@@ -2124,7 +2124,27 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::ds_read_u8:
    case aco_opcode::ds_read_u8_d16:
    case aco_opcode::ds_read_u16:
-   case aco_opcode::ds_read_u16_d16: {
+   case aco_opcode::ds_read_u16_d16:
+   case aco_opcode::s_load_ubyte:
+   case aco_opcode::s_buffer_load_ubyte:
+   case aco_opcode::s_load_ushort:
+   case aco_opcode::s_buffer_load_ushort:
+   case aco_opcode::buffer_load_ubyte:
+   case aco_opcode::buffer_load_ubyte_d16:
+   case aco_opcode::buffer_load_ushort:
+   case aco_opcode::buffer_load_short_d16:
+   case aco_opcode::flat_load_ubyte:
+   case aco_opcode::flat_load_ubyte_d16:
+   case aco_opcode::flat_load_ushort:
+   case aco_opcode::flat_load_short_d16:
+   case aco_opcode::global_load_ubyte:
+   case aco_opcode::global_load_ubyte_d16:
+   case aco_opcode::global_load_ushort:
+   case aco_opcode::global_load_short_d16:
+   case aco_opcode::scratch_load_ubyte:
+   case aco_opcode::scratch_load_ubyte_d16:
+   case aco_opcode::scratch_load_ushort:
+   case aco_opcode::scratch_load_short_d16: {
       ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       break;
    }
@@ -3201,16 +3221,16 @@ apply_insert(opt_ctx& ctx, aco_ptr<Instruction>& instr)
  * p_extract(ds_read_uN(), 0, N, 0) -> ds_read_uN()
  */
 bool
-apply_ds_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
+apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
 {
    /* Check if p_extract has a usedef operand and is the only user. */
    if (!ctx.info[extract->operands[0].tempId()].is_usedef() ||
        ctx.uses[extract->operands[0].tempId()] > 1)
       return false;
 
-   /* Check if the usedef is a DS instruction. */
-   Instruction* ds = ctx.info[extract->operands[0].tempId()].instr;
-   if (ds->format != Format::DS)
+   /* Check if the usedef is the right format. */
+   Instruction* load = ctx.info[extract->operands[0].tempId()].instr;
+   if (!load->isDS() && !load->isSMEM() && !load->isMUBUF() && !load->isFlatLike())
       return false;
 
    unsigned extract_idx = extract->operands[1].constantValue();
@@ -3219,32 +3239,91 @@ apply_ds_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
    unsigned dst_bitsize = extract->definitions[0].bytes() * 8u;
 
    /* TODO: These are doable, but probably don't occur too often. */
-   if (extract_idx || sign_ext || dst_bitsize != 32)
+   if (extract_idx || sign_ext || dst_bitsize != 32 ||
+       (load->definitions[0].regClass().type() != extract->definitions[0].regClass().type()))
       return false;
 
    unsigned bits_loaded = 0;
-   if (ds->opcode == aco_opcode::ds_read_u8 || ds->opcode == aco_opcode::ds_read_u8_d16)
-      bits_loaded = 8;
-   else if (ds->opcode == aco_opcode::ds_read_u16 || ds->opcode == aco_opcode::ds_read_u16_d16)
-      bits_loaded = 16;
-   else
+   bool can_shrink = false;
+   switch (load->opcode) {
+   case aco_opcode::ds_read_u8:
+   case aco_opcode::ds_read_u8_d16:
+   case aco_opcode::flat_load_ubyte:
+   case aco_opcode::flat_load_ubyte_d16:
+   case aco_opcode::global_load_ubyte:
+   case aco_opcode::global_load_ubyte_d16:
+   case aco_opcode::scratch_load_ubyte:
+   case aco_opcode::scratch_load_ubyte_d16: can_shrink = true; FALLTHROUGH;
+   case aco_opcode::s_load_ubyte:
+   case aco_opcode::s_buffer_load_ubyte:
+   case aco_opcode::buffer_load_ubyte:
+   case aco_opcode::buffer_load_ubyte_d16: bits_loaded = 8; break;
+   case aco_opcode::ds_read_u16:
+   case aco_opcode::ds_read_u16_d16:
+   case aco_opcode::flat_load_ushort:
+   case aco_opcode::flat_load_short_d16:
+   case aco_opcode::global_load_ushort:
+   case aco_opcode::global_load_short_d16:
+   case aco_opcode::scratch_load_ushort:
+   case aco_opcode::scratch_load_short_d16: can_shrink = true; FALLTHROUGH;
+   case aco_opcode::s_load_ushort:
+   case aco_opcode::s_buffer_load_ushort:
+   case aco_opcode::buffer_load_ushort:
+   case aco_opcode::buffer_load_short_d16: bits_loaded = 16; break;
+   default: return false;
+   }
+
+   /* We can't shrink some loads because that would remove zeroing of the offset/address LSBs. */
+   if (!can_shrink && bits_extracted < bits_loaded)
       return false;
 
-   /* Shrink the DS load if the extracted bit size is smaller. */
+   /* Shrink the load if the extracted bit size is smaller. */
    bits_loaded = MIN2(bits_loaded, bits_extracted);
 
-   /* Change the DS opcode so it writes the full register. */
-   if (bits_loaded == 8)
-      ds->opcode = aco_opcode::ds_read_u8;
-   else if (bits_loaded == 16)
-      ds->opcode = aco_opcode::ds_read_u16;
-   else
-      unreachable("Forgot to add DS opcode above.");
+   /* Change the opcode so it writes the full register. */
+   if (bits_loaded == 8 && load->isDS())
+      load->opcode = aco_opcode::ds_read_u8;
+   else if (bits_loaded == 16 && load->isDS())
+      load->opcode = aco_opcode::ds_read_u16;
+   else if (bits_loaded == 8 && load->isMUBUF())
+      load->opcode = aco_opcode::buffer_load_ubyte;
+   else if (bits_loaded == 16 && load->isMUBUF())
+      load->opcode = aco_opcode::buffer_load_ushort;
+   else if (bits_loaded == 8 && load->isFlat())
+      load->opcode = aco_opcode::flat_load_ubyte;
+   else if (bits_loaded == 16 && load->isFlat())
+      load->opcode = aco_opcode::flat_load_ushort;
+   else if (bits_loaded == 8 && load->isGlobal())
+      load->opcode = aco_opcode::global_load_ubyte;
+   else if (bits_loaded == 16 && load->isGlobal())
+      load->opcode = aco_opcode::global_load_ushort;
+   else if (bits_loaded == 8 && load->isScratch())
+      load->opcode = aco_opcode::scratch_load_ubyte;
+   else if (bits_loaded == 16 && load->isScratch())
+      load->opcode = aco_opcode::scratch_load_ushort;
+   else if (!load->isSMEM())
+      unreachable("Forgot to add opcode above.");
 
-   /* The DS now produces the exact same thing as the extract, remove the extract. */
-   std::swap(ds->definitions[0], extract->definitions[0]);
+   if (dst_bitsize <= 16 && ctx.program->gfx_level >= GFX9) {
+      switch (load->opcode) {
+      case aco_opcode::ds_read_u8: load->opcode = aco_opcode::ds_read_u8_d16; break;
+      case aco_opcode::ds_read_u16: load->opcode = aco_opcode::ds_read_u16_d16; break;
+      case aco_opcode::buffer_load_ubyte: load->opcode = aco_opcode::buffer_load_ubyte_d16; break;
+      case aco_opcode::buffer_load_ushort: load->opcode = aco_opcode::buffer_load_short_d16; break;
+      case aco_opcode::flat_load_ubyte: load->opcode = aco_opcode::flat_load_ubyte_d16; break;
+      case aco_opcode::flat_load_ushort: load->opcode = aco_opcode::flat_load_short_d16; break;
+      case aco_opcode::global_load_ubyte: load->opcode = aco_opcode::global_load_ubyte_d16; break;
+      case aco_opcode::global_load_ushort: load->opcode = aco_opcode::global_load_short_d16; break;
+      case aco_opcode::scratch_load_ubyte: load->opcode = aco_opcode::scratch_load_ubyte_d16; break;
+      case aco_opcode::scratch_load_ushort: load->opcode = aco_opcode::scratch_load_short_d16; break;
+      default: break;
+      }
+   }
+
+   /* The load now produces the exact same thing as the extract, remove the extract. */
+   std::swap(load->definitions[0], extract->definitions[0]);
    ctx.uses[extract->definitions[0].tempId()] = 0;
-   ctx.info[ds->definitions[0].tempId()].label = 0;
+   ctx.info[load->definitions[0].tempId()].label = 0;
    return true;
 }
 
@@ -3808,7 +3887,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
 
       if (instr->opcode == aco_opcode::p_extract)
-         apply_ds_extract(ctx, instr);
+         apply_load_extract(ctx, instr);
    }
 
    /* TODO: There are still some peephole optimizations that could be done:
