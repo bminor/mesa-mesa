@@ -550,6 +550,18 @@ lvp_handle_aabb_intersection(nir_builder *b, struct lvp_leaf_intersection *inter
    struct lvp_ray_tracing_pipeline_compiler *compiler = args->data;
    struct lvp_ray_tracing_state *state = &compiler->state;
 
+   bool has_isec = false;
+   for (uint32_t i = 0; i < compiler->pipeline->rt.group_count; i++) {
+      struct lvp_ray_tracing_group *group = compiler->pipeline->rt.groups + i;
+      if (group->isec_index != VK_SHADER_UNUSED_KHR) {
+         has_isec = true;
+         break;
+      }
+   }
+
+   if (!has_isec)
+      return;
+
    nir_store_var(b, state->accept, nir_imm_false(b), 0x1);
    nir_store_var(b, state->terminate, ray_flags->terminate_on_first_hit, 0x1);
    nir_store_var(b, state->opaque, intersection->opaque, 0x1);
