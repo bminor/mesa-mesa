@@ -545,14 +545,14 @@ lower_doubles_instr_to_soft(nir_builder *b, nir_alu_instr *instr,
    switch (instr->op) {
    case nir_op_f2i64:
       if (instr->src[0].src.ssa->bit_size != 64)
-         return false;
+         return NULL;
       name = "__fp64_to_int64";
       mangled_name = "__fp64_to_int64(u641;";
       return_type = glsl_int64_t_type();
       break;
    case nir_op_f2u64:
       if (instr->src[0].src.ssa->bit_size != 64)
-         return false;
+         return NULL;
       name = "__fp64_to_uint64";
       mangled_name = "__fp64_to_uint64(u641;";
       break;
@@ -675,7 +675,7 @@ lower_doubles_instr_to_soft(nir_builder *b, nir_alu_instr *instr,
       return_type = glsl_bool_type();
       break;
    default:
-      return false;
+      return NULL;
    }
 
    assert(softfp64 != NULL);

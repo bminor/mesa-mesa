@@ -64,7 +64,7 @@ try_opt_bcsel_of_shuffle(nir_builder *b, nir_alu_instr *alu,
     * now and subgroup ops in the presence of discard aren't common.
     */
    if (block_has_discard)
-      return false;
+      return NULL;
 
    if (!nir_alu_src_is_trivial_ssa(alu, 0))
       return NULL;

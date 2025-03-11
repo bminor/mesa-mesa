@@ -2814,12 +2814,12 @@ check_tes_input_load_get_single_use_alu(nir_intrinsic_instr *load,
 
    /* Check the vertex index. Each vertex can be loaded only once. */
    if (!nir_src_is_const(load->src[0]))
-      return false;
+      return NULL;
 
    *vertex_index = nir_src_as_uint(load->src[0]);
    if (*vertex_index >= max_vertices ||
        *vertices_used & BITFIELD_BIT(*vertex_index))
-      return false;
+      return NULL;
 
    *vertices_used |= BITFIELD_BIT(*vertex_index);
 
