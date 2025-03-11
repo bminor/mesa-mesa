@@ -177,6 +177,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_external_semaphore                = true,
       .KHR_external_semaphore_fd             = true,
       .KHR_format_feature_flags2             = true,
+      .KHR_fragment_shader_barycentric       = device->info.ver >= 20,
       .KHR_fragment_shading_rate             = device->info.ver >= 11,
       .KHR_get_memory_requirements2          = true,
       .KHR_global_priority                   = device->max_context_priority >=
@@ -958,6 +959,10 @@ get_features(const struct anv_physical_device *pdevice,
       .shaderBFloat16CooperativeMatrix =
          anv_device_has_bfloat16_cooperative_matrix(pdevice),
       .shaderBFloat16DotProduct = pdevice->info.has_bfloat16,
+
+      /* VK_KHR_fragment_shader_barycentric */
+      .fragmentShaderBarycentric =
+         pdevice->vk.supported_extensions.KHR_fragment_shader_barycentric,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
@@ -1438,6 +1443,11 @@ get_properties(const struct anv_physical_device *pdevice,
    /* VK_KHR_compute_shader_derivatives */
    {
       props->meshAndTaskShaderDerivatives = pdevice->info.has_mesh_shading;
+   }
+
+   /* VK_KHR_fragment_shader_barycentric */
+   {
+      props->triStripVertexOrderIndependentOfProvokingVertex = false;
    }
 
    /* VK_KHR_fragment_shading_rate */
