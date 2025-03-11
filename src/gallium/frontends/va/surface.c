@@ -540,49 +540,44 @@ vlVaQuerySurfaceAttributes(VADriverContextP ctx, VAConfigID config_id,
 
    i = 0;
 
-   if (config->rt_format & VA_RT_FORMAT_YUV420) {
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_NV12, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_YV12, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_IYUV, attribs, &i);
-   }
+   /* VA_RT_FORMAT_YUV420 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_NV12, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_YV12, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_IYUV, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_YUV420_10) {
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P010, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P016, attribs, &i);
-   }
+   /* VA_RT_FORMAT_YUV420_10 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P010, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P016, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_YUV420_12)
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P012, attribs, &i);
+   /* VA_RT_FORMAT_YUV420_12 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P012, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_YUV400)
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_400_UNORM, attribs, &i);
+   /* VA_RT_FORMAT_YUV400 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_400_UNORM, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_YUV422) {
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_UYVY, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_YUYV, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_U8_V8_440_UNORM, attribs, &i);
-   }
+   /* VA_RT_FORMAT_YUV422 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_UYVY, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_YUYV, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_U8_V8_440_UNORM, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_YUV444)
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_U8_V8_444_UNORM, attribs, &i);
+   /* VA_RT_FORMAT_YUV444 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_U8_V8_444_UNORM, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_RGBP)
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8_G8_B8_UNORM, attribs, &i);
+   /* VA_RT_FORMAT_RGBP */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8_G8_B8_UNORM, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_RGB32) {
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8G8B8A8_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8A8_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8G8B8X8_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8X8_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_A8R8G8B8_UNORM, attribs, &i);
-   }
+   /* VA_RT_FORMAT_RGB32 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8G8B8A8_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8A8_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R8G8B8X8_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B8G8R8X8_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_A8R8G8B8_UNORM, attribs, &i);
 
-   if (config->rt_format & VA_RT_FORMAT_RGB32_10) {
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R10G10B10A2_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B10G10R10A2_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R10G10B10X2_UNORM, attribs, &i);
-      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B10G10R10X2_UNORM, attribs, &i);
-   }
+   /* VA_RT_FORMAT_RGB32_10 */
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R10G10B10A2_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B10G10R10A2_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_R10G10B10X2_UNORM, attribs, &i);
+   vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_B10G10R10X2_UNORM, attribs, &i);
 
    attribs[i].type = VASurfaceAttribMemoryType;
    attribs[i].value.type = VAGenericValueTypeInteger;
