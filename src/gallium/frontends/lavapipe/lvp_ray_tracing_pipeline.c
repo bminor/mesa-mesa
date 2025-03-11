@@ -1075,6 +1075,8 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
    NIR_PASS(_, b->shader, nir_lower_global_vars_to_local);
    NIR_PASS(_, b->shader, nir_lower_vars_to_ssa);
 
+   lvp_shader_optimize(b->shader);
+
    NIR_PASS(_, b->shader, nir_lower_vars_to_explicit_types,
             nir_var_shader_temp,
             glsl_get_natural_size_align_bytes);
@@ -1090,6 +1092,8 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
       compiler.raygen_size +
       MIN2(create_info->maxPipelineRayRecursionDepth, 1) * MAX3(compiler.chit_size, compiler.miss_size, compiler.isec_size + compiler.ahit_size) +
       MAX2(0, (int)create_info->maxPipelineRayRecursionDepth - 1) * MAX2(compiler.chit_size, compiler.miss_size) + 31 * compiler.callable_size;
+
+   lvp_shader_optimize(b->shader);
 
    struct lvp_shader *shader = &pipeline->shaders[MESA_SHADER_RAYGEN];
    lvp_shader_init(shader, b->shader);
