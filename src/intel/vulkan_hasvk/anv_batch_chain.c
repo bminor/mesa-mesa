@@ -1166,7 +1166,7 @@ anv_cmd_buffer_add_secondary(struct anv_cmd_buffer *primary,
       break;
    }
    default:
-      assert(!"Invalid execution mode");
+      unreachable("Invalid execution mode");
    }
 
    anv_reloc_list_append(&primary->surface_relocs, &primary->vk.pool->alloc,

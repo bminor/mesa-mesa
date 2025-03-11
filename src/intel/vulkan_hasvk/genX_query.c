@@ -164,7 +164,7 @@ VkResult genX(CreateQueryPool)(
       uint64s_per_slot = 1 + 2;
       break;
    default:
-      assert(!"Invalid query type");
+      unreachable("Invalid query type");
    }
 
    if (!vk_object_multialloc(&device->vk, &ma, pAllocator,

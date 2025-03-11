@@ -2385,8 +2385,7 @@ emit_binding_table(struct anv_cmd_buffer *cmd_buffer,
             break;
 
          default:
-            assert(!"Invalid descriptor type");
-            continue;
+            unreachable("Invalid descriptor type");
          }
          assert(surface_state.map);
          bt_map[s] = surface_state.offset + state_offset;
