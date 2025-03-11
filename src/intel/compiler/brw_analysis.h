@@ -374,6 +374,9 @@ public:
       BITSET_WORD flag_use[1];
       BITSET_WORD flag_livein[1];
       BITSET_WORD flag_liveout[1];
+
+      int start_ip;
+      int end_ip;
    };
 
    brw_live_variables(const brw_shader *s);

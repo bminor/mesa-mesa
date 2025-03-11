@@ -104,11 +104,11 @@ brw_live_variables::setup_def_use()
    int ip = 0;
 
    foreach_block (block, cfg) {
-      assert(ip == block->start_ip);
-      if (block->num > 0)
-         assert(cfg->blocks[block->num - 1]->end_ip == ip - 1);
-
       struct block_data *bd = &block_data[block->num];
+
+      assert(ip == bd->start_ip);
+      if (block->num > 0)
+         assert(block_data[block->num - 1].end_ip == ip - 1);
 
       foreach_inst_in_block(brw_inst, inst, block) {
          /* Set use[] for this instruction */
@@ -233,13 +233,13 @@ brw_live_variables::compute_start_end()
       unsigned i;
 
       BITSET_FOREACH_SET(i, bd->livein, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], block->start_ip);
-         end[i] = MAX2(end[i], block->start_ip);
+         start[i] = MIN2(start[i], bd->start_ip);
+         end[i] = MAX2(end[i], bd->start_ip);
       }
 
       BITSET_FOREACH_SET(i, bd->liveout, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], block->end_ip);
-         end[i] = MAX2(end[i], block->end_ip);
+         start[i] = MIN2(start[i], bd->end_ip);
+         end[i] = MAX2(end[i], bd->end_ip);
       }
    }
 }
@@ -294,6 +294,12 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
       block_data[i].flag_use[0] = 0;
       block_data[i].flag_livein[0] = 0;
       block_data[i].flag_liveout[0] = 0;
+   }
+
+   const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
+   for (int i = 0; i < cfg->num_blocks; i++) {
+      block_data[i].start_ip = ips.start(cfg->blocks[i]);
+      block_data[i].end_ip   = ips.end(cfg->blocks[i]);
    }
 
    setup_def_use();
