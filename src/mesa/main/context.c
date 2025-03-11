@@ -138,7 +138,7 @@
 #include "texturebindless.h"
 #include "program/program.h"
 #include "math/m_matrix.h"
-#include "main/dispatch.h" /* for _gloffset_COUNT */
+#include "dispatch.h" /* for _gloffset_COUNT */
 #include "macros.h"
 #include "git_sha1.h"
 

@@ -27,7 +27,7 @@
 #include "get.h"
 #include "mtypes.h"
 #include "macros.h"
-#include "main/dispatch.h" /* for _gloffset_COUNT */
+#include "dispatch.h" /* for _gloffset_COUNT */
 #include "api_exec_decl.h"
 #include "glthread_marshal.h"
 

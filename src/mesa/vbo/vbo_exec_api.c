@@ -40,7 +40,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "main/light.h"
 #include "main/api_arrayelt.h"
 #include "main/draw_validate.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "util/bitscan.h"
 #include "util/u_memory.h"
 #include "api_exec_decl.h"

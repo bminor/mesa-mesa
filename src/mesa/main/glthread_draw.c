@@ -31,7 +31,7 @@
 
 #include "api_exec_decl.h"
 #include "main/glthread_marshal.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "main/varray.h"
 
 static inline unsigned

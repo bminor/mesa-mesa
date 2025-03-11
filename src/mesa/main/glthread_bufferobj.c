@@ -22,7 +22,7 @@
  */
 
 #include "main/glthread_marshal.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "main/bufferobj.h"
 
 /**

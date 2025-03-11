@@ -29,7 +29,7 @@
 #include "main/context.h"
 #include "main/macros.h"
 #include "math/m_eval.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "vbo_exec.h"
 #include "vbo_private.h"
 

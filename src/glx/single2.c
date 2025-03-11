@@ -16,7 +16,7 @@
 #include <xcb/xcb.h>
 #include <xcb/glx.h>
 #include <X11/Xlib-xcb.h>
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 #if !defined(__GNUC__)
 #  define __builtin_expect(x, y) x

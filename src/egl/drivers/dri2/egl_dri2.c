@@ -75,7 +75,7 @@
 #include "egl_dri2.h"
 #include "egldefines.h"
 #include "mapi/glapi/glapi.h"
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 #define NUM_ATTRIBS 16
 

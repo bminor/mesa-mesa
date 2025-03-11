@@ -30,7 +30,7 @@
 #include "main/glformats.h"
 #include "main/mtypes.h"
 #include "main/hash.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "main/varray.h"
 
 static unsigned

@@ -22,7 +22,7 @@
  */
 
 #include "main/glthread_marshal.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 
 uint32_t
 _mesa_unmarshal_GetIntegerv(struct gl_context *ctx,

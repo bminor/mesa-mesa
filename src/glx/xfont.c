@@ -37,7 +37,7 @@
 
 #include "glxclient.h"
 #include "mapi/glapi/glapi.h"
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 /* Implementation.  */
 

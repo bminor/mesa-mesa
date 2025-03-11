@@ -52,7 +52,7 @@
 #include "loader_dri_helper.h"
 #include "dri_util.h"
 #include "mapi/glapi/glapi.h"
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 #undef DRI2_MINOR
 #define DRI2_MINOR 1

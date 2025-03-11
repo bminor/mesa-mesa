@@ -5,7 +5,7 @@
  */
 
 #include "main/glthread_marshal.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "main/image.h"
 
 #define MAX_BITMAP_BYTE_SIZE     4096

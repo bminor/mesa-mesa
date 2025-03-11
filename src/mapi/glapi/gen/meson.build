@@ -81,6 +81,26 @@ main_api_hw_select_init_h = custom_target(
   capture : true,
 )
 
+main_dispatch_h = custom_target(
+  'dispatch.h',
+  input : ['gl_table.py', 'gl_and_es_API.xml'],
+  output : 'dispatch.h',
+  command : [prog_python, '@INPUT0@', '-f', '@INPUT1@', '-m', 'dispatch'],
+  depend_files : glapi_xml_py_deps,
+  capture : true,
+)
+
+idep_dispatch_h = declare_dependency(sources : [main_dispatch_h])
+
+main_marshal_generated_h = custom_target(
+  'marshal_generated.h',
+  input : ['marshal_generated_h.py', 'gl_and_es_API.xml'],
+  output : 'marshal_generated.h',
+  command : [prog_python, '@INPUT0@', '@INPUT1@', sizeof_pointer],
+  depend_files : glapi_xml_py_deps,
+  capture : true,
+)
+
 main_unmarshal_table_c = custom_target(
   'unmarshal_table.c',
   input : ['unmarshal_table_c.py', 'gl_and_es_API.xml'],

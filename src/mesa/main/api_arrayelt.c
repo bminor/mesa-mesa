@@ -42,7 +42,7 @@
 
 #include "macros.h"
 #include "mtypes.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "varray.h"
 #include "api_exec_decl.h"
 

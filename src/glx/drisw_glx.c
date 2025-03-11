@@ -44,7 +44,7 @@
 #include "loader_dri_helper.h"
 #include "dri_util.h"
 #include "mapi/glapi/glapi.h"
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 static int xshm_error = 0;
 static int xshm_opcode = -1;

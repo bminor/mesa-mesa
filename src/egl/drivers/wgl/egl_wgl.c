@@ -47,7 +47,7 @@
 
 #include "util/u_call_once.h"
 #include "mapi/glapi/glapi.h"
-#include "mesa/main/dispatch.h"
+#include "dispatch.h"
 
 #include <GL/mesa_glinterop.h>
 

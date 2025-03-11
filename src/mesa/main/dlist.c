@@ -45,7 +45,7 @@
 #include "varray.h"
 #include "glthread_marshal.h"
 
-#include "main/dispatch.h"
+#include "dispatch.h"
 
 #include "vbo/vbo_save.h"
 #include "util/u_inlines.h"

@@ -24,7 +24,7 @@
 #include "c99_alloca.h"
 
 #include "main/glthread_marshal.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 
 struct marshal_cmd_CallList
 {

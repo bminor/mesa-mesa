@@ -41,7 +41,7 @@
 #include "varray.h"
 #include "arrayobj.h"
 #include "get.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "api_exec_decl.h"
 
 #include "state_tracker/st_atom.h"

@@ -41,7 +41,7 @@
 #include "xm_api.h"
 #include "main/errors.h"
 #include "main/config.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "mapi/glapi/glapi.h"
 #include "util/compiler.h"
 #include "util/u_math.h"

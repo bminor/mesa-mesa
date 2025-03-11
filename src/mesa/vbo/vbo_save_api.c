@@ -110,7 +110,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "main/macros.h"
 #include "main/draw_validate.h"
 #include "main/api_arrayelt.h"
-#include "main/dispatch.h"
+#include "dispatch.h"
 #include "main/state.h"
 #include "main/varray.h"
 #include "util/bitscan.h"
