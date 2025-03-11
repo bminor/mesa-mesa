@@ -35,7 +35,13 @@ use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
       return false;
    }
 
-   if (intrin->def.divergent || (cb_data->after_lowering && intrin->def.bit_size < 32))
+   if (intrin->def.divergent)
+      return false;
+
+   /* ACO doesn't support instruction selection for multi-component 8/16-bit SMEM loads. */
+   const bool supports_scalar_subdword = cb_data->gfx_level >= GFX12 && !cb_data->use_llvm;
+   if (cb_data->after_lowering && intrin->def.bit_size < 32 &&
+       (intrin->def.num_components > 1 || !supports_scalar_subdword))
       return false;
 
    enum gl_access_qualifier access = nir_intrinsic_access(intrin);
@@ -83,12 +89,14 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    if (!is_load)
       return res;
 
-   /* Lower 8/16-bit loads to 32-bit, unless it's a VMEM scalar load. */
+   /* Lower 8/16-bit loads to 32-bit, unless it's a VMEM (or SMEM on GFX12+) scalar load. */
 
-   const bool support_subdword = res.num_components == 1 && !is_smem &&
-                                 (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
+   const bool supports_scalar_subdword =
+      !is_smem || (cb_data->gfx_level >= GFX12 && intrin != nir_intrinsic_load_push_constant);
+   const bool supported_subdword = res.num_components == 1 && supports_scalar_subdword &&
+                                   (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
 
-   if (res.bit_size >= 32 || support_subdword)
+   if (res.bit_size >= 32 || supported_subdword)
       return res;
 
    const uint32_t max_pad = 4 - MIN2(combined_align, 4);
