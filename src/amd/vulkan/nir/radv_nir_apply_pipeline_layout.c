@@ -398,7 +398,11 @@ load_push_constant(nir_builder *b, apply_layout_state *state, nir_intrinsic_inst
          addr = convert_pointer_to_64_bit(b, state, addr);
          offset = nir_iadd_imm_nuw(b, intrin->src[0].ssa, base);
       }
-      unsigned size = 1 << (util_last_bit(count - start) - 1); /* Round down to power of two. */
+
+      /* Decrease to supported size. */
+      unsigned size = count - start;
+      size = state->gfx_level >= GFX12 && size == 3 ? 3 : (1 << (util_last_bit(size) - 1));
+
       /* Try to round up to power of two instead. */
       if (size < (count - start) && can_increase_load_size(intrin, start * 4, size, size * 2))
          size *= 2;
