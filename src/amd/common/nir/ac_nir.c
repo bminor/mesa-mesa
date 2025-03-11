@@ -575,13 +575,14 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
       if (config->uses_aco && uses_smem && aligned_new_size >= 128)
          overfetch_size = 32;
 
+      /* Allow overfetching from 8/16 bits to 32 bits. */
       int64_t aligned_unvectorized_size =
-         align_load_store_size(config->gfx_level, low->num_components * low->def.bit_size,
-                               uses_smem, is_shared) +
-         align_load_store_size(config->gfx_level, high->num_components * high->def.bit_size,
-                               uses_smem, is_shared);
+         ALIGN_POT(align_load_store_size(config->gfx_level, low->num_components * low->def.bit_size,
+                                         uses_smem, is_shared), 32) +
+         ALIGN_POT(align_load_store_size(config->gfx_level, high->num_components * high->def.bit_size,
+                                         uses_smem, is_shared), 32);
 
-      if (aligned_new_size > aligned_unvectorized_size + overfetch_size)
+      if (ALIGN_POT(aligned_new_size, 32) > aligned_unvectorized_size + overfetch_size)
          return false;
    }
 
