@@ -4507,8 +4507,10 @@ get_smem_opcode(amd_gfx_level level, unsigned bytes, bool buffer, bool round_dow
 {
    if (bytes <= (round_down ? 7 : 4))
       return {buffer ? aco_opcode::s_buffer_load_dword : aco_opcode::s_load_dword, 4};
-   else if (bytes <= (round_down ? 15 : 8))
+   else if (bytes <= (round_down ? (level >= GFX12 ? 11 : 15) : 8))
       return {buffer ? aco_opcode::s_buffer_load_dwordx2 : aco_opcode::s_load_dwordx2, 8};
+   else if (bytes <= (round_down ? 15 : 12) && level >= GFX12)
+      return {buffer ? aco_opcode::s_buffer_load_dwordx3 : aco_opcode::s_load_dwordx3, 12};
    else if (bytes <= (round_down ? 31 : 16))
       return {buffer ? aco_opcode::s_buffer_load_dwordx4 : aco_opcode::s_load_dwordx4, 16};
    else if (bytes <= (round_down ? 63 : 32))
