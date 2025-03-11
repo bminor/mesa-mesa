@@ -31,7 +31,7 @@ pushd /cuttlefish
 function my_atexit()
 {
   # shellcheck disable=SC2317
-  HOME=/cuttlefish stop_cvd -wait_for_launcher=10
+  HOME=/cuttlefish stop_cvd -wait_for_launcher=20
 
   # shellcheck disable=SC2317
   cp /cuttlefish/cuttlefish/instances/cvd-1/logs/logcat $RESULTS_DIR || true
