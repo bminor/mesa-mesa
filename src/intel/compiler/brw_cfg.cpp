@@ -62,8 +62,7 @@ push_stack(exec_list *list, void *mem_ctx, bblock_t *block)
 }
 
 bblock_t::bblock_t(cfg_t *cfg) :
-   cfg(cfg), start_ip(0), end_ip(0), end_ip_delta(0),
-   num_instructions(0), num(0)
+   cfg(cfg), num_instructions(0), num(0)
 {
    instructions.make_empty();
    parents.make_empty();
@@ -332,8 +331,6 @@ cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
       }
    }
 
-   cur->end_ip = ip - 1;
-
    make_block_array();
 }
 
@@ -462,11 +459,6 @@ cfg_t::new_block()
 void
 cfg_t::set_next_block(bblock_t **cur, bblock_t *block, int ip)
 {
-   if (*cur) {
-      (*cur)->end_ip = ip - 1;
-   }
-
-   block->start_ip = ip;
    block->num = num_blocks++;
    block_list.push_tail(&block->link);
    *cur = block;

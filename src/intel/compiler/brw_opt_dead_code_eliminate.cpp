@@ -151,7 +151,7 @@ brw_opt_dead_code_eliminate(brw_shader &s)
             flag_live[0] &= ~inst->flags_written(devinfo);
 
          if (inst->opcode == BRW_OPCODE_NOP) {
-            inst->remove(true);
+            inst->remove();
             continue;
          }
 
@@ -168,8 +168,6 @@ brw_opt_dead_code_eliminate(brw_shader &s)
          flag_live[0] |= inst->flags_read(devinfo);
       }
    }
-
-   s.cfg->adjust_block_ips();
 
    ralloc_free(live);
    ralloc_free(flag_live);

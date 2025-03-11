@@ -1883,7 +1883,7 @@ brw_opt_copy_propagation_defs(brw_shader &s)
                   progress = true;
                   ++uses_deleted[def->dst.nr];
                   if (defs.get_use_count(def->dst) == uses_deleted[def->dst.nr])
-                     def->remove(true);
+                     def->remove();
                }
 
                continue;
@@ -1917,7 +1917,7 @@ brw_opt_copy_propagation_defs(brw_shader &s)
              */
             if (def->conditional_mod == BRW_CONDITIONAL_NONE &&
                 defs.get_use_count(def->dst) == uses_deleted[def->dst.nr]) {
-               def->remove(true);
+               def->remove();
             }
          }
       }
@@ -1929,7 +1929,6 @@ brw_opt_copy_propagation_defs(brw_shader &s)
    }
 
    if (progress) {
-      s.cfg->adjust_block_ips();
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 

@@ -372,11 +372,9 @@ brw_opt_register_coalesce(brw_shader &s)
    if (progress) {
       foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
          if (inst->opcode == BRW_OPCODE_NOP) {
-            inst->remove(true);
+            inst->remove();
          }
       }
-
-      s.cfg->adjust_block_ips();
 
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }

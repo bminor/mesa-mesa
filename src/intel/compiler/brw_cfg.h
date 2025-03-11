@@ -97,14 +97,6 @@ struct bblock_t {
    struct exec_node link;
    struct cfg_t *cfg;
 
-   int start_ip;
-   int end_ip;
-
-   /**
-    * Change in end_ip since the last time IPs of later blocks were updated.
-    */
-   int end_ip_delta;
-
    unsigned num_instructions;
 
    struct exec_list instructions;
@@ -219,11 +211,6 @@ struct cfg_t {
    void validate(const char *stage_abbrev);
 #endif
 
-   /**
-    * Propagate bblock_t::end_ip_delta data through the CFG.
-    */
-   inline void adjust_block_ips();
-
    struct brw_shader *s;
    void *mem_ctx;
 
@@ -310,20 +297,5 @@ cfg_t::last_block() const
    for (__type *__scan_inst = (__type *)__inst->prev;          \
         !__scan_inst->is_head_sentinel();                      \
         __scan_inst = (__type *)__scan_inst->prev)
-
-inline void
-cfg_t::adjust_block_ips()
-{
-   int delta = 0;
-
-   foreach_block(block, this) {
-      block->start_ip += delta;
-      block->end_ip += delta;
-
-      delta += block->end_ip_delta;
-
-      block->end_ip_delta = 0;
-   }
-}
 
 #endif

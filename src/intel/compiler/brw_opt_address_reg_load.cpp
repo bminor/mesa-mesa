@@ -65,7 +65,6 @@ brw_opt_address_reg_load(brw_shader &s)
    }
 
    if (progress) {
-      s.cfg->adjust_block_ips();
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 

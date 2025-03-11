@@ -134,7 +134,7 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
               scan_inst->conditional_mod == cond)) {
             scan_inst->conditional_mod = cond;
             scan_inst->flag_subreg = inst->flag_subreg;
-            inst->remove(true);
+            inst->remove();
             return true;
          }
          break;
@@ -203,7 +203,7 @@ cmod_propagate_not(const intel_device_info *devinfo, brw_inst *inst)
               scan_inst->conditional_mod == cond)) {
             scan_inst->conditional_mod = cond;
             scan_inst->flag_subreg = inst->flag_subreg;
-            inst->remove(true);
+            inst->remove();
             return true;
          }
          break;
@@ -223,11 +223,8 @@ static bool
 opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
 {
    bool progress = false;
-   UNUSED int ip = block->end_ip + 1;
 
    foreach_inst_in_block_reverse_safe(brw_inst, inst, block) {
-      ip--;
-
       if ((inst->opcode != BRW_OPCODE_AND &&
            inst->opcode != BRW_OPCODE_CMP &&
            inst->opcode != BRW_OPCODE_MOV &&
@@ -310,7 +307,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
             if (inst->conditional_mod == BRW_CONDITIONAL_NZ &&
                 scan_inst->opcode == BRW_OPCODE_CMP &&
                 brw_type_is_int(inst->dst.type)) {
-               inst->remove(true);
+               inst->remove();
                progress = true;
                break;
             }
@@ -458,20 +455,20 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                        inst->src[0].type == BRW_TYPE_UD) ||
                       (inst->conditional_mod == BRW_CONDITIONAL_L &&
                        inst->src[0].type == BRW_TYPE_D)) {
-                     inst->remove(true);
+                     inst->remove();
                      progress = true;
                      break;
                   }
                } else if (scan_inst->conditional_mod == inst->conditional_mod) {
                   /* sel.cond will not write the flags. */
                   assert(scan_inst->opcode != BRW_OPCODE_SEL);
-                  inst->remove(true);
+                  inst->remove();
                   progress = true;
                   break;
                } else if (!read_flag && scan_inst->can_do_cmod()) {
                   scan_inst->conditional_mod = inst->conditional_mod;
                   scan_inst->flag_subreg = inst->flag_subreg;
-                  inst->remove(true);
+                  inst->remove();
                   progress = true;
                   break;
                }
@@ -533,7 +530,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                  scan_inst->conditional_mod == cond)) {
                scan_inst->conditional_mod = cond;
                scan_inst->flag_subreg = inst->flag_subreg;
-               inst->remove(true);
+               inst->remove();
                progress = true;
             }
             break;
@@ -546,9 +543,6 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                      (scan_inst->flags_read(devinfo) & flags_written) != 0;
       }
    }
-
-   /* There is progress if and only if instructions were removed. */
-   assert(progress == (block->end_ip_delta != 0));
 
    return progress;
 }
@@ -563,8 +557,6 @@ brw_opt_cmod_propagation(brw_shader &s)
    }
 
    if (progress) {
-      s.cfg->adjust_block_ips();
-
       s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
    }
 
