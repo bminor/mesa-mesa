@@ -1087,8 +1087,7 @@ isl_format_has_color_component(enum isl_format fmt, int component)
    case 3:
       return (fmtl->channels.a.bits + intensity) > 0;
    default:
-      assert(!"Invalid color component: must be 0..3");
-      return false;
+      unreachable("Invalid color component: must be 0..3");
    }
 }
 
@@ -1212,8 +1211,7 @@ isl_format_rgbx_to_rgba(enum isl_format rgbx)
    case ISL_FORMAT_B5G5R5X1_UNORM_SRGB:
       return ISL_FORMAT_B5G5R5A1_UNORM_SRGB;
    default:
-      assert(!"Invalid RGBX format");
-      return rgbx;
+      unreachable("Invalid RGBX format");
    }
 }
 

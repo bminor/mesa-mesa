@@ -82,8 +82,7 @@ typedef void (*isl_emit_cpb_control_s_func)(const struct isl_device *dev, void *
       case 300:                                                         \
          return isl_gfx30_##func;                                       \
       default:                                                          \
-         assert(!"Unknown hardware generation");                        \
-         return NULL;                                                   \
+         unreachable("Unknown hardware generation");                    \
       }                                                                 \
    }
 

@@ -3884,7 +3884,7 @@ isl_surf_get_ccs_surf(const struct isl_device *dev,
       isl_gfx30_##func(__VA_ARGS__);               \
       break;                                       \
    default:                                        \
-      assert(!"Unknown hardware generation");      \
+      unreachable("Unknown hardware generation");  \
    }
 
 /**

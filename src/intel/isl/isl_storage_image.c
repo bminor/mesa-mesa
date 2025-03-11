@@ -228,8 +228,7 @@ isl_lower_storage_image_format(const struct intel_device_info *devinfo,
       return ISL_FORMAT_R32G32_UINT;
 
    default:
-      assert(!"Unknown image format");
-      return ISL_FORMAT_UNSUPPORTED;
+      unreachable("Unknown image format");
    }
 }
 
@@ -338,7 +337,7 @@ isl_surf_fill_image_param(const struct isl_device *dev,
       break;
 
    default:
-      assert(!"Unhandled storage image tiling");
+      unreachable("Unhandled storage image tiling");
    }
 
    /* 3D textures are arranged in 2D in memory with 2^lod slices per row.  The

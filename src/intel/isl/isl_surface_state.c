@@ -747,8 +747,7 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
          case ISL_FORMAT_R16_UNORM:
             break;
          default:
-            assert(!"Incompatible HiZ Sampling format");
-            break;
+            unreachable("Incompatible HiZ Sampling format");
          }
       }
 
