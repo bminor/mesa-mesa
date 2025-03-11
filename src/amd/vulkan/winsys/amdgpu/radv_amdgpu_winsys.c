@@ -234,7 +234,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
       goto fail;
    }
 
-   struct hash_entry *entry = _mesa_hash_table_search(winsyses, dev);
+   struct hash_entry *entry = _mesa_hash_table_search(winsyses, (void *)ac_drm_device_get_cookie(dev));
    if (entry) {
       ws = (struct radv_amdgpu_winsys *)entry->data;
       ++ws->refcount;
@@ -325,7 +325,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    radv_amdgpu_bo_init_functions(ws);
    radv_amdgpu_cs_init_functions(ws);
 
-   _mesa_hash_table_insert(winsyses, dev, ws);
+   _mesa_hash_table_insert(winsyses, (void *)ac_drm_device_get_cookie(dev), ws);
    simple_mtx_unlock(&winsys_creation_mutex);
 
    return &ws->base;
