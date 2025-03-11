@@ -483,11 +483,11 @@ brw_inst::components_read(unsigned i) const
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       if (i == MEMORY_LOGICAL_DATA0)
          return 0;
-      /* fallthrough */
+      FALLTHROUGH;
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
       if (i == MEMORY_LOGICAL_DATA1)
          return 0;
-      /* fallthrough */
+      FALLTHROUGH;
    case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
       if (i == MEMORY_LOGICAL_DATA0 || i == MEMORY_LOGICAL_DATA1)
          return src[MEMORY_LOGICAL_COMPONENTS].ud;

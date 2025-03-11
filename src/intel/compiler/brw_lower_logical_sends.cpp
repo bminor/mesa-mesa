@@ -1393,7 +1393,7 @@ setup_lsc_surface_descriptors(const brw_builder &bld, brw_inst *inst,
    switch (surf_type) {
    case LSC_ADDR_SURFTYPE_BSS:
       inst->send_ex_bso = compiler->extended_bindless_surface_offset;
-      /* fall-through */
+      FALLTHROUGH;
    case LSC_ADDR_SURFTYPE_SS:
       assert(surface.file != BAD_FILE);
       /* We assume that the driver provided the handle in the top 20 bits so
@@ -1882,7 +1882,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       break;
    case LSC_ADDR_SURFTYPE_BSS:
       inst->send_ex_bso = compiler->extended_bindless_surface_offset;
-      /* fall-through */
+      FALLTHROUGH;
    case LSC_ADDR_SURFTYPE_SS:
       desc |= GFX9_BTI_BINDLESS;
 
