@@ -80,6 +80,7 @@ with_moltenvk_dir = get_option('moltenvk-dir')
 with_vulkan_icd_dir = get_option('vulkan-icd-dir')
 with_tests = get_option('build-tests')
 with_glcpp_tests = get_option('enable-glcpp-tests')
+with_radv_tests = get_option('build-radv-tests')
 with_aco_tests = get_option('build-aco-tests')
 with_glx_read_only_text = get_option('glx-read-only-text')
 with_glx_direct = get_option('glx-direct')
@@ -350,6 +351,9 @@ if with_gallium_tegra and not with_gallium_nouveau
 endif
 if with_aco_tests and not with_amd_vk
   error('ACO tests require Radv')
+endif
+if with_radv_tests and not with_amd_vk
+  error('RADV tests require RADV')
 endif
 
 with_microsoft_clc = get_option('microsoft-clc').enabled()

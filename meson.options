@@ -465,6 +465,13 @@ option(
 )
 
 option(
+  'build-radv-tests',
+  type : 'boolean',
+  value : false,
+  description : 'Build RADV tests. These do not require an AMD GPU.'
+)
+
+option(
   'build-aco-tests',
   type : 'boolean',
   value : false,
