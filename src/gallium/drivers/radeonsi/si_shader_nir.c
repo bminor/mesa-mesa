@@ -15,10 +15,9 @@ bool si_alu_to_scalar_packed_math_filter(const nir_instr *instr, const void *dat
 {
    if (instr->type == nir_instr_type_alu) {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
-      bool use_aco = (bool)data;
 
       if (alu->def.bit_size == 16 && alu->def.num_components == 2 &&
-          (!use_aco || aco_nir_op_supports_packed_math_16bit(alu)))
+          aco_nir_op_supports_packed_math_16bit(alu))
          return false;
    }
 
@@ -34,30 +33,11 @@ static uint8_t si_vectorize_callback(const nir_instr *instr, const void *data)
    if (alu->def.bit_size != 16)
       return 1;
 
-   bool use_aco = (bool)data;
-
-   if (use_aco) {
-      return aco_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
-   } else {
-      switch (alu->op) {
-      case nir_op_unpack_32_2x16_split_x:
-      case nir_op_unpack_32_2x16_split_y:
-      case nir_op_extract_i8:
-      case nir_op_extract_u8:
-      case nir_op_extract_i16:
-      case nir_op_extract_u16:
-      case nir_op_insert_u8:
-      case nir_op_insert_u16:
-         return 1;
-      default:
-         return 2;
-      }
-   }
+   return aco_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
 }
 
 void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_array_temps)
 {
-   bool use_aco = sscreen->use_aco || nir->info.use_aco_amd;
    bool progress;
 
    do {
@@ -66,8 +46,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       bool lower_phis_to_scalar = false;
 
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
-      NIR_PASS(progress, nir, nir_lower_alu_to_scalar,
-               nir->options->lower_to_scalar_filter, (void *)use_aco);
+      NIR_PASS(progress, nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
       NIR_PASS(progress, nir, nir_lower_phis_to_scalar, false);
 
       if (has_array_temps) {
@@ -89,8 +68,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       NIR_PASS(progress, nir, nir_opt_dead_cf);
 
       if (lower_alu_to_scalar) {
-         NIR_PASS_V(nir, nir_lower_alu_to_scalar,
-                    nir->options->lower_to_scalar_filter, (void *)use_aco);
+         NIR_PASS_V(nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
       }
       if (lower_phis_to_scalar)
          NIR_PASS_V(nir, nir_lower_phis_to_scalar, false);
@@ -144,7 +122,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
          NIR_PASS_V(nir, nir_opt_move_discards_to_top);
 
       if (sscreen->info.has_packed_math_16bit)
-         NIR_PASS(progress, nir, nir_opt_vectorize, si_vectorize_callback, (void *)use_aco);
+         NIR_PASS(progress, nir, nir_opt_vectorize, si_vectorize_callback, NULL);
    } while (progress);
 
    NIR_PASS_V(nir, nir_lower_var_copies);
