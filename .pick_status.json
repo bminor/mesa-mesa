@@ -1334,7 +1334,7 @@
         "description": "radv/video: don't try and send events on UVD devices.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "95a980b61fbf4457ce8e2aed260af269ee6334be",
         "notes": null
