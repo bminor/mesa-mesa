@@ -1527,9 +1527,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    }
    tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9602, 0);
    tu_cs_emit_write_reg(cs, REG_A6XX_PC_UNKNOWN_9E72, 0);
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_TP_MODE_CNTL,
-                        0x000000a0 |
-                        A6XX_SP_TP_MODE_CNTL_ISAMMODE(ISAMMODE_GL));
+   tu_cs_emit_regs(cs, A6XX_SP_TP_MODE_CNTL(.isammode = ISAMMODE_GL,
+                                            .texcoordroundmode = COORD_TRUNCATE,
+                                            .nearestmipsnap = CLAMP_ROUND_TRUNCATE,
+                                            .destdatatypeoverride = true));
    tu_cs_emit_regs(cs, HLSQ_CONTROL_5_REG(CHIP, .dword = 0xfc));
 
    tu_cs_emit_write_reg(cs, REG_A6XX_VFD_MODE_CNTL, 0x00000000);

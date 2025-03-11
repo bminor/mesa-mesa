@@ -977,8 +977,12 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    /* NOTE blob seems to (mostly?) use 0xb2 for SP_TP_MODE_CNTL
     * but this seems to kill texture gather offsets.
     */
-   WRITE(REG_A6XX_SP_TP_MODE_CNTL, 0xa0 |
-         A6XX_SP_TP_MODE_CNTL_ISAMMODE(ISAMMODE_GL));
+   OUT_REG(ring,
+      A6XX_SP_TP_MODE_CNTL(
+         .isammode = ISAMMODE_GL,
+         .texcoordroundmode = COORD_TRUNCATE,
+         .nearestmipsnap = CLAMP_ROUND_TRUNCATE,
+         .destdatatypeoverride = true));
 
    OUT_REG(ring, HLSQ_CONTROL_5_REG(
          CHIP,

@@ -5402,9 +5402,22 @@ to upconvert to 32b float internally?
 	<reg32 offset="0xb305" name="SP_TP_SAMPLE_LOCATION_0" type="a6xx_sample_locations" usage="rp_blit"/>
 	<reg32 offset="0xb306" name="SP_TP_SAMPLE_LOCATION_1" type="a6xx_sample_locations" usage="rp_blit"/>
 	<reg32 offset="0xb307" name="SP_TP_WINDOW_OFFSET" type="a6xx_reg_xy" usage="rp_blit"/>
+
+	<enum name="a6xx_coord_round">
+		<value value="0" name="COORD_TRUNCATE"/>
+		<value value="1" name="COORD_ROUND_NEAREST_EVEN"/>
+	</enum>
+
+	<enum name="a6xx_nearest_mode">
+		<value value="0" name="ROUND_CLAMP_TRUNCATE"/>
+		<value value="1" name="CLAMP_ROUND_TRUNCATE"/>
+	</enum>
+
 	<reg32 offset="0xb309" name="SP_TP_MODE_CNTL" usage="cmd">
 		<bitfield name="ISAMMODE" low="0" high="1" type="a6xx_isam_mode"/>
-		<bitfield name="UNK3" low="2" high="7"/>
+		<bitfield name="TEXCOORDROUNDMODE" pos="2" type="a6xx_coord_round"/>
+		<bitfield name="NEARESTMIPSNAP" pos="5" type="a6xx_nearest_mode"/>
+		<bitfield name="DESTDATATYPEOVERRIDE" pos="7" type="boolean"/>
 	</reg32>
 	<reg32 offset="0xb310" name="SP_UNKNOWN_B310" variants="A7XX-" usage="cmd"/>
 
