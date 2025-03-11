@@ -258,7 +258,7 @@ get_features(const struct v3dv_physical_device *physical_device,
       .geometryShader = true,
       .tessellationShader = false,
       .sampleRateShading = true,
-      .dualSrcBlend = false,
+      .dualSrcBlend = true,
       .logicOp = true,
       .multiDrawIndirect = false,
       .drawIndirectFirstInstance = true,
@@ -967,7 +967,7 @@ get_device_properties(const struct v3dv_physical_device *device,
       /* Fragment limits */
       .maxFragmentInputComponents               = max_varying_components,
       .maxFragmentOutputAttachments             = 4,
-      .maxFragmentDualSrcAttachments            = 0,
+      .maxFragmentDualSrcAttachments            = 1,
       .maxFragmentCombinedOutputResources       = max_rts +
                                                   MAX_STORAGE_BUFFERS +
                                                   MAX_STORAGE_IMAGES,

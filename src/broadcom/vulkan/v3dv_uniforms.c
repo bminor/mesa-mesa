@@ -670,6 +670,19 @@ v3dv_write_uniforms_wg_offsets(struct v3dv_cmd_buffer *cmd_buffer,
                         v3dv_get_aa_line_width(pipeline, job->cmd_buffer));
          break;
 
+      case QUNIFORM_BLEND_CONSTANT_R:
+         cl_aligned_f(&uniforms, job->cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants[0]);
+         break;
+      case QUNIFORM_BLEND_CONSTANT_G:
+         cl_aligned_f(&uniforms, job->cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants[1]);
+         break;
+      case QUNIFORM_BLEND_CONSTANT_B:
+         cl_aligned_f(&uniforms, job->cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants[2]);
+         break;
+      case QUNIFORM_BLEND_CONSTANT_A:
+         cl_aligned_f(&uniforms, job->cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants[3]);
+         break;
+
       default:
          unreachable("unsupported quniform_contents uniform type\n");
       }

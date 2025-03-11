@@ -29,6 +29,7 @@
 #include "qpu/qpu_disasm.h"
 
 #include "compiler/nir/nir_builder.h"
+#include "compiler/nir/nir_lower_blend.h"
 #include "nir/nir_serialize.h"
 
 #include "util/shader_stats.h"
@@ -39,6 +40,7 @@
 #include "vk_format.h"
 #include "vk_nir_convert_ycbcr.h"
 #include "vk_pipeline.h"
+#include "vk_blend.h"
 
 static VkResult
 compute_vpm_config(struct v3dv_pipeline *pipeline);
@@ -1121,13 +1123,36 @@ v3d_fs_key_set_color_attachment(struct v3d_fs_key *key,
    /* If logic operations are enabled then we might emit color reads and we
     * need to know the color buffer format and swizzle for that
     */
-   if (key->logicop_func != PIPE_LOGICOP_COPY) {
+   if (key->logicop_func != PIPE_LOGICOP_COPY ||
+       p_stage->nir->info.fs.uses_fbfetch_output ||
+       key->software_blend) {
       /* Framebuffer formats should be single plane */
       assert(vk_format_get_plane_count(fb_format) == 1);
       key->color_fmt[index].format = fb_pipe_format;
       memcpy(key->color_fmt[index].swizzle,
              v3dv_get_format_swizzle(p_stage->pipeline->device, fb_format, 0),
              sizeof(key->color_fmt[index].swizzle));
+   }
+
+   if (key->software_blend) {
+      struct vk_color_blend_attachment_state *att =
+         &p_stage->pipeline->dynamic_graphics_state.cb.attachments[index];
+
+      if (att->blend_enable) {
+         key->blend[index].rgb_func = vk_blend_op_to_pipe(att->color_blend_op);
+         key->blend[index].alpha_func = vk_blend_op_to_pipe(att->alpha_blend_op);
+         key->blend[index].rgb_dst_factor = vk_blend_factor_to_pipe(att->dst_color_blend_factor);
+         key->blend[index].alpha_dst_factor = vk_blend_factor_to_pipe(att->dst_alpha_blend_factor);
+         key->blend[index].rgb_src_factor = vk_blend_factor_to_pipe(att->src_color_blend_factor);
+         key->blend[index].alpha_src_factor = vk_blend_factor_to_pipe(att->src_alpha_blend_factor);
+      } else {
+         key->blend[index].rgb_func = PIPE_BLEND_ADD;
+         key->blend[index].alpha_func = PIPE_BLEND_ADD;
+         key->blend[index].rgb_dst_factor = PIPE_BLENDFACTOR_ZERO;
+         key->blend[index].alpha_dst_factor = PIPE_BLENDFACTOR_ZERO;
+         key->blend[index].rgb_src_factor = PIPE_BLENDFACTOR_ONE;
+         key->blend[index].alpha_src_factor = PIPE_BLENDFACTOR_ONE;
+      }
    }
 
    const struct util_format_description *desc =
@@ -1214,6 +1239,8 @@ pipeline_populate_v3d_fs_key(struct v3d_fs_key *key,
     * tile buffer load/store swap R/B bit.
     */
    key->swap_color_rb = 0;
+
+   key->software_blend = p_stage->pipeline->blend.use_software;
 
    for (uint32_t i = 0; i < rendering_info->color_attachment_count; i++) {
       if (rendering_info->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
@@ -1989,6 +2016,8 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
       key->sample_alpha_to_one = ms_info->alphaToOneEnable;
    }
 
+   key->software_blend = pipeline->blend.use_software;
+
    struct vk_render_pass_state *ri = &pipeline->rendering_info;
    for (uint32_t i = 0; i < ri->color_attachment_count; i++) {
       if (ri->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
@@ -2002,13 +2031,35 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
       /* If logic operations are enabled then we might emit color reads and we
        * need to know the color buffer format and swizzle for that
        */
-      if (key->logicop_func != PIPE_LOGICOP_COPY) {
+      if (key->logicop_func != PIPE_LOGICOP_COPY ||
+          key->software_blend) {
          /* Framebuffer formats should be single plane */
          assert(vk_format_get_plane_count(fb_format) == 1);
          key->color_fmt[i].format = fb_pipe_format;
          memcpy(key->color_fmt[i].swizzle,
                 v3dv_get_format_swizzle(pipeline->device, fb_format, 0),
                 sizeof(key->color_fmt[i].swizzle));
+      }
+
+      if (key->software_blend) {
+         struct vk_color_blend_attachment_state *att =
+            &pipeline->dynamic_graphics_state.cb.attachments[i];
+
+         if (att->blend_enable) {
+            key->blend[i].rgb_func = vk_blend_op_to_pipe(att->color_blend_op);
+            key->blend[i].alpha_func = vk_blend_op_to_pipe(att->alpha_blend_op);
+            key->blend[i].rgb_dst_factor = vk_blend_factor_to_pipe(att->dst_color_blend_factor);
+            key->blend[i].alpha_dst_factor = vk_blend_factor_to_pipe(att->dst_alpha_blend_factor);
+            key->blend[i].rgb_src_factor = vk_blend_factor_to_pipe(att->src_color_blend_factor);
+            key->blend[i].alpha_src_factor = vk_blend_factor_to_pipe(att->src_alpha_blend_factor);
+         } else {
+            key->blend[i].rgb_func = PIPE_BLEND_ADD;
+            key->blend[i].alpha_func = PIPE_BLEND_ADD;
+            key->blend[i].rgb_dst_factor = PIPE_BLENDFACTOR_ZERO;
+            key->blend[i].alpha_dst_factor = PIPE_BLENDFACTOR_ZERO;
+            key->blend[i].rgb_src_factor = PIPE_BLENDFACTOR_ONE;
+            key->blend[i].alpha_src_factor = PIPE_BLENDFACTOR_ONE;
+         }
       }
 
       const struct util_format_description *desc =

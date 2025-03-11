@@ -27,7 +27,8 @@
 #include "broadcom/compiler/v3d_compiler.h"
 
 static uint8_t
-blend_factor(VkBlendFactor factor, bool dst_alpha_one, bool *needs_constants)
+blend_factor(VkBlendFactor factor, bool dst_alpha_one, bool *needs_constants,
+             bool *needs_dual_src)
 {
    switch (factor) {
    case VK_BLEND_FACTOR_ZERO:
@@ -52,11 +53,17 @@ blend_factor(VkBlendFactor factor, bool dst_alpha_one, bool *needs_constants)
    case VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
       return dst_alpha_one ? V3D_BLEND_FACTOR_ZERO :
                              V3D_BLEND_FACTOR_INV_DST_ALPHA;
+
+   /* For dual source blending we need to fallback to software as the hardware
+    * has no support for it.
+    */
    case VK_BLEND_FACTOR_SRC1_COLOR:
    case VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR:
    case VK_BLEND_FACTOR_SRC1_ALPHA:
    case VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA:
-      unreachable("Invalid blend factor: dual source blending not supported.");
+      assert(needs_dual_src);
+      *needs_dual_src = true;
+      return VK_BLEND_FACTOR_ZERO;
    default:
       unreachable("Unknown blend factor.");
    }
@@ -86,6 +93,8 @@ pack_blend(struct v3dv_pipeline *pipeline,
    assert(ri->color_attachment_count == cb_info->attachmentCount);
    pipeline->blend.needs_color_constants = false;
    uint32_t color_write_masks = 0;
+
+   bool needs_dual_src = false;
    for (uint32_t i = 0; i < ri->color_attachment_count; i++) {
       const VkPipelineColorBlendAttachmentState *b_state =
          &cb_info->pAttachments[i];
@@ -116,21 +125,29 @@ pack_blend(struct v3dv_pipeline *pipeline,
          config.color_blend_mode = b_state->colorBlendOp;
          config.color_blend_dst_factor =
             blend_factor(b_state->dstColorBlendFactor, dst_alpha_one,
-                         &pipeline->blend.needs_color_constants);
+                         &pipeline->blend.needs_color_constants,
+                         &needs_dual_src);
          config.color_blend_src_factor =
             blend_factor(b_state->srcColorBlendFactor, dst_alpha_one,
-                         &pipeline->blend.needs_color_constants);
+                         &pipeline->blend.needs_color_constants,
+                         &needs_dual_src);
 
          config.alpha_blend_mode = b_state->alphaBlendOp;
          config.alpha_blend_dst_factor =
             blend_factor(b_state->dstAlphaBlendFactor, dst_alpha_one,
-                         &pipeline->blend.needs_color_constants);
+                         &pipeline->blend.needs_color_constants,
+                         &needs_dual_src);
          config.alpha_blend_src_factor =
             blend_factor(b_state->srcAlphaBlendFactor, dst_alpha_one,
-                         &pipeline->blend.needs_color_constants);
+                         &pipeline->blend.needs_color_constants,
+                         &needs_dual_src);
       }
    }
 
+   /* We may want to fallback to software in other cases in the future such
+    * as for formats not supported by the blend hardware.
+    */
+   pipeline->blend.use_software = V3D_DBG(SOFT_BLEND) || needs_dual_src;
    pipeline->blend.color_write_masks = color_write_masks;
 }
 
@@ -191,7 +208,8 @@ pack_cfg_bits(struct v3dv_pipeline *pipeline,
          config.direct3d_provoking_vertex = true;
       }
 
-      config.blend_enable = pipeline->blend.enables != 0;
+      config.blend_enable = pipeline->blend.enables != 0 &&
+         !pipeline->blend.use_software;
 
 #if V3D_VERSION >= 71
       /* From the Vulkan spec:

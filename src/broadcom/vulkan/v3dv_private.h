@@ -321,11 +321,20 @@ struct v3dv_pipeline_key {
    bool msaa;
    bool sample_alpha_to_coverage;
    bool sample_alpha_to_one;
+   bool software_blend;
    uint8_t cbufs;
    struct {
       enum pipe_format format;
       uint8_t swizzle[4];
    } color_fmt[V3D_MAX_DRAW_BUFFERS];
+   struct {
+           enum pipe_blend_func rgb_func;
+           enum pipe_blendfactor rgb_src_factor;
+           enum pipe_blendfactor rgb_dst_factor;
+           enum pipe_blend_func alpha_func;
+           enum pipe_blendfactor alpha_src_factor;
+           enum pipe_blendfactor alpha_dst_factor;
+   } blend[V3D_MAX_DRAW_BUFFERS];
    uint8_t f32_color_rb;
    uint32_t va_swap_rb_mask;
    bool has_multiview;
@@ -2318,7 +2327,12 @@ struct v3dv_pipeline {
 
    /* Blend state */
    struct {
-      /* Per-RT bit mask with blend enables */
+      /* In some cases, such as when dual source blend factors are in use, we
+       * fall back to software blend lowering.
+       */
+      bool use_software;
+
+      /* Per-RT bit mask with blend enables. */
       uint8_t enables;
       /* Per-RT prepacked blend config packets */
       uint8_t cfg[V3D_MAX_DRAW_BUFFERS][V3DV_BLEND_CFG_LENGTH];

@@ -1617,6 +1617,10 @@ v3dX(cmd_buffer_emit_blend)(struct v3dv_cmd_buffer *cmd_buffer)
    struct v3dv_pipeline *pipeline = cmd_buffer->state.gfx.pipeline;
    assert(pipeline);
 
+   /* When using software blend we don't want to enable any blend hardware */
+   if (pipeline->blend.use_software)
+      return;
+
    const struct v3d_device_info *devinfo = &cmd_buffer->device->devinfo;
    const uint32_t max_color_rts = V3D_MAX_RENDER_TARGETS(devinfo->ver);
 

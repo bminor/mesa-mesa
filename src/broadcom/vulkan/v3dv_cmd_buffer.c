@@ -2400,7 +2400,9 @@ update_gfx_uniform_state(struct v3dv_cmd_buffer *cmd_buffer)
                 V3DV_CMD_DIRTY_DESCRIPTOR_SETS |
                 V3DV_CMD_DIRTY_VIEW_INDEX |
                 V3DV_CMD_DIRTY_DRAW_ID)) ||
-      BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS);
+      BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS) ||
+      (pipeline->blend.use_software &&
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS));
 
    if (!dirty_uniform_state)
       return false;
@@ -2411,6 +2413,8 @@ update_gfx_uniform_state(struct v3dv_cmd_buffer *cmd_buffer)
    const bool has_new_descriptors = dirty & V3DV_CMD_DIRTY_DESCRIPTOR_SETS;
    const bool has_new_view_index = dirty & V3DV_CMD_DIRTY_VIEW_INDEX;
    const bool has_new_draw_id = dirty & V3DV_CMD_DIRTY_DRAW_ID;
+   const bool has_new_blend_constants = (pipeline->blend.use_software &&
+      BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS));
 
    /* VK_SHADER_STAGE_FRAGMENT_BIT */
    const bool has_new_descriptors_fs =
@@ -2424,7 +2428,8 @@ update_gfx_uniform_state(struct v3dv_cmd_buffer *cmd_buffer)
    const bool needs_fs_update = has_new_pipeline ||
                                 has_new_view_index ||
                                 has_new_push_constants_fs ||
-                                has_new_descriptors_fs;
+                                has_new_descriptors_fs ||
+                                has_new_blend_constants;
 
    if (needs_fs_update) {
       struct v3dv_shader_variant *fs_variant =
