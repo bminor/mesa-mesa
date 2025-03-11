@@ -3,6 +3,9 @@ glx@glx_arb_sync_control@timing.*
 glx@glx-multithread-texture
 glx@glx-visuals-stencil -pixmap
 
+# These either consistently pass or consistently fail depending on the X server version, DDX, etc.
+glx@glx_ext_import_context@*
+
 # This one will be Crash or Fail depending on the shader cache state
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
