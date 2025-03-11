@@ -62,7 +62,7 @@ create_vert_shader(struct vl_compositor *c)
 
    shader = ureg_create(PIPE_SHADER_VERTEX);
    if (!shader)
-      return false;
+      return NULL;
 
    vpos = ureg_DECL_vs_input(shader, 0);
    vtex = ureg_DECL_vs_input(shader, 1);
@@ -270,7 +270,7 @@ create_frag_shader_video_buffer(struct vl_compositor *c)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    texel = ureg_DECL_temporary(shader);
    fragment = ureg_DECL_output(shader, TGSI_SEMANTIC_COLOR, 0);
@@ -292,7 +292,7 @@ create_frag_shader_weave_rgb(struct vl_compositor *c)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    texel = ureg_DECL_temporary(shader);
    fragment = ureg_DECL_output(shader, TGSI_SEMANTIC_COLOR, 0);
@@ -315,7 +315,7 @@ create_frag_shader_deint_yuv(struct vl_compositor *c, bool y, bool w)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    texel = ureg_DECL_temporary(shader);
    fragment = ureg_DECL_output(shader, TGSI_SEMANTIC_COLOR, 0);
@@ -353,7 +353,7 @@ create_frag_shader_palette(struct vl_compositor *c, bool include_cc)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    for (i = 0; include_cc && i < 3; ++i)
       csc[i] = ureg_DECL_constant(shader, i);
@@ -407,7 +407,7 @@ create_frag_shader_rgba(struct vl_compositor *c)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    tc = ureg_DECL_fs_input(shader, TGSI_SEMANTIC_GENERIC, VS_O_VTEX, TGSI_INTERPOLATE_LINEAR);
    color = ureg_DECL_fs_input(shader, TGSI_SEMANTIC_COLOR, VS_O_COLOR, TGSI_INTERPOLATE_LINEAR);
@@ -442,7 +442,7 @@ create_frag_shader_rgb_yuv(struct vl_compositor *c, bool y)
 
    shader = ureg_create(PIPE_SHADER_FRAGMENT);
    if (!shader)
-      return false;
+      return NULL;
 
    for (i = 0; i < 3; ++i)
       csc[i] = ureg_DECL_constant(shader, i);

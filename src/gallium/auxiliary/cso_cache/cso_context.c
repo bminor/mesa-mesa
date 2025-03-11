@@ -1380,7 +1380,7 @@ set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage,
    if (cso_hash_iter_is_null(iter)) {
       cso = MALLOC(sizeof(struct cso_sampler));
       if (!cso)
-         return false;
+         return NULL;
 
       memcpy(&cso->state, templ, sizeof(*templ));
       cso->data = ctx->base.pipe->create_sampler_state(ctx->base.pipe, &cso->state);
@@ -1389,7 +1389,7 @@ set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage,
       iter = cso_insert_state(&ctx->cache, hash_key, CSO_SAMPLER, cso);
       if (cso_hash_iter_is_null(iter)) {
          FREE(cso);
-         return false;
+         return NULL;
       }
    } else {
       cso = cso_hash_iter_data(iter);
