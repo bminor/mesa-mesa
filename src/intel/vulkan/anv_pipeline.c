@@ -656,6 +656,9 @@ anv_pipeline_hash_graphics(struct anv_graphics_base_pipeline *pipeline,
    if (stages[MESA_SHADER_MESH].info || stages[MESA_SHADER_TASK].info) {
       const uint8_t afs = device->physical->instance->assume_full_subgroups;
       _mesa_sha1_update(&ctx, &afs, sizeof(afs));
+
+      const bool afs_shm = device->physical->instance->assume_full_subgroups_with_shared_memory;
+      _mesa_sha1_update(&ctx, &afs_shm, sizeof(afs_shm));
    }
 
    _mesa_sha1_final(&ctx, sha1_out);
@@ -677,6 +680,9 @@ anv_pipeline_hash_compute(struct anv_compute_pipeline *pipeline,
 
    const bool afswb = device->physical->instance->assume_full_subgroups_with_barrier;
    _mesa_sha1_update(&ctx, &afswb, sizeof(afswb));
+
+   const bool afs_shm = device->physical->instance->assume_full_subgroups_with_shared_memory;
+   _mesa_sha1_update(&ctx, &afs_shm, sizeof(afs_shm));
 
    _mesa_sha1_update(&ctx, stage->shader_sha1,
                      sizeof(stage->shader_sha1));
@@ -862,6 +868,16 @@ anv_fixup_subgroup_size(struct anv_device *device, struct shader_info *info)
        info->stage == MESA_SHADER_COMPUTE &&
        device->info->verx10 <= 125 &&
        info->uses_control_barrier &&
+       info->subgroup_size == SUBGROUP_SIZE_VARYING &&
+       local_size &&
+       local_size % BRW_SUBGROUP_SIZE == 0)
+      info->subgroup_size = SUBGROUP_SIZE_FULL_SUBGROUPS;
+
+   /* Similarly, sometimes games rely on the implicit synchronization of
+    * the shared memory accesses, and choosing smaller subgroups than the game
+    * expects will cause bugs. */
+   if (device->physical->instance->assume_full_subgroups_with_shared_memory &&
+       info->shared_size > 0 &&
        info->subgroup_size == SUBGROUP_SIZE_VARYING &&
        local_size &&
        local_size % BRW_SUBGROUP_SIZE == 0)
