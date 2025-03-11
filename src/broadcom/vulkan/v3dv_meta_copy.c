@@ -3321,11 +3321,13 @@ v3dv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
          if (memcmp(rsc, rsc_s, sizeof(VkImageSubresourceLayers)) != 0)
             break;
 
-         /* For 3D images we also need to check the depth extent */
+         /* For 3D images we also need to check the depth extent / Z-offset */
          if (image->vk.image_type == VK_IMAGE_TYPE_3D &&
-             info->pRegions[s].imageExtent.depth !=
-             info->pRegions[r].imageExtent.depth) {
-               break;
+             (info->pRegions[s].imageExtent.depth !=
+              info->pRegions[r].imageExtent.depth ||
+              info->pRegions[s].imageOffset.z !=
+              info->pRegions[r].imageOffset.z)) {
+            break;
          }
 
          batch_size++;
