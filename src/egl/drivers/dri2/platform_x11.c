@@ -1132,14 +1132,14 @@ dri2_x11_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
    /* swrast path unsupported for now */
    assert(dri2_dpy->kopper);
-   if (numRects) {
-      if (dri2_dpy->kopper)
+   if (dri2_dpy->kopper) {
+      if (numRects)
          kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, numRects, rects);
       else
-         driSwapBuffersWithDamage(dri2_surf->dri_drawable, numRects, rects);
-   } else {
-      if (dri2_dpy->kopper)
          kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+   } else {
+      if (numRects)
+         driSwapBuffersWithDamage(dri2_surf->dri_drawable, numRects, rects);
       else
          driSwapBuffers(dri2_surf->dri_drawable);
    }
