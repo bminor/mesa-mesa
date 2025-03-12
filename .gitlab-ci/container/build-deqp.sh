@@ -47,6 +47,8 @@ main_cts_patch_files=(
 
 # shellcheck disable=SC2034
 vk_cts_commits_to_backport=(
+  # Stop querying device address from unbound buffers
+  046343f46f7d39d53b47842d7fd8ed3279528046
 )
 
 # shellcheck disable=SC2034
