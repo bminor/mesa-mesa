@@ -154,7 +154,7 @@ VkDeviceSize get_bvh_size(VkDevice device,
 }
 
 static uint32_t
-encode_key(VkAccelerationStructureTypeKHR type,
+encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
            VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    return 0;
@@ -233,7 +233,7 @@ enum tu_header_key {
 };
 
 static uint32_t
-header_key(VkAccelerationStructureTypeKHR type,
+header_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
            VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    return (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ?

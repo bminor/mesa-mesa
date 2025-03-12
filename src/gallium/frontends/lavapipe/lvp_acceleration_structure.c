@@ -646,7 +646,7 @@ lvp_get_as_size(VkDevice device,
 }
 
 static uint32_t
-lvp_get_encode_key(VkAccelerationStructureTypeKHR type,
+lvp_get_encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
                    VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    return 0;

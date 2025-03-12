@@ -147,7 +147,7 @@ struct scratch_layout {
 };
 
 static struct build_config
-build_config(uint32_t leaf_count,
+build_config(struct vk_device *device, uint32_t leaf_count,
              const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
              const struct vk_acceleration_structure_build_ops *ops)
 {
@@ -176,7 +176,7 @@ build_config(uint32_t leaf_count,
    for (unsigned i = 0; i < ARRAY_SIZE(config.encode_key); i++) {
       if (!ops->get_encode_key[i])
          break;
-      config.encode_key[i] = ops->get_encode_key[i](leaf_count, build_info->flags);
+      config.encode_key[i] = ops->get_encode_key[i](device, leaf_count, build_info->flags);
    }
 
    return config;
@@ -218,7 +218,7 @@ get_scratch_layout(struct vk_device *device,
    uint32_t ploc_scratch_space = 0;
    uint32_t lbvh_node_space = 0;
 
-   struct build_config config = build_config(leaf_count, build_info,
+   struct build_config config = build_config(device, leaf_count, build_info,
                                              device->as_build_ops);
 
    if (config.internal_type == INTERNAL_BUILD_TYPE_PLOC)
@@ -1039,7 +1039,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
       get_scratch_layout(device, leaf_node_count, pInfos + i, args, &bvh_states[i].scratch);
 
-      struct build_config config = build_config(leaf_node_count, pInfos + i,
+      struct build_config config = build_config(cmd_buffer->base.device, leaf_node_count, pInfos + i,
                                                 device->as_build_ops);
       bvh_states[i].config = config;
 

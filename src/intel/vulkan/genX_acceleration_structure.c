@@ -350,7 +350,7 @@ anv_get_as_size(VkDevice device,
 }
 
 static uint32_t
-anv_get_encode_key(VkAccelerationStructureTypeKHR type,
+anv_get_encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
                    VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    return 0;
@@ -437,7 +437,7 @@ anv_encode_as(VkCommandBuffer commandBuffer,
 }
 
 static uint32_t
-anv_get_header_key(VkAccelerationStructureTypeKHR type,
+anv_get_header_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
                    VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    return (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ?

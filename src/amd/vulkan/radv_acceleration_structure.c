@@ -385,7 +385,8 @@ radv_get_update_scratch_size(struct vk_device *vk_device, uint32_t leaf_count)
 }
 
 static uint32_t
-radv_get_encode_key(VkAccelerationStructureTypeKHR type, VkBuildAccelerationStructureFlagBitsKHR flags)
+radv_get_encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
+                    VkBuildAccelerationStructureFlagBitsKHR flags)
 {
    if (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
       return RADV_ENCODE_KEY_COMPACT;
