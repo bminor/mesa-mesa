@@ -2,9 +2,3 @@ __glx_Main
 MesaGLInteropGLXExportObject
 MesaGLInteropGLXFlushObjects
 MesaGLInteropGLXQueryDeviceInfo
-
-# TODO: These shouldn't be exported:
-glAreTexturesResidentEXT
-glDeleteTexturesEXT
-glGenTexturesEXT
-glIsTextureEXT
