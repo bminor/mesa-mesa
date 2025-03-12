@@ -3183,21 +3183,31 @@ TEST_P(validation_test, dpas_types)
    if (devinfo.verx10 < 125)
       return;
 
+   if (devinfo.ver >= 20)
+      assert(devinfo.has_bfloat16);
+
 #define TV(a, b, c, d, r) \
    { BRW_TYPE_ ## a, BRW_TYPE_ ## b, BRW_TYPE_ ## c, BRW_TYPE_ ## d, r }
 
-   static const struct {
+   const struct {
       brw_reg_type dst_type;
       brw_reg_type src0_type;
       brw_reg_type src1_type;
       brw_reg_type src2_type;
+
       bool expected_result;
    } test_vectors[] = {
       TV( F,  F, HF, HF, true),
-      TV( F, HF, HF, HF, false),
-      TV(HF,  F, HF, HF, false),
+      TV(HF, HF, HF, HF, devinfo.ver >= 20),
+      TV( F, HF, HF, HF, devinfo.ver >= 20),
+      TV(HF,  F, HF, HF, devinfo.ver >= 20),
       TV( F,  F,  F, HF, false),
       TV( F,  F, HF,  F, false),
+
+      TV( F,  F, BF, BF, devinfo.ver >= 20),
+      TV(BF, BF, BF, BF, devinfo.ver >= 20),
+      TV(BF,  F, BF, BF, devinfo.ver >= 20),
+      TV( F, BF, BF, BF, devinfo.ver >= 20),
 
       TV(DF, DF, DF, DF, false),
       TV(DF, DF, DF,  F, false),
@@ -3252,16 +3262,41 @@ TEST_P(validation_test, dpas_types)
                                                   : BRW_EXECUTE_8);
 
    for (unsigned i = 0; i < ARRAY_SIZE(test_vectors); i++) {
+      const auto &t = test_vectors[i];
+
+      /* We encode the instruction and then decode to validate.  But our
+       * encode reasonably asserts BF types when unsupported.  So skip those.
+       *
+       * TODO: Promote up the brw_eu_decoded_inst so that validation test can
+       * use those types too instead of encoding/decoding.
+       */
+      if (!devinfo.has_bfloat16 &&
+          (t.dst_type == BRW_TYPE_BF ||
+           t.src0_type == BRW_TYPE_BF ||
+           t.src1_type == BRW_TYPE_BF ||
+           t.src2_type == BRW_TYPE_BF))
+         continue;
+
       brw_DPAS(p,
                BRW_SYSTOLIC_DEPTH_8,
                8,
-               retype(brw_vec8_grf(0, 0), test_vectors[i].dst_type),
-               retype(brw_vec8_grf(16, 0), test_vectors[i].src0_type),
-               retype(brw_vec8_grf(32, 0), test_vectors[i].src1_type),
-               retype(brw_vec8_grf(48, 0), test_vectors[i].src2_type));
+               retype(brw_vec8_grf(0, 0),  t.dst_type),
+               retype(brw_vec8_grf(16, 0), t.src0_type),
+               retype(brw_vec8_grf(32, 0), t.src1_type),
+               retype(brw_vec8_grf(48, 0), t.src2_type));
 
-      EXPECT_EQ(test_vectors[i].expected_result, validate(p)) <<
-         "test vector index = " << i;
+      char *error = nullptr;
+      bool valid = validate(p, &error);
+
+      if (t.expected_result) {
+         EXPECT_TRUE(valid)
+            << "Test vector index = " << i << " expected to succeed "
+            << "but failed validation with error: '" << error << "'.";
+      } else {
+         EXPECT_FALSE(valid)
+            << "Test vector index = " << i << " expected to "
+            << "fail validation but succeeded.";
+      }
 
       clear_instructions(p);
    }

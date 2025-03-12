@@ -1085,6 +1085,10 @@ special_restrictions_for_mixed_float_mode(const struct brw_isa_info *isa,
 
    struct string error_msg = { .str = NULL, .len = 0 };
 
+   /* See instruction_restrictions() for DPAS operand type validation. */
+   if (inst->opcode == BRW_OPCODE_DPAS)
+      return error_msg;
+
    ERROR_IF(is_pure_bfloat(inst),
             "Instructions with pure bfloat16 operands are not supported.");
 
@@ -2191,14 +2195,31 @@ instruction_restrictions(const struct brw_isa_info *isa,
 
       if (brw_eu_inst_dpas_3src_exec_type(devinfo, inst->raw) ==
           BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT) {
-         ERROR_IF(dst_type != BRW_TYPE_F,
-                  "DPAS destination type must be F.");
-         ERROR_IF(src0_type != BRW_TYPE_F,
-                  "DPAS src0 type must be F.");
-         ERROR_IF(src1_type != BRW_TYPE_HF,
-                  "DPAS src1 type must be HF.");
-         ERROR_IF(src2_type != BRW_TYPE_HF,
-                  "DPAS src2 type must be HF.");
+         if (devinfo->ver < 20) {
+            ERROR_IF(src1_type != BRW_TYPE_HF,
+                     "DPAS src1 type must be HF in Gfx12.");
+            ERROR_IF(src2_type != BRW_TYPE_HF,
+                     "DPAS src2 type must be HF in Gfx12.");
+            ERROR_IF(dst_type != BRW_TYPE_F,
+                     "DPAS destination type must be F in Gfx12.");
+            ERROR_IF(src0_type != BRW_TYPE_F,
+                     "DPAS src0 type must be F in Gfx12.");
+         } else {
+            ERROR_IF(src1_type != BRW_TYPE_HF &&
+                     src1_type != BRW_TYPE_BF,
+                     "DPAS src1 type must be HF or BF in Gfx20+.");
+            ERROR_IF(src2_type != BRW_TYPE_HF &&
+                     src2_type != BRW_TYPE_BF,
+                     "DPAS src2 type must be HF or BF in Gfx20+.");
+            ERROR_IF(src1_type != src2_type,
+                     "DPAS src1 and src2 with types must match when using float types.");
+            ERROR_IF(dst_type != BRW_TYPE_F &&
+                     dst_type != src1_type,
+                     "DPAS destination type must be F or match Src1/Src2 in Gfx20+.");
+            ERROR_IF(src0_type != BRW_TYPE_F &&
+                     src0_type != src1_type,
+                     "DPAS src0 type must be F or match Src1/Src2 in Gfx20+.");
+         }
       } else {
          ERROR_IF(dst_type != BRW_TYPE_D &&
                   dst_type != BRW_TYPE_UD,
