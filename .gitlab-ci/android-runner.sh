@@ -10,9 +10,6 @@ export PATH=/android-tools/platform-tools:$PATH
 
 $ADB wait-for-device root
 sleep 1
-$ADB shell echo Hi from Android
-# shellcheck disable=SC2035
-$ADB logcat dEQP:D *:S &
 
 # overlay vendor
 
