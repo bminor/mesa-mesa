@@ -1180,6 +1180,8 @@ st_create_fp_variant(struct st_context *st,
       options.lower_yu_yv_external = key->external.lower_yu_yv;
       options.lower_yv_yu_external = key->external.lower_yv_yu;
       options.lower_y41x_external = key->external.lower_y41x;
+      options.lower_sx10_external = key->external.lower_sx10;
+      options.lower_sx12_external = key->external.lower_sx12;
       options.bt709_external = key->external.bt709;
       options.bt2020_external = key->external.bt2020;
       options.yuv_full_range_external = key->external.yuv_full_range;

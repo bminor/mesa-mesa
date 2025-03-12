@@ -2315,6 +2315,15 @@ dri2_num_fourcc_format_planes(EGLint format)
    case DRM_FORMAT_YVU422:
    case DRM_FORMAT_YUV444:
    case DRM_FORMAT_YVU444:
+   case DRM_FORMAT_S010:
+   case DRM_FORMAT_S210:
+   case DRM_FORMAT_S410:
+   case DRM_FORMAT_S012:
+   case DRM_FORMAT_S212:
+   case DRM_FORMAT_S412:
+   case DRM_FORMAT_S016:
+   case DRM_FORMAT_S216:
+   case DRM_FORMAT_S416:
       return 3;
 
    default:

@@ -60,6 +60,8 @@ struct st_external_sampler_key
    GLuint lower_yu_yv;
    GLuint lower_yv_yu;
    GLuint lower_y41x;
+   GLuint lower_sx10;
+   GLuint lower_sx12;
    GLuint bt709;
    GLuint bt2020;
    GLuint yuv_full_range;
@@ -140,6 +142,23 @@ st_get_external_sampler_key(struct st_context *st, struct gl_program *prog)
             key.lower_yuv |= (1 << unit);
             break;
          }
+         key.lower_iyuv |= (1 << unit);
+         break;
+      case PIPE_FORMAT_Y10X6_U10X6_V10X6_420_UNORM:
+      case PIPE_FORMAT_Y10X6_U10X6_V10X6_422_UNORM:
+      case PIPE_FORMAT_Y10X6_U10X6_V10X6_444_UNORM:
+         key.lower_iyuv |= (1 << unit);
+         key.lower_sx10 |= (1 << unit);
+         break;
+      case PIPE_FORMAT_Y12X4_U12X4_V12X4_420_UNORM:
+      case PIPE_FORMAT_Y12X4_U12X4_V12X4_422_UNORM:
+      case PIPE_FORMAT_Y12X4_U12X4_V12X4_444_UNORM:
+         key.lower_iyuv |= (1 << unit);
+         key.lower_sx12 |= (1 << unit);
+         break;
+      case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
+      case PIPE_FORMAT_Y16_U16_V16_422_UNORM:
+      case PIPE_FORMAT_Y16_U16_V16_444_UNORM:
          key.lower_iyuv |= (1 << unit);
          break;
       case PIPE_FORMAT_YUYV:
