@@ -4090,6 +4090,8 @@ struct anv_cmd_ray_tracing_state {
    uint32_t debug_marker_count;
    uint32_t num_tlas;
    uint32_t num_blas;
+   uint32_t num_leaves;
+   uint32_t num_ir_nodes;
    enum vk_acceleration_structure_build_step debug_markers[5];
 
    struct anv_address build_priv_mem_addr;

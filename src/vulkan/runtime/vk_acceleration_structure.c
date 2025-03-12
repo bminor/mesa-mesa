@@ -1168,11 +1168,19 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       vk_barrier_compute_w_to_indirect_compute_r(commandBuffer);
    }
 
-   if (args->emit_markers) {
+   /* Calculate number of leaves and internal nodes to encode */
+   uint32_t num_leaves = 0;
+   uint32_t num_internal_node = 0;
+   for ( uint32_t i = 0; i < infoCount; i++) {
+      num_leaves += bvh_states[i].leaf_node_count;
+      num_internal_node += bvh_states[i].internal_node_count;
+   }
+
+   if (args->emit_markers)
       device->as_build_ops->begin_debug_marker(commandBuffer,
                                                VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
-                                               "encode");
-   }
+                                               "encode_leaves=%u encode_ir_node=%u",
+                                               num_leaves, num_internal_node);
 
    for (unsigned pass = 0; pass < ARRAY_SIZE(ops->encode_as); pass++) {
       if (!ops->encode_as[pass] && !ops->update_as[pass])

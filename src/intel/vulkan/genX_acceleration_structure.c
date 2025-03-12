@@ -68,8 +68,15 @@ begin_debug_marker(VkCommandBuffer commandBuffer,
       trace_intel_begin_as_ploc_build_internal(&cmd_buffer->trace);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
+   {
+      va_list args;
+      va_start(args, format);
+      cmd_buffer->state.rt.num_leaves = va_arg(args, uint32_t);
+      cmd_buffer->state.rt.num_ir_nodes = va_arg(args, uint32_t);
+      va_end(args);
       trace_intel_begin_as_encode(&cmd_buffer->trace);
       break;
+   }
    default:
       unreachable("Invalid build step");
    }
@@ -103,7 +110,7 @@ end_debug_marker(VkCommandBuffer commandBuffer)
       trace_intel_end_as_ploc_build_internal(&cmd_buffer->trace);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
-      trace_intel_end_as_encode(&cmd_buffer->trace);
+      trace_intel_end_as_encode(&cmd_buffer->trace, cmd_buffer->state.rt.num_leaves, cmd_buffer->state.rt.num_ir_nodes);
       break;
    default:
       unreachable("Invalid build step");
