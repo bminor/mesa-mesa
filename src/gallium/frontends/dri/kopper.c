@@ -663,6 +663,13 @@ kopperQueryBufferAge(struct dri_drawable *drawable)
    return zink_kopper_query_buffer_age(ctx->st->pipe, ptex);
 }
 
+void
+kopperQuerySurfaceSize(struct dri_drawable *drawable, int *width, int *height)
+{
+   *width = drawable->w;
+   *height = drawable->h;
+}
+
 int
 kopperGetSyncValues(struct dri_drawable *drawable, int64_t target_msc, int64_t divisor,
                     int64_t remainder, int64_t *ust, int64_t *msc, int64_t *sbc)

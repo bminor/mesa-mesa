@@ -26,6 +26,12 @@ kopperQueryBufferAge(struct dri_drawable *dPriv)
    return 0;
 }
 
+void
+kopperQuerySurfaceSize(struct dri_drawable *drawable, int *width, int *height)
+{
+   *width = *height = 1;
+}
+
 int
 kopperGetSyncValues(struct dri_drawable *drawable, int64_t target_msc, int64_t divisor,
                     int64_t remainder, int64_t *ust, int64_t *msc, int64_t *sbc)
