@@ -2755,7 +2755,7 @@ anv_physical_device_destroy(struct vk_physical_device *vk_device)
    vk_free(&device->instance->vk.alloc, device);
 }
 
-static const VkQueueFamilyProperties
+static VkQueueFamilyProperties
 get_anv_queue_family_properties_template(const struct anv_physical_device *device)
 {
 

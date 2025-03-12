@@ -1660,7 +1660,7 @@ load_indirect_parameters(struct anv_cmd_buffer *cmd_buffer,
 #endif
 }
 
-static const inline bool
+static inline bool
 execute_indirect_draw_supported(const struct anv_cmd_buffer *cmd_buffer)
 {
 #if GFX_VERx10 >= 125
@@ -1764,7 +1764,7 @@ emit_indirect_draws(struct anv_cmd_buffer *cmd_buffer,
    }
 }
 
-static inline const uint32_t xi_argument_format_for_vk_cmd(enum vk_cmd_type cmd)
+static inline uint32_t xi_argument_format_for_vk_cmd(enum vk_cmd_type cmd)
 {
 #if GFX_VERx10 >= 125
    switch (cmd) {
