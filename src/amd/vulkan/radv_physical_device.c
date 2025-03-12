@@ -136,64 +136,6 @@ radv_emulate_rt(const struct radv_physical_device *pdev)
    return instance->perftest_flags & RADV_PERFTEST_EMULATE_RT;
 }
 
-static VkConformanceVersion
-radv_get_conformance_version(const struct radv_physical_device *pdev)
-{
-   VkConformanceVersion conformance_version = {0}; /* Non-conformant by default */
-
-   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level <= GFX11_5) {
-      switch (pdev->info.family) {
-      /* GFX8 */
-      case CHIP_TONGA:
-      case CHIP_FIJI:
-      case CHIP_POLARIS10:
-      /* GFX9 */
-      case CHIP_VEGA10:
-      case CHIP_RENOIR:
-      /* GFX10 */
-      case CHIP_NAVI14:
-      /* GFX10.3 */
-      case CHIP_NAVI21:
-      case CHIP_NAVI22:
-      case CHIP_VANGOGH:
-      /* GFX11 */
-      case CHIP_NAVI31:
-      /* GFX11.5 */
-      case CHIP_GFX1150:
-         conformance_version = (VkConformanceVersion){
-            .major = 1,
-            .minor = 4,
-            .subminor = 0,
-            .patch = 0,
-         };
-         break;
-      default:
-         break;
-      }
-   } else {
-      /* GFX6-7 */
-      switch (pdev->info.family) {
-      case CHIP_TAHITI:
-      case CHIP_PITCAIRN:
-      case CHIP_VERDE:
-      case CHIP_OLAND:
-      case CHIP_BONAIRE:
-      case CHIP_HAWAII:
-         conformance_version = (VkConformanceVersion){
-            .major = 1,
-            .minor = 3,
-            .subminor = 9,
-            .patch = 2,
-         };
-         break;
-      default:
-         break;
-      }
-   }
-
-   return conformance_version;
-}
-
 static void
 parse_hex(char *out, const char *in, unsigned length)
 {
@@ -1557,7 +1499,6 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxMemoryAllocationSize = RADV_MAX_MEMORY_ALLOCATION_SIZE,
 
       /* Vulkan 1.2 */
-      .conformanceVersion = radv_get_conformance_version(pdev),
       /* On AMD hardware, denormals and rounding modes for fp16/fp64 are
        * controlled by the same config register.
        */
@@ -1973,6 +1914,13 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    snprintf(p->driverName, VK_MAX_DRIVER_NAME_SIZE, "radv");
    snprintf(p->driverInfo, VK_MAX_DRIVER_INFO_SIZE, "Mesa " PACKAGE_VERSION MESA_GIT_SHA1 "%s",
             radv_get_compiler_string(pdev));
+
+   p->conformanceVersion = (VkConformanceVersion){
+      .major = 1,
+      .minor = 4,
+      .subminor = 0,
+      .patch = 0,
+   };
 
    memset(p->optimalTilingLayoutUUID, 0, sizeof(p->optimalTilingLayoutUUID));
 
