@@ -283,6 +283,18 @@ impl ShaderFloatControls {
     }
 }
 
+fn f_rnd_mode_from_nir(mode: nir_rounding_mode) -> FRndMode {
+    match mode {
+        nir_rounding_mode_undef | nir_rounding_mode_rtne => {
+            FRndMode::NearestEven
+        }
+        nir_rounding_mode_ru => FRndMode::PosInf,
+        nir_rounding_mode_rd => FRndMode::NegInf,
+        nir_rounding_mode_rtz => FRndMode::Zero,
+        _ => panic!("Invalid NIR rounding mode"),
+    }
+}
+
 impl Index<FloatType> for ShaderFloatControls {
     type Output = PerSizeFloatControls;
 
@@ -2160,6 +2172,98 @@ impl<'a> ShaderFromNir<'a> {
                     dst.push(u[0]);
                 }
                 self.set_ssa(&intrin.def, dst);
+            }
+            nir_intrinsic_convert_alu_types => {
+                let src_base_type = intrin.src_type().base_type();
+                let src_bit_size = intrin.src_type().bit_size();
+                let dst_base_type = intrin.dest_type().base_type();
+                let dst_bit_size = intrin.dest_type().bit_size();
+                let rnd_mode = f_rnd_mode_from_nir(intrin.rounding_mode());
+
+                assert!(srcs[0].as_def().bit_size() == src_bit_size);
+                assert!(intrin.def.bit_size() == dst_bit_size);
+
+                let def_bits =
+                    intrin.def.bit_size() * intrin.def.num_components();
+                let dst = b.alloc_ssa(RegFile::GPR, def_bits.div_ceil(32));
+
+                match dst_base_type {
+                    ALUType::INT | ALUType::UINT => {
+                        let dst_type = IntType::from_bits(
+                            dst_bit_size.into(),
+                            dst_base_type == ALUType::INT,
+                        );
+                        match src_base_type {
+                            ALUType::INT | ALUType::UINT => {
+                                let src_type = IntType::from_bits(
+                                    src_bit_size.into(),
+                                    src_base_type == ALUType::INT,
+                                );
+                                b.push_op(OpI2I {
+                                    dst: dst.into(),
+                                    src: self.get_src(&srcs[0]),
+                                    src_type,
+                                    dst_type,
+                                    abs: false,
+                                    neg: false,
+                                    saturate: intrin.saturate(),
+                                });
+                            }
+                            ALUType::FLOAT => {
+                                let src_type =
+                                    FloatType::from_bits(src_bit_size.into());
+                                // F2I doesn't support 8-bit destinations
+                                // pre-Volta
+                                assert!(b.sm() >= 70 || dst_bit_size > 8);
+                                b.push_op(OpF2I {
+                                    dst: dst.into(),
+                                    src: self.get_src(&srcs[0]),
+                                    src_type,
+                                    dst_type,
+                                    rnd_mode,
+                                    ftz: self.float_ctl[src_type].ftz,
+                                });
+                            }
+                            _ => panic!("Unknown src_type"),
+                        }
+                    }
+                    ALUType::FLOAT => {
+                        let dst_type =
+                            FloatType::from_bits(dst_bit_size.into());
+                        match src_base_type {
+                            ALUType::INT | ALUType::UINT => {
+                                let src_type = IntType::from_bits(
+                                    src_bit_size.into(),
+                                    src_base_type == ALUType::INT,
+                                );
+                                b.push_op(OpI2F {
+                                    dst: dst.into(),
+                                    src: self.get_src(&srcs[0]),
+                                    src_type,
+                                    dst_type,
+                                    rnd_mode,
+                                });
+                            }
+                            ALUType::FLOAT => {
+                                let src_type =
+                                    FloatType::from_bits(src_bit_size.into());
+                                b.push_op(OpF2F {
+                                    dst: dst.into(),
+                                    src: self.get_src(&srcs[0]),
+                                    src_type,
+                                    dst_type,
+                                    rnd_mode,
+                                    ftz: self.float_ctl[src_type].ftz,
+                                    high: false,
+                                    integer_rnd: false,
+                                });
+                            }
+                            _ => panic!("Unknown src_type"),
+                        }
+                    }
+                    _ => panic!("Unknown dest_type"),
+                }
+                self.set_dst(&intrin.def, dst);
             }
             nir_intrinsic_ddx
             | nir_intrinsic_ddx_coarse
