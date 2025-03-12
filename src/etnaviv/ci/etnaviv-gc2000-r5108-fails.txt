@@ -632,7 +632,6 @@ spec@arb_texture_rectangle@copyteximage rect samples=2,Fail
 spec@arb_texture_rectangle@copyteximage rect samples=4,Fail
 
 # Added on 2025-01-30
-dEQP-GLES2.functional.polygon_offset.default_enable,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_float_fragment,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_int_fragment,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_ivec2_fragment,Fail
