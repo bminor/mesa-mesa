@@ -887,6 +887,8 @@ validate_ir(Program* program)
                            program->gfx_level >= GFX12 ? (instr->operands.size() - 4) : 4;
                         if (instr->opcode != aco_opcode::image_bvh_intersect_ray &&
                             instr->opcode != aco_opcode::image_bvh64_intersect_ray &&
+                            instr->opcode != aco_opcode::image_bvh_dual_intersect_ray &&
+                            instr->opcode != aco_opcode::image_bvh8_intersect_ray &&
                             i < 3 + num_scalar) {
                            check(instr->operands[i].regClass() == v1,
                                  "first 4 GFX11 MIMG VADDR must be v1 if NSA is used", instr.get());

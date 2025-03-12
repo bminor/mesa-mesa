@@ -838,7 +838,7 @@ emit_mimg_instruction_gfx12(asm_context& ctx, std::vector<uint32_t>& out, const 
 
    encoding = 0;
    if (!instr->definitions.empty())
-      encoding |= reg(ctx, instr->definitions[0], 8); /* VDATA */
+      encoding |= reg(ctx, instr->definitions.back(), 8); /* VDATA */
    else if (!instr->operands[2].isUndefined())
       encoding |= reg(ctx, instr->operands[2], 8); /* VDATA */
    encoding |= reg(ctx, instr->operands[0]) << 9;  /* T# (resource) */

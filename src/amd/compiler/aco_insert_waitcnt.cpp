@@ -650,8 +650,8 @@ gen(Instruction* instr, wait_ctx& ctx)
 
       update_counters(ctx, ev, get_sync_info(instr));
 
-      if (!instr->definitions.empty())
-         insert_wait_entry(ctx, instr->definitions[0], ev, type);
+      for (auto& definition : instr->definitions)
+         insert_wait_entry(ctx, definition, ev, type);
 
       if (ctx.gfx_level == GFX6 && instr->format != Format::MIMG && instr->operands.size() == 4) {
          update_counters(ctx, event_vmem_gpr_lock);

@@ -1414,7 +1414,6 @@ aco::small_vec<uint32_t, 2>
 get_ops_fixed_to_def(Instruction* instr)
 {
    aco::small_vec<uint32_t, 2> ops;
-
    if (instr->opcode == aco_opcode::v_interp_p2_f32 || instr->opcode == aco_opcode::v_mac_f32 ||
        instr->opcode == aco_opcode::v_fmac_f32 || instr->opcode == aco_opcode::v_mac_f16 ||
        instr->opcode == aco_opcode::v_fmac_f16 || instr->opcode == aco_opcode::v_mac_legacy_f32 ||
@@ -1432,6 +1431,10 @@ get_ops_fixed_to_def(Instruction* instr)
    } else if (instr->isMIMG() && instr->definitions.size() == 1 &&
               !instr->operands[2].isUndefined()) {
       ops.push_back(2);
+   } else if (instr->opcode == aco_opcode::image_bvh8_intersect_ray) {
+      /* VADDR starts at 3. */
+      ops.push_back(3 + 2);
+      ops.push_back(3 + 3);
    }
    return ops;
 }
@@ -1439,7 +1442,8 @@ get_ops_fixed_to_def(Instruction* instr)
 uint8_t
 get_vmem_type(enum amd_gfx_level gfx_level, Instruction* instr)
 {
-   if (instr->opcode == aco_opcode::image_bvh64_intersect_ray)
+   if (instr->opcode == aco_opcode::image_bvh64_intersect_ray ||
+       instr->opcode == aco_opcode::image_bvh8_intersect_ray)
       return vmem_bvh;
    else if (gfx_level >= GFX12 && instr->opcode == aco_opcode::image_msaa_load)
       return vmem_sampler;

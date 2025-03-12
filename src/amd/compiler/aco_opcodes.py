@@ -1867,6 +1867,8 @@ MIMG = {
    ("image_gather4_c_lz_o",      op(0x5f, gfx11=0x37)),
    ("image_bvh_intersect_ray",   op(gfx10=0xe6, gfx11=0x19)),
    ("image_bvh64_intersect_ray", op(gfx10=0xe7, gfx11=0x1a)),
+   ("image_bvh_dual_intersect_ray", op(gfx12=0x80)),
+   ("image_bvh8_intersect_ray",  op(gfx12=0x81)),
 }
 for (name, num) in MIMG:
    insn(name, num, Format.MIMG, InstrClass.VMem, is_atomic = "atomic" in name)

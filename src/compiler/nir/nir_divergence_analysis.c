@@ -693,6 +693,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_is_sparse_resident_zink:
    case nir_intrinsic_sparse_residency_code_and:
    case nir_intrinsic_bvh64_intersect_ray_amd:
+   case nir_intrinsic_bvh8_intersect_ray_amd:
    case nir_intrinsic_image_deref_load_param_intel:
    case nir_intrinsic_image_load_raw_intel:
    case nir_intrinsic_get_ubo_size:

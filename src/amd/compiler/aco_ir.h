@@ -292,6 +292,7 @@ struct RegClass {
       v6 = 6 | (1 << 5),
       v7 = 7 | (1 << 5),
       v8 = 8 | (1 << 5),
+      v10 = 10 | (1 << 5),
       /* byte-sized register class */
       v1b = v1 | (1 << 7),
       v2b = v2 | (1 << 7),
@@ -360,6 +361,7 @@ static constexpr RegClass v5{RegClass::v5};
 static constexpr RegClass v6{RegClass::v6};
 static constexpr RegClass v7{RegClass::v7};
 static constexpr RegClass v8{RegClass::v8};
+static constexpr RegClass v10{RegClass::v10};
 static constexpr RegClass v1b{RegClass::v1b};
 static constexpr RegClass v2b{RegClass::v2b};
 static constexpr RegClass v3b{RegClass::v3b};

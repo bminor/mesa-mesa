@@ -5962,6 +5962,38 @@ visit_bvh64_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    emit_split_vector(ctx, dst, instr->def.num_components);
 }
 
+void
+visit_bvh8_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
+{
+   Builder bld(ctx->program, ctx->block);
+   Temp dst = get_ssa_temp(ctx, &instr->def);
+   Temp resource = get_ssa_temp(ctx, instr->src[0].ssa);
+   Temp bvh_base = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[1].ssa));
+   Temp cull_mask = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[2].ssa));
+   Temp tmax = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[3].ssa));
+   Temp origin = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[4].ssa));
+   Temp dir = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[5].ssa));
+   Temp node_id = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[6].ssa));
+
+   Temp result = bld.tmp(v10);
+   Temp new_origin = bld.tmp(v3);
+   Temp new_dir = bld.tmp(v3);
+
+   std::vector<Temp> args = {bvh_base,
+                             bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), tmax, cull_mask),
+                             origin, dir, node_id};
+
+   MIMG_instruction* mimg = emit_mimg(bld, aco_opcode::image_bvh8_intersect_ray,
+                                      {new_origin, new_dir, result}, resource, Operand(s4), args);
+   mimg->dim = ac_image_1d;
+   mimg->dmask = 0xf;
+   mimg->unrm = true;
+   mimg->r128 = true;
+
+   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand(result), Operand(new_origin),
+              Operand(new_dir));
+}
+
 static std::vector<Temp>
 get_image_coords(isel_context* ctx, const nir_intrinsic_instr* instr)
 {
@@ -8787,6 +8819,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       break;
    }
    case nir_intrinsic_bvh64_intersect_ray_amd: visit_bvh64_intersect_ray_amd(ctx, instr); break;
+   case nir_intrinsic_bvh8_intersect_ray_amd: visit_bvh8_intersect_ray_amd(ctx, instr); break;
    case nir_intrinsic_load_resume_shader_address_amd: {
       bld.pseudo(aco_opcode::p_resume_shader_address, Definition(get_ssa_temp(ctx, &instr->def)),
                  bld.def(s1, scc), Operand::c32(nir_intrinsic_call_idx(instr)));

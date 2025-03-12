@@ -53,7 +53,9 @@ get_type(Program* program, aco_ptr<Instruction>& instr)
       if (instr->isMIMG()) {
          switch (instr->opcode) {
          case aco_opcode::image_bvh_intersect_ray:
-         case aco_opcode::image_bvh64_intersect_ray: return clause_bvh;
+         case aco_opcode::image_bvh64_intersect_ray:
+         case aco_opcode::image_bvh_dual_intersect_ray:
+         case aco_opcode::image_bvh8_intersect_ray: return clause_bvh;
          case aco_opcode::image_atomic_swap:
          case aco_opcode::image_atomic_cmpswap:
          case aco_opcode::image_atomic_add:

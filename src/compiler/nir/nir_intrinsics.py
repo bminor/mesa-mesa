@@ -1777,6 +1777,32 @@ system_value("sbt_base_amd", 1, bit_sizes=[64])
 # 6. inverse ray direction (componentwise 1.0/ray direction)
 intrinsic("bvh64_intersect_ray_amd", [4, 2, 1, 3, 3, 3], 4, flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# 1. HW descriptor
+# 2. BVH base
+# 3. instance cull mask
+# 4. ray extent
+# 5. ray origin
+# 6. ray direction
+# 7. node ID
+#
+# dst:
+# | component | box node    | instance node        | triangle node                     | procedural node                   |
+# |-----------|-------------|----------------------|-----------------------------------|-----------------------------------|
+# | 0         | child_id[0] |                      | t[0]                              |                                   |
+# | 1         | child_id[1] |                      | u[0]                              |                                   |
+# | 2         | child_id[2] | blas_addr_lo         | v[0]                              |                                   |
+# | 3         | child_id[3] | blas_addr_hi         | primitive_index_hit_kind[0]       | primitive_index                   |
+# | 4         | child_id[4] |                      | t[1]                              |                                   |
+# | 5         | child_id[5] |                      | u[1]                              |                                   |
+# | 6         | child_id[6] | user_data            | v[1]                              |                                   |
+# | 7         | child_id[7] | next_node_ids        | primitive_index_hit_kind[1]       |                                   |
+# | 8         |             |                      | geometry_index_navigation_bits[0] | geometry_index_navigation_bits[0] |
+# | 9         |             |                      | geometry_index_navigation_bits[1] | geometry_index_navigation_bits[1] |
+# | [10,12]   |             | object_ray_origin    |                                   |                                   |
+# | [13,15]   |             | object_ray_direction |                                   |                                   |
+#
+intrinsic("bvh8_intersect_ray_amd", [4, 2, 1, 1, 3, 3, 1], 16, flags=[CAN_ELIMINATE, CAN_REORDER])
+
 # Return of a callable in raytracing pipelines
 intrinsic("rt_return_amd")
 
