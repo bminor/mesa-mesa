@@ -70,6 +70,37 @@ impl<'a, T: 'a> Iterator for ExecListIter<'a, T> {
     }
 }
 
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct ALUType(nir_alu_type);
+
+impl ALUType {
+    pub const INT: Self = Self(nir_type_int);
+    pub const UINT: Self = Self(nir_type_uint);
+    pub const BOOL: Self = Self(nir_type_bool);
+    pub const FLOAT: Self = Self(nir_type_float);
+
+    pub fn new(base: Self, bit_size: u8) -> Self {
+        assert!(bit_size.is_power_of_two());
+        assert!(bit_size & (NIR_ALU_TYPE_BASE_TYPE_MASK as u8) == 0);
+        assert!(
+            base.is_base_type() || bit_size == 0 || bit_size == base.bit_size()
+        );
+        Self(base.0 | bit_size)
+    }
+
+    pub fn is_base_type(&self) -> bool {
+        self.bit_size() == 0
+    }
+
+    pub fn bit_size(&self) -> u8 {
+        self.0 & (NIR_ALU_TYPE_SIZE_MASK as u8)
+    }
+
+    pub fn base_type(&self) -> Self {
+        Self(self.0 & (NIR_ALU_TYPE_BASE_TYPE_MASK as u8))
+    }
+}
+
 impl nir_def {
     pub fn parent_instr<'a>(&'a self) -> &'a nir_instr {
         unsafe { NonNull::new(self.parent_instr).unwrap().as_ref() }

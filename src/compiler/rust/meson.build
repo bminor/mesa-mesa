@@ -39,6 +39,7 @@ _compiler_bindgen_args = [
   '--raw-line', '#![allow(non_camel_case_types)]',
   '--raw-line', '#![allow(non_snake_case)]',
   '--raw-line', '#![allow(non_upper_case_globals)]',
+  '--allowlist-var', 'NIR_.*',
   '--allowlist-var', 'nir_.*_infos',
   '--allowlist-var', 'rust_.*',
   '--allowlist-function', 'glsl_.*',
