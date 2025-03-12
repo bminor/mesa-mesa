@@ -1514,7 +1514,7 @@
         "description": "panvk: Avoid division by zero for vkCmdCopyQueryPoolResults",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7755c41b3efd5ff50cef9702c2fb218fd412e1f5",
         "notes": null
