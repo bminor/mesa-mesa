@@ -26,7 +26,6 @@ use std::cmp::Ordering;
 use std::mem::{self, MaybeUninit};
 use std::os::raw::c_void;
 use std::ptr;
-use std::slice;
 use std::sync::Arc;
 
 fn validate_mem_flags(flags: cl_mem_flags, images: bool) -> CLResult<()> {
@@ -1612,8 +1611,12 @@ fn enqueue_fill_buffer(
         return Err(CL_INVALID_CONTEXT);
     }
 
-    // we have to copy memory
-    let pattern = unsafe { slice::from_raw_parts(pattern.cast(), pattern_size).to_vec() };
+    // The caller may free `pattern` once the `clEnqueueFillBuffer()` call
+    // returns, so we need to duplicate its contents to hold onto.
+    // SAFETY: `cl_slice::from_raw_parts()` verifies the testable invariants of
+    // `slice::from_raw_parts()`. The caller is responsible for providing a
+    // pointer to appropriately-sized, initialized memory.
+    let pattern = unsafe { cl_slice::from_raw_parts(pattern.cast(), pattern_size)? }.to_vec();
     create_and_queue(
         q,
         CL_COMMAND_FILL_BUFFER,
@@ -2421,8 +2424,12 @@ fn enqueue_svm_free_impl(
     // The application is allowed to reuse or free the memory referenced by `svm_pointers` after this
     // function returns, so we have to make a copy.
     let mut svm_pointers = if !svm_pointers.is_null() {
-        // SAFETY: num_svm_pointers specifies the amount of elements in svm_pointers
-        unsafe { slice::from_raw_parts(svm_pointers.cast(), num_svm_pointers as usize) }.to_vec()
+        // SAFETY: `cl_slice::from_raw_parts()` verifies that testable
+        // invariants of `slice::from_raw_parts()` are satisfied. Callers are
+        // responsible for providing pointers to appropriately-sized,
+        // initialized memory.
+        unsafe { cl_slice::from_raw_parts(svm_pointers.cast(), num_svm_pointers as usize)? }
+            .to_vec()
     } else {
         // A slice must not be created from a raw null pointer, so simply create
         // an empty vec instead.
