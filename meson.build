@@ -168,10 +168,8 @@ if gallium_drivers.contains('auto')
           host_machine.system()))
   endif
 elif gallium_drivers.contains('all')
-   # Build-test everything except for i915, which depends on libdrm-intel which
-   # is not available on non-Intel distros.
    gallium_drivers = [
-     'r300', 'r600', 'radeonsi', 'crocus', 'v3d', 'vc4', 'freedreno', 'etnaviv',
+     'r300', 'r600', 'radeonsi', 'crocus', 'v3d', 'vc4', 'freedreno', 'etnaviv', 'i915',
      'nouveau', 'svga', 'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
      'zink', 'd3d12', 'asahi'
    ]
@@ -1560,10 +1558,6 @@ endif
 
 if with_any_intel and ['x86', 'x86_64'].contains(host_machine.cpu_family())
   pre_args += '-DSUPPORT_INTEL_INTEGRATED_GPUS'
-endif
-
-if with_gallium_i915 and host_machine.cpu_family().startswith('x86') == false
-  error('Intel "i915" Gallium driver requires x86 or x86_64 CPU family')
 endif
 
 # Determine whether or not the rt library is needed for time functions
