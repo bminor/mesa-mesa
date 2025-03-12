@@ -6200,7 +6200,8 @@ bi_compile_variant(nir_shader *nir,
       }
    }
 
-   if (idvs == BI_IDVS_POSITION && !nir->info.internal &&
+   if ((idvs == BI_IDVS_POSITION || idvs == BI_IDVS_ALL) &&
+       !nir->info.internal &&
        nir->info.outputs_written & BITFIELD_BIT(VARYING_SLOT_PSIZ)) {
       /* Find the psiz write */
       bi_instr *write = NULL;
