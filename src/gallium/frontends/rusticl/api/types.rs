@@ -189,6 +189,13 @@ cl_callback!(
 
 impl SVMFreeCb {
     pub fn call(self, queue: &Queue, svm_pointers: &mut [usize]) {
+        // `clEnqueueSVMFree()` takes the length of the `svm_pointers` list as a
+        // `cl_uint`, so this will only occur in cases of implementation error.
+        debug_assert!(
+            svm_pointers.len() <= cl_uint::MAX as usize,
+            "svm_pointers count must not exceed `cl_uint::MAX`"
+        );
+
         let (num_svm_pointers, svm_pointers) = if !svm_pointers.is_empty() {
             (
                 svm_pointers.len() as cl_uint,

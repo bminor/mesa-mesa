@@ -916,6 +916,11 @@ fn get_supported_image_formats(
     res.sort();
     res.dedup();
 
+    debug_assert!(
+        res.len() <= cl_uint::MAX as usize,
+        "number of supported formats exceeds `cl_uint::MAX`"
+    );
+
     // `num_image_formats` should be the full count of supported formats,
     // regardless of the value of `num_entries`. It may be null, in which case
     // it is ignored.

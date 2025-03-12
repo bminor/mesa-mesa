@@ -346,6 +346,11 @@ fn get_device_ids(
         return Err(CL_DEVICE_NOT_FOUND);
     }
 
+    debug_assert!(
+        devs.len() <= cl_uint::MAX as usize,
+        "number of available devices exceeds `cl_uint::MAX`"
+    );
+
     // num_devices returns the number of OpenCL devices available that match device_type. If
     // num_devices is NULL, this argument is ignored.
     // SAFETY: Caller is responsible for providing a null pointer or one valid
