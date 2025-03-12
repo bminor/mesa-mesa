@@ -84,6 +84,7 @@ panfrost_blendable_format_table(unsigned arch)
    FMT_TABLE(9);
    FMT_TABLE(10);
    FMT_TABLE(12);
+   FMT_TABLE(13);
 #undef FMT_TABLE
    default:
       assert(!"Unsupported architecture");
@@ -112,6 +113,7 @@ panfrost_format_table(unsigned arch)
    FMT_TABLE(9);
    FMT_TABLE(10);
    FMT_TABLE(12);
+   FMT_TABLE(13);
 #undef FMT_TABLE
    default:
       assert(!"Unsupported architecture");
