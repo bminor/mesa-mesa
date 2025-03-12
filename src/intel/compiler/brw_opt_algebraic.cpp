@@ -548,6 +548,7 @@ brw_opt_algebraic(brw_shader &s)
                default:
                   break;
                }
+               break;
             default:
                break;
             }

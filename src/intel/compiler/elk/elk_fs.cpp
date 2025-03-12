@@ -2437,6 +2437,7 @@ elk_fs_visitor::opt_algebraic()
                default:
                   break;
                }
+               break;
             default:
                break;
             }
