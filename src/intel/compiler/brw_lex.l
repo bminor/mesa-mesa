@@ -76,6 +76,7 @@ dp2             { yylval.integer = BRW_OPCODE_DP2; return DP2; }
 dp3             { yylval.integer = BRW_OPCODE_DP3; return DP3; }
 dp4             { yylval.integer = BRW_OPCODE_DP4; return DP4; }
 dp4a            { yylval.integer = BRW_OPCODE_DP4A; return DP4A; }
+dpas            { yylval.integer = BRW_OPCODE_DPAS; return DPAS; }
 dph             { yylval.integer = BRW_OPCODE_DPH; return DPH; }
 else            { yylval.integer = BRW_OPCODE_ELSE; return ELSE; }
 endif           { yylval.integer = BRW_OPCODE_ENDIF; return ENDIF; }
@@ -418,6 +419,13 @@ sr[0-9]+        { yylval.integer = atoi(yytext + 2); return STATEREG; }
 "$"[0-9]*       { yylval.integer = atoi(yytext + 1); return SBID_ALLOC; }
 "$"[0-9]*".src" { yylval.integer = atoi(yytext + 1); return SBID_WAIT_SRC; }
 "$"[0-9]*".dst" { yylval.integer = atoi(yytext + 1); return SBID_WAIT_DST; }
+
+ /* DPAS params. */
+"."[1-9][0-9]*x[1-9][0-9]* {
+        yylval.dpas_params.sdepth = atoi(yytext + 1);
+        yylval.dpas_params.rcount = atoi(strchr(yytext, 'x') + 1);
+        return DPAS_PARAMS;
+}
 
 \n      { yycolumn = 1; }
 

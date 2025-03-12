@@ -740,19 +740,6 @@ brw_generator::enable_debug(const char *shader_name)
    this->shader_name = shader_name;
 }
 
-static gfx12_systolic_depth
-translate_systolic_depth(unsigned d)
-{
-   /* Could also return (ffs(d) - 1) & 3. */
-   switch (d) {
-   case 2:  return BRW_SYSTOLIC_DEPTH_2;
-   case 4:  return BRW_SYSTOLIC_DEPTH_4;
-   case 8:  return BRW_SYSTOLIC_DEPTH_8;
-   case 16: return BRW_SYSTOLIC_DEPTH_16;
-   default: unreachable("Invalid systolic depth.");
-   }
-}
-
 int
 brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
                             struct brw_shader_stats shader_stats,

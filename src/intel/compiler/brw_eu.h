@@ -1425,6 +1425,19 @@ brw_pixel_interp_desc(UNUSED const struct intel_device_info *devinfo,
            SET_BITS(simd_mode, 16, 16));
 }
 
+static inline enum gfx12_systolic_depth
+translate_systolic_depth(unsigned d)
+{
+   /* Could also return (ffs(d) - 1) & 3. */
+   switch (d) {
+   case 2:  return BRW_SYSTOLIC_DEPTH_2;
+   case 4:  return BRW_SYSTOLIC_DEPTH_4;
+   case 8:  return BRW_SYSTOLIC_DEPTH_8;
+   case 16: return BRW_SYSTOLIC_DEPTH_16;
+   default: unreachable("Invalid systolic depth.");
+   }
+}
+
 /**
  * Send message to shared unit \p sfid with a possibly indirect descriptor \p
  * desc.  If \p desc is not an immediate it will be transparently loaded to an
