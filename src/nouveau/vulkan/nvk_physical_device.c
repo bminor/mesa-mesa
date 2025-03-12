@@ -216,7 +216,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_depth_range_unrestricted = info->cls_eng3d >= VOLTA_A,
       .EXT_descriptor_buffer = true,
       .EXT_descriptor_indexing = true,
-      .EXT_device_generated_commands = true,
+      .EXT_device_generated_commands = info->cls_eng3d >= MAXWELL_B,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
 #endif
@@ -556,9 +556,16 @@ nvk_get_device_features(const struct nv_device_info *info,
       .descriptorBufferImageLayoutIgnored = true,
       .descriptorBufferPushDescriptors = true,
 
-      /* VK_EXT_device_generated_commands */
-      .deviceGeneratedCommands = true,
-      .dynamicGeneratedPipelineLayout = true,
+      /* VK_EXT_device_generated_commands
+       *
+       * We don't enable VK_EXT_device_generated_commands or the corresponding
+       * features on Maxwell A and newer because we need to allocate QMDs from
+       * the QMD heap and not from arbitrary client memory.
+       *
+       * See also nvk_cmd_buffer_alloc_qmd().
+       */
+      .deviceGeneratedCommands = info->cls_eng3d >= MAXWELL_B,
+      .dynamicGeneratedPipelineLayout = info->cls_eng3d >= MAXWELL_B,
 
       /* VK_EXT_dynamic_rendering_unused_attachments */
       .dynamicRenderingUnusedAttachments = true,
