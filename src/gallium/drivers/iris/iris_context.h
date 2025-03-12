@@ -1487,7 +1487,7 @@ int iris_get_driver_query_group_info(struct pipe_screen *pscreen,
 void gfx9_toggle_preemption(struct iris_context *ice,
                             struct iris_batch *batch,
                             const struct pipe_draw_info *draw);
-static const bool
+static bool
 iris_execute_indirect_draw_supported(const struct iris_context *ice,
                                      const struct pipe_draw_indirect_info *indirect,
                                      const struct pipe_draw_info *draw)
