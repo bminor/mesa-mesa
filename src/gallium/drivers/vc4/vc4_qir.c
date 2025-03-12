@@ -738,10 +738,7 @@ void
 qir_compile_destroy(struct vc4_compile *c)
 {
         qir_for_each_block(block, c) {
-                while (!list_is_empty(&block->instructions)) {
-                        struct qinst *qinst =
-                                list_first_entry(&block->instructions,
-                                                 struct qinst, link);
+                list_for_each_entry_safe(struct qinst, qinst, &block->instructions, link) {
                         qir_remove_instruction(c, qinst);
                 }
         }
