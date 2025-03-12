@@ -113,7 +113,7 @@ image_linear_address(nir_builder *b,
                    coords[0]);
 }
 
-static enum isl_tiling
+static enum isl_surf_dim
 glsl_sampler_dim_to_isl(enum glsl_sampler_dim dim)
 {
    return dim == GLSL_SAMPLER_DIM_1D ? ISL_SURF_DIM_1D :
