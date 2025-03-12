@@ -350,6 +350,14 @@ ALLOWED_ANDROID_VERSION = {
     "VK_KHR_present_id": 33,
     "VK_KHR_present_wait": 33,
     "VK_KHR_shader_subgroup_uniform_control_flow": 33,
+    # on android14-tests-release
+    "VK_KHR_fragment_shader_barycentric": 34,
+    "VK_KHR_ray_tracing_maintenance1": 34,
+    # blocked by testVulkanBlockedExtensions
+    # "VK_KHR_video_decode_h264": 34,
+    # "VK_KHR_video_decode_h265": 34,
+    # "VK_KHR_video_decode_queue": 34,
+    # "VK_KHR_video_queue": 34,
 
     # testNoUnknownExtensions on oreo-cts-release
     "VK_GOOGLE_display_timing": 26,
