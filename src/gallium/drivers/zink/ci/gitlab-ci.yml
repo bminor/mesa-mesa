@@ -57,6 +57,7 @@ zink-anv-adl:
     HWCI_START_WESTON: 1
     # We use gbm because its a copy of tgl job
     PIGLIT_PLATFORM: gbm
+    FDO_CI_CONCURRENT: 6 # higher is too much, and leads to OOM
   timeout: 30m
   parallel: 4
 
@@ -67,7 +68,6 @@ zink-anv-adl-full:
     - .zink-anv-manual-rules
   variables:
     DEQP_SUITE: zink-anv-adl-full
-    FDO_CI_CONCURRENT: 6 # higher is too much, and leads to OOM
   timeout: 2h
   parallel: 5
 
