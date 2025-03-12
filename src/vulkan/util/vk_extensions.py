@@ -358,6 +358,29 @@ ALLOWED_ANDROID_VERSION = {
     # "VK_KHR_video_decode_h265": 34,
     # "VK_KHR_video_decode_queue": 34,
     # "VK_KHR_video_queue": 34,
+    # on android15-tests-release
+    "VK_KHR_calibrated_timestamps": 35,
+    "VK_KHR_cooperative_matrix": 35,
+    "VK_KHR_dynamic_rendering_local_read": 35,
+    "VK_KHR_index_type_uint8": 35,
+    "VK_KHR_line_rasterization": 35,
+    "VK_KHR_load_store_op_none": 35,
+    "VK_KHR_maintenance5": 35,
+    "VK_KHR_maintenance6": 35,
+    "VK_KHR_map_memory2": 35,
+    "VK_KHR_ray_tracing_position_fetch": 35,
+    "VK_KHR_shader_expect_assume": 35,
+    "VK_KHR_shader_float_controls2": 35,
+    "VK_KHR_shader_maximal_reconvergence": 35,
+    "VK_KHR_shader_quad_control": 35,
+    "VK_KHR_shader_subgroup_rotate": 35,
+    "VK_KHR_vertex_attribute_divisor": 35,
+    # blocked by testVulkanBlockedExtensions
+    # "VK_KHR_video_decode_av1": 35,
+    # "VK_KHR_video_encode_h264": 35,
+    # "VK_KHR_video_encode_h265": 35,
+    # "VK_KHR_video_encode_queue": 35,
+    # "VK_KHR_video_maintenance1": 35,
 
     # testNoUnknownExtensions on oreo-cts-release
     "VK_GOOGLE_display_timing": 26,
@@ -368,6 +391,8 @@ ALLOWED_ANDROID_VERSION = {
     "VK_GOOGLE_hlsl_functionality1": 30,
     # on android13-tests-release
     "VK_GOOGLE_surfaceless_query": 33,
+    # on android15-tests-release
+    "VK_ANDROID_external_format_resolve": 35,
 
     # this HAL extension is always allowed and will be filtered out by the
     # loader
