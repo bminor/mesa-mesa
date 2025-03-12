@@ -16,6 +16,7 @@
 
 #include "cl9097.h"
 #include "clb097.h"
+#include "clb197.h"
 #include "clc397.h"
 
 static void
@@ -228,6 +229,14 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
    if (result != VK_SUCCESS)
       goto fail_shader_heap;
 
+   if (pdev->info.cls_eng3d < MAXWELL_B) {
+      result = nvk_heap_init(dev, &dev->qmd_heap,
+                             NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
+                             0 /* overalloc */, false /* contiguous */);
+      if (result != VK_SUCCESS)
+         goto fail_event_heap;
+   }
+
    nvk_slm_area_init(&dev->slm);
 
    if (pdev->info.cls_eng3d >= FERMI_A &&
@@ -271,6 +280,9 @@ fail_vab_memory:
       nvkmd_mem_unref(dev->vab_memory);
 fail_slm:
    nvk_slm_area_finish(&dev->slm);
+   if (pdev->info.cls_eng3d < MAXWELL_B)
+      nvk_heap_finish(dev, &dev->qmd_heap);
+fail_event_heap:
    nvk_heap_finish(dev, &dev->event_heap);
 fail_shader_heap:
    nvk_heap_finish(dev, &dev->shader_heap);
@@ -301,6 +313,8 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    if (!dev)
       return;
 
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+
    if (dev->copy_queries)
       vk_shader_destroy(&dev->vk, &dev->copy_queries->vk, &dev->vk.alloc);
 
@@ -316,6 +330,8 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    nvk_upload_queue_sync(dev, &dev->upload);
 
    nvk_slm_area_finish(&dev->slm);
+   if (pdev->info.cls_eng3d < MAXWELL_B)
+      nvk_heap_finish(dev, &dev->qmd_heap);
    nvk_heap_finish(dev, &dev->event_heap);
    nvk_heap_finish(dev, &dev->shader_heap);
    nvk_edb_bview_cache_finish(dev, &dev->edb_bview_cache);

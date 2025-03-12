@@ -46,6 +46,7 @@ struct nvk_device {
    struct nvk_edb_bview_cache edb_bview_cache;
    struct nvk_heap shader_heap;
    struct nvk_heap event_heap;
+   struct nvk_heap qmd_heap;
    struct nvk_slm_area slm;
    struct nvkmd_mem *vab_memory;
 

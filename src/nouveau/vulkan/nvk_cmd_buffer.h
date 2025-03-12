@@ -216,6 +216,7 @@ struct nvk_cmd_buffer {
     */
    struct list_head owned_mem;
    struct list_head owned_gart_mem;
+   struct list_head owned_qmd;
 
    struct nvk_cmd_mem *upload_mem;
    uint32_t upload_offset;
@@ -341,6 +342,10 @@ VkResult nvk_cmd_buffer_upload_data(struct nvk_cmd_buffer *cmd,
 
 VkResult nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
 					  uint64_t *addr);
+
+VkResult nvk_cmd_buffer_alloc_qmd(struct nvk_cmd_buffer *cmd,
+                                  uint32_t size, uint32_t alignment,
+                                  uint64_t *addr, void **ptr);
 
 void nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
                             const VkDependencyInfo *dep,

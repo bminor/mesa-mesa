@@ -190,9 +190,13 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
       uint32_t qmd[64];
       nak_fill_qmd(&pdev->info, &shader->info, &qmd_info, qmd, sizeof(qmd));
 
-      result = nvk_cmd_buffer_upload_data(cmd, qmd, sizeof(qmd), 0x100, &qmd_addr);
+      void *qmd_map;
+      result = nvk_cmd_buffer_alloc_qmd(cmd, sizeof(qmd), 0x100,
+                                        &qmd_addr, &qmd_map);
       if (unlikely(result != VK_SUCCESS))
          return result;
+
+      memcpy(qmd_map, qmd, sizeof(qmd));
    }
 
    *qmd_addr_out = qmd_addr;

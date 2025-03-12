@@ -44,6 +44,39 @@ nvk_cmd_mem_destroy(struct nvk_cmd_pool *pool, struct nvk_cmd_mem *mem)
    vk_free(&pool->vk.alloc, mem);
 }
 
+static VkResult
+nvk_cmd_qmd_create(struct nvk_cmd_pool *pool, struct nvk_cmd_qmd **qmd_out)
+{
+   struct nvk_device *dev = nvk_cmd_pool_device(pool);
+   struct nvk_cmd_qmd *qmd;
+   VkResult result;
+
+   qmd = vk_zalloc(&pool->vk.alloc, sizeof(*qmd), 8,
+                  VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (qmd == NULL)
+      return vk_error(pool, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   result = nvk_heap_alloc(dev, &dev->qmd_heap,
+                           NVK_CMD_QMD_SIZE, NVK_CMD_QMD_SIZE,
+                           &qmd->addr, &qmd->map);
+   if (result != VK_SUCCESS) {
+      vk_free(&pool->vk.alloc, qmd);
+      return result;
+   }
+
+   *qmd_out = qmd;
+   return VK_SUCCESS;
+}
+
+static void
+nvk_cmd_qmd_destroy(struct nvk_cmd_pool *pool, struct nvk_cmd_qmd *qmd)
+{
+   struct nvk_device *dev = nvk_cmd_pool_device(pool);
+
+   nvk_heap_free(dev, &dev->qmd_heap, qmd->addr, NVK_CMD_QMD_SIZE);
+   vk_free(&pool->vk.alloc, qmd);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateCommandPool(VkDevice _device,
                       const VkCommandPoolCreateInfo *pCreateInfo,
@@ -67,6 +100,7 @@ nvk_CreateCommandPool(VkDevice _device,
 
    list_inithead(&pool->free_mem);
    list_inithead(&pool->free_gart_mem);
+   list_inithead(&pool->free_qmd);
 
    *pCmdPool = nvk_cmd_pool_to_handle(pool);
 
@@ -85,6 +119,10 @@ nvk_cmd_pool_destroy_mem(struct nvk_cmd_pool *pool)
       nvk_cmd_mem_destroy(pool, mem);
 
    list_inithead(&pool->free_gart_mem);
+
+   list_for_each_entry_safe(struct nvk_cmd_qmd, qmd, &pool->free_qmd, link)
+      nvk_cmd_qmd_destroy(pool, qmd);
+   list_inithead(&pool->free_qmd);
 }
 
 VkResult
@@ -108,6 +146,21 @@ nvk_cmd_pool_alloc_mem(struct nvk_cmd_pool *pool, bool force_gart,
    return nvk_cmd_mem_create(pool, force_gart, mem_out);
 }
 
+VkResult
+nvk_cmd_pool_alloc_qmd(struct nvk_cmd_pool *pool,
+                       struct nvk_cmd_qmd **qmd_out)
+{
+   if (!list_is_empty(&pool->free_qmd)) {
+      struct nvk_cmd_qmd *qmd =
+         list_first_entry(&pool->free_qmd, struct nvk_cmd_qmd, link);
+      list_del(&qmd->link);
+      *qmd_out = qmd;
+      return VK_SUCCESS;
+   }
+
+   return nvk_cmd_qmd_create(pool, qmd_out);
+}
+
 void
 nvk_cmd_pool_free_mem_list(struct nvk_cmd_pool *pool,
                            struct list_head *mem_list)
@@ -122,6 +175,14 @@ nvk_cmd_pool_free_gart_mem_list(struct nvk_cmd_pool *pool,
 {
    list_splicetail(mem_list, &pool->free_gart_mem);
    list_inithead(mem_list);
+}
+
+void
+nvk_cmd_pool_free_qmd_list(struct nvk_cmd_pool *pool,
+                           struct list_head *qmd_list)
+{
+   list_splicetail(qmd_list, &pool->free_qmd);
+   list_inithead(qmd_list);
 }
 
 VKAPI_ATTR void VKAPI_CALL
