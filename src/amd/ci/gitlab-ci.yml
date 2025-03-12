@@ -201,6 +201,7 @@ vkcts-tahiti-valve:
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
     B2C_TIMEOUT_BOOT_RETRIES: 0
+    RADV_PERFTEST: video_decode,video_encode
 
 vkcts-hawaii-valve:
   extends:
@@ -213,6 +214,7 @@ vkcts-hawaii-valve:
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
     B2C_TIMEOUT_BOOT_RETRIES: 0
+    RADV_PERFTEST: video_decode,video_encode
 
 vkcts-polaris10-valve:
   extends:
@@ -224,6 +226,7 @@ vkcts-polaris10-valve:
     GPU_VERSION: radv-polaris10-aco
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
+    RADV_PERFTEST: video_decode,video_encode
 
 vkcts-vega10-valve:
   extends:
