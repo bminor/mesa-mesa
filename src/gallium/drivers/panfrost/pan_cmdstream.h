@@ -157,6 +157,7 @@ panfrost_overdraw_alpha(const struct panfrost_context *ctx, bool zero)
 }
 #endif
 
+#if PAN_ARCH < 13
 static inline void
 panfrost_emit_primitive_size(struct panfrost_context *ctx, bool points,
                              uint64_t size_array,
@@ -172,6 +173,7 @@ panfrost_emit_primitive_size(struct panfrost_context *ctx, bool points,
       }
    }
 }
+#endif
 
 static inline uint8_t
 pan_draw_mode(enum mesa_prim mode)

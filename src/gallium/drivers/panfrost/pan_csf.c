@@ -1172,8 +1172,10 @@ csf_emit_draw_state(struct panfrost_batch *batch,
 
    struct mali_primitive_flags_packed primitive_flags;
    pan_pack(&primitive_flags, PRIMITIVE_FLAGS, cfg) {
+#if PAN_ARCH < 13
       if (panfrost_writes_point_size(ctx))
          cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_FP16;
+#endif
 
       cfg.allow_rotating_primitives = allow_rotating_primitives(fs, info);
 
@@ -1302,12 +1304,17 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD0), dcd_flags0.opaque[0]);
    cs_move32_to(b, cs_sr_reg32(b, IDVS, DCD1), dcd_flags1.opaque[0]);
 
+#if PAN_ARCH >= 13
+   cs_move32_to(b, cs_reg32(b, MALI_IDVS_SR_LINE_WIDTH),
+                fui(ctx->rasterizer->base.line_width));
+#else
    struct mali_primitive_size_packed primsize;
    panfrost_emit_primitive_size(ctx, info->mode == MESA_PRIM_POINTS, 0,
                                 &primsize);
    struct mali_primitive_size_packed *primsize_ptr = &primsize;
    cs_move64_to(b, cs_sr_reg64(b, IDVS, PRIMITIVE_SIZE),
                 *((uint64_t *)primsize_ptr));
+#endif
 
    struct mali_primitive_flags_packed flags_override;
    /* Pack with nodefaults so only explicitly set override fields affect the

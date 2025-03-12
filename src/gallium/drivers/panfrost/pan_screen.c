@@ -498,6 +498,10 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    /* Removed in v9 (Valhall) */
    caps->depth_clip_disable_separate = dev->arch < 9;
 
+   /* On v13+, point size cannot be set in the command stream anymore. */
+   caps->point_size_fixed = dev->arch >= 13 ? PIPE_POINT_SIZE_LOWER_USER_ONLY
+                                            : PIPE_POINT_SIZE_LOWER_NEVER;
+
    caps->max_render_targets =
    caps->fbfetch = has_mrt ? 8 : 1;
    caps->fbfetch_coherent = true;
@@ -941,6 +945,9 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
       break;
    case 12:
       panfrost_cmdstream_screen_init_v12(screen);
+      break;
+   case 13:
+      panfrost_cmdstream_screen_init_v13(screen);
       break;
    default:
       debug_printf("panfrost: Unhandled architecture major %d", dev->arch);

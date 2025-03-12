@@ -41,7 +41,7 @@ compile_args_panfrost = [
   '-Wno-pointer-arith'
 ]
 
-panfrost_versions = ['4', '5', '6', '7', '9', '10', '12']
+panfrost_versions = ['4', '5', '6', '7', '9', '10', '12', '13']
 libpanfrost_versions = []
 
 foreach ver : panfrost_versions
@@ -53,7 +53,7 @@ foreach ver : panfrost_versions
   ]
   if ver in ['4', '5', '6', '7', '9']
     files_panfrost_vx += ['pan_jm.c']
-  elif ver in ['10', '12']
+  elif ver in ['10', '12', '13']
     files_panfrost_vx += ['pan_csf.c']
   endif
   libpanfrost_versions += static_library(

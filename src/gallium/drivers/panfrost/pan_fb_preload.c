@@ -1271,7 +1271,7 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
       enum pipe_format fmt = fb->zs.view.zs
                                 ? fb->zs.view.zs->planes[0]->layout.format
                                 : fb->zs.view.s->planes[0]->layout.format;
-      bool always = false;
+      UNUSED bool always = false;
 
       /* If we're dealing with a combined ZS resource and only one
        * component is cleared, we need to reload the whole surface
@@ -1282,19 +1282,29 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
           fb->zs.clear.z != fb->zs.clear.s)
          always = true;
 
-      /* We could use INTERSECT on Bifrost v7 too, but
+      /* We could use INTERSECT on Bifrost v7-v12 too, but
        * EARLY_ZS_ALWAYS has the advantage of reloading the ZS tile
        * buffer one or more tiles ahead, making ZS data immediately
        * available for any ZS tests taking place in other shaders.
        * Thing's haven't been benchmarked to determine what's
        * preferable (saving bandwidth vs having ZS preloaded
        * earlier), so let's leave it like that for now.
+       *
+       * On v13+, we don't have EARLY_ZS_ALWAYS instead we use
+       * PREPASS_ALWAYS / PREPASS_INTERSECT.
        */
+#if PAN_ARCH >= 13
       fb->bifrost.pre_post.modes[dcd_idx] =
-         PAN_ARCH > 6
-            ? MALI_PRE_POST_FRAME_SHADER_MODE_EARLY_ZS_ALWAYS
-         : always ? MALI_PRE_POST_FRAME_SHADER_MODE_ALWAYS
-                  : MALI_PRE_POST_FRAME_SHADER_MODE_INTERSECT;
+         always ? MALI_PRE_POST_FRAME_SHADER_MODE_PREPASS_ALWAYS
+                : MALI_PRE_POST_FRAME_SHADER_MODE_PREPASS_INTERSECT;
+#elif PAN_ARCH >= 7 && PAN_ARCH <= 12
+      fb->bifrost.pre_post.modes[dcd_idx] =
+         MALI_PRE_POST_FRAME_SHADER_MODE_EARLY_ZS_ALWAYS;
+#else
+      fb->bifrost.pre_post.modes[dcd_idx] =
+         always ? MALI_PRE_POST_FRAME_SHADER_MODE_ALWAYS
+                : MALI_PRE_POST_FRAME_SHADER_MODE_INTERSECT;
+#endif
    } else {
       fb->bifrost.pre_post.modes[dcd_idx] =
          always_write ? MALI_PRE_POST_FRAME_SHADER_MODE_ALWAYS

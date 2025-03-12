@@ -64,7 +64,7 @@
  * functions. */
 #if PAN_ARCH <= 9
 #define JOBX(__suffix) GENX(jm_##__suffix)
-#elif PAN_ARCH <= 12
+#elif PAN_ARCH <= 13
 #define JOBX(__suffix) GENX(csf_##__suffix)
 #else
 #error "Unsupported arch"
