@@ -565,7 +565,8 @@ pan_kmod_bo_export(struct pan_kmod_bo *bo)
 {
    int fd;
 
-   if (drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC, &fd)) {
+   if (drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR,
+                          &fd)) {
       mesa_loge("drmPrimeHandleToFD() failed (err=%d)", errno);
       return -1;
    }
