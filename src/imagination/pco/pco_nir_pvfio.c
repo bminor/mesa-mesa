@@ -960,6 +960,30 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
 static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
 {
    bool has_depth_feedback = !!state->depth_feedback_src;
+   if (b->shader->info.writes_memory && !has_depth_feedback) {
+      nir_variable *var_pos = nir_get_variable_with_location(b->shader,
+                                                             nir_var_shader_in,
+                                                             VARYING_SLOT_POS,
+                                                             glsl_vec4_type());
+      var_pos->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+
+      b->cursor = nir_before_block(
+         nir_start_block(nir_shader_get_entrypoint(b->shader)));
+
+      state->depth_feedback_src =
+         nir_load_input(b,
+                        1,
+                        32,
+                        nir_imm_int(b, 0),
+                        .component = 2,
+                        .dest_type = nir_type_float32,
+                        .io_semantics = (nir_io_semantics){
+                           .location = VARYING_SLOT_POS,
+                           .num_slots = 1,
+                        });
+
+      has_depth_feedback = true;
+   }
 
    if (!has_depth_feedback && !state->has_discards)
       return false;
@@ -980,7 +1004,7 @@ static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
       b,
       state->has_discards ? nir_i2b(b, nir_load_reg(b, state->discard_cond_reg))
                           : undef,
-      state->depth_feedback_src ? state->depth_feedback_src : undef);
+      has_depth_feedback ? state->depth_feedback_src : undef);
 
    state->fs->uses.discard = state->has_discards;
    state->fs->uses.depth_feedback = has_depth_feedback;
@@ -1003,6 +1027,58 @@ static bool sink_outputs(nir_shader *shader, struct pfo_state *state)
    }
 
    return progress;
+}
+
+static bool z_replicate(nir_shader *shader, struct pfo_state *state)
+{
+   if (shader->info.internal || state->fs->z_replicate == ~0u)
+      return false;
+
+   assert(!nir_find_variable_with_location(shader,
+                                           nir_var_shader_out,
+                                           state->fs->z_replicate));
+
+   nir_create_variable_with_location(shader,
+                                     nir_var_shader_out,
+                                     state->fs->z_replicate,
+                                     glsl_float_type());
+
+   if (!state->depth_feedback_src) {
+      nir_variable *var_pos = nir_get_variable_with_location(shader,
+                                                             nir_var_shader_in,
+                                                             VARYING_SLOT_POS,
+                                                             glsl_vec4_type());
+      var_pos->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+
+      nir_builder b = nir_builder_at(
+         nir_before_block(nir_start_block(nir_shader_get_entrypoint(shader))));
+
+      state->depth_feedback_src =
+         nir_load_input(&b,
+                        1,
+                        32,
+                        nir_imm_int(&b, 0),
+                        .component = 2,
+                        .dest_type = nir_type_float32,
+                        .io_semantics = (nir_io_semantics){
+                           .location = VARYING_SLOT_POS,
+                           .num_slots = 1,
+                        });
+   }
+
+   nir_builder b = nir_builder_at(
+      nir_after_block(nir_impl_last_block(nir_shader_get_entrypoint(shader))));
+   nir_store_output(&b,
+                    state->depth_feedback_src,
+                    nir_imm_int(&b, 0),
+                    .write_mask = 1,
+                    .src_type = nir_type_invalid | 32,
+                    .io_semantics = (nir_io_semantics){
+                       .location = state->fs->z_replicate,
+                       .num_slots = 1,
+                    });
+
+   return true;
 }
 
 /**
@@ -1029,12 +1105,13 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
    util_dynarray_init(&state.loads, NULL);
    util_dynarray_init(&state.stores, NULL);
 
-   bool progress =
-      nir_shader_lower_instructions(shader, is_pfo, lower_pfo, &state);
+   bool progress = false;
 
+   progress |= nir_shader_lower_instructions(shader, is_pfo, lower_pfo, &state);
    progress |= lower_isp_fb(&b, &state);
 
    progress |= sink_outputs(shader, &state);
+   progress |= z_replicate(shader, &state);
 
    util_dynarray_fini(&state.stores);
    util_dynarray_fini(&state.loads);

@@ -1804,7 +1804,8 @@ pvr_init_fs_outputs(pco_data *data,
                     const struct pvr_render_subpass *const subpass,
                     const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
-   for (unsigned u = 0; u < subpass->color_count; ++u) {
+   unsigned u;
+   for (u = 0; u < subpass->color_count; ++u) {
       unsigned idx = subpass->color_attachments[u];
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
@@ -1814,7 +1815,12 @@ pvr_init_fs_outputs(pco_data *data,
       data->fs.output_formats[location] = vk_format_to_pipe_format(vk_format);
    }
 
-   /* TODO: z-replicate. */
+   data->fs.z_replicate = ~0u;
+   if (hw_subpass->z_replicate >= 0) {
+      gl_frag_result location = FRAG_RESULT_DATA0 + u;
+      data->fs.output_formats[location] = PIPE_FORMAT_R32_FLOAT;
+      data->fs.z_replicate = location;
+   }
 }
 
 static void
@@ -1825,7 +1831,8 @@ pvr_setup_fs_outputs(pco_data *data,
 {
    uint64_t outputs_written = nir->info.outputs_written;
 
-   for (unsigned u = 0; u < subpass->color_count; ++u) {
+   unsigned u;
+   for (u = 0; u < subpass->color_count; ++u) {
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
       unsigned idx = subpass->color_attachments[u];
       const struct usc_mrt_resource *mrt_resource;
@@ -1840,10 +1847,10 @@ pvr_setup_fs_outputs(pco_data *data,
          continue;
 
       mrt_resource = &hw_subpass->setup.mrt_resources[u];
-      output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
-      assert(output_reg);
       /* TODO: tile buffer support. */
+      output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+      assert(output_reg);
 
       set_var(data->fs.outputs,
               mrt_resource->reg.output_reg,
@@ -1854,7 +1861,29 @@ pvr_setup_fs_outputs(pco_data *data,
       outputs_written &= ~BITFIELD64_BIT(location);
    }
 
-   /* TODO: z-replicate. */
+   if (hw_subpass->z_replicate >= 0) {
+      const struct usc_mrt_resource *mrt_resource =
+         &hw_subpass->setup.mrt_resources[hw_subpass->z_replicate];
+      gl_frag_result location = FRAG_RESULT_DATA0 + u;
+      ASSERTED bool output_reg;
+      nir_variable *var;
+
+      var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
+      if (var) {
+         /* TODO: tile buffer support. */
+         output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+         assert(output_reg);
+
+         set_var(data->fs.outputs,
+                 mrt_resource->reg.output_reg,
+                 var,
+                 DIV_ROUND_UP(mrt_resource->intermediate_size,
+                              sizeof(uint32_t)));
+         data->fs.output_reg[location] = output_reg;
+
+         outputs_written &= ~BITFIELD64_BIT(location);
+      }
+   }
 
    assert(!outputs_written);
 }
@@ -1875,11 +1904,12 @@ static void pvr_init_fs_input_attachments(
       if (!onchip)
          continue;
 
-      /* TODO: z-replicate. */
-      assert(hw_subpass->input_access[u].type !=
-             PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_ONCHIP_ZREPLICATE);
-
       VkFormat vk_format = pass->attachments[idx].vk_format;
+      if (hw_subpass->input_access[u].type ==
+          PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_ONCHIP_ZREPLICATE) {
+         vk_format = VK_FORMAT_R32_SFLOAT;
+      }
+
       data->fs.ia_formats[u] = vk_format_to_pipe_format(vk_format);
 
       unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;

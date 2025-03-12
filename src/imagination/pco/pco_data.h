@@ -80,6 +80,8 @@ typedef struct _pco_fs_data {
    /** On-chip input attachment formats. */
    enum pipe_format ia_formats[4];
 
+   gl_frag_result z_replicate;
+
    /* Blend options. */
    nir_lower_blend_options blend_opts;
    pco_range blend_consts;
