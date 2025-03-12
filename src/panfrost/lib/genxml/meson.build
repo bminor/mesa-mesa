@@ -20,7 +20,7 @@ idep_pan_packers = declare_dependency(
 
 libpanfrost_decode_per_arch = []
 
-foreach ver : ['4', '5', '6', '7', '9', '10', '12']
+foreach ver : ['4', '5', '6', '7', '9', '10', '12', '13']
   libpanfrost_decode_per_arch += static_library(
     'pandecode-arch-v' + ver,
     ['decode.c', 'decode_jm.c', 'decode_csf.c', pan_packers],

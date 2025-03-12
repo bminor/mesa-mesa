@@ -186,6 +186,62 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
    }
 #endif
 
+#if PAN_ARCH >= 13
+   case MALI_CS_OPCODE_ARITH_IMM32: {
+      cs_unpack(instr, CS_ARITH_IMM32_BASE, I);
+
+      const char *instr_name[] = {
+         "ADD_IMM32", "LSHIFT_IMM32", "RSHIFT_IMM_U32", "RSHIFT_IMM_S32",
+         "BFEXT_U32", "BFEXT_S32",    "BFINS_IMM32",    "UMIN_IMM32",
+      };
+
+      fprintf(fp, "%s r%u, r%u, #%d", instr_name[I.sub_opcode], I.destination,
+              I.source, I.immediate);
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_IMM64: {
+      cs_unpack(instr, CS_ARITH_IMM64_BASE, I);
+
+      const char *instr_name[] = {
+         "ADD_IMM64", "LSHIFT_IMM64", "RSHIFT_IMM_U64", "RSHIFT_IMM_S64",
+         "BFEXT_U64", "BFEXT_S64",    "BFINS_IMM64",    "UMIN_IMM64",
+      };
+
+      fprintf(fp, "%s d%u, d%u, #%d", instr_name[I.sub_opcode], I.destination,
+              I.source, I.immediate);
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_REG32: {
+      cs_unpack(instr, CS_ARITH_REG32_BASE, I);
+
+      const char *instr_name[] = {
+         "UMIN32",     "ADD32",      "SUB32",   "LSHIFT32",
+         "RSHIFT_U32", "RSHIFT_S32", "BFINS32",
+      };
+
+      fprintf(fp, "%s r%u, r%u, r%u", instr_name[I.sub_opcode], I.destination,
+              I.source_1, I.source_0);
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_REG64: {
+      cs_unpack(instr, CS_ARITH_REG64_BASE, I);
+
+      const char *instr_name[] = {
+         "UMIN64",     "ADD64",      "SUB64",   "LSHIFT64",
+         "RSHIFT_U64", "RSHIFT_S64", "BFINS64",
+      };
+
+      fprintf(fp, "%s d%u, d%u, d%u", instr_name[I.sub_opcode], I.destination,
+              I.source_1, I.source_0);
+
+      break;
+   }
+#endif
+
 #if PAN_ARCH >= 11
    case MALI_CS_OPCODE_LOGIC_OP32: {
       cs_unpack(instr, CS_LOGIC_OP32, I);
@@ -868,8 +924,13 @@ pandecode_run_idvs2(struct pandecode_context *ctx, FILE *fp,
    DUMP_CL(ctx, DCD_FLAGS_1, &qctx->regs[MALI_IDVS_SR_DCD1], "DCD Flags 1\n");
    DUMP_CL(ctx, DCD_FLAGS_2, &qctx->regs[MALI_IDVS_SR_DCD2], "DCD Flags 2\n");
 
+#if PAN_ARCH >= 13
+   float line_width = cs_get_u32(qctx, MALI_IDVS_SR_LINE_WIDTH);
+   pandecode_log(ctx, "Line width: %f\n", line_width);
+#else
    DUMP_CL(ctx, PRIMITIVE_SIZE, &qctx->regs[MALI_IDVS_SR_PRIMITIVE_SIZE],
            "Primitive size\n");
+#endif
 
    DUMP_CL(ctx, PRIMITIVE_FLAGS_2, &qctx->regs[MALI_IDVS_SR_TILER_FLAGS2],
            "Tiler flags 2\n");
@@ -1274,6 +1335,219 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       break;
    }
 #endif
+
+#if PAN_ARCH >= 13
+   case MALI_CS_OPCODE_ARITH_IMM32: {
+      cs_unpack(bytes, CS_ARITH_IMM32_BASE, I);
+
+      uint32_t *dest = &qctx->regs[I.destination];
+      uint32_t source = qctx->regs[I.source];
+      uint32_t imm = I.immediate;
+      uint8_t bf_position = imm & 0xff;
+      uint8_t bf_width = (imm >> 8) & 0xff;
+      uint16_t bf_imm = (imm >> 16) & 0xffff;
+
+      switch (I.sub_opcode) {
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_ADD_IMM32: {
+         *dest = source + imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_LSHIFT_IMM32: {
+         *dest = source << imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_RSHIFT_IMM_U32: {
+         *dest = source >> imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_RSHIFT_IMM_S32: {
+         *dest = (int32_t)source >> imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFEXT_U32: {
+         uint32_t mask = (1 << bf_width) - 1;
+         *dest = (source >> bf_position) & mask;
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFEXT_S32: {
+         uint32_t mask = (1 << bf_width) - 1;
+         uint32_t tmp = (source >> bf_position) & mask;
+         *dest = util_sign_extend(tmp, bf_width);
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFINS_IMM32: {
+         uint32_t mask0 = (1 << bf_width) - 1;
+         uint32_t mask1 = mask0 << bf_position;
+         uint32_t tmp = bf_imm << bf_position;
+         *dest = (tmp & mask1) | (source & ~mask1);
+         break;
+      }
+      case MALI_CS_ARITH_IMM32_SUB_OPCODE_UMIN_IMM32: {
+         *dest = MIN2(source, imm);
+         break;
+      }
+      default:
+         assert(0 && "unhandled ARITH_IMM32 subopcode");
+      }
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_REG32: {
+      cs_unpack(bytes, CS_ARITH_REG32_BASE, I);
+
+      uint32_t *dest = &qctx->regs[I.destination];
+      uint32_t source_0 = qctx->regs[I.source_0];
+      uint32_t source_1 = qctx->regs[I.source_1];
+
+      switch (I.sub_opcode) {
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_UMIN32: {
+         *dest = MIN2(source_0, source_1);
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_ADD32: {
+         *dest = source_0 + source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_SUB32: {
+         *dest = source_0 - source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_LSHIFT32: {
+         *dest = source_0 << source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_RSHIFT_U32: {
+         *dest = source_0 >> source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_RSHIFT_S32: {
+         *dest = (int32_t)source_0 >> source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG32_SUB_OPCODE_BFINS32: {
+         uint8_t bf_position = I.immediate & 0xff;
+         uint8_t bf_width = (I.immediate >> 8) & 0xff;
+         uint32_t mask0 = (1 << bf_width) - 1;
+         uint32_t mask1 = mask0 << bf_position;
+         uint32_t tmp = source_1 << bf_position;
+         *dest = (tmp & mask1) | (source_0 & ~mask1);
+         break;
+      }
+      default:
+         assert(0 && "unhandled ARITH_REG32 subopcode");
+      }
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_IMM64: {
+      cs_unpack(bytes, CS_ARITH_IMM64_BASE, I);
+
+      uint64_t *dest = (uint64_t *)&qctx->regs[I.destination];
+      uint64_t source =
+         ((uint64_t)qctx->regs[I.source + 1] << 32) | qctx->regs[I.source];
+      uint64_t imm = I.immediate;
+      uint8_t bf_position = imm & 0xff;
+      uint8_t bf_width = (imm >> 8) & 0xff;
+      uint16_t bf_imm = (imm >> 16) & 0xffff;
+
+      switch (I.sub_opcode) {
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_ADD_IMM64: {
+         *dest = source + imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_LSHIFT_IMM64: {
+         *dest = source << imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_RSHIFT_IMM_U64: {
+         *dest = source >> imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_RSHIFT_IMM_S64: {
+         *dest = (int64_t)source >> imm;
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFEXT_U64: {
+         uint64_t mask = (1 << bf_width) - 1;
+         *dest = (source >> bf_position) & mask;
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFEXT_S64: {
+         uint64_t mask = (1 << bf_width) - 1;
+         uint64_t tmp = (source >> bf_position) & mask;
+         *dest = util_sign_extend(tmp, bf_width);
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFINS_IMM64: {
+         uint64_t mask0 = (1 << bf_width) - 1;
+         uint64_t mask1 = mask0 << bf_position;
+         uint64_t tmp = bf_imm << bf_position;
+         *dest = (tmp & mask1) | (source & ~mask1);
+         break;
+      }
+      case MALI_CS_ARITH_IMM64_SUB_OPCODE_UMIN_IMM64: {
+         *dest = MIN2(source, imm);
+         break;
+      }
+      default:
+         assert(0 && "unhandled ARITH_IMM64 subopcode");
+      }
+
+      break;
+   }
+
+   case MALI_CS_OPCODE_ARITH_REG64: {
+      cs_unpack(bytes, CS_ARITH_REG64_BASE, I);
+
+      uint64_t *dest = (uint64_t *)&qctx->regs[I.destination];
+      uint64_t source_0 =
+         ((uint64_t)qctx->regs[I.source_0 + 1] << 32) | qctx->regs[I.source_0];
+      uint64_t source_1 =
+         ((uint64_t)qctx->regs[I.source_1 + 1] << 32) | qctx->regs[I.source_1];
+
+      switch (I.sub_opcode) {
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_UMIN64: {
+         *dest = MIN2(source_0, source_1);
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_ADD64: {
+         *dest = source_0 + source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_SUB64: {
+         *dest = source_0 - source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_LSHIFT64: {
+         *dest = source_0 << source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_RSHIFT_U64: {
+         *dest = source_0 >> source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_RSHIFT_S64: {
+         *dest = (int64_t)source_0 >> source_1;
+         break;
+      }
+      case MALI_CS_ARITH_REG64_SUB_OPCODE_BFINS64: {
+         uint8_t bf_position = I.immediate & 0xff;
+         uint8_t bf_width = (I.immediate >> 8) & 0xff;
+         uint64_t mask0 = (1 << bf_width) - 1;
+         uint64_t mask1 = mask0 << bf_position;
+         uint64_t tmp = source_1 << bf_position;
+         *dest = (tmp & mask1) | (source_0 & ~mask1);
+         break;
+      }
+      default:
+         assert(0 && "unhandled ARITH_REG64 subopcode");
+      }
+
+      break;
+   }
+#else
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
       cs_unpack(bytes, CS_ADD_IMM32, I);
 
@@ -1292,6 +1566,7 @@ interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       qctx->regs[I.destination + 1] = value >> 32;
       break;
    }
+#endif
 
    case MALI_CS_OPCODE_CALL: {
       cs_unpack(bytes, CS_CALL, I);
@@ -1534,6 +1809,215 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
          }
 #endif
 
+#if PAN_ARCH >= 13
+         case MALI_CS_OPCODE_ARITH_IMM32: {
+            cs_unpack(instr, CS_ARITH_IMM32_BASE, I);
+
+            uint32_t *dest = &reg_file.u32[I.destination];
+            uint32_t source = reg_file.u32[I.source];
+            uint32_t imm = I.immediate;
+            uint8_t bf_position = imm & 0xff;
+            uint8_t bf_width = (imm >> 8) & 0xff;
+            uint16_t bf_imm = (imm >> 16) & 0xffff;
+
+            switch (I.sub_opcode) {
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_ADD_IMM32: {
+               *dest = source + imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_LSHIFT_IMM32: {
+               *dest = source << imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_RSHIFT_IMM_U32: {
+               *dest = source >> imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_RSHIFT_IMM_S32: {
+               *dest = (int32_t)source >> imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFEXT_U32: {
+               uint32_t mask = (1 << bf_width) - 1;
+               *dest = (source >> bf_position) & mask;
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFEXT_S32: {
+               uint32_t mask = (1 << bf_width) - 1;
+               uint32_t tmp = (source >> bf_position) & mask;
+               *dest = util_sign_extend(tmp, bf_width);
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_BFINS_IMM32: {
+               uint32_t mask0 = (1 << bf_width) - 1;
+               uint32_t mask1 = mask0 << bf_position;
+               uint32_t tmp = bf_imm << bf_position;
+               *dest = (tmp & mask1) | (source & ~mask1);
+               break;
+            }
+            case MALI_CS_ARITH_IMM32_SUB_OPCODE_UMIN_IMM32: {
+               *dest = MIN2(source, imm);
+               break;
+            }
+            default:
+               assert(0 && "unhandled ARITH_IMM32 subopcode");
+            }
+
+            break;
+         }
+
+         case MALI_CS_OPCODE_ARITH_REG32: {
+            cs_unpack(instr, CS_ARITH_REG32_BASE, I);
+
+            uint32_t *dest = &reg_file.u32[I.destination];
+            uint32_t source_0 = reg_file.u32[I.source_0];
+            uint32_t source_1 = reg_file.u32[I.source_1];
+
+            switch (I.sub_opcode) {
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_UMIN32: {
+               *dest = MIN2(source_0, source_1);
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_ADD32: {
+               *dest = source_0 + source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_SUB32: {
+               *dest = source_0 - source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_LSHIFT32: {
+               *dest = source_0 << source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_RSHIFT_U32: {
+               *dest = source_0 >> source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_RSHIFT_S32: {
+               *dest = (int32_t)source_0 >> source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG32_SUB_OPCODE_BFINS32: {
+               uint8_t bf_position = I.immediate & 0xff;
+               uint8_t bf_width = (I.immediate >> 8) & 0xff;
+               uint32_t mask0 = (1 << bf_width) - 1;
+               uint32_t mask1 = mask0 << bf_position;
+               uint32_t tmp = source_1 << bf_position;
+               *dest = (tmp & mask1) | (source_0 & ~mask1);
+               break;
+            }
+            default:
+               assert(0 && "unhandled ARITH_REG32 subopcode");
+            }
+
+            break;
+         }
+
+         case MALI_CS_OPCODE_ARITH_IMM64: {
+            cs_unpack(instr, CS_ARITH_IMM64_BASE, I);
+
+            uint64_t *dest = &reg_file.u64[I.destination / 2];
+            uint64_t source = reg_file.u64[I.source / 2];
+            uint64_t imm = I.immediate;
+            uint8_t bf_position = imm & 0xff;
+            uint8_t bf_width = (imm >> 8) & 0xff;
+            uint16_t bf_imm = (imm >> 16) & 0xffff;
+
+            switch (I.sub_opcode) {
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_ADD_IMM64: {
+               *dest = source + imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_LSHIFT_IMM64: {
+               *dest = source << imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_RSHIFT_IMM_U64: {
+               *dest = source >> imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_RSHIFT_IMM_S64: {
+               *dest = (int64_t)source >> imm;
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFEXT_U64: {
+               uint64_t mask = (1 << bf_width) - 1;
+               *dest = (source >> bf_position) & mask;
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFEXT_S64: {
+               uint64_t mask = (1 << bf_width) - 1;
+               uint64_t tmp = (source >> bf_position) & mask;
+               *dest = util_sign_extend(tmp, bf_width);
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_BFINS_IMM64: {
+               uint64_t mask0 = (1 << bf_width) - 1;
+               uint64_t mask1 = mask0 << bf_position;
+               uint64_t tmp = bf_imm << bf_position;
+               *dest = (tmp & mask1) | (source & ~mask1);
+               break;
+            }
+            case MALI_CS_ARITH_IMM64_SUB_OPCODE_UMIN_IMM64: {
+               *dest = MIN2(source, imm);
+               break;
+            }
+            default:
+               assert(0 && "unhandled ARITH_IMM64 subopcode");
+            }
+
+            break;
+         }
+
+         case MALI_CS_OPCODE_ARITH_REG64: {
+            cs_unpack(instr, CS_ARITH_REG64_BASE, I);
+
+            uint64_t *dest = &reg_file.u64[I.destination];
+            uint64_t source_0 = reg_file.u64[I.source_0 / 2];
+            uint64_t source_1 = reg_file.u64[I.source_1 / 2];
+
+            switch (I.sub_opcode) {
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_UMIN64: {
+               *dest = MIN2(source_0, source_1);
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_ADD64: {
+               *dest = source_0 + source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_SUB64: {
+               *dest = source_0 - source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_LSHIFT64: {
+               *dest = source_0 << source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_RSHIFT_U64: {
+               *dest = source_0 >> source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_RSHIFT_S64: {
+               *dest = (int64_t)source_0 >> source_1;
+               break;
+            }
+            case MALI_CS_ARITH_REG64_SUB_OPCODE_BFINS64: {
+               uint8_t bf_position = I.immediate & 0xff;
+               uint8_t bf_width = (I.immediate >> 8) & 0xff;
+               uint64_t mask0 = (1 << bf_width) - 1;
+               uint64_t mask1 = mask0 << bf_position;
+               uint64_t tmp = source_1 << bf_position;
+               *dest = (tmp & mask1) | (source_0 & ~mask1);
+               break;
+            }
+            default:
+               assert(0 && "unhandled ARITH_REG64 subopcode");
+            }
+
+            break;
+         }
+#else
          case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
             cs_unpack(instr, CS_ADD_IMM32, I);
             reg_file.u32[I.destination] = reg_file.u32[I.source] + I.immediate;
@@ -1559,6 +2043,7 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
                MIN2(reg_file.u32[I.source_1], reg_file.u32[I.source_0]);
             break;
          }
+#endif
 
          default:
             break;
@@ -1608,6 +2093,54 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
          break;
       }
 
+#if PAN_ARCH >= 13
+      case MALI_CS_OPCODE_ARITH_IMM32: {
+         cs_unpack(instr, CS_ARITH_IMM32_BASE, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_ARITH_IMM64: {
+         cs_unpack(instr, CS_ARITH_IMM64_BASE, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         if (BITSET_TEST(track_map, I.destination + 1)) {
+            BITSET_SET(track_map, I.source + 1);
+            BITSET_CLEAR(track_map, I.destination + 1);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_ARITH_REG32: {
+         cs_unpack(instr, CS_ARITH_REG32_BASE, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source_1);
+            BITSET_SET(track_map, I.source_0);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_ARITH_REG64: {
+         cs_unpack(instr, CS_ARITH_REG64_BASE, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source_1);
+            BITSET_SET(track_map, I.source_0);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         if (BITSET_TEST(track_map, I.destination + 1)) {
+            BITSET_SET(track_map, I.source_1 + 1);
+            BITSET_SET(track_map, I.source_0 + 1);
+            BITSET_CLEAR(track_map, I.destination + 1);
+         }
+         break;
+      }
+#else
       case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
          cs_unpack(instr, CS_ADD_IMM32, I);
          if (BITSET_TEST(track_map, I.destination)) {
@@ -1639,6 +2172,7 @@ collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
          }
          break;
       }
+#endif
 
       case MALI_CS_OPCODE_LOAD_MULTIPLE: {
          cs_unpack(instr, CS_LOAD_MULTIPLE, I);

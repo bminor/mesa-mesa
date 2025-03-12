@@ -69,6 +69,8 @@ extern const struct pan_blendable_format
    panfrost_blendable_formats_v10[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
    panfrost_blendable_formats_v12[PIPE_FORMAT_COUNT];
+extern const struct pan_blendable_format
+   panfrost_blendable_formats_v13[PIPE_FORMAT_COUNT];
 
 static inline const struct pan_blendable_format *
 panfrost_blendable_format_table(unsigned arch)
@@ -95,6 +97,7 @@ extern const struct panfrost_format panfrost_pipe_format_v7[PIPE_FORMAT_COUNT];
 extern const struct panfrost_format panfrost_pipe_format_v9[PIPE_FORMAT_COUNT];
 extern const struct panfrost_format panfrost_pipe_format_v10[PIPE_FORMAT_COUNT];
 extern const struct panfrost_format panfrost_pipe_format_v12[PIPE_FORMAT_COUNT];
+extern const struct panfrost_format panfrost_pipe_format_v13[PIPE_FORMAT_COUNT];
 
 static inline const struct panfrost_format *
 panfrost_format_table(unsigned arch)
