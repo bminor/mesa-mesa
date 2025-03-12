@@ -294,7 +294,7 @@
         "description": "nir/serialize: fix decoding of is_return and is_uniform",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3321a56d1de4359c6ca76f619e5c97c37c81d342",
         "notes": null
