@@ -36,7 +36,7 @@
  * Helpers for encoding SURFACE_STATE and XY_BLOCK_COPY_BLT commands.
  */
 
-UNUSED static const uint8_t
+UNUSED static uint8_t
 isl_encode_halign(uint8_t halign)
 {
    switch (halign) {
@@ -57,7 +57,7 @@ isl_encode_halign(uint8_t halign)
    }
 }
 
-UNUSED static const uint8_t
+UNUSED static uint8_t
 isl_encode_valign(uint8_t valign)
 {
    switch (valign) {
