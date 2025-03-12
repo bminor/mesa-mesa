@@ -63,21 +63,6 @@ static const uint32_t ploc_spv[] = {
 #include "bvh/ploc_internal.spv.h"
 };
 
-VkDeviceAddress
-vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_struct)
-{
-   VkBufferDeviceAddressInfo info = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-      .buffer = accel_struct->buffer,
-   };
-
-   VkDeviceAddress base_addr = accel_struct->base.device->dispatch_table.GetBufferDeviceAddress(
-      vk_device_to_handle(accel_struct->base.device), &info);
-
-   return base_addr + accel_struct->offset;
-}
-
-
 VKAPI_ATTR VkResult VKAPI_CALL
 vk_common_CreateAccelerationStructureKHR(VkDevice _device,
                                          const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
@@ -85,6 +70,7 @@ vk_common_CreateAccelerationStructureKHR(VkDevice _device,
                                          VkAccelerationStructureKHR *pAccelerationStructure)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
+   VK_FROM_HANDLE(vk_buffer, buffer, pCreateInfo->buffer);
 
    struct vk_acceleration_structure *accel_struct = vk_object_alloc(
       device, pAllocator, sizeof(struct vk_acceleration_structure),
@@ -93,7 +79,7 @@ vk_common_CreateAccelerationStructureKHR(VkDevice _device,
    if (!accel_struct)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   accel_struct->buffer = pCreateInfo->buffer;
+   accel_struct->buffer = buffer;
    accel_struct->offset = pCreateInfo->offset;
    accel_struct->size = pCreateInfo->size;
 
@@ -1376,4 +1362,3 @@ vk_common_CopyAccelerationStructureToMemoryKHR(VkDevice _device,
    unreachable("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
-

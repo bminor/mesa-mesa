@@ -4446,9 +4446,12 @@ handle_copy_acceleration_structure(struct vk_cmd_queue_entry *cmd, struct render
 
    struct pipe_box box = { 0 };
    u_box_1d(src->offset, MIN2(src->size, dst->size), &box);
-   state->pctx->resource_copy_region(state->pctx, lvp_buffer_from_handle(dst->buffer)->bo, 0,
+   state->pctx->resource_copy_region(state->pctx,
+                                     lvp_buffer_from_handle(
+                                        vk_buffer_to_handle(dst->buffer))->bo, 0,
                                      dst->offset, 0, 0,
-                                     lvp_buffer_from_handle(src->buffer)->bo, 0, &box);
+                                     lvp_buffer_from_handle(
+                                        vk_buffer_to_handle(src->buffer))->bo, 0, &box);
 }
 
 static void

@@ -532,7 +532,8 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
          geometry_infos[i].primitive_count = build_range_infos[i].primitiveCount;
       }
 
-      radv_CmdUpdateBuffer(commandBuffer, dst->buffer, dst->offset + layout.geometry_info_offset, geometry_infos_size,
+      radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer),
+                           dst->offset + layout.geometry_info_offset, geometry_infos_size,
                            geometry_infos);
 
       free(geometry_infos);
@@ -815,7 +816,7 @@ radv_CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopy
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                                                          VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
-   radv_CmdDispatchIndirect(commandBuffer, src->buffer,
+   radv_CmdDispatchIndirect(commandBuffer, vk_buffer_to_handle(src->buffer),
                             src->offset + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
 
    radv_meta_restore(&saved_state, cmd_buffer);
@@ -904,7 +905,7 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                                                          VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
-   radv_CmdDispatchIndirect(commandBuffer, src->buffer,
+   radv_CmdDispatchIndirect(commandBuffer, vk_buffer_to_handle(src->buffer),
                             src->offset + offsetof(struct radv_accel_struct_header, copy_dispatch_size));
 
    radv_meta_restore(&saved_state, cmd_buffer);

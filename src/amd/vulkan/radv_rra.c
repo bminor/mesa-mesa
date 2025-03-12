@@ -1182,7 +1182,7 @@ rra_map_accel_struct_data(struct rra_copy_context *ctx, uint32_t i)
 
    VkCopyBufferInfo2 copy_info = {
       .sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-      .srcBuffer = accel_struct->buffer,
+      .srcBuffer = vk_buffer_to_handle(accel_struct->buffer),
       .dstBuffer = ctx->buffer,
       .regionCount = 1,
       .pRegions = &copy,

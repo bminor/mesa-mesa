@@ -236,7 +236,7 @@ handle_accel_struct_write(VkCommandBuffer commandBuffer, VkAccelerationStructure
 
    VkCopyBufferInfo2 copyInfo = {
       .sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-      .srcBuffer = accel_struct->buffer,
+      .srcBuffer = vk_buffer_to_handle(accel_struct->buffer),
       .dstBuffer = data->buffer->buffer,
       .regionCount = 1,
       .pRegions = &region,

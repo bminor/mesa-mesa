@@ -757,7 +757,7 @@ genX(CmdCopyAccelerationStructureKHR)(
    }
 
    anv_genX(cmd_buffer->device->info, CmdDispatchIndirect)(
-      commandBuffer, src->buffer,
+      commandBuffer, vk_buffer_to_handle(src->buffer),
       src->offset + offsetof(struct anv_accel_struct_header,
                              copy_dispatch_size));
 
@@ -828,7 +828,7 @@ genX(CmdCopyAccelerationStructureToMemoryKHR)(
    }
 
    anv_genX(device->info, CmdDispatchIndirect)(
-      commandBuffer, src->buffer,
+      commandBuffer, vk_buffer_to_handle(src->buffer),
       src->offset + offsetof(struct anv_accel_struct_header,
                              copy_dispatch_size));
 

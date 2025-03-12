@@ -25,6 +25,7 @@
 #ifndef VK_ACCELERATION_STRUCTURE_H
 #define VK_ACCELERATION_STRUCTURE_H
 
+#include "vk_buffer.h"
 #include "vk_object.h"
 #include "radix_sort/radix_sort_vk.h"
 
@@ -47,12 +48,18 @@ enum vk_acceleration_structure_build_step {
 struct vk_acceleration_structure {
    struct vk_object_base base;
 
-   VkBuffer buffer;
+   struct vk_buffer *buffer;
+
    uint64_t offset;
    uint64_t size;
 };
 
-VkDeviceAddress vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_struct);
+static inline VkDeviceAddress
+vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_struct)
+{
+   assert(accel_struct->buffer != NULL);
+   return vk_buffer_address(accel_struct->buffer, accel_struct->offset);
+}
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(vk_acceleration_structure, base, VkAccelerationStructureKHR,
                                VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR)
