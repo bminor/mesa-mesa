@@ -58,6 +58,9 @@ panvk_catch_indirect_alloc_failure(VkResult error)
       case 12:                                                                 \
          panvk_arch_name(name, v12)(__VA_ARGS__);                              \
          break;                                                                \
+      case 13:                                                                 \
+         panvk_arch_name(name, v13)(__VA_ARGS__);                              \
+         break;                                                                \
       default:                                                                 \
          unreachable("Unsupported architecture");                              \
       }                                                                        \
@@ -78,6 +81,9 @@ panvk_catch_indirect_alloc_failure(VkResult error)
       case 12:                                                                 \
          ret = panvk_arch_name(name, v12)(__VA_ARGS__);                        \
          break;                                                                \
+      case 13:                                                                 \
+         ret = panvk_arch_name(name, v13)(__VA_ARGS__);                        \
+         break;                                                                \
       default:                                                                 \
          unreachable("Unsupported architecture");                              \
       }                                                                        \
@@ -94,6 +100,8 @@ panvk_catch_indirect_alloc_failure(VkResult error)
 #define panvk_per_arch(name) panvk_arch_name(name, v10)
 #elif PAN_ARCH == 12
 #define panvk_per_arch(name) panvk_arch_name(name, v12)
+#elif PAN_ARCH == 13
+#define panvk_per_arch(name) panvk_arch_name(name, v13)
 #else
 #error "Unsupported arch"
 #endif

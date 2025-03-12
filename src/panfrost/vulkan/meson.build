@@ -13,7 +13,8 @@ panvk_entrypoints = custom_target(
     '--out-h', '@OUTPUT0@', '--out-c', '@OUTPUT1@', '--prefix', 'panvk',
     '--device-prefix', 'panvk_v6', '--device-prefix', 'panvk_v7',
     '--device-prefix', 'panvk_v9', '--device-prefix', 'panvk_v10',
-    '--device-prefix', 'panvk_v12', '--beta', with_vulkan_beta.to_string()
+    '--device-prefix', 'panvk_v12', '--device-prefix', 'panvk_v13',
+    '--beta', with_vulkan_beta.to_string()
   ],
   depend_files : vk_entrypoints_gen_depend_files,
 )
@@ -62,7 +63,7 @@ valhall_archs = [9, 10]
 valhall_inc_dir = ['valhall']
 valhall_files = []
 
-avalon_archs = [12]
+avalon_archs = [12, 13]
 avalon_inc_dir = ['avalon']
 avalon_files = []
 
@@ -80,7 +81,7 @@ jm_files = [
   'jm/panvk_vX_queue.c',
 ]
 
-csf_archs = [10, 12]
+csf_archs = [10, 12, 13]
 csf_inc_dir = ['csf']
 csf_files = [
   'csf/panvk_vX_cmd_buffer.c',
@@ -118,7 +119,7 @@ common_per_arch_files = [
   'panvk_vX_shader.c',
 ]
 
-foreach arch : [6, 7, 10, 12]
+foreach arch : [6, 7, 10, 12, 13]
   per_arch_files = common_per_arch_files
   inc_panvk_per_arch = []
 

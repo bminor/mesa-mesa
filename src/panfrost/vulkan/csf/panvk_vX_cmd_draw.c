@@ -647,7 +647,6 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct vk_input_assembly_state *ia =
       &cmdbuf->vk.dynamic_graphics_state.ia;
    float primitive_size;
@@ -665,13 +664,16 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
     *    points."
     *
     * If no point size is written, ensure that the size is always 1.0f.
+    * On v13+, the point size default to 1.0f.
     */
+#if PAN_ARCH < 13
    case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-      if (vs->info.vs.writes_point_size)
+      if (cmdbuf->state.gfx.vs.shader->info.vs.writes_point_size)
          return;
 
       primitive_size = 1.0f;
       break;
+#endif
    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
       primitive_size = cmdbuf->vk.dynamic_graphics_state.rs.line.width;
@@ -680,8 +682,13 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
       return;
    }
 
+#if PAN_ARCH >= 13
+   cs_move32_to(b, cs_sr_reg32(b, IDVS, LINE_WIDTH),
+                fui(primitive_size));
+#else
    cs_move32_to(b, cs_sr_reg32(b, IDVS, PRIMITIVE_SIZE),
                 fui(primitive_size));
+#endif
 }
 
 static uint32_t
@@ -1802,9 +1809,12 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
          cfg.draw_mode = translate_prim_topology(ia->primitive_topology);
 
+#if PAN_ARCH < 13
          cfg.point_size_array_format = writes_point_size
             ? MALI_POINT_SIZE_ARRAY_FORMAT_FP16
             : MALI_POINT_SIZE_ARRAY_FORMAT_NONE;
+#endif
+
          cfg.layer_index_enable = writes_layer;
 
          cfg.position_fifo_format = extended_fifo

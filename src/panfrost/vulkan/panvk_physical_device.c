@@ -609,6 +609,18 @@ get_device_properties(const struct panvk_instance *instance,
    /* Ensure that the max threads count per workgroup is valid for Bifrost */
    assert(arch > 8 || device->kmod.props.max_threads_per_wg <= 1024);
 
+   float pointSizeRangeMin;
+   float pointSizeRangeMax;
+
+   /* On v13+, point size handling changed entirely */
+   if (arch >= 13) {
+      pointSizeRangeMin = 1.0;
+      pointSizeRangeMax = 1024.0;
+   } else {
+      pointSizeRangeMin = 0.125;
+      pointSizeRangeMax = 4095.9375;
+   }
+
    *properties = (struct vk_properties){
       .apiVersion = get_api_version(arch),
       .driverVersion = vk_get_driver_version(),
@@ -822,7 +834,7 @@ get_device_properties(const struct panvk_instance *instance,
       .maxCullDistances = 0,
       .maxCombinedClipAndCullDistances = 0,
       .discreteQueuePriorities = 2,
-      .pointSizeRange = {0.125, 4095.9375},
+      .pointSizeRange = {pointSizeRangeMin, pointSizeRangeMax},
       .lineWidthRange = {0.0, 7.9921875},
       .pointSizeGranularity = (1.0 / 16.0),
       .lineWidthGranularity = (1.0 / 128.0),
@@ -1092,6 +1104,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
 
    case 10:
    case 12:
+   case 13:
       break;
 
    default:
@@ -1267,6 +1280,7 @@ DEVICE_PER_ARCH_FUNCS(6);
 DEVICE_PER_ARCH_FUNCS(7);
 DEVICE_PER_ARCH_FUNCS(10);
 DEVICE_PER_ARCH_FUNCS(12);
+DEVICE_PER_ARCH_FUNCS(13);
 
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CreateDevice(VkPhysicalDevice physicalDevice,
