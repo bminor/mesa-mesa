@@ -365,6 +365,22 @@ impl nir_intrinsic_instr {
     pub fn atomic_op(&self) -> nir_atomic_op {
         self.get_const_index(NIR_INTRINSIC_ATOMIC_OP) as nir_atomic_op
     }
+
+    pub fn src_type(&self) -> ALUType {
+        ALUType(self.get_const_index(NIR_INTRINSIC_SRC_TYPE) as nir_alu_type)
+    }
+
+    pub fn dest_type(&self) -> ALUType {
+        ALUType(self.get_const_index(NIR_INTRINSIC_DEST_TYPE) as nir_alu_type)
+    }
+
+    pub fn rounding_mode(&self) -> nir_rounding_mode {
+        self.get_const_index(NIR_INTRINSIC_ROUNDING_MODE) as nir_rounding_mode
+    }
+
+    pub fn saturate(&self) -> bool {
+        self.get_const_index(NIR_INTRINSIC_SATURATE) != 0
+    }
 }
 
 impl nir_intrinsic_info {
