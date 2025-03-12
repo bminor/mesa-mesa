@@ -926,7 +926,7 @@ fn get_supported_image_formats(
     // SAFETY: Callers are responsible for providing either a null pointer or
     // one for which a write of `num_entries * size_of::<cl_image_format>()` is
     // valid. The validity of reading from `res` is guaranteed by the compiler.
-    unsafe { image_formats.copy_checked(res.as_ptr(), num_entries_to_write) };
+    unsafe { image_formats.copy_from_checked(res.as_ptr(), num_entries_to_write) };
 
     Ok(())
 }
