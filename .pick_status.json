@@ -3004,7 +3004,7 @@
         "description": "wsi/x11: drop misleading reference to anv in var names",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "ec0bc14a700c2503d834ac0763f4cfbe312998fa",
         "notes": null
