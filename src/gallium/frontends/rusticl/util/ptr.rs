@@ -63,7 +63,14 @@ pub trait CheckedPtr<T> {
     /// other invariants of [`std::ptr::copy`].
     unsafe fn copy_from_checked(self, src: *const T, count: usize);
 
-    fn write_checked(self, val: T);
+    /// Overwrites a memory location with the given value without reading or
+    /// dropping the old value.
+    ///
+    /// # Safety
+    ///
+    /// The nullity of `self` is checked. `self` must fulfill all other
+    /// invariants of [`std::ptr::write`].
+    unsafe fn write_checked(self, val: T);
 }
 
 impl<T> CheckedPtr<T> for *mut T {
@@ -77,10 +84,12 @@ impl<T> CheckedPtr<T> for *mut T {
         }
     }
 
-    fn write_checked(self, val: T) {
+    unsafe fn write_checked(self, val: T) {
         if !self.is_null() {
+            // SAFETY: Caller is responsible for satisfying all invariants save
+            // pointer nullity.
             unsafe {
-                *self = val;
+                self.write(val);
             }
         }
     }

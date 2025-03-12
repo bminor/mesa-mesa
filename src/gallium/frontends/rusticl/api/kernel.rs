@@ -343,7 +343,11 @@ fn create_kernels_in_program(
         }
         num_kernels += 1;
     }
-    num_kernels_ret.write_checked(num_kernels);
+
+    // SAFETY: Caller is responsible for providing a pointer valid for a write
+    // of `size_of::<cl_uint>()`.
+    unsafe { num_kernels_ret.write_checked(num_kernels) };
+
     Ok(())
 }
 

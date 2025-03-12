@@ -549,7 +549,12 @@ extern "C" fn clLinkProgram(
         Err(e) => (ptr::null_mut(), e),
     };
 
-    errcode_ret.write_checked(err);
+    // Correct behavior when `errcode_ret` is null is unspecified, but by
+    // analogy, we fail silently in that case.
+    // SAFETY: Caller is responsible for providing a pointer valid for a write
+    // of `size_of::<cl_int>()`.
+    unsafe { errcode_ret.write_checked(err) };
+
     ptr
 }
 

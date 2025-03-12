@@ -919,7 +919,9 @@ fn get_supported_image_formats(
     // `num_image_formats` should be the full count of supported formats,
     // regardless of the value of `num_entries`. It may be null, in which case
     // it is ignored.
-    num_image_formats.write_checked(res.len() as cl_uint);
+    // SAFETY: Callers are responsible for providing either a null pointer or
+    // one for which a write of `size_of::<cl_uint>()` is valid.
+    unsafe { num_image_formats.write_checked(res.len() as cl_uint) };
 
     // `image_formats` may be null, in which case it is ignored.
     let num_entries_to_write = cmp::min(res.len(), num_entries as usize);
@@ -3155,8 +3157,12 @@ fn get_gl_object_info(
 
     match &m.gl_obj {
         Some(gl_obj) => {
-            gl_object_type.write_checked(gl_obj.gl_object_type);
-            gl_object_name.write_checked(gl_obj.gl_object_name);
+            // Either `gl_object_type` or `gl_object_name` may be null, in which
+            // case they are ignored.
+            // SAFETY: Caller is responsible for providing null pointers or ones
+            // which are valid for a write of the appropriate size.
+            unsafe { gl_object_type.write_checked(gl_obj.gl_object_type) };
+            unsafe { gl_object_name.write_checked(gl_obj.gl_object_name) };
         }
         None => {
             // CL_INVALID_GL_OBJECT if there is no GL object associated with memobj.
