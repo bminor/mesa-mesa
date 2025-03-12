@@ -95,6 +95,10 @@ lp_nir_instr_src_divergent(nir_instr *instr, uint32_t src_index)
       case nir_intrinsic_load_reg_indirect:
       case nir_intrinsic_store_reg:
       case nir_intrinsic_store_reg_indirect:
+      case nir_intrinsic_reduce:
+      case nir_intrinsic_inclusive_scan:
+      case nir_intrinsic_exclusive_scan:
+      case nir_intrinsic_shuffle:
          return true;
 
       case nir_intrinsic_image_load:
