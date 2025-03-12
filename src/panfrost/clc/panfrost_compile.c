@@ -308,6 +308,11 @@ void pan_shader_compile_v12(nir_shader *nir,
                             struct util_dynarray *binary,
                             struct pan_shader_info *info);
 
+void pan_shader_compile_v13(nir_shader *nir,
+                            struct panfrost_compile_inputs *inputs,
+                            struct util_dynarray *binary,
+                            struct pan_shader_info *info);
+
 static void
 shader_compile(int arch, nir_shader *nir,
                struct panfrost_compile_inputs *inputs,
@@ -328,6 +333,9 @@ shader_compile(int arch, nir_shader *nir,
       break;
    case 12:
       pan_shader_compile_v12(nir, inputs, binary, info);
+      break;
+   case 13:
+      pan_shader_compile_v13(nir, inputs, binary, info);
       break;
    default:
       unreachable("Unknown arch!");
@@ -353,7 +361,7 @@ main(int argc, const char **argv)
 
    int target_arch = atoi(target_arch_str);
 
-   if (target_arch < 4 || target_arch > 12) {
+   if (target_arch < 4 || target_arch > 13) {
       fprintf(stderr, "Unsupported target arch %d\n", target_arch);
       return 1;
    }

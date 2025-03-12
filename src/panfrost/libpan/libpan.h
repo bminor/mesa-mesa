@@ -26,6 +26,8 @@
 #include "libpan_v10.h"
 #elif (PAN_ARCH == 12)
 #include "libpan_v12.h"
+#elif (PAN_ARCH == 13)
+#include "libpan_v13.h"
 #else
 #error "Unsupported architecture for libpan"
 #endif
