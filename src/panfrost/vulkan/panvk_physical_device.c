@@ -252,6 +252,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float_controls = true,
+      .KHR_shader_float_controls2 = true,
       .KHR_shader_float16_int8 = true,
       .KHR_shader_maximal_reconvergence = has_vk1_1,
       .KHR_shader_non_semantic_info = true,
@@ -514,6 +515,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_pipeline_robustness */
       .pipelineRobustness = true,
+
+      /* VK_KHR_shader_float_controls2 */
+      .shaderFloatControls2 = true,
 
       /* VK_KHR_shader_quad_control */
       .shaderQuadControl = false,
