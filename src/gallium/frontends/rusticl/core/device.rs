@@ -888,10 +888,6 @@ impl Device {
     }
 
     pub fn fp16_supported(&self) -> bool {
-        if !Platform::features().fp16 {
-            return false;
-        }
-
         self.shader_caps().fp16
     }
 

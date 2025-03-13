@@ -67,7 +67,6 @@ pub struct PlatformDebug {
 }
 
 pub struct PlatformFeatures {
-    pub fp16: bool,
     pub fp64: bool,
     pub intel: bool,
 }
@@ -96,7 +95,6 @@ static mut PLATFORM_DBG: PlatformDebug = PlatformDebug {
     validate_spirv: false,
 };
 static mut PLATFORM_FEATURES: PlatformFeatures = PlatformFeatures {
-    fp16: false,
     fp64: false,
     intel: false,
 };
@@ -134,7 +132,6 @@ fn load_env() {
     if let Ok(feature_flags) = env::var("RUSTICL_FEATURES") {
         for flag in feature_flags.split(',') {
             match flag {
-                "fp16" => features.fp16 = true,
                 "fp64" => features.fp64 = true,
                 "intel" => features.intel = true,
                 "" => (),

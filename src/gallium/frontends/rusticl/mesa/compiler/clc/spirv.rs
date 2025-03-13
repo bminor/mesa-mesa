@@ -518,7 +518,9 @@ impl CLCSpecConstantType for clc_spec_constant_type {
             Self::CLC_SPEC_CONSTANT_INT32
             | Self::CLC_SPEC_CONSTANT_UINT32
             | Self::CLC_SPEC_CONSTANT_FLOAT => 4,
-            Self::CLC_SPEC_CONSTANT_INT16 | Self::CLC_SPEC_CONSTANT_UINT16 => 2,
+            Self::CLC_SPEC_CONSTANT_INT16
+            | Self::CLC_SPEC_CONSTANT_UINT16
+            | Self::CLC_SPEC_CONSTANT_HALF => 2,
             Self::CLC_SPEC_CONSTANT_INT8
             | Self::CLC_SPEC_CONSTANT_UINT8
             | Self::CLC_SPEC_CONSTANT_BOOL => 1,
