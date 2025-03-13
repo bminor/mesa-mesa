@@ -463,6 +463,7 @@ VkResult pvr_CreateBufferView(VkDevice _device,
    info.format = bview->vk.format;
    info.flags = PVR_TEXFLAGS_INDEX_LOOKUP;
    info.aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+   info.buffer_elems = bview->vk.elements;
 
    if (PVR_HAS_FEATURE(&device->pdevice->dev_info, tpu_array_textures))
       info.array_size = 1U;

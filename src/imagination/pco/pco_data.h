@@ -111,9 +111,9 @@ typedef struct _pco_cs_data {
 /** PCO image descriptor metadata. */
 enum pco_image_meta {
    PCO_IMAGE_META_LAYER_SIZE,
+   PCO_IMAGE_META_BUFFER_ELEMS,
    PCO_IMAGE_META_RSVD0,
    PCO_IMAGE_META_RSVD1,
-   PCO_IMAGE_META_RSVD2,
 
    PCO_IMAGE_META_COUNT,
 };

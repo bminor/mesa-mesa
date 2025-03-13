@@ -724,16 +724,64 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    enum glsl_sampler_dim image_dim = nir_intrinsic_image_dim(intr);
    bool is_array = nir_intrinsic_image_array(intr);
    enum pipe_format format = nir_intrinsic_format(intr);
+   unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
+   unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
+   nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
+
+   if (intr->intrinsic == nir_intrinsic_image_deref_size) {
+      if (image_dim == GLSL_SAMPLER_DIM_BUF) {
+         assert(intr->def.num_components == 1);
+         nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                   PCO_IMAGE_META_COUNT,
+                                                   elem,
+                                                   .desc_set = desc_set,
+                                                   .binding = binding);
+
+         return nir_channel(b, tex_meta, PCO_IMAGE_META_BUFFER_ELEMS);
+      }
+
+      nir_def *tex_state = nir_load_tex_state_pco(b,
+                                                  ROGUE_NUM_TEXSTATE_DWORDS,
+                                                  elem,
+                                                  .desc_set = desc_set,
+                                                  .binding = binding);
+
+      nir_def *tex_state_word[] = {
+         [0] = nir_channel(b, tex_state, 0),
+         [1] = nir_channel(b, tex_state, 1),
+         [2] = nir_channel(b, tex_state, 2),
+         [3] = nir_channel(b, tex_state, 3),
+      };
+
+      unsigned num_comps = intr->def.num_components;
+      if (is_array)
+         --num_comps;
+
+      nir_def *size_comps[] = {
+         [0] = STATE_UNPACK_ADD(b, tex_state_word, 1, 2, 14, 1),
+         [1] = STATE_UNPACK_ADD(b, tex_state_word, 1, 16, 14, 1),
+         [2] = STATE_UNPACK_ADD(b, tex_state_word, 2, 4, 11, 1),
+      };
+
+      nir_def *base_level = STATE_UNPACK(b, tex_state_word, 3, 28, 4);
+      nir_def *lod = intr->src[0].ssa;
+      lod = nir_iadd(b, lod, base_level);
+
+      for (unsigned c = 0; c < num_comps; ++c)
+         size_comps[c] = nir_umax_imm(b, nir_ushr(b, size_comps[c], lod), 1);
+
+      if (image_dim == GLSL_SAMPLER_DIM_1D && is_array)
+         size_comps[1] = size_comps[2];
+
+      return nir_vec(b, size_comps, intr->def.num_components);
+   }
+
    nir_alu_type type = intr->intrinsic == nir_intrinsic_image_deref_load
                           ? nir_intrinsic_dest_type(intr)
                           : nir_intrinsic_src_type(intr);
 
    bool msaa = image_dim == GLSL_SAMPLER_DIM_MS ||
                image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
-
-   unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
-   unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
-   nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
 
    nir_def *coords = intr->src[1].ssa;
    nir_def *sample_index = msaa ? intr->src[2].ssa : NULL;
@@ -881,6 +929,7 @@ static bool is_image(const nir_instr *instr, UNUSED const void *cb_data)
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_store:
+   case nir_intrinsic_image_deref_size:
       return true;
 
    default:

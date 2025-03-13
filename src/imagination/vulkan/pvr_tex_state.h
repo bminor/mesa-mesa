@@ -105,6 +105,7 @@ struct pvr_texture_state_info {
    pvr_dev_addr_t addr;
 
    uint32_t layer_size;
+   uint32_t buffer_elems;
 };
 
 VkResult pvr_pack_tex_state(struct pvr_device *device,
