@@ -1375,7 +1375,8 @@ ntq_emit_alu(struct v3d_compile *c, nir_alu_instr *instr)
         }
 
         /* General case: We can just grab the one used channel per src. */
-        struct qreg src[nir_op_infos[instr->op].num_inputs];
+        assert(nir_op_infos[instr->op].num_inputs <= 3);
+        struct qreg src[3] = { 0 };
         for (int i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
                 src[i] = ntq_get_alu_src(c, instr, i);
         }
