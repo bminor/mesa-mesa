@@ -1,5 +1,635 @@
 [
     {
+        "sha": "e519e0b9e6a4921aa9b3c75e17fd5b31062ea261",
+        "description": "radv: update conformance version",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ea479c5849330446bf2f618256797e3552dce9c",
+        "description": "ci/deqp: backport fix for dEQP-VK.binding_model.buffer_device_address.*",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e1921581043c145049e199d64e11c8a64037c8b",
+        "description": "brw: Get the reference to brw_def_analysis only once in saturate propagation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb224e9016e9592645fb10f331344f6be22bb514",
+        "description": "ci/lava: Fix LAVA lima jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0330522e99c4dc28ba50e31e9e7da423b09c48a4",
+        "description": "ci/lava: Fix LAVA lima jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad90dbabe4ba2b42a86687b1c0ca5e8ffc6ece4c",
+        "description": "egl/kopper: Update the EGLSurface size after kopperSwapBuffers()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8ade5588e39d736bdeab9bdd8ffa7cbfb6a5191e",
+        "notes": null
+    },
+    {
+        "sha": "dc8714c5686dafd8a03e468c9e17ecadd18c4dd3",
+        "description": "egl/x11: Re-order an if statement",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8ade5588e39d736bdeab9bdd8ffa7cbfb6a5191e",
+        "notes": null
+    },
+    {
+        "sha": "2e3b23539efb71ebbe2f920a6af011e5ca098da9",
+        "description": "radv/video: don't try and send events on UVD devices.",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "95a980b61fbf4457ce8e2aed260af269ee6334be",
+        "notes": null
+    },
+    {
+        "sha": "308f56ef82242154e80f984cc5bcee71bbf29c02",
+        "description": "brw: Add missing dependency classes to various passes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cff40b1512a640c1100b65213fae69b560b1a71b",
+        "description": "zink/ci: Work around recent OOM issues in zink-anv-adl",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3b1e120a140cbdd079f0e06e939392163ef808b",
+        "description": "ci/update_tag: fix linter errors",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82073f7be3fc9b6503a176c6ed130a861dcb9112",
+        "description": "ci/bin: update_tag: improve tag load",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5798f5d05f239a26a554a69e2efe8158c973b632",
+        "description": "Revert \"ci: setup-test-env: Prefer functions over aliases\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1cc2c738bbf7099d6543700669910b6b81c8e96e",
+        "notes": null
+    },
+    {
+        "sha": "283866d2fdde183712b5643ac627420ee439ab99",
+        "description": "venus: add a new debug option to revive memory budget support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e740211a83f6b01b53a2a7e158c627421c94176",
+        "description": "venus: default to passthrough ray tracing support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2040900d097b25e069bf00f25b0c4bb5cfff292",
+        "description": "venus: support VK_EXT_nested_command_buffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b310cb340394c94c48a704876a37e4db660042e",
+        "description": "venus: support VK_EXT_attachment_feedback_loop_dynamic_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "edcc7148bad7cd91e231311dbf26d3b922980ff7",
+        "description": "venus: support VK_EXT_depth_clamp_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8914447d9ebff564db44abd3df3f887af1446569",
+        "description": "venus: support VK_EXT_depth_bias_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9207d3ad97f881e1e1f53d0c906a30baacd094e",
+        "description": "venus: support VK_EXT_legacy_dithering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb5fa89bc40b626a446352237d51a062fe6409e5",
+        "description": "venus: support VK_EXT_filter_cubic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89ec6c4d8fbc5155b8ba73346c63d3f7228eef61",
+        "description": "venus: add a few more trivial extensions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e01731bc926f3907517fb2d372f91f959c61587",
+        "description": "venus: sync latest protocol for more extension support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e2c54358083aa17bb49736cf69afdb2524371261",
+        "description": "venus: drop vn_call usage on apis without any returns",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ac0ca63b9ddb82afb181d7ad6028594d8dd4ef79",
+        "description": "v3dv: use the stats framework",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a47ae456cbae85508ec8bff73c9ec0020edd552",
+        "description": "panvk: Avoid division by zero for vkCmdCopyQueryPoolResults",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7755c41b3efd5ff50cef9702c2fb218fd412e1f5",
+        "notes": null
+    },
+    {
+        "sha": "43c99d3928b31e7b2b0fc25250b45fade83f8a06",
+        "description": "frontends/va: Don't filter supported formats according to config RT format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47a9312a5d2b188f6c875777c5a41070c835f07d",
+        "description": "frontends/va: Use ARGB as default fourcc for RGB32 RT format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f87d72152c92694d21165c2cd12e844f16755698",
+        "description": "frontends/va: Support A8R8G8B8 format for processing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "332b313547f454034a10a92bd03f71a1cc46625c",
+        "description": "v3d: enable framebuffer fetch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6023a46d02848bd515ade20245e4a5c35a6e1176",
+        "description": "v3d/compiler: Implement load_output",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de2a65ade686a5720d1beaf570c9efb19fc1d09a",
+        "description": "anv: fix non page aligned descriptor bindings on <Gfx12.0",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ab7641b8dcbfee419b761abb27fe6fed476b4e05",
+        "notes": null
+    },
+    {
+        "sha": "06369caa40262bae9dad1cbfad7365e27e6be5e8",
+        "description": "pan/kmod: set DRM_RDWR for exported dma-bufs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cac4287aab0c305683125849c1fa26cad981a77e",
+        "description": "aco/validate: fix scalar source validation for DPP and gfx11+ VINTERP",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b5e537b092f486cddab99ae408e2eee8156f943",
+        "description": "aco/gfx11.5: remove vinterp ddx/ddy path",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bee487df48b19fc3bf792874aa6aff25104e281a",
+        "notes": null
+    },
+    {
+        "sha": "bac77bb30dd178c1c3cb4f6524ba67bf9170d970",
+        "description": "ci/android: add a job using android-cts instead of deqp-runner",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6a38667f922a46f1130015a8a508d39802eadd7",
+        "description": "ci/android: add an android-deqp-runner.sh script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3a941720e61cbfd69b067adf1a34f5aee23abcd",
+        "description": "ci/android: move all dEQP handling in one place in cuttlefish-runner.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef496469bf71062cbd7354e1521a7309da58f474",
+        "description": "ci/android: pass -vsock_guest_cid to launch_cvd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "074297aea1a6da478ea4905a38bd017a91779e3c",
+        "description": "ci/android: push /deqp-gles/mustpass/egl-main.txt.zst",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae574a08c6f7153f7a574e9b5979ec960ab45ba9",
+        "description": "ci/android: use an x86_64_only cuttlefish image",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3520ed0f2c921bfd5db5e6b3bf27ec0d99e5e085",
+        "description": "ci/android: bump CUTTLEFISH_BUILD_NUMBER",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b4aa9cf80655dc1f30864c54de546da836a0f48",
+        "description": "ci/android: increase the waiting time to stop the cuttlefish launcher",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a267694db3bc4ac6ee780bf635ec6fe22497006",
+        "description": "ci/android: stop cuttlefish before copying the logs, to log everything",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d4ebb3ff4372a21f19c1babcb93d01bd2b2f06e",
+        "description": "ci/android: disable modem simulator in cuttlefish, it is not needed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9b98b53b46a647d7fb34123100f3ded39649d0d",
+        "description": "ci/android: disable audio in cuttlefish, it is not needed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a8f98befe3603668e55a49c329afb2510bdffd80",
+        "description": "ci/android: don't set HOME globally in cuttlefish-runner.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8fc7297cbfb82978537647c59857bab005104ab",
+        "description": "ci/android: don't do unnecessary cleanup",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc12fafb1d0e203e7d0aaf4e9ae31296ccea7914",
+        "description": "radv/meta: Change the return type of get_r32g32b32_format to VkFormat",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29865b41fb0b96506a656505c7e07ff507bb20a5",
+        "description": "anv: simplify internal blorp helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "900483f13fc293fe55453a465ec8970b584f49f6",
+        "description": "anv: use addresses for buffer<->image copies",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02bbe2f9c5989157c5fdb934943c5ef620a4d6f7",
+        "description": "anv: track protection on anv_address",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "648d843813fe4af0a44bf2e2016a4e951e4d0df2",
+        "description": "anv: move xfb buffer storage to 64bit address + mocs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c0dcfeb0fad574eb2ee13c934a46542a4e41da4",
+        "description": "anv: move vertex buffer storage to 64bit address + mocs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d254dc4eaf01b2065d59c97a7c38de08da830812",
+        "description": "anv: move index buffer entry point out of genX code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60b2e6f8acb1a13bc093b3318f52e04a3c43c5ec",
+        "description": "radv/tests: add few tests that verify drirc options",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8abe6beb3c2b47524976bbdd0178b430a1657006",
+        "description": "radv/tests: add a test to verify that pipeline hash matches RGP<->Fossilize",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3da9d6dac967e6ab04988997be87e4f99044cedb",
+        "description": "radv/tests: add a test to verify that pipelineCacheUUID is invariant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "19e62c7abca4e5d837860c92985c3438e0edf5e9",
+        "description": "radv: add a small framework for RADV specific tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8e3f6632894c7c8d2793c090349e3e3699645d7",
+        "description": "radv/winsys: enable has_timeline_syncobj for the null winsys",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "511d2a9c2e13a9edbf50c3a35eb5f554e48849c1",
+        "description": "ci: enable build-radv-tests for debian-clang and debian-vulkan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5fe5fb147e924399bc2c2305de695517610de10c",
+        "description": "meson: add build-radv-tests option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a4e0c833c85e83f6834fc3fd54753cafb587d19",
+        "description": "ci: Enable Perfetto in debian-no-libdrm for Turnip build testing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "4082e2267629383c5ed8184119231cd4c999ae83",
         "description": "anv: fill runtime buffer device_address field",
         "nominated": false,
