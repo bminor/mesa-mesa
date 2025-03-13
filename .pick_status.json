@@ -1,5 +1,725 @@
 [
     {
+        "sha": "79c84e4b9cbf87c676e4f5c82e9bb8d879eeabd4",
+        "description": "radv/ci: enable RADV_PERFTEST=video_decode,video_encode on TAHITI,HAWAII and POLARIS10",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7ba1291d268f7e3bb8ad8009a8a0e8d90845d9e",
+        "description": "panvk: fix dependency for EXT_display_control",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f6112a26c552d01d2af8271b2c88c56d56dad8ac",
+        "notes": null
+    },
+    {
+        "sha": "305925c439aac214a7fe4337e1f619cd4d1f501c",
+        "description": "panvk: disable VK_KHR_shader_quad_control",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0c40b1653ddbfd235dc203090a24efeb6ce7ddc9",
+        "notes": null
+    },
+    {
+        "sha": "773f84ccc9aada8d2c6299380976c24a5fd197e5",
+        "description": "meson: add i915 to 'all' build for gallium-drivers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08450138c20fa05b15c5a4271c7a9c400a2f95f1",
+        "description": "gallium: delete u_cache",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33a98544ec3a1d87483f5973b12b715761ade88a",
+        "description": "util/tests: move u_half_test into half_float_test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "185a3f9105669502b509f06179795a3b45d656f6",
+        "description": "gallium: delete tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "186fb5e73a07509059a8c9222f62dab03e9b2ce8",
+        "description": "r600: update the software fp64 support",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "aed6a39c10c328c32e6009e6f5c00cfdd9257e73",
+        "notes": null
+    },
+    {
+        "sha": "0ff322d1d9a849d8d702f53567c0475e7671d076",
+        "description": "freedreno/crashdec: Add check for `CP_BV_SQE_STAT_ADDR`",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed64e62229a2bd9817b7e180ae44abb8f260c209",
+        "description": "freedreno/crashdec: Avoid crashing on some traces",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6c717d006b767bbe9543e0a822896b18c21d73c",
+        "description": "anv: Remove ignored qualifier",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a76ce6a6eedf6024764d7be49dc5fbd1bdf7371",
+        "description": "intel/isl: Remove ignored qualifier",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53be1a5e5fc177139fbf0d7956fe12e1d1aecc7f",
+        "description": "iris: Remove ignored qualifier",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed42dc56f502437058f5efdd5082af989bede1f0",
+        "description": "intel/compiler: Use correct enum type",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ce7208c3eeefc34193e79997a0447a90fd740453",
+        "notes": null
+    },
+    {
+        "sha": "d5dcc6a5c43e8e01960f34fb58a61229eb39eb1a",
+        "description": "intel/compiler: Add missing breaks",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e5af71478a662d6c8f135e381d34c0632ea97047",
+        "description": "intel/decoder: Remove assert(!\"...\") in recoverable condition",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f160787038b4fd0df7d9f9375a4f1a5b4060e501",
+        "description": "hasvk: Use unreachable instead of assert(!\"...\")",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4a2ed89707fc84b21d125a1747269f1dd65f949",
+        "description": "anv: Use unreachable instead of assert(!\"...\")",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72066928bfca510f385fdee08f0624868b4a1277",
+        "description": "intel/isl: Use unreachable instead of assert(!\"...\")",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a63d629fe7ffe1f9765a71c8e44784bebfd0f8a",
+        "description": "intel/compiler: Use unreachable instead of assert(!\"...\")",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d6deb40733f24373cbec0eafd3be3293e4928e4",
+        "description": "glsl: Add missing break",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "328c29d6007ed7677d5c5307bd6997d84a32104a",
+        "notes": null
+    },
+    {
+        "sha": "4953d2a014d5511473bd3891d564c039a1b78210",
+        "description": "glsl: Use FALLTHROUGH",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ab5b4f7dbb5fe88c2f13abee32c10fc7a48b109",
+        "description": "intel/compiler: Use FALLTHROUGH",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b05c26f54b2c0767d6f6b7301273df7ae22b75ab",
+        "description": "iris: Initialize pointer with NULL, not false",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7534559f2fb667e86340db304c31279000437925",
+        "description": "nir: Return NULL, not false, from functions returning pointers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "702f554aae889d1508484ffc072b9f976db8e711",
+        "description": "gallium: Return NULL, not false, from functions returning pointers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e06b834dfaaba2b34cf7ad0cf4851923f5df7151",
+        "description": "loader: Stop looking in ${libdir}/tls/",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81f73c89deb44203e5012b850cfe3ae7bb86c420",
+        "description": "ir3: Fix const allocation when parsing assembly",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "68ab25e6d4ef01d19b52a015b4240a69fa456f38",
+        "notes": null
+    },
+    {
+        "sha": "4707e9c8b9d9d8012a7e69ac23d089ccdbd77d30",
+        "description": "aux/trace: set sampler_view_release pointer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e60e1bbeceed72e3b3e0f7edb86d6283317130d",
+        "description": "mesa: remove st_sampler_view::private_refcount",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ad5f1a93c768b9c02eaed547bc49e549fb778aa",
+        "description": "gallium: make pipe_sampler_view::reference non-atomic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91feef40db00e22e21b54e7ba340a7ed9437a9f8",
+        "description": "brw: Simplify the test code for brw passes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdfb478be11286f58caa8dfb04376b9e6cdacf63",
+        "description": "radeonsi/video: Only allow 64K_S swizzle mode for VCN < 2.2",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7f7206f1a9d4e4e836f7099a15c70c4d3fbc5e5a",
+        "notes": null
+    },
+    {
+        "sha": "4fc4f3425afba23790fe461f9d99c0075c87140f",
+        "description": "rusticl: add debug assertions to avoid truncating casts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "474d8b6316061535832d8e771fdb8b98c2d3aaca",
+        "description": "rusticl: mark CheckedPtr::write_checked as unsafe",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1164d39c3851b83712ea181c01536f6ed691e403",
+        "description": "rusticl: rename CheckedPtr::copy_checked to match primitive method",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa9109f0b54f1338d4989e2f91b45b0a56feba5f",
+        "description": "rusticl/mem: use cl_slice::from_raw_parts in place of std::slice",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e365f167499cdca04fa8010dd7049ead41e204f",
+        "description": "rusticl/mem: don't create svm_pointers slice from null raw pointer",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "faad7a8aad0133c49f9a86790b2ec8cbf06bbdd6",
+        "description": "rusticl/mem: don't write more supported image formats than requested",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25338cb2950b7683f1d127e9194897dbf203540a",
+        "description": "etnaviv/ci: remove dEQP-GLES2.functional.polygon_offset.default_enable fail",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb0f9e6352251576f5aff76166b40ddb76c366ad",
+        "description": "etnaviv: rs: fix slow/fast clear transitions",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "35df3925ca0fe5e78c24b12f34c6a1afce08ed7a",
+        "description": "brw: ensure VUE header writes in HS/DS/GS stages",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c60180ba6333c6f6edcd2bd6a0166334082bc378",
+        "description": "brw: fix spilling for Xe2+",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "aa494cbacf3bfa57163bbed8b5552ad25434e713",
+        "notes": null
+    },
+    {
+        "sha": "602843a8819ba5447fddcfa650bc2daf4356350c",
+        "description": "vulkan/runtime: rely on vk_buffer::device_address",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cbb0211c1e3f9e539cb0e944b818c20711a59249",
+        "description": "lavapipe: fill buffer address",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "085cfc98cc07a756bf93d25440b265dd650a0505",
+        "description": "r600: fix cayman main non-deterministic behavior problem",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d51dbe048afd2131eb3675e9cd868ce73325a61d",
+        "notes": null
+    },
+    {
+        "sha": "6f35d3768dc90b81dad60702f458fe027db93c33",
+        "description": "gallium/vl: Return YUV plane order for single plane formats",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b346d8acfcdeaa852a9d43d074bef5e70496e636",
+        "description": "venus: support VK_EXT_image_sliced_view_of_3d",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "638341d7090bee9f19570f0edc2cec8f5c057bc7",
+        "description": "venus: support VK_EXT_pipeline_library_group_handles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5894f35c9c727c184e3a842f99488d85f5910104",
+        "description": "venus: sync latest protocol for 2 more extensions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79027caf6fcf42adec9bfa96c51a5817185fa58c",
+        "description": "venus: support VK_EXT_debug_report",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cebb8e8c95beffa9ded30d4a8cde731836a18885",
+        "description": "venus: back out display control",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "89ec6c4d8fbc5155b8ba73346c63d3f7228eef61",
+        "notes": null
+    },
+    {
+        "sha": "f1e7fdc2efb465f89a35338061f7201fe9d00846",
+        "description": "venus: properly enable display platform extensions",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "673a95e5b4ecc1a860e7c3648d9b979b08823df7",
+        "notes": null
+    },
+    {
+        "sha": "466387ce365c0fa37cb53a2c1a900ac16fcf53f0",
+        "description": "zink+radv/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d79133285875e3471e6249676f11126b067b27d2",
+        "description": "zink+radv/ci: fix sorting of flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad601a67d3f026a6ba85130381ad14b7f4373aa2",
+        "description": "radv/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f3e83d6459271fe435dea26d3c09d684ad9d7ad",
+        "description": "zink+nvk/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d319aa10a3ef538e5bb0b539d6e44287719d4d8e",
+        "description": "zink+nvk/ci: fix sorting of flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9e34fa7b2ca00565772e9673932481c1e24953d",
+        "description": "zink+nvk/ci: document new failures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a1f72544c82cfcd3e111650f471ef4b3f05a44e1",
+        "description": "nvk/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a33f6910b7e9e35b8f54f13d5dca63c76433dc64",
+        "description": "nvk/ci: fix sorting of flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bf17d122b125a490623840a535e7eb0179fa4e6",
+        "description": "freedreno/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba097261e9d5a6ac88934d825ca53beab1ddabc0",
+        "description": "freedreno/ci: document fixed test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad742146c4725de70266182baadb366d454a1781",
+        "description": "lvp/ci: document flakes seen over the last week",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "025c83ae28393e88eda857eded7b248e892e3a76",
+        "description": "lvp/ci: remove duplicate flakes (noticed after sorting)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9da78f07789642bc0bece510432d3e0ae8f5babe",
+        "description": "lvp/ci: fix sorting of flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96b79ec4c3905162f9afeb3d2cd159f7775a6a15",
+        "description": "lvp/ci: skip tests that are timing out (>1 min)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2bd6b1b9db2550674ca1b532382e1e7a64d4d21",
+        "description": "lvp/ci: document fixed tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0b457aca6cbe94d555ae75864a47bb6a16318a0",
+        "description": "meson: announce that clover is deprecated (slated for removal)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f46830912e53f1f56910123b34df20714451605d",
+        "description": "aco: do not apply OMOD/CLAMP for pseudo scalar trans instrs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce71f2badd45caa447f02a5644877a054c7aa5c1",
+        "description": "brw: Move defs analysis back to its place in saturate propagation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a7f174fb30e7a1a68fb41f66ad1d2e790aa34ea",
+        "description": "ci/deqp: Delete more uncompressed caselist files",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "e519e0b9e6a4921aa9b3c75e17fd5b31062ea261",
         "description": "radv: update conformance version",
         "nominated": false,
