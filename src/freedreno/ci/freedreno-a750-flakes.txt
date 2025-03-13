@@ -1,6 +1,8 @@
 KHR-GL46.shader_atomic_counters.basic-usage-tes
 KHR-GL46.shader_bitfield_operation.bitfieldInsert.ivec3_2
 KHR-GL46.shader_bitfield_operation.findMSB.uint_0
+KHR-GL46.shader_bitfield_operation.unpackUnorm4x8.1
+KHR-GL46.shader_group_vote.all_invocations
 KHR-GL46.shader_group_vote.all_invocations_equal
 KHR-GL46.shader_group_vote.invocations_with_variables
 KHR-GL46.shader_image_load_store.early-fragment-tests
@@ -12,6 +14,9 @@ KHR-GL46.tessellation_shader.single.max_patch_vertices
 KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_PatchVerticesIn
 KHR-GL46.transform_feedback.draw_xfb_feedbackk_test
 
+KHR-GLES3.packed_depth_stencil.verify_read_pixels.depth24_stencil8
+KHR-GLES31.core.shader_bitfield_operation.bitfieldReverse.uint_3
+KHR-GLES31.core.shader_bitfield_operation.findMSB.ivec2_1
 KHR-GLES31.core.shader_storage_buffer_object.advanced-usage-sync-cs
 KHR-GLES31.core.texture_cube_map_array.color_depth_attachments
 dEQP-GLES3.functional.polygon_offset.fixed16_enable
@@ -20,14 +25,15 @@ dEQP-GLES3.functional.polygon_offset.fixed24_enable
 dEQP-GLES31.functional.compute.shared_var.basic_type.mat3_mediump
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32ui_rgba16f.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.fbo.no_attachments.interaction.127x127ms0_default_129x129ms0
+dEQP-GLES31.functional.image_load_store.2d_array.load_store.rgba32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.load_store.r32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.load_store.rgba16f
-dEQP-GLES31.functional.image_load_store.2d_array.load_store.rgba32f_single_layer
 dEQP-GLES31.functional.shaders.builtin_var.compute.local_invocation_id
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat2x4
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat4
 dEQP-GLES31.functional.ssbo.layout.basic_unsized_array.std140.row_major_mat3
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std140.column_major_mat2x3
+dEQP-GLES31.functional.ssbo.layout.multi_nested_struct.single_buffer.packed
 dEQP-GLES31.functional.ssbo.layout.random.arrays_of_arrays.4
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_arrays.14
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_mediump_mat4
