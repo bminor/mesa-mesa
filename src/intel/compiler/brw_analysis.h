@@ -232,6 +232,75 @@ private:
    bblock_t **parents;
 };
 
+/* TODO: Make these exclusive ranges, i.e. half-open at the end. */
+struct brw_range {
+   int start;
+   int end;
+
+   inline bool is_empty() const
+   {
+      return end < start;
+   }
+
+   inline int len() const
+   {
+      return end - start + 1;
+   }
+
+   inline bool contains(int x) const
+   {
+      return start <= x && x <= end;
+   }
+
+   inline bool contains(brw_range r) const
+   {
+      return start <= r.start && r.end <= end;
+   }
+};
+
+inline brw_range
+merge(brw_range a, brw_range b)
+{
+   if (a.is_empty())
+      return b;
+   if (b.is_empty())
+      return a;
+   return { MIN2(a.start, b.start), MAX2(a.end, b.end) };
+}
+
+inline brw_range
+merge(brw_range r, int x)
+{
+   if (r.is_empty())
+      return { x, x };
+   return { MIN2(r.start, x), MAX2(r.end, x) };
+}
+
+inline bool
+overlaps(brw_range a, brw_range b)
+{
+   return a.start <= b.end &&
+          b.start <= a.end;
+}
+
+inline brw_range
+intersect(brw_range a, brw_range b)
+{
+   if (overlaps(a, b))
+      return { MAX2(a.start, b.start),
+               MIN2(a.end, b.end) };
+   else
+      return { 0, -1 };
+}
+
+
+inline brw_range
+clip_end(brw_range r, int n)
+{
+   assert(n >= 0);
+   return { r.start, r.end - n };
+}
+
 struct brw_ip_ranges {
    brw_ip_ranges(const brw_shader *s);
    ~brw_ip_ranges();
