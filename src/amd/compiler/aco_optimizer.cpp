@@ -3694,7 +3694,8 @@ apply_output_impl(opt_ctx& ctx, aco_ptr<Instruction>& instr, Instruction* parent
    else if (instr->opcode == aco_opcode::v_mul_f64 || instr->opcode == aco_opcode::v_mul_f64_e64 ||
             instr->opcode == aco_opcode::v_mul_f32 || instr->opcode == aco_opcode::v_mul_f16 ||
             instr->opcode == aco_opcode::v_pk_mul_f16 ||
-            instr->opcode == aco_opcode::v_mul_legacy_f32)
+            instr->opcode == aco_opcode::v_mul_legacy_f32 ||
+            instr->opcode == aco_opcode::s_mul_f32 || instr->opcode == aco_opcode::s_mul_f16)
       return apply_output_mul(ctx, instr, parent);
    else if (instr->opcode == aco_opcode::v_cvt_f16_f32)
       return apply_f2f16(ctx, instr, parent);
@@ -3722,6 +3723,8 @@ apply_output(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_mul_f16:
    case aco_opcode::v_pk_mul_f16:
    case aco_opcode::v_mul_legacy_f32:
+   case aco_opcode::s_mul_f32:
+   case aco_opcode::s_mul_f16:
    case aco_opcode::v_cvt_f16_f32:
    case aco_opcode::v_med3_f32:
    case aco_opcode::v_med3_f16: break;

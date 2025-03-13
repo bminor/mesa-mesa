@@ -2040,7 +2040,7 @@ BEGIN_TEST(optimizer.trans_inline_constant)
    finish_opt_test();
 END_TEST
 
-BEGIN_TEST(optimizer.trans_no_omod)
+BEGIN_TEST(optimizer.trans_omod)
    //>> s1: %a:s[0] = p_startpgm
    if (!setup_cs("s1", GFX12))
       return;
@@ -2051,6 +2051,12 @@ BEGIN_TEST(optimizer.trans_no_omod)
    Temp dst = bld.vop3(aco_opcode::v_s_log_f32, bld.def(s1), inputs[0]);
    writeout(0, bld.vop2(aco_opcode::v_mul_legacy_f32, bld.def(v1), dst,
                         bld.copy(bld.def(v1), Operand::c32(0x3f000000))));
+
+   //! s1: %res1 = v_s_rcp_f32 -%a *0.5
+   //! p_unit_test 1, %res1
+   dst = bld.vop3(aco_opcode::v_s_rcp_f32, bld.def(s1), inputs[0]);
+   writeout(1, bld.sop2(aco_opcode::s_mul_f32, bld.def(s1), dst,
+                        bld.copy(bld.def(s1), Operand::c32(0xbf000000))));
 
    finish_opt_test();
 END_TEST
