@@ -2279,6 +2279,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindBufferMemory2(VkDevice _device,
                                              mem->pmem,
                                              0, 0,
                                              pBindInfos[i].memoryOffset);
+      buffer->vk.device_address = (VkDeviceAddress)(uintptr_t)buffer->map;
       if (status)
          *status->pResult = VK_SUCCESS;
    }

@@ -596,6 +596,8 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateBuffer(
          buffer->map = device->queue.ctx->buffer_map(device->queue.ctx, buffer->bo, 0,
                                                      PIPE_MAP_READ | PIPE_MAP_WRITE | PIPE_MAP_PERSISTENT,
                                                      &(struct pipe_box){ 0 }, &buffer->transfer);
+
+         buffer->vk.device_address = (VkDeviceAddress)(uintptr_t)buffer->map;
       }
    }
    *pBuffer = lvp_buffer_to_handle(buffer);
