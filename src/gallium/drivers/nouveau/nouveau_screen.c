@@ -438,7 +438,6 @@ nouveau_screen_init(struct nouveau_screen *screen, struct nouveau_device *dev)
       PIPE_BIND_CURSOR |
       PIPE_BIND_SAMPLER_VIEW |
       PIPE_BIND_SHADER_BUFFER | PIPE_BIND_SHADER_IMAGE |
-      PIPE_BIND_COMPUTE_RESOURCE |
       PIPE_BIND_GLOBAL;
    screen->sysmem_bindings =
       PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_STREAM_OUTPUT |
