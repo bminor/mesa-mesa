@@ -26,6 +26,7 @@
 
 #include "util/half_float.h"
 #include "util/u_math.h"
+#include "util/u_cpu_detect.h"
 
 /* math.h has some defines for these, but they have some compiler dependencies
  * and can potentially raise exceptions.
@@ -133,6 +134,41 @@ test_float_to_half_limits(uint16_t (*func)(float))
 
    EXPECT_EQ(func(TEST_POS_INF), HALF_POS_INF);
    EXPECT_EQ(func(TEST_NEG_INF), HALF_NEG_INF);
+}
+
+static void
+u_half_test_test(void)
+{
+   unsigned i;
+   unsigned roundtrip_fails = 0;
+
+   for(i = 0; i < 1 << 16; ++i)
+   {
+      uint16_t h = (uint16_t) i;
+      union fi f;
+      uint16_t rh;
+
+      f.f = _mesa_half_to_float(h);
+      rh = _mesa_float_to_half(f.f);
+
+      if (h != rh && !(util_is_half_nan(h) && util_is_half_nan(rh))) {
+         printf("Roundtrip failed: %x -> %x = %f -> %x\n", h, f.ui, f.f, rh);
+         ++roundtrip_fails;
+      }
+   }
+
+   EXPECT_EQ(roundtrip_fails, 0);
+}
+
+TEST(u_half_test, u_half_test)
+{
+   u_half_test_test();
+
+   /* Test non-f16c. */
+   if (util_get_cpu_caps()->has_f16c) {
+      ((struct util_cpu_caps_t *)util_get_cpu_caps())->has_f16c = false;
+      u_half_test_test();
+   }
 }
 
 TEST(float_to_half_test, float_to_half_test)
