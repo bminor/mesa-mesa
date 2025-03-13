@@ -740,6 +740,9 @@ static nir_def *lower_pfo_store(nir_builder *b,
    b->cursor = nir_before_instr(&intr->instr);
 
    enum pipe_format format = state->fs->output_formats[location];
+   if (format == PIPE_FORMAT_NONE)
+      return NIR_LOWER_INSTR_PROGRESS_REPLACE;
+
    format = to_pbe_format(b, format, &input);
 
    nir_alu_type src_type = nir_intrinsic_src_type(intr);
@@ -788,6 +791,8 @@ static nir_def *lower_pfo_load(nir_builder *b,
    gl_frag_result location = io_semantics.location;
 
    enum pipe_format format = state->fs->output_formats[location];
+   if (format == PIPE_FORMAT_NONE)
+      return nir_undef(b, intr->def.num_components, intr->def.bit_size);
 
    format = to_pbe_format(b, format, NULL);
 
