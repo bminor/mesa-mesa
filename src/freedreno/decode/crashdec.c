@@ -102,6 +102,7 @@ popline(void)
    /* Handle section name typo's from earlier kernels: */
    r = replacestr(r, "CP_MEMPOOOL", "CP_MEMPOOL");
    r = replacestr(r, "CP_SEQ_STAT", "CP_SQE_STAT");
+   r = replacestr(r, "CP_BV_SQE_STAT_ADDR", "CP_BV_SQE_STAT");
 
    lastline = r;
    return r;
