@@ -46,7 +46,15 @@ dEQP-GLES3.functional.texture.specification.texstorage3d.format.rg32ui_2d_array
 dEQP-GLES3.functional.texture.specification.texstorage3d.format.rg8_2d_array
 dEQP-GLES3.functional.transform_feedback.basic_types.interleaved.triangles.highp_float
 dEQP-GLES3.functional.ubo.random.all_per_block_buffers.11
+dEQP-GLES3.functional.ubo.single_basic_array.packed.column_major_mat2_fragment
+dEQP-GLES3.functional.uniform_api.value.assigned.by_pointer.render.basic.ivec2_fragment
+dEQP-GLES3.functional.uniform_api.value.assigned.by_pointer.render.basic.mat3_both
+dEQP-GLES3.functional.uniform_api.value.assigned.by_pointer.render.basic.mat4x3_both
+dEQP-GLES3.functional.uniform_api.value.initial.render.basic.int_fragment
 dEQP-GLES3.functional.uniform_api.value.initial.render.basic_array.ivec4_both
+dEQP-GLES3.functional.uniform_api.value.initial.render.basic_array.vec4_both
+dEQP-GLES3.functional.uniform_api.value.initial.render.basic_struct.bool_bvec4_fragment
+dEQP-GLES3.functional.uniform_api.value.initial.render.struct_in_array.float_vec4_vertex
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x5_rgba.srgb8_alpha8_astc_10x5_khr_srgb8_alpha8_astc_10x5_khr.texture2d_array_to_texture2d
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x5_rgba.srgb8_alpha8_astc_8x5_khr_rgba_astc_8x5_khr.texture2d_array_to_texture2d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_astc_5x4_khr.texture3d_to_texture2d_array
@@ -55,6 +63,7 @@ dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_as
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_alpha8_astc_12x10_khr.texture3d_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_rgba_astc_4x4_khr.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_12x10_khr.texture2d_array_to_texture2d_array
+dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_12x10_khr.texture3d_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32ui_srgb8_alpha8_astc_10x6_khr.texture2d_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.srgb8_alpha8_astc_10x8_khr_rgba32i.texture2d_array_to_texture3d
 dEQP-GLES31.functional.geometry_shading.instanced.geometry_output_different_32_invocations
@@ -82,6 +91,7 @@ spec@arb_color_buffer_float@gl_rgba8-render-fog
 spec@arb_color_buffer_float@gl_rgba8-render-sanity
 spec@arb_color_buffer_float@gl_rgba8_snorm-render
 spec@arb_color_buffer_float@gl_rgba8_snorm-render-fog
+spec@arb_copy_image@arb_copy_image-formats
 spec@arb_copy_image@arb_copy_image-targets gl_texture_1d_array 32 1 12 gl_texture_2d_array 32 16 18 11 0 3 5 9 7 14 1 8
 spec@arb_copy_image@arb_copy_image-targets gl_texture_1d_array 32 1 12 gl_texture_3d 32 16 18 11 0 3 5 9 2 14 1 7
 spec@arb_copy_image@arb_copy_image-targets gl_texture_1d_array 32 1 12 gl_texture_cube_map_array 32 32 18 11 0 3 5 17 2 14 1 7
@@ -103,6 +113,12 @@ spec@arb_pixel_buffer_object@pbo-drawpixels
 spec@arb_pixel_buffer_object@texsubimage pbo
 spec@arb_pixel_buffer_object@texsubimage-unpack pbo
 spec@arb_sample_locations@test
+spec@arb_shader_image_load_store@coherency
+spec@arb_shader_image_load_store@coherency@Tessellation control-Geometry shader/'volatile' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'coherent' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'volatile' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/256x256
 spec@arb_shader_image_load_store@semantics@imageLoad/Tessellation control shader/r8/image2D test
 spec@arb_shader_precision@fs-fma-float-float-float
 spec@arb_shader_precision@gs-radians-float
@@ -136,9 +152,11 @@ spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 msaa
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 upsample
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 msaa
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 upsample
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 msaa
 spec@ext_framebuffer_multisample@line-smooth 6
 spec@ext_framebuffer_multisample@line-smooth 8
 spec@ext_framebuffer_multisample@polygon-smooth 2
+spec@ext_framebuffer_multisample@polygon-smooth 8
 spec@ext_framebuffer_object@fbo-blending-formats
 spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render
 spec@ext_texture_array@copyteximage 1d_array samples=4
