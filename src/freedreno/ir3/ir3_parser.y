@@ -247,7 +247,7 @@ static void add_const(unsigned reg, unsigned c0, unsigned c1, unsigned c2, unsig
 	assert((reg & 0x7) == 0);
 	int idx = reg >> (1 + 2); /* low bit is half vs full, next two bits are swiz */
 	if (idx * 4 + 4 > imm_state->size) {
-		imm_state->values = rerzalloc(imm_state,
+		imm_state->values = rerzalloc(variant,
 				imm_state->values,
 				__typeof__(imm_state->values[0]),
 				imm_state->size,
