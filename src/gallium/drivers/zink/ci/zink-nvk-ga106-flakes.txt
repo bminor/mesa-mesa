@@ -1,3 +1,12 @@
+KHR-GL46.constant_expressions.basic_cos_vec2_tess_eval
+KHR-GL46.constant_expressions.basic_degrees_vec3_tess_control
+KHR-GL46.constant_expressions.basic_degrees_vec4_tess_eval
+KHR-GL46.constant_expressions.basic_exp_vec4_tess_control
+KHR-GL46.constant_expressions.basic_log_vec4_vertex
+KHR-GL46.constant_expressions.basic_pow_float_compute
+KHR-GL46.constant_expressions.basic_sin_float_compute
+KHR-GL46.constant_expressions.basic_sin_vec3_geometry
+KHR-GL46.constant_expressions.basic_sin_vec3_tess_eval
 KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment
 KHR-GL46.geometry_shader.api.getProgramiv3
 KHR-GL46.geometry_shader.limits.max_output_vertices
@@ -14,8 +23,12 @@ KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_3d_r8u
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_3d_rgba32i
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_3d_rgba16_snorm
 KHR-GL46.texture_buffer.texture_buffer_max_size
+KHR-GL46.texture_swizzle.functional_format_idx_1_target_idx_1
+KHR-GL46.texture_swizzle.functional_format_idx_63_target_idx_3
 KHR-GL46.texture_swizzle.functional_format_idx_63_target_idx_4
+KHR-GL46.texture_swizzle.functional_format_idx_66_target_idx_1
 KHR-GL46.texture_swizzle.smoke
+KHR-GL46.texture_swizzle.smoke_access_idx_11_channel_idx_2
 
 dEQP-GLES2.functional.fbo.render.shared_colorbuffer_clear.rbo_rgba4
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.47
@@ -114,6 +127,7 @@ spec@arb_texture_multisample@texelfetch fs sampler2dmsarray 4 1x129x9-98x129x9
 spec@arb_texture_multisample@texelfetch fs sampler2dmsarray 4 98x1x9-98x129x9
 spec@arb_texture_rg@fbo-blending-formats
 spec@arb_texture_view@rendering-formats
+spec@arb_texture_view@rendering-levels
 spec@arb_vertex_attrib_64bit@execution@vs_in@vs-input-double_dvec4-double_dmat3-position
 spec@arb_vertex_attrib_64bit@execution@vs_in@vs-input-position-float_vec4_array3-double_dvec4
 spec@ext_external_objects@vk-image-display-muliple-textures
@@ -136,6 +150,8 @@ spec@ext_texture_array@fbo-depth-array fs-writes-depth
 spec@ext_texture_array@fbo-depth-array stencil-clear
 spec@ext_texture_array@fbo-depth-array stencil-draw
 spec@ext_texture_array@fbo-depth-array stencil-layered-clear
+spec@ext_texture_compression_s3tc@texwrap formats
+spec@ext_texture_compression_s3tc@texwrap formats@GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
 spec@ext_texture_integer@getteximage-clamping
 spec@ext_texture_snorm@fbo-blending-formats
 spec@ext_texture_swizzle@ext_texture_swizzle-swizzle
@@ -189,23 +205,3 @@ spec@nv_half_float@attribs-half-float
 spec@nv_primitive_restart@primitive-restart-draw-mode-lines
 spec@nv_primitive_restart@primitive-restart-draw-mode-polygon
 spec@nv_primitive_restart@primitive-restart-draw-mode-quad_strip
-
-# First seen in https://gitlab.freedesktop.org/mesa/mesa/-/jobs/67817963
-KHR-GL46.constant_expressions.basic_cos_vec2_tess_eval
-KHR-GL46.constant_expressions.basic_degrees_vec3_tess_control
-KHR-GL46.constant_expressions.basic_degrees_vec4_tess_eval
-KHR-GL46.constant_expressions.basic_exp_vec4_tess_control
-KHR-GL46.constant_expressions.basic_log_vec4_vertex
-KHR-GL46.constant_expressions.basic_pow_float_compute
-KHR-GL46.constant_expressions.basic_sin_float_compute
-KHR-GL46.constant_expressions.basic_sin_vec3_geometry
-KHR-GL46.constant_expressions.basic_sin_vec3_tess_eval
-
-KHR-GL46.texture_swizzle.functional_format_idx_63_target_idx_3
-KHR-GL46.texture_swizzle.functional_format_idx_66_target_idx_1
-spec@arb_texture_view@rendering-levels
-
-KHR-GL46.texture_swizzle.functional_format_idx_1_target_idx_1
-KHR-GL46.texture_swizzle.smoke_access_idx_11_channel_idx_2
-spec@ext_texture_compression_s3tc@texwrap formats
-spec@ext_texture_compression_s3tc@texwrap formats@GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
