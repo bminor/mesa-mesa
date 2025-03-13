@@ -1208,16 +1208,6 @@ nvc0_bind_surfaces_range(struct nvc0_context *nvc0, const unsigned t,
       nouveau_bufctx_reset(nvc0->bufctx_cp, NVC0_BIND_CP_SUF);
 }
 
-static void
-nvc0_set_compute_resources(struct pipe_context *pipe,
-                           unsigned start, unsigned nr,
-                           struct pipe_surface **resources)
-{
-   nvc0_bind_surfaces_range(nvc0_context(pipe), 1, start, nr, resources);
-
-   nvc0_context(pipe)->dirty_cp |= NVC0_NEW_CP_SURFACES;
-}
-
 static bool
 nvc0_bind_images_range(struct nvc0_context *nvc0, const unsigned s,
                        unsigned start, unsigned nr,
@@ -1524,7 +1514,6 @@ nvc0_init_state_functions(struct nvc0_context *nvc0)
    pipe->set_stream_output_targets = nvc0_set_transform_feedback_targets;
 
    pipe->set_global_binding = nvc0_set_global_bindings;
-   pipe->set_compute_resources = nvc0_set_compute_resources;
    pipe->set_shader_images = nvc0_set_shader_images;
    pipe->set_shader_buffers = nvc0_set_shader_buffers;
 

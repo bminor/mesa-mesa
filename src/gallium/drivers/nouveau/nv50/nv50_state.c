@@ -1330,14 +1330,6 @@ nv50_set_shader_images(struct pipe_context *pipe,
    nv50_context(pipe)->dirty_cp |= NV50_NEW_CP_SURFACES;
 }
 
-static void
-nv50_set_compute_resources(struct pipe_context *pipe,
-                           unsigned start, unsigned nr,
-                           struct pipe_surface **resources)
-{
-   /* TODO: bind surfaces */
-}
-
 static bool
 nv50_bind_buffers_range(struct nv50_context *nv50,
                         unsigned start, unsigned nr,
@@ -1523,7 +1515,6 @@ nv50_init_state_functions(struct nv50_context *nv50)
    pipe->set_stream_output_targets = nv50_set_stream_output_targets;
 
    pipe->set_global_binding = nv50_set_global_bindings;
-   pipe->set_compute_resources = nv50_set_compute_resources;
    pipe->set_shader_images = nv50_set_shader_images;
    pipe->set_shader_buffers = nv50_set_shader_buffers;
 

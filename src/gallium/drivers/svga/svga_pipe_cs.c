@@ -115,21 +115,6 @@ svga_delete_compute_state(struct pipe_context *pipe, void *shader)
 
 
 /**
- * Bind an array of shader resources that will be used by the
- * compute program.  Any resources that were previously bound to
- * the specified range will be unbound after this call.
- */
-static void
-svga_set_compute_resources(struct pipe_context *pipe,
-                           unsigned start, unsigned count,
-                           struct pipe_surface **resources)
-{
-   //TODO
-   return;
-}
-
-
-/**
  * Bind an array of buffers to be mapped into the address space of
  * the GLOBAL resource.  Any buffers that were previously bound
  * between [first, first + count - 1] are unbound after this call.
@@ -221,7 +206,6 @@ svga_init_cs_functions(struct svga_context *svga)
    svga->pipe.create_compute_state = svga_create_compute_state;
    svga->pipe.bind_compute_state = svga_bind_compute_state;
    svga->pipe.delete_compute_state = svga_delete_compute_state;
-   svga->pipe.set_compute_resources = svga_set_compute_resources;
    svga->pipe.set_global_binding = svga_set_global_binding;
    svga->pipe.launch_grid = svga_launch_grid;
 }

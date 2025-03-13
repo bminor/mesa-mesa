@@ -1069,18 +1069,6 @@ tegra_delete_compute_state(struct pipe_context *pcontext, void *so)
 }
 
 static void
-tegra_set_compute_resources(struct pipe_context *pcontext,
-                            unsigned int start, unsigned int count,
-                            struct pipe_surface **resources)
-{
-   struct tegra_context *context = to_tegra_context(pcontext);
-
-   /* XXX unwrap resources */
-
-   context->gpu->set_compute_resources(context->gpu, start, count, resources);
-}
-
-static void
 tegra_set_global_binding(struct pipe_context *pcontext, unsigned int first,
                          unsigned int count, struct pipe_resource **resources,
                          uint32_t **handles)
@@ -1402,7 +1390,6 @@ tegra_screen_context_create(struct pipe_screen *pscreen, void *priv,
    context->base.create_compute_state = tegra_create_compute_state;
    context->base.bind_compute_state = tegra_bind_compute_state;
    context->base.delete_compute_state = tegra_delete_compute_state;
-   context->base.set_compute_resources = tegra_set_compute_resources;
    context->base.set_global_binding = tegra_set_global_binding;
    context->base.launch_grid = tegra_launch_grid;
    context->base.get_sample_position = tegra_get_sample_position;
