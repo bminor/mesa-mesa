@@ -263,6 +263,7 @@ enum sqtt_gfxip_level
    SQTT_GFXIP_LEVEL_GFXIP_10_1 = 0x7,
    SQTT_GFXIP_LEVEL_GFXIP_10_3 = 0x9,
    SQTT_GFXIP_LEVEL_GFXIP_11_0 = 0xc,
+   SQTT_GFXIP_LEVEL_GFXIP_11_5 = 0xd,
 };
 
 enum sqtt_memory_type
@@ -353,8 +354,9 @@ static enum sqtt_gfxip_level ac_gfx_level_to_sqtt_gfxip_level(enum amd_gfx_level
    case GFX10_3:
       return SQTT_GFXIP_LEVEL_GFXIP_10_3;
    case GFX11:
-   case GFX11_5:
       return SQTT_GFXIP_LEVEL_GFXIP_11_0;
+   case GFX11_5:
+      return SQTT_GFXIP_LEVEL_GFXIP_11_5;
    default:
       unreachable("Invalid gfx level");
    }
@@ -846,6 +848,7 @@ enum elf_gfxip_level
    EF_AMDGPU_MACH_AMDGCN_GFX1010 = 0x033,
    EF_AMDGPU_MACH_AMDGCN_GFX1030 = 0x036,
    EF_AMDGPU_MACH_AMDGCN_GFX1100 = 0x041,
+   EF_AMDGPU_MACH_AMDGCN_GFX1150 = 0x043,
 };
 
 static enum elf_gfxip_level ac_gfx_level_to_elf_gfxip_level(enum amd_gfx_level gfx_level)
@@ -860,8 +863,9 @@ static enum elf_gfxip_level ac_gfx_level_to_elf_gfxip_level(enum amd_gfx_level g
    case GFX10_3:
       return EF_AMDGPU_MACH_AMDGCN_GFX1030;
    case GFX11:
-   case GFX11_5:
       return EF_AMDGPU_MACH_AMDGCN_GFX1100;
+   case GFX11_5:
+      return EF_AMDGPU_MACH_AMDGCN_GFX1150;
    default:
       unreachable("Invalid gfx level");
    }
