@@ -36,6 +36,8 @@
 .build-linux:
   extends: .build-common
   variables:
+    C_ARGS: >
+      -Wno-error=deprecated-declarations
     CCACHE_COMPILERCHECK: "content"
     CCACHE_COMPRESS: "true"
     CCACHE_DIR: /cache/mesa/ccache
@@ -120,6 +122,9 @@ debian-testing-asan:
   variables:
     VULKAN_DRIVERS: "swrast"
     GALLIUM_DRIVERS: "llvmpipe,softpipe"
+    C_ARGS: >
+      -Wno-error=stringop-truncation
+      -Wno-error=deprecated-declarations
     EXTRA_OPTION: >
       -D b_sanitize=address
       -D gallium-va=false
@@ -173,6 +178,20 @@ debian-testing-msan:
     MESON_TEST_ARGS: "--suite glcpp --suite format"
     GALLIUM_DRIVERS: "freedreno,iris,nouveau,r300,r600,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,radeonsi,tegra,d3d12,crocus"
     VULKAN_DRIVERS: intel,amd,broadcom,virtio
+    C_ARGS: >
+      -Wno-error=constant-conversion
+      -Wno-error=enum-conversion
+      -Wno-error=initializer-overrides
+      -Wno-error=sometimes-uninitialized
+      -Werror=misleading-indentation
+      -Wno-error=deprecated-declarations
+    CPP_ARGS: >
+      -Wno-error=c99-designator
+      -Wno-error=overloaded-virtual
+      -Wno-error=tautological-constant-out-of-range-compare
+      -Wno-error=unused-private-field
+      -Wno-error=vla-cxx-extension
+      -Wno-error=deprecated-declarations
     RUN_MESON_TESTS: "false" # just too slow
     # Do a host build for mesa-clc and precomp-compiler (msan complains about uninitialized
     # values in the LLVM libs)
@@ -199,6 +218,7 @@ debian-testing-ubsan:
     C_ARGS: >
       -Wno-error=stringop-overflow
       -Wno-error=stringop-truncation
+      -Wno-error=deprecated-declarations
     CPP_ARGS: >
       -Wno-error=array-bounds
     GALLIUM_DRIVERS: "llvmpipe,softpipe"
@@ -230,6 +250,10 @@ debian-build-testing:
     - .use-debian/x86_64_build
   variables:
     UNWIND: "enabled"
+    C_ARGS: >
+      -Wno-error=deprecated-declarations
+    CPP_ARGS: >
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -262,6 +286,9 @@ debian-release:
     UNWIND: "enabled"
     C_ARGS: >
       -Wno-error=stringop-overread
+      -Wno-error=deprecated-declarations
+    CPP_ARGS: >
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -302,6 +329,7 @@ alpine-build-testing:
       -Wno-error=array-bounds
       -Wno-error=stringop-overflow
       -Wno-error=stringop-overread
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=disabled
       -D gbm=enabled
@@ -343,6 +371,11 @@ fedora-release:
       -Wno-error=stringop-overread
       -Wno-error=array-bounds
       -Wno-error=maybe-uninitialized
+      -Wno-error=deprecated-declarations
+    CPP_ARGS: >
+      -Wno-error=dangling-reference
+      -Wno-error=overloaded-virtual
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -386,9 +419,14 @@ debian-android:
       -Wno-error=constant-conversion
       -Wno-error=enum-conversion
       -Wno-error=initializer-overrides
+      -Wno-error=sometimes-uninitialized
+      -Wno-error=deprecated-declarations
     CPP_ARGS: >
       -Wno-error=c99-designator
       -Wno-error=unused-variable
+      -Wno-error=unused-but-set-variable
+      -Wno-error=self-assign
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=disabled
       -D gbm=disabled
@@ -536,6 +574,8 @@ debian-arm64:
   variables:
     C_ARGS: >
       -Wno-error=array-bounds
+      -Wno-error=stringop-truncation
+      -Wno-error=deprecated-declarations
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,panfrost,v3d,vc4,zink"
     VULKAN_DRIVERS: "broadcom,freedreno,panfrost"
     DRI_LOADERS:
@@ -558,7 +598,8 @@ debian-arm64-asan:
   variables:
     VULKAN_DRIVERS: "broadcom,freedreno"
     GALLIUM_DRIVERS: "freedreno,vc4,v3d"
-    C_ARGS: ""
+    C_ARGS: >
+      -Wno-error=deprecated-declarations
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -582,6 +623,7 @@ debian-arm64-ubsan:
       -Wno-error=array-bounds
       -Wno-error=stringop-overflow
       -Wno-error=stringop-truncation
+      -Wno-error=deprecated-declarations
     CPP_ARGS: >
       -Wno-error=array-bounds
       -fno-var-tracking-assignments
@@ -617,6 +659,7 @@ debian-arm64-release:
     C_ARGS: >
       -Wno-error=array-bounds
       -Wno-error=stringop-overread
+      -Wno-error=deprecated-declarations
   script:
     - *meson-build
     - 'if [ -n "$MESA_CI_PERFORMANCE_ENABLED" ]; then .gitlab-ci/prepare-artifacts.sh; fi'
@@ -631,6 +674,7 @@ debian-no-libdrm:
     BUILDTYPE: release
     C_ARGS: >
       -Wno-error=stringop-overread
+      -Wno-error=deprecated-declarations
     EXTRA_OPTION: >
       -D freedreno-kmds=kgsl
       -D glx=disabled
@@ -649,12 +693,16 @@ debian-clang:
       -Wno-error=constant-conversion
       -Wno-error=enum-conversion
       -Wno-error=initializer-overrides
+      -Wno-error=sometimes-uninitialized
+      -Werror=misleading-indentation
+      -Wno-error=deprecated-declarations
     CPP_ARGS: >
       -Wno-error=c99-designator
       -Wno-error=overloaded-virtual
       -Wno-error=tautological-constant-out-of-range-compare
       -Wno-error=unused-private-field
       -Wno-error=vla-cxx-extension
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -701,6 +749,14 @@ debian-clang-release:
       -Wno-error=enum-conversion
       -Wno-error=initializer-overrides
       -Wno-error=sometimes-uninitialized
+      -Wno-error=deprecated-declarations
+    CPP_ARGS: >
+      -Wno-error=c99-designator
+      -Wno-error=overloaded-virtual
+      -Wno-error=tautological-constant-out-of-range-compare
+      -Wno-error=unused-private-field
+      -Wno-error=vla-cxx-extension
+      -Wno-error=deprecated-declarations
     DRI_LOADERS: >
       -D glx=xlib
       -D platforms=x11,wayland
@@ -779,6 +835,8 @@ debian-x86_32:
     EXTRA_OPTION: >
       -D vulkan-layers=device-select,overlay
       -D mesa-clc=system
+    CPP_ARGS: >
+      -Wno-error=deprecated-declarations
     C_LINK_ARGS: >
       -Wl,--no-warn-rwx-segments
     CPP_LINK_ARGS: >
