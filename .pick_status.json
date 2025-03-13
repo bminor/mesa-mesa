@@ -474,7 +474,7 @@
         "description": "etnaviv: fix ETNA_MESA_DEBUG=no_early_z",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d600b45ccc975e898ead4496db0dcbd1e5e9b8b7",
         "notes": null
