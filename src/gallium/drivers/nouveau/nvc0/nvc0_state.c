@@ -729,7 +729,6 @@ nvc0_cp_state_create(struct pipe_context *pipe,
    prog->type = PIPE_SHADER_COMPUTE;
 
    prog->cp.smem_size = cso->static_shared_mem;
-   prog->parm_size = cso->req_input_mem;
 
    switch(cso->ir_type) {
    case PIPE_SHADER_IR_TGSI: {
