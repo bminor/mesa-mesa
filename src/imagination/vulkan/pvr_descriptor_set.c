@@ -39,6 +39,7 @@
 #include "util/macros.h"
 #include "util/vma.h"
 #include "vk_alloc.h"
+#include "vk_descriptor_update_template.h"
 #include "vk_descriptors.h"
 #include "vk_descriptor_set_layout.h"
 #include "vk_format.h"
@@ -865,6 +866,134 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
 
             memcpy(dst_desc_mapping, src_desc_mapping, src_binding->stride);
          }
+      }
+   }
+}
+
+void pvr_UpdateDescriptorSetWithTemplate(
+   VkDevice _device,
+   VkDescriptorSet descriptorSet,
+   VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+   const void *pData)
+{
+   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(vk_descriptor_update_template,
+                  template,
+                  descriptorUpdateTemplate);
+   PVR_FROM_HANDLE(pvr_descriptor_set, set, descriptorSet);
+
+   const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
+
+   assert(template->type !=
+          VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS);
+
+   for (uint32_t i = 0; i < template->entry_count; i++) {
+      const struct vk_descriptor_template_entry *entry = &template->entries[i];
+      const struct pvr_descriptor_set_layout_binding *layout_binding =
+         &set->layout->bindings[entry->binding];
+      uint8_t *data = (uint8_t *)pData + entry->offset;
+
+      switch (entry->type) {
+      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorBufferInfo *info =
+               (const VkDescriptorBufferInfo *)(data + j * entry->stride);
+
+            write_buffer(set, info, layout_binding, entry->array_element + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorBufferInfo *info =
+               (const VkDescriptorBufferInfo *)(data + j * entry->stride);
+
+            write_dynamic_buffer(set,
+                                 info,
+                                 layout_binding,
+                                 entry->array_element + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_SAMPLER:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorImageInfo *info =
+               (const VkDescriptorImageInfo *)(data + j * entry->stride);
+
+            write_sampler(set, info, layout_binding, entry->array_element + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorImageInfo *info =
+               (const VkDescriptorImageInfo *)(data + j * entry->stride);
+
+            write_image_sampler(set,
+                                info,
+                                layout_binding,
+                                entry->array_element + j);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorImageInfo *info =
+               (const VkDescriptorImageInfo *)(data + j * entry->stride);
+
+            write_sampled_image(set,
+                                info,
+                                layout_binding,
+                                entry->array_element + j,
+                                dev_info);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorImageInfo *info =
+               (const VkDescriptorImageInfo *)(data + j * entry->stride);
+
+            write_storage_image(set,
+                                info,
+                                layout_binding,
+                                entry->array_element + j,
+                                dev_info);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkBufferView *bview =
+               (const VkBufferView *)(data + j * entry->stride);
+
+            write_buffer_view(set,
+                              *bview,
+                              layout_binding,
+                              entry->array_element + j,
+                              entry->type ==
+                                 VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                              dev_info);
+         }
+         break;
+
+      case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+         for (uint32_t j = 0; j < entry->array_count; j++) {
+            const VkDescriptorImageInfo *info =
+               (const VkDescriptorImageInfo *)(data + j * entry->stride);
+
+            write_input_attachment(set,
+                                   info,
+                                   layout_binding,
+                                   entry->array_element + j);
+         }
+         break;
+
+      default:
+         UNREACHABLE("Unknown descriptor type");
       }
    }
 }
