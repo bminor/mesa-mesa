@@ -2363,8 +2363,16 @@ tu_calc_frag_area(struct tu_cmd_buffer *cmd,
          else
             floor_y += 1.f;
       }
-      tile->frag_areas[i].width = floor_x;
-      tile->frag_areas[i].height = floor_y;
+      uint32_t width = floor_x;
+      uint32_t height = floor_y;
+
+      /* Areas that aren't a power of two, especially large areas, can create
+       * in floating-point rounding errors when dividing by the area in the
+       * viewport that result in under-rendering. Round down to a power of two
+       * to make sure all operations are exact.
+       */
+      width = 1u << util_logbase2(width);
+      height = 1u << util_logbase2(height);
 
       /* Make sure that the width/height divides the tile width/height so
        * we don't have to do extra awkward clamping of the edges of each
@@ -2373,10 +2381,13 @@ tu_calc_frag_area(struct tu_cmd_buffer *cmd,
        *
        * TODO: Try to take advantage of the total area allowance here, too.
        */
-      while (tiling->tile0.width % tile->frag_areas[i].width != 0)
-         tile->frag_areas[i].width--;
-      while (tiling->tile0.height % tile->frag_areas[i].height != 0)
-         tile->frag_areas[i].height--;
+      while (tiling->tile0.width % width != 0)
+         width /= 2;
+      while (tiling->tile0.height % height != 0)
+         height /= 2;
+
+      tile->frag_areas[i].width = width;
+      tile->frag_areas[i].height = height;
    }
 
    /* If at any point we were forced to use the same scaling for all
