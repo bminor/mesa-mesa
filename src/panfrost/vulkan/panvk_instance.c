@@ -64,6 +64,7 @@ static const struct vk_instance_extension_table panvk_instance_extensions = {
 #endif
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
    .KHR_display = true,
+   .EXT_display_surface_counter = true,
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
    .KHR_wayland_surface = true,
