@@ -3,8 +3,6 @@
 dEQP-VK.rasterization.provoking_vertex.transform_feedback.first.line_strip_with_adjacency,Fail
 dEQP-VK.rasterization.provoking_vertex.transform_feedback.per_pipeline.triangle_strip_with_adjacency,Fail
 
-dEQP-VK.api.maintenance7.total_dynamic_buffers_properties,Fail
-
 dEQP-VK.dynamic_rendering.complete_secondary_cmd_buff.suballocation.unused_attachment.loadopclear.storeopdontcare.stencilloadopdontcare.stencilstoreopdontcare,Fail
 dEQP-VK.dynamic_rendering.complete_secondary_cmd_buff.suballocation.unused_attachment.loadopdontcare.storeopdontcare.stencilloadopdontcare.stencilstoreopdontcare,Fail
 dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.attachment_allocation.input_output.63,Fail
@@ -857,13 +855,8 @@ nir-stress=dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.unused_attac
 # New fails in 1.4.1.0
 dEQP-VK.pipeline.pipeline_library.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.shader_object_linked_spirv.multisample.sample_rate_a2c.static_a2c,Fail
-dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_20,Fail
 
 # New fails in 1.4.1.1
 dEQP-VK.pipeline.fast_linked_library.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.shader_object_linked_binary.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.shader_object_unlinked_spirv.multisample.sample_rate_a2c.static_a2c,Fail
-
-# Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
-dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_image_opaque_memory_bind_info.2d.r12x4_unorm_pack16.1024_128_1,Crash
-dEQP-VK.synchronization.implicit.timeline_semaphore.write_ssbo_vertex_read_ssbo_vertex.buffer_16384.3033,Crash
