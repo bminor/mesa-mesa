@@ -112,7 +112,7 @@ brw_ip_ranges::validate(const brw_shader *s) const
 
    if (num_blocks) {
       bblock_t *last_block = s->cfg->blocks[num_blocks - 1];
-      unsigned last_ip = end(last_block);
+      unsigned last_ip = range(last_block).end;
       if (last_ip + 1 != s->cfg->total_instructions)
          return false;
    }

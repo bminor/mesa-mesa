@@ -298,8 +298,10 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
 
    const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
    for (int i = 0; i < cfg->num_blocks; i++) {
-      block_data[i].start_ip = ips.start(cfg->blocks[i]);
-      block_data[i].end_ip   = ips.end(cfg->blocks[i]);
+      brw_range range = ips.range(cfg->blocks[i]);
+
+      block_data[i].start_ip = range.start;
+      block_data[i].end_ip   = range.end;
    }
 
    setup_def_use();

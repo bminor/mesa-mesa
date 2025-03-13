@@ -547,8 +547,9 @@ void
 brw_copy_prop_dataflow::dump_block_data() const
 {
    foreach_block (block, cfg) {
+      brw_range range = ips.range(block);
       fprintf(stderr, "Block %d [%d, %d] (parents ", block->num,
-             ips.start(block), ips.end(block));
+              range.start, range.end);
       foreach_list_typed(bblock_link, link, link, &block->parents) {
          bblock_t *parent = link->block;
          fprintf(stderr, "%d ", parent->num);
@@ -1524,8 +1525,9 @@ brw_opt_copy_propagation(brw_shader &s)
       for (auto iter = out_acp[block->num].begin();
            iter != out_acp[block->num].end(); ++iter) {
          assert((*iter)->dst.file == VGRF);
-         if (ips.start(block) <= live.vgrf_start[(*iter)->dst.nr] &&
-             live.vgrf_end[(*iter)->dst.nr] <= ips.end(block)) {
+         brw_range block_range = ips.range(block);
+         if (block_range.start <= live.vgrf_start[(*iter)->dst.nr] &&
+             live.vgrf_end[(*iter)->dst.nr] <= block_range.end) {
             out_acp[block->num].remove(*iter);
          }
       }

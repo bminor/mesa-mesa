@@ -1142,8 +1142,8 @@ namespace {
                   int delta[IDX(TGL_PIPE_ALL)];
 
                   for (unsigned p = 0; p < IDX(TGL_PIPE_ALL); p++)
-                     delta[p] = jps[ips.start(child_link->block)].jp[p]
-                        - jps[ips.end(block)].jp[p]
+                     delta[p] = jps[ips.range(child_link->block).start].jp[p]
+                        - jps[ips.range(block).end].jp[p]
                         - ordered_unit(shader->devinfo,
                                        static_cast<const brw_inst *>(block->end()), p);
 

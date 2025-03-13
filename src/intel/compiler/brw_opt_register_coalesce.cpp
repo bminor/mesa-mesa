@@ -122,10 +122,10 @@ can_coalesce_vars(const intel_device_info *devinfo,
    int end_ip = MIN2(dst_end, src_end);
 
    foreach_block(scan_block, cfg) {
-      if (ips.end(scan_block) < start_ip)
+      if (ips.range(scan_block).end < start_ip)
          continue;
 
-      int scan_ip = ips.start(scan_block) - 1;
+      int scan_ip = ips.range(scan_block).start - 1;
 
       bool seen_src_write = false;
       bool seen_copy = false;

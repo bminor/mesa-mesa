@@ -314,18 +314,9 @@ struct brw_ip_ranges {
              BRW_DEPENDENCY_BLOCKS;
    }
 
-   int
-   start(const bblock_t *block) const
-   {
-      assert(block->num < num_blocks);
-      return start_ip[block->num];
-   }
-
-   int
-   end(const bblock_t *block) const
-   {
-      assert(block->num < num_blocks);
-      return start_ip[block->num] + block->num_instructions - 1;
+   brw_range range(const bblock_t *block) const {
+      int start = start_ip[block->num];
+      return { start, start + (int)block->num_instructions - 1 };
    }
 
 private:
