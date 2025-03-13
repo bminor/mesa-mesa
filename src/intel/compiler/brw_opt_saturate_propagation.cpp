@@ -87,12 +87,11 @@ propagate_sat(brw_inst *inst, brw_inst *scan_inst)
 
 static bool
 opt_saturate_propagation_local(brw_shader &s,
-                               const brw_ip_ranges &ips,
                                bblock_t *block)
 {
    bool progress = false;
 
-   foreach_inst_in_block_reverse(brw_inst, inst, block) {
+   foreach_inst_in_block(brw_inst, inst, block) {
       if (inst->opcode != BRW_OPCODE_MOV ||
           !inst->saturate ||
           inst->dst.file != VGRF ||
@@ -133,10 +132,8 @@ brw_opt_saturate_propagation(brw_shader &s)
 {
    bool progress = false;
 
-   const brw_ip_ranges &ips = s.ip_ranges_analysis.require();
-
    foreach_block (block, s.cfg) {
-      progress = opt_saturate_propagation_local(s, ips, block) || progress;
+      progress = opt_saturate_propagation_local(s, block) || progress;
    }
 
    if (progress)
