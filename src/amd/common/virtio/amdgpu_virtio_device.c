@@ -10,6 +10,7 @@
 #include "util/log.h"
 #include "util/os_file.h"
 #include "util/u_debug.h"
+#include "util/u_sync_provider.h"
 
 #include <xf86drm.h>
 
@@ -94,7 +95,8 @@ int amdvgpu_device_deinitialize(amdvgpu_device_handle dev) {
 }
 
 int amdvgpu_device_initialize(int fd, uint32_t *drm_major, uint32_t *drm_minor,
-                              amdvgpu_device_handle* dev_out) {
+                              amdvgpu_device_handle* dev_out,
+                              struct util_sync_provider **p) {
    simple_mtx_lock(&dev_mutex);
    amdvgpu_device_handle dev;
 
@@ -108,7 +110,7 @@ int amdvgpu_device_initialize(int fd, uint32_t *drm_major, uint32_t *drm_minor,
       *drm_major = dev->vdev->caps.version_major;
       *drm_minor = dev->vdev->caps.version_minor;
       simple_mtx_unlock(&dev_mutex);
-      return 0;
+      goto init_sync_provider;
    }
 
    /* fd is owned by the amdgpu_screen_winsys that called this function.
@@ -183,6 +185,11 @@ int amdvgpu_device_initialize(int fd, uint32_t *drm_major, uint32_t *drm_minor,
 
    *drm_major = dev->vdev->caps.version_major;
    *drm_minor = dev->vdev->caps.version_minor;
+
+init_sync_provider:
+   *p = vdrm_vpipe_get_sync(dev->vdev);
+   if (!(*p))
+      *p = util_sync_provider_drm(fd);
 
    return 0;
 }

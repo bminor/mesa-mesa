@@ -6,6 +6,7 @@
 #include "util/os_drm.h"
 #include "ac_linux_drm.h"
 #include "util/u_math.h"
+#include "util/u_sync_provider.h"
 
 #include <stdlib.h>
 #include <time.h>
@@ -22,6 +23,7 @@ struct ac_drm_device {
       amdvgpu_device_handle vdev;
 #endif
    };
+   struct util_sync_provider *p;
    int fd;
    bool is_virtio;
 };
@@ -38,12 +40,14 @@ int ac_drm_device_initialize(int fd, bool is_virtio,
 
 #ifdef HAVE_AMDGPU_VIRTIO
    if (is_virtio) {
+      struct util_sync_provider *p;
       amdvgpu_device_handle vdev;
       r = amdvgpu_device_initialize(fd, major_version, minor_version,
-                                    &vdev);
+                                    &vdev, &p);
       if (r == 0) {
          (*dev)->vdev = vdev;
          (*dev)->fd = amdvgpu_device_get_fd(vdev);
+         (*dev)->p = p;
       }
    } else
 #endif
@@ -54,6 +58,7 @@ int ac_drm_device_initialize(int fd, bool is_virtio,
       if (r == 0) {
          (*dev)->adev = adev;
          (*dev)->fd = amdgpu_device_get_fd(adev);
+         (*dev)->p = util_sync_provider_drm((*dev)->fd);
       }
    }
 
@@ -65,6 +70,11 @@ int ac_drm_device_initialize(int fd, bool is_virtio,
    return r;
 }
 
+struct util_sync_provider *ac_drm_device_get_sync_provider(ac_drm_device *dev)
+{
+   return dev->p;
+}
+
 uintptr_t ac_drm_device_get_cookie(ac_drm_device *dev)
 {
    return (uintptr_t) dev->adev;
@@ -72,6 +82,8 @@ uintptr_t ac_drm_device_get_cookie(ac_drm_device *dev)
 
 void ac_drm_device_deinitialize(ac_drm_device *dev)
 {
+   dev->p->finalize(dev->p);
+
 #ifdef HAVE_AMDGPU_VIRTIO
    if (dev->is_virtio)
       amdvgpu_device_deinitialize(dev->vdev);
