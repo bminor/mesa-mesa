@@ -527,7 +527,7 @@ public:
             literalType = CLC_SPEC_CONSTANT_DOUBLE;
             break;
          case 16:
-            /* Can't be used for a spec constant */
+            literalType = CLC_SPEC_CONSTANT_HALF;
             break;
          default:
             unreachable("Unexpected float bit size");
@@ -1373,6 +1373,7 @@ clc_spirv_specialize(const struct clc_binary *in_spirv,
       case CLC_SPEC_CONSTANT_INT8:
          words.push_back((uint32_t)(int32_t)consts->specializations[i].value.i8);
          break;
+      case CLC_SPEC_CONSTANT_HALF:
       case CLC_SPEC_CONSTANT_UINT16:
          words.push_back((uint32_t)consts->specializations[i].value.u16);
          break;
