@@ -1167,7 +1167,7 @@ ntq_emit_comparison(struct v3d_compile *c,
                     enum v3d_qpu_cond *out_cond)
 {
         struct qreg src0 = ntq_get_alu_src(c, compare_instr, 0);
-        struct qreg src1;
+        struct qreg src1 = { 0 };
         if (nir_op_infos[compare_instr->op].num_inputs > 1)
                 src1 = ntq_get_alu_src(c, compare_instr, 1);
         bool cond_invert = false;
