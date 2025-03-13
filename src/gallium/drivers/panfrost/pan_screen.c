@@ -402,8 +402,6 @@ panfrost_init_compute_caps(struct panfrost_screen *screen)
 
    caps->address_bits = 64;
 
-   snprintf(caps->ir_target, sizeof(caps->ir_target), "panfrost");
-
    caps->grid_dimension = 3;
 
    caps->max_grid_size[0] =

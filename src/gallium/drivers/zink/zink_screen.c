@@ -651,8 +651,6 @@ zink_init_compute_caps(struct zink_screen *screen)
 
    caps->address_bits = 64;
 
-   snprintf(caps->ir_target, sizeof(caps->ir_target), "nir");
-
    caps->grid_dimension = 3;
 
    caps->max_grid_size[0] = screen->info.props.limits.maxComputeWorkGroupCount[0];

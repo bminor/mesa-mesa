@@ -194,8 +194,6 @@ v3d_init_compute_caps(struct v3d_screen *screen)
 
         caps->address_bits = 32;
 
-        snprintf(caps->ir_target, sizeof(caps->ir_target), "v3d");
-
         caps->grid_dimension = 3;
 
         /* GL_MAX_COMPUTE_SHADER_WORK_GROUP_COUNT: The CSD has a

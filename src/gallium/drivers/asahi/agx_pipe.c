@@ -1942,8 +1942,6 @@ agx_init_compute_caps(struct pipe_screen *pscreen)
 
    caps->address_bits = 64;
 
-   snprintf(caps->ir_target, sizeof(caps->ir_target), "agx");
-
    caps->grid_dimension = 3;
 
    caps->max_grid_size[0] = caps->max_grid_size[1] = caps->max_grid_size[2] =
