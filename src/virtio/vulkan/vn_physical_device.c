@@ -1113,9 +1113,6 @@ vn_physical_device_get_native_extensions(
       exts->KHR_swapchain_mutable_format = true;
       exts->EXT_hdr_metadata = true;
       exts->EXT_swapchain_maintenance1 = true;
-#ifdef VK_USE_PLATFORM_DISPLAY_KHR
-      exts->EXT_display_control = true;
-#endif
    }
 
    /* VK_EXT_pci_bus_info is required by common wsi to decide whether native
