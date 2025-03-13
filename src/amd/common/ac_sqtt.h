@@ -16,6 +16,8 @@
 #include "ac_rgp.h"
 #include "amd_family.h"
 
+#define SQTT_BUFFER_ALIGN_SHIFT 12
+
 struct radeon_cmdbuf;
 struct radeon_info;
 
@@ -542,8 +544,6 @@ bool ac_check_profile_state(const struct radeon_info *info);
 
 union rgp_sqtt_marker_cb_id ac_sqtt_get_next_cmdbuf_id(struct ac_sqtt *sqtt,
                                                        enum amd_ip_type ip_type);
-
-uint32_t ac_sqtt_get_buffer_align_shift(const struct radeon_info *info);
 
 bool ac_sqtt_get_trace(struct ac_sqtt *sqtt, const struct radeon_info *info,
                        struct ac_sqtt_trace *sqtt_trace);

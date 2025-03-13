@@ -151,7 +151,10 @@ radv_emit_spi_config_cntl(const struct radv_device *device, struct radeon_cmdbuf
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (pdev->info.gfx_level >= GFX9) {
+   if (pdev->info.gfx_level >= GFX12) {
+      radeon_set_uconfig_reg(cs, R_031120_SPI_SQG_EVENT_CTL,
+                             S_031120_ENABLE_SQG_TOP_EVENTS(enable) | S_031120_ENABLE_SQG_BOP_EVENTS(enable));
+   } else if (pdev->info.gfx_level >= GFX9) {
       uint32_t spi_config_cntl = S_031100_GPR_WRITE_PRIORITY(0x2c688) | S_031100_EXP_PRIORITY_ORDER(3) |
                                  S_031100_ENABLE_SQG_TOP_EVENTS(enable) | S_031100_ENABLE_SQG_BOP_EVENTS(enable);
 
@@ -316,7 +319,6 @@ static bool
 radv_sqtt_init_bo(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t align_shift = ac_sqtt_get_buffer_align_shift(&pdev->info);
    unsigned max_se = pdev->info.max_se;
    struct radeon_winsys *ws = device->ws;
    VkResult result;
@@ -325,10 +327,10 @@ radv_sqtt_init_bo(struct radv_device *device)
    /* The buffer size and address need to be aligned in HW regs. Align the
     * size as early as possible so that we do all the allocation & addressing
     * correctly. */
-   device->sqtt.buffer_size = align64(device->sqtt.buffer_size, 1ull << align_shift);
+   device->sqtt.buffer_size = align64(device->sqtt.buffer_size, 1ull << SQTT_BUFFER_ALIGN_SHIFT);
 
    /* Compute total size of the thread trace BO for all SEs. */
-   size = align64(sizeof(struct ac_sqtt_data_info) * max_se, 1ull << align_shift);
+   size = align64(sizeof(struct ac_sqtt_data_info) * max_se, 1ull << SQTT_BUFFER_ALIGN_SHIFT);
    size += device->sqtt.buffer_size * (uint64_t)max_se;
 
    struct radeon_winsys_bo *bo = NULL;
