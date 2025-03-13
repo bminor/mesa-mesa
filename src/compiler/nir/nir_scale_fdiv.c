@@ -29,33 +29,50 @@
 static bool
 nir_scale_fdiv_instr(nir_builder *b, nir_alu_instr *alu, UNUSED void *_data)
 {
-   if (alu->op != nir_op_fdiv || alu->src[0].src.ssa->bit_size != 32)
+   if (alu->op != nir_op_fdiv)
       return false;
 
-   b->cursor = nir_before_instr(&alu->instr);
+   switch (alu->src[0].src.ssa->bit_size) {
+   case 16: {
+      b->cursor = nir_before_instr(&alu->instr);
 
-   nir_def *orig_a = nir_ssa_for_alu_src(b, alu, 0);
-   nir_def *orig_b = nir_ssa_for_alu_src(b, alu, 1);
-   nir_def *fabs = nir_fabs(b, orig_b);
-   nir_def *big = nir_fgt_imm(b, fabs, uif(0x7e800000));
-   nir_def *small = nir_flt_imm(b, fabs, uif(0x00800000));
+      nir_def *src0 = nir_ssa_for_alu_src(b, alu, 0);
+      nir_def *src1 = nir_ssa_for_alu_src(b, alu, 1);
 
-   nir_def *scaled_down_a = nir_fmul_imm(b, orig_a, 0.25);
-   nir_def *scaled_down_b = nir_fmul_imm(b, orig_b, 0.25);
-   nir_def *scaled_up_a = nir_fmul_imm(b, orig_a, 16777216.0);
-   nir_def *scaled_up_b = nir_fmul_imm(b, orig_b, 16777216.0);
+      nir_def *new_div = nir_fdiv(b, nir_f2f32(b, src0), nir_f2f32(b, src1));
+      new_div = nir_f2f16(b, new_div);
 
-   nir_def *final_a =
-      nir_bcsel(b, big, scaled_down_a,
-                (nir_bcsel(b, small, scaled_up_a, orig_a)));
-   nir_def *final_b =
-      nir_bcsel(b, big, scaled_down_b,
-                (nir_bcsel(b, small, scaled_up_b, orig_b)));
+      nir_def_rewrite_uses(&alu->def, new_div);
+      return true;
+   }
+   case 32: {
+      b->cursor = nir_before_instr(&alu->instr);
 
-   nir_def *new_div = nir_fdiv(b, final_a, final_b);
-   nir_def_rewrite_uses(&alu->def, new_div);
+      nir_def *orig_a = nir_ssa_for_alu_src(b, alu, 0);
+      nir_def *orig_b = nir_ssa_for_alu_src(b, alu, 1);
+      nir_def *fabs = nir_fabs(b, orig_b);
+      nir_def *big = nir_fgt_imm(b, fabs, uif(0x7e800000));
+      nir_def *small = nir_flt_imm(b, fabs, uif(0x00800000));
 
-   return true;
+      nir_def *scaled_down_a = nir_fmul_imm(b, orig_a, 0.25);
+      nir_def *scaled_down_b = nir_fmul_imm(b, orig_b, 0.25);
+      nir_def *scaled_up_a = nir_fmul_imm(b, orig_a, 16777216.0);
+      nir_def *scaled_up_b = nir_fmul_imm(b, orig_b, 16777216.0);
+
+      nir_def *final_a =
+         nir_bcsel(b, big, scaled_down_a,
+                  (nir_bcsel(b, small, scaled_up_a, orig_a)));
+      nir_def *final_b =
+         nir_bcsel(b, big, scaled_down_b,
+                  (nir_bcsel(b, small, scaled_up_b, orig_b)));
+
+      nir_def *new_div = nir_fdiv(b, final_a, final_b);
+      nir_def_rewrite_uses(&alu->def, new_div);
+      return true;
+   }
+   default:
+      return false;
+   }
 }
 
 /** Scale both sides of an fdiv if needed to prevent denorm flushing
