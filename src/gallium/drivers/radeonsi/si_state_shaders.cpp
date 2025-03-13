@@ -51,7 +51,10 @@ unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *sha
       return prev_sel->info.base.api_subgroup_size;
 
    /* Workgroup sizes that are not divisible by 64 use Wave32. */
-   if (stage == MESA_SHADER_COMPUTE && !info->base.workgroup_size_variable &&
+   if ((stage == MESA_SHADER_COMPUTE ||
+        stage == MESA_SHADER_TASK ||
+        stage == MESA_SHADER_MESH) &&
+       !info->base.workgroup_size_variable &&
        (info->base.workgroup_size[0] *
         info->base.workgroup_size[1] *
         info->base.workgroup_size[2]) % 64 != 0)
@@ -3377,9 +3380,12 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
          shader->key.ge.use_aco = sel->nir->info.use_aco_amd;
       }
 
+      if (sel->stage == MESA_SHADER_MESH)
+         shader->key.ge.as_ngg = 1;
+
       shader->wave_size = si_determine_wave_size(sscreen, shader);
 
-      if (sel->stage <= MESA_SHADER_GEOMETRY) {
+      if (sel->stage <= MESA_SHADER_GEOMETRY || sel->stage == MESA_SHADER_MESH) {
          si_get_ir_cache_key(sel, shader->key.ge.as_ngg, shader->key.ge.as_es,
                              shader->wave_size, ir_sha1_cache_key);
       } else {
@@ -3552,6 +3558,9 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
          sel->rast_prim = MESA_PRIM_TRIANGLES;
       }
       break;
+   case MESA_SHADER_MESH:
+      sel->rast_prim = sel->nir->info.mesh.primitive_type;
+      break;
    default:;
    }
 
@@ -3559,6 +3568,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       sscreen->info.gfx_level >= GFX10 &&
       sscreen->use_ngg_culling &&
       sel->nir->info.outputs_written & VARYING_BIT_POS &&
+      sel->stage != MESA_SHADER_MESH &&
       !sel->nir->info.writes_memory &&
       /* NGG GS supports culling with streamout because it culls after streamout. */
       (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
