@@ -96,6 +96,37 @@ pipe_reference_described(struct pipe_reference *dst,
    return false;
 }
 
+/**
+ * Update reference counting.
+ * The old thing pointed to, if any, will be unreferenced.
+ * Both 'dst' and 'src' may be NULL.
+ * \return TRUE if the object's refcount hits zero and should be destroyed.
+ */
+static inline bool
+pipe_reference_described_nonatomic(struct pipe_reference *dst,
+                                   struct pipe_reference *src,
+                                   debug_reference_descriptor get_desc)
+{
+   if (dst != src) {
+      /* bump the src.count first */
+      if (src) {
+         ASSERTED int64_t count = ++src->count;
+         assert(count != 1); /* src had to be referenced */
+         debug_reference(src, get_desc, 1);
+      }
+
+      if (dst) {
+         int64_t count = --dst->count;
+         assert(count != -1); /* dst had to be referenced */
+         debug_reference(dst, get_desc, -1);
+         if (!count)
+            return true;
+      }
+   }
+
+   return false;
+}
+
 static inline bool
 pipe_reference(struct pipe_reference *dst, struct pipe_reference *src)
 {
@@ -210,10 +241,10 @@ pipe_sampler_view_reference(struct pipe_sampler_view **dst,
 {
    struct pipe_sampler_view *old_dst = *dst;
 
-   if (pipe_reference_described(old_dst ? &old_dst->reference : NULL,
-                                src ? &src->reference : NULL,
-                                (debug_reference_descriptor)
-                                debug_describe_sampler_view))
+   if (pipe_reference_described_nonatomic(old_dst ? &old_dst->reference : NULL,
+                                          src ? &src->reference : NULL,
+                                          (debug_reference_descriptor)
+                                          debug_describe_sampler_view))
       old_dst->context->sampler_view_destroy(old_dst->context, old_dst);
    *dst = src;
 }

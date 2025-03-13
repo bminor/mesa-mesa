@@ -498,8 +498,8 @@ struct pipe_tex2d_from_buf {
  */
 struct pipe_sampler_view
 {
-   /* Put the refcount on its own cache line to prevent "False sharing". */
-   EXCLUSIVE_CACHELINE(struct pipe_reference reference);
+   /* this refcount is non-atomic */
+   struct pipe_reference reference;
 
    enum pipe_format format:12;      /**< typed PIPE_FORMAT_x */
    unsigned astc_decode_format:2;   /**< intermediate format used for ASTC textures */
