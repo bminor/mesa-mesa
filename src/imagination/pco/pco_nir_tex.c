@@ -721,7 +721,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
    enum glsl_sampler_dim image_dim = nir_intrinsic_image_dim(intr);
    bool is_array = nir_intrinsic_image_array(intr);
-   assert(!is_array);
    enum pipe_format format = nir_intrinsic_format(intr);
    nir_alu_type type = intr->intrinsic == nir_intrinsic_image_deref_load
                           ? nir_intrinsic_dest_type(intr)
@@ -741,6 +740,8 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
                             ? intr->src[3].ssa
                             : NULL;
 
+   bool hw_array_support = false;
+
    if (write_data) {
       assert(intr->num_components == 4);
       assert(write_data->num_components == 4);
@@ -750,6 +751,7 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
              image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
 
    if (ia) {
+      assert(!is_array);
       nir_load_const_instr *load =
          nir_instr_as_load_const(intr->src[0].ssa->parent_instr);
       bool onchip = load->def.num_components == 4;
@@ -819,6 +821,46 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
                               ? intr->def.num_components
                               : 0,
    };
+
+   if (is_array) {
+      if (hw_array_support) {
+         params.array_index = int_array_index;
+      } else {
+         nir_def *tex_state_word[] = {
+            [0] = nir_channel(b, tex_state, 0),
+            [1] = nir_channel(b, tex_state, 1),
+            [2] = nir_channel(b, tex_state, 2),
+            [3] = nir_channel(b, tex_state, 3),
+         };
+
+         nir_def *base_addr_lo;
+         nir_def *base_addr_hi;
+         unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
+
+         nir_def *array_index = int_array_index;
+         assert(array_index);
+
+         nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
+         array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+
+         nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                   PCO_IMAGE_META_COUNT,
+                                                   elem,
+                                                   .desc_set = desc_set,
+                                                   .binding = binding);
+
+         nir_def *array_stride =
+            nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
+
+         nir_def *array_offset = nir_imul(b, array_index, array_stride);
+
+         nir_def *addr =
+            nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
+
+         params.addr_lo = nir_channel(b, addr, 0);
+         params.addr_hi = nir_channel(b, addr, 1);
+      }
+   }
 
    nir_intrinsic_instr *smp = pco_emit_nir_smp(b, &params);
 
