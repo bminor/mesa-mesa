@@ -11,7 +11,7 @@ set -uex
 
 uncollapsed_section_start apitrace "Building apitrace"
 
-APITRACE_VERSION="0a6506433e1f9f7b69757b4e5730326970c4321a"
+APITRACE_VERSION="952bad1469ea747012bdc48c48993bd5f13eec04"
 
 git clone https://github.com/apitrace/apitrace.git --single-branch --no-checkout /apitrace
 pushd /apitrace
