@@ -86,9 +86,7 @@ propagate_sat(brw_inst *inst, brw_inst *scan_inst)
 }
 
 static bool
-opt_saturate_propagation_local(brw_shader &s,
-                               const brw_def_analysis &defs,
-                               bblock_t *block)
+opt_saturate_propagation_local(brw_shader &s, bblock_t *block)
 {
    bool progress = false;
    int ip = block->end_ip + 1;
@@ -104,6 +102,7 @@ opt_saturate_propagation_local(brw_shader &s,
           inst->src[0].abs)
          continue;
 
+      const brw_def_analysis &defs = s.def_analysis.require();
       brw_inst *def = defs.get(inst->src[0]);
 
       if (def != NULL) {
@@ -193,10 +192,8 @@ brw_opt_saturate_propagation(brw_shader &s)
 {
    bool progress = false;
 
-   const brw_def_analysis &defs = s.def_analysis.require();
-
    foreach_block (block, s.cfg) {
-      progress = opt_saturate_propagation_local(s, defs, block) || progress;
+      progress = opt_saturate_propagation_local(s, block) || progress;
    }
 
    if (progress)
