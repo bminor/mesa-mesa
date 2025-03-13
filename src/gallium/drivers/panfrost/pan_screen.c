@@ -364,7 +364,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
       caps->max_tex_indirections = 16384; /* arbitrary */
       caps->max_control_flow_depth = 1024; /* arbitrary */
       /* Used as ABI on Midgard */
-      caps->max_inputs = 16;
+      caps->max_inputs = dev->arch >= 9 ? 32 : 16;
       caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : PIPE_MAX_ATTRIBS;
       caps->max_temps = 256; /* arbitrary */
       caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
@@ -638,7 +638,7 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
 
    caps->shader_buffer_offset_alignment = 4;
 
-   caps->max_varyings = dev->arch >= 9 ? 16 : 32;
+   caps->max_varyings = 32;
 
    /* Removed in v6 (Bifrost) */
    caps->gl_clamp =

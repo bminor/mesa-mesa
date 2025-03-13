@@ -133,6 +133,7 @@ struct panfrost_batch {
 
    unsigned nr_push_uniforms[PIPE_SHADER_TYPES];
    unsigned nr_uniform_buffers[PIPE_SHADER_TYPES];
+   unsigned nr_varying_attribs[PIPE_SHADER_TYPES];
 
    /* Varying related pointers */
    struct {

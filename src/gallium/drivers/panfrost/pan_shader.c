@@ -136,18 +136,20 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       .push_uniforms = true,
    };
 
-   if (dev->arch >= 9)
-      /* Use LD_VAR_BUF for varying lookups. */
-      inputs.valhall.use_ld_var_buf = true;
-
    /* Lower this early so the backends don't have to worry about it */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
-      inputs.fixed_varying_mask = key->fs.fixed_varying_mask;
-   } else if (s->info.stage == MESA_SHADER_VERTEX) {
-      inputs.fixed_varying_mask = fixed_varying_mask;
+      unsigned fixed_varying_mask =
+         (ir->info.inputs_read & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
+         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
 
+      inputs.fixed_varying_mask = fixed_varying_mask;
+   } else if (s->info.stage == MESA_SHADER_VERTEX) {
       /* No IDVS for internal XFB shaders */
       inputs.no_idvs = s->info.has_transform_feedback_varyings;
+
+      inputs.fixed_varying_mask =
+         (ir->info.outputs_written & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
+         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
 
       if (s->info.has_transform_feedback_varyings) {
          NIR_PASS(_, s, nir_io_add_const_offset_to_base,
@@ -293,7 +295,6 @@ panfrost_build_fs_key(struct panfrost_context *ctx,
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct pipe_framebuffer_state *fb = &ctx->pipe_framebuffer;
    struct pipe_rasterizer_state *rast = (void *)ctx->rasterizer;
-   struct panfrost_uncompiled_shader *vs = ctx->uncompiled[MESA_SHADER_VERTEX];
 
    /* gl_FragColor lowering needs the number of colour buffers */
    if (uncompiled->fragcolor_lowered) {
@@ -325,12 +326,6 @@ panfrost_build_fs_key(struct panfrost_context *ctx,
 
          key->rt_formats[i] = fmt;
       }
-   }
-
-   /* Funny desktop GL varying lowering on Valhall */
-   if (dev->arch >= 9) {
-      assert(vs != NULL && "too early");
-      key->fixed_varying_mask = vs->fixed_varying_mask;
    }
 }
 
@@ -470,13 +465,6 @@ panfrost_create_shader_state(struct pipe_context *pctx,
 
    so->stream_output = cso->stream_output;
    so->nir = nir;
-
-   /* Fix linkage early */
-   if (so->nir->info.stage == MESA_SHADER_VERTEX) {
-      so->fixed_varying_mask =
-         (so->nir->info.outputs_written & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
-   }
 
    /* gl_FragColor needs to be lowered before lowering I/O, do that now */
    if (nir->info.stage == MESA_SHADER_FRAGMENT &&

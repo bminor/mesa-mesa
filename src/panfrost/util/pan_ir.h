@@ -294,6 +294,9 @@ struct pan_shader_info {
 
       /* Bitfield of noperspective varyings, starting at VARYING_SLOT_VAR0 */
       uint32_t noperspective;
+
+      /* Bitfield of special varyings. */
+      uint32_t fixed_varyings;
    } varyings;
 
    /* UBOs to push to Register Mapped Uniforms (Midgard) or Fast Access

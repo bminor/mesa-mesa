@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Arm Ltd.
  * Copyright (C) 2023 Amazon.com, Inc. or its affiliates.
  * Copyright (C) 2018 Alyssa Rosenzweig
  * Copyright (C) 2020 Collabora Ltd.
@@ -2875,6 +2876,57 @@ panfrost_update_streamout_offsets(struct panfrost_context *ctx)
    (PAN_DIRTY_ZS | PAN_DIRTY_BLEND | PAN_DIRTY_MSAA | PAN_DIRTY_RASTERIZER |   \
     PAN_DIRTY_OQ)
 
+#if PAN_ARCH >= 9
+static uint64_t
+panfrost_emit_varying_descriptors(struct panfrost_batch *batch)
+{
+   struct panfrost_compiled_shader *vs =
+      batch->ctx->prog[PIPE_SHADER_VERTEX];
+   struct panfrost_compiled_shader *fs =
+      batch->ctx->prog[PIPE_SHADER_FRAGMENT];
+
+   const uint32_t vs_out_mask = vs->info.varyings.fixed_varyings;
+   const uint32_t fs_in_mask = fs->info.varyings.fixed_varyings;
+   const uint32_t fs_in_slots = fs->info.varyings.input_count +
+                                util_bitcount(fs_in_mask);
+
+   struct panfrost_ptr bufs =
+      pan_pool_alloc_desc_array(&batch->pool.base, fs_in_slots, ATTRIBUTE);
+   struct mali_attribute_packed *descs = bufs.cpu;
+
+   batch->nr_varying_attribs[PIPE_SHADER_FRAGMENT] = fs_in_slots;
+
+   const uint32_t varying_size = panfrost_vertex_attribute_stride(vs, fs);
+
+   for (uint32_t i = 0; i < fs_in_slots; i++) {
+      const struct pan_shader_varying *var = &fs->info.varyings.input[i];
+
+      uint32_t index = 0;
+      if (var->location >= VARYING_SLOT_VAR0) {
+         unsigned nr_special = util_bitcount(vs_out_mask);
+         unsigned general_index = (var->location - VARYING_SLOT_VAR0);
+         index = nr_special + general_index;
+      } else {
+         index = util_bitcount(vs_out_mask & BITFIELD_MASK(var->location));
+      }
+
+      pan_pack(&descs[i], ATTRIBUTE, cfg) {
+         cfg.attribute_type = MALI_ATTRIBUTE_TYPE_VERTEX_PACKET;
+         cfg.offset_enable = false;
+         cfg.format = GENX(panfrost_format_from_pipe_format)(var->format)->hw;
+         cfg.table = 61;
+         cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
+         cfg.offset = 1024 + (index * 16);
+         cfg.buffer_index = 0;
+         cfg.attribute_stride = varying_size;
+         cfg.packet_stride = varying_size + 16;
+      }
+   }
+
+   return bufs.gpu;
+}
+#endif
+
 static inline void
 panfrost_update_shader_state(struct panfrost_batch *batch,
                              enum pipe_shader_type st)
@@ -2904,6 +2956,9 @@ panfrost_update_shader_state(struct panfrost_batch *batch,
    }
 
 #if PAN_ARCH >= 9
+   if ((dirty & PAN_DIRTY_STAGE_SHADER) && frag)
+      batch->attribs[st] = panfrost_emit_varying_descriptors(batch);
+
    if (dirty & PAN_DIRTY_STAGE_IMAGE) {
       batch->images[st] =
          ctx->image_mask[st] ? panfrost_emit_images(batch, st) : 0;
