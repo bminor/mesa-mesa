@@ -50,6 +50,12 @@ conv_opcode_types = {
     'f2b' : 'bool',
 }
 
+swizzles = {'x' : 0, 'y' : 1, 'z' : 2, 'w' : 3,
+            'a' : 0, 'b' : 1, 'c' : 2, 'd' : 3,
+            'e' : 4, 'f' : 5, 'g' : 6, 'h' : 7,
+            'i' : 8, 'j' : 9, 'k' : 10, 'l' : 11,
+            'm' : 12, 'n' : 13, 'o' : 14, 'p' : 15 }
+
 def get_cond_index(conds, cond):
     if cond:
         if cond in conds:
@@ -208,7 +214,7 @@ class Value(object):
       ${'true' if val.nsz else 'false'},
       ${'true' if val.nnan else 'false'},
       ${'true' if val.ninf else 'false'},
-      ${'true' if val.swizzle_y else 'false'},
+      ${val.swizzle},
       ${val.c_opcode()},
       ${val.comm_expr_idx}, ${val.comm_exprs},
       { ${', '.join(src.array_index for src in val.sources)} },
@@ -353,16 +359,11 @@ class Variable(Value):
 
    def swizzle(self):
       if self.swiz is not None:
-         swizzles = {'x' : 0, 'y' : 1, 'z' : 2, 'w' : 3,
-                     'a' : 0, 'b' : 1, 'c' : 2, 'd' : 3,
-                     'e' : 4, 'f' : 5, 'g' : 6, 'h' : 7,
-                     'i' : 8, 'j' : 9, 'k' : 10, 'l' : 11,
-                     'm' : 12, 'n' : 13, 'o' : 14, 'p' : 15 }
          return '{' + ', '.join([str(swizzles[c]) for c in self.swiz[1:]]) + '}'
       return '{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}'
 
 _opcode_re = re.compile(r"(?P<inexact>~)?(?P<exact>!)?(?P<opcode>\w+)(?:@(?P<bits>\d+))?"
-                        r"(?P<cond>\([^\)]+\))?(?P<swizzle_y>\.y)?")
+                        r"(?P<cond>\([^\)]+\))?(?P<swizzle>\.[xyzwabcdefghijklmnop])?")
 
 class Expression(Value):
    def __init__(self, expr, name_base, varset, algebraic_pass):
@@ -392,7 +393,7 @@ class Expression(Value):
       self.nsz = cond.pop('nsz', False)
       self.nnan = cond.pop('nnan', False)
       self.ninf = cond.pop('ninf', False)
-      self.swizzle_y = m.group('swizzle_y') is not None
+      self.swizzle = -1 if m.group('swizzle') is None else swizzles[m.group('swizzle').removeprefix('.')]
 
       assert len(cond) <= 1
       self.cond = cond.popitem()[0] if cond else None
