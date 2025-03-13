@@ -3551,14 +3551,6 @@ iris_set_sampler_views(struct pipe_context *ctx,
 }
 
 static void
-iris_set_compute_resources(struct pipe_context *ctx,
-                           unsigned start, unsigned count,
-                           struct pipe_surface **resources)
-{
-   assert(count == 0);
-}
-
-static void
 iris_set_global_binding(struct pipe_context *ctx,
                         unsigned start_slot, unsigned count,
                         struct pipe_resource **resources,
@@ -4017,28 +4009,21 @@ upload_sysvals(struct iris_context *ice,
    struct iris_shader_state *shs = &ice->state.shaders[stage];
 
    struct iris_compiled_shader *shader = ice->shaders.prog[stage];
-   if (!shader || (shader->num_system_values == 0 &&
-                   shader->kernel_input_size == 0))
+   if (!shader || shader->num_system_values == 0)
       return;
 
    assert(shader->num_cbufs > 0);
 
    unsigned sysval_cbuf_index = shader->num_cbufs - 1;
    struct pipe_shader_buffer *cbuf = &shs->constbuf[sysval_cbuf_index];
-   unsigned system_values_start =
-      ALIGN(shader->kernel_input_size, sizeof(uint32_t));
-   unsigned upload_size = system_values_start +
-                          shader->num_system_values * sizeof(uint32_t);
+   unsigned upload_size = shader->num_system_values * sizeof(uint32_t);
    void *map = NULL;
 
    assert(sysval_cbuf_index < PIPE_MAX_CONSTANT_BUFFERS);
    u_upload_alloc(ice->ctx.const_uploader, 0, upload_size, 64,
                   &cbuf->buffer_offset, &cbuf->buffer, &map);
 
-   if (shader->kernel_input_size > 0)
-      memcpy(map, grid->input, shader->kernel_input_size);
-
-   uint32_t *sysval_map = map + system_values_start;
+   uint32_t *sysval_map = map;
    for (int i = 0; i < shader->num_system_values; i++) {
       uint32_t sysval = shader->system_values[i];
       uint32_t value = 0;
@@ -9356,9 +9341,8 @@ iris_upload_compute_state(struct iris_context *ice,
     */
    iris_use_pinned_bo(batch, ice->state.binder.bo, false, IRIS_DOMAIN_NONE);
 
-   if (((stage_dirty & IRIS_STAGE_DIRTY_CONSTANTS_CS) &&
-        shs->sysvals_need_upload) ||
-       shader->kernel_input_size > 0)
+   if ((stage_dirty & IRIS_STAGE_DIRTY_CONSTANTS_CS) &&
+        shs->sysvals_need_upload)
       upload_sysvals(ice, MESA_SHADER_COMPUTE, grid);
 
    if (stage_dirty & IRIS_STAGE_DIRTY_BINDINGS_CS)
@@ -9479,7 +9463,6 @@ iris_rebind_buffer(struct iris_context *ice,
                                  PIPE_BIND_BLENDABLE |
                                  PIPE_BIND_DISPLAY_TARGET |
                                  PIPE_BIND_CURSOR |
-                                 PIPE_BIND_COMPUTE_RESOURCE |
                                  PIPE_BIND_GLOBAL)));
 
    if (res->bind_history & PIPE_BIND_VERTEX_BUFFER) {
@@ -10557,7 +10540,6 @@ genX(init_state)(struct iris_context *ice)
    ctx->set_shader_buffers = iris_set_shader_buffers;
    ctx->set_shader_images = iris_set_shader_images;
    ctx->set_sampler_views = iris_set_sampler_views;
-   ctx->set_compute_resources = iris_set_compute_resources;
    ctx->set_global_binding = iris_set_global_binding;
    ctx->set_tess_state = iris_set_tess_state;
    ctx->set_patch_vertices = iris_set_patch_vertices;
