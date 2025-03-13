@@ -194,8 +194,6 @@ files_libgallium = files(
   'util/u_blend.h',
   'util/u_blitter.c',
   'util/u_blitter.h',
-  'util/u_cache.c',
-  'util/u_cache.h',
   'util/u_debug_cb.h',
   'util/u_debug_describe.c',
   'util/u_debug_describe.h',
