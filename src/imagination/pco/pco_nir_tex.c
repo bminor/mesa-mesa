@@ -470,11 +470,9 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    /* Process tex sources, build up the smp flags and data words. */
    BITSET_DECLARE(tex_src_set, nir_num_tex_src_types) = { 0 };
    nir_def *tex_srcs[nir_num_tex_src_types];
-   nir_def *smp_data_comps[NIR_MAX_VEC_COMPONENTS];
-   unsigned smp_data_comp_count = 0;
-   pco_smp_flags smp_flags = {
-      .dim = to_pco_dim(tex->sampler_dim),
-      .lod_mode = PCO_LOD_MODE_NORMAL,
+   pco_smp_params params = {
+      .dest_type = tex->dest_type,
+      .sampler_dim = tex->sampler_dim,
    };
 
    for (unsigned s = 0; s < nir_num_tex_src_types; ++s)
@@ -510,30 +508,30 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
                              .binding = smp_binding,
                              .flags = tex->op == nir_texop_tg4);
 
+   params.tex_state = tex_state;
+   params.smp_state = smp_state;
+
    nir_def *float_coords;
    nir_def *int_coords;
    nir_def *float_array_index;
    nir_def *int_array_index;
-   unsigned num_coord_comps =
-      process_coords(b,
-                     tex->is_array && tex->op != nir_texop_lod,
-                     tex_src_is_float(tex, nir_tex_src_coord),
-                     tex_srcs[nir_tex_src_coord],
-                     &float_coords,
-                     &int_coords,
-                     &float_array_index,
-                     &int_array_index);
+   process_coords(b,
+                  tex->is_array && tex->op != nir_texop_lod,
+                  tex_src_is_float(tex, nir_tex_src_coord),
+                  tex_srcs[nir_tex_src_coord],
+                  &float_coords,
+                  &int_coords,
+                  &float_array_index,
+                  &int_array_index);
 
    bool use_int_coords = !tex_src_is_float(tex, nir_tex_src_coord) &&
                          hw_int_support;
 
+   params.int_mode = use_int_coords,
+
    assert(BITSET_TEST(tex_src_set, nir_tex_src_coord));
    if (BITSET_TEST(tex_src_set, nir_tex_src_coord)) {
-      for (unsigned c = 0; c < num_coord_comps; ++c) {
-         smp_data_comps[smp_data_comp_count++] =
-            nir_channel(b, use_int_coords ? int_coords : float_coords, c);
-      }
-
+      params.coords = use_int_coords ? int_coords : float_coords;
       BITSET_CLEAR(tex_src_set, nir_tex_src_coord);
    }
 
@@ -541,48 +539,26 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    if (BITSET_TEST(tex_src_set, nir_tex_src_projector)) {
       assert(tex_src_is_float(tex, nir_tex_src_projector));
       proj = tex_srcs[nir_tex_src_projector];
-      smp_data_comps[smp_data_comp_count++] =
-         use_int_coords ? nir_f2i32(b, proj) : proj;
-
-      smp_flags.proj = true;
+      params.proj = use_int_coords ? nir_f2i32(b, proj) : proj;
       BITSET_CLEAR(tex_src_set, nir_tex_src_projector);
-   }
-
-   if (hw_array_support && int_array_index) {
-      smp_data_comps[smp_data_comp_count++] =
-         use_int_coords ? int_array_index : float_array_index;
-
-      smp_flags.array = true;
    }
 
    assert((BITSET_TEST(tex_src_set, nir_tex_src_bias) +
            BITSET_TEST(tex_src_set, nir_tex_src_lod) +
            BITSET_TEST(tex_src_set, nir_tex_src_ddx)) < 2);
 
-   bool lod_set = false;
+   ASSERTED bool lod_set = false;
    if (BITSET_TEST(tex_src_set, nir_tex_src_bias)) {
-      nir_def *lod = tex_srcs[nir_tex_src_bias];
-
-      if (!tex_src_is_float(tex, nir_tex_src_bias))
-         lod = nir_i2f32(b, lod);
-
-      smp_data_comps[smp_data_comp_count++] = lod;
-
-      smp_flags.pplod = true;
-      smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
+      params.lod_bias = tex_src_is_float(tex, nir_tex_src_bias)
+                           ? tex_srcs[nir_tex_src_bias]
+                           : nir_i2f32(b, tex_srcs[nir_tex_src_bias]);
 
       lod_set = true;
       BITSET_CLEAR(tex_src_set, nir_tex_src_bias);
    } else if (BITSET_TEST(tex_src_set, nir_tex_src_lod)) {
-      nir_def *lod = tex_srcs[nir_tex_src_lod];
-
-      if (!tex_src_is_float(tex, nir_tex_src_lod))
-         lod = nir_i2f32(b, lod);
-
-      smp_data_comps[smp_data_comp_count++] = lod;
-
-      smp_flags.pplod = true;
-      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+      params.lod_replace = tex_src_is_float(tex, nir_tex_src_lod)
+                              ? tex_srcs[nir_tex_src_lod]
+                              : nir_i2f32(b, tex_srcs[nir_tex_src_lod]);
 
       lod_set = true;
       BITSET_CLEAR(tex_src_set, nir_tex_src_lod);
@@ -591,15 +567,8 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
       assert(tex_src_is_float(tex, nir_tex_src_ddx) &&
              tex_src_is_float(tex, nir_tex_src_ddy));
 
-      nir_def *ddx = tex_srcs[nir_tex_src_ddx];
-      nir_def *ddy = tex_srcs[nir_tex_src_ddy];
-
-      for (unsigned c = 0; c < ddx->num_components; ++c) {
-         smp_data_comps[smp_data_comp_count++] = nir_channel(b, ddx, c);
-         smp_data_comps[smp_data_comp_count++] = nir_channel(b, ddy, c);
-      }
-
-      smp_flags.lod_mode = PCO_LOD_MODE_GRADIENTS;
+      params.lod_ddx = tex_srcs[nir_tex_src_ddx];
+      params.lod_ddy = tex_srcs[nir_tex_src_ddy];
 
       lod_set = true;
       BITSET_CLEAR(tex_src_set, nir_tex_src_ddx);
@@ -608,91 +577,58 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 
    if (tex->op == nir_texop_tg4) {
       assert(!lod_set);
-      smp_data_comps[smp_data_comp_count++] = nir_imm_int(b, 0);
-      smp_flags.pplod = true;
-      smp_flags.lod_mode = PCO_LOD_MODE_REPLACE;
+      params.lod_replace = nir_imm_int(b, 0);
       lod_set = true;
    }
 
-   if (!hw_array_support && int_array_index) {
-      /* Set a per-pixel lod bias of 0 if none has been set yet. */
-      if (!lod_set) {
-         smp_data_comps[smp_data_comp_count++] = nir_imm_int(b, 0);
-         smp_flags.pplod = true;
-         smp_flags.lod_mode = PCO_LOD_MODE_BIAS;
-         lod_set = true;
+   if (tex->is_array && tex->op != nir_texop_lod) {
+      if (hw_array_support) {
+         params.array_index = int_array_index;
+      } else {
+         nir_def *tex_state_word[] = {
+            [0] = nir_channel(b, tex_state, 0),
+            [1] = nir_channel(b, tex_state, 1),
+            [2] = nir_channel(b, tex_state, 2),
+            [3] = nir_channel(b, tex_state, 3),
+         };
+
+         nir_def *base_addr_lo;
+         nir_def *base_addr_hi;
+         unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
+
+         nir_def *array_index = int_array_index;
+         assert(array_index);
+
+         nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
+         array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+
+         nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                   PCO_IMAGE_META_COUNT,
+                                                   tex_elem,
+                                                   .desc_set = tex_desc_set,
+                                                   .binding = tex_binding);
+
+         nir_def *array_stride =
+            nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
+
+         nir_def *array_offset = nir_imul(b, array_index, array_stride);
+
+         nir_def *addr =
+            nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
+
+         params.addr_lo = nir_channel(b, addr, 0);
+         params.addr_hi = nir_channel(b, addr, 1);
       }
-
-      nir_def *tex_state_word[] = {
-         [0] = nir_channel(b, tex_state, 0),
-         [1] = nir_channel(b, tex_state, 1),
-         [2] = nir_channel(b, tex_state, 2),
-         [3] = nir_channel(b, tex_state, 3),
-      };
-
-      nir_def *base_addr_lo;
-      nir_def *base_addr_hi;
-      unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
-
-      nir_def *array_index = int_array_index;
-      assert(array_index);
-
-      nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
-      array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
-
-      nir_def *tex_meta = nir_load_tex_meta_pco(b,
-                                                PCO_IMAGE_META_COUNT,
-                                                tex_elem,
-                                                .desc_set = tex_desc_set,
-                                                .binding = tex_binding);
-
-      nir_def *array_stride =
-         nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
-
-      nir_def *array_offset = nir_imul(b, array_index, array_stride);
-
-      nir_def *addr =
-         nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
-
-      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 0);
-      smp_data_comps[smp_data_comp_count++] = nir_channel(b, addr, 1);
-
-      smp_flags.tao = true;
    }
 
-   if (BITSET_TEST(tex_src_set, nir_tex_src_offset) ||
-       BITSET_TEST(tex_src_set, nir_tex_src_ms_index)) {
-      nir_def *lookup = nir_imm_int(b, 0);
+   if (BITSET_TEST(tex_src_set, nir_tex_src_offset)) {
+      params.offset = tex_srcs[nir_tex_src_offset];
+      BITSET_CLEAR(tex_src_set, nir_tex_src_offset);
+   }
 
-      if (BITSET_TEST(tex_src_set, nir_tex_src_offset)) {
-         nir_def *offset = tex_srcs[nir_tex_src_offset];
-         const unsigned packed_offset_start[] = { 0, 6, 12 };
-         const unsigned packed_offset_size[] = { 6, 6, 4 };
-
-         for (unsigned c = 0; c < offset->num_components; ++c) {
-            lookup = nir_bitfield_insert(b,
-                                         lookup,
-                                         nir_channel(b, offset, c),
-                                         nir_imm_int(b, packed_offset_start[c]),
-                                         nir_imm_int(b, packed_offset_size[c]));
-         }
-
-         smp_flags.soo = true;
-         BITSET_CLEAR(tex_src_set, nir_tex_src_offset);
-      }
-
-      if (BITSET_TEST(tex_src_set, nir_tex_src_ms_index)) {
-         lookup = nir_bitfield_insert(b,
-                                      lookup,
-                                      tex_srcs[nir_tex_src_ms_index],
-                                      nir_imm_int(b, 16),
-                                      nir_imm_int(b, 3));
-
-         smp_flags.sno = true;
-         BITSET_CLEAR(tex_src_set, nir_tex_src_ms_index);
-      }
-
-      smp_data_comps[smp_data_comp_count++] = lookup;
+   if (BITSET_TEST(tex_src_set, nir_tex_src_ms_index)) {
+      params.ms_index = tex_srcs[nir_tex_src_ms_index];
+      BITSET_CLEAR(tex_src_set, nir_tex_src_ms_index);
    }
 
    /* Shadow comparator. */
@@ -708,61 +644,33 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 
    assert(BITSET_IS_EMPTY(tex_src_set));
 
-   /* Pad out the rest of the data words. */
-   assert(smp_data_comp_count <= NIR_MAX_VEC_COMPONENTS);
-   for (unsigned c = smp_data_comp_count; c < ARRAY_SIZE(smp_data_comps); ++c)
-      smp_data_comps[c] = nir_imm_int(b, 0);
-
-   nir_def *smp_data = nir_vec(b, smp_data_comps, ARRAY_SIZE(smp_data_comps));
-
    nir_def *result;
+   nir_intrinsic_instr *smp;
    switch (tex->op) {
    case nir_texop_lod:
-      result = nir_smp_coeffs_pco(b,
-                                  smp_data,
-                                  tex_state,
-                                  smp_state,
-                                  .smp_flags_pco = smp_flags._,
-                                  .range = smp_data_comp_count);
-
-      result = lower_tex_query_lod(b, float_coords, result);
+      params.sample_coeffs = true;
+      smp = pco_emit_nir_smp(b, &params);
+      result = lower_tex_query_lod(b, float_coords, &smp->def);
       break;
 
    case nir_texop_txf:
    case nir_texop_txf_ms:
-      smp_flags.nncoords = true;
+      params.nncoords = true;
       FALLTHROUGH;
 
    case nir_texop_tex:
    case nir_texop_txb:
    case nir_texop_txd:
    case nir_texop_txl:
-      smp_flags.integer = use_int_coords;
-      smp_flags.fcnorm = nir_alu_type_get_base_type(tex->dest_type) ==
-                         nir_type_float;
-
-      result = nir_smp_pco(b,
-                           tex->def.num_components,
-                           smp_data,
-                           tex_state,
-                           smp_state,
-                           .smp_flags_pco = smp_flags._,
-                           .range = smp_data_comp_count);
+      params.sample_components = tex->def.num_components;
+      smp = pco_emit_nir_smp(b, &params);
+      result = &smp->def;
       break;
 
    case nir_texop_tg4:
-      smp_flags.integer = use_int_coords;
-      smp_flags.fcnorm = nir_alu_type_get_base_type(tex->dest_type) ==
-                         nir_type_float;
-
-      result = nir_smp_raw_pco(b,
-                               smp_data,
-                               tex_state,
-                               smp_state,
-                               .smp_flags_pco = smp_flags._,
-                               .range = smp_data_comp_count);
-
-      result = lower_tex_gather(b, tex, result);
+      params.sample_raw = true;
+      smp = pco_emit_nir_smp(b, &params);
+      result = lower_tex_gather(b, tex, &smp->def);
       break;
 
    default:
