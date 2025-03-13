@@ -1143,6 +1143,9 @@ static void
 trace_context_sampler_view_release(struct pipe_context *_pipe,
                                    struct pipe_sampler_view *_view)
 {
+   if (!_view)
+      return;
+
    struct trace_context *tr_ctx = trace_context(_pipe);
    struct trace_sampler_view *tr_view = trace_sampler_view(_view);
    struct pipe_context *pipe = tr_ctx->pipe;
@@ -2587,6 +2590,7 @@ trace_context_create(struct trace_screen *tr_scr,
    TR_CTX_INIT(set_sampler_views);
    TR_CTX_INIT(create_sampler_view);
    TR_CTX_INIT(sampler_view_destroy);
+   TR_CTX_INIT(sampler_view_release);
    TR_CTX_INIT(create_surface);
    TR_CTX_INIT(surface_destroy);
    TR_CTX_INIT(set_vertex_buffers);
