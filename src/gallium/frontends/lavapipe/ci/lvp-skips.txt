@@ -45,6 +45,7 @@ dEQP-VK.ray_query.builtin.instanceid.tesc.triangles
 dEQP-VK.ray_query.builtin.primitiveid.tesc.aabbs
 dEQP-VK.ray_query.builtin.primitiveid.tese.triangles
 
+dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_AABB_12
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_AABB_14
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_AABB_15
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_tri_14
@@ -73,6 +74,8 @@ dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_im
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image_to_buffer.image_128_r32_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_to_image_read_blit_image.image_128_r32_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_fragment_read_copy_image_to_buffer.image_128x128_r16_uint
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_tess_control_read_image_vertex.image_128x128_r32g32b32a32_sfloat
 dEQP-VK.tessellation.invariance.outer_edge_symmetry.triangles_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.misc_draw.fill_overlap_quads_equal_spacing_draw_indirect
+dEQP-VK.tessellation.tesscoord.triangles_equal_spacing_execution_mode_in_tesc
 nir-stress=dEQP-VK.ray_query.builtin.instanceid.tese.triangles
