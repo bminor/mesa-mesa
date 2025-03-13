@@ -2611,7 +2611,8 @@ radv_emit_fragment_shader_state(struct radv_cmd_buffer *cmd_buffer, const struct
       radeon_opt_set_context_reg(cmd_buffer, R_028640_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
                                  spi_ps_in_control);
 
-      radeon_set_context_reg(cmd_buffer->cs, R_028BBC_PA_SC_HISZ_CONTROL, pa_sc_hisz_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028BBC_PA_SC_HISZ_CONTROL, RADV_TRACKED_PA_SC_HISZ_CONTROL,
+                                 pa_sc_hisz_control);
    } else {
       const uint32_t pa_sc_shader_control = ps ? ps->info.regs.ps.pa_sc_shader_control : 0;
 
