@@ -820,9 +820,16 @@ vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *sps,
       for (int i = 0; i < STD_VIDEO_H264_SCALING_LIST_4X4_NUM_LISTS; i++)
       {
          if (sps->pScalingLists->scaling_list_present_mask & (1 << i))
-            memcpy(temp.ScalingList4x4[i],
-                   sps->pScalingLists->ScalingList4x4[i],
-                   STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+         {
+            if (sps->pScalingLists->use_default_scaling_matrix_mask & (1 << i))
+               memcpy(temp.ScalingList4x4[i],
+                      (i < 3) ? h264_scaling_list_default_4x4_intra : h264_scaling_list_default_4x4_inter,
+                      STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+            else
+               memcpy(temp.ScalingList4x4[i],
+                      sps->pScalingLists->ScalingList4x4[i],
+                      STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+         }
          else /* fall-back rule A */
          {
             if (i == 0)
@@ -844,8 +851,15 @@ vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *sps,
       {
          int i = j + STD_VIDEO_H264_SCALING_LIST_4X4_NUM_LISTS;
          if (sps->pScalingLists->scaling_list_present_mask & (1 << i))
-            memcpy(temp.ScalingList8x8[j], sps->pScalingLists->ScalingList8x8[j],
-                   STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+         {
+            if (sps->pScalingLists->use_default_scaling_matrix_mask & (1 << i))
+               memcpy(temp.ScalingList8x8[j],
+                      (i == 6 || i == 8 || i == 10) ? h264_scaling_list_default_8x8_intra : h264_scaling_list_default_8x8_inter,
+                      STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+            else
+               memcpy(temp.ScalingList8x8[j], sps->pScalingLists->ScalingList8x8[j],
+                      STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+         }
          else /* fall-back rule A */
          {
             if (i == 6)
@@ -877,8 +891,16 @@ vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *sps,
       for (int i = 0; i < STD_VIDEO_H264_SCALING_LIST_4X4_NUM_LISTS; i++)
       {
          if (pps->pScalingLists->scaling_list_present_mask & (1 << i))
-            memcpy(list->ScalingList4x4[i], pps->pScalingLists->ScalingList4x4[i],
-                   STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+         {
+            if (pps->pScalingLists->use_default_scaling_matrix_mask & (1 << i))
+               memcpy(list->ScalingList4x4[i],
+                      (i < 3) ? h264_scaling_list_default_4x4_intra : h264_scaling_list_default_4x4_inter,
+                      STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+            else
+               memcpy(list->ScalingList4x4[i],
+                      pps->pScalingLists->ScalingList4x4[i],
+                      STD_VIDEO_H264_SCALING_LIST_4X4_NUM_ELEMENTS);
+         }
          else if (sps->flags.seq_scaling_matrix_present_flag) /* fall-back rule B */
          {
             if (i == 0 || i == 3)
@@ -909,8 +931,16 @@ vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *sps,
       {
          int i = j + STD_VIDEO_H264_SCALING_LIST_4X4_NUM_LISTS;
          if (pps->pScalingLists->scaling_list_present_mask & (1 << i))
-            memcpy(list->ScalingList8x8[j], pps->pScalingLists->ScalingList8x8[j],
-                   STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+         {
+            if (pps->pScalingLists->use_default_scaling_matrix_mask & (1 << i))
+               memcpy(list->ScalingList8x8[j],
+                      (i == 6 || i == 8 || i == 10) ? h264_scaling_list_default_8x8_intra : h264_scaling_list_default_8x8_inter,
+                      STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+            else
+               memcpy(list->ScalingList8x8[j],
+                      pps->pScalingLists->ScalingList8x8[j],
+                      STD_VIDEO_H264_SCALING_LIST_8X8_NUM_ELEMENTS);
+         }
          else if (sps->flags.seq_scaling_matrix_present_flag) /* fall-back rule B */
          {
             if (i == 6 || i == 7)
