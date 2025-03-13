@@ -523,6 +523,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    uint32_t num_instances = 0;
    int r, i, j;
    ac_drm_device *dev = dev_p;
+   bool is_virtio_vpipe = info->is_virtio && fd < 0;
 
    STATIC_ASSERT(AMDGPU_HW_IP_GFX == AMD_IP_GFX);
    STATIC_ASSERT(AMDGPU_HW_IP_COMPUTE == AMD_IP_COMPUTE);
@@ -537,7 +538,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    handle_env_var_force_family(info);
 
-   if (!ac_query_pci_bus_info(fd, info)) {
+   if (!is_virtio_vpipe && !ac_query_pci_bus_info(fd, info)) {
       if (require_pci_bus_info)
          return AC_QUERY_GPU_INFO_FAIL;
    }
@@ -553,10 +554,15 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
 
    uint64_t cap;
-   r = drmGetCap(fd, DRM_CAP_SYNCOBJ, &cap);
-   if (r != 0 || cap == 0) {
-      fprintf(stderr, "amdgpu: syncobj support is missing but is required.\n");
-      return AC_QUERY_GPU_INFO_FAIL;
+   /* In the vpipe case, the fd will be < 0 and we can't do direct ioctls.
+    * Assume syncobjs are supported in this case.
+    */
+   if (!is_virtio_vpipe) {
+      r = drmGetCap(fd, DRM_CAP_SYNCOBJ, &cap);
+      if (r != 0 || cap == 0) {
+         fprintf(stderr, "amdgpu: syncobj support is missing but is required.\n");
+         return AC_QUERY_GPU_INFO_FAIL;
+      }
    }
 
    /* Query hardware and driver information. */
@@ -1015,7 +1021,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_gang_submit = info->drm_minor >= 49;
    info->has_gpuvm_fault_query = info->drm_minor >= 55;
    info->has_tmz_support = device_info.ids_flags & AMDGPU_IDS_FLAGS_TMZ;
-   info->kernel_has_modifiers = has_modifiers(fd);
+   info->kernel_has_modifiers = has_modifiers(fd) || (info->is_virtio && fd < 0);
    info->uses_kernel_cu_mask = false; /* Not implemented in the kernel. */
    info->has_graphics = info->ip[AMD_IP_GFX].num_queues > 0;
 
