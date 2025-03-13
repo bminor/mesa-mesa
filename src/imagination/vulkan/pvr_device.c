@@ -193,6 +193,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_zero_initialize_workgroup_memory = false,
       .EXT_color_write_enable = true,
       .EXT_depth_clamp_zero_one = true,
+      .EXT_extended_dynamic_state = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
@@ -282,6 +283,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_color_write_enable */
       .colorWriteEnable = true,
+
+      /* Vulkan 1.3 / VK_EXT_extended_dynamic_state */
+      .extendedDynamicState = true,
 
       /* Vulkan 1.2 / VK_EXT_host_query_reset */
       .hostQueryReset = true,
