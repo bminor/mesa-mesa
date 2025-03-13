@@ -94,7 +94,8 @@ vn_flags = [
 
 vn_libs = []
 
-if with_platform_wayland or with_platform_x11
+if with_platform_wayland or with_platform_x11 or \
+   (system_has_kms_drm and not with_platform_android)
   libvn_files += files('vn_wsi.c')
   vn_flags += '-DVN_USE_WSI_PLATFORM'
 endif
