@@ -256,9 +256,6 @@ if with_platform_windows
     subdir('targets/libgl-gdi')
   endif
 endif
-if with_tests
-  subdir('tests')
-endif
 if with_swrast_vk
   subdir('frontends/lavapipe')
   subdir('targets/lavapipe')
