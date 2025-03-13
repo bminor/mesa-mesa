@@ -730,7 +730,7 @@ static void ac_sqtt_fill_sqtt_desc(const struct radeon_info *info,
       ac_gfx_level_to_sqtt_version(info->gfx_level);
    chunk->shader_engine_index = shader_engine_index;
    chunk->v1.instrumentation_spec_version = 1;
-   chunk->v1.instrumentation_api_version = 0;
+   chunk->v1.instrumentation_api_version = 5;
    chunk->v1.compute_unit_index = compute_unit_index;
 }
 
