@@ -21,11 +21,11 @@ dump_mem_pool_reg_write(unsigned reg, uint32_t data, unsigned context,
       struct rnndecaddrinfo *info = rnn_reginfo(rnn_pipe, reg);
       printf("\t\twrite %s (%02x) pipe\n", info->name, reg);
 
-      if (!strcmp(info->typeinfo->name, "void")) {
-         /* registers that ignore their payload */
-      } else {
+      if (!info->typeinfo || strcmp(info->typeinfo->name, "void")) {
          printf("\t\t\t");
          dump_register(&r);
+      } else {
+         /* registers that ignore their payload */
       }
       rnn_reginfo_free(info);
    } else {
