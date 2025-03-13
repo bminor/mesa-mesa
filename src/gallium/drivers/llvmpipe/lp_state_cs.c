@@ -743,16 +743,12 @@ generate_compute(struct llvmpipe_context *lp,
       LLVMValueRef ssbo_ptr;
       LLVMValueRef shared_ptr;
       LLVMValueRef payload_ptr;
-      LLVMValueRef kernel_args_ptr;
       struct lp_build_mask_context mask;
       struct lp_bld_tgsi_system_values system_values;
 
       memset(&system_values, 0, sizeof(system_values));
       consts_ptr = lp_jit_resources_constants(gallivm, variant->jit_resources_type, resources_ptr);
       ssbo_ptr = lp_jit_resources_ssbos(gallivm, variant->jit_resources_type, resources_ptr);
-      kernel_args_ptr = lp_jit_cs_context_kernel_args(gallivm,
-                                                      variant->jit_cs_context_type,
-                                                      context_ptr);
 
       shared_ptr = lp_jit_cs_thread_data_shared(gallivm,
                                                 variant->jit_cs_thread_data_type,
@@ -879,7 +875,6 @@ generate_compute(struct llvmpipe_context *lp,
       params.shared_ptr = shared_ptr;
       params.payload_ptr = payload_ptr;
       params.coro = &coro_info;
-      params.kernel_args = kernel_args_ptr;
       params.mesh_iface = &mesh_iface.base;
 
       params.current_func = NULL;
@@ -1643,7 +1638,7 @@ update_csctx_ssbo(struct llvmpipe_context *llvmpipe,
 
 
 static void
-llvmpipe_cs_update_derived(struct llvmpipe_context *llvmpipe, const void *input)
+llvmpipe_cs_update_derived(struct llvmpipe_context *llvmpipe)
 {
    if (llvmpipe->cs_dirty & LP_CSNEW_CONSTANTS) {
       lp_csctx_set_cs_constants(llvmpipe->csctx,
@@ -1673,12 +1668,6 @@ llvmpipe_cs_update_derived(struct llvmpipe_context *llvmpipe, const void *input)
       lp_csctx_set_cs_images(llvmpipe->csctx,
                               ARRAY_SIZE(llvmpipe->images[PIPE_SHADER_COMPUTE]),
                               llvmpipe->images[PIPE_SHADER_COMPUTE]);
-
-   struct lp_cs_context *csctx = llvmpipe->csctx;
-   if (input) {
-      csctx->input = input;
-      csctx->cs.current.jit_context.kernel_args = input;
-   }
 
    if (llvmpipe->cs_dirty & (LP_CSNEW_CS |
                              LP_CSNEW_IMAGES |
@@ -1790,7 +1779,7 @@ llvmpipe_launch_grid(struct pipe_context *pipe,
 
    memset(&job_info, 0, sizeof(job_info));
 
-   llvmpipe_cs_update_derived(llvmpipe, info->input);
+   llvmpipe_cs_update_derived(llvmpipe);
 
    fill_grid_size(pipe, 0, info, job_info.grid_size);
 
@@ -1816,14 +1805,6 @@ llvmpipe_launch_grid(struct pipe_context *pipe,
    }
    if (!llvmpipe->queries_disabled)
       llvmpipe->pipeline_statistics.cs_invocations += num_tasks * info->block[0] * info->block[1] * info->block[2];
-}
-
-
-static void
-llvmpipe_set_compute_resources(struct pipe_context *pipe,
-                               unsigned start, unsigned count,
-                               struct pipe_surface **resources)
-{
 }
 
 
@@ -1873,7 +1854,6 @@ llvmpipe_init_compute_funcs(struct llvmpipe_context *llvmpipe)
    llvmpipe->pipe.bind_compute_state = llvmpipe_bind_compute_state;
    llvmpipe->pipe.get_compute_state_info = llvmpipe_get_compute_state_info;
    llvmpipe->pipe.delete_compute_state = llvmpipe_delete_compute_state;
-   llvmpipe->pipe.set_compute_resources = llvmpipe_set_compute_resources;
    llvmpipe->pipe.set_global_binding = llvmpipe_set_global_binding;
    llvmpipe->pipe.launch_grid = llvmpipe_launch_grid;
 }

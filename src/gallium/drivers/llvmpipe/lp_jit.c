@@ -270,15 +270,11 @@ lp_jit_create_cs_types(struct lp_compute_shader_variant *lp)
       LLVMTypeRef elem_types[LP_JIT_CS_CTX_COUNT];
       LLVMTypeRef cs_context_type;
 
-      elem_types[LP_JIT_CS_CTX_KERNEL_ARGS] = LLVMPointerType(LLVMInt8TypeInContext(lc), 0);
       elem_types[LP_JIT_CS_CTX_SHARED_SIZE] = LLVMInt32TypeInContext(lc);
 
       cs_context_type = LLVMStructTypeInContext(lc, elem_types,
                                              ARRAY_SIZE(elem_types), 0);
 
-      LP_CHECK_MEMBER_OFFSET(struct lp_jit_cs_context, kernel_args,
-                             gallivm->target, cs_context_type,
-                             LP_JIT_CS_CTX_KERNEL_ARGS);
       LP_CHECK_MEMBER_OFFSET(struct lp_jit_cs_context, shared_size,
                              gallivm->target, cs_context_type,
                              LP_JIT_CS_CTX_SHARED_SIZE);

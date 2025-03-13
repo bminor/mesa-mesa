@@ -323,8 +323,6 @@ enum {
 
 struct lp_jit_cs_context
 {
-   const void *kernel_args;
-
    uint32_t shared_size;
 };
 
@@ -333,7 +331,6 @@ struct lp_jit_cs_context
  * lp_jit_context struct above.
  */
 enum {
-   LP_JIT_CS_CTX_KERNEL_ARGS,
    LP_JIT_CS_CTX_SHARED_SIZE,
    LP_JIT_CS_CTX_COUNT
 };
@@ -352,9 +349,6 @@ enum {
 
 #define lp_jit_cs_context_images(_gallivm, _type, _ptr) \
    lp_build_struct_get_ptr2(_gallivm, _type, _ptr, LP_JIT_CS_CTX_IMAGES, "images")
-
-#define lp_jit_cs_context_kernel_args(_gallivm, _type, _ptr) \
-   lp_build_struct_get2(_gallivm, _type, _ptr, LP_JIT_CS_CTX_KERNEL_ARGS, "kernel_args")
 
 #define lp_jit_cs_context_shared_size(_gallivm, _type, _ptr) \
    lp_build_struct_get_ptr2(_gallivm, _type, _ptr, LP_JIT_CS_CTX_SHARED_SIZE, "shared_size")

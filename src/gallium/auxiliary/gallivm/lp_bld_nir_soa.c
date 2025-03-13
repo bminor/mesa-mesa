@@ -243,7 +243,6 @@ struct lp_build_nir_soa_context
     */
    LLVMValueRef inputs_array;
 
-   LLVMValueRef kernel_args_ptr;
    unsigned gs_vertex_streams;
 
    LLVMTypeRef call_context_type;
@@ -4538,42 +4537,6 @@ visit_discard(struct lp_build_nir_soa_context *bld,
 }
 
 static void
-visit_load_kernel_input(struct lp_build_nir_soa_context *bld,
-                        nir_intrinsic_instr *instr,
-                        LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
-{
-   struct gallivm_state *gallivm = bld->base.gallivm;
-   LLVMBuilderRef builder = gallivm->builder;
-
-   LLVMValueRef offset = get_src(bld, &instr->src[0], 0);
-   bool offset_is_uniform = !lp_nir_instr_src_divergent(&instr->instr, 0);
-
-   struct lp_build_context *bld_broad = get_int_bld(bld, true, instr->def.bit_size, !offset_is_uniform);
-   LLVMValueRef kernel_args_ptr = bld->kernel_args_ptr;
-   unsigned size_shift = bit_size_to_shift_size(instr->def.bit_size);
-   struct lp_build_context *bld_offset = get_int_bld(bld, true, nir_src_bit_size(instr->src[0]), !offset_is_uniform);
-   if (size_shift)
-      offset = lp_build_shr(bld_offset, offset, lp_build_const_int_vec(gallivm, bld_offset->type, size_shift));
-
-   LLVMTypeRef ptr_type = LLVMPointerType(bld_broad->elem_type, 0);
-   kernel_args_ptr = LLVMBuildBitCast(builder, kernel_args_ptr, ptr_type, "");
-
-   if (offset_is_uniform) {
-      offset = LLVMBuildExtractElement(builder, offset, first_active_invocation(bld), "");
-
-      for (unsigned c = 0; c < instr->def.num_components; c++) {
-         LLVMValueRef this_offset = LLVMBuildAdd(builder, offset, nir_src_bit_size(instr->src[0]) == 64 ?
-                                                 lp_build_const_int64(gallivm, c) :
-                                                 lp_build_const_int32(gallivm, c), "");
-
-         result[c] = lp_build_pointer_get2(builder, bld_broad->elem_type, kernel_args_ptr, this_offset);
-      }
-   } else {
-      unreachable("load_kernel_arg must have a uniform offset.");
-   }
-}
-
-static void
 visit_load_global(struct lp_build_nir_soa_context *bld,
                   nir_intrinsic_instr *instr,
                   LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
@@ -5046,9 +5009,6 @@ visit_intrinsic(struct lp_build_nir_soa_context *bld,
    case nir_intrinsic_barrier:
       visit_barrier(bld, instr);
       break;
-   case nir_intrinsic_load_kernel_input:
-      visit_load_kernel_input(bld, instr, result);
-     break;
    case nir_intrinsic_load_global:
    case nir_intrinsic_load_global_constant:
       visit_load_global(bld, instr, result);
@@ -5910,7 +5870,6 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
    bld.shared_ptr = params->shared_ptr;
    bld.payload_ptr = params->payload_ptr;
    bld.coro = params->coro;
-   bld.kernel_args_ptr = params->kernel_args;
    bld.num_inputs = params->num_inputs;
    bld.indirects = 0;
    if (shader->info.inputs_read_indirectly)
