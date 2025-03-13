@@ -212,7 +212,7 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
    if (ctx->gen_dirty & BIT(FD6_GROUP_CONST))
       fd6_emit_cs_user_consts<CHIP>(ctx, ring, cs);
 
-   if (cs->v->need_driver_params || info->input)
+   if (cs->v->need_driver_params)
       fd6_emit_cs_driver_params<CHIP>(ctx, ring, cs, info);
 
    OUT_PKT7(ring, CP_SET_MARKER, 1);

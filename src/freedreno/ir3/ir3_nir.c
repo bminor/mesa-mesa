@@ -1545,12 +1545,6 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
                               align(const_state->image_dims.count, 4) / 4, 1);
    }
 
-   if (v->type == MESA_SHADER_KERNEL && v->cs.req_input_mem) {
-      ir3_const_reserve_space(&const_state->allocs,
-                              IR3_CONST_ALLOC_KERNEL_PARAMS,
-                              align(v->cs.req_input_mem, 4) / 4, 1);
-   }
-
    if ((v->type == MESA_SHADER_VERTEX) && (compiler->gen < 5) &&
        v->stream_output.num_outputs > 0) {
       ir3_const_reserve_space(&const_state->allocs, IR3_CONST_ALLOC_TFBO,

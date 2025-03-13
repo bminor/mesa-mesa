@@ -359,7 +359,6 @@ alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
 
    case MESA_SHADER_COMPUTE:
    case MESA_SHADER_KERNEL:
-      v->cs.req_input_mem = shader->cs.req_input_mem;
       v->cs.req_local_mem = shader->cs.req_local_mem;
       break;
 
@@ -810,8 +809,6 @@ ir3_const_alloc_type_to_string(enum ir3_const_alloc_type type)
       return "ubo_ptrs";
    case IR3_CONST_ALLOC_IMAGE_DIMS:
       return "image_dims";
-   case IR3_CONST_ALLOC_KERNEL_PARAMS:
-      return "kernel_params";
    case IR3_CONST_ALLOC_TFBO:
       return "tfbo";
    case IR3_CONST_ALLOC_PRIMITIVE_PARAM:

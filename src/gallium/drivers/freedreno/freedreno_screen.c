@@ -319,8 +319,6 @@ fd_init_compute_caps(struct fd_screen *screen)
 
    caps->address_bits = screen->gen >= 5 ? 64 : 32;
 
-   snprintf(caps->ir_target, sizeof(caps->ir_target), "ir3");
-
    caps->grid_dimension = 3;
 
    caps->max_grid_size[0] =

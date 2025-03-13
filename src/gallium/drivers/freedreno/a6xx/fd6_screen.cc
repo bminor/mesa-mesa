@@ -87,11 +87,10 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
 
    if ((usage &
         (PIPE_BIND_RENDER_TARGET | PIPE_BIND_DISPLAY_TARGET |
-         PIPE_BIND_SCANOUT | PIPE_BIND_SHARED | PIPE_BIND_COMPUTE_RESOURCE)) &&
+         PIPE_BIND_SCANOUT | PIPE_BIND_SHARED)) &&
        has_color && has_tex) {
       retval |= usage & (PIPE_BIND_RENDER_TARGET | PIPE_BIND_DISPLAY_TARGET |
-                         PIPE_BIND_SCANOUT | PIPE_BIND_SHARED |
-                         PIPE_BIND_COMPUTE_RESOURCE);
+                         PIPE_BIND_SCANOUT | PIPE_BIND_SHARED);
    }
 
    /* For ARB_framebuffer_no_attachments: */

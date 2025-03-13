@@ -210,20 +210,18 @@ enum ir3_const_alloc_type {
     * for images that have image_{load,store,size,atomic*} intrinsics.
     */
    IR3_CONST_ALLOC_IMAGE_DIMS = 8,
-   /* OpenCL */
-   IR3_CONST_ALLOC_KERNEL_PARAMS = 9,
    /* OpenGL, TFBO addresses only for vs on a3xx/a4xx */
-   IR3_CONST_ALLOC_TFBO = 10,
+   IR3_CONST_ALLOC_TFBO = 9,
    /* Common, stage-dependent primitive params:
     *  vs, gs: uvec4(primitive_stride, vertex_stride, 0, 0)
     *  hs, ds: uvec4(primitive_stride, vertex_stride,
     *                patch_stride, patch_vertices_in)
     *          uvec4(tess_param_base, tess_factor_base)
     */
-   IR3_CONST_ALLOC_PRIMITIVE_PARAM = 11,
+   IR3_CONST_ALLOC_PRIMITIVE_PARAM = 10,
    /* Common, mapping from varying location to offset. */
-   IR3_CONST_ALLOC_PRIMITIVE_MAP = 12,
-   IR3_CONST_ALLOC_MAX = 13,
+   IR3_CONST_ALLOC_PRIMITIVE_MAP = 11,
+   IR3_CONST_ALLOC_MAX = 12,
 };
 
 struct ir3_const_allocation {
@@ -932,7 +930,6 @@ struct ir3_shader_variant {
          bool fbfetch_coherent     : 1;
       } fs;
       struct {
-         unsigned req_input_mem;
          unsigned req_local_mem;
          bool force_linear_dispatch;
          uint32_t local_invocation_id;
@@ -1009,7 +1006,6 @@ struct ir3_shader {
    union {
       /* for compute shaders: */
       struct {
-         unsigned req_input_mem;    /* in dwords */
          unsigned req_local_mem;
          bool force_linear_dispatch;
       } cs;

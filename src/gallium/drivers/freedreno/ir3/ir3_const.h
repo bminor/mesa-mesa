@@ -426,24 +426,6 @@ emit_common_consts(const struct ir3_shader_variant *v,
    }
 }
 
-/* emit kernel params */
-static inline void
-emit_kernel_params(struct fd_context *ctx, const struct ir3_shader_variant *v,
-                   struct fd_ringbuffer *ring, const struct pipe_grid_info *info)
-   assert_dt
-{
-   const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset =
-      const_state->allocs.consts[IR3_CONST_ALLOC_KERNEL_PARAMS].offset_vec4;
-   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_KERNEL_PARAMS,
-                            v->constlen)) {
-      ring_wfi(ctx->batch, ring);
-      emit_const_user(ring, v, offset * 4,
-                      align(v->cs.req_input_mem, 4),
-                      (uint32_t *)info->input);
-   }
-}
-
 static inline struct ir3_driver_params_vs
 ir3_build_driver_params_vs(struct fd_context *ctx,
                            const struct pipe_draw_info *info,
@@ -634,8 +616,6 @@ ir3_emit_cs_driver_params(const struct ir3_shader_variant *v,
                           const struct pipe_grid_info *info)
    assert_dt
 {
-   emit_kernel_params(ctx, v, ring, info);
-
    /* a3xx/a4xx can inject these directly */
    if (ctx->screen->gen <= 4)
       return;

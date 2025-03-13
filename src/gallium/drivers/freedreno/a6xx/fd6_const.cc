@@ -484,11 +484,6 @@ fd6_emit_cs_driver_params(struct fd_context *ctx,
                           struct fd6_compute_state *cs,
                           const struct pipe_grid_info *info)
 {
-   /* info->input not handled in the UBO path.  I believe this was only
-    * ever used by clover
-    */
-   assert(!info->input);
-
    if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(cs->v);
       struct ir3_driver_params_cs compute_params =

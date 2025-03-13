@@ -265,17 +265,6 @@ ir3_shader_compute_state_create(struct pipe_context *pctx,
 {
    struct fd_context *ctx = fd_context(pctx);
 
-   /* req_input_mem will only be non-zero for cl kernels (ie. clover).
-    * This isn't a perfect test because I guess it is possible (but
-    * uncommon) for none for the kernel parameters to be a global,
-    * but ctx->set_global_bindings() can't fail, so this is the next
-    * best place to fail if we need a newer version of kernel driver:
-    */
-   if ((cso->req_input_mem > 0) &&
-       fd_device_version(ctx->dev) < FD_VERSION_BO_IOVA) {
-      return NULL;
-   }
-
    enum ir3_wavesize_option api_wavesize = IR3_SINGLE_OR_DOUBLE;
    enum ir3_wavesize_option real_wavesize = IR3_SINGLE_OR_DOUBLE;
 
@@ -311,7 +300,6 @@ ir3_shader_compute_state_create(struct pipe_context *pctx,
 
    struct ir3_shader *shader =
       ir3_shader_from_nir(compiler, nir, &ir3_options, NULL);
-   shader->cs.req_input_mem = align(cso->req_input_mem, 4) / 4;     /* byte->dword */
    shader->cs.req_local_mem = cso->static_shared_mem;
 
    struct ir3_shader_state *hwcso = calloc(1, sizeof(*hwcso));
