@@ -2101,7 +2101,12 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       }
 
       if (!strcmp(version->name, "amdgpu")) {
-         /* nothing to do. */
+#ifdef HAVE_AMDGPU_VIRTIO
+         if (debug_get_bool_option("AMD_FORCE_VPIPE", false)) {
+            is_virtio = true;
+            fd = -1;
+         }
+#endif
       } else
 #ifdef HAVE_AMDGPU_VIRTIO
          if (!strcmp(version->name, "virtio_gpu")) {

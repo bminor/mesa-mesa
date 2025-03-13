@@ -1184,7 +1184,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    device->rt_handles = _mesa_hash_table_create(NULL, _mesa_hash_u32, _mesa_key_u32_equal);
 
    device->ws = pdev->ws;
-   vk_device_set_drm_fd(&device->vk, device->ws->get_fd(device->ws));
+   device->vk.sync = device->ws->get_sync_provider(device->ws);
 
    /* With update after bind we can't attach bo's to the command buffer
     * from the descriptor set anymore, so we have to use a global BO list.

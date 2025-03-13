@@ -10,6 +10,7 @@
 #include "radv_null_winsys_public.h"
 
 #include "util/u_string.h"
+#include "util/u_sync_provider.h"
 #include "radv_null_bo.h"
 #include "radv_null_cs.h"
 #include "vk_sync_dummy.h"
@@ -189,6 +190,12 @@ radv_null_winsys_get_sync_types(struct radeon_winsys *rws)
    return radv_null_winsys(rws)->sync_types;
 }
 
+static struct util_sync_provider *
+radv_null_winsys_get_sync_provider(struct radeon_winsys *rws)
+{
+   return radv_null_winsys(rws)->sync_provider;
+}
+
 struct radeon_winsys *
 radv_null_winsys_create()
 {
@@ -202,11 +209,13 @@ radv_null_winsys_create()
    ws->base.query_info = radv_null_winsys_query_info;
    ws->base.get_fd = radv_null_winsys_get_fd;
    ws->base.get_sync_types = radv_null_winsys_get_sync_types;
+   ws->base.get_sync_provider = radv_null_winsys_get_sync_provider;
    ws->base.get_chip_name = radv_null_winsys_get_chip_name;
    radv_null_bo_init_functions(ws);
    radv_null_cs_init_functions(ws);
 
    ws->sync_types[0] = &vk_sync_dummy_type;
    ws->sync_types[1] = NULL;
+   ws->sync_provider = util_sync_provider_drm(-1);
    return &ws->base;
 }

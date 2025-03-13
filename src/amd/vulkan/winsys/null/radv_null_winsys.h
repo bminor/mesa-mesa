@@ -16,10 +16,12 @@
 #include "radv_radeon_winsys.h"
 
 struct vk_sync_type;
+struct util_sync_provider;
 
 struct radv_null_winsys {
    struct radeon_winsys base;
    const struct vk_sync_type *sync_types[2];
+   struct util_sync_provider *sync_provider;
 };
 
 static inline struct radv_null_winsys *
