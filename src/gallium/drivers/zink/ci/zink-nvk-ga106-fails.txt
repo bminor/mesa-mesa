@@ -354,9 +354,17 @@ spec@arb_sample_shading@samplemask 8@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 8@noms partition,Fail
 spec@arb_sample_shading@samplemask 8@sample mask_in_one,Fail
 spec@arb_shader_image_load_store@atomicity,Crash
+spec@arb_shader_image_load_store@atomicity@imageAtomicCompSwap,Fail
+spec@arb_shader_image_load_store@atomicity@imageAtomicExchange,Fail
+spec@arb_shader_image_load_store@atomicity@imageAtomicMax,Fail
 spec@arb_shader_image_load_store@atomicity@imageAtomicMin,Fail
+spec@arb_shader_image_load_store@atomicity@imageAtomicOr,Fail
+spec@arb_shader_image_load_store@atomicity@imageAtomicXor,Fail
+spec@arb_shader_image_load_store@coherency,Fail
 spec@arb_shader_image_load_store@max-size,Fail
 spec@arb_shader_image_load_store@max-size@image2DMS max size test/8x16384x8x1,Fail
+spec@arb_shader_storage_buffer_object@max-ssbo-size@fs,Crash
+spec@arb_shader_storage_buffer_object@max-ssbo-size@vs,Crash
 spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgrad,Fail
 spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@fs-packhalf2x16,Fail
