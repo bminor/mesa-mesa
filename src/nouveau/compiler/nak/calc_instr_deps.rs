@@ -341,7 +341,8 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
     }
 }
 
-fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
+fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
+    let mut min_num_static_cycles = 0;
     for b in f.blocks.iter_mut().rev() {
         let mut cycle = 0_u32;
 
@@ -446,6 +447,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
 
             cycle = min_start;
         }
+        min_num_static_cycles += cycle;
     }
 
     // It's unclear exactly why but the blob inserts a Nop with a delay of 2
@@ -464,6 +466,8 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
             MappedInstrs::One(instr)
         }
     });
+
+    min_num_static_cycles
 }
 
 impl Shader<'_> {
@@ -502,10 +506,17 @@ impl Shader<'_> {
         if DEBUG.serial() {
             self.assign_deps_serial();
         } else {
+            let mut min_num_static_cycles = 0;
             for f in &mut self.functions {
                 assign_barriers(f, self.sm);
-                calc_delays(f, self.sm);
+                min_num_static_cycles += calc_delays(f, self.sm);
             }
+
+            // Check that this file's model matches up with the model in
+            // opt_instr_sched_postpass. postpass includes an estimate of
+            // variable latency delays in its count, so we expect it to be >=
+            // the estimate here
+            assert!(self.info.num_static_cycles >= min_num_static_cycles);
         }
     }
 }
