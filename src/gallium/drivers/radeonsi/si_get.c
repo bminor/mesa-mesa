@@ -16,6 +16,7 @@
 #include "util/u_video.h"
 #include "vl/vl_video_buffer.h"
 #include <sys/utsname.h>
+#include "drm-uapi/drm.h"
 
 /* The capabilities reported by the kernel has priority
    over the existing logic in si_get_video_param */
@@ -1147,6 +1148,11 @@ void si_init_screen_caps(struct si_screen *sscreen)
    caps->has_const_bw = true;
    caps->cl_gl_sharing = true;
    caps->call_finalize_nir_in_linker = true;
+
+   /* Fixup dmabuf caps for the virtio + vpipe case (when fd=-1, u_init_pipe_screen_caps
+    * fails to set this capability). */
+   if (sscreen->info.is_virtio)
+         caps->dmabuf |= DRM_PRIME_CAP_EXPORT | DRM_PRIME_CAP_IMPORT;
 
    caps->fbfetch = 1;
 

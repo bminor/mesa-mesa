@@ -1664,6 +1664,8 @@ struct pipe_screen *radeonsi_screen_create(int fd, const struct pipe_screen_conf
 #ifdef HAVE_AMDGPU_VIRTIO
    if (strcmp(version->name, "virtio_gpu") == 0) {
       rw = amdgpu_winsys_create(fd, config, radeonsi_screen_create_impl, true);
+   } else if (debug_get_bool_option("AMD_FORCE_VPIPE", false)) {
+      rw = amdgpu_winsys_create(-1, config, radeonsi_screen_create_impl, true);
    } else
 #endif
    {
