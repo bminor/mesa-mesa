@@ -367,6 +367,16 @@ v3d_uncompiled_shader_create(struct pipe_context *pctx,
         if (s->info.stage == MESA_SHADER_KERNEL)
                 s->info.stage = MESA_SHADER_COMPUTE;
 
+        if (s->info.stage == MESA_SHADER_FRAGMENT &&
+            s->info.outputs_written & BITFIELD_BIT(FRAG_RESULT_COLOR)) {
+                /* We only support one attachment when doing dual source blending. */
+                if (s->info.fs.color_is_dual_source)
+                        NIR_PASS(_, s, nir_lower_fragcolor, 1);
+                else if (V3D_DBG(SOFT_BLEND))
+                        NIR_PASS(_, s, nir_lower_fragcolor,
+                                 V3D_MAX_DRAW_BUFFERS);
+        }
+
         if (s->info.stage != MESA_SHADER_VERTEX &&
             s->info.stage != MESA_SHADER_GEOMETRY) {
                 NIR_PASS(_, s, nir_lower_io,
@@ -680,6 +690,8 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                  !v3d->zsa->base.depth_writemask) &&
                 !(v3d->active_queries && v3d->current_oq);
 
+        key->software_blend = v3d->blend->use_software;
+
         for (int i = 0; i < v3d->framebuffer.nr_cbufs; i++) {
                 struct pipe_surface *cbuf = v3d->framebuffer.cbufs[i];
                 if (!cbuf)
@@ -696,13 +708,34 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                  * swizzle.
                  */
                 if (key->logicop_func != PIPE_LOGICOP_COPY ||
-                    s->info.fs.uses_fbfetch_output) {
+                    s->info.fs.uses_fbfetch_output ||
+                    key->software_blend) {
 
                         key->color_fmt[i].format = cbuf->format;
                         memcpy(key->color_fmt[i].swizzle,
                                v3d_get_format_swizzle(&v3d->screen->devinfo,
                                                        cbuf->format),
                                sizeof(key->color_fmt[i].swizzle));
+                }
+
+                if (key->software_blend) {
+                        struct pipe_rt_blend_state *blend = &v3d->blend->base.rt[i];
+
+                        if (blend->blend_enable) {
+                                key->blend[i].rgb_func = blend->rgb_func;
+                                key->blend[i].rgb_src_factor = blend->rgb_src_factor;
+                                key->blend[i].rgb_dst_factor = blend->rgb_dst_factor;
+                                key->blend[i].alpha_func = blend->alpha_func;
+                                key->blend[i].alpha_src_factor = blend->alpha_src_factor;
+                                key->blend[i].alpha_dst_factor = blend->alpha_dst_factor;
+                        } else {
+                                key->blend[i].rgb_func = PIPE_BLEND_ADD;
+                                key->blend[i].rgb_src_factor = PIPE_BLENDFACTOR_ONE;
+                                key->blend[i].rgb_dst_factor = PIPE_BLENDFACTOR_ZERO;
+                                key->blend[i].alpha_func = PIPE_BLEND_ADD;
+                                key->blend[i].alpha_src_factor = PIPE_BLENDFACTOR_ONE;
+                                key->blend[i].alpha_dst_factor = PIPE_BLENDFACTOR_ZERO;
+                        }
                 }
 
                 const struct util_format_description *desc =

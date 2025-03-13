@@ -338,6 +338,7 @@ v3d_init_screen_caps(struct v3d_screen *screen)
         caps->max_render_targets = V3D_MAX_RENDER_TARGETS(screen->devinfo.ver);
         caps->fbfetch = caps->max_render_targets;
         caps->fbfetch_coherent = true;
+        caps->max_dual_source_render_targets = 1;
 
         caps->vendor_id = 0x14E4;
 

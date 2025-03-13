@@ -712,6 +712,8 @@ struct v3d_depth_stencil_alpha_state {
 struct v3d_blend_state {
         struct pipe_blend_state base;
 
+        bool use_software;
+
         /* Per-RT mask of whether blending is enabled. */
         uint8_t blend_enables;
 };
