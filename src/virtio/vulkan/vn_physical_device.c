@@ -369,7 +369,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    vn_call_vkGetPhysicalDeviceFeatures2(
       ring, vn_physical_device_to_handle(physical_dev), &feats2);
 
-   struct vk_features *feats = &physical_dev->base.base.supported_features;
+   struct vk_features *feats = &physical_dev->base.vk.supported_features;
    vk_set_physical_device_features(feats, &feats2);
 
    /* Enable features for extensions natively implemented in Venus driver.
@@ -403,7 +403,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
 static void
 vn_physical_device_init_uuids(struct vn_physical_device *physical_dev)
 {
-   struct vk_properties *props = &physical_dev->base.base.properties;
+   struct vk_properties *props = &physical_dev->base.vk.properties;
    struct mesa_sha1 sha1_ctx;
    uint8_t sha1[SHA1_DIGEST_LENGTH];
 
@@ -439,7 +439,7 @@ static void
 vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
 {
    struct vn_instance *instance = physical_dev->instance;
-   struct vk_properties *props = &physical_dev->base.base.properties;
+   struct vk_properties *props = &physical_dev->base.vk.properties;
 
    const uint32_t version_override = vk_get_version_override();
    if (version_override) {
@@ -464,14 +464,14 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
        * is required for 1.3.
        * See vn_physical_device_get_passthrough_extensions()
        */
-      if (!physical_dev->base.base.supported_extensions.KHR_synchronization2)
+      if (!physical_dev->base.vk.supported_extensions.KHR_synchronization2)
          ver = MIN2(VK_API_VERSION_1_2, ver);
 
       props->apiVersion = ver;
    }
 
    /* ANGLE relies on ARM proprietary driver version for workarounds */
-   const char *engine_name = instance->base.base.app_info.engine_name;
+   const char *engine_name = instance->base.vk.app_info.engine_name;
    const bool forward_driver_version =
       props->driverID == VK_DRIVER_ID_ARM_PROPRIETARY && engine_name &&
       strcmp(engine_name, "ANGLE") == 0;
@@ -511,7 +511,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    const uint32_t renderer_version = physical_dev->renderer_version;
    struct vn_instance *instance = physical_dev->instance;
    const struct vn_renderer_info *renderer_info = &instance->renderer->info;
-   struct vk_properties *props = &physical_dev->base.base.properties;
+   struct vk_properties *props = &physical_dev->base.vk.properties;
    const struct vk_device_extension_table *exts =
       &physical_dev->renderer_extensions;
    VkPhysicalDeviceProperties2 props2 = {
@@ -785,14 +785,14 @@ vn_physical_device_init_queue_family_properties(
 {
    struct vn_instance *instance = physical_dev->instance;
    struct vn_ring *ring = instance->ring.ring;
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
    uint32_t count = 0;
 
    vn_call_vkGetPhysicalDeviceQueueFamilyProperties2(
       ring, vn_physical_device_to_handle(physical_dev), &count, NULL);
 
    const bool can_query_prio =
-      physical_dev->base.base.supported_features.globalPriorityQuery;
+      physical_dev->base.vk.supported_features.globalPriorityQuery;
    VkQueueFamilyProperties2 *props;
    VkQueueFamilyGlobalPriorityProperties *prio_props;
 
@@ -819,7 +819,7 @@ vn_physical_device_init_queue_family_properties(
    /* Starting from Android 14 (Android U), framework HWUI has required a
     * second graphics queue to avoid racing between webview and skiavk.
     */
-   const char *engine_name = instance->base.base.app_info.engine_name;
+   const char *engine_name = instance->base.vk.app_info.engine_name;
    const bool require_second_queue =
       engine_name && strcmp(engine_name, "android framework") == 0;
    ;
@@ -1362,11 +1362,11 @@ vn_physical_device_init_supported_extensions(
 #endif
 
       if (native.extensions[i]) {
-         physical_dev->base.base.supported_extensions.extensions[i] = true;
+         physical_dev->base.vk.supported_extensions.extensions[i] = true;
          physical_dev->extension_spec_versions[i] = props->specVersion;
       } else if (passthrough.extensions[i] &&
                  physical_dev->renderer_extensions.extensions[i]) {
-         physical_dev->base.base.supported_extensions.extensions[i] = true;
+         physical_dev->base.vk.supported_extensions.extensions[i] = true;
          physical_dev->extension_spec_versions[i] = MIN2(
             physical_dev->extension_spec_versions[i], props->specVersion);
       }
@@ -1379,7 +1379,7 @@ vn_physical_device_init_renderer_extensions(
 {
    struct vn_instance *instance = physical_dev->instance;
    struct vn_ring *ring = instance->ring.ring;
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
 
    /* get renderer extensions */
    uint32_t count = 0;
@@ -1501,7 +1501,7 @@ static void
 vn_image_format_cache_fini(struct vn_physical_device *physical_dev)
 {
    const VkAllocationCallbacks *alloc =
-      &physical_dev->base.base.instance->alloc;
+      &physical_dev->base.vk.instance->alloc;
    struct vn_image_format_properties_cache *cache =
       &physical_dev->image_format_cache;
 
@@ -1534,7 +1534,7 @@ vn_physical_device_disable_sparse_binding(
     * get filtered out then disable the feature.
     */
 
-   struct vk_features *feats = &physical_dev->base.base.supported_features;
+   struct vk_features *feats = &physical_dev->base.vk.supported_features;
    feats->sparseBinding = false;
    feats->sparseResidencyBuffer = false;
    feats->sparseResidencyImage2D = false;
@@ -1545,7 +1545,7 @@ vn_physical_device_disable_sparse_binding(
    feats->sparseResidency16Samples = false;
    feats->sparseResidencyAliased = false;
 
-   struct vk_properties *props = &physical_dev->base.base.properties;
+   struct vk_properties *props = &physical_dev->base.vk.properties;
    props->sparseAddressSpaceSize = 0;
    props->sparseResidencyStandard2DBlockShape = 0;
    props->sparseResidencyStandard2DMultisampleBlockShape = 0;
@@ -1558,7 +1558,7 @@ static VkResult
 vn_physical_device_init(struct vn_physical_device *physical_dev)
 {
    struct vn_instance *instance = physical_dev->instance;
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
    VkResult result;
 
    result = vn_physical_device_init_renderer_extensions(physical_dev);
@@ -1605,7 +1605,7 @@ void
 vn_physical_device_fini(struct vn_physical_device *physical_dev)
 {
    struct vn_instance *instance = physical_dev->instance;
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
 
    vn_image_format_cache_fini(physical_dev);
 
@@ -1639,7 +1639,7 @@ vn_instance_enumerate_physical_device_groups_locked(
 {
    VkInstance instance_handle = vn_instance_to_handle(instance);
    struct vn_ring *ring = instance->ring.ring;
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
    VkResult result;
 
    uint32_t count = 0;
@@ -1674,7 +1674,7 @@ vn_instance_enumerate_physical_device_groups_locked(
       for (uint32_t j = 0; j < VK_MAX_DEVICE_GROUP_SIZE; j++) {
          struct vn_physical_device_base *temp_obj =
             &temp_objs[VK_MAX_DEVICE_GROUP_SIZE * i + j];
-         temp_obj->base.base.type = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+         temp_obj->vk.base.type = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
          group->physicalDevices[j] = (VkPhysicalDevice)temp_obj;
       }
    }
@@ -1732,7 +1732,7 @@ enumerate_physical_devices(struct vn_instance *instance,
                            struct vn_physical_device **out_physical_devs,
                            uint32_t *out_count)
 {
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
    struct vn_ring *ring = instance->ring.ring;
    struct vn_physical_device *physical_devs = NULL;
    VkResult result;
@@ -1821,7 +1821,7 @@ filter_physical_devices(struct vn_physical_device *physical_devs,
 static VkResult
 vn_instance_enumerate_physical_devices_and_groups(struct vn_instance *instance)
 {
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
    struct vn_physical_device *physical_devs = NULL;
    uint32_t count = 0;
    VkResult result = VK_SUCCESS;
@@ -1940,7 +1940,7 @@ vn_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
    VK_OUTARRAY_MAKE_TYPED(VkExtensionProperties, out, pProperties,
                           pPropertyCount);
    for (uint32_t i = 0; i < VK_DEVICE_EXTENSION_COUNT; i++) {
-      if (physical_dev->base.base.supported_extensions.extensions[i]) {
+      if (physical_dev->base.vk.supported_extensions.extensions[i]) {
          vk_outarray_append_typed(VkExtensionProperties, &out, prop) {
             *prop = vk_device_extensions[i];
             prop->specVersion = physical_dev->extension_spec_versions[i];
@@ -2026,7 +2026,7 @@ vn_GetPhysicalDeviceMemoryProperties2(
    VkPhysicalDeviceMemoryBudgetPropertiesEXT *memory_budget = NULL;
 
    /* Don't waste time searching for unsupported structs. */
-   if (physical_dev->base.base.supported_extensions.EXT_memory_budget) {
+   if (physical_dev->base.vk.supported_extensions.EXT_memory_budget) {
       memory_budget =
          vk_find_struct(pMemoryProperties->pNext,
                         PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT);
@@ -2513,7 +2513,7 @@ vn_image_store_format_in_cache(
    VkResult cached_result)
 {
    const VkAllocationCallbacks *alloc =
-      &physical_dev->base.base.instance->alloc;
+      &physical_dev->base.vk.instance->alloc;
    struct vn_image_format_properties_cache *cache =
       &physical_dev->image_format_cache;
    struct vn_image_format_cache_entry *cache_entry = NULL;

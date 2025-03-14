@@ -26,7 +26,7 @@ vn_CreateQueryPool(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_query_pool *pool =
       vk_zalloc(alloc, sizeof(*pool), VN_DEFAULT_ALIGN,

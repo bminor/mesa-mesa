@@ -50,7 +50,7 @@ struct vn_device_memory {
    VkDeviceSize map_end;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_device_memory,
-                               base.base.base,
+                               base.vk.base,
                                VkDeviceMemory,
                                VK_OBJECT_TYPE_DEVICE_MEMORY)
 

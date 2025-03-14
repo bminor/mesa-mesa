@@ -252,7 +252,7 @@ vn_CreateShaderModule(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_shader_module *mod =
       vk_zalloc(alloc, sizeof(*mod), VN_DEFAULT_ALIGN,
@@ -279,7 +279,7 @@ vn_DestroyShaderModule(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_shader_module *mod = vn_shader_module_from_handle(shaderModule);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!mod)
       return;
@@ -297,7 +297,7 @@ static void
 vn_pipeline_layout_destroy(struct vn_device *dev,
                            struct vn_pipeline_layout *pipeline_layout)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    if (pipeline_layout->push_descriptor_set_layout) {
       vn_descriptor_set_layout_unref(
          dev, pipeline_layout->push_descriptor_set_layout);
@@ -334,7 +334,7 @@ vn_CreatePipelineLayout(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    /* ignore pAllocator as the pipeline layout is reference-counted */
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    struct vn_pipeline_layout *layout =
       vk_zalloc(alloc, sizeof(*layout), VN_DEFAULT_ALIGN,
@@ -403,7 +403,7 @@ vn_CreatePipelineCache(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_pipeline_cache *cache =
       vk_zalloc(alloc, sizeof(*cache), VN_DEFAULT_ALIGN,
@@ -443,7 +443,7 @@ vn_DestroyPipelineCache(VkDevice device,
    struct vn_pipeline_cache *cache =
       vn_pipeline_cache_from_handle(pipelineCache);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!cache)
       return;
@@ -507,7 +507,7 @@ vn_GetPipelineCacheData(VkDevice device,
       return VK_INCOMPLETE;
    }
 
-   const struct vk_properties *props = &physical_dev->base.base.properties;
+   const struct vk_properties *props = &physical_dev->base.vk.properties;
    header->header_size = sizeof(*header);
    header->header_version = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
    header->vendor_id = props->vendorID;
@@ -1677,7 +1677,7 @@ vn_CreateGraphicsPipelines(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    bool want_sync = false;
    VkResult result;
 
@@ -1770,7 +1770,7 @@ vn_CreateComputePipelines(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    bool want_sync = false;
    VkResult result;
 
@@ -1829,7 +1829,7 @@ vn_DestroyPipeline(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_pipeline *pipeline = vn_pipeline_from_handle(_pipeline);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!pipeline)
       return;
@@ -1856,7 +1856,7 @@ vn_CreateRayTracingPipelinesKHR(
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    bool want_sync = false;
    VkResult result = VK_SUCCESS;
 

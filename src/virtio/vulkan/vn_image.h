@@ -84,7 +84,7 @@ struct vn_image {
    } wsi;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_image,
-                               base.base.base,
+                               base.vk.base,
                                VkImage,
                                VK_OBJECT_TYPE_IMAGE)
 
@@ -94,7 +94,7 @@ struct vn_image_view {
    const struct vn_image *image;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_image_view,
-                               base.base,
+                               base.vk,
                                VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW)
 
@@ -102,7 +102,7 @@ struct vn_sampler {
    struct vn_object_base base;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_sampler,
-                               base.base,
+                               base.vk,
                                VkSampler,
                                VK_OBJECT_TYPE_SAMPLER)
 
@@ -110,7 +110,7 @@ struct vn_sampler_ycbcr_conversion {
    struct vn_object_base base;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_sampler_ycbcr_conversion,
-                               base.base,
+                               base.vk,
                                VkSamplerYcbcrConversion,
                                VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION)
 

@@ -25,7 +25,7 @@
 static void
 vn_queue_fini(struct vn_queue *queue)
 {
-   VkDevice dev_handle = vk_device_to_handle(queue->base.base.base.device);
+   VkDevice dev_handle = vk_device_to_handle(queue->base.vk.base.device);
 
    if (queue->wait_fence != VK_NULL_HANDLE) {
       vn_DestroyFence(dev_handle, queue->wait_fence, NULL);
@@ -49,7 +49,7 @@ vn_queue_init(struct vn_device *dev,
    if (result != VK_SUCCESS)
       return result;
 
-   vn_cached_storage_init(&queue->storage, &dev->base.base.alloc);
+   vn_cached_storage_init(&queue->storage, &dev->base.vk.alloc);
 
    if (dev->physical_device->emulate_second_queue ==
           queue_info->queueFamilyIndex &&
@@ -91,7 +91,7 @@ static VkResult
 vn_device_init_queues(struct vn_device *dev,
                       const VkDeviceCreateInfo *create_info)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    uint32_t count = 0;
    for (uint32_t i = 0; i < create_info->queueCreateInfoCount; i++)
@@ -135,7 +135,7 @@ static bool
 vn_device_queue_family_init(struct vn_device *dev,
                             const VkDeviceCreateInfo *create_info)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    uint32_t *queue_families = NULL;
    uint32_t count = 0;
 
@@ -169,7 +169,7 @@ vn_device_queue_family_init(struct vn_device *dev,
 static inline void
 vn_device_queue_family_fini(struct vn_device *dev)
 {
-   vk_free(&dev->base.base.alloc, dev->queue_families);
+   vk_free(&dev->base.vk.alloc, dev->queue_families);
 }
 
 static bool
@@ -224,7 +224,7 @@ vn_device_fix_create_info(const struct vn_device *dev,
 {
    const struct vn_physical_device *physical_dev = dev->physical_device;
    const struct vk_device_extension_table *app_exts =
-      &dev->base.base.enabled_extensions;
+      &dev->base.vk.enabled_extensions;
    /* extra_exts and block_exts must not overlap */
    const char *extra_exts[16];
    const char *block_exts[16];
@@ -364,7 +364,7 @@ vn_device_feedback_pool_init(struct vn_device *dev)
     * events, which well covers the common scenarios. Pool can grow anyway.
     */
    static const uint32_t pool_size = 4096;
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    if (VN_PERF(NO_EVENT_FEEDBACK) && VN_PERF(NO_FENCE_FEEDBACK) &&
        VN_PERF(NO_SEMAPHORE_FEEDBACK))
@@ -396,7 +396,7 @@ vn_device_update_shader_cache_id(struct vn_device *dev)
     */
 #if !DETECT_OS_ANDROID && defined(ENABLE_SHADER_CACHE)
    const uint8_t *device_uuid =
-      dev->physical_device->base.base.properties.pipelineCacheUUID;
+      dev->physical_device->base.vk.properties.pipelineCacheUUID;
 
    char uuid[VK_UUID_SIZE * 2 + 1];
    mesa_bytes_to_hex(uuid, device_uuid, VK_UUID_SIZE);
@@ -534,7 +534,7 @@ vn_CreateDevice(VkPhysicalDevice physicalDevice,
       vn_physical_device_from_handle(physicalDevice);
    struct vn_instance *instance = physical_dev->instance;
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &instance->base.base.alloc;
+      pAllocator ? pAllocator : &instance->base.vk.alloc;
    struct vn_device *dev;
    VkResult result;
 
@@ -563,8 +563,8 @@ vn_CreateDevice(VkPhysicalDevice physicalDevice,
    }
 
    if (VN_DEBUG(LOG_CTX_INFO)) {
-      vn_log(instance, "%s", physical_dev->base.base.properties.deviceName);
-      vn_log(instance, "%s", physical_dev->base.base.properties.driverInfo);
+      vn_log(instance, "%s", physical_dev->base.vk.properties.deviceName);
+      vn_log(instance, "%s", physical_dev->base.vk.properties.driverInfo);
    }
 
    vn_tls_set_async_pipeline_create();
@@ -580,7 +580,7 @@ vn_DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator)
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!dev)
       return;
@@ -618,7 +618,7 @@ PFN_vkVoidFunction
 vn_GetDeviceProcAddr(VkDevice device, const char *pName)
 {
    struct vn_device *dev = vn_device_from_handle(device);
-   return vk_device_get_proc_addr(&dev->base.base, pName);
+   return vk_device_get_proc_addr(&dev->base.vk, pName);
 }
 
 void

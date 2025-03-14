@@ -29,7 +29,7 @@ struct vn_query_pool {
    bool saturate_on_overflow;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_query_pool,
-                               base.base,
+                               base.vk,
                                VkQueryPool,
                                VK_OBJECT_TYPE_QUERY_POOL)
 

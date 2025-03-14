@@ -89,7 +89,7 @@ vn_device_memory_bo_init(struct vn_device *dev, struct vn_device_memory *mem)
    if (result != VK_SUCCESS)
       return result;
 
-   const struct vk_device_memory *mem_vk = &mem->base.base;
+   const struct vk_device_memory *mem_vk = &mem->base.vk;
    const VkMemoryType *mem_type = &dev->physical_device->memory_properties
                                       .memoryTypes[mem_vk->memory_type_index];
    return vn_renderer_bo_create_from_device_memory(
@@ -155,7 +155,7 @@ vn_device_memory_alloc_guest_vram(struct vn_device *dev,
                                   struct vn_device_memory *mem,
                                   const VkMemoryAllocateInfo *alloc_info)
 {
-   const struct vk_device_memory *mem_vk = &mem->base.base;
+   const struct vk_device_memory *mem_vk = &mem->base.vk;
    const VkMemoryType *mem_type = &dev->physical_device->memory_properties
                                       .memoryTypes[mem_vk->memory_type_index];
    VkMemoryPropertyFlags flags = mem_type->propertyFlags;
@@ -288,7 +288,7 @@ vn_device_memory_alloc(struct vn_device *dev,
                        struct vn_device_memory *mem,
                        const VkMemoryAllocateInfo *alloc_info)
 {
-   struct vk_device_memory *mem_vk = &mem->base.base;
+   struct vk_device_memory *mem_vk = &mem->base.vk;
    const VkMemoryType *mem_type = &dev->physical_device->memory_properties
                                       .memoryTypes[mem_vk->memory_type_index];
 
@@ -324,12 +324,12 @@ vn_device_memory_emit_report(struct vn_device *dev,
                              bool is_alloc,
                              VkResult result)
 {
-   struct vk_device *dev_vk = &dev->base.base;
+   struct vk_device *dev_vk = &dev->base.vk;
 
    if (likely(!dev_vk->memory_reports))
       return;
 
-   const struct vk_device_memory *mem_vk = &mem->base.base;
+   const struct vk_device_memory *mem_vk = &mem->base.vk;
    VkDeviceMemoryReportEventTypeEXT type;
    if (result != VK_SUCCESS) {
       type = VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATION_FAILED_EXT;
@@ -377,14 +377,14 @@ vn_AllocateMemory(VkDevice device,
    }
 
    struct vn_device_memory *mem = vk_device_memory_create(
-      &dev->base.base, pAllocateInfo, pAllocator, sizeof(*mem));
+      &dev->base.vk, pAllocateInfo, pAllocator, sizeof(*mem));
    if (!mem)
       return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    vn_object_set_id(mem, vn_get_next_obj_id(), VK_OBJECT_TYPE_DEVICE_MEMORY);
 
    VkResult result;
-   if (mem->base.base.ahardware_buffer) {
+   if (mem->base.vk.ahardware_buffer) {
       result = vn_android_device_import_ahb(dev, mem, dedicated_info);
    } else if (import_fd_info) {
       result = vn_device_memory_import_dma_buf(dev, mem, pAllocateInfo, false,
@@ -396,7 +396,7 @@ vn_AllocateMemory(VkDevice device,
    vn_device_memory_emit_report(dev, mem, /* is_alloc */ true, result);
 
    if (result != VK_SUCCESS) {
-      vk_device_memory_destroy(&dev->base.base, pAllocator, &mem->base.base);
+      vk_device_memory_destroy(&dev->base.vk, pAllocator, &mem->base.vk);
       return vn_error(dev->instance, result);
    }
 
@@ -424,7 +424,7 @@ vn_FreeMemory(VkDevice device,
       vn_ring_wait_roundtrip(dev->primary_ring, mem->bo_roundtrip_seqno);
 
    vn_device_memory_free_simple(dev, mem);
-   vk_device_memory_destroy(&dev->base.base, pAllocator, &mem->base.base);
+   vk_device_memory_destroy(&dev->base.vk, pAllocator, &mem->base.vk);
 }
 
 uint64_t
@@ -447,7 +447,7 @@ vn_MapMemory2(VkDevice device,
       vn_device_memory_from_handle(pMemoryMapInfo->memory);
    const VkDeviceSize offset = pMemoryMapInfo->offset;
    const VkDeviceSize size = pMemoryMapInfo->size;
-   const struct vk_device_memory *mem_vk = &mem->base.base;
+   const struct vk_device_memory *mem_vk = &mem->base.vk;
    const bool need_bo = !mem->base_bo;
    void *ptr = NULL;
    VkResult result;

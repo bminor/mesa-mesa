@@ -12,7 +12,7 @@ struct vn_acceleration_structure {
    struct vn_object_base base;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_acceleration_structure,
-                               base.base,
+                               base.vk,
                                VkAccelerationStructureKHR,
                                VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR)
 

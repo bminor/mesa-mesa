@@ -45,7 +45,7 @@ struct vn_command_pool {
    struct vn_cached_storage storage;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_command_pool,
-                               base.base,
+                               base.vk,
                                VkCommandPool,
                                VK_OBJECT_TYPE_COMMAND_POOL)
 
@@ -95,7 +95,7 @@ struct vn_command_buffer {
    struct list_head head;
 };
 VK_DEFINE_HANDLE_CASTS(vn_command_buffer,
-                       base.base,
+                       base.vk,
                        VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 

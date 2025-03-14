@@ -76,7 +76,7 @@ struct vn_instance {
    } physical_device;
 };
 VK_DEFINE_HANDLE_CASTS(vn_instance,
-                       base.base.base,
+                       base.vk.base,
                        VkInstance,
                        VK_OBJECT_TYPE_INSTANCE)
 

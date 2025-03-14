@@ -275,7 +275,7 @@ vn_ring_create(struct vn_instance *instance,
 {
    VN_TRACE_FUNC();
 
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
 
    struct vn_ring *ring = vk_zalloc(alloc, sizeof(*ring), VN_DEFAULT_ALIGN,
                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
@@ -369,7 +369,7 @@ vn_ring_destroy(struct vn_ring *ring)
 {
    VN_TRACE_FUNC();
 
-   const VkAllocationCallbacks *alloc = &ring->instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &ring->instance->base.vk.alloc;
 
    uint32_t destroy_ring_data[4];
    struct vn_cs_encoder local_enc = VN_CS_ENCODER_INITIALIZER_LOCAL(

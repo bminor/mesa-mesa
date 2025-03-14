@@ -202,7 +202,7 @@ vn_CreateRenderPass(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    uint32_t acquire_count;
    uint32_t release_count;
@@ -257,7 +257,7 @@ vn_CreateRenderPass2(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    uint32_t acquire_count;
    uint32_t release_count;
@@ -307,7 +307,7 @@ vn_DestroyRenderPass(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_render_pass *pass = vn_render_pass_from_handle(renderPass);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!pass)
       return;
@@ -356,7 +356,7 @@ vn_CreateFramebuffer(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    /* Two render passes differ only in attachment image layouts are considered
     * compatible.  We must not use pCreateInfo->renderPass here.
@@ -394,7 +394,7 @@ vn_DestroyFramebuffer(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_framebuffer *fb = vn_framebuffer_from_handle(framebuffer);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!fb)
       return;

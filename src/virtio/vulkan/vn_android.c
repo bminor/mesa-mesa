@@ -661,8 +661,7 @@ vn_android_get_wsi_memory_from_bind_info(
 
    struct vn_image *img = vn_image_from_handle(bind_info->image);
    VkResult result = vn_android_image_from_anb_internal(
-      dev, &img->deferred_info->create, anb_info, &dev->base.base.alloc,
-      &img);
+      dev, &img->deferred_info->create, anb_info, &dev->base.vk.alloc, &img);
    if (result != VK_SUCCESS)
       return NULL;
 
@@ -928,7 +927,7 @@ vn_android_device_import_ahb(
    struct vn_device_memory *mem,
    const struct VkMemoryDedicatedAllocateInfo *dedicated_info)
 {
-   const struct vk_device_memory *mem_vk = &mem->base.base;
+   const struct vk_device_memory *mem_vk = &mem->base.vk;
    const native_handle_t *handle = NULL;
    int dma_buf_fd = -1;
    int dup_fd = -1;

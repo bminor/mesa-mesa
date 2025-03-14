@@ -17,7 +17,7 @@ struct vn_shader_module {
    struct vn_object_base base;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_shader_module,
-                               base.base,
+                               base.vk,
                                VkShaderModule,
                                VK_OBJECT_TYPE_SHADER_MODULE)
 
@@ -29,7 +29,7 @@ struct vn_pipeline_layout {
    struct vn_refcount refcount;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_pipeline_layout,
-                               base.base,
+                               base.vk,
                                VkPipelineLayout,
                                VK_OBJECT_TYPE_PIPELINE_LAYOUT)
 
@@ -37,7 +37,7 @@ struct vn_pipeline_cache {
    struct vn_object_base base;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_pipeline_cache,
-                               base.base,
+                               base.vk,
                                VkPipelineCache,
                                VK_OBJECT_TYPE_PIPELINE_CACHE)
 
@@ -69,7 +69,7 @@ struct vn_pipeline {
    struct vn_pipeline_layout *layout;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_pipeline,
-                               base.base,
+                               base.vk,
                                VkPipeline,
                                VK_OBJECT_TYPE_PIPELINE)
 

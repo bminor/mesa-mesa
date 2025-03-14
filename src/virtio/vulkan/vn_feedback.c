@@ -521,7 +521,7 @@ struct vn_semaphore_feedback_cmd *
 vn_semaphore_feedback_cmd_alloc(struct vn_device *dev,
                                 struct vn_feedback_slot *dst_slot)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    struct vn_semaphore_feedback_cmd *sfb_cmd;
    VkCommandBuffer *cmd_handles;
 
@@ -565,7 +565,7 @@ void
 vn_semaphore_feedback_cmd_free(struct vn_device *dev,
                                struct vn_semaphore_feedback_cmd *sfb_cmd)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
       vn_feedback_cmd_free(vn_device_to_handle(dev), &dev->fb_cmd_pools[i],
@@ -798,7 +798,7 @@ vn_feedback_cmd_free(VkDevice dev_handle,
 VkResult
 vn_feedback_cmd_pools_init(struct vn_device *dev)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    VkDevice dev_handle = vn_device_to_handle(dev);
    struct vn_feedback_cmd_pool *fb_cmd_pools;
    VkCommandPoolCreateInfo info = {
@@ -848,7 +848,7 @@ vn_feedback_cmd_pools_init(struct vn_device *dev)
 void
 vn_feedback_cmd_pools_fini(struct vn_device *dev)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    VkDevice dev_handle = vn_device_to_handle(dev);
 
    if (!dev->fb_cmd_pools)

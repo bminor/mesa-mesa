@@ -263,7 +263,7 @@ static bool
 vn_has_zink_sync_batch(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.base.base.device;
+   struct vn_device *dev = (void *)queue->base.vk.base.device;
    struct vn_instance *instance = dev->instance;
    const uint32_t last_batch_index = submit->batch_count - 1;
 
@@ -1030,7 +1030,7 @@ static VkResult
 vn_queue_submit(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.base.base.device;
+   struct vn_device *dev = (void *)queue->base.vk.base.device;
    struct vn_instance *instance = dev->instance;
    VkResult result;
 
@@ -1160,7 +1160,7 @@ static VkResult
 vn_queue_bind_sparse_submit(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.base.base.device;
+   struct vn_device *dev = (void *)queue->base.vk.base.device;
    struct vn_instance *instance = dev->instance;
    VkResult result;
 
@@ -1188,7 +1188,7 @@ vn_queue_bind_sparse_submit_batch(struct vn_queue_submission *submit,
                                   uint32_t batch_index)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   VkDevice dev_handle = vk_device_to_handle(queue->base.base.base.device);
+   VkDevice dev_handle = vk_device_to_handle(queue->base.vk.base.device);
    const VkBindSparseInfo *sparse_info = &submit->sparse_batches[batch_index];
    const VkSemaphore *signal_sem = sparse_info->pSignalSemaphores;
    uint32_t signal_sem_count = sparse_info->signalSemaphoreCount;
@@ -1376,7 +1376,7 @@ vn_QueueWaitIdle(VkQueue _queue)
 {
    VN_TRACE_FUNC();
    struct vn_queue *queue = vn_queue_from_handle(_queue);
-   VkDevice dev_handle = vk_device_to_handle(queue->base.base.base.device);
+   VkDevice dev_handle = vk_device_to_handle(queue->base.vk.base.device);
    struct vn_device *dev = vn_device_from_handle(dev_handle);
    VkResult result;
 
@@ -1523,7 +1523,7 @@ vn_CreateFence(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    const bool signaled = pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT;
    VkResult result;
 
@@ -1571,7 +1571,7 @@ vn_DestroyFence(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_fence *fence = vn_fence_from_handle(_fence);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!fence)
       return;
@@ -2009,7 +2009,7 @@ vn_CreateSemaphore(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_semaphore *sem = vk_zalloc(alloc, sizeof(*sem), VN_DEFAULT_ALIGN,
                                         VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -2069,7 +2069,7 @@ vn_DestroySemaphore(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_semaphore *sem = vn_semaphore_from_handle(semaphore);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!sem)
       return;
@@ -2392,7 +2392,7 @@ vn_CreateEvent(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_event *ev = vk_zalloc(alloc, sizeof(*ev), VN_DEFAULT_ALIGN,
                                    VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -2426,7 +2426,7 @@ vn_DestroyEvent(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_event *ev = vn_event_from_handle(event);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!ev)
       return;

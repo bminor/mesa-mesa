@@ -25,7 +25,7 @@ vn_descriptor_set_layout_destroy(struct vn_device *dev,
    VkDevice dev_handle = vn_device_to_handle(dev);
    VkDescriptorSetLayout layout_handle =
       vn_descriptor_set_layout_to_handle(layout);
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    vn_async_vkDestroyDescriptorSetLayout(dev->primary_ring, dev_handle,
                                          layout_handle, NULL);
@@ -202,7 +202,7 @@ vn_CreateDescriptorSetLayout(
 {
    struct vn_device *dev = vn_device_from_handle(device);
    /* ignore pAllocator as the layout is reference-counted */
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
 
    STACK_ARRAY(VkDescriptorSetLayoutBinding, bindings,
                pCreateInfo->bindingCount);
@@ -283,7 +283,7 @@ vn_CreateDescriptorPool(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    const VkDescriptorPoolInlineUniformBlockCreateInfo *iub_info =
       vk_find_struct_const(pCreateInfo->pNext,
@@ -969,7 +969,7 @@ vn_CreateDescriptorUpdateTemplate(
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    const size_t templ_size =
       offsetof(struct vn_descriptor_update_template,
@@ -1010,7 +1010,7 @@ vn_DestroyDescriptorUpdateTemplate(
    struct vn_descriptor_update_template *templ =
       vn_descriptor_update_template_from_handle(descriptorUpdateTemplate);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!templ)
       return;

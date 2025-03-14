@@ -46,7 +46,7 @@ struct vn_device {
    struct vn_image_reqs_cache image_reqs_cache;
 };
 VK_DEFINE_HANDLE_CASTS(vn_device,
-                       base.base.base,
+                       base.vk.base,
                        VkDevice,
                        VK_OBJECT_TYPE_DEVICE)
 

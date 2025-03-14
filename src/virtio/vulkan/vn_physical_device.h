@@ -124,7 +124,7 @@ struct vn_physical_device {
    struct vn_image_format_properties_cache image_format_cache;
 };
 VK_DEFINE_HANDLE_CASTS(vn_physical_device,
-                       base.base.base,
+                       base.vk.base,
                        VkPhysicalDevice,
                        VK_OBJECT_TYPE_PHYSICAL_DEVICE)
 

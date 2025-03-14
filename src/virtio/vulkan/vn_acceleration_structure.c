@@ -18,7 +18,7 @@ vn_CreateAccelerationStructureKHR(
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_acceleration_structure *accel =
       vk_zalloc(alloc, sizeof(*accel), VN_DEFAULT_ALIGN,
@@ -49,7 +49,7 @@ vn_DestroyAccelerationStructureKHR(
    struct vn_acceleration_structure *accel =
       vn_acceleration_structure_from_handle(accelerationStructure);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!accel)
       return;

@@ -137,43 +137,43 @@ typedef uint64_t vn_object_id;
 
 /* base class of vn_instance */
 struct vn_instance_base {
-   struct vk_instance base;
+   struct vk_instance vk;
    vn_object_id id;
 };
 
 /* base class of vn_physical_device */
 struct vn_physical_device_base {
-   struct vk_physical_device base;
+   struct vk_physical_device vk;
    vn_object_id id;
 };
 
 /* base class of vn_device */
 struct vn_device_base {
-   struct vk_device base;
+   struct vk_device vk;
    vn_object_id id;
 };
 
 /* base class of vn_queue */
 struct vn_queue_base {
-   struct vk_queue base;
+   struct vk_queue vk;
    vn_object_id id;
 };
 
 /* base class of vn_device_memory */
 struct vn_device_memory_base {
-   struct vk_device_memory base;
+   struct vk_device_memory vk;
    vn_object_id id;
 };
 
 /* base class of vn_image */
 struct vn_image_base {
-   struct vk_image base;
+   struct vk_image vk;
    vn_object_id id;
 };
 
 /* base class of other driver objects */
 struct vn_object_base {
-   struct vk_object_base base;
+   struct vk_object_base vk;
    vn_object_id id;
 };
 
@@ -417,7 +417,7 @@ vn_instance_base_init(
    const VkInstanceCreateInfo *info,
    const VkAllocationCallbacks *alloc)
 {
-   VkResult result = vk_instance_init(&instance->base, supported_extensions,
+   VkResult result = vk_instance_init(&instance->vk, supported_extensions,
                                       dispatch_table, info, alloc);
    instance->id = vn_get_next_obj_id();
    return result;
@@ -426,7 +426,7 @@ vn_instance_base_init(
 static inline void
 vn_instance_base_fini(struct vn_instance_base *instance)
 {
-   vk_instance_finish(&instance->base);
+   vk_instance_finish(&instance->vk);
 }
 
 static inline VkResult
@@ -436,9 +436,9 @@ vn_physical_device_base_init(
    const struct vk_device_extension_table *supported_extensions,
    const struct vk_physical_device_dispatch_table *dispatch_table)
 {
-   VkResult result = vk_physical_device_init(
-      &physical_dev->base, &instance->base, supported_extensions, NULL, NULL,
-      dispatch_table);
+   VkResult result = vk_physical_device_init(&physical_dev->vk, &instance->vk,
+                                             supported_extensions, NULL, NULL,
+                                             dispatch_table);
    physical_dev->id = vn_get_next_obj_id();
    return result;
 }
@@ -446,7 +446,7 @@ vn_physical_device_base_init(
 static inline void
 vn_physical_device_base_fini(struct vn_physical_device_base *physical_dev)
 {
-   vk_physical_device_finish(&physical_dev->base);
+   vk_physical_device_finish(&physical_dev->vk);
 }
 
 static inline VkResult
@@ -456,7 +456,7 @@ vn_device_base_init(struct vn_device_base *dev,
                     const VkDeviceCreateInfo *info,
                     const VkAllocationCallbacks *alloc)
 {
-   VkResult result = vk_device_init(&dev->base, &physical_dev->base,
+   VkResult result = vk_device_init(&dev->vk, &physical_dev->vk,
                                     dispatch_table, info, alloc);
    dev->id = vn_get_next_obj_id();
    return result;
@@ -465,7 +465,7 @@ vn_device_base_init(struct vn_device_base *dev,
 static inline void
 vn_device_base_fini(struct vn_device_base *dev)
 {
-   vk_device_finish(&dev->base);
+   vk_device_finish(&dev->vk);
 }
 
 static inline VkResult
@@ -475,7 +475,7 @@ vn_queue_base_init(struct vn_queue_base *queue,
                    uint32_t queue_index)
 {
    VkResult result =
-      vk_queue_init(&queue->base, &dev->base, queue_info, queue_index);
+      vk_queue_init(&queue->vk, &dev->vk, queue_info, queue_index);
    queue->id = vn_get_next_obj_id();
    return result;
 }
@@ -483,7 +483,7 @@ vn_queue_base_init(struct vn_queue_base *queue,
 static inline void
 vn_queue_base_fini(struct vn_queue_base *queue)
 {
-   vk_queue_finish(&queue->base);
+   vk_queue_finish(&queue->vk);
 }
 
 static inline void
@@ -491,14 +491,14 @@ vn_object_base_init(struct vn_object_base *obj,
                     VkObjectType type,
                     struct vn_device_base *dev)
 {
-   vk_object_base_init(&dev->base, &obj->base, type);
+   vk_object_base_init(&dev->vk, &obj->vk, type);
    obj->id = vn_get_next_obj_id();
 }
 
 static inline void
 vn_object_base_fini(struct vn_object_base *obj)
 {
-   vk_object_base_finish(&obj->base);
+   vk_object_base_finish(&obj->vk);
 }
 
 static inline void

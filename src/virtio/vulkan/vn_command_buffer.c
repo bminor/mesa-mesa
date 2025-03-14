@@ -243,7 +243,7 @@ vn_cmd_fix_image_memory_barrier_common(const struct vn_image *img,
       result.availability_op_needed = false;
       result.external_acquire_unmodified = true;
 
-      if (img->base.base.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
+      if (img->base.vk.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
          *src_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
          *dst_qfi = VK_QUEUE_FAMILY_IGNORED;
       } else if (*dst_qfi == *src_qfi || *dst_qfi == cmd_pool_qfi) {
@@ -263,7 +263,7 @@ vn_cmd_fix_image_memory_barrier_common(const struct vn_image *img,
 
       result.visibility_op_needed = false;
 
-      if (img->base.base.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
+      if (img->base.vk.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
          *src_qfi = VK_QUEUE_FAMILY_IGNORED;
          *dst_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
       } else if (*src_qfi == *dst_qfi || *src_qfi == cmd_pool_qfi) {
@@ -709,7 +709,7 @@ vn_CreateCommandPool(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_command_pool *pool =
       vk_zalloc(alloc, sizeof(*pool), VN_DEFAULT_ALIGN,

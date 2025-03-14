@@ -113,7 +113,7 @@ vn_instance_init_renderer_versions(struct vn_instance *instance)
 
    /* request at least VN_MIN_RENDERER_VERSION internally */
    instance->renderer_api_version =
-      MAX2(instance->base.base.app_info.api_version, VN_MIN_RENDERER_VERSION);
+      MAX2(instance->base.vk.app_info.api_version, VN_MIN_RENDERER_VERSION);
 
    /* instance version for internal use is capped */
    instance_version = MIN3(instance_version, instance->renderer_api_version,
@@ -167,7 +167,7 @@ vn_instance_init_ring(struct vn_instance *instance)
 static VkResult
 vn_instance_init_renderer(struct vn_instance *instance)
 {
-   const VkAllocationCallbacks *alloc = &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &instance->base.vk.alloc;
 
    VkResult result = vn_renderer_create(instance, alloc, &instance->renderer);
    if (result != VK_SUCCESS)
@@ -296,8 +296,7 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    mtx_init(&instance->physical_device.mutex, mtx_plain);
    mtx_init(&instance->ring_idx_mutex, mtx_plain);
 
-   if (!vn_icd_supports_api_version(
-          instance->base.base.app_info.api_version)) {
+   if (!vn_icd_supports_api_version(instance->base.vk.app_info.api_version)) {
       result = VK_ERROR_INCOMPATIBLE_DRIVER;
       goto out_mtx_destroy;
    }
@@ -337,7 +336,7 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    pCreateInfo = &local_create_info;
 
    VkApplicationInfo local_app_info;
-   if (instance->base.base.app_info.api_version <
+   if (instance->base.vk.app_info.api_version <
        instance->renderer_api_version) {
       if (pCreateInfo->pApplicationInfo) {
          local_app_info = *pCreateInfo->pApplicationInfo;
@@ -360,10 +359,10 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                       ARRAY_SIZE(vn_dri_options));
    driParseConfigFiles(&instance->dri_options,
                        &instance->available_dri_options, 0, "venus", NULL,
-                       NULL, instance->base.base.app_info.app_name,
-                       instance->base.base.app_info.app_version,
-                       instance->base.base.app_info.engine_name,
-                       instance->base.base.app_info.engine_version);
+                       NULL, instance->base.vk.app_info.app_name,
+                       instance->base.vk.app_info.app_version,
+                       instance->base.vk.app_info.engine_name,
+                       instance->base.vk.app_info.engine_version);
 
    instance->renderer->info.has_implicit_fencing =
       driQueryOptionb(&instance->dri_options, "venus_implicit_fencing");
@@ -375,7 +374,7 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
              instance->enable_wsi_multi_plane_modifiers ? "yes" : "no");
    }
 
-   const char *engine_name = instance->base.base.app_info.engine_name;
+   const char *engine_name = instance->base.vk.app_info.engine_name;
    if (engine_name) {
       instance->engine_is_zink = strcmp(engine_name, "mesa zink") == 0;
    }
@@ -410,7 +409,7 @@ vn_DestroyInstance(VkInstance _instance,
    VN_TRACE_FUNC();
    struct vn_instance *instance = vn_instance_from_handle(_instance);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &instance->base.base.alloc;
+      pAllocator ? pAllocator : &instance->base.vk.alloc;
 
    if (!instance)
       return;
@@ -452,6 +451,6 @@ PFN_vkVoidFunction
 vn_GetInstanceProcAddr(VkInstance _instance, const char *pName)
 {
    struct vn_instance *instance = vn_instance_from_handle(_instance);
-   return vk_instance_get_proc_addr(&instance->base.base,
+   return vk_instance_get_proc_addr(&instance->base.vk,
                                     &vn_instance_entrypoints, pName);
 }

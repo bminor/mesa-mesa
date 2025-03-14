@@ -53,7 +53,7 @@ struct vn_descriptor_set_layout {
    struct vn_descriptor_set_layout_binding bindings[];
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_descriptor_set_layout,
-                               base.base,
+                               base.vk,
                                VkDescriptorSetLayout,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT)
 
@@ -107,7 +107,7 @@ struct vn_descriptor_pool {
    struct vn_descriptor_pool_state_mutable *mutable_states;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_descriptor_pool,
-                               base.base,
+                               base.vk,
                                VkDescriptorPool,
                                VK_OBJECT_TYPE_DESCRIPTOR_POOL)
 
@@ -120,7 +120,7 @@ struct vn_descriptor_set {
    struct list_head head;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_descriptor_set,
-                               base.base,
+                               base.vk,
                                VkDescriptorSet,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET)
 
@@ -141,7 +141,7 @@ struct vn_descriptor_update_template {
    VkDescriptorUpdateTemplateEntry entries[];
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_descriptor_update_template,
-                               base.base,
+                               base.vk,
                                VkDescriptorUpdateTemplate,
                                VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE)
 

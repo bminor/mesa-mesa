@@ -200,7 +200,7 @@ vn_image_reqs_cache_init(struct vn_device *dev)
 void
 vn_image_reqs_cache_fini(struct vn_device *dev)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    struct vn_image_reqs_cache *cache = &dev->image_reqs_cache;
 
    if (!cache->ht)
@@ -277,7 +277,7 @@ vn_image_store_reqs_in_cache(struct vn_device *dev,
                              uint32_t plane_count,
                              struct vn_image_memory_requirements *requirements)
 {
-   const VkAllocationCallbacks *alloc = &dev->base.base.alloc;
+   const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    struct vn_image_reqs_cache *cache = &dev->image_reqs_cache;
    struct vn_image_reqs_cache_entry *cache_entry;
 
@@ -503,7 +503,7 @@ vn_image_create(struct vn_device *dev,
                 struct vn_image **out_img)
 {
    struct vn_image *img =
-      vk_image_create(&dev->base.base, create_info, alloc, sizeof(*img));
+      vk_image_create(&dev->base.vk, create_info, alloc, sizeof(*img));
    if (!img)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -511,7 +511,7 @@ vn_image_create(struct vn_device *dev,
 
    VkResult result = vn_image_init(dev, create_info, img);
    if (result != VK_SUCCESS) {
-      vk_image_destroy(&dev->base.base, alloc, &img->base.base);
+      vk_image_destroy(&dev->base.vk, alloc, &img->base.vk);
       return result;
    }
 
@@ -537,7 +537,7 @@ vn_image_create_deferred(struct vn_device *dev,
                          struct vn_image **out_img)
 {
    struct vn_image *img =
-      vk_image_create(&dev->base.base, create_info, alloc, sizeof(*img));
+      vk_image_create(&dev->base.vk, create_info, alloc, sizeof(*img));
    if (!img)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -545,7 +545,7 @@ vn_image_create_deferred(struct vn_device *dev,
 
    VkResult result = vn_image_deferred_info_init(img, create_info, alloc);
    if (result != VK_SUCCESS) {
-      vk_image_destroy(&dev->base.base, alloc, &img->base.base);
+      vk_image_destroy(&dev->base.vk, alloc, &img->base.vk);
       return result;
    }
 
@@ -622,7 +622,7 @@ vn_CreateImage(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    const VkExternalMemoryHandleTypeFlagBits renderer_handle_type =
       dev->physical_device->external_memory.renderer_handle_type;
    struct vn_image *img;
@@ -714,7 +714,7 @@ vn_DestroyImage(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image *img = vn_image_from_handle(image);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!img)
       return;
@@ -730,7 +730,7 @@ vn_DestroyImage(VkDevice device,
 
    vn_image_deferred_info_fini(img, alloc);
 
-   vk_image_destroy(&dev->base.base, alloc, &img->base.base);
+   vk_image_destroy(&dev->base.vk, alloc, &img->base.vk);
 }
 
 void
@@ -918,7 +918,7 @@ vn_CreateImageView(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image *img = vn_image_from_handle(pCreateInfo->image);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    VkImageViewCreateInfo local_info;
    if (img->deferred_info && img->deferred_info->from_external_format) {
@@ -957,7 +957,7 @@ vn_DestroyImageView(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image_view *view = vn_image_view_from_handle(imageView);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!view)
       return;
@@ -978,7 +978,7 @@ vn_CreateSampler(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_sampler *sampler =
       vk_zalloc(alloc, sizeof(*sampler), VN_DEFAULT_ALIGN,
@@ -1005,7 +1005,7 @@ vn_DestroySampler(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_sampler *sampler = vn_sampler_from_handle(_sampler);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!sampler)
       return;
@@ -1027,7 +1027,7 @@ vn_CreateSamplerYcbcrConversion(
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    const VkExternalFormatANDROID *ext_info =
       vk_find_struct_const(pCreateInfo->pNext, EXTERNAL_FORMAT_ANDROID);
 
@@ -1075,7 +1075,7 @@ vn_DestroySamplerYcbcrConversion(VkDevice device,
    struct vn_sampler_ycbcr_conversion *conv =
       vn_sampler_ycbcr_conversion_from_handle(ycbcrConversion);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!conv)
       return;

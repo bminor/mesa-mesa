@@ -64,8 +64,8 @@ vn_buffer_get_max_buffer_size(struct vn_physical_device *physical_dev)
     * - mali: UINT32_MAX
     */
    static const uint64_t safe_max_buffer_size = 1ULL << 30;
-   return physical_dev->base.base.supported_features.maintenance4
-             ? physical_dev->base.base.properties.maxBufferSize
+   return physical_dev->base.vk.supported_features.maintenance4
+             ? physical_dev->base.vk.properties.maxBufferSize
              : safe_max_buffer_size;
 }
 
@@ -363,7 +363,7 @@ vn_CreateBuffer(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
    const VkExternalMemoryHandleTypeFlagBits renderer_handle_type =
       dev->physical_device->external_memory.renderer_handle_type;
 
@@ -408,7 +408,7 @@ vn_DestroyBuffer(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_buffer *buf = vn_buffer_from_handle(buffer);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!buf)
       return;
@@ -478,7 +478,7 @@ vn_CreateBufferView(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    struct vn_buffer_view *view =
       vk_zalloc(alloc, sizeof(*view), VN_DEFAULT_ALIGN,
@@ -505,7 +505,7 @@ vn_DestroyBufferView(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_buffer_view *view = vn_buffer_view_from_handle(bufferView);
    const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &dev->base.base.alloc;
+      pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    if (!view)
       return;
