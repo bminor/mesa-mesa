@@ -717,6 +717,39 @@ bool pco_nir_lower_tex(nir_shader *shader)
    return nir_shader_lower_instructions(shader, is_tex, lower_tex, NULL);
 }
 
+static enum util_format_type nir_type_to_util_type(nir_alu_type nir_type)
+{
+   switch (nir_alu_type_get_base_type(nir_type)) {
+   case nir_type_int:
+      return UTIL_FORMAT_TYPE_SIGNED;
+
+   case nir_type_uint:
+      return UTIL_FORMAT_TYPE_UNSIGNED;
+
+   case nir_type_float:
+      return UTIL_FORMAT_TYPE_FLOAT;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("Unsupported nir_alu_type.");
+}
+
+static enum pipe_format nir_type_to_pipe_format(nir_alu_type nir_type,
+                                                unsigned num_components)
+{
+   enum util_format_type format_type = nir_type_to_util_type(nir_type);
+   unsigned bits = nir_alu_type_get_type_size(nir_type);
+   bool pure_integer = format_type != UTIL_FORMAT_TYPE_FLOAT;
+
+   return util_format_get_array(format_type,
+                                bits,
+                                num_components,
+                                false,
+                                pure_integer);
+}
+
 static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
@@ -727,6 +760,24 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
    nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
+
+   nir_def *lod;
+   switch (intr->intrinsic) {
+   case nir_intrinsic_image_deref_load:
+      lod = intr->src[3].ssa;
+      break;
+
+   case nir_intrinsic_image_deref_store:
+      lod = intr->src[4].ssa;
+      break;
+
+   case nir_intrinsic_image_deref_size:
+      lod = intr->src[1].ssa;
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
 
    if (intr->intrinsic == nir_intrinsic_image_deref_size) {
       if (image_dim == GLSL_SAMPLER_DIM_BUF) {
@@ -764,7 +815,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       };
 
       nir_def *base_level = STATE_UNPACK(b, tex_state_word, 3, 28, 4);
-      nir_def *lod = intr->src[0].ssa;
       lod = nir_iadd(b, lod, base_level);
 
       for (unsigned c = 0; c < num_comps; ++c)
@@ -795,6 +845,173 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    if (write_data) {
       assert(intr->num_components == 4);
       assert(write_data->num_components == 4);
+
+      /* TODO: formatless write support */
+      assert(format != PIPE_FORMAT_NONE);
+
+      const struct util_format_description *desc =
+         util_format_description(format);
+
+      enum pipe_format data_format =
+         nir_type_to_pipe_format(type, desc->nr_channels);
+
+      /* TODO: u/sint need clamping? */
+
+      if (format != data_format) {
+         nir_def *write_data_comps[4];
+         for (unsigned c = 0; c < desc->nr_channels; ++c) {
+            enum pipe_swizzle chan = desc->swizzle[c];
+            nir_def *input = nir_channel(b, write_data, c);
+
+            switch (format) {
+            case PIPE_FORMAT_R8_UINT:
+            case PIPE_FORMAT_R8G8_UINT:
+            case PIPE_FORMAT_R8G8B8_UINT:
+            case PIPE_FORMAT_R8G8B8A8_UINT:
+
+            case PIPE_FORMAT_R8_SINT:
+            case PIPE_FORMAT_R8G8_SINT:
+            case PIPE_FORMAT_R8G8B8_SINT:
+            case PIPE_FORMAT_R8G8B8A8_SINT:
+               write_data_comps[chan] =
+                  nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 8);
+               break;
+
+            case PIPE_FORMAT_R8_UNORM:
+            case PIPE_FORMAT_R8G8_UNORM:
+            case PIPE_FORMAT_R8G8B8_UNORM:
+            case PIPE_FORMAT_R8G8B8A8_UNORM:
+               write_data_comps[chan] = nir_pack_unorm_8(b, input);
+               break;
+
+            case PIPE_FORMAT_R8_SNORM:
+            case PIPE_FORMAT_R8G8_SNORM:
+            case PIPE_FORMAT_R8G8B8_SNORM:
+            case PIPE_FORMAT_R8G8B8A8_SNORM:
+               write_data_comps[chan] = nir_pack_snorm_8(b, input);
+               break;
+
+            case PIPE_FORMAT_R11G11B10_FLOAT:
+               switch (chan) {
+               case PIPE_SWIZZLE_X:
+               case PIPE_SWIZZLE_Y:
+                  write_data_comps[chan] = nir_pack_float_11(b, input);
+                  break;
+
+               case PIPE_SWIZZLE_Z:
+                  write_data_comps[chan] = nir_pack_float_10(b, input);
+                  break;
+
+               default:
+                  UNREACHABLE("");
+               }
+               break;
+
+            case PIPE_FORMAT_R10G10B10A2_UINT:
+
+            case PIPE_FORMAT_R10G10B10A2_SINT:
+
+               switch (chan) {
+               case PIPE_SWIZZLE_X:
+               case PIPE_SWIZZLE_Y:
+               case PIPE_SWIZZLE_Z:
+                  write_data_comps[chan] =
+                     nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 10);
+                  break;
+
+               case PIPE_SWIZZLE_W:
+                  write_data_comps[chan] =
+                     nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 2);
+                  break;
+
+               default:
+                  UNREACHABLE("");
+               }
+               break;
+
+            /* TODO: better way to do the 1x2 component. */
+            case PIPE_FORMAT_R10G10B10A2_UNORM:
+               switch (chan) {
+               case PIPE_SWIZZLE_X:
+               case PIPE_SWIZZLE_Y:
+               case PIPE_SWIZZLE_Z:
+                  write_data_comps[chan] = nir_pack_unorm_10(b, input);
+                  break;
+
+               case PIPE_SWIZZLE_W:
+                  write_data_comps[chan] =
+                     nir_f2i32_rtne(b,
+                                    nir_fmul_imm(b, nir_fsat(b, input), 3.0f));
+                  break;
+
+               default:
+                  UNREACHABLE("");
+               }
+               break;
+
+            /* TODO: better way to do the 1x2 component. */
+            case PIPE_FORMAT_R10G10B10A2_SNORM:
+               switch (chan) {
+               case PIPE_SWIZZLE_X:
+               case PIPE_SWIZZLE_Y:
+               case PIPE_SWIZZLE_Z:
+                  write_data_comps[chan] = nir_pack_snorm_10(b, input);
+                  break;
+
+               case PIPE_SWIZZLE_W:
+                  write_data_comps[chan] =
+                     nir_f2i32_rtne(b, nir_fsat_signed(b, input));
+                  break;
+
+               default:
+                  UNREACHABLE("");
+               }
+               break;
+
+            case PIPE_FORMAT_R16_UINT:
+            case PIPE_FORMAT_R16G16_UINT:
+            case PIPE_FORMAT_R16G16B16_UINT:
+            case PIPE_FORMAT_R16G16B16A16_UINT:
+
+            case PIPE_FORMAT_R16_SINT:
+            case PIPE_FORMAT_R16G16_SINT:
+            case PIPE_FORMAT_R16G16B16_SINT:
+            case PIPE_FORMAT_R16G16B16A16_SINT:
+               write_data_comps[chan] =
+                  nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 16);
+               break;
+
+            case PIPE_FORMAT_R16_FLOAT:
+            case PIPE_FORMAT_R16G16_FLOAT:
+            case PIPE_FORMAT_R16G16B16_FLOAT:
+            case PIPE_FORMAT_R16G16B16A16_FLOAT:
+               write_data_comps[chan] = nir_pack_half_16(b, input);
+               break;
+
+            case PIPE_FORMAT_R16_UNORM:
+            case PIPE_FORMAT_R16G16_UNORM:
+            case PIPE_FORMAT_R16G16B16_UNORM:
+            case PIPE_FORMAT_R16G16B16A16_UNORM:
+               write_data_comps[chan] = nir_pack_unorm_16(b, input);
+               break;
+
+            case PIPE_FORMAT_R16_SNORM:
+            case PIPE_FORMAT_R16G16_SNORM:
+            case PIPE_FORMAT_R16G16B16_SNORM:
+            case PIPE_FORMAT_R16G16B16A16_SNORM:
+               write_data_comps[chan] = nir_pack_snorm_16(b, input);
+               break;
+
+            default:
+               printf("Unsupported image write pack format %s.\n",
+                      util_format_name(format));
+               UNREACHABLE("");
+            }
+         }
+
+         write_data = nir_vec(b, write_data_comps, desc->nr_channels);
+         write_data = nir_pad_vector(b, write_data, 4);
+      }
    }
 
    bool ia = image_dim == GLSL_SAMPLER_DIM_SUBPASS ||
@@ -866,6 +1083,8 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       .ms_index = sample_index,
 
       .write_data = write_data,
+
+      .lod_replace = lod,
 
       .sample_components = intr->intrinsic == nir_intrinsic_image_deref_load
                               ? intr->def.num_components

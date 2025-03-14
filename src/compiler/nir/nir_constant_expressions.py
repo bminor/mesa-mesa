@@ -113,6 +113,16 @@ pack_snorm_1x8(float x)
 }
 
 /**
+ * Evaluate component [0,2] of packSnorm3x10_1x2.
+ */
+static uint16_t
+pack_snorm_1x10(float x)
+{
+   return (uint16_t) (int)
+          _mesa_roundevenf(CLAMP(x, -1.0f, +1.0f) * 511.0f);
+}
+
+/**
  * Evaluate one component of packSnorm2x16.
  */
 static uint16_t
@@ -150,6 +160,16 @@ unpack_snorm_1x8(uint8_t u)
      *       unpackSnorm4x8: clamp(f / 127.0, -1, +1)
      */
    return CLAMP((int8_t) u / 127.0f, -1.0f, +1.0f);
+}
+
+/**
+ * Evaluate component [0,2] of unpackSnorm3x10_1x2.
+ */
+static float
+unpack_snorm_1x10(uint16_t u)
+{
+   u &= 0x03FF;
+   return CLAMP((int16_t) u / 511.0f, -1.0f, +1.0f);
 }
 
 /**

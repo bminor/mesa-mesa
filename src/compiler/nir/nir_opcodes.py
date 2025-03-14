@@ -1846,11 +1846,22 @@ pack_rg("unorm", 8, 8)
 pack_rgb("snorm", 8, 8, 8)
 pack_rgb("unorm", 8, 8, 8)
 
+pack_r("snorm", 10)
+pack_r("unorm", 10)
+
 pack_r("snorm", 16)
 pack_r("unorm", 16)
 pack_r("half", 16)
 
 pack_rgba("unorm", 10, 10, 10, 2)
+
+unop_horiz(f"pack_float_10", 1, tuint32, 1, tfloat32, f"""
+dst.x = f32_to_uf10(src0.x) & 0x3ff;
+""")
+
+unop_horiz(f"pack_float_11", 1, tuint32, 1, tfloat32, f"""
+dst.x = f32_to_uf11(src0.x) & 0x7ff;
+""")
 
 unop_horiz(f"pack_float_11_11_10", 1, tuint32, 3, tfloat32, f"""
 dst.x  =  f32_to_uf11(src0.x) & 0x7ff;

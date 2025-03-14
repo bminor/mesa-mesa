@@ -2528,6 +2528,40 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                         .scale = true);
       break;
 
+   case nir_op_pack_unorm_10:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 1,
+                      .pck_fmt = PCO_PCK_FMT_U1010102,
+                      .scale = true);
+      break;
+
+   case nir_op_pack_snorm_10:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 1,
+                      .pck_fmt = PCO_PCK_FMT_S1010102,
+                      .scale = true);
+      break;
+
+   case nir_op_pack_float_10:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 1,
+                      .pck_fmt = PCO_PCK_FMT_2F10F10F10);
+      break;
+
+   case nir_op_pack_float_11:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 1,
+                      .pck_fmt = PCO_PCK_FMT_F111110);
+      break;
+
    case nir_op_pack_float_11_11_10:
       instr = pco_pck(&tctx->b,
                       dest,
