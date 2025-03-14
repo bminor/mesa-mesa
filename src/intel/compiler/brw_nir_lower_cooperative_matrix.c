@@ -187,6 +187,7 @@ init_slice_info(struct lower_cmat_state *state,
       break;
    case GLSL_TYPE_UINT:
    case GLSL_TYPE_FLOAT16:
+   case GLSL_TYPE_BFLOAT16:
    case GLSL_TYPE_UINT8:
    case GLSL_TYPE_UINT16:
       base_type = GLSL_TYPE_UINT;

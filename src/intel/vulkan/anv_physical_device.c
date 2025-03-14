@@ -3119,12 +3119,13 @@ static VkComponentTypeKHR
 convert_component_type(enum intel_cooperative_matrix_component_type t)
 {
    switch (t) {
-   case INTEL_CMAT_FLOAT16: return VK_COMPONENT_TYPE_FLOAT16_KHR;
-   case INTEL_CMAT_FLOAT32: return VK_COMPONENT_TYPE_FLOAT32_KHR;
-   case INTEL_CMAT_SINT32:  return VK_COMPONENT_TYPE_SINT32_KHR;
-   case INTEL_CMAT_SINT8:   return VK_COMPONENT_TYPE_SINT8_KHR;
-   case INTEL_CMAT_UINT32:  return VK_COMPONENT_TYPE_UINT32_KHR;
-   case INTEL_CMAT_UINT8:   return VK_COMPONENT_TYPE_UINT8_KHR;
+   case INTEL_CMAT_FLOAT16:  return VK_COMPONENT_TYPE_FLOAT16_KHR;
+   case INTEL_CMAT_FLOAT32:  return VK_COMPONENT_TYPE_FLOAT32_KHR;
+   case INTEL_CMAT_SINT32:   return VK_COMPONENT_TYPE_SINT32_KHR;
+   case INTEL_CMAT_SINT8:    return VK_COMPONENT_TYPE_SINT8_KHR;
+   case INTEL_CMAT_UINT32:   return VK_COMPONENT_TYPE_UINT32_KHR;
+   case INTEL_CMAT_UINT8:    return VK_COMPONENT_TYPE_UINT8_KHR;
+   case INTEL_CMAT_BFLOAT16: return VK_COMPONENT_TYPE_BFLOAT16_KHR;
    }
    unreachable("invalid cooperative matrix component type in configuration");
 }

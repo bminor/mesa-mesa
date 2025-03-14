@@ -169,7 +169,8 @@ Enum("intel_cooperative_matrix_component_type",
       "INTEL_CMAT_SINT32",
       "INTEL_CMAT_SINT8",
       "INTEL_CMAT_UINT32",
-      "INTEL_CMAT_UINT8"])
+      "INTEL_CMAT_UINT8",
+      "INTEL_CMAT_BFLOAT16"])
 
 Enum("intel_engine_class",
      ["INTEL_ENGINE_CLASS_RENDER",
