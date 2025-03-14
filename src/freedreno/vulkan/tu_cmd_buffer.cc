@@ -996,11 +996,6 @@ use_sysmem_rendering(struct tu_cmd_buffer *cmd,
       return true;
    }
 
-   if (cmd->state.framebuffer->layers > 1) {
-      cmd->state.rp.gmem_disable_reason = "Framebuffer has more than 1 layer";
-      return true;
-   }
-
    /* Use sysmem for empty render areas */
    if (cmd->state.render_area.extent.width == 0 ||
        cmd->state.render_area.extent.height == 0) {
