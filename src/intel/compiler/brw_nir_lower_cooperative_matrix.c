@@ -647,23 +647,20 @@ lower_cmat_instr(nir_builder *b, nir_instr *instr, void *_state)
       assert(((cmat_signed_mask & NIR_CMAT_A_SIGNED) == 0) ==
              ((cmat_signed_mask & NIR_CMAT_RESULT_SIGNED) == 0));
 
-      nir_alu_type src_type =
-         nir_get_nir_type_for_glsl_base_type(src_desc.element_type);
-      nir_alu_type dest_type =
-         nir_get_nir_type_for_glsl_base_type(dst_desc.element_type);
+      enum glsl_base_type src_type = src_desc.element_type;
+      enum glsl_base_type dst_type = dst_desc.element_type;
 
       /* For integer types, the signedness is determined by flags on the
        * muladd instruction. The types of the sources play no role. Adjust the
        * types passed to the dpas_intel intrinsic to match.
        */
-      if (nir_alu_type_get_base_type(src_type) == nir_type_uint ||
-          nir_alu_type_get_base_type(src_type) == nir_type_int) {
+      if (glsl_base_type_is_integer(src_type)) {
          if ((cmat_signed_mask & NIR_CMAT_A_SIGNED) == 0) {
-            src_type = nir_alu_type_get_type_size(src_type) | nir_type_uint;
-            dest_type = nir_alu_type_get_type_size(dest_type) | nir_type_uint;
+            src_type = glsl_unsigned_base_type_of(src_type);
+            dst_type = glsl_unsigned_base_type_of(dst_type);
          } else {
-            src_type = nir_alu_type_get_type_size(src_type) | nir_type_int;
-            dest_type = nir_alu_type_get_type_size(dest_type) | nir_type_int;
+            src_type = glsl_signed_base_type_of(src_type);
+            dst_type = glsl_signed_base_type_of(dst_type);
          }
       }
 
@@ -673,8 +670,8 @@ lower_cmat_instr(nir_builder *b, nir_instr *instr, void *_state)
                         nir_load_deref(b, accum_slice),
                         nir_load_deref(b, A_slice),
                         nir_load_deref(b, B_slice),
-                        .dest_type = dest_type,
-                        .src_type = src_type,
+                        .dest_base_type = dst_type,
+                        .src_base_type = src_type,
                         .saturate = nir_intrinsic_saturate(intrin),
                         .systolic_depth = 8,
                         .repeat_count = 8);

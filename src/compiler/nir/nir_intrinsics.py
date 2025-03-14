@@ -223,6 +223,11 @@ index("nir_alu_type", "src_type")
 # The nir_alu_type of the data output from a load or conversion
 index("nir_alu_type", "dest_type")
 
+# Source and destination data types for dpas_intel.  Needed here to
+# represent types that won't have a nir_alu_type.
+index("enum glsl_base_type", "src_base_type")
+index("enum glsl_base_type", "dest_base_type")
+
 # The swizzle mask for quad_swizzle_amd & masked_swizzle_amd
 index("unsigned", "swizzle_mask")
 
@@ -2421,7 +2426,7 @@ system_value("ray_query_global_intel", 1, bit_sizes=[64])
 # its value. Some supported configurations will have the component count of
 # that matrix different than the others.
 intrinsic("dpas_intel", dest_comp=0, src_comp=[0, -1, 0],
-          indices=[DEST_TYPE, SRC_TYPE, SATURATE, SYSTOLIC_DEPTH, REPEAT_COUNT],
+          indices=[DEST_BASE_TYPE, SRC_BASE_TYPE, SATURATE, SYSTOLIC_DEPTH, REPEAT_COUNT],
           flags=[CAN_ELIMINATE])
 
 # NVIDIA-specific intrinsics

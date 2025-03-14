@@ -4693,9 +4693,9 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       const unsigned rcount = nir_intrinsic_repeat_count(instr);
 
       const brw_reg_type dest_type =
-         brw_type_for_nir_type(devinfo, nir_intrinsic_dest_type(instr));
+         brw_type_for_base_type(nir_intrinsic_dest_base_type(instr));
       const brw_reg_type src_type =
-         brw_type_for_nir_type(devinfo, nir_intrinsic_src_type(instr));
+         brw_type_for_base_type(nir_intrinsic_src_base_type(instr));
 
       brw_reg src[3] = {};
       for (unsigned i = 0; i < ARRAY_SIZE(src); i++) {

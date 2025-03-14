@@ -2254,6 +2254,28 @@ lsc_op_for_nir_intrinsic(const nir_intrinsic_instr *intrin)
 }
 
 enum brw_reg_type
+brw_type_for_base_type(enum glsl_base_type base_type)
+{
+   switch (base_type) {
+   case GLSL_TYPE_UINT:      return BRW_TYPE_UD;
+   case GLSL_TYPE_INT:       return BRW_TYPE_D;
+   case GLSL_TYPE_FLOAT:     return BRW_TYPE_F;
+   case GLSL_TYPE_FLOAT16:   return BRW_TYPE_HF;
+   case GLSL_TYPE_BFLOAT16:  return BRW_TYPE_BF;
+   case GLSL_TYPE_DOUBLE:    return BRW_TYPE_DF;
+   case GLSL_TYPE_UINT16:    return BRW_TYPE_UW;
+   case GLSL_TYPE_INT16:     return BRW_TYPE_W;
+   case GLSL_TYPE_UINT8:     return BRW_TYPE_UB;
+   case GLSL_TYPE_INT8:      return BRW_TYPE_B;
+   case GLSL_TYPE_UINT64:    return BRW_TYPE_UQ;
+   case GLSL_TYPE_INT64:     return BRW_TYPE_Q;
+
+   default:
+      unreachable("invalid base type");
+   }
+}
+
+enum brw_reg_type
 brw_type_for_nir_type(const struct intel_device_info *devinfo,
                       nir_alu_type type)
 {
