@@ -921,9 +921,7 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
       fprintf(out, "@in(%sr%d.%c)\tin%d",
               (reg->flags & IR3_REG_HALF) ? "h" : "", (regid >> 2),
               "xyzw"[regid & 0x3], i);
-
-      if (reg->wrmask > 0x1)
-         fprintf(out, " (wrmask=0x%x)", reg->wrmask);
+      fprintf(out, " (wrmask=0x%x)", reg->wrmask);
       fprintf(out, "\n");
    }
 

@@ -893,12 +893,16 @@ in_header:         T_A_IN '(' T_REGISTER ')' T_IDENTIFIER '(' T_IDENTIFIER '=' i
 
 out_header:        T_A_OUT '(' T_REGISTER ')' T_IDENTIFIER '(' T_IDENTIFIER '=' integer ')' { }
 
+/* The only used OPC for texture prefetches seems to be SAM */
+tex_header_opc:    T_OP_SAM
+
 tex_header:        T_A_TEX '(' T_REGISTER ')'
                        T_IDENTIFIER '=' integer ',' /* src */
+                       T_IDENTIFIER '=' integer ',' /* bindless */
                        T_IDENTIFIER '=' integer ',' /* samp */
-                       T_IDENTIFIER '=' integer ',' /* tex */
+                       T_MOD_TEX '=' integer ',' /* tex */
                        T_IDENTIFIER '=' integer ',' /* wrmask */
-                       T_IDENTIFIER '=' integer     /* cmd */ { }
+                       T_IDENTIFIER '=' tex_header_opc /* cmd */ { }
 
 fullnop_start_section: T_A_FULLNOPSTART { is_in_fullnop_section = true; }
 fullnop_end_section: T_A_FULLNOPEND { is_in_fullnop_section = false; }
