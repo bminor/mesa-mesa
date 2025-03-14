@@ -1944,7 +1944,7 @@
         "description": "panfrost/pps: fix omitting several counters",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "513d1baaea5eeef3d9bcfdf9f6e2180db8924236",
         "notes": null
