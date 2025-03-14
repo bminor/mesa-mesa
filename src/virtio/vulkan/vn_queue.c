@@ -263,7 +263,7 @@ static bool
 vn_has_zink_sync_batch(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.vk.base.device;
+   struct vn_device *dev = vn_device_from_vk(queue->base.vk.base.device);
    struct vn_instance *instance = dev->instance;
    const uint32_t last_batch_index = submit->batch_count - 1;
 
@@ -320,7 +320,7 @@ vn_fix_device_group_cmd_count(struct vn_queue_submission *submit,
                               uint32_t batch_index)
 {
    struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
    const VkSubmitInfo *src_batch = &submit->submit_batches[batch_index];
    struct vn_submit_info_pnext_fix *pnext_fix = submit->temp.pnexts;
    VkBaseOutStructure *dst =
@@ -649,7 +649,7 @@ vn_queue_submission_add_query_feedback(struct vn_queue_submission *submit,
                                        uint32_t *new_cmd_count)
 {
    struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
    VkResult result;
 
    struct vn_feedback_cmd_pool *fb_cmd_pool = NULL;
@@ -722,7 +722,7 @@ vn_queue_submission_add_semaphore_feedback(struct vn_queue_submission *submit,
       return VK_SUCCESS;
 
    VK_FROM_HANDLE(vk_queue, queue_vk, submit->queue_handle);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
    struct vn_semaphore_feedback_cmd *sfb_cmd =
       vn_semaphore_get_feedback_cmd(dev, sem);
    if (!sfb_cmd)
@@ -748,7 +748,7 @@ vn_queue_submission_add_fence_feedback(struct vn_queue_submission *submit,
                                        uint32_t *new_cmd_count)
 {
    VK_FROM_HANDLE(vk_queue, queue_vk, submit->queue_handle);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
    struct vn_fence *fence = vn_fence_from_handle(submit->fence_handle);
 
    VkCommandBuffer ffb_cmd_handle = VK_NULL_HANDLE;
@@ -984,7 +984,7 @@ static void
 vn_queue_wsi_present(struct vn_queue_submission *submit)
 {
    struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
 
    /* base_bo can be NULL for prime blit src */
    if (!submit->wsi_mem || !submit->wsi_mem->base_bo)
@@ -1030,7 +1030,7 @@ static VkResult
 vn_queue_submit(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.vk.base.device;
+   struct vn_device *dev = vn_device_from_vk(queue->base.vk.base.device);
    struct vn_instance *instance = dev->instance;
    VkResult result;
 
@@ -1160,7 +1160,7 @@ static VkResult
 vn_queue_bind_sparse_submit(struct vn_queue_submission *submit)
 {
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = (void *)queue->base.vk.base.device;
+   struct vn_device *dev = vn_device_from_vk(queue->base.vk.base.device);
    struct vn_instance *instance = dev->instance;
    VkResult result;
 

@@ -295,7 +295,7 @@ vn_QueuePresentKHR(VkQueue _queue, const VkPresentInfoKHR *pPresentInfo)
 {
    VN_TRACE_FUNC();
    struct vk_queue *queue_vk = vk_queue_from_handle(_queue);
-   struct vn_device *dev = (void *)queue_vk->base.device;
+   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
 
    VkResult result = wsi_common_queue_present(
       &dev->physical_device->wsi_device, vn_device_to_handle(dev), _queue,
