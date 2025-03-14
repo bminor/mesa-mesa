@@ -655,6 +655,31 @@ static void get_h265_reflist(rvcn_dec_message_hevc_direct_ref_list_t *hevc_refli
    }
 }
 
+static void set_drm_keys_cenc(rvcn_dec_message_drm_t *drm, amd_secure_buffer_format *secure_buf)
+{
+   drm->drm_offset = 0;
+   drm->drm_cmd = 0;
+   drm->drm_cntl = 0;
+   drm->drm_max_res = 0;
+
+   memcpy(drm->drm_wrapped_key, secure_buf->key_blob.wrapped_key, 16);
+   memcpy(drm->drm_key, secure_buf->key_blob.wrapped_key_iv, 16);
+   memcpy(drm->drm_counter, secure_buf->desc.iv, 16);
+
+   drm->drm_subsample_size = secure_buf->desc.subsamples_length;
+
+   drm->drm_cmd |= 1 << DRM_CMD_KEY_SHIFT;
+   drm->drm_cmd |= 1 << DRM_CMD_CNT_KEY_SHIFT;
+   drm->drm_cmd |= 1 << DRM_CMD_CNT_DATA_SHIFT;
+   drm->drm_cmd |= 1 << DRM_CMD_OFFSET_SHIFT;
+   drm->drm_cmd |= 1 << DRM_CMD_GEN_MASK_SHIFT;
+   drm->drm_cmd |= 0xFF << DRM_CMD_BYTE_MASK_SHIFT;
+   drm->drm_cmd |= secure_buf->key_blob.u.s.drm_session_id << DRM_CMD_SESSION_SEL_SHIFT;
+   drm->drm_cmd |= 1 << DRM_CMD_UNWRAP_KEY_SHIFT;
+
+   drm->drm_cntl |= 0x3 << DRM_CNTL_CENC_ENABLE_SHIFT;
+}
+
 static void set_drm_keys(rvcn_dec_message_drm_t *drm, DECRYPT_PARAMETERS *decrypted)
 {
    int cbc = decrypted->u.s.cbc;
@@ -1815,7 +1840,10 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
 
    if (encrypted) {
       assert(sscreen->info.has_tmz_support);
-      set_drm_keys(drm, decrypt);
+      if (picture->cenc)
+         set_drm_keys_cenc(drm, secure_buf);
+      else
+         set_drm_keys(drm, decrypt);
    }
 
    if (dec->dpb_type == DPB_DYNAMIC_TIER_1) {

@@ -350,6 +350,7 @@
 #define DRM_CMD_DRM_BYPASS_MASK        (0x80000000)
 
 /* Drm_cntl definitions */
+#define DRM_CNTL_CENC_ENABLE_SHIFT     (0)
 #define DRM_CNTL_ENC_BYTECNT_SHIFT     (6)
 #define DRM_CNTL_CLR_BYTECNT_SHIFT     (16)
 #define DRM_CNTL_BYPASS_SHIFT          (24)
