@@ -2548,3 +2548,25 @@ brw_nir_lower_simd(nir_shader *nir, unsigned dispatch_width)
    return nir_shader_lower_instructions(nir, filter_simd, lower_simd,
                                  (void *)(uintptr_t)dispatch_width);
 }
+
+nir_variable *
+brw_nir_find_complete_variable_with_location(nir_shader *shader,
+                                             nir_variable_mode mode,
+                                             int location)
+{
+   nir_variable *best_var = NULL;
+   unsigned last_size = 0;
+
+   nir_foreach_variable_with_modes(var, shader, mode) {
+      if (var->data.location != location)
+         continue;
+
+      unsigned new_size = glsl_count_dword_slots(var->type, false);
+      if (new_size > last_size) {
+         best_var = var;
+         last_size = new_size;
+      }
+   }
+
+   return best_var;
+}

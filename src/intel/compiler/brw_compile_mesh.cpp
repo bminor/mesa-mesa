@@ -551,28 +551,6 @@ brw_mue_assign_position(const struct attr_desc *attr,
    }
 }
 
-static nir_variable *
-brw_nir_find_complete_variable_with_location(nir_shader *shader,
-                                             nir_variable_mode mode,
-                                             int location)
-{
-   nir_variable *best_var = NULL;
-   unsigned last_size = 0;
-
-   nir_foreach_variable_with_modes(var, shader, mode) {
-      if (var->data.location != location)
-         continue;
-
-      unsigned new_size = glsl_count_dword_slots(var->type, false);
-      if (new_size > last_size) {
-         best_var = var;
-         last_size = new_size;
-      }
-   }
-
-   return best_var;
-}
-
 static unsigned
 brw_sum_size(const std::list<struct attr_desc> &orders)
 {

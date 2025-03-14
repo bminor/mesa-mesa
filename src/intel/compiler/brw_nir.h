@@ -318,6 +318,10 @@ bool brw_nir_uses_inline_data(nir_shader *shader);
 nir_shader *
 brw_nir_from_spirv(void *mem_ctx, const uint32_t *spirv, size_t spirv_size);
 
+nir_variable *
+brw_nir_find_complete_variable_with_location(nir_shader *shader,
+                                             nir_variable_mode mode,
+                                             int location);
 #ifdef __cplusplus
 }
 #endif
