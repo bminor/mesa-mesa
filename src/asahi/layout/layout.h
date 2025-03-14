@@ -500,14 +500,6 @@ ail_is_view_compatible(struct ail_layout *layout, enum pipe_format view)
    return !layout->compressed || ail_formats_compatible(layout->format, view);
 }
 
-/* Fake values, pending UAPI upstreaming */
-#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED
-#define DRM_FORMAT_MOD_APPLE_GPU_TILED (2)
-#endif
-#ifndef DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED
-#define DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED (3)
-#endif
-
 /*
  * We generally use ail enums instead of DRM format modifiers. These helpers
  * bridges the gap.
