@@ -18,10 +18,6 @@
 struct vn_command_pool {
    struct vn_command_pool_base base;
 
-   VkAllocationCallbacks allocator;
-   struct vn_device *device;
-   uint32_t queue_family_index;
-
    struct list_head command_buffers;
 
    /* The list contains the recycled query records allocated from the same

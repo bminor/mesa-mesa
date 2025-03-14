@@ -308,13 +308,12 @@ vn_cmd_fix_image_memory_barrier(const struct vn_command_buffer *cmd,
                                 VkImageMemoryBarrier *barrier,
                                 struct vn_cmd_cached_storage *storage)
 {
-   const struct vn_physical_device *physical_dev =
-      cmd->pool->device->physical_device;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
    const struct vn_image *img = vn_image_from_handle(barrier->image);
 
    struct vn_cmd_fix_image_memory_barrier_result result =
       vn_cmd_fix_image_memory_barrier_common(
-         img, cmd->pool->queue_family_index, &barrier->oldLayout,
+         img, cmd->pool->base.vk.queue_family_index, &barrier->oldLayout,
          &barrier->newLayout, &barrier->srcQueueFamilyIndex,
          &barrier->dstQueueFamilyIndex);
    if (!result.availability_op_needed)
@@ -323,7 +322,7 @@ vn_cmd_fix_image_memory_barrier(const struct vn_command_buffer *cmd,
       barrier->dstAccessMask = 0;
 
    if (result.external_acquire_unmodified &&
-       physical_dev->renderer_extensions
+       dev->physical_device->renderer_extensions
           .EXT_external_memory_acquire_unmodified)
       vn_cmd_set_external_acquire_unmodified((VkBaseOutStructure *)barrier,
                                              storage);
@@ -334,13 +333,12 @@ vn_cmd_fix_image_memory_barrier2(const struct vn_command_buffer *cmd,
                                  VkImageMemoryBarrier2 *barrier,
                                  struct vn_cmd_cached_storage *storage)
 {
-   const struct vn_physical_device *physical_dev =
-      cmd->pool->device->physical_device;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
    const struct vn_image *img = vn_image_from_handle(barrier->image);
 
    struct vn_cmd_fix_image_memory_barrier_result result =
       vn_cmd_fix_image_memory_barrier_common(
-         img, cmd->pool->queue_family_index, &barrier->oldLayout,
+         img, cmd->pool->base.vk.queue_family_index, &barrier->oldLayout,
          &barrier->newLayout, &barrier->srcQueueFamilyIndex,
          &barrier->dstQueueFamilyIndex);
    if (!result.availability_op_needed) {
@@ -353,7 +351,7 @@ vn_cmd_fix_image_memory_barrier2(const struct vn_command_buffer *cmd,
    }
 
    if (result.external_acquire_unmodified &&
-       physical_dev->renderer_extensions
+       dev->physical_device->renderer_extensions
           .EXT_external_memory_acquire_unmodified) {
       vn_cmd_set_external_acquire_unmodified((VkBaseOutStructure *)barrier,
                                              storage);
@@ -560,7 +558,7 @@ vn_cmd_pool_alloc_query_record(struct vn_command_pool *cmd_pool,
 {
    struct vn_cmd_query_record *record;
    if (list_is_empty(&cmd_pool->free_query_records)) {
-      record = vk_alloc(&cmd_pool->allocator, sizeof(*record),
+      record = vk_alloc(&cmd_pool->base.vk.alloc, sizeof(*record),
                         VN_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!record)
          return NULL;
@@ -629,9 +627,9 @@ vn_cmd_begin_render_pass(struct vn_command_buffer *cmd,
       view_count = imageless_info->attachmentCount;
    }
 
-   const struct vn_image **images =
-      vk_alloc(&cmd->pool->allocator, sizeof(*images) * pass->present_count,
-               VN_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   const struct vn_image **images = vk_alloc(
+      &cmd->pool->base.vk.alloc, sizeof(*images) * pass->present_count,
+      VN_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!images) {
       cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
       return;
@@ -673,7 +671,7 @@ vn_cmd_end_render_pass(struct vn_command_buffer *cmd)
          pass->present_release_attachments, pass->present_release_count);
    }
 
-   vk_free(&cmd->pool->allocator, images);
+   vk_free(&cmd->pool->base.vk.alloc, images);
 }
 
 static inline void
@@ -719,9 +717,6 @@ vn_CreateCommandPool(VkDevice device,
 
    vn_command_pool_base_init(&pool->base, &dev->base, pCreateInfo, alloc);
 
-   pool->allocator = *alloc;
-   pool->device = dev;
-   pool->queue_family_index = pCreateInfo->queueFamilyIndex;
    list_inithead(&pool->command_buffers);
    list_inithead(&pool->free_query_records);
 
@@ -746,7 +741,7 @@ vn_cmd_reset(struct vn_command_buffer *cmd)
    cmd->state = VN_COMMAND_BUFFER_STATE_INITIAL;
 
    /* reset cmd builder */
-   vk_free(&cmd->pool->allocator, cmd->builder.present_src_images);
+   vk_free(&cmd->pool->base.vk.alloc, cmd->builder.present_src_images);
    vn_cmd_pool_free_query_records(cmd->pool, &cmd->builder.query_records);
    memset(&cmd->builder, 0, sizeof(cmd->builder));
    list_inithead(&cmd->builder.query_records);
@@ -770,7 +765,7 @@ vn_DestroyCommandPool(VkDevice device,
    if (!pool)
       return;
 
-   alloc = pAllocator ? pAllocator : &pool->allocator;
+   alloc = pAllocator ? pAllocator : &pool->base.vk.alloc;
 
    vn_async_vkDestroyCommandPool(dev->primary_ring, device, commandPool,
                                  NULL);
@@ -809,12 +804,12 @@ vn_ResetCommandPool(VkDevice device,
    if (flags & VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) {
       list_for_each_entry_safe(struct vn_cmd_query_record, record,
                                &pool->free_query_records, head)
-         vk_free(&pool->allocator, record);
+         vk_free(&pool->base.vk.alloc, record);
 
       list_inithead(&pool->free_query_records);
 
       vn_cached_storage_fini(&pool->storage);
-      vn_cached_storage_init(&pool->storage, &pool->allocator);
+      vn_cached_storage_init(&pool->storage, &pool->base.vk.alloc);
    }
 
    vn_async_vkResetCommandPool(dev->primary_ring, device, commandPool, flags);
@@ -844,7 +839,7 @@ vn_AllocateCommandBuffers(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_command_pool *pool =
       vn_command_pool_from_handle(pAllocateInfo->commandPool);
-   const VkAllocationCallbacks *alloc = &pool->allocator;
+   const VkAllocationCallbacks *alloc = &pool->base.vk.alloc;
 
    for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
       struct vn_command_buffer *cmd =
@@ -894,7 +889,7 @@ vn_FreeCommandBuffers(VkDevice device,
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_command_pool *pool = vn_command_pool_from_handle(commandPool);
-   const VkAllocationCallbacks *alloc = &pool->allocator;
+   const VkAllocationCallbacks *alloc = &pool->base.vk.alloc;
 
    vn_async_vkFreeCommandBuffers(dev->primary_ring, device, commandPool,
                                  commandBufferCount, pCommandBuffers);
@@ -922,11 +917,11 @@ vn_ResetCommandBuffer(VkCommandBuffer commandBuffer,
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_ring *ring = cmd->pool->device->primary_ring;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
 
    vn_cmd_reset(cmd);
 
-   vn_async_vkResetCommandBuffer(ring, commandBuffer, flags);
+   vn_async_vkResetCommandBuffer(dev->primary_ring, commandBuffer, flags);
 
    return VK_SUCCESS;
 }
@@ -1042,7 +1037,8 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_instance *instance = cmd->pool->device->instance;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_instance *instance = dev->instance;
    size_t cmd_size;
 
    /* reset regardless of VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT */
@@ -1096,7 +1092,7 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
 static void
 vn_cmd_submit(struct vn_command_buffer *cmd)
 {
-   struct vn_ring *ring = cmd->pool->device->primary_ring;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
 
    if (cmd->state != VN_COMMAND_BUFFER_STATE_RECORDING)
       return;
@@ -1109,9 +1105,10 @@ vn_cmd_submit(struct vn_command_buffer *cmd)
    }
 
    if (vn_cs_encoder_needs_roundtrip(&cmd->cs))
-      vn_ring_roundtrip(ring);
+      vn_ring_roundtrip(dev->primary_ring);
 
-   if (vn_ring_submit_command_simple(ring, &cmd->cs) != VK_SUCCESS) {
+   if (vn_ring_submit_command_simple(dev->primary_ring, &cmd->cs) !=
+       VK_SUCCESS) {
       cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
       return;
    }
@@ -1125,7 +1122,8 @@ vn_EndCommandBuffer(VkCommandBuffer commandBuffer)
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_instance *instance = cmd->pool->device->instance;
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_instance *instance = dev->instance;
    size_t cmd_size;
 
    if (cmd->state != VN_COMMAND_BUFFER_STATE_RECORDING)
@@ -1501,7 +1499,7 @@ vn_transition_prime_layout(struct vn_command_buffer *cmd, VkBuffer dst_buffer)
    const VkBufferMemoryBarrier buf_barrier = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
       .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-      .srcQueueFamilyIndex = cmd->pool->queue_family_index,
+      .srcQueueFamilyIndex = cmd->pool->base.vk.queue_family_index,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT,
       .buffer = dst_buffer,
       .size = VK_WHOLE_SIZE,
@@ -1817,14 +1815,14 @@ vn_cmd_record_query(VkCommandBuffer cmd_handle,
                     bool copy)
 {
    struct vn_command_buffer *cmd = vn_command_buffer_from_handle(cmd_handle);
+   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
    struct vn_query_pool *query_pool = vn_query_pool_from_handle(pool_handle);
 
    if (unlikely(VN_PERF(NO_QUERY_FEEDBACK)))
       return;
 
    if (unlikely(!query_pool->fb_buf)) {
-      if (vn_query_feedback_buffer_init_once(cmd->pool->device, query_pool) !=
-          VK_SUCCESS) {
+      if (vn_query_feedback_buffer_init_once(dev, query_pool) != VK_SUCCESS) {
          cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
          return;
       }

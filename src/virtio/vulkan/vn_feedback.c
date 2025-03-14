@@ -696,7 +696,7 @@ vn_query_feedback_cmd_alloc(VkDevice dev_handle,
       struct vn_command_pool *cmd_pool =
          vn_command_pool_from_handle(fb_cmd_pool->pool_handle);
 
-      qfb_cmd = vk_alloc(&cmd_pool->allocator, sizeof(*qfb_cmd),
+      qfb_cmd = vk_alloc(&cmd_pool->base.vk.alloc, sizeof(*qfb_cmd),
                          VN_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!qfb_cmd) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -712,7 +712,7 @@ vn_query_feedback_cmd_alloc(VkDevice dev_handle,
       VkCommandBuffer qfb_cmd_handle;
       result = vn_AllocateCommandBuffers(dev_handle, &info, &qfb_cmd_handle);
       if (result != VK_SUCCESS) {
-         vk_free(&cmd_pool->allocator, qfb_cmd);
+         vk_free(&cmd_pool->base.vk.alloc, qfb_cmd);
          goto out_unlock;
       }
 
