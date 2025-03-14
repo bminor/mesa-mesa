@@ -222,6 +222,174 @@ try_override_shader_variant(struct ir3_shader_variant *v,
    return true;
 }
 
+struct disasm_context {
+   FILE *stream;
+   uint8_t *mismatch_array;
+};
+
+static void
+disasm_pre_instr_cb(void *cbdata, unsigned n, void *instr)
+{
+   struct disasm_context *context = (struct disasm_context *)cbdata;
+   bool mismatch = context->mismatch_array && context->mismatch_array[n];
+   uint32_t *dwords = (uint32_t *)instr;
+   fprintf(context->stream, " %s [%03d] [%08x_%08x] ",
+      mismatch ? "!!" : "  ", n, dwords[1], dwords[0]);
+}
+
+static void
+disasm_no_match_cb(FILE *stream, const BITSET_WORD *dwords, size_t size)
+{
+   fprintf(stream, " XX [000] raw 0x%X%X\n", dwords[0], dwords[1]);
+}
+
+static char *
+disasm_collect(struct ir3_shader_variant *v, uint8_t *mismatch_array,
+               uint32_t *binary_data, uint32_t binary_size)
+{
+   char *stream_data = NULL;
+   size_t stream_size = 0;
+   FILE *stream = open_memstream(&stream_data, &stream_size);
+
+   struct disasm_context context = {
+      .stream = stream,
+      .mismatch_array = mismatch_array,
+   };
+
+   struct isa_decode_options decode_options = {
+      .gpu_id = v->ir->compiler->gen * 100,
+      .show_errors = true,
+      .branch_labels = true,
+      .cbdata = &context,
+      .pre_instr_cb = disasm_pre_instr_cb,
+      .no_match_cb = disasm_no_match_cb,
+   };
+
+   ir3_isa_disasm(binary_data, binary_size, stream, &decode_options);
+
+   fclose(stream);
+   return stream_data;
+}
+
+static uint16_t
+variant_unpadded_binary_size(struct ir3_shader_variant *v)
+{
+   /* This helper returns the size (in dwords) of variant's binary after
+    * the padding nops at the end are ignored.
+    */
+   uint16_t size = v->info.sizedwords;
+
+   for (uint16_t i = 0; i < v->info.sizedwords; i += 2) {
+      uint32_t *dword = &v->bin[v->info.sizedwords - 2 - i];
+      if (!!dword[0] || !!dword[1])
+         break;
+
+      size -= 2;
+   }
+
+   return size;
+}
+
+static void
+validate_print_disasm(struct ir3_shader_variant *v, uint8_t *mismatch_array)
+{
+   char *disasm = disasm_collect(v, mismatch_array,
+                                 v->bin, variant_unpadded_binary_size(v) * 4);
+   mesa_loge("\n%s", disasm);
+   free(disasm);
+}
+
+static bool
+validate_roundtrip_variant_binary(struct ir3_shader_variant *rt_v, struct ir3_shader_variant *v)
+{
+   /* Ignoring padding nops in both variants, compare the binary data.
+    * If there's a mismatch, print both disassemblies with highlighted
+    * points of difference.
+    */
+   uint16_t v_sizedwords = variant_unpadded_binary_size(v);
+   uint16_t rt_v_sizedwords = variant_unpadded_binary_size(rt_v);
+   if (v_sizedwords == rt_v_sizedwords &&
+       !memcmp(v->bin, rt_v->bin, v_sizedwords * 4))
+      return true;
+
+   mesa_loge("validate_roundtrip_variant_binary: mismatch between initial and reassembled binary\n");
+
+   uint32_t max_sizedwords = MAX2(v_sizedwords, rt_v_sizedwords);
+   uint8_t *mismatch_array = calloc(max_sizedwords / 2, sizeof(uint8_t));
+
+   for (uint32_t i = 0; i < max_sizedwords; i += 2) {
+      if (i >= v_sizedwords || i >= rt_v_sizedwords) {
+         mismatch_array[i / 2] = 0xff;
+         continue;
+      }
+
+      uint32_t *v_dword = &v->bin[i];
+      uint32_t *rt_v_dword = &rt_v->bin[i];
+      if (v_dword[0] != rt_v_dword[0] || v_dword[1] != rt_v_dword[1])
+         mismatch_array[i / 2] = 0xff;
+   }
+
+   mesa_loge("  disassembly of initial binary:");
+   validate_print_disasm(v, mismatch_array);
+
+   mesa_loge("  disassembly of reassembled binary:");
+   validate_print_disasm(rt_v, mismatch_array);
+
+   free(mismatch_array);
+   return false;
+}
+
+static struct ir3_shader_variant *
+alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
+              struct ir3_shader_variant *nonbinning, void *mem_ctx);
+
+static struct ir3_shader_variant *
+create_roundtrip_variant(struct ir3_shader *shader, struct ir3_shader_variant *v)
+{
+   struct ir3_shader_variant *rt_v = alloc_variant(shader, &v->key, NULL, NULL);
+   if (!rt_v)
+      return NULL;
+
+   /* Dump variant's disassembly into a memory stream, then read and
+    * parse from that stream to assemble the roundtrip variant.
+    */
+   char *disasm_data = NULL;
+   size_t disasm_size = 0;
+   FILE *disasm_stream = open_memstream(&disasm_data, &disasm_size);
+   ir3_shader_disasm(v, v->bin, disasm_stream);
+   fflush(disasm_stream);
+
+   struct ir3_kernel_info info;
+   memset(&info, 0, sizeof(info));
+   info.numwg = INVALID_REG;
+
+   fseek(disasm_stream, 0, SEEK_SET);
+   rt_v->ir = ir3_parse(rt_v, &info, disasm_stream);
+
+   fclose(disasm_stream);
+   free(disasm_data);
+
+   if (!rt_v->ir) {
+      mesa_loge("create_roundtrip_variant: failed to parse initial disassembly");
+      goto fail;
+   }
+
+   rt_v->bin = ir3_shader_assemble(rt_v);
+   if (!rt_v->bin) {
+      mesa_loge("create_roundtrip_variant: failed to assemble parsed initial disassembly");
+      goto fail;
+   }
+
+   if (!validate_roundtrip_variant_binary(rt_v, v))
+      goto fail;
+
+   return rt_v;
+
+fail:
+   ralloc_free(rt_v);
+   return NULL;
+}
+
 static void
 assemble_variant(struct ir3_shader_variant *v, bool internal)
 {
@@ -275,10 +443,6 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
          free(stream_data);
       }
    }
-
-   /* no need to keep the ir around beyond this point: */
-   ir3_destroy(v->ir);
-   v->ir = NULL;
 }
 
 static bool
@@ -297,6 +461,26 @@ compile_variant(struct ir3_shader *shader, struct ir3_shader_variant *v)
                 shader->nir->info.label);
       return false;
    }
+
+   if (ir3_shader_debug & IR3_DBG_ASM_ROUNDTRIP) {
+      struct ir3_shader_variant *rt_v = create_roundtrip_variant(shader, v);
+      if (!rt_v)
+         return false;
+
+      /* TODO: the roundtrip variant could replace the initial variant
+       * to also test the gathered variant information that's then emitted
+       * into shader state. Some known problems:
+       * - parsing from assembly will lack constant data that's filled
+       *   in ir3_nir_lower_load_constant during compilation
+       * - parsing from assembly will also lack metadata (e.g. writemasks)
+       *   that's used to determine register footprint
+       */
+      ralloc_free(rt_v);
+   }
+
+   /* no need to keep the ir around beyond this point: */
+   ir3_destroy(v->ir);
+   v->ir = NULL;
 
    return true;
 }
