@@ -26,6 +26,19 @@
     - !reference [.venus-manual-rules, rules]
     - !reference [.lavapipe-manual-rules, rules]
 
+.venus-anv-rules:
+  stage: layered-backends
+  rules:
+    - !reference [.venus-rules, rules]
+    - !reference [.anv-rules, rules]
+
+.venus-anv-manual-rules:
+  stage: layered-backends-nightly
+  extends: .no-auto-retry
+  rules:
+    - !reference [.venus-manual-rules, rules]
+    - !reference [.anv-manual-rules, rules]
+
 
 .venus-lavapipe-test:
   extends:

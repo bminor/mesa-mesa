@@ -76,6 +76,24 @@ variables:
     KERNEL_IMAGE_TYPE: "zimage"
     BOOT_METHOD: u-boot
 
+.lava-x86_64-test-android:
+  extends:
+    - .use-debian/x86_64_test-android
+    - .lava-x86_64-test
+    - .android-variables
+  variables:
+    HWCI_ENABLE_X86_KVM: 1
+    HWCI_TEST_SCRIPT: install/cuttlefish-runner.sh
+    S3_ANDROID_ARTIFACT_NAME: mesa-x86_64-android-debug
+  needs:
+    - !reference [.lava-test, needs]
+    - job: debian/x86_64_test-android
+      artifacts: false
+    - job: debian-x86_64 # The generic Linux build for the host will be downloaded later
+      artifacts: false
+    - job: debian-android # The Android build for the guest will be downloaded later and installed via adb
+      artifacts: false
+
 .lava-x86_64-test-gl:
   extends:
     - .use-debian/x86_64_test-gl

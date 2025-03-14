@@ -1,0 +1,2 @@
+dEQP-VK.api.external.memory.android_hardware_buffer.dedicated.host_visible.import_twice,Fail
+dEQP-VK.api.external.memory.android_hardware_buffer.suballocated.host_visible.import_twice,Fail
