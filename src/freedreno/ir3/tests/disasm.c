@@ -137,6 +137,7 @@ static const struct test {
    /* custom test with qcom_dot8 function from cl_qcom_dot_product8 */
    INSTR_6XX(66818c02_0002e003, "(sat)(nop3) dp2acc.mixed.low r0.z, r0.w, r0.w, r0.z"), /* (nop3) dp2acc (sat)r0.z, (signed)(low)(r)r0.w, (low)(r)r0.w, r0.z */
    INSTR_6XX(6681c802_8002a003, "(nop3) dp4acc.unsigned.low r0.z, r0.w, r0.w, (neg)r0.z"), /* (nop3) dp4acc r0.z, (unsigned)(r)r0.w, (r)r0.w, (neg)r0.z */
+   INSTR_6XX(7681c002_00002002, "(sy)dp4acc.unsigned.low r0.z, r0.z, r0.w, r0.x"),
 
    INSTR_7XX(61808000_04020400, "madsh.m16 r0.x, (last)r0.x, r0.y, (last)r0.z"),
    INSTR_7XX(64838806_04088406, "(nop3) sel.b32 r1.z, (last)r1.z, r1.w, (last)r2.x"),

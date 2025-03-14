@@ -344,8 +344,14 @@ SOFTWARE.
 <bitset name="#instruction-cat3-dp" extends="#instruction-cat3-base">
 	<gen min="600"/>
 
+	<override expr="#cat2-cat3-nop-encoding">
+		<display>
+			{SY}{SS}{JP}{SAT}(nop{NOP}) {UL}{NAME}{SRC_SIGN}{SRC_PACK} {DST}, {SRC1}, {SRC2}, {SRC3_NEG}{SRC3_R}{SRC3}
+		</display>
+		<derived name="NOP" expr="#cat2-cat3-nop-value" type="uint"/>
+	</override>
 	<display>
-		{SY}{SS}{JP}{SAT}(nop{NOP}) {UL}{NAME}{SRC_SIGN}{SRC_PACK} {DST}, {SRC1}, {SRC2}, {SRC3_NEG}{SRC3}
+		{SY}{SS}{JP}{SAT}{UL}{NAME}{SRC_SIGN}{SRC_PACK} {DST}, {SRC1_R}{SRC1}, {SRC2_R}{SRC2}, {SRC3_NEG}{SRC3_R}{SRC3}
 	</display>
 
 	<derived name="FULL" expr="#true" type="bool"/>
