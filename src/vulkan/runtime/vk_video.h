@@ -183,6 +183,10 @@ void vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *s
                                        const StdVideoH264PictureParameterSet *pps,
                                        StdVideoH264ScalingLists *list);
 
+void vk_video_derive_h265_scaling_list(const StdVideoH265SequenceParameterSet *sps,
+                                       const StdVideoH265PictureParameterSet *pps,
+                                       const StdVideoH265ScalingLists **list);
+
 const StdVideoH264SequenceParameterSet *
 vk_video_find_h264_dec_std_sps(const struct vk_video_session_parameters *params,
                                uint32_t id);
