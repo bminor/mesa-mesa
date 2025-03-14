@@ -523,9 +523,9 @@ anv_block_pool_grow(struct anv_block_pool *pool, struct anv_block_state *state,
     * We align to a page size because it makes it easier to do our
     * calculations later in such a way that we state page-aigned.
     */
-   uint64_t total_used = align(pool->state.next, PAGE_SIZE);
+   const uint64_t total_used = align(pool->state.next, PAGE_SIZE);
 
-   uint64_t old_size = pool->size;
+   const uint64_t old_size = pool->size;
 
    /* The block pool is always initialized to a nonzero size and this function
     * is always called after initialization.
@@ -546,7 +546,7 @@ anv_block_pool_grow(struct anv_block_pool *pool, struct anv_block_state *state,
 
    if (required > pool->max_size) {
       result = VK_ERROR_OUT_OF_DEVICE_MEMORY;
-   } else if (total_used * 2 > required) {
+   } else {
       uint64_t size = old_size * 2;
       while (size < required)
          size *= 2;
