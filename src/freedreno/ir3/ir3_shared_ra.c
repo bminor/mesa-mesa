@@ -1464,6 +1464,9 @@ ir3_ra_shared(struct ir3_shader_variant *v, struct ir3_liveness **live_ptr)
    ctx.live = live;
    ctx.pcopy_src_map = _mesa_pointer_hash_table_create(NULL);
 
+   /* Used to detect instructions inserted by this pass. */
+   unsigned last_old_serialno = v->ir->instr_count;
+
    foreach_block (block, &v->ir->block_list) {
       handle_block(&ctx, block);
    }
@@ -1493,6 +1496,16 @@ ir3_ra_shared(struct ir3_shader_variant *v, struct ir3_liveness **live_ptr)
    ralloc_free(live);
    *live_ptr = ir3_calc_liveness(live_mem_ctx, v->ir);
    (*live_ptr)->interval_offset = interval_offset;
+
+   /* Create merge sets for the splits/collects created by this pass. */
+   foreach_block (block, &v->ir->block_list) {
+      foreach_instr (instr, &block->instr_list) {
+         if (instr->serialno > last_old_serialno &&
+             (instr->opc == OPC_META_SPLIT || instr->opc == OPC_META_COLLECT)) {
+            ir3_aggressive_coalesce(*live_ptr, instr);
+         }
+      }
+   }
 
    /* We've created instructions that will be handled by regular RA (e.g.,
     * shared spills) so make sure they have their interval offsets assigned.
