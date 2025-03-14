@@ -920,13 +920,11 @@ etna_update_zsa(struct etna_context *ctx)
                   COND(early_z_test, VIVS_RA_EARLY_DEPTH_TEST_ENABLE);
 
    if (VIV_FEATURE(screen, ETNA_FEATURE_RA_WRITE_DEPTH)) {
+      new_ra_depth |= VIVS_RA_EARLY_DEPTH_FORWARD_W |
+                      VIVS_RA_EARLY_DEPTH_FORWARD_Z;
+
       if (!early_zs)
          new_ra_depth |= VIVS_RA_EARLY_DEPTH_WRITE_DISABLE;
-      /* The new early hierarchical test seems to only work properly if depth
-       * is also written from the early stage.
-       */
-      if (late_z_test || (early_z_test && late_zs))
-         new_ra_depth |= VIVS_RA_EARLY_DEPTH_FORWARD_Z;
 
       for (unsigned i = 0; i < fb->nr_cbufs; i++) {
          if (!fb->cbufs[i])
