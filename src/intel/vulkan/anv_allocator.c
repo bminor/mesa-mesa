@@ -483,6 +483,12 @@ anv_block_pool_map(struct anv_block_pool *pool, int32_t offset, uint32_t size)
    return bo->map + (offset - bo_offset);
 }
 
+static bool
+anv_device_has_perf_improvement_with_2mb_pages(struct anv_device *device)
+{
+   return device->info->verx10 >= 110;
+}
+
 /** Grows and re-centers the block pool.
  *
  * We grow the block pool in one or both directions in such a way that the
@@ -647,6 +653,8 @@ anv_state_pool_init(struct anv_state_pool *pool,
 {
    uint32_t initial_size = MAX2(params->block_size * 16,
                                 device->info->mem_alignment);
+   if (anv_device_has_perf_improvement_with_2mb_pages(device))
+      initial_size = MAX2(initial_size, 2 * 1024 * 1024);
 
    VkResult result = anv_block_pool_init(&pool->block_pool, device,
                                          params->name,
@@ -1559,7 +1567,8 @@ anv_bo_vma_alloc_or_close(struct anv_device *device,
     *
     * Only available on ICL+.
     */
-   if (device->info->ver >= 11 && bo->size >= 1 * 1024 * 1024 && !is_small_heap)
+   if (anv_device_has_perf_improvement_with_2mb_pages(device) &&
+       (bo->size >= 1 * 1024 * 1024) && !is_small_heap)
       align = MAX2(2 * 1024 * 1024, align);
 
    if (alloc_flags & ANV_BO_ALLOC_FIXED_ADDRESS) {
