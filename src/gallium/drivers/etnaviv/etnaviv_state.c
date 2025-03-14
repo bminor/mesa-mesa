@@ -926,7 +926,7 @@ etna_update_zsa(struct etna_context *ctx)
        * is also written from the early stage.
        */
       if (late_z_test || (early_z_test && late_zs))
-         new_ra_depth |= VIVS_RA_EARLY_DEPTH_HDEPTH_DISABLE;
+         new_ra_depth |= VIVS_RA_EARLY_DEPTH_FORWARD_Z;
 
       for (unsigned i = 0; i < fb->nr_cbufs; i++) {
          if (!fb->cbufs[i])

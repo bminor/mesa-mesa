@@ -8,17 +8,17 @@ http://0x04.net/cgit/index.cgi/rules-ng-ng
 git clone git://0x04.net/rules-ng-ng
 
 The rules-ng-ng source files this header was generated from are:
-- state.xml     (  30526 bytes, from 2024-12-16 16:01:37)
+- state.xml     (  30672 bytes, from 2025-01-06 20:30:33)
 - common.xml    (  35664 bytes, from 2024-12-05 12:09:36)
 - common_3d.xml (  15069 bytes, from 2024-12-05 12:09:36)
 - state_hi.xml  (  35909 bytes, from 2024-12-05 12:09:36)
 - copyright.xml (   1597 bytes, from 2020-10-28 12:56:03)
 - state_2d.xml  (  52271 bytes, from 2023-05-30 20:50:02)
-- state_3d.xml  (  89504 bytes, from 2024-12-16 16:15:15)
+- state_3d.xml  (  89428 bytes, from 2025-03-14 21:09:00)
 - state_blt.xml (  14592 bytes, from 2024-12-05 12:09:36)
 - state_vg.xml  (   5975 bytes, from 2020-10-28 12:56:03)
 
-Copyright (C) 2012-2024 by the following authors:
+Copyright (C) 2012-2025 by the following authors:
 - Wladimir J. van der Laan <laanwj@gmail.com>
 - Christian Gmeiner <christian.gmeiner@gmail.com>
 - Lucas Stach <l.stach@pengutronix.de>
@@ -591,8 +591,9 @@ DEALINGS IN THE SOFTWARE.
 
 #define VIVS_RA_EARLY_DEPTH					0x00000e08
 #define VIVS_RA_EARLY_DEPTH_TEST_ENABLE				0x00000001
-#define VIVS_RA_EARLY_DEPTH_HDEPTH_DISABLE			0x01000000
+#define VIVS_RA_EARLY_DEPTH_FORWARD_Z				0x01000000
 #define VIVS_RA_EARLY_DEPTH_LATE_DEPTH_MSAA			0x02000000
+#define VIVS_RA_EARLY_DEPTH_FORWARD_W				0x04000000
 #define VIVS_RA_EARLY_DEPTH_WRITE_DISABLE			0x10000000
 
 #define VIVS_RA_UNK00E0C					0x00000e0c
