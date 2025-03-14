@@ -388,6 +388,15 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   pco_foreach_instr_in_func_rev (vec, func) {
+      if (vec->op != PCO_OP_VEC)
+         continue;
+
+      pco_foreach_instr_src_ssa (psrc, vec) {
+         ra_add_node_interference(ra_graph, vec->dest[0].val, psrc->val);
+      }
+   }
+
    bool allocated = ra_allocate(ra_graph);
    assert(allocated);
    /* TODO: spilling. */
