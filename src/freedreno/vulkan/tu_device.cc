@@ -3357,7 +3357,8 @@ tu_setup_dynamic_framebuffer(struct tu_cmd_buffer *cmd_buffer,
       pRenderingInfo->renderArea.extent.width;
    framebuffer->height = pRenderingInfo->renderArea.offset.y +
       pRenderingInfo->renderArea.extent.height;
-   framebuffer->layers = pRenderingInfo->layerCount;
+   framebuffer->layers =
+      pRenderingInfo->viewMask != 0 ? 1 : pRenderingInfo->layerCount;
 
    tu_framebuffer_tiling_config(framebuffer, cmd_buffer->device, pass);
 }
