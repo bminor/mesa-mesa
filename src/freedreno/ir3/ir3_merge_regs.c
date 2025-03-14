@@ -591,6 +591,25 @@ dump_merge_sets(struct ir3 *ir)
 }
 
 void
+ir3_aggressive_coalesce(struct ir3_liveness *live,
+                        struct ir3_instruction *instr)
+{
+   switch (instr->opc) {
+   case OPC_META_SPLIT:
+      aggressive_coalesce_split(live, instr);
+      break;
+   case OPC_META_COLLECT:
+      aggressive_coalesce_collect(live, instr);
+      break;
+   case OPC_META_PARALLEL_COPY:
+      aggressive_coalesce_parallel_copy(live, instr);
+      break;
+   default:
+      break;
+   }
+}
+
+void
 ir3_merge_regs(struct ir3_liveness *live, struct ir3 *ir)
 {
    /* First pass: coalesce phis, which must be together. */
@@ -606,19 +625,7 @@ ir3_merge_regs(struct ir3_liveness *live, struct ir3 *ir)
    /* Second pass: aggressively coalesce parallelcopy, split, collect */
    foreach_block (block, &ir->block_list) {
       foreach_instr (instr, &block->instr_list) {
-         switch (instr->opc) {
-         case OPC_META_SPLIT:
-            aggressive_coalesce_split(live, instr);
-            break;
-         case OPC_META_COLLECT:
-            aggressive_coalesce_collect(live, instr);
-            break;
-         case OPC_META_PARALLEL_COPY:
-            aggressive_coalesce_parallel_copy(live, instr);
-            break;
-         default:
-            break;
-         }
+         ir3_aggressive_coalesce(live, instr);
       }
    }
 

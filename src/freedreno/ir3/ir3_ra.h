@@ -154,6 +154,8 @@ bool ir3_def_live_after(struct ir3_liveness *live, struct ir3_register *def,
 void ir3_create_parallel_copies(struct ir3 *ir);
 
 void ir3_merge_regs(struct ir3_liveness *live, struct ir3 *ir);
+void ir3_aggressive_coalesce(struct ir3_liveness *live,
+                             struct ir3_instruction *instr);
 
 void ir3_force_merge(struct ir3_register *a, struct ir3_register *b,
                      int b_offset);
