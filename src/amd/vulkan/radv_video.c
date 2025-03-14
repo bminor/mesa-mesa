@@ -1337,29 +1337,6 @@ get_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *p
    return result;
 }
 
-static void
-update_h265_scaling(void *it_ptr, const StdVideoH265ScalingLists *scaling_lists)
-{
-   if (scaling_lists) {
-      memcpy(it_ptr, scaling_lists->ScalingList4x4,
-             STD_VIDEO_H265_SCALING_LIST_4X4_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_4X4_NUM_ELEMENTS);
-      memcpy((char *)it_ptr + 96, scaling_lists->ScalingList8x8,
-             STD_VIDEO_H265_SCALING_LIST_8X8_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_8X8_NUM_ELEMENTS);
-      memcpy((char *)it_ptr + 480, scaling_lists->ScalingList16x16,
-             STD_VIDEO_H265_SCALING_LIST_16X16_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_16X16_NUM_ELEMENTS);
-      memcpy((char *)it_ptr + 864, scaling_lists->ScalingList32x32,
-             STD_VIDEO_H265_SCALING_LIST_32X32_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_32X32_NUM_ELEMENTS);
-   } else {
-      memset(it_ptr, 0, STD_VIDEO_H265_SCALING_LIST_4X4_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_4X4_NUM_ELEMENTS);
-      memset((char *)it_ptr + 96, 0,
-             STD_VIDEO_H265_SCALING_LIST_8X8_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_8X8_NUM_ELEMENTS);
-      memset((char *)it_ptr + 480, 0,
-             STD_VIDEO_H265_SCALING_LIST_16X16_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_16X16_NUM_ELEMENTS);
-      memset((char *)it_ptr + 864, 0,
-             STD_VIDEO_H265_SCALING_LIST_32X32_NUM_LISTS * STD_VIDEO_H265_SCALING_LIST_32X32_NUM_ELEMENTS);
-   }
-}
-
 static rvcn_dec_message_hevc_t
 get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct radv_video_session_params *params,
              const struct VkVideoDecodeInfoKHR *frame_info,
@@ -1491,19 +1468,11 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
       result.ref_pic_set_lt_curr[i] = IDXS(h265_pic_info->pStdPictureInfo->RefPicSetLtCurr[i]);
 
    const StdVideoH265ScalingLists *scaling_lists = NULL;
-   if (pps->flags.pps_scaling_list_data_present_flag)
-      scaling_lists = pps->pScalingLists;
-   else if (sps->flags.sps_scaling_list_data_present_flag)
-      scaling_lists = sps->pScalingLists;
-
-   update_h265_scaling(it_ptr, scaling_lists);
-
+   vk_video_derive_h265_scaling_list(sps, pps, &scaling_lists);
    if (scaling_lists) {
-      for (i = 0; i < STD_VIDEO_H265_SCALING_LIST_16X16_NUM_LISTS; ++i)
-         result.ucScalingListDCCoefSizeID2[i] = scaling_lists->ScalingListDCCoef16x16[i];
-
-      for (i = 0; i < STD_VIDEO_H265_SCALING_LIST_32X32_NUM_LISTS; ++i)
-         result.ucScalingListDCCoefSizeID3[i] = scaling_lists->ScalingListDCCoef32x32[i];
+      memcpy(it_ptr, scaling_lists, IT_SCALING_TABLE_SIZE);
+      memcpy(result.ucScalingListDCCoefSizeID2, scaling_lists->ScalingListDCCoef16x16, 6);
+      memcpy(result.ucScalingListDCCoefSizeID3, scaling_lists->ScalingListDCCoef32x32, 2);
    }
 
    for (i = 0; i < 2; i++) {
@@ -2383,18 +2352,11 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
       result.ref_pic_set_lt_curr[i] = IDXS(h265_pic_info->pStdPictureInfo->RefPicSetLtCurr[i]);
 
    const StdVideoH265ScalingLists *scaling_lists = NULL;
-   if (pps->flags.pps_scaling_list_data_present_flag)
-      scaling_lists = pps->pScalingLists;
-   else if (sps->flags.sps_scaling_list_data_present_flag)
-      scaling_lists = sps->pScalingLists;
-
-   update_h265_scaling(it_ptr, scaling_lists);
+   vk_video_derive_h265_scaling_list(sps, pps, &scaling_lists);
    if (scaling_lists) {
-      for (i = 0; i < STD_VIDEO_H265_SCALING_LIST_16X16_NUM_LISTS; ++i)
-         result.ucScalingListDCCoefSizeID2[i] = scaling_lists->ScalingListDCCoef16x16[i];
-
-      for (i = 0; i < STD_VIDEO_H265_SCALING_LIST_32X32_NUM_LISTS; ++i)
-         result.ucScalingListDCCoefSizeID3[i] = scaling_lists->ScalingListDCCoef32x32[i];
+      memcpy(it_ptr, scaling_lists, IT_SCALING_TABLE_SIZE);
+      memcpy(result.ucScalingListDCCoefSizeID2, scaling_lists->ScalingListDCCoef16x16, 6);
+      memcpy(result.ucScalingListDCCoefSizeID3, scaling_lists->ScalingListDCCoef32x32, 2);
    }
 
    for (i = 0; i < 2; i++) {
