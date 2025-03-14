@@ -77,6 +77,7 @@ files_libradeonsi = files(
   'si_vpe.c',
   'si_vpe.h',
   'pspdecryptionparam.h',
+  'cencdecryptionparam.h',
   'radeon_uvd.c',
   'radeon_uvd.h',
   'radeon_uvd_enc.c',
