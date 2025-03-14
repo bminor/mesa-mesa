@@ -16,7 +16,7 @@
 #include "vn_cs.h"
 
 struct vn_command_pool {
-   struct vn_object_base base;
+   struct vn_command_pool_base base;
 
    VkAllocationCallbacks allocator;
    struct vn_device *device;
@@ -45,7 +45,7 @@ struct vn_command_pool {
    struct vn_cached_storage storage;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_command_pool,
-                               base.vk,
+                               base.vk.base,
                                VkCommandPool,
                                VK_OBJECT_TYPE_COMMAND_POOL)
 

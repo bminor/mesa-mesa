@@ -717,7 +717,7 @@ vn_CreateCommandPool(VkDevice device,
    if (!pool)
       return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   vn_object_base_init(&pool->base, VK_OBJECT_TYPE_COMMAND_POOL, &dev->base);
+   vn_command_pool_base_init(&pool->base, &dev->base, pCreateInfo, alloc);
 
    pool->allocator = *alloc;
    pool->device = dev;
@@ -789,7 +789,7 @@ vn_DestroyCommandPool(VkDevice device,
 
    vn_cached_storage_fini(&pool->storage);
 
-   vn_object_base_fini(&pool->base);
+   vn_command_pool_base_fini(&pool->base);
    vk_free(alloc, pool);
 }
 

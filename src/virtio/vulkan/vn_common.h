@@ -39,6 +39,7 @@
 #include "util/u_math.h"
 #include "util/xmlconfig.h"
 #include "vk_alloc.h"
+#include "vk_command_pool.h"
 #include "vk_debug_report.h"
 #include "vk_device.h"
 #include "vk_device_memory.h"
@@ -156,6 +157,12 @@ struct vn_device_base {
 /* base class of vn_queue */
 struct vn_queue_base {
    struct vk_queue vk;
+   vn_object_id id;
+};
+
+/* base class of vn_command_pool */
+struct vn_command_pool_base {
+   struct vk_command_pool vk;
    vn_object_id id;
 };
 
@@ -486,6 +493,24 @@ vn_queue_base_fini(struct vn_queue_base *queue)
    vk_queue_finish(&queue->vk);
 }
 
+static inline VkResult
+vn_command_pool_base_init(struct vn_command_pool_base *cmd_pool,
+                          struct vn_device_base *dev,
+                          const VkCommandPoolCreateInfo *info,
+                          const VkAllocationCallbacks *alloc)
+{
+   VkResult result =
+      vk_command_pool_init(&dev->vk, &cmd_pool->vk, info, alloc);
+   cmd_pool->id = vn_get_next_obj_id();
+   return result;
+}
+
+static inline void
+vn_command_pool_base_fini(struct vn_command_pool_base *cmd_pool)
+{
+   vk_command_pool_finish(&cmd_pool->vk);
+}
+
 static inline void
 vn_object_base_init(struct vn_object_base *obj,
                     VkObjectType type,
@@ -518,6 +543,9 @@ vn_object_set_id(void *obj, vn_object_id id, VkObjectType type)
    case VK_OBJECT_TYPE_QUEUE:
       ((struct vn_queue_base *)obj)->id = id;
       break;
+   case VK_OBJECT_TYPE_COMMAND_POOL:
+      ((struct vn_command_pool_base *)obj)->id = id;
+      break;
    case VK_OBJECT_TYPE_DEVICE_MEMORY:
       ((struct vn_device_memory_base *)obj)->id = id;
       break;
@@ -543,6 +571,8 @@ vn_object_get_id(const void *obj, VkObjectType type)
       return ((struct vn_device_base *)obj)->id;
    case VK_OBJECT_TYPE_QUEUE:
       return ((struct vn_queue_base *)obj)->id;
+   case VK_OBJECT_TYPE_COMMAND_POOL:
+      return ((struct vn_command_pool_base *)obj)->id;
    case VK_OBJECT_TYPE_DEVICE_MEMORY:
       return ((struct vn_device_memory_base *)obj)->id;
    case VK_OBJECT_TYPE_IMAGE:
