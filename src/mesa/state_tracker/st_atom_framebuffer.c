@@ -150,12 +150,10 @@ st_update_framebuffer_state( struct st_context *st )
 
    unsigned num_multiview_layer = 0;
    for (i = 0; i < fb->_NumColorDrawBuffers; i++) {
-      framebuffer.cbufs[i] = NULL;
       rb = fb->_ColorDrawBuffers[i];
 
-      if (rb) {
-         if (rb->is_rtt || (rb->texture &&
-             _mesa_is_format_srgb(rb->Format))) {
+      if (rb && rb->texture) {
+         if (rb->is_rtt || _mesa_is_format_srgb(rb->Format)) {
             /* rendering to a GL texture, may have to update surface */
 
             _mesa_update_renderbuffer_surface(ctx, rb);
@@ -163,25 +161,22 @@ st_update_framebuffer_state( struct st_context *st )
             num_multiview_layer = MAX2(num_multiview_layer, rb->rtt_numviews);
          }
 
-         struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
-         if (surface) {
-            if (surface->context != st->pipe) {
-               _mesa_regen_renderbuffer_surface(ctx, rb);
-            }
-            framebuffer.cbufs[i] = surface;
-            update_framebuffer_size(&framebuffer, surface);
-         }
+         framebuffer.cbufs[i] = rb->surface;
+         framebuffer.cbufs[i].format = _mesa_renderbuffer_get_format(ctx, rb);
+         update_framebuffer_size(&framebuffer, &rb->surface);
          rb->defined = GL_TRUE; /* we'll be drawing something */
+      } else {
+         memset(&framebuffer.cbufs[i], 0, sizeof(framebuffer.cbufs[i]));
       }
    }
 
    for (i = framebuffer.nr_cbufs; i < PIPE_MAX_COLOR_BUFS; i++) {
-      framebuffer.cbufs[i] = NULL;
+      memset(&framebuffer.cbufs[i], 0, sizeof(framebuffer.cbufs[i]));
    }
 
    /* Remove trailing GL_NONE draw buffers. */
    while (framebuffer.nr_cbufs &&
-          !framebuffer.cbufs[framebuffer.nr_cbufs-1]) {
+          !framebuffer.cbufs[framebuffer.nr_cbufs-1].texture) {
       framebuffer.nr_cbufs--;
    }
 
@@ -198,27 +193,23 @@ st_update_framebuffer_state( struct st_context *st )
          _mesa_update_renderbuffer_surface(ctx, rb);
          num_multiview_layer = MAX2(num_multiview_layer, rb->rtt_numviews);
       }
-      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
-      if (surface && surface->context != ctx->pipe) {
-         _mesa_regen_renderbuffer_surface(ctx, rb);
-      }
-      framebuffer.zsbuf = surface;
-      if (surface)
-         update_framebuffer_size(&framebuffer, surface);
+      framebuffer.zsbuf = rb->surface;
+      framebuffer.zsbuf.format = rb->texture->format;
+      update_framebuffer_size(&framebuffer, &rb->surface);
+   } else {
+      memset(&framebuffer.zsbuf, 0, sizeof(framebuffer.zsbuf));
    }
-   else
-      framebuffer.zsbuf = NULL;
 
    framebuffer.viewmask = BITFIELD_MASK(num_multiview_layer);
 
 #ifndef NDEBUG
    /* Make sure the resource binding flags were set properly */
    for (i = 0; i < framebuffer.nr_cbufs; i++) {
-      assert(!framebuffer.cbufs[i] ||
-             framebuffer.cbufs[i]->texture->bind & PIPE_BIND_RENDER_TARGET);
+      assert(!framebuffer.cbufs[i].texture ||
+             framebuffer.cbufs[i].texture->bind & PIPE_BIND_RENDER_TARGET);
    }
-   if (framebuffer.zsbuf) {
-      assert(framebuffer.zsbuf->texture->bind & PIPE_BIND_DEPTH_STENCIL);
+   if (framebuffer.zsbuf.texture) {
+      assert(framebuffer.zsbuf.texture->bind & PIPE_BIND_DEPTH_STENCIL);
    }
 #endif
 

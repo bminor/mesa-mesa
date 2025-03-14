@@ -987,16 +987,9 @@ trace_context_set_framebuffer_state(struct pipe_context *_pipe,
 {
    struct trace_context *tr_ctx = trace_context(_pipe);
    struct pipe_context *pipe = tr_ctx->pipe;
-   unsigned i;
 
    /* Unwrap the input state */
-   memcpy(&tr_ctx->unwrapped_state, state, sizeof(tr_ctx->unwrapped_state));
-   for (i = 0; i < state->nr_cbufs; ++i)
-      tr_ctx->unwrapped_state.cbufs[i] = trace_surface_unwrap(tr_ctx, state->cbufs[i]);
-   for (i = state->nr_cbufs; i < PIPE_MAX_COLOR_BUFS; ++i)
-      tr_ctx->unwrapped_state.cbufs[i] = NULL;
-   tr_ctx->unwrapped_state.zsbuf = trace_surface_unwrap(tr_ctx, state->zsbuf);
-   state = &tr_ctx->unwrapped_state;
+   util_copy_framebuffer_state(&tr_ctx->unwrapped_state, state);
 
    dump_fb_state(tr_ctx, "set_framebuffer_state", trace_dump_is_triggered());
 

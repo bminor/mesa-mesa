@@ -544,7 +544,7 @@ batch_from_key(struct fd_context *ctx, struct fd_batch_key *key) assert_dt
 
 static void
 key_surf(struct fd_batch_key *key, unsigned idx, unsigned pos,
-         struct pipe_surface *psurf)
+         const struct pipe_surface *psurf)
 {
    key->surf[idx].texture = psurf->texture;
    key->surf[idx].u = psurf->u;
@@ -557,7 +557,7 @@ struct fd_batch *
 fd_batch_from_fb(struct fd_context *ctx,
                  const struct pipe_framebuffer_state *pfb)
 {
-   unsigned idx = 0, n = pfb->nr_cbufs + (pfb->zsbuf ? 1 : 0);
+   unsigned idx = 0, n = pfb->nr_cbufs + (pfb->zsbuf.texture ? 1 : 0);
    struct fd_batch_key *key = key_alloc(n);
 
    key->width = pfb->width;
@@ -566,12 +566,12 @@ fd_batch_from_fb(struct fd_context *ctx,
    key->samples = util_framebuffer_get_num_samples(pfb);
    key->ctx_seqno = ctx->seqno;
 
-   if (pfb->zsbuf)
-      key_surf(key, idx++, 0, pfb->zsbuf);
+   if (pfb->zsbuf.texture)
+      key_surf(key, idx++, 0, &pfb->zsbuf);
 
    for (unsigned i = 0; i < pfb->nr_cbufs; i++)
-      if (pfb->cbufs[i])
-         key_surf(key, idx++, i + 1, pfb->cbufs[i]);
+      if (pfb->cbufs[i].texture)
+         key_surf(key, idx++, i + 1, &pfb->cbufs[i]);
 
    key->num_surfs = idx;
 

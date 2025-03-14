@@ -568,7 +568,7 @@ vl_mc_init_buffer(struct vl_mc *renderer, struct vl_mc_buffer *buffer)
    buffer->viewport.swizzle_w = PIPE_VIEWPORT_SWIZZLE_POSITIVE_W;
 
    buffer->fb_state.nr_cbufs = 1;
-   buffer->fb_state.zsbuf = NULL;
+   memset(&buffer->fb_state.zsbuf, 0, sizeof(buffer->fb_state.zsbuf));
 
    return true;
 }
@@ -591,7 +591,7 @@ vl_mc_set_surface(struct vl_mc_buffer *buffer, struct pipe_surface *surface)
 
    buffer->fb_state.width = pipe_surface_width(surface);
    buffer->fb_state.height = pipe_surface_height(surface);
-   buffer->fb_state.cbufs[0] = surface;
+   buffer->fb_state.cbufs[0] = *surface;
 }
 
 static void

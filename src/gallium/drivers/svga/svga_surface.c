@@ -66,7 +66,7 @@ svga_texture_copy_handle(struct svga_context *svga,
                          unsigned dst_level, unsigned dst_layer,
                          unsigned width, unsigned height, unsigned depth)
 {
-   struct svga_surface dst, src;
+   struct svga_surface dst = { 0 }, src = { 0 };
    SVGA3dCopyBox box, *boxes;
 
    assert(svga);
@@ -650,8 +650,7 @@ svga_surface_destroy(struct pipe_context *pipe,
 
    /* Destroy the backed view surface if it exists */
    if (s->backed) {
-      svga_surface_destroy(pipe, &s->backed->base);
-      s->backed = NULL;
+      pipe_surface_unref(pipe, (struct pipe_surface **) &s->backed);
    }
 
    /* Destroy the surface handle if this is a backed handle and
@@ -744,11 +743,11 @@ svga_mark_surfaces_dirty(struct svga_context *svga)
          svga_mark_surface_dirty(hw->dsv);
    } else {
       for (i = 0; i < svga->curr.framebuffer.nr_cbufs; i++) {
-         if (svga->curr.framebuffer.cbufs[i])
-            svga_mark_surface_dirty(svga->curr.framebuffer.cbufs[i]);
+         if (svga->curr.framebuffer.cbufs[i].texture)
+            svga_mark_surface_dirty(svga->curr.fb_cbufs[i]);
       }
-      if (svga->curr.framebuffer.zsbuf)
-         svga_mark_surface_dirty(svga->curr.framebuffer.zsbuf);
+      if (svga->curr.framebuffer.zsbuf.texture)
+         svga_mark_surface_dirty(svga->curr.fb_zsbuf);
    }
 }
 

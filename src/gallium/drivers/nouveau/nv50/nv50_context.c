@@ -150,6 +150,7 @@ nv50_context_unreference_resources(struct nv50_context *nv50)
    nouveau_bufctx_del(&nv50->bufctx);
    nouveau_bufctx_del(&nv50->bufctx_cp);
 
+   util_framebuffer_init(&nv50->base.pipe, NULL, nv50->fb_cbufs, &nv50->fb_zsbuf);
    util_unreference_framebuffer_state(&nv50->framebuffer);
 
    assert(nv50->num_vtxbufs <= PIPE_MAX_ATTRIBS);
@@ -214,8 +215,7 @@ nv50_invalidate_resource_storage(struct nouveau_context *ctx,
    if (bind & PIPE_BIND_RENDER_TARGET) {
       assert(nv50->framebuffer.nr_cbufs <= PIPE_MAX_COLOR_BUFS);
       for (i = 0; i < nv50->framebuffer.nr_cbufs; ++i) {
-         if (nv50->framebuffer.cbufs[i] &&
-             nv50->framebuffer.cbufs[i]->texture == res) {
+         if (nv50->framebuffer.cbufs[i].texture == res) {
             nv50->dirty_3d |= NV50_NEW_3D_FRAMEBUFFER;
             nouveau_bufctx_reset(nv50->bufctx_3d, NV50_BIND_3D_FB);
             if (!--ref)
@@ -224,8 +224,7 @@ nv50_invalidate_resource_storage(struct nouveau_context *ctx,
       }
    }
    if (bind & PIPE_BIND_DEPTH_STENCIL) {
-      if (nv50->framebuffer.zsbuf &&
-          nv50->framebuffer.zsbuf->texture == res) {
+      if (nv50->framebuffer.zsbuf.texture == res) {
          nv50->dirty_3d |= NV50_NEW_3D_FRAMEBUFFER;
          nouveau_bufctx_reset(nv50->bufctx_3d, NV50_BIND_3D_FB);
          if (!--ref)

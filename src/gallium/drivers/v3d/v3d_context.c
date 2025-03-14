@@ -187,8 +187,8 @@ v3d_line_smoothing_enabled(struct v3d_context *v3d)
         if (v3d->framebuffer.nr_cbufs <= 0)
                 return false;
 
-        struct pipe_surface *cbuf = v3d->framebuffer.cbufs[0];
-        if (!cbuf)
+        const struct pipe_surface *cbuf = &v3d->framebuffer.cbufs[0];
+        if (!cbuf->texture)
                 return false;
 
         /* Modifying the alpha for pure integer formats probably
@@ -315,6 +315,7 @@ v3d_context_destroy(struct pipe_context *pctx)
 
         slab_destroy_child(&v3d->transfer_pool);
 
+        util_framebuffer_init(pctx, NULL, v3d->fb_cbufs, &v3d->fb_zsbuf);
         util_unreference_framebuffer_state(&v3d->framebuffer);
 
         if (v3d->sand8_blit_vs)

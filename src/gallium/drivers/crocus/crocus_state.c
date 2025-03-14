@@ -1508,8 +1508,8 @@ can_emit_logic_op(struct crocus_context *ice)
    /* all pre gen8 have logicop restricted to unorm */
    enum pipe_format pformat = PIPE_FORMAT_NONE;
    for (unsigned i = 0; i < ice->state.framebuffer.nr_cbufs; i++) {
-      if (ice->state.framebuffer.cbufs[i]) {
-         pformat = ice->state.framebuffer.cbufs[i]->format;
+      if (ice->state.framebuffer.cbufs[i].texture) {
+         pformat = ice->state.framebuffer.cbufs[i].format;
          break;
       }
    }
@@ -1859,17 +1859,17 @@ want_pma_fix(struct crocus_context *ice)
     * meaning the PMA signal will already be disabled).
     */
 
-   if (!cso_fb->zsbuf)
+   if (!cso_fb->zsbuf.texture)
       return false;
 
    struct crocus_resource *zres, *sres;
    crocus_get_depth_stencil_resources(devinfo,
-                                      cso_fb->zsbuf->texture, &zres, &sres);
+                                      cso_fb->zsbuf.texture, &zres, &sres);
 
    /* 3DSTATE_DEPTH_BUFFER::SURFACE_TYPE != NULL &&
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable &&
     */
-   if (!zres || !crocus_resource_level_has_hiz(zres, cso_fb->zsbuf->u.tex.level))
+   if (!zres || !crocus_resource_level_has_hiz(zres, cso_fb->zsbuf.u.tex.level))
       return false;
 
    /* 3DSTATE_WM::EDSC_Mode != EDSC_PREPS */
@@ -3424,27 +3424,28 @@ crocus_set_framebuffer_state(struct pipe_context *ctx,
 #endif
    }
 
-   if (cso->zsbuf || state->zsbuf) {
+   if (cso->zsbuf.texture || state->zsbuf.texture) {
       ice->state.dirty |= CROCUS_DIRTY_DEPTH_BUFFER;
 
       /* update SF's depth buffer format */
-      if (GFX_VER == 7 && cso->zsbuf)
+      if (GFX_VER == 7 && cso->zsbuf.texture)
          ice->state.dirty |= CROCUS_DIRTY_RASTER;
    }
 
    /* wm thread dispatch enable */
    ice->state.dirty |= CROCUS_DIRTY_WM;
+   util_framebuffer_init(ctx, state, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
    util_copy_framebuffer_state(cso, state);
    cso->samples = samples;
    cso->layers = layers;
 
-   if (cso->zsbuf) {
+   if (cso->zsbuf.texture) {
       struct crocus_resource *zres;
       struct crocus_resource *stencil_res;
       enum isl_aux_usage aux_usage = ISL_AUX_USAGE_NONE;
-      crocus_get_depth_stencil_resources(devinfo, cso->zsbuf->texture, &zres,
+      crocus_get_depth_stencil_resources(devinfo, cso->zsbuf.texture, &zres,
                                          &stencil_res);
-      if (zres && crocus_resource_level_has_hiz(zres, cso->zsbuf->u.tex.level)) {
+      if (zres && crocus_resource_level_has_hiz(zres, cso->zsbuf.u.tex.level)) {
          aux_usage = zres->aux.usage;
       }
       ice->state.hiz_usage = aux_usage;
@@ -4773,7 +4774,7 @@ crocus_populate_fs_key(const struct crocus_context *ice,
    if (info->outputs_written & BITFIELD64_BIT(FRAG_RESULT_DEPTH))
       lookup |= ELK_WM_IZ_PS_COMPUTES_DEPTH_BIT;
 
-   if (fb->zsbuf && zsa->cso.depth_enabled) {
+   if (fb->zsbuf.texture && zsa->cso.depth_enabled) {
       lookup |= ELK_WM_IZ_DEPTH_TEST_ENABLE_BIT;
 
       if (zsa->cso.depth_writemask)
@@ -4942,11 +4943,11 @@ emit_null_fb_surface(struct crocus_batch *batch,
    level = 0;
    layer = 0;
 
-   if (cso->nr_cbufs == 0 && cso->zsbuf) {
-      width = ((struct crocus_surface*)cso->zsbuf)->surf.logical_level0_px.width;
-      height = ((struct crocus_surface*)cso->zsbuf)->surf.logical_level0_px.height;
-      level = cso->zsbuf->u.tex.level;
-      layer = cso->zsbuf->u.tex.first_layer;
+   if (cso->nr_cbufs == 0 && ice->state.fb_zsbuf) {
+      width = ((struct crocus_surface*)ice->state.fb_zsbuf)->surf.logical_level0_px.width;
+      height = ((struct crocus_surface*)ice->state.fb_zsbuf)->surf.logical_level0_px.height;
+      level = cso->zsbuf.u.tex.level;
+      layer = cso->zsbuf.u.tex.first_layer;
    }
    emit_sized_null_surface(batch, width, height,
                            layers, level, layer,
@@ -5390,9 +5391,9 @@ crocus_populate_binding_table(struct crocus_context *ice,
             /* Gen4/5 can't handle blending off when a dual src blend wm is enabled. */
             blend_enable = rt->blend_enable || wm_prog_data->dual_src_blend;
 #endif
-            if (cso_fb->cbufs[i]) {
+            if (cso_fb->cbufs[i].texture) {
                surf_offsets[s] = emit_surface(batch,
-                                              (struct crocus_surface *)cso_fb->cbufs[i],
+                                              (struct crocus_surface *)ice->state.fb_cbufs[i],
                                               ice->state.draw_aux_usage[i],
                                               blend_enable,
                                               write_disables);
@@ -5408,9 +5409,9 @@ crocus_populate_binding_table(struct crocus_context *ice,
 
       foreach_surface_used(i, CROCUS_SURFACE_GROUP_RENDER_TARGET_READ) {
          struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
-         if (cso_fb->cbufs[i]) {
+         if (cso_fb->cbufs[i].texture) {
             surf_offsets[s++] = emit_rt_surface(batch,
-                                                (struct crocus_surface *)cso_fb->cbufs[i],
+                                                (struct crocus_surface *)ice->state.fb_cbufs[i],
                                                 ice->state.draw_aux_usage[i]);
          }
       }
@@ -7107,10 +7108,10 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
             sf.MultisampleRasterizationMode = MSRASTMODE_ON_PATTERN;
 #endif
 #if GFX_VER == 7
-         if (ice->state.framebuffer.zsbuf) {
+         if (ice->state.framebuffer.zsbuf.texture) {
             struct crocus_resource *zres, *sres;
                crocus_get_depth_stencil_resources(&batch->screen->devinfo,
-                                                  ice->state.framebuffer.zsbuf->texture,
+                                                  ice->state.framebuffer.zsbuf.texture,
                                                   &zres, &sres);
             /* ANV thinks that the stencil-ness doesn't matter, this is just
              * about handling polygon offset scaling.
@@ -7443,15 +7444,15 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
          .mocs = crocus_mocs(NULL, isl_dev),
       };
 
-      if (cso->zsbuf) {
-         crocus_get_depth_stencil_resources(&batch->screen->devinfo, cso->zsbuf->texture, &zres, &sres);
-         struct crocus_surface *zsbuf = (struct crocus_surface *)cso->zsbuf;
+      if (cso->zsbuf.texture) {
+         crocus_get_depth_stencil_resources(&batch->screen->devinfo, cso->zsbuf.texture, &zres, &sres);
+         struct crocus_surface *zsbuf = (struct crocus_surface *)ice->state.fb_zsbuf;
          if (zsbuf->align_res) {
             zres = (struct crocus_resource *)zsbuf->align_res;
          }
-         view.base_level = cso->zsbuf->u.tex.level;
-         view.base_array_layer = cso->zsbuf->u.tex.first_layer;
-         view.array_len = cso->zsbuf->u.tex.last_layer - cso->zsbuf->u.tex.first_layer + 1;
+         view.base_level = cso->zsbuf.u.tex.level;
+         view.base_array_layer = cso->zsbuf.u.tex.first_layer;
+         view.array_len = cso->zsbuf.u.tex.last_layer - cso->zsbuf.u.tex.first_layer + 1;
 
          if (zres) {
             view.usage |= ISL_SURF_USAGE_DEPTH_BIT;

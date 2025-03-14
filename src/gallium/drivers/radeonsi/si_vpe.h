@@ -71,8 +71,8 @@ struct vpe_video_processor {
 
     uint8_t log_level;
 
-    struct pipe_surface **src_surfaces;
-    struct pipe_surface **dst_surfaces;
+    struct pipe_surface src_surfaces[VL_MAX_SURFACES];
+    struct pipe_surface dst_surfaces[VL_MAX_SURFACES];
 
     /* For HDR content display */
     void *gm_handle;

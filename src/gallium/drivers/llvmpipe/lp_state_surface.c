@@ -61,27 +61,16 @@ llvmpipe_set_framebuffer_state(struct pipe_context *pipe,
        * If no depth buffer is bound, send the utility function the default
        * format for no bound depth (PIPE_FORMAT_NONE).
        */
-      enum pipe_format depth_format = fb->zsbuf && !(LP_PERF & PERF_NO_DEPTH) ?
-         fb->zsbuf->format : PIPE_FORMAT_NONE;
+      enum pipe_format depth_format = fb->zsbuf.texture && !(LP_PERF & PERF_NO_DEPTH) ?
+         fb->zsbuf.format : PIPE_FORMAT_NONE;
       const struct util_format_description *depth_desc =
          util_format_description(depth_format);
-
-      if (fb->zsbuf && fb->zsbuf->context != pipe) {
-         debug_printf("Illegal setting of fb state with zsbuf created in "
-                       "another context\n");
-      }
-      for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-         if (fb->cbufs[i] &&
-             fb->cbufs[i]->context != pipe) {
-            debug_printf("Illegal setting of fb state with cbuf %d created in "
-                          "another context\n", i);
-         }
-      }
 
       util_copy_framebuffer_state(&lp->framebuffer, fb);
 
       if (LP_PERF & PERF_NO_DEPTH) {
-         pipe_surface_reference(&lp->framebuffer.zsbuf, NULL);
+         pipe_resource_reference(&lp->framebuffer.zsbuf.texture, NULL);
+         memset(&lp->framebuffer.zsbuf, 0, sizeof(lp->framebuffer.zsbuf));
       }
 
       /*

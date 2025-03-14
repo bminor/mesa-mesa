@@ -192,6 +192,10 @@ lp_blit(struct pipe_context *pipe,
                                       lp->render_cond_cond,
                                       lp->render_cond_mode);
    util_blitter_blit(lp->blitter, &info, NULL);
+
+   /* not sure why this is needed but it is */
+   if (llvmpipe_is_resource_referenced(pipe, blit_info->dst.resource, blit_info->dst.level) & LP_REFERENCED_FOR_WRITE)
+      lp_setup_bind_framebuffer(lp->setup, &lp->framebuffer);
 }
 
 

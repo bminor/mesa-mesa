@@ -397,56 +397,6 @@ struct pipe_stencil_ref
    uint8_t ref_value[2];
 };
 
-
-/**
- * Note that pipe_surfaces are "texture views for rendering"
- * and so in the case of ARB_framebuffer_no_attachment there
- * is no pipe_surface state available such that we may
- * extract the number of samples and layers.
- */
-struct pipe_framebuffer_state
-{
-   uint16_t width, height;
-   uint16_t layers;  /**< Number of layers  in a no-attachment framebuffer */
-   uint8_t samples; /**< Number of samples in a no-attachment framebuffer */
-
-   /** multiple color buffers for multiple render targets */
-   uint8_t nr_cbufs;
-   /** used for multiview */
-   uint8_t viewmask;
-   struct pipe_surface *cbufs[PIPE_MAX_COLOR_BUFS];
-
-   struct pipe_surface *zsbuf;      /**< Z/stencil buffer */
-
-   struct pipe_resource *resolve;
-};
-
-
-/**
- * Texture sampler state.
- */
-struct pipe_sampler_state
-{
-   unsigned wrap_s:3;            /**< PIPE_TEX_WRAP_x */
-   unsigned wrap_t:3;            /**< PIPE_TEX_WRAP_x */
-   unsigned wrap_r:3;            /**< PIPE_TEX_WRAP_x */
-   unsigned min_img_filter:1;    /**< PIPE_TEX_FILTER_x */
-   unsigned min_mip_filter:2;    /**< PIPE_TEX_MIPFILTER_x */
-   unsigned mag_img_filter:1;    /**< PIPE_TEX_FILTER_x */
-   unsigned compare_mode:1;      /**< PIPE_TEX_COMPARE_x */
-   unsigned compare_func:3;      /**< PIPE_FUNC_x */
-   unsigned unnormalized_coords:1; /**< Are coords normalized to [0,1]? */
-   unsigned max_anisotropy:5;
-   unsigned seamless_cube_map:1;
-   unsigned border_color_is_integer:1;
-   unsigned reduction_mode:2;    /**< PIPE_TEX_REDUCTION_x */
-   unsigned pad:5;               /**< take bits from this for new members */
-   float lod_bias;               /**< LOD/lambda bias */
-   float min_lod, max_lod;       /**< LOD clamp range, after bias */
-   union pipe_color_union border_color;
-   enum pipe_format border_color_format;      /**< only with PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO, must be last */
-};
-
 union pipe_surface_desc {
    struct {
       unsigned level;
@@ -479,6 +429,55 @@ struct pipe_surface
    unsigned nr_samples:8;
 
    union pipe_surface_desc u;
+};
+
+/**
+ * Note that pipe_surfaces are "texture views for rendering"
+ * and so in the case of ARB_framebuffer_no_attachment there
+ * is no pipe_surface state available such that we may
+ * extract the number of samples and layers.
+ */
+struct pipe_framebuffer_state
+{
+   uint16_t width, height;
+   uint16_t layers;  /**< Number of layers  in a no-attachment framebuffer */
+   uint8_t samples; /**< Number of samples in a no-attachment framebuffer */
+
+   /** multiple color buffers for multiple render targets */
+   uint8_t nr_cbufs;
+   /** used for multiview */
+   uint8_t viewmask;
+   struct pipe_surface cbufs[PIPE_MAX_COLOR_BUFS];
+
+   struct pipe_surface zsbuf;      /**< Z/stencil buffer */
+
+   struct pipe_resource *resolve;
+};
+
+
+/**
+ * Texture sampler state.
+ */
+struct pipe_sampler_state
+{
+   unsigned wrap_s:3;            /**< PIPE_TEX_WRAP_x */
+   unsigned wrap_t:3;            /**< PIPE_TEX_WRAP_x */
+   unsigned wrap_r:3;            /**< PIPE_TEX_WRAP_x */
+   unsigned min_img_filter:1;    /**< PIPE_TEX_FILTER_x */
+   unsigned min_mip_filter:2;    /**< PIPE_TEX_MIPFILTER_x */
+   unsigned mag_img_filter:1;    /**< PIPE_TEX_FILTER_x */
+   unsigned compare_mode:1;      /**< PIPE_TEX_COMPARE_x */
+   unsigned compare_func:3;      /**< PIPE_FUNC_x */
+   unsigned unnormalized_coords:1; /**< Are coords normalized to [0,1]? */
+   unsigned max_anisotropy:5;
+   unsigned seamless_cube_map:1;
+   unsigned border_color_is_integer:1;
+   unsigned reduction_mode:2;    /**< PIPE_TEX_REDUCTION_x */
+   unsigned pad:5;               /**< take bits from this for new members */
+   float lod_bias;               /**< LOD/lambda bias */
+   float min_lod, max_lod;       /**< LOD clamp range, after bias */
+   union pipe_color_union border_color;
+   enum pipe_format border_color_format;      /**< only with PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO, must be last */
 };
 
 struct pipe_tex2d_from_buf {

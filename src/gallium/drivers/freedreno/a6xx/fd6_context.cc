@@ -118,7 +118,7 @@ fd6_vertex_state_delete(struct pipe_context *pctx, void *hwcso)
 }
 
 static void
-validate_surface(struct pipe_context *pctx, struct pipe_surface *psurf)
+validate_surface(struct pipe_context *pctx, const struct pipe_surface *psurf)
    assert_dt
 {
    fd6_validate_format(fd_context(pctx), fd_resource(psurf->texture),
@@ -130,13 +130,13 @@ fd6_set_framebuffer_state(struct pipe_context *pctx,
                           const struct pipe_framebuffer_state *pfb)
    in_dt
 {
-   if (pfb->zsbuf)
-      validate_surface(pctx, pfb->zsbuf);
+   if (pfb->zsbuf.texture)
+      validate_surface(pctx, &pfb->zsbuf);
 
    for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
-      if (!pfb->cbufs[i])
+      if (!pfb->cbufs[i].texture)
          continue;
-      validate_surface(pctx, pfb->cbufs[i]);
+      validate_surface(pctx, &pfb->cbufs[i]);
    }
 
    fd_set_framebuffer_state(pctx, pfb);

@@ -631,8 +631,8 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
         key->software_blend = v3d->blend->use_software;
 
         for (int i = 0; i < v3d->framebuffer.nr_cbufs; i++) {
-                struct pipe_surface *cbuf = v3d->framebuffer.cbufs[i];
-                if (!cbuf)
+                const struct pipe_surface *cbuf = &v3d->framebuffer.cbufs[i];
+                if (!cbuf->texture)
                         continue;
 
                 /* gl_FragColor's propagation to however many bound color

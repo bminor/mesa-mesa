@@ -30,6 +30,7 @@
 #include "sp_context.h"
 #include "sp_surface.h"
 #include "sp_query.h"
+#include "sp_tile_cache.h"
 
 static void sp_blit(struct pipe_context *pipe,
                     const struct pipe_blit_info *info)
@@ -56,6 +57,18 @@ static void sp_blit(struct pipe_context *pipe,
                    util_format_short_name(info->src.resource->format),
                    util_format_short_name(info->dst.resource->format));
       return;
+   }
+
+   /* not sure why this is needed but it is */
+   if (softpipe_is_resource_referenced(pipe, info->dst.resource, info->dst.level, info->dst.box.z) == SP_REFERENCED_FOR_WRITE) {
+      if (util_format_is_depth_or_stencil(info->dst.resource->format)) {
+         sp_flush_tile_cache(sp->zsbuf_cache);
+      } else {
+         for (int i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
+            if (sp->framebuffer.cbufs[i].texture == info->dst.resource)
+               sp_flush_tile_cache(sp->cbuf_cache[i]);
+         }
+      }
    }
 
    /* XXX turn off occlusion and streamout queries */

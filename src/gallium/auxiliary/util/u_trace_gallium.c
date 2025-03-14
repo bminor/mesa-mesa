@@ -90,12 +90,12 @@ trace_framebuffer_state(struct u_trace *ut, void *cs, const struct pipe_framebuf
    trace_framebuffer(ut, cs, pfb);
 
    for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
-      if (pfb->cbufs[i]) {
-         trace_surface(ut, cs, pfb->cbufs[i]);
+      if (pfb->cbufs[i].texture) {
+         trace_surface(ut, cs, &pfb->cbufs[i]);
       }
    }
-   if (pfb->zsbuf) {
-      trace_surface(ut, cs, pfb->zsbuf);
+   if (pfb->zsbuf.texture) {
+      trace_surface(ut, cs, &pfb->zsbuf);
    }
 }
 

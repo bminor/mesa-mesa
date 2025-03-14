@@ -31,6 +31,7 @@ static void r300_release_referenced_objects(struct r300_context *r300)
     unsigned i;
 
     /* Framebuffer state. */
+    util_framebuffer_init(&r300->context, NULL, r300->fb_cbufs, &r300->fb_zsbuf);
     util_unreference_framebuffer_state(fb);
 
     /* Textures. */

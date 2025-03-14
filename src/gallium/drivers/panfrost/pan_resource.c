@@ -1988,13 +1988,13 @@ panfrost_invalidate_resource(struct pipe_context *pctx,
    rsrc->constant_stencil = true;
 
    /* Handle the glInvalidateFramebuffer case */
-   if (batch->key.zsbuf && batch->key.zsbuf->texture == prsrc)
+   if (batch->key.zsbuf.texture == prsrc)
       batch->resolve &= ~PIPE_CLEAR_DEPTHSTENCIL;
 
    for (unsigned i = 0; i < batch->key.nr_cbufs; ++i) {
-      struct pipe_surface *surf = batch->key.cbufs[i];
+      struct pipe_surface *surf = &batch->key.cbufs[i];
 
-      if (surf && surf->texture == prsrc)
+      if (surf->texture == prsrc)
          batch->resolve &= ~(PIPE_CLEAR_COLOR0 << i);
    }
 }

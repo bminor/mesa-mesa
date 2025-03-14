@@ -35,6 +35,7 @@
 #include "crocus_resource.h"
 #include "crocus_screen.h"
 #include "util/u_blitter.h"
+#include "util/u_framebuffer.h"
 
 struct crocus_bo;
 struct crocus_context;
@@ -571,6 +572,7 @@ struct crocus_context {
       struct pipe_viewport_state viewports[CROCUS_MAX_VIEWPORTS];
       struct pipe_scissor_state scissors[CROCUS_MAX_VIEWPORTS];
       struct pipe_stencil_ref stencil_ref;
+      PIPE_FB_SURFACES; //STOP USING THIS
       struct pipe_framebuffer_state framebuffer;
       struct pipe_clip_state clip_planes;
 

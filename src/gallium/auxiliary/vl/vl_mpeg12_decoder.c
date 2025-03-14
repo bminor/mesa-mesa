@@ -122,7 +122,7 @@ get_video_buffer_private(struct vl_mpeg12_decoder *dec, struct pipe_video_buffer
    struct pipe_context *pipe = dec->context;
    struct video_buffer_private *priv;
    struct pipe_sampler_view **sv;
-   struct pipe_surface **surf;
+   struct pipe_surface *surf;
    unsigned i;
 
    priv = vl_video_buffer_get_associated_data(buf, &dec->base);
@@ -140,9 +140,7 @@ get_video_buffer_private(struct vl_mpeg12_decoder *dec, struct pipe_video_buffer
          priv->sampler_view_planes[i] = pipe->create_sampler_view(pipe, sv[i]->texture, sv[i]);
 
    surf = buf->get_surfaces(buf);
-   for (i = 0; i < VL_MAX_SURFACES; ++i)
-      if (surf[i])
-         priv->surfaces[i] = pipe->create_surface(pipe, surf[i]->texture, surf[i]);
+   memcpy(priv->surfaces, surf, sizeof(priv->surfaces));
 
    vl_video_buffer_set_associated_data(buf, &dec->base, priv, destroy_video_buffer_private);
 
@@ -166,7 +164,7 @@ init_zscan_buffer(struct vl_mpeg12_decoder *dec, struct vl_mpeg12_buffer *buffer
 {
    struct pipe_resource *res, res_tmpl;
    struct pipe_sampler_view sv_tmpl;
-   struct pipe_surface **destination;
+   struct pipe_surface *destination;
 
    unsigned i;
 
@@ -200,12 +198,9 @@ init_zscan_buffer(struct vl_mpeg12_decoder *dec, struct vl_mpeg12_buffer *buffer
    else
       destination = dec->mc_source->get_surfaces(dec->mc_source);
 
-   if (!destination)
-      goto error_surface;
-
    for (i = 0; i < VL_NUM_COMPONENTS; ++i)
       if (!vl_zscan_init_buffer(i == 0 ? &dec->zscan_y : &dec->zscan_c,
-                                &buffer->zscan[i], buffer->zscan_source, destination[i]))
+                                &buffer->zscan[i], buffer->zscan_source, &destination[i]))
          goto error_plane;
 
    return true;
@@ -214,7 +209,6 @@ error_plane:
    for (; i > 0; --i)
       vl_zscan_cleanup_buffer(&buffer->zscan[i - 1]);
 
-error_surface:
 error_sampler:
    pipe_sampler_view_reference(&buffer->zscan_source, NULL);
 

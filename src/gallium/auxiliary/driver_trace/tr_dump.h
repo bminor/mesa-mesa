@@ -191,6 +191,13 @@ bool trace_dump_is_triggered(void);
       trace_dump_member_end(); \
    } while(0)
 
+#define trace_dump_member_val(_type, _obj, _member) \
+   do { \
+      trace_dump_member_begin(#_member); \
+      trace_dump_##_type(&(_obj)->_member); \
+      trace_dump_member_end(); \
+   } while(0)
+
 
 #define trace_dump_member_enum(_type, _obj, _member) \
    do { \

@@ -234,8 +234,8 @@ vc4_get_job_for_fbo(struct vc4_context *vc4)
         if (vc4->job)
                 return vc4->job;
 
-        struct pipe_surface *cbuf = vc4->framebuffer.cbufs[0];
-        struct pipe_surface *zsbuf = vc4->framebuffer.zsbuf;
+        struct pipe_surface *cbuf = vc4->fb_cbufs[0];
+        struct pipe_surface *zsbuf = vc4->fb_zsbuf;
         struct vc4_job *job = vc4_get_job(vc4, cbuf, zsbuf);
 
         /* The dirty flags are tracking what's been updated while vc4->job has
@@ -572,4 +572,3 @@ vc4_job_init(struct vc4_context *vc4)
 
         return 0;
 }
-

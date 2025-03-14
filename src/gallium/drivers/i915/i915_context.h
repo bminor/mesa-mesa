@@ -40,6 +40,7 @@
 #include "util/log.h"
 #include "util/slab.h"
 #include "util/u_blitter.h"
+#include "util/u_framebuffer.h"
 #include "i915_reg.h"
 
 struct i915_winsys;
@@ -278,6 +279,7 @@ struct i915_context {
    struct pipe_stencil_ref stencil_ref;
    struct pipe_clip_state clip;
    struct pipe_resource *constants[PIPE_SHADER_TYPES];
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct pipe_framebuffer_state framebuffer;
    struct pipe_poly_stipple poly_stipple;
    struct pipe_scissor_state scissor;

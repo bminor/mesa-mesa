@@ -423,17 +423,17 @@ dd_dump_draw_vbo(struct dd_draw_state *dstate, struct pipe_draw_info *info,
 
    DUMP(framebuffer_state, &dstate->framebuffer_state);
    for (i = 0; i < dstate->framebuffer_state.nr_cbufs; i++)
-      if (dstate->framebuffer_state.cbufs[i]) {
+      if (dstate->framebuffer_state.cbufs[i].texture) {
          fprintf(f, "  " COLOR_STATE "cbufs[%i]:" COLOR_RESET "\n    ", i);
-         DUMP(surface, dstate->framebuffer_state.cbufs[i]);
+         DUMP(surface, &dstate->framebuffer_state.cbufs[i]);
          fprintf(f, "    ");
-         DUMP(resource, dstate->framebuffer_state.cbufs[i]->texture);
+         DUMP(resource, dstate->framebuffer_state.cbufs[i].texture);
       }
-   if (dstate->framebuffer_state.zsbuf) {
+   if (dstate->framebuffer_state.zsbuf.texture) {
       fprintf(f, "  " COLOR_STATE "zsbuf:" COLOR_RESET "\n    ");
-      DUMP(surface, dstate->framebuffer_state.zsbuf);
+      DUMP(surface, &dstate->framebuffer_state.zsbuf);
       fprintf(f, "    ");
-      DUMP(resource, dstate->framebuffer_state.zsbuf->texture);
+      DUMP(resource, dstate->framebuffer_state.zsbuf.texture);
    }
    fprintf(f, "\n");
 }

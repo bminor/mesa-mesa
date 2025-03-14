@@ -55,6 +55,7 @@ u_surface_default_template(struct pipe_surface *surf,
    memset(surf, 0, sizeof(*surf));
 
    surf->format = texture->format;
+   surf->texture = (void*)texture;
 }
 
 

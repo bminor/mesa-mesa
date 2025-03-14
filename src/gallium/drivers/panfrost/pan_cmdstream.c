@@ -262,7 +262,7 @@ panfrost_get_blend_shaders(struct panfrost_batch *batch,
    bool used = false;
 
    for (unsigned c = 0; c < batch->key.nr_cbufs; ++c) {
-      if (batch->key.cbufs[c]) {
+      if (batch->key.cbufs[c].texture) {
          blend_shaders[c] = panfrost_get_blend(batch, c);
          if (blend_shaders[c])
             used = true;
@@ -303,7 +303,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
       struct mali_blend_packed *packed = rts + (i * pan_size(BLEND));
 
       /* Disable blending for unbacked render targets */
-      if (rt_count == 0 || !batch->key.cbufs[i] || !so->info[i].enabled) {
+      if (rt_count == 0 || !batch->key.cbufs[i].texture || !so->info[i].enabled) {
          pan_pack(packed, BLEND, cfg) {
             cfg.enable = false;
 #if PAN_ARCH >= 6
@@ -315,7 +315,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
       }
 
       struct pan_blend_info info = so->info[i];
-      enum pipe_format format = batch->key.cbufs[i]->format;
+      enum pipe_format format = batch->key.cbufs[i].format;
       float cons =
          pan_blend_get_constant(info.constant_mask, ctx->blend_color.color);
 
@@ -429,8 +429,8 @@ panfrost_emit_compute_shader_meta(struct panfrost_batch *batch,
 static float
 panfrost_z_depth_offset(struct panfrost_context *ctx, float offset_units)
 {
-   if (ctx->pipe_framebuffer.zsbuf) {
-      if (util_format_is_float(ctx->pipe_framebuffer.zsbuf->format)) {
+   if (ctx->pipe_framebuffer.zsbuf.texture) {
+      if (util_format_is_float(ctx->pipe_framebuffer.zsbuf.format)) {
          /* no scaling necessary, hw will do this at run time */
          return offset_units;
       }
@@ -532,7 +532,7 @@ panfrost_prepare_fs_state(struct panfrost_context *ctx, uint64_t *blend_shaders,
          cfg.multisample_misc.blend_shader = (blend_shaders[0] != 0);
          cfg.stencil_mask_misc.write_enable = so->info[0].enabled;
          cfg.stencil_mask_misc.srgb =
-            util_format_is_srgb(ctx->pipe_framebuffer.cbufs[0]->format);
+            util_format_is_srgb(ctx->pipe_framebuffer.cbufs[0].format);
          cfg.stencil_mask_misc.dither_disable = !so->base.dither;
          cfg.stencil_mask_misc.alpha_to_one = so->base.alpha_to_one;
 
@@ -1256,8 +1256,8 @@ panfrost_upload_rt_conversion_sysval(struct panfrost_batch *batch,
    unsigned rt = size_and_rt & 0xF;
    unsigned size = size_and_rt >> 4;
 
-   if (rt < batch->key.nr_cbufs && batch->key.cbufs[rt]) {
-      enum pipe_format format = batch->key.cbufs[rt]->format;
+   if (rt < batch->key.nr_cbufs && batch->key.cbufs[rt].texture) {
+      enum pipe_format format = batch->key.cbufs[rt].format;
       uniform->u[0] =
          GENX(pan_blend_get_internal_desc)(format, rt, size, false) >> 32;
    } else {
@@ -2812,7 +2812,7 @@ static void
 panfrost_initialize_surface(struct panfrost_batch *batch,
                             struct pipe_surface *surf)
 {
-   if (surf) {
+   if (surf->texture) {
       struct panfrost_resource *rsrc = pan_resource(surf->texture);
       BITSET_SET(rsrc->valid.data, surf->u.tex.level);
       if (rsrc->separate_stencil)
@@ -2834,9 +2834,9 @@ emit_fragment_job(struct panfrost_batch *batch, const struct pan_fb_info *pfb)
    struct pipe_framebuffer_state *fb = &batch->key;
 
    for (unsigned i = 0; i < fb->nr_cbufs; ++i)
-      panfrost_initialize_surface(batch, fb->cbufs[i]);
+      panfrost_initialize_surface(batch, &fb->cbufs[i]);
 
-   panfrost_initialize_surface(batch, fb->zsbuf);
+   panfrost_initialize_surface(batch, &fb->zsbuf);
 
    /* The passed tile coords can be out of range in some cases, so we need
     * to clamp them to the framebuffer size to avoid a TILE_RANGE_FAULT.

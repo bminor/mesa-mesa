@@ -1829,6 +1829,7 @@ struct zink_context {
 
    uint32_t transient_attachments;
    struct pipe_framebuffer_state fb_state;
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct hash_table framebuffer_cache;
 
    struct zink_vertex_elements_state *element_state;

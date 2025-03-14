@@ -406,10 +406,10 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
          if (b != BUFFER_NONE && mask & (1 << b)) {
             struct gl_renderbuffer *rb
                = ctx->DrawBuffer->Attachment[b].Renderbuffer;
-            struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
+            enum pipe_format format = _mesa_renderbuffer_get_format(ctx, rb);
             int colormask_index = ctx->Extensions.EXT_draw_buffers2 ? i : 0;
 
-            if (!rb || !surface)
+            if (!rb || !rb->texture)
                continue;
 
             unsigned colormask =
@@ -419,7 +419,7 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
                continue;
 
             unsigned surf_colormask =
-               util_format_colormask(util_format_description(surface->format));
+               util_format_colormask(util_format_description(format));
 
             bool scissor = is_scissor_enabled(ctx, rb);
             if ((scissor && !st->can_scissor_clear) ||
@@ -434,8 +434,7 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
    }
 
    if (mask & BUFFER_BIT_DEPTH) {
-      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, depthRb);
-      if (surface && ctx->Depth.Mask) {
+      if (depthRb->texture && ctx->Depth.Mask) {
          bool scissor = is_scissor_enabled(ctx, depthRb);
          if ((scissor && !st->can_scissor_clear) ||
              is_window_rectangle_enabled(ctx))
@@ -446,8 +445,7 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
       }
    }
    if (mask & BUFFER_BIT_STENCIL) {
-      struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, stencilRb);
-      if (surface && !is_stencil_disabled(ctx, stencilRb)) {
+      if (stencilRb->texture && !is_stencil_disabled(ctx, stencilRb)) {
          bool scissor = is_scissor_enabled(ctx, stencilRb);
          if ((scissor && !st->can_scissor_clear) ||
              is_window_rectangle_enabled(ctx) ||

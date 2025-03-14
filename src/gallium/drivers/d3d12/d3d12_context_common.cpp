@@ -104,6 +104,7 @@ d3d12_context_destroy(struct pipe_context *pctx)
       if (ctx->timestamp_query)
          pctx->destroy_query(pctx, ctx->timestamp_query);
 
+      util_framebuffer_init(pctx, NULL, ctx->fb_cbufs, &ctx->fb_zsbuf);
       util_unreference_framebuffer_state(&ctx->fb);
       d3d12_compute_pipeline_state_cache_destroy(ctx);
       d3d12_root_signature_cache_destroy(ctx);

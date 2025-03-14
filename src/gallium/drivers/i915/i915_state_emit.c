@@ -112,7 +112,7 @@ validate_immediate(struct i915_context *i915, unsigned *batch_space)
 static void
 emit_immediate_s5(struct i915_context *i915, uint32_t imm)
 {
-   struct i915_surface *surf = i915_surface(i915->framebuffer.cbufs[0]);
+   struct i915_surface *surf = i915_surface(i915->fb_cbufs[0]);
 
    if (surf) {
       uint32_t writemask = imm & S5_WRITEDISABLE_MASK;

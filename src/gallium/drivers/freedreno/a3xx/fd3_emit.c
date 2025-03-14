@@ -257,7 +257,7 @@ emit_textures(struct fd_context *ctx, struct fd_ringbuffer *ring,
  */
 void
 fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
-                          struct pipe_surface **psurf, int bufs)
+                          struct pipe_surface *psurf, int bufs)
 {
    int i, j;
 
@@ -287,7 +287,7 @@ fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
    OUT_RING(ring, CP_LOAD_STATE_1_STATE_TYPE(ST_CONSTANTS) |
                      CP_LOAD_STATE_1_EXT_SRC_ADDR(0));
    for (i = 0; i < bufs; i++) {
-      if (!psurf[i]) {
+      if (!psurf[i].texture) {
          OUT_RING(ring, A3XX_TEX_CONST_0_TYPE(A3XX_TEX_2D) |
                            A3XX_TEX_CONST_0_SWIZ_X(A3XX_TEX_ONE) |
                            A3XX_TEX_CONST_0_SWIZ_Y(A3XX_TEX_ONE) |
@@ -299,10 +299,10 @@ fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
          continue;
       }
 
-      struct fd_resource *rsc = fd_resource(psurf[i]->texture);
-      enum pipe_format format = fd_gmem_restore_format(psurf[i]->format);
+      struct fd_resource *rsc = fd_resource(psurf[i].texture);
+      enum pipe_format format = fd_gmem_restore_format(psurf[i].format);
       uint16_t width, height;
-      pipe_surface_size(psurf[i], &width, &height);
+      pipe_surface_size(&psurf[i], &width, &height);
       /* The restore blit_zs shader expects stencil in sampler 0, and depth
        * in sampler 1
        */
@@ -312,9 +312,9 @@ fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
       }
 
       /* note: PIPE_BUFFER disallowed for surfaces */
-      unsigned lvl = psurf[i]->u.tex.level;
+      unsigned lvl = psurf[i].u.tex.level;
 
-      assert(psurf[i]->u.tex.first_layer == psurf[i]->u.tex.last_layer);
+      assert(psurf[i].u.tex.first_layer == psurf[i].u.tex.last_layer);
 
       OUT_RING(ring, A3XX_TEX_CONST_0_TILE_MODE(rsc->layout.tile_mode) |
                         A3XX_TEX_CONST_0_FMT(fd3_pipe2tex(format)) |
@@ -337,14 +337,14 @@ fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
    OUT_RING(ring, CP_LOAD_STATE_1_STATE_TYPE(ST_CONSTANTS) |
                      CP_LOAD_STATE_1_EXT_SRC_ADDR(0));
    for (i = 0; i < bufs; i++) {
-      if (psurf[i]) {
-         struct fd_resource *rsc = fd_resource(psurf[i]->texture);
+      if (psurf[i].texture) {
+         struct fd_resource *rsc = fd_resource(psurf[i].texture);
          /* Matches above logic for blit_zs shader */
          if (rsc->stencil && i == 0)
             rsc = rsc->stencil;
-         unsigned lvl = psurf[i]->u.tex.level;
+         unsigned lvl = psurf[i].u.tex.level;
          uint32_t offset =
-            fd_resource_offset(rsc, lvl, psurf[i]->u.tex.first_layer);
+            fd_resource_offset(rsc, lvl, psurf[i].u.tex.first_layer);
          OUT_RELOC(ring, rsc->bo, offset, 0, 0);
       } else {
          OUT_RING(ring, 0x00000000);
@@ -702,9 +702,9 @@ fd3_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
        (FD_DIRTY_VIEWPORT | FD_DIRTY_RASTERIZER | FD_DIRTY_FRAMEBUFFER)) {
       float zmin, zmax;
       int depth = 24;
-      if (ctx->batch->framebuffer.zsbuf) {
+      if (ctx->batch->framebuffer.zsbuf.texture) {
          depth = util_format_get_component_bits(
-            pipe_surface_format(ctx->batch->framebuffer.zsbuf),
+            pipe_surface_format(&ctx->batch->framebuffer.zsbuf),
             UTIL_FORMAT_COLORSPACE_ZS, 0);
       }
       util_viewport_zmin_zmax(&ctx->viewport[0], ctx->rasterizer->clip_halfz,
@@ -749,7 +749,7 @@ fd3_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
       for (i = 0; i < ARRAY_SIZE(blend->rb_mrt); i++) {
          enum pipe_format format =
-            pipe_surface_format(ctx->batch->framebuffer.cbufs[i]);
+            pipe_surface_format(&ctx->batch->framebuffer.cbufs[i]);
          const struct util_format_description *desc =
             util_format_description(format);
          bool is_float = util_format_is_float(format);

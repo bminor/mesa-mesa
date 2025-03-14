@@ -57,12 +57,12 @@ batch_draw_tracking_for_dirty_bits(struct fd_batch *batch) assert_dt
 
    if (dirty & (FD_DIRTY_FRAMEBUFFER | FD_DIRTY_ZSA)) {
       if (fd_depth_enabled(ctx)) {
-         if (fd_resource(pfb->zsbuf->texture)->valid) {
+         if (fd_resource(pfb->zsbuf.texture)->valid) {
             restore_buffers |= FD_BUFFER_DEPTH;
             /* storing packed d/s depth also stores stencil, so we need
              * the stencil restored too to avoid invalidating it.
              */
-            if (pfb->zsbuf->texture->format == PIPE_FORMAT_Z24_UNORM_S8_UINT)
+            if (pfb->zsbuf.texture->format == PIPE_FORMAT_Z24_UNORM_S8_UINT)
                restore_buffers |= FD_BUFFER_STENCIL;
          } else {
             batch->invalidated |= FD_BUFFER_DEPTH;
@@ -70,26 +70,26 @@ batch_draw_tracking_for_dirty_bits(struct fd_batch *batch) assert_dt
          batch->gmem_reason |= FD_GMEM_DEPTH_ENABLED;
          if (fd_depth_write_enabled(ctx)) {
             buffers |= FD_BUFFER_DEPTH;
-            resource_written(batch, pfb->zsbuf->texture);
+            resource_written(batch, pfb->zsbuf.texture);
          } else {
-            resource_read(batch, pfb->zsbuf->texture);
+            resource_read(batch, pfb->zsbuf.texture);
          }
       }
 
       if (fd_stencil_enabled(ctx)) {
-         if (fd_resource(pfb->zsbuf->texture)->valid) {
+         if (fd_resource(pfb->zsbuf.texture)->valid) {
             restore_buffers |= FD_BUFFER_STENCIL;
             /* storing packed d/s stencil also stores depth, so we need
              * the depth restored too to avoid invalidating it.
              */
-            if (pfb->zsbuf->texture->format == PIPE_FORMAT_Z24_UNORM_S8_UINT)
+            if (pfb->zsbuf.texture->format == PIPE_FORMAT_Z24_UNORM_S8_UINT)
                restore_buffers |= FD_BUFFER_DEPTH;
          } else {
             batch->invalidated |= FD_BUFFER_STENCIL;
          }
          batch->gmem_reason |= FD_GMEM_STENCIL_ENABLED;
          buffers |= FD_BUFFER_STENCIL;
-         resource_written(batch, pfb->zsbuf->texture);
+         resource_written(batch, pfb->zsbuf.texture);
       }
    }
 
@@ -97,10 +97,10 @@ batch_draw_tracking_for_dirty_bits(struct fd_batch *batch) assert_dt
       for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
          struct pipe_resource *surf;
 
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
 
-         surf = pfb->cbufs[i]->texture;
+         surf = pfb->cbufs[i].texture;
 
          if (fd_resource(surf)->valid) {
             restore_buffers |= PIPE_CLEAR_COLOR0 << i;
@@ -110,7 +110,7 @@ batch_draw_tracking_for_dirty_bits(struct fd_batch *batch) assert_dt
 
          buffers |= PIPE_CLEAR_COLOR0 << i;
 
-         resource_written(batch, pfb->cbufs[i]->texture);
+         resource_written(batch, pfb->cbufs[i].texture);
       }
    }
 
@@ -371,8 +371,8 @@ fd_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
    DBG("%p: %ux%u num_draws=%u (%s/%s)", batch, pfb->width, pfb->height,
        batch->num_draws,
-       util_format_short_name(pipe_surface_format(pfb->cbufs[0])),
-       util_format_short_name(pipe_surface_format(pfb->zsbuf)));
+       util_format_short_name(pipe_surface_format(&pfb->cbufs[0])),
+       util_format_short_name(pipe_surface_format(&pfb->zsbuf)));
 
    batch->cost += ctx->draw_cost;
 
@@ -444,10 +444,10 @@ batch_clear_tracking(struct fd_batch *batch, unsigned buffers) assert_dt
    if (buffers & PIPE_CLEAR_COLOR)
       for (unsigned i = 0; i < pfb->nr_cbufs; i++)
          if (buffers & (PIPE_CLEAR_COLOR0 << i))
-            resource_written(batch, pfb->cbufs[i]->texture);
+            resource_written(batch, pfb->cbufs[i].texture);
 
    if (buffers & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL)) {
-      resource_written(batch, pfb->zsbuf->texture);
+      resource_written(batch, pfb->zsbuf.texture);
       batch->gmem_reason |= FD_GMEM_CLEARS_DEPTH_STENCIL;
    }
 
@@ -495,8 +495,8 @@ fd_clear(struct pipe_context *pctx, unsigned buffers,
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
    DBG("%p: %x %ux%u depth=%f, stencil=%u (%s/%s)", batch, buffers, pfb->width,
        pfb->height, depth, stencil,
-       util_format_short_name(pipe_surface_format(pfb->cbufs[0])),
-       util_format_short_name(pipe_surface_format(pfb->zsbuf)));
+       util_format_short_name(pipe_surface_format(&pfb->cbufs[0])),
+       util_format_short_name(pipe_surface_format(&pfb->zsbuf)));
 
    /* if per-gen backend doesn't implement ctx->clear() generic
     * blitter clear:

@@ -310,7 +310,7 @@ vc4_write_uniforms(struct vc4_context *vc4, struct vc4_compiled_shader *shader,
 
                 case QUNIFORM_BLEND_CONST_COLOR_RGBA: {
                         const uint8_t *format_swiz =
-                                vc4_get_format_swizzle(vc4->framebuffer.cbufs[0]->format);
+                                vc4_get_format_swizzle(vc4->framebuffer.cbufs[0].format);
                         uint32_t color = 0;
                         for (int i = 0; i < 4; i++) {
                                 if (format_swiz[i] >= 4)

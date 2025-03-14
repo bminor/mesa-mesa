@@ -359,11 +359,11 @@ void
 zink_init_zs_attachment(struct zink_context *ctx, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct zink_resource *zsbuf = zink_resource(fb->zsbuf->texture);
+   struct zink_resource *zsbuf = zink_resource(fb->zsbuf.texture);
    struct zink_framebuffer_clear *fb_clear = &ctx->fb_clears[PIPE_MAX_COLOR_BUFS];
-   struct zink_surface *transient = zink_transient_surface(fb->zsbuf);
+   struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
    rt->format = zsbuf->format;
-   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf->texture->nr_samples, 1);
+   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf.texture->nr_samples, 1);
    rt->clear_color = zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS) &&
                                          !zink_fb_clear_first_needs_explicit(fb_clear) &&
                                          (zink_fb_clear_element(fb_clear, 0)->zs.bits & PIPE_CLEAR_DEPTH);
@@ -389,11 +389,11 @@ void
 zink_tc_init_zs_attachment(struct zink_context *ctx, const struct tc_renderpass_info *info, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct zink_resource *zsbuf = zink_resource(fb->zsbuf->texture);
+   struct zink_resource *zsbuf = zink_resource(fb->zsbuf.texture);
    struct zink_framebuffer_clear *fb_clear = &ctx->fb_clears[PIPE_MAX_COLOR_BUFS];
-   struct zink_surface *transient = zink_transient_surface(fb->zsbuf);
+   struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
    rt->format = zsbuf->format;
-   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf->texture->nr_samples, 1);
+   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf.texture->nr_samples, 1);
    rt->clear_color = zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS) &&
                                          !zink_fb_clear_first_needs_explicit(fb_clear) &&
                                          (zink_fb_clear_element(fb_clear, 0)->zs.bits & PIPE_CLEAR_DEPTH);
@@ -409,7 +409,7 @@ void
 zink_init_color_attachment(struct zink_context *ctx, unsigned i, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct pipe_surface *psurf = fb->cbufs[i];
+   struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
       struct zink_surface *transient = zink_transient_surface(psurf);
@@ -430,7 +430,7 @@ void
 zink_tc_init_color_attachment(struct zink_context *ctx, const struct tc_renderpass_info *info, unsigned i, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct pipe_surface *psurf = fb->cbufs[i];
+   struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
       struct zink_surface *transient = zink_transient_surface(psurf);
@@ -454,7 +454,7 @@ get_render_pass(struct zink_context *ctx)
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
    struct zink_render_pass_state state = {0};
    uint32_t clears = 0;
-   bool have_zsbuf = fb->zsbuf && zink_is_zsbuf_used(ctx);
+   bool have_zsbuf = fb->zsbuf.texture && zink_is_zsbuf_used(ctx);
    bool use_tc_info = !ctx->blitting && ctx->track_renderpasses;
    state.samples = fb->samples > 0;
 
@@ -463,7 +463,7 @@ get_render_pass(struct zink_context *ctx)
          zink_tc_init_color_attachment(ctx, &ctx->dynamic_fb.tc_info, i, &state.rts[i]);
       else
          zink_init_color_attachment(ctx, i, &state.rts[i]);
-      struct pipe_surface *surf = fb->cbufs[i];
+      struct pipe_surface *surf = ctx->fb_cbufs[i];
       if (surf) {
          clears |= !!state.rts[i].clear_color ? PIPE_CLEAR_COLOR0 << i : 0;
          struct zink_surface *transient = zink_transient_surface(surf);
@@ -488,7 +488,7 @@ get_render_pass(struct zink_context *ctx)
          zink_tc_init_zs_attachment(ctx, &ctx->dynamic_fb.tc_info, &state.rts[fb->nr_cbufs]);
       else
          zink_init_zs_attachment(ctx, &state.rts[fb->nr_cbufs]);
-      struct zink_surface *transient = zink_transient_surface(fb->zsbuf);
+      struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
       if (transient) {
          state.num_zsresolves = 1;
          state.rts[fb->nr_cbufs].resolve = true;
@@ -618,12 +618,12 @@ setup_framebuffer(struct zink_context *ctx)
 static bool
 prep_fb_attachments(struct zink_context *ctx, VkImageView *att)
 {
-   bool have_zsbuf = ctx->fb_state.zsbuf && zink_is_zsbuf_used(ctx);
+   bool have_zsbuf = ctx->fb_state.zsbuf.texture && zink_is_zsbuf_used(ctx);
    const unsigned cresolve_offset = ctx->fb_state.nr_cbufs + !!have_zsbuf;
    unsigned num_resolves = 0;
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      struct zink_surface *surf = zink_csurface(ctx->fb_state.cbufs[i]);
-      struct zink_surface *transient = zink_transient_surface(ctx->fb_state.cbufs[i]);
+      struct zink_surface *surf = zink_csurface(ctx->fb_cbufs[i]);
+      struct zink_surface *transient = zink_transient_surface(ctx->fb_cbufs[i]);
       if (transient) {
          att[i] = zink_prep_fb_attachment(ctx, transient, i);
          att[i + cresolve_offset] = zink_prep_fb_attachment(ctx, surf, i);
@@ -636,8 +636,8 @@ prep_fb_attachments(struct zink_context *ctx, VkImageView *att)
       }
    }
    if (have_zsbuf) {
-      struct zink_surface *surf = zink_csurface(ctx->fb_state.zsbuf);
-      struct zink_surface *transient = zink_transient_surface(ctx->fb_state.zsbuf);
+      struct zink_surface *surf = zink_csurface(ctx->fb_zsbuf);
+      struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
       if (transient) {
          att[ctx->fb_state.nr_cbufs] = zink_prep_fb_attachment(ctx, transient, ctx->fb_state.nr_cbufs);
          att[cresolve_offset + num_resolves] = zink_prep_fb_attachment(ctx, surf, ctx->fb_state.nr_cbufs);
@@ -661,8 +661,8 @@ begin_render_pass(struct zink_context *ctx)
    rpbi.renderArea.extent.width = fb_state->width;
    rpbi.renderArea.extent.height = fb_state->height;
 
-   if (ctx->fb_state.cbufs[0]) {
-      struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[0]->texture);
+   if (ctx->fb_state.cbufs[0].texture) {
+      struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[0].texture);
       if (zink_is_swapchain(res)) {
          if (res->use_damage)
             rpbi.renderArea = res->damage;
@@ -674,7 +674,7 @@ begin_render_pass(struct zink_context *ctx)
    uint32_t clear_validate = 0;
    for (int i = 0; i < fb_state->nr_cbufs; i++) {
       /* these are no-ops */
-      if (!fb_state->cbufs[i] || !zink_fb_clear_enabled(ctx, i))
+      if (!fb_state->cbufs[i].texture || !zink_fb_clear_enabled(ctx, i))
          continue;
       /* these need actual clear calls inside the rp */
       struct zink_framebuffer_clear_data *clear = zink_fb_clear_element(&ctx->fb_clears[i], 0);
@@ -690,7 +690,7 @@ begin_render_pass(struct zink_context *ctx)
       clear_validate |= PIPE_CLEAR_COLOR0 << i;
       assert(ctx->framebuffer->rp->state.clears);
    }
-   if (fb_state->zsbuf && zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS)) {
+   if (fb_state->zsbuf.texture && zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS)) {
       struct zink_framebuffer_clear *fb_clear = &ctx->fb_clears[PIPE_MAX_COLOR_BUFS];
       struct zink_framebuffer_clear_data *clear = zink_fb_clear_element(fb_clear, 0);
       if (!zink_fb_clear_element_needs_explicit(clear)) {
@@ -725,14 +725,14 @@ begin_render_pass(struct zink_context *ctx)
    /* this can be set if fbfetch is activated */
    ctx->rp_changed = false;
 #ifndef NDEBUG
-   bool zsbuf_used = ctx->fb_state.zsbuf && zink_is_zsbuf_used(ctx);
+   bool zsbuf_used = ctx->fb_state.zsbuf.texture && zink_is_zsbuf_used(ctx);
    const unsigned cresolve_offset = ctx->fb_state.nr_cbufs + !!zsbuf_used;
    unsigned num_cresolves = 0;
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      if (ctx->fb_state.cbufs[i]) {
-         struct zink_surface *surf = zink_csurface(ctx->fb_state.cbufs[i]);
-         struct zink_surface *transient = zink_transient_surface(ctx->fb_state.cbufs[i]);
-         if (surf->base.format == ctx->fb_state.cbufs[i]->format) {
+      if (ctx->fb_state.cbufs[i].texture) {
+         struct zink_surface *surf = zink_csurface(ctx->fb_cbufs[i]);
+         struct zink_surface *transient = zink_transient_surface(ctx->fb_cbufs[i]);
+         if (surf->base.format == ctx->fb_state.cbufs[i].format) {
             if (transient) {
                num_cresolves++;
                assert(zink_resource(transient->base.texture)->obj->vkusage == ctx->framebuffer->state.infos[i].usage);
@@ -744,8 +744,8 @@ begin_render_pass(struct zink_context *ctx)
       }
    }
    if (ctx->gfx_pipeline_state.render_pass->state.have_zsbuf) {
-      struct zink_surface *surf = zink_csurface(ctx->fb_state.zsbuf);
-      struct zink_surface *transient = zink_transient_surface(ctx->fb_state.zsbuf);
+      struct zink_surface *surf = zink_csurface(ctx->fb_zsbuf);
+      struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
       if (transient) {
          assert(zink_resource(transient->base.texture)->obj->vkusage == ctx->framebuffer->state.infos[ctx->fb_state.nr_cbufs].usage);
          assert(zink_resource(surf->base.texture)->obj->vkusage == ctx->framebuffer->state.infos[cresolve_offset + num_cresolves].usage);
@@ -768,7 +768,7 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
 
    bool blitting = ctx->blitting;
    u_foreach_bit(i, msaa_expand_mask) {
-      struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_state.cbufs[i];
+      struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_cbufs[i];
       /* skip replicate blit if the image will be full-cleared */
       if ((i == PIPE_MAX_COLOR_BUFS && (ctx->rp_clears_enabled & PIPE_CLEAR_DEPTHSTENCIL)) ||
             (ctx->rp_clears_enabled >> 2) & BITFIELD_BIT(i)) {
@@ -779,13 +779,13 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       struct pipe_surface *dst_view = (struct pipe_surface*)csurf->transient;
       assert(dst_view);
       struct pipe_sampler_view src_templ, *src_view;
-      struct pipe_resource *src = ctx->fb_state.cbufs[i]->texture;
+      struct pipe_resource *src = ctx->fb_state.cbufs[i].texture;
       struct pipe_box dstbox;
 
       u_box_3d(0, 0, 0, ctx->fb_state.width, ctx->fb_state.height,
                1 + dst_view->u.tex.last_layer - dst_view->u.tex.first_layer, &dstbox);
 
-      util_blitter_default_src_texture(ctx->blitter, &src_templ, src, ctx->fb_state.cbufs[i]->u.tex.level);
+      util_blitter_default_src_texture(ctx->blitter, &src_templ, src, ctx->fb_state.cbufs[i].u.tex.level);
       src_view = ctx->base.create_sampler_view(&ctx->base, src, &src_templ);
 
       zink_blit_begin(ctx, ZINK_BLIT_SAVE_FB | ZINK_BLIT_SAVE_FS | ZINK_BLIT_SAVE_TEXTURES);
@@ -848,7 +848,7 @@ zink_end_render_pass(struct zink_context *ctx)
       VKCTX(CmdEndRenderPass)(ctx->bs->cmdbuf);
 
       for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-         struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_state.cbufs[i];
+         struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_cbufs[i];
          if (csurf)
             csurf->transient_init = true;
       }
@@ -890,13 +890,13 @@ zink_render_update_swapchain(struct zink_context *ctx)
 {
    bool has_swapchain = false;
    for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      if (!ctx->fb_state.cbufs[i])
+      if (!ctx->fb_state.cbufs[i].texture)
          continue;
-      struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[i]->texture);
+      struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[i].texture);
       if (zink_is_swapchain(res)) {
          has_swapchain = true;
          if (zink_kopper_acquire(ctx, res, UINT64_MAX))
-            zink_surface_swapchain_update(ctx, zink_csurface(ctx->fb_state.cbufs[i]));
+            zink_surface_swapchain_update(ctx, zink_csurface(ctx->fb_cbufs[i]));
       }
    }
    return has_swapchain;

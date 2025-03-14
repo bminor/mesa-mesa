@@ -183,7 +183,7 @@ lp_rast_get_color_block_pointer(struct lp_rasterizer_task *task,
       color += (layer + view_index) * task->scene->cbufs[buf].layer_stride;
    }
 
-   assert(lp_check_alignment(color, llvmpipe_get_format_alignment(task->scene->fb.cbufs[buf]->format)));
+   assert(lp_check_alignment(color, llvmpipe_get_format_alignment(task->scene->fb.cbufs[buf].format)));
    return color;
 }
 
@@ -213,7 +213,7 @@ lp_rast_get_depth_block_pointer(struct lp_rasterizer_task *task,
       depth += (layer + view_index) * task->scene->zsbuf.layer_stride;
    }
 
-   assert(lp_check_alignment(depth, llvmpipe_get_format_alignment(task->scene->fb.zsbuf->format)));
+   assert(lp_check_alignment(depth, llvmpipe_get_format_alignment(task->scene->fb.zsbuf.format)));
    return depth;
 }
 
@@ -241,7 +241,7 @@ lp_rast_shade_quads_all(struct lp_rasterizer_task *task,
 
    /* color buffer */
    for (unsigned i = 0; i < scene->fb.nr_cbufs; i++) {
-      if (scene->fb.cbufs[i]) {
+      if (scene->fb.cbufs[i].texture) {
          stride[i] = scene->cbufs[i].stride;
          sample_stride[i] = scene->cbufs[i].sample_stride;
          color[i] = lp_rast_get_color_block_pointer(task, i, x, y,

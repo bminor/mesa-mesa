@@ -295,7 +295,7 @@ vl_matrix_filter_render(struct vl_matrix_filter *filter,
    fb_state.width = pipe_surface_width(dst);
    fb_state.height = pipe_surface_height(dst);
    fb_state.nr_cbufs = 1;
-   fb_state.cbufs[0] = dst;
+   fb_state.cbufs[0] = *dst;
 
    filter->pipe->bind_rasterizer_state(filter->pipe, filter->rs_state);
    filter->pipe->bind_blend_state(filter->pipe, filter->blend);

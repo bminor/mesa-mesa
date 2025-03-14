@@ -2808,8 +2808,8 @@ vc4_update_compiled_fs(struct vc4_context *vc4, uint8_t prim_mode)
                 key->sample_alpha_to_one = vc4->blend->alpha_to_one;
         }
 
-        if (vc4->framebuffer.cbufs[0])
-                key->color_format = vc4->framebuffer.cbufs[0]->format;
+        if (vc4->framebuffer.cbufs[0].texture)
+                key->color_format = vc4->framebuffer.cbufs[0].format;
 
         key->stencil_enabled = vc4->zsa->stencil_uniforms[0] != 0;
         key->stencil_twoside = vc4->zsa->stencil_uniforms[1] != 0;

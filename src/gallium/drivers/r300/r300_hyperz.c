@@ -117,8 +117,7 @@ static void r300_update_hyperz(struct r300_context* r300)
     struct pipe_framebuffer_state *fb =
         (struct pipe_framebuffer_state*)r300->fb_state.state;
     struct r300_dsa_state *dsa = r300->dsa_state.state;
-    struct r300_resource *zstex =
-            fb->zsbuf ? r300_resource(fb->zsbuf->texture) : NULL;
+    struct r300_resource *zstex = r300_resource(fb->zsbuf.texture);
 
     z->gb_z_peq_config = 0;
     z->zb_bw_cntl = 0;
@@ -134,7 +133,7 @@ static void r300_update_hyperz(struct r300_context* r300)
         return;
 
     /* Set the size of ZMASK tiles. */
-    if (zstex->tex.zcomp8x8[fb->zsbuf->u.tex.level]) {
+    if (zstex->tex.zcomp8x8[fb->zsbuf.u.tex.level]) {
         z->gb_z_peq_config |= R300_GB_Z_PEQ_CONFIG_Z_PEQ_SIZE_8_8;
     }
 

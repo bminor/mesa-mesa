@@ -229,6 +229,9 @@ iris_destroy_context(struct pipe_context *ctx)
 
    screen->vtbl.destroy_state(ice);
 
+   util_framebuffer_init(ctx, NULL, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
+   util_unreference_framebuffer_state(&ice->state.framebuffer);
+
    for (unsigned i = 0; i < ARRAY_SIZE(ice->shaders.scratch_surfs); i++)
       pipe_resource_reference(&ice->shaders.scratch_surfs[i].res, NULL);
 

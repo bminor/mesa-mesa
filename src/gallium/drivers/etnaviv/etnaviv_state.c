@@ -150,11 +150,13 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
    const bool use_ts = etna_use_ts_for_mrt(screen, fb);
    unsigned rt = 0;
 
+   util_framebuffer_init(pctx, fb, ctx->fb_cbufs, &ctx->fb_zsbuf);
+
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
-      struct etna_surface *cbuf = etna_surface(fb->cbufs[i]);
+      struct etna_surface *cbuf = etna_surface(ctx->fb_cbufs[i]);
       struct etna_resource *res = etna_resource(cbuf->base.texture);
       bool color_supertiled = (res->layout & ETNA_LAYOUT_BIT_SUPER) != 0;
       uint32_t fmt = translate_pe_format(cbuf->base.format);
@@ -336,8 +338,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
          cs->PE_PIPE_COLOR_ADDR[i] = screen->dummy_rt_reloc;
    }
 
-   if (fb->zsbuf != NULL) {
-      struct etna_surface *zsbuf = etna_surface(fb->zsbuf);
+   if (fb->zsbuf.texture != NULL) {
+      struct etna_surface *zsbuf = etna_surface(ctx->fb_zsbuf);
       struct etna_resource *res = etna_resource(zsbuf->base.texture);
 
       etna_update_render_surface(pctx, zsbuf);
@@ -761,7 +763,7 @@ etna_update_ts_config(struct etna_context *ctx)
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
       uint32_t ts_config;
 
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
       /* Read the current ts config value for the render target. */
@@ -771,7 +773,7 @@ etna_update_ts_config(struct etna_context *ctx)
          ts_config = ctx->framebuffer.RT_TS_MEM_CONFIG[rt - 1];
 
       /* Update the ts config for color fast clear. */
-      struct etna_surface *c_surf = etna_surface(fb->cbufs[i]);
+      struct etna_surface *c_surf = etna_surface(ctx->fb_cbufs[i]);
       if (etna_resource_level_ts_valid(c_surf->level)) {
          if (rt == 0)
             ts_config |= VIVS_TS_MEM_CONFIG_COLOR_FAST_CLEAR;
@@ -801,8 +803,8 @@ etna_update_ts_config(struct etna_context *ctx)
    }
 
    /* Update the ts config for depth fast clear. */
-   if (ctx->framebuffer_s.zsbuf) {
-      struct etna_surface *zs_surf = etna_surface(ctx->framebuffer_s.zsbuf);
+   if (ctx->framebuffer_s.zsbuf.texture) {
+      struct etna_surface *zs_surf = etna_surface(ctx->fb_zsbuf);
       uint32_t ts_config = ctx->framebuffer.TS_MEM_CONFIG;
 
       if (etna_resource_level_ts_valid(zs_surf->level))
@@ -873,10 +875,10 @@ etna_update_zsa(struct etna_context *ctx)
     * know if any other draws to the same surface require late Z write.
     */
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
-      struct etna_surface *cbuf = etna_surface(fb->cbufs[i]);
+      struct etna_surface *cbuf = etna_surface(ctx->fb_cbufs[i]);
       struct etna_resource *res = etna_resource(cbuf->base.texture);
 
       if (res->layout == ETNA_LAYOUT_LINEAR)
@@ -927,10 +929,10 @@ etna_update_zsa(struct etna_context *ctx)
          new_ra_depth |= VIVS_RA_EARLY_DEPTH_WRITE_DISABLE;
 
       for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-         if (!fb->cbufs[i])
+         if (!fb->cbufs[i].texture)
             continue;
 
-         struct pipe_resource *res = fb->cbufs[i]->texture;
+         struct pipe_resource *res = fb->cbufs[i].texture;
 
          if ((late_z_test || late_zs) && res->nr_samples > 1)
             new_ra_depth |= VIVS_RA_EARLY_DEPTH_LATE_DEPTH_MSAA;
@@ -956,10 +958,10 @@ etna_record_flush_resources(struct etna_context *ctx)
    struct pipe_framebuffer_state *fb = &ctx->framebuffer_s;
 
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
-      struct etna_surface *surf = etna_surface(fb->cbufs[i]);
+      struct etna_surface *surf = etna_surface(ctx->fb_cbufs[i]);
       struct etna_resource *rsc = etna_resource(surf->prsc);
 
       if (rsc->shared && !rsc->explicit_flush)

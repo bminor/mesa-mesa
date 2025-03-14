@@ -26,7 +26,7 @@
 
 static void
 emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
-         struct pipe_surface **bufs, const struct fd_gmem_stateobj *gmem)
+         struct pipe_surface *bufs, const struct fd_gmem_stateobj *gmem)
 {
    enum a5xx_tile_mode tile_mode;
    unsigned i;
@@ -47,8 +47,8 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
          tile_mode = TILE5_LINEAR;
       }
 
-      if ((i < nr_bufs) && bufs[i]) {
-         struct pipe_surface *psurf = bufs[i];
+      if ((i < nr_bufs) && bufs[i].texture) {
+         struct pipe_surface *psurf = &bufs[i];
          enum pipe_format pformat = psurf->format;
 
          rsc = fd_resource(psurf->texture);
@@ -88,7 +88,7 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
             COND(srgb, A5XX_RB_MRT_BUF_INFO_COLOR_SRGB));
       OUT_RING(ring, A5XX_RB_MRT_PITCH(stride));
       OUT_RING(ring, A5XX_RB_MRT_ARRAY_PITCH(size));
-      if (gmem || (i >= nr_bufs) || !bufs[i]) {
+      if (gmem || (i >= nr_bufs) || !bufs[i].texture) {
          OUT_RING(ring, base);       /* RB_MRT[i].BASE_LO */
          OUT_RING(ring, 0x00000000); /* RB_MRT[i].BASE_HI */
       } else {
@@ -116,7 +116,7 @@ static void
 emit_zs(struct fd_ringbuffer *ring, struct pipe_surface *zsbuf,
         const struct fd_gmem_stateobj *gmem)
 {
-   if (zsbuf) {
+   if (zsbuf->texture) {
       struct fd_resource *rsc = fd_resource(zsbuf->texture);
       enum a5xx_depth_format fmt = fd5_pipe2depth(zsbuf->format);
       uint32_t cpp = rsc->layout.cpp;
@@ -404,7 +404,7 @@ fd5_emit_tile_init(struct fd_batch *batch) assert_dt
    OUT_PKT4(ring, REG_A5XX_RB_CCU_CNTL, 1);
    OUT_RING(ring, 0x7c13c080); /* RB_CCU_CNTL */
 
-   emit_zs(ring, pfb->zsbuf, batch->gmem_state);
+   emit_zs(ring, &pfb->zsbuf, batch->gmem_state);
    emit_mrt(ring, pfb->nr_cbufs, pfb->cbufs, batch->gmem_state);
 
    /* Enable stream output for the first pass (likely the binning). */
@@ -556,7 +556,7 @@ fd5_emit_tile_mem2gmem(struct fd_batch *batch, const struct fd_tile *tile)
     */
 
    emit_mrt(ring, pfb->nr_cbufs, pfb->cbufs, NULL);
-   //	emit_zs(ring, pfb->zsbuf, NULL);
+   //	emit_zs(ring, &pfb->zsbuf, NULL);
 
    OUT_PKT4(ring, REG_A5XX_RB_CNTL, 1);
    OUT_RING(ring, A5XX_RB_CNTL_WIDTH(gmem->bin_w) |
@@ -565,23 +565,23 @@ fd5_emit_tile_mem2gmem(struct fd_batch *batch, const struct fd_tile *tile)
    if (fd_gmem_needs_restore(batch, tile, FD_BUFFER_COLOR)) {
       unsigned i;
       for (i = 0; i < pfb->nr_cbufs; i++) {
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
          if (!(batch->restore & (PIPE_CLEAR_COLOR0 << i)))
             continue;
-         emit_mem2gmem_surf(batch, gmem->cbuf_base[i], pfb->cbufs[i],
+         emit_mem2gmem_surf(batch, gmem->cbuf_base[i], &pfb->cbufs[i],
                             BLIT_MRT0 + i);
       }
    }
 
    if (fd_gmem_needs_restore(batch, tile,
                              FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
 
       if (!rsc->stencil || fd_gmem_needs_restore(batch, tile, FD_BUFFER_DEPTH))
-         emit_mem2gmem_surf(batch, gmem->zsbuf_base[0], pfb->zsbuf, BLIT_ZS);
+         emit_mem2gmem_surf(batch, gmem->zsbuf_base[0], &pfb->zsbuf, BLIT_ZS);
       if (rsc->stencil && fd_gmem_needs_restore(batch, tile, FD_BUFFER_STENCIL))
-         emit_mem2gmem_surf(batch, gmem->zsbuf_base[1], pfb->zsbuf, BLIT_S);
+         emit_mem2gmem_surf(batch, gmem->zsbuf_base[1], &pfb->zsbuf, BLIT_S);
    }
 }
 
@@ -597,7 +597,7 @@ fd5_emit_tile_renderprep(struct fd_batch *batch, const struct fd_tile *tile)
    OUT_RING(ring,
             A5XX_RB_CNTL_WIDTH(gmem->bin_w) | A5XX_RB_CNTL_HEIGHT(gmem->bin_h));
 
-   emit_zs(ring, pfb->zsbuf, gmem);
+   emit_zs(ring, &pfb->zsbuf, gmem);
    emit_mrt(ring, pfb->nr_cbufs, pfb->cbufs, gmem);
    emit_msaa(ring, pfb->samples);
 }
@@ -660,22 +660,22 @@ fd5_emit_tile_gmem2mem(struct fd_batch *batch, const struct fd_tile *tile)
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
 
    if (batch->resolve & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
 
       if (!rsc->stencil || (batch->resolve & FD_BUFFER_DEPTH))
-         emit_gmem2mem_surf(batch, gmem->zsbuf_base[0], pfb->zsbuf, BLIT_ZS);
+         emit_gmem2mem_surf(batch, gmem->zsbuf_base[0], &pfb->zsbuf, BLIT_ZS);
       if (rsc->stencil && (batch->resolve & FD_BUFFER_STENCIL))
-         emit_gmem2mem_surf(batch, gmem->zsbuf_base[1], pfb->zsbuf, BLIT_S);
+         emit_gmem2mem_surf(batch, gmem->zsbuf_base[1], &pfb->zsbuf, BLIT_S);
    }
 
    if (batch->resolve & FD_BUFFER_COLOR) {
       unsigned i;
       for (i = 0; i < pfb->nr_cbufs; i++) {
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
          if (!(batch->resolve & (PIPE_CLEAR_COLOR0 << i)))
             continue;
-         emit_gmem2mem_surf(batch, gmem->cbuf_base[i], pfb->cbufs[i],
+         emit_gmem2mem_surf(batch, gmem->cbuf_base[i], &pfb->cbufs[i],
                             BLIT_MRT0 + i);
       }
    }
@@ -757,7 +757,7 @@ fd5_emit_sysmem_prep(struct fd_batch *batch) assert_dt
 
    patch_draws(batch, IGNORE_VISIBILITY);
 
-   emit_zs(ring, pfb->zsbuf, NULL);
+   emit_zs(ring, &pfb->zsbuf, NULL);
    emit_mrt(ring, pfb->nr_cbufs, pfb->cbufs, NULL);
    emit_msaa(ring, pfb->samples);
 }

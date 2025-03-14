@@ -831,12 +831,12 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       struct pipe_framebuffer_state *fb = &batch->key;
 
       for (unsigned i = 0; i < fb->nr_cbufs; ++i) {
-         if (fb->cbufs[i])
-            asahi_add_attachment(&att, agx_resource(fb->cbufs[i]->texture));
+         if (fb->cbufs[i].texture)
+            asahi_add_attachment(&att, agx_resource(fb->cbufs[i].texture));
       }
 
-      if (fb->zsbuf) {
-         struct agx_resource *rsrc = agx_resource(fb->zsbuf->texture);
+      if (fb->zsbuf.texture) {
+         struct agx_resource *rsrc = agx_resource(fb->zsbuf.texture);
          asahi_add_attachment(&att, rsrc);
 
          if (rsrc->separate_stencil)

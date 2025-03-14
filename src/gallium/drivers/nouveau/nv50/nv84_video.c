@@ -27,6 +27,7 @@
 
 #include "util/format/u_format.h"
 #include "util/u_sampler.h"
+#include "util/u_surface.h"
 #include "vl/vl_zscan.h"
 
 #include "nv50/nv84_video.h"
@@ -585,7 +586,7 @@ nv84_video_buffer_sampler_view_components(struct pipe_video_buffer *buffer)
    return buf->sampler_view_components;
 }
 
-static struct pipe_surface **
+static struct pipe_surface *
 nv84_video_buffer_surfaces(struct pipe_video_buffer *buffer)
 {
    struct nv84_video_buffer *buf = (struct nv84_video_buffer *)buffer;
@@ -604,8 +605,6 @@ nv84_video_buffer_destroy(struct pipe_video_buffer *buffer)
       pipe_resource_reference(&buf->resources[i], NULL);
       pipe_sampler_view_reference(&buf->sampler_view_planes[i], NULL);
       pipe_sampler_view_reference(&buf->sampler_view_components[i], NULL);
-      pipe_surface_reference(&buf->surfaces[i * 2], NULL);
-      pipe_surface_reference(&buf->surfaces[i * 2 + 1], NULL);
    }
 
    nouveau_bo_ref(NULL, &buf->interlaced);
@@ -733,18 +732,12 @@ nv84_video_buffer_create(struct pipe_context *pipe,
 
    memset(&surf_templ, 0, sizeof(surf_templ));
    for (j = 0; j < 2; ++j) {
-      surf_templ.format = buffer->resources[j]->format;
+      u_surface_default_template(&surf_templ, buffer->resources[j]);
       surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 0;
-      buffer->surfaces[j * 2] =
-         pipe->create_surface(pipe, buffer->resources[j], &surf_templ);
-      if (!buffer->surfaces[j * 2])
-         goto error;
+      buffer->surfaces[j * 2] = surf_templ;
 
       surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 1;
-      buffer->surfaces[j * 2 + 1] =
-         pipe->create_surface(pipe, buffer->resources[j], &surf_templ);
-      if (!buffer->surfaces[j * 2 + 1])
-         goto error;
+      buffer->surfaces[j * 2 + 1] = surf_templ;
    }
 
    return &buffer->base;

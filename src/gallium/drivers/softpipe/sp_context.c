@@ -141,13 +141,11 @@ softpipe_is_resource_referenced( struct pipe_context *pipe,
    /* check if any of the bound drawing surfaces are this texture */
    if (softpipe->dirty_render_cache) {
       for (i = 0; i < softpipe->framebuffer.nr_cbufs; i++) {
-         if (softpipe->framebuffer.cbufs[i] && 
-             softpipe->framebuffer.cbufs[i]->texture == texture) {
+         if (softpipe->framebuffer.cbufs[i].texture == texture) {
             return SP_REFERENCED_FOR_WRITE;
          }
       }
-      if (softpipe->framebuffer.zsbuf && 
-          softpipe->framebuffer.zsbuf->texture == texture) {
+      if (softpipe->framebuffer.zsbuf.texture == texture) {
          return SP_REFERENCED_FOR_WRITE;
       }
    }

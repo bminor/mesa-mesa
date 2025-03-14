@@ -300,10 +300,10 @@ fd_set_framebuffer_state(struct pipe_context *pctx,
     * created.
     */
    for (unsigned i = 0; i < framebuffer->nr_cbufs; i++) {
-      if (!framebuffer->cbufs[i])
+      if (!framebuffer->cbufs[i].texture)
          continue;
 
-      enum pipe_format format = framebuffer->cbufs[i]->format;
+      enum pipe_format format = framebuffer->cbufs[i].format;
       unsigned nr = util_format_get_nr_components(format);
 
       ctx->all_mrt_channel_mask |= BITFIELD_MASK(nr) << (4 * i);
@@ -325,7 +325,7 @@ fd_set_framebuffer_state(struct pipe_context *pctx,
       fd_batch_reference(&old_batch, NULL);
    } else if (ctx->batch) {
       DBG("%d: cbufs[0]=%p, zsbuf=%p", ctx->batch->needs_flush,
-          framebuffer->cbufs[0], framebuffer->zsbuf);
+          framebuffer->cbufs[0].texture, framebuffer->zsbuf.texture);
       fd_batch_flush(ctx->batch);
    }
 

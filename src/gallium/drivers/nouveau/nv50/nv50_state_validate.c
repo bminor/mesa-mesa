@@ -38,13 +38,13 @@ nv50_validate_fb(struct nv50_context *nv50)
       struct nv50_surface *sf;
       struct nouveau_bo *bo;
 
-      if (!fb->cbufs[i]) {
+      if (!fb->cbufs[i].texture) {
          nv50_fb_set_null_rt(push, i);
          continue;
       }
 
-      mt = nv50_miptree(fb->cbufs[i]->texture);
-      sf = nv50_surface(fb->cbufs[i]);
+      mt = nv50_miptree(fb->cbufs[i].texture);
+      sf = nv50_surface(nv50->fb_cbufs[i]);
       bo = mt->base.bo;
 
       array_size = MIN2(array_size, sf->depth);
@@ -78,7 +78,7 @@ nv50_validate_fb(struct nv50_context *nv50)
          BEGIN_NV04(push, NV50_3D(RT_ARRAY_MODE), 1);
          PUSH_DATA (push, 0);
 
-         assert(!fb->zsbuf);
+         assert(!fb->zsbuf.texture);
          assert(!mt->ms_mode);
       }
 
@@ -93,15 +93,15 @@ nv50_validate_fb(struct nv50_context *nv50)
       BCTX_REFN(nv50->bufctx_3d, 3D_FB, &mt->base, WR);
    }
 
-   if (fb->zsbuf) {
-      struct nv50_miptree *mt = nv50_miptree(fb->zsbuf->texture);
-      struct nv50_surface *sf = nv50_surface(fb->zsbuf);
+   if (fb->zsbuf.texture) {
+      struct nv50_miptree *mt = nv50_miptree(fb->zsbuf.texture);
+      struct nv50_surface *sf = nv50_surface(nv50->fb_zsbuf);
       int unk = mt->base.base.target == PIPE_TEXTURE_3D || sf->depth == 1;
 
       BEGIN_NV04(push, NV50_3D(ZETA_ADDRESS_HIGH), 5);
       PUSH_DATAh(push, mt->base.address + sf->offset);
       PUSH_DATA (push, mt->base.address + sf->offset);
-      PUSH_DATA (push, nv50_format_table[fb->zsbuf->format].rt);
+      PUSH_DATA (push, nv50_format_table[fb->zsbuf.format].rt);
       PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
       PUSH_DATA (push, mt->layer_stride >> 2);
       BEGIN_NV04(push, NV50_3D(ZETA_ENABLE), 1);

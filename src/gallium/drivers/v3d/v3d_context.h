@@ -36,6 +36,7 @@
 #include "util/bitset.h"
 #include "util/slab.h"
 #include "util/u_dynarray.h"
+#include "util/u_framebuffer.h"
 #include "xf86drm.h"
 #include "drm-uapi/v3d_drm.h"
 #include "v3d_screen.h"
@@ -633,6 +634,7 @@ struct v3d_context {
         } blend_color;
         struct pipe_stencil_ref stencil_ref;
         unsigned sample_mask;
+        PIPE_FB_SURFACES; //STOP USING THIS
         struct pipe_framebuffer_state framebuffer;
 
         /* Per render target, whether we should swap the R and B fields in the

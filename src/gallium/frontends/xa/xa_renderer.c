@@ -319,24 +319,21 @@ setup_vertex_data_yuv(struct xa_context *r,
  * these concepts are linked.
  */
 void
-renderer_bind_destination(struct xa_context *r,
-			  struct pipe_surface *surface)
+renderer_bind_destination(struct xa_context *r)
 {
     uint16_t width, height;
-    pipe_surface_size(surface, &width, &height);
+    pipe_surface_size(&r->srf, &width, &height);
 
-    struct pipe_framebuffer_state fb;
+    struct pipe_framebuffer_state fb = {0};
     struct pipe_viewport_state viewport;
 
     xa_scissor_reset(r);
 
     /* Framebuffer uses actual surface width/height
      */
-    memset(&fb, 0, sizeof fb);
-    pipe_surface_size(surface, &fb.width, &fb.height);
+    pipe_surface_size(&r->srf, &fb.width, &fb.height);
     fb.nr_cbufs = 1;
-    fb.cbufs[0] = surface;
-    fb.zsbuf = NULL;
+    fb.cbufs[0] = r->srf;
 
     /* Viewport just touches the bit we're interested in:
      */
@@ -392,7 +389,6 @@ renderer_set_constants(struct xa_context *r,
 
 void
 renderer_copy_prepare(struct xa_context *r,
-		      struct pipe_surface *dst_surface,
 		      struct pipe_resource *src_texture,
 		      const enum xa_formats src_xa_format,
 		      const enum xa_formats dst_xa_format)
@@ -402,12 +398,12 @@ renderer_copy_prepare(struct xa_context *r,
     struct xa_shader shader;
     uint32_t fs_traits = FS_COMPOSITE;
 
-    assert(screen->is_format_supported(screen, dst_surface->format,
+    assert(screen->is_format_supported(screen, r->srf.format,
 				       PIPE_TEXTURE_2D, 0, 0,
 				       PIPE_BIND_RENDER_TARGET));
     (void)screen;
 
-    renderer_bind_destination(r, dst_surface);
+    renderer_bind_destination(r);
 
     /* set misc state we care about */
     {
@@ -454,8 +450,8 @@ renderer_copy_prepare(struct xa_context *r,
     if (src_texture->format == PIPE_FORMAT_L8_UNORM ||
         src_texture->format == PIPE_FORMAT_R8_UNORM)
 	fs_traits |= FS_SRC_LUMINANCE;
-    if (dst_surface->format == PIPE_FORMAT_L8_UNORM ||
-        dst_surface->format == PIPE_FORMAT_R8_UNORM)
+    if (r->srf.format == PIPE_FORMAT_L8_UNORM ||
+        r->srf.format == PIPE_FORMAT_R8_UNORM)
 	fs_traits |= FS_DST_LUMINANCE;
     if (xa_format_a(dst_xa_format) != 0 &&
 	xa_format_a(src_xa_format) == 0)

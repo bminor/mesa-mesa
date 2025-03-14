@@ -52,28 +52,28 @@ nv30_validate_fb(struct nv30_context *nv30)
 
    rt_format = 0;
    if (fb->nr_cbufs > 0) {
-      struct nv30_miptree *mt = nv30_miptree(fb->cbufs[0]->texture);
-      rt_format |= nv30_format(pscreen, fb->cbufs[0]->format)->hw;
+      struct nv30_miptree *mt = nv30_miptree(fb->cbufs[0].texture);
+      rt_format |= nv30_format(pscreen, fb->cbufs[0].format)->hw;
       rt_format |= mt->ms_mode;
       if (mt->swizzled)
          rt_format |= NV30_3D_RT_FORMAT_TYPE_SWIZZLED;
       else
          rt_format |= NV30_3D_RT_FORMAT_TYPE_LINEAR;
    } else {
-      if (fb->zsbuf && util_format_get_blocksize(fb->zsbuf->format) > 2)
+      if (fb->zsbuf.texture && util_format_get_blocksize(fb->zsbuf.format) > 2)
          rt_format |= NV30_3D_RT_FORMAT_COLOR_A8R8G8B8;
       else
          rt_format |= NV30_3D_RT_FORMAT_COLOR_R5G6B5;
    }
 
-   if (fb->zsbuf) {
-      rt_format |= nv30_format(pscreen, fb->zsbuf->format)->hw;
-      if (nv30_miptree(fb->zsbuf->texture)->swizzled)
+   if (fb->zsbuf.texture) {
+      rt_format |= nv30_format(pscreen, fb->zsbuf.format)->hw;
+      if (nv30_miptree(fb->zsbuf.texture)->swizzled)
          rt_format |= NV30_3D_RT_FORMAT_TYPE_SWIZZLED;
       else
          rt_format |= NV30_3D_RT_FORMAT_TYPE_LINEAR;
    } else {
-      if (fb->nr_cbufs && util_format_get_blocksize(fb->cbufs[0]->format) > 2)
+      if (fb->nr_cbufs && util_format_get_blocksize(fb->cbufs[0].format) > 2)
          rt_format |= NV30_3D_RT_FORMAT_ZETA_Z24S8;
       else
          rt_format |= NV30_3D_RT_FORMAT_ZETA_Z16;
@@ -85,9 +85,9 @@ nv30_validate_fb(struct nv30_context *nv30)
     * we can hack around this limitation by adjusting the viewport origin
     */
    if (nv30->state.rt_enable) {
-      int off = nv30_surface(fb->cbufs[0])->offset & 63;
+      int off = nv30_surface(nv30->fb_cbufs[0])->offset & 63;
       if (off) {
-         x += off / (util_format_get_blocksize(fb->cbufs[0]->format) * 2);
+         x += off / (util_format_get_blocksize(nv30->fb_cbufs[0]->format) * 2);
          w  = 16;
          h  = 2;
       }
@@ -114,9 +114,9 @@ nv30_validate_fb(struct nv30_context *nv30)
    PUSH_DATA (push, ((w - 1) << 16) | 0);
    PUSH_DATA (push, ((h - 1) << 16) | 0);
 
-   if ((nv30->state.rt_enable & NV30_3D_RT_ENABLE_COLOR0) || fb->zsbuf) {
-      struct nv30_surface *rsf = nv30_surface(fb->cbufs[0]);
-      struct nv30_surface *zsf = nv30_surface(fb->zsbuf);
+   if ((nv30->state.rt_enable & NV30_3D_RT_ENABLE_COLOR0) || fb->zsbuf.texture) {
+      struct nv30_surface *rsf = nv30_surface(nv30->fb_cbufs[0]);
+      struct nv30_surface *zsf = nv30_surface(nv30->fb_zsbuf);
       struct nouveau_bo *rbo, *zbo;
 
       if (!rsf)      rsf = zsf;
@@ -140,7 +140,7 @@ nv30_validate_fb(struct nv30_context *nv30)
    }
 
    if (nv30->state.rt_enable & NV30_3D_RT_ENABLE_COLOR1) {
-      struct nv30_surface *sf = nv30_surface(fb->cbufs[1]);
+      struct nv30_surface *sf = nv30_surface(nv30->fb_cbufs[1]);
       struct nouveau_bo *bo = nv30_miptree(sf->base.texture)->base.bo;
 
       BEGIN_NV04(push, NV30_3D(COLOR1_OFFSET), 2);
@@ -150,7 +150,7 @@ nv30_validate_fb(struct nv30_context *nv30)
    }
 
    if (nv30->state.rt_enable & NV40_3D_RT_ENABLE_COLOR2) {
-      struct nv30_surface *sf = nv30_surface(fb->cbufs[2]);
+      struct nv30_surface *sf = nv30_surface(nv30->fb_cbufs[2]);
       struct nouveau_bo *bo = nv30_miptree(sf->base.texture)->base.bo;
 
       BEGIN_NV04(push, NV40_3D(COLOR2_OFFSET), 1);
@@ -161,7 +161,7 @@ nv30_validate_fb(struct nv30_context *nv30)
    }
 
    if (nv30->state.rt_enable & NV40_3D_RT_ENABLE_COLOR3) {
-      struct nv30_surface *sf = nv30_surface(fb->cbufs[3]);
+      struct nv30_surface *sf = nv30_surface(nv30->fb_cbufs[3]);
       struct nouveau_bo *bo = nv30_miptree(sf->base.texture)->base.bo;
 
       BEGIN_NV04(push, NV40_3D(COLOR3_OFFSET), 1);
@@ -179,7 +179,7 @@ nv30_validate_blend_colour(struct nv30_context *nv30)
    float *rgba = nv30->blend_colour.color;
 
    if (nv30->framebuffer.nr_cbufs) {
-      switch (nv30->framebuffer.cbufs[0]->format) {
+      switch (nv30->framebuffer.cbufs[0].format) {
       case PIPE_FORMAT_R16G16B16A16_FLOAT:
       case PIPE_FORMAT_R32G32B32A32_FLOAT:
          BEGIN_NV04(push, NV30_3D(BLEND_COLOR), 1);

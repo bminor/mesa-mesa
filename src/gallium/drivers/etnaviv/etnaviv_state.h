@@ -53,7 +53,7 @@ etna_use_ts_for_mrt(const struct etna_screen *screen, const struct pipe_framebuf
    unsigned count = 0;
 
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
       count++;

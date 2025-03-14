@@ -432,8 +432,8 @@ bind_shaders(struct xa_context *ctx, const struct xa_composite *comp)
         }
     }
 
-    if (ctx->srf->format == PIPE_FORMAT_L8_UNORM ||
-        ctx->srf->format == PIPE_FORMAT_R8_UNORM)
+    if (ctx->srf.format == PIPE_FORMAT_L8_UNORM ||
+        ctx->srf.format == PIPE_FORMAT_R8_UNORM)
 	fs_traits |= FS_DST_LUMINANCE;
 
     shader = xa_shaders_get(ctx->shaders, vs_traits, fs_traits);
@@ -519,7 +519,7 @@ xa_composite_prepare(struct xa_context *ctx,
 	return ret;
 
     ctx->dst = dst_srf;
-    renderer_bind_destination(ctx, ctx->srf);
+    renderer_bind_destination(ctx);
 
     ret = bind_composite_blend_state(ctx, comp);
     if (ret != XA_ERR_NONE)

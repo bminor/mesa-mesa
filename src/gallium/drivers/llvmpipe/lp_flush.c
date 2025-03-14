@@ -76,12 +76,12 @@ llvmpipe_flush(struct pipe_context *pipe,
 
       for (i = 0; i < llvmpipe->framebuffer.nr_cbufs; i++) {
          snprintf(filename, sizeof(filename), "cbuf%u_%u", i, frame_no);
-         debug_dump_surface_bmp(&llvmpipe->pipe, filename, llvmpipe->framebuffer.cbufs[i]);
+         debug_dump_surface_bmp(&llvmpipe->pipe, filename, &llvmpipe->framebuffer.cbufs[i]);
       }
 
       if (0) {
          snprintf(filename, sizeof(filename), "zsbuf_%u", frame_no);
-         debug_dump_surface_bmp(&llvmpipe->pipe, filename, llvmpipe->framebuffer.zsbuf);
+         debug_dump_surface_bmp(&llvmpipe->pipe, filename, &llvmpipe->framebuffer.zsbuf);
       }
 
       ++frame_no;

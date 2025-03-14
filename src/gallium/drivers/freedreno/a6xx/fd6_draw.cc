@@ -583,10 +583,10 @@ do_lrz_clear(struct fd_context *ctx, enum fd_buffer_mask buffers)
 {
    struct pipe_framebuffer_state *pfb = &ctx->batch->framebuffer;
 
-   if (!pfb->zsbuf)
+   if (!pfb->zsbuf.texture)
       return false;
 
-   struct fd_resource *zsbuf = fd_resource(pfb->zsbuf->texture);
+   struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
    return (buffers & FD_BUFFER_DEPTH) && zsbuf->lrz;
 }
@@ -626,7 +626,7 @@ fd6_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
        * would cause LRZ state to be invalid.
        */
       if (do_lrz_clear(ctx, buffers)) {
-         struct fd_resource *zsbuf = fd_resource(pfb->zsbuf->texture);
+         struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
          fd_bo_del(subpass->lrz);
          subpass->lrz = fd_bo_new(ctx->screen->dev, fd_bo_size(zsbuf->lrz),
@@ -637,7 +637,7 @@ fd6_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
    }
 
    if (do_lrz_clear(ctx, buffers)) {
-      struct fd_resource *zsbuf = fd_resource(pfb->zsbuf->texture);
+      struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
       zsbuf->lrz_valid = true;
       zsbuf->lrz_direction = FD_LRZ_UNKNOWN;

@@ -1127,9 +1127,9 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
 
    OUT_REG(ring,
            A6XX_GRAS_2D_SRC_TL_X(0),
-           A6XX_GRAS_2D_SRC_BR_X(width - 1),
+           A6XX_GRAS_2D_SRC_BR_X(pipe_surface_width(psurf) - 1),
            A6XX_GRAS_2D_SRC_TL_Y(0),
-           A6XX_GRAS_2D_SRC_BR_Y(height - 1),
+           A6XX_GRAS_2D_SRC_BR_Y(pipe_surface_height(psurf) - 1),
    );
 
    /* Enable scissor bit, which will take into account the window scissor
@@ -1160,8 +1160,8 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
            ),
            SP_PS_2D_SRC_SIZE(
                  CHIP,
-                 .width = width,
-                 .height = height,
+                 .width = pipe_surface_width(psurf),
+                 .height = pipe_surface_height(psurf),
            ),
            SP_PS_2D_SRC(
                  CHIP,

@@ -389,10 +389,10 @@ fd_batch_set_fb(struct fd_batch *batch, const struct pipe_framebuffer_state *pfb
 
    util_copy_framebuffer_state(&batch->framebuffer, pfb);
 
-   if (!pfb->zsbuf)
+   if (!pfb->zsbuf.texture)
       return;
 
-   struct fd_resource *zsbuf = fd_resource(pfb->zsbuf->texture);
+   struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
    /* Switching back to a batch we'd previously started constructing shouldn't
     * result in a different lrz.  The dependency tracking should avoid another

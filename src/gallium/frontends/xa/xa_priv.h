@@ -103,7 +103,7 @@ struct xa_context {
     struct pipe_fence_handle *last_fence;
     struct xa_surface *src;
     struct xa_surface *dst;
-    struct pipe_surface *srf;
+    struct pipe_surface srf;
 
     /* destination scissor state.. we scissor out untouched parts
      * of the dst for the benefit of tilers:
@@ -255,12 +255,10 @@ void renderer_draw_yuv(struct xa_context *r,
 		       int dst_y, int dst_w, int dst_h,
 		       struct xa_surface *srf[]);
 
-void renderer_bind_destination(struct xa_context *r,
-			       struct pipe_surface *surface);
+void renderer_bind_destination(struct xa_context *r);
 
 void renderer_init_state(struct xa_context *r);
 void renderer_copy_prepare(struct xa_context *r,
-			   struct pipe_surface *dst_surface,
 			   struct pipe_resource *src_texture,
 			   const enum xa_formats src_xa_format,
 			   const enum xa_formats dst_xa_format);

@@ -848,12 +848,12 @@ zink_draw(struct pipe_context *pctx,
          bool is_zs = util_format_is_depth_or_stencil(ctx->sampler_views[MESA_SHADER_FRAGMENT][0]->format);
          marker = zink_cmd_debug_marker_begin(ctx, VK_NULL_HANDLE, "u_blitter(%s->%s, %dx%d)",
                                               util_format_short_name(ctx->sampler_views[MESA_SHADER_FRAGMENT][0]->format),
-                                              util_format_short_name((is_zs ? ctx->fb_state.zsbuf : ctx->fb_state.cbufs[0])->format),
+                                              util_format_short_name((is_zs ? ctx->fb_state.zsbuf : ctx->fb_state.cbufs[0]).format),
                                               lround(viewport.width), lround(viewport.height));
       } else {
          marker = zink_cmd_debug_marker_begin(ctx, VK_NULL_HANDLE, "draw(%u cbufs|%s, %dx%d)",
                                               ctx->fb_state.nr_cbufs,
-                                              ctx->fb_state.zsbuf ? "zsbuf" : "",
+                                              ctx->fb_state.zsbuf.texture ? "zsbuf" : "",
                                               lround(viewport.width), lround(viewport.height));
       }
    }

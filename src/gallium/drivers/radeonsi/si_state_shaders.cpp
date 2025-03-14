@@ -2589,7 +2589,7 @@ void si_ps_key_update_framebuffer(struct si_context *sctx)
 
    /* ps_uses_fbfetch is true only if the color buffer is bound. */
    if (sctx->ps_uses_fbfetch) {
-      struct pipe_surface *cb0 = sctx->framebuffer.state.cbufs[0];
+      struct pipe_surface *cb0 = &sctx->framebuffer.state.cbufs[0];
       struct pipe_resource *tex = cb0->texture;
 
       /* 1D textures are allocated and used as 2D on GFX9. */
@@ -2632,7 +2632,7 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
 #endif
 
    key->ps.part.epilog.kill_z = sel->info.writes_z &&
-                                (!sctx->framebuffer.state.zsbuf || !dsa->depth_enabled ||
+                                (!sctx->framebuffer.state.zsbuf.texture || !dsa->depth_enabled ||
                                  (sel->info.output_z_equals_input_z && !rs->multisample_enable));
    key->ps.part.epilog.kill_stencil = sel->info.writes_stencil &&
                                       (!sctx->framebuffer.has_stencil || !dsa->stencil_enabled);

@@ -90,8 +90,7 @@ nv30_invalidate_resource_storage(struct nouveau_context *nv,
 
    if (res->bind & PIPE_BIND_RENDER_TARGET) {
       for (i = 0; i < nv30->framebuffer.nr_cbufs; ++i) {
-         if (nv30->framebuffer.cbufs[i] &&
-             nv30->framebuffer.cbufs[i]->texture == res) {
+         if (nv30->framebuffer.cbufs[i].texture == res) {
             nv30->dirty |= NV30_NEW_FRAMEBUFFER;
             nouveau_bufctx_reset(nv30->bufctx, BUFCTX_FB);
             if (!--ref)
@@ -100,8 +99,7 @@ nv30_invalidate_resource_storage(struct nouveau_context *nv,
       }
    }
    if (res->bind & PIPE_BIND_DEPTH_STENCIL) {
-      if (nv30->framebuffer.zsbuf &&
-          nv30->framebuffer.zsbuf->texture == res) {
+      if (nv30->framebuffer.zsbuf.texture == res) {
             nv30->dirty |= NV30_NEW_FRAMEBUFFER;
             nouveau_bufctx_reset(nv30->bufctx, BUFCTX_FB);
             if (!--ref)
@@ -163,6 +161,9 @@ nv30_context_destroy(struct pipe_context *pipe)
 
    if (nv30->blit_fp)
       pipe_resource_reference(&nv30->blit_fp, NULL);
+
+   util_framebuffer_init(pipe, NULL, nv30->fb_cbufs, &nv30->fb_zsbuf);
+   util_unreference_framebuffer_state(&nv30->framebuffer);
 
    nouveau_bufctx_del(&nv30->bufctx);
 

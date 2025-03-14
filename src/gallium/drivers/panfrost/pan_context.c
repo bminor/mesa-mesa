@@ -176,7 +176,7 @@ panfrost_get_blend(struct panfrost_batch *batch, unsigned rti)
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct panfrost_blend_state *blend = ctx->blend;
    struct pan_blend_info info = blend->info[rti];
-   struct pipe_surface *surf = batch->key.cbufs[rti];
+   struct pipe_surface *surf = &batch->key.cbufs[rti];
    enum pipe_format fmt = surf->format;
 
    /* Use fixed-function if the equation permits, the format is blendable,
@@ -451,7 +451,7 @@ panfrost_set_framebuffer_state(struct pipe_context *pctx,
    ctx->fb_rt_mask = 0;
 
    for (unsigned i = 0; i < ctx->pipe_framebuffer.nr_cbufs; ++i) {
-      if (ctx->pipe_framebuffer.cbufs[i])
+      if (ctx->pipe_framebuffer.cbufs[i].texture)
          ctx->fb_rt_mask |= BITFIELD_BIT(i);
    }
 }

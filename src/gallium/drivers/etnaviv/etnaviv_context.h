@@ -39,6 +39,7 @@
 #include "pipe/p_shader_tokens.h"
 #include "pipe/p_state.h"
 #include "util/slab.h"
+#include "util/u_framebuffer.h"
 #include <util/u_suballoc.h>
 
 struct pipe_screen;
@@ -180,6 +181,8 @@ struct etna_context {
    struct etna_vertexbuf_state vertex_buffer;
    struct etna_index_buffer index_buffer;
    struct etna_shader_state shader;
+
+   PIPE_FB_SURFACES; //STOP USING THIS
 
    /* saved parameter-like state. these are mainly kept around for the blitter */
    struct pipe_framebuffer_state framebuffer_s;

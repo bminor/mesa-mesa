@@ -416,6 +416,7 @@ vc4_set_framebuffer_state(struct pipe_context *pctx,
 
         vc4->job = NULL;
 
+        util_framebuffer_init(pctx, framebuffer, vc4->fb_cbufs, &vc4->fb_zsbuf);
         util_copy_framebuffer_state(cso, framebuffer);
 
         /* Nonzero texture mipmap levels are laid out as if they were in
@@ -424,17 +425,17 @@ vc4_set_framebuffer_state(struct pipe_context *pctx,
          * framebuffer.  Note that if the z/color buffers were mismatched
          * sizes, we wouldn't be able to do this.
          */
-        if (cso->cbufs[0] && cso->cbufs[0]->u.tex.level) {
+        if (cso->cbufs[0].texture && cso->cbufs[0].u.tex.level) {
                 struct vc4_resource *rsc =
-                        vc4_resource(cso->cbufs[0]->texture);
+                        vc4_resource(cso->cbufs[0].texture);
                 cso->width =
-                        (rsc->slices[cso->cbufs[0]->u.tex.level].stride /
+                        (rsc->slices[cso->cbufs[0].u.tex.level].stride /
                          rsc->cpp);
-        } else if (cso->zsbuf && cso->zsbuf->u.tex.level){
+        } else if (cso->zsbuf.texture && cso->zsbuf.u.tex.level){
                 struct vc4_resource *rsc =
-                        vc4_resource(cso->zsbuf->texture);
+                        vc4_resource(cso->zsbuf.texture);
                 cso->width =
-                        (rsc->slices[cso->zsbuf->u.tex.level].stride /
+                        (rsc->slices[cso->zsbuf.u.tex.level].stride /
                          rsc->cpp);
         }
 

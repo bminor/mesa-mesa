@@ -424,7 +424,7 @@ zink_blit(struct pipe_context *pctx,
    bool in_rp = ctx->in_rp;
    uint64_t tc_data = ctx->dynamic_fb.tc_info.data;
    bool queries_disabled = ctx->queries_disabled;
-   bool rp_changed = ctx->rp_changed || (!ctx->fb_state.zsbuf && util_format_is_depth_or_stencil(info->dst.format));
+   bool rp_changed = ctx->rp_changed || (!ctx->fb_state.zsbuf.texture && util_format_is_depth_or_stencil(info->dst.format));
    unsigned ds3_states = ctx->ds3_states;
    bool rp_tc_info_updated = ctx->rp_tc_info_updated;
    if (ctx->unordered_blitting) {

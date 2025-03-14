@@ -21,7 +21,7 @@
 struct fd_ringbuffer;
 
 void fd3_emit_gmem_restore_tex(struct fd_ringbuffer *ring,
-                               struct pipe_surface **psurf, int bufs);
+                               struct pipe_surface *psurf, int bufs);
 
 /* grouped together emit-state for prog/vertex/state emit: */
 struct fd3_emit {

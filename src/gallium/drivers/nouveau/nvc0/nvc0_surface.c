@@ -748,12 +748,12 @@ nvc0_clear(struct pipe_context *pipe, unsigned buffers,
 
    if (mode) {
       int zs_layers = 0, color0_layers = 0;
-      if (fb->cbufs[0] && (mode & 0x3c))
-         color0_layers = fb->cbufs[0]->u.tex.last_layer -
-            fb->cbufs[0]->u.tex.first_layer + 1;
-      if (fb->zsbuf && (mode & ~0x3c))
-         zs_layers = fb->zsbuf->u.tex.last_layer -
-            fb->zsbuf->u.tex.first_layer + 1;
+      if (fb->cbufs[0].texture && (mode & 0x3c))
+         color0_layers = fb->cbufs[0].u.tex.last_layer -
+            fb->cbufs[0].u.tex.first_layer + 1;
+      if (fb->zsbuf.texture && (mode & ~0x3c))
+         zs_layers = fb->zsbuf.u.tex.last_layer -
+            fb->zsbuf.u.tex.first_layer + 1;
 
       for (j = 0; j < MIN2(zs_layers, color0_layers); j++) {
          BEGIN_NVC0(push, NVC0_3D(CLEAR_BUFFERS), 1);
@@ -770,8 +770,8 @@ nvc0_clear(struct pipe_context *pipe, unsigned buffers,
    }
 
    for (i = 1; i < fb->nr_cbufs; i++) {
-      struct pipe_surface *sf = fb->cbufs[i];
-      if (!sf || !(buffers & (PIPE_CLEAR_COLOR0 << i)))
+      const struct pipe_surface *sf = &fb->cbufs[i];
+      if (!sf->texture || !(buffers & (PIPE_CLEAR_COLOR0 << i)))
          continue;
       for (j = 0; j <= sf->u.tex.last_layer - sf->u.tex.first_layer; j++) {
          BEGIN_NVC0(push, NVC0_3D(CLEAR_BUFFERS), 1);
@@ -833,6 +833,7 @@ struct nvc0_blitctx
    enum pipe_texture_target target;
    struct {
       struct pipe_framebuffer_state fb;
+      struct pipe_surface *cbuf0, *zsbuf;
       struct nvc0_window_rect_stateobj window_rect;
       struct nvc0_rasterizer_stateobj *rast;
       struct nvc0_program *vp;
@@ -977,10 +978,11 @@ nvc0_blit_set_dst(struct nvc0_blitctx *ctx,
          (res->target == PIPE_TEXTURE_3D ? res->depth0 : res->array_size) - 1;
    }
 
-   nvc0->framebuffer.cbufs[0] = nvc0_miptree_surface_new(pipe, res, &templ);
+   nvc0->framebuffer.cbufs[0] = templ;
+   nvc0->fb_cbufs[0] = nvc0_miptree_surface_new(pipe, res, &templ);
    nvc0->framebuffer.nr_cbufs = 1;
-   nvc0->framebuffer.zsbuf = NULL;
-   pipe_surface_size(nvc0->framebuffer.cbufs[0], &nvc0->framebuffer.width, &nvc0->framebuffer.height);
+   memset(&nvc0->framebuffer.zsbuf, 0, sizeof(nvc0->framebuffer.zsbuf));
+   pipe_surface_size(&nvc0->framebuffer.cbufs[0], &nvc0->framebuffer.width, &nvc0->framebuffer.height);
 }
 
 static void
@@ -1091,6 +1093,8 @@ nvc0_blitctx_pre_blit(struct nvc0_blitctx *ctx,
    ctx->saved.fb.nr_cbufs = nvc0->framebuffer.nr_cbufs;
    ctx->saved.fb.cbufs[0] = nvc0->framebuffer.cbufs[0];
    ctx->saved.fb.zsbuf = nvc0->framebuffer.zsbuf;
+   ctx->saved.cbuf0 = nvc0->fb_cbufs[0];
+   ctx->saved.zsbuf = nvc0->fb_zsbuf;
 
    ctx->saved.rast = nvc0->rast;
 
@@ -1159,7 +1163,7 @@ nvc0_blitctx_post_blit(struct nvc0_blitctx *blit)
    struct nvc0_context *nvc0 = blit->nvc0;
    int s;
 
-   pipe_surface_reference(&nvc0->framebuffer.cbufs[0], NULL);
+   pipe_surface_reference(&nvc0->fb_cbufs[0], NULL);
 
    nvc0->framebuffer.width = blit->saved.fb.width;
    nvc0->framebuffer.height = blit->saved.fb.height;
@@ -1168,6 +1172,8 @@ nvc0_blitctx_post_blit(struct nvc0_blitctx *blit)
    nvc0->framebuffer.nr_cbufs = blit->saved.fb.nr_cbufs;
    nvc0->framebuffer.cbufs[0] = blit->saved.fb.cbufs[0];
    nvc0->framebuffer.zsbuf = blit->saved.fb.zsbuf;
+   nvc0->fb_cbufs[0] = blit->saved.cbuf0;
+   nvc0->fb_zsbuf = blit->saved.zsbuf;
 
    nvc0->rast = blit->saved.rast;
 

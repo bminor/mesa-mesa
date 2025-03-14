@@ -929,7 +929,7 @@ blend_fallback(struct quad_stage *qs,
       softpipe->fs_variant->info.properties[TGSI_PROPERTY_FS_COLOR0_WRITES_ALL_CBUFS];
 
    for (cbuf = 0; cbuf < softpipe->framebuffer.nr_cbufs; cbuf++) {
-      if (softpipe->framebuffer.cbufs[cbuf]) {
+      if (softpipe->framebuffer.cbufs[cbuf].texture) {
          /* which blend/mask state index to use: */
          const uint blend_buf = blend->independent_blend_enable ? cbuf : 0;
          float dest[4][TGSI_QUAD_SIZE];
@@ -1233,7 +1233,7 @@ choose_blend_quad(struct quad_stage *qs,
             softpipe->blend->rt[0].colormask == 0xf &&
             softpipe->framebuffer.nr_cbufs == 1)
    {
-      if (softpipe->framebuffer.cbufs[0] == NULL) {
+      if (softpipe->framebuffer.cbufs[0].texture == NULL) {
          qs->run = blend_noop;
       }
       else if (!blend->rt[0].blend_enable) {
@@ -1260,8 +1260,8 @@ choose_blend_quad(struct quad_stage *qs,
     * whether color clamping is needed.
     */
    for (i = 0; i < softpipe->framebuffer.nr_cbufs; i++) {
-      if (softpipe->framebuffer.cbufs[i]) {
-         const enum pipe_format format = softpipe->framebuffer.cbufs[i]->format;
+      if (softpipe->framebuffer.cbufs[i].texture) {
+         const enum pipe_format format = softpipe->framebuffer.cbufs[i].format;
          const struct util_format_description *desc =
             util_format_description(format);
          /* assuming all or no color channels are normalized: */

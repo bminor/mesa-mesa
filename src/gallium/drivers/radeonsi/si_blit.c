@@ -641,16 +641,14 @@ static void si_check_render_feedback_texture(struct si_context *sctx, struct si_
       return;
 
    for (unsigned j = 0; j < sctx->framebuffer.state.nr_cbufs; ++j) {
-      struct si_surface *surf;
+      struct pipe_surface *surf = &sctx->framebuffer.state.cbufs[j];
 
-      if (!sctx->framebuffer.state.cbufs[j])
+      if (!sctx->framebuffer.state.cbufs[j].texture)
          continue;
 
-      surf = (struct si_surface *)sctx->framebuffer.state.cbufs[j];
-
-      if (tex == (struct si_texture *)surf->base.texture && surf->base.u.tex.level >= first_level &&
-          surf->base.u.tex.level <= last_level && surf->base.u.tex.first_layer <= last_layer &&
-          surf->base.u.tex.last_layer >= first_layer) {
+      if (tex == (struct si_texture *)surf->texture && surf->u.tex.level >= first_level &&
+          surf->u.tex.level <= last_level && surf->u.tex.first_layer <= last_layer &&
+          surf->u.tex.last_layer >= first_layer) {
          render_feedback = true;
          break;
       }
@@ -868,7 +866,7 @@ void gfx6_decompress_textures(struct si_context *sctx, unsigned shader_mask)
          si_decompress_resident_images(sctx);
 
       if (sctx->ps_uses_fbfetch) {
-         struct pipe_surface *cb0 = sctx->framebuffer.state.cbufs[0];
+         struct pipe_surface *cb0 = &sctx->framebuffer.state.cbufs[0];
          si_decompress_color_texture(sctx, (struct si_texture *)cb0->texture,
                                      cb0->u.tex.first_layer, cb0->u.tex.last_layer, false);
       }
@@ -932,8 +930,8 @@ void si_decompress_subresource(struct pipe_context *ctx, struct pipe_resource *t
        * source, make sure the decompression pass is invoked
        * by dirtying the framebuffer.
        */
-      if (sctx->framebuffer.state.zsbuf && sctx->framebuffer.state.zsbuf->u.tex.level == level &&
-          sctx->framebuffer.state.zsbuf->texture == tex)
+      if (sctx->framebuffer.state.zsbuf.u.tex.level == level &&
+          sctx->framebuffer.state.zsbuf.texture == tex)
          si_fb_barrier_after_rendering(sctx, SI_FB_BARRIER_SYNC_DB);
 
       si_decompress_depth(sctx, stex, planes, level, level, first_layer, last_layer);
@@ -944,9 +942,8 @@ void si_decompress_subresource(struct pipe_context *ctx, struct pipe_resource *t
        * by dirtying the framebuffer.
        */
       for (unsigned i = 0; i < sctx->framebuffer.state.nr_cbufs; i++) {
-         if (sctx->framebuffer.state.cbufs[i] &&
-             sctx->framebuffer.state.cbufs[i]->u.tex.level == level &&
-             sctx->framebuffer.state.cbufs[i]->texture == tex) {
+         if (sctx->framebuffer.state.cbufs[i].u.tex.level == level &&
+             sctx->framebuffer.state.cbufs[i].texture == tex) {
             si_fb_barrier_after_rendering(sctx, SI_FB_BARRIER_SYNC_CB);
             break;
          }

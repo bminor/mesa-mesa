@@ -1615,13 +1615,13 @@ fd_invalidate_resource(struct pipe_context *pctx,
       struct fd_batch *batch = rsc->track->write_batch;
       struct pipe_framebuffer_state *pfb = &batch->framebuffer;
 
-      if (pfb->zsbuf && pfb->zsbuf->texture == prsc) {
+      if (pfb->zsbuf.texture == prsc) {
          batch->resolve &= ~(FD_BUFFER_DEPTH | FD_BUFFER_STENCIL);
          fd_dirty_resource(ctx, prsc, FD_DIRTY_ZSA, true);
       }
 
       for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
-         if (pfb->cbufs[i] && pfb->cbufs[i]->texture == prsc) {
+         if (pfb->cbufs[i].texture == prsc) {
             batch->resolve &= ~(PIPE_CLEAR_COLOR0 << i);
             fd_dirty_resource(ctx, prsc, FD_DIRTY_FRAMEBUFFER, true);
          }

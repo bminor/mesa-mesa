@@ -441,7 +441,7 @@ fd2_clear_fast(struct fd_context *ctx, unsigned buffers,
    struct fd_ringbuffer *ring = batch->draw;
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
    uint32_t color_clear = 0, depth_clear = 0;
-   enum pipe_format format = pipe_surface_format(pfb->cbufs[0]);
+   enum pipe_format format = pipe_surface_format(&pfb->cbufs[0]);
    int depth_size = -1; /* -1: no clear, 0: clear 16-bit, 1: clear 32-bit */
    int color_size = -1;
 
@@ -457,12 +457,12 @@ fd2_clear_fast(struct fd_context *ctx, unsigned buffers,
       if (!(buffers & PIPE_CLEAR_DEPTH))
          return false;
 
-      if ((pfb->zsbuf->format == PIPE_FORMAT_Z24_UNORM_S8_UINT ||
-           pfb->zsbuf->format == PIPE_FORMAT_S8_UINT_Z24_UNORM) &&
+      if ((pfb->zsbuf.format == PIPE_FORMAT_Z24_UNORM_S8_UINT ||
+           pfb->zsbuf.format == PIPE_FORMAT_S8_UINT_Z24_UNORM) &&
           !(buffers & PIPE_CLEAR_STENCIL))
          return false;
 
-      depth_size = fd_pipe2depth(pfb->zsbuf->format) == DEPTHX_24_8;
+      depth_size = fd_pipe2depth(pfb->zsbuf.format) == DEPTHX_24_8;
    }
 
    assert(color_size >= 0 || depth_size >= 0);
@@ -583,7 +583,7 @@ fd2_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
 
       if (buffers & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
          uint32_t clear_mask, depth_clear;
-         switch (fd_pipe2depth(fb->zsbuf->format)) {
+         switch (fd_pipe2depth(fb->zsbuf.format)) {
          case DEPTHX_24_8:
             clear_mask = ((buffers & FD_BUFFER_DEPTH) ? 0xe : 0) |
                          ((buffers & FD_BUFFER_STENCIL) ? 0x1 : 0);

@@ -611,9 +611,9 @@ cs_launch(struct vl_compositor *c,
 
    /* Bind the image */
    struct pipe_image_view image = {0};
-   image.resource = c->fb_state.cbufs[0]->texture;
+   image.resource = c->fb_state.cbufs[0].texture;
    image.shader_access = image.access = PIPE_IMAGE_ACCESS_READ_WRITE;
-   image.format = c->fb_state.cbufs[0]->texture->format;
+   image.format = c->fb_state.cbufs[0].texture->format;
 
    ctx->set_shader_images(c->pipe, PIPE_SHADER_COMPUTE, 0, 1, 0, &image);
 
@@ -892,7 +892,7 @@ vl_compositor_cs_render(struct vl_compositor_state *s,
    assert(dst_surface);
 
    pipe_surface_size(dst_surface, &c->fb_state.width, &c->fb_state.height);
-   c->fb_state.cbufs[0] = dst_surface;
+   c->fb_state.cbufs[0] = *dst_surface;
 
    if (!s->scissor_valid) {
       s->scissor.minx = 0;

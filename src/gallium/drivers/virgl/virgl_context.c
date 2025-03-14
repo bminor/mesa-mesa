@@ -175,22 +175,18 @@ static void virgl_attach_res_framebuffer(struct virgl_context *vctx)
    struct virgl_resource *res;
    unsigned i;
 
-   surf = vctx->framebuffer.zsbuf;
-   if (surf) {
+   surf = &vctx->framebuffer.zsbuf;
+   res = virgl_resource(surf->texture);
+   if (res) {
+      vws->emit_res(vws, vctx->cbuf, res->hw_res, false);
+      virgl_resource_dirty(res, surf->u.tex.level);
+   }
+   for (i = 0; i < vctx->framebuffer.nr_cbufs; i++) {
+      surf = &vctx->framebuffer.cbufs[i];
       res = virgl_resource(surf->texture);
       if (res) {
          vws->emit_res(vws, vctx->cbuf, res->hw_res, false);
          virgl_resource_dirty(res, surf->u.tex.level);
-      }
-   }
-   for (i = 0; i < vctx->framebuffer.nr_cbufs; i++) {
-      surf = vctx->framebuffer.cbufs[i];
-      if (surf) {
-         res = virgl_resource(surf->texture);
-         if (res) {
-            vws->emit_res(vws, vctx->cbuf, res->hw_res, false);
-            virgl_resource_dirty(res, surf->u.tex.level);
-         }
       }
    }
 }
@@ -494,7 +490,8 @@ static void virgl_set_framebuffer_state(struct pipe_context *ctx,
 {
    struct virgl_context *vctx = virgl_context(ctx);
 
-   vctx->framebuffer = *state;
+   util_framebuffer_init(ctx, state, vctx->fb_cbufs, &vctx->fb_zsbuf);
+   util_copy_framebuffer_state(&vctx->framebuffer, state);
    virgl_encoder_set_framebuffer_state(vctx, state);
    virgl_attach_res_framebuffer(vctx);
 }
@@ -1577,8 +1574,8 @@ virgl_context_destroy( struct pipe_context *ctx )
    struct virgl_screen *rs = virgl_screen(ctx->screen);
    enum pipe_shader_type shader_type;
 
-   vctx->framebuffer.zsbuf = NULL;
-   vctx->framebuffer.nr_cbufs = 0;
+   util_framebuffer_init(ctx, NULL, vctx->fb_cbufs, &vctx->fb_zsbuf);
+   util_unreference_framebuffer_state(&vctx->framebuffer);
    virgl_encoder_destroy_sub_ctx(vctx, vctx->hw_sub_ctx_id);
    virgl_flush_eq(vctx, vctx, NULL);
 

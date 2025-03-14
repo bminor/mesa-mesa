@@ -1693,7 +1693,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
                 if (!(buffers & bit))
                         continue;
 
-                struct pipe_surface *psurf = v3d->framebuffer.cbufs[i];
+                struct pipe_surface *psurf = v3d->fb_cbufs[i];
                 struct v3d_surface *surf = v3d_surface(psurf);
                 struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
@@ -1759,7 +1759,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
         unsigned zsclear = buffers & PIPE_CLEAR_DEPTHSTENCIL;
         if (zsclear) {
                 struct v3d_resource *rsc =
-                        v3d_resource(v3d->framebuffer.zsbuf->texture);
+                        v3d_resource(v3d->framebuffer.zsbuf.texture);
 
                 if (zsclear & PIPE_CLEAR_DEPTH)
                         job->clear_z = depth;

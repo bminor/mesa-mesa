@@ -714,7 +714,7 @@ vl_compositor_gfx_render(struct vl_compositor_state *s,
    assert(dst_surface);
 
    pipe_surface_size(dst_surface, &c->fb_state.width, &c->fb_state.height);
-   c->fb_state.cbufs[0] = dst_surface;
+   c->fb_state.cbufs[0] = *dst_surface;
 
    if (!s->scissor_valid) {
       s->scissor.minx = 0;

@@ -1381,8 +1381,8 @@ sp_setup_prepare(struct setup_context *setup)
     * attachment hence don't need separate per cbuf and zsbuf max.
     */
    for (i = 0; i < setup->softpipe->framebuffer.nr_cbufs; i++) {
-      struct pipe_surface *cbuf = setup->softpipe->framebuffer.cbufs[i];
-      if (cbuf) {
+      const struct pipe_surface *cbuf = &setup->softpipe->framebuffer.cbufs[i];
+      if (cbuf->texture) {
          max_layer = MIN2(max_layer,
                           cbuf->u.tex.last_layer - cbuf->u.tex.first_layer);
 

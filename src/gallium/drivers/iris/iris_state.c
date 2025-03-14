@@ -2108,17 +2108,17 @@ want_pma_fix(struct iris_context *ice)
     * meaning the PMA signal will already be disabled).
     */
 
-   if (!cso_fb->zsbuf)
+   if (!cso_fb->zsbuf.texture)
       return false;
 
    struct iris_resource *zres, *sres;
-   iris_get_depth_stencil_resources(cso_fb->zsbuf->texture, &zres, &sres);
+   iris_get_depth_stencil_resources(cso_fb->zsbuf.texture, &zres, &sres);
 
    /* 3DSTATE_DEPTH_BUFFER::SURFACE_TYPE != NULL &&
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable &&
     */
    if (!zres ||
-       !iris_resource_level_has_hiz(devinfo, zres, cso_fb->zsbuf->u.tex.level))
+       !iris_resource_level_has_hiz(devinfo, zres, cso_fb->zsbuf.u.tex.level))
       return false;
 
    /* 3DSTATE_WM::EDSC_Mode != EDSC_PREPS */
@@ -3806,8 +3806,8 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       ice->state.dirty |= IRIS_DIRTY_CLIP;
    }
 
-   if (state->nr_cbufs > 0 && state->cbufs[0])
-      new_res = (struct iris_resource *)state->cbufs[0]->texture;
+   if (state->nr_cbufs > 0)
+      new_res = (struct iris_resource *)state->cbufs[0].texture;
 
    if (new_res && new_res->use_damage) {
       new_render_area = new_res->damage;
@@ -3825,15 +3825,15 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       ice->state.render_area = new_render_area;
    }
 
-   if (cso->zsbuf || state->zsbuf) {
+   if (cso->zsbuf.texture || state->zsbuf.texture) {
       ice->state.dirty |= IRIS_DIRTY_DEPTH_BUFFER;
    }
 
    bool has_integer_rt = false;
    for (unsigned i = 0; i < state->nr_cbufs; i++) {
-      if (state->cbufs[i]) {
+      if (state->cbufs[i].texture) {
          enum isl_format ifmt =
-            isl_format_for_pipe_format(state->cbufs[i]->format);
+            isl_format_for_pipe_format(state->cbufs[i].format);
          has_integer_rt |= isl_format_has_int_channel(ifmt);
       }
    }
@@ -3844,6 +3844,7 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       ice->state.dirty |= IRIS_DIRTY_RASTER;
    }
 
+   util_framebuffer_init(ctx, state, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
    util_copy_framebuffer_state(cso, state);
    cso->samples = samples;
    cso->layers = layers;
@@ -3865,14 +3866,14 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       .mocs = iris_mocs(NULL, isl_dev, ISL_SURF_USAGE_DEPTH_BIT),
    };
 
-   if (cso->zsbuf) {
-      iris_get_depth_stencil_resources(cso->zsbuf->texture, &zres,
+   if (cso->zsbuf.texture) {
+      iris_get_depth_stencil_resources(cso->zsbuf.texture, &zres,
                                        &stencil_res);
 
-      view.base_level = cso->zsbuf->u.tex.level;
-      view.base_array_layer = cso->zsbuf->u.tex.first_layer;
+      view.base_level = cso->zsbuf.u.tex.level;
+      view.base_array_layer = cso->zsbuf.u.tex.first_layer;
       view.array_len =
-         cso->zsbuf->u.tex.last_layer - cso->zsbuf->u.tex.first_layer + 1;
+         cso->zsbuf.u.tex.last_layer - cso->zsbuf.u.tex.first_layer + 1;
 
       if (zres) {
          view.usage |= ISL_SURF_USAGE_DEPTH_BIT;
@@ -5811,8 +5812,8 @@ iris_populate_binding_table(struct iris_context *ice,
       if (cso_fb->nr_cbufs) {
          for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
             uint32_t addr;
-            if (cso_fb->cbufs[i]) {
-               addr = use_surface(ice, batch, cso_fb->cbufs[i], true,
+            if (cso_fb->cbufs[i].texture) {
+               addr = use_surface(ice, batch, ice->state.fb_cbufs[i], true,
                                   ice->state.draw_aux_usage[i], false,
                                   IRIS_DOMAIN_RENDER_WRITE);
             } else {
@@ -5835,8 +5836,8 @@ iris_populate_binding_table(struct iris_context *ice,
    foreach_surface_used(i, IRIS_SURFACE_GROUP_RENDER_TARGET_READ) {
       struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
       uint32_t addr;
-      if (cso_fb->cbufs[i]) {
-         addr = use_surface(ice, batch, cso_fb->cbufs[i],
+      if (cso_fb->cbufs[i].texture) {
+         addr = use_surface(ice, batch, ice->state.fb_cbufs[i],
                             false, ice->state.draw_aux_usage[i], true,
                             IRIS_DOMAIN_SAMPLER_READ);
          push_bt_entry(addr);
@@ -5897,14 +5898,14 @@ iris_use_optional_res(struct iris_batch *batch,
 
 static void
 pin_depth_and_stencil_buffers(struct iris_batch *batch,
-                              struct pipe_surface *zsbuf,
+                              struct pipe_resource *zsbuf,
                               struct iris_depth_stencil_alpha_state *cso_zsa)
 {
    if (!zsbuf)
       return;
 
    struct iris_resource *zres, *sres;
-   iris_get_depth_stencil_resources(zsbuf->texture, &zres, &sres);
+   iris_get_depth_stencil_resources(zsbuf, &zres, &sres);
 
    if (zres) {
       iris_use_pinned_bo(batch, zres->bo, cso_zsa->depth_writes_enabled,
@@ -6078,7 +6079,7 @@ iris_restore_render_saved_bos(struct iris_context *ice,
    if ((clean & IRIS_DIRTY_DEPTH_BUFFER) &&
        (clean & IRIS_DIRTY_WM_DEPTH_STENCIL)) {
       struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
-      pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf, ice->state.cso_zsa);
+      pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf.texture, ice->state.cso_zsa);
    }
 
    iris_use_optional_res(batch, ice->state.last_res.index_buffer, false,
@@ -6683,7 +6684,7 @@ calculate_tile_dimensions(struct iris_context *ice,
       return false;
 
    for (unsigned i = 0; i < cso->nr_cbufs; i++) {
-      const struct iris_surface *surf = (void *)cso->cbufs[i];
+      const struct iris_surface *surf = (void *)ice->state.fb_cbufs[i];
 
       if (surf) {
          const struct iris_resource *res = (void *)surf->base.texture;
@@ -6704,10 +6705,10 @@ calculate_tile_dimensions(struct iris_context *ice,
       }
    }
 
-   if (cso->zsbuf) {
+   if (cso->zsbuf.texture) {
       struct iris_resource *zres;
       struct iris_resource *sres;
-      iris_get_depth_stencil_resources(cso->zsbuf->texture, &zres, &sres);
+      iris_get_depth_stencil_resources(cso->zsbuf.texture, &zres, &sres);
 
       if (zres) {
          pixel_size += intel_calculate_surface_pixel_size(&zres->surf);
@@ -6715,7 +6716,7 @@ calculate_tile_dimensions(struct iris_context *ice,
          /* XXX - Pessimistic, in some cases it might be helpful to neglect
           *       aux surface traffic.
           */
-         if (iris_resource_level_has_hiz(devinfo, zres, cso->zsbuf->u.tex.level)) {
+         if (iris_resource_level_has_hiz(devinfo, zres, cso->zsbuf.u.tex.level)) {
             pixel_size += intel_calculate_surface_pixel_size(&zres->aux.surf);
 
             if (isl_aux_usage_has_ccs(zres->aux.usage)) {
@@ -7930,8 +7931,8 @@ iris_upload_dirty_render_state(struct iris_context *ice,
       /* Do not emit the cso yet. We may need to update clear params first. */
       struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
       struct iris_resource *zres = NULL, *sres = NULL;
-      if (cso_fb->zsbuf) {
-         iris_get_depth_stencil_resources(cso_fb->zsbuf->texture,
+      if (cso_fb->zsbuf.texture) {
+         iris_get_depth_stencil_resources(cso_fb->zsbuf.texture,
                                           &zres, &sres);
       }
 
@@ -7976,7 +7977,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    if (dirty & (IRIS_DIRTY_DEPTH_BUFFER | IRIS_DIRTY_WM_DEPTH_STENCIL)) {
       /* Listen for buffer changes, and also write enable changes. */
       struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
-      pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf, ice->state.cso_zsa);
+      pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf.texture, ice->state.cso_zsa);
    }
 
    if (dirty & IRIS_DIRTY_POLYGON_STIPPLE) {

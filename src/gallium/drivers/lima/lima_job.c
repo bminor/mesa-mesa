@@ -189,7 +189,7 @@ _lima_job_get(struct lima_context *ctx)
 {
    struct lima_context_framebuffer *fb = &ctx->framebuffer;
 
-   return lima_job_get_with_fb(ctx, fb->base.cbufs[0], fb->base.zsbuf);
+   return lima_job_get_with_fb(ctx, fb->fb_cbufs[0], fb->fb_zsbuf);
 }
 
 /*

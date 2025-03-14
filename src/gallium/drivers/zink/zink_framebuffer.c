@@ -141,7 +141,7 @@ struct zink_framebuffer *
 zink_get_framebuffer(struct zink_context *ctx)
 {
    assert(zink_screen(ctx->base.screen)->info.have_KHR_imageless_framebuffer);
-   bool have_zsbuf = ctx->fb_state.zsbuf && zink_is_zsbuf_used(ctx);
+   bool have_zsbuf = ctx->fb_state.zsbuf.texture && zink_is_zsbuf_used(ctx);
 
    struct zink_framebuffer_state state;
    state.num_attachments = ctx->fb_state.nr_cbufs;
@@ -149,7 +149,7 @@ zink_get_framebuffer(struct zink_context *ctx)
    const unsigned cresolve_offset = ctx->fb_state.nr_cbufs + !!have_zsbuf;
    unsigned num_resolves = 0;
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      struct pipe_surface *psurf = ctx->fb_state.cbufs[i];
+      struct pipe_surface *psurf = ctx->fb_cbufs[i];
       if (!psurf) {
          psurf = zink_get_dummy_pipe_surface(ctx, util_logbase2_ceil(ctx->gfx_pipeline_state.rast_samples+1));
       }
@@ -166,7 +166,7 @@ zink_get_framebuffer(struct zink_context *ctx)
 
    const unsigned zsresolve_offset = cresolve_offset + num_resolves;
    if (have_zsbuf) {
-      struct pipe_surface *psurf = ctx->fb_state.zsbuf;
+      struct pipe_surface *psurf = ctx->fb_zsbuf;
       struct zink_surface *surface = zink_csurface(psurf);
       struct zink_surface *transient = zink_transient_surface(psurf);
       if (transient) {
@@ -221,19 +221,19 @@ unsigned
 zink_framebuffer_get_num_layers(const struct pipe_framebuffer_state *fb)
 {
    unsigned i, num_layers = UINT32_MAX;
-   if (!(fb->nr_cbufs || fb->zsbuf))
+   if (!(fb->nr_cbufs || fb->zsbuf.texture))
       return MAX2(fb->layers, 1);
 
    for (i = 0; i < fb->nr_cbufs; i++) {
-      if (fb->cbufs[i]) {
-         unsigned num = fb->cbufs[i]->u.tex.last_layer -
-         fb->cbufs[i]->u.tex.first_layer + 1;
+      if (fb->cbufs[i].texture) {
+         unsigned num = fb->cbufs[i].u.tex.last_layer -
+         fb->cbufs[i].u.tex.first_layer + 1;
          num_layers = MIN2(num_layers, num);
       }
    }
-   if (fb->zsbuf) {
-      unsigned num = fb->zsbuf->u.tex.last_layer -
-      fb->zsbuf->u.tex.first_layer + 1;
+   if (fb->zsbuf.texture) {
+      unsigned num = fb->zsbuf.u.tex.last_layer -
+      fb->zsbuf.u.tex.first_layer + 1;
       num_layers = MIN2(num_layers, num);
    }
    return MAX2(num_layers, 1);

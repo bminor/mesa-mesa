@@ -39,7 +39,7 @@ fd3_gmem_emit_set_prog(struct fd_context *ctx, struct fd3_emit *emit,
 
 static void
 emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
-         struct pipe_surface **bufs, const uint32_t *bases, uint32_t bin_w,
+         struct pipe_surface *bufs, const uint32_t *bases, uint32_t bin_w,
          bool decode_srgb)
 {
    enum a3xx_tile_mode tile_mode;
@@ -61,8 +61,8 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
          tile_mode = LINEAR;
       }
 
-      if ((i < nr_bufs) && bufs[i]) {
-         struct pipe_surface *psurf = bufs[i];
+      if ((i < nr_bufs) && bufs[i].texture) {
+         struct pipe_surface *psurf = &bufs[i];
 
          rsc = fd_resource(psurf->texture);
          pformat = psurf->format;
@@ -107,14 +107,14 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
                         A3XX_RB_MRT_BUF_INFO_COLOR_BUF_PITCH(stride) |
                         A3XX_RB_MRT_BUF_INFO_COLOR_SWAP(swap) |
                         COND(srgb, A3XX_RB_MRT_BUF_INFO_COLOR_SRGB));
-      if (bin_w || (i >= nr_bufs) || !bufs[i]) {
+      if (bin_w || (i >= nr_bufs) || !bufs[i].texture) {
          OUT_RING(ring, A3XX_RB_MRT_BUF_BASE_COLOR_BUF_BASE(base));
       } else {
          OUT_RELOC(ring, rsc->bo, offset, 0, -1);
       }
 
       OUT_PKT0(ring, REG_A3XX_SP_FS_IMAGE_OUTPUT_REG(i), 1);
-      OUT_RING(ring, COND((i < nr_bufs) && bufs[i],
+      OUT_RING(ring, COND((i < nr_bufs) && bufs[i].texture,
                           A3XX_SP_FS_IMAGE_OUTPUT_REG_MRTFORMAT(
                              fd3_fs_output_format(pformat))));
    }
@@ -449,23 +449,23 @@ fd3_emit_tile_gmem2mem(struct fd_batch *batch,
    fd3_emit_vertex_bufs(ring, &emit);
 
    if (batch->resolve & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
       if (!rsc->stencil || batch->resolve & FD_BUFFER_DEPTH)
          emit_gmem2mem_surf(batch, RB_COPY_DEPTH_STENCIL, false,
-                            gmem->zsbuf_base[0], pfb->zsbuf);
+                            gmem->zsbuf_base[0], &pfb->zsbuf);
       if (rsc->stencil && batch->resolve & FD_BUFFER_STENCIL)
          emit_gmem2mem_surf(batch, RB_COPY_DEPTH_STENCIL, true,
-                            gmem->zsbuf_base[1], pfb->zsbuf);
+                            gmem->zsbuf_base[1], &pfb->zsbuf);
    }
 
    if (batch->resolve & FD_BUFFER_COLOR) {
       for (i = 0; i < pfb->nr_cbufs; i++) {
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
          if (!(batch->resolve & (PIPE_CLEAR_COLOR0 << i)))
             continue;
          emit_gmem2mem_surf(batch, RB_COPY_RESOLVE, false, gmem->cbuf_base[i],
-                            pfb->cbufs[i]);
+                            &pfb->cbufs[i]);
       }
    }
 
@@ -484,10 +484,10 @@ fd3_emit_tile_gmem2mem(struct fd_batch *batch,
 
 static void
 emit_mem2gmem_surf(struct fd_batch *batch, const uint32_t bases[],
-                   struct pipe_surface **psurf, uint32_t bufs, uint32_t bin_w)
+                   struct pipe_surface *psurf, uint32_t bufs, uint32_t bin_w)
 {
    struct fd_ringbuffer *ring = batch->gmem;
-   struct pipe_surface *zsbufs[2];
+   struct pipe_surface zsbufs[2];
 
    assert(bufs > 0);
 
@@ -498,8 +498,8 @@ emit_mem2gmem_surf(struct fd_batch *batch, const uint32_t bases[],
 
    emit_mrt(ring, bufs, psurf, bases, bin_w, false);
 
-   if (psurf[0] && (psurf[0]->format == PIPE_FORMAT_Z32_FLOAT ||
-                    psurf[0]->format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)) {
+   if (psurf[0].texture && (psurf[0].format == PIPE_FORMAT_Z32_FLOAT ||
+                    psurf[0].format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)) {
       /* Depth is stored as unorm in gmem, so we have to write it in using a
        * special blit shader which writes depth.
        */
@@ -515,7 +515,7 @@ emit_mem2gmem_surf(struct fd_batch *batch, const uint32_t bases[],
                         A3XX_RB_DEPTH_INFO_DEPTH_FORMAT(DEPTHX_32));
       OUT_RING(ring, A3XX_RB_DEPTH_PITCH(4 * batch->gmem_state->bin_w));
 
-      if (psurf[0]->format == PIPE_FORMAT_Z32_FLOAT) {
+      if (psurf[0].format == PIPE_FORMAT_Z32_FLOAT) {
          OUT_PKT0(ring, REG_A3XX_RB_MRT_CONTROL(0), 1);
          OUT_RING(ring, 0);
       } else {
@@ -677,15 +677,15 @@ fd3_emit_tile_mem2gmem(struct fd_batch *batch,
 
    if (fd_gmem_needs_restore(batch, tile,
                              FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      if (pfb->zsbuf->format != PIPE_FORMAT_Z32_FLOAT_S8X24_UINT &&
-          pfb->zsbuf->format != PIPE_FORMAT_Z32_FLOAT) {
+      if (pfb->zsbuf.format != PIPE_FORMAT_Z32_FLOAT_S8X24_UINT &&
+          pfb->zsbuf.format != PIPE_FORMAT_Z32_FLOAT) {
          /* Non-float can use a regular color write. It's split over 8-bit
           * components, so half precision is always sufficient.
           */
          fd3_gmem_emit_set_prog(ctx, &emit, &ctx->blit_prog[0]);
       } else {
          /* Float depth needs special blit shader that writes depth */
-         if (pfb->zsbuf->format == PIPE_FORMAT_Z32_FLOAT)
+         if (pfb->zsbuf.format == PIPE_FORMAT_Z32_FLOAT)
             fd3_gmem_emit_set_prog(ctx, &emit, &ctx->blit_z);
          else
             fd3_gmem_emit_set_prog(ctx, &emit, &ctx->blit_zs);
@@ -736,8 +736,8 @@ fd3_emit_sysmem_prep(struct fd_batch *batch) assert_dt
    uint32_t i, pitch = 0;
 
    for (i = 0; i < pfb->nr_cbufs; i++) {
-      struct pipe_surface *psurf = pfb->cbufs[i];
-      if (!psurf)
+      struct pipe_surface *psurf = &pfb->cbufs[i];
+      if (!psurf->texture)
          continue;
       struct fd_resource *rsc = fd_resource(psurf->texture);
       pitch = fd_resource_pitch(rsc, psurf->u.tex.level) / rsc->layout.cpp;
@@ -1002,12 +1002,12 @@ fd3_emit_tile_renderprep(struct fd_batch *batch,
 
    OUT_PKT0(ring, REG_A3XX_RB_DEPTH_INFO, 2);
    reg = A3XX_RB_DEPTH_INFO_DEPTH_BASE(gmem->zsbuf_base[0]);
-   if (pfb->zsbuf) {
-      reg |= A3XX_RB_DEPTH_INFO_DEPTH_FORMAT(fd_pipe2depth(pfb->zsbuf->format));
+   if (pfb->zsbuf.texture) {
+      reg |= A3XX_RB_DEPTH_INFO_DEPTH_FORMAT(fd_pipe2depth(pfb->zsbuf.format));
    }
    OUT_RING(ring, reg);
-   if (pfb->zsbuf) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+   if (pfb->zsbuf.texture) {
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
       OUT_RING(ring,
                A3XX_RB_DEPTH_PITCH(gmem->bin_w << fdl_cpp_shift(&rsc->layout)));
       if (rsc->stencil) {

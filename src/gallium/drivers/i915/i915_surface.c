@@ -136,15 +136,14 @@ i915_clear_render_target_render(struct pipe_context *pipe,
                                 unsigned height, bool render_condition_enabled)
 {
    struct i915_context *i915 = i915_context(pipe);
-   struct pipe_framebuffer_state fb_state;
+   struct pipe_framebuffer_state fb_state = {0};
 
    util_blitter_save_framebuffer(i915->blitter, &i915->framebuffer);
 
    fb_state.width = width;
    fb_state.height = height;
    fb_state.nr_cbufs = 1;
-   fb_state.cbufs[0] = dst;
-   fb_state.zsbuf = NULL;
+   fb_state.cbufs[0] = *dst;
    pipe->set_framebuffer_state(pipe, &fb_state);
 
    if (i915->dirty)
@@ -173,7 +172,7 @@ i915_clear_depth_stencil_render(struct pipe_context *pipe,
    fb_state.width = width;
    fb_state.height = height;
    fb_state.nr_cbufs = 0;
-   fb_state.zsbuf = dst;
+   fb_state.zsbuf = *dst;
    pipe->set_framebuffer_state(pipe, &fb_state);
 
    if (i915->dirty)

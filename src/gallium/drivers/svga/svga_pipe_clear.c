@@ -79,8 +79,8 @@ is_integer_target(struct pipe_framebuffer_state *fb, unsigned buffers)
 
    for (i = 0; i < fb->nr_cbufs; i++) {
       if ((buffers & (PIPE_CLEAR_COLOR0 << i)) &&
-          fb->cbufs[i] &&
-          util_format_is_pure_integer(fb->cbufs[i]->format)) {
+          fb->cbufs[i].texture &&
+          util_format_is_pure_integer(fb->cbufs[i].format)) {
          return true;
       }
    }
@@ -137,14 +137,14 @@ try_clear(struct svga_context *svga,
       rect.h = fb->height;
    }
 
-   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && fb->zsbuf) {
+   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && fb->zsbuf.texture) {
       if (buffers & PIPE_CLEAR_DEPTH)
          flags |= SVGA3D_CLEAR_DEPTH;
 
       if (buffers & PIPE_CLEAR_STENCIL)
          flags |= SVGA3D_CLEAR_STENCIL;
-      rect.w = MAX2(rect.w, pipe_surface_width(fb->zsbuf));
-      rect.h = MAX2(rect.h, pipe_surface_height(fb->zsbuf));
+      rect.w = MAX2(rect.w, pipe_surface_width(&fb->zsbuf));
+      rect.h = MAX2(rect.h, pipe_surface_height(&fb->zsbuf));
    }
 
    if (!svga_have_vgpu10(svga) &&
@@ -184,12 +184,12 @@ try_clear(struct svga_context *svga,
 
             /* Issue VGPU10 Clear commands */
             for (i = 0; i < fb->nr_cbufs; i++) {
-               if ((fb->cbufs[i] == NULL) ||
+               if ((fb->cbufs[i].texture == NULL) ||
                    !(buffers & (PIPE_CLEAR_COLOR0 << i)))
                   continue;
 
                rtv = svga_validate_surface_view(svga,
-                                                svga_surface(fb->cbufs[i]));
+                                                svga_surface(svga->curr.fb_cbufs[i]));
                if (!rtv)
                   return PIPE_ERROR_OUT_OF_MEMORY;
 
@@ -201,7 +201,7 @@ try_clear(struct svga_context *svga,
       }
       if (flags & (SVGA3D_CLEAR_DEPTH | SVGA3D_CLEAR_STENCIL)) {
          struct pipe_surface *dsv =
-            svga_validate_surface_view(svga, svga_surface(fb->zsbuf));
+            svga_validate_surface_view(svga, svga_surface(svga->curr.fb_zsbuf));
          if (!dsv)
             return PIPE_ERROR_OUT_OF_MEMORY;
 
@@ -239,8 +239,8 @@ svga_clear(struct pipe_context *pipe, unsigned buffers, const struct pipe_scisso
 
    if (buffers & PIPE_CLEAR_COLOR) {
       struct svga_winsys_surface *h = NULL;
-      if (svga->curr.framebuffer.cbufs[0]) {
-         h = svga_surface(svga->curr.framebuffer.cbufs[0])->handle;
+      if (svga->curr.fb_cbufs[0]) {
+         h = svga_surface(svga->curr.fb_cbufs[0])->handle;
       }
       SVGA_DBG(DEBUG_DMA, "clear sid %p\n", h);
    }

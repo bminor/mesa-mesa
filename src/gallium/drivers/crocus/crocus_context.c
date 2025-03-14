@@ -201,6 +201,9 @@ crocus_destroy_context(struct pipe_context *ctx)
       util_blitter_destroy(ice->blitter);
    screen->vtbl.destroy_state(ice);
 
+   util_framebuffer_init(ctx, NULL, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
+   util_unreference_framebuffer_state(&ice->state.framebuffer);
+
    for (unsigned i = 0; i < ARRAY_SIZE(ice->shaders.scratch_bos); i++) {
       for (unsigned j = 0; j < ARRAY_SIZE(ice->shaders.scratch_bos[i]); j++)
          crocus_bo_unreference(ice->shaders.scratch_bos[i][j]);

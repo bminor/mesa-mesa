@@ -53,7 +53,7 @@ softpipe_clear(struct pipe_context *pipe, unsigned buffers,
                double depth, unsigned stencil)
 {
    struct softpipe_context *softpipe = softpipe_context(pipe);
-   struct pipe_surface *zsbuf = softpipe->framebuffer.zsbuf;
+   struct pipe_surface *zsbuf = &softpipe->framebuffer.zsbuf;
    unsigned zs_buffers = buffers & PIPE_CLEAR_DEPTHSTENCIL;
    uint64_t cv;
    uint i;

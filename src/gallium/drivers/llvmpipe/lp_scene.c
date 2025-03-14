@@ -200,19 +200,15 @@ init_scene_texture(struct lp_scene_surface *ssurf, struct pipe_surface *psurf)
 void
 lp_scene_begin_rasterization(struct lp_scene *scene)
 {
-   const struct pipe_framebuffer_state *fb = &scene->fb;
-
    //LP_DBG(DEBUG_RAST, "%s\n", __func__);
 
    for (unsigned i = 0; i < scene->fb.nr_cbufs; i++) {
-      struct pipe_surface *cbuf = scene->fb.cbufs[i];
-      init_scene_texture(&scene->cbufs[i], cbuf);
+      struct pipe_surface *cbuf = &scene->fb.cbufs[i];
+      init_scene_texture(&scene->cbufs[i], cbuf->texture ? cbuf : NULL);
    }
 
-   if (fb->zsbuf) {
-      struct pipe_surface *zsbuf = scene->fb.zsbuf;
-      init_scene_texture(&scene->zsbuf, zsbuf);
-   }
+   struct pipe_surface *zsbuf = &scene->fb.zsbuf;
+   init_scene_texture(&scene->zsbuf, zsbuf->texture ? zsbuf : NULL);
 }
 
 
@@ -227,7 +223,7 @@ lp_scene_end_rasterization(struct lp_scene *scene)
    /* Unmap color buffers */
    for (unsigned i = 0; i < scene->fb.nr_cbufs; i++) {
       if (scene->cbufs[i].map) {
-         struct pipe_surface *cbuf = scene->fb.cbufs[i];
+         struct pipe_surface *cbuf = &scene->fb.cbufs[i];
          if (llvmpipe_resource_is_texture(cbuf->texture)) {
             llvmpipe_resource_unmap(cbuf->texture,
                                     cbuf->u.tex.level,
@@ -239,7 +235,7 @@ lp_scene_end_rasterization(struct lp_scene *scene)
 
    /* Unmap z/stencil buffer */
    if (scene->zsbuf.map) {
-      struct pipe_surface *zsbuf = scene->fb.zsbuf;
+      struct pipe_surface *zsbuf = &scene->fb.zsbuf;
       llvmpipe_resource_unmap(zsbuf->texture,
                               zsbuf->u.tex.level,
                               zsbuf->u.tex.first_layer);
@@ -527,10 +523,10 @@ lp_scene_is_resource_referenced(const struct lp_scene *scene,
 
    /* check the render targets */
    for (unsigned j = 0; j < scene->fb.nr_cbufs; j++) {
-     if (scene->fb.cbufs[j] && scene->fb.cbufs[j]->texture == resource)
+     if (scene->fb.cbufs[j].texture == resource)
        return LP_REFERENCED_FOR_READ | LP_REFERENCED_FOR_WRITE;
    }
-   if (scene->fb.zsbuf && scene->fb.zsbuf->texture == resource) {
+   if (scene->fb.zsbuf.texture == resource) {
      return LP_REFERENCED_FOR_READ | LP_REFERENCED_FOR_WRITE;
    }
 
@@ -638,8 +634,8 @@ lp_scene_begin_binning(struct lp_scene *scene,
     */
    unsigned max_layer = ~0;
    for (unsigned i = 0; i < scene->fb.nr_cbufs; i++) {
-      struct pipe_surface *cbuf = scene->fb.cbufs[i];
-      if (cbuf) {
+      struct pipe_surface *cbuf = &scene->fb.cbufs[i];
+      if (cbuf->texture) {
          if (llvmpipe_resource_is_texture(cbuf->texture)) {
             max_layer = MIN2(max_layer,
                              cbuf->u.tex.last_layer - cbuf->u.tex.first_layer);
@@ -649,8 +645,8 @@ lp_scene_begin_binning(struct lp_scene *scene,
       }
    }
 
-   if (fb->zsbuf) {
-      struct pipe_surface *zsbuf = scene->fb.zsbuf;
+   if (fb->zsbuf.texture) {
+      struct pipe_surface *zsbuf = &scene->fb.zsbuf;
       max_layer = MIN2(max_layer, zsbuf->u.tex.last_layer - zsbuf->u.tex.first_layer);
    }
 

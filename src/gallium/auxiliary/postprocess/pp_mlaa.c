@@ -184,7 +184,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    /* Blit the input to the output */
    pp_blit(p->pipe, in, 0, 0,
-           w, h, 0, p->framebuffer.cbufs[0],
+           w, h, 0, &p->framebuffer.cbufs[0],
            0, 0, w, h);
 
    u_sampler_view_default_template(&v_tmp, in, in->format);
@@ -211,7 +211,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    pipe->sampler_view_release(pipe, arr[1]);
 
    p->blend.rt[0].blend_enable = 0;
-   p->framebuffer.zsbuf = NULL;
+   memset(&p->framebuffer.zsbuf, 0, sizeof(p->framebuffer.zsbuf));
 }
 
 /** The init function of the MLAA filter. */

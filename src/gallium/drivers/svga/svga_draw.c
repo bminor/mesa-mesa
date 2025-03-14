@@ -252,8 +252,8 @@ draw_vgpu9(struct svga_hwtnl *hwtnl)
    }
 
    SVGA_DBG(DEBUG_DMA, "draw to sid %p, %d prims\n",
-            svga->curr.framebuffer.cbufs[0] ?
-            svga_surface(svga->curr.framebuffer.cbufs[0])->handle : NULL,
+            svga->curr.framebuffer.cbufs[0].texture ?
+            svga_surface(svga->curr.fb_cbufs[0])->handle : NULL,
             hwtnl->cmd.prim_count);
 
    ret = SVGA3D_BeginDrawPrimitives(swc,

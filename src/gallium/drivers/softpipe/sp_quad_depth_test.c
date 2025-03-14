@@ -43,7 +43,6 @@
 
 
 struct depth_data {
-   struct pipe_surface *ps;
    enum pipe_format format;
    unsigned bzzzz[TGSI_QUAD_SIZE];  /**< Z values fetched from depth buffer */
    unsigned qzzzz[TGSI_QUAD_SIZE];  /**< Z values from the quad */
@@ -851,7 +850,7 @@ depth_test_quads_fallback(struct quad_stage *qs,
    const struct tgsi_shader_info *fsInfo = &qs->softpipe->fs_variant->info;
    bool interp_depth = !fsInfo->writes_z || qs->softpipe->early_depth;
    bool shader_stencil_ref = fsInfo->writes_stencil;
-   bool have_zs = !!qs->softpipe->framebuffer.zsbuf;
+   bool have_zs = !!qs->softpipe->framebuffer.zsbuf.texture;
    struct depth_data data;
    unsigned vp_idx = quads[0]->input.viewport_index;
 
@@ -862,8 +861,7 @@ depth_test_quads_fallback(struct quad_stage *qs,
                    qs->softpipe->depth_stencil->depth_bounds_test)) {
       float near_val, far_val;
 
-      data.ps = qs->softpipe->framebuffer.zsbuf;
-      data.format = data.ps->format;
+      data.format = qs->softpipe->framebuffer.zsbuf.format;
       data.tile = sp_get_cached_tile(qs->softpipe->zsbuf_cache, 
                                      quads[0]->input.x0, 
                                      quads[0]->input.y0, quads[0]->input.layer);
@@ -1006,7 +1004,7 @@ choose_depth_test(struct quad_stage *qs,
 
    bool depth_bounds = qs->softpipe->depth_stencil->depth_bounds_test;
 
-   if(!qs->softpipe->framebuffer.zsbuf)
+   if(!qs->softpipe->framebuffer.zsbuf.texture)
       depth = depthwrite = stencil = false;
 
    /* default */
@@ -1030,7 +1028,7 @@ choose_depth_test(struct quad_stage *qs,
             !stencil &&
             !depth_bounds)
    {
-      if (qs->softpipe->framebuffer.zsbuf->format == PIPE_FORMAT_Z16_UNORM) {
+      if (qs->softpipe->framebuffer.zsbuf.format == PIPE_FORMAT_Z16_UNORM) {
          switch (depthfunc) {
          case PIPE_FUNC_NEVER:
             qs->run = depth_test_quads_fallback;

@@ -342,7 +342,7 @@ etna_blit_clear_color_rs(struct pipe_context *pctx, unsigned idx,
                       const union pipe_color_union *color, bool use_ts)
 {
    struct etna_context *ctx = etna_context(pctx);
-   struct pipe_surface *dst = ctx->framebuffer_s.cbufs[idx];
+   struct pipe_surface *dst = ctx->fb_cbufs[idx];
    struct etna_surface *surf = etna_surface(dst);
    uint64_t new_clear_value = etna_clear_blit_pack_rgba(surf->base.format, color);
 
@@ -484,7 +484,7 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
    bool need_ts_flush = false;
    if (buffers & PIPE_CLEAR_COLOR) {
       for (int idx = 0; idx < ctx->framebuffer_s.nr_cbufs; ++idx) {
-         struct etna_surface *surf = etna_surface(ctx->framebuffer_s.cbufs[idx]);
+         struct etna_surface *surf = etna_surface(ctx->fb_cbufs[idx]);
 
          if (!surf)
             continue;
@@ -493,8 +493,8 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
             need_ts_flush = true;
       }
    }
-   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->framebuffer_s.zsbuf != NULL) {
-      struct etna_surface *surf = etna_surface(ctx->framebuffer_s.zsbuf);
+   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->fb_zsbuf != NULL) {
+      struct etna_surface *surf = etna_surface(ctx->fb_zsbuf);
 
       if (surf->level->ts_size)
          need_ts_flush = true;
@@ -510,7 +510,7 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
       const bool use_ts = etna_use_ts_for_mrt(ctx->screen, &ctx->framebuffer_s);
 
       for (int idx = 0; idx < ctx->framebuffer_s.nr_cbufs; ++idx) {
-         struct etna_surface *surf = etna_surface(ctx->framebuffer_s.cbufs[idx]);
+         struct etna_surface *surf = etna_surface(ctx->fb_cbufs[idx]);
 
          if (!surf)
             continue;
@@ -528,8 +528,8 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
       etna_set_state(ctx->stream, VIVS_GL_FLUSH_CACHE,
                      VIVS_GL_FLUSH_CACHE_COLOR | VIVS_GL_FLUSH_CACHE_DEPTH);
 
-   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->framebuffer_s.zsbuf != NULL)
-      etna_blit_clear_zs_rs(pctx, ctx->framebuffer_s.zsbuf, buffers, depth, stencil);
+   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->fb_zsbuf != NULL)
+      etna_blit_clear_zs_rs(pctx, ctx->fb_zsbuf, buffers, depth, stencil);
 
    etna_stall(ctx->stream, SYNC_RECIPIENT_RA, SYNC_RECIPIENT_PE);
 }

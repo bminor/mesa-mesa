@@ -64,12 +64,11 @@ util_framebuffer_state_equal(const struct pipe_framebuffer_state *dst,
    }
 
    for (i = 0; i < src->nr_cbufs; i++) {
-      if (dst->cbufs[i] != src->cbufs[i]) {
+      if (!pipe_surface_equal(&dst->cbufs[i], &src->cbufs[i]))
          return false;
-      }
    }
 
-   if (dst->zsbuf != src->zsbuf) {
+   if (!pipe_surface_equal(&dst->zsbuf, &src->zsbuf)) {
       return false;
    }
 
@@ -100,34 +99,25 @@ util_copy_framebuffer_state(struct pipe_framebuffer_state *dst,
       dst->samples = src->samples;
       dst->layers  = src->layers;
 
-      for (i = 0; i < src->nr_cbufs; i++)
-         pipe_surface_reference(&dst->cbufs[i], src->cbufs[i]);
+      for (i = 0; i < src->nr_cbufs; i++) {
+         pipe_resource_reference(&dst->cbufs[i].texture, src->cbufs[i].texture);
+         dst->cbufs[i] = src->cbufs[i];
+      }
 
       /* Set remaining dest cbuf pointers to NULL */
-      for ( ; i < ARRAY_SIZE(dst->cbufs); i++)
-         pipe_surface_reference(&dst->cbufs[i], NULL);
+      for ( ; i < ARRAY_SIZE(dst->cbufs); i++) {
+         pipe_resource_reference(&dst->cbufs[i].texture, NULL);
+         memset(&dst->cbufs[i], 0, sizeof(dst->cbufs[i]));
+      }
 
       dst->nr_cbufs = src->nr_cbufs;
 
       dst->viewmask = src->viewmask;
-      pipe_surface_reference(&dst->zsbuf, src->zsbuf);
+      pipe_resource_reference(&dst->zsbuf.texture, src->zsbuf.texture);
+      dst->zsbuf = src->zsbuf;
       pipe_resource_reference(&dst->resolve, src->resolve);
    } else {
-      dst->width = 0;
-      dst->height = 0;
-
-      dst->samples = 0;
-      dst->layers  = 0;
-
-      for (i = 0 ; i < ARRAY_SIZE(dst->cbufs); i++)
-         pipe_surface_reference(&dst->cbufs[i], NULL);
-
-      dst->nr_cbufs = 0;
-
-      dst->viewmask = 0;
-
-      pipe_surface_reference(&dst->zsbuf, NULL);
-      pipe_resource_reference(&dst->resolve, NULL);
+      util_unreference_framebuffer_state(dst);
    }
 }
 
@@ -137,18 +127,11 @@ util_unreference_framebuffer_state(struct pipe_framebuffer_state *fb)
 {
    unsigned i;
 
-   for (i = 0; i < fb->nr_cbufs; i++) {
-      pipe_surface_reference(&fb->cbufs[i], NULL);
-   }
-
-   pipe_surface_reference(&fb->zsbuf, NULL);
+   for (i = 0 ; i < ARRAY_SIZE(fb->cbufs); i++)
+      pipe_resource_reference(&fb->cbufs[i].texture, NULL);
+   pipe_resource_reference(&fb->zsbuf.texture, NULL);
    pipe_resource_reference(&fb->resolve, NULL);
-
-   fb->samples = fb->layers = 0;
-   fb->width = fb->height = 0;
-   fb->nr_cbufs = 0;
-
-   fb->viewmask = 0;
+   memset(fb, 0, sizeof(*fb));
 }
 
 
@@ -165,19 +148,19 @@ util_framebuffer_min_size(const struct pipe_framebuffer_state *fb,
    unsigned i;
 
    for (i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
       uint16_t width, height;
-      pipe_surface_size(fb->cbufs[i], &width, &height);
+      pipe_surface_size(&fb->cbufs[i], &width, &height);
 
       w = MIN2(w, width);
       h = MIN2(h, height);
    }
 
-   if (fb->zsbuf) {
+   if (fb->zsbuf.texture) {
       uint16_t width, height;
-      pipe_surface_size(fb->zsbuf, &width, &height);
+      pipe_surface_size(&fb->zsbuf, &width, &height);
       w = MIN2(w, width);
       h = MIN2(h, height);
    }
@@ -208,19 +191,19 @@ util_framebuffer_get_num_layers(const struct pipe_framebuffer_state *fb)
 	 * we obtain the number of layers directly from
 	 * the framebuffer state.
 	 */
-	if (!(fb->nr_cbufs || fb->zsbuf))
+	if (!(fb->nr_cbufs || fb->zsbuf.texture))
 		return fb->layers;
 
 	for (i = 0; i < fb->nr_cbufs; i++) {
-		if (fb->cbufs[i]) {
-			unsigned num = fb->cbufs[i]->u.tex.last_layer -
-				       fb->cbufs[i]->u.tex.first_layer + 1;
+		if (fb->cbufs[i].texture) {
+			unsigned num = fb->cbufs[i].u.tex.last_layer -
+				       fb->cbufs[i].u.tex.first_layer + 1;
 			num_layers = MAX2(num_layers, num);
 		}
 	}
-	if (fb->zsbuf) {
-		unsigned num = fb->zsbuf->u.tex.last_layer -
-			       fb->zsbuf->u.tex.first_layer + 1;
+	if (fb->zsbuf.texture) {
+		unsigned num = fb->zsbuf.u.tex.last_layer -
+			       fb->zsbuf.u.tex.first_layer + 1;
 		num_layers = MAX2(num_layers, num);
 	}
 	return num_layers;
@@ -246,7 +229,7 @@ util_framebuffer_get_num_samples(const struct pipe_framebuffer_state *fb)
     *       if samples is legitimately not getting set somewhere
     *       multi-sampling will evidently break.
     */
-   if (!(fb->nr_cbufs || fb->zsbuf))
+   if (!(fb->nr_cbufs || fb->zsbuf.texture))
       return MAX2(fb->samples, 1);
 
    /**
@@ -254,14 +237,14 @@ util_framebuffer_get_num_samples(const struct pipe_framebuffer_state *fb)
     * pipe_surface::nr_samples will always be 0.
     */
    for (i = 0; i < fb->nr_cbufs; i++) {
-      if (fb->cbufs[i]) {
-         return MAX3(1, fb->cbufs[i]->texture->nr_samples,
-                     fb->cbufs[i]->nr_samples);
+      if (fb->cbufs[i].texture) {
+         return MAX3(1, fb->cbufs[i].texture->nr_samples,
+                     fb->cbufs[i].nr_samples);
       }
    }
-   if (fb->zsbuf) {
-      return MAX3(1, fb->zsbuf->texture->nr_samples,
-                  fb->zsbuf->nr_samples);
+   if (fb->zsbuf.texture) {
+      return MAX3(1, fb->zsbuf.texture->nr_samples,
+                  fb->zsbuf.nr_samples);
    }
 
    return MAX2(fb->samples, 1);
@@ -295,4 +278,42 @@ util_sample_locations_flip_y(struct pipe_screen *screen, unsigned fb_height,
    }
 
    memcpy(locations, new_locations, grid_width * grid_height * samples);
+}
+
+void
+util_framebuffer_init(struct pipe_context *pctx, const struct pipe_framebuffer_state *fb, struct pipe_surface **cbufs, struct pipe_surface **zsbuf)
+{
+   if (fb) {
+      for (unsigned i = 0; i < fb->nr_cbufs; i++) {
+         if (cbufs[i] && pipe_surface_equal(&fb->cbufs[i], cbufs[i]))
+            continue;
+
+         struct pipe_surface *psurf = fb->cbufs[i].texture ? pctx->create_surface(pctx, fb->cbufs[i].texture, &fb->cbufs[i]) : NULL;
+         if (cbufs[i])
+            pipe_surface_unref(pctx, &cbufs[i]);
+         cbufs[i] = psurf;
+      }
+
+      for (unsigned i = fb->nr_cbufs; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (cbufs[i])
+            pipe_surface_unref(pctx, &cbufs[i]);
+         cbufs[i] = NULL;
+      }
+
+      if (*zsbuf && pipe_surface_equal(&fb->zsbuf, *zsbuf))
+         return;
+      struct pipe_surface *zsurf = fb->zsbuf.texture ? pctx->create_surface(pctx, fb->zsbuf.texture, &fb->zsbuf) : NULL;
+      if (*zsbuf)
+         pipe_surface_unref(pctx, zsbuf);
+      *zsbuf = zsurf;
+   } else {
+      for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (cbufs[i])
+            pipe_surface_unref(pctx, &cbufs[i]);
+         cbufs[i] = NULL;
+      }
+      if (*zsbuf)
+         pipe_surface_unref(pctx, zsbuf);
+      *zsbuf = NULL;
+   }
 }

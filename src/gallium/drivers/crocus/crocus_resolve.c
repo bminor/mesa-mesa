@@ -62,7 +62,7 @@ disable_rb_aux_buffer(struct crocus_context *ice,
       return false;
 
    for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct crocus_surface *surf = (void *) cso_fb->cbufs[i];
+      struct crocus_surface *surf = (void *) ice->state.fb_cbufs[i];
       if (!surf)
          continue;
 
@@ -227,7 +227,7 @@ crocus_predraw_resolve_framebuffer(struct crocus_context *ice,
    const nir_shader *nir = ish->nir;
 
    if (ice->state.dirty & CROCUS_DIRTY_DEPTH_BUFFER) {
-      struct pipe_surface *zs_surf = cso_fb->zsbuf;
+      struct pipe_surface *zs_surf = ice->state.fb_zsbuf;
 
       if (zs_surf) {
          struct crocus_resource *z_res, *s_res;
@@ -255,9 +255,9 @@ crocus_predraw_resolve_framebuffer(struct crocus_context *ice,
 
    if (nir->info.outputs_read != 0) {
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         if (cso_fb->cbufs[i]) {
-            struct crocus_surface *surf = (void *) cso_fb->cbufs[i];
-            struct crocus_resource *res = (void *) cso_fb->cbufs[i]->texture;
+         if (ice->state.fb_cbufs[i]) {
+            struct crocus_surface *surf = (void *) ice->state.fb_cbufs[i];
+            struct crocus_resource *res = (void *) ice->state.fb_cbufs[i]->texture;
 
             crocus_resource_prepare_texture(ice, res, surf->view.format,
                                             surf->view.base_level, 1,
@@ -269,7 +269,7 @@ crocus_predraw_resolve_framebuffer(struct crocus_context *ice,
 
    if (ice->state.stage_dirty & CROCUS_STAGE_DIRTY_BINDINGS_FS) {
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         struct crocus_surface *surf = (void *) cso_fb->cbufs[i];
+         struct crocus_surface *surf = (void *) ice->state.fb_cbufs[i];
          if (!surf)
             continue;
 
@@ -325,7 +325,7 @@ crocus_postdraw_update_resolve_tracking(struct crocus_context *ice,
       ice->state.dirty & (CROCUS_DIRTY_DEPTH_BUFFER |
                           CROCUS_DIRTY_GEN6_WM_DEPTH_STENCIL);
 
-   struct pipe_surface *zs_surf = cso_fb->zsbuf;
+   struct pipe_surface *zs_surf = ice->state.fb_zsbuf;
    if (zs_surf) {
       struct crocus_resource *z_res, *s_res;
       crocus_get_depth_stencil_resources(devinfo, zs_surf->texture, &z_res, &s_res);
@@ -363,7 +363,7 @@ crocus_postdraw_update_resolve_tracking(struct crocus_context *ice,
       ice->state.stage_dirty & CROCUS_STAGE_DIRTY_BINDINGS_FS;
 
    for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct crocus_surface *surf = (void *) cso_fb->cbufs[i];
+      struct crocus_surface *surf = (void *) ice->state.fb_cbufs[i];
       if (!surf)
          continue;
 

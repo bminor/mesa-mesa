@@ -27,6 +27,7 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_video_codec.h"
+#include "vl/vl_defines.h"
 #include <vector>
 #include "d3d12_video_types.h"
 
@@ -77,7 +78,7 @@ d3d12_video_buffer_get_sampler_view_components(struct pipe_video_buffer *buffer)
 /**
  * get an individual surfaces for each plane
  */
-struct pipe_surface **
+struct pipe_surface *
 d3d12_video_buffer_get_surfaces(struct pipe_video_buffer *buffer);
 
 /*
@@ -94,7 +95,7 @@ struct d3d12_video_buffer
    pipe_video_buffer                       base;
    struct d3d12_resource *                 texture = nullptr;
    uint                                    num_planes = 0;
-   std::vector<pipe_surface *>      surfaces;
+   struct pipe_surface              surfaces[VL_MAX_SURFACES];
    std::vector<pipe_sampler_view *> sampler_view_planes;
    std::vector<pipe_sampler_view *> sampler_view_components;
 

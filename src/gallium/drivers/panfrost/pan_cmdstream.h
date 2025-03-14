@@ -146,7 +146,7 @@ panfrost_overdraw_alpha(const struct panfrost_context *ctx, bool zero)
    for (unsigned i = 0; i < ctx->pipe_framebuffer.nr_cbufs; ++i) {
       const struct pan_blend_info info = so->info[i];
 
-      bool enabled = ctx->pipe_framebuffer.cbufs[i] && !info.enabled;
+      bool enabled = ctx->pipe_framebuffer.cbufs[i].texture && !info.enabled;
       bool flag = zero ? info.alpha_zero_nop : info.alpha_one_store;
 
       if (enabled && !flag)
@@ -234,7 +234,7 @@ panfrost_fs_required(struct panfrost_compiled_shader *fs,
 
    /* If colour is written we need to execute */
    for (unsigned i = 0; i < state->nr_cbufs; ++i) {
-      if (state->cbufs[i] && blend->info[i].enabled)
+      if (state->cbufs[i].texture && blend->info[i].enabled)
          return true;
    }
 

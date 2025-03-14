@@ -69,6 +69,17 @@ util_sample_locations_flip_y(struct pipe_screen *screen, unsigned fb_height,
                              unsigned samples, uint8_t *locations);
 
 
+void
+#ifndef _WIN32
+__attribute__((deprecated))
+#endif
+util_framebuffer_init(struct pipe_context *pctx, const struct pipe_framebuffer_state *fb, struct pipe_surface **cbufs, struct pipe_surface **zsbuf);
+
+/* if you see this in your driver stop using it */
+#define PIPE_FB_SURFACES \
+   struct pipe_surface *fb_cbufs[PIPE_MAX_COLOR_BUFS]; \
+   struct pipe_surface *fb_zsbuf
+
 #ifdef __cplusplus
 }
 #endif

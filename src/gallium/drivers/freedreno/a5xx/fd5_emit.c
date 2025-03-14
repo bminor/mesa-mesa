@@ -511,7 +511,7 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       unsigned char mrt_comp[A5XX_MAX_RENDER_TARGETS] = {0};
 
       for (unsigned i = 0; i < A5XX_MAX_RENDER_TARGETS; i++) {
-         mrt_comp[i] = ((i < pfb->nr_cbufs) && pfb->cbufs[i]) ? 0xf : 0;
+         mrt_comp[i] = ((i < pfb->nr_cbufs) && pfb->cbufs[i].texture) ? 0xf : 0;
       }
 
       OUT_PKT4(ring, REG_A5XX_RB_RENDER_COMPONENTS, 1);
@@ -529,7 +529,7 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       struct fd5_zsa_stateobj *zsa = fd5_zsa_stateobj(ctx->zsa);
       uint32_t rb_alpha_control = zsa->rb_alpha_control;
 
-      if (util_format_is_pure_integer(pipe_surface_format(pfb->cbufs[0])))
+      if (util_format_is_pure_integer(pipe_surface_format(&pfb->cbufs[0])))
          rb_alpha_control &= ~A5XX_RB_ALPHA_CONTROL_ALPHA_TEST;
 
       OUT_PKT4(ring, REG_A5XX_RB_ALPHA_CONTROL, 1);
@@ -543,8 +543,8 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       struct fd5_blend_stateobj *blend = fd5_blend_stateobj(ctx->blend);
       struct fd5_zsa_stateobj *zsa = fd5_zsa_stateobj(ctx->zsa);
 
-      if (pfb->zsbuf) {
-         struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+      if (pfb->zsbuf.texture) {
+         struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
          uint32_t gras_lrz_cntl = zsa->gras_lrz_cntl;
 
          if (emit->no_lrz_write || !rsc->lrz || !rsc->lrz_valid)
@@ -767,7 +767,7 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       uint32_t i;
 
       for (i = 0; i < A5XX_MAX_RENDER_TARGETS; i++) {
-         enum pipe_format format = pipe_surface_format(pfb->cbufs[i]);
+         enum pipe_format format = pipe_surface_format(&pfb->cbufs[i]);
          bool is_int = util_format_is_pure_integer(format);
          bool has_alpha = util_format_has_alpha(format);
          uint32_t control = blend->rb_mrt[i].control;

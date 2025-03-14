@@ -758,23 +758,23 @@ update_framebuffer(struct NineDevice9 *device, bool is_clear)
         if (rt && rt->desc.Format != D3DFMT_NULL && (mask & (1 << i)) &&
             rt->desc.Width == w && rt->desc.Height == h &&
             rt->base.info.nr_samples == nr_samples) {
-            fb->cbufs[i] = NineSurface9_GetSurface(rt, sRGB);
+            fb->cbufs[i] = *NineSurface9_GetSurface(rt, sRGB);
             context->rt_mask |= 1 << i;
             fb->nr_cbufs = i + 1;
         } else {
             /* Color outputs must match RT slot,
              * drivers will have to handle NULL entries for GL, too.
              */
-            fb->cbufs[i] = NULL;
+            memset(&fb->cbufs[i], 0, sizeof(fb->cbufs[0]));
         }
     }
 
     if (context->ds && context->ds->desc.Width >= w &&
         context->ds->desc.Height >= h &&
         context->ds->base.info.nr_samples == nr_samples) {
-        fb->zsbuf = NineSurface9_GetSurface(context->ds, 0);
+        fb->zsbuf = *NineSurface9_GetSurface(context->ds, 0);
     } else {
-        fb->zsbuf = NULL;
+        memset(&fb->zsbuf, 0, sizeof(fb->zsbuf));
     }
 
     fb->width = w;
@@ -2297,7 +2297,7 @@ CSMT_ITEM_NO_WAIT(nine_context_clear_fb,
 
     if (Flags & D3DCLEAR_TARGET) bufs |= PIPE_CLEAR_COLOR;
     /* Ignore Z buffer if not bound */
-    if (context->pipe_data.fb.zsbuf != NULL) {
+    if (context->pipe_data.fb.zsbuf.texture != NULL) {
         if (Flags & D3DCLEAR_ZBUFFER) bufs |= PIPE_CLEAR_DEPTH;
         if (Flags & D3DCLEAR_STENCIL) bufs |= PIPE_CLEAR_STENCIL;
     }

@@ -461,6 +461,130 @@ static bool r600_decompress_subresource(struct pipe_context *ctx,
 	return true;
 }
 
+/* FAST COLOR CLEAR */
+
+static void evergreen_set_clear_color(struct r600_texture *rtex,
+				      enum pipe_format surface_format,
+				      const union pipe_color_union *color)
+{
+	union util_color uc;
+
+	memset(&uc, 0, sizeof(uc));
+
+	if (rtex->surface.bpe == 16) {
+		/* DCC fast clear only:
+		 *   CLEAR_WORD0 = R = G = B
+		 *   CLEAR_WORD1 = A
+		 */
+		assert(color->ui[0] == color->ui[1] &&
+		       color->ui[0] == color->ui[2]);
+		uc.ui[0] = color->ui[0];
+		uc.ui[1] = color->ui[3];
+	} else {
+		util_pack_color_union(surface_format, &uc, color);
+	}
+
+	memcpy(rtex->color_clear_value, &uc, 2 * sizeof(uint32_t));
+}
+
+static void
+evergreen_do_fast_color_clear(struct r600_context *rctx,
+				struct pipe_framebuffer_state *fb,
+				struct r600_atom *fb_state,
+				unsigned *buffers, uint8_t *dirty_cbufs,
+				const union pipe_color_union *color)
+{
+	int i;
+
+	/* This function is broken in BE, so just disable this path for now */
+#if UTIL_ARCH_BIG_ENDIAN
+	return;
+#endif
+
+	if (rctx->b.render_cond)
+		return;
+
+	for (i = 0; i < fb->nr_cbufs; i++) {
+		struct r600_texture *tex;
+		unsigned clear_bit = PIPE_CLEAR_COLOR0 << i;
+
+		if (!fb->cbufs[i].texture)
+			continue;
+
+		/* if this colorbuffer is not being cleared */
+		if (!(*buffers & clear_bit))
+			continue;
+
+		tex = (struct r600_texture *)rctx->framebuffer.fb_cbufs[i]->texture;
+
+		/* the clear is allowed if all layers are bound */
+		if (fb->cbufs[i].u.tex.first_layer != 0 ||
+		    fb->cbufs[i].u.tex.last_layer != util_max_layer(&tex->resource.b.b, 0)) {
+			continue;
+		}
+
+		/* cannot clear mipmapped textures */
+		if (fb->cbufs[i].texture->last_level != 0) {
+			continue;
+		}
+
+		/* only supported on tiled surfaces */
+		if (tex->surface.is_linear) {
+			continue;
+		}
+
+		/* shared textures can't use fast clear without an explicit flush,
+		 * because there is no way to communicate the clear color among
+		 * all clients
+		 */
+		if (tex->resource.b.is_shared &&
+		    !(tex->resource.external_usage & PIPE_HANDLE_USAGE_EXPLICIT_FLUSH))
+			continue;
+
+		/* Use a slow clear for small surfaces where the cost of
+		 * the eliminate pass can be higher than the benefit of fast
+		 * clear. AMDGPU-pro does this, but the numbers may differ.
+		 *
+		 * This helps on both dGPUs and APUs, even small ones.
+		 */
+		if (tex->resource.b.b.nr_samples <= 1 &&
+		    tex->resource.b.b.width0 * tex->resource.b.b.height0 <= 300 * 300)
+			continue;
+
+		{
+			/* 128-bit formats are unusupported */
+			if (tex->surface.bpe > 8) {
+				continue;
+			}
+
+			/* ensure CMASK is enabled */
+			r600_texture_alloc_cmask_separate(rctx->b.screen, tex);
+			if (tex->cmask.size == 0) {
+				continue;
+			}
+
+			/* Do the fast clear. */
+			rctx->b.clear_buffer(&rctx->b.b, &tex->cmask_buffer->b.b,
+					   tex->cmask.offset, tex->cmask.size, 0,
+					   R600_COHERENCY_CB_META);
+
+			bool need_compressed_update = !tex->dirty_level_mask;
+
+			tex->dirty_level_mask |= 1 << fb->cbufs[i].u.tex.level;
+
+			if (need_compressed_update)
+				p_atomic_inc(&rctx->b.screen->compressed_colortex_counter);
+		}
+
+		evergreen_set_clear_color(tex, fb->cbufs[i].format, color);
+
+		if (dirty_cbufs)
+			*dirty_cbufs |= 1 << i;
+		rctx->b.set_atom_dirty(&rctx->b, fb_state, true);
+		*buffers &= ~clear_bit;
+	}
+}
+
 static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 		       const struct pipe_scissor_state *scissor_state,
 		       const union pipe_color_union *color,
@@ -470,7 +594,7 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 	struct pipe_framebuffer_state *fb = &rctx->framebuffer.state;
 
 	if (buffers & PIPE_CLEAR_COLOR && rctx->b.gfx_level >= EVERGREEN) {
-		evergreen_do_fast_color_clear(&rctx->b, fb, &rctx->framebuffer.atom,
+		evergreen_do_fast_color_clear(rctx, fb, &rctx->framebuffer.atom,
 					      &buffers, NULL, color);
 		if (!buffers)
 			return; /* all buffers have been fast cleared */
@@ -487,29 +611,29 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 			if (!(buffers & (PIPE_CLEAR_COLOR0 << i)))
 				continue;
 
-			if (!fb->cbufs[i])
+			if (!fb->cbufs[i].texture)
 				continue;
 
-			tex = (struct r600_texture *)fb->cbufs[i]->texture;
+			tex = (struct r600_texture *)fb->cbufs[i].texture;
 			if (tex->fmask.size == 0)
-				tex->dirty_level_mask &= ~(1 << fb->cbufs[i]->u.tex.level);
+				tex->dirty_level_mask &= ~(1 << fb->cbufs[i].u.tex.level);
 		}
 	}
 
 	/* if hyperz enabled just clear hyperz */
-	if (fb->zsbuf && (buffers & PIPE_CLEAR_DEPTH)) {
+	if (fb->zsbuf.texture && (buffers & PIPE_CLEAR_DEPTH)) {
 		struct r600_texture *rtex;
-		unsigned level = fb->zsbuf->u.tex.level;
+		unsigned level = fb->zsbuf.u.tex.level;
 
-		rtex = (struct r600_texture*)fb->zsbuf->texture;
+		rtex = (struct r600_texture*)fb->zsbuf.texture;
 
 		/* We can't use hyperz fast clear if each slice of a texture
 		 * array are clear to different value. To simplify code just
 		 * disable fast clear for texture array.
 		 */
 		if (r600_htile_enabled(rtex, level) &&
-                   fb->zsbuf->u.tex.first_layer == 0 &&
-                   fb->zsbuf->u.tex.last_layer == util_max_layer(&rtex->resource.b.b, level)) {
+                   fb->zsbuf.u.tex.first_layer == 0 &&
+                   fb->zsbuf.u.tex.last_layer == util_max_layer(&rtex->resource.b.b, level)) {
 			if (rtex->depth_clear_value != depth) {
 				rtex->depth_clear_value = depth;
 				r600_mark_atom_dirty(rctx, &rctx->db_state.atom);

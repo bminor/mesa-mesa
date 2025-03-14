@@ -104,7 +104,7 @@ try_pbo_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
    struct pipe_context *pipe = st->pipe;
    struct pipe_screen *screen = st->screen;
    struct cso_context *cso = st->cso_context;
-   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(st->ctx, rb);
+   struct pipe_surface *surface = &rb->surface;
    struct pipe_resource *texture = rb->texture;
    const struct util_format_description *desc;
    struct st_pbo_addresses addr;
@@ -308,10 +308,9 @@ blit_to_staging(struct st_context *st, struct gl_renderbuffer *rb,
    if (!dst)
       return NULL;
 
-   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(st->ctx, rb);
    memset(&blit, 0, sizeof(blit));
    blit.src.resource = rb->texture;
-   blit.src.level = surface->u.tex.level;
+   blit.src.level = rb->surface.u.tex.level;
    blit.src.format = src_format;
    blit.dst.resource = dst;
    blit.dst.level = 0;
@@ -320,7 +319,7 @@ blit_to_staging(struct st_context *st, struct gl_renderbuffer *rb,
    blit.dst.box.x = 0;
    blit.src.box.y = y;
    blit.dst.box.y = 0;
-   blit.src.box.z = surface->u.tex.first_layer;
+   blit.src.box.z = rb->surface.u.tex.first_layer;
    blit.dst.box.z = 0;
    blit.src.box.width = blit.dst.box.width = width;
    blit.src.box.height = blit.dst.box.height = height;
@@ -349,7 +348,7 @@ try_cached_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
 {
    struct pipe_resource *src = rb->texture;
    struct pipe_resource *dst = NULL;
-   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(st->ctx, rb);
+   const struct pipe_surface *surface = &rb->surface;
 
    if (ST_DEBUG & DEBUG_NOREADPIXCACHE)
       return NULL;

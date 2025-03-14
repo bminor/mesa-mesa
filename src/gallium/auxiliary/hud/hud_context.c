@@ -485,7 +485,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    struct cso_context *cso = hud->cso;
    struct pipe_context *pipe = hud->pipe;
    struct pipe_framebuffer_state fb;
-   struct pipe_surface surf_templ, *surf;
+   struct pipe_surface surf_templ;
    struct pipe_viewport_state viewport;
    const struct pipe_sampler_state *sampler_states[] =
          { &hud->font_sampler_state };
@@ -545,12 +545,10 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
       if (srgb_format != PIPE_FORMAT_NONE)
          surf_templ.format = srgb_format;
    }
-   surf = pipe->create_surface(pipe, tex, &surf_templ);
 
    memset(&fb, 0, sizeof(fb));
    fb.nr_cbufs = 1;
-   fb.cbufs[0] = surf;
-   fb.zsbuf = NULL;
+   fb.cbufs[0] = surf_templ;
    fb.width = hud->fb_width;
    fb.height = hud->fb_height;
    fb.resolve = NULL;
@@ -664,8 +662,6 @@ done:
                                ST_INVALIDATE_VS_CONSTBUF0 |
                                ST_INVALIDATE_VERTEX_BUFFERS);
    }
-
-   pipe_surface_reference(&surf, NULL);
 }
 
 static void

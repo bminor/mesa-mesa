@@ -443,7 +443,7 @@ vl_bicubic_filter_render(struct vl_bicubic_filter *filter,
    fb_state.width = pipe_surface_width(dst);
    fb_state.height = pipe_surface_height(dst);
    fb_state.nr_cbufs = 1;
-   fb_state.cbufs[0] = dst;
+   fb_state.cbufs[0] = *dst;
 
    filter->pipe->set_scissor_states(filter->pipe, 0, 1, &scissor);
    filter->pipe->clear_render_target(filter->pipe, dst, &clear_color,

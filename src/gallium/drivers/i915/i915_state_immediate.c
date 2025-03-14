@@ -153,13 +153,13 @@ upload_S6(struct i915_context *i915)
 
    /* I915_NEW_FRAMEBUFFER
     */
-   if (i915->framebuffer.cbufs[0])
+   if (i915->framebuffer.cbufs[0].texture)
       LIS6 |= S6_COLOR_WRITE_ENABLE;
 
    /* I915_NEW_BLEND
     */
    if (i915->blend) {
-      struct i915_surface *cbuf = i915_surface(i915->framebuffer.cbufs[0]);
+      struct i915_surface *cbuf = i915_surface(i915->fb_cbufs[0]);
       if (cbuf && cbuf->alpha_in_g)
          LIS6 |= i915->blend->LIS6_alpha_in_g;
       else if (cbuf && cbuf->alpha_is_x)

@@ -1788,7 +1788,7 @@ try_pbo_upload_common(struct gl_context *ctx,
       fb.width = width;
       fb.height = height;
       fb.nr_cbufs = 1;
-      fb.cbufs[0] = surface;
+      fb.cbufs[0] = *surface;
 
       cso_set_framebuffer(cso, &fb);
    }
@@ -1840,9 +1840,7 @@ try_pbo_upload(struct gl_context *ctx, GLuint dims,
    struct gl_texture_image *stImage = texImage;
    struct gl_texture_object *stObj = texImage->TexObject;
    struct pipe_resource *texture = stImage->pt;
-   struct pipe_context *pipe = st->pipe;
    struct pipe_screen *screen = st->screen;
-   struct pipe_surface *surface = NULL;
    struct st_pbo_addresses addr;
    enum pipe_format src_format;
    const struct util_format_description *desc;
@@ -1915,28 +1913,22 @@ try_pbo_upload(struct gl_context *ctx, GLuint dims,
       return false;
 
    /* Set up the surface */
-   {
-      unsigned level = stObj->pt != stImage->pt
-         ? 0 : texImage->TexObject->Attrib.MinLevel + texImage->Level;
-      unsigned max_layer = util_max_layer(texture, level);
+   unsigned level = stObj->pt != stImage->pt
+      ? 0 : texImage->TexObject->Attrib.MinLevel + texImage->Level;
+   unsigned max_layer = util_max_layer(texture, level);
 
-      zoffset += texImage->Face + texImage->TexObject->Attrib.MinLayer;
+   zoffset += texImage->Face + texImage->TexObject->Attrib.MinLayer;
 
-      struct pipe_surface templ;
-      memset(&templ, 0, sizeof(templ));
-      templ.format = dst_format;
-      templ.u.tex.level = level;
-      templ.u.tex.first_layer = MIN2(zoffset, max_layer);
-      templ.u.tex.last_layer = MIN2(zoffset + depth - 1, max_layer);
+   struct pipe_surface templ;
+   memset(&templ, 0, sizeof(templ));
+   templ.format = dst_format;
+   templ.u.tex.level = level;
+   templ.u.tex.first_layer = MIN2(zoffset, max_layer);
+   templ.u.tex.last_layer = MIN2(zoffset + depth - 1, max_layer);
+   templ.context = st->pipe;
+   templ.texture = texture;
 
-      surface = pipe->create_surface(pipe, texture, &templ);
-      if (!surface)
-         return false;
-   }
-
-   success = try_pbo_upload_common(ctx, surface, &addr, src_format);
-
-   pipe_surface_reference(&surface, NULL);
+   success = try_pbo_upload_common(ctx, &templ, &addr, src_format);
 
    return success;
 }
@@ -2431,28 +2423,16 @@ st_try_pbo_compressed_texsubimage(struct gl_context *ctx,
                                   struct pipe_resource *buf,
                                   intptr_t buf_offset,
                                   const struct st_pbo_addresses *addr_tmpl,
-                                  struct pipe_resource *texture,
-                                  const struct pipe_surface *surface_templ)
+                                  struct pipe_surface *surface_templ)
 {
    struct st_context *st = st_context(ctx);
-   struct pipe_context *pipe = st->pipe;
    struct st_pbo_addresses addr;
-   struct pipe_surface *surface = NULL;
-   bool success;
 
    addr = *addr_tmpl;
    if (!st_pbo_addresses_setup(st, buf, buf_offset, &addr))
       return false;
 
-   surface = pipe->create_surface(pipe, texture, surface_templ);
-   if (!surface)
-      return false;
-
-   success = try_pbo_upload_common(ctx, surface, &addr, surface_templ->format);
-
-   pipe_surface_reference(&surface, NULL);
-
-   return success;
+   return try_pbo_upload_common(ctx, surface_templ, &addr, surface_templ->format);
 }
 
 void
@@ -2558,12 +2538,14 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
 
    memset(&templ, 0, sizeof(templ));
    templ.format = copy_format;
+   templ.texture = texture;
+   templ.context = st->pipe;
    templ.u.tex.level = level;
    templ.u.tex.first_layer = MIN2(layer, max_layer);
    templ.u.tex.last_layer = MIN2(layer + d - 1, max_layer);
 
    if (st_try_pbo_compressed_texsubimage(ctx, buf, buf_offset, &addr,
-                                         texture, &templ))
+                                         &templ))
       return;
 
    /* Some drivers can re-interpret surfaces but only one layer at a time.
@@ -2573,7 +2555,7 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
       templ.u.tex.first_layer = MIN2(layer, max_layer);
       templ.u.tex.last_layer = templ.u.tex.first_layer;
       if (!st_try_pbo_compressed_texsubimage(ctx, buf, buf_offset, &addr,
-                                             texture, &templ))
+                                             &templ))
          goto fallback;
 
       /* By incrementing layer here, we ensure the fallback only uploads
@@ -2825,11 +2807,10 @@ fallback_copy_texsubimage(struct gl_context *ctx,
       srcY = rb->Height - srcY - height;
    }
 
-   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
    map = pipe_texture_map(pipe,
                            rb->texture,
-                           surface->u.tex.level,
-                           surface->u.tex.first_layer,
+                           rb->surface.u.tex.level,
+                           rb->surface.u.tex.first_layer,
                            PIPE_MAP_READ,
                            srcX, srcY,
                            width, height, &src_trans);
@@ -3012,7 +2993,7 @@ st_CopyTexSubImage(struct gl_context *ctx, GLuint dims,
           !_mesa_is_format_astc_2d(texImage->TexFormat) &&
           texImage->TexFormat != MESA_FORMAT_ETC1_RGB8);
 
-   if (!rb || !_mesa_renderbuffer_get_surface(ctx, rb) || !stImage->pt) {
+   if (!rb || !rb->texture || !stImage->pt) {
       debug_printf("%s: null rb or stImage\n", __func__);
       return;
    }
@@ -3060,14 +3041,13 @@ st_CopyTexSubImage(struct gl_context *ctx, GLuint dims,
    /* Blit the texture.
     * This supports flipping, format conversions, and downsampling.
     */
-   struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
    memset(&blit, 0, sizeof(blit));
    blit.src.resource = rb->texture;
-   blit.src.format = util_format_linear(surface->format);
-   blit.src.level = surface->u.tex.level;
+   blit.src.format = rb->format_linear;
+   blit.src.level = rb->surface.u.tex.level;
    blit.src.box.x = srcX;
    blit.src.box.y = srcY0;
-   blit.src.box.z = surface->u.tex.first_layer;
+   blit.src.box.z = rb->surface.u.tex.first_layer;
    blit.src.box.width = width;
    blit.src.box.height = srcY1 - srcY0;
    blit.src.box.depth = 1;

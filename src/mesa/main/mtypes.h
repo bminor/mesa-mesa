@@ -2551,8 +2551,9 @@ struct gl_renderbuffer
                              GLuint width, GLuint height);
 
    struct pipe_resource *texture;
-   struct pipe_surface *surface_linear;
-   struct pipe_surface *surface_srgb;
+   enum pipe_format format_linear;
+   enum pipe_format format_srgb;
+   struct pipe_surface surface;
    GLboolean defined;        /**< defined contents? */
 
    struct pipe_transfer *transfer; /**< only used when mapping the resource */

@@ -335,8 +335,8 @@ panfrost_build_fs_key(struct panfrost_context *ctx,
       u_foreach_bit(i, (nir->info.outputs_read >> FRAG_RESULT_DATA0)) {
          enum pipe_format fmt = PIPE_FORMAT_R8G8B8A8_UNORM;
 
-         if ((fb->nr_cbufs > i) && fb->cbufs[i])
-            fmt = fb->cbufs[i]->format;
+         if ((fb->nr_cbufs > i) && fb->cbufs[i].texture)
+            fmt = fb->cbufs[i].format;
 
          if (pan_blendable_formats_v6[fmt].internal)
             fmt = PIPE_FORMAT_NONE;

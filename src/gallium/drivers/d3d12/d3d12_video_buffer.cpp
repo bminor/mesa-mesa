@@ -34,6 +34,7 @@
 #include "util/u_video.h"
 #include "vl/vl_video_buffer.h"
 #include "util/u_sampler.h"
+#include "util/u_surface.h"
 #include "frontend/winsys_handle.h"
 #include "d3d12_format.h"
 #include "d3d12_screen.h"
@@ -234,12 +235,6 @@ d3d12_video_buffer_destroy(struct pipe_video_buffer *buffer)
       pD3D12VideoBuffer->base.associated_data = nullptr;
    }
 
-   for (uint i = 0; i < pD3D12VideoBuffer->surfaces.size(); ++i) {
-      if (pD3D12VideoBuffer->surfaces[i] != NULL) {
-         pipe_surface_reference(&pD3D12VideoBuffer->surfaces[i], NULL);
-      }
-   }
-
    for (uint i = 0; i < pD3D12VideoBuffer->sampler_view_planes.size(); ++i) {
       if (pD3D12VideoBuffer->sampler_view_planes[i] != NULL) {
          pipe_sampler_view_reference(&pD3D12VideoBuffer->sampler_view_planes[i], NULL);
@@ -265,13 +260,12 @@ d3d12_video_buffer_destroy_associated_data(void *associated_data)
 /**
  * get an individual surfaces for each plane
  */
-struct pipe_surface **
+struct pipe_surface *
 d3d12_video_buffer_get_surfaces(struct pipe_video_buffer *buffer)
 {
    assert(buffer);
    struct d3d12_video_buffer *pD3D12VideoBuffer = (struct d3d12_video_buffer *) buffer;
    struct pipe_context *      pipe              = pD3D12VideoBuffer->base.context;
-   struct pipe_surface        surface_template  = {};
 
    // DPB buffers don't support views
    if ((pD3D12VideoBuffer->base.bind & PIPE_BIND_VIDEO_DECODE_DPB) ||
@@ -281,11 +275,6 @@ d3d12_video_buffer_get_surfaces(struct pipe_video_buffer *buffer)
    if (!pipe->create_surface)
       return nullptr;
 
-   // Some video frameworks iterate over [0..VL_MAX_SURFACES) and ignore the nullptr entries
-   // So we have to null initialize the other surfaces not used from [num_planes..VL_MAX_SURFACES)
-   // Like in src/gallium/frontends/va/surface.c
-   pD3D12VideoBuffer->surfaces.resize(VL_MAX_SURFACES, nullptr);
-
    // pCurPlaneResource refers to the planar resource, not the overall resource.
    // in d3d12_resource this is handled by having a linked list of planes with
    // d3dRes->base.next ptr to next plane resource
@@ -293,28 +282,24 @@ d3d12_video_buffer_get_surfaces(struct pipe_video_buffer *buffer)
    struct pipe_resource *pCurPlaneResource = &pD3D12VideoBuffer->texture->base.b;
 
    for (uint PlaneSlice = 0; PlaneSlice < pD3D12VideoBuffer->num_planes; ++PlaneSlice) {
-      if (!pD3D12VideoBuffer->surfaces[PlaneSlice]) {
-         memset(&surface_template, 0, sizeof(surface_template));
-         surface_template.format =
-            util_format_get_plane_format(pD3D12VideoBuffer->texture->overall_format, PlaneSlice);
+      struct pipe_surface surface_template = {};
+      surface_template.format = util_format_get_plane_format(pD3D12VideoBuffer->texture->overall_format, PlaneSlice);
+      surface_template.texture = pCurPlaneResource;
 
-         pD3D12VideoBuffer->surfaces[PlaneSlice] =
-            pipe->create_surface(pipe, pCurPlaneResource, &surface_template);
+      if (!pipe->screen->is_format_supported(pipe->screen, surface_template.format, PIPE_TEXTURE_2D,
+                                             0, 0, PIPE_BIND_RENDER_TARGET))
+         goto error;
 
-         if (!pD3D12VideoBuffer->surfaces[PlaneSlice]) {
-            goto error;
-         }
-      }
+      pD3D12VideoBuffer->surfaces[PlaneSlice] = surface_template;
       pCurPlaneResource = pCurPlaneResource->next;
    }
 
-   return pD3D12VideoBuffer->surfaces.data();
+   for (uint i = pD3D12VideoBuffer->num_planes; i < VL_MAX_SURFACES; i++)
+      memset(&pD3D12VideoBuffer->surfaces[i], 0, sizeof(struct pipe_surface));
+
+   return pD3D12VideoBuffer->surfaces;
 
 error:
-   for (uint PlaneSlice = 0; PlaneSlice < pD3D12VideoBuffer->num_planes; ++PlaneSlice) {
-      pipe_surface_reference(&pD3D12VideoBuffer->surfaces[PlaneSlice], NULL);
-   }
-
    return nullptr;
 }
 

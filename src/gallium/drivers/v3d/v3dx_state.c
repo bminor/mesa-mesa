@@ -519,13 +519,14 @@ v3d_set_framebuffer_state(struct pipe_context *pctx,
 
         v3d->job = NULL;
 
+        util_framebuffer_init(pctx, framebuffer, v3d->fb_cbufs, &v3d->fb_zsbuf);
         util_copy_framebuffer_state(cso, framebuffer);
 
         v3d->swap_color_rb = 0;
         v3d->blend_dst_alpha_one = 0;
         for (int i = 0; i < v3d->framebuffer.nr_cbufs; i++) {
-                struct pipe_surface *cbuf = v3d->framebuffer.cbufs[i];
-                if (!cbuf)
+                const struct pipe_surface *cbuf = &v3d->framebuffer.cbufs[i];
+                if (!cbuf->texture)
                         continue;
 
                 const struct util_format_description *desc =

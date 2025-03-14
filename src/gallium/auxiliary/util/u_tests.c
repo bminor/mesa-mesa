@@ -70,19 +70,18 @@ static void
 util_set_framebuffer_cb0(struct cso_context *cso, struct pipe_context *ctx,
 			 struct pipe_resource *tex)
 {
-   struct pipe_surface templ = {{0}}, *surf;
+   struct pipe_surface templ = {{0}};
    struct pipe_framebuffer_state fb = {0};
 
    templ.format = tex->format;
-   surf = ctx->create_surface(ctx, tex, &templ);
+   templ.texture = tex;
 
    fb.width = tex->width0;
    fb.height = tex->height0;
-   fb.cbufs[0] = surf;
+   fb.cbufs[0] = templ;
    fb.nr_cbufs = 1;
 
    cso_set_framebuffer(cso, &fb);
-   pipe_surface_reference(&surf, NULL);
 }
 
 static void

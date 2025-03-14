@@ -743,7 +743,7 @@ iris_clear(struct pipe_context *ctx,
    }
 
    if (buffers & PIPE_CLEAR_DEPTHSTENCIL) {
-      struct pipe_surface *psurf = cso_fb->zsbuf;
+      struct pipe_surface *psurf = &cso_fb->zsbuf;
 
       box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1;
       box.z = psurf->u.tex.first_layer,
@@ -756,7 +756,7 @@ iris_clear(struct pipe_context *ctx,
    if (buffers & PIPE_CLEAR_COLOR) {
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
          if (buffers & (PIPE_CLEAR_COLOR0 << i)) {
-            struct pipe_surface *psurf = cso_fb->cbufs[i];
+            struct pipe_surface *psurf = ice->state.fb_cbufs[i];
             struct iris_surface *isurf = (void *) psurf;
             box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1,
             box.z = psurf->u.tex.first_layer,

@@ -643,7 +643,7 @@ crocus_clear(struct pipe_context *ctx,
                             util_framebuffer_get_num_layers(cso_fb),
                             buffers & PIPE_CLEAR_DEPTHSTENCIL, p_color, depth, stencil, false);
       } else {
-         struct pipe_surface *psurf = cso_fb->zsbuf;
+         const struct pipe_surface *psurf = &cso_fb->zsbuf;
          box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1;
          box.z = psurf->u.tex.first_layer;
 
@@ -661,7 +661,7 @@ crocus_clear(struct pipe_context *ctx,
 
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
          if (buffers & (PIPE_CLEAR_COLOR0 << i)) {
-            struct pipe_surface *psurf = cso_fb->cbufs[i];
+            struct pipe_surface *psurf = ice->state.fb_cbufs[i];
             struct crocus_surface *isurf = (void *) psurf;
             box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1,
             box.z = psurf->u.tex.first_layer,

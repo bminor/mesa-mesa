@@ -723,6 +723,7 @@ struct si_images {
 
 struct si_framebuffer {
    struct pipe_framebuffer_state state;
+   PIPE_FB_SURFACES; //STOP USING THIS
    unsigned colorbuf_enabled_4bit;
    unsigned spi_shader_col_format;
    unsigned spi_shader_col_format_alpha;

@@ -19,7 +19,7 @@
 struct fd_ringbuffer;
 
 void fd4_emit_gmem_restore_tex(struct fd_ringbuffer *ring, unsigned nr_bufs,
-                               struct pipe_surface **bufs);
+                               struct pipe_surface *bufs);
 
 /* grouped together emit-state for prog/vertex/state emit: */
 struct fd4_emit {
@@ -48,7 +48,7 @@ struct fd4_emit {
 static inline enum a4xx_color_fmt
 fd4_emit_format(struct pipe_surface *surf)
 {
-   if (!surf)
+   if (!surf->texture)
       return 0;
    return fd4_pipe2color(surf->format);
 }

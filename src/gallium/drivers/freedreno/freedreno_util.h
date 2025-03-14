@@ -307,7 +307,7 @@ fd_half_precision(struct pipe_framebuffer_state *pfb)
    unsigned i;
 
    for (i = 0; i < pfb->nr_cbufs; i++)
-      if (!fd_surface_half_precision(pfb->cbufs[i]))
+      if (!fd_surface_half_precision(&pfb->cbufs[i]))
          return false;
 
    return true;

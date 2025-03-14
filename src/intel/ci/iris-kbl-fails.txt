@@ -4,15 +4,6 @@ glx@glx-multi-window-single-context,Fail
 
 glx@glx-swap-pixmap-bad,Fail
 
-# failed to create drawable
-# X Error of failed request:  BadValue (integer parameter out of range for operation)
-#   Major opcode of failed request:  53 (X_CreatePixmap)
-#   Value in failed request:  0x1e
-#   Serial number of failed request:  1177
-#   Current serial number in output stream:  1181
-glx@glx-visuals-depth -pixmap,Fail
-glx@glx-visuals-stencil -pixmap,Fail
-
 spec@!opengl 1.0@rasterpos,Fail
 
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail
@@ -104,3 +95,14 @@ spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage,Fail
 
+# failed to create drawable
+# X Error of failed request:  BadValue (integer parameter out of range for operation)
+#   Major opcode of failed request:  53 (X_CreatePixmap)
+#   Value in failed request:  0x1e
+#   Serial number of failed request:  1177
+#   Current serial number in output stream:  1181
+#glx@glx-visuals-depth -pixmap,Fail
+#glx@glx-visuals-stencil -pixmap,Fail
+# undebuggable corner case from !34054
+glx@glx-visuals-depth -pixmap,Crash
+glx@glx-visuals-stencil -pixmap,Crash

@@ -78,8 +78,8 @@ translate_depth_format(enum pipe_format zformat)
 static void
 update_framebuffer(struct i915_context *i915)
 {
-   struct pipe_surface *cbuf_surface = i915->framebuffer.cbufs[0];
-   struct pipe_surface *depth_surface = i915->framebuffer.zsbuf;
+   struct pipe_surface *cbuf_surface = i915->fb_cbufs[0];
+   struct pipe_surface *depth_surface = i915->fb_zsbuf;
    unsigned x, y;
    unsigned y1;
    int layer;
@@ -154,8 +154,8 @@ struct i915_tracked_state i915_hw_framebuffer = {
 static void
 update_dst_buf_vars(struct i915_context *i915)
 {
-   struct pipe_surface *cbuf_surface = i915->framebuffer.cbufs[0];
-   struct pipe_surface *depth_surface = i915->framebuffer.zsbuf;
+   struct pipe_surface *cbuf_surface = i915->fb_cbufs[0];
+   struct pipe_surface *depth_surface = i915->fb_zsbuf;
    uint32_t dst_buf_vars, cformat, zformat;
    uint32_t early_z = 0;
 

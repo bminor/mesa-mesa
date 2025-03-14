@@ -193,13 +193,12 @@ void
 st_set_ws_renderbuffer_surface(struct gl_renderbuffer *rb,
                                struct pipe_surface *surf)
 {
-   pipe_surface_reference(&rb->surface_srgb, NULL);
-   pipe_surface_reference(&rb->surface_linear, NULL);
+   rb->surface = *surf;
 
    if (util_format_is_srgb(surf->format))
-      pipe_surface_reference(&rb->surface_srgb, surf);
+      rb->format_srgb = surf->format;
    else
-      pipe_surface_reference(&rb->surface_linear, surf);
+      rb->format_linear = surf->format;
 
    pipe_resource_reference(&rb->texture, surf->texture);
    rb->Width = pipe_surface_width(surf);
@@ -247,7 +246,7 @@ st_framebuffer_validate(struct gl_framebuffer *stfb,
 
    for (i = 0; i < stfb->num_statts; i++) {
       struct gl_renderbuffer *rb;
-      struct pipe_surface *ps, surf_tmpl;
+      struct pipe_surface surf_tmpl;
       gl_buffer_index idx;
 
       if (!textures[i])
@@ -269,16 +268,12 @@ st_framebuffer_validate(struct gl_framebuffer *stfb,
       }
 
       u_surface_default_template(&surf_tmpl, textures[i]);
-      ps = st->pipe->create_surface(st->pipe, textures[i], &surf_tmpl);
-      if (ps) {
-         st_set_ws_renderbuffer_surface(rb, ps);
-         pipe_surface_reference(&ps, NULL);
+      st_set_ws_renderbuffer_surface(rb, &surf_tmpl);
 
-         changed = true;
+      changed = true;
 
-         width = rb->Width;
-         height = rb->Height;
-      }
+      width = rb->Width;
+      height = rb->Height;
 
       pipe_resource_reference(&textures[i], NULL);
    }

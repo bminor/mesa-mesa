@@ -76,6 +76,7 @@ svga_cleanup_framebuffer(struct svga_context *svga)
    struct pipe_framebuffer_state *curr = &svga->curr.framebuffer;
    struct pipe_framebuffer_state *hw = &svga->state.hw_clear.framebuffer;
 
+   util_framebuffer_init(&svga->pipe, NULL, svga->curr.fb_cbufs, &svga->curr.fb_zsbuf);
    util_unreference_framebuffer_state(curr);
    util_unreference_framebuffer_state(hw);
 }
@@ -109,14 +110,14 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
     */
    {
       uint16_t width = 0, height = 0;
-      if (fb->zsbuf) {
-         pipe_surface_size(fb->zsbuf, &width, &height);
+      if (fb->zsbuf.texture) {
+         pipe_surface_size(&fb->zsbuf, &width, &height);
       }
       for (i = 0; i < fb->nr_cbufs; ++i) {
-         if (fb->cbufs[i]) {
+         if (fb->cbufs[i].texture) {
             if (width && height) {
                uint16_t cwidth, cheight;
-               pipe_surface_size(fb->cbufs[i], &cwidth, &cheight);
+               pipe_surface_size(&fb->cbufs[i], &cwidth, &cheight);
                if (cwidth != width ||
                    cheight != height) {
                   debug_warning("Mixed-size color and depth/stencil surfaces "
@@ -124,16 +125,17 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
                }
             }
             else {
-               pipe_surface_size(fb->cbufs[i], &width, &height);
+               pipe_surface_size(&fb->cbufs[i], &width, &height);
             }
          }
       }
    }
 
+   util_framebuffer_init(pipe, fb, svga->curr.fb_cbufs, &svga->curr.fb_zsbuf);
    util_copy_framebuffer_state(dst, fb);
 
-   if (svga->curr.framebuffer.zsbuf) {
-      switch (svga->curr.framebuffer.zsbuf->format) {
+   if (svga->curr.framebuffer.zsbuf.texture) {
+      switch (svga->curr.framebuffer.zsbuf.texture->format) {
       case PIPE_FORMAT_Z16_UNORM:
          svga->curr.depthscale = 1.0f / DEPTH_BIAS_SCALE_FACTOR_D16;
          break;

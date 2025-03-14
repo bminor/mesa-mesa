@@ -1462,17 +1462,18 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 			 R600_CONTEXT_FLUSH_AND_INV_DB_META |
 			 R600_CONTEXT_INV_TEX_CACHE;
 
+	util_framebuffer_init(ctx, state, rctx->framebuffer.fb_cbufs, &rctx->framebuffer.fb_zsbuf);
 	util_copy_framebuffer_state(&rctx->framebuffer.state, state);
 
 	/* Colorbuffers. */
 	rctx->framebuffer.export_16bpc = state->nr_cbufs != 0;
-	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0] &&
-					   util_format_is_pure_integer(state->cbufs[0]->format);
+	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
+					   util_format_is_pure_integer(state->cbufs[0].format);
 	rctx->framebuffer.compressed_cb_mask = 0;
 	rctx->framebuffer.nr_samples = util_framebuffer_get_num_samples(state);
 
 	for (i = 0; i < state->nr_cbufs; i++) {
-		surf = (struct r600_surface*)state->cbufs[i];
+		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
 		if (!surf)
 			continue;
 
@@ -1480,7 +1481,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 
 		rtex = (struct r600_texture*)surf->base.texture;
 
-		r600_context_add_resource_size(ctx, state->cbufs[i]->texture);
+		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
 		if (!surf->color_initialized) {
 			evergreen_init_color_surface(rctx, surf);
@@ -1501,7 +1502,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 		bool alphatest_bypass = false;
 		bool export_16bpc = true;
 
-		surf = (struct r600_surface*)state->cbufs[0];
+		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[0];
 		if (surf) {
 			alphatest_bypass = surf->alphatest_bypass;
 			export_16bpc = surf->export_16bpc;
@@ -1518,17 +1519,17 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 	}
 
 	/* ZS buffer. */
-	if (state->zsbuf) {
-		surf = (struct r600_surface*)state->zsbuf;
+	if (state->zsbuf.texture) {
+		surf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 
-		r600_context_add_resource_size(ctx, state->zsbuf->texture);
+		r600_context_add_resource_size(ctx, state->zsbuf.texture);
 
 		if (!surf->depth_initialized) {
 			evergreen_init_depth_surface(rctx, surf);
 		}
 
-		if (state->zsbuf->format != rctx->poly_offset_state.zs_format) {
-			rctx->poly_offset_state.zs_format = state->zsbuf->format;
+		if (state->zsbuf.format != rctx->poly_offset_state.zs_format) {
+			rctx->poly_offset_state.zs_format = state->zsbuf.format;
 			r600_mark_atom_dirty(rctx, &rctx->poly_offset_state.atom);
 		}
 
@@ -1580,7 +1581,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 	rctx->framebuffer.atom.num_dw += (12 - state->nr_cbufs) * 3;
 
 	/* ZS buffer. */
-	if (state->zsbuf) {
+	if (state->zsbuf.texture) {
 		rctx->framebuffer.atom.num_dw += 24;
 		rctx->framebuffer.atom.num_dw += 2;
 	} else {
@@ -1853,7 +1854,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 	for (i = 0; i < nr_cbufs; i++) {
 		unsigned reloc, cmask_reloc;
 
-		cb = (struct r600_surface*)state->cbufs[i];
+		cb = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
 		if (!cb) {
 			radeon_set_context_reg(cs, R_028C70_CB_COLOR0_INFO + i * 0x3C,
 					       S_028C70_FORMAT(V_028C70_COLOR_INVALID));
@@ -1904,7 +1905,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 		radeon_emit(cs, reloc);
 	}
 	/* set CB_COLOR1_INFO for possible dual-src blending */
-	if (rctx->framebuffer.dual_src_blend && i == 1 && state->cbufs[0]) {
+	if (rctx->framebuffer.dual_src_blend && i == 1 && state->cbufs[0].texture) {
 		radeon_set_context_reg(cs, R_028C70_CB_COLOR0_INFO + 1 * 0x3C,
 				       cb->cb_color_info | tex->cb_color_info);
 		i++;
@@ -1917,11 +1918,11 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 		radeon_set_context_reg(cs, R_028E50_CB_COLOR8_INFO + (i - 8) * 0x1C, 0);
 
 	/* ZS buffer. */
-	if (state->zsbuf) {
-		struct r600_surface *zb = (struct r600_surface*)state->zsbuf;
+	if (state->zsbuf.texture) {
+		struct r600_surface *zb = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 		unsigned reloc = radeon_add_to_buffer_list(&rctx->b,
 						       &rctx->b.gfx,
-						       (struct r600_resource*)state->zsbuf->texture,
+						       (struct r600_resource*)state->zsbuf.texture,
 						       RADEON_USAGE_READWRITE |
 						       (zb->base.texture->nr_samples > 1 ?
 							       RADEON_PRIO_DEPTH_BUFFER_MSAA :

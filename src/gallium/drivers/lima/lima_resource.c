@@ -861,12 +861,17 @@ lima_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
    struct lima_context *ctx = lima_context(pctx);
    struct pipe_blit_info info = *blit_info;
 
+   /* For a discussion about flushes here see
+    * https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/34054#note_2867478
+    */
+   lima_flush(ctx);
+
    if (lima_do_blit(pctx, blit_info)) {
-       return;
+      goto done;
    }
 
    if (util_try_blit_via_copy_region(pctx, &info, false)) {
-      return; /* done */
+      goto done;
    }
 
    if (info.mask & PIPE_MASK_S) {
@@ -884,6 +889,9 @@ lima_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
    lima_util_blitter_save_states(ctx);
 
    util_blitter_blit(ctx->blitter, &info, NULL);
+
+done:
+   lima_flush(ctx);
 }
 
 static void

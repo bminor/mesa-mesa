@@ -396,8 +396,8 @@ v3d_get_job_for_fbo(struct v3d_context *v3d)
                 return v3d->job;
 
         uint32_t nr_cbufs = v3d->framebuffer.nr_cbufs;
-        struct pipe_surface **cbufs = v3d->framebuffer.cbufs;
-        struct pipe_surface *zsbuf = v3d->framebuffer.zsbuf;
+        struct pipe_surface **cbufs = v3d->fb_cbufs;
+        struct pipe_surface *zsbuf = v3d->fb_zsbuf;
         struct v3d_job *job = v3d_get_job(v3d, nr_cbufs, cbufs, zsbuf, NULL);
 
         if (v3d->framebuffer.samples >= 1) {
@@ -753,4 +753,3 @@ v3d_job_init(struct v3d_context *v3d)
                                                   _mesa_hash_pointer,
                                                   _mesa_key_pointer_equal);
 }
-

@@ -2137,8 +2137,8 @@ crocus_update_compiled_clip(struct crocus_context *ice)
 
             if (offset_back || offset_front) {
                double mrd = 0.0;
-               if (ice->state.framebuffer.zsbuf)
-                  mrd = util_get_depth_format_mrd(util_format_description(ice->state.framebuffer.zsbuf->format));
+               if (ice->state.framebuffer.zsbuf.texture)
+                  mrd = util_get_depth_format_mrd(util_format_description(ice->state.framebuffer.zsbuf.format));
                key.offset_units = rs_state->offset_units * mrd * 2;
                key.offset_factor = rs_state->offset_scale * mrd;
                key.offset_clamp = rs_state->offset_clamp * mrd;

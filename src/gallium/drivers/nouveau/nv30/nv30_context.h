@@ -3,6 +3,7 @@
 
 #include "util/format/u_formats.h"
 #include "util/u_blitter.h"
+#include "util/u_framebuffer.h"
 
 #include "nv30/nv30_screen.h"
 #include "nv30/nv30_state.h"
@@ -98,6 +99,7 @@ struct nv30_context {
       unsigned dirty_samplers;
    } fragprog;
 
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct pipe_framebuffer_state framebuffer;
    struct pipe_blend_color blend_colour;
    struct pipe_stencil_ref stencil_ref;

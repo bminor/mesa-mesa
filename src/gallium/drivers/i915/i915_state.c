@@ -867,9 +867,10 @@ i915_set_framebuffer_state(struct pipe_context *pipe,
 {
    struct i915_context *i915 = i915_context(pipe);
 
+   util_framebuffer_init(pipe, fb, i915->fb_cbufs, &i915->fb_zsbuf);
    util_copy_framebuffer_state(&i915->framebuffer, fb);
    if (fb->nr_cbufs) {
-      struct i915_surface *surf = i915_surface(i915->framebuffer.cbufs[0]);
+      struct i915_surface *surf = i915_surface(i915->fb_cbufs[0]);
       if (i915->current.fixup_swizzle != surf->oc_swizzle) {
          i915->current.fixup_swizzle = surf->oc_swizzle;
          memcpy(i915->current.color_swizzle, surf->color_swizzle,
@@ -877,8 +878,8 @@ i915_set_framebuffer_state(struct pipe_context *pipe,
          i915->dirty |= I915_NEW_COLOR_SWIZZLE;
       }
    }
-   if (fb->zsbuf)
-      draw_set_zs_format(i915->draw, fb->zsbuf->format);
+   if (fb->zsbuf.texture)
+      draw_set_zs_format(i915->draw, fb->zsbuf.format);
 
    i915->dirty |= I915_NEW_FRAMEBUFFER;
 }

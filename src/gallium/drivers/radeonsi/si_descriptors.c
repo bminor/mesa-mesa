@@ -889,8 +889,8 @@ void si_update_ps_colorbuf0_slot(struct si_context *sctx)
 
    /* Get the color buffer if FBFETCH should be enabled. */
    if (sctx->shader.ps.cso && sctx->shader.ps.cso->info.base.fs.uses_fbfetch_output &&
-       sctx->framebuffer.state.nr_cbufs && sctx->framebuffer.state.cbufs[0]) {
-      surf = sctx->framebuffer.state.cbufs[0];
+       sctx->framebuffer.state.nr_cbufs && sctx->framebuffer.state.cbufs[0].texture) {
+      surf = &sctx->framebuffer.state.cbufs[0];
       if (surf) {
          tex = (struct si_texture *)surf->texture;
          assert(tex && !tex->is_depth);
@@ -3011,9 +3011,8 @@ bool si_gfx_resources_check_encrypted(struct si_context *sctx)
 
    struct si_state_blend *blend = sctx->queued.named.blend;
    for (int i = 0; i < sctx->framebuffer.state.nr_cbufs && !use_encrypted_bo; i++) {
-      struct pipe_surface *surf = sctx->framebuffer.state.cbufs[i];
-      if (surf && surf->texture) {
-         struct si_texture *tex = (struct si_texture *)surf->texture;
+      struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i].texture;
+      if (tex) {
          if (!(tex->buffer.flags & RADEON_FLAG_ENCRYPTED))
             continue;
 
@@ -3025,30 +3024,26 @@ bool si_gfx_resources_check_encrypted(struct si_context *sctx)
       }
    }
 
-   if (sctx->framebuffer.state.zsbuf) {
-      struct si_texture* zs = (struct si_texture *)sctx->framebuffer.state.zsbuf->texture;
-      if (zs &&
-          (zs->buffer.flags & RADEON_FLAG_ENCRYPTED)) {
-         /* TODO: This isn't needed if depth.func is PIPE_FUNC_NEVER or PIPE_FUNC_ALWAYS */
-         use_encrypted_bo = true;
-      }
+   struct si_texture* zs = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
+   if (zs &&
+         (zs->buffer.flags & RADEON_FLAG_ENCRYPTED)) {
+      /* TODO: This isn't needed if depth.func is PIPE_FUNC_NEVER or PIPE_FUNC_ALWAYS */
+      use_encrypted_bo = true;
    }
 
 #ifndef NDEBUG
    if (use_encrypted_bo) {
       /* Verify that color buffers are encrypted */
       for (int i = 0; i < sctx->framebuffer.state.nr_cbufs; i++) {
-         struct pipe_surface *surf = sctx->framebuffer.state.cbufs[i];
-         if (!surf)
+         struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i].texture;
+         if (!tex)
             continue;
-         struct si_texture *tex = (struct si_texture *)surf->texture;
-         assert(!surf->texture || (tex->buffer.flags & RADEON_FLAG_ENCRYPTED));
+         assert(tex->buffer.flags & RADEON_FLAG_ENCRYPTED);
       }
       /* Verify that depth/stencil buffer is encrypted */
-      if (sctx->framebuffer.state.zsbuf) {
-         struct pipe_surface *surf = sctx->framebuffer.state.zsbuf;
-         struct si_texture *tex = (struct si_texture *)surf->texture;
-         assert(!surf->texture || (tex->buffer.flags & RADEON_FLAG_ENCRYPTED));
+      if (sctx->framebuffer.state.zsbuf.texture) {
+         struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
+         assert(tex->buffer.flags & RADEON_FLAG_ENCRYPTED);
       }
    }
 #endif

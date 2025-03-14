@@ -4430,8 +4430,8 @@ make_variant_key(struct llvmpipe_context *lp,
 
    memset(key, 0, sizeof(*key));
 
-   if (lp->framebuffer.zsbuf) {
-      const enum pipe_format zsbuf_format = lp->framebuffer.zsbuf->format;
+   if (lp->framebuffer.zsbuf.texture) {
+      const enum pipe_format zsbuf_format = lp->framebuffer.zsbuf.format;
       const struct util_format_description *zsbuf_desc =
          util_format_description(zsbuf_format);
 
@@ -4448,11 +4448,11 @@ make_variant_key(struct llvmpipe_context *lp,
          memcpy(&key->stencil, &lp->depth_stencil->stencil,
                 sizeof key->stencil);
       }
-      if (llvmpipe_resource_is_1d(lp->framebuffer.zsbuf->texture)) {
+      if (llvmpipe_resource_is_1d(lp->framebuffer.zsbuf.texture)) {
          key->resource_1d = true;
       }
       key->zsbuf_nr_samples =
-         util_res_sample_count(lp->framebuffer.zsbuf->texture);
+         util_res_sample_count(lp->framebuffer.zsbuf.texture);
 
       /*
        * Restrict depth values if the API is clamped (GL, VK with ext)
@@ -4472,8 +4472,8 @@ make_variant_key(struct llvmpipe_context *lp,
     * (or does not exist)
     */
    if (!lp->framebuffer.nr_cbufs ||
-       !lp->framebuffer.cbufs[0] ||
-       !util_format_is_pure_integer(lp->framebuffer.cbufs[0]->format)) {
+       !lp->framebuffer.cbufs[0].texture ||
+       !util_format_is_pure_integer(lp->framebuffer.cbufs[0].format)) {
       key->alpha.enabled = lp->depth_stencil->alpha_enabled;
    }
    if (key->alpha.enabled) {
@@ -4536,19 +4536,19 @@ make_variant_key(struct llvmpipe_context *lp,
    for (unsigned i = 0; i < lp->framebuffer.nr_cbufs; i++) {
       struct pipe_rt_blend_state *blend_rt = &key->blend.rt[i];
 
-      if (lp->framebuffer.cbufs[i]) {
-         const enum pipe_format format = lp->framebuffer.cbufs[i]->format;
+      if (lp->framebuffer.cbufs[i].texture) {
+         const enum pipe_format format = lp->framebuffer.cbufs[i].format;
 
          key->cbuf_format[i] = format;
          key->cbuf_nr_samples[i] =
-            util_res_sample_count(lp->framebuffer.cbufs[i]->texture);
+            util_res_sample_count(lp->framebuffer.cbufs[i].texture);
 
          /*
           * Figure out if this is a 1d resource. Note that OpenGL allows crazy
           * mixing of 2d textures with height 1 and 1d textures, so make sure
           * we pick 1d if any cbuf or zsbuf is 1d.
           */
-         if (llvmpipe_resource_is_1d(lp->framebuffer.cbufs[i]->texture)) {
+         if (llvmpipe_resource_is_1d(lp->framebuffer.cbufs[i].texture)) {
             key->resource_1d = true;
          }
 

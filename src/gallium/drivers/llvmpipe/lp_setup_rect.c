@@ -104,7 +104,7 @@ lp_setup_whole_tile(struct lp_setup_context *setup,
        * accurate query results we unfortunately need to execute the rendering
        * commands.
        */
-      if (!scene->fb.zsbuf && scene->fb_max_layer == 0 &&
+      if (!scene->fb.zsbuf.texture && scene->fb_max_layer == 0 &&
           !scene->had_queries) {
          /*
           * All previous rendering will be overwritten so reset the bin.

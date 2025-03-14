@@ -225,7 +225,7 @@ fd5_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
    struct pipe_framebuffer_state *pfb = &ctx->batch->framebuffer;
 
    if ((buffers & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) &&
-       is_z32(pfb->zsbuf->format))
+       is_z32(pfb->zsbuf.format))
       return false;
 
    fd5_emit_render_cntl(ctx, true, false);
@@ -234,13 +234,13 @@ fd5_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
       for (int i = 0; i < pfb->nr_cbufs; i++) {
          union util_color uc = {0};
 
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
 
          if (!(buffers & (PIPE_CLEAR_COLOR0 << i)))
             continue;
 
-         enum pipe_format pfmt = pfb->cbufs[i]->format;
+         enum pipe_format pfmt = pfb->cbufs[i].format;
 
          // XXX I think RB_CLEAR_COLOR_DWn wants to take into account SWAP??
          union pipe_color_union swapped;
@@ -290,8 +290,8 @@ fd5_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
       }
    }
 
-   if (pfb->zsbuf && (buffers & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL))) {
-      uint32_t clear = util_pack_z_stencil(pfb->zsbuf->format, depth, stencil);
+   if (pfb->zsbuf.texture && (buffers & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL))) {
+      uint32_t clear = util_pack_z_stencil(pfb->zsbuf.format, depth, stencil);
       uint32_t mask = 0;
 
       if (buffers & FD_BUFFER_DEPTH)
@@ -312,8 +312,8 @@ fd5_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
 
       fd5_emit_blit(ctx->batch, ring);
 
-      if (pfb->zsbuf && (buffers & FD_BUFFER_DEPTH)) {
-         struct fd_resource *zsbuf = fd_resource(pfb->zsbuf->texture);
+      if (pfb->zsbuf.texture && (buffers & FD_BUFFER_DEPTH)) {
+         struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
          if (zsbuf->lrz) {
             zsbuf->lrz_valid = true;
             fd5_clear_lrz(ctx->batch, zsbuf, depth);

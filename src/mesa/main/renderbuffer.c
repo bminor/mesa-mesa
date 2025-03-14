@@ -69,13 +69,6 @@ choose_renderbuffer_format(struct gl_context *ctx,
 static void
 delete_renderbuffer(struct gl_context *ctx, struct gl_renderbuffer *rb)
 {
-   if (ctx) {
-      pipe_surface_unref(ctx->pipe, &rb->surface_srgb);
-      pipe_surface_unref(ctx->pipe, &rb->surface_linear);
-   } else {
-      pipe_surface_unref_no_context(&rb->surface_srgb);
-      pipe_surface_unref_no_context(&rb->surface_linear);
-   }
    pipe_resource_reference(&rb->texture, NULL);
    free(rb->data);
    free(rb->Label);
@@ -148,10 +141,8 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
                                            width, height);
    }
 
-   /* Free the old surface and texture
+   /* Free the old texture
     */
-   pipe_surface_reference(&rb->surface_srgb, NULL);
-   pipe_surface_reference(&rb->surface_linear, NULL);
    pipe_resource_reference(&rb->texture, NULL);
 
    /* If an sRGB framebuffer is unsupported, sRGB formats behave like linear
@@ -288,7 +279,7 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
       return false;
 
    _mesa_update_renderbuffer_surface(ctx, rb);
-   return _mesa_renderbuffer_get_surface(ctx, rb) != NULL;
+   return GL_TRUE;
 }
 
 /**
@@ -490,11 +481,10 @@ _mesa_map_renderbuffer(struct gl_context *ctx,
       y2 = y;
 
    _mesa_update_renderbuffer_surface(ctx, rb);
-   const struct pipe_surface *surface = _mesa_renderbuffer_get_surface(ctx, rb);
    map = pipe_texture_map(pipe,
                            rb->texture,
-                           surface->u.tex.level,
-                           surface->u.tex.first_layer,
+                           rb->surface.u.tex.level,
+                           rb->surface.u.tex.first_layer,
                            transfer_flags, x, y2, w, h, &rb->transfer);
    if (map) {
       if (invert) {
@@ -527,46 +517,6 @@ _mesa_unmap_renderbuffer(struct gl_context *ctx,
    rb->transfer = NULL;
 }
 
-void
-_mesa_regen_renderbuffer_surface(struct gl_context *ctx,
-                                 struct gl_renderbuffer *rb)
-{
-   struct pipe_context *pipe = ctx->pipe;
-   struct pipe_resource *resource = rb->texture;
-
-   struct pipe_surface **psurf =
-      rb->surface_srgb ? &rb->surface_srgb : &rb->surface_linear;
-   struct pipe_surface *surf = *psurf;
-   /* create a new pipe_surface */
-   struct pipe_surface surf_tmpl;
-   memset(&surf_tmpl, 0, sizeof(surf_tmpl));
-   surf_tmpl.format = surf->format;
-   surf_tmpl.nr_samples = rb->rtt_nr_samples;
-   surf_tmpl.u.tex.level = surf->u.tex.level;
-   surf_tmpl.u.tex.first_layer = surf->u.tex.first_layer;
-   surf_tmpl.u.tex.last_layer = surf->u.tex.last_layer;
-
-   /* create -> destroy to avoid blowing up cached surfaces */
-   surf = pipe->create_surface(pipe, resource, &surf_tmpl);
-   pipe_surface_unref(pipe, psurf);
-}
-
-static void
-update_renderbuffer_surface(struct gl_context *ctx, struct gl_renderbuffer *rb, struct pipe_surface *surf, bool enable_srgb)
-{
-   if (enable_srgb)
-      rb->surface_srgb = surf;
-   else
-      rb->surface_linear = surf;
-}
-
-struct pipe_surface *
-_mesa_renderbuffer_get_surface(struct gl_context *ctx, struct gl_renderbuffer *rb)
-{
-   bool enable_srgb = ctx->Color.sRGBEnabled && _mesa_is_format_srgb(rb->Format);
-   return enable_srgb ? rb->surface_srgb : rb->surface_linear;
-}
-
 enum pipe_format
 _mesa_renderbuffer_get_format(struct gl_context *ctx, struct gl_renderbuffer *rb)
 {
@@ -577,6 +527,7 @@ _mesa_renderbuffer_get_format(struct gl_context *ctx, struct gl_renderbuffer *rb
     * to determine if the rb is sRGB-capable.
     */
    bool enable_srgb = ctx->Color.sRGBEnabled && _mesa_is_format_srgb(rb->Format);
+   assert(rb->texture);
    enum pipe_format format = rb->texture->format;
 
    if (rb->is_rtt) {
@@ -585,7 +536,15 @@ _mesa_renderbuffer_get_format(struct gl_context *ctx, struct gl_renderbuffer *rb
          format = stTexObj->surface_format;
    }
 
-   return enable_srgb ? util_format_srgb(format) : util_format_linear(format);
+   if (util_format_is_depth_or_stencil(format)) {
+      rb->format_srgb = format;
+      rb->format_linear = format;
+   } else {
+      rb->format_srgb = util_format_srgb(format);
+      rb->format_linear = util_format_linear(format);
+   }
+
+   return enable_srgb ? rb->format_srgb : rb->format_linear;
 }
 
 /**
@@ -596,7 +555,6 @@ void
 _mesa_update_renderbuffer_surface(struct gl_context *ctx,
                                   struct gl_renderbuffer *rb)
 {
-   struct pipe_context *pipe = ctx->pipe;
    struct pipe_resource *resource = rb->texture;
    const struct gl_texture_object *stTexObj = NULL;
    unsigned rtt_width = rb->Width;
@@ -604,8 +562,6 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
    unsigned rtt_depth = rb->Depth;
 
 
-   bool enable_srgb = ctx->Color.sRGBEnabled &&
-      _mesa_is_format_srgb(rb->Format);
    enum pipe_format format = _mesa_renderbuffer_get_format(ctx, rb);
 
    if (rb->is_rtt) {
@@ -679,29 +635,10 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
       }
    }
 
-   struct pipe_surface *surf = _mesa_renderbuffer_get_surface(ctx, rb);
-
-   if (!surf ||
-       surf->texture->nr_samples != rb->NumSamples ||
-       surf->texture->nr_storage_samples != rb->NumStorageSamples ||
-       surf->format != format ||
-       surf->texture != resource ||
-       surf->nr_samples != nr_samples ||
-       surf->u.tex.level != level ||
-       surf->u.tex.first_layer != first_layer ||
-       surf->u.tex.last_layer != last_layer) {
-      /* create a new pipe_surface */
-      struct pipe_surface surf_tmpl;
-      memset(&surf_tmpl, 0, sizeof(surf_tmpl));
-      surf_tmpl.format = format;
-      surf_tmpl.nr_samples = nr_samples;
-      surf_tmpl.u.tex.level = level;
-      surf_tmpl.u.tex.first_layer = first_layer;
-      surf_tmpl.u.tex.last_layer = last_layer;
-
-      /* create -> destroy to avoid blowing up cached surfaces */
-      struct pipe_surface *psurf = pipe->create_surface(pipe, resource, &surf_tmpl);
-      pipe_surface_unref(pipe, &surf);
-      update_renderbuffer_surface(ctx, rb, psurf, enable_srgb);
-   }
+   rb->surface.format = format;
+   rb->surface.texture = rb->texture;
+   rb->surface.nr_samples = nr_samples;
+   rb->surface.u.tex.level = level;
+   rb->surface.u.tex.first_layer = first_layer;
+   rb->surface.u.tex.last_layer = last_layer;
 }

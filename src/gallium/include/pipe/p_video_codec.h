@@ -246,7 +246,7 @@ struct pipe_video_buffer
    /**
     * get an individual surfaces for each plane
     */
-   struct pipe_surface **(*get_surfaces)(struct pipe_video_buffer *buffer);
+   struct pipe_surface *(*get_surfaces)(struct pipe_video_buffer *buffer);
 
    /*
     * auxiliary associated data

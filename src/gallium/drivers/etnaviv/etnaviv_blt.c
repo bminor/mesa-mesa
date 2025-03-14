@@ -225,7 +225,7 @@ etna_blit_clear_color_blt(struct pipe_context *pctx, unsigned idx,
                       const union pipe_color_union *color)
 {
    struct etna_context *ctx = etna_context(pctx);
-   struct pipe_surface *dst = ctx->framebuffer_s.cbufs[idx];
+   struct pipe_surface *dst = ctx->fb_cbufs[idx];
    struct etna_surface *surf = etna_surface(dst);
    uint64_t new_clear_value = etna_clear_blit_pack_rgba(surf->base.format, color);
    int msaa_xscale = 1, msaa_yscale = 1;
@@ -385,7 +385,7 @@ etna_clear_blt(struct pipe_context *pctx, unsigned buffers, const struct pipe_sc
 
    if (buffers & PIPE_CLEAR_COLOR) {
       for (int idx = 0; idx < ctx->framebuffer_s.nr_cbufs; ++idx) {
-         struct etna_surface *surf = etna_surface(ctx->framebuffer_s.cbufs[idx]);
+         struct etna_surface *surf = etna_surface(ctx->fb_cbufs[idx]);
 
          if (!surf)
             continue;
@@ -397,8 +397,8 @@ etna_clear_blt(struct pipe_context *pctx, unsigned buffers, const struct pipe_sc
       }
    }
 
-   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->framebuffer_s.zsbuf != NULL)
-      etna_blit_clear_zs_blt(pctx, ctx->framebuffer_s.zsbuf, buffers, depth, stencil);
+   if ((buffers & PIPE_CLEAR_DEPTHSTENCIL) && ctx->framebuffer_s.zsbuf.texture != NULL)
+      etna_blit_clear_zs_blt(pctx, ctx->fb_zsbuf, buffers, depth, stencil);
 
    etna_stall(ctx->stream, SYNC_RECIPIENT_RA, SYNC_RECIPIENT_BLT);
 

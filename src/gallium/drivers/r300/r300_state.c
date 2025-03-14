@@ -566,7 +566,7 @@ static void r300_set_blend_color(struct pipe_context* pipe,
 
     state->state = *color; /* Save it, so that we can reuse it in set_fb_state */
     c = *color;
-    cb = fb->nr_cbufs ? r300_get_nonnull_cb(fb, 0) : NULL;
+    cb = fb->nr_cbufs ? r300_get_nonnull_cb(r300, fb, 0) : NULL;
 
     /* The blend color is dependent on the colorbuffer format. */
     if (cb) {
@@ -816,7 +816,7 @@ static void r300_set_stencil_ref(struct pipe_context* pipe,
     r300_mark_atom_dirty(r300, &r300->dsa_state);
 }
 
-static void r300_print_fb_surf_info(struct pipe_surface *surf, unsigned index,
+static void r300_print_fb_surf_info(const struct pipe_surface *surf, unsigned index,
                                     const char *binding)
 {
     struct pipe_resource *tex = surf->texture;
@@ -870,7 +870,7 @@ void r300_mark_fb_state_dirty(struct r300_context *r300,
 
     if (r300->cbzb_clear)
         r300->fb_state.size += 10;
-    else if (state->zsbuf) {
+    else if (state->zsbuf.texture) {
         r300->fb_state.size += 10;
         if (r300->hyperz_enabled)
             r300->fb_state.size += 8;
@@ -911,22 +911,22 @@ r300_set_framebuffer_state(struct pipe_context* pipe,
         return;
     }
 
-    if (current_state->zsbuf && r300->zmask_in_use && !r300->locked_zbuffer) {
+    if (current_state->zsbuf.texture && r300->zmask_in_use && !r300->locked_zbuffer) {
         /* There is a zmask in use, what are we gonna do? */
-        if (state->zsbuf) {
-            if (!pipe_surface_equal(current_state->zsbuf, state->zsbuf)) {
+        if (state->zsbuf.texture) {
+            if (!pipe_surface_equal(&current_state->zsbuf, &state->zsbuf)) {
                 /* Decompress the currently bound zbuffer before we bind another one. */
                 r300_decompress_zmask(r300);
                 r300->hiz_in_use = false;
             }
         } else {
             /* We don't bind another zbuffer, so lock the current one. */
-            pipe_surface_reference(&r300->locked_zbuffer, current_state->zsbuf);
+            pipe_surface_reference(&r300->locked_zbuffer, r300->fb_zsbuf);
         }
     } else if (r300->locked_zbuffer) {
         /* We have a locked zbuffer now, what are we gonna do? */
-        if (state->zsbuf) {
-            if (!pipe_surface_equal(r300->locked_zbuffer, state->zsbuf)) {
+        if (state->zsbuf.texture) {
+            if (!pipe_surface_equal(r300->locked_zbuffer, &state->zsbuf)) {
                 /* We are binding some other zbuffer, so decompress the locked one,
                  * it gets unlocked automatically. */
                 r300_decompress_zmask_locked_unsafe(r300);
@@ -937,23 +937,23 @@ r300_set_framebuffer_state(struct pipe_context* pipe,
             }
         }
     }
-    assert(state->zsbuf || (r300->locked_zbuffer && !unlock_zbuffer) || !r300->zmask_in_use);
+    assert(state->zsbuf.texture || (r300->locked_zbuffer && !unlock_zbuffer) || !r300->zmask_in_use);
 
     /* If zsbuf is set from NULL to non-NULL or vice versa.. */
-    if (!!current_state->zsbuf != !!state->zsbuf) {
+    if (!!current_state->zsbuf.texture != !!state->zsbuf.texture) {
         r300_mark_atom_dirty(r300, &r300->dsa_state);
     }
 
+    util_framebuffer_init(pipe, state, r300->fb_cbufs, &r300->fb_zsbuf);
     util_copy_framebuffer_state(r300->fb_state.state, state);
 
     /* Remove trailing NULL colorbuffers. */
-    while (current_state->nr_cbufs && !current_state->cbufs[current_state->nr_cbufs-1])
+    while (current_state->nr_cbufs && !current_state->cbufs[current_state->nr_cbufs-1].texture)
         current_state->nr_cbufs--;
 
     /* Set whether CMASK can be used. */
     r300->cmask_in_use =
-        state->nr_cbufs == 1 && state->cbufs[0] &&
-        r300->screen->cmask_resource == state->cbufs[0]->texture;
+        state->nr_cbufs == 1 && r300->screen->cmask_resource == state->cbufs[0].texture;
 
     /* Need to reset clamping or colormask. */
     r300_mark_atom_dirty(r300, &r300->blend_state);
@@ -967,8 +967,8 @@ r300_set_framebuffer_state(struct pipe_context* pipe,
 
     r300_mark_fb_state_dirty(r300, R300_CHANGED_FB_STATE);
 
-    if (state->zsbuf) {
-        switch (util_format_get_blocksize(state->zsbuf->format)) {
+    if (state->zsbuf.texture) {
+        switch (util_format_get_blocksize(state->zsbuf.format)) {
         case 2:
             zbuffer_bpp = 16;
             break;
@@ -1011,11 +1011,11 @@ r300_set_framebuffer_state(struct pipe_context* pipe,
     if (DBG_ON(r300, DBG_FB)) {
         fprintf(stderr, "r300: set_framebuffer_state:\n");
         for (i = 0; i < state->nr_cbufs; i++) {
-            if (state->cbufs[i])
-                r300_print_fb_surf_info(state->cbufs[i], i, "CB");
+            if (state->cbufs[i].texture)
+                r300_print_fb_surf_info(&state->cbufs[i], i, "CB");
         }
-        if (state->zsbuf) {
-            r300_print_fb_surf_info(state->zsbuf, 0, "ZB");
+        if (state->zsbuf.texture) {
+            r300_print_fb_surf_info(&state->zsbuf, 0, "ZB");
         }
     }
 }

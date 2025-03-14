@@ -752,11 +752,8 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 						const struct pipe_surface *templ,
 						unsigned width0, unsigned height0);
 unsigned r600_translate_colorswap(enum pipe_format format, bool do_endian_swap);
-void evergreen_do_fast_color_clear(struct r600_common_context *rctx,
-				   struct pipe_framebuffer_state *fb,
-				   struct r600_atom *fb_state,
-				   unsigned *buffers, uint8_t *dirty_cbufs,
-				   const union pipe_color_union *color);
+void r600_texture_alloc_cmask_separate(struct r600_common_screen *rscreen,
+					struct r600_texture *rtex);
 void r600_init_screen_texture_functions(struct r600_common_screen *rscreen);
 void r600_init_context_texture_functions(struct r600_common_context *rctx);
 void eg_resource_alloc_immed(struct r600_common_screen *rscreen,

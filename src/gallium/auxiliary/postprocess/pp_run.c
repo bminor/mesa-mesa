@@ -110,7 +110,7 @@ pp_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
 
       pp_blit(ppq->p->pipe, in, 0, 0,
-              w, h, 0, ppq->tmps[0],
+              w, h, 0, &ppq->tmps[0],
               0, 0, w, h);
 
       in = ppq->tmp[0];
@@ -223,14 +223,14 @@ pp_filter_setup_out(struct pp_program *p, struct pipe_resource *out)
 {
    p->surf.format = out->format;
 
-   p->framebuffer.cbufs[0] = p->pipe->create_surface(p->pipe, out, &p->surf);
+   p->framebuffer.cbufs[0] = p->surf;
+   p->framebuffer.cbufs[0].texture = out;
 }
 
 /** Clean up the input and output set with the above. */
 void
 pp_filter_end_pass(struct pp_program *p)
 {
-   pipe_surface_reference(&p->framebuffer.cbufs[0], NULL);
    pipe_sampler_view_reference(&p->view, NULL);
 }
 

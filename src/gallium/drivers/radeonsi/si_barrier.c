@@ -731,7 +731,7 @@ static void si_set_sampler_depth_decompress_mask(struct si_context *sctx, struct
 void si_fb_barrier_before_rendering(struct si_context *sctx)
 {
    /* Wait for all shaders because all image loads must finish before CB/DB can write there. */
-   if (sctx->framebuffer.state.nr_cbufs || sctx->framebuffer.state.zsbuf) {
+   if (sctx->framebuffer.state.nr_cbufs || sctx->framebuffer.state.zsbuf.texture) {
       sctx->barrier_flags |= SI_BARRIER_SYNC_CS | SI_BARRIER_SYNC_PS;
       si_mark_atom_dirty(sctx, &sctx->atoms.s.barrier);
    }
@@ -743,8 +743,8 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
       /* Setting dirty_level_mask should ignore SI_FB_BARRIER_SYNC_* because it triggers
        * decompression, which is not syncing.
        */
-      if (sctx->framebuffer.state.zsbuf) {
-         struct pipe_surface *surf = sctx->framebuffer.state.zsbuf;
+      if (sctx->framebuffer.state.zsbuf.texture) {
+         struct pipe_surface *surf = &sctx->framebuffer.state.zsbuf;
          struct si_texture *tex = (struct si_texture *)surf->texture;
 
          tex->dirty_level_mask |= 1 << surf->u.tex.level;
@@ -758,7 +758,7 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
       unsigned compressed_cb_mask = sctx->framebuffer.compressed_cb_mask;
       while (compressed_cb_mask) {
          unsigned i = u_bit_scan(&compressed_cb_mask);
-         struct pipe_surface *surf = sctx->framebuffer.state.cbufs[i];
+         struct pipe_surface *surf = &sctx->framebuffer.state.cbufs[i];
          struct si_texture *tex = (struct si_texture *)surf->texture;
 
          if (tex->surface.fmask_offset) {
@@ -780,7 +780,7 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
       }
    }
 
-   if (flags & SI_FB_BARRIER_SYNC_DB && sctx->framebuffer.state.zsbuf) {
+   if (flags & SI_FB_BARRIER_SYNC_DB && sctx->framebuffer.state.zsbuf.texture) {
       /* DB caches are flushed on demand (using si_decompress_textures) except the cases below. */
       if (sctx->gfx_level >= GFX12) {
          si_make_DB_shader_coherent(sctx, sctx->framebuffer.nr_samples, true, false);
@@ -792,7 +792,7 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
           */
          si_make_DB_shader_coherent(sctx, 1, false, sctx->framebuffer.DB_has_shader_readable_metadata);
       } else if (sctx->screen->info.family == CHIP_NAVI33) {
-         struct si_surface *old_zsurf = (struct si_surface *)sctx->framebuffer.state.zsbuf;
+         struct si_surface *old_zsurf = (struct si_surface *)sctx->framebuffer.fb_zsbuf;
          struct si_texture *old_ztex = (struct si_texture *)old_zsurf->base.texture;
 
          if (old_ztex->upgraded_depth) {

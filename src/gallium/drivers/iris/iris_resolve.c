@@ -58,7 +58,7 @@ disable_rb_aux_buffer(struct iris_context *ice,
       return false;
 
    for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct iris_surface *surf = (void *) cso_fb->cbufs[i];
+      struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
       if (!surf)
          continue;
 
@@ -204,7 +204,7 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
    const nir_shader *nir = ish->nir;
 
    if (ice->state.dirty & IRIS_DIRTY_DEPTH_BUFFER) {
-      struct pipe_surface *zs_surf = cso_fb->zsbuf;
+      struct pipe_surface *zs_surf = &cso_fb->zsbuf;
 
       if (zs_surf) {
          struct iris_resource *z_res, *s_res;
@@ -230,9 +230,9 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
 
    if (devinfo->ver == 8 && nir->info.outputs_read != 0) {
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         if (cso_fb->cbufs[i]) {
-            struct iris_surface *surf = (void *) cso_fb->cbufs[i];
-            struct iris_resource *res = (void *) cso_fb->cbufs[i]->texture;
+         if (cso_fb->cbufs[i].texture) {
+            struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
+            struct iris_resource *res = (void *) cso_fb->cbufs[i].texture;
 
             iris_resource_prepare_texture(ice, res, surf->view.format,
                                           surf->view.base_level, 1,
@@ -244,7 +244,7 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
 
    if (ice->state.stage_dirty & IRIS_STAGE_DIRTY_BINDINGS_FS) {
       for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         struct iris_surface *surf = (void *) cso_fb->cbufs[i];
+         struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
          if (!surf)
             continue;
 
@@ -344,7 +344,7 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
       ice->state.dirty & (IRIS_DIRTY_DEPTH_BUFFER |
                           IRIS_DIRTY_WM_DEPTH_STENCIL);
 
-   struct pipe_surface *zs_surf = cso_fb->zsbuf;
+   struct pipe_surface *zs_surf = &cso_fb->zsbuf;
    if (zs_surf) {
       struct iris_resource *z_res, *s_res;
       iris_get_depth_stencil_resources(zs_surf->texture, &z_res, &s_res);
@@ -372,7 +372,7 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
       ice->state.stage_dirty & IRIS_STAGE_DIRTY_BINDINGS_FS;
 
    for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct iris_surface *surf = (void *) cso_fb->cbufs[i];
+      struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
       if (!surf)
          continue;
 

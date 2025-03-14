@@ -349,26 +349,19 @@ st_egl_image_target_renderbuffer_storage(struct gl_context *ctx,
    if (st_get_egl_image(ctx, image_handle, PIPE_BIND_RENDER_TARGET, false,
                         "glEGLImageTargetRenderbufferStorage",
                         &stimg, &native_supported)) {
-      struct pipe_context *pipe = st_context(ctx)->pipe;
-      struct pipe_surface *ps, surf_tmpl;
+      struct pipe_surface surf_tmpl;
 
       u_surface_default_template(&surf_tmpl, stimg.texture);
-      surf_tmpl.format = stimg.format;
       surf_tmpl.u.tex.level = stimg.level;
       surf_tmpl.u.tex.first_layer = stimg.layer;
       surf_tmpl.u.tex.last_layer = stimg.layer;
-      ps = pipe->create_surface(pipe, stimg.texture, &surf_tmpl);
-      pipe_resource_reference(&stimg.texture, NULL);
 
-      if (!ps)
-         return;
-
-      rb->Format = st_pipe_format_to_mesa_format(ps->format);
-      rb->_BaseFormat = st_pipe_format_to_base_format(ps->format);
+      rb->Format = st_pipe_format_to_mesa_format(surf_tmpl.format);
+      rb->_BaseFormat = st_pipe_format_to_base_format(surf_tmpl.format);
       rb->InternalFormat = rb->_BaseFormat;
 
-      st_set_ws_renderbuffer_surface(rb, ps);
-      pipe_surface_reference(&ps, NULL);
+      st_set_ws_renderbuffer_surface(rb, &surf_tmpl);
+      pipe_resource_reference(&stimg.texture, NULL);
    }
 }
 

@@ -434,7 +434,7 @@ void
 vlVdpVideoSurfaceClear(vlVdpSurface *vlsurf)
 {
    struct pipe_context *pipe = vlsurf->device->context;
-   struct pipe_surface **surfaces;
+   struct pipe_surface *surfaces;
    unsigned i;
 
    if (!vlsurf->video_buffer)
@@ -444,15 +444,15 @@ vlVdpVideoSurfaceClear(vlVdpSurface *vlsurf)
    for (i = 0; i < VL_MAX_SURFACES; ++i) {
       union pipe_color_union c = {};
 
-      if (!surfaces[i])
+      if (!surfaces[i].texture)
          continue;
 
       if (i > !!vlsurf->templat.interlaced)
          c.f[0] = c.f[1] = c.f[2] = c.f[3] = 0.5f;
 
       uint16_t width, height;
-      pipe_surface_size(surfaces[i], &width, &height);
-      pipe->clear_render_target(pipe, surfaces[i], &c, 0, 0,
+      pipe_surface_size(&surfaces[i], &width, &height);
+      pipe->clear_render_target(pipe, &surfaces[i], &c, 0, 0,
                                 width, height, false);
    }
    pipe->flush(pipe, NULL, 0);
@@ -517,7 +517,7 @@ VdpStatus vlVdpVideoSurfaceDMABuf(VdpVideoSurface surface,
       return VDP_STATUS_NO_IMPLEMENTATION;
    }
 
-   surf = p_surf->video_buffer->get_surfaces(p_surf->video_buffer)[plane];
+   surf = &p_surf->video_buffer->get_surfaces(p_surf->video_buffer)[plane];
    if (!surf) {
       mtx_unlock(&p_surf->device->mutex);
       return VDP_STATUS_RESOURCES;

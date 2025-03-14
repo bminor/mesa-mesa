@@ -379,25 +379,27 @@ nv30_set_framebuffer_state(struct pipe_context *pipe,
 
     nouveau_bufctx_reset(nv30->bufctx, BUFCTX_FB);
 
-    nv30->framebuffer = *fb;
+    util_copy_framebuffer_state(&nv30->framebuffer, fb);
     nv30->dirty |= NV30_NEW_FRAMEBUFFER;
 
    /* Hardware can't handle different swizzled-ness or different blocksizes
     * for zs and cbufs. If both are supplied and something doesn't match,
     * blank out the zs for now so that at least *some* rendering can occur.
     */
-    if (fb->nr_cbufs > 0 && fb->zsbuf) {
-       struct nv30_miptree *color_mt = nv30_miptree(fb->cbufs[0]->texture);
-       struct nv30_miptree *zeta_mt = nv30_miptree(fb->zsbuf->texture);
+    if (fb->nr_cbufs > 0 && fb->zsbuf.texture) {
+       struct nv30_miptree *color_mt = nv30_miptree(fb->cbufs[0].texture);
+       struct nv30_miptree *zeta_mt = nv30_miptree(fb->zsbuf.texture);
 
        if (color_mt->swizzled != zeta_mt->swizzled ||
            (color_mt->swizzled &&
-            (util_format_get_blocksize(fb->zsbuf->format) > 2) !=
-            (util_format_get_blocksize(fb->cbufs[0]->format) > 2))) {
-          nv30->framebuffer.zsbuf = NULL;
+            (util_format_get_blocksize(fb->zsbuf.format) > 2) !=
+            (util_format_get_blocksize(fb->cbufs[0].format) > 2))) {
+          pipe_resource_reference(&nv30->framebuffer.zsbuf.texture, NULL);
+          memset(&nv30->framebuffer.zsbuf, 0, sizeof(nv30->framebuffer.zsbuf));
           debug_printf("Mismatched color and zeta formats, ignoring zeta.\n");
        }
     }
+    util_framebuffer_init(pipe, &nv30->framebuffer, nv30->fb_cbufs, &nv30->fb_zsbuf);
 }
 
 static void

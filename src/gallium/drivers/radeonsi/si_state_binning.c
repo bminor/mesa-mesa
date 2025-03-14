@@ -52,7 +52,7 @@ static struct uvec2 gfx9_get_color_bin_size(struct si_context *sctx, unsigned cb
       if (!(cb_target_enabled_4bit & (0xf << (i * 4))))
          continue;
 
-      struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i]->texture;
+      struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i].texture;
       sum += tex->surface.bpe;
    }
 
@@ -160,13 +160,13 @@ static struct uvec2 gfx9_get_depth_bin_size(struct si_context *sctx)
 {
    struct si_state_dsa *dsa = sctx->queued.named.dsa;
 
-   if (!sctx->framebuffer.state.zsbuf || (!dsa->depth_enabled && !dsa->stencil_enabled)) {
+   if (!sctx->framebuffer.state.zsbuf.texture || (!dsa->depth_enabled && !dsa->stencil_enabled)) {
       /* Return the max size. */
       struct uvec2 size = {512, 512};
       return size;
    }
 
-   struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.zsbuf->texture;
+   struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
    unsigned depth_coeff = dsa->depth_enabled ? 5 : 0;
    unsigned stencil_coeff = tex->surface.has_stencil && dsa->stencil_enabled ? 1 : 0;
    unsigned sum = 4 * (depth_coeff + stencil_coeff) * MAX2(tex->buffer.b.b.nr_samples, 1);
@@ -314,10 +314,10 @@ static void gfx10_get_bin_sizes(struct si_context *sctx, unsigned cb_target_enab
    bool has_fmask = false;
 
    for (unsigned i = 0; i < sctx->framebuffer.state.nr_cbufs; i++) {
-      if (!sctx->framebuffer.state.cbufs[i])
+      if (!sctx->framebuffer.state.cbufs[i].texture)
          continue;
 
-      struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i]->texture;
+      struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i].texture;
       const unsigned mmrt = num_fragments == 1 ? 1 : (ps_iter_sample ? num_fragments : 2);
 
       cColor += tex->surface.bpe * mmrt;
@@ -362,12 +362,12 @@ static void gfx10_get_bin_sizes(struct si_context *sctx, unsigned cb_target_enab
    color_bin_size->x = MAX2(binSizeX, minBinSizeX);
    color_bin_size->y = MAX2(binSizeY, minBinSizeY);
 
-   if (!sctx->framebuffer.state.zsbuf) {
+   if (!sctx->framebuffer.state.zsbuf.texture) {
       /* Set to max sizes when no depth buffer is bound. */
       depth_bin_size->x = 512;
       depth_bin_size->y = 512;
    } else {
-      struct si_texture *zstex = (struct si_texture *)sctx->framebuffer.state.zsbuf->texture;
+      struct si_texture *zstex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
       struct si_state_dsa *dsa = sctx->queued.named.dsa;
 
       const unsigned cPerDepthSample = dsa->depth_enabled ? 5 : 0;
@@ -469,7 +469,7 @@ void si_emit_dpbb_state(struct si_context *sctx, unsigned index)
 
    /* Disable DPBB when it's believed to be inefficient. */
    if (sscreen->info.max_render_backends > 4 && ps_can_kill && db_can_reject_z_trivially &&
-       sctx->framebuffer.state.zsbuf && dsa->db_can_write) {
+       sctx->framebuffer.state.zsbuf.texture && dsa->db_can_write) {
       si_emit_dpbb_disable(sctx);
       return;
    }

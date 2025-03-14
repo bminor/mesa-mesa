@@ -83,7 +83,7 @@ struct pp_queue_t
    struct pipe_resource *stencil;       /* stencil shared by inner_tmps */
    struct pipe_resource *areamaptex;    /* MLAA area map texture */
 
-   struct pipe_surface *tmps[2], *inner_tmps[3], *stencils;
+   struct pipe_surface tmps[2], inner_tmps[3], stencils;
 
    void ***shaders;             /* Shaders in TGSI form */
    unsigned int *filters;       /* Active filter to filters.h mapping. */

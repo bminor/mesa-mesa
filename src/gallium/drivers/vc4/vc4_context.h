@@ -29,6 +29,7 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_state.h"
+#include "util/u_framebuffer.h"
 #include "util/slab.h"
 #include "util/u_debug_cb.h"
 #include "xf86drm.h"
@@ -370,6 +371,7 @@ struct vc4_context {
         } blend_color;
         struct pipe_stencil_ref stencil_ref;
         unsigned sample_mask;
+        PIPE_FB_SURFACES; //STOP USING THIS
         struct pipe_framebuffer_state framebuffer;
         struct pipe_poly_stipple stipple;
         struct pipe_clip_state clip;

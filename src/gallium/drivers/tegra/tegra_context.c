@@ -496,22 +496,6 @@ tegra_set_framebuffer_state(struct pipe_context *pcontext,
                             const struct pipe_framebuffer_state *fb)
 {
    struct tegra_context *context = to_tegra_context(pcontext);
-   struct pipe_framebuffer_state state;
-   unsigned i;
-
-   if (fb) {
-      memcpy(&state, fb, sizeof(state));
-
-      for (i = 0; i < fb->nr_cbufs; i++)
-         state.cbufs[i] = tegra_surface_unwrap(fb->cbufs[i]);
-
-      while (i < PIPE_MAX_COLOR_BUFS)
-         state.cbufs[i++] = NULL;
-
-      state.zsbuf = tegra_surface_unwrap(fb->zsbuf);
-
-      fb = &state;
-   }
 
    context->gpu->set_framebuffer_state(context->gpu, fb);
 }

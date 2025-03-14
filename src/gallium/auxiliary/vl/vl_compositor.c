@@ -144,7 +144,7 @@ init_pipe_state(struct vl_compositor *c)
    assert(c);
 
    c->fb_state.nr_cbufs = 1;
-   c->fb_state.zsbuf = NULL;
+   memset(&c->fb_state.zsbuf, 0, sizeof(c->fb_state.zsbuf));
 
    memset(&sampler, 0, sizeof(sampler));
    sampler.wrap_s = PIPE_TEX_WRAP_CLAMP_TO_EDGE;
@@ -737,43 +737,43 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
                              struct u_rect *dst_rect,
                              enum vl_compositor_deinterlace deinterlace)
 {
-   struct pipe_surface **dst_surfaces;
+   struct pipe_surface *dst_surfaces;
 
    dst_surfaces = dst->get_surfaces(dst);
 
    set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_Y, deinterlace);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-   vl_compositor_render(s, c, dst_surfaces[0], NULL, false);
+   vl_compositor_render(s, c, &dst_surfaces[0], NULL, false);
 
-   if (dst_surfaces[1]) {
+   if (dst_surfaces[1].texture) {
       bool clear = util_format_get_nr_components(src->buffer_format) == 1;
       union pipe_color_union clear_color = { .f = {0.5, 0.5} };
       dst_rect->x0 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x0);
       dst_rect->x1 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x1);
       dst_rect->y0 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y0);
       dst_rect->y1 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y1);
-      set_yuv_layer(s, c, 0, src, src_rect, NULL, dst_surfaces[2] ? VL_COMPOSITOR_PLANE_U :
+      set_yuv_layer(s, c, 0, src, src_rect, NULL, dst_surfaces[2].texture ? VL_COMPOSITOR_PLANE_U :
                     VL_COMPOSITOR_PLANE_UV, deinterlace);
       vl_compositor_set_layer_dst_area(s, 0, dst_rect);
       if (clear) {
          struct u_rect clear_rect = *dst_rect;
          s->used_layers = 0;
          vl_compositor_set_clear_color(s, &clear_color);
-         vl_compositor_render(s, c, dst_surfaces[1], &clear_rect, true);
+         vl_compositor_render(s, c, &dst_surfaces[1], &clear_rect, true);
       } else {
-         vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+         vl_compositor_render(s, c, &dst_surfaces[1], NULL, false);
       }
 
-      if (dst_surfaces[2]) {
+      if (dst_surfaces[2].texture) {
          set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_V, deinterlace);
          vl_compositor_set_layer_dst_area(s, 0, dst_rect);
          if (clear) {
             struct u_rect clear_rect = *dst_rect;
             s->used_layers = 0;
             vl_compositor_set_clear_color(s, &clear_color);
-            vl_compositor_render(s, c, dst_surfaces[2], &clear_rect, true);
+            vl_compositor_render(s, c, &dst_surfaces[2], &clear_rect, true);
          } else {
-            vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+            vl_compositor_render(s, c, &dst_surfaces[2], NULL, false);
          }
       }
    }
@@ -789,7 +789,7 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
                                  struct u_rect *dst_rect)
 {
    struct pipe_sampler_view *sv, sv_templ;
-   struct pipe_surface **dst_surfaces;
+   struct pipe_surface *dst_surfaces;
 
    dst_surfaces = dst->get_surfaces(dst);
 
@@ -799,22 +799,22 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
 
    set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, VL_COMPOSITOR_PLANE_Y);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-   vl_compositor_render(s, c, dst_surfaces[0], NULL, false);
+   vl_compositor_render(s, c, &dst_surfaces[0], NULL, false);
 
-   if (dst_surfaces[1]) {
+   if (dst_surfaces[1].texture) {
       dst_rect->x0 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x0);
       dst_rect->x1 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x1);
       dst_rect->y0 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y0);
       dst_rect->y1 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y1);
-      set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, dst_surfaces[2] ? VL_COMPOSITOR_PLANE_U :
+      set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, dst_surfaces[2].texture ? VL_COMPOSITOR_PLANE_U :
                            VL_COMPOSITOR_PLANE_UV);
       vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-      vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+      vl_compositor_render(s, c, &dst_surfaces[1], NULL, false);
 
-      if (dst_surfaces[2]) {
+      if (dst_surfaces[2].texture) {
          set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, VL_COMPOSITOR_PLANE_V);
          vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-         vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+         vl_compositor_render(s, c, &dst_surfaces[2], NULL, false);
       }
    }
 

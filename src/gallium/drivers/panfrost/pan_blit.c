@@ -118,5 +118,7 @@ panfrost_blit(struct pipe_context *pipe, const struct pipe_blit_info *info)
    enum pipe_format dst_view_format = util_format_linear(info->dst.format);
    pan_legalize_format(ctx, dst, dst_view_format, true, false);
 
+   panfrost_flush_all_batches(ctx, "Blit");
    panfrost_blit_no_afbc_legalization(pipe, info);
+   panfrost_flush_all_batches(ctx, "Blit");
 }

@@ -27,6 +27,7 @@
 #include "pipe/p_context.h"
 #include "util/slab.h"
 #include "util/list.h"
+#include "util/u_framebuffer.h"
 
 #include "virgl_staging_mgr.h"
 #include "virgl_transfer_queue.h"
@@ -76,6 +77,7 @@ struct virgl_context {
 
    struct virgl_vertex_elements_state *vertex_elements;
 
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct pipe_framebuffer_state framebuffer;
 
    struct slab_child_pool transfer_pool;

@@ -173,7 +173,7 @@ fd_autotune_use_bypass(struct fd_autotune *at, struct fd_batch *batch)
        * implement a temporary render target that we can MSAA resolve
        * from
        */
-      if (pfb->cbufs[i] && pfb->cbufs[i]->nr_samples)
+      if (pfb->cbufs[i].texture && pfb->cbufs[i].nr_samples)
          return fallback_use_bypass(batch);
    }
 

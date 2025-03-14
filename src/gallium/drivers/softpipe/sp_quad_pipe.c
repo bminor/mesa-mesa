@@ -44,7 +44,7 @@ sp_build_quad_pipeline(struct softpipe_context *sp)
 {
    bool early_depth_test =
       (sp->depth_stencil->depth_enabled &&
-      sp->framebuffer.zsbuf &&
+      sp->framebuffer.zsbuf.texture &&
       !sp->depth_stencil->alpha_enabled &&
       !sp->fs_variant->info.uses_kill &&
       !sp->fs_variant->info.writes_z &&
@@ -63,4 +63,3 @@ sp_build_quad_pipeline(struct softpipe_context *sp)
       insert_stage_at_head( sp, sp->quad.shade );
    }
 }
-

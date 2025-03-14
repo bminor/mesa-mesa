@@ -247,7 +247,7 @@ emit_rss_vgpu9(struct svga_context *svga, uint64_t dirty)
        * pipeline is active.
        */
       if (!svga->state.sw.need_pipeline &&
-          svga->curr.framebuffer.zsbuf)
+          svga->curr.framebuffer.zsbuf.texture)
       {
          slope = curr->slopescaledepthbias;
          bias  = svga->curr.depthscale * curr->depthbias;
@@ -260,8 +260,8 @@ emit_rss_vgpu9(struct svga_context *svga, uint64_t dirty)
    if (dirty & SVGA_NEW_FRAME_BUFFER) {
       /* XXX: we only look at the first color buffer's sRGB state */
       float gamma = 1.0f;
-      if (svga->curr.framebuffer.cbufs[0] &&
-          util_format_is_srgb(svga->curr.framebuffer.cbufs[0]->format)) {
+      if (svga->curr.framebuffer.cbufs[0].texture &&
+          util_format_is_srgb(svga->curr.framebuffer.cbufs[0].format)) {
          gamma = 2.2f;
       }
       EMIT_RS_FLOAT(svga, gamma, OUTPUTGAMMA);
@@ -480,7 +480,7 @@ emit_rss_vgpu10(struct svga_context *svga, uint64_t dirty)
           * specified in forcedSampleCount in the RasterizerState_v2 object.
           */
          if ((svga->curr.framebuffer.nr_cbufs == 0) &&
-             (svga->curr.framebuffer.zsbuf == NULL)) {
+             (svga->curr.framebuffer.zsbuf.texture == NULL)) {
             rastId =
                get_alt_rasterizer_state_id(svga, rast,
                                            svga->curr.framebuffer.samples);

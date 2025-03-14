@@ -57,7 +57,7 @@ i915_clear_emit(struct pipe_context *pipe, unsigned buffers,
    depth_clear_bbp = color_clear_bbp = 0;
 
    if (buffers & PIPE_CLEAR_COLOR) {
-      struct pipe_surface *cbuf = i915->framebuffer.cbufs[0];
+      struct pipe_surface *cbuf = &i915->framebuffer.cbufs[0];
 
       clear_params |= CLEARPARAM_WRITE_COLOR;
       cbuf_tex = i915_texture(cbuf->texture);
@@ -82,7 +82,7 @@ i915_clear_emit(struct pipe_context *pipe, unsigned buffers,
 
    clear_depth = clear_stencil = 0;
    if (buffers & PIPE_CLEAR_DEPTH) {
-      struct pipe_surface *zbuf = i915->framebuffer.zsbuf;
+      struct pipe_surface *zbuf = &i915->framebuffer.zsbuf;
 
       clear_params |= CLEARPARAM_WRITE_DEPTH;
       depth_tex = i915_texture(zbuf->texture);
@@ -104,7 +104,7 @@ i915_clear_emit(struct pipe_context *pipe, unsigned buffers,
          depth_clear_bbp = 16;
       }
    } else if (buffers & PIPE_CLEAR_STENCIL) {
-      struct pipe_surface *zbuf = i915->framebuffer.zsbuf;
+      struct pipe_surface *zbuf = &i915->framebuffer.zsbuf;
 
       clear_params |= CLEARPARAM_WRITE_STENCIL;
       depth_tex = i915_texture(zbuf->texture);
@@ -228,9 +228,9 @@ i915_clear_blitter(struct pipe_context *pipe, unsigned buffers,
 
    for (i = 0; i < framebuffer->nr_cbufs; i++) {
       if (buffers & (PIPE_CLEAR_COLOR0 << i)) {
-         struct pipe_surface *ps = framebuffer->cbufs[i];
+         struct pipe_surface *ps = &framebuffer->cbufs[i];
 
-         if (ps) {
+         if (ps->texture) {
             uint16_t width, height;
             pipe_surface_size(ps, &width, &height);
             pipe->clear_render_target(pipe, ps, color, 0, 0, width,
@@ -240,7 +240,7 @@ i915_clear_blitter(struct pipe_context *pipe, unsigned buffers,
    }
 
    if (buffers & PIPE_CLEAR_DEPTHSTENCIL) {
-      struct pipe_surface *ps = framebuffer->zsbuf;
+      struct pipe_surface *ps = &framebuffer->zsbuf;
       uint16_t width, height;
       pipe_surface_size(ps, &width, &height);
       pipe->clear_depth_stencil(pipe, ps, buffers & PIPE_CLEAR_DEPTHSTENCIL,

@@ -196,6 +196,7 @@ static void si_destroy_context(struct pipe_context *context)
    context->set_debug_callback(context, NULL);
 
    util_unreference_framebuffer_state(&sctx->framebuffer.state);
+   util_framebuffer_init(context, NULL, sctx->framebuffer.fb_cbufs, &sctx->framebuffer.fb_zsbuf);
    si_release_all_descriptors(sctx);
 
    if (sctx->gfx_level >= GFX10 && sctx->has_graphics)

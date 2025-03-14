@@ -471,7 +471,7 @@ vl_deint_filter_render(struct vl_deint_filter *filter,
    struct pipe_sampler_view **prev_sv;
    struct pipe_sampler_view **next_sv;
    struct pipe_sampler_view *sampler_views[4];
-   struct pipe_surface **dst_surfaces;
+   struct pipe_surface *dst_surfaces;
    const unsigned *plane_order;
    int i;
    unsigned j;
@@ -513,8 +513,8 @@ vl_deint_filter_render(struct vl_deint_filter *filter,
 
    /* process each plane separately */
    for (i = 0, j = 0; i < VL_NUM_COMPONENTS; ++i) {
-      struct pipe_surface *blit_surf = dst_surfaces[field];
-      struct pipe_surface *dst_surf = dst_surfaces[1 - field];
+      struct pipe_surface *blit_surf = &dst_surfaces[field];
+      struct pipe_surface *dst_surf = &dst_surfaces[1 - field];
       int k = plane_order[i];
 
       /* bind blend state for this component in the plane */
@@ -535,14 +535,14 @@ vl_deint_filter_render(struct vl_deint_filter *filter,
                                       0, 4, 0, sampler_views);
 
       /* blit current field */
-      fb_state.cbufs[0] = blit_surf;
+      fb_state.cbufs[0] = *blit_surf;
       filter->pipe->bind_fs_state(filter->pipe, field ? filter->fs_copy_bottom : filter->fs_copy_top);
       filter->pipe->set_framebuffer_state(filter->pipe, &fb_state);
       filter->pipe->set_viewport_states(filter->pipe, 0, 1, &viewport);
       util_draw_arrays(filter->pipe, MESA_PRIM_QUADS, 0, 4);
 
       /* blit or interpolate other field */
-      fb_state.cbufs[0] = dst_surf;
+      fb_state.cbufs[0] = *dst_surf;
       filter->pipe->set_framebuffer_state(filter->pipe, &fb_state);
       if (i > 0 && filter->skip_chroma) {
          util_draw_arrays(filter->pipe, MESA_PRIM_QUADS, 0, 4);

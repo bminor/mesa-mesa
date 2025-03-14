@@ -159,14 +159,11 @@ pp_free_fbos(struct pp_queue_t *ppq)
       return;
 
    for (i = 0; i < ppq->n_tmp; i++) {
-      pipe_surface_reference(&ppq->tmps[i], NULL);
       pipe_resource_reference(&ppq->tmp[i], NULL);
    }
    for (i = 0; i < ppq->n_inner_tmp; i++) {
-      pipe_surface_reference(&ppq->inner_tmps[i], NULL);
       pipe_resource_reference(&ppq->inner_tmp[i], NULL);
    }
-   pipe_surface_reference(&ppq->stencils, NULL);
    pipe_resource_reference(&ppq->stencil, NULL);
 
    ppq->fbos_init = false;
@@ -295,19 +292,18 @@ pp_init_fbos(struct pp_queue_t *ppq, unsigned int w,
 
    for (i = 0; i < ppq->n_tmp; i++) {
       ppq->tmp[i] = p->screen->resource_create(p->screen, &tmp_res);
-      ppq->tmps[i] = p->pipe->create_surface(p->pipe, ppq->tmp[i], &p->surf);
+      ppq->tmps[i] = p->surf;
+      ppq->tmps[i].texture = ppq->tmp[i];
 
-      if (!ppq->tmp[i] || !ppq->tmps[i])
+      if (!ppq->tmp[i])
          goto error;
    }
 
    for (i = 0; i < ppq->n_inner_tmp; i++) {
       ppq->inner_tmp[i] = p->screen->resource_create(p->screen, &tmp_res);
-      ppq->inner_tmps[i] = p->pipe->create_surface(p->pipe,
-                                                   ppq->inner_tmp[i],
-                                                   &p->surf);
-
-      if (!ppq->inner_tmp[i] || !ppq->inner_tmps[i])
+      ppq->inner_tmps[i] = p->surf;
+      ppq->inner_tmps[i].texture = ppq->inner_tmp[i];
+      if (!ppq->inner_tmp[i])
          goto error;
    }
 
@@ -326,8 +322,8 @@ pp_init_fbos(struct pp_queue_t *ppq, unsigned int w,
    }
 
    ppq->stencil = p->screen->resource_create(p->screen, &tmp_res);
-   ppq->stencils = p->pipe->create_surface(p->pipe, ppq->stencil, &p->surf);
-   if (!ppq->stencil || !ppq->stencils)
+   ppq->stencils = p->surf;
+   if (!ppq->stencil)
       goto error;
 
    p->framebuffer.width = w;

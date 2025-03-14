@@ -956,7 +956,7 @@ vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface,
                           const uint64_t *modifiers,
                           unsigned int modifiers_count)
 {
-   struct pipe_surface **surfaces;
+   struct pipe_surface *surfaces;
    unsigned i;
 
    if (modifiers_count > 0) {
@@ -979,20 +979,20 @@ vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface,
       return VA_STATUS_SUCCESS;
 
    surfaces = surface->buffer->get_surfaces(surface->buffer);
-   if (surfaces) {
+   if (surfaces[0].texture) {
       for (i = 0; i < VL_MAX_SURFACES; ++i) {
          union pipe_color_union c;
          memset(&c, 0, sizeof(c));
 
-         if (!surfaces[i])
+         if (!surfaces[i].texture)
             continue;
 
          if (i > !!surface->buffer->interlaced)
             c.f[0] = c.f[1] = c.f[2] = c.f[3] = 0.5f;
 
          uint16_t width, height;
-         pipe_surface_size(surfaces[i], &width, &height);
-         drv->pipe->clear_render_target(drv->pipe, surfaces[i], &c, 0, 0,
+         pipe_surface_size(&surfaces[i], &width, &height);
+         drv->pipe->clear_render_target(drv->pipe, &surfaces[i], &c, 0, 0,
                   width, height,
                   false);
       }
@@ -1609,7 +1609,7 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
 {
    vlVaDriver *drv;
    vlVaSurface *surf;
-   struct pipe_surface **surfaces;
+   struct pipe_surface *surfaces;
    struct pipe_screen *screen;
    VAStatus ret;
    unsigned int usage;
@@ -1653,7 +1653,7 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
 #ifdef _WIN32
    struct winsys_handle whandle;
    memset(&whandle, 0, sizeof(struct winsys_handle));
-   struct pipe_resource *resource = surfaces[0]->texture;
+   struct pipe_resource *resource = surfaces[0].texture;
 
    if (mem_type == VA_SURFACE_ATTRIB_MEM_TYPE_NTHANDLE)
       whandle.type = WINSYS_HANDLE_TYPE_FD;
@@ -1685,10 +1685,10 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
       struct pipe_resource *resource;
       uint32_t drm_format;
 
-      if (!surfaces[p])
+      if (!surfaces[p].texture)
          break;
 
-      resource = surfaces[p]->texture;
+      resource = surfaces[p].texture;
 
       drm_format = pipe_format_to_drm_format(resource->format);
       if (drm_format == DRM_FORMAT_INVALID) {

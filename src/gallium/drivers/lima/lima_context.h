@@ -31,9 +31,11 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_state.h"
+#include "util/u_framebuffer.h"
 
 struct lima_context_framebuffer {
    struct pipe_framebuffer_state base;
+   PIPE_FB_SURFACES; //STOP USING THIS
    int tiled_w, tiled_h;
    int shift_w, shift_h;
    int block_w, block_h;

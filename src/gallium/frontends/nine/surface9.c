@@ -210,9 +210,6 @@ NineSurface9_dtor( struct NineSurface9 *This )
     if (p_atomic_read(&This->pending_uploads_counter))
         nine_csmt_process(This->base.base.device);
 
-    pipe_surface_reference(&This->surface[0], NULL);
-    pipe_surface_reference(&This->surface[1], NULL);
-
     if (!is_worker && This->lock_count && (This->data_internal || This->data)) {
         /* For is_worker nine_free_worker will handle it */
         nine_pointer_strongrelease(This->base.base.device->allocator,
@@ -238,7 +235,6 @@ NineSurface9_dtor( struct NineSurface9 *This )
 static void
 NineSurface9_CreatePipeSurfaces( struct NineSurface9 *This )
 {
-    struct pipe_context *pipe;
     struct pipe_screen *screen = NineDevice9_GetScreen(This->base.base.device);
     struct pipe_resource *resource = This->base.resource;
     struct pipe_surface templ;
@@ -253,28 +249,16 @@ NineSurface9_CreatePipeSurfaces( struct NineSurface9 *This )
                                      resource->target, 0, 0, resource->bind))
         srgb_format = resource->format;
 
-    memset(&templ, 0, sizeof(templ));
-    templ.format = resource->format;
+    u_surface_default_template(&templ, resource);
     templ.u.tex.level = This->level;
     templ.u.tex.first_layer = This->layer;
     templ.u.tex.last_layer = This->layer;
 
-    pipe = nine_context_get_pipe_acquire(This->base.base.device);
+    This->surface[0] = templ;
 
-    This->surface[0] = pipe->create_surface(pipe, resource, &templ);
-
-    memset(&templ, 0, sizeof(templ));
     templ.format = srgb_format;
-    templ.u.tex.level = This->level;
-    templ.u.tex.first_layer = This->layer;
-    templ.u.tex.last_layer = This->layer;
 
-    This->surface[1] = pipe->create_surface(pipe, resource, &templ);
-
-    nine_context_get_pipe_release(This->base.base.device);
-
-    assert(This->surface[0]); /* TODO: Handle failure */
-    assert(This->surface[1]);
+    This->surface[1] = templ;
 }
 
 #if MESA_DEBUG || !defined(NDEBUG)
@@ -841,8 +825,6 @@ NineSurface9_SetResourceResize( struct NineSurface9 *This,
     This->stride = nine_format_get_stride(This->base.info.format,
                                           This->desc.Width);
 
-    pipe_surface_reference(&This->surface[0], NULL);
-    pipe_surface_reference(&This->surface[1], NULL);
     NineSurface9_CreatePipeSurfaces(This);
 }
 

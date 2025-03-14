@@ -134,7 +134,7 @@ setup_stages(struct fd4_emit *emit, struct stage *s)
 
 void
 fd4_program_emit(struct fd_ringbuffer *ring, struct fd4_emit *emit, int nr,
-                 struct pipe_surface **bufs)
+                 struct pipe_surface *bufs)
 {
    struct stage s[MAX_STAGES];
    uint32_t pos_regid, posz_regid, psize_regid, color_regid[8];
@@ -435,12 +435,12 @@ fd4_program_emit(struct fd_ringbuffer *ring, struct fd4_emit *emit, int nr,
       bool uint = false;
       bool sint = false;
       if (i < nr) {
-         format = fd4_emit_format(bufs[i]);
-         if (bufs[i]) {
+         format = fd4_emit_format(&bufs[i]);
+         if (bufs[i].texture) {
             if (!emit->no_decode_srgb)
-               srgb = util_format_is_srgb(bufs[i]->format);
-            uint = util_format_is_pure_uint(bufs[i]->format);
-            sint = util_format_is_pure_sint(bufs[i]->format);
+               srgb = util_format_is_srgb(bufs[i].format);
+            uint = util_format_is_pure_uint(bufs[i].format);
+            sint = util_format_is_pure_sint(bufs[i].format);
          }
       }
       OUT_RING(ring, A4XX_SP_FS_MRT_REG_REGID(color_regid[i]) |

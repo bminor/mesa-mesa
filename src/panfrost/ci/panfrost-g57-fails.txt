@@ -295,7 +295,6 @@ spec@arb_texture_float@texwrap formats@GL_INTENSITY16F_ARB- NPOT,Fail
 spec@arb_texture_float@texwrap formats@GL_INTENSITY16F_ARB- swizzled,Fail
 spec@arb_timer_query@query gl_timestamp,Fail
 spec@arb_timer_query@timestamp-get,Fail
-spec@ext_clear_texture@ext_clear_texture-base-formats,Fail
 spec@ext_disjoint_timer_query@simple,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 spec@ext_timer_query@time-elapsed,Fail

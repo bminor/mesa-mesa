@@ -74,7 +74,7 @@ emit_shader(struct fd_ringbuffer *ring, const struct ir3_shader_variant *so)
 
 void
 fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
-                 struct pipe_surface **bufs)
+                 struct pipe_surface *bufs)
 {
    const struct ir3_shader_variant *vp, *fp;
    const struct ir3_info *vsi, *fsi;
@@ -167,7 +167,7 @@ fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
     * format, so it's just treated like red
     */
    for (i = 0; i < nr; i++)
-      if (util_format_is_alpha(pipe_surface_format(bufs[i])))
+      if (util_format_is_alpha(pipe_surface_format(&bufs[i])))
          color_regid[i] += 3;
 
    /* we could probably divide this up into things that need to be
@@ -319,7 +319,7 @@ fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
          COND(color_regid[i] & HALF_REG_ID, A3XX_SP_FS_MRT_REG_HALF_PRECISION);
 
       if (i < nr) {
-         enum pipe_format fmt = pipe_surface_format(bufs[i]);
+         enum pipe_format fmt = pipe_surface_format(&bufs[i]);
          mrt_reg |=
             COND(util_format_is_pure_uint(fmt), A3XX_SP_FS_MRT_REG_UINT) |
             COND(util_format_is_pure_sint(fmt), A3XX_SP_FS_MRT_REG_SINT);

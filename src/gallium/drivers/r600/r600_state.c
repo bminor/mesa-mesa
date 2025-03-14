@@ -1094,16 +1094,17 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 			 R600_CONTEXT_INV_TEX_CACHE;
 
 	/* Set the new state. */
+	util_framebuffer_init(ctx, state, rctx->framebuffer.fb_cbufs, &rctx->framebuffer.fb_zsbuf);
 	util_copy_framebuffer_state(&rctx->framebuffer.state, state);
 
 	rctx->framebuffer.export_16bpc = state->nr_cbufs != 0;
-	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0] &&
-			       util_format_is_pure_integer(state->cbufs[0]->format);
+	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
+			       util_format_is_pure_integer(state->cbufs[0].format);
 	rctx->framebuffer.compressed_cb_mask = 0;
 	rctx->framebuffer.is_msaa_resolve = state->nr_cbufs == 2 &&
-					    state->cbufs[0] && state->cbufs[1] &&
-					    state->cbufs[0]->texture->nr_samples > 1 &&
-				            state->cbufs[1]->texture->nr_samples <= 1;
+					    state->cbufs[0].texture && state->cbufs[1].texture &&
+					    state->cbufs[0].texture->nr_samples > 1 &&
+				            state->cbufs[1].texture->nr_samples <= 1;
 	rctx->framebuffer.nr_samples = util_framebuffer_get_num_samples(state);
 
 	/* Colorbuffers. */
@@ -1113,12 +1114,12 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 					 rctx->framebuffer.is_msaa_resolve &&
 					 i == 1;
 
-		surf = (struct r600_surface*)state->cbufs[i];
+		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
 		if (!surf)
 			continue;
 
 		rtex = (struct r600_texture*)surf->base.texture;
-		r600_context_add_resource_size(ctx, state->cbufs[i]->texture);
+		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
 		target_mask |= (0xf << (i * 4));
 
@@ -1144,7 +1145,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 	if (state->nr_cbufs) {
 		bool alphatest_bypass = false;
 
-		surf = (struct r600_surface*)state->cbufs[0];
+		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[0];
 		if (surf) {
 			alphatest_bypass = surf->alphatest_bypass;
 		}
@@ -1156,17 +1157,17 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 	}
 
 	/* ZS buffer. */
-	if (state->zsbuf) {
-		surf = (struct r600_surface*)state->zsbuf;
+	if (state->zsbuf.texture) {
+		surf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 
-		r600_context_add_resource_size(ctx, state->zsbuf->texture);
+		r600_context_add_resource_size(ctx, state->zsbuf.texture);
 
 		if (!surf->depth_initialized) {
 			r600_init_depth_surface(rctx, surf);
 		}
 
-		if (state->zsbuf->format != rctx->poly_offset_state.zs_format) {
-			rctx->poly_offset_state.zs_format = state->zsbuf->format;
+		if (state->zsbuf.format != rctx->poly_offset_state.zs_format) {
+			rctx->poly_offset_state.zs_format = state->zsbuf.format;
 			r600_mark_atom_dirty(rctx, &rctx->poly_offset_state.atom);
 		}
 
@@ -1201,7 +1202,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 		rctx->framebuffer.atom.num_dw += 15 * rctx->framebuffer.state.nr_cbufs;
 		rctx->framebuffer.atom.num_dw += 3 * (2 + rctx->framebuffer.state.nr_cbufs);
 	}
-	if (rctx->framebuffer.state.zsbuf) {
+	if (rctx->framebuffer.state.zsbuf.texture) {
 		rctx->framebuffer.atom.num_dw += 16;
 	} else {
 		rctx->framebuffer.atom.num_dw += 3;
@@ -1344,7 +1345,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 	struct radeon_cmdbuf *cs = &rctx->b.gfx.cs;
 	struct pipe_framebuffer_state *state = &rctx->framebuffer.state;
 	unsigned nr_cbufs = state->nr_cbufs;
-	struct r600_surface **cb = (struct r600_surface**)&state->cbufs[0];
+	struct r600_surface **cb = (struct r600_surface**)&rctx->framebuffer.fb_cbufs[0];
 	unsigned i, sbu = 0;
 
 	/* Colorbuffers. */
@@ -1434,11 +1435,11 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 	}
 
 	/* Zbuffer. */
-	if (state->zsbuf) {
-		struct r600_surface *surf = (struct r600_surface*)state->zsbuf;
+	if (state->zsbuf.texture) {
+		struct r600_surface *surf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 		unsigned reloc = radeon_add_to_buffer_list(&rctx->b,
 						       &rctx->b.gfx,
-						       (struct r600_resource*)state->zsbuf->texture,
+						       (struct r600_resource*)state->zsbuf.texture,
 						       RADEON_USAGE_READWRITE |
 						       (surf->base.texture->nr_samples > 1 ?
 							       RADEON_PRIO_DEPTH_BUFFER_MSAA :

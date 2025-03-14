@@ -17,6 +17,7 @@
 #include "util/list.h"
 #include "util/u_transfer.h"
 #include "util/u_memory.h"
+#include "util/u_framebuffer.h"
 
 #include "tgsi/tgsi_scan.h"
 
@@ -189,6 +190,7 @@ struct r600_cs_shader_state {
 
 struct r600_framebuffer {
 	struct r600_atom atom;
+	PIPE_FB_SURFACES; //STOP USING THIS
 	struct pipe_framebuffer_state state;
 	unsigned compressed_cb_mask;
 	unsigned nr_samples;

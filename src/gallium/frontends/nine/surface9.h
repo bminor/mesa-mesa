@@ -20,7 +20,7 @@ struct NineSurface9
 
     /* G3D state */
     struct pipe_transfer *transfer;
-    struct pipe_surface *surface[2]; /* created on-demand (linear, sRGB) */
+    struct pipe_surface surface[2]; /* created on-demand (linear, sRGB) */
     int lock_count;
     uint8_t texture; /* rtype of container BaseTex or 0 */
 
@@ -77,8 +77,7 @@ NineSurface9_MarkContainerDirty( struct NineSurface9 *This );
 static inline struct pipe_surface *
 NineSurface9_GetSurface( struct NineSurface9 *This, int sRGB )
 {
-    assert(This->surface[sRGB]);
-    return This->surface[sRGB];
+    return &This->surface[sRGB];
 }
 
 static inline struct pipe_resource *

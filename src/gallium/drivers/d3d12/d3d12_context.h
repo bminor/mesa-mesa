@@ -36,6 +36,7 @@
 #include "pipe/p_state.h"
 #include "util/list.h"
 #include "util/slab.h"
+#include "util/u_framebuffer.h"
 #include "util/u_suballoc.h"
 #include "util/u_threaded_context.h"
 
@@ -205,6 +206,7 @@ struct d3d12_context {
    struct hash_table *compute_transform_cache;
 
    struct pipe_constant_buffer cbufs[PIPE_SHADER_TYPES][PIPE_MAX_CONSTANT_BUFFERS];
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct pipe_framebuffer_state fb;
    struct pipe_vertex_buffer vbs[PIPE_MAX_ATTRIBS];
    D3D12_VERTEX_BUFFER_VIEW vbvs[PIPE_MAX_ATTRIBS];

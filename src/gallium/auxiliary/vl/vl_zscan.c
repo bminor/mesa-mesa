@@ -438,7 +438,7 @@ vl_zscan_init_buffer(struct vl_zscan *zscan, struct vl_zscan_buffer *buffer,
    buffer->fb_state.width = pipe_surface_width(dst);
    buffer->fb_state.height = pipe_surface_height(dst);
    buffer->fb_state.nr_cbufs = 1;
-   pipe_surface_reference(&buffer->fb_state.cbufs[0], dst);
+   buffer->fb_state.cbufs[0] = *dst;
 
    memset(&res_tmpl, 0, sizeof(res_tmpl));
    res_tmpl.target = PIPE_TEXTURE_3D;
@@ -473,7 +473,7 @@ vl_zscan_cleanup_buffer(struct vl_zscan_buffer *buffer)
    pipe_sampler_view_reference(&buffer->src, NULL);
    pipe_sampler_view_reference(&buffer->layout, NULL);
    pipe_sampler_view_reference(&buffer->quant, NULL);
-   pipe_surface_reference(&buffer->fb_state.cbufs[0], NULL);
+   memset(&buffer->fb_state.cbufs[0], 0, sizeof(struct pipe_surface));
 }
 
 void

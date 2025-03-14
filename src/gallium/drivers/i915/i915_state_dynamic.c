@@ -164,7 +164,7 @@ upload_IAB(struct i915_context *i915)
    unsigned iab = 0;
 
    if (i915->blend) {
-      struct i915_surface *cbuf = i915_surface(i915->framebuffer.cbufs[0]);
+      struct i915_surface *cbuf = i915_surface(i915->fb_cbufs[0]);
       if (cbuf && cbuf->alpha_in_g)
          iab |= i915->blend->iab_alpha_in_g;
       else if (cbuf && cbuf->alpha_is_x)

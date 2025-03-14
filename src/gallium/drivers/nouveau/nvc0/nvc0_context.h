@@ -9,6 +9,7 @@
 #include "util/u_memory.h"
 #include "util/u_math.h"
 #include "util/u_inlines.h"
+#include "util/u_framebuffer.h"
 #include "util/u_dynarray.h"
 
 #include "nvc0/nvc0_winsys.h"
@@ -236,6 +237,7 @@ struct nvc0_context {
    struct list_head tex_head;
    struct list_head img_head;
 
+   PIPE_FB_SURFACES; //STOP USING THIS
    struct pipe_framebuffer_state framebuffer;
    bool sample_locations_enabled;
    uint8_t sample_locations[2 * 4 * 8];

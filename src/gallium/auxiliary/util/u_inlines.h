@@ -423,13 +423,13 @@ pipe_surface_size(const struct pipe_surface *ps, uint16_t *width, uint16_t *heig
 static inline bool
 pipe_surface_equal(const struct pipe_surface *s1, const struct pipe_surface *s2)
 {
-   return s1->texture == s2->texture &&
+   return !!s1 == !!s2 && s1->texture == s2->texture &&
           s1->format == s2->format &&
           s1->nr_samples == s2->nr_samples &&
-          (s1->texture->target != PIPE_BUFFER ||
+          ((s1->texture && s1->texture->target != PIPE_BUFFER) ||
            (s1->u.buf.first_element == s2->u.buf.first_element &&
             s1->u.buf.last_element == s2->u.buf.last_element)) &&
-          (s1->texture->target == PIPE_BUFFER ||
+          ((s1->texture && s1->texture->target == PIPE_BUFFER) ||
            (s1->u.tex.level == s2->u.tex.level &&
             s1->u.tex.first_layer == s2->u.tex.first_layer &&
             s1->u.tex.last_layer == s2->u.tex.last_layer));

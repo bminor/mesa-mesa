@@ -2520,8 +2520,8 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 	if (rctx->framebuffer.do_update_surf_dirtiness) {
 		/* Set the depth buffer as dirty. */
-		if (rctx->framebuffer.state.zsbuf) {
-			struct pipe_surface *surf = rctx->framebuffer.state.zsbuf;
+		if (rctx->framebuffer.state.zsbuf.texture) {
+			struct pipe_surface *surf = &rctx->framebuffer.state.zsbuf;
 			struct r600_texture *rtex = (struct r600_texture *)surf->texture;
 
 			rtex->dirty_level_mask |= 1 << surf->u.tex.level;
@@ -2536,7 +2536,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 			do {
 				unsigned i = u_bit_scan(&mask);
-				surf = rctx->framebuffer.state.cbufs[i];
+				surf = rctx->framebuffer.fb_cbufs[i];
 				rtex = (struct r600_texture*)surf->texture;
 
 				rtex->dirty_level_mask |= 1 << surf->u.tex.level;

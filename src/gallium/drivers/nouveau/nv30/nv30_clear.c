@@ -79,15 +79,15 @@ nv30_clear(struct pipe_context *pipe, unsigned buffers, const struct pipe_scisso
    }
 
    if (buffers & PIPE_CLEAR_COLOR && fb->nr_cbufs) {
-      colr  = pack_rgba(fb->cbufs[0]->format, color->f);
+      colr  = pack_rgba(fb->cbufs[0].format, color->f);
       mode |= NV30_3D_CLEAR_BUFFERS_COLOR_R |
               NV30_3D_CLEAR_BUFFERS_COLOR_G |
               NV30_3D_CLEAR_BUFFERS_COLOR_B |
               NV30_3D_CLEAR_BUFFERS_COLOR_A;
    }
 
-   if (fb->zsbuf) {
-      zeta = pack_zeta(fb->zsbuf->format, depth, stencil);
+   if (fb->zsbuf.texture) {
+      zeta = pack_zeta(fb->zsbuf.format, depth, stencil);
       if (buffers & PIPE_CLEAR_DEPTH)
          mode |= NV30_3D_CLEAR_BUFFERS_DEPTH;
       if (buffers & PIPE_CLEAR_STENCIL) {

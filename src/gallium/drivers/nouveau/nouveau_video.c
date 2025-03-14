@@ -31,6 +31,7 @@
 #include "util/u_video.h"
 #include "util/format/u_format.h"
 #include "util/u_sampler.h"
+#include "util/u_surface.h"
 
 static int
 nouveau_vpe_init(struct nouveau_decoder *dec) {
@@ -726,35 +727,21 @@ error:
    return NULL;
 }
 
-static struct pipe_surface **
+static struct pipe_surface *
 nouveau_video_buffer_surfaces(struct pipe_video_buffer *buffer)
 {
    struct nouveau_video_buffer *buf = (struct nouveau_video_buffer *)buffer;
    struct pipe_surface surf_templ;
-   struct pipe_context *pipe;
    unsigned i;
 
    assert(buf);
 
-   pipe = buf->base.context;
-
    for (i = 0; i < buf->num_planes; ++i ) {
-      if (!buf->surfaces[i]) {
-         memset(&surf_templ, 0, sizeof(surf_templ));
-         surf_templ.format = buf->resources[i]->format;
-         buf->surfaces[i] = pipe->create_surface(pipe, buf->resources[i], &surf_templ);
-         if (!buf->surfaces[i])
-            goto error;
-      }
+      u_surface_default_template(&surf_templ, buf->resources[i]);
+      buf->surfaces[i] = surf_templ;
    }
 
    return buf->surfaces;
-
-error:
-   for (i = 0; i < buf->num_planes; ++i )
-      pipe_surface_reference(&buf->surfaces[i], NULL);
-
-   return NULL;
 }
 
 static void
@@ -766,7 +753,6 @@ nouveau_video_buffer_destroy(struct pipe_video_buffer *buffer)
    assert(buf);
 
    for (i = 0; i < buf->num_planes; ++i) {
-      pipe_surface_reference(&buf->surfaces[i], NULL);
       pipe_sampler_view_reference(&buf->sampler_view_planes[i], NULL);
       pipe_sampler_view_reference(&buf->sampler_view_components[i], NULL);
       pipe_resource_reference(&buf->resources[i], NULL);

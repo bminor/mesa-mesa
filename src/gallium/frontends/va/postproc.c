@@ -107,7 +107,7 @@ vlVaPostProcCompositor(vlVaDriver *drv,
                        enum vl_compositor_deinterlace deinterlace,
                        VAProcPipelineParameterBuffer *param)
 {
-   struct pipe_surface **surfaces;
+   struct pipe_surface *surfaces;
    struct u_rect src_rect;
    struct u_rect dst_rect;
    enum VL_CSC_COLOR_STANDARD color_standard;
@@ -128,7 +128,7 @@ vlVaPostProcCompositor(vlVaDriver *drv,
       return VA_STATUS_ERROR_UNIMPLEMENTED;
 
    surfaces = dst->get_surfaces(dst);
-   if (!surfaces || !surfaces[0])
+   if (!surfaces[0].texture)
       return VA_STATUS_ERROR_INVALID_SURFACE;
 
    src_rect.x0 = src_region->x;
@@ -226,7 +226,7 @@ vlVaPostProcCompositor(vlVaDriver *drv,
       vl_compositor_set_buffer_layer(&drv->cstate, &drv->compositor, 0, src,
                                      &src_rect, NULL, deinterlace);
       vl_compositor_set_layer_dst_area(&drv->cstate, 0, &dst_rect);
-      vl_compositor_render(&drv->cstate, &drv->compositor, surfaces[0], NULL, false);
+      vl_compositor_render(&drv->cstate, &drv->compositor, &surfaces[0], NULL, false);
    }
 
    drv->cstate.chroma_location = VL_COMPOSITOR_LOCATION_NONE;

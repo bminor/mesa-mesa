@@ -394,3 +394,6 @@ spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 5- Grid: false,Fail
 spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 5- Grid: true,Fail
 spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 6- Grid: false,Fail
 spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 6- Grid: true,Fail
+
+# undebuggable corner case from !34054
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-modifiers,Crash

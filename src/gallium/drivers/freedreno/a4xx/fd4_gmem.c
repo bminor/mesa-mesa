@@ -40,7 +40,7 @@ fd4_gmem_emit_set_prog(struct fd_context *ctx, struct fd4_emit *emit,
 
 static void
 emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
-         struct pipe_surface **bufs, const uint32_t *bases, uint32_t bin_w,
+         struct pipe_surface *bufs, const uint32_t *bases, uint32_t bin_w,
          bool decode_srgb)
 {
    enum a4xx_tile_mode tile_mode;
@@ -61,8 +61,8 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
       uint32_t base = 0;
       uint32_t offset = 0;
 
-      if ((i < nr_bufs) && bufs[i]) {
-         struct pipe_surface *psurf = bufs[i];
+      if ((i < nr_bufs) && bufs[i].texture) {
+         struct pipe_surface *psurf = &bufs[i];
          enum pipe_format pformat = psurf->format;
 
          rsc = fd_resource(psurf->texture);
@@ -109,7 +109,7 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
                         A4XX_RB_MRT_BUF_INFO_COLOR_BUF_PITCH(stride) |
                         A4XX_RB_MRT_BUF_INFO_COLOR_SWAP(swap) |
                         COND(srgb, A4XX_RB_MRT_BUF_INFO_COLOR_SRGB));
-      if (bin_w || (i >= nr_bufs) || !bufs[i]) {
+      if (bin_w || (i >= nr_bufs) || !bufs[i].texture) {
          OUT_RING(ring, base);
          OUT_RING(ring, A4XX_RB_MRT_CONTROL3_STRIDE(stride));
       } else {
@@ -268,21 +268,21 @@ fd4_emit_tile_gmem2mem(struct fd_batch *batch,
    fd4_emit_vertex_bufs(ring, &emit);
 
    if (batch->resolve & (FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
       if (!rsc->stencil || (batch->resolve & FD_BUFFER_DEPTH))
-         emit_gmem2mem_surf(batch, false, gmem->zsbuf_base[0], pfb->zsbuf);
+         emit_gmem2mem_surf(batch, false, gmem->zsbuf_base[0], &pfb->zsbuf);
       if (rsc->stencil && (batch->resolve & FD_BUFFER_STENCIL))
-         emit_gmem2mem_surf(batch, true, gmem->zsbuf_base[1], pfb->zsbuf);
+         emit_gmem2mem_surf(batch, true, gmem->zsbuf_base[1], &pfb->zsbuf);
    }
 
    if (batch->resolve & FD_BUFFER_COLOR) {
       unsigned i;
       for (i = 0; i < pfb->nr_cbufs; i++) {
-         if (!pfb->cbufs[i])
+         if (!pfb->cbufs[i].texture)
             continue;
          if (!(batch->resolve & (PIPE_CLEAR_COLOR0 << i)))
             continue;
-         emit_gmem2mem_surf(batch, false, gmem->cbuf_base[i], pfb->cbufs[i]);
+         emit_gmem2mem_surf(batch, false, gmem->cbuf_base[i], &pfb->cbufs[i]);
       }
    }
 
@@ -297,14 +297,14 @@ fd4_emit_tile_gmem2mem(struct fd_batch *batch,
 
 static void
 emit_mem2gmem_surf(struct fd_batch *batch, const uint32_t *bases,
-                   struct pipe_surface **bufs, uint32_t nr_bufs, uint32_t bin_w)
+                   struct pipe_surface *bufs, uint32_t nr_bufs, uint32_t bin_w)
 {
    struct fd_ringbuffer *ring = batch->gmem;
-   struct pipe_surface *zsbufs[2];
+   struct pipe_surface zsbufs[2];
 
    emit_mrt(ring, nr_bufs, bufs, bases, bin_w, false);
 
-   if (bufs[0] && (bufs[0]->format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)) {
+   if (bufs[0].texture && (bufs[0].format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)) {
       /* The gmem_restore_tex logic will put the first buffer's stencil
        * as color. Supply it with the proper information to make that
        * happen.
@@ -357,7 +357,7 @@ fd4_emit_tile_mem2gmem(struct fd_batch *batch,
    OUT_RING(ring, fui(y1));
 
    for (i = 0; i < A4XX_MAX_RENDER_TARGETS; i++) {
-      mrt_comp[i] = ((i < pfb->nr_cbufs) && pfb->cbufs[i]) ? 0xf : 0;
+      mrt_comp[i] = ((i < pfb->nr_cbufs) && pfb->cbufs[i].texture) ? 0xf : 0;
 
       OUT_PKT0(ring, REG_A4XX_RB_MRT_CONTROL(i), 1);
       OUT_RING(ring, A4XX_RB_MRT_CONTROL_ROP_CODE(ROP_COPY) |
@@ -463,10 +463,10 @@ fd4_emit_tile_mem2gmem(struct fd_batch *batch,
 
    if (fd_gmem_needs_restore(batch, tile,
                              FD_BUFFER_DEPTH | FD_BUFFER_STENCIL)) {
-      switch (pfb->zsbuf->format) {
+      switch (pfb->zsbuf.format) {
       case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
       case PIPE_FORMAT_Z32_FLOAT:
-         if (pfb->zsbuf->format == PIPE_FORMAT_Z32_FLOAT)
+         if (pfb->zsbuf.format == PIPE_FORMAT_Z32_FLOAT)
             fd4_gmem_emit_set_prog(ctx, &emit, &ctx->blit_z);
          else
             fd4_gmem_emit_set_prog(ctx, &emit, &ctx->blit_zs);
@@ -705,14 +705,14 @@ fd4_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
    const struct fd_gmem_stateobj *gmem = batch->gmem_state;
 
-   if (pfb->zsbuf) {
-      struct fd_resource *rsc = fd_resource(pfb->zsbuf->texture);
+   if (pfb->zsbuf.texture) {
+      struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
       uint32_t cpp = rsc->layout.cpp;
 
       OUT_PKT0(ring, REG_A4XX_RB_DEPTH_INFO, 3);
       OUT_RING(ring, A4XX_RB_DEPTH_INFO_DEPTH_BASE(gmem->zsbuf_base[0]) |
                         A4XX_RB_DEPTH_INFO_DEPTH_FORMAT(
-                           fd4_pipe2depth(pfb->zsbuf->format)));
+                           fd4_pipe2depth(pfb->zsbuf.format)));
       OUT_RING(ring, A4XX_RB_DEPTH_PITCH(cpp * gmem->bin_w));
       OUT_RING(ring, A4XX_RB_DEPTH_PITCH2(cpp * gmem->bin_w));
 
@@ -739,9 +739,9 @@ fd4_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
    }
 
    OUT_PKT0(ring, REG_A4XX_GRAS_DEPTH_CONTROL, 1);
-   if (pfb->zsbuf) {
+   if (pfb->zsbuf.texture) {
       OUT_RING(ring, A4XX_GRAS_DEPTH_CONTROL_FORMAT(
-                        fd4_pipe2depth(pfb->zsbuf->format)));
+                        fd4_pipe2depth(pfb->zsbuf.format)));
    } else {
       OUT_RING(ring, A4XX_GRAS_DEPTH_CONTROL_FORMAT(DEPTH4_NONE));
    }

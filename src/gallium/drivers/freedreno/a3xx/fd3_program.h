@@ -31,7 +31,7 @@ fd3_program_state(struct ir3_program_state *state)
 }
 
 void fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
-                      struct pipe_surface **bufs);
+                      struct pipe_surface *bufs);
 
 void fd3_prog_init(struct pipe_context *pctx);
 

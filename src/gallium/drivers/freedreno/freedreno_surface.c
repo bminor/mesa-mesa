@@ -17,12 +17,11 @@ struct pipe_surface *
 fd_create_surface(struct pipe_context *pctx, struct pipe_resource *ptex,
                   const struct pipe_surface *surf_tmpl)
 {
-   struct fd_surface *surface = CALLOC_STRUCT(fd_surface);
+   struct pipe_surface *psurf = CALLOC_STRUCT(pipe_surface);
 
-   if (!surface)
+   if (!psurf)
       return NULL;
 
-   struct pipe_surface *psurf = &surface->base;
    unsigned level = surf_tmpl->u.tex.level;
 
    pipe_reference_init(&psurf->reference, 1);
@@ -41,7 +40,7 @@ fd_create_surface(struct pipe_context *pctx, struct pipe_resource *ptex,
       psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
    }
 
-   return &surface->base;
+   return psurf;
 }
 
 void

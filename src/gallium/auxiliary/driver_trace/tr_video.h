@@ -34,7 +34,6 @@ struct trace_video_buffer
 
    struct pipe_sampler_view *sampler_view_planes[VL_NUM_COMPONENTS];
    struct pipe_sampler_view *sampler_view_components[VL_NUM_COMPONENTS];
-   struct pipe_surface      *surfaces[VL_MAX_SURFACES];
 };
 
 static inline struct trace_video_buffer *

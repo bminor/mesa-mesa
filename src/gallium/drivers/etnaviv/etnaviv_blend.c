@@ -122,7 +122,7 @@ etna_update_blend(struct etna_context *ctx)
    unsigned current_rt = 0;
 
    for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
-      if (!pfb->cbufs[i])
+      if (!pfb->cbufs[i].texture)
          continue;
 
       const struct pipe_rt_blend_state *rt;
@@ -133,7 +133,7 @@ etna_update_blend(struct etna_context *ctx)
       else
          rt = &pblend->rt[0];
 
-      if (translate_pe_format_rb_swap(pfb->cbufs[i]->format)) {
+      if (translate_pe_format_rb_swap(pfb->cbufs[i].format)) {
          colormask = rt->colormask & (PIPE_MASK_A | PIPE_MASK_G);
          if (rt->colormask & PIPE_MASK_R)
             colormask |= PIPE_MASK_B;
@@ -147,7 +147,7 @@ etna_update_blend(struct etna_context *ctx)
       * - The color mask covers all channels of the render target
       * - No blending or logicop is used
       */
-      const struct util_format_description *desc = util_format_description(pfb->cbufs[i]->format);
+      const struct util_format_description *desc = util_format_description(pfb->cbufs[i].format);
       bool full_overwrite = (blend->rt[i].fo_allowed &&
                             util_format_colormask_full(desc, colormask));
 
@@ -203,10 +203,10 @@ etna_update_blend_color(struct etna_context *ctx)
    unsigned rt = 0;
 
    for (unsigned i = 0; i < fb->nr_cbufs; i++) {
-      if (!fb->cbufs[i])
+      if (!fb->cbufs[i].texture)
          continue;
 
-      bool rb_swap = translate_pe_format_rb_swap(fb->cbufs[i]->format);
+      bool rb_swap = translate_pe_format_rb_swap(fb->cbufs[i].format);
 
       if (rt == 0) {
          cs->PE_ALPHA_BLEND_COLOR =
