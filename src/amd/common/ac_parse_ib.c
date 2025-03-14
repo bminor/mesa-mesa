@@ -1981,8 +1981,8 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
                case RDECODE_CMDBUF_FLAGS_REPORT_EVENT_STATUS:
                   fprintf(f, "REPORT EVENT STATUS\n");
                   break;
-               case RDECODE_CMDBUF_FLAGS_RESERVED_SIZE_INFO_BUFFER:
-                  fprintf(f, "RESERVED SIZE INFO BUFFER\n");
+               case RDECODE_CMDBUF_FLAGS_SUBSAMPLE_SIZE_INFO_BUFFER:
+                  fprintf(f, "SUBSAMPLE SIZE INFO BUFFER\n");
                   break;
                case RDECODE_CMDBUF_FLAGS_LUMA_HIST_BUFFER:
                   fprintf(f, "LUMA HIST BUFFER\n");

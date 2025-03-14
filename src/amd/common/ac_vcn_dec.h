@@ -61,7 +61,7 @@
 #define RDECODE_CMDBUF_FLAGS_SCLR_COEF_BUFFER                        (0x00008000)
 #define RDECODE_CMDBUF_FLAGS_RECORD_TIMESTAMP                        (0x00010000)
 #define RDECODE_CMDBUF_FLAGS_REPORT_EVENT_STATUS                     (0x00020000)
-#define RDECODE_CMDBUF_FLAGS_RESERVED_SIZE_INFO_BUFFER               (0x00040000)
+#define RDECODE_CMDBUF_FLAGS_SUBSAMPLE_SIZE_INFO_BUFFER              (0x00040000)
 #define RDECODE_CMDBUF_FLAGS_LUMA_HIST_BUFFER                        (0x00080000)
 #define RDECODE_CMDBUF_FLAGS_SESSION_CONTEXT_BUFFER                  (0x00100000)
 #define RDECODE_CMDBUF_FLAGS_REF_BUFFER                              (0x00200000)
@@ -75,6 +75,7 @@
 #define RDECODE_CMD_BITSTREAM_BUFFER                        0x00000100
 #define RDECODE_CMD_IT_SCALING_TABLE_BUFFER                 0x00000204
 #define RDECODE_CMD_CONTEXT_BUFFER                          0x00000206
+#define RDECODE_CMD_SUBSAMPLE                               0x00000700
 #define RDECODE_CMD_WRITE_MEMORY                            0x00000800
 
 #define RDECODE_MSG_CREATE                                  0x00000000
@@ -146,6 +147,7 @@
 #define RDECODE_MESSAGE_VP9                                 0x0000000E
 #define RDECODE_MESSAGE_DYNAMIC_DPB                         0x00000010
 #define RDECODE_MESSAGE_AV1                                 0x00000011
+#define RDECODE_MESSAGE_DRM_KEYBLOB                         0x00000014
 
 #define RDECODE_FEEDBACK_PROFILING                          0x00000001
 
@@ -464,8 +466,8 @@ typedef struct rvcn_decode_buffer_s {
    unsigned int it_sclr_table_buffer_address_lo;
    unsigned int sclr_target_buffer_address_hi;
    unsigned int sclr_target_buffer_address_lo;
-   unsigned int reserved_size_info_buffer_address_hi;
-   unsigned int reserved_size_info_buffer_address_lo;
+   unsigned int subsample_hi;
+   unsigned int subsample_lo;
    unsigned int mpeg2_pic_param_buffer_address_hi;
    unsigned int mpeg2_pic_param_buffer_address_lo;
    unsigned int mpeg2_mb_control_buffer_address_hi;
@@ -559,7 +561,8 @@ typedef struct rvcn_dec_message_drm_s {
    unsigned int	drm_offset;
    unsigned int	drm_cmd;
    unsigned int	drm_cntl;
-   unsigned int	drm_reserved;
+   unsigned int	drm_max_res;
+   unsigned int	drm_subsample_size;
 } rvcn_dec_message_drm_t;
 
 typedef struct rvcn_dec_message_dynamic_dpb_s {
@@ -1244,6 +1247,7 @@ struct jpeg_params {
 #define RDECODE_VCN2_5_ENGINE_CNTL          0x9b4
 
 #define RDECODE_SESSION_CONTEXT_SIZE (128 * 1024)
+#define RDECODE_MAX_SUBSAMPLE_SIZE   (2048 * 2 * 4)
 
 unsigned ac_vcn_dec_calc_ctx_size_av1(unsigned av1_version);
 void ac_vcn_av1_init_probs(unsigned av1_version, uint8_t *prob);

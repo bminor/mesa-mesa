@@ -96,6 +96,7 @@ struct radeon_decoder {
    struct rvid_buffer dpb;
    struct rvid_buffer ctx;
    struct rvid_buffer sessionctx;
+   struct rvid_buffer subsample;
 
    unsigned bs_size;
    unsigned cur_buffer;

@@ -15,6 +15,7 @@
 #include "util/vl_zscan_data.h"
 #include "vl/vl_probs_table.h"
 #include "pspdecryptionparam.h"
+#include "cencdecryptionparam.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -1488,6 +1489,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
                                                       struct pipe_picture_desc *picture)
 {
    DECRYPT_PARAMETERS *decrypt = (DECRYPT_PARAMETERS *)picture->decrypt_key;
+   amd_secure_buffer_format *secure_buf = (amd_secure_buffer_format *)picture->decrypt_key;
    bool encrypted = picture->protected_playback;
    struct si_texture *luma;
    struct si_texture *chroma;
@@ -1791,6 +1793,26 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    if (dec->stream_type == RDECODE_CODEC_AV1)
       decode->db_pitch_uv = chroma->surface.u.gfx9.surf_pitch * chroma->surface.blk_w;
 
+   if (picture->cenc) {
+      if (!dec->subsample.res && !si_vid_create_buffer(dec->screen, &dec->subsample,
+                                                       RDECODE_MAX_SUBSAMPLE_SIZE,
+                                                       PIPE_USAGE_DEFAULT)) {
+         RADEON_DEC_ERR("Can't allocate subsample buffer.\n");
+         return NULL;
+      }
+      int ss_length = MIN2(secure_buf->desc.subsamples_length, MAX_SUBSAMPLES);
+      uint32_t *ss_ptr = dec->ws->buffer_map(dec->ws, dec->subsample.res->buf, &dec->cs,
+                                             PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
+      if (!ss_ptr) {
+         RADEON_DEC_ERR("Failed to map subsample buffer memory.\n");
+         return NULL;
+      }
+      for (int i = 0; i < ss_length; i++)
+         memcpy(&ss_ptr[i * 2], &secure_buf->desc.subsamples[i].num_bytes_clear, 8);
+      ss_ptr[ss_length * 2 - 1] = align(ss_ptr[ss_length * 2 - 1], 256);
+      dec->ws->buffer_unmap(dec->ws, dec->subsample.res->buf);
+   }
+
    if (encrypted) {
       assert(sscreen->info.has_tmz_support);
       set_drm_keys(drm, decrypt);
@@ -2063,6 +2085,11 @@ static void send_cmd(struct radeon_decoder *dec, unsigned cmd, struct pb_buffer_
             dec->decode_buffer->valid_buf_flag |= (RDECODE_CMDBUF_FLAGS_CONTEXT_BUFFER);
             dec->decode_buffer->context_buffer_address_hi = (addr >> 32);
             dec->decode_buffer->context_buffer_address_lo = (addr);
+         break;
+      case RDECODE_CMD_SUBSAMPLE:
+            dec->decode_buffer->valid_buf_flag |= (RDECODE_CMDBUF_FLAGS_SUBSAMPLE_SIZE_INFO_BUFFER);
+            dec->decode_buffer->subsample_hi = (addr >> 32);
+            dec->decode_buffer->subsample_lo = (addr);
          break;
       default:
             printf("Not Support!");
@@ -2393,6 +2420,7 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
    }
    si_vid_destroy_buffer(&dec->ctx);
    si_vid_destroy_buffer(&dec->sessionctx);
+   si_vid_destroy_buffer(&dec->subsample);
 
    FREE(dec->jcs);
    FREE(dec->jctx);
@@ -2599,6 +2627,9 @@ bool send_cmd_dec(struct radeon_decoder *dec, struct pipe_video_buffer *target,
    else if (have_probs(dec))
       send_cmd(dec, RDECODE_CMD_PROB_TBL_BUFFER, msg_fb_it_probs_buf->res->buf,
                FB_BUFFER_OFFSET + FB_BUFFER_SIZE, RADEON_USAGE_READ, RADEON_DOMAIN_GTT);
+   if (picture->cenc)
+      send_cmd(dec, RDECODE_CMD_SUBSAMPLE, dec->subsample.res->buf, 0, RADEON_USAGE_READ,
+               RADEON_DOMAIN_VRAM);
 
    if (dec->dpb_type == DPB_DYNAMIC_TIER_3)
       send_ref_buffers(dec);
