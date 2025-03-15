@@ -610,11 +610,10 @@ etna_compute_tileoffset(const struct pipe_box *box, enum pipe_format format,
 }
 
 static inline void
-etna_get_rs_alignment_mask(const struct etna_context *ctx,
+etna_get_rs_alignment_mask(const struct etna_screen *screen,
                            const enum etna_surface_layout layout,
                            unsigned int *width_mask, unsigned int *height_mask)
 {
-   struct etna_screen *screen = ctx->screen;
    unsigned int h_align, w_align;
 
    if (layout & ETNA_LAYOUT_BIT_SUPER) {
@@ -713,7 +712,7 @@ etna_try_rs_blit(struct pipe_context *pctx,
 
    unsigned w_mask, h_mask;
 
-   etna_get_rs_alignment_mask(ctx, src->layout, &w_mask, &h_mask);
+   etna_get_rs_alignment_mask(ctx->screen, src->layout, &w_mask, &h_mask);
    if ((blit_info->src.box.x & w_mask) || (blit_info->src.box.y & h_mask)) {
       DBG("src x/y not properly aligned: %d %d",
           blit_info->src.box.x,
@@ -721,7 +720,7 @@ etna_try_rs_blit(struct pipe_context *pctx,
       return false;
    }
 
-   etna_get_rs_alignment_mask(ctx, dst->layout, &w_mask, &h_mask);
+   etna_get_rs_alignment_mask(ctx->screen, dst->layout, &w_mask, &h_mask);
    if ((blit_info->dst.box.x & w_mask) || (blit_info->dst.box.y & h_mask)) {
       DBG("dst x/y not properly aligned: %d %d",
           blit_info->src.box.x,
@@ -906,13 +905,13 @@ manual:
 }
 
 void
-etna_align_box_for_rs(const struct etna_context *ctx,
+etna_align_box_for_rs(const struct etna_screen *screen,
                       const struct etna_resource *rsc,
                       struct pipe_box *box)
 {
    unsigned w_align, h_align;
 
-   etna_get_rs_alignment_mask(ctx, rsc->layout, &w_align, &h_align);
+   etna_get_rs_alignment_mask(screen, rsc->layout, &w_align, &h_align);
 
    box->width += box->x & w_align;
    box->x = box->x & ~w_align;

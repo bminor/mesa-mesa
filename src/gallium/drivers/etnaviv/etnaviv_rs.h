@@ -88,7 +88,7 @@ etna_compile_rs_state(struct etna_context *ctx, struct compiled_rs_state *cs,
                       const struct rs_state *rs);
 
 void
-etna_align_box_for_rs(const struct etna_context *ctx,
+etna_align_box_for_rs(const struct etna_screen *screen,
                       const struct etna_resource *rsc,
                       struct pipe_box *box);
 

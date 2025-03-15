@@ -298,7 +298,7 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
          /* Need to align the transfer region to satisfy RS restrictions, as we
           * really want to hit the RS blit path here.
           */
-         etna_align_box_for_rs(ctx, rsc, &ptrans->box);
+         etna_align_box_for_rs(ctx->screen, rsc, &ptrans->box);
       }
 
       if ((usage & PIPE_MAP_READ) || !(usage & ETNA_PIPE_MAP_DISCARD_LEVEL))
