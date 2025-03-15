@@ -299,7 +299,7 @@
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     # Enable ETC2 emulation on non-native platforms (RENOIR,RDNA+, GFX6-8 dGPUs)
     vk_require_etc2: 'true'
-    B2C_JOB_WARN_REGEX: '\*ERROR\* ring .* timeout'
+    CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
 
 .b2c-test-radv-vk:
   extends:
@@ -307,36 +307,38 @@
     - .radv-valve-rules
     - .test-radv
   variables:
-    B2C_KERNEL_URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
+    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
+
 
 .tahiti-test-valve:
   variables:
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:TAHITI
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:TAHITI
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .hawaii-test-valve:
   variables:
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:HAWAII
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:HAWAII
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .kabini-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:KABINI
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=8g'
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:KABINI
+    CI_TRON__B2C_SWAP_SIZE: '8g'
 
 .polaris10-test-valve:
   variables:
     FDO_CI_CONCURRENT: 16
-    B2C_TIMEOUT_BOOT_RETRIES: 4
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:POLARIS10
+    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:POLARIS10
+    CI_TRON__B2C_SWAP_SIZE: '16g'
     # (2022-01) tsc=unstable was added in response to this message in kmsg,
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g tsc=unstable'
+    CI_TRON_KERNEL_CMDLINE__TSC_WORKAROUND: 'tsc=unstable'
 
 .polaris10-test-valve-mupuf:
   extends: .polaris10-test-valve
@@ -351,16 +353,16 @@
 .vega10-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:VEGA10
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VEGA10
     FDO_CI_CONCURRENT: 16
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .renoir-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:RENOIR
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RENOIR
     FDO_CI_CONCURRENT: 16
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .navi10-test-valve:
   variables:
@@ -368,8 +370,9 @@
     # machine is using non-MSI IRQs and is generating a lot of
     # IRQs. This tends to confuse the interrupt controller and breaks
     # MSI IRQs leading to GPU hangs on amdgpu.
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g noapic'
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:NAVI10
+    CI_TRON_KERNEL_CMDLINE__APIC_WORKAROUND: 'noapic'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI10
 
 .navi10-test-valve-mupuf:
   extends:
@@ -388,34 +391,34 @@
 .navi21-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:NAVI21
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI21
     FDO_CI_CONCURRENT: 32
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .vangogh-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:VANGOGH
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VANGOGH
     FDO_CI_CONCURRENT: 8
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
   tags:
     - farm:$RUNNER_FARM_LOCATION
-    - $B2C_MARS_SETUP_TAGS
+    - $CI_TRON_DUT_SETUP_TAGS
     - $CI_TRON_JOB_PRIORITY_TAG
 
 .raphael-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:RAPHAEL
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RAPHAEL
     FDO_CI_CONCURRENT: 32
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .navi31-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
-    B2C_MARS_SETUP_TAGS: amdgpu:codename:NAVI31
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI31
     FDO_CI_CONCURRENT: 32
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 ############### Fluster tests ###############
 .radeonsi-vaapi-fluster-rules:

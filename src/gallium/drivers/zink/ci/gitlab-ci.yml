@@ -192,8 +192,8 @@ zink-tu-a750:
     - .test-piglit
   timeout: 25m  # base runtime 11min total, 9min of testing
   variables:
-    B2C_TIMEOUT_BOOT_MINUTES: 18
-    B2C_TIMEOUT_OVERALL_MINUTES: 20
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 18
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: zink-tu-a750
     GPU_VERSION: zink-tu-a750
     HWCI_START_WESTON: 1
@@ -207,8 +207,8 @@ zink-nvk-ga106-valve:
     - .nvk-ga106-valve
   variables:
     GPU_VERSION: zink-nvk-ga106
-    B2C_TIMEOUT_BOOT_MINUTES: 50
-    B2C_TIMEOUT_OVERALL_MINUTES: 55  # usual run time: 35min
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 55  # usual run time: 35min
 
 zink-radv-polaris10-valve:
   extends:
@@ -219,7 +219,7 @@ zink-radv-polaris10-valve:
   variables:
     GPU_VERSION: zink-radv-polaris10
     ZINK_DEBUG: quiet
-    B2C_TIMEOUT_OVERALL_MINUTES: 30
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
 
 zink-radv-navi10-valve:
   extends:
@@ -228,7 +228,7 @@ zink-radv-navi10-valve:
     - .zink-radv-manual-rules
   timeout: 40m
   variables:
-    B2C_TIMEOUT_OVERALL_MINUTES: 30
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     GPU_VERSION: zink-radv-navi10
 
 zink-radv-vangogh-valve:
@@ -240,10 +240,10 @@ zink-radv-vangogh-valve:
     - .zink-radv-rules
   variables:
     GPU_VERSION: zink-radv-vangogh
-    B2C_SESSION_REBOOT_REGEX: 'BUG: kernel NULL pointer dereference, address'
-    B2C_TIMEOUT_BOOT_RETRIES: 1
-    B2C_TIMEOUT_BOOT_MINUTES: 30
-    B2C_TIMEOUT_OVERALL_MINUTES: 30
+    CI_TRON_PATTERN__SESSION_REBOOT__REGEX: 'BUG: kernel NULL pointer dereference, address'
+    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 1
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 30
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     FDO_CI_CONCURRENT: 6
     ZINK_DEBUG: vvl
   # Override the list of tags to drop `ci-tron:priority:low`
@@ -259,6 +259,6 @@ zink-radv-navi31-valve:
   timeout: 1h 20m
   variables:
     GPU_VERSION: zink-radv-navi31
-    B2C_TIMEOUT_BOOT_MINUTES: 75
-    B2C_TIMEOUT_OVERALL_MINUTES: 75
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 75
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
     ZINK_DEBUG: vvl

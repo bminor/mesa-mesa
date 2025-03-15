@@ -15,7 +15,6 @@ mkdir -p artifacts/
 cp -Rp .gitlab-ci/report-flakes.py artifacts/
 cp -Rp .gitlab-ci/setup-test-env.sh artifacts/
 cp -Rp .gitlab-ci/common artifacts/ci-common
-cp -Rp .gitlab-ci/b2c artifacts/
 cp -Rp .gitlab-ci/bare-metal artifacts/
 cp -Rp .gitlab-ci/lava artifacts/
 cp -Rp .gitlab-ci/bin/*_logger.py artifacts/

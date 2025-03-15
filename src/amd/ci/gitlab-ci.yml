@@ -168,9 +168,8 @@ radeonsi-raven-vaapi-fluster:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-kabini
-    B2C_TIMEOUT_BOOT_MINUTES: 710
-    B2C_TIMEOUT_OVERALL_MINUTES: 710
-    B2C_TIMEOUT_BOOT_RETRIES: 0
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 710
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 710
 
 radv-tahiti-vkcts:
   extends:
@@ -181,9 +180,8 @@ radv-tahiti-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-tahiti
-    B2C_TIMEOUT_BOOT_MINUTES: 50
-    B2C_TIMEOUT_OVERALL_MINUTES: 50
-    B2C_TIMEOUT_BOOT_RETRIES: 0
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
 radv-hawaii-vkcts:
@@ -195,9 +193,8 @@ radv-hawaii-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-hawaii
-    B2C_TIMEOUT_BOOT_MINUTES: 50
-    B2C_TIMEOUT_OVERALL_MINUTES: 50
-    B2C_TIMEOUT_BOOT_RETRIES: 0
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
 radv-polaris10-vkcts:
@@ -209,8 +206,8 @@ radv-polaris10-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-polaris10
-    B2C_TIMEOUT_BOOT_MINUTES: 70
-    B2C_TIMEOUT_OVERALL_MINUTES: 70
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     RADV_PERFTEST: video_decode,video_encode
     radv_enable_float16_gfx8: true
 
@@ -223,8 +220,8 @@ radv-vega10-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vega10
-    B2C_TIMEOUT_BOOT_MINUTES: 70
-    B2C_TIMEOUT_OVERALL_MINUTES: 70
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 radv-renoir-vkcts:
@@ -236,8 +233,8 @@ radv-renoir-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-renoir
-    B2C_TIMEOUT_BOOT_MINUTES: 130
-    B2C_TIMEOUT_OVERALL_MINUTES: 130
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 130
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 130
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
 
@@ -262,8 +259,8 @@ radv-navi21-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi21
-    B2C_TIMEOUT_BOOT_MINUTES: 30
-    B2C_TIMEOUT_OVERALL_MINUTES: 30
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 30
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     RADV_PERFTEST: transfer_queue
 
 radv-vangogh-vkcts:
@@ -277,8 +274,8 @@ radv-vangogh-vkcts:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
-    B2C_TIMEOUT_BOOT_MINUTES: 85
-    B2C_TIMEOUT_OVERALL_MINUTES: 89
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 85
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
 radeonsi-vangogh-glcts-full:
   extends:
@@ -290,8 +287,8 @@ radeonsi-vangogh-glcts-full:
   variables:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
-    B2C_TIMEOUT_BOOT_MINUTES: 85
-    B2C_TIMEOUT_OVERALL_MINUTES: 89
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 85
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
 radeonsi-vangogh-glcts:
   extends:
@@ -300,8 +297,8 @@ radeonsi-vangogh-glcts:
   timeout: 30m
   variables:
     DEQP_FRACTION: 4
-    B2C_TIMEOUT_BOOT_MINUTES: 28
-    B2C_TIMEOUT_OVERALL_MINUTES: 29
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 29
 
 radv-raphael-vkcts:
   extends:
@@ -312,8 +309,8 @@ radv-raphael-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-raphael
-    B2C_TIMEOUT_BOOT_MINUTES: 35
-    B2C_TIMEOUT_OVERALL_MINUTES: 40
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 35
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 radv-navi31-vkcts:
@@ -328,8 +325,8 @@ radv-navi31-vkcts:
     GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
-    B2C_TIMEOUT_BOOT_MINUTES: 20
-    B2C_TIMEOUT_OVERALL_MINUTES: 20
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 20
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
 ############### Fossilize
 radv-fossils:

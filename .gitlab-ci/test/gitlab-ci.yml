@@ -379,123 +379,53 @@ yaml-toml-shell-py-test:
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     FDO_CI_CONCURRENT: 0  # Default to number of CPUs
 
-# For Valve's bare-metal testing farm jobs.
+# For CI-tron based testing farm jobs.
 .b2c-test:
-  # It would be nice to use ci-templates within Mesa CI for this job's
-  # image:, but the integration is not possible for the current
-  # use-case. Within this job, two containers are managed. 1) the
-  # gitlab runner container from which the job is submitted to the
-  # DUT, and 2) the test container (e.g. debian/x86_64_test-vk) within
-  # which the test cases will run on the DUT. Since ci-templates and
-  # the associated image setting macros in this file rely on variables
-  # like FDO_DISTRIBUTION_TAG for *the* image, there is no way to
-  # depend on more than one image per job. So, the job container is
-  # built as part of the CI in the boot2container project.
-  image: registry.freedesktop.org/gfx-ci/ci-tron/mesa-trigger:2024-01-05.1
+  extends:
+    - .ci-tron-b2c-job-v1
   timeout: 1h 40m
   variables:
-    # No need to pull the whole git repo, the artifacts from python-artifacts
-    # contain everything we need.
     GIT_STRATEGY: none
     # boot2container initrd configuration parameters.
     B2C_VERSION: v0.9.14
-    B2C_JOB_SUCCESS_REGEX: 'hwci: mesa: pass, exit_code: 0\r$'
-    B2C_LOG_LEVEL: 6
-    B2C_POWEROFF_DELAY: 15
-    B2C_SESSION_END_REGEX: '^.*It''s now safe to turn off your computer\r$'
-    B2C_SESSION_REBOOT_REGEX: ''
-    B2C_TIMEOUT_BOOT_MINUTES: 45
-    B2C_TIMEOUT_BOOT_RETRIES: 0
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_MINUTES: 2
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
-    B2C_TIMEOUT_CONSOLE_ACTIVITY_MINUTES: 5
-    B2C_TIMEOUT_OVERALL_MINUTES: 90
-    B2C_TIMEOUT_CONSOLE_ACTIVITY_RETRIES: 0
-    B2C_JOB_VOLUME_EXCLUSIONS: "*.shader_cache,install/*,*/install/*,*/vkd3d-proton.cache*,vkd3d-proton.cache*,*.qpa"
-    B2C_MACHINE_REGISTRATION_IMAGE: "registry.freedesktop.org/gfx-ci/ci-tron/machine-registration:latest"
-    B2C_TELEGRAF_IMAGE: "registry.freedesktop.org/gfx-ci/ci-tron/telegraf:latest"
-    B2C_KERNEL_CMDLINE_EXTRAS: ""
 
-    # As noted in the top description, we make a distinction between the
-    # container used by gitlab-runner to queue the work, and the container
-    # used by the DUTs/test machines. To make this distinction quite clear,
-    # we rename the variable.
-    B2C_IMAGE_UNDER_TEST: "$MESA_IMAGE"
+    SCRIPTS_DIR: install
 
-    B2C_INSTALL_TARBALL_URL: "https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst"
-    B2C_CONTAINER_CMD: "./install/common/init-stage2.sh"
+    CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: pass, exit_code: 0\r$'
+    CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'
 
-    CI_B2C_ARTIFACTS: "./artifacts/b2c"
-    CI_COMMON_SCRIPTS: "./artifacts/ci-common"
-    B2C_JOB_TEMPLATE: "${CI_B2C_ARTIFACTS}/b2c.yml.jinja2.jinja2"
-    JOB_FOLDER: "job_folder"
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 45
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 2
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__RETRIES: 3
+    CI_TRON_TIMEOUT__CONSOLE_ACTIVITY__MINUTES: 5
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 90
+
+    CI_TRON__B2C_ARTIFACT_EXCLUSION: "*.shader_cache,install/*,*/install/*,*/vkd3d-proton.cache*,vkd3d-proton.cache*,*.qpa"
+    CI_TRON_HTTP_ARTIFACT__INSTALL__PATH: "/install.tar.zst"
+    CI_TRON_HTTP_ARTIFACT__INSTALL__URL: "https://$PIPELINE_ARTIFACTS_BASE/$S3_ARTIFACT_NAME.tar.zst"
+
+    CI_TRON__B2C_MACHINE_REGISTRATION_CMD: "setup --tags $CI_TRON_DUT_SETUP_TAGS"
+    CI_TRON__B2C_IMAGE_UNDER_TEST: $MESA_IMAGE
+    CI_TRON__B2C_EXEC_CMD: "curl --silent --fail-with-body {{ job.http.url }}$CI_TRON_HTTP_ARTIFACT__INSTALL__PATH | tar --zstd --extract && $SCRIPTS_DIR/common/init-stage2.sh"
 
     # Assume by default this is running deqp, as that's almost always true
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
-
   needs:
-    - job: python-artifacts
-      artifacts: true
     - !reference [.required-for-hardware-jobs, needs]
   tags:
     - farm:$RUNNER_FARM_LOCATION
-    - $B2C_MARS_SETUP_TAGS
+    - $CI_TRON_DUT_SETUP_TAGS
 
+  # Override the default before_script, as it is not compatible with the CI-tron environment. We just keep the clearing
+  # of the JWT token for security reasons
   before_script:
-    # We don't want the tarball unpacking of .test, but will take the JWT bits.
-    - !reference [default, before_script]
-
     - |
-      set -eux
+      set -eu
 
-      section_start b2c_kernel_boot "Booting hardware device"
+      eval "$S3_JWT_FILE_SCRIPT"
 
-      [ -d "$CI_B2C_ARTIFACTS" ] || exit 1
-      [ -d "$CI_COMMON_SCRIPTS" ] || exit 1
-
-      # Pull all our images through our proxy registry
-      B2C_IMAGE_UNDER_TEST=${B2C_IMAGE_UNDER_TEST//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
-      B2C_MACHINE_REGISTRATION_IMAGE=${B2C_MACHINE_REGISTRATION_IMAGE//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
-      B2C_TELEGRAF_IMAGE=${B2C_TELEGRAF_IMAGE//registry.freedesktop.org/{{ fdo_proxy_registry \}\}}
-
-      # The Valve CI gateway receives jobs in a YAML format. Create a
-      # job description from the CI environment.
-      python3 "$CI_B2C_ARTIFACTS"/generate_b2c.py
-
-      cat b2c.yml.jinja2
-
-      rm -rf ${JOB_FOLDER} || true
-      mkdir -v ${JOB_FOLDER}
-
-      # Create a script to regenerate the CI environment when this job
-      # begins running on the remote DUT.
-      set +x
-      "$CI_COMMON_SCRIPTS"/export-gitlab-job-env-for-dut.sh > ${JOB_FOLDER}/set-job-env-vars.sh
-      echo "export SCRIPTS_DIR=./install" >> ${JOB_FOLDER}/set-job-env-vars.sh
-      echo "Variables passed through:"
-      cat ${JOB_FOLDER}/set-job-env-vars.sh
-      set -x
-
-  script: |
-      slugify () {
-          echo "$1" | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
-      }
-
-      # Submit the job to Valve's CI gateway service with the CI
-      # provisioned job_folder.
-      PYTHONUNBUFFERED=1 \
-      executorctl run \
-          --machine-id "$CI_RUNNER_DESCRIPTION" \
-          --job-id $(slugify "$CI_JOB_NAME") \
-          --share-directory "$JOB_FOLDER" \
-          --wait \
-          b2c.yml.jinja2
-
-  after_script:
-    # Keep the results path the same as baremetal and LAVA
-    - mkdir -p "${JOB_FOLDER}"/results
-    - mv "${JOB_FOLDER}"/results ./
-    - !reference [default, after_script]
+      # Open a section that will be closed by b2c
+      echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36m[$(cut -d ' ' -f1 /proc/uptime)]: Submitting the CI-tron job and booting the DUT\e[0m\n"
 
   # Anything our job places in results/ will be collected by the
   # Gitlab coordinator for status presentation. results/junit.xml
@@ -513,8 +443,14 @@ yaml-toml-shell-py-test:
   extends:
     - .b2c-test
   variables:
-    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
-    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_amd64.cpio.xz'
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_amd64.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
+
+    # Set the following variables if you need AMD, Intel, or NVIDIA support
+    # CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    # CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
+    # CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/amdgpu)/.*)"
+
     S3_ARTIFACT_NAME: "mesa-x86_64-default-debugoptimized"
 
 .b2c-x86_64-test-vk:
@@ -569,8 +505,8 @@ yaml-toml-shell-py-test:
   extends:
     - .b2c-test
   variables:
-    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm64.cpio.xz'
-    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm64'
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm64.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm64'
     S3_ARTIFACT_NAME: "mesa-arm64-default-debugoptimized"
 
 .b2c-arm64-test-vk:
@@ -599,8 +535,8 @@ yaml-toml-shell-py-test:
   extends:
     - .b2c-test
   variables:
-    B2C_INITRAMFS_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/initramfs.linux_arm.cpio.xz'
-    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/${B2C_VERSION}/downloads/linux-arm'
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm'
     S3_ARTIFACT_NAME: "mesa-arm32-default-debugoptimized"
 
 .b2c-arm32-test-vk:

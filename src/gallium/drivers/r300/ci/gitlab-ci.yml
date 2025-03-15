@@ -9,19 +9,19 @@ include:
     FDO_CI_CONCURRENT: 2
     RUNNER_FARM_LOCATION: ondracka
     # 6.6.8 kernel with radeon driver.
-    B2C_KERNEL_URL: 'https://gitlab.freedesktop.org/ondracka/boot2container/-/wikis/uploads/1733cfc7cc114d08ec785044b24314f3/linux-x86_64'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/ondracka/boot2container/-/wikis/uploads/1733cfc7cc114d08ec785044b24314f3/linux-x86_64'
 
 .ondracka-rv530:
   extends:
     - .ondracka-generic
   variables:
-    B2C_MARS_SETUP_TAGS: radeon:codename:RV530
+    CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV530
 
 .ondracka-rv380:
   extends:
     - .ondracka-generic
   variables:
-    B2C_MARS_SETUP_TAGS: radeon:codename:RV380
+    CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV380
 
 r300-rv530-deqp-gles2:
   extends:
@@ -60,7 +60,7 @@ r300-rv410-deqp-piglit:
     DEQP_SUITE: r300-rv410
     GPU_VERSION: r300-rv410
     PIGLIT_PLATFORM: gbm
-    B2C_MARS_SETUP_TAGS: radeon:codename:RV410
+    CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV410
 
 r300-rv530-piglit:
   extends:

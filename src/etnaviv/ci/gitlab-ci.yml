@@ -32,17 +32,19 @@
       when: manual
 
 .austriancoder-ci-tron:
+  extends:
+    - .ci-tron-b2c-diskless-v1
   variables:
     RUNNER_FARM_LOCATION: austriancoder
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
-    B2C_MARS_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 0.5
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__RETRIES: 3
+    CI_TRON_DUT_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
 
 .austriancoder-imx6q-cubox-i:arm32:
   extends:
     - .austriancoder-ci-tron
   variables:
-    B2C_IMAGESTORE_PLATFORM: linux/arm/v7
+    CI_TRON__B2C_DISKLESS_IMAGESTORE_PLATFORM: linux/arm/v7
     VIVANTE_MODEL_TAG: "vivante:model:2000"
     VIVANTE_REVISION_TAG: "vivante:revision:5108"
     GPU_VERSION: "etnaviv-gc2000-r5108"
@@ -77,7 +79,7 @@
     - .austriancoder-ci-tron
   variables:
     FDO_CI_CONCURRENT: 4
-    B2C_IMAGESTORE_PLATFORM: linux/arm/v7
+    CI_TRON__B2C_DISKLESS_IMAGESTORE_PLATFORM: linux/arm/v7
     VIVANTE_MODEL_TAG: "vivante:model:3000"
     VIVANTE_REVISION_TAG: "vivante:revision:5450"
     GPU_VERSION: "etnaviv-gc3000-r5450"
@@ -92,7 +94,7 @@
     - .austriancoder-ci-tron
   variables:
     FDO_CI_CONCURRENT: 4
-    B2C_IMAGESTORE_PLATFORM: linux/arm64/v8
+    CI_TRON__B2C_DISKLESS_IMAGESTORE_PLATFORM: linux/arm64/v8
     VIVANTE_MODEL_TAG: "vivante:model:7000"
     VIVANTE_REVISION_TAG: "vivante:revision:6214"
     GPU_VERSION: "etnaviv-gc7000-r6214"
@@ -123,7 +125,7 @@ gc2000-gles2:
     # Disable reporting, since DUTs don't have internet access
     FLAKES_CHANNEL: ""
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    B2C_TIMEOUT_OVERALL_MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
   timeout: 30m
 
 # Disabled until the 168 fails get addressed
@@ -138,7 +140,7 @@ gc2000-gles2:
     DEQP_FRACTION: 100
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    B2C_TIMEOUT_OVERALL_MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
   timeout: 30m
 
 gc2000-piglit:
@@ -147,7 +149,7 @@ gc2000-piglit:
     - .test-piglit
   variables:
     DEQP_SUITE: etnaviv-gc2000-piglit
-    B2C_TIMEOUT_OVERALL_MINUTES: 25
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
   parallel: 2
   timeout: 30m
 
@@ -160,7 +162,7 @@ gc3000-gles2:
     DEQP_SUITE: etnaviv-gc3000
     FLAKES_CHANNEL: ""
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    B2C_TIMEOUT_OVERALL_MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
   timeout: 30m
 
 gc7000-imx8mq-gles2:
@@ -172,7 +174,7 @@ gc7000-imx8mq-gles2:
     DEQP_SUITE: etnaviv-gc7000
     FLAKES_CHANNEL: ""
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    B2C_TIMEOUT_OVERALL_MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
   timeout: 30m
 
 gc7000-imx8mp-gles2:

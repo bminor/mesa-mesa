@@ -448,8 +448,8 @@ a750-angle:
     - .test-angle
   timeout: 25m  # base runtime 10min total, 7min of testing
   variables:
-    B2C_TIMEOUT_BOOT_MINUTES: 17
-    B2C_TIMEOUT_OVERALL_MINUTES: 20
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 17
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: tu-angle
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
 
@@ -460,8 +460,8 @@ a750-gl:
     - .valve-freedreno-manual-rules
   timeout: 30m  # base runtime 11min total, 8min of testing
   variables:
-    B2C_TIMEOUT_BOOT_MINUTES: 22
-    B2C_TIMEOUT_OVERALL_MINUTES: 25
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 22
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
     DEQP_SUITE: freedreno-a750
 
@@ -487,8 +487,8 @@ a750-vk:
     - .valve-turnip-manual-rules
   timeout: 75m  # base runtime 54min total, 51min of testing
   variables:
-    B2C_TIMEOUT_BOOT_MINUTES: 65
-    B2C_TIMEOUT_OVERALL_MINUTES: 70
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 65
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     DEQP_SUITE: freedreno-a750-vk
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
 
@@ -499,8 +499,8 @@ a750-vkd3d:
     - .valve-turnip-manual-rules
   timeout: 15m  # base runtime 3min
   variables:
-    B2C_TIMEOUT_OVERALL_MINUTES: 12
-    B2C_TIMEOUT_BOOT_MINUTES: 10
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 12
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 10
     HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
     GPU_VERSION: freedreno-a750
     FDO_CI_CONCURRENT: 1
