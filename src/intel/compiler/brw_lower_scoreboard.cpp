@@ -156,7 +156,7 @@ namespace {
          assert(devinfo->has_64bit_float || devinfo->has_64bit_int ||
                 devinfo->has_integer_dword_mul);
          return TGL_PIPE_LONG;
-      } else if (brw_type_is_float(inst->dst.type))
+      } else if (brw_type_is_float_or_bfloat(inst->dst.type))
          return TGL_PIPE_FLOAT;
       else
          return TGL_PIPE_INT;
