@@ -45,13 +45,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(vn_command_pool,
                                VkCommandPool,
                                VK_OBJECT_TYPE_COMMAND_POOL)
 
-enum vn_command_buffer_state {
-   VN_COMMAND_BUFFER_STATE_INITIAL,
-   VN_COMMAND_BUFFER_STATE_RECORDING,
-   VN_COMMAND_BUFFER_STATE_EXECUTABLE,
-   VN_COMMAND_BUFFER_STATE_INVALID,
-};
-
 /* command buffer builder to:
  * - fix wsi image ownership and layout transitions
  * - scrub ignored bits in VkCommandBufferBeginInfo
@@ -79,9 +72,6 @@ struct vn_query_feedback_cmd;
 struct vn_command_buffer {
    struct vn_command_buffer_base base;
 
-   struct vn_command_pool *pool;
-   VkCommandBufferLevel level;
-   enum vn_command_buffer_state state;
    struct vn_cs_encoder cs;
 
    struct vn_command_buffer_builder builder;
@@ -94,6 +84,12 @@ VK_DEFINE_HANDLE_CASTS(vn_command_buffer,
                        base.vk.base,
                        VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
+
+static inline struct vn_command_pool *
+vn_cmd_pool(struct vn_command_buffer *cmd)
+{
+   return container_of(cmd->base.vk.pool, struct vn_command_pool, base.vk);
+}
 
 /* Queries recorded to support qfb.
  * - query_count is the actual queries used with multiview considered

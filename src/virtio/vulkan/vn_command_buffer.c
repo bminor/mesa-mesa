@@ -34,7 +34,7 @@ vn_cmd_submit(struct vn_command_buffer *cmd);
       if (likely(vn_cs_encoder_reserve(&_cmd->cs, _cmd_size)))               \
          vn_encode_##cmd_name(&_cmd->cs, 0, commandBuffer, ##__VA_ARGS__);   \
       else                                                                   \
-         _cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;                      \
+         _cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;         \
                                                                              \
       if (unlikely(VN_PERF(NO_CMD_BATCHING)))                                \
          vn_cmd_submit(_cmd);                                                \
@@ -99,6 +99,7 @@ vn_cmd_get_cached_storage(struct vn_command_buffer *cmd,
                           uint32_t dep_info_count,
                           struct vn_cmd_cached_storage *out_storage)
 {
+   struct vn_command_pool *cmd_pool = vn_cmd_pool(cmd);
    size_t dep_infos_size = dep_info_count * sizeof(VkDependencyInfo);
    size_t barriers_size;
 
@@ -117,7 +118,7 @@ vn_cmd_get_cached_storage(struct vn_command_buffer *cmd,
    size_t total_size =
       dep_infos_size + barriers_size +
       barrier_count * sizeof(VkExternalMemoryAcquireUnmodifiedEXT);
-   void *data = vn_cached_storage_get(&cmd->pool->storage, total_size);
+   void *data = vn_cached_storage_get(&cmd_pool->storage, total_size);
    if (!data)
       return false;
 
@@ -308,12 +309,12 @@ vn_cmd_fix_image_memory_barrier(const struct vn_command_buffer *cmd,
                                 VkImageMemoryBarrier *barrier,
                                 struct vn_cmd_cached_storage *storage)
 {
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
    const struct vn_image *img = vn_image_from_handle(barrier->image);
 
    struct vn_cmd_fix_image_memory_barrier_result result =
       vn_cmd_fix_image_memory_barrier_common(
-         img, cmd->pool->base.vk.queue_family_index, &barrier->oldLayout,
+         img, cmd->base.vk.pool->queue_family_index, &barrier->oldLayout,
          &barrier->newLayout, &barrier->srcQueueFamilyIndex,
          &barrier->dstQueueFamilyIndex);
    if (!result.availability_op_needed)
@@ -333,12 +334,12 @@ vn_cmd_fix_image_memory_barrier2(const struct vn_command_buffer *cmd,
                                  VkImageMemoryBarrier2 *barrier,
                                  struct vn_cmd_cached_storage *storage)
 {
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
    const struct vn_image *img = vn_image_from_handle(barrier->image);
 
    struct vn_cmd_fix_image_memory_barrier_result result =
       vn_cmd_fix_image_memory_barrier_common(
-         img, cmd->pool->base.vk.queue_family_index, &barrier->oldLayout,
+         img, cmd->base.vk.pool->queue_family_index, &barrier->oldLayout,
          &barrier->newLayout, &barrier->srcQueueFamilyIndex,
          &barrier->dstQueueFamilyIndex);
    if (!result.availability_op_needed) {
@@ -375,7 +376,7 @@ vn_cmd_wait_events_fix_image_memory_barriers(
    if (!vn_cmd_get_cached_storage(cmd, VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                                   count * 2, /*dep_info_count=*/0,
                                   &storage)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return src_barriers;
    }
    VkImageMemoryBarrier *img_barriers = storage.barriers;
@@ -425,7 +426,7 @@ vn_cmd_pipeline_barrier_fix_image_memory_barriers(
    struct vn_cmd_cached_storage storage;
    if (!vn_cmd_get_cached_storage(cmd, VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                                   count, /*dep_info_count=*/0, &storage)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return src_barriers;
    }
 
@@ -454,7 +455,7 @@ vn_cmd_fix_dependency_infos(struct vn_command_buffer *cmd,
    if (!vn_cmd_get_cached_storage(cmd,
                                   VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                                   total_barrier_count, dep_count, &storage)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return dep_infos;
    }
    memcpy(storage.dep_infos, dep_infos, dep_count * sizeof(VkDependencyInfo));
@@ -530,7 +531,7 @@ vn_cmd_transfer_present_src_images(
    struct vn_cmd_cached_storage storage;
    if (!vn_cmd_get_cached_storage(cmd, VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                                   count, /*dep_info_count=*/0, &storage)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return;
    }
 
@@ -580,14 +581,15 @@ static inline void
 vn_cmd_merge_query_records(struct vn_command_buffer *primary_cmd,
                            struct vn_command_buffer *secondary_cmd)
 {
+   struct vn_command_pool *cmd_pool = vn_cmd_pool(primary_cmd);
+
    list_for_each_entry_safe(struct vn_cmd_query_record, secondary_record,
                             &secondary_cmd->builder.query_records, head) {
       struct vn_cmd_query_record *record = vn_cmd_pool_alloc_query_record(
-         primary_cmd->pool, secondary_record->query_pool,
-         secondary_record->query, secondary_record->query_count,
-         secondary_record->copy);
+         cmd_pool, secondary_record->query_pool, secondary_record->query,
+         secondary_record->query_count, secondary_record->copy);
       if (!record) {
-         primary_cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+         primary_cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
          return;
       }
 
@@ -602,7 +604,7 @@ vn_cmd_begin_render_pass(struct vn_command_buffer *cmd,
                          const VkRenderPassBeginInfo *begin_info)
 {
    assert(begin_info);
-   assert(cmd->level == VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+   assert(cmd->base.vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
    cmd->builder.render_pass = pass;
    cmd->builder.in_render_pass = true;
@@ -628,10 +630,10 @@ vn_cmd_begin_render_pass(struct vn_command_buffer *cmd,
    }
 
    const struct vn_image **images = vk_alloc(
-      &cmd->pool->base.vk.alloc, sizeof(*images) * pass->present_count,
+      &cmd->base.vk.pool->alloc, sizeof(*images) * pass->present_count,
       VN_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!images) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return;
    }
 
@@ -671,7 +673,7 @@ vn_cmd_end_render_pass(struct vn_command_buffer *cmd)
          pass->present_release_attachments, pass->present_release_count);
    }
 
-   vk_free(&cmd->pool->base.vk.alloc, images);
+   vk_free(&cmd->base.vk.pool->alloc, images);
 }
 
 static inline void
@@ -736,13 +738,15 @@ vn_CreateCommandPool(VkDevice device,
 static void
 vn_cmd_reset(struct vn_command_buffer *cmd)
 {
+   struct vn_command_pool *cmd_pool = vn_cmd_pool(cmd);
+
    vn_cs_encoder_reset(&cmd->cs);
 
-   cmd->state = VN_COMMAND_BUFFER_STATE_INITIAL;
+   cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INITIAL;
 
    /* reset cmd builder */
-   vk_free(&cmd->pool->base.vk.alloc, cmd->builder.present_src_images);
-   vn_cmd_pool_free_query_records(cmd->pool, &cmd->builder.query_records);
+   vk_free(&cmd->base.vk.pool->alloc, cmd->builder.present_src_images);
+   vn_cmd_pool_free_query_records(cmd_pool, &cmd->builder.query_records);
    memset(&cmd->builder, 0, sizeof(cmd->builder));
    list_inithead(&cmd->builder.query_records);
 
@@ -860,9 +864,7 @@ vn_AllocateCommandBuffers(VkDevice device,
 
       vn_command_buffer_base_init(&cmd->base, &pool->base, NULL,
                                   pAllocateInfo->level);
-      cmd->pool = pool;
-      cmd->level = pAllocateInfo->level;
-      cmd->state = VN_COMMAND_BUFFER_STATE_INITIAL;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INITIAL;
       vn_cs_encoder_init(&cmd->cs, dev->instance,
                          VN_CS_ENCODER_STORAGE_SHMEM_POOL, 16 * 1024);
 
@@ -917,7 +919,7 @@ vn_ResetCommandBuffer(VkCommandBuffer commandBuffer,
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
 
    vn_cmd_reset(cmd);
 
@@ -947,7 +949,7 @@ vn_fix_command_buffer_begin_info(struct vn_command_buffer *cmd,
       return begin_info;
 
    const bool is_cmd_secondary =
-      cmd->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+      cmd->base.vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
    const bool has_continue =
       begin_info->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
    const bool has_renderpass =
@@ -1037,7 +1039,7 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
    struct vn_instance *instance = dev->instance;
    size_t cmd_size;
 
@@ -1050,7 +1052,7 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
    cmd_size = vn_sizeof_vkBeginCommandBuffer(commandBuffer, pBeginInfo);
    if (!vn_cs_encoder_reserve(&cmd->cs, cmd_size)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return vn_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
    }
    cmd->builder.is_simultaneous =
@@ -1058,7 +1060,7 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
    vn_encode_vkBeginCommandBuffer(&cmd->cs, 0, commandBuffer, pBeginInfo);
 
-   cmd->state = VN_COMMAND_BUFFER_STATE_RECORDING;
+   cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_RECORDING;
 
    const VkCommandBufferInheritanceInfo *inheritance_info =
       pBeginInfo->pInheritanceInfo;
@@ -1092,14 +1094,14 @@ vn_BeginCommandBuffer(VkCommandBuffer commandBuffer,
 static void
 vn_cmd_submit(struct vn_command_buffer *cmd)
 {
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
 
-   if (cmd->state != VN_COMMAND_BUFFER_STATE_RECORDING)
+   if (cmd->base.vk.state != MESA_VK_COMMAND_BUFFER_STATE_RECORDING)
       return;
 
    vn_cs_encoder_commit(&cmd->cs);
    if (vn_cs_encoder_get_fatal(&cmd->cs)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       vn_cs_encoder_reset(&cmd->cs);
       return;
    }
@@ -1109,7 +1111,7 @@ vn_cmd_submit(struct vn_command_buffer *cmd)
 
    if (vn_ring_submit_command_simple(dev->primary_ring, &cmd->cs) !=
        VK_SUCCESS) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return;
    }
 
@@ -1122,26 +1124,26 @@ vn_EndCommandBuffer(VkCommandBuffer commandBuffer)
    VN_TRACE_FUNC();
    struct vn_command_buffer *cmd =
       vn_command_buffer_from_handle(commandBuffer);
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
    struct vn_instance *instance = dev->instance;
    size_t cmd_size;
 
-   if (cmd->state != VN_COMMAND_BUFFER_STATE_RECORDING)
+   if (cmd->base.vk.state != MESA_VK_COMMAND_BUFFER_STATE_RECORDING)
       return vn_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    cmd_size = vn_sizeof_vkEndCommandBuffer(commandBuffer);
    if (!vn_cs_encoder_reserve(&cmd->cs, cmd_size)) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return vn_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
    }
 
    vn_encode_vkEndCommandBuffer(&cmd->cs, 0, commandBuffer);
 
    vn_cmd_submit(cmd);
-   if (cmd->state == VN_COMMAND_BUFFER_STATE_INVALID)
+   if (cmd->base.vk.state == MESA_VK_COMMAND_BUFFER_STATE_INVALID)
       return vn_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   cmd->state = VN_COMMAND_BUFFER_STATE_EXECUTABLE;
+   cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_EXECUTABLE;
 
    return VK_SUCCESS;
 }
@@ -1499,7 +1501,7 @@ vn_transition_prime_layout(struct vn_command_buffer *cmd, VkBuffer dst_buffer)
    const VkBufferMemoryBarrier buf_barrier = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
       .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-      .srcQueueFamilyIndex = cmd->pool->base.vk.queue_family_index,
+      .srcQueueFamilyIndex = cmd->base.vk.pool->queue_family_index,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT,
       .buffer = dst_buffer,
       .size = VK_WHOLE_SIZE,
@@ -1815,7 +1817,8 @@ vn_cmd_record_query(VkCommandBuffer cmd_handle,
                     bool copy)
 {
    struct vn_command_buffer *cmd = vn_command_buffer_from_handle(cmd_handle);
-   struct vn_device *dev = vn_device_from_vk(cmd->pool->base.vk.base.device);
+   struct vn_command_pool *cmd_pool = vn_cmd_pool(cmd);
+   struct vn_device *dev = vn_device_from_vk(cmd->base.vk.pool->base.device);
    struct vn_query_pool *query_pool = vn_query_pool_from_handle(pool_handle);
 
    if (unlikely(VN_PERF(NO_QUERY_FEEDBACK)))
@@ -1823,15 +1826,15 @@ vn_cmd_record_query(VkCommandBuffer cmd_handle,
 
    if (unlikely(!query_pool->fb_buf)) {
       if (vn_query_feedback_buffer_init_once(dev, query_pool) != VK_SUCCESS) {
-         cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+         cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
          return;
       }
    }
 
    struct vn_cmd_query_record *record = vn_cmd_pool_alloc_query_record(
-      cmd->pool, query_pool, query, query_count, copy);
+      cmd_pool, query_pool, query, query_count, copy);
    if (!record) {
-      cmd->state = VN_COMMAND_BUFFER_STATE_INVALID;
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
       return;
    }
 
