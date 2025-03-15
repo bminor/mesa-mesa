@@ -774,7 +774,7 @@ vn_DestroyCommandPool(VkDevice device,
                             &pool->command_buffers, head) {
       vn_cmd_reset(cmd);
       vn_cs_encoder_fini(&cmd->cs);
-      vn_object_base_fini(&cmd->base);
+      vn_command_buffer_base_fini(&cmd->base);
       vk_free(alloc, cmd);
    }
 
@@ -850,7 +850,7 @@ vn_AllocateCommandBuffers(VkDevice device,
             cmd = vn_command_buffer_from_handle(pCommandBuffers[j]);
             vn_cs_encoder_fini(&cmd->cs);
             list_del(&cmd->head);
-            vn_object_base_fini(&cmd->base);
+            vn_command_buffer_base_fini(&cmd->base);
             vk_free(alloc, cmd);
          }
          memset(pCommandBuffers, 0,
@@ -858,8 +858,8 @@ vn_AllocateCommandBuffers(VkDevice device,
          return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
       }
 
-      vn_object_base_init(&cmd->base, VK_OBJECT_TYPE_COMMAND_BUFFER,
-                          &dev->base);
+      vn_command_buffer_base_init(&cmd->base, &pool->base, NULL,
+                                  pAllocateInfo->level);
       cmd->pool = pool;
       cmd->level = pAllocateInfo->level;
       cmd->state = VN_COMMAND_BUFFER_STATE_INITIAL;
@@ -905,7 +905,7 @@ vn_FreeCommandBuffers(VkDevice device,
 
       vn_cmd_reset(cmd);
       vn_cs_encoder_fini(&cmd->cs);
-      vn_object_base_fini(&cmd->base);
+      vn_command_buffer_base_fini(&cmd->base);
       vk_free(alloc, cmd);
    }
 }

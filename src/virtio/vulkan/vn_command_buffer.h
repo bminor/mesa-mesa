@@ -77,7 +77,7 @@ struct vn_command_buffer_builder {
 struct vn_query_feedback_cmd;
 
 struct vn_command_buffer {
-   struct vn_object_base base;
+   struct vn_command_buffer_base base;
 
    struct vn_command_pool *pool;
    VkCommandBufferLevel level;
@@ -91,7 +91,7 @@ struct vn_command_buffer {
    struct list_head head;
 };
 VK_DEFINE_HANDLE_CASTS(vn_command_buffer,
-                       base.vk,
+                       base.vk.base,
                        VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 
