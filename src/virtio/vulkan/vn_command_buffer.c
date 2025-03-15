@@ -719,7 +719,6 @@ vn_CreateCommandPool(VkDevice device,
 
    vn_command_pool_base_init(&pool->base, &dev->base, pCreateInfo, alloc);
 
-   list_inithead(&pool->command_buffers);
    list_inithead(&pool->free_query_records);
 
    vn_cached_storage_init(&pool->storage, alloc);
@@ -774,14 +773,6 @@ vn_DestroyCommandPool(VkDevice device,
    vn_async_vkDestroyCommandPool(dev->primary_ring, device, commandPool,
                                  NULL);
 
-   list_for_each_entry_safe(struct vn_command_buffer, cmd,
-                            &pool->command_buffers, head) {
-      vn_cmd_reset(cmd);
-      vn_cs_encoder_fini(&cmd->cs);
-      vn_command_buffer_base_fini(&cmd->base);
-      vk_free(alloc, cmd);
-   }
-
    list_for_each_entry_safe(struct vn_cmd_query_record, record,
                             &pool->free_query_records, head)
       vk_free(alloc, record);
@@ -801,9 +792,11 @@ vn_ResetCommandPool(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_command_pool *pool = vn_command_pool_from_handle(commandPool);
 
-   list_for_each_entry_safe(struct vn_command_buffer, cmd,
-                            &pool->command_buffers, head)
+   list_for_each_entry_safe(struct vk_command_buffer, cmd_vk,
+                            &pool->base.vk.command_buffers, pool_link) {
+      struct vn_command_buffer *cmd = vn_cmd_from_vk(cmd_vk);
       vn_cmd_reset(cmd);
+   }
 
    if (flags & VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) {
       list_for_each_entry_safe(struct vn_cmd_query_record, record,
@@ -834,6 +827,20 @@ vn_TrimCommandPool(VkDevice device,
 
 /* command buffer commands */
 
+static void
+vn_cmd_destroy(struct vk_command_buffer *cmd_vk)
+{
+   struct vn_command_buffer *cmd = vn_cmd_from_vk(cmd_vk);
+   vn_cmd_reset(cmd);
+   vn_cs_encoder_fini(&cmd->cs);
+   vn_command_buffer_base_fini(&cmd->base);
+   vk_free(&cmd_vk->pool->alloc, cmd);
+}
+
+static const struct vk_command_buffer_ops vn_cmd_ops = {
+   .destroy = vn_cmd_destroy,
+};
+
 VkResult
 vn_AllocateCommandBuffers(VkDevice device,
                           const VkCommandBufferAllocateInfo *pAllocateInfo,
@@ -853,7 +860,6 @@ vn_AllocateCommandBuffers(VkDevice device,
          for (uint32_t j = 0; j < i; j++) {
             cmd = vn_command_buffer_from_handle(pCommandBuffers[j]);
             vn_cs_encoder_fini(&cmd->cs);
-            list_del(&cmd->head);
             vn_command_buffer_base_fini(&cmd->base);
             vk_free(alloc, cmd);
          }
@@ -862,15 +868,13 @@ vn_AllocateCommandBuffers(VkDevice device,
          return vn_error(dev->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
       }
 
-      vn_command_buffer_base_init(&cmd->base, &pool->base, NULL,
+      vn_command_buffer_base_init(&cmd->base, &pool->base, &vn_cmd_ops,
                                   pAllocateInfo->level);
       cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INITIAL;
       vn_cs_encoder_init(&cmd->cs, dev->instance,
                          VN_CS_ENCODER_STORAGE_SHMEM_POOL, 16 * 1024);
 
       list_inithead(&cmd->builder.query_records);
-
-      list_addtail(&cmd->head, &pool->command_buffers);
 
       VkCommandBuffer cmd_handle = vn_command_buffer_to_handle(cmd);
       pCommandBuffers[i] = cmd_handle;
@@ -902,8 +906,6 @@ vn_FreeCommandBuffers(VkDevice device,
 
       if (!cmd)
          continue;
-
-      list_del(&cmd->head);
 
       vn_cmd_reset(cmd);
       vn_cs_encoder_fini(&cmd->cs);

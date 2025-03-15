@@ -77,8 +77,6 @@ struct vn_command_buffer {
    struct vn_command_buffer_builder builder;
 
    struct vn_query_feedback_cmd *linked_qfb_cmd;
-
-   struct list_head head;
 };
 VK_DEFINE_HANDLE_CASTS(vn_command_buffer,
                        base.vk.base,
@@ -89,6 +87,12 @@ static inline struct vn_command_pool *
 vn_cmd_pool(struct vn_command_buffer *cmd)
 {
    return container_of(cmd->base.vk.pool, struct vn_command_pool, base.vk);
+}
+
+static inline struct vn_command_buffer *
+vn_cmd_from_vk(struct vk_command_buffer *cmd_vk)
+{
+   return container_of(cmd_vk, struct vn_command_buffer, base.vk);
 }
 
 /* Queries recorded to support qfb.
