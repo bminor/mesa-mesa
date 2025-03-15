@@ -355,8 +355,14 @@ create_bvh_descriptor(nir_builder *b, const struct radv_physical_device *pdev, s
     * use the same descriptor, which avoids divergence when different rays hit different
     * instances at the cost of having to use 64-bit node ids. */
    const uint64_t bvh_size = 1ull << 42;
-   nir_def *desc = nir_imm_ivec4(b, 0, 1u << 31 /* Enable box sorting */, (bvh_size - 1) & 0xFFFFFFFFu,
-                                 ((bvh_size - 1) >> 32) | (1u << 24 /* Return IJ for triangles */) | (1u << 31));
+
+   const uint32_t box_sort_enable = BITFIELD_BIT(63 - 32);
+   const uint32_t triangle_return_mode = BITFIELD_BIT(120 - 96); /* Return IJ for triangles */
+
+   uint32_t dword0 = 0;
+   nir_def *dword1 = nir_imm_intN_t(b, box_sort_enable, 32);
+   uint32_t dword2 = (bvh_size - 1) & 0xFFFFFFFFu;
+   uint32_t dword3 = ((bvh_size - 1) >> 32) | triangle_return_mode | (1u << 31);
 
    if (pdev->info.gfx_level >= GFX11) {
       /* Instead of the default box sorting (closest point), use largest for terminate_on_first_hit rays and midpoint
@@ -366,16 +372,13 @@ create_bvh_descriptor(nir_builder *b, const struct radv_physical_device *pdev, s
 
       /* Only use largest/midpoint sorting when all invocations have the same ray flags, otherwise
        * fall back to the default closest point. */
-      nir_def *box_sort = nir_imm_int(b, 1u << 31);
-      box_sort = nir_bcsel(b, nir_vote_any(b, 1, ray_flags->terminate_on_first_hit), box_sort,
-                           nir_imm_int(b, (box_sort_midpoint << 21) | (1u << 31)));
-      box_sort = nir_bcsel(b, nir_vote_all(b, 1, ray_flags->terminate_on_first_hit),
-                           nir_imm_int(b, (box_sort_largest << 21) | (1u << 31)), box_sort);
-
-      desc = nir_vector_insert(b, desc, box_sort, nir_imm_int(b, 1));
+      dword1 = nir_bcsel(b, nir_vote_any(b, 1, ray_flags->terminate_on_first_hit), dword1,
+                           nir_imm_int(b, (box_sort_midpoint << 21) | box_sort_enable));
+      dword1 = nir_bcsel(b, nir_vote_all(b, 1, ray_flags->terminate_on_first_hit),
+                           nir_imm_int(b, (box_sort_largest << 21) | box_sort_enable), dword1);
    }
 
-   return desc;
+   return nir_vec4(b, nir_imm_intN_t(b, dword0, 32), dword1, nir_imm_intN_t(b, dword2, 32), nir_imm_intN_t(b, dword3, 32));
 }
 
 static void
