@@ -71,6 +71,9 @@ class BootstrapHTML5TranslatorMixin:
             self.body.append(str(admonitionlabels[name]))
             self.body.append('</div>')
 
+    def depart_admonition(self, node) -> None:
+        self.body.append('</div>\n')
+
     def visit_table(self, node):
         # init the attributes
         atts = {}
