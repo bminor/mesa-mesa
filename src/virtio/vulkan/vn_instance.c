@@ -34,6 +34,7 @@ static const struct vk_instance_extension_table
       .KHR_external_semaphore_capabilities = true,
       .KHR_get_physical_device_properties2 = true,
       .EXT_debug_report = true,
+      .EXT_debug_utils = true,
 
 #ifdef VN_USE_WSI_PLATFORM
       .KHR_get_surface_capabilities2 = true,
