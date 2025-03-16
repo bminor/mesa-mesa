@@ -1197,7 +1197,7 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
 
         /* Parameters for the CBZB clear. */
         surface->cbzb_allowed = tex->tex.cbzb_allowed[level];
-        surface->cbzb_width = align(pipe_surface_width(surf_tmpl), 64);
+        surface->cbzb_width = align(u_minify(width0_override, level), 64);
 
         /* Height must be aligned to the size of a tile. */
         tile_height = r300_get_pixel_alignment(surface->base.format,
@@ -1207,7 +1207,7 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
                                                DIM_HEIGHT, 0,
                                                tex->b.bind & PIPE_BIND_SCANOUT);
 
-        surface->cbzb_height = align((pipe_surface_height(surf_tmpl) + 1) / 2,
+        surface->cbzb_height = align((u_minify(height0_override, level) + 1) / 2,
                                      tile_height);
 
         /* Offset must be aligned to 2K and must point at the beginning
