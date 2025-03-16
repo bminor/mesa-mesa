@@ -22,6 +22,9 @@
 
 #include "pan_kmod_backend.h"
 
+/* Maximum kmod BO label length, including NUL-terminator */
+#define PANTHOR_BO_LABEL_MAXLEN 4096
+
 const struct pan_kmod_ops panthor_kmod_ops;
 
 /* Objects used to track VAs returned through async unmaps. */
@@ -1190,6 +1193,30 @@ panthor_kmod_query_timestamp(const struct pan_kmod_dev *dev)
    return timestamp_info.current_timestamp;
 }
 
+static void
+panthor_kmod_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const char *label)
+{
+   char truncated_label[PANTHOR_BO_LABEL_MAXLEN];
+
+   if (!(dev->driver.version.major > 1 || dev->driver.version.minor >= 4))
+      return;
+
+    if (strnlen(label, PANTHOR_BO_LABEL_MAXLEN) == PANTHOR_BO_LABEL_MAXLEN) {
+      strncpy(truncated_label, label, PANTHOR_BO_LABEL_MAXLEN - 1);
+      truncated_label[PANTHOR_BO_LABEL_MAXLEN - 1] = '\0';
+      label = truncated_label;
+   }
+
+   struct drm_panthor_bo_set_label set_label = (struct drm_panthor_bo_set_label) {
+      .handle = bo->handle,
+      .label = (uint64_t)(uintptr_t)label,
+   };
+
+   int ret = pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANTHOR_BO_SET_LABEL, &set_label);
+   if (ret)
+      mesa_loge("DRM_IOCTL_PANTHOR_BO_SET_LABEL failed (err=%d)", errno);
+}
+
 const struct pan_kmod_ops panthor_kmod_ops = {
    .dev_create = panthor_kmod_dev_create,
    .dev_destroy = panthor_kmod_dev_destroy,
@@ -1206,4 +1233,5 @@ const struct pan_kmod_ops panthor_kmod_ops = {
    .vm_bind = panthor_kmod_vm_bind,
    .vm_query_state = panthor_kmod_vm_query_state,
    .query_timestamp = panthor_kmod_query_timestamp,
+   .bo_set_label = panthor_kmod_bo_label,
 };
