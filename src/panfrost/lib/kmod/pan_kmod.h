@@ -435,6 +435,9 @@ struct pan_kmod_ops {
 
    /* Query the current GPU timestamp */
    uint64_t (*query_timestamp)(const struct pan_kmod_dev *dev);
+
+   /* Label the BO */
+   void (*bo_set_label)(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const char *label);
 };
 
 /* KMD information. */
@@ -632,6 +635,13 @@ pan_kmod_bo_mmap(struct pan_kmod_bo *bo, off_t bo_offset, size_t size, int prot,
    }
 
    return host_addr;
+}
+
+static inline void
+pan_kmod_set_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const char *label)
+{
+   if (dev->ops->bo_set_label)
+      dev->ops->bo_set_label(dev, bo, label);
 }
 
 static inline size_t
