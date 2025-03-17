@@ -656,7 +656,9 @@ pandecode_run_compute(struct pandecode_context *ctx, FILE *fp,
    unsigned reg_spd = 16 + (I->spd_select * 2);
    unsigned reg_tsd = 24 + (I->tsd_select * 2);
 
-   GENX(pandecode_resource_tables)(ctx, cs_get_u64(qctx, reg_srt), "Resources");
+   uint64_t compute_srt = cs_get_u64(qctx, reg_srt);
+
+   GENX(pandecode_resource_tables)(ctx, compute_srt, "Resources");
 
    uint64_t fau = cs_get_u64(qctx, reg_fau);
 
@@ -696,7 +698,9 @@ pandecode_run_compute_indirect(struct pandecode_context *ctx, FILE *fp,
    unsigned reg_spd = 16 + (I->spd_select * 2);
    unsigned reg_tsd = 24 + (I->tsd_select * 2);
 
-   GENX(pandecode_resource_tables)(ctx, cs_get_u64(qctx, reg_srt), "Resources");
+   uint64_t compute_srt = cs_get_u64(qctx, reg_srt);
+
+   GENX(pandecode_resource_tables)(ctx, compute_srt, "Resources");
 
    uint64_t fau = cs_get_u64(qctx, reg_fau);
 
@@ -747,8 +751,7 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
    uint64_t spd = cs_get_u64(qctx, reg_spd);
    uint64_t tsd = cs_get_u64(qctx, reg_tsd);
 
-   if (srt)
-      GENX(pandecode_resource_tables)(ctx, srt, "Fragment resources");
+   GENX(pandecode_resource_tables)(ctx, srt, "Fragment resources");
 
    if (fau) {
       uint64_t lo = fau & BITFIELD64_MASK(48);
@@ -847,11 +850,8 @@ pandecode_run_idvs2(struct pandecode_context *ctx, FILE *fp,
    };
    pan_unpack(&tiler_flags_packed, PRIMITIVE_FLAGS, tiler_flags);
 
-   if (vert_srt)
-      GENX(pandecode_resource_tables)(ctx, vert_srt, "Vertex resources");
-
-   if (frag_srt)
-      GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
+   GENX(pandecode_resource_tables)(ctx, vert_srt, "Vertex resources");
+   GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
 
    if (vert_fau) {
       uint64_t lo = vert_fau & BITFIELD64_MASK(48);
@@ -971,14 +971,9 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
    uint64_t vary_srt = cs_get_u64(qctx, reg_vary_srt);
    uint64_t frag_srt = cs_get_u64(qctx, reg_frag_srt);
 
-   if (position_srt)
-      GENX(pandecode_resource_tables)(ctx, position_srt, "Position resources");
-
-   if (vary_srt)
-      GENX(pandecode_resource_tables)(ctx, vary_srt, "Varying resources");
-
-   if (frag_srt)
-      GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
+   GENX(pandecode_resource_tables)(ctx, position_srt, "Position resources");
+   GENX(pandecode_resource_tables)(ctx, vary_srt, "Varying resources");
+   GENX(pandecode_resource_tables)(ctx, frag_srt, "Fragment resources");
 
    uint64_t position_fau = cs_get_u64(qctx, reg_position_fau);
    uint64_t vary_fau = cs_get_u64(qctx, reg_vary_fau);

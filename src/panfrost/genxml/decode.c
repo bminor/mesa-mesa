@@ -634,6 +634,9 @@ void
 GENX(pandecode_resource_tables)(struct pandecode_context *ctx, uint64_t addr,
                                 const char *label)
 {
+   if (!addr)
+      return;
+
    unsigned count = addr & 0x3F;
    addr = addr & ~0x3F;
 
@@ -672,8 +675,7 @@ GENX(pandecode_shader_environment)(struct pandecode_context *ctx,
    if (p->shader)
       GENX(pandecode_shader)(ctx, p->shader, "Shader", gpu_id);
 
-   if (p->resources)
-      GENX(pandecode_resource_tables)(ctx, p->resources, "Resources");
+   GENX(pandecode_resource_tables)(ctx, p->resources, "Resources");
 
    if (p->thread_storage)
       DUMP_ADDR(ctx, LOCAL_STORAGE, p->thread_storage, "Local Storage:\n");
@@ -714,9 +716,8 @@ GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
    if (p->vertex_shader)
       GENX(pandecode_shader)(ctx, p->vertex_shader, "Vertex Shader", gpu_id);
 
-   if (p->vertex_resources)
-      GENX(pandecode_resource_tables)(ctx, p->vertex_resources,
-                                      "Vertex Resources");
+   GENX(pandecode_resource_tables)(ctx, p->vertex_resources,
+                                   "Vertex Resources");
 
    if (p->vertex_fau.pointer)
       GENX(pandecode_fau)(ctx, p->vertex_fau.pointer, p->vertex_fau.count,
@@ -726,9 +727,8 @@ GENX(pandecode_dcd)(struct pandecode_context *ctx, const struct MALI_DRAW *p,
       GENX(pandecode_shader)(ctx, p->fragment_shader, "Fragment Shader",
                              gpu_id);
 
-   if (p->fragment_resources)
-      GENX(pandecode_resource_tables)(ctx, p->fragment_resources,
-                                      "Fragment Resources");
+   GENX(pandecode_resource_tables)(ctx, p->fragment_resources,
+                                   "Fragment Resources");
 
    if (p->fragment_fau.pointer)
       GENX(pandecode_fau)(ctx, p->fragment_fau.pointer, p->fragment_fau.count,
