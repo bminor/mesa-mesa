@@ -284,6 +284,11 @@ struct nvkmd_va {
 struct nvkmd_ctx_exec {
    uint64_t addr;
    uint32_t size_B;
+   /* True if this push ends in an incomplete method and requires the next
+    * push to provide the method data.  In this case, this push and the next
+    * one must be in the same submit ioctl.
+    */
+   bool incomplete;
    bool no_prefetch;
 };
 
