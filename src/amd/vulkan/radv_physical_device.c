@@ -589,7 +589,8 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
          instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
       .KHR_present_id2 = true,
       .KHR_present_wait =
-         instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
+         (instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk)) &&
+         pdev->info.has_timeline_syncobj,
       .KHR_present_wait2 = true,
       .KHR_push_descriptor = true,
       .KHR_ray_query = radv_enable_rt(pdev),
@@ -625,7 +626,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_swapchain_mutable_format = true,
 #endif
       .KHR_synchronization2 = true,
-      .KHR_timeline_semaphore = true,
+      .KHR_timeline_semaphore = pdev->info.has_timeline_syncobj,
       .KHR_unified_image_layouts = pdev->info.gfx_level >= GFX11,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_variable_pointers = true,
@@ -902,7 +903,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .shaderSubgroupExtendedTypes = true,
       .separateDepthStencilLayouts = true,
       .hostQueryReset = true,
-      .timelineSemaphore = true,
+      .timelineSemaphore = pdev->info.has_timeline_syncobj,
       .bufferDeviceAddress = true,
       .bufferDeviceAddressCaptureReplay = true,
       .bufferDeviceAddressMultiDevice = false,
