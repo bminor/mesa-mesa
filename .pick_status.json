@@ -2234,7 +2234,7 @@
         "description": "nouveau/mme/fermi: Don't allow STATE and EMIT on the same op",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "162269f04981da3905b22dfc8afacadc619c71c2",
         "notes": null
