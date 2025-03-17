@@ -587,6 +587,11 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    NIR_PASS(_, nir, nir_opt_shrink_stores, !instance->drirc.disable_shrink_image_store);
 
+   const nir_opt_access_options opt_access_options = {
+      .is_vulkan = true,
+   };
+   NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
+
    if (!stage->key.optimisations_disabled)
       radv_optimize_nir(nir, false);
 
@@ -603,11 +608,6 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       if (progress)
          NIR_PASS(_, nir, nir_opt_constant_folding);
    }
-
-   const nir_opt_access_options opt_access_options = {
-      .is_vulkan = true,
-   };
-   NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_push_const, nir_address_format_32bit_offset);
 
