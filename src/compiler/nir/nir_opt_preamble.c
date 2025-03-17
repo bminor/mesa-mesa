@@ -102,18 +102,10 @@ typedef struct {
 static bool
 instr_can_speculate(nir_instr *instr)
 {
-   /* Intrinsics with an ACCESS index can only be speculated if they are
-    * explicitly CAN_SPECULATE.
-    */
-   if (instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   if (instr->type == nir_instr_type_phi)
+      return true;
 
-      if (nir_intrinsic_has_access(intr))
-         return nir_intrinsic_access(intr) & ACCESS_CAN_SPECULATE;
-   }
-
-   /* For now, everything else can be speculated. TODO: Bindless textures. */
-   return true;
+   return nir_instr_can_speculate(instr);
 }
 
 static float

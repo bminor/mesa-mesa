@@ -2121,7 +2121,7 @@ void nir_rewrite_image_intrinsic(nir_intrinsic_instr *instr,
 
 /* Determine if an intrinsic can be arbitrarily reordered and eliminated. */
 bool nir_intrinsic_can_reorder(nir_intrinsic_instr *instr);
-
+bool nir_instr_can_speculate(nir_instr *instr);
 bool nir_intrinsic_writes_external_memory(const nir_intrinsic_instr *instr);
 
 static inline bool
