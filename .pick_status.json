@@ -2224,7 +2224,7 @@
         "description": "nvk: Use the right sample mask for 8x/4pass on Maxwell A",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48898c47bf37ac026b9309f330cd210384e20dc4",
         "notes": null
