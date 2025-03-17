@@ -77,7 +77,7 @@
     - .test-crosvm
   variables:
     HWCI_KERNEL_MODULES: vhost_vsock
-    HWCI_KVM: "true"
+    HWCI_ENABLE_X86_KVM: 1
     HWCI_TEST_SCRIPT: "/install/crosvm-runner.sh"
     HWCI_TEST_ARGS: "/install/piglit/piglit-traces.sh"
     PARALLELISE_VIA_LP_THREADS: 1

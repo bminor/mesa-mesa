@@ -76,7 +76,7 @@ fi
 # - vmx for Intel VT
 # - svm for AMD-V
 #
-if [ "$HWCI_KVM" = "true" ]; then
+if [ -n "$HWCI_ENABLE_X86_KVM" ]; then
     unset KVM_KERNEL_MODULE
     {
       grep -qs '\bvmx\b' /proc/cpuinfo && KVM_KERNEL_MODULE=kvm_intel
