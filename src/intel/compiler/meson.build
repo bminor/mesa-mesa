@@ -8,7 +8,6 @@ intel_nir_files = files(
   'intel_nir_blockify_uniform_loads.c',
   'intel_nir_clamp_image_1d_2d_array_sizes.c',
   'intel_nir_clamp_per_vertex_loads.c',
-  'intel_nir_lower_conversions.c',
   'intel_nir_lower_non_uniform_barycentric_at_sample.c',
   'intel_nir_lower_non_uniform_resource_intel.c',
   'intel_nir_lower_printf.c',

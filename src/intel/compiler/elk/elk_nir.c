@@ -1467,7 +1467,10 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
       }
    }
 
-   OPT(intel_nir_lower_conversions);
+   const nir_split_conversions_options split_conv_opts = {
+      .callback = intel_nir_split_conversions_cb,
+   };
+   OPT(nir_split_conversions, &split_conv_opts);
 
    if (is_scalar)
       OPT(nir_lower_alu_to_scalar, NULL, NULL);

@@ -1961,11 +1961,14 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
    if (OPT(brw_nir_lower_fsign))
       OPT(nir_opt_dce);
 
-   /* Run intel_nir_lower_conversions only after the last time
+   /* Run nir_split_conversions only after the last tiem
     * brw_nir_optimize is called. Various optimizations invoked there can
     * rematerialize the conversions that the lowering pass eliminates.
     */
-   OPT(intel_nir_lower_conversions);
+   const nir_split_conversions_options split_conv_opts = {
+      .callback = intel_nir_split_conversions_cb,
+   };
+   OPT(nir_split_conversions, &split_conv_opts);
 
    /* Do this only after the last opt_gcm. GCM will undo this lowering. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
