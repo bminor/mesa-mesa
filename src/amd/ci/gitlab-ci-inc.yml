@@ -285,7 +285,7 @@
     GPU_VERSION: amd-raven
     VK_DRIVER: radeon
 
-############### Valve Infra
+############### CI-tron
 .test-radv:
   variables:
     VK_DRIVER: radeon
@@ -302,9 +302,9 @@
     CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
     CI_TRON__B2C_SWAP_SIZE: '16g'
 
-.b2c-test-radv-vk:
+.ci-tron-test-radv-vk:
   extends:
-    - .b2c-x86_64-test-vk
+    - .ci-tron-x86_64-test-vk
     - .radv-valve-rules
     - .test-radv
   variables:

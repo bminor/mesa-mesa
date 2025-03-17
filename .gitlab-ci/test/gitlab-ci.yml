@@ -380,7 +380,7 @@ yaml-toml-shell-py-test:
     FDO_CI_CONCURRENT: 0  # Default to number of CPUs
 
 # For CI-tron based testing farm jobs.
-.b2c-test:
+.ci-tron-test:
   extends:
     - .ci-tron-b2c-job-v1
   timeout: 1h 40m
@@ -452,9 +452,9 @@ yaml-toml-shell-py-test:
     reports:
       junit: results/**/junit.xml
 
-.b2c-x86_64-test:
+.ci-tron-x86_64-test:
   extends:
-    - .b2c-test
+    - .ci-tron-test
   variables:
     CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_amd64.cpio.xz'
     CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
@@ -466,21 +466,21 @@ yaml-toml-shell-py-test:
 
     S3_ARTIFACT_NAME: "mesa-x86_64-default-debugoptimized"
 
-.b2c-x86_64-test-vk:
+.ci-tron-x86_64-test-vk:
   extends:
     - .use-debian/x86_64_test-vk
-    - .b2c-x86_64-test
+    - .ci-tron-x86_64-test
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
     - job: debian-testing
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-x86_64-test-vk-manual:
+.ci-tron-x86_64-test-vk-manual:
   extends:
     - .use-debian/x86_64_test-vk
-    - .b2c-x86_64-test
+    - .ci-tron-x86_64-test
   variables:
     S3_ARTIFACT_NAME: "debian-build-testing"
   needs:
@@ -488,23 +488,23 @@ yaml-toml-shell-py-test:
       artifacts: false
     - job: debian-build-testing
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-x86_64-test-gl:
+.ci-tron-x86_64-test-gl:
   extends:
     - .use-debian/x86_64_test-gl
-    - .b2c-x86_64-test
+    - .ci-tron-x86_64-test
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
     - job: debian-testing
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-x86_64-test-gl-manual:
+.ci-tron-x86_64-test-gl-manual:
   extends:
     - .use-debian/x86_64_test-gl
-    - .b2c-x86_64-test
+    - .ci-tron-x86_64-test
   variables:
     S3_ARTIFACT_NAME: "debian-build-testing"
   needs:
@@ -512,72 +512,72 @@ yaml-toml-shell-py-test:
       artifacts: false
     - job: debian-build-testing
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-arm64-test:
+.ci-tron-arm64-test:
   extends:
-    - .b2c-test
+    - .ci-tron-test
   variables:
     CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm64.cpio.xz'
     CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm64'
     S3_ARTIFACT_NAME: "mesa-arm64-default-debugoptimized"
 
-.b2c-arm64-test-vk:
+.ci-tron-arm64-test-vk:
   extends:
     - .use-debian/arm64_test-vk
-    - .b2c-arm64-test
+    - .ci-tron-arm64-test
   needs:
     - job: debian/arm64_test-vk
       artifacts: false
     - job: debian-arm64
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-arm64-test-gl:
+.ci-tron-arm64-test-gl:
   extends:
     - .use-debian/arm64_test-gl
-    - .b2c-arm64-test
+    - .ci-tron-arm64-test
   needs:
     - job: debian/arm64_test-gl
       artifacts: false
     - job: debian-arm64
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-arm32-test:
+.ci-tron-arm32-test:
   extends:
-    - .b2c-test
+    - .ci-tron-test
   variables:
     CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm.cpio.xz'
     CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm'
     S3_ARTIFACT_NAME: "mesa-arm32-default-debugoptimized"
 
-.b2c-arm32-test-vk:
+.ci-tron-arm32-test-vk:
   extends:
     - .use-debian/arm32_test-vk
-    - .b2c-arm32-test
+    - .ci-tron-arm32-test
   needs:
     - job: debian/arm32_test-vk
       artifacts: false
     - job: debian-arm32
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-arm32-test-gl:
+.ci-tron-arm32-test-gl:
   extends:
     - .use-debian/arm32_test-gl
-    - .b2c-arm32-test
+    - .ci-tron-arm32-test
   needs:
     - job: debian/arm32_test-gl
       artifacts: false
     - job: debian-arm32
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]
 
-.b2c-arm32-test-asan-gl:
+.ci-tron-arm32-test-asan-gl:
   extends:
     - .use-debian/arm32_test-gl
-    - .b2c-arm32-test
+    - .ci-tron-arm32-test
   variables:
     S3_ARTIFACT_NAME: "mesa-arm32-asan-debugoptimized"
     DEQP_FORCE_ASAN: 1
@@ -586,4 +586,4 @@ yaml-toml-shell-py-test:
       artifacts: false
     - job: debian-arm32-asan
       artifacts: false
-    - !reference [.b2c-test, needs]
+    - !reference [.ci-tron-test, needs]

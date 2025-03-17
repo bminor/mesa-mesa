@@ -161,7 +161,7 @@ radeonsi-raven-vaapi-fluster:
 # Hence, disable it for now.
 .radv-kabini-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .kabini-test-valve
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 12h
@@ -173,7 +173,7 @@ radeonsi-raven-vaapi-fluster:
 
 radv-tahiti-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .tahiti-test-valve
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 1h
@@ -186,7 +186,7 @@ radv-tahiti-vkcts:
 
 radv-hawaii-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .hawaii-test-valve
     - .radv-valve-manual-rules
   timeout: 1h
@@ -199,7 +199,7 @@ radv-hawaii-vkcts:
 
 radv-polaris10-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
   timeout: 1h 15m
@@ -213,7 +213,7 @@ radv-polaris10-vkcts:
 
 radv-vega10-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .vega10-test-valve
     - .radv-valve-manual-rules
   timeout: 1h 15m
@@ -226,7 +226,7 @@ radv-vega10-vkcts:
 
 radv-renoir-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .renoir-test-valve
     - .radv-valve-manual-rules
   timeout: 2h 15m
@@ -241,7 +241,7 @@ radv-renoir-vkcts:
 radv-navi10-vkcts:
   parallel: 2
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .navi10-test-valve-kws
     - .radv-valve-manual-rules
   variables:
@@ -253,7 +253,7 @@ radv-navi21-vkcts:
   timeout: 35m
   parallel: 3
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .navi21-test-valve
     - .radv-valve-rules
   variables:
@@ -266,7 +266,7 @@ radv-navi21-vkcts:
 radv-vangogh-vkcts:
   parallel: 2
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .vangogh-test-valve
     - .radv-valve-manual-rules
   timeout: 90m
@@ -279,7 +279,7 @@ radv-vangogh-vkcts:
 
 radeonsi-vangogh-glcts-full:
   extends:
-    - .b2c-x86_64-test-gl
+    - .ci-tron-x86_64-test-gl
     - .test-piglit
     - .vangogh-test-valve
     - .radeonsi-valve-manual-rules
@@ -302,7 +302,7 @@ radeonsi-vangogh-glcts:
 
 radv-raphael-vkcts:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .raphael-test-valve
     - .radv-valve-manual-rules
   timeout: 45m
@@ -317,7 +317,7 @@ radv-navi31-vkcts:
   timeout: 25m
   parallel: 2
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
@@ -368,7 +368,7 @@ radv-fossils:
 
 radv-tahiti-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .tahiti-test-valve
     - .radv-valve-manual-rules
@@ -379,7 +379,7 @@ radv-tahiti-vkd3d:
 
 radv-hawaii-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .hawaii-test-valve
     - .radv-valve-manual-rules
@@ -390,7 +390,7 @@ radv-hawaii-vkd3d:
 
 radv-polaris10-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
@@ -401,7 +401,7 @@ radv-polaris10-vkd3d:
 
 radv-vega10-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .vega10-test-valve
     - .radv-valve-manual-rules
@@ -412,7 +412,7 @@ radv-vega10-vkd3d:
 
 radv-renoir-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .renoir-test-valve
     - .radv-valve-manual-rules
@@ -423,7 +423,7 @@ radv-renoir-vkd3d:
 
 radv-navi10-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .navi10-test-valve-mupuf
     - .radv-valve-manual-rules
@@ -434,7 +434,7 @@ radv-navi10-vkd3d:
 
 radv-navi21-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .navi21-test-valve
     - .radv-valve-manual-rules
@@ -445,7 +445,7 @@ radv-navi21-vkd3d:
 
 radv-vangogh-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .vangogh-test-valve
     - .radv-valve-manual-rules
@@ -456,7 +456,7 @@ radv-vangogh-vkd3d:
 
 radv-raphael-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .raphael-test-valve
     - .radv-valve-manual-rules
@@ -467,7 +467,7 @@ radv-raphael-vkd3d:
 
 radv-navi31-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .navi31-test-valve
     - .radv-valve-manual-rules
@@ -478,7 +478,7 @@ radv-navi31-vkd3d:
 
 .radv-kabini-vkd3d:
   extends:
-    - .b2c-test-radv-vk
+    - .ci-tron-test-radv-vk
     - .test-vkd3d-proton
     - .kabini-test-valve
     - .radv-valve-manual-rules

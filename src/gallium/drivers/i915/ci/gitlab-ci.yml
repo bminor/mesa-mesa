@@ -4,7 +4,7 @@ include:
 # Manual test rules for using g33 in ondracka r300 farm.
 .ondracka-g33-test:
   extends:
-    - .b2c-x86_64-test-gl-manual # use debian-build-testing rather than debian-testing
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-testing rather than debian-testing
     - .i915g-manual-rules
   variables:
     FDO_CI_CONCURRENT: 2

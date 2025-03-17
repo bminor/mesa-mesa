@@ -228,7 +228,7 @@
 
 .zink-nvk-test-valve:
   extends:
-    - .b2c-x86_64-test-gl-manual
+    - .ci-tron-x86_64-test-gl-manual
     - .nvk-vkcts
     - .test-piglit
     - .zink-test
@@ -239,7 +239,7 @@
 
 .tu-zink-test-valve:
   extends:
-    - .b2c-arm64-test-gl
+    - .ci-tron-arm64-test-gl
     - .zink-test
   variables:
     VK_DRIVER: freedreno
@@ -250,7 +250,7 @@
 .radv-zink-test-valve:
   timeout: 30m
   extends:
-    - .b2c-x86_64-test-gl
+    - .ci-tron-x86_64-test-gl
     - .zink-test
     - .test-piglit
     - .test-radv

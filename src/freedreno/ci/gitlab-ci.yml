@@ -442,7 +442,7 @@ a630-traces-performance:
 
 a750-angle:
   extends:
-    - .b2c-arm64-test-gl
+    - .ci-tron-arm64-test-gl
     - .a750-mupuf
     - .valve-turnip-manual-rules
     - .test-angle
@@ -455,7 +455,7 @@ a750-angle:
 
 a750-gl:
   extends:
-    - .b2c-arm64-test-gl
+    - .ci-tron-arm64-test-gl
     - .a750-mupuf
     - .valve-freedreno-manual-rules
   timeout: 30m  # base runtime 11min total, 8min of testing
@@ -467,7 +467,7 @@ a750-gl:
 
 a750-piglit-cl:
   extends:
-    - .b2c-arm64-test-gl
+    - .ci-tron-arm64-test-gl
     - .test-piglit
     - .a750-mupuf
     - .valve-freedreno-manual-rules
@@ -482,7 +482,7 @@ a750-piglit-cl:
 
 a750-vk:
   extends:
-    - .b2c-arm64-test-vk
+    - .ci-tron-arm64-test-vk
     - .a750-mupuf
     - .valve-turnip-manual-rules
   timeout: 75m  # base runtime 54min total, 51min of testing
@@ -494,7 +494,7 @@ a750-vk:
 
 a750-vkd3d:
   extends:
-    - .b2c-arm64-test-vk
+    - .ci-tron-arm64-test-vk
     - .a750-mupuf
     - .valve-turnip-manual-rules
   timeout: 15m  # base runtime 3min

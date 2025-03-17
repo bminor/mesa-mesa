@@ -117,7 +117,7 @@
 
 gc2000-gles2:
   extends:
-    - .b2c-arm32-test-gl
+    - .ci-tron-arm32-test-gl
     - .austriancoder-imx6q-cubox-i-4cores:arm32
     - .etnaviv-manual-rules
   variables:
@@ -131,7 +131,7 @@ gc2000-gles2:
 # Disabled until the 168 fails get addressed
 .gc2000-gles2-asan:
   extends:
-    - .b2c-arm32-test-asan-gl
+    - .ci-tron-arm32-test-asan-gl
     - .austriancoder-imx6q-cubox-i-2cores:arm32
     - .etnaviv-manual-rules
   variables:
@@ -155,7 +155,7 @@ gc2000-piglit:
 
 gc3000-gles2:
   extends:
-    - .b2c-arm32-test-gl
+    - .ci-tron-arm32-test-gl
     - .austriancoder-imx6qp-nitrogen6_max:arm32
     - .etnaviv-manual-rules
   variables:
@@ -167,7 +167,7 @@ gc3000-gles2:
 
 gc7000-imx8mq-gles2:
   extends:
-    - .b2c-arm64-test-gl
+    - .ci-tron-arm64-test-gl
     - .austriancoder-imx8mq-nitrogen:arm64
     - .etnaviv-manual-rules
   variables:
