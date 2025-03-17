@@ -915,6 +915,21 @@ atomic_supported(const nir_instr *instr, const void *data)
             intr->def.bit_size == 64);
 }
 
+static unsigned
+split_conversions_cb(const nir_instr *instr, void *data)
+{
+   nir_alu_instr *alu = nir_instr_as_alu(instr);
+   unsigned src_bit_size = nir_src_bit_size(alu->src[0].src);
+   unsigned dst_bit_size = alu->def.bit_size;
+
+   /* We can't cross the 64-bit boundary in one conversion */
+   if ((src_bit_size <= 32 && dst_bit_size <= 32) ||
+       (src_bit_size >= 32 && dst_bit_size >= 32))
+      return 0;
+
+   return 32;
+}
+
 void
 nak_postprocess_nir(nir_shader *nir,
                     const struct nak_compiler *nak,
@@ -1059,8 +1074,13 @@ nak_postprocess_nir(nir_shader *nir,
       }
    } while (progress);
 
-   if (nak->sm < 70)
-      OPT(nir, nak_nir_split_64bit_conversions);
+   if (nak->sm < 70) {
+      const nir_split_conversions_options split_conv_opts = {
+         .callback = split_conversions_cb,
+         .has_convert_alu_types = true,
+      };
+      OPT(nir, nir_split_conversions, &split_conv_opts);
+   }
 
    /* Re-materialize load_const instructions in the blocks that use them.
     * This is both a register pressure optimization and a ensures correctness

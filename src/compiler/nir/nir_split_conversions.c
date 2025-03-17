@@ -23,7 +23,7 @@
 
 /* Adapted from intel_nir_lower_conversions.c */
 
-#include "nak_private.h"
+#include "nir.h"
 #include "nir_builder.h"
 
 static nir_rounding_mode
@@ -37,8 +37,10 @@ op_rounding_mode(nir_op op)
 }
 
 static bool
-split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
+split_conversion_instr(nir_builder *b, nir_instr *instr, UNUSED void *_data)
 {
+   const nir_split_conversions_options *opts = _data;
+
    if (instr->type != nir_instr_type_alu)
       return false;
 
@@ -47,20 +49,24 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
    if (!nir_op_infos[alu->op].is_conversion)
       return false;
 
+   unsigned tmp_bit_size = opts->callback(instr, opts->callback_data);
+   if (tmp_bit_size == 0)
+      return false;
+
    unsigned src_bit_size = nir_src_bit_size(alu->src[0].src);
+   unsigned dst_bit_size = alu->def.bit_size;
+   if (src_bit_size < dst_bit_size)
+      assert(src_bit_size < tmp_bit_size && tmp_bit_size < dst_bit_size);
+   else
+      assert(dst_bit_size < tmp_bit_size && tmp_bit_size < src_bit_size);
+
    nir_alu_type src_type = nir_op_infos[alu->op].input_types[0];
    nir_alu_type src_full_type = (nir_alu_type) (src_type | src_bit_size);
 
-   unsigned dst_bit_size = alu->def.bit_size;
    nir_alu_type dst_full_type = nir_op_infos[alu->op].output_type;
    assert(nir_alu_type_get_type_size(dst_full_type) == dst_bit_size);
    nir_alu_type dst_type = nir_alu_type_get_base_type(dst_full_type);
    const nir_rounding_mode rounding_mode = op_rounding_mode(alu->op);
-
-   /* We can't cross the 64-bit boundary in one conversion */
-   if ((src_bit_size <= 32 && dst_bit_size <= 32) ||
-       (src_bit_size >= 32 && dst_bit_size >= 32))
-      return false;
 
    nir_alu_type tmp_type;
    if ((src_full_type == nir_type_float16 && dst_bit_size == 64) ||
@@ -69,6 +75,7 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
        * 32-bit float type so we don't lose range when we convert to/from
        * a 64-bit integer.
        */
+      assert(tmp_bit_size == 32);
       tmp_type = nir_type_float32;
    } else {
       /* For fp64 to integer conversions, using an integer intermediate type
@@ -83,7 +90,7 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
        * For all other conversions, the conversion from int to int is either
        * lossless or just as lossy as the final conversion.
        */
-      tmp_type = dst_type | 32;
+      tmp_type = dst_type | tmp_bit_size;
    }
 
    b->cursor = nir_before_instr(&alu->instr);
@@ -95,7 +102,8 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
        */
       assert(tmp_type == nir_type_float32);
       if (rounding_mode == nir_rounding_mode_rtne ||
-          rounding_mode == nir_rounding_mode_undef) {
+          rounding_mode == nir_rounding_mode_undef ||
+          !opts->has_convert_alu_types) {
          nir_def *src_lo = nir_unpack_64_2x32_split_x(b, src);
          nir_def *src_hi = nir_unpack_64_2x32_split_y(b, src);
 
@@ -148,10 +156,14 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
           * sufficiently negative exponent that it will flush to zero when
           * converted to fp16, regardless of what we do here.
           *
+          * This same trick works for all the rounding modes.  Even though the
+          * actual rounding logic is a bit different, they all treat the F and
+          * D bits together based on "all F and D bits are zero" or not.
+          *
           * There are many operations we could choose for combining the low
           * dword bits for ORing into the high dword.  We choose umin because
-          * it nicely translates to a single fixed-latency instruction on
-          * everything except Volta.
+          * it nicely translates to a single fixed-latency instruction on a
+          * lot of hardware.
           */
          src_hi = nir_ior(b, src_hi, nir_umin_imm(b, src_lo, 1));
          src_lo = nir_imm_int(b, 0);
@@ -160,7 +172,8 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
       } else {
          /* For round-up, round-down, and round-towards-zero, the rounding
           * accumulates properly as long as we use the same rounding mode for
-          * both operations.
+          * both operations.  This is more efficient if the back-end supports
+          * nir_intrinsic_convert_alu_types.
           */
          tmp = nir_convert_alu_types(b, 32, src,
                                      .src_type = nir_type_float64,
@@ -183,9 +196,10 @@ split_64bit_conversion(nir_builder *b, nir_instr *instr, UNUSED void *_data)
 }
 
 bool
-nak_nir_split_64bit_conversions(nir_shader *nir)
+nir_split_conversions(nir_shader *shader,
+                      const nir_split_conversions_options *options)
 {
-   return nir_shader_instructions_pass(nir, split_64bit_conversion,
+   return nir_shader_instructions_pass(shader, split_conversion_instr,
                                        nir_metadata_control_flow,
-                                       NULL);
+                                       (void *)options);
 }

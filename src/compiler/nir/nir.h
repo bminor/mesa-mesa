@@ -5791,6 +5791,16 @@ bool nir_lower_bit_size(nir_shader *shader,
                         void *callback_data);
 bool nir_lower_64bit_phis(nir_shader *shader);
 
+typedef struct nir_split_conversions_options {
+   nir_lower_bit_size_callback callback;
+   void *callback_data;
+   /* True if the implementation supports nir_intrinsic_convert_alu_types */
+   bool has_convert_alu_types;
+} nir_split_conversions_options;
+
+bool nir_split_conversions(nir_shader *shader,
+                           const nir_split_conversions_options *options);
+
 bool nir_split_64bit_vec3_and_vec4(nir_shader *shader);
 
 nir_lower_int64_options nir_lower_int64_op_to_options_mask(nir_op opcode);
