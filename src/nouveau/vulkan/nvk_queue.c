@@ -319,6 +319,7 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
          execs[exec_count++] = (struct nvkmd_ctx_exec) {
             .addr = push->addr,
             .size_B = push->range,
+            .incomplete = push->incomplete,
             .no_prefetch = push->no_prefetch,
          };
       }

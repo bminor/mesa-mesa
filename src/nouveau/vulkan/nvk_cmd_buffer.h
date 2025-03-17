@@ -196,6 +196,7 @@ struct nvk_cmd_push {
    void *map;
    uint64_t addr;
    uint32_t range;
+   bool incomplete;
    bool no_prefetch;
 };
 

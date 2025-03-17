@@ -144,7 +144,7 @@ nvk_cmd_buffer_alloc_mem(struct nvk_cmd_buffer *cmd, bool force_gart,
 }
 
 static void
-nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd)
+nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd, bool incomplete)
 {
    if (likely(cmd->push_mem != NULL)) {
       const uint32_t mem_offset =
@@ -154,6 +154,7 @@ nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd)
          .map = cmd->push.start,
          .addr = cmd->push_mem->mem->va->addr + mem_offset,
          .range = nv_push_dw_count(&cmd->push) * 4,
+         .incomplete = incomplete,
       };
       util_dynarray_append(&cmd->pushes, struct nvk_cmd_push, push);
    }
@@ -164,7 +165,7 @@ nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd)
 void
 nvk_cmd_buffer_new_push(struct nvk_cmd_buffer *cmd)
 {
-   nvk_cmd_buffer_flush_push(cmd);
+   nvk_cmd_buffer_flush_push(cmd, false);
 
    VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &cmd->push_mem);
    if (unlikely(result != VK_SUCCESS)) {
@@ -184,7 +185,7 @@ void
 nvk_cmd_buffer_push_indirect(struct nvk_cmd_buffer *cmd,
                              uint64_t addr, uint32_t range)
 {
-   nvk_cmd_buffer_flush_push(cmd);
+   nvk_cmd_buffer_flush_push(cmd, true);
 
    struct nvk_cmd_push push = {
       .addr = addr,
@@ -363,7 +364,7 @@ nvk_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
 
-   nvk_cmd_buffer_flush_push(cmd);
+   nvk_cmd_buffer_flush_push(cmd, false);
 
    return vk_command_buffer_get_record_result(&cmd->vk);
 }
@@ -378,7 +379,7 @@ nvk_CmdExecuteCommands(VkCommandBuffer commandBuffer,
    if (commandBufferCount == 0)
       return;
 
-   nvk_cmd_buffer_flush_push(cmd);
+   nvk_cmd_buffer_flush_push(cmd, false);
 
    for (uint32_t i = 0; i < commandBufferCount; i++) {
       VK_FROM_HANDLE(nvk_cmd_buffer, other, pCommandBuffers[i]);
