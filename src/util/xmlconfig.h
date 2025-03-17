@@ -34,6 +34,7 @@
 #include "util/ralloc.h"
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,13 +44,14 @@ extern "C" {
 
 /** \brief Option data types */
 typedef enum driOptionType {
-   DRI_BOOL, DRI_ENUM, DRI_INT, DRI_FLOAT, DRI_STRING, DRI_SECTION
+   DRI_BOOL, DRI_ENUM, DRI_INT, DRI_UINT64, DRI_FLOAT, DRI_STRING, DRI_SECTION
 } driOptionType;
 
 /** \brief Option value */
 typedef union driOptionValue {
    unsigned char _bool; /**< \brief Boolean */
    int _int;      /**< \brief Integer or Enum */
+   uint64_t _uint64;    /**< \brief Unsigned 64-bit Integer */
    float _float;  /**< \brief Floating-point */
    char *_string;   /**< \brief String */
 } driOptionValue;
@@ -153,6 +155,8 @@ unsigned char driCheckOption(const driOptionCache *cache, const char *name,
 unsigned char driQueryOptionb(const driOptionCache *cache, const char *name);
 /** \brief Query an integer option value */
 int driQueryOptioni(const driOptionCache *cache, const char *name);
+/** \brief Query a 64-bit unsigned integer option value */
+uint64_t driQueryOptionu64(const driOptionCache *cache, const char *name);
 /** \brief Query a floating-point option value */
 float driQueryOptionf(const driOptionCache *cache, const char *name);
 /** \brief Query a string option value */
@@ -186,6 +190,11 @@ driComputeOptionsSha1(const driOptionCache *cache, unsigned char *sha1)
          ret = ralloc_asprintf_append(&dri_options, "%s:%d,",
                                       cache->info[i].name,
                                       cache->values[i]._int);
+         break;
+      case DRI_UINT64:
+         ret = ralloc_asprintf_append(&dri_options, "%s:%" PRIu64 ",",
+                                      cache->info[i].name,
+                                      cache->values[i]._uint64);
          break;
       case DRI_FLOAT:
          ret = ralloc_asprintf_append(&dri_options, "%s:%f,",

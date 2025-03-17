@@ -58,6 +58,12 @@
          .end = { ._int = max },                \
       }                                         \
 
+#define DRI_CONF_RANGE_U64(min, max)            \
+      .range = {                                \
+         .start = { ._uint64 = min },           \
+         .end = { ._uint64 = max },             \
+      }
+
 #define DRI_CONF_RANGE_F(min, max)              \
       .range = {                                \
          .start = { ._float = min },            \
@@ -86,6 +92,16 @@
          DRI_CONF_RANGE_I(min, max),                            \
       },                                                        \
       .value = { ._int = def },                                 \
+   },
+
+#define DRI_CONF_OPT_U64(_name, def, min, max, _desc) {         \
+      .desc = _desc,                                            \
+      .info = {                                                 \
+         .name = #_name,                                        \
+         .type = DRI_UINT64,                                    \
+         DRI_CONF_RANGE_U64(min, max),                          \
+      },                                                        \
+      .value = { ._uint64 = def },                                 \
    },
 
 #define DRI_CONF_OPT_F(_name, def, min, max, _desc) {           \

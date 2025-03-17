@@ -76,31 +76,35 @@ be_verbose(void)
    return strstr(s, "silent") == NULL;
 }
 
-/** \brief Locale-independent integer parser.
+/** \brief Locale-independent 64-bit integer parser.
  *
- * Works similar to strtol. Leading space is NOT skipped. The input
- * number may have an optional sign. Radix is specified by base. If
- * base is 0 then decimal is assumed unless the input number is
- * prefixed by 0x or 0X for hexadecimal or 0 for octal. After
- * returning tail points to the first character that is not part of
- * the integer number. If no number was found then tail points to the
- * start of the input string. */
-static int
-strToI(const char *string, const char **tail, int base)
+ * Works similar to strtol. Leading space is NOT skipped. If the sign
+ * argument is non-null, the input number may have an optional sign.
+ * Radix is specified by base. If base is 0 then decimal is assumed
+ * unless the input number is prefixed by 0x or 0X for hexadecimal or
+ * 0 for octal. After returning tail points to the first character
+ * that is not part of the integer number. If no number was found then
+ * tail points to the start of the input string. Out-of-range values
+ * are truncated. */
+static uint64_t
+strToInteger(const char *string, const char **tail, int *sign, int base)
 {
    int radix = base == 0 ? 10 : base;
-   int result = 0;
-   int sign = 1;
+   uint64_t result = 0;
    bool numberFound = false;
    const char *start = string;
 
    assert(radix >= 2 && radix <= 36);
 
-   if (*string == '-') {
-      sign = -1;
-      string++;
-   } else if (*string == '+')
-      string++;
+   if (sign) {
+      *sign = 1;
+      if (*string == '-') {
+         *sign = -1;
+         string++;
+      } else if (*string == '+')
+         string++;
+   }
+
    if (base == 0 && *string == '0') {
       numberFound = true;
       if (*(string+1) == 'x' || *(string+1) == 'X') {
@@ -132,7 +136,28 @@ strToI(const char *string, const char **tail, int base)
          break;
    } while (true);
    *tail = numberFound ? string : start;
+   return result;
+}
+
+/** \brief Locale-independent integer parser.
+ *
+ * Follows the semantics of strToInteger, allowing a sign character. */
+static int
+strToI(const char *string, const char **tail, int base)
+{
+   int sign;
+   int result = strToInteger(string, tail, &sign, base);
    return sign * result;
+}
+
+/** \brief Locale-independent 64-bit unsigned integer parser.
+ *
+ * Follows the semantics of strToInteger, without allowing a sign
+ * character. */
+static uint64_t
+strToU64(const char *string, const char **tail, int base)
+{
+   return strToInteger(string, tail, NULL, base);
 }
 
 /** \brief Locale-independent floating-point parser.
@@ -233,6 +258,9 @@ parseValue(driOptionValue *v, driOptionType type, const char *string)
    case DRI_INT:
       v->_int = strToI(string, &tail, 0);
       break;
+   case DRI_UINT64:
+      v->_uint64 = strToU64(string, &tail, 0);
+      break;
    case DRI_FLOAT:
       v->_float = strToF(string, &tail);
       break;
@@ -303,6 +331,11 @@ checkValue(const driOptionValue *v, const driOptionInfo *info)
               (v->_int >= info->range.start._int &&
                v->_int <= info->range.end._int));
 
+   case DRI_UINT64:
+      return (info->range.start._uint64 == info->range.end._uint64 ||
+              (v->_uint64 >= info->range.start._uint64 &&
+               v->_uint64 <= info->range.end._uint64));
+
    case DRI_FLOAT:
       return (info->range.start._float == info->range.end._float ||
               (v->_float >= info->range.start._float &&
@@ -366,6 +399,10 @@ driParseOptionInfo(driOptionCache *info,
       case DRI_INT:
       case DRI_ENUM:
          optval->_int = opt->value._int;
+         break;
+
+      case DRI_UINT64:
+         optval->_uint64 = opt->value._uint64;
          break;
 
       case DRI_FLOAT:
@@ -437,6 +474,7 @@ driGetOptionsXml(const driOptionDescription *configOptions, unsigned numOptions)
       const char *types[] = {
          [DRI_BOOL] = "bool",
          [DRI_INT] = "int",
+         [DRI_UINT64] = "uint64",
          [DRI_FLOAT] = "float",
          [DRI_ENUM] = "enum",
          [DRI_STRING] = "string",
@@ -470,6 +508,10 @@ driGetOptionsXml(const driOptionDescription *configOptions, unsigned numOptions)
          ralloc_asprintf_append(&str, "%d", opt->value._int);
          break;
 
+      case DRI_UINT64:
+         ralloc_asprintf_append(&str, "%" PRIu64, opt->value._uint64);
+         break;
+
       case DRI_FLOAT:
          ralloc_asprintf_append(&str, "%f", opt->value._float);
          break;
@@ -492,6 +534,14 @@ driGetOptionsXml(const driOptionDescription *configOptions, unsigned numOptions)
             ralloc_asprintf_append(&str, " valid=\"%d:%d\"",
                                    opt->info.range.start._int,
                                    opt->info.range.end._int);
+         }
+         break;
+
+      case DRI_UINT64:
+         if (opt->info.range.start._uint64 < opt->info.range.end._uint64) {
+            ralloc_asprintf_append(&str, " valid=\"%" PRIu64 ":%" PRIu64 "\"",
+                                   opt->info.range.start._uint64,
+                                   opt->info.range.end._uint64);
          }
          break;
 
@@ -636,6 +686,11 @@ parseRange(driOptionInfo *info, const char *string)
    }
    if (info->type == DRI_INT &&
        info->range.start._int >= info->range.end._int) {
+      free(cp);
+      return false;
+   }
+   if (info->type == DRI_UINT64 &&
+       info->range.start._uint64 >= info->range.end._uint64) {
       free(cp);
       return false;
    }
@@ -1276,6 +1331,16 @@ driQueryOptioni(const driOptionCache *cache, const char *name)
    assert(cache->info[i].name != NULL);
    assert(cache->info[i].type == DRI_INT || cache->info[i].type == DRI_ENUM);
    return cache->values[i]._int;
+}
+
+uint64_t
+driQueryOptionu64(const driOptionCache *cache, const char *name)
+{
+   uint32_t i = findOption(cache, name);
+   /* make sure the option is defined and has the correct type */
+   assert(cache->info[i].name != NULL);
+   assert(cache->info[i].type == DRI_UINT64);
+   return cache->values[i]._uint64;
 }
 
 float
