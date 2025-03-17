@@ -740,6 +740,13 @@ bool pco_opt_comp_only_vecs(pco_shader *shader)
             continue;
          }
 
+         /* Has collated vec, skip. */
+         /* TODO: support this. */
+         if (vec->num_srcs != util_dynarray_num_elements(&comps, pco_instr *)) {
+            util_dynarray_fini(&comps);
+            continue;
+         }
+
          util_dynarray_foreach (&comps, pco_instr *, _comp) {
             pco_instr *comp = *_comp;
             pco_ref dest = comp->dest[0];
