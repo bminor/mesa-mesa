@@ -882,7 +882,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .independentResolve = true,
       .driverID = VK_DRIVER_ID_MESA_NVK,
       .conformanceVersion =
-         conformant ? (VkConformanceVersion) { 1, 4, 0, 0 }
+         conformant ? (VkConformanceVersion) { 1, 4, 1, 3 }
                     : (VkConformanceVersion) { 0, 0, 0, 0 },
       .denormBehaviorIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
       .roundingModeIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
