@@ -3664,7 +3664,7 @@
         "description": "aco/ra: fix free register counting when moving variables",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "626aa7b648174dccad51e018cf7bd288c6a64750",
         "notes": null
