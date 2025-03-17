@@ -415,6 +415,31 @@ transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_i
    }
 }
 
+static VkFormat
+radv_get_compat_color_ds_format(VkFormat format)
+{
+   switch (format) {
+   case VK_FORMAT_R8_UNORM:
+   case VK_FORMAT_R8_SNORM:
+   case VK_FORMAT_R8_UINT:
+   case VK_FORMAT_R8_SINT:
+      return VK_FORMAT_R8_UINT;
+      break;
+   case VK_FORMAT_R16_SFLOAT:
+   case VK_FORMAT_R16_UNORM:
+   case VK_FORMAT_R16_SNORM:
+   case VK_FORMAT_R16_UINT:
+   case VK_FORMAT_R16_SINT:
+      return VK_FORMAT_R16_UNORM;
+   case VK_FORMAT_R32_SFLOAT:
+   case VK_FORMAT_R32_SINT:
+   case VK_FORMAT_R32_UINT:
+      return VK_FORMAT_R32_SFLOAT;
+   default:
+      unreachable("invalid color format for color to depth/stencil image copy.");
+   }
+}
+
 static void
 copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkImageLayout src_image_layout,
            struct radv_image *dst_image, VkImageLayout dst_image_layout, const VkImageCopy2 *region)
@@ -521,6 +546,13 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
       b_dst.disable_compression = true;
 
       radv_describe_barrier_end(cmd_buffer);
+   }
+
+   /* Select a compatible color format for color<->depth/stencil copies. */
+   if (vk_format_is_color(src_image->vk.format) && vk_format_is_depth_or_stencil(dst_image->vk.format)) {
+      b_src.format = radv_get_compat_color_ds_format(src_image->vk.format);
+   } else if (vk_format_is_depth_or_stencil(src_image->vk.format) && vk_format_is_color(dst_image->vk.format)) {
+      b_dst.format = radv_get_compat_color_ds_format(dst_image->vk.format);
    }
 
    /**
