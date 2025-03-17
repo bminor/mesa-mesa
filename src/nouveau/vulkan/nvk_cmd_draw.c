@@ -516,6 +516,21 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
    P_NV9097_SET_VERTEX_STREAM_SUBSTITUTE_A(p, zero_addr >> 32);
    P_NV9097_SET_VERTEX_STREAM_SUBSTITUTE_B(p, zero_addr);
 
+   if (pdev->info.cls_eng3d >= VOLTA_A) {
+      /* These WATERMARK settings are based on what the blob sets. I'm guessing
+       * these are thresholds for balancing PS vs VS shaders but I'm not sure.
+       * We could do this on older cards if we knew what values to set.
+       */
+      P_IMMD(p, NV9097, SET_PS_WARP_WATERMARKS, {
+         .low = 0x8,
+         .high = pdev->info.max_warps_per_mp * pdev->info.mp_per_tpc,
+      });
+      P_IMMD(p, NV9097, SET_PS_REGISTER_WATERMARKS, {
+         .low = 0x80,
+         .high = 0x1000,
+      });
+   }
+
    P_MTHD(p, NV9097, SET_MME_SHADOW_SCRATCH(NVK_MME_SCRATCH_VB_ENABLES));
    P_NV9097_SET_MME_SHADOW_SCRATCH(p, NVK_MME_SCRATCH_VB_ENABLES, 0);
    for (uint32_t b = 0; b < 32; b++) {
