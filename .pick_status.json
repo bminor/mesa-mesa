@@ -3334,7 +3334,7 @@
         "description": "radv/meta: fix color<->depth/stencil image copies",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4ff011b12d36ad5e6ced8bc57c41ff3bd3a4db8",
         "notes": null
