@@ -1352,6 +1352,42 @@ PCO_DEFINE_CF_ITER(loop, PCO_CF_NODE_TYPE_LOOP)
 #undef PCO_DEFINE_CF_ITER
 
 /**
+ * \brief Returns the next non-empty block.
+ *
+ * \param[in] block The current block.
+ * \return The next non-empty block, or NULL if the end of the function has been
+ *         reached.
+ */
+static inline pco_block *pco_next_block_nonempty(pco_block *block)
+{
+   block = pco_next_block(block);
+
+   /* Skip over empty blocks. */
+   while (block && exec_list_is_empty(&block->instrs))
+      block = pco_next_block(block);
+
+   return block;
+}
+
+/**
+ * \brief Returns the previous non-empty block.
+ *
+ * \param[in] block The current block.
+ * \return The previous non-empty block, or NULL if the end of the function has
+ *         been reached.
+ */
+static inline pco_block *pco_prev_block_nonempty(pco_block *block)
+{
+   block = pco_prev_block(block);
+
+   /* Skip over empty blocks. */
+   while (block && exec_list_is_empty(&block->instrs))
+      block = pco_prev_block(block);
+
+   return block;
+}
+
+/**
  * \brief Returns the first instruction in a block.
  *
  * \param[in] block The block.
@@ -1389,12 +1425,7 @@ static inline pco_instr *pco_next_instr(pco_instr *instr)
    if (next_instr)
       return next_instr;
 
-   pco_block *block = pco_next_block(instr->parent_block);
-
-   /* Skip over empty blocks. */
-   while (block && exec_list_is_empty(&block->instrs))
-      block = pco_next_block(block);
-
+   pco_block *block = pco_next_block_nonempty(instr->parent_block);
    return !block ? NULL : pco_first_instr(block);
 }
 
@@ -1414,12 +1445,7 @@ static inline pco_instr *pco_prev_instr(pco_instr *instr)
    if (prev_instr)
       return prev_instr;
 
-   pco_block *block = pco_prev_block(instr->parent_block);
-
-   /* Skip over empty blocks. */
-   while (block && exec_list_is_empty(&block->instrs))
-      block = pco_prev_block(block);
-
+   pco_block *block = pco_prev_block_nonempty(instr->parent_block);
    return !block ? NULL : pco_last_instr(block);
 }
 

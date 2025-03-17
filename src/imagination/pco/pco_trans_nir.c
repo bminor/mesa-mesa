@@ -1536,6 +1536,12 @@ static unsigned try_collate_vec_srcs(trans_ctx *tctx,
    bool collated_vector = false;
    unsigned num_srcs_collated = 0;
    pco_instr *from = pco_cursor_instr(tctx->b.cursor);
+   if (!from) {
+      from = pco_last_instr(
+         pco_prev_block_nonempty(pco_cursor_block(tctx->b.cursor)));
+   }
+
+   assert(from);
 
    for (unsigned s = 0; s < num_srcs; ++s) {
       pco_instr *parent_instr = find_parent_instr_from(src[s], from);
