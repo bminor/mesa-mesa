@@ -259,7 +259,7 @@
     - .radv-collabora-rules
   variables:
     DRIVER_NAME: radv
-    GPU_VERSION: radv-stoney-aco
+    GPU_VERSION: radv-stoney
 
 .radeonsi-raven-test:x86_64:
   extends:

@@ -18,7 +18,7 @@ radv-stoney-angle:
     - .test-angle
   variables:
     DEQP_SUITE: radv-stoney-angle
-    GPU_VERSION: angle-radv-stoney-aco
+    GPU_VERSION: angle-radv-stoney
     DEQP_FRACTION: 3
 
 radv-stoney-angle-full:
@@ -164,7 +164,7 @@ radeonsi-raven-vaapi-fluster:
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 12h
   variables:
-    GPU_VERSION: radv-kabini-aco
+    GPU_VERSION: radv-kabini
     B2C_TIMEOUT_BOOT_MINUTES: 710
     B2C_TIMEOUT_OVERALL_MINUTES: 710
     B2C_TIMEOUT_BOOT_RETRIES: 0
@@ -180,7 +180,7 @@ radeonsi-raven-vaapi-fluster:
   # total) would get the runtime under 15 minutes.
   timeout: 4h 10m
   variables:
-    GPU_VERSION: radv-stoney-aco
+    GPU_VERSION: radv-stoney
     # Note, it only has a wee 32g disk!
     B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=8g'
     B2C_TIMEOUT_BOOT_MINUTES: 240
@@ -197,7 +197,7 @@ vkcts-tahiti-valve:
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 1h
   variables:
-    GPU_VERSION: radv-tahiti-aco
+    GPU_VERSION: radv-tahiti
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
     B2C_TIMEOUT_BOOT_RETRIES: 0
@@ -210,7 +210,7 @@ vkcts-hawaii-valve:
     - .radv-valve-manual-rules
   timeout: 1h
   variables:
-    GPU_VERSION: radv-hawaii-aco
+    GPU_VERSION: radv-hawaii
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
     B2C_TIMEOUT_BOOT_RETRIES: 0
@@ -223,7 +223,7 @@ vkcts-polaris10-valve:
     - .radv-valve-manual-rules
   timeout: 1h 15m
   variables:
-    GPU_VERSION: radv-polaris10-aco
+    GPU_VERSION: radv-polaris10
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
     RADV_PERFTEST: video_decode,video_encode
@@ -235,7 +235,7 @@ vkcts-vega10-valve:
     - .radv-valve-manual-rules
   timeout: 1h 15m
   variables:
-    GPU_VERSION: radv-vega10-aco
+    GPU_VERSION: radv-vega10
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
@@ -247,7 +247,7 @@ vkcts-renoir-valve:
     - .radv-valve-manual-rules
   timeout: 2h 15m
   variables:
-    GPU_VERSION: radv-renoir-aco
+    GPU_VERSION: radv-renoir
     B2C_TIMEOUT_BOOT_MINUTES: 130
     B2C_TIMEOUT_OVERALL_MINUTES: 130
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
@@ -260,7 +260,7 @@ vkcts-navi10-valve:
     - .navi10-test-valve-kws
     - .radv-valve-manual-rules
   variables:
-    GPU_VERSION: radv-navi10-aco
+    GPU_VERSION: radv-navi10
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 vkcts-navi21-valve:
@@ -271,7 +271,7 @@ vkcts-navi21-valve:
     - .navi21-test-valve
     - .radv-valve-rules
   variables:
-    GPU_VERSION: radv-navi21-aco
+    GPU_VERSION: radv-navi21
     B2C_TIMEOUT_BOOT_MINUTES: 30
     B2C_TIMEOUT_OVERALL_MINUTES: 30
     RADV_PERFTEST: transfer_queue
@@ -284,7 +284,7 @@ vkcts-vangogh-valve:
     - .radv-valve-manual-rules
   timeout: 2h 10m
   variables:
-    GPU_VERSION: radv-vangogh-aco
+    GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
 
 .glcts-vangogh-valve-common:
@@ -317,7 +317,7 @@ vkcts-raphael-valve:
     - .radv-valve-manual-rules
   timeout: 45m
   variables:
-    GPU_VERSION: radv-raphael-aco
+    GPU_VERSION: radv-raphael
     B2C_TIMEOUT_BOOT_MINUTES: 35
     B2C_TIMEOUT_OVERALL_MINUTES: 40
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
@@ -330,7 +330,7 @@ vkcts-navi31-valve:
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
-    GPU_VERSION: radv-navi31-aco
+    GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
     B2C_TIMEOUT_BOOT_MINUTES: 20
