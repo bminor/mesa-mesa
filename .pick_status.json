@@ -3834,7 +3834,7 @@
         "description": "radv: fix creating pipeline binary from the traversal shader",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "880261245856546b0a7ba55a11a61948ae71dc19",
         "notes": null
