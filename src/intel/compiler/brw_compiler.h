@@ -380,7 +380,9 @@ struct brw_wm_prog_key {
 static inline bool
 brw_wm_prog_key_is_dynamic(const struct brw_wm_prog_key *key)
 {
-   return key->alpha_to_coverage == INTEL_SOMETIMES ||
+   return
+      key->mesh_input == INTEL_SOMETIMES ||
+      key->alpha_to_coverage == INTEL_SOMETIMES ||
       key->persample_interp == INTEL_SOMETIMES ||
       key->multisample_fbo == INTEL_SOMETIMES ||
       key->base.vue_layout == INTEL_VUE_LAYOUT_SEPARATE_MESH;
@@ -750,6 +752,11 @@ struct brw_wm_prog_data {
    enum intel_sometimes alpha_to_coverage;
 
    /**
+    * Whether the shader is dispatch with a preceeding mesh shader.
+    */
+   enum intel_sometimes mesh_input;
+
+   /**
     * Push constant location of intel_msaa_flags (dynamic configuration of the
     * pixel shader).
     */
@@ -806,7 +813,8 @@ struct brw_wm_prog_data {
 static inline bool
 brw_wm_prog_data_is_dynamic(const struct brw_wm_prog_data *prog_data)
 {
-   return prog_data->alpha_to_coverage == INTEL_SOMETIMES ||
+   return prog_data->mesh_input == INTEL_SOMETIMES ||
+      prog_data->alpha_to_coverage == INTEL_SOMETIMES ||
       prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES ||
       prog_data->persample_dispatch == INTEL_SOMETIMES;
 }

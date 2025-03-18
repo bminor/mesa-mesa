@@ -604,6 +604,13 @@ anv_graphics_pipeline_stage_fragment_dynamic(const struct anv_pipeline_stage *st
           brw_wm_prog_key_is_dynamic(&stage->key.wm);
 }
 
+static bool
+anv_graphics_pipeline_stage_mesh_dynamic(const struct anv_pipeline_stage *stage)
+{
+   return stage->stage == MESA_SHADER_FRAGMENT &&
+          stage->key.wm.mesh_input == INTEL_SOMETIMES;
+}
+
 static void
 anv_pipeline_hash_common(struct mesa_sha1 *ctx,
                          const struct anv_pipeline *pipeline)
@@ -1086,6 +1093,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    NIR_PASS_V(nir, anv_nir_compute_push_layout,
               pdevice, stage->key.base.robust_flags,
               anv_graphics_pipeline_stage_fragment_dynamic(stage),
+              anv_graphics_pipeline_stage_mesh_dynamic(stage),
               prog_data, &stage->bind_map, &push_map,
               pipeline->layout.type, mem_ctx);
 

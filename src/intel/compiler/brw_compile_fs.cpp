@@ -950,6 +950,8 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     */
    prog_data->alpha_to_coverage = key->alpha_to_coverage;
 
+   prog_data->mesh_input = key->mesh_input;
+
    prog_data->uses_sample_mask =
       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
 

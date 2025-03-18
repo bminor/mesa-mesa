@@ -4189,7 +4189,8 @@ brw_per_primitive_reg(const brw_builder &bld, int location, unsigned comp)
 {
    brw_shader &s = *bld.shader;
    assert(s.stage == MESA_SHADER_FRAGMENT);
-   assert(BITFIELD64_BIT(location) & s.nir->info.per_primitive_inputs);
+   assert((BITFIELD64_BIT(location) & s.nir->info.per_primitive_inputs) ||
+          location == VARYING_SLOT_PRIMITIVE_ID);
 
    const struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
 
