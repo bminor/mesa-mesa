@@ -48,9 +48,11 @@ $ADB push "$INSTALL/lib/libGLESv2.so" /vendor/lib64/egl/libGLESv2_mesa.so
 
 $ADB shell rm -f /vendor/lib64/hw/vulkan.lvp.so*
 $ADB shell rm -f /vendor/lib64/hw/vulkan.virtio.so*
+$ADB shell rm -f /vendor/lib64/hw/vulkan.intel.so*
 
 $ADB push "$INSTALL/lib/libvulkan_lvp.so" /vendor/lib64/hw/vulkan.lvp.so
 $ADB push "$INSTALL/lib/libvulkan_virtio.so" /vendor/lib64/hw/vulkan.virtio.so
+$ADB push "$INSTALL/lib/libvulkan_intel.so" /vendor/lib64/hw/vulkan.intel.so
 
 $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so*
