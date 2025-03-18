@@ -647,6 +647,56 @@ update_h265_session_parameters(struct vk_video_session_parameters *params,
    return result;
 }
 
+void
+vk_video_get_h264_parameters(const struct vk_video_session *session,
+                             const struct vk_video_session_parameters *params,
+                             const VkVideoDecodeInfoKHR *decode_info,
+                             const VkVideoDecodeH264PictureInfoKHR *h264_pic_info,
+                             const StdVideoH264SequenceParameterSet **sps_p,
+                             const StdVideoH264PictureParameterSet **pps_p)
+{
+   const StdVideoH264SequenceParameterSet *sps = NULL;
+   const StdVideoH264PictureParameterSet *pps = NULL;
+
+   sps = vk_video_find_h264_dec_std_sps(params, h264_pic_info->pStdPictureInfo->seq_parameter_set_id);
+   pps = vk_video_find_h264_dec_std_pps(params, h264_pic_info->pStdPictureInfo->pic_parameter_set_id);
+
+   *sps_p = sps;
+   *pps_p = pps;
+}
+
+void
+vk_video_get_h265_parameters(const struct vk_video_session *session,
+                             const struct vk_video_session_parameters *params,
+                             const VkVideoDecodeInfoKHR *decode_info,
+                             const VkVideoDecodeH265PictureInfoKHR *h265_pic_info,
+                             const StdVideoH265SequenceParameterSet **sps_p,
+                             const StdVideoH265PictureParameterSet **pps_p)
+{
+   const StdVideoH265SequenceParameterSet *sps = NULL;
+   const StdVideoH265PictureParameterSet *pps = NULL;
+
+   sps = vk_video_find_h265_dec_std_sps(params, h265_pic_info->pStdPictureInfo->pps_seq_parameter_set_id);
+   pps = vk_video_find_h265_dec_std_pps(params, h265_pic_info->pStdPictureInfo->pps_pic_parameter_set_id);
+
+   *sps_p = sps;
+   *pps_p = pps;
+}
+
+void
+vk_video_get_av1_parameters(const struct vk_video_session *session,
+                            const struct vk_video_session_parameters *params,
+                            const VkVideoDecodeInfoKHR *decode_info,
+                            const StdVideoAV1SequenceHeader **seq_hdr_p)
+{
+   const StdVideoAV1SequenceHeader *seq_hdr = NULL;
+
+   seq_hdr = &params->av1_dec.seq_hdr.base;
+
+   *seq_hdr_p = seq_hdr;
+}
+
+
 VkResult
 vk_video_session_parameters_update(struct vk_video_session_parameters *params,
                                    const VkVideoSessionParametersUpdateInfoKHR *update)
