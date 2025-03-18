@@ -4344,7 +4344,7 @@
         "description": "venus: fix ahb usage caching",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fde5cebec53aa9a0ceaafef2ec9ba85fd897f40c",
         "notes": null
