@@ -11,17 +11,24 @@ export PATH=/android-tools/platform-tools:$PATH
 $ADB wait-for-device root
 sleep 1
 
-# overlay vendor
+# overlay 
+
+REMOUNT_PATHS="/vendor"
+if [ "$ANDROID_VERSION" -ge 15 ]; then
+  REMOUNT_PATHS="$REMOUNT_PATHS /system"
+fi
 
 OV_TMPFS="/data/overlay-remount"
 $ADB shell mkdir -p "$OV_TMPFS"
 $ADB shell mount -t tmpfs none "$OV_TMPFS"
 
-$ADB shell mkdir -p "$OV_TMPFS/vendor-upper"
-$ADB shell mkdir -p "$OV_TMPFS/vendor-work"
+for path in $REMOUNT_PATHS; do
+  $ADB shell mkdir -p "${OV_TMPFS}${path}-upper"
+  $ADB shell mkdir -p "${OV_TMPFS}${path}-work"
 
-opts="lowerdir=/vendor,upperdir=$OV_TMPFS/vendor-upper,workdir=$OV_TMPFS/vendor-work"
-$ADB shell mount -t overlay -o "$opts" none /vendor
+  opts="lowerdir=${path},upperdir=${OV_TMPFS}${path}-upper,workdir=${OV_TMPFS}${path}-work"
+  $ADB shell mount -t overlay -o "$opts" none ${path}
+done
 
 $ADB shell setenforce 0
 
@@ -58,13 +65,18 @@ $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv2_emulation.so*
 
-$ADB shell rm -f /vendor/lib64/egl/libEGL_angle.so*
-$ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_angle.so*
-$ADB shell rm -f /vendor/lib64/egl/libGLESv2_angle.so*
+ANGLE_DEST_PATH=/vendor/lib64/egl
+if [ "$ANDROID_VERSION" -ge 15 ]; then
+  ANGLE_DEST_PATH=/system/lib64
+fi
 
-$ADB push /angle/libEGL_angle.so /vendor/lib64/egl/libEGL_angle.so
-$ADB push /angle/libGLESv1_CM_angle.so /vendor/lib64/egl/libGLESv1_CM_angle.so
-$ADB push /angle/libGLESv2_angle.so /vendor/lib64/egl/libGLESv2_angle.so
+$ADB shell rm -f "$ANGLE_DEST_PATH/libEGL_angle.so"*
+$ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"*
+$ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv2_angle.so"*
+
+$ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
+$ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
+$ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
 # Check what GLES implementation Surfaceflinger is using before copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
