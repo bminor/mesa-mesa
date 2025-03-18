@@ -56,16 +56,13 @@ $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv2_emulation.so*
 
-# Remove built-in ANGLE, we'll supply our own if needed
 $ADB shell rm -f /vendor/lib64/egl/libEGL_angle.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_angle.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv2_angle.so*
 
-if [ -n "$ANGLE_TAG" ]; then
-  $ADB push /angle/libEGL_angle.so /vendor/lib64/egl/libEGL_angle.so
-  $ADB push /angle/libGLESv1_CM_angle.so /vendor/lib64/egl/libGLESv1_CM_angle.so
-  $ADB push /angle/libGLESv2_angle.so /vendor/lib64/egl/libGLESv2_angle.so
-fi
+$ADB push /angle/libEGL_angle.so /vendor/lib64/egl/libEGL_angle.so
+$ADB push /angle/libGLESv1_CM_angle.so /vendor/lib64/egl/libGLESv1_CM_angle.so
+$ADB push /angle/libGLESv2_angle.so /vendor/lib64/egl/libGLESv2_angle.so
 
 # Check what GLES implementation Surfaceflinger is using before copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
