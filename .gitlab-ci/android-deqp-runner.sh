@@ -39,7 +39,7 @@ if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
     DEQP_SKIPS="$DEQP_SKIPS /data/deqp/$GPU_VERSION-skips.txt"
 fi
 
-if [ -n "$USE_ANGLE" ]; then
+if [ -n "$ANGLE_TAG" ]; then
     DEQP_SKIPS="$DEQP_SKIPS /data/deqp/angle-skips.txt"
 fi
 
