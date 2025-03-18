@@ -799,7 +799,9 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    }
 
    case SpvOpDot:
-      dest->def = nir_fdot(&b->nb, src[0], src[1]);
+      dest->def = glsl_type_is_bfloat_16(dest_type) ?
+         nir_bfdot(&b->nb, src[0], src[1]) :
+         nir_fdot(&b->nb, src[0], src[1]);
       break;
 
    case SpvOpIAddCarry:
