@@ -196,6 +196,11 @@ lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin, lower_vs_inputs
    const unsigned bit_size = intrin->def.bit_size;
    const unsigned dest_num_components = intrin->def.num_components;
 
+   if (!(s->gfx_state->vi.attributes_valid & (1 << location))) {
+      /* Return early for unassigned attribute reads. */
+      return nir_imm_zero(b, intrin->def.num_components, intrin->def.bit_size);
+   }
+
    /* Convert the component offset to bit_size units.
     * (Intrinsic component offset is in 32-bit units.)
     *
@@ -442,19 +447,25 @@ opt_vs_input_to_const(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    const unsigned bit_size = intrin->def.bit_size;
    const unsigned component = var->data.location_frac >> (bit_size == 64 ? 1 : 0);
 
-   const enum pipe_format attrib_format = gfx_state->vi.vertex_attribute_formats[location];
-   const struct util_format_description *f = util_format_description(attrib_format);
-
    b->cursor = nir_after_instr(&intrin->instr);
 
    nir_def *res = &intrin->def;
-   for (unsigned i = 0; i < intrin->def.num_components; i++) {
-      const unsigned c = i + component;
-      if (f->swizzle[c] >= f->nr_channels) {
-         /* Handle input loads that are larger than their format. */
-         nir_def *channel = oob_input_load_value(b, c, bit_size, !is_integer);
-         res = nir_vector_insert_imm(b, res, channel, i);
+
+   if (gfx_state->vi.attributes_valid & (1 << location)) {
+      const enum pipe_format attrib_format = gfx_state->vi.vertex_attribute_formats[location];
+      const struct util_format_description *f = util_format_description(attrib_format);
+
+      for (unsigned i = 0; i < intrin->def.num_components; i++) {
+         const unsigned c = i + component;
+         if (f->swizzle[c] >= f->nr_channels) {
+            /* Handle input loads that are larger than their format. */
+            nir_def *channel = oob_input_load_value(b, c, bit_size, !is_integer);
+            res = nir_vector_insert_imm(b, res, channel, i);
+         }
       }
+   } else {
+      /* Use (0,0,0,0) for unassigned attribute reads. */
+      res = nir_imm_zero(b, intrin->def.num_components, intrin->def.bit_size);
    }
 
    if (res != &intrin->def) {

@@ -137,6 +137,7 @@ struct radv_graphics_state_key {
    } ia;
 
    struct {
+      uint32_t attributes_valid;
       uint32_t instance_rate_inputs;
       uint32_t instance_rate_divisors[MAX_VERTEX_ATTRIBS];
       uint8_t vertex_attribute_formats[MAX_VERTEX_ATTRIBS];

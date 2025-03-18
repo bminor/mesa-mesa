@@ -1852,6 +1852,8 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
 
    /* Vertex input state */
    if (state->vi) {
+      key.vi.attributes_valid = state->vi->attributes_valid;
+
       u_foreach_bit (i, state->vi->attributes_valid) {
          uint32_t binding = state->vi->attributes[i].binding;
          uint32_t offset = state->vi->attributes[i].offset;
