@@ -1224,6 +1224,13 @@ tu_bin_offset(VkOffset2D fdm_offset, const struct tu_tiling_config *tiling)
    };
 }
 
+static uint32_t
+tu_fdm_num_layers(const struct tu_cmd_buffer *cmd)
+{
+   return cmd->state.pass->num_views ? cmd->state.pass->num_views : 
+      (cmd->state.fdm_per_layer ? cmd->state.framebuffer->layers : 1);
+}
+
 template <chip CHIP>
 static void
 tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
@@ -1301,8 +1308,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    tu_cs_emit(cs, 0x0);
 
    if (fdm) {
-      unsigned views =
-         cmd->state.pass->num_views ? cmd->state.pass->num_views : 1;
+      unsigned views = tu_fdm_num_layers(cmd);
       VkRect2D bin = {
          { x1, y1 },
          { (x2 - x1) * tile->extent.width, (y2 - y1) * tile->extent.height }
@@ -1991,7 +1997,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
     */
    if ((!(cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) ||
         fdm_offsets) && cmd->fdm_bin_patchpoints.size != 0) {
-      unsigned num_views = MAX2(cmd->state.pass->num_views, 1);
+      unsigned num_views = tu_fdm_num_layers(cmd);
       VkExtent2D unscaled_frag_areas[num_views];
       VkRect2D bins[num_views];
       for (unsigned i = 0; i < num_views; i++) {
@@ -2675,8 +2681,7 @@ tu_calc_frag_area(struct tu_cmd_buffer *cmd,
    const uint32_t x2 = MIN2(x1 + tiling->tile0.width, MAX_VIEWPORT_SIZE);
    const uint32_t y2 = MIN2(y1 + tiling->tile0.height, MAX_VIEWPORT_SIZE);
 
-   unsigned views =
-      cmd->state.pass->num_views ? cmd->state.pass->num_views : 1;
+   unsigned views = tu_fdm_num_layers(cmd);
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    struct tu_frag_area raw_areas[views];
    if (fdm) {
@@ -2894,8 +2899,7 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
 {
    uint32_t width = tx2 - tx1;
    uint32_t height = ty2 - ty1;
-   unsigned views =
-      cmd->state.pass->num_views ? cmd->state.pass->num_views : 1;
+   unsigned views = tu_fdm_num_layers(cmd);
    bool has_abs_mask =
       cmd->device->physical_device->info->a7xx.has_abs_bin_mask;
 
@@ -4491,6 +4495,15 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
          pipeline->shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm;
    }
 
+   if (pipeline->program.per_layer_viewport != cmd->state.per_layer_viewport ||
+       pipeline->shaders[MESA_SHADER_FRAGMENT]->fs.max_fdm_layers !=
+       cmd->state.max_fdm_layers) {
+      cmd->state.per_layer_viewport = pipeline->program.per_layer_viewport;
+      cmd->state.max_fdm_layers =
+         pipeline->shaders[MESA_SHADER_FRAGMENT]->fs.max_fdm_layers;
+      cmd->state.dirty |= TU_CMD_DIRTY_FDM;
+   }
+
    if (pipeline->program.per_view_viewport != cmd->state.per_view_viewport ||
        pipeline->program.fake_single_viewport != cmd->state.fake_single_viewport) {
       cmd->state.per_view_viewport = pipeline->program.per_view_viewport;
@@ -5554,6 +5567,7 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    cmd->state.subpass = pass->subpasses;
    cmd->state.framebuffer = fb;
    cmd->state.render_area = pRenderPassBegin->renderArea;
+   cmd->state.fdm_per_layer = pass->has_layered_fdm;
 
    if (pass->attachment_count > 0) {
       VK_MULTIALLOC(ma);
@@ -5622,6 +5636,8 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
    cmd->state.subpass = &cmd->dynamic_subpass;
    cmd->state.framebuffer = &cmd->dynamic_framebuffer;
    cmd->state.render_area = pRenderingInfo->renderArea;
+   cmd->state.fdm_per_layer =
+      pRenderingInfo->flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
    cmd->state.blit_cache_cleaned = false;
 
    cmd->state.attachments = cmd->dynamic_attachments;
@@ -6417,11 +6433,14 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
    unsigned num_consts = state->num_consts;
 
    for (unsigned i = 0; i < num_consts; i++) {
-      assert(i < views);
-      VkExtent2D area = frag_areas[i];
-      VkRect2D bin = bins[i];
+      /* FDM per layer may be enabled in the shader but not in the renderpass,
+       * in which case views will be 1 and we have to replicate the one view
+       * to all of the layers.
+       */
+      VkExtent2D area = frag_areas[MIN2(i, views - 1)];
+      VkRect2D bin = bins[MIN2(i, views - 1)];
       VkOffset2D offset = tu_fdm_per_bin_offset(area, bin, common_bin_offset);
-      
+
       tu_cs_emit(cs, area.width);
       tu_cs_emit(cs, area.height);
       tu_cs_emit(cs, fui(offset.x));
@@ -7984,8 +8003,7 @@ tu_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
 
    VkOffset2D test_offsets[MAX_VIEWS];
    if (TU_DEBUG(FDM) && TU_DEBUG(FDM_OFFSET)) {
-      for (unsigned i = 0;
-           i < MAX2(cmd_buffer->state.pass->num_views, 1); i++) {
+      for (unsigned i = 0; i < tu_fdm_num_layers(cmd_buffer); i++) {
          test_offsets[i] = { 64, 64 };
       }
       fdm_offsets = test_offsets;
@@ -8030,8 +8048,7 @@ tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
 
    VkOffset2D test_offsets[MAX_VIEWS];
    if (TU_DEBUG(FDM) && TU_DEBUG(FDM_OFFSET)) {
-      for (unsigned i = 0;
-           i < MAX2(cmd_buffer->state.pass->num_views, 1); i++) {
+      for (unsigned i = 0; i < tu_fdm_num_layers(cmd_buffer); i++) {
          test_offsets[i] = { 64, 64 };
       }
       fdm_offsets = test_offsets;
@@ -8047,7 +8064,7 @@ tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
          if (fdm_offsets) {
             memcpy(cmd_buffer->pre_chain.fdm_offsets,
                    fdm_offsets, sizeof(VkOffset2D) *
-                   MAX2(cmd_buffer->state.pass->num_views, 1));
+                   tu_fdm_num_layers(cmd_buffer));
          }
 
          /* Even we don't call tu_cmd_render here, renderpass is finished

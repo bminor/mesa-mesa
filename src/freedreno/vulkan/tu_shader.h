@@ -82,6 +82,11 @@ struct tu_shader
     */
    int dynamic_descriptor_sizes[MAX_SETS];
 
+   /* For all shader types other than FS, store whether the viewport was
+    * rewritten to equal the layer.
+    */
+   bool per_layer_viewport;
+
    union {
       struct {
          unsigned patch_type;
@@ -99,6 +104,10 @@ struct tu_shader
             uint32_t status;
             bool force_late_z;
          } lrz;
+
+         /* If per_layer_viewport is true, the maximum number of layers written to.
+          */
+         uint8_t max_fdm_layers;
       } fs;
    };
 };
@@ -106,8 +115,10 @@ struct tu_shader
 struct tu_shader_key {
    unsigned multiview_mask;
    uint16_t read_only_input_attachments;
+   uint8_t max_fdm_layers;
    bool force_sample_interp;
    bool fragment_density_map;
+   bool fdm_per_layer;
    bool dynamic_renderpass;
    uint8_t unscaled_input_fragcoord;
    bool robust_storage_access2;

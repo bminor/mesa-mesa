@@ -1012,6 +1012,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
 struct lower_fdm_options {
    unsigned num_views;
    bool adjust_fragcoord;
+   bool use_layer;
 };
 
 static bool
@@ -1039,14 +1040,16 @@ lower_fdm_instr(struct nir_builder *b, nir_instr *instr, void *data)
 
    nir_def *view;
    if (options->num_views > 1) {
+      gl_varying_slot slot = options->use_layer ?
+         VARYING_SLOT_LAYER : VARYING_SLOT_VIEW_INDEX;
       nir_variable *view_var =
          nir_find_variable_with_location(b->shader, nir_var_shader_in,
-                                         VARYING_SLOT_VIEW_INDEX);
+                                         slot);
 
       if (view_var == NULL) {
          view_var = nir_variable_create(b->shader, nir_var_shader_in,
                                         glsl_int_type(), NULL);
-         view_var->data.location = VARYING_SLOT_VIEW_INDEX;
+         view_var->data.location = slot;
          view_var->data.interpolation = INTERP_MODE_FLAT;
          view_var->data.driver_location = b->shader->num_inputs++;
       }
@@ -1137,6 +1140,81 @@ tu_nir_lower_ssbo_descriptor(nir_shader *shader,
    return nir_shader_intrinsics_pass(shader, lower_ssbo_descriptor_instr,
                                      nir_metadata_control_flow,
                                      (void *)dev);
+}
+
+struct lower_fdm_state {
+   nir_variable *layer_var;
+   nir_variable *viewport_var;
+};
+
+static bool
+lower_layered_fdm_instr(nir_builder *b, nir_intrinsic_instr *intrin,
+                        void *cb)
+{
+   struct lower_fdm_state *state = (struct lower_fdm_state *)cb;
+   if (intrin->intrinsic != nir_intrinsic_store_deref)
+      return false;
+
+   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
+   if (!nir_deref_mode_is(deref, nir_var_shader_out))
+       return false;
+
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+   if (var != state->layer_var)
+      return false;
+
+   /* Ok, we've finally got a store to gl_Layer. Mirror a store to
+    * gl_ViewportIndex.
+    */
+   if (!state->viewport_var) {
+      state->viewport_var =
+         nir_create_variable_with_location(b->shader,
+                                           nir_var_shader_out,
+                                           VARYING_SLOT_VIEWPORT,
+                                           glsl_int_type());
+      state->viewport_var->data.interpolation = INTERP_MODE_FLAT;
+   }
+
+   b->cursor = nir_after_instr(&intrin->instr);
+   nir_store_var(b, state->viewport_var, intrin->src[1].ssa, 0x1);
+   return true;
+}
+
+static bool
+tu_nir_lower_layered_fdm(nir_shader *shader,
+                         bool *per_layer_viewport)
+{
+   nir_function_impl *entrypoint = nir_shader_get_entrypoint(shader);
+
+   /* If viewport is alreay written, there's nothing to do and we will fall
+    * back.
+    */
+   if (shader->info.outputs_written & VARYING_BIT_VIEWPORT) {
+      *per_layer_viewport = false;
+      return nir_no_progress(entrypoint);
+   }
+
+   *per_layer_viewport = true;
+
+   struct lower_fdm_state state = {};
+
+   state.layer_var =
+      nir_find_variable_with_location(shader, nir_var_shader_out,
+                                      VARYING_SLOT_LAYER);
+
+   /* If layer is never written, it will get the default value of 0 and we can
+    * also leave the viewport with the default value of 0.
+    */
+   if (!state.layer_var)
+      return nir_no_progress(entrypoint);
+
+   state.viewport_var =
+      nir_find_variable_with_location(shader, nir_var_shader_out,
+                                      VARYING_SLOT_VIEWPORT);
+
+
+   return nir_shader_intrinsics_pass(shader, lower_layered_fdm_instr,
+                                     nir_metadata_control_flow, &state);
 }
 
 static void
@@ -2451,6 +2529,7 @@ tu_shader_serialize(struct vk_pipeline_cache_object *object,
                     sizeof(shader->dynamic_descriptor_sizes));
    blob_write_uint32(blob, shader->view_mask);
    blob_write_uint8(blob, shader->active_desc_sets);
+   blob_write_uint8(blob, shader->per_layer_viewport);
 
    ir3_store_variant(blob, shader->variant);
 
@@ -2496,6 +2575,7 @@ tu_shader_deserialize(struct vk_pipeline_cache *cache,
                    sizeof(shader->dynamic_descriptor_sizes));
    shader->view_mask = blob_read_uint32(blob);
    shader->active_desc_sets = blob_read_uint8(blob);
+   shader->per_layer_viewport = blob_read_uint8(blob);
 
    shader->variant = ir3_retrieve_variant(blob, dev->compiler, NULL);
 
@@ -2568,10 +2648,25 @@ tu_shader_create(struct tu_device *dev,
     * lower input attachment coordinates except if unscaled.
     */
    const struct lower_fdm_options fdm_options = {
-      .num_views = MAX2(util_last_bit(key->multiview_mask), 1),
+      .num_views = MAX2(key->multiview_mask ?
+                        util_last_bit(key->multiview_mask) :
+                        key->max_fdm_layers, 1),
       .adjust_fragcoord = key->fragment_density_map,
+      .use_layer = !key->multiview_mask,
    };
    NIR_PASS(_, nir, tu_nir_lower_fdm, &fdm_options);
+
+   if (nir->info.stage != MESA_SHADER_FRAGMENT &&
+       nir->info.stage != MESA_SHADER_COMPUTE &&
+       !key->multiview_mask &&
+       key->fdm_per_layer) {
+      NIR_PASS(_, nir, tu_nir_lower_layered_fdm, &shader->per_layer_viewport);
+   }
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT &&
+       key->fdm_per_layer) {
+      shader->fs.max_fdm_layers = key->max_fdm_layers;
+   }
 
    /* Note that nir_opt_barrier_modes here breaks tests such as
     * dEQP-VK.memory_model.message_passing.ext.u32.coherent.fence_atomic.atomicwrite.device.payload_local.image.guard_local.buffer.vert

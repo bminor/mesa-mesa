@@ -3959,10 +3959,9 @@ fdm_apply_sysmem_clear_coords(struct tu_cmd_buffer *cmd,
 {
    const struct apply_sysmem_clear_coords_state *state =
       (const struct apply_sysmem_clear_coords_state *)data;
-   assert(state->view < views);
 
-   VkExtent2D frag_area = frag_areas[state->view];
-   VkRect2D bin = bins[state->view];
+   VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
+   VkRect2D bin = bins[MIN2(state->view, views - 1)];
 
    VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin, common_bin_offset);
 
@@ -4233,10 +4232,9 @@ fdm_apply_gmem_clear_coords(struct tu_cmd_buffer *cmd,
 {
    const struct apply_gmem_clear_coords_state *state =
       (const struct apply_gmem_clear_coords_state *)data;
-   assert(state->view < views);
 
-   VkExtent2D frag_area = frag_areas[state->view];
-   VkRect2D bin = bins[state->view];
+   VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
+   VkRect2D bin = bins[MIN2(state->view, views - 1)];
 
    VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin, common_bin_offset);
 
@@ -4869,9 +4867,8 @@ fdm_apply_load_coords(struct tu_cmd_buffer *cmd,
 {
    const struct apply_load_coords_state *state =
       (const struct apply_load_coords_state *)data;
-   assert(state->view < views);
-   VkExtent2D frag_area = frag_areas[state->view];
-   VkRect2D bin = bins[state->view];
+   VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
+   VkRect2D bin = bins[MIN2(state->view, views - 1)];
 
    assert(bin.extent.width % frag_area.width == 0);
    assert(bin.extent.height % frag_area.height == 0);
@@ -4923,7 +4920,7 @@ load_3d_blit(struct tu_cmd_buffer *cmd,
    for_each_layer(i, att->clear_views, cmd->state.framebuffer->layers) {
       if (cmd->state.pass->has_fdm) {
          struct apply_load_coords_state state = {
-            .view = att->clear_views ? i : 0,
+            .view = i,
          };
          tu_create_fdm_bin_patchpoint(cmd, cs, 4, TU_FDM_SKIP_BINNING,
                                       fdm_apply_load_coords, state);
@@ -5342,9 +5339,8 @@ fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
 {
    const struct apply_store_coords_state *state =
       (const struct apply_store_coords_state *)data;
-   assert(state->view < views);
-   VkExtent2D frag_area = frag_areas[state->view];
-   VkRect2D bin = bins[state->view];
+   VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
+   VkRect2D bin = bins[MIN2(state->view, views - 1)];
 
    /* The bin width/height must be a multiple of the frag_area to make sure
     * that the scaling happens correctly. This means there may be some
@@ -5496,9 +5492,8 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
 
       for_each_layer (i, layer_mask, layers) {
          if (cmd->state.pass->has_fdm) {
-            unsigned view = layer_mask ? i : 0;
             struct apply_store_coords_state state = {
-               .view = view,
+               .view = i,
             };
             tu_create_fdm_bin_patchpoint(cmd, cs, 8, TU_FDM_SKIP_BINNING,
                                          fdm_apply_store_coords, state);

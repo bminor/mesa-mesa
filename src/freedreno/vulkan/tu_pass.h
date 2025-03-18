@@ -139,6 +139,7 @@ struct tu_render_pass
    bool has_cond_load_store;
    bool has_fdm;
    bool allow_ib2_skipping;
+   bool has_layered_fdm;
 
    struct tu_subpass_barrier end_barrier;
    struct tu_subpass subpasses[0];

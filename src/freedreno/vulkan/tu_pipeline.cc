@@ -282,6 +282,8 @@ struct tu_pipeline_builder
    VkShaderStageFlags active_stages;
 
    bool fragment_density_map;
+   bool fdm_per_layer;
+   uint8_t max_fdm_layers;
 
    struct vk_graphics_pipeline_all_state all_state;
    struct vk_graphics_pipeline_state graphics_state;
@@ -1799,6 +1801,16 @@ tu_pipeline_builder_compile_shaders(struct tu_pipeline_builder *builder,
        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
       keys[MESA_SHADER_VERTEX].multiview_mask =
          builder->graphics_state.rp->view_mask;
+
+      gl_shader_stage last_pre_rast_stage = MESA_SHADER_VERTEX;
+      for (int i = MESA_SHADER_GEOMETRY; i >= MESA_SHADER_VERTEX; i--) {
+         if (nir[i]) {
+            last_pre_rast_stage = (gl_shader_stage)i;
+            break;
+         }
+      }
+
+      keys[last_pre_rast_stage].fdm_per_layer = builder->fdm_per_layer;
    }
 
    if (builder->state & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
@@ -1806,6 +1818,9 @@ tu_pipeline_builder_compile_shaders(struct tu_pipeline_builder *builder,
          builder->graphics_state.rp->view_mask;
       keys[MESA_SHADER_FRAGMENT].fragment_density_map =
          builder->fragment_density_map;
+      keys[MESA_SHADER_FRAGMENT].fdm_per_layer =
+         builder->fdm_per_layer;
+      keys[MESA_SHADER_FRAGMENT].max_fdm_layers = builder->max_fdm_layers;
       keys[MESA_SHADER_FRAGMENT].unscaled_input_fragcoord =
          builder->unscaled_input_fragcoord;
 
@@ -2309,20 +2324,27 @@ tu_emit_program_state(struct tu_cs *sub_cs,
    tu6_emit_vpc<CHIP>(&prog_cs, vs, hs, ds, gs, fs);
    prog->vpc_state = tu_cs_end_draw_state(sub_cs, &prog_cs);
    
-   const struct ir3_shader_variant *last_shader;
-   if (gs)
-      last_shader = gs;
-   else if (ds)
-      last_shader = ds;
-   else
-      last_shader = vs;
+   const struct ir3_shader_variant *last_variant;
+   const struct tu_shader *last_shader;
+   if (gs) {
+      last_shader = shaders[MESA_SHADER_GEOMETRY];
+      last_variant = gs;
+   } else if (ds) {
+      last_shader = shaders[MESA_SHADER_TESS_EVAL];
+      last_variant = ds;
+   } else {
+      last_shader = shaders[MESA_SHADER_VERTEX];
+      last_variant = vs;
+   }
 
    prog->per_view_viewport =
-      !last_shader->writes_viewport &&
+      !last_variant->writes_viewport &&
       shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm &&
       dev->physical_device->info->a6xx.has_per_view_viewport;
-   prog->fake_single_viewport = prog->per_view_viewport;
-   prog->writes_shading_rate = last_shader->writes_shading_rate;
+   prog->per_layer_viewport = last_shader->per_layer_viewport;
+   prog->fake_single_viewport = prog->per_view_viewport ||
+      prog->per_layer_viewport;
+   prog->writes_shading_rate = last_variant->writes_shading_rate;
    prog->reads_shading_rate = fs->reads_shading_rate;
    prog->accesses_smask = fs->reads_smask || fs->writes_smask;
 }
@@ -2613,9 +2635,15 @@ fdm_apply_viewports(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
        * same across all views, we can pick any view. However the number
        * of viewports and number of views is not guaranteed the same, so we
        * need to pick the 0'th view which always exists to be safe.
+       *
+       * If FDM per layer is enabled in the shader but disabled by the
+       * renderpass, views will be 1 and we also have to replicate the 0'th
+       * view to every view.
        */
-      VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
-      VkRect2D bin = state->share_scale ? bins[0] : bins[i];
+      VkExtent2D frag_area =
+         (state->share_scale || views == 1) ? frag_areas[0] : frag_areas[i];
+      VkRect2D bin =
+         (state->share_scale || views == 1) ? bins[0] : bins[i];
       /* Implement fake_single_viewport by replicating viewport 0 across all
        * views.
        */
@@ -2655,16 +2683,20 @@ tu6_emit_viewport_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
    struct apply_viewport_state state = {
       .vp = *vp,
       .rs = *rs,
-      .share_scale = !cmd->state.per_view_viewport,
+      .share_scale = !cmd->state.per_view_viewport &&
+         !cmd->state.per_layer_viewport,
       .fake_single_viewport = cmd->state.fake_single_viewport,
    };
-   if (!state.share_scale)
+   if (cmd->state.per_view_viewport)
       state.vp.viewport_count = num_views;
+   else if (cmd->state.per_layer_viewport)
+      state.vp.viewport_count = cmd->state.max_fdm_layers;
    unsigned size = TU_CALLX(cmd->device, tu6_viewport_size)(cmd->device, &state.vp, &state.rs);
    tu_cs_begin_sub_stream(&cmd->sub_cs, size, cs);
    tu_create_fdm_bin_patchpoint(cmd, cs, size, TU_FDM_NONE,
                                 fdm_apply_viewports, state);
-   cmd->state.rp.shared_viewport |= !cmd->state.per_view_viewport;
+   cmd->state.rp.shared_viewport |= !cmd->state.per_view_viewport &&
+      !cmd->state.program.per_layer_viewport;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_scissor_state[] = {
@@ -2723,8 +2755,10 @@ fdm_apply_scissors(struct tu_cmd_buffer *cmd, struct tu_cs *cs, void *data,
    struct vk_viewport_state vp = state->vp;
 
    for (unsigned i = 0; i < vp.scissor_count; i++) {
-      VkExtent2D frag_area = state->share_scale ? frag_areas[0] : frag_areas[i];
-      VkRect2D bin = state->share_scale ? bins[0] : bins[i];
+      VkExtent2D frag_area =
+         (state->share_scale || views == 1) ? frag_areas[0] : frag_areas[i];
+      VkRect2D bin =
+         (state->share_scale || views == 1) ? bins[0] : bins[i];
       VkRect2D scissor =
          state->fake_single_viewport ? state->vp.scissors[0] : state->vp.scissors[i];
 
@@ -2768,11 +2802,14 @@ tu6_emit_scissor_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
    unsigned num_views = MAX2(cmd->state.pass->num_views, 1);
    struct apply_viewport_state state = {
       .vp = *vp,
-      .share_scale = !cmd->state.per_view_viewport,
+      .share_scale = !cmd->state.per_view_viewport &&
+         !cmd->state.per_layer_viewport,
       .fake_single_viewport = cmd->state.fake_single_viewport,
    };
-   if (!state.share_scale)
+   if (cmd->state.per_view_viewport)
       state.vp.scissor_count = num_views;
+   else if (cmd->state.per_layer_viewport)
+      state.vp.scissor_count = cmd->state.max_fdm_layers;
    unsigned size = TU_CALLX(cmd->device, tu6_scissor_size)(cmd->device, &state.vp);
    tu_cs_begin_sub_stream(&cmd->sub_cs, size, cs);
    tu_create_fdm_bin_patchpoint(cmd, cs, size, TU_FDM_NONE, fdm_apply_scissors,
@@ -3692,7 +3729,8 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
     * to set viewport and stencil state dynamically.
     */
    bool no_per_view_viewport = pipeline_contains_all_shader_state(pipeline) &&
-      !pipeline->program.per_view_viewport;
+      !pipeline->program.per_view_viewport &&
+      !pipeline->program.per_layer_viewport;
    DRAW_STATE_COND(viewport, TU_DYNAMIC_STATE_VIEWPORT, no_per_view_viewport,
                    builder->graphics_state.vp,
                    builder->graphics_state.rs);
@@ -3912,7 +3950,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                              (TU_CMD_DIRTY_FDM |                              \
                               TU_CMD_DIRTY_PER_VIEW_VIEWPORT))) &&            \
        !(cmd->state.pipeline_draw_states & (1u << id))) {                     \
-      if (cmd->state.has_fdm) {                                               \
+      if (cmd->state.has_fdm || cmd->state.per_layer_viewport) {              \
          tu_cs_set_writeable(&cmd->sub_cs, true);                             \
          tu6_emit_##name##_fdm(&cs, cmd, __VA_ARGS__);                        \
          cmd->state.dynamic_state[id] =                                       \
@@ -4501,6 +4539,11 @@ tu_pipeline_builder_init_graphics(
             VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
       }
 
+      if (pass->has_layered_fdm) {
+         rp_flags |=
+            VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+      }
+
       builder->unscaled_input_fragcoord = 0;
       for (unsigned i = 0; i < subpass->input_count; i++) {
          /* Input attachments stored in GMEM must be loaded with unscaled
@@ -4526,6 +4569,17 @@ tu_pipeline_builder_init_graphics(
       builder->fragment_density_map = (builder->graphics_state.pipeline_flags &
          VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT) ||
          TU_DEBUG(FDM);
+      builder->fdm_per_layer = (builder->graphics_state.pipeline_flags &
+                                VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE);
+      if (builder->fdm_per_layer) {
+         const VkPipelineFragmentDensityMapLayeredCreateInfoVALVE *fdm_layered_info =
+            vk_find_struct_const(create_info->pNext,
+                                 PIPELINE_FRAGMENT_DENSITY_MAP_LAYERED_CREATE_INFO_VALVE);
+         if (fdm_layered_info) {
+            builder->max_fdm_layers =
+               fdm_layered_info->maxFragmentDensityMapLayers;
+         }
+      }
    }
 }
 

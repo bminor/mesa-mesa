@@ -109,18 +109,46 @@ struct tu_program_state
 
       unsigned dynamic_descriptor_offsets[MAX_SETS];
 
+      /* With FDM, we control the fragment area by overriding the viewport and
+       * scsissor. In order to have different areas for different views, we
+       * need to have a viewport/scissor per FDM layer. There are various
+       * possible scenarios based on the shader and whether multiview or
+       * per-layer sampling is enabled, that are communicated to the driver
+       * via the struct members below:
+       * 
+       * - The shader writes gl_ViewportIndex, managing multiple viewports in
+       *   a way that may not correspond to FDM layer:
+       *   - Set everything to false. The driver will set shared_scale and
+       *     apply the same scaling to all viewports/scissors.
+       * - Multiview is enabled:
+       *   - Set per_view_viewport.
+       *   - Set fake_single_viewport to splat viewport 0 to all viewports.
+       *       - (Not implemented yet) if the user requests per-view
+       *         viewports, don't set fake_single_viewport and let the user
+       *         set multiple viewports that are transformed independently.
+       * - Multiview is not enabled and per-layer FDM sampling is enabled:
+       *   - Inject code into shader and set per_layer_viewport.
+       *   - Set fake_single_viewport to splat viewport 0 to all viewports.
+       */
+
       /* Whether the per-view-viewport feature should be enabled in HW. This
        * implicitly adds gl_ViewIndex to gl_ViewportIndex so that from a HW
        * point of view (but not necessarily the user's point of view!) there
        * is a viewport per view.
        */
       bool per_view_viewport;
-      /* If per_view_viewport is true and this is true, the app has provided
-       * a single viewport and we need to fake it by duplicating the viewport
-       * across views before transforming each viewport separately using FDM
-       * state.
+      /* Whether gl_ViewportIndex has been set to gl_Layer, so that from a HW
+       * point of view (but not necessarily the user's point of view!) there
+       * is a viewport per view.
+       */
+      bool per_layer_viewport;
+      /* If per_view_viewport or per_layer_viewport is true and this is true,
+       * the app has provided a single viewport and we need to fake it by
+       * duplicating the viewport across views before transforming each
+       * viewport separately using FDM state.
        */
       bool fake_single_viewport;
+
       bool writes_shading_rate;
       bool reads_shading_rate;
       bool accesses_smask;

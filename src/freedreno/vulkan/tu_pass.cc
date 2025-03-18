@@ -999,6 +999,8 @@ tu_CreateRenderPass2(VkDevice _device,
       pass->fragment_density_map.attachment =
          fdm_info->fragmentDensityMapAttachment.attachment;
       pass->has_fdm = true;
+      if (pCreateInfo->flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)
+         pass->has_layered_fdm = true;
    } else {
       pass->fragment_density_map.attachment = VK_ATTACHMENT_UNUSED;
    }
@@ -1344,6 +1346,8 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
                          VK_ATTACHMENT_STORE_OP_DONT_CARE);
       pass->has_fdm = true;
+      if (info->flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)
+         pass->has_layered_fdm = true;
    } else {
       pass->fragment_density_map.attachment = VK_ATTACHMENT_UNUSED;
       pass->has_fdm = false;

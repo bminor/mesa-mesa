@@ -352,6 +352,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .IMG_filter_cubic = device->info->a6xx.has_tex_filter_cubic,
       .NV_compute_shader_derivatives = device->info->chip >= 7,
       .QCOM_fragment_density_map_offset = true,
+      .VALVE_fragment_density_map_layered = true,
       .VALVE_mutable_descriptor_type = true,
    } };
 
@@ -778,6 +779,9 @@ tu_get_features(struct tu_physical_device *pdevice,
    /* VK_KHR_unified_layouts */
    features->unifiedImageLayouts = true;
    features->unifiedImageLayoutsVideo = false;
+
+   /* VK_VALVE_fragment_density_map_layered */
+   features->fragmentDensityMapLayered = true;
 }
 
 static void
@@ -1436,6 +1440,9 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->fragmentDensityOffsetGranularity = (VkExtent2D) { 
       TU_FDM_OFFSET_GRANULARITY, TU_FDM_OFFSET_GRANULARITY
    };
+
+   /* VK_VALVE_fragment_density_map_layered */
+   props->maxFragmentDensityMapLayers = MAX_VIEWS;
 }
 
 static const struct vk_pipeline_cache_object_ops *const cache_import_ops[] = {
