@@ -4104,7 +4104,7 @@
         "description": "mesa: fix reuse of deleted texture object",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "842c91300fd041cf35398d05d2995f16d76870ae",
         "notes": null

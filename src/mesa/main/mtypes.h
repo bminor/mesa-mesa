@@ -932,6 +932,7 @@ struct gl_texture_object
    GLboolean _IsFloat;         /**< GL_OES_float_texture */
    GLboolean _IsHalfFloat;     /**< GL_OES_half_float_texture */
    bool HandleAllocated;       /**< GL_ARB_bindless_texture */
+   bool DeletePending;         /**< true if texture object is removed from the hash */
 
    /* This should not be restored by glPopAttrib: */
    bool StencilSampling;       /**< Should we sample stencil instead of depth? */
