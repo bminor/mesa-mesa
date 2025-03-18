@@ -276,16 +276,6 @@ vkcts-navi21-valve:
     B2C_TIMEOUT_OVERALL_MINUTES: 30
     RADV_PERFTEST: transfer_queue
 
-# Disabled due to its extremelly-broken nature
-.vkcts-navi21-llvm-valve:
-  extends:
-    - .vkcts-test-valve
-    - .navi21-test-valve
-    - .radv-valve-manual-rules
-  variables:
-    GPU_VERSION: radv-navi21-llvm
-    RADV_DEBUG: llvm,checkir
-
 vkcts-vangogh-valve:
   parallel: 2
   extends:
