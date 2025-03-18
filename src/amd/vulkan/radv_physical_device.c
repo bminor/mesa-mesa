@@ -86,6 +86,18 @@ radv_transfer_queue_enabled(const struct radv_physical_device *pdev)
    return pdev->info.gfx_level >= GFX9;
 }
 
+static bool
+radv_video_decode_queue_enabled(const struct radv_physical_device *pdev)
+{
+   return pdev->video_decode_enabled && pdev->info.ip[pdev->vid_decode_ip].num_queues > 0;
+}
+
+static bool
+radv_video_encode_queue_enabled(const struct radv_physical_device *pdev)
+{
+   return pdev->video_encode_enabled && pdev->info.ip[AMD_IP_VCN_ENC].num_queues > 0;
+}
+
 bool
 radv_compute_queue_enabled(const struct radv_physical_device *pdev)
 {
@@ -244,11 +256,9 @@ radv_physical_device_init_queue_table(struct radv_physical_device *pdev)
       idx++;
    }
 
-   if (pdev->video_decode_enabled) {
-      if (pdev->info.ip[pdev->vid_decode_ip].num_queues > 0) {
-         pdev->vk_queue_to_radv[idx] = RADV_QUEUE_VIDEO_DEC;
-         idx++;
-      }
+   if (radv_video_decode_queue_enabled(pdev)) {
+      pdev->vk_queue_to_radv[idx] = RADV_QUEUE_VIDEO_DEC;
+      idx++;
    }
 
    if (radv_transfer_queue_enabled(pdev)) {
@@ -256,11 +266,9 @@ radv_physical_device_init_queue_table(struct radv_physical_device *pdev)
       idx++;
    }
 
-   if (pdev->video_encode_enabled) {
-      if (pdev->info.ip[AMD_IP_VCN_ENC].num_queues > 0) {
-         pdev->vk_queue_to_radv[idx] = RADV_QUEUE_VIDEO_ENC;
-         idx++;
-      }
+   if (radv_video_encode_queue_enabled(pdev)) {
+      pdev->vk_queue_to_radv[idx] = RADV_QUEUE_VIDEO_ENC;
+      idx++;
    }
 
    if (radv_dedicated_sparse_queue_enabled(pdev)) {
@@ -2365,19 +2373,15 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
    if (radv_compute_queue_enabled(pdev))
       num_queue_families++;
 
-   if (pdev->video_decode_enabled) {
-      if (pdev->info.ip[pdev->vid_decode_ip].num_queues > 0)
-         num_queue_families++;
-   }
+   if (radv_video_decode_queue_enabled(pdev))
+      num_queue_families++;
 
    if (radv_transfer_queue_enabled(pdev)) {
       num_queue_families++;
    }
 
-   if (pdev->video_encode_enabled) {
-     if (pdev->info.ip[AMD_IP_VCN_ENC].num_queues > 0)
-       num_queue_families++;
-   }
+   if (radv_video_encode_queue_enabled(pdev))
+      num_queue_families++;
 
    if (radv_dedicated_sparse_queue_enabled(pdev)) {
       num_queue_families++;
@@ -2417,17 +2421,15 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
       }
    }
 
-   if (pdev->video_decode_enabled) {
-      if (pdev->info.ip[pdev->vid_decode_ip].num_queues > 0) {
-         if (*pCount > idx) {
-            *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
-               .queueFlags = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
-               .queueCount = pdev->info.ip[pdev->vid_decode_ip].num_queues,
-               .timestampValidBits = 0,
-               .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
-            };
-            idx++;
-         }
+   if (radv_video_decode_queue_enabled(pdev)) {
+      if (*pCount > idx) {
+         *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
+            .queueFlags = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
+            .queueCount = pdev->info.ip[pdev->vid_decode_ip].num_queues,
+            .timestampValidBits = 0,
+            .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
+         };
+         idx++;
       }
    }
 
@@ -2443,17 +2445,15 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
       }
    }
 
-   if (pdev->video_encode_enabled) {
-      if (pdev->info.ip[AMD_IP_VCN_ENC].num_queues > 0) {
-         if (*pCount > idx) {
-            *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
-               .queueFlags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR,
-               .queueCount = pdev->info.ip[AMD_IP_VCN_ENC].num_queues,
-               .timestampValidBits = 0,
-               .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
-            };
-            idx++;
-         }
+   if (radv_video_encode_queue_enabled(pdev)) {
+      if (*pCount > idx) {
+         *pQueueFamilyProperties[idx] = (VkQueueFamilyProperties){
+            .queueFlags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR,
+            .queueCount = pdev->info.ip[AMD_IP_VCN_ENC].num_queues,
+            .timestampValidBits = 0,
+            .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
+         };
+         idx++;
       }
    }
 
