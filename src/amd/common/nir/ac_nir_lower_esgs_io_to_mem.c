@@ -64,13 +64,15 @@ emit_split_buffer_load(nir_builder *b, unsigned num_components, unsigned bit_siz
    for (unsigned i = 0; i < full_dwords; ++i)
       comps[i] = nir_load_buffer_amd(b, 1, 32, desc, v_off, s_off, zero,
                                      .base = component_stride * i, .memory_modes = nir_var_shader_in,
-                                     .access = ACCESS_COHERENT);
+                                     .access = ACCESS_COHERENT | ACCESS_CAN_REORDER |
+                                               ACCESS_CAN_SPECULATE);
 
    if (remaining_bytes)
       comps[full_dwords] = nir_load_buffer_amd(b, 1, remaining_bytes * 8, desc, v_off, s_off, zero,
                                                .base = component_stride * full_dwords,
                                                .memory_modes = nir_var_shader_in,
-                                               .access = ACCESS_COHERENT);
+                                               .access = ACCESS_COHERENT | ACCESS_CAN_REORDER |
+                                                         ACCESS_CAN_SPECULATE);
 
    return nir_extract_bits(b, comps, full_dwords + !!remaining_bytes, 0, num_components, bit_size);
 }

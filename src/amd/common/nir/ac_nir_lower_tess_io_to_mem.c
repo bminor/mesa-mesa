@@ -1499,7 +1499,8 @@ lower_tes_input_load(nir_builder *b,
    nir_def *load = NULL;
 
    AC_NIR_LOAD_IO(load, b, intrin->def.num_components, intrin->def.bit_size, io_sem.high_16bits,
-                  nir_load_buffer_amd, offchip_ring, off, offchip_offset, zero, .access = ACCESS_COHERENT,
+                  nir_load_buffer_amd, offchip_ring, off, offchip_offset, zero,
+                  .access = ACCESS_COHERENT | ACCESS_CAN_REORDER | ACCESS_CAN_SPECULATE,
                   .memory_modes = nir_var_shader_in);
 
    return load;
