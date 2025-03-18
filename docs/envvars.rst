@@ -1495,9 +1495,9 @@ RADV driver environment variables
    ``transfer_queue``
       enable experimental transfer queue support (GFX9+, not yet spec compliant)
    ``video_decode``
-      enable experimental video decoding support
+      enable experimental video decoding support on GFX6-9
    ``video_encode``
-      enable experimental video encoding support
+      enable experimental video encoding support on GFX6-9
 
 .. envvar:: RADV_TEX_ANISO
 
