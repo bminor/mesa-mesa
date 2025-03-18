@@ -750,16 +750,14 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
             lower_load_global_constant_offset_instr, nir_metadata_none,
             &soft_fault);
 
-   if (!nir->info.shared_memory_explicit_layout) {
-      /* There may be garbage in shared_size, but it's the job of
-       * nir_lower_vars_to_explicit_types to allocate it. We have to reset to
-       * avoid overallocation.
-       */
-      nir->info.shared_size = 0;
+   /* There may be garbage in shared_size, but it's the job of
+    * nir_lower_vars_to_explicit_types to allocate it. We have to reset to
+    * avoid overallocation.
+    */
+   nir->info.shared_size = 0;
 
-      NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
-               shared_var_info);
-   }
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
+            shared_var_info);
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
             nir_address_format_32bit_offset);
 

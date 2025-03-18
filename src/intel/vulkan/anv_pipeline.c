@@ -1127,10 +1127,8 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
               pipeline->layout.type);
 
    if (gl_shader_stage_uses_workgroup(nir->info.stage)) {
-      if (!nir->info.shared_memory_explicit_layout) {
-         NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-                  nir_var_mem_shared, shared_type_info);
-      }
+      NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
+               nir_var_mem_shared, shared_type_info);
 
       NIR_PASS(_, nir, nir_lower_explicit_io,
                nir_var_mem_shared, nir_address_format_32bit_offset);

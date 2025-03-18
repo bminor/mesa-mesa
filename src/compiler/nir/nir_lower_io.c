@@ -2663,6 +2663,45 @@ lower_vars_to_explicit(nir_shader *shader,
    return progress;
 }
 
+static unsigned
+nir_calculate_alignment_from_explicit_layout(const glsl_type *type,
+                                             glsl_type_size_align_func type_info)
+{
+   unsigned size, alignment;
+   glsl_get_explicit_type_for_size_align(type, type_info,
+                                         &size, &alignment);
+   return alignment;
+}
+
+static void
+nir_assign_shared_var_locations(nir_shader *shader, glsl_type_size_align_func type_info)
+{
+   assert(shader->info.shared_memory_explicit_layout);
+
+   unsigned aliased_size = 0;
+   unsigned aliased_alignment = 0;
+   nir_foreach_variable_with_modes(var, shader, nir_var_mem_shared) {
+      /* Per SPV_KHR_workgroup_storage_explicit_layout, if one shared variable is
+       * a Block, all of them will be and Blocks are explicitly laid out.
+       */
+      assert(glsl_type_is_interface(var->type));
+      const bool align_to_stride = false;
+      aliased_size = MAX2(aliased_size, glsl_get_explicit_size(var->type, align_to_stride));
+      aliased_alignment = MAX2(aliased_alignment,
+                               nir_calculate_alignment_from_explicit_layout(var->type, type_info));
+   }
+
+   if (aliased_size) {
+      const unsigned aliased_location =
+         align(shader->info.shared_size, aliased_alignment);
+
+      nir_foreach_variable_with_modes(var, shader, nir_var_mem_shared)
+         var->data.driver_location = aliased_location;
+
+      shader->info.shared_size = aliased_location + aliased_size;
+   }
+}
+
 /* If nir_lower_vars_to_explicit_types is called on any shader that contains
  * generic pointers, it must either be used on all of the generic modes or
  * none.
@@ -2693,8 +2732,13 @@ nir_lower_vars_to_explicit_types(nir_shader *shader,
       progress |= lower_vars_to_explicit(shader, &shader->variables, nir_var_mem_global, type_info);
 
    if (modes & nir_var_mem_shared) {
-      assert(!shader->info.shared_memory_explicit_layout);
-      progress |= lower_vars_to_explicit(shader, &shader->variables, nir_var_mem_shared, type_info);
+      if (shader->info.shared_memory_explicit_layout) {
+         nir_assign_shared_var_locations(shader, type_info);
+         /* Types don't change, so no further lowering is needed. */
+         modes &= ~nir_var_mem_shared;
+      } else {
+         progress |= lower_vars_to_explicit(shader, &shader->variables, nir_var_mem_shared, type_info);
+      }
    }
 
    if (modes & nir_var_shader_temp)
@@ -2712,11 +2756,13 @@ nir_lower_vars_to_explicit_types(nir_shader *shader,
    if (modes & nir_var_mem_node_payload_in)
       progress |= lower_vars_to_explicit(shader, &shader->variables, nir_var_mem_node_payload_in, type_info);
 
-   nir_foreach_function_impl(impl, shader) {
-      if (modes & nir_var_function_temp)
-         progress |= lower_vars_to_explicit(shader, &impl->locals, nir_var_function_temp, type_info);
+   if (modes) {
+      nir_foreach_function_impl(impl, shader) {
+         if (modes & nir_var_function_temp)
+            progress |= lower_vars_to_explicit(shader, &impl->locals, nir_var_function_temp, type_info);
 
-      progress |= nir_lower_vars_to_explicit_types_impl(impl, modes, type_info);
+         progress |= nir_lower_vars_to_explicit_types_impl(impl, modes, type_info);
+      }
    }
 
    return progress;

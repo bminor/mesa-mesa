@@ -499,10 +499,8 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_shader_intrinsics_pass,
             lower_load_intrinsic, nir_metadata_none, NULL);
 
-   if (!nir->info.shared_memory_explicit_layout) {
-      NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-               nir_var_mem_shared, shared_var_info);
-   }
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
+            nir_var_mem_shared, shared_var_info);
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
             nir_address_format_32bit_offset);
 

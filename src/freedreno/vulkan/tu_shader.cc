@@ -743,7 +743,7 @@ lower_inline_ubo(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data)
       val = nir_load_global_ir3(b, intrin->num_components,
                                 intrin->def.bit_size,
                                 base_addr, nir_ishr_imm(b, offset, 2),
-                                .access = 
+                                .access =
                                  (enum gl_access_qualifier)(
                                     (enum gl_access_qualifier)(ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER) |
                                     ACCESS_CAN_SPECULATE),
@@ -1585,7 +1585,7 @@ tu6_emit_cs_config(struct tu_cs *cs,
       tu_cs_emit_regs(
          cs, HLSQ_CS_CNTL_1(CHIP,
                    .linearlocalidregid = regid(63, 0), .threadsize = thrsz_cs,
-                   .workgrouprastorderzfirsten = true, 
+                   .workgrouprastorderzfirsten = true,
                    .wgtilewidth = 4, .wgtileheight = tile_height));
 
       tu_cs_emit_regs(cs, HLSQ_FS_CNTL_0(CHIP, .threadsize = THREAD64));
@@ -2587,10 +2587,8 @@ tu_shader_create(struct tu_device *dev,
             nir_address_format_64bit_global);
 
    if (nir->info.stage == MESA_SHADER_COMPUTE) {
-      if (!nir->info.shared_memory_explicit_layout) {
-         NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-                  nir_var_mem_shared, shared_type_info);
-      }
+      NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
+               nir_var_mem_shared, shared_type_info);
       NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
                nir_address_format_32bit_offset);
 
