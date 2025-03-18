@@ -1560,6 +1560,8 @@ delete_textures(struct gl_context *ctx, GLsizei n, const GLuint *textures)
              */
             _mesa_make_texture_handles_non_resident(ctx, delObj);
 
+            delObj->DeletePending = true;
+
             _mesa_unlock_texture(ctx, delObj);
 
             ctx->NewState |= _NEW_TEXTURE_OBJECT;
@@ -1985,7 +1987,8 @@ bind_textures(struct gl_context *ctx, GLuint first, GLsizei count,
             struct gl_texture_object *current = texUnit->_Current;
             struct gl_texture_object *texObj;
 
-            if (current && current->Name == textures[i])
+            if (current && !current->DeletePending &&
+                current->Name == textures[i])
                texObj = current;
             else
                texObj = _mesa_lookup_texture_locked(ctx, textures[i]);
