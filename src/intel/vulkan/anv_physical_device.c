@@ -246,6 +246,10 @@ get_device_extensions(const struct anv_physical_device *device,
                                                (VIDEO_CODEC_H264DEC || VIDEO_CODEC_H265DEC)) ||
                                                (device->video_encode_enabled &&
                                                (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)),
+      .KHR_video_maintenance2                = (device->video_decode_enabled &&
+                                               (VIDEO_CODEC_H264DEC || VIDEO_CODEC_H265DEC)) ||
+                                               (device->video_encode_enabled &&
+                                               (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)),
       .KHR_vulkan_memory_model               = true,
       .KHR_workgroup_memory_explicit_layout  = true,
       .KHR_zero_initialize_workgroup_memory  = true,
@@ -886,6 +890,9 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_video_maintenance1 */
       .videoMaintenance1 = true,
+
+      /* VK_KHR_video_maintenance2 */
+      .videoMaintenance2 = true,
 
       /* VK_EXT_image_compression_control */
       .imageCompressionControl = true,
