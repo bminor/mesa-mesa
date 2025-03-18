@@ -658,8 +658,20 @@ vk_video_get_h264_parameters(const struct vk_video_session *session,
    const StdVideoH264SequenceParameterSet *sps = NULL;
    const StdVideoH264PictureParameterSet *pps = NULL;
 
-   sps = vk_video_find_h264_dec_std_sps(params, h264_pic_info->pStdPictureInfo->seq_parameter_set_id);
-   pps = vk_video_find_h264_dec_std_pps(params, h264_pic_info->pStdPictureInfo->pic_parameter_set_id);
+   if (session->flags & VK_VIDEO_SESSION_CREATE_INLINE_SESSION_PARAMETERS_BIT_KHR) {
+      const struct VkVideoDecodeH264InlineSessionParametersInfoKHR *inline_params =
+         vk_find_struct_const(decode_info->pNext, VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR);
+
+      if (inline_params) {
+         sps = inline_params->pStdSPS;
+         pps = inline_params->pStdPPS;
+      }
+   }
+
+   if (!sps)
+      sps = vk_video_find_h264_dec_std_sps(params, h264_pic_info->pStdPictureInfo->seq_parameter_set_id);
+   if (!pps)
+      pps = vk_video_find_h264_dec_std_pps(params, h264_pic_info->pStdPictureInfo->pic_parameter_set_id);
 
    *sps_p = sps;
    *pps_p = pps;
@@ -676,8 +688,20 @@ vk_video_get_h265_parameters(const struct vk_video_session *session,
    const StdVideoH265SequenceParameterSet *sps = NULL;
    const StdVideoH265PictureParameterSet *pps = NULL;
 
-   sps = vk_video_find_h265_dec_std_sps(params, h265_pic_info->pStdPictureInfo->pps_seq_parameter_set_id);
-   pps = vk_video_find_h265_dec_std_pps(params, h265_pic_info->pStdPictureInfo->pps_pic_parameter_set_id);
+   if (session->flags & VK_VIDEO_SESSION_CREATE_INLINE_SESSION_PARAMETERS_BIT_KHR) {
+      const struct VkVideoDecodeH265InlineSessionParametersInfoKHR *inline_params =
+         vk_find_struct_const(decode_info->pNext, VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR);
+
+      if (inline_params) {
+         sps = inline_params->pStdSPS;
+         pps = inline_params->pStdPPS;
+      }
+   }
+
+   if (!sps)
+      sps = vk_video_find_h265_dec_std_sps(params, h265_pic_info->pStdPictureInfo->pps_seq_parameter_set_id);
+   if (!pps)
+      pps = vk_video_find_h265_dec_std_pps(params, h265_pic_info->pStdPictureInfo->pps_pic_parameter_set_id);
 
    *sps_p = sps;
    *pps_p = pps;
@@ -691,7 +715,17 @@ vk_video_get_av1_parameters(const struct vk_video_session *session,
 {
    const StdVideoAV1SequenceHeader *seq_hdr = NULL;
 
-   seq_hdr = &params->av1_dec.seq_hdr.base;
+   if (session->flags & VK_VIDEO_SESSION_CREATE_INLINE_SESSION_PARAMETERS_BIT_KHR) {
+      const struct VkVideoDecodeAV1InlineSessionParametersInfoKHR *inline_params =
+         vk_find_struct_const(decode_info->pNext, VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR);
+
+      if (inline_params) {
+         seq_hdr = inline_params->pStdSequenceHeader;
+      }
+   }
+
+   if (!seq_hdr)
+      seq_hdr = &params->av1_dec.seq_hdr.base;
 
    *seq_hdr_p = seq_hdr;
 }
