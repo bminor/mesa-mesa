@@ -285,6 +285,7 @@ radv_node_to_addr(uint64_t node)
 struct rra_bvh_info {
    uint32_t leaf_nodes_size;
    uint32_t internal_nodes_size;
+   uint32_t instance_sideband_data_size;
    struct rra_geometry_info *geometry_infos;
 };
 
@@ -293,6 +294,7 @@ struct rra_transcoding_context {
    uint8_t *dst;
    uint32_t dst_leaf_offset;
    uint32_t dst_internal_offset;
+   uint32_t dst_instance_sideband_data_offset;
    uint32_t *parent_id_table;
    uint32_t parent_id_table_size;
    uint32_t *leaf_node_ids;
@@ -306,5 +308,13 @@ void rra_gather_bvh_info_gfx10_3(const uint8_t *bvh, uint32_t node_id, struct rr
 
 uint32_t rra_transcode_node_gfx10_3(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id,
                                     vk_aabb bounds);
+
+bool rra_validate_node_gfx12(struct hash_table_u64 *accel_struct_vas, uint8_t *data, void *node,
+                             uint32_t geometry_count, uint32_t size, bool is_bottom_level, uint32_t depth);
+
+void rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_info *dst);
+
+void rra_transcode_node_gfx12(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id,
+                              uint32_t dst_offset);
 
 #endif /* RADV_RRA_H */

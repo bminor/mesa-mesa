@@ -48,6 +48,7 @@ struct radv_physical_device_cache_key {
    uint32_t disable_sinking_load_input_fs : 1;
    uint32_t disable_trunc_coord : 1;
    uint32_t emulate_rt : 1;
+   uint32_t bvh8 : 1;
    uint32_t ge_wave32 : 1;
    uint32_t invariant_geom : 1;
    uint32_t no_fmask : 1;
@@ -257,6 +258,8 @@ radv_use_llvm_for_stage(const struct radv_physical_device *pdev, UNUSED gl_shade
 bool radv_enable_rt(const struct radv_physical_device *pdev);
 
 bool radv_emulate_rt(const struct radv_physical_device *pdev);
+
+bool radv_use_bvh8(const struct radv_physical_device *pdev);
 
 uint32_t radv_find_memory_index(const struct radv_physical_device *pdev, VkMemoryPropertyFlags flags);
 

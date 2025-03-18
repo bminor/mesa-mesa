@@ -14,14 +14,20 @@
 
 struct radv_device;
 
-nir_def *build_addr_to_node(nir_builder *b, nir_def *addr);
+nir_def *build_addr_to_node(struct radv_device *device, nir_builder *b, nir_def *addr, nir_def *flags);
 
 nir_def *nir_build_vec3_mat_mult(nir_builder *b, nir_def *vec, nir_def *matrix[], bool translation);
 
-void nir_build_wto_matrix_load(nir_builder *b, nir_def *instance_addr, nir_def **out);
-
 nir_def *radv_load_vertex_position(struct radv_device *device, nir_builder *b, nir_def *instance_addr,
                                    nir_def *geometry_id, nir_def *primitive_id, uint32_t index);
+
+void radv_load_wto_matrix(struct radv_device *device, nir_builder *b, nir_def *instance_addr, nir_def **out);
+
+void radv_load_otw_matrix(struct radv_device *device, nir_builder *b, nir_def *instance_addr, nir_def **out);
+
+nir_def *radv_load_custom_instance(struct radv_device *device, nir_builder *b, nir_def *instance_addr);
+
+nir_def *radv_load_instance_id(struct radv_device *device, nir_builder *b, nir_def *instance_addr);
 
 struct radv_ray_traversal_args;
 
@@ -145,5 +151,8 @@ struct radv_ray_traversal_args {
  */
 nir_def *radv_build_ray_traversal(struct radv_device *device, nir_builder *b,
                                   const struct radv_ray_traversal_args *args);
+
+nir_def *radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b,
+                                        const struct radv_ray_traversal_args *args);
 
 #endif /* RADV_NIR_RT_COMMON_H */

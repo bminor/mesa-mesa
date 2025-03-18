@@ -530,11 +530,7 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
       break;
    }
    case nir_intrinsic_load_ray_instance_custom_index: {
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
-      nir_def *custom_instance_and_mask = nir_build_load_global(
-         b, 1, 32,
-         nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, custom_instance_and_mask)));
-      ret = nir_iand_imm(b, custom_instance_and_mask, 0xFFFFFF);
+      ret = radv_load_custom_instance(vars->device, b, nir_load_var(b, vars->instance_addr));
       break;
    }
    case nir_intrinsic_load_primitive_id: {
@@ -547,9 +543,7 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
       break;
    }
    case nir_intrinsic_load_instance_id: {
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
-      ret = nir_build_load_global(
-         b, 1, 32, nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, instance_id)));
+      ret = radv_load_instance_id(vars->device, b, nir_load_var(b, vars->instance_addr));
       break;
    }
    case nir_intrinsic_load_ray_flags: {
@@ -564,7 +558,7 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
       unsigned c = nir_intrinsic_column(intr);
       nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(vars->device, b, instance_node_addr, wto_matrix);
 
       nir_def *vals[3];
       for (unsigned i = 0; i < 3; ++i)
@@ -575,26 +569,21 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
    }
    case nir_intrinsic_load_ray_object_to_world: {
       unsigned c = nir_intrinsic_column(intr);
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
-      nir_def *rows[3];
-      for (unsigned r = 0; r < 3; ++r)
-         rows[r] = nir_build_load_global(
-            b, 4, 32,
-            nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, otw_matrix) + r * 16));
-      ret = nir_vec3(b, nir_channel(b, rows[0], c), nir_channel(b, rows[1], c), nir_channel(b, rows[2], c));
+      nir_def *otw_matrix[3];
+      radv_load_otw_matrix(vars->device, b, nir_load_var(b, vars->instance_addr), otw_matrix);
+      ret = nir_vec3(b, nir_channel(b, otw_matrix[0], c), nir_channel(b, otw_matrix[1], c),
+                     nir_channel(b, otw_matrix[2], c));
       break;
    }
    case nir_intrinsic_load_ray_object_origin: {
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(vars->device, b, nir_load_var(b, vars->instance_addr), wto_matrix);
       ret = nir_build_vec3_mat_mult(b, nir_load_var(b, vars->origin), wto_matrix, true);
       break;
    }
    case nir_intrinsic_load_ray_object_direction: {
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(vars->device, b, nir_load_var(b, vars->instance_addr), wto_matrix);
       ret = nir_build_vec3_mat_mult(b, nir_load_var(b, vars->direction), wto_matrix, false);
       break;
    }
@@ -1526,6 +1515,8 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
 
    struct rt_traversal_vars trav_vars = init_traversal_vars(b);
 
+   nir_def *cull_mask_and_flags = nir_load_var(b, vars->cull_mask_and_flags);
+
    nir_store_var(b, trav_vars.hit, nir_imm_false(b), 1);
 
    nir_def *accel_struct = nir_load_var(b, vars->accel_struct);
@@ -1533,7 +1524,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
       .access = ACCESS_NON_WRITEABLE);
    nir_def *root_bvh_base = nir_iadd(b, accel_struct, nir_u2u64(b, bvh_offset));
-   root_bvh_base = build_addr_to_node(b, root_bvh_base);
+   root_bvh_base = build_addr_to_node(device, b, root_bvh_base, cull_mask_and_flags);
 
    nir_store_var(b, trav_vars.bvh_base, root_bvh_base, 1);
 
@@ -1589,7 +1580,6 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       .pipeline = pipeline,
    };
 
-   nir_def *cull_mask_and_flags = nir_load_var(b, vars->cull_mask_and_flags);
    struct radv_ray_traversal_args args = {
       .root_bvh_base = root_bvh_base,
       .flags = cull_mask_and_flags,
@@ -1617,7 +1607,10 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
 
    nir_def *original_tmax = nir_load_var(b, vars->tmax);
 
-   radv_build_ray_traversal(device, b, &args);
+   if (radv_use_bvh8(pdev))
+      radv_build_ray_traversal_gfx12(device, b, &args);
+   else
+      radv_build_ray_traversal(device, b, &args);
 
    if (vars->device->rra_trace.ray_history_addr)
       radv_build_end_trace_token(b, vars, original_tmax, nir_load_var(b, trav_vars.hit),

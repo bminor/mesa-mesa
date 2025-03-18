@@ -11,7 +11,8 @@
 #include "encode.h"
 
 bool
-radv_build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom_data, uint32_t global_id)
+radv_build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom_data, uint32_t global_id,
+                    bool gfx12)
 {
    bool is_valid = true;
    triangle_indices indices = load_indices(geom_data.indices, geom_data.index_format, global_id);
@@ -56,13 +57,17 @@ radv_build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data
    node.triangle_id = global_id;
    node.geometry_id_and_flags = geom_data.geometry_id;
 
-   radv_encode_triangle_gfx10_3(dst_ptr, node);
+   if (gfx12)
+      radv_encode_triangle_gfx12(dst_ptr, node);
+   else
+      radv_encode_triangle_gfx10_3(dst_ptr, node);
 
    return is_valid;
 }
 
 bool
-radv_build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_t geometry_id, uint32_t global_id)
+radv_build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_t geometry_id, uint32_t global_id,
+                bool gfx12)
 {
    bool is_valid = true;
 
@@ -87,10 +92,14 @@ radv_build_aabb(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32
 #endif
 
    vk_ir_aabb_node node;
+   node.base.aabb = bounds;
    node.primitive_id = global_id;
    node.geometry_id_and_flags = geometry_id;
 
-   radv_encode_aabb_gfx10_3(dst_ptr, node);
+   if (gfx12)
+      radv_encode_aabb_gfx12(dst_ptr, node);
+   else
+      radv_encode_aabb_gfx10_3(dst_ptr, node);
 
    return is_valid;
 }

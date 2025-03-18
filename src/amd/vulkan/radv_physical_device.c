@@ -157,6 +157,13 @@ radv_emulate_rt(const struct radv_physical_device *pdev)
    return !pdev->info.has_image_bvh_intersect_ray && instance->drirc.emulate_rt;
 }
 
+bool
+radv_use_bvh8(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+   return pdev->info.gfx_level >= GFX12 && !radv_emulate_rt(pdev) && !(instance->debug_flags & RADV_DEBUG_BVH4);
+}
+
 static void
 parse_hex(char *out, const char *in, unsigned length)
 {
@@ -186,6 +193,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->disable_sinking_load_input_fs = instance->drirc.disable_sinking_load_input_fs;
    key->disable_trunc_coord = instance->drirc.disable_trunc_coord;
    key->emulate_rt = radv_emulate_rt(pdev);
+   key->bvh8 = radv_use_bvh8(pdev);
    key->ge_wave32 = pdev->ge_wave_size == 32;
    key->invariant_geom = !!(instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM);
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);

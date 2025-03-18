@@ -58,10 +58,12 @@ struct radv_accel_struct_header {
    uint64_t size;
 
    /* Everything after this gets updated/copied from the CPU. */
+   uint32_t geometry_type;
    uint32_t geometry_count;
    uint32_t primitive_base_indices_offset;
    uint64_t instance_offset;
    uint64_t instance_count;
+   uint32_t leaf_node_offsets_offset;
    uint32_t build_flags;
 };
 
@@ -113,5 +115,61 @@ struct radv_bvh_box32_node {
 
 #define RADV_BVH_ROOT_NODE    radv_bvh_node_box32
 #define RADV_BVH_INVALID_NODE 0xffffffffu
+
+/* GFX12 */
+
+#define RADV_GFX12_BVH_NODE_SIZE 128
+
+struct radv_gfx12_box_child {
+   uint32_t dword0;
+   uint32_t dword1;
+   uint32_t dword2;
+};
+
+#ifndef VULKAN
+typedef struct radv_gfx12_box_child radv_gfx12_box_child;
+#endif
+
+struct radv_gfx12_box_node {
+   uint32_t internal_base_id;
+   uint32_t primitive_base_id;
+   uint32_t unused;
+   vec3 origin;
+   uint32_t child_count_exponents;
+   uint32_t obb_matrix_index;
+   radv_gfx12_box_child children[8];
+};
+
+struct radv_gfx12_instance_node {
+   mat3x4 wto_matrix;
+   uint64_t pointer_flags_bvh_addr;
+   uint32_t unused;
+   uint32_t cull_mask_user_data;
+   vec3 origin;
+   uint32_t child_count_exponents;
+   radv_gfx12_box_child children[4];
+};
+
+struct radv_gfx12_instance_node_user_data {
+   mat3x4 otw_matrix;
+   uint32_t custom_instance;
+   uint32_t instance_index;
+   uint32_t bvh_offset;
+   uint32_t padding;
+   uint64_t blas_addr;
+   uint32_t primitive_base_indices_offset;
+   uint32_t leaf_node_offsets_offset;
+   uint32_t unused[12];
+};
+
+/* Size of the primitive header section in bits. */
+#define RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE 52
+
+/* Size of a primitive pair description in bits. */
+#define RADV_GFX12_PRIMITIVE_NODE_PAIR_DESC_SIZE 29
+
+struct radv_gfx12_primitive_node {
+   uint32_t dwords[32];
+};
 
 #endif /* BVH_H */

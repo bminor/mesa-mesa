@@ -100,8 +100,10 @@ struct radv_meta_state {
       VkPipeline update_pipeline;
       VkPipelineLayout copy_p_layout;
       VkPipeline copy_pipeline;
+      VkPipeline copy_blas_addrs_gfx12_pipeline;
 
       struct radix_sort_vk *radix_sort;
+      struct vk_acceleration_structure_build_ops build_ops;
       struct vk_acceleration_structure_build_args build_args;
 
       struct {

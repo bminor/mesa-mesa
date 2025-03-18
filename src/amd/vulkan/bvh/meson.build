@@ -4,8 +4,23 @@
 # source file, output name, defines
 bvh_shaders = [
   [
+    'copy_blas_addrs_gfx12.comp',
+    'copy_blas_addrs_gfx12',
+    [],
+  ],
+  [
     'copy.comp',
     'copy',
+    ['GFX12=0'],
+  ],
+  [
+    'copy.comp',
+    'copy_gfx12',
+    ['GFX12=1'],
+  ],
+  [
+    'encode_gfx12.comp',
+    'encode_gfx12',
     [],
   ],
   [
@@ -26,6 +41,11 @@ bvh_shaders = [
   [
     'update.comp',
     'update',
+    [],
+  ],
+  [
+    'update_gfx12.comp',
+    'update_gfx12',
     [],
   ],
   [

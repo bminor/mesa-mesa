@@ -241,8 +241,11 @@ enum rq_intersection_type { intersection_type_none, intersection_type_triangle, 
 
 static void
 lower_rq_initialize(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query_vars *vars, nir_deref_instr *rq,
-                    struct radv_instance *instance)
+                    struct radv_device *device)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_instance *instance = radv_physical_device_instance(pdev);
+
    nir_deref_instr *closest = rq_deref(b, rq, closest);
    nir_deref_instr *candidate = rq_deref(b, rq, candidate);
 
@@ -270,7 +273,7 @@ lower_rq_initialize(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query
       b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
       .access = ACCESS_NON_WRITEABLE);
    nir_def *bvh_base = nir_iadd(b, accel_struct, nir_u2u64(b, bvh_offset));
-   bvh_base = build_addr_to_node(b, bvh_base);
+   bvh_base = build_addr_to_node(device, b, bvh_base, instr->src[2].ssa);
 
    rq_store(b, rq, root_bvh_base, bvh_base);
    rq_store(b, rq, trav_bvh_base, bvh_base);
@@ -320,44 +323,27 @@ lower_rq_load(struct radv_device *device, nir_builder *b, nir_intrinsic_instr *i
       return isec_load(b, intersection, frontface);
    case nir_ray_query_value_intersection_geometry_index:
       return nir_iand_imm(b, isec_load(b, intersection, geometry_id_and_flags), 0xFFFFFF);
-   case nir_ray_query_value_intersection_instance_custom_index: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
-      return nir_iand_imm(
-         b,
-         nir_build_load_global(
-            b, 1, 32,
-            nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, custom_instance_and_mask))),
-         0xFFFFFF);
-   }
-   case nir_ray_query_value_intersection_instance_id: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
-      return nir_build_load_global(
-         b, 1, 32, nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, instance_id)));
-   }
+   case nir_ray_query_value_intersection_instance_custom_index:
+      return radv_load_custom_instance(device, b, isec_load(b, intersection, instance_addr));
+   case nir_ray_query_value_intersection_instance_id:
+      return radv_load_instance_id(device, b, isec_load(b, intersection, instance_addr));
    case nir_ray_query_value_intersection_instance_sbt_index:
       return nir_iand_imm(b, isec_load(b, intersection, sbt_offset_and_flags), 0xFFFFFF);
    case nir_ray_query_value_intersection_object_ray_direction: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(device, b, isec_load(b, intersection, instance_addr), wto_matrix);
       return nir_build_vec3_mat_mult(b, rq_load(b, rq, direction), wto_matrix, false);
    }
    case nir_ray_query_value_intersection_object_ray_origin: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(device, b, isec_load(b, intersection, instance_addr), wto_matrix);
       return nir_build_vec3_mat_mult(b, rq_load(b, rq, origin), wto_matrix, true);
    }
    case nir_ray_query_value_intersection_object_to_world: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
-      nir_def *rows[3];
-      for (unsigned r = 0; r < 3; ++r)
-         rows[r] = nir_build_load_global(
-            b, 4, 32,
-            nir_iadd_imm(b, instance_node_addr, offsetof(struct radv_bvh_instance_node, otw_matrix) + r * 16));
-
-      return nir_vec3(b, nir_channel(b, rows[0], column), nir_channel(b, rows[1], column),
-                      nir_channel(b, rows[2], column));
+      nir_def *otw_matrix[3];
+      radv_load_otw_matrix(device, b, isec_load(b, intersection, instance_addr), otw_matrix);
+      return nir_vec3(b, nir_channel(b, otw_matrix[0], column), nir_channel(b, otw_matrix[1], column),
+                      nir_channel(b, otw_matrix[2], column));
    }
    case nir_ray_query_value_intersection_primitive_index:
       return isec_load(b, intersection, primitive_id);
@@ -371,10 +357,8 @@ lower_rq_load(struct radv_device *device, nir_builder *b, nir_intrinsic_instr *i
       return intersection_type;
    }
    case nir_ray_query_value_intersection_world_to_object: {
-      nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
-
       nir_def *wto_matrix[3];
-      nir_build_wto_matrix_load(b, instance_node_addr, wto_matrix);
+      radv_load_wto_matrix(device, b, isec_load(b, intersection, instance_addr), wto_matrix);
 
       nir_def *vals[3];
       for (unsigned i = 0; i < 3; ++i)
@@ -477,6 +461,8 @@ static nir_def *
 lower_rq_proceed(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query_vars *vars, nir_deref_instr *rq,
                  struct radv_device *device)
 {
+   struct radv_physical_device *pdev = radv_device_physical(device);
+
    nir_deref_instr *closest = rq_deref(b, rq, closest);
    nir_deref_instr *candidate = rq_deref(b, rq, candidate);
 
@@ -543,7 +529,11 @@ lower_rq_proceed(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query_va
 
    nir_push_if(b, rq_load(b, rq, incomplete));
    {
-      nir_def *incomplete = radv_build_ray_traversal(device, b, &args);
+      nir_def *incomplete;
+      if (radv_use_bvh8(pdev))
+         incomplete = radv_build_ray_traversal_gfx12(device, b, &args);
+      else
+         incomplete = radv_build_ray_traversal(device, b, &args);
       rq_store(b, rq, incomplete, nir_iand(b, rq_load(b, rq, incomplete), incomplete));
    }
    nir_pop_if(b, NULL);
@@ -571,7 +561,7 @@ bool
 radv_nir_lower_ray_queries(struct nir_shader *shader, struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_instance *instance = radv_physical_device_instance(pdev);
+
    bool progress = false;
    struct hash_table *query_ht = _mesa_pointer_hash_table_create(NULL);
 
@@ -626,7 +616,7 @@ radv_nir_lower_ray_queries(struct nir_shader *shader, struct radv_device *device
                lower_rq_generate_intersection(&builder, intrinsic, rq);
                break;
             case nir_intrinsic_rq_initialize:
-               lower_rq_initialize(&builder, intrinsic, vars, rq, instance);
+               lower_rq_initialize(&builder, intrinsic, vars, rq, device);
                break;
             case nir_intrinsic_rq_load:
                new_dest = lower_rq_load(device, &builder, intrinsic, rq);

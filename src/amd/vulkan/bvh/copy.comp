@@ -71,7 +71,10 @@ main(void)
          DEREF(REF(uvec4)(copy_src_addr + offset));
 
       /* Do the adjustment inline in the same invocation that copies the data so that we don't have
-       * to synchronize. */
+       * to synchronize. This is only possible on pre-GFX12 HW because leaf nodes have a different
+       * order on GFX12.
+       */
+#if !GFX12
       if (offset < node_end && offset >= node_offset &&
           (offset - node_offset) % SIZEOF(radv_bvh_instance_node) == 0) {
          uint64_t idx = (offset - node_offset) / SIZEOF(radv_bvh_instance_node);
@@ -85,5 +88,6 @@ main(void)
             DEREF(REF(radv_bvh_instance_node)(copy_dst_addr + offset)).bvh_ptr = addr_to_node(blas_addr + bvh_offset);
          }
       }
+#endif
    }
 }

@@ -35,6 +35,16 @@ struct encode_args {
    uint32_t geometry_type;
 };
 
+struct encode_gfx12_args {
+   VOID_REF intermediate_bvh;
+   VOID_REF output_base;
+   REF(vk_ir_header) header;
+   uint32_t output_bvh_offset;
+   uint32_t leaf_node_offsets_offset;
+   uint32_t leaf_node_count;
+   uint32_t geometry_type;
+};
+
 struct header_args {
    REF(vk_ir_header) src;
    REF(radv_accel_struct_header) dst;
