@@ -2569,7 +2569,7 @@ static LLVMValueRef ac_build_readlane_common(struct ac_llvm_context *ctx, LLVMVa
 {
    LLVMTypeRef src_type = LLVMTypeOf(src);
    src = ac_to_integer(ctx, src);
-   unsigned bits = LLVMGetIntTypeWidth(LLVMTypeOf(src));
+   unsigned bits = ac_get_type_size(LLVMTypeOf(src)) * 8;
    LLVMValueRef ret;
 
    if (bits > 32) {
