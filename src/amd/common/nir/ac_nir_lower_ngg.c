@@ -66,9 +66,6 @@ typedef struct
    /* LDS params */
    unsigned pervertex_lds_bytes;
 
-   uint64_t inputs_needed_by_pos;
-   uint64_t inputs_needed_by_others;
-
    nir_instr *compact_arg_stores[4];
    nir_intrinsic_instr *overwrite_args;
    nir_variable *repacked_rel_patch_id;
@@ -720,23 +717,6 @@ analyze_shader_before_culling_walk(nir_def *ssa,
 
    switch (instr->type) {
    case nir_instr_type_intrinsic: {
-      nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-      /* VS input loads and SSBO loads are actually VRAM reads on AMD HW. */
-      switch (intrin->intrinsic) {
-      case nir_intrinsic_load_input: {
-         nir_io_semantics in_io_sem = nir_intrinsic_io_semantics(intrin);
-         uint64_t in_mask = UINT64_C(1) << (uint64_t) in_io_sem.location;
-         if (instr->pass_flags & nggc_passflag_used_by_pos)
-            s->inputs_needed_by_pos |= in_mask;
-         else if (instr->pass_flags & nggc_passflag_used_by_other)
-            s->inputs_needed_by_others |= in_mask;
-         break;
-      }
-      default:
-         break;
-      }
-
       break;
    }
    case nir_instr_type_alu: {
