@@ -4682,7 +4682,7 @@ iris_compute_first_urb_slot_required(uint64_t inputs_read,
                                      const struct intel_vue_map *prev_stage_vue_map)
 {
 #if GFX_VER >= 9
-   return brw_compute_first_urb_slot_required(inputs_read, prev_stage_vue_map);
+   return brw_compute_first_fs_urb_slot_required(inputs_read, prev_stage_vue_map);
 #else
    return elk_compute_first_urb_slot_required(inputs_read, prev_stage_vue_map);
 #endif

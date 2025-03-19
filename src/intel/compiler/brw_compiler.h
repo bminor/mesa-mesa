@@ -1021,6 +1021,13 @@ typedef enum
    BRW_VARYING_SLOT_COUNT
 } brw_varying_slot;
 
+
+#define BRW_VUE_HEADER_VARYING_MASK \
+   (VARYING_BIT_VIEWPORT | \
+    VARYING_BIT_LAYER | \
+    VARYING_BIT_PRIMITIVE_SHADING_RATE | \
+    VARYING_BIT_PSIZ)
+
 /**
  * Bitmask indicating which fragment shader inputs represent varyings (and
  * hence have to be delivered to the fragment shader by the SF/SBE stage).
@@ -1605,31 +1612,13 @@ brw_stage_has_packed_dispatch(ASSERTED const struct intel_device_info *devinfo,
  * that is used in the next stage. We do this by testing the varying slots in
  * the previous stage's vue map against the inputs read in the next stage.
  *
- * Note that:
- *
- * - Each URB offset contains two varying slots and we can only skip a
- *   full offset if both slots are unused, so the value we return here is always
- *   rounded down to the closest multiple of two.
- *
- * - gl_Layer and gl_ViewportIndex don't have their own varying slots, they are
- *   part of the vue header, so if these are read we can't skip anything.
+ * Note that each URB offset contains two varying slots and we can only skip a
+ * full offset if both slots are unused, so the value we return here is always
+ * rounded down to the closest multiple of two.
  */
-static inline int
-brw_compute_first_urb_slot_required(uint64_t inputs_read,
-                                    const struct intel_vue_map *prev_stage_vue_map)
-{
-   if ((inputs_read & (VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT | VARYING_BIT_PRIMITIVE_SHADING_RATE)) == 0) {
-      for (int i = 0; i < prev_stage_vue_map->num_slots; i++) {
-         int varying = prev_stage_vue_map->slot_to_varying[i];
-         if (varying != BRW_VARYING_SLOT_PAD && varying > 0 &&
-             (inputs_read & BITFIELD64_BIT(varying)) != 0) {
-            return ROUND_DOWN_TO(i, 2);
-         }
-      }
-   }
-
-   return 0;
-}
+int
+brw_compute_first_fs_urb_slot_required(uint64_t inputs_read,
+                                       const struct intel_vue_map *prev_stage_vue_map);
 
 /* From InlineData in 3DSTATE_TASK_SHADER_DATA and 3DSTATE_MESH_SHADER_DATA. */
 #define BRW_TASK_MESH_INLINE_DATA_SIZE_DW 8

@@ -791,18 +791,9 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
    } else {
       assert(!nir->info.per_primitive_inputs);
 
-      uint64_t vue_header_bits =
-         VARYING_BIT_PSIZ | VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT;
+      const uint64_t vue_header_bits = BRW_VUE_HEADER_VARYING_MASK;
 
-      uint64_t unique_fs_attrs = inputs_read & BRW_FS_VARYING_INPUT_MASK;
-
-      /* VUE header fields all live in the same URB slot, so we pass them
-       * as a single FS input attribute.  We want to only count them once.
-       */
-      if (inputs_read & vue_header_bits) {
-         unique_fs_attrs &= ~vue_header_bits;
-         unique_fs_attrs |= VARYING_BIT_PSIZ;
-      }
+      uint64_t unique_fs_attrs = inputs_read & BRW_FS_VARYING_INPUT_MASK & ~vue_header_bits;
 
       if (util_bitcount64(unique_fs_attrs) <= 16) {
          /* The SF/SBE pipeline stage can do arbitrary rearrangement of the
@@ -813,20 +804,7 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
           * fragment shader won't take up valuable register space, and (b) we
           * won't have to recompile the fragment shader if it gets paired with
           * a different vertex (or geometry) shader.
-          *
-          * VUE header fields share the same FS input attribute.
           */
-         if (inputs_read & vue_header_bits) {
-            if (inputs_read & VARYING_BIT_PSIZ)
-               prog_data->urb_setup[VARYING_SLOT_PSIZ] = urb_next;
-            if (inputs_read & VARYING_BIT_LAYER)
-               prog_data->urb_setup[VARYING_SLOT_LAYER] = urb_next;
-            if (inputs_read & VARYING_BIT_VIEWPORT)
-               prog_data->urb_setup[VARYING_SLOT_VIEWPORT] = urb_next;
-
-            urb_next++;
-         }
-
          for (unsigned int i = 0; i < VARYING_SLOT_MAX; i++) {
             if (inputs_read & BRW_FS_VARYING_INPUT_MASK & ~vue_header_bits &
                 BITFIELD64_BIT(i)) {
@@ -850,8 +828,8 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
                              nir->info.separate_shader, 1);
 
          int first_slot =
-            brw_compute_first_urb_slot_required(inputs_read,
-                                                &prev_stage_vue_map);
+            brw_compute_first_fs_urb_slot_required(unique_fs_attrs,
+                                                   &prev_stage_vue_map);
 
          assert(prev_stage_vue_map.num_slots <= first_slot + 32);
          for (int slot = first_slot; slot < prev_stage_vue_map.num_slots;
@@ -1907,4 +1885,30 @@ brw_print_fs_urb_setup(FILE *fp, const struct brw_wm_prog_data *prog_data)
               gl_varying_slot_name_for_stage((gl_varying_slot)i,
                                              MESA_SHADER_FRAGMENT));
    }
+}
+
+extern "C" int
+brw_compute_first_fs_urb_slot_required(uint64_t inputs_read,
+                                       const struct intel_vue_map *prev_stage_vue_map)
+{
+   /* The header slots are irrelevant for the URB varying slots. They are
+    * delivered somewhere else in the thread payload.
+    *
+    * For example on DG2:
+    *   - PRIMITIVE_SHADING_RATE : R1.0, ActualCoarsePixelShadingSize.(X|Y)
+    *   - LAYER                  : R1.1, Render Target Array Index
+    *   - VIEWPORT               : R1.1, Viewport Index
+    *   - PSIZ                   : not available in fragment shaders
+    */
+   inputs_read &= ~BRW_VUE_HEADER_VARYING_MASK;
+
+   for (int i = 0; i < prev_stage_vue_map->num_slots; i++) {
+      int varying = prev_stage_vue_map->slot_to_varying[i];
+      if (varying != BRW_VARYING_SLOT_PAD && varying > 0 &&
+          (inputs_read & BITFIELD64_BIT(varying)) != 0) {
+         return ROUND_DOWN_TO(i, 2);
+      }
+   }
+
+   return 0;
 }

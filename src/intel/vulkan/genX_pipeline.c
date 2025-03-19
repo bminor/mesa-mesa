@@ -685,8 +685,8 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
             &anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map;
 
          int first_slot =
-            brw_compute_first_urb_slot_required(wm_prog_data->inputs,
-                                                fs_input_map);
+            brw_compute_first_fs_urb_slot_required(wm_prog_data->inputs,
+                                                   fs_input_map);
          assert(first_slot % 2 == 0);
          unsigned urb_entry_read_offset = first_slot / 2;
          int max_source_attr = 0;
@@ -695,15 +695,6 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
             int input_index = wm_prog_data->urb_setup[attr];
 
             assert(0 <= input_index);
-
-            /* gl_Viewport, gl_Layer and FragmentShadingRateKHR are stored in the
-             * VUE header
-             */
-            if (attr == VARYING_SLOT_VIEWPORT ||
-                attr == VARYING_SLOT_LAYER ||
-                attr == VARYING_SLOT_PRIMITIVE_SHADING_RATE) {
-               continue;
-            }
 
             if (attr == VARYING_SLOT_PNTC) {
                sbe.PointSpriteTextureCoordinateEnable = 1 << input_index;
