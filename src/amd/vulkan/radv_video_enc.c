@@ -40,73 +40,11 @@
 #define RENCODE_V4_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_V4_FW_INTERFACE_MINOR_VERSION 11
 
-#define RENCODE_V4_IB_PARAM_ENCODE_STATISTICS 0x0000001a
-
 #define RENCODE_V3_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_V3_FW_INTERFACE_MINOR_VERSION 27
 
-#define RENCODE_V2_IB_PARAM_SESSION_INFO              0x00000001
-#define RENCODE_V2_IB_PARAM_TASK_INFO                 0x00000002
-#define RENCODE_V2_IB_PARAM_SESSION_INIT              0x00000003
-#define RENCODE_V2_IB_PARAM_LAYER_CONTROL             0x00000004
-#define RENCODE_V2_IB_PARAM_LAYER_SELECT              0x00000005
-#define RENCODE_V2_IB_PARAM_RATE_CONTROL_SESSION_INIT 0x00000006
-#define RENCODE_V2_IB_PARAM_RATE_CONTROL_LAYER_INIT   0x00000007
-#define RENCODE_V2_IB_PARAM_RATE_CONTROL_PER_PICTURE  0x00000008
-#define RENCODE_V2_IB_PARAM_QUALITY_PARAMS            0x00000009
-#define RENCODE_V2_IB_PARAM_DIRECT_OUTPUT_NALU        0x0000000a
-#define RENCODE_V2_IB_PARAM_SLICE_HEADER              0x0000000b
-#define RENCODE_V2_IB_PARAM_INPUT_FORMAT              0x0000000c
-#define RENCODE_V2_IB_PARAM_OUTPUT_FORMAT             0x0000000d
-#define RENCODE_V2_IB_PARAM_ENCODE_PARAMS             0x0000000f
-#define RENCODE_V2_IB_PARAM_INTRA_REFRESH             0x00000010
-#define RENCODE_V2_IB_PARAM_ENCODE_CONTEXT_BUFFER     0x00000011
-#define RENCODE_V2_IB_PARAM_VIDEO_BITSTREAM_BUFFER    0x00000012
-#define RENCODE_V2_IB_PARAM_FEEDBACK_BUFFER           0x00000015
-#define RENCODE_V2_IB_PARAM_ENCODE_LATENCY            0x00000018
-#define RENCODE_V2_IB_PARAM_ENCODE_STATISTICS         0x00000019
-#define RENCODE_V2_IB_PARAM_RATE_CONTROL_PER_PIC_EX   0x0000001d
-
-#define RENCODE_V2_HEVC_IB_PARAM_SLICE_CONTROL 0x00100001
-#define RENCODE_V2_HEVC_IB_PARAM_SPEC_MISC     0x00100002
-#define RENCODE_V2_HEVC_IB_PARAM_LOOP_FILTER   0x00100003
-
-#define RENCODE_V2_H264_IB_PARAM_SLICE_CONTROL     0x00200001
-#define RENCODE_V2_H264_IB_PARAM_SPEC_MISC         0x00200002
-#define RENCODE_V2_H264_IB_PARAM_ENCODE_PARAMS     0x00200003
-#define RENCODE_V2_H264_IB_PARAM_DEBLOCKING_FILTER 0x00200004
-
 #define RENCODE_V2_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_V2_FW_INTERFACE_MINOR_VERSION 18
-
-#define RENCODE_IB_PARAM_SESSION_INFO              0x00000001
-#define RENCODE_IB_PARAM_TASK_INFO                 0x00000002
-#define RENCODE_IB_PARAM_SESSION_INIT              0x00000003
-#define RENCODE_IB_PARAM_LAYER_CONTROL             0x00000004
-#define RENCODE_IB_PARAM_LAYER_SELECT              0x00000005
-#define RENCODE_IB_PARAM_RATE_CONTROL_SESSION_INIT 0x00000006
-#define RENCODE_IB_PARAM_RATE_CONTROL_LAYER_INIT   0x00000007
-#define RENCODE_IB_PARAM_RATE_CONTROL_PER_PICTURE  0x00000008
-#define RENCODE_IB_PARAM_QUALITY_PARAMS            0x00000009
-#define RENCODE_IB_PARAM_SLICE_HEADER              0x0000000a
-#define RENCODE_IB_PARAM_ENCODE_PARAMS             0x0000000b
-#define RENCODE_IB_PARAM_INTRA_REFRESH             0x0000000c
-#define RENCODE_IB_PARAM_ENCODE_CONTEXT_BUFFER     0x0000000d
-#define RENCODE_IB_PARAM_VIDEO_BITSTREAM_BUFFER    0x0000000e
-#define RENCODE_IB_PARAM_FEEDBACK_BUFFER           0x00000010
-#define RENCODE_IB_PARAM_RATE_CONTROL_PER_PIC_EX   0x0000001d
-#define RENCODE_IB_PARAM_DIRECT_OUTPUT_NALU        0x00000020
-#define RENCODE_IB_PARAM_ENCODE_LATENCY            0x00000022
-#define RENCODE_IB_PARAM_ENCODE_STATISTICS         0x00000024
-
-#define RENCODE_HEVC_IB_PARAM_SLICE_CONTROL     0x00100001
-#define RENCODE_HEVC_IB_PARAM_SPEC_MISC         0x00100002
-#define RENCODE_HEVC_IB_PARAM_DEBLOCKING_FILTER 0x00100003
-
-#define RENCODE_H264_IB_PARAM_SLICE_CONTROL     0x00200001
-#define RENCODE_H264_IB_PARAM_SPEC_MISC         0x00200002
-#define RENCODE_H264_IB_PARAM_ENCODE_PARAMS     0x00200003
-#define RENCODE_H264_IB_PARAM_DEBLOCKING_FILTER 0x00200004
 
 #define RENCODE_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_FW_INTERFACE_MINOR_VERSION 15
@@ -187,64 +125,7 @@ radv_init_physical_device_encoder(struct radv_physical_device *pdev)
                                          (RENCODE_FW_INTERFACE_MINOR_VERSION << RENCODE_IF_MINOR_VERSION_SHIFT));
    }
 
-   if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
-      pdev->vcn_enc_cmds.session_info = RENCODE_V2_IB_PARAM_SESSION_INFO;
-      pdev->vcn_enc_cmds.task_info = RENCODE_V2_IB_PARAM_TASK_INFO;
-      pdev->vcn_enc_cmds.session_init = RENCODE_V2_IB_PARAM_SESSION_INIT;
-      pdev->vcn_enc_cmds.layer_control = RENCODE_V2_IB_PARAM_LAYER_CONTROL;
-      pdev->vcn_enc_cmds.layer_select = RENCODE_V2_IB_PARAM_LAYER_SELECT;
-      pdev->vcn_enc_cmds.rc_session_init = RENCODE_V2_IB_PARAM_RATE_CONTROL_SESSION_INIT;
-      pdev->vcn_enc_cmds.rc_layer_init = RENCODE_V2_IB_PARAM_RATE_CONTROL_LAYER_INIT;
-      pdev->vcn_enc_cmds.rc_per_pic = RENCODE_V2_IB_PARAM_RATE_CONTROL_PER_PIC_EX;
-      pdev->vcn_enc_cmds.quality_params = RENCODE_V2_IB_PARAM_QUALITY_PARAMS;
-      pdev->vcn_enc_cmds.nalu = RENCODE_V2_IB_PARAM_DIRECT_OUTPUT_NALU;
-      pdev->vcn_enc_cmds.slice_header = RENCODE_V2_IB_PARAM_SLICE_HEADER;
-      pdev->vcn_enc_cmds.input_format = RENCODE_V2_IB_PARAM_INPUT_FORMAT;
-      pdev->vcn_enc_cmds.output_format = RENCODE_V2_IB_PARAM_OUTPUT_FORMAT;
-      pdev->vcn_enc_cmds.enc_params = RENCODE_V2_IB_PARAM_ENCODE_PARAMS;
-      pdev->vcn_enc_cmds.intra_refresh = RENCODE_V2_IB_PARAM_INTRA_REFRESH;
-      pdev->vcn_enc_cmds.ctx = RENCODE_V2_IB_PARAM_ENCODE_CONTEXT_BUFFER;
-      pdev->vcn_enc_cmds.bitstream = RENCODE_V2_IB_PARAM_VIDEO_BITSTREAM_BUFFER;
-      pdev->vcn_enc_cmds.feedback = RENCODE_V2_IB_PARAM_FEEDBACK_BUFFER;
-      pdev->vcn_enc_cmds.slice_control_hevc = RENCODE_V2_HEVC_IB_PARAM_SLICE_CONTROL;
-      pdev->vcn_enc_cmds.spec_misc_hevc = RENCODE_V2_HEVC_IB_PARAM_SPEC_MISC;
-      pdev->vcn_enc_cmds.deblocking_filter_hevc = RENCODE_V2_HEVC_IB_PARAM_LOOP_FILTER;
-      pdev->vcn_enc_cmds.slice_control_h264 = RENCODE_V2_H264_IB_PARAM_SLICE_CONTROL;
-      pdev->vcn_enc_cmds.spec_misc_h264 = RENCODE_V2_H264_IB_PARAM_SPEC_MISC;
-      pdev->vcn_enc_cmds.enc_params_h264 = RENCODE_V2_H264_IB_PARAM_ENCODE_PARAMS;
-      pdev->vcn_enc_cmds.deblocking_filter_h264 = RENCODE_V2_H264_IB_PARAM_DEBLOCKING_FILTER;
-      if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4) {
-         pdev->vcn_enc_cmds.enc_statistics = RENCODE_V4_IB_PARAM_ENCODE_STATISTICS;
-      } else
-         pdev->vcn_enc_cmds.enc_statistics = RENCODE_V2_IB_PARAM_ENCODE_STATISTICS;
-      pdev->vcn_enc_cmds.enc_latency = RENCODE_V2_IB_PARAM_ENCODE_LATENCY;
-   } else {
-      pdev->vcn_enc_cmds.session_info = RENCODE_IB_PARAM_SESSION_INFO;
-      pdev->vcn_enc_cmds.task_info = RENCODE_IB_PARAM_TASK_INFO;
-      pdev->vcn_enc_cmds.session_init = RENCODE_IB_PARAM_SESSION_INIT;
-      pdev->vcn_enc_cmds.layer_control = RENCODE_IB_PARAM_LAYER_CONTROL;
-      pdev->vcn_enc_cmds.layer_select = RENCODE_IB_PARAM_LAYER_SELECT;
-      pdev->vcn_enc_cmds.rc_session_init = RENCODE_IB_PARAM_RATE_CONTROL_SESSION_INIT;
-      pdev->vcn_enc_cmds.rc_layer_init = RENCODE_IB_PARAM_RATE_CONTROL_LAYER_INIT;
-      pdev->vcn_enc_cmds.rc_per_pic = RENCODE_IB_PARAM_RATE_CONTROL_PER_PIC_EX;
-      pdev->vcn_enc_cmds.quality_params = RENCODE_IB_PARAM_QUALITY_PARAMS;
-      pdev->vcn_enc_cmds.nalu = RENCODE_IB_PARAM_DIRECT_OUTPUT_NALU;
-      pdev->vcn_enc_cmds.slice_header = RENCODE_IB_PARAM_SLICE_HEADER;
-      pdev->vcn_enc_cmds.enc_params = RENCODE_IB_PARAM_ENCODE_PARAMS;
-      pdev->vcn_enc_cmds.intra_refresh = RENCODE_IB_PARAM_INTRA_REFRESH;
-      pdev->vcn_enc_cmds.ctx = RENCODE_IB_PARAM_ENCODE_CONTEXT_BUFFER;
-      pdev->vcn_enc_cmds.bitstream = RENCODE_IB_PARAM_VIDEO_BITSTREAM_BUFFER;
-      pdev->vcn_enc_cmds.feedback = RENCODE_IB_PARAM_FEEDBACK_BUFFER;
-      pdev->vcn_enc_cmds.slice_control_hevc = RENCODE_HEVC_IB_PARAM_SLICE_CONTROL;
-      pdev->vcn_enc_cmds.spec_misc_hevc = RENCODE_HEVC_IB_PARAM_SPEC_MISC;
-      pdev->vcn_enc_cmds.deblocking_filter_hevc = RENCODE_HEVC_IB_PARAM_DEBLOCKING_FILTER;
-      pdev->vcn_enc_cmds.slice_control_h264 = RENCODE_H264_IB_PARAM_SLICE_CONTROL;
-      pdev->vcn_enc_cmds.spec_misc_h264 = RENCODE_H264_IB_PARAM_SPEC_MISC;
-      pdev->vcn_enc_cmds.enc_params_h264 = RENCODE_H264_IB_PARAM_ENCODE_PARAMS;
-      pdev->vcn_enc_cmds.deblocking_filter_h264 = RENCODE_H264_IB_PARAM_DEBLOCKING_FILTER;
-      pdev->vcn_enc_cmds.enc_statistics = RENCODE_IB_PARAM_ENCODE_STATISTICS;
-      pdev->vcn_enc_cmds.enc_latency = RENCODE_IB_PARAM_ENCODE_LATENCY;
-   }
+   ac_vcn_enc_init_cmds(&pdev->vcn_enc_cmds, pdev->info.vcn_ip_version);
 }
 
 /* to process invalid frame rate */
@@ -1387,7 +1268,7 @@ radv_enc_rc_per_pic(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoK
       }
    }
 
-   RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.rc_per_pic);
+   RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.rc_per_pic_ex);
    RADEON_ENC_CS(qp); // qp_i
    RADEON_ENC_CS(qp); // qp_p
    RADEON_ENC_CS(qp); // qp_b
