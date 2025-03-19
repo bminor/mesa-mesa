@@ -1113,6 +1113,9 @@ typedef enum SpvCapability_ {
     SpvCapabilityShaderClockKHR = 5055,
     SpvCapabilityShaderEnqueueAMDX = 5067,
     SpvCapabilityQuadControlKHR = 5087,
+    SpvCapabilityBFloat16TypeKHR = 5116,
+    SpvCapabilityBFloat16DotProductKHR = 5117,
+    SpvCapabilityBFloat16CooperativeMatrixKHR = 5118,
     SpvCapabilitySampleMaskOverrideCoverageNV = 5249,
     SpvCapabilityGeometryShaderPassthroughNV = 5251,
     SpvCapabilityShaderViewportIndexLayerEXT = 5254,
@@ -1261,6 +1264,7 @@ typedef enum SpvCapability_ {
     SpvCapabilityArithmeticFenceEXT = 6144,
     SpvCapabilityFPGAClusterAttributesV2INTEL = 6150,
     SpvCapabilityFPGAKernelAttributesv2INTEL = 6161,
+    SpvCapabilityTaskSequenceINTEL = 6162,
     SpvCapabilityFPMaxErrorINTEL = 6169,
     SpvCapabilityFPGALatencyControlINTEL = 6171,
     SpvCapabilityFPGAArgumentInterfacesINTEL = 6174,
@@ -1272,6 +1276,7 @@ typedef enum SpvCapability_ {
     SpvCapabilitySubgroup2DBlockTransposeINTEL = 6230,
     SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL = 6236,
     SpvCapabilityGroupUniformArithmeticKHR = 6400,
+    SpvCapabilityTensorFloat32RoundingINTEL = 6425,
     SpvCapabilityMaskedGatherScatterINTEL = 6427,
     SpvCapabilityCacheControlsINTEL = 6441,
     SpvCapabilityRegisterLimitsINTEL = 6460,
@@ -1536,6 +1541,7 @@ typedef enum SpvRawAccessChainOperandsMask_ {
 } SpvRawAccessChainOperandsMask;
 
 typedef enum SpvFPEncoding_ {
+    SpvFPEncodingBFloat16KHR = 0,
     SpvFPEncodingMax = 0x7fffffff,
 } SpvFPEncoding;
 
@@ -2348,6 +2354,11 @@ typedef enum SpvOp_ {
     SpvOpControlBarrierArriveINTEL = 6142,
     SpvOpControlBarrierWaitINTEL = 6143,
     SpvOpArithmeticFenceEXT = 6145,
+    SpvOpTaskSequenceCreateINTEL = 6163,
+    SpvOpTaskSequenceAsyncINTEL = 6164,
+    SpvOpTaskSequenceGetINTEL = 6165,
+    SpvOpTaskSequenceReleaseINTEL = 6166,
+    SpvOpTypeTaskSequenceINTEL = 6199,
     SpvOpSubgroupBlockPrefetchINTEL = 6221,
     SpvOpSubgroup2DBlockLoadINTEL = 6231,
     SpvOpSubgroup2DBlockLoadTransformINTEL = 6232,
@@ -2363,6 +2374,7 @@ typedef enum SpvOp_ {
     SpvOpGroupLogicalAndKHR = 6406,
     SpvOpGroupLogicalOrKHR = 6407,
     SpvOpGroupLogicalXorKHR = 6408,
+    SpvOpRoundFToTF32INTEL = 6426,
     SpvOpMaskedGatherINTEL = 6428,
     SpvOpMaskedScatterINTEL = 6429,
     SpvOpMax = 0x7fffffff,
@@ -3146,6 +3158,11 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpControlBarrierArriveINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpArithmeticFenceEXT: *hasResult = true; *hasResultType = true; break;
+    case SpvOpTaskSequenceCreateINTEL: *hasResult = true; *hasResultType = true; break;
+    case SpvOpTaskSequenceAsyncINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpTaskSequenceGetINTEL: *hasResult = true; *hasResultType = true; break;
+    case SpvOpTaskSequenceReleaseINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpTypeTaskSequenceINTEL: *hasResult = true; *hasResultType = false; break;
     case SpvOpSubgroupBlockPrefetchINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpSubgroup2DBlockLoadINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpSubgroup2DBlockLoadTransformINTEL: *hasResult = false; *hasResultType = false; break;
@@ -3161,6 +3178,7 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpGroupLogicalAndKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupLogicalOrKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupLogicalXorKHR: *hasResult = true; *hasResultType = true; break;
+    case SpvOpRoundFToTF32INTEL: *hasResult = true; *hasResultType = true; break;
     case SpvOpMaskedGatherINTEL: *hasResult = true; *hasResultType = true; break;
     case SpvOpMaskedScatterINTEL: *hasResult = false; *hasResultType = false; break;
     }
@@ -3969,6 +3987,9 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilityShaderClockKHR: return "ShaderClockKHR";
     case SpvCapabilityShaderEnqueueAMDX: return "ShaderEnqueueAMDX";
     case SpvCapabilityQuadControlKHR: return "QuadControlKHR";
+    case SpvCapabilityBFloat16TypeKHR: return "BFloat16TypeKHR";
+    case SpvCapabilityBFloat16DotProductKHR: return "BFloat16DotProductKHR";
+    case SpvCapabilityBFloat16CooperativeMatrixKHR: return "BFloat16CooperativeMatrixKHR";
     case SpvCapabilitySampleMaskOverrideCoverageNV: return "SampleMaskOverrideCoverageNV";
     case SpvCapabilityGeometryShaderPassthroughNV: return "GeometryShaderPassthroughNV";
     case SpvCapabilityShaderViewportIndexLayerEXT: return "ShaderViewportIndexLayerEXT";
@@ -4091,6 +4112,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilityArithmeticFenceEXT: return "ArithmeticFenceEXT";
     case SpvCapabilityFPGAClusterAttributesV2INTEL: return "FPGAClusterAttributesV2INTEL";
     case SpvCapabilityFPGAKernelAttributesv2INTEL: return "FPGAKernelAttributesv2INTEL";
+    case SpvCapabilityTaskSequenceINTEL: return "TaskSequenceINTEL";
     case SpvCapabilityFPMaxErrorINTEL: return "FPMaxErrorINTEL";
     case SpvCapabilityFPGALatencyControlINTEL: return "FPGALatencyControlINTEL";
     case SpvCapabilityFPGAArgumentInterfacesINTEL: return "FPGAArgumentInterfacesINTEL";
@@ -4102,6 +4124,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilitySubgroup2DBlockTransposeINTEL: return "Subgroup2DBlockTransposeINTEL";
     case SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL: return "SubgroupMatrixMultiplyAccumulateINTEL";
     case SpvCapabilityGroupUniformArithmeticKHR: return "GroupUniformArithmeticKHR";
+    case SpvCapabilityTensorFloat32RoundingINTEL: return "TensorFloat32RoundingINTEL";
     case SpvCapabilityMaskedGatherScatterINTEL: return "MaskedGatherScatterINTEL";
     case SpvCapabilityCacheControlsINTEL: return "CacheControlsINTEL";
     case SpvCapabilityRegisterLimitsINTEL: return "RegisterLimitsINTEL";
@@ -4259,6 +4282,7 @@ inline const char* SpvNamedMaximumNumberOfRegistersToString(SpvNamedMaximumNumbe
 
 inline const char* SpvFPEncodingToString(SpvFPEncoding value) {
     switch (value) {
+    case SpvFPEncodingBFloat16KHR: return "BFloat16KHR";
     default: return "Unknown";
     }
 }
@@ -5066,6 +5090,11 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpControlBarrierArriveINTEL: return "OpControlBarrierArriveINTEL";
     case SpvOpControlBarrierWaitINTEL: return "OpControlBarrierWaitINTEL";
     case SpvOpArithmeticFenceEXT: return "OpArithmeticFenceEXT";
+    case SpvOpTaskSequenceCreateINTEL: return "OpTaskSequenceCreateINTEL";
+    case SpvOpTaskSequenceAsyncINTEL: return "OpTaskSequenceAsyncINTEL";
+    case SpvOpTaskSequenceGetINTEL: return "OpTaskSequenceGetINTEL";
+    case SpvOpTaskSequenceReleaseINTEL: return "OpTaskSequenceReleaseINTEL";
+    case SpvOpTypeTaskSequenceINTEL: return "OpTypeTaskSequenceINTEL";
     case SpvOpSubgroupBlockPrefetchINTEL: return "OpSubgroupBlockPrefetchINTEL";
     case SpvOpSubgroup2DBlockLoadINTEL: return "OpSubgroup2DBlockLoadINTEL";
     case SpvOpSubgroup2DBlockLoadTransformINTEL: return "OpSubgroup2DBlockLoadTransformINTEL";
@@ -5081,6 +5110,7 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpGroupLogicalAndKHR: return "OpGroupLogicalAndKHR";
     case SpvOpGroupLogicalOrKHR: return "OpGroupLogicalOrKHR";
     case SpvOpGroupLogicalXorKHR: return "OpGroupLogicalXorKHR";
+    case SpvOpRoundFToTF32INTEL: return "OpRoundFToTF32INTEL";
     case SpvOpMaskedGatherINTEL: return "OpMaskedGatherINTEL";
     case SpvOpMaskedScatterINTEL: return "OpMaskedScatterINTEL";
     default: return "Unknown";
