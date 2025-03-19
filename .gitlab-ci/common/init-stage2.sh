@@ -227,7 +227,7 @@ set -x
 # kill the job.
 cleanup
 
-# upload artifacts
+# upload artifacts (lava jobs)
 if [ -n "$S3_RESULTS_UPLOAD" ]; then
   tar --zstd -cf results.tar.zst results/;
   ci-fairy s3cp --token-file "${S3_JWT_FILE}" results.tar.zst https://"$S3_RESULTS_UPLOAD"/results.tar.zst;
