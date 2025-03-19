@@ -69,42 +69,6 @@ enum radv_copy_flags {
    RADV_COPY_FLAGS_DEVICE_LOCAL = 1 << 0,
 };
 
-enum radv_blit_ds_layout {
-   RADV_BLIT_DS_LAYOUT_TILE_ENABLE,
-   RADV_BLIT_DS_LAYOUT_TILE_DISABLE,
-   RADV_BLIT_DS_LAYOUT_COUNT,
-};
-
-static inline enum radv_blit_ds_layout
-radv_meta_blit_ds_to_type(VkImageLayout layout)
-{
-   return (layout == VK_IMAGE_LAYOUT_GENERAL) ? RADV_BLIT_DS_LAYOUT_TILE_DISABLE : RADV_BLIT_DS_LAYOUT_TILE_ENABLE;
-}
-
-static inline VkImageLayout
-radv_meta_blit_ds_to_layout(enum radv_blit_ds_layout ds_layout)
-{
-   return ds_layout == RADV_BLIT_DS_LAYOUT_TILE_ENABLE ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-}
-
-enum radv_meta_dst_layout {
-   RADV_META_DST_LAYOUT_GENERAL,
-   RADV_META_DST_LAYOUT_OPTIMAL,
-   RADV_META_DST_LAYOUT_COUNT,
-};
-
-static inline enum radv_meta_dst_layout
-radv_meta_dst_layout_from_layout(VkImageLayout layout)
-{
-   return (layout == VK_IMAGE_LAYOUT_GENERAL) ? RADV_META_DST_LAYOUT_GENERAL : RADV_META_DST_LAYOUT_OPTIMAL;
-}
-
-static inline VkImageLayout
-radv_meta_dst_layout_to_layout(enum radv_meta_dst_layout layout)
-{
-   return layout == RADV_META_DST_LAYOUT_OPTIMAL ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-}
-
 extern const VkFormat radv_fs_key_format_exemplars[NUM_META_FS_KEYS];
 
 enum radv_meta_object_key_type {

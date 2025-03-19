@@ -429,8 +429,6 @@ radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
-   unsigned dst_layout = radv_meta_dst_layout_from_layout(dst_image_layout);
-   VkImageLayout layout = radv_meta_dst_layout_to_layout(dst_layout);
 
    radv_meta_save(&saved_state, cmd_buffer,
                   RADV_META_SAVE_GRAPHICS_PIPELINE | RADV_META_SAVE_CONSTANTS | RADV_META_SAVE_DESCRIPTORS);
@@ -499,7 +497,7 @@ radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv
    const VkRenderingAttachmentInfo color_att = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
       .imageView = radv_image_view_to_handle(&dst_iview),
-      .imageLayout = layout,
+      .imageLayout = dst_image_layout,
       .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
       .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
    };

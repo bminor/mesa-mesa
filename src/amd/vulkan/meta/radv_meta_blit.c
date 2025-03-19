@@ -289,12 +289,10 @@ meta_emit_blit(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_i
 
    VkRenderingAttachmentInfo color_att;
    if (src_image->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT) {
-      unsigned dst_layout = radv_meta_dst_layout_from_layout(dst_image_layout);
-
       color_att = (VkRenderingAttachmentInfo){
          .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
          .imageView = radv_image_view_to_handle(dst_iview),
-         .imageLayout = radv_meta_dst_layout_to_layout(dst_layout),
+         .imageLayout = dst_image_layout,
          .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
          .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
       };
@@ -304,12 +302,10 @@ meta_emit_blit(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_i
 
    VkRenderingAttachmentInfo depth_att;
    if (src_image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
-      enum radv_blit_ds_layout ds_layout = radv_meta_blit_ds_to_type(dst_image_layout);
-
       depth_att = (VkRenderingAttachmentInfo){
          .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
          .imageView = radv_image_view_to_handle(dst_iview),
-         .imageLayout = radv_meta_blit_ds_to_layout(ds_layout),
+         .imageLayout = dst_image_layout,
          .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
          .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
       };
@@ -318,12 +314,10 @@ meta_emit_blit(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_i
 
    VkRenderingAttachmentInfo stencil_att;
    if (src_image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
-      enum radv_blit_ds_layout ds_layout = radv_meta_blit_ds_to_type(dst_image_layout);
-
       stencil_att = (VkRenderingAttachmentInfo){
          .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
          .imageView = radv_image_view_to_handle(dst_iview),
-         .imageLayout = radv_meta_blit_ds_to_layout(ds_layout),
+         .imageLayout = dst_image_layout,
          .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
          .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
       };
