@@ -4485,6 +4485,7 @@ to_uniform_bool_instr(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          continue;
 
       ctx.uses[op.tempId()]--;
+      bool increase_uses = ctx.uses[op.tempId()];
 
       if (ctx.info[op.tempId()].is_uniform_bool()) {
          /* Just use the uniform boolean temp. */
@@ -4500,11 +4501,13 @@ to_uniform_bool_instr(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          assert(pred_instr->definitions[1].isFixed() &&
                 pred_instr->definitions[1].physReg() == scc);
          op.setTemp(pred_instr->definitions[1].getTemp());
+         increase_uses = true;
       } else {
          UNREACHABLE("Invalid operand on uniform bitwise instruction.");
       }
 
-      ctx.uses[op.tempId()]++;
+      if (increase_uses)
+         ctx.uses[op.tempId()]++;
    }
 
    instr->definitions[0].setTemp(Temp(instr->definitions[0].tempId(), s1));
