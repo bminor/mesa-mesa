@@ -489,6 +489,15 @@ anv_device_has_perf_improvement_with_2mb_pages(struct anv_device *device)
    return device->info->verx10 >= 110;
 }
 
+static bool
+anv_device_has_perf_improvement_with_64k_pages(struct anv_device *device)
+{
+   if (device->info->has_local_mem || device->info->verx10 < 110)
+      return false;
+
+   return device->info->kmd_type == INTEL_KMD_TYPE_XE;
+}
+
 /** Grows and re-centers the block pool.
  *
  * We grow the block pool in one or both directions in such a way that the
@@ -1671,6 +1680,14 @@ anv_device_alloc_bo(struct anv_device *device,
       size += size / INTEL_AUX_MAP_MAIN_SIZE_SCALEDOWN;
       size = align64(size, 4096);
    }
+
+   /* bos larger than 1MB can't be allocated with slab but to reduce pages we
+    * could align size to 64k pages to gain performance with minimum memory
+    * waste.
+    */
+   if ((size > (1 * 1024 * 1024)) &&
+       anv_device_has_perf_improvement_with_64k_pages(device))
+      size = align64(size, 64 * 1024);
 
    const struct intel_memory_class_instance *regions[2];
    uint32_t nregions = 0;
