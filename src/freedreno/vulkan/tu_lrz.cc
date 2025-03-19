@@ -995,7 +995,6 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
          tu_lrz_write_disable_reason(cmd, "Depth write + blending");
          cmd->state.lrz.disable_write_for_rp = true;
       }
-      temporary_disable_lrz = true;
    }
 
    if (disable_lrz)
