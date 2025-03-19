@@ -78,30 +78,33 @@ $ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
 $ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
 $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
-# Check what GLES implementation Surfaceflinger is using before copying the new mesa libraries
-while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
-$ADB shell dumpsys SurfaceFlinger | grep GLES
+get_gles_runtime_version() {
+  while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
+  $ADB shell dumpsys SurfaceFlinger | grep GLES
+}
 
-# restart Android shell, so that surfaceflinger uses the new libraries
+# Check what GLES implementation is used before loading the new libraries
+get_gles_runtime_version
+
+# restart Android shell, so that services use the new libraries
 $ADB shell stop
 $ADB shell start
 
-# Check what GLES implementation Surfaceflinger is using after copying the new mesa libraries
-# Note: we are injecting the ANGLE libs in the vendor partition, so we need to check if the
-#       ANGLE libs are being used after the shell restart
-while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
-MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
+# Check what GLES implementation is used after loading the new libraries
+GLES_RUNTIME_VERSION="$(get_gles_runtime_version)"
 
 if [ -n "$ANGLE_TAG" ]; then
+  # Note: we are injecting the ANGLE libs too, so we need to check if the
+  #       ANGLE libs are being used after the shell restart.
   ANGLE_HASH=$(head -c 12 /angle/version)
-  if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep --quiet "${ANGLE_HASH}"; then
+  if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep --quiet "${ANGLE_HASH}"; then
     echo "Fatal: Android is loading a wrong version of the ANGLE libs: ${ANGLE_HASH}" 1>&2
     exit 1
   fi
 else
   MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
-  if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep --quiet "${MESA_BUILD_VERSION}$"; then
-     echo "Fatal: Android is loading a wrong version of the Mesa3D libs: ${MESA_RUNTIME_VERSION}" 1>&2
+  if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep --quiet "${MESA_BUILD_VERSION}$"; then
+     echo "Fatal: Android is loading a wrong version of the Mesa3D GLES libs: ${GLES_RUNTIME_VERSION}" 1>&2
      exit 1
   fi
 fi
