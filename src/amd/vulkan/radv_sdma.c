@@ -219,10 +219,11 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
 
 static uint32_t
 radv_sdma_get_tiled_info_dword(const struct radv_device *const device, const struct radv_image *const image,
-                               const struct radeon_surf *const surf, const VkImageSubresourceLayers subresource)
+                               const struct radeon_surf *const surf, const VkImageSubresourceLayers subresource,
+                               const VkImageAspectFlags aspect_mask)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t bpe = radv_sdma_get_bpe(image, subresource.aspectMask);
+   const uint32_t bpe = radv_sdma_get_bpe(image, aspect_mask);
    const uint32_t element_size = util_logbase2(bpe);
    const uint32_t swizzle_mode = surf->has_stencil ? surf->u.gfx9.zs.stencil_swizzle_mode : surf->u.gfx9.swizzle_mode;
    const enum gfx9_resource_type dimension = radv_sdma_surface_resource_type(device, surf);
@@ -308,7 +309,7 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
 
       info.va = (va + surf_offset) | surf->tile_swizzle << 8;
 
-      info.info_dword = radv_sdma_get_tiled_info_dword(device, image, surf, subresource);
+      info.info_dword = radv_sdma_get_tiled_info_dword(device, image, surf, subresource, aspect_mask);
       info.header_dword = radv_sdma_get_tiled_header_dword(device, image, subresource);
 
       if (pdev->info.sdma_supports_compression &&
