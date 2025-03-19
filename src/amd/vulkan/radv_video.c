@@ -247,6 +247,14 @@ init_vcn_decoder(struct radv_physical_device *pdev)
       pdev->vid_addr_gfx_mode = RDECODE_ARRAY_MODE_ADDRLIB_SEL_GFX11;
       pdev->av1_version = RDECODE_AV1_VER_1;
       break;
+   case VCN_5_0_0:
+      pdev->vid_addr_gfx_mode = RDECODE_ARRAY_MODE_ADDRLIB_SEL_GFX11;
+      pdev->av1_version = RDECODE_AV1_VER_2;
+      break;
+   case VCN_5_0_1:
+      pdev->vid_addr_gfx_mode = RDECODE_ARRAY_MODE_ADDRLIB_SEL_GFX9;
+      pdev->av1_version = RDECODE_AV1_VER_2;
+      break;
    default:
       break;
    }
@@ -280,12 +288,10 @@ radv_probe_video_decode(struct radv_physical_device *pdev)
 
    pdev->video_decode_enabled = false;
 
-   /* TODO: Add VCN 5.0+. */
-   if (pdev->info.vcn_ip_version >= VCN_5_0_0)
-      return;
-
    /* The support for decode events are available at the same time as encode */
-   if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
+   if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
+      pdev->video_decode_enabled = true;
+   } else if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
       if (pdev->info.vcn_enc_major_version > 1)
          pdev->video_decode_enabled = true;
       /* VCN 4 FW 1.22 has all the necessary pieces to pass CTS */
