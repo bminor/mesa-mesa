@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# When changing this file, check if the *_BUIL_TAG tags in
+# When changing this file, all the linux tags in
 # .gitlab-ci/image-tags.yml need updating.
 
 set -eu
