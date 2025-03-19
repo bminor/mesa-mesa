@@ -655,12 +655,13 @@ static void
 emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
 {
    const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
+   UNUSED const struct anv_device *device = pipeline->base.base.device;
 
    if (!anv_pipeline_has_stage(pipeline, MESA_SHADER_FRAGMENT)) {
       anv_pipeline_emit(pipeline, final.sbe, GENX(3DSTATE_SBE), sbe);
       anv_pipeline_emit(pipeline, final.sbe_swiz, GENX(3DSTATE_SBE_SWIZ), sbe);
 #if GFX_VERx10 >= 125
-      if (anv_pipeline_is_mesh(pipeline))
+      if (device->vk.enabled_extensions.EXT_mesh_shader)
          anv_pipeline_emit(pipeline, final.sbe_mesh, GENX(3DSTATE_SBE_MESH), sbe);
 #endif
       return;
@@ -752,63 +753,67 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
             sbe.PrimitiveIDOverrideComponentZ = true;
             sbe.PrimitiveIDOverrideComponentW = true;
          }
-      } else {
-         assert(anv_pipeline_is_mesh(pipeline));
-#if GFX_VERx10 >= 125
-         const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
-         anv_pipeline_emit(pipeline, final.sbe_mesh,
-                           GENX(3DSTATE_SBE_MESH), sbe_mesh) {
-            const struct brw_mue_map *mue = &mesh_prog_data->map;
-
-            assert(mue->per_vertex_header_size_dw % 8 == 0);
-            sbe_mesh.PerVertexURBEntryOutputReadOffset = mue->per_vertex_header_size_dw / 8;
-            sbe_mesh.PerVertexURBEntryOutputReadLength = DIV_ROUND_UP(mue->per_vertex_data_size_dw, 8);
-
-            /* Clip distance array is passed in the per-vertex header so that
-             * it can be consumed by the HW. If user wants to read it in the
-             * FS, adjust the offset and length to cover it. Conveniently it
-             * is at the end of the per-vertex header, right before per-vertex
-             * attributes.
-             *
-             * Note that FS attribute reading must be aware that the clip
-             * distances have fixed position.
-             */
-            if (mue->per_vertex_header_size_dw > 8 &&
-                (wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST0] >= 0 ||
-                 wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST1] >= 0)) {
-               sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
-               sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
-            }
-
-            if (mue->user_data_in_vertex_header) {
-               sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
-               sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
-            }
-
-            assert(mue->per_primitive_header_size_dw % 8 == 0);
-            sbe_mesh.PerPrimitiveURBEntryOutputReadOffset =
-               mue->per_primitive_header_size_dw / 8;
-            sbe_mesh.PerPrimitiveURBEntryOutputReadLength =
-               DIV_ROUND_UP(mue->per_primitive_data_size_dw, 8);
-
-            /* Just like with clip distances, if Primitive Shading Rate,
-             * Viewport Index or Layer is read back in the FS, adjust the
-             * offset and length to cover the Primitive Header, where PSR,
-             * Viewport Index & Layer are stored.
-             */
-            if (wm_prog_data->urb_setup[VARYING_SLOT_VIEWPORT] >= 0 ||
-                wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_SHADING_RATE] >= 0 ||
-                wm_prog_data->urb_setup[VARYING_SLOT_LAYER] >= 0 ||
-                mue->user_data_in_primitive_header) {
-               assert(sbe_mesh.PerPrimitiveURBEntryOutputReadOffset > 0);
-               sbe_mesh.PerPrimitiveURBEntryOutputReadOffset -= 1;
-               sbe_mesh.PerPrimitiveURBEntryOutputReadLength += 1;
-            }
-         }
-#endif
       }
    }
    }
+
+#if GFX_VERx10 >= 125
+   if (device->vk.enabled_extensions.EXT_mesh_shader) {
+      anv_pipeline_emit(pipeline, final.sbe_mesh,
+                        GENX(3DSTATE_SBE_MESH), sbe_mesh) {
+         if (!anv_pipeline_is_mesh(pipeline))
+            continue;
+
+         const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
+         const struct brw_mue_map *mue = &mesh_prog_data->map;
+
+         assert(mue->per_vertex_header_size_dw % 8 == 0);
+         sbe_mesh.PerVertexURBEntryOutputReadOffset = mue->per_vertex_header_size_dw / 8;
+         sbe_mesh.PerVertexURBEntryOutputReadLength = DIV_ROUND_UP(mue->per_vertex_data_size_dw, 8);
+
+         /* Clip distance array is passed in the per-vertex header so that it
+          * can be consumed by the HW. If user wants to read it in the FS,
+          * adjust the offset and length to cover it. Conveniently it is at
+          * the end of the per-vertex header, right before per-vertex
+          * attributes.
+          *
+          * Note that FS attribute reading must be aware that the clip
+          * distances have fixed position.
+          */
+         if (mue->per_vertex_header_size_dw > 8 &&
+             (wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST0] >= 0 ||
+              wm_prog_data->urb_setup[VARYING_SLOT_CLIP_DIST1] >= 0)) {
+            sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
+            sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
+         }
+
+         if (mue->user_data_in_vertex_header) {
+            sbe_mesh.PerVertexURBEntryOutputReadOffset -= 1;
+            sbe_mesh.PerVertexURBEntryOutputReadLength += 1;
+         }
+
+         assert(mue->per_primitive_header_size_dw % 8 == 0);
+         sbe_mesh.PerPrimitiveURBEntryOutputReadOffset =
+            mue->per_primitive_header_size_dw / 8;
+         sbe_mesh.PerPrimitiveURBEntryOutputReadLength =
+            DIV_ROUND_UP(mue->per_primitive_data_size_dw, 8);
+
+         /* Just like with clip distances, if Primitive Shading Rate, Viewport
+          * Index or Layer is read back in the FS, adjust the offset and
+          * length to cover the Primitive Header, where PSR, Viewport Index &
+          * Layer are stored.
+          */
+         if (wm_prog_data->urb_setup[VARYING_SLOT_VIEWPORT] >= 0 ||
+             wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_SHADING_RATE] >= 0 ||
+             wm_prog_data->urb_setup[VARYING_SLOT_LAYER] >= 0 ||
+             mue->user_data_in_primitive_header) {
+            assert(sbe_mesh.PerPrimitiveURBEntryOutputReadOffset > 0);
+            sbe_mesh.PerPrimitiveURBEntryOutputReadOffset -= 1;
+            sbe_mesh.PerPrimitiveURBEntryOutputReadLength += 1;
+         }
+      }
+   }
+#endif
 }
 
 static void
@@ -896,13 +901,16 @@ emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
    }
 
 #if GFX_VERx10 >= 125
-   if (anv_pipeline_is_mesh(pipeline)) {
-      const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
+   const struct anv_device *device = pipeline->base.base.device;
+   if (device->vk.enabled_extensions.EXT_mesh_shader) {
       anv_pipeline_emit(pipeline, final.clip_mesh,
                         GENX(3DSTATE_CLIP_MESH), clip_mesh) {
-         clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.per_primitive_header_size_dw > 0;
-         clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
-         clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
+         if (anv_pipeline_is_mesh(pipeline)) {
+            const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
+            clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.per_primitive_header_size_dw > 0;
+            clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
+            clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
+         }
       }
    }
 #endif
@@ -2004,10 +2012,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                            GENX(3DSTATE_MESH_SHADER), zero);
          anv_pipeline_emit(pipeline, final.mesh_distrib,
                            GENX(3DSTATE_MESH_DISTRIB), zero);
-         anv_pipeline_emit(pipeline, final.clip_mesh,
-                           GENX(3DSTATE_CLIP_MESH), zero);
-         anv_pipeline_emit(pipeline, final.sbe_mesh,
-                           GENX(3DSTATE_SBE_MESH), zero);
          anv_pipeline_emit(pipeline, final.task_control,
                            GENX(3DSTATE_TASK_CONTROL), zero);
          anv_pipeline_emit(pipeline, final.task_control_protected,
