@@ -1082,7 +1082,7 @@ has_dst_aligned_region_restriction(const intel_device_info *devinfo,
        (brw_type_size_bytes(exec_type) == 4 && is_dword_multiply))
       return intel_device_info_is_9lp(devinfo) || devinfo->verx10 >= 125;
 
-   else if (brw_type_is_float(dst_type))
+   else if (brw_type_is_float_or_bfloat(dst_type))
       return devinfo->verx10 >= 125;
 
    else

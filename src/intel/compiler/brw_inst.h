@@ -345,6 +345,20 @@ is_unordered(const intel_device_info *devinfo, const brw_inst *inst)
             inst->dst.type == BRW_TYPE_DF));
 }
 
+static inline bool
+has_bfloat_operands(const brw_inst *inst)
+{
+   if (brw_type_is_bfloat(inst->dst.type))
+      return true;
+
+   for (int i = 0; i < inst->sources; i++) {
+      if (brw_type_is_bfloat(inst->src[i].type))
+         return true;
+   }
+
+   return false;
+}
+
 bool has_dst_aligned_region_restriction(const intel_device_info *devinfo,
                                         const brw_inst *inst,
                                         brw_reg_type dst_type);
