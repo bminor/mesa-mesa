@@ -30,6 +30,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "util/macros.h"
+
 struct pan_kmod_dev;
 struct pan_kmod_dev_props;
 
@@ -140,6 +142,51 @@ panfrost_max_effective_tile_size(unsigned arch)
       return 32 * 32;
 
    return 16 * 16;
+}
+
+/* Returns the maximum usable color tilebuffer-size. This is *usually* twice
+ * the optimal tilebuffer-size, but not always.
+ */
+static inline unsigned
+pan_get_max_tib_size(unsigned arch, const struct panfrost_model *model)
+{
+   unsigned tib_size = panfrost_query_optimal_tib_size(model);
+
+   /* On V5, as well as V6 and later, we can disable pipelining to gain some
+    * extra tib memory.
+    */
+   if (arch > 4 && arch != 6)
+      return tib_size * 2;
+
+   return tib_size;
+}
+
+static inline uint32_t
+pan_get_max_cbufs(unsigned arch, unsigned max_tib_size)
+{
+   if (arch < 5)
+      return 1;
+
+   const unsigned min_msaa = 4;            /* Vulkan *requires* at least 4x MSAA support */
+   const unsigned max_cbuf_format = 4 * 4; /* R32G32B32A32 */
+   const unsigned min_tile_size = 4 * 4;
+
+   unsigned max_cbufs =
+      max_tib_size / (min_msaa * max_cbuf_format * min_tile_size);
+
+   return MIN2(max_cbufs, 8);
+}
+
+static inline unsigned
+pan_get_max_msaa(unsigned arch, unsigned max_tib_size, unsigned max_cbuf_atts,
+                 unsigned format_size)
+{
+   assert(max_cbuf_atts > 0);
+   assert(format_size > 0);
+   const unsigned min_tile_size = 4 * 4;
+   unsigned max_msaa = max_tib_size / (max_cbuf_atts * format_size *
+                                       min_tile_size);
+   return MIN2(max_msaa, arch >= 5 ? 16 : 8);
 }
 
 #endif
