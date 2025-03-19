@@ -96,14 +96,20 @@ radv_printf_data_finish(struct radv_device *device)
    util_dynarray_fini(&device->printf.formats);
 }
 
-void
-radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
+static bool
+radv_shader_printf_enabled(nir_shader *shader)
 {
    if (!device_ht)
-      return;
+      return false;
 
-   struct radv_device *device = _mesa_hash_table_search(device_ht, b->shader)->data;
-   if (!device->printf.buffer_addr)
+   struct radv_device *device = _mesa_hash_table_search(device_ht, shader)->data;
+   return !!device->printf.buffer_addr;
+}
+
+void
+radv_build_printf_args(nir_builder *b, nir_def *cond, const char *format_string, uint32_t argc, nir_def **in_args)
+{
+   if (!radv_shader_printf_enabled(b->shader))
       return;
 
    struct radv_printf_format format = {0};
@@ -111,6 +117,7 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
    if (!format.string)
       return;
 
+   struct radv_device *device = _mesa_hash_table_search(device_ht, b->shader)->data;
    uint32_t format_index = util_dynarray_num_elements(&device->printf.formats, struct radv_printf_format);
 
    if (cond)
@@ -121,22 +128,14 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
 
    nir_def *size = nir_imm_int(b, 4);
 
-   va_list arg_list;
-   va_start(arg_list, format_string);
-
-   uint32_t num_args = 0;
-   for (uint32_t i = 0; i < strlen(format_string); i++)
-      if (format_string[i] == '%')
-         num_args++;
-
-   nir_def **args = malloc(num_args * sizeof(nir_def *));
-   nir_def **strides = malloc(num_args * sizeof(nir_def *));
+   nir_def **args = malloc(argc * sizeof(nir_def *));
+   nir_def **strides = malloc(argc * sizeof(nir_def *));
 
    nir_def *ballot = nir_ballot(b, 1, 64, nir_imm_true(b));
    nir_def *active_invocation_count = nir_bit_count(b, ballot);
 
-   for (uint32_t i = 0; i < num_args; i++) {
-      nir_def *arg = va_arg(arg_list, nir_def *);
+   for (uint32_t i = 0; i < argc; i++) {
+      nir_def *arg = in_args[i];
       bool divergent = arg->divergent;
 
       if (arg->bit_size == 1)
@@ -156,8 +155,6 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
 
       size = nir_iadd(b, size, strides[i]);
    }
-
-   va_end(arg_list);
 
    nir_def *offset;
    nir_def *undef;
@@ -187,7 +184,7 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
       nir_store_global(b, addr, 4, nir_ior_imm(b, active_invocation_count, format_index << 16), 1);
       addr = nir_iadd_imm(b, addr, 4);
 
-      for (uint32_t i = 0; i < num_args; i++) {
+      for (uint32_t i = 0; i < argc; i++) {
          nir_def *arg = args[i];
 
          if (arg->divergent) {
@@ -214,6 +211,32 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
    free(strides);
 
    util_dynarray_append(&device->printf.formats, struct radv_printf_format, format);
+}
+
+void
+radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
+{
+   if (!radv_shader_printf_enabled(b->shader))
+      return;
+
+   va_list arg_list;
+   va_start(arg_list, format_string);
+
+   uint32_t num_args = 0;
+   for (uint32_t i = 0; i < strlen(format_string); i++)
+      if (format_string[i] == '%')
+         num_args++;
+
+   nir_def **args = malloc(num_args * sizeof(nir_def *));
+
+   for (uint32_t i = 0; i < num_args; i++)
+      args[i] = va_arg(arg_list, nir_def *);
+
+   va_end(arg_list);
+
+   radv_build_printf_args(b, cond, format_string, num_args, args);
+
+   free(args);
 }
 
 void

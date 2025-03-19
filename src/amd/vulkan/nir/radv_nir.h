@@ -75,6 +75,8 @@ bool radv_nir_lower_draw_id_to_zero(nir_shader *shader);
 
 bool radv_nir_remap_color_attachment(nir_shader *shader, const struct radv_graphics_state_key *gfx_state);
 
+bool radv_nir_lower_printf(nir_shader *shader);
+
 typedef struct radv_nir_opt_tid_function_options {
    bool use_masked_swizzle_amd : 1;
    bool use_dpp16_shift_amd : 1;

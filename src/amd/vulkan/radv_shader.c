@@ -394,6 +394,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
             },
          .emit_debug_break = !!device->trap_handler_shader,
          .debug_info = !!(instance->debug_flags & RADV_DEBUG_NIR_DEBUG_INFO),
+         .printf = !!device->printf.buffer_addr,
       };
       nir = spirv_to_nir(spirv, stage->spirv.size / 4, spec_entries, num_spec_entries, stage->stage, stage->entrypoint,
                          &spirv_options, &pdev->nir_options[stage->stage]);
@@ -404,6 +405,9 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       free(spec_entries);
 
       radv_device_associate_nir(device, nir);
+
+      if (device->printf.buffer_addr)
+         NIR_PASS(_, nir, radv_nir_lower_printf);
 
       const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
          .point_coord = true,
