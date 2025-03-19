@@ -70,7 +70,6 @@ static const struct debug_named_value panfrost_debug_options[] = {
    {"gl3",        PAN_DBG_GL3,        "Enable experimental GL 3.x implementation, up to 3.3"},
    {"noafbc",     PAN_DBG_NO_AFBC,    "Disable AFBC support"},
    {"nocrc",      PAN_DBG_NO_CRC,     "Disable transaction elimination"},
-   {"msaa16",     PAN_DBG_MSAA16,     "Enable MSAA 8x and 16x support"},
    {"linear",     PAN_DBG_LINEAR,     "Force linear textures"},
    {"strict_import", PAN_DBG_STRICT_IMPORT, "Use the explicit WSI stride and fail if it's not properly aligned"},
    {"nocache",    PAN_DBG_NO_CACHE,   "Disable BO cache"},
@@ -177,28 +176,8 @@ panfrost_is_format_supported(struct pipe_screen *screen,
        MAX2(sample_count, 1) > max_msaa)
       return false;
 
-   /* MSAA 2x gets rounded up to 4x. MSAA 8x/16x only supported on v5+.
-    * TODO: debug MSAA 8x/16x */
-
-   switch (sample_count) {
-   case 0:
-   case 1:
-   case 4:
-      break;
-   case 2:
-      if (dev->arch >= 12)
-         break;
-      else
-         return false;
-   case 8:
-   case 16:
-      if (dev->debug & PAN_DBG_MSAA16)
-         break;
-      else
-         return false;
-   default:
+   if (sample_count == 2 && dev->arch < 12)
       return false;
-   }
 
    if (MAX2(sample_count, 1) != MAX2(storage_sample_count, 1))
       return false;

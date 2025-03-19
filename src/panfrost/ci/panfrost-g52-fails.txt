@@ -33,6 +33,9 @@ spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB,Fail
 spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB NPOT,Fail
 spec@arb_texture_float@multisample-formats 2 gl_arb_texture_float,Fail
 spec@arb_texture_float@multisample-formats 4 gl_arb_texture_float,Fail
+spec@arb_texture_float@multisample-formats 6 gl_arb_texture_float,Fail
+spec@arb_texture_float@multisample-formats 8 gl_arb_texture_float,Fail
+spec@arb_texture_float@multisample-formats 16 gl_arb_texture_float,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16I,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16_SNORM,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R32I,Fail
@@ -326,6 +329,8 @@ afbcp-spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB,Fail
 afbcp-spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB NPOT,Fail
 afbcp-spec@arb_texture_float@multisample-formats 2 gl_arb_texture_float,Fail
 afbcp-spec@arb_texture_float@multisample-formats 4 gl_arb_texture_float,Fail
+afbcp-spec@arb_texture_float@multisample-formats 6 gl_arb_texture_float,Fail
+afbcp-spec@arb_texture_float@multisample-formats 8 gl_arb_texture_float,Fail
 afbcp-spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16I,Fail
 afbcp-spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16_SNORM,Fail
 afbcp-spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R32I,Fail
@@ -388,6 +393,9 @@ afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gl srgb-fp@sRGB decode
 # uprev Piglit in Mesa
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 afbcp-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
+
+# CTS bug: https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5695
+KHR-GLES31.core.texture_storage_multisample.APIDependencies.renderbuffer_storage_multisample_invalid_samples_argument_for_integer_internalformats,Fail
 
 # physical device and device needs more robustness in allocation handling
 dEQP-VK.api.object_management.max_concurrent.device,Fail

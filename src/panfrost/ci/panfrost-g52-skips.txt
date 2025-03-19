@@ -10,6 +10,9 @@ dEQP-GLES31.functional.draw_indirect.compute_interop.large.*
 # https://gitlab.freedesktop.org/mesa/mesa/-/jobs/19776551
 dEQP-GLES31.functional.ssbo.layout.random.all_shared_buffer.36
 
+# Huge render, which eventually times out
+dEQP-GLES31.functional.fbo.no_attachments.maximums.all
+
 # Seems to timeout occasionally
 dEQP-VK.api.object_management.max_concurrent.query_pool
 
