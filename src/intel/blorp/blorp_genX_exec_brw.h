@@ -689,6 +689,8 @@ blorp_emit_vs_config(struct blorp_batch *batch,
 
    blorp_emit(batch, GENX(3DSTATE_VS), vs) {
       if (vs_prog_data) {
+         assert(vs_prog_data->base.base.total_scratch == 0);
+
          vs.Enable = true;
 
          vs.KernelStartPointer = params->vs_prog_kernel;
@@ -885,6 +887,8 @@ blorp_emit_ps_config(struct blorp_batch *batch,
 #endif
 
       if (prog_data) {
+         assert(prog_data->base.total_scratch == 0);
+
          intel_set_ps_dispatch_state(&ps, devinfo, prog_data,
                                      params->num_samples,
                                      0 /* msaa_flags */);
