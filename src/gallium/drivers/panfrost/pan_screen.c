@@ -140,6 +140,20 @@ pipe_to_pan_bind_flags(uint32_t pipe_bind_flags)
    return pan_bind_flags;
 }
 
+static unsigned
+get_max_msaa(struct panfrost_device *dev, enum pipe_format format)
+{
+   unsigned max_tib_size = pan_get_max_tib_size(dev->arch, dev->model);
+   unsigned max_cbuf_atts = pan_get_max_cbufs(dev->arch, max_tib_size);
+   unsigned format_size = util_format_get_blocksize(format);
+
+   unsigned max_msaa = pan_get_max_msaa(dev->arch, max_tib_size,
+                                        max_cbuf_atts, format_size);
+   assert(format_size > 16 || max_msaa >= 4);
+
+   return max_msaa;
+}
+
 /**
  * Query format support for creating a texture, drawing surface, etc.
  * \param format  the format to test
@@ -153,6 +167,11 @@ panfrost_is_format_supported(struct pipe_screen *screen,
                              unsigned storage_sample_count, unsigned bind)
 {
    struct panfrost_device *dev = pan_device(screen);
+
+   unsigned max_msaa = get_max_msaa(dev, format);
+   if (!util_is_power_of_two_or_zero(sample_count) ||
+       MAX2(sample_count, 1) > max_msaa)
+      return false;
 
    /* MSAA 2x gets rounded up to 4x. MSAA 8x/16x only supported on v5+.
     * TODO: debug MSAA 8x/16x */
@@ -485,8 +504,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    /* Our GL 3.x implementation is WIP */
    bool is_gl3 = dev->debug & PAN_DBG_GL3;
 
-   /* Native MRT is introduced with v5 */
-   bool has_mrt = (dev->arch >= 5);
+   unsigned max_tib_size =
+      pan_get_max_tib_size(dev->arch, dev->model);
 
    caps->npot_textures = true;
    caps->mixed_color_depth_bits = true;
@@ -510,7 +529,7 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
                                             : PIPE_POINT_SIZE_LOWER_NEVER;
 
    caps->max_render_targets =
-   caps->fbfetch = has_mrt ? 8 : 1;
+   caps->fbfetch = pan_get_max_cbufs(dev->arch, max_tib_size);
    caps->fbfetch_coherent = true;
 
    caps->max_dual_source_render_targets = 1;
