@@ -62,24 +62,24 @@
 
 /* clang-format off */
 static const struct debug_named_value panfrost_debug_options[] = {
-   {"perf",       PAN_DBG_PERF,     "Enable performance warnings"},
-   {"trace",      PAN_DBG_TRACE,    "Trace the command stream"},
-   {"dirty",      PAN_DBG_DIRTY,    "Always re-emit all state"},
-   {"sync",       PAN_DBG_SYNC,     "Wait for each job's completion and abort on GPU faults"},
-   {"nofp16",     PAN_DBG_NOFP16,    "Disable 16-bit support"},
-   {"gl3",        PAN_DBG_GL3,      "Enable experimental GL 3.x implementation, up to 3.3"},
-   {"noafbc",     PAN_DBG_NO_AFBC,  "Disable AFBC support"},
-   {"nocrc",      PAN_DBG_NO_CRC,   "Disable transaction elimination"},
-   {"msaa16",     PAN_DBG_MSAA16,   "Enable MSAA 8x and 16x support"},
-   {"linear",     PAN_DBG_LINEAR,   "Force linear textures"},
-   {"nocache",    PAN_DBG_NO_CACHE, "Disable BO cache"},
-   {"dump",       PAN_DBG_DUMP,     "Dump all graphics memory"},
+   {"perf",       PAN_DBG_PERF,       "Enable performance warnings"},
+   {"trace",      PAN_DBG_TRACE,      "Trace the command stream"},
+   {"dirty",      PAN_DBG_DIRTY,      "Always re-emit all state"},
+   {"sync",       PAN_DBG_SYNC,       "Wait for each job's completion and abort on GPU faults"},
+   {"nofp16",     PAN_DBG_NOFP16,     "Disable 16-bit support"},
+   {"gl3",        PAN_DBG_GL3,        "Enable experimental GL 3.x implementation, up to 3.3"},
+   {"noafbc",     PAN_DBG_NO_AFBC,    "Disable AFBC support"},
+   {"nocrc",      PAN_DBG_NO_CRC,     "Disable transaction elimination"},
+   {"msaa16",     PAN_DBG_MSAA16,     "Enable MSAA 8x and 16x support"},
+   {"linear",     PAN_DBG_LINEAR,     "Force linear textures"},
+   {"nocache",    PAN_DBG_NO_CACHE,   "Disable BO cache"},
+   {"dump",       PAN_DBG_DUMP,       "Dump all graphics memory"},
 #ifdef PAN_DBG_OVERFLOW
-   {"overflow",   PAN_DBG_OVERFLOW, "Check for buffer overflows in pool uploads"},
+   {"overflow",   PAN_DBG_OVERFLOW,   "Check for buffer overflows in pool uploads"},
 #endif
-   {"yuv",        PAN_DBG_YUV,      "Tint YUV textures with blue for 1-plane and green for 2-plane"},
-   {"forcepack",  PAN_DBG_FORCE_PACK,  "Force packing of AFBC textures on upload"},
-   {"cs",         PAN_DBG_CS,       "Enable extra checks in command stream"},
+   {"yuv",        PAN_DBG_YUV,        "Tint YUV textures with blue for 1-plane and green for 2-plane"},
+   {"forcepack",  PAN_DBG_FORCE_PACK, "Force packing of AFBC textures on upload"},
+   {"cs",         PAN_DBG_CS,         "Enable extra checks in command stream"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */
