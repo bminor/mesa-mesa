@@ -52,8 +52,7 @@ radv_sdma_get_copy_extent(const struct radv_image *const image, const VkImageSub
 }
 
 struct radv_sdma_surf radv_sdma_get_buf_surf(uint64_t buffer_va, const struct radv_image *const image,
-                                             const VkBufferImageCopy2 *const region,
-                                             const VkImageAspectFlags aspect_mask);
+                                             const VkBufferImageCopy2 *const region);
 struct radv_sdma_surf radv_sdma_get_surf(const struct radv_device *const device, const struct radv_image *const image,
                                          const VkImageSubresourceLayers subresource, const VkOffset3D offset,
                                          const VkImageAspectFlags aspect_mask);

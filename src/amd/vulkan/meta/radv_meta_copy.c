@@ -82,7 +82,7 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
 
-   struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer_va, image, region, aspect_mask);
+   struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer_va, image, region);
    const struct radv_sdma_surf img =
       radv_sdma_get_surf(device, image, region->imageSubresource, region->imageOffset, aspect_mask);
    const VkExtent3D extent = radv_sdma_get_copy_extent(image, region->imageSubresource, region->imageExtent);

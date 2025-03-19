@@ -164,10 +164,9 @@ radv_sdma_get_bpe(const struct radv_image *const image, VkImageAspectFlags aspec
 }
 
 struct radv_sdma_surf
-radv_sdma_get_buf_surf(uint64_t buffer_va, const struct radv_image *const image, const VkBufferImageCopy2 *const region,
-                       const VkImageAspectFlags aspect_mask)
+radv_sdma_get_buf_surf(uint64_t buffer_va, const struct radv_image *const image, const VkBufferImageCopy2 *const region)
 {
-   assert(util_bitcount(aspect_mask) == 1);
+   assert(util_bitcount(region->imageSubresource.aspectMask) == 1);
 
    const unsigned pitch = (region->bufferRowLength ? region->bufferRowLength : region->imageExtent.width);
    const unsigned slice_pitch =
