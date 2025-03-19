@@ -521,7 +521,12 @@ fn instr_latency(sm: u8, op: &Op, dst_idx: usize) -> u32 {
             | Op::HMul2(_)
             | Op::HSet2(_)
             | Op::HSetP2(_)
-            | Op::HMnMx2(_) => (13, 14),
+            | Op::HMnMx2(_) => if sm == 70 {
+                // Volta is even slower
+                (13, 15)
+            } else {
+                (13, 14)
+            }
             _ => (6, 13)
         }
     } else {
@@ -578,8 +583,15 @@ fn waw_latency(
 }
 
 /// Predicate read-after-write latency
-fn paw_latency(_sm: u8, _write: &Op, _dst_idx: usize) -> u32 {
-    13
+fn paw_latency(sm: u8, write: &Op, _dst_idx: usize) -> u32 {
+    if sm == 70 {
+        match write {
+            Op::DSetP(_) | Op::HSetP2(_) => 15,
+            _ => 13,
+        }
+    } else {
+        13
+    }
 }
 
 fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) {
