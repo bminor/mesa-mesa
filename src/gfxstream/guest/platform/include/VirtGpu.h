@@ -181,7 +181,7 @@ class VirtGpuDevice {
    VirtGpuDevice(enum VirtGpuCapset capset) : mCapset(capset) {}
    virtual ~VirtGpuDevice() {}
 
-   enum VirtGpuCapset capset() { return mCapset; }
+   enum VirtGpuCapset getCapset() { return mCapset; }
 
    virtual int64_t getDeviceHandle(void) = 0;
 

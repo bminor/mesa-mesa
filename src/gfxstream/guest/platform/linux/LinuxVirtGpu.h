@@ -52,7 +52,9 @@ class LinuxVirtGpuResourceMapping : public VirtGpuResourceMapping {
 
 class LinuxVirtGpuDevice : public VirtGpuDevice {
    public:
-    LinuxVirtGpuDevice(enum VirtGpuCapset capset, int fd = -1);
+    LinuxVirtGpuDevice(enum VirtGpuCapset capset);
+    int32_t init(int32_t descriptor);
+
     virtual ~LinuxVirtGpuDevice();
 
     virtual int64_t getDeviceHandle(void);
@@ -74,7 +76,7 @@ class LinuxVirtGpuDevice : public VirtGpuDevice {
     int64_t mDeviceHandle;
     struct VirtGpuCaps mCaps;
 
-    int openDevice(const drmDevicePtr dev);
+    int openDevice();
 
     bool mHasPrimary;
     int mPrimaryMajor;

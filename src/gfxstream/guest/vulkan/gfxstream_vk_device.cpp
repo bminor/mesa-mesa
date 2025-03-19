@@ -79,7 +79,7 @@ static bool isGuestEmulatedInstanceExtension(const char* name) {
 static VkResult SetupInstanceForProcess(void) {
     auto mgr = getConnectionManager();
     if (!mgr) {
-        mesa_loge("vulkan: Failed to get host connection\n");
+        mesa_logd("vulkan: Failed to get host connection\n");
         return VK_ERROR_DEVICE_LOST;
     }
 
