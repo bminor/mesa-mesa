@@ -840,7 +840,8 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    if (nir->info.stage != MESA_SHADER_FRAGMENT)
       vec_modes |= nir_var_shader_out;
 
-   NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes, false);
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes, false);
 
    /* Special case for frag coords:
     * - x,y come from (non-consecutive) special regs - always scalar.
