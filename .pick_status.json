@@ -374,7 +374,7 @@
         "description": "panvk: Remove lower_tg4_broadcom_swizzle from panvk_preprocess_nir()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4050697a8f4620109388c02cd8e7437f21e12dc4",
         "notes": null
