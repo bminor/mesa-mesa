@@ -674,7 +674,7 @@
         "description": "ci: replace broken s3cp command with a simple curl call",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

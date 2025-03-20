@@ -13,7 +13,6 @@ set -ex
 export PAGER=cat  # FIXME: export everywhere
 
 INSTALL=$(realpath -s "$PWD"/install)
-S3_ARGS="--token-file ${S3_JWT_FILE}"
 
 export PIGLIT_REPLAY_DESCRIPTION_FILE="$INSTALL/$PIGLIT_TRACES_FILE"
 
@@ -128,8 +127,7 @@ replay_s3_upload_images() {
             __DESTINATION_FILE_PATH="$__S3_TRACES_PREFIX/${line##*-}"
         fi
 
-        ci-fairy s3cp $S3_ARGS "$RESULTS_DIR/$__PREFIX/$line" \
-            "https://${__S3_PATH}/${__DESTINATION_FILE_PATH}"
+        s3_upload "$RESULTS_DIR/$__PREFIX/$line" "https://${__S3_PATH}/${__DESTINATION_FILE_PATH%/*}"
     done
 }
 
