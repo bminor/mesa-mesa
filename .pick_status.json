@@ -3454,7 +3454,7 @@
         "description": "vulkan/video: Do byte-alignment when building a h264 slice header",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ff8de61907083855a5c3bf307e133628cd919b4c",
         "notes": null
