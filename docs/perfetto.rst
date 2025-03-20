@@ -116,9 +116,10 @@ CPU Tracing
 Mesa's CPU tracepoints (``MESA_TRACE_*``) use Perfetto track events when
 Perfetto is enabled.  They use ``mesa.default`` and ``mesa.slow`` categories.
 
-Currently, only EGL and the following drivers have have CPU tracepoints.
+Currently, only EGL and the following drivers have CPU tracepoints.
 
 - Freedreno
+- Panfrost
 - Turnip
 - V3D
 - VC4
