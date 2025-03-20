@@ -1025,7 +1025,12 @@ impl Device {
     }
 
     pub fn max_grid_dimensions(&self) -> cl_uint {
-        self.screen.compute_caps().grid_dimension
+        // Much of the kernel code assumes three-dimensional grids, implicitly
+        // capping this value. The OpenCL spec requires a minimum value of 3 for
+        // devices not of type CL_DEVICE_TYPE_CUSTOM.
+        const MAX_GRID_DIM: cl_uint = 3;
+
+        MAX_GRID_DIM
     }
 
     /// Returns the maximum size in bytes of a memory allocation for this
