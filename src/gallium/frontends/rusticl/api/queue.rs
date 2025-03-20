@@ -132,9 +132,9 @@ fn create_command_queue_with_properties(
 
     // SAFETY: properties is a 0 terminated array by spec.
     let properties = unsafe { Properties::new(properties) }.ok_or(CL_INVALID_PROPERTY)?;
-    for (k, v) in properties.iter() {
-        match *k as cl_uint {
-            CL_QUEUE_PROPERTIES => queue_properties = *v,
+    for (&key, &val) in properties.iter() {
+        match u32::try_from(key).or(Err(CL_INVALID_PROPERTY))? {
+            CL_QUEUE_PROPERTIES => queue_properties = val,
             // CL_INVALID_QUEUE_PROPERTIES if values specified in properties are valid but are not
             // supported by the device.
             CL_QUEUE_SIZE => return Err(CL_INVALID_QUEUE_PROPERTIES),
