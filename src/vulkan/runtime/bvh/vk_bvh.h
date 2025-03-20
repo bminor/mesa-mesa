@@ -94,7 +94,14 @@ struct vk_ir_header {
    uint32_t dispatch_size_y;
    uint32_t dispatch_size_z;
    vk_global_sync_data sync_data;
+   /* Generic offset used by the driver during encoding
+    * to write HW nodes in a compact way.
+    */
    uint32_t dst_node_offset;
+   /* Same as dst_node_offset but only useful if the driver
+    * uses a separate memory section for leaf nodes.
+    */
+   uint32_t dst_leaf_node_offset;
 };
 
 struct vk_ir_node {
