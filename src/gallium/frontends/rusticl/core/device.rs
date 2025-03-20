@@ -923,7 +923,7 @@ impl Device {
     }
 
     pub fn global_mem_size(&self) -> cl_ulong {
-        if let Some(memory_info) = self.screen().query_memory_info() {
+        if let Some(memory_info) = self.screen.query_memory_info() {
             let memory: cl_ulong = if memory_info.total_device_memory != 0 {
                 memory_info.total_device_memory.into()
             } else {

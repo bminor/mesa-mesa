@@ -479,15 +479,17 @@ impl Program {
     // we need to precalculate the size
     pub fn bin_sizes(&self) -> Vec<usize> {
         let lock = self.build_info();
-        let mut res = Vec::new();
-        for d in &self.devs {
-            let info = lock.dev_build(d);
 
-            res.push(info.spirv.as_ref().map_or(0, |s| {
-                s.to_bin().len() + d.screen().name().to_bytes().len() + BIN_HEADER_SIZE
-            }));
-        }
-        res
+        self.devs
+            .iter()
+            .map(|&device| {
+                let info = lock.dev_build(device);
+
+                info.spirv.as_ref().map_or(0, |s| {
+                    s.to_bin().len() + device.screen().name().to_bytes().len() + BIN_HEADER_SIZE
+                })
+            })
+            .collect()
     }
 
     pub fn binaries(&self, ptrs: &[*mut u8]) -> CLResult<()> {

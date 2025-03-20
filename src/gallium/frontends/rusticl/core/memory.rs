@@ -959,14 +959,15 @@ impl MemBase {
         let (shadow_map, texture) = if is_cube_map_face(export_in.target) {
             let shadow = create_shadow_slice(&imported_gl_tex, image_format)?;
 
-            let mut res_map = HashMap::new();
-            shadow
+            let res_map = shadow
                 .iter()
-                .map(|(k, v)| {
-                    let gl_res = Arc::clone(imported_gl_tex.get(k).unwrap());
-                    res_map.insert(Arc::clone(v), gl_res);
+                .map(|(dev, resource)| {
+                    (
+                        Arc::clone(resource),
+                        Arc::clone(imported_gl_tex.get(dev).unwrap()),
+                    )
                 })
-                .for_each(drop);
+                .collect();
 
             (Some(res_map), shadow)
         } else {

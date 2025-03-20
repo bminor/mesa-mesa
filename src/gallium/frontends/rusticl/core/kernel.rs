@@ -527,11 +527,10 @@ impl_cl_type_trait!(cl_kernel, Kernel, CL_INVALID_KERNEL);
 fn create_kernel_arr<T>(vals: &[usize], val: T) -> CLResult<[T; 3]>
 where
     T: std::convert::TryFrom<usize> + Copy,
-    <T as std::convert::TryFrom<usize>>::Error: std::fmt::Debug,
 {
     let mut res = [val; 3];
     for (i, v) in vals.iter().enumerate() {
-        res[i] = (*v).try_into().ok().ok_or(CL_OUT_OF_RESOURCES)?;
+        res[i] = (*v).try_into().or(Err(CL_OUT_OF_RESOURCES))?;
     }
 
     Ok(res)
