@@ -31,8 +31,6 @@
 #include <util/format/u_format.h>
 #include <util/u_process.h>
 
-#define VIRGL_RENDERER_UNSTABLE_APIS
-
 #include "virgl_vtest_winsys.h"
 #include "virgl_vtest_public.h"
 

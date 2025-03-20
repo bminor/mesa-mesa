@@ -27,11 +27,7 @@
 
 #define VTEST_DEFAULT_SOCKET_NAME "/tmp/.virgl_test"
 
-#ifdef VIRGL_RENDERER_UNSTABLE_APIS
 #define VTEST_PROTOCOL_VERSION 3
-#else
-#define VTEST_PROTOCOL_VERSION 2
-#endif
 
 /* 32-bit length field */
 /* 32-bit cmd field */
@@ -70,7 +66,6 @@
 #define VCMD_TRANSFER_GET2 13
 #define VCMD_TRANSFER_PUT2 14
 
-#ifdef VIRGL_RENDERER_UNSTABLE_APIS
 /* since protocol version 3 */
 #define VCMD_GET_PARAM 15
 #define VCMD_GET_CAPSET 16
@@ -82,7 +77,6 @@
 #define VCMD_SYNC_WRITE 22
 #define VCMD_SYNC_WAIT 23
 #define VCMD_SUBMIT_CMD2 24
-#endif /* VIRGL_RENDERER_UNSTABLE_APIS */
 
 #define VCMD_RES_CREATE_SIZE 10
 #define VCMD_RES_CREATE_RES_HANDLE 0 /* must be 0 since protocol version 3 */
@@ -149,8 +143,6 @@
 
 #define VCMD_PROTOCOL_VERSION_SIZE 1
 #define VCMD_PROTOCOL_VERSION_VERSION 0
-
-#ifdef VIRGL_RENDERER_UNSTABLE_APIS
 
 enum vcmd_param  {
    VCMD_PARAM_MAX_TIMELINE_COUNT = 1,
@@ -240,7 +232,5 @@ struct vcmd_submit_cmd2_batch {
 #define VCMD_SUBMIT_CMD2_BATCH_SYNC_OFFSET(n)      (1 + 8 * (n) + 3)
 #define VCMD_SUBMIT_CMD2_BATCH_SYNC_COUNT(n)       (1 + 8 * (n) + 4)
 #define VCMD_SUBMIT_CMD2_BATCH_RING_IDX(n)         (1 + 8 * (n) + 5)
-
-#endif /* VIRGL_RENDERER_UNSTABLE_APIS */
 
 #endif /* VTEST_PROTOCOL */

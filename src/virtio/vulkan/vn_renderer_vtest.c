@@ -19,7 +19,6 @@
 #include "util/os_misc.h"
 #include "util/sparse_array.h"
 #include "util/u_process.h"
-#define VIRGL_RENDERER_UNSTABLE_APIS
 #include "virtio-gpu/virglrenderer_hw.h"
 #include "vtest/vtest_protocol.h"
 

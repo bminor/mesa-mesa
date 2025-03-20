@@ -22,7 +22,6 @@
 #include "drm-uapi/virtgpu_drm.h"
 #include "util/os_file.h"
 #include "util/sparse_array.h"
-#define VIRGL_RENDERER_UNSTABLE_APIS
 #include "virtio-gpu/virglrenderer_hw.h"
 
 #include "vn_renderer_internal.h"
