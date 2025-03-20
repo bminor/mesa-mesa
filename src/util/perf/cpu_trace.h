@@ -95,6 +95,11 @@
 
 #if __has_attribute(cleanup) && __has_attribute(unused)
 
+#include <stdarg.h>
+#include <stdio.h>
+
+#define _MESA_TRACE_SCOPE_MAX_NAME_LENGTH 4096
+
 #define _MESA_TRACE_SCOPE_VAR_CONCAT(name, suffix) name##suffix
 #define _MESA_TRACE_SCOPE_VAR(suffix)                                        \
    _MESA_TRACE_SCOPE_VAR_CONCAT(_mesa_trace_scope_, suffix)
@@ -102,23 +107,33 @@
 /* This must expand to a single non-scoped statement for
  *
  *    if (cond)
- *       _MESA_TRACE_SCOPE(...)
+ *       _MESA_TRACE_SCOPE(format, ...)
  *
  * to work.
  */
-#define _MESA_TRACE_SCOPE(name)                                              \
+#define _MESA_TRACE_SCOPE(format, ...)                                       \
    int _MESA_TRACE_SCOPE_VAR(__LINE__)                                       \
       __attribute__((cleanup(_mesa_trace_scope_end), unused)) =              \
-         _mesa_trace_scope_begin(name)
+         _mesa_trace_scope_begin(format, ##__VA_ARGS__)
 
 #define _MESA_TRACE_SCOPE_FLOW(name, id)                                     \
    int _MESA_TRACE_SCOPE_VAR(__LINE__)                                       \
       __attribute__((cleanup(_mesa_trace_scope_end), unused)) =              \
          _mesa_trace_scope_flow_begin(name, id)
 
+__attribute__((format(printf, 1, 2)))
 static inline int
-_mesa_trace_scope_begin(const char *name)
+_mesa_trace_scope_begin(const char *format, ...)
 {
+   char name[_MESA_TRACE_SCOPE_MAX_NAME_LENGTH];
+   va_list args;
+
+   va_start(args, format);
+   ASSERTED size_t len = vsnprintf(name, _MESA_TRACE_SCOPE_MAX_NAME_LENGTH,
+                                   format, args);
+   va_end(args);
+   assert(len < _MESA_TRACE_SCOPE_MAX_NAME_LENGTH);
+
    _MESA_TRACE_BEGIN(name);
    _MESA_GPUVIS_TRACE_BEGIN(name);
    return 0;
@@ -143,13 +158,13 @@ _mesa_trace_scope_end(UNUSED int *scope)
 
 #else
 
-#define _MESA_TRACE_SCOPE(name)
+#define _MESA_TRACE_SCOPE(format, ...)
 
 #endif /* __has_attribute(cleanup) && __has_attribute(unused) */
 
-#define MESA_TRACE_SCOPE(name) _MESA_TRACE_SCOPE(name)
+#define MESA_TRACE_SCOPE(format, ...) _MESA_TRACE_SCOPE(format, ##__VA_ARGS__)
 #define MESA_TRACE_SCOPE_FLOW(name, id) _MESA_TRACE_SCOPE_FLOW(name, id)
-#define MESA_TRACE_FUNC() _MESA_TRACE_SCOPE(__func__)
+#define MESA_TRACE_FUNC() _MESA_TRACE_SCOPE("%s", __func__)
 #define MESA_TRACE_FUNC_FLOW(id) _MESA_TRACE_SCOPE_FLOW(__func__, id)
 #define MESA_TRACE_SET_COUNTER(name, value) _MESA_TRACE_SET_COUNTER(name, value)
 #define MESA_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \

@@ -635,7 +635,7 @@ _tc_sync(struct threaded_context *tc, UNUSED const char *info, UNUSED const char
    struct tc_batch *next = &tc->batch_slots[tc->next];
    bool synced = false;
 
-   MESA_TRACE_SCOPE(func);
+   MESA_TRACE_SCOPE("%s", func);
 
    tc_debug_check(tc);
 
