@@ -656,7 +656,7 @@ fn validate_buffer(
                                 let addr_alignment = dev.image_base_address_alignment();
                                 if addr_alignment == 0 {
                                     return Err(CL_INVALID_OPERATION);
-                                } else if !is_alligned(host_ptr, addr_alignment as usize) {
+                                } else if !is_aligned_to(host_ptr, addr_alignment as usize) {
                                     return Err(err);
                                 }
                             }

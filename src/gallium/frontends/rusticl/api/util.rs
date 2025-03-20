@@ -491,10 +491,6 @@ pub fn checked_compare(a: usize, o: cmp::Ordering, b: u64) -> bool {
     }
 }
 
-pub fn is_alligned<T>(ptr: *const T, alignment: usize) -> bool {
-    ptr as usize & (alignment - 1) == 0
-}
-
 pub fn bit_check<A: BitAnd<Output = A> + PartialEq + Default, B: Into<A>>(a: A, b: B) -> bool {
     a & b.into() != A::default()
 }
