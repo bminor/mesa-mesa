@@ -338,9 +338,6 @@ struct brw_task_prog_key
 struct brw_mesh_prog_key
 {
    struct brw_base_prog_key base;
-
-   bool compact_mue:1;
-   unsigned padding:31;
 };
 
 /** The program key for Fragment/Pixel Shaders. */

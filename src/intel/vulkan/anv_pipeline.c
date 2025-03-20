@@ -431,14 +431,12 @@ populate_task_prog_key(struct anv_pipeline_stage *stage,
 
 static void
 populate_mesh_prog_key(struct anv_pipeline_stage *stage,
-                       const struct anv_device *device,
-                       bool compact_mue)
+                       const struct anv_device *device)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
    populate_base_prog_key(stage, device);
 
-   stage->key.mesh.compact_mue = compact_mue;
    stage->key.base.uses_inline_push_addr = true;
 }
 
@@ -1805,10 +1803,7 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
          break;
 
       case MESA_SHADER_MESH: {
-         const bool compact_mue =
-            !(pipeline->base.type == ANV_PIPELINE_GRAPHICS_LIB &&
-              !anv_pipeline_base_has_stage(pipeline, MESA_SHADER_FRAGMENT));
-         populate_mesh_prog_key(&stages[s], device, compact_mue);
+         populate_mesh_prog_key(&stages[s], device);
          break;
       }
 
