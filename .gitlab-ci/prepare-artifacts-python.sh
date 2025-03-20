@@ -52,7 +52,7 @@ cp -Rp .gitlab-ci/*.txt artifacts/
 if [ -n "$S3_ARTIFACT_NAME" ]; then
     # Pass needed files to the test stage
     S3_ARTIFACT_TAR="$S3_ARTIFACT_NAME.tar.zst"
-    tar cv artifacts/ | zstd -o "${S3_ARTIFACT_TAR}"
+    tar c artifacts/ | zstd -o "${S3_ARTIFACT_TAR}"
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${S3_ARTIFACT_TAR}" "https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_TAR}"
     rm "${S3_ARTIFACT_TAR}"
 fi
