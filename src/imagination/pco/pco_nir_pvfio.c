@@ -401,6 +401,26 @@ static nir_def *unpack_from_format(nir_builder *b,
       unpacked = nir_unpack_snorm_4x8(b, input);
       break;
 
+   case PIPE_FORMAT_R8_SSCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_sscaled_8(b, input);
+      break;
+
+   case PIPE_FORMAT_R8G8_SSCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_sscaled_8_8(b, input);
+      break;
+
+   case PIPE_FORMAT_R8G8B8_SSCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_sscaled_8_8_8(b, input);
+      break;
+
+   case PIPE_FORMAT_R8G8B8A8_SSCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_sscaled_8_8_8_8(b, input);
+      break;
+
    case PIPE_FORMAT_R8G8B8A8_UINT:
       unpacked = nir_vector_insert_imm(
          b,

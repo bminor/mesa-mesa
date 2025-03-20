@@ -285,6 +285,15 @@ unpack_unorm_1x16(uint16_t u)
 }
 
 /**
+ * Evaluate one component of unpackSscaled4x8.
+ */
+static float
+unpack_sscaled_1x8(uint8_t u)
+{
+   return CLAMP((int8_t) u, -128.0f, +127.0f);
+}
+
+/**
  * Evaluate one component of packHalf2x16.
  */
 static uint16_t

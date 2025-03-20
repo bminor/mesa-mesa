@@ -1883,13 +1883,18 @@ dst.w = unpack_{fmt}_1x{a}((src0.x >> {r + g + b}) & ((1u << {a}) - 1));
 """)
 
 unpack_r("snorm", 8)
+unpack_r("sscaled", 8)
 unpack_r("unorm", 8)
 
 unpack_rg("snorm", 8, 8)
+unpack_rg("sscaled", 8, 8)
 unpack_rg("unorm", 8, 8)
 
 unpack_rgb("snorm", 8, 8, 8)
+unpack_rgb("sscaled", 8, 8, 8)
 unpack_rgb("unorm", 8, 8, 8)
+
+unpack_rgba("sscaled", 8, 8, 8, 8)
 
 unpack_r("snorm", 16)
 unpack_r("unorm", 16)
