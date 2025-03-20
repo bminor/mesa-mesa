@@ -120,6 +120,12 @@ FreedrenoDriver::setup_a6xx_counters()
    auto PERF_CP_NUM_PREEMPTIONS = countable("CP", "PERF_CP_NUM_PREEMPTIONS");
    auto PERF_CP_PREEMPTION_REACTION_DELAY = countable("CP", "PERF_CP_PREEMPTION_REACTION_DELAY");
 
+   /* LRZ: 4/4 counters */
+   auto PERF_LRZ_TOTAL_PIXEL = countable("LRZ", "PERF_LRZ_TOTAL_PIXEL");
+   auto PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ = countable("LRZ", "PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ");
+   auto PERF_LRZ_TILE_KILLED = countable("LRZ", "PERF_LRZ_TILE_KILLED");
+   auto PERF_LRZ_PRIM_KILLED_BY_LRZ = countable("LRZ", "PERF_LRZ_PRIM_KILLED_BY_LRZ");
+
    /* TODO: resolve() tells there is no PERF_CMPDECMP_VBIF_READ_DATA */
    // auto PERF_CMPDECMP_VBIF_READ_DATA = countable("PERF_CMPDECMP_VBIF_READ_DATA");
 
@@ -400,6 +406,19 @@ FreedrenoDriver::setup_a6xx_counters()
          return PERF_CP_PREEMPTION_REACTION_DELAY * (1.f / time);
       }
    );
+
+   counter("% LRZ Pixel Killed", Counter::Units::Percent, [=]() {
+      return percent(PERF_LRZ_TOTAL_PIXEL - PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ,
+                     PERF_LRZ_TOTAL_PIXEL);
+   });
+
+   counter("LRZ Primitives Killed", Counter::Units::None, [=]() {
+      return PERF_LRZ_PRIM_KILLED_BY_LRZ;
+   });
+
+   counter("LRZ Tiles Killed", Counter::Units::None, [=]() {
+      return PERF_LRZ_TILE_KILLED;
+   });
 }
 
 void
@@ -510,6 +529,12 @@ FreedrenoDriver::setup_a7xx_counters()
 
    /* CMP: 1/4 counters */
    auto PERF_CMPDECMP_VBIF_READ_DATA = countable("CMP", "PERF_CMPDECMP_VBIF_READ_DATA");
+
+   /* LRZ: 4/4 counters */
+   auto PERF_LRZ_TOTAL_PIXEL = countable("LRZ", "PERF_LRZ_TOTAL_PIXEL");
+   auto PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ = countable("LRZ", "PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ");
+   auto PERF_LRZ_TILE_KILLED = countable("LRZ", "PERF_LRZ_TILE_KILLED");
+   auto PERF_LRZ_PRIM_KILLED_BY_LRZ = countable("LRZ", "PERF_LRZ_PRIM_KILLED_BY_LRZ");
 
    /**
     * GPU Compute
@@ -1420,6 +1445,19 @@ FreedrenoDriver::setup_a7xx_counters()
          return percent(cbSum(PERF_PC_STALL_CYCLES_VFD), PERF_RBBM_STATUS_MASKED);
       }
    );
+
+   counter("% LRZ Pixel Killed", Counter::Units::Percent, [=]() {
+      return percent(PERF_LRZ_TOTAL_PIXEL - PERF_LRZ_VISIBLE_PIXEL_AFTER_LRZ,
+                     PERF_LRZ_TOTAL_PIXEL);
+   });
+
+   counter("LRZ Primitives Killed", Counter::Units::None, [=]() {
+      return PERF_LRZ_PRIM_KILLED_BY_LRZ;
+   });
+
+   counter("LRZ Tiles Killed", Counter::Units::None, [=]() {
+      return PERF_LRZ_TILE_KILLED;
+   });
 }
 
 /**

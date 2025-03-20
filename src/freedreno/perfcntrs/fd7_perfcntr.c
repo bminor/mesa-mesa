@@ -1343,6 +1343,11 @@ enum {
    DERIVED_COUNTER_PERFCNTR_BV_SP_ANY_EU_WORKING_FS_STAGE,
    DERIVED_COUNTER_PERFCNTR_BV_SP_ANY_EU_WORKING_VS_STAGE,
 
+   DERIVED_COUNTER_PERFCNTR_LRZ_TOTAL_PIXEL,
+   DERIVED_COUNTER_PERFCNTR_LRZ_VISIBLE_PIXEL_AFTER_LRZ,
+   DERIVED_COUNTER_PERFCNTR_LRZ_PRIM_KILLED_BY_LRZ,
+   DERIVED_COUNTER_PERFCNTR_LRZ_TILE_KILLED,
+
    DERIVED_COUNTER_PERFCNTR_MAX_VALUE,
 };
 
@@ -1443,6 +1448,12 @@ static const struct {
    DERIVED_COUNTER_PERFCNTR_BV(SP_ICL1_MISSES,                    &bv_sp_counters[5]),
    DERIVED_COUNTER_PERFCNTR_BV(SP_ANY_EU_WORKING_FS_STAGE,        &bv_sp_counters[6]),
    DERIVED_COUNTER_PERFCNTR_BV(SP_ANY_EU_WORKING_VS_STAGE,        &bv_sp_counters[7]),
+
+   /* LRZ: 4/4 counters */
+   DERIVED_COUNTER_PERFCNTR(LRZ_TOTAL_PIXEL, &lrz_counters[0]),
+   DERIVED_COUNTER_PERFCNTR(LRZ_VISIBLE_PIXEL_AFTER_LRZ, &lrz_counters[1]),
+   DERIVED_COUNTER_PERFCNTR(LRZ_TILE_KILLED, &lrz_counters[2]),
+   DERIVED_COUNTER_PERFCNTR(LRZ_PRIM_KILLED_BY_LRZ, &lrz_counters[3]),
 };
 
 static uint64_t
@@ -1481,6 +1492,7 @@ percent(uint64_t a, uint64_t b)
 #define DERIVED_COUNTER_CATEGORY_GPU_PRIMITIVE_PROCESSING "GPU Primitive Processing"
 #define DERIVED_COUNTER_CATEGORY_GPU_SHADER_PROCESSING "GPU Shader Processing"
 #define DERIVED_COUNTER_CATEGORY_GPU_STALLS "GPU Stalls"
+#define DERIVED_COUNTER_CATEGORY_GPU_LRZ "GPU LRZ"
 
 #define DERIVED_COUNTER_PERFCNTRS_COUNT_IMPL(_0, _1, _2, _3, _4, _5, _6, _7, N, ...) N
 #define DERIVED_COUNTER_PERFCNTRS_COUNT(...) DERIVED_COUNTER_PERFCNTRS_COUNT_IMPL(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, 0)
@@ -2129,6 +2141,33 @@ DERIVED_COUNTER(percent_vertex_fetch_stall,
                      RBBM_STATUS_MASKED);
    });
 
+DERIVED_COUNTER(percent_lrz_pixel_killed,
+   "% LRZ Pixel Killed",
+   "Percentage of pixels killed by LRZ",
+   GPU_LRZ, PERCENTAGE,
+   DERIVED_COUNTER_PERFCNTRS(LRZ_TOTAL_PIXEL,
+                             LRZ_VISIBLE_PIXEL_AFTER_LRZ),
+   {
+      return percent(LRZ_TOTAL_PIXEL - LRZ_VISIBLE_PIXEL_AFTER_LRZ, LRZ_TOTAL_PIXEL);
+   });
+
+DERIVED_COUNTER(lrz_primitives_killed,
+   "LRZ Primitives Killed",
+   "",
+   GPU_LRZ, UINT64,
+   DERIVED_COUNTER_PERFCNTRS(LRZ_PRIM_KILLED_BY_LRZ),
+   {
+      return LRZ_PRIM_KILLED_BY_LRZ;
+   });
+
+DERIVED_COUNTER(lrz_tiles_killed,
+   "LRZ Tiles Killed",
+   "",
+   GPU_LRZ, UINT64,
+   DERIVED_COUNTER_PERFCNTRS(LRZ_TILE_KILLED),
+   {
+      return LRZ_TILE_KILLED;
+   });
 
 const struct fd_derived_counter *a7xx_derived_counters[] = {
    /* Category: GPU General */
@@ -2193,6 +2232,11 @@ const struct fd_derived_counter *a7xx_derived_counters[] = {
    DERIVED_COUNTER_PTR(percent_texture_l1_miss),
    DERIVED_COUNTER_PTR(percent_texture_l2_miss),
    DERIVED_COUNTER_PTR(percent_vertex_fetch_stall),
+
+   /* Category: GPU LRZ */
+   DERIVED_COUNTER_PTR(percent_lrz_pixel_killed),
+   DERIVED_COUNTER_PTR(lrz_primitives_killed),
+   DERIVED_COUNTER_PTR(lrz_tiles_killed),
 };
 
 const unsigned a7xx_num_derived_counters = ARRAY_SIZE(a7xx_derived_counters);
