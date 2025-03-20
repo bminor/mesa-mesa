@@ -543,18 +543,18 @@ cleanup_culling_shader_after_dce(nir_shader *shader,
    cleanup_culling_shader_after_dce_done:
 
    if (shader->info.stage == MESA_SHADER_VERTEX) {
-      if (!uses_vs_vertex_id)
+      if (s->deferred.uses_vertex_id && !uses_vs_vertex_id)
          progress |= remove_compacted_arg(s, &b, 0);
-      if (!uses_vs_instance_id)
+      if (s->deferred.uses_instance_id && !uses_vs_instance_id)
          progress |= remove_compacted_arg(s, &b, 1);
    } else if (shader->info.stage == MESA_SHADER_TESS_EVAL) {
-      if (!uses_tes_u)
+      if (s->deferred.uses_tess_u && !uses_tes_u)
          progress |= remove_compacted_arg(s, &b, 0);
-      if (!uses_tes_v)
+      if (s->deferred.uses_tess_v && !uses_tes_v)
          progress |= remove_compacted_arg(s, &b, 1);
-      if (!uses_tes_rel_patch_id)
+      if (s->deferred.uses_tess_rel_patch_id_amd && !uses_tes_rel_patch_id)
          progress |= remove_compacted_arg(s, &b, 3);
-      if (!uses_tes_patch_id)
+      if (s->deferred.uses_tess_primitive_id && !uses_tes_patch_id)
          progress |= remove_compacted_arg(s, &b, 2);
    }
 
@@ -605,7 +605,7 @@ compact_vertices_after_culling(nir_builder *b,
       }
 
       /* TES rel patch id does not cost extra dword */
-      if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
+      if (b->shader->info.stage == MESA_SHADER_TESS_EVAL && s->deferred.uses_tess_rel_patch_id_amd) {
          nir_def *arg_val = nir_load_var(b, s->repacked_rel_patch_id);
          nir_intrinsic_instr *store =
             nir_store_shared(b, nir_u2u8(b, arg_val), exporter_addr,
@@ -636,7 +636,7 @@ compact_vertices_after_culling(nir_builder *b,
          nir_store_var(b, repacked_variables[i], arg_val, 0x1u);
       }
 
-      if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
+      if (b->shader->info.stage == MESA_SHADER_TESS_EVAL && s->deferred.uses_tess_rel_patch_id_amd) {
          nir_def *arg_val = nir_load_shared(b, 1, 8, es_vertex_lds_addr,
                                                 .base = lds_es_tes_rel_patch_id);
          nir_store_var(b, s->repacked_rel_patch_id, nir_u2u32(b, arg_val), 0x1u);
@@ -1133,14 +1133,11 @@ prepare_shader_for_culling(nir_shader *shader, nir_function_impl *impl,
 static void
 add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_cf, lower_ngg_nogs_state *s)
 {
-   bool uses_instance_id = BITSET_TEST(b->shader->info.system_values_read, SYSTEM_VALUE_INSTANCE_ID);
-   bool uses_tess_primitive_id = BITSET_TEST(b->shader->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);
-
    unsigned num_repacked_variables;
    unsigned pervertex_lds_bytes =
       ngg_nogs_get_culling_pervertex_lds_size(b->shader->info.stage,
-                                              uses_instance_id,
-                                              uses_tess_primitive_id,
+                                              s->deferred.uses_instance_id,
+                                              s->deferred.uses_tess_primitive_id,
                                               &num_repacked_variables);
 
    nir_function_impl *impl = nir_shader_get_entrypoint(b->shader);
@@ -1193,15 +1190,19 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
 
       /* Remember the current thread's shader arguments */
       if (b->shader->info.stage == MESA_SHADER_VERTEX) {
-         nir_store_var(b, repacked_variables[0], nir_load_vertex_id_zero_base(b), 0x1u);
-         if (uses_instance_id)
+         if (s->deferred.uses_vertex_id)
+            nir_store_var(b, repacked_variables[0], nir_load_vertex_id_zero_base(b), 0x1u);
+         if (s->deferred.uses_instance_id)
             nir_store_var(b, repacked_variables[1], nir_load_instance_id(b), 0x1u);
       } else if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
          nir_store_var(b, s->repacked_rel_patch_id, nir_load_tess_rel_patch_id_amd(b), 0x1u);
-         nir_def *tess_coord = nir_load_tess_coord(b);
-         nir_store_var(b, repacked_variables[0], nir_channel(b, tess_coord, 0), 0x1u);
-         nir_store_var(b, repacked_variables[1], nir_channel(b, tess_coord, 1), 0x1u);
-         if (uses_tess_primitive_id)
+         nir_def *tess_coord = (s->deferred.uses_tess_u || s->deferred.uses_tess_v) ? nir_load_tess_coord(b) : NULL;
+
+         if (s->deferred.uses_tess_u)
+            nir_store_var(b, repacked_variables[0], nir_channel(b, tess_coord, 0), 0x1u);
+         if (s->deferred.uses_tess_v)
+            nir_store_var(b, repacked_variables[1], nir_channel(b, tess_coord, 1), 0x1u);
+         if (s->deferred.uses_tess_primitive_id)
             nir_store_var(b, repacked_variables[2], nir_load_primitive_id(b), 0x1u);
       } else {
          unreachable("Should be VS or TES.");
@@ -1389,17 +1390,21 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
     * This can change if VS input loads and other stuff are lowered to eg. load_buffer_amd.
     */
 
-   if (b->shader->info.stage == MESA_SHADER_VERTEX)
-      s->overwrite_args =
-         nir_overwrite_vs_arguments_amd(b,
-            nir_load_var(b, repacked_variables[0]), nir_load_var(b, repacked_variables[1]));
-   else if (b->shader->info.stage == MESA_SHADER_TESS_EVAL)
-      s->overwrite_args =
-         nir_overwrite_tes_arguments_amd(b,
-            nir_load_var(b, repacked_variables[0]), nir_load_var(b, repacked_variables[1]),
-            nir_load_var(b, repacked_variables[2]), nir_load_var(b, s->repacked_rel_patch_id));
-   else
+   if (b->shader->info.stage == MESA_SHADER_VERTEX) {
+      nir_def *vertex_id = s->deferred.uses_vertex_id ? nir_load_var(b, repacked_variables[0]) : nir_undef(b, 1, 32);
+      nir_def *instance_id = s->deferred.uses_instance_id ? nir_load_var(b, repacked_variables[1]) : nir_undef(b, 1, 32);
+
+      s->overwrite_args = nir_overwrite_vs_arguments_amd(b, vertex_id, instance_id);
+   } else if (b->shader->info.stage == MESA_SHADER_TESS_EVAL) {
+      nir_def *u = s->deferred.uses_tess_u ? nir_load_var(b, repacked_variables[0]) : nir_undef(b, 1, 32);
+      nir_def *v = s->deferred.uses_tess_v ? nir_load_var(b, repacked_variables[1]) : nir_undef(b, 1, 32);
+      nir_def *prim_id = s->deferred.uses_tess_primitive_id ? nir_load_var(b, repacked_variables[2]) : nir_undef(b, 1, 32);
+      nir_def *rel_patch_id = s->deferred.uses_tess_rel_patch_id_amd ? nir_load_var(b, s->repacked_rel_patch_id) : nir_undef(b, 1, 32);
+
+      s->overwrite_args = nir_overwrite_tes_arguments_amd(b, u, v, prim_id, rel_patch_id);
+   } else {
       unreachable("Should be VS or TES.");
+   }
 }
 
 static void
