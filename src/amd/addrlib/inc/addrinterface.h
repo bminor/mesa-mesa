@@ -2612,8 +2612,8 @@ typedef struct _ADDR2_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT
 {
     UINT_32             size;            ///< Size of this structure in bytes
 
-    UINT_32             x;               ///< X coordinate
-    UINT_32             y;               ///< Y coordinate
+    UINT_32             x;               ///< X coordinate, in elements
+    UINT_32             y;               ///< Y coordinate, in elements
     UINT_32             slice;           ///< Slice index
     UINT_32             sample;          ///< Sample index, use fragment index for EQAA
     UINT_32             mipId;           ///< the mip ID in mip chain
@@ -2622,8 +2622,8 @@ typedef struct _ADDR2_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT
     ADDR2_SURFACE_FLAGS flags;           ///< Surface flags
     AddrResourceType    resourceType;    ///< Surface type
     UINT_32             bpp;             ///< Bits per pixel
-    UINT_32             unalignedWidth;  ///< Surface original width (of mip0)
-    UINT_32             unalignedHeight; ///< Surface original height (of mip0)
+    UINT_32             unalignedWidth;  ///< Surface original width (of mip0), in elements
+    UINT_32             unalignedHeight; ///< Surface original height (of mip0), in elements
     UINT_32             numSlices;       ///< Surface original slices (of mip0)
     UINT_32             numMipLevels;    ///< Total mipmap levels
     UINT_32             numSamples;      ///< Number of samples
@@ -2771,8 +2771,8 @@ typedef struct _ADDR2_COMPUTE_SURFACE_COORDFROMADDR_INPUT
     ADDR2_SURFACE_FLAGS flags;           ///< Surface flags
     AddrResourceType    resourceType;    ///< Surface type
     UINT_32             bpp;             ///< Bits per pixel
-    UINT_32             unalignedWidth;  ///< Surface original width (of mip0)
-    UINT_32             unalignedHeight; ///< Surface original height (of mip0)
+    UINT_32             unalignedWidth;  ///< Surface original width (of mip0), in elements
+    UINT_32             unalignedHeight; ///< Surface original height (of mip0), in elements
     UINT_32             numSlices;       ///< Surface original slices (of mip0)
     UINT_32             numMipLevels;    ///< Total mipmap levels.
     UINT_32             numSamples;      ///< Number of samples
@@ -2796,8 +2796,8 @@ typedef struct _ADDR2_COMPUTE_SURFACE_COORDFROMADDR_OUTPUT
 {
     UINT_32    size;       ///< Size of this structure in bytes
 
-    UINT_32    x;          ///< X coordinate
-    UINT_32    y;          ///< Y coordinate
+    UINT_32    x;          ///< X coordinate, in elements
+    UINT_32    y;          ///< Y coordinate, in elements
     UINT_32    slice;      ///< Index of slices
     UINT_32    sample;     ///< Index of samples, means fragment index for EQAA
     UINT_32    mipId;      ///< mipmap level id
@@ -4388,8 +4388,8 @@ typedef struct _ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT
 {
     UINT_32             size;            ///< Size of this structure in bytes
 
-    UINT_32             x;               ///< X coordinate
-    UINT_32             y;               ///< Y coordinate
+    UINT_32             x;               ///< X coordinate, in elements
+    UINT_32             y;               ///< Y coordinate, in elements
     UINT_32             slice;           ///< Slice index
     UINT_32             sample;          ///< Sample index, use fragment index for EQAA
     UINT_32             mipId;           ///< the mip ID in mip chain
@@ -4398,7 +4398,7 @@ typedef struct _ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT
     ADDR3_SURFACE_FLAGS flags;           ///< Surface flags
     AddrResourceType    resourceType;    ///< Surface type
     UINT_32             bpp;             ///< Bits per pixel
-    ADDR_EXTENT3D       unAlignedDims;   ///< Surface original dimensions (of mip0)
+    ADDR_EXTENT3D       unAlignedDims;   ///< Surface original dimensions (of mip0), in elements
     UINT_32             numMipLevels;    ///< Total mipmap levels
     UINT_32             numSamples;      ///< Number of samples
     UINT_32             pitchInElement;  ///< Pitch in elements (blocks for compressed formats)

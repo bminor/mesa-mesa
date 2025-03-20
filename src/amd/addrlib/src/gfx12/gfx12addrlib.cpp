@@ -114,6 +114,7 @@ VOID Gfx12Lib::ConvertSwizzlePatternToEquation(
     const UINT_32           blockSizeLog2 = GetBlockSizeLog2(swMode, TRUE);
 
     pEquation->numBits = blockSizeLog2;
+    pEquation->numBitComponents = 1;
     pEquation->stackedDepthSlices = FALSE;
 
     for (UINT_32 i = 0; i < elemLog2; i++)
@@ -231,15 +232,7 @@ UINT_32 Gfx12Lib::HwlGetEquationIndex(
     const ADDR3_COMPUTE_SURFACE_INFO_INPUT* pIn    ///< [in] input structure
     ) const
 {
-    UINT_32 equationIdx = ADDR_INVALID_EQUATION_INDEX;
-
-    if ((pIn->resourceType == ADDR_RSRC_TEX_2D) ||
-        (pIn->resourceType == ADDR_RSRC_TEX_3D))
-    {
-        equationIdx = GetEquationTableEntry(pIn->swizzleMode, Log2(pIn->numSamples), Log2(pIn->bpp >> 3));
-    }
-
-    return equationIdx;
+    return GetEquationTableEntry(pIn->swizzleMode, Log2(pIn->numSamples), Log2(pIn->bpp >> 3));
 }
 
 /**
@@ -669,7 +662,7 @@ UINT_32 Gfx12Lib::GetMaxNumMipsInTail(
     UINT_32 effectiveLog2 = blockSizeLog2;
     UINT_32 mipsInTail    = 1;
 
-    if (Is3dSwizzle(pSurfInfo->swizzleMode))
+    if (Is3dSwizzle(pSurfInfo->swizzleMode) && (blockSizeLog2 >= 8))
     {
         effectiveLog2 -= (blockSizeLog2 - 8) / 3;
     }
@@ -1139,61 +1132,6 @@ ADDR_E_RETURNCODE Gfx12Lib::HwlComputePipeBankXor(
 
 /**
 ************************************************************************************************************************
-*   Gfx12Lib::ComputeOffsetFromEquation
-*
-*   @brief
-*       Compute offset from equation
-*
-*   @return
-*       Offset
-************************************************************************************************************************
-*/
-UINT_32 Gfx12Lib::ComputeOffsetFromEquation(
-    const ADDR_EQUATION* pEq,   ///< Equation
-    UINT_32              x,     ///< x coord in bytes
-    UINT_32              y,     ///< y coord in pixel
-    UINT_32              z,     ///< z coord in slice
-    UINT_32              s      ///< MSAA sample index
-    ) const
-{
-    UINT_32 offset = 0;
-
-    for (UINT_32 i = 0; i < pEq->numBits; i++)
-    {
-        UINT_32 v = 0;
-
-        if (pEq->addr[i].valid)
-        {
-            if (pEq->addr[i].channel == 0)
-            {
-                v ^= (x >> pEq->addr[i].index) & 1;
-            }
-            else if (pEq->addr[i].channel == 1)
-            {
-                v ^= (y >> pEq->addr[i].index) & 1;
-            }
-            else if (pEq->addr[i].channel == 2)
-            {
-                v ^= (z >> pEq->addr[i].index) & 1;
-            }
-            else if (pEq->addr[i].channel == 3)
-            {
-                v ^= (s >> pEq->addr[i].index) & 1;
-            }
-            else
-            {
-                ADDR_ASSERT_ALWAYS();
-            }
-        }
-
-        offset |= (v << i);
-    }
-
-    return offset;
-}
-
-/**
-************************************************************************************************************************
 *   Gfx12Lib::GetSwizzlePatternInfo
 *
 *   @brief
@@ -1381,6 +1319,9 @@ BOOL_32 Gfx12Lib::HwlInitGlobalParams(
 
     m_numSwizzleBits = ((m_pipesLog2 >= 3) ? m_pipesLog2 - 2 : 0);
 
+    // Gfx10+ chips treat packed 8-bit 422 formats as 32bpe with 2pix/elem.
+    m_configFlags.use32bppFor422Fmt = TRUE;
+
     if (valid)
     {
         InitEquationTable();
@@ -1484,7 +1425,6 @@ ADDR_E_RETURNCODE Gfx12Lib::HwlComputeNonBlockCompressedView(
 
             if (inTail)
             {
-                // For mipmap level that is in mip tail block, hack a lot of things...
                 // Basically all mipmap levels in tail block will be viewed as a small mipmap chain that all levels
                 // are fit in tail block:
 

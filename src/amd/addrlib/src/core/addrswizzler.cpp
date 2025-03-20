@@ -223,7 +223,7 @@ UINT_32 LutAddresser::EvalEquation(
             UINT_32 xSrcs = m_bit[i].x;
             while (xSrcs != 0)
             {
-                UINT_32 xIdx = BitScanForward(xSrcs);
+                UINT_32 xIdx = BitMaskScanForward(xSrcs);
                 out ^= (((x >> xIdx) & 1) << i);
                 xSrcs = UnsetLeastBit(xSrcs);
             }
@@ -234,7 +234,7 @@ UINT_32 LutAddresser::EvalEquation(
             UINT_32 ySrcs = m_bit[i].y;
             while (ySrcs != 0)
             {
-                UINT_32 yIdx = BitScanForward(ySrcs);
+                UINT_32 yIdx = BitMaskScanForward(ySrcs);
                 out ^= (((y >> yIdx) & 1) << i);
                 ySrcs = UnsetLeastBit(ySrcs);
             }
@@ -245,7 +245,7 @@ UINT_32 LutAddresser::EvalEquation(
             UINT_32 zSrcs = m_bit[i].z;
             while (zSrcs != 0)
             {
-                UINT_32 zIdx = BitScanForward(zSrcs);
+                UINT_32 zIdx = BitMaskScanForward(zSrcs);
                 out ^= (((z >> zIdx) & 1) << i);
                 zSrcs = UnsetLeastBit(zSrcs);
             }
@@ -256,7 +256,7 @@ UINT_32 LutAddresser::EvalEquation(
             UINT_32 sSrcs = m_bit[i].s;
             while (sSrcs != 0)
             {
-                UINT_32 sIdx = BitScanForward(sSrcs);
+                UINT_32 sIdx = BitMaskScanForward(sSrcs);
                 out ^= (((s >> sIdx) & 1) << i);
                 sSrcs = UnsetLeastBit(sSrcs);
             }

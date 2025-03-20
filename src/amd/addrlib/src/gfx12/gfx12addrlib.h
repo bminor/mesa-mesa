@@ -234,13 +234,6 @@ private:
         };
     }
 
-    UINT_32 ComputeOffsetFromEquation(
-        const ADDR_EQUATION* pEq,
-        UINT_32              x,
-        UINT_32              y,
-        UINT_32              z,
-        UINT_32              s) const;
-
     const ADDR_SW_PATINFO* GetSwizzlePatternInfo(
         Addr3SwizzleMode swizzleMode,
         UINT_32          log2Elem,

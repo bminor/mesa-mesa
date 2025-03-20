@@ -1167,5 +1167,59 @@ ADDR_E_RETURNCODE Lib::ComputeSurfaceInfoSanityCheck(
     return HwlValidateNonSwModeParams(&localIn) ? ADDR_OK : ADDR_INVALIDPARAMS;
 }
 
+
+/**
+************************************************************************************************************************
+*   Lib::ComputeOffsetFromEquation
+*
+*   @brief
+*       Compute offset from equation
+*
+*   @return
+*       Offset
+************************************************************************************************************************
+*/
+UINT_32 Lib::ComputeOffsetFromEquation(
+    const ADDR_EQUATION* pEq,   ///< Equation
+    UINT_32              x,     ///< x coord in bytes
+    UINT_32              y,     ///< y coord in pixel
+    UINT_32              z,     ///< z coord in slice
+    UINT_32              s)      ///< MSAA sample index
+{
+    UINT_32 offset = 0;
+
+    for (UINT_32 i = 0; i < pEq->numBits; i++)
+    {
+        UINT_32 v = 0;
+
+        for (UINT_32 c = 0; c < pEq->numBitComponents; c++)
+        {
+            if (pEq->comps[c][i].valid)
+            {
+                if (pEq->comps[c][i].channel == 0)
+                {
+                    v ^= (x >> pEq->comps[c][i].index) & 1;
+                }
+                else if (pEq->comps[c][i].channel == 1)
+                {
+                    v ^= (y >> pEq->comps[c][i].index) & 1;
+                }
+                else if (pEq->comps[c][i].channel == 2)
+                {
+                    v ^= (z >> pEq->comps[c][i].index) & 1;
+                }
+                else if (pEq->comps[c][i].channel == 3)
+                {
+                    v ^= (s >> pEq->comps[c][i].index) & 1;
+                }
+            }
+        }
+
+        offset |= (v << i);
+    }
+
+    return offset;
+}
+
 } // V3
 } // Addr

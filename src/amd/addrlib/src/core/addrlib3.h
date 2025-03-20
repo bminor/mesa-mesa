@@ -105,10 +105,7 @@ public:
     static Lib* GetLib(
         ADDR_HANDLE hLib);
 
-    virtual UINT_32 GetInterfaceVersion() const
-    {
-        return 3;
-    }
+    UINT_32 GetInterfaceVersion() const override { return 3; }
 
     //
     // Interface stubs
@@ -206,6 +203,13 @@ protected:
         return res;
     }
 
+    static UINT_32 ComputeOffsetFromEquation(
+        const ADDR_EQUATION* pEq,
+        UINT_32              x,
+        UINT_32              y,
+        UINT_32              z,
+        UINT_32              s);
+
     const ADDR_EXTENT3D GetBlockDimensionTableEntry(
         Addr3SwizzleMode swMode,
         UINT_32          msaaLog2,
@@ -283,21 +287,13 @@ protected:
 
     // The max alignment is tied to the swizzle mode and since the largest swizzle mode is 256kb, so the maximal
     // alignment is also 256kb.
-    virtual UINT_32 HwlComputeMaxBaseAlignments() const { return Size256K; }
+    UINT_32 HwlComputeMaxBaseAlignments() const override { return Size256K; }
 
     virtual ADDR_E_RETURNCODE HwlGetPossibleSwizzleModes(
         const ADDR3_GET_POSSIBLE_SWIZZLE_MODE_INPUT*   pIn,
         ADDR3_GET_POSSIBLE_SWIZZLE_MODE_OUTPUT*        pOut) const = 0;
 
-    virtual BOOL_32 HwlInitGlobalParams(const ADDR_CREATE_INPUT* pCreateIn)
-    {
-        ADDR_NOT_IMPLEMENTED();
-        // Although GFX12 addressing should be consistent regardless of the configuration, we still need to
-        // call some initialization for member variables.
-        return TRUE;
-    }
-
-    virtual UINT_32 HwlComputeMaxMetaBaseAlignments() const { return 0; }
+    UINT_32 HwlComputeMaxMetaBaseAlignments() const override { return 0; }
 
     virtual ADDR_E_RETURNCODE HwlComputeSurfaceInfo(
          const ADDR3_COMPUTE_SURFACE_INFO_INPUT* pIn,

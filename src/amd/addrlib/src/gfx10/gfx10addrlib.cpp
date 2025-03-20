@@ -929,6 +929,9 @@ BOOL_32 Gfx10Lib::HwlInitGlobalParams(
             break;
     }
 
+    // Gfx10+ chips treat packed 8-bit 422 formats as 32bpe with 2pix/elem.
+    m_configFlags.use32bppFor422Fmt = TRUE;
+
     // Skip unaligned case
     m_xmaskBaseIndex += MaxNumOfBppCMask;
     m_htileBaseIndex += MaxNumOfAA;
@@ -1089,8 +1092,6 @@ ChipFamily Gfx10Lib::HwlConvertChipFamily(
             ADDR_ASSERT(!"Unknown chip family");
             break;
     }
-
-    m_configFlags.use32bppFor422Fmt = TRUE;
 
     return family;
 }
@@ -2388,7 +2389,6 @@ ADDR_E_RETURNCODE Gfx10Lib::HwlComputeNonBlockCompressedView(
 
             if (inTail)
             {
-                // For mipmap level that is in mip tail block, hack a lot of things...
                 // Basically all mipmap levels in tail block will be viewed as a small mipmap chain that all levels
                 // are fit in tail block:
 
