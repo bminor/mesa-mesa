@@ -785,7 +785,7 @@ impl Device {
             1 << 26,
             min(
                 self.max_mem_alloc(),
-                self.screen.caps().max_shader_buffer_size as u64,
+                self.screen.caps().max_shader_buffer_size.into(),
             ),
         )
     }
@@ -1003,17 +1003,20 @@ impl Device {
         self.screen.compute_caps().max_local_size as cl_ulong
     }
 
-    pub fn max_block_sizes(&self) -> Vec<usize> {
-        let v: [u32; 3] = self.screen.compute_caps().max_block_size;
-        v.into_iter().map(|v| v as usize).collect()
+    pub fn max_block_sizes(&self) -> [usize; 3] {
+        self.screen
+            .compute_caps()
+            .max_block_size
+            .map(|value| value as usize)
     }
 
-    pub fn max_grid_size(&self) -> Vec<usize> {
-        let v: [u32; 3] = self.screen.compute_caps().max_grid_size;
-        v.into_iter()
-            .map(|a| min(a, Platform::dbg().max_grid_size))
-            .map(|v| v as usize)
-            .collect()
+    pub fn max_grid_size(&self) -> [usize; 3] {
+        self.screen
+            .compute_caps()
+            .max_grid_size
+            .map(|screen_max_grid_size| {
+                min(screen_max_grid_size, Platform::dbg().max_grid_size) as usize
+            })
     }
 
     pub fn max_clock_freq(&self) -> cl_uint {

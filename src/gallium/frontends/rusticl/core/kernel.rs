@@ -122,7 +122,7 @@ impl KernelArgType {
 
 #[derive(Hash, PartialEq, Eq, Clone)]
 enum CompiledKernelArgType {
-    APIArg(u32),
+    APIArg(usize),
     ConstantBuffer,
     GlobalWorkOffsets,
     GlobalWorkSize,
@@ -235,7 +235,7 @@ struct CompiledKernelArg {
     kind: CompiledKernelArgType,
     /// The binding for image/sampler args, the offset into the input buffer
     /// for anything else.
-    offset: u32,
+    offset: usize,
     dead: bool,
 }
 
@@ -254,7 +254,7 @@ impl CompiledKernelArg {
                 var.data.binding
             } else {
                 var.data.driver_location
-            };
+            } as usize;
         }
     }
 
@@ -262,7 +262,7 @@ impl CompiledKernelArg {
         unsafe {
             blob_write_uint16(blob, args.len() as u16);
             for arg in args {
-                blob_write_uint32(blob, arg.offset);
+                blob_write_uint32(blob, arg.offset as u32);
                 blob_write_uint8(blob, arg.dead.into());
                 match arg.kind {
                     CompiledKernelArgType::ConstantBuffer => blob_write_uint8(blob, 0),
@@ -282,7 +282,7 @@ impl CompiledKernelArg {
                     CompiledKernelArgType::GlobalWorkSize => blob_write_uint8(blob, 9),
                     CompiledKernelArgType::APIArg(idx) => {
                         blob_write_uint8(blob, 10);
-                        blob_write_uint32(blob, idx)
+                        blob_write_uint32(blob, idx as u32)
                     }
                 };
             }
@@ -295,7 +295,7 @@ impl CompiledKernelArg {
             let mut res = Vec::with_capacity(len);
 
             for _ in 0..len {
-                let offset = blob_read_uint32(blob);
+                let offset = blob_read_uint32(blob) as usize;
                 let dead = blob_read_uint8(blob) != 0;
 
                 let kind = match blob_read_uint8(blob) {
@@ -315,7 +315,7 @@ impl CompiledKernelArg {
                     8 => CompiledKernelArgType::NumWorkgroups,
                     9 => CompiledKernelArgType::GlobalWorkSize,
                     10 => {
-                        let idx = blob_read_uint32(blob);
+                        let idx = blob_read_uint32(blob) as usize;
                         CompiledKernelArgType::APIArg(idx)
                     }
                     _ => return None,
@@ -1009,7 +1009,7 @@ fn compile_nir_variant(
     /* update the has_variable_shared_mem info as we might have DCEed all of them */
     nir.set_has_variable_shared_mem(compiled_args.iter().any(|arg| {
         if let CompiledKernelArgType::APIArg(idx) = arg.kind {
-            args[idx as usize].kind == KernelArgType::MemLocal && !arg.dead
+            args[idx].kind == KernelArgType::MemLocal && !arg.dead
         } else {
             false
         }
@@ -1042,7 +1042,7 @@ fn compile_nir_remaining(
     // add all API kernel args
     let mut compiled_args: Vec<_> = (0..args.len())
         .map(|idx| CompiledKernelArg {
-            kind: CompiledKernelArgType::APIArg(idx as u32),
+            kind: CompiledKernelArgType::APIArg(idx),
             offset: 0,
             dead: true,
         })
@@ -1196,7 +1196,7 @@ pub(super) fn convert_spirv_to_nir(
 
                 for arg in &build.compiled_args {
                     if let CompiledKernelArgType::APIArg(idx) = arg.kind {
-                        args[idx as usize].dead &= arg.dead;
+                        args[idx].dead &= arg.dead;
                     }
                 }
             }
@@ -1351,7 +1351,7 @@ impl Kernel {
         self.optimize_local_size(q.device, &mut grid, &mut block);
 
         Ok(Box::new(move |q, ctx| {
-            let hw_max_grid: Vec<usize> = q.device.max_grid_size();
+            let hw_max_grid = q.device.max_grid_size();
 
             let variant = if offsets == [0; 3]
                 && grid[0] <= hw_max_grid[0]
@@ -1432,23 +1432,23 @@ impl Kernel {
 
             for arg in &nir_kernel_build.compiled_args {
                 let is_opaque = if let CompiledKernelArgType::APIArg(idx) = arg.kind {
-                    kernel_info.args[idx as usize].kind.is_opaque()
+                    kernel_info.args[idx].kind.is_opaque()
                 } else {
                     false
                 };
 
-                if !is_opaque && arg.offset as usize > input.len() {
-                    input.resize(arg.offset as usize, 0);
+                if !is_opaque && arg.offset > input.len() {
+                    input.resize(arg.offset, 0);
                 }
 
                 match arg.kind {
                     CompiledKernelArgType::APIArg(idx) => {
-                        let api_arg = &kernel_info.args[idx as usize];
+                        let api_arg = &kernel_info.args[idx];
                         if api_arg.dead {
                             continue;
                         }
 
-                        let Some(value) = &arg_values[idx as usize] else {
+                        let Some(value) = &arg_values[idx] else {
                             continue;
                         };
 
@@ -1480,11 +1480,10 @@ impl Kernel {
                                     (&mut tex_formats, &mut tex_orders)
                                 };
 
-                                let binding = arg.offset as usize;
-                                assert!(binding >= formats.len());
+                                assert!(arg.offset >= formats.len());
 
-                                formats.resize(binding, 0);
-                                orders.resize(binding, 0);
+                                formats.resize(arg.offset, 0);
+                                orders.resize(arg.offset, 0);
 
                                 formats.push(image.image_format.image_channel_data_type as u16);
                                 orders.push(image.image_format.image_channel_order as u16);
@@ -1655,8 +1654,8 @@ impl Kernel {
         Ok(())
     }
 
-    pub fn access_qualifier(&self, idx: cl_uint) -> cl_kernel_arg_access_qualifier {
-        let aq = self.kernel_info.args[idx as usize].spirv.access_qualifier;
+    pub fn access_qualifier(&self, idx: usize) -> cl_kernel_arg_access_qualifier {
+        let aq = self.kernel_info.args[idx].spirv.access_qualifier;
 
         if aq
             == clc_kernel_arg_access_qualifier::CLC_KERNEL_ARG_ACCESS_READ
@@ -1672,8 +1671,8 @@ impl Kernel {
         }
     }
 
-    pub fn address_qualifier(&self, idx: cl_uint) -> cl_kernel_arg_address_qualifier {
-        match self.kernel_info.args[idx as usize].spirv.address_qualifier {
+    pub fn address_qualifier(&self, idx: usize) -> cl_kernel_arg_address_qualifier {
+        match self.kernel_info.args[idx].spirv.address_qualifier {
             clc_kernel_arg_address_qualifier::CLC_KERNEL_ARG_ADDRESS_PRIVATE => {
                 CL_KERNEL_ARG_ADDRESS_PRIVATE
             }
@@ -1689,8 +1688,8 @@ impl Kernel {
         }
     }
 
-    pub fn type_qualifier(&self, idx: cl_uint) -> cl_kernel_arg_type_qualifier {
-        let tq = self.kernel_info.args[idx as usize].spirv.type_qualifier;
+    pub fn type_qualifier(&self, idx: usize) -> cl_kernel_arg_type_qualifier {
+        let tq = self.kernel_info.args[idx].spirv.type_qualifier;
         let zero = clc_kernel_arg_type_qualifier(0);
         let mut res = CL_KERNEL_ARG_TYPE_NONE;
 
@@ -1721,13 +1720,13 @@ impl Kernel {
         self.kernel_info.subgroup_size
     }
 
-    pub fn arg_name(&self, idx: cl_uint) -> Option<&CStr> {
-        let name = &self.kernel_info.args[idx as usize].spirv.name;
+    pub fn arg_name(&self, idx: usize) -> Option<&CStr> {
+        let name = &self.kernel_info.args[idx].spirv.name;
         name.is_empty().not().then_some(name)
     }
 
-    pub fn arg_type_name(&self, idx: cl_uint) -> Option<&CStr> {
-        let type_name = &self.kernel_info.args[idx as usize].spirv.type_name;
+    pub fn arg_type_name(&self, idx: usize) -> Option<&CStr> {
+        let type_name = &self.kernel_info.args[idx].spirv.type_name;
         type_name.is_empty().not().then_some(type_name)
     }
 

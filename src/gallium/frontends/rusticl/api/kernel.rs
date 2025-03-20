@@ -50,8 +50,10 @@ unsafe impl CLInfoObj<cl_kernel_arg_info, cl_uint> for cl_kernel {
     fn query(&self, idx: cl_uint, q: cl_kernel_arg_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let kernel = Kernel::ref_from_raw(*self)?;
 
+        let idx = idx as usize;
+
         // CL_INVALID_ARG_INDEX if arg_index is not a valid argument index.
-        if idx as usize >= kernel.kernel_info.args.len() {
+        if idx >= kernel.kernel_info.args.len() {
             return Err(CL_INVALID_ARG_INDEX);
         }
 

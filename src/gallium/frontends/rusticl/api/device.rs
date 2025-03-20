@@ -100,7 +100,7 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             }
             CL_DEVICE_HOST_UNIFIED_MEMORY => v.write::<bool>(dev.unified_memory()),
             CL_DEVICE_IL_VERSION => v.write::<&CStr>(SPIRV_SUPPORT_STRING),
-            CL_DEVICE_ILS_WITH_VERSION => v.write::<Vec<cl_name_version>>(SPIRV_SUPPORT.to_vec()),
+            CL_DEVICE_ILS_WITH_VERSION => v.write::<&[cl_name_version]>(&SPIRV_SUPPORT),
             CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT => {
                 v.write::<cl_uint>(dev.image_base_address_alignment())
             }
@@ -189,7 +189,7 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             CL_DEVICE_MAX_SAMPLERS => v.write::<cl_uint>(dev.max_samplers()),
             CL_DEVICE_MAX_WORK_GROUP_SIZE => v.write::<usize>(dev.max_threads_per_block()),
             CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS => v.write::<cl_uint>(dev.max_grid_dimensions()),
-            CL_DEVICE_MAX_WORK_ITEM_SIZES => v.write::<Vec<usize>>(dev.max_block_sizes()),
+            CL_DEVICE_MAX_WORK_ITEM_SIZES => v.write::<&[usize]>(&dev.max_block_sizes()),
             CL_DEVICE_MAX_WRITE_IMAGE_ARGS => v.write::<cl_uint>(dev.caps.max_write_images),
             // TODO proper retrival from devices
             CL_DEVICE_MEM_BASE_ADDR_ALIGN => v.write::<cl_uint>(0x1000),
