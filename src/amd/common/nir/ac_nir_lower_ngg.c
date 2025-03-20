@@ -934,29 +934,22 @@ save_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
 }
 
 /**
- * Reuses suitable variables from the top part of the shader,
- * by deleting their stores from the bottom part.
+ * Reuses suitable variables from the non-deferred (top) part of the shader,
+ * by deleting their stores from the deferred (bottom) part.
  */
 static void
-apply_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
+apply_reusable_variables(nir_function_impl *impl, lower_ngg_nogs_state *s)
 {
    if (!u_vector_length(&s->reusable_nondeferred_variables)) {
       u_vector_finish(&s->reusable_nondeferred_variables);
       return;
    }
 
-   nir_foreach_block_reverse_safe(block, b->impl) {
+   nir_foreach_block_reverse_safe(block, impl) {
       nir_foreach_instr_reverse_safe(instr, block) {
          if (instr->type != nir_instr_type_intrinsic)
             continue;
          nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-         /* When we found any of these intrinsics, it means
-          * we reached the top part and we must stop.
-          */
-         if (intrin->intrinsic == nir_intrinsic_sendmsg_amd)
-            goto done;
-
          if (intrin->intrinsic != nir_intrinsic_store_deref)
             continue;
          nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
@@ -972,7 +965,6 @@ apply_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
       }
    }
 
-   done:
    u_vector_finish(&s->reusable_nondeferred_variables);
 }
 
@@ -1056,6 +1048,35 @@ ngg_nogs_get_culling_pervertex_lds_size(gl_shader_stage stage,
    return (lds_es_arg_0 + num_repacked * 4u) | 4u;
 }
 
+static nir_cf_list *
+prepare_shader_for_culling(nir_shader *shader, nir_function_impl *impl,
+                           nir_cf_list *original_extracted_cf, lower_ngg_nogs_state *s)
+{
+   /* Reinsert a clone of the original shader code. */
+   struct hash_table *orig_remap_table = _mesa_pointer_hash_table_create(NULL);
+   nir_cf_list_clone_and_reinsert(original_extracted_cf, &impl->cf_node, nir_after_impl(impl), orig_remap_table);
+   _mesa_hash_table_destroy(orig_remap_table, NULL);
+
+   /* Apply reusable variables. */
+   apply_reusable_variables(impl, s);
+   apply_repacked_pos_outputs(shader, s);
+
+   /* Cleanup. This is done so that we can accurately gather info from the deferred part. */
+   bool progress;
+   do {
+      progress = false;
+      NIR_PASS(progress, shader, nir_opt_undef);
+      NIR_PASS(progress, shader, nir_copy_prop);
+      NIR_PASS(progress, shader, nir_opt_dce);
+      NIR_PASS(progress, shader, nir_opt_dead_cf);
+   } while (progress);
+
+   /* Extract the shader code again. This will be reinserted as the deferred shader part. */
+   nir_cf_list *prepared_extracted = rzalloc(shader, nir_cf_list);
+   nir_cf_extract(prepared_extracted, nir_before_impl(impl), nir_after_impl(impl));
+   return prepared_extracted;
+}
+
 static void
 add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_cf, lower_ngg_nogs_state *s)
 {
@@ -1113,10 +1134,8 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
        */
       nir_store_var(b, s->position_value_var, nir_imm_vec4(b, 0.0f, 0.0f, 0.0f, 1.0f), 0xfu);
 
-      /* Now reinsert a clone of the shader code */
-      struct hash_table *remap_table = _mesa_pointer_hash_table_create(NULL);
-      nir_cf_list_clone_and_reinsert(original_extracted_cf, &if_es_thread->cf_node, b->cursor, remap_table);
-      _mesa_hash_table_destroy(remap_table, NULL);
+      /* Now reinsert the shader code. */
+      nir_cf_reinsert(original_extracted_cf, b->cursor);
       b->cursor = nir_after_cf_list(&if_es_thread->then_list);
 
       /* Remember the current thread's shader arguments */
@@ -1651,9 +1670,16 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       save_reusable_variables(b, &state);
    }
 
-   nir_cf_list extracted;
-   nir_cf_extract(&extracted, nir_before_impl(impl),
+   nir_cf_list *extracted = rzalloc(shader, nir_cf_list);
+   nir_cf_extract(extracted, nir_before_impl(impl),
                   nir_after_impl(impl));
+   nir_cf_list *non_deferred_cf = NULL;
+
+   if (options->can_cull) {
+      non_deferred_cf = extracted;
+      extracted = prepare_shader_for_culling(shader, impl, extracted, &state);
+   }
+
    b->cursor = nir_before_impl(impl);
 
    ngg_nogs_init_vertex_indices_vars(b, impl, &state);
@@ -1687,7 +1713,9 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       else
          nir_store_var(b, prim_exp_arg_var, emit_ngg_nogs_prim_exp_arg(b, &state), 0x1u);
    } else {
-      add_deferred_attribute_culling(b, &extracted, &state);
+      add_deferred_attribute_culling(b, non_deferred_cf, &state);
+
+      ralloc_free(non_deferred_cf);
       b->cursor = nir_after_impl(impl);
 
       if (state.early_prim_export)
@@ -1736,21 +1764,14 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    nir_if *if_es_thread = nir_push_if(b, es_thread);
    {
       /* Run the actual shader */
-      nir_cf_reinsert(&extracted, b->cursor);
+      nir_cf_reinsert(extracted, b->cursor);
+      ralloc_free(extracted);
       b->cursor = nir_after_cf_list(&if_es_thread->then_list);
 
       if (options->export_primitive_id)
          emit_store_ngg_nogs_es_primitive_id(b, &state);
    }
    nir_pop_if(b, if_es_thread);
-
-   if (options->can_cull) {
-      /* Replace uniforms. */
-      apply_reusable_variables(b, &state);
-
-      /* Reuse the position value calculated in the non-deferred shader part. */
-      apply_repacked_pos_outputs(shader, &state);
-   }
 
    /* Gather outputs data and types */
    ngg_nogs_gather_outputs(b, &if_es_thread->then_list, &state);
