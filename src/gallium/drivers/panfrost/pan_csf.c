@@ -690,9 +690,13 @@ csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
                                          batch->key.height,
                                          dev->tiler_features.max_levels);
 
-      /* For effective tile size larger than 16x16, disable first level */
-      if (fb->tile_size > 16 * 16)
-         tiler.hierarchy_mask &= ~1;
+      /* Disable hierarchies falling under the effective tile size. */
+      uint32_t disable_hierarchies;
+      for (disable_hierarchies = 0;
+           fb->tile_size > (16 * 16) << (disable_hierarchies * 2);
+           disable_hierarchies++)
+         ;
+      tiler.hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
 
       tiler.fb_width = batch->key.width;
       tiler.fb_height = batch->key.height;
