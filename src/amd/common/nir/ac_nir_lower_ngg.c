@@ -57,6 +57,16 @@ typedef struct
 
    struct u_vector reusable_nondeferred_variables;
 
+   /** Information about the deferred shader part, if culling is enabled. */
+   struct {
+      bool uses_vertex_id : 1;
+      bool uses_instance_id : 1;
+      bool uses_tess_u : 1;
+      bool uses_tess_v : 1;
+      bool uses_tess_rel_patch_id_amd : 1;
+      bool uses_tess_primitive_id : 1;
+   } deferred;
+
    bool early_prim_export;
    bool streamout_enabled;
    bool has_user_edgeflags;
@@ -1070,6 +1080,49 @@ prepare_shader_for_culling(nir_shader *shader, nir_function_impl *impl,
       NIR_PASS(progress, shader, nir_opt_dce);
       NIR_PASS(progress, shader, nir_opt_dead_cf);
    } while (progress);
+
+   s->deferred.uses_tess_primitive_id = s->options->export_primitive_id;
+
+   /* Gather what the deferred shader part uses. */
+   nir_foreach_block(block, impl) {
+      nir_foreach_instr(instr, block) {
+         if (instr->type != nir_instr_type_intrinsic)
+            continue;
+
+         nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+
+         switch (intrin->intrinsic) {
+         case nir_intrinsic_load_vertex_id:
+         case nir_intrinsic_load_vertex_id_zero_base:
+            s->deferred.uses_vertex_id = true;
+            break;
+         case nir_intrinsic_load_instance_id:
+            s->deferred.uses_instance_id = true;
+            break;
+         case nir_intrinsic_load_input: {
+            const nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+            if (s->options->instance_rate_inputs & BITFIELD_BIT(io_sem.location))
+               s->deferred.uses_instance_id = true;
+            else
+               s->deferred.uses_vertex_id = true;
+            break;
+         }
+         case nir_intrinsic_load_tess_coord:
+            s->deferred.uses_tess_u = true;
+            s->deferred.uses_tess_v = true;
+            break;
+         case nir_intrinsic_load_tess_rel_patch_id_amd:
+            s->deferred.uses_tess_rel_patch_id_amd = true;
+            break;
+         case nir_intrinsic_load_primitive_id:
+            if (shader->info.stage == MESA_SHADER_TESS_EVAL)
+               s->deferred.uses_tess_primitive_id = true;
+            break;
+         default:
+            break;
+         }
+      }
+   }
 
    /* Extract the shader code again. This will be reinserted as the deferred shader part. */
    nir_cf_list *prepared_extracted = rzalloc(shader, nir_cf_list);
