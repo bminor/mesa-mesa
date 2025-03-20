@@ -147,6 +147,15 @@ panfrost_max_effective_tile_size(unsigned arch)
    return 16 * 16;
 }
 
+static inline unsigned
+panfrost_meta_tile_size(unsigned arch)
+{
+   if (arch >= 12)
+      return 64;
+
+   return 32;
+}
+
 /* Returns the maximum usable color tilebuffer-size. This is *usually* twice
  * the optimal tilebuffer-size, but not always.
  */

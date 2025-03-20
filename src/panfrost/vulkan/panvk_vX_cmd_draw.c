@@ -533,17 +533,19 @@ void
 panvk_per_arch(cmd_preload_render_area_border)(
    struct panvk_cmd_buffer *cmdbuf, const VkRenderingInfo *render_info)
 {
+   const unsigned meta_tile_size = panfrost_meta_tile_size(PAN_ARCH);
    struct panvk_cmd_graphics_state *state = &cmdbuf->state.gfx;
    struct pan_fb_info *fbinfo = &state->render.fb.info;
-   bool render_area_is_32x32_aligned =
-      ((fbinfo->extent.minx | fbinfo->extent.miny) % 32) == 0 &&
-      (fbinfo->extent.maxx + 1 == fbinfo->width ||
-       (fbinfo->extent.maxx % 32) == 31) &&
-      (fbinfo->extent.maxy + 1 == fbinfo->height ||
-       (fbinfo->extent.maxy % 32) == 31);
 
-   /* If the render area is aligned on a 32x32 section, we're good. */
-   if (!render_area_is_32x32_aligned)
+   bool render_area_is_aligned =
+      ((fbinfo->extent.minx | fbinfo->extent.miny) % meta_tile_size) == 0 &&
+      (fbinfo->extent.maxx + 1 == fbinfo->width ||
+       (fbinfo->extent.maxx % meta_tile_size) == (meta_tile_size - 1)) &&
+      (fbinfo->extent.maxy + 1 == fbinfo->height ||
+       (fbinfo->extent.maxy % meta_tile_size) == (meta_tile_size - 1));
+
+   /* If the render area is aligned on the meta tile size, we're good. */
+   if (!render_area_is_aligned)
       panvk_per_arch(cmd_force_fb_preload)(cmdbuf, render_info);
 }
 
