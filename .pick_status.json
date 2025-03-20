@@ -4294,7 +4294,7 @@
         "description": "panvk/csf: rework cache flush reduction",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "28e4d2249725ddc3d4dd031820e209c3bc4183ad",
         "notes": null
