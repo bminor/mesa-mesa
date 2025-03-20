@@ -400,50 +400,35 @@ remove_culling_shader_outputs(nir_shader *culling_shader, lower_ngg_nogs_state *
 }
 
 static void
-rewrite_uses_to_var(nir_builder *b, nir_def *old_def, nir_variable *replacement_var, unsigned replacement_var_channel)
+replace_scalar_component_uses(nir_builder *b, nir_scalar old, nir_scalar rep)
 {
-   if (old_def->parent_instr->type == nir_instr_type_load_const)
+   if (old.def->parent_instr->type == nir_instr_type_load_const)
       return;
 
-   b->cursor = nir_after_instr(old_def->parent_instr);
-   if (b->cursor.instr->type == nir_instr_type_phi)
-      b->cursor = nir_after_phis(old_def->parent_instr->block);
+   assert(old.def->bit_size == rep.def->bit_size);
 
-   nir_def *pos_val_rep = nir_load_var(b, replacement_var);
-   nir_def *replacement = nir_channel(b, pos_val_rep, replacement_var_channel);
-
-   if (old_def->num_components > 1) {
-      /* old_def uses a swizzled vector component.
-       * There is no way to replace the uses of just a single vector component,
-       * so instead create a new vector and replace all uses of the old vector.
-       */
-      nir_def *old_def_elements[NIR_MAX_VEC_COMPONENTS] = {0};
-      for (unsigned j = 0; j < old_def->num_components; ++j)
-         old_def_elements[j] = nir_channel(b, old_def, j);
-      replacement = nir_vec(b, old_def_elements, old_def->num_components);
+   nir_def *dst[NIR_MAX_VEC_COMPONENTS] = {0};
+   for (unsigned dst_comp = 0; dst_comp < old.def->num_components; ++dst_comp) {
+      nir_scalar old_dst = nir_get_scalar(old.def, dst_comp);
+      nir_scalar new_dst = dst_comp == old.comp ? rep : old_dst;
+      dst[dst_comp] = nir_channel(b, new_dst.def, new_dst.comp);
    }
 
-   nir_def_rewrite_uses_after(old_def, replacement, replacement->parent_instr);
+   nir_def *replacement = nir_vec(b, dst, old.def->num_components);
+   nir_def_rewrite_uses_after(old.def, replacement, replacement->parent_instr);
 }
 
 static bool
-remove_extra_pos_output(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
+apply_repacked_pos_output(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_ngg_nogs_state *s = (lower_ngg_nogs_state *) state;
 
-   /* These are not allowed in VS / TES */
-   assert(intrin->intrinsic != nir_intrinsic_store_per_vertex_output &&
-          intrin->intrinsic != nir_intrinsic_load_per_vertex_input);
-
-   /* We are only interested in output stores now */
    if (intrin->intrinsic != nir_intrinsic_store_output)
       return false;
 
    nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
    if (io_sem.location != VARYING_SLOT_POS)
       return false;
-
-   b->cursor = nir_before_instr(&intrin->instr);
 
    /* In case other outputs use what we calculated for pos,
     * try to avoid calculating it again by rewriting the usages
@@ -452,47 +437,21 @@ remove_extra_pos_output(nir_builder *b, nir_intrinsic_instr *intrin, void *state
    nir_def *store_val = intrin->src[0].ssa;
    unsigned store_pos_component = nir_intrinsic_component(intrin);
 
-   nir_instr_remove(&intrin->instr);
+   for (unsigned comp = 0; comp < store_val->num_components; ++comp) {
+      nir_scalar val = nir_scalar_chase_movs(nir_get_scalar(store_val, comp));
+      b->cursor = nir_after_instr_and_phis(val.def->parent_instr);
+      nir_def *reloaded = nir_load_var(b, s->position_value_var);
 
-   if (store_val->parent_instr->type == nir_instr_type_alu) {
-      nir_alu_instr *alu = nir_instr_as_alu(store_val->parent_instr);
-      if (nir_op_is_vec_or_mov(alu->op)) {
-         /* Output store uses a vector, we can easily rewrite uses of each vector element. */
-
-         unsigned num_vec_src = 0;
-         if (alu->op == nir_op_mov)
-            num_vec_src = 1;
-         else if (alu->op == nir_op_vec2)
-            num_vec_src = 2;
-         else if (alu->op == nir_op_vec3)
-            num_vec_src = 3;
-         else if (alu->op == nir_op_vec4)
-            num_vec_src = 4;
-         assert(num_vec_src);
-
-         /* Remember the current components whose uses we wish to replace.
-          * This is needed because rewriting one source can affect the others too.
-          */
-         nir_def *vec_comps[NIR_MAX_VEC_COMPONENTS] = {0};
-         for (unsigned i = 0; i < num_vec_src; i++)
-            vec_comps[i] = alu->src[i].src.ssa;
-
-         for (unsigned i = 0; i < num_vec_src; i++)
-            rewrite_uses_to_var(b, vec_comps[i], s->position_value_var, store_pos_component + i);
-      } else {
-         rewrite_uses_to_var(b, store_val, s->position_value_var, store_pos_component);
-      }
-   } else {
-      rewrite_uses_to_var(b, store_val, s->position_value_var, store_pos_component);
+      replace_scalar_component_uses(b, val, nir_get_scalar(reloaded, store_pos_component + comp));
    }
 
    return true;
 }
 
 static void
-remove_extra_pos_outputs(nir_shader *shader, lower_ngg_nogs_state *s)
+apply_repacked_pos_outputs(nir_shader *shader, lower_ngg_nogs_state *s)
 {
-   nir_shader_intrinsics_pass(shader, remove_extra_pos_output,
+   nir_shader_intrinsics_pass(shader, apply_repacked_pos_output,
                               nir_metadata_control_flow, s);
 }
 
@@ -1809,18 +1768,8 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       /* Replace uniforms. */
       apply_reusable_variables(b, &state);
 
-      /* Remove the redundant position output. */
-      remove_extra_pos_outputs(shader, &state);
-
-      /* After looking at the performance in apps eg. Doom Eternal, and The Witcher 3,
-       * it seems that it's best to put the position export always at the end, and
-       * then let ACO schedule it up (slightly) only when early prim export is used.
-       */
-      b->cursor = nir_after_cf_list(&if_es_thread->then_list);
-
-      nir_def *pos_val = nir_load_var(b, state.position_value_var);
-      for (int i = 0; i < 4; i++)
-         state.out.outputs[VARYING_SLOT_POS][i] = nir_channel(b, pos_val, i);
+      /* Reuse the position value calculated in the non-deferred shader part. */
+      apply_repacked_pos_outputs(shader, &state);
    }
 
    /* Gather outputs data and types */
