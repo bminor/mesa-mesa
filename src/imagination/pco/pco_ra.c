@@ -401,7 +401,7 @@ static bool pco_ra_func(pco_func *func,
    assert(allocated);
    /* TODO: spilling. */
 
-   if (PCO_DEBUG_PRINT(RA)) {
+   if (pco_should_print_shader(func->parent_shader) && PCO_DEBUG_PRINT(RA)) {
       printf("RA live ranges:\n");
       for (unsigned u = 0; u < num_vars; ++u)
          printf("  %c%u: %u, %u\n",
@@ -428,7 +428,7 @@ static bool pco_ra_func(pco_func *func,
    unsigned interns = 0;
    pco_foreach_instr_in_func_safe (instr, func) {
       /*
-      if (PCO_DEBUG_PRINT(RA))
+      if (pco_should_print_shader(func->parent_shader) && PCO_DEBUG_PRINT(RA))
          pco_print_shader(func->parent_shader, stdout, "ra debug");
          */
 
@@ -569,7 +569,7 @@ static bool pco_ra_func(pco_func *func,
 
    func->temps = temps;
 
-   if (PCO_DEBUG_PRINT(RA)) {
+   if (pco_should_print_shader(func->parent_shader) && PCO_DEBUG_PRINT(RA)) {
       printf(
          "RA allocated %u temps, %u vtxins, %u interns from %u SSA vars, %u vregs.\n",
          temps,
