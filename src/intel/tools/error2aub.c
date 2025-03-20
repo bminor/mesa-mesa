@@ -42,54 +42,6 @@
 
 #define fail(...) fail_if(true, __VA_ARGS__)
 
-static int zlib_inflate(uint32_t **ptr, int len)
-{
-   struct z_stream_s zstream;
-   void *out;
-   const uint32_t out_size = 128*4096;  /* approximate obj size */
-
-   memset(&zstream, 0, sizeof(zstream));
-
-   zstream.next_in = (unsigned char *)*ptr;
-   zstream.avail_in = 4*len;
-
-   if (inflateInit(&zstream) != Z_OK)
-      return 0;
-
-   out = malloc(out_size);
-   zstream.next_out = out;
-   zstream.avail_out = out_size;
-
-   do {
-      switch (inflate(&zstream, Z_SYNC_FLUSH)) {
-      case Z_STREAM_END:
-         goto end;
-      case Z_OK:
-         break;
-      default:
-         inflateEnd(&zstream);
-         return 0;
-      }
-
-      if (zstream.avail_out)
-         break;
-
-      out = realloc(out, 2*zstream.total_out);
-      if (out == NULL) {
-         inflateEnd(&zstream);
-         return 0;
-      }
-
-      zstream.next_out = (unsigned char *)out + zstream.total_out;
-      zstream.avail_out = zstream.total_out;
-   } while (1);
- end:
-   inflateEnd(&zstream);
-   free(*ptr);
-   *ptr = out;
-   return zstream.total_out / 4;
-}
-
 static int ascii85_decode(const char *in, uint32_t **out, bool inflate)
 {
    int len = 0, size = 1024;
