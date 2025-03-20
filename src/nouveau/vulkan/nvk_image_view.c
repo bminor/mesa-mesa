@@ -190,7 +190,9 @@ nvk_image_view_init(struct nvk_device *dev,
 
          uint32_t desc_index = 0;
          if (cap_info != NULL) {
-            desc_index = cap.planes[view_plane].sampled_desc_index;
+            desc_index = view->plane_count == 1
+               ? cap.single_plane.sampled_desc_index
+               : cap.ycbcr.planes[view_plane].desc_index;
             result = nvk_descriptor_table_insert(dev, &dev->images,
                                                  desc_index, tic, sizeof(tic));
          } else {
@@ -237,7 +239,8 @@ nvk_image_view_init(struct nvk_device *dev,
 
          uint32_t desc_index = 0;
          if (cap_info != NULL) {
-            desc_index = cap.planes[view_plane].storage_desc_index;
+            assert(view->plane_count == 1);
+            desc_index = cap.single_plane.storage_desc_index;
             result = nvk_descriptor_table_insert(dev, &dev->images,
                                                  desc_index, tic, sizeof(tic));
          } else {
@@ -326,9 +329,14 @@ nvk_GetImageViewOpaqueCaptureDescriptorDataEXT(
    VK_FROM_HANDLE(nvk_image_view, view, pInfo->imageView);
 
    struct nvk_image_view_capture cap = {};
-   for (uint8_t p = 0; p < view->plane_count; p++) {
-      cap.planes[p].sampled_desc_index = view->planes[p].sampled_desc_index;
-      cap.planes[p].storage_desc_index = view->planes[p].storage_desc_index;
+   if (view->plane_count == 1) {
+      cap.single_plane.sampled_desc_index = view->planes[0].sampled_desc_index;
+      cap.single_plane.storage_desc_index = view->planes[0].storage_desc_index;
+   } else {
+      for (uint8_t p = 0; p < view->plane_count; p++) {
+         cap.ycbcr.planes[p].desc_index = view->planes[p].sampled_desc_index;
+         assert(view->planes[p].storage_desc_index == 0);
+      }
    }
 
    memcpy(pData, &cap, sizeof(cap));

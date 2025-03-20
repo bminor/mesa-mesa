@@ -34,10 +34,18 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_image_view, vk.base, VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW)
 
 struct nvk_image_view_capture {
-   struct {
-      uint32_t sampled_desc_index;
-      uint32_t storage_desc_index;
-   } planes[NVK_MAX_IMAGE_PLANES];
+   union {
+      struct {
+         uint32_t sampled_desc_index;
+         uint32_t storage_desc_index;
+      } single_plane;
+
+      struct {
+         struct {
+            uint32_t desc_index;
+         } planes[NVK_MAX_IMAGE_PLANES];
+      } ycbcr;
+   };
 };
 
 VkResult nvk_image_view_init(struct nvk_device *dev,
