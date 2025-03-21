@@ -889,6 +889,8 @@ struct gl_sampler_object
 
    uint8_t glclamp_mask; /**< mask of GL_CLAMP wraps active */
 
+   bool DeletePending; /**< true if sampler object is removed from the hash */
+
    /** GL_ARB_bindless_texture */
    bool HandleAllocated;
    struct util_dynarray Handles;
