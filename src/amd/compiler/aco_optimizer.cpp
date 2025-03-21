@@ -3044,8 +3044,11 @@ backpropagate_input_modifiers(opt_ctx& ctx, alu_opt_info& info, const alu_opt_op
    if (info.uses_insert())
       return false;
 
+   assert(type.num_components != 0);
+
    /* Resolve swizzles first. */
-   if (op_info.op.size() > 1) {
+   if (type.bit_size == 1 || op_info.op.size() > 1) {
+      /* no swizzle */
       assert(type.num_components == 1);
    } else {
       bitarray8 swizzle = 0;
@@ -4563,6 +4566,9 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(s_not_b32, s_ff0_i32_b32, 0x1, "0");
    } else if (info.opcode == aco_opcode::s_ff1_i32_b64 && ctx.program->gfx_level < GFX11) {
       add_opt(s_not_b64, s_ff0_i32_b64, 0x1, "0");
+   } else if (info.opcode == aco_opcode::v_cndmask_b32) {
+      add_opt(s_not_b64, v_cndmask_b32, 0x4, "102");
+      add_opt(s_not_b32, v_cndmask_b32, 0x4, "102");
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
