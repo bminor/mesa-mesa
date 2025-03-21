@@ -50,7 +50,7 @@ class TestCommit:
                 'sha': 'abc123',
                 'description': 'sub: A commit',
                 'nominated': False,
-                'nomination_type': None,
+                'nomination_type': core.NominationType.NONE.value,
                 'resolution': core.Resolution.UNRESOLVED.value,
                 'main_sha': '45678',
                 'because_sha': None,
@@ -381,7 +381,7 @@ class TestResolveNomination:
             await core.resolve_nomination(c, '16.1')
 
         assert not c.nominated
-        assert c.nomination_type is None
+        assert c.nomination_type is core.NominationType.NONE
 
     @pytest.mark.asyncio
     async def test_backport_is_nominated(self):
@@ -403,7 +403,7 @@ class TestResolveNomination:
             await core.resolve_nomination(c, '16.1')
 
         assert not c.nominated
-        assert c.nomination_type is None
+        assert c.nomination_type is core.NominationType.NONE
 
     @pytest.mark.asyncio
     async def test_revert_is_nominated(self):
