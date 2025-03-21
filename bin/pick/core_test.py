@@ -54,6 +54,7 @@ class TestCommit:
                 'resolution': core.Resolution.UNRESOLVED.value,
                 'main_sha': '45678',
                 'because_sha': None,
+                'notes': None,
             }
 
         def test_nominated(self, nominated_commit: 'core.Commit'):
@@ -67,6 +68,7 @@ class TestCommit:
                 'resolution': core.Resolution.UNRESOLVED.value,
                 'main_sha': None,
                 'because_sha': None,
+                'notes': None,
             }
 
     class TestFromJson:
