@@ -3844,7 +3844,7 @@
         "description": "ir3/legalize: take wrmask into account for delay updates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "61b2bd861f97affbfdbe7e92eccb3dd4f7e65609",
         "notes": null
