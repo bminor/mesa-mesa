@@ -1599,6 +1599,11 @@ var_decoration_cb(struct vtn_builder *b, struct vtn_value *val, int member,
    case SpvDecorationPatch:
       vtn_var->var->data.patch = true;
       break;
+   case SpvDecorationAliased:
+      if (vtn_var->mode == vtn_variable_mode_workgroup &&
+          glsl_type_is_interface(vtn_var->var->type))
+         vtn_var->var->data.aliased_shared_memory = true;
+      break;
    case SpvDecorationOffset:
       vtn_var->offset = dec->operands[0];
       break;

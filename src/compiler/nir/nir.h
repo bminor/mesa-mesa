@@ -651,6 +651,15 @@ typedef struct nir_variable {
       unsigned per_vertex : 1;
 
       /**
+       * Whether the shared memory block that this variable represent alias
+       * with other similarly decorated shared memory blocks.  These are Blocks
+       * marked as Aliased in SPIR-V.
+       *
+       * See SPV_KHR_workgroup_storage_explicit_layout for details.
+       */
+      unsigned aliased_shared_memory : 1;
+
+      /**
        * Layout qualifier for gl_FragDepth. See nir_depth_layout.
        *
        * This is not equal to ``ir_depth_layout_none`` if and only if this

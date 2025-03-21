@@ -2678,6 +2678,7 @@ nir_assign_shared_var_locations(nir_shader *shader, glsl_type_size_align_func ty
 {
    assert(shader->info.shared_memory_explicit_layout);
 
+   /* Calculate region for Aliased shared memory at the beginning. */
    unsigned aliased_size = 0;
    unsigned aliased_alignment = 0;
    nir_foreach_variable_with_modes(var, shader, nir_var_mem_shared) {
@@ -2685,21 +2686,40 @@ nir_assign_shared_var_locations(nir_shader *shader, glsl_type_size_align_func ty
        * a Block, all of them will be and Blocks are explicitly laid out.
        */
       assert(glsl_type_is_interface(var->type));
-      const bool align_to_stride = false;
-      aliased_size = MAX2(aliased_size, glsl_get_explicit_size(var->type, align_to_stride));
-      aliased_alignment = MAX2(aliased_alignment,
-                               nir_calculate_alignment_from_explicit_layout(var->type, type_info));
+
+      if (var->data.aliased_shared_memory) {
+         const bool align_to_stride = false;
+         aliased_size = MAX2(aliased_size, glsl_get_explicit_size(var->type, align_to_stride));
+         aliased_alignment = MAX2(aliased_alignment,
+                                  nir_calculate_alignment_from_explicit_layout(var->type, type_info));
+      }
    }
 
+   unsigned offset = shader->info.shared_size;
+
+   unsigned aliased_location = UINT_MAX;
    if (aliased_size) {
-      const unsigned aliased_location =
-         align(shader->info.shared_size, aliased_alignment);
-
-      nir_foreach_variable_with_modes(var, shader, nir_var_mem_shared)
-         var->data.driver_location = aliased_location;
-
-      shader->info.shared_size = aliased_location + aliased_size;
+      aliased_location = align(offset, aliased_alignment);
+      offset = aliased_location + aliased_size;
    }
+
+   /* Allocate Blocks either at the Aliased region or after it. */
+   nir_foreach_variable_with_modes(var, shader, nir_var_mem_shared) {
+      if (var->data.aliased_shared_memory) {
+         assert(aliased_location != UINT_MAX);
+         var->data.driver_location = aliased_location;
+      } else {
+         const bool align_to_stride = false;
+         const unsigned size = glsl_get_explicit_size(var->type, align_to_stride);
+         const unsigned alignment =
+            MAX2(nir_calculate_alignment_from_explicit_layout(var->type, type_info),
+                 var->data.alignment);
+         var->data.driver_location = align(offset, alignment);
+         offset = var->data.driver_location + size;
+      }
+   }
+
+   shader->info.shared_size = offset;
 }
 
 /* If nir_lower_vars_to_explicit_types is called on any shader that contains
