@@ -278,6 +278,7 @@ libmesa_util_sse41 = static_library(
   c_args : [c_msvc_compat_args, sse41_args],
   include_directories : [inc_util],
   gnu_symbol_visibility : 'hidden',
+  build_by_default : false,
 )
 
 _libmesa_util = static_library(
