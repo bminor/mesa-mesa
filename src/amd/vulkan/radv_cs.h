@@ -27,21 +27,19 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    return cs->cdw + needed;
 }
 
-static inline void
-radeon_set_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num, unsigned idx, unsigned base_reg_offset,
-                   unsigned packet, bool reset_filter_cam)
-{
-   assert(cs->cdw + 2 + num <= cs->reserved_dw);
-   assert(num);
-   radeon_emit(cs, PKT3(packet, num, 0) | PKT3_RESET_FILTER_CAM_S(reset_filter_cam));
-   radeon_emit(cs, ((reg - base_reg_offset) >> 2) | (idx << 28));
-}
+/* Packet building helpers. Don't use directly. */
+#define radeon_set_reg_seq(cs, reg, num, idx, prefix_name, packet, reset_filter_cam)                                   \
+   do {                                                                                                                \
+      assert((reg) >= prefix_name##_REG_OFFSET && (reg) < prefix_name##_REG_END);                                      \
+      assert(cs->cdw + 2 + num <= cs->reserved_dw);                                                                    \
+      radeon_emit(cs, PKT3(packet, num, 0) | PKT3_RESET_FILTER_CAM_S(reset_filter_cam));                               \
+      radeon_emit(cs, (((reg) - prefix_name##_REG_OFFSET) >> 2) | ((idx) << 28));                                      \
+   } while (0)
 
 static inline void
 radeon_set_config_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
 {
-   assert(reg >= SI_CONFIG_REG_OFFSET && reg < SI_CONFIG_REG_END);
-   radeon_set_reg_seq(cs, reg, num, 0, SI_CONFIG_REG_OFFSET, PKT3_SET_CONFIG_REG, false);
+   radeon_set_reg_seq(cs, reg, num, 0, SI_CONFIG, PKT3_SET_CONFIG_REG, false);
 }
 
 static inline void
@@ -54,8 +52,7 @@ radeon_set_config_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
 static inline void
 radeon_set_context_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
 {
-   assert(reg >= SI_CONTEXT_REG_OFFSET && reg < SI_CONTEXT_REG_END);
-   radeon_set_reg_seq(cs, reg, num, 0, SI_CONTEXT_REG_OFFSET, PKT3_SET_CONTEXT_REG, false);
+   radeon_set_reg_seq(cs, reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, false);
 }
 
 static inline void
@@ -68,16 +65,14 @@ radeon_set_context_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
 static inline void
 radeon_set_context_reg_idx(struct radeon_cmdbuf *cs, unsigned reg, unsigned idx, unsigned value)
 {
-   assert(reg >= SI_CONTEXT_REG_OFFSET && reg < SI_CONTEXT_REG_END);
-   radeon_set_reg_seq(cs, reg, 1, idx, SI_CONTEXT_REG_OFFSET, PKT3_SET_CONTEXT_REG, false);
+   radeon_set_reg_seq(cs, reg, 1, idx, SI_CONTEXT, PKT3_SET_CONTEXT_REG, false);
    radeon_emit(cs, value);
 }
 
 static inline void
 radeon_set_sh_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
 {
-   assert(reg >= SI_SH_REG_OFFSET && reg < SI_SH_REG_END);
-   radeon_set_reg_seq(cs, reg, num, 0, SI_SH_REG_OFFSET, PKT3_SET_SH_REG, false);
+   radeon_set_reg_seq(cs, reg, num, 0, SI_SH, PKT3_SET_SH_REG, false);
 }
 
 static inline void
@@ -91,22 +86,20 @@ static inline void
 radeon_set_sh_reg_idx(const struct radeon_info *info, struct radeon_cmdbuf *cs, unsigned reg, unsigned idx,
                       unsigned value)
 {
-   assert(reg >= SI_SH_REG_OFFSET && reg < SI_SH_REG_END);
    assert(idx);
 
    unsigned opcode = PKT3_SET_SH_REG_INDEX;
    if (info->gfx_level < GFX10)
       opcode = PKT3_SET_SH_REG;
 
-   radeon_set_reg_seq(cs, reg, 1, idx, SI_SH_REG_OFFSET, opcode, false);
+   radeon_set_reg_seq(cs, reg, 1, idx, SI_SH, opcode, false);
    radeon_emit(cs, value);
 }
 
 static inline void
 radeon_set_uconfig_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
 {
-   assert(reg >= CIK_UCONFIG_REG_OFFSET && reg < CIK_UCONFIG_REG_END);
-   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG_REG_OFFSET, PKT3_SET_UCONFIG_REG, false);
+   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, false);
 }
 
 static inline void
@@ -120,8 +113,7 @@ radeon_set_uconfig_perfctr_reg_seq(enum amd_gfx_level gfx_level, enum radv_queue
     */
    const bool filter_cam_workaround = gfx_level >= GFX10 && qf == RADV_QUEUE_GENERAL;
 
-   assert(reg >= CIK_UCONFIG_REG_OFFSET && reg < CIK_UCONFIG_REG_END);
-   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG_REG_OFFSET, PKT3_SET_UCONFIG_REG, filter_cam_workaround);
+   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, filter_cam_workaround);
 }
 
 static inline void
@@ -143,14 +135,13 @@ static inline void
 radeon_set_uconfig_reg_idx(const struct radeon_info *info, struct radeon_cmdbuf *cs, unsigned reg, unsigned idx,
                            unsigned value)
 {
-   assert(reg >= CIK_UCONFIG_REG_OFFSET && reg < CIK_UCONFIG_REG_END);
    assert(idx);
 
    unsigned opcode = PKT3_SET_UCONFIG_REG_INDEX;
    if (info->gfx_level < GFX9 || (info->gfx_level == GFX9 && info->me_fw_version < 26))
       opcode = PKT3_SET_UCONFIG_REG;
 
-   radeon_set_reg_seq(cs, reg, 1, idx, CIK_UCONFIG_REG_OFFSET, opcode, false);
+   radeon_set_reg_seq(cs, reg, 1, idx, CIK_UCONFIG, opcode, false);
    radeon_emit(cs, value);
 }
 
