@@ -31,8 +31,6 @@
   timeout: 10m
   script:
     - git diff --color=always --exit-code  # Fails if there are diffs
-  tags:
-    - placeholder-job
 
 rustfmt:
   extends:
@@ -118,8 +116,6 @@ yaml-toml-shell-py-test:
       when: on_success
     - changes: *lint_files
       when: manual
-  tags:
-    - placeholder-job
 
 .test-gl:
   extends:

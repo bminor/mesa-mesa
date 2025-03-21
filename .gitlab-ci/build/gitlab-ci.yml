@@ -832,5 +832,3 @@ python-artifacts:
   timeout: 10m
   script:
     - .gitlab-ci/prepare-artifacts-python.sh
-  tags:
-    - placeholder-job

@@ -391,8 +391,6 @@ sanity:
     when: on_failure
     reports:
       junit: check-*.xml
-  tags:
-    - placeholder-job
 
 
 mr-label-maker-test:
