@@ -36,128 +36,83 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
       radeon_emit(cs, (((reg) - prefix_name##_REG_OFFSET) >> 2) | ((idx) << 28));                                      \
    } while (0)
 
-static inline void
-radeon_set_config_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
-{
-   radeon_set_reg_seq(cs, reg, num, 0, SI_CONFIG, PKT3_SET_CONFIG_REG, false);
-}
+#define radeon_set_reg(cs, reg, idx, value, prefix_name, packet)                                                       \
+   do {                                                                                                                \
+      radeon_set_reg_seq(cs, reg, 1, idx, prefix_name, packet, 0);                                                     \
+      radeon_emit(cs, value);                                                                                          \
+   } while (0)
 
-static inline void
-radeon_set_config_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
-{
-   radeon_set_config_reg_seq(cs, reg, 1);
-   radeon_emit(cs, value);
-}
+/* Packet building helpers for CONFIG registers. */
+#define radeon_set_config_reg_seq(cs, reg, num) radeon_set_reg_seq(cs, reg, num, 0, SI_CONFIG, PKT3_SET_CONFIG_REG, 0)
 
-static inline void
-radeon_set_context_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
-{
-   radeon_set_reg_seq(cs, reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, false);
-}
+#define radeon_set_config_reg(cs, reg, value)   radeon_set_reg(cs, reg, 0, value, SI_CONFIG, PKT3_SET_CONFIG_REG)
 
-static inline void
-radeon_set_context_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
-{
-   radeon_set_context_reg_seq(cs, reg, 1);
-   radeon_emit(cs, value);
-}
+/* Packet building helpers for CONTEXT registers. */
+#define radeon_set_context_reg_seq(cs, reg, num)                                                                       \
+   radeon_set_reg_seq(cs, reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, 0)
 
-static inline void
-radeon_set_context_reg_idx(struct radeon_cmdbuf *cs, unsigned reg, unsigned idx, unsigned value)
-{
-   radeon_set_reg_seq(cs, reg, 1, idx, SI_CONTEXT, PKT3_SET_CONTEXT_REG, false);
-   radeon_emit(cs, value);
-}
+#define radeon_set_context_reg(cs, reg, value) radeon_set_reg(cs, reg, 0, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
 
-static inline void
-radeon_set_sh_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
-{
-   radeon_set_reg_seq(cs, reg, num, 0, SI_SH, PKT3_SET_SH_REG, false);
-}
+#define radeon_set_context_reg_idx(cs, reg, idx, value)                                                                \
+   radeon_set_reg(cs, reg, idx, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
 
-static inline void
-radeon_set_sh_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
-{
-   radeon_set_sh_reg_seq(cs, reg, 1);
-   radeon_emit(cs, value);
-}
+/* Packet building helpers for SH registers. */
+#define radeon_set_sh_reg_seq(cs, reg, num) radeon_set_reg_seq(cs, reg, num, 0, SI_SH, PKT3_SET_SH_REG, 0)
 
-static inline void
-radeon_set_sh_reg_idx(const struct radeon_info *info, struct radeon_cmdbuf *cs, unsigned reg, unsigned idx,
-                      unsigned value)
-{
-   assert(idx);
+#define radeon_set_sh_reg(cs, reg, value) radeon_set_reg(cs, reg, 0, value, SI_SH, PKT3_SET_SH_REG)
 
-   unsigned opcode = PKT3_SET_SH_REG_INDEX;
-   if (info->gfx_level < GFX10)
-      opcode = PKT3_SET_SH_REG;
+#define radeon_set_sh_reg_idx(info, cs, reg, idx, value)                                                               \
+   do {                                                                                                                \
+      assert((idx));                                                                                                   \
+      unsigned __opcode = PKT3_SET_SH_REG_INDEX;                                                                       \
+      if ((info)->gfx_level < GFX10)                                                                                   \
+         __opcode = PKT3_SET_SH_REG;                                                                                   \
+      radeon_set_reg(cs, reg, idx, value, SI_SH, __opcode);                                                            \
+   } while (0)
 
-   radeon_set_reg_seq(cs, reg, 1, idx, SI_SH, opcode, false);
-   radeon_emit(cs, value);
-}
+/* Packet building helpers for UCONFIG registers. */
+#define radeon_set_uconfig_reg_seq(cs, reg, num)                                                                       \
+   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, 0)
 
-static inline void
-radeon_set_uconfig_reg_seq(struct radeon_cmdbuf *cs, unsigned reg, unsigned num)
-{
-   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, false);
-}
+#define radeon_set_uconfig_reg(cs, reg, value) radeon_set_reg(cs, reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
 
-static inline void
-radeon_set_uconfig_perfctr_reg_seq(enum amd_gfx_level gfx_level, enum radv_queue_family qf, struct radeon_cmdbuf *cs,
-                                   unsigned reg, unsigned num)
-{
-   /*
-    * On GFX10, there is a bug with the ME implementation of its content addressable memory (CAM),
-    * that means that it can skip register writes due to not taking correctly into account the
-    * fields from the GRBM_GFX_INDEX. With this bit we can force the write.
-    */
-   const bool filter_cam_workaround = gfx_level >= GFX10 && qf == RADV_QUEUE_GENERAL;
+#define radeon_set_uconfig_reg_idx(info, cs, reg, idx, value)                                                          \
+   do {                                                                                                                \
+      assert((idx));                                                                                                   \
+      unsigned __opcode = PKT3_SET_UCONFIG_REG_INDEX;                                                                  \
+      if ((info)->gfx_level < GFX9 || ((info)->gfx_level == GFX9 && (info)->me_fw_version < 26))                       \
+         __opcode = PKT3_SET_UCONFIG_REG;                                                                              \
+      radeon_set_reg(cs, reg, idx, value, CIK_UCONFIG, __opcode);                                                      \
+   } while (0)
 
-   radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, filter_cam_workaround);
-}
+/*
+ * On GFX10, there is a bug with the ME implementation of its content addressable memory (CAM),
+ * that means that it can skip register writes due to not taking correctly into account the
+ * fields from the GRBM_GFX_INDEX. With this bit we can force the write.
+ */
+#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg, num)                                                \
+   do {                                                                                                                \
+      const bool __filter_cam_workaround = (gfx_level) >= GFX10 && (qf) == RADV_QUEUE_GENERAL;                         \
+      radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, __filter_cam_workaround);                 \
+   } while (0)
 
-static inline void
-radeon_set_uconfig_perfctr_reg(enum amd_gfx_level gfx_level, enum radv_queue_family qf, struct radeon_cmdbuf *cs,
-                               unsigned reg, unsigned value)
-{
-   radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg, 1);
-   radeon_emit(cs, value);
-}
+#define radeon_set_uconfig_perfctr_reg(gfx_level, qf, cs, reg, value)                                                  \
+   do {                                                                                                                \
+      radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg, 1);                                                   \
+      radeon_emit(cs, value);                                                                                          \
+   } while (0)
 
-static inline void
-radeon_set_uconfig_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
-{
-   radeon_set_uconfig_reg_seq(cs, reg, 1);
-   radeon_emit(cs, value);
-}
-
-static inline void
-radeon_set_uconfig_reg_idx(const struct radeon_info *info, struct radeon_cmdbuf *cs, unsigned reg, unsigned idx,
-                           unsigned value)
-{
-   assert(idx);
-
-   unsigned opcode = PKT3_SET_UCONFIG_REG_INDEX;
-   if (info->gfx_level < GFX9 || (info->gfx_level == GFX9 && info->me_fw_version < 26))
-      opcode = PKT3_SET_UCONFIG_REG;
-
-   radeon_set_reg_seq(cs, reg, 1, idx, CIK_UCONFIG, opcode, false);
-   radeon_emit(cs, value);
-}
-
-static inline void
-radeon_set_privileged_config_reg(struct radeon_cmdbuf *cs, unsigned reg, unsigned value)
-{
-   assert(reg < CIK_UCONFIG_REG_OFFSET);
-   assert(cs->cdw + 6 <= cs->reserved_dw);
-
-   radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_PERF));
-   radeon_emit(cs, value);
-   radeon_emit(cs, 0); /* unused */
-   radeon_emit(cs, reg >> 2);
-   radeon_emit(cs, 0); /* unused */
-}
+#define radeon_set_privileged_config_reg(cs, reg, value)                                                               \
+   do {                                                                                                                \
+      assert((reg) < CIK_UCONFIG_REG_OFFSET);                                                                          \
+      assert((cs)->cdw + 6 <= (cs)->reserved_dw);                                                                      \
+      radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));                                                                     \
+      radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_PERF));                           \
+      radeon_emit(cs, value);                                                                                          \
+      radeon_emit(cs, 0); /* unused */                                                                                 \
+      radeon_emit(cs, (reg) >> 2);                                                                                     \
+      radeon_emit(cs, 0); /* unused */                                                                                 \
+   } while (0)
 
 #define radeon_opt_set_context_reg(cmdbuf, reg, reg_enum, value)                                                       \
    do {                                                                                                                \
