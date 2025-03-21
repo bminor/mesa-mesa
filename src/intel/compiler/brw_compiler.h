@@ -672,7 +672,14 @@ enum brw_pixel_shader_computed_depth_mode {
 struct brw_wm_prog_data {
    struct brw_stage_prog_data base;
 
+   /**
+    * Number of slots (16B) chunks dedicated to per primitive payload.
+    */
    unsigned num_per_primitive_inputs;
+
+   /**
+    * Number of slots (16B) chunks dedicated to per vertex payload.
+    */
    unsigned num_varying_inputs;
 
    uint8_t dispatch_grf_start_reg_16;
@@ -748,6 +755,10 @@ struct brw_wm_prog_data {
     */
    enum intel_sometimes alpha_to_coverage;
 
+   /**
+    * Push constant location of intel_msaa_flags (dynamic configuration of the
+    * pixel shader).
+    */
    unsigned msaa_flags_param;
 
    /**
