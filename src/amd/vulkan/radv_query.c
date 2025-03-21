@@ -82,6 +82,51 @@ gfx10_copy_shader_query_ace(struct radv_cmd_buffer *cmd_buffer, uint32_t src_off
    gfx10_copy_shader_query(cmd_buffer->gang.cs, COPY_DATA_GDS, src_offset, src_va);
 }
 
+enum radv_event_write {
+   RADV_EVENT_WRITE_STREAMOUT_STAT0,
+   RADV_EVENT_WRITE_STREAMOUT_STAT1,
+   RADV_EVENT_WRITE_STREAMOUT_STAT2,
+   RADV_EVENT_WRITE_STREAMOUT_STAT3,
+   RADV_EVENT_WRITE_PIPELINE_STAT,
+   RADV_EVENT_WRITE_OCCLUSION_QUERY,
+};
+
+static void
+radv_emit_event_write(const struct radeon_info *info, struct radeon_cmdbuf *cs, enum radv_event_write event,
+                      uint64_t va)
+{
+   if (event == RADV_EVENT_WRITE_PIPELINE_STAT) {
+      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
+      radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
+   } else if (event == RADV_EVENT_WRITE_OCCLUSION_QUERY) {
+      if (info->gfx_level >= GFX11 && info->pfp_fw_version >= EVENT_WRITE_ZPASS_PFP_VERSION) {
+         radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_ZPASS, 1, 0));
+      } else {
+         radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
+         if (info->gfx_level >= GFX11) {
+            radeon_emit(cs, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_DUMP) | EVENT_INDEX(1));
+         } else {
+            radeon_emit(cs, EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
+         }
+      }
+   } else {
+      assert(event >= RADV_EVENT_WRITE_STREAMOUT_STAT0 && event <= RADV_EVENT_WRITE_STREAMOUT_STAT3);
+
+      const uint32_t streamout_events[] = {
+         V_028A90_SAMPLE_STREAMOUTSTATS,
+         V_028A90_SAMPLE_STREAMOUTSTATS1,
+         V_028A90_SAMPLE_STREAMOUTSTATS2,
+         V_028A90_SAMPLE_STREAMOUTSTATS3,
+      };
+
+      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
+      radeon_emit(cs, EVENT_TYPE(streamout_events[event]) | EVENT_INDEX(3));
+   }
+
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+}
+
 static void
 radv_store_availability(nir_builder *b, nir_def *flags, nir_def *dst_va, nir_def *offset, nir_def *value32)
 {
@@ -302,18 +347,7 @@ radv_begin_occlusion_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va, VkQu
       }
    }
 
-   if (pdev->info.gfx_level >= GFX11 && pdev->info.pfp_fw_version >= EVENT_WRITE_ZPASS_PFP_VERSION) {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_ZPASS, 1, 0));
-   } else {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      if (pdev->info.gfx_level >= GFX11) {
-         radeon_emit(cs, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_DUMP) | EVENT_INDEX(1));
-      } else {
-         radeon_emit(cs, EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
-      }
-   }
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radv_emit_event_write(&pdev->info, cmd_buffer->cs, RADV_EVENT_WRITE_OCCLUSION_QUERY, va);
 }
 
 static void
@@ -335,18 +369,7 @@ radv_end_occlusion_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_OCCLUSION_QUERY;
    }
 
-   if (pdev->info.gfx_level >= GFX11 && pdev->info.pfp_fw_version >= EVENT_WRITE_ZPASS_PFP_VERSION) {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_ZPASS, 1, 0));
-   } else {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      if (pdev->info.gfx_level >= GFX11) {
-         radeon_emit(cs, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_DUMP) | EVENT_INDEX(1));
-      } else {
-         radeon_emit(cs, EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
-      }
-   }
-   radeon_emit(cs, va + 8);
-   radeon_emit(cs, (va + 8) >> 32);
+   radv_emit_event_write(&pdev->info, cmd_buffer->cs, RADV_EVENT_WRITE_OCCLUSION_QUERY, va + 8);
 }
 
 static void
@@ -621,10 +644,7 @@ radv_begin_pipeline_stat_query(struct radv_cmd_buffer *cmd_buffer, struct radv_q
       va += cs_invoc_offset;
    }
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-   radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radv_emit_event_write(&pdev->info, cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
 
    if (pool->uses_emulated_queries) {
       if (pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT) {
@@ -659,10 +679,7 @@ radv_begin_pipeline_stat_query(struct radv_cmd_buffer *cmd_buffer, struct radv_q
 
          radeon_check_space(device->ws, cmd_buffer->gang.cs, 4);
 
-         radeon_emit(cmd_buffer->gang.cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-         radeon_emit(cmd_buffer->gang.cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-         radeon_emit(cmd_buffer->gang.cs, va);
-         radeon_emit(cmd_buffer->gang.cs, va >> 32);
+         radv_emit_event_write(&pdev->info, cmd_buffer->gang.cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
       } else {
          radeon_check_space(device->ws, cmd_buffer->gang.cs, 11);
 
@@ -704,10 +721,7 @@ radv_end_pipeline_stat_query(struct radv_cmd_buffer *cmd_buffer, struct radv_que
       va += cs_invoc_offset;
    }
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-   radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radv_emit_event_write(&pdev->info, cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
 
    if (pool->uses_emulated_queries) {
       if (pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT) {
@@ -738,10 +752,7 @@ radv_end_pipeline_stat_query(struct radv_cmd_buffer *cmd_buffer, struct radv_que
 
          radeon_check_space(device->ws, cmd_buffer->gang.cs, 4);
 
-         radeon_emit(cmd_buffer->gang.cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-         radeon_emit(cmd_buffer->gang.cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-         radeon_emit(cmd_buffer->gang.cs, va);
-         radeon_emit(cmd_buffer->gang.cs, va >> 32);
+         radv_emit_event_write(&pdev->info, cmd_buffer->gang.cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
       } else {
          radeon_check_space(device->ws, cmd_buffer->gang.cs, 11);
 
@@ -925,36 +936,18 @@ build_tfb_query_shader(struct radv_device *device)
    return b.shader;
 }
 
-static unsigned
-event_type_for_stream(unsigned stream)
-{
-   switch (stream) {
-   default:
-   case 0:
-      return V_028A90_SAMPLE_STREAMOUTSTATS;
-   case 1:
-      return V_028A90_SAMPLE_STREAMOUTSTATS1;
-   case 2:
-      return V_028A90_SAMPLE_STREAMOUTSTATS2;
-   case 3:
-      return V_028A90_SAMPLE_STREAMOUTSTATS3;
-   }
-}
-
 static void
 emit_sample_streamout(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint32_t index)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    radeon_check_space(device->ws, cs, 4);
 
    assert(index < MAX_SO_STREAMS);
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-   radeon_emit(cs, EVENT_TYPE(event_type_for_stream(index)) | EVENT_INDEX(3));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radv_emit_event_write(&pdev->info, cs, index, va);
 }
 
 static void
@@ -1624,10 +1617,7 @@ radv_begin_ms_prim_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va)
 
       radv_update_hw_pipelinestat(cmd_buffer);
 
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-      radeon_emit(cs, va);
-      radeon_emit(cs, va >> 32);
+      radv_emit_event_write(&pdev->info, cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
    } else {
       gfx10_copy_shader_query_gfx(cmd_buffer, true, RADV_SHADER_QUERY_MS_PRIM_GEN_OFFSET, va);
       radv_cs_write_data_imm(cs, V_370_ME, va + 4, 0x80000000);
@@ -1660,10 +1650,7 @@ radv_end_ms_prim_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t
 
       va += pipelinestat_block_size;
 
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
-      radeon_emit(cs, va);
-      radeon_emit(cs, va >> 32);
+      radv_emit_event_write(&pdev->info, cs, RADV_EVENT_WRITE_PIPELINE_STAT, va);
 
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, cmd_buffer->qf, V_028A90_BOTTOM_OF_PIPE_TS, 0,
                                    EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT, avail_va, 1, cmd_buffer->gfx9_eop_bug_va);
