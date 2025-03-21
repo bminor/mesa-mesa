@@ -169,7 +169,9 @@ rm -rf replayer-db
 if [ -n "$PIGLIT_REPLAY_ANGLE_TAG" ]; then
   ARCH="amd64"
   FILE="angle-bin-${ARCH}-${PIGLIT_REPLAY_ANGLE_TAG}.tar.zst"
-  ci-fairy s3cp $S3_ARGS "https://s3.freedesktop.org/mesa-tracie-private/${FILE}" "${FILE}"
+  curl --location --fail --retry-all-errors --retry 4 --retry-delay 60 \
+    --header "Authorization: Bearer $(cat "${S3_JWT_FILE}")" \
+    "https://s3.freedesktop.org/mesa-tracie-private/${FILE}" --output "${FILE}"
   mkdir -p replayer-db/angle
   tar --zstd -xf ${FILE} -C replayer-db/angle/
 fi
