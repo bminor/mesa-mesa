@@ -730,6 +730,7 @@ static uint32_t zlib_inflate(const void *compressed_data,
       case Z_OK:
          break;
       default:
+         free(out);
          inflateEnd(&zstream);
          return 0;
       }
