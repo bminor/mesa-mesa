@@ -1165,6 +1165,9 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
    struct anv_ray_tracing_pipeline *pipeline =
       anv_pipeline_to_ray_tracing(rt->base.pipeline);
 
+   if (INTEL_DEBUG(DEBUG_RT_NO_TRACE))
+      return;
+
    if (anv_batch_has_error(&cmd_buffer->batch))
       return;
 

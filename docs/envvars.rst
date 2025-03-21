@@ -582,6 +582,8 @@ Intel driver environment variables
       mark all state dirty on each draw call
    ``rt``
       dump shader assembly for ray tracing shaders
+   ``rt_notrace``
+      skip trace rays operation (does not disable AS generation; see bvh_no_build)
    ``sf``
       emit messages about the strips & fans unit (for old gens, includes
       the SF program)
