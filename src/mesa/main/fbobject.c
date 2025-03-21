@@ -109,6 +109,17 @@ _mesa_get_incomplete_framebuffer(void)
    return &IncompleteFramebuffer;
 }
 
+static struct gl_renderbuffer *
+_mesa_lookup_renderbuffer_locked(struct gl_context *ctx, GLuint id)
+{
+   if (id == 0)
+      return NULL;
+
+   struct gl_renderbuffer *rb = (struct gl_renderbuffer *)
+      _mesa_HashLookupLocked(&ctx->Shared->RenderBuffers, id);
+   return rb;
+}
+
 /**
  * Helper routine for getting a gl_renderbuffer.
  */
@@ -1799,7 +1810,8 @@ bind_renderbuffer(GLenum target, GLuint renderbuffer)
     */
 
    if (renderbuffer) {
-      newRb = _mesa_lookup_renderbuffer(ctx, renderbuffer);
+      _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
+      newRb = _mesa_lookup_renderbuffer_locked(ctx, renderbuffer);
       if (newRb == &DummyRenderbuffer) {
          /* ID was reserved, but no real renderbuffer object made yet */
          newRb = NULL;
@@ -1808,15 +1820,15 @@ bind_renderbuffer(GLenum target, GLuint renderbuffer)
          /* All RB IDs must be Gen'd */
          _mesa_error(ctx, GL_INVALID_OPERATION,
                      "glBindRenderbuffer(non-gen name)");
+         _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
          return;
       }
 
       if (!newRb) {
-         _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
          newRb = allocate_renderbuffer_locked(ctx, renderbuffer,
                                               "glBindRenderbufferEXT");
-         _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
       }
+      _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
    }
    else {
       newRb = NULL;
@@ -3046,13 +3058,16 @@ _mesa_NamedRenderbufferStorageEXT(GLuint renderbuffer, GLenum internalformat,
                                   GLsizei width, GLsizei height)
 {
    GET_CURRENT_CONTEXT(ctx);
-   struct gl_renderbuffer *rb = _mesa_lookup_renderbuffer(ctx, renderbuffer);
+
+   _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
+   struct gl_renderbuffer *rb =
+      _mesa_lookup_renderbuffer_locked(ctx, renderbuffer);
    if (!rb || rb == &DummyRenderbuffer) {
-      _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
       rb = allocate_renderbuffer_locked(ctx, renderbuffer,
                                         "glNamedRenderbufferStorageEXT");
-      _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
    }
+   _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
+
    renderbuffer_storage(ctx, rb, internalformat, width, height, NO_SAMPLES,
                         0, "glNamedRenderbufferStorageEXT");
 }
@@ -3075,13 +3090,16 @@ _mesa_NamedRenderbufferStorageMultisampleEXT(GLuint renderbuffer, GLsizei sample
                                              GLsizei width, GLsizei height)
 {
    GET_CURRENT_CONTEXT(ctx);
-   struct gl_renderbuffer *rb = _mesa_lookup_renderbuffer(ctx, renderbuffer);
+
+   _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
+   struct gl_renderbuffer *rb =
+      _mesa_lookup_renderbuffer_locked(ctx, renderbuffer);
    if (!rb || rb == &DummyRenderbuffer) {
-      _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
       rb = allocate_renderbuffer_locked(ctx, renderbuffer,
                                         "glNamedRenderbufferStorageMultisampleEXT");
-      _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
    }
+   _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
+
    renderbuffer_storage(ctx, rb, internalformat, width, height,
                         samples, samples,
                         "glNamedRenderbufferStorageMultisample");
@@ -3193,13 +3211,14 @@ _mesa_GetNamedRenderbufferParameterivEXT(GLuint renderbuffer, GLenum pname,
 {
    GET_CURRENT_CONTEXT(ctx);
 
-   struct gl_renderbuffer *rb = _mesa_lookup_renderbuffer(ctx, renderbuffer);
+   _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
+   struct gl_renderbuffer *rb =
+      _mesa_lookup_renderbuffer_locked(ctx, renderbuffer);
    if (!rb || rb == &DummyRenderbuffer) {
-      _mesa_HashLockMutex(&ctx->Shared->RenderBuffers);
       rb = allocate_renderbuffer_locked(ctx, renderbuffer,
                                         "glGetNamedRenderbufferParameterivEXT");
-      _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
    }
+   _mesa_HashUnlockMutex(&ctx->Shared->RenderBuffers);
 
    get_render_buffer_parameteriv(ctx, rb, pname, params,
                                  "glGetNamedRenderbufferParameterivEXT");
