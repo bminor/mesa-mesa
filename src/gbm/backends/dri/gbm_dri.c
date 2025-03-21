@@ -268,15 +268,23 @@ fail:
 }
 
 static int
-dri_screen_create(struct gbm_dri_device *dri, bool driver_name_is_inferred)
+dri_screen_create(struct gbm_dri_device *dri)
 {
    char *driver_name;
+   int ret;
 
    driver_name = loader_get_driver_for_fd(dri->base.v0.fd);
    if (!driver_name)
       return -1;
 
-   return dri_screen_create_for_driver(dri, driver_name, driver_name_is_inferred);
+   ret = dri_screen_create_for_driver(dri, driver_name, /*driver_name_is_inferred=*/false);
+   if (ret) {
+      /* Note: driver_name freed by called function */
+      driver_name = strdup("zink");
+      ret = dri_screen_create_for_driver(dri, driver_name, /*driver_name_is_inferred=*/true);
+   }
+
+   return ret;
 }
 
 static int
@@ -1197,7 +1205,7 @@ dri_device_create(int fd, uint32_t gbm_backend_version)
 
    force_sw = debug_get_bool_option("GBM_ALWAYS_SOFTWARE", false);
    if (!force_sw) {
-      ret = dri_screen_create(dri, false);
+      ret = dri_screen_create(dri);
       if (ret)
          ret = dri_screen_create_sw(dri, true);
    } else {
