@@ -324,16 +324,83 @@ impl Drop for BO {
     }
 }
 
+struct QMDHeapImpl {
+    dev: Arc<Device>,
+    bos: Vec<BO>,
+    last_offset: u32,
+    free: Vec<(u64, *mut std::os::raw::c_void)>,
+}
+
+struct QMDHeap(Mutex<QMDHeapImpl>);
+
+struct QMD<'a> {
+    heap: &'a QMDHeap,
+    pub addr: u64,
+    pub map: *mut std::os::raw::c_void,
+}
+
+impl Drop for QMD<'_> {
+    fn drop(&mut self) {
+        let mut heap = self.heap.0.lock().unwrap();
+        heap.free.push((self.addr, self.map));
+    }
+}
+
+impl QMDHeap {
+    const BO_SIZE: u32 = 1 << 16;
+    const QMD_SIZE: u32 = 0x100;
+
+    fn new(dev: Arc<Device>) -> Self {
+        Self(Mutex::new(QMDHeapImpl {
+            dev,
+            bos: Vec::new(),
+            last_offset: Self::BO_SIZE,
+            free: Vec::new(),
+        }))
+    }
+
+    fn alloc_qmd<'a>(&'a self) -> io::Result<QMD<'a>> {
+        let mut imp = self.0.lock().unwrap();
+        if let Some((addr, map)) = imp.free.pop() {
+            return Ok(QMD {
+                heap: self,
+                addr,
+                map,
+            });
+        }
+
+        if imp.last_offset >= Self::BO_SIZE {
+            let dev = imp.dev.clone();
+            imp.bos.push(BO::new(dev, Self::BO_SIZE.into())?);
+            imp.last_offset = 0;
+        }
+
+        let bo = imp.bos.last().unwrap();
+        let addr = bo.addr + u64::from(imp.last_offset);
+        let map =
+            unsafe { bo.map.byte_offset(imp.last_offset.try_into().unwrap()) };
+        imp.last_offset += Self::QMD_SIZE;
+
+        Ok(QMD {
+            heap: self,
+            addr,
+            map,
+        })
+    }
+}
+
 pub struct Runner {
     dev: Arc<Device>,
     ctx: Context,
+    qmd_heap: QMDHeap,
 }
 
 impl<'a> Runner {
     pub fn new(dev_id: Option<usize>) -> Runner {
         let dev = Device::new(dev_id).expect("Failed to create nouveau device");
         let ctx = Context::new(dev.clone()).expect("Failed to create context");
-        Runner { dev, ctx }
+        let qmd_heap = QMDHeap::new(dev.clone());
+        Runner { dev, ctx, qmd_heap }
     }
 
     pub fn dev_info(&self) -> &nv_device_info {
@@ -359,10 +426,6 @@ impl<'a> Runner {
         const MAX_PUSH_DW: usize = 256;
         let push_offset = size;
         size = push_offset + 4 * MAX_PUSH_DW;
-
-        const QMD_SIZE: usize = 64 * 4;
-        let qmd_offset = size.next_multiple_of(0x100);
-        size = qmd_offset + 4 * QMD_SIZE;
 
         let shader_offset = size.next_multiple_of(0x80);
         size = shader_offset + usize::try_from(shader.code_size).unwrap();
@@ -425,14 +488,13 @@ impl<'a> Runner {
             cbufs: qmd_cbufs,
         };
 
-        let qmd_addr = bo.addr + u64::try_from(qmd_offset).unwrap();
-        let qmd_map = bo.map.byte_offset(qmd_offset.try_into().unwrap());
+        let qmd = self.qmd_heap.alloc_qmd()?;
         nak_fill_qmd(
             self.dev_info(),
             &shader.info,
             &qmd_info,
-            qmd_map,
-            QMD_SIZE,
+            qmd.map,
+            QMDHeap::QMD_SIZE.try_into().unwrap(),
         );
 
         // Fill out the pushbuf
@@ -481,7 +543,7 @@ impl<'a> Runner {
         }
 
         p.push_method(cla0c0::SendPcasA {
-            qmd_address_shifted8: (qmd_addr >> 8) as u32,
+            qmd_address_shifted8: (qmd.addr >> 8) as u32,
         });
         if self.dev_info().cls_compute >= AMPERE_COMPUTE_A {
             p.push_method(clc6c0::SendSignalingPcas2B {
