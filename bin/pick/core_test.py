@@ -46,20 +46,28 @@ class TestCommit:
         def test_not_nominated(self, unnominated_commit: 'core.Commit'):
             c = unnominated_commit
             v = c.to_json()
-            assert v == {'sha': 'abc123', 'description': 'sub: A commit', 'nominated': False,
-                         'nomination_type': None, 'resolution': core.Resolution.UNRESOLVED.value,
-                         'main_sha': '45678', 'because_sha': None}
+            assert v == {
+                'sha': 'abc123',
+                'description': 'sub: A commit',
+                'nominated': False,
+                'nomination_type': None,
+                'resolution': core.Resolution.UNRESOLVED.value,
+                'main_sha': '45678',
+                'because_sha': None,
+            }
 
         def test_nominated(self, nominated_commit: 'core.Commit'):
             c = nominated_commit
             v = c.to_json()
-            assert v == {'sha': 'abc123',
-                         'description': 'sub: A commit',
-                         'nominated': True,
-                         'nomination_type': core.NominationType.CC.value,
-                         'resolution': core.Resolution.UNRESOLVED.value,
-                         'main_sha': None,
-                         'because_sha': None}
+            assert v == {
+                'sha': 'abc123',
+                'description': 'sub: A commit',
+                'nominated': True,
+                'nomination_type': core.NominationType.CC.value,
+                'resolution': core.Resolution.UNRESOLVED.value,
+                'main_sha': None,
+                'because_sha': None,
+            }
 
     class TestFromJson:
 
