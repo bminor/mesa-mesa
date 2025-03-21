@@ -41,34 +41,6 @@
 
 #define XE_KMD_ERROR_DUMP_IDENTIFIER "**** Xe Device Coredump ****"
 
-static int ascii85_decode(const char *in, uint32_t **out, bool inflate)
-{
-   int len = 0, size = 1024;
-
-   *out = realloc(*out, sizeof(uint32_t)*size);
-   if (*out == NULL)
-      return 0;
-
-   while (*in >= '!' && *in <= 'z') {
-      uint32_t v = 0;
-
-      if (len == size) {
-         size *= 2;
-         *out = realloc(*out, sizeof(uint32_t)*size);
-         if (*out == NULL)
-            return 0;
-      }
-
-      in = ascii85_decode_char(in, &v);
-      (*out)[len++] = v;
-   }
-
-   if (!inflate)
-      return len;
-
-   return zlib_inflate(out, len);
-}
-
 static void
 print_help(const char *progname, FILE *file)
 {

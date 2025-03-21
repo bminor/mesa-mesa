@@ -76,3 +76,31 @@ int zlib_inflate(uint32_t **ptr, int len)
    *ptr = out;
    return zstream.total_out / 4;
 }
+
+int ascii85_decode(const char *in, uint32_t **out, bool inflate)
+{
+   int len = 0, size = 1024;
+
+   *out = realloc(*out, sizeof(uint32_t)*size);
+   if (*out == NULL)
+      return 0;
+
+   while (*in >= '!' && *in <= 'z') {
+      uint32_t v = 0;
+
+      if (len == size) {
+         size *= 2;
+         *out = realloc(*out, sizeof(uint32_t)*size);
+         if (*out == NULL)
+            return 0;
+      }
+
+      in = ascii85_decode_char(in, &v);
+      (*out)[len++] = v;
+   }
+
+   if (!inflate)
+      return len;
+
+   return zlib_inflate(out, len);
+}
