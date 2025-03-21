@@ -174,15 +174,15 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
  * that means that it can skip register writes due to not taking correctly into account the
  * fields from the GRBM_GFX_INDEX. With this bit we can force the write.
  */
-#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg, num)                                                \
+#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, reg, num)                                              \
    do {                                                                                                                \
-      const bool __filter_cam_workaround = (gfx_level) >= GFX10 && (qf) == RADV_QUEUE_GENERAL;                         \
+      const bool __filter_cam_workaround = (gfx_level) >= GFX10 && (ring) == AMD_IP_GFX;                               \
       radeon_set_reg_seq(cs, reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, __filter_cam_workaround);                 \
    } while (0)
 
-#define radeon_set_uconfig_perfctr_reg(gfx_level, qf, cs, reg, value)                                                  \
+#define radeon_set_uconfig_perfctr_reg(gfx_level, ring, cs, reg, value)                                                \
    do {                                                                                                                \
-      radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg, 1);                                                   \
+      radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, reg, 1);                                                 \
       radeon_emit(cs, value);                                                                                          \
    } while (0)
 

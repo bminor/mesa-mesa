@@ -71,6 +71,7 @@ static void
 radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct ac_spm *spm = &device->spm;
 
@@ -89,7 +90,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
             const struct ac_spm_counter_select *cntr_sel = &spm->sq_wgp[instance].counters[b];
             uint32_t reg_base = R_036700_SQ_PERFCOUNTER0_SELECT;
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg_base + b * 4, 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, reg_base + b * 4, 1);
             radeon_emit(cs, cntr_sel->sel0);
          }
       }
@@ -111,7 +112,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
          const struct ac_spm_counter_select *cntr_sel = &spm->sqg[instance].counters[b];
          uint32_t reg_base = R_036700_SQ_PERFCOUNTER0_SELECT;
 
-         radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, reg_base + b * 4, 1);
+         radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, reg_base + b * 4, 1);
          radeon_emit(cs, cntr_sel->sel0 | S_036700_SQC_BANK_MASK(0xf)); /* SQC_BANK_MASK only gfx10 */
       }
    }
@@ -133,10 +134,10 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
             if (!cntr_sel->active)
                continue;
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, regs->select0[c], 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, regs->select0[c], 1);
             radeon_emit(cs, cntr_sel->sel0);
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, qf, cs, regs->select1[c], 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, regs->select1[c], 1);
             radeon_emit(cs, cntr_sel->sel1);
          }
       }
@@ -152,6 +153,7 @@ void
 radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct ac_spm *spm = &device->spm;
    uint64_t va = radv_buffer_get_va(spm->bo);
@@ -229,7 +231,7 @@ radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum r
          uint32_t *data = (uint32_t *)spm->muxsel_lines[s][l].muxsel;
 
          /* Select MUXSEL_ADDR to point to the next muxsel. */
-         radeon_set_uconfig_perfctr_reg(gfx_level, qf, cs, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
+         radeon_set_uconfig_perfctr_reg(gfx_level, ring, cs, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
 
          /* Write the muxsel line configuration with MUXSEL_DATA. */
          radeon_emit(cs, PKT3(PKT3_WRITE_DATA, 2 + AC_SPM_MUXSEL_LINE_SIZE, 0));
