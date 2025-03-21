@@ -109,7 +109,7 @@ deployment:
               {% endfor %}
               b2c.run_service="--privileged --tls-verify=false --pid=host {{ B2C_TELEGRAF_IMAGE }}" b2c.hostname=dut-{{ '{{' }} machine.full_name }}
               b2c.run="-ti --tls-verify=false {{ B2C_MACHINE_REGISTRATION_IMAGE }} {% if B2C_MARS_SETUP_TAGS %}setup --tags {{ B2C_MARS_SETUP_TAGS }}{% else %}check{% endif %}"
-              b2c.run="-v {{ '{{' }} job_bucket }}-results:{{ CI_PROJECT_DIR }} -w {{ CI_PROJECT_DIR }} {% for mount_volume in B2C_MOUNT_VOLUMES %} -v {{ mount_volume }}{% endfor %} --tls-verify=false --entrypoint bash {{ B2C_IMAGE_UNDER_TEST }} -euc 'curl -q {{ '{{' }} job.http.url }}/install.tar.zst | tar --zstd -x; {{ B2C_CONTAINER_CMD }}'"
+              b2c.run="-v {{ '{{' }} job_bucket }}-results:{{ CI_PROJECT_DIR }} -w {{ CI_PROJECT_DIR }} {% for mount_volume in B2C_MOUNT_VOLUMES %} -v {{ mount_volume }}{% endfor %} --tls-verify=false --entrypoint bash {{ B2C_IMAGE_UNDER_TEST }} -euc 'curl --fail -q {{ '{{' }} job.http.url }}/install.tar.zst | tar --zstd -x; {{ B2C_CONTAINER_CMD }}'"
     kernel:
 {% if B2C_KERNEL_URL %}
       url: '{{ B2C_KERNEL_URL }}'
