@@ -2615,7 +2615,6 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
          nir_alu_type dst_alu_type = nir_get_nir_type_for_glsl_type(val->type->type);
          nir_alu_type src_alu_type = dst_alu_type;
          unsigned num_components = glsl_get_vector_elements(val->type->type);
-         unsigned bit_size;
 
          vtn_assert(count <= 7);
 
@@ -2623,14 +2622,12 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
          case SpvOpSConvert:
          case SpvOpFConvert:
          case SpvOpUConvert:
-            /* We have a source in a conversion */
+            /* We have a different source type in a conversion. */
             src_alu_type =
                nir_get_nir_type_for_glsl_type(vtn_get_value_type(b, w[4])->type);
-            /* We use the bitsize of the conversion source to evaluate the opcode later */
-            bit_size = glsl_get_bit_size(vtn_get_value_type(b, w[4])->type);
             break;
          default:
-            bit_size = glsl_get_bit_size(val->type->type);
+            break;
          };
 
          bool exact;
@@ -2643,6 +2640,7 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
           */
          assert(!exact);
 
+         unsigned bit_size = glsl_get_bit_size(val->type->type);
          nir_const_value src[3][NIR_MAX_VEC_COMPONENTS];
 
          for (unsigned i = 0; i < count - 4; i++) {
