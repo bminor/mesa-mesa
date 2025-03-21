@@ -2631,14 +2631,13 @@ texel_buffer_shader_copy(struct v3dv_cmd_buffer *cmd_buffer,
     *
     * If we are batching (region_count > 1) all our regions have the same
     * image subresource so we can take this from the first region. For 3D
-    * images we require the same depth extent.
+    * images we require the same depth extent and Z offset.
     */
    const VkImageSubresourceLayers *resource = &regions[0].imageSubresource;
    uint32_t num_layers;
    if (image->vk.image_type != VK_IMAGE_TYPE_3D) {
       num_layers = vk_image_subresource_layer_count(&image->vk, resource);
    } else {
-      assert(region_count == 1);
       num_layers = regions[0].imageExtent.depth;
    }
    assert(num_layers > 0);
@@ -2732,7 +2731,7 @@ texel_buffer_shader_copy(struct v3dv_cmd_buffer *cmd_buffer,
          .aspectMask = aspect,
          .baseMipLevel = resource->mipLevel,
          .levelCount = 1,
-         .baseArrayLayer = resource->baseArrayLayer,
+         .baseArrayLayer = resource->baseArrayLayer + regions[0].imageOffset.z,
          .layerCount = num_layers,
       },
    };
