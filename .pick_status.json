@@ -4514,7 +4514,7 @@
         "description": "docs: demote VK_KHR_shader_relaxed_extended_instruction",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8b272c8d8c419ecb7aee0257563c9489b675f4ef",
         "notes": null
