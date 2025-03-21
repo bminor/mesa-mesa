@@ -1392,7 +1392,7 @@ kill_sched(struct ir3 *ir, struct ir3_shader_variant *so)
 
    foreach_block_rev (block, &ir->block_list) {
       for (unsigned i = 0; i < 2 && block->successors[i]; i++) {
-         if (block->successors[i]->start_ip <= block->end_ip)
+         if (block->successors[i]->start_ip < block->end_ip)
             always_ends = false;
       }
 
