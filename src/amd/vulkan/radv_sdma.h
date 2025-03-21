@@ -78,6 +78,8 @@ void radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbu
 void radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, const uint64_t va,
                            const uint64_t size, const uint32_t value);
 
+void radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs);
+
 #ifdef __cplusplus
 }
 #endif

@@ -22,6 +22,7 @@
 #include "radv_perfcounter.h"
 #include "radv_query.h"
 #include "radv_rmv.h"
+#include "radv_sdma.h"
 #include "sid.h"
 #include "vk_acceleration_structure.h"
 #include "vk_common_entrypoints.h"
@@ -2752,8 +2753,7 @@ radv_CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 sta
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       if (instance->drirc.flush_before_timestamp_write) {
-         radeon_check_space(device->ws, cmd_buffer->cs, 1);
-         radeon_emit(cmd_buffer->cs, SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
+         radv_sdma_emit_nop(device, cmd_buffer->cs);
       }
 
       for (unsigned i = 0; i < num_queries; ++i, query_va += pool->stride) {

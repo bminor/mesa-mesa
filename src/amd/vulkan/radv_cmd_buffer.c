@@ -19,6 +19,7 @@
 #include "radv_radeon_winsys.h"
 #include "radv_rmv.h"
 #include "radv_rra.h"
+#include "radv_sdma.h"
 #include "radv_shader.h"
 #include "radv_shader_object.h"
 #include "radv_sqtt.h"
@@ -12937,8 +12938,7 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, uint32_t dep_count, const VkDep
        * Note that GFX9+ is supposed to have RAW dependency tracking, but it's buggy
        * so we can't rely on it fow now.
        */
-      radeon_check_space(device->ws, cmd_buffer->cs, 1);
-      radeon_emit(cmd_buffer->cs, SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
+      radv_sdma_emit_nop(device, cmd_buffer->cs);
    } else {
       const bool is_gfx_or_ace = cmd_buffer->qf == RADV_QUEUE_GENERAL || cmd_buffer->qf == RADV_QUEUE_COMPUTE;
       if (is_gfx_or_ace)

@@ -321,7 +321,7 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
    return info;
 }
 
-static void
+void
 radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs)
 {
    /* SDMA NOP acts as a fence command and causes the SDMA engine to wait for pending copy operations. */
