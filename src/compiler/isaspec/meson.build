@@ -13,4 +13,5 @@ libisaspec = static_library(
   ['isaspec.c'],
   dependencies: [idep_mesautil],
   gnu_symbol_visibility: 'hidden',
+  build_by_default : false,
 )
