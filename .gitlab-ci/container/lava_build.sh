@@ -25,7 +25,7 @@ export SKIP_UPDATE_FLUSTER_VECTORS=0
 check_minio()
 {
     S3_PATH="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DISTRIBUTION_TAG}/${DEBIAN_ARCH}"
-    if curl -L --retry 4 -f --retry-delay 60 -s -X HEAD \
+    if curl -L --retry 4 -f --retry-delay 60 -s \
       "https://${S3_PATH}/done"; then
         echo "Remote files are up-to-date, skip rebuilding them."
         exit
@@ -35,7 +35,7 @@ check_minio()
 check_fluster()
 {
     S3_PATH_FLUSTER="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_VECTORS_VERSION}"
-    if curl -L --retry 4 -f --retry-delay 60 -s -X HEAD \
+    if curl -L --retry 4 -f --retry-delay 60 -s \
       "https://${S3_PATH_FLUSTER}/done"; then
         echo "Fluster vectors are up-to-date, skip downloading them."
         export SKIP_UPDATE_FLUSTER_VECTORS=1
