@@ -61,7 +61,6 @@ private:
    std::list<Instr *> m_last_ar_use;
    AluInstr *m_last_ar_load{nullptr};
 
-   unsigned m_linear_index{0};
    unsigned m_last_idx_load_index[2] {0,0};
    AluInstr *m_last_idx_load[2] {nullptr, nullptr};
    std::list<Instr *> m_last_idx_use[2];

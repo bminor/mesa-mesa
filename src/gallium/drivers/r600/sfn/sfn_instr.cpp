@@ -23,7 +23,6 @@ using std::string;
 using std::vector;
 
 Instr::Instr():
-    m_use_count(0),
     m_block_id(std::numeric_limits<int>::max()),
     m_index(std::numeric_limits<int>::max())
 {

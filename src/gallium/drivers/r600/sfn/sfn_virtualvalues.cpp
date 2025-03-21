@@ -510,13 +510,11 @@ operator==(const RegisterVec4& lhs, const RegisterVec4& rhs)
 }
 
 RegisterVec4::Element::Element(const RegisterVec4& parent, int chan):
-    m_parent(parent),
     m_value(new Register(parent.m_sel, chan, pin_none))
 {
 }
 
 RegisterVec4::Element::Element(const RegisterVec4& parent, PRegister value):
-    m_parent(parent),
     m_value(value)
 {
 }

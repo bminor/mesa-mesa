@@ -142,7 +142,6 @@ private:
    InstrList m_required_instr;
    InstrList m_dependend_instr;
 
-   int m_use_count;
    int m_block_id;
    int m_index;
    std::bitset<nflags> m_instr_flags{0};

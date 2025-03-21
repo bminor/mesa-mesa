@@ -210,7 +210,6 @@ private:
    int m_lds_addr_count{0};
    int m_alu_groups_scheduled{0};
    r600_chip_class m_chip_class;
-   radeon_family m_chip_family;
    bool m_idx0_loading{false};
    bool m_idx1_loading{false};
    bool m_idx0_pending{false};
@@ -265,8 +264,7 @@ BlockScheduler::BlockScheduler(r600_chip_class chip_class,
     m_last_pixel(nullptr),
     m_last_param(nullptr),
     m_current_block(nullptr),
-    m_chip_class(chip_class),
-    m_chip_family(chip_family)
+    m_chip_class(chip_class)
 {
    m_nop_after_rel_dest = chip_family == CHIP_RV770;
 

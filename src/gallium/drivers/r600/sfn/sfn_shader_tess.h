@@ -78,9 +78,7 @@ private:
 
    VertexExportStage *m_export_processor{nullptr};
 
-   int m_tcs_vertices_out{0};
    bool m_vs_as_gs_a{false};
-   bool m_tes_as_es{false};
 };
 
 } // namespace r600

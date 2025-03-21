@@ -287,7 +287,6 @@ public:
       void set_value(PRegister reg) { m_value = reg; }
 
    private:
-      const RegisterVec4& m_parent;
       PRegister m_value;
    };
 

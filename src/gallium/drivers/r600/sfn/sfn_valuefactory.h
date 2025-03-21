@@ -282,7 +282,6 @@ private:
    PVirtualValue ssa_src(const nir_def& dest, int chan);
 
    int m_next_register_index;
-   int m_next_temp_channel{0};
 
    template <typename Key, typename T>
    using unordered_map_alloc = std::unordered_map<Key,

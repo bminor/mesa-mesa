@@ -138,8 +138,7 @@ TESShader::TESShader(const pipe_stream_output_info *so_info,
                      const r600_shader *gs_shader,
                      const r600_shader_key& key):
     VertexStageShader("TES", key.tes.first_atomic_counter),
-    m_vs_as_gs_a(key.vs.as_gs_a),
-    m_tes_as_es(key.tes.as_es)
+    m_vs_as_gs_a(key.vs.as_gs_a)
 {
    if (key.tes.as_es)
       m_export_processor = new VertexExportForGS(this, gs_shader);
