@@ -19,6 +19,7 @@
 
 #include "VirtGpu.h"
 #include "util/log.h"
+#include "virtio/virtio-gpu/virgl_hw.h"
 
 static const size_t kTransferBufferSize = (1048576);
 

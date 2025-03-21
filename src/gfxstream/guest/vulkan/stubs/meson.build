@@ -11,5 +11,5 @@ libgfxstream_vk_stubs = static_library(
    files_libgfxstream_vk_stubs,
    cpp_args: gfxstream_guest_args,
    include_directories: [inc_connection_manager, inc_platform_virtgpu,
-                         inc_guest_iostream],
+                         inc_guest_iostream, inc_src],
 )

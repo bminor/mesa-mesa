@@ -19,7 +19,6 @@
 #include "LinuxVirtGpu.h"
 #include "drm-uapi/virtgpu_drm.h"
 #include "util/log.h"
-#include "virtgpu_gfxstream_protocol.h"
 
 #ifdef MAJOR_IN_MKDEV
 #include <sys/mkdev.h>
@@ -196,11 +195,11 @@ LinuxVirtGpuDevice::LinuxVirtGpuDevice(enum VirtGpuCapset capset, int32_t descri
             get_caps.addr = (unsigned long long)&mCaps.magmaCapset;
             break;
         case kCapsetGfxStreamGles:
-            get_caps.size = sizeof(struct vulkanCapset);
+            get_caps.size = sizeof(struct glesCapset);
             get_caps.addr = (unsigned long long)&mCaps.glesCapset;
             break;
         case kCapsetGfxStreamComposer:
-            get_caps.size = sizeof(struct vulkanCapset);
+            get_caps.size = sizeof(struct composerCapset);
             get_caps.addr = (unsigned long long)&mCaps.composerCapset;
             break;
         default:

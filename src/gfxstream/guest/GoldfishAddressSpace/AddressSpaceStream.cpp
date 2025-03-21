@@ -13,7 +13,6 @@
 #include "VirtGpu.h"
 #include "util/log.h"
 #include "util/perf/cpu_trace.h"
-#include "virtgpu_gfxstream_protocol.h"
 
 static const size_t kReadSize = 512 * 1024;
 static const size_t kWriteOffset = kReadSize;

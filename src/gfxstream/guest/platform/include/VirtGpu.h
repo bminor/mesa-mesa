@@ -8,25 +8,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "virtgpu_gfxstream_protocol.h"
-
-// See virgl_hw.h and p_defines.h
-#define VIRGL_FORMAT_B8G8R8A8_UNORM 1
-#define VIRGL_FORMAT_B5G6R5_UNORM 7
-#define VIRGL_FORMAT_R10G10B10A2_UNORM 8
-#define VIRGL_FORMAT_R8_UNORM 64
-#define VIRGL_FORMAT_R8G8B8_UNORM 66
-#define VIRGL_FORMAT_R8G8B8A8_UNORM 67
-#define VIRGL_FORMAT_R16G16B16A16_FLOAT 94
-#define VIRGL_FORMAT_YV12 163
-#define VIRGL_FORMAT_YV16 164
-#define VIRGL_FORMAT_IYUV 165
-#define VIRGL_FORMAT_NV12 166
-#define VIRGL_FORMAT_NV21 167
-
-#define VIRGL_BIND_RENDER_TARGET (1 << 1)
-#define VIRGL_BIND_CUSTOM (1 << 17)
-#define VIRGL_BIND_LINEAR (1 << 22)
+#include "virtio/virtio-gpu/virtgpu_gfxstream_protocol.h"
 
 #define PIPE_BUFFER 0
 #define PIPE_TEXTURE_2D 2

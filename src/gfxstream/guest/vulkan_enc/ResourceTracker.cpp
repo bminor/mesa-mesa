@@ -15,9 +15,9 @@
 #include "goldfish_vk_private_defs.h"
 #include "util/anon_file.h"
 #include "util/macros.h"
-#include "virtgpu_gfxstream_protocol.h"
 #include "vulkan/vulkan_core.h"
 #include "util/detect_os.h"
+#include "virtio/virtio-gpu/virgl_hw.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vk_format_info.h"
