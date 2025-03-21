@@ -549,7 +549,7 @@ r600_lower_shared_io_impl(nir_function_impl *impl)
          progress = true;
       }
    }
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 static bool
