@@ -707,9 +707,7 @@ eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
             bool success = false;
             if (!disp->Options.Zink && !getenv("GALLIUM_DRIVER")) {
                disp->Options.Zink = EGL_TRUE;
-               disp->Options.FallbackZink = EGL_TRUE;
                success = _eglDriver.Initialize(disp);
-               disp->Options.FallbackZink = EGL_FALSE;
             }
             if (!success) {
                disp->Options.Zink = EGL_FALSE;
