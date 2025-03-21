@@ -40,6 +40,7 @@ blake3 = static_library(
   files_blake3,
   c_args : blake3_defs,
   gnu_symbol_visibility : 'hidden',
+  build_by_default : false,
 )
 
 idep_blake3 = declare_dependency(
