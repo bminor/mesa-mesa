@@ -84,7 +84,7 @@ r600_nir_lower_int_tg4_impl(nir_function_impl *impl)
          }
       }
    }
-   return progress;
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 /*
