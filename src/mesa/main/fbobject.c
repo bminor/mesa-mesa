@@ -146,6 +146,17 @@ _mesa_lookup_renderbuffer_err(struct gl_context *ctx, GLuint id,
    return rb;
 }
 
+static struct gl_framebuffer *
+_mesa_lookup_framebuffer_locked(struct gl_context *ctx, GLuint id)
+{
+   if (id == 0)
+      return NULL;
+
+   struct gl_framebuffer *fb = (struct gl_framebuffer *)
+      _mesa_HashLookupLocked(&ctx->Shared->FrameBuffers, id);
+
+   return fb;
+}
 
 /**
  * Helper routine for getting a gl_framebuffer.
@@ -169,27 +180,29 @@ struct gl_framebuffer *
 _mesa_lookup_framebuffer_dsa(struct gl_context *ctx, GLuint id,
                              const char* func)
 {
-   struct gl_framebuffer *fb;
-
    if (id == 0)
       return NULL;
 
-   fb = _mesa_lookup_framebuffer(ctx, id);
+   _mesa_HashLockMutex(&ctx->Shared->FrameBuffers);
+   struct gl_framebuffer *fb = _mesa_lookup_framebuffer_locked(ctx, id);
 
    /* Name exists but buffer is not initialized */
    if (fb == &DummyFramebuffer) {
       fb = _mesa_new_framebuffer(ctx, id);
-      _mesa_HashInsert(&ctx->Shared->FrameBuffers, id, fb);
+      _mesa_HashInsertLocked(&ctx->Shared->FrameBuffers, id, fb);
    }
    /* Name doesn't exist */
    else if (!fb) {
       fb = _mesa_new_framebuffer(ctx, id);
       if (!fb) {
          _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", func);
+         _mesa_HashUnlockMutex(&ctx->Shared->FrameBuffers);
          return NULL;
       }
-      _mesa_HashInsert(&ctx->Shared->FrameBuffers, id, fb);
+      _mesa_HashInsertLocked(&ctx->Shared->FrameBuffers, id, fb);
    }
+   _mesa_HashUnlockMutex(&ctx->Shared->FrameBuffers);
+
    return fb;
 }
 
@@ -3278,14 +3291,17 @@ bind_framebuffer(GLenum target, GLuint framebuffer)
    }
 
    if (framebuffer) {
+      _mesa_HashLockMutex(&ctx->Shared->FrameBuffers);
+
       /* Binding a user-created framebuffer object */
-      newDrawFb = _mesa_lookup_framebuffer(ctx, framebuffer);
+      newDrawFb = _mesa_lookup_framebuffer_locked(ctx, framebuffer);
       if (newDrawFb == &DummyFramebuffer) {
          /* ID was reserved, but no real framebuffer object made yet */
          newDrawFb = NULL;
       }
       else if (!newDrawFb && _mesa_is_desktop_gl_core(ctx)) {
          /* All FBO IDs must be Gen'd */
+         _mesa_HashUnlockMutex(&ctx->Shared->FrameBuffers);
          _mesa_error(ctx, GL_INVALID_OPERATION,
                      "glBindFramebuffer(non-gen name)");
          return;
@@ -3295,11 +3311,13 @@ bind_framebuffer(GLenum target, GLuint framebuffer)
          /* create new framebuffer object */
          newDrawFb = _mesa_new_framebuffer(ctx, framebuffer);
          if (!newDrawFb) {
+            _mesa_HashUnlockMutex(&ctx->Shared->FrameBuffers);
             _mesa_error(ctx, GL_OUT_OF_MEMORY, "glBindFramebufferEXT");
             return;
          }
-         _mesa_HashInsert(&ctx->Shared->FrameBuffers, framebuffer, newDrawFb);
+         _mesa_HashInsertLocked(&ctx->Shared->FrameBuffers, framebuffer, newDrawFb);
       }
+      _mesa_HashUnlockMutex(&ctx->Shared->FrameBuffers);
       newReadFb = newDrawFb;
    }
    else {
