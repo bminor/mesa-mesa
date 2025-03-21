@@ -643,6 +643,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       }
       pCapabilities->minBitstreamBufferOffsetAlignment = 16;
       pCapabilities->minBitstreamBufferSizeAlignment = 16;
+      if (pdev->info.vcn_ip_version >= VCN_5_0_0)
+         pCapabilities->flags |= VK_VIDEO_CAPABILITY_SEPARATE_REFERENCE_IMAGES_BIT_KHR;
    }
 
    switch (pVideoProfile->videoCodecOperation) {
@@ -777,8 +779,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_H264_ENCODE_SPEC_VERSION;
       pCapabilities->maxDpbSlots = RADV_VIDEO_H264_MAX_DPB_SLOTS;
       pCapabilities->maxActiveReferencePictures = MAX2(ext->maxPPictureL0ReferenceCount, ext->maxBPictureL0ReferenceCount + ext->maxL1ReferenceCount);
-      pCapabilities->minCodedExtent.width = 128;
-      pCapabilities->minCodedExtent.height = 128;
+      pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 96 : 128;
+      pCapabilities->minCodedExtent.height = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 32 : 128;
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
@@ -834,7 +836,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_H265_ENCODE_SPEC_VERSION;
       pCapabilities->maxDpbSlots = RADV_VIDEO_H265_MAX_DPB_SLOTS;
       pCapabilities->maxActiveReferencePictures = MAX2(ext->maxPPictureL0ReferenceCount, ext->maxBPictureL0ReferenceCount + ext->maxL1ReferenceCount);
-      pCapabilities->minCodedExtent.width = 130;
+      pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 384 : 130;
       pCapabilities->minCodedExtent.height = 128;
       break;
    }

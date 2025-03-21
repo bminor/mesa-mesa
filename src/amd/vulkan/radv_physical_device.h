@@ -73,6 +73,7 @@ enum radv_video_enc_hw_ver {
    RADV_VIDEO_ENC_HW_2,
    RADV_VIDEO_ENC_HW_3,
    RADV_VIDEO_ENC_HW_4,
+   RADV_VIDEO_ENC_HW_5,
 };
 
 struct radv_physical_device {

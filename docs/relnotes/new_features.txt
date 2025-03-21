@@ -31,3 +31,4 @@ cl_ext_buffer_device_address on llvmpipe and zink
 Completed OpenCL 2.0 coarse grain buffer SVM support
 VK_EXT_shader_subgroup_ballot on panvk
 VK_EXT_shader_subgroup_vote on panvk
+Vulkan video support on GFX12 (RDNA4) for RADV
