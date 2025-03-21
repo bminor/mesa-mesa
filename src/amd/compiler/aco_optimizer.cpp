@@ -4393,6 +4393,9 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       /* v_mul_f32(a, v_cndmask_b32(0, 1.0, cond)) -> v_cndmask_b32(0, a, cond) */
       add_opt(v_cndmask_b32, v_cndmask_b32, 0x3, "1032",
               and_cb<check_const_cb<0, 0>, remove_const_cb<0x3f800000>>, true);
+      /* v_mul_f32(a, v_cndmask_b32(1.0, 0, cond)) -> v_cndmask_b32(a, 0, cond) */
+      add_opt(v_cndmask_b32, v_cndmask_b32, 0x3, "0231",
+              and_cb<check_const_cb<1, 0>, remove_const_cb<0x3f800000>>, true);
    } else if (info.opcode == aco_opcode::v_add_u16 && !info.clamp) {
       if (ctx.program->gfx_level < GFX9) {
          add_opt(v_mul_lo_u16, v_mad_legacy_u16, 0x3, "120");
@@ -4445,6 +4448,11 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       /* v_add_u32(a, v_cndmask_b32(0, 1, cond)) -> v_addc_co_u32(a, 0, cond) */
       add_opt(v_cndmask_b32, v_addc_co_u32, 0x3, "0132",
               and_cb<and_cb<check_const_cb<1, 0>, remove_const_cb<1>>, add_lm_def_cb>, true);
+      /* v_add_u32(a, v_cndmask_b32(1, 0, cond)) -> v_subb_co_u32(a, -1, cond) */
+      add_opt(v_cndmask_b32, v_subb_co_u32, 0x3, "0321",
+              and_cb<and_cb<remove_const_cb<1>, remove_const_cb<0>>,
+                     and_cb<insert_const_cb<1, UINT32_MAX>, add_lm_def_cb>>,
+              true);
    } else if ((info.opcode == aco_opcode::v_add_co_u32 ||
                info.opcode == aco_opcode::v_add_co_u32_e64) &&
               !info.clamp) {
@@ -4452,6 +4460,10 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(v_cndmask_b32, v_addc_co_u32, 0x3, "0132",
               and_cb<check_const_cb<1, 0>, remove_const_cb<1>>);
       if (ctx.uses[info.defs[1].tempId()] == 0) {
+         /* v_add_co_u32(a, v_cndmask_b32(1, 0, cond)) -> v_subb_co_u32(a, -1, cond) */
+         add_opt(
+            v_cndmask_b32, v_subb_co_u32, 0x3, "0321",
+            and_cb<and_cb<remove_const_cb<1>, remove_const_cb<0>>, insert_const_cb<1, UINT32_MAX>>);
          add_opt(v_bcnt_u32_b32, v_bcnt_u32_b32, 0x3, "102",
                  and_cb<remove_const_cb<0>, pop_def_cb>);
          add_opt(s_bcnt1_i32_b32, v_bcnt_u32_b32, 0x3, "10", pop_def_cb);
@@ -4478,6 +4490,10 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       /* v_sub_u32(a, v_cndmask_b32(0, 1, cond)) -> v_subb_co_u32(a, 0, cond) */
       add_opt(v_cndmask_b32, v_subb_co_u32, 0x2, "0132",
               and_cb<and_cb<check_const_cb<1, 0>, remove_const_cb<1>>, add_lm_def_cb>);
+      /* v_sub_u32(a, v_cndmask_b32(1, 0, cond)) -> v_addc_co_u32(a, -1, cond) */
+      add_opt(v_cndmask_b32, v_addc_co_u32, 0x2, "0321",
+              and_cb<and_cb<remove_const_cb<1>, remove_const_cb<0>>,
+                     and_cb<insert_const_cb<1, UINT32_MAX>, add_lm_def_cb>>);
       add_opt(v_lshlrev_b32, v_mad_i32_i24, 0x2, "210",
               and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>);
       add_opt(s_lshl_b32, v_mad_i32_i24, 0x2, "120",
@@ -4498,6 +4514,10 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(v_cndmask_b32, v_subb_co_u32, 0x2, "0132",
               and_cb<check_const_cb<1, 0>, remove_const_cb<1>>);
       if (ctx.uses[info.defs[1].tempId()] == 0) {
+         /* v_sub_co_u32(a, v_cndmask_b32(1, 0, cond)) -> v_addc_co_u32(a, -1, cond) */
+         add_opt(
+            v_cndmask_b32, v_addc_co_u32, 0x2, "0321",
+            and_cb<and_cb<remove_const_cb<1>, remove_const_cb<0>>, insert_const_cb<1, UINT32_MAX>>);
          add_opt(v_lshlrev_b32, v_mad_i32_i24, 0x2, "210",
                  and_cb<and_cb<shift_to_mad_cb<32>, neg_mul_to_i24_cb>, pop_def_cb>);
          add_opt(s_lshl_b32, v_mad_i32_i24, 0x2, "120",
