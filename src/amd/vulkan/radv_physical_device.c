@@ -150,7 +150,11 @@ bool
 radv_emulate_rt(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   return instance->perftest_flags & RADV_PERFTEST_EMULATE_RT;
+   if (instance->perftest_flags & RADV_PERFTEST_EMULATE_RT)
+      return true;
+
+   /* Do not force emulated RT on GPUs that have native support. */
+   return !pdev->info.has_image_bvh_intersect_ray && instance->drirc.emulate_rt;
 }
 
 static void

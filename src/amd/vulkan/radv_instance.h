@@ -72,6 +72,7 @@ struct radv_instance {
       bool disable_dcc_mips;
       bool disable_dcc_stores;
       bool lower_terminate_to_discard;
+      bool emulate_rt;
       char *app_layer;
       uint8_t override_graphics_shader_version;
       uint8_t override_compute_shader_version;

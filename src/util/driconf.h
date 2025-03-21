@@ -798,6 +798,10 @@
 #define DRI_CONF_RADV_DISABLE_NGG_GS(def) \
    DRI_CONF_OPT_B(radv_disable_ngg_gs, def, "Disable NGG GS on GFX10/GFX10.3.")
 
+#define DRI_CONF_RADV_EMULATE_RT(def) \
+   DRI_CONF_OPT_B(radv_emulate_rt, def, \
+                  "Expose RT extensions on GFX10 and below through software emulation.")
+
 /**
  * \brief ANV specific configuration options
  */

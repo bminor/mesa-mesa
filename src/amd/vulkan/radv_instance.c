@@ -192,6 +192,7 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_SSBO_NON_UNIFORM(false)
       DRI_CONF_RADV_LOWER_TERMINATE_TO_DISCARD(false)
       DRI_CONF_RADV_APP_LAYER()
+      DRI_CONF_RADV_EMULATE_RT(false)
    DRI_CONF_SECTION_END
 };
 // clang-format on
@@ -286,6 +287,8 @@ radv_init_dri_options(struct radv_instance *instance)
 
    instance->drirc.lower_terminate_to_discard =
       driQueryOptionb(&instance->drirc.options, "radv_lower_terminate_to_discard");
+
+   instance->drirc.emulate_rt = driQueryOptionb(&instance->drirc.options, "radv_emulate_rt");
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {
