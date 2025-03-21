@@ -330,6 +330,43 @@ radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs)
 }
 
 void
+radv_sdma_emit_write_timestamp(struct radeon_cmdbuf *cs, uint64_t va)
+{
+   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_TIMESTAMP, SDMA_TS_SUB_OPCODE_GET_GLOBAL_TIMESTAMP, 0));
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+}
+
+void
+radv_sdma_emit_fence(struct radeon_cmdbuf *cs, uint64_t va, uint32_t fence)
+{
+   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+   radeon_emit(cs, fence);
+}
+
+void
+radv_sdma_emit_wait_mem(struct radeon_cmdbuf *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask)
+{
+   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_POLL_REGMEM, 0, 0) | op << 28 | SDMA_POLL_MEM);
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+   radeon_emit(cs, ref);
+   radeon_emit(cs, mask);
+   radeon_emit(cs, SDMA_POLL_INTERVAL_160_CLK | SDMA_POLL_RETRY_INDEFINITELY << 16);
+}
+
+void
+radv_sdma_emit_write_data_head(struct radeon_cmdbuf *cs, uint64_t va, uint32_t count)
+{
+   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+   radeon_emit(cs, count - 1);
+}
+
+void
 radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, uint64_t src_va, uint64_t dst_va,
                       uint64_t size)
 {

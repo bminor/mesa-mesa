@@ -8,9 +8,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "radv_buffer.h"
 #include "radv_cs.h"
+#include "radv_buffer.h"
 #include "radv_debug.h"
+#include "radv_sdma.h"
 #include "radv_shader.h"
 #include "radv_sqtt.h"
 #include "sid.h"
@@ -21,10 +22,7 @@ radv_cs_emit_write_event_eop(struct radeon_cmdbuf *cs, enum amd_gfx_level gfx_le
                              uint32_t new_fence, uint64_t gfx9_eop_bug_va)
 {
    if (qf == RADV_QUEUE_TRANSFER) {
-      radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
-      radeon_emit(cs, va);
-      radeon_emit(cs, va >> 32);
-      radeon_emit(cs, new_fence);
+      radv_sdma_emit_fence(cs, va, new_fence);
       return;
    }
 
