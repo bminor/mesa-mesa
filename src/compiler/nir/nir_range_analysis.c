@@ -551,9 +551,17 @@ fadd_is_a_number(const struct ssa_result_range left, const struct ssa_result_ran
    /* X + Y is NaN if either operand is NaN or if one operand is +Inf and
     * the other is -Inf.  If neither operand is NaN and at least one of the
     * operands is finite, then the result cannot be NaN.
+    * If the combined range doesn't contain both postive and negative values
+    * (including Infs) then the result cannot be NaN either.
     */
+   enum ssa_ranges combined_range = union_ranges(left.range, right.range);
    return left.is_a_number && right.is_a_number &&
-          (left.is_finite || right.is_finite);
+          (left.is_finite || right.is_finite ||
+           combined_range == eq_zero ||
+           combined_range == gt_zero ||
+           combined_range == ge_zero ||
+           combined_range == lt_zero ||
+           combined_range == le_zero);
 }
 
 /**
