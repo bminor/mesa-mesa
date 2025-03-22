@@ -1031,6 +1031,12 @@ optimizations.extend([
    (('fmax', ('fadd(is_used_once)', 'a(is_not_positive)', '#b(is_zero_to_one)'), 0.0),
     ('fsat', ('fadd', a, b)), '!options->lower_fsat'),
 
+   # ffma variants of the pattern above.
+   (('fmax', ('ffma(is_used_once)', 'a(is_not_positive)', 'b(is_not_negative)', '#c(is_zero_to_one)'), 0.0),
+    ('fsat', ('ffma', a, b, c)), '!options->lower_fsat'),
+   (('fmax', ('ffma(is_used_once)', 'a', ('fneg', a), '#b(is_zero_to_one)'), 0.0),
+    ('fsat', ('ffma', a, ('fneg', a), b)), '!options->lower_fsat'),
+
    (('extract_u8', ('imin', ('imax', a, 0), 0xff), 0), ('imin', ('imax', a, 0), 0xff)),
 
    # The ior versions are exact because fmin and fmax will always pick a
