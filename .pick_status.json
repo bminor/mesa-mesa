@@ -4334,7 +4334,7 @@
         "description": "venus: fix maint4 multi-planar memory requirements",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce1bbd241eb1ff69254000232a42a840893206dc",
         "notes": null
