@@ -1022,14 +1022,14 @@ optimizations.extend([
    (('fmax', ('fneg', ('fmin', b, a)), b), ('fmax', ('fabs', b), ('fneg', a))),
    (('fmin', ('fneg', ('fmax', b, a)), b), ('fmin', ('fneg', ('fabs', b)), ('fneg', a))),
 
-   # If a in [0,b] then b-a is also in [0,b].  Since b in [0,1], max(b-a, 0) =
-   # fsat(b-a).
+   # If a in [-b,0] then a+b is in [0,b].  Since b in [0,1], max(a+b, 0) =
+   # fsat(a+b).
    #
-   # If a > b, then b-a < 0 and max(b-a, 0) = fsat(b-a) = 0
+   # If a < -b, then a+b < 0 and max(a+b, 0) = fsat(a+b) = 0
    #
    # This should be NaN safe since max(NaN, 0) = fsat(NaN) = 0.
-   (('fmax', ('fadd(is_used_once)', ('fneg', 'a(is_not_negative)'), '#b(is_zero_to_one)'), 0.0),
-    ('fsat', ('fadd', ('fneg',  a), b)), '!options->lower_fsat'),
+   (('fmax', ('fadd(is_used_once)', 'a(is_not_positive)', '#b(is_zero_to_one)'), 0.0),
+    ('fsat', ('fadd', a, b)), '!options->lower_fsat'),
 
    (('extract_u8', ('imin', ('imax', a, 0), 0xff), 0), ('imin', ('imax', a, 0), 0xff)),
 
