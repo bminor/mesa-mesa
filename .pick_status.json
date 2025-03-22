@@ -94,7 +94,7 @@
         "description": "nir/opt_algebraic: disable fsat(a + 1.0) opt if a can be NaN",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a4a3487aae98cc83990b1c79785983b65124145f",
         "notes": null
