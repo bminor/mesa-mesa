@@ -527,6 +527,35 @@ get_fp_key(struct analysis_query *q)
    return ptr | type_encoding;
 }
 
+static inline bool
+fmul_is_a_number(const struct ssa_result_range left, const struct ssa_result_range right, bool mulz)
+{
+   if (mulz) {
+      /* nir_op_fmulz: unlike nir_op_fmul, 0 * ±Inf is a number. */
+      return left.is_a_number && right.is_a_number;
+   } else {
+      /* Mulitpliation produces NaN for X * NaN and for 0 * ±Inf.  If both
+       * operands are numbers and either both are finite or one is finite and
+       * the other cannot be zero, then the result must be a number.
+       */
+      return  (left.is_a_number && right.is_a_number) &&
+               ((left.is_finite && right.is_finite) ||
+                (!is_not_zero(left.range) && right.is_finite) ||
+                (left.is_finite && !is_not_zero(right.range)));
+   }
+}
+
+static inline bool
+fadd_is_a_number(const struct ssa_result_range left, const struct ssa_result_range right)
+{
+   /* X + Y is NaN if either operand is NaN or if one operand is +Inf and
+    * the other is -Inf.  If neither operand is NaN and at least one of the
+    * operands is finite, then the result cannot be NaN.
+    */
+   return left.is_a_number && right.is_a_number &&
+          (left.is_finite || right.is_finite);
+}
+
 /**
  * Analyze an expression to determine the range of its result
  *
@@ -814,13 +843,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
 
       r.is_integral = left.is_integral && right.is_integral;
       r.range = fadd_table[left.range][right.range];
-
-      /* X + Y is NaN if either operand is NaN or if one operand is +Inf and
-       * the other is -Inf.  If neither operand is NaN and at least one of the
-       * operands is finite, then the result cannot be NaN.
-       */
-      r.is_a_number = left.is_a_number && right.is_a_number &&
-                      (left.is_finite || right.is_finite);
+      r.is_a_number = fadd_is_a_number(left, right);
       break;
    }
 
@@ -1032,22 +1055,11 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       } else if (left.range != eq_zero && nir_alu_srcs_negative_equal(alu, alu, 0, 1)) {
          /* -x * x => le_zero. */
          r.range = le_zero;
-      } else
-         r.range = fmul_table[left.range][right.range];
-
-      if (alu->op == nir_op_fmul) {
-         /* Mulitpliation produces NaN for X * NaN and for 0 * ±Inf.  If both
-          * operands are numbers and either both are finite or one is finite and
-          * the other cannot be zero, then the result must be a number.
-          */
-         r.is_a_number = (left.is_a_number && right.is_a_number) &&
-                         ((left.is_finite && right.is_finite) ||
-                          (!is_not_zero(left.range) && right.is_finite) ||
-                          (left.is_finite && !is_not_zero(right.range)));
       } else {
-         /* nir_op_fmulz: unlike nir_op_fmul, 0 * ±Inf is a number. */
-         r.is_a_number = left.is_a_number && right.is_a_number;
+         r.range = fmul_table[left.range][right.range];
       }
+
+      r.is_a_number = fmul_is_a_number(left, right, alu->op == nir_op_fmulz);
 
       break;
    }
@@ -1359,26 +1371,25 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       const struct ssa_result_range second = unpack_data(src_res[1]);
       const struct ssa_result_range third = unpack_data(src_res[2]);
 
-      r.is_integral = first.is_integral && second.is_integral &&
-                      third.is_integral;
-
-      /* Various cases can result in NaN, so assume the worst. */
-      r.is_a_number = false;
-
-      enum ssa_ranges fmul_range;
+      struct ssa_result_range fmul_result;
+      fmul_result.is_integral = first.is_integral && second.is_integral;
+      fmul_result.is_finite = false;
+      fmul_result.is_a_number = fmul_is_a_number(first, third, alu->op == nir_op_ffmaz);
 
       if (first.range != eq_zero && nir_alu_srcs_equal(alu, alu, 0, 1)) {
          /* See handling of nir_op_fmul for explanation of why ge_zero is the
           * range.
           */
-         fmul_range = ge_zero;
+         fmul_result.range = ge_zero;
       } else if (first.range != eq_zero && nir_alu_srcs_negative_equal(alu, alu, 0, 1)) {
          /* -x * x => le_zero */
-         fmul_range = le_zero;
+         fmul_result.range = le_zero;
       } else
-         fmul_range = fmul_table[first.range][second.range];
+         fmul_result.range = fmul_table[first.range][second.range];
 
-      r.range = fadd_table[fmul_range][third.range];
+      r.range = fadd_table[fmul_result.range][third.range];
+      r.is_integral = fmul_result.is_integral && third.is_integral;
+      r.is_a_number = fadd_is_a_number(fmul_result, third);
       break;
    }
 
