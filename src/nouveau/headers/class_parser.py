@@ -236,10 +236,27 @@ pub const ${version[0]}: u16 = ${version[1]};
 
 TEMPLATE_RS_MTHD = Template("""\
 
+%if prev_mod is not None:
+use crate::classes::${prev_mod}::mthd as ${prev_mod};
+%endif
+
 // parsed class ${nvcl}
 
 ## Write out the methods in Rust
 %for mthd in methods:
+
+## If this method is the same as the one in the previous class header, just
+## pub use everything instead of re-generating it.  This significantly
+## reduces the number of unique Rust types and trait implementations.
+%if prev_methods.get(mthd.name, None) == mthd:
+    %for field in mthd.fields:
+        %if field.is_rs_enum:
+pub use ${prev_mod}::${field.rs_type(mthd)};
+        %endif
+    %endfor
+pub use ${prev_mod}::${to_camel(mthd.name)};
+    <% continue %>
+%endif
 
 ## If there are a range of values for a field, we define an enum.
 %for field in mthd.fields:
@@ -329,6 +346,15 @@ class Field(object):
         self.end = int(end)
         self.defs = {}
 
+    def __eq__(self, other):
+        if not isinstance(other, Field):
+            return False
+
+        return self.name == other.name and \
+               self.start == other.start and \
+               self.end == other.end and \
+               self.defs == other.defs
+
     @property
     def is_bool(self):
         if len(self.defs) != 2:
@@ -377,6 +403,15 @@ class Method(object):
         self.addr = addr
         self.is_array = is_array
         self.fields = []
+
+    def __eq__(self, other):
+        if not isinstance(other, Method):
+            return False
+
+        return self.name == other.name and \
+               self.addr == other.addr and \
+               self.is_array == other.is_array and \
+               self.fields == other.fields
 
     @property
     def array_size(self):
@@ -476,6 +511,11 @@ def parse_header(nvcl, f):
 
     return (version, methods)
 
+def nvcl_for_filename(name):
+    name = name.removeprefix("cl")
+    name = name.removesuffix(".h")
+    return "NV" + name.upper()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--out-h', required=False, help='Output C header.')
@@ -486,23 +526,33 @@ def main():
     parser.add_argument('--in-h',
                         help='Input class header file.',
                         required=True)
+    parser.add_argument('--prev-in-h',
+                        help='Previous input class header file.',
+                        required=False)
     args = parser.parse_args()
 
     clheader = os.path.basename(args.in_h)
-    nvcl = clheader
-    nvcl = nvcl.removeprefix("cl")
-    nvcl = nvcl.removesuffix(".h")
-    nvcl = nvcl.upper()
-    nvcl = "NV" + nvcl
+    nvcl = nvcl_for_filename(clheader)
 
     with open(args.in_h, 'r', encoding='utf-8') as f:
         (version, methods) = parse_header(nvcl, f)
+
+    prev_mod = None
+    prev_methods = {}
+    if args.prev_in_h is not None:
+        prev_clheader = os.path.basename(args.prev_in_h)
+        prev_nvcl = nvcl_for_filename(prev_clheader)
+        prev_mod = prev_clheader.removesuffix(".h")
+        with open(args.prev_in_h, 'r', encoding='utf-8') as f:
+            (prev_version, prev_methods) = parse_header(prev_nvcl, f)
 
     environment = {
         'clheader': clheader,
         'nvcl': nvcl,
         'version': version,
         'methods': list(methods.values()),
+        'prev_mod': prev_mod,
+        'prev_methods': prev_methods,
         'to_camel': to_camel,
         'bs': '\\'
     }

@@ -81,12 +81,25 @@ if with_nouveau_vk
                  '--out-rs', '@OUTPUT0@'],
     )
 
+    prev_cl_h = []
+    prev_cl_args = []
+    foreach prev_cl : nv_classes
+      if prev_cl == cl
+        break
+      endif
+
+      if prev_cl.substring(-2) == cl.substring(-2)
+        prev_cl_h = 'nvidia/classes/'+prev_cl+'.h'
+        prev_cl_args = ['--prev-in-h', '@INPUT2@']
+      endif
+    endforeach
+
     cl_rs_generated += custom_target(
       'nvh_' + cl + '_mthd.rs',
-      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h'],
+      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', prev_cl_h],
       output : ['nvh_classes_'+cl+'_mthd.rs'],
       command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
-                 '--out-rs-mthd', '@OUTPUT0@'],
+                 prev_cl_args, '--out-rs-mthd', '@OUTPUT0@'],
     )
 
     if cl.endswith('c0') and fs.is_file('nvidia/classes/'+cl+'qmd.h')
