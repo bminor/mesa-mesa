@@ -410,6 +410,13 @@ impl SM50Op for OpFAdd {
         let [src0, src1] = &mut self.srcs;
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+
+        if src1.as_imm_not_f20().is_some()
+            && self.rnd_mode != FRndMode::NearestEven
+        {
+            // Hardware cannot encode long-immediate + rounding mode
+            b.copy_alu_src(src1, GPR, SrcType::F32);
+        }
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -418,6 +425,7 @@ impl SM50Op for OpFAdd {
             e.set_dst(self.dst);
             e.set_reg_fmod_src(8..16, 54, 56, self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
+            assert!(self.rnd_mode == FRndMode::NearestEven);
             e.set_bit(55, self.ftz);
         } else {
             match &self.srcs[1].src_ref {
@@ -562,6 +570,13 @@ impl SM50Op for OpFMul {
         b.copy_alu_src_if_fabs(src1, SrcType::F32);
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+
+        if src1.as_imm_not_f20().is_some()
+            && self.rnd_mode != FRndMode::NearestEven
+        {
+            // Hardware cannot encode long-immediate + rounding mode
+            b.copy_alu_src(src1, GPR, SrcType::F32);
+        }
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -579,6 +594,7 @@ impl SM50Op for OpFMul {
             e.set_bit(53, self.ftz);
             e.set_bit(54, self.dnz);
             e.set_bit(55, self.saturate);
+            assert!(self.rnd_mode == FRndMode::NearestEven);
 
             if fneg {
                 // Flip the immediate sign bit
