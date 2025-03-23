@@ -476,65 +476,6 @@ def parse_header(nvcl, f):
 
     return (version, methods)
 
-def convert_to_rust_constants(filename):
-    with open(filename, 'r') as file:
-        lines = file.readlines()
-
-    rust_items = []
-    processed_constants = {}
-    file_prefix = "NV" + os.path.splitext(os.path.basename(filename))[0].upper() + "_"
-    file_prefix = file_prefix.replace('CL', '')
-    for line in lines:
-        match = re.match(r'#define\s+(\w+)\((\w+)\)\s+(.+)', line.strip())
-        if match:
-            name, arg, expr = match.groups()
-            if name in processed_constants:
-                processed_constants[name] += 1
-                name += f"_{processed_constants[name]}"
-            else:
-                processed_constants[name] = 0
-            name = name.replace(file_prefix, '')
-            # convert to snake case
-            name =  re.sub(r'(?<=[a-z])(?=[A-Z])', '_', name).lower()
-            rust_items.append(f"#[inline]\npub fn {name}  ({arg}: u32) -> u32 {{ {expr.replace('(', '').replace(')', '')} }} ")
-        else:
-            match = re.match(r'#define\s+(\w+)\s+(?:MW\()?(\d+):(\d+)\)?', line.strip())
-            if match:
-                name, high, low = match.groups()
-                high = int(high) + 1  # Convert to exclusive range
-                if name in processed_constants:
-                    processed_constants[name] += 1
-                    name += f"_{processed_constants[name]}"
-                else:
-                    processed_constants[name] = 0
-                # name = name.replace('__', '_').replace(file_prefix, '')
-                name = name.replace(file_prefix, '')
-                rust_items.append(f"pub const {name}: Range<u32> = {low}..{high};")
-            else:
-                match = re.match(r'#define\s+(\w+)\s+\(?0x(\w+)\)?', line.strip())
-                if match:
-                    name, value = match.groups()
-                    if name in processed_constants:
-                        processed_constants[name] += 1
-                        name += f"_{processed_constants[name]}"
-                    else:
-                        processed_constants[name] = 0
-                    name = name.replace(file_prefix, '')
-                    rust_items.append(f"pub const {name}: u32 = 0x{value};")
-                else:
-                    match = re.match(r'#define\s+(\w+)\s+\(?(\d+)\)?', line.strip())
-                    if match:
-                        name, value = match.groups()
-                        if name in processed_constants:
-                            processed_constants[name] += 1
-                            name += f"_{processed_constants[name]}"
-                        else:
-                            processed_constants[name] = 0
-                        name = name.replace(file_prefix, '')
-                        rust_items.append(f"pub const {name}: u32 = {value};")
-
-    return '\n'.join(rust_items)
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--out-h', required=False, help='Output C header.')
@@ -579,14 +520,9 @@ def main():
                 f.write(TEMPLATE_RS.render(**environment))
         if args.out_rs_mthd is not None:
             with open(args.out_rs_mthd, 'w', encoding='utf-8') as f:
-                f.write("#![allow(non_camel_case_types)]\n")
                 f.write("#![allow(non_snake_case)]\n")
-                f.write("#![allow(non_upper_case_globals)]\n\n")
-                f.write("use std::ops::Range;\n")
                 f.write("use crate::Mthd;\n")
                 f.write("use crate::ArrayMthd;\n")
-                f.write("\n")
-                f.write(convert_to_rust_constants(args.in_h))
                 f.write("\n")
                 f.write(TEMPLATE_RS_MTHD.render(**environment))
 
