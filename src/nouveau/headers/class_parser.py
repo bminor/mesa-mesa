@@ -369,7 +369,7 @@ class Field(object):
         elif name[0].isdigit():
             return '_' + name
         else:
-            return name
+            return re.sub(r'_+', '_', name)
 
 class Method(object):
     def __init__(self, name, addr, is_array=False):
@@ -520,7 +520,6 @@ def main():
                 f.write(TEMPLATE_RS.render(**environment))
         if args.out_rs_mthd is not None:
             with open(args.out_rs_mthd, 'w', encoding='utf-8') as f:
-                f.write("#![allow(non_snake_case)]\n")
                 f.write("use crate::Mthd;\n")
                 f.write("use crate::ArrayMthd;\n")
                 f.write("\n")
