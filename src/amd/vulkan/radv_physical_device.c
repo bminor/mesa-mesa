@@ -827,7 +827,8 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storagePushConstant8 = true,
       .shaderBufferInt64Atomics = true,
       .shaderSharedInt64Atomics = true,
-      .shaderFloat16 = pdev->info.has_packed_math_16bit,
+      .shaderFloat16 = pdev->info.has_packed_math_16bit ||
+                       (pdev->info.gfx_level == GFX8 && instance->drirc.expose_float16_gfx8),
       .shaderInt8 = true,
 
       .descriptorIndexing = true,

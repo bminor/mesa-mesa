@@ -802,6 +802,10 @@
    DRI_CONF_OPT_B(radv_emulate_rt, def, \
                   "Expose RT extensions on GFX10 and below through software emulation.")
 
+#define DRI_CONF_RADV_ENABLE_FLOAT16_GFX8(def) \
+   DRI_CONF_OPT_B(radv_enable_float16_gfx8, def, \
+                  "Expose float16 on GFX8, where it's supported but usually not beneficial.")
+
 /**
  * \brief ANV specific configuration options
  */
