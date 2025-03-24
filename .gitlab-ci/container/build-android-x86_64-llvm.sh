@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml and .gitlab-ci/container/gitlab-ci.yml tags:
+# DEBIAN_BUILD_TAG
+# ANDROID_LLVM_ARTIFACT_NAME
+
 set -exu
 
 # If CI vars are not set, assign an empty value, this prevents -u to fail
@@ -34,9 +39,8 @@ if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "https://${S3_HOST}/
   exit
 fi
 
-# Install some dependencies needed to build LLVM
+# Ephemeral packages (installed for this script and removed again at the end)
 EPHEMERAL=(
-  ninja-build
   unzip
 )
 
