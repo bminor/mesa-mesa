@@ -32,7 +32,8 @@ virgl-on-gles:
   extends:
     - virgl-on-gl
 
-virgl-traces:
+# Disabled until piglit's trace download is fixed
+.virgl-traces:
   extends:
     - .virgl-test
     - .piglit-traces-test
