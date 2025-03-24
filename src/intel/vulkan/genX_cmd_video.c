@@ -471,12 +471,11 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
 #endif
    }
 
-   if (sps->flags.scaling_list_enabled_flag) {
-      if (pps->flags.pps_scaling_list_data_present_flag) {
-         scaling_list(cmd_buffer, pps->pScalingLists);
-      } else if (sps->flags.sps_scaling_list_data_present_flag) {
-         scaling_list(cmd_buffer, sps->pScalingLists);
-      }
+   const StdVideoH265ScalingLists *scaling_lists = NULL;
+   vk_video_derive_h265_scaling_list(sps, pps, &scaling_lists);
+
+   if (scaling_lists) {
+      scaling_list(cmd_buffer, scaling_lists);
    } else {
       for (uint8_t size = 0; size < 4; size++) {
          for (uint8_t pred = 0; pred < 2; pred++) {
