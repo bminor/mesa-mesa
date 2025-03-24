@@ -132,14 +132,17 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
       uint32_t count = MIN2(num_dwords, 2);
 
       radeon_check_space(device->ws, cs, 2 + count);
+      radeon_begin(cs);
 
       /* Without the perfctr bit the CP might not always pass the
        * write on correctly. */
       if (pdev->info.gfx_level >= GFX10)
-         radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, cs, R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
+         radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
       else
-         radeon_set_uconfig_reg_seq(cs, R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
-      radeon_emit_array(cs, dwords, count);
+         radeon_set_uconfig_reg_seq(R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
+      radeon_emit_array(dwords, count);
+
+      radeon_end();
 
       dwords += count;
       num_dwords -= count;
@@ -151,8 +154,10 @@ radv_emit_spi_config_cntl(const struct radv_device *device, struct radeon_cmdbuf
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
+   radeon_begin(cs);
+
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_uconfig_reg(cs, R_031120_SPI_SQG_EVENT_CTL,
+      radeon_set_uconfig_reg(R_031120_SPI_SQG_EVENT_CTL,
                              S_031120_ENABLE_SQG_TOP_EVENTS(enable) | S_031120_ENABLE_SQG_BOP_EVENTS(enable));
    } else if (pdev->info.gfx_level >= GFX9) {
       uint32_t spi_config_cntl = S_031100_GPR_WRITE_PRIORITY(0x2c688) | S_031100_EXP_PRIORITY_ORDER(3) |
@@ -161,12 +166,14 @@ radv_emit_spi_config_cntl(const struct radv_device *device, struct radeon_cmdbuf
       if (pdev->info.gfx_level >= GFX10)
          spi_config_cntl |= S_031100_PS_PKR_PRIORITY_CNTL(3);
 
-      radeon_set_uconfig_reg(cs, R_031100_SPI_CONFIG_CNTL, spi_config_cntl);
+      radeon_set_uconfig_reg(R_031100_SPI_CONFIG_CNTL, spi_config_cntl);
    } else {
       /* SPI_CONFIG_CNTL is a protected register on GFX6-GFX8. */
-      radeon_set_privileged_config_reg(cs, R_009100_SPI_CONFIG_CNTL,
+      radeon_set_privileged_config_reg(R_009100_SPI_CONFIG_CNTL,
                                        S_009100_ENABLE_SQG_TOP_EVENTS(enable) | S_009100_ENABLE_SQG_BOP_EVENTS(enable));
    }
+
+   radeon_end();
 }
 
 void
@@ -177,11 +184,15 @@ radv_emit_inhibit_clockgating(const struct radv_device *device, struct radeon_cm
    if (pdev->info.gfx_level >= GFX11)
       return; /* not needed */
 
+   radeon_begin(cs);
+
    if (pdev->info.gfx_level >= GFX10) {
-      radeon_set_uconfig_reg(cs, R_037390_RLC_PERFMON_CLK_CNTL, S_037390_PERFMON_CLOCK_STATE(inhibit));
+      radeon_set_uconfig_reg(R_037390_RLC_PERFMON_CLK_CNTL, S_037390_PERFMON_CLOCK_STATE(inhibit));
    } else if (pdev->info.gfx_level >= GFX8) {
-      radeon_set_uconfig_reg(cs, R_0372FC_RLC_PERFMON_CLK_CNTL, S_0372FC_PERFMON_CLOCK_STATE(inhibit));
+      radeon_set_uconfig_reg(R_0372FC_RLC_PERFMON_CLK_CNTL, S_0372FC_PERFMON_CLOCK_STATE(inhibit));
    }
+
+   radeon_end();
 }
 
 VkResult
@@ -520,20 +531,24 @@ radv_begin_sqtt(struct radv_queue *queue)
 
    radeon_check_space(ws, cs, 512);
 
+   radeon_begin(cs);
+
    switch (family) {
    case RADV_QUEUE_GENERAL:
-      radeon_emit(cs, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
-      radeon_emit(cs, CC0_UPDATE_LOAD_ENABLES(1));
-      radeon_emit(cs, CC1_UPDATE_SHADOW_ENABLES(1));
+      radeon_emit(PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
+      radeon_emit(CC0_UPDATE_LOAD_ENABLES(1));
+      radeon_emit(CC1_UPDATE_SHADOW_ENABLES(1));
       break;
    case RADV_QUEUE_COMPUTE:
-      radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
-      radeon_emit(cs, 0);
+      radeon_emit(PKT3(PKT3_NOP, 0, 0));
+      radeon_emit(0);
       break;
    default:
       unreachable("Incorrect queue family");
       break;
    }
+
+   radeon_end();
 
    /* Make sure to wait-for-idle before starting SQTT. */
    radv_emit_wait_for_idle(device, cs, family);
@@ -593,20 +608,24 @@ radv_end_sqtt(struct radv_queue *queue)
 
    radeon_check_space(ws, cs, 512);
 
+   radeon_begin(cs);
+
    switch (family) {
    case RADV_QUEUE_GENERAL:
-      radeon_emit(cs, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
-      radeon_emit(cs, CC0_UPDATE_LOAD_ENABLES(1));
-      radeon_emit(cs, CC1_UPDATE_SHADOW_ENABLES(1));
+      radeon_emit(PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
+      radeon_emit(CC0_UPDATE_LOAD_ENABLES(1));
+      radeon_emit(CC1_UPDATE_SHADOW_ENABLES(1));
       break;
    case RADV_QUEUE_COMPUTE:
-      radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
-      radeon_emit(cs, 0);
+      radeon_emit(PKT3(PKT3_NOP, 0, 0));
+      radeon_emit(0);
       break;
    default:
       unreachable("Incorrect queue family");
       break;
    }
+
+   radeon_end();
 
    /* Make sure to wait-for-idle before stopping SQTT. */
    radv_emit_wait_for_idle(device, cs, family);

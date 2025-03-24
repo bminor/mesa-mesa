@@ -321,21 +321,6 @@ struct radeon_winsys {
    const struct vk_sync_type *const *(*get_sync_types)(struct radeon_winsys *ws);
 };
 
-static inline void
-radeon_emit(struct radeon_cmdbuf *cs, uint32_t value)
-{
-   assert(cs->cdw < cs->reserved_dw);
-   cs->buf[cs->cdw++] = value;
-}
-
-static inline void
-radeon_emit_array(struct radeon_cmdbuf *cs, const uint32_t *values, unsigned count)
-{
-   assert(cs->cdw + count <= cs->reserved_dw);
-   memcpy(cs->buf + cs->cdw, values, count * 4);
-   cs->cdw += count;
-}
-
 static inline uint64_t
 radv_buffer_get_va(const struct radeon_winsys_bo *bo)
 {

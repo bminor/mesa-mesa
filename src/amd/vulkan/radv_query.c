@@ -38,12 +38,14 @@ static void radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType qu
 static void
 gfx10_copy_shader_query(struct radeon_cmdbuf *cs, uint32_t src_sel, uint64_t src_va, uint64_t dst_va)
 {
-   radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(cs, COPY_DATA_SRC_SEL(src_sel) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-   radeon_emit(cs, src_va);
-   radeon_emit(cs, src_va >> 32);
-   radeon_emit(cs, dst_va);
-   radeon_emit(cs, dst_va >> 32);
+   radeon_begin(cs);
+   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
+   radeon_emit(COPY_DATA_SRC_SEL(src_sel) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
+   radeon_emit(src_va);
+   radeon_emit(src_va >> 32);
+   radeon_emit(dst_va);
+   radeon_emit(dst_va >> 32);
+   radeon_end();
 }
 
 static void
@@ -95,18 +97,20 @@ static void
 radv_emit_event_write(const struct radeon_info *info, struct radeon_cmdbuf *cs, enum radv_event_write event,
                       uint64_t va)
 {
+   radeon_begin(cs);
+
    if (event == RADV_EVENT_WRITE_PIPELINE_STAT) {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      radeon_emit(cs, EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
+      radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+      radeon_emit(EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
    } else if (event == RADV_EVENT_WRITE_OCCLUSION_QUERY) {
       if (info->gfx_level >= GFX11 && info->pfp_fw_version >= EVENT_WRITE_ZPASS_PFP_VERSION) {
-         radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_ZPASS, 1, 0));
+         radeon_emit(PKT3(PKT3_EVENT_WRITE_ZPASS, 1, 0));
       } else {
-         radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
+         radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
          if (info->gfx_level >= GFX11) {
-            radeon_emit(cs, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_DUMP) | EVENT_INDEX(1));
+            radeon_emit(EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_DUMP) | EVENT_INDEX(1));
          } else {
-            radeon_emit(cs, EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
+            radeon_emit(EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
          }
       }
    } else {
@@ -119,12 +123,14 @@ radv_emit_event_write(const struct radeon_info *info, struct radeon_cmdbuf *cs, 
          V_028A90_SAMPLE_STREAMOUTSTATS3,
       };
 
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      radeon_emit(cs, EVENT_TYPE(streamout_events[event]) | EVENT_INDEX(3));
+      radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+      radeon_emit(EVENT_TYPE(streamout_events[event]) | EVENT_INDEX(3));
    }
 
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radeon_emit(va);
+   radeon_emit(va >> 32);
+
+   radeon_end();
 }
 
 static void
@@ -2706,13 +2712,15 @@ radv_write_timestamp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, VkPipeline
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    if (stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
-      radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(cs, COPY_DATA_COUNT_SEL | COPY_DATA_WR_CONFIRM | COPY_DATA_SRC_SEL(COPY_DATA_TIMESTAMP) |
-                         COPY_DATA_DST_SEL(V_370_MEM));
-      radeon_emit(cs, 0);
-      radeon_emit(cs, 0);
-      radeon_emit(cs, va);
-      radeon_emit(cs, va >> 32);
+      radeon_begin(cs);
+      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
+      radeon_emit(COPY_DATA_COUNT_SEL | COPY_DATA_WR_CONFIRM | COPY_DATA_SRC_SEL(COPY_DATA_TIMESTAMP) |
+                  COPY_DATA_DST_SEL(V_370_MEM));
+      radeon_emit(0);
+      radeon_emit(0);
+      radeon_emit(va);
+      radeon_emit(va >> 32);
+      radeon_end();
    } else {
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, cmd_buffer->qf, V_028A90_BOTTOM_OF_PIPE_TS, 0,
                                    EOP_DST_SEL_MEM, EOP_DATA_SEL_TIMESTAMP, va, 0, cmd_buffer->gfx9_eop_bug_va);
@@ -2791,6 +2799,8 @@ radv_CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, 
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs, 6 * accelerationStructureCount);
 
+   radeon_begin(cs);
+
    for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
       VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, pAccelerationStructures[i]);
       uint64_t va = vk_acceleration_structure_get_va(accel_struct);
@@ -2812,16 +2822,17 @@ radv_CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, 
          unreachable("Unhandle accel struct query type.");
       }
 
-      radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                         COPY_DATA_COUNT_SEL | COPY_DATA_WR_CONFIRM);
-      radeon_emit(cs, va);
-      radeon_emit(cs, va >> 32);
-      radeon_emit(cs, query_va);
-      radeon_emit(cs, query_va >> 32);
+      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
+      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_COUNT_SEL |
+                  COPY_DATA_WR_CONFIRM);
+      radeon_emit(va);
+      radeon_emit(va >> 32);
+      radeon_emit(query_va);
+      radeon_emit(query_va >> 32);
 
       query_va += pool->stride;
    }
 
+   radeon_end();
    assert(cmd_buffer->cs->cdw <= cdw_max);
 }

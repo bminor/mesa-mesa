@@ -80,24 +80,26 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radeon_cmdbuf *cs, bool p
    else if (cp_dma_use_L2)
       header |= S_411_SRC_SEL(V_411_SRC_ADDR_TC_L2);
 
+   radeon_begin(cs);
    if (pdev->info.gfx_level >= GFX7) {
-      radeon_emit(cs, PKT3(PKT3_DMA_DATA, 5, predicating));
-      radeon_emit(cs, header);
-      radeon_emit(cs, src_va);       /* SRC_ADDR_LO [31:0] */
-      radeon_emit(cs, src_va >> 32); /* SRC_ADDR_HI [31:0] */
-      radeon_emit(cs, dst_va);       /* DST_ADDR_LO [31:0] */
-      radeon_emit(cs, dst_va >> 32); /* DST_ADDR_HI [31:0] */
-      radeon_emit(cs, command);
+      radeon_emit(PKT3(PKT3_DMA_DATA, 5, predicating));
+      radeon_emit(header);
+      radeon_emit(src_va);       /* SRC_ADDR_LO [31:0] */
+      radeon_emit(src_va >> 32); /* SRC_ADDR_HI [31:0] */
+      radeon_emit(dst_va);       /* DST_ADDR_LO [31:0] */
+      radeon_emit(dst_va >> 32); /* DST_ADDR_HI [31:0] */
+      radeon_emit(command);
    } else {
       assert(!cp_dma_use_L2);
       header |= S_411_SRC_ADDR_HI(src_va >> 32);
-      radeon_emit(cs, PKT3(PKT3_CP_DMA, 4, predicating));
-      radeon_emit(cs, src_va);                  /* SRC_ADDR_LO [31:0] */
-      radeon_emit(cs, header);                  /* SRC_ADDR_HI [15:0] + flags. */
-      radeon_emit(cs, dst_va);                  /* DST_ADDR_LO [31:0] */
-      radeon_emit(cs, (dst_va >> 32) & 0xffff); /* DST_ADDR_HI [15:0] */
-      radeon_emit(cs, command);
+      radeon_emit(PKT3(PKT3_CP_DMA, 4, predicating));
+      radeon_emit(src_va);                  /* SRC_ADDR_LO [31:0] */
+      radeon_emit(header);                  /* SRC_ADDR_HI [15:0] + flags. */
+      radeon_emit(dst_va);                  /* DST_ADDR_LO [31:0] */
+      radeon_emit((dst_va >> 32) & 0xffff); /* DST_ADDR_HI [15:0] */
+      radeon_emit(command);
    }
+   radeon_end();
 }
 
 static void
@@ -116,8 +118,10 @@ radv_emit_cp_dma(struct radv_cmd_buffer *cmd_buffer, uint64_t dst_va, uint64_t s
     */
    if (flags & CP_DMA_SYNC) {
       if (cmd_buffer->qf == RADV_QUEUE_GENERAL) {
-         radeon_emit(cs, PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
-         radeon_emit(cs, 0);
+         radeon_begin(cs);
+         radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
+         radeon_emit(0);
+         radeon_end();
       }
 
       /* CP will see the sync flag and wait for all DMAs to complete. */
@@ -157,13 +161,15 @@ radv_cs_cp_dma_prefetch(const struct radv_device *device, struct radeon_cmdbuf *
 
    header |= S_411_SRC_SEL(V_411_SRC_ADDR_TC_L2);
 
-   radeon_emit(cs, PKT3(PKT3_DMA_DATA, 5, predicating));
-   radeon_emit(cs, header);
-   radeon_emit(cs, aligned_va);       /* SRC_ADDR_LO [31:0] */
-   radeon_emit(cs, aligned_va >> 32); /* SRC_ADDR_HI [31:0] */
-   radeon_emit(cs, aligned_va);       /* DST_ADDR_LO [31:0] */
-   radeon_emit(cs, aligned_va >> 32); /* DST_ADDR_HI [31:0] */
-   radeon_emit(cs, command);
+   radeon_begin(cs);
+   radeon_emit(PKT3(PKT3_DMA_DATA, 5, predicating));
+   radeon_emit(header);
+   radeon_emit(aligned_va);       /* SRC_ADDR_LO [31:0] */
+   radeon_emit(aligned_va >> 32); /* SRC_ADDR_HI [31:0] */
+   radeon_emit(aligned_va);       /* DST_ADDR_LO [31:0] */
+   radeon_emit(aligned_va >> 32); /* DST_ADDR_HI [31:0] */
+   radeon_emit(command);
+   radeon_end();
 }
 
 void

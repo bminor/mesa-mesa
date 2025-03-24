@@ -30,23 +30,25 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
    radv_cs_add_buffer(device->ws, cs, reloc->bo);
 
+   radeon_begin(cs);
+
    /* VS */
    if (pipeline->base.shaders[MESA_SHADER_VERTEX]) {
       struct radv_shader *vs = pipeline->base.shaders[MESA_SHADER_VERTEX];
 
       va = reloc->va[MESA_SHADER_VERTEX];
       if (vs->info.vs.as_ls) {
-         radeon_set_sh_reg(cs, vs->info.regs.pgm_lo, va >> 8);
+         radeon_set_sh_reg(vs->info.regs.pgm_lo, va >> 8);
       } else if (vs->info.vs.as_es) {
-         radeon_set_sh_reg_seq(cs, vs->info.regs.pgm_lo, 2);
-         radeon_emit(cs, va >> 8);
-         radeon_emit(cs, S_00B324_MEM_BASE(va >> 40));
+         radeon_set_sh_reg_seq(vs->info.regs.pgm_lo, 2);
+         radeon_emit(va >> 8);
+         radeon_emit(S_00B324_MEM_BASE(va >> 40));
       } else if (vs->info.is_ngg) {
-         radeon_set_sh_reg(cs, vs->info.regs.pgm_lo, va >> 8);
+         radeon_set_sh_reg(vs->info.regs.pgm_lo, va >> 8);
       } else {
-         radeon_set_sh_reg_seq(cs, vs->info.regs.pgm_lo, 2);
-         radeon_emit(cs, va >> 8);
-         radeon_emit(cs, S_00B124_MEM_BASE(va >> 40));
+         radeon_set_sh_reg_seq(vs->info.regs.pgm_lo, 2);
+         radeon_emit(va >> 8);
+         radeon_emit(S_00B124_MEM_BASE(va >> 40));
       }
    }
 
@@ -57,11 +59,11 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
       va = reloc->va[MESA_SHADER_TESS_CTRL];
 
       if (gfx_level >= GFX9) {
-         radeon_set_sh_reg(cs, tcs->info.regs.pgm_lo, va >> 8);
+         radeon_set_sh_reg(tcs->info.regs.pgm_lo, va >> 8);
       } else {
-         radeon_set_sh_reg_seq(cs, tcs->info.regs.pgm_lo, 2);
-         radeon_emit(cs, va >> 8);
-         radeon_emit(cs, S_00B424_MEM_BASE(va >> 40));
+         radeon_set_sh_reg_seq(tcs->info.regs.pgm_lo, 2);
+         radeon_emit(va >> 8);
+         radeon_emit(S_00B424_MEM_BASE(va >> 40));
       }
    }
 
@@ -71,15 +73,15 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       va = reloc->va[MESA_SHADER_TESS_EVAL];
       if (tes->info.is_ngg) {
-         radeon_set_sh_reg(cs, tes->info.regs.pgm_lo, va >> 8);
+         radeon_set_sh_reg(tes->info.regs.pgm_lo, va >> 8);
       } else if (tes->info.tes.as_es) {
-         radeon_set_sh_reg_seq(cs, tes->info.regs.pgm_lo, 2);
-         radeon_emit(cs, va >> 8);
-         radeon_emit(cs, S_00B324_MEM_BASE(va >> 40));
+         radeon_set_sh_reg_seq(tes->info.regs.pgm_lo, 2);
+         radeon_emit(va >> 8);
+         radeon_emit(S_00B324_MEM_BASE(va >> 40));
       } else {
-         radeon_set_sh_reg_seq(cs, tes->info.regs.pgm_lo, 2);
-         radeon_emit(cs, va >> 8);
-         radeon_emit(cs, S_00B124_MEM_BASE(va >> 40));
+         radeon_set_sh_reg_seq(tes->info.regs.pgm_lo, 2);
+         radeon_emit(va >> 8);
+         radeon_emit(S_00B124_MEM_BASE(va >> 40));
       }
    }
 
@@ -89,14 +91,14 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       va = reloc->va[MESA_SHADER_GEOMETRY];
       if (gs->info.is_ngg) {
-         radeon_set_sh_reg(cs, gs->info.regs.pgm_lo, va >> 8);
+         radeon_set_sh_reg(gs->info.regs.pgm_lo, va >> 8);
       } else {
          if (gfx_level >= GFX9) {
-            radeon_set_sh_reg(cs, gs->info.regs.pgm_lo, va >> 8);
+            radeon_set_sh_reg(gs->info.regs.pgm_lo, va >> 8);
          } else {
-            radeon_set_sh_reg_seq(cs, gs->info.regs.pgm_lo, 2);
-            radeon_emit(cs, va >> 8);
-            radeon_emit(cs, S_00B224_MEM_BASE(va >> 40));
+            radeon_set_sh_reg_seq(gs->info.regs.pgm_lo, 2);
+            radeon_emit(va >> 8);
+            radeon_emit(S_00B224_MEM_BASE(va >> 40));
          }
       }
    }
@@ -107,9 +109,9 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       va = reloc->va[MESA_SHADER_FRAGMENT];
 
-      radeon_set_sh_reg_seq(cs, ps->info.regs.pgm_lo, 2);
-      radeon_emit(cs, va >> 8);
-      radeon_emit(cs, S_00B024_MEM_BASE(va >> 40));
+      radeon_set_sh_reg_seq(ps->info.regs.pgm_lo, 2);
+      radeon_emit(va >> 8);
+      radeon_emit(S_00B024_MEM_BASE(va >> 40));
    }
 
    /* MS */
@@ -118,8 +120,10 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       va = reloc->va[MESA_SHADER_MESH];
 
-      radeon_set_sh_reg(cs, ms->info.regs.pgm_lo, va >> 8);
+      radeon_set_sh_reg(ms->info.regs.pgm_lo, va >> 8);
    }
+
+   radeon_end();
 }
 
 static uint64_t

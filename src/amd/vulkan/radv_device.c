@@ -972,40 +972,42 @@ radv_emit_default_sample_locations(const struct radv_physical_device *pdev, stru
 {
    uint64_t centroid_priority;
 
+   radeon_begin(cs);
+
    switch (nr_samples) {
    default:
    case 1:
       centroid_priority = centroid_priority_1x;
 
-      radeon_set_context_reg(cs, R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_1x);
-      radeon_set_context_reg(cs, R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_1x);
-      radeon_set_context_reg(cs, R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_1x);
-      radeon_set_context_reg(cs, R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_1x);
+      radeon_set_context_reg(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_1x);
+      radeon_set_context_reg(R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_1x);
+      radeon_set_context_reg(R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_1x);
+      radeon_set_context_reg(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_1x);
       break;
    case 2:
       centroid_priority = centroid_priority_2x;
 
-      radeon_set_context_reg(cs, R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_2x);
-      radeon_set_context_reg(cs, R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_2x);
-      radeon_set_context_reg(cs, R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_2x);
-      radeon_set_context_reg(cs, R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_2x);
+      radeon_set_context_reg(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_2x);
+      radeon_set_context_reg(R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_2x);
+      radeon_set_context_reg(R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_2x);
+      radeon_set_context_reg(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_2x);
       break;
    case 4:
       centroid_priority = centroid_priority_4x;
 
-      radeon_set_context_reg(cs, R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_4x);
-      radeon_set_context_reg(cs, R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_4x);
-      radeon_set_context_reg(cs, R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_4x);
-      radeon_set_context_reg(cs, R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_4x);
+      radeon_set_context_reg(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_4x);
+      radeon_set_context_reg(R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_4x);
+      radeon_set_context_reg(R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_4x);
+      radeon_set_context_reg(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_4x);
       break;
    case 8:
       centroid_priority = centroid_priority_8x;
 
-      radeon_set_context_reg_seq(cs, R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, 14);
-      radeon_emit_array(cs, sample_locs_8x, 4);
-      radeon_emit_array(cs, sample_locs_8x, 4);
-      radeon_emit_array(cs, sample_locs_8x, 4);
-      radeon_emit_array(cs, sample_locs_8x, 2);
+      radeon_set_context_reg_seq(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, 14);
+      radeon_emit_array(sample_locs_8x, 4);
+      radeon_emit_array(sample_locs_8x, 4);
+      radeon_emit_array(sample_locs_8x, 4);
+      radeon_emit_array(sample_locs_8x, 2);
       break;
    }
 
@@ -1014,17 +1016,19 @@ radv_emit_default_sample_locations(const struct radv_physical_device *pdev, stru
     * support 16 samples.
     */
    if (pdev->info.gfx_level >= GFX7) {
-      radeon_set_context_reg(cs, R_02882C_PA_SU_PRIM_FILTER_CNTL,
+      radeon_set_context_reg(R_02882C_PA_SU_PRIM_FILTER_CNTL,
                              S_02882C_XMAX_RIGHT_EXCLUSION(1) | S_02882C_YMAX_BOTTOM_EXCLUSION(1));
    }
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg_seq(cs, R_028BF0_PA_SC_CENTROID_PRIORITY_0, 2);
+      radeon_set_context_reg_seq(R_028BF0_PA_SC_CENTROID_PRIORITY_0, 2);
    } else {
-      radeon_set_context_reg_seq(cs, R_028BD4_PA_SC_CENTROID_PRIORITY_0, 2);
+      radeon_set_context_reg_seq(R_028BD4_PA_SC_CENTROID_PRIORITY_0, 2);
    }
-   radeon_emit(cs, centroid_priority);
-   radeon_emit(cs, centroid_priority >> 32);
+   radeon_emit(centroid_priority);
+   radeon_emit(centroid_priority >> 32);
+
+   radeon_end();
 }
 
 static void

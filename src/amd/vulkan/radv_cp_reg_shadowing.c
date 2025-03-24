@@ -39,7 +39,10 @@ radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_s
    if (!pm4)
       goto fail_create;
 
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+   radeon_begin(cs);
+   radeon_emit_array(pm4->pm4, pm4->ndw);
+   radeon_end();
+
    ws->cs_pad(cs, 0);
 
    result = radv_bo_create(
@@ -126,7 +129,10 @@ radv_init_shadowed_regs_buffer_state(const struct radv_device *device, struct ra
          goto fail;
       }
 
-      radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+      radeon_begin(cs);
+      radeon_emit_array(pm4->pm4, pm4->ndw);
+      radeon_end();
+
       ac_pm4_free_state(pm4);
    }
 

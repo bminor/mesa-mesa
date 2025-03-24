@@ -323,44 +323,54 @@ radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs)
 {
    /* SDMA NOP acts as a fence command and causes the SDMA engine to wait for pending copy operations. */
    radeon_check_space(device->ws, cs, 1);
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
+   radeon_end();
 }
 
 void
 radv_sdma_emit_write_timestamp(struct radeon_cmdbuf *cs, uint64_t va)
 {
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_TIMESTAMP, SDMA_TS_SUB_OPCODE_GET_GLOBAL_TIMESTAMP, 0));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_TIMESTAMP, SDMA_TS_SUB_OPCODE_GET_GLOBAL_TIMESTAMP, 0));
+   radeon_emit(va);
+   radeon_emit(va >> 32);
+   radeon_end();
 }
 
 void
 radv_sdma_emit_fence(struct radeon_cmdbuf *cs, uint64_t va, uint32_t fence)
 {
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
-   radeon_emit(cs, fence);
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
+   radeon_emit(va);
+   radeon_emit(va >> 32);
+   radeon_emit(fence);
+   radeon_end();
 }
 
 void
 radv_sdma_emit_wait_mem(struct radeon_cmdbuf *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask)
 {
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_POLL_REGMEM, 0, 0) | op << 28 | SDMA_POLL_MEM);
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
-   radeon_emit(cs, ref);
-   radeon_emit(cs, mask);
-   radeon_emit(cs, SDMA_POLL_INTERVAL_160_CLK | SDMA_POLL_RETRY_INDEFINITELY << 16);
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_POLL_REGMEM, 0, 0) | op << 28 | SDMA_POLL_MEM);
+   radeon_emit(va);
+   radeon_emit(va >> 32);
+   radeon_emit(ref);
+   radeon_emit(mask);
+   radeon_emit(SDMA_POLL_INTERVAL_160_CLK | SDMA_POLL_RETRY_INDEFINITELY << 16);
+   radeon_end();
 }
 
 void
 radv_sdma_emit_write_data_head(struct radeon_cmdbuf *cs, uint64_t va, uint32_t count)
 {
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
-   radeon_emit(cs, va);
-   radeon_emit(cs, va >> 32);
-   radeon_emit(cs, count - 1);
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
+   radeon_emit(va);
+   radeon_emit(va >> 32);
+   radeon_emit(count - 1);
+   radeon_end();
 }
 
 void
@@ -393,19 +403,23 @@ radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
 
    radeon_check_space(device->ws, cs, ncopy * 7);
 
+   radeon_begin(cs);
+
    for (unsigned i = 0; i < ncopy; i++) {
       unsigned csize = size >= 4 ? MIN2(size & align, max_size_per_packet) : size;
-      radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR, 0));
-      radeon_emit(cs, ver >= SDMA_4_0 ? csize - 1 : csize);
-      radeon_emit(cs, 0); /* src/dst endian swap */
-      radeon_emit(cs, src_va);
-      radeon_emit(cs, src_va >> 32);
-      radeon_emit(cs, dst_va);
-      radeon_emit(cs, dst_va >> 32);
+      radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR, 0));
+      radeon_emit(ver >= SDMA_4_0 ? csize - 1 : csize);
+      radeon_emit(0); /* src/dst endian swap */
+      radeon_emit(src_va);
+      radeon_emit(src_va >> 32);
+      radeon_emit(dst_va);
+      radeon_emit(dst_va >> 32);
       dst_va += csize;
       src_va += csize;
       size -= csize;
    }
+
+   radeon_end();
 }
 
 void
@@ -428,18 +442,21 @@ radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
    const unsigned num_packets = DIV_ROUND_UP(size, max_fill_bytes);
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs, num_packets * 5);
 
+   radeon_begin(cs);
+
    for (unsigned i = 0; i < num_packets; ++i) {
       const uint64_t offset = i * max_fill_bytes;
       const uint64_t fill_bytes = MIN2(size - offset, max_fill_bytes);
       const uint64_t fill_va = va + offset;
 
-      radeon_emit(cs, constant_fill_header);
-      radeon_emit(cs, fill_va);
-      radeon_emit(cs, fill_va >> 32);
-      radeon_emit(cs, value);
-      radeon_emit(cs, fill_bytes - 1); /* Must be programmed in bytes, even if the fill is done in dwords. */
+      radeon_emit(constant_fill_header);
+      radeon_emit(fill_va);
+      radeon_emit(fill_va >> 32);
+      radeon_emit(value);
+      radeon_emit(fill_bytes - 1); /* Must be programmed in bytes, even if the fill is done in dwords. */
    }
 
+   radeon_end();
    assert(cs->cdw <= cdw_max);
 }
 
@@ -475,20 +492,22 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
 
    ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 13);
 
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) | util_logbase2(src->bpp)
-                                                                                                 << 29);
-   radeon_emit(cs, src->va);
-   radeon_emit(cs, src->va >> 32);
-   radeon_emit(cs, src_off.x | src_off.y << 16);
-   radeon_emit(cs, src_off.z | (src_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
-   radeon_emit(cs, src_slice_pitch - 1);
-   radeon_emit(cs, dst->va);
-   radeon_emit(cs, dst->va >> 32);
-   radeon_emit(cs, dst_off.x | dst_off.y << 16);
-   radeon_emit(cs, dst_off.z | (dst_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
-   radeon_emit(cs, dst_slice_pitch - 1);
-   radeon_emit(cs, (ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit(cs, (ext.depth - 1));
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) | util_logbase2(src->bpp)
+                                                                                             << 29);
+   radeon_emit(src->va);
+   radeon_emit(src->va >> 32);
+   radeon_emit(src_off.x | src_off.y << 16);
+   radeon_emit(src_off.z | (src_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
+   radeon_emit(src_slice_pitch - 1);
+   radeon_emit(dst->va);
+   radeon_emit(dst->va >> 32);
+   radeon_emit(dst_off.x | dst_off.y << 16);
+   radeon_emit(dst_off.z | (dst_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
+   radeon_emit(dst_slice_pitch - 1);
+   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
+   radeon_emit((ext.depth - 1));
+   radeon_end();
 
    assert(cs->cdw == cdw_end);
 }
@@ -519,29 +538,31 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
 
    ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 14 + (dcc ? 3 : 0));
 
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_TILED_SUB_WINDOW, 0) | dcc << 19 | detile << 31 |
-                      tiled->header_dword);
-   radeon_emit(cs, tiled->va);
-   radeon_emit(cs, tiled->va >> 32);
-   radeon_emit(cs, tiled_off.x | tiled_off.y << 16);
-   radeon_emit(cs, tiled_off.z | (tiled_ext.width - 1) << 16);
-   radeon_emit(cs, (tiled_ext.height - 1) | (tiled_ext.depth - 1) << 16);
-   radeon_emit(cs, tiled->info_dword);
-   radeon_emit(cs, linear->va);
-   radeon_emit(cs, linear->va >> 32);
-   radeon_emit(cs, linear_off.x | linear_off.y << 16);
-   radeon_emit(cs, linear_off.z | (linear_pitch - 1) << 16);
-   radeon_emit(cs, linear_slice_pitch - 1);
-   radeon_emit(cs, (ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit(cs, (ext.depth - 1));
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_TILED_SUB_WINDOW, 0) | dcc << 19 | detile << 31 |
+               tiled->header_dword);
+   radeon_emit(tiled->va);
+   radeon_emit(tiled->va >> 32);
+   radeon_emit(tiled_off.x | tiled_off.y << 16);
+   radeon_emit(tiled_off.z | (tiled_ext.width - 1) << 16);
+   radeon_emit((tiled_ext.height - 1) | (tiled_ext.depth - 1) << 16);
+   radeon_emit(tiled->info_dword);
+   radeon_emit(linear->va);
+   radeon_emit(linear->va >> 32);
+   radeon_emit(linear_off.x | linear_off.y << 16);
+   radeon_emit(linear_off.z | (linear_pitch - 1) << 16);
+   radeon_emit(linear_slice_pitch - 1);
+   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
+   radeon_emit((ext.depth - 1));
 
    if (tiled->meta_va) {
       const unsigned write_compress_enable = !detile;
-      radeon_emit(cs, tiled->meta_va);
-      radeon_emit(cs, tiled->meta_va >> 32);
-      radeon_emit(cs, tiled->meta_config | write_compress_enable << 28);
+      radeon_emit(tiled->meta_va);
+      radeon_emit(tiled->meta_va >> 32);
+      radeon_emit(tiled->meta_config | write_compress_enable << 28);
    }
 
+   radeon_end();
    assert(cs->cdw == cdw_end);
 }
 
@@ -583,34 +604,36 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
 
    ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 15 + (dcc ? 3 : 0));
 
-   radeon_emit(cs, SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_T2T_SUB_WINDOW, 0) | dcc << 19 | dcc_dir << 31 |
-                      src->header_dword);
-   radeon_emit(cs, src->va);
-   radeon_emit(cs, src->va >> 32);
-   radeon_emit(cs, src_off.x | src_off.y << 16);
-   radeon_emit(cs, src_off.z | (src_ext.width - 1) << 16);
-   radeon_emit(cs, (src_ext.height - 1) | (src_ext.depth - 1) << 16);
-   radeon_emit(cs, src->info_dword);
-   radeon_emit(cs, dst->va);
-   radeon_emit(cs, dst->va >> 32);
-   radeon_emit(cs, dst_off.x | dst_off.y << 16);
-   radeon_emit(cs, dst_off.z | (dst_ext.width - 1) << 16);
-   radeon_emit(cs, (dst_ext.height - 1) | (dst_ext.depth - 1) << 16);
-   radeon_emit(cs, dst->info_dword);
-   radeon_emit(cs, (ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit(cs, (ext.depth - 1));
+   radeon_begin(cs);
+   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_T2T_SUB_WINDOW, 0) | dcc << 19 | dcc_dir << 31 |
+               src->header_dword);
+   radeon_emit(src->va);
+   radeon_emit(src->va >> 32);
+   radeon_emit(src_off.x | src_off.y << 16);
+   radeon_emit(src_off.z | (src_ext.width - 1) << 16);
+   radeon_emit((src_ext.height - 1) | (src_ext.depth - 1) << 16);
+   radeon_emit(src->info_dword);
+   radeon_emit(dst->va);
+   radeon_emit(dst->va >> 32);
+   radeon_emit(dst_off.x | dst_off.y << 16);
+   radeon_emit(dst_off.z | (dst_ext.width - 1) << 16);
+   radeon_emit((dst_ext.height - 1) | (dst_ext.depth - 1) << 16);
+   radeon_emit(dst->info_dword);
+   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
+   radeon_emit((ext.depth - 1));
 
    if (dst->meta_va) {
       const uint32_t write_compress_enable = 1;
-      radeon_emit(cs, dst->meta_va);
-      radeon_emit(cs, dst->meta_va >> 32);
-      radeon_emit(cs, dst->meta_config | write_compress_enable << 28);
+      radeon_emit(dst->meta_va);
+      radeon_emit(dst->meta_va >> 32);
+      radeon_emit(dst->meta_config | write_compress_enable << 28);
    } else if (src->meta_va) {
-      radeon_emit(cs, src->meta_va);
-      radeon_emit(cs, src->meta_va >> 32);
-      radeon_emit(cs, src->meta_config);
+      radeon_emit(src->meta_va);
+      radeon_emit(src->meta_va >> 32);
+      radeon_emit(src->meta_config);
    }
 
+   radeon_end();
    assert(cs->cdw == cdw_end);
 }
 
