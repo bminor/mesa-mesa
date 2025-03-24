@@ -30,6 +30,7 @@
 #define PANVK_MAX_QUEUE_FAMILIES 1
 
 struct panvk_precomp_cache;
+struct panvk_device_draw_context;
 
 struct panvk_device {
    struct vk_device vk;
@@ -78,6 +79,8 @@ struct panvk_device {
       struct panvk_utrace_perfetto utp;
 #endif
    } utrace;
+
+   struct panvk_device_draw_context* draw_ctx;
 
    struct {
       struct pandecode_context *decode_ctx;
