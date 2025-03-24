@@ -11,6 +11,7 @@
 #include "ac_shadowed_regs.h"
 
 #include "ac_debug.h"
+#include "ac_pm4.h"
 #include "sid.h"
 #include "util/macros.h"
 #include "util/u_debug.h"
@@ -778,11 +779,21 @@ void ac_get_reg_ranges(enum amd_gfx_level gfx_level, enum radeon_family family,
    }
 }
 
+static void
+set_context_reg_seq_array(struct ac_pm4_state *pm4, unsigned reg,
+                          unsigned num, const uint32_t *values)
+{
+   ac_pm4_cmd_add(pm4, PKT3(PKT3_SET_CONTEXT_REG, num, 0));
+   ac_pm4_cmd_add(pm4, (reg - SI_CONTEXT_REG_OFFSET) >> 2);
+
+   for (uint32_t i = 0; i < num; i++)
+      ac_pm4_cmd_add(pm4, values[i]);
+}
+
 /**
  * Emulate CLEAR_STATE.
  */
-static void gfx9_emulate_clear_state(struct radeon_cmdbuf *cs,
-                                     set_context_reg_seq_array_fn set_context_reg_seq_array)
+static void gfx9_emulate_clear_state(struct ac_pm4_state *pm4)
 {
    static const uint32_t DbRenderControlGfx9[] = {
       0x0,        // DB_RENDER_CONTROL
@@ -1407,31 +1418,31 @@ static void gfx9_emulate_clear_state(struct radeon_cmdbuf *cs,
 
 #define SET(array) ARRAY_SIZE(array), array
 
-   set_context_reg_seq_array(cs, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx9));
-   set_context_reg_seq_array(cs, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx9));
-   set_context_reg_seq_array(cs, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
+   set_context_reg_seq_array(pm4, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx9));
+   set_context_reg_seq_array(pm4, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx9));
+   set_context_reg_seq_array(pm4, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
                              SET(VgtMultiPrimIbResetIndxGfx9));
-   set_context_reg_seq_array(cs, R_028414_CB_BLEND_RED, SET(CbBlendRedGfx9));
-   set_context_reg_seq_array(cs, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx9));
-   set_context_reg_seq_array(cs, R_028754_SX_PS_DOWNCONVERT, SET(SxPsDownconvertGfx9));
-   set_context_reg_seq_array(cs, R_028800_DB_DEPTH_CONTROL, SET(DbDepthControlGfx9));
-   set_context_reg_seq_array(cs, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx9));
-   set_context_reg_seq_array(cs, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx9));
-   set_context_reg_seq_array(cs, R_028A40_VGT_GS_MODE, SET(VgtGsModeGfx9));
-   set_context_reg_seq_array(cs, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx9));
-   set_context_reg_seq_array(cs, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx9));
-   set_context_reg_seq_array(cs, R_028A94_VGT_GS_MAX_PRIMS_PER_SUBGROUP,
+   set_context_reg_seq_array(pm4, R_028414_CB_BLEND_RED, SET(CbBlendRedGfx9));
+   set_context_reg_seq_array(pm4, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx9));
+   set_context_reg_seq_array(pm4, R_028754_SX_PS_DOWNCONVERT, SET(SxPsDownconvertGfx9));
+   set_context_reg_seq_array(pm4, R_028800_DB_DEPTH_CONTROL, SET(DbDepthControlGfx9));
+   set_context_reg_seq_array(pm4, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx9));
+   set_context_reg_seq_array(pm4, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx9));
+   set_context_reg_seq_array(pm4, R_028A40_VGT_GS_MODE, SET(VgtGsModeGfx9));
+   set_context_reg_seq_array(pm4, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx9));
+   set_context_reg_seq_array(pm4, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx9));
+   set_context_reg_seq_array(pm4, R_028A94_VGT_GS_MAX_PRIMS_PER_SUBGROUP,
                              SET(VgtGsMaxPrimsPerSubgroupGfx9));
-   set_context_reg_seq_array(cs, R_028AE0_VGT_STRMOUT_BUFFER_SIZE_1,
+   set_context_reg_seq_array(pm4, R_028AE0_VGT_STRMOUT_BUFFER_SIZE_1,
                              SET(VgtStrmoutBufferSize1Gfx9));
-   set_context_reg_seq_array(cs, R_028AF0_VGT_STRMOUT_BUFFER_SIZE_2,
+   set_context_reg_seq_array(pm4, R_028AF0_VGT_STRMOUT_BUFFER_SIZE_2,
                              SET(VgtStrmoutBufferSize2Gfx9));
-   set_context_reg_seq_array(cs, R_028B00_VGT_STRMOUT_BUFFER_SIZE_3,
+   set_context_reg_seq_array(pm4, R_028B00_VGT_STRMOUT_BUFFER_SIZE_3,
                              SET(VgtStrmoutBufferSize3Gfx9));
-   set_context_reg_seq_array(cs, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET,
+   set_context_reg_seq_array(pm4, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET,
                              SET(VgtStrmoutDrawOpaqueOffsetGfx9));
-   set_context_reg_seq_array(cs, R_028B38_VGT_GS_MAX_VERT_OUT, SET(VgtGsMaxVertOutGfx9));
-   set_context_reg_seq_array(cs, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
+   set_context_reg_seq_array(pm4, R_028B38_VGT_GS_MAX_VERT_OUT, SET(VgtGsMaxVertOutGfx9));
+   set_context_reg_seq_array(pm4, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
                              SET(PaScCentroidPriority0Gfx9));
 }
 
@@ -1439,9 +1450,8 @@ static void gfx9_emulate_clear_state(struct radeon_cmdbuf *cs,
  * Emulate CLEAR_STATE. Additionally, initialize num_reg_pairs registers specified
  * via reg_offsets and reg_values.
  */
-static void gfx10_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_reg_pairs,
-                                      unsigned *reg_offsets, uint32_t *reg_values,
-                                      set_context_reg_seq_array_fn set_context_reg_seq_array)
+static void gfx10_emulate_clear_state(struct ac_pm4_state *pm4, unsigned num_reg_pairs,
+                                      unsigned *reg_offsets, uint32_t *reg_values)
 {
    static const uint32_t DbRenderControlNv10[] = {
       0x0,        // DB_RENDER_CONTROL
@@ -2115,35 +2125,34 @@ static void gfx10_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_reg
       0x0         // CB_COLOR7_ATTRIB3
    };
 
-   set_context_reg_seq_array(cs, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlNv10));
-   set_context_reg_seq_array(cs, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Nv10));
-   set_context_reg_seq_array(cs, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
+   set_context_reg_seq_array(pm4, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlNv10));
+   set_context_reg_seq_array(pm4, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Nv10));
+   set_context_reg_seq_array(pm4, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
                              SET(VgtMultiPrimIbResetIndxNv10));
-   set_context_reg_seq_array(cs, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Nv10));
-   set_context_reg_seq_array(cs, R_028754_SX_PS_DOWNCONVERT, SET(SxPsDownconvertNv10));
-   set_context_reg_seq_array(cs, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadNv10));
-   set_context_reg_seq_array(cs, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP,
+   set_context_reg_seq_array(pm4, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Nv10));
+   set_context_reg_seq_array(pm4, R_028754_SX_PS_DOWNCONVERT, SET(SxPsDownconvertNv10));
+   set_context_reg_seq_array(pm4, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadNv10));
+   set_context_reg_seq_array(pm4, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP,
                              SET(GeMaxOutputPerSubgroupNv10));
-   set_context_reg_seq_array(cs, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeNv10));
-   set_context_reg_seq_array(cs, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelNv10));
-   set_context_reg_seq_array(cs, R_028A40_VGT_GS_MODE, SET(VgtGsModeNv10));
-   set_context_reg_seq_array(cs, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnNv10));
-   set_context_reg_seq_array(cs, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetNv10));
-   set_context_reg_seq_array(cs, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlNv10));
-   set_context_reg_seq_array(cs, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
+   set_context_reg_seq_array(pm4, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeNv10));
+   set_context_reg_seq_array(pm4, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelNv10));
+   set_context_reg_seq_array(pm4, R_028A40_VGT_GS_MODE, SET(VgtGsModeNv10));
+   set_context_reg_seq_array(pm4, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnNv10));
+   set_context_reg_seq_array(pm4, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetNv10));
+   set_context_reg_seq_array(pm4, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlNv10));
+   set_context_reg_seq_array(pm4, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
                              SET(PaScCentroidPriority0Nv10));
 
    for (unsigned i = 0; i < num_reg_pairs; i++)
-      set_context_reg_seq_array(cs, reg_offsets[i], 1, &reg_values[i]);
+      set_context_reg_seq_array(pm4, reg_offsets[i], 1, &reg_values[i]);
 }
 
 /**
  * Emulate CLEAR_STATE. Additionally, initialize num_reg_pairs registers specified
  * via reg_offsets and reg_values.
  */
-static void gfx103_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_reg_pairs,
-                                       unsigned *reg_offsets, uint32_t *reg_values,
-                                       set_context_reg_seq_array_fn set_context_reg_seq_array)
+static void gfx103_emulate_clear_state(struct ac_pm4_state *pm4, unsigned num_reg_pairs,
+                                       unsigned *reg_offsets, uint32_t *reg_values)
 {
    static const uint32_t DbRenderControlGfx103[] = {
       0x0,        // DB_RENDER_CONTROL
@@ -2819,36 +2828,35 @@ static void gfx103_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_re
       0x0         // CB_COLOR7_ATTRIB3
    };
 
-   set_context_reg_seq_array(cs, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx103));
-   set_context_reg_seq_array(cs, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx103));
-   set_context_reg_seq_array(cs, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
+   set_context_reg_seq_array(pm4, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx103));
+   set_context_reg_seq_array(pm4, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx103));
+   set_context_reg_seq_array(pm4, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
                              SET(VgtMultiPrimIbResetIndxGfx103));
-   set_context_reg_seq_array(cs, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx103));
-   set_context_reg_seq_array(cs, R_028750_SX_PS_DOWNCONVERT_CONTROL,
+   set_context_reg_seq_array(pm4, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx103));
+   set_context_reg_seq_array(pm4, R_028750_SX_PS_DOWNCONVERT_CONTROL,
                              SET(SxPsDownconvertControlGfx103));
-   set_context_reg_seq_array(cs, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadGfx103));
-   set_context_reg_seq_array(cs, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP,
+   set_context_reg_seq_array(pm4, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadGfx103));
+   set_context_reg_seq_array(pm4, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP,
                              SET(GeMaxOutputPerSubgroupGfx103));
-   set_context_reg_seq_array(cs, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx103));
-   set_context_reg_seq_array(cs, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx103));
-   set_context_reg_seq_array(cs, R_028A40_VGT_GS_MODE, SET(VgtGsModeGfx103));
-   set_context_reg_seq_array(cs, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx103));
-   set_context_reg_seq_array(cs, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx103));
-   set_context_reg_seq_array(cs, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlGfx103));
-   set_context_reg_seq_array(cs, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
+   set_context_reg_seq_array(pm4, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx103));
+   set_context_reg_seq_array(pm4, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx103));
+   set_context_reg_seq_array(pm4, R_028A40_VGT_GS_MODE, SET(VgtGsModeGfx103));
+   set_context_reg_seq_array(pm4, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx103));
+   set_context_reg_seq_array(pm4, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx103));
+   set_context_reg_seq_array(pm4, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlGfx103));
+   set_context_reg_seq_array(pm4, R_028BD4_PA_SC_CENTROID_PRIORITY_0,
                              SET(PaScCentroidPriority0Gfx103));
 
    for (unsigned i = 0; i < num_reg_pairs; i++)
-      set_context_reg_seq_array(cs, reg_offsets[i], 1, &reg_values[i]);
+      set_context_reg_seq_array(pm4, reg_offsets[i], 1, &reg_values[i]);
 }
 
 /**
  * Emulate CLEAR_STATE. Additionally, initialize num_reg_pairs registers specified
  * via reg_offsets and reg_values.
  */
-static void gfx11_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_reg_pairs,
-                                      unsigned *reg_offsets, uint32_t *reg_values,
-                                      set_context_reg_seq_array_fn set_context_reg_seq_array)
+static void gfx11_emulate_clear_state(struct ac_pm4_state *pm4,unsigned num_reg_pairs,
+                                      unsigned *reg_offsets, uint32_t *reg_values)
 {
    static const uint32_t DbRenderControlGfx11[] = {
       0x0,        // DB_RENDER_CONTROL
@@ -3449,53 +3457,58 @@ static void gfx11_emulate_clear_state(struct radeon_cmdbuf *cs, unsigned num_reg
       0x0,        // CB_COLOR7_ATTRIB3
    };
 
-   set_context_reg_seq_array(cs, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx11));
-   set_context_reg_seq_array(cs, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx11));
-   set_context_reg_seq_array(cs, R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, SET(PaScVrsOverrideCntlGfx11));
-   set_context_reg_seq_array(cs, R_0283F0_PA_SC_VRS_RATE_BASE, SET(PaScVrsRateBaseGfx11));
-   set_context_reg_seq_array(cs, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX, SET(VgtMultiPrimIbResetIndxGfx11));
-   set_context_reg_seq_array(cs, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx11));
-   set_context_reg_seq_array(cs, R_028708_SPI_SHADER_IDX_FORMAT, SET(SpiShaderIdxFormatGfx11));
-   set_context_reg_seq_array(cs, R_028750_SX_PS_DOWNCONVERT_CONTROL, SET(SxPsDownconvertControlGfx11));
-   set_context_reg_seq_array(cs, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadGfx11));
-   set_context_reg_seq_array(cs, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP, SET(GeMaxOutputPerSubgroupGfx11));
-   set_context_reg_seq_array(cs, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx11));
-   set_context_reg_seq_array(cs, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx11));
-   set_context_reg_seq_array(cs, R_028A48_PA_SC_MODE_CNTL_0, SET(PaScModeCntl0Gfx11));
-   set_context_reg_seq_array(cs, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx11));
-   set_context_reg_seq_array(cs, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx11));
-   set_context_reg_seq_array(cs, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlGfx11));
-   set_context_reg_seq_array(cs, R_028AAC_VGT_ESGS_RING_ITEMSIZE, SET(VgtEsgsRingItemsizeGfx11));
-   set_context_reg_seq_array(cs, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET, SET(VgtStrmoutDrawOpaqueOffsetGfx11));
-   set_context_reg_seq_array(cs, R_028B4C_GE_NGG_SUBGRP_CNTL, SET(GeNggSubgrpCntlGfx11));
-   set_context_reg_seq_array(cs, R_028B6C_VGT_TF_PARAM, SET(VgtTfParamGfx11));
-   set_context_reg_seq_array(cs, R_028BD4_PA_SC_CENTROID_PRIORITY_0, SET(PaScCentroidPriority0Gfx11));
-   set_context_reg_seq_array(cs, R_028C60_CB_COLOR0_BASE, SET(CbColor0BaseGfx11));
-   set_context_reg_seq_array(cs, R_028C6C_CB_COLOR0_VIEW, SET(CbColor0ViewGfx11));
-   set_context_reg_seq_array(cs, R_028C94_CB_COLOR0_DCC_BASE, SET(CbColor0DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028CA8_CB_COLOR1_VIEW, SET(CbColor1ViewGfx11));
-   set_context_reg_seq_array(cs, R_028CD0_CB_COLOR1_DCC_BASE, SET(CbColor1DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028CE4_CB_COLOR2_VIEW, SET(CbColor2ViewGfx11));
-   set_context_reg_seq_array(cs, R_028D0C_CB_COLOR2_DCC_BASE, SET(CbColor2DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028D20_CB_COLOR3_VIEW, SET(CbColor3ViewGfx11));
-   set_context_reg_seq_array(cs, R_028D48_CB_COLOR3_DCC_BASE, SET(CbColor3DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028D5C_CB_COLOR4_VIEW, SET(CbColor4ViewGfx11));
-   set_context_reg_seq_array(cs, R_028D84_CB_COLOR4_DCC_BASE, SET(CbColor4DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028D98_CB_COLOR5_VIEW, SET(CbColor5ViewGfx11));
-   set_context_reg_seq_array(cs, R_028DC0_CB_COLOR5_DCC_BASE, SET(CbColor5DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028DD4_CB_COLOR6_VIEW, SET(CbColor6ViewGfx11));
-   set_context_reg_seq_array(cs, R_028DFC_CB_COLOR6_DCC_BASE, SET(CbColor6DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028E10_CB_COLOR7_VIEW, SET(CbColor7ViewGfx11));
-   set_context_reg_seq_array(cs, R_028E38_CB_COLOR7_DCC_BASE, SET(CbColor7DccBaseGfx11));
-   set_context_reg_seq_array(cs, R_028C98_CB_COLOR0_DCC_BASE_EXT, SET(CbColor0DccBaseExtGfx11));
+   set_context_reg_seq_array(pm4, R_028000_DB_RENDER_CONTROL, SET(DbRenderControlGfx11));
+   set_context_reg_seq_array(pm4, R_0281E8_COHER_DEST_BASE_HI_0, SET(CoherDestBaseHi0Gfx11));
+   set_context_reg_seq_array(pm4, R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, SET(PaScVrsOverrideCntlGfx11));
+   set_context_reg_seq_array(pm4, R_0283F0_PA_SC_VRS_RATE_BASE, SET(PaScVrsRateBaseGfx11));
+   set_context_reg_seq_array(pm4, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX, SET(VgtMultiPrimIbResetIndxGfx11));
+   set_context_reg_seq_array(pm4, R_028644_SPI_PS_INPUT_CNTL_0, SET(SpiPsInputCntl0Gfx11));
+   set_context_reg_seq_array(pm4, R_028708_SPI_SHADER_IDX_FORMAT, SET(SpiShaderIdxFormatGfx11));
+   set_context_reg_seq_array(pm4, R_028750_SX_PS_DOWNCONVERT_CONTROL, SET(SxPsDownconvertControlGfx11));
+   set_context_reg_seq_array(pm4, R_0287D4_PA_CL_POINT_X_RAD, SET(PaClPointXRadGfx11));
+   set_context_reg_seq_array(pm4, R_0287FC_GE_MAX_OUTPUT_PER_SUBGROUP, SET(GeMaxOutputPerSubgroupGfx11));
+   set_context_reg_seq_array(pm4, R_028A00_PA_SU_POINT_SIZE, SET(PaSuPointSizeGfx11));
+   set_context_reg_seq_array(pm4, R_028A18_VGT_HOS_MAX_TESS_LEVEL, SET(VgtHosMaxTessLevelGfx11));
+   set_context_reg_seq_array(pm4, R_028A48_PA_SC_MODE_CNTL_0, SET(PaScModeCntl0Gfx11));
+   set_context_reg_seq_array(pm4, R_028A84_VGT_PRIMITIVEID_EN, SET(VgtPrimitiveidEnGfx11));
+   set_context_reg_seq_array(pm4, R_028A8C_VGT_PRIMITIVEID_RESET, SET(VgtPrimitiveidResetGfx11));
+   set_context_reg_seq_array(pm4, R_028A98_VGT_DRAW_PAYLOAD_CNTL, SET(VgtDrawPayloadCntlGfx11));
+   set_context_reg_seq_array(pm4, R_028AAC_VGT_ESGS_RING_ITEMSIZE, SET(VgtEsgsRingItemsizeGfx11));
+   set_context_reg_seq_array(pm4, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET, SET(VgtStrmoutDrawOpaqueOffsetGfx11));
+   set_context_reg_seq_array(pm4, R_028B4C_GE_NGG_SUBGRP_CNTL, SET(GeNggSubgrpCntlGfx11));
+   set_context_reg_seq_array(pm4, R_028B6C_VGT_TF_PARAM, SET(VgtTfParamGfx11));
+   set_context_reg_seq_array(pm4, R_028BD4_PA_SC_CENTROID_PRIORITY_0, SET(PaScCentroidPriority0Gfx11));
+   set_context_reg_seq_array(pm4, R_028C60_CB_COLOR0_BASE, SET(CbColor0BaseGfx11));
+   set_context_reg_seq_array(pm4, R_028C6C_CB_COLOR0_VIEW, SET(CbColor0ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028C94_CB_COLOR0_DCC_BASE, SET(CbColor0DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028CA8_CB_COLOR1_VIEW, SET(CbColor1ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028CD0_CB_COLOR1_DCC_BASE, SET(CbColor1DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028CE4_CB_COLOR2_VIEW, SET(CbColor2ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028D0C_CB_COLOR2_DCC_BASE, SET(CbColor2DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028D20_CB_COLOR3_VIEW, SET(CbColor3ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028D48_CB_COLOR3_DCC_BASE, SET(CbColor3DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028D5C_CB_COLOR4_VIEW, SET(CbColor4ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028D84_CB_COLOR4_DCC_BASE, SET(CbColor4DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028D98_CB_COLOR5_VIEW, SET(CbColor5ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028DC0_CB_COLOR5_DCC_BASE, SET(CbColor5DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028DD4_CB_COLOR6_VIEW, SET(CbColor6ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028DFC_CB_COLOR6_DCC_BASE, SET(CbColor6DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028E10_CB_COLOR7_VIEW, SET(CbColor7ViewGfx11));
+   set_context_reg_seq_array(pm4, R_028E38_CB_COLOR7_DCC_BASE, SET(CbColor7DccBaseGfx11));
+   set_context_reg_seq_array(pm4, R_028C98_CB_COLOR0_DCC_BASE_EXT, SET(CbColor0DccBaseExtGfx11));
 
    for (unsigned i = 0; i < num_reg_pairs; i++)
-      set_context_reg_seq_array(cs, reg_offsets[i], 1, &reg_values[i]);
+      set_context_reg_seq_array(pm4, reg_offsets[i], 1, &reg_values[i]);
 }
 
-void ac_emulate_clear_state(const struct radeon_info *info, struct radeon_cmdbuf *cs,
-                            set_context_reg_seq_array_fn set_context_reg_seq_array)
+struct ac_pm4_state *ac_emulate_clear_state(const struct radeon_info *info)
 {
+   struct ac_pm4_state *pm4;
+
+   pm4 = ac_pm4_create_sized(info, false, 768, false);
+   if (!pm4)
+      return NULL;
+
    assert(info->gfx_level < GFX12);
 
    /* Set context registers same as CLEAR_STATE to initialize shadow memory. */
@@ -3503,16 +3516,19 @@ void ac_emulate_clear_state(const struct radeon_info *info, struct radeon_cmdbuf
    uint32_t reg_value = info->pa_sc_tile_steering_override;
 
    if (info->gfx_level == GFX11 || info->gfx_level == GFX11_5) {
-      gfx11_emulate_clear_state(cs, 1, &reg_offset, &reg_value, set_context_reg_seq_array);
+      gfx11_emulate_clear_state(pm4, 1, &reg_offset, &reg_value);
    } else if (info->gfx_level == GFX10_3) {
-      gfx103_emulate_clear_state(cs, 1, &reg_offset, &reg_value, set_context_reg_seq_array);
+      gfx103_emulate_clear_state(pm4, 1, &reg_offset, &reg_value);
    } else if (info->gfx_level == GFX10) {
-      gfx10_emulate_clear_state(cs, 1, &reg_offset, &reg_value, set_context_reg_seq_array);
+      gfx10_emulate_clear_state(pm4, 1, &reg_offset, &reg_value);
    } else if (info->gfx_level == GFX9) {
-      gfx9_emulate_clear_state(cs, set_context_reg_seq_array);
+      gfx9_emulate_clear_state(pm4);
    } else {
       unreachable("unimplemented");
    }
+
+   ac_pm4_finalize(pm4);
+   return pm4;
 }
 
 static void ac_print_nonshadowed_reg(enum amd_gfx_level gfx_level, enum radeon_family family,
@@ -3566,7 +3582,7 @@ void ac_print_nonshadowed_regs(enum amd_gfx_level gfx_level, enum radeon_family 
 }
 
 static void ac_build_load_reg(const struct radeon_info *info,
-                              pm4_cmd_add_fn pm4_cmd_add, void *pm4_cmdbuf,
+                              struct ac_pm4_state *pm4,
                               enum ac_reg_range_type type,
                               uint64_t gpu_address)
 {
@@ -3594,56 +3610,61 @@ static void ac_build_load_reg(const struct radeon_info *info,
       break;
    }
 
-   pm4_cmd_add(pm4_cmdbuf, PKT3(packet, 1 + num_ranges * 2, 0));
-   pm4_cmd_add(pm4_cmdbuf, gpu_address);
-   pm4_cmd_add(pm4_cmdbuf, gpu_address >> 32);
+   ac_pm4_cmd_add(pm4, PKT3(packet, 1 + num_ranges * 2, 0));
+   ac_pm4_cmd_add(pm4, gpu_address);
+   ac_pm4_cmd_add(pm4, gpu_address >> 32);
    for (unsigned i = 0; i < num_ranges; i++) {
-      pm4_cmd_add(pm4_cmdbuf, (ranges[i].offset - offset) / 4);
-      pm4_cmd_add(pm4_cmdbuf, ranges[i].size / 4);
+      ac_pm4_cmd_add(pm4, (ranges[i].offset - offset) / 4);
+      ac_pm4_cmd_add(pm4, ranges[i].size / 4);
    }
 }
 
-void ac_create_shadowing_ib_preamble(const struct radeon_info *info,
-                                     pm4_cmd_add_fn pm4_cmd_add, void *pm4_cmdbuf,
-                                     uint64_t gpu_address,
-                                     bool dpbb_allowed)
+struct ac_pm4_state *ac_create_shadowing_ib_preamble(const struct radeon_info *info,
+                                                     uint64_t gpu_address,
+                                                     bool dpbb_allowed)
 {
+   struct ac_pm4_state *pm4;
+
+   pm4 = ac_pm4_create_sized(info, false, 256, false);
+   if (!pm4)
+      return NULL;
+
    if (dpbb_allowed) {
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_EVENT_WRITE, 0, 0));
-      pm4_cmd_add(pm4_cmdbuf, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_EVENT_WRITE, 0, 0));
+      ac_pm4_cmd_add(pm4, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
    }
 
    /* Wait for idle, because we'll update VGT ring pointers. */
-   pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_EVENT_WRITE, 0, 0));
-   pm4_cmd_add(pm4_cmdbuf, EVENT_TYPE(V_028A90_VS_PARTIAL_FLUSH) | EVENT_INDEX(4));
+   ac_pm4_cmd_add(pm4, PKT3(PKT3_EVENT_WRITE, 0, 0));
+   ac_pm4_cmd_add(pm4, EVENT_TYPE(V_028A90_VS_PARTIAL_FLUSH) | EVENT_INDEX(4));
 
    /* VGT_FLUSH is required even if VGT is idle. It resets VGT pointers. */
-   pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_EVENT_WRITE, 0, 0));
-   pm4_cmd_add(pm4_cmdbuf, EVENT_TYPE(V_028A90_VGT_FLUSH) | EVENT_INDEX(0));
+   ac_pm4_cmd_add(pm4, PKT3(PKT3_EVENT_WRITE, 0, 0));
+   ac_pm4_cmd_add(pm4, EVENT_TYPE(V_028A90_VGT_FLUSH) | EVENT_INDEX(0));
 
    if (info->gfx_level >= GFX11) {
       uint64_t rb_mask = BITFIELD64_MASK(info->max_render_backends);
 
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_EVENT_WRITE, 2, 0));
-      pm4_cmd_add(pm4_cmdbuf, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_CONTROL) | EVENT_INDEX(1));
-      pm4_cmd_add(pm4_cmdbuf, PIXEL_PIPE_STATE_CNTL_COUNTER_ID(0) |
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_EVENT_WRITE, 2, 0));
+      ac_pm4_cmd_add(pm4, EVENT_TYPE(V_028A90_PIXEL_PIPE_STAT_CONTROL) | EVENT_INDEX(1));
+      ac_pm4_cmd_add(pm4, PIXEL_PIPE_STATE_CNTL_COUNTER_ID(0) |
                               PIXEL_PIPE_STATE_CNTL_STRIDE(2) |
                               PIXEL_PIPE_STATE_CNTL_INSTANCE_EN_LO(rb_mask));
-      pm4_cmd_add(pm4_cmdbuf, PIXEL_PIPE_STATE_CNTL_INSTANCE_EN_HI(rb_mask));
+      ac_pm4_cmd_add(pm4, PIXEL_PIPE_STATE_CNTL_INSTANCE_EN_HI(rb_mask));
 
       /* We must wait for idle using an EOP event before changing the attribute ring registers.
        * Use the bottom-of-pipe EOP event, but increment the PWS counter instead of writing memory.
        */
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_RELEASE_MEM, 6, 0));
-      pm4_cmd_add(pm4_cmdbuf, S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) |
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_RELEASE_MEM, 6, 0));
+      ac_pm4_cmd_add(pm4, S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) |
                               S_490_EVENT_INDEX(5) |
                               S_490_PWS_ENABLE(1));
-      pm4_cmd_add(pm4_cmdbuf, 0); /* DST_SEL, INT_SEL, DATA_SEL */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* ADDRESS_LO */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* ADDRESS_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* DATA_LO */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* DATA_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* INT_CTXID */
+      ac_pm4_cmd_add(pm4, 0); /* DST_SEL, INT_SEL, DATA_SEL */
+      ac_pm4_cmd_add(pm4, 0); /* ADDRESS_LO */
+      ac_pm4_cmd_add(pm4, 0); /* ADDRESS_HI */
+      ac_pm4_cmd_add(pm4, 0); /* DATA_LO */
+      ac_pm4_cmd_add(pm4, 0); /* DATA_HI */
+      ac_pm4_cmd_add(pm4, 0); /* INT_CTXID */
 
       unsigned gcr_cntl = S_586_GL2_INV(1) | S_586_GL2_WB(1) |
                           S_586_GLM_INV(1) | S_586_GLM_WB(1) |
@@ -3651,34 +3672,34 @@ void ac_create_shadowing_ib_preamble(const struct radeon_info *info,
                           S_586_GLK_INV(1) | S_586_GLI_INV(V_586_GLI_ALL);
 
       /* Wait for the PWS counter. */
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_ACQUIRE_MEM, 6, 0));
-      pm4_cmd_add(pm4_cmdbuf, S_580_PWS_STAGE_SEL(V_580_CP_PFP) |
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_ACQUIRE_MEM, 6, 0));
+      ac_pm4_cmd_add(pm4, S_580_PWS_STAGE_SEL(V_580_CP_PFP) |
                               S_580_PWS_COUNTER_SEL(V_580_TS_SELECT) |
                               S_580_PWS_ENA2(1) |
                               S_580_PWS_COUNT(0));
-      pm4_cmd_add(pm4_cmdbuf, 0xffffffff); /* GCR_SIZE */
-      pm4_cmd_add(pm4_cmdbuf, 0x01ffffff); /* GCR_SIZE_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* GCR_BASE_LO */
-      pm4_cmd_add(pm4_cmdbuf, 0); /* GCR_BASE_HI */
-      pm4_cmd_add(pm4_cmdbuf, S_585_PWS_ENA(1));
-      pm4_cmd_add(pm4_cmdbuf, gcr_cntl); /* GCR_CNTL */
+      ac_pm4_cmd_add(pm4, 0xffffffff); /* GCR_SIZE */
+      ac_pm4_cmd_add(pm4, 0x01ffffff); /* GCR_SIZE_HI */
+      ac_pm4_cmd_add(pm4, 0); /* GCR_BASE_LO */
+      ac_pm4_cmd_add(pm4, 0); /* GCR_BASE_HI */
+      ac_pm4_cmd_add(pm4, S_585_PWS_ENA(1));
+      ac_pm4_cmd_add(pm4, gcr_cntl); /* GCR_CNTL */
    } else if (info->gfx_level >= GFX10) {
       unsigned gcr_cntl = S_586_GL2_INV(1) | S_586_GL2_WB(1) |
                           S_586_GLM_INV(1) | S_586_GLM_WB(1) |
                           S_586_GL1_INV(1) | S_586_GLV_INV(1) |
                           S_586_GLK_INV(1) | S_586_GLI_INV(V_586_GLI_ALL);
 
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_ACQUIRE_MEM, 6, 0));
-      pm4_cmd_add(pm4_cmdbuf, 0);           /* CP_COHER_CNTL */
-      pm4_cmd_add(pm4_cmdbuf, 0xffffffff);  /* CP_COHER_SIZE */
-      pm4_cmd_add(pm4_cmdbuf, 0xffffff);    /* CP_COHER_SIZE_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0);           /* CP_COHER_BASE */
-      pm4_cmd_add(pm4_cmdbuf, 0);           /* CP_COHER_BASE_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0x0000000A);  /* POLL_INTERVAL */
-      pm4_cmd_add(pm4_cmdbuf, gcr_cntl);    /* GCR_CNTL */
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_ACQUIRE_MEM, 6, 0));
+      ac_pm4_cmd_add(pm4, 0);           /* CP_COHER_CNTL */
+      ac_pm4_cmd_add(pm4, 0xffffffff);  /* CP_COHER_SIZE */
+      ac_pm4_cmd_add(pm4, 0xffffff);    /* CP_COHER_SIZE_HI */
+      ac_pm4_cmd_add(pm4, 0);           /* CP_COHER_BASE */
+      ac_pm4_cmd_add(pm4, 0);           /* CP_COHER_BASE_HI */
+      ac_pm4_cmd_add(pm4, 0x0000000A);  /* POLL_INTERVAL */
+      ac_pm4_cmd_add(pm4, gcr_cntl);    /* GCR_CNTL */
 
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      pm4_cmd_add(pm4_cmdbuf, 0);
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
+      ac_pm4_cmd_add(pm4, 0);
    } else if (info->gfx_level == GFX9) {
       unsigned cp_coher_cntl = S_0301F0_SH_ICACHE_ACTION_ENA(1) |
                                S_0301F0_SH_KCACHE_ACTION_ENA(1) |
@@ -3686,37 +3707,41 @@ void ac_create_shadowing_ib_preamble(const struct radeon_info *info,
                                S_0301F0_TCL1_ACTION_ENA(1) |
                                S_0301F0_TC_WB_ACTION_ENA(1);
 
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_ACQUIRE_MEM, 5, 0));
-      pm4_cmd_add(pm4_cmdbuf, cp_coher_cntl); /* CP_COHER_CNTL */
-      pm4_cmd_add(pm4_cmdbuf, 0xffffffff);    /* CP_COHER_SIZE */
-      pm4_cmd_add(pm4_cmdbuf, 0xffffff);      /* CP_COHER_SIZE_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0);             /* CP_COHER_BASE */
-      pm4_cmd_add(pm4_cmdbuf, 0);             /* CP_COHER_BASE_HI */
-      pm4_cmd_add(pm4_cmdbuf, 0x0000000A);    /* POLL_INTERVAL */
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_ACQUIRE_MEM, 5, 0));
+      ac_pm4_cmd_add(pm4, cp_coher_cntl); /* CP_COHER_CNTL */
+      ac_pm4_cmd_add(pm4, 0xffffffff);    /* CP_COHER_SIZE */
+      ac_pm4_cmd_add(pm4, 0xffffff);      /* CP_COHER_SIZE_HI */
+      ac_pm4_cmd_add(pm4, 0);             /* CP_COHER_BASE */
+      ac_pm4_cmd_add(pm4, 0);             /* CP_COHER_BASE_HI */
+      ac_pm4_cmd_add(pm4, 0x0000000A);    /* POLL_INTERVAL */
 
-      pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      pm4_cmd_add(pm4_cmdbuf, 0);
+      ac_pm4_cmd_add(pm4, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
+      ac_pm4_cmd_add(pm4, 0);
    } else {
       unreachable("invalid chip");
    }
 
-   pm4_cmd_add(pm4_cmdbuf, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
-   pm4_cmd_add(pm4_cmdbuf,
-               CC0_UPDATE_LOAD_ENABLES(1) |
-               CC0_LOAD_PER_CONTEXT_STATE(1) |
-               CC0_LOAD_CS_SH_REGS(1) |
-               CC0_LOAD_GFX_SH_REGS(1) |
-               CC0_LOAD_GLOBAL_UCONFIG(1));
-   pm4_cmd_add(pm4_cmdbuf,
-               CC1_UPDATE_SHADOW_ENABLES(1) |
-               CC1_SHADOW_PER_CONTEXT_STATE(1) |
-               CC1_SHADOW_CS_SH_REGS(1) |
-               CC1_SHADOW_GFX_SH_REGS(1) |
-               CC1_SHADOW_GLOBAL_UCONFIG(1) |
-               CC1_SHADOW_GLOBAL_CONFIG(1));
+   ac_pm4_cmd_add(pm4, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
+   ac_pm4_cmd_add(pm4,
+                  CC0_UPDATE_LOAD_ENABLES(1) |
+                  CC0_LOAD_PER_CONTEXT_STATE(1) |
+                  CC0_LOAD_CS_SH_REGS(1) |
+                  CC0_LOAD_GFX_SH_REGS(1) |
+                  CC0_LOAD_GLOBAL_UCONFIG(1));
+   ac_pm4_cmd_add(pm4,
+                  CC1_UPDATE_SHADOW_ENABLES(1) |
+                  CC1_SHADOW_PER_CONTEXT_STATE(1) |
+                  CC1_SHADOW_CS_SH_REGS(1) |
+                  CC1_SHADOW_GFX_SH_REGS(1) |
+                  CC1_SHADOW_GLOBAL_UCONFIG(1) |
+                  CC1_SHADOW_GLOBAL_CONFIG(1));
 
    if (!info->has_fw_based_shadowing) {
       for (unsigned i = 0; i < SI_NUM_REG_RANGES; i++)
-         ac_build_load_reg(info, pm4_cmd_add, pm4_cmdbuf, i, gpu_address);
+         ac_build_load_reg(info, pm4, i, gpu_address);
    }
+
+   ac_pm4_finalize(pm4);
+
+   return pm4;
 }

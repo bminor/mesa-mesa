@@ -39,7 +39,7 @@ void si_pm4_clear_state(struct si_pm4_state *state, struct si_screen *sscreen,
                         bool is_compute_queue);
 void si_pm4_free_state(struct si_context *sctx, struct si_pm4_state *state, unsigned idx);
 
-void si_pm4_emit_commands(struct si_context *sctx, struct si_pm4_state *state);
+void si_pm4_emit_commands(struct si_context *sctx, struct ac_pm4_state *state);
 void si_pm4_emit_state(struct si_context *sctx, unsigned index);
 void si_pm4_emit_shader(struct si_context *sctx, unsigned index);
 void si_pm4_reset_emitted(struct si_context *sctx);

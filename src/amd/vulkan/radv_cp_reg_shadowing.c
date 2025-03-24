@@ -12,19 +12,13 @@
 #include "radv_debug.h"
 #include "sid.h"
 
-static void
-radv_set_context_reg_array(struct radeon_cmdbuf *cs, unsigned reg, unsigned num, const uint32_t *values)
-{
-   radeon_set_context_reg_seq(cs, reg, num);
-   radeon_emit_array(cs, values, num);
-}
-
 VkResult
 radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_state *queue_state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_winsys *ws = device->ws;
    const struct radeon_info *gpu_info = &pdev->info;
+   struct ac_pm4_state *pm4 = NULL;
    VkResult result;
 
    struct radeon_cmdbuf *cs = ws->cs_create(ws, AMD_IP_GFX, false);
@@ -41,9 +35,11 @@ radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_s
       goto fail;
 
    /* fill the cs for shadow regs preamble ib that starts the register shadowing */
-   ac_create_shadowing_ib_preamble(gpu_info, (pm4_cmd_add_fn)&radeon_emit, cs, queue_state->shadowed_regs->va,
-                                   device->pbb_allowed);
+   pm4 = ac_create_shadowing_ib_preamble(gpu_info, queue_state->shadowed_regs->va, device->pbb_allowed);
+   if (!pm4)
+      goto fail_create;
 
+   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
    ws->cs_pad(cs, 0);
 
    result = radv_bo_create(
@@ -65,12 +61,16 @@ radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_s
    queue_state->shadow_regs_ib_size_dw = cs->cdw;
 
    ws->buffer_unmap(ws, queue_state->shadow_regs_ib, false);
+
+   ac_pm4_free_state(pm4);
    ws->cs_destroy(cs);
    return VK_SUCCESS;
 fail_map:
    radv_bo_destroy(device, NULL, queue_state->shadow_regs_ib);
    queue_state->shadow_regs_ib = NULL;
 fail_ib_buffer:
+   ac_pm4_free_state(pm4);
+fail_create:
    radv_bo_destroy(device, NULL, queue_state->shadowed_regs);
    queue_state->shadowed_regs = NULL;
 fail:
@@ -119,8 +119,16 @@ radv_init_shadowed_regs_buffer_state(const struct radv_device *device, struct ra
 
    radv_emit_shadow_regs_preamble(cs, device, &queue->state);
 
-   if (pdev->info.gfx_level < GFX12)
-      ac_emulate_clear_state(gpu_info, cs, radv_set_context_reg_array);
+   if (pdev->info.gfx_level < GFX12) {
+      struct ac_pm4_state *pm4 = ac_emulate_clear_state(gpu_info);
+      if (!pm4) {
+         result = VK_ERROR_OUT_OF_HOST_MEMORY;
+         goto fail;
+      }
+
+      radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+      ac_pm4_free_state(pm4);
+   }
 
    result = ws->cs_finalize(cs);
    if (result == VK_SUCCESS) {
@@ -128,6 +136,7 @@ radv_init_shadowed_regs_buffer_state(const struct radv_device *device, struct ra
          result = VK_ERROR_UNKNOWN;
    }
 
+fail:
    ws->cs_destroy(cs);
    return result;
 }

@@ -29,22 +29,15 @@ enum ac_reg_range_type
 extern "C" {
 #endif
 
-typedef void (*pm4_cmd_add_fn)(void *pm4_cmdbuf, uint32_t value);
-
-typedef void (*set_context_reg_seq_array_fn)(struct radeon_cmdbuf *cs, unsigned reg, unsigned num,
-                                             const uint32_t *values);
-
 void ac_get_reg_ranges(enum amd_gfx_level gfx_level, enum radeon_family family,
                        enum ac_reg_range_type type, unsigned *num_ranges,
                        const struct ac_reg_range **ranges);
-void ac_emulate_clear_state(const struct radeon_info *info, struct radeon_cmdbuf *cs,
-                            set_context_reg_seq_array_fn set_context_reg_seq_array);
+struct ac_pm4_state *ac_emulate_clear_state(const struct radeon_info *info);
 void ac_print_nonshadowed_regs(enum amd_gfx_level gfx_level, enum radeon_family family);
 
-void ac_create_shadowing_ib_preamble(const struct radeon_info *info,
-                                     pm4_cmd_add_fn pm4_cmd_add, void *pm4_cmdbuf,
-                                     uint64_t gpu_address,
-                                     bool dpbb_allowed);
+struct ac_pm4_state *ac_create_shadowing_ib_preamble(const struct radeon_info *info,
+                                                     uint64_t gpu_address,
+                                                     bool dpbb_allowed);
 #ifdef __cplusplus
 }
 #endif
