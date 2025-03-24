@@ -1681,7 +1681,7 @@ choose_pdev(struct zink_screen *screen, int64_t dev_major, int64_t dev_minor, ui
    VKSCR(GetPhysicalDeviceProperties)(screen->pdev, &screen->info.props);
 
    /* allow software rendering only if forced by the user */
-   if (!cpu && screen->info.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
+   if (((!cpu || screen->driver_name_is_inferred) && screen->info.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)) {
       screen->pdev = VK_NULL_HANDLE;
       return;
    }
