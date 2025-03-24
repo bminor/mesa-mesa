@@ -766,10 +766,6 @@
    DRI_CONF_OPT_B(radv_disable_dedicated_sparse_queue, def, \
                   "Disables the dedicated sparse queue. This replaces radv_legacy_sparse_binding as a compatible drirc workaround for games that might not expect a separate SPARSE queue")
 
-#define DRI_CONF_RADV_FORCE_PSTATE_PEAK_GFX11_DGPU(def) \
-   DRI_CONF_OPT_B(radv_force_pstate_peak_gfx11_dgpu, def, \
-                  "Force the performance level to profile_peak (all clocks to the highest levels) for RDNA3 dGPUs")
-
 /**
  * Overrides for forcing re-compilation of pipelines when RADV_BUILD_ID_OVERRIDE is enabled.
  * These need to be bumped every time a compiler bugfix is backported (up to 8 shader
