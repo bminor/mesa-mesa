@@ -1111,11 +1111,8 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
          radv_init_graphics_state(cs, device);
 
          if (esgs_ring_bo || gsvs_ring_bo || tess_rings_bo || task_rings_bo) {
-            radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-            radeon_emit(cs, EVENT_TYPE(V_028A90_VS_PARTIAL_FLUSH) | EVENT_INDEX(4));
-
-            radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-            radeon_emit(cs, EVENT_TYPE(V_028A90_VGT_FLUSH) | EVENT_INDEX(0));
+            radeon_event_write(cs, V_028A90_VS_PARTIAL_FLUSH);
+            radeon_event_write(cs, V_028A90_VGT_FLUSH);
          }
 
          radv_emit_gs_ring_sizes(device, cs, esgs_ring_bo, needs->esgs_ring_size, gsvs_ring_bo, needs->gsvs_ring_size);
@@ -1131,8 +1128,7 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
          radv_emit_compute(device, cs, true);
 
          if (task_rings_bo) {
-            radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-            radeon_emit(cs, EVENT_TYPE(V_028A90_CS_PARTIAL_FLUSH) | EVENT_INDEX(4));
+            radeon_event_write(cs, V_028A90_CS_PARTIAL_FLUSH);
          }
 
          radv_emit_task_rings(device, cs, task_rings_bo, true);

@@ -34,8 +34,7 @@ static void
 radv_emit_windowed_counters(struct radv_device *device, struct radeon_cmdbuf *cs, int family, bool enable)
 {
    if (family == RADV_QUEUE_GENERAL) {
-      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-      radeon_emit(cs, EVENT_TYPE(enable ? V_028A90_PERFCOUNTER_START : V_028A90_PERFCOUNTER_STOP) | EVENT_INDEX(0));
+      radeon_event_write(cs, enable ? V_028A90_PERFCOUNTER_START : V_028A90_PERFCOUNTER_STOP);
    }
 
    radeon_set_sh_reg(cs, R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(enable));
@@ -534,8 +533,7 @@ radv_pc_wait_idle(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-   radeon_emit(cs, EVENT_TYPE(V_028A90_CS_PARTIAL_FLUSH | EVENT_INDEX(4)));
+   radeon_event_write(cs, V_028A90_CS_PARTIAL_FLUSH);
 
    radeon_emit(cs, PKT3(PKT3_ACQUIRE_MEM, 6, 0));
    radeon_emit(cs, 0);          /* CP_COHER_CNTL */
@@ -557,8 +555,7 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-   radeon_emit(cs, EVENT_TYPE(V_028A90_PERFCOUNTER_SAMPLE) | EVENT_INDEX(0));
+   radeon_event_write(cs, V_028A90_PERFCOUNTER_SAMPLE);
 
    radv_pc_wait_idle(cmd_buffer);
 

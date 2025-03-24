@@ -837,8 +837,7 @@ radv_cmd_buffer_after_draw(struct radv_cmd_buffer *cmd_buffer, enum radv_cmd_flu
    if (unlikely(device->sqtt.bo) && !dgc) {
       radeon_check_space(device->ws, cmd_buffer->cs, 2);
 
-      radeon_emit(cmd_buffer->cs, PKT3(PKT3_EVENT_WRITE, 0, cmd_buffer->state.predicating));
-      radeon_emit(cmd_buffer->cs, EVENT_TYPE(V_028A90_THREAD_TRACE_MARKER) | EVENT_INDEX(0));
+      radeon_event_write_predicate(cmd_buffer->cs, V_028A90_THREAD_TRACE_MARKER, cmd_buffer->state.predicating);
    }
 
    if (instance->debug_flags & RADV_DEBUG_SYNC_SHADERS) {
@@ -2932,8 +2931,7 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
               cmd_buffer->state.graphics_pipeline->base.shaders[MESA_SHADER_FRAGMENT]) &&
           (settings->context_states_per_bin > 1 || settings->persistent_states_per_bin > 1)) {
          /* Break the batch on PS changes. */
-         radeon_emit(cmd_buffer->cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-         radeon_emit(cmd_buffer->cs, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
+         radeon_event_write(cmd_buffer->cs, V_028A90_BREAK_BATCH);
       }
    }
 
@@ -3386,8 +3384,7 @@ radv_emit_primitive_restart_enable(struct radv_cmd_buffer *cmd_buffer)
    const bool en = d->vk.ia.primitive_restart_enable;
 
    if (pdev->info.has_prim_restart_sync_bug) {
-      radeon_emit(cmd_buffer->cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-      radeon_emit(cmd_buffer->cs, EVENT_TYPE(V_028A90_SQ_NON_EVENT) | EVENT_INDEX(0));
+      radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
    }
 
    if (gfx_level >= GFX11) {
@@ -3485,8 +3482,7 @@ radv_emit_color_write(struct radv_cmd_buffer *cmd_buffer)
    if (device->pbb_allowed && settings->context_states_per_bin > 1 &&
        cmd_buffer->state.last_cb_target_mask != cb_target_mask) {
       /* Flush DFSM on CB_TARGET_MASK changes. */
-      radeon_emit(cmd_buffer->cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-      radeon_emit(cmd_buffer->cs, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
+      radeon_event_write(cmd_buffer->cs, V_028A90_BREAK_BATCH);
 
       cmd_buffer->state.last_cb_target_mask = cb_target_mask;
    }
@@ -13336,8 +13332,7 @@ radv_flush_vgt_streamout(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_config_reg(cs, reg_strmout_cntl, 0);
    }
 
-   radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-   radeon_emit(cs, EVENT_TYPE(V_028A90_SO_VGTSTREAMOUT_FLUSH) | EVENT_INDEX(0));
+   radeon_event_write(cs, V_028A90_SO_VGTSTREAMOUT_FLUSH);
 
    radeon_emit(cs, PKT3(PKT3_WAIT_REG_MEM, 5, 0));
    radeon_emit(cs, WAIT_REG_MEM_EQUAL);    /* wait until the register is equal to the reference value */
@@ -13654,8 +13649,7 @@ radv_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanc
    if (pdev->info.gfx_level == GFX12) {
       /* DrawTransformFeedback requires 3 SQ_NON_EVENTs after the packet. */
       for (unsigned i = 0; i < 3; i++) {
-         radeon_emit(cmd_buffer->cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-         radeon_emit(cmd_buffer->cs, EVENT_TYPE(V_028A90_SQ_NON_EVENT) | EVENT_INDEX(0));
+         radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
       }
    }
 

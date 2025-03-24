@@ -198,6 +198,19 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
       radeon_emit(cs, 0); /* unused */                                                                                 \
    } while (0)
 
+#define radeon_event_write_predicate(cs, event_type, predicate)                                                        \
+   do {                                                                                                                \
+      unsigned __event_type = (event_type);                                                                            \
+      radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, predicate));                                                           \
+      radeon_emit(cs, EVENT_TYPE(__event_type) | EVENT_INDEX(__event_type == V_028A90_VS_PARTIAL_FLUSH ||              \
+                                                                   __event_type == V_028A90_PS_PARTIAL_FLUSH ||        \
+                                                                   __event_type == V_028A90_CS_PARTIAL_FLUSH           \
+                                                                ? 4                                                    \
+                                                                : 0));                                                 \
+   } while (0)
+
+#define radeon_event_write(cs, event_type) radeon_event_write_predicate(cs, event_type, false)
+
 ALWAYS_INLINE static void
 radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
                  const uint32_t ref, const uint32_t mask)
