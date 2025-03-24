@@ -1095,6 +1095,9 @@ spec@arb_transform_feedback3@arb_transform_feedback3-ext_interleaved_two_bufs_vs
 # error: main:90: eglChooseConfig() returned no configs
 spec@egl 1.4@eglterminate then unbind context,Fail
 
+# Not allowed to force software rendering when API explicitly selects a hardware device.
+spec@egl_ext_device_base@conformance,Crash
+
 # "eglChooseConfig() failed"
 spec@egl_khr_surfaceless_context@viewport,Fail
 spec@egl_mesa_configless_context@basic,Fail
