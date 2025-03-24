@@ -86,6 +86,11 @@ struct panvk_rendering_state {
    /* True if the last render pass was suspended. */
    bool suspended;
 
+   /* Blocks that can patch to flip the provoking vertex mode if we need to
+    * emit FBDs/TDs before we know which mode the application is using */
+   struct cs_maybe *maybe_set_tds_provoking_vertex;
+   struct cs_maybe *maybe_set_fbds_provoking_vertex;
+
    struct {
       /* != 0 if the render pass contains one or more occlusion queries to
        * signal. */
@@ -214,6 +219,13 @@ struct panvk_cmd_graphics_state {
       }                                                                        \
    } while (0)
 
+#if PAN_ARCH >= 10
+struct panvk_device_draw_context {
+   struct panvk_priv_bo *fns_bo;
+   uint64_t fn_set_fbds_provoking_vertex_stride;
+};
+#endif
+
 static inline uint32_t
 panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
                                   const struct panvk_cmd_graphics_state *state,
@@ -319,6 +331,15 @@ cached_fs_required(ASSERTED const struct panvk_cmd_graphics_state *state,
       if (__set_fs_push_dirty)                                                 \
          gfx_state_set_dirty(__cmdbuf, FS_PUSH_UNIFORMS);                      \
    } while (0)
+
+
+#if PAN_ARCH >= 10
+VkResult
+panvk_per_arch(device_draw_context_init)(struct panvk_device *dev);
+
+void
+panvk_per_arch(device_draw_context_cleanup)(struct panvk_device *dev);
+#endif
 
 void
 panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
