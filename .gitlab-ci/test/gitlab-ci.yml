@@ -173,6 +173,8 @@ yaml-toml-shell-py-test:
   artifacts:
     paths:
       - results/
+  tags:
+    - kvm
 
 .test-angle:
   variables:
