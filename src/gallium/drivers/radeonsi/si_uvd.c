@@ -43,7 +43,8 @@ struct pipe_video_buffer *si_video_buffer_create_with_modifiers(struct pipe_cont
             continue;
 
          /* Filter out non displayable modifiers */
-         if (AMD_FMT_MOD_GET(DCC_MAX_COMPRESSED_BLOCK, mod) == AMD_FMT_MOD_DCC_BLOCK_256B)
+         if (sscreen->info.drm_minor < 63 &&
+             AMD_FMT_MOD_GET(DCC_MAX_COMPRESSED_BLOCK, mod) == AMD_FMT_MOD_DCC_BLOCK_256B)
             continue;
       }
 
