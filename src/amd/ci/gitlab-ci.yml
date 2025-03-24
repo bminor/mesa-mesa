@@ -30,7 +30,7 @@ radv-stoney-angle-full:
     DEQP_SUITE: radv-stoney-angle-full
     DEQP_FRACTION: 1
 
-radeonsi-stoney-gl:
+radeonsi-stoney-glcts-piglit:
   extends:
     - .lava-test-deqp:x86_64
     - .radeonsi-stoney-test:x86_64
@@ -40,9 +40,9 @@ radeonsi-stoney-gl:
     HWCI_START_WESTON: 1
     DEQP_FRACTION: 2
 
-radeonsi-stoney-gl-full:
+radeonsi-stoney-glcts-piglit-full:
   extends:
-    - radeonsi-stoney-gl
+    - radeonsi-stoney-glcts-piglit
     - .radeonsi-manual-rules
   variables:
     DEQP_FRACTION: 1
@@ -115,7 +115,7 @@ radeonsi-raven-piglit:
     HWCI_START_WESTON: 1
 
 # lower image opcodes to emulate CDNA compute devices
-radeonsi-raven-cdna-lower-image:
+radeonsi-raven-cdna-lower-image-piglit:
   extends:
     - .lava-test-deqp:x86_64
     - .radeonsi-raven-test:x86_64
@@ -157,7 +157,7 @@ radeonsi-raven-vaapi-fluster:
 
 # VKCTS never finishes on gfx7 due to all the GPU resets and hangs.
 # Hence, disable it for now.
-.vkcts-kabini-valve:
+.radv-kabini-vkcts:
   extends:
     - .vkcts-test-valve
     - .kabini-test-valve
@@ -182,7 +182,7 @@ vkcts-tahiti-valve:
     B2C_TIMEOUT_BOOT_RETRIES: 0
     RADV_PERFTEST: video_decode,video_encode
 
-vkcts-hawaii-valve:
+radv-hawaii-vkcts:
   extends:
     - .vkcts-test-valve
     - .hawaii-test-valve
@@ -195,7 +195,7 @@ vkcts-hawaii-valve:
     B2C_TIMEOUT_BOOT_RETRIES: 0
     RADV_PERFTEST: video_decode,video_encode
 
-vkcts-polaris10-valve:
+radv-polaris10-vkcts:
   extends:
     - .vkcts-test-valve
     - .polaris10-test-valve-kws
@@ -207,7 +207,7 @@ vkcts-polaris10-valve:
     B2C_TIMEOUT_OVERALL_MINUTES: 70
     RADV_PERFTEST: video_decode,video_encode
 
-vkcts-vega10-valve:
+radv-vega10-vkcts:
   extends:
     - .vkcts-test-valve
     - .vega10-test-valve
@@ -219,7 +219,7 @@ vkcts-vega10-valve:
     B2C_TIMEOUT_OVERALL_MINUTES: 70
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
-vkcts-renoir-valve:
+radv-renoir-vkcts:
   extends:
     - .vkcts-test-valve
     - .renoir-test-valve
@@ -232,7 +232,7 @@ vkcts-renoir-valve:
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
 
-vkcts-navi10-valve:
+radv-navi10-vkcts:
   parallel: 2
   extends:
     - .vkcts-test-valve
@@ -242,7 +242,7 @@ vkcts-navi10-valve:
     GPU_VERSION: radv-navi10
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
-vkcts-navi21-valve:
+radv-navi21-vkcts:
   timeout: 35m
   parallel: 3
   extends:
@@ -255,7 +255,7 @@ vkcts-navi21-valve:
     B2C_TIMEOUT_OVERALL_MINUTES: 30
     RADV_PERFTEST: transfer_queue
 
-vkcts-vangogh-valve:
+radv-vangogh-vkcts:
   parallel: 2
   extends:
     - .vkcts-test-valve
@@ -266,7 +266,7 @@ vkcts-vangogh-valve:
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
 
-.glcts-vangogh-valve-common:
+.radeonsi-vangogh-glcts-common:
   extends:
     - .b2c-x86_64-test-gl
     - .b2c-deqp-test
@@ -275,21 +275,21 @@ vkcts-vangogh-valve:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
 
-glcts-vangogh-valve:
+radeonsi-vangogh-glcts:
   extends:
-    - .glcts-vangogh-valve-common
+    - .radeonsi-vangogh-glcts-common
     - .radeonsi-valve-rules
   timeout: 30m
   variables:
     DEQP_FRACTION: 4
 
-glcts-vangogh-full-valve:
+radeonsi-vangogh-glcts-full:
   extends:
-    - .glcts-vangogh-valve-common
+    - .radeonsi-vangogh-glcts-common
     - .radeonsi-valve-manual-rules
   timeout: 90m
 
-vkcts-raphael-valve:
+radv-raphael-vkcts:
   extends:
     - .vkcts-test-valve
     - .raphael-test-valve
@@ -301,7 +301,7 @@ vkcts-raphael-valve:
     B2C_TIMEOUT_OVERALL_MINUTES: 40
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
-vkcts-navi31-valve:
+radv-navi31-vkcts:
   timeout: 25m
   parallel: 2
   extends:
@@ -351,7 +351,7 @@ radv-fossils:
 
 ############### vkd3d-proton
 
-vkd3d-tahiti-valve:
+radv-tahiti-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -362,7 +362,7 @@ vkd3d-tahiti-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-hawaii-valve:
+radv-hawaii-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -373,7 +373,7 @@ vkd3d-hawaii-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-polaris10-valve:
+radv-polaris10-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -384,7 +384,7 @@ vkd3d-polaris10-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-vega10-valve:
+radv-vega10-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -395,7 +395,7 @@ vkd3d-vega10-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-renoir-valve:
+radv-renoir-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -406,7 +406,7 @@ vkd3d-renoir-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-navi10-valve:
+radv-navi10-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -417,7 +417,7 @@ vkd3d-navi10-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-navi21-valve:
+radv-navi21-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -428,7 +428,7 @@ vkd3d-navi21-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-vangogh-valve:
+radv-vangogh-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -439,7 +439,7 @@ vkd3d-vangogh-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-raphael-valve:
+radv-raphael-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
@@ -450,7 +450,7 @@ vkd3d-raphael-valve:
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
-vkd3d-navi31-valve:
+radv-navi31-vkd3d:
   extends:
     - .b2c-test-radv-vk
     - .b2c-vkd3d-proton-test
