@@ -5921,6 +5921,10 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
        ctx->s->info.fs.post_depth_coverage)
       so->post_depth_coverage = true;
 
+   if (ctx->so->type == MESA_SHADER_FRAGMENT) {
+      so->fs.depth_layout = ctx->s->info.fs.depth_layout;
+   }
+
    ctx->so->per_samp = ctx->s->info.fs.uses_sample_shading;
 
    if (ctx->has_relative_load_const_ir3) {

@@ -6222,8 +6222,18 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
        pass->attachments[subpass->depth_stencil_attachment.attachment].format
        == VK_FORMAT_S8_UINT) ||
       fs->fs.lrz.force_late_z ||
+      cmd->state.lrz.force_late_z ||
       /* alpha-to-coverage can behave like a discard. */
       cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable;
+
+   /* If there is explicit depth direction in FS writing gl_FragDepth
+    * may be compatible with LRZ test.
+    */
+   if (!force_late_z && cmd->state.lrz.enabled && fs->variant->writes_pos &&
+       zmode != A6XX_LATE_Z) {
+      zmode = A6XX_EARLY_LRZ_LATE_Z;
+   }
+
    if ((force_late_z && !fs->variant->fs.early_fragment_tests) ||
        !ds_test_enable)
       zmode = A6XX_LATE_Z;

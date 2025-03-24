@@ -759,6 +759,9 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
 
    struct A6XX_GRAS_LRZ_CNTL gras_lrz_cntl = { 0 };
 
+   if (fs->variant->writes_pos && !fs->variant->fs.early_fragment_tests)
+      cmd->state.lrz.force_late_z = true;
+
    if (!cmd->state.lrz.valid) {
       return gras_lrz_cntl;
    }
@@ -802,7 +805,42 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * fragment tests.  We have to skip LRZ testing and updating, but as long as
     * the depth direction stayed the same we can continue with LRZ testing later.
     */
-   if (fs->fs.lrz.status & TU_LRZ_FORCE_DISABLE_LRZ) {
+   bool disable_lrz_due_to_fs = fs->fs.lrz.status & TU_LRZ_FORCE_DISABLE_LRZ;
+
+   /* Specifying depth write direction in shader may help us. E.g.
+    * If depth test is GREATER and FS specifies FRAG_DEPTH_LAYOUT_LESS
+    * it means that LRZ won't kill any fragment that shouldn't be killed,
+    * in other words, FS can only reduce the depth value which could
+    * make fragment to NOT pass with GREATER depth test. We just have to
+    * enable late Z test.
+    */
+   if (!disable_lrz_due_to_fs && fs->variant->writes_pos &&
+       !fs->variant->fs.early_fragment_tests) {
+      if (fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_NONE ||
+          fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_ANY) {
+         disable_lrz_due_to_fs = true;
+      } else {
+         if (fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_GREATER) {
+            disable_lrz_due_to_fs =
+               depth_compare_op != VK_COMPARE_OP_LESS &&
+               depth_compare_op != VK_COMPARE_OP_LESS_OR_EQUAL;
+         } else if (fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_LESS) {
+            disable_lrz_due_to_fs =
+               depth_compare_op != VK_COMPARE_OP_GREATER &&
+               depth_compare_op != VK_COMPARE_OP_GREATER_OR_EQUAL;
+         }
+         /* FRAG_DEPTH_LAYOUT_UNCHANGED is always OK.*/
+      }
+
+      cmd->state.lrz.force_late_z = disable_lrz_due_to_fs;
+   } else if (fs->variant->writes_pos && !fs->variant->fs.early_fragment_tests) {
+      disable_lrz_due_to_fs = true;
+      cmd->state.lrz.force_late_z = true;
+   } else {
+      cmd->state.lrz.force_late_z = false;
+   }
+
+   if (disable_lrz_due_to_fs) {
       if (cmd->state.lrz.prev_direction != TU_LRZ_UNKNOWN || !cmd->state.lrz.gpu_dir_tracking) {
          perf_debug(cmd->device, "Skipping LRZ due to FS");
          temporary_disable_lrz = true;
