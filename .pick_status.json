@@ -154,7 +154,7 @@
         "description": "driconf: update X4 Foundations executable name",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5532f135664c7f67d4a8162336005d0118948343",
         "notes": null
