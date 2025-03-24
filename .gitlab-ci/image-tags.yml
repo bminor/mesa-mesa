@@ -23,7 +23,7 @@ variables:
    DEBIAN_BASE_TAG: "20250321-s3cp-fix5"
 
    DEBIAN_X86_64_BUILD_IMAGE_PATH: "debian/x86_64_build"
-   DEBIAN_BUILD_TAG: "20250321-s3cp-fix5"
+   DEBIAN_BUILD_TAG: "20250324-android"
 
    DEBIAN_X86_64_TEST_BASE_IMAGE: "debian/x86_64_test-base"
    DEBIAN_ARM32_TEST_BASE_IMAGE: "debian/arm32_test-base"

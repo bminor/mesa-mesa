@@ -198,8 +198,8 @@ debian/s390x_build:
     ANDROID_SDK_VERSION: 34
     # Space-separated list of interesting CTS modules
     ANDROID_CTS_MODULES: CtsGraphicsTestCases
-    ANDROID_LLVM_VERSION: llvmorg-18.1.8
-    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250103
+    ANDROID_LLVM_VERSION: llvmorg-19.1.7
+    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250324
     # This can be confusing: LLVM_VERSION refers to the host LLVM toolchain
     # used (LLVM 19 in our Debian system), but ANDROID_LLVM_VERSION refers to
     # the cross-compiling LLVM toolchain used to build for the Android system.
