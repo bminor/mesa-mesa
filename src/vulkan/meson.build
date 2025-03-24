@@ -98,3 +98,6 @@ endif
 if with_vulkan_vram_report_limit_layer
   subdir('vram-report-limit-layer')
 endif
+if with_vulkan_anti_lag_layer
+  subdir('anti-lag-layer')
+endif
