@@ -625,6 +625,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
          push_fp_query(state, alu, 1, nir_type_invalid);
          return;
       case nir_op_ffma:
+      case nir_op_ffmaz:
       case nir_op_flrp:
          push_fp_query(state, alu, 0, nir_type_invalid);
          push_fp_query(state, alu, 1, nir_type_invalid);
@@ -1352,7 +1353,8 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       break;
    }
 
-   case nir_op_ffma: {
+   case nir_op_ffma:
+   case nir_op_ffmaz: {
       const struct ssa_result_range first = unpack_data(src_res[0]);
       const struct ssa_result_range second = unpack_data(src_res[1]);
       const struct ssa_result_range third = unpack_data(src_res[2]);
