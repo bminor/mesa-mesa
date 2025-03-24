@@ -111,6 +111,9 @@ sm_for_chipset(uint16_t chipset)
 static uint8_t
 max_warps_per_mp_for_sm(uint8_t sm)
 {
+   /* These are documented in each architecture's tuning guide. Eg. see:
+    * https://docs.nvidia.com/cuda/blackwell-tuning-guide/index.html#occupancy
+    */
    switch (sm) {
    case 10:
    case 11:
@@ -124,6 +127,7 @@ max_warps_per_mp_for_sm(uint8_t sm)
    case 86:
    case 87:
    case 89:
+   case 120:
       return 48;
    case 30:
    case 32:
@@ -139,6 +143,7 @@ max_warps_per_mp_for_sm(uint8_t sm)
    case 72:
    case 80:
    case 90:
+   case 100:
       return 64;
    default:
       assert(!"unkown SM version");
