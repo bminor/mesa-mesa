@@ -3847,9 +3847,6 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
             }
             const uint32_t target = PIPE_TEXTURE_2D;
             uint32_t bind = VIRGL_BIND_RENDER_TARGET;
-            if (VK_IMAGE_TILING_LINEAR == imageCreateInfo.tiling) {
-                bind |= VIRGL_BIND_LINEAR;
-            }
 
             if (mCaps.vulkanCapset.alwaysBlob) {
                 struct gfxstreamResourceCreate3d create3d = {};
