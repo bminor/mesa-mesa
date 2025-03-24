@@ -1624,7 +1624,7 @@
         "description": "radeonsi/vce: Support old VCE firmware",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "104f9c6654583c67251fb442c49b3cf86b416efb",
         "notes": null
