@@ -492,7 +492,7 @@ struct radv_cmd_state {
 };
 
 struct radv_enc_state {
-   uint32_t task_size_offset;
+   uint32_t *p_task_size;
    uint32_t total_task_size;
    unsigned shifter;
    unsigned bits_in_shifter;

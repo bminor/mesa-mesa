@@ -468,7 +468,7 @@ radv_enc_task_info(struct radv_cmd_buffer *cmd_buffer, bool feedback)
    enc->task_id++;
    ENC_BEGIN;
    radeon_emit(cs, pdev->vcn_enc_cmds.task_info);
-   enc->task_size_offset = cs->cdw++;
+   enc->p_task_size = &cs->buf[cs->cdw++];
    radeon_emit(cs, enc->task_id);
    radeon_emit(cs, feedback ? 1 : 0);
    ENC_END;
@@ -1842,7 +1842,7 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    // op_enc
    radv_enc_op_enc(cmd_buffer);
 
-   radeon_emit_direct(cmd_buffer->cs, enc->task_size_offset, enc->total_task_size);
+   *enc->p_task_size = enc->total_task_size;
 
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
       radv_vcn_sq_tail(cmd_buffer->cs, &cmd_buffer->video.sq);
