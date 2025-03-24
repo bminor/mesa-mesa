@@ -2796,6 +2796,12 @@ nir_visitor::visit(ir_dereference_array *ir)
 {
    nir_def *index = evaluate_rvalue(ir->array_index);
 
+   /* In NIR, array indices must match the pointer size (32-bits for arrays),
+    * but in GLSL IR, we might "optimize" the array index to a 16-bit integer.
+    * We need to upcast in that case to keep the NIR valid.
+    */
+   index = nir_i2iN(&b, index, this->deref->def.bit_size);
+
    ir->array->accept(this);
 
    this->deref = nir_build_deref_array(&b, this->deref, index);
