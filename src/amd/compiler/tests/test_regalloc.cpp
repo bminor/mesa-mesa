@@ -670,3 +670,107 @@ BEGIN_TEST(regalloc.linear_vgpr.compact_for_future_phis)
       finish_ra_test(ra_test_policy());
    }
 END_TEST
+
+// TODO: If get_reg_impl() didn't fail here, only one of the s1 temporaries would be moved
+BEGIN_TEST(regalloc.pseudo_scalar_trans_vcc.get_reg_impl)
+   if (!setup_cs("", GFX12, CHIP_UNKNOWN))
+      return;
+
+   std::vector<Temp> tmps;
+   for (unsigned i = 0; i < 52; i++)
+      tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s2)));
+   tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1)));
+   tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1)));
+
+   //>> s1: %_:s[0] = v_s_sqrt_f32 0
+   bld.vop3(aco_opcode::v_s_sqrt_f32, bld.def(s1), Operand::c32(0));
+
+   //; for i in range(51):
+   //;    insert_pattern(f'p_unit_test %_:s[{4+i*2}-{5+i*2}]')
+   //! p_unit_test %_:vcc
+   //! p_unit_test %_:s[1]
+   //! p_unit_test %_:s[2]
+   for (Temp t : tmps)
+      bld.pseudo(aco_opcode::p_unit_test, t);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.pseudo_scalar_trans_vcc.compact_relocate)
+   for (unsigned subvariant = 0; subvariant <= 3; subvariant++) {
+      const char* names[] = {"_fiftythree_s2", "_fiftythree_s2_one_s1",
+                             "_twentysix_s4_one_s2_one_s1", "_twentysix_s4_three_s1"};
+      if (!setup_cs("", GFX12, CHIP_UNKNOWN, names[subvariant]))
+         continue;
+
+      std::vector<Temp> tmps;
+      if (subvariant <= 1) {
+         for (unsigned i = 0; i < 53; i++)
+            tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s2, PhysReg(i * 2))));
+      } else if (subvariant >= 2) {
+         for (unsigned i = 0; i < 26; i++)
+            tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s4, PhysReg(i * 4))));
+      }
+      if (subvariant == 2) {
+         tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s2, PhysReg(104))));
+      } else if (subvariant == 3) {
+         tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1, PhysReg(104))));
+         tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1, PhysReg(105))));
+      }
+      if (subvariant >= 1)
+         tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1, PhysReg(106))));
+
+      //~gfx12_twentysix_s4_one_s2_one_s1>> s1: %_:s[104] = v_s_sqrt_f32 0
+      //~gfx12_twentysix_s4_three_s1>> s1: %_:s[104] = v_s_sqrt_f32 0
+      //~gfx12_fiftythree_s2>> s1: %_:s[0] = v_s_sqrt_f32 0
+      //~gfx12_fiftythree_s2_one_s1>> s1: %_:s[0] = v_s_sqrt_f32 0
+      bld.vop3(aco_opcode::v_s_sqrt_f32, bld.def(s1), Operand::c32(0));
+
+      //; if variant in ['gfx12_fiftythree_s2', 'gfx12_fiftythree_s2_one_s1']:
+      //;    for i in range(52):
+      //;       insert_pattern(f'p_unit_test %_:s[{2+i*2}-{3+i*2}]')
+      //;    insert_pattern('p_unit_test %_:vcc')
+      //~gfx12_fiftythree_s2_one_s1! p_unit_test %_:s[1]
+      //; if variant in ['gfx12_twentysix_s4_one_s2_one_s1', 'gfx12_twentysix_s4_three_s1']:
+      //;    for i in range(26):
+      //;       insert_pattern(f'p_unit_test %_:s[{0+i*4}-{3+i*4}]')
+      //~gfx12_twentysix_s4_one_s2_one_s1! p_unit_test %_:vcc
+      //~gfx12_twentysix_s4_one_s2_one_s1! p_unit_test %_:s[105]
+      //~gfx12_twentysix_s4_three_s1! p_unit_test %_:s[105]
+      //~gfx12_twentysix_s4_three_s1! p_unit_test %_:vcc_lo
+      //~gfx12_twentysix_s4_three_s1! p_unit_test %_:vcc_hi
+      for (Temp t : tmps)
+         bld.pseudo(aco_opcode::p_unit_test, t);
+
+      finish_ra_test(ra_test_policy{.use_compact_relocate = true});
+   }
+END_TEST
+
+/* Without some care, we can use too many registers when the definition/killed-operand space is a
+ * NPOT size.
+ */
+BEGIN_TEST(regalloc.compact_relocate.npot_space)
+   if (!setup_cs("", GFX12, CHIP_UNKNOWN))
+      return;
+
+   std::vector<Temp> tmps;
+   for (unsigned i = 0; i < 25; i++)
+      tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s4, PhysReg(i * 4))));
+   tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s2, PhysReg(100))));
+   tmps.push_back(bld.pseudo(aco_opcode::p_unit_test, bld.def(s1, PhysReg(102))));
+
+   Temp desc = bld.pseudo(aco_opcode::p_unit_test, bld.def(s4, PhysReg(103)));
+   Temp offset = bld.pseudo(aco_opcode::p_unit_test, bld.def(s1, PhysReg(104)));
+
+   //>> s4: %30:s[100-103] = s_buffer_load_dwordx4 %_:s[100-103], %_:s[104]
+   bld.smem(aco_opcode::s_buffer_load_dwordx4, bld.def(s4), desc, offset);
+
+   //; for i in range(25):
+   //;    insert_pattern(f'p_unit_test %_:s[{i*4}-{3+i*4}]')
+   //! p_unit_test %_:vcc
+   //! p_unit_test %_:s[105]
+   for (Temp t : tmps)
+      bld.pseudo(aco_opcode::p_unit_test, t);
+
+   finish_ra_test(ra_test_policy{.use_compact_relocate = true});
+END_TEST
