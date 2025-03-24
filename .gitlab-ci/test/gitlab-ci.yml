@@ -73,6 +73,8 @@ shader-db:
     paths:
       - shader-db
   timeout: 15m
+  tags:
+    - kvm  # FIXME: this is a hack, should not be needed
 
 yaml-toml-shell-py-test:
   extends:
