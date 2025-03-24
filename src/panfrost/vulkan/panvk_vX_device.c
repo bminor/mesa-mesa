@@ -17,6 +17,7 @@
 #include "panvk_cmd_alloc.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_device.h"
+#include "panvk_cmd_draw.h"
 #include "panvk_entrypoints.h"
 #include "panvk_instance.h"
 #include "panvk_macros.h"
@@ -373,9 +374,15 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
 
-   result = panvk_meta_init(device);
+#if PAN_ARCH >= 10
+   result = panvk_per_arch(device_draw_context_init)(device);
    if (result != VK_SUCCESS)
       goto err_free_precomp;
+#endif
+
+   result = panvk_meta_init(device);
+   if (result != VK_SUCCESS)
+      goto err_free_draw_ctx;
 
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       const VkDeviceQueueCreateInfo *queue_create =
@@ -425,7 +432,11 @@ err_finish_queues:
 
    panvk_meta_cleanup(device);
 
+err_free_draw_ctx:
+#if PAN_ARCH >= 10
+   panvk_per_arch(device_draw_context_cleanup)(device);
 err_free_precomp:
+#endif
    panvk_precomp_cleanup(device);
 err_free_priv_bos:
    if (device->printf.bo)
@@ -468,6 +479,9 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
    }
 
    panvk_precomp_cleanup(device);
+#if PAN_ARCH >= 10
+   panvk_per_arch(device_draw_context_cleanup)(device);
+#endif
    panvk_meta_cleanup(device);
    u_printf_destroy(&device->printf.ctx);
    panvk_priv_bo_unref(device->printf.bo);
