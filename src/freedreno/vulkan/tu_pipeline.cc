@@ -3876,7 +3876,9 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
       dirty_draw_states |= (1u << id);                                        \
    }
 #define DRAW_STATE_FDM(name, id, ...)                                         \
-   if ((EMIT_STATE(name) || (cmd->state.dirty & TU_CMD_DIRTY_FDM)) &&         \
+   if ((EMIT_STATE(name) || (cmd->state.dirty &                               \
+                             (TU_CMD_DIRTY_FDM |                              \
+                              TU_CMD_DIRTY_PER_VIEW_VIEWPORT))) &&            \
        !(cmd->state.pipeline_draw_states & (1u << id))) {                     \
       if (cmd->state.shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm) {             \
          tu_cs_set_writeable(&cmd->sub_cs, true);                             \

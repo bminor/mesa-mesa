@@ -294,7 +294,7 @@
         "description": "tu: Make sure to re-emit viewports if per_view_viewport changes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
