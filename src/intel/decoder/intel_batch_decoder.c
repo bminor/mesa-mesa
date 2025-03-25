@@ -503,7 +503,8 @@ handle_compute_walker(struct intel_batch_decode_ctx *ctx,
    struct intel_field_iterator iter;
    intel_field_iterator_init(&iter, inst, p, 0, false);
    while (intel_field_iterator_next(&iter)) {
-      if (strcmp(iter.name, "body") == 0) {
+      if (strcmp(iter.name, "body") == 0 ||
+          strcmp(iter.name, "COMPUTE_WALKER_BODY") == 0) {
          intel_field_iterator_init(&iter, iter.struct_desc,
                                    &iter.p[iter.start_bit / 32],
                                    0, false);
@@ -1497,6 +1498,7 @@ struct custom_decoder state_handlers[] = {
 /* Special printing of instructions */
 struct custom_decoder custom_decoders[] = {
    { "COMPUTE_WALKER", handle_compute_walker },
+   { "EXECUTE_INDIRECT_DISPATCH", handle_compute_walker },
    { "MEDIA_CURBE_LOAD", handle_media_curbe_load },
    { "3DSTATE_VERTEX_BUFFERS", handle_3dstate_vertex_buffers },
    { "3DSTATE_INDEX_BUFFER", handle_3dstate_index_buffer },
