@@ -1000,7 +1000,7 @@ dest_3src(FILE *file, const struct intel_device_info *devinfo,
    if (subreg_nr)
       format(file, ".%u", subreg_nr);
    string(file, "<");
-   unsigned _horiz_stride =
+   unsigned _horiz_stride = devinfo->ver == 9 ? BRW_HORIZONTAL_STRIDE_1 :
       hstride_from_align1_3src_dst_hstride(brw_eu_inst_3src_a1_dst_hstride(devinfo, inst));
    err |= control(file, "horiz_stride", horiz_stride, _horiz_stride, NULL);
    string(file, ">");
