@@ -28,6 +28,22 @@
 # that are used by a driver. See the various `.$DRIVER-rules` in the
 # corresponding `src/**/ci/gitlab-ci.yml`.
 
+# In case of issues with a farm, here are the people to contact:
+#   farm name        | ci infrastructure used           | admin(s)
+#   -----------------|----------------------------------|---------
+#   anholt           | baremetal/poe-powered            | @anholt
+#   austriancoder    | ci-tron                          | @austriancoder
+#   collabora        | lava                             | @daniels, @sergi
+#   google-freedreno | baremetal/{fastboot,cros-servo}  | @robclark
+#   igalia           | baremetal/poe-powered            | @jasuarez, @chema
+#   lima             | lava                             | @enunes
+#   microsoft        | custom                           | @jenatali, @alatiera
+#   ondracka         | ci-tron                          | @ondracka
+#   pengutronix      | lava                             | @hnez, @lynxeye
+#   valve-kws        | ci-tron                          | @mupuf, @eric
+#   valve-mupuf      | ci-tron                          | @mupuf, @eric
+#   vmware           | lava                             | @blu
+
 .microsoft-farm-rules:
   rules:
     - exists: [ .ci-farms-disabled/microsoft ]  # 1. Is disabled, never run
