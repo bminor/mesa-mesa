@@ -225,6 +225,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
          legacy_vertex_attributes;
       VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw;
+      VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT
+         multisampled_render_to_single_sampled;
       VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type;
       VkPhysicalDeviceNestedCommandBufferFeaturesEXT nested_command_buffer;
       VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT non_seamless_cube_map;
@@ -368,12 +370,13 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT, local_feats.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_ADD_PNEXT_EXT(feats2, FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT, local_feats.fragment_shader_interlock, exts->EXT_fragment_shader_interlock);
    VN_ADD_PNEXT_EXT(feats2, GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT, local_feats.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
-   VN_ADD_PNEXT_EXT(feats2, LEGACY_DITHERING_FEATURES_EXT, local_feats.legacy_dithering, exts->EXT_legacy_dithering);
-   VN_ADD_PNEXT_EXT(feats2, LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT, local_feats.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
    VN_ADD_PNEXT_EXT(feats2, IMAGE_2D_VIEW_OF_3D_FEATURES_EXT, local_feats.image_2d_view_of_3d, exts->EXT_image_2d_view_of_3d);
    VN_ADD_PNEXT_EXT(feats2, IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT, local_feats.image_sliced_view_of_3d, exts->EXT_image_sliced_view_of_3d);
    VN_ADD_PNEXT_EXT(feats2, IMAGE_VIEW_MIN_LOD_FEATURES_EXT, local_feats.image_view_min_lod, exts->EXT_image_view_min_lod);
+   VN_ADD_PNEXT_EXT(feats2, LEGACY_DITHERING_FEATURES_EXT, local_feats.legacy_dithering, exts->EXT_legacy_dithering);
+   VN_ADD_PNEXT_EXT(feats2, LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT, local_feats.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
    VN_ADD_PNEXT_EXT(feats2, MULTI_DRAW_FEATURES_EXT, local_feats.multi_draw, exts->EXT_multi_draw);
+   VN_ADD_PNEXT_EXT(feats2, MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT, local_feats.multisampled_render_to_single_sampled, exts->EXT_multisampled_render_to_single_sampled);
    VN_ADD_PNEXT_EXT(feats2, MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT, local_feats.mutable_descriptor_type, exts->EXT_mutable_descriptor_type || exts->VALVE_mutable_descriptor_type);
    VN_ADD_PNEXT_EXT(feats2, NESTED_COMMAND_BUFFER_FEATURES_EXT, local_feats.nested_command_buffer, exts->EXT_nested_command_buffer);
    VN_ADD_PNEXT_EXT(feats2, NON_SEAMLESS_CUBE_MAP_FEATURES_EXT, local_feats.non_seamless_cube_map, exts->EXT_non_seamless_cube_map);
@@ -1377,6 +1380,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_load_store_op_none = true,
       .EXT_memory_budget = VN_DEBUG(MEM_BUDGET),
       .EXT_multi_draw = true,
+      .EXT_multisampled_render_to_single_sampled = true,
       .EXT_mutable_descriptor_type = true,
       .EXT_nested_command_buffer = true,
       .EXT_non_seamless_cube_map = true,
@@ -2181,6 +2185,7 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
    struct vn_ring *ring = physical_dev->instance->ring.ring;
    VkFormatProperties *props = &pFormatProperties->formatProperties;
    VkFormatProperties3 *props3 = NULL;
+   VkBool32 *srpq = NULL;
 
    bool cacheable = true;
    uint64_t key = (uint64_t)format;
@@ -2189,6 +2194,10 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
       case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3:
          props3 = (VkFormatProperties3 *)src;
          key |= 1ull << 32;
+         break;
+      case VK_STRUCTURE_TYPE_SUBPASS_RESOLVE_PERFORMANCE_QUERY_EXT:
+         srpq = &((VkSubpassResolvePerformanceQueryEXT *)src)->optimal;
+         key |= 1ull << 33;
          break;
       default:
          cacheable = false;
@@ -2203,6 +2212,8 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
          *props = entry->props;
          if (props3)
             VN_COPY_STRUCT_GUTS(props3, &entry->props3, sizeof(*props3));
+         if (srpq)
+            *srpq = entry->srpq;
          return;
       }
    }
@@ -2217,6 +2228,8 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
       entry->props = *props;
       if (props3)
          VN_COPY_STRUCT_GUTS(&entry->props3, props3, sizeof(*props3));
+      if (srpq)
+         entry->srpq = *srpq;
       entry->valid = true;
    }
    simple_mtx_unlock(&physical_dev->format_update_mutex);

@@ -21,6 +21,7 @@ struct vn_format_properties_entry {
    atomic_bool valid;
    VkFormatProperties props;
    VkFormatProperties3 props3;
+   VkBool32 srpq;
 };
 
 struct vn_image_format_properties {
