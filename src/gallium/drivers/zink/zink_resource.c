@@ -2345,7 +2345,8 @@ zink_buffer_map(struct pipe_context *pctx,
    /* but this is only viable with a certain amount of vram since it may fully duplicate lots of large buffers */
    bool host_mem_type_check = screen->always_cached_upload ? is_cached_mem : res->obj->host_visible;
    if (usage & PIPE_MAP_DISCARD_RANGE &&
-       (!host_mem_type_check || !(usage & (PIPE_MAP_UNSYNCHRONIZED | PIPE_MAP_PERSISTENT)))) {
+       ((!res->obj->host_visible || !(usage & (PIPE_MAP_UNSYNCHRONIZED | PIPE_MAP_PERSISTENT))) ||
+        (!host_mem_type_check && !(usage & (PIPE_MAP_UNSYNCHRONIZED | PIPE_MAP_PERSISTENT))))) {
 
       /* Check if mapping this buffer would cause waiting for the GPU.
        */
