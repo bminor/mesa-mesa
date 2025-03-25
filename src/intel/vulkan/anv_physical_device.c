@@ -1971,8 +1971,27 @@ static uint64_t
 anv_restrict_sys_heap_size(struct anv_physical_device *device,
                            uint64_t kmd_reported_sram)
 {
-   if (device->info.kmd_type == INTEL_KMD_TYPE_XE)
-      return kmd_reported_sram;
+   if (device->info.kmd_type == INTEL_KMD_TYPE_XE) {
+      uint64_t sys_reported_sram;
+      if (!os_get_total_physical_memory(&sys_reported_sram))
+         return kmd_reported_sram;
+
+      /* From what I could gather, kmd_reported_sram always seems to be
+       * exactly half of sys_reported_sram in older Kernels, but let's leave
+       * some room for imprecision here in case the interfaces chosen to
+       * report memory end up changing, accounting things differently somehow.
+       *
+       * If we detect an older Kernel (i.e., kmd_reported_sram == ~50% of
+       * sys_reported_sram) we just return the values reported by the KMD
+       * since they are already restricted. If we detect a newer Kernel, we
+       * deal with the value below, along with i915.ko (which is expected to
+       * always report 100% of SRAM).
+       */
+      uint64_t ratio = kmd_reported_sram * 10 / sys_reported_sram;
+      assert(ratio <= 11);
+      if (ratio <= 6)
+         return kmd_reported_sram;
+   }
 
    return kmd_reported_sram / 2;
 }
