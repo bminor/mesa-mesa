@@ -543,8 +543,15 @@ impl<'a> ShaderFromNir<'a> {
                 let mut comps = Vec::new();
                 match src_bit_size {
                     1 | 32 | 64 => {
-                        for (ssa, _) in srcs {
-                            comps.push(ssa);
+                        for (ssa, byte) in srcs {
+                            assert!(byte == 0);
+                            // Always insert a copy regardless of whether or not
+                            // we need to permute bytes.  It's possible that the
+                            // source is uniform but the destination is not and
+                            // we'll need a copy in that case.  If the copy
+                            // isn't needed, copy-prop should clean it up for
+                            // us.
+                            comps.push(b.copy(ssa.into())[0]);
                         }
                     }
                     8 => {
