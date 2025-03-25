@@ -189,6 +189,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceShaderClockFeaturesKHR shader_clock;
       VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR shader_maximal_reconvergence;
       VkPhysicalDeviceShaderQuadControlFeaturesKHR shader_quad_control;
+      VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR
+         shader_relaxed_extended_instruction;
       VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR shader_subgroup_uniform_control_flow;
       VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR
          workgroup_memory_explicit_layout;
@@ -344,6 +346,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_POSITION_FETCH_FEATURES_KHR, local_feats.ray_tracing_position_fetch, exts->KHR_ray_tracing_position_fetch);
    VN_ADD_PNEXT_EXT(feats2, SHADER_CLOCK_FEATURES_KHR, local_feats.shader_clock, exts->KHR_shader_clock);
    VN_ADD_PNEXT_EXT(feats2, SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR, local_feats.shader_maximal_reconvergence, exts->KHR_shader_maximal_reconvergence);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR, local_feats.shader_relaxed_extended_instruction, exts->KHR_shader_relaxed_extended_instruction);
    VN_ADD_PNEXT_EXT(feats2, SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, local_feats.shader_subgroup_uniform_control_flow, exts->KHR_shader_subgroup_uniform_control_flow);
    VN_ADD_PNEXT_EXT(feats2, SHADER_QUAD_CONTROL_FEATURES_KHR, local_feats.shader_quad_control, exts->KHR_shader_quad_control);
    VN_ADD_PNEXT_EXT(feats2, WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, local_feats.workgroup_memory_explicit_layout, exts->KHR_workgroup_memory_explicit_layout);
@@ -1334,6 +1337,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_shader_clock = true,
       .KHR_shader_maximal_reconvergence = true,
       .KHR_shader_quad_control = true,
+      .KHR_shader_relaxed_extended_instruction = true,
       .KHR_shader_subgroup_uniform_control_flow = true,
       .KHR_workgroup_memory_explicit_layout = true,
 
