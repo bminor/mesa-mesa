@@ -336,9 +336,7 @@ intel_device_info_i915_query_regions(struct intel_device_info *devinfo, int fd, 
       /* If the memory region uAPI query is not available, try to generate some
        * numbers out of os_* utils for sram only.
        */
-      bool ret = intel_device_info_compute_system_memory(devinfo, false);
-      devinfo->mem.sram.mappable.size /= 2;
-      return ret;
+      return intel_device_info_compute_system_memory(devinfo, false);
    }
 
    for (int i = 0; i < meminfo->num_regions; i++) {
@@ -348,14 +346,11 @@ intel_device_info_i915_query_regions(struct intel_device_info *devinfo, int fd, 
          if (!update) {
             devinfo->mem.sram.mem.klass = mem->region.memory_class;
             devinfo->mem.sram.mem.instance = mem->region.memory_instance;
-            /* i915 reports the whole RAM as SRAM size but Xe KMD only reports
-             * half, so adjusting i915 to follow Xe KMD.
-             */
-            devinfo->mem.sram.mappable.size = mem->probed_size / 2;
+            devinfo->mem.sram.mappable.size = mem->probed_size;
          } else {
             assert(devinfo->mem.sram.mem.klass == mem->region.memory_class);
             assert(devinfo->mem.sram.mem.instance == mem->region.memory_instance);
-            assert(devinfo->mem.sram.mappable.size == mem->probed_size / 2);
+            assert(devinfo->mem.sram.mappable.size == mem->probed_size);
          }
          /* if running without elevated privileges i915 reports
           * unallocated_size == probed_size

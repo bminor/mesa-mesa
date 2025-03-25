@@ -1955,13 +1955,36 @@ get_properties(const struct anv_physical_device *pdevice,
    }
 }
 
+/* This function restricts the maximum size of system memory heap. The
+ * reasoning is that if we allow all the RAM to be used by graphics, nothing
+ * will remain for the rest of the system.
+ *
+ * In practice, applications should really be using VK_EXT_memory_budget
+ * instead of relying on our heuristics.
+ *
+ * The i915.ko driver has always reported 100% of the total available RAM.
+ * The xe.ko driver changed its behavior after commit d2d5f6d57884 ("drm/xe:
+ * Increase the XE_PL_TT watermark"), so we need to detect that and make a
+ * choice based on it.
+ */
+static uint64_t
+anv_restrict_sys_heap_size(struct anv_physical_device *device,
+                           uint64_t kmd_reported_sram)
+{
+   if (device->info.kmd_type == INTEL_KMD_TYPE_XE)
+      return kmd_reported_sram;
+
+   return kmd_reported_sram / 2;
+}
+
 static VkResult MUST_CHECK
 anv_init_meminfo(struct anv_physical_device *device, int fd)
 {
    const struct intel_device_info *devinfo = &device->info;
 
    device->sys.region = &devinfo->mem.sram.mem;
-   device->sys.size = devinfo->mem.sram.mappable.size;
+   device->sys.size =
+      anv_restrict_sys_heap_size(device, devinfo->mem.sram.mappable.size);
    device->sys.available = devinfo->mem.sram.mappable.free;
 
    device->vram_mappable.region = &devinfo->mem.vram.mem;
