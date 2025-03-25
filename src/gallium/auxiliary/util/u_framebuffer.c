@@ -27,7 +27,7 @@
 /**
  * @file
  * Framebuffer utility functions.
- *  
+ *
  * @author Brian Paul
  */
 
@@ -184,28 +184,28 @@ util_framebuffer_min_size(const struct pipe_framebuffer_state *fb,
 unsigned
 util_framebuffer_get_num_layers(const struct pipe_framebuffer_state *fb)
 {
-	unsigned i, num_layers = 0;
+   /**
+    * In the case of ARB_framebuffer_no_attachment
+    * we obtain the number of layers directly from
+    * the framebuffer state.
+    */
+   if (!(fb->nr_cbufs || fb->zsbuf.texture))
+      return fb->layers;
 
-	/**
-	 * In the case of ARB_framebuffer_no_attachment
-	 * we obtain the number of layers directly from
-	 * the framebuffer state.
-	 */
-	if (!(fb->nr_cbufs || fb->zsbuf.texture))
-		return fb->layers;
+   unsigned num_layers = 0;
 
-	for (i = 0; i < fb->nr_cbufs; i++) {
-		if (fb->cbufs[i].texture) {
-			unsigned num = fb->cbufs[i].last_layer - fb->cbufs[i].first_layer + 1;
-			num_layers = MAX2(num_layers, num);
-		}
-	}
-	if (fb->zsbuf.texture) {
-		unsigned num = fb->zsbuf.last_layer -
-			       fb->zsbuf.first_layer + 1;
-		num_layers = MAX2(num_layers, num);
-	}
-	return num_layers;
+   for (unsigned i = 0; i < fb->nr_cbufs; i++) {
+      if (fb->cbufs[i].texture) {
+         unsigned num = fb->cbufs[i].last_layer - fb->cbufs[i].first_layer + 1;
+         num_layers = MAX2(num_layers, num);
+      }
+   }
+   if (fb->zsbuf.texture) {
+      unsigned num = fb->zsbuf.last_layer -
+         fb->zsbuf.first_layer + 1;
+      num_layers = MAX2(num_layers, num);
+   }
+   return num_layers;
 }
 
 
