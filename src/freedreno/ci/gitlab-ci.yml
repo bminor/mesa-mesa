@@ -44,7 +44,8 @@ a306-piglit-shader:
     FDO_CI_CONCURRENT: 6
     HWCI_START_WESTON: 1
 
-a306-traces:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a306-traces:
   extends:
     - .google-freedreno-test-traces
     - .a306-test
@@ -61,7 +62,8 @@ a530-gl:
     FDO_CI_CONCURRENT: 3  # if 4, sometimes "deqp-gles31, not enough memory for the allocation" appears
   parallel: 6
 
-a530-traces:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a530-traces:
   extends:
     - .google-freedreno-test-traces
     - .a530-test
@@ -195,7 +197,8 @@ a618-piglit-cl:
     HWCI_START_WESTON: 1
     PIGLIT_PROFILES: cl
 
-a618-traces:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a618-traces:
   extends:
     - .lava-piglit-traces:arm64
     - .lava-sc7180-trogdor-kingoftown:arm64
@@ -214,9 +217,10 @@ a618-traces:
     MESA_GL_VERSION_OVERRIDE: "4.6"
     PIGLIT_TRACES_FILE: traces-freedreno.yml
 
-a618-traces-performance:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a618-traces-performance:
   extends:
-    - a618-traces
+    - .a618-traces
     - .piglit-performance:arm64
     - .collabora-freedreno-rules-performance
   variables:
@@ -224,7 +228,7 @@ a618-traces-performance:
     # a618 tag starts with cbg-1 (not cbg-0) for some reason
     LAVA_TAGS: "cbg-1"
   needs:
-    - !reference [a618-traces, needs]
+    - !reference [.a618-traces, needs]
     - !reference [.piglit-performance:arm64, needs]
 
 a660-angle:
@@ -388,7 +392,8 @@ a630-piglit-full:
     MESA_GL_VERSION_OVERRIDE: "4.6"
     PIGLIT_REPLAY_EXTRA_ARGS: "--download-caching-proxy-url=http://10.42.0.1:8888/cache/?uri="
 
-a630-traces-restricted:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a630-traces-restricted:
   extends:
     - .a630-traces
     - .google-freedreno-rules-restricted
@@ -397,7 +402,8 @@ a630-traces-restricted:
     PIGLIT_REPLAY_EXTRA_ARGS: "--download-caching-proxy-url=http://10.42.0.1:8888/cache/?uri= --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}"
   allow_failure: true
 
-a630-traces-performance:
+# https://gitlab.freedesktop.org/mesa/piglit/-/issues/113
+.a630-traces-performance:
   extends:
     - .a630-traces
     - .google-freedreno-rules-performance
