@@ -1083,6 +1083,15 @@ lower_xehp_tg4_offset_filter(const nir_instr *instr, UNUSED const void *data)
    if (offset_index < 0)
       return false;
 
+   /* When we have LOD & offset, we can pack both (see
+    * intel_nir_lower_texture.c pack_lod_or_bias_and_offset)
+    */
+   bool has_lod =
+      nir_tex_instr_src_index(tex, nir_tex_src_lod) != -1 ||
+      nir_tex_instr_src_index(tex, nir_tex_src_bias) != -1;
+   if (has_lod)
+      return false;
+
    if (!nir_src_is_const(tex->src[offset_index].src))
       return true;
 
@@ -1127,39 +1136,6 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
     */
    if (intel_needs_workaround(devinfo, 1806565034) && !opts->robust_image_access)
       OPT(intel_nir_clamp_image_1d_2d_array_sizes);
-
-   const struct intel_nir_lower_texture_opts intel_tex_options = {
-      .combined_lod_or_bias_and_offset = compiler->devinfo->ver >= 20,
-   };
-   OPT(intel_nir_lower_texture, &intel_tex_options);
-
-   const nir_lower_tex_options tex_options = {
-      .lower_txp = ~0,
-      .lower_txf_offset = true,
-      .lower_rect_offset = true,
-      .lower_txd_cube_map = true,
-      /* For below, See bspec 45942, "Enable new message layout for cube array" */
-      .lower_txd_3d = devinfo->verx10 >= 125,
-      .lower_txd_array = devinfo->verx10 >= 125,
-      .lower_txb_shadow_clamp = true,
-      .lower_txd_shadow_clamp = true,
-      .lower_txd_offset_clamp = true,
-      .lower_tg4_offsets = true,
-      .lower_txs_lod = true, /* Wa_14012320009 */
-      .lower_offset_filter =
-         devinfo->verx10 >= 125 ? lower_xehp_tg4_offset_filter : NULL,
-      .lower_invalid_implicit_lod = true,
-   };
-
-   /* In the case where TG4 coords are lowered to offsets and we have a
-    * lower_xehp_tg4_offset_filter lowering those offsets further, we need to
-    * rerun the pass because the instructions inserted by the first lowering
-    * are not visible during that first pass.
-    */
-   if (OPT(nir_lower_tex, &tex_options)) {
-      OPT(intel_nir_lower_texture, &intel_tex_options);
-      OPT(nir_lower_tex, &tex_options);
-   }
 
    OPT(nir_normalize_cubemap_coords);
 
@@ -1785,6 +1761,41 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 
    UNUSED bool progress; /* Written by OPT */
 
+   const nir_lower_tex_options tex_options = {
+      .lower_txp = ~0,
+      .lower_txf_offset = true,
+      .lower_rect_offset = true,
+      .lower_txd_cube_map = true,
+      /* For below, See bspec 45942, "Enable new message layout for cube array" */
+      .lower_txd_3d = devinfo->verx10 >= 125,
+      .lower_txd_array = devinfo->verx10 >= 125,
+      .lower_txb_shadow_clamp = true,
+      .lower_txd_shadow_clamp = true,
+      .lower_txd_offset_clamp = true,
+      .lower_tg4_offsets = true,
+      .lower_txs_lod = true, /* Wa_14012320009 */
+      .lower_offset_filter =
+         devinfo->verx10 >= 125 ? lower_xehp_tg4_offset_filter : NULL,
+      .lower_txd_clamp_bindless_sampler = true,
+      .lower_txd_clamp_if_sampler_index_not_lt_16 = true,
+      .lower_invalid_implicit_lod = true,
+      .lower_index_to_offset = true,
+   };
+
+   /* In the case where TG4 coords are lowered to offsets and we have a
+    * lower_xehp_tg4_offset_filter lowering those offsets further, we need to
+    * rerun the pass because the instructions inserted by the first lowering
+    * are not visible during that first pass.
+    */
+   if (OPT(nir_lower_tex, &tex_options))
+      OPT(nir_lower_tex, &tex_options);
+
+   const struct intel_nir_lower_texture_opts intel_tex_options = {
+      .combined_lod_and_array_index = compiler->devinfo->ver >= 20,
+      .combined_lod_or_bias_and_offset = compiler->devinfo->ver >= 20,
+   };
+   OPT(intel_nir_lower_texture, &intel_tex_options);
+
    OPT(intel_nir_lower_sparse_intrinsics);
 
    OPT(nir_lower_bit_size, lower_bit_size_callback, (void *)compiler);
@@ -2076,19 +2087,6 @@ brw_nir_apply_key(nir_shader *nir,
                   unsigned max_subgroup_size)
 {
    bool progress = false;
-
-   nir_lower_tex_options nir_tex_opts = {
-      .lower_txd_clamp_bindless_sampler = true,
-      .lower_txd_clamp_if_sampler_index_not_lt_16 = true,
-      .lower_invalid_implicit_lod = true,
-      .lower_index_to_offset = true,
-   };
-   OPT(nir_lower_tex, &nir_tex_opts);
-
-   const struct intel_nir_lower_texture_opts tex_opts = {
-      .combined_lod_and_array_index = compiler->devinfo->ver >= 20,
-   };
-   OPT(intel_nir_lower_texture, &tex_opts);
 
    const nir_lower_subgroups_options subgroups_options = {
       .subgroup_size = get_subgroup_size(&nir->info, max_subgroup_size),
