@@ -220,6 +220,9 @@ gather_atomic_info(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 static const char *
 remap_variant(nir_function *func, unsigned variant, const char *target)
 {
+   /* pass_flags is only 32-bit */
+   assert(variant < 32 && "maximum # of variants");
+
    bool has_atomic = func->pass_flags & BITFIELD_BIT(variant);
 
    if (!has_atomic && !strcmp(target, "g13x"))
