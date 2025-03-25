@@ -854,7 +854,7 @@
         "description": "vulkan/wsi/headless: Remove unnecessary wsi_configure_image()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4a2c0fcaaf665bbbb88970ded3973c3d9eef3de",
         "notes": null
