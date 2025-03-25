@@ -101,13 +101,15 @@ unsafe impl CLInfoObj<cl_kernel_work_group_info, cl_device_id> for cl_kernel {
                 kernel.prog.devs[0]
             }
         } else {
-            Device::ref_from_raw(dev)?
-        };
+            let dev = Device::ref_from_raw(dev)?;
 
-        // CL_INVALID_DEVICE if device is not in the list of devices associated with kernel
-        if !kernel.prog.devs.contains(&dev) {
-            return Err(CL_INVALID_DEVICE);
-        }
+            // CL_INVALID_DEVICE if device is not in the list of devices associated with kernel
+            if !kernel.prog.devs.contains(&dev) {
+                return Err(CL_INVALID_DEVICE);
+            }
+
+            dev
+        };
 
         match *q {
             CL_KERNEL_COMPILE_WORK_GROUP_SIZE => v.write::<[usize; 3]>(kernel.work_group_size()),
