@@ -430,7 +430,7 @@ debian-android:
     # Can't do AMD drivers because they require LLVM, which is currently
     # problematic in our Android builds.
     - export CROSS=x86_64-linux-android
-    - export GALLIUM_DRIVERS=iris,virgl,zink,softpipe,llvmpipe,swrast
+    - export GALLIUM_DRIVERS=iris,virgl,zink,softpipe
     - export VULKAN_DRIVERS=intel,virtio,swrast
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
     - *meson-build
