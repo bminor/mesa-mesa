@@ -456,6 +456,7 @@ radv_expand_depth_stencil(struct radv_cmd_buffer *cmd_buffer, struct radv_image 
    if (cmd_buffer->qf == RADV_QUEUE_GENERAL) {
       radv_process_depth_stencil(cmd_buffer, image, subresourceRange, sample_locs);
    } else {
+      assert(cmd_buffer->qf == RADV_QUEUE_COMPUTE);
       radv_expand_depth_stencil_compute(cmd_buffer, image, subresourceRange);
    }
 }

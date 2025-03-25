@@ -557,8 +557,10 @@ radv_decompress_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image
    barrier.layout_transitions.dcc_decompress = 1;
    radv_describe_layout_transition(cmd_buffer, &barrier);
 
-   if (cmd_buffer->qf == RADV_QUEUE_GENERAL)
+   if (cmd_buffer->qf == RADV_QUEUE_GENERAL) {
       radv_process_color_image(cmd_buffer, image, subresourceRange, DCC_DECOMPRESS);
-   else
+   } else {
+      assert(cmd_buffer->qf == RADV_QUEUE_COMPUTE);
       radv_decompress_dcc_compute(cmd_buffer, image, subresourceRange);
+   }
 }
