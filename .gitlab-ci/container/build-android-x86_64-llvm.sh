@@ -118,6 +118,4 @@ if [ -n "$CI" ]; then
   rm "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
 fi
 
-rm -rf "$LLVM_INSTALL_PREFIX"
-
 apt-get purge -y "${EPHEMERAL[@]}"
