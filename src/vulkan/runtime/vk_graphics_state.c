@@ -1168,6 +1168,13 @@ vk_pipeline_flags_init(struct vk_graphics_pipeline_state *state,
 {
    VkPipelineCreateFlags2KHR valid_pipeline_flags = 0;
    VkPipelineCreateFlags2KHR valid_renderpass_flags = 0;
+   if (lib & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+              VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
+      valid_renderpass_flags |=
+         VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+      valid_pipeline_flags |=
+         VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+   }
    if (lib & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
       valid_renderpass_flags |=
          VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
@@ -1527,7 +1534,8 @@ vk_graphics_pipeline_state_fill(const struct vk_device *device,
          state->rp = NULL;
    }
 
-   if (lib & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+   if (lib & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+              VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) {
       vk_pipeline_flags_init(state, driver_rp_flags, !!driver_rp, info, dynamic, lib);
    }
