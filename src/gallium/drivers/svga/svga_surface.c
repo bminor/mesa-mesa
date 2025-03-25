@@ -888,10 +888,13 @@ svga_propagate_rendertargets(struct svga_context *svga)
 bool
 svga_surface_needs_propagation(const struct pipe_surface *surf)
 {
-   const struct svga_surface *s = svga_surface_const(surf);
-   struct svga_texture *tex = svga_texture(surf->texture);
-
-   return s->dirty && s->handle != tex->handle;
+   if (surf == NULL) {
+      return false;
+   } else {
+      const struct svga_surface *s = svga_surface_const(surf);
+      struct svga_texture *tex = svga_texture(surf->texture);
+      return s->dirty && s->handle != tex->handle;
+   }
 }
 
 
