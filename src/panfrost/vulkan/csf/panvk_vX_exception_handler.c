@@ -43,8 +43,8 @@ generate_tiler_oom_handler(struct panvk_device *dev,
    };
    cs_builder_init(&b, &conf, handler_mem);
 
-   struct cs_exception_handler handler;
-   struct cs_exception_handler_ctx handler_ctx = {
+   struct cs_function handler;
+   struct cs_function_ctx handler_ctx = {
       .ctx_reg = cs_subqueue_ctx_reg(&b),
       .dump_addr_offset = TILER_OOM_CTX_FIELD_OFFSET(reg_dump_addr),
       .ls_sb_slot = SB_ID(LS),
@@ -57,7 +57,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
       .ls_sb_slot = SB_ID(LS),
    };
 
-   cs_exception_handler_def(&b, &handler, handler_ctx) {
+   cs_function_def(&b, &handler, handler_ctx) {
       struct cs_index subqueue_ctx = cs_subqueue_ctx_reg(&b);
       struct cs_index zero = cs_scratch_reg64(&b, 0);
       /* Have flush_id read part of the double zero register */
