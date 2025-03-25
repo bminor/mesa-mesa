@@ -1934,44 +1934,44 @@ cs_nop(struct cs_builder *b)
    cs_emit(b, NOP, I) {};
 }
 
-struct cs_exception_handler_ctx {
+struct cs_function_ctx {
    struct cs_index ctx_reg;
    unsigned dump_addr_offset;
 };
 
-struct cs_exception_handler {
+struct cs_function {
    struct cs_block block;
    struct cs_dirty_tracker dirty;
-   struct cs_exception_handler_ctx ctx;
+   struct cs_function_ctx ctx;
    unsigned dump_size;
    uint64_t address;
    uint32_t length;
 };
 
-static inline struct cs_exception_handler *
-cs_exception_handler_start(struct cs_builder *b,
-                           struct cs_exception_handler *handler,
-                           struct cs_exception_handler_ctx ctx)
+static inline struct cs_function *
+cs_function_start(struct cs_builder *b,
+                  struct cs_function *function,
+                  struct cs_function_ctx ctx)
 {
    assert(cs_cur_block(b) == NULL);
    assert(b->conf.dirty_tracker == NULL);
 
-   *handler = (struct cs_exception_handler){
+   *function = (struct cs_function){
       .ctx = ctx,
    };
 
-   cs_block_start(b, &handler->block);
+   cs_block_start(b, &function->block);
 
-   b->conf.dirty_tracker = &handler->dirty;
+   b->conf.dirty_tracker = &function->dirty;
 
-   return handler;
+   return function;
 }
 
 #define SAVE_RESTORE_MAX_OPS (256 / 16)
 
 static inline void
-cs_exception_handler_end(struct cs_builder *b,
-                         struct cs_exception_handler *handler)
+cs_function_end(struct cs_builder *b,
+                struct cs_function *function)
 {
    struct cs_index ranges[SAVE_RESTORE_MAX_OPS];
    uint16_t masks[SAVE_RESTORE_MAX_OPS];
@@ -1987,8 +1987,8 @@ cs_exception_handler_end(struct cs_builder *b,
    /* Manual cs_block_end() without an instruction flush. We do that to insert
     * the preamble without having to move memory in b->blocks.instrs. The flush
     * will be done after the preamble has been emitted. */
-   assert(cs_cur_block(b) == &handler->block);
-   assert(handler->block.next == NULL);
+   assert(cs_cur_block(b) == &function->block);
+   assert(function->block.next == NULL);
    b->blocks.stack = NULL;
 
    if (!num_instrs)
@@ -1998,7 +1998,7 @@ cs_exception_handler_end(struct cs_builder *b,
    unsigned nregs = b->conf.nr_registers - b->conf.nr_kernel_registers;
    unsigned pos, last = 0;
 
-   BITSET_FOREACH_SET(pos, handler->dirty.regs, nregs) {
+   BITSET_FOREACH_SET(pos, function->dirty.regs, nregs) {
       unsigned range = MIN2(nregs - pos, 16);
       unsigned word = BITSET_BITWORD(pos);
       unsigned bit = pos % BITSET_WORDBITS;
@@ -2007,9 +2007,9 @@ cs_exception_handler_end(struct cs_builder *b,
       if (pos < last)
          continue;
 
-      masks[num_ranges] = handler->dirty.regs[word] >> bit;
+      masks[num_ranges] = function->dirty.regs[word] >> bit;
       if (remaining_bits < range)
-         masks[num_ranges] |= handler->dirty.regs[word + 1] << remaining_bits;
+         masks[num_ranges] |= function->dirty.regs[word + 1] << remaining_bits;
       masks[num_ranges] &= BITFIELD_MASK(range);
 
       ranges[num_ranges] =
@@ -2018,7 +2018,7 @@ cs_exception_handler_end(struct cs_builder *b,
       last = pos + range;
    }
 
-   handler->dump_size = BITSET_COUNT(handler->dirty.regs) * sizeof(uint32_t);
+   function->dump_size = BITSET_COUNT(function->dirty.regs) * sizeof(uint32_t);
 
    /* Make sure the current chunk is able to accommodate the block
     * instructions as well as the preamble and postamble.
@@ -2027,21 +2027,21 @@ cs_exception_handler_end(struct cs_builder *b,
    num_instrs += (num_ranges * 2) + 4;
 
    /* Align things on a cache-line in case the buffer contains more than one
-    * exception handler (64 bytes = 8 instructions). */
+    * function (64 bytes = 8 instructions). */
    uint32_t padded_num_instrs = ALIGN_POT(num_instrs, 8);
 
    if (!cs_reserve_instrs(b, padded_num_instrs))
       return;
 
-   handler->address =
+   function->address =
       b->cur_chunk.buffer.gpu + (b->cur_chunk.pos * sizeof(uint64_t));
 
    /* Preamble: backup modified registers */
    if (num_ranges > 0) {
       unsigned offset = 0;
 
-      cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
-                   handler->ctx.dump_addr_offset);
+      cs_load64_to(b, addr_reg, function->ctx.ctx_reg,
+                   function->ctx.dump_addr_offset);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -2054,15 +2054,15 @@ cs_exception_handler_end(struct cs_builder *b,
    }
 
    /* Now that the preamble is emitted, we can flush the instructions we have in
-    * our exception handler block. */
+    * our function block. */
    cs_flush_block_instrs(b);
 
    /* Postamble: restore modified registers */
    if (num_ranges > 0) {
       unsigned offset = 0;
 
-      cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
-                   handler->ctx.dump_addr_offset);
+      cs_load64_to(b, addr_reg, function->ctx.ctx_reg,
+                   function->ctx.dump_addr_offset);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -2078,14 +2078,13 @@ cs_exception_handler_end(struct cs_builder *b,
    for (; num_instrs < padded_num_instrs; num_instrs++)
       cs_nop(b);
 
-   handler->length = padded_num_instrs;
+   function->length = padded_num_instrs;
 }
 
-#define cs_exception_handler_def(__b, __handler, __ctx)                        \
-   for (struct cs_exception_handler *__ehandler =                              \
-           cs_exception_handler_start(__b, __handler, __ctx);                  \
-        __ehandler != NULL;                                                    \
-        cs_exception_handler_end(__b, __handler), __ehandler = NULL)
+#define cs_function_def(__b, __function, __ctx)                                \
+   for (struct cs_function *__tmp = cs_function_start(__b, __function, __ctx); \
+        __tmp != NULL;                                                         \
+        cs_function_end(__b, __function), __tmp = NULL)
 
 struct cs_tracing_ctx {
    bool enabled;
