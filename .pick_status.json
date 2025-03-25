@@ -2424,7 +2424,7 @@
         "description": "nak: Insert the annotation in the right spot in assign_regs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "efc4ac0d27eec2e9c241accd95c396352e477d15",
         "notes": null
