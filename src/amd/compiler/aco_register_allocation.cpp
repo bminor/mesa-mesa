@@ -1886,19 +1886,27 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
    if (!increase_register_file(ctx, info.rc)) {
       /* fallback algorithm: reallocate all variables at once (linear VGPRs should already be
        * compact at the end) */
+      const PhysRegInterval regs = get_reg_bounds(ctx, info.rc);
+
       unsigned def_size = info.rc.size();
       for (Definition def : instr->definitions) {
+         if (def.isPrecolored()) {
+            assert(!regs.contains({def.physReg(), def.size()}));
+            continue;
+         }
          if (ctx.assignments[def.tempId()].assigned && def.regClass().type() == info.rc.type())
             def_size += def.regClass().size();
       }
 
       unsigned killed_op_size = 0;
       for (Operand op : instr->operands) {
+         if (op.isPrecolored()) {
+            assert(!regs.contains({op.physReg(), op.size()}));
+            continue;
+         }
          if (op.isTemp() && op.isFirstKillBeforeDef() && op.regClass().type() == info.rc.type())
             killed_op_size += op.regClass().size();
       }
-
-      const PhysRegInterval regs = get_reg_bounds(ctx, info.rc);
 
       /* reallocate passthrough variables and non-killed operands */
       std::vector<IDAndRegClass> vars;
@@ -1911,7 +1919,8 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
       /* reallocate killed operands */
       std::vector<IDAndRegClass> killed_op_vars;
       for (Operand op : instr->operands) {
-         if (op.isFirstKillBeforeDef() && op.regClass().type() == info.rc.type())
+         if (!op.isPrecolored() && op.isFirstKillBeforeDef() &&
+             op.regClass().type() == info.rc.type())
             killed_op_vars.emplace_back(op.tempId(), op.regClass());
       }
       compact_relocate_vars(ctx, killed_op_vars, parallelcopies, space);
@@ -1919,7 +1928,8 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
       /* reallocate definitions */
       std::vector<IDAndRegClass> def_vars;
       for (Definition def : instr->definitions) {
-         if (ctx.assignments[def.tempId()].assigned && def.regClass().type() == info.rc.type())
+         if (!def.isPrecolored() && ctx.assignments[def.tempId()].assigned &&
+             def.regClass().type() == info.rc.type())
             def_vars.emplace_back(def.tempId(), def.regClass());
       }
       def_vars.emplace_back(0xffffffff, info.rc);
