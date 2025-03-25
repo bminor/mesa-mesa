@@ -74,7 +74,7 @@
         "description": "lavapipe: Don't advertise support for multiplane drm formats",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bd4f69a0fe495a2c584bf0e4040fc341c55d0e18",
         "notes": null
