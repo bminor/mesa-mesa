@@ -318,6 +318,17 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
    }
 }
 
+static bool
+is_hw_binning_possible(const struct tu_tiling_config *tiling)
+{
+   /* Similar to older gens, # of tiles per pipe cannot be more than 32.
+    * But there are no hangs with 16 or more tiles per pipe in either
+    * X or Y direction, so that limit does not seem to apply.
+    */
+   uint32_t tiles_per_pipe = tiling->pipe0.width * tiling->pipe0.height;
+   return tiles_per_pipe <= 32;
+}
+
 static void
 tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
                                     const struct tu_device *dev,
@@ -340,6 +351,8 @@ tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
          DIV_ROUND_UP(tiling->tile_count.width, tiling->pipe0.width);
       tiling->pipe_count.height =
          DIV_ROUND_UP(tiling->tile_count.height, tiling->pipe0.height);
+      tiling->binning_possible =
+         tiling->pipe_count.width * tiling->pipe_count.height <= max_pipe_count;
       return;
    }
 
@@ -361,6 +374,8 @@ tu_tiling_config_update_pipe_layout(struct tu_tiling_config *tiling,
             DIV_ROUND_UP(tiling->tile_count.height, tiling->pipe0.height);
       }
    }
+
+   tiling->binning_possible = is_hw_binning_possible(tiling);
 }
 
 static void
@@ -375,6 +390,9 @@ tu_tiling_config_update_pipes(struct tu_tiling_config *tiling,
       .width = (tiling->tile_count.width - 1) % tiling->pipe0.width + 1,
       .height = (tiling->tile_count.height - 1) % tiling->pipe0.height + 1,
    };
+
+   if (!tiling->binning_possible)
+      return;
 
    assert(used_pipe_count <= max_pipe_count);
    assert(max_pipe_count <= ARRAY_SIZE(tiling->pipe_config));
@@ -403,22 +421,9 @@ tu_tiling_config_update_pipes(struct tu_tiling_config *tiling,
           sizeof(uint32_t) * (max_pipe_count - used_pipe_count));
 }
 
-static bool
-is_hw_binning_possible(const struct tu_tiling_config *tiling)
-{
-   /* Similar to older gens, # of tiles per pipe cannot be more than 32.
-    * But there are no hangs with 16 or more tiles per pipe in either
-    * X or Y direction, so that limit does not seem to apply.
-    */
-   uint32_t tiles_per_pipe = tiling->pipe0.width * tiling->pipe0.height;
-   return tiles_per_pipe <= 32;
-}
-
 static void
 tu_tiling_config_update_binning(struct tu_tiling_config *tiling, const struct tu_device *device)
 {
-   tiling->binning_possible = is_hw_binning_possible(tiling);
-
    if (tiling->binning_possible) {
       tiling->binning = (tiling->tile_count.width * tiling->tile_count.height) > 2;
 
