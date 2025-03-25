@@ -93,16 +93,11 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
 {
    struct svga_context *svga = svga_context(pipe);
    struct pipe_framebuffer_state *dst = &svga->curr.framebuffer;
-   unsigned i;
 
    /* make sure any pending drawing calls are flushed before changing
     * the framebuffer state
     */
    svga_hwtnl_flush_retry(svga);
-
-   dst->width = fb->width;
-   dst->height = fb->height;
-   dst->nr_cbufs = fb->nr_cbufs;
 
    /* Check that all surfaces are the same size.
     * Actually, the virtual hardware may support rendertargets with
@@ -113,7 +108,7 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
       if (fb->zsbuf.texture) {
          pipe_surface_size(&fb->zsbuf, &width, &height);
       }
-      for (i = 0; i < fb->nr_cbufs; ++i) {
+      for (unsigned i = 0; i < fb->nr_cbufs; ++i) {
          if (fb->cbufs[i].texture) {
             if (width && height) {
                uint16_t cwidth, cheight;
