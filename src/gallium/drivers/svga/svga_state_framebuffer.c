@@ -50,12 +50,14 @@ emit_fb_vgpu9(struct svga_context *svga)
     */
 
    for (i = 0; i < svgascreen->max_color_buffers; i++) {
-      if (!pipe_surface_equal(&curr->cbufs[i], &hw->cbufs[i]) || (reemit && svga->state.hw_clear.fb_cbufs[i])) {
+      if (!pipe_surface_equal(&curr->cbufs[i], &hw->cbufs[i]) ||
+          (reemit && svga->state.hw_clear.fb_cbufs[i])) {
          if (svga->curr.nr_fbs++ > MAX_RT_PER_BATCH)
             return PIPE_ERROR_OUT_OF_MEMORY;
 
          /* Check to see if we need to propagate the render target surface */
-         if (svga->state.hw_clear.fb_cbufs[i] && svga_surface_needs_propagation(svga->state.hw_clear.fb_cbufs[i]))
+         if (svga->state.hw_clear.fb_cbufs[i] &&
+             svga_surface_needs_propagation(svga->state.hw_clear.fb_cbufs[i]))
             svga_propagate_surface(svga, svga->state.hw_clear.fb_cbufs[i], true);
 
          ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_COLOR0 + i,
@@ -63,7 +65,8 @@ emit_fb_vgpu9(struct svga_context *svga)
          if (ret != PIPE_OK)
             return ret;
 
-         pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i], svga->curr.fb_cbufs[i]);
+         pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i],
+                                svga->curr.fb_cbufs[i]);
       }
 
       /* Set the rendered-to flag */
@@ -73,13 +76,16 @@ emit_fb_vgpu9(struct svga_context *svga)
       }
    }
 
-   if (!pipe_surface_equal(&curr->zsbuf, &hw->zsbuf) || (reemit && svga->state.hw_clear.fb_zsbuf)) {
-      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH, svga->curr.fb_zsbuf);
+   if (!pipe_surface_equal(&curr->zsbuf, &hw->zsbuf) ||
+       (reemit && svga->state.hw_clear.fb_zsbuf)) {
+      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH,
+                                   svga->curr.fb_zsbuf);
       if (ret != PIPE_OK)
          return ret;
 
       /* Check to see if we need to propagate the depth stencil surface */
-      if (hw->zsbuf.texture && svga_surface_needs_propagation(svga->state.hw_clear.fb_zsbuf))
+      if (hw->zsbuf.texture &&
+          svga_surface_needs_propagation(svga->state.hw_clear.fb_zsbuf))
          svga_propagate_surface(svga, svga->state.hw_clear.fb_zsbuf, true);
 
       if (curr->zsbuf.texture &&
@@ -95,7 +101,8 @@ emit_fb_vgpu9(struct svga_context *svga)
             return ret;
       }
 
-      pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf, svga->curr.fb_zsbuf);
+      pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf,
+                             svga->curr.fb_zsbuf);
 
       /* Set the rendered-to flag */
       struct pipe_surface *s = svga->curr.fb_zsbuf;
@@ -136,14 +143,16 @@ svga_reemit_framebuffer_bindings_vgpu9(struct svga_context *svga)
    }
 
    if (svga->state.hw_clear.fb_zsbuf) {
-      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH, svga->state.hw_clear.fb_zsbuf);
+      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH,
+                                   svga->state.hw_clear.fb_zsbuf);
       if (ret != PIPE_OK) {
          return ret;
       }
 
       if (svga->state.hw_clear.fb_zsbuf &&
           util_format_is_depth_and_stencil(svga->state.hw_clear.fb_zsbuf->format)) {
-         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL, svga->state.hw_clear.fb_zsbuf);
+         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL,
+                                      svga->state.hw_clear.fb_zsbuf);
          if (ret != PIPE_OK) {
             return ret;
          }
@@ -171,8 +180,6 @@ emit_fb_vgpu10(struct svga_context *svga)
    struct pipe_framebuffer_state *hw = &svga->state.hw_clear.framebuffer;
    const unsigned num_color = MAX2(curr->nr_cbufs, hw->nr_cbufs);
    int last_rtv = -1;
-   unsigned i;
-   enum pipe_error ret = PIPE_OK;
 
    assert(svga_have_vgpu10(svga));
 
@@ -187,7 +194,7 @@ emit_fb_vgpu10(struct svga_context *svga)
     * any previously bound buffers when the new number of buffers is less
     * than the old number of buffers.
     */
-   for (i = 0; i < num_color; i++) {
+   for (unsigned i = 0; i < num_color; i++) {
       if (curr->cbufs[i].texture) {
          struct pipe_surface *s = svga->curr.fb_cbufs[i];
 
@@ -197,7 +204,7 @@ emit_fb_vgpu10(struct svga_context *svga)
                return PIPE_ERROR_OUT_OF_MEMORY;
             }
          } else {
-           rtv[i] = svga->state.hw_clear.rtv[i];
+            rtv[i] = svga->state.hw_clear.rtv[i];
          }
 
          assert(svga_surface(rtv[i])->view_id != SVGA3D_INVALID_ID);
@@ -236,17 +243,19 @@ emit_fb_vgpu10(struct svga_context *svga)
        (dsv != svga->state.hw_clear.dsv) ||
        memcmp(rtv, svga->state.hw_clear.rtv, num_color * sizeof(rtv[0]))) {
 
-      ret = SVGA3D_vgpu10_SetRenderTargets(svga->swc, num_color, rtv, dsv);
+      enum pipe_error ret =
+         SVGA3D_vgpu10_SetRenderTargets(svga->swc, num_color, rtv, dsv);
       if (ret != PIPE_OK)
          return ret;
 
       /* number of render targets sent to the device, not including trailing
        * unbound render targets.
        */
-      for (i = 0; i < ss->max_color_buffers; i++) {
+      for (unsigned i = 0; i < ss->max_color_buffers; i++) {
          if (!pipe_surface_equal(&hw->cbufs[i], &curr->cbufs[i])) {
             /* propagate the backed view surface before unbinding it */
-            if (hw->cbufs[i].texture && svga_surface(svga->state.hw_clear.fb_cbufs[i])->backed) {
+            if (hw->cbufs[i].texture &&
+                svga_surface(svga->state.hw_clear.fb_cbufs[i])->backed) {
                svga_propagate_surface(svga,
                                       &svga_surface(svga->state.hw_clear.fb_cbufs[i])->backed->base,
                                       true);
@@ -256,7 +265,8 @@ emit_fb_vgpu10(struct svga_context *svga)
                /* Free the alternate surface view when it is unbound.  */
                pipe_surface_unref(&svga->pipe, &svga->state.hw_clear.rtv[i]);
             }
-            pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i], svga->curr.fb_cbufs[i]);
+            pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i],
+                                   svga->curr.fb_cbufs[i]);
          }
       }
       svga->state.hw_clear.num_rendertargets = last_rtv + 1;
@@ -272,16 +282,18 @@ emit_fb_vgpu10(struct svga_context *svga)
                                    &svga_surface(svga->state.hw_clear.fb_zsbuf)->backed->base,
                                    true);
          }
-         else if (svga->state.hw_clear.dsv != svga->state.hw_clear.fb_zsbuf && svga->state.hw_clear.dsv) {
+         else if (svga->state.hw_clear.dsv != svga->state.hw_clear.fb_zsbuf &&
+                  svga->state.hw_clear.dsv) {
             /* Free the alternate surface view when it is unbound.  */
             svga->pipe.surface_destroy(&svga->pipe, svga->state.hw_clear.dsv);
          }
-         pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf, svga->curr.fb_zsbuf);
+         pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf,
+                                svga->curr.fb_zsbuf);
       }
       pipe_surface_reference(&svga->state.hw_clear.dsv, dsv);
    }
 
-   return ret;
+   return PIPE_OK;
 }
 
 
@@ -373,11 +385,6 @@ struct svga_tracked_state svga_hw_framebuffer =
    emit_framebuffer
 };
 
-
-
-
-/***********************************************************************
- */
 
 static void
 get_viewport_prescale(struct svga_context *svga,
