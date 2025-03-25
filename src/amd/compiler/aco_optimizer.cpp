@@ -3269,7 +3269,7 @@ apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
    }
 
    /* TODO: These are doable, but probably don't occur too often. */
-   if (extract_idx || bits_extracted > bits_loaded || dst_bitsize != 32 ||
+   if (extract_idx || bits_extracted > bits_loaded || dst_bitsize > 32 ||
        (load->definitions[0].regClass().type() != extract->definitions[0].regClass().type()))
       return false;
 
