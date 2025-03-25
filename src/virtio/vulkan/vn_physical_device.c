@@ -200,6 +200,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT
          blend_operation_advanced;
       VkPhysicalDeviceBorderColorSwizzleFeaturesEXT border_color_swizzle;
+      VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
       VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_enable;
       VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
       VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color;
@@ -352,6 +353,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT, local_feats.attachment_feedback_loop_layout, exts->EXT_attachment_feedback_loop_layout);
    VN_ADD_PNEXT_EXT(feats2, BLEND_OPERATION_ADVANCED_FEATURES_EXT, local_feats.blend_operation_advanced, exts->EXT_blend_operation_advanced);
    VN_ADD_PNEXT_EXT(feats2, BORDER_COLOR_SWIZZLE_FEATURES_EXT, local_feats.border_color_swizzle, exts->EXT_border_color_swizzle);
+   VN_ADD_PNEXT_EXT(feats2, BUFFER_DEVICE_ADDRESS_FEATURES_EXT, local_feats.buffer_device_address_ext, exts->EXT_buffer_device_address);
    VN_ADD_PNEXT_EXT(feats2, COLOR_WRITE_ENABLE_FEATURES_EXT, local_feats.color_write_enable, exts->EXT_color_write_enable);
    VN_ADD_PNEXT_EXT(feats2, CONDITIONAL_RENDERING_FEATURES_EXT, local_feats.conditional_rendering, exts->EXT_conditional_rendering);
    VN_ADD_PNEXT_EXT(feats2, CUSTOM_BORDER_COLOR_FEATURES_EXT, local_feats.custom_border_color, exts->EXT_custom_border_color);
@@ -1340,6 +1342,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_attachment_feedback_loop_layout = true,
       .EXT_blend_operation_advanced = true,
       .EXT_border_color_swizzle = true,
+      .EXT_buffer_device_address = true,
       .EXT_calibrated_timestamps = true,
       .EXT_color_write_enable = true,
       .EXT_conditional_rendering = true,
