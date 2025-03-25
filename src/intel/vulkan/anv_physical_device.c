@@ -1993,7 +1993,10 @@ anv_restrict_sys_heap_size(struct anv_physical_device *device,
          return kmd_reported_sram;
    }
 
-   return kmd_reported_sram / 2;
+   if (kmd_reported_sram <= 4ull * 1024ull * 1024ull * 1024ull)
+      return kmd_reported_sram / 2;
+   else
+      return kmd_reported_sram * 3 / 4;
 }
 
 static VkResult MUST_CHECK
