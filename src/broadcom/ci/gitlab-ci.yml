@@ -88,7 +88,8 @@ v3d-rpi4-rusticl:arm64:
   variables:
     DEQP_SUITE: v3d-rusticl
 
-v3d-rpi4-traces:arm64:
+# Disabled until piglit's trace download is fixed
+.v3d-rpi4-traces:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .piglit-traces-test
@@ -221,7 +222,8 @@ v3d-rpi5-rusticl:arm64:
   variables:
     DEQP_SUITE: v3d-rusticl
 
-v3d-rpi5-traces:arm64:
+# Disabled until piglit's trace download is fixed
+.v3d-rpi5-traces:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .piglit-traces-test
