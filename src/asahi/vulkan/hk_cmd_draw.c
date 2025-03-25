@@ -1393,13 +1393,14 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
       .max_draws = 1 /* TODO: MDI */,
       .restart_index = gfx->index.restart,
       .index_buffer_size_el = agx_draw_index_range_el(draw),
+      .index_size_log2 = draw.index_size,
       .flatshade_first =
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
    };
 
    libagx_unroll_restart_struct(cmd, agx_1d(1024 * draw_count),
                                 AGX_BARRIER_ALL | AGX_PREGFX, ia,
-                                draw.index_size, libagx_compact_prim(prim));
+                                libagx_compact_prim(prim));
 
    return agx_draw_indexed_indirect(ia.out_draw, dev->heap->va->addr,
                                     dev->heap->size, draw.index_size,

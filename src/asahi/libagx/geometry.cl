@@ -477,10 +477,10 @@ libagx_unroll_restart(global struct agx_geometry_state *heap,
                       uint64_t index_buffer, constant uint *in_draw,
                       global uint32_t *out_draw, uint32_t max_draws,
                       uint32_t restart_index, uint32_t index_buffer_size_el,
-                      uint32_t index_size_log2__3, uint32_t flatshade_first,
+                      uint32_t index_size_log2, uint32_t flatshade_first,
                       uint mode__11)
 {
-   uint32_t index_size_B = 1 << index_size_log2__3;
+   uint32_t index_size_B = 1 << index_size_log2;
    enum mesa_prim mode = libagx_uncompact_prim(mode__11);
    uint tid = cl_local_id.x;
    uint count = in_draw[0];

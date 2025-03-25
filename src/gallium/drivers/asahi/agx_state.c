@@ -4274,14 +4274,15 @@ agx_draw_without_restart(struct agx_batch *batch,
       .out_draw = out_draws.gpu,
       .restart_index = info->restart_index,
       .index_buffer_size_el = ib_extent / info->index_size,
+      .index_size_log2 = util_logbase2(info->index_size),
       .flatshade_first = batch->ctx->rast->base.flatshade_first,
       .in_draw = agx_indirect_buffer_ptr(batch, indirect),
    };
 
    /* Unroll the index buffer for each draw */
-   libagx_unroll_restart_struct(
-      batch, agx_1d(1024 * indirect->draw_count), AGX_BARRIER_ALL, unroll,
-      util_logbase2(info->index_size), libagx_compact_prim(info->mode));
+   libagx_unroll_restart_struct(batch, agx_1d(1024 * indirect->draw_count),
+                                AGX_BARRIER_ALL, unroll,
+                                libagx_compact_prim(info->mode));
 
    /* Now draw the results without restart */
    struct pipe_draw_info new_info = {
