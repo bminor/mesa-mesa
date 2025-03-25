@@ -37,6 +37,10 @@ extern const struct nir_shader_compiler_options brw_scalar_nir_options;
 int type_size_vec4(const struct glsl_type *type, bool bindless);
 int type_size_dvec4(const struct glsl_type *type, bool bindless);
 
+struct brw_mem_access_cb_data {
+   const struct intel_device_info *devinfo;
+};
+
 static inline int
 type_size_scalar_bytes(const struct glsl_type *type, bool bindless)
 {

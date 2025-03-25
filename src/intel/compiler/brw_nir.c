@@ -1582,6 +1582,9 @@ get_mem_access_size_align(nir_intrinsic_op intrin, uint8_t bytes,
                           const void *cb_data)
 {
    const uint32_t align = nir_combined_align(align_mul, align_offset);
+   const struct brw_mem_access_cb_data *mem_cb_data =
+      (struct brw_mem_access_cb_data *)cb_data;
+   const struct intel_device_info *devinfo = mem_cb_data->devinfo;
 
    switch (intrin) {
    case nir_intrinsic_load_ssbo:
@@ -1649,13 +1652,27 @@ get_mem_access_size_align(nir_intrinsic_op intrin, uint8_t bytes,
       };
    } else {
       bytes = MIN2(bytes, 16);
-      return (nir_mem_access_size_align) {
-         .bit_size = 32,
-         .num_components = is_scratch ? 1 :
-                           is_load ? DIV_ROUND_UP(bytes, 4) : bytes / 4,
-         .align = 4,
-         .shift = nir_mem_access_shift_method_scalar,
-      };
+
+      /* With UGM LSC dataport, we don't need to lower 64bit data access into
+       * two 32bit single vector access since it supports direct 64bit data
+       * operation.
+       */
+      if (devinfo->has_lsc && align == 8 && bit_size == 64) {
+         return (nir_mem_access_size_align) {
+            .bit_size = bit_size,
+            .num_components = bytes / 8,
+            .align = bit_size / 8,
+            .shift = nir_mem_access_shift_method_scalar,
+         };
+      } else {
+         return (nir_mem_access_size_align) {
+            .bit_size = 32,
+            .num_components = is_scratch ? 1 :
+                              is_load ? DIV_ROUND_UP(bytes, 4) : bytes / 4,
+            .align = 4,
+            .shift = nir_mem_access_shift_method_scalar,
+         };
+      }
    }
 }
 
@@ -1711,6 +1728,11 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
       }
    }
 
+
+   struct brw_mem_access_cb_data cb_data = {
+      .devinfo = compiler->devinfo,
+   };
+
    nir_lower_mem_access_bit_sizes_options mem_access_options = {
       .modes = nir_var_mem_ssbo |
                nir_var_mem_constant |
@@ -1720,6 +1742,7 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
                nir_var_mem_global |
                nir_var_mem_shared,
       .callback = get_mem_access_size_align,
+      .cb_data = &cb_data,
    };
    OPT(nir_lower_mem_access_bit_sizes, &mem_access_options);
 
