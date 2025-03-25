@@ -2404,7 +2404,7 @@
         "description": "nak: Always copy sources when handling vec/pack/mov ops",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d09d3f52468ada6ce52425f9e1473c52dd054269",
         "notes": null
