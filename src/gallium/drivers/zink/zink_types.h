@@ -1371,6 +1371,7 @@ struct zink_transfer {
    struct pipe_resource *staging_res;
    unsigned offset;
    unsigned depthPitch;
+   bool unsync_upload;
 };
 
 
@@ -1515,6 +1516,7 @@ struct zink_screen {
    struct vk_uncompacted_dispatch_table vk;
 
    void (*buffer_barrier)(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline);
+   void (*buffer_barrier_unsync)(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline);
    void (*image_barrier)(struct zink_context *ctx, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline);
    void (*image_barrier_unsync)(struct zink_context *ctx, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline);
 

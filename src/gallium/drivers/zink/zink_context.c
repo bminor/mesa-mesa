@@ -4771,8 +4771,13 @@ end:
 
 void
 zink_copy_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zink_resource *src,
-                 unsigned dst_offset, unsigned src_offset, unsigned size)
+                 unsigned dst_offset, unsigned src_offset, unsigned size, bool unsync)
 {
+   if (unsync) {
+      util_queue_fence_wait(&ctx->flush_fence);
+      util_queue_fence_reset(&ctx->unsync_fence);
+   }
+
    VkBufferCopy region;
    region.srcOffset = src_offset;
    region.dstOffset = dst_offset;
@@ -4783,11 +4788,15 @@ zink_copy_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zin
    /* must barrier if something wrote the valid buffer range */
    bool valid_write = zink_check_valid_buffer_src_access(ctx, src, src_offset, size);
    bool unordered_src = !valid_write && !zink_check_unordered_transfer_access(src, 0, &box);
-   zink_screen(ctx->base.screen)->buffer_barrier(ctx, src, VK_ACCESS_TRANSFER_READ_BIT, 0);
+   /* unsync should only occur during subdata with staging resource */
+   if (!unsync)
+      zink_screen(ctx->base.screen)->buffer_barrier(ctx, src, VK_ACCESS_TRANSFER_READ_BIT, 0);
    bool unordered_dst = zink_resource_buffer_transfer_dst_barrier(ctx, dst, dst_offset, size);
    bool can_unorder = unordered_dst && unordered_src && !ctx->no_reorder;
-   VkCommandBuffer cmdbuf = can_unorder ? ctx->bs->reordered_cmdbuf : zink_get_cmdbuf(ctx, src, dst);
+   VkCommandBuffer cmdbuf = unsync ? ctx->bs->unsynchronized_cmdbuf : 
+                                     can_unorder ? ctx->bs->reordered_cmdbuf : zink_get_cmdbuf(ctx, src, dst);
    ctx->bs->has_reordered_work |= can_unorder;
+   ctx->bs->has_unsync |= unsync;
    zink_batch_reference_resource_rw(ctx, src, false);
    zink_batch_reference_resource_rw(ctx, dst, true);
    if (unlikely(zink_debug & ZINK_DEBUG_SYNC)) {
@@ -4804,6 +4813,9 @@ zink_copy_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zin
    bool marker = zink_cmd_debug_marker_begin(ctx, cmdbuf, "copy_buffer(%d)", size);
    VKCTX(CmdCopyBuffer)(cmdbuf, src->obj->buffer, dst->obj->buffer, 1, &region);
    zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
+
+   if (unsync)
+      util_queue_fence_signal(&ctx->unsync_fence);
 }
 
 void
@@ -5108,7 +5120,7 @@ zink_resource_copy_region(struct pipe_context *pctx,
       zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
    } else if (dst->base.b.target == PIPE_BUFFER &&
               src->base.b.target == PIPE_BUFFER) {
-      zink_copy_buffer(ctx, dst, src, dstx, src_box->x, src_box->width);
+      zink_copy_buffer(ctx, dst, src, dstx, src_box->x, src_box->width, false);
    } else
       zink_copy_image_buffer(ctx, dst, src, dst_level, dstx, dsty, dstz, src_level, src_box, 0);
    if (ctx->oom_flush && !ctx->in_rp && !ctx->unordered_blitting)

@@ -202,7 +202,7 @@ void
 zink_cmd_debug_marker_end(struct zink_context *ctx, VkCommandBuffer cmdbuf,bool emitted);
 void
 zink_copy_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zink_resource *src,
-                 unsigned dst_offset, unsigned src_offset, unsigned size);
+                 unsigned dst_offset, unsigned src_offset, unsigned size, bool unsync);
 #ifdef __cplusplus
 }
 #endif

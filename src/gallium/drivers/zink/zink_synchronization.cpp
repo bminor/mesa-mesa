@@ -689,7 +689,7 @@ buffer_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelineS
 
 
 
-template <barrier_type BARRIER_API>
+template <barrier_type BARRIER_API, bool UNSYNCHRONIZED>
 void
 zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
@@ -708,6 +708,7 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
    }
    bool unordered_usage_matches = res->obj->unordered_access && usage_matches;
    bool unordered = unordered_res_exec(ctx, res, is_write);
+   assert(!UNSYNCHRONIZED || !usage_matches);
    if (!buffer_needs_barrier(res, flags, pipeline, unordered))
       return;
    if (completed) {
@@ -734,18 +735,20 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
     * - there is no current-batch unordered access AND previous batch usage is not write access
     * - there is current-batch unordered access AND the unordered access is not write access
     */
-   bool can_skip_unordered = !unordered ? false : !zink_resource_access_is_write(!unordered_usage_matches ? res->obj->access : res->obj->unordered_access);
+   bool can_skip_unordered = !unordered || UNSYNCHRONIZED ? false : !zink_resource_access_is_write(!unordered_usage_matches ? res->obj->access : res->obj->unordered_access);
    /* ordered barriers can be skipped if both:
     * - there is no current access
     * - there is no current-batch unordered access
     */
-   bool can_skip_ordered = unordered ? false : (!res->obj->access && !unordered_usage_matches);
+   bool can_skip_ordered = unordered || UNSYNCHRONIZED ? false : (!res->obj->access && !unordered_usage_matches);
    if (ctx->no_reorder)
       can_skip_unordered = can_skip_ordered = false;
 
    if (!can_skip_unordered && !can_skip_ordered) {
-      VkCommandBuffer cmdbuf = is_write ? zink_get_cmdbuf(ctx, NULL, res) : zink_get_cmdbuf(ctx, res, NULL);
+      VkCommandBuffer cmdbuf = UNSYNCHRONIZED ? ctx->bs->unsynchronized_cmdbuf :
+                                                is_write ? zink_get_cmdbuf(ctx, NULL, res) : zink_get_cmdbuf(ctx, res, NULL);
       bool marker = false;
+      ctx->bs->has_unsync |= UNSYNCHRONIZED;
       if (unlikely(zink_tracing)) {
          char buf[4096];
          zink_string_vkflags_unroll(buf, sizeof(buf), flags, (zink_vkflags_func)vk_AccessFlagBits_to_str);
@@ -758,7 +761,8 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
       zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
    }
 
-   resource_check_defer_buffer_barrier(ctx, res, pipeline);
+   if (!UNSYNCHRONIZED)
+      resource_check_defer_buffer_barrier(ctx, res, pipeline);
 
    if (is_write)
       res->obj->last_write = flags;
@@ -784,11 +788,13 @@ void
 zink_synchronization_init(struct zink_screen *screen)
 {
    if (screen->info.have_vulkan13 || screen->info.have_KHR_synchronization2) {
-      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_KHR_synchronzation2>;
+      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_KHR_synchronzation2, false>;
+      screen->buffer_barrier_unsync = zink_resource_buffer_barrier<barrier_KHR_synchronzation2, true>;
       screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
       screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
    } else {
-      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_default>;
+      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_default, false>;
+      screen->buffer_barrier_unsync = zink_resource_buffer_barrier<barrier_default, true>;
       screen->image_barrier = zink_resource_image_barrier<barrier_default, false>;
       screen->image_barrier_unsync = zink_resource_image_barrier<barrier_default, true>;
    }

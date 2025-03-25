@@ -1449,7 +1449,7 @@ zink_get_query_result_resource(struct pipe_context *pctx,
       }
       struct pipe_resource *staging = pipe_buffer_create(pctx->screen, 0, PIPE_USAGE_STAGING, src_offset + result_size);
       copy_results_to_buffer(ctx, query, zink_resource(staging), 0, 1, size_flags | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | flag);
-      zink_copy_buffer(ctx, res, zink_resource(staging), offset, result_size * get_num_results(query), result_size);
+      zink_copy_buffer(ctx, res, zink_resource(staging), offset, result_size * get_num_results(query), result_size, false);
       pipe_resource_reference(&staging, NULL);
       return;
    }
@@ -1474,7 +1474,7 @@ zink_get_query_result_resource(struct pipe_context *pctx,
             /* internal qbo always writes 64bit value so we can just direct copy */
             zink_copy_buffer(ctx, res, zink_resource(query->curr_qbo->buffers[0]), offset,
                              get_buffer_offset(query),
-                             result_size);
+                             result_size, false);
          } else
             /* have to do a new copy for 32bit */
             copy_results_to_buffer(ctx, query, res, offset, 1, size_flags);

@@ -2344,9 +2344,8 @@ zink_buffer_map(struct pipe_context *pctx,
    bool is_cached_mem = (screen->info.mem_props.memoryTypes[res->obj->bo->base.base.placement].propertyFlags & VK_STAGING_RAM) == VK_STAGING_RAM;
    /* but this is only viable with a certain amount of vram since it may fully duplicate lots of large buffers */
    bool host_mem_type_check = screen->always_cached_upload ? is_cached_mem : res->obj->host_visible;
-   if (usage & PIPE_MAP_DISCARD_RANGE &&
-       ((!res->obj->host_visible || !(usage & (PIPE_MAP_UNSYNCHRONIZED | PIPE_MAP_PERSISTENT))) ||
-        (!host_mem_type_check && !(usage & (PIPE_MAP_UNSYNCHRONIZED | PIPE_MAP_PERSISTENT))))) {
+   if (usage & PIPE_MAP_DISCARD_RANGE && !(usage & PIPE_MAP_PERSISTENT) &&
+       (!host_mem_type_check || !(usage & (PIPE_MAP_UNSYNCHRONIZED)))) {
 
       /* Check if mapping this buffer would cause waiting for the GPU.
        */
@@ -2356,20 +2355,26 @@ zink_buffer_map(struct pipe_context *pctx,
          /* Do a wait-free write-only transfer using a temporary buffer. */
          unsigned offset;
 
-         /* If we are not called from the driver thread, we have
-          * to use the uploader from u_threaded_context, which is
-          * local to the calling thread.
-          */
-         struct u_upload_mgr *mgr;
-         if (usage & TC_TRANSFER_MAP_THREADED_UNSYNC)
-            mgr = ctx->tc->base.stream_uploader;
-         else
-            mgr = ctx->base.stream_uploader;
-         u_upload_alloc(mgr, 0, box->width,
-                     screen->info.props.limits.minMemoryMapAlignment, &offset,
-                     (struct pipe_resource **)&trans->staging_res, (void **)&ptr);
+         if (usage & PIPE_MAP_UNSYNCHRONIZED) {
+            trans->offset = box->x % MAX2(screen->info.props.limits.minMemoryMapAlignment, 1 << MIN_SLAB_ORDER);
+            trans->staging_res = pipe_buffer_create(&screen->base, PIPE_BIND_LINEAR, PIPE_USAGE_STAGING, box->width + trans->offset);
+            trans->unsync_upload = true;
+         } else {
+            /* If we are not called from the driver thread, we have
+            * to use the uploader from u_threaded_context, which is
+            * local to the calling thread.
+            */
+            struct u_upload_mgr *mgr;
+            if (usage & TC_TRANSFER_MAP_THREADED_UNSYNC)
+               mgr = ctx->tc->base.stream_uploader;
+            else
+               mgr = ctx->base.stream_uploader;
+            u_upload_alloc(mgr, 0, box->width,
+                        screen->info.props.limits.minMemoryMapAlignment, &offset,
+                        (struct pipe_resource **)&trans->staging_res, (void **)&ptr);
+            trans->offset = offset;
+         }
          res = zink_resource(trans->staging_res);
-         trans->offset = offset;
          usage |= PIPE_MAP_UNSYNCHRONIZED;
          ptr = ((uint8_t *)ptr);
       } else {
@@ -2401,7 +2406,7 @@ overwrite:
             ctx = screen->copy_context;
          }
          if (usage & PIPE_MAP_READ)
-            zink_copy_buffer(ctx, staging_res, res, trans->offset, box->x, box->width);
+            zink_copy_buffer(ctx, staging_res, res, trans->offset, box->x, box->width, false);
          res = staging_res;
          usage &= ~PIPE_MAP_UNSYNCHRONIZED;
          map_offset = trans->offset;
@@ -2752,7 +2757,7 @@ zink_transfer_flush_region(struct pipe_context *pctx,
          struct zink_resource *staging_res = zink_resource(trans->staging_res);
 
          if (ptrans->resource->target == PIPE_BUFFER)
-            zink_copy_buffer(ctx, res, staging_res, dst_offset, src_offset, size);
+            zink_copy_buffer(ctx, res, staging_res, dst_offset, src_offset, size, trans->unsync_upload);
          else
             zink_transfer_copy_bufimage(ctx, res, staging_res, trans);
       }
