@@ -47,6 +47,8 @@ bvh_includes = files(
   'build_helpers.h',
   'build_interface.h',
   'bvh.h',
+  'encode.h',
+  'update.h',
   vk_bvh_include_dir + '/vk_build_helpers.h',
   vk_bvh_include_dir + '/vk_bvh.h',
 )

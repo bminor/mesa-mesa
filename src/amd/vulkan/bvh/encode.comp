@@ -22,6 +22,7 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 #include "build_helpers.h"
 #include "build_interface.h"
+#include "encode.h"
 
 layout(push_constant) uniform CONSTS {
    encode_args args;
@@ -50,13 +51,9 @@ main()
 
          vk_ir_triangle_node src_node =
             DEREF(REF(vk_ir_triangle_node)(OFFSET(args.intermediate_bvh, gl_GlobalInvocationID.x * ir_leaf_node_size)));
-         REF(radv_bvh_triangle_node) dst_node =
-            REF(radv_bvh_triangle_node)(OFFSET(args.output_bvh, dst_leaf_offset + gl_GlobalInvocationID.x * output_leaf_node_size));
+         VOID_REF dst_node = OFFSET(args.output_bvh, dst_leaf_offset + gl_GlobalInvocationID.x * output_leaf_node_size);
 
-         DEREF(dst_node).coords = src_node.coords;
-         DEREF(dst_node).triangle_id = src_node.triangle_id;
-         DEREF(dst_node).geometry_id_and_flags = src_node.geometry_id_and_flags;
-         DEREF(dst_node).id = 9;
+         radv_encode_triangle_gfx10_3(dst_node, src_node);
 
          break;
       }
@@ -66,11 +63,9 @@ main()
 
          vk_ir_aabb_node src_node =
             DEREF(REF(vk_ir_aabb_node)(OFFSET(args.intermediate_bvh, gl_GlobalInvocationID.x * ir_leaf_node_size)));
-         REF(radv_bvh_aabb_node) dst_node =
-            REF(radv_bvh_aabb_node)(OFFSET(args.output_bvh, dst_leaf_offset + gl_GlobalInvocationID.x * output_leaf_node_size));
+         VOID_REF dst_node = OFFSET(args.output_bvh, dst_leaf_offset + gl_GlobalInvocationID.x * output_leaf_node_size);
 
-         DEREF(dst_node).primitive_id = src_node.primitive_id;
-         DEREF(dst_node).geometry_id_and_flags = src_node.geometry_id_and_flags;
+         radv_encode_aabb_gfx10_3(dst_node, src_node);
 
          break;
       }
@@ -196,23 +191,7 @@ main()
             if (type == vk_ir_node_instance) {
                vk_ir_instance_node src_node =
                   DEREF(REF(vk_ir_instance_node)(OFFSET(args.intermediate_bvh, offset)));
-               REF(radv_bvh_instance_node) dst_node =
-                  REF(radv_bvh_instance_node)(OFFSET(args.output_bvh, dst_offset));
-
-               radv_accel_struct_header blas_header =
-                  DEREF(REF(radv_accel_struct_header)(src_node.base_ptr));
-
-               DEREF(dst_node).bvh_ptr = addr_to_node(src_node.base_ptr + blas_header.bvh_offset);
-               DEREF(dst_node).bvh_offset = blas_header.bvh_offset;
-
-               mat4 transform = mat4(src_node.otw_matrix);
-               mat4 inv_transform = transpose(inverse(transpose(transform)));
-               DEREF(dst_node).wto_matrix = mat3x4(inv_transform);
-               DEREF(dst_node).otw_matrix = mat3x4(transform);
-
-               DEREF(dst_node).custom_instance_and_mask = src_node.custom_instance_and_mask;
-               DEREF(dst_node).sbt_offset_and_flags = radv_encode_sbt_offset_and_flags(src_node.sbt_offset_and_flags);
-               DEREF(dst_node).instance_id = src_node.instance_id;
+               radv_encode_instance_gfx10_3(OFFSET(args.output_bvh, dst_offset), src_node);
             }
          }
 
