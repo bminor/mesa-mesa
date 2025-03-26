@@ -23,16 +23,21 @@
 #include "util/macros.h"
 #include <wayland-client.h>
 #include "wayland-drm-client-protocol.h"
+#include "linux-dmabuf-unstable-v1-client-protocol.h"
 #include "device_select.h"
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <xf86drm.h>
+
 struct device_select_wayland_info {
    struct wl_drm *wl_drm;
-   drmDevicePtr dev_info;
-   bool info_is_set;
+   drmDevicePtr drm_dev_info;
+
+   struct zwp_linux_dmabuf_v1 *wl_dmabuf;
+   struct zwp_linux_dmabuf_feedback_v1 *wl_dmabuf_feedback;
+   drmDevicePtr dmabuf_dev_info;
 };
 
 static void
@@ -44,30 +49,27 @@ device_select_drm_handle_device(void *data, struct wl_drm *drm, const char *devi
    if (fd == -1)
       return;
 
-   int ret = drmGetDevice2(fd, 0, &info->dev_info);
-   if (ret >= 0)
-      info->info_is_set = true;
+   drmGetDevice2(fd, 0, &info->drm_dev_info);
    close(fd);
-   return;
 }
 
 static void
 device_select_drm_handle_format(void *data, struct wl_drm *drm, uint32_t format)
 {
-
+   /* ignore this event */
 }
 
 static void
 device_select_drm_handle_authenticated(void *data, struct wl_drm *drm)
 {
-
+   /* ignore this event */
 }
 
 
 static void
 device_select_drm_handle_capabilities(void *data, struct wl_drm *drm, uint32_t value)
 {
-
+   /* ignore this event */
 }
 
 
@@ -79,6 +81,80 @@ static const struct wl_drm_listener ds_drm_listener = {
 };
 
 static void
+default_dmabuf_feedback_format_table(void *data,
+                                     struct zwp_linux_dmabuf_feedback_v1 *zwp_linux_dmabuf_feedback_v1,
+                                     int32_t fd, uint32_t size)
+{
+
+   /* ignore this event */
+   close(fd);
+}
+
+static void
+default_dmabuf_feedback_main_device(void *data,
+                                    struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback,
+                                    struct wl_array *device)
+{
+
+   struct device_select_wayland_info *info = data;
+
+   dev_t dev_id;
+   assert(device->size == sizeof(dev_id));
+   memcpy(&dev_id, device->data, device->size);
+
+   drmGetDeviceFromDevId(dev_id, 0, &info->dmabuf_dev_info);
+   return;
+}
+
+static void
+default_dmabuf_feedback_tranche_target_device(void *data,
+                                              struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback,
+                                              struct wl_array *device)
+{
+   /* ignore this event */
+}
+
+static void
+default_dmabuf_feedback_tranche_flags(void *data,
+                                      struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback,
+                                      uint32_t flags)
+{
+   /* ignore this event */
+}
+
+static void
+default_dmabuf_feedback_tranche_formats(void *data,
+                                        struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback,
+                                        struct wl_array *indices)
+{
+   /* ignore this event */
+}
+
+static void
+default_dmabuf_feedback_tranche_done(void *data,
+                                     struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback)
+{
+   /* ignore this event */
+}
+
+static void
+default_dmabuf_feedback_done(void *data,
+                             struct zwp_linux_dmabuf_feedback_v1 *dmabuf_feedback)
+{
+   /* ignore this event */
+}
+
+static const struct zwp_linux_dmabuf_feedback_v1_listener dmabuf_feedback_listener = {
+   .format_table = default_dmabuf_feedback_format_table,
+   .main_device = default_dmabuf_feedback_main_device,
+   .tranche_target_device = default_dmabuf_feedback_tranche_target_device,
+   .tranche_flags = default_dmabuf_feedback_tranche_flags,
+   .tranche_formats = default_dmabuf_feedback_tranche_formats,
+   .tranche_done = default_dmabuf_feedback_tranche_done,
+   .done = default_dmabuf_feedback_done,
+};
+
+static void
 device_select_registry_global(void *data, struct wl_registry *registry, uint32_t name,
 			      const char *interface, uint32_t version)
 {
@@ -86,6 +162,15 @@ device_select_registry_global(void *data, struct wl_registry *registry, uint32_t
    if (strcmp(interface, wl_drm_interface.name) == 0) {
       info->wl_drm = wl_registry_bind(registry, name, &wl_drm_interface, MIN2(version, 2));
       wl_drm_add_listener(info->wl_drm, &ds_drm_listener, data);
+   } else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
+              version >= ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION) {
+      info->wl_dmabuf =
+         wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface,
+                          ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION);
+      info->wl_dmabuf_feedback =
+         zwp_linux_dmabuf_v1_get_default_feedback(info->wl_dmabuf);
+      zwp_linux_dmabuf_feedback_v1_add_listener(info->wl_dmabuf_feedback,
+                                                &dmabuf_feedback_listener, data);
    }
 }
 
@@ -105,12 +190,12 @@ int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint
 
    display = wl_display_connect(NULL);
    if (!display)
-      goto out;
+      return -1;
 
    registry = wl_display_get_registry(display);
    if (!registry) {
       wl_display_disconnect(display);
-      goto out;
+      return -1;
    }
 
    static const struct wl_registry_listener registry_listener =
@@ -120,31 +205,47 @@ int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint
    wl_display_dispatch(display);
    wl_display_roundtrip(display);
 
-
-   if (info.info_is_set) {
-      for (unsigned i = 0; i < device_count; i++) {
-	 if (devices[i].has_bus_info) {
-	    if (info.dev_info->businfo.pci->domain == devices[i].bus_info.domain &&
-		info.dev_info->businfo.pci->bus == devices[i].bus_info.bus &&
-		info.dev_info->businfo.pci->dev == devices[i].bus_info.dev &&
-		info.dev_info->businfo.pci->func == devices[i].bus_info.func)
-	       default_idx = i;
-	 } else {
-	    if (info.dev_info->deviceinfo.pci->vendor_id == devices[i].dev_info.vendor_id &&
-		info.dev_info->deviceinfo.pci->device_id == devices[i].dev_info.device_id)
-	       default_idx = i;
-	 }
-	 if (default_idx != -1)
-	    break;
-      }
-
-      drmFreeDevice(&info.dev_info);
+   drmDevicePtr target;
+   if (info.dmabuf_dev_info != NULL) {
+      target = info.dmabuf_dev_info;
+   } else if (info.drm_dev_info != NULL) {
+      target = info.drm_dev_info;
+   } else {
+      goto done;
    }
 
+   for (unsigned i = 0; i < device_count; i++) {
+      if (devices[i].has_bus_info) {
+	 if (target->businfo.pci->domain == devices[i].bus_info.domain &&
+	     target->businfo.pci->bus == devices[i].bus_info.bus &&
+	     target->businfo.pci->dev == devices[i].bus_info.dev &&
+	     target->businfo.pci->func == devices[i].bus_info.func) {
+	    default_idx = i;
+	    break;
+	 }
+      } else {
+	 if (target->deviceinfo.pci->vendor_id == devices[i].dev_info.vendor_id &&
+	     target->deviceinfo.pci->device_id == devices[i].dev_info.device_id) {
+	    default_idx = i;
+	    break;
+	 }
+      }
+   }
+
+ done:
+   if (info.dmabuf_dev_info != NULL)
+      drmFreeDevice(&info.dmabuf_dev_info);
+   if (info.drm_dev_info != NULL)
+      drmFreeDevice(&info.drm_dev_info);
+
+   if (info.wl_dmabuf_feedback)
+      zwp_linux_dmabuf_feedback_v1_destroy(info.wl_dmabuf_feedback);
+   if (info.wl_dmabuf)
+      zwp_linux_dmabuf_v1_destroy(info.wl_dmabuf);
    if (info.wl_drm)
       wl_drm_destroy(info.wl_drm);
+
    wl_registry_destroy(registry);
    wl_display_disconnect(display);
- out:
    return default_idx;
 }
