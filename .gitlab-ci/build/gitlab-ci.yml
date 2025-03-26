@@ -192,7 +192,7 @@ debian-testing-ubsan:
       -Wno-error=stringop-truncation
     CPP_ARGS: >
       -Wno-error=array-bounds
-    GALLIUM_DRIVERS: "swrast"
+    GALLIUM_DRIVERS: "llvmpipe,softpipe"
     VULKAN_DRIVERS: "swrast"
     EXTRA_OPTION: >
       -D b_sanitize=undefined
