@@ -2079,34 +2079,6 @@ vn_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
    }
 }
 
-static struct vn_format_properties_entry *
-vn_physical_device_get_format_properties(
-   struct vn_physical_device *physical_dev, VkFormat format)
-{
-   return util_sparse_array_get(&physical_dev->format_properties, format);
-}
-
-static void
-vn_physical_device_add_format_properties(
-   struct vn_physical_device *physical_dev,
-   struct vn_format_properties_entry *entry,
-   const VkFormatProperties *props,
-   const VkFormatProperties3 *props3)
-{
-   simple_mtx_lock(&physical_dev->format_update_mutex);
-   if (!entry->valid) {
-      entry->properties = *props;
-      entry->valid = true;
-   }
-
-   if (props3 && !entry->props3_valid) {
-      entry->properties3 = *props3;
-      entry->props3_valid = true;
-   }
-
-   simple_mtx_unlock(&physical_dev->format_update_mutex);
-}
-
 void
 vn_GetPhysicalDeviceQueueFamilyProperties2(
    VkPhysicalDevice physicalDevice,
@@ -2207,45 +2179,47 @@ vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
    struct vn_physical_device *physical_dev =
       vn_physical_device_from_handle(physicalDevice);
    struct vn_ring *ring = physical_dev->instance->ring.ring;
-
-   /* VkFormatProperties3 is cached if its the only struct in pNext */
+   VkFormatProperties *props = &pFormatProperties->formatProperties;
    VkFormatProperties3 *props3 = NULL;
-   if (pFormatProperties->pNext) {
-      const VkBaseOutStructure *base = pFormatProperties->pNext;
-      if (base->sType == VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3 &&
-          base->pNext == NULL) {
-         props3 = (VkFormatProperties3 *)base;
+
+   bool cacheable = true;
+   uint64_t key = (uint64_t)format;
+   vk_foreach_struct_const(src, pFormatProperties->pNext) {
+      switch (src->sType) {
+      case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3:
+         props3 = (VkFormatProperties3 *)src;
+         key |= 1ull << 32;
+         break;
+      default:
+         cacheable = false;
+         break;
       }
    }
 
    struct vn_format_properties_entry *entry = NULL;
-   if (!pFormatProperties->pNext || props3) {
-      entry = vn_physical_device_get_format_properties(physical_dev, format);
+   if (cacheable) {
+      entry = util_sparse_array_get(&physical_dev->format_properties, key);
       if (entry->valid) {
-         const bool has_valid_props3 = props3 && entry->props3_valid;
-         if (has_valid_props3)
-            *props3 = entry->properties3;
-
-         /* Make the host call if our cache doesn't have props3 but the app
-          * now requests it.
-          */
-         if (!props3 || has_valid_props3) {
-            pFormatProperties->formatProperties = entry->properties;
-            pFormatProperties->pNext = props3;
-            return;
-         }
+         *props = entry->props;
+         if (props3)
+            VN_COPY_STRUCT_GUTS(props3, &entry->props3, sizeof(*props3));
+         return;
       }
    }
 
    vn_call_vkGetPhysicalDeviceFormatProperties2(ring, physicalDevice, format,
                                                 pFormatProperties);
+   vn_sanitize_format_properties(format, props, props3);
 
-   vn_sanitize_format_properties(format, &pFormatProperties->formatProperties,
-                                 props3);
-   if (entry) {
-      vn_physical_device_add_format_properties(
-         physical_dev, entry, &pFormatProperties->formatProperties, props3);
+   simple_mtx_lock(&physical_dev->format_update_mutex);
+   if (entry && !entry->valid) {
+      assert(cacheable);
+      entry->props = *props;
+      if (props3)
+         VN_COPY_STRUCT_GUTS(&entry->props3, props3, sizeof(*props3));
+      entry->valid = true;
    }
+   simple_mtx_unlock(&physical_dev->format_update_mutex);
 }
 
 struct vn_physical_device_image_format_info {

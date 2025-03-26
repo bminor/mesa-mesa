@@ -19,9 +19,8 @@
 
 struct vn_format_properties_entry {
    atomic_bool valid;
-   VkFormatProperties properties;
-   atomic_bool props3_valid;
-   VkFormatProperties3 properties3;
+   VkFormatProperties props;
+   VkFormatProperties3 props3;
 };
 
 struct vn_image_format_properties {
