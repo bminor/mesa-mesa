@@ -9990,16 +9990,22 @@ radv_emit_direct_mesh_draw_packet(struct radv_cmd_buffer *cmd_buffer, uint32_t x
    }
 }
 
+static void
+radv_emit_indirect_buffer(struct radeon_cmdbuf *cs, uint64_t va, bool is_compute)
+{
+   radeon_emit(cs, PKT3(PKT3_SET_BASE, 2, 0) | (is_compute ? PKT3_SHADER_TYPE_S(1) : 0));
+   radeon_emit(cs, 1);
+   radeon_emit(cs, va);
+   radeon_emit(cs, va >> 32);
+}
+
 ALWAYS_INLINE static void
 radv_emit_indirect_mesh_draw_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *info)
 {
    const struct radv_cmd_state *state = &cmd_buffer->state;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   radeon_emit(cs, PKT3(PKT3_SET_BASE, 2, 0));
-   radeon_emit(cs, 1);
-   radeon_emit(cs, info->indirect_va);
-   radeon_emit(cs, info->indirect_va >> 32);
+   radv_emit_indirect_buffer(cs, info->indirect_va, false);
 
    if (state->uses_drawid) {
       const struct radv_shader *mesh_shader = state->shaders[MESA_SHADER_MESH];
@@ -10124,10 +10130,7 @@ radv_emit_indirect_draw_packets(struct radv_cmd_buffer *cmd_buffer, const struct
    const struct radv_cmd_state *state = &cmd_buffer->state;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   radeon_emit(cs, PKT3(PKT3_SET_BASE, 2, 0));
-   radeon_emit(cs, 1);
-   radeon_emit(cs, info->indirect_va);
-   radeon_emit(cs, info->indirect_va >> 32);
+   radv_emit_indirect_buffer(cs, info->indirect_va, false);
 
    if (!state->render.view_mask) {
       radv_cs_emit_indirect_draw_packet(cmd_buffer, info->indexed, info->count, info->count_va, info->stride);
@@ -11833,10 +11836,7 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
          radeon_emit(cs, indirect_va >> 32);
          radeon_emit(cs, dispatch_initiator);
       } else {
-         radeon_emit(cs, PKT3(PKT3_SET_BASE, 2, 0) | PKT3_SHADER_TYPE_S(1));
-         radeon_emit(cs, 1);
-         radeon_emit(cs, info->indirect_va);
-         radeon_emit(cs, info->indirect_va >> 32);
+         radv_emit_indirect_buffer(cs, info->indirect_va, true);
 
          if (cmd_buffer->qf == RADV_QUEUE_COMPUTE) {
             radv_cs_emit_compute_predication(device, &cmd_buffer->state, cs, cmd_buffer->state.mec_inv_pred_va,
