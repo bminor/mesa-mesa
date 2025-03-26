@@ -175,12 +175,6 @@ elif gallium_drivers.contains('all')
    ]
 endif
 
-# compatibility for meson configurations asking for 'swrast'
-with_swrast = gallium_drivers.contains('swrast')
-if with_swrast
-  warning('`gallium-drivers=swrast` is a deprecated alias for `gallium-drivers=softpipe,llvmpipe` and will be removed in version 25.0')
-endif
-
 with_amdgpu_virtio = get_option('amdgpu-virtio')
 
 with_gallium_radeonsi = gallium_drivers.contains('radeonsi')
@@ -188,8 +182,8 @@ with_gallium_r300 = gallium_drivers.contains('r300')
 with_gallium_r600 = gallium_drivers.contains('r600')
 with_gallium_nouveau = gallium_drivers.contains('nouveau')
 with_gallium_freedreno = gallium_drivers.contains('freedreno')
-with_gallium_softpipe = with_swrast or gallium_drivers.contains('softpipe')
-with_gallium_llvmpipe = with_swrast or gallium_drivers.contains('llvmpipe')
+with_gallium_softpipe = gallium_drivers.contains('softpipe')
+with_gallium_llvmpipe = gallium_drivers.contains('llvmpipe')
 with_gallium_vc4 = gallium_drivers.contains('vc4')
 with_gallium_v3d = gallium_drivers.contains('v3d')
 with_gallium_panfrost = gallium_drivers.contains('panfrost')
