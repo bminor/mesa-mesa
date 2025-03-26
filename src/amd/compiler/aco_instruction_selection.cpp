@@ -4542,6 +4542,16 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
    std::tie(op, bytes_needed) =
       buffer || (align % util_next_power_of_two(larger.second) == 0) ? larger : smaller;
 
+   /* Use a s4 regclass for dwordx3 loads. Even if the register allocator aligned s3 SMEM
+    * definitions correctly, multiple dwordx3 loads can make very inefficient use of the register
+    * file. There might be a single SGPR hole between each s3 temporary, making no space for a
+    * vector without a copy for each SGPR needed. Using a s4 definition instead should help avoid
+    * this situation by preventing the scheduler and register allocator from assuming that the 4th
+    * SGPR of each definition in a sequence of dwordx3 SMEM loads is free for use by vector
+    * temporaries.
+    */
+   RegClass rc(RegType::sgpr, DIV_ROUND_UP(util_next_power_of_two(bytes_needed), 4u));
+
    aco_ptr<Instruction> load{create_instruction(op, Format::SMEM, 2, 1)};
    if (buffer) {
       if (const_offset)
@@ -4559,12 +4569,20 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
       else
          load->operands[1] = Operand::c32(const_offset);
    }
-   RegClass rc(RegType::sgpr, DIV_ROUND_UP(bytes_needed, 4u));
-   Temp val = dst_hint.id() && dst_hint.regClass() == rc ? dst_hint : bld.tmp(rc);
+   Temp val = dst_hint.id() && dst_hint.regClass() == rc && rc.bytes() == bytes_needed
+                 ? dst_hint
+                 : bld.tmp(rc);
    load->definitions[0] = Definition(val);
    load->smem().cache = info.cache;
    load->smem().sync = info.sync;
    bld.insert(std::move(load));
+
+   if (rc.bytes() > bytes_needed) {
+      rc = RegClass(RegType::sgpr, DIV_ROUND_UP(bytes_needed, 4u));
+      Temp val2 = dst_hint.id() && dst_hint.regClass() == rc ? dst_hint : bld.tmp(rc);
+      val = bld.pseudo(aco_opcode::p_extract_vector, Definition(val2), val, Operand::c32(0u));
+   }
+
    return val;
 }
 
@@ -7110,6 +7128,7 @@ visit_load_smem(isel_context* ctx, nir_intrinsic_instr* instr)
    unsigned size;
    assert(dst.bytes() <= 64);
    std::tie(opcode, size) = get_smem_opcode(ctx->program->gfx_level, dst.bytes(), false, false);
+   size = util_next_power_of_two(size);
 
    if (dst.size() != DIV_ROUND_UP(size, 4)) {
       bld.pseudo(aco_opcode::p_extract_vector, Definition(dst),
