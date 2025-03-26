@@ -57,6 +57,9 @@ struct pipe_video_buffer *si_video_buffer_create_with_modifiers(struct pipe_cont
          if (sscreen->info.vcn_ip_version < VCN_2_2_0 &&
              AMD_FMT_MOD_GET(TILE, mod) != AMD_FMT_MOD_TILE_GFX9_64K_S)
             continue;
+
+         if (!sscreen->info.has_image_opcodes)
+            continue;
       }
 
       allowed_modifiers[allowed_modifiers_count++] = mod;
