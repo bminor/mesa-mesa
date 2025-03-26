@@ -574,9 +574,9 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
       radeon_emit(cs, pred_va);
       radeon_emit(cs, pred_va >> 32);
       radeon_emit(cs, 0); /* Cache policy */
-
-      uint32_t *skip_dwords = cs->buf + cs->cdw;
       radeon_emit(cs, 0);
+
+      uint32_t *skip_dwords = cs->buf + (cs->cdw - 1);
 
       for (unsigned i = 0; i < pool->num_pc_regs;) {
          enum ac_pc_gpu_block block = G_REG_BLOCK(pool->pc_regs[i]);
@@ -654,9 +654,9 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
       radeon_emit(cs, pred_va);
       radeon_emit(cs, pred_va >> 32);
       radeon_emit(cs, 0); /* Cache policy */
-
-      uint32_t *skip_dwords = cs->buf + cs->cdw;
       radeon_emit(cs, 0);
+
+      uint32_t *skip_dwords = cs->buf + (cs->cdw - 1);
 
       for (unsigned i = 0; i < pool->num_pc_regs;) {
          enum ac_pc_gpu_block block = G_REG_BLOCK(pool->pc_regs[i]);
