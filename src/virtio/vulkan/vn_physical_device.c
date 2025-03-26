@@ -862,7 +862,7 @@ vn_physical_device_init_queue_family_properties(
    const bool can_query_prio =
       physical_dev->base.vk.supported_features.globalPriorityQuery;
    VkQueueFamilyProperties2 *props;
-   VkQueueFamilyGlobalPriorityProperties *prio_props;
+   VkQueueFamilyGlobalPriorityProperties *prio_props = NULL;
 
    VK_MULTIALLOC(ma);
    vk_multialloc_add(&ma, &props, __typeof__(*props), count);
@@ -2099,12 +2099,14 @@ vn_GetPhysicalDeviceQueueFamilyProperties2(
          props->queueFamilyProperties =
             physical_dev->queue_family_properties[i].queueFamilyProperties;
 
-         VkQueueFamilyGlobalPriorityProperties *prio_props = vk_find_struct(
-            props->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES);
-         if (prio_props) {
-            void *pnext = prio_props->pNext;
-            *prio_props = physical_dev->global_priority_properties[i];
-            prio_props->pNext = pnext;
+         if (physical_dev->base.vk.supported_features.globalPriorityQuery) {
+            VkQueueFamilyGlobalPriorityProperties *prio_props = vk_find_struct(
+               props->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES);
+            if (prio_props) {
+               void *pnext = prio_props->pNext;
+               *prio_props = physical_dev->global_priority_properties[i];
+               prio_props->pNext = pnext;
+            }
          }
       }
    }
