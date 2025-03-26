@@ -1993,6 +1993,17 @@ anv_restrict_sys_heap_size(struct anv_physical_device *device,
          return kmd_reported_sram;
    }
 
+   const char *env_limit = os_get_option("ANV_SYS_MEM_LIMIT");
+   if (env_limit) {
+      int64_t limit_percent = debug_parse_num_option(env_limit, 75);
+      if (limit_percent < 10)
+         limit_percent = 10;
+      else if (limit_percent > 100)
+         limit_percent = 100;
+
+      return kmd_reported_sram * limit_percent / 100;
+   }
+
    if (kmd_reported_sram <= 4ull * 1024ull * 1024ull * 1024ull)
       return kmd_reported_sram / 2;
    else
