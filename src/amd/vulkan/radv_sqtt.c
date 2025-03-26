@@ -544,7 +544,7 @@ radv_begin_sqtt(struct radv_queue *queue)
    /* Enable SQG events that collects thread trace data. */
    radv_emit_spi_config_cntl(device, cs, true);
 
-   radv_perfcounter_emit_spm_reset(cs);
+   radv_perfcounter_emit_reset(cs, true);
 
    if (device->spm.bo) {
       /* Enable all shader stages by default. */
@@ -619,7 +619,7 @@ radv_end_sqtt(struct radv_queue *queue)
    /* Stop SQTT. */
    radv_emit_sqtt_stop(device, cs, family);
 
-   radv_perfcounter_emit_spm_reset(cs);
+   radv_perfcounter_emit_reset(cs, true);
 
    /* Restore previous state by disabling SQG events. */
    radv_emit_spi_config_cntl(device, cs, false);

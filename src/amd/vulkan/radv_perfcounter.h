@@ -32,7 +32,7 @@ struct radv_pc_query_pool {
 
 void radv_perfcounter_emit_shaders(struct radv_device *device, struct radeon_cmdbuf *cs, unsigned shaders);
 
-void radv_perfcounter_emit_spm_reset(struct radeon_cmdbuf *cs);
+void radv_perfcounter_emit_reset(struct radeon_cmdbuf *cs, bool is_spm);
 
 void radv_perfcounter_emit_spm_start(struct radv_device *device, struct radeon_cmdbuf *cs, int family);
 
