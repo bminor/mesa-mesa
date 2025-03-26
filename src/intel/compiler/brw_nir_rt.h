@@ -30,12 +30,16 @@
 extern "C" {
 #endif
 
-void brw_nir_lower_raygen(nir_shader *nir);
+void brw_nir_lower_raygen(nir_shader *nir,
+                          const struct intel_device_info *devinfo);
 void brw_nir_lower_any_hit(nir_shader *nir,
                            const struct intel_device_info *devinfo);
-void brw_nir_lower_closest_hit(nir_shader *nir);
-void brw_nir_lower_miss(nir_shader *nir);
-void brw_nir_lower_callable(nir_shader *nir);
+void brw_nir_lower_closest_hit(nir_shader *nir,
+                               const struct intel_device_info *devinfo);
+void brw_nir_lower_miss(nir_shader *nir,
+                        const struct intel_device_info *devinfo);
+void brw_nir_lower_callable(nir_shader *nir,
+                            const struct intel_device_info *devinfo);
 void brw_nir_lower_combined_intersection_any_hit(nir_shader *intersection,
                                                  const nir_shader *any_hit,
                                                  const struct intel_device_info *devinfo);

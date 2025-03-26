@@ -465,7 +465,6 @@ brw_nir_rt_unpack_leaf_ptr(nir_builder *b, nir_def *vec2,
  */
 struct brw_nir_rt_mem_hit_defs {
    nir_def *t;
-   nir_def *tri_bary; /**< Only valid for triangle geometry */
    nir_def *aabb_hit_kind; /**< Only valid for AABB geometry */
    nir_def *valid;
    nir_def *leaf_type;
@@ -478,6 +477,34 @@ struct brw_nir_rt_mem_hit_defs {
    nir_def *inst_leaf_ptr;
 };
 
+/* For Xe3+, barycentric coordinates are stored as 24 bit unorm.
+ * Since unorm_float could be expensive, we calculate tri_bary on
+ * demand. We do this for Xe3+ and Xe1/2 for consistency.
+ */
+static inline nir_def *
+brw_nir_rt_load_tri_bary_from_addr(nir_builder *b,
+                                   nir_def *stack_addr,
+                                   bool committed,
+                                   const struct intel_device_info *devinfo)
+{
+   nir_def *hit_addr =
+      brw_nir_rt_mem_hit_addr_from_addr(b, stack_addr, committed);
+
+   nir_def *data = brw_nir_rt_load(b, hit_addr, 16, 4, 32);
+   nir_def *tri_bary;
+   if (devinfo->ver >= 30) {
+      nir_def *u = nir_iand_imm(b, nir_channel(b, data, 1), 0xffffff);
+      nir_def *v = nir_iand_imm(b, nir_channel(b, data, 2), 0xffffff);
+      const unsigned bits[1] = {24};
+      tri_bary = nir_vec2(b,
+                          nir_format_unorm_to_float_precise(b, u, bits),
+                          nir_format_unorm_to_float_precise(b, v, bits));
+   } else {
+      tri_bary = nir_channels(b, data, 0x6);
+   }
+
+   return tri_bary;
+}
 static inline void
 brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
                                   struct brw_nir_rt_mem_hit_defs *defs,
@@ -495,19 +522,11 @@ brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
    if (devinfo->ver >= 30) {
       defs->aabb_hit_kind = nir_iand_imm(b, nir_channel(b, data, 1),
                                          0xffffff);
-      nir_def *u = nir_iand_imm(b, nir_channel(b, data, 1), 0xffffff);
-      nir_def *v = nir_iand_imm(b, nir_channel(b, data, 2), 0xffffff);
-      /* For Xe3+, barycentric coordinates are stored as 24 bit unorm */
-      const unsigned bits[1] = {24};
-      defs->tri_bary = nir_vec2(b,
-                                nir_format_unorm_to_float_precise(b, u, bits),
-                                nir_format_unorm_to_float_precise(b, v, bits));
       defs->prim_index_delta = nir_ubitfield_extract(b, bitfield,
                                                      nir_imm_int(b, 0),
                                                      nir_imm_int(b, 5));
    } else {
       defs->aabb_hit_kind = nir_channel(b, data, 1);
-      defs->tri_bary = nir_channels(b, data, 0x6);
       defs->prim_index_delta = nir_ubitfield_extract(b, bitfield,
                                                      nir_imm_int(b, 0),
                                                      nir_imm_int(b, 16));

@@ -432,7 +432,8 @@ lower_ray_query_intrinsic(nir_builder *b,
          break;
 
       case nir_ray_query_value_intersection_barycentrics:
-         sysval = hit_in.tri_bary;
+         sysval = brw_nir_rt_load_tri_bary_from_addr(b, stack_addr, committed,
+                                                     state->devinfo);
          break;
 
       case nir_ray_query_value_intersection_front_face:

@@ -3728,7 +3728,7 @@ anv_pipeline_compile_ray_tracing(struct anv_ray_tracing_pipeline *pipeline,
       nir_shader *nir = nir_shader_clone(tmp_stage_ctx, stages[i].nir);
       switch (stages[i].stage) {
       case MESA_SHADER_RAYGEN:
-         brw_nir_lower_raygen(nir);
+         brw_nir_lower_raygen(nir, devinfo);
          break;
 
       case MESA_SHADER_ANY_HIT:
@@ -3736,18 +3736,18 @@ anv_pipeline_compile_ray_tracing(struct anv_ray_tracing_pipeline *pipeline,
          break;
 
       case MESA_SHADER_CLOSEST_HIT:
-         brw_nir_lower_closest_hit(nir);
+         brw_nir_lower_closest_hit(nir, devinfo);
          break;
 
       case MESA_SHADER_MISS:
-         brw_nir_lower_miss(nir);
+         brw_nir_lower_miss(nir, devinfo);
          break;
 
       case MESA_SHADER_INTERSECTION:
          unreachable("These are handled later");
 
       case MESA_SHADER_CALLABLE:
-         brw_nir_lower_callable(nir);
+         brw_nir_lower_callable(nir, devinfo);
          break;
 
       default:
