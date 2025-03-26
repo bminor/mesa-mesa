@@ -250,36 +250,16 @@ get_fast_clear_rect(const struct isl_device *dev,
           * The X and Y scale down factors in the table that follows are used
           * for both alignment and scaling down.
           */
+         struct isl_tile_info tile_info;
+         isl_surf_get_tile_info(surf, &tile_info);
+
          if (surf->tiling == ISL_TILING_4) {
-            x_align = x_scaledown = 1024 / bs;
-            y_align = y_scaledown = 16;
-         } else if (surf->tiling == ISL_TILING_64) {
-            switch (bs) {
-            case 1:
-               x_align = x_scaledown = 128;
-               y_align = y_scaledown = 128;
-               break;
-            case 2:
-               x_align = x_scaledown = 128;
-               y_align = y_scaledown = 64;
-               break;
-            case 4:
-               x_align = x_scaledown = 64;
-               y_align = y_scaledown = 64;
-               break;
-            case 8:
-               x_align = x_scaledown = 64;
-               y_align = y_scaledown = 32;
-               break;
-            case 16:
-               x_align = x_scaledown = 32;
-               y_align = y_scaledown = 32;
-               break;
-            default:
-               unreachable("unsupported bpp");
-            }
+            x_align = x_scaledown = 16 * tile_info.logical_extent_el.w / 2;
+            y_align = y_scaledown = tile_info.logical_extent_el.h / 2;
          } else {
-            unreachable("Unsupported tiling format");
+            assert(surf->tiling == ISL_TILING_64);
+            x_align = x_scaledown = tile_info.logical_extent_el.w / 2;
+            y_align = y_scaledown = tile_info.logical_extent_el.h / 2;
          }
       } else {
          /* From the Ivy Bridge PRM, Vol2 Part1 11.7 "MCS Buffer for Render
