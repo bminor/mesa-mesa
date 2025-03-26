@@ -79,6 +79,8 @@ pass(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
              * shift.
              */
             int64_t raw_scalar = nir_scalar_as_uint(const_scalar);
+            assert(raw_scalar != 0 && "must have been optimized out");
+
             uint32_t shift = MIN2(__builtin_ctz(raw_scalar), max_shift);
             int64_t k = raw_scalar >> shift;
 

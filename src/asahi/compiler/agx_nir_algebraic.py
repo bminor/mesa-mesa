@@ -215,6 +215,9 @@ cleanup_amul = [
    # neither multiplication overflows.
    (('amul', ('ishl', ('u2u64', 'a@32'), '#b(is_ult_32)'), '#c'),
     ('amul', ('u2u64', a), ('ishl', c, b))),
+
+   # We depending on simplifying this.
+   (('iadd', a, 0), a),
 ]
 
 fuse_lea = []
