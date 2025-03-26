@@ -138,7 +138,7 @@ like this:
 .. code-block:: sh
 
    meson setup builddir/ -Dprefix="$MESA_INSTALLDIR" \
-      -Dgallium-drivers=swrast -Dvulkan-drivers=swrast
+      -Dgallium-drivers=llvmpipe -Dvulkan-drivers=swrast
    meson install -C builddir/
 
 Once Mesa has built and installed to ``$MESA_INSTALLDIR``, you can run any app
