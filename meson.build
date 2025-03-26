@@ -2393,6 +2393,7 @@ if with_any_vk
   video_apis += 'vulkan'
 endif
 if with_gallium_xa
+  warning('XA will be removed in Mesa 25.2')
   video_apis += 'xa'
 endif
 video_summary += {'APIs': video_apis.length() != 0 ? video_apis : false}

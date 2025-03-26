@@ -129,6 +129,7 @@ option(
   type : 'feature',
   deprecated: {'true': 'enabled', 'false': 'disabled'},
   description : 'enable gallium xa frontend.',
+  deprecated: true,
 )
 
 option(
