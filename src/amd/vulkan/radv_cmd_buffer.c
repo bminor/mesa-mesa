@@ -956,12 +956,13 @@ static void
 radv_emit_userdata_address(const struct radv_device *device, struct radeon_cmdbuf *cs, const struct radv_shader *shader,
                            int idx, uint64_t va)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    const uint32_t offset = radv_get_user_sgpr_loc(shader, idx);
 
    if (!offset)
       return;
 
-   radv_emit_shader_pointer(device, cs, offset, va, false);
+   radeon_emit_32bit_pointer(cs, offset, va, &pdev->info);
 }
 
 uint64_t
@@ -983,11 +984,12 @@ static void
 radv_emit_descriptors_per_stage(const struct radv_device *device, struct radeon_cmdbuf *cs,
                                 const struct radv_shader *shader, const struct radv_descriptor_state *descriptors_state)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    const uint32_t indirect_descriptor_sets_offset = radv_get_user_sgpr_loc(shader, AC_UD_INDIRECT_DESCRIPTOR_SETS);
 
    if (indirect_descriptor_sets_offset) {
-      radv_emit_shader_pointer(device, cs, indirect_descriptor_sets_offset,
-                               descriptors_state->indirect_descriptor_sets_va, false);
+      radeon_emit_32bit_pointer(cs, indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
+                                &pdev->info);
    } else {
       const struct radv_userdata_locations *locs = &shader->info.user_sgprs_locs;
       const uint32_t sh_base = shader->info.user_data_0;
@@ -1003,11 +1005,12 @@ radv_emit_descriptors_per_stage(const struct radv_device *device, struct radeon_
          const struct radv_userdata_info *loc = &locs->descriptor_sets[start];
          const unsigned sh_offset = sh_base + loc->sgpr_idx * 4;
 
-         radv_emit_shader_pointer_head(cs, sh_offset, count, true);
+         radeon_set_sh_reg_seq(cs, sh_offset, count);
+
          for (int i = 0; i < count; i++) {
             uint64_t va = radv_descriptor_get_va(descriptors_state, start + i);
 
-            radv_emit_shader_pointer_body(device, cs, va, true);
+            radeon_emit(cs, va);
          }
       }
    }
@@ -1951,7 +1954,7 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
    assert((ps_epilog->va >> 32) == pdev->info.address32_hi);
 
    const uint32_t epilog_pc_offset = radv_get_user_sgpr_loc(ps_shader, AC_UD_EPILOG_PC);
-   radv_emit_shader_pointer(device, cmd_buffer->cs, epilog_pc_offset, ps_epilog->va, false);
+   radeon_emit_32bit_pointer(cmd_buffer->cs, epilog_pc_offset, ps_epilog->va, &pdev->info);
 
    cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, ps_epilog->upload_seq);
 
@@ -2235,7 +2238,7 @@ radv_emit_vertex_shader(struct radv_cmd_buffer *cmd_buffer)
       }
 
       const uint32_t next_stage_pc_offset = radv_get_user_sgpr_loc(vs, AC_UD_NEXT_STAGE_PC);
-      radv_emit_shader_pointer(device, cmd_buffer->cs, next_stage_pc_offset, next_stage->va, false);
+      radeon_emit_32bit_pointer(cmd_buffer->cs, next_stage_pc_offset, next_stage->va, &pdev->info);
       return;
    }
 
@@ -2293,7 +2296,7 @@ radv_emit_tess_eval_shader(struct radv_cmd_buffer *cmd_buffer)
       radeon_emit(cmd_buffer->cs, rsrc2 | S_00B22C_LDS_SIZE(lds_size));
 
       const uint32_t next_stage_pc_offset = radv_get_user_sgpr_loc(tes, AC_UD_NEXT_STAGE_PC);
-      radv_emit_shader_pointer(device, cmd_buffer->cs, next_stage_pc_offset, gs->va, false);
+      radeon_emit_32bit_pointer(cmd_buffer->cs, next_stage_pc_offset, gs->va, &pdev->info);
       return;
    }
 
@@ -5055,7 +5058,6 @@ emit_prolog_inputs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader 
        !cmd_buffer->state.emitted_vs_prolog->nontrivial_divisors)
       return;
 
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
    uint64_t input_va = radv_shader_get_va(vs_shader);
 
@@ -5088,7 +5090,7 @@ emit_prolog_inputs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader 
    }
 
    const uint32_t vs_prolog_inputs_offset = radv_get_user_sgpr_loc(vs_shader, AC_UD_VS_PROLOG_INPUTS);
-   radv_emit_shader_pointer(device, cmd_buffer->cs, vs_prolog_inputs_offset, input_va, true);
+   radeon_emit_64bit_pointer(cmd_buffer->cs, vs_prolog_inputs_offset, input_va);
 }
 
 static void
@@ -6023,16 +6025,17 @@ radv_emit_streamout_buffers(struct radv_cmd_buffer *cmd_buffer, uint64_t va)
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
    uint32_t streamout_buffers_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_STREAMOUT_BUFFERS);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (!streamout_buffers_offset)
       return;
 
-   radv_emit_shader_pointer(device, cmd_buffer->cs, streamout_buffers_offset, va, false);
+   radeon_emit_32bit_pointer(cmd_buffer->cs, streamout_buffers_offset, va, &pdev->info);
 
    if (cmd_buffer->state.gs_copy_shader) {
       streamout_buffers_offset = radv_get_user_sgpr_loc(cmd_buffer->state.gs_copy_shader, AC_UD_STREAMOUT_BUFFERS);
       if (streamout_buffers_offset)
-         radv_emit_shader_pointer(device, cmd_buffer->cs, streamout_buffers_offset, va, false);
+         radeon_emit_32bit_pointer(cmd_buffer->cs, streamout_buffers_offset, va, &pdev->info);
    }
 }
 
@@ -6050,7 +6053,7 @@ radv_emit_streamout_state(struct radv_cmd_buffer *cmd_buffer)
    if (!streamout_state_offset)
       return;
 
-   radv_emit_shader_pointer(device, cmd_buffer->cs, streamout_state_offset, so->state_va, false);
+   radeon_emit_32bit_pointer(cmd_buffer->cs, streamout_state_offset, so->state_va, &pdev->info);
 }
 
 static void
@@ -7393,7 +7396,7 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
       struct radv_shader *traversal_shader = cmd_buffer->state.shaders[MESA_SHADER_INTERSECTION];
       if (traversal_shader_addr_offset && traversal_shader) {
          uint64_t traversal_va = traversal_shader->va | radv_rt_priority_traversal;
-         radv_emit_shader_pointer(device, cmd_buffer->cs, traversal_shader_addr_offset, traversal_va, true);
+         radeon_emit_64bit_pointer(cmd_buffer->cs, traversal_shader_addr_offset, traversal_va);
       }
    }
 
@@ -11789,7 +11792,7 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
             radeon_emit(cs, (grid_size_offset - SI_SH_REG_OFFSET) >> 2);
             radeon_emit(cs, 3);
          } else {
-            radv_emit_shader_pointer(device, cmd_buffer->cs, grid_size_offset, info->indirect_va, true);
+            radeon_emit_64bit_pointer(cmd_buffer->cs, grid_size_offset, info->indirect_va);
          }
       }
 
@@ -11901,7 +11904,7 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
                return;
 
             uint64_t va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
-            radv_emit_shader_pointer(device, cmd_buffer->cs, grid_size_offset, va, true);
+            radeon_emit_64bit_pointer(cmd_buffer->cs, grid_size_offset, va);
          }
       }
 
@@ -12323,12 +12326,12 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
 
    const uint32_t sbt_descriptors_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_SBT_DESCRIPTORS);
    if (sbt_descriptors_offset) {
-      radv_emit_shader_pointer(device, cmd_buffer->cs, sbt_descriptors_offset, sbt_va, true);
+      radeon_emit_64bit_pointer(cmd_buffer->cs, sbt_descriptors_offset, sbt_va);
    }
 
    const uint32_t ray_launch_size_addr_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_RAY_LAUNCH_SIZE_ADDR);
    if (ray_launch_size_addr_offset) {
-      radv_emit_shader_pointer(device, cmd_buffer->cs, ray_launch_size_addr_offset, launch_size_va, true);
+      radeon_emit_64bit_pointer(cmd_buffer->cs, ray_launch_size_addr_offset, launch_size_va);
    }
 
    assert(cmd_buffer->cs->cdw <= cdw_max);
@@ -12344,7 +12347,7 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
       tables->height = 1;
       radv_upload_trace_rays_params(cmd_buffer, tables, mode, &launch_size_va, NULL);
       if (ray_launch_size_addr_offset) {
-         radv_emit_shader_pointer(device, cmd_buffer->cs, ray_launch_size_addr_offset, launch_size_va, true);
+         radeon_emit_64bit_pointer(cmd_buffer->cs, ray_launch_size_addr_offset, launch_size_va);
       }
 
       radv_dispatch(cmd_buffer, &info, pipeline, rt_prolog, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);

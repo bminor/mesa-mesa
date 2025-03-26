@@ -554,7 +554,7 @@ radv_emit_compute_shader_pointers(struct radv_device *device, struct radeon_cmdb
    /* Compute shader user data 0-1 have the scratch pointer (unlike GFX shaders),
     * so emit the descriptor pointer to user data 2-3 instead (task_ring_offsets arg).
     */
-   radv_emit_shader_pointer(device, cs, R_00B908_COMPUTE_USER_DATA_2, va, true);
+   radeon_emit_64bit_pointer(cs, R_00B908_COMPUTE_USER_DATA_2, va);
 }
 
 static void
@@ -576,28 +576,28 @@ radv_emit_graphics_shader_pointers(struct radv_device *device, struct radeon_cmd
                          R_00B210_SPI_SHADER_PGM_LO_GS};
 
       for (int i = 0; i < ARRAY_SIZE(regs); ++i) {
-         radv_emit_shader_pointer(device, cs, regs[i], va, true);
+         radeon_emit_64bit_pointer(cs, regs[i], va);
       }
    } else if (pdev->info.gfx_level >= GFX11) {
       uint32_t regs[] = {R_00B030_SPI_SHADER_USER_DATA_PS_0, R_00B420_SPI_SHADER_PGM_LO_HS,
                          R_00B220_SPI_SHADER_PGM_LO_GS};
 
       for (int i = 0; i < ARRAY_SIZE(regs); ++i) {
-         radv_emit_shader_pointer(device, cs, regs[i], va, true);
+         radeon_emit_64bit_pointer(cs, regs[i], va);
       }
    } else if (pdev->info.gfx_level >= GFX10) {
       uint32_t regs[] = {R_00B030_SPI_SHADER_USER_DATA_PS_0, R_00B130_SPI_SHADER_USER_DATA_VS_0,
                          R_00B208_SPI_SHADER_USER_DATA_ADDR_LO_GS, R_00B408_SPI_SHADER_USER_DATA_ADDR_LO_HS};
 
       for (int i = 0; i < ARRAY_SIZE(regs); ++i) {
-         radv_emit_shader_pointer(device, cs, regs[i], va, true);
+         radeon_emit_64bit_pointer(cs, regs[i], va);
       }
    } else if (pdev->info.gfx_level == GFX9) {
       uint32_t regs[] = {R_00B030_SPI_SHADER_USER_DATA_PS_0, R_00B130_SPI_SHADER_USER_DATA_VS_0,
                          R_00B208_SPI_SHADER_USER_DATA_ADDR_LO_GS, R_00B408_SPI_SHADER_USER_DATA_ADDR_LO_HS};
 
       for (int i = 0; i < ARRAY_SIZE(regs); ++i) {
-         radv_emit_shader_pointer(device, cs, regs[i], va, true);
+         radeon_emit_64bit_pointer(cs, regs[i], va);
       }
    } else {
       uint32_t regs[] = {R_00B030_SPI_SHADER_USER_DATA_PS_0, R_00B130_SPI_SHADER_USER_DATA_VS_0,
@@ -605,7 +605,7 @@ radv_emit_graphics_shader_pointers(struct radv_device *device, struct radeon_cmd
                          R_00B430_SPI_SHADER_USER_DATA_HS_0, R_00B530_SPI_SHADER_USER_DATA_LS_0};
 
       for (int i = 0; i < ARRAY_SIZE(regs); ++i) {
-         radv_emit_shader_pointer(device, cs, regs[i], va, true);
+         radeon_emit_64bit_pointer(cs, regs[i], va);
       }
    }
 }

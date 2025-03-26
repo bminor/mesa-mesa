@@ -211,6 +211,20 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 
 #define radeon_event_write(cs, event_type) radeon_event_write_predicate(cs, event_type, false)
 
+#define radeon_emit_32bit_pointer(cs, sh_offset, va, info)                                                             \
+   do {                                                                                                                \
+      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
+      radeon_set_sh_reg_seq(cs, sh_offset, 1);                                                                         \
+      radeon_emit(cs, va);                                                                                             \
+   } while (0)
+
+#define radeon_emit_64bit_pointer(cs, sh_offset, va)                                                                   \
+   do {                                                                                                                \
+      radeon_set_sh_reg_seq(cs, sh_offset, 2);                                                                         \
+      radeon_emit(cs, va);                                                                                             \
+      radeon_emit(cs, va >> 32);                                                                                       \
+   } while (0)
+
 ALWAYS_INLINE static void
 radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
                  const uint32_t ref, const uint32_t mask)
