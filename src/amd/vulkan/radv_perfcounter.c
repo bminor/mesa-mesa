@@ -600,11 +600,8 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
 
       if (end) {
          uint64_t signal_va = va + pool->b.stride - 8 - 8 * pass;
-         radeon_emit(cs, PKT3(PKT3_WRITE_DATA, 3, 0));
-         radeon_emit(cs, S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_ME));
-         radeon_emit(cs, signal_va);
-         radeon_emit(cs, signal_va >> 32);
-         radeon_emit(cs, 1); /* value */
+
+         radv_cs_write_data_imm(cs, V_370_ME, signal_va, 1);
       }
 
       *skip_dwords = cs->buf + cs->cdw - skip_dwords - 1;
@@ -632,11 +629,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, device->perf_counter_bo);
 
    uint64_t perf_ctr_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_FENCE_OFFSET;
-   radeon_emit(cs, PKT3(PKT3_WRITE_DATA, 3, 0));
-   radeon_emit(cs, S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_ME));
-   radeon_emit(cs, perf_ctr_va);
-   radeon_emit(cs, perf_ctr_va >> 32);
-   radeon_emit(cs, 0); /* value */
+   radv_cs_write_data_imm(cs, V_370_ME, perf_ctr_va, 0);
 
    radv_pc_wait_idle(cmd_buffer);
 
