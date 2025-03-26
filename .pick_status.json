@@ -2484,7 +2484,7 @@
         "description": "brw: always write the VUE header",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "35df3925ca0fe5e78c24b12f34c6a1afce08ed7a",
         "notes": null
