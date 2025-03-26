@@ -754,7 +754,7 @@
         "description": "ac/nir: fix nir_metadata value of ac_nir_lower_image_opcodes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eaf98b14220d8cbc186d67a929254acc3e7de41a",
         "notes": null
