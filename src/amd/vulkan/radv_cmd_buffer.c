@@ -2282,14 +2282,14 @@ radv_emit_tess_eval_shader(struct radv_cmd_buffer *cmd_buffer)
 
       radv_shader_combine_cfg_tes_gs(tes, gs, &rsrc1, &rsrc2);
 
-      radeon_set_sh_reg(cmd_buffer->cs, tes->info.regs.pgm_lo, tes->va >> 8);
-
       unsigned lds_size;
       if (gs->info.is_ngg) {
          lds_size = DIV_ROUND_UP(gs->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
       } else {
          lds_size = gs->info.gs_ring_info.lds_size;
       }
+
+      radeon_set_sh_reg(cmd_buffer->cs, tes->info.regs.pgm_lo, tes->va >> 8);
 
       radeon_set_sh_reg_seq(cmd_buffer->cs, tes->info.regs.pgm_rsrc1, 2);
       radeon_emit(cmd_buffer->cs, rsrc1);
@@ -3329,9 +3329,6 @@ radv_emit_fragment_shading_rate(struct radv_cmd_buffer *cmd_buffer)
       }
    }
 
-   /* Emit per-draw VRS rate which is the first combiner. */
-   radeon_set_uconfig_reg(cmd_buffer->cs, R_03098C_GE_VRS_RATE, S_03098C_RATE_X(rate_x) | S_03098C_RATE_Y(rate_y));
-
    /* Disable VRS and use the rates from PS_ITER_SAMPLES if:
     *
     * 1) sample shading is enabled or per-sample interpolation is used by the fragment shader
@@ -3356,6 +3353,9 @@ radv_emit_fragment_shading_rate(struct radv_cmd_buffer *cmd_buffer)
     * rate.
     */
    pa_cl_vrs_cntl |= S_028848_HTILE_RATE_COMBINER_MODE(htile_comb_mode);
+
+   /* Emit per-draw VRS rate which is the first combiner. */
+   radeon_set_uconfig_reg(cmd_buffer->cs, R_03098C_GE_VRS_RATE, S_03098C_RATE_X(rate_x) | S_03098C_RATE_Y(rate_y));
 
    radeon_set_context_reg(cmd_buffer->cs, R_028848_PA_CL_VRS_CNTL, pa_cl_vrs_cntl);
 }
@@ -3565,24 +3565,23 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
 
    /* Emit user SGPRs for dynamic patch control points. */
    uint32_t tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tcs, AC_UD_TCS_OFFCHIP_LAYOUT);
-   if (!tcs_offchip_layout_offset)
-      return;
+   if (tcs_offchip_layout_offset) {
+      unsigned tcs_offchip_layout =
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS, d->vk.ts.patch_control_points - 1) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP, tcs->info.tcs.tcs_vertices_out - 1) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
 
-   unsigned tcs_offchip_layout =
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS, d->vk.ts.patch_control_points - 1) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP, tcs->info.tcs.tcs_vertices_out - 1) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
-      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
+      radeon_set_sh_reg(cmd_buffer->cs, tcs_offchip_layout_offset, tcs_offchip_layout);
 
-   radeon_set_sh_reg(cmd_buffer->cs, tcs_offchip_layout_offset, tcs_offchip_layout);
+      tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
+      assert(tcs_offchip_layout_offset);
 
-   tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
-   assert(tcs_offchip_layout_offset);
-
-   radeon_set_sh_reg(cmd_buffer->cs, tcs_offchip_layout_offset, tcs_offchip_layout);
+      radeon_set_sh_reg(cmd_buffer->cs, tcs_offchip_layout_offset, tcs_offchip_layout);
+   }
 }
 
 static void
@@ -10404,10 +10403,8 @@ radv_emit_ngg_state(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.gfx_level >= GFX12) {
       const uint32_t ngg_query_buf_va_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGG_QUERY_BUF_VA);
-      if (!ngg_query_buf_va_offset)
-         return;
-
-      radeon_set_sh_reg(cmd_buffer->cs, ngg_query_buf_va_offset, cmd_buffer->state.shader_query_buf_va);
+      if (ngg_query_buf_va_offset)
+         radeon_set_sh_reg(cmd_buffer->cs, ngg_query_buf_va_offset, cmd_buffer->state.shader_query_buf_va);
    }
 }
 
@@ -13651,9 +13648,9 @@ radv_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanc
 
    if (pdev->info.gfx_level == GFX12) {
       /* DrawTransformFeedback requires 3 SQ_NON_EVENTs after the packet. */
-      for (unsigned i = 0; i < 3; i++) {
-         radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
-      }
+      radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
+      radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
+      radeon_event_write(cmd_buffer->cs, V_028A90_SQ_NON_EVENT);
    }
 
    radv_after_draw(cmd_buffer, false);
