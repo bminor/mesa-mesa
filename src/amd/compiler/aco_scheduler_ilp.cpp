@@ -214,6 +214,19 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
 }
 
 bool
+are_src_banks_compatible(const VOPDInfo& a, const VOPDInfo& b, bool swap)
+{
+   uint16_t a_src_banks = a.src_banks;
+   if (swap) {
+      uint16_t src0 = a.src_banks & 0xf;
+      uint16_t src1 = a.src_banks & 0xf0;
+      uint16_t src2 = a.src_banks & 0x300;
+      a_src_banks = (src0 << 4) | (src1 >> 4) | src2;
+   }
+   return (a_src_banks & b.src_banks) == 0;
+}
+
+bool
 is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b, bool* swap)
 {
    if ((!a.can_be_opx && !b.can_be_opx) || (a.is_dst_odd == b.is_dst_odd))
@@ -226,17 +239,16 @@ is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b, bool* swap)
    *swap = false;
 
    /* The rest is checking src VGPR bank compatibility. */
-   if ((a.src_banks & b.src_banks) == 0)
+   if (are_src_banks_compatible(a, b, false))
       return true;
 
+   /* The rest of this function checks if we can resolve the VGPR bank incompatibility by swapping
+    * the operands of one of the instructions.
+    */
    if (!a.is_commutative && !b.is_commutative)
       return false;
 
-   uint16_t src0 = a.src_banks & 0xf;
-   uint16_t src1 = a.src_banks & 0xf0;
-   uint16_t src2 = a.src_banks & 0x300;
-   uint16_t a_src_banks = (src0 << 4) | (src1 >> 4) | src2;
-   if ((a_src_banks & b.src_banks) != 0)
+   if (!are_src_banks_compatible(a, b, true))
       return false;
 
    /* If we have to turn v_mov_b32 into v_add_u32 but there is already an OPY-only instruction,
@@ -756,7 +768,7 @@ create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, bool prev_can_
    x_info.can_be_opx &= prev_can_be_opx;
 
    bool swap_x = false, swap_y = false;
-   if (x_info.src_banks & y_info.src_banks) {
+   if (!are_src_banks_compatible(x_info, y_info, false)) {
       assert(x_info.is_commutative || y_info.is_commutative);
       /* Avoid swapping v_mov_b32 because it will become an OPY-only opcode. */
       if (x_info.op == aco_opcode::v_dual_mov_b32 && !y_info.is_commutative) {
