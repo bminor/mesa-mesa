@@ -2394,7 +2394,7 @@
         "description": "nak: Fix a SM check for OpPCnt",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9bbc6920640b71503519e513ccb9ce528a16fb8f",
         "notes": null
