@@ -28,13 +28,6 @@ bool intel_nir_lower_patch_vertices_in(nir_shader *shader, unsigned input_vertic
 bool intel_nir_lower_shading_rate_output(nir_shader *nir);
 bool intel_nir_lower_sparse_intrinsics(nir_shader *nir);
 
-struct intel_nir_lower_texture_opts {
-   bool combined_lod_and_array_index;
-   bool combined_lod_or_bias_and_offset;
-};
-bool intel_nir_lower_texture(nir_shader *nir,
-                             const struct intel_nir_lower_texture_opts *opts);
-
 bool intel_nir_opt_peephole_ffma(nir_shader *shader);
 bool intel_nir_opt_peephole_imul32x16(nir_shader *shader);
 

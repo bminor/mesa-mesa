@@ -22,7 +22,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "intel_nir.h"
+#include "brw_nir.h"
 
 /**
  * Pack either the explicit LOD or LOD bias and the array index together.
@@ -163,12 +163,12 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
 }
 
 static bool
-intel_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
+brw_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    if (instr->type != nir_instr_type_tex)
       return false;
 
-   const struct intel_nir_lower_texture_opts *opts = cb_data;
+   const struct brw_nir_lower_texture_opts *opts = cb_data;
    nir_tex_instr *tex = nir_instr_as_tex(instr);
 
    switch (tex->op) {
@@ -195,11 +195,11 @@ intel_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
 }
 
 bool
-intel_nir_lower_texture(nir_shader *shader,
-                        const struct intel_nir_lower_texture_opts *opts)
+brw_nir_lower_texture(nir_shader *shader,
+                      const struct brw_nir_lower_texture_opts *opts)
 {
    return nir_shader_instructions_pass(shader,
-                                       intel_nir_lower_texture_instr,
+                                       brw_nir_lower_texture_instr,
                                        nir_metadata_none,
                                        (void *)opts);
 }
