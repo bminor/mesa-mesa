@@ -1527,8 +1527,7 @@ brw_opt_copy_propagation(brw_shader &s)
          assert((*iter)->dst.file == VGRF);
 
          brw_range block_range = ips.range(block);
-         brw_range vgrf_range{live.vgrf_start[(*iter)->dst.nr],
-                              live.vgrf_end[(*iter)->dst.nr]};
+         brw_range vgrf_range  = live.vgrf_range[(*iter)->dst.nr];
 
          if (block_range.contains(vgrf_range))
             out_acp[block->num].remove(*iter);

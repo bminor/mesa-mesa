@@ -272,12 +272,9 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
       end[i] = -1;
    }
 
-   vgrf_start = linear_alloc_array(lin_ctx, int, num_vgrfs);
-   vgrf_end = linear_alloc_array(lin_ctx, int, num_vgrfs);
-   for (int i = 0; i < num_vgrfs; i++) {
-      vgrf_start[i] = MAX_INSTRUCTION;
-      vgrf_end[i] = -1;
-   }
+   vgrf_range = linear_alloc_array(lin_ctx, brw_range, num_vgrfs);
+   for (int i = 0; i < num_vgrfs; i++)
+      vgrf_range[i] = { MAX_INSTRUCTION, -1 };
 
    block_data = linear_alloc_array(lin_ctx, struct block_data, cfg->num_blocks);
 
@@ -307,8 +304,7 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
    /* Merge the per-component live ranges to whole VGRF live ranges. */
    for (int i = 0; i < num_vars; i++) {
       const unsigned vgrf = vgrf_from_var[i];
-      vgrf_start[vgrf] = MIN2(vgrf_start[vgrf], start[i]);
-      vgrf_end[vgrf] = MAX2(vgrf_end[vgrf], end[i]);
+      vgrf_range[vgrf] = merge(vgrf_range[vgrf], { start[i], end[i] });
    }
 }
 
@@ -322,11 +318,9 @@ check_register_live_range(const brw_live_variables *live, int ip,
                           const brw_reg &reg, unsigned n)
 {
    const unsigned var = live->var_from_reg(reg);
-   const brw_range reg_range{ live->vgrf_start[reg.nr],
-                              live->vgrf_end[reg.nr] };
 
    if (var + n > unsigned(live->num_vars) ||
-       !reg_range.contains(ip))
+       !live->vgrf_range[reg.nr].contains(ip))
       return false;
 
    for (unsigned j = 0; j < n; j++) {
@@ -388,9 +382,6 @@ brw_live_variables::vgrfs_interfere(int a, int b) const
     *
     * Clip the ranges to cover this edge case.
     */
-   brw_range ra{vgrf_start[a], vgrf_end[a]};
-   brw_range rb{vgrf_start[b], vgrf_end[b]};
-
-   return overlaps(clip_end(ra, 1),
-                   clip_end(rb, 1));
+   return overlaps(clip_end(vgrf_range[a], 1),
+                   clip_end(vgrf_range[b], 1));
 }

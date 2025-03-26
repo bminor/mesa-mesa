@@ -484,8 +484,7 @@ public:
    /** @{
     * Final computed live ranges for each VGRF.
     */
-   int *vgrf_start;
-   int *vgrf_end;
+   brw_range *vgrf_range;
    /** @} */
 
    /** Per-basic-block information on live variables */

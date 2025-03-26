@@ -128,7 +128,8 @@ brw_register_pressure::brw_register_pressure(const brw_shader *v)
    regs_live_at_ip = new unsigned[num_instructions]();
 
    for (unsigned reg = 0; reg < v->alloc.count; reg++) {
-      for (int ip = live.vgrf_start[reg]; ip <= live.vgrf_end[reg]; ip++)
+      brw_range range = live.vgrf_range[reg];
+      for (int ip = range.start; ip <= range.end; ip++)
          regs_live_at_ip[ip] += v->alloc.sizes[reg];
    }
 

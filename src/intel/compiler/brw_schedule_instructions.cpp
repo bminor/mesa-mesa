@@ -857,7 +857,7 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
    for (int block = 0; block < cfg->num_blocks - 1; block++) {
       for (int i = 0; i < grf_count; i++) {
          const int block_end = ips.range(cfg->blocks[block]).end;
-         const brw_range vgrf_range{live.vgrf_start[i], live.vgrf_end[i]};
+         const brw_range vgrf_range = live.vgrf_range[i];
 
          if (vgrf_range.contains(block_end) &&
              vgrf_range.contains(block_end + 1)) {
