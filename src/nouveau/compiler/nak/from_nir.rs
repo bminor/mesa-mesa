@@ -3434,7 +3434,7 @@ impl<'a> ShaderFromNir<'a> {
             b.push_op(phi);
         }
 
-        if self.sm.sm() < 75 && nb.cf_node.prev().is_none() {
+        if self.sm.sm() < 70 && nb.cf_node.prev().is_none() {
             if let Some(_) = nb.parent().as_loop() {
                 b.push_op(OpPCnt {
                     target: self.get_block_label(nb),
