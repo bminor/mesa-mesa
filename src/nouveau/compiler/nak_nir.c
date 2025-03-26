@@ -1073,7 +1073,7 @@ nak_postprocess_nir(nir_shader *nir,
 
    bool lcssa_progress = nir_convert_to_lcssa(nir, false, false);
 
-   if (nak->sm >= 75) {
+   if (nak->sm >= 73) {
       if (lcssa_progress) {
          OPT(nir, nak_nir_mark_lcssa_invariants);
       }

@@ -110,7 +110,7 @@ impl ShaderProgramHeader {
             SPHV3_T1_SPH_TYPE_TYPE_01_VTG
         };
 
-        let sph_version = if sm >= 75 { 4 } else { 3 };
+        let sph_version = if sm >= 73 { 4 } else { 3 };
         res.set_sph_type(sph_type, sph_version);
         res.set_shader_type(shader_type);
 

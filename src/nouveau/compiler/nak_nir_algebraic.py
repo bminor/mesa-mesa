@@ -30,7 +30,7 @@ c = 'c'
 s = 's'
 
 # common conditions to improve readability
-volta = 'nak->sm >= 70 && nak->sm < 75'
+volta = 'nak->sm >= 70 && nak->sm < 73'
 
 algebraic_lowering = [
     # Volta doesn't have `IMNMX`

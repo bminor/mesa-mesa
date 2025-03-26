@@ -22,7 +22,7 @@ impl ShaderModel70 {
     }
 
     fn has_uniform_alu(&self) -> bool {
-        self.sm >= 75
+        self.sm >= 73
     }
 }
 
@@ -161,7 +161,7 @@ impl SM70Encoder<'_> {
     }
 
     fn set_ureg(&mut self, range: Range<usize>, reg: RegRef) {
-        assert!(self.sm.sm >= 75);
+        assert!(self.sm.sm >= 73);
         assert!(range.len() == 8);
         assert!(reg.file() == RegFile::UGPR);
         assert!(reg.base_idx() <= 63);
