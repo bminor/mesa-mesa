@@ -60,6 +60,7 @@
 #include "pan_shader.h"
 #include "pan_texture.h"
 #include "pan_util.h"
+#include "pan_desc.h"
 
 /* JOBX() is used to select the job backend helpers to call from generic
  * functions. */
@@ -104,23 +105,6 @@ static_assert((int)PIPE_FUNC_GREATER == MALI_FUNC_GREATER, "must match");
 static_assert((int)PIPE_FUNC_NOTEQUAL == MALI_FUNC_NOT_EQUAL, "must match");
 static_assert((int)PIPE_FUNC_GEQUAL == MALI_FUNC_GEQUAL, "must match");
 static_assert((int)PIPE_FUNC_ALWAYS == MALI_FUNC_ALWAYS, "must match");
-
-static inline enum mali_sample_pattern
-panfrost_sample_pattern(unsigned samples)
-{
-   switch (samples) {
-   case 1:
-      return MALI_SAMPLE_PATTERN_SINGLE_SAMPLED;
-   case 4:
-      return MALI_SAMPLE_PATTERN_ROTATED_4X_GRID;
-   case 8:
-      return MALI_SAMPLE_PATTERN_D3D_8X_GRID;
-   case 16:
-      return MALI_SAMPLE_PATTERN_D3D_16X_GRID;
-   default:
-      unreachable("Unsupported sample count");
-   }
-}
 
 static unsigned
 translate_tex_wrap(enum pipe_tex_wrap w, bool using_nearest)
@@ -1243,7 +1227,7 @@ panfrost_upload_sample_positions_sysval(struct panfrost_batch *batch,
    unsigned samples = util_framebuffer_get_num_samples(&batch->key);
    uniform->du[0] =
       dev->sample_positions->ptr.gpu +
-      panfrost_sample_positions_offset(panfrost_sample_pattern(samples));
+      panfrost_sample_positions_offset(pan_sample_pattern(samples));
 }
 
 static void
