@@ -3410,7 +3410,7 @@ impl<'a> ShaderFromNir<'a> {
             }
 
             let uniform = !nb.divergent
-                && self.sm.sm() >= 75
+                && self.sm.num_regs(RegFile::UGPR) > 0
                 && !DEBUG.no_ugpr()
                 && !np.def.divergent;
 
@@ -3459,7 +3459,7 @@ impl<'a> ShaderFromNir<'a> {
             }
 
             let uniform = !nb.divergent
-                && self.sm.sm() >= 75
+                && self.sm.num_regs(RegFile::UGPR) > 0
                 && !DEBUG.no_ugpr()
                 && ni.def().is_some_and(|d| !d.divergent);
             let mut b = UniformBuilder::new(&mut b, uniform);
