@@ -69,10 +69,11 @@ radv_vcn_sq_header(struct radeon_cmdbuf *cs, struct rvcn_sq_var *sq, unsigned ty
       /* vcn ib signature */
       radeon_emit(cs, RADEON_VCN_SIGNATURE_SIZE);
       radeon_emit(cs, RADEON_VCN_SIGNATURE);
-      sq->signature_ib_checksum = &cs->buf[cs->cdw];
       radeon_emit(cs, 0);
-      sq->signature_ib_total_size_in_dw = &cs->buf[cs->cdw];
       radeon_emit(cs, 0);
+
+      sq->signature_ib_checksum = &cs->buf[cs->cdw - 2];
+      sq->signature_ib_total_size_in_dw = &cs->buf[cs->cdw - 1];
    } else {
       sq->signature_ib_checksum = NULL;
       sq->signature_ib_total_size_in_dw = NULL;
@@ -82,8 +83,9 @@ radv_vcn_sq_header(struct radeon_cmdbuf *cs, struct rvcn_sq_var *sq, unsigned ty
    radeon_emit(cs, RADEON_VCN_ENGINE_INFO_SIZE);
    radeon_emit(cs, RADEON_VCN_ENGINE_INFO);
    radeon_emit(cs, type);
-   sq->engine_ib_size_of_packages = &cs->buf[cs->cdw];
    radeon_emit(cs, 0);
+
+   sq->engine_ib_size_of_packages = &cs->buf[cs->cdw - 1];
 }
 
 void
