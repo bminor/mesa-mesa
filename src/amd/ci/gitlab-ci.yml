@@ -169,27 +169,6 @@ radeonsi-raven-vaapi-fluster:
     B2C_TIMEOUT_OVERALL_MINUTES: 710
     B2C_TIMEOUT_BOOT_RETRIES: 0
 
-# Disabled for now due to Igalia farm issues.
-.vkcts-stoney-valve:
-  extends:
-    - .vkcts-test-valve
-    - .radv-valve-manual-rules
-  parallel: 2
-  # The thin clients can't manage a full run in less than an hour
-  # currently.  Interpolation suggests four more thin clients (6
-  # total) would get the runtime under 15 minutes.
-  timeout: 4h 10m
-  variables:
-    GPU_VERSION: radv-stoney
-    # Note, it only has a wee 32g disk!
-    B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=8g'
-    B2C_TIMEOUT_BOOT_MINUTES: 240
-    B2C_TIMEOUT_OVERALL_MINUTES: 240
-    B2C_TIMEOUT_BOOT_RETRIES: 0
-  tags:
-    - farm:$RUNNER_FARM_LOCATION
-    - amdgpu:codename:STONEY
-
 vkcts-tahiti-valve:
   extends:
     - .vkcts-test-valve
