@@ -908,7 +908,6 @@
     <value name="Ordered 4x Grid" value="1"/>
     <value name="Rotated 4x Grid" value="2"/>
     <value name="D3D 8x Grid" value="3"/>
-    <value name="D3D 16x Grid" value="4"/>
   </enum>
 
   <struct name="Job Header" align="64">

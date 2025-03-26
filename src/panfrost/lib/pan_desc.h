@@ -247,8 +247,10 @@ pan_sample_pattern(unsigned samples)
       return MALI_SAMPLE_PATTERN_ROTATED_4X_GRID;
    case 8:
       return MALI_SAMPLE_PATTERN_D3D_8X_GRID;
+#if PAN_ARCH >= 5
    case 16:
       return MALI_SAMPLE_PATTERN_D3D_16X_GRID;
+#endif
    default:
       unreachable("Unsupported sample count");
    }
