@@ -284,8 +284,7 @@ public:
    bool assign_regs(bool allow_spilling, bool spill_all);
 
 private:
-   void setup_live_interference(unsigned node,
-                                int node_start_ip, int node_end_ip);
+   void setup_live_interference(unsigned node, brw_range ip_range);
    void setup_inst_interference(const brw_inst *inst);
 
    void build_interference_graph(bool allow_spilling);
@@ -369,8 +368,7 @@ namespace {
 }
 
 void
-brw_reg_alloc::setup_live_interference(unsigned node,
-                                      int node_start_ip, int node_end_ip)
+brw_reg_alloc::setup_live_interference(unsigned node, brw_range ip_range)
 {
    /* Mark any virtual grf that is live between the start of the program and
     * the last use of a payload node interfering with that payload node.
@@ -383,9 +381,11 @@ brw_reg_alloc::setup_live_interference(unsigned node,
        * in order to not have to worry about the uniform issue described in
        * calculate_live_intervals().
        */
-      if (node_start_ip <= payload_last_use_ip[i])
+      if (ip_range.start <= payload_last_use_ip[i])
          ra_add_node_interference(g, node, first_payload_node + i);
    }
+
+   const brw_range clipped_ip_range = clip_end(ip_range, 1);
 
    /* Add interference with every vgrf whose live range intersects this
     * node's.  We only need to look at nodes below this one as the reflexivity
@@ -394,8 +394,14 @@ brw_reg_alloc::setup_live_interference(unsigned node,
    for (unsigned n2 = first_vgrf_node;
         n2 <= (unsigned)last_vgrf_node && n2 < node; n2++) {
       unsigned vgrf = n2 - first_vgrf_node;
-      if (!(node_end_ip <= live.vgrf_start[vgrf] ||
-            live.vgrf_end[vgrf] <= node_start_ip))
+
+      /* Clip the ranges so the end of a live range can overlap with
+       * the start of another live range.  See details in vgrfs_interfere().
+       */
+      brw_range vgrf_range { live.vgrf_start[vgrf],
+                             live.vgrf_end[vgrf] };
+      if (overlaps(clip_end(vgrf_range, 1),
+                   clipped_ip_range))
          ra_add_node_interference(g, node, n2);
    }
 }
@@ -663,9 +669,9 @@ brw_reg_alloc::build_interference_graph(bool allow_spilling)
 
    /* Add interference based on the live range of the register */
    for (unsigned i = 0; i < fs->alloc.count; i++) {
-      setup_live_interference(first_vgrf_node + i,
-                              live.vgrf_start[i],
-                              live.vgrf_end[i]);
+      brw_range vgrf_range{ live.vgrf_start[i],
+                            live.vgrf_end[i] };
+      setup_live_interference(first_vgrf_node + i, vgrf_range);
    }
 
    /* Add interference based on the instructions in which a register is used.
@@ -1085,7 +1091,8 @@ brw_reg_alloc::alloc_spill_reg(unsigned size, int ip)
    assert(n == first_vgrf_node + vgrf);
    assert(n == first_spill_node + spill_node_count);
 
-   setup_live_interference(n, ip - 1, ip + 1);
+   brw_range spill_reg_range{ ip - 1, ip + 1 };
+   setup_live_interference(n, spill_reg_range);
 
    /* Add interference between this spill node and any other spill nodes for
     * the same instruction.

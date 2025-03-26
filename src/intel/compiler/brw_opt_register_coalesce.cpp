@@ -105,24 +105,22 @@ can_coalesce_vars(const intel_device_info *devinfo,
    if (!live.vars_interfere(src_var, dst_var))
       return true;
 
-   int dst_start = live.start[dst_var];
-   int dst_end = live.end[dst_var];
-   int src_start = live.start[src_var];
-   int src_end = live.end[src_var];
+   brw_range dst_range{ live.start[dst_var], live.end[dst_var] };
+   brw_range src_range{ live.start[src_var], live.end[src_var] };
 
-   /* Variables interfere and one line range isn't a subset of the other. */
-   if ((dst_end > src_end && src_start < dst_start) ||
-       (src_end > dst_end && dst_start < src_start))
+   /* Variables interfere and one live range isn't a subset of the other. */
+   if (!dst_range.contains(src_range) &&
+       !src_range.contains(dst_range))
       return false;
 
    /* Check for a write to either register in the intersection of their live
     * ranges.
     */
-   int start_ip = MAX2(dst_start, src_start);
-   int end_ip = MIN2(dst_end, src_end);
+   brw_range intersection = intersect(dst_range, src_range);
+   assert(!intersection.is_empty());
 
    foreach_block(scan_block, cfg) {
-      if (ips.range(scan_block).end < start_ip)
+      if (ips.range(scan_block).end < intersection.start)
          continue;
 
       int scan_ip = ips.range(scan_block).start - 1;
@@ -133,7 +131,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
          scan_ip++;
 
          /* Ignore anything before the intersection of the live ranges */
-         if (scan_ip < start_ip)
+         if (scan_ip < intersection.start)
             continue;
 
          /* Ignore the copying instruction itself */
@@ -142,7 +140,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
             continue;
          }
 
-         if (scan_ip > end_ip)
+         if (scan_ip > intersection.end)
             return true; /* registers do not interfere */
 
          if (seen_src_write && !seen_copy) {

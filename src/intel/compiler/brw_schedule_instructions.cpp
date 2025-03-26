@@ -856,11 +856,11 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
     */
    for (int block = 0; block < cfg->num_blocks - 1; block++) {
       for (int i = 0; i < grf_count; i++) {
-         const int this_block_end = ips.range(cfg->blocks[block]).end;
-         const int next_block_start = ips.range(cfg->blocks[block + 1]).start;
+         const int block_end = ips.range(cfg->blocks[block]).end;
+         const brw_range vgrf_range{live.vgrf_start[i], live.vgrf_end[i]};
 
-         if (live.vgrf_start[i] <= this_block_end &&
-             live.vgrf_end[i] >= next_block_start) {
+         if (vgrf_range.contains(block_end) &&
+             vgrf_range.contains(block_end + 1)) {
             if (!BITSET_TEST(livein[block + 1], i)) {
                 reg_pressure_in[block + 1] += s->alloc.sizes[i];
                 BITSET_SET(livein[block + 1], i);

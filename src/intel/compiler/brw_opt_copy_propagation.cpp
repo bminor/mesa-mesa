@@ -1525,11 +1525,13 @@ brw_opt_copy_propagation(brw_shader &s)
       for (auto iter = out_acp[block->num].begin();
            iter != out_acp[block->num].end(); ++iter) {
          assert((*iter)->dst.file == VGRF);
+
          brw_range block_range = ips.range(block);
-         if (block_range.start <= live.vgrf_start[(*iter)->dst.nr] &&
-             live.vgrf_end[(*iter)->dst.nr] <= block_range.end) {
+         brw_range vgrf_range{live.vgrf_start[(*iter)->dst.nr],
+                              live.vgrf_end[(*iter)->dst.nr]};
+
+         if (block_range.contains(vgrf_range))
             out_acp[block->num].remove(*iter);
-         }
       }
    }
 

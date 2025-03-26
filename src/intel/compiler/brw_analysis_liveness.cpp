@@ -106,9 +106,9 @@ brw_live_variables::setup_def_use()
    foreach_block (block, cfg) {
       struct block_data *bd = &block_data[block->num];
 
-      assert(ip == bd->start_ip);
+      assert(ip == bd->ip_range.start);
       if (block->num > 0)
-         assert(block_data[block->num - 1].end_ip == ip - 1);
+         assert(block_data[block->num - 1].ip_range.end == ip - 1);
 
       foreach_inst_in_block(brw_inst, inst, block) {
          /* Set use[] for this instruction */
@@ -233,13 +233,13 @@ brw_live_variables::compute_start_end()
       unsigned i;
 
       BITSET_FOREACH_SET(i, bd->livein, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], bd->start_ip);
-         end[i] = MAX2(end[i], bd->start_ip);
+         start[i] = MIN2(start[i], bd->ip_range.start);
+         end[i] = MAX2(end[i], bd->ip_range.start);
       }
 
       BITSET_FOREACH_SET(i, bd->liveout, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], bd->end_ip);
-         end[i] = MAX2(end[i], bd->end_ip);
+         start[i] = MIN2(start[i], bd->ip_range.end);
+         end[i] = MAX2(end[i], bd->ip_range.end);
       }
    }
 }
@@ -297,12 +297,8 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
    }
 
    const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
-   for (int i = 0; i < cfg->num_blocks; i++) {
-      brw_range range = ips.range(cfg->blocks[i]);
-
-      block_data[i].start_ip = range.start;
-      block_data[i].end_ip   = range.end;
-   }
+   for (int i = 0; i < cfg->num_blocks; i++)
+      block_data[i].ip_range = ips.range(cfg->blocks[i]);
 
    setup_def_use();
    compute_live_variables();
@@ -326,13 +322,17 @@ check_register_live_range(const brw_live_variables *live, int ip,
                           const brw_reg &reg, unsigned n)
 {
    const unsigned var = live->var_from_reg(reg);
+   const brw_range reg_range{ live->vgrf_start[reg.nr],
+                              live->vgrf_end[reg.nr] };
 
    if (var + n > unsigned(live->num_vars) ||
-       live->vgrf_start[reg.nr] > ip || live->vgrf_end[reg.nr] < ip)
+       !reg_range.contains(ip))
       return false;
 
    for (unsigned j = 0; j < n; j++) {
-      if (live->start[var + j] > ip || live->end[var + j] < ip)
+      const brw_range var_range{ live->start[var + j],
+                                 live->end[var + j] };
+      if (!var_range.contains(ip))
          return false;
    }
 
@@ -365,13 +365,32 @@ brw_live_variables::validate(const brw_shader *s) const
 bool
 brw_live_variables::vars_interfere(int a, int b) const
 {
-   return !(end[b] <= start[a] ||
-            end[a] <= start[b]);
+   /* Clip the ranges so the end of a live range can overlap with
+    * the start of another live range.  See details in vgrfs_interfere().
+    */
+   brw_range ra{start[a], end[a]};
+   brw_range rb{start[b], end[b]};
+
+   return overlaps(clip_end(ra, 1),
+                   clip_end(rb, 1));
 }
 
 bool
 brw_live_variables::vgrfs_interfere(int a, int b) const
 {
-   return !(vgrf_end[a] <= vgrf_start[b] ||
-            vgrf_end[b] <= vgrf_start[a]);
+   /* The live ranges are constructed such that at the start
+    * of the range there's a WRITE to the VGRF and at the
+    * end of the range there's a READ of the VGRF.
+    *
+    * Two VGRFs will not interfere if the same IP has both
+    * the READ at the end for one and the WRITE at the start
+    * for the other.
+    *
+    * Clip the ranges to cover this edge case.
+    */
+   brw_range ra{vgrf_start[a], vgrf_end[a]};
+   brw_range rb{vgrf_start[b], vgrf_end[b]};
+
+   return overlaps(clip_end(ra, 1),
+                   clip_end(rb, 1));
 }
