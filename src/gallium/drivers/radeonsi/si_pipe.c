@@ -828,10 +828,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
    }
 
    if (sctx->gfx_level == GFX7) {
-      /* Clear the NULL constant buffer, because loads should return zeros.
-       * Note that this forces CP DMA to be used, because clover deadlocks
-       * for some reason when the compute codepath is used.
-       */
+      /* Clear the NULL constant buffer, because loads should return zeros. */
       uint32_t clear_value = 0;
       si_cp_dma_clear_buffer(sctx, &sctx->gfx_cs, sctx->null_const_buf.buffer, 0,
                              sctx->null_const_buf.buffer->width0, clear_value);

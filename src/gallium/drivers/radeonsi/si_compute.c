@@ -5,7 +5,6 @@
  */
 
 #include "ac_rtld.h"
-#include "amd_kernel_code_t.h"
 #include "nir/tgsi_to_nir.h"
 #include "si_build_pm4.h"
 #include "si_shader_internal.h"
@@ -20,71 +19,6 @@
       if ((sscreen->debug_flags & DBG(COMPUTE)))                                                   \
          fprintf(stderr, fmt, ##args);                                                             \
    } while (0);
-
-struct dispatch_packet {
-   uint16_t header;
-   uint16_t setup;
-   uint16_t workgroup_size_x;
-   uint16_t workgroup_size_y;
-   uint16_t workgroup_size_z;
-   uint16_t reserved0;
-   uint32_t grid_size_x;
-   uint32_t grid_size_y;
-   uint32_t grid_size_z;
-   uint32_t group_segment_size;
-   uint64_t kernel_object;
-   uint64_t kernarg_address;
-   uint64_t reserved2;
-};
-
-static const amd_kernel_code_t *si_compute_get_code_object(const struct si_compute *program,
-                                                           uint64_t symbol_offset)
-{
-   const struct si_shader_selector *sel = &program->sel;
-
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE)
-      return NULL;
-
-   struct ac_rtld_binary rtld;
-   if (!ac_rtld_open(&rtld,
-                     (struct ac_rtld_open_info){.info = &sel->screen->info,
-                                                .shader_type = MESA_SHADER_COMPUTE,
-                                                .num_parts = 1,
-                                                .elf_ptrs = &program->shader.binary.code_buffer,
-                                                .elf_sizes = &program->shader.binary.code_size}))
-      return NULL;
-
-   const amd_kernel_code_t *result = NULL;
-   const char *text;
-   size_t size;
-   if (!ac_rtld_get_section_by_name(&rtld, ".text", &text, &size))
-      goto out;
-
-   if (symbol_offset + sizeof(amd_kernel_code_t) > size)
-      goto out;
-
-   result = (const amd_kernel_code_t *)(text + symbol_offset);
-
-out:
-   ac_rtld_close(&rtld);
-   return result;
-}
-
-static void code_object_to_config(const amd_kernel_code_t *code_object,
-                                  struct ac_shader_config *out_config)
-{
-
-   uint32_t rsrc1 = code_object->compute_pgm_resource_registers;
-   uint32_t rsrc2 = code_object->compute_pgm_resource_registers >> 32;
-   out_config->num_sgprs = code_object->wavefront_sgpr_count;
-   out_config->num_vgprs = code_object->workitem_vgpr_count;
-   out_config->float_mode = G_00B028_FLOAT_MODE(rsrc1);
-   out_config->rsrc1 = rsrc1;
-   out_config->lds_size = MAX2(out_config->lds_size, G_00B84C_LDS_SIZE(rsrc2));
-   out_config->rsrc2 = rsrc2;
-   out_config->scratch_bytes_per_wave =
-      align(code_object->workitem_private_segment_byte_size * 64, 1024);
-}
 
 /* Asynchronous compute shader compilation. */
 static void si_create_compute_state_async(void *job, void *gdata, int thread_index)
@@ -101,7 +35,6 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    assert(thread_index < ARRAY_SIZE(sscreen->compiler));
    compiler = &sscreen->compiler[thread_index];
 
-   assert(program->ir_type == PIPE_SHADER_IR_NIR);
    si_nir_scan_shader(sscreen, sel->nir, &sel->info, false);
 
    if (!sel->nir->info.use_aco_amd && !*compiler)
@@ -223,6 +156,10 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_screen *sscreen = (struct si_screen *)ctx->screen;
+
+   if (cso->ir_type == PIPE_SHADER_IR_NATIVE)
+      return NULL;
+
    struct si_compute *program = CALLOC_STRUCT(si_compute);
    struct si_shader_selector *sel = &program->sel;
 
@@ -236,61 +173,25 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
       si_sampler_and_image_descriptors_idx(PIPE_SHADER_COMPUTE);
    sel->info.base.shared_size = cso->static_shared_mem;
    program->shader.selector = &program->sel;
-   program->ir_type = cso->ir_type;
-   program->input_size = cso->req_input_mem;
 
-   if (cso->ir_type != PIPE_SHADER_IR_NATIVE) {
-      if (cso->ir_type == PIPE_SHADER_IR_TGSI) {
-         program->ir_type = PIPE_SHADER_IR_NIR;
-         sel->nir = tgsi_to_nir(cso->prog, ctx->screen, true);
-      } else {
-         assert(cso->ir_type == PIPE_SHADER_IR_NIR);
-         sel->nir = (struct nir_shader *)cso->prog;
-      }
-
-      sel->nir->info.shared_size = cso->static_shared_mem;
-
-      if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
-         nir_print_shader(sel->nir, stderr);
-
-      sel->compiler_ctx_state.debug = sctx->debug;
-      sel->compiler_ctx_state.is_debug_context = sctx->is_debug;
-      p_atomic_inc(&sscreen->num_shaders_created);
-
-      si_schedule_initial_compile(sctx, MESA_SHADER_COMPUTE, &sel->ready, &sel->compiler_ctx_state,
-                                  program, si_create_compute_state_async);
+   if (cso->ir_type == PIPE_SHADER_IR_TGSI) {
+      sel->nir = tgsi_to_nir(cso->prog, ctx->screen, true);
    } else {
-      const struct pipe_binary_program_header *header;
-      header = cso->prog;
-
-      program->shader.binary.type = SI_SHADER_BINARY_ELF;
-      program->shader.binary.code_size = header->num_bytes;
-      program->shader.binary.code_buffer = malloc(header->num_bytes);
-      if (!program->shader.binary.code_buffer) {
-         FREE(program);
-         return NULL;
-      }
-      memcpy((void *)program->shader.binary.code_buffer, header->blob, header->num_bytes);
-
-      const amd_kernel_code_t *code_object = si_compute_get_code_object(program, 0);
-      code_object_to_config(code_object, &program->shader.config);
-
-      if (AMD_HSA_BITS_GET(code_object->code_properties, AMD_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32))
-         program->shader.wave_size = 32;
-      else
-         program->shader.wave_size = 64;
-
-      bool ok = si_shader_binary_upload(sctx->screen, &program->shader, 0);
-      si_shader_dump(sctx->screen, &program->shader, &sctx->debug, stderr, true);
-
-      if (!ok) {
-         fprintf(stderr, "LLVM failed to upload shader\n");
-         free((void *)program->shader.binary.code_buffer);
-         FREE(program);
-         return NULL;
-      }
+      assert(cso->ir_type == PIPE_SHADER_IR_NIR);
+      sel->nir = (struct nir_shader *)cso->prog;
    }
 
+   sel->nir->info.shared_size = cso->static_shared_mem;
+
+   if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
+      nir_print_shader(sel->nir, stderr);
+
+   sel->compiler_ctx_state.debug = sctx->debug;
+   sel->compiler_ctx_state.is_debug_context = sctx->is_debug;
+   p_atomic_inc(&sscreen->num_shaders_created);
+
+   si_schedule_initial_compile(sctx, MESA_SHADER_COMPUTE, &sel->ready, &sel->compiler_ctx_state,
+                               program, si_create_compute_state_async);
    return program;
 }
 
@@ -299,8 +200,6 @@ static void si_get_compute_state_info(struct pipe_context *ctx, void *state,
 {
    struct si_compute *program = (struct si_compute *)state;
    struct si_shader_selector *sel = &program->sel;
-
-   assert(program->ir_type != PIPE_SHADER_IR_NATIVE);
 
    /* Wait because we need the compilation to finish first */
    util_queue_fence_wait(&sel->ready);
@@ -323,8 +222,7 @@ static void si_bind_compute_state(struct pipe_context *ctx, void *state)
       return;
 
    /* Wait because we need active slot usage masks. */
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE)
-      util_queue_fence_wait(&sel->ready);
+   util_queue_fence_wait(&sel->ready);
 
    si_set_active_descriptors(sctx,
                              SI_DESCS_FIRST_COMPUTE + SI_SHADER_DESCS_CONST_AND_SHADER_BUFFERS,
@@ -434,51 +332,29 @@ static bool si_setup_compute_scratch_buffer(struct si_context *sctx, struct si_s
 }
 
 static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute *program,
-                                     struct si_shader *shader, const amd_kernel_code_t *code_object,
-                                     unsigned offset, bool *prefetch, unsigned variable_shared_size)
+                                     struct si_shader *shader, unsigned offset, bool *prefetch,
+                                     unsigned variable_shared_size)
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
-   struct ac_shader_config inline_config = {0};
-   const struct ac_shader_config *config;
+   const struct ac_shader_config *config = &shader->config;
    unsigned rsrc2;
-   uint64_t shader_va;
    unsigned stage = shader->selector->info.base.stage;
 
    *prefetch = false;
 
-   assert(variable_shared_size == 0 || stage == MESA_SHADER_KERNEL || program->ir_type == PIPE_SHADER_IR_NATIVE);
+   assert(variable_shared_size == 0 || stage == MESA_SHADER_KERNEL);
    if (sctx->cs_shader_state.emitted_program == program && sctx->cs_shader_state.offset == offset &&
        sctx->cs_shader_state.variable_shared_size == variable_shared_size)
       return true;
 
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE) {
-      config = &shader->config;
-   } else {
-      code_object_to_config(code_object, &inline_config);
-      config = &inline_config;
-   }
    /* copy rsrc2 so we don't have to change it inside the si_shader object */
    rsrc2 = config->rsrc2;
 
    /* only do this for OpenCL */
-   if (program->ir_type == PIPE_SHADER_IR_NATIVE || stage == MESA_SHADER_KERNEL) {
+   if (stage == MESA_SHADER_KERNEL) {
       unsigned shared_size = program->sel.info.base.shared_size + variable_shared_size;
-      unsigned lds_blocks;
+      unsigned lds_blocks = 0;
 
-      /* Clover uses the compute API differently than other frontends and expects drivers to parse
-       * the shared_size out of the shader headers.
-       */
-      if (program->ir_type == PIPE_SHADER_IR_NATIVE) {
-         lds_blocks = config->lds_size;
-      } else {
-         lds_blocks = 0;
-      }
-
-      /* XXX: We are over allocating LDS.  For GFX6, the shader reports
-       * LDS in blocks of 256 bytes, so if there are 4 bytes lds
-       * allocated in the shader and 4 bytes allocated by the state
-       * tracker, then we will set LDS_SIZE to 512 bytes rather than 256.
-       */
       if (sctx->gfx_level <= GFX6) {
          lds_blocks += align(shared_size, 256) >> 8;
       } else {
@@ -516,12 +392,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
                                 RADEON_USAGE_READWRITE | RADEON_PRIO_SCRATCH_BUFFER);
    }
 
-   shader_va = shader->bo->gpu_address + offset;
-   if (program->ir_type == PIPE_SHADER_IR_NATIVE) {
-      /* Shader code is placed after the amd_kernel_code_t
-       * struct. */
-      shader_va += sizeof(amd_kernel_code_t);
-   }
+   uint64_t shader_va = shader->bo->gpu_address + offset;
 
    radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, shader->bo,
                              RADEON_USAGE_READ | RADEON_PRIO_SHADER_BINARY);
@@ -601,165 +472,6 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    sctx->cs_shader_state.variable_shared_size = variable_shared_size;
 
    *prefetch = true;
-   return true;
-}
-
-static void setup_scratch_rsrc_user_sgprs(struct si_context *sctx,
-                                          const amd_kernel_code_t *code_object, unsigned user_sgpr)
-{
-   struct radeon_cmdbuf *cs = &sctx->gfx_cs;
-   uint64_t scratch_va = sctx->compute_scratch_buffer->gpu_address;
-
-   unsigned max_private_element_size =
-      AMD_HSA_BITS_GET(code_object->code_properties, AMD_CODE_PROPERTY_PRIVATE_ELEMENT_SIZE);
-
-   uint32_t scratch_dword0 = scratch_va & 0xffffffff;
-   uint32_t scratch_dword1 = S_008F04_BASE_ADDRESS_HI(scratch_va >> 32);
-
-   if (sctx->gfx_level >= GFX11)
-      scratch_dword1 |= S_008F04_SWIZZLE_ENABLE_GFX11(1);
-   else
-      scratch_dword1 |= S_008F04_SWIZZLE_ENABLE_GFX6(1);
-
-   /* Disable address clamping */
-   uint32_t scratch_dword2 = 0xffffffff;
-   uint32_t index_stride = sctx->cs_shader_state.program->shader.wave_size == 32 ? 2 : 3;
-   uint32_t scratch_dword3 = S_008F0C_INDEX_STRIDE(index_stride) | S_008F0C_ADD_TID_ENABLE(1);
-
-   if (sctx->gfx_level >= GFX9) {
-      assert(max_private_element_size == 1); /* only 4 bytes on GFX9 */
-   } else {
-      scratch_dword3 |= S_008F0C_ELEMENT_SIZE(max_private_element_size);
-
-      if (sctx->gfx_level < GFX8) {
-         /* BUF_DATA_FORMAT is ignored, but it cannot be
-          * BUF_DATA_FORMAT_INVALID. */
-         scratch_dword3 |= S_008F0C_DATA_FORMAT(V_008F0C_BUF_DATA_FORMAT_8);
-      }
-   }
-
-   radeon_begin(cs);
-   radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 + (user_sgpr * 4), 4);
-   radeon_emit(scratch_dword0);
-   radeon_emit(scratch_dword1);
-   radeon_emit(scratch_dword2);
-   radeon_emit(scratch_dword3);
-   radeon_end();
-}
-
-static void si_setup_user_sgprs_co_v2(struct si_context *sctx, const amd_kernel_code_t *code_object,
-                                      const struct pipe_grid_info *info, uint64_t kernel_args_va)
-{
-   struct si_compute *program = sctx->cs_shader_state.program;
-   struct radeon_cmdbuf *cs = &sctx->gfx_cs;
-
-   static const enum amd_code_property_mask_t workgroup_count_masks[] = {
-      AMD_CODE_PROPERTY_ENABLE_SGPR_GRID_WORKGROUP_COUNT_X,
-      AMD_CODE_PROPERTY_ENABLE_SGPR_GRID_WORKGROUP_COUNT_Y,
-      AMD_CODE_PROPERTY_ENABLE_SGPR_GRID_WORKGROUP_COUNT_Z};
-
-   unsigned i, user_sgpr = 0;
-   if (AMD_HSA_BITS_GET(code_object->code_properties,
-                        AMD_CODE_PROPERTY_ENABLE_SGPR_PRIVATE_SEGMENT_BUFFER)) {
-      if (code_object->workitem_private_segment_byte_size > 0) {
-         setup_scratch_rsrc_user_sgprs(sctx, code_object, user_sgpr);
-      }
-      user_sgpr += 4;
-   }
-
-   radeon_begin(cs);
-
-   if (AMD_HSA_BITS_GET(code_object->code_properties, AMD_CODE_PROPERTY_ENABLE_SGPR_DISPATCH_PTR)) {
-      struct dispatch_packet dispatch;
-      unsigned dispatch_offset;
-      struct si_resource *dispatch_buf = NULL;
-      uint64_t dispatch_va;
-
-      /* Upload dispatch ptr */
-      memset(&dispatch, 0, sizeof(dispatch));
-
-      dispatch.workgroup_size_x = util_cpu_to_le16(info->block[0]);
-      dispatch.workgroup_size_y = util_cpu_to_le16(info->block[1]);
-      dispatch.workgroup_size_z = util_cpu_to_le16(info->block[2]);
-
-      dispatch.grid_size_x = util_cpu_to_le32(info->grid[0] * info->block[0]);
-      dispatch.grid_size_y = util_cpu_to_le32(info->grid[1] * info->block[1]);
-      dispatch.grid_size_z = util_cpu_to_le32(info->grid[2] * info->block[2]);
-
-      dispatch.group_segment_size =
-         util_cpu_to_le32(program->sel.info.base.shared_size + info->variable_shared_mem);
-
-      dispatch.kernarg_address = util_cpu_to_le64(kernel_args_va);
-
-      u_upload_data(sctx->b.const_uploader, 0, sizeof(dispatch), 256, &dispatch, &dispatch_offset,
-                    (struct pipe_resource **)&dispatch_buf);
-
-      if (!dispatch_buf) {
-         fprintf(stderr, "Error: Failed to allocate dispatch "
-                         "packet.");
-      }
-      radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, dispatch_buf,
-                                RADEON_USAGE_READ | RADEON_PRIO_CONST_BUFFER);
-
-      dispatch_va = dispatch_buf->gpu_address + dispatch_offset;
-
-      radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 + (user_sgpr * 4), 2);
-      radeon_emit(dispatch_va);
-      radeon_emit(S_008F04_BASE_ADDRESS_HI(dispatch_va >> 32) | S_008F04_STRIDE(0));
-
-      si_resource_reference(&dispatch_buf, NULL);
-      user_sgpr += 2;
-   }
-
-   if (AMD_HSA_BITS_GET(code_object->code_properties,
-                        AMD_CODE_PROPERTY_ENABLE_SGPR_KERNARG_SEGMENT_PTR)) {
-      radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 + (user_sgpr * 4), 2);
-      radeon_emit(kernel_args_va);
-      radeon_emit(S_008F04_BASE_ADDRESS_HI(kernel_args_va >> 32) | S_008F04_STRIDE(0));
-      user_sgpr += 2;
-   }
-
-   for (i = 0; i < 3 && user_sgpr < 16; i++) {
-      if (code_object->code_properties & workgroup_count_masks[i]) {
-         radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 + (user_sgpr * 4), 1);
-         radeon_emit(info->grid[i]);
-         user_sgpr += 1;
-      }
-   }
-   radeon_end();
-}
-
-static bool si_upload_compute_input(struct si_context *sctx, const amd_kernel_code_t *code_object,
-                                    const struct pipe_grid_info *info)
-{
-   struct si_compute *program = sctx->cs_shader_state.program;
-   struct si_resource *input_buffer = NULL;
-   uint32_t kernel_args_offset = 0;
-   uint32_t *kernel_args;
-   void *kernel_args_ptr;
-   uint64_t kernel_args_va;
-
-   u_upload_alloc(sctx->b.const_uploader, 0, program->input_size,
-                  sctx->screen->info.tcc_cache_line_size, &kernel_args_offset,
-                  (struct pipe_resource **)&input_buffer, &kernel_args_ptr);
-
-   if (unlikely(!kernel_args_ptr))
-      return false;
-
-   kernel_args = (uint32_t *)kernel_args_ptr;
-   kernel_args_va = input_buffer->gpu_address + kernel_args_offset;
-
-   memcpy(kernel_args, info->input, program->input_size);
-
-   for (unsigned i = 0; i < program->input_size / 4; i++) {
-      COMPUTE_DBG(sctx->screen, "input %u : %u\n", i, kernel_args[i]);
-   }
-
-   radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, input_buffer,
-                             RADEON_USAGE_READ | RADEON_PRIO_CONST_BUFFER);
-
-   si_setup_user_sgprs_co_v2(sctx, code_object, info, kernel_args_va);
-   si_resource_reference(&input_buffer, NULL);
    return true;
 }
 
@@ -1174,18 +886,16 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_screen *sscreen = sctx->screen;
    struct si_compute *program = sctx->cs_shader_state.program;
-   const amd_kernel_code_t *code_object = si_compute_get_code_object(program, info->pc);
-   int i;
+
+   if (program->shader.compilation_failed)
+      return;
+
    bool cs_regalloc_hang = sscreen->info.has_cs_regalloc_hang_bug &&
                            info->block[0] * info->block[1] * info->block[2] > 256;
-
    if (cs_regalloc_hang) {
       sctx->barrier_flags |= SI_BARRIER_SYNC_PS | SI_BARRIER_SYNC_CS;
       si_mark_atom_dirty(sctx, &sctx->atoms.s.barrier);
    }
-
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE && program->shader.compilation_failed)
-      return;
 
    si_check_dirty_buffers_textures(sctx);
 
@@ -1251,18 +961,14 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
 
    /* First emit registers. */
    bool prefetch;
-   if (!si_switch_compute_shader(sctx, program, &program->shader, code_object, info->pc, &prefetch,
+   if (!si_switch_compute_shader(sctx, program, &program->shader, info->pc, &prefetch,
                                  info->variable_shared_mem))
       return;
 
    si_emit_compute_shader_pointers(sctx);
 
-   if (program->ir_type == PIPE_SHADER_IR_NATIVE &&
-       unlikely(!si_upload_compute_input(sctx, code_object, info)))
-      return;
-
    /* Global buffers */
-   for (i = 0; i < sctx->max_global_buffers; i++) {
+   for (unsigned i = 0; i < sctx->max_global_buffers; i++) {
       struct si_resource *buffer = si_resource(sctx->global_buffers[i]);
       if (!buffer) {
          continue;
@@ -1283,8 +989,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
    if (sctx->gfx_level >= GFX7 && sctx->screen->info.has_cp_dma && prefetch)
       si_cp_dma_prefetch(sctx, &program->shader.bo->b.b, 0, program->shader.bo->b.b.width0);
 
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE)
-      si_setup_nir_user_data(sctx, info);
+   si_setup_nir_user_data(sctx, info);
 
    si_emit_dispatch_packets(sctx, info);
 
@@ -1323,10 +1028,8 @@ void si_destroy_compute(struct si_compute *program)
 {
    struct si_shader_selector *sel = &program->sel;
 
-   if (program->ir_type != PIPE_SHADER_IR_NATIVE) {
-      util_queue_drop_job(&sel->screen->shader_compiler_queue, &sel->ready);
-      util_queue_fence_destroy(&sel->ready);
-   }
+   util_queue_drop_job(&sel->screen->shader_compiler_queue, &sel->ready);
+   util_queue_fence_destroy(&sel->ready);
 
    si_shader_destroy(&program->shader);
    ralloc_free(program->sel.nir);

@@ -942,8 +942,6 @@ void si_init_shader_caps(struct si_screen *sscreen)
       caps->max_shader_images = SI_NUM_IMAGES;
 
       caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
-      if (i == PIPE_SHADER_COMPUTE)
-         caps->supported_irs |= 1 << PIPE_SHADER_IR_NATIVE;
 
       /* Supported boolean features. */
       caps->cont_supported = true;
@@ -984,12 +982,7 @@ void si_init_compute_caps(struct si_screen *sscreen)
    caps->max_block_size[1] =
    caps->max_block_size[2] = 1024;
 
-   caps->max_block_size_clover[0] =
-   caps->max_block_size_clover[1] =
-   caps->max_block_size_clover[2] = 256;
-
    caps->max_threads_per_block = 1024;
-   caps->max_threads_per_block_clover = 256;
    caps->address_bits = 64;
 
    /* Return 1/4 of the heap size as the maximum because the max size is not practically

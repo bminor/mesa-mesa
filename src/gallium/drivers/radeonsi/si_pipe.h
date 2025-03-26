@@ -673,9 +673,6 @@ struct si_screen {
 struct si_compute {
    struct si_shader_selector sel;
    struct si_shader shader;
-
-   unsigned ir_type;
-   unsigned input_size;
 };
 
 struct si_sampler_view {
