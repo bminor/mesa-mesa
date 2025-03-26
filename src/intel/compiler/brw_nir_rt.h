@@ -55,6 +55,8 @@ void brw_nir_lower_shader_returns(nir_shader *shader);
 
 bool brw_nir_lower_shader_calls(nir_shader *shader, struct brw_bs_prog_key *key);
 
+bool brw_nir_lower_rt_intrinsics_pre_trace(nir_shader *nir);
+
 void brw_nir_lower_rt_intrinsics(nir_shader *shader,
                                  const struct brw_base_prog_key *key,
                                  const struct intel_device_info *devinfo);

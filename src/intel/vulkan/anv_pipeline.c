@@ -3373,6 +3373,8 @@ compile_upload_rt_shader(struct anv_ray_tracing_pipeline *pipeline,
          .should_remat_callback = should_remat_cb,
       };
 
+      NIR_PASS(_, nir, brw_nir_lower_rt_intrinsics_pre_trace);
+
       NIR_PASS(_, nir, nir_lower_shader_calls, &opts,
                &resume_shaders, &num_resume_shaders, mem_ctx);
       NIR_PASS(_, nir, brw_nir_lower_shader_calls, &stage->key.bs);
