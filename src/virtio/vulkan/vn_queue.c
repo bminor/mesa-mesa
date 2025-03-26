@@ -986,8 +986,7 @@ vn_queue_wsi_present(struct vn_queue_submission *submit)
    struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
    struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
 
-   /* base_bo can be NULL for prime blit src */
-   if (!submit->wsi_mem || !submit->wsi_mem->base_bo)
+   if (!submit->wsi_mem)
       return;
 
    if (dev->renderer->info.has_implicit_fencing) {
