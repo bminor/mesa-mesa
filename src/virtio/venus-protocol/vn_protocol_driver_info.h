@@ -19,14 +19,15 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 175;
-static const struct vn_info_extension _vn_info_extensions[175] = {
+static const uint32_t _vn_info_extension_count = 178;
+static const struct vn_info_extension _vn_info_extensions[178] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_dynamic_state", 525, 1 },
    { "VK_EXT_attachment_feedback_loop_layout", 340, 2 },
    { "VK_EXT_blend_operation_advanced", 149, 2 },
    { "VK_EXT_border_color_swizzle", 412, 1 },
+   { "VK_EXT_buffer_device_address", 245, 2 },
    { "VK_EXT_calibrated_timestamps", 185, 2 },
    { "VK_EXT_color_write_enable", 382, 1 },
    { "VK_EXT_command_serialization", 384, 1 },
@@ -66,6 +67,7 @@ static const struct vn_info_extension _vn_info_extensions[175] = {
    { "VK_EXT_load_store_op_none", 401, 1 },
    { "VK_EXT_memory_budget", 238, 1 },
    { "VK_EXT_multi_draw", 393, 1 },
+   { "VK_EXT_multisampled_render_to_single_sampled", 377, 1 },
    { "VK_EXT_mutable_descriptor_type", 495, 1 },
    { "VK_EXT_nested_command_buffer", 452, 1 },
    { "VK_EXT_non_seamless_cube_map", 423, 1 },
@@ -179,6 +181,7 @@ static const struct vn_info_extension _vn_info_extensions[175] = {
    { "VK_KHR_shader_maximal_reconvergence", 435, 1 },
    { "VK_KHR_shader_non_semantic_info", 294, 1 },
    { "VK_KHR_shader_quad_control", 236, 1 },
+   { "VK_KHR_shader_relaxed_extended_instruction", 559, 1 },
    { "VK_KHR_shader_subgroup_extended_types", 176, 1 },
    { "VK_KHR_shader_subgroup_rotate", 417, 2 },
    { "VK_KHR_shader_subgroup_uniform_control_flow", 324, 1 },

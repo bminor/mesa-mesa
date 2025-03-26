@@ -2094,6 +2094,61 @@ vn_encode_VkMemoryRequirements2_partial(struct vn_cs_encoder *enc, const VkMemor
     vn_encode_VkMemoryRequirements2_self_partial(enc, val);
 }
 
+/* struct VkMultisampledRenderToSingleSampledInfoEXT chain */
+
+static inline size_t
+vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_self(const VkMultisampledRenderToSingleSampledInfoEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_VkBool32(&val->multisampledRenderToSingleSampledEnable);
+    size += vn_sizeof_VkSampleCountFlagBits(&val->rasterizationSamples);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT(const VkMultisampledRenderToSingleSampledInfoEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_pnext(val->pNext);
+    size += vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_self(struct vn_cs_encoder *enc, const VkMultisampledRenderToSingleSampledInfoEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_VkBool32(enc, &val->multisampledRenderToSingleSampledEnable);
+    vn_encode_VkSampleCountFlagBits(enc, &val->rasterizationSamples);
+}
+
+static inline void
+vn_encode_VkMultisampledRenderToSingleSampledInfoEXT(struct vn_cs_encoder *enc, const VkMultisampledRenderToSingleSampledInfoEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT });
+    vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_pnext(enc, val->pNext);
+    vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_self(enc, val);
+}
+
 /* struct VkMemoryBarrier2 chain */
 
 static inline size_t

@@ -2985,6 +2985,14 @@ vn_sizeof_VkRenderingInfo_pnext(const void *val)
             size += vn_sizeof_VkRenderingInfo_pnext(pnext->pNext);
             size += vn_sizeof_VkDeviceGroupRenderPassBeginInfo_self((const VkDeviceGroupRenderPassBeginInfo *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(377 /* VK_EXT_multisampled_render_to_single_sampled */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkRenderingInfo_pnext(pnext->pNext);
+            size += vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_self((const VkMultisampledRenderToSingleSampledInfoEXT *)pnext);
+            return size;
         case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
             if (!(vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */) && vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */)))
                 break;
@@ -3053,6 +3061,14 @@ vn_encode_VkRenderingInfo_pnext(struct vn_cs_encoder *enc, const void *val)
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkRenderingInfo_pnext(enc, pnext->pNext);
             vn_encode_VkDeviceGroupRenderPassBeginInfo_self(enc, (const VkDeviceGroupRenderPassBeginInfo *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(377 /* VK_EXT_multisampled_render_to_single_sampled */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkRenderingInfo_pnext(enc, pnext->pNext);
+            vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_self(enc, (const VkMultisampledRenderToSingleSampledInfoEXT *)pnext);
             return;
         case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
             if (!(vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */) && vn_cs_renderer_protocol_has_extension(45 /* VK_KHR_dynamic_rendering */)))
