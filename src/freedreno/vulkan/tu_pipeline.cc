@@ -3041,6 +3041,7 @@ static unsigned
 tu6_blend_size(struct tu_device *dev,
                const struct vk_color_blend_state *cb,
                const struct vk_color_attachment_location_state *cal,
+               const struct vk_render_pass_state *rp,
                bool alpha_to_coverage_enable,
                bool alpha_to_one_enable,
                uint32_t sample_mask)
@@ -3055,6 +3056,7 @@ static void
 tu6_emit_blend(struct tu_cs *cs,
                const struct vk_color_blend_state *cb,
                const struct vk_color_attachment_location_state *cal,
+               const struct vk_render_pass_state *rp,
                bool alpha_to_coverage_enable,
                bool alpha_to_one_enable,
                uint32_t sample_mask)
@@ -3069,8 +3071,14 @@ tu6_emit_blend(struct tu_cs *cs,
          continue;
 
       const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
+      VkFormat att_format = rp->color_attachment_formats[i];
+      bool is_float_or_srgb = vk_format_is_float(att_format) || vk_format_is_srgb(att_format);
 
-      if (rop_reads_dst || att->blend_enable) {
+      /* Logic op overrides any blending. Even when logic op is present, blending
+       * should be kept disabled for any ops that don't read dst values or for
+       * attachments of float or sRGB formats.
+       */
+      if ((att->blend_enable && !cb->logic_op_enable) || (rop_reads_dst && !is_float_or_srgb)) {
          blend_enable_mask |= 1u << cal->color_map[i];
       }
    }
@@ -3119,12 +3127,21 @@ tu6_emit_blend(struct tu_cs *cs,
             tu6_blend_factor((VkBlendFactor)att->src_alpha_blend_factor);
          const enum adreno_rb_blend_factor dst_alpha_factor =
             tu6_blend_factor((VkBlendFactor)att->dst_alpha_blend_factor);
+         VkFormat att_format = rp->color_attachment_formats[i];
+         bool is_float_or_srgb = vk_format_is_float(att_format) || vk_format_is_srgb(att_format);
+
+         /* Keep blend and logic op flags tidy. These conditions match the blend-enable
+          * mask construction above, except for the dst-reading rop condition that doesn't
+          * apply here.
+          */
+         bool blend_enable = att->blend_enable && !cb->logic_op_enable;
+         bool logic_op_enable = cb->logic_op_enable && !is_float_or_srgb;
 
          tu_cs_emit_regs(cs,
                          A6XX_RB_MRT_CONTROL(remapped_idx,
-                                             .blend = att->blend_enable,
-                                             .blend2 = att->blend_enable,
-                                             .rop_enable = cb->logic_op_enable,
+                                             .blend = blend_enable,
+                                             .blend2 = blend_enable,
+                                             .rop_enable = logic_op_enable,
                                              .rop_code = rop,
                                              .component_enable = att->write_mask),
                          A6XX_RB_MRT_BLEND_CONTROL(remapped_idx,
@@ -3676,11 +3693,12 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
       BITSET_SET(pipeline_set, MESA_VK_DYNAMIC_CB_WRITE_MASKS);
       BITSET_SET(pipeline_set, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS);
    }
-   DRAW_STATE(blend, TU_DYNAMIC_STATE_BLEND, cb,
-              builder->graphics_state.cal,
-              builder->graphics_state.ms->alpha_to_coverage_enable,
-              builder->graphics_state.ms->alpha_to_one_enable,
-              builder->graphics_state.ms->sample_mask);
+   DRAW_STATE_COND(blend, TU_DYNAMIC_STATE_BLEND, attachments_valid, cb,
+                   builder->graphics_state.cal,
+                   builder->graphics_state.rp,
+                   builder->graphics_state.ms->alpha_to_coverage_enable,
+                   builder->graphics_state.ms->alpha_to_one_enable,
+                   builder->graphics_state.ms->sample_mask);
    if (EMIT_STATE(blend_lrz, attachments_valid))
       tu_emit_blend_lrz(&pipeline->lrz_blend, cb,
                         builder->graphics_state.rp);
@@ -3913,12 +3931,14 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
               cmd->vk.dynamic_graphics_state.ms.sample_locations);
    DRAW_STATE(depth_bias, TU_DYNAMIC_STATE_DEPTH_BIAS,
               &cmd->vk.dynamic_graphics_state.rs);
-   DRAW_STATE(blend, TU_DYNAMIC_STATE_BLEND,
-              &cmd->vk.dynamic_graphics_state.cb,
-              &cmd->vk.dynamic_graphics_state.cal,
-              cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable,
-              cmd->vk.dynamic_graphics_state.ms.alpha_to_one_enable,
-              cmd->vk.dynamic_graphics_state.ms.sample_mask);
+   DRAW_STATE_COND(blend, TU_DYNAMIC_STATE_BLEND,
+                   cmd->state.dirty & TU_CMD_DIRTY_SUBPASS,
+                   &cmd->vk.dynamic_graphics_state.cb,
+                   &cmd->vk.dynamic_graphics_state.cal,
+                   &cmd->state.vk_rp,
+                   cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable,
+                   cmd->vk.dynamic_graphics_state.ms.alpha_to_one_enable,
+                   cmd->vk.dynamic_graphics_state.ms.sample_mask);
    if (!cmd->state.pipeline_blend_lrz &&
        (EMIT_STATE(blend_lrz) || (cmd->state.dirty & TU_CMD_DIRTY_SUBPASS))) {
       bool blend_reads_dest = tu6_calc_blend_lrz(&cmd->vk.dynamic_graphics_state.cb,
