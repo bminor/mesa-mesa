@@ -362,7 +362,7 @@ int etna_bo_dmabuf(struct etna_bo *bo)
 {
 	int ret, prime_fd;
 
-	ret = drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC,
+	ret = drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR,
 				&prime_fd);
 	if (ret) {
 		ERROR_MSG("failed to get dmabuf fd: %d", ret);
