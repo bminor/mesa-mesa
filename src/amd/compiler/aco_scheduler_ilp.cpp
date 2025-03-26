@@ -214,8 +214,16 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
 }
 
 bool
-are_src_banks_compatible(const VOPDInfo& a, const VOPDInfo& b, bool swap)
+are_src_banks_compatible(enum amd_gfx_level gfx_level, const VOPDInfo& a, const VOPDInfo& b,
+                         bool swap)
 {
+   if (gfx_level >= GFX12 && a.op == aco_opcode::v_dual_mov_b32 &&
+       b.op == aco_opcode::v_dual_mov_b32) {
+      /* On GFX12+, OPY uses src2 if both OPX and OPY are v_dual_mov_b32, so there are no
+       * compatibility issues. */
+      return true;
+   }
+
    uint16_t a_src_banks = a.src_banks;
    if (swap) {
       uint16_t src0 = a.src_banks & 0xf;
@@ -234,7 +242,7 @@ enum vopd_compatibility {
 };
 
 unsigned
-is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b)
+is_vopd_compatible(enum amd_gfx_level gfx_level, const VOPDInfo& a, const VOPDInfo& b)
 {
    if ((!a.can_be_opx && !b.can_be_opx) || (a.is_dst_odd == b.is_dst_odd))
       return vopd_incompatible;
@@ -246,7 +254,7 @@ is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b)
    unsigned compat = vopd_incompatible;
 
    /* The rest is checking src VGPR bank compatibility. */
-   if (are_src_banks_compatible(a, b, false)) {
+   if (are_src_banks_compatible(gfx_level, a, b, false)) {
       if (a.can_be_opx)
          compat |= vopd_first_is_opx;
       if (b.can_be_opx)
@@ -260,7 +268,7 @@ is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b)
    if (!a.is_commutative && !b.is_commutative)
       return vopd_incompatible;
 
-   if (!are_src_banks_compatible(a, b, true))
+   if (!are_src_banks_compatible(gfx_level, a, b, true))
       return vopd_incompatible;
 
    /* Swapping v_mov_b32 makes it become an OPY-only opcode. */
@@ -286,7 +294,7 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx)
    if (second_info.op == aco_opcode::num_opcodes || first_info.op == aco_opcode::num_opcodes)
       return 0;
 
-   unsigned compat = is_vopd_compatible(first_info, second_info);
+   unsigned compat = is_vopd_compatible(ctx.program->gfx_level, first_info, second_info);
    if (!compat)
       return 0;
 
