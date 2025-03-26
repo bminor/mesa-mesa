@@ -300,6 +300,17 @@ has_texture_compression_astc_ldr(const struct panvk_physical_device *physical_de
    return has_compressed_formats(physical_device, BITFIELD_BIT(MALI_ASTC_2D_LDR));
 }
 
+static bool
+has_texture_compression_bc(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device,
+      BITFIELD_BIT(MALI_BC1_UNORM) | BITFIELD_BIT(MALI_BC2_UNORM) |
+      BITFIELD_BIT(MALI_BC3_UNORM) | BITFIELD_BIT(MALI_BC4_UNORM) |
+      BITFIELD_BIT(MALI_BC4_SNORM) | BITFIELD_BIT(MALI_BC5_UNORM) |
+      BITFIELD_BIT(MALI_BC5_SNORM) | BITFIELD_BIT(MALI_BC6H_SF16) |
+      BITFIELD_BIT(MALI_BC6H_UF16) | BITFIELD_BIT(MALI_BC7_UNORM));
+}
+
 static void
 get_features(const struct panvk_physical_device *device,
              struct vk_features *features)
@@ -322,6 +333,7 @@ get_features(const struct panvk_physical_device *device,
       .samplerAnisotropy = true,
       .textureCompressionETC2 = has_texture_compression_etc2(device),
       .textureCompressionASTC_LDR = has_texture_compression_astc_ldr(device),
+      .textureCompressionBC = has_texture_compression_bc(device),
       .fragmentStoresAndAtomics = arch >= 10,
       .shaderImageGatherExtended = true,
       .shaderStorageImageExtendedFormats = true,

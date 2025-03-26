@@ -27,3 +27,4 @@ KHR_blend_equation_advanced_coherent on v3d
 KHR_partial_update on etnaviv
 VK_KHR_line_rasterization on panvk
 shaderImageGatherExtended on panvk
+textureCompressionBC on panvk
