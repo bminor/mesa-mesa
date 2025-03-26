@@ -37,6 +37,7 @@ struct VOPDInfo {
    uint16_t is_commutative : 1;
    aco_opcode op = aco_opcode::num_opcodes;
    uint32_t literal = 0;
+   uint8_t port_vgprs[2] = {0, 0};
 };
 
 struct InstrInfo {
@@ -190,8 +191,11 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
          op = Operand::get_const(ctx.program->gfx_level, util_bitreverse(op.constantValue()), 4);
 
       unsigned port = (instr->opcode == aco_opcode::v_fmamk_f32 && i == 1) ? 2 : i;
-      if (op.isOfType(RegType::vgpr))
+      if (op.isOfType(RegType::vgpr)) {
          info.src_banks |= 1 << (port * 4 + (op.physReg().reg() & bank_mask[port]));
+         if (port < 2)
+            info.port_vgprs[port] = op.physReg().reg();
+      }
 
       /* Check all operands because of fmaak/fmamk. */
       if (op.isLiteral()) {
@@ -225,12 +229,29 @@ are_src_banks_compatible(enum amd_gfx_level gfx_level, const VOPDInfo& a, const 
    }
 
    uint16_t a_src_banks = a.src_banks;
+   uint8_t a_port_vgprs[2] = {a.port_vgprs[0], a.port_vgprs[1]};
    if (swap) {
       uint16_t src0 = a.src_banks & 0xf;
       uint16_t src1 = a.src_banks & 0xf0;
       uint16_t src2 = a.src_banks & 0x300;
       a_src_banks = (src0 << 4) | (src1 >> 4) | src2;
+      std::swap(a_port_vgprs[0], a_port_vgprs[1]);
    }
+
+   /* On GFX12+, we can skip checking a src0/src1 port if both SRCx and SRCy use the same VGPR and
+    * the same sized operand.
+    */
+   if (gfx_level >= GFX12) {
+      bool a_is_dot2cc =
+         a.op == aco_opcode::v_dual_dot2acc_f32_f16 || a.op == aco_opcode::v_dual_dot2acc_f32_bf16;
+      bool b_is_dot2cc =
+         b.op == aco_opcode::v_dual_dot2acc_f32_f16 || b.op == aco_opcode::v_dual_dot2acc_f32_bf16;
+      if (a_port_vgprs[0] == b.port_vgprs[0] && a_is_dot2cc == b_is_dot2cc)
+         a_src_banks &= ~0xf;
+      if (a_port_vgprs[1] == b.port_vgprs[1] && a_is_dot2cc == b_is_dot2cc)
+         a_src_banks &= ~0xf0;
+   }
+
    return (a_src_banks & b.src_banks) == 0;
 }
 
