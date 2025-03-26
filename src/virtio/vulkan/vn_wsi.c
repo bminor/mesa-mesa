@@ -87,6 +87,7 @@ vn_wsi_init(struct vn_physical_device *physical_dev)
    if (result != VK_SUCCESS)
       return result;
 
+   physical_dev->wsi_device.supports_scanout = false;
    physical_dev->wsi_device.supports_modifiers =
       physical_dev->base.vk.supported_extensions.EXT_image_drm_format_modifier;
    physical_dev->base.vk.wsi_device = &physical_dev->wsi_device;
@@ -110,56 +111,27 @@ vn_wsi_create_image(struct vn_device *dev,
                     const VkAllocationCallbacks *alloc,
                     struct vn_image **out_img)
 {
-   /* TODO This is the legacy path used by wsi_create_native_image when there
-    * is no modifier support.  Instead of forcing linear tiling, we should ask
-    * wsi to use wsi_create_prime_image instead.
-    *
-    * In fact, this is not enough when the image is truely used for scanout by
-    * the host compositor.  There can be requirements we fail to meet.  We
-    * should require modifier support at some point.
-    */
-   const uint64_t modifier = DRM_FORMAT_MOD_LINEAR;
-   const VkImageDrmFormatModifierListCreateInfoEXT mod_list_info = {
-      .sType =
-         VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT,
-      .pNext = create_info->pNext,
-      .drmFormatModifierCount = 1,
-      .pDrmFormatModifiers = &modifier,
-   };
    VkImageCreateInfo local_create_info = *create_info;
    create_info = &local_create_info;
-   if (wsi_info->scanout) {
-      assert(!vk_find_struct_const(
-         create_info->pNext, IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT));
 
-      local_create_info.pNext = &mod_list_info;
-      local_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+   if (dev->physical_device->renderer_driver_id ==
+       VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
+      /* See explanation in vn_GetPhysicalDeviceImageFormatProperties2() */
+      local_create_info.flags &= ~VK_IMAGE_CREATE_ALIAS_BIT;
+   }
 
+   if (VN_PERF(NO_TILED_WSI_IMAGE)) {
+      const VkImageDrmFormatModifierListCreateInfoEXT *modifier_info =
+         vk_find_struct_const(
+            create_info->pNext,
+            IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
+      assert(modifier_info);
+      assert(modifier_info->drmFormatModifierCount == 1 &&
+             modifier_info->pDrmFormatModifiers[0] ==
+                DRM_FORMAT_MOD_LINEAR);
       if (VN_DEBUG(WSI)) {
-         vn_log(
-            dev->instance,
-            "forcing scanout image linear (no explicit modifier support)");
-      }
-   } else {
-      if (dev->physical_device->renderer_driver_id ==
-          VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
-         /* See explanation in vn_GetPhysicalDeviceImageFormatProperties2() */
-         local_create_info.flags &= ~VK_IMAGE_CREATE_ALIAS_BIT;
-      }
-
-      if (VN_PERF(NO_TILED_WSI_IMAGE)) {
-         const VkImageDrmFormatModifierListCreateInfoEXT *modifier_info =
-            vk_find_struct_const(
-               create_info->pNext,
-               IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
-         assert(modifier_info);
-         assert(modifier_info->drmFormatModifierCount == 1 &&
-                modifier_info->pDrmFormatModifiers[0] ==
-                   DRM_FORMAT_MOD_LINEAR);
-         if (VN_DEBUG(WSI)) {
-            vn_log(dev->instance,
-                   "forcing scanout image linear (given no_tiled_wsi_image)");
-         }
+         vn_log(dev->instance,
+                "forcing image linear (given no_tiled_wsi_image)");
       }
    }
 
