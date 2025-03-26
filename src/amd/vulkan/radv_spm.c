@@ -149,12 +149,62 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
       S_030800_SE_BROADCAST_WRITES(1) | S_030800_SH_BROADCAST_WRITES(1) | S_030800_INSTANCE_BROADCAST_WRITES(1));
 }
 
+static void
+radv_emit_spm_muxsel(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
+   const struct ac_spm *spm = &device->spm;
+
+   /* Upload each muxsel ram to the RLC. */
+   for (unsigned s = 0; s < AC_SPM_SEGMENT_TYPE_COUNT; s++) {
+      unsigned rlc_muxsel_addr, rlc_muxsel_data;
+      unsigned grbm_gfx_index = S_030800_SH_BROADCAST_WRITES(1) | S_030800_INSTANCE_BROADCAST_WRITES(1);
+
+      if (!spm->num_muxsel_lines[s])
+         continue;
+
+      if (s == AC_SPM_SEGMENT_TYPE_GLOBAL) {
+         grbm_gfx_index |= S_030800_SE_BROADCAST_WRITES(1);
+
+         rlc_muxsel_addr =
+            pdev->info.gfx_level >= GFX11 ? R_037220_RLC_SPM_GLOBAL_MUXSEL_ADDR : R_037224_RLC_SPM_GLOBAL_MUXSEL_ADDR;
+         rlc_muxsel_data =
+            pdev->info.gfx_level >= GFX11 ? R_037224_RLC_SPM_GLOBAL_MUXSEL_DATA : R_037228_RLC_SPM_GLOBAL_MUXSEL_DATA;
+      } else {
+         grbm_gfx_index |= S_030800_SE_INDEX(s);
+
+         rlc_muxsel_addr =
+            pdev->info.gfx_level >= GFX11 ? R_037228_RLC_SPM_SE_MUXSEL_ADDR : R_03721C_RLC_SPM_SE_MUXSEL_ADDR;
+         rlc_muxsel_data =
+            pdev->info.gfx_level >= GFX11 ? R_03722C_RLC_SPM_SE_MUXSEL_DATA : R_037220_RLC_SPM_SE_MUXSEL_DATA;
+      }
+
+      radeon_check_space(device->ws, cs, 3 + spm->num_muxsel_lines[s] * (7 + AC_SPM_MUXSEL_LINE_SIZE));
+
+      radeon_set_uconfig_reg(cs, R_030800_GRBM_GFX_INDEX, grbm_gfx_index);
+
+      for (unsigned l = 0; l < spm->num_muxsel_lines[s]; l++) {
+         uint32_t *data = (uint32_t *)spm->muxsel_lines[s][l].muxsel;
+
+         /* Select MUXSEL_ADDR to point to the next muxsel. */
+         radeon_set_uconfig_perfctr_reg(pdev->info.gfx_level, ring, cs, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
+
+         /* Write the muxsel line configuration with MUXSEL_DATA. */
+         radeon_emit(cs, PKT3(PKT3_WRITE_DATA, 2 + AC_SPM_MUXSEL_LINE_SIZE, 0));
+         radeon_emit(cs, S_370_DST_SEL(V_370_MEM_MAPPED_REGISTER) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_ME) |
+                            S_370_WR_ONE_ADDR(1));
+         radeon_emit(cs, rlc_muxsel_data >> 2);
+         radeon_emit(cs, 0);
+         radeon_emit_array(cs, data, AC_SPM_MUXSEL_LINE_SIZE);
+      }
+   }
+}
+
 void
 radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
-   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct ac_spm *spm = &device->spm;
    uint64_t va = radv_buffer_get_va(spm->bo);
    uint64_t ring_size = spm->buffer_size;
@@ -202,46 +252,7 @@ radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum r
    }
 
    /* Upload each muxsel ram to the RLC. */
-   for (unsigned s = 0; s < AC_SPM_SEGMENT_TYPE_COUNT; s++) {
-      unsigned rlc_muxsel_addr, rlc_muxsel_data;
-      unsigned grbm_gfx_index = S_030800_SH_BROADCAST_WRITES(1) | S_030800_INSTANCE_BROADCAST_WRITES(1);
-
-      if (!spm->num_muxsel_lines[s])
-         continue;
-
-      if (s == AC_SPM_SEGMENT_TYPE_GLOBAL) {
-         grbm_gfx_index |= S_030800_SE_BROADCAST_WRITES(1);
-
-         rlc_muxsel_addr =
-            gfx_level >= GFX11 ? R_037220_RLC_SPM_GLOBAL_MUXSEL_ADDR : R_037224_RLC_SPM_GLOBAL_MUXSEL_ADDR;
-         rlc_muxsel_data =
-            gfx_level >= GFX11 ? R_037224_RLC_SPM_GLOBAL_MUXSEL_DATA : R_037228_RLC_SPM_GLOBAL_MUXSEL_DATA;
-      } else {
-         grbm_gfx_index |= S_030800_SE_INDEX(s);
-
-         rlc_muxsel_addr = gfx_level >= GFX11 ? R_037228_RLC_SPM_SE_MUXSEL_ADDR : R_03721C_RLC_SPM_SE_MUXSEL_ADDR;
-         rlc_muxsel_data = gfx_level >= GFX11 ? R_03722C_RLC_SPM_SE_MUXSEL_DATA : R_037220_RLC_SPM_SE_MUXSEL_DATA;
-      }
-
-      radeon_check_space(device->ws, cs, 3 + spm->num_muxsel_lines[s] * (7 + AC_SPM_MUXSEL_LINE_SIZE));
-
-      radeon_set_uconfig_reg(cs, R_030800_GRBM_GFX_INDEX, grbm_gfx_index);
-
-      for (unsigned l = 0; l < spm->num_muxsel_lines[s]; l++) {
-         uint32_t *data = (uint32_t *)spm->muxsel_lines[s][l].muxsel;
-
-         /* Select MUXSEL_ADDR to point to the next muxsel. */
-         radeon_set_uconfig_perfctr_reg(gfx_level, ring, cs, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
-
-         /* Write the muxsel line configuration with MUXSEL_DATA. */
-         radeon_emit(cs, PKT3(PKT3_WRITE_DATA, 2 + AC_SPM_MUXSEL_LINE_SIZE, 0));
-         radeon_emit(cs, S_370_DST_SEL(V_370_MEM_MAPPED_REGISTER) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_ME) |
-                            S_370_WR_ONE_ADDR(1));
-         radeon_emit(cs, rlc_muxsel_data >> 2);
-         radeon_emit(cs, 0);
-         radeon_emit_array(cs, data, AC_SPM_MUXSEL_LINE_SIZE);
-      }
-   }
+   radv_emit_spm_muxsel(device, cs, qf);
 
    /* Select SPM counters. */
    radv_emit_spm_counters(device, cs, qf);
