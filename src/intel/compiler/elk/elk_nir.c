@@ -1665,9 +1665,6 @@ elk_nir_apply_key(nir_shader *nir,
 
    OPT(elk_nir_apply_sampler_key, compiler, &key->tex);
 
-   const struct intel_nir_lower_texture_opts tex_opts = {0};
-   OPT(intel_nir_lower_texture, &tex_opts);
-
    const nir_lower_subgroups_options subgroups_options = {
       .subgroup_size = get_subgroup_size(&nir->info, max_subgroup_size),
       .ballot_bit_size = 32,
