@@ -136,6 +136,7 @@ option(
   type : 'boolean',
   value : false,
   description : 'build gallium "nine" Direct3D 9.x frontend.',
+  deprecated: true,
 )
 
 option(
