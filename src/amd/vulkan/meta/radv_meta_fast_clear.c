@@ -419,6 +419,9 @@ radv_fast_clear_eliminate(struct radv_cmd_buffer *cmd_buffer, struct radv_image 
 {
    struct radv_barrier_data barrier = {0};
 
+   if (cmd_buffer->qf != RADV_QUEUE_GENERAL)
+      return;
+
    barrier.layout_transitions.fast_clear_eliminate = 1;
    radv_describe_layout_transition(cmd_buffer, &barrier);
 
@@ -430,6 +433,9 @@ radv_fmask_decompress(struct radv_cmd_buffer *cmd_buffer, struct radv_image *ima
                       const VkImageSubresourceRange *subresourceRange)
 {
    struct radv_barrier_data barrier = {0};
+
+   if (cmd_buffer->qf != RADV_QUEUE_GENERAL)
+      return;
 
    barrier.layout_transitions.fmask_decompress = 1;
    radv_describe_layout_transition(cmd_buffer, &barrier);
