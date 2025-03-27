@@ -5865,8 +5865,8 @@ image_type_to_components_count(enum glsl_sampler_dim dim, bool array)
 }
 
 static MIMG_instruction*
-emit_mimg(Builder& bld, aco_opcode op, Temp dst, Temp rsrc, Operand samp, std::vector<Temp> coords,
-          Operand vdata = Operand(v1))
+emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc, Operand samp,
+          std::vector<Temp> coords, Operand vdata = Operand(v1))
 {
    bool is_vsample = !samp.isUndefined() || op == aco_opcode::image_msaa_load;
 
@@ -5909,11 +5909,9 @@ emit_mimg(Builder& bld, aco_opcode op, Temp dst, Temp rsrc, Operand samp, std::v
       coords.resize(nsa_size + 1);
    }
 
-   bool has_dst = dst.id() != 0;
-
-   aco_ptr<Instruction> mimg{create_instruction(op, Format::MIMG, 3 + coords.size(), has_dst)};
-   if (has_dst)
-      mimg->definitions[0] = Definition(dst);
+   aco_ptr<Instruction> mimg{create_instruction(op, Format::MIMG, 3 + coords.size(), dsts.size())};
+   for (unsigned i = 0; i < dsts.size(); ++i)
+      mimg->definitions[i] = Definition(dsts[i]);
    mimg->operands[0] = Operand(rsrc);
    mimg->operands[1] = samp;
    mimg->operands[2] = vdata;
@@ -5955,7 +5953,7 @@ visit_bvh64_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 
    MIMG_instruction* mimg =
-      emit_mimg(bld, aco_opcode::image_bvh64_intersect_ray, dst, resource, Operand(s4), args);
+      emit_mimg(bld, aco_opcode::image_bvh64_intersect_ray, {dst}, resource, Operand(s4), args);
    mimg->dim = ac_image_1d;
    mimg->dmask = 0xf;
    mimg->unrm = true;
@@ -6172,7 +6170,7 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
       }
 
       Operand vdata = is_sparse ? emit_tfe_init(bld, tmp) : Operand(v1);
-      MIMG_instruction* load = emit_mimg(bld, opcode, tmp, resource, Operand(s4), coords, vdata);
+      MIMG_instruction* load = emit_mimg(bld, opcode, {tmp}, resource, Operand(s4), coords, vdata);
       load->cache = get_cache_flags(ctx, nir_intrinsic_access(instr) | ACCESS_TYPE_LOAD);
       load->a16 = instr->src[1].ssa->bit_size == 16;
       load->d16 = d16;
@@ -6313,7 +6311,7 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
    aco_opcode opcode = level_zero ? aco_opcode::image_store : aco_opcode::image_store_mip;
 
    MIMG_instruction* store =
-      emit_mimg(bld, opcode, Temp(0, v1), resource, Operand(s4), coords, Operand(data));
+      emit_mimg(bld, opcode, {}, resource, Operand(s4), coords, Operand(data));
    store->cache = cache;
    store->a16 = instr->src[1].ssa->bit_size == 16;
    store->d16 = d16;
@@ -6466,9 +6464,11 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
 
    std::vector<Temp> coords = get_image_coords(ctx, instr);
    Temp resource = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
-   Temp tmp = return_previous ? (cmpswap ? bld.tmp(data.regClass()) : dst) : Temp(0, v1);
+   std::vector<Temp> tmps;
+   if (return_previous)
+      tmps = {(cmpswap ? bld.tmp(data.regClass()) : dst)};
    MIMG_instruction* mimg =
-      emit_mimg(bld, image_op, tmp, resource, Operand(s4), coords, Operand(data));
+      emit_mimg(bld, image_op, tmps, resource, Operand(s4), coords, Operand(data));
    mimg->cache = get_atomic_cache_flags(ctx, return_previous);
    mimg->dmask = (1 << data.size()) - 1;
    mimg->a16 = instr->src[1].ssa->bit_size == 16;
@@ -6480,7 +6480,7 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    mimg->sync = sync;
    ctx->program->needs_exact = true;
    if (return_previous && cmpswap)
-      bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), tmp, Operand::zero());
+      bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), tmps[0], Operand::zero());
    return;
 }
 
@@ -9296,7 +9296,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
       } else {
          Temp tg4_lod = bld.copy(bld.def(v1), Operand::zero());
          Temp size = bld.tmp(v2);
-         MIMG_instruction* tex = emit_mimg(bld, aco_opcode::image_get_resinfo, size, resource,
+         MIMG_instruction* tex = emit_mimg(bld, aco_opcode::image_get_resinfo, {size}, resource,
                                            Operand(s4), std::vector<Temp>{tg4_lod});
          tex->dim = dim;
          tex->dmask = 0x3;
@@ -9453,7 +9453,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
                          ? aco_opcode::image_load
                          : aco_opcode::image_load_mip;
       Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
-      MIMG_instruction* tex = emit_mimg(bld, op, tmp_dst, resource, Operand(s4), args, vdata);
+      MIMG_instruction* tex = emit_mimg(bld, op, {tmp_dst}, resource, Operand(s4), args, vdata);
       if (instr->op == nir_texop_fragment_mask_fetch_amd)
          tex->dim = da ? ac_image_2darray : ac_image_2d;
       else
@@ -9632,7 +9632,8 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
                           instr->sampler_dim != GLSL_SAMPLER_DIM_SUBPASS_MS;
 
    Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
-   MIMG_instruction* tex = emit_mimg(bld, opcode, tmp_dst, resource, Operand(sampler), args, vdata);
+   MIMG_instruction* tex =
+      emit_mimg(bld, opcode, {tmp_dst}, resource, Operand(sampler), args, vdata);
    tex->dim = dim;
    tex->dmask = dmask & 0xf;
    tex->da = da;
