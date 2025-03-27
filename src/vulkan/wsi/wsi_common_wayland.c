@@ -2985,6 +2985,10 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
          wl_surface_damage_buffer(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
       }
    } else {
+      /* If the compositor doesn't support damage_buffer, we deliberately
+       * ignore the damage region and post maximum damage, because
+       * we are unaware how to map the damage region from the buffer local
+       * coordinate space to the surface local coordinate space */
       wl_surface_damage(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
    }
 
