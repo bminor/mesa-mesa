@@ -164,11 +164,24 @@ intel_hwconfig_is_required(const struct intel_device_info *devinfo)
    return devinfo->verx10 >= 125;
 }
 
+static bool
+hwconfig_ignore_difference(const struct intel_device_info *devinfo,
+                           const uint32_t key, uint32_t value)
+{
+   if (key == INTEL_HWCONFIG_TOTAL_GS_THREADS && value == 336 &&
+       intel_needs_workaround(devinfo, 18040209780))
+      return true;
+
+   return false;
+}
+
 static inline void
-hwconfig_item_warning(const char *devinfo_name, uint32_t devinfo_val,
+hwconfig_item_warning(const struct intel_device_info *devinfo,
+                      const char *devinfo_name, uint32_t devinfo_val,
                       const uint32_t hwconfig_key, uint32_t hwconfig_val)
 {
-   if (devinfo_val != hwconfig_val) {
+   if (devinfo_val != hwconfig_val &&
+       !hwconfig_ignore_difference(devinfo, hwconfig_key, hwconfig_val)) {
       printf("   %s (%u) != devinfo->%s (%u)\n", key_to_name(hwconfig_key),
              hwconfig_val, devinfo_name, devinfo_val);
    }
@@ -201,7 +214,7 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
 #define DEVINFO_HWCONFIG_KV(CVER, F, K, V)                              \
    do {                                                                 \
       if (check_only)                                                   \
-         hwconfig_item_warning(#F, devinfo->F, (K), (V));               \
+         hwconfig_item_warning(devinfo, #F, devinfo->F, (K), (V));      \
       else if (should_apply_hwconfig_item((CVER), devinfo, devinfo->F)) \
          devinfo->F = (V);                                              \
    } while (0)
@@ -237,7 +250,7 @@ process_hwconfig_item(struct intel_device_info *devinfo,
        * guarantee to be processed before this one
        */
       if (check_only) {
-         hwconfig_item_warning("max_subslices_per_slice",
+         hwconfig_item_warning(devinfo, "max_subslices_per_slice",
                                devinfo->max_subslices_per_slice, item->key,
                                item->val[0] / devinfo->max_slices);
       } else {
