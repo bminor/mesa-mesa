@@ -797,10 +797,6 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
 
 static void
 emit_rs_state(struct anv_graphics_pipeline *pipeline,
-              const struct vk_input_assembly_state *ia,
-              const struct vk_rasterization_state *rs,
-              const struct vk_multisample_state *ms,
-              const struct vk_render_pass_state *rp,
               enum intel_urb_deref_block_size urb_deref_block_size)
 {
    anv_pipeline_emit(pipeline, partial.sf, GENX(3DSTATE_SF), sf) {
@@ -1924,8 +1920,7 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
    enum intel_urb_deref_block_size urb_deref_block_size;
    emit_urb_setup(pipeline, &urb_deref_block_size);
 
-   emit_rs_state(pipeline, state->ia, state->rs, state->ms, state->rp,
-                 urb_deref_block_size);
+   emit_rs_state(pipeline, urb_deref_block_size);
    compute_kill_pixel(pipeline, state->ms, state);
 
    emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);
