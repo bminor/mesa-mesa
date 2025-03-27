@@ -9432,6 +9432,19 @@ radv_emit_view_index(const struct radv_cmd_state *cmd_state, struct radeon_cmdbu
    }
 }
 
+static void
+radv_emit_copy_data_imm(const struct radv_physical_device *pdev, struct radeon_cmdbuf *cs, uint32_t src_imm,
+                        uint64_t dst_va)
+{
+   radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
+   radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM |
+                      (pdev->info.gfx_level == GFX6 ? COPY_DATA_ENGINE_PFP : 0));
+   radeon_emit(cs, src_imm);
+   radeon_emit(cs, 0);
+   radeon_emit(cs, dst_va);
+   radeon_emit(cs, dst_va >> 32);
+}
+
 /**
  * Emulates predication for MEC using COND_EXEC.
  * When the current command buffer is predicating, emit a COND_EXEC packet
@@ -9454,30 +9467,16 @@ radv_cs_emit_compute_predication(const struct radv_device *device, struct radv_c
    if (!state->predication_type) {
       /* Invert the condition the first time it is needed. */
       if (!*inv_emitted) {
-         const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-
          *inv_emitted = true;
 
          /* Write 1 to the inverted predication VA. */
-         radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-         radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                            COPY_DATA_WR_CONFIRM | (gfx_level == GFX6 ? COPY_DATA_ENGINE_PFP : 0));
-         radeon_emit(cs, 1);
-         radeon_emit(cs, 0);
-         radeon_emit(cs, inv_va);
-         radeon_emit(cs, inv_va >> 32);
+         radv_emit_copy_data_imm(pdev, cs, 1, inv_va);
 
          /* If the API predication VA == 0, skip next command. */
          radv_emit_cond_exec(device, cs, va, 6 /* 1x COPY_DATA size */);
 
          /* Write 0 to the new predication VA (when the API condition != 0) */
-         radeon_emit(cs, PKT3(PKT3_COPY_DATA, 4, 0));
-         radeon_emit(cs, COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                            COPY_DATA_WR_CONFIRM | (gfx_level == GFX6 ? COPY_DATA_ENGINE_PFP : 0));
-         radeon_emit(cs, 0);
-         radeon_emit(cs, 0);
-         radeon_emit(cs, inv_va);
-         radeon_emit(cs, inv_va >> 32);
+         radv_emit_copy_data_imm(pdev, cs, 0, inv_va);
       }
 
       va = inv_va;
