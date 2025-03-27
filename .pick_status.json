@@ -934,7 +934,7 @@
         "description": "radeonsi/vcn: Disable AV1 unidir compound with rate control",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
