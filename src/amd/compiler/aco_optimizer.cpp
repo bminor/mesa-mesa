@@ -4078,52 +4078,6 @@ apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
    return true;
 }
 
-/* v_and(a, not(b)) -> v_bfi_b32(b, 0, a)
- * v_or(a, not(b)) -> v_bfi_b32(b, a, -1)
- */
-bool
-combine_v_andor_not(opt_ctx& ctx, aco_ptr<Instruction>& instr)
-{
-   if (instr->usesModifiers())
-      return false;
-
-   for (unsigned i = 0; i < 2; i++) {
-      Instruction* op_instr = follow_operand(ctx, instr->operands[i], true);
-      if (op_instr && !op_instr->usesModifiers() &&
-          (op_instr->opcode == aco_opcode::v_not_b32 ||
-           op_instr->opcode == aco_opcode::s_not_b32)) {
-
-         Operand ops[3] = {
-            op_instr->operands[0],
-            Operand::zero(),
-            instr->operands[!i],
-         };
-         if (instr->opcode == aco_opcode::v_or_b32) {
-            ops[1] = instr->operands[!i];
-            ops[2] = Operand::c32(-1);
-         }
-         if (!check_vop3_operands(ctx, 3, ops))
-            continue;
-
-         Instruction* new_instr = create_instruction(aco_opcode::v_bfi_b32, Format::VOP3, 3, 1);
-
-         if (op_instr->operands[0].isTemp())
-            ctx.uses[op_instr->operands[0].tempId()]++;
-         for (unsigned j = 0; j < 3; j++)
-            new_instr->operands[j] = ops[j];
-         new_instr->definitions[0] = instr->definitions[0];
-         new_instr->pass_flags = instr->pass_flags;
-         instr.reset(new_instr);
-         decrease_and_dce(ctx, op_instr->definitions[0].getTemp());
-         ctx.info[instr->definitions[0].tempId()].label = 0;
-         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
-         return true;
-      }
-   }
-
-   return false;
-}
-
 /* v_add_co(c, s_lshl(a, b)) -> v_mad_u32_u24(a, 1<<b, c)
  * v_add_co(c, v_lshlrev(a, b)) -> v_mad_u32_u24(b, 1<<a, c)
  * v_sub(c, s_lshl(a, b)) -> v_mad_i32_i24(a, -(1<<b), c)
@@ -4602,8 +4556,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       combine_salu_n2(ctx, instr);
    } else if (instr->opcode == aco_opcode::s_abs_i32) {
       combine_sabsdiff(ctx, instr);
-   } else if (instr->opcode == aco_opcode::v_and_b32) {
-      combine_v_andor_not(ctx, instr);
    }
 
    alu_opt_info info;
@@ -4819,6 +4771,9 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       add_opt(v_add_u32, v_add_lshl_u32, 0x2, "120", nullptr, true);
       add_opt(s_add_u32, v_add_lshl_u32, 0x2, "120", nullptr, true);
       add_opt(s_add_i32, v_add_lshl_u32, 0x2, "120", nullptr, true);
+   } else if (info.opcode == aco_opcode::v_and_b32) {
+      add_opt(v_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<1, 0>, true);
+      add_opt(s_not_b32, v_bfi_b32, 0x3, "10", insert_const_cb<1, 0>, true);
    }
 
    if (match_and_apply_patterns(ctx, info, patterns)) {
