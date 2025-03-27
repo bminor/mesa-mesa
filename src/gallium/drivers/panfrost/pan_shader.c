@@ -113,7 +113,6 @@ static void
 panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                         struct util_debug_callback *dbg,
                         struct panfrost_shader_key *key, unsigned req_local_mem,
-                        unsigned fixed_varying_mask,
                         struct panfrost_shader_binary *out)
 {
    MESA_TRACE_FUNC();
@@ -138,11 +137,9 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    /* Lower this early so the backends don't have to worry about it */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
-      unsigned fixed_varying_mask =
+      inputs.fixed_varying_mask =
          (ir->info.inputs_read & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
          ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
-
-      inputs.fixed_varying_mask = fixed_varying_mask;
    } else if (s->info.stage == MESA_SHADER_VERTEX) {
       /* No IDVS for internal XFB shaders */
       inputs.no_idvs = s->info.has_transform_feedback_varyings;
@@ -244,8 +241,7 @@ panfrost_shader_get(struct pipe_screen *pscreen,
    if (!panfrost_disk_cache_retrieve(screen->disk_cache, uncompiled,
                                      &state->key, &res)) {
       panfrost_shader_compile(screen, uncompiled->nir, dbg, &state->key,
-                              req_local_mem, uncompiled->fixed_varying_mask,
-                              &res);
+                              req_local_mem, &res);
 
       panfrost_disk_cache_store(screen->disk_cache, uncompiled, &state->key,
                                 &res);

@@ -424,12 +424,6 @@ struct panfrost_uncompiled_shader {
    /* Compiled transform feedback program, if one is required */
    struct panfrost_compiled_shader *xfb;
 
-   /* On vertex shaders, bit mask of special desktop-only varyings to link
-    * with the fragment shader. Used on Valhall to implement separable
-    * shaders for desktop GL.
-    */
-   uint32_t fixed_varying_mask;
-
    /* On fragments shaders, bit mask of varyings using noprespective
     * interpolation, starting at VARYING_SLOT_VAR0 */
    uint32_t noperspective_varyings;
