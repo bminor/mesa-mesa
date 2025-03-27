@@ -2083,7 +2083,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    }
    case nir_op_fneg: {
       if (dst.regClass() == v1 && instr->def.bit_size == 16) {
-         Temp src = get_alu_src_vop3p(ctx, instr->src[0]);
+         Temp src = as_vgpr(ctx, get_alu_src_vop3p(ctx, instr->src[0]));
          Instruction* vop3p =
             bld.vop3p(aco_opcode::v_pk_mul_f16, Definition(dst), src, Operand::c16(0x3C00),
                       instr->src[0].swizzle[0] & 1, instr->src[0].swizzle[1] & 1);

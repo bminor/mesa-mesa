@@ -2263,6 +2263,40 @@ parse_operand(opt_ctx& ctx, Temp tmp, alu_opt_op& op_info, aco_type& type)
    ssa_info info = ctx.info[tmp.id()];
    op_info = {};
    type = {};
+
+   if (info.parent_instr->opcode == aco_opcode::v_pk_mul_f16 &&
+       (info.parent_instr->operands[0].constantEquals(0x3c00) ||
+        info.parent_instr->operands[1].constantEquals(0x3c00) ||
+        info.parent_instr->operands[0].constantEquals(0xbc00) ||
+        info.parent_instr->operands[1].constantEquals(0xbc00))) {
+
+      VALU_instruction* fneg = &info.parent_instr->valu();
+
+      unsigned fneg_src =
+         fneg->operands[0].constantEquals(0x3c00) || fneg->operands[0].constantEquals(0xbc00);
+
+      if (fneg->opsel_lo[1 - fneg_src] || fneg->opsel_hi[1 - fneg_src])
+         return false;
+
+      if (fneg->clamp || fneg->isDPP())
+         return false;
+
+      type.base_type = aco_base_type_float;
+      type.num_components = 2;
+      type.bit_size = 16;
+
+      op_info.op = fneg->operands[fneg_src];
+      if (fneg->opsel_lo[fneg_src])
+         op_info.extract[0] = SubdwordSel::uword1;
+      if (fneg->opsel_hi[fneg_src])
+         op_info.extract[1] = SubdwordSel::uword1;
+      op_info.neg[0] =
+         fneg->operands[1 - fneg_src].constantEquals(0xbc00) ^ fneg->neg_lo[0] ^ fneg->neg_lo[1];
+      op_info.neg[1] =
+         fneg->operands[1 - fneg_src].constantEquals(0xbc00) ^ fneg->neg_hi[0] ^ fneg->neg_hi[1];
+      return true;
+   }
+
    // TODO use parent dst type
    if (info.is_fcanonicalize() || info.is_abs() || info.is_neg()) {
       if (ctx.info[info.temp.id()].is_canonicalized() ||
@@ -2308,8 +2342,35 @@ combine_operand(opt_ctx& ctx, alu_opt_op& inner, const aco_type& inner_type,
       return false;
 
    for (unsigned i = 0; i < inner_type.num_components; i++) {
-      inner.neg[i] ^= !inner.abs[i] && outer.neg[0];
-      inner.abs[i] |= outer.abs[0];
+      unsigned offset = inner.extract[i].offset() * 8;
+      unsigned size = MIN2(inner.extract[i].size() * 8, inner_type.bit_size);
+      unsigned out_comp = offset / outer_type.bit_size;
+      unsigned rem_off = offset % outer_type.bit_size;
+      if (rem_off && has_imod)
+         return false;
+      if (out_comp > outer_type.num_components)
+         return false;
+      if (size > outer_type.bit_size && (out_comp + 1) != outer_type.num_components)
+         return false;
+      if (rem_off >= outer.extract[out_comp].size() * 8)
+         return false;
+      if (size < inner_type.bit_size && size > outer.extract[out_comp].size() * 8 &&
+          outer.extract[out_comp].sign_extend() && !inner.extract[i].sign_extend())
+         return false;
+
+      bool sign_extend = size <= outer.extract[out_comp].size() * 8
+                            ? inner.extract[i].sign_extend()
+                            : outer.extract[out_comp].sign_extend();
+      unsigned new_off = (rem_off / 8) + outer.extract[out_comp].offset();
+      unsigned new_size = MIN2(size / 8, outer.extract[i].size());
+      inner.extract[i] = SubdwordSel(new_size, new_off, sign_extend);
+
+      if (size == outer_type.bit_size) {
+         inner.neg[i] ^= !inner.abs[i] && outer.neg[out_comp];
+         inner.abs[i] |= outer.abs[out_comp];
+      } else if (outer_type.base_type != aco_base_type_uint) {
+         return false;
+      }
    }
 
    if (outer.op.isTemp())
@@ -4321,62 +4382,6 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          ctx.uses[instr->definitions[0].tempId()]--;
          return;
-      }
-   }
-
-   /* check for fneg modifiers */
-   for (unsigned i = 0; i < instr->operands.size(); i++) {
-      if (!can_use_input_modifiers(ctx.program->gfx_level, instr->opcode, i))
-         continue;
-      Operand& op = instr->operands[i];
-      if (!op.isTemp())
-         continue;
-
-      ssa_info& info = ctx.info[op.tempId()];
-      if (info.parent_instr->opcode == aco_opcode::v_pk_mul_f16 &&
-          (info.parent_instr->operands[0].constantEquals(0x3C00) ||
-           info.parent_instr->operands[1].constantEquals(0x3C00) ||
-           info.parent_instr->operands[0].constantEquals(0xBC00) ||
-           info.parent_instr->operands[1].constantEquals(0xBC00))) {
-
-         VALU_instruction* fneg = &info.parent_instr->valu();
-
-         unsigned fneg_src =
-            fneg->operands[0].constantEquals(0x3C00) || fneg->operands[0].constantEquals(0xBC00);
-
-         if (fneg->opsel_lo[1 - fneg_src] || fneg->opsel_hi[1 - fneg_src])
-            continue;
-
-         Operand ops[3];
-         for (unsigned j = 0; j < instr->operands.size(); j++)
-            ops[j] = instr->operands[j];
-         ops[i] = fneg->operands[fneg_src];
-         if (!check_vop3_operands(ctx, instr->operands.size(), ops))
-            continue;
-
-         if (fneg->clamp)
-            continue;
-         instr->operands[i] = fneg->operands[fneg_src];
-
-         /* opsel_lo/hi is either 0 or 1:
-          * if 0 - pick selection from fneg->lo
-          * if 1 - pick selection from fneg->hi
-          */
-         bool opsel_lo = vop3p->opsel_lo[i];
-         bool opsel_hi = vop3p->opsel_hi[i];
-         bool neg_lo = fneg->neg_lo[0] ^ fneg->neg_lo[1];
-         bool neg_hi = fneg->neg_hi[0] ^ fneg->neg_hi[1];
-         bool neg_const = fneg->operands[1 - fneg_src].constantEquals(0xBC00);
-         /* Avoid ternary xor as it causes CI fails that can't be reproduced on other systems. */
-         neg_lo ^= neg_const;
-         neg_hi ^= neg_const;
-         vop3p->neg_lo[i] ^= opsel_lo ? neg_hi : neg_lo;
-         vop3p->neg_hi[i] ^= opsel_hi ? neg_hi : neg_lo;
-         vop3p->opsel_lo[i] ^= opsel_lo ? !fneg->opsel_hi[fneg_src] : fneg->opsel_lo[fneg_src];
-         vop3p->opsel_hi[i] ^= opsel_hi ? !fneg->opsel_hi[fneg_src] : fneg->opsel_lo[fneg_src];
-
-         if (--ctx.uses[fneg->definitions[0].tempId()])
-            ctx.uses[fneg->operands[fneg_src].tempId()]++;
       }
    }
 
