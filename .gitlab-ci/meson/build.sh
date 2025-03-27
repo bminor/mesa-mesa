@@ -83,7 +83,7 @@ if [ -n "$HOST_BUILD_OPTIONS" ]; then
 
     section_switch meson-host-build "meson: host build"
 
-    meson configure
+    meson configure --no-pager
     ninja
     ninja install
     popd
@@ -186,7 +186,7 @@ meson setup _build \
       -D backend_max_links=${MAX_LD} \
       ${EXTRA_OPTION}
 cd _build
-meson configure
+meson configure --no-pager
 
 uncollapsed_section_switch meson-build "meson: build"
 
