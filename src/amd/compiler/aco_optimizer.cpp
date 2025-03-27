@@ -1519,7 +1519,9 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
              parse_base_offset(ctx, instr.get(), i, &base, &offset, false) &&
              base.regClass() == instr->operands[i].regClass() &&
              instr->opcode != aco_opcode::ds_swizzle_b32 &&
-             instr->opcode != aco_opcode::ds_bvh_stack_push4_pop1_rtn_b32) {
+             instr->opcode != aco_opcode::ds_bvh_stack_push4_pop1_rtn_b32 &&
+             instr->opcode != aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32 &&
+             instr->opcode != aco_opcode::ds_bvh_stack_push8_pop2_rtn_b64) {
             if (instr->opcode == aco_opcode::ds_write2_b32 ||
                 instr->opcode == aco_opcode::ds_read2_b32 ||
                 instr->opcode == aco_opcode::ds_write2_b64 ||

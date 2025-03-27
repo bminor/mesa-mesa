@@ -4052,6 +4052,23 @@ emit_ds_bvh_stack_push4_pop1_rtn(isel_context* ctx, nir_intrinsic_instr* instr, 
               Operand(dst_node_pointer));
 }
 
+void
+emit_ds_bvh_stack_push8_pop1_rtn(isel_context* ctx, nir_intrinsic_instr* instr, Builder& bld)
+{
+   Temp dst = get_ssa_temp(ctx, &instr->def);
+   Temp stack_addr = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa));
+   Temp last_node = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[1].ssa));
+   Temp intersection_result = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[2].ssa));
+
+   Temp dst_stack_addr = bld.tmp(v1);
+   Temp dst_node_pointer = bld.tmp(v1);
+   bld.ds(aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32, Definition(dst_stack_addr),
+          Definition(dst_node_pointer), Operand(stack_addr), Operand(last_node),
+          Operand(intersection_result), nir_intrinsic_stack_size(instr), 0);
+   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand(dst_stack_addr),
+              Operand(dst_node_pointer));
+}
+
 } // namespace
 
 void
@@ -5093,6 +5110,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_bvh_stack_rtn_amd: {
       switch (instr->num_components) {
       case 4: emit_ds_bvh_stack_push4_pop1_rtn(ctx, instr, bld); break;
+      case 8: emit_ds_bvh_stack_push8_pop1_rtn(ctx, instr, bld); break;
       default: unreachable("Invalid BVH stack component count!");
       }
       break;

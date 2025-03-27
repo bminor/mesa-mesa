@@ -1445,7 +1445,9 @@ get_tied_defs(Instruction* instr)
       ops.push_back(2);
    } else if (instr->opcode == aco_opcode::s_addk_i32 || instr->opcode == aco_opcode::s_mulk_i32 ||
               instr->opcode == aco_opcode::s_cmovk_i32 ||
-              instr->opcode == aco_opcode::ds_bvh_stack_push4_pop1_rtn_b32) {
+              instr->opcode == aco_opcode::ds_bvh_stack_push4_pop1_rtn_b32 ||
+              instr->opcode == aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32 ||
+              instr->opcode == aco_opcode::ds_bvh_stack_push8_pop2_rtn_b64) {
       ops.push_back(0);
    } else if (instr->isMUBUF() && instr->definitions.size() == 1 && instr->operands.size() == 4) {
       ops.push_back(3);
