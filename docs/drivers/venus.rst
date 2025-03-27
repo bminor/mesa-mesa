@@ -17,17 +17,36 @@ The Venus renderer requires
 - :ext:`VK_EXT_image_drm_format_modifier`
 - :ext:`VK_EXT_queue_family_foreign`
 
-from the host driver.  However, it violates the spec in some places currently
-and also relies on implementation-defined behaviors in others.  It is not
-expected to work on all drivers meeting the requirements.  It has only been
-tested with
+from the host driver.  However, it violates the spec and relies on
+implementation-defined behaviors to support ``vkMapMemory`` (see `below
+<#vk-memory-property-host-visible-bit>`__).  It is not expected to work on all
+drivers meeting the requirements.  It has only been tested with:
 
 - ANV 21.1 or later
-- RADV 21.1 or later (the host kernel must have
-  ``CONFIG_TRANSPARENT_HUGEPAGE`` disabled because of this `KVM issue
-  <https://github.com/google/security-research/security/advisories/GHSA-7wq5-phmq-m584>`__)
-- TURNIP 22.0 or later
-- Mali r32p0 or later
+- RADV 21.1 or later
+   - Note: you need 6.13 or later kernel that already has `this KVM series
+     <https://lore.kernel.org/all/20241010182427.1434605-1-seanjc@google.com/>`__,
+     or prior kernel patched with `this prior art
+     <https://lore.kernel.org/all/20240229025759.1187910-1-stevensd@google.com/>`__.
+   - Note: for dGPU with Intel CPU, you need 6.11 or later kernel patched with
+     `this KVM change
+     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__
+     (it was `temporarily reverted
+     <https://lore.kernel.org/all/20240915073010.5860-1-pbonzini@redhat.com/>`__
+     due to a Bochs DRM driver regression that has already been `fixed
+     <https://lore.kernel.org/all/20240909131643.28915-1-yan.y.zhao@intel.com/>`__).
+- Turnip 22.0 or later
+- PanVK 25.1 or later
+- Lavapipe 22.1 or later
+- Mali (Proprietary) r32p0 or later
+- NVIDIA (Proprietary) 570.86 or later
+   - Note: if with Intel CPU, you need 6.11 or later kernel patched with
+     `this KVM change
+     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__
+     (it was `temporarily reverted
+     <https://lore.kernel.org/all/20240915073010.5860-1-pbonzini@redhat.com/>`__
+     due to a Bochs DRM driver regression that has already been `fixed
+     <https://lore.kernel.org/all/20240909131643.28915-1-yan.y.zhao@intel.com/>`__).
 
 The Venus driver requires supports for
 
@@ -40,10 +59,8 @@ The Venus driver requires supports for
 
 from the virtio-gpu kernel driver, unless vtest is used.  That usually means
 the guest kernel should be at least 5.16 or have the parameters back ported,
-paired with hypervisors such as `crosvm
-<https://chromium.googlesource.com/chromiumos/platform/crosvm>`__, or `patched
-qemu
-<https://www.collabora.com/news-and-blog/blog/2021/11/26/venus-on-qemu-enabling-new-virtual-vulkan-driver/>`__.
+paired with hypervisors such as `crosvm <https://crosvm.dev>`__, or `QEMU
+<https://www.qemu.org>`__.
 
 vtest
 -----
