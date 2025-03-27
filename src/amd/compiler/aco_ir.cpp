@@ -1410,9 +1410,11 @@ should_form_clause(const Instruction* a, const Instruction* b)
    return false;
 }
 
-int
-get_op_fixed_to_def(Instruction* instr)
+aco::small_vec<uint32_t, 2>
+get_ops_fixed_to_def(Instruction* instr)
 {
+   aco::small_vec<uint32_t, 2> ops;
+
    if (instr->opcode == aco_opcode::v_interp_p2_f32 || instr->opcode == aco_opcode::v_mac_f32 ||
        instr->opcode == aco_opcode::v_fmac_f32 || instr->opcode == aco_opcode::v_mac_f16 ||
        instr->opcode == aco_opcode::v_fmac_f16 || instr->opcode == aco_opcode::v_mac_legacy_f32 ||
@@ -1421,17 +1423,17 @@ get_op_fixed_to_def(Instruction* instr)
        instr->opcode == aco_opcode::v_writelane_b32_e64 ||
        instr->opcode == aco_opcode::v_dot4c_i32_i8 || instr->opcode == aco_opcode::s_fmac_f32 ||
        instr->opcode == aco_opcode::s_fmac_f16) {
-      return 2;
+      ops.push_back(2);
    } else if (instr->opcode == aco_opcode::s_addk_i32 || instr->opcode == aco_opcode::s_mulk_i32 ||
               instr->opcode == aco_opcode::s_cmovk_i32) {
-      return 0;
+      ops.push_back(0);
    } else if (instr->isMUBUF() && instr->definitions.size() == 1 && instr->operands.size() == 4) {
-      return 3;
+      ops.push_back(3);
    } else if (instr->isMIMG() && instr->definitions.size() == 1 &&
               !instr->operands[2].isUndefined()) {
-      return 2;
+      ops.push_back(2);
    }
-   return -1;
+   return ops;
 }
 
 uint8_t

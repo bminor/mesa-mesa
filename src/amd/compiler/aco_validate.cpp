@@ -1472,11 +1472,13 @@ validate_ra(Program* program)
             assignments[def.tempId()].valid = true;
          }
 
-         int op_fixed_to_def = get_op_fixed_to_def(instr.get());
-         if (op_fixed_to_def != -1 &&
-             instr->definitions[0].physReg() != instr->operands[op_fixed_to_def].physReg()) {
-            err |= ra_fail(program, loc, Location(),
-                           "Operand %d must have the same register as definition", op_fixed_to_def);
+         unsigned fixed_def_idx = 0;
+         for (auto op_idx : get_ops_fixed_to_def(instr.get())) {
+            if (instr->definitions[fixed_def_idx++].physReg() !=
+                instr->operands[op_idx].physReg()) {
+               err |= ra_fail(program, loc, Location(),
+                              "Operand %d must have the same register as definition", op_idx);
+            }
          }
       }
    }

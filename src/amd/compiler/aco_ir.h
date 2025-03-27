@@ -2321,7 +2321,7 @@ void _aco_err(Program* program, const char* file, unsigned line, const char* fmt
 
 #define aco_err(program, ...)      _aco_err(program, __FILE__, __LINE__, __VA_ARGS__)
 
-int get_op_fixed_to_def(Instruction* instr);
+aco::small_vec<uint32_t, 2> get_ops_fixed_to_def(Instruction* instr);
 
 /* utilities for dealing with register demand */
 RegisterDemand get_live_changes(Instruction* instr);
