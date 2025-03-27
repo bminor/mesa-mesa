@@ -526,10 +526,10 @@ emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline)
       get_task_prog_data(pipeline) : NULL;
    const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
 
-   const struct intel_mesh_urb_allocation alloc =
-      intel_get_mesh_urb_config(devinfo, pipeline->base.base.device->l3_config,
-                                task_prog_data ? task_prog_data->map.size_dw : 0,
-                                mesh_prog_data->map.size / 4);
+   intel_get_mesh_urb_config(devinfo, pipeline->base.base.device->l3_config,
+                             task_prog_data ? task_prog_data->map.size_dw : 0,
+                             mesh_prog_data->map.size / 4,
+                             &pipeline->urb_cfg);
 
    /* Zero out the primitive pipeline URB allocations. */
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
@@ -546,23 +546,21 @@ emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline)
 
    anv_pipeline_emit(pipeline, final.urb, GENX(3DSTATE_URB_ALLOC_TASK), urb) {
       if (task_prog_data) {
-         urb.TASKURBEntryAllocationSize   = alloc.task_entry_size_64b - 1;
-         urb.TASKNumberofURBEntriesSlice0 = alloc.task_entries;
-         urb.TASKNumberofURBEntriesSliceN = alloc.task_entries;
-         urb.TASKURBStartingAddressSlice0 = alloc.task_starting_address_8kb;
-         urb.TASKURBStartingAddressSliceN = alloc.task_starting_address_8kb;
+         urb.TASKURBEntryAllocationSize   = pipeline->urb_cfg.size[MESA_SHADER_TASK] - 1;
+         urb.TASKNumberofURBEntriesSlice0 = pipeline->urb_cfg.entries[MESA_SHADER_TASK];
+         urb.TASKNumberofURBEntriesSliceN = pipeline->urb_cfg.entries[MESA_SHADER_TASK];
+         urb.TASKURBStartingAddressSlice0 = pipeline->urb_cfg.start[MESA_SHADER_TASK];
+         urb.TASKURBStartingAddressSliceN = pipeline->urb_cfg.start[MESA_SHADER_TASK];
       }
    }
 
    anv_pipeline_emit(pipeline, final.urb, GENX(3DSTATE_URB_ALLOC_MESH), urb) {
-      urb.MESHURBEntryAllocationSize   = alloc.mesh_entry_size_64b - 1;
-      urb.MESHNumberofURBEntriesSlice0 = alloc.mesh_entries;
-      urb.MESHNumberofURBEntriesSliceN = alloc.mesh_entries;
-      urb.MESHURBStartingAddressSlice0 = alloc.mesh_starting_address_8kb;
-      urb.MESHURBStartingAddressSliceN = alloc.mesh_starting_address_8kb;
+      urb.MESHURBEntryAllocationSize   = pipeline->urb_cfg.size[MESA_SHADER_MESH] - 1;
+      urb.MESHNumberofURBEntriesSlice0 = pipeline->urb_cfg.entries[MESA_SHADER_MESH];
+      urb.MESHNumberofURBEntriesSliceN = pipeline->urb_cfg.entries[MESA_SHADER_MESH];
+      urb.MESHURBStartingAddressSlice0 = pipeline->urb_cfg.start[MESA_SHADER_MESH];
+      urb.MESHURBStartingAddressSliceN = pipeline->urb_cfg.start[MESA_SHADER_MESH];
    }
-
-   pipeline->urb_cfg.deref_block_size = alloc.deref_block_size;
 }
 #endif
 
