@@ -2046,12 +2046,15 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
                     offsetof(fd_lrzfc_layout<CHIP>, dir_track);
    }
 
-   trace_end_render_pass(&cmd->trace, &cmd->cs, gmem,
-                         cmd->state.rp.gmem_disable_reason,
-                         cmd->state.rp.drawcall_count,
-                         avg_per_sample_bandwidth, cmd->state.lrz.valid,
-                         cmd->state.rp.lrz_disable_reason,
-                         cmd->state.rp.lrz_disabled_at_draw, addr);
+   trace_end_render_pass(
+      &cmd->trace, &cmd->cs, gmem,
+      cmd->state.rp.gmem_disable_reason ? cmd->state.rp.gmem_disable_reason
+                                        : "",
+      cmd->state.rp.drawcall_count, avg_per_sample_bandwidth,
+      cmd->state.lrz.valid,
+      cmd->state.rp.lrz_disable_reason ? cmd->state.rp.lrz_disable_reason
+                                       : "",
+      cmd->state.rp.lrz_disabled_at_draw, addr);
 }
 
 static void
