@@ -169,7 +169,7 @@ radeonsi-raven-vaapi-fluster:
     B2C_TIMEOUT_OVERALL_MINUTES: 710
     B2C_TIMEOUT_BOOT_RETRIES: 0
 
-vkcts-tahiti-valve:
+radv-tahiti-vkcts:
   extends:
     - .vkcts-test-valve
     - .tahiti-test-valve
