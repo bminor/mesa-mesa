@@ -1933,8 +1933,6 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min
    intel_device_info_init_was(devinfo);
    intel_device_info_apply_workarounds(devinfo);
 
-   intel_check_hwconfig_items(fd, devinfo);
-
    return true;
 }
 
