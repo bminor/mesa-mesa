@@ -106,7 +106,7 @@ brw_live_variables::setup_def_use()
 
       assert(ip == bd->ip_range.start);
       if (block->num > 0)
-         assert(block_data[block->num - 1].ip_range.end == ip - 1);
+         assert(block_data[block->num - 1].ip_range.end == ip);
 
       foreach_inst_in_block(brw_inst, inst, block) {
          /* Set use[] for this instruction */
@@ -259,14 +259,8 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
       }
    }
 
-   vars_range = linear_alloc_array(lin_ctx, brw_range, num_vars);
-   for (int i = 0; i < num_vars; i++)
-      vars_range[i] = { MAX_INSTRUCTION, -1 };
-
-   vgrf_range = linear_alloc_array(lin_ctx, brw_range, num_vgrfs);
-   for (int i = 0; i < num_vgrfs; i++)
-      vgrf_range[i] = { MAX_INSTRUCTION, -1 };
-
+   vars_range = linear_zalloc_array(lin_ctx, brw_range, num_vars);
+   vgrf_range = linear_zalloc_array(lin_ctx, brw_range, num_vgrfs);
    block_data = linear_alloc_array(lin_ctx, struct block_data, cfg->num_blocks);
 
    bitset_words = BITSET_WORDS(num_vars);

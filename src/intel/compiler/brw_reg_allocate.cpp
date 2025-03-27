@@ -1086,7 +1086,7 @@ brw_reg_alloc::alloc_spill_reg(unsigned size, int ip)
    assert(n == first_vgrf_node + vgrf);
    assert(n == first_spill_node + spill_node_count);
 
-   brw_range spill_reg_range{ ip - 1, ip + 1 };
+   brw_range spill_reg_range{ ip - 1, ip + 2 };
    setup_live_interference(n, spill_reg_range);
 
    /* Add interference between this spill node and any other spill nodes for

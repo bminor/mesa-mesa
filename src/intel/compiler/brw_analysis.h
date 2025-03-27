@@ -232,7 +232,6 @@ private:
    bblock_t **parents;
 };
 
-/* TODO: Make these exclusive ranges, i.e. half-open at the end. */
 struct brw_range {
    int start;
    int end;
@@ -240,22 +239,22 @@ struct brw_range {
    /* If range not empty, this is the last value inside the range. */
    inline int last() const
    {
-      return end;
+      return end - 1;
    }
 
    inline bool is_empty() const
    {
-      return end < start;
+      return end <= start;
    }
 
    inline int len() const
    {
-      return end - start + 1;
+      return end - start;
    }
 
    inline bool contains(int x) const
    {
-      return start <= x && x <= end;
+      return start <= x && x < end;
    }
 
    inline bool contains(brw_range r) const
@@ -278,15 +277,15 @@ inline brw_range
 merge(brw_range r, int x)
 {
    if (r.is_empty())
-      return { x, x };
-   return { MIN2(r.start, x), MAX2(r.end, x) };
+      return { x, x + 1 };
+   return { MIN2(r.start, x), MAX2(r.end, x + 1) };
 }
 
 inline bool
 overlaps(brw_range a, brw_range b)
 {
-   return a.start <= b.end &&
-          b.start <= a.end;
+   return a.start < b.end &&
+          b.start < a.end;
 }
 
 inline brw_range
@@ -296,9 +295,8 @@ intersect(brw_range a, brw_range b)
       return { MAX2(a.start, b.start),
                MIN2(a.end, b.end) };
    else
-      return { 0, -1 };
+      return { 0, 0 };
 }
-
 
 inline brw_range
 clip_end(brw_range r, int n)
@@ -322,7 +320,7 @@ struct brw_ip_ranges {
 
    brw_range range(const bblock_t *block) const {
       int start = start_ip[block->num];
-      return { start, start + (int)block->num_instructions - 1 };
+      return { start, start + (int)block->num_instructions };
    }
 
 private:
