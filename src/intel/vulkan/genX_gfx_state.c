@@ -1177,6 +1177,15 @@ update_line_width(struct anv_gfx_dynamic_state *hw_state,
 }
 
 ALWAYS_INLINE static void
+update_sf_point_width_source(struct anv_gfx_dynamic_state *hw_state,
+                             const struct anv_cmd_graphics_state *gfx)
+{
+   SET(SF, sf.PointWidthSource,
+       (get_gfx_last_vue_map(gfx)->slots_valid & VARYING_BIT_PSIZ) ?
+       Vertex : State);
+}
+
+ALWAYS_INLINE static void
 update_sf_global_depth_bias(struct anv_gfx_dynamic_state *hw_state,
                             const struct vk_dynamic_graphics_state *dyn)
 {
@@ -2050,6 +2059,9 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH))
       update_line_width(hw_state, dyn);
 
+   if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
+      update_sf_point_width_source(hw_state, gfx);
+
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_FACTORS))
       update_sf_global_depth_bias(hw_state, dyn);
 
@@ -2833,11 +2845,18 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 #endif /* GFX_VER >= 30 */
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SF)) {
-      anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_SF),
-                           pipeline, partial.sf, sf) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_SF), sf) {
+         /* Fixed values */
+         sf.ViewportTransformEnable = true;
+         sf.StatisticsEnable = true;
+         sf.VertexSubPixelPrecisionSelect = _8Bit;
+         sf.AALineDistanceMode = true;
+         sf.PointWidth = 1.0;
+
 #if GFX_VER >= 12
          SET(sf, sf, DerefBlockSize);
 #endif
+         SET(sf, sf, PointWidthSource);
          SET(sf, sf, LineWidth);
          SET(sf, sf, TriangleStripListProvokingVertexSelect);
          SET(sf, sf, LineStripListProvokingVertexSelect);

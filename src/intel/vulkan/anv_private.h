@@ -1794,6 +1794,7 @@ struct anv_gfx_dynamic_state {
    /* 3DSTATE_SF */
    struct {
       uint32_t DerefBlockSize;
+      uint32_t PointWidthSource;
       float    LineWidth;
       uint32_t TriangleStripListProvokingVertexSelect;
       uint32_t LineStripListProvokingVertexSelect;
@@ -5172,7 +5173,6 @@ struct anv_graphics_pipeline {
     */
    struct {
       struct anv_gfx_state_ptr                  clip;
-      struct anv_gfx_state_ptr                  sf;
       struct anv_gfx_state_ptr                  ps_extra;
       struct anv_gfx_state_ptr                  wm;
       struct anv_gfx_state_ptr                  so;
@@ -5399,7 +5399,7 @@ get_gfx_last_vue_map(const struct anv_cmd_graphics_state *gfx)
       return &((const struct brw_vs_prog_data *)
                gfx->shaders[MESA_SHADER_VERTEX]->prog_data)->base.vue_map;
    }
-   return NULL;
+   UNREACHABLE("Invalid bound shaders");
 }
 
 static inline const struct brw_cs_prog_data *

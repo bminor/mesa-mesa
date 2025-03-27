@@ -613,28 +613,6 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
 }
 
 static void
-emit_rs_state(struct anv_graphics_pipeline *pipeline)
-{
-   anv_pipeline_emit(pipeline, partial.sf, GENX(3DSTATE_SF), sf) {
-      sf.ViewportTransformEnable = true;
-      sf.StatisticsEnable = true;
-      sf.VertexSubPixelPrecisionSelect = _8Bit;
-      sf.AALineDistanceMode = true;
-
-      const struct intel_vue_map *vue_map =
-         anv_pipeline_is_primitive(pipeline) ?
-         &anv_pipeline_get_last_vue_prog_data(pipeline)->vue_map :
-         &get_pipeline_mesh_prog_data(pipeline)->map.vue_map;
-      if (vue_map->slots_valid & VARYING_BIT_PSIZ) {
-         sf.PointWidthSource = Vertex;
-      } else {
-         sf.PointWidthSource = State;
-         sf.PointWidth = 1.0;
-      }
-   }
-}
-
-static void
 emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
                   const struct vk_input_assembly_state *ia,
                   const struct vk_viewport_state *vp,
@@ -1697,7 +1675,6 @@ void
 genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                              const struct vk_graphics_pipeline_state *state)
 {
-   emit_rs_state(pipeline);
    compute_kill_pixel(pipeline, state->ms, state);
 
    emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);
