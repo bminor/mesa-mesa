@@ -1025,9 +1025,18 @@ impl Device {
         self.screen.compute_caps().grid_dimension
     }
 
+    /// Returns the maximum size in bytes of a memory allocation for this
+    /// device.
     pub fn max_mem_alloc(&self) -> cl_ulong {
-        // TODO: at the moment gallium doesn't support bigger buffers
-        min(self.screen.compute_caps().max_mem_alloc_size, 0x80000000)
+        // The returned value must always be less than or equal to `isize::MAX`,
+        // as this method may be used for bounds checking on allocations.
+        // TODO: Add support for larger allocations. gallium doesn't support
+        // buffers larger than `i32::MAX` due to constraints in the buffer
+        // mapping API.
+        min(
+            self.screen.compute_caps().max_mem_alloc_size,
+            i32::MAX as cl_ulong,
+        )
     }
 
     pub fn max_samplers(&self) -> cl_uint {
