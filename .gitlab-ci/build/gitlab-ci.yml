@@ -422,10 +422,6 @@ debian-android:
     ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
-    - export CROSS=aarch64-linux-android
-    - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
-    - export VULKAN_DRIVERS=freedreno,broadcom,virtio
-    - *meson-build
     # x86_64 build:
     # Can't do AMD drivers because they require LLVM, which is currently
     # problematic in our Android builds.
@@ -435,6 +431,16 @@ debian-android:
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
     - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
+    # remove all the files created by the previous build before the next build
+    - git clean -dxf .
+    # aarch64 build:
+    # build-only, to catch compilation regressions
+    # without calling .gitlab-ci/prepare-artifacts.sh so that the
+    # artifacts are not shipped in mesa-x86_64-android-${BUILDTYPE}
+    - export CROSS=aarch64-linux-android
+    - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
+    - export VULKAN_DRIVERS=freedreno,broadcom,virtio
+    - *meson-build
 
 .meson-cross:
   extends:
