@@ -128,8 +128,20 @@ struct radv_bvh_box32_node {
 
 #define RADV_BVH_ROOT_NODE    radv_bvh_node_box32
 #define RADV_BVH_INVALID_NODE 0xffffffffu
-/* used by gfx11's ds_bvh_stack* only */
+/* used by gfx11's ds_bvh_stack* only
+ * Indicator to ignore everything in the intrinsic result (i.e. push nothing to the stack) and only pop the next node
+ * from the stack.
+ */
 #define RADV_BVH_STACK_TERMINAL_NODE 0xfffffffeu
+/* used by gfx12's ds_bvh_stack* only */
+#define RADV_BVH_STACK_SKIP_0_TO_3 0xfffffffdu
+#define RADV_BVH_STACK_SKIP_4_TO_7 0xfffffffbu
+#define RADV_BVH_STACK_SKIP_0_TO_7 0xfffffff9u
+
+/* On gfx12, bits 29-31 of the stack pointer contain flags. */
+#define RADV_BVH_STACK_FLAG_HAS_BLAS (1u << 29)
+#define RADV_BVH_STACK_FLAG_OVERFLOW (1u << 30)
+#define RADV_BVH_STACK_FLAG_TLAS_POP (1u << 31)
 
 /* GFX12 */
 
