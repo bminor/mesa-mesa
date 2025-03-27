@@ -200,6 +200,8 @@
     # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
     # dependencies right.
     - .lava-traces-base
+  rules:
+    - when: never # temporarily disabled due to S3 issues
   variables:
     VK_DRIVER: intel
     GPU_VERSION: zink-anv-adl
@@ -225,6 +227,8 @@
     # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
     # dependencies right.
     - .lava-traces-base
+  rules:
+    - when: never # temporarily disabled due to S3 issues
   variables:
     VK_DRIVER: intel
     GPU_VERSION: zink-anv-tgl
