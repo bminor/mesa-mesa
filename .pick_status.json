@@ -2444,7 +2444,7 @@
         "description": "hasvk: Fix non-functioning version override.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d575034f23038163d502e744b957b184334a74b",
         "notes": null
