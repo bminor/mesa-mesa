@@ -2972,14 +2972,17 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    assert(image_index < chain->base.image_count);
    wl_surface_attach(wsi_wl_surface->surface, chain->images[image_index].buffer, 0, 0);
 
-   if (wl_surface_get_version(wsi_wl_surface->surface) >= 4 && damage &&
-       damage->pRectangles && damage->rectangleCount > 0) {
-      for (unsigned i = 0; i < damage->rectangleCount; i++) {
-         const VkRectLayerKHR *rect = &damage->pRectangles[i];
-         assert(rect->layer == 0);
-         wl_surface_damage_buffer(wsi_wl_surface->surface,
-                                  rect->offset.x, rect->offset.y,
-                                  rect->extent.width, rect->extent.height);
+   if (wl_surface_get_version(wsi_wl_surface->surface) >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION) {
+      if (damage && damage->pRectangles && damage->rectangleCount > 0) {
+         for (unsigned i = 0; i < damage->rectangleCount; i++) {
+            const VkRectLayerKHR *rect = &damage->pRectangles[i];
+            assert(rect->layer == 0);
+            wl_surface_damage_buffer(wsi_wl_surface->surface,
+                                     rect->offset.x, rect->offset.y,
+                                     rect->extent.width, rect->extent.height);
+         }
+      } else {
+         wl_surface_damage_buffer(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
       }
    } else {
       wl_surface_damage(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
