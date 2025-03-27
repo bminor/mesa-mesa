@@ -771,6 +771,52 @@ calculate_tile_dimensions(const struct anv_device *device,
    }                                                                \
 
 ALWAYS_INLINE static void
+update_urb_config(struct anv_gfx_dynamic_state *hw_state,
+                  const struct anv_graphics_pipeline *pipeline,
+                  const struct anv_device *device)
+{
+   struct intel_urb_config new_cfg = { 0 };
+
+#if GFX_VERx10 >= 125
+   if (anv_pipeline_is_mesh(pipeline)) {
+      const struct brw_task_prog_data *task_prog_data =
+         get_task_prog_data(pipeline);
+      const struct brw_mesh_prog_data *mesh_prog_data =
+         get_mesh_prog_data(pipeline);
+      intel_get_mesh_urb_config(device->info, device->l3_config,
+                                task_prog_data ? task_prog_data->map.size_dw : 0,
+                                mesh_prog_data->map.size / 4, &new_cfg);
+   } else
+#endif
+   {
+      for (int i = MESA_SHADER_VERTEX; i <= MESA_SHADER_GEOMETRY; i++) {
+         const struct brw_vue_prog_data *prog_data =
+            !anv_pipeline_has_stage(pipeline, i) ? NULL :
+            (const struct brw_vue_prog_data *) pipeline->base.shaders[i]->prog_data;
+
+         new_cfg.size[i] = prog_data ? prog_data->urb_entry_size : 1;
+      }
+
+      UNUSED bool constrained;
+      intel_get_urb_config(device->info, device->l3_config,
+                           pipeline->base.base.active_stages &
+                           VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                           pipeline->base.base.active_stages & VK_SHADER_STAGE_GEOMETRY_BIT,
+                           &new_cfg, &constrained);
+   }
+
+#if GFX_VER >= 12
+   SET(SF, sf.DerefBlockSize, new_cfg.deref_block_size);
+#endif
+
+   for (int s = 0; s <= MESA_SHADER_MESH; s++) {
+      SET(URB, urb_cfg.size[s],    new_cfg.size[s]);
+      SET(URB, urb_cfg.start[s],   new_cfg.start[s]);
+      SET(URB, urb_cfg.entries[s], new_cfg.entries[s]);
+   }
+}
+
+ALWAYS_INLINE static void
 update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
                      const struct vk_dynamic_graphics_state *dyn,
                      const struct anv_graphics_pipeline *pipeline)
@@ -1922,6 +1968,9 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR))
       update_fs_msaa_flags(hw_state, dyn, pipeline);
 
+   if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
+      update_urb_config(hw_state, pipeline, device);
+
    if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
       update_ps(hw_state, device, dyn, pipeline);
@@ -2245,6 +2294,55 @@ genX(batch_emit_wa_14018283232)(struct anv_batch *batch)
 }
 #endif
 
+void
+genX(emit_urb_setup)(struct anv_batch *batch,
+                     const struct anv_device *device,
+                     const struct intel_urb_config *urb_cfg)
+{
+   for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
+#if GFX_VER >= 12
+      anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
+         urb._3DCommandSubOpcode             += i;
+         if (urb_cfg->size[i] > 0)
+            urb.VSURBEntryAllocationSize     = urb_cfg->size[i] - 1;
+         urb.VSURBStartingAddressSlice0      = urb_cfg->start[i];
+         urb.VSURBStartingAddressSliceN      = urb_cfg->start[i];
+         urb.VSNumberofURBEntriesSlice0      = urb_cfg->entries[i];
+         urb.VSNumberofURBEntriesSliceN      = urb_cfg->entries[i];
+      }
+#else
+      anv_batch_emit(batch, GENX(3DSTATE_URB_VS), urb) {
+         urb._3DCommandSubOpcode      += i;
+         if (urb_cfg->size[i] > 0)
+            urb.VSURBEntryAllocationSize = urb_cfg->size[i] - 1;
+         urb.VSURBStartingAddress        = urb_cfg->start[i];
+         urb.VSNumberofURBEntries        = urb_cfg->entries[i];
+      }
+#endif
+   }
+
+#if GFX_VERx10 >= 125
+   if (device->vk.enabled_extensions.EXT_mesh_shader) {
+      anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_TASK), urb) {
+         if (urb_cfg->size[MESA_SHADER_TASK] > 0)
+            urb.TASKURBEntryAllocationSize = urb_cfg->size[MESA_SHADER_TASK] - 1;
+         urb.TASKNumberofURBEntriesSlice0  = urb_cfg->entries[MESA_SHADER_TASK];
+         urb.TASKNumberofURBEntriesSliceN  = urb_cfg->entries[MESA_SHADER_TASK];
+         urb.TASKURBStartingAddressSlice0   = urb_cfg->start[MESA_SHADER_TASK];
+         urb.TASKURBStartingAddressSliceN  = urb_cfg->start[MESA_SHADER_TASK];
+      }
+      anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_MESH), urb) {
+         if (urb_cfg->size[MESA_SHADER_MESH] > 0)
+            urb.MESHURBEntryAllocationSize = urb_cfg->size[MESA_SHADER_MESH] - 1;
+         urb.MESHNumberofURBEntriesSlice0  = urb_cfg->entries[MESA_SHADER_MESH];
+         urb.MESHNumberofURBEntriesSliceN  = urb_cfg->entries[MESA_SHADER_MESH];
+         urb.MESHURBStartingAddressSlice0  = urb_cfg->start[MESA_SHADER_MESH];
+         urb.MESHURBStartingAddressSliceN  = urb_cfg->start[MESA_SHADER_MESH];
+      }
+   }
+#endif
+}
+
 /**
  * This function handles dirty state emission to the batch buffer.
  */
@@ -2324,15 +2422,24 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       gfx->base.push_constants_data_dirty = true;
    }
 
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_URB)) {
-      if (genX(need_wa_16014912113)(&gfx->urb_cfg, &pipeline->urb_cfg)) {
-         genX(batch_emit_wa_16014912113)(&cmd_buffer->batch,
-                                         &gfx->urb_cfg);
-      }
-      anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.urb);
+#define INIT(category, name) \
+   .name = hw_state->category.name
+#define SET(s, category, name) \
+   s.name = hw_state->category.name
 
-      memcpy(&gfx->urb_cfg, &pipeline->urb_cfg,
-             sizeof(struct intel_urb_config));
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_URB)) {
+#if INTEL_NEEDS_WA_16014912113
+      if (genX(need_wa_16014912113)(
+             &cmd_buffer->state.gfx.urb_cfg, &hw_state->urb_cfg)) {
+         genX(batch_emit_wa_16014912113)(&cmd_buffer->batch,
+                                         &cmd_buffer->state.gfx.urb_cfg);
+      }
+      /* Update urb config. */
+      memcpy(&cmd_buffer->state.gfx.urb_cfg, &hw_state->urb_cfg,
+             sizeof(hw_state->urb_cfg));
+#endif
+
+      genX(emit_urb_setup)(&cmd_buffer->batch, device, &hw_state->urb_cfg);
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PRIMITIVE_REPLICATION))
@@ -2452,11 +2559,6 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
              !BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_CLIP_MESH) &&
              !BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE_MESH));
    }
-
-#define INIT(category, name) \
-   .name = hw_state->category.name
-#define SET(s, category, name) \
-   s.name = hw_state->category.name
 
    /* Now the potentially dynamic instructions */
 
@@ -2704,6 +2806,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SF)) {
       anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_SF),
                            pipeline, partial.sf, sf) {
+#if GFX_VER >= 12
+         SET(sf, sf, DerefBlockSize);
+#endif
          SET(sf, sf, LineWidth);
          SET(sf, sf, TriangleStripListProvokingVertexSelect);
          SET(sf, sf, LineStripListProvokingVertexSelect);

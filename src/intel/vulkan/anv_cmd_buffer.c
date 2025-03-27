@@ -554,7 +554,6 @@ anv_cmd_buffer_flush_pipeline_state(struct anv_cmd_buffer *cmd_buffer,
     * We avoid comparing protected packets as all the fields but the scratch
     * surface are identical. we just need to select the right one at emission.
     */
-   diff_fix_state(URB,                      final.urb);
    diff_fix_state(VF_SGVS,                  final.vf_sgvs);
    if (cmd_buffer->device->info->ver >= 11)
       diff_fix_state(VF_SGVS_2,             final.vf_sgvs_2);

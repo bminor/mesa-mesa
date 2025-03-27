@@ -125,11 +125,16 @@ emit_common_so_memcpy(struct anv_memcpy_state *state,
     * allocate space for the VS.  Even though one isn't run, we need VUEs to
     * store the data that VF is going to pass to SOL.
     */
-   const unsigned entry_size[4] = { DIV_ROUND_UP(32, 64), 1, 1, 1 };
-   memcpy(state->urb_cfg.size, &entry_size, sizeof(entry_size));
+   state->urb_cfg = (struct intel_urb_config) {
+      .size = { DIV_ROUND_UP(32, 64), 1, 1, 1 },
+   };
+   UNUSED bool constrained;
+   intel_get_urb_config(device->info, l3_config, false, false,
+                        &state->urb_cfg, &constrained);
 
-   genX(emit_urb_setup)(device, batch, l3_config,
-                        VK_SHADER_STAGE_VERTEX_BIT, urb_cfg_in, &state->urb_cfg);
+   if (genX(need_wa_16014912113)(urb_cfg_in, &state->urb_cfg))
+      genX(batch_emit_wa_16014912113)(batch, urb_cfg_in);
+   genX(emit_urb_setup)(batch, device, &state->urb_cfg);
 
 #if GFX_VER >= 12
    /* Disable Primitive Replication. */

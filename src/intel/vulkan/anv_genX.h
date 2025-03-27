@@ -232,11 +232,9 @@ void genX(cmd_buffer_ensure_cfe_state)(struct anv_cmd_buffer *cmd_buffer,
                                        uint32_t total_scratch);
 
 void
-genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
-                     const struct intel_l3_config *l3_config,
-                     VkShaderStageFlags active_stages,
-                     const struct intel_urb_config *urb_cfg_in,
-                     struct intel_urb_config *urb_cfg_out);
+genX(emit_urb_setup)(struct anv_batch *batch,
+                     const struct anv_device *device,
+                     const struct intel_urb_config *urb_cfg);
 
 void genX(emit_sample_pattern)(struct anv_batch *batch,
                                const struct vk_sample_locations_state *sl);

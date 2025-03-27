@@ -266,15 +266,17 @@ static void
 blorp_pre_emit_urb_config(struct blorp_batch *blorp_batch,
                           struct intel_urb_config *urb_cfg)
 {
+#if INTEL_NEEDS_WA_16014912113
    struct anv_cmd_buffer *cmd_buffer = blorp_batch->driver_batch;
-   if (genX(need_wa_16014912113)(&cmd_buffer->state.gfx.urb_cfg, urb_cfg)) {
+   if (genX(need_wa_16014912113)(
+          &cmd_buffer->state.gfx.urb_cfg, urb_cfg)) {
       genX(batch_emit_wa_16014912113)(&cmd_buffer->batch,
                                       &cmd_buffer->state.gfx.urb_cfg);
    }
 
    /* Update urb config. */
-   memcpy(&cmd_buffer->state.gfx.urb_cfg, urb_cfg,
-          sizeof(struct intel_urb_config));
+   memcpy(&cmd_buffer->state.gfx.urb_cfg, urb_cfg, sizeof(*urb_cfg));
+#endif
 }
 
 static const struct intel_l3_config *

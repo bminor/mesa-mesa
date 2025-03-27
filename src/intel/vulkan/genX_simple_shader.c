@@ -116,16 +116,23 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
     * allocate space for the VS.  Even though one isn't run, we need VUEs to
     * store the data that VF is going to pass to SOL.
     */
-   struct intel_urb_config urb_cfg_out = {
+   struct intel_urb_config urb_cfg = {
       .size = { DIV_ROUND_UP(32, 64), 1, 1, 1 },
    };
 
-   genX(emit_l3_config)(batch, device, state->l3_config);
-   state->cmd_buffer->state.current_l3_config = state->l3_config;
+   genX(emit_l3_config)(batch, device, device->l3_config);
+   state->cmd_buffer->state.current_l3_config = device->l3_config;
 
-   genX(emit_urb_setup)(device, batch, state->l3_config,
-                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                        state->urb_cfg, &urb_cfg_out);
+   bool constrained;
+   intel_get_urb_config(device->info, device->l3_config, false, false,
+                        &urb_cfg, &constrained);
+
+   if (genX(need_wa_16014912113)(&state->cmd_buffer->state.gfx.urb_cfg,
+                                 &urb_cfg)) {
+      genX(batch_emit_wa_16014912113)(
+         batch, &state->cmd_buffer->state.gfx.urb_cfg);
+   }
+   genX(emit_urb_setup)(batch, device, &urb_cfg);
 
    anv_batch_emit(batch, GENX(3DSTATE_PS_BLEND), ps_blend) {
       ps_blend.HasWriteableRT = true;
@@ -168,7 +175,7 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
 
    anv_batch_emit(batch, GENX(3DSTATE_SF), sf) {
 #if GFX_VER >= 12
-      sf.DerefBlockSize = urb_cfg_out.deref_block_size;
+      sf.DerefBlockSize = urb_cfg.deref_block_size;
 #endif
    }
 
@@ -376,8 +383,8 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
    }
 
    /* Update urb config after simple shader. */
-   memcpy(&state->cmd_buffer->state.gfx.urb_cfg, &urb_cfg_out,
-          sizeof(struct intel_urb_config));
+   memcpy(&state->cmd_buffer->state.gfx.urb_cfg, &urb_cfg,
+          sizeof(urb_cfg));
 
    state->cmd_buffer->state.gfx.vb_dirty = BITFIELD_BIT(0);
    state->cmd_buffer->state.gfx.dirty |= ~(ANV_CMD_DIRTY_INDEX_BUFFER |

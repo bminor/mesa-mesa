@@ -241,7 +241,6 @@ anv_device_utrace_flush_cmd_buffers(struct anv_queue *queue,
             .general_state_stream = &submit->general_state_stream,
             .batch                = batch,
             .kernel               = copy_kernel,
-            .l3_config            = device->internal_kernels_l3_config,
          };
          anv_genX(device->info, emit_simple_shader_init)(&submit->simple_state);
 

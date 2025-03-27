@@ -1588,6 +1588,27 @@ enum anv_coarse_pixel_state {
  * be reemitted outside of the VkPipeline object are tracked here.
  */
 struct anv_gfx_dynamic_state {
+   /* 3DSTATE_URB_* */
+   struct intel_urb_config urb_cfg;
+
+   /* 3DSTATE_URB_ALLOC_TASK */
+   struct {
+      uint32_t TASKURBEntryAllocationSize;
+      uint32_t TASKNumberofURBEntriesSlice0;
+      uint32_t TASKNumberofURBEntriesSliceN;
+      uint32_t TASKURBStartingAddressSlice0;
+      uint32_t TASKURBStartingAddressSliceN;
+   } urb_task;
+
+   /* 3DSTATE_URB_ALLOC_TASK */
+   struct {
+      uint32_t MESHURBEntryAllocationSize;
+      uint32_t MESHNumberofURBEntriesSlice0;
+      uint32_t MESHNumberofURBEntriesSliceN;
+      uint32_t MESHURBStartingAddressSlice0;
+      uint32_t MESHURBStartingAddressSliceN;
+   } urb_mesh;
+
    /* 3DSTATE_BLEND_STATE_POINTERS */
    struct {
       bool AlphaToCoverageEnable;
@@ -1765,6 +1786,7 @@ struct anv_gfx_dynamic_state {
 
    /* 3DSTATE_SF */
    struct {
+      uint32_t DerefBlockSize;
       float    LineWidth;
       uint32_t TriangleStripListProvokingVertexSelect;
       uint32_t LineStripListProvokingVertexSelect;
@@ -3985,10 +4007,6 @@ struct anv_simple_shader {
    struct anv_batch *batch;
    /* Shader to use */
    struct anv_shader_bin *kernel;
-   /* L3 config used by the shader */
-   const struct intel_l3_config *l3_config;
-   /* Current URB config */
-   const struct intel_urb_config *urb_cfg;
 
    /* Managed by the simpler shader helper*/
    struct anv_state bt_state;
@@ -5074,7 +5092,6 @@ struct anv_graphics_pipeline {
 
    /* Fully backed instructions, ready to be emitted in the anv_cmd_buffer */
    struct {
-      struct anv_gfx_state_ptr                  urb;
       struct anv_gfx_state_ptr                  vf_sgvs;
       struct anv_gfx_state_ptr                  vf_sgvs_2;
       struct anv_gfx_state_ptr                  vf_sgvs_instancing;

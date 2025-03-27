@@ -1836,7 +1836,6 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
                                uint32_t query_count,
                                VkQueryResultFlags flags)
 {
-   struct anv_device *device = cmd_buffer->device;
    enum anv_pipe_bits needed_flushes = 0;
 
    trace_intel_begin_query_copy_shader(&cmd_buffer->trace);
@@ -1921,8 +1920,6 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
       .general_state_stream = &cmd_buffer->general_state_stream,
       .batch                = &cmd_buffer->batch,
       .kernel               = copy_kernel,
-      .l3_config            = device->internal_kernels_l3_config,
-      .urb_cfg              = &cmd_buffer->state.gfx.urb_cfg,
    };
    genX(emit_simple_shader_init)(&state);
 
