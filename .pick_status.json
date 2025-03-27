@@ -894,7 +894,7 @@
         "description": "radeonsi: Fix perfcounter start event in si_pc_emit_start",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1a1138817c32a491066a0ed9afe9c95f5842ec60",
         "notes": null
