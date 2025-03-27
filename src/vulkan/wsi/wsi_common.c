@@ -1770,6 +1770,12 @@ wsi_select_memory_type(const struct wsi_device *wsi,
       return wsi_select_memory_type(wsi, req_props, deny_props, type_bits);
    }
 
+   if (req_props & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+      req_props &= ~VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+      // fallback to coherent if cached-coherent is requested but not found
+      return wsi_select_memory_type(wsi, req_props, deny_props, type_bits);
+   }
+
    unreachable("No memory type found");
 }
 
@@ -1785,8 +1791,12 @@ static uint32_t
 wsi_select_host_memory_type(const struct wsi_device *wsi,
                             uint32_t type_bits)
 {
-   return wsi_select_memory_type(wsi, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                 0 /* deny_props */, type_bits);
+   VkMemoryPropertyFlags req_props = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+   if (wsi->sw)
+      req_props |= VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+
+   return wsi_select_memory_type(wsi, req_props, 0 /* deny_props */, type_bits);
 }
 
 VkResult
