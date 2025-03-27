@@ -419,8 +419,6 @@
 .iris-traces:
   extends:
     - .lava-traces-base
-  rules:
-    - when: never # temporarily disabled due to S3 issues
   variables:
     EGL_PLATFORM: surfaceless
     PIGLIT_REPLAY_DEVICE_NAME: "gl-${GPU_VERSION}"

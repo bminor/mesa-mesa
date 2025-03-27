@@ -51,8 +51,6 @@ radeonsi-stoney-traces:
   extends:
     - .lava-piglit-traces:x86_64
     - .radeonsi-stoney-test:x86_64
-  rules:
-    - when: never # temporarily disabled due to S3 issues
   variables:
     EGL_PLATFORM: surfaceless
     PIGLIT_TRACES_FILE: traces-amd.yml
@@ -97,8 +95,6 @@ radv-raven-traces-restricted:
     - .radv-raven-test:x86_64
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
     - .radv-collabora-restricted-rules
-  rules:
-    - when: never # temporarily disabled due to S3 issues
   variables:
     HWCI_START_WESTON: 1
     PIGLIT_REPLAY_ANGLE_TAG: "2023-02-10-1"

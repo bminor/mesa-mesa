@@ -12,8 +12,7 @@ llvmpipe-piglit-rusticl:
     DEQP_SUITE: llvmpipe-rusticl
     GPU_VERSION: llvmpipe-rusticl
 
-# Disabled until piglit's trace download is fixed
-.llvmpipe-traces:
+llvmpipe-traces:
   extends:
     - .test-gl
     - .piglit-traces-test
