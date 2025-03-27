@@ -1378,11 +1378,11 @@ BEGIN_TEST(optimize.mad_mix.fma.basic)
       //! p_unit_test 4, %res4
       writeout(4, fadd(fabs(fmul(fneg(a), fneg(b))), f2f32(c16)));
 
-      //! v1: %res5 = v_fma_mix_f32 %a, -%b, lo(%c16)
+      //! v1: %res5 = v_fma_mix_f32 -%a, %b, lo(%c16)
       //! p_unit_test 5, %res5
       writeout(5, fadd(fneg(fmul(a, b)), f2f32(c16)));
 
-      //! v1: %res6 = v_fma_mix_f32 |%a|, -|%b|, lo(%c16)
+      //! v1: %res6 = v_fma_mix_f32 -|%a|, |%b|, lo(%c16)
       //! p_unit_test 6, %res6
       writeout(6, fadd(fneg(fabs(fmul(fneg(a), fneg(b)))), f2f32(c16)));
 
@@ -1789,8 +1789,7 @@ BEGIN_TEST(optimize.fmamix_two_literals)
 END_TEST
 
 BEGIN_TEST(optimize.fma_opsel)
-   /* TODO make these work before GFX11 using SDWA. */
-   for (unsigned i = GFX11; i <= GFX11; i++) {
+   for (unsigned i = GFX9; i <= GFX11; i++) {
       //>> v2b: %a:v[0][0:16],  v2b: %b:v[1][0:16],  v1: %c:v[2],  v1: %d:v[3],  v1: %e:v[4] = p_startpgm
       if (!setup_cs("v2b v2b v1 v1 v1", (amd_gfx_level)i))
          continue;
