@@ -88,7 +88,7 @@ emit_common_so_memcpy(struct anv_batch *batch, struct anv_device *device,
    const unsigned entry_size[4] = { DIV_ROUND_UP(32, 64), 1, 1, 1 };
 
    genX(emit_urb_setup)(device, batch, l3_config,
-                        VK_SHADER_STAGE_VERTEX_BIT, entry_size, NULL);
+                        VK_SHADER_STAGE_VERTEX_BIT, entry_size);
 
 #if GFX_VER >= 8
    anv_batch_emit(batch, GENX(3DSTATE_VF_TOPOLOGY), topo) {

@@ -239,8 +239,7 @@ _blorp_combine_address(struct blorp_batch *batch, void *location,
  */
 static void
 emit_urb_config(struct blorp_batch *batch,
-                const struct blorp_params *params,
-                UNUSED enum intel_urb_deref_block_size *deref_block_size)
+                const struct blorp_params *params)
 {
    /* Once vertex fetcher has written full VUE entries with complete
     * header the space requirement is as follows per vertex (in bytes):
@@ -274,8 +273,7 @@ emit_urb_config(struct blorp_batch *batch,
    bool constrained;
    intel_get_urb_config(batch->blorp->compiler->elk->devinfo,
                         blorp_get_l3_config(batch),
-                        false, false, &urb_cfg,
-                        deref_block_size, &constrained);
+                        false, false, &urb_cfg, &constrained);
 
    /* Tell drivers about the config. */
    blorp_pre_emit_urb_config(batch, &urb_cfg);
@@ -761,8 +759,7 @@ blorp_emit_vs_config(struct blorp_batch *batch,
 
 static void
 blorp_emit_sf_config(struct blorp_batch *batch,
-                     const struct blorp_params *params,
-                     UNUSED enum intel_urb_deref_block_size urb_deref_block_size)
+                     const struct blorp_params *params)
 {
    const struct elk_wm_prog_data *prog_data = params->wm_prog_data;
 
@@ -1312,8 +1309,7 @@ blorp_emit_pipeline(struct blorp_batch *batch,
    uint32_t color_calc_state_offset;
    uint32_t depth_stencil_state_offset;
 
-   enum intel_urb_deref_block_size urb_deref_block_size;
-   emit_urb_config(batch, params, &urb_deref_block_size);
+   emit_urb_config(batch, params);
 
    if (params->wm_prog_data) {
       blend_state_offset = blorp_emit_blend_state(batch, params);
@@ -1395,7 +1391,7 @@ blorp_emit_pipeline(struct blorp_batch *batch,
       clip.PerspectiveDivideDisable = true;
    }
 
-   blorp_emit_sf_config(batch, params, urb_deref_block_size);
+   blorp_emit_sf_config(batch, params);
    blorp_emit_ps_config(batch, params);
 
    blorp_emit_cc_viewport(batch);

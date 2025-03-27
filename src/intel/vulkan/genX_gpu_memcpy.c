@@ -129,8 +129,7 @@ emit_common_so_memcpy(struct anv_memcpy_state *state,
    memcpy(state->urb_cfg.size, &entry_size, sizeof(entry_size));
 
    genX(emit_urb_setup)(device, batch, l3_config,
-                        VK_SHADER_STAGE_VERTEX_BIT, urb_cfg_in, &state->urb_cfg,
-                        NULL);
+                        VK_SHADER_STAGE_VERTEX_BIT, urb_cfg_in, &state->urb_cfg);
 
 #if GFX_VER >= 12
    /* Disable Primitive Replication. */

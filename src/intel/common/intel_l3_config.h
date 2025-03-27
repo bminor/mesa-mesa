@@ -110,13 +110,14 @@ struct intel_urb_config {
    unsigned size[5];
    unsigned entries[5];
    unsigned start[5];
+
+   enum intel_urb_deref_block_size deref_block_size;
 };
 
 void intel_get_urb_config(const struct intel_device_info *devinfo,
                           const struct intel_l3_config *l3_cfg,
                           bool tess_present, bool gs_present,
                           struct intel_urb_config *urb_cfg,
-                          enum intel_urb_deref_block_size *deref_block_size,
                           bool *constrained);
 
 /* Returns if URB changed for given shader stage. */

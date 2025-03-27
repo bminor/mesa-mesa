@@ -236,8 +236,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                      const struct intel_l3_config *l3_config,
                      VkShaderStageFlags active_stages,
                      const struct intel_urb_config *urb_cfg_in,
-                     struct intel_urb_config *urb_cfg_out,
-                     enum intel_urb_deref_block_size *deref_block_size);
+                     struct intel_urb_config *urb_cfg_out);
 
 void genX(emit_sample_pattern)(struct anv_batch *batch,
                                const struct vk_sample_locations_state *sl);

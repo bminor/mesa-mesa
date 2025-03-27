@@ -252,7 +252,7 @@ _blorp_combine_address(struct blorp_batch *batch, void *location,
 static void
 emit_urb_config(struct blorp_batch *batch,
                 const struct blorp_params *params,
-                UNUSED enum intel_urb_deref_block_size *deref_block_size)
+                struct intel_urb_config *urb_cfg)
 {
    /* Once vertex fetcher has written full VUE entries with complete
     * header the space requirement is as follows per vertex (in bytes):
@@ -272,35 +272,34 @@ emit_urb_config(struct blorp_batch *batch,
    /* The URB size is expressed in units of 64 bytes (512 bits) */
    const unsigned vs_entry_size = DIV_ROUND_UP(total_needed, 64);
 
-   struct intel_urb_config urb_cfg = {
+   *urb_cfg = (struct intel_urb_config) {
       .size = { vs_entry_size, 1, 1, 1 },
    };
 
    bool constrained;
    intel_get_urb_config(batch->blorp->compiler->brw->devinfo,
                         blorp_get_l3_config(batch),
-                        false, false, &urb_cfg,
-                        deref_block_size, &constrained);
+                        false, false, urb_cfg, &constrained);
 
    /* Tell drivers about the config. */
-   blorp_pre_emit_urb_config(batch, &urb_cfg);
+   blorp_pre_emit_urb_config(batch, urb_cfg);
 
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
 #if GFX_VER >= 12
       blorp_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
          urb._3DCommandSubOpcode            += i;
-         urb.VSURBEntryAllocationSize        = urb_cfg.size[i] - 1;
-         urb.VSURBStartingAddressSlice0      = urb_cfg.start[i];
-         urb.VSURBStartingAddressSliceN      = urb_cfg.start[i];
-         urb.VSNumberofURBEntriesSlice0      = urb_cfg.entries[i];
-         urb.VSNumberofURBEntriesSliceN      = urb_cfg.entries[i];
+         urb.VSURBEntryAllocationSize        = urb_cfg->size[i] - 1;
+         urb.VSURBStartingAddressSlice0      = urb_cfg->start[i];
+         urb.VSURBStartingAddressSliceN      = urb_cfg->start[i];
+         urb.VSNumberofURBEntriesSlice0      = urb_cfg->entries[i];
+         urb.VSNumberofURBEntriesSliceN      = urb_cfg->entries[i];
       }
 #else
       blorp_emit(batch, GENX(3DSTATE_URB_VS), urb) {
          urb._3DCommandSubOpcode      += i;
-         urb.VSURBStartingAddress      = urb_cfg.start[i];
-         urb.VSURBEntryAllocationSize  = urb_cfg.size[i] - 1;
-         urb.VSNumberofURBEntries      = urb_cfg.entries[i];
+         urb.VSURBStartingAddress      = urb_cfg->start[i];
+         urb.VSURBEntryAllocationSize  = urb_cfg->size[i] - 1;
+         urb.VSNumberofURBEntries      = urb_cfg->entries[i];
       }
 #endif
    }
@@ -720,7 +719,7 @@ blorp_emit_vs_config(struct blorp_batch *batch,
 static void
 blorp_emit_sf_config(struct blorp_batch *batch,
                      const struct blorp_params *params,
-                     UNUSED enum intel_urb_deref_block_size urb_deref_block_size)
+                     const struct intel_urb_config *urb_cfg)
 {
    const struct brw_wm_prog_data *prog_data = params->wm_prog_data;
 
@@ -745,7 +744,7 @@ blorp_emit_sf_config(struct blorp_batch *batch,
 
    blorp_emit(batch, GENX(3DSTATE_SF), sf) {
 #if GFX_VER >= 12
-      sf.DerefBlockSize = urb_deref_block_size;
+      sf.DerefBlockSize = urb_cfg->deref_block_size;
 #endif
    }
 
@@ -1099,8 +1098,8 @@ static void
 blorp_emit_pipeline(struct blorp_batch *batch,
                     const struct blorp_params *params)
 {
-   enum intel_urb_deref_block_size urb_deref_block_size;
-   emit_urb_config(batch, params, &urb_deref_block_size);
+   struct intel_urb_config urb_cfg;
+   emit_urb_config(batch, params, &urb_cfg);
 
    if (params->wm_prog_data) {
       blorp_emit_blend_state(batch, params);
@@ -1154,7 +1153,7 @@ blorp_emit_pipeline(struct blorp_batch *batch,
       clip.PerspectiveDivideDisable = true;
    }
 
-   blorp_emit_sf_config(batch, params, urb_deref_block_size);
+   blorp_emit_sf_config(batch, params, &urb_cfg);
    blorp_emit_ps_config(batch, params);
 
    blorp_emit_cc_viewport(batch);

@@ -123,10 +123,9 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
    genX(emit_l3_config)(batch, device, state->l3_config);
    state->cmd_buffer->state.current_l3_config = state->l3_config;
 
-   enum intel_urb_deref_block_size deref_block_size;
    genX(emit_urb_setup)(device, batch, state->l3_config,
                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                        state->urb_cfg, &urb_cfg_out, &deref_block_size);
+                        state->urb_cfg, &urb_cfg_out);
 
    anv_batch_emit(batch, GENX(3DSTATE_PS_BLEND), ps_blend) {
       ps_blend.HasWriteableRT = true;
@@ -169,7 +168,7 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
 
    anv_batch_emit(batch, GENX(3DSTATE_SF), sf) {
 #if GFX_VER >= 12
-      sf.DerefBlockSize = deref_block_size;
+      sf.DerefBlockSize = urb_cfg_out.deref_block_size;
 #endif
    }
 

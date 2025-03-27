@@ -897,7 +897,6 @@ genX(emit_urb_config)(struct iris_batch *batch,
                         has_tess_eval,
                         has_geometry,
                         &ice->shaders.urb.cfg,
-                        &ice->state.urb_deref_block_size,
                         &ice->shaders.urb.constrained);
 
    genX(urb_workaround)(batch, &ice->shaders.urb.cfg);
@@ -7788,7 +7787,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
          sf.ViewportTransformEnable = !ice->state.window_space_position;
 
 #if GFX_VER >= 12
-         sf.DerefBlockSize = ice->state.urb_deref_block_size;
+         sf.DerefBlockSize = ice->shaders.urb.cfg.deref_block_size;
 #endif
       }
       iris_emit_merge(batch, cso->sf, dynamic_sf,

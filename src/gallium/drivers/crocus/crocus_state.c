@@ -6084,7 +6084,7 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
                               batch->screen->l3_config_3d,
                               tess_present,
                               gs_present,
-                              &urb_cfg, NULL, &constrained);
+                              &urb_cfg, &constrained);
 
 #if GFX_VER == 7
          if (devinfo->platform == INTEL_PLATFORM_IVB)

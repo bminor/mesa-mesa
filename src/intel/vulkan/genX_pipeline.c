@@ -450,8 +450,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                      const struct intel_l3_config *l3_config,
                      VkShaderStageFlags active_stages,
                      const struct intel_urb_config *urb_cfg_in,
-                     struct intel_urb_config *urb_cfg_out,
-                     enum intel_urb_deref_block_size *deref_block_size)
+                     struct intel_urb_config *urb_cfg_out)
 {
    const struct intel_device_info *devinfo = device->info;
 
@@ -460,8 +459,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                         active_stages &
                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
                         active_stages & VK_SHADER_STAGE_GEOMETRY_BIT,
-                        urb_cfg_out, deref_block_size,
-                        &constrained);
+                        urb_cfg_out,  &constrained);
 
 #if INTEL_NEEDS_WA_16014912113
    if (genX(need_wa_16014912113)(urb_cfg_in, urb_cfg_out)) {
@@ -519,8 +517,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
 
 #if GFX_VERx10 >= 125
 static void
-emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline,
-                    enum intel_urb_deref_block_size *deref_block_size)
+emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline)
 {
    const struct intel_device_info *devinfo = pipeline->base.base.device->info;
 
@@ -565,17 +562,16 @@ emit_urb_setup_mesh(struct anv_graphics_pipeline *pipeline,
       urb.MESHURBStartingAddressSliceN = alloc.mesh_starting_address_8kb;
    }
 
-   *deref_block_size = alloc.deref_block_size;
+   pipeline->urb_cfg.deref_block_size = alloc.deref_block_size;
 }
 #endif
 
 static void
-emit_urb_setup(struct anv_graphics_pipeline *pipeline,
-               enum intel_urb_deref_block_size *deref_block_size)
+emit_urb_setup(struct anv_graphics_pipeline *pipeline)
 {
 #if GFX_VERx10 >= 125
    if (anv_pipeline_is_mesh(pipeline)) {
-      emit_urb_setup_mesh(pipeline, deref_block_size);
+      emit_urb_setup_mesh(pipeline);
       return;
    }
 #endif
@@ -598,8 +594,7 @@ emit_urb_setup(struct anv_graphics_pipeline *pipeline,
                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
                         pipeline->base.base.active_stages &
                            VK_SHADER_STAGE_GEOMETRY_BIT,
-                        &pipeline->urb_cfg, deref_block_size,
-                        &constrained);
+                        &pipeline->urb_cfg, &constrained);
 
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
 #if GFX_VER >= 12
@@ -796,8 +791,7 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
 }
 
 static void
-emit_rs_state(struct anv_graphics_pipeline *pipeline,
-              enum intel_urb_deref_block_size urb_deref_block_size)
+emit_rs_state(struct anv_graphics_pipeline *pipeline)
 {
    anv_pipeline_emit(pipeline, partial.sf, GENX(3DSTATE_SF), sf) {
       sf.ViewportTransformEnable = true;
@@ -806,7 +800,7 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
       sf.AALineDistanceMode = true;
 
 #if GFX_VER >= 12
-      sf.DerefBlockSize = urb_deref_block_size;
+      sf.DerefBlockSize = pipeline->urb_cfg.deref_block_size;
 #endif
 
       bool point_from_shader;
@@ -1917,10 +1911,9 @@ void
 genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                              const struct vk_graphics_pipeline_state *state)
 {
-   enum intel_urb_deref_block_size urb_deref_block_size;
-   emit_urb_setup(pipeline, &urb_deref_block_size);
+   emit_urb_setup(pipeline);
 
-   emit_rs_state(pipeline, urb_deref_block_size);
+   emit_rs_state(pipeline);
    compute_kill_pixel(pipeline, state->ms, state);
 
    emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);

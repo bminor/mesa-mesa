@@ -248,7 +248,7 @@ emit_indirect_generate_draw(struct iris_batch *batch,
 
    iris_emit_cmd(batch, GENX(3DSTATE_SF), sf) {
 #if GFX_VER >= 12
-      sf.DerefBlockSize = ice->state.urb_deref_block_size;
+      sf.DerefBlockSize = ice->shaders.urb.cfg.deref_block_size;
 #endif
    }
 

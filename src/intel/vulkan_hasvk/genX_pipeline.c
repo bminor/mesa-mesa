@@ -273,8 +273,7 @@ void
 genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                      const struct intel_l3_config *l3_config,
                      VkShaderStageFlags active_stages,
-                     const unsigned entry_size[4],
-                     enum intel_urb_deref_block_size *deref_block_size)
+                     const unsigned entry_size[4])
 {
    const struct intel_device_info *devinfo = device->info;
    struct intel_urb_config urb_cfg = {
@@ -286,7 +285,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                         active_stages &
                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
                         active_stages & VK_SHADER_STAGE_GEOMETRY_BIT,
-                        &urb_cfg, deref_block_size, &constrained);
+                        &urb_cfg, &constrained);
 
 #if GFX_VERx10 == 70
    /* From the IVB PRM Vol. 2, Part 1, Section 3.2.1:
@@ -315,8 +314,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
 }
 
 static void
-emit_urb_setup(struct anv_graphics_pipeline *pipeline,
-               enum intel_urb_deref_block_size *deref_block_size)
+emit_urb_setup(struct anv_graphics_pipeline *pipeline)
 {
    unsigned entry_size[4];
    for (int i = MESA_SHADER_VERTEX; i <= MESA_SHADER_GEOMETRY; i++) {
@@ -329,8 +327,7 @@ emit_urb_setup(struct anv_graphics_pipeline *pipeline,
 
    genX(emit_urb_setup)(pipeline->base.device, &pipeline->base.batch,
                         pipeline->base.l3_config,
-                        pipeline->active_stages, entry_size,
-                        deref_block_size);
+                        pipeline->active_stages, entry_size);
 }
 
 static void
@@ -610,8 +607,7 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
               const struct vk_input_assembly_state *ia,
               const struct vk_rasterization_state *rs,
               const struct vk_multisample_state *ms,
-              const struct vk_render_pass_state *rp,
-              enum intel_urb_deref_block_size urb_deref_block_size)
+              const struct vk_render_pass_state *rp)
 {
    struct GENX(3DSTATE_SF) sf = {
       GENX(3DSTATE_SF_header),
@@ -1829,12 +1825,10 @@ void
 genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                              const struct vk_graphics_pipeline_state *state)
 {
-   enum intel_urb_deref_block_size urb_deref_block_size;
-   emit_urb_setup(pipeline, &urb_deref_block_size);
+   emit_urb_setup(pipeline);
 
    assert(state->rs != NULL);
-   emit_rs_state(pipeline, state->ia, state->rs, state->ms, state->rp,
-                           urb_deref_block_size);
+   emit_rs_state(pipeline, state->ia, state->rs, state->ms, state->rp);
    emit_ms_state(pipeline, state->ms);
    emit_cb_state(pipeline, state->cb, state->ms, state->rp);
    compute_kill_pixel(pipeline, state->ms, state);
