@@ -419,7 +419,6 @@ debian-android:
       -D install-mesa-clc=true
       -D precomp-compiler=enabled
       -D install-precomp-compiler=true
-    ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
     # x86_64 build:
