@@ -721,27 +721,18 @@ if with_gallium_st_d3d10umd
     error('The d3d10umd state tracker requires gallium softpipe/llvmpipe.')
   endif
 endif
-_power8 = get_option('power8')
-if _power8.allowed()
-  if host_machine.cpu_family() == 'ppc64' and host_machine.endian() == 'little'
-    if cc.get_id() == 'gcc' and cc.version().version_compare('< 4.8')
-      error('Altivec is not supported with gcc version < 4.8.')
-    endif
-    if cc.compiles('''
-        #include <altivec.h>
-        int main() {
-          vector unsigned char r;
-          vector unsigned int v = vec_splat_u32 (1);
-          r = __builtin_vec_vgbbd ((vector unsigned char) v);
-          return 0;
-        }''',
-        args : '-mpower8-vector',
-        name : 'POWER8 intrinsics')
-      pre_args += ['-D_ARCH_PWR8']
-      c_cpp_args += '-mpower8-vector'
-    elif _power8.enabled()
-      error('POWER8 intrinsic support required but not found.')
-    endif
+
+if host_machine.cpu_family() == 'ppc64' and host_machine.endian() == 'little'
+  if cc.compiles('''
+      #include <altivec.h>
+      int main() {
+        vector unsigned char r;
+        vector unsigned int v = vec_splat_u32 (1);
+        r = __builtin_vec_vgbbd ((vector unsigned char) v);
+        return 0;
+      }''',
+      name : 'POWER8 intrinsics')
+    pre_args += ['-D_ARCH_PWR8']
   endif
 endif
 

@@ -547,7 +547,8 @@ option(
   'power8',
   type : 'feature',
   deprecated: {'true': 'enabled', 'false': 'disabled'},
-  description : 'Enable power8 optimizations.',
+  description : 'Does nothing, left here for a while to avoid build breakages.',
+  deprecated: true,
 )
 
 option(
