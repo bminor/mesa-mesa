@@ -716,9 +716,7 @@ radv_emit_compute(struct radv_device *device, struct radeon_cmdbuf *cs, bool is_
                      S_00B8BC_INTERLEAVE_1D(preamble_state.gfx11.compute_dispatch_interleave));
 
    ac_pm4_finalize(pm4);
-
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
-
+   radv_emit_pm4_commands(cs, pm4);
    ac_pm4_free_state(pm4);
 }
 
@@ -889,7 +887,7 @@ radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs)
    }
 
    ac_pm4_finalize(pm4);
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+   radv_emit_pm4_commands(cs, pm4);
    ac_pm4_free_state(pm4);
 
    radv_emit_compute(device, cs, false);

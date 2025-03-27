@@ -76,7 +76,7 @@ radv_emit_sqtt_start(const struct radv_device *device, struct radeon_cmdbuf *cs,
    ac_pm4_finalize(pm4);
 
    radeon_check_space(device->ws, cs, pm4->ndw);
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+   radv_emit_pm4_commands(cs, pm4);
 
    ac_pm4_free_state(pm4);
 }
@@ -96,7 +96,7 @@ radv_emit_sqtt_stop(const struct radv_device *device, struct radeon_cmdbuf *cs, 
    ac_pm4_finalize(pm4);
 
    radeon_check_space(device->ws, cs, pm4->ndw);
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+   radv_emit_pm4_commands(cs, pm4);
 
    ac_pm4_clear_state(pm4, &pdev->info, false, is_compute_queue);
 
@@ -109,7 +109,7 @@ radv_emit_sqtt_stop(const struct radv_device *device, struct radeon_cmdbuf *cs, 
    ac_pm4_finalize(pm4);
 
    radeon_check_space(device->ws, cs, pm4->ndw);
-   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+   radv_emit_pm4_commands(cs, pm4);
 
    ac_pm4_free_state(pm4);
 }

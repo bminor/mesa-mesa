@@ -290,4 +290,10 @@ void radv_emit_cond_exec(const struct radv_device *device, struct radeon_cmdbuf 
 
 void radv_cs_write_data_imm(struct radeon_cmdbuf *cs, unsigned engine_sel, uint64_t va, uint32_t imm);
 
+static inline void
+radv_emit_pm4_commands(struct radeon_cmdbuf *cs, const struct ac_pm4_state *pm4)
+{
+   radeon_emit_array(cs, pm4->pm4, pm4->ndw);
+}
+
 #endif /* RADV_CS_H */
