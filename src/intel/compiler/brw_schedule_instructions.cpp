@@ -856,7 +856,7 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
     */
    for (int block = 0; block < cfg->num_blocks - 1; block++) {
       for (int i = 0; i < grf_count; i++) {
-         const int block_end = ips.range(cfg->blocks[block]).end;
+         const int block_end = ips.range(cfg->blocks[block]).last();
          const brw_range vgrf_range = live.vgrf_range[i];
 
          if (vgrf_range.contains(block_end) &&
@@ -884,7 +884,7 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
          if (range.start <= payload_last_use_ip[i])
             reg_pressure_in[block]++;
 
-         if (range.end <= payload_last_use_ip[i])
+         if (range.last() <= payload_last_use_ip[i])
             BITSET_SET(hw_liveout[block], i);
       }
    }

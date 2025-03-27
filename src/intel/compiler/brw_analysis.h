@@ -237,6 +237,12 @@ struct brw_range {
    int start;
    int end;
 
+   /* If range not empty, this is the last value inside the range. */
+   inline int last() const
+   {
+      return end;
+   }
+
    inline bool is_empty() const
    {
       return end < start;

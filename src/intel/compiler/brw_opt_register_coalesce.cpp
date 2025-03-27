@@ -120,7 +120,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
    assert(!intersection.is_empty());
 
    foreach_block(scan_block, cfg) {
-      if (ips.range(scan_block).end < intersection.start)
+      if (ips.range(scan_block).last() < intersection.start)
          continue;
 
       int scan_ip = ips.range(scan_block).start - 1;
@@ -140,7 +140,7 @@ can_coalesce_vars(const intel_device_info *devinfo,
             continue;
          }
 
-         if (scan_ip > intersection.end)
+         if (scan_ip > intersection.last())
             return true; /* registers do not interfere */
 
          if (seen_src_write && !seen_copy) {

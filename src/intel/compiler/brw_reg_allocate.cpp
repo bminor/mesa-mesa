@@ -132,7 +132,7 @@ static int
 count_to_loop_end(const bblock_t *block, const brw_ip_ranges &ips)
 {
    if (block->end()->opcode == BRW_OPCODE_WHILE)
-      return ips.range(block).end;
+      return ips.range(block).last();
 
    int depth = 1;
    /* Skip the first block, since we don't want to count the do the calling
@@ -146,7 +146,7 @@ count_to_loop_end(const bblock_t *block, const brw_ip_ranges &ips)
       if (block->end()->opcode == BRW_OPCODE_WHILE) {
          depth--;
          if (depth == 0)
-            return ips.range(block).end;
+            return ips.range(block).last();
       }
    }
    unreachable("not reached");
@@ -1043,7 +1043,7 @@ brw_reg_alloc::set_spill_costs()
       if (isinf(spill_costs[i]))
          continue;
 
-      int live_length = live.vgrf_range[i].end - live.vgrf_range[i].start;
+      int live_length = live.vgrf_range[i].last() - live.vgrf_range[i].start;
       if (live_length <= 0)
          continue;
 

@@ -234,7 +234,7 @@ brw_live_variables::compute_start_end()
          vars_range[i] = merge(vars_range[i], bd->ip_range.start);
 
       BITSET_FOREACH_SET(i, bd->liveout, (unsigned)num_vars)
-         vars_range[i] = merge(vars_range[i], bd->ip_range.end);
+         vars_range[i] = merge(vars_range[i], bd->ip_range.last());
    }
 }
 
