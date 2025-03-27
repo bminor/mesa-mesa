@@ -168,13 +168,10 @@ static inline void
 hwconfig_item_warning(const char *devinfo_name, uint32_t devinfo_val,
                       const uint32_t hwconfig_key, uint32_t hwconfig_val)
 {
-#ifndef NDEBUG
    if (devinfo_val != hwconfig_val) {
-      mesa_logw("%s (%u) != devinfo->%s (%u)",
-                key_to_name(hwconfig_key), hwconfig_val, devinfo_name,
-                devinfo_val);
+      printf("   %s (%u) != devinfo->%s (%u)\n", key_to_name(hwconfig_key),
+             hwconfig_val, devinfo_name, devinfo_val);
    }
-#endif
 }
 
 static inline bool
@@ -380,7 +377,6 @@ check_hwconfig_item(struct intel_device_info *devinfo,
 void
 intel_check_hwconfig_items(int fd, struct intel_device_info *devinfo)
 {
-#ifndef NDEBUG
    struct hwconfig *data;
    int32_t len = 0;
 
@@ -389,5 +385,4 @@ intel_check_hwconfig_items(int fd, struct intel_device_info *devinfo)
       process_hwconfig_table(devinfo, data, len, check_hwconfig_item);
       free(data);
    }
-#endif
 }

@@ -285,6 +285,7 @@ main(int argc, char *argv[])
 
          print_base_devinfo(&devinfo);
          print_regions_info(&devinfo);
+         intel_check_hwconfig_items(fd, &devinfo);
          if (print_hwconfig)
             intel_get_and_print_hwconfig_table(fd, &devinfo);
          if (print_workarounds)
