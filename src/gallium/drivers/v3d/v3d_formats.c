@@ -144,3 +144,17 @@ v3d_format_supports_tlb_msaa_resolve(const struct v3d_device_info *devinfo,
         return internal_type == V3D_INTERNAL_TYPE_8 ||
                internal_type == V3D_INTERNAL_TYPE_16F;
 }
+
+/**
+ * Determines if the R and B channels should be swapped for a given format.
+ * We use the TLB load/store flags for this.
+ */
+bool
+v3d_format_needs_tlb_rb_swap(enum pipe_format format)
+{
+        const struct util_format_description *desc =
+                util_format_description(format);
+
+        return (desc->swizzle[0] == PIPE_SWIZZLE_Z &&
+                format != PIPE_FORMAT_B5G6R5_UNORM);
+}
