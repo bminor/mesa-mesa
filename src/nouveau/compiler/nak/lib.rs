@@ -23,6 +23,7 @@ mod opt_prmt;
 mod opt_uniform_instrs;
 mod qmd;
 mod repair_ssa;
+mod sched_common;
 mod sm50;
 mod sm70;
 mod sph;
