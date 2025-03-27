@@ -1780,14 +1780,13 @@ platform_x11_finalize(_EGLDisplay *disp)
    dri2_setup_screen(disp);
 
    if (!dri2_dpy->swrast) {
-      dri2_x11_setup_swap_interval(disp);
-
 #ifdef HAVE_WAYLAND_PLATFORM
       if (dri2_dpy->kopper)
          dri2_dpy->device_name = strdup("zink");
 #endif
 
       dri2_dpy->swap_available = true;
+      dri2_x11_setup_swap_interval(disp);
       if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
          disp->Extensions.KHR_image_pixmap = EGL_TRUE;
       disp->Extensions.NOK_texture_from_pixmap = EGL_TRUE;
