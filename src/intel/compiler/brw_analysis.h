@@ -477,8 +477,7 @@ public:
     * Final computed live ranges for each var (each component of each virtual
     * GRF).
     */
-   int *start;
-   int *end;
+   brw_range *vars_range;
    /** @} */
 
    /** @{

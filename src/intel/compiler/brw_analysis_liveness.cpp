@@ -57,8 +57,7 @@ brw_live_variables::setup_one_read(struct block_data *bd,
    int var = var_from_reg(reg);
    assert(var < num_vars);
 
-   start[var] = MIN2(start[var], ip);
-   end[var] = MAX2(end[var], ip);
+   vars_range[var] = merge(vars_range[var], ip);
 
    /* The use[] bitset marks when the block makes use of a variable (VGRF
     * channel) without having completely defined that variable within the
@@ -75,8 +74,7 @@ brw_live_variables::setup_one_write(struct block_data *bd, brw_inst *inst,
    int var = var_from_reg(reg);
    assert(var < num_vars);
 
-   start[var] = MIN2(start[var], ip);
-   end[var] = MAX2(end[var], ip);
+   vars_range[var] = merge(vars_range[var], ip);
 
    /* The def[] bitset marks when an initialization in a block completely
     * screens off previous updates of that variable (VGRF channel).
@@ -232,15 +230,11 @@ brw_live_variables::compute_start_end()
       struct block_data *bd = &block_data[block->num];
       unsigned i;
 
-      BITSET_FOREACH_SET(i, bd->livein, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], bd->ip_range.start);
-         end[i] = MAX2(end[i], bd->ip_range.start);
-      }
+      BITSET_FOREACH_SET(i, bd->livein, (unsigned)num_vars)
+         vars_range[i] = merge(vars_range[i], bd->ip_range.start);
 
-      BITSET_FOREACH_SET(i, bd->liveout, (unsigned)num_vars) {
-         start[i] = MIN2(start[i], bd->ip_range.end);
-         end[i] = MAX2(end[i], bd->ip_range.end);
-      }
+      BITSET_FOREACH_SET(i, bd->liveout, (unsigned)num_vars)
+         vars_range[i] = merge(vars_range[i], bd->ip_range.end);
    }
 }
 
@@ -265,12 +259,9 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
       }
    }
 
-   start = linear_alloc_array(lin_ctx, int, num_vars);
-   end = linear_alloc_array(lin_ctx, int, num_vars);
-   for (int i = 0; i < num_vars; i++) {
-      start[i] = MAX_INSTRUCTION;
-      end[i] = -1;
-   }
+   vars_range = linear_alloc_array(lin_ctx, brw_range, num_vars);
+   for (int i = 0; i < num_vars; i++)
+      vars_range[i] = { MAX_INSTRUCTION, -1 };
 
    vgrf_range = linear_alloc_array(lin_ctx, brw_range, num_vgrfs);
    for (int i = 0; i < num_vgrfs; i++)
@@ -304,7 +295,7 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
    /* Merge the per-component live ranges to whole VGRF live ranges. */
    for (int i = 0; i < num_vars; i++) {
       const unsigned vgrf = vgrf_from_var[i];
-      vgrf_range[vgrf] = merge(vgrf_range[vgrf], { start[i], end[i] });
+      vgrf_range[vgrf] = merge(vgrf_range[vgrf], vars_range[i]);
    }
 }
 
@@ -324,9 +315,7 @@ check_register_live_range(const brw_live_variables *live, int ip,
       return false;
 
    for (unsigned j = 0; j < n; j++) {
-      const brw_range var_range{ live->start[var + j],
-                                 live->end[var + j] };
-      if (!var_range.contains(ip))
+      if (!live->vars_range[var + j].contains(ip))
          return false;
    }
 
@@ -362,11 +351,8 @@ brw_live_variables::vars_interfere(int a, int b) const
    /* Clip the ranges so the end of a live range can overlap with
     * the start of another live range.  See details in vgrfs_interfere().
     */
-   brw_range ra{start[a], end[a]};
-   brw_range rb{start[b], end[b]};
-
-   return overlaps(clip_end(ra, 1),
-                   clip_end(rb, 1));
+   return overlaps(clip_end(vars_range[a], 1),
+                   clip_end(vars_range[b], 1));
 }
 
 bool

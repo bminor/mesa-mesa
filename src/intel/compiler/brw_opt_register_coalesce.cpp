@@ -105,8 +105,8 @@ can_coalesce_vars(const intel_device_info *devinfo,
    if (!live.vars_interfere(src_var, dst_var))
       return true;
 
-   brw_range dst_range{ live.start[dst_var], live.end[dst_var] };
-   brw_range src_range{ live.start[src_var], live.end[src_var] };
+   brw_range dst_range = live.vars_range[dst_var];
+   brw_range src_range = live.vars_range[src_var];
 
    /* Variables interfere and one live range isn't a subset of the other. */
    if (!dst_range.contains(src_range) &&
@@ -374,10 +374,8 @@ brw_opt_register_coalesce(brw_shader &s)
       }
 
       for (int i = 0; i < src_size; i++) {
-         live.start[dst_var[i]] = MIN2(live.start[dst_var[i]],
-                                       live.start[src_var[i]]);
-         live.end[dst_var[i]] = MAX2(live.end[dst_var[i]],
-                                     live.end[src_var[i]]);
+         live.vars_range[dst_var[i]] = merge(live.vars_range[dst_var[i]],
+                                             live.vars_range[src_var[i]]);
       }
       src_reg = ~0u;
    }
