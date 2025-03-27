@@ -1638,13 +1638,19 @@ try_damage_buffer(struct dri2_egl_surface *dri2_surf, const EGLint *rects,
        WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION)
       return EGL_FALSE;
 
-   for (int i = 0; i < n_rects; i++) {
-      const int *rect = &rects[i * 4];
+   if (n_rects == 0) {
+      wl_surface_damage_buffer(dri2_surf->wl_surface_wrapper, 0, 0,
+                               INT32_MAX, INT32_MAX);
+   } else {
+      for (int i = 0; i < n_rects; i++) {
+         const int *rect = &rects[i * 4];
 
-      wl_surface_damage_buffer(dri2_surf->wl_surface_wrapper, rect[0],
-                               dri2_surf->base.Height - rect[1] - rect[3],
-                               rect[2], rect[3]);
+         wl_surface_damage_buffer(dri2_surf->wl_surface_wrapper, rect[0],
+                                  dri2_surf->base.Height - rect[1] - rect[3],
+                                  rect[2], rect[3]);
+      }
    }
+
    return EGL_TRUE;
 }
 
@@ -1732,7 +1738,7 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    /* If the compositor doesn't support damage_buffer, we deliberately
     * ignore the damage region and post maximum damage, due to
     * https://bugs.freedesktop.org/78190 */
-   if (!n_rects || !try_damage_buffer(dri2_surf, rects, n_rects))
+   if (!try_damage_buffer(dri2_surf, rects, n_rects))
       wl_surface_damage(dri2_surf->wl_surface_wrapper, 0, 0, INT32_MAX,
                         INT32_MAX);
 
@@ -2747,7 +2753,7 @@ dri2_wl_swrast_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    /* If the compositor doesn't support damage_buffer, we deliberately
     * ignore the damage region and post maximum damage, due to
     * https://bugs.freedesktop.org/78190 */
-   if (!n_rects || !try_damage_buffer(dri2_surf, rects, n_rects))
+   if (!try_damage_buffer(dri2_surf, rects, n_rects))
       wl_surface_damage(dri2_surf->wl_surface_wrapper, 0, 0, INT32_MAX,
                         INT32_MAX);
 
