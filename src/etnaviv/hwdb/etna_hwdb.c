@@ -111,6 +111,7 @@ etna_query_feature_db(struct etna_core_info *info)
 
    ETNA_FEATURE(MSAA_FRAGMENT_OPERATION, MSAA_FRAGMENT_OPERATION);
    ETNA_FEATURE(REG_RSS8, S8);
+   ETNA_FEATURE(HWTFB, HWTFB);
 
    /* Limits: */
    if (info->type == ETNA_CORE_GPU) {
