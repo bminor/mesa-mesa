@@ -146,6 +146,7 @@ libradv_files = files(
   'radv_radeon_winsys.h',
   'radv_rmv.c',
   'radv_rmv.h',
+  'radv_rra_gfx10_3.c',
   'radv_rra.c',
   'radv_rra.h',
   'radv_sampler.c',
