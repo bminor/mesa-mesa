@@ -207,6 +207,7 @@ radv-polaris10-vkcts:
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
     RADV_PERFTEST: video_decode,video_encode
+    radv_enable_float16_gfx8: true
 
 radv-vega10-vkcts:
   extends:

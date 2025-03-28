@@ -114,6 +114,7 @@ VARS=(
     PIPELINE_ARTIFACTS_BASE
     RADEON_DEBUG
     RADV_DEBUG
+    radv_enable_float16_gfx8
     RADV_PERFTEST
     S3_HOST
     S3_JWT_FILE
