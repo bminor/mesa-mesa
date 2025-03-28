@@ -22,9 +22,7 @@ traces:
       checksum: 9016da5b61ea1966b8486491a1a899d5
   angle/libangle_restricted_traces_minetest.so:
     vk-radv-raven:
-      label: [skip, broken]
-      checksum: 013e71013c6e2239680c9e2844b78c0b
-      text: missing fog, see https://gitlab.freedesktop.org/mesa/mesa/-/issues/7916
+      checksum: 63969c1f61a6d25e4f68af9e80e69007
   angle/libangle_restricted_traces_mobile_legends.so:
     vk-radv-raven:
       checksum: 47c004fed88bed8d3d387295399f0810
