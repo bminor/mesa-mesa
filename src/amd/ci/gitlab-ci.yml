@@ -97,7 +97,8 @@ radv-raven-traces-restricted:
     - .radv-collabora-restricted-rules
   variables:
     HWCI_START_WESTON: 1
-    PIGLIT_REPLAY_ANGLE_TAG: "2023-02-10-1"
+    ANGLE_TRACE_FILES_TAG: "2023-02-10-1"
+    PIGLIT_REPLAY_ANGLE_ARCH: amd64
     PIGLIT_TRACES_FILE: restricted-traces-amd.yml
     PIGLIT_REPLAY_DEVICE_NAME: "vk-${GPU_VERSION}"
     PIGLIT_REPLAY_EXTRA_ARGS: --keep-image --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}

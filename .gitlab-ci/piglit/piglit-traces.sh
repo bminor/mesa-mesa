@@ -164,9 +164,8 @@ RUN_CMD="export LD_LIBRARY_PATH=$__LD_LIBRARY_PATH; $SANITY_MESA_VERSION_CMD && 
 rm -rf replayer-db
 
 # ANGLE: download compiled ANGLE runtime and the compiled restricted traces (all-in-one package)
-if [ -n "$PIGLIT_REPLAY_ANGLE_TAG" ]; then
-  ARCH="amd64"
-  FILE="angle-bin-${ARCH}-${PIGLIT_REPLAY_ANGLE_TAG}.tar.zst"
+if [ -n "$PIGLIT_REPLAY_ANGLE_ARCH" ]; then
+  FILE="angle-bin-${PIGLIT_REPLAY_ANGLE_ARCH}-${ANGLE_TRACE_FILES_TAG}.tar.zst"
   curl --location --fail --retry-all-errors --retry 4 --retry-delay 60 \
     --header "Authorization: Bearer $(cat "${S3_JWT_FILE}")" \
     "https://s3.freedesktop.org/mesa-tracie-private/${FILE}" --output "${FILE}"
