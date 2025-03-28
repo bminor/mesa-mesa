@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -38,7 +39,7 @@ enum {
    EXECUTOR_BO_SIZE = 10 * 1024 * 1024,
 };
 
-const char usage_line[] = "usage: executor FILENAME";
+const char usage_line[] = "usage: executor [-d DEVICE] FILENAME";
 
 static void
 print_help()
@@ -48,7 +49,7 @@ print_help()
       "%s\n"
       "\n"
       "The input is a Lua script that can perform data manipulation\n"
-      "and dispatch execution of compute shaders, written in Xe assembly,\n"
+      "and dispatch execution of compute shaders, written in assembly,\n"
       "the same format used by the brw_asm assembler or when dumping\n"
       "shaders in debug mode.\n"
       "\n"
@@ -56,10 +57,14 @@ print_help()
       "assembly instructions and the shared units without having to\n"
       "instrument the drivers.\n"
       "\n"
+      "The program will pick the first available device unless -d is\n"
+      "passed with either the index or a substring of the device to use.\n"
+      "Use \"-d list\" to list available devices.\n"
+      "\n"
       "EXECUTION CONTEXT\n"
       "\n"
       "By default compute shaders are used with SIMD8 for Gfx9-125 and SIMD16\n"
-      "for Xe2.  Only a single thread is dispatched.  A data buffer is used to\n"
+      "for Xe2+.  Only a single thread is dispatched.  A data buffer is used to\n"
       "pipe data into the shader and out of it, it is bound to the graphics\n"
       "address 0x%08x.\n"
       "\n"
@@ -289,34 +294,91 @@ executor_address_of_ptr(executor_bo *bo, void *ptr)
    return (executor_address){ptr - bo->map + bo->addr};
 }
 
-static int
-get_drm_device(struct intel_device_info *devinfo)
+static bool
+open_intel_render_device(drmDevicePtr dev,
+                         struct intel_device_info *devinfo,
+                         int *fd)
+{
+   if (!(dev->available_nodes & 1 << DRM_NODE_RENDER) ||
+       dev->bustype != DRM_BUS_PCI ||
+       dev->deviceinfo.pci->vendor_id != 0x8086)
+      return false;
+
+   *fd = open(dev->nodes[DRM_NODE_RENDER], O_RDWR | O_CLOEXEC);
+   if (fd < 0)
+      return false;
+
+   if (!intel_get_device_info_from_fd(*fd, devinfo, -1, -1) ||
+       devinfo->ver < 8) {
+      close(*fd);
+      *fd = -1;
+      return false;
+   }
+
+   return true;
+}
+
+static void
+print_drm_devices()
 {
    drmDevicePtr devices[8];
-   int max_devices = drmGetDevices2(0, devices, 8);
+   int num_devices = drmGetDevices2(0, devices, ARRAY_SIZE(devices));
 
-   int i, fd = -1;
-   for (i = 0; i < max_devices; i++) {
-      if (devices[i]->available_nodes & 1 << DRM_NODE_RENDER &&
-          devices[i]->bustype == DRM_BUS_PCI &&
-          devices[i]->deviceinfo.pci->vendor_id == 0x8086) {
-         fd = open(devices[i]->nodes[DRM_NODE_RENDER], O_RDWR | O_CLOEXEC);
-         if (fd < 0)
-            continue;
+   if (num_devices < 1) {
+      printf("No devices found.\n");
+      return;
+   }
 
-         if (!intel_get_device_info_from_fd(fd, devinfo, -1, -1) ||
-             devinfo->ver < 8) {
-            close(fd);
-            fd = -1;
-            continue;
-         }
+   for (int i = 0; i < num_devices; i++) {
+      struct intel_device_info devinfo = {};
+      int fd = -1;
 
-         /* Found a device! */
-         break;
+      if (open_intel_render_device(devices[i], &devinfo, &fd)) {
+         printf("%d: %s\n", i, devinfo.name);
+         close(fd);
       }
    }
-   drmFreeDevices(devices, max_devices);
 
+   drmFreeDevices(devices, num_devices);
+}
+
+static int
+get_drm_device(struct intel_device_info *devinfo, const char *device_pattern)
+{
+   drmDevicePtr devices[8];
+   int num_devices = drmGetDevices2(0, devices, ARRAY_SIZE(devices));
+   int fd = -1;
+   int index = -1;
+
+   if (!device_pattern)
+      device_pattern = "";
+
+   /* Interpret numbers as picking an index. */
+   if (isdigit(device_pattern[0])) {
+      index = atoi(device_pattern);
+   }
+
+   if (index != -1) {
+      if (index >= num_devices)
+         failf("No device with index %d", index);
+
+      if (!open_intel_render_device(devices[index], devinfo, &fd))
+         failf("Couldn't open device with index %d", index);
+
+   } else {
+      for (int i = 0; i < num_devices; i++) {
+         if (open_intel_render_device(devices[i], devinfo, &fd)) {
+            if (strcasestr(devinfo->name, device_pattern)) {
+               /* Found a device! */
+               break;
+            }
+            close(fd);
+            fd = -1;
+         }
+      }
+   }
+
+   drmFreeDevices(devices, num_devices);
    return fd;
 }
 
@@ -788,14 +850,23 @@ int
 main(int argc, char *argv[])
 {
    int opt;
+   const char *device_pattern = NULL;
 
    static const struct option long_options[] = {
        {"help",   no_argument,       0, 'h'},
+       {"device", required_argument, 0, 'd'},
        {},
    };
 
-   while ((opt = getopt_long(argc, argv, "h", long_options, NULL)) != -1) {
+   while ((opt = getopt_long(argc, argv, "d:h", long_options, NULL)) != -1) {
       switch (opt) {
+      case 'd':
+         if (!strcmp(optarg, "list")) {
+            print_drm_devices();
+            return 0;
+         }
+         device_pattern = optarg;
+         break;
       case 'h':
          print_help();
          return 0;
@@ -815,7 +886,12 @@ main(int argc, char *argv[])
 
    process_intel_debug_variable();
 
-   E.fd = get_drm_device(&E.devinfo);
+   E.fd = get_drm_device(&E.devinfo, device_pattern);
+   if (E.fd < 0)
+      failf("Failed to open DRM device");
+
+   fprintf(stderr, "Using device: %s\n", E.devinfo.name);
+
    isl_device_init(&E.isl_dev, &E.devinfo);
    brw_init_isa_info(&E.isa, &E.devinfo);
    assert(E.devinfo.kmd_type == INTEL_KMD_TYPE_I915 ||
