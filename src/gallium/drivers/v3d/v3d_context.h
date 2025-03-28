@@ -824,6 +824,10 @@ const uint8_t *v3d_get_format_swizzle(const struct v3d_device_info *devinfo,
 bool v3d_format_supports_tlb_msaa_resolve(const struct v3d_device_info *devinfo,
                                           enum pipe_format f);
 bool v3d_format_needs_tlb_rb_swap(enum pipe_format format);
+void v3d_format_get_internal_type_and_bpp(const struct v3d_device_info *devinfo,
+                                          enum pipe_format format,
+                                          uint8_t *internal_type,
+                                          uint8_t *internal_bpp);
 
 void v3d_init_query_functions(struct v3d_context *v3d);
 void v3d_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info);

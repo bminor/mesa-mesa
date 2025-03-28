@@ -1077,9 +1077,6 @@ v3d_create_surface(struct pipe_context *pctx,
                    struct pipe_resource *ptex,
                    const struct pipe_surface *surf_tmpl)
 {
-        struct v3d_context *v3d = v3d_context(pctx);
-        struct v3d_screen *screen = v3d->screen;
-        struct v3d_device_info *devinfo = &screen->devinfo;
         struct v3d_surface *surface = CALLOC_STRUCT(v3d_surface);
         struct v3d_resource *rsc = v3d_resource(ptex);
 
@@ -1096,27 +1093,6 @@ v3d_create_surface(struct pipe_context *pctx,
         psurf->level = surf_tmpl->level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-
-        if (util_format_is_depth_or_stencil(psurf->format)) {
-                switch (psurf->format) {
-                case PIPE_FORMAT_Z16_UNORM:
-                        surface->internal_type = V3D_INTERNAL_TYPE_DEPTH_16;
-                        break;
-                case PIPE_FORMAT_Z32_FLOAT:
-                case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
-                        surface->internal_type = V3D_INTERNAL_TYPE_DEPTH_32F;
-                        break;
-                default:
-                        surface->internal_type = V3D_INTERNAL_TYPE_DEPTH_24;
-                }
-        } else {
-                uint32_t bpp, type;
-                uint16_t rt_format = v3d_get_rt_format(devinfo, psurf->format);
-                v3d_X(devinfo, get_internal_type_bpp_for_output_format)
-                   (rt_format, &type, &bpp);
-                surface->internal_type = type;
-                surface->internal_bpp = bpp;
-        }
 
         if (rsc->separate_stencil) {
                 surface->separate_stencil =

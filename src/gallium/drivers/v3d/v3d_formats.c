@@ -158,3 +158,39 @@ v3d_format_needs_tlb_rb_swap(enum pipe_format format)
         return (desc->swizzle[0] == PIPE_SWIZZLE_Z &&
                 format != PIPE_FORMAT_B5G6R5_UNORM);
 }
+
+void
+v3d_format_get_internal_type_and_bpp(const struct v3d_device_info *devinfo,
+                                     enum pipe_format format,
+                                     uint8_t *internal_type,
+                                     uint8_t *internal_bpp)
+{
+
+        if (util_format_is_depth_or_stencil(format)) {
+                if (internal_bpp)
+                        *internal_bpp = 0;
+                if (internal_type) {
+                        switch (format) {
+                        case PIPE_FORMAT_Z16_UNORM:
+                                *internal_type = V3D_INTERNAL_TYPE_DEPTH_16;
+                                return;
+                        case PIPE_FORMAT_Z32_FLOAT:
+                        case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
+                                *internal_type = V3D_INTERNAL_TYPE_DEPTH_32F;
+                                return;
+                        default:
+                                *internal_type = V3D_INTERNAL_TYPE_DEPTH_24;
+                                return;
+                        }
+                }
+        } else {
+                uint32_t bpp, type;
+                uint16_t rt_format = v3d_get_rt_format(devinfo, format);
+                v3d_X(devinfo, get_internal_type_bpp_for_output_format)
+                        (rt_format, &type, &bpp);
+                if (internal_bpp)
+                        *internal_bpp = bpp;
+                if (internal_type)
+                        *internal_type = type;
+        }
+}

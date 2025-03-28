@@ -435,15 +435,26 @@ v3d_setup_render_target(struct v3d_job *job,
 {
         if (!job->cbufs[cbuf])
                 return;
-
-        struct v3d_surface *surf = v3d_surface(job->cbufs[cbuf]);
-        *rt_bpp = surf->internal_bpp;
+        struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
+        struct pipe_surface *psurf = job->cbufs[cbuf];
+        uint8_t sinternal_bpp;
+        uint8_t sinternal_type;
+        v3d_format_get_internal_type_and_bpp(devinfo,
+                                             psurf->format,
+                                             &sinternal_type,
+                                             &sinternal_bpp);
+        *rt_bpp = sinternal_bpp;
         if (job->bbuf) {
-           struct v3d_surface *bsurf = v3d_surface(job->bbuf);
-           *rt_bpp = MAX2(*rt_bpp, bsurf->internal_bpp);
+                struct pipe_surface *bsurf = job->bbuf;
+                uint8_t binternal_bpp;
+                v3d_format_get_internal_type_and_bpp(devinfo,
+                                                     bsurf->format,
+                                                     NULL,
+                                                     &binternal_bpp);
+                *rt_bpp = MAX2(*rt_bpp, binternal_bpp);
         }
-        *rt_type_clamp = v3dX(clamp_for_format_and_type)(surf->internal_type,
-                                                         surf->base.format);
+        *rt_type_clamp = v3dX(clamp_for_format_and_type)(sinternal_type,
+                                                         psurf->format);
 }
 #endif
 
@@ -458,15 +469,27 @@ v3d_setup_render_target(struct v3d_job *job,
         if (!job->cbufs[cbuf])
                 return;
 
-        struct v3d_surface *surf = v3d_surface(job->cbufs[cbuf]);
-        *rt_bpp = surf->internal_bpp;
+        struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
+        struct pipe_surface *psurf = job->cbufs[cbuf];
+        uint8_t sinternal_bpp;
+        uint8_t sinternal_type;
+        v3d_format_get_internal_type_and_bpp(devinfo,
+                                             psurf->format,
+                                             &sinternal_type,
+                                             &sinternal_bpp);
+        *rt_bpp = sinternal_bpp;
         if (job->bbuf) {
-           struct v3d_surface *bsurf = v3d_surface(job->bbuf);
-           *rt_bpp = MAX2(*rt_bpp, bsurf->internal_bpp);
+                struct pipe_surface *bsurf = job->bbuf;
+                uint8_t binternal_bpp;
+                v3d_format_get_internal_type_and_bpp(devinfo,
+                                                     bsurf->format,
+                                                     NULL,
+                                                     &binternal_bpp);
+                *rt_bpp = MAX2(*rt_bpp, binternal_bpp);
         }
-        *rt_type = surf->internal_type;
-        *rt_clamp = v3dX(clamp_for_format_and_type)(surf->internal_type,
-                                                    surf->base.format);
+        *rt_type = sinternal_type;
+        *rt_clamp = v3dX(clamp_for_format_and_type)(sinternal_type,
+                                                    psurf->format);
 }
 #endif
 
@@ -645,6 +668,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
 {
         /* The RCL list should be empty. */
         assert(!job->rcl.bo);
+        struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
 
         v3d_cl_ensure_space_with_branch(&job->rcl, 200 +
                                         MAX2(job->num_layers, 1) * 256 *
@@ -658,8 +682,12 @@ v3dX(emit_rcl)(struct v3d_job *job)
          */
         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_COMMON, config) {
                 if (job->zsbuf) {
-                        struct v3d_surface *surf = v3d_surface(job->zsbuf);
-                        config.internal_depth_type = surf->internal_type;
+                        uint8_t internal_type;
+                        v3d_format_get_internal_type_and_bpp(devinfo,
+                                                             job->zsbuf->format,
+                                                             &internal_type,
+                                                             NULL);
+                        config.internal_depth_type = internal_type;
                 }
 
                 if (job->decided_global_ez_enable) {
@@ -740,8 +768,11 @@ v3dX(emit_rcl)(struct v3d_job *job)
 #endif
                         continue;
                 }
-
-                struct v3d_surface *surf = v3d_surface(psurf);
+                uint8_t internal_bpp;
+                v3d_format_get_internal_type_and_bpp(devinfo,
+                                                     psurf->format,
+                                                     NULL,
+                                                     &internal_bpp);
                 struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
                 UNUSED uint32_t config_pad = 0;
@@ -776,7 +807,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         clear.render_target_number = i;
                 };
 
-                if (surf->internal_bpp >= V3D_INTERNAL_BPP_64) {
+                if (internal_bpp >= V3D_INTERNAL_BPP_64) {
                         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_CLEAR_COLORS_PART2,
                                 clear) {
                                 clear.clear_color_mid_low_32_bits =
@@ -789,7 +820,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         };
                 }
 
-                if (surf->internal_bpp >= V3D_INTERNAL_BPP_128 || clear_pad) {
+                if (internal_bpp >= V3D_INTERNAL_BPP_128 || clear_pad) {
                         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_CLEAR_COLORS_PART3,
                                 clear) {
                                 clear.uif_padded_height_in_uif_blocks = clear_pad;
@@ -812,7 +843,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         base_addr += (job->tile_desc.height * rt.stride) / 8;
                 }
 
-                if (surf->internal_bpp >= V3D_INTERNAL_BPP_64) {
+                if (internal_bpp >= V3D_INTERNAL_BPP_64) {
                         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_RENDER_TARGET_PART2, rt) {
                                 rt.clear_color_mid_bits = /* 40 bits (32 + 8)  */
                                         ((uint64_t) job->clear_color[i][1]) |
@@ -821,7 +852,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         }
                 }
 
-                if (surf->internal_bpp >= V3D_INTERNAL_BPP_128) {
+                if (internal_bpp >= V3D_INTERNAL_BPP_128) {
                         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_RENDER_TARGET_PART3, rt) {
                                 rt.clear_color_top_bits = /* 56 bits (24 + 32) */
                                         (((uint64_t) (job->clear_color[i][2] & 0xffffff00)) >> 8) |

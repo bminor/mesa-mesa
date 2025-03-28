@@ -1666,6 +1666,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
               double depth, unsigned stencil)
 {
         struct v3d_context *v3d = job->v3d;
+        struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
 
         if (job->draw_calls_queued) {
                 /* If anything in the CL has drawn using the buffer, then the
@@ -1680,7 +1681,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
          * if it would be possible to need to emit a load of just one after
          * we've set up our TLB clears. This issue is fixed since V3D 4.3.18.
          */
-        if (v3d->screen->devinfo.ver == 42 &&
+        if (devinfo->ver == 42 &&
             buffers & PIPE_CLEAR_DEPTHSTENCIL &&
             (buffers & PIPE_CLEAR_DEPTHSTENCIL) != PIPE_CLEAR_DEPTHSTENCIL &&
             job->zsbuf &&
@@ -1694,11 +1695,16 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
                         continue;
 
                 struct pipe_surface *psurf = v3d->fb_cbufs[i];
-                struct v3d_surface *surf = v3d_surface(psurf);
                 struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
                 union util_color uc;
-                uint32_t internal_size = 4 << surf->internal_bpp;
+                uint8_t internal_bpp;
+                uint8_t internal_type;
+                v3d_format_get_internal_type_and_bpp(devinfo,
+                                                     psurf->format,
+                                                     &internal_type,
+                                                     &internal_bpp);
+                uint32_t internal_size = 4 << internal_bpp;
 
                 /*  While hardware supports clamping, this is not applied on
                  *  the clear values, so we need to do it manually.
@@ -1721,7 +1727,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
                 if (util_format_is_alpha(psurf->format))
                         clamped_color.f[0] = clamped_color.f[3];
 
-                switch (surf->internal_type) {
+                switch (internal_type) {
                 case V3D_INTERNAL_TYPE_8:
                         util_pack_color(clamped_color.f, PIPE_FORMAT_R8G8B8A8_UNORM,
                                         &uc);

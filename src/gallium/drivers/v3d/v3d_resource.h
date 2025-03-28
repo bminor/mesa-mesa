@@ -50,17 +50,6 @@ struct v3d_resource_slice {
 
 struct v3d_surface {
         struct pipe_surface base;
-        /**
-         * Internal format of the tile buffer for
-         * TILE_RENDERING_MODE_CONFIGURATION.
-         */
-        uint8_t internal_type;
-
-        /**
-         * internal bpp value (0=32bpp, 2=128bpp) for color buffers in
-         * TILE_RENDERING_MODE_CONFIGURATION.
-         */
-        uint8_t internal_bpp;
 
         /* If the resource being referenced is separate stencil, then this is
          * the surface to use when reading/writing stencil.
