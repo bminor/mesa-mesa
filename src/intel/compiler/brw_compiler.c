@@ -103,11 +103,8 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
    compiler->indirect_ubos_use_sampler = devinfo->ver < 12;
 
-   compiler->lower_dpas = devinfo->verx10 < 125 ||
-      intel_device_info_is_mtl(devinfo) ||
-      (intel_device_info_is_arl(devinfo) &&
-       devinfo->platform != INTEL_PLATFORM_ARL_H) ||
-      debug_get_bool_option("INTEL_LOWER_DPAS", false);
+   compiler->lower_dpas = !devinfo->has_systolic ||
+                          debug_get_bool_option("INTEL_LOWER_DPAS", false);
 
    nir_lower_int64_options int64_options =
       nir_lower_imul64 |

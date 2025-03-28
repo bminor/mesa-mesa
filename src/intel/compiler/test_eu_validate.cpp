@@ -2984,7 +2984,7 @@ TEST_P(validation_test, add3_immediate_types)
 
 TEST_P(validation_test, dpas_sdepth)
 {
-   if (devinfo.verx10 < 125)
+   if (!devinfo.has_systolic)
       return;
 
    static const enum gfx12_systolic_depth depth[] = {
@@ -3017,7 +3017,7 @@ TEST_P(validation_test, dpas_sdepth)
 
 TEST_P(validation_test, dpas_exec_size)
 {
-   if (devinfo.verx10 < 125)
+   if (!devinfo.has_systolic)
       return;
 
    static const enum brw_execution_size test_vectors[] = {
@@ -3056,7 +3056,7 @@ TEST_P(validation_test, dpas_exec_size)
 
 TEST_P(validation_test, dpas_sub_byte_precision)
 {
-   if (devinfo.verx10 < 125)
+   if (!devinfo.has_systolic)
       return;
 
    static const struct {
@@ -3182,7 +3182,7 @@ TEST_P(validation_test, dpas_sub_byte_precision)
 
 TEST_P(validation_test, dpas_types)
 {
-   if (devinfo.verx10 < 125)
+   if (!devinfo.has_systolic)
       return;
 
    if (devinfo.ver >= 20)
@@ -3306,7 +3306,7 @@ TEST_P(validation_test, dpas_types)
 
 TEST_P(validation_test, dpas_src_subreg_nr)
 {
-   if (devinfo.verx10 < 125)
+   if (!devinfo.has_systolic)
       return;
 
 #define TV(dt, od, t0, o0, t1, o1, o2, r) \

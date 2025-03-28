@@ -1040,6 +1040,7 @@ static const struct intel_device_info intel_device_info_sg1 = {
    .has_ray_tracing = true,                                     \
    .has_mesh_shading = true,                                    \
    .has_bfloat16 = true,                                        \
+   .has_systolic = true,                                        \
    .has_coarse_pixel_primitive_and_cb = true,                   \
    .needs_null_push_constant_tbimr_workaround = true,           \
    .simulator_id = 29
@@ -1104,6 +1105,8 @@ static const struct intel_device_info intel_device_info_atsm_g11 = {
    .platform = INTEL_PLATFORM_ ## platform_suffix,              \
    .has_64bit_float = true,                                     \
    .has_64bit_float_via_math_pipe = true,                       \
+   /* BSpec 55414 (r53716). */                                  \
+   .has_systolic = false,                                       \
    /* BSpec 45101 (r51017) */                                   \
    .pat = {                                                     \
          /* CPU: WB, GPU: PAT 3 => WB, 1WAY */                  \
@@ -1130,6 +1133,8 @@ static const struct intel_device_info intel_device_info_arl_u = {
 
 static const struct intel_device_info intel_device_info_arl_h = {
    MTL_CONFIG(ARL_H),
+   /* BSpec 55414 (r53716). */
+   .has_systolic = true,
 };
 
 #define XE2_FEATURES                                            \
