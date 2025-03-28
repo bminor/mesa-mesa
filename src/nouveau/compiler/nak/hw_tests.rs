@@ -797,6 +797,10 @@ fn test_op_leax() {
 #[test]
 fn test_lea64() {
     let run = RunSingleton::get();
+    if run.sm.sm() < 70 {
+        return;
+    }
+
     let invocations = 100;
 
     for shift in 0..64 {
@@ -1237,6 +1241,10 @@ fn test_shr64() {
 #[test]
 fn test_f2fp_pack_ab() {
     let run = RunSingleton::get();
+    if run.sm.sm() < 70 {
+        return;
+    }
+
     let mut b = TestShaderBuilder::new(run.sm.as_ref());
 
     let srcs = SSARef::from([
