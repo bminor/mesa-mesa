@@ -1314,7 +1314,7 @@
         "description": "dri: complete the support for ARGB4444",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "00aa095d53e49d5cacc9878fe4df4820c83fe3f4",
         "notes": null
