@@ -475,6 +475,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->two_sided_color = false;
 	caps->cull_distance = true;
 
+	caps->max_window_rectangles = R600_MAX_WINDOW_RECTANGLES;
 	caps->shader_buffer_offset_alignment = family >= CHIP_CEDAR ?  256 : 0;
 
 	caps->max_shader_patch_varyings = family >= CHIP_CEDAR ? 30 : 0;

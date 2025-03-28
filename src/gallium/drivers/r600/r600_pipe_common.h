@@ -446,6 +446,16 @@ struct r600_viewports {
 	struct r600_signed_scissor	as_scissor[R600_MAX_VIEWPORTS];
 };
 
+/* EXT_window_rectangles */
+#define R600_MAX_WINDOW_RECTANGLES 4
+
+struct r600_window_rectangles {
+	unsigned			number;
+	bool				include;
+	struct pipe_scissor_state	states[R600_MAX_WINDOW_RECTANGLES];
+	struct r600_atom		atom;
+};
+
 struct r600_ring {
 	struct radeon_cmdbuf		cs;
 	void (*flush)(void *ctx, unsigned flags,
@@ -493,6 +503,7 @@ struct r600_common_context {
 	struct r600_streamout		streamout;
 	struct r600_scissors		scissors;
 	struct r600_viewports		viewports;
+	struct r600_window_rectangles	window_rectangles;
 	bool				scissor_enabled;
 	bool				clip_halfz;
 	bool				vs_writes_viewport_index;

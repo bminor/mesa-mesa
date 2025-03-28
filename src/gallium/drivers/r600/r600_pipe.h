@@ -20,7 +20,7 @@
 
 #include "tgsi/tgsi_scan.h"
 
-#define R600_NUM_ATOMS 56
+#define R600_NUM_ATOMS 57
 
 #define R600_MAX_IMAGES 8
 /*

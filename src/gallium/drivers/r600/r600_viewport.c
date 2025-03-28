@@ -6,6 +6,7 @@
 #include "r600_cs.h"
 #include "util/u_viewport.h"
 #include "tgsi/tgsi_scan.h"
+#include "r600d.h"
 
 #define R600_R_028C0C_PA_CL_GB_VERT_CLIP_ADJ         0x028C0C
 #define CM_R_028BE8_PA_CL_GB_VERT_CLIP_ADJ           0x28be8
@@ -425,14 +426,96 @@ void r600_update_vs_writes_viewport_index(struct r600_common_context *rctx,
 	    rctx->set_atom_dirty(rctx, &rctx->viewports.atom, true);
 }
 
+static void r600_emit_window_rectangles(struct r600_common_context *rctx,
+					struct r600_atom *atom)
+{
+	/* There are four clipping rectangles. Their corner coordinates are inclusive.
+	 * Every pixel is assigned a number from 0 and 15 by setting bits 0-3 depending
+	 * on whether the pixel is inside cliprects 0-3, respectively. For example,
+	 * if a pixel is inside cliprects 0 and 1, but outside 2 and 3, it is assigned
+	 * the number 3 (binary 0011).
+	 *
+	 * If CLIPRECT_RULE & (1 << number), the pixel is rasterized.
+	 */
+        struct radeon_cmdbuf *cs = &rctx->gfx.cs;
+	static const unsigned outside[4] = {
+		/* outside rectangle 0 */
+		V_02820C_OUT |
+		V_02820C_IN_1 |
+		V_02820C_IN_2 |
+		V_02820C_IN_21 |
+		V_02820C_IN_3 |
+		V_02820C_IN_31 |
+		V_02820C_IN_32 |
+		V_02820C_IN_321,
+		/* outside rectangles 0, 1 */
+		V_02820C_OUT |
+		V_02820C_IN_2 |
+		V_02820C_IN_3 |
+		V_02820C_IN_32,
+		/* outside rectangles 0, 1, 2 */
+		V_02820C_OUT |
+		V_02820C_IN_3,
+		/* outside rectangles 0, 1, 2, 3 */
+		V_02820C_OUT,
+	};
+	const unsigned disabled = 0xffff; /* all inside and outside cases */
+	unsigned num_rectangles = rctx->window_rectangles.number;
+	struct pipe_scissor_state *rects = rctx->window_rectangles.states;
+	unsigned rule;
+
+	assert(num_rectangles <= R600_MAX_WINDOW_RECTANGLES);
+
+	if (num_rectangles == 0)
+		rule = disabled;
+	else if (rctx->window_rectangles.include)
+		rule = ~outside[num_rectangles - 1];
+	else
+		rule = outside[num_rectangles - 1];
+
+	radeon_set_context_reg_seq(cs, R_02820C_PA_SC_CLIPRECT_RULE, 1);
+	radeon_emit(cs, rule);
+
+	if (num_rectangles == 0)
+		return;
+
+	radeon_set_context_reg_seq(cs, R_028210_PA_SC_CLIPRECT_0_TL,
+				   num_rectangles * 2);
+	for (unsigned i = 0; i < num_rectangles; i++) {
+		radeon_emit(cs, S_028210_TL_X(rects[i].minx) |
+			    S_028210_TL_Y(rects[i].miny));
+		radeon_emit(cs, S_028214_BR_X(rects[i].maxx) |
+			    S_028214_BR_Y(rects[i].maxy));
+	}
+}
+
+static void r600_set_window_rectangles(struct pipe_context *ctx,
+				       bool include,
+				       unsigned num_rectangles,
+				       const struct pipe_scissor_state *rects)
+{
+	struct r600_common_context *rctx = (struct r600_common_context *)ctx;
+
+	rctx->window_rectangles.number = num_rectangles;
+	rctx->window_rectangles.include = include;
+
+	if (num_rectangles)
+		memcpy(rctx->window_rectangles.states, rects,
+		       sizeof(*rects) * num_rectangles);
+
+	rctx->set_atom_dirty(rctx, &rctx->window_rectangles.atom, true);
+}
+
 void r600_init_viewport_functions(struct r600_common_context *rctx)
 {
 	rctx->scissors.atom.emit = r600_emit_scissors;
 	rctx->viewports.atom.emit = r600_emit_viewport_states;
+	rctx->window_rectangles.atom.emit = r600_emit_window_rectangles;
 
 	rctx->scissors.atom.num_dw = (2 + 16 * 2) + 6;
 	rctx->viewports.atom.num_dw = 2 + 16 * 6;
 
 	rctx->b.set_scissor_states = r600_set_scissor_states;
 	rctx->b.set_viewport_states = r600_set_viewport_states;
+	rctx->b.set_window_rectangles = r600_set_window_rectangles;
 }
