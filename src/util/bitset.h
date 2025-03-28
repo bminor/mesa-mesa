@@ -281,6 +281,20 @@ __bitclear_clear_range(BITSET_WORD *r, unsigned start, unsigned end)
    __bitclear_clear_range(x, b, e)
 
 static inline unsigned
+__bitset_extract(const BITSET_WORD *r, unsigned start, unsigned count)
+{
+   unsigned shift = start % BITSET_WORDBITS;
+   unsigned lower = r[BITSET_BITWORD(start)] >> shift;
+   unsigned upper = shift ? r[BITSET_BITWORD(start) + 1] << (32 - shift) : 0;
+   unsigned total = lower | upper;
+
+   return count != 32 ? total & ((1u << count) - 1u) : total;
+}
+
+#define BITSET_EXTRACT(x, s, c) \
+   __bitset_extract(x, s, c)
+   
+static inline unsigned
 __bitset_prefix_sum(const BITSET_WORD *x, unsigned b, unsigned n)
 {
    unsigned prefix = 0;
