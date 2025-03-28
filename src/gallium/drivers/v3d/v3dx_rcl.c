@@ -44,6 +44,23 @@ v3d_surface_get_tiling(struct pipe_surface *psurf)
         return rsc->slices[psurf->level].tiling;
 }
 
+static uint32_t
+v3d_surface_get_height_in_ub_or_stride(struct pipe_surface *psurf)
+{
+        assert(psurf && psurf->texture);
+        struct v3d_resource *rsc = v3d_resource(psurf->texture);
+        struct v3d_resource_slice *slice = &rsc->slices[psurf->level];
+
+        if (slice->tiling == V3D_TILING_UIF_NO_XOR ||
+            slice->tiling == V3D_TILING_UIF_XOR) {
+                return (slice->padded_height /
+                        (2 * v3d_utile_height(rsc->cpp)));
+        } else if (slice->tiling == V3D_TILING_RASTER) {
+                return slice->stride;
+        }
+        return 0;
+}
+
 static void
 load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
              int layer, uint32_t pipe_bit, uint32_t *loads_pending)
@@ -60,13 +77,12 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
         uint32_t layer_offset =
                 v3d_layer_offset(&rsc->base, psurf->level,
                                  psurf->first_layer + layer);
-        enum v3d_tiling_mode tiling = v3d_surface_get_tiling(psurf);
 
         cl_emit(cl, LOAD_TILE_BUFFER_GENERAL, load) {
                 load.buffer_to_load = buffer;
                 load.address = cl_address(rsc->bo, layer_offset);
 
-                load.memory_format = tiling;
+                load.memory_format = v3d_surface_get_tiling(psurf);
                 if (separate_stencil)
                         load.input_image_format = V3D_OUTPUT_IMAGE_FORMAT_S8;
                 else
@@ -76,15 +92,8 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
                                         psurf->format);
                 load.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
                 load.force_alpha_1 = util_format_has_alpha1(psurf->format);
-                if (tiling == V3D_TILING_UIF_NO_XOR ||
-                    tiling == V3D_TILING_UIF_XOR) {
-                        load.height_in_ub_or_stride =
-                                surf->padded_height_of_output_image_in_uif_blocks;
-                } else if (tiling == V3D_TILING_RASTER) {
-                        struct v3d_resource_slice *slice =
-                                &rsc->slices[psurf->level];
-                        load.height_in_ub_or_stride = slice->stride;
-                }
+                load.height_in_ub_or_stride =
+                        v3d_surface_get_height_in_ub_or_stride(psurf);
 
                 if (psurf->texture->nr_samples > 1)
                         load.decimate_mode = V3D_DECIMATE_MODE_ALL_SAMPLES;
@@ -121,7 +130,6 @@ store_general(struct v3d_job *job,
         uint32_t layer_offset =
                 v3d_layer_offset(&rsc->base, psurf->level,
                                  psurf->first_layer + layer);
-        enum v3d_tiling_mode tiling = v3d_surface_get_tiling(psurf);
 
         cl_emit(cl, STORE_TILE_BUFFER_GENERAL, store) {
                 store.buffer_to_store = buffer;
@@ -138,17 +146,9 @@ store_general(struct v3d_job *job,
                                         psurf->format);
 
                 store.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
-                store.memory_format = tiling;
-
-                if (tiling == V3D_TILING_UIF_NO_XOR ||
-                    tiling == V3D_TILING_UIF_XOR) {
-                        store.height_in_ub_or_stride =
-                                surf->padded_height_of_output_image_in_uif_blocks;
-                } else if (tiling == V3D_TILING_RASTER) {
-                        struct v3d_resource_slice *slice =
-                                &rsc->slices[psurf->level];
-                        store.height_in_ub_or_stride = slice->stride;
-                }
+                store.memory_format = v3d_surface_get_tiling(psurf);
+                store.height_in_ub_or_stride =
+                        v3d_surface_get_height_in_ub_or_stride(psurf);
 
                 if (psurf->texture->nr_samples > 1) {
                         store.decimate_mode = V3D_DECIMATE_MODE_ALL_SAMPLES;
@@ -755,13 +755,16 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         int uif_block_height = v3d_utile_height(rsc->cpp) * 2;
                         uint32_t implicit_padded_height = (align(job->draw_height, uif_block_height) /
                                                            uif_block_height);
-                        if (surf->padded_height_of_output_image_in_uif_blocks -
+                        uint32_t padded_height_of_output_image_in_uif_blocks =
+                                v3d_surface_get_height_in_ub_or_stride(psurf);
+
+                        if (padded_height_of_output_image_in_uif_blocks -
                             implicit_padded_height < 15) {
-                                config_pad = (surf->padded_height_of_output_image_in_uif_blocks -
+                                config_pad = (padded_height_of_output_image_in_uif_blocks -
                                               implicit_padded_height);
                         } else {
                                 config_pad = 15;
-                                clear_pad = surf->padded_height_of_output_image_in_uif_blocks;
+                                clear_pad = padded_height_of_output_image_in_uif_blocks;
                         }
                 }
 

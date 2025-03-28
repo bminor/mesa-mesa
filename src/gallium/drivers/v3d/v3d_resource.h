@@ -62,8 +62,6 @@ struct v3d_surface {
          */
         uint8_t internal_bpp;
 
-        uint32_t padded_height_of_output_image_in_uif_blocks;
-
         /* If the resource being referenced is separate stencil, then this is
          * the surface to use when reading/writing stencil.
          */

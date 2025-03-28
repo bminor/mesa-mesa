@@ -1087,19 +1087,15 @@ v3d_create_surface(struct pipe_context *pctx,
                 return NULL;
 
         struct pipe_surface *psurf = &surface->base;
-        unsigned level = surf_tmpl->level;
-        struct v3d_resource_slice *slice = &rsc->slices[level];
 
         pipe_reference_init(&psurf->reference, 1);
         pipe_resource_reference(&psurf->texture, ptex);
 
         psurf->context = pctx;
         psurf->format = surf_tmpl->format;
-        psurf->level = level;
+        psurf->level = surf_tmpl->level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-
-        enum v3d_tiling_mode tiling = slice->tiling;
 
         if (util_format_is_depth_or_stencil(psurf->format)) {
                 switch (psurf->format) {
@@ -1120,13 +1116,6 @@ v3d_create_surface(struct pipe_context *pctx,
                    (rt_format, &type, &bpp);
                 surface->internal_type = type;
                 surface->internal_bpp = bpp;
-        }
-
-        if (tiling == V3D_TILING_UIF_NO_XOR ||
-            tiling == V3D_TILING_UIF_XOR) {
-                surface->padded_height_of_output_image_in_uif_blocks =
-                        (slice->padded_height /
-                         (2 * v3d_utile_height(rsc->cpp)));
         }
 
         if (rsc->separate_stencil) {
