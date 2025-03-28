@@ -47,7 +47,8 @@ generate_tiler_oom_handler(struct panvk_device *dev,
    struct cs_function handler;
    struct cs_function_ctx handler_ctx = {
       .ctx_reg = cs_subqueue_ctx_reg(&b),
-      .dump_addr_offset = TILER_OOM_CTX_FIELD_OFFSET(reg_dump_addr),
+      .dump_addr_offset =
+         offsetof(struct panvk_cs_subqueue_context, reg_dump_addr),
    };
    struct cs_tracing_ctx tracing_ctx = {
       .enabled = tracing_enabled,
@@ -172,10 +173,10 @@ panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
 
          /* All handlers must have the same length */
          assert(idx == 0 || handler_length == device->tiler_oom.handler_stride);
-         assert(idx == 0 ||
-                dump_region_size == device->tiler_oom.dump_region_size);
          device->tiler_oom.handler_stride = handler_length;
-         device->tiler_oom.dump_region_size = dump_region_size;
+         device->dump_region_size[PANVK_SUBQUEUE_FRAGMENT] =
+            MAX2(device->dump_region_size[PANVK_SUBQUEUE_FRAGMENT],
+                 dump_region_size);
       }
    }
 
