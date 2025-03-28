@@ -1524,7 +1524,7 @@
         "description": "llvmpipe: Free dummy_dmabuf on shutdown",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d21aa86b5471a6d5943d6bf5c4c1768128d25ad4",
         "notes": null
