@@ -3752,10 +3752,10 @@ static void cdna_emu_make_image_descriptor(struct si_screen *screen, struct si_t
       .format = pipe_format,
       .swizzle =
          {
-            desc->swizzle[0],
-            desc->swizzle[1],
-            desc->swizzle[2],
-            desc->swizzle[3],
+            swizzle[0],
+            swizzle[1],
+            swizzle[2],
+            swizzle[3],
          },
       .stride = stride,
       .gfx10_oob_select = V_008F0C_OOB_SELECT_STRUCTURED_WITH_OFFSET,
