@@ -1098,9 +1098,6 @@ v3d_create_surface(struct pipe_context *pctx,
         psurf->level = level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-
-        surface->offset = v3d_layer_offset(ptex, level,
-                                           psurf->first_layer);
         surface->tiling = slice->tiling;
 
         if (util_format_is_depth_or_stencil(psurf->format)) {

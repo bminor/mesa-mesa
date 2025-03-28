@@ -50,7 +50,6 @@ struct v3d_resource_slice {
 
 struct v3d_surface {
         struct pipe_surface base;
-        uint32_t offset;
         enum v3d_tiling_mode tiling;
 
         /**
