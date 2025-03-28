@@ -1990,6 +1990,9 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
                case RDECODE_CMDBUF_FLAGS_SESSION_CONTEXT_BUFFER:
                   fprintf(f, "SESSION CONTEXT BUFFER\n");
                   break;
+               case RDECODE_CMDBUF_FLAGS_REF_BUFFER:
+                  fprintf(f, "REF BUFFER\n");
+                  break;
                default:
                   fprintf(f, "%s(UNRECOGNIZED)%s\n", O_COLOR_RED, O_COLOR_RESET);
                   break;
@@ -2011,6 +2014,39 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
             print_vcn_addr(f, ib, "    mpeg2 pic param buffer");
             print_vcn_addr(f, ib, "    mpeg2 mb control buffer");
             print_vcn_addr(f, ib, "    mpeg2 idct coeff buffer");
+            break;
+         }
+         case RDECODE_IB_PARAM_DYNAMIC_REFLIST_BUFFER: {
+            fprintf(f, "%sDYNAMIC_REFLIST_BUFFER%s\n", O_COLOR_GREEN, O_COLOR_RESET);
+            uint32_t size = ac_ib_get(ib);
+            fprintf(f, "    size = %u\n", size);
+            uint32_t num_bufs = ac_ib_get(ib);
+            fprintf(f, "    num bufs = %u\n", num_bufs);
+            for (uint32_t i = 0; i < num_bufs; i++) {
+               uint32_t index = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] index = %u\n", i, index);
+               uint32_t y_pitch = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] Y pitch = %u\n", i, y_pitch);
+               uint32_t y_aligned_height = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] Y aligned height = %u\n", i, y_aligned_height);
+               uint32_t y_aligned_size = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] Y aligned size = %u\n", i, y_aligned_size);
+               print_vcn_addr(f, ib, "    ref[%u] Y buffer", i);
+               uint32_t uv_pitch = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] UV pitch = %u\n", i, uv_pitch);
+               uint32_t uv_aligned_height = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] UV aligned height = %u\n", i, uv_aligned_height);
+               uint32_t uv_aligned_size = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] UV aligned size = %u\n", i, uv_aligned_size);
+               print_vcn_addr(f, ib, "    ref[%u] UV buffer", i);
+               uint32_t v_pitch = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] V pitch = %u\n", i, v_pitch);
+               uint32_t v_aligned_height = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] V aligned height = %u\n", i, v_aligned_height);
+               uint32_t v_aligned_size = ac_ib_get(ib);
+               fprintf(f, "    ref[%u] V aligned size = %u\n", i, v_aligned_size);
+               print_vcn_addr(f, ib, "    ref[%u] V buffer", i);
+            }
             break;
          }
          default:
