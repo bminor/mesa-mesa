@@ -523,7 +523,7 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
        */
       if (anv_pipeline_is_primitive(pipeline)) {
          for (uint8_t idx = 0; idx < wm_prog_data->urb_setup_attribs_count; idx++) {
-            uint8_t attr = wm_prog_data->urb_setup_attribs[idx];
+            gl_varying_slot attr = wm_prog_data->urb_setup_attribs[idx];
             int input_index = wm_prog_data->urb_setup[attr];
 
             assert(0 <= input_index);
@@ -534,22 +534,8 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
             }
 
             const int slot = vue_map->varying_to_slot[attr];
-
-            if (slot == -1) {
-               /* This attribute does not exist in the VUE--that means that
-                * the vertex shader did not write to it. It could be that it's
-                * a regular varying read by the fragment shader but not
-                * written by the vertex shader or it's gl_PrimitiveID. In the
-                * first case the value is undefined, in the second it needs to
-                * be gl_PrimitiveID.
-                */
-               swiz.Attribute[input_index].ConstantSource = PRIM_ID;
-               swiz.Attribute[input_index].ComponentOverrideX = true;
-               swiz.Attribute[input_index].ComponentOverrideY = true;
-               swiz.Attribute[input_index].ComponentOverrideZ = true;
-               swiz.Attribute[input_index].ComponentOverrideW = true;
+            if (slot == -1)
                continue;
-            }
 
             /* We have to subtract two slots to account for the URB entry
              * output read offset in the VS and GS stages.
