@@ -1732,7 +1732,8 @@ special_requirements_for_handling_double_precision_data_types(
       if (devinfo->verx10 >= 125 &&
           (brw_type_is_float(dst_type) ||
            is_double_precision)) {
-         ERROR_IF(!is_scalar_region &&
+         ERROR_IF(!brw_type_is_bfloat(type) &&
+                  !is_scalar_region &&
                   BRW_ADDRESS_REGISTER_INDIRECT_REGISTER != address_mode &&
                   (!is_linear(vstride, width, hstride) ||
                    src_stride != dst_stride ||
