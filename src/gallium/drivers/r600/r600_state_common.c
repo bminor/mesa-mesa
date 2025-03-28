@@ -3112,6 +3112,26 @@ out_word4:
 
 	if (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB && !is_srgb_valid)
 		return ~0;
+
+	if (unlikely(swizzle_view &&
+		     swizzle_view[0] >= PIPE_SWIZZLE_0 &&
+		     swizzle_view[1] >= PIPE_SWIZZLE_0 &&
+		     swizzle_view[2] >= PIPE_SWIZZLE_0 &&
+		     swizzle_view[3] >= PIPE_SWIZZLE_0)) {
+		switch (result) {
+		case FMT_32_32_32_32_FLOAT:
+		case FMT_32_32_FLOAT:
+			result = FMT_32_FLOAT;
+			break;
+		case FMT_16_16_16_16:
+		case FMT_16_16:
+			result = FMT_32;
+			break;
+		default:
+			break;
+		}
+	}
+
 	if (word4_p)
 		*word4_p = word4;
 	if (yuv_format_p)
