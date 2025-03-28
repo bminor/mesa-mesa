@@ -1690,11 +1690,11 @@ static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib)
          fprintf(f, "    color volume = %s\n", vcn_color_volume(color_volume));
          uint32_t color_range = ac_ib_get(ib);
          fprintf(f, "    color range = %s\n", vcn_color_range(color_range));
-         uint32_t chroma_location = ac_ib_get(ib);
          if (ib->vcn_version >= VCN_5_0_0) {
             uint32_t chroma_subsampling = ac_ib_get(ib);
             fprintf(f, "    chroma subsampling = %s\n", vcn_chroma_subsampling(chroma_subsampling));
          }
+         uint32_t chroma_location = ac_ib_get(ib);
          fprintf(f, "    chroma location = %s\n", vcn_chroma_location(chroma_location));
          uint32_t bit_depth = ac_ib_get(ib);
          fprintf(f, "    color bit depth = %s\n", vcn_color_bit_depth(bit_depth));
