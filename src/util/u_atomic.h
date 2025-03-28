@@ -135,8 +135,28 @@ __forceinline short _interlockedadd16(short volatile * _Addend, short _Value)
  * Therefore, we rely on implicit casting to LONGLONG for the functions that return
  */
 
+
 #define p_atomic_set(_v, _i) (*(_v) = (_i))
-#define p_atomic_read(_v) (*(_v))
+#if defined(__cplusplus)
+#include <type_traits>
+#define p_atomic_read(_v) (*reinterpret_cast<std::add_volatile_t<decltype(_v)>>(_v))
+#else
+#define p_atomic_read(_v) (_Generic(*(_v), \
+   bool            : *((volatile bool*)            (_v)), \
+   char            : *((volatile char*)            (_v)), \
+   short           : *((volatile short*)           (_v)), \
+   int             : *((volatile int*)             (_v)), \
+   long            : *((volatile long*)            (_v)), \
+   __int64         : *((volatile __int64*)         (_v)), \
+   unsigned char   : *((volatile unsigned char*)   (_v)), \
+   unsigned short  : *((volatile unsigned short*)  (_v)), \
+   unsigned int    : *((volatile unsigned int*)    (_v)), \
+   unsigned long   : *((volatile unsigned long*)   (_v)), \
+   unsigned __int64: *((volatile unsigned __int64*)(_v)), \
+   float           : *((volatile float*)           (_v)), \
+   double          : *((volatile double*)          (_v)), \
+   default         : *(_v)))
+#endif
 #define p_atomic_read_relaxed(_v) (*(_v))
 
 #define p_atomic_dec_zero(_v) \
