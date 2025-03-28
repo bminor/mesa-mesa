@@ -282,41 +282,20 @@ struct rvce_h264_enc_pic {
    struct rvce_enc_create ec;
    struct rvce_config_ext ce;
 
-   unsigned quant_i_frames;
-   unsigned quant_p_frames;
-   unsigned quant_b_frames;
-
    enum pipe_h2645_enc_picture_type picture_type;
    unsigned frame_num;
    unsigned frame_num_cnt;
    unsigned p_remain;
    unsigned i_remain;
-   unsigned idr_pic_id;
    unsigned pic_order_cnt;
    unsigned addrmode_arraymode_disrdo_distwoinstants;
 
    bool not_referenced;
-   bool is_idr;
 };
 
 /* VCE encoder representation */
 struct rvce_encoder {
    struct pipe_video_codec base;
-
-   /* version specific packets */
-   void (*session)(struct rvce_encoder *enc);
-   void (*create)(struct rvce_encoder *enc);
-   void (*feedback)(struct rvce_encoder *enc);
-   void (*rate_control)(struct rvce_encoder *enc);
-   void (*config_extension)(struct rvce_encoder *enc);
-   void (*pic_control)(struct rvce_encoder *enc);
-   void (*motion_estimation)(struct rvce_encoder *enc);
-   void (*rdo)(struct rvce_encoder *enc);
-   void (*config)(struct rvce_encoder *enc);
-   void (*encode)(struct rvce_encoder *enc);
-   void (*destroy)(struct rvce_encoder *enc);
-   void (*task_info)(struct rvce_encoder *enc, uint32_t op, uint32_t fb_idx);
-   void (*si_get_pic_param)(struct rvce_encoder *enc, struct pipe_h264_enc_picture_desc *pic);
 
    unsigned stream_handle;
 
@@ -357,13 +336,6 @@ struct rvce_feedback_data {
    struct rvce_output_unit_segment segments[];
 };
 
-unsigned int si_vce_write_sps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out);
-unsigned int si_vce_write_pps(struct rvce_encoder *enc, uint8_t nal_byte, uint8_t *out);
-
-/* CPB handling functions */
-void si_vce_frame_offset(struct rvce_encoder *enc, unsigned slot, signed *luma_offset,
-                         signed *chroma_offset);
-
 struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,
                                                const struct pipe_video_codec *templat,
                                                struct radeon_winsys *ws,
@@ -373,8 +345,5 @@ bool si_vce_is_fw_version_supported(struct si_screen *sscreen);
 
 void si_vce_add_buffer(struct rvce_encoder *enc, struct pb_buffer_lean *buf, unsigned usage,
                        enum radeon_bo_domain domain, signed offset);
-
-/* init vce fw 52 specific callbacks */
-void si_vce_52_init(struct rvce_encoder *enc);
 
 #endif
