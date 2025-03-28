@@ -338,10 +338,6 @@ struct radeon_uvd_enc_pic {
 struct radeon_uvd_encoder {
    struct pipe_video_codec base;
 
-   void (*begin)(struct radeon_uvd_encoder *enc, struct pipe_picture_desc *pic);
-   void (*encode)(struct radeon_uvd_encoder *enc);
-   void (*destroy)(struct radeon_uvd_encoder *enc);
-
    unsigned stream_handle;
 
    struct pipe_screen *screen;
@@ -387,11 +383,6 @@ struct ruvd_enc_feedback_data {
 
 struct si_screen;
 
-void radeon_uvd_enc_1_1_init(struct radeon_uvd_encoder *enc);
 bool si_radeon_uvd_enc_supported(struct si_screen *sscreen);
-
-unsigned int radeon_uvd_enc_write_vps(struct radeon_uvd_encoder *enc, uint8_t *out);
-unsigned int radeon_uvd_enc_write_sps(struct radeon_uvd_encoder *enc, uint8_t *out);
-unsigned int radeon_uvd_enc_write_pps(struct radeon_uvd_encoder *enc, uint8_t *out);
 
 #endif // _RADEON_UVD_ENC_H
