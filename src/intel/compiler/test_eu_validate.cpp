@@ -3206,7 +3206,7 @@ TEST_P(validation_test, dpas_types)
       TV( F,  F,  F, HF, false),
       TV( F,  F, HF,  F, false),
 
-      TV( F,  F, BF, BF, devinfo.ver >= 20),
+      TV( F,  F, BF, BF, true),
       TV(BF, BF, BF, BF, devinfo.ver >= 20),
       TV(BF,  F, BF, BF, devinfo.ver >= 20),
       TV( F, BF, BF, BF, devinfo.ver >= 20),
