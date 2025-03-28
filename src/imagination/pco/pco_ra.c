@@ -89,6 +89,86 @@ static void pco_extend_live_range(pco_ref origin,
    }
 }
 
+typedef struct _pco_use {
+   pco_instr *instr;
+   pco_ref *ref;
+} pco_use;
+
+static void preproc_vecs(pco_func *func)
+{
+   unsigned num_ssas = func->next_ssa;
+
+   void *mem_ctx = ralloc_context(NULL);
+   BITSET_WORD *multi_use_elems = rzalloc_array_size(mem_ctx,
+                                                     sizeof(*multi_use_elems),
+                                                     BITSET_WORDS(num_ssas));
+   struct hash_table_u64 *elem_uses = _mesa_hash_table_u64_create(mem_ctx);
+
+   pco_foreach_instr_in_func (instr, func) {
+      if (instr->op != PCO_OP_VEC)
+         continue;
+
+      pco_foreach_instr_src_ssa (psrc, instr) {
+         struct util_dynarray *uses =
+            _mesa_hash_table_u64_search(elem_uses, psrc->val);
+         if (!uses) {
+            uses = rzalloc_size(elem_uses, sizeof(*uses));
+            util_dynarray_init(uses, uses);
+            _mesa_hash_table_u64_insert(elem_uses, psrc->val, uses);
+         }
+
+         if (uses->size > 0)
+            BITSET_SET(multi_use_elems, psrc->val);
+
+         pco_use use = {
+            .instr = instr,
+            .ref = psrc,
+         };
+         util_dynarray_append(uses, pco_use, use);
+      }
+   }
+
+   unsigned b;
+   BITSET_FOREACH_SET (b, multi_use_elems, num_ssas) {
+      struct util_dynarray *uses = _mesa_hash_table_u64_search(elem_uses, b);
+
+      pco_instr *producer = NULL;
+      pco_ref var;
+      pco_foreach_instr_in_func (instr, func) {
+         pco_foreach_instr_dest_ssa (pdest, instr) {
+            if (pdest->val == b) {
+               producer = instr;
+               var = *pdest;
+               break;
+            }
+         }
+
+         if (producer)
+            break;
+      }
+      assert(producer);
+
+      pco_builder b =
+         pco_builder_create(func, pco_cursor_after_instr(producer));
+
+      util_dynarray_foreach (uses, pco_use, use) {
+         b.cursor = pco_cursor_before_instr(use->instr);
+         pco_ref dest = pco_ref_new_ssa_clone(func, var);
+         assert(pco_ref_get_chans(var) <= 4);
+         pco_mbyp(&b,
+                  dest,
+                  var,
+                  .exec_cnd = pco_instr_has_exec_cnd(producer)
+                                 ? pco_instr_get_exec_cnd(producer)
+                                 : PCO_EXEC_CND_E1_ZX,
+                  .rpt = pco_ref_get_chans(var));
+         *use->ref = dest;
+      }
+   }
+
+   ralloc_free(mem_ctx);
+}
+
 /**
  * \brief Performs register allocation on a function.
  *
@@ -109,6 +189,8 @@ static bool pco_ra_func(pco_func *func,
    /* TODO: loop lifetime extension.
     * TODO: track successors/predecessors.
     */
+
+   preproc_vecs(func);
 
    unsigned num_ssas = func->next_ssa;
    unsigned num_vregs = func->next_vreg;
@@ -173,10 +255,14 @@ static bool pco_ra_func(pco_func *func,
 
          if (pco_ref_is_ssa(*psrc)) {
             /* Make sure this hasn't already been overridden somewhere else! */
+#if 1
             if (_mesa_hash_table_u64_search(overrides, psrc->val)) {
                BITSET_SET(comps, psrc->val);
                continue;
             }
+#else
+            assert(!_mesa_hash_table_u64_search(overrides, psrc->val));
+#endif
 
             struct vec_override *src_override =
                rzalloc_size(overrides, sizeof(*src_override));
@@ -427,10 +513,10 @@ static bool pco_ra_func(pco_func *func,
    unsigned vtxins = 0;
    unsigned interns = 0;
    pco_foreach_instr_in_func_safe (instr, func) {
-      /*
+#if 1
       if (pco_should_print_shader(func->parent_shader) && PCO_DEBUG_PRINT(RA))
          pco_print_shader(func->parent_shader, stdout, "ra debug");
-         */
+#endif
 
       /* Insert movs for scalar components of super vecs. */
       if (instr->op == PCO_OP_VEC) {

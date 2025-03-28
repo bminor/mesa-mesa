@@ -2153,6 +2153,21 @@ pco_ref_new_ssa(pco_func *func, unsigned bits, unsigned chans)
 }
 
 /**
+ * \brief Builds and returns a new SSA reference cloning the properties of
+ *        another.
+ *
+ * \param[in,out] func The function.
+ * \param [in] ref The base reference.
+ * \return SSA reference.
+ */
+static inline pco_ref pco_ref_new_ssa_clone(pco_func *func, pco_ref ref)
+{
+   return pco_ref_ssa(func->next_ssa++,
+                      pco_ref_get_bits(ref),
+                      pco_ref_get_chans(ref));
+}
+
+/**
  * \brief Builds and returns a new 32x1 SSA reference.
  *
  * \param[in,out] func The function.
