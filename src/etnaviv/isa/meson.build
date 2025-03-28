@@ -97,7 +97,7 @@ disasm = executable(
 
 if with_tools.contains('etnaviv')
   isa_bindings_rs = rust.bindgen(
-    input : 'bindings.h',
+    input : [ 'bindings.h', etnaviv_enums_h ],
     output : 'isa_bindings.rs',
     include_directories : [inc_src],
     args : [
