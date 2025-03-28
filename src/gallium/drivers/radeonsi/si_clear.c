@@ -14,6 +14,7 @@
 enum {
    SI_CLEAR = SI_SAVE_FRAGMENT_STATE | SI_SAVE_FRAGMENT_CONSTANT,
    SI_CLEAR_SURFACE = SI_SAVE_FRAMEBUFFER | SI_SAVE_FRAGMENT_STATE | SI_SAVE_FRAGMENT_CONSTANT,
+   SI_DEPTH_STENCIL = SI_SAVE_FRAMEBUFFER | SI_SAVE_FRAGMENT_STATE,
 };
 
 void si_init_buffer_clear(struct si_clear_info *info,
@@ -1430,7 +1431,7 @@ static void si_clear_depth_stencil(struct pipe_context *ctx, struct pipe_surface
       return;
 
    si_blitter_begin(sctx,
-                    SI_CLEAR_SURFACE | (render_condition_enabled ? 0 : SI_DISABLE_RENDER_COND));
+                    SI_DEPTH_STENCIL | (render_condition_enabled ? 0 : SI_DISABLE_RENDER_COND));
    util_blitter_clear_depth_stencil(sctx->blitter, dst, clear_flags, depth, stencil, dstx, dsty,
                                     width, height);
    si_blitter_end(sctx);
