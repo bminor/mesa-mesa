@@ -51,7 +51,6 @@ struct panvk_device {
    struct {
       struct panvk_priv_bo *handlers_bo;
       uint32_t handler_stride;
-      uint32_t dump_region_size;
    } tiler_oom;
 
    struct vk_meta_device meta;
@@ -61,6 +60,10 @@ struct panvk_device {
       struct panvk_pool rw_nc;
       struct panvk_pool exec;
    } mempools;
+
+   /* For each subqueue, maximum size of the register dump region needed by
+    * exception handlers or functions */
+   uint32_t *dump_region_size;
 
    struct vk_device_dispatch_table cmd_dispatch;
 
