@@ -288,9 +288,12 @@ export -f get_tag_file
 s3_upload() {
     x_off
     local file=$1 s3_folder_url=$2
-    if [ ! -f "$file" ] || [[ "$s3_folder_url" != https://* ]]
+    if [ ! -f "$file" ] || [[ "$s3_folder_url" != https://*/ ]]
     then
-      echo "s3_upload used incorrectly: first argument is the file, second argument is the s3 folder url"
+      echo "Error: s3_upload incorrect usage."
+      echo "Usage: s3_upload <file> <s3_folder_url>"
+      echo "  - <file> must exist."
+      echo "  - <s3_folder_url> must start with 'https://' and end with '/'."
       exit 1
     fi
     curl --fail --retry-all-errors --retry 4 --retry-delay 60 \

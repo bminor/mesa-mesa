@@ -127,7 +127,7 @@ replay_s3_upload_images() {
             __DESTINATION_FILE_PATH="$__S3_TRACES_PREFIX/${line##*-}"
         fi
 
-        s3_upload "$RESULTS_DIR/$__PREFIX/$line" "https://${__S3_PATH}/${__DESTINATION_FILE_PATH%/*}"
+        s3_upload "$RESULTS_DIR/$__PREFIX/$line" "https://${__S3_PATH}/${__DESTINATION_FILE_PATH%/*}/"
     done
 }
 
