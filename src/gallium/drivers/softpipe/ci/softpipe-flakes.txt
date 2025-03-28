@@ -10,3 +10,6 @@ spec@arb_sync@sync_api
 
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
+
+# seen since the move to Hetzner runners
+spec@egl_ext_device_base@conformance
