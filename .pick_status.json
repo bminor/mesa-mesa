@@ -64,7 +64,7 @@
         "description": "Revert \"radv: program SAMPLE_MASK_TRACKER_WATERMARK optimally for GFX11 APUs\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "96e9c3fe77a315869a567dcdd5b1a2549a51925b",
         "notes": null
