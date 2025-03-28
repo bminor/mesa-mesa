@@ -1105,6 +1105,7 @@ static const struct intel_device_info intel_device_info_atsm_g11 = {
    .platform = INTEL_PLATFORM_ ## platform_suffix,              \
    .has_64bit_float = true,                                     \
    .has_64bit_float_via_math_pipe = true,                       \
+   .has_bfloat16 = false,                                       \
    /* BSpec 55414 (r53716). */                                  \
    .has_systolic = false,                                       \
    /* BSpec 45101 (r51017) */                                   \
@@ -1133,6 +1134,7 @@ static const struct intel_device_info intel_device_info_arl_u = {
 
 static const struct intel_device_info intel_device_info_arl_h = {
    MTL_CONFIG(ARL_H),
+   .has_bfloat16 = true,
    /* BSpec 55414 (r53716). */
    .has_systolic = true,
 };
