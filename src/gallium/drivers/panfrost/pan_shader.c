@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Arm Ltd.
  * Copyright (c) 2022 Amazon.com, Inc. or its affiliates.
  * Copyright (C) 2019-2022 Collabora, Ltd.
  * Copyright (C) 2019 Red Hat Inc.
@@ -109,6 +110,14 @@ lower_sample_mask_writes(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static bool
+panfrost_use_ld_var_buf(const nir_shader *ir)
+{
+   const uint64_t allowed = VARYING_BIT_POS | VARYING_BIT_PSIZ |
+      BITFIELD64_MASK(16) << VARYING_SLOT_VAR0;
+   return (ir->info.inputs_read & ~allowed) == 0;
+}
+
 static void
 panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                         struct util_debug_callback *dbg,
@@ -138,15 +147,12 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    /* Lower this early so the backends don't have to worry about it */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
       inputs.fixed_varying_mask =
-         (ir->info.inputs_read & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+         panfrost_get_fixed_varying_mask(s->info.inputs_read);
    } else if (s->info.stage == MESA_SHADER_VERTEX) {
       /* No IDVS for internal XFB shaders */
       inputs.no_idvs = s->info.has_transform_feedback_varyings;
-
       inputs.fixed_varying_mask =
-         (ir->info.outputs_written & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+         panfrost_get_fixed_varying_mask(s->info.outputs_written);
 
       if (s->info.has_transform_feedback_varyings) {
          NIR_PASS(_, s, nir_io_add_const_offset_to_base,
@@ -173,6 +179,8 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       if (key->fs.clip_plane_enable) {
          NIR_PASS(_, s, nir_lower_clip_fs, key->fs.clip_plane_enable,
                   false, true);
+         inputs.fixed_varying_mask =
+            panfrost_get_fixed_varying_mask(s->info.inputs_read);
       }
 
       if (key->fs.line_smooth) {
@@ -201,6 +209,9 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    /* Lower resource indices */
    NIR_PASS(_, s, panfrost_nir_lower_res_indices, &inputs);
+
+   if (dev->arch >= 9)
+      inputs.valhall.use_ld_var_buf = panfrost_use_ld_var_buf(s);
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
 

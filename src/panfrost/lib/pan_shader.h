@@ -37,6 +37,13 @@
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 
+static unsigned
+panfrost_get_fixed_varying_mask(unsigned varyings_used)
+{
+   return (varyings_used & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
+      ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+}
+
 static inline void
 pan_shader_preprocess(nir_shader *nir, unsigned gpu_id)
 {

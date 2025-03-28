@@ -149,8 +149,7 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
 
       /* Store the mask of special varyings, in case we need to emit ADs later. */
       info->varyings.fixed_varyings =
-         (s->info.outputs_written & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+         panfrost_get_fixed_varying_mask(s->info.outputs_written);
 #endif
       break;
    case MESA_SHADER_FRAGMENT:
@@ -203,8 +202,7 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
 
       /* Store the mask of special varyings, in case we need to emit ADs later. */
       info->varyings.fixed_varyings =
-         (s->info.inputs_read & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-         ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+         panfrost_get_fixed_varying_mask(s->info.inputs_read);
 #endif
       break;
    default:
