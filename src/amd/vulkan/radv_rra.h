@@ -242,7 +242,7 @@ struct rra_accel_struct_header {
    uint32_t leaf_node_count;
    uint32_t rt_driver_interface_version;
    uint64_t unused2;
-   uint32_t half_fp32_node_count;
+   uint32_t rt_ip_version;
    char unused3[44];
 };
 
