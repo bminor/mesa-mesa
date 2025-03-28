@@ -1078,7 +1078,6 @@ v3d_create_surface(struct pipe_context *pctx,
                    const struct pipe_surface *surf_tmpl)
 {
         struct v3d_surface *surface = CALLOC_STRUCT(v3d_surface);
-        struct v3d_resource *rsc = v3d_resource(ptex);
 
         if (!surface)
                 return NULL;
@@ -1094,23 +1093,12 @@ v3d_create_surface(struct pipe_context *pctx,
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
 
-        if (rsc->separate_stencil) {
-                surface->separate_stencil =
-                        v3d_create_surface(pctx, &rsc->separate_stencil->base,
-                                           surf_tmpl);
-        }
-
         return &surface->base;
 }
 
 static void
 v3d_surface_destroy(struct pipe_context *pctx, struct pipe_surface *psurf)
 {
-        struct v3d_surface *surf = v3d_surface(psurf);
-
-        if (surf->separate_stencil)
-                pipe_surface_reference(&surf->separate_stencil, NULL);
-
         pipe_resource_reference(&psurf->texture, NULL);
         FREE(psurf);
 }

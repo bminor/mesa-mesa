@@ -37,18 +37,27 @@
 #define PIPE_FIRST_COLOR_BUFFER_BIT (ffs(PIPE_CLEAR_COLOR0) - 1)
 
 static inline enum v3d_tiling_mode
-v3d_surface_get_tiling(struct pipe_surface *psurf)
+v3d_surface_get_tiling(struct pipe_surface *psurf, bool separate_stencil)
 {
         assert(psurf && psurf->texture);
         struct v3d_resource *rsc = v3d_resource(psurf->texture);
+        if (separate_stencil) {
+                assert(rsc->separate_stencil);
+                rsc = rsc->separate_stencil;
+        }
         return rsc->slices[psurf->level].tiling;
 }
 
 static uint32_t
-v3d_surface_get_height_in_ub_or_stride(struct pipe_surface *psurf)
+v3d_surface_get_height_in_ub_or_stride(struct pipe_surface *psurf,
+                                       bool separate_stencil)
 {
         assert(psurf && psurf->texture);
         struct v3d_resource *rsc = v3d_resource(psurf->texture);
+        if (separate_stencil) {
+                assert(rsc->separate_stencil);
+                rsc = rsc->separate_stencil;
+        }
         struct v3d_resource_slice *slice = &rsc->slices[psurf->level];
 
         if (slice->tiling == V3D_TILING_UIF_NO_XOR ||
@@ -65,14 +74,10 @@ static void
 load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
              int layer, uint32_t pipe_bit, uint32_t *loads_pending)
 {
-        struct v3d_surface *surf = v3d_surface(psurf);
-        bool separate_stencil = surf->separate_stencil && buffer == STENCIL;
-        if (separate_stencil) {
-                psurf = surf->separate_stencil;
-                surf = v3d_surface(psurf);
-        }
-
         struct v3d_resource *rsc = v3d_resource(psurf->texture);
+        bool separate_stencil = rsc->separate_stencil && buffer == STENCIL;
+        if (separate_stencil)
+                rsc = rsc->separate_stencil;
 
         uint32_t layer_offset =
                 v3d_layer_offset(&rsc->base, psurf->level,
@@ -82,7 +87,8 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
                 load.buffer_to_load = buffer;
                 load.address = cl_address(rsc->bo, layer_offset);
 
-                load.memory_format = v3d_surface_get_tiling(psurf);
+                load.memory_format = v3d_surface_get_tiling(psurf,
+                                                            separate_stencil);
                 if (separate_stencil)
                         load.input_image_format = V3D_OUTPUT_IMAGE_FORMAT_S8;
                 else
@@ -93,7 +99,8 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
                 load.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
                 load.force_alpha_1 = util_format_has_alpha1(psurf->format);
                 load.height_in_ub_or_stride =
-                        v3d_surface_get_height_in_ub_or_stride(psurf);
+                        v3d_surface_get_height_in_ub_or_stride(psurf,
+                                                               separate_stencil);
 
                 if (psurf->texture->nr_samples > 1)
                         load.decimate_mode = V3D_DECIMATE_MODE_ALL_SAMPLES;
@@ -112,17 +119,13 @@ store_general(struct v3d_job *job,
               uint32_t *stores_pending, bool general_color_clear,
               bool resolve_4x)
 {
-        struct v3d_surface *surf = v3d_surface(psurf);
-        bool separate_stencil = surf->separate_stencil && buffer == STENCIL;
-        if (separate_stencil) {
-                psurf = surf->separate_stencil;
-                surf = v3d_surface(psurf);
-        }
+        struct v3d_resource *rsc = v3d_resource(psurf->texture);
+        bool separate_stencil = rsc->separate_stencil && buffer == STENCIL;
+        if (separate_stencil)
+                rsc = rsc->separate_stencil;
 
         if (stores_pending)
                 *stores_pending &= ~pipe_bit;
-
-        struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
         rsc->writes++;
         rsc->graphics_written = true;
@@ -146,9 +149,11 @@ store_general(struct v3d_job *job,
                                         psurf->format);
 
                 store.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
-                store.memory_format = v3d_surface_get_tiling(psurf);
+                store.memory_format = v3d_surface_get_tiling(psurf,
+                                                             separate_stencil);
                 store.height_in_ub_or_stride =
-                        v3d_surface_get_height_in_ub_or_stride(psurf);
+                        v3d_surface_get_height_in_ub_or_stride(psurf,
+                                                               separate_stencil);
 
                 if (psurf->texture->nr_samples > 1) {
                         store.decimate_mode = V3D_DECIMATE_MODE_ALL_SAMPLES;
@@ -778,7 +783,8 @@ v3dX(emit_rcl)(struct v3d_job *job)
                 UNUSED uint32_t config_pad = 0;
                 UNUSED uint32_t clear_pad = 0;
 
-                enum v3d_tiling_mode tiling = v3d_surface_get_tiling(psurf);
+                enum v3d_tiling_mode tiling = v3d_surface_get_tiling(psurf,
+                                                                     false);
 
                 /* XXX: Set the pad for raster. */
                 if (tiling == V3D_TILING_UIF_NO_XOR ||
@@ -787,7 +793,8 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         uint32_t implicit_padded_height = (align(job->draw_height, uif_block_height) /
                                                            uif_block_height);
                         uint32_t padded_height_of_output_image_in_uif_blocks =
-                                v3d_surface_get_height_in_ub_or_stride(psurf);
+                                v3d_surface_get_height_in_ub_or_stride(psurf,
+                                                                       false);
 
                         if (padded_height_of_output_image_in_uif_blocks -
                             implicit_padded_height < 15) {

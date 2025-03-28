@@ -50,11 +50,6 @@ struct v3d_resource_slice {
 
 struct v3d_surface {
         struct pipe_surface base;
-
-        /* If the resource being referenced is separate stencil, then this is
-         * the surface to use when reading/writing stencil.
-         */
-        struct pipe_surface *separate_stencil;
 };
 
 struct v3d_resource {
