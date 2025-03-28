@@ -60,7 +60,10 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
                 if (separate_stencil)
                         load.input_image_format = V3D_OUTPUT_IMAGE_FORMAT_S8;
                 else
-                        load.input_image_format = surf->format;
+                        load.input_image_format =
+                                v3d_get_rt_format(
+                                        &cl->job->v3d->screen->devinfo,
+                                        psurf->format);
                 load.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
                 load.force_alpha_1 = util_format_has_alpha1(psurf->format);
                 if (surf->tiling == V3D_TILING_UIF_NO_XOR ||
@@ -117,7 +120,10 @@ store_general(struct v3d_job *job,
                 if (separate_stencil)
                         store.output_image_format = V3D_OUTPUT_IMAGE_FORMAT_S8;
                 else
-                        store.output_image_format = surf->format;
+                        store.output_image_format =
+                                v3d_get_rt_format(
+                                        &cl->job->v3d->screen->devinfo,
+                                        psurf->format);
 
                 store.r_b_swap = v3d_format_needs_tlb_rb_swap(psurf->format);
                 store.memory_format = surf->tiling;

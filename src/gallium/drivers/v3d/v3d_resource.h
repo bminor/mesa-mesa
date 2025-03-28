@@ -52,10 +52,6 @@ struct v3d_surface {
         struct pipe_surface base;
         uint32_t offset;
         enum v3d_tiling_mode tiling;
-        /**
-         * Output image format for TILE_RENDERING_MODE_CONFIGURATION
-         */
-        uint8_t format;
 
         /**
          * Internal format of the tile buffer for

@@ -1103,8 +1103,6 @@ v3d_create_surface(struct pipe_context *pctx,
                                            psurf->first_layer);
         surface->tiling = slice->tiling;
 
-        surface->format = v3d_get_rt_format(devinfo, psurf->format);
-
         if (util_format_is_depth_or_stencil(psurf->format)) {
                 switch (psurf->format) {
                 case PIPE_FORMAT_Z16_UNORM:
@@ -1119,8 +1117,9 @@ v3d_create_surface(struct pipe_context *pctx,
                 }
         } else {
                 uint32_t bpp, type;
+                uint16_t rt_format = v3d_get_rt_format(devinfo, psurf->format);
                 v3d_X(devinfo, get_internal_type_bpp_for_output_format)
-                   (surface->format, &type, &bpp);
+                   (rt_format, &type, &bpp);
                 surface->internal_type = type;
                 surface->internal_bpp = bpp;
         }
