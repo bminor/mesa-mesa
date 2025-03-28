@@ -4,6 +4,7 @@
  */
 
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -37,12 +38,14 @@ enum {
    EXECUTOR_BO_SIZE = 10 * 1024 * 1024,
 };
 
+const char usage_line[] = "usage: executor FILENAME";
+
 static void
 print_help()
 {
    printf(
       "Executes shaders written for Intel GPUs\n"
-      "usage: executor FILENAME\n"
+      "%s\n"
       "\n"
       "The input is a Lua script that can perform data manipulation\n"
       "and dispatch execution of compute shaders, written in Xe assembly,\n"
@@ -147,7 +150,7 @@ print_help()
       "   [0x00000000] 0x00000100 0x00000101 0x00000102 0x00000103\n"
       "\n"
       "More examples can be found in the examples/ directory in the source code.\n"
-      "\n", EXECUTOR_BO_DATA_ADDR, LUA_RELEASE);
+      "\n", usage_line, EXECUTOR_BO_DATA_ADDR, LUA_RELEASE);
 }
 
 static struct {
@@ -784,20 +787,31 @@ l_check_verx10(lua_State *L)
 int
 main(int argc, char *argv[])
 {
-   if (argc < 2 ||
-       !strcmp(argv[1], "--help") ||
-       !strcmp(argv[1], "-help") ||
-       !strcmp(argv[1], "-h") ||
-       !strcmp(argv[1], "help")) {
-      print_help();
-      return 0;
+   int opt;
+
+   static const struct option long_options[] = {
+       {"help",   no_argument,       0, 'h'},
+       {},
+   };
+
+   while ((opt = getopt_long(argc, argv, "h", long_options, NULL)) != -1) {
+      switch (opt) {
+      case 'h':
+         print_help();
+         return 0;
+      default:
+         fprintf(stderr, "%s\n", usage_line);
+         return 1;
+      }
    }
 
-   if (argc > 2) {
-      /* TODO: Expose extra arguments to the script as a variable. */
-      failf("invalid extra arguments\nusage: executor FILENAME");
+   if (optind >= argc) {
+      fprintf(stderr, "%s\n", usage_line);
+      fprintf(stderr, "expected FILENAME after options\n");
       return 1;
    }
+
+   const char *filename = argv[optind];
 
    process_intel_debug_variable();
 
@@ -834,7 +848,6 @@ main(int argc, char *argv[])
    lua_pushcfunction(L, l_check_verx10);
    lua_setglobal(L, "check_verx10");
 
-   const char *filename = argv[1];
    int err = luaL_loadfile(L, filename);
    if (err)
       failf("failed to load script: %s", lua_tostring(L, -1));
