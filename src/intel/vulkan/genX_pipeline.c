@@ -1542,49 +1542,57 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
       brw_cs_get_dispatch_info(devinfo, prog_data, NULL);
    const struct anv_shader_bin *shader = pipeline->cs;
 
-   struct GENX(COMPUTE_WALKER) walker =  {
-      GENX(COMPUTE_WALKER_header),
-#if GFX_VERx10 == 125
-      .SystolicModeEnable             = prog_data->uses_systolic,
+   struct GENX(COMPUTE_WALKER_BODY) walker =  {
+      /* HSD 14016252163: Use of Morton walk order (and batching using a batch
+       * size of 4) is expected to increase sampler cache hit rates by
+       * increasing sample address locality within a subslice.
+       */
+#if GFX_VER >= 30
+      .DispatchWalkOrder        = prog_data->uses_sampler ?
+                                  MortonWalk :
+                                  LinearWalk,
+      .ThreadGroupBatchSize     = prog_data->uses_sampler ? TG_BATCH_4 :
+                                                            TG_BATCH_1,
 #endif
-      .body = {
-         .SIMDSize                       = dispatch.simd_size / 16,
-         .MessageSIMD                    = dispatch.simd_size / 16,
-         .GenerateLocalID                = prog_data->generate_local_id != 0,
-         .EmitLocal                      = prog_data->generate_local_id,
-         .WalkOrder                      = prog_data->walk_order,
-         .TileLayout                     = prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
-                                           TileY32bpe : Linear,
-         .LocalXMaximum                  = prog_data->local_size[0] - 1,
-         .LocalYMaximum                  = prog_data->local_size[1] - 1,
-         .LocalZMaximum                  = prog_data->local_size[2] - 1,
-         .ExecutionMask                  = dispatch.right_mask,
-         .PostSync                       = {
-            .MOCS                        = anv_mocs(pipeline->base.device, NULL, 0),
-         },
-         .InterfaceDescriptor            = {
-            .KernelStartPointer                = shader->kernel.offset,
-            /* Typically set to 0 to avoid prefetching on every thread dispatch. */
-            .BindingTableEntryCount            = devinfo->verx10 == 125 ?
-            0 : 1 + MIN2(shader->bind_map.surface_count, 30),
-            .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
-            .ThreadGroupDispatchSize =
-               intel_compute_threads_group_dispatch_size(dispatch.threads),
-            .SharedLocalMemorySize             =
-            intel_compute_slm_encode_size(GFX_VER, prog_data->base.total_shared),
-            .PreferredSLMAllocationSize        =
-            intel_compute_preferred_slm_calc_encode_size(devinfo,
-                                                         prog_data->base.total_shared,
-                                                         dispatch.group_size,
-                                                         dispatch.simd_size),
-            .NumberOfBarriers                  = prog_data->uses_barrier,
-         },
-         .EmitInlineParameter            = prog_data->uses_inline_push_addr,
+      .SIMDSize                       = dispatch.simd_size / 16,
+      .MessageSIMD                    = dispatch.simd_size / 16,
+      .GenerateLocalID                = prog_data->generate_local_id != 0,
+      .EmitLocal                      = prog_data->generate_local_id,
+      .WalkOrder                      = prog_data->walk_order,
+      .TileLayout                     = prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
+                                        TileY32bpe : Linear,
+      .LocalXMaximum                  = prog_data->local_size[0] - 1,
+      .LocalYMaximum                  = prog_data->local_size[1] - 1,
+      .LocalZMaximum                  = prog_data->local_size[2] - 1,
+      .PostSync                       = {
+         .MOCS                        = anv_mocs(pipeline->base.device, NULL, 0),
       },
+      .EmitInlineParameter            = prog_data->uses_inline_push_addr,
+      .InterfaceDescriptor            = {
+         .KernelStartPointer                = shader->kernel.offset,
+         .SamplerCount                      = DIV_ROUND_UP(CLAMP(shader->bind_map.sampler_count, 0, 16), 4),
+         /* Typically set to 0 to avoid prefetching on every thread dispatch. */
+         .BindingTableEntryCount            = devinfo->verx10 == 125 ?
+                                              0 : 1 + MIN2(shader->bind_map.surface_count, 30),
+         .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
+         .SharedLocalMemorySize             = intel_compute_slm_encode_size(
+            GFX_VER, prog_data->base.total_shared),
+         .PreferredSLMAllocationSize        = intel_compute_preferred_slm_calc_encode_size(
+            devinfo, prog_data->base.total_shared,
+            dispatch.group_size, dispatch.simd_size),
+         .NumberOfBarriers                  = prog_data->uses_barrier,
+#if GFX_VER >= 30
+         .RegistersPerThread                = ptl_register_blocks(prog_data->base.grf_used),
+#endif
+      },
+      .EmitInlineParameter            = prog_data->uses_inline_push_addr,
    };
 
-   assert(ARRAY_SIZE(pipeline->gfx125.compute_walker) >= GENX(COMPUTE_WALKER_length));
-   GENX(COMPUTE_WALKER_pack)(NULL, pipeline->gfx125.compute_walker, &walker);
+   assert(ARRAY_SIZE(pipeline->gfx125.compute_walker_body) >=
+          GENX(COMPUTE_WALKER_BODY_length));
+   GENX(COMPUTE_WALKER_BODY_pack)(NULL,
+                                  pipeline->gfx125.compute_walker_body,
+                                  &walker);
 }
 
 #else /* #if GFX_VERx10 >= 125 */
@@ -1660,7 +1668,10 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
        */
       .ThreadPreemptionDisable = true,
 #endif
-
+#if GFX_VERx10 >= 125
+      .ThreadGroupDispatchSize =
+         intel_compute_threads_group_dispatch_size(dispatch->threads),
+#endif
       .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
    };
    GENX(INTERFACE_DESCRIPTOR_DATA_pack)(NULL,

@@ -2725,6 +2725,31 @@ _anv_combine_address(struct anv_batch *batch, void *location,
       __dst;                                               \
    })
 
+/* Emit an instruction with fields set in the arguments of this macro and
+ * combine it with a prepacked instructions.
+ */
+#define anv_batch_emitn_merge_at(batch, n, offset, to_merge, cmd, ...) ({ \
+      void *__dst = anv_batch_emit_dwords(batch, n);                    \
+      if (__dst) {                                                      \
+         struct cmd __template = {                                      \
+            __anv_cmd_header(cmd),                                      \
+            .DWordLength = n - __anv_cmd_length_bias(cmd),              \
+            __VA_ARGS__                                                 \
+         };                                                             \
+         uint32_t __partial[__anv_cmd_length(cmd)];                     \
+         __anv_cmd_pack(cmd)(batch, __partial, &__template);            \
+         for (uint32_t i = 0; i < (offset); i++)                        \
+            ((uint32_t *)__dst)[i] = __partial[i];                      \
+         for (uint32_t i = (offset); i < n; i++) {                      \
+            ((uint32_t *)__dst)[i] =                                    \
+               (to_merge)[i - (offset)] | __partial[i];                 \
+         }                                                              \
+         VG(VALGRIND_CHECK_MEM_IS_DEFINED(__dst,                        \
+                                          __anv_cmd_length(cmd) * 4));  \
+      }                                                                 \
+      __dst;                                                            \
+   })
+
 #define anv_batch_emit_merge(batch, cmd, pipeline, state, name)         \
    for (struct cmd name = { 0 },                                        \
         *_dst = anv_batch_emit_dwords(batch, __anv_cmd_length(cmd));    \
@@ -5260,7 +5285,7 @@ struct anv_compute_pipeline {
          uint32_t                               gpgpu_walker[15];
       } gfx9;
       struct {
-         uint32_t                               compute_walker[40];
+         uint32_t                               compute_walker_body[39];
       } gfx125;
    };
 };
