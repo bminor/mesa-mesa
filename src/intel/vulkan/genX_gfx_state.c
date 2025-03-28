@@ -38,6 +38,31 @@
 
 #include "genX_mi_builder.h"
 
+#define anv_gfx_emit(_gfx, _bit, _field, cmd, name)                     \
+   for (struct cmd name = { __anv_cmd_header(cmd) }, *_dst = &name;     \
+        __builtin_expect(_dst != NULL, 1);                              \
+        ({ assert(ARRAY_SIZE((_gfx)->_field) >= __anv_cmd_length(cmd)); \
+           uint32_t __packed[__anv_cmd_length(cmd)];                    \
+           __anv_cmd_pack(cmd)(NULL, __packed, &name);                  \
+           if (memcmp(__packed, (_gfx)->_field,                         \
+                      4 * __anv_cmd_length(cmd))) {                     \
+              memcpy((_gfx)->_field, __packed,                          \
+                     4 * __anv_cmd_length(cmd));                        \
+              BITSET_SET((_gfx)->dirty, ANV_GFX_STATE_##_bit);          \
+           }                                                            \
+           _dst = NULL;                                                 \
+         }))
+
+#define anv_batch_emit_gfx_state(batch, _packed, cmd)                   \
+   ({                                                                   \
+      assert((_packed)[0] != 0);                                        \
+      void *_dst = anv_batch_emit_dwords(batch, __anv_cmd_length(cmd)); \
+      if (_dst != NULL) {                                               \
+         memcpy(_dst, _packed, 4 * __anv_cmd_length(cmd));              \
+         VG(VALGRIND_CHECK_MEM_IS_DEFINED(_dst, __anv_cmd_length(cmd) * 4)); \
+      }                                                                 \
+   })
+
 static const uint32_t vk_to_intel_blend[] = {
    [VK_BLEND_FACTOR_ZERO]                    = BLENDFACTOR_ZERO,
    [VK_BLEND_FACTOR_ONE]                     = BLENDFACTOR_ONE,
@@ -847,13 +872,136 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
             .coarse_pixel              = !vk_fragment_shading_rate_is_disabled(&dyn->fsr),
             .alpha_to_coverage         = dyn->ms.alpha_to_coverage_enable,
             .provoking_vertex_last     = dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT,
-            .first_vue_slot            = gfx->first_vue_slot,
-            .primitive_id_index        = gfx->primitive_id_index,
+            .first_vue_slot            = hw_state->first_vue_slot,
+            .primitive_id_index        = hw_state->primitive_id_index,
             .per_primitive_remapping   = mesh_prog_data &&
                                          mesh_prog_data->map.wa_18019110168_active,
          });
 
    SET(FS_MSAA_FLAGS, fs_msaa_flags, fs_msaa_flags);
+}
+
+static bool
+sbe_primitive_id_override(const struct anv_cmd_graphics_state *gfx)
+{
+   const struct brw_wm_prog_data *wm_prog_data = get_gfx_wm_prog_data(gfx);
+   if (!wm_prog_data)
+      return false;
+
+   if (anv_gfx_has_stage(gfx, MESA_SHADER_MESH)) {
+      const struct brw_mesh_prog_data *mesh_prog_data =
+         get_gfx_mesh_prog_data(gfx);
+      const struct brw_mue_map *mue = &mesh_prog_data->map;
+      return (wm_prog_data->inputs & VARYING_BIT_PRIMITIVE_ID) &&
+              mue->per_primitive_offsets[VARYING_SLOT_PRIMITIVE_ID] == -1;
+   }
+
+   const struct intel_vue_map *vue_map = get_gfx_last_vue_map(gfx);
+
+   return (wm_prog_data->inputs & VARYING_BIT_PRIMITIVE_ID) &&
+          (vue_map->slots_valid & VARYING_BIT_PRIMITIVE_ID) == 0;
+}
+
+ALWAYS_INLINE static void
+update_sbe(struct anv_gfx_dynamic_state *hw_state,
+           const struct anv_cmd_graphics_state *gfx,
+           const struct anv_device *device)
+{
+   const struct brw_wm_prog_data *wm_prog_data = get_gfx_wm_prog_data(gfx);
+   if (wm_prog_data == NULL)
+      return;
+
+   const struct brw_mesh_prog_data *mesh_prog_data =
+      get_gfx_mesh_prog_data(gfx);
+
+   const struct intel_vue_map *vue_map = get_gfx_last_vue_map(gfx);
+
+   uint32_t vertex_read_offset, vertex_read_length, vertex_varyings, flat_inputs;
+   brw_compute_sbe_per_vertex_urb_read(
+      vue_map, mesh_prog_data != NULL,
+      mesh_prog_data ? mesh_prog_data->map.wa_18019110168_active : false,
+      wm_prog_data,
+      &vertex_read_offset, &vertex_read_length, &vertex_varyings,
+      &hw_state->primitive_id_index, &flat_inputs);
+
+   hw_state->first_vue_slot = vertex_read_offset * 2;
+
+   /* As far as we can test, 3DSTATE_SBE & 3DSTATE_SBE_SWIZ has no effect when
+    * the pipeline is using Mesh. We still fill the instruction for now, but
+    * in the future we might want to completely avoid its emission.
+    */
+   SET(SBE, sbe.AttributeSwizzleEnable, mesh_prog_data == NULL);
+   SET(SBE, sbe.PointSpriteTextureCoordinateOrigin, UPPERLEFT);
+   SET(SBE, sbe.NumberofSFOutputAttributes, vertex_varyings);
+   SET(SBE, sbe.ConstantInterpolationEnable, flat_inputs);
+   SET(SBE, sbe.VertexAttributesBypass, wm_prog_data->vertex_attributes_bypass);
+
+   if (mesh_prog_data == NULL) {
+      for (uint8_t idx = 0; idx < wm_prog_data->urb_setup_attribs_count; idx++) {
+         gl_varying_slot attr = wm_prog_data->urb_setup_attribs[idx];
+         int input_index = wm_prog_data->urb_setup[attr];
+
+         assert(0 <= input_index);
+
+         if (attr == VARYING_SLOT_PNTC) {
+            SET(SBE, sbe.PointSpriteTextureCoordinateEnable, 1 << input_index);
+            continue;
+         }
+
+         const int slot = vue_map->varying_to_slot[attr];
+         if (slot == -1)
+            continue;
+
+         /* We have to subtract two slots to account for the URB entry output
+          * read offset in the VS and GS stages.
+          */
+         const int source_attr = slot - 2 * vertex_read_offset;
+         assert(source_attr >= 0 && source_attr < 32);
+         /* The hardware can only do overrides on 16 overrides at a time, and
+          * the other up to 16 have to be lined up so that the input index =
+          * the output index. We'll need to do some tweaking to make sure
+          * that's the case.
+          */
+         if (input_index < 16) {
+            SET(SBE_SWIZ,
+                sbe_swiz.Attribute[input_index].SourceAttribute,
+                source_attr);
+         } else {
+            assert(source_attr == input_index);
+         }
+      }
+
+      SET(SBE, sbe.VertexURBEntryReadOffset, vertex_read_offset);
+      SET(SBE, sbe.VertexURBEntryReadLength, vertex_read_length);
+   }
+
+   /* Ask the hardware to supply PrimitiveID if the fragment shader reads it
+    * but a previous stage didn't write one.
+    */
+   const bool prim_id_override = sbe_primitive_id_override(gfx);
+   SET(SBE, sbe.PrimitiveIDOverrideAttributeSelect,
+       prim_id_override ? wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID] : 0);
+   SET(SBE, sbe.PrimitiveIDOverrideComponentX, prim_id_override);
+   SET(SBE, sbe.PrimitiveIDOverrideComponentY, prim_id_override);
+   SET(SBE, sbe.PrimitiveIDOverrideComponentZ, prim_id_override);
+   SET(SBE, sbe.PrimitiveIDOverrideComponentW, prim_id_override);
+
+#if GFX_VERx10 >= 125
+   if (mesh_prog_data) {
+      SET(SBE_MESH, sbe_mesh.PerVertexURBEntryOutputReadOffset, vertex_read_offset);
+      SET(SBE_MESH, sbe_mesh.PerVertexURBEntryOutputReadLength, vertex_read_length);
+
+      uint32_t prim_read_offset, prim_read_length;
+      brw_compute_sbe_per_primitive_urb_read(wm_prog_data->per_primitive_inputs,
+                                             wm_prog_data->num_per_primitive_inputs,
+                                             &mesh_prog_data->map,
+                                             &prim_read_offset,
+                                             &prim_read_length);
+
+      SET(SBE_MESH, sbe_mesh.PerPrimitiveURBEntryOutputReadOffset, prim_read_offset);
+      SET(SBE_MESH, sbe_mesh.PerPrimitiveURBEntryOutputReadLength, prim_read_length);
+   }
+#endif
 }
 
 ALWAYS_INLINE static void
@@ -1988,6 +2136,11 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
                                    VkCommandBufferLevel cmd_buffer_level)
 {
    UNUSED bool fs_msaa_changed = false;
+
+   /* Do this before update_fs_msaa_flags() for primitive_id_index */
+   if (gfx->dirty & ANV_CMD_DIRTY_ALL_SHADERS(device))
+      update_sbe(hw_state, gfx, device);
+
    if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) ||
@@ -2527,12 +2680,6 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       }
    }
 
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE))
-      anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.sbe);
-
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE_SWIZ))
-      anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.sbe_swiz);
-
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SO_DECL_LIST)) {
       /* Wa_16011773973:
        * If SOL is enabled and SO_DECL state has to be programmed,
@@ -2562,6 +2709,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 #endif
    }
 
+#if GFX_VERx10 >= 125
    if (device->vk.enabled_extensions.EXT_mesh_shader) {
       if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MESH_CONTROL)) {
          anv_batch_emit_pipeline_state_protected(&cmd_buffer->batch, pipeline,
@@ -2585,12 +2733,20 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_TASK_REDISTRIB))
          anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.task_redistrib);
 
-      if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE_MESH))
-         anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.sbe_mesh);
+      if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE_MESH)) {
+         anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_SBE_MESH), sbe_mesh) {
+            SET(sbe_mesh, sbe_mesh, PerVertexURBEntryOutputReadOffset);
+            SET(sbe_mesh, sbe_mesh, PerVertexURBEntryOutputReadLength);
+            SET(sbe_mesh, sbe_mesh, PerPrimitiveURBEntryOutputReadOffset);
+            SET(sbe_mesh, sbe_mesh, PerPrimitiveURBEntryOutputReadLength);
+         }
+      }
 
       if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_CLIP_MESH))
          anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.clip_mesh);
-   } else {
+   } else
+#endif
+   {
       assert(!BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MESH_CONTROL) &&
              !BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MESH_SHADER) &&
              !BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MESH_DISTRIB) &&
@@ -2602,6 +2758,38 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    /* Now the potentially dynamic instructions */
+
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE)) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_SBE), sbe) {
+         for (unsigned i = 0; i < 32; i++)
+            sbe.AttributeActiveComponentFormat[i] = ACF_XYZW;
+         sbe.ForceVertexURBEntryReadOffset = true;
+         sbe.ForceVertexURBEntryReadLength = true;
+
+         SET(sbe, sbe, AttributeSwizzleEnable);
+         SET(sbe, sbe, PointSpriteTextureCoordinateEnable);
+         SET(sbe, sbe, PointSpriteTextureCoordinateOrigin);
+         SET(sbe, sbe, NumberofSFOutputAttributes);
+         SET(sbe, sbe, ConstantInterpolationEnable);
+         SET(sbe, sbe, VertexURBEntryReadOffset);
+         SET(sbe, sbe, VertexURBEntryReadLength);
+#if GFX_VER >= 20
+         SET(sbe, sbe, VertexAttributesBypass);
+#endif
+         SET(sbe, sbe, PrimitiveIDOverrideAttributeSelect);
+         SET(sbe, sbe, PrimitiveIDOverrideComponentX);
+         SET(sbe, sbe, PrimitiveIDOverrideComponentY);
+         SET(sbe, sbe, PrimitiveIDOverrideComponentZ);
+         SET(sbe, sbe, PrimitiveIDOverrideComponentW);
+      }
+   }
+
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE_SWIZ)) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_SBE_SWIZ), sbe_swiz) {
+         for (unsigned i = 0; i < 16; i++)
+            SET(sbe_swiz, sbe_swiz, Attribute[i].SourceAttribute);
+      }
+   }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PS)) {
       DEBUG_SHADER_HASH(MESA_SHADER_FRAGMENT);

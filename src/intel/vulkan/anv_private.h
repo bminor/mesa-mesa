@@ -1791,6 +1791,37 @@ struct anv_gfx_dynamic_state {
       } elem[MAX_SCISSORS];
    } scissor;
 
+   /* 3DSTATE_SBE */
+   struct {
+      bool     AttributeSwizzleEnable;
+      uint32_t PointSpriteTextureCoordinateEnable;
+      uint32_t PointSpriteTextureCoordinateOrigin;
+      uint32_t NumberofSFOutputAttributes;
+      uint32_t ConstantInterpolationEnable;
+      uint32_t VertexURBEntryReadOffset;
+      uint32_t VertexURBEntryReadLength;
+      bool     VertexAttributesBypass;
+      uint32_t PrimitiveIDOverrideAttributeSelect;
+      bool     PrimitiveIDOverrideComponentX;
+      bool     PrimitiveIDOverrideComponentY;
+      bool     PrimitiveIDOverrideComponentZ;
+      bool     PrimitiveIDOverrideComponentW;
+   } sbe;
+
+   struct {
+      uint32_t PerVertexURBEntryOutputReadOffset;
+      uint32_t PerVertexURBEntryOutputReadLength;
+      uint32_t PerPrimitiveURBEntryOutputReadOffset;
+      uint32_t PerPrimitiveURBEntryOutputReadLength;
+   } sbe_mesh;
+
+   /* 3DSTATE_SBE_SWIZ */
+   struct {
+      struct {
+         uint32_t SourceAttribute;
+      } Attribute[16];
+   } sbe_swiz;
+
    /* 3DSTATE_SF */
    struct {
       uint32_t DerefBlockSize;
@@ -1932,6 +1963,17 @@ struct anv_gfx_dynamic_state {
    uint32_t mesh_provoking_vertex;
 
    bool pma_fix;
+
+   /**
+    * Attribute index of gl_PrimitiveID in the fragment shader relative to the
+    * first read attribute.
+    */
+   uint32_t primitive_id_index;
+
+   /**
+    * First attribute read by SBE in the VUE.
+    */
+   uint32_t first_vue_slot;
 
    /**
     * DEPTH and STENCIL attachment write state for Wa_18019816803.
@@ -4130,8 +4172,6 @@ struct anv_cmd_graphics_state {
 
    bool kill_pixel;
    bool uses_xfb;
-   uint32_t primitive_id_index;
-   uint32_t first_vue_slot;
 
    /* Render pass information */
    VkRenderingFlags rendering_flags;
@@ -5094,11 +5134,6 @@ struct anv_graphics_pipeline {
    uint32_t                                     view_mask;
    uint32_t                                     instance_multiplier;
 
-   /* First VUE slot read by SBE */
-   uint32_t                                     first_vue_slot;
-   /* Attribute index of the PrimitiveID in the delivered attributes */
-   uint32_t                                     primitive_id_index;
-
    bool                                         kill_pixel;
    bool                                         uses_xfb;
 
@@ -5146,8 +5181,6 @@ struct anv_graphics_pipeline {
       struct anv_gfx_state_ptr                  vf_sgvs_instancing;
       struct anv_gfx_state_ptr                  vf_instancing;
       struct anv_gfx_state_ptr                  vf_component_packing;
-      struct anv_gfx_state_ptr                  sbe;
-      struct anv_gfx_state_ptr                  sbe_swiz;
       struct anv_gfx_state_ptr                  so_decl_list;
       struct anv_gfx_state_ptr                  vs;
       struct anv_gfx_state_ptr                  hs;
@@ -5165,7 +5198,6 @@ struct anv_graphics_pipeline {
       struct anv_gfx_state_ptr                  mesh_control_protected;
       struct anv_gfx_state_ptr                  mesh_shader;
       struct anv_gfx_state_ptr                  mesh_distrib;
-      struct anv_gfx_state_ptr                  sbe_mesh;
    } final;
 
    /* Pre packed CS instructions & structures that need to be merged later

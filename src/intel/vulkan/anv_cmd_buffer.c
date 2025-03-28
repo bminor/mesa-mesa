@@ -558,8 +558,6 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
    if (cmd_buffer->device->info->ver >= 11)
       diff_fix_state(VF_SGVS_2,             final.vf_sgvs_2);
    diff_fix_state(VF_COMPONENT_PACKING,     final.vf_component_packing);
-   diff_fix_state(SBE,                      final.sbe);
-   diff_fix_state(SBE_SWIZ,                 final.sbe_swiz);
    diff_fix_state(VS,                       final.vs);
    diff_fix_state(HS,                       final.hs);
    diff_fix_state(DS,                       final.ds);
@@ -581,7 +579,6 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
       diff_fix_state(MESH_SHADER,           final.mesh_shader);
       diff_fix_state(MESH_DISTRIB,          final.mesh_distrib);
       diff_fix_state(CLIP_MESH,             final.clip_mesh);
-      diff_fix_state(SBE_MESH,              final.sbe_mesh);
    } else {
       assert_empty(final.task_control);
       assert_empty(final.task_shader);
@@ -590,7 +587,6 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
       assert_empty(final.mesh_shader);
       assert_empty(final.mesh_distrib);
       assert_empty(final.clip_mesh);
-      assert_empty(final.sbe_mesh);
    }
 
    /* States that can vary in length */
@@ -765,8 +761,6 @@ void anv_CmdBindPipeline(
       cmd_buffer->state.gfx.fs_source_hash = new_pipeline->fs_source_hash;
 
       cmd_buffer->state.gfx.instance_multiplier = new_pipeline->instance_multiplier;
-      cmd_buffer->state.gfx.primitive_id_index = new_pipeline->primitive_id_index;
-      cmd_buffer->state.gfx.first_vue_slot = new_pipeline->first_vue_slot;
 
       anv_cmd_buffer_flush_pipeline_hw_state(cmd_buffer, old_pipeline, new_pipeline);
       break;
