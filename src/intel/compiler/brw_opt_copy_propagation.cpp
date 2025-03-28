@@ -793,6 +793,12 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
        (reg_offset(inst->dst) % (REG_SIZE * reg_unit(devinfo))) != (reg_offset(entry->src) % (REG_SIZE * reg_unit(devinfo))))
       return false;
 
+   /* BFloat16 sources always must be packed and not scalars,
+    * so don't propagate those cases.
+    */
+   if (brw_type_is_bfloat(inst->src[arg].type) && entry_stride != 1)
+      return false;
+
    /*
     * Bail if the composition of both regions would be affected by the Xe2+
     * regioning restrictions that apply to integer types smaller than a dword.
@@ -1738,6 +1744,12 @@ try_copy_propagate_def(brw_shader &s,
    if (has_dst_aligned_region_restriction(devinfo, inst, dst_type) &&
        entry_stride != 0 &&
        (reg_offset(inst->dst) % (REG_SIZE * reg_unit(devinfo))) != (reg_offset(val) % (REG_SIZE * reg_unit(devinfo))))
+      return false;
+
+   /* BFloat16 sources always must be packed and not scalars,
+    * so don't propagate those cases.
+    */
+   if (brw_type_is_bfloat(inst->src[arg].type) && entry_stride != 1)
       return false;
 
    /* The <8;8,0> regions used for FS attributes in multipolygon
