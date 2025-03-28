@@ -1098,7 +1098,8 @@ v3d_create_surface(struct pipe_context *pctx,
         psurf->level = level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-        surface->tiling = slice->tiling;
+
+        enum v3d_tiling_mode tiling = slice->tiling;
 
         if (util_format_is_depth_or_stencil(psurf->format)) {
                 switch (psurf->format) {
@@ -1121,8 +1122,8 @@ v3d_create_surface(struct pipe_context *pctx,
                 surface->internal_bpp = bpp;
         }
 
-        if (surface->tiling == V3D_TILING_UIF_NO_XOR ||
-            surface->tiling == V3D_TILING_UIF_XOR) {
+        if (tiling == V3D_TILING_UIF_NO_XOR ||
+            tiling == V3D_TILING_UIF_XOR) {
                 surface->padded_height_of_output_image_in_uif_blocks =
                         (slice->padded_height /
                          (2 * v3d_utile_height(rsc->cpp)));

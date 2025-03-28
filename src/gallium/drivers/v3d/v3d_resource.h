@@ -50,8 +50,6 @@ struct v3d_resource_slice {
 
 struct v3d_surface {
         struct pipe_surface base;
-        enum v3d_tiling_mode tiling;
-
         /**
          * Internal format of the tile buffer for
          * TILE_RENDERING_MODE_CONFIGURATION.
@@ -158,6 +156,5 @@ void v3d_update_shadow_texture(struct pipe_context *pctx,
                                struct pipe_sampler_view *view);
 uint32_t v3d_layer_offset(struct pipe_resource *prsc, uint32_t level,
                           uint32_t layer);
-
 
 #endif /* V3D_RESOURCE_H */
