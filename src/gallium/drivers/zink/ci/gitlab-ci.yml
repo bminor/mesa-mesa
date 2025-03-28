@@ -285,10 +285,6 @@ zink-radv-vangogh-valve:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     FDO_CI_CONCURRENT: 6
     RADV_PERFTEST: hic
-  # Override the list of tags to drop `ci-tron:priority:low`
-  tags:
-    - farm:$RUNNER_FARM_LOCATION
-    - amdgpu:codename:VANGOGH
 
 zink-radv-vangogh-traces:
   extends:

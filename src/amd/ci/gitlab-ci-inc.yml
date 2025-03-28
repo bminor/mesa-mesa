@@ -356,6 +356,7 @@
     - farm:$RUNNER_FARM_LOCATION
     - $CI_TRON_DUT_SETUP_TAGS
     - amdgpu:$INTEGRATED_OR_DISCRETE
+    - ci-tron:priority:$CI_TRON_JOB_PRIORITY
 
 .ci-tron-test-radv:
   extends: .ci-tron-test-amdgpu
@@ -484,11 +485,6 @@
     INTEGRATED_OR_DISCRETE: integrated
     GPU_VERSION: radv-vangogh
     FDO_CI_CONCURRENT: 8
-  tags:
-    - farm:$RUNNER_FARM_LOCATION
-    - amdgpu:$INTEGRATED_OR_DISCRETE
-    - $CI_TRON_DUT_SETUP_TAGS
-    - $CI_TRON_JOB_PRIORITY_TAG
 
 .raphael-test-valve:
   variables:

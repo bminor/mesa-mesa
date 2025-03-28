@@ -228,6 +228,7 @@
   tags:
     - farm:igalia
     - dt_gpu:model:$RPI_MODEL
+    - ci-tron:priority:$CI_TRON_JOB_PRIORITY
 
 
 # For RPI_KERNEL, see KERNEL in
