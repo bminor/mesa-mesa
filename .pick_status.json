@@ -734,7 +734,7 @@
         "description": "radeonsi: use composed swizzle in cdna_emu_make_image_descriptor",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "139bc6b8136c9a7aad57d469267deafc0430f347",
         "notes": null
