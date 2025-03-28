@@ -503,8 +503,7 @@ handle_compute_walker(struct intel_batch_decode_ctx *ctx,
    struct intel_field_iterator iter;
    intel_field_iterator_init(&iter, inst, p, 0, false);
    while (intel_field_iterator_next(&iter)) {
-      if (strcmp(iter.name, "body") == 0 ||
-          strcmp(iter.name, "COMPUTE_WALKER_BODY") == 0) {
+      if (strcmp(iter.name, "body") == 0) {
          intel_field_iterator_init(&iter, iter.struct_desc,
                                    &iter.p[iter.start_bit / 32],
                                    0, false);

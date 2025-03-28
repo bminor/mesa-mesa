@@ -1962,7 +1962,7 @@
     <field name="Count Buffer Indirect Enable" start="64" end="64" type="bool" />
     <field name="Count Buffer Address" start="66" end="127" type="address" />
     <field name="Argument Buffer Start Address" start="130" end="191" type="address" />
-    <field name="COMPUTE_WALKER_BODY" start="192" end="1407" type="COMPUTE_WALKER_BODY" />
+    <field name="body" start="192" end="1407" type="COMPUTE_WALKER_BODY" />
   </instruction>
   <instruction name="EXECUTE_INDIRECT_DRAW" bias="2" length="6" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="4" />

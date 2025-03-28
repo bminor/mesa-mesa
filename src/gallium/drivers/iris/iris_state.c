@@ -9098,7 +9098,7 @@ static void iris_emit_execute_indirect_dispatch(struct iris_context *ice,
       ind.PredicateEnable            =
          ice->state.predicate == IRIS_PREDICATE_STATE_USE_BIT;
       ind.MaxCount                   = 1;
-      ind.COMPUTE_WALKER_BODY        = body;
+      ind.body                       = body;
       ind.ArgumentBufferStartAddress = indirect_bo;
       ind.MOCS                       =
          iris_mocs(indirect_bo.bo, &screen->isl_dev, 0);

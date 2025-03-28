@@ -6394,7 +6394,7 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       GENX(EXECUTE_INDIRECT_DISPATCH_pack)
       (batch, dwords, &(struct GENX(EXECUTE_INDIRECT_DISPATCH)) {
             .MOCS = anv_mocs(device, NULL, 0),
-            .COMPUTE_WALKER_BODY = {
+            .body = {
                .PostSync = (struct GENX(POSTSYNC_DATA)) {
                   .Operation = WriteTimestamp,
                   .DestinationAddress = addr,
