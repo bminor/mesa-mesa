@@ -53,6 +53,7 @@ pub enum KernelArgValue {
     None,
     /// cl_ext_buffer_device_address
     BDA(u64),
+    SVM(usize),
     Buffer(Weak<Buffer>),
     Constant(Vec<u8>),
     Image(Weak<Image>),
@@ -1494,6 +1495,11 @@ impl Kernel {
                                         res,
                                         buffer.offset(),
                                     );
+                                }
+                            }
+                            &KernelArgValue::SVM(handle) => {
+                                if !api_arg.dead {
+                                    add_pointer(q, &mut input, handle as u64);
                                 }
                             }
                             KernelArgValue::Image(image) => {

@@ -489,7 +489,7 @@ fn set_kernel_arg_svm_pointer(
             return Err(CL_INVALID_ARG_INDEX);
         }
 
-        let arg_value = KernelArgValue::Constant(arg_value.to_ne_bytes().to_vec());
+        let arg_value = KernelArgValue::SVM(arg_value);
         kernel.set_kernel_arg(arg_index, arg_value)
     } else {
         Err(CL_INVALID_ARG_INDEX)
