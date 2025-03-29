@@ -5,6 +5,19 @@ variables:
 .lava-test:
   # Cancel job if a newer commit is pushed to the same branch
   interruptible: true
+  # The jobs themselves shouldn't actually run for an hour, of course.
+  # Jobs are picked up greedily by a GitLab CI runner which is deliberately
+  # overprovisioned compared to the number of available devices. They are
+  # submitted to the LAVA co-ordinator with a job priority which gives
+  # pre-merge priority over everyone else. User-submitted and nightly jobs
+  # can thus spend ages just waiting around in a queue to be run at some
+  # point as they get pre-empted by other things.
+  # Non-queue time has strict timeouts for each stage, e.g. for downloading
+  # the artifacts, booting the device, device setup, running the tests, etc,
+  # which is handled by LAVA itself.
+  # So the only reason we should see anyone bouncing off this timeout is due
+  # to a lack of available devices to run the jobs.
+  timeout: 1h
   variables:
     GIT_STRATEGY: none # testing doesn't build anything from source
     FDO_CI_CONCURRENT: 6 # should be replaced by per-machine definitions

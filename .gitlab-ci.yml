@@ -124,6 +124,7 @@ variables:
   DATA_STORAGE_PATH: data_storage
 
 default:
+  timeout: 1m # catch any jobs which don't specify a timeout
   id_tokens:
     S3_JWT:
       aud: https://s3.freedesktop.org

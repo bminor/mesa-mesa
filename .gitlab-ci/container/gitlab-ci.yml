@@ -52,6 +52,7 @@
 
 .container:
   stage: container
+  timeout: 1h
   extends:
     - .container+build-rules
     - .incorporate-templates-commit
