@@ -48,24 +48,6 @@
     <value name=".xyz" value="2" />
     <value name=".xyzw" value="3" />
   </enum>
-  <enum name="COMPONENT_ENABLES" prefix="CE">
-    <value name="NONE" value="0" />
-    <value name="X" value="1" />
-    <value name="Y" value="2" />
-    <value name="XY" value="3" />
-    <value name="Z" value="4" />
-    <value name="XZ" value="5" />
-    <value name="YZ" value="6" />
-    <value name="XYZ" value="7" />
-    <value name="W" value="8" />
-    <value name="XW" value="9" />
-    <value name="YW" value="10" />
-    <value name="XYW" value="11" />
-    <value name="ZW" value="12" />
-    <value name="XZW" value="13" />
-    <value name="YZW" value="14" />
-    <value name="XYZW" value="15" />
-  </enum>
   <struct name="COLOR_CALC_STATE" length="6">
     <field name="Alpha Test Format" start="0" end="0" type="uint">
       <value name="ALPHATEST_UNORM8" value="0" />
@@ -78,14 +60,6 @@
     <field name="Blend Constant Color Green" start="96" end="127" type="float" />
     <field name="Blend Constant Color Blue" start="128" end="159" type="float" />
     <field name="Blend Constant Color Alpha" start="160" end="191" type="float" />
-  </struct>
-  <struct name="EXECUTION_UNIT_EXTENDED_MESSAGE_DESCRIPTOR" length="1">
-    <field name="Target Function ID" start="0" end="3" type="uint" />
-    <field name="End Of Thread" start="5" end="5" type="uint">
-      <value name="No Termination" value="0" />
-      <value name="EOT" value="1" />
-    </field>
-    <field name="Extended Message Length" start="6" end="9" type="uint" />
   </struct>
   <struct name="FRAMEDELTAQP" length="2">
     <group count="8" start="0" size="8">
