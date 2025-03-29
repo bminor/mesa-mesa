@@ -11044,7 +11044,7 @@
         "description": "radv: Use radv_format_to_pipe_format instead of vk_format_to_pipe_format",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9af11bf306c4b67c434044a7ba2907a5c6df5542",
         "notes": null
