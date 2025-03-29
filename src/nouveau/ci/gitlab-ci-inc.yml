@@ -52,13 +52,9 @@
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: nvidia:codename:GA106
     CI_TRON_PATTERN__JOB_WARN__REGEX: 'nouveau .+ job timeout|NMI backtrace for cpu \d+'
-    # Default kernel is missing the GA106 GSP
-    # 1 - clone b2c
-    # 2 - apply all patches in patches/linux/* to your kernel
-    # 3 - download https://tmp.engestrom.ch/nouveau to config/linux/
-    # 4 - make linux LINUX_SRC=~/linux-nvk GOARCH=amd64 FEATURES=common,network,sensors,serial_adapters,ucode,nouveau
-    # This is https://gitlab.freedesktop.org/gfxstrand/linux/-/commits/nvk
-    # at d6820f36f375ece63226b26568be3a893985dc60 nouveau: set placement to original placement on uvmm validate.
-    CI_TRON_KERNEL__URL: 'https://static.engestrom.ch/linux-6.8-nvk-ga106'
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
+    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: '(lib/(modules|firmware/nvidia/ga10\d)/.*)'
+    CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=nouveau'
     # GSP is not loaded by default
     CI_TRON_KERNEL_CMDLINE__NOUVEAU_LOAD_GSP: 'nouveau.config=NvGspRm=1'
