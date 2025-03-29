@@ -361,8 +361,6 @@
     B2C_MARS_SETUP_TAGS: amdgpu:codename:RENOIR
     FDO_CI_CONCURRENT: 16
     B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
-    B2C_TIMEOUT_BOOT_MINUTES: 60
-    B2C_TIMEOUT_OVERALL_MINUTES: 120
 
 .navi10-test-valve:
   variables:
