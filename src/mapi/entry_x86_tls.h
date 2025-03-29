@@ -73,9 +73,3 @@ __asm__(".balign 16\n"
    "movl _mesa_glapi_tls_Dispatch@GOTNTPOFF(%eax), %eax\n\t" \
    "movl %gs:(%eax), %eax\n\t"                              \
    "jmp *(4 * " slot ")(%eax)"
-
-#ifndef GLX_X86_READONLY_TEXT
-__asm__(".balign 16\n"
-        "x86_entry_end:");
-__asm__(".text");
-#endif /* GLX_X86_READONLY_TEXT */

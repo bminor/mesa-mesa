@@ -25,6 +25,12 @@ _mesa_noop_entrypoint(const char *name);
 #define MAPI_TMP_STUB_ASM_GCC
 #include "shared_glapi_mapi_tmp.h"
 
+#ifndef GLX_X86_READONLY_TEXT
+__asm__(".balign 16\n"
+        "x86_entry_end:");
+__asm__(".text");
+#endif /* GLX_X86_READONLY_TEXT */
+
 extern unsigned long
 x86_current_tls();
 
