@@ -24,7 +24,7 @@
 #include "anv_private.h"
 
 #include "genxml/gen_macros.h"
-#include "genxml/genX_pack.h"
+#include "genxml/genX_video_pack.h"
 
 #include "util/vl_zscan_data.h"
 

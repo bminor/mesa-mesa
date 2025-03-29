@@ -24,7 +24,9 @@
 #include "anv_private.h"
 
 #include "genxml/gen_macros.h"
-#include "genxml/genX_pack.h"
+#include "genxml/genX_video_pack.h"
+
+#define MI_BUILDER_CAN_WRITE_BATCH false
 #include "genX_mi_builder.h"
 
 static int

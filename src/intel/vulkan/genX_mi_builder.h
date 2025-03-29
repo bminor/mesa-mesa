@@ -4,16 +4,15 @@
 
 #pragma once
 
-#include "genxml/gen_macros.h"
-#include "genxml/genX_pack.h"
-
 /* We reserve :
  *    - GPR 13 for STATE_BASE_ADDRESS bindless surface base address
  *    - GPR 14 for perf queries
  *    - GPR 15 for conditional rendering
  */
 #define MI_BUILDER_NUM_ALLOC_GPRS 13
+#ifndef MI_BUILDER_CAN_WRITE_BATCH
 #define MI_BUILDER_CAN_WRITE_BATCH true
+#endif
 /* Don't do any write check by default, we manually set it where it matters.
  */
 #define MI_BUILDER_DEFAULT_WRITE_CHECK false

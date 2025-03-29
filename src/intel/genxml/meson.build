@@ -98,7 +98,20 @@ foreach f : gen_xml_files + gen_xml_rt_files
     _name,
     input : ['gen_pack_header.py', f],
     output : _name,
-    command : [prog_python, '@INPUT@', '--engines=render,blitter,compute,video'],
+    command : [prog_python, '@INPUT@', '--engines=render,blitter,compute'],
+    capture : true,
+    depend_files: gen_pack_header_deps
+  )
+endforeach
+
+gen_xml_video_pack = []
+foreach f : gen_xml_files
+  _name = '@0@_video_pack.h'.format(f.split('.')[0])
+  gen_xml_pack += custom_target(
+    _name,
+    input : ['gen_pack_header.py', f],
+    output : _name,
+    command : [prog_python, '@INPUT@', '--engines=video'],
     capture : true,
     depend_files: gen_pack_header_deps
   )
@@ -125,7 +138,7 @@ foreach f : gen_xml_files + gen_xml_rt_files
     _name,
     input : ['gen_pack_header.py', f],
     output : _name,
-    command : [prog_python, '@INPUT@', '--engines=render,blitter,video',
+    command : [prog_python, '@INPUT@', '--engines=render,blitter,compute',
                '--opencl', '--repack',
                '--include-symbols', ','.join(genX_cl_included_symbols)],
     capture : true,
@@ -138,7 +151,7 @@ gen_pack_header_py = files('gen_pack_header.py')
 idep_genxml = declare_dependency(
   include_directories : include_directories('.'),
   dependencies : idep_mesautil,
-  sources : [gen_xml_pack, gen_cl_xml_pack, genX_bits_h, genX_xml_h]
+  sources : [gen_xml_pack, gen_xml_video_pack, gen_cl_xml_pack, genX_bits_h, genX_xml_h]
 )
 
 foreach f : gen_xml_files + gen_xml_rt_files
