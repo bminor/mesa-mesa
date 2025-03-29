@@ -48,6 +48,7 @@
   extends:
     - .test-gl
     - .virgl-rules
+  timeout: 15m
   variables:
     GALLIVM_PERF: nopt
     FLAKES_CHANNEL: "#virgl-ci"
@@ -60,6 +61,7 @@
   extends:
     - .test-gl
     - .virgl-rules
+  timeout: 15m
   variables:
     FLAKES_CHANNEL: "#virgl-ci"
     GALLIUM_DRIVER: "virgl"

@@ -21,6 +21,7 @@
   extends:
     - .test-vk
     - .venus-rules
+  timeout: 15m
   variables:
     VK_DRIVER: virtio
     CROSVM_GALLIUM_DRIVER: "llvmpipe"

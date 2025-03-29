@@ -5,7 +5,6 @@ venus-lavapipe:
   extends:
     - .deqp-test
     - .venus-lavapipe-test
-  timeout: 25m
   variables:
     DEQP_FRACTION: 60
     DEQP_SUITE: venus
