@@ -3,7 +3,6 @@ $env:PIGLIT_SPIRV_AS_BINARY = "C:\VulkanSDK\$env:VULKAN_SDK_VERSION\Bin\spirv-as
 
 Copy-Item -Path _install\bin\opengl32.dll -Destination C:\Piglit\bin\opengl32.dll
 Copy-Item -Path _install\bin\libgallium_wgl.dll -Destination C:\Piglit\bin\libgallium_wgl.dll
-Copy-Item -Path _install\bin\libglapi.dll -Destination C:\Piglit\bin\libglapi.dll
 
 $jobs = ""
 if ($null -ne $env:FDO_CI_CONCURRENT) {
