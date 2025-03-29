@@ -655,7 +655,7 @@ def main():
     pargs = parse_args()
 
     engines = set(pargs.engines.split(','))
-    valid_engines = [ 'render', 'blitter', 'video' ]
+    valid_engines = [ 'render', 'blitter', 'video', 'compute' ]
     if engines - set(valid_engines):
         print("Invalid engine specified, valid engines are:\n")
         for e in valid_engines:

@@ -98,7 +98,7 @@ foreach f : gen_xml_files + gen_xml_rt_files
     _name,
     input : ['gen_pack_header.py', f],
     output : _name,
-    command : [prog_python, '@INPUT@', '--engines=render,blitter,video'],
+    command : [prog_python, '@INPUT@', '--engines=render,blitter,compute,video'],
     capture : true,
     depend_files: gen_pack_header_deps
   )
