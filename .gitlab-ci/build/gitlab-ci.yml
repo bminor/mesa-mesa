@@ -4,15 +4,17 @@
   # Cancel job if a newer commit is pushed to the same branch
   interruptible: true
   variables:
-    # Build jobs don't take more than 1-3 minutes. 5-8 min max on a fresh runner
-    # without a populated ccache.
-    # These jobs are never slow, either they finish within reasonable time or
-    # something has gone wrong and the job will never terminate, so we should
-    # instead timeout so that the retry mechanism can kick in.
-    # A few exception are made, see overrides in the rest of this file.
-    BUILD_JOB_TIMEOUT: 15m
+    # Build jobs are typically taking between 5-12 minutes, depending on how
+    # much they build and how many new Rust compilers we have to build twice.
+    # Allow 25 minutes as a reasonable margin: beyond this point, something
+    # has gone badly wrong, and we should try again to see if we can get
+    # something from it.
+    #
+    # Some jobs not in the critical path use a higher timeout, particularly
+    # when building with ASan or UBSan.
+    BUILD_JOB_TIMEOUT: 12m
     RUN_MESON_TESTS: "true"
-  timeout: 1h
+  timeout: 16m
   # We don't want to download any previous job's artifacts
   dependencies: []
   artifacts:
@@ -23,6 +25,12 @@
       - _build/meson-logs/strace
       - _build/.ninja_log
       - artifacts
+
+.build-run-long:
+  variables:
+    BUILD_JOB_TIMEOUT: 18m
+  timeout: 25m
+
 
 # Just Linux
 .build-linux:
@@ -76,9 +84,9 @@ debian-testing:
   extends:
     - .meson-build-for-tests
     - .use-debian/x86_64_build
+    - .build-run-long # but it really shouldn't! tracked in mesa#12544
     - .ci-deqp-artifacts
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     UNWIND: "enabled"
     DRI_LOADERS: >
       -D egl=enabled
@@ -108,8 +116,8 @@ debian-testing-asan:
   extends:
     - debian-testing
     - .meson-build-for-tests
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "swrast"
     GALLIUM_DRIVERS: "llvmpipe,softpipe"
     C_ARGS: >
@@ -147,8 +155,8 @@ debian-testing-msan:
   extends:
     - debian-clang
     - .meson-build-only
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     # l_undef is incompatible with msan
     EXTRA_OPTION:
       -D b_sanitize=memory
@@ -184,9 +192,8 @@ debian-testing-ubsan:
   extends:
     - debian-testing
     - .meson-build-for-tests
-  timeout: 40m
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     C_ARGS: >
       -Wno-error=stringop-overflow
       -Wno-error=stringop-truncation
@@ -288,7 +295,6 @@ alpine-build-testing:
     - .meson-build-only
     - .use-alpine/x86_64_build
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: "release"
     C_ARGS: >
       -Wno-error=cpp
@@ -322,6 +328,10 @@ fedora-release:
   extends:
     - .meson-build-only
     - .use-fedora/x86_64_build
+    - .build-run-long
+  # LTO builds can be really very slow, and we have no way to specify different
+  # timeouts for pre-merge and nightly jobs
+  timeout: 1h
   variables:
     BUILDTYPE: "release"
     # array-bounds are pure non-LTO gcc buggy warning
@@ -507,8 +517,8 @@ debian-arm32-asan:
   extends:
     - debian-arm32
     - .meson-build-for-tests
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     GALLIUM_DRIVERS: "etnaviv"
     VULKAN_DRIVERS: ""
     DRI_LOADERS:
@@ -550,8 +560,8 @@ debian-arm64-asan:
   extends:
     - debian-arm64
     - .meson-build-for-tests
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom,freedreno"
     GALLIUM_DRIVERS: "freedreno,vc4,v3d"
     DRI_LOADERS:
@@ -569,8 +579,8 @@ debian-arm64-ubsan:
   extends:
     - debian-arm64
     - .meson-build-for-tests
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     VULKAN_DRIVERS: "broadcom"
     GALLIUM_DRIVERS: "v3d,vc4"
     C_ARGS: >
@@ -693,8 +703,8 @@ debian-clang-release:
   extends:
     - debian-clang
     - .meson-build-only
+    - .build-run-long
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: "release"
     DRI_LOADERS: >
       -D glx=xlib
@@ -729,7 +739,6 @@ debian-vulkan:
     - .meson-build-only
     - .use-debian/x86_64_build
   variables:
-    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: debug
     UNWIND: "disabled"
     DRI_LOADERS: >
@@ -764,6 +773,7 @@ debian-x86_32:
     - .meson-cross
     - .use-debian/x86_32_build
     - .meson-build-only
+    - .build-run-long # it's not clear why this runs long, but it also doesn't matter much
   variables:
     BUILDTYPE: debug
     CROSS: i386
