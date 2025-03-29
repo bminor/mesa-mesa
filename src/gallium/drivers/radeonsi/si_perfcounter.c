@@ -40,6 +40,30 @@ struct si_query_pc {
    struct si_query_group *groups;
 };
 
+static void si_pc_wait_idle(struct si_context *sctx)
+{
+   struct radeon_cmdbuf *cs = &sctx->gfx_cs;
+   uint32_t coher_cntl_stall_all = 0;
+
+   if (sctx->gfx_level != GFX9)
+      return;
+
+   coher_cntl_stall_all = S_0085F0_DEST_BASE_0_ENA(1) |
+      S_0085F0_DEST_BASE_1_ENA(1) | S_0085F0_DEST_BASE_2_ENA(1) |
+      S_0085F0_DEST_BASE_3_ENA(1) | S_0085F0_DB_DEST_BASE_ENA(1) |
+      S_0085F0_CB0_DEST_BASE_ENA(1) | S_0085F0_CB1_DEST_BASE_ENA(1) |
+      S_0085F0_CB2_DEST_BASE_ENA(1) | S_0085F0_CB3_DEST_BASE_ENA(1) |
+      S_0085F0_CB4_DEST_BASE_ENA(1) | S_0085F0_CB5_DEST_BASE_ENA(1) |
+      S_0085F0_CB6_DEST_BASE_ENA(1) | S_0085F0_CB7_DEST_BASE_ENA(1);
+
+   radeon_begin(cs);
+   radeon_emit(PKT3(PKT3_EVENT_WRITE, 0, 0));
+   radeon_emit(EVENT_TYPE(V_028A90_CS_PARTIAL_FLUSH | EVENT_INDEX(4)));
+   radeon_end();
+
+   si_cp_acquire_mem(sctx, cs, coher_cntl_stall_all, V_580_CP_PFP);
+}
+
 static void si_pc_emit_instance(struct si_context *sctx, int se, int instance)
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
@@ -112,8 +136,6 @@ static void si_pc_emit_start(struct si_context *sctx, struct si_resource *buffer
                    COPY_DATA_IMM, NULL, 1);
 
    radeon_begin(cs);
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
-                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET));
    radeon_event_write(V_028A90_PERFCOUNTER_START);
    radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
                           S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_START_COUNTING));
@@ -132,6 +154,13 @@ static void si_pc_emit_stop(struct si_context *sctx, struct si_resource *buffer,
 
    radeon_begin(cs);
    radeon_event_write(V_028A90_PERFCOUNTER_SAMPLE);
+
+   /*
+    * The recommended sampling procedure:
+    * 	sample, wait-idle, stop global, read values
+    * So insert a wait idle after PERFCOUNTER_SAMPLE
+    */
+   si_pc_wait_idle(sctx);
 
    if (!sctx->screen->info.never_send_perfcounter_stop)
       radeon_event_write(V_028A90_PERFCOUNTER_STOP);
@@ -279,6 +308,14 @@ static void si_pc_query_resume(struct si_context *sctx, struct si_query *squery)
       return;
    si_need_gfx_cs_space(sctx, 0, 0);
 
+   si_pc_wait_idle(sctx);
+
+   /* Set DISABLE_AND_RESET before SQ_PERFCOUNTER_CTRL(si_pc_emit_shaders) */
+   radeon_begin(&sctx->gfx_cs);
+   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
+                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET));
+   radeon_end();
+
    if (query->shaders)
       si_pc_emit_shaders(&sctx->gfx_cs, query->shaders);
 
@@ -312,6 +349,8 @@ static void si_pc_query_suspend(struct si_context *sctx, struct si_query *squery
 
    uint64_t va = query->buffer.buf->gpu_address + query->buffer.results_end;
    query->buffer.results_end += query->result_size;
+
+   si_pc_wait_idle(sctx);
 
    si_pc_emit_stop(sctx, query->buffer.buf, va);
 
