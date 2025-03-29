@@ -1,4 +1,5 @@
 .docs-base:
+  timeout: 10m
   extends:
     - .build-linux
     - .use-alpine/x86_64_build
