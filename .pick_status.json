@@ -364,7 +364,7 @@
         "description": "panvk/csf: fix uninitialized read in utrace_clone_init_builder",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3096cf2a5ddd851cf60c835e013377ccbce0e3eb",
         "notes": null
