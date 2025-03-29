@@ -34,7 +34,7 @@
         "description": "radv: Add radv_format_description to remap 10/12bit formats to 16bit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0098f8ef35ab34b88e2bfff940fa1a2cf264382f",
         "notes": null
