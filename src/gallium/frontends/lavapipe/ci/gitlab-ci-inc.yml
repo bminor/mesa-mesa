@@ -1,5 +1,6 @@
 .lavapipe-rules:
   stage: software-renderer
+  timeout: 15m
   rules:
     - !reference [.test, rules]
     - if: $EXTERNAL_KERNEL_TAG != null

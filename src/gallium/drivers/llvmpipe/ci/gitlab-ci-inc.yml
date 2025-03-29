@@ -1,5 +1,6 @@
 .llvmpipe-rules:
   stage: software-renderer
+  timeout: 12m
   rules:
     - !reference [.test, rules]
     - if: $EXTERNAL_KERNEL_TAG != null
