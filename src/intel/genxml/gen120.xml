@@ -391,7 +391,7 @@
     <field name="Subslice Hashing Table Enable Mask" start="53" end="53" type="bool" />
     <field name="Slice Hashing Table Enable Mask" start="54" end="54" type="bool" />
   </instruction>
-  <instruction name="3DSTATE_CONSTANT_ALL" bias="2" length="2">
+  <instruction name="3DSTATE_CONSTANT_ALL" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="Shader Update Enable" start="8" end="12" type="uint" />
     <field name="Vertex Shader Update Enable" start="8" end="8" type="bool" />
@@ -418,7 +418,7 @@
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="Coarse Pixel Shading State Array Pointer" start="37" end="63" type="offset" />
   </instruction>
-  <instruction name="3DSTATE_DEPTH_BOUNDS" bias="2" length="4">
+  <instruction name="3DSTATE_DEPTH_BOUNDS" bias="2" length="4" engine="render">
     <field name="Length" start="0" end="7" type="uint" default="2" />
     <field name="Depth Bounds Test Value Modify Disable" start="14" end="14" type="bool" />
     <field name="Depth Bounds Test Enable Modify Disable" start="15" end="15" type="bool" />
@@ -594,7 +594,7 @@
     <field name="Buffer Starting Address" start="64" end="127" type="address" />
     <field name="Buffer Size" start="128" end="159" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_PRIMITIVE_REPLICATION" bias="2" length="6">
+  <instruction name="3DSTATE_PRIMITIVE_REPLICATION" bias="2" length="6" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="4" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="108" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -777,7 +777,7 @@
     <field name="Surf LOD" start="240" end="243" type="uint" />
     <field name="Render Target View Extent" start="245" end="255" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_SUBSLICE_HASH_TABLE" bias="2" length="14">
+  <instruction name="3DSTATE_SUBSLICE_HASH_TABLE" bias="2" length="14" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="12" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="31" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="1" />

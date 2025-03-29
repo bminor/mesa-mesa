@@ -460,7 +460,7 @@
     <field name="Single Program Flow" start="251" end="251" type="bool" />
     <field name="Dispatch GRF Start Register For URB Data [5]" start="252" end="252" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_SHADER" bias="2" length="8">
+  <instruction name="3DSTATE_MESH_SHADER" bias="2" length="8" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="6" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="122" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -613,7 +613,7 @@
     </field>
     <field name="Kernel Start Pointer 1" start="262" end="319" type="offset" />
   </instruction>
-  <instruction name="3DSTATE_TASK_SHADER" bias="2" length="7">
+  <instruction name="3DSTATE_TASK_SHADER" bias="2" length="7" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="5" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="125" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />

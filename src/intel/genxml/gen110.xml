@@ -547,7 +547,7 @@
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="Constant Body" start="32" end="351" type="3DSTATE_CONSTANT_BODY" />
   </instruction>
-  <instruction name="3DSTATE_CPS" bias="2" length="9">
+  <instruction name="3DSTATE_CPS" bias="2" length="9" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="7" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="34" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -831,7 +831,7 @@
     <field name="Pixel Shader Does not write to RT" start="62" end="62" type="mbz" />
     <field name="Pixel Shader Valid" start="63" end="63" type="bool" />
   </instruction>
-  <instruction name="3DSTATE_SLICE_TABLE_STATE_POINTERS" bias="2" length="2">
+  <instruction name="3DSTATE_SLICE_TABLE_STATE_POINTERS" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="32" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="1" />

@@ -429,7 +429,7 @@
     <field name="Memory Compression Mode" start="10" end="10" type="uint" />
     <field name="Cache Select" start="12" end="12" type="uint" />
   </struct>
-  <instruction name="3DMESH_1D" bias="2" length="3">
+  <instruction name="3DMESH_1D" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="UAV Coherency Required" start="9" end="9" type="bool" />
@@ -444,7 +444,7 @@
     <field name="Starting ThreadGroup ID X" start="64" end="95" type="uint" />
     <field name="Extended Parameter 0 (XP0)" start="96" end="127" type="uint" />
   </instruction>
-  <instruction name="3DMESH_3D" bias="2" length="4">
+  <instruction name="3DMESH_3D" bias="2" length="4" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="2" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="UAV Coherency Required" start="9" end="9" type="bool" />
@@ -617,7 +617,7 @@
     <field name="ChromaKey Low Value" start="64" end="95" type="uint" />
     <field name="ChromaKey High Value" start="96" end="127" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_CLIP_MESH" bias="2" length="2">
+  <instruction name="3DSTATE_CLIP_MESH" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="129" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -627,7 +627,7 @@
     <field name="User Clip Distance Clip Test Enable Bitmask" start="40" end="47" type="uint" />
     <field name="Primitive Header Enable" start="48" end="48" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_CPSIZE_CONTROL_BUFFER" bias="2" length="8">
+  <instruction name="3DSTATE_CPSIZE_CONTROL_BUFFER" bias="2" length="8" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="6" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="131" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -862,7 +862,7 @@
     <field name="Single Program Flow" start="251" end="251" type="bool" />
     <field name="Dispatch GRF Start Register For URB Data [5]" start="252" end="252" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_CONTROL" bias="2" length="3">
+  <instruction name="3DSTATE_MESH_CONTROL" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="119" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -877,7 +877,7 @@
     <field name="MeshShader Enable" start="63" end="63" type="uint" />
     <field name="Scratch Space Buffer" start="74" end="95" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_DISTRIB" bias="2" length="2">
+  <instruction name="3DSTATE_MESH_DISTRIB" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="120" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -892,7 +892,7 @@
     <field name="Mesh Distribution Batch Size" start="36" end="39" type="uint" />
     <field name="Task Distribution Batch Size" start="42" end="45" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_SHADER" bias="2" length="8">
+  <instruction name="3DSTATE_MESH_SHADER" bias="2" length="8" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="6" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="122" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -958,7 +958,7 @@
     </field>
     <field name="Per-Primitive Data Present" start="255" end="255" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_SHADER_DATA" bias="2" length="10">
+  <instruction name="3DSTATE_MESH_SHADER_DATA" bias="2" length="10" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="8" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="123" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1081,7 +1081,7 @@
     <field name="Pixel Shader Does not write to RT" start="62" end="62" type="mbz" />
     <field name="Pixel Shader Valid" start="63" end="63" type="bool" />
   </instruction>
-  <instruction name="3DSTATE_SBE_MESH" bias="2" length="2">
+  <instruction name="3DSTATE_SBE_MESH" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="130" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1166,7 +1166,7 @@
     <field name="Surf LOD" start="240" end="243" type="uint" />
     <field name="Render Target View Extent" start="245" end="255" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_TASK_CONTROL" bias="2" length="3">
+  <instruction name="3DSTATE_TASK_CONTROL" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="124" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1181,7 +1181,7 @@
     <field name="TaskShader Enable" start="63" end="63" type="uint" />
     <field name="Scratch Space Buffer" start="74" end="95" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_TASK_REDISTRIB" bias="2" length="2">
+  <instruction name="3DSTATE_TASK_REDISTRIB" bias="2" length="2" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="0" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="121" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1205,7 +1205,7 @@
       <value name="MULTIPLIER_4" value="3" />
     </field>
   </instruction>
-  <instruction name="3DSTATE_TASK_SHADER" bias="2" length="7">
+  <instruction name="3DSTATE_TASK_SHADER" bias="2" length="7" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="5" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="125" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1255,7 +1255,7 @@
     </field>
     <field name="Execution Mask" start="192" end="223" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_TASK_SHADER_DATA" bias="2" length="10">
+  <instruction name="3DSTATE_TASK_SHADER_DATA" bias="2" length="10" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="8" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="126" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1266,7 +1266,7 @@
       <field name="Inline Data" start="0" end="31" type="uint" />
     </group>
   </instruction>
-  <instruction name="3DSTATE_TBIMR_TILE_PASS_INFO" bias="2" length="4">
+  <instruction name="3DSTATE_TBIMR_TILE_PASS_INFO" bias="2" length="4" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="2" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="110" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1347,7 +1347,7 @@
     <field name="Maximum Tessellation Factor Odd" start="64" end="95" type="float" />
     <field name="Maximum Tessellation Factor Not Odd" start="96" end="127" type="float" />
   </instruction>
-  <instruction name="3DSTATE_URB_ALLOC_MESH" bias="2" length="3">
+  <instruction name="3DSTATE_URB_ALLOC_MESH" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="127" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1359,7 +1359,7 @@
     <field name="MESH Number of URB Entries Slice0" start="64" end="79" type="uint" />
     <field name="MESH Number of URB Entries SliceN" start="80" end="95" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_URB_ALLOC_TASK" bias="2" length="3">
+  <instruction name="3DSTATE_URB_ALLOC_TASK" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="128" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1384,7 +1384,7 @@
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="Cut Index" start="32" end="63" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_VFG" bias="2" length="4">
+  <instruction name="3DSTATE_VFG" bias="2" length="4" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="2" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="87" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -1576,7 +1576,7 @@
     <field name="Clear Rectangle Y Max" start="112" end="127" type="uint" />
     <field name="Sample Mask" start="128" end="143" type="uint" />
   </instruction>
-  <instruction name="CFE_STATE" bias="2" length="6">
+  <instruction name="CFE_STATE" bias="2" length="6" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="4" />
     <field name="CFE SubOpcode Variant" start="16" end="17" type="uint" default="0" />
     <field name="CFE SubOpcode" start="18" end="23" type="uint" default="0" />
@@ -1595,7 +1595,7 @@
     </field>
     <field name="Maximum Number of Threads" start="112" end="127" type="uint" />
   </instruction>
-  <instruction name="COMPUTE_WALKER" bias="2" length="39">
+  <instruction name="COMPUTE_WALKER" bias="2" length="39" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="37" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="Workload Partition Enable" start="9" end="9" type="bool" />
@@ -1608,7 +1608,7 @@
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="body" start="32" end="1248" type="COMPUTE_WALKER_BODY" />
   </instruction>
-  <instruction name="EXECUTE_INDIRECT_DISPATCH" bias="2" length="44">
+  <instruction name="EXECUTE_INDIRECT_DISPATCH" bias="2" length="44" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="42" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="MOCS" start="12" end="15" type="uint" nonzero="true" />

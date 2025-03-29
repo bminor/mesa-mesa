@@ -383,7 +383,7 @@
     <field name="Memory Backed Buffer Base Pointer" start="74" end="127" type="address" />
     <field name="Scratch Space Buffer" start="138" end="159" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_CPSIZE_CONTROL_BUFFER" bias="2" length="8">
+  <instruction name="3DSTATE_CPSIZE_CONTROL_BUFFER" bias="2" length="8" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="6" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="131" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -570,7 +570,7 @@
     <field name="Single Program Flow" start="251" end="251" type="bool" />
     <field name="Dispatch GRF Start Register For URB Data [5]" start="252" end="252" type="uint" />
   </instruction>
-  <instruction name="3DSTATE_MESH_CONTROL" bias="2" length="3">
+  <instruction name="3DSTATE_MESH_CONTROL" bias="2" length="3" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="1" />
     <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="119" />
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
@@ -900,7 +900,7 @@
     <field name="Sample Mask" start="128" end="143" type="uint" />
     <field name="Depth Clear Value" start="160" end="191" type="float" />
   </instruction>
-  <instruction name="CFE_STATE" bias="2" length="6">
+  <instruction name="CFE_STATE" bias="2" length="6" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="4" />
     <field name="CFE SubOpcode Variant" start="16" end="17" type="uint" default="0" />
     <field name="CFE SubOpcode" start="18" end="23" type="uint" default="0" />
@@ -924,7 +924,7 @@
     </field>
     <field name="Maximum Number of Threads" start="112" end="127" type="uint" />
   </instruction>
-  <instruction name="COMPUTE_WALKER" bias="2" length="40">
+  <instruction name="COMPUTE_WALKER" bias="2" length="40" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="38" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="Workload Partition Enable" start="9" end="9" type="bool" />
@@ -937,7 +937,7 @@
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
     <field name="body" start="32" end="1280" type="COMPUTE_WALKER_BODY" />
   </instruction>
-  <instruction name="EXECUTE_INDIRECT_DISPATCH" bias="2" length="45">
+  <instruction name="EXECUTE_INDIRECT_DISPATCH" bias="2" length="45" engine="render|compute">
     <field name="DWord Length" start="0" end="7" type="uint" default="43" />
     <field name="Predicate Enable" start="8" end="8" type="bool" />
     <field name="MOCS" start="12" end="15" type="uint" nonzero="true" />
