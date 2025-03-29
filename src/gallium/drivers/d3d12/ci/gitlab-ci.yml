@@ -21,6 +21,15 @@
     - .d3d12-test
   script:
     - . _install/piglit_run.ps1
+  # temporarily restrict to GSt runners until we discover why GL testing is
+  # so slow on the Microsoft runners
+  tags:
+    - windows
+    - docker
+    - "2022"
+    - mesa
+    - gstreamer-windows
+  timeout: 12m
   artifacts:
     when: on_failure
     name: "${CI_PROJECT_NAME}_${CI_JOB_NAME}"

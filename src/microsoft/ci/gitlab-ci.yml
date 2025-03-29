@@ -6,6 +6,7 @@ test-spirv2dxil-windows:
     - .use-windows_test_msvc
     - .spirv2dxil-test-rules
   stage: layered-backends
+  timeout: 15m
   dependencies:
     - windows-msvc
   needs:
@@ -27,6 +28,7 @@ test-dozen-deqp:
     - .use-windows_test_msvc
     - .dozen-test-rules
   stage: layered-backends
+  timeout: 15m
   dependencies:
     - windows-msvc
   needs:
@@ -52,5 +54,6 @@ test-dozen-deqp-full:
   extends:
     - test-dozen-deqp
     - .dozen-manual-rules
+  timeout: 1h
   variables:
     DEQP_FRACTION: 1
