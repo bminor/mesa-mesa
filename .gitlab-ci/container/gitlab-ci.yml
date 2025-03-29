@@ -423,6 +423,8 @@ debian/x86_64_test-android:
     MESA_IMAGE_TAG: &debian-x86_64_test-android ${DEBIAN_TEST_ANDROID_TAG}
 
 .use-debian/x86_64_test-android:
+  tags:
+    - kvm
   extends:
     - .android-variables
     - .set-image-base-tag
