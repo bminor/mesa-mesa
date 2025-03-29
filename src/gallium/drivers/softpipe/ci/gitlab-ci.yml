@@ -6,6 +6,7 @@ softpipe:
     DEQP_SUITE: softpipe
     XVFB_SCRIPT: "install/deqp-runner.sh"
     DEQP_FRACTION: 4
+  timeout: 15m
   extends: .softpipe-deqp-test
   script: |
     . "$SCRIPTS_DIR"/setup-test-env.sh
@@ -19,6 +20,7 @@ softpipe-asan-gles31:
     GPU_VERSION: softpipe-asan
     DEQP_FRACTION: 10
     DEQP_FORCE_ASAN: 1
+  timeout: 10m
   extends: .softpipe-deqp-test
   needs:
     - debian/x86_64_test-gl
