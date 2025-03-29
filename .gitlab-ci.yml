@@ -333,9 +333,6 @@ make git archive:
   stage: git-archive
   rules:
     - !reference [.scheduled_pipeline-rules, rules]
-  # ensure we are running on packet
-  tags:
-    - packet.net
   script:
     # Compactify the .git directory
     - git gc --aggressive
