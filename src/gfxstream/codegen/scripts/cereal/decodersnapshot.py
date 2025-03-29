@@ -260,6 +260,15 @@ def api_special_implementation_common(api, cgen, tag_vk):
     cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
     cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
 
+def api_special_implementation_vkCmdPipelineBarrier(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.beginFor("uint32_t i = 0", "i < bufferMemoryBarrierCount", "++i")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer( pBufferMemoryBarriers[i].buffer))")
+    cgen.endFor()
+    cgen.beginFor("uint32_t i = 0", "i < imageMemoryBarrierCount", "++i")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage( pImageMemoryBarriers[i].image))")
+    cgen.endFor()
+
 def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
@@ -270,6 +279,35 @@ def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
     cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
     cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
     cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+
+def api_special_implementation_vkCmdBeginRenderPass(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
+
+def api_special_implementation_vkCmdCopyBufferToImage(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(dstImage))")
+
+def api_special_implementation_vkCmdBindVertexBuffers(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.beginFor("uint32_t i = 0", "i < bindingCount", "++i")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(pBuffers[i]))")
+    cgen.endFor()
+
+
+def api_special_implementation_vkResetCommandBuffer(api, cgen):
+    cgen.line("// Note: special implementation");
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("mReconstruction.removeDescendantsOfHandle((uint64_t)(uintptr_t)commandBuffer)")
+
+def api_special_implementation_vkQueueFlushCommandsGOOGLE(api, cgen):
+    api_special_implementation_common(api, cgen, "Tag_VkCmdOp")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)commandBuffer)")
+    cgen.beginFor("uint32_t i = 0", "i < apiCallInfo->depends.size()", "++i")
+    cgen.stmt("auto parent = apiCallInfo->depends[i]")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)parent)")
+    cgen.endFor()
 
 def api_special_implementation_vkBindBufferMemory(api, cgen):
     api_special_implementation_common(api, cgen, "Tag_VkBindMemory")
@@ -295,6 +333,13 @@ apiSpecialImplementation = {
     "vkBindImageMemory2KHR": api_special_implementation_vkBindImageMemory2,
     "vkMapMemoryIntoAddressSpaceGOOGLE": api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE,
     "vkGetBlobGOOGLE": api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE,
+    "vkQueueFlushCommandsGOOGLE": api_special_implementation_vkQueueFlushCommandsGOOGLE,
+    "vkResetCommandBuffer": api_special_implementation_vkResetCommandBuffer,
+    "vkCmdBindVertexBuffers": api_special_implementation_vkCmdBindVertexBuffers,
+    "vkCmdCopyBufferToImage": api_special_implementation_vkCmdCopyBufferToImage,
+    "vkCmdPipelineBarrier": api_special_implementation_vkCmdPipelineBarrier,
+    "vkCmdBeginRenderPass": api_special_implementation_vkCmdBeginRenderPass,
+    "vkCmdBeginRenderPass2": api_special_implementation_vkCmdBeginRenderPass,
 }
 
 apiModifies = {
@@ -311,7 +356,6 @@ apiActionsTag = {
 }
 
 apiClearModifiers = {
-    "vkResetCommandBuffer" : ["commandBuffer"],
 }
 
 delayedDestroys = [
@@ -352,15 +396,7 @@ def is_modify_operation(api, param):
     if api.name in apiModifies:
         if param.paramName in apiModifies[api.name]:
             return True
-    if api.name.startswith('vkCmd') and param.paramName == 'commandBuffer':
-        return True
     return False
-
-def is_clear_modifier_operation(api, param):
-    if api.name in apiClearModifiers:
-        if param.paramName in apiClearModifiers[api.name]:
-            return True
-
 
 def emit_impl(typeInfo, api, cgen):
     if api.name in apiSpecialImplementation:
@@ -440,7 +476,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, {get_target_state(api, p)})")
             cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
 
-        elif is_modify_operation(api, p) or is_clear_modifier_operation(api, p):
+        elif is_modify_operation(api, p):
             cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s modify" % p.paramName)
             cgen.stmt("auto apiCallHandle = apiCallInfo->handle")

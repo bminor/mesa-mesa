@@ -1,7 +1,8 @@
 # Copyright 2018 Google LLC
 # SPDX-License-Identifier: MIT
 from .common.codegen import CodeGen, VulkanWrapperGenerator
-from .common.vulkantypes import VulkanAPI, iterateVulkanType, VulkanType
+from .common.vulkantypes import VulkanAPI, makeVulkanTypeSimple, iterateVulkanType, VulkanTypeInfo,\
+    VulkanType
 
 from .reservedmarshaling import VulkanReservedMarshalingCodegen
 from .transform import TransformCodegen
@@ -243,6 +244,19 @@ def emit_decode_parameters(typeInfo, api, cgen, globalWrapped=False):
 
     emit_call_log(api, cgen)
 
+def emit_snapshot_call(api, cgen):
+    apiForSnapshot = \
+        api.withCustomReturnType(makeVulkanTypeSimple(False, "void", 0, "void"))
+    customParamsSnapshot = ["pool", "snapshotApiCallInfo", "nullptr", "0"]
+    retTypeName = api.getRetTypeExpr()
+    if retTypeName != "void":
+        retVar = api.getRetVarExpr()
+        customParamsSnapshot.append(retVar)
+    customParamsSnapshot.append("(VkCommandBuffer)(boxed_dispatchHandle)")
+    customParamsSnapshot = customParamsSnapshot + list(map(lambda p: p.paramName, api.parameters[1:]))
+    cgen.beginIf("snapshotsEnabled()")
+    cgen.vkApiCall(apiForSnapshot, customPrefix="this->snapshot()->", customParameters=customParamsSnapshot)
+    cgen.endIf()
 
 def emit_dispatch_call(api, cgen):
 
@@ -263,6 +277,8 @@ def emit_dispatch_call(api, cgen):
                     checkForDeviceLost=True, globalStatePrefix=global_state_prefix,
                     checkForOutOfMemory=True, checkDispatcher="CC_LIKELY(vk)")
 
+    emit_snapshot_call(api, cgen)
+
     if api.name in driver_workarounds_global_lock_apis:
         cgen.stmt("unlock()")
 
@@ -275,6 +291,7 @@ def emit_global_state_wrapped_call(api, cgen, context=False):
     cgen.vkApiCall(api, customPrefix=global_state_prefix,
                    customParameters=customParams, checkForDeviceLost=True,
                    checkForOutOfMemory=True, globalStatePrefix=global_state_prefix, checkDispatcher="CC_LIKELY(vk)")
+    emit_snapshot_call(api, cgen)
 
 
 def emit_default_decoding(typeInfo, api, cgen):
@@ -337,7 +354,7 @@ class VulkanSubDecoder(VulkanWrapperGenerator):
             "#define CC_UNLIKELY(exp)  (__builtin_expect( !!(exp), false ))\n")
 
         self.module.appendImpl(
-            "size_t subDecode(VulkanMemReadingStream* readStream, VulkanDispatch* vk, void* boxed_dispatchHandle, void* dispatchHandle, VkDeviceSize subDecodeDataSize, const void* pSubDecodeData, const VkDecoderContext& context)\n")
+            "size_t subDecode(VulkanMemReadingStream* readStream, VulkanDispatch* vk, VkSnapshotApiCallInfo* snapshotApiCallInfo, void* boxed_dispatchHandle, void* dispatchHandle, VkDeviceSize subDecodeDataSize, const void* pSubDecodeData, const VkDecoderContext& context)\n")
 
         self.cgen.beginBlock()  # function body
 
