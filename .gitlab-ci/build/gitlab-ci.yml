@@ -466,8 +466,6 @@ debian-android:
     VULKAN_DRIVERS: "asahi,broadcom,freedreno"
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,nouveau,panfrost,llvmpipe,softpipe,tegra,v3d,vc4,zink"
     BUILDTYPE: "debugoptimized"
-  tags:
-    - aarch64
 
 debian-arm32:
   extends:

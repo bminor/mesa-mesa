@@ -239,6 +239,8 @@ debian/arm64_build:
 .use-debian/arm64_build:
   extends:
     - .set-image
+  tags:
+    - aarch64
   variables:
     MESA_IMAGE_PATH: "debian/arm64_build"
     MESA_IMAGE_TAG: *debian-arm64_build
@@ -580,8 +582,6 @@ kernel+rootfs_arm64:
     - .kernel+rootfs
     - .firmware_arm64
     - .container-builds-arm64
-  tags:
-    - aarch64
   variables:
     DEBIAN_ARCH: "arm64"
     LLVM_VERSION: *debian-arm64-llvm
