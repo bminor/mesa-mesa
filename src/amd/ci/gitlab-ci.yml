@@ -272,11 +272,13 @@ radv-vangogh-vkcts:
     - .b2c-test-radv-vk
     - .vangogh-test-valve
     - .radv-valve-manual-rules
-  timeout: 2h 10m
+  timeout: 90m
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
+    B2C_TIMEOUT_BOOT_MINUTES: 85
+    B2C_TIMEOUT_OVERALL_MINUTES: 89
 
 radeonsi-vangogh-glcts-full:
   extends:
@@ -288,6 +290,8 @@ radeonsi-vangogh-glcts-full:
   variables:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
+    B2C_TIMEOUT_BOOT_MINUTES: 85
+    B2C_TIMEOUT_OVERALL_MINUTES: 89
 
 radeonsi-vangogh-glcts:
   extends:
@@ -296,6 +300,8 @@ radeonsi-vangogh-glcts:
   timeout: 30m
   variables:
     DEQP_FRACTION: 4
+    B2C_TIMEOUT_BOOT_MINUTES: 28
+    B2C_TIMEOUT_OVERALL_MINUTES: 29
 
 radv-raphael-vkcts:
   extends:
