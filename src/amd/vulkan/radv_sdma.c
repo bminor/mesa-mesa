@@ -201,7 +201,7 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
    }
 
    const VkFormat format = vk_format_get_aspect_format(image->vk.format, subresource.aspectMask);
-   const struct util_format_description *desc = vk_format_description(format);
+   const struct util_format_description *desc = radv_format_description(format);
 
    const uint32_t data_format = ac_get_cb_format(pdev->info.gfx_level, radv_format_to_pipe_format(format));
    const uint32_t alpha_is_on_msb = ac_alpha_is_on_msb(&pdev->info, radv_format_to_pipe_format(format));
