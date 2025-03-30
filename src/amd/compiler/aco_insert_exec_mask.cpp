@@ -530,6 +530,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
             assert(info.exec.size() == 1);
             bld.sop2(Builder::s_andn2, Definition(exec, bld.lm), bld.def(s1, scc), info.exec[0].op,
                      src);
+            info.exec[0].op = Operand(exec, bld.lm);
          } else {
             Temp cond = bld.tmp(s1);
             info.exec[0].op = bld.sop2(Builder::s_andn2, bld.def(bld.lm), Definition(cond, scc),
