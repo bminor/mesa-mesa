@@ -954,7 +954,7 @@
         "description": "r600: Take dual source blending in account when creating target mask with RATs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a6b379284365e8adee780b691596d3a66de1ba93",
         "notes": null
