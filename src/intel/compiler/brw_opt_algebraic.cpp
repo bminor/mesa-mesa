@@ -324,6 +324,17 @@ brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *in
       }
       break;
 
+   case FS_OPCODE_DDX_COARSE:
+   case FS_OPCODE_DDX_FINE:
+   case FS_OPCODE_DDY_COARSE:
+   case FS_OPCODE_DDY_FINE:
+      if (is_uniform(inst->src[0]) || inst->src[0].is_scalar) {
+         inst->opcode = BRW_OPCODE_MOV;
+         inst->src[0] = retype(brw_imm_uq(0), inst->dst.type);
+         progress = true;
+      }
+      break;
+
    default:
       break;
    }
