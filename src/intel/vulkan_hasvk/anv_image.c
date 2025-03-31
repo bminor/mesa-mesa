@@ -1723,16 +1723,14 @@ VkResult anv_BindImageMemory2(
    return VK_SUCCESS;
 }
 
-void anv_GetImageSubresourceLayout(
-    VkDevice                                    device,
-    VkImage                                     _image,
-    const VkImageSubresource*                   subresource,
-    VkSubresourceLayout*                        layout)
+static void
+anv_get_image_subresource_layout(const struct anv_image *image,
+                                 const VkImageSubresource2KHR *subresource,
+                                 VkSubresourceLayout2KHR *layout)
 {
-   ANV_FROM_HANDLE(anv_image, image, _image);
    const struct anv_surface *surface;
 
-   assert(__builtin_popcount(subresource->aspectMask) == 1);
+   assert(__builtin_popcount(subresource->imageSubresource.aspectMask) == 1);
 
    /* The Vulkan spec requires that aspectMask be
     * VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT if tiling is
@@ -1752,7 +1750,7 @@ void anv_GetImageSubresourceLayout(
    if (image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       /* TODO(chadv): Drop this workaround when WSI gets fixed. */
       uint32_t mem_plane;
-      switch (subresource->aspectMask) {
+      switch (subresource->imageSubresource.aspectMask) {
       case VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT:
       case VK_IMAGE_ASPECT_PLANE_0_BIT:
          mem_plane = 0;
@@ -1783,31 +1781,83 @@ void anv_GetImageSubresourceLayout(
       }
    } else {
       const uint32_t plane =
-         anv_image_aspect_to_plane(image, subresource->aspectMask);
+         anv_image_aspect_to_plane(image, subresource->imageSubresource.aspectMask);
       surface = &image->planes[plane].primary_surface;
    }
 
-   layout->offset = surface->memory_range.offset;
-   layout->rowPitch = surface->isl.row_pitch_B;
-   layout->depthPitch = isl_surf_get_array_pitch(&surface->isl);
-   layout->arrayPitch = isl_surf_get_array_pitch(&surface->isl);
+   layout->subresourceLayout.offset = surface->memory_range.offset;
+   layout->subresourceLayout.rowPitch = surface->isl.row_pitch_B;
+   layout->subresourceLayout.depthPitch = isl_surf_get_array_pitch(&surface->isl);
+   layout->subresourceLayout.arrayPitch = isl_surf_get_array_pitch(&surface->isl);
 
-   if (subresource->mipLevel > 0 || subresource->arrayLayer > 0) {
+   if (subresource->imageSubresource.mipLevel > 0 ||
+      subresource->imageSubresource.arrayLayer > 0) {
       assert(surface->isl.tiling == ISL_TILING_LINEAR);
 
       uint64_t offset_B;
       isl_surf_get_image_offset_B_tile_sa(&surface->isl,
-                                          subresource->mipLevel,
-                                          subresource->arrayLayer,
+                                          subresource->imageSubresource.mipLevel,
+                                          subresource->imageSubresource.arrayLayer,
                                           0 /* logical_z_offset_px */,
                                           &offset_B, NULL, NULL);
-      layout->offset += offset_B;
-      layout->size = layout->rowPitch * u_minify(image->vk.extent.height,
-                                                 subresource->mipLevel) *
-                     image->vk.extent.depth;
+
+      layout->subresourceLayout.offset += offset_B;
+      layout->subresourceLayout.size =
+         layout->subresourceLayout.rowPitch *
+         u_minify(image->vk.extent.height,
+                  subresource->imageSubresource.mipLevel) *
+         image->vk.extent.depth;
    } else {
-      layout->size = surface->memory_range.size;
+      layout->subresourceLayout.size = surface->memory_range.size;
    }
+}
+
+void anv_GetImageSubresourceLayout(
+    VkDevice                                    device,
+    VkImage                                     _image,
+    const VkImageSubresource*                   pSubresource,
+    VkSubresourceLayout*                        pLayout)
+{
+   ANV_FROM_HANDLE(anv_image, image, _image);
+
+   VkImageSubresource2KHR subresource = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR,
+      .imageSubresource = *pSubresource,
+   };
+   VkSubresourceLayout2KHR layout = {
+      .sType = VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR
+   };
+   anv_get_image_subresource_layout(image, &subresource, &layout);
+
+   *pLayout = layout.subresourceLayout;
+}
+
+void anv_GetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    _device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout)
+{
+   ANV_FROM_HANDLE(anv_device, device, _device);
+
+   struct anv_image image = { 0 };
+
+   if (anv_image_init_from_create_info(device, &image, pInfo->pCreateInfo) != VK_SUCCESS) {
+      pLayout->subresourceLayout = (VkSubresourceLayout) { 0, };
+      return;
+   }
+
+   anv_get_image_subresource_layout(&image, pInfo->pSubresource, pLayout);
+}
+
+void anv_GetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     _image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout)
+{
+   ANV_FROM_HANDLE(anv_image, image, _image);
+
+   anv_get_image_subresource_layout(image, pSubresource, pLayout);
 }
 
 /**
@@ -2521,6 +2571,11 @@ anv_CreateBufferView(VkDevice _device,
    if (!view)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
+   const VkBufferUsageFlags2CreateInfoKHR *view_usage_info =
+      vk_find_struct_const(pCreateInfo->pNext, BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR);
+   const VkBufferUsageFlags buffer_usage =
+      view_usage_info != NULL ? view_usage_info->usage : buffer->vk.usage;
+
    struct anv_format_plane format;
    format = anv_get_format_plane(device->info, pCreateInfo->format,
                                  0, VK_IMAGE_TILING_LINEAR);
@@ -2532,7 +2587,7 @@ anv_CreateBufferView(VkDevice _device,
 
    view->address = anv_address_add(buffer->address, pCreateInfo->offset);
 
-   if (buffer->vk.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) {
+   if (buffer_usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) {
       view->surface_state = alloc_surface_state(device);
 
       anv_fill_buffer_surface_state(device, view->surface_state,
@@ -2543,7 +2598,7 @@ anv_CreateBufferView(VkDevice _device,
       view->surface_state = (struct anv_state){ 0 };
    }
 
-   if (buffer->vk.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) {
+   if (buffer_usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) {
       view->storage_surface_state = alloc_surface_state(device);
       view->lowered_storage_surface_state = alloc_surface_state(device);
 
@@ -2609,4 +2664,15 @@ anv_DestroyBufferView(VkDevice _device, VkBufferView bufferView,
                           view->lowered_storage_surface_state);
 
    vk_object_free(&device->vk, pAllocator, view);
+}
+
+void anv_GetRenderingAreaGranularityKHR(
+    VkDevice                                    _device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity)
+{
+   *pGranularity = (VkExtent2D) {
+      .width = 1,
+      .height = 1,
+   };
 }
