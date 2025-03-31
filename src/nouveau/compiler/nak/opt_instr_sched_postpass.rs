@@ -71,13 +71,17 @@ fn generate_dep_graph(
 
         uses.for_each_instr_dst_mut(instr, |i, u| {
             if let Some((w_ip, w_dst_idx)) = u.write {
-                let latency = sm.waw_latency(
+                let mut latency = sm.waw_latency(
                     &instr.op,
                     i,
                     !instr.pred.pred_ref.is_none(),
                     &instrs[w_ip].op,
                     w_dst_idx,
                 );
+                if sm.op_needs_scoreboard(&instr.op) {
+                    // Barriers take two cycles to become active
+                    latency = max(latency, 2);
+                }
                 g.add_edge(ip, w_ip, EdgeLabel { latency });
             }
 
@@ -98,8 +102,12 @@ fn generate_dep_graph(
         });
         uses.for_each_instr_src_mut(instr, |i, u| {
             if let Some((w_ip, w_dst_idx)) = u.write {
-                let latency =
+                let mut latency =
                     sm.war_latency(&instr.op, i, &instrs[w_ip].op, w_dst_idx);
+                if sm.op_needs_scoreboard(&instr.op) {
+                    // Barriers take two cycles to become active
+                    latency = max(latency, 2);
+                }
                 g.add_edge(ip, w_ip, EdgeLabel { latency });
             }
         });
