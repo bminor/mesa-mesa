@@ -85,6 +85,10 @@ nvk_get_vk_version(const struct nv_device_info *info)
    return VK_MAKE_VERSION(1, 1, VK_HEADER_VERSION);
 #endif
 
+   /* Vulkan 1.3 requires vulkanMemoryModel which isn't supported by Kepler */
+   if (info->cls_eng3d < MAXWELL_A)
+      return VK_MAKE_VERSION(1, 2, VK_HEADER_VERSION);
+
    /* Vulkan 1.4 requires hostImageCopy which is currently only supported on
     * Turing+.
     */
@@ -196,7 +200,8 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_variable_pointers = true,
       .KHR_vertex_attribute_divisor = true,
-      .KHR_vulkan_memory_model = nvk_use_nak(info),
+      .KHR_vulkan_memory_model =
+         nvk_use_nak(info) && info->cls_eng3d >= MAXWELL_A,
       .KHR_workgroup_memory_explicit_layout = true,
       .KHR_zero_initialize_workgroup_memory = true,
       .EXT_4444_formats = true,
@@ -415,9 +420,11 @@ nvk_get_device_features(const struct nv_device_info *info,
       .bufferDeviceAddress = true,
       .bufferDeviceAddressCaptureReplay = true,
       .bufferDeviceAddressMultiDevice = false,
-      .vulkanMemoryModel = nvk_use_nak(info),
-      .vulkanMemoryModelDeviceScope = nvk_use_nak(info),
-      .vulkanMemoryModelAvailabilityVisibilityChains = nvk_use_nak(info),
+      .vulkanMemoryModel = nvk_use_nak(info) && info->cls_eng3d >= MAXWELL_A,
+      .vulkanMemoryModelDeviceScope =
+         nvk_use_nak(info) && info->cls_eng3d >= MAXWELL_A,
+      .vulkanMemoryModelAvailabilityVisibilityChains =
+         nvk_use_nak(info) && info->cls_eng3d >= MAXWELL_A,
       .shaderOutputViewportIndex = info->cls_eng3d >= MAXWELL_B,
       .shaderOutputLayer = info->cls_eng3d >= MAXWELL_B,
       .subgroupBroadcastDynamicId = nvk_use_nak(info),
