@@ -161,8 +161,8 @@ store_general(struct v3d_job *job,
                         /* We are resolving from a MSAA blit buffer or we are
                          * resolving directly from TLB to a resolve buffer
                          */
-                        assert((job->bbuf && job->bbuf->texture->nr_samples > 1) ||
-                               (job->dbuf && job->dbuf->texture->nr_samples <= 1));
+                        assert((job->bbuf.texture && job->bbuf.texture->nr_samples > 1) ||
+                               (job->dbuf.texture && job->dbuf.texture->nr_samples <= 1));
                         store.decimate_mode = V3D_DECIMATE_MODE_4X;
                 } else {
                         store.decimate_mode = V3D_DECIMATE_MODE_SAMPLE_0;
@@ -191,20 +191,21 @@ v3d_rcl_emit_loads(struct v3d_job *job, struct v3d_cl *cl, int layer)
         /* When blitting, no color or zs buffer is loaded; instead the blit
          * source buffer is loaded for the aspects that we are going to blit.
          */
-        assert(!job->bbuf || job->load == 0);
-        assert(!job->bbuf || job->nr_cbufs <= 1);
+        assert(!job->bbuf.texture || job->load == 0);
+        assert(!job->bbuf.texture || job->nr_cbufs <= 1);
 
-        uint32_t loads_pending = job->bbuf ? job->store : job->load;
+        uint32_t loads_pending = job->bbuf.texture ? job->store : job->load;
 
         for (int i = 0; i < job->nr_cbufs; i++) {
                 uint32_t bit = PIPE_CLEAR_COLOR0 << i;
                 if (!(loads_pending & bit))
                         continue;
 
-                struct pipe_surface *psurf = job->bbuf ? job->bbuf : job->cbufs[i];
-                assert(!job->bbuf || i == 0);
+                struct pipe_surface *psurf =
+                        job->bbuf.texture ? &job->bbuf : &job->cbufs[i];
+                assert(!job->bbuf.texture || i == 0);
 
-                if (!psurf)
+                if (!psurf->texture)
                         continue;
 
                 load_general(cl, psurf, RENDER_TARGET_0 + i, layer,
@@ -213,7 +214,8 @@ v3d_rcl_emit_loads(struct v3d_job *job, struct v3d_cl *cl, int layer)
 
         if (loads_pending & PIPE_CLEAR_DEPTHSTENCIL) {
                 assert(!job->early_zs_clear);
-                struct pipe_surface *src = job->bbuf ? job->bbuf : job->zsbuf;
+                struct pipe_surface *src =
+                        job->bbuf.texture ? &job->bbuf : &job->zsbuf;
                 struct v3d_resource *rsc = v3d_resource(src->texture);
 
                 if (rsc->separate_stencil &&
@@ -252,19 +254,20 @@ v3d_rcl_emit_stores(struct v3d_job *job, struct v3d_cl *cl, int layer)
          * perspective.  Non-MSAA surfaces will use
          * STORE_MULTI_SAMPLE_RESOLVED_TILE_COLOR_BUFFER_EXTENDED.
          */
-        assert((!job->bbuf && !job->dbuf) || job->nr_cbufs <= 1);
+        assert((!job->bbuf.texture && !job->dbuf.texture) ||
+               job->nr_cbufs <= 1);
         for (int i = 0; i < job->nr_cbufs; i++) {
-                struct pipe_surface *psurf = job->cbufs[i];
-                if (!psurf)
+                struct pipe_surface *psurf = &job->cbufs[i];
+                if (!psurf->texture)
                         continue;
 
                 uint32_t bit = PIPE_CLEAR_COLOR0 << i;
                 if (job->blit_tlb & bit) {
-                        assert(job->dbuf);
+                        assert(job->dbuf.texture);
                         bool blit_resolve =
-                                job->dbuf->texture->nr_samples <= 1 &&
+                                job->dbuf.texture->nr_samples <= 1 &&
                                 psurf->texture->nr_samples > 1;
-                        store_general(job, cl, job->dbuf, layer,
+                        store_general(job, cl, &job->dbuf, layer,
                                       RENDER_TARGET_0 + i, bit, NULL,
                                       false, blit_resolve);
                 }
@@ -273,18 +276,19 @@ v3d_rcl_emit_stores(struct v3d_job *job, struct v3d_cl *cl, int layer)
                         continue;
 
                 bool blit_resolve =
-                        job->bbuf && job->bbuf->texture->nr_samples > 1 &&
+                        job->bbuf.texture &&
+                        job->bbuf.texture->nr_samples > 1 &&
                         psurf->texture->nr_samples <= 1;
                 store_general(job, cl, psurf, layer, RENDER_TARGET_0 + i, bit,
                               &stores_pending, general_color_clear, blit_resolve);
         }
 
-        if (job->store & PIPE_CLEAR_DEPTHSTENCIL && job->zsbuf) {
+        if (job->store & PIPE_CLEAR_DEPTHSTENCIL && job->zsbuf.texture) {
                 assert(!job->early_zs_clear);
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf.texture);
                 if (rsc->separate_stencil) {
                         if (job->store & PIPE_CLEAR_DEPTH) {
-                                store_general(job, cl, job->zsbuf, layer,
+                                store_general(job, cl, &job->zsbuf, layer,
                                               Z, PIPE_CLEAR_DEPTH,
                                               &stores_pending,
                                               general_color_clear,
@@ -292,14 +296,14 @@ v3d_rcl_emit_stores(struct v3d_job *job, struct v3d_cl *cl, int layer)
                         }
 
                         if (job->store & PIPE_CLEAR_STENCIL) {
-                                store_general(job, cl, job->zsbuf, layer,
+                                store_general(job, cl, &job->zsbuf, layer,
                                               STENCIL, PIPE_CLEAR_STENCIL,
                                               &stores_pending,
                                               general_color_clear,
                                               false);
                         }
                 } else {
-                        store_general(job, cl, job->zsbuf, layer,
+                        store_general(job, cl, &job->zsbuf, layer,
                                       zs_buffer_from_pipe_bits(job->store),
                                       job->store & PIPE_CLEAR_DEPTHSTENCIL,
                                       &stores_pending, general_color_clear,
@@ -438,10 +442,10 @@ v3d_setup_render_target(struct v3d_job *job,
                         uint32_t *rt_bpp,
                         uint32_t *rt_type_clamp)
 {
-        if (!job->cbufs[cbuf])
+        if (!job->cbufs[cbuf].texture)
                 return;
         struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
-        struct pipe_surface *psurf = job->cbufs[cbuf];
+        struct pipe_surface *psurf = &job->cbufs[cbuf];
         uint8_t sinternal_bpp;
         uint8_t sinternal_type;
         v3d_format_get_internal_type_and_bpp(devinfo,
@@ -449,8 +453,8 @@ v3d_setup_render_target(struct v3d_job *job,
                                              &sinternal_type,
                                              &sinternal_bpp);
         *rt_bpp = sinternal_bpp;
-        if (job->bbuf) {
-                struct pipe_surface *bsurf = job->bbuf;
+        if (job->bbuf.texture) {
+                struct pipe_surface *bsurf = &job->bbuf;
                 uint8_t binternal_bpp;
                 v3d_format_get_internal_type_and_bpp(devinfo,
                                                      bsurf->format,
@@ -471,11 +475,11 @@ v3d_setup_render_target(struct v3d_job *job,
                         uint32_t *rt_type,
                         uint32_t *rt_clamp)
 {
-        if (!job->cbufs[cbuf])
+        if (!job->cbufs[cbuf].texture)
                 return;
 
         struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
-        struct pipe_surface *psurf = job->cbufs[cbuf];
+        struct pipe_surface *psurf = &job->cbufs[cbuf];
         uint8_t sinternal_bpp;
         uint8_t sinternal_type;
         v3d_format_get_internal_type_and_bpp(devinfo,
@@ -483,8 +487,8 @@ v3d_setup_render_target(struct v3d_job *job,
                                              &sinternal_type,
                                              &sinternal_bpp);
         *rt_bpp = sinternal_bpp;
-        if (job->bbuf) {
-                struct pipe_surface *bsurf = job->bbuf;
+        if (job->bbuf.texture) {
+                struct pipe_surface *bsurf = &job->bbuf;
                 uint8_t binternal_bpp;
                 v3d_format_get_internal_type_and_bpp(devinfo,
                                                      bsurf->format,
@@ -686,10 +690,10 @@ v3dX(emit_rcl)(struct v3d_job *job)
          * optional updates to the previous HW state.
          */
         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_COMMON, config) {
-                if (job->zsbuf) {
+                if (job->zsbuf.texture) {
                         uint8_t internal_type;
                         v3d_format_get_internal_type_and_bpp(devinfo,
-                                                             job->zsbuf->format,
+                                                             job->zsbuf.format,
                                                              &internal_type,
                                                              NULL);
                         config.internal_depth_type = internal_type;
@@ -716,7 +720,7 @@ v3dX(emit_rcl)(struct v3d_job *job)
                         config.early_z_disable = true;
                 }
 
-                assert(job->zsbuf || config.early_z_disable);
+                assert(job->zsbuf.texture || config.early_z_disable);
 
                 job->early_zs_clear = (job->clear_tlb & PIPE_CLEAR_DEPTHSTENCIL) &&
                         !(job->load & PIPE_CLEAR_DEPTHSTENCIL) &&
@@ -763,8 +767,8 @@ v3dX(emit_rcl)(struct v3d_job *job)
         }
 #endif
         for (int i = 0; i < job->nr_cbufs; i++) {
-                struct pipe_surface *psurf = job->cbufs[i];
-                if (!psurf) {
+                struct pipe_surface *psurf = &job->cbufs[i];
+                if (!psurf->texture) {
 #if V3D_VERSION >= 71
                         cl_emit(&job->rcl, TILE_RENDERING_MODE_CFG_RENDER_TARGET_PART1, rt) {
                                 rt.render_target_number = i;

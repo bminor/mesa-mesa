@@ -58,27 +58,27 @@ v3d_job_free(struct v3d_context *v3d, struct v3d_job *job)
         }
 
         for (int i = 0; i < job->nr_cbufs; i++) {
-                if (job->cbufs[i]) {
+                if (job->cbufs[i].texture) {
                         _mesa_hash_table_remove_key(v3d->write_jobs,
-                                                    job->cbufs[i]->texture);
-                        pipe_surface_reference(&job->cbufs[i], NULL);
+                                                    job->cbufs[i].texture);
+                        pipe_resource_reference(&job->cbufs[i].texture, NULL);
                 }
         }
-        if (job->zsbuf) {
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+        if (job->zsbuf.texture) {
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf.texture);
                 if (rsc->separate_stencil)
                         _mesa_hash_table_remove_key(v3d->write_jobs,
                                                     &rsc->separate_stencil->base);
 
                 _mesa_hash_table_remove_key(v3d->write_jobs,
-                                            job->zsbuf->texture);
-                pipe_surface_reference(&job->zsbuf, NULL);
+                                            job->zsbuf.texture);
+                pipe_resource_reference(&job->zsbuf.texture, NULL);
         }
-        if (job->bbuf)
-                pipe_surface_reference(&job->bbuf, NULL);
+        if (job->bbuf.texture)
+                pipe_resource_reference(&job->bbuf.texture, NULL);
 
-        if (job->dbuf)
-                pipe_surface_reference(&job->dbuf, NULL);
+        if (job->dbuf.texture)
+                pipe_resource_reference(&job->dbuf.texture, NULL);
 
         if (v3d->job == job)
                 v3d->job = NULL;
@@ -290,6 +290,28 @@ v3d_flush_jobs_reading_resource(struct v3d_context *v3d,
         }
 }
 
+static void
+v3d_job_attach_surface(struct pipe_surface *job_psurf,
+                       struct pipe_surface *src_psurf)
+{
+        assert(job_psurf);
+        if (src_psurf) {
+                /* Texture reference counter needs to be updated before
+                 * assigning the struct pipe_surface to avoid leaks of
+                 * textures from previously attached surfaces. The follow up
+                 * assignment would just overwrite the same pointer for the
+                 * texture field.
+                 */
+                pipe_resource_reference(&job_psurf->texture,
+                                        src_psurf->texture);
+                *job_psurf = *src_psurf;
+        } else {
+                pipe_resource_reference(&job_psurf->texture,
+                                        NULL);
+                memset(job_psurf, 0, sizeof(*job_psurf));
+        }
+}
+
 /**
  * Returns a v3d_job structure for tracking V3D rendering to a particular FBO.
  *
@@ -301,25 +323,20 @@ v3d_flush_jobs_reading_resource(struct v3d_context *v3d,
 struct v3d_job *
 v3d_get_job(struct v3d_context *v3d,
             uint32_t nr_cbufs,
-            struct pipe_surface **cbufs,
+            struct pipe_surface *cbufs,
             struct pipe_surface *zsbuf,
             struct pipe_surface *bbuf)
 {
         /* Return the existing job for this FBO if we have one */
-        struct v3d_job_key local_key = {
-                .cbufs = {
-                        cbufs[0],
-                        cbufs[1],
-                        cbufs[2],
-                        cbufs[3],
-                        cbufs[4],
-                        cbufs[5],
-                        cbufs[6],
-                        cbufs[7],
-                },
-                .zsbuf = zsbuf,
-                .bbuf = bbuf,
-        };
+        struct v3d_job_key local_key;
+        memset(&local_key, 0, sizeof(local_key));
+        memcpy(&local_key.cbufs[0], &cbufs[0],
+               sizeof(struct pipe_surface) * nr_cbufs);
+        if (zsbuf)
+                local_key.zsbuf = *zsbuf;
+        if (bbuf)
+                local_key.bbuf = *bbuf;
+
         struct hash_entry *entry = _mesa_hash_table_search(v3d->jobs,
                                                            &local_key);
         if (entry)
@@ -332,36 +349,36 @@ v3d_get_job(struct v3d_context *v3d,
         job->nr_cbufs = nr_cbufs;
 
         for (int i = 0; i < job->nr_cbufs; i++) {
-                if (cbufs[i]) {
-                        v3d_flush_jobs_reading_resource(v3d, cbufs[i]->texture,
+                if (cbufs[i].texture) {
+                        v3d_flush_jobs_reading_resource(v3d, cbufs[i].texture,
                                                         V3D_FLUSH_DEFAULT,
                                                         false);
-                        pipe_surface_reference(&job->cbufs[i], cbufs[i]);
+                        v3d_job_attach_surface(&job->cbufs[i], &cbufs[i]);
 
-                        if (cbufs[i]->texture->nr_samples > 1)
+                        if (cbufs[i].texture->nr_samples > 1)
                                 job->msaa = true;
                 }
         }
-        if (zsbuf) {
+        if (zsbuf && zsbuf->texture) {
                 v3d_flush_jobs_reading_resource(v3d, zsbuf->texture,
                                                 V3D_FLUSH_DEFAULT,
                                                 false);
-                pipe_surface_reference(&job->zsbuf, zsbuf);
+                v3d_job_attach_surface(&job->zsbuf, zsbuf);
                 if (zsbuf->texture->nr_samples > 1)
                         job->msaa = true;
         }
-        if (bbuf) {
-                pipe_surface_reference(&job->bbuf, bbuf);
+        if (bbuf && bbuf->texture) {
+                v3d_job_attach_surface(&job->bbuf, bbuf);
                 if (bbuf->texture->nr_samples > 1)
                         job->msaa = true;
         }
 
         for (int i = 0; i < job->nr_cbufs; i++) {
-                if (cbufs[i])
+                if (cbufs[i].texture)
                         _mesa_hash_table_insert(v3d->write_jobs,
-                                                cbufs[i]->texture, job);
+                                                cbufs[i].texture, job);
         }
-        if (zsbuf) {
+        if (zsbuf && zsbuf->texture) {
                 _mesa_hash_table_insert(v3d->write_jobs, zsbuf->texture, job);
 
                 struct v3d_resource *rsc = v3d_resource(zsbuf->texture);
@@ -396,8 +413,8 @@ v3d_get_job_for_fbo(struct v3d_context *v3d)
                 return v3d->job;
 
         uint32_t nr_cbufs = v3d->framebuffer.nr_cbufs;
-        struct pipe_surface **cbufs = v3d->fb_cbufs;
-        struct pipe_surface *zsbuf = v3d->fb_zsbuf;
+        struct pipe_surface *cbufs = &v3d->framebuffer.cbufs[0];
+        struct pipe_surface *zsbuf = &v3d->framebuffer.zsbuf;
         struct v3d_job *job = v3d_get_job(v3d, nr_cbufs, cbufs, zsbuf, NULL);
 
         if (v3d->framebuffer.samples >= 1) {
@@ -407,7 +424,7 @@ v3d_get_job_for_fbo(struct v3d_context *v3d)
 
         v3d_get_tile_buffer_size(&v3d->screen->devinfo,
                                  job->msaa, job->double_buffer,
-                                 job->nr_cbufs, job->cbufs, job->bbuf,
+                                 job->nr_cbufs, &job->cbufs[0], &job->bbuf,
                                  &job->tile_desc.width,
                                  &job->tile_desc.height,
                                  &job->internal_bpp);
@@ -422,8 +439,8 @@ v3d_get_job_for_fbo(struct v3d_context *v3d)
          * contents before drawing.
          */
         for (int i = 0; i < nr_cbufs; i++) {
-                if (cbufs[i]) {
-                        struct v3d_resource *rsc = v3d_resource(cbufs[i]->texture);
+                if (cbufs[i].texture) {
+                        struct v3d_resource *rsc = v3d_resource(cbufs[i].texture);
                         if (!rsc->writes)
                                 job->clear_tlb |= PIPE_CLEAR_COLOR0 << i;
                         if (rsc->invalidated) {
@@ -433,7 +450,7 @@ v3d_get_job_for_fbo(struct v3d_context *v3d)
                 }
         }
 
-        if (zsbuf) {
+        if (zsbuf->texture) {
                 struct v3d_resource *rsc = v3d_resource(zsbuf->texture);
                 if (!rsc->writes)
                         job->clear_tlb |= PIPE_CLEAR_DEPTH;
@@ -599,7 +616,7 @@ enable_double_buffer_mode(struct v3d_job *job)
         job->double_buffer = true;
         v3d_get_tile_buffer_size(&job->v3d->screen->devinfo,
                                  job->msaa, job->double_buffer,
-                                 job->nr_cbufs, job->cbufs, job->bbuf,
+                                 job->nr_cbufs, &job->cbufs[0], &job->bbuf,
                                  &job->tile_desc.width, &job->tile_desc.height,
                                  &job->internal_bpp);
 

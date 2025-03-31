@@ -126,13 +126,13 @@ v3d_invalidate_resource(struct pipe_context *pctx, struct pipe_resource *prsc)
                 return;
 
         struct v3d_job *job = entry->data;
-        if (job->key.zsbuf && job->key.zsbuf->texture == prsc) {
+        if (job->zsbuf.texture && job->zsbuf.texture == prsc) {
                 job->store &= ~(PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL);
                 return;
         }
 
         for (int i = 0; i < job->nr_cbufs; i++) {
-                if (job->cbufs[i] && job->cbufs[i]->texture == prsc) {
+                if (job->cbufs[i].texture && job->cbufs[i].texture == prsc) {
                         job->store &= ~(PIPE_CLEAR_COLOR0 << i);
                         return;
                 }
@@ -258,7 +258,7 @@ v3d_get_tile_buffer_size(const struct v3d_device_info *devinfo,
                          bool is_msaa,
                          bool double_buffer,
                          uint32_t nr_cbufs,
-                         struct pipe_surface **cbufs,
+                         struct pipe_surface *cbufs,
                          struct pipe_surface *bbuf,
                          uint32_t *tile_width,
                          uint32_t *tile_height,
@@ -270,10 +270,10 @@ v3d_get_tile_buffer_size(const struct v3d_device_info *devinfo,
         uint32_t total_bpp = 0;
         *max_bpp = 0;
         for (int i = 0; i < nr_cbufs; i++) {
-                if (cbufs[i]) {
+                if (cbufs[i].texture) {
                         uint8_t internal_bpp;
                         v3d_format_get_internal_type_and_bpp(devinfo,
-                                                             cbufs[i]->format,
+                                                             cbufs[i].format,
                                                              NULL,
                                                              &internal_bpp);
                         *max_bpp = MAX2(*max_bpp, internal_bpp);
@@ -281,8 +281,8 @@ v3d_get_tile_buffer_size(const struct v3d_device_info *devinfo,
                         max_cbuf_idx = MAX2(i, max_cbuf_idx);
                 }
         }
-
-        if (bbuf) {
+        assert(bbuf);
+        if (bbuf->texture) {
                 uint8_t internal_bpp;
                 v3d_format_get_internal_type_and_bpp(devinfo,
                                                      bbuf->format,
@@ -327,7 +327,6 @@ v3d_context_destroy(struct pipe_context *pctx)
 
         slab_destroy_child(&v3d->transfer_pool);
 
-        util_framebuffer_init(pctx, NULL, v3d->fb_cbufs, &v3d->fb_zsbuf);
         util_unreference_framebuffer_state(&v3d->framebuffer);
 
         if (v3d->sand8_blit_vs)

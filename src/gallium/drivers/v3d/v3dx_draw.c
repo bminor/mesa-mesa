@@ -935,7 +935,7 @@ v3d_update_job_ez(struct v3d_context *v3d, struct v3d_job *job)
                 job->decided_global_ez_enable = true;
                 job->global_ez_zsa_decision_state = v3d->zsa;
 
-                if (!job->zsbuf) {
+                if (!job->zsbuf.texture) {
                         job->first_ez_state = V3D_EZ_DISABLED;
                         job->ez_state = V3D_EZ_DISABLED;
                         return;
@@ -946,12 +946,12 @@ v3d_update_job_ez(struct v3d_context *v3d, struct v3d_job *job)
                  * buffer is 16-bit and multisampled. Disable early-Z in these
                  * cases.
                  */
-                bool needs_depth_load = v3d->zsa && job->zsbuf &&
+                bool needs_depth_load = v3d->zsa && job->zsbuf.texture &&
                         v3d->zsa->base.depth_enabled &&
                         (PIPE_CLEAR_DEPTH & ~job->clear_tlb);
                 if (needs_depth_load) {
-                        if (job->zsbuf->texture->format == PIPE_FORMAT_Z16_UNORM &&
-                            job->zsbuf->texture->nr_samples > 0) {
+                        if (job->zsbuf.texture->format == PIPE_FORMAT_Z16_UNORM &&
+                            job->zsbuf.texture->nr_samples > 0) {
                                 perf_debug("Loading 16-bit multisampled depth buffer "
                                            "disables early-Z tests\n");
                                 job->first_ez_state = V3D_EZ_DISABLED;
@@ -1066,8 +1066,8 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
         uint32_t no_load_mask =
                 job->clear_tlb | job->clear_draw | job->invalidated_load;
 
-        if (v3d->zsa && job->zsbuf && v3d->zsa->base.depth_enabled) {
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+        if (v3d->zsa && job->zsbuf.texture && v3d->zsa->base.depth_enabled) {
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf.texture);
                 v3d_job_add_bo(job, rsc->bo);
                 job->load |= PIPE_CLEAR_DEPTH & ~no_load_mask;
                 if (v3d->zsa->base.depth_writemask)
@@ -1075,8 +1075,9 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
                 rsc->initialized_buffers |= PIPE_CLEAR_DEPTH;
         }
 
-        if (v3d->zsa && job->zsbuf && v3d->zsa->base.stencil[0].enabled) {
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+        if (v3d->zsa && job->zsbuf.texture &&
+            v3d->zsa->base.stencil[0].enabled) {
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf.texture);
                 if (rsc->separate_stencil)
                         rsc = rsc->separate_stencil;
 
@@ -1094,9 +1095,9 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
                 uint32_t bit = PIPE_CLEAR_COLOR0 << i;
                 int blend_rt = v3d->blend->base.independent_blend_enable ? i : 0;
 
-                if (job->store & bit || !job->cbufs[i])
+                if (job->store & bit || !job->cbufs[i].texture)
                         continue;
-                struct v3d_resource *rsc = v3d_resource(job->cbufs[i]->texture);
+                struct v3d_resource *rsc = v3d_resource(job->cbufs[i].texture);
                 job->load |= bit & ~no_load_mask;
 
                 if (v3d->blend->base.rt[blend_rt].colormask)
@@ -1684,8 +1685,8 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
         if (devinfo->ver == 42 &&
             buffers & PIPE_CLEAR_DEPTHSTENCIL &&
             (buffers & PIPE_CLEAR_DEPTHSTENCIL) != PIPE_CLEAR_DEPTHSTENCIL &&
-            job->zsbuf &&
-            util_format_is_depth_and_stencil(job->zsbuf->texture->format)) {
+            job->zsbuf.texture &&
+            util_format_is_depth_and_stencil(job->zsbuf.texture->format)) {
                 buffers &= ~PIPE_CLEAR_DEPTHSTENCIL;
         }
 
@@ -1694,7 +1695,7 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
                 if (!(buffers & bit))
                         continue;
 
-                struct pipe_surface *psurf = v3d->fb_cbufs[i];
+                struct pipe_surface *psurf = &v3d->framebuffer.cbufs[i];
                 struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
                 union util_color uc;

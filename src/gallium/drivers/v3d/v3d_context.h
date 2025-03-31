@@ -305,9 +305,9 @@ struct v3d_ssbo_stateobj {
 
 /* Hash table key for v3d->jobs */
 struct v3d_job_key {
-        struct pipe_surface *cbufs[V3D_MAX_DRAW_BUFFERS];
-        struct pipe_surface *zsbuf;
-        struct pipe_surface *bbuf;
+        struct pipe_surface cbufs[V3D_MAX_DRAW_BUFFERS];
+        struct pipe_surface zsbuf;
+        struct pipe_surface bbuf;
 };
 
 enum v3d_ez_state {
@@ -385,10 +385,10 @@ struct v3d_job {
          * blit destination surface.
          */
         uint32_t nr_cbufs;
-        struct pipe_surface *cbufs[V3D_MAX_DRAW_BUFFERS];
-        struct pipe_surface *zsbuf;
-        struct pipe_surface *bbuf;
-        struct pipe_surface *dbuf;
+        struct pipe_surface cbufs[V3D_MAX_DRAW_BUFFERS];
+        struct pipe_surface zsbuf;
+        struct pipe_surface bbuf;
+        struct pipe_surface dbuf;
         /** @} */
         /** @{
          * Bounding box of the scissor across all queued drawing.
@@ -634,7 +634,6 @@ struct v3d_context {
         } blend_color;
         struct pipe_stencil_ref stencil_ref;
         unsigned sample_mask;
-        PIPE_FB_SURFACES; //STOP USING THIS
         struct pipe_framebuffer_state framebuffer;
 
         /* Per render target, whether we should swap the R and B fields in the
@@ -789,7 +788,7 @@ struct v3d_job *v3d_job_create(struct v3d_context *v3d);
 void v3d_job_free(struct v3d_context *v3d, struct v3d_job *job);
 struct v3d_job *v3d_get_job(struct v3d_context *v3d,
                             uint32_t nr_cbufs,
-                            struct pipe_surface **cbufs,
+                            struct pipe_surface *cbufs,
                             struct pipe_surface *zsbuf,
                             struct pipe_surface *bbuf);
 struct v3d_job *v3d_get_job_for_fbo(struct v3d_context *v3d);
@@ -867,7 +866,7 @@ void v3d_get_tile_buffer_size(const struct v3d_device_info *devinfo,
                               bool is_msaa,
                               bool double_buffer,
                               uint32_t nr_cbufs,
-                              struct pipe_surface **cbufs,
+                              struct pipe_surface *cbufs,
                               struct pipe_surface *bbuf,
                               uint32_t *tile_width,
                               uint32_t *tile_height,

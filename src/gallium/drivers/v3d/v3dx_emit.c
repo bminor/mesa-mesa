@@ -391,8 +391,8 @@ v3dX(emit_state)(struct pipe_context *pctx)
         if (v3d->dirty & V3D_DIRTY_RASTERIZER &&
             v3d->rasterizer->base.offset_tri) {
                 if (v3d->screen->devinfo.ver == 42 &&
-                    job->zsbuf &&
-                    job->zsbuf->format == PIPE_FORMAT_Z16_UNORM) {
+                    job->zsbuf.texture &&
+                    job->zsbuf.format == PIPE_FORMAT_Z16_UNORM) {
                         cl_emit_prepacked_sized(&job->bcl,
                                                 v3d->rasterizer->depth_offset_z16,
                                                 cl_packet_length(DEPTH_OFFSET));
