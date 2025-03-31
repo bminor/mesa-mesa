@@ -50,8 +50,10 @@ static inline nir_def *get_src_def(nir_tex_instr *tex,
  * \param[in] tex_state Texture state words.
  * \return The replacement/lowered def.
  */
-static nir_def *
-lower_tex_query_basic(nir_builder *b, nir_tex_instr *tex, nir_def *tex_state)
+static nir_def *lower_tex_query_basic(nir_builder *b,
+                                      nir_tex_instr *tex,
+                                      nir_def *tex_state,
+                                      nir_def *tex_meta)
 {
    nir_def *tex_state_word[] = {
       [0] = nir_channel(b, tex_state, 0),
@@ -68,6 +70,13 @@ lower_tex_query_basic(nir_builder *b, nir_tex_instr *tex, nir_def *tex_state)
       return STATE_UNPACK_SHIFT(b, tex_state_word, 1, 30, 2, 1);
 
    case nir_texop_txs: {
+      if (tex->sampler_dim == GLSL_SAMPLER_DIM_BUF) {
+         assert(tex->def.num_components == 1);
+         assert(!tex->is_array);
+
+         return nir_channel(b, tex_meta, PCO_IMAGE_META_BUFFER_ELEMS);
+      }
+
       unsigned num_comps = tex->def.num_components;
       if (tex->is_array)
          --num_comps;
@@ -499,8 +508,14 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
                                                .desc_set = tex_desc_set,
                                                .binding = tex_binding);
 
+   nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                             PCO_IMAGE_META_COUNT,
+                                             tex_elem,
+                                             .desc_set = tex_desc_set,
+                                             .binding = tex_binding);
+
    if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
-      return lower_tex_query_basic(b, tex, tex_state);
+      return lower_tex_query_basic(b, tex, tex_state, tex_meta);
 
    nir_def *smp_state =
       nir_load_smp_state_pco(b,
@@ -515,6 +530,19 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 
    bool is_cube_array = tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
                         tex->is_array;
+
+   /* Special case, override buffers to be 2D. */
+   if ((tex->op == nir_texop_txf || tex->op == nir_texop_txf_ms) &&
+       tex->sampler_dim == GLSL_SAMPLER_DIM_BUF) {
+      assert(!tex_src_is_float(tex, nir_tex_src_coord));
+
+      tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
+      params.sampler_dim = tex->sampler_dim;
+      tex_srcs[nir_tex_src_coord] =
+         nir_vec2(b,
+                  nir_umod_imm(b, tex_srcs[nir_tex_src_coord], 8192),
+                  nir_udiv_imm(b, tex_srcs[nir_tex_src_coord], 8192));
+   }
 
    nir_def *float_coords;
    nir_def *int_coords;

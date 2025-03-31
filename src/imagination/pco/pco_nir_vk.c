@@ -77,6 +77,17 @@ static nir_def *array_elem_from_deref(nir_builder *b, nir_deref_instr *deref)
    return nir_imm_int(b, array_elem);
 }
 
+static inline bool is_comb_img_smp(unsigned desc_set,
+                                   unsigned binding,
+                                   const pco_common_data *common)
+{
+   const pco_descriptor_set_data *desc_set_data = &common->desc_sets[desc_set];
+   assert(desc_set_data->bindings && binding < desc_set_data->binding_count);
+
+   const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+   return binding_data->is_img_smp;
+}
+
 static void lower_tex_deref_to_binding(nir_builder *b,
                                        nir_tex_instr *tex,
                                        unsigned deref_index,
@@ -108,6 +119,31 @@ static void lower_tex_deref_to_binding(nir_builder *b,
    nir_src_rewrite(&deref_src->src, elem);
 }
 
+static void
+add_txf_sampler(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
+{
+   int deref_index = nir_tex_instr_src_index(tex, nir_tex_src_backend1);
+   assert(deref_index >= 0);
+   nir_tex_src *deref_src = &tex->src[deref_index];
+
+   unsigned desc_set;
+   unsigned binding;
+   pco_unpack_desc(tex->texture_index, &desc_set, &binding);
+   nir_def *elem = deref_src->src.ssa;
+
+   /* If it's not a combined image/sampler, use the point sampler. */
+   if (!is_comb_img_smp(desc_set, binding, common)) {
+      desc_set = PCO_POINT_SAMPLER;
+      binding = PCO_POINT_SAMPLER;
+      elem = nir_imm_int(b, 0);
+
+      common->uses.point_sampler = true;
+   }
+
+   tex->sampler_index = pco_pack_desc(desc_set, binding);
+   nir_tex_instr_add_src(tex, nir_tex_src_backend2, elem);
+}
+
 static inline void
 lower_tex_derefs(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
 {
@@ -120,6 +156,8 @@ lower_tex_derefs(nir_builder *b, nir_tex_instr *tex, pco_common_data *common)
    deref_index = nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref);
    if (deref_index >= 0)
       lower_tex_deref_to_binding(b, tex, deref_index, common);
+   else if (tex->op == nir_texop_txf || tex->op == nir_texop_txf_ms)
+      add_txf_sampler(b, tex, common);
 }
 
 static nir_def *

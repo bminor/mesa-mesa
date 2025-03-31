@@ -2087,6 +2087,16 @@ static void pvr_init_descriptors(pco_data *data,
          rzalloc_array_size(NULL,
                             sizeof(*desc_set_data->bindings),
                             set_layout->binding_count);
+
+      for (unsigned binding = 0; binding < set_layout->binding_count;
+           ++binding) {
+         const struct pvr_descriptor_set_layout_binding *layout_binding =
+            &set_layout->bindings[binding];
+         pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+
+         binding_data->is_img_smp = layout_binding->type ==
+                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      }
    }
 }
 
@@ -2125,9 +2135,6 @@ static void pvr_setup_descriptors(pco_data *data,
          const struct pvr_descriptor_set_layout_binding *layout_binding =
             &set_layout->bindings[binding];
          pco_binding_data *binding_data = &desc_set_data->bindings[binding];
-
-         binding_data->is_img_smp = layout_binding->type ==
-                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
          binding_data->range = (pco_range){
             .start = desc_set_range->start +
