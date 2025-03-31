@@ -470,72 +470,6 @@ sbe_primitive_id_override(struct anv_graphics_pipeline *pipeline)
 }
 
 static void
-emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
-                  const struct vk_input_assembly_state *ia,
-                  const struct vk_viewport_state *vp,
-                  const struct vk_rasterization_state *rs)
-{
-   const struct brw_wm_prog_data *wm_prog_data =
-      get_pipeline_wm_prog_data(pipeline);
-   (void) wm_prog_data;
-
-   anv_pipeline_emit(pipeline, partial.clip, GENX(3DSTATE_CLIP), clip) {
-      clip.ClipEnable               = true;
-      clip.StatisticsEnable         = true;
-      clip.EarlyCullEnable          = true;
-      clip.GuardbandClipTestEnable  = true;
-
-      clip.VertexSubPixelPrecisionSelect = _8Bit;
-      clip.ClipMode = CLIPMODE_NORMAL;
-
-      clip.MinimumPointWidth = 0.125;
-      clip.MaximumPointWidth = 255.875;
-
-      /* TODO(mesh): Multiview. */
-      if (anv_pipeline_is_primitive(pipeline)) {
-         const struct brw_vue_prog_data *last =
-            anv_pipeline_get_last_vue_prog_data(pipeline);
-
-         /* From the Vulkan 1.0.45 spec:
-          *
-          *    "If the last active vertex processing stage shader entry point's
-          *    interface does not include a variable decorated with Layer, then
-          *    the first layer is used."
-          */
-         clip.ForceZeroRTAIndexEnable =
-            !(last->vue_map.slots_valid & VARYING_BIT_LAYER);
-
-      } else if (anv_pipeline_is_mesh(pipeline)) {
-         const struct brw_mesh_prog_data *mesh_prog_data =
-            get_pipeline_mesh_prog_data(pipeline);
-
-         clip.ForceZeroRTAIndexEnable =
-            mesh_prog_data->map.per_primitive_offsets[VARYING_SLOT_LAYER] < 0;
-      }
-
-      clip.NonPerspectiveBarycentricEnable = wm_prog_data ?
-         wm_prog_data->uses_nonperspective_interp_modes : 0;
-   }
-
-#if GFX_VERx10 >= 125
-   const struct anv_device *device = pipeline->base.base.device;
-   if (device->vk.enabled_extensions.EXT_mesh_shader) {
-      anv_pipeline_emit(pipeline, final.clip_mesh,
-                        GENX(3DSTATE_CLIP_MESH), clip_mesh) {
-         if (!anv_pipeline_is_mesh(pipeline))
-            continue;
-
-         const struct brw_mesh_prog_data *mesh_prog_data =
-            get_pipeline_mesh_prog_data(pipeline);
-         clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.has_per_primitive_header;
-         clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
-         clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
-      }
-   }
-#endif
-}
-
-static void
 emit_3dstate_streamout(struct anv_graphics_pipeline *pipeline,
                        const struct vk_rasterization_state *rs)
 {
@@ -1525,6 +1459,13 @@ emit_mesh_state(struct anv_graphics_pipeline *pipeline)
       distrib.TaskDistributionBatchSize = devinfo->num_slices > 2 ? 4 : 9; /* 2^N thread groups */
       distrib.MeshDistributionBatchSize = devinfo->num_slices > 2 ? 3 : 3; /* 2^N thread groups */
    }
+
+   anv_pipeline_emit(pipeline, final.clip_mesh,
+                     GENX(3DSTATE_CLIP_MESH), clip_mesh) {
+      clip_mesh.PrimitiveHeaderEnable = mesh_prog_data->map.has_per_primitive_header;
+      clip_mesh.UserClipDistanceClipTestEnableBitmask = mesh_prog_data->clip_distance_mask;
+      clip_mesh.UserClipDistanceCullTestEnableBitmask = mesh_prog_data->cull_distance_mask;
+   }
 }
 #endif
 
@@ -1533,8 +1474,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                              const struct vk_graphics_pipeline_state *state)
 {
    compute_kill_pixel(pipeline, state->ms, state);
-
-   emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);
 
 #if GFX_VERx10 >= 125
    bool needs_instance_granularity =
@@ -1594,6 +1533,8 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
                            GENX(3DSTATE_MESH_SHADER), zero);
          anv_pipeline_emit(pipeline, final.mesh_distrib,
                            GENX(3DSTATE_MESH_DISTRIB), zero);
+         anv_pipeline_emit(pipeline, final.clip_mesh,
+                           GENX(3DSTATE_CLIP_MESH), zero);
          anv_pipeline_emit(pipeline, final.task_control,
                            GENX(3DSTATE_TASK_CONTROL), zero);
          anv_pipeline_emit(pipeline, final.task_control_protected,

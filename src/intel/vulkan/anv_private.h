@@ -1659,6 +1659,8 @@ struct anv_gfx_dynamic_state {
       uint32_t LineStripListProvokingVertexSelect;
       uint32_t TriangleFanProvokingVertexSelect;
       uint32_t TriangleStripOddProvokingVertexSelect;
+      bool     ForceZeroRTAIndexEnable;
+      uint32_t NonPerspectiveBarycentricEnable;
    } clip;
 
    /* 3DSTATE_COARSE_PIXEL */
@@ -5204,7 +5206,6 @@ struct anv_graphics_pipeline {
     * with dynamic state.
     */
    struct {
-      struct anv_gfx_state_ptr                  clip;
       struct anv_gfx_state_ptr                  ps_extra;
       struct anv_gfx_state_ptr                  wm;
       struct anv_gfx_state_ptr                  so;

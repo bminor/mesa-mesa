@@ -1471,6 +1471,29 @@ update_clip_raster(struct anv_gfx_dynamic_state *hw_state,
 }
 
 ALWAYS_INLINE static void
+update_clip_preraster_stages(struct anv_gfx_dynamic_state *hw_state,
+                             const struct anv_cmd_graphics_state *gfx)
+{
+   const bool layer_written =
+      anv_gfx_has_stage(gfx, MESA_SHADER_MESH) ?
+      get_gfx_mesh_prog_data(gfx)->map.per_primitive_offsets[VARYING_SLOT_LAYER] >= 0 :
+      (get_gfx_last_vue_map(gfx)->slots_valid & VARYING_BIT_LAYER);
+
+   SET(CLIP, clip.ForceZeroRTAIndexEnable, !layer_written);
+}
+
+ALWAYS_INLINE static void
+update_clip_non_perspective_barycentrics(struct anv_gfx_dynamic_state *hw_state,
+                                         const struct anv_cmd_graphics_state *gfx)
+{
+   const struct brw_wm_prog_data *wm_prog_data = get_gfx_wm_prog_data(gfx);
+
+   SET(CLIP, clip.NonPerspectiveBarycentricEnable,
+       wm_prog_data ?
+       wm_prog_data->uses_nonperspective_interp_modes : 0);
+}
+
+ALWAYS_INLINE static void
 update_multisample(struct anv_gfx_dynamic_state *hw_state,
                    const struct vk_dynamic_graphics_state *dyn)
 {
@@ -2239,6 +2262,12 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_CONSERVATIVE_MODE))
       update_clip_raster(hw_state, dyn, gfx);
 
+   if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
+      update_clip_preraster_stages(hw_state, gfx);
+
+   if (gfx->dirty & ANV_CMD_DIRTY_PS)
+      update_clip_non_perspective_barycentrics(hw_state, gfx);
+
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES))
       update_multisample(hw_state, dyn);
 
@@ -2844,8 +2873,18 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_CLIP)) {
-      anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_CLIP),
-                           pipeline, partial.clip, clip) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_CLIP), clip) {
+         clip.ClipEnable               = true;
+         clip.StatisticsEnable         = true;
+         clip.EarlyCullEnable          = true;
+         clip.GuardbandClipTestEnable  = true;
+
+         clip.VertexSubPixelPrecisionSelect = _8Bit;
+         clip.ClipMode = CLIPMODE_NORMAL;
+
+         clip.MinimumPointWidth = 0.125;
+         clip.MaximumPointWidth = 255.875;
+
          SET(clip, clip, APIMode);
          SET(clip, clip, ViewportXYClipTestEnable);
          SET(clip, clip, TriangleStripListProvokingVertexSelect);
@@ -2855,6 +2894,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
          SET(clip, clip, TriangleStripOddProvokingVertexSelect);
 #endif
          SET(clip, clip, MaximumVPIndex);
+         SET(clip, clip, ForceZeroRTAIndexEnable);
+         SET(clip, clip, NonPerspectiveBarycentricEnable);
       }
    }
 
