@@ -131,7 +131,7 @@ genX(cmd_buffer_ensure_wa_14018283232)(struct anv_cmd_buffer *cmd_buffer,
    if (intel_needs_workaround(cmd_buffer->device->info, 14018283232) &&
        hw_state->wa_14018283232_toggle != toggle) {
       hw_state->wa_14018283232_toggle = toggle;
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_WA_14018283232);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_WA_14018283232);
       genX(batch_emit_wa_14018283232)(&cmd_buffer->batch);
    }
 }
@@ -164,7 +164,7 @@ genX(cmd_buffer_set_coarse_pixel_active)(struct anv_cmd_buffer *cmd_buffer,
    if (intel_needs_workaround(cmd_buffer->device->info, 18038825448) &&
        gfx->dyn_state.coarse_state != state) {
       gfx->dyn_state.coarse_state = state;
-      BITSET_SET(gfx->dyn_state.dirty, ANV_GFX_STATE_COARSE_STATE);
+      BITSET_SET(gfx->dyn_state.emit_dirty, ANV_GFX_STATE_PS_EXTRA);
       return true;
    }
    return false;

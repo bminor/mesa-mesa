@@ -333,33 +333,33 @@ genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state)
       genX(cmd_buffer_ensure_wa_14018283232)(state->cmd_buffer, false);
 #endif
 
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_URB);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VF_STATISTICS);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VF);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VF_TOPOLOGY);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VERTEX_INPUT);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VF_SGVS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_URB);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VF_STATISTICS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VF);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VF_TOPOLOGY);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VERTEX_INPUT);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VF_SGVS);
 #if GFX_VER >= 11
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VF_SGVS_2);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VF_SGVS_2);
 #endif
 #if GFX_VER >= 12
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_PRIMITIVE_REPLICATION);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_PRIMITIVE_REPLICATION);
 #endif
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SO_DECL_LIST);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_STREAMOUT);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SAMPLE_MASK);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_MULTISAMPLE);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SF);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SBE);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VS);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_HS);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_DS);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_TE);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_GS);
-      BITSET_SET(hw_state->dirty, ANV_GFX_STATE_PS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_SO_DECL_LIST);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_STREAMOUT);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_SAMPLE_MASK);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_MULTISAMPLE);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_SF);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_SBE);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_VS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_HS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_DS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_TE);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_GS);
+      BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_PS);
       if (state->cmd_buffer->device->vk.enabled_extensions.EXT_mesh_shader) {
-         BITSET_SET(hw_state->dirty, ANV_GFX_STATE_MESH_CONTROL);
-         BITSET_SET(hw_state->dirty, ANV_GFX_STATE_TASK_CONTROL);
+         BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_MESH_CONTROL);
+         BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_TASK_CONTROL);
       }
 
       state->cmd_buffer->state.gfx.dirty |=

@@ -57,9 +57,8 @@ anv_cmd_state_init(struct anv_cmd_buffer *cmd_buffer)
    state->compute.z_pass_async_compute_thread_limit = UINT8_MAX;
    state->compute.np_z_async_throttle_settings = UINT8_MAX;
 
-   memcpy(state->gfx.dyn_state.dirty,
-          cmd_buffer->device->gfx_dirty_state,
-          sizeof(state->gfx.dyn_state.dirty));
+   BITSET_COPY(state->gfx.dyn_state.pack_dirty,
+               cmd_buffer->device->gfx_dirty_state);
 }
 
 static void
@@ -516,25 +515,25 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
       assert(old_pipeline == NULL ||                                    \
              old_pipeline->name.len == new_pipeline->name.len);         \
       /* Don't bother memcmp if the state is already dirty */           \
-      if (!BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_##bit) &&         \
+      if (!BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##bit) &&    \
           (old_pipeline == NULL ||                                      \
            memcmp(&old_pipeline->batch_data[old_pipeline->name.offset], \
                   &new_pipeline->batch_data[new_pipeline->name.offset], \
                   4 * new_pipeline->name.len) != 0))                    \
-         BITSET_SET(hw_state->dirty, ANV_GFX_STATE_##bit);              \
+         BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);         \
    } while (0)
 #define diff_var_state(bit, name)                                       \
    do {                                                                 \
       /* Don't bother memcmp if the state is already dirty */           \
       /* Also if the new state is empty, avoid marking dirty */         \
-      if (!BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_##bit) &&         \
+      if (!BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##bit) &&    \
           new_pipeline->name.len != 0 &&                                \
           (old_pipeline == NULL ||                                      \
            old_pipeline->name.len != new_pipeline->name.len ||          \
            memcmp(&old_pipeline->batch_data[old_pipeline->name.offset], \
                   &new_pipeline->batch_data[new_pipeline->name.offset], \
                   4 * new_pipeline->name.len) != 0))                    \
-         BITSET_SET(hw_state->dirty, ANV_GFX_STATE_##bit);              \
+         BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);         \
    } while (0)
 #define assert_identical(bit, name)                                     \
    do {                                                                 \

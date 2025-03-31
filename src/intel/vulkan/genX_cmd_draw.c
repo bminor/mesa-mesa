@@ -874,7 +874,7 @@ cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
       genX(cmd_buffer_flush_gfx_runtime_state)(cmd_buffer);
 
    /* Flush the HW state into the commmand buffer */
-   if (!BITSET_IS_EMPTY(cmd_buffer->state.gfx.dyn_state.dirty))
+   if (!BITSET_IS_EMPTY(cmd_buffer->state.gfx.dyn_state.emit_dirty))
       genX(cmd_buffer_flush_gfx_hw_state)(cmd_buffer);
 
    /* If the pipeline changed, we may need to re-allocate push constant space

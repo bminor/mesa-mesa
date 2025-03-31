@@ -3688,9 +3688,9 @@ genX(CmdExecuteCommands)(
    memset(&container->state.gfx.urb_cfg, 0, sizeof(struct intel_urb_config));
 
    /* Reemit all GFX instructions in container */
-   memcpy(container->state.gfx.dyn_state.dirty,
-          device->gfx_dirty_state,
-          sizeof(container->state.gfx.dyn_state.dirty));
+   BITSET_OR(container->state.gfx.dyn_state.emit_dirty,
+             container->state.gfx.dyn_state.emit_dirty,
+             device->gfx_dirty_state);
    if (container->device->vk.enabled_extensions.KHR_fragment_shading_rate) {
       /* Also recompute the CPS_STATE offset */
       struct vk_dynamic_graphics_state *dyn =

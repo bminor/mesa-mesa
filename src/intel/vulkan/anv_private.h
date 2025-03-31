@@ -1534,11 +1534,9 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_TASK_SHADER,
    ANV_GFX_STATE_TASK_REDISTRIB,
    /* Dynamic states */
-   ANV_GFX_STATE_BLEND_STATE, /* Just the dynamic state structure */
-   ANV_GFX_STATE_BLEND_STATE_PTR, /* The pointer to the dynamic state */
+   ANV_GFX_STATE_BLEND_STATE,
    ANV_GFX_STATE_CLIP,
    ANV_GFX_STATE_CC_STATE,
-   ANV_GFX_STATE_CC_STATE_PTR,
    ANV_GFX_STATE_COARSE_PIXEL,
    ANV_GFX_STATE_CPS,
    ANV_GFX_STATE_DEPTH_BOUNDS,
@@ -1558,7 +1556,6 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_VF_TOPOLOGY,
    ANV_GFX_STATE_VFG,
    ANV_GFX_STATE_VIEWPORT_CC,
-   ANV_GFX_STATE_VIEWPORT_CC_PTR,
    ANV_GFX_STATE_VIEWPORT_SF_CLIP,
    ANV_GFX_STATE_WM,
    ANV_GFX_STATE_WM_DEPTH_STENCIL,
@@ -1569,7 +1566,6 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_TBIMR_TILE_PASS_INFO,
    ANV_GFX_STATE_FS_MSAA_FLAGS,
    ANV_GFX_STATE_TCS_INPUT_VERTICES,
-   ANV_GFX_STATE_COARSE_STATE,
    ANV_GFX_STATE_MESH_PROVOKING_VERTEX,
 
    ANV_GFX_STATE_MAX,
@@ -1995,7 +1991,64 @@ struct anv_gfx_dynamic_state {
     */
    enum anv_coarse_pixel_state coarse_state;
 
-   BITSET_DECLARE(dirty, ANV_GFX_STATE_MAX);
+   /** Dirty bits of what needs to be repacked */
+   BITSET_DECLARE(pack_dirty, ANV_GFX_STATE_MAX);
+
+   struct {
+      uint32_t vf[2];
+      uint32_t vft[2];
+      uint32_t vfs[1];
+      uint32_t vfg[4];
+      uint32_t vf_sgvs[2];
+      uint32_t vf_sgvs_2[3];
+      uint32_t vf_sgvs_instancing[6];
+      uint32_t vf_sgvs_instancing_len;
+      uint32_t vf_component_packing[5];
+      uint32_t ib[5];
+      uint32_t so[5];
+      uint32_t so_decl_list[3 + 2 * 128];
+      uint32_t so_decl_list_len;
+      uint32_t clip[4];
+      uint32_t clip_mesh[2];
+      uint32_t sf_clip[2];
+      uint32_t cc_viewport[2];
+      uint32_t scissor[2];
+      uint32_t mesh_control[3];
+      uint32_t task_control[3];
+      uint32_t mesh_shader[8];
+      uint32_t task_shader[7];
+      uint32_t mesh_distrib[2];
+      uint32_t task_redistrib[2];
+      uint32_t vs[9];
+      uint32_t hs[9];
+      uint32_t te[5];
+      uint32_t ds[11];
+      uint32_t gs[10];
+      uint32_t sf[4];
+      uint32_t ms[2];
+      uint32_t sm[2];
+      uint32_t sp[9];
+      uint32_t raster[5];
+      uint32_t cps[9];
+      uint32_t ls[3];
+      uint32_t db[4];
+      uint32_t wm_ds[4];
+      uint32_t wm[2];
+      uint32_t pr[6];
+      uint32_t sbe[6];
+      uint32_t sbe_swiz[11];
+      uint32_t sbe_mesh[2];
+      uint32_t ps[12];
+      uint32_t ps_extra[2];
+      uint32_t ps_extra_dep[2];
+      uint32_t ps_blend[2];
+      uint32_t blend_state[2];
+      uint32_t cc_state[2];
+      uint32_t tbimr[4];
+   } packed;
+
+   /** Dirty bits of what needs to be reemitted */
+   BITSET_DECLARE(emit_dirty, ANV_GFX_STATE_MAX);
 };
 
 enum anv_internal_kernel_name {
@@ -2763,28 +2816,6 @@ _anv_combine_address(struct anv_batch *batch, void *location,
                          (pipeline)->state.offset + i]) == 0);          \
               ((uint32_t *)_dst)[i] = _partial[i] |                     \
                  (pipeline)->batch_data[(pipeline)->state.offset + i];  \
-           }                                                            \
-           VG(VALGRIND_CHECK_MEM_IS_DEFINED(_dst, __anv_cmd_length(cmd) * 4)); \
-           _dst = NULL;                                                 \
-         }))
-
-#define anv_batch_emit_merge_protected(batch, cmd, pipeline, state,     \
-                                       name, protected)                 \
-   for (struct cmd name = { 0 },                                        \
-        *_dst = anv_batch_emit_dwords(batch, __anv_cmd_length(cmd));    \
-        __builtin_expect(_dst != NULL, 1);                              \
-        ({ struct anv_gfx_state_ptr *_cmd_state = protected ?           \
-              &(pipeline)->state##_protected :                          \
-              &(pipeline)->state;                                       \
-           uint32_t _partial[__anv_cmd_length(cmd)];                    \
-           assert(_cmd_state->len == __anv_cmd_length(cmd));            \
-           __anv_cmd_pack(cmd)(batch, _partial, &name);                 \
-           for (uint32_t i = 0; i < __anv_cmd_length(cmd); i++) {       \
-              assert((_partial[i] &                                     \
-                      (pipeline)->batch_data[                           \
-                         (pipeline)->state.offset + i]) == 0);          \
-              ((uint32_t *)_dst)[i] = _partial[i] |                     \
-                 (pipeline)->batch_data[_cmd_state->offset + i];        \
            }                                                            \
            VG(VALGRIND_CHECK_MEM_IS_DEFINED(_dst, __anv_cmd_length(cmd) * 4)); \
            _dst = NULL;                                                 \
