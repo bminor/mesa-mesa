@@ -112,11 +112,11 @@ anv_shader_stage_to_nir(struct anv_device *device,
    return nir;
 }
 
-VkResult
+static VkResult
 anv_pipeline_init(struct anv_pipeline *pipeline,
                   struct anv_device *device,
                   enum anv_pipeline_type type,
-                  VkPipelineCreateFlags flags,
+                  VkPipelineCreateFlags2KHR flags,
                   const VkAllocationCallbacks *pAllocator)
 {
    VkResult result;
@@ -149,7 +149,7 @@ anv_pipeline_init(struct anv_pipeline *pipeline,
    return VK_SUCCESS;
 }
 
-void
+static void
 anv_pipeline_finish(struct anv_pipeline *pipeline,
                     struct anv_device *device,
                     const VkAllocationCallbacks *pAllocator)
@@ -910,14 +910,14 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
    char *nir = NULL;
    if (stage->nir &&
        (pipeline->flags &
-        VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
+         VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
       nir = nir_shader_as_str(stage->nir, pipeline->mem_ctx);
    }
 
    char *disasm = NULL;
    if (stage->code &&
        (pipeline->flags &
-        VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
+         VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
       char *stream_data = NULL;
       size_t stream_size = 0;
       FILE *stream = open_memstream(&stream_data, &stream_size);
@@ -1251,7 +1251,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
    }
 
    const bool skip_cache_lookup =
-      (pipeline->base.flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR);
+      (pipeline->base.flags & VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR);
    if (!skip_cache_lookup) {
       bool found_all_shaders =
          anv_graphics_pipeline_load_cached_shaders(pipeline, cache, stages,
@@ -1260,7 +1260,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
          goto done;
    }
 
-   if (info->flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)
+   if (pipeline->base.flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
       return VK_PIPELINE_COMPILE_REQUIRED;
 
    void *pipeline_ctx = ralloc_context(NULL);
@@ -1606,6 +1606,18 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
    return VK_SUCCESS;
 }
 
+static VkPipelineCreateFlags2KHR
+get_pipeline_flags(VkPipelineCreateFlags flags, const void *pNext)
+{
+   const VkPipelineCreateFlags2CreateInfoKHR *flags2 =
+      vk_find_struct_const(pNext, PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR);
+
+   if (flags2)
+      return flags2->flags;
+
+   return (VkPipelineCreateFlags2KHR)flags;
+}
+
 static VkResult
 anv_compute_pipeline_create(struct anv_device *device,
                             struct vk_pipeline_cache *cache,
@@ -1624,7 +1636,8 @@ anv_compute_pipeline_create(struct anv_device *device,
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    result = anv_pipeline_init(&pipeline->base, device,
-                              ANV_PIPELINE_COMPUTE, pCreateInfo->flags,
+                              ANV_PIPELINE_COMPUTE,
+                              get_pipeline_flags(pCreateInfo->flags, pCreateInfo->pNext),
                               pAllocator);
    if (result != VK_SUCCESS) {
       vk_free2(&device->vk.alloc, pAllocator, pipeline);
@@ -1663,6 +1676,9 @@ VkResult anv_CreateComputePipelines(
 
    unsigned i;
    for (i = 0; i < count; i++) {
+      const VkPipelineCreateFlags2KHR flags =
+         get_pipeline_flags(pCreateInfos[i].flags, pCreateInfos[i].pNext);
+
       VkResult res = anv_compute_pipeline_create(device, pipeline_cache,
                                                  &pCreateInfos[i],
                                                  pAllocator, &pPipelines[i]);
@@ -1679,7 +1695,7 @@ VkResult anv_CreateComputePipelines(
 
       pPipelines[i] = VK_NULL_HANDLE;
 
-      if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)
+      if (flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR)
          break;
    }
 
@@ -1855,6 +1871,9 @@ VkResult anv_CreateGraphicsPipelines(
 
    unsigned i;
    for (i = 0; i < count; i++) {
+      const VkPipelineCreateFlags2KHR flags =
+         get_pipeline_flags(pCreateInfos[i].flags, pCreateInfos[i].pNext);
+
       VkResult res = anv_graphics_pipeline_create(device,
                                                   pipeline_cache,
                                                   &pCreateInfos[i],
@@ -1872,7 +1891,7 @@ VkResult anv_CreateGraphicsPipelines(
 
       pPipelines[i] = VK_NULL_HANDLE;
 
-      if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)
+      if (flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR)
          break;
    }
 

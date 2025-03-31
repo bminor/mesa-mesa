@@ -2998,18 +2998,6 @@ anv_pipeline_get_last_vue_prog_data(const struct anv_graphics_pipeline *pipeline
       return &get_vs_prog_data(pipeline)->base;
 }
 
-VkResult
-anv_pipeline_init(struct anv_pipeline *pipeline,
-                  struct anv_device *device,
-                  enum anv_pipeline_type type,
-                  VkPipelineCreateFlags flags,
-                  const VkAllocationCallbacks *pAllocator);
-
-void
-anv_pipeline_finish(struct anv_pipeline *pipeline,
-                    struct anv_device *device,
-                    const VkAllocationCallbacks *pAllocator);
-
 struct anv_format_plane {
    enum isl_format isl_format:16;
    struct isl_swizzle swizzle;
