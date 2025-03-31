@@ -29,8 +29,8 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 
 #define radeon_begin(cs)                                                                                               \
    struct radeon_cmdbuf *__cs = (cs);                                                                                  \
-   uint64_t __cs_num = __cs->cdw;                                                                                      \
-   UNUSED uint64_t __cs_reserved_dw = __cs->reserved_dw;                                                               \
+   uint32_t __cs_num = __cs->cdw;                                                                                      \
+   UNUSED uint32_t __cs_reserved_dw = __cs->reserved_dw;                                                               \
    uint32_t *__cs_buf = __cs->buf
 
 #define radeon_end()                                                                                                   \

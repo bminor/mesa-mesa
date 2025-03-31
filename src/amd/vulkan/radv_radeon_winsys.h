@@ -85,12 +85,9 @@ enum radeon_value_id {
 };
 
 struct radeon_cmdbuf {
-   /* These are uint64_t to tell the compiler that buf can't alias them.
-    * If they're uint32_t the generated code needs to redundantly
-    * store and reload them between buf writes. */
-   uint64_t cdw;         /* Number of used dwords. */
-   uint64_t max_dw;      /* Maximum number of dwords. */
-   uint64_t reserved_dw; /* Number of dwords reserved through radeon_check_space() */
+   uint32_t cdw;         /* Number of used dwords. */
+   uint32_t max_dw;      /* Maximum number of dwords. */
+   uint32_t reserved_dw; /* Number of dwords reserved through radeon_check_space() */
    uint32_t *buf;        /* The base pointer of the chunk. */
 };
 
