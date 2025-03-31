@@ -781,7 +781,12 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, pco_nir_lower_variables, true, true);
 
    NIR_PASS(_, nir, pco_nir_lower_images, data);
-   NIR_PASS(_, nir, nir_lower_tex, &(nir_lower_tex_options){});
+   NIR_PASS(_,
+            nir,
+            nir_lower_tex,
+            &(nir_lower_tex_options){
+               .lower_txd_cube_map = true,
+            });
    NIR_PASS(_, nir, pco_nir_lower_tex);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {

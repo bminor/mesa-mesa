@@ -513,6 +513,9 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    params.tex_state = tex_state;
    params.smp_state = smp_state;
 
+   bool is_cube_array = tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
+                        tex->is_array;
+
    nir_def *float_coords;
    nir_def *int_coords;
    nir_def *float_array_index;
@@ -603,6 +606,8 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 
          nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
          array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+         if (is_cube_array)
+            array_index = nir_imul_imm(b, array_index, 6);
 
          nir_def *tex_meta = nir_load_tex_meta_pco(b,
                                                    PCO_IMAGE_META_COUNT,
@@ -760,6 +765,8 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    unsigned desc_set = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
    nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
+
+   bool is_cube_array = image_dim == GLSL_SAMPLER_DIM_CUBE && is_array;
 
    nir_def *lod;
    switch (intr->intrinsic) {
@@ -1062,6 +1069,11 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       coords = nir_vec2(b,
                         nir_umod_imm(b, coords, 8192),
                         nir_udiv_imm(b, coords, 8192));
+   }
+   /* Special case; lower image cube to arrayed 2d textures. */
+   else if (image_dim == GLSL_SAMPLER_DIM_CUBE) {
+      image_dim = GLSL_SAMPLER_DIM_2D;
+      is_array = true;
    } else if (ia) {
       nir_variable *pos = nir_get_variable_with_location(b->shader,
                                                          nir_var_shader_in,
@@ -1144,6 +1156,8 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
          nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
          array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+         if (is_cube_array)
+            array_index = nir_imul_imm(b, array_index, 6);
 
          nir_def *tex_meta = nir_load_tex_meta_pco(b,
                                                    PCO_IMAGE_META_COUNT,
