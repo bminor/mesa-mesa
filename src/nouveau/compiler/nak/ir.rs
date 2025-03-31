@@ -7493,6 +7493,66 @@ pub struct ShaderInfo {
 
 pub trait ShaderModel {
     fn sm(&self) -> u8;
+
+    #[allow(dead_code)]
+    fn is_fermi(&self) -> bool {
+        self.sm() >= 20 && self.sm() < 30
+    }
+
+    #[allow(dead_code)]
+    fn is_kepler_a(&self) -> bool {
+        self.sm() >= 30 && self.sm() < 32
+    }
+
+    #[allow(dead_code)]
+    fn is_kepler_b(&self) -> bool {
+        // TK1 is SM 3.2 and desktop Kepler B is SM 3.3+
+        self.sm() >= 32 && self.sm() < 40
+    }
+
+    // The following helpers are pulled from GetSpaVersion in the open-source
+    // NVIDIA kernel driver sources
+
+    #[allow(dead_code)]
+    fn is_maxwell(&self) -> bool {
+        self.sm() >= 50 && self.sm() < 60
+    }
+
+    #[allow(dead_code)]
+    fn is_pascal(&self) -> bool {
+        self.sm() >= 60 && self.sm() < 70
+    }
+
+    #[allow(dead_code)]
+    fn is_volta(&self) -> bool {
+        self.sm() >= 70 && self.sm() < 73
+    }
+
+    #[allow(dead_code)]
+    fn is_turing(&self) -> bool {
+        self.sm() >= 73 && self.sm() < 80
+    }
+
+    #[allow(dead_code)]
+    fn is_ampere(&self) -> bool {
+        self.sm() >= 80 && self.sm() < 89
+    }
+
+    #[allow(dead_code)]
+    fn is_ada(&self) -> bool {
+        self.sm() == 89
+    }
+
+    #[allow(dead_code)]
+    fn is_hopper(&self) -> bool {
+        self.sm() >= 90 && self.sm() < 100
+    }
+
+    #[allow(dead_code)]
+    fn is_blackwell(&self) -> bool {
+        self.sm() >= 100 && self.sm() < 110
+    }
+
     fn num_regs(&self, file: RegFile) -> u32;
     fn hw_reserved_gprs(&self) -> u32;
     fn crs_size(&self, max_crs_depth: u32) -> u32;
