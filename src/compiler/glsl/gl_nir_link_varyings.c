@@ -4032,10 +4032,7 @@ link_shader_opts(struct varying_matches *vm,
       gl_nir_opts(producer);
       gl_nir_opts(consumer);
 
-      /* Optimizations can cause varyings to become unused.
-       * nir_compact_varyings() depends on all dead varyings being removed so
-       * we need to call nir_remove_dead_variables() again here.
-       */
+      /* Optimizations can cause varyings to become unused. */
       NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out,
                  NULL);
       NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in,
