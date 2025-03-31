@@ -230,6 +230,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_maintenance2                      = true,
       .KHR_maintenance3                      = true,
       .KHR_maintenance4                      = true,
+      .KHR_maintenance5                      = true,
       .KHR_multiview                         = true,
       .KHR_performance_query =
          !anv_use_relocations(device) && device->perf &&
@@ -667,6 +668,9 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_shader_relaxed_extended_instruction */
       .shaderRelaxedExtendedInstruction = true,
+
+      /* VK_KHR_maintenance5 */
+      .maintenance5 = true,
    };
 
    /* We can't do image stores in vec4 shaders */
@@ -1259,6 +1263,15 @@ get_properties(const struct anv_physical_device *pdevice,
    }
 #endif /* DETECT_OS_ANDROID */
 
+   /* VK_KHR_maintenance5 */
+   {
+      props->earlyFragmentMultisampleCoverageAfterSampleCounting = false;
+      props->earlyFragmentSampleMaskTestBeforeSampleCounting = false;
+      props->depthStencilSwizzleOneSupport = true;
+      props->polygonModePointSize = true;
+      props->nonStrictSinglePixelWideLinesUseParallelogram = false;
+      props->nonStrictWideLinesUseParallelogram = false;
+   }
 }
 
 static uint64_t
