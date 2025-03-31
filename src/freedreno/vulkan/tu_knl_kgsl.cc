@@ -463,18 +463,28 @@ kgsl_syncobj_reset(struct kgsl_syncobj *s)
    if (s->state == KGSL_SYNCOBJ_STATE_FD && s->fd >= 0) {
       ASSERTED int ret = close(s->fd);
       assert(ret == 0);
-      s->fd = -1;
-   } else if (s->state == KGSL_SYNCOBJ_STATE_TS) {
-      s->timestamp = UINT32_MAX;
    }
 
    s->state = KGSL_SYNCOBJ_STATE_UNSIGNALED;
+   s->timestamp = UINT32_MAX;
+   s->fd = -1;
 }
 
 static void
 kgsl_syncobj_destroy(struct kgsl_syncobj *s)
 {
    kgsl_syncobj_reset(s);
+}
+
+static struct kgsl_syncobj
+kgsl_syncobj_dup(struct kgsl_syncobj *s)
+{
+   struct kgsl_syncobj dups = *s;
+   if (s->state == KGSL_SYNCOBJ_STATE_FD && s->fd >= 0) {
+      dups.fd = dup(s->fd);
+      assert(dups.fd >= 0);
+   }
+   return dups;
 }
 
 static int
@@ -1122,14 +1132,30 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       assert(wait_sync.state !=
              KGSL_SYNCOBJ_STATE_UNSIGNALED); // Would wait forever
 
-      for (uint32_t i = 0; i < signal_count; i++) {
+      if (signal_count == 1) {
+         /* Move instead of duplicating the syncobj, as we don't need to
+          * keep the original one around.
+          */
          struct kgsl_syncobj *signal_sync =
-            &container_of(signals[i].sync, struct vk_kgsl_syncobj, vk)
+            &container_of(signals[0].sync, struct vk_kgsl_syncobj, vk)
                 ->syncobj;
 
          kgsl_syncobj_reset(signal_sync);
          *signal_sync = wait_sync;
+      } else {
+         for (uint32_t i = 0; i < signal_count; i++) {
+            struct kgsl_syncobj *signal_sync =
+               &container_of(signals[i].sync, struct vk_kgsl_syncobj, vk)
+                   ->syncobj;
+
+            kgsl_syncobj_reset(signal_sync);
+            *signal_sync = kgsl_syncobj_dup(&wait_sync);
+         }
+
+         kgsl_syncobj_destroy(&wait_sync);
       }
+
+      kgsl_syncobj_destroy(&last_submit_sync);
 
       return VK_SUCCESS;
    }
