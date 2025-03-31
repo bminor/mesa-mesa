@@ -170,12 +170,16 @@ def extract_deps_vkAllocateDescriptorSets(param, access, lenExpr, api, cgen):
               (access, lenExpr, "unboxed_to_boxed_non_dispatchable_VkDescriptorPool(pAllocateInfo->descriptorPool)"))
 
 def extract_deps_vkUpdateDescriptorSets(param, access, lenExpr, api, cgen):
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)device)")
     cgen.beginFor("uint32_t i = 0", "i < descriptorWriteCount", "++i")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDescriptorSet( pDescriptorWrites[i].dstSet))")
     cgen.beginFor("uint32_t j = 0", "j < pDescriptorWrites[i].descriptorCount", "++j")
     cgen.beginIf("(pDescriptorWrites[i].pImageInfo)")
     cgen.beginIf("pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkSampler( pDescriptorWrites[i].pImageInfo[j].sampler))")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImageView( pDescriptorWrites[i].pImageInfo[j].imageView))")
+    cgen.endIf()
+    cgen.beginIf("pDescriptorWrites[i].pImageInfo[j].imageView")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImageView( pDescriptorWrites[i].pImageInfo[j].imageView))")
     cgen.endIf()
     cgen.beginIf("pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER")
@@ -191,7 +195,7 @@ def extract_deps_vkUpdateDescriptorSets(param, access, lenExpr, api, cgen):
     cgen.endFor()
 
 def extract_deps_vkCreateImageView(param, access, lenExpr, api, cgen):
-    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s, VkReconstruction::CREATED, VkReconstruction::BOUND_MEMORY)" % \
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s)" % \
               (access, lenExpr, "unboxed_to_boxed_non_dispatchable_VkImage(pCreateInfo->image)"))
 
 def extract_deps_vkCreateGraphicsPipelines(param, access, lenExpr, api, cgen):
@@ -231,8 +235,6 @@ specialCaseDependencyExtractors = {
     "vkCreateImageView" : extract_deps_vkCreateImageView,
     "vkCreateGraphicsPipelines" : extract_deps_vkCreateGraphicsPipelines,
     "vkCreateFramebuffer" : extract_deps_vkCreateFramebuffer,
-    "vkBindImageMemory": extract_deps_vkBindImageMemory,
-    "vkBindBufferMemory": extract_deps_vkBindBufferMemory,
     "vkUpdateDescriptorSets" : extract_deps_vkUpdateDescriptorSets,
 }
 
@@ -247,50 +249,67 @@ class VkObjectState:
 
 # TODO: add vkBindImageMemory2 and vkBindBufferMemory2 into this list
 apiChangeState = {
-    "vkBindImageMemory": VkObjectState("image", "VkReconstruction::BOUND_MEMORY"),
-    "vkBindBufferMemory": VkObjectState("buffer", "VkReconstruction::BOUND_MEMORY"),
 }
 
-def api_special_implementation_vkBindImageMemory2(api, cgen):
-    childType = "VkImage"
-    parentType = "VkDeviceMemory"
-    childObj = "boxed_%s" % childType
-    parentObj = "boxed_%s" % parentType
+def api_special_implementation_common(api, cgen, tag_vk):
+    cgen.line("// Note: special implementation");
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.beginFor("uint32_t i = 0", "i < bindInfoCount", "++i")
-    cgen.stmt("%s boxed_%s = unboxed_to_boxed_non_dispatchable_%s(pBindInfos[i].image)"
-              % (childType, childType, childType))
-    cgen.stmt("%s boxed_%s = unboxed_to_boxed_non_dispatchable_%s(pBindInfos[i].memory)"
-              % (parentType, parentType, parentType))
-    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)&%s, %s, (uint64_t)(uintptr_t)%s, VkReconstruction::BOUND_MEMORY)" % \
-              (childObj, "1", parentObj))
-    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)&%s, %s, (uint64_t)(uintptr_t)%s, VkReconstruction::BOUND_MEMORY)" % \
-              (childObj, "1", childObj))
-    cgen.endFor()
-
+    cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
+    cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(%s)" % tag_vk)
+    cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
+    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallInfo->handle, VkReconstruction::CREATED)")
     cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
+    cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
     cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
-    cgen.line("// Note: the implementation does not work with bindInfoCount > 1");
+
+def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
+    cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(Tag_VkMapMemory)")
+    cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDeviceMemory(memory))")
+    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallInfo->handle, VkReconstruction::CREATED)")
+    cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
+    cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
+    cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+
+def api_special_implementation_vkBindBufferMemory(api, cgen):
+    api_special_implementation_common(api, cgen, "Tag_VkBindMemory")
+    cgen.stmt("mReconstruction.addHandleDependency( (const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDeviceMemory(memory))")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)(unboxed_to_boxed_non_dispatchable_VkBuffer(buffer)))")
+
+def api_special_implementation_vkBindImageMemory(api, cgen):
+    api_special_implementation_common(api, cgen, "Tag_VkBindMemory")
+    cgen.stmt("mReconstruction.addHandleDependency( (const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDeviceMemory(memory))")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(image))")
+
+def api_special_implementation_vkBindImageMemory2(api, cgen):
+    api_special_implementation_common(api, cgen, "Tag_VkBindMemory")
     cgen.beginFor("uint32_t i = 0", "i < bindInfoCount", "++i")
-    cgen.stmt("%s boxed_%s = unboxed_to_boxed_non_dispatchable_%s(pBindInfos[i].image)"
-              % (childType, childType, childType))
-    cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*)&{childObj}, {1}, apiCallHandle, VkReconstruction::BOUND_MEMORY)")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)&handle, 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDeviceMemory(pBindInfos[i].memory))")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)&handle, 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(pBindInfos[i].image))")
     cgen.endFor()
 
 apiSpecialImplementation = {
+    "vkBindBufferMemory": api_special_implementation_vkBindBufferMemory,
+    "vkBindImageMemory": api_special_implementation_vkBindImageMemory,
     "vkBindImageMemory2": api_special_implementation_vkBindImageMemory2,
     "vkBindImageMemory2KHR": api_special_implementation_vkBindImageMemory2,
+    "vkMapMemoryIntoAddressSpaceGOOGLE": api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE,
+    "vkGetBlobGOOGLE": api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE,
 }
 
 apiModifies = {
-    "vkMapMemoryIntoAddressSpaceGOOGLE" : ["memory"],
-    "vkGetBlobGOOGLE" : ["memory"],
     "vkBeginCommandBuffer" : ["commandBuffer"],
     "vkEndCommandBuffer" : ["commandBuffer"],
 }
 
 apiActions = {
     "vkUpdateDescriptorSets" : ["pDescriptorWrites"],
+}
+
+apiActionsTag = {
+    "vkUpdateDescriptorSets" : "Tag_VkUpdateDescriptorSets",
 }
 
 apiClearModifiers = {
@@ -414,7 +433,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.beginIf("m_state->batchedDescriptorSetUpdateEnabled()")
             cgen.stmt("return")
             cgen.endIf();
-            cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle()")
+            cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(%s)" % apiActionsTag[api.name])
             cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)");
             cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
             cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
