@@ -7613,6 +7613,7 @@ pub trait ShaderModel {
         &self,
         a: &Op,
         a_dst_idx: usize,
+        a_has_pred: bool,
         b: &Op,
         b_dst_idx: usize,
     ) -> u32;

@@ -380,6 +380,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
                         + sm.waw_latency(
                             &instr.op,
                             i,
+                            !instr.pred.pred_ref.is_none(),
                             &b.instrs[*w_ip].op,
                             *w_dst_idx,
                         );

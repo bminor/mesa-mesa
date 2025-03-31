@@ -71,8 +71,13 @@ fn generate_dep_graph(
 
         uses.for_each_instr_dst_mut(instr, |i, u| {
             if let Some((w_ip, w_dst_idx)) = u.write {
-                let latency =
-                    sm.waw_latency(&instr.op, i, &instrs[w_ip].op, w_dst_idx);
+                let latency = sm.waw_latency(
+                    &instr.op,
+                    i,
+                    !instr.pred.pred_ref.is_none(),
+                    &instrs[w_ip].op,
+                    w_dst_idx,
+                );
                 g.add_edge(ip, w_ip, EdgeLabel { latency });
             }
 

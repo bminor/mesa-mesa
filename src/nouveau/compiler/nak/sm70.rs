@@ -188,6 +188,7 @@ impl ShaderModel for ShaderModel70 {
         &self,
         a: &Op,
         a_dst_idx: usize,
+        _a_has_pred: bool,
         _b: &Op,
         _b_dst_idx: usize,
     ) -> u32 {
