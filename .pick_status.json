@@ -1524,7 +1524,7 @@
         "description": "brw/algebraic: Optimize derivative of convergent value",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d5d7ae22ae4d150fa96e9cb7c5f423cff83f88b3",
         "notes": null
