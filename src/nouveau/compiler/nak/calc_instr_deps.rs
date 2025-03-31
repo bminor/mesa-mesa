@@ -3,7 +3,7 @@
 
 use crate::api::{GetDebugFlags, DEBUG};
 use crate::ir::*;
-use crate::sched_common::RegTracker;
+use crate::reg_tracker::RegTracker;
 
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
