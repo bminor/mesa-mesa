@@ -40,7 +40,7 @@ impl ShaderModel70 {
                 | Op::HMul2(_)
                 | Op::HSet2(_)
                 | Op::HSetP2(_)
-                | Op::HMnMx2(_) => if self.sm == 70 {
+                | Op::HMnMx2(_) => if self.is_volta() {
                     // Volta is even slower
                     (13, 15)
                 } else {
@@ -197,7 +197,7 @@ impl ShaderModel for ShaderModel70 {
     }
 
     fn paw_latency(&self, write: &Op, _dst_idx: usize) -> u32 {
-        if self.sm == 70 {
+        if self.is_volta() {
             match write {
                 Op::DSetP(_) | Op::HSetP2(_) => 15,
                 _ => 13,
