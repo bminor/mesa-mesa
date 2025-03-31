@@ -563,8 +563,6 @@ elk_fs_visitor::emit_urb_writes(const elk_fs_reg &gs_vertex_count)
       elk_vue_prog_data(this->prog_data);
    const struct elk_vs_prog_key *vs_key =
       (const struct elk_vs_prog_key *) this->key;
-   const GLbitfield64 psiz_mask =
-      VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT | VARYING_BIT_PSIZ | VARYING_BIT_PRIMITIVE_SHADING_RATE;
    const struct intel_vue_map *vue_map = &vue_prog_data->vue_map;
    bool flush;
    elk_fs_reg sources[8];
@@ -634,12 +632,12 @@ elk_fs_visitor::emit_urb_writes(const elk_fs_reg &gs_vertex_count)
       switch (varying) {
       case VARYING_SLOT_PSIZ: {
          /* The point size varying slot is the vue header and is always in the
-          * vue map. But often none of the special varyings that live there
-          * are written and for the vertex shaders we can skip writing to the
-          * VUE header because it is setup by the VF fixed function. All other
-          * pre-rasterization stages should setup the VUE header properly as
-          * describe in the SKL PRMs, Volume 7: 3D-Media-GPGPU, Vertex URB
-          * Entry (VUE) Formats:
+          * vue map. If anything in the header is going to be read back by HW,
+          * we need to initialize it, in particular the viewport & layer
+          * values.
+          *
+          * SKL PRMs, Volume 7: 3D-Media-GPGPU, Vertex URB Entry (VUE)
+          * Formats:
           *
           *    "VUEs are written in two ways:
           *
@@ -668,12 +666,6 @@ elk_fs_visitor::emit_urb_writes(const elk_fs_reg &gs_vertex_count)
           *       - If Rendering is disabled, VertexHeaders are not required
           *         anywhere."
           */
-         if ((vue_map->slots_valid & psiz_mask) == 0 &&
-             stage == MESA_SHADER_VERTEX) {
-            assert(length == 0);
-            urb_offset++;
-            break;
-         }
 
          elk_fs_reg zero(VGRF, alloc.allocate(dispatch_width / 8),
                      ELK_REGISTER_TYPE_UD);
