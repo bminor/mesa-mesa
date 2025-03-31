@@ -217,7 +217,6 @@ run_vs(brw_shader &s)
    brw_assign_vs_urb_setup(s);
 
    brw_lower_3src_null_dest(s);
-   brw_workaround_memory_fence_before_eot(s);
    brw_workaround_emit_dummy_mov_instruction(s);
 
    brw_allocate_registers(s, true /* allow_spilling */);
