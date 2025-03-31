@@ -226,64 +226,69 @@ are_src_banks_compatible(const VOPDInfo& a, const VOPDInfo& b, bool swap)
    return (a_src_banks & b.src_banks) == 0;
 }
 
-bool
-is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b, bool* swap)
+enum vopd_compatibility {
+   vopd_incompatible = 0x0,
+   vopd_first_is_opx = 0x1,
+   vopd_second_is_opx = 0x2,
+   vopd_need_swap = 0x4,
+};
+
+unsigned
+is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b)
 {
    if ((!a.can_be_opx && !b.can_be_opx) || (a.is_dst_odd == b.is_dst_odd))
-      return false;
+      return vopd_incompatible;
 
    /* Both can use a literal, but it must be the same literal. */
    if (a.has_literal && b.has_literal && a.literal != b.literal)
-      return false;
+      return vopd_incompatible;
 
-   *swap = false;
+   unsigned compat = vopd_incompatible;
 
    /* The rest is checking src VGPR bank compatibility. */
-   if (are_src_banks_compatible(a, b, false))
-      return true;
+   if (are_src_banks_compatible(a, b, false)) {
+      if (a.can_be_opx)
+         compat |= vopd_first_is_opx;
+      if (b.can_be_opx)
+         compat |= vopd_second_is_opx;
+      return compat;
+   }
 
    /* The rest of this function checks if we can resolve the VGPR bank incompatibility by swapping
     * the operands of one of the instructions.
     */
    if (!a.is_commutative && !b.is_commutative)
-      return false;
+      return vopd_incompatible;
 
    if (!are_src_banks_compatible(a, b, true))
-      return false;
+      return vopd_incompatible;
 
-   /* If we have to turn v_mov_b32 into v_add_u32 but there is already an OPY-only instruction,
-    * we can't do it.
-    */
-   if (!b.is_commutative && !b.can_be_opx && a.op == aco_opcode::v_dual_mov_b32)
-      return false;
-   if (!a.is_commutative && !a.can_be_opx && b.op == aco_opcode::v_dual_mov_b32)
-      return false;
+   /* Swapping v_mov_b32 makes it become an OPY-only opcode. */
+   if (a.can_be_opx && (b.is_commutative || a.op != aco_opcode::v_dual_mov_b32))
+      compat |= vopd_first_is_opx;
+   if (b.can_be_opx && (a.is_commutative || b.op != aco_opcode::v_dual_mov_b32))
+      compat |= vopd_second_is_opx;
 
-   *swap = true;
-
-   return true;
+   return compat ? (compat | vopd_need_swap) : vopd_incompatible;
 }
 
-bool
-can_use_vopd(const SchedILPContext& ctx, unsigned idx, bool* prev_can_be_opx)
+unsigned
+can_use_vopd(const SchedILPContext& ctx, unsigned idx)
 {
-   VOPDInfo cur_vopd = ctx.vopd[idx];
+   VOPDInfo first_info = ctx.vopd[idx];
+   VOPDInfo second_info = ctx.prev_vopd_info;
    Instruction* first = ctx.nodes[idx].instr;
    Instruction* second = ctx.prev_info.instr;
 
    if (!second)
-      return false;
+      return 0;
 
-   if (ctx.prev_vopd_info.op == aco_opcode::num_opcodes || cur_vopd.op == aco_opcode::num_opcodes)
-      return false;
+   if (second_info.op == aco_opcode::num_opcodes || first_info.op == aco_opcode::num_opcodes)
+      return 0;
 
-   bool swap = false;
-   if (!is_vopd_compatible(ctx.prev_vopd_info, cur_vopd, &swap))
-      return false;
-
-   /* If we have to swap a v_mov_b32, it will become an OPY-only opcode. */
-   if (swap && !ctx.prev_vopd_info.is_commutative && cur_vopd.op == aco_opcode::v_dual_mov_b32)
-      cur_vopd.can_be_opx = false;
+   unsigned compat = is_vopd_compatible(first_info, second_info);
+   if (!compat)
+      return 0;
 
    assert(first->definitions.size() == 1);
    assert(first->definitions[0].size() == 1);
@@ -292,17 +297,16 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx, bool* prev_can_be_opx)
 
    /* Check for WaW dependency. */
    if (first->definitions[0].physReg() == second->definitions[0].physReg())
-      return false;
+      return 0;
 
    /* Check for RaW dependency. */
    for (Operand op : second->operands) {
       assert(op.size() == 1);
       if (first->definitions[0].physReg() == op.physReg())
-         return false;
+         return 0;
    }
 
    /* WaR dependencies are not a concern before GFX12. */
-   *prev_can_be_opx = true;
    if (ctx.program->gfx_level >= GFX12) {
       /* From RDNA4 ISA doc:
        * The OPX instruction must not overwrite sources of the OPY instruction".
@@ -313,11 +317,13 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx, bool* prev_can_be_opx)
          if (second->definitions[0].physReg() == op.physReg())
             war = true;
       }
-      if (war)
-         *prev_can_be_opx = false;
+      if (war) {
+         compat &= ~vopd_second_is_opx;
+         compat = compat & vopd_first_is_opx ? compat : 0;
+      }
    }
 
-   return *prev_can_be_opx || cur_vopd.can_be_opx;
+   return compat;
 }
 
 Instruction_cycle_info
@@ -655,17 +661,18 @@ select_instruction_ilp(const SchedILPContext& ctx)
 }
 
 bool
-compare_nodes_vopd(const SchedILPContext& ctx, int num_vopd_odd_minus_even, bool* use_vopd,
-                   bool* prev_can_be_opx, unsigned current, unsigned candidate)
+compare_nodes_vopd(const SchedILPContext& ctx, int num_vopd_odd_minus_even, unsigned* vopd_compat,
+                   unsigned current, unsigned candidate)
 {
-   if (can_use_vopd(ctx, candidate, prev_can_be_opx)) {
+   unsigned candidate_compat = can_use_vopd(ctx, candidate);
+   if (candidate_compat) {
       /* If we can form a VOPD instruction, always prefer to do so. */
-      if (!*use_vopd) {
-         *use_vopd = true;
+      if (!*vopd_compat) {
+         *vopd_compat = candidate_compat;
          return true;
       }
    } else {
-      if (*use_vopd)
+      if (*vopd_compat)
          return false;
 
       /* Neither current nor candidate can form a VOPD instruction with the previously scheduled
@@ -690,13 +697,17 @@ compare_nodes_vopd(const SchedILPContext& ctx, int num_vopd_odd_minus_even, bool
       }
    }
 
-   return ctx.nodes[candidate].wait_cycles < ctx.nodes[current].wait_cycles;
+   if (ctx.nodes[candidate].wait_cycles < ctx.nodes[current].wait_cycles) {
+      *vopd_compat = candidate_compat;
+      return true;
+   }
+   return false;
 }
 
 unsigned
-select_instruction_vopd(const SchedILPContext& ctx, bool* use_vopd, bool* prev_can_be_opx)
+select_instruction_vopd(const SchedILPContext& ctx, unsigned* vopd_compat)
 {
-   *use_vopd = false;
+   *vopd_compat = 0;
 
    mask_t mask = ctx.active_mask;
    if (ctx.next_non_reorderable != UINT8_MAX)
@@ -716,14 +727,11 @@ select_instruction_vopd(const SchedILPContext& ctx, bool* use_vopd, bool* prev_c
       if (candidate.dependency_mask)
          continue;
 
-      bool prev_can_be_opx_for_i;
       if (cur == -1u) {
          cur = i;
-         *use_vopd = can_use_vopd(ctx, i, prev_can_be_opx);
-      } else if (compare_nodes_vopd(ctx, num_vopd_odd_minus_even, use_vopd, &prev_can_be_opx_for_i,
-                                    cur, i)) {
+         *vopd_compat = can_use_vopd(ctx, i);
+      } else if (compare_nodes_vopd(ctx, num_vopd_odd_minus_even, vopd_compat, cur, i)) {
          cur = i;
-         *prev_can_be_opx = prev_can_be_opx_for_i;
       }
    }
 
@@ -759,16 +767,16 @@ get_vopd_opcode_operands(const SchedILPContext& ctx, Instruction* instr, const V
 }
 
 Instruction*
-create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, bool prev_can_be_opx)
+create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, unsigned compat)
 {
-   Instruction* x = ctx.prev_info.instr;
-   Instruction* y = ctx.nodes[idx].instr;
+   Instruction* x = ctx.prev_info.instr;  /* second */
+   Instruction* y = ctx.nodes[idx].instr; /* first */
    VOPDInfo x_info = ctx.prev_vopd_info;
    VOPDInfo y_info = ctx.vopd[idx];
-   x_info.can_be_opx &= prev_can_be_opx;
+   x_info.can_be_opx = x_info.can_be_opx && (compat & vopd_second_is_opx);
 
    bool swap_x = false, swap_y = false;
-   if (!are_src_banks_compatible(x_info, y_info, false)) {
+   if (compat & vopd_need_swap) {
       assert(x_info.is_commutative || y_info.is_commutative);
       /* Avoid swapping v_mov_b32 because it will become an OPY-only opcode. */
       if (x_info.op == aco_opcode::v_dual_mov_b32 && !y_info.is_commutative) {
@@ -815,16 +823,15 @@ do_schedule(SchedILPContext& ctx, It& insert_it, It& remove_it, It instructions_
    }
 
    ctx.prev_info.instr = NULL;
-   bool use_vopd = false;
-   bool prev_can_be_opx;
+   unsigned vopd_compat = 0;
 
    while (ctx.active_mask) {
-      unsigned next_idx = ctx.is_vopd ? select_instruction_vopd(ctx, &use_vopd, &prev_can_be_opx)
-                                      : select_instruction_ilp(ctx);
+      unsigned next_idx =
+         ctx.is_vopd ? select_instruction_vopd(ctx, &vopd_compat) : select_instruction_ilp(ctx);
       Instruction* next_instr = ctx.nodes[next_idx].instr;
 
-      if (use_vopd) {
-         std::prev(insert_it)->reset(create_vopd_instruction(ctx, next_idx, prev_can_be_opx));
+      if (vopd_compat) {
+         std::prev(insert_it)->reset(create_vopd_instruction(ctx, next_idx, vopd_compat));
          ctx.prev_info.instr = NULL;
       } else {
          (insert_it++)->reset(next_instr);
