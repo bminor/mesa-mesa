@@ -9,7 +9,6 @@ use nak_bindings::*;
 
 pub use crate::builder::{Builder, InstrBuilder, SSABuilder, SSAInstrBuilder};
 use crate::legalize::LegalizeBuilder;
-use crate::sched_common;
 use crate::sph::{OutputTopology, PixelImap};
 use compiler::as_slice::*;
 use compiler::cfg::CFG;
@@ -7505,45 +7504,41 @@ pub trait ShaderModel {
         !op.has_fixed_latency(self.sm())
     }
 
+    /// Latency before another non-NOP can execute
     fn exec_latency(&self, op: &Op) -> u32;
 
+    /// Read-after-read latency
     fn raw_latency(
         &self,
         write: &Op,
         dst_idx: usize,
         read: &Op,
         src_idx: usize,
-    ) -> u32 {
-        sched_common::raw_latency(self.sm(), write, dst_idx, read, src_idx)
-    }
+    ) -> u32;
 
+    /// Write-after-read latency
     fn war_latency(
         &self,
         read: &Op,
         src_idx: usize,
         write: &Op,
         dst_idx: usize,
-    ) -> u32 {
-        sched_common::war_latency(self.sm(), read, src_idx, write, dst_idx)
-    }
+    ) -> u32;
 
+    /// Write-after-write latency
     fn waw_latency(
         &self,
         a: &Op,
         a_dst_idx: usize,
         b: &Op,
         b_dst_idx: usize,
-    ) -> u32 {
-        sched_common::waw_latency(self.sm(), a, a_dst_idx, b, b_dst_idx)
-    }
+    ) -> u32;
 
-    fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32 {
-        sched_common::paw_latency(self.sm(), write, dst_idx)
-    }
+    /// Predicate read-after-write latency
+    fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32;
 
-    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
-        sched_common::instr_latency(self.sm(), write, dst_idx)
-    }
+    /// Worst-case access-after-write latency
+    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32;
 
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op);
     fn encode_shader(&self, s: &Shader<'_>) -> Vec<u32>;

@@ -18,6 +18,51 @@ impl ShaderModel70 {
     fn has_uniform_alu(&self) -> bool {
         self.sm >= 73
     }
+
+    fn instr_latency(&self, op: &Op, dst_idx: usize) -> u32 {
+        let file = match op.dsts_as_slice()[dst_idx] {
+            Dst::None => return 0,
+            Dst::SSA(vec) => vec.file().unwrap(),
+            Dst::Reg(reg) => reg.file(),
+        };
+
+        let (gpr_latency, pred_latency) = if self.sm < 80 {
+            match op {
+                // Double-precision float ALU
+                Op::DAdd(_)
+                | Op::DFma(_)
+                | Op::DMnMx(_)
+                | Op::DMul(_)
+                | Op::DSetP(_)
+                // Half-precision float ALU
+                | Op::HAdd2(_)
+                | Op::HFma2(_)
+                | Op::HMul2(_)
+                | Op::HSet2(_)
+                | Op::HSetP2(_)
+                | Op::HMnMx2(_) => if self.sm == 70 {
+                    // Volta is even slower
+                    (13, 15)
+                } else {
+                    (13, 14)
+                }
+                _ => (6, 13)
+            }
+        } else {
+            (6, 13)
+        };
+
+        // This is BS and we know it
+        match file {
+            RegFile::GPR => gpr_latency,
+            RegFile::UGPR => 12,
+            RegFile::Pred => pred_latency,
+            RegFile::UPred => 11,
+            RegFile::Bar => 0, // Barriers have a HW scoreboard
+            RegFile::Carry => 6,
+            RegFile::Mem => panic!("Not a register"),
+        }
+    }
 }
 
 impl ShaderModel for ShaderModel70 {
@@ -115,6 +160,55 @@ impl ShaderModel for ShaderModel70 {
             // Op::DepBar(_) => 4,
             _ => 1, // TODO: co-issue
         }
+    }
+
+    fn raw_latency(
+        &self,
+        write: &Op,
+        dst_idx: usize,
+        _read: &Op,
+        _src_idx: usize,
+    ) -> u32 {
+        self.instr_latency(write, dst_idx)
+    }
+
+    fn war_latency(
+        &self,
+        _read: &Op,
+        _src_idx: usize,
+        _write: &Op,
+        _dst_idx: usize,
+    ) -> u32 {
+        // We assume the source gets read in the first 4 cycles.  We don't know
+        // how quickly the write will happen.  This is all a guess.
+        4
+    }
+
+    fn waw_latency(
+        &self,
+        a: &Op,
+        a_dst_idx: usize,
+        _b: &Op,
+        _b_dst_idx: usize,
+    ) -> u32 {
+        // We know our latencies are wrong so assume the wrote could happen
+        // anywhere between 0 and instr_latency(a) cycles
+        self.instr_latency(a, a_dst_idx)
+    }
+
+    fn paw_latency(&self, write: &Op, _dst_idx: usize) -> u32 {
+        if self.sm == 70 {
+            match write {
+                Op::DSetP(_) | Op::HSetP2(_) => 15,
+                _ => 13,
+            }
+        } else {
+            13
+        }
+    }
+
+    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        self.instr_latency(write, dst_idx)
     }
 
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
