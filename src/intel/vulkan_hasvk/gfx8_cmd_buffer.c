@@ -349,8 +349,7 @@ genX(cmd_buffer_flush_dynamic_state)(struct anv_cmd_buffer *cmd_buffer)
                                              buffer->address.bo,
                                              ISL_SURF_USAGE_INDEX_BUFFER_BIT);
          ib.BufferStartingAddress = anv_address_add(buffer->address, offset);
-         ib.BufferSize            = vk_buffer_range(&buffer->vk, offset,
-                                                    VK_WHOLE_SIZE);
+         ib.BufferSize            = cmd_buffer->state.gfx.index_size;
       }
    }
 

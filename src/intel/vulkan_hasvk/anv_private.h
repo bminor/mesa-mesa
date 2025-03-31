@@ -2442,6 +2442,7 @@ struct anv_cmd_graphics_state {
    struct anv_buffer *index_buffer;
    uint32_t index_type; /**< 3DSTATE_INDEX_BUFFER.IndexFormat */
    uint32_t index_offset;
+   uint32_t index_size;
 
    struct vk_sample_locations_state sample_locations;
 
@@ -2838,7 +2839,7 @@ struct anv_graphics_pipeline {
    /* Shaders */
    struct anv_shader_bin *                      shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
 
-   VkShaderStageFlags                           active_stages;
+   VkPipelineCreateFlags2KHR                    active_stages;
 
    struct vk_sample_locations_state             sample_locations;
    struct vk_dynamic_graphics_state             dynamic_state;
