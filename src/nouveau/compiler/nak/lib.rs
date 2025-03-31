@@ -28,6 +28,7 @@ mod repair_ssa;
 mod sched_common;
 mod sm50;
 mod sm70;
+mod sm70_encode;
 mod sph;
 mod spill_values;
 mod to_cssa;
