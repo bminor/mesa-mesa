@@ -2354,7 +2354,19 @@ print_loop(nir_loop *loop, print_state *state, unsigned tabs)
    FILE *fp = state->fp;
 
    print_indentation(tabs, fp);
-   fprintf(fp, "%sloop {\n", divergence_status(state, loop->divergent_break));
+   fprintf(fp, "%sloop", divergence_status(state, loop->divergent_break));
+   switch (loop->control) {
+   case nir_loop_control_unroll:
+      fprintf(fp, "  // unroll");
+      break;
+   case nir_loop_control_dont_unroll:
+      fprintf(fp, "  // don't unroll");
+      break;
+   case nir_loop_control_none:
+   default:
+      break;
+   }
+   fprintf(fp, " {\n");
    foreach_list_typed(nir_cf_node, node, node, &loop->body) {
       print_cf_node(node, state, tabs + 1);
    }
