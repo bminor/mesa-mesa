@@ -1954,7 +1954,7 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
       OPT(nir_lower_subgroups, &subgroups_options);
    }
 
-   /* Run intel_nir_lower_conversions only after the last tiem
+   /* Run intel_nir_lower_conversions only after the last time
     * brw_nir_optimize is called. Various optimizations invoked there can
     * rematerialize the conversions that the lowering pass eliminates.
     */
