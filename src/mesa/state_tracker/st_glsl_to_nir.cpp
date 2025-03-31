@@ -298,9 +298,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
          gl_nir_opts(nir);
    }
 
-   nir_variable_mode mask =
-      nir_var_shader_in | nir_var_shader_out | nir_var_function_temp;
-   nir_remove_dead_variables(nir, mask, NULL);
+   nir_remove_dead_variables(nir, nir_var_function_temp, NULL);
 
    if (!st->has_hw_atomics && !screen->caps.nir_atomics_as_deref) {
       unsigned align_offset_state = 0;
