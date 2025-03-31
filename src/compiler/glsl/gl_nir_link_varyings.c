@@ -739,7 +739,7 @@ validate_explicit_variable_location(const struct gl_constants *consts,
  * outputs of the last stage in a program, if those are not the VS and FS
  * shaders.
  */
-void
+bool
 gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_constants *consts,
                                                             struct gl_shader_program *prog,
                                                             gl_shader_stage first_stage,
@@ -751,7 +751,7 @@ gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_cons
    bool validate_first_stage = first_stage != MESA_SHADER_VERTEX;
    bool validate_last_stage = last_stage != MESA_SHADER_FRAGMENT;
    if (!validate_first_stage && !validate_last_stage)
-      return;
+      return true;
 
    struct explicit_location_info explicit_locations[MAX_VARYING][4];
 
@@ -777,10 +777,12 @@ gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_cons
 
          if (!validate_explicit_variable_location(consts, explicit_locations,
                                                   var, prog, sh)) {
-            return;
+            return false;
          }
       }
    }
+
+   return true;
 }
 
 /**

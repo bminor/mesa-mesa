@@ -3914,9 +3914,10 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
     * stage and outputs of the last stage included in the program, since there
     * is no cross validation for these.
     */
-   gl_nir_validate_first_and_last_interface_explicit_locations(consts, prog,
-                                                               (gl_shader_stage) first,
-                                                               (gl_shader_stage) last);
+   if (!gl_nir_validate_first_and_last_interface_explicit_locations(consts, prog,
+                                                                    (gl_shader_stage)first,
+                                                                    (gl_shader_stage)last))
+      goto done;
 
    if (prog->SeparateShader)
       disable_varying_optimizations_for_sso(prog);
