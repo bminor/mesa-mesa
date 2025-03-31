@@ -84,7 +84,7 @@
         "description": "brw/nir: Lower fsign again after last call to brw_nir_optimize",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "13332c236b87b44b1e0b0fc1f1c51a16f47af5e4",
         "notes": null
