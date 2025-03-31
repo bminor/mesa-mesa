@@ -68,10 +68,7 @@ genX(CmdControlVideoCodingKHR)(VkCommandBuffer commandBuffer,
       assert((rate_control_info->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR) ||
              (rate_control_info->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
 
-      cmd_buffer->video.params->rc_mode = rate_control_info->rateControlMode;
-   } else {
-      if (cmd_buffer->video.params)
-         cmd_buffer->video.params->rc_mode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR;
+      cmd_buffer->video.vid->rc_mode = rate_control_info->rateControlMode;
    }
 }
 

@@ -6434,6 +6434,7 @@ struct anv_video_session {
    struct vk_video_session vk;
 
    bool cdf_initialized;
+   VkVideoEncodeRateControlModeFlagBitsKHR rc_mode;
    /* the decoder needs some private memory allocations */
    struct anv_vid_mem vid_mem[ANV_VID_MEM_AV1_MAX];
    struct anv_av1_video_refs_info prev_refs[STD_VIDEO_AV1_NUM_REF_FRAMES];
@@ -6441,7 +6442,6 @@ struct anv_video_session {
 
 struct anv_video_session_params {
    struct vk_video_session_parameters vk;
-   VkVideoEncodeRateControlModeFlagBitsKHR rc_mode;
 };
 
 void anv_init_av1_cdf_tables(struct anv_cmd_buffer *cmd,
