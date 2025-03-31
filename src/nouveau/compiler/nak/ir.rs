@@ -9,6 +9,7 @@ use nak_bindings::*;
 
 pub use crate::builder::{Builder, InstrBuilder, SSABuilder, SSAInstrBuilder};
 use crate::legalize::LegalizeBuilder;
+use crate::sched_common;
 use crate::sph::{OutputTopology, PixelImap};
 use compiler::as_slice::*;
 use compiler::cfg::CFG;
@@ -7002,14 +7003,6 @@ impl Instr {
         }
     }
 
-    pub fn has_fixed_latency(&self, sm: u8) -> bool {
-        self.op.has_fixed_latency(sm)
-    }
-
-    pub fn needs_scoreboard(&self, sm: u8) -> bool {
-        !self.has_fixed_latency(sm)
-    }
-
     pub fn needs_yield(&self) -> bool {
         matches!(&self.op, Op::Bar(_) | Op::BSync(_))
     }
@@ -7506,6 +7499,53 @@ pub trait ShaderModel {
     fn crs_size(&self, max_crs_depth: u32) -> u32;
 
     fn op_can_be_uniform(&self, op: &Op) -> bool;
+
+    // Scheduling information
+    fn op_needs_scoreboard(&self, op: &Op) -> bool {
+        !op.has_fixed_latency(self.sm())
+    }
+
+    fn exec_latency(&self, op: &Op) -> u32 {
+        sched_common::exec_latency(self.sm(), op)
+    }
+
+    fn raw_latency(
+        &self,
+        write: &Op,
+        dst_idx: usize,
+        read: &Op,
+        src_idx: usize,
+    ) -> u32 {
+        sched_common::raw_latency(self.sm(), write, dst_idx, read, src_idx)
+    }
+
+    fn war_latency(
+        &self,
+        read: &Op,
+        src_idx: usize,
+        write: &Op,
+        dst_idx: usize,
+    ) -> u32 {
+        sched_common::war_latency(self.sm(), read, src_idx, write, dst_idx)
+    }
+
+    fn waw_latency(
+        &self,
+        a: &Op,
+        a_dst_idx: usize,
+        b: &Op,
+        b_dst_idx: usize,
+    ) -> u32 {
+        sched_common::waw_latency(self.sm(), a, a_dst_idx, b, b_dst_idx)
+    }
+
+    fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        sched_common::paw_latency(self.sm(), write, dst_idx)
+    }
+
+    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        sched_common::instr_latency(self.sm(), write, dst_idx)
+    }
 
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op);
     fn encode_shader(&self, s: &Shader<'_>) -> Vec<u32>;

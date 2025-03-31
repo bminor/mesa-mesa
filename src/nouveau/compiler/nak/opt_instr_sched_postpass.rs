@@ -3,10 +3,7 @@
 
 use crate::ir::*;
 use crate::opt_instr_sched_common::*;
-use crate::sched_common::{
-    exec_latency, instr_latency, paw_latency, raw_latency, war_latency,
-    waw_latency, RegTracker,
-};
+use crate::sched_common::RegTracker;
 use std::cmp::max;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -74,29 +71,18 @@ fn generate_dep_graph(
 
         uses.for_each_instr_dst_mut(instr, |i, u| {
             if let Some((w_ip, w_dst_idx)) = u.write {
-                let latency = waw_latency(
-                    sm.sm(),
-                    &instr.op,
-                    i,
-                    &instrs[w_ip].op,
-                    w_dst_idx,
-                );
+                let latency =
+                    sm.waw_latency(&instr.op, i, &instrs[w_ip].op, w_dst_idx);
                 g.add_edge(ip, w_ip, EdgeLabel { latency });
             }
 
             for &(r_ip, r_src_idx) in &u.reads {
                 let mut latency = if r_src_idx == usize::MAX {
-                    paw_latency(sm.sm(), &instr.op, i)
+                    sm.paw_latency(&instr.op, i)
                 } else {
-                    raw_latency(
-                        sm.sm(),
-                        &instr.op,
-                        i,
-                        &instrs[r_ip].op,
-                        r_src_idx,
-                    )
+                    sm.raw_latency(&instr.op, i, &instrs[r_ip].op, r_src_idx)
                 };
-                if instr.needs_scoreboard(sm.sm()) {
+                if sm.op_needs_scoreboard(&instr.op) {
                     latency = max(
                         latency,
                         estimate_variable_latency(sm.sm(), &instr.op),
@@ -107,13 +93,8 @@ fn generate_dep_graph(
         });
         uses.for_each_instr_src_mut(instr, |i, u| {
             if let Some((w_ip, w_dst_idx)) = u.write {
-                let latency = war_latency(
-                    sm.sm(),
-                    &instr.op,
-                    i,
-                    &instrs[w_ip].op,
-                    w_dst_idx,
-                );
+                let latency =
+                    sm.war_latency(&instr.op, i, &instrs[w_ip].op, w_dst_idx);
                 g.add_edge(ip, w_ip, EdgeLabel { latency });
             }
         });
@@ -131,16 +112,16 @@ fn generate_dep_graph(
 
         // Initialize this node's distance to the end
         let mut ready_cycle = (0..instr.dsts().len())
-            .map(|i| instr_latency(sm.sm(), &instr.op, i))
+            .map(|i| sm.worst_latency(&instr.op, i))
             .max()
             .unwrap_or(0);
-        if instr.needs_scoreboard(sm.sm()) {
+        if sm.op_needs_scoreboard(&instr.op) {
             let var_latency = estimate_variable_latency(sm.sm(), &instr.op)
-                + exec_latency(sm.sm(), &instrs[instrs.len() - 1].op);
+                + sm.exec_latency(&instrs[instrs.len() - 1].op);
             ready_cycle = max(ready_cycle, var_latency);
         }
         let label = &mut g.nodes[ip].label;
-        label.exec_latency = exec_latency(sm.sm(), &instr.op);
+        label.exec_latency = sm.exec_latency(&instr.op);
         label.ready_cycle = ready_cycle;
     }
 

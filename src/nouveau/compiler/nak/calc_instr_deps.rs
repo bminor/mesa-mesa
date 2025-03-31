@@ -3,7 +3,7 @@
 
 use crate::api::{GetDebugFlags, DEBUG};
 use crate::ir::*;
-use crate::sched_common::*;
+use crate::sched_common::RegTracker;
 
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
@@ -257,7 +257,7 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                     waits.extend_from_slice(u.deps());
                 });
 
-                if instr.needs_scoreboard(sm.sm()) {
+                if sm.op_needs_scoreboard(&instr.op) {
                     let (rd, wr) = deps.add_instr(bi, ip);
                     uses.for_each_instr_src_mut(instr, |_, u| {
                         // Only mark a dep as signaled if we actually have
@@ -314,7 +314,7 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                 instr.deps.set_yield(true);
             }
 
-            if !instr.needs_scoreboard(sm.sm()) {
+            if !sm.op_needs_scoreboard(&instr.op) {
                 continue;
             }
 
@@ -360,7 +360,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
 
         for ip in (0..b.instrs.len()).rev() {
             let instr = &b.instrs[ip];
-            let mut min_start = cycle + exec_latency(sm.sm(), &instr.op);
+            let mut min_start = cycle + sm.exec_latency(&instr.op);
             if let Some(bar) = instr.deps.rd_bar() {
                 min_start = max(min_start, bars[usize::from(bar)] + 2);
             }
@@ -372,13 +372,12 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
                     // We don't know how it will be used but it may be used in
                     // the next block so we need at least assume the maximum
                     // destination latency from the end of the block.
-                    let s = instr_latency(sm.sm(), &instr.op, i);
+                    let s = sm.worst_latency(&instr.op, i);
                     min_start = max(min_start, s);
                 }
                 RegUse::Write((w_ip, w_dst_idx)) => {
                     let s = instr_cycle[*w_ip]
-                        + waw_latency(
-                            sm.sm(),
+                        + sm.waw_latency(
                             &instr.op,
                             i,
                             &b.instrs[*w_ip].op,
@@ -390,10 +389,9 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
                     for (r_ip, r_src_idx) in reads {
                         let c = instr_cycle[*r_ip];
                         let s = if *r_src_idx == usize::MAX {
-                            c + paw_latency(sm.sm(), &instr.op, i)
+                            c + sm.paw_latency(&instr.op, i)
                         } else {
-                            c + raw_latency(
-                                sm.sm(),
+                            c + sm.raw_latency(
                                 &instr.op,
                                 i,
                                 &b.instrs[*r_ip].op,
@@ -408,8 +406,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
                 RegUse::None => (),
                 RegUse::Write((w_ip, w_dst_idx)) => {
                     let s = instr_cycle[*w_ip]
-                        + war_latency(
-                            sm.sm(),
+                        + sm.war_latency(
                             &instr.op,
                             i,
                             &b.instrs[*w_ip].op,
@@ -458,7 +455,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
         if matches!(instr.op, Op::SrcBar(_)) {
             instr.op = Op::Nop(OpNop { label: None });
             MappedInstrs::One(instr)
-        } else if exec_latency(sm.sm(), &instr.op) > 1 {
+        } else if sm.exec_latency(&instr.op) > 1 {
             let mut nop = Instr::new_boxed(OpNop { label: None });
             nop.deps.set_delay(2);
             MappedInstrs::Many(vec![instr, nop])
