@@ -1514,7 +1514,7 @@
         "description": "anv: re enable compression for CPS surfaces on platforms other than Xe",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "80f9b61f0225e23705cf0d2b243f9eb27a9cfa9e",
         "notes": null
