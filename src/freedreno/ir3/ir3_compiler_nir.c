@@ -3363,9 +3363,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_preamble_end_ir3: {
-      struct ir3_instruction *instr = ir3_SHPE(b);
-      instr->barrier_class = instr->barrier_conflict = IR3_BARRIER_CONST_W;
-      array_insert(ctx->block, ctx->block->keeps, instr);
+      ir3_SHPE(b);
       break;
    }
    case nir_intrinsic_store_const_ir3: {

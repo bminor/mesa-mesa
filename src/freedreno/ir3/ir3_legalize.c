@@ -1230,7 +1230,16 @@ block_sched(struct ir3 *ir)
           */
          assert(terminator);
          assert(terminator->opc == OPC_JUMP || terminator->opc == OPC_PREDT ||
-                terminator->opc == OPC_PREDF);
+                terminator->opc == OPC_PREDF || terminator->opc == OPC_SHPE);
+
+         /* shpe is not a branch (we just treat it as a terminator to make sure
+          * it stays at the end of its block) so add one now.
+          */
+         if (terminator->opc == OPC_SHPE) {
+            struct ir3_builder b = ir3_builder_at(ir3_after_instr(terminator));
+            terminator = ir3_JUMP(&b);
+         }
+
          terminator->cat0.target = block->successors[0];
       }
    }

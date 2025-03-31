@@ -604,7 +604,7 @@ ir3_find_shpe(struct ir3 *ir)
    }
 
    foreach_block (block, &ir->block_list) {
-      struct ir3_instruction *last = ir3_block_get_last_non_terminator(block);
+      struct ir3_instruction *last = ir3_block_get_terminator(block);
 
       if (last && last->opc == OPC_SHPE) {
          return last;
@@ -666,9 +666,6 @@ ir3_create_empty_preamble(struct ir3 *ir)
 
    b.cursor = ir3_after_block(body_block);
    struct ir3_instruction *shpe = ir3_SHPE(&b);
-   shpe->barrier_class = shpe->barrier_conflict = IR3_BARRIER_CONST_W;
-   array_insert(body_block, body_block->keeps, shpe);
-   ir3_JUMP(&b);
    body_block->successors[0] = main_start_block;
    ir3_block_add_predecessor(main_start_block, body_block);
    ir3_block_link_physical(body_block, main_start_block);

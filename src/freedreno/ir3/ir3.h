@@ -1009,6 +1009,7 @@ is_terminator(struct ir3_instruction *instr)
    case OPC_BRAA:
    case OPC_BRAO:
    case OPC_SHPS:
+   case OPC_SHPE:
    case OPC_GETONE:
    case OPC_GETLAST:
    case OPC_PREDT:
