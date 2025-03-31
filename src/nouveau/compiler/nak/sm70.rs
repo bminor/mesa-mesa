@@ -99,6 +99,24 @@ impl ShaderModel for ShaderModel70 {
         }
     }
 
+    fn exec_latency(&self, op: &Op) -> u32 {
+        match op {
+            Op::Bar(_) | Op::MemBar(_) => {
+                if self.sm >= 80 {
+                    6
+                } else {
+                    5
+                }
+            }
+            Op::CCtl(_op) => {
+                // CCTL.C needs 8, CCTL.I needs 11
+                11
+            }
+            // Op::DepBar(_) => 4,
+            _ => 1, // TODO: co-issue
+        }
+    }
+
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
         legalize_sm70_op(self, b, op);
     }

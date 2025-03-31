@@ -56,6 +56,25 @@ impl ShaderModel for ShaderModel50 {
         false
     }
 
+    fn exec_latency(&self, op: &Op) -> u32 {
+        match op {
+            Op::CCtl(_)
+            | Op::MemBar(_)
+            | Op::Bra(_)
+            | Op::SSy(_)
+            | Op::Sync(_)
+            | Op::Brk(_)
+            | Op::PBk(_)
+            | Op::Cont(_)
+            | Op::PCnt(_)
+            | Op::Exit(_)
+            | Op::Bar(_)
+            | Op::Kill(_)
+            | Op::OutFinal(_) => 13,
+            _ => 1,
+        }
+    }
+
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
         as_sm50_op_mut(op).legalize(b);
     }

@@ -7505,9 +7505,7 @@ pub trait ShaderModel {
         !op.has_fixed_latency(self.sm())
     }
 
-    fn exec_latency(&self, op: &Op) -> u32 {
-        sched_common::exec_latency(self.sm(), op)
-    }
+    fn exec_latency(&self, op: &Op) -> u32;
 
     fn raw_latency(
         &self,

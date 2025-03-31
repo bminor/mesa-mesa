@@ -5,43 +5,6 @@ use crate::ir::*;
 
 use std::ops::{Index, IndexMut, Range};
 
-pub fn exec_latency(sm: u8, op: &Op) -> u32 {
-    if sm >= 70 {
-        match op {
-            Op::Bar(_) | Op::MemBar(_) => {
-                if sm >= 80 {
-                    6
-                } else {
-                    5
-                }
-            }
-            Op::CCtl(_op) => {
-                // CCTL.C needs 8, CCTL.I needs 11
-                11
-            }
-            // Op::DepBar(_) => 4,
-            _ => 1, // TODO: co-issue
-        }
-    } else {
-        match op {
-            Op::CCtl(_)
-            | Op::MemBar(_)
-            | Op::Bra(_)
-            | Op::SSy(_)
-            | Op::Sync(_)
-            | Op::Brk(_)
-            | Op::PBk(_)
-            | Op::Cont(_)
-            | Op::PCnt(_)
-            | Op::Exit(_)
-            | Op::Bar(_)
-            | Op::Kill(_)
-            | Op::OutFinal(_) => 13,
-            _ => 1,
-        }
-    }
-}
-
 pub fn instr_latency(sm: u8, op: &Op, dst_idx: usize) -> u32 {
     let file = match op.dsts_as_slice()[dst_idx] {
         Dst::None => return 0,
