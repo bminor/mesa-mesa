@@ -174,7 +174,7 @@
         "description": "panvk: check for texture-compression support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d970fe2e9d6a8e9997a0ce212146d62013b3b455",
         "notes": null
