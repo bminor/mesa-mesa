@@ -257,18 +257,7 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                     waits.extend_from_slice(u.deps());
                 });
 
-                if instr.has_fixed_latency(sm.sm()) {
-                    // Delays will cover us here.  We just need to make sure
-                    // that we wait on any uses that we consume.
-                    uses.for_each_instr_src_mut(instr, |_, u| {
-                        let u = u.clear_write();
-                        waits.extend_from_slice(u.deps());
-                    });
-                    uses.for_each_instr_dst_mut(instr, |_, u| {
-                        let u = u.clear();
-                        waits.extend_from_slice(u.deps());
-                    });
-                } else {
+                if instr.needs_scoreboard(sm.sm()) {
                     let (rd, wr) = deps.add_instr(bi, ip);
                     uses.for_each_instr_src_mut(instr, |_, u| {
                         // Only mark a dep as signaled if we actually have
@@ -290,6 +279,17 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                                 waits.push(*dep);
                             }
                         }
+                    });
+                } else {
+                    // Delays will cover us here.  We just need to make sure
+                    // that we wait on any uses that we consume.
+                    uses.for_each_instr_src_mut(instr, |_, u| {
+                        let u = u.clear_write();
+                        waits.extend_from_slice(u.deps());
+                    });
+                    uses.for_each_instr_dst_mut(instr, |_, u| {
+                        let u = u.clear();
+                        waits.extend_from_slice(u.deps());
                     });
                 }
                 deps.add_waits(bi, ip, waits);
@@ -314,7 +314,7 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                 instr.deps.set_yield(true);
             }
 
-            if instr.has_fixed_latency(sm.sm()) {
+            if !instr.needs_scoreboard(sm.sm()) {
                 continue;
             }
 

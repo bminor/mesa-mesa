@@ -96,7 +96,7 @@ fn generate_dep_graph(
                         r_src_idx,
                     )
                 };
-                if !instr.has_fixed_latency(sm.sm()) {
+                if instr.needs_scoreboard(sm.sm()) {
                     latency = max(
                         latency,
                         estimate_variable_latency(sm.sm(), &instr.op),
@@ -134,7 +134,7 @@ fn generate_dep_graph(
             .map(|i| instr_latency(sm.sm(), &instr.op, i))
             .max()
             .unwrap_or(0);
-        if !instr.has_fixed_latency(sm.sm()) {
+        if instr.needs_scoreboard(sm.sm()) {
             let var_latency = estimate_variable_latency(sm.sm(), &instr.op)
                 + exec_latency(sm.sm(), &instrs[instrs.len() - 1].op);
             ready_cycle = max(ready_cycle, var_latency);

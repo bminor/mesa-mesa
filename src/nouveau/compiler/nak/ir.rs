@@ -7006,6 +7006,10 @@ impl Instr {
         self.op.has_fixed_latency(sm)
     }
 
+    pub fn needs_scoreboard(&self, sm: u8) -> bool {
+        !self.has_fixed_latency(sm)
+    }
+
     pub fn needs_yield(&self) -> bool {
         matches!(&self.op, Op::Bar(_) | Op::BSync(_))
     }
