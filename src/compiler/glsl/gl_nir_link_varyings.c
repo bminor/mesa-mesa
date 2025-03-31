@@ -4555,7 +4555,8 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
                              has_xfb_qualifiers, mem_ctx))
       return false;
 
-   return prog->data->LinkStatus != LINKING_FAILURE;
+   assert(prog->data->LinkStatus != LINKING_FAILURE);
+   return true;
 }
 
 bool
