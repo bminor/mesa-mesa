@@ -4556,6 +4556,35 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
       return false;
 
    assert(prog->data->LinkStatus != LINKING_FAILURE);
+
+   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+      if (!prog->_LinkedShaders[i])
+         continue;
+
+      /* Check for transform feedback varyings specified via the API */
+      prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings =
+            prog->TransformFeedback.NumVarying > 0;
+
+      /* Check for transform feedback varyings specified in the Shader */
+      if (prog->last_vert_prog) {
+         prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings |=
+               prog->last_vert_prog->sh.LinkedTransformFeedback->NumVarying > 0;
+      }
+   }
+
+   /* Assign NIR XFB info to the last stage before the fragment shader */
+   for (int stage = MESA_SHADER_FRAGMENT - 1; stage >= 0; stage--) {
+      struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
+      if (sh && stage != MESA_SHADER_TESS_CTRL) {
+         sh->Program->nir->xfb_info =
+               gl_to_nir_xfb_info(sh->Program->sh.LinkedTransformFeedback,
+                                  sh->Program->nir);
+         break;
+      }
+   }
+
+   /* Lower IO and thoroughly optimize and compact varyings. */
+   gl_nir_lower_optimize_varyings(consts, prog, false);
    return true;
 }
 
@@ -4610,36 +4639,6 @@ gl_nir_link_varyings(const struct gl_constants *consts,
    }
 
    bool r = link_varyings(prog, first, last, consts, exts, api, mem_ctx);
-   if (r) {
-      for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
-         if (!prog->_LinkedShaders[i])
-            continue;
-
-         /* Check for transform feedback varyings specified via the API */
-         prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings =
-            prog->TransformFeedback.NumVarying > 0;
-
-         /* Check for transform feedback varyings specified in the Shader */
-         if (prog->last_vert_prog) {
-            prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings |=
-               prog->last_vert_prog->sh.LinkedTransformFeedback->NumVarying > 0;
-         }
-      }
-
-      /* Assign NIR XFB info to the last stage before the fragment shader */
-      for (int stage = MESA_SHADER_FRAGMENT - 1; stage >= 0; stage--) {
-         struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
-         if (sh && stage != MESA_SHADER_TESS_CTRL) {
-            sh->Program->nir->xfb_info =
-               gl_to_nir_xfb_info(sh->Program->sh.LinkedTransformFeedback,
-                                  sh->Program->nir);
-            break;
-         }
-      }
-
-      /* Lower IO and thoroughly optimize and compact varyings. */
-      gl_nir_lower_optimize_varyings(consts, prog, false);
-   }
 
    ralloc_free(mem_ctx);
    return r;
