@@ -2110,6 +2110,18 @@ static inline bool pco_ref_has_mods_set(pco_ref ref)
           (ref.elem != 0);
 }
 
+/**
+ * \brief Returns whether a reference is a temporary register.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a temporary register.
+ */
+static inline bool pco_ref_is_temp(pco_ref ref)
+{
+   return pco_ref_is_reg(ref) &&
+          pco_ref_get_reg_class(ref) == PCO_REG_CLASS_TEMP;
+}
+
 /* PCO ref builders. */
 /**
  * \brief Builds and returns a null reference.

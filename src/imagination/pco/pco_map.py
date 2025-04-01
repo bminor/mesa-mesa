@@ -2693,6 +2693,35 @@ group_map(O_FLUSH_P0,
    ]
 )
 
+group_map(O_MBYP2,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, [DEST(0)], [SRC(0)]),
+      ('1', O_MBYP, [DEST(1)], [SRC(1)])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[3]', ('1', SRC(0)), 's3')
+   ],
+   iss=[
+      ('is[4]', 'ft0'),
+      ('is[5]', 'ft1'),
+   ],
+   dests=[
+      ('w[0]', ('0', DEST(0)), 'ft0'),
+      ('w[1]', ('1', DEST(0)), 'ft1'),
+   ]
+)
+
 group_map(O_UVSW_WRITE,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'be'),

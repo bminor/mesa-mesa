@@ -464,6 +464,8 @@ O_XCHG_ATOMIC = hw_op('xchg.atomic', OM_ALU_ATOMEXT, 2, 2, [], [[RM_ABS, RM_NEG]
 
 O_FLUSH_P0 = hw_op('flush.p0', [OM_EXEC_CND, OM_END])
 
+O_MBYP2 = hw_op('mbyp2', OM_ALU, 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+
 # Pseudo-ops (unmapped).
 O_FNEG = pseudo_op('fneg', OM_ALU, 1, 1)
 O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)

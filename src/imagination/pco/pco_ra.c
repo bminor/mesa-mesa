@@ -1,6 +1,9 @@
 /*
  * Copyright © 2024 Imagination Technologies Ltd.
  *
+ * based in part on asahi driver which is:
+ * Copyright 2022 Alyssa Rosenzweig
+ *
  * SPDX-License-Identifier: MIT
  */
 
@@ -167,6 +170,116 @@ static void preproc_vecs(pco_func *func)
    }
 
    ralloc_free(mem_ctx);
+}
+
+typedef struct _pco_copy {
+   pco_ref src;
+   pco_ref dest;
+   bool s1;
+
+   bool done;
+} pco_copy;
+
+static inline bool
+copy_blocked(pco_copy *copy, unsigned *temp_use_counts, unsigned lowest_temp)
+{
+   return temp_use_counts[pco_ref_get_temp(copy->dest) - lowest_temp] > 0;
+}
+
+static inline void
+do_copy(pco_builder *b, enum pco_exec_cnd exec_cnd, pco_copy *copy)
+{
+   if (copy->s1)
+      pco_movs1(b, copy->dest, copy->src, .exec_cnd = exec_cnd);
+   else
+      pco_mbyp(b, copy->dest, copy->src, .exec_cnd = exec_cnd);
+}
+
+static inline void
+do_swap(pco_builder *b, enum pco_exec_cnd exec_cnd, pco_copy *copy)
+{
+   assert(!copy->s1);
+
+   pco_mbyp2(b,
+             copy->dest,
+             pco_ref_reset_mods(copy->src),
+             copy->src,
+             copy->dest,
+             .exec_cnd = exec_cnd);
+}
+
+static void emit_copies(pco_builder *b,
+                        struct util_dynarray *copies,
+                        enum pco_exec_cnd exec_cnd,
+                        unsigned highest_temp,
+                        unsigned lowest_temp)
+{
+   unsigned temp_range = highest_temp - lowest_temp + 1;
+   unsigned *temp_use_counts =
+      rzalloc_array_size(NULL, sizeof(*temp_use_counts), temp_range);
+   pco_copy **temp_writes =
+      rzalloc_array_size(NULL, sizeof(*temp_writes), temp_range);
+
+   util_dynarray_foreach (copies, pco_copy, copy) {
+      if (pco_ref_is_temp(copy->src))
+         ++temp_use_counts[pco_ref_get_temp(copy->src) - lowest_temp];
+
+      temp_writes[pco_ref_get_temp(copy->dest) - lowest_temp] = copy;
+   }
+
+   bool progress = true;
+   while (progress) {
+      progress = false;
+
+      util_dynarray_foreach (copies, pco_copy, copy) {
+         if (!copy->done && !copy_blocked(copy, temp_use_counts, lowest_temp)) {
+            copy->done = true;
+            progress = true;
+            do_copy(b, exec_cnd, copy);
+
+            if (pco_ref_is_temp(copy->src))
+               --temp_use_counts[pco_ref_get_temp(copy->src) - lowest_temp];
+
+            temp_writes[pco_ref_get_temp(copy->dest) - lowest_temp] = NULL;
+         }
+      }
+
+      if (progress)
+         continue;
+
+      util_dynarray_foreach (copies, pco_copy, copy) {
+         if (copy->done)
+            continue;
+
+         if (pco_refs_are_equal(copy->src, copy->dest, true)) {
+            copy->done = true;
+            continue;
+         }
+
+         do_swap(b, exec_cnd, copy);
+         copy->src = pco_ref_reset_mods(copy->src);
+
+         util_dynarray_foreach (copies, pco_copy, blocking) {
+            if (pco_ref_get_temp(blocking->src) >=
+                   pco_ref_get_temp(copy->dest) &&
+                pco_ref_get_temp(blocking->src) <
+                   (pco_ref_get_temp(copy->dest) + 1)) {
+               blocking->src = pco_ref_offset(blocking->src,
+                                              pco_ref_get_temp(copy->src) -
+                                                 pco_ref_get_temp(copy->dest));
+            }
+         }
+
+         copy->done = true;
+      }
+   }
+
+   util_dynarray_foreach (copies, pco_copy, copy) {
+      assert(copy->done);
+   }
+
+   ralloc_free(temp_writes);
+   ralloc_free(temp_use_counts);
 }
 
 /**
@@ -532,6 +645,13 @@ static bool pco_ra_func(pco_func *func,
             override ? ra_get_node_reg(ra_graph, override->ref.val)
                      : ra_get_node_reg(ra_graph, instr->dest[0].val);
 
+         struct util_dynarray copies;
+         util_dynarray_init(&copies, NULL);
+
+         unsigned highest_temp = 0;
+         unsigned lowest_temp = ~0;
+
+         enum pco_exec_cnd exec_cnd = pco_instr_get_exec_cnd(instr);
          pco_foreach_instr_src (psrc, instr) {
             if (!pco_ref_is_ssa(*psrc) ||
                 !_mesa_hash_table_u64_search(overrides, psrc->val) ||
@@ -554,7 +674,6 @@ static bool pco_ra_func(pco_func *func,
                      ra_get_node_reg(ra_graph, psrc->val + num_ssas);
                }
 
-               enum pco_exec_cnd exec_cnd = pco_instr_get_exec_cnd(instr);
                for (unsigned u = 0; u < chans; ++u) {
                   pco_ref dest =
                      pco_ref_hwreg(temp_dest_base + offset, PCO_REG_CLASS_TEMP);
@@ -570,13 +689,37 @@ static bool pco_ra_func(pco_func *func,
 
                   pco_ref_xfer_mods(&src, psrc, false);
 
-                  if (!pco_refs_are_equal(src, dest, true)) {
+                  /* if (!pco_refs_are_equal(src, dest, true)) */ {
+                     highest_temp =
+                        MAX3(highest_temp,
+                             pco_ref_is_temp(src) ? pco_ref_get_temp(src)
+                                                  : highest_temp,
+                             pco_ref_is_temp(dest) ? pco_ref_get_temp(dest)
+                                                   : highest_temp);
+
+                     lowest_temp =
+                        MIN3(lowest_temp,
+                             pco_ref_is_temp(src) ? pco_ref_get_temp(src)
+                                                  : lowest_temp,
+                             pco_ref_is_temp(dest) ? pco_ref_get_temp(dest)
+                                                   : lowest_temp);
+                     pco_copy copy = {
+                        .src = src,
+                        .dest = dest,
+                        .s1 = pco_ref_is_reg(src) &&
+                              pco_ref_get_reg_class(src) == PCO_REG_CLASS_SPEC,
+                     };
+
+                     /*
                      if (pco_ref_is_reg(src) &&
                          pco_ref_get_reg_class(src) == PCO_REG_CLASS_SPEC) {
                         pco_movs1(&b, dest, src, .exec_cnd = exec_cnd);
                      } else {
                         pco_mbyp(&b, dest, src, .exec_cnd = exec_cnd);
                      }
+                     */
+
+                     util_dynarray_append(&copies, pco_copy, copy);
                   }
                }
 
@@ -585,6 +728,11 @@ static bool pco_ra_func(pco_func *func,
 
             offset += pco_ref_get_chans(*psrc);
          }
+
+         /* Emit copies. */
+         emit_copies(&b, &copies, exec_cnd, highest_temp, lowest_temp);
+
+         util_dynarray_fini(&copies);
 
          pco_instr_delete(instr);
          continue;
