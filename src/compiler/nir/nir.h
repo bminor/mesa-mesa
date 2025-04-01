@@ -2474,6 +2474,11 @@ typedef struct nir_tex_instr {
    /** True if the offset is not dynamically uniform */
    bool offset_non_uniform;
 
+   /** True whether this returns the same result anywhere in the shader and
+    *  doesn't cause page faults.
+    */
+   bool can_speculate;
+
    /** The texture index
     *
     * If this texture instruction has a nir_tex_src_texture_offset source,

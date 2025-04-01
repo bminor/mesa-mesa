@@ -78,6 +78,7 @@ dx_get_texture_lod(nir_builder *b, nir_tex_instr *tex)
    tql->is_new_style_shadow = tex->is_new_style_shadow;
    tql->texture_index = tex->texture_index;
    tql->sampler_index = tex->sampler_index;
+   tql->can_speculate = tex->can_speculate;
    tql->dest_type = nir_type_float32;
 
    /* The coordinate needs special handling because we might have
@@ -282,6 +283,7 @@ create_txf_from_tex(nir_builder *b, nir_tex_instr *tex)
    txf->is_new_style_shadow = tex->is_new_style_shadow;
    txf->texture_index = tex->texture_index;
    txf->sampler_index = tex->sampler_index;
+   txf->can_speculate = tex->can_speculate;
    txf->dest_type = tex->dest_type;
 
    unsigned idx = 0;

@@ -319,6 +319,7 @@ nir_build_texture_query(nir_builder *b, nir_tex_instr *tex, nir_texop texop,
    query->is_new_style_shadow = tex->is_new_style_shadow;
    query->texture_index = tex->texture_index;
    query->sampler_index = tex->sampler_index;
+   query->can_speculate = tex->can_speculate;
    query->dest_type = dest_type;
 
    if (include_coord) {

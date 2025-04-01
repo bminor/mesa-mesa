@@ -129,6 +129,7 @@ sample_via_nir(nir_builder *b,  const char *name, int sampler,
    tex->op = nir_texop_tex;
    tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
    tex->coord_components = 2;
+   tex->can_speculate = true;
    tex->dest_type = alu_type;
    tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
                                      &deref->def);

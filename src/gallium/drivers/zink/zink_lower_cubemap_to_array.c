@@ -158,6 +158,7 @@ create_array_tex_from_cube_tex(nir_builder *b, nir_tex_instr *tex, nir_def *coor
    array_tex->sampler_index = tex->sampler_index;
    array_tex->dest_type = tex->dest_type;
    array_tex->coord_components = 3;
+   array_tex->can_speculate = tex->can_speculate;
 
    nir_src coord_src = nir_src_for_ssa(coord);
    unsigned s = 0;
@@ -415,6 +416,7 @@ lower_tex_to_txl(nir_builder *b, nir_tex_instr *tex)
    txl->is_shadow = tex->is_shadow;
    txl->is_sparse = tex->is_sparse;
    txl->is_new_style_shadow = tex->is_new_style_shadow;
+   txl->can_speculate = tex->can_speculate;
 
    unsigned s = 0;
    for (int i = 0; i < tex->num_srcs; i++) {

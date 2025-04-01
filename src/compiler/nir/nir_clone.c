@@ -414,6 +414,7 @@ clone_tex(clone_state *state, const nir_tex_instr *tex)
 
    ntex->texture_index = tex->texture_index;
    ntex->sampler_index = tex->sampler_index;
+   ntex->can_speculate = tex->can_speculate;
 
    ntex->texture_non_uniform = tex->texture_non_uniform;
    ntex->sampler_non_uniform = tex->sampler_non_uniform;

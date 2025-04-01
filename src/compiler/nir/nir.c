@@ -816,6 +816,7 @@ nir_tex_instr_create(nir_shader *shader, unsigned num_srcs)
    instr->texture_index = 0;
    instr->sampler_index = 0;
    memcpy(instr->tg4_offsets, default_tg4_offsets, sizeof(instr->tg4_offsets));
+   instr->can_speculate = false;
 
    return instr;
 }
@@ -2745,7 +2746,7 @@ nir_instr_can_speculate(nir_instr *instr)
       return true;
 
    case nir_instr_type_tex:
-      return false;
+      return nir_instr_as_tex(instr)->can_speculate;
 
    case nir_instr_type_intrinsic:
       intr = nir_instr_as_intrinsic(instr);

@@ -428,6 +428,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
                new_tex->is_array = tex->is_array;
                new_tex->texture_index = tex->texture_index;
                new_tex->sampler_index = tex->sampler_index;
+               new_tex->can_speculate = tex->can_speculate;
                new_tex->dest_type = nir_type_int32;
                new_tex->src[0].src = nir_src_for_ssa(tex->src[i].src.ssa);
                new_tex->src[0].src_type = tex->src[i].src_type;
@@ -447,6 +448,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
                new_tex->is_array = tex->is_array;
                new_tex->texture_index = tex->texture_index;
                new_tex->sampler_index = tex->sampler_index;
+               new_tex->can_speculate = tex->can_speculate;
                new_tex->dest_type = nir_type_int32;
                new_tex->src[0].src = nir_src_for_ssa(tex->src[i].src.ssa);
                new_tex->src[0].src_type = tex->src[i].src_type;

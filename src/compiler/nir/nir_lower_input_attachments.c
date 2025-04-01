@@ -140,6 +140,7 @@ try_lower_input_load(nir_builder *b, nir_intrinsic_instr *load,
 
    tex->texture_index = 0;
    tex->sampler_index = 0;
+   tex->can_speculate = true;
 
    tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
                                      &deref->def);

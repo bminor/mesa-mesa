@@ -178,6 +178,7 @@ create_array_tex_from_cube_tex(nir_builder *b, nir_tex_instr *tex, nir_def *coor
    array_tex->sampler_index = tex->sampler_index;
    array_tex->dest_type = tex->dest_type;
    array_tex->coord_components = 3;
+   array_tex->can_speculate = tex->can_speculate;
 
    nir_src coord_src = nir_src_for_ssa(coord);
    for (unsigned i = 0; i < tex->num_srcs; i++) {

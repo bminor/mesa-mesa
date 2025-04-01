@@ -1259,6 +1259,7 @@ ttn_tex(struct ttn_compile *c, nir_def **src)
 
    instr = nir_tex_instr_create(b->shader, num_srcs);
    instr->op = op;
+   instr->can_speculate = true; /* No shaders come from SPIR-V or GLSL. */
 
    get_texture_info(tgsi_inst->Texture.Texture,
                     &instr->sampler_dim, &instr->is_shadow, &instr->is_array);
@@ -1441,12 +1442,14 @@ ttn_txq(struct ttn_compile *c, nir_def **src)
    txs = nir_tex_instr_create(b->shader, 2);
    txs->op = nir_texop_txs;
    txs->dest_type = nir_type_uint32;
+   txs->can_speculate = true;
    get_texture_info(tgsi_inst->Texture.Texture,
                     &txs->sampler_dim, &txs->is_shadow, &txs->is_array);
 
    qlv = nir_tex_instr_create(b->shader, 1);
    qlv->op = nir_texop_query_levels;
    qlv->dest_type = nir_type_uint32;
+   qlv->can_speculate = true;
    get_texture_info(tgsi_inst->Texture.Texture,
                     &qlv->sampler_dim, &qlv->is_shadow, &qlv->is_array);
 

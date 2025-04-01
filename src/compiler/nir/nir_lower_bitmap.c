@@ -78,7 +78,8 @@ nir_lower_bitmap(nir_shader *shader, const nir_lower_bitmap_options *options)
    nir_deref_instr *tex_deref = nir_build_deref_var(b, tex_var);
 
    nir_def *tex = nir_tex(b, texcoord, .texture_deref = tex_deref,
-                          .sampler_deref = tex_deref);
+                          .sampler_deref = tex_deref,
+                          .can_speculate = true);
 
    /* kill if tex != 0.0.. take .x or .w channel according to format: */
    nir_def *channel = nir_channel(b, tex, options->swizzle_xxxx ? 0 : 3);

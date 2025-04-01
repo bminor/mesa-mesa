@@ -206,6 +206,7 @@ gl_nir_inline_functions(nir_shader *shader)
                                   &deref->def, instr);
                   replace_tex_src(&intr->src[1], nir_tex_src_sampler_deref,
                                   &deref->def, instr);
+                  intr->can_speculate = true;
                }
                nir_instr_remove(&intrin->instr);
             }

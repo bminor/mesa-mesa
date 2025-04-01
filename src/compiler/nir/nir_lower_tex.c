@@ -377,6 +377,7 @@ sample_plane(nir_builder *b, nir_tex_instr *tex, int plane,
 
    plane_tex->texture_index = tex->texture_index;
    plane_tex->sampler_index = tex->sampler_index;
+   plane_tex->can_speculate = tex->can_speculate;
 
    nir_def_init(&plane_tex->instr, &plane_tex->def, 4,
                 tex->def.bit_size);
@@ -940,6 +941,7 @@ lower_tex_to_txd(nir_builder *b, nir_tex_instr *tex)
    txd->is_array = tex->is_array;
    txd->is_shadow = tex->is_shadow;
    txd->is_new_style_shadow = tex->is_new_style_shadow;
+   txd->can_speculate = tex->can_speculate;
 
    /* reuse existing srcs */
    for (unsigned i = 0; i < tex->num_srcs; i++) {
@@ -981,6 +983,7 @@ lower_txb_to_txl(nir_builder *b, nir_tex_instr *tex)
    txl->is_array = tex->is_array;
    txl->is_shadow = tex->is_shadow;
    txl->is_new_style_shadow = tex->is_new_style_shadow;
+   txl->can_speculate = tex->can_speculate;
 
    /* reuse all but bias src */
    for (int i = 0; i < tex->num_srcs; i++) {
@@ -1275,6 +1278,7 @@ lower_tg4_offsets(nir_builder *b, nir_tex_instr *tex)
       tex_copy->texture_index = tex->texture_index;
       tex_copy->sampler_index = tex->sampler_index;
       tex_copy->backend_flags = tex->backend_flags;
+      tex_copy->can_speculate = tex->can_speculate;
 
       for (unsigned j = 0; j < tex->num_srcs; ++j) {
          tex_copy->src[j].src = nir_src_for_ssa(tex->src[j].src.ssa);
@@ -1407,6 +1411,7 @@ nir_lower_ms_txf_to_fragment_fetch(nir_builder *b, nir_tex_instr *tex)
    fmask_fetch->texture_non_uniform = tex->texture_non_uniform;
    fmask_fetch->offset_non_uniform = tex->offset_non_uniform;
    fmask_fetch->dest_type = nir_type_uint32;
+   fmask_fetch->can_speculate = tex->can_speculate;
    nir_def_init(&fmask_fetch->instr, &fmask_fetch->def, 1, 32);
 
    fmask_fetch->num_srcs = 0;

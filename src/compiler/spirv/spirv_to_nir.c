@@ -3749,6 +3749,8 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
    instr->is_new_style_shadow =
       is_shadow && glsl_get_components(ret_type->type) == 1;
    instr->component = gather_component;
+   /* spirv_to_nir doesn't support OpenGL bindless textures. */
+   instr->can_speculate = b->options->environment == NIR_SPIRV_OPENGL;
 
    /* If SpvCapabilityImageGatherBiasLodAMD is enabled, texture gather without an explicit LOD
     * has an implicit one (instead of using level 0).

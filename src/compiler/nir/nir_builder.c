@@ -284,6 +284,7 @@ nir_build_tex_struct(nir_builder *build, nir_texop op, struct nir_tex_builder f)
    tex->backend_flags = f.backend_flags;
    tex->texture_index = f.texture_index;
    tex->sampler_index = f.sampler_index;
+   tex->can_speculate = f.can_speculate;
 
    switch (op) {
    case nir_texop_txs:

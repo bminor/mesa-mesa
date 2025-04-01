@@ -102,7 +102,7 @@ lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *
     *   TEX def, texcoord, drawpix_sampler, 2D
     */
    def = nir_tex(b, nir_trim_vector(b, texcoord, 2), .texture_deref = tex_deref,
-                 .sampler_deref = tex_deref);
+                 .sampler_deref = tex_deref, .can_speculate = true);
 
    /* Apply the scale and bias. */
    if (state->options->scale_and_bias) {
@@ -132,6 +132,7 @@ lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *
       tex->coord_components = 2;
       tex->sampler_index = state->options->pixelmap_sampler;
       tex->texture_index = state->options->pixelmap_sampler;
+      tex->can_speculate = true;
       tex->dest_type = nir_type_float32;
       tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
                                         &pixelmap_deref->def);
@@ -150,6 +151,7 @@ lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *
       tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
       tex->coord_components = 2;
       tex->sampler_index = state->options->pixelmap_sampler;
+      tex->can_speculate = true;
       tex->dest_type = nir_type_float32;
       tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord,
                                         nir_channels(b, def, 0xc));

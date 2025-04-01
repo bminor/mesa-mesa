@@ -771,6 +771,7 @@ load_texture(struct texenv_fragment_program *p, GLuint unit)
    tex->dest_type = nir_type_float32;
    tex->texture_index = unit;
    tex->sampler_index = unit;
+   tex->can_speculate = true;
 
    tex->sampler_dim =
       _mesa_texture_index_to_sampler_dim(texTarget,

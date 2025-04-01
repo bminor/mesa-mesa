@@ -422,6 +422,7 @@ ptn_tex(struct ptn_compile *c, nir_def **src,
    instr->op = op;
    instr->dest_type = nir_type_float32;
    instr->is_shadow = prog_inst->TexShadow;
+   instr->can_speculate = true;
 
    bool is_array;
    instr->sampler_dim = _mesa_texture_index_to_sampler_dim(prog_inst->TexSrcTarget, &is_array);

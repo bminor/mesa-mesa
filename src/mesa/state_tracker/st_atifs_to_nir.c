@@ -355,6 +355,7 @@ compile_setupinst(struct st_translate *t,
       tex->dest_type = nir_type_float32;
       tex->coord_components =
          glsl_get_sampler_dim_coordinate_components(tex->sampler_dim);
+      tex->can_speculate = true;
 
       tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
                                         &tex_deref->def);

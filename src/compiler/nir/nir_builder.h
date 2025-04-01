@@ -2189,6 +2189,7 @@ struct nir_tex_builder {
    enum glsl_sampler_dim dim;
    nir_alu_type dest_type;
    bool is_array;
+   bool can_speculate;
    uint32_t backend_flags;
 };
 

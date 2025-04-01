@@ -404,7 +404,8 @@ txs_for_image(nir_builder *b, nir_intrinsic_instr *intr,
 
    nir_def *res =
       nir_build_tex(b, op, .texture_handle = intr->src[0].ssa, .lod = lod,
-                    .dim = dim, .is_array = nir_intrinsic_image_array(intr));
+                    .dim = dim, .is_array = nir_intrinsic_image_array(intr),
+                    .can_speculate = nir_instr_can_speculate(&intr->instr));
 
    /* Cube images are implemented as 2D arrays, so we need to divide here. */
    if (dim == GLSL_SAMPLER_DIM_CUBE && res->num_components > 2 &&

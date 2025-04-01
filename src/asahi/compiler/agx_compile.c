@@ -2931,14 +2931,22 @@ agx_mem_vectorize_cb(unsigned align_mul, unsigned align_offset,
 }
 
 static bool
-set_speculate(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
+set_speculate(nir_builder *b, nir_instr *instr, UNUSED void *_)
 {
-   if (!nir_intrinsic_has_access(intr))
-      return false;
+   if (instr->type == nir_instr_type_intrinsic &&
+       nir_intrinsic_has_access(nir_instr_as_intrinsic(instr))) {
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+      nir_intrinsic_set_access(intr,
+                               ACCESS_CAN_SPECULATE | nir_intrinsic_access(intr));
+      return true;
+   }
 
-   nir_intrinsic_set_access(intr,
-                            ACCESS_CAN_SPECULATE | nir_intrinsic_access(intr));
-   return true;
+   if (instr->type == nir_instr_type_tex) {
+      nir_instr_as_tex(instr)->can_speculate = true;
+      return true;
+   }
+
+   return false;
 }
 
 static bool
@@ -3067,7 +3075,7 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
     * peephole select and form preambles more aggressively.
     */
    if (soft_fault) {
-      NIR_PASS(_, nir, nir_shader_intrinsics_pass, set_speculate,
+      NIR_PASS(_, nir, nir_shader_instructions_pass, set_speculate,
                nir_metadata_control_flow, NULL);
    }
 
