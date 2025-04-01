@@ -512,11 +512,16 @@ impl Shader<'_> {
                 min_num_static_cycles += calc_delays(f, self.sm);
             }
 
-            // Check that this file's model matches up with the model in
-            // opt_instr_sched_postpass. postpass includes an estimate of
-            // variable latency delays in its count, so we expect it to be >=
-            // the estimate here
-            assert!(self.info.num_static_cycles >= min_num_static_cycles);
+            if DEBUG.cycles() {
+                // This is useful for debugging differences in the scheduler
+                // cycle count model and the calc_delays() model.  However, it
+                // isn't totally valid since assign_barriers() can add extra
+                // dependencies for barrier re-use and those may add cycles.
+                // The chances of it doing this are low, thanks to our LRU
+                // allocation strategy, but it's still not an assert we want
+                // running in production.
+                assert!(self.info.num_static_cycles >= min_num_static_cycles);
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ enum DebugFlags {
     Spill,
     Annotate,
     NoUgpr,
+    Cycles,
 }
 
 pub struct Debug {
@@ -49,6 +50,7 @@ impl Debug {
                 "spill" => flags |= 1 << DebugFlags::Spill as u8,
                 "annotate" => flags |= 1 << DebugFlags::Annotate as u8,
                 "nougpr" => flags |= 1 << DebugFlags::NoUgpr as u8,
+                "cycles" => flags |= 1 << DebugFlags::Cycles as u8,
                 unk => eprintln!("Unknown NAK_DEBUG flag \"{}\"", unk),
             }
         }
@@ -77,6 +79,10 @@ pub trait GetDebugFlags {
 
     fn no_ugpr(&self) -> bool {
         self.debug_flags() & (1 << DebugFlags::NoUgpr as u8) != 0
+    }
+
+    fn cycles(&self) -> bool {
+        self.debug_flags() & (1 << DebugFlags::Cycles as u8) != 0
     }
 }
 
