@@ -74,7 +74,7 @@
         "description": "ac/surface: fix selecting preferred alignments for HiZ/HiS on GFX12",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "079f55d405ea9783ad63c526ed39a0e20c4f4724",
         "notes": null
