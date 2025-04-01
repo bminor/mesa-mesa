@@ -1755,8 +1755,6 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
 
    if (intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_TIMELINE_FENCES, &val))
       device->has_exec_timeline = val;
-   if (debug_get_bool_option("ANV_QUEUE_THREAD_DISABLE", false))
-      device->has_exec_timeline = false;
 
    unsigned st_idx = 0;
 

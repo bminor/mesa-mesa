@@ -2562,9 +2562,6 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    if (result != VK_SUCCESS)
       goto fail_base;
 
-   if (debug_get_bool_option("ANV_QUEUE_THREAD_DISABLE", false))
-      device->has_exec_timeline = false;
-
    device->has_cooperative_matrix =
       device->info.cooperative_matrix_configurations[0].scope != INTEL_CMAT_SCOPE_NONE;
 

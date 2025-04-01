@@ -877,11 +877,6 @@ Anvil(ANV) driver environment variables
    If defined to ``1`` or ``true``, this forces all descriptor sets to
    use the internal :ref:`Bindless model`.
 
-.. envvar:: ANV_QUEUE_THREAD_DISABLE
-
-   If defined to ``1`` or ``true``, this disables support for timeline
-   semaphores.
-
 .. envvar:: ANV_USERSPACE_RELOCS
 
    If defined to ``1`` or ``true``, this forces ANV to always do
