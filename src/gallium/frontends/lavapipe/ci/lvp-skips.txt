@@ -76,3 +76,11 @@ dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_fragment_rea
 dEQP-VK.tessellation.invariance.outer_edge_symmetry.triangles_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.misc_draw.fill_overlap_quads_equal_spacing_draw_indirect
 nir-stress=dEQP-VK.ray_query.builtin.instanceid.tese.triangles
+
+# since hetzner migration
+dEQP-VK.rasterization.interpolation.basic.strict_line_strip_wide
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_blit_image.image_128x128_r8_unorm
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_compute.image_128x128_r16_uint
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_tess_control_read_image_vertex.image_128x128_r32g32b32a32_sfloat
+dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_linear_clamp
+dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_linear_clamp
