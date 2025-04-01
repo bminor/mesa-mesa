@@ -594,7 +594,7 @@
         "description": "nir/opt_varyings: Fix assertion when deduplicating TCS outputs.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c66967b5cb7aa69c3c2efb12730b7b570483e01b",
         "notes": null
