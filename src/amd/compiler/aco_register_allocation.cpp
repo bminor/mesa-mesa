@@ -1849,7 +1849,7 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
 
    DefInfo info(ctx, instr, temp.regClass(), operand_index);
 
-   if (!ctx.policy.skip_optimistic_path) {
+   if (!ctx.policy.skip_optimistic_path && !ctx.policy.use_compact_relocate) {
       /* try to find space without live-range splits */
       res = get_reg_simple(ctx, reg_file, info);
 
@@ -1857,11 +1857,13 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
          return *res;
    }
 
-   /* try to find space with live-range splits */
-   res = get_reg_impl(ctx, reg_file, parallelcopies, info, instr);
+   if (!ctx.policy.use_compact_relocate) {
+      /* try to find space with live-range splits */
+      res = get_reg_impl(ctx, reg_file, parallelcopies, info, instr);
 
-   if (res)
-      return *res;
+      if (res)
+         return *res;
+   }
 
    /* try compacting the linear vgprs to make more space */
    std::vector<parallelcopy> pc;

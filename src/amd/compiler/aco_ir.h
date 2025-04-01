@@ -2219,6 +2219,8 @@ private:
 struct ra_test_policy {
    /* Force RA to always use its pessimistic fallback algorithm */
    bool skip_optimistic_path = false;
+   /* Force get_reg() to always use its compact_relocate_vars() path */
+   bool use_compact_relocate = false;
 };
 
 void init();
