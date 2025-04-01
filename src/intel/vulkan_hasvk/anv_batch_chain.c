@@ -1504,7 +1504,7 @@ execbuf_can_skip_relocations(struct anv_execbuf *exec)
 
    static int userspace_relocs = -1;
    if (userspace_relocs < 0)
-      userspace_relocs = debug_get_bool_option("ANV_USERSPACE_RELOCS", true);
+      userspace_relocs = debug_get_bool_option("HASVK_USERSPACE_RELOCS", true);
    if (!userspace_relocs)
       return false;
 

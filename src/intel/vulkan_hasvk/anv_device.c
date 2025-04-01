@@ -975,7 +975,7 @@ get_properties(const struct anv_physical_device *pdevice,
 #if DETECT_OS_ANDROID
       .apiVersion = ANV_API_VERSION,
 #else
-      .apiVersion = (pdevice->use_softpin || pdevice->instance->report_vk_1_3) ? 
+      .apiVersion = (pdevice->use_softpin || pdevice->instance->report_vk_1_3) ?
          ANV_API_VERSION_1_3 : ANV_API_VERSION_1_2,
 #endif /* DETECT_OS_ANDROID */
       .driverVersion = vk_get_driver_version(),
@@ -1469,33 +1469,13 @@ anv_physical_device_free_disk_cache(struct anv_physical_device *device)
 #endif
 }
 
-/* The ANV_QUEUE_OVERRIDE environment variable is a comma separated list of
- * queue overrides.
- *
- * To override the number queues:
- *  * "gc" is for graphics queues with compute support
- *  * "g" is for graphics queues with no compute support
- *  * "c" is for compute queues with no graphics support
- *
- * For example, ANV_QUEUE_OVERRIDE=gc=2,c=1 would override the number of
- * advertised queues to be 2 queues with graphics+compute support, and 1 queue
- * with compute-only support.
- *
- * ANV_QUEUE_OVERRIDE=c=1 would override the number of advertised queues to
- * include 1 queue with compute-only support, but it will not change the
- * number of graphics+compute queues.
- *
- * ANV_QUEUE_OVERRIDE=gc=0,c=1 would override the number of advertised queues
- * to include 1 queue with compute-only support, and it would override the
- * number of graphics+compute queues to be 0.
- */
 static void
 anv_override_engine_counts(int *gc_count, int *g_count, int *c_count)
 {
    int gc_override = -1;
    int g_override = -1;
    int c_override = -1;
-   const char *env_ = os_get_option("ANV_QUEUE_OVERRIDE");
+   const char *env_ = os_get_option("HASVK_QUEUE_OVERRIDE");
 
    if (env_ == NULL)
       return;
@@ -1778,11 +1758,11 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    device->vk.pipeline_cache_import_ops = anv_cache_import_ops;
 
    device->always_use_bindless =
-      debug_get_bool_option("ANV_ALWAYS_BINDLESS", false);
+      debug_get_bool_option("HASVK_ALWAYS_BINDLESS", false);
 
    device->use_call_secondary =
       device->use_softpin &&
-      !debug_get_bool_option("ANV_DISABLE_SECONDARY_CMD_BUFFER_CALLS", false);
+      !debug_get_bool_option("HASVK_DISABLE_SECONDARY_CMD_BUFFER_CALLS", false);
 
    /* We first got the A64 messages on broadwell and we can only use them if
     * we can pass addresses directly into the shader which requires softpin.
