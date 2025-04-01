@@ -325,7 +325,12 @@ static void si_driver_ds_init_once(void)
 #ifdef HAVE_PERFETTO
    util_perfetto_init();
    perfetto::DataSourceDescriptor dsd;
+#if DETECT_OS_ANDROID
+   // Android tooling expects this data source name
+   dsd.set_name("gpu.renderstages");
+#else
    dsd.set_name("gpu.renderstages.amd");
+#endif
    SIRenderpassDataSource::Register(dsd);
 #endif
 }

@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "util/detect_os.h"
 #include "pps_datasource.h"
 #include "pps_driver.h"
 
@@ -147,7 +148,12 @@ void GpuDataSource::register_data_source(const std::string &_driver_name)
 {
    driver_name = _driver_name;
    static perfetto::DataSourceDescriptor dsd;
+#if DETECT_OS_ANDROID
+   // Android tooling expects this data source name
+   dsd.set_name("gpu.counters");
+#else
    dsd.set_name("gpu.counters." + driver_name);
+#endif
    Register(dsd);
 }
 

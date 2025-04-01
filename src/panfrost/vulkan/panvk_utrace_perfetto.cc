@@ -255,7 +255,12 @@ static void
 register_data_source(void)
 {
    perfetto::DataSourceDescriptor dsd;
+#if DETECT_OS_ANDROID
+   // Android tooling expects this data source name
+   dsd.set_name("gpu.renderstages");
+#else
    dsd.set_name("gpu.renderstages.panfrost");
+#endif
    PanVKRenderpassDataSource::Register(dsd);
 }
 
