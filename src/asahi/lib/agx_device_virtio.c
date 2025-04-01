@@ -12,7 +12,6 @@
 #include "unstable_asahi_drm.h"
 
 #include "vdrm.h"
-#include "virglrenderer_hw.h"
 
 #include "asahi_proto.h"
 

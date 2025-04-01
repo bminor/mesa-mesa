@@ -19,10 +19,11 @@
 #include "util/os_misc.h"
 #include "util/sparse_array.h"
 #include "util/u_process.h"
-#include "virtio-gpu/virglrenderer_hw.h"
+#include "drm-uapi/virtgpu_drm.h"
 #include "vtest/vtest_protocol.h"
 
 #include "vn_renderer_internal.h"
+#include "virtio/virtio-gpu/venus_hw.h"
 
 #define VTEST_PCI_VENDOR_ID 0x1af4
 #define VTEST_PCI_DEVICE_ID 0x1050
@@ -57,7 +58,7 @@ struct vtest {
    uint32_t max_timeline_count;
 
    struct {
-      enum virgl_renderer_capset id;
+      uint32_t id;
       uint32_t version;
       struct virgl_renderer_capset_venus data;
    } capset;
@@ -255,7 +256,7 @@ vtest_vcmd_get_param(struct vtest *vtest, enum vcmd_param param)
 
 static bool
 vtest_vcmd_get_capset(struct vtest *vtest,
-                      enum virgl_renderer_capset id,
+                      uint32_t id,
                       uint32_t version,
                       void *capset,
                       size_t capset_size)
@@ -299,7 +300,7 @@ vtest_vcmd_get_capset(struct vtest *vtest,
 
 static void
 vtest_vcmd_context_init(struct vtest *vtest,
-                        enum virgl_renderer_capset capset_id)
+                        uint32_t capset_id)
 {
    uint32_t vtest_hdr[VTEST_HDR_SIZE];
    uint32_t vcmd_context_init[VCMD_CONTEXT_INIT_SIZE];
@@ -975,7 +976,7 @@ vtest_destroy(struct vn_renderer *renderer,
 static VkResult
 vtest_init_capset(struct vtest *vtest)
 {
-   vtest->capset.id = VIRGL_RENDERER_CAPSET_VENUS;
+   vtest->capset.id = VIRTGPU_DRM_CAPSET_VENUS;
    vtest->capset.version = 0;
 
    if (!vtest_vcmd_get_capset(vtest, vtest->capset.id, vtest->capset.version,

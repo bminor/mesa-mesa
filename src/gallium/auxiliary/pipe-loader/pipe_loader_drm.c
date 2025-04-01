@@ -50,7 +50,6 @@
 #include "util/xmlconfig.h"
 
 #include "virtio/virtio-gpu/drm_hw.h"
-#include "virtio/virtio-gpu/virglrenderer_hw.h"
 #include "drm-uapi/virtgpu_drm.h"
 
 #define DRM_RENDER_NODE_DEV_NAME_FORMAT "%s/renderD%d"
@@ -129,7 +128,7 @@ static int
 get_nctx_caps(int fd, struct virgl_renderer_capset_drm *caps)
 {
    struct drm_virtgpu_get_caps args = {
-         .cap_set_id = VIRGL_RENDERER_CAPSET_DRM,
+         .cap_set_id = VIRTGPU_DRM_CAPSET_DRM,
          .cap_set_ver = 0,
          .addr = (uintptr_t)caps,
          .size = sizeof(*caps),

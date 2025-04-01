@@ -49,10 +49,6 @@
 #include "virgl_drm_winsys.h"
 #include "virgl_drm_public.h"
 
-// Delete local definitions when virglrenderer_hw.h becomes public
-#define VIRGL_DRM_CAPSET_VIRGL  1
-#define VIRGL_DRM_CAPSET_VIRGL2 2
-
 #define VIRGL_DRM_VERSION(major, minor) ((major) << 16 | (minor))
 #define VIRGL_DRM_VERSION_FENCE_FD      VIRGL_DRM_VERSION(0, 1)
 
@@ -1169,10 +1165,10 @@ static int virgl_init_context(int drmFD)
    uint64_t supports_capset_virgl, supports_capset_virgl2;
    supports_capset_virgl = supports_capset_virgl2 = 0;
 
-   supports_capset_virgl = ((1 << VIRGL_DRM_CAPSET_VIRGL) &
+   supports_capset_virgl = ((1 << VIRTGPU_DRM_CAPSET_VIRGL) &
                              params[param_supported_capset_ids].value);
 
-   supports_capset_virgl2 = ((1 << VIRGL_DRM_CAPSET_VIRGL2) &
+   supports_capset_virgl2 = ((1 << VIRTGPU_DRM_CAPSET_VIRGL2) &
                               params[param_supported_capset_ids].value);
 
    if (!supports_capset_virgl && !supports_capset_virgl2) {
@@ -1182,8 +1178,8 @@ static int virgl_init_context(int drmFD)
 
    ctx_set_param.param = VIRTGPU_CONTEXT_PARAM_CAPSET_ID;
    ctx_set_param.value = (supports_capset_virgl2) ?
-                         VIRGL_DRM_CAPSET_VIRGL2 :
-                         VIRGL_DRM_CAPSET_VIRGL;
+                         VIRTGPU_DRM_CAPSET_VIRGL :
+                         VIRTGPU_DRM_CAPSET_VIRGL2;
 
    init.ctx_set_params = (unsigned long)(void *)&ctx_set_param;
    init.num_params = 1;

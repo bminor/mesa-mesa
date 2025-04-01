@@ -290,7 +290,7 @@ static int
 get_capset(int fd, struct virgl_renderer_capset_drm *caps)
 {
    struct drm_virtgpu_get_caps args = {
-         .cap_set_id = VIRGL_RENDERER_CAPSET_DRM,
+         .cap_set_id = VIRTGPU_DRM_CAPSET_DRM,
          .cap_set_ver = 0,
          .addr = (uintptr_t)caps,
          .size = sizeof(*caps),
@@ -305,7 +305,7 @@ static int
 set_context(int fd)
 {
    struct drm_virtgpu_context_set_param params[] = {
-         { VIRTGPU_CONTEXT_PARAM_CAPSET_ID, VIRGL_RENDERER_CAPSET_DRM },
+         { VIRTGPU_CONTEXT_PARAM_CAPSET_ID, VIRTGPU_DRM_CAPSET_DRM },
          { VIRTGPU_CONTEXT_PARAM_NUM_RINGS, 64 },
    };
    struct drm_virtgpu_context_init args = {

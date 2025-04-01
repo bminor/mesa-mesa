@@ -30,10 +30,8 @@
 #include "tu_knl_drm.h"
 #include "tu_queue.h"
 
-#include "virglrenderer_hw.h"
-#include "msm_proto.h"
-
 #include "vdrm.h"
+#include "msm_proto.h"
 
 struct tu_userspace_fence_cmd {
    uint32_t pkt[4];    /* first 4 dwords of packet */

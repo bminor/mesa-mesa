@@ -20,10 +20,8 @@
 /* We also use some types/defines from the host drm/msm uabi: */
 #include "drm-uapi/msm_drm.h"
 
-#include "virglrenderer_hw.h"
-#include "msm_proto.h"
-
 #include "vdrm.h"
+#include "msm_proto.h"
 
 struct virtio_device {
    struct fd_device base;

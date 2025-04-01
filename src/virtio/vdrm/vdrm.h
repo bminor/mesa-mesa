@@ -16,7 +16,7 @@
 
 #include "util/simple_mtx.h"
 
-#include "virglrenderer_hw.h"
+#include "virtio/virtio-gpu/drm_hw.h"
 
 #ifdef __cplusplus
 extern "C" {
