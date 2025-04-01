@@ -2054,7 +2054,7 @@
         "description": "Revert \"ir3: optimize SSBO offset shifts for nir_opt_offsets\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "57ea68927305a5b0696cc56caaaa17eeeafafdff",
         "notes": null
