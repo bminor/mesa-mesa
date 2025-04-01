@@ -2790,7 +2790,7 @@ varying_matches_record(void *mem_ctx, struct varying_matches *vm,
  *                        allocated
  * \return number of slots (4-element vectors) allocated
  */
-static unsigned
+static int
 varying_matches_assign_locations(struct varying_matches *vm,
                                  struct gl_shader_program *prog,
                                  uint8_t components[], uint64_t reserved_slots)
@@ -2942,6 +2942,7 @@ varying_matches_assign_locations(struct varying_matches *vm,
                       "packed between varyings with explicit locations. Try "
                       "using an explicit location for arrays and structs.",
                       var->name);
+         return -1;
       }
 
       if (slot_end < MAX_VARYINGS_INCL_PATCH * 4u) {
@@ -4170,8 +4171,11 @@ assign_final_varying_locations(const struct gl_constants *consts,
    }
 
    uint8_t components[MAX_VARYINGS_INCL_PATCH] = {0};
-   const unsigned slots_used =
+   const int slots_used =
       varying_matches_assign_locations(vm, prog, components, reserved_slots);
+   if (slots_used == -1)
+      return false;
+
    varying_matches_store_locations(vm);
 
    for (unsigned i = 0; i < num_xfb_decls; ++i) {
