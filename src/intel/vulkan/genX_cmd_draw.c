@@ -963,10 +963,30 @@ cmd_buffer_pre_draw_wa(struct anv_cmd_buffer *cmd_buffer)
                                  VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
    UNUSED struct anv_graphics_pipeline *pipeline =
       anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
+   UNUSED struct anv_device *device = cmd_buffer->device;
+   UNUSED struct anv_instance *instance = device->physical->instance;
+
+#define DEBUG_SHADER_HASH(stage) do {                                   \
+      if (unlikely(                                                     \
+             (instance->debug & ANV_DEBUG_SHADER_HASH) &&               \
+             anv_pipeline_has_stage(pipeline, stage))) {                \
+         mi_store(&b,                                                   \
+                  mi_mem32(device->workaround_address),                 \
+                  mi_imm(pipeline->base.shaders[stage]->                \
+                         prog_data->source_hash));                      \
+      }                                                                 \
+   } while (0)
+
+   struct mi_builder b;
+   if (unlikely(instance->debug & ANV_DEBUG_SHADER_HASH)) {
+      mi_builder_init(&b, device->info, &cmd_buffer->batch);
+      mi_builder_set_mocs(&b, isl_mocs(&device->isl_dev, 0, false));
+   }
 
 #if INTEL_WA_16011107343_GFX_VER
    if (intel_needs_workaround(cmd_buffer->device->info, 16011107343) &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_TESS_CTRL);
       anv_batch_emit_pipeline_state_protected(&cmd_buffer->batch, pipeline,
                                               final.hs, protected);
    }
@@ -975,6 +995,7 @@ cmd_buffer_pre_draw_wa(struct anv_cmd_buffer *cmd_buffer)
 #if INTEL_WA_22018402687_GFX_VER
    if (intel_needs_workaround(cmd_buffer->device->info, 22018402687) &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_TESS_EVAL);
       /* Wa_22018402687:
        *   In any 3D enabled context, just before any Tessellation enabled
        *   draw call (3D Primitive), re-send the last programmed 3DSTATE_DS
@@ -993,6 +1014,8 @@ cmd_buffer_pre_draw_wa(struct anv_cmd_buffer *cmd_buffer)
 #endif
 
    genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, true);
+
+#undef DEBUG_SHADER_HASH
 }
 
 ALWAYS_INLINE static void

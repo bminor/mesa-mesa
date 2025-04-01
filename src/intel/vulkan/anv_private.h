@@ -1298,6 +1298,7 @@ enum anv_debug {
    ANV_DEBUG_SPARSE_TRTT       = BITFIELD_BIT(4),
    ANV_DEBUG_VIDEO_DECODE      = BITFIELD_BIT(5),
    ANV_DEBUG_VIDEO_ENCODE      = BITFIELD_BIT(6),
+   ANV_DEBUG_SHADER_HASH       = BITFIELD_BIT(7),
 };
 
 struct anv_instance {

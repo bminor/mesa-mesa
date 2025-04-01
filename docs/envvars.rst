@@ -878,6 +878,10 @@ Anvil(ANV) driver environment variables
     Enables video decoding support
   ``video-encode``
     Enables video encoding support
+  ``shader-hash``
+    Emits dummy (MI_STORE_DATA_IMM) instructions containing the shader
+    source hash, preceding shader programming instructions (internal
+    shaders & ray-tracing shaders are omitted)
 
    If defined to ``1`` or ``true``, this will prevent usage of self
    modifying command buffers to implement ``vkCmdExecuteCommands``. As

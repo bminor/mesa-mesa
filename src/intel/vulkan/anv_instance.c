@@ -78,6 +78,7 @@ static const struct debug_control debug_control[] = {
    { "sparse-trtt",  ANV_DEBUG_SPARSE_TRTT},
    { "video-decode", ANV_DEBUG_VIDEO_DECODE},
    { "video-encode", ANV_DEBUG_VIDEO_ENCODE},
+   { "shader-hash",  ANV_DEBUG_SHADER_HASH},
    { NULL,    0 }
 };
 

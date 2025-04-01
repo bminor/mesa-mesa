@@ -36,6 +36,8 @@
 #include "common/intel_tiled_render.h"
 #include "compiler/brw_prim.h"
 
+#include "genX_mi_builder.h"
+
 static const uint32_t vk_to_intel_blend[] = {
    [VK_BLEND_FACTOR_ZERO]                    = BLENDFACTOR_ZERO,
    [VK_BLEND_FACTOR_ONE]                     = BLENDFACTOR_ONE,
@@ -2146,6 +2148,7 @@ static void
 cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 {
    struct anv_device *device = cmd_buffer->device;
+   struct anv_instance *instance = device->physical->instance;
    struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
    struct anv_graphics_pipeline *pipeline =
       anv_pipeline_to_graphics(gfx->base.pipeline);
@@ -2156,6 +2159,23 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
    const bool protected = cmd_buffer->vk.pool->flags &
                           VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
+
+#define DEBUG_SHADER_HASH(stage) do {                                   \
+      if (unlikely(                                                     \
+             (instance->debug & ANV_DEBUG_SHADER_HASH) &&               \
+             anv_pipeline_has_stage(pipeline, stage))) {                \
+         mi_store(&b,                                                   \
+                  mi_mem32(device->workaround_address),                 \
+                  mi_imm(pipeline->base.shaders[stage]->                \
+                         prog_data->source_hash));                      \
+      }                                                                 \
+   } while (0)
+
+   struct mi_builder b;
+   if (unlikely(instance->debug & ANV_DEBUG_SHADER_HASH)) {
+      mi_builder_init(&b, device->info, &cmd_buffer->batch);
+      mi_builder_set_mocs(&b, isl_mocs(&device->isl_dev, 0, false));
+   }
 
 #if INTEL_WA_16011107343_GFX_VER
    /* Will be emitted in front of every draw instead */
@@ -2219,16 +2239,19 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VS)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_VERTEX);
       anv_batch_emit_pipeline_state_protected(&cmd_buffer->batch, pipeline,
                                               final.vs, protected);
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_HS)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_TESS_CTRL);
       anv_batch_emit_pipeline_state_protected(&cmd_buffer->batch, pipeline,
                                               final.hs, protected);
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_DS)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_TESS_EVAL);
       anv_batch_emit_pipeline_state_protected(&cmd_buffer->batch, pipeline,
                                               final.ds, protected);
    }
@@ -2321,6 +2344,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    /* Now the potentially dynamic instructions */
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PS)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_FRAGMENT);
       anv_batch_emit_merge_protected(&cmd_buffer->batch, GENX(3DSTATE_PS),
                                      pipeline, partial.ps, ps, protected) {
          SET(ps, ps, KernelStartPointer0);
@@ -2506,6 +2530,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_GS)) {
+      DEBUG_SHADER_HASH(MESA_SHADER_GEOMETRY);
       anv_batch_emit_merge_protected(&cmd_buffer->batch, GENX(3DSTATE_GS),
                                      pipeline, partial.gs, gs, protected) {
          SET(gs, gs, ReorderMode);
@@ -2856,6 +2881,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #undef INIT
 #undef SET
+#undef DEBUG_SHADER_HASH
 
    BITSET_ZERO(hw_state->dirty);
 }
