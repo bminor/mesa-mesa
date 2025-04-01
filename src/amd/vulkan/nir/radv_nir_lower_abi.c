@@ -34,7 +34,8 @@ load_ring(nir_builder *b, unsigned ring, lower_abi_state *s)
 
    nir_def *ring_offsets = ac_nir_load_arg(b, &s->args->ac, arg);
    ring_offsets = nir_pack_64_2x32_split(b, nir_channel(b, ring_offsets, 0), nir_channel(b, ring_offsets, 1));
-   return nir_load_smem_amd(b, 4, ring_offsets, nir_imm_int(b, ring * 16u), .align_mul = 4u);
+   return nir_load_smem_amd(b, 4, ring_offsets, nir_imm_int(b, ring * 16u), .align_mul = 4u,
+                            .access = ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *
@@ -366,7 +367,8 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_streamout_buffer_amd: {
       nir_def *ptr = nir_pack_64_2x32_split(b, ac_nir_load_arg(b, &s->args->ac, s->args->streamout_buffers),
                                             nir_imm_int(b, s->address32_hi));
-      replacement = nir_load_smem_amd(b, 4, ptr, nir_imm_int(b, nir_intrinsic_base(intrin) * 16));
+      replacement = nir_load_smem_amd(b, 4, ptr, nir_imm_int(b, nir_intrinsic_base(intrin) * 16),
+                                      .access = ACCESS_CAN_SPECULATE);
       break;
    }
    case nir_intrinsic_load_xfb_state_address_gfx12_amd:

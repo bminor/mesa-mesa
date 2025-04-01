@@ -433,7 +433,8 @@ load_vs_input_from_vertex_buffer(nir_builder *b, unsigned input_index,
    } else {
       unsigned index = input_index - sel->info.num_vbos_in_user_sgprs;
       nir_def *addr = ac_nir_load_arg(b, &s->args->ac, s->args->ac.vertex_buffers);
-      vb_desc = nir_load_smem_amd(b, 4, addr, nir_imm_int(b, index * 16));
+      vb_desc = nir_load_smem_amd(b, 4, addr, nir_imm_int(b, index * 16),
+                                  .access = ACCESS_CAN_SPECULATE);
    }
 
    nir_def *vertex_index = s->vertex_index[input_index];

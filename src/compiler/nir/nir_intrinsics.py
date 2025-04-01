@@ -1930,7 +1930,7 @@ store("vector_arg_amd", [], [BASE])
 # restriction justifies the CAN_REORDER flag. Additionally, the base/offset must
 # be subgroup uniform.
 intrinsic("load_smem_amd", src_comp=[1, 1], dest_comp=0, bit_sizes=[32],
-                           indices=[ALIGN_MUL, ALIGN_OFFSET],
+                           indices=[ALIGN_MUL, ALIGN_OFFSET, ACCESS],
                            flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # src[] = { offset }.

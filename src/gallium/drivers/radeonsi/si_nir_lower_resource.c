@@ -74,7 +74,7 @@ static nir_def *load_ubo_desc(nir_builder *b, nir_def *index,
    index = nir_iadd_imm(b, index, SI_NUM_SHADER_BUFFERS);
 
    nir_def *offset = nir_ishl_imm(b, index, 4);
-   return nir_load_smem_amd(b, 4, addr, offset);
+   return nir_load_smem_amd(b, 4, addr, offset, .access = ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *load_ssbo_desc(nir_builder *b, nir_src *index,
@@ -94,7 +94,7 @@ static nir_def *load_ssbo_desc(nir_builder *b, nir_src *index,
    slot = nir_isub_imm(b, SI_NUM_SHADER_BUFFERS - 1, slot);
 
    nir_def *offset = nir_ishl_imm(b, slot, 4);
-   return nir_load_smem_amd(b, 4, addr, offset);
+   return nir_load_smem_amd(b, 4, addr, offset, .access = ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *fixup_image_desc(nir_builder *b, nir_def *rsrc, bool uses_store,
@@ -138,7 +138,7 @@ static nir_def *fixup_image_desc(nir_builder *b, nir_def *rsrc, bool uses_store,
  */
 static nir_def *load_image_desc(nir_builder *b, nir_def *list, nir_def *index,
                                     enum ac_descriptor_type desc_type, bool uses_store,
-                                    struct lower_resource_state *s)
+                                    bool bindless, struct lower_resource_state *s)
 {
    /* index is in uvec8 unit, convert to offset in bytes */
    nir_def *offset = nir_ishl_imm(b, index, 5);
@@ -151,7 +151,8 @@ static nir_def *load_image_desc(nir_builder *b, nir_def *list, nir_def *index,
       num_channels = 8;
    }
 
-   nir_def *rsrc = nir_load_smem_amd(b, num_channels, list, offset);
+   nir_def *rsrc = nir_load_smem_amd(b, num_channels, list, offset,
+                                     .access = bindless ? 0 : ACCESS_CAN_SPECULATE);
 
    if (desc_type == AC_DESC_IMAGE)
       rsrc = fixup_image_desc(b, rsrc, uses_store, s);
@@ -237,7 +238,7 @@ static nir_def *load_deref_image_desc(nir_builder *b, nir_deref_instr *deref,
       index = nir_isub_imm(b, SI_NUM_IMAGE_SLOTS - 1, index);
 
       nir_def *list = ac_nir_load_arg(b, &s->args->ac, s->args->samplers_and_images);
-      desc = load_image_desc(b, list, index, desc_type, !is_load, s);
+      desc = load_image_desc(b, list, index, desc_type, !is_load, false, s);
    }
 
    return desc;
@@ -255,7 +256,7 @@ static nir_def *load_bindless_image_desc(nir_builder *b, nir_def *index,
       index = nir_iadd_imm(b, index, 1);
 
    nir_def *list = ac_nir_load_arg(b, &s->args->ac, s->args->bindless_samplers_and_images);
-   return load_image_desc(b, list, index, desc_type, !is_load, s);
+   return load_image_desc(b, list, index, desc_type, !is_load, true, s);
 }
 
 static bool lower_resource_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
@@ -397,7 +398,7 @@ static bool lower_resource_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin
 }
 
 static nir_def *load_sampler_desc(nir_builder *b, nir_def *list, nir_def *index,
-                                      enum ac_descriptor_type desc_type)
+                                  enum ac_descriptor_type desc_type, bool bindless)
 {
    /* index is in 16 dword unit, convert to offset in bytes */
    nir_def *offset = nir_ishl_imm(b, index, 6);
@@ -427,7 +428,8 @@ static nir_def *load_sampler_desc(nir_builder *b, nir_def *list, nir_def *index,
       break;
    }
 
-   return nir_load_smem_amd(b, num_channels, list, offset);
+   return nir_load_smem_amd(b, num_channels, list, offset,
+                            .access = bindless ? 0 : ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *load_deref_sampler_desc(nir_builder *b, nir_deref_instr *deref,
@@ -442,7 +444,7 @@ static nir_def *load_deref_sampler_desc(nir_builder *b, nir_deref_instr *deref,
    /* return actual desc when required by caller */
    if (return_descriptor) {
       nir_def *list = ac_nir_load_arg(b, &s->args->ac, s->args->samplers_and_images);
-      return load_sampler_desc(b, list, index, desc_type);
+      return load_sampler_desc(b, list, index, desc_type, false);
    }
 
    /* Just use index here and let nir-to-llvm backend to translate to actual
@@ -461,7 +463,7 @@ static nir_def *load_bindless_sampler_desc(nir_builder *b, nir_def *index,
    /* 64 bit to 32 bit */
    index = nir_u2u32(b, index);
 
-   return load_sampler_desc(b, list, index, desc_type);
+   return load_sampler_desc(b, list, index, desc_type, true);
 }
 
 static nir_def *fixup_sampler_desc(nir_builder *b,
