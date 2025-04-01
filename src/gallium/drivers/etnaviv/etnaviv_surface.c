@@ -93,24 +93,6 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    pipe_resource_reference(&surf->base.texture, &rsc->base);
    pipe_resource_reference(&surf->prsc, prsc);
 
-   /* Allocate a TS for the resource if there isn't one yet,
-    * and it is allowed by the hw (width is a multiple of 16).
-    * Avoid doing this for GPUs with MC1.0, as kernel sources
-    * indicate the tile status module bypasses the memory
-    * offset and MMU. */
-
-   if (VIV_FEATURE(screen, ETNA_FEATURE_FAST_CLEAR) &&
-       !rsc->ts_bo &&
-       /* needs to be RS/BLT compatible for transfer_map/unmap */
-       (rsc->levels[level].padded_width & ETNA_RS_WIDTH_MASK) == 0 &&
-       (rsc->levels[level].padded_height & ETNA_RS_HEIGHT_MASK) == 0 &&
-       etna_resource_hw_tileable(screen->specs.use_blt, prsc) &&
-       /* Multi-layer resources would need to keep much more state (TS valid and
-        * clear color per layer) and are unlikely to profit from TS usage. */
-       prsc->depth0 == 1 && prsc->array_size == 1) {
-      etna_screen_resource_alloc_ts(pctx->screen, rsc, 0);
-   }
-
    surf->base.format = templat->format;
    surf->base.writable = templat->writable; /* what is this for anyway */
    surf->base.u = templat->u;

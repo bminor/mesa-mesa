@@ -107,6 +107,27 @@ etna_resource_is_render_compatible(struct pipe_screen *pscreen,
    return true;
 }
 
+static bool
+etna_resource_can_use_ts(struct etna_screen *screen,
+                         struct etna_resource *rsc)
+{
+   struct pipe_resource *prsc = &rsc->base;
+
+   /* GPU capable of using TS */
+   if (!VIV_FEATURE(screen, ETNA_FEATURE_FAST_CLEAR))
+      return false;
+
+   /* No array layers or 3D slices */
+   if (prsc->depth0 != 1 || prsc->array_size != 1)
+      return false;
+
+   /* Can be handled by the resolve engine */
+   if (!etna_resource_hw_tileable(screen->specs.use_blt, prsc))
+      return false;
+
+   return true;
+}
+
 /* A tile is either 64 bytes or, when the GPU has the CACHE128B256BPERLINE
  * feature, 128/256 bytes of color/depth data, tracked by
  * 'screen->specs.bits_per_tile' bits of tile status.
@@ -461,10 +482,10 @@ etna_resource_alloc(struct pipe_screen *pscreen, unsigned layout,
       }
    }
 
-   /* If TS is externally visible set it up now, so it can be exported before
-    * the first rendering to a surface.
-    */
-   if (etna_resource_ext_ts(rsc))
+   /* Allocate TS for the resource if it is renderable and may use TS */
+   if ((templat->bind & (PIPE_BIND_RENDER_TARGET | PIPE_BIND_DEPTH_STENCIL)) &&
+       etna_resource_is_render_compatible(pscreen, rsc) &&
+       etna_resource_can_use_ts(screen, rsc))
       etna_screen_resource_alloc_ts(pscreen, rsc, modifier);
 
    if (DBG_ENABLED(ETNA_DBG_ZERO)) {
