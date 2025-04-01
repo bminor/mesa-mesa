@@ -3127,7 +3127,7 @@ radv_get_vgt_shader_key(const struct radv_device *device, struct radv_shader **s
    if (last_vgt_shader->info.is_ngg) {
       key.ngg = 1;
       key.ngg_passthrough = last_vgt_shader->info.is_ngg_passthrough;
-      key.ngg_streamout = last_vgt_shader->info.so.num_outputs > 0;
+      key.ngg_streamout = !!last_vgt_shader->info.so.enabled_stream_buffers_mask;
    }
    if (shaders[MESA_SHADER_MESH]) {
       key.mesh = 1;

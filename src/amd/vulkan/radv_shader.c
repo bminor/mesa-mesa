@@ -2004,7 +2004,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    if (!pdev->use_ngg_streamout) {
       config->rsrc2 |= S_00B12C_SO_BASE0_EN(!!info->so.strides[0]) | S_00B12C_SO_BASE1_EN(!!info->so.strides[1]) |
                        S_00B12C_SO_BASE2_EN(!!info->so.strides[2]) | S_00B12C_SO_BASE3_EN(!!info->so.strides[3]) |
-                       S_00B12C_SO_EN(!!info->so.num_outputs);
+                       S_00B12C_SO_EN(!!info->so.enabled_stream_buffers_mask);
    }
 
    config->rsrc1 = S_00B848_VGPRS((num_vgprs - 1) / (info->wave_size == 32 ? 8 : 4)) | S_00B848_DX10_CLAMP(dx10_clamp) |

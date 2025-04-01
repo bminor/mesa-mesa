@@ -53,7 +53,6 @@ struct radv_vs_output_info {
 };
 
 struct radv_streamout_info {
-   uint16_t num_outputs;
    uint16_t strides[MAX_SO_BUFFERS];
    uint32_t enabled_stream_buffers_mask;
 };

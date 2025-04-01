@@ -372,8 +372,6 @@ gather_xfb_info(const nir_shader *nir, struct radv_shader_info *info)
       return;
 
    const nir_xfb_info *xfb = nir->xfb_info;
-   assert(xfb->output_count <= MAX_SO_OUTPUTS);
-   so->num_outputs = xfb->output_count;
 
    u_foreach_bit(output_buffer, xfb->buffers_written) {
       unsigned stream = xfb->buffer_to_stream[output_buffer];
@@ -535,7 +533,7 @@ gather_shader_info_ngg_query(struct radv_device *device, struct radv_shader_info
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    info->gs.has_pipeline_stat_query = pdev->emulate_ngg_gs_query_pipeline_stat && info->stage == MESA_SHADER_GEOMETRY;
-   info->has_xfb_query = info->so.num_outputs > 0;
+   info->has_xfb_query = !!info->so.enabled_stream_buffers_mask;
    info->has_prim_query = device->cache_key.primitives_generated_query || info->has_xfb_query;
 }
 
@@ -1443,7 +1441,7 @@ gfx10_get_ngg_scratch_lds_base(const struct radv_device *device, const struct ra
    } else {
       const bool uses_instanceid = es_info->vs.needs_instance_id;
       const bool uses_primitive_id = es_info->uses_prim_id;
-      const bool streamout_enabled = es_info->so.num_outputs && pdev->use_ngg_streamout;
+      const bool streamout_enabled = es_info->so.enabled_stream_buffers_mask && pdev->use_ngg_streamout;
       const uint32_t num_outputs =
          es_info->stage == MESA_SHADER_VERTEX ? es_info->vs.num_outputs : es_info->tes.num_outputs;
       unsigned pervertex_lds_bytes = ac_ngg_nogs_get_pervertex_lds_size(
@@ -1527,7 +1525,7 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
       /* LDS size for passing data from GS to ES. */
       struct radv_streamout_info *so_info = &es_info->so;
 
-      if (so_info->num_outputs) {
+      if (so_info->enabled_stream_buffers_mask) {
          /* Compute the same pervertex LDS size as the NGG streamout lowering pass which allocates
           * space for all outputs.
           * TODO: only alloc space for outputs that really need streamout.

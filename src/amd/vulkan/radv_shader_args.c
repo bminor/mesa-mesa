@@ -111,7 +111,7 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
    }
 
    const bool needs_streamout_buffers =
-      info->so.num_outputs ||
+      info->so.enabled_stream_buffers_mask ||
       (info->merged_shader_compiled_separately &&
        ((info->stage == MESA_SHADER_VERTEX && info->vs.as_es) ||
         (info->stage == MESA_SHADER_TESS_EVAL && info->tes.as_es) || info->stage == MESA_SHADER_GEOMETRY));
@@ -202,7 +202,7 @@ declare_streamout_sgprs(const struct radv_shader_info *info, struct radv_shader_
    int i;
 
    /* Streamout SGPRs. */
-   if (info->so.num_outputs) {
+   if (info->so.enabled_stream_buffers_mask) {
       assert(stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL);
 
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_config);
