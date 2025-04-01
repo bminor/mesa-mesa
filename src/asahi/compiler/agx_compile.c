@@ -3873,9 +3873,10 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
          nir->info.outputs_written & (VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT);
 
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      info->disable_tri_merging = nir->info.uses_wide_subgroup_intrinsics ||
-                                  nir->info.fs.needs_coarse_quad_helper_invocations ||
-                                  nir->info.writes_memory;
+      info->disable_tri_merging =
+         nir->info.uses_wide_subgroup_intrinsics ||
+         nir->info.fs.needs_coarse_quad_helper_invocations ||
+         nir->info.writes_memory;
 
       /* Writing the sample mask requires tag writes */
       info->tag_write_disable &= !info->writes_sample_mask;
