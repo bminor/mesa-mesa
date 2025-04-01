@@ -141,8 +141,9 @@ if with_tests and get_option('b_sanitize') == 'none'
     'nak',
     _libnak_rs,
     args : [
-      # Don't run HW tests by default
+      # Don't run HW or nvdisasm tests by default
       '--skip', 'hw_tests::',
+      '--skip', 'nvdisasm_tests::',
     ],
     suite : ['nouveau'],
     dependencies : [
