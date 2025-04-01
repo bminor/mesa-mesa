@@ -3546,7 +3546,7 @@ static bool
 remove_unused_io_vars(nir_shader *producer, nir_shader *consumer,
                       struct gl_shader_program *prog,
                       nir_variable_mode mode,
-                      BITSET_WORD **used_by_other_stage)
+                      BITSET_WORD **used_by_other_stage, bool *out_progress)
 {
    assert(mode == nir_var_shader_in || mode == nir_var_shader_out);
 
@@ -3623,6 +3623,7 @@ remove_unused_io_vars(nir_shader *producer, nir_shader *consumer,
                             _mesa_shader_stage_to_string(consumer->info.stage),
                             var->name,
                             _mesa_shader_stage_to_string(producer->info.stage));
+               return false;
             } else {
                linker_warning(prog, "%s shader varying %s not written "
                               "by %s shader\n.",
@@ -3637,12 +3638,14 @@ remove_unused_io_vars(nir_shader *producer, nir_shader *consumer,
    if (progress)
       fixup_vars_lowered_to_temp(shader, mode);
 
-   return progress;
+   *out_progress |= progress;
+   return true;
 }
 
 static bool
 remove_unused_varyings(nir_shader *producer, nir_shader *consumer,
-                       struct gl_shader_program *prog, void *mem_ctx)
+                       struct gl_shader_program *prog, void *mem_ctx,
+                       bool *out_progress)
 {
    assert(producer->info.stage != MESA_SHADER_FRAGMENT);
    assert(consumer->info.stage != MESA_SHADER_VERTEX);
@@ -3720,13 +3723,10 @@ remove_unused_varyings(nir_shader *producer, nir_shader *consumer,
    if (producer->info.stage == MESA_SHADER_TESS_CTRL)
       tcs_add_output_reads(producer, read);
 
-   bool progress = false;
-   progress =
-      remove_unused_io_vars(producer, consumer, prog, nir_var_shader_out, read);
-   progress =
-      remove_unused_io_vars(producer, consumer, prog, nir_var_shader_in, written) || progress;
-
-   return progress;
+   return remove_unused_io_vars(producer, consumer, prog, nir_var_shader_out,
+                                read, out_progress) &&
+          remove_unused_io_vars(producer, consumer, prog, nir_var_shader_in,
+                                written, out_progress);
 }
 
 static bool
@@ -3993,7 +3993,7 @@ assign_initial_varying_locations(const struct gl_constants *consts,
    return true;
 }
 
-static void
+static bool
 link_shader_opts(struct varying_matches *vm,
                  nir_shader *producer, nir_shader *consumer,
                  struct gl_shader_program *prog, void *mem_ctx)
@@ -4021,7 +4021,11 @@ link_shader_opts(struct varying_matches *vm,
    NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, NULL);
    NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, NULL);
 
-   if (remove_unused_varyings(producer, consumer, prog, mem_ctx)) {
+   bool progress = false;
+   if (!remove_unused_varyings(producer, consumer, prog, mem_ctx, &progress))
+      return false;
+
+   if (progress) {
       NIR_PASS(_, producer, nir_lower_global_vars_to_local);
       NIR_PASS(_, consumer, nir_lower_global_vars_to_local);
 
@@ -4039,6 +4043,7 @@ link_shader_opts(struct varying_matches *vm,
    }
 
    nir_link_varying_precision(producer, consumer);
+   return true;
 }
 
 /**
@@ -4430,9 +4435,10 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
           * varyings even if the program is a SSO because the stages are being
           * linked together i.e. we have a multi-stage SSO.
           */
-         link_shader_opts(&vm, linked_shader[i]->Program->nir,
-                          linked_shader[i + 1]->Program->nir,
-                          prog, mem_ctx);
+         if (!link_shader_opts(&vm, linked_shader[i]->Program->nir,
+                               linked_shader[i + 1]->Program->nir,
+                               prog, mem_ctx))
+            return false;
 
          remove_unused_shader_inputs_and_outputs(prog, linked_shader[i]->Stage,
                                                  nir_var_shader_out);
