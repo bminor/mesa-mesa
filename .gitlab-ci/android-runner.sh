@@ -2,8 +2,6 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
-export PATH=/android-tools/platform-tools:$PATH
-
 # Set default ADB command if not set already
 
 : "${ADB:=adb}"
