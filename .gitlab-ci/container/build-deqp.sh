@@ -81,13 +81,6 @@ gles_cts_patch_files=(
   build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
-if [ "${DEQP_TARGET}" = 'android' ]; then
-  gles_cts_patch_files+=(
-    build-deqp-gles_Allow-running-on-Android-from-the-command-line.patch
-    build-deqp-gles_Android-prints-to-stdout-instead-of-logcat.patch
-  )
-fi
-
 
 ### Careful editing anything below this line
 
