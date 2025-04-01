@@ -334,7 +334,7 @@
         "description": "gallivm: Re-add check for passmgr before disposing it",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47cd0eee2611001499e3aa0a045fbed38c2dc1e5",
         "notes": null
