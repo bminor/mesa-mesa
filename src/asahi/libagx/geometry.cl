@@ -459,8 +459,7 @@ setup_unroll_for_draw(global struct agx_geometry_state *heap,
     * TODO: For multidraw, should be atomic. But multidraw+unroll isn't
     * currently wired up in any driver.
     */
-   uint old_heap_bottom_B = heap->heap_bottom;
-   heap->heap_bottom += align(alloc_size, 8);
+   uint old_heap_bottom_B = agx_heap_alloc_nonatomic_offs(heap, alloc_size);
 
    /* Setup most of the descriptor. Count will be determined after unroll. */
    out[1] = in_draw[1];                       /* instance count */
@@ -654,32 +653,29 @@ libagx_gs_setup_indirect(
       libagx_tcs_in_size(vertex_count * instance_count, vs_outputs);
 
    if (is_prefix_summing) {
-      p->count_buffer = (global uint *)(state->heap + state->heap_bottom);
-      state->heap_bottom +=
-         align(p->input_primitives * p->count_buffer_stride, 16);
+      p->count_buffer = agx_heap_alloc_nonatomic(
+         state, p->input_primitives * p->count_buffer_stride);
    }
 
-   p->input_buffer = (uintptr_t)(state->heap + state->heap_bottom);
+   p->input_buffer =
+      (uintptr_t)agx_heap_alloc_nonatomic(state, vertex_buffer_size);
    *vertex_buffer = p->input_buffer;
-   state->heap_bottom += align(vertex_buffer_size, 4);
-   assert(state->heap_bottom < state->heap_size);
 
    p->input_mask = vs_outputs;
 
    /* Allocate the index buffer and write the draw consuming it */
    global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
-   uint index_buffer_offset_B = state->heap_bottom;
+   uint count = p->input_primitives * indices_per_in_prim;
+   uint index_buffer_offset_B = agx_heap_alloc_nonatomic_offs(state, count * 4);
 
    *cmd = (VkDrawIndexedIndirectCommand){
-      .indexCount = p->input_primitives * indices_per_in_prim,
+      .indexCount = count,
       .instanceCount = 1,
       .firstIndex = index_buffer_offset_B / 4,
    };
 
    p->output_index_buffer =
       (global uint *)(state->heap + index_buffer_offset_B);
-   state->heap_bottom += (cmd->indexCount * 4);
-   assert(state->heap_bottom < state->heap_size);
 }
 
 /*
@@ -778,10 +774,7 @@ libagx_prefix_sum_tess(global struct libagx_tess_args *p)
    /* Allocate 4-byte indices */
    uint32_t elsize_B = sizeof(uint32_t);
    uint32_t size_B = total * elsize_B;
-   uint alloc_B = p->heap->heap_bottom;
-   p->heap->heap_bottom += size_B;
-   p->heap->heap_bottom = align(p->heap->heap_bottom, 8);
-
+   uint alloc_B = agx_heap_alloc_nonatomic_offs(p->heap, size_B);
    p->index_buffer = (global uint32_t *)(((uintptr_t)p->heap->heap) + alloc_B);
 
    /* ...and now we can generate the API indexed draw */
