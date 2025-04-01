@@ -6595,15 +6595,19 @@ impl Op {
             | Op::MemBar(_) => false,
 
             // Control-flow ops
-            Op::BClear(_) | Op::Break(_) | Op::BSSy(_) | Op::BSync(_) => true,
-            Op::SSy(_)
+            Op::BClear(_)
+            | Op::Break(_)
+            | Op::BSSy(_)
+            | Op::BSync(_)
+            | Op::SSy(_)
             | Op::Sync(_)
             | Op::Brk(_)
             | Op::PBk(_)
             | Op::Cont(_)
-            | Op::PCnt(_) => true,
-            Op::Bra(_) | Op::Exit(_) => true,
-            Op::WarpSync(_) => false,
+            | Op::PCnt(_)
+            | Op::Bra(_)
+            | Op::Exit(_)
+            | Op::WarpSync(_) => false,
 
             // The barrier half is HW scoreboarded by the GPR isn't.  When
             // moving from a GPR to a barrier, we still need a token for WaR
@@ -6636,6 +6640,26 @@ impl Op {
             | Op::Annotate(_) => {
                 panic!("Not a hardware opcode")
             }
+        }
+    }
+
+    /// Some decoupled instructions don't need
+    /// scoreboards, due to our usage.
+    pub fn no_scoreboard(&self) -> bool {
+        match self {
+            Op::BClear(_)
+            | Op::Break(_)
+            | Op::BSSy(_)
+            | Op::BSync(_)
+            | Op::SSy(_)
+            | Op::Sync(_)
+            | Op::Brk(_)
+            | Op::PBk(_)
+            | Op::Cont(_)
+            | Op::PCnt(_)
+            | Op::Bra(_)
+            | Op::Exit(_) => true,
+            _ => false,
         }
     }
 }
@@ -7560,7 +7584,7 @@ pub trait ShaderModel {
 
     // Scheduling information
     fn op_needs_scoreboard(&self, op: &Op) -> bool {
-        !op.has_fixed_latency(self.sm())
+        !op.no_scoreboard() && !op.has_fixed_latency(self.sm())
     }
 
     /// Latency before another non-NOP can execute
