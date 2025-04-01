@@ -188,6 +188,12 @@ ir3_nir_should_vectorize_mem(unsigned align_mul, unsigned align_offset,
       return false;
    }
 
+   if ((low->intrinsic == nir_intrinsic_load_ssbo && low->def.bit_size == 8) ||
+       (low->intrinsic == nir_intrinsic_store_ssbo &&
+        low->src[0].ssa->bit_size == 8)) {
+      return false;
+   }
+
    if (low->intrinsic != nir_intrinsic_load_ubo) {
       return bit_size <= 32 && align_mul >= byte_size &&
          align_offset % byte_size == 0 &&
