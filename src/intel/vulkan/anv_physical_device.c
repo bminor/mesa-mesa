@@ -131,6 +131,8 @@ get_device_extensions(const struct anv_physical_device *device,
       (device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT) != 0;
 
    const bool rt_enabled = ANV_SUPPORT_RT && device->info.has_ray_tracing;
+   const bool video_decode_enabled = device->instance->debug & ANV_DEBUG_VIDEO_DECODE;
+   const bool video_encode_enabled = device->instance->debug & ANV_DEBUG_VIDEO_ENCODE;
 
    *ext = (struct vk_device_extension_table) {
       .KHR_8bit_storage                      = true,
@@ -185,7 +187,7 @@ get_device_extensions(const struct anv_physical_device *device,
          device->perf &&
          (intel_perf_has_hold_preemption(device->perf) ||
           INTEL_DEBUG(DEBUG_NO_OACONFIG)) &&
-         device->use_call_secondary,
+         !(device->instance->debug & ANV_DEBUG_NO_SECONDARY_CALL),
       .KHR_pipeline_executable_properties    = true,
       .KHR_pipeline_library                  = true,
       /* Hide these behind dri configs for now since we cannot implement it reliably on
@@ -235,21 +237,21 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_uniform_buffer_standard_layout    = true,
       .KHR_variable_pointers                 = true,
       .KHR_vertex_attribute_divisor          = true,
-      .KHR_video_queue                       = device->video_decode_enabled || device->video_encode_enabled,
-      .KHR_video_decode_queue                = device->video_decode_enabled,
-      .KHR_video_decode_h264                 = VIDEO_CODEC_H264DEC && device->video_decode_enabled,
-      .KHR_video_decode_h265                 = VIDEO_CODEC_H265DEC && device->video_decode_enabled,
-      .KHR_video_decode_av1                  = device->info.ver >= 12 && VIDEO_CODEC_AV1DEC && device->video_decode_enabled,
-      .KHR_video_encode_queue                = device->video_encode_enabled,
-      .KHR_video_encode_h264                 = VIDEO_CODEC_H264ENC && device->video_encode_enabled,
-      .KHR_video_encode_h265                 = device->info.ver >= 12 && VIDEO_CODEC_H265ENC && device->video_encode_enabled,
-      .KHR_video_maintenance1                = (device->video_decode_enabled &&
+      .KHR_video_queue                       = video_decode_enabled || video_encode_enabled,
+      .KHR_video_decode_queue                = video_decode_enabled,
+      .KHR_video_decode_h264                 = VIDEO_CODEC_H264DEC && video_decode_enabled,
+      .KHR_video_decode_h265                 = VIDEO_CODEC_H265DEC && video_decode_enabled,
+      .KHR_video_decode_av1                  = device->info.ver >= 12 && VIDEO_CODEC_AV1DEC && video_decode_enabled,
+      .KHR_video_encode_queue                = video_encode_enabled,
+      .KHR_video_encode_h264                 = VIDEO_CODEC_H264ENC && video_encode_enabled,
+      .KHR_video_encode_h265                 = device->info.ver >= 12 && VIDEO_CODEC_H265ENC && video_encode_enabled,
+      .KHR_video_maintenance1                = (video_decode_enabled &&
                                                (VIDEO_CODEC_H264DEC || VIDEO_CODEC_H265DEC)) ||
-                                               (device->video_encode_enabled &&
+                                               (video_encode_enabled &&
                                                (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)),
-      .KHR_video_maintenance2                = (device->video_decode_enabled &&
+      .KHR_video_maintenance2                = (video_decode_enabled &&
                                                (VIDEO_CODEC_H264DEC || VIDEO_CODEC_H265DEC)) ||
-                                               (device->video_encode_enabled &&
+                                               (video_encode_enabled &&
                                                (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)),
       .KHR_vulkan_memory_model               = true,
       .KHR_workgroup_memory_explicit_layout  = true,
@@ -287,7 +289,7 @@ get_device_extensions(const struct anv_physical_device *device,
                                                VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR,
       .EXT_global_priority_query             = device->max_context_priority >=
                                                VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR,
-      .EXT_graphics_pipeline_library         = !debug_get_bool_option("ANV_NO_GPL", false),
+      .EXT_graphics_pipeline_library         = !(device->instance->debug & ANV_DEBUG_NO_GPL),
       .EXT_hdr_metadata = true,
       .EXT_host_image_copy                   = !device->emu_astc_ldr,
       .EXT_host_query_reset                  = true,
@@ -2173,8 +2175,9 @@ anv_physical_device_init_uuids(struct anv_physical_device *device)
    _mesa_sha1_init(&sha1_ctx);
    _mesa_sha1_update(&sha1_ctx, build_id_data(note), build_id_len);
    brw_device_sha1_update(&sha1_ctx, &device->info);
-   _mesa_sha1_update(&sha1_ctx, &device->always_use_bindless,
-                     sizeof(device->always_use_bindless));
+   bool always_use_bindless = !!(device->instance->debug & ANV_DEBUG_BINDLESS);
+   _mesa_sha1_update(&sha1_ctx, &always_use_bindless,
+                     sizeof(always_use_bindless));
    _mesa_sha1_final(&sha1_ctx, sha1);
    memcpy(device->pipeline_cache_uuid, sha1, VK_UUID_SIZE);
 
@@ -2351,7 +2354,8 @@ anv_physical_device_init_queue_families(struct anv_physical_device *pdevice)
             .engine_class = compute_class,
          };
       }
-      if (v_count > 0 && (pdevice->video_decode_enabled || pdevice->video_encode_enabled)) {
+      if (v_count > 0 && ((pdevice->instance->debug & ANV_DEBUG_VIDEO_DECODE) ||
+                          (pdevice->instance->debug & ANV_DEBUG_VIDEO_ENCODE))) {
          /* HEVC support on Gfx9 is only available on VCS0. So limit the number of video queues
           * to the first VCS engine instance.
           *
@@ -2364,8 +2368,10 @@ anv_physical_device_init_queue_families(struct anv_physical_device *pdevice)
           */
          /* TODO: enable protected content on video queue */
          pdevice->queue.families[family_count++] = (struct anv_queue_family) {
-            .queueFlags = (pdevice->video_decode_enabled ? VK_QUEUE_VIDEO_DECODE_BIT_KHR : 0) |
-                          (pdevice->video_encode_enabled ? VK_QUEUE_VIDEO_ENCODE_BIT_KHR : 0),
+            .queueFlags = ((pdevice->instance->debug & ANV_DEBUG_VIDEO_DECODE) ?
+                           VK_QUEUE_VIDEO_DECODE_BIT_KHR : 0) |
+                          ((pdevice->instance->debug & ANV_DEBUG_VIDEO_ENCODE) ?
+                           VK_QUEUE_VIDEO_ENCODE_BIT_KHR : 0),
             .queueCount = pdevice->info.ver == 9 ? MIN2(1, v_count) : v_count,
             .engine_class = INTEL_ENGINE_CLASS_VIDEO,
          };
@@ -2571,15 +2577,6 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
 
    device->vk.pipeline_cache_import_ops = anv_cache_import_ops;
 
-   device->always_use_bindless =
-      debug_get_bool_option("ANV_ALWAYS_BINDLESS", false);
-
-   device->use_call_secondary =
-      !debug_get_bool_option("ANV_DISABLE_SECONDARY_CMD_BUFFER_CALLS", false);
-
-   device->video_decode_enabled = debug_get_bool_option("ANV_VIDEO_DECODE", false);
-   device->video_encode_enabled = debug_get_bool_option("ANV_VIDEO_ENCODE", false);
-
    device->uses_ex_bso = device->info.verx10 >= 125;
 
    /* For now always use indirect descriptors. We'll update this
@@ -2600,9 +2597,9 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    device->uses_relocs = device->info.kmd_type != INTEL_KMD_TYPE_XE;
 
    /* While xe.ko can use both vm_bind and TR-TT, i915.ko only has TR-TT. */
-   if (debug_get_bool_option("ANV_SPARSE", true)) {
+   if (!(instance->debug & ANV_DEBUG_NO_SPARSE)) {
       if (device->info.kmd_type == INTEL_KMD_TYPE_XE) {
-         if (debug_get_bool_option("ANV_SPARSE_USE_TRTT", false))
+         if (instance->debug & ANV_DEBUG_SPARSE_TRTT)
             device->sparse_type = ANV_SPARSE_TYPE_TRTT;
          else
             device->sparse_type = ANV_SPARSE_TYPE_VM_BIND;

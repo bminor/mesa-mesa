@@ -71,6 +71,16 @@ static const driOptionDescription anv_dri_options[] = {
    DRI_CONF_SECTION_END
 };
 
+static const struct debug_control debug_control[] = {
+   { "bindless",     ANV_DEBUG_BINDLESS},
+   { "no-gpl",       ANV_DEBUG_NO_GPL},
+   { "no-sparse",    ANV_DEBUG_NO_SPARSE},
+   { "sparse-trtt",  ANV_DEBUG_SPARSE_TRTT},
+   { "video-decode", ANV_DEBUG_VIDEO_DECODE},
+   { "video-encode", ANV_DEBUG_VIDEO_ENCODE},
+   { NULL,    0 }
+};
+
 VkResult anv_EnumerateInstanceVersion(
     uint32_t*                                   pApiVersion)
 {
@@ -254,6 +264,9 @@ VkResult anv_CreateInstance(
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
    anv_init_dri_options(instance);
+
+   instance->debug = parse_debug_string(os_get_option("ANV_DEBUG"),
+                                        debug_control);
 
    intel_driver_ds_init();
 

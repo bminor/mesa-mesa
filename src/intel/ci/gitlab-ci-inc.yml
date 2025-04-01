@@ -352,8 +352,7 @@
     - .anv-rules
   variables:
     DRIVER_NAME: anv
-    ANV_VIDEO_DECODE: "true"
-    ANV_VIDEO_ENCODE: "true"
+    ANV_DEBUG: "video-decode,video-encode"
 
 .iris-test:
   extends:

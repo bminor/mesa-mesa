@@ -682,11 +682,11 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
    assert(aspects & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
 
    if (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO) {
-      flags |= physical_device->video_decode_enabled ?
+      flags |= (physical_device->instance->debug & ANV_DEBUG_VIDEO_DECODE) ?
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR |
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR : 0;
 
-      flags |= physical_device->video_encode_enabled ?
+      flags |= (physical_device->instance->debug & ANV_DEBUG_VIDEO_ENCODE) ?
                   VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR |
                   VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR : 0;
    }
@@ -1646,7 +1646,7 @@ anv_get_image_format_properties(
                    "requires VK_IMAGE_TYPE_2D");
          goto unsupported;
       }
- 
+
       if (isl_mod_info->modifier != DRM_FORMAT_MOD_LINEAR)
          maxArraySize = 1;
       maxMipLevels = 1;

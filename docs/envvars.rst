@@ -860,16 +860,28 @@ Intel driver environment variables
 Anvil(ANV) driver environment variables
 ---------------------------------------
 
-.. envvar:: ANV_DISABLE_SECONDARY_CMD_BUFFER_CALLS
+.. envvar:: ANV_DEBUG
+
+  Accepts the following comma-separated list of flags:
+
+  ``bindless``
+    Forces all descriptor sets to use the internal :ref:`Bindless model`
+  ``no-gpl``
+    Disables `VK_KHR_graphics_pipeline_library` support
+  ``no-secondary-call``
+    Disables secondary command buffer calls
+  ``no-sparse``
+    Disables sparse support
+  ``sparse-trtt``
+    Forces use of TR-TT hardware for sparse support
+  ``video-decode``
+    Enables video decoding support
+  ``video-encode``
+    Enables video encoding support
 
    If defined to ``1`` or ``true``, this will prevent usage of self
    modifying command buffers to implement ``vkCmdExecuteCommands``. As
    a result of this, it will also disable :ext:`VK_KHR_performance_query`.
-
-.. envvar:: ANV_ALWAYS_BINDLESS
-
-   If defined to ``1`` or ``true``, this forces all descriptor sets to
-   use the internal :ref:`Bindless model`.
 
 .. envvar:: ANV_PRIMITIVE_REPLICATION_MAX_VIEWS
 
@@ -878,10 +890,9 @@ Anvil(ANV) driver environment variables
    using instanced rendering. If unspecified, the value default to
    ``2``.
 
-.. envvar:: ANV_NO_GPL
+.. envvar:: ANV_PRINTF_BUFFER_SIZE
 
-   If set to 1, true, or yes, then VK_EXT_graphics_pipeline_library
-   will be disabled.
+   Specifies the size of the printf buffer.
 
 .. envvar:: ANV_QUEUE_OVERRIDE
 

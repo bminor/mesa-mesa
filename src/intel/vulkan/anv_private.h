@@ -1025,9 +1025,6 @@ struct anv_physical_device {
     char                                        path[20];
     struct intel_device_info                      info;
 
-    bool                                        video_decode_enabled;
-    bool                                        video_encode_enabled;
-
     struct brw_compiler *                       compiler;
     struct isl_device                           isl_dev;
     struct intel_perf_config *                    perf;
@@ -1040,9 +1037,6 @@ struct anv_physical_device {
     bool                                        has_exec_capture;
     VkQueueGlobalPriorityKHR                    max_context_priority;
     uint64_t                                    gtt_size;
-
-    bool                                        always_use_bindless;
-    bool                                        use_call_secondary;
 
     /** True if we can use timeline semaphores through execbuf */
     bool                                        has_exec_timeline;
@@ -1296,11 +1290,23 @@ anv_physical_device_has_vram(const struct anv_physical_device *device)
    return device->vram_mappable.size > 0;
 }
 
+enum anv_debug {
+   ANV_DEBUG_BINDLESS          = BITFIELD_BIT(0),
+   ANV_DEBUG_NO_GPL            = BITFIELD_BIT(1),
+   ANV_DEBUG_NO_SECONDARY_CALL = BITFIELD_BIT(2),
+   ANV_DEBUG_NO_SPARSE         = BITFIELD_BIT(3),
+   ANV_DEBUG_SPARSE_TRTT       = BITFIELD_BIT(4),
+   ANV_DEBUG_VIDEO_DECODE      = BITFIELD_BIT(5),
+   ANV_DEBUG_VIDEO_ENCODE      = BITFIELD_BIT(6),
+};
+
 struct anv_instance {
     struct vk_instance                          vk;
 
     struct driOptionCache                       dri_options;
     struct driOptionCache                       available_dri_options;
+
+    enum anv_debug                              debug;
 
     int                                         mesh_conv_prim_attrs_to_vert_attrs;
     bool                                        enable_tbimr;
