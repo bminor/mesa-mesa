@@ -1383,6 +1383,8 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
             break;
 
          case nir_intrinsic_load_output:
+         case nir_intrinsic_load_per_vertex_output:
+         case nir_intrinsic_load_per_primitive_output:
          case nir_intrinsic_store_output:
          case nir_intrinsic_store_per_primitive_output:
          case nir_intrinsic_store_per_vertex_output:
