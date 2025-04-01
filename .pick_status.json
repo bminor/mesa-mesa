@@ -574,7 +574,7 @@
         "description": "radv: Call nir_opt_undef too after nir_opt_varyings.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17f6ab28cc40302d20cdc15d84947f38d5f02b4b",
         "notes": null
