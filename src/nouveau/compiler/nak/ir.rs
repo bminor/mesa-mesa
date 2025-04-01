@@ -6806,7 +6806,6 @@ impl InstrDeps {
     }
 
     pub fn set_delay(&mut self, delay: u8) {
-        assert!(delay <= MAX_INSTR_DELAY);
         self.delay = delay;
     }
 

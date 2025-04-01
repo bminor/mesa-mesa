@@ -420,10 +420,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
             let instr = &mut b.instrs[ip];
 
             let delay = min_start - cycle;
-            let delay = delay
-                .clamp(MIN_INSTR_DELAY.into(), MAX_INSTR_DELAY.into())
-                .try_into()
-                .unwrap();
+            let delay = delay.max(MIN_INSTR_DELAY.into()).try_into().unwrap();
             instr.deps.set_delay(delay);
 
             instr_cycle[ip] = min_start;
@@ -450,15 +447,25 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
         min_num_static_cycles += cycle;
     }
 
-    // It's unclear exactly why but the blob inserts a Nop with a delay of 2
-    // after every instruction which has an exec latency.  Perhaps it has
-    // something to do with .yld?  In any case, the extra 2 cycles aren't worth
-    // the chance of weird bugs.
     f.map_instrs(|mut instr, _| {
-        if matches!(instr.op, Op::SrcBar(_)) {
+        if instr.deps.delay > MAX_INSTR_DELAY {
+            let mut delay = instr.deps.delay - MAX_INSTR_DELAY;
+            instr.deps.set_delay(MAX_INSTR_DELAY);
+            let instrs = vec![instr];
+            while delay > 0 {
+                let mut nop = Instr::new_boxed(OpNop { label: None });
+                nop.deps.set_delay(delay.min(MAX_INSTR_DELAY));
+                delay -= nop.deps.delay;
+            }
+            MappedInstrs::Many(instrs)
+        } else if matches!(instr.op, Op::SrcBar(_)) {
             instr.op = Op::Nop(OpNop { label: None });
             MappedInstrs::One(instr)
         } else if sm.exec_latency(&instr.op) > 1 {
+            // It's unclear exactly why but the blob inserts a Nop with a delay
+            // of 2 after every instruction which has an exec latency.  Perhaps
+            // it has something to do with .yld?  In any case, the extra 2
+            // cycles aren't worth the chance of weird bugs.
             let mut nop = Instr::new_boxed(OpNop { label: None });
             nop.deps.set_delay(2);
             MappedInstrs::Many(vec![instr, nop])
