@@ -289,6 +289,8 @@ def CamelCase_to_SHOUT_CASE(s):
 def compute_max_enum_name(s):
     if s == "VkSwapchainImageUsageFlagBitsANDROID":
         return "VK_SWAPCHAIN_IMAGE_USAGE_FLAG_BITS_MAX_ENUM"
+    if s == "VkTensorTilingARM":
+        return "VK_TENSOR_TILING_MAX_ENUM_ARM"
     max_enum_name = CamelCase_to_SHOUT_CASE(s)
     last_prefix = max_enum_name.rsplit('_', 1)[-1]
     # Those special prefixes need to be always at the end

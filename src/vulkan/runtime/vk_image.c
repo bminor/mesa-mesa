@@ -738,6 +738,7 @@ vk_image_layout_is_read_only(VkImageLayout layout,
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR:
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
+   case VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM:
       unreachable("Invalid image layout.");
    }
 
@@ -1127,6 +1128,10 @@ vk_image_layout_to_usage_flags(VkImageLayout layout,
       return VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
       return VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+
+   case VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM:
+      return VK_IMAGE_USAGE_TENSOR_ALIASING_BIT_ARM;
+
    case VK_IMAGE_LAYOUT_MAX_ENUM:
       unreachable("Invalid image layout.");
    }
