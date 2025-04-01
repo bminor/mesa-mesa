@@ -2009,7 +2009,7 @@ static void pvr_init_fs_input_attachments(
 {
    pco_fs_data *fs = &data->fs;
    for (unsigned u = 0; u < subpass->input_count; ++u) {
-      unsigned idx = subpass->input_attachments[u];
+      unsigned idx = subpass->input_attachments[u].attachment_idx;
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
 
@@ -2097,7 +2097,7 @@ static void pvr_setup_fs_input_attachments(
 {
    pco_fs_data *fs = &data->fs;
    for (unsigned u = 0; u < subpass->input_count; ++u) {
-      unsigned idx = subpass->input_attachments[u];
+      unsigned idx = subpass->input_attachments[u].attachment_idx;
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
 

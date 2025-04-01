@@ -875,7 +875,8 @@ pvr_copy_storage_details(struct pvr_renderpass_context *ctx,
    }
 
    for (uint32_t i = 0U; i < input_subpass->input_count; i++) {
-      const uint32_t attach_idx = input_subpass->input_attachments[i];
+      const uint32_t attach_idx =
+         input_subpass->input_attachments[i].attachment_idx;
       struct pvr_render_int_attachment *int_attach;
 
       if (attach_idx == VK_ATTACHMENT_UNUSED)
@@ -963,7 +964,8 @@ pvr_copy_z_replicate_details(struct pvr_renderpass_context *ctx,
 
    /* Is the replicated depth also an input attachment? */
    for (uint32_t i = 0U; i < input_subpass->input_count; i++) {
-      const uint32_t attach_idx = input_subpass->input_attachments[i];
+      const uint32_t attach_idx =
+         input_subpass->input_attachments[i].attachment_idx;
       struct pvr_render_int_attachment *int_attach;
 
       if (attach_idx == VK_ATTACHMENT_UNUSED)
@@ -1362,7 +1364,7 @@ static bool pvr_is_input(struct pvr_render_subpass *subpass,
       return false;
 
    for (uint32_t i = 0U; i < subpass->input_count; i++) {
-      if (subpass->input_attachments[i] == attach_idx)
+      if (subpass->input_attachments[i].attachment_idx == attach_idx)
          return true;
    }
 
@@ -1921,7 +1923,7 @@ pvr_can_combine_with_render(const struct pvr_device_info *dev_info,
     * in an existing subpass in the current render.
     */
    for (uint32_t i = 0U; i < subpass->input_count; i++) {
-      const uint32_t attach_idx = subpass->input_attachments[i];
+      const uint32_t attach_idx = subpass->input_attachments[i].attachment_idx;
       if (attach_idx != VK_ATTACHMENT_UNUSED &&
           pvr_is_pending_resolve_dest(ctx, attach_idx)) {
          return false;
@@ -2292,14 +2294,17 @@ pvr_dereference_color_output_list(struct pvr_renderpass_context *ctx,
    }
 }
 
-static void pvr_dereference_surface_list(struct pvr_renderpass_context *ctx,
-                                         uint32_t subpass_num,
-                                         uint32_t *attachments,
-                                         uint32_t count)
+static void
+pvr_dereference_surface_list(struct pvr_renderpass_context *ctx,
+                             uint32_t subpass_num,
+                             struct pvr_render_input_attachment *attachments,
+                             uint32_t count)
 {
    for (uint32_t i = 0U; i < count; i++) {
-      if (attachments[i] != VK_ATTACHMENT_UNUSED)
-         pvr_dereference_surface(ctx, attachments[i], subpass_num);
+      if (attachments[i].attachment_idx != VK_ATTACHMENT_UNUSED)
+         pvr_dereference_surface(ctx,
+                                 attachments[i].attachment_idx,
+                                 subpass_num);
    }
 }
 
@@ -2415,6 +2420,21 @@ static VkResult pvr_schedule_subpass(const struct pvr_device *device,
    }
 
    return VK_SUCCESS;
+}
+
+static uint32_t pvr_count_uses_in_input_attachment_list(
+   struct pvr_render_input_attachment *attachments,
+   uint32_t size,
+   uint32_t attach_idx)
+{
+   uint32_t count = 0U;
+
+   for (uint32_t i = 0U; i < size; i++) {
+      if (attachments[i].attachment_idx == attach_idx)
+         count++;
+   }
+
+   return count;
 }
 
 static uint32_t pvr_count_uses_in_list(uint32_t *attachments,
@@ -2594,9 +2614,9 @@ VkResult pvr_create_renderpass_hwsetup(
       for (uint32_t j = 0U; j < pass->subpass_count; j++) {
          struct pvr_render_subpass *subpass = &pass->subpasses[j];
          const uint32_t input_attachment_uses =
-            pvr_count_uses_in_list(subpass->input_attachments,
-                                   subpass->input_count,
-                                   i);
+            pvr_count_uses_in_input_attachment_list(subpass->input_attachments,
+                                                    subpass->input_count,
+                                                    i);
          uint32_t resolve_output_uses;
          uint32_t color_output_uses;
          uint32_t total_output_uses;

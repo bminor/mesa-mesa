@@ -45,7 +45,7 @@ static inline bool pvr_subpass_has_msaa_input_attachment(
    const VkRenderPassCreateInfo2 *pCreateInfo)
 {
    for (uint32_t i = 0; i < subpass->input_count; i++) {
-      const uint32_t attachment = subpass->input_attachments[i];
+      const uint32_t attachment = subpass->input_attachments[i].attachment_idx;
 
       if (pCreateInfo->pAttachments[attachment].samples > 1)
          return true;
@@ -568,6 +568,8 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
    struct pvr_render_subpass *subpasses;
    const VkAllocationCallbacks *alloc;
    size_t subpass_attachment_count;
+   size_t subpass_input_attachment_count;
+   struct pvr_render_input_attachment *subpass_input_attachments;
    uint32_t *subpass_attachments;
    struct pvr_render_pass *pass;
    uint32_t *dep_list;
@@ -588,17 +590,23 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
                      pCreateInfo->subpassCount);
 
    subpass_attachment_count = 0;
+   subpass_input_attachment_count = 0;
    for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
       const VkSubpassDescription2 *desc = &pCreateInfo->pSubpasses[i];
       subpass_attachment_count +=
-         desc->inputAttachmentCount + desc->colorAttachmentCount +
+         desc->colorAttachmentCount +
          (desc->pResolveAttachments ? desc->colorAttachmentCount : 0);
+      subpass_input_attachment_count += desc->inputAttachmentCount;
    }
 
    vk_multialloc_add(&ma,
                      &subpass_attachments,
                      __typeof__(*subpass_attachments),
                      subpass_attachment_count);
+   vk_multialloc_add(&ma,
+                     &subpass_input_attachments,
+                     __typeof__(*subpass_input_attachments),
+                     subpass_input_attachment_count);
    vk_multialloc_add(&ma,
                      &dep_list,
                      __typeof__(*dep_list),
@@ -732,12 +740,14 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
 
       subpass->input_count = desc->inputAttachmentCount;
       if (subpass->input_count > 0) {
-         subpass->input_attachments = subpass_attachments;
-         subpass_attachments += subpass->input_count;
+         subpass->input_attachments = subpass_input_attachments;
+         subpass_input_attachments += subpass->input_count;
 
          for (uint32_t j = 0; j < subpass->input_count; j++) {
-            subpass->input_attachments[j] =
+            subpass->input_attachments[j].attachment_idx =
                desc->pInputAttachments[j].attachment;
+            subpass->input_attachments[j].aspect_mask =
+               desc->pInputAttachments[j].aspectMask;
          }
       }
 

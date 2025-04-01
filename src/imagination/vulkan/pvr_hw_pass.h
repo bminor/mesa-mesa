@@ -186,6 +186,7 @@ struct pvr_renderpass_hwsetup_subpass {
    } * input_access;
 
    uint8_t output_register_mask;
+   bool has_stencil_self_dep;
 };
 
 struct pvr_renderpass_colorinit {
