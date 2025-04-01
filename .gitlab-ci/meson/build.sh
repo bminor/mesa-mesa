@@ -121,7 +121,7 @@ case $CI_PIPELINE_SOURCE in
 	      LTO=false
       # enable one by one for now
       elif [ "$CI_JOB_NAME" == "fedora-release" ]; then
-	      LTO=true
+	      LTO=false
       else
 	      LTO=false
       fi
