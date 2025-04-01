@@ -54,7 +54,7 @@
         "description": "Revert \"radeonsi/gfx11: program SAMPLE_MASK_TRACKER_WATERMARK optimally for APUs\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6ce3a958523dd0be97d9fb9e29af9336440b1213",
         "notes": null
