@@ -1163,11 +1163,6 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    progress |= OPT(s, ir3_nir_lower_64b_intrinsics);
    progress |= OPT(s, nir_lower_64bit_phis);
 
-   /* Cleanup code leftover from lowering passes before opt_preamble */
-   if (progress) {
-      progress |= OPT(s, nir_opt_constant_folding);
-   }
-
    progress |= OPT(s, ir3_nir_opt_subgroups, so);
 
    if (so->compiler->load_shader_consts_via_preamble)
@@ -1175,6 +1170,16 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
 
    if (!so->binning_pass) {
       ir3_setup_const_state(s, so, ir3_const_state_mut(so));
+   }
+
+   /* Cleanup code leftover from lowering passes before opt_preamble */
+   if (progress) {
+      ir3_optimize_loop(so->compiler, options, s);
+
+      /* No need to run the optimize loop again if there's no progress after
+       * this point.
+       */
+      progress = false;
    }
 
    /* Do the preamble before analysing UBO ranges, because it's usually
