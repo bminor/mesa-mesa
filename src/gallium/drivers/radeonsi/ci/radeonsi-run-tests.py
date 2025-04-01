@@ -477,8 +477,6 @@ if args.glcts:
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(glcts_path),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(glcts_path),
-            "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-gtf-main.txt".format(glcts_path),
         ]
     elif args.llvmpipe:
         cmd += [
@@ -486,8 +484,6 @@ if args.glcts:
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(glcts_path),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(glcts_path),
-            "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-gtf-main.txt".format(glcts_path),
         ]
     elif args.virgl:
         cmd += [
@@ -495,16 +491,12 @@ if args.glcts:
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(glcts_path),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(glcts_path),
-            "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-gtf-main.txt".format(glcts_path),
         ]
     elif args.softpipe:
         # KHR-GL33.info.renderer crashes with softpipe.
         #cmd += [
         #    "--caselist",
         #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(glcts_path),
-        #    "--caselist",
-        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-gtf-main.txt".format(glcts_path),
         #]
         pass
     else:
