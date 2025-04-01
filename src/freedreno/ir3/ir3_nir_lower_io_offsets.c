@@ -281,6 +281,7 @@ lower_io_offsets_block(nir_block *block, nir_builder *b, void *mem_ctx)
           intr->num_components > 1) {
          b->cursor = nir_before_instr(instr);
          scalarize_load(intr, b);
+         progress = true;
       }
    }
 

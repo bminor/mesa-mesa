@@ -1984,7 +1984,7 @@
         "description": "ir3/lower_io_offsets: set progress when scalarizing UAV loads",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "91f19bcbe072e663c1c4e9cd81f12ed0824a30e9",
         "notes": null
