@@ -130,15 +130,17 @@ git checkout FETCH_HEAD
 
 apt-get install -y --allow-downgrades ./cuttlefish-base_*.deb ./cuttlefish-user_*.deb
 
-section_end cuttlefish
-
 popd
 rm -rf android-cuttlefish
 
 addgroup --system kvm
 usermod -a -G kvm,cvdnetwork root
 
+section_end cuttlefish
+
 ############### Downloading Android CTS tools
+
+uncollapsed_section_start android-cts "Downloading Android CTS tools"
 
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
@@ -164,6 +166,8 @@ rm "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
 mv "android-$ANDROID_VERSION" build-tools
 
 popd
+
+section_end android-cts
 
 ############### Uninstall the build software
 
