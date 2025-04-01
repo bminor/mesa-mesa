@@ -860,12 +860,6 @@ Intel driver environment variables
 Anvil(ANV) driver environment variables
 ---------------------------------------
 
-.. envvar:: ANV_ENABLE_PIPELINE_CACHE
-
-   If defined to ``0`` or ``false``, this will disable pipeline
-   caching, forcing ANV to reparse and recompile any VkShaderModule
-   (SPIRV) it is given.
-
 .. envvar:: ANV_DISABLE_SECONDARY_CMD_BUFFER_CALLS
 
    If defined to ``1`` or ``true``, this will prevent usage of self
