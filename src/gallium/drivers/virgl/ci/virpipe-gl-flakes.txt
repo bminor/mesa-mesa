@@ -56,3 +56,6 @@ spec@arb_framebuffer_no_attachments@arb_framebuffer_no_attachments-atomic@glView
 spec@ext_texture_array@fbo-depth-array stencil-clear
 
 glx@glx-multithread-clearbuffer
+
+# New flake with GL CTS 4.6.6.0
+KHR-GL43.texture_size_promotion.functional

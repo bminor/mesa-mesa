@@ -144,6 +144,14 @@ KHR-GLES2.shaders.aggressive_optimizations.sin_vec3_frag,Fail
 # https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/3134
 KHR-GLES2.texture_3d.filtering.combinations.negative,Fail
 
+# New failures with ES CTS 3.2.12.0
+dEQP-GLES2.functional.uniform_api.info_query.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.initial.get_uniform.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.initial.render.nested_structs_arrays.mat4_mat2_both,Fail
+
+
 # No derivatives support in the HW.
 shaders@glsl-derivs,Fail
 

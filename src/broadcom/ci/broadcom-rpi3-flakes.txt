@@ -180,3 +180,7 @@ gles_multipicturedraw_rectclip_tiled
 gles_multipicturedraw_sierpinski_simple
 gles_multipicturedraw_sierpinski_tiled
 gles_scaledemojipos
+
+# New failures ES CTS 3.2.11.0
+dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba4444_nicest
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.programs.link.19

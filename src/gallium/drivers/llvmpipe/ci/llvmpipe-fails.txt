@@ -1,7 +1,3 @@
-KHR-GL45.pipeline_statistics_query_tests_ARB.functional_tess_queries,Crash
-
-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
-
 dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.compute,Fail
 dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex,Fail
 dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex_and_fragment,Fail
@@ -104,3 +100,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on top edge,
 dEQP-GLES31.functional.shaders.framebuffer_fetch.basic.last_frag_data,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 spec@ovr_multiview@compiler@multiple-num-views-in-single-declaration-mismatch.vert,Fail
+
+# New failures with GL CTS 4.6.6.0
+KHR-GL45.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail

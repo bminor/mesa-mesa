@@ -90,6 +90,7 @@ spec@ext_texture_lod_bias@lodbias
 spec@ext_texture_srgb@texwrap formats
 spec@ext_texture_srgb@texwrap formats bordercolor
 spec@glsl-1.10@execution@built-in-functions@vs-equal-vec2-vec2
+spec@glsl-1.30@execution@tex-miplevel-selection texturelod 1dshadow
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9
 spec@glsl-1.50@execution@built-in-functions@gs-greaterthan-uvec3-uvec3
 spec@glsl-1.50@execution@geometry@point-size-out

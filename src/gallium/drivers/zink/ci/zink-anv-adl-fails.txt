@@ -1,5 +1,4 @@
 # initial fails
-KHR-GL46.gpu_shader_fp64.builtin.inverse_dmat4,Crash
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rgba32i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rg16ui,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgba16,Fail

@@ -6,7 +6,6 @@ dEQP-GLES31.functional.primitive_bounding_box.wide_points.global_state.vertex_te
 dEQP-GLES31.functional.primitive_bounding_box.wide_points.global_state.vertex_tessellation_fragment.fbo_bbox_equal,Fail
 dEQP-GLES31.functional.primitive_bounding_box.wide_points.tessellation_set_per_draw.vertex_tessellation_fragment.default_framebuffer_bbox_equal,Fail
 dEQP-GLES31.functional.primitive_bounding_box.wide_points.tessellation_set_per_draw.vertex_tessellation_fragment.default_framebuffer_bbox_larger,Fail
-dEQP-GLES31.functional.primitive_bounding_box.wide_points.tessellation_set_per_draw.vertex_tessellation_fragment.fbo_bbox_equal,Fail
 dEQP-GLES31.functional.primitive_bounding_box.wide_points.tessellation_set_per_primitive.vertex_tessellation_fragment.default_framebuffer,Fail
 dEQP-GLES31.functional.shaders.sample_variables.sample_mask_in.bit_count_per_pixel.multisample_rbo_1,Fail
 dEQP-GLES31.functional.shaders.sample_variables.sample_mask_in.bit_count_per_pixel.multisample_rbo_2,Fail
@@ -27,7 +26,6 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_src_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_src_dst_y,Fail
 
-KHR-GL43.compute_shader.resource-subroutine,Fail
 KHR-GL43.cull_distance.functional,Fail
 KHR-GL43.map_buffer_alignment.functional,Crash
 KHR-GL43.shader_image_load_store.basic-allTargets-store,Fail
@@ -568,3 +566,9 @@ spec@ext_texture_srgb@texwrap formats-s3tc bordercolor@GL_COMPRESSED_SRGB_ALPHA_
 spec@ext_texture_srgb@texwrap formats-s3tc bordercolor@GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT- border color only,Fail
 spec@ext_texture_srgb@texwrap formats-s3tc bordercolor@GL_COMPRESSED_SRGB_S3TC_DXT1_EXT- border color only,Fail
 
+# New failures with GL CTS 4.6.6.0 & ES CTS 3.2.12.0
+dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_corner,Fail
+KHR-GL43.cull_distance.functional_test_item_5_primitive_mode_points_max_culldist_0,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.InteractionArgumentAliasing4_var_type_index_4,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.InteractionFunctionCalls1_var_type_index_13,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.SubroutineArgumentAliasing3_var_type_index_13,Fail

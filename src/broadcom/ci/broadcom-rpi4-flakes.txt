@@ -4,9 +4,11 @@ KHR-GLES31.core.shader_atomic_counters.basic-usage-no-offset
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
 KHR-GLES31.core.shader_storage_buffer_object.advanced-unsizedArrayLength-cs-std430-vec
 dEQP-GLES3.functional.buffer.write.recreate_store.random_4
+dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
 dEQP-GLES31.functional.synchronization.inter_invocation.image_overwrite
+dEQP-GLES31.functional.synchronization.inter_invocation.ssbo_atomic_read_write
 
 fast_color_clear@fcc-front-buffer-distraction
 glx@glx-multi-context-front

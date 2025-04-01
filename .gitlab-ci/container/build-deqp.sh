@@ -25,8 +25,8 @@ set -x
 
 DEQP_MAIN_COMMIT=f66e0ae866117f3d7375763bf5ec194404d88cdb
 DEQP_VK_VERSION=1.4.1.1
-DEQP_GL_VERSION=4.6.5.0
-DEQP_GLES_VERSION=3.2.11.0
+DEQP_GL_VERSION=4.6.6.0
+DEQP_GLES_VERSION=3.2.12.0
 
 # Patches to VulkanCTS may come from commits in their repo (listed in
 # cts_commits_to_backport) or patch files stored in our repo (in the patch
@@ -36,8 +36,8 @@ DEQP_GLES_VERSION=3.2.11.0
 
 # shellcheck disable=SC2034
 main_cts_commits_to_backport=(
-    # If you find yourself wanting to add something in here, consider whether
-    # bumping DEQP_MAIN_COMMIT is not a better solution :)
+  # If you find yourself wanting to add something in here, consider whether
+  # bumping DEQP_MAIN_COMMIT is not a better solution :)
 )
 
 # shellcheck disable=SC2034
@@ -56,31 +56,29 @@ vk_cts_patch_files=(
 
 # shellcheck disable=SC2034
 gl_cts_commits_to_backport=(
-  # Add #include <cmath> in deMath.h when being compiled by C++
-  71808fe7d0a640dfd703e845d93ba1c5ab751055
-  # Revert "Add #include <cmath> in deMath.h when being compiled by C++ compiler"
-  # This also adds an alternative fix along with the revert.
-  6164879a0acce258637d261592a9c395e564b361
+  # Add testing for GL_PRIMITIVES_SUBMITTED_ARB query.
+  e075ce73ddc5973aa46a5236c715bb281c9501fa
 )
 
 # shellcheck disable=SC2034
 gl_cts_patch_files=(
   build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
+  build-deqp-gl_Revert-Add-missing-context-deletion.patch
+  build-deqp-gl_Revert-Fix-issues-with-GLX-reset-notification-strate.patch
+  build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
 # shellcheck disable=SC2034
 # GLES builds also EGL
 gles_cts_commits_to_backport=(
-  # Add #include <cmath> in deMath.h when being compiled by C++
-  71808fe7d0a640dfd703e845d93ba1c5ab751055
-  # Revert "Add #include <cmath> in deMath.h when being compiled by C++ compiler"
-  # This also adds an alternative fix along with the revert.
-  6164879a0acce258637d261592a9c395e564b361
 )
 
 # shellcheck disable=SC2034
 gles_cts_patch_files=(
   build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
+  build-deqp-gl_Revert-Add-missing-context-deletion.patch
+  build-deqp-gl_Revert-Fix-issues-with-GLX-reset-notification-strate.patch
+  build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
 if [ "${DEQP_TARGET}" = 'android' ]; then

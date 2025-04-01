@@ -106,3 +106,6 @@ spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage,Fail
 # undebuggable corner case from !34054
 glx@glx-visuals-depth -pixmap,Crash
 glx@glx-visuals-stencil -pixmap,Crash
+
+# New failures with GL CTS 4.6.6.0
+KHR-GL46.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail

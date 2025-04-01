@@ -486,6 +486,12 @@ KHR-GLES2.texture_3d.filtering.sizes.63x63x63_nearest,Fail
 KHR-GLES2.texture_3d.filtering.sizes.63x63x63_nearest_mipmap_linear,Fail
 KHR-GLES2.texture_3d.filtering.sizes.63x63x63_nearest_mipmap_nearest,Fail
 
+# New failures with ES CTS 3.2.12.0
+dEQP-GLES2.functional.polygon_offset.fixed16_render_with_units,Fail
+dEQP-GLES2.functional.uniform_api.info_query.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.mat4_mat2_both,Fail
+
 
 # Piglit gpu tests
 

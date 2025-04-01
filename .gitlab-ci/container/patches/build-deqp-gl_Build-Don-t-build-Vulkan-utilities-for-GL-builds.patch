@@ -1,4 +1,4 @@
-From bcb1110cc00398dfb501aac83eddbd66d8fae425 Mon Sep 17 00:00:00 2001
+From ccdc2b9341c703507cba6017d2a494595335ffdc Mon Sep 17 00:00:00 2001
 From: Daniel Stone <daniels@collabora.com>
 Date: Wed, 29 Jan 2025 12:50:33 +0000
 Subject: [PATCH] Build: Don't build Vulkan utilities for GL builds
@@ -55,7 +55,7 @@ index ec1deb5c2..49fe412a7 100644
  
  # Always link to glutil as some platforms such as Win32 always support GL
 diff --git a/framework/platform/android/tcuAndroidPlatform.cpp b/framework/platform/android/tcuAndroidPlatform.cpp
-index 0472fa615..40f523ee2 100644
+index af56dabb8..6b0de6dba 100644
 --- a/framework/platform/android/tcuAndroidPlatform.cpp
 +++ b/framework/platform/android/tcuAndroidPlatform.cpp
 @@ -31,7 +31,6 @@
@@ -76,7 +76,7 @@ index 0472fa615..40f523ee2 100644
 -{
 -public:
 -    VulkanLibrary(const char *libraryPath)
--        : m_library(libraryPath != DE_NULL ? libraryPath : "libvulkan.so")
+-        : m_library(libraryPath != nullptr ? libraryPath : "libvulkan.so")
 -        , m_driver(m_library)
 -    {
 -    }
@@ -169,7 +169,7 @@ index 0472fa615..40f523ee2 100644
  static size_t getTotalSystemMemory(ANativeActivity *activity)
  {
      const size_t MiB = (size_t)(1 << 20);
-@@ -338,8 +241,7 @@ static size_t getTotalSystemMemory(ANativeActivity *activity)
+@@ -341,8 +244,7 @@ static size_t getTotalSystemMemory(ANativeActivity *activity)
  // Platform
  
  Platform::Platform(NativeActivity &activity)
@@ -179,7 +179,7 @@ index 0472fa615..40f523ee2 100644
  {
      m_nativeDisplayFactoryRegistry.registerFactory(new NativeDisplayFactory(m_windowRegistry));
      m_contextFactoryRegistry.registerFactory(new eglu::GLContextFactory(m_nativeDisplayFactoryRegistry));
-@@ -355,16 +257,6 @@ bool Platform::processEvents(void)
+@@ -358,16 +260,6 @@ bool Platform::processEvents(void)
      return true;
  }
  
@@ -196,7 +196,7 @@ index 0472fa615..40f523ee2 100644
  void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
  {
      // Worst-case estimates
-@@ -398,21 +290,5 @@ void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
+@@ -401,22 +293,6 @@ void Platform::getMemoryLimits(tcu::PlatformMemoryLimits &limits) const
      limits.devicePageTableHierarchyLevels    = 3;
  }
  
@@ -218,6 +218,7 @@ index 0472fa615..40f523ee2 100644
 -
  } // namespace Android
  } // namespace tcu
+ 
 diff --git a/framework/platform/android/tcuAndroidPlatform.hpp b/framework/platform/android/tcuAndroidPlatform.hpp
 index 32cc9068c..3c3f02d98 100644
 --- a/framework/platform/android/tcuAndroidPlatform.hpp
@@ -308,7 +309,7 @@ index 8c0a3ef06..6b1a4985a 100644
  #if defined(DEQP_SUPPORT_GLX)
      m_glPlatform.registerFactory(x11::glx::createContextFactory(m_eventState));
 diff --git a/framework/platform/surfaceless/tcuSurfacelessPlatform.cpp b/framework/platform/surfaceless/tcuSurfacelessPlatform.cpp
-index 1cea9dd97..3d5bd8b62 100644
+index 585bfbbae..9f386b3ca 100644
 --- a/framework/platform/surfaceless/tcuSurfacelessPlatform.cpp
 +++ b/framework/platform/surfaceless/tcuSurfacelessPlatform.cpp
 @@ -43,7 +43,6 @@
@@ -319,7 +320,7 @@ index 1cea9dd97..3d5bd8b62 100644
  
  #include <EGL/egl.h>
  
-@@ -93,52 +92,6 @@ namespace tcu
+@@ -99,52 +98,6 @@ namespace tcu
  namespace surfaceless
  {
  
@@ -327,7 +328,7 @@ index 1cea9dd97..3d5bd8b62 100644
 -{
 -public:
 -    VulkanLibrary(const char *libraryPath)
--        : m_library(libraryPath != DE_NULL ? libraryPath : DEQP_VULKAN_LIBRARY_PATH)
+-        : m_library(libraryPath != nullptr ? libraryPath : DEQP_VULKAN_LIBRARY_PATH)
 -        , m_driver(m_library)
 -    {
 -    }
@@ -372,7 +373,7 @@ index 1cea9dd97..3d5bd8b62 100644
  bool isEGLExtensionSupported(const eglw::Library &egl, eglw::EGLDisplay, const std::string &extName)
  {
      const vector<string> exts = eglu::getClientExtensions(egl);
-@@ -185,13 +138,6 @@ public:
+@@ -191,13 +144,6 @@ public:
      {
          return *this;
      }
@@ -387,5 +388,5 @@ index 1cea9dd97..3d5bd8b62 100644
  
  class ContextFactory : public glu::ContextFactory
 -- 
-2.47.2
+2.45.2
 

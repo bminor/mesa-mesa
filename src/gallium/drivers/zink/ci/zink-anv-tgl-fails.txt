@@ -650,6 +650,7 @@ KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_a
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rg32i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rg16f,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_rgb10_a2,Fail
+
 #glcts update
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_y,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_dst_x,Fail
@@ -670,3 +671,6 @@ glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
+
+# New failures with GL CTS 4.6.6.0 & ES CTS 3.2.12.0
+KHR-GLES31.core.texture_stencil8.multisample,Crash

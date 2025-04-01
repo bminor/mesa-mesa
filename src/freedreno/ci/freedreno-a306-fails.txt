@@ -1119,3 +1119,6 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_revers
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag,Fail
+
+# New failures with ES CTS 3.2.11.0
+dEQP-GLES2.functional.polygon_offset.fixed16_render_with_units,Fail

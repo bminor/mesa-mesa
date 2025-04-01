@@ -75,3 +75,6 @@ gmem-dEQP-VK.spirv_assembly.instruction.graphics.image_sampler.imagefetch.sample
 # Random flakes, first time seen on job
 # https://gitlab.freedesktop.org/mesa/mesa/-/jobs/76075075
 dEQP-VK.clipping.user_defined.clip_cull_distance.vert_tess_geom.1_7
+
+# New flake with GL CTS 4.6.6.0
+KHR-GL46.gpu_shader_fp64.builtin.smoothstep_dvec4

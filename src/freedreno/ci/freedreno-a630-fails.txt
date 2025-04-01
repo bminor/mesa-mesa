@@ -9,13 +9,6 @@ KHR-GLES31.core.tessellation_shader.tessellation_shader_tc_barriers.barrier_guar
 KHR-GLES31.core.texture_cube_map_array.color_depth_attachments,Fail
 KHR-GL46.texture_cube_map_array.color_depth_attachments,Fail
 
-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
-
-#
-# new fails with gl45:
-#
-
-
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 
@@ -234,6 +227,10 @@ dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Fail
 KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
+
+# New failures with GL CTS 4.6.6.0 & ES CTS 3.2.12.0
+KHR-GL46.shading_language_420pack.binding_images_texture_type_1D,Fail
+KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Fail
 
 # a630-gles-asan
 asan-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail

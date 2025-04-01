@@ -287,9 +287,6 @@ spec@nv_read_depth@read_depth_gles3,Fail
 spec@oes_point_sprite@arb_point_sprite-checkerboard_gles1,Fail
 spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
 
-# https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/4422
-KHR-GL31.texture_size_promotion.functional,Fail
-
 # Hardware do not support line/polygon stipple. In fact, this feature
 # was deprecated/removed in newer OpenGL spec versions. It could be
 # emulated using shaders.
@@ -440,6 +437,9 @@ program@run kernel with max work item sizes,Fail
 KHR-GL31.transform_feedback3.multiple_streams,Fail
 KHR-GL31.transform_feedback3.skip_components,Fail
 KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
+
+# New failures with GL CTS 4.6.6.0
+KHR-GL31.frag_coord_conventions.multisample,Fail
 
 # This seems to be working with upstream
 program@execute@vector-conversion,Fail

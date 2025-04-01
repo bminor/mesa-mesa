@@ -427,9 +427,6 @@ spec@!opengl 2.1@polygon-stipple-fs,Fail
 # Works when run individually, but fail consistently on the CI
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube,Fail
 
-# https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/4422
-KHR-GL31.texture_size_promotion.functional,Fail
-
 # uprev Piglit in Mesa
 spec@glsl-1.40@uniform_buffer@two-stages,Fail
 
@@ -566,7 +563,9 @@ program@execute@scalar-load-ulong,Crash
 program@run kernel with max work item sizes,Fail
 
 # Failures from arm32
-arm32-KHR-GL31.texture_size_promotion.functional,Fail
+arm32-KHR-GL31.frag_coord_conventions.multisample,Fail
+arm32-KHR-GL31.framebuffer_blit.multisampled_to_singlesampled_blit_color_config_test,Fail
+arm32-KHR-GL31.framebuffer_blit.scissor_blit,Fail
 
 KHR-GL31.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Fail
 KHR-GL31.transform_feedback3.multiple_streams,Fail
@@ -580,6 +579,11 @@ arm32-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 
 asan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 ubsan-KHR-GL31.transform_feedback3.multiple_streams,Fail
+
+# New failures with GL CTS 4.6.6.0
+KHR-GL31.frag_coord_conventions.multisample,Fail
+KHR-GL31.framebuffer_blit.scissor_blit,Fail
+KHR-GL31.framebuffer_blit.multisampled_to_singlesampled_blit_color_config_test,Fail
 
 # This seems to be working with upstream
 program@execute@vector-conversion,Fail

@@ -22,5 +22,6 @@ dEQP-GLES31.functional.primitive_bounding_box.clear.scissored_clear_with_triangl
 dEQP-GLES31.functional.primitive_bounding_box.clear.scissored_clear_with_triangles_per_primitive_bbox
 
 # Nightly run expectations update
+KHR-Single-GL46.arrays_of_arrays_gl.AtomicDeclaration
 KHR-Single-GL46.arrays_of_arrays_gl.ConstructorsAndUnsizedDeclConstructorSizing1
 
