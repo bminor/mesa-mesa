@@ -540,11 +540,20 @@ radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
    struct acceleration_structure_layout layout;
    radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
 
-   uint32_t dst_internal_nodes_offset = layout.internal_nodes_offset - layout.bvh_offset;
-   uint32_t dst_leaf_nodes_offset = layout.leaf_nodes_offset - layout.bvh_offset;
-   uint32_t offsets[2] = {dst_internal_nodes_offset, dst_leaf_nodes_offset};
-   radv_update_buffer_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset), offsets,
-                         sizeof(offsets));
+   struct vk_ir_header header = {
+      .sync_data =
+         {
+            .current_phase_end_counter = TASK_INDEX_INVALID,
+            /* Will be updated by the first PLOC shader invocation */
+            .task_counts = {TASK_INDEX_INVALID, TASK_INDEX_INVALID},
+         },
+      .dst_node_offset = layout.internal_nodes_offset - layout.bvh_offset,
+      .dst_leaf_node_offset = layout.leaf_nodes_offset - layout.bvh_offset,
+   };
+
+   const uint8_t *update_data = ((const uint8_t *)&header + offsetof(struct vk_ir_header, sync_data));
+   radv_update_buffer_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, sync_data), update_data,
+                         sizeof(struct vk_ir_header) - offsetof(struct vk_ir_header, sync_data));
    if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 
@@ -560,10 +569,11 @@ radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
    vk_common_CmdPushConstants(commandBuffer, device->meta_state.accel_struct_build.encode_p_layout,
                               VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(args), &args);
 
+   uint32_t internal_count = MAX2(leaf_count, 2) - 1;
+
    struct radv_dispatch_info dispatch = {
-      .unaligned = true,
       .ordered = true,
-      .blocks = {MAX2(leaf_count, 1), 1, 1},
+      .blocks = {DIV_ROUND_UP(internal_count * 8, 64), 1, 1},
    };
 
    radv_compute_dispatch(cmd_buffer, &dispatch);
@@ -664,9 +674,8 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
          geometry_infos[i].primitive_count = build_range_infos[i].primitiveCount;
       }
 
-      radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer),
-                           dst->offset + layout.geometry_info_offset, geometry_infos_size,
-                           geometry_infos);
+      radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer), dst->offset + layout.geometry_info_offset,
+                           geometry_infos_size, geometry_infos);
 
       free(geometry_infos);
    }
