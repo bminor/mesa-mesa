@@ -1178,8 +1178,8 @@ static int virgl_init_context(int drmFD)
 
    ctx_set_param.param = VIRTGPU_CONTEXT_PARAM_CAPSET_ID;
    ctx_set_param.value = (supports_capset_virgl2) ?
-                         VIRTGPU_DRM_CAPSET_VIRGL :
-                         VIRTGPU_DRM_CAPSET_VIRGL2;
+                         VIRTGPU_DRM_CAPSET_VIRGL2 :
+                         VIRTGPU_DRM_CAPSET_VIRGL;
 
    init.ctx_set_params = (unsigned long)(void *)&ctx_set_param;
    init.num_params = 1;
