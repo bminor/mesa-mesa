@@ -164,3 +164,14 @@ angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch_block.vertex
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch_block_array.vertex_io_array_size_query.quads,Crash
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_vertex_block.vertex_io_array_size_implicit.quads_explicit_tcs_out_size,Crash
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_vertex_block.vertex_io_array_size_shader_builtin.quads_explicit_tcs_out_size,Crash
+
+# Turnip regression in https://gitlab.freedesktop.org/mesa/mesa/-/compare/e210b79ce3932f7fb1387d68a4cad495b77746f4...5ad00bae8b39b3731efc694d01470156b6fa7594
+angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.7,Fail
+angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.93,Fail
+angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.94,Fail
+angle-dEQP-GLES2.functional.fragment_ops.random.18,Fail
+angle-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.45,Fail
+angle-dEQP-GLES3.functional.fragment_ops.random.18,Fail
+angle-multisample-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.45,Fail
+angle-multisample-dEQP-GLES3.functional.fragment_ops.random.18,Fail
+

@@ -17,3 +17,7 @@ KHR-GLES31.core.tessellation_shader.vertex.vertex_spacing
 
 # Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
 dEQP-GLES3.functional.multisample.fbo_8_samples.constancy_both
+
+# uprev ANGLE in Mesa
+KHR-GLES31.core.blend_equation_advanced.test_coherency.multiplySequence
+
