@@ -685,8 +685,3 @@ KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r32ui,
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation_texture_2d_multisample_r16_snorm,Fail
 KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess_texture_2d_array_rg16f,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
-
-# some point around 2025-03-27, after the fd.o infrastructure move
-KHR-GLES31.core.layout_binding.block_layout_binding_block_VertexShader,Fail
-
-KHR-GL46.layout_binding.block_layout_binding_block_VertexShader,Fail
