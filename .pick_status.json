@@ -1,5 +1,265 @@
 [
     {
+        "sha": "0d2ebca39fd2a68bfb64dc2196e442e25dc90334",
+        "description": "v3dv: include depth offset on image view creation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91ee8ab284458815d282a09da614921f26cd5b08",
+        "description": "v3dv: don't batch regions with different depth offsets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7de4ad0fb4f2d0c46d86cb53844b76ddb586333",
+        "description": "v3dv: remove src_format from blit render pass creation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "597f13b24421f4308ac9d513d9774f2b8673c120",
+        "description": "radv: Add radv_format_description to remap 10/12bit formats to 16bit",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0098f8ef35ab34b88e2bfff940fa1a2cf264382f",
+        "notes": null
+    },
+    {
+        "sha": "3ef0ee2241f0e2e7b570a8271ccbe279be83d60e",
+        "description": "radv: Use radv_format_to_pipe_format instead of vk_format_to_pipe_format",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "9af11bf306c4b67c434044a7ba2907a5c6df5542",
+        "notes": null
+    },
+    {
+        "sha": "5784a36fd1efeeb880014151270a8d787859c276",
+        "description": "Revert \"radeonsi/gfx11: program SAMPLE_MASK_TRACKER_WATERMARK optimally for APUs\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6ce3a958523dd0be97d9fb9e29af9336440b1213",
+        "notes": null
+    },
+    {
+        "sha": "64e6e043b3ca2d428b92bd08a6b42cc1d69c155b",
+        "description": "Revert \"radv: program SAMPLE_MASK_TRACKER_WATERMARK optimally for GFX11 APUs\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "96e9c3fe77a315869a567dcdd5b1a2549a51925b",
+        "notes": null
+    },
+    {
+        "sha": "fac44c0ca0c70bc6f1fc125a5f6422406a6ffa76",
+        "description": "ac/surface: fix selecting preferred alignments for HiZ/HiS on GFX12",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "079f55d405ea9783ad63c526ed39a0e20c4f4724",
+        "notes": null
+    },
+    {
+        "sha": "e210b79ce3932f7fb1387d68a4cad495b77746f4",
+        "description": "brw/nir: Lower fsign again after last call to brw_nir_optimize",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "13332c236b87b44b1e0b0fc1f1c51a16f47af5e4",
+        "notes": null
+    },
+    {
+        "sha": "ca95cb8178df5909220da2f1456d23c230872562",
+        "description": "brw: Fix typo in comment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17d254e978a582d6f4eea3f2fb91a8e0f64f0faa",
+        "description": "panvk/ci: disable some more slow tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8513bcbd2f5893cefdd366b525d7947b3ac0122d",
+        "description": "virtio: Remove virglrenderer_hw.h entirely",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1ca6a0b43cd1299499a654d1dd2a78dce31c592",
+        "description": "drm-uapi: Sync virtgpu header",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a01953a396e8b4968f4c8a9f1771af8837bda39",
+        "description": "nak: Add Ampere and Ada latency information",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b8a4e6bb73117e1141fe80e6d8fdfe5d2a39d33",
+        "description": "nak: Add Turing latency information",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "386885514473261ebe39abd78d46a9f5f5187557",
+        "description": "nak/instr_sched: Barriers activate after 2 cycles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38d22121946094db21e97c5dae208d588cfc303c",
+        "description": "nak: Add an a_has_pred parameter to waw_latency",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4914470327f250d4c40fabd6f181f03a7b78615c",
+        "description": "nak: Add an Op::no_scoreboard() helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b569ecdb6531228a1c2eac38da310b8cd0f3cfc",
+        "description": "nak: Handle delays > 15",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "348f345238000ccf479330a4805b880c4be92ffa",
+        "description": "nak: Put the cycle count assert behind a debug flag",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c1d64053f2c8e9d6438d0fec021d763e0f2695e9",
+        "notes": null
+    },
+    {
+        "sha": "7a55a9afcce85b589b66e5636ef33e4bf696c953",
+        "description": "nak: add reads after setting writes",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2d4e4450999d7632fab11aeda0450ce79d95da0d",
+        "notes": null
+    },
+    {
+        "sha": "afa254ad681cc301d319ade92393c32cd23c1fd9",
+        "description": "ci/zink+radv: Add sample locations fails",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae6d24c4efeb8f907ac4761c06e3c45c35c0c94f",
+        "description": "radv: Expose VK_SAMPLE_COUNT_1_BIT for sample position on GFX10+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "693e3b47f7c5d5d6d36845006fb98f665431c0b8",
+        "description": "radv: Expose EXT_sample_locations everywhere",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "343c434c507a0ea818d20b75323f113bfdf8e18c",
+        "description": "radv: Enable fragmentShadingRateWithCustomSampleLocations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d75082c0229b1445ab29e182fc11f09d5402a38",
+        "description": "radv: Fix compute resolve rounding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "b60d816d6ee35cc1bfa2d2f6aed59104a09ec11d",
         "description": "include: update GL headers from the registry",
         "nominated": false,
