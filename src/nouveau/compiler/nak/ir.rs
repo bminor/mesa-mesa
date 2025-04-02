@@ -2523,6 +2523,15 @@ impl AtomType {
             AtomType::U64 | AtomType::I64 | AtomType::F64 => 64,
         }
     }
+
+    pub fn is_float(&self) -> bool {
+        match self {
+            AtomType::F16x2 | AtomType::F32 | AtomType::F64 => true,
+            AtomType::U32 | AtomType::I32 | AtomType::U64 | AtomType::I64 => {
+                false
+            }
+        }
+    }
 }
 
 impl fmt::Display for AtomType {

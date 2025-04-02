@@ -168,3 +168,140 @@ pub fn test_nop() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_ld_st_atom() {
+    let r0 = RegRef::new(RegFile::GPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+    let r2 = RegRef::new(RegFile::GPR, 2, 1);
+    let r3 = RegRef::new(RegFile::GPR, 3, 1);
+
+    let order = MemOrder::Strong(MemScope::CTA);
+
+    let atom_types = [
+        (AtomType::F16x2, ".f16x2.rn"),
+        (AtomType::U32, ""),
+        (AtomType::I32, ".s32"),
+        (AtomType::F32, ".f32.ftz.rn"),
+        (AtomType::U64, ".64"),
+        (AtomType::I64, ".s64"),
+        (AtomType::F64, ".f64.rn"),
+    ];
+
+    let spaces = [
+        MemSpace::Global(MemAddrType::A64),
+        MemSpace::Shared,
+        MemSpace::Local,
+    ];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+        for space in spaces {
+            for (addr_offset, addr_offset_str) in [(0x12, "0x12"), (-1, "-0x1")]
+            {
+                let cta = if sm >= 80 { "sm" } else { "cta" };
+
+                let pri = match space {
+                    MemSpace::Global(_) => MemEvictionPriority::First,
+                    MemSpace::Shared => MemEvictionPriority::Normal,
+                    MemSpace::Local => MemEvictionPriority::Normal,
+                };
+                let access = MemAccess {
+                    mem_type: MemType::B32,
+                    space,
+                    order: order,
+                    eviction_priority: pri,
+                };
+
+                let instr = OpLd {
+                    dst: Dst::Reg(r0),
+                    addr: SrcRef::Reg(r1).into(),
+                    offset: addr_offset,
+                    access: access.clone(),
+                };
+                let expected = match space {
+                    MemSpace::Global(_) => {
+                        format!(
+                            "ldg.e.ef.strong.{cta} r0, [r1+{addr_offset_str}];"
+                        )
+                    }
+                    MemSpace::Shared => {
+                        format!("lds r0, [r1+{addr_offset_str}];")
+                    }
+                    MemSpace::Local => {
+                        format!("ldl r0, [r1+{addr_offset_str}];")
+                    }
+                };
+                c.push(instr, expected);
+
+                let instr = OpSt {
+                    addr: SrcRef::Reg(r1).into(),
+                    data: SrcRef::Reg(r2).into(),
+                    offset: addr_offset,
+                    access: access.clone(),
+                };
+                let expected = match space {
+                    MemSpace::Global(_) => {
+                        format!(
+                            "stg.e.ef.strong.{cta} [r1+{addr_offset_str}], r2;"
+                        )
+                    }
+                    MemSpace::Shared => {
+                        format!("sts [r1+{addr_offset_str}], r2;")
+                    }
+                    MemSpace::Local => {
+                        format!("stl [r1+{addr_offset_str}], r2;")
+                    }
+                };
+                c.push(instr, expected);
+
+                for (atom_type, atom_type_str) in atom_types {
+                    for use_dst in [true, false] {
+                        let instr = OpAtom {
+                            dst: if use_dst { Dst::Reg(r0) } else { Dst::None },
+                            addr: SrcRef::Reg(r1).into(),
+                            data: SrcRef::Reg(r2).into(),
+                            atom_op: AtomOp::Add,
+                            cmpr: SrcRef::Reg(r3).into(),
+                            atom_type,
+
+                            addr_offset,
+
+                            mem_space: space,
+                            mem_order: order,
+                            mem_eviction_priority: pri,
+                        };
+
+                        let expected = match space {
+                            MemSpace::Global(_) => {
+                                let op = if use_dst {
+                                    "atomg"
+                                } else if sm >= 90 {
+                                    "redg"
+                                } else {
+                                    "red"
+                                };
+                                let dst = if use_dst { "pt, r0, " } else { "" };
+                                format!("{op}.e.add.ef{atom_type_str}.strong.{cta} {dst}[r1+{addr_offset_str}], r2;")
+                            }
+                            MemSpace::Shared => {
+                                if atom_type.is_float() {
+                                    continue;
+                                }
+                                if atom_type.bits() == 64 {
+                                    continue;
+                                }
+                                let dst = if use_dst { "r0" } else { "rz" };
+                                format!("atoms.add{atom_type_str} {dst}, [r1+{addr_offset_str}], r2;")
+                            }
+                            MemSpace::Local => continue,
+                        };
+
+                        c.push(instr, expected);
+                    }
+                }
+            }
+        }
+        c.check(sm);
+    }
+}

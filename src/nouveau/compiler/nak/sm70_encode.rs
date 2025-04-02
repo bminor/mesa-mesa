@@ -2966,18 +2966,46 @@ impl SM70Encoder<'_> {
     }
 
     fn set_atom_type(&mut self, atom_type: AtomType) {
-        self.set_field(
-            73..76,
-            match atom_type {
-                AtomType::U32 => 0_u8,
-                AtomType::I32 => 1_u8,
-                AtomType::U64 => 2_u8,
-                AtomType::F32 => 3_u8,
-                AtomType::F16x2 => 4_u8,
-                AtomType::I64 => 5_u8,
-                AtomType::F64 => 6_u8,
-            },
-        );
+        if self.sm >= 90 {
+            // Float/int is differentiated by opcode
+            self.set_field(
+                73..77,
+                match atom_type {
+                    AtomType::F16x2 => 0_u8,
+                    // f16x4 => 1
+                    // f16x8 => 2
+                    // bf16x2 => 3
+                    // bf16x4 => 4
+                    // bf16x8 => 5
+                    AtomType::F32 => 9_u8, // .ftz
+                    // f32x2.ftz => 10
+                    // f32x4.ftz => 11
+                    // f32x1 => 12
+                    // f32x2 => 13
+                    // f32x4 => 14
+                    AtomType::F64 => 15_u8,
+
+                    AtomType::U32 => 0,
+                    AtomType::I32 => 1,
+                    AtomType::U64 => 2,
+                    AtomType::I64 => 3,
+                    // u128 => 4,
+                },
+            );
+        } else {
+            self.set_field(
+                73..76,
+                match atom_type {
+                    AtomType::U32 => 0_u8,
+                    AtomType::I32 => 1_u8,
+                    AtomType::U64 => 2_u8,
+                    AtomType::F32 => 3_u8,
+                    AtomType::F16x2 => 4_u8,
+                    AtomType::I64 => 5_u8,
+                    AtomType::F64 => 6_u8,
+                },
+            );
+        }
     }
 }
 
@@ -2990,7 +3018,11 @@ impl SM70Op for OpAtom {
         match self.mem_space {
             MemSpace::Global(_) => {
                 if self.dst.is_none() {
-                    e.set_opcode(0x98e);
+                    if e.sm >= 90 && self.atom_type.is_float() {
+                        e.set_opcode(0x9a6);
+                    } else {
+                        e.set_opcode(0x98e);
+                    }
 
                     e.set_reg_src(32..40, self.data);
                     e.set_atom_op(87..90, self.atom_op);
@@ -3001,7 +3033,11 @@ impl SM70Op for OpAtom {
                     e.set_reg_src(32..40, self.cmpr);
                     e.set_reg_src(64..72, self.data);
                 } else {
-                    e.set_opcode(0x3a8);
+                    if e.sm >= 90 && self.atom_type.is_float() {
+                        e.set_opcode(0x3a3);
+                    } else {
+                        e.set_opcode(0x3a8);
+                    }
 
                     e.set_reg_src(32..40, self.data);
                     e.set_atom_op(87..91, self.atom_op);
@@ -3036,6 +3072,10 @@ impl SM70Op for OpAtom {
                         self.atom_type != AtomType::U64
                             || self.atom_op == AtomOp::Exch,
                         "64-bit Shared atomics only support CmpExch or Exch"
+                    );
+                    assert!(
+                        !self.atom_type.is_float(),
+                        "Shared atomics don't support float"
                     );
                     e.set_atom_op(87..91, self.atom_op);
                 }
