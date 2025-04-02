@@ -192,6 +192,7 @@ struct etna_context {
       uint64_t prims_generated;
       uint64_t draw_calls;
       uint64_t rs_operations;
+      uint64_t flushes;
    } stats;
 
    int in_fence_fd;

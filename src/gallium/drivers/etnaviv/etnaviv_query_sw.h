@@ -32,6 +32,7 @@
 
 #define ETNA_QUERY_DRAW_CALLS    (ETNA_SW_QUERY_BASE + 0)
 #define ETNA_QUERY_RS_OPERATIONS (ETNA_SW_QUERY_BASE + 1)
+#define ETNA_QUERY_CTX_FLUSHES   (ETNA_SW_QUERY_BASE + 2)
 
 struct etna_sw_query {
    struct etna_query base;

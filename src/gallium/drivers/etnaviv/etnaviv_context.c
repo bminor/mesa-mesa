@@ -558,6 +558,8 @@ etna_flush(struct pipe_context *pctx, struct pipe_fence_handle **fence,
    struct etna_context *ctx = etna_context(pctx);
    int out_fence_fd = -1;
 
+   ctx->stats.flushes++;
+
    list_for_each_entry(struct etna_acc_query, aq, &ctx->active_acc_queries, node)
       etna_acc_query_suspend(aq, ctx);
 

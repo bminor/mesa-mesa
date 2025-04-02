@@ -51,6 +51,8 @@ read_counter(struct etna_context *ctx, unsigned type)
       return ctx->stats.draw_calls;
    case ETNA_QUERY_RS_OPERATIONS:
       return ctx->stats.rs_operations;
+   case ETNA_QUERY_CTX_FLUSHES:
+      return ctx->stats.flushes;
    }
 
    return 0;
@@ -100,6 +102,7 @@ etna_sw_create_query(struct etna_context *ctx, unsigned query_type)
    case PIPE_QUERY_PRIMITIVES_GENERATED:
    case ETNA_QUERY_DRAW_CALLS:
    case ETNA_QUERY_RS_OPERATIONS:
+   case ETNA_QUERY_CTX_FLUSHES:
       break;
    default:
       return NULL;
@@ -120,6 +123,7 @@ static const struct pipe_driver_query_info list[] = {
    {"prims-generated", PIPE_QUERY_PRIMITIVES_GENERATED, { 0 }},
    {"draw-calls", ETNA_QUERY_DRAW_CALLS, { 0 }},
    {"rs-operations", ETNA_QUERY_RS_OPERATIONS, { 0 }},
+   {"ctx-flushes", ETNA_QUERY_CTX_FLUSHES, { 0 }},
 };
 
 int
