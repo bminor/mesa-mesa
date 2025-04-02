@@ -1311,6 +1311,7 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
 
 ALWAYS_INLINE static void
 update_te(struct anv_gfx_dynamic_state *hw_state,
+          const struct anv_device *device,
           const struct vk_dynamic_graphics_state *dyn,
           const struct anv_cmd_graphics_state *gfx)
 {
@@ -1327,8 +1328,28 @@ update_te(struct anv_gfx_dynamic_state *hw_state,
             SET(TE, te.OutputTopology, OUTPUT_TRI_CCW);
          } else {
             SET(TE, te.OutputTopology, tes_prog_data->output_topology);
-            }
+         }
       }
+
+#if GFX_VERx10 >= 125
+      uint32_t distrib_mode =
+         intel_needs_workaround(device->info, 22012699309) ?
+         TEDMODE_RR_STRICT : TEDMODE_RR_FREE;
+
+      /* Wa_14015055625:
+       *
+       * Disable Tessellation Distribution when primitive Id is enabled.
+       */
+      if (intel_needs_workaround(device->info, 14015055625) &&
+          (sbe_primitive_id_override(gfx) || geom_or_tess_prim_id_used(gfx)))
+         distrib_mode = TEDMODE_OFF;
+
+      /* Debug feature for hang analysis */
+      if (!device->physical->instance->enable_te_distribution)
+         distrib_mode = TEDMODE_OFF;
+
+      SET(TE, te.TessellationDistributionMode, distrib_mode);
+#endif
    } else {
       SET(TE, te.OutputTopology, OUTPUT_POINT);
    }
@@ -2259,9 +2280,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
       update_cps(hw_state, device, dyn);
 #endif /* GFX_VER >= 11 */
 
-   if ((gfx->dirty & ANV_CMD_DIRTY_DS) ||
+   if (
+#if GFX_VERx10 >= 125
+      (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) ||
+#else
+      (gfx->dirty & ANV_CMD_DIRTY_DS) ||
+#endif
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_DOMAIN_ORIGIN))
-      update_te(hw_state, dyn, gfx);
+      update_te(hw_state, device, dyn, gfx);
 
 #if GFX_VER >= 12
    if ((gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) ||
@@ -3058,6 +3084,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_TE),
                            pipeline, partial.te, te) {
          SET(te, te, OutputTopology);
+#if GFX_VERx10 >= 125
+         SET(te, te, TessellationDistributionMode);
+#endif
       }
    }
 

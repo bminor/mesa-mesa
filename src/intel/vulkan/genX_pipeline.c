@@ -961,26 +961,8 @@ emit_3dstate_te(struct anv_graphics_pipeline *pipeline)
          te.MaximumTessellationFactorOdd = 63.0;
          te.MaximumTessellationFactorNotOdd = 64.0;
 #if GFX_VERx10 >= 125
-         const struct anv_device *device = pipeline->base.base.device;
-         if (intel_needs_workaround(device->info, 22012699309))
-            te.TessellationDistributionMode = TEDMODE_RR_STRICT;
-         else
-            te.TessellationDistributionMode = TEDMODE_RR_FREE;
-
-         if (intel_needs_workaround(device->info, 14015055625)) {
-            /* Wa_14015055625:
-             *
-             * Disable Tessellation Distribution when primitive Id is enabled.
-             */
-            if (sbe_primitive_id_override(pipeline) ||
-                geom_or_tess_prim_id_used(pipeline))
-               te.TessellationDistributionMode = TEDMODE_OFF;
-         }
-
-         if (!device->physical->instance->enable_te_distribution)
-            te.TessellationDistributionMode = TEDMODE_OFF;
-
 #if GFX_VER >= 20
+         const struct anv_device *device = pipeline->base.base.device;
          if (intel_needs_workaround(device->info, 16025857284))
             te.TessellationDistributionLevel = TEDLEVEL_PATCH;
          else

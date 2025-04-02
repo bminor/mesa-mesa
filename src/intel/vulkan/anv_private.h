@@ -1852,6 +1852,7 @@ struct anv_gfx_dynamic_state {
    /* 3DSTATE_TE */
    struct {
       uint32_t OutputTopology;
+      uint32_t TessellationDistributionMode;
    } te;
 
    /* 3DSTATE_VF */
