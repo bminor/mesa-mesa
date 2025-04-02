@@ -1992,8 +1992,8 @@ get_reg_create_vector(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
    for (unsigned i = 0, offset = 0; i < instr->operands.size();
         offset += instr->operands[i].bytes(), i++) {
       // TODO: think about, if we can alias live operands on the same register
-      if (!instr->operands[i].isTemp() || !instr->operands[i].isKillBeforeDef() ||
-          instr->operands[i].getTemp().type() != rc.type())
+      if (!instr->operands[i].isTemp() || instr->operands[i].getTemp().type() != rc.type() ||
+          reg_file.test(instr->operands[i].physReg(), instr->operands[i].bytes()))
          continue;
 
       if (offset > instr->operands[i].physReg().reg_b)
