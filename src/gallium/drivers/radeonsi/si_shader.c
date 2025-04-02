@@ -2499,12 +2499,19 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
 
    NIR_PASS_V(nir, nir_divergence_analysis); /* required by ac_nir_flag_smem_for_loads */
    NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
-            !sel->info.base.use_aco_amd, true);
+            !sel->info.base.use_aco_amd, false);
    NIR_PASS(progress, nir, nir_lower_io_to_scalar,
             nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared | nir_var_mem_global,
             ac_nir_scalarize_overfetching_loads_callback, &sel->screen->info.gfx_level);
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, &ctx->args);
 
+   /* This must be done before load/store vectorization to lower 16-bit SMEM loads to 32 bits,
+    * so that they can be vectorized as 32-bit loads. 16-bit loads are never vectorized.
+    */
+   NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes,
+            sel->screen->info.gfx_level, !nir->info.use_aco_amd);
+
+   /* Load/store vectorization requires that offset computations are optimized. */
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
       progress = false;
@@ -2521,6 +2528,8 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
                 */
                .has_shared2_amd = sel->screen->info.gfx_level >= GFX7,
             });
+
+   /* This must be done again if 8-bit or 16-bit buffer stores were vectorized. */
    NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes,
             sel->screen->info.gfx_level, !nir->info.use_aco_amd);
 
