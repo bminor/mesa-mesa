@@ -107,7 +107,6 @@ bool anv_nir_lower_ubo_loads(nir_shader *shader);
 bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    const struct anv_physical_device *pdevice,
                                    enum brw_robustness_flags robust_flags,
-                                   enum anv_descriptor_set_layout_type layout_type,
                                    struct anv_descriptor_set_layout * const *set_layouts,
                                    uint32_t set_count,
                                    const uint32_t *dynamic_offset_start,
@@ -123,7 +122,6 @@ bool anv_nir_compute_push_layout(nir_shader *nir,
                                  struct brw_stage_prog_data *prog_data,
                                  struct anv_pipeline_bind_map *map,
                                  const struct anv_pipeline_push_map *push_map,
-                                 enum anv_descriptor_set_layout_type desc_type,
                                  void *mem_ctx);
 
 void anv_nir_validate_push_layout(const struct anv_physical_device *pdevice,

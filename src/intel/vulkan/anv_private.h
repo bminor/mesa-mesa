@@ -4774,6 +4774,9 @@ struct anv_pipeline_bind_map {
    unsigned char                                sampler_sha1[20];
    unsigned char                                push_sha1[20];
 
+   /* enum anv_descriptor_set_layout_type */
+   uint32_t layout_type;
+
    uint32_t surface_count;
    uint32_t sampler_count;
    uint32_t embedded_sampler_count;

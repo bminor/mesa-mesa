@@ -297,6 +297,7 @@ anv_stage_allocate_bind_map_tables(struct anv_pipeline *pipeline,
                        &pipeline->layout));
 
    stage->bind_map = (struct anv_pipeline_bind_map) {
+      .layout_type = pipeline->layout.type,
       .surface_to_descriptor = surface_bindings,
       .sampler_to_descriptor = sampler_bindings,
       .embedded_sampler_to_binding = embedded_sampler_bindings,
@@ -1062,7 +1063,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
    NIR_PASS(_, nir, anv_nir_apply_pipeline_layout,
               pdevice, stage->key.base.robust_flags,
-              layout->type, layout->set_layouts, layout->num_sets,
+              layout->set_layouts, layout->num_sets,
               layout->independent_sets ? NULL : layout->dynamic_offset_start,
               &stage->bind_map, &push_map, mem_ctx);
 
@@ -1130,11 +1131,10 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
               pdevice, stage->key.base.robust_flags,
               anv_graphics_pipeline_stage_fragment_dynamic(stage),
               anv_graphics_pipeline_stage_mesh_dynamic(stage),
-              prog_data, &stage->bind_map, &push_map,
-              pipeline->layout.type, mem_ctx);
+              prog_data, &stage->bind_map, &push_map, mem_ctx);
 
    NIR_PASS(_, nir, anv_nir_lower_resource_intel, pdevice,
-              pipeline->layout.type);
+               stage->bind_map.layout_type);
 
    if (gl_shader_stage_uses_workgroup(nir->info.stage)) {
       NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,

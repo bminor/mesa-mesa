@@ -333,6 +333,7 @@ anv_shader_bin_serialize(struct vk_pipeline_cache_object *object,
                     sizeof(shader->bind_map.sampler_sha1));
    blob_write_bytes(blob, shader->bind_map.push_sha1,
                     sizeof(shader->bind_map.push_sha1));
+   blob_write_uint32(blob, shader->bind_map.layout_type);
    blob_write_uint32(blob, shader->bind_map.surface_count);
    blob_write_uint32(blob, shader->bind_map.sampler_count);
    blob_write_uint32(blob, shader->bind_map.embedded_sampler_count);
@@ -397,6 +398,7 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
    blob_copy_bytes(blob, bind_map.surface_sha1, sizeof(bind_map.surface_sha1));
    blob_copy_bytes(blob, bind_map.sampler_sha1, sizeof(bind_map.sampler_sha1));
    blob_copy_bytes(blob, bind_map.push_sha1, sizeof(bind_map.push_sha1));
+   bind_map.layout_type = blob_read_uint32(blob);
    bind_map.surface_count = blob_read_uint32(blob);
    bind_map.sampler_count = blob_read_uint32(blob);
    bind_map.embedded_sampler_count = blob_read_uint32(blob);

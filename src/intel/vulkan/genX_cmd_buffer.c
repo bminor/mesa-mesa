@@ -2240,16 +2240,15 @@ emit_binding_table(struct anv_cmd_buffer *cmd_buffer,
             continue;
          }
 
-         const struct anv_pipeline *pipeline = pipe_state->pipeline;
          uint32_t surface_state_offset;
-         if (pipeline->layout.type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_INDIRECT) {
+         if (map->layout_type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_INDIRECT) {
             surface_state_offset =
                emit_indirect_descriptor_binding_table_entry(cmd_buffer,
                                                             pipe_state,
                                                             binding, desc);
          } else {
-            assert(pipeline->layout.type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT ||
-                   pipeline->layout.type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_BUFFER);
+            assert(map->layout_type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT ||
+                   map->layout_type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_BUFFER);
             surface_state_offset =
                emit_direct_descriptor_binding_table_entry(cmd_buffer, pipe_state,
                                                           set, binding, desc);
