@@ -1832,11 +1832,7 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, st
       return;
    }
 
-   /* VK_EXT_conditional_rendering says that copy commands should not be
-    * affected by conditional rendering.
-    */
-   radv_meta_save(&saved_state, cmd_buffer,
-                  RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_CONSTANTS | RADV_META_SUSPEND_PREDICATING);
+   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_CONSTANTS);
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
@@ -2453,6 +2449,8 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    if (!queryCount)
       return;
 
+   radv_suspend_conditional_rendering(cmd_buffer);
+
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, pool->bo);
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
 
@@ -2498,6 +2496,8 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    default:
       unreachable("trying to get results of unhandled query type");
    }
+
+   radv_resume_conditional_rendering(cmd_buffer);
 }
 
 static uint32_t

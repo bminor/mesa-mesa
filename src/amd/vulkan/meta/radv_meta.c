@@ -148,11 +148,6 @@ radv_meta_save(struct radv_meta_saved_state *state, struct radv_cmd_buffer *cmd_
       radv_cmd_buffer_reset_rendering(cmd_buffer);
    }
 
-   if (state->flags & RADV_META_SUSPEND_PREDICATING) {
-      state->predicating = cmd_buffer->state.predicating;
-      cmd_buffer->state.predicating = false;
-   }
-
    radv_suspend_queries(state, cmd_buffer);
 }
 
@@ -221,9 +216,6 @@ radv_meta_restore(const struct radv_meta_saved_state *state, struct radv_cmd_buf
       cmd_buffer->state.render = state->render;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
    }
-
-   if (state->flags & RADV_META_SUSPEND_PREDICATING)
-      cmd_buffer->state.predicating = state->predicating;
 
    radv_resume_queries(state, cmd_buffer);
 }
