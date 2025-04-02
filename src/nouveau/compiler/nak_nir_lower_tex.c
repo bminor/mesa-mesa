@@ -356,6 +356,69 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    return true;
 }
 
+static enum pipe_format
+format_for_bits(unsigned bits)
+{
+   switch (bits) {
+   case 8:   return PIPE_FORMAT_R8_UINT;
+   case 16:  return PIPE_FORMAT_R16_UINT;
+   case 32:  return PIPE_FORMAT_R32_UINT;
+   case 64:  return PIPE_FORMAT_R32G32_UINT;
+   case 128: return PIPE_FORMAT_R32G32B32A32_UINT;
+   default: unreachable("Unknown number of image format bits");
+   }
+}
+
+static bool
+lower_formatted_image_load(nir_builder *b, nir_intrinsic_instr *intrin,
+                           const struct nak_compiler *nak)
+{
+   enum pipe_format format = nir_intrinsic_format(intrin);
+   if (format == PIPE_FORMAT_NONE)
+      return false;
+
+   unsigned bits = util_format_get_blocksizebits(format);
+
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_bindless_image_load:
+      intrin->intrinsic = nir_intrinsic_bindless_image_load_raw_nv;
+      break;
+   default:
+      unreachable("Unknown image intrinsic");
+   }
+
+   nir_intrinsic_set_format(intrin, format_for_bits(bits));
+
+   ASSERTED const unsigned rgba_bit_size = intrin->def.bit_size;
+   intrin->def.bit_size = 32;
+
+   nir_intrinsic_set_dest_type(intrin, nir_type_uint32);
+   const unsigned num_raw_components = DIV_ROUND_UP(bits, 32);
+   intrin->num_components = num_raw_components;
+   intrin->def.num_components = num_raw_components;
+
+   b->cursor = nir_after_instr(&intrin->instr);
+   nir_def *rgba = NULL;
+   switch (format) {
+   case PIPE_FORMAT_R64_UINT:
+   case PIPE_FORMAT_R64_SINT:
+      assert(rgba_bit_size == 64);
+      rgba = nir_vec4(b, nir_pack_64_2x32(b, &intrin->def),
+                         nir_imm_int64(b, 0),
+                         nir_imm_int64(b, 0),
+                         nir_imm_int64(b, 1));
+      break;
+   default:
+      assert(rgba_bit_size == 32);
+      rgba = nir_format_unpack_rgba(b, &intrin->def, format);
+      break;
+   }
+
+   nir_def_rewrite_uses_after(&intrin->def, rgba, rgba->parent_instr);
+
+   return true;
+}
+
 static bool
 shrink_image_load(nir_builder *b, nir_intrinsic_instr *intrin,
                   const struct nak_compiler *nak)
@@ -614,6 +677,9 @@ lower_tex_instr(nir_builder *b, nir_instr *instr, void *_data)
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
       switch (intrin->intrinsic) {
       case nir_intrinsic_bindless_image_load:
+         if (nak->sm < 50 && lower_formatted_image_load(b, intrin, nak))
+            return true;
+         FALLTHROUGH;
       case nir_intrinsic_bindless_image_sparse_load:
          return shrink_image_load(b, intrin, nak);
       case nir_intrinsic_bindless_image_store:
