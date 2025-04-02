@@ -388,6 +388,22 @@ brw_from_nir_emit_cf_list(nir_to_brw_state &ntb, exec_list *list)
    }
 }
 
+static brw_inst *
+brw_from_nir_emit_jump(nir_to_brw_state &ntb, nir_jump_instr *instr)
+{
+   switch (instr->type) {
+   case nir_jump_break:
+      return ntb.bld.emit(BRW_OPCODE_BREAK);
+   case nir_jump_continue:
+      return ntb.bld.emit(BRW_OPCODE_CONTINUE);
+   case nir_jump_halt:
+      return ntb.bld.emit(BRW_OPCODE_HALT);
+   case nir_jump_return:
+   default:
+      UNREACHABLE("unknown jump");
+   }
+}
+
 static void
 brw_from_nir_emit_if(nir_to_brw_state &ntb, nir_if *if_stmt)
 {
@@ -413,6 +429,27 @@ brw_from_nir_emit_if(nir_to_brw_state &ntb, nir_if *if_stmt)
                            retype(cond_reg, BRW_TYPE_D));
    inst->conditional_mod = BRW_CONDITIONAL_NZ;
 
+   /* Peephole: replace IF-JUMP-ENDIF with predicated jump */
+   if (nir_cf_list_is_empty_block(&if_stmt->else_list) &&
+       exec_list_is_singular(&if_stmt->then_list)) {
+      struct exec_node *head = exec_list_get_head(&if_stmt->then_list);
+      nir_block *block =
+         nir_cf_node_as_block(exec_node_data(nir_cf_node, head, node));
+
+      if (exec_list_is_singular(&block->instr_list) &&
+          nir_block_ends_in_jump(block)) {
+         nir_jump_instr *jump = nir_instr_as_jump(nir_block_first_instr(block));
+         if (jump->type == nir_jump_break ||
+             jump->type == nir_jump_continue) {
+
+            brw_inst *inst = brw_from_nir_emit_jump(ntb, jump);
+            inst->predicate = BRW_PREDICATE_NORMAL;
+            inst->predicate_inverse = invert;
+            return;
+         }
+      }
+   }
+
    brw_inst *iff = bld.IF(BRW_PREDICATE_NORMAL);
    iff->predicate_inverse = invert;
 
@@ -423,20 +460,7 @@ brw_from_nir_emit_if(nir_to_brw_state &ntb, nir_if *if_stmt)
       brw_from_nir_emit_cf_list(ntb, &if_stmt->else_list);
    }
 
-   brw_inst *endif = bld.emit(BRW_OPCODE_ENDIF);
-
-   /* Peephole: replace IF-JUMP-ENDIF with predicated jump */
-   if (endif->prev->prev == iff) {
-      brw_inst *jump = (brw_inst *) endif->prev;
-      if (jump->predicate == BRW_PREDICATE_NONE &&
-          (jump->opcode == BRW_OPCODE_BREAK ||
-           jump->opcode == BRW_OPCODE_CONTINUE)) {
-         jump->predicate = iff->predicate;
-         jump->predicate_inverse = iff->predicate_inverse;
-         iff->brw_exec_node::remove();
-         endif->brw_exec_node::remove();
-      }
-   }
+   bld.emit(BRW_OPCODE_ENDIF);
 }
 
 static void
@@ -7703,25 +7727,6 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       }
 
       bld.LOAD_PAYLOAD(nir_def_reg, nir_dest, dest_size, 0);
-   }
-}
-
-static void
-brw_from_nir_emit_jump(nir_to_brw_state &ntb, nir_jump_instr *instr)
-{
-   switch (instr->type) {
-   case nir_jump_break:
-      ntb.bld.emit(BRW_OPCODE_BREAK);
-      break;
-   case nir_jump_continue:
-      ntb.bld.emit(BRW_OPCODE_CONTINUE);
-      break;
-   case nir_jump_halt:
-      ntb.bld.emit(BRW_OPCODE_HALT);
-      break;
-   case nir_jump_return:
-   default:
-      UNREACHABLE("unknown jump");
    }
 }
 
