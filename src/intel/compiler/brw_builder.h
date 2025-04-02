@@ -132,6 +132,15 @@ public:
       return bld;
    }
 
+   brw_builder
+   after_block_before_control_flow(bblock_t *block) const
+   {
+      brw_builder bld = *this;
+      bld.block = block;
+      bld.cursor = block->last_non_control_flow_inst()->next;
+      return bld;
+   }
+
    /**
     * Construct a builder specifying the default SIMD width and group of
     * channel enable signals, inheriting other code generation parameters

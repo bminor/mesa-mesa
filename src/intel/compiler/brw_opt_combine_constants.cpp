@@ -1535,39 +1535,22 @@ brw_opt_combine_constants(brw_shader &s)
       /* Insert it either before the instruction that generated the immediate
        * or after the last non-control flow instruction of the common ancestor.
        */
-      exec_node *n;
-      bblock_t *insert_block;
+      brw_builder ibld = brw_builder(&s, 1).exec_all();
       if (imm->inst != nullptr) {
-         insert_block = imm->block;
-         n = imm->inst;
+         ibld = ibld.before(imm->inst);
       } else {
-         insert_block = imm->block;
-         if (insert_block->start()->opcode == BRW_OPCODE_DO) {
+         bblock_t *block = imm->block;
+         if (block->start()->opcode == BRW_OPCODE_DO) {
             /* DO blocks are weird. They can contain only the single DO
              * instruction. As a result, MOV instructions cannot be added to
              * the DO block, so add to the next block which is guaranteed
              * to not be a DO block.
              */
-            insert_block = insert_block->next();
-            assert(insert_block->start()->opcode != BRW_OPCODE_DO);
+            block = block->next();
+            assert(block->start()->opcode != BRW_OPCODE_DO);
          }
-         n = insert_block->last_non_control_flow_inst()->next;
+         ibld = ibld.after_block_before_control_flow(block);
       }
-
-      /* From the BDW and CHV PRM, 3D Media GPGPU, Special Restrictions:
-       *
-       *   "In Align16 mode, the channel selects and channel enables apply to a
-       *    pair of half-floats, because these parameters are defined for DWord
-       *    elements ONLY. This is applicable when both source and destination
-       *    are half-floats."
-       *
-       * This means that Align16 instructions that use promoted HF immediates
-       * and use a <0,1,0>:HF region would read 2 HF slots instead of
-       * replicating the single one we want. To avoid this, we always populate
-       * both HF slots within a DWord with the constant.
-       */
-      const uint32_t width = 1;
-      const brw_builder ibld = brw_builder(&s, width).at(insert_block, n).exec_all();
 
       brw_reg reg = brw_vgrf(imm->nr, BRW_TYPE_F);
       reg.offset = imm->subreg_offset;
@@ -1582,7 +1565,7 @@ brw_opt_combine_constants(brw_shader &s)
       struct brw_reg imm_reg = build_imm_reg_for_copy(imm);
 
       /* Ensure we have enough space in the register to copy the immediate */
-      assert(reg.offset + brw_type_size_bytes(imm_reg.type) * width <= REG_SIZE * reg_unit(devinfo));
+      assert(reg.offset + brw_type_size_bytes(imm_reg.type) <= REG_SIZE * reg_unit(devinfo));
 
       ibld.MOV(retype(reg, imm_reg.type), imm_reg);
    }
