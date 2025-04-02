@@ -100,5 +100,11 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 		--compression=gz \
 		--path="/" \
 		--format=tar \
+	- append-overlay \
+		--name=extra-modules \
+		--url="${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar.zst" \
+		--compression=zstd \
+		--path="/" \
+		--format=tar \
 	- submit \
 	>> results/lava.log
