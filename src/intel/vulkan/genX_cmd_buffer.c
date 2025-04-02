@@ -2773,7 +2773,8 @@ compute_descriptor_set_sampler_offset(const struct anv_cmd_buffer *cmd_buffer,
 
 void
 genX(flush_descriptor_buffers)(struct anv_cmd_buffer *cmd_buffer,
-                               struct anv_cmd_pipeline_state *pipe_state)
+                               struct anv_cmd_pipeline_state *pipe_state,
+                               VkShaderStageFlags active_stages)
 {
    /* On Gfx12.5+ the STATE_BASE_ADDRESS BindlessSurfaceStateBaseAddress &
     * DynamicStateBaseAddress are fixed. So as long as we stay in one
@@ -2792,8 +2793,7 @@ genX(flush_descriptor_buffers)(struct anv_cmd_buffer *cmd_buffer,
           ANV_CMD_DESCRIPTOR_BUFFER_MODE_UNKNOWN);
    if (cmd_buffer->state.current_db_mode == ANV_CMD_DESCRIPTOR_BUFFER_MODE_BUFFER &&
        (cmd_buffer->state.descriptor_buffers.dirty ||
-        (pipe_state->pipeline->active_stages &
-         cmd_buffer->state.descriptor_buffers.offsets_dirty) != 0)) {
+        (active_stages & cmd_buffer->state.descriptor_buffers.offsets_dirty) != 0)) {
       struct anv_push_constants *push_constants =
          &pipe_state->push_constants;
       for (uint32_t i = 0; i < ARRAY_SIZE(push_constants->desc_surface_offsets); i++) {
@@ -2815,11 +2815,9 @@ genX(flush_descriptor_buffers)(struct anv_cmd_buffer *cmd_buffer,
 #endif
 
       cmd_buffer->state.push_constants_dirty |=
-         (cmd_buffer->state.descriptor_buffers.offsets_dirty &
-          pipe_state->pipeline->active_stages);
+         (cmd_buffer->state.descriptor_buffers.offsets_dirty & active_stages);
       pipe_state->push_constants_data_dirty = true;
-      cmd_buffer->state.descriptor_buffers.offsets_dirty &=
-         ~pipe_state->pipeline->active_stages;
+      cmd_buffer->state.descriptor_buffers.offsets_dirty &= ~active_stages;
    }
 
    cmd_buffer->state.descriptor_buffers.dirty = false;
