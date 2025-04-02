@@ -12,13 +12,12 @@
 #include "svga3d_reg.h"
 
 #include "util/u_thread.h"
-
 #include "util/list.h"
 
 
 /* Guess the storage size of cached surfaces and try and keep it under
  * this amount:
- */ 
+ */
 #define SVGA_HOST_SURFACE_CACHE_BYTES (16 * 1024 * 1024)
 
 /* Maximum number of discrete surfaces in the cache:
@@ -33,6 +32,7 @@
 struct svga_winsys_surface;
 struct svga_screen;
 struct svga_context;
+
 
 /**
  * Same as svga_winsys_screen::surface_create.
@@ -55,53 +55,53 @@ struct svga_host_surface_cache_key
 
 struct svga_host_surface_cache_entry
 {
-   /** 
+   /**
     * Head for the LRU list, svga_host_surface_cache::unused, and
     * svga_host_surface_cache::empty
     */
    struct list_head head;
-   
+
    /** Head for the bucket lists. */
    struct list_head bucket_head;
 
    struct svga_host_surface_cache_key key;
    struct svga_winsys_surface *handle;
-   
+
    struct pipe_fence_handle *fence;
 };
 
 
 /**
  * Cache of the host surfaces.
- * 
+ *
  * A cache entry can be in the following stages:
  * 1. empty (entry->handle = NULL)
  * 2. holding a buffer in a validate list
  * 3. holding a buffer in an invalidate list
  * 4. holding a flushed buffer (not in any validate list) with an active fence
  * 5. holding a flushed buffer with an expired fence
- * 
- * An entry progresses from 1 -> 2 -> 3 -> 4 -> 5. When we need an entry to put a 
- * buffer into we preferentially take from 1, or from the least recently used 
+ *
+ * An entry progresses from 1 -> 2 -> 3 -> 4 -> 5. When we need an entry to put a
+ * buffer into we preferentially take from 1, or from the least recently used
  * buffer from 4/5.
  */
-struct svga_host_surface_cache 
+struct svga_host_surface_cache
 {
    mtx_t mutex;
-   
+
    /* Unused buffers are put in buckets to speed up lookups */
    struct list_head bucket[SVGA_HOST_SURFACE_CACHE_BUCKETS];
-   
-   /* Entries with unused buffers, ordered from most to least recently used 
+
+   /* Entries with unused buffers, ordered from most to least recently used
     * (3 and 4) */
    struct list_head unused;
-   
+
    /* Entries with buffers still in validate list (2) */
    struct list_head validated;
-   
+
    /* Entries with buffers still in invalidate list (3) */
    struct list_head invalidated;
-   
+
    /** Empty entries (1) */
    struct list_head empty;
 
