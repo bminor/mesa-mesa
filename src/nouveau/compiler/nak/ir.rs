@@ -5068,16 +5068,31 @@ impl DisplayOp for OpTxq {
 }
 impl_display_for_op!(OpTxq);
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum ImageAccess {
+    Binary(MemType),
+    Formatted(ChannelMask),
+}
+
+impl fmt::Display for ImageAccess {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ImageAccess::Binary(mem_type) => write!(f, ".b{mem_type}"),
+            ImageAccess::Formatted(mask) => write!(f, ".p{mask}"),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpSuLd {
     pub dst: Dst,
     pub fault: Dst,
 
+    pub image_access: ImageAccess,
     pub image_dim: ImageDim,
     pub mem_order: MemOrder,
     pub mem_eviction_priority: MemEvictionPriority,
-    pub channel_mask: ChannelMask,
 
     #[src_type(GPR)]
     pub handle: Src,
@@ -5090,11 +5105,11 @@ impl DisplayOp for OpSuLd {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "suld.p{}{}{}{} [{}] {}",
+            "suld{}{}{}{} [{}] {}",
+            self.image_access,
             self.image_dim,
             self.mem_order,
             self.mem_eviction_priority,
-            self.channel_mask,
             self.coord,
             self.handle,
         )
@@ -5105,10 +5120,10 @@ impl_display_for_op!(OpSuLd);
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpSuSt {
+    pub image_access: ImageAccess,
     pub image_dim: ImageDim,
     pub mem_order: MemOrder,
     pub mem_eviction_priority: MemEvictionPriority,
-    pub channel_mask: ChannelMask,
 
     #[src_type(GPR)]
     pub handle: Src,
@@ -5124,11 +5139,11 @@ impl DisplayOp for OpSuSt {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "sust.p{}{}{}{} [{}] {} {}",
+            "sust{}{}{}{} [{}] {} {}",
+            self.image_access,
             self.image_dim,
             self.mem_order,
             self.mem_eviction_priority,
-            self.channel_mask,
             self.coord,
             self.data,
             self.handle,

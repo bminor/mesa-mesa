@@ -2711,7 +2711,16 @@ impl SM70Op for OpSuLd {
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        e.set_opcode(0x998);
+        match self.image_access {
+            ImageAccess::Binary(mem_type) => {
+                e.set_opcode(0x99a);
+                e.set_mem_type(73..76, mem_type);
+            }
+            ImageAccess::Formatted(channel_mask) => {
+                e.set_opcode(0x998);
+                e.set_image_channel_mask(72..76, channel_mask);
+            }
+        }
 
         e.set_dst(self.dst);
         e.set_reg_src(24..32, self.coord);
@@ -2721,7 +2730,6 @@ impl SM70Op for OpSuLd {
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
         e.set_eviction_priority(&self.mem_eviction_priority);
-        e.set_image_channel_mask(72..76, self.channel_mask);
     }
 }
 
@@ -2731,7 +2739,16 @@ impl SM70Op for OpSuSt {
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        e.set_opcode(0x99c);
+        match self.image_access {
+            ImageAccess::Binary(mem_type) => {
+                e.set_opcode(0x99e);
+                e.set_mem_type(73..76, mem_type);
+            }
+            ImageAccess::Formatted(channel_mask) => {
+                e.set_opcode(0x99c);
+                e.set_image_channel_mask(72..76, channel_mask);
+            }
+        }
 
         e.set_reg_src(24..32, self.coord);
         e.set_reg_src(32..40, self.data);
@@ -2740,7 +2757,6 @@ impl SM70Op for OpSuSt {
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
         e.set_eviction_priority(&self.mem_eviction_priority);
-        e.set_image_channel_mask(72..76, self.channel_mask);
     }
 }
 

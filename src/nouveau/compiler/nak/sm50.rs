@@ -2476,7 +2476,16 @@ impl SM50Op for OpSuLd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xeb00);
 
-        e.set_image_channel_mask(20..24, self.channel_mask);
+        match self.image_access {
+            ImageAccess::Binary(mem_type) => {
+                e.set_bit(52, true); // .B
+                e.set_mem_type(20..23, mem_type);
+            }
+            ImageAccess::Formatted(channel_mask) => {
+                e.set_bit(52, false); // .P
+                e.set_image_channel_mask(20..24, channel_mask);
+            }
+        }
         e.set_image_dim(33..36, self.image_dim);
 
         // mem_eviction_policy not a thing for sm < 70
@@ -2512,14 +2521,23 @@ impl SM50Op for OpSuSt {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xeb20);
 
+        match self.image_access {
+            ImageAccess::Binary(mem_type) => {
+                e.set_bit(52, true); // .B
+                e.set_mem_type(20..23, mem_type);
+            }
+            ImageAccess::Formatted(channel_mask) => {
+                e.set_bit(52, false); // .P
+                e.set_image_channel_mask(20..24, channel_mask);
+            }
+        }
+
         e.set_reg_src(8..16, self.coord);
         e.set_reg_src(0..8, self.data);
         e.set_reg_src(39..47, self.handle);
 
         e.set_image_dim(33..36, self.image_dim);
         e.set_mem_order(&self.mem_order);
-
-        e.set_image_channel_mask(20..24, self.channel_mask);
     }
 }
 

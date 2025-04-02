@@ -2479,17 +2479,19 @@ impl<'a> ShaderFromNir<'a> {
                 let comps = intrin.num_components;
                 assert!(intrin.def.bit_size() == 32);
                 assert!(comps == 1 || comps == 2 || comps == 4);
+                let image_access =
+                    ImageAccess::Formatted(ChannelMask::for_comps(comps));
 
                 let dst = b.alloc_ssa(RegFile::GPR, comps);
 
                 b.push_op(OpSuLd {
                     dst: dst.into(),
                     fault: Dst::None,
+                    image_access,
                     image_dim: dim,
                     mem_order,
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    channel_mask: ChannelMask::for_comps(comps),
                     handle: handle,
                     coord: coord,
                 });
@@ -2514,6 +2516,8 @@ impl<'a> ShaderFromNir<'a> {
                 let comps = intrin.num_components;
                 assert!(intrin.def.bit_size() == 32);
                 assert!(comps == 5);
+                let image_access =
+                    ImageAccess::Formatted(ChannelMask::for_comps(comps - 1));
 
                 let dst = b.alloc_ssa(RegFile::GPR, comps - 1);
                 let fault = b.alloc_ssa(RegFile::Pred, 1);
@@ -2521,11 +2525,11 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpSuLd {
                     dst: dst.into(),
                     fault: fault.into(),
+                    image_access,
                     image_dim: dim,
                     mem_order,
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    channel_mask: ChannelMask::for_comps(comps - 1),
                     handle: handle,
                     coord: coord,
                 });
@@ -2548,13 +2552,15 @@ impl<'a> ShaderFromNir<'a> {
                 let comps = intrin.num_components;
                 assert!(srcs[3].bit_size() == 32);
                 assert!(comps == 1 || comps == 2 || comps == 4);
+                let image_access =
+                    ImageAccess::Formatted(ChannelMask::for_comps(comps));
 
                 b.push_op(OpSuSt {
+                    image_access,
                     image_dim: dim,
                     mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    channel_mask: ChannelMask::for_comps(comps),
                     handle: handle,
                     coord: coord,
                     data: data,
