@@ -3034,7 +3034,7 @@
         "description": "vulkan/runtime: fixup assert with link_geom_stages",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9308e8d90d26fca678fe72380d899cdae77415b5",
         "notes": null
