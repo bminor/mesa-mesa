@@ -979,14 +979,16 @@ aco_print_operand(const Operand* operand, FILE* output, unsigned flags)
       print_reg_class(operand->regClass(), output);
       fprintf(output, "undef");
    } else {
-      if (operand->isLateKill())
-         fprintf(output, "(latekill)");
       if (operand->is16bit())
          fprintf(output, "(is16bit)");
       if (operand->is24bit())
          fprintf(output, "(is24bit)");
-      if ((flags & print_kill) && operand->isKill())
-         fprintf(output, "(kill)");
+      if ((flags & print_kill) && operand->isKill()) {
+         if (operand->isLateKill())
+            fprintf(output, "(lateKill)");
+         else
+            fprintf(output, "(kill)");
+      }
 
       if (!(flags & print_no_ssa))
          fprintf(output, "%%%d%s", operand->tempId(), operand->isFixed() ? ":" : "");
