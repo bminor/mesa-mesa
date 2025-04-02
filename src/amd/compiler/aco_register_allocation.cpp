@@ -109,7 +109,13 @@ struct vector_info {
    vector_info(Instruction* instr, unsigned start = 0, bool weak = false)
        : is_weak(weak), num_parts(instr->operands.size() - start),
          parts(instr->operands.begin() + start)
-   {}
+   {
+      if (parts[0].isVectorAligned()) {
+         num_parts = 1;
+         while (parts[num_parts - 1].isVectorAligned())
+            num_parts++;
+      }
+   }
 
    /* If true, then we should stop trying to form a vector if anything goes wrong. Useful for when
     * the cost of failing does not introduce copies. */
@@ -2974,9 +2980,17 @@ get_affinities(ra_ctx& ctx)
                   ctx.vectors[op.tempId()] = vector_info(instr.get());
             }
          } else if (instr->format == Format::MIMG && instr->operands.size() > 4 &&
-                    !instr->mimg().strict_wqm && ctx.program->gfx_level < GFX12) {
-            for (unsigned i = 3; i < instr->operands.size(); i++)
-               ctx.vectors[instr->operands[i].tempId()] = vector_info(instr.get(), 3, true);
+                    !instr->mimg().strict_wqm) {
+
+            bool is_vector = false;
+            for (unsigned i = 3, vector_begin = 3; i < instr->operands.size(); i++) {
+               if (is_vector || instr->operands[i].isVectorAligned())
+                  ctx.vectors[instr->operands[i].tempId()] = vector_info(instr.get(), vector_begin);
+               else if (ctx.program->gfx_level < GFX12 && !instr->operands[3].isVectorAligned())
+                  ctx.vectors[instr->operands[i].tempId()] = vector_info(instr.get(), 3, true);
+               is_vector = instr->operands[i].isVectorAligned();
+               vector_begin = is_vector ? vector_begin : i + 1;
+            }
          } else if (instr->opcode == aco_opcode::p_split_vector &&
                     instr->operands[0].isFirstKillBeforeDef()) {
             ctx.split_vectors[instr->operands[0].tempId()] = instr.get();
