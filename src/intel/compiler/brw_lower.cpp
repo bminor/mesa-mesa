@@ -323,7 +323,7 @@ brw_lower_barycentrics(brw_shader &s)
 
          for (unsigned i = 0; i < 2; i++) {
             for (unsigned g = 0; g < inst->exec_size / 8; g++) {
-               brw_inst *mov = ibld.at(block, inst->next).group(8, g)
+               brw_inst *mov = ibld.after(inst).group(8, g)
                                   .MOV(horiz_offset(offset(inst->dst, ibld, i),
                                                     8 * g),
                                        offset(tmp, ubld, 2 * g + i));

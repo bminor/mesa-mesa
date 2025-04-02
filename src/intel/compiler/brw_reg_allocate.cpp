@@ -1292,7 +1292,7 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
             emit_unspill(ubld, &fs->shader_stats, spill_src,
                          subset_spill_offset, regs_written(inst), ip);
 
-         emit_spill(ubld.at(block, inst->next), &fs->shader_stats, spill_src,
+         emit_spill(ubld.after(inst), &fs->shader_stats, spill_src,
                     subset_spill_offset, regs_written(inst), ip);
       }
 

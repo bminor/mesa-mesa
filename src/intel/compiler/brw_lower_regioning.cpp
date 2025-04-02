@@ -563,7 +563,7 @@ namespace {
       tmp = horiz_stride(tmp, stride);
 
       /* Emit a MOV taking care of all the destination modifiers. */
-      brw_inst *mov = ibld.at(inst->block, inst->next).MOV(inst->dst, tmp);
+      brw_inst *mov = ibld.after(inst).MOV(inst->dst, tmp);
       mov->saturate = inst->saturate;
       if (!has_inconsistent_cmod(inst))
          mov->conditional_mod = inst->conditional_mod;
@@ -697,8 +697,8 @@ namespace {
          }
 
          for (unsigned j = 0; j < n; j++) {
-            brw_inst *jnst = ibld.at(inst->block, inst->next).MOV(subscript(inst->dst, raw_type, j),
-                                                           subscript(tmp, raw_type, j));
+            brw_inst *jnst = ibld.after(inst).MOV(subscript(inst->dst, raw_type, j),
+                                                  subscript(tmp, raw_type, j));
             if (has_subdword_integer_region_restriction(v->devinfo, jnst)) {
                /* The copy isn't guaranteed to comply with all subdword integer
                 * regioning restrictions in some cases.  Lower it recursively.

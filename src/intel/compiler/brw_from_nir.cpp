@@ -3813,11 +3813,11 @@ emit_is_helper_invocation(nir_to_brw_state &ntb, brw_reg result)
 
       brw_inst *mov = b.MOV(offset(result, b, i), brw_imm_ud(~0));
 
-      /* The at() ensures that any code emitted to get the predicate happens
+      /* The before() ensures that any code emitted to get the predicate happens
        * before the mov right above.  This is not an issue elsewhere because
        * lowering code already set up the builder this way.
        */
-      brw_emit_predicate_on_sample_mask(b.at(NULL, mov), mov);
+      brw_emit_predicate_on_sample_mask(b.before(mov), mov);
       mov->predicate_inverse = true;
    }
 }

@@ -260,7 +260,7 @@ brw_workaround_nomask_control_flow(brw_shader &s)
                inst->predicate_trivial = true;
 
                if (save_flag)
-                  ubld.group(1, 0).at(block, inst->next).MOV(flag, tmp);
+                  ubld.group(1, 0).after(inst).MOV(flag, tmp);
 
                progress = true;
             }

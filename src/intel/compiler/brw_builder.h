@@ -96,6 +96,42 @@ public:
       return bld;
    }
 
+   brw_builder
+   at_start(bblock_t *block) const
+   {
+      brw_builder bld = *this;
+      bld.block = block;
+      bld.cursor = block->instructions.head_sentinel.next;
+      return bld;
+   }
+
+   brw_builder
+   at_end(bblock_t *block) const
+   {
+      brw_builder bld = *this;
+      bld.block = block;
+      bld.cursor = &block->instructions.tail_sentinel;
+      return bld;
+   }
+
+   brw_builder
+   before(brw_inst *ref) const
+   {
+      brw_builder bld = *this;
+      bld.block = ref->block;
+      bld.cursor = ref;
+      return bld;
+   }
+
+   brw_builder
+   after(brw_inst *ref) const
+   {
+      brw_builder bld = *this;
+      bld.block = ref->block;
+      bld.cursor = ref->next;
+      return bld;
+   }
+
    /**
     * Construct a builder specifying the default SIMD width and group of
     * channel enable signals, inheriting other code generation parameters

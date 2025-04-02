@@ -151,7 +151,7 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          const unsigned lanes = CLAMP(count - curr, min_simd, max_simd);
          const unsigned width = util_next_power_of_two(lanes);
          const brw_builder ubld =
-            brw_builder(&s).at(block, txfs[curr]).exec_all().group(width, 0);
+            brw_builder(&s).before(txfs[curr]).exec_all().group(width, 0);
          const brw_builder ubld1 = ubld.group(1, 0);
 
          enum brw_reg_type coord_type =

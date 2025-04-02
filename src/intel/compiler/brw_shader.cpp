@@ -671,8 +671,7 @@ brw_shader::assign_curb_setup()
            gl_shader_stage_is_mesh(stage)) &&
           brw_cs_prog_data(prog_data)->uses_inline_push_addr);
       assert(devinfo->has_lsc);
-      brw_builder ubld = brw_builder(this, 1).exec_all().at(
-         cfg->first_block(), cfg->first_block()->start());
+      brw_builder ubld = brw_builder(this, 1).exec_all().at_start(cfg->first_block());
 
       brw_reg base_addr;
       if (pull_constants_a64) {
@@ -812,8 +811,7 @@ brw_shader::assign_curb_setup()
 
    uint64_t want_zero = used & prog_data->zero_push_reg;
    if (want_zero) {
-      brw_builder ubld = brw_builder(this, 8).exec_all().at(
-         cfg->first_block(), cfg->first_block()->start());
+      brw_builder ubld = brw_builder(this, 8).exec_all().at_start(cfg->first_block());
 
       /* push_reg_mask_param is in 32-bit units */
       unsigned mask_param = prog_data->push_reg_mask_param;
