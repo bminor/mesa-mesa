@@ -232,20 +232,14 @@ radv_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSi
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, dstBuffer);
-   bool old_predicating;
 
-   /* VK_EXT_conditional_rendering says that copy commands should not be
-    * affected by conditional rendering.
-    */
-   old_predicating = cmd_buffer->state.predicating;
-   cmd_buffer->state.predicating = false;
+   radv_suspend_conditional_rendering(cmd_buffer);
 
    fillSize = vk_buffer_range(&dst_buffer->vk, dstOffset, fillSize) & ~3ull;
 
    radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo, vk_buffer_address(&dst_buffer->vk, dstOffset), fillSize, data);
 
-   /* Restore conditional rendering. */
-   cmd_buffer->state.predicating = old_predicating;
+   radv_resume_conditional_rendering(cmd_buffer);
 }
 
 void
@@ -270,13 +264,8 @@ radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCop
    VK_FROM_HANDLE(radv_buffer, src_buffer, pCopyBufferInfo->srcBuffer);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyBufferInfo->dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   bool old_predicating;
 
-   /* VK_EXT_conditional_rendering says that copy commands should not be
-    * affected by conditional rendering.
-    */
-   old_predicating = cmd_buffer->state.predicating;
-   cmd_buffer->state.predicating = false;
+   radv_suspend_conditional_rendering(cmd_buffer);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_buffer->bo);
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
@@ -289,8 +278,7 @@ radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCop
       radv_copy_memory(cmd_buffer, src_va, dst_va, region->size);
    }
 
-   /* Restore conditional rendering. */
-   cmd_buffer->state.predicating = old_predicating;
+   radv_resume_conditional_rendering(cmd_buffer);
 }
 
 void
@@ -347,18 +335,12 @@ radv_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDevice
    VK_FROM_HANDLE(radv_buffer, dst_buffer, dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, dstOffset);
-   bool old_predicating;
 
-   /* VK_EXT_conditional_rendering says that copy commands should not be
-    * affected by conditional rendering.
-    */
-   old_predicating = cmd_buffer->state.predicating;
-   cmd_buffer->state.predicating = false;
+   radv_suspend_conditional_rendering(cmd_buffer);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
 
    radv_update_memory(cmd_buffer, dst_va, dataSize, pData);
 
-   /* Restore conditional rendering. */
-   cmd_buffer->state.predicating = old_predicating;
+   radv_resume_conditional_rendering(cmd_buffer);
 }

@@ -407,6 +407,8 @@ struct radv_cmd_state {
    uint64_t predication_va;
    uint64_t mec_inv_pred_va;  /* For inverted predication when using MEC. */
    bool mec_inv_pred_emitted; /* To ensure we don't have to repeat inverting the VA. */
+   bool saved_user_cond_render;
+   bool is_user_cond_render_suspended;
 
    /* Inheritance info. */
    VkQueryPipelineStatisticFlags inherited_pipeline_statistics;
@@ -800,5 +802,24 @@ void radv_emit_compute_shader(const struct radv_physical_device *pdev, struct ra
 
 void radv_upload_indirect_descriptor_sets(struct radv_cmd_buffer *cmd_buffer,
                                           struct radv_descriptor_state *descriptors_state);
+
+static inline void
+radv_suspend_conditional_rendering(struct radv_cmd_buffer *cmd_buffer)
+{
+   assert(!cmd_buffer->state.is_user_cond_render_suspended);
+
+   cmd_buffer->state.saved_user_cond_render = cmd_buffer->state.predicating;
+   cmd_buffer->state.predicating = false;
+   cmd_buffer->state.is_user_cond_render_suspended = true;
+}
+
+static inline void
+radv_resume_conditional_rendering(struct radv_cmd_buffer *cmd_buffer)
+{
+   assert(cmd_buffer->state.is_user_cond_render_suspended);
+
+   cmd_buffer->state.predicating = cmd_buffer->state.saved_user_cond_render;
+   cmd_buffer->state.is_user_cond_render_suspended = false;
+}
 
 #endif /* RADV_CMD_BUFFER_H */

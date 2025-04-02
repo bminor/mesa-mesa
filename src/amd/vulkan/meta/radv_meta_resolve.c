@@ -407,13 +407,8 @@ radv_CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *
    VkImageLayout src_image_layout = pResolveImageInfo->srcImageLayout;
    VkImageLayout dst_image_layout = pResolveImageInfo->dstImageLayout;
    enum radv_resolve_method resolve_method = pdev->info.gfx_level >= GFX11 ? RESOLVE_FRAGMENT : RESOLVE_HW;
-   bool old_predicating;
 
-   /* VK_EXT_conditional_rendering says that resolve commands should not be affected by conditional
-    * rendering.
-    */
-   old_predicating = cmd_buffer->state.predicating;
-   cmd_buffer->state.predicating = false;
+   radv_suspend_conditional_rendering(cmd_buffer);
 
    /* we can use the hw resolve only for single full resolves */
    if (pResolveImageInfo->regionCount == 1) {
@@ -440,8 +435,7 @@ radv_CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *
       resolve_image(cmd_buffer, src_image, src_image_layout, dst_image, dst_image_layout, region, resolve_method);
    }
 
-   /* Restore conditional rendering. */
-   cmd_buffer->state.predicating = old_predicating;
+   radv_resume_conditional_rendering(cmd_buffer);
 }
 
 static void
