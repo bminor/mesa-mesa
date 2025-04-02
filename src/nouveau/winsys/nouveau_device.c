@@ -51,7 +51,11 @@ name_for_chip(uint32_t dev_id,
 static uint8_t
 sm_for_chipset(uint16_t chipset)
 {
-   if (chipset >= 0x190)
+   if (chipset >= 0x1b0)
+      return 120;
+   else if (chipset >= 0x1a0)
+      return 100;
+   else if (chipset >= 0x190)
       return 89;
    // GH100 is older than AD10X, but is SM90
    else if (chipset >= 0x180)
@@ -144,6 +148,7 @@ max_warps_per_mp_for_sm(uint8_t sm)
    case 80:
    case 90:
    case 100:
+   case 104:
       return 64;
    default:
       assert(!"unkown SM version");
