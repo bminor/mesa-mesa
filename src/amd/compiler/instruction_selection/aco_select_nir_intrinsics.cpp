@@ -1734,7 +1734,7 @@ visit_bvh64_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp dir = get_ssa_temp(ctx, instr->src[4].ssa);
    Temp inv_dir = get_ssa_temp(ctx, instr->src[5].ssa);
 
-   /* On GFX11 image_bvh64_intersect_ray has a special vaddr layout with NSA:
+   /* On GFX11+ image_bvh64_intersect_ray has a special vaddr layout with NSA:
     * There are five smaller vector groups:
     * node_pointer, ray_extent, ray_origin, ray_dir, ray_inv_dir.
     * These directly match the NIR intrinsic sources.
@@ -1743,21 +1743,35 @@ visit_bvh64_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
       node, tmax, origin, dir, inv_dir,
    };
 
-   if (bld.program->gfx_level == GFX10_3 || bld.program->family == CHIP_GFX1013) {
-      std::vector<Temp> scalar_args;
-      for (Temp tmp : args) {
-         for (unsigned i = 0; i < tmp.size(); i++)
-            scalar_args.push_back(emit_extract_vector(ctx, tmp, i, v1));
+   /* Use vector-aligned scalar operands in order to avoid unnecessary copies
+    * when creating vectors.
+    */
+   std::vector<Operand> scalar_args;
+   for (Temp tmp : args) {
+      for (unsigned i = 0; i < tmp.size(); i++) {
+         scalar_args.push_back(Operand(emit_extract_vector(ctx, tmp, i, v1)));
+         if (bld.program->gfx_level >= GFX11 || bld.program->gfx_level < GFX10_3)
+            scalar_args.back().setVectorAligned(true);
       }
-      args = std::move(scalar_args);
+      /* GFX10: cannot use NSA and must treat all Operands as one large vector. */
+      scalar_args.back().setVectorAligned(bld.program->gfx_level < GFX10_3);
    }
+   scalar_args.back().setVectorAligned(false);
 
-   MIMG_instruction* mimg =
-      emit_mimg(bld, aco_opcode::image_bvh64_intersect_ray, {dst}, resource, Operand(s4), args);
-   mimg->dim = ac_image_1d;
-   mimg->dmask = 0xf;
-   mimg->unrm = true;
-   mimg->r128 = true;
+   Instruction* mimg = create_instruction(aco_opcode::image_bvh64_intersect_ray, Format::MIMG,
+                                          3 + scalar_args.size(), 1);
+   mimg->definitions[0] = Definition(dst);
+   mimg->operands[0] = Operand(resource);
+   mimg->operands[1] = Operand(s4);
+   mimg->operands[2] = Operand(v1);
+   for (unsigned i = 0; i < scalar_args.size(); i++)
+      mimg->operands[3 + i] = scalar_args[i];
+
+   mimg->mimg().dim = ac_image_1d;
+   mimg->mimg().dmask = 0xf;
+   mimg->mimg().unrm = true;
+   mimg->mimg().r128 = true;
+   bld.insert(std::move(mimg));
 
    emit_split_vector(ctx, dst, instr->def.num_components);
 }
