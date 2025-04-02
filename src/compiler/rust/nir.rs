@@ -319,6 +319,10 @@ impl nir_intrinsic_instr {
         self.get_const_index(NIR_INTRINSIC_IMAGE_ARRAY) != 0
     }
 
+    pub fn format(&self) -> pipe_format {
+        self.get_const_index(NIR_INTRINSIC_FORMAT) as pipe_format
+    }
+
     pub fn access(&self) -> gl_access_qualifier {
         self.get_const_index(NIR_INTRINSIC_ACCESS) as gl_access_qualifier
     }

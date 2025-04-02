@@ -2047,6 +2047,19 @@ impl<'a> ShaderFromNir<'a> {
         }
     }
 
+    fn get_image_mem_type(&self, intrin: &nir_intrinsic_instr) -> MemType {
+        match intrin.format() {
+            PIPE_FORMAT_R8_UINT => MemType::U8,
+            PIPE_FORMAT_R8_SINT => MemType::I8,
+            PIPE_FORMAT_R16_UINT => MemType::U16,
+            PIPE_FORMAT_R16_SINT => MemType::I16,
+            PIPE_FORMAT_R32_UINT => MemType::B32,
+            PIPE_FORMAT_R32G32_UINT => MemType::B64,
+            PIPE_FORMAT_R32G32B32A32_UINT => MemType::B128,
+            _ => panic!("Unknown format"),
+        }
+    }
+
     fn get_image_coord(
         &mut self,
         intrin: &nir_intrinsic_instr,
@@ -2460,7 +2473,8 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst);
             }
-            nir_intrinsic_bindless_image_load => {
+            nir_intrinsic_bindless_image_load
+            | nir_intrinsic_bindless_image_load_raw_nv => {
                 let handle = self.get_src(&srcs[0]);
                 let dim = self.get_image_dim(intrin);
                 let coord = self.get_image_coord(intrin, dim);
@@ -2478,9 +2492,16 @@ impl<'a> ShaderFromNir<'a> {
 
                 let comps = intrin.num_components;
                 assert!(intrin.def.bit_size() == 32);
-                assert!(comps == 1 || comps == 2 || comps == 4);
-                let image_access =
-                    ImageAccess::Formatted(ChannelMask::for_comps(comps));
+                let image_access = if intrin.intrinsic
+                    == nir_intrinsic_bindless_image_load_raw_nv
+                {
+                    let mem_type = self.get_image_mem_type(intrin);
+                    assert!(mem_type.bits().div_ceil(32) == comps.into());
+                    ImageAccess::Binary(mem_type)
+                } else {
+                    assert!(comps == 1 || comps == 2 || comps == 4);
+                    ImageAccess::Formatted(ChannelMask::for_comps(comps))
+                };
 
                 let dst = b.alloc_ssa(RegFile::GPR, comps);
 
