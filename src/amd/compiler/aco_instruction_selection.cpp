@@ -4587,10 +4587,12 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    aco_opcode op;
    if (bytes_needed == 1 || align_ % 2) {
       bytes_size = 1;
-      op = aco_opcode::buffer_load_ubyte;
+      op = bld.program->gfx_level >= GFX9 ? aco_opcode::buffer_load_ubyte_d16
+                                          : aco_opcode::buffer_load_ubyte;
    } else if (bytes_needed == 2 || align_ % 4) {
       bytes_size = 2;
-      op = aco_opcode::buffer_load_ushort;
+      op = bld.program->gfx_level >= GFX9 ? aco_opcode::buffer_load_short_d16
+                                          : aco_opcode::buffer_load_ushort;
    } else if (bytes_needed <= 4) {
       bytes_size = 4;
       op = aco_opcode::buffer_load_dword;
@@ -4695,10 +4697,10 @@ scratch_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsig
    aco_opcode op;
    if (bytes_needed == 1 || align_ % 2u) {
       bytes_size = 1;
-      op = aco_opcode::scratch_load_ubyte;
+      op = aco_opcode::scratch_load_ubyte_d16;
    } else if (bytes_needed == 2 || align_ % 4u) {
       bytes_size = 2;
-      op = aco_opcode::scratch_load_ushort;
+      op = aco_opcode::scratch_load_short_d16;
    } else if (bytes_needed <= 4) {
       bytes_size = 4;
       op = aco_opcode::scratch_load_dword;
@@ -4849,12 +4851,12 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsign
    if (bytes_needed == 1 || align_ % 2u) {
       bytes_size = 1;
       op = use_mubuf ? aco_opcode::buffer_load_ubyte
-           : global  ? aco_opcode::global_load_ubyte
+           : global  ? aco_opcode::global_load_ubyte_d16
                      : aco_opcode::flat_load_ubyte;
    } else if (bytes_needed == 2 || align_ % 4u) {
       bytes_size = 2;
       op = use_mubuf ? aco_opcode::buffer_load_ushort
-           : global  ? aco_opcode::global_load_ushort
+           : global  ? aco_opcode::global_load_short_d16
                      : aco_opcode::flat_load_ushort;
    } else if (bytes_needed <= 4) {
       bytes_size = 4;
