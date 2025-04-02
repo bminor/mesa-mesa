@@ -2164,6 +2164,14 @@ impl SM50Encoder<'_> {
             },
         );
     }
+
+    fn set_tex_channel_mask(
+        &mut self,
+        range: Range<usize>,
+        channel_mask: ChannelMask,
+    ) {
+        self.set_field(range, channel_mask.to_bits());
+    }
 }
 
 fn legalize_tex_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
@@ -2207,7 +2215,7 @@ impl SM50Op for OpTex {
         e.set_reg_src(20..28, self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(35, false); // ToDo: NDV
         e.set_bit(49, self.nodep);
         e.set_bit(50, self.z_cmpr);
@@ -2240,7 +2248,7 @@ impl SM50Op for OpTld {
         e.set_reg_src(20..28, self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(35, self.offset);
         e.set_bit(49, self.nodep);
         e.set_bit(50, self.is_ms);
@@ -2288,7 +2296,7 @@ impl SM50Op for OpTld4 {
         e.set_reg_src(20..28, self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(35, false); // ToDo: NDV
         e.set_bit(49, self.nodep);
         e.set_bit(50, self.z_cmpr);
@@ -2320,7 +2328,7 @@ impl SM50Op for OpTmml {
         e.set_reg_src(20..28, self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(35, false); // ToDo: NDV
         e.set_bit(49, self.nodep);
     }
@@ -2352,7 +2360,7 @@ impl SM50Op for OpTxd {
         e.set_reg_src(20..28, self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(35, self.offset);
         e.set_bit(49, self.nodep);
     }
@@ -2393,7 +2401,7 @@ impl SM50Op for OpTxq {
                 // TexQuery::BorderColour => 0x16,
             },
         );
-        e.set_field(31..35, self.mask);
+        e.set_tex_channel_mask(31..35, self.channel_mask);
         e.set_bit(49, self.nodep);
     }
 }
@@ -2445,6 +2453,19 @@ impl SM50Encoder<'_> {
             },
         );
     }
+
+    fn set_image_channel_mask(
+        &mut self,
+        range: Range<usize>,
+        channel_mask: ChannelMask,
+    ) {
+        assert!(
+            channel_mask.to_bits() == 0x1
+                || channel_mask.to_bits() == 0x3
+                || channel_mask.to_bits() == 0xf
+        );
+        self.set_field(range, channel_mask.to_bits());
+    }
 }
 
 impl SM50Op for OpSuLd {
@@ -2455,8 +2476,7 @@ impl SM50Op for OpSuLd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xeb00);
 
-        assert!(self.mask == 0x1 || self.mask == 0x3 || self.mask == 0xf);
-        e.set_field(20..24, self.mask);
+        e.set_image_channel_mask(20..24, self.channel_mask);
         e.set_image_dim(33..36, self.image_dim);
 
         // mem_eviction_policy not a thing for sm < 70
@@ -2499,8 +2519,7 @@ impl SM50Op for OpSuSt {
         e.set_image_dim(33..36, self.image_dim);
         e.set_mem_order(&self.mem_order);
 
-        assert!(self.mask == 0x1 || self.mask == 0x3 || self.mask == 0xf);
-        e.set_field(20..24, self.mask);
+        e.set_image_channel_mask(20..24, self.channel_mask);
     }
 }
 

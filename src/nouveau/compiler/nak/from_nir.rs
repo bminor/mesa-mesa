@@ -1804,6 +1804,7 @@ impl<'a> ShaderFromNir<'a> {
         } else {
             debug_assert!(mask != 0);
         }
+        let channel_mask = ChannelMask::new(mask);
 
         let dst_comps = u8::try_from(mask.count_ones()).unwrap();
         let dst = b.alloc_ssa(RegFile::GPR, dst_comps);
@@ -1832,7 +1833,7 @@ impl<'a> ShaderFromNir<'a> {
                 src: src,
                 query: TexQuery::Dimension,
                 nodep: flags.nodep(),
-                mask: mask,
+                channel_mask,
             });
         } else if tex.op == nir_texop_tex_type_nv {
             let src = self.get_src(&srcs[0].src);
@@ -1843,7 +1844,7 @@ impl<'a> ShaderFromNir<'a> {
                 src: src,
                 query: TexQuery::TextureType,
                 nodep: flags.nodep(),
-                mask: mask,
+                channel_mask,
             });
         } else {
             let lod_mode = match flags.lod_mode() {
@@ -1884,7 +1885,7 @@ impl<'a> ShaderFromNir<'a> {
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
-                    mask: mask,
+                    channel_mask,
                 });
             } else if tex.op == nir_texop_lod {
                 assert!(offset_mode == Tld4OffsetMode::None);
@@ -1894,7 +1895,7 @@ impl<'a> ShaderFromNir<'a> {
                     srcs: srcs,
                     dim: dim,
                     nodep: flags.nodep(),
-                    mask: mask,
+                    channel_mask,
                 });
             } else if tex.op == nir_texop_txf || tex.op == nir_texop_txf_ms {
                 assert!(offset_mode != Tld4OffsetMode::PerPx);
@@ -1909,7 +1910,7 @@ impl<'a> ShaderFromNir<'a> {
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
-                    mask: mask,
+                    channel_mask,
                 });
             } else if tex.op == nir_texop_tg4 {
                 b.push_op(OpTld4 {
@@ -1923,7 +1924,7 @@ impl<'a> ShaderFromNir<'a> {
                     z_cmpr: flags.has_z_cmpr(),
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
-                    mask: mask,
+                    channel_mask,
                 });
             } else {
                 assert!(offset_mode != Tld4OffsetMode::PerPx);
@@ -1938,7 +1939,7 @@ impl<'a> ShaderFromNir<'a> {
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
-                    mask: mask,
+                    channel_mask,
                 });
             }
         }
@@ -2488,7 +2489,7 @@ impl<'a> ShaderFromNir<'a> {
                     mem_order,
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    mask: (1 << comps) - 1,
+                    channel_mask: ChannelMask::for_comps(comps),
                     handle: handle,
                     coord: coord,
                 });
@@ -2524,7 +2525,7 @@ impl<'a> ShaderFromNir<'a> {
                     mem_order,
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    mask: (1 << (comps - 1)) - 1,
+                    channel_mask: ChannelMask::for_comps(comps - 1),
                     handle: handle,
                     coord: coord,
                 });
@@ -2553,7 +2554,7 @@ impl<'a> ShaderFromNir<'a> {
                     mem_order: MemOrder::Strong(MemScope::GPU),
                     mem_eviction_priority: self
                         .get_eviction_priority(intrin.access()),
-                    mask: (1 << comps) - 1,
+                    channel_mask: ChannelMask::for_comps(comps),
                     handle: handle,
                     coord: coord,
                     data: data,

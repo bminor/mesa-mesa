@@ -2127,6 +2127,37 @@ impl fmt::Display for TexLodMode {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
+pub struct ChannelMask(u8);
+
+impl ChannelMask {
+    pub fn new(mask: u8) -> Self {
+        assert!(mask != 0 && (mask & !0xf) == 0);
+        ChannelMask(mask)
+    }
+
+    pub fn for_comps(comps: u8) -> Self {
+        assert!(comps > 0 && comps <= 4);
+        ChannelMask((1 << comps) - 1)
+    }
+
+    pub fn to_bits(self) -> u8 {
+        self.0
+    }
+}
+
+impl fmt::Display for ChannelMask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, ".")?;
+        for (i, c) in ['r', 'g', 'b', 'a'].into_iter().enumerate() {
+            if self.0 & (1 << i) != 0 {
+                write!(f, "{c}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Tld4OffsetMode {
     None,
     AddOffI,
@@ -4843,7 +4874,7 @@ pub struct OpTex {
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTex {
@@ -4862,6 +4893,7 @@ impl DisplayOp for OpTex {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4884,7 +4916,7 @@ pub struct OpTld {
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTld {
@@ -4903,6 +4935,7 @@ impl DisplayOp for OpTld {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4925,7 +4958,7 @@ pub struct OpTld4 {
     pub z_cmpr: bool,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTld4 {
@@ -4941,6 +4974,7 @@ impl DisplayOp for OpTld4 {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4958,7 +4992,7 @@ pub struct OpTmml {
 
     pub dim: TexDim,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTmml {
@@ -4967,6 +5001,7 @@ impl DisplayOp for OpTmml {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -4987,7 +5022,7 @@ pub struct OpTxd {
     pub offset: bool,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTxd {
@@ -5000,6 +5035,7 @@ impl DisplayOp for OpTxd {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.srcs[0], self.srcs[1])
     }
 }
@@ -5017,7 +5053,7 @@ pub struct OpTxq {
 
     pub query: TexQuery,
     pub nodep: bool,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 }
 
 impl DisplayOp for OpTxq {
@@ -5026,6 +5062,7 @@ impl DisplayOp for OpTxq {
         if self.nodep {
             write!(f, ".nodep")?;
         }
+        write!(f, "{}", self.channel_mask)?;
         write!(f, " {} {} {}", self.tex, self.src, self.query)
     }
 }
@@ -5040,7 +5077,7 @@ pub struct OpSuLd {
     pub image_dim: ImageDim,
     pub mem_order: MemOrder,
     pub mem_eviction_priority: MemEvictionPriority,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 
     #[src_type(GPR)]
     pub handle: Src,
@@ -5053,10 +5090,11 @@ impl DisplayOp for OpSuLd {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "suld.p{}{}{} [{}] {}",
+            "suld.p{}{}{}{} [{}] {}",
             self.image_dim,
             self.mem_order,
             self.mem_eviction_priority,
+            self.channel_mask,
             self.coord,
             self.handle,
         )
@@ -5070,7 +5108,7 @@ pub struct OpSuSt {
     pub image_dim: ImageDim,
     pub mem_order: MemOrder,
     pub mem_eviction_priority: MemEvictionPriority,
-    pub mask: u8,
+    pub channel_mask: ChannelMask,
 
     #[src_type(GPR)]
     pub handle: Src,
@@ -5086,10 +5124,11 @@ impl DisplayOp for OpSuSt {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "sust.p{}{}{} [{}] {} {}",
+            "sust.p{}{}{}{} [{}] {} {}",
             self.image_dim,
             self.mem_order,
             self.mem_eviction_priority,
+            self.channel_mask,
             self.coord,
             self.data,
             self.handle,
