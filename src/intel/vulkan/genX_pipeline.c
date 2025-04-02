@@ -1475,42 +1475,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
 {
    compute_kill_pixel(pipeline, state->ms, state);
 
-#if GFX_VERx10 >= 125
-   bool needs_instance_granularity =
-      intel_needs_workaround(pipeline->base.base.device->info, 14019166699) &&
-      (sbe_primitive_id_override(pipeline) ||
-       geom_or_tess_prim_id_used(pipeline));
-
-   anv_pipeline_emit(pipeline, partial.vfg, GENX(3DSTATE_VFG), vfg) {
-      /* Gfx12.5: If 3DSTATE_TE: TE Enable == 1 then RR_STRICT else RR_FREE */
-      vfg.DistributionMode =
-#if GFX_VER < 20
-         !anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL) ? RR_FREE :
-#endif
-         RR_STRICT;
-      vfg.DistributionGranularity = needs_instance_granularity ?
-         InstanceLevelGranularity : BatchLevelGranularity;
-#if INTEL_WA_14014851047_GFX_VER
-      vfg.GranularityThresholdDisable =
-         intel_needs_workaround(pipeline->base.base.device->info, 14014851047);
-#endif
-      /* 192 vertices for TRILIST_ADJ */
-      vfg.ListNBatchSizeScale = 0;
-      /* Batch size of 384 vertices */
-      vfg.List3BatchSizeScale = 2;
-      /* Batch size of 128 vertices */
-      vfg.List2BatchSizeScale = 1;
-      /* Batch size of 128 vertices */
-      vfg.List1BatchSizeScale = 2;
-      /* Batch size of 256 vertices for STRIP topologies */
-      vfg.StripBatchSizeScale = 3;
-      /* 192 control points for PATCHLIST_3 */
-      vfg.PatchBatchSizeScale = 1;
-      /* 192 control points for PATCHLIST_3 */
-      vfg.PatchBatchSizeMultiplier = 31;
-   }
-#endif
-
    if (anv_pipeline_is_primitive(pipeline)) {
       emit_vertex_input(pipeline, state, state->vi);
 

@@ -1862,7 +1862,9 @@ struct anv_gfx_dynamic_state {
 
    /* 3DSTATE_VFG */
    struct {
+      uint32_t DistributionGranularity;
       uint32_t DistributionMode;
+      bool     GranularityThresholdDisable;
       bool     ListCutIndexEnable;
    } vfg;
 
@@ -5214,7 +5216,6 @@ struct anv_graphics_pipeline {
       struct anv_gfx_state_ptr                  te;
       struct anv_gfx_state_ptr                  ps;
       struct anv_gfx_state_ptr                  ps_protected;
-      struct anv_gfx_state_ptr                  vfg;
    } partial;
 };
 

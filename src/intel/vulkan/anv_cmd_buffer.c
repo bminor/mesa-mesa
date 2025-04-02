@@ -566,7 +566,6 @@ anv_cmd_buffer_flush_pipeline_hw_state(struct anv_cmd_buffer *cmd_buffer,
    diff_fix_state(STREAMOUT,                partial.so);
    diff_fix_state(GS,                       partial.gs);
    diff_fix_state(TE,                       partial.te);
-   diff_fix_state(VFG,                      partial.vfg);
    diff_fix_state(PS,                       partial.ps);
    diff_fix_state(PS_EXTRA,                 partial.ps_extra);
 

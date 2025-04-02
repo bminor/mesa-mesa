@@ -1133,6 +1133,43 @@ update_ps_extra_kills_pixel(struct anv_gfx_dynamic_state *hw_state,
 }
 
 #if GFX_VERx10 >= 125
+ALWAYS_INLINE static bool
+geom_or_tess_prim_id_used(const struct anv_cmd_graphics_state *gfx)
+{
+   const struct brw_tcs_prog_data *tcs_prog_data =
+      get_gfx_tcs_prog_data(gfx);
+   const struct brw_tes_prog_data *tes_prog_data =
+      get_gfx_tes_prog_data(gfx);
+   const struct brw_gs_prog_data *gs_prog_data =
+      get_gfx_gs_prog_data(gfx);
+
+   return (tcs_prog_data && tcs_prog_data->include_primitive_id) ||
+          (tes_prog_data && tes_prog_data->include_primitive_id) ||
+      (gs_prog_data && gs_prog_data->include_primitive_id);
+}
+
+ALWAYS_INLINE static void
+update_vfg_distribution_mode(struct anv_gfx_dynamic_state *hw_state,
+                             const struct anv_device *device,
+                             const struct anv_cmd_graphics_state *gfx)
+{
+   const bool needs_instance_granularity =
+      intel_needs_workaround(device->info, 14019166699) &&
+      (sbe_primitive_id_override(gfx) || geom_or_tess_prim_id_used(gfx));
+
+
+   SET(VFG, vfg.DistributionMode, (GFX_VER < 20 &&
+                                   !anv_gfx_has_stage(gfx, MESA_SHADER_TESS_EVAL)) ?
+                                  RR_FREE : RR_STRICT);
+   SET(VFG, vfg.DistributionGranularity, needs_instance_granularity ?
+                                         InstanceLevelGranularity :
+                                         BatchLevelGranularity);
+#if INTEL_WA_14014851047_GFX_VER
+   SET(VFG, vfg.GranularityThresholdDisable, intel_needs_workaround(device->info,
+                                                                    14014851047));
+#endif
+}
+
 ALWAYS_INLINE static void
 update_vfg_list_cut_index(struct anv_gfx_dynamic_state *hw_state,
                           const struct vk_dynamic_graphics_state *dyn)
@@ -2308,6 +2345,9 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_INDEX_BUFFER);
 
 #if GFX_VERx10 >= 125
+   if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
+      update_vfg_distribution_mode(hw_state, device, gfx);
+
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_IA_PRIMITIVE_RESTART_ENABLE))
       update_vfg_list_cut_index(hw_state, dyn);
 #endif
@@ -3271,8 +3311,25 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #if GFX_VERx10 >= 125
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VFG)) {
-      anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_VFG),
-                           pipeline, partial.vfg, vfg) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_VFG), vfg) {
+         /* 192 vertices for TRILIST_ADJ */
+         vfg.ListNBatchSizeScale = 0;
+         /* Batch size of 384 vertices */
+         vfg.List3BatchSizeScale = 2;
+         /* Batch size of 128 vertices */
+         vfg.List2BatchSizeScale = 1;
+         /* Batch size of 128 vertices */
+         vfg.List1BatchSizeScale = 2;
+         /* Batch size of 256 vertices for STRIP topologies */
+         vfg.StripBatchSizeScale = 3;
+         /* 192 control points for PATCHLIST_3 */
+         vfg.PatchBatchSizeScale = 1;
+         /* 192 control points for PATCHLIST_3 */
+         vfg.PatchBatchSizeMultiplier = 31;
+
+         SET(vfg, vfg, DistributionGranularity);
+         SET(vfg, vfg, DistributionMode);
+         SET(vfg, vfg, GranularityThresholdDisable);
          SET(vfg, vfg, ListCutIndexEnable);
       }
    }
