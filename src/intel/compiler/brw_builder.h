@@ -38,29 +38,24 @@ class brw_builder {
 public:
    /**
     * Construct an brw_builder that inserts instructions
-    * at the end of \p shader. The \p dispatch_width gives
-    * the execution width, that may differ from the shader
-    * dispatch_width.
+    * at the end of \p shader. The optional \p dispatch_width
+    * gives the execution width to be used instead of the
+    * shader original dispatch_width.
     */
    brw_builder(brw_shader *shader,
-               unsigned dispatch_width) :
+               unsigned dispatch_width = 0) :
       shader(shader), block(NULL), cursor(NULL),
-      _dispatch_width(dispatch_width),
+      _dispatch_width(dispatch_width ? dispatch_width : shader->dispatch_width),
       _group(0),
       force_writemask_all(false),
       annotation()
    {
-      if (shader)
+      if (shader->cfg && shader->cfg->num_blocks > 0) {
+         block = shader->cfg->last_block();
+         cursor = &block->instructions.tail_sentinel;
+      } else {
          cursor = (exec_node *)&shader->instructions.tail_sentinel;
-   }
-
-   /**
-    * Construct an brw_builder that inserts instructions into \p shader,
-    * using its dispatch width.
-    */
-   explicit brw_builder(brw_shader *s = NULL) :
-      brw_builder(s, s ? s->dispatch_width : 0)
-   {
+      }
    }
 
    /**
