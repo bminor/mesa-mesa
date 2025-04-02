@@ -56,7 +56,7 @@ print_help(const char *progname, FILE *file)
            "    -g, --gen=platform     assemble instructions for given \n"
            "                           platform (3 letter platform name)\n"
            "Example:\n"
-           "    i965_asm -g kbl input.asm -t hex -o output\n",
+           "    elk_asm -g kbl input.asm -t hex -o output\n",
            progname);
 }
 
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
    list_inithead(&instr_labels);
    list_inithead(&target_labels);
 
-   const struct option i965_asm_opts[] = {
+   const struct option elk_asm_opts[] = {
       { "help",          no_argument,       (int *) &help,      true },
       { "type",          required_argument, NULL,               't' },
       { "gen",           required_argument, NULL,               'g' },
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
       { NULL,            0,                 NULL,               0 }
    };
 
-   while ((c = getopt_long(argc, argv, ":t:g:o:h", i965_asm_opts, NULL)) != -1) {
+   while ((c = getopt_long(argc, argv, ":t:g:o:h", elk_asm_opts, NULL)) != -1) {
       switch (c) {
       case 'g': {
          const int id = intel_device_name_to_pci_device_id(optarg);

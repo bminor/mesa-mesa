@@ -781,7 +781,7 @@ Intel driver environment variables
    this folder and have a name formatted as ``sha1_of_assembly.bin``.
    The SHA-1 of a shader assembly is printed when assembly is dumped via
    corresponding :envvar:`INTEL_DEBUG` flag (e.g. ``vs`` for vertex shader).
-   A binary could be generated from a dumped assembly by ``i965_asm``.
+   A binary could be generated from a dumped assembly by ``brw_asm`` or ``elk_asm``.
    For :envvar:`INTEL_SHADER_ASM_READ_PATH` to work it is necessary to enable
    dumping of corresponding shader stages via :envvar:`INTEL_DEBUG`.
    It is advised to use ``nocompact`` flag of :envvar:`INTEL_DEBUG` when
@@ -797,7 +797,7 @@ Intel driver environment variables
    this folder and have a name formatted as ``sha1_of_assembly.bin``.
    The SHA-1 of a shader assembly is printed when assembly is dumped via
    corresponding :envvar:`INTEL_DEBUG` flag (e.g. ``vs`` for vertex shader).
-   A binary could be generated from a dumped assembly by ``i965_asm``.
+   A binary could be generated from a dumped assembly by ``brw_asm`` or ``elk_asm``.
    For :envvar:`INTEL_SHADER_ASM_READ_PATH` to work it is necessary to enable
    dumping of corresponding shader stages via :envvar:`INTEL_DEBUG`.
    It is advised to use ``nocompact`` flag of :envvar:`INTEL_DEBUG` when
