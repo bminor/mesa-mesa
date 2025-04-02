@@ -63,9 +63,13 @@ unsigned
 get_mimg_nsa_dwords(const Instruction* instr)
 {
    unsigned addr_dwords = instr->operands.size() - 3;
-   for (unsigned i = 1; i < addr_dwords; i++) {
-      if (instr->operands[3 + i].physReg() !=
-          instr->operands[3 + (i - 1)].physReg().advance(instr->operands[3 + (i - 1)].bytes()))
+   for (unsigned i = 3; i < instr->operands.size(); i++) {
+      if (instr->operands[i].isVectorAligned())
+         addr_dwords--;
+   }
+   for (unsigned i = 4; i < instr->operands.size(); i++) {
+      if (instr->operands[i].physReg() !=
+          instr->operands[i - 1].physReg().advance(instr->operands[i - 1].bytes()))
          return DIV_ROUND_UP(addr_dwords - 1, 4);
    }
    return 0;
@@ -802,8 +806,12 @@ emit_mimg_instruction(asm_context& ctx, std::vector<uint32_t>& out, const Instru
    if (nsa_dwords) {
       out.resize(out.size() + nsa_dwords);
       std::vector<uint32_t>::iterator nsa = std::prev(out.end(), nsa_dwords);
-      for (unsigned i = 0; i < instr->operands.size() - 4u; i++)
-         nsa[i / 4] |= reg(ctx, instr->operands[4 + i], 8) << (i % 4 * 8);
+      for (unsigned i = 4, k = 0; i < instr->operands.size(); i++) {
+         if (instr->operands[i - 1].isVectorAligned())
+            continue;
+         nsa[k / 4] |= reg(ctx, instr->operands[i], 8) << (k % 4 * 8);
+         k++;
+      }
    }
 }
 
@@ -830,8 +838,11 @@ emit_mimg_instruction_gfx12(asm_context& ctx, std::vector<uint32_t>& out, const 
    out.push_back(encoding);
 
    uint8_t vaddr[5] = {0, 0, 0, 0, 0};
-   for (unsigned i = 3; i < instr->operands.size(); i++)
-      vaddr[i - 3] = reg(ctx, instr->operands[i], 8);
+   for (unsigned i = 3, k = 0; i < instr->operands.size(); i++) {
+      if (instr->operands[i - 1].isVectorAligned())
+         continue;
+      vaddr[k++] = reg(ctx, instr->operands[i], 8);
+   }
    int num_vaddr = instr->operands.size() - 3;
    for (int i = 0; i < (int)MIN2(instr->operands.back().size() - 1, ARRAY_SIZE(vaddr) - num_vaddr); i++)
       vaddr[num_vaddr + i] = reg(ctx, instr->operands.back(), 8) + i + 1;
