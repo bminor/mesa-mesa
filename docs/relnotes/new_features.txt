@@ -29,3 +29,4 @@ VK_KHR_line_rasterization on panvk
 shaderImageGatherExtended on panvk
 textureCompressionBC on panvk
 VK_EXT_sample_locations on RADV for GFX10+
+GL_ARB_shader_clock on panvk

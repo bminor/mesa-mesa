@@ -733,6 +733,20 @@
     <value desc="Retrieve previous state">retrieve</value>
   </enum>
 
+  <enum name="Source">
+    <desc>
+      Clock source for LD_GCLK instruction.
+    </desc>
+    <reserved/>
+    <reserved/>
+    <reserved/>
+    <reserved/>
+    <reserved/>
+    <reserved/>
+    <value desc="Cycle counter">cycle_counter</value>
+    <value desc="System timestamp">system_timestamp</value>
+  </enum>
+
   <enum name="Source format">
     <desc>
       In-memory format of varyings.
@@ -1016,6 +1030,13 @@
     <src>Vertex ID</src>
     <src>Instance ID</src>
     <src>Index and table</src>
+  </ins>
+
+  <ins name="LD_GCLK_U64" title="Global clock load" opcode="0x44" unused="true" unit="LS">
+    <desc>Load the 64-bit global clock, either a cycle counter or the system clock.</desc>
+    <sr write="true"/>
+    <sr_count count="2"/>
+    <slot/>
   </ins>
 
   <ins name="LD_TEX_IMM" title="Load immediate texture" opcode="0x66" opcode2="1" message="attribute" unit="LS">

@@ -514,7 +514,7 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
     * work to turn on, since CYCLE_COUNT_START needs to be issued. In
     * kbase, userspace requests this via BASE_JD_REQ_PERMON. There is not
     * yet way to request this with mainline TODO */
-   caps->shader_clock = false;
+   caps->shader_clock = dev->arch >= 6;
 
    caps->vs_instanceid = true;
    caps->texture_multisample = true;

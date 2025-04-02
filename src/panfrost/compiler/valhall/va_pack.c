@@ -678,6 +678,19 @@ va_pack_byte_offset_8(const bi_instr *I)
 }
 
 static uint64_t
+va_pack_gclk(const bi_instr *I)
+{
+   switch (I->source) {
+   case BI_SOURCE_CYCLE_COUNTER:
+      return VA_SOURCE_CYCLE_COUNTER;
+   case BI_SOURCE_SYSTEM_TIMESTAMP:
+      return VA_SOURCE_SYSTEM_TIMESTAMP;
+   }
+
+   invalid_instruction(I, "source");
+}
+
+static uint64_t
 va_pack_load(const bi_instr *I, bool buffer_descriptor)
 {
    const uint8_t load_lane_identity[8] = {
@@ -919,6 +932,10 @@ va_pack_instr(const bi_instr *I, unsigned arch)
 
       break;
    }
+
+   case BI_OPCODE_LD_GCLK_U64:
+      hex |= va_pack_gclk(I);
+      break;
 
    case BI_OPCODE_TEX_GRADIENT:
    case BI_OPCODE_TEX_SINGLE:
