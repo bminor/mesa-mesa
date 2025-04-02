@@ -1874,7 +1874,7 @@
         "description": "glsl: fix regression in ubo cloning",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2b2132d2acd1fc312de41813888b802aeda3a00a",
         "notes": null
