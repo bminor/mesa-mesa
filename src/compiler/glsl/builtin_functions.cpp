@@ -732,6 +732,19 @@ shader_clock_int64(const _mesa_glsl_parse_state *state)
 }
 
 static bool
+shader_clock_realtime(const _mesa_glsl_parse_state *state)
+{
+   return state->EXT_shader_realtime_clock_enable;
+}
+
+static bool
+shader_clock_realtime_int64(const _mesa_glsl_parse_state *state)
+{
+   return state->EXT_shader_realtime_clock_enable &&
+          state->ARB_gpu_shader_int64_enable;
+}
+
+static bool
 shader_storage_buffer_object(const _mesa_glsl_parse_state *state)
 {
    return state->has_shader_storage_buffer_objects();
@@ -1518,6 +1531,11 @@ private:
    ir_function_signature *_shader_clock(builtin_available_predicate avail,
                                         const glsl_type *type);
 
+   ir_function_signature *_shader_clock_realtime_intrinsic(builtin_available_predicate avail,
+                                                           const glsl_type *type);
+   ir_function_signature *_shader_clock_realtime(builtin_available_predicate avail,
+                                                 const glsl_type *type);
+
    ir_function_signature *_vote_intrinsic(const glsl_type *type,
                                           builtin_available_predicate avail,
                                           enum ir_intrinsic_id id);
@@ -1924,6 +1942,11 @@ builtin_builder::create_intrinsics()
    add_function("__intrinsic_shader_clock",
                 _shader_clock_intrinsic(shader_clock,
                                         &glsl_type_builtin_uvec2),
+                NULL);
+
+   add_function("__intrinsic_shader_clock_realtime",
+                _shader_clock_realtime_intrinsic(shader_clock,
+                                                 &glsl_type_builtin_uvec2),
                 NULL);
 
    add_function("__intrinsic_vote_all",
@@ -5614,6 +5637,15 @@ builtin_builder::create_builtins()
                               &glsl_type_builtin_uint64_t),
                 NULL);
 
+   add_function("clockRealtime2x32EXT",
+                _shader_clock_realtime(shader_clock_realtime,
+                                       &glsl_type_builtin_uvec2),
+                NULL);
+
+   add_function("clockRealtimeEXT",
+                  _shader_clock_realtime(shader_clock_realtime_int64,
+                                         &glsl_type_builtin_uint64_t),
+                  NULL);
    add_function("beginInvocationInterlockARB",
                 _invocation_interlock(
                    "__intrinsic_begin_invocation_interlock",
@@ -9181,6 +9213,34 @@ builtin_builder::_shader_clock(builtin_available_predicate avail,
    ir_variable *retval = body.make_temp(&glsl_type_builtin_uvec2, "clock_retval");
 
    body.emit(call(symbols->get_function("__intrinsic_shader_clock"),
+                  retval, sig->parameters));
+
+   if (type == &glsl_type_builtin_uint64_t) {
+      body.emit(ret(expr(ir_unop_pack_uint_2x32, retval)));
+   } else {
+      body.emit(ret(retval));
+   }
+
+   return sig;
+}
+
+ir_function_signature *
+builtin_builder::_shader_clock_realtime_intrinsic(builtin_available_predicate avail,
+                                                  const glsl_type *type)
+{
+   MAKE_INTRINSIC(type, ir_intrinsic_shader_clock_realtime, avail, 0);
+   return sig;
+}
+
+ir_function_signature *
+builtin_builder::_shader_clock_realtime(builtin_available_predicate avail,
+                                        const glsl_type *type)
+{
+   MAKE_SIG(type, avail, 0);
+
+   ir_variable *retval = body.make_temp(&glsl_type_builtin_uvec2, "clock_retval");
+
+   body.emit(call(symbols->get_function("__intrinsic_shader_clock_realtime"),
                   retval, sig->parameters));
 
    if (type == &glsl_type_builtin_uint64_t) {

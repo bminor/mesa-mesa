@@ -829,6 +829,7 @@ static const _mesa_glsl_extension _mesa_glsl_supported_extensions[] = {
    EXT(EXT_shader_implicit_conversions),
    EXT(EXT_shader_integer_mix),
    EXT_AEP(EXT_shader_io_blocks),
+   EXT(EXT_shader_realtime_clock),
    EXT(EXT_shader_samples_identical),
    EXT(EXT_shadow_samplers),
    EXT(EXT_tessellation_point_size),

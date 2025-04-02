@@ -909,6 +909,7 @@ struct pipe_caps {
    bool int64;
    bool tgsi_tex_txf_lz;
    bool shader_clock;
+   bool shader_realtime_clock;
    bool polygon_mode_fill_rectangle;
    bool shader_ballot;
    bool tes_layer_viewport;

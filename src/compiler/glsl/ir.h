@@ -1076,6 +1076,7 @@ enum ir_intrinsic_id {
 
    ir_intrinsic_memory_barrier,
    ir_intrinsic_shader_clock,
+   ir_intrinsic_shader_clock_realtime,
    ir_intrinsic_group_memory_barrier,
    ir_intrinsic_memory_barrier_atomic_counter,
    ir_intrinsic_memory_barrier_buffer,

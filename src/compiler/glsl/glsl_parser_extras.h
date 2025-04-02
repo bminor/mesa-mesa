@@ -896,6 +896,8 @@ struct _mesa_glsl_parse_state {
    bool EXT_shader_integer_mix_warn;
    bool EXT_shader_io_blocks_enable;
    bool EXT_shader_io_blocks_warn;
+   bool EXT_shader_realtime_clock_enable;
+   bool EXT_shader_realtime_clock_warn;
    bool EXT_shader_samples_identical_enable;
    bool EXT_shader_samples_identical_warn;
    bool EXT_shadow_samplers_enable;
