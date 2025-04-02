@@ -118,6 +118,12 @@ struct vector_info {
    Operand* parts;
 };
 
+struct vector_operand {
+   Definition def;
+   uint32_t start;
+   uint32_t num_part;
+};
+
 struct ra_ctx {
 
    Program* program;
@@ -126,6 +132,7 @@ struct ra_ctx {
    std::vector<assignment> assignments;
    std::vector<aco::unordered_map<uint32_t, Temp>> renames;
    std::vector<std::pair<uint32_t, PhysReg>> loop_header;
+   std::vector<vector_operand> vector_operands;
    aco::unordered_map<uint32_t, Temp> orig_names;
    aco::unordered_map<uint32_t, vector_info> vectors;
    aco::unordered_map<uint32_t, Instruction*> split_vectors;
@@ -842,14 +849,16 @@ adjust_max_used_regs(ra_ctx& ctx, RegClass rc, unsigned reg)
 
 void
 update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& parallelcopies,
-               aco_ptr<Instruction>& instr)
+               aco_ptr<Instruction>& instr, bool clear_operands = true)
 {
    /* clear operands */
-   for (parallelcopy& copy : parallelcopies) {
-      /* the definitions with id are not from this function and already handled */
-      if (copy.def.isTemp() || copy.copy_kill >= 0)
-         continue;
-      reg_file.clear(copy.op);
+   if (clear_operands) {
+      for (parallelcopy& copy : parallelcopies) {
+         /* the definitions with id are not from this function and already handled */
+         if (copy.def.isTemp() || copy.copy_kill >= 0)
+            continue;
+         reg_file.clear(copy.op);
+      }
    }
 
    /* allocate id's and rename operands: this is done transparently here */
@@ -874,6 +883,19 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
             it = parallelcopies.erase(it);
             is_def = true;
             break;
+         }
+      }
+      if (is_def)
+         continue;
+
+      /* check if we moved a vector-operand */
+      for (vector_operand& vec : ctx.vector_operands) {
+         if (vec.def.getTemp() == it->op.getTemp()) {
+            vec.def.setFixed(it->def.physReg());
+            reg_file.fill(vec.def);
+            ctx.assignments[vec.def.tempId()].reg = vec.def.physReg();
+            it = parallelcopies.erase(it);
+            is_def = true;
          }
       }
       if (is_def)
@@ -2316,6 +2338,89 @@ get_reg_for_operand(ra_ctx& ctx, RegisterFile& register_file,
    operand.setFixed(dst);
 }
 
+void
+handle_vector_operands(ra_ctx& ctx, RegisterFile& register_file,
+                       std::vector<parallelcopy>& parallelcopies, aco_ptr<Instruction>& instr,
+                       unsigned operand_index)
+{
+   assert(operand_index == 0 || !instr->operands[operand_index - 1].isVectorAligned());
+   /* Count the operands that form part of the vector. */
+   uint32_t num_operands = 1;
+   uint32_t num_bytes = instr->operands[operand_index].bytes();
+   for (unsigned i = operand_index + 1; instr->operands[i - 1].isVectorAligned(); i++) {
+      /* If it's not late kill, we might end up trying to kill/re-enable the operands
+       * before resolve_vector_operands(), which wouldn't work.
+       */
+      assert(instr->operands[i].isLateKill());
+      num_operands++;
+      num_bytes += instr->operands[i].bytes();
+   }
+   RegClass rc = instr->operands[operand_index].regClass().resize(num_bytes);
+
+   /* Create temporary p_create_vector instruction and make use of get_reg_create_vector. */
+   aco_ptr<Instruction> vec{
+      create_instruction(aco_opcode::p_create_vector, Format::PSEUDO, num_operands, 1)};
+   for (unsigned i = 0; i < num_operands; i++) {
+      vec->operands[i] = instr->operands[operand_index + i];
+      vec->operands[i].setFixed(ctx.assignments[vec->operands[i].tempId()].reg);
+   }
+   Temp vec_temp = ctx.program->allocateTmp(rc);
+   ctx.assignments.emplace_back();
+   vec->definitions[0] = Definition(vec_temp);
+
+   PhysReg reg = get_reg_create_vector(ctx, register_file, vec_temp, parallelcopies, vec);
+   vec->definitions[0].setFixed(reg);
+   ctx.assignments[vec_temp.id()].set(vec->definitions[0]);
+
+   /* For now, fix instruction operands to previous registers. They are essentially ignored until
+    * we call resolve_vector_operands(). For the remaining handling of this instruction, we'll
+    * use the p_create_vector definition as temporary.
+    */
+   for (unsigned i = operand_index; i < operand_index + num_operands; i++)
+      instr->operands[i].setFixed(ctx.assignments[instr->operands[i].tempId()].reg);
+
+   update_renames(ctx, register_file, parallelcopies, instr);
+   ctx.vector_operands.emplace_back(
+      vector_operand{vec->definitions[0], operand_index, num_operands});
+   register_file.fill(vec->definitions[0]);
+}
+
+void
+resolve_vector_operands(ra_ctx& ctx, RegisterFile& reg_file,
+                        std::vector<parallelcopy>& parallelcopies, aco_ptr<Instruction>& instr)
+{
+   /* Vector Operands are temporarily stored as a single SSA value in the register file.
+    * Replace it again with the individual components and create the necessary parallelcopies.
+    */
+   for (vector_operand vec : ctx.vector_operands) {
+      /* Remove the temporary p_create_vector definition from register file. */
+      reg_file.clear(vec.def);
+
+      PhysReg reg = vec.def.physReg();
+      for (unsigned i = vec.start; i < vec.start + vec.num_part; i++) {
+         Operand& op = instr->operands[i];
+         /* Assert that no already handled parallelcopy moved the operand. */
+         assert(std::none_of(parallelcopies.begin(), parallelcopies.end(), [=](parallelcopy copy)
+                             { return copy.op.getTemp() == op.getTemp() && copy.def.isTemp(); }));
+
+         /* Add a parallelcopy for each operand which is not in the correct position. */
+         if (op.physReg() != reg) {
+            Definition pc_def = Definition(reg, op.regClass());
+            Operand pc_op = Operand(op.getTemp(), op.physReg());
+            parallelcopies.emplace_back(pc_op, pc_def, op.isCopyKill() ? i : -1);
+         } else {
+            reg_file.fill(Definition(op.getTemp(), reg));
+         }
+
+         reg = reg.advance(op.bytes());
+      }
+   }
+   ctx.vector_operands.clear();
+
+   /* Update operand temporaries and fill non-killed operands. */
+   update_renames(ctx, reg_file, parallelcopies, instr, false);
+}
+
 PhysReg
 get_reg_phi(ra_ctx& ctx, IDSet& live_in, RegisterFile& register_file,
             std::vector<aco_ptr<Instruction>>& instructions, Block& block,
@@ -3352,6 +3457,13 @@ register_allocation(Program* program, ra_test_policy policy)
 
             fixed |=
                operand.isPrecolored() && ctx.assignments[operand.tempId()].reg != operand.physReg();
+
+            /* Avoid emitting parallelcopies for vector operands. handle_vector_operands() will
+             * temporarily place vector SSA-defs into the register file while handling this
+             * instruction. */
+            if (operand.isVectorAligned() || (i && instr->operands[i - 1].isVectorAligned()))
+               register_file.clear(
+                  Operand(operand.getTemp(), ctx.assignments[operand.tempId()].reg));
          }
 
          bool is_writelane = instr->opcode == aco_opcode::v_writelane_b32 ||
@@ -3373,6 +3485,11 @@ register_allocation(Program* program, ra_test_policy policy)
             auto& operand = instr->operands[i];
             if (!operand.isTemp() || operand.isFixed())
                continue;
+
+            if (operand.isVectorAligned()) {
+               handle_vector_operands(ctx, register_file, parallelcopy, instr, i);
+               continue;
+            }
 
             PhysReg reg = ctx.assignments[operand.tempId()].reg;
             if (operand_can_use_reg(program->gfx_level, instr, i, reg, operand.regClass()))
@@ -3512,7 +3629,10 @@ register_allocation(Program* program, ra_test_policy policy)
             register_file.fill(*definition);
          }
 
-         /* This avoids renaming tied operands because they are both killed and late-kill. */
+         if (!ctx.vector_operands.empty())
+            resolve_vector_operands(ctx, register_file, parallelcopy, instr);
+
+         /* This ignores tied defs and vector aligned operands because they are late-kill. */
          undo_renames(ctx, parallelcopy, instr);
 
          assign_tied_definitions(ctx, instr, register_file, tied_defs);
