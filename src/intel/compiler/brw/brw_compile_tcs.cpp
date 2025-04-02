@@ -176,12 +176,12 @@ run_tcs(brw_shader &s)
       bld.emit(BRW_OPCODE_ENDIF);
    }
 
-   brw_emit_tcs_thread_end(s);
-
    if (s.failed)
       return false;
 
    brw_calculate_cfg(s);
+
+   brw_emit_tcs_thread_end(s);
 
    brw_optimize(s);
 

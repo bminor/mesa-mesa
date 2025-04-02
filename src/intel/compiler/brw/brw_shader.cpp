@@ -578,23 +578,47 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
 bool
 brw_shader::mark_last_urb_write_with_eot()
 {
-   brw_foreach_in_list_reverse(brw_inst, prev, &this->instructions) {
-      if (prev->opcode == SHADER_OPCODE_URB_WRITE_LOGICAL) {
-         prev->eot = true;
-
-         /* Delete now dead instructions. */
-         brw_foreach_in_list_reverse_safe(brw_exec_node, dead, &this->instructions) {
-            if (dead == prev)
-               break;
-            dead->remove();
+   brw_inst *limit = NULL;
+   foreach_block_reverse(block, cfg) {
+      foreach_inst_in_block_reverse(brw_inst, inst, block) {
+         if (inst->opcode == SHADER_OPCODE_URB_WRITE_LOGICAL) {
+            inst->eot = true;
+            limit = inst;
+            break;
+         } else if (inst->is_control_flow() || inst->has_side_effects()) {
+            limit = inst;
+            break;
          }
-         return true;
-      } else if (prev->is_control_flow() || prev->has_side_effects()) {
-         break;
       }
+
+      if (limit)
+         break;
    }
 
-   return false;
+   if (!limit || !limit->eot)
+      return false;
+
+   brw_analysis_dependency_class dep = BRW_DEPENDENCY_INSTRUCTION_DETAIL;
+
+   /* Delete now dead instructions. */
+   bool done = false;
+   foreach_block_reverse(block, cfg) {
+      foreach_inst_in_block_reverse_safe(brw_inst, dead, block) {
+         if (dead == limit) {
+            done = true;
+            break;
+         }
+
+         dep = dep | BRW_DEPENDENCY_INSTRUCTION_IDENTITY;
+         dead->remove();
+      }
+
+      if (done)
+         break;
+   }
+
+   invalidate_analysis(dep);
+   return true;
 }
 
 static unsigned

@@ -110,12 +110,12 @@ run_gs(brw_shader &s)
 
    brw_from_nir(&s);
 
-   brw_emit_gs_thread_end(s);
-
    if (s.failed)
       return false;
 
    brw_calculate_cfg(s);
+
+   brw_emit_gs_thread_end(s);
 
    brw_optimize(s);
 
