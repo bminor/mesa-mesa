@@ -219,6 +219,9 @@ void si_test_blit_perf(struct si_screen *sscreen)
       for (unsigned dim = 1; dim <= 3; dim++) {
          for (unsigned format_index = 0; format_index < ARRAY_SIZE(formats); format_index++) {
             for (unsigned samples = 1; samples <= 8; samples *= 2) {
+               if (!sscreen->info.has_image_opcodes && samples > 1)
+                  break;
+
                for (unsigned layout = 0; layout < NUM_LAYOUTS; layout++) {
                   /* Reject invalid combinations. */
                   if (samples >= 2 && (dim != 2 || layout != LAYOUT_T2T))
@@ -240,6 +243,9 @@ void si_test_blit_perf(struct si_screen *sscreen)
 
                   if (test_flavor == TEST_RESOLVE &&
                       util_format_is_pure_integer(formats[format_index]))
+                     continue;
+
+                  if (!sscreen->info.has_image_opcodes && layout != LAYOUT_L2L)
                      continue;
 
                   /* Create textures. */
