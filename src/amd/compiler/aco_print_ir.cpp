@@ -1049,11 +1049,14 @@ aco_print_instr(enum amd_gfx_level gfx_level, const Instruction* instr, FILE* ou
          neg = valu.neg;
          opsel = valu.opsel;
       }
+      bool is_vector_op = false;
       for (unsigned i = 0; i < num_operands; ++i) {
          if (i)
             fprintf(output, ", ");
          else
             fprintf(output, " ");
+         if (!is_vector_op && instr->operands[i].isVectorAligned())
+            fprintf(output, "(");
 
          if (i < 3) {
             if (neg[i] && instr->operands[i].isConstant())
@@ -1086,6 +1089,10 @@ aco_print_instr(enum amd_gfx_level gfx_level, const Instruction* instr, FILE* ou
             if (neg_hi[i])
                fprintf(output, "*[1,-1]");
          }
+
+         if (is_vector_op && !instr->operands[i].isVectorAligned())
+            fprintf(output, ")");
+         is_vector_op = instr->operands[i].isVectorAligned();
       }
    }
    print_instr_format_specific(gfx_level, instr, output);
