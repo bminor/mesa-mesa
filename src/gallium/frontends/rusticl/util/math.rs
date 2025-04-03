@@ -21,7 +21,7 @@ pub struct SetBitIndices<T> {
 
 impl<T> SetBitIndices<T> {
     pub fn from_msb(val: T) -> Self {
-        Self { val: val }
+        Self { val }
     }
 }
 
@@ -36,5 +36,11 @@ impl Iterator for SetBitIndices<u32> {
             self.val ^= 1 << pos;
             Some(pos)
         }
+    }
+}
+
+impl ExactSizeIterator for SetBitIndices<u32> {
+    fn len(&self) -> usize {
+        self.val.count_ones() as usize
     }
 }

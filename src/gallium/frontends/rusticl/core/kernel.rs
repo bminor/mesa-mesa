@@ -1765,10 +1765,8 @@ impl Kernel {
         self.prog.devs.iter().any(|dev| dev.svm_supported())
     }
 
-    pub fn subgroup_sizes(&self, dev: &Device) -> Vec<usize> {
-        SetBitIndices::from_msb(self.builds.get(dev).unwrap().info.simd_sizes)
-            .map(|bit| 1 << bit)
-            .collect()
+    pub fn subgroup_sizes(&self, dev: &Device) -> impl ExactSizeIterator<Item = usize> {
+        SetBitIndices::from_msb(self.builds.get(dev).unwrap().info.simd_sizes).map(|bit| 1 << bit)
     }
 
     pub fn subgroups_for_block(&self, dev: &Device, block: &[usize]) -> usize {
@@ -1782,13 +1780,16 @@ impl Kernel {
     }
 
     pub fn subgroup_size_for_block(&self, dev: &Device, block: &[usize]) -> usize {
-        let subgroup_sizes = self.subgroup_sizes(dev);
-        if subgroup_sizes.is_empty() {
+        let mut subgroup_sizes = self.subgroup_sizes(dev);
+
+        // Replace with `ExactSizeIterator::is_empty()` when stable.
+        // See https://github.com/rust-lang/rust/issues/35428
+        if subgroup_sizes.len() == 0 {
             return 0;
         }
 
         if subgroup_sizes.len() == 1 {
-            return subgroup_sizes[0];
+            return subgroup_sizes.next().unwrap();
         }
 
         let block = [
