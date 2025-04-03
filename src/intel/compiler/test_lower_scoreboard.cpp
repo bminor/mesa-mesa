@@ -156,6 +156,120 @@ std::ostream &operator<<(std::ostream &os, const tgl_swsb &swsb) {
    return os;
 }
 
+/* Parse SWSB for setting test expected results. */
+static tgl_swsb
+SWSB(const char *input)
+{
+   struct tgl_swsb swsb = {};
+
+   bool seen_sbid    = false;
+   bool seen_regdist = false;
+
+   const char *s = input;
+   while (*s) {
+      if (*s == ' ') {
+         s++;
+
+      } else if (*s == '$') {
+         if (seen_sbid)
+            goto invalid;
+
+         s++;
+
+         if (!isdigit(*s))
+            goto invalid;
+
+         unsigned sbid = 0;
+         sbid = (*s - '0');
+         s++;
+
+         if (isdigit(*s)) {
+            sbid = (sbid * 10) + (*s - '0');
+            s++;
+         }
+
+         if (isdigit(*s) || sbid >= 32)
+            goto invalid;
+
+         swsb.sbid = sbid;
+
+         if (*s == '.') {
+            s++;
+            if (!strncmp(s, "src", 3)) {
+               swsb.mode = TGL_SBID_SRC;
+               s += 3;
+            } else if (!strncmp(s, "dst", 3)) {
+               swsb.mode = TGL_SBID_DST;
+               s += 3;
+            } else {
+               goto invalid;
+            }
+         } else {
+            swsb.mode = TGL_SBID_SET;
+         }
+
+         seen_sbid = true;
+
+      } else {
+         if (seen_regdist)
+            goto invalid;
+
+         if (*s != '@') {
+            switch (*s) {
+            case 'F': swsb.pipe = TGL_PIPE_FLOAT;  break;
+            case 'I': swsb.pipe = TGL_PIPE_INT;    break;
+            case 'L': swsb.pipe = TGL_PIPE_LONG;   break;
+            case 'A': swsb.pipe = TGL_PIPE_ALL;    break;
+            case 'M': swsb.pipe = TGL_PIPE_MATH;   break;
+            case 'S': swsb.pipe = TGL_PIPE_SCALAR; break;
+            default: goto invalid;
+            }
+            s++;
+         } else {
+            swsb.pipe = TGL_PIPE_NONE;
+         }
+         if (*s != '@')
+            goto invalid;
+         s++;
+         if (*s < '0' || *s > '7')
+            goto invalid;
+         swsb.regdist = *s - '0';
+         s++;
+
+         seen_regdist = true;
+      }
+   }
+
+   return swsb;
+
+invalid:
+   ADD_FAILURE() << "Couldn't parse SWSB: " << input;
+   return {};
+}
+
+TEST_F(scoreboard_test, parse_swsb)
+{
+   struct {
+      const char *input;
+      tgl_swsb    output;
+   } tests[] = {
+      { "",            {                                                                         } },
+      { "@1",          { .regdist = 1                                                            } },
+      { "A@6",         { .regdist = 6, .pipe = TGL_PIPE_ALL                                      } },
+      { "$3",          {                                        .sbid = 3,  .mode = TGL_SBID_SET } },
+      { "$0.src",      {                                        .sbid = 0,  .mode = TGL_SBID_SRC } },
+      { "@1 $4.dst",   { .regdist = 1,                          .sbid = 4,  .mode = TGL_SBID_DST } },
+      { "F@2 $11.src", { .regdist = 2, .pipe = TGL_PIPE_FLOAT,  .sbid = 11, .mode = TGL_SBID_SRC } },
+      { "S@5 $22",     { .regdist = 5, .pipe = TGL_PIPE_SCALAR, .sbid = 22, .mode = TGL_SBID_SET } },
+      { "M@1",         { .regdist = 1, .pipe = TGL_PIPE_MATH                                     } },
+      { "$1 I@1",      { .regdist = 1, .pipe = TGL_PIPE_INT,    .sbid = 1,  .mode = TGL_SBID_SET } },
+      { "$31.src L@4", { .regdist = 4, .pipe = TGL_PIPE_LONG,   .sbid = 31, .mode = TGL_SBID_SRC } },
+   };
+
+   for (auto &t : tests)
+      EXPECT_EQ(SWSB(t.input), t.output);
+}
+
 TEST_F(scoreboard_test, RAW_inorder_inorder)
 {
    brw_reg g[16];
