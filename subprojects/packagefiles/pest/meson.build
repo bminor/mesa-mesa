@@ -1,7 +1,7 @@
 project(
   'pest',
   'rust',
-  version : '2.7.11',
+  version : '2.8.0',
   license :'MIT OR Apache-2.0',
 )
 
