@@ -362,7 +362,7 @@ public:
 #endif
 
       if (block)
-         static_cast<brw_inst *>(cursor)->insert_before(block, inst);
+         block->insert_before(inst, cursor);
       else
          cursor->insert_before(inst);
 

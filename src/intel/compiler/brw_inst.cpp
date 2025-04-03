@@ -963,42 +963,10 @@ brw_inst::is_volatile() const
 }
 
 void
-brw_inst::insert_before(bblock_t *block, brw_inst *inst)
-{
-   assert(this != inst);
-
-   assert(!inst->block || inst->block == block);
-
-   exec_node::insert_before(inst);
-
-   inst->block = block;
-   inst->block->num_instructions++;
-   inst->block->cfg->total_instructions++;
-}
-
-void
 brw_inst::remove()
 {
    assert(block);
-
-   if (exec_list_is_singular(&block->instructions)) {
-      this->opcode = BRW_OPCODE_NOP;
-      this->resize_sources(0);
-      this->dst = brw_reg();
-      this->size_written = 0;
-      return;
-   }
-
-   assert(block->num_instructions > 0);
-   assert(block->cfg->total_instructions > 0);
-   block->num_instructions--;
-   block->cfg->total_instructions--;
-
-   if (block->num_instructions == 0)
-      block->cfg->remove_block(block);
-
-   exec_node::remove();
-   block = NULL;
+   block->remove(this);
 }
 
 enum brw_reg_type

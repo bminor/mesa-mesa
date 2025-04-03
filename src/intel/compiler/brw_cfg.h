@@ -94,6 +94,9 @@ struct bblock_t {
 
    brw_inst *last_non_control_flow_inst();
 
+   void insert_before(brw_inst *inst, exec_node *ref);
+   void remove(brw_inst *inst);
+
    struct exec_node link;
    struct cfg_t *cfg;
 

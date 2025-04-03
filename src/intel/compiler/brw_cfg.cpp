@@ -77,6 +77,42 @@ bblock_t::add_successor(void *mem_ctx, bblock_t *successor,
    children.push_tail(::link(mem_ctx, successor, kind));
 }
 
+void
+bblock_t::insert_before(brw_inst *inst, exec_node *ref)
+{
+   assert(inst != ref);
+   assert(!inst->block || inst->block == this);
+
+   num_instructions++;
+   cfg->total_instructions++;
+
+   ref->exec_node::insert_before(inst);
+   inst->block = this;
+}
+
+void
+bblock_t::remove(brw_inst *inst)
+{
+   if (exec_list_is_singular(&instructions)) {
+      inst->opcode = BRW_OPCODE_NOP;
+      inst->resize_sources(0);
+      inst->dst = brw_reg();
+      inst->size_written = 0;
+      return;
+   }
+
+   assert(num_instructions > 0);
+   assert(cfg->total_instructions > 0);
+   num_instructions--;
+   cfg->total_instructions--;
+
+   inst->exec_node::remove();
+   inst->block = NULL;
+
+   if (num_instructions == 0)
+      cfg->remove_block(this);
+}
+
 static void
 append_inst(bblock_t *block, brw_inst *inst)
 {
