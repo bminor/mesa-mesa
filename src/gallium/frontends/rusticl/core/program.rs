@@ -560,7 +560,7 @@ impl Program {
 
         let mut res = true;
         for dev in devs {
-            if !self.do_compile(dev, options, &Vec::new(), &mut info) {
+            if !self.do_compile(dev, options, &[], &mut info) {
                 res = false;
                 continue;
             }

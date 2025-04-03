@@ -1180,7 +1180,7 @@ impl Device {
     }
 }
 
-pub fn devs() -> &'static Vec<Device> {
+pub fn devs() -> &'static [Device] {
     &Platform::get().devs
 }
 
