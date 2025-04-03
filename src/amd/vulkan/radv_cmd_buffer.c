@@ -4034,8 +4034,45 @@ radv_cmd_buffer_get_vrs_image(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds, struct radv_image_view *iview,
-                      bool depth_compressed, bool stencil_compressed)
+radv_gfx12_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds)
+{
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   radeon_begin(cs);
+   radeon_set_context_reg(R_028004_DB_DEPTH_VIEW, ds->ac.db_depth_view);
+   radeon_set_context_reg(R_028008_DB_DEPTH_VIEW1, ds->ac.u.gfx12.db_depth_view1);
+   radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, ds->db_render_override2);
+   radeon_set_context_reg(R_028014_DB_DEPTH_SIZE_XY, ds->ac.db_depth_size);
+   radeon_set_context_reg(R_028018_DB_Z_INFO, ds->ac.db_z_info);
+   radeon_set_context_reg(R_02801C_DB_STENCIL_INFO, ds->ac.db_stencil_info);
+   radeon_set_context_reg(R_028020_DB_Z_READ_BASE, ds->ac.db_depth_base);
+   radeon_set_context_reg(R_028024_DB_Z_READ_BASE_HI, S_028024_BASE_HI(ds->ac.db_depth_base >> 32));
+   radeon_set_context_reg(R_028028_DB_Z_WRITE_BASE, ds->ac.db_depth_base);
+   radeon_set_context_reg(R_02802C_DB_Z_WRITE_BASE_HI, S_02802C_BASE_HI(ds->ac.db_depth_base >> 32));
+   radeon_set_context_reg(R_028030_DB_STENCIL_READ_BASE, ds->ac.db_stencil_base);
+   radeon_set_context_reg(R_028034_DB_STENCIL_READ_BASE_HI, S_028034_BASE_HI(ds->ac.db_stencil_base >> 32));
+   radeon_set_context_reg(R_028038_DB_STENCIL_WRITE_BASE, ds->ac.db_stencil_base);
+   radeon_set_context_reg(R_02803C_DB_STENCIL_WRITE_BASE_HI, S_02803C_BASE_HI(ds->ac.db_stencil_base >> 32));
+   radeon_set_context_reg(R_028B94_PA_SC_HIZ_INFO, ds->ac.u.gfx12.hiz_info);
+   radeon_set_context_reg(R_028B98_PA_SC_HIS_INFO, ds->ac.u.gfx12.his_info);
+
+   if (ds->ac.u.gfx12.hiz_info) {
+      radeon_set_context_reg(R_028B9C_PA_SC_HIZ_BASE, ds->ac.u.gfx12.hiz_base);
+      radeon_set_context_reg(R_028BA0_PA_SC_HIZ_BASE_EXT, S_028BA0_BASE_256B(ds->ac.u.gfx12.hiz_base >> 32));
+      radeon_set_context_reg(R_028BA4_PA_SC_HIZ_SIZE_XY, ds->ac.u.gfx12.hiz_size_xy);
+   }
+
+   if (ds->ac.u.gfx12.his_info) {
+      radeon_set_context_reg(R_028BA8_PA_SC_HIS_BASE, ds->ac.u.gfx12.his_base);
+      radeon_set_context_reg(R_028BAC_PA_SC_HIS_BASE_EXT, S_028BAC_BASE_256B(ds->ac.u.gfx12.his_base >> 32));
+      radeon_set_context_reg(R_028BB0_PA_SC_HIS_SIZE_XY, ds->ac.u.gfx12.his_size_xy);
+   }
+   radeon_end();
+}
+
+static void
+radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds,
+                           struct radv_image_view *iview, bool depth_compressed, bool stencil_compressed)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -4069,43 +4106,12 @@ radv_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_
    }
 
    radeon_begin(cmd_buffer->cs);
-
-   if (pdev->info.gfx_level < GFX12) {
-      radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
-      radeon_set_context_reg(R_028008_DB_DEPTH_VIEW, ds->ac.db_depth_view);
-      radeon_set_context_reg(R_028ABC_DB_HTILE_SURFACE, db_htile_surface);
-   }
-
+   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
+   radeon_set_context_reg(R_028008_DB_DEPTH_VIEW, ds->ac.db_depth_view);
+   radeon_set_context_reg(R_028ABC_DB_HTILE_SURFACE, db_htile_surface);
    radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, ds->db_render_override2);
 
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028004_DB_DEPTH_VIEW, ds->ac.db_depth_view);
-      radeon_set_context_reg(R_028008_DB_DEPTH_VIEW1, ds->ac.u.gfx12.db_depth_view1);
-      radeon_set_context_reg(R_028014_DB_DEPTH_SIZE_XY, ds->ac.db_depth_size);
-      radeon_set_context_reg(R_028018_DB_Z_INFO, ds->ac.db_z_info);
-      radeon_set_context_reg(R_02801C_DB_STENCIL_INFO, ds->ac.db_stencil_info);
-      radeon_set_context_reg(R_028020_DB_Z_READ_BASE, ds->ac.db_depth_base);
-      radeon_set_context_reg(R_028024_DB_Z_READ_BASE_HI, S_028024_BASE_HI(ds->ac.db_depth_base >> 32));
-      radeon_set_context_reg(R_028028_DB_Z_WRITE_BASE, ds->ac.db_depth_base);
-      radeon_set_context_reg(R_02802C_DB_Z_WRITE_BASE_HI, S_02802C_BASE_HI(ds->ac.db_depth_base >> 32));
-      radeon_set_context_reg(R_028030_DB_STENCIL_READ_BASE, ds->ac.db_stencil_base);
-      radeon_set_context_reg(R_028034_DB_STENCIL_READ_BASE_HI, S_028034_BASE_HI(ds->ac.db_stencil_base >> 32));
-      radeon_set_context_reg(R_028038_DB_STENCIL_WRITE_BASE, ds->ac.db_stencil_base);
-      radeon_set_context_reg(R_02803C_DB_STENCIL_WRITE_BASE_HI, S_02803C_BASE_HI(ds->ac.db_stencil_base >> 32));
-      radeon_set_context_reg(R_028B94_PA_SC_HIZ_INFO, ds->ac.u.gfx12.hiz_info);
-      radeon_set_context_reg(R_028B98_PA_SC_HIS_INFO, ds->ac.u.gfx12.his_info);
-
-      if (ds->ac.u.gfx12.hiz_info) {
-         radeon_set_context_reg(R_028B9C_PA_SC_HIZ_BASE, ds->ac.u.gfx12.hiz_base);
-         radeon_set_context_reg(R_028BA0_PA_SC_HIZ_BASE_EXT, S_028BA0_BASE_256B(ds->ac.u.gfx12.hiz_base >> 32));
-         radeon_set_context_reg(R_028BA4_PA_SC_HIZ_SIZE_XY, ds->ac.u.gfx12.hiz_size_xy);
-      }
-      if (ds->ac.u.gfx12.his_info) {
-         radeon_set_context_reg(R_028BA8_PA_SC_HIS_BASE, ds->ac.u.gfx12.his_base);
-         radeon_set_context_reg(R_028BAC_PA_SC_HIS_BASE_EXT, S_028BAC_BASE_256B(ds->ac.u.gfx12.his_base >> 32));
-         radeon_set_context_reg(R_028BB0_PA_SC_HIS_SIZE_XY, ds->ac.u.gfx12.his_size_xy);
-      }
-   } else if (pdev->info.gfx_level >= GFX10) {
+   if (pdev->info.gfx_level >= GFX10) {
       radeon_set_context_reg(R_028014_DB_HTILE_DATA_BASE, db_htile_data_base);
       radeon_set_context_reg(R_02801C_DB_DEPTH_SIZE_XY, ds->ac.db_depth_size);
 
@@ -4775,7 +4781,11 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       bool stencil_compressed = radv_layout_is_htile_compressed(device, image, iview->vk.base_mip_level,
                                                                 render->ds_att.stencil_layout, qf_mask);
 
-      radv_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds, iview, depth_compressed, stencil_compressed);
+      if (pdev->info.gfx_level >= GFX12) {
+         radv_gfx12_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds);
+      } else {
+         radv_gfx6_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds, iview, depth_compressed, stencil_compressed);
+      }
 
       if (depth_compressed || stencil_compressed) {
          /* Only load the depth/stencil fast clear values when
@@ -4819,7 +4829,7 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
       bool depth_compressed = radv_layout_is_htile_compressed(
          device, image, 0, layout, radv_image_queue_family_mask(image, cmd_buffer->qf, cmd_buffer->qf));
-      radv_emit_fb_ds_state(cmd_buffer, &ds, &iview, depth_compressed, false);
+      radv_gfx6_emit_fb_ds_state(cmd_buffer, &ds, &iview, depth_compressed, false);
 
       radv_image_view_finish(&iview);
    } else {
