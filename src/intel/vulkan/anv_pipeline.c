@@ -114,7 +114,7 @@ anv_pipeline_init(struct anv_pipeline *pipeline,
 
    memset(pipeline, 0, sizeof(*pipeline));
 
-   vk_object_base_init(&device->vk, &pipeline->base,
+   vk_object_base_init(&device->vk, &pipeline->vk.base,
                        VK_OBJECT_TYPE_PIPELINE);
    pipeline->device = device;
 
@@ -169,7 +169,7 @@ anv_pipeline_finish(struct anv_pipeline *pipeline,
    anv_pipeline_sets_layout_fini(&pipeline->layout);
    anv_reloc_list_finish(&pipeline->batch_relocs);
    ralloc_free(pipeline->mem_ctx);
-   vk_object_base_finish(&pipeline->base);
+   vk_object_base_finish(&pipeline->vk.base);
 }
 
 void anv_DestroyPipeline(

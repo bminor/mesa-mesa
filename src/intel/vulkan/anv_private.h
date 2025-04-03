@@ -92,6 +92,7 @@
 #include "vk_graphics_state.h"
 #include "vk_image.h"
 #include "vk_instance.h"
+#include "vk_pipeline.h"
 #include "vk_pipeline_cache.h"
 #include "vk_pipeline_layout.h"
 #include "vk_physical_device.h"
@@ -5077,7 +5078,7 @@ enum anv_pipeline_type {
 };
 
 struct anv_pipeline {
-   struct vk_object_base                        base;
+   struct vk_pipeline                           vk;
 
    struct anv_device *                          device;
 
@@ -6936,7 +6937,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_image_view, vk.base, VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW);
-VK_DEFINE_NONDISP_HANDLE_CASTS(anv_pipeline, base, VkPipeline,
+VK_DEFINE_NONDISP_HANDLE_CASTS(anv_pipeline, vk.base, VkPipeline,
                                VK_OBJECT_TYPE_PIPELINE)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_query_pool, vk.base, VkQueryPool,
                                VK_OBJECT_TYPE_QUERY_POOL)
