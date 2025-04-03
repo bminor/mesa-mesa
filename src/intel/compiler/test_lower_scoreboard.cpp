@@ -484,7 +484,7 @@ TEST_F(scoreboard_test, loop1)
    bld.DO();
 
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_WHILE)->predicate = BRW_PREDICATE_NORMAL;
+   bld.WHILE(BRW_PREDICATE_NORMAL);
 
    bld.MUL(   x, g[1], g[2]);
 
@@ -519,7 +519,7 @@ TEST_F(scoreboard_test, loop2)
    bld.DO();
 
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_WHILE)->predicate = BRW_PREDICATE_NORMAL;
+   bld.WHILE(BRW_PREDICATE_NORMAL);
 
    bld.MUL(   x, g[1], g[2]);
 
@@ -559,7 +559,7 @@ TEST_F(scoreboard_test, loop3)
    bld.XOR(g[6], g[1], g[2]);
 
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_WHILE)->predicate = BRW_PREDICATE_NORMAL;
+   bld.WHILE(BRW_PREDICATE_NORMAL);
 
    bld.MUL(   x, g[1], g[2]);
 
@@ -588,11 +588,11 @@ TEST_F(scoreboard_test, conditional1)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -620,11 +620,11 @@ TEST_F(scoreboard_test, conditional2)
    bld.XOR(g[3], g[1], g[2]);
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -649,14 +649,14 @@ TEST_F(scoreboard_test, conditional3)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.XOR(g[3], g[1], g[2]);
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
    bld.ADD(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -681,14 +681,14 @@ TEST_F(scoreboard_test, conditional4)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
    bld.XOR(g[3], g[1], g[2]);
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -713,14 +713,14 @@ TEST_F(scoreboard_test, conditional5)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_ELSE);
+   bld.ELSE();
 
    bld.ROL(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -750,13 +750,13 @@ TEST_F(scoreboard_test, conditional6)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.XOR(g[3], g[1], g[2]);
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_ELSE);
+   bld.ELSE();
 
    bld.XOR(g[6], g[1], g[2]);
    bld.XOR(g[7], g[1], g[2]);
@@ -764,7 +764,7 @@ TEST_F(scoreboard_test, conditional6)
    bld.XOR(g[9], g[1], g[2]);
    bld.ROL(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -794,13 +794,13 @@ TEST_F(scoreboard_test, conditional7)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    bld.XOR(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
    bld.XOR(g[3], g[1], g[2]);
    bld.XOR(g[4], g[1], g[2]);
    bld.XOR(g[5], g[1], g[2]);
-   bld.emit(BRW_OPCODE_ELSE);
+   bld.ELSE();
 
    bld.ROL(   x, g[1], g[2]);
    bld.XOR(g[6], g[1], g[2]);
@@ -808,7 +808,7 @@ TEST_F(scoreboard_test, conditional7)
    bld.XOR(g[8], g[1], g[2]);
    bld.XOR(g[9], g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);
@@ -843,14 +843,14 @@ TEST_F(scoreboard_test, conditional8)
    bld.XOR(g[5], g[1], g[2]);
    bld.XOR(g[6], g[1], g[2]);
    bld.XOR(g[7], g[1], g[2]);
-   bld.emit(BRW_OPCODE_IF);
+   bld.IF();
 
    bld.ADD(   x, g[1], g[2]);
-   bld.emit(BRW_OPCODE_ELSE);
+   bld.ELSE();
 
    bld.ROL(   x, g[1], g[2]);
 
-   bld.emit(BRW_OPCODE_ENDIF);
+   bld.ENDIF();
    bld.MUL(   x, g[1], g[2]);
 
    brw_calculate_cfg(*v);

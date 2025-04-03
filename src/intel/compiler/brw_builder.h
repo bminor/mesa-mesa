@@ -661,15 +661,6 @@ public:
    }
 
    /**
-    * Gfx4 predicated IF.
-    */
-   brw_inst *
-   IF(brw_predicate predicate) const
-   {
-      return set_predicate(predicate, emit(BRW_OPCODE_IF));
-   }
-
-   /**
     * CSEL: dst = src2 <op> 0.0f ? src0 : src1
     */
    brw_inst *
@@ -891,12 +882,26 @@ public:
    brw_shader *shader;
 
    brw_inst *BREAK()    const { return emit(BRW_OPCODE_BREAK); }
+   brw_inst *ELSE()     const { return emit(BRW_OPCODE_ELSE); }
    brw_inst *ENDIF()    const { return emit(BRW_OPCODE_ENDIF); }
    brw_inst *NOP()      const { return emit(BRW_OPCODE_NOP); }
-   brw_inst *WHILE()    const { return emit(BRW_OPCODE_WHILE); }
    brw_inst *CONTINUE() const { return emit(BRW_OPCODE_CONTINUE); }
 
-   void DO() const {
+   brw_inst *
+   IF(brw_predicate predicate = BRW_PREDICATE_NORMAL) const
+   {
+      return set_predicate(predicate, emit(BRW_OPCODE_IF));
+   }
+
+   brw_inst *
+   WHILE(brw_predicate predicate = BRW_PREDICATE_NONE) const
+   {
+      return set_predicate(predicate, emit(BRW_OPCODE_WHILE));
+   }
+
+   void
+   DO() const
+   {
       emit(BRW_OPCODE_DO);
       /* Ensure that there'll always be a block after DO to add
        * instructions and serve as sucessor for predicated WHILE
