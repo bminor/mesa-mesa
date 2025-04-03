@@ -10785,18 +10785,18 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
       }
    }
 
+   /* Use the alpha value from MRTZ.a for alpha-to-coverage when alpha-to-one is also enabled.
+    * GFX11+ selects MRTZ.a by default if present.
+    */
+   db_shader_control |= S_02880C_COVERAGE_TO_MASK_ENABLE(
+      pdev->info.gfx_level < GFX11 && d->vk.ms.alpha_to_coverage_enable && d->vk.ms.alpha_to_one_enable);
+
    radeon_begin(cmd_buffer->cs);
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_opt_set_context_reg(cmd_buffer, R_02806C_DB_SHADER_CONTROL, RADV_TRACKED_DB_SHADER_CONTROL,
                                  db_shader_control);
    } else {
-      /* Use the alpha value from MRTZ.a for alpha-to-coverage when alpha-to-one is also enabled.
-       * GFX11+ selects MRTZ.a by default if present.
-       */
-      db_shader_control |= S_02880C_COVERAGE_TO_MASK_ENABLE(
-         pdev->info.gfx_level < GFX11 && d->vk.ms.alpha_to_coverage_enable && d->vk.ms.alpha_to_one_enable);
-
       radeon_opt_set_context_reg(cmd_buffer, R_02880C_DB_SHADER_CONTROL, RADV_TRACKED_DB_SHADER_CONTROL,
                                  db_shader_control);
 
