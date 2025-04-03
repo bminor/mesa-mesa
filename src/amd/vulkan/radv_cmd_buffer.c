@@ -10740,7 +10740,7 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
    const bool uses_ds_feedback_loop =
       !!(d->feedback_loop_aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
    const unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
-
+   uint32_t db_dfsm_control = S_028060_PUNCHOUT_MODE(V_028060_FORCE_OFF);
    uint32_t db_shader_control;
 
    if (ps) {
@@ -10773,13 +10773,8 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
          if (ps->info.ps.pops_is_per_sample)
             db_shader_control |= S_02880C_POPS_OVERLAP_NUM_SAMPLES(util_logbase2(rasterization_samples));
 
-         if (gpu_info->has_pops_missed_overlap_bug) {
-            radeon_begin(cmd_buffer->cs);
-            radeon_set_context_reg(R_028060_DB_DFSM_CONTROL,
-                                   S_028060_PUNCHOUT_MODE(V_028060_FORCE_OFF) |
-                                      S_028060_POPS_DRAIN_PS_ON_OVERLAP(rasterization_samples >= 8));
-            radeon_end();
-         }
+         if (gpu_info->has_pops_missed_overlap_bug)
+            db_dfsm_control |= S_028060_POPS_DRAIN_PS_ON_OVERLAP(rasterization_samples >= 8);
       }
    } else if (gpu_info->has_export_conflict_bug && rasterization_samples == 1) {
       for (uint32_t i = 0; i < MAX_RTS; i++) {
@@ -10804,6 +10799,9 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
 
       radeon_opt_set_context_reg(cmd_buffer, R_02880C_DB_SHADER_CONTROL, RADV_TRACKED_DB_SHADER_CONTROL,
                                  db_shader_control);
+
+      if (gpu_info->has_pops_missed_overlap_bug)
+         radeon_set_context_reg(R_028060_DB_DFSM_CONTROL, db_dfsm_control);
    }
 
    radeon_end();
