@@ -3248,59 +3248,6 @@ radv_emit_scissor(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_discard_rectangle(struct radv_cmd_buffer *cmd_buffer)
-{
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   uint32_t cliprect_rule = 0;
-
-   radeon_begin(cmd_buffer->cs);
-
-   if (!d->vk.dr.enable) {
-      cliprect_rule = 0xffff;
-   } else {
-      for (unsigned i = 0; i < (1u << MAX_DISCARD_RECTANGLES); ++i) {
-         /* Interpret i as a bitmask, and then set the bit in
-          * the mask if that combination of rectangles in which
-          * the pixel is contained should pass the cliprect
-          * test.
-          */
-         unsigned relevant_subset = i & ((1u << d->vk.dr.rectangle_count) - 1);
-
-         if (d->vk.dr.mode == VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT && !relevant_subset)
-            continue;
-
-         if (d->vk.dr.mode == VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT && relevant_subset)
-            continue;
-
-         cliprect_rule |= 1u << i;
-      }
-
-      radeon_set_context_reg_seq(R_028210_PA_SC_CLIPRECT_0_TL, d->vk.dr.rectangle_count * 2);
-      for (unsigned i = 0; i < d->vk.dr.rectangle_count; ++i) {
-         VkRect2D rect = d->vk.dr.rectangles[i];
-         radeon_emit(S_028210_TL_X(rect.offset.x) | S_028210_TL_Y(rect.offset.y));
-         radeon_emit(S_028214_BR_X(rect.offset.x + rect.extent.width) |
-                     S_028214_BR_Y(rect.offset.y + rect.extent.height));
-      }
-
-      if (pdev->info.gfx_level >= GFX12) {
-         radeon_set_context_reg_seq(R_028374_PA_SC_CLIPRECT_0_EXT, d->vk.dr.rectangle_count);
-         for (unsigned i = 0; i < d->vk.dr.rectangle_count; ++i) {
-            VkRect2D rect = d->vk.dr.rectangles[i];
-            radeon_emit(S_028374_TL_X_EXT(rect.offset.x >> 15) | S_028374_TL_Y_EXT(rect.offset.y >> 15) |
-                        S_028374_BR_X_EXT((rect.offset.x + rect.extent.width) >> 15) |
-                        S_028374_BR_Y_EXT((rect.offset.y + rect.extent.height) >> 15));
-         }
-      }
-   }
-
-   radeon_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, cliprect_rule);
-   radeon_end();
-}
-
-static void
 radv_emit_blend_constants(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
@@ -5578,10 +5525,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & RADV_DYNAMIC_DEPTH_BIAS)
       radv_emit_depth_bias(cmd_buffer);
-
-   if (states &
-       (RADV_DYNAMIC_DISCARD_RECTANGLE | RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE | RADV_DYNAMIC_DISCARD_RECTANGLE_MODE))
-      radv_emit_discard_rectangle(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       radv_emit_sample_locations(cmd_buffer);
@@ -11098,6 +11041,59 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_emit_clip_rects_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+   uint32_t cliprect_rule = 0;
+
+   radeon_begin(cmd_buffer->cs);
+
+   if (!d->vk.dr.enable) {
+      cliprect_rule = 0xffff;
+   } else {
+      for (unsigned i = 0; i < (1u << MAX_DISCARD_RECTANGLES); ++i) {
+         /* Interpret i as a bitmask, and then set the bit in
+          * the mask if that combination of rectangles in which
+          * the pixel is contained should pass the cliprect
+          * test.
+          */
+         unsigned relevant_subset = i & ((1u << d->vk.dr.rectangle_count) - 1);
+
+         if (d->vk.dr.mode == VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT && !relevant_subset)
+            continue;
+
+         if (d->vk.dr.mode == VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT && relevant_subset)
+            continue;
+
+         cliprect_rule |= 1u << i;
+      }
+
+      radeon_set_context_reg_seq(R_028210_PA_SC_CLIPRECT_0_TL, d->vk.dr.rectangle_count * 2);
+      for (unsigned i = 0; i < d->vk.dr.rectangle_count; ++i) {
+         VkRect2D rect = d->vk.dr.rectangles[i];
+         radeon_emit(S_028210_TL_X(rect.offset.x) | S_028210_TL_Y(rect.offset.y));
+         radeon_emit(S_028214_BR_X(rect.offset.x + rect.extent.width) |
+                     S_028214_BR_Y(rect.offset.y + rect.extent.height));
+      }
+
+      if (pdev->info.gfx_level >= GFX12) {
+         radeon_set_context_reg_seq(R_028374_PA_SC_CLIPRECT_0_EXT, d->vk.dr.rectangle_count);
+         for (unsigned i = 0; i < d->vk.dr.rectangle_count; ++i) {
+            VkRect2D rect = d->vk.dr.rectangles[i];
+            radeon_emit(S_028374_TL_X_EXT(rect.offset.x >> 15) | S_028374_TL_Y_EXT(rect.offset.y >> 15) |
+                        S_028374_BR_X_EXT((rect.offset.x + rect.extent.width) >> 15) |
+                        S_028374_BR_Y_EXT((rect.offset.y + rect.extent.height) >> 15));
+         }
+      }
+   }
+
+   radeon_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, cliprect_rule);
+   radeon_end();
+}
+
+static void
 radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynamic_states)
 {
    if (dynamic_states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
@@ -11127,6 +11123,10 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
                          RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
                          RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE | RADV_DYNAMIC_SAMPLE_MASK))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_MSAA_STATE;
+
+   if (dynamic_states &
+       (RADV_DYNAMIC_DISCARD_RECTANGLE | RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE | RADV_DYNAMIC_DISCARD_RECTANGLE_MODE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CLIP_RECTS_STATE;
 }
 
 static void
@@ -11222,6 +11222,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
 
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
+
+      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
+         radv_emit_clip_rects_state(cmd_buffer);
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
          radv_emit_raster_state(cmd_buffer);
