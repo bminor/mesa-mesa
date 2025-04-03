@@ -3711,45 +3711,6 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_conservative_rast_mode(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-
-   if (pdev->info.gfx_level >= GFX9) {
-      uint32_t pa_sc_conservative_rast;
-
-      if (d->vk.rs.conservative_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
-         const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
-         const bool uses_inner_coverage = ps && ps->info.ps.reads_fully_covered;
-
-         pa_sc_conservative_rast =
-            S_028C4C_PREZ_AA_MASK_ENABLE(1) | S_028C4C_POSTZ_AA_MASK_ENABLE(1) | S_028C4C_CENTROID_SAMPLE_OVERRIDE(1);
-
-         /* Inner coverage requires underestimate conservative rasterization. */
-         if (d->vk.rs.conservative_mode == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT &&
-             !uses_inner_coverage) {
-            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_ENABLE(1) | S_028C4C_UNDER_RAST_SAMPLE_SELECT(1) |
-                                       S_028C4C_PBB_UNCERTAINTY_REGION_ENABLE(1);
-         } else {
-            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_SAMPLE_SELECT(1) | S_028C4C_UNDER_RAST_ENABLE(1);
-         }
-      } else {
-         pa_sc_conservative_rast = S_028C4C_NULL_SQUAD_AA_MASK_ENABLE(1);
-      }
-
-      radeon_begin(cmd_buffer->cs);
-      if (pdev->info.gfx_level >= GFX12) {
-         radeon_set_context_reg(R_028C54_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
-      } else {
-         radeon_set_context_reg(R_028C4C_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
-      }
-      radeon_end();
-   }
-}
-
-static void
 radv_emit_depth_clamp_enable(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -5651,6 +5612,7 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned log_samples = util_logbase2(rasterization_samples);
+   unsigned pa_sc_conservative_rast = 0;
    unsigned pa_sc_aa_config = 0;
    unsigned max_sample_dist = 0;
    unsigned db_eqaa;
@@ -5658,10 +5620,28 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
    db_eqaa = S_028804_HIGH_QUALITY_INTERSECTIONS(1) | S_028804_INCOHERENT_EQAA_READS(pdev->info.gfx_level < GFX12) |
              S_028804_STATIC_ANCHOR_ASSOCIATIONS(1);
 
-   if (pdev->info.gfx_level >= GFX9 && d->vk.rs.conservative_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
-      /* Adjust MSAA state if conservative rasterization is enabled. */
-      db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(4);
-      pa_sc_aa_config |= S_028BE0_AA_MASK_CENTROID_DTMN(1);
+   if (pdev->info.gfx_level >= GFX9) {
+      if (d->vk.rs.conservative_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
+         const bool uses_inner_coverage = ps && ps->info.ps.reads_fully_covered;
+
+         pa_sc_conservative_rast |=
+            S_028C4C_PREZ_AA_MASK_ENABLE(1) | S_028C4C_POSTZ_AA_MASK_ENABLE(1) | S_028C4C_CENTROID_SAMPLE_OVERRIDE(1);
+
+         /* Inner coverage requires underestimate conservative rasterization. */
+         if (d->vk.rs.conservative_mode == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT &&
+             !uses_inner_coverage) {
+            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_ENABLE(1) | S_028C4C_UNDER_RAST_SAMPLE_SELECT(1) |
+                                       S_028C4C_PBB_UNCERTAINTY_REGION_ENABLE(1);
+         } else {
+            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_SAMPLE_SELECT(1) | S_028C4C_UNDER_RAST_ENABLE(1);
+         }
+
+         /* Adjust MSAA state if conservative rasterization is enabled. */
+         db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(4);
+         pa_sc_aa_config |= S_028BE0_AA_MASK_CENTROID_DTMN(1);
+      } else {
+         pa_sc_conservative_rast |= S_028C4C_NULL_SQUAD_AA_MASK_ENABLE(1);
+      }
    }
 
    if (!d->sample_location.count || !d->vk.ms.sample_locations_enable) {
@@ -5721,8 +5701,12 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg(R_028C5C_PA_SC_SAMPLE_PROPERTIES, S_028C5C_MAX_SAMPLE_DIST(max_sample_dist));
 
       radeon_set_context_reg(R_028078_DB_EQAA, db_eqaa);
+      radeon_set_context_reg(R_028C54_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
    } else {
       radeon_set_context_reg(R_028804_DB_EQAA, db_eqaa);
+
+      if (pdev->info.gfx_level >= GFX9)
+         radeon_set_context_reg(R_028C4C_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
    }
 
    radeon_set_context_reg(R_028BE0_PA_SC_AA_CONFIG, pa_sc_aa_config);
@@ -5755,9 +5739,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if (states &
        (RADV_DYNAMIC_DISCARD_RECTANGLE | RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE | RADV_DYNAMIC_DISCARD_RECTANGLE_MODE))
       radv_emit_discard_rectangle(cmd_buffer);
-
-   if (states & RADV_DYNAMIC_CONSERVATIVE_RAST_MODE)
-      radv_emit_conservative_rast_mode(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       radv_emit_sample_locations(cmd_buffer);
@@ -5805,10 +5786,9 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
                  RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       radv_emit_rasterization_samples(cmd_buffer);
 
-   if (states &
-       (RADV_DYNAMIC_LINE_STIPPLE_ENABLE | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS |
-        RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-        RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE))
+   if (states & (RADV_DYNAMIC_LINE_STIPPLE_ENABLE | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE |
+                 RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE |
+                 RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE))
       radv_emit_msaa_state(cmd_buffer);
 
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
