@@ -621,6 +621,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (stage == MESA_SHADER_FRAGMENT && data->fs.tile_buffers.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_TILE_BUFFERS,
+         .size_in_dwords = data->fs.tile_buffers.count,
+         .destination = data->fs.tile_buffers.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -1844,21 +1852,45 @@ pvr_init_fs_outputs(pco_data *data,
                     const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
    unsigned u;
+   pco_fs_data *fs = &data->fs;
+
    for (u = 0; u < subpass->color_count; ++u) {
       unsigned idx = subpass->color_attachments[u];
+      const struct usc_mrt_resource *mrt_resource;
+      bool tile_buffer;
+
       if (idx == VK_ATTACHMENT_UNUSED)
          continue;
 
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
       VkFormat vk_format = pass->attachments[idx].vk_format;
-      data->fs.output_formats[location] = vk_format_to_pipe_format(vk_format);
+      fs->output_formats[location] = vk_format_to_pipe_format(vk_format);
+
+      mrt_resource = &hw_subpass->setup.mrt_resources[u];
+      tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+
+      if (tile_buffer) {
+         fs->num_tile_buffers =
+            MAX2(fs->num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         fs->output_tile_buffers |= BITFIELD_BIT(u);
+      }
    }
 
-   data->fs.z_replicate = ~0u;
+   fs->z_replicate = ~0u;
    if (hw_subpass->z_replicate >= 0) {
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
-      data->fs.output_formats[location] = PIPE_FORMAT_R32_FLOAT;
-      data->fs.z_replicate = location;
+      const struct usc_mrt_resource *mrt_resource =
+         &hw_subpass->setup.mrt_resources[u];
+      bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+
+      fs->output_formats[location] = PIPE_FORMAT_R32_FLOAT;
+      fs->z_replicate = location;
+
+      if (tile_buffer) {
+         fs->num_tile_buffers =
+            MAX2(fs->num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         fs->output_tile_buffers |= BITFIELD_BIT(u);
+      }
    }
 }
 
@@ -1869,13 +1901,14 @@ pvr_setup_fs_outputs(pco_data *data,
                      const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
    uint64_t outputs_written = nir->info.outputs_written;
+   pco_fs_data *fs = &data->fs;
 
    unsigned u;
    for (u = 0; u < subpass->color_count; ++u) {
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
       unsigned idx = subpass->color_attachments[u];
       const struct usc_mrt_resource *mrt_resource;
-      ASSERTED bool output_reg;
+      bool tile_buffer;
       nir_variable *var;
 
       if (idx == VK_ATTACHMENT_UNUSED)
@@ -1886,16 +1919,16 @@ pvr_setup_fs_outputs(pco_data *data,
          continue;
 
       mrt_resource = &hw_subpass->setup.mrt_resources[u];
+      tile_buffer = fs->output_tile_buffers & BITFIELD_BIT(u);
 
-      /* TODO: tile buffer support. */
-      output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
-      assert(output_reg);
-
-      set_var(data->fs.outputs,
-              mrt_resource->reg.output_reg,
+      set_var(fs->outputs,
+              tile_buffer ? mrt_resource->mem.tile_buffer
+                          : mrt_resource->reg.output_reg,
               var,
               DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)));
-      data->fs.output_reg[location] = output_reg;
+
+      if (tile_buffer)
+         fs->outputs[location].offset = mrt_resource->mem.offset_dw;
 
       outputs_written &= ~BITFIELD64_BIT(location);
    }
@@ -1904,21 +1937,20 @@ pvr_setup_fs_outputs(pco_data *data,
       const struct usc_mrt_resource *mrt_resource =
          &hw_subpass->setup.mrt_resources[hw_subpass->z_replicate];
       gl_frag_result location = FRAG_RESULT_DATA0 + u;
-      ASSERTED bool output_reg;
-      nir_variable *var;
-
-      var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
+      nir_variable *var =
+         nir_find_variable_with_location(nir, nir_var_shader_out, location);
       if (var) {
-         /* TODO: tile buffer support. */
-         output_reg = mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
-         assert(output_reg);
+         bool tile_buffer = fs->output_tile_buffers & BITFIELD_BIT(u);
 
-         set_var(data->fs.outputs,
-                 mrt_resource->reg.output_reg,
+         set_var(fs->outputs,
+                 tile_buffer ? mrt_resource->mem.tile_buffer
+                             : mrt_resource->reg.output_reg,
                  var,
                  DIV_ROUND_UP(mrt_resource->intermediate_size,
                               sizeof(uint32_t)));
-         data->fs.output_reg[location] = output_reg;
+
+         if (tile_buffer)
+            fs->outputs[location].offset = mrt_resource->mem.offset_dw;
 
          outputs_written &= ~BITFIELD64_BIT(location);
       }
@@ -1933,6 +1965,7 @@ static void pvr_init_fs_input_attachments(
    const struct pvr_render_subpass *const subpass,
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
+   pco_fs_data *fs = &data->fs;
    for (unsigned u = 0; u < subpass->input_count; ++u) {
       unsigned idx = subpass->input_attachments[u];
       if (idx == VK_ATTACHMENT_UNUSED)
@@ -1949,22 +1982,20 @@ static void pvr_init_fs_input_attachments(
          vk_format = VK_FORMAT_R32_SFLOAT;
       }
 
-      data->fs.ia_formats[u] = vk_format_to_pipe_format(vk_format);
+      fs->ia_formats[u] = vk_format_to_pipe_format(vk_format);
+      assert(fs->ia_formats[u] != PIPE_FORMAT_NONE);
 
       unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;
       const struct usc_mrt_resource *mrt_resource =
          &hw_subpass->setup.mrt_resources[mrt_idx];
 
-      ASSERTED bool output_reg = mrt_resource->type ==
-                                 USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
-      assert(output_reg);
-      /* TODO: tile buffer support. */
+      bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
-      data->fs.ias_onchip[u] = (pco_range){
-         .start = mrt_resource->reg.output_reg,
-         .count =
-            DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)),
-      };
+      if (tile_buffer) {
+         fs->num_tile_buffers =
+            MAX2(fs->num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         fs->ia_tile_buffers |= BITFIELD_BIT(u);
+      }
    }
 }
 
@@ -2019,7 +2050,33 @@ static void pvr_setup_fs_input_attachments(
    const struct pvr_render_subpass *const subpass,
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass)
 {
-   /* pvr_finishme("pvr_setup_fs_input_attachments"); */
+   pco_fs_data *fs = &data->fs;
+   for (unsigned u = 0; u < subpass->input_count; ++u) {
+      unsigned idx = subpass->input_attachments[u];
+      if (idx == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      bool onchip = hw_subpass->input_access[u].type !=
+                    PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_OFFCHIP;
+      if (!onchip)
+         continue;
+
+      unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;
+      const struct usc_mrt_resource *mrt_resource =
+         &hw_subpass->setup.mrt_resources[mrt_idx];
+
+      bool tile_buffer = fs->ia_tile_buffers & BITFIELD_BIT(u);
+
+      fs->ias_onchip[u] = (pco_range){
+         .start = tile_buffer ? mrt_resource->mem.tile_buffer
+                              : mrt_resource->reg.output_reg,
+         .count =
+            DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)),
+      };
+
+      if (tile_buffer)
+         fs->ias_onchip[u].offset = mrt_resource->mem.offset_dw;
+   }
 }
 
 static void pvr_setup_fs_blend(pco_data *data)
@@ -2034,6 +2091,29 @@ static void pvr_setup_fs_blend(pco_data *data)
    };
 
    data->common.shareds += num_blend_consts;
+}
+
+static void pvr_init_fs_tile_buffers(pco_data *data)
+{
+   if (!data->fs.num_tile_buffers)
+      return;
+
+   unsigned tile_buffer_addr_dwords =
+      data->fs.num_tile_buffers * (sizeof(uint64_t) / sizeof(uint32_t));
+
+   data->fs.tile_buffers = (pco_range){
+      .count = tile_buffer_addr_dwords,
+      .stride = sizeof(uint64_t) / sizeof(uint32_t),
+   };
+}
+
+static void pvr_setup_fs_tile_buffers(pco_data *data)
+{
+   if (!data->fs.tile_buffers.count)
+      return;
+
+   data->fs.tile_buffers.start = data->common.shareds;
+   data->common.shareds += data->fs.tile_buffers.count;
 }
 
 static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
@@ -2317,6 +2397,7 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
       pvr_init_fs_input_attachments(data, pass, subpass, hw_subpass);
       pvr_init_fs_blend(data, state->cb);
+      pvr_init_fs_tile_buffers(data);
 
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) ||
           (state->ms && state->ms->sample_mask != 0xffff)) {
@@ -2374,6 +2455,7 @@ static void pvr_postprocess_shader_data(pco_data *data,
       pvr_setup_fs_outputs(data, nir, subpass, hw_subpass);
       pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
       pvr_setup_fs_blend(data);
+      pvr_setup_fs_tile_buffers(data);
 
       /* TODO: push consts, blend consts, dynamic state, etc. */
       break;

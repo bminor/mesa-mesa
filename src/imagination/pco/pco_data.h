@@ -30,7 +30,10 @@ typedef struct _pco_shader pco_shader;
 typedef struct _pco_range {
    unsigned start;
    unsigned count;
-   unsigned stride;
+   union {
+      unsigned stride;
+      unsigned offset;
+   };
 } pco_range;
 
 /** PCO vertex shader-specific data. */
@@ -71,17 +74,21 @@ typedef struct _pco_fs_data {
    /** Results/output mappings. */
    pco_range outputs[FRAG_RESULT_MAX];
 
-   /** If outputs are to be placed in pixout regs. */
-   bool output_reg[FRAG_RESULT_MAX];
+   /** If outputs are to be placed in tile buffers. */
+   uint8_t output_tile_buffers;
 
    /** Fragment output formats. */
    enum pipe_format output_formats[FRAG_RESULT_MAX];
 
    /** On-chip input attachment mappings. */
-   pco_range ias_onchip[4];
+   pco_range ias_onchip[8];
 
    /** On-chip input attachment formats. */
-   enum pipe_format ia_formats[4];
+   enum pipe_format ia_formats[8];
+
+   uint8_t ia_tile_buffers;
+
+   unsigned num_tile_buffers;
 
    pco_range meta;
 
@@ -93,6 +100,8 @@ typedef struct _pco_fs_data {
    uint8_t blend_consts_needed;
 
    uint16_t rasterization_samples;
+
+   pco_range tile_buffers;
 
    struct {
       bool w; /** Whether the shader uses pos.w. */

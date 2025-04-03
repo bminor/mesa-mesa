@@ -380,7 +380,13 @@ O_FITR = hw_op('fitr', [OM_EXEC_CND, OM_END, OM_ITR_MODE, OM_SAT], 1, 3)
 O_FITRP = hw_op('fitrp', [OM_EXEC_CND, OM_END, OM_ITR_MODE, OM_SAT], 1, 4)
 
 O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
+O_LD_REGBL = hw_op('ld.regbl', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
+
 O_ST = hw_direct_op('st', [OM_MCU_CACHE_MODE_ST], 0, 6)
+
+# { data, data size, drc, chans, addr, cov_msk}
+O_ST_TILED = hw_op('st.tiled', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 6)
+
 O_ATOMIC = hw_op('atomic', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM_OP], 1, 2)
 
 O_SMP = hw_op('smp', OM_ALU_RPT1 + [OM_DIM, OM_PROJ, OM_FCNORM, OM_NNCOORDS,

@@ -183,7 +183,7 @@ lower_image_derefs(nir_builder *b, nir_intrinsic_instr *intr, pco_data *data)
 
    if (ia) {
       unsigned ia_idx = var->data.index;
-      bool onchip = data->fs.ias_onchip[ia_idx].count > 0;
+      bool onchip = data->fs.ia_formats[ia_idx] != PIPE_FORMAT_NONE;
 
       if (onchip) {
          nir_def *elem = array_elem_from_deref(b, deref);

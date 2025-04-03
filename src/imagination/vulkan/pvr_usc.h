@@ -30,6 +30,8 @@ struct pvr_eot_props {
       const uint32_t *state_words;
       const unsigned *state_regs;
    };
+
+   uint64_t tile_buffer_addrs[PVR_MAX_COLOR_ATTACHMENTS];
 };
 
 pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props);

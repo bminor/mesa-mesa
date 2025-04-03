@@ -489,6 +489,7 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
    struct pvr_cmd_buffer *const cmd_buffer,
    const uint32_t emit_count,
    const uint32_t *pbe_cs_words,
+   const unsigned *tile_buffer_ids,
    struct pvr_pds_upload *const pds_upload_out)
 {
    struct pvr_pds_event_program pixel_event_program = {
@@ -499,6 +500,8 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
       PVR_DW_TO_BYTES(cmd_buffer->device->pixel_event_data_size_in_dwords);
    const VkAllocationCallbacks *const allocator = &cmd_buffer->vk.pool->alloc;
    struct pvr_device *const device = cmd_buffer->device;
+   const struct pvr_device_tile_buffer_state *tile_buffer_state =
+      &device->tile_buffer_state;
    struct pvr_suballoc_bo *usc_eot_program = NULL;
    struct pvr_eot_props props = {
       .emit_count = emit_count,
@@ -509,6 +512,16 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
    uint32_t usc_temp_count;
    pco_shader *eot;
    VkResult result;
+
+   for (unsigned u = 0; u < emit_count; ++u) {
+      unsigned tile_buffer_id = tile_buffer_ids[u];
+      if (tile_buffer_id == ~0)
+         continue;
+
+      assert(tile_buffer_id < tile_buffer_state->buffer_count);
+      props.tile_buffer_addrs[u] =
+         tile_buffer_state->buffers[tile_buffer_id]->vma->dev_addr.addr;
+   }
 
    eot = pvr_usc_eot(cmd_buffer->device->pdevice->pco_ctx, &props);
    usc_temp_count = pco_shader_data(eot)->common.temps;
@@ -778,6 +791,12 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    buffer_size +=
       texture_count * sizeof(struct pvr_combined_image_sampler_descriptor);
 
+   unsigned tile_buffer_offset = buffer_size;
+   buffer_size += load_op->num_tile_buffers * sizeof(uint64_t);
+
+   assert(!(buffer_size % sizeof(uint32_t)));
+   assert(buffer_size / sizeof(uint32_t) == load_op->shareds_count);
+
    result = pvr_cmd_buffer_alloc_mem(cmd_buffer,
                                      cmd_buffer->device->heaps.general_heap,
                                      buffer_size,
@@ -793,6 +812,20 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    memcpy(&buffer[words],
           texture_states,
           texture_count * sizeof(struct pvr_combined_image_sampler_descriptor));
+
+   struct pvr_device *const device = cmd_buffer->device;
+   const struct pvr_device_tile_buffer_state *tile_buffer_state =
+      &device->tile_buffer_state;
+
+   uint32_t *tile_buffers = (uint32_t *)&buffer[tile_buffer_offset];
+   for (unsigned u = 0; u < load_op->num_tile_buffers; ++u) {
+      assert(u < tile_buffer_state->buffer_count);
+      uint64_t tile_buffer_addr =
+         tile_buffer_state->buffers[u]->vma->dev_addr.addr;
+
+      tile_buffers[2 * u] = tile_buffer_addr & 0xffffffff;
+      tile_buffers[2 * u + 1] = tile_buffer_addr >> 32;
+   }
 
    *addr_out = clear_bo->dev_addr;
 
@@ -1313,6 +1346,8 @@ struct pvr_emit_state {
    uint64_t pbe_reg_words[PVR_MAX_COLOR_ATTACHMENTS]
                          [ROGUE_NUM_PBESTATE_REG_WORDS];
 
+   unsigned tile_buffer_ids[PVR_MAX_COLOR_ATTACHMENTS];
+
    uint32_t emit_count;
 };
 
@@ -1374,6 +1409,11 @@ pvr_setup_emit_state(const struct pvr_device_info *dev_info,
 
          assert(emit_state->emit_count < ARRAY_SIZE(emit_state->pbe_cs_words));
          assert(emit_state->emit_count < ARRAY_SIZE(emit_state->pbe_reg_words));
+
+         emit_state->tile_buffer_ids[emit_state->emit_count] =
+            mrt_resource->type == USC_MRT_RESOURCE_TYPE_MEMORY
+               ? mrt_resource->mem.tile_buffer
+               : ~0;
 
          pvr_setup_pbe_state(dev_info,
                              framebuffer,
@@ -1451,6 +1491,9 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
             .pixel_event_program_data_offset;
    } else {
       struct pvr_emit_state emit_state = { 0 };
+      memset(emit_state.tile_buffer_ids,
+             ~0,
+             sizeof(emit_state.tile_buffer_ids));
 
       pvr_setup_emit_state(dev_info, hw_render, render_pass_info, &emit_state);
 
@@ -1462,6 +1505,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
          cmd_buffer,
          emit_state.emit_count,
          emit_state.pbe_cs_words[0],
+         emit_state.tile_buffer_ids,
          &pds_pixel_event_program);
       if (result != VK_SUCCESS)
          return result;
@@ -3865,6 +3909,44 @@ static VkResult pvr_setup_descriptor_mappings(
 
             PVR_WRITE(qword_buffer,
                       fs_meta_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
+         case PVR_BUFFER_TYPE_TILE_BUFFERS: {
+            const struct pvr_device_tile_buffer_state *tile_buffer_state =
+               &cmd_buffer->device->tile_buffer_state;
+            const struct pvr_graphics_pipeline *const gfx_pipeline =
+               cmd_buffer->state.gfx_pipeline;
+            const pco_data *const fs_data = &gfx_pipeline->fs_data;
+
+            unsigned num_tile_buffers =
+               fs_data->fs.tile_buffers.count / fs_data->fs.tile_buffers.stride;
+
+            uint32_t tile_buffer_addrs[PVR_MAX_TILE_BUFFER_COUNT * 2];
+
+            for (unsigned u = 0; u < num_tile_buffers; ++u) {
+               assert(u < tile_buffer_state->buffer_count);
+               uint64_t tile_buffer_addr =
+                  tile_buffer_state->buffers[u]->vma->dev_addr.addr;
+
+               tile_buffer_addrs[2 * u] = tile_buffer_addr & 0xffffffff;
+               tile_buffer_addrs[2 * u + 1] = tile_buffer_addr >> 32;
+            }
+
+            struct pvr_suballoc_bo *tile_buffer_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   &tile_buffer_addrs,
+                                                   num_tile_buffers *
+                                                      sizeof(uint64_t),
+                                                   &tile_buffer_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      tile_buffer_bo->dev_addr.addr,
                       special_buff_entry->const_offset,
                       pds_info->data_size_in_dwords);
             break;

@@ -1336,6 +1336,19 @@ encode_map(O_LD,
    op_ref_maps=[('backend', ['s3'], ['drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5']])]
 )
 
+encode_map(O_LD_REGBL,
+   encodings=[
+      (I_LD_REGBL, [
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+
+         ('srcseladd', ('pco_ref_srcsel', SRC(2))),
+         ('srcselbl', ('pco_ref_srcsel', SRC(1))),
+         ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
+      ])
+   ],
+   op_ref_maps=[('backend', ['s3'], ['drc', ['s0', 's1', 's2', 's3', 's4', 's5'], ['s0', 's1', 's2', 's3', 's4', 's5']])]
+)
+
 encode_map(O_ST,
    encodings=[
       (I_ST_IMMBL, [
@@ -1345,6 +1358,21 @@ encode_map(O_ST,
          ('cachemode_st', OM_MCU_CACHE_MODE_ST),
          ('srcseldata', ('pco_ref_srcsel', SRC(0))),
          ('dsize', ('pco_ref_get_imm', SRC(1)))
+      ])
+   ],
+   op_ref_maps=[('backend', [], [['s0', 's1', 's2', 's3', 's4', 's5'], 'imm', 'drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5'], ['s0', 's1', 's2', 's3', 's4', 's5', '_']])]
+)
+
+encode_map(O_ST_TILED,
+   encodings=[
+      (I_ST_IMMBL_TILED, [
+         ('drc', ('pco_ref_get_drc', SRC(2))),
+         ('srcseladd', ('pco_ref_srcsel', SRC(4))),
+         ('burstlen', ('pco_ref_get_imm', SRC(3))),
+         ('cachemode_st', OM_MCU_CACHE_MODE_ST),
+         ('srcseldata', ('pco_ref_srcsel', SRC(0))),
+         ('dsize', ('pco_ref_get_imm', SRC(1))),
+         ('srcmask', ('pco_ref_srcsel', SRC(5)))
       ])
    ],
    op_ref_maps=[('backend', [], [['s0', 's1', 's2', 's3', 's4', 's5'], 'imm', 'drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5'], ['s0', 's1', 's2', 's3', 's4', 's5', '_']])]
@@ -2608,6 +2636,25 @@ group_map(O_ST32,
    ]
 )
 
+group_map(O_ST_TILED,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_ST_TILED)],
+   srcs=[
+      ('s[0]', ('backend', SRC(0)), 's0'),
+      ('s[3]', ('backend', SRC(4)), 's3'),
+      ('s[4]', ('backend', SRC(5)), 's4')
+   ]
+)
+
 group_map(O_IADD32_ATOMIC,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0_p1'),
@@ -2853,6 +2900,25 @@ group_map(O_LD,
    enc_ops=[('backend', O_LD)],
    srcs=[
       ('s[0]', ('backend', SRC(2)), 's0'),
+      ('s[3]', ('backend', DEST(0)), 's3')
+   ]
+)
+
+group_map(O_LD_REGBL,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_LD_REGBL)],
+   srcs=[
+      ('s[0]', ('backend', SRC(2)), 's0'),
+      ('s[1]', ('backend', SRC(1)), 's1'),
       ('s[3]', ('backend', DEST(0)), 's3')
    ]
 )

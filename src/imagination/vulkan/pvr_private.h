@@ -1123,6 +1123,7 @@ struct pvr_load_op {
    struct pvr_suballoc_bo *usc_frag_prog_bo;
    uint32_t const_shareds_count;
    uint32_t shareds_count;
+   uint32_t num_tile_buffers;
 
    struct pvr_pds_upload pds_frag_prog;
 

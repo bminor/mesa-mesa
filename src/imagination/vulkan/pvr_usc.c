@@ -91,6 +91,17 @@ pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props)
       if (u > 0)
          nir_wop_pco(&b);
 
+      if (props->tile_buffer_addrs[u]) {
+         nir_def *tile_buffer_addr_lo =
+            nir_imm_int(&b, props->tile_buffer_addrs[u] & 0xffffffff);
+         nir_def *tile_buffer_addr_hi =
+            nir_imm_int(&b, props->tile_buffer_addrs[u] >> 32);
+
+         nir_flush_tile_buffer_pco(&b,
+                                   tile_buffer_addr_lo,
+                                   tile_buffer_addr_hi);
+      }
+
       nir_def *state0;
       nir_def *state1;
       if (props->shared_words) {
@@ -860,7 +871,6 @@ pco_shader *pvr_uscgen_tq(pco_ctx *ctx,
       .start = 0,
       .count = pixel_size,
    };
-   data.fs.output_reg[FRAG_RESULT_DATA0] = true;
 
    nir_def *loaded_data;
    nir_def *coords =
@@ -1024,15 +1034,21 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
       }
 
       struct usc_mrt_resource *mrt_resource = &mrt_setup->mrt_resources[rt_idx];
-      /* TODO: tile buffer support */
-      assert(mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG);
+      bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
       data.fs.outputs[FRAG_RESULT_DATA0 + rt_idx] = (pco_range){
-         .start = mrt_resource->reg.output_reg,
+         .start = tile_buffer ? mrt_resource->mem.tile_buffer
+                              : mrt_resource->reg.output_reg,
          .count = accum_size_dwords,
       };
 
-      data.fs.output_reg[FRAG_RESULT_DATA0 + rt_idx] = true;
+      if (tile_buffer) {
+         data.fs.num_tile_buffers =
+            MAX2(data.fs.num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         data.fs.output_tile_buffers |= BITFIELD_BIT(rt_idx);
+         data.fs.outputs[FRAG_RESULT_DATA0 + rt_idx].offset =
+            mrt_resource->mem.offset_dw;
+      }
 
       nir_create_variable_with_location(b.shader,
                                         nir_var_shader_out,
@@ -1064,11 +1080,11 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
 
       struct usc_mrt_resource *mrt_resource =
          &mrt_setup->mrt_resources[depth_idx];
-      /* TODO: tile buffer support */
-      assert(mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG);
+      bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
-      assert(DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)) ==
-             1);
+      unsigned accum_size_dwords =
+         DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t));
+      assert(accum_size_dwords == 1);
 
       data.fs.output_formats[FRAG_RESULT_DATA0 + depth_idx] =
          PIPE_FORMAT_R32_FLOAT;
@@ -1076,11 +1092,18 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
       const glsl_type *type = glsl_float_type();
 
       data.fs.outputs[FRAG_RESULT_DATA0 + depth_idx] = (pco_range){
-         .start = mrt_resource->reg.output_reg,
-         .count = 1,
+         .start = tile_buffer ? mrt_resource->mem.tile_buffer
+                              : mrt_resource->reg.output_reg,
+         .count = accum_size_dwords,
       };
 
-      data.fs.output_reg[FRAG_RESULT_DATA0 + depth_idx] = true;
+      if (tile_buffer) {
+         data.fs.num_tile_buffers =
+            MAX2(data.fs.num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         data.fs.output_tile_buffers |= BITFIELD_BIT(depth_idx);
+         data.fs.outputs[FRAG_RESULT_DATA0 + depth_idx].offset =
+            mrt_resource->mem.offset_dw;
+      }
 
       nir_create_variable_with_location(b.shader,
                                         nir_var_shader_out,
@@ -1157,6 +1180,21 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
                           .io_semantics.location = FRAG_RESULT_DATA0 + rt_idx,
                           .io_semantics.num_slots = 1);
       }
+   }
+
+   if (data.fs.num_tile_buffers > 0) {
+      unsigned tile_buffer_addr_dwords =
+         data.fs.num_tile_buffers * (sizeof(uint64_t) / sizeof(uint32_t));
+
+      data.fs.tile_buffers = (pco_range){
+         .start = shared_regs,
+         .count = tile_buffer_addr_dwords,
+         .stride = sizeof(uint64_t) / sizeof(uint32_t),
+      };
+
+      shared_regs += tile_buffer_addr_dwords;
+
+      load_op->num_tile_buffers = data.fs.num_tile_buffers;
    }
 
    nir_jump(&b, nir_jump_return);

@@ -2740,3 +2740,5 @@ system_value("face_ccw_pco", 1, bit_sizes=[32])
 system_value("front_face_op_pco", 1, bit_sizes=[32])
 
 system_value("fs_meta_pco", 1, bit_sizes=[32])
+
+intrinsic("flush_tile_buffer_pco", src_comp=[1, 1])

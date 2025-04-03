@@ -707,6 +707,7 @@ pvr_spm_init_eot_state(struct pvr_device *device,
       /* Store off-chip tile data (i.e. tile buffers). */
 
       for (uint32_t i = 0; i < hw_render->tile_buffers_count; i++) {
+         continue;
          assert(!"Add support for tile buffers in EOT");
          pvr_finishme("Add support for tile buffers in EOT");
 

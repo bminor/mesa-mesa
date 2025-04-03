@@ -429,6 +429,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 static pco_instr *
 trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 {
+   pco_fs_data *fs_data = &tctx->shader->data.fs;
    ASSERTED unsigned base = nir_intrinsic_base(intr);
    assert(!base);
 
@@ -440,15 +441,108 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 
    gl_frag_result location = nir_intrinsic_io_semantics(intr).location;
 
-   const pco_range *range = &tctx->shader->data.fs.outputs[location];
+   const pco_range *range = &fs_data->outputs[location];
    assert(component < range->count);
 
-   ASSERTED bool output_reg = tctx->shader->data.fs.output_reg[location];
-   assert(output_reg);
-   /* TODO: tile buffer support. */
+   unsigned idx = location - FRAG_RESULT_DATA0;
+   bool tile_buffer = fs_data->output_tile_buffers & BITFIELD_BIT(idx);
+   if (!tile_buffer) {
+      pco_ref dest =
+         pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
+      return pco_mov(&tctx->b, dest, src, .olchk = true);
+   }
 
-   pco_ref dest = pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
-   return pco_mov(&tctx->b, dest, src, .olchk = true);
+   unsigned tile_buffer_id = range->start;
+   pco_range *tile_buffers = &fs_data->tile_buffers;
+   assert(tile_buffer_id < (tile_buffers->count / tile_buffers->stride));
+   unsigned sh_index =
+      tile_buffers->start + tile_buffer_id * tile_buffers->stride;
+
+   pco_ref base_addr[2];
+   pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
+
+   pco_ref addr_data_comps[3] = {
+      [2] = src,
+   };
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps);
+
+   component += range->offset;
+   assert(component < 8);
+
+   unsigned sr_index = component < 4 ? component + PCO_SR_TILED_ST_COMP0
+                                     : component + PCO_SR_TILED_ST_COMP4 - 4;
+   pco_ref tiled_offset = pco_ref_hwreg(sr_index, PCO_REG_CLASS_SPEC);
+
+   pco_add64_32(&tctx->b,
+                addr_data_comps[0],
+                addr_data_comps[1],
+                base_addr[0],
+                base_addr[1],
+                tiled_offset,
+                pco_ref_null(),
+                .olchk = true,
+                .s = true);
+
+   unsigned chans = pco_ref_get_chans(src);
+   pco_ref addr_data = pco_ref_new_ssa_addr_data(tctx->func, chans);
+   pco_vec(&tctx->b, addr_data, ARRAY_SIZE(addr_data_comps), addr_data_comps);
+
+   pco_ref data_comp =
+      pco_ref_new_ssa(tctx->func, pco_ref_get_bits(src), chans);
+   pco_comp(&tctx->b, data_comp, addr_data, pco_ref_val16(2));
+
+   pco_ref cov_mask = pco_ref_new_ssa32(tctx->func);
+   pco_ref sample_id = pco_ref_hwreg(PCO_SR_SAMP_NUM, PCO_REG_CLASS_SPEC);
+   pco_shift(&tctx->b,
+             cov_mask,
+             pco_one,
+             sample_id,
+             pco_ref_null(),
+             .shiftop = PCO_SHIFTOP_LSL);
+
+   return pco_st_tiled(&tctx->b,
+                       data_comp,
+                       pco_ref_imm8(PCO_DSIZE_32BIT),
+                       pco_ref_drc(PCO_DRC_0),
+                       pco_ref_imm8(chans),
+                       addr_data,
+                       cov_mask);
+}
+
+static pco_instr *trans_flush_tile_buffer(trans_ctx *tctx,
+                                          nir_intrinsic_instr *intr,
+                                          pco_ref src_addr_lo,
+                                          pco_ref src_addr_hi)
+{
+   pco_ref addr_comps[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps);
+
+   pco_ref tiled_offset =
+      pco_ref_hwreg(PCO_SR_TILED_LD_COMP0, PCO_REG_CLASS_SPEC);
+
+   pco_add64_32(&tctx->b,
+                addr_comps[0],
+                addr_comps[1],
+                src_addr_lo,
+                src_addr_hi,
+                tiled_offset,
+                pco_ref_null(),
+                .olchk = true,
+                .s = true);
+
+   pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
+   pco_vec(&tctx->b, addr, ARRAY_SIZE(addr_comps), addr_comps);
+
+   unsigned idx_reg_num = 0;
+   pco_ref idx_reg =
+      pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+   pco_mbyp(&tctx->b, idx_reg, pco_zero);
+
+   pco_ref dest = pco_ref_hwreg(0, PCO_REG_CLASS_PIXOUT);
+   dest = pco_ref_hwreg_idx_from(idx_reg_num, dest);
+
+   return pco_ld_regbl(&tctx->b, dest, pco_ref_drc(PCO_DRC_0), pco_zero, addr);
 }
 
 static unsigned fetch_resource_base_reg(const pco_common_data *common,
@@ -515,7 +609,10 @@ static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
 static pco_instr *
 trans_load_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
+   pco_fs_data *fs_data = &tctx->shader->data.fs;
    unsigned base = nir_intrinsic_base(intr);
+
+   assert(pco_ref_is_scalar(dest));
    unsigned component = nir_intrinsic_component(intr);
 
    ASSERTED const nir_src offset = intr->src[0];
@@ -524,26 +621,67 @@ trans_load_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    gl_frag_result location = nir_intrinsic_io_semantics(intr).location;
 
    const pco_range *range;
+   bool tile_buffer;
    if (location >= FRAG_RESULT_DATA0) {
       assert(!base);
-
       range = &tctx->shader->data.fs.outputs[location];
-
-      ASSERTED bool output_reg = tctx->shader->data.fs.output_reg[location];
-      assert(output_reg);
-      /* TODO: tile buffer support. */
+      unsigned idx = location - FRAG_RESULT_DATA0;
+      tile_buffer = fs_data->output_tile_buffers & BITFIELD_BIT(idx);
    } else if (location == FRAG_RESULT_COLOR) {
       /* Special case for on-chip input attachments. */
       assert(base < ARRAY_SIZE(tctx->shader->data.fs.ias_onchip));
       range = &tctx->shader->data.fs.ias_onchip[base];
+      tile_buffer = fs_data->ia_tile_buffers & BITFIELD_BIT(base);
    } else {
       UNREACHABLE("");
    }
 
    assert(component < range->count);
 
-   pco_ref src = pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
-   return pco_mov(&tctx->b, dest, src, .olchk = true);
+   if (!tile_buffer) {
+      pco_ref src =
+         pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
+      return pco_mov(&tctx->b, dest, src, .olchk = true);
+   }
+
+   unsigned tile_buffer_id = range->start;
+   pco_range *tile_buffers = &fs_data->tile_buffers;
+   assert(tile_buffer_id < (tile_buffers->count / tile_buffers->stride));
+   unsigned sh_index =
+      tile_buffers->start + tile_buffer_id * tile_buffers->stride;
+
+   pco_ref base_addr[2];
+   pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
+
+   pco_ref addr_comps[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps);
+
+   component += range->offset;
+   assert(component < 8);
+
+   unsigned sr_index = component < 4 ? component + PCO_SR_TILED_LD_COMP0
+                                     : component + PCO_SR_TILED_LD_COMP4 - 4;
+   pco_ref tiled_offset = pco_ref_hwreg(sr_index, PCO_REG_CLASS_SPEC);
+
+   pco_add64_32(&tctx->b,
+                addr_comps[0],
+                addr_comps[1],
+                base_addr[0],
+                base_addr[1],
+                tiled_offset,
+                pco_ref_null(),
+                .olchk = true,
+                .s = true);
+
+   pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
+   pco_vec(&tctx->b, addr, ARRAY_SIZE(addr_comps), addr_comps);
+
+   unsigned chans = pco_ref_get_chans(dest);
+   return pco_ld(&tctx->b,
+                 dest,
+                 pco_ref_drc(PCO_DRC_0),
+                 pco_ref_imm8(chans),
+                 addr);
 }
 
 static pco_instr *trans_load_common_store(trans_ctx *tctx,
@@ -1293,6 +1431,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_load_output:
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
       instr = trans_load_output_fs(tctx, intr, dest);
+      break;
+
+   case nir_intrinsic_flush_tile_buffer_pco:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      instr = trans_flush_tile_buffer(tctx, intr, src[0], src[1]);
       break;
 
    case nir_intrinsic_load_preamble:
