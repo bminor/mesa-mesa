@@ -256,7 +256,7 @@ struct pvr_device_features {
    bool has_compute_overlap : 1;
    bool has_eight_output_registers : 1;
    bool has_fb_cdc_v4 : 1;
-   bool has_fbcdc_algorithm;
+   bool has_fbcdc_algorithm : 1;
    bool has_gpu_multicore_support : 1;
    bool has_gs_rta_support : 1;
    bool has_ipf_creq_pf : 1;
