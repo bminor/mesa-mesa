@@ -1724,7 +1724,7 @@
         "description": "v3dv: don't check if DRM device is master",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2af12c5b36ec8591cff812e91cb117929de5f84e",
         "notes": null

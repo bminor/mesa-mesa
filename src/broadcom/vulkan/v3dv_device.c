@@ -1508,10 +1508,6 @@ try_display_device(struct v3dv_instance *instance, const char *path,
          goto fail;
    }
 
-   /* If the display device isn't the DRM master, we can't get its resources */
-   if (!drmIsMaster(*fd))
-      goto fail;
-
    drmModeResPtr mode_res = drmModeGetResources(*fd);
    if (!mode_res) {
       mesa_loge("Failed to get DRM mode resources: %s\n", strerror(errno));
