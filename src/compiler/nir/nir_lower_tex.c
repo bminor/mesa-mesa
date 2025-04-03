@@ -1520,12 +1520,12 @@ nir_lower_tex_block(nir_block *block, nir_builder *b,
       /* mask of src coords to saturate (clamp): */
       unsigned sat_mask = 0;
       /* ignore saturate for txf ops: these don't use samplers and can't GL_CLAMP */
-      if (nir_tex_instr_need_sampler(tex)) {
-         if ((1 << tex->sampler_index) & options->saturate_r)
+      if (nir_tex_instr_need_sampler(tex) && tex->sampler_index < 32) {
+         if ((1u << tex->sampler_index) & options->saturate_r)
             sat_mask |= (1 << 2); /* .z */
-         if ((1 << tex->sampler_index) & options->saturate_t)
+         if ((1u << tex->sampler_index) & options->saturate_t)
             sat_mask |= (1 << 1); /* .y */
-         if ((1 << tex->sampler_index) & options->saturate_s)
+         if ((1u << tex->sampler_index) & options->saturate_s)
             sat_mask |= (1 << 0); /* .x */
       }
 
@@ -1568,14 +1568,15 @@ nir_lower_tex_block(nir_block *block, nir_builder *b,
       }
 
       unsigned texture_index = tex->texture_index;
-      uint32_t texture_mask = 1u << texture_index;
+      uint32_t texture_mask;
       int tex_index = nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
       if (tex_index >= 0) {
          nir_deref_instr *deref = nir_src_as_deref(tex->src[tex_index].src);
          nir_variable *var = nir_deref_instr_get_variable(deref);
          texture_index = var ? var->data.binding : 0;
          texture_mask = var && texture_index < 32 ? (1u << texture_index) : 0u;
-      }
+      } else
+         texture_mask = texture_index < 32 ? (1u << texture_index) : 0u;
 
       if (texture_mask & options->lower_y_uv_external) {
          lower_y_uv_external(b, tex, options, texture_index);
