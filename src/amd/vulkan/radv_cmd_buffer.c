@@ -4705,6 +4705,46 @@ radv_emit_mip_change_flush_default(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_gfx11_emit_vrs_surface(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
+   const bool vrs_surface_enable = render->vrs_att.iview != NULL;
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   radeon_begin(cs);
+
+   if (vrs_surface_enable) {
+      const struct radv_image_view *vrs_iview = render->vrs_att.iview;
+      struct radv_image *vrs_image = vrs_iview->image;
+      unsigned xmax = 0, ymax = 0;
+      uint64_t va = 0;
+
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, vrs_image->bindings[0].bo);
+
+      va = vrs_image->bindings[0].addr;
+      va |= vrs_image->planes[0].surface.tile_swizzle << 8;
+
+      xmax = vrs_iview->vk.extent.width - 1;
+      ymax = vrs_iview->vk.extent.height - 1;
+
+      radeon_set_context_reg_seq(R_0283F0_PA_SC_VRS_RATE_BASE, 3);
+      radeon_emit(va >> 8);
+      radeon_emit(S_0283F4_BASE_256B(va >> 40));
+      radeon_emit(S_0283F8_X_MAX(xmax) | S_0283F8_Y_MAX(ymax));
+
+      if (pdev->info.gfx_level >= GFX12) {
+         radeon_set_context_reg(R_0283E0_PA_SC_VRS_INFO,
+                                S_0283E0_RATE_SW_MODE(vrs_image->planes[0].surface.u.gfx9.swizzle_mode));
+      }
+   }
+
+   radeon_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
+   radeon_end();
+}
+
+static void
 radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -4845,38 +4885,10 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       radv_gfx6_emit_null_ds_state(cmd_buffer);
    }
 
+   if (pdev->info.gfx_level >= GFX11)
+      radv_gfx11_emit_vrs_surface(cmd_buffer);
+
    radeon_begin(cmd_buffer->cs);
-
-   if (pdev->info.gfx_level >= GFX11) {
-      const bool vrs_surface_enable = render->vrs_att.iview != NULL;
-
-      if (vrs_surface_enable) {
-         const struct radv_image_view *vrs_iview = render->vrs_att.iview;
-         struct radv_image *vrs_image = vrs_iview->image;
-         unsigned xmax = 0, ymax = 0;
-         uint64_t va = 0;
-
-         radv_cs_add_buffer(device->ws, cmd_buffer->cs, vrs_image->bindings[0].bo);
-
-         va = vrs_image->bindings[0].addr;
-         va |= vrs_image->planes[0].surface.tile_swizzle << 8;
-
-         xmax = vrs_iview->vk.extent.width - 1;
-         ymax = vrs_iview->vk.extent.height - 1;
-
-         radeon_set_context_reg_seq(R_0283F0_PA_SC_VRS_RATE_BASE, 3);
-         radeon_emit(va >> 8);
-         radeon_emit(S_0283F4_BASE_256B(va >> 40));
-         radeon_emit(S_0283F8_X_MAX(xmax) | S_0283F8_Y_MAX(ymax));
-
-         if (pdev->info.gfx_level >= GFX12) {
-            radeon_set_context_reg(R_0283E0_PA_SC_VRS_INFO,
-                                   S_0283E0_RATE_SW_MODE(vrs_image->planes[0].surface.u.gfx9.swizzle_mode));
-         }
-      }
-
-      radeon_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
-   }
 
    if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11) {
       const bool disable_constant_encode = pdev->info.has_dcc_constant_encode;
