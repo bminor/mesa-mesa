@@ -247,7 +247,8 @@ read_xe_data_file(FILE *file,
                vm_entry_data = calloc(1, vm_entry_len);
                if (!vm_entry_data) {
                   printf("Out of memory to allocate a buffer to store content of HWCTX\n");
-                  break;
+                  printf("Aborting decode process due to insufficient memory\n");
+                  goto cleanup;
                }
 
                if (is_hw_ctx)
@@ -282,7 +283,8 @@ read_xe_data_file(FILE *file,
             vm_entry_data = calloc(1, vm_entry_len);
             if (!vm_entry_data) {
                printf("Out of memory to allocate a buffer to store content of VMA 0x%" PRIx64 "\n", address);
-               break;
+               printf("Aborting decode process due to insufficient memory\n");
+               goto cleanup;
             }
             if (!error_decode_xe_vm_append(&xe_vm, address, vm_entry_len, vm_entry_data)) {
                printf("xe_vm_append() failed for VMA 0x%" PRIx64 "\n", address);
@@ -349,6 +351,8 @@ read_xe_data_file(FILE *file,
    }
 
    intel_batch_decode_ctx_finish(&batch_ctx);
+
+cleanup:
    intel_spec_destroy(spec);
    free(batch_buffers.addrs);
    free(line);
