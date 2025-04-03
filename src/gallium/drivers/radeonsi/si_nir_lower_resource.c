@@ -145,7 +145,6 @@ static nir_def *load_image_desc(nir_builder *b, nir_def *list, nir_def *index,
 
    unsigned num_channels;
    if (desc_type == AC_DESC_BUFFER) {
-      offset = nir_iadd_imm(b, offset, 16);
       num_channels = 4;
    } else {
       assert(desc_type == AC_DESC_IMAGE || desc_type == AC_DESC_FMASK);
@@ -410,8 +409,7 @@ static nir_def *load_sampler_desc(nir_builder *b, nir_def *list, nir_def *index,
       num_channels = 8;
       break;
    case AC_DESC_BUFFER:
-      /* The buffer is in [4:7]. */
-      offset = nir_iadd_imm(b, offset, 16);
+      /* The buffer is in [0:3]. */
       num_channels = 4;
       break;
    case AC_DESC_FMASK:

@@ -677,8 +677,7 @@ struct si_compute {
 
 struct si_sampler_view {
    struct pipe_sampler_view base;
-   /* [0..7] = image descriptor
-    * [4..7] = buffer descriptor */
+   /* [0..7] = image or buffer descriptor */
    uint32_t state[8];
    uint32_t fmask_state[8];
    const struct legacy_surf_level *base_level_info;

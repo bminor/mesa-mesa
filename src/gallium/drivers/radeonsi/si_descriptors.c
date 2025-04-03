@@ -26,8 +26,8 @@
  * Possible scenarios for one 16 dword image+sampler slot:
  *
  *       | Image        | w/ FMASK   | Buffer       | NULL
- * [ 0: 3] Image[0:3]   | Image[0:3] | Null[0:3]    | Null[0:3]
- * [ 4: 7] Image[4:7]   | Image[4:7] | Buffer[0:3]  | 0
+ * [ 0: 3] Image[0:3]   | Image[0:3] | Buffer[0:3]  | Null[0:3]
+ * [ 4: 7] Image[4:7]   | Image[4:7] | Buffer[4:7]  | 0
  * [ 8:11] Null[0:3]    | Fmask[0:3] | Null[0:3]    | Null[0:3]
  * [12:15] Sampler[0:3] | Fmask[4:7] | Sampler[0:3] | Sampler[0:3]
  *
@@ -52,22 +52,12 @@
  * For images, all fields must be zero except for the swizzle, which
  * supports arbitrary combinations of 0s and 1s. The texture type must be
  * any valid type (e.g. 1D). If the texture type isn't set, the hw hangs.
- *
- * For buffers, all fields must be zero. If they are not, the hw hangs.
- *
- * This is the only reason why the buffer descriptor must be in words [4:7].
  */
 static uint32_t null_texture_descriptor[8] = {
    0, 0, 0, S_008F1C_DST_SEL_W(V_008F1C_SQ_SEL_1) | S_008F1C_TYPE(V_008F1C_SQ_RSRC_IMG_1D)
-   /* the rest must contain zeros, which is also used by the buffer
-    * descriptor */
 };
 
-static uint32_t null_image_descriptor[8] = {
-   0, 0, 0, S_008F1C_TYPE(V_008F1C_SQ_RSRC_IMG_1D)
-   /* the rest must contain zeros, which is also used by the buffer
-    * descriptor */
-};
+static uint32_t null_image_descriptor[8] = {0};
 
 static uint64_t si_desc_extract_buffer_address(const uint32_t *desc)
 {
@@ -370,7 +360,7 @@ static void si_set_sampler_view_desc(struct si_context *sctx, struct si_sampler_
    if (tex->buffer.b.b.target == PIPE_BUFFER) {
       memcpy(desc, sview->state, 8 * 4);
       memcpy(desc + 8, null_texture_descriptor, 4 * 4); /* Disable FMASK. */
-      si_set_buf_desc_address(&tex->buffer, sview->base.u.buf.offset, desc + 4);
+      si_set_buf_desc_address(&tex->buffer, sview->base.u.buf.offset, desc);
       return;
    }
 
@@ -685,7 +675,7 @@ static void si_set_shader_image_desc(struct si_context *ctx, const struct pipe_i
 
       si_make_buffer_descriptor(screen, res, view->format, view->u.buf.offset, elements,
                                 desc);
-      si_set_buf_desc_address(res, view->u.buf.offset, desc + 4);
+      si_set_buf_desc_address(res, view->u.buf.offset, desc);
    } else {
       static const unsigned char swizzle[4] = {0, 1, 2, 3};
       struct si_texture *tex = (struct si_texture *)res;
@@ -1755,7 +1745,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                unsigned desc_slot = si_get_sampler_slot(i);
 
                si_set_buf_desc_address(si_resource(buffer), samplers->views[i]->u.buf.offset,
-                                       descs->list + desc_slot * 16 + 4);
+                                       descs->list + desc_slot * 16);
                sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
                if (shader != PIPE_SHADER_COMPUTE)
                   si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
@@ -1787,7 +1777,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                   si_mark_image_range_valid(&images->views[i]);
 
                si_set_buf_desc_address(si_resource(buffer), images->views[i].u.buf.offset,
-                                       descs->list + desc_slot * 8 + 4);
+                                       descs->list + desc_slot * 8);
                sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
                if (shader != PIPE_SHADER_COMPUTE)
                   si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
@@ -1814,7 +1804,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
 
          if (buffer && buffer->target == PIPE_BUFFER && (!buf || buffer == buf)) {
             si_set_buf_desc_address(si_resource(buffer), view->u.buf.offset,
-                                    descs->list + desc_slot * 16 + 4);
+                                    descs->list + desc_slot * 16);
 
             (*tex_handle)->desc_dirty = true;
             si_mark_bindless_descriptors_dirty(sctx);
@@ -1839,7 +1829,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                si_mark_image_range_valid(view);
 
             si_set_buf_desc_address(si_resource(buffer), view->u.buf.offset,
-                                    descs->list + desc_slot * 16 + 4);
+                                    descs->list + desc_slot * 16);
 
             (*img_handle)->desc_dirty = true;
             si_mark_bindless_descriptors_dirty(sctx);
@@ -2452,10 +2442,8 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
          unsigned num_sgprs = 8;
 
          /* Image buffers are in desc[4..7]. */
-         if (BITSET_TEST(shader->info.base.image_buffers, i)) {
-            desc_offset += 4;
+         if (BITSET_TEST(shader->info.base.image_buffers, i))
             num_sgprs = 4;
-         }
 
          radeon_emit_array(&desc->list[desc_offset], num_sgprs);
       }
@@ -2552,7 +2540,7 @@ static void si_update_bindless_buffer_descriptor(struct si_context *sctx, unsign
    struct si_descriptors *desc = &sctx->bindless_descriptors;
    struct si_resource *buf = si_resource(resource);
    unsigned desc_slot_offset = desc_slot * 16;
-   uint32_t *desc_list = desc->list + desc_slot_offset + 4;
+   uint32_t *desc_list = desc->list + desc_slot_offset;
    uint64_t old_desc_va;
 
    assert(resource->target == PIPE_BUFFER);

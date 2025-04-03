@@ -3678,7 +3678,7 @@ void si_make_buffer_descriptor(struct si_screen *screen, struct si_resource *buf
       .gfx10_oob_select = V_008F0C_OOB_SELECT_STRUCTURED_WITH_OFFSET,
    };
 
-   ac_build_buffer_descriptor(screen->info.gfx_level, &buffer_state, &state[4]);
+   ac_build_buffer_descriptor(screen->info.gfx_level, &buffer_state, &state[0]);
 }
 
 /**
