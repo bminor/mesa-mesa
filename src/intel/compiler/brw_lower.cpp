@@ -440,7 +440,7 @@ brw_lower_find_live_channel(brw_shader &s)
       if (!inst->is_partial_write())
          ibld.emit_undef_for_dst(inst);
 
-      const brw_builder ubld = brw_builder(inst).exec_all().group(1, 0);
+      const brw_builder ubld = brw_builder(inst).uniform();
 
       brw_reg exec_mask = ubld.vgrf(BRW_TYPE_UD);
       ubld.UNDEF(exec_mask);
@@ -813,7 +813,7 @@ brw_lower_send_gather_inst(brw_shader &s, brw_inst *inst)
    /* Fill out ARF scalar register with the physical register numbers
     * and use SEND_GATHER.
     */
-   brw_builder ubld = brw_builder(inst).group(1, 0).exec_all();
+   brw_builder ubld = brw_builder(inst).uniform();
    for (unsigned q = 0; q < DIV_ROUND_UP(count, 8); q++) {
       uint64_t v = 0;
       for (unsigned i = 0; i < 8; i++) {

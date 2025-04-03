@@ -153,6 +153,15 @@ public:
    }
 
    /**
+    * Construct a builder for SIMD1 operations.
+    */
+   brw_builder
+   uniform() const
+   {
+      return exec_all().group(1, 0);
+   }
+
+   /**
     * Construct a builder for SIMD8-as-scalar
     */
    brw_builder

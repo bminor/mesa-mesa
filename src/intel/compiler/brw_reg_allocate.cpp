@@ -693,26 +693,26 @@ brw_reg_alloc::build_ex_desc(const brw_builder &bld, unsigned reg_size, bool uns
     */
    brw_reg ex_desc = bld.vaddr(BRW_TYPE_UD,
                                BRW_ADDRESS_SUBREG_INDIRECT_SPILL_DESC);
-   brw_inst *inst = bld.exec_all().group(1, 0).AND(
-      ex_desc,
-      retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
-      brw_imm_ud(INTEL_MASK(31, 10)));
+
+   brw_builder ubld = bld.uniform();
+
+   brw_inst *inst = ubld.AND(ex_desc,
+                             retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
+                             brw_imm_ud(INTEL_MASK(31, 10)));
    _mesa_set_add(spill_insts, inst);
 
    const intel_device_info *devinfo = bld.shader->devinfo;
    if (devinfo->verx10 >= 200) {
-      inst = bld.exec_all().group(1, 0).SHR(
-         ex_desc, ex_desc, brw_imm_ud(4));
+      inst = ubld.SHR(ex_desc, ex_desc, brw_imm_ud(4));
       _mesa_set_add(spill_insts, inst);
    } else {
       if (unspill) {
-         inst = bld.exec_all().group(1, 0).OR(
-            ex_desc, ex_desc, brw_imm_ud(BRW_SFID_UGM));
+         inst = ubld.OR(ex_desc, ex_desc, brw_imm_ud(BRW_SFID_UGM));
          _mesa_set_add(spill_insts, inst);
       } else {
-         inst = bld.exec_all().group(1, 0).OR(
-            ex_desc, ex_desc,
-            brw_imm_ud(brw_message_ex_desc(devinfo, reg_size) | BRW_SFID_UGM));
+         inst = ubld.OR(ex_desc,
+                        ex_desc,
+                        brw_imm_ud(brw_message_ex_desc(devinfo, reg_size) | BRW_SFID_UGM));
          _mesa_set_add(spill_insts, inst);
       }
    }
@@ -816,7 +816,7 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
          const bool use_transpose =
             bld.dispatch_width() > 16 * reg_unit(devinfo) ||
             bld.has_writemask_all();
-         const brw_builder ubld = use_transpose ? bld.exec_all().group(1, 0) : bld;
+         const brw_builder ubld = use_transpose ? bld.uniform() : bld;
          brw_reg offset;
          if (use_transpose) {
             offset = build_single_offset(ubld, spill_offset, ip);

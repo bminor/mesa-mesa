@@ -630,7 +630,7 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
        * have to build a single 32bit value for the SIMD32 message out of 2
        * SIMD16 16 bit values.
        */
-      const brw_builder rbld = lbld_after.exec_all().group(1, 0);
+      const brw_builder rbld = lbld_after.uniform();
       brw_reg local_res_reg = component(
          retype(offset(tmp, lbld_before, dst_size), BRW_TYPE_UW), 0);
       brw_reg final_res_reg =

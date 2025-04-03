@@ -591,7 +591,7 @@ brw_emit_repclear_shader(brw_shader &s)
 
    for (int i = 0; i < key->nr_color_regions; ++i) {
       if (i > 0)
-         bld.exec_all().group(1, 0).MOV(component(header, 2), brw_imm_ud(i));
+         bld.uniform().MOV(component(header, 2), brw_imm_ud(i));
 
       write = bld.emit(SHADER_OPCODE_SEND);
       write->resize_sources(3);
@@ -1434,9 +1434,8 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
             const brw_reg dispatch_mask =
                devinfo->ver >= 20 ? xe2_vec1_grf(i, 15) :
                                     brw_vec1_grf(i + 1, 7);
-            bld.exec_all().group(1, 0)
-               .MOV(brw_sample_mask_reg(bld.group(lower_width, i)),
-                    retype(dispatch_mask, BRW_TYPE_UW));
+            bld.uniform().MOV(brw_sample_mask_reg(bld.group(lower_width, i)),
+                              retype(dispatch_mask, BRW_TYPE_UW));
          }
       }
 

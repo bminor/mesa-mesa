@@ -2999,7 +2999,7 @@ static void
 setup_barrier_message_payload_gfx125(const brw_builder &bld,
                                      const brw_reg &msg_payload)
 {
-   const brw_builder ubld = bld.exec_all().group(1, 0);
+   const brw_builder ubld = bld.uniform();
    const struct intel_device_info *devinfo = bld.shader->devinfo;
    assert(devinfo->verx10 >= 125);
 
@@ -3064,7 +3064,7 @@ emit_tcs_barrier(nir_to_brw_state &ntb)
    brw_reg m0 = bld.vgrf(BRW_TYPE_UD);
    brw_reg m0_2 = component(m0, 2);
 
-   const brw_builder chanbld = bld.exec_all().group(1, 0);
+   const brw_builder chanbld = bld.uniform();
 
    /* Zero the message header */
    bld.exec_all().MOV(m0, brw_imm_ud(0u));
@@ -4462,7 +4462,7 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
          const brw_reg sample_id = bld.emit_uniformize(sample_src);
          const brw_reg msg_data = component(bld.group(8, 0).vgrf(BRW_TYPE_UD), 0);
 
-         bld.exec_all().group(1, 0).SHL(msg_data, sample_id, brw_imm_ud(4u));
+         bld.uniform().SHL(msg_data, sample_id, brw_imm_ud(4u));
 
          brw_reg flag_reg;
          struct brw_wm_prog_key *wm_prog_key = (struct brw_wm_prog_key *) s.key;
@@ -4602,7 +4602,7 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
           */
          if (!s.nir->info.workgroup_size_variable &&
              brw_workgroup_size(s) <= s.dispatch_width) {
-            bld.exec_all().group(1, 0).emit(FS_OPCODE_SCHEDULING_FENCE);
+            bld.uniform().emit(FS_OPCODE_SCHEDULING_FENCE);
             break;
          }
 
@@ -5925,7 +5925,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       unsigned fence_regs_count = 0;
       brw_reg fence_regs[4] = {};
 
-      const brw_builder ubld1 = bld.exec_all().group(1, 0);
+      const brw_builder ubld1 = bld.uniform();
 
       /* A memory barrier with acquire semantics requires us to
        * guarantee that memory operations of the specified storage
@@ -7127,7 +7127,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_ADDRESS] =
          bld.emit_uniformize(srcs[MEMORY_LOGICAL_ADDRESS]);
 
-      const brw_builder ubld = bld.exec_all().group(1, 0);
+      const brw_builder ubld = bld.uniform();
       unsigned total, done;
       unsigned first_read_component = 0;
 
@@ -7775,8 +7775,7 @@ emit_shader_float_controls_execution_mode(nir_to_brw_state &ntb)
    if (execution_mode == FLOAT_CONTROLS_DEFAULT_FLOAT_CONTROL_MODE)
       return;
 
-   brw_builder ubld = bld.exec_all().group(1, 0);
-   brw_builder abld = ubld.annotate("shader floats control execution mode");
+   brw_builder abld = bld.uniform().annotate("shader floats control execution mode");
    unsigned mask, mode = brw_rnd_mode_from_nir(execution_mode, &mask);
 
    if (mask == 0)
@@ -7804,7 +7803,7 @@ brw_test_dispatch_packing(const brw_builder &bld)
    if (brw_stage_has_packed_dispatch(shader->devinfo, stage,
                                      shader->max_polygons,
                                      shader->prog_data)) {
-      const brw_builder ubld = bld.exec_all().group(1, 0);
+      const brw_builder ubld = bld.uniform();
       const brw_reg tmp = component(bld.vgrf(BRW_TYPE_UD), 0);
       const brw_reg mask = uses_vmask ? brw_vmask_reg() : brw_dmask_reg();
 

@@ -352,7 +352,7 @@ brw_lower_scan(brw_shader &s, brw_inst *inst)
 static brw_reg
 brw_fill_flag(const brw_builder &bld, unsigned v)
 {
-   const brw_builder ubld1 = bld.exec_all().group(1, 0);
+   const brw_builder ubld1 = bld.uniform();
    brw_reg flag = brw_flag_reg(0, 0);
 
    if (bld.shader->dispatch_width == 32) {
@@ -398,7 +398,7 @@ brw_lower_dispatch_width_vote(const brw_builder &bld, enum opcode opcode, brw_re
     * TODO: Check if we still need this for newer platforms.
     */
    const brw_builder ubld = devinfo->ver >= 20 ? bld.exec_all()
-                                               : bld.exec_all().group(1, 0);
+                                               : bld.uniform();
    brw_reg res1 = ubld.MOV(brw_imm_d(0));
 
    enum brw_predicate pred;

@@ -168,8 +168,8 @@ brw_emit_predicate_on_sample_mask(const brw_builder &bld, brw_inst *inst)
              sample_mask.subnr == brw_flag_subreg(
                 subreg + inst->group / 16).subnr);
    } else {
-      bld.group(1, 0).exec_all()
-         .MOV(brw_flag_subreg(subreg + inst->group / 16), sample_mask);
+      bld.uniform().MOV(brw_flag_subreg(subreg + inst->group / 16),
+                        sample_mask);
    }
 
    if (inst->predicate) {

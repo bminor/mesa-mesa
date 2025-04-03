@@ -23,8 +23,8 @@ TEST_F(CombineConstantsTest, Simple)
 
    brw_reg tmp = component(exp.vgrf(BRW_TYPE_D), 0);
 
-   exp.group(1, 0).exec_all().MOV(tmp, imm_a);
-   exp                       .SEL(r, tmp, imm_b);
+   exp.uniform().MOV(tmp, imm_a);
+   exp          .SEL(r, tmp, imm_b);
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
@@ -51,7 +51,7 @@ TEST_F(CombineConstantsTest, DoContainingDo)
    /* Explicit emit the expected FLOW instruction. */
    exp.emit(BRW_OPCODE_DO);
    brw_reg tmp = component(exp.vgrf(BRW_TYPE_D), 0);
-   exp.group(1, 0).exec_all().MOV(tmp, imm_a);
+   exp.uniform().MOV(tmp, imm_a);
    exp.emit(SHADER_OPCODE_FLOW);
    exp.DO();
    exp.SEL(r1, tmp, imm_b);

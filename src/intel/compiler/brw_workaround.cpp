@@ -98,8 +98,7 @@ brw_workaround_memory_fence_before_eot(brw_shader &s)
       if (!has_ugm_write_or_atomic)
          break;
 
-      const brw_builder ibld(inst);
-      const brw_builder ubld = ibld.exec_all().group(1, 0);
+      const brw_builder ubld = brw_builder(inst).uniform();
 
       brw_reg dst = ubld.vgrf(BRW_TYPE_UD);
       brw_inst *dummy_fence = ubld.emit(SHADER_OPCODE_MEMORY_FENCE,
@@ -342,8 +341,7 @@ brw_workaround_source_arf_before_eot(brw_shader &s)
           */
          assert(++eot_count == 1);
 
-         const brw_builder ibld(inst);
-         const brw_builder ubld = ibld.exec_all().group(1, 0);
+         const brw_builder ubld = brw_builder(inst).uniform();
 
          if (flags_unread & 0x0f)
             ubld.MOV(ubld.null_reg_ud(), retype(brw_flag_reg(0, 0), BRW_TYPE_UD));

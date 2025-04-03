@@ -1326,8 +1326,8 @@ namespace {
                   /* Emit dependency into the SWSB of an extra SYNC
                    * instruction.
                    */
-                  const brw_builder ibld = brw_builder(inst).exec_all().group(1, 0);
-                  brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
+                  const brw_builder ubld = brw_builder(inst).uniform();
+                  brw_inst *sync = ubld.SYNC(TGL_SYNC_NOP);
                   sync->sched.sbid = dep.id;
                   sync->sched.mode = dep.unordered;
                   assert(!(sync->sched.mode & TGL_SBID_SET));
@@ -1348,9 +1348,8 @@ namespace {
                 * scenario with unordered dependencies should have been
                 * handled above.
                 */
-               const brw_builder ibld = brw_builder(inst)
-                                        .exec_all().group(1, 0);
-               brw_inst *sync = ibld.SYNC(TGL_SYNC_NOP);
+               const brw_builder ubld = brw_builder(inst).uniform();
+               brw_inst *sync = ubld.SYNC(TGL_SYNC_NOP);
                sync->sched = ordered_dependency_swsb(deps[ip], jps[ip], true);
                break;
             }

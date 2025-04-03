@@ -35,7 +35,7 @@ protected:
 brw_inst *
 SYNC_NOP(const brw_builder &bld)
 {
-   return bld.group(1, 0).exec_all().SYNC(TGL_SYNC_NOP);
+   return bld.uniform().SYNC(TGL_SYNC_NOP);
 }
 
 brw_inst *
@@ -876,13 +876,13 @@ TEST_F(scoreboard_test, gitlab_issue_from_mr_29723)
    brw_reg a = brw_ud8_grf(29, 0);
    brw_reg b = brw_ud8_grf(2, 0);
 
-   auto bld1 = bld.exec_all().group(1, 0);
+   auto bld1 = bld.uniform();
    bld1.ADD(             a, stride(b, 0, 1, 0),    brw_imm_ud(256));
    bld1.CMP(brw_null_reg(), stride(a, 2, 1, 2), stride(b, 0, 1, 0), BRW_CONDITIONAL_L);
 
    EXPECT_PROGRESS(brw_lower_scoreboard, bld);
 
-   auto exp1 = exp.exec_all().group(1, 0);
+   auto exp1 = exp.uniform();
    exp1.ADD(             a, stride(b, 0, 1, 0),    brw_imm_ud(256));
    exp1.CMP(brw_null_reg(), stride(a, 2, 1, 2), stride(b, 0, 1, 0), BRW_CONDITIONAL_L)->sched = SWSB("@1");
 
@@ -969,13 +969,13 @@ TEST_F(scoreboard_test, gitlab_issue_11069)
    brw_reg a = brw_ud8_grf(76, 0);
    brw_reg b = brw_ud8_grf(2, 0);
 
-   auto bld1 = bld.exec_all().group(1, 0);
+   auto bld1 = bld.uniform();
    bld1.ADD(stride(a, 2, 1, 2), stride(b, 0, 1, 0),   brw_imm_ud(0x80));
    bld1.CMP(    brw_null_reg(), stride(a, 0, 1, 0), stride(b, 0, 1, 0), BRW_CONDITIONAL_L);
 
    EXPECT_PROGRESS(brw_lower_scoreboard, bld);
 
-   auto exp1 = exp.exec_all().group(1, 0);
+   auto exp1 = exp.uniform();
    exp1.ADD(stride(a, 2, 1, 2), stride(b, 0, 1, 0),   brw_imm_ud(0x80));
    exp1.CMP(    brw_null_reg(), stride(a, 0, 1, 0), stride(b, 0, 1, 0), BRW_CONDITIONAL_L)->sched = SWSB("@1");
 
@@ -1109,14 +1109,14 @@ TEST_F(scoreboard_test, scalar_register_mov_immediate_is_in_scalar_pipe)
    brw_reg imm    = brw_imm_uw(0x1415);
    brw_reg r20    = brw_uw8_grf(20, 0);
 
-   bld.group(1, 0).exec_all().MOV(scalar, imm);
-   bld                       .MOV(r20, scalar);
+   bld.uniform().MOV(scalar, imm);
+   bld          .MOV(r20, scalar);
 
    EXPECT_PROGRESS(brw_lower_scoreboard, bld);
 
-   exp.group(1, 0).exec_all().MOV(scalar, imm);
-                              SYNC_NOP(exp   )->sched = SWSB("S@1");
-   exp                       .MOV(r20, scalar);
+   exp.uniform().MOV(scalar, imm);
+                 SYNC_NOP(exp   )->sched = SWSB("S@1");
+   exp          .MOV(r20, scalar);
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
@@ -1132,14 +1132,14 @@ TEST_F(scoreboard_test, scalar_register_mov_grf_is_not_in_scalar_pipe)
    brw_reg r10    = brw_uw8_grf(10, 0);
    brw_reg r20    = brw_uw8_grf(20, 0);
 
-   bld.group(1, 0).exec_all().MOV(scalar, r10);
-   bld                       .MOV(r20, scalar);
+   bld.uniform().MOV(scalar, r10);
+   bld          .MOV(r20, scalar);
 
    EXPECT_PROGRESS(brw_lower_scoreboard, bld);
 
-   exp.group(1, 0).exec_all().MOV    (scalar, r10);
-                              SYNC_NOP(exp       )->sched = SWSB("I@1");
-   exp                       .MOV    (r20, scalar);
+   exp.uniform().MOV     (scalar, r10);
+                 SYNC_NOP(exp       )->sched = SWSB("I@1");
+   exp          .MOV     (r20, scalar);
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
