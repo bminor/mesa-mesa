@@ -4177,7 +4177,22 @@ radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_bu
 }
 
 static void
-radv_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
+radv_gfx12_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   radeon_begin(cs);
+   radeon_set_context_reg_seq(R_028018_DB_Z_INFO, 2);
+   radeon_emit(S_028018_FORMAT(V_028018_Z_INVALID) | S_028018_NUM_SAMPLES(3));
+   radeon_emit(S_02801C_FORMAT(V_02801C_STENCIL_INVALID) | S_02801C_TILE_STENCIL_DISABLE(1));
+   radeon_set_context_reg(R_028B94_PA_SC_HIZ_INFO, S_028B94_SURFACE_ENABLE(0));
+   radeon_set_context_reg(R_028B98_PA_SC_HIS_INFO, S_028B98_SURFACE_ENABLE(0));
+   radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, S_028010_CENTROID_COMPUTATION_MODE(1));
+   radeon_end();
+}
+
+static void
+radv_gfx6_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -4185,38 +4200,30 @@ radv_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_begin(cmd_buffer->cs);
 
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg_seq(R_028018_DB_Z_INFO, 2);
-      radeon_emit(S_028018_FORMAT(V_028018_Z_INVALID) | S_028018_NUM_SAMPLES(3));
-      radeon_emit(S_02801C_FORMAT(V_02801C_STENCIL_INVALID) | S_02801C_TILE_STENCIL_DISABLE(1));
-
-      radeon_set_context_reg(R_028B94_PA_SC_HIZ_INFO, S_028B94_SURFACE_ENABLE(0));
-      radeon_set_context_reg(R_028B98_PA_SC_HIS_INFO, S_028B98_SURFACE_ENABLE(0));
+   if (gfx_level == GFX9) {
+      radeon_set_context_reg_seq(R_028038_DB_Z_INFO, 2);
    } else {
-      if (gfx_level == GFX9) {
-         radeon_set_context_reg_seq(R_028038_DB_Z_INFO, 2);
-      } else {
-         radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 2);
-      }
-
-      /* On GFX11+, the hw intentionally looks at DB_Z_INFO.NUM_SAMPLES when there is no bound
-       * depth/stencil buffer and it clamps the number of samples like MIN2(DB_Z_INFO.NUM_SAMPLES,
-       * PA_SC_AA_CONFIG.MSAA_EXPOSED_SAMPLES). Use 8x for DB_Z_INFO.NUM_SAMPLES to make sure it's not
-       * the constraining factor. This affects VRS, occlusion queries and POPS.
-       */
-      radeon_emit(S_028040_FORMAT(V_028040_Z_INVALID) | S_028040_NUM_SAMPLES(pdev->info.gfx_level >= GFX11 ? 3 : 0));
-      radeon_emit(S_028044_FORMAT(V_028044_STENCIL_INVALID));
-      uint32_t db_render_control = 0;
-
-      if (gfx_level == GFX11 || gfx_level == GFX11_5)
-         radv_gfx11_set_db_render_control(device, 1, &db_render_control);
-
-      radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
+      radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 2);
    }
+
+   /* On GFX11+, the hw intentionally looks at DB_Z_INFO.NUM_SAMPLES when there is no bound
+    * depth/stencil buffer and it clamps the number of samples like MIN2(DB_Z_INFO.NUM_SAMPLES,
+    * PA_SC_AA_CONFIG.MSAA_EXPOSED_SAMPLES). Use 8x for DB_Z_INFO.NUM_SAMPLES to make sure it's not
+    * the constraining factor. This affects VRS, occlusion queries and POPS.
+    */
+   radeon_emit(S_028040_FORMAT(V_028040_Z_INVALID) | S_028040_NUM_SAMPLES(pdev->info.gfx_level >= GFX11 ? 3 : 0));
+   radeon_emit(S_028044_FORMAT(V_028044_STENCIL_INVALID));
+   uint32_t db_render_control = 0;
+
+   if (gfx_level == GFX11 || gfx_level == GFX11_5)
+      radv_gfx11_set_db_render_control(device, 1, &db_render_control);
+
+   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
 
    radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, S_028010_CENTROID_COMPUTATION_MODE(gfx_level >= GFX10_3));
    radeon_end();
 }
+
 /**
  * Update the fast clear depth/stencil values if the image is bound as a
  * depth/stencil buffer.
@@ -4832,8 +4839,10 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       radv_gfx6_emit_fb_ds_state(cmd_buffer, &ds, &iview, depth_compressed, false);
 
       radv_image_view_finish(&iview);
+   } else if (pdev->info.gfx_level >= GFX12) {
+      radv_gfx12_emit_null_ds_state(cmd_buffer);
    } else {
-      radv_emit_null_ds_state(cmd_buffer);
+      radv_gfx6_emit_null_ds_state(cmd_buffer);
    }
 
    radeon_begin(cmd_buffer->cs);
