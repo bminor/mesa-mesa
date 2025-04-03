@@ -24,9 +24,7 @@ if [ "$CI_PROJECT_PATH" != "$FDO_UPSTREAM_REPO" ]; then
   fi
 fi
 
-FLUSTER_VECTORS_HOST_PATH="${FDO_HTTP_CACHE_URI:-}https://${FLUSTER_VECTORS_HOST_PATH}/vectors.tar.zst"
-
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 ${FLUSTER_VECTORS_HOST_PATH} | tar --zstd -x -C /usr/local/
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 "${FDO_HTTP_CACHE_URI:-}https://${FLUSTER_VECTORS_HOST_PATH}/vectors.tar.zst" | tar --zstd -x -C /usr/local/
 
 INSTALL="$PWD/install"
 
