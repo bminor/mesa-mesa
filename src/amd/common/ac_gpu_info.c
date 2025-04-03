@@ -1446,6 +1446,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    info->has_stable_pstate = info->drm_minor >= 45;
 
+   info->has_zerovram_support = info->drm_minor >= 59;
+
    if (info->gfx_level >= GFX12) {
       /* Gfx12 doesn't use pc_lines and pbb_max_alloc_count. */
    } else if (info->gfx_level >= GFX11) {
@@ -2096,6 +2098,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
          info->fw_based_mcbp.csa_alignment);
    }
 
+   fprintf(f, "    has_zerovram_support = %u\n", info->has_zerovram_support);
    fprintf(f, "    has_tmz_support = %u\n", info->has_tmz_support);
    fprintf(f, "    has_trap_handler_support = %u\n", info->has_trap_handler_support);
    for (unsigned i = 0; i < AMD_NUM_IP_TYPES; i++) {

@@ -241,6 +241,7 @@ struct radeon_info {
    bool has_stable_pstate;
    /* Whether SR-IOV is enabled or amdgpu.mcbp=1 was set on the kernel command line. */
    bool register_shadowing_required;
+   bool has_zerovram_support;
    bool has_tmz_support;
    bool has_trap_handler_support;
    bool kernel_has_modifiers;
