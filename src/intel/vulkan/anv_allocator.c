@@ -1500,20 +1500,19 @@ anv_bo_finish(struct anv_device *device, struct anv_bo *bo)
    anv_bo_unmap_close(device, bo);
 }
 
-static VkResult
-anv_bo_vma_alloc_or_close(struct anv_device *device,
-                          struct anv_bo *bo,
-                          enum anv_bo_alloc_flags alloc_flags,
-                          uint64_t explicit_address)
+/* Return the minimum bo alignment requirement, not taking into consideration
+ * KMD bind requirements.
+ */
+static uint32_t
+anv_bo_vma_calc_alignment_requirement(struct anv_device *device,
+                                      enum anv_bo_alloc_flags alloc_flags,
+                                      uint64_t size)
 {
-   assert(bo->vma_heap == NULL);
-   assert(explicit_address == intel_48b_address(explicit_address));
-
    const bool is_small_heap = anv_bo_is_small_heap(alloc_flags);
-   uint32_t align = device->physical->info.mem_alignment;
+   uint32_t align = 64; /* A cache line */
 
    /* If it's big enough to store a tiled resource, we need 64K alignment */
-   if (bo->size >= 64 * 1024 && !is_small_heap)
+   if (size >= 64 * 1024 && !is_small_heap)
       align = MAX2(64 * 1024, align);
 
    /* If we're using the AUX map, make sure we follow the required
@@ -1521,6 +1520,23 @@ anv_bo_vma_alloc_or_close(struct anv_device *device,
     */
    if (alloc_flags & ANV_BO_ALLOC_AUX_TT_ALIGNED)
       align = MAX2(intel_aux_map_get_alignment(device->aux_map_ctx), align);
+
+   return align;
+}
+
+static VkResult
+anv_bo_vma_alloc_or_close(struct anv_device *device,
+                          struct anv_bo *bo,
+                          enum anv_bo_alloc_flags alloc_flags,
+                          uint64_t explicit_address,
+                          uint32_t align)
+{
+   assert(bo->vma_heap == NULL);
+   assert(explicit_address == intel_48b_address(explicit_address));
+   const bool is_small_heap = anv_bo_is_small_heap(alloc_flags);
+
+   /* KMD alignment requirement */
+   align = MAX2(align, device->physical->info.mem_alignment);
 
    /* Opportunistically align addresses to 2Mb when above 1Mb. We do this
     * because this gives an opportunity for the kernel to use Transparent Huge
@@ -1602,6 +1618,7 @@ anv_device_alloc_bo(struct anv_device *device,
 
    const uint32_t bo_flags =
          device->kmd_backend->bo_alloc_flags_to_bo_flags(device, alloc_flags);
+   uint32_t alignment = anv_bo_vma_calc_alignment_requirement(device, alloc_flags, size);
 
    /* The kernel is going to give us whole pages anyway. */
    size = align64(size, 4096);
@@ -1671,7 +1688,8 @@ anv_device_alloc_bo(struct anv_device *device,
 
    VkResult result = anv_bo_vma_alloc_or_close(device, &new_bo,
                                                alloc_flags,
-                                               explicit_address);
+                                               explicit_address,
+                                               alignment);
    if (result != VK_SUCCESS)
       return result;
 
@@ -1825,9 +1843,11 @@ anv_device_import_bo_from_host_ptr(struct anv_device *device,
          .from_host_ptr = true,
       };
 
+      uint32_t alignment = anv_bo_vma_calc_alignment_requirement(device, alloc_flags, size);
       VkResult result = anv_bo_vma_alloc_or_close(device, &new_bo,
                                                   alloc_flags,
-                                                  client_address);
+                                                  client_address,
+                                                  alignment);
       if (result != VK_SUCCESS) {
          pthread_mutex_unlock(&cache->mutex);
          return result;
@@ -1921,9 +1941,11 @@ anv_device_import_bo(struct anv_device *device,
       new_bo.size = size;
       new_bo.actual_size = size;
 
+      uint32_t alignment = anv_bo_vma_calc_alignment_requirement(device, alloc_flags, size);
       VkResult result = anv_bo_vma_alloc_or_close(device, &new_bo,
                                                   alloc_flags,
-                                                  client_address);
+                                                  client_address,
+                                                  alignment);
       if (result != VK_SUCCESS) {
          pthread_mutex_unlock(&cache->mutex);
          return result;
