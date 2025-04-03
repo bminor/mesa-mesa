@@ -1,7 +1,7 @@
 project(
   'unicode-ident',
   'rust',
-  version : '1.0.6',
+  version : '1.0.12',
   license : '(MIT or Apache-2.0) AND Unicode-DFS-2016)',
 )
 

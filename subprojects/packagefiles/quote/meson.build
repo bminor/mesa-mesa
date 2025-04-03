@@ -1,7 +1,7 @@
 project(
   'quote',
   'rust',
-  version : '1.0.25',
+  version : '1.0.33',
   license :'MIT OR Apache-2.0',
 )
 
