@@ -10,6 +10,12 @@
 #include "util/u_math.h"
 
 static bool
+has_cbuf_tex(const struct nak_compiler *nak) {
+   /* TODO: Figure out how bound textures work on blackwell */
+   return nak->sm >= 70 && nak->sm < 100;
+}
+
+static bool
 tex_handle_as_cbuf(nir_def *tex_h, uint32_t *cbuf_out)
 {
    if (tex_h->parent_instr->type != nir_instr_type_intrinsic)
@@ -73,7 +79,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    }
 
    enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
-   if (nak->sm >= 70 && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
+   if (has_cbuf_tex(nak) && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
       ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
       tex_h = NULL;
    }
@@ -362,7 +368,7 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    }
 
    enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
-   if (nak->sm >= 70 && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
+   if (has_cbuf_tex(nak) && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
       ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
       tex_h = NULL;
    }
@@ -654,7 +660,7 @@ lower_image_txq(nir_builder *b, nir_intrinsic_instr *intrin,
 
    uint32_t texture_index = 0;
    enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
-   if (nak->sm >= 70 && tex_handle_as_cbuf(img_h, &texture_index)) {
+   if (has_cbuf_tex(nak) && tex_handle_as_cbuf(img_h, &texture_index)) {
       ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
       img_h = NULL;
    }
