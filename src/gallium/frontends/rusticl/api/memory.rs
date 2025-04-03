@@ -523,7 +523,7 @@ fn validate_image_desc(
     // host_ptr is not NULL and image_slice_pitch = 0, image_slice_pitch is calculated as
     // image_row_pitch × image_height for a 2D image array or 3D image and image_row_pitch for a 1D
     // image array. If image_slice_pitch is not 0, it must be a multiple of the image_row_pitch.
-    let has_buf_parent = parent.as_ref().map_or(false, |p| p.is_buffer());
+    let has_buf_parent = parent.as_ref().is_some_and(|p| p.is_buffer());
     if host_ptr.is_null() {
         if (desc.image_row_pitch != 0 || desc.image_slice_pitch != 0) && !has_buf_parent {
             return Err(err);
