@@ -198,7 +198,7 @@ unsafe impl CLInfoObj<cl_kernel_sub_group_info, (cl_device_id, usize, *const c_v
             }
             CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT => {
                 let subgroups = input[0];
-                let mut res = vec![0; 3];
+                let mut res = [0; 3];
 
                 for subgroup_size in kernel.subgroup_sizes(dev) {
                     let threads = subgroups * subgroup_size;
@@ -211,13 +211,12 @@ unsafe impl CLInfoObj<cl_kernel_sub_group_info, (cl_device_id, usize, *const c_v
                     let real_subgroups = kernel.subgroups_for_block(dev, &block);
 
                     if real_subgroups == subgroups {
-                        res = block.to_vec();
+                        res = block;
                         break;
                     }
                 }
 
-                res.truncate(output_value_size / usize_byte);
-                v.write::<Vec<usize>>(res)
+                v.write_iter::<usize>(res.into_iter().take(output_value_size / usize_byte))
             }
             CL_KERNEL_MAX_NUM_SUB_GROUPS => {
                 let threads = kernel.max_threads_per_block(dev);

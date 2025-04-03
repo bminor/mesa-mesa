@@ -23,12 +23,9 @@ unsafe impl CLInfo<cl_context_info> for cl_context {
     fn query(&self, q: cl_context_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let ctx = Context::ref_from_raw(*self)?;
         match q {
-            CL_CONTEXT_DEVICES => v.write::<Vec<cl_device_id>>(
-                ctx.devs
-                    .iter()
-                    .map(|&d| cl_device_id::from_ptr(d))
-                    .collect(),
-            ),
+            CL_CONTEXT_DEVICES => {
+                v.write_iter::<cl_device_id>(ctx.devs.iter().map(|&d| cl_device_id::from_ptr(d)))
+            }
             CL_CONTEXT_NUM_DEVICES => v.write::<cl_uint>(ctx.devs.len() as u32),
             // need to return None if no properties exist
             CL_CONTEXT_PROPERTIES => v.write::<&Properties<cl_context_properties>>(&ctx.properties),

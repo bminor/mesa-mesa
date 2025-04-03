@@ -275,11 +275,11 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             ),
             CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS => v.write::<bool>(false),
             CL_DEVICE_SUB_GROUP_SIZES_INTEL => {
-                v.write::<Vec<usize>>(if dev.subgroups_supported() {
-                    dev.subgroup_sizes().collect()
+                if dev.subgroups_supported() {
+                    v.write_iter::<usize>(dev.subgroup_sizes())
                 } else {
-                    vec![0; 1]
-                })
+                    v.write::<&[usize]>(&[0; 1])
+                }
             }
             CL_DEVICE_SVM_CAPABILITIES | CL_DEVICE_SVM_CAPABILITIES_ARM => {
                 v.write::<cl_device_svm_capabilities>(

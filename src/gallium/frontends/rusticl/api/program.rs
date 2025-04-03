@@ -55,7 +55,7 @@ unsafe impl CLInfo<cl_program_info> for cl_program {
                 }
                 v.write_len_only::<&[*mut u8]>(prog.devs.len())
             }
-            CL_PROGRAM_BINARY_SIZES => v.write::<Vec<usize>>(prog.bin_sizes()),
+            CL_PROGRAM_BINARY_SIZES => v.write_iter::<usize>(prog.bin_sizes()),
             CL_PROGRAM_CONTEXT => {
                 // Note we use as_ptr here which doesn't increase the reference count.
                 let ptr = Arc::as_ptr(&prog.context);

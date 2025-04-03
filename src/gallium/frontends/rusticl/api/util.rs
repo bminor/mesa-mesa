@@ -340,21 +340,6 @@ impl CLProp for &CStr {
     }
 }
 
-impl<T> CLProp for Vec<T>
-where
-    T: CLProp + Copy,
-{
-    type Output = T;
-
-    fn count(&self) -> usize {
-        self.len()
-    }
-
-    fn write_to(&self, out: &mut [MaybeUninit<T>]) {
-        self.as_slice().write_to(out);
-    }
-}
-
 impl<T> CLProp for &[T]
 where
     T: CLProp + Copy,

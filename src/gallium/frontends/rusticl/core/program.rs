@@ -477,19 +477,16 @@ impl Program {
     }
 
     // we need to precalculate the size
-    pub fn bin_sizes(&self) -> Vec<usize> {
+    pub fn bin_sizes(&self) -> impl ExactSizeIterator<Item = usize> + '_ {
         let lock = self.build_info();
 
-        self.devs
-            .iter()
-            .map(|&device| {
-                let info = lock.dev_build(device);
+        self.devs.iter().map(move |&device| {
+            let info = lock.dev_build(device);
 
-                info.spirv.as_ref().map_or(0, |s| {
-                    s.to_bin().len() + device.screen().name().to_bytes().len() + BIN_HEADER_SIZE
-                })
+            info.spirv.as_ref().map_or(0, |s| {
+                s.to_bin().len() + device.screen().name().to_bytes().len() + BIN_HEADER_SIZE
             })
-            .collect()
+        })
     }
 
     pub fn binaries(&self, ptrs: &[*mut u8]) -> CLResult<()> {
