@@ -82,20 +82,6 @@ public:
 #endif
    }
 
-   /**
-    * Construct an brw_builder that inserts instructions before \p cursor in
-    * basic block \p block, inheriting other code generation parameters
-    * from this.
-    */
-   brw_builder
-   at(bblock_t *block, exec_node *cursor) const
-   {
-      brw_builder bld = *this;
-      bld.block = block;
-      bld.cursor = cursor;
-      return bld;
-   }
-
    brw_builder
    at_start(bblock_t *block) const
    {

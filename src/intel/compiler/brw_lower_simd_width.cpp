@@ -725,7 +725,7 @@ brw_lower_simd_width(brw_shader &s)
        * instructions (this is required for some render target writes), we
        * split from the highest group to lowest.
        */
-      exec_node *const after_inst = inst->next;
+      const brw_builder zip_bld = ibld.after(inst);
       for (int i = n - 1; i >= 0; i--) {
          /* Emit a copy of the original instruction with the lowered width.
           * If the EOT flag was set throw it away except for the last
@@ -740,12 +740,13 @@ brw_lower_simd_width(brw_shader &s)
           * instruction.
           */
          const brw_builder lbld = ibld.group(lower_width, i);
+         const brw_builder lbld_after = zip_bld.group(lower_width, i);
 
          for (unsigned j = 0; j < inst->sources; j++)
             split_inst.src[j] = emit_unzip(lbld.before(inst), inst, j);
 
          split_inst.dst = emit_zip(lbld.before(inst),
-                                   lbld.at(block, after_inst), inst);
+                                   lbld_after, inst);
          split_inst.size_written =
             split_inst.dst.component_size(lower_width) * dst_size +
             residency_size;
