@@ -432,7 +432,7 @@
   tags:
     - farm:$RUNNER_FARM_LOCATION
     - $B2C_MARS_SETUP_TAGS
-    - $VALVE_INFRA_VANGOGH_JOB_PRIORITY
+    - $CI_TRON_JOB_PRIORITY_TAG
 
 .raphael-test-valve:
   variables:

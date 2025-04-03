@@ -41,7 +41,7 @@ workflow:
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: priority:high
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: priority:high-kvm
         FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:high-aarch64
-        VALVE_INFRA_VANGOGH_JOB_PRIORITY: ""  # Empty tags are ignored by gitlab
+        CI_TRON_JOB_PRIORITY_TAG: ""  # Empty tags are ignored by gitlab
         JOB_PRIORITY: 75
         # fast-fail in merge pipelines: stop early if we get this many unexpected fails/crashes
         DEQP_RUNNER_MAX_FAILS: 40
@@ -119,7 +119,7 @@ variables:
   FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: ""  # Empty tags are ignored by gitlab
   FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: kvm
   FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: aarch64
-  VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
+  CI_TRON_JOB_PRIORITY_TAG: ci-tron:priority:low
   JOB_PRIORITY: 50
   DATA_STORAGE_PATH: data_storage
 
