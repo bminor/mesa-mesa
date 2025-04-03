@@ -32,13 +32,35 @@ protected:
    ~scoreboard_test() override;
 
    struct brw_compiler *compiler;
-   struct brw_compile_params params;
    struct intel_device_info *devinfo;
    void *ctx;
-   struct brw_wm_prog_data *prog_data;
-   struct gl_shader_program *shader_prog;
    brw_shader *v;
    brw_builder bld;
+
+   void
+   set_gfx_verx10(unsigned verx10)
+   {
+      devinfo->verx10 = verx10;
+      devinfo->ver    = verx10 / 10;
+      assert(devinfo->ver > 0);
+      brw_init_isa_info(&compiler->isa, devinfo);
+
+      if (v)
+         delete v;
+
+      brw_compile_params params = {
+         .mem_ctx = ctx,
+      };
+
+      struct brw_wm_prog_data *prog_data = rzalloc(ctx, struct brw_wm_prog_data);
+      nir_shader *shader =
+         nir_shader_create(ctx, MESA_SHADER_FRAGMENT, NULL, NULL);
+
+      unsigned dispatch_width = devinfo->ver >= 20 ? 16 : 8;
+      v = new brw_shader(compiler, &params, NULL, &prog_data->base, shader, dispatch_width,
+                         false, false);
+      bld = brw_builder(v);
+   }
 };
 
 scoreboard_test::scoreboard_test()
@@ -46,23 +68,10 @@ scoreboard_test::scoreboard_test()
    ctx = ralloc_context(NULL);
    compiler = rzalloc(ctx, struct brw_compiler);
    devinfo = rzalloc(ctx, struct intel_device_info);
-   devinfo->ver = 12;
-   devinfo->verx10 = devinfo->ver * 10;
-
    compiler->devinfo = devinfo;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   v = NULL;
 
-   params = {};
-   params.mem_ctx = ctx;
-
-   prog_data = ralloc(ctx, struct brw_wm_prog_data);
-   nir_shader *shader =
-      nir_shader_create(ctx, MESA_SHADER_FRAGMENT, NULL, NULL);
-
-   v = new brw_shader(compiler, &params, NULL, &prog_data->base, shader, 8,
-                      false, false);
-
-   bld = brw_builder(v);
+   set_gfx_verx10(120);
 }
 
 scoreboard_test::~scoreboard_test()
@@ -877,8 +886,7 @@ TEST_F(scoreboard_test, conditional8)
 
 TEST_F(scoreboard_test, gfx125_RaR_over_different_pipes)
 {
-   devinfo->verx10 = 125;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(125);
 
    brw_reg a = bld.vgrf(BRW_TYPE_D);
    brw_reg b = bld.vgrf(BRW_TYPE_D);
@@ -925,13 +933,11 @@ TEST_F(scoreboard_test, gitlab_issue_from_mr_29723)
 
 TEST_F(scoreboard_test, combine_regdist_float_and_int_with_sbid_set)
 {
-   devinfo->ver = 20;
-   devinfo->verx10 = 200;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(200);
 
-   brw_reg a = retype(brw_ud8_grf(1, 0), BRW_TYPE_F);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg a = retype(brw_ud8_grf(10, 0), BRW_TYPE_F);
+   brw_reg b = brw_ud8_grf(20, 0);
+   brw_reg x = brw_ud8_grf(30, 0);
 
    bld.ADD(       a, a, a);
    bld.ADD(       b, b, b);
@@ -958,13 +964,11 @@ TEST_F(scoreboard_test, combine_regdist_float_and_int_with_sbid_set)
 
 TEST_F(scoreboard_test, combine_regdist_float_with_sbid_set)
 {
-   devinfo->ver = 20;
-   devinfo->verx10 = 200;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(200);
 
-   brw_reg a = retype(brw_ud8_grf(1, 0), BRW_TYPE_F);
-   brw_reg b = retype(brw_ud8_grf(2, 0), BRW_TYPE_F);
-   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg a = retype(brw_ud8_grf(10, 0), BRW_TYPE_F);
+   brw_reg b = retype(brw_ud8_grf(20, 0), BRW_TYPE_F);
+   brw_reg x = brw_ud8_grf(30, 0);
 
    bld.ADD(       a, a, a);
    bld.ADD(       b, b, b);
@@ -991,13 +995,11 @@ TEST_F(scoreboard_test, combine_regdist_float_with_sbid_set)
 
 TEST_F(scoreboard_test, combine_regdist_int_with_sbid_set)
 {
-   devinfo->ver = 20;
-   devinfo->verx10 = 200;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(200);
 
-   brw_reg a = brw_ud8_grf(1, 0);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
+   brw_reg a = brw_ud8_grf(10, 0);
+   brw_reg b = brw_ud8_grf(20, 0);
+   brw_reg x = brw_ud8_grf(30, 0);
 
    bld.ADD(       a, a, a);
    bld.ADD(       b, b, b);
@@ -1044,11 +1046,12 @@ TEST_F(scoreboard_test, gitlab_issue_11069)
    EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
 
-TEST_F(scoreboard_test, gfx120_can_embed_outoforder_src_dependency_in_send_eot) {
-   brw_reg a = brw_ud8_grf(1, 0);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
-   brw_reg desc = brw_ud8_grf(4, 0);
+TEST_F(scoreboard_test, gfx120_can_embed_outoforder_src_dependency_in_send_eot)
+{
+   brw_reg a    = brw_ud8_grf(10, 0);
+   brw_reg b    = brw_ud8_grf(20, 0);
+   brw_reg x    = brw_ud8_grf(30, 0);
+   brw_reg desc = brw_ud8_grf(40, 0);
 
    emit_SEND(bld, a, desc, x);
    emit_SEND(bld, b, desc, x)->eot = true;
@@ -1064,11 +1067,12 @@ TEST_F(scoreboard_test, gfx120_can_embed_outoforder_src_dependency_in_send_eot) 
    EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_sbid(TGL_SBID_SRC, 0));
 }
 
-TEST_F(scoreboard_test, gfx120_can_embed_outoforder_dst_dependency_in_send_eot) {
-   brw_reg a = brw_ud8_grf(1, 0);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
-   brw_reg desc = brw_ud8_grf(4, 0);
+TEST_F(scoreboard_test, gfx120_can_embed_outoforder_dst_dependency_in_send_eot)
+{
+   brw_reg a    = brw_ud8_grf(10, 0);
+   brw_reg b    = brw_ud8_grf(20, 0);
+   brw_reg x    = brw_ud8_grf(30, 0);
+   brw_reg desc = brw_ud8_grf(40, 0);
 
    emit_SEND(bld, x, desc, a);
    emit_SEND(bld, b, desc, x)->eot = true;
@@ -1084,15 +1088,14 @@ TEST_F(scoreboard_test, gfx120_can_embed_outoforder_dst_dependency_in_send_eot) 
    EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_sbid(TGL_SBID_DST, 0));
 }
 
-TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_src_dependency_in_send_eot) {
-   devinfo->ver = 20;
-   devinfo->verx10 = 200;
-   brw_init_isa_info(&compiler->isa, devinfo);
+TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_src_dependency_in_send_eot)
+{
+   set_gfx_verx10(200);
 
-   brw_reg a = brw_ud8_grf(1, 0);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
-   brw_reg desc = brw_ud8_grf(4, 0);
+   brw_reg a    = brw_ud8_grf(10, 0);
+   brw_reg b    = brw_ud8_grf(20, 0);
+   brw_reg x    = brw_ud8_grf(30, 0);
+   brw_reg desc = brw_ud8_grf(40, 0);
 
    emit_SEND(bld, a, desc, x);
    emit_SEND(bld, b, desc, x)->eot = true;
@@ -1113,15 +1116,14 @@ TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_src_dependency_in_send_eo
    EXPECT_EQ(instruction(block0, 2)->sched, tgl_swsb_null());
 }
 
-TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_dst_dependency_in_send_eot) {
-   devinfo->ver = 20;
-   devinfo->verx10 = 200;
-   brw_init_isa_info(&compiler->isa, devinfo);
+TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_dst_dependency_in_send_eot)
+{
+   set_gfx_verx10(200);
 
-   brw_reg a = brw_ud8_grf(1, 0);
-   brw_reg b = brw_ud8_grf(2, 0);
-   brw_reg x = brw_ud8_grf(3, 0);
-   brw_reg desc = brw_ud8_grf(4, 0);
+   brw_reg a    = brw_ud8_grf(10, 0);
+   brw_reg b    = brw_ud8_grf(20, 0);
+   brw_reg x    = brw_ud8_grf(30, 0);
+   brw_reg desc = brw_ud8_grf(40, 0);
 
    emit_SEND(bld, x, desc, a);
    emit_SEND(bld, b, desc, x)->eot = true;
@@ -1160,9 +1162,7 @@ brw_s0_with_region(enum brw_reg_type type, unsigned subnr, unsigned v, unsigned 
 
 TEST_F(scoreboard_test, scalar_register_mov_immediate_is_in_scalar_pipe)
 {
-   devinfo->ver = 30;
-   devinfo->verx10 = 300;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(300);
 
    brw_reg scalar = brw_s0_with_region(BRW_TYPE_UW, 0, 0, 1, 0);
 
@@ -1180,9 +1180,7 @@ TEST_F(scoreboard_test, scalar_register_mov_immediate_is_in_scalar_pipe)
 
 TEST_F(scoreboard_test, scalar_register_mov_grf_is_not_in_scalar_pipe)
 {
-   devinfo->ver = 30;
-   devinfo->verx10 = 300;
-   brw_init_isa_info(&compiler->isa, devinfo);
+   set_gfx_verx10(300);
 
    brw_reg scalar = brw_s0_with_region(BRW_TYPE_UW, 0, 0, 1, 0);
 
