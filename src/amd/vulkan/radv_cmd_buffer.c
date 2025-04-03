@@ -4878,21 +4878,15 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
    }
 
-   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX12) {
-      bool disable_constant_encode = pdev->info.has_dcc_constant_encode;
-      enum amd_gfx_level gfx_level = pdev->info.gfx_level;
+   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11) {
+      const bool disable_constant_encode = pdev->info.has_dcc_constant_encode;
+      const uint8_t watermark = pdev->info.gfx_level >= GFX10 ? 6 : 4;
 
-      if (pdev->info.gfx_level >= GFX11) {
-         radeon_set_context_reg(R_028424_CB_FDCC_CONTROL, 0);
-      } else {
-         uint8_t watermark = gfx_level >= GFX10 ? 6 : 4;
-
-         radeon_set_context_reg(R_028424_CB_DCC_CONTROL,
-                                S_028424_OVERWRITE_COMBINER_MRT_SHARING_DISABLE(gfx_level <= GFX9) |
-                                   S_028424_OVERWRITE_COMBINER_WATERMARK(watermark) |
-                                   S_028424_DISABLE_CONSTANT_ENCODE_AC01(disable_constant_encode_ac01) |
-                                   S_028424_DISABLE_CONSTANT_ENCODE_REG(disable_constant_encode));
-      }
+      radeon_set_context_reg(R_028424_CB_DCC_CONTROL,
+                             S_028424_OVERWRITE_COMBINER_MRT_SHARING_DISABLE(pdev->info.gfx_level <= GFX9) |
+                                S_028424_OVERWRITE_COMBINER_WATERMARK(watermark) |
+                                S_028424_DISABLE_CONSTANT_ENCODE_AC01(disable_constant_encode_ac01) |
+                                S_028424_DISABLE_CONSTANT_ENCODE_REG(disable_constant_encode));
    }
 
    if (pdev->info.gfx_level >= GFX12) {
