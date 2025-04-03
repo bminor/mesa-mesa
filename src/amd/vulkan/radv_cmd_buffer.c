@@ -3876,7 +3876,7 @@ radv_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct r
       radeon_set_context_reg(R_028C64_CB_COLOR0_VIEW + index * 0x24, cb->ac.cb_color_view);
       radeon_set_context_reg(R_028C68_CB_COLOR0_VIEW2 + index * 0x24, cb->ac.cb_color_view2);
       radeon_set_context_reg(R_028C6C_CB_COLOR0_ATTRIB + index * 0x24, cb->ac.cb_color_attrib);
-      radeon_set_context_reg(R_028C70_CB_COLOR0_FDCC_CONTROL + index * 0x24, cb_fdcc_control);
+      radeon_set_context_reg(R_028C70_CB_COLOR0_FDCC_CONTROL + index * 0x24, cb->ac.cb_dcc_control);
       radeon_set_context_reg(R_028C78_CB_COLOR0_ATTRIB2 + index * 0x24, cb->ac.cb_color_attrib2);
       radeon_set_context_reg(R_028C7C_CB_COLOR0_ATTRIB3 + index * 0x24, cb->ac.cb_color_attrib3);
       radeon_set_context_reg(R_028E40_CB_COLOR0_BASE_EXT + index * 4, S_028E40_BASE_256B(cb->ac.cb_color_base >> 32));
