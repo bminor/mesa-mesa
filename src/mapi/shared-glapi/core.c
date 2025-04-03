@@ -18,6 +18,7 @@ _mesa_noop_entrypoint(const char *name);
 
 #define MAPI_TMP_NOOP_ARRAY
 #define MAPI_TMP_PUBLIC_STUBS
+#include "shared_glapi_mapi_tmp.h"
 
 /* REALLY_INITIAL_EXEC implies __GLIBC__ */
 #if defined(USE_X86_ASM) && defined(REALLY_INITIAL_EXEC)
