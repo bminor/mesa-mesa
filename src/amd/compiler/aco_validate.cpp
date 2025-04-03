@@ -1435,6 +1435,12 @@ validate_ra(Program* program)
             if (op.regClass().is_subdword() &&
                 !validate_subdword_operand(program->gfx_level, instr, i))
                err |= ra_fail(program, loc, Location(), "Operand %d not aligned correctly", i);
+            if (op.isVectorAligned() &&
+                op.physReg().advance(op.bytes()) != instr->operands[i + 1].physReg())
+               err |= ra_fail(
+                  program, loc, assignments[instr->operands[i + 1].tempId()].firstloc,
+                  "Operand %d forms part of a vector but has misaligned register assignment.",
+                  i + 1);
             if (!assignments[op.tempId()].firstloc.block)
                assignments[op.tempId()].firstloc = loc;
             if (!assignments[op.tempId()].defloc.block) {
