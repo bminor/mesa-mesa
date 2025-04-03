@@ -253,7 +253,7 @@ TEST_F(scoreboard_test, RAW_outoforder_outoforder)
     */
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    emit_SEND(bld,    x, g[1], g[2]);
-   emit_SEND(bld, g[3],    x, g[4])->sfid++;
+   emit_SEND(bld, g[3],    x, g[4]);
 
    brw_calculate_cfg(*v);
    bblock_t *block0 = v->cfg->blocks[0];
@@ -355,7 +355,7 @@ TEST_F(scoreboard_test, WAR_outoforder_outoforder)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    emit_SEND(bld, g[1], g[2],    x);
-   emit_SEND(bld,    x, g[3], g[4])->sfid++;
+   emit_SEND(bld,    x, g[3], g[4]);
 
    brw_calculate_cfg(*v);
    bblock_t *block0 = v->cfg->blocks[0];
@@ -462,7 +462,7 @@ TEST_F(scoreboard_test, WAW_outoforder_outoforder)
 
    brw_reg x = bld.vgrf(BRW_TYPE_D);
    emit_SEND(bld, x, g[1], g[2]);
-   emit_SEND(bld, x, g[3], g[4])->sfid++;
+   emit_SEND(bld, x, g[3], g[4]);
 
    brw_calculate_cfg(*v);
    bblock_t *block0 = v->cfg->blocks[0];
