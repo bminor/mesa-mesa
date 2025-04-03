@@ -231,7 +231,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       if (flags_info && flags_info->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)
          flags |= RADEON_FLAG_REPLAYABLE;
 
-      if (instance->drirc.zero_vram)
+      if ((flags_info && flags_info->flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT) || instance->drirc.zero_vram)
          flags |= RADEON_FLAG_ZERO_VRAM;
 
       /* On GFX12, DCC is transparent to the userspace driver and PTE.DCC is
