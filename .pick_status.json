@@ -1104,7 +1104,7 @@
         "description": "nir/lower_tex: use texture_mask instead of shifting on use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "880b00dc59973ee64cf0ce5f21dc13f19ac12e70",
         "notes": null
