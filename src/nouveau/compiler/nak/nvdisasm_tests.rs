@@ -305,3 +305,174 @@ pub fn test_ld_st_atom() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_texture() {
+    let r0 = RegRef::new(RegFile::GPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+    let r2 = RegRef::new(RegFile::GPR, 2, 1);
+    let r3 = RegRef::new(RegFile::GPR, 3, 1);
+    let p0 = RegRef::new(RegFile::Pred, 0, 1);
+
+    let lod_modes = [
+        TexLodMode::Auto,
+        TexLodMode::Zero,
+        TexLodMode::Lod,
+        TexLodMode::Bias,
+        TexLodMode::Clamp,
+        TexLodMode::BiasClamp,
+    ];
+
+    let tld4_offset_modes = [
+        Tld4OffsetMode::None,
+        Tld4OffsetMode::AddOffI,
+        Tld4OffsetMode::PerPx,
+    ];
+
+    let tex_queries = [
+        TexQuery::Dimension,
+        TexQuery::TextureType,
+        TexQuery::SamplerPos,
+    ];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+        for lod_mode in lod_modes {
+            let lod_mode_str = if lod_mode == TexLodMode::Auto {
+                String::new()
+            } else {
+                format!(".{lod_mode}")
+            };
+            if lod_mode == TexLodMode::BiasClamp && sm >= 100 {
+                continue;
+            }
+
+            let instr = OpTex {
+                dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+                fault: Dst::Reg(p0),
+
+                tex: TexRef::Bindless,
+
+                srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
+
+                dim: TexDim::_2D,
+                lod_mode,
+                z_cmpr: false,
+                offset: false,
+                mem_eviction_priority: MemEvictionPriority::First,
+                nodep: true,
+                channel_mask: ChannelMask::for_comps(3),
+            };
+            c.push(
+                instr,
+                format!(
+                    "tex.b{lod_mode_str}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"
+                ),
+            );
+
+            if lod_mode.is_explicit_lod() {
+                let instr = OpTld {
+                    dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+                    fault: Dst::Reg(p0),
+
+                    tex: TexRef::Bindless,
+
+                    srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
+
+                    dim: TexDim::_2D,
+                    is_ms: false,
+                    lod_mode,
+                    offset: false,
+                    mem_eviction_priority: MemEvictionPriority::First,
+                    nodep: true,
+                    channel_mask: ChannelMask::for_comps(3),
+                };
+                c.push(
+                    instr,
+                    format!("tld.b{lod_mode_str}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"),
+                );
+            }
+        }
+
+        for offset_mode in tld4_offset_modes {
+            let offset_mode_str = if offset_mode == Tld4OffsetMode::None {
+                String::new()
+            } else {
+                format!(".{offset_mode}")
+            };
+
+            let instr = OpTld4 {
+                dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+                fault: Dst::Reg(p0),
+
+                tex: TexRef::Bindless,
+
+                srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
+
+                dim: TexDim::_2D,
+                comp: 1,
+                offset_mode,
+                z_cmpr: false,
+                mem_eviction_priority: MemEvictionPriority::First,
+                nodep: true,
+                channel_mask: ChannelMask::for_comps(3),
+            };
+            c.push(
+                instr,
+                format!("tld4.g.b{offset_mode_str}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"),
+            );
+        }
+
+        let instr = OpTmml {
+            dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+
+            tex: TexRef::Bindless,
+
+            srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
+
+            dim: TexDim::_2D,
+            nodep: true,
+            channel_mask: ChannelMask::for_comps(3),
+        };
+        c.push(instr, format!("tmml.b.lod.nodep r2, r0, r1, r3, 2d, 0x7;"));
+
+        let instr = OpTxd {
+            dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+            fault: Dst::Reg(p0),
+
+            tex: TexRef::Bindless,
+
+            srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
+
+            dim: TexDim::_2D,
+            offset: false,
+            mem_eviction_priority: MemEvictionPriority::First,
+            nodep: true,
+            channel_mask: ChannelMask::for_comps(3),
+        };
+        c.push(
+            instr,
+            format!("txd.b.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"),
+        );
+
+        for tex_query in tex_queries {
+            let instr = OpTxq {
+                dsts: [Dst::Reg(r0), Dst::Reg(r2)],
+
+                tex: TexRef::Bindless,
+
+                src: SrcRef::Reg(r1).into(),
+
+                query: tex_query,
+                nodep: true,
+                channel_mask: ChannelMask::for_comps(3),
+            };
+            c.push(
+                instr,
+                format!("txq.b.nodep r2, r0, r1, tex_header_{tex_query}, 0x7;"),
+            );
+        }
+
+        c.check(sm);
+    }
+}

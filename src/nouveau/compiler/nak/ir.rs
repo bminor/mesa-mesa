@@ -2104,6 +2104,18 @@ pub enum TexLodMode {
     BiasClamp,
 }
 
+impl TexLodMode {
+    pub fn is_explicit_lod(&self) -> bool {
+        match self {
+            TexLodMode::Auto
+            | TexLodMode::Bias
+            | TexLodMode::Clamp
+            | TexLodMode::BiasClamp => false,
+            TexLodMode::Zero | TexLodMode::Lod => true,
+        }
+    }
+}
+
 impl fmt::Display for TexLodMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

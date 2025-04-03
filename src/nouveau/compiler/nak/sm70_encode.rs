@@ -2306,17 +2306,36 @@ impl SM70Encoder<'_> {
 
     fn set_tex_lod_mode(&mut self, range: Range<usize>, lod_mode: TexLodMode) {
         assert!(range.len() == 3);
-        self.set_field(
-            range,
-            match lod_mode {
-                TexLodMode::Auto => 0_u8,
-                TexLodMode::Zero => 1_u8,
-                TexLodMode::Bias => 2_u8,
-                TexLodMode::Lod => 3_u8,
-                TexLodMode::Clamp => 4_u8,
-                TexLodMode::BiasClamp => 5_u8,
-            },
-        );
+        if self.sm >= 100 {
+            self.set_field(
+                range,
+                match lod_mode {
+                    TexLodMode::Auto => 0_u8,
+                    TexLodMode::Bias => 1_u8,
+                    TexLodMode::Clamp => 2_u8,
+                    // ulb => 0x3
+                    // ulc => 0x4
+                    // lb.ulc => 0x5
+                    TexLodMode::BiasClamp => todo!(),
+
+                    TexLodMode::Zero => 0_u8,
+                    TexLodMode::Lod => 1_u8,
+                    // ull => 3
+                },
+            );
+        } else {
+            self.set_field(
+                range,
+                match lod_mode {
+                    TexLodMode::Auto => 0_u8,
+                    TexLodMode::Zero => 1_u8,
+                    TexLodMode::Bias => 2_u8,
+                    TexLodMode::Lod => 3_u8,
+                    TexLodMode::Clamp => 4_u8,
+                    TexLodMode::BiasClamp => 5_u8,
+                },
+            );
+        }
     }
 
     fn set_image_dim(&mut self, range: Range<usize>, dim: ImageDim) {
@@ -2384,12 +2403,18 @@ impl SM70Op for OpTex {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb60);
                 e.set_tex_cb_ref(40..59, cb);
             }
             TexRef::Bindless => {
-                e.set_opcode(0x361);
-                e.set_bit(59, true); // .B
+                if e.sm >= 100 {
+                    e.set_opcode(0xd61);
+                    e.set_bit(91, true);
+                } else {
+                    e.set_opcode(0x361);
+                    e.set_bit(59, true); // .B
+                }
             }
         }
 
@@ -2403,6 +2428,11 @@ impl SM70Op for OpTex {
 
         e.set_reg_src(24..32, self.srcs[0]);
         e.set_reg_src(32..40, self.srcs[1]);
+
+        if e.sm >= 100 {
+            e.set_field(48..56, 0xff_u8); // ureg
+            e.set_bit(59, self.lod_mode.is_explicit_lod());
+        }
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
@@ -2426,12 +2456,18 @@ impl SM70Op for OpTld {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb66);
                 e.set_tex_cb_ref(40..59, cb);
             }
             TexRef::Bindless => {
-                e.set_opcode(0x367);
-                e.set_bit(59, true); // .B
+                if e.sm >= 100 {
+                    e.set_opcode(0xd67);
+                    e.set_bit(91, true);
+                } else {
+                    e.set_opcode(0x367);
+                    e.set_bit(59, true); // .B
+                }
             }
         }
 
@@ -2446,17 +2482,18 @@ impl SM70Op for OpTld {
         e.set_reg_src(24..32, self.srcs[0]);
         e.set_reg_src(32..40, self.srcs[1]);
 
+        if e.sm >= 100 {
+            e.set_field(48..56, 0xff_u8); // ureg
+        }
+
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
         e.set_bit(76, self.offset);
         // bit 77: .CL
         e.set_bit(78, self.is_ms);
         // bits 79..81: .F16
-        assert!(
-            self.lod_mode == TexLodMode::Zero
-                || self.lod_mode == TexLodMode::Lod
-        );
         e.set_eviction_priority(&self.mem_eviction_priority);
+        assert!(self.lod_mode.is_explicit_lod());
         e.set_tex_lod_mode(87..90, self.lod_mode);
         e.set_bit(90, self.nodep);
     }
@@ -2473,12 +2510,18 @@ impl SM70Op for OpTld4 {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb63);
                 e.set_tex_cb_ref(40..59, cb);
             }
             TexRef::Bindless => {
-                e.set_opcode(0x364);
-                e.set_bit(59, true); // .B
+                if e.sm >= 100 {
+                    e.set_opcode(0xd64);
+                    e.set_bit(91, true);
+                } else {
+                    e.set_opcode(0x364);
+                    e.set_bit(59, true); // .B
+                }
             }
         }
 
@@ -2492,6 +2535,10 @@ impl SM70Op for OpTld4 {
 
         e.set_reg_src(24..32, self.srcs[0]);
         e.set_reg_src(32..40, self.srcs[1]);
+
+        if e.sm >= 100 {
+            e.set_field(48..56, 0xff_u8); // ureg
+        }
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
@@ -2522,6 +2569,7 @@ impl SM70Op for OpTmml {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb69);
                 e.set_tex_cb_ref(40..59, cb);
             }
@@ -2559,12 +2607,18 @@ impl SM70Op for OpTxd {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb6c);
                 e.set_tex_cb_ref(40..59, cb);
             }
             TexRef::Bindless => {
-                e.set_opcode(0x36d);
-                e.set_bit(59, true); // .B
+                if e.sm >= 100 {
+                    e.set_opcode(0xd6d);
+                    e.set_bit(91, true);
+                } else {
+                    e.set_opcode(0x36d);
+                    e.set_bit(59, true); // .B
+                }
             }
         }
 
@@ -2578,6 +2632,10 @@ impl SM70Op for OpTxd {
 
         e.set_reg_src(24..32, self.srcs[0]);
         e.set_reg_src(32..40, self.srcs[1]);
+
+        if e.sm >= 100 {
+            e.set_field(48..56, 0xff_u8); // ureg
+        }
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
@@ -2599,6 +2657,7 @@ impl SM70Op for OpTxq {
                 panic!("SM70+ doesn't have legacy bound textures");
             }
             TexRef::CBuf(cb) => {
+                assert!(e.sm < 100);
                 e.set_opcode(0xb6f);
                 e.set_tex_cb_ref(40..59, cb);
             }
