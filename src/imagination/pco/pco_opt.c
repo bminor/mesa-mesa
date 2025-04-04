@@ -258,6 +258,24 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
 
    pco_ref *pdest_from = &use->instr->dest[0];
 
+   if (pco_ref_is_reg(*pdest_from) &&
+       pco_ref_get_reg_class(*pdest_from) == PCO_REG_CLASS_PIXOUT) {
+      bool has_isp_fb = false;
+
+      pco_foreach_instr_in_func_from_rev (rev_instr, use->instr) {
+         if (rev_instr == instr)
+            break;
+
+         if (rev_instr->op == PCO_OP_ALPHAF || rev_instr->op == PCO_OP_DEPTHF) {
+            has_isp_fb = true;
+            break;
+         }
+      }
+
+      if (has_isp_fb)
+         return false;
+   }
+
    assert(pco_ref_get_bits(*pdest_from) == pco_ref_get_bits(*pdest_to));
    assert(pco_ref_get_chans(*pdest_from) == pco_ref_get_chans(*pdest_to));
    assert(!pco_ref_has_mods_set(*pdest_from) &&
