@@ -336,6 +336,8 @@ static void r600_init_compute_caps(struct r600_screen *screen)
 	caps->max_clock_frequency = rscreen->info.max_gpu_freq_mhz;
 	caps->max_compute_units = rscreen->info.num_cu;
 	caps->subgroup_sizes = r600_wavefront_size(rscreen->family);
+
+	caps->max_variable_threads_per_block = R600_MAX_VARIABLE_THREADS_PER_BLOCK;
 }
 
 static void r600_init_screen_caps(struct r600_screen *rscreen)

@@ -297,7 +297,7 @@ Khronos, ARB, and OES extensions that are not part of any OpenGL or OpenGL ES ve
 
   GL_ARB_bindless_texture                               DONE (nvc0, radeonsi, zink)
   GL_ARB_cl_event                                       not started
-  GL_ARB_compute_variable_group_size                    DONE (freedreno/a4xx+, nvc0, radeonsi, zink, iris, crocus/gen7+, asahi)
+  GL_ARB_compute_variable_group_size                    DONE (freedreno/a4xx+, nvc0, radeonsi, zink, iris, crocus/gen7+, asahi, r600)
   GL_ARB_ES3_2_compatibility                            DONE (freedreno/a6xx, radeonsi, virgl, zink, iris, crocus/gen7.5+, asahi)
   GL_ARB_fragment_shader_interlock                      DONE (zink, iris/gen9+)
   GL_ARB_gpu_shader_int64                               DONE (freedreno/a6xx, nvc0, radeonsi, softpipe, llvmpipe, zink, d3d12, iris, crocus/gen8, asahi)

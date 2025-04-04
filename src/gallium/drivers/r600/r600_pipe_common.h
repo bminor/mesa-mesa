@@ -85,7 +85,7 @@ struct u_log_context;
 #define R600_MAP_BUFFER_ALIGNMENT 64
 #define R600_MAX_VIEWPORTS        16
 
-#define SI_MAX_VARIABLE_THREADS_PER_BLOCK 1024
+#define R600_MAX_VARIABLE_THREADS_PER_BLOCK 1024
 
 enum r600_coherency {
 	R600_COHERENCY_NONE, /* no cache flushes needed */
