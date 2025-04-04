@@ -517,7 +517,7 @@ pub fn encode_header(
             }
 
             let uses_underestimate =
-                fs_key.map_or(false, |key| key.uses_underestimate);
+                fs_key.is_some_and(|key| key.uses_underestimate);
 
             // This isn't so much a "Do we write multiple render targets?" bit
             // as a "Should color0 be broadcast to all render targets?" bit. In
@@ -541,7 +541,7 @@ pub fn encode_header(
 
     match &shader_info.stage {
         ShaderStageInfo::Fragment(stage) => {
-            let zs_self_dep = fs_key.map_or(false, |key| key.zs_self_dep);
+            let zs_self_dep = fs_key.is_some_and(|key| key.zs_self_dep);
             sph.set_kills_pixels(stage.uses_kill || zs_self_dep);
             sph.set_does_interlock(stage.does_interlock);
         }

@@ -43,7 +43,7 @@ impl DeadCodePass {
         match dst {
             Dst::SSA(ssa) => {
                 for val in ssa.iter() {
-                    if self.live_ssa.get(val).is_some() {
+                    if self.live_ssa.contains(val) {
                         return true;
                     }
                 }
@@ -55,7 +55,7 @@ impl DeadCodePass {
     }
 
     fn is_phi_live(&self, id: u32) -> bool {
-        self.live_phi.get(&id).is_some()
+        self.live_phi.contains(&id)
     }
 
     fn is_instr_live(&self, instr: &Instr) -> bool {

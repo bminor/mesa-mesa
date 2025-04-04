@@ -502,9 +502,7 @@ impl<'a> ShaderFromNir<'a> {
     }
 
     fn alu_src_is_saturated(&self, src: &nir_alu_src) -> bool {
-        self.saturated
-            .get(&(src.src.as_def() as *const _))
-            .is_some()
+        self.saturated.contains(&(src.src.as_def() as *const _))
     }
 
     fn parse_alu(&mut self, b: &mut impl SSABuilder, alu: &nir_alu_instr) {
@@ -3783,7 +3781,7 @@ impl<'a> ShaderFromNir<'a> {
                 /* Next block in the NIR CF list */
                 let next_block = nb.cf_node.next().unwrap().as_block().unwrap();
 
-                if else_target as *const _ == next_block as *const _ {
+                if std::ptr::eq(else_target, next_block) {
                     self.emit_pred_jump(
                         &mut b,
                         nb,
@@ -3792,7 +3790,7 @@ impl<'a> ShaderFromNir<'a> {
                         target,
                         else_target,
                     );
-                } else if target as *const _ == next_block as *const _ {
+                } else if std::ptr::eq(target, next_block) {
                     self.emit_pred_jump(
                         &mut b,
                         nb,

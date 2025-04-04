@@ -209,12 +209,7 @@ impl BarAlloc {
     }
 
     pub fn try_find_free_bar(&self) -> Option<u8> {
-        for bar in 0..self.num_bars {
-            if self.bar_is_free(bar) {
-                return Some(bar);
-            }
-        }
-        None
+        (0..self.num_bars).find(|&bar| self.bar_is_free(bar))
     }
 
     pub fn free_some_bar(&mut self) -> u8 {
@@ -230,12 +225,7 @@ impl BarAlloc {
     }
 
     pub fn get_bar_for_dep(&self, dep: usize) -> Option<u8> {
-        for bar in 0..self.num_bars {
-            if self.bar_dep[usize::from(bar)] == dep {
-                return Some(bar);
-            }
-        }
-        None
+        (0..self.num_bars).find(|&bar| self.bar_dep[usize::from(bar)] == dep)
     }
 }
 
@@ -347,8 +337,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
         let mut cycle = 0_u32;
 
         // Vector mapping IP to start cycle
-        let mut instr_cycle = Vec::new();
-        instr_cycle.resize(b.instrs.len(), 0_u32);
+        let mut instr_cycle = vec![0; b.instrs.len()];
 
         // Maps registers to RegUse<ip, src_dst_idx>.  Predicates are
         // represented by  src_idx = usize::MAX.

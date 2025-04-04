@@ -238,9 +238,8 @@ impl<'a> CoalesceGraph<'a> {
         let nodes = MergedIter::new(a_nodes.into_iter(), b_nodes.into_iter());
 
         self.sets[a].nodes = nodes
-            .map(|n| {
+            .inspect(|&n| {
                 self.nodes[n].set = a;
-                n
             })
             .collect();
 

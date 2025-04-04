@@ -462,7 +462,7 @@ fn legalize_instr(
                 // vector sources or as multiple components in the same
                 // source, we need to make a copy so it can get assigned to
                 // multiple different registers.
-                if vec_comps.get(&ssa).is_some() {
+                if vec_comps.contains(&ssa) {
                     let copy = b.alloc_ssa(ssa.file());
                     b.copy_to(copy.into(), ssa.into());
                     new_vec[usize::from(c)] = copy;

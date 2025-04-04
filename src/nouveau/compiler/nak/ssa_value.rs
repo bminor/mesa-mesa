@@ -79,9 +79,9 @@ impl<const SIZE: usize> SSAValueArray<SIZE> {
                 packed: NonZeroU32::MAX,
             }; SIZE],
         };
-        for i in 0..comps.len() {
-            r.v[i] = comps[i];
-        }
+
+        r.v[..comps.len()].copy_from_slice(comps);
+
         if comps.len() < SIZE {
             r.v[SIZE - 1].packed =
                 (comps.len() as u32).wrapping_neg().try_into().unwrap();

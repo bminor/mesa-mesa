@@ -1034,7 +1034,7 @@ fn spill_values<S: Spill>(
         let ip = pb
             .phi_srcs_ip()
             .or_else(|| pb.branch_ip())
-            .unwrap_or_else(|| pb.instrs.len());
+            .unwrap_or(pb.instrs.len());
         pb.instrs.splice(ip..ip, instrs.into_iter());
     }
 }

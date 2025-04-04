@@ -583,10 +583,9 @@ impl SrcRef {
 
     pub fn is_bindless_cbuf(&self) -> bool {
         match self {
-            SrcRef::CBuf(cbuf) => match cbuf.buf {
-                CBuf::BindlessSSA(_) | CBuf::BindlessUGPR(_) => true,
-                _ => false,
-            },
+            SrcRef::CBuf(cbuf) => {
+                matches!(cbuf.buf, CBuf::BindlessSSA(_) | CBuf::BindlessUGPR(_))
+            }
             _ => false,
         }
     }
@@ -1264,7 +1263,7 @@ fn all_dsts_uniform(dsts: &[Dst]) -> bool {
             Dst::Reg(r) => r.is_uniform(),
             Dst::SSA(r) => r.file().unwrap().is_uniform(),
         };
-        assert!(uniform == None || uniform == Some(dst_uniform));
+        assert!(uniform.is_none() || uniform == Some(dst_uniform));
         uniform = Some(dst_uniform);
     }
     uniform == Some(true)
@@ -3303,7 +3302,7 @@ pub struct OpIAbs {
 impl Foldable for OpIAbs {
     fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
         let src = f.get_u32_src(self, &self.src);
-        let dst = (src as i32).abs() as u32;
+        let dst = (src as i32).unsigned_abs();
         f.set_u32_dst(self, &self.dst, dst);
     }
 }
@@ -4609,12 +4608,10 @@ impl OpPrmt {
             return None;
         }
 
-        if let Some(sel) = self.sel.as_u32(SrcType::ALU) {
+        self.sel.as_u32(SrcType::ALU).map(|sel| {
             // The top 16 bits are ignored
-            Some(PrmtSel(sel as u16))
-        } else {
-            None
-        }
+            PrmtSel(sel as u16)
+        })
     }
 
     /// Reduces the sel immediate, if any.

@@ -563,7 +563,7 @@ impl<'a> VecRegAllocator<'a> {
 
     fn move_ssa_to_reg(&mut self, ssa: SSAValue, new_reg: u32) {
         if let Some(old_reg) = self.ra.try_get_reg(ssa) {
-            assert!(self.evicted.get(&ssa).is_none());
+            assert!(!self.evicted.contains_key(&ssa));
             assert!(!self.reg_is_pinned(old_reg));
 
             if new_reg == old_reg {

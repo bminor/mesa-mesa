@@ -98,7 +98,7 @@ fn lower_par_copy(pc: OpParCopy, sm: &dyn ShaderModel) -> MappedInstrs {
     for (i, (dst, _)) in pc.dsts_srcs.iter().enumerate() {
         // Destinations must be pairwise unique
         let reg = dst.as_reg().unwrap();
-        assert!(reg_to_idx.get(reg).is_none());
+        assert!(!reg_to_idx.contains_key(reg));
 
         // Everything must be scalar
         assert!(reg.comps() == 1);
