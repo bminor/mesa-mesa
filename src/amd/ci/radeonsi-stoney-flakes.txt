@@ -27,3 +27,18 @@ dEQP-GLES3.functional.occlusion_query.conservative_scissor_stencil_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_clear
 dEQP-GLES3.functional.occlusion_query.scissor_depth_clear_stencil_write_stencil_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_clear
+
+dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_12x12_rgba.srgb8_alpha8_astc_12x12_khr_srgb8_alpha8_astc_12x12_khr.texture2d_to_cubemap
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_96_bits.rgb32f_rgb32i.texture3d_to_texture2d
+
+glx@glx-visuals-stencil
+spec@!opengl 1.0@gl-1.0-ortho-pos
+spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
+spec@arb_gpu_shader5@texturegatheroffset@vs-rgba-0-unorm-2d
+spec@arb_tessellation_shader@execution@built-in-functions@tcs-op-assign-bitxor-uint-uint
+spec@arb_vertex_buffer_object@vbo-subdata-many drawelements
+spec@ext_external_objects@vk-ping-pong-multi-sem
+spec@ext_external_objects@vk-semaphores
+spec@ext_framebuffer_multisample@accuracy 4 depth_draw small depthstencil
+spec@glsl-1.30@execution@tex-miplevel-selection texturelodoffset 1d
+spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint

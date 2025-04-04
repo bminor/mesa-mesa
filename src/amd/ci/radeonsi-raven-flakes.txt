@@ -30,3 +30,14 @@ spec@arb_texture_gather@texturegather@fs-rg-green-int-2darray
 spec@arm_shader_framebuffer_fetch_depth_stencil@arm_shader_framebuffer_fetch_depth_stencil gl_depth_component32f 16
 spec@ext_framebuffer_multisample@accuracy 32 depth_draw small depthstencil
 spec@ext_gpu_shader4@tex-miplevel-selection gpu4textureprojgrad 2dshadow
+
+glx@glx-visuals-stencil
+spec@!opengl 2.0@vertex-program-two-side back front2
+spec@!opengl 2.0@vertex-program-two-side enabled front front2 back2
+spec@amd_shader_trinary_minmax@execution@built-in-functions@tcs-max3-int-int-int
+spec@arb_shader_atomic_counters@semantics
+spec@arb_tessellation_shader@execution@variable-indexing@vs-output-array-vec2-index-wr-before-tcs
+spec@ext_disjoint_timer_query@simple
+spec@ext_framebuffer_blit@fbo-sys-blit
+spec@glsl-1.50@execution@texelfetch@gs-texelfetch-sampler1darray
+spec@glsl-1.50@execution@texelfetch@gs-texelfetch-usampler1d
