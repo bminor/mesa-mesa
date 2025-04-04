@@ -3360,7 +3360,7 @@ fn as_sm50_op_mut(op: &mut Op) -> &mut dyn SM50Op {
 
 fn encode_instr(
     instr_index: usize,
-    instr: Option<&Box<Instr>>,
+    instr: Option<&Instr>,
     sm: &ShaderModel50,
     labels: &FxHashMap<Label, usize>,
     ip: &mut usize,

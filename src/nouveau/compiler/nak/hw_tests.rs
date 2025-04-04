@@ -265,7 +265,7 @@ impl<'a> TestShaderBuilder<'a> {
 }
 
 impl Builder for TestShaderBuilder<'_> {
-    fn push_instr(&mut self, instr: Box<Instr>) -> &mut Instr {
+    fn push_instr(&mut self, instr: Instr) -> &mut Instr {
         self.b.push_instr(instr)
     }
 

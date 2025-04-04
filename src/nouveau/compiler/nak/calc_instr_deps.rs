@@ -559,7 +559,7 @@ fn insert_texture_barriers(f: &mut Function, sm: &dyn ShaderModel) {
     for (block, mut sim) in f.blocks.iter_mut().zip(state_in.into_iter()) {
         block.map_instrs(|instr| {
             if let Some(textures_left) = sim.visit_instr(&instr) {
-                let bar = Instr::new_boxed(OpTexDepBar { textures_left });
+                let bar = Instr::new(OpTexDepBar { textures_left });
                 MappedInstrs::Many(vec![bar, instr])
             } else {
                 MappedInstrs::One(instr)
@@ -799,7 +799,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u64 {
             instr.deps.set_delay(max_instr_delay);
             let mut instrs = vec![instr];
             while delay > 0 {
-                let mut nop = Instr::new_boxed(OpNop { label: None });
+                let mut nop = Instr::new(OpNop { label: None });
                 nop.deps.set_delay(delay.min(max_instr_delay));
                 delay -= nop.deps.delay;
                 instrs.push(nop);
@@ -813,7 +813,7 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u64 {
             // of 2 after every instruction which has an exec latency.  Perhaps
             // it has something to do with .yld?  In any case, the extra 2
             // cycles aren't worth the chance of weird bugs.
-            let mut nop = Instr::new_boxed(OpNop { label: None });
+            let mut nop = Instr::new(OpNop { label: None });
             nop.deps.set_delay(2);
             MappedInstrs::Many(vec![instr, nop])
         } else {

@@ -124,7 +124,7 @@ where
     let mut instr_iter = func
         .blocks
         .iter()
-        .flat_map(|b| b.instrs.iter().map(|x| &**x))
+        .flat_map(|b| b.instrs.iter().map(|x| &*x))
         .peekable();
     let mut filling_instr = Instr {
         pred: true.into(),

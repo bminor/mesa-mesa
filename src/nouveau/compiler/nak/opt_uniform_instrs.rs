@@ -65,7 +65,7 @@ impl Shader<'_> {
                             target: bra.target,
                             cond: instr.pred.into(),
                         };
-                        MappedInstrs::One(Instr::new_boxed(bra_u))
+                        MappedInstrs::One(Instr::new(bra_u))
                     }
                     _ => MappedInstrs::One(instr),
                 },

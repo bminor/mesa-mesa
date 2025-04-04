@@ -8404,16 +8404,12 @@ pub struct Instr {
 }
 
 impl Instr {
-    pub fn new(op: impl Into<Op>) -> Instr {
-        Instr {
+    pub fn new(op: impl Into<Op>) -> Self {
+        Self {
             op: op.into(),
             pred: true.into(),
             deps: InstrDeps::new(),
         }
-    }
-
-    pub fn new_boxed(op: impl Into<Op>) -> Box<Self> {
-        Box::new(Instr::new(op))
     }
 
     pub fn dsts(&self) -> &[Dst] {
@@ -8580,7 +8576,7 @@ impl<T: Into<Op>> From<T> for Instr {
     }
 }
 
-pub type MappedInstrs = SmallVec<Box<Instr>>;
+pub type MappedInstrs = SmallVec<Instr>;
 
 pub struct BasicBlock {
     pub label: Label,
@@ -8591,14 +8587,11 @@ pub struct BasicBlock {
     /// are guaranteed to execute it together
     pub uniform: bool,
 
-    pub instrs: Vec<Box<Instr>>,
+    pub instrs: Vec<Instr>,
 }
 
 impl BasicBlock {
-    pub fn map_instrs(
-        &mut self,
-        mut map: impl FnMut(Box<Instr>) -> MappedInstrs,
-    ) {
+    pub fn map_instrs(&mut self, mut map: impl FnMut(Instr) -> MappedInstrs) {
         let mut instrs = Vec::new();
         for i in self.instrs.drain(..) {
             match map(i) {
@@ -8720,7 +8713,7 @@ pub struct Function {
 impl Function {
     pub fn map_instrs(
         &mut self,
-        mut map: impl FnMut(Box<Instr>, &mut SSAValueAllocator) -> MappedInstrs,
+        mut map: impl FnMut(Instr, &mut SSAValueAllocator) -> MappedInstrs,
     ) {
         let alloc = &mut self.ssa_alloc;
         for b in &mut self.blocks {
@@ -9228,7 +9221,7 @@ impl Shader<'_> {
 
     pub fn map_instrs(
         &mut self,
-        mut map: impl FnMut(Box<Instr>, &mut SSAValueAllocator) -> MappedInstrs,
+        mut map: impl FnMut(Instr, &mut SSAValueAllocator) -> MappedInstrs,
     ) {
         for f in &mut self.functions {
             f.map_instrs(&mut map);
@@ -9237,7 +9230,7 @@ impl Shader<'_> {
 
     /// Remove all annotations, presumably before encoding the shader.
     pub fn remove_annotations(&mut self) {
-        self.map_instrs(|instr: Box<Instr>, _| -> MappedInstrs {
+        self.map_instrs(|instr: Instr, _| -> MappedInstrs {
             if matches!(instr.op, Op::Annotate(_)) {
                 MappedInstrs::None
             } else {

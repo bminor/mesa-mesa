@@ -47,7 +47,7 @@ fn run_nvdisasm(s: &Shader) -> String {
     stdout.into()
 }
 
-fn disassemble_instrs(instrs: Vec<Box<Instr>>, sm: u8) -> Vec<String> {
+fn disassemble_instrs(instrs: Vec<Instr>, sm: u8) -> Vec<String> {
     let mut label_alloc = LabelAllocator::new();
     let block = BasicBlock {
         label: label_alloc.alloc(),
@@ -116,7 +116,7 @@ fn disassemble_instrs(instrs: Vec<Box<Instr>>, sm: u8) -> Vec<String> {
 }
 
 struct DisasmCheck {
-    instrs: Vec<Box<Instr>>,
+    instrs: Vec<Instr>,
     expected: Vec<String>,
 }
 
@@ -129,7 +129,7 @@ impl DisasmCheck {
     }
 
     fn push(&mut self, instr: impl Into<Instr>, expected: impl Into<String>) {
-        self.instrs.push(Box::new(instr.into()));
+        self.instrs.push(instr.into());
         self.expected.push(expected.into());
     }
 
