@@ -125,3 +125,7 @@ apt-get purge -y "${EPHEMERAL[@]}"
 . .gitlab-ci/container/container_post_build.sh
 
 section_end debian_cleanup
+
+############### Remove unused packages
+
+. .gitlab-ci/container/strip-rootfs.sh
