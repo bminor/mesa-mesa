@@ -14,6 +14,7 @@ dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.less_or_equa
 dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.not_equal_depth24_stencil8
 dEQP-GLES3.functional.texture.shadow.2d_array.nearest_mipmap_nearest.not_equal_depth24_stencil8
 dEQP-GLES3.functional.texture.specification.texstorage2d.format.depth24_stencil8_cube
+dEQP-GLES31.functional.draw_base_vertex.draw_elements_base_vertex.points.multiple_attributes
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.15x15
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.17x17
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.1x1
