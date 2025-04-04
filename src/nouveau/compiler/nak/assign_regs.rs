@@ -307,9 +307,7 @@ impl RegAllocator {
     }
 
     pub fn try_get_vec_reg(&self, vec: &SSARef) -> Option<u32> {
-        let Some(reg) = self.try_get_reg(vec[0]) else {
-            return None;
-        };
+        let reg = self.try_get_reg(vec[0])?;
 
         let align = u32::from(vec.comps()).next_power_of_two();
         if reg % align != 0 {

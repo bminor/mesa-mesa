@@ -4627,17 +4627,12 @@ impl OpPrmt {
     }
 
     pub fn as_u32(&self) -> Option<u32> {
-        let Some(sel) = self.get_sel() else {
-            return None;
-        };
+        let sel = self.get_sel()?;
 
         let mut imm = 0_u32;
         for b in 0..4 {
             let sel_byte = sel.get(b);
-            let sel_src = &self.srcs[sel_byte.src()];
-            let Some(src_u32) = sel_src.as_u32(SrcType::ALU) else {
-                return None;
-            };
+            let src_u32 = self.srcs[sel_byte.src()].as_u32(SrcType::ALU)?;
 
             let sb = sel_byte.fold_u32(src_u32);
             imm |= u32::from(sb) << (b * 8);
