@@ -92,6 +92,8 @@ typedef struct _pco_fs_data {
    pco_range blend_consts;
    uint8_t blend_consts_needed;
 
+   uint16_t rasterization_samples;
+
    struct {
       bool w; /** Whether the shader uses pos.w. */
       bool z; /** Whether the shader uses pos.z */
@@ -105,6 +107,7 @@ typedef struct _pco_fs_data {
    } uses;
 
    struct {
+      bool sample_mask;
    } meta_present;
 } pco_fs_data;
 

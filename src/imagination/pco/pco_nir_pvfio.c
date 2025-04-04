@@ -36,6 +36,8 @@ struct pfo_state {
    nir_def *discard_cond_reg;
    bool has_discards;
 
+   nir_intrinsic_instr *last_discard_store;
+
    bool has_sample_check;
 
    /* nir_instr *terminate; */
@@ -919,15 +921,16 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
          nir_def *smp_msk =
             nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b));
 
+         smp_msk = nir_iand(b, smp_msk, nir_load_sample_mask_in(b));
          smp_msk = nir_iand(b, smp_msk, intr->src[0].ssa);
-         smp_msk = nir_iand(b, smp_msk, nir_load_savmsk_vm_pco(b));
          nir_def *cond = nir_ieq_imm(b, smp_msk, 0);
 
          state->has_discards = true;
          state->has_sample_check = true;
          nir_def *val = nir_load_reg(b, state->discard_cond_reg);
          val = nir_ior(b, val, cond);
-         nir_store_reg(b, val, state->discard_cond_reg);
+         state->last_discard_store =
+            nir_build_store_reg(b, val, state->discard_cond_reg);
          return NIR_LOWER_INSTR_PROGRESS_REPLACE;
       }
 
@@ -939,14 +942,16 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
 
    case nir_intrinsic_terminate:
       state->has_discards = true;
-      nir_store_reg(b, nir_imm_true(b), state->discard_cond_reg);
+      state->last_discard_store =
+         nir_build_store_reg(b, nir_imm_true(b), state->discard_cond_reg);
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
 
    case nir_intrinsic_terminate_if: {
       state->has_discards = true;
       nir_def *val = nir_load_reg(b, state->discard_cond_reg);
       val = nir_ior(b, val, intr->src[0].ssa);
-      nir_store_reg(b, val, state->discard_cond_reg);
+      state->last_discard_store =
+         nir_build_store_reg(b, val, state->discard_cond_reg);
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
    }
 
@@ -1081,6 +1086,34 @@ static bool z_replicate(nir_shader *shader, struct pfo_state *state)
    return true;
 }
 
+static bool is_load_sample_mask(const nir_instr *instr,
+                                UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   return intr->intrinsic == nir_intrinsic_load_sample_mask_in;
+}
+
+static nir_def *
+lower_load_sample_mask(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   struct pfo_state *state = cb_data;
+
+   b->cursor = nir_before_instr(instr);
+
+   if (!state->fs->meta_present.sample_mask)
+      return nir_imm_int(b, 0xffff);
+
+   nir_def *smp_msk =
+      nir_ubitfield_extract_imm(b, nir_load_fs_meta_pco(b), 9, 16);
+
+   smp_msk = nir_iand(b, smp_msk, nir_load_savmsk_vm_pco(b));
+
+   return smp_msk;
+}
+
 /**
  * \brief Per-fragment output pass.
  *
@@ -1100,7 +1133,8 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
       .fs = fs,
       .discard_cond_reg = nir_decl_reg(&b, 1, 1, 0),
    };
-   nir_store_reg(&b, nir_imm_false(&b), state.discard_cond_reg);
+   state.last_discard_store =
+      nir_build_store_reg(&b, nir_imm_false(&b), state.discard_cond_reg);
 
    util_dynarray_init(&state.loads, NULL);
    util_dynarray_init(&state.stores, NULL);
@@ -1112,6 +1146,11 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
 
    progress |= sink_outputs(shader, &state);
    progress |= z_replicate(shader, &state);
+
+   progress |= nir_shader_lower_instructions(shader,
+                                             is_load_sample_mask,
+                                             lower_load_sample_mask,
+                                             &state);
 
    util_dynarray_fini(&state.stores);
    util_dynarray_fini(&state.loads);

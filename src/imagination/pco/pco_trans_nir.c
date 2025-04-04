@@ -329,17 +329,20 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
       assert(var->data.interpolation == INTERP_MODE_NOPERSPECTIVE);
 
       /* Special case: x and y are loaded from special registers. */
-      /* TODO: select appropriate regs if sample rate shading. */
       switch (component) {
       case 0: /* x */
          return pco_mov(&tctx->b,
                         dest,
-                        pco_ref_hwreg(PCO_SR_X_P, PCO_REG_CLASS_SPEC));
+                        pco_ref_hwreg(fs_data->uses.sample_shading ? PCO_SR_X_S
+                                                                   : PCO_SR_X_P,
+                                      PCO_REG_CLASS_SPEC));
 
       case 1: /* y */
          return pco_mov(&tctx->b,
                         dest,
-                        pco_ref_hwreg(PCO_SR_Y_P, PCO_REG_CLASS_SPEC));
+                        pco_ref_hwreg(fs_data->uses.sample_shading ? PCO_SR_Y_S
+                                                                   : PCO_SR_Y_P,
+                                      PCO_REG_CLASS_SPEC));
 
       case 2:
          assert(fs_data->uses.z);

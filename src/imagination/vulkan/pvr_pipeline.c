@@ -1252,8 +1252,11 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
 
    fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
-   if (shader_data->fs.uses.sample_shading)
+   if (shader_data->fs.uses.sample_shading ||
+       gfx_pipeline->dynamic_state.ms.rasterization_samples >
+          VK_SAMPLE_COUNT_1_BIT) {
       fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL;
+   }
 
    /* We can't initialize it yet since we still need to generate the PDS
     * programs so set it to `~0` to make sure that we set this up later on.
@@ -1780,6 +1783,7 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 
    assert(BITSET_IS_EMPTY(system_values_read));
 
+   has_meta |= data->fs.meta_present.sample_mask;
    if (!has_meta)
       return;
 
@@ -2313,6 +2317,15 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
       pvr_init_fs_input_attachments(data, pass, subpass, hw_subpass);
       pvr_init_fs_blend(data, state->cb);
+
+      if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) ||
+          (state->ms && state->ms->sample_mask != 0xffff)) {
+         data->fs.meta_present.sample_mask = true;
+      }
+
+      data->fs.rasterization_samples = state->ms->rasterization_samples;
+      nir->info.fs.uses_sample_shading = state->ms->rasterization_samples >
+                                         VK_SAMPLE_COUNT_1_BIT;
 
       /* TODO: push consts, dynamic state, etc. */
       break;

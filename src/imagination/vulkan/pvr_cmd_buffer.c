@@ -3851,6 +3851,9 @@ static VkResult pvr_setup_descriptor_mappings(
          case PVR_BUFFER_TYPE_FS_META: {
             uint32_t fs_meta = 0;
 
+            fs_meta |= cmd_buffer->vk.dynamic_graphics_state.ms.sample_mask
+                       << 9;
+
             struct pvr_suballoc_bo *fs_meta_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
                                                    &fs_meta,
