@@ -10772,8 +10772,8 @@ radv_emit_depth_stencil_state(struct radv_cmd_buffer *cmd_buffer)
          stencil_test_enable && ((d->vk.ds.stencil.front.op.pass != d->vk.ds.stencil.front.op.depth_fail) ||
                                  (d->vk.ds.stencil.back.op.pass != d->vk.ds.stencil.back.op.depth_fail));
 
-      radeon_set_context_reg(R_02800C_DB_RENDER_OVERRIDE,
-                             S_02800C_FORCE_STENCIL_READ(1) | S_02800C_FORCE_STENCIL_VALID(force_s_valid));
+      radeon_opt_set_context_reg(cmd_buffer, R_02800C_DB_RENDER_OVERRIDE, RADV_TRACKED_DB_RENDER_OVERRIDE,
+                                 S_02800C_FORCE_STENCIL_READ(1) | S_02800C_FORCE_STENCIL_VALID(force_s_valid));
 
       radeon_opt_set_context_reg(cmd_buffer, R_028070_DB_DEPTH_CONTROL, RADV_TRACKED_DB_DEPTH_CONTROL,
                                  db_depth_control);
