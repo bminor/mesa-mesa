@@ -954,7 +954,7 @@ impl SSAInstrBuilder<'_> {
     }
 }
 
-impl<'a> Builder for SSAInstrBuilder<'a> {
+impl Builder for SSAInstrBuilder<'_> {
     fn push_instr(&mut self, instr: Box<Instr>) -> &mut Instr {
         self.b.push_instr(instr)
     }
@@ -964,7 +964,7 @@ impl<'a> Builder for SSAInstrBuilder<'a> {
     }
 }
 
-impl<'a> SSABuilder for SSAInstrBuilder<'a> {
+impl SSABuilder for SSAInstrBuilder<'_> {
     fn alloc_ssa(&mut self, file: RegFile) -> SSAValue {
         self.alloc.alloc(file)
     }
@@ -979,7 +979,7 @@ pub struct PredicatedBuilder<'a, T: Builder> {
     pred: Pred,
 }
 
-impl<'a, T: Builder> Builder for PredicatedBuilder<'a, T> {
+impl<T: Builder> Builder for PredicatedBuilder<'_, T> {
     fn push_instr(&mut self, instr: Box<Instr>) -> &mut Instr {
         let mut instr = instr;
         assert!(instr.pred.is_true());
@@ -992,7 +992,7 @@ impl<'a, T: Builder> Builder for PredicatedBuilder<'a, T> {
     }
 }
 
-impl<'a, T: SSABuilder> SSABuilder for PredicatedBuilder<'a, T> {
+impl<T: SSABuilder> SSABuilder for PredicatedBuilder<'_, T> {
     fn alloc_ssa(&mut self, file: RegFile) -> SSAValue {
         self.b.alloc_ssa(file)
     }
@@ -1013,7 +1013,7 @@ impl<'a, T: Builder> UniformBuilder<'a, T> {
     }
 }
 
-impl<'a, T: Builder> Builder for UniformBuilder<'a, T> {
+impl<T: Builder> Builder for UniformBuilder<'_, T> {
     fn push_instr(&mut self, instr: Box<Instr>) -> &mut Instr {
         self.b.push_instr(instr)
     }
@@ -1023,7 +1023,7 @@ impl<'a, T: Builder> Builder for UniformBuilder<'a, T> {
     }
 }
 
-impl<'a, T: SSABuilder> SSABuilder for UniformBuilder<'a, T> {
+impl<T: SSABuilder> SSABuilder for UniformBuilder<'_, T> {
     fn alloc_ssa(&mut self, file: RegFile) -> SSAValue {
         let file = if self.uniform {
             file.to_uniform().unwrap()

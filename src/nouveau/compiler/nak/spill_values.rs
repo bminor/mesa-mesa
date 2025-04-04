@@ -399,7 +399,7 @@ impl<'a> SpillChooser<'a> {
     }
 }
 
-impl<'a> IntoIterator for SpillChooser<'a> {
+impl IntoIterator for SpillChooser<'_> {
     type Item = SSAValue;
     type IntoIter = SpillChoiceIter;
 

@@ -97,8 +97,8 @@ fn nvb097_th_bl_source(
 
 type THBitView<'a> = BitMutView<'a, [u32; 8]>;
 
-fn nv9097_set_th_v2_0<'a>(
-    th: &mut THBitView<'a>,
+fn nv9097_set_th_v2_0(
+    th: &mut THBitView<'_>,
     format: &Format,
     swizzle: [nil_rs_bindings::pipe_swizzle; 4],
 ) {
@@ -122,8 +122,8 @@ fn nv9097_set_th_v2_0<'a>(
     th.set_field(cl9097::TEXHEADV2_W_SOURCE, source[3]);
 }
 
-fn nvb097_set_th_bl_0<'a>(
-    th: &mut THBitView<'a>,
+fn nvb097_set_th_bl_0(
+    th: &mut THBitView<'_>,
     format: &Format,
     swizzle: [nil_rs_bindings::pipe_swizzle; 4],
 ) {
