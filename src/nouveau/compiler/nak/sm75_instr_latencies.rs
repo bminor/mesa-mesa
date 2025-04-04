@@ -1184,10 +1184,8 @@ impl SM75Latency {
                     Some(op) => RegLatencySM75::op_category(op, true, src_idx),
                     None => RegLatencySM75::RedirectedFP64,
                 };
-                return RegLatencySM75::read_after_write(
-                    write_latency,
-                    read_latency,
-                );
+
+                RegLatencySM75::read_after_write(write_latency, read_latency)
             }
             RegFile::UGPR => {
                 let write_latency =
@@ -1196,10 +1194,8 @@ impl SM75Latency {
                     Some(op) => URegLatencySM75::op_category(op, true, src_idx),
                     None => URegLatencySM75::Uldc,
                 };
-                return URegLatencySM75::read_after_write(
-                    write_latency,
-                    read_latency,
-                );
+
+                URegLatencySM75::read_after_write(write_latency, read_latency)
             }
             RegFile::Pred => {
                 let write_latency =
@@ -1208,10 +1204,11 @@ impl SM75Latency {
                     Some(op) => RegLatencySM75::op_category(op, true, src_idx),
                     None => RegLatencySM75::GuardPredicate,
                 };
-                return RegLatencySM75::pred_read_after_write(
+
+                RegLatencySM75::pred_read_after_write(
                     write_latency,
                     read_latency,
-                );
+                )
             }
             RegFile::UPred => {
                 let write_latency =
@@ -1220,14 +1217,13 @@ impl SM75Latency {
                     Some(op) => URegLatencySM75::op_category(op, true, src_idx),
                     None => URegLatencySM75::GuardPredicate,
                 };
-                return URegLatencySM75::pred_read_after_write(
+
+                URegLatencySM75::pred_read_after_write(
                     write_latency,
                     read_latency,
-                );
+                )
             }
-            RegFile::Bar => {
-                return 0;
-            } // Barriers have a HW scoreboard
+            RegFile::Bar => 0, // Barriers have a HW scoreboard
             _ => panic!("Not a register"),
         }
     }
@@ -1245,40 +1241,38 @@ impl SM75Latency {
                     RegLatencySM75::op_category(write, false, dst_idx);
                 let read_latency =
                     RegLatencySM75::op_category(read, true, src_idx);
-                return RegLatencySM75::write_after_read(
-                    read_latency,
-                    write_latency,
-                );
+
+                RegLatencySM75::write_after_read(read_latency, write_latency)
             }
             RegFile::UGPR => {
                 let write_latency =
                     URegLatencySM75::op_category(write, false, dst_idx);
                 let read_latency =
                     URegLatencySM75::op_category(read, true, src_idx);
-                return URegLatencySM75::write_after_read(
-                    read_latency,
-                    write_latency,
-                );
+
+                URegLatencySM75::write_after_read(read_latency, write_latency)
             }
             RegFile::Pred => {
                 let write_latency =
                     RegLatencySM75::op_category(write, false, dst_idx);
                 let read_latency =
                     RegLatencySM75::op_category(read, true, src_idx);
-                return RegLatencySM75::pred_write_after_read(
+
+                RegLatencySM75::pred_write_after_read(
                     read_latency,
                     write_latency,
-                );
+                )
             }
             RegFile::UPred => {
                 let write_latency =
                     URegLatencySM75::op_category(write, false, dst_idx);
                 let read_latency =
                     URegLatencySM75::op_category(read, true, src_idx);
-                return URegLatencySM75::pred_write_after_read(
+
+                URegLatencySM75::pred_write_after_read(
                     read_latency,
                     write_latency,
-                );
+                )
             }
             _ => panic!("Not a register"),
         }
@@ -1303,43 +1297,47 @@ impl SM75Latency {
                     RegLatencySM75::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     RegLatencySM75::op_category(b, false, b_dst_idx);
-                return RegLatencySM75::write_after_write(
+
+                RegLatencySM75::write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::UGPR => {
                 let write1_latency =
                     URegLatencySM75::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     URegLatencySM75::op_category(b, false, b_dst_idx);
-                return URegLatencySM75::write_after_write(
+
+                URegLatencySM75::write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::Pred => {
                 let write1_latency =
                     RegLatencySM75::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     RegLatencySM75::op_category(b, false, b_dst_idx);
-                return RegLatencySM75::pred_write_after_write(
+
+                RegLatencySM75::pred_write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::UPred => {
                 let write1_latency =
                     URegLatencySM75::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     URegLatencySM75::op_category(b, false, b_dst_idx);
-                return URegLatencySM75::pred_write_after_write(
+
+                URegLatencySM75::pred_write_after_write(
                     write1_latency,
                     write2_latency,
-                );
+                )
             }
             _ => panic!("Not a register"),
         }

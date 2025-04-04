@@ -200,7 +200,8 @@ fn generate_order(
             }
         }
     }
-    return (instr_order, current_cycle);
+
+    (instr_order, current_cycle)
 }
 
 fn sched_buffer(

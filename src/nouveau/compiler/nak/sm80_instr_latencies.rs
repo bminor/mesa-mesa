@@ -1420,10 +1420,8 @@ impl SM80Latency {
                     Some(op) => RegLatencySM80::op_category(op, true, src_idx),
                     None => RegLatencySM80::RedirectedFP64,
                 };
-                return RegLatencySM80::read_after_write(
-                    write_latency,
-                    read_latency,
-                );
+
+                RegLatencySM80::read_after_write(write_latency, read_latency)
             }
             RegFile::UGPR => {
                 let write_latency =
@@ -1432,10 +1430,8 @@ impl SM80Latency {
                     Some(op) => URegLatencySM80::op_category(op, true, src_idx),
                     None => URegLatencySM80::Uldc,
                 };
-                return URegLatencySM80::read_after_write(
-                    write_latency,
-                    read_latency,
-                );
+
+                URegLatencySM80::read_after_write(write_latency, read_latency)
             }
             RegFile::Pred => {
                 let write_latency = PredLatencySM80::op_category(write);
@@ -1443,10 +1439,11 @@ impl SM80Latency {
                     Some(op) => PredLatencySM80::op_category(op),
                     None => PredLatencySM80::RedirectedFP64,
                 };
-                return PredLatencySM80::pred_read_after_write(
+
+                PredLatencySM80::pred_read_after_write(
                     write_latency,
                     read_latency,
-                );
+                )
             }
             RegFile::UPred => {
                 let write_latency = UPredLatencySM80::op_category(write);
@@ -1454,14 +1451,13 @@ impl SM80Latency {
                     Some(op) => UPredLatencySM80::op_category(op),
                     None => UPredLatencySM80::UGuard,
                 };
-                return UPredLatencySM80::pred_read_after_write(
+
+                UPredLatencySM80::pred_read_after_write(
                     write_latency,
                     read_latency,
-                );
+                )
             }
-            RegFile::Bar => {
-                return 0;
-            } // Barriers have a HW scoreboard
+            RegFile::Bar => 0, // Barriers have a HW scoreboard
             _ => panic!("Not a register"),
         }
     }
@@ -1479,36 +1475,34 @@ impl SM80Latency {
                     RegLatencySM80::op_category(write, false, dst_idx);
                 let read_latency =
                     RegLatencySM80::op_category(read, true, src_idx);
-                return RegLatencySM80::write_after_read(
-                    read_latency,
-                    write_latency,
-                );
+
+                RegLatencySM80::write_after_read(read_latency, write_latency)
             }
             RegFile::UGPR => {
                 let write_latency =
                     URegLatencySM80::op_category(write, false, dst_idx);
                 let read_latency =
                     URegLatencySM80::op_category(read, true, src_idx);
-                return URegLatencySM80::write_after_read(
-                    read_latency,
-                    write_latency,
-                );
+
+                URegLatencySM80::write_after_read(read_latency, write_latency)
             }
             RegFile::Pred => {
                 let write_latency = PredLatencySM80::op_category(write);
                 let read_latency = PredLatencySM80::op_category(read);
-                return PredLatencySM80::pred_write_after_read(
+
+                PredLatencySM80::pred_write_after_read(
                     read_latency,
                     write_latency,
-                );
+                )
             }
             RegFile::UPred => {
                 let write_latency = UPredLatencySM80::op_category(write);
                 let read_latency = UPredLatencySM80::op_category(read);
-                return UPredLatencySM80::pred_write_after_read(
+
+                UPredLatencySM80::pred_write_after_read(
                     read_latency,
                     write_latency,
-                );
+                )
             }
             _ => panic!("Not a register"),
         }
@@ -1533,39 +1527,43 @@ impl SM80Latency {
                     RegLatencySM80::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     RegLatencySM80::op_category(b, false, b_dst_idx);
-                return RegLatencySM80::write_after_write(
+
+                RegLatencySM80::write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::UGPR => {
                 let write1_latency =
                     URegLatencySM80::op_category(a, false, a_dst_idx);
                 let write2_latency =
                     URegLatencySM80::op_category(b, false, b_dst_idx);
-                return URegLatencySM80::write_after_write(
+
+                URegLatencySM80::write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::Pred => {
                 let write1_latency = PredLatencySM80::op_category(a);
                 let write2_latency = PredLatencySM80::op_category(b);
-                return PredLatencySM80::pred_write_after_write(
+
+                PredLatencySM80::pred_write_after_write(
                     write1_latency,
                     write2_latency,
                     a_op_pred,
-                );
+                )
             }
             RegFile::UPred => {
                 let write1_latency = UPredLatencySM80::op_category(a);
                 let write2_latency = UPredLatencySM80::op_category(b);
-                return UPredLatencySM80::pred_write_after_write(
+
+                UPredLatencySM80::pred_write_after_write(
                     write1_latency,
                     write2_latency,
-                );
+                )
             }
             _ => panic!("Not a register"),
         }

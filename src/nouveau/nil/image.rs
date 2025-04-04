@@ -938,9 +938,9 @@ impl Image {
         );
 
         let tiling_extent_B = lvl_tiling.extent_B();
-        let offset_B = offset_B
-            + u64::from(tiling_extent_B.width * tiling_extent_B.height * z_gob);
+
         offset_B
+            + u64::from(tiling_extent_B.width * tiling_extent_B.height * z_gob)
     }
 }
 

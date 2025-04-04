@@ -335,7 +335,8 @@ pub fn calc_statistics(g: &mut DepGraph) -> Vec<usize> {
             initial_ready_list.push(i);
         }
     }
-    return initial_ready_list;
+
+    initial_ready_list
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
