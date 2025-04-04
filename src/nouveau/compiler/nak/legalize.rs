@@ -499,7 +499,7 @@ impl Shader<'_> {
                     let mut b = SSAInstrBuilder::new(sm, &mut f.ssa_alloc);
                     legalize_instr(sm, &mut b, bl, bu, &pinned, ip, &mut instr);
                     b.push_instr(instr);
-                    instrs.append(&mut b.as_vec());
+                    instrs.append(&mut b.into_vec());
                 }
                 b.instrs = instrs;
             }

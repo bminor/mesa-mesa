@@ -248,7 +248,7 @@ fn lower_par_copy(pc: OpParCopy, sm: &dyn ShaderModel) -> MappedInstrs {
         }
     }
 
-    b.as_mapped_instrs()
+    b.into_mapped_instrs()
 }
 
 impl Shader<'_> {

@@ -112,7 +112,7 @@ impl RegFile {
     /// Returns the uniform form of this register file, if any.  For `GPR` and
     /// `UGPR, this returns `UGPR` and for `Pred` and `UPred`, this returns
     /// `UPred`.
-    pub fn to_uniform(&self) -> Option<RegFile> {
+    pub fn to_uniform(self) -> Option<RegFile> {
         match self {
             RegFile::GPR | RegFile::UGPR => Some(RegFile::UGPR),
             RegFile::Pred | RegFile::UPred => Some(RegFile::UPred),
@@ -121,11 +121,11 @@ impl RegFile {
     }
 
     /// Returns warp-wide version of this register file.
-    pub fn to_warp(&self) -> RegFile {
+    pub fn to_warp(self) -> RegFile {
         match self {
             RegFile::GPR | RegFile::UGPR => RegFile::GPR,
             RegFile::Pred | RegFile::UPred => RegFile::Pred,
-            RegFile::Carry | RegFile::Bar | RegFile::Mem => *self,
+            RegFile::Carry | RegFile::Bar | RegFile::Mem => self,
         }
     }
 

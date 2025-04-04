@@ -59,7 +59,7 @@ impl MthdHeader {
         unsafe { &mut *(bits as *mut u32 as *mut MthdHeader) }
     }
 
-    fn to_bits(self) -> u32 {
+    fn into_bits(self) -> u32 {
         self.0
     }
 
@@ -183,11 +183,11 @@ impl Push {
         if bits <= 0x1fff {
             self.last_inc = usize::MAX;
             let header = MthdHeader::new_immd(bits as u16, subc, addr);
-            self.mem.push(header.to_bits());
+            self.mem.push(header.into_bits());
         } else {
             self.last_inc = self.mem.len();
             let header = MthdHeader::new(MthdType::NInc, subc, addr, 1);
-            self.mem.push(header.to_bits());
+            self.mem.push(header.into_bits());
             self.mem.push(bits);
         }
     }

@@ -129,7 +129,7 @@ impl<'a> TestShaderBuilder<'a> {
         let start_block = BasicBlock {
             label: label_alloc.alloc(),
             uniform: true,
-            instrs: b.as_vec(),
+            instrs: b.into_vec(),
         };
 
         TestShaderBuilder {
@@ -187,7 +187,7 @@ impl<'a> TestShaderBuilder<'a> {
         let block = BasicBlock {
             label: self.label,
             uniform: true,
-            instrs: self.b.as_vec(),
+            instrs: self.b.into_vec(),
         };
 
         let mut cfg = CFGBuilder::new();

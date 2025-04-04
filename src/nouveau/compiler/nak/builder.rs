@@ -902,7 +902,7 @@ impl<'a> InstrBuilder<'a> {
 }
 
 impl InstrBuilder<'_> {
-    pub fn as_vec(self) -> Vec<Box<Instr>> {
+    pub fn into_vec(self) -> Vec<Box<Instr>> {
         match self.instrs {
             MappedInstrs::None => Vec::new(),
             MappedInstrs::One(i) => vec![i],
@@ -910,7 +910,7 @@ impl InstrBuilder<'_> {
         }
     }
 
-    pub fn as_mapped_instrs(self) -> MappedInstrs {
+    pub fn into_mapped_instrs(self) -> MappedInstrs {
         self.instrs
     }
 }
@@ -944,13 +944,13 @@ impl<'a> SSAInstrBuilder<'a> {
 }
 
 impl SSAInstrBuilder<'_> {
-    pub fn as_vec(self) -> Vec<Box<Instr>> {
-        self.b.as_vec()
+    pub fn into_vec(self) -> Vec<Box<Instr>> {
+        self.b.into_vec()
     }
 
     #[allow(dead_code)]
-    pub fn as_mapped_instrs(self) -> MappedInstrs {
-        self.b.as_mapped_instrs()
+    pub fn into_mapped_instrs(self) -> MappedInstrs {
+        self.b.into_mapped_instrs()
     }
 }
 

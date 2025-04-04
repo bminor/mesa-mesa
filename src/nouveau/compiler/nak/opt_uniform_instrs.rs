@@ -73,7 +73,7 @@ impl Shader<'_> {
                         });
                         *ssa = w;
                     });
-                    let mut v = b.as_vec();
+                    let mut v = b.into_vec();
                     v.insert(0, instr);
                     MappedInstrs::Many(v)
                 } else {
@@ -90,7 +90,7 @@ impl Shader<'_> {
                         }
                     });
                     b.push_instr(instr);
-                    b.as_mapped_instrs()
+                    b.into_mapped_instrs()
                 }
             } else {
                 propagated_r2ur |= propagate_r2ur(&mut instr, &r2ur);

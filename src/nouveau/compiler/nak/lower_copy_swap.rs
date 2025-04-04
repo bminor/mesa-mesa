@@ -261,7 +261,7 @@ impl LowerCopySwap {
                         }));
                     }
                     self.lower_r2ur(&mut b, r2ur);
-                    b.as_mapped_instrs()
+                    b.into_mapped_instrs()
                 }
                 Op::Copy(copy) => {
                     debug_assert!(instr.pred.is_true());
@@ -273,7 +273,7 @@ impl LowerCopySwap {
                         }));
                     }
                     self.lower_copy(&mut b, copy);
-                    b.as_mapped_instrs()
+                    b.into_mapped_instrs()
                 }
                 Op::Swap(swap) => {
                     debug_assert!(instr.pred.is_true());
@@ -285,7 +285,7 @@ impl LowerCopySwap {
                         }));
                     }
                     self.lower_swap(&mut b, swap);
-                    b.as_mapped_instrs()
+                    b.into_mapped_instrs()
                 }
                 _ => MappedInstrs::One(instr),
             }
