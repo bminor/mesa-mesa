@@ -28,6 +28,8 @@ nv_classes = [
   'clc797',
   'clc7c0',
   'clcbc0',
+  'clcdc0',
+  'clcec0',
 ]
 
 hwref_gens = [
