@@ -102,6 +102,12 @@
   variables:
     CI_BUILD_COMPONENTS: "angle piglit"
 
+# Export the container rootfs and upload it to S3
+.export-container:
+  variables:
+    FDO_DISTRIBUTION_PACKAGES: zstd
+    FDO_DISTRIBUTION_POST_EXEC: 'bash .gitlab-ci/container/fdo_cntr_export.sh'
+
 .use-base-image:
   extends:
     - .container
@@ -422,8 +428,10 @@ debian/x86_64_test-gl:
   extends:
     - .use-debian/x86_64_test-base
     - .container-builds-x86_64
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-gl ${DEBIAN_TEST_GL_TAG}
+    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-gl:
   tags:
@@ -442,8 +450,10 @@ debian/x86_64_test-vk:
   extends:
     - .use-debian/x86_64_test-base
     - .container-builds-x86_64
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-vk ${DEBIAN_TEST_VK_TAG}
+    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-vk:
   tags:
@@ -506,8 +516,10 @@ debian/arm32_test-gl:
   extends:
     - .use-debian/arm32_test-base
     - .container-builds-arm32
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-gl ${DEBIAN_TEST_GL_TAG}
+    LAVA_DISTRIBUTION_TAG: "debian/arm32_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm32_test-gl:
   tags:
@@ -552,8 +564,10 @@ debian/arm64_test-gl:
   extends:
     - .use-debian/arm64_test-base
     - .container-builds-arm64
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-gl ${DEBIAN_TEST_GL_TAG}
+    LAVA_DISTRIBUTION_TAG: "debian/arm64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm64_test-gl:
   tags:
@@ -574,8 +588,10 @@ debian/arm64_test-vk:
   extends:
     - .use-debian/arm64_test-base
     - .container-builds-arm64
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-vk ${DEBIAN_TEST_VK_TAG}
+    LAVA_DISTRIBUTION_TAG: "debian/arm64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm64_test-vk:
   tags:
