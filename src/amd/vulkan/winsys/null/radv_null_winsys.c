@@ -160,7 +160,6 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
       (gpu_info->family == CHIP_STONEY || gpu_info->family == CHIP_VEGA12 || gpu_info->family == CHIP_RAVEN ||
        gpu_info->family == CHIP_RAVEN2 || gpu_info->family == CHIP_RENOIR || gpu_info->gfx_level >= GFX10_3);
 
-   gpu_info->has_scheduled_fence_dependency = true;
    gpu_info->has_gang_submit = true;
 
    gpu_info->gart_page_size = 4096;
