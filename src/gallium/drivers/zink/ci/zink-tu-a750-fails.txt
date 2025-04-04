@@ -18,6 +18,12 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_revers
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_y,Fail
 dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
 
+# Regression from !33851
+KHR-GL46.packed_depth_stencil.blit.depth24_stencil8,Fail
+KHR-GL46.packed_depth_stencil.blit.depth32f_stencil8,Fail
+KHR-GLES3.packed_depth_stencil.blit.depth24_stencil8,Fail
+KHR-GLES3.packed_depth_stencil.blit.depth32f_stencil8,Fail
+
 GTF-GL46.gtf30.GL3Tests.sgis_texture_lod.sgis_texture_lod_basic_lod_selection,Fail
 
 KHR-Single-GL46.arrays_of_arrays_gl.SubroutineFunctionCalls2,Crash
