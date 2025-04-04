@@ -2116,6 +2116,8 @@ static void pvr_setup_descriptors(pco_data *data,
 {
    mesa_shader_stage stage = nir->info.stage;
 
+   data->common.shareds = ALIGN_POT(data->common.shareds, 4);
+
    /* Allocate shareds for the descriptors. */
    for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
       const struct pvr_descriptor_set_layout *set_layout =
@@ -2238,6 +2240,7 @@ static void pvr_setup_descriptors(pco_data *data,
    }
 
    if (data->common.uses.point_sampler) {
+      data->common.shareds = ALIGN_POT(data->common.shareds, 4);
       data->common.point_sampler = (pco_range){
          .start = data->common.shareds,
          .count = ROGUE_NUM_TEXSTATE_DWORDS,
@@ -2247,6 +2250,7 @@ static void pvr_setup_descriptors(pco_data *data,
    }
 
    if (data->common.uses.ia_sampler) {
+      data->common.shareds = ALIGN_POT(data->common.shareds, 4);
       data->common.ia_sampler = (pco_range){
          .start = data->common.shareds,
          .count = ROGUE_NUM_TEXSTATE_DWORDS,
