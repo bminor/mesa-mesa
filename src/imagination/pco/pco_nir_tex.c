@@ -1056,6 +1056,33 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    if (coords)
       coords = nir_trim_vector(b, coords, num_coord_comps);
 
+   if (ia) {
+      nir_variable *pos = nir_get_variable_with_location(b->shader,
+                                                         nir_var_shader_in,
+                                                         VARYING_SLOT_POS,
+                                                         glsl_vec4_type());
+      pos->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+
+      nir_def *frag_coords = nir_load_input(b,
+                                            2,
+                                            32,
+                                            nir_imm_int(b, 0),
+                                            .dest_type = nir_type_float32,
+                                            .io_semantics = (nir_io_semantics){
+                                               .location = VARYING_SLOT_POS,
+                                               .num_slots = 1,
+                                            });
+
+      frag_coords = nir_f2i32(b, frag_coords);
+      coords = nir_iadd(b, frag_coords, coords);
+
+      nir_def *layer = nir_load_layer_id(b); /* TODO: view id for multiview? */
+
+      coords = nir_pad_vector(b, coords, 3);
+      coords = nir_vector_insert_imm(b, coords, layer, 2);
+      is_array = true;
+   }
+
    nir_def *float_coords;
    nir_def *int_coords;
    nir_def *float_array_index;
