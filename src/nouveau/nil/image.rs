@@ -434,8 +434,8 @@ impl Image {
             assert!(bl_mod.pte_kind() == image.pte_kind);
         }
 
-        image.tile_mode = u16::from(image.levels[0].tiling.y_log2) << 4
-            | u16::from(image.levels[0].tiling.z_log2) << 8;
+        image.tile_mode = (u16::from(image.levels[0].tiling.y_log2) << 4)
+            | (u16::from(image.levels[0].tiling.z_log2) << 8);
 
         image.align_B = std::cmp::max(image.align_B, 4096);
         if image.pte_kind >= 0xb && image.pte_kind <= 0xe {

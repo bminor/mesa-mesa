@@ -325,7 +325,7 @@ impl ShaderBin {
                 },
                 _ => unsafe { std::mem::zeroed() },
             },
-            hdr: sph::encode_header(sm, &info, fs_key),
+            hdr: sph::encode_header(sm, info, fs_key),
         };
 
         if DEBUG.print() {

@@ -90,7 +90,7 @@ impl MthdHeader {
     }
 
     fn subc(&self) -> u8 {
-        (self.0 >> 13 & 0x7) as u8
+        ((self.0 >> 13) & 0x7) as u8
     }
 
     fn addr(&self) -> u16 {
@@ -99,7 +99,7 @@ impl MthdHeader {
 
     fn len(&self) -> u16 {
         debug_assert!(!matches!(self.mthd_type(), MthdType::Immd));
-        (self.0 >> 16 & 0x1fff) as u16
+        ((self.0 >> 16) & 0x1fff) as u16
     }
 
     fn set_len(&mut self, len: u16) {

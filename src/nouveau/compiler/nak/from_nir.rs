@@ -2324,7 +2324,7 @@ impl<'a> ShaderFromNir<'a> {
                         in_bounds: Dst::None,
                         src: self.get_src(&srcs[0]),
                         lane: 1_u32.into(),
-                        c: (0x3_u32 | 0x1c_u32 << 8).into(),
+                        c: (0x3_u32 | (0x1c_u32 << 8)).into(),
                         op: ShflOp::Bfly,
                     });
 
@@ -2375,7 +2375,7 @@ impl<'a> ShaderFromNir<'a> {
                         in_bounds: Dst::None,
                         src: self.get_src(&srcs[0]),
                         lane: 2_u32.into(),
-                        c: (0x3_u32 | 0x1c_u32 << 8).into(),
+                        c: (0x3_u32 | (0x1c_u32 << 8)).into(),
                         op: ShflOp::Bfly,
                     });
 
@@ -3458,7 +3458,7 @@ impl<'a> ShaderFromNir<'a> {
                         let c = dw * 4 + b;
                         if c < load_const.def.num_components {
                             let imm_u8 = unsafe { values[usize::from(c)].u8_ };
-                            imm_u32 |= u32::from(imm_u8) << b * 8;
+                            imm_u32 |= u32::from(imm_u8) << (b * 8);
                         }
                     }
                     dst.push(b.copy(imm_u32.into()));
@@ -3472,7 +3472,7 @@ impl<'a> ShaderFromNir<'a> {
                         if c < load_const.def.num_components {
                             let imm_u16 =
                                 unsafe { values[usize::from(c)].u16_ };
-                            imm_u32 |= u32::from(imm_u16) << w * 16;
+                            imm_u32 |= u32::from(imm_u16) << (w * 16);
                         }
                     }
                     dst.push(b.copy(imm_u32.into()));
