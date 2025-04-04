@@ -498,6 +498,15 @@ anv_device_has_perf_improvement_with_64k_pages(struct anv_device *device)
    return device->info->kmd_type == INTEL_KMD_TYPE_XE;
 }
 
+static bool
+anv_device_has_perf_improvement_with_2mb_pages_oversubscription(struct anv_device *device)
+{
+   /* for now it is the same restriction as anv_device_has_perf_improvement_with_64k_pages()
+    * but lets have a function to adjust it in future if needed
+    */
+   return anv_device_has_perf_improvement_with_64k_pages(device);
+}
+
 /** Grows and re-centers the block pool.
  *
  * We grow the block pool in one or both directions in such a way that the
@@ -1681,12 +1690,21 @@ anv_device_alloc_bo(struct anv_device *device,
       size = align64(size, 4096);
    }
 
+   /* Round up allocations to 2MB intervals so long as increase doesn't
+    * increase allocation by more than 1.33%. This reduces page
+    * count at the cost of increased memory footprint. Only apply on
+    * MTL(Xe KMD only)/LNL platforms, which incur largest perf penalty from
+    * page misses.
+    */
+   if (align64(size, 2 * 1024 * 1024) <= (size * 4 / 3) &&
+       anv_device_has_perf_improvement_with_2mb_pages_oversubscription(device))
+      size = align64(size, 2 * 1024 * 1024);
    /* bos larger than 1MB can't be allocated with slab but to reduce pages we
     * could align size to 64k pages to gain performance with minimum memory
     * waste.
     */
-   if ((size > (1 * 1024 * 1024)) &&
-       anv_device_has_perf_improvement_with_64k_pages(device))
+   else if ((size > (1 * 1024 * 1024)) &&
+            anv_device_has_perf_improvement_with_64k_pages(device))
       size = align64(size, 64 * 1024);
 
    const struct intel_memory_class_instance *regions[2];
