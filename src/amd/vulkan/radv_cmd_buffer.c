@@ -4646,11 +4646,9 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_rendering_state *render = &cmd_buffer->state.render;
    int i;
-   bool disable_constant_encode_ac01 = false;
    unsigned color_invalid = pdev->info.gfx_level >= GFX12   ? S_028EC0_FORMAT(V_028EC0_COLOR_INVALID)
                             : pdev->info.gfx_level >= GFX11 ? S_028C70_FORMAT_GFX11(V_028C70_COLOR_INVALID)
                                                             : S_028C70_FORMAT_GFX6(V_028C70_COLOR_INVALID);
-   VkExtent2D extent = {MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT};
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cmd_buffer->cs, 51 + MAX_RTS * 70);
 
@@ -4690,16 +4688,6 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       }
 
       radv_load_color_clear_metadata(cmd_buffer, iview, i);
-
-      if (pdev->info.gfx_level >= GFX9 && iview->image->dcc_sign_reinterpret) {
-         /* Disable constant encoding with the clear value of "1" with different DCC signedness
-          * because the hardware will fill "1" instead of the clear value.
-          */
-         disable_constant_encode_ac01 = true;
-      }
-
-      extent.width = MIN2(extent.width, iview->vk.extent.width);
-      extent.height = MIN2(extent.height, iview->vk.extent.height);
    }
    for (; i < cmd_buffer->state.last_subpass_color_count; i++) {
       radeon_begin(cmd_buffer->cs);
@@ -4735,9 +4723,6 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
           */
          radv_load_ds_clear_metadata(cmd_buffer, iview);
       }
-
-      extent.width = MIN2(extent.width, iview->vk.extent.width);
-      extent.height = MIN2(extent.height, iview->vk.extent.height);
    } else if (pdev->info.gfx_level == GFX10_3 && render->vrs_att.iview && radv_cmd_buffer_get_vrs_image(cmd_buffer)) {
       /* When a subpass uses a VRS attachment without binding a depth/stencil attachment, we have to
        * bind our internal depth buffer that contains the VRS data as part of HTILE.
@@ -4783,28 +4768,6 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
    if (pdev->info.gfx_level >= GFX11)
       radv_gfx11_emit_vrs_surface(cmd_buffer);
 
-   radeon_begin(cmd_buffer->cs);
-
-   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11) {
-      const bool disable_constant_encode = pdev->info.has_dcc_constant_encode;
-      const uint8_t watermark = pdev->info.gfx_level >= GFX10 ? 6 : 4;
-
-      radeon_set_context_reg(R_028424_CB_DCC_CONTROL,
-                             S_028424_OVERWRITE_COMBINER_MRT_SHARING_DISABLE(pdev->info.gfx_level <= GFX9) |
-                                S_028424_OVERWRITE_COMBINER_WATERMARK(watermark) |
-                                S_028424_DISABLE_CONSTANT_ENCODE_AC01(disable_constant_encode_ac01) |
-                                S_028424_DISABLE_CONSTANT_ENCODE_REG(disable_constant_encode));
-   }
-
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028184_PA_SC_SCREEN_SCISSOR_BR,
-                             S_028034_BR_X(extent.width) | S_028034_BR_Y(extent.height));
-   } else {
-      radeon_set_context_reg(R_028034_PA_SC_SCREEN_SCISSOR_BR,
-                             S_028034_BR_X(extent.width) | S_028034_BR_Y(extent.height));
-   }
-
-   radeon_end();
    assert(cmd_buffer->cs->cdw <= cdw_max);
 
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAMEBUFFER;
@@ -9164,6 +9127,8 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   VkExtent2D screen_scissor = {MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT};
+   bool disable_constant_encode_ac01 = false;
 
    const struct VkSampleLocationsInfoEXT *sample_locs_info =
       vk_find_struct_const(pRenderingInfo->pNext, SAMPLE_LOCATIONS_INFO_EXT);
@@ -9219,6 +9184,16 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
                                                 pRenderingInfo->viewMask, initial_layout, VK_IMAGE_LAYOUT_UNDEFINED,
                                                 color_att[i].layout, VK_IMAGE_LAYOUT_UNDEFINED, &sample_locations);
       }
+
+      if (pdev->info.gfx_level >= GFX9 && iview->image->dcc_sign_reinterpret) {
+         /* Disable constant encoding with the clear value of "1" with different DCC signedness
+          * because the hardware will fill "1" instead of the clear value.
+          */
+         disable_constant_encode_ac01 = true;
+      }
+
+      screen_scissor.width = MIN2(screen_scissor.width, iview->vk.extent.width);
+      screen_scissor.height = MIN2(screen_scissor.height, iview->vk.extent.height);
    }
 
    struct radv_attachment ds_att = {.iview = NULL};
@@ -9288,6 +9263,9 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
                                                 pRenderingInfo->viewMask, initial_depth_layout, initial_stencil_layout,
                                                 ds_att.layout, ds_att.stencil_layout, &sample_locations);
       }
+
+      screen_scissor.width = MIN2(screen_scissor.width, ds_att.iview->vk.extent.width);
+      screen_scissor.height = MIN2(screen_scissor.height, ds_att.iview->vk.extent.height);
    }
    if (cmd_buffer->vk.render_pass)
       radv_describe_barrier_end(cmd_buffer);
@@ -9387,16 +9365,31 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    const uint32_t maxx = minx + render->area.extent.width;
    const uint32_t maxy = miny + render->area.extent.height;
 
-   radeon_check_space(device->ws, cmd_buffer->cs, 6);
+   radeon_check_space(device->ws, cmd_buffer->cs, 12);
    radeon_begin(cmd_buffer->cs);
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_context_reg(R_028204_PA_SC_WINDOW_SCISSOR_TL, S_028204_TL_X(minx) | S_028204_TL_Y_GFX12(miny));
       radeon_set_context_reg(R_028208_PA_SC_WINDOW_SCISSOR_BR,
                              S_028208_BR_X(maxx - 1) | S_028208_BR_Y(maxy - 1)); /* inclusive */
+      radeon_set_context_reg(R_028184_PA_SC_SCREEN_SCISSOR_BR,
+                             S_028034_BR_X(screen_scissor.width) | S_028034_BR_Y(screen_scissor.height));
    } else {
       radeon_set_context_reg(R_028204_PA_SC_WINDOW_SCISSOR_TL, S_028204_TL_X(minx) | S_028204_TL_Y_GFX6(miny));
       radeon_set_context_reg(R_028208_PA_SC_WINDOW_SCISSOR_BR, S_028208_BR_X(maxx) | S_028208_BR_Y(maxy));
+      radeon_set_context_reg(R_028034_PA_SC_SCREEN_SCISSOR_BR,
+                             S_028034_BR_X(screen_scissor.width) | S_028034_BR_Y(screen_scissor.height));
+
+      if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11) {
+         const bool disable_constant_encode = pdev->info.has_dcc_constant_encode;
+         const uint8_t watermark = pdev->info.gfx_level >= GFX10 ? 6 : 4;
+
+         radeon_set_context_reg(R_028424_CB_DCC_CONTROL,
+                                S_028424_OVERWRITE_COMBINER_MRT_SHARING_DISABLE(pdev->info.gfx_level <= GFX9) |
+                                   S_028424_OVERWRITE_COMBINER_WATERMARK(watermark) |
+                                   S_028424_DISABLE_CONSTANT_ENCODE_AC01(disable_constant_encode_ac01) |
+                                   S_028424_DISABLE_CONSTANT_ENCODE_REG(disable_constant_encode));
+      }
    }
 
    radeon_end();
