@@ -1,7 +1,9 @@
 KHR-GL46.shader_atomic_counters.basic-usage-tes
 KHR-GL46.shader_bitfield_operation.bitfieldInsert.ivec3_2
+KHR-GL46.shader_bitfield_operation.bitfieldReverse.int_2
 KHR-GL46.shader_bitfield_operation.findMSB.uint_0
 KHR-GL46.shader_bitfield_operation.unpackUnorm4x8.1
+KHR-GL46.shader_draw_parameters_tests.ShaderMultiDrawElementsIndirectParameters
 KHR-GL46.shader_group_vote.all_invocations
 KHR-GL46.shader_group_vote.all_invocations_equal
 KHR-GL46.shader_group_vote.invocations_with_variables
@@ -26,6 +28,7 @@ dEQP-GLES31.functional.compute.shared_var.basic_type.mat3_mediump
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32ui_rgba16f.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.fbo.no_attachments.interaction.127x127ms0_default_129x129ms0
 dEQP-GLES31.functional.image_load_store.2d_array.load_store.rgba32f_single_layer
+dEQP-GLES31.functional.image_load_store.cube.format_reinterpret.rgba8_snorm_r32ui
 dEQP-GLES31.functional.image_load_store.cube.load_store.r32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.load_store.rgba16f
 dEQP-GLES31.functional.shaders.builtin_var.compute.local_invocation_id
@@ -34,8 +37,12 @@ dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat4
 dEQP-GLES31.functional.ssbo.layout.basic_unsized_array.std140.row_major_mat3
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std140.column_major_mat2x3
 dEQP-GLES31.functional.ssbo.layout.multi_nested_struct.single_buffer.packed
+dEQP-GLES31.functional.ssbo.layout.random.all_per_block_buffers.49
 dEQP-GLES31.functional.ssbo.layout.random.arrays_of_arrays.4
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_arrays.14
+dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.11
+dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.12
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.mediump_uint
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_mediump_mat4
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.highp_mat3
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.column_major_mediump_mat3x2
