@@ -273,8 +273,8 @@ fn nv9097_fill_tic(
     nv9097_set_th_v2_0(&mut th, &view.format, view.swizzle);
 
     // There's no base layer field in the texture header
-    let layer_address = base_address
-        + u64::from(view.base_array_layer) * u64::from(image.array_stride_B);
+    let layer_address =
+        base_address + u64::from(view.base_array_layer) * image.array_stride_B;
 
     th.set_field(cl9097::TEXHEADV2_OFFSET_LOWER, layer_address as u32);
     th.set_field(cl9097::TEXHEADV2_OFFSET_UPPER, (layer_address >> 32) as u32);
@@ -395,7 +395,7 @@ fn nvb097_fill_tic(
             view.base_array_layer + view.array_len <= image.extent_px.array_len
         );
         layer_address +=
-            u64::from(view.base_array_layer) * u64::from(image.array_stride_B);
+            u64::from(view.base_array_layer) * image.array_stride_B;
     }
 
     if tiling.is_tiled() {

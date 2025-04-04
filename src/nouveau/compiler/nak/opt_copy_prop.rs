@@ -319,10 +319,10 @@ impl<'a> CopyPropPass<'a> {
                         combined[i] = prmt_byte.byte().try_into().unwrap();
                     }
 
-                    let entry_src_idx = usize::from(entry_src_idx.unwrap());
+                    let entry_src_idx = entry_src_idx.unwrap();
                     let entry_src = &entry.srcs[entry_src_idx];
 
-                    if !cbuf_rule.allows_src(entry.bi, &entry_src) {
+                    if !cbuf_rule.allows_src(entry.bi, entry_src) {
                         return;
                     }
 

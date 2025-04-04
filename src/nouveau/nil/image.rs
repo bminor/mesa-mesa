@@ -271,7 +271,7 @@ impl Image {
             extent_px: info.extent_px,
             sample_layout,
             num_levels: info.levels,
-            levels: [ImageLevel::default(); MAX_LEVELS as usize],
+            levels: [ImageLevel::default(); MAX_LEVELS],
             array_stride_B: 0,
             align_B,
             size_B,
@@ -352,7 +352,7 @@ impl Image {
             extent_px: info.extent_px,
             sample_layout,
             num_levels: info.levels,
-            levels: [ImageLevel::default(); MAX_LEVELS as usize],
+            levels: [ImageLevel::default(); MAX_LEVELS],
             array_stride_B: 0,
             align_B: 0,
             size_B: 0,
@@ -632,7 +632,7 @@ impl Image {
             size_B -= next_lvl_offset_in_bytes - lvl.offset_B;
         }
 
-        let mut levels: [ImageLevel; MAX_LEVELS as usize] = Default::default();
+        let mut levels: [ImageLevel; MAX_LEVELS] = Default::default();
         levels[0] = lvl;
 
         *offset_in_bytes_out = lvl.offset_B;

@@ -837,7 +837,7 @@ fn spill_values<S: Spill>(
                                     assert!(spill.is_const(ssa));
                                     instrs.push(spill.spill(*ssa));
                                 }
-                                *ssa = spill.get_spill(*ssa).into();
+                                *ssa = spill.get_spill(*ssa);
                             }
                         });
                     } else if file == RegFile::UPred && !bb.uniform {

@@ -528,15 +528,15 @@ pub extern "C" fn nak_get_qmd_cbuf_desc_layout(
     idx: u8,
 ) -> nak_qmd_cbuf_desc_layout {
     if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
-        Qmd4_0::cbuf_desc_layout(idx.into())
+        Qmd4_0::cbuf_desc_layout(idx)
     } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
-        Qmd3_0::cbuf_desc_layout(idx.into())
+        Qmd3_0::cbuf_desc_layout(idx)
     } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
-        Qmd2_2::cbuf_desc_layout(idx.into())
+        Qmd2_2::cbuf_desc_layout(idx)
     } else if dev.cls_compute >= clc0c0::PASCAL_COMPUTE_A {
-        Qmd2_1::cbuf_desc_layout(idx.into())
+        Qmd2_1::cbuf_desc_layout(idx)
     } else if dev.cls_compute >= cla0c0::KEPLER_COMPUTE_A {
-        Qmd0_6::cbuf_desc_layout(idx.into())
+        Qmd0_6::cbuf_desc_layout(idx)
     } else {
         panic!("Unsupported shader model");
     }

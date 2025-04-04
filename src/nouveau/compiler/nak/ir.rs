@@ -3779,7 +3779,7 @@ impl Foldable for OpLea {
         let (dst, o) = u32::overflowing_add(shift_result, b);
         overflow |= o;
 
-        f.set_u32_dst(self, &self.dst, dst as u32);
+        f.set_u32_dst(self, &self.dst, dst);
         f.set_pred_dst(self, &self.overflow, overflow);
     }
 }
@@ -3858,7 +3858,7 @@ impl Foldable for OpLeaX {
         let (dst, o) = u32::overflowing_add(dst, if carry { 1 } else { 0 });
         overflow |= o;
 
-        f.set_u32_dst(self, &self.dst, dst as u32);
+        f.set_u32_dst(self, &self.dst, dst);
         f.set_pred_dst(self, &self.overflow, overflow);
     }
 }

@@ -1186,7 +1186,7 @@ impl AssignRegsBlock {
                 for (_, src) in pcopy.dsts_srcs.iter_mut() {
                     if let Some(src_vec) = src_ssa_ref(src) {
                         debug_assert!(src_vec.comps() == 1);
-                        let reg = self.get_scalar(src_vec[0]).into();
+                        let reg = self.get_scalar(src_vec[0]);
                         src_set_reg(src, reg);
                     }
                 }
@@ -1225,7 +1225,7 @@ impl AssignRegsBlock {
                 for src in out.srcs.iter_mut() {
                     if let Some(src_vec) = src_ssa_ref(src) {
                         debug_assert!(src_vec.comps() == 1);
-                        let reg = self.get_scalar(src_vec[0]).into();
+                        let reg = self.get_scalar(src_vec[0]);
                         src_set_reg(src, reg);
                     }
                 }

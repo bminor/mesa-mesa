@@ -675,8 +675,7 @@ impl<'a> ShaderFromNir<'a> {
                             } else if *s != Src::from(dw) {
                                 continue;
                             }
-                            prmt[usize::from(b)] =
-                                (ds as u8) * 4 + (bytes[b] % 4);
+                            prmt[b] = (ds as u8) * 4 + (bytes[b] % 4);
                             break;
                         }
                     }
@@ -2436,7 +2435,7 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpBreak {
                     bar_out: bar_out.into(),
                     bar_in: bar_in.into(),
-                    cond: cond.into(),
+                    cond,
                 });
 
                 self.set_dst(&intrin.def, b.bmov_to_gpr(bar_out.into()).into());

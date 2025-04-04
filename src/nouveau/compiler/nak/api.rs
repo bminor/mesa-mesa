@@ -314,8 +314,8 @@ impl ShaderBin {
                     writes_point_size: io.attr_written(NAK_ATTR_POINT_SIZE),
                     writes_vprs_table_index: io
                         .attr_written(NAK_ATTR_VPRS_TABLE_INDEX),
-                    clip_enable: io.clip_enable.try_into().unwrap(),
-                    cull_enable: io.cull_enable.try_into().unwrap(),
+                    clip_enable: io.clip_enable,
+                    cull_enable: io.cull_enable,
                     xfb: if let Some(xfb) = &io.xfb {
                         **xfb
                     } else {
