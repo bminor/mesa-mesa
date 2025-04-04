@@ -9365,18 +9365,19 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    const uint32_t maxx = minx + render->area.extent.width;
    const uint32_t maxy = miny + render->area.extent.height;
 
-   radeon_check_space(device->ws, cmd_buffer->cs, 12);
+   radeon_check_space(device->ws, cmd_buffer->cs, 10);
    radeon_begin(cmd_buffer->cs);
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028204_PA_SC_WINDOW_SCISSOR_TL, S_028204_TL_X(minx) | S_028204_TL_Y_GFX12(miny));
-      radeon_set_context_reg(R_028208_PA_SC_WINDOW_SCISSOR_BR,
-                             S_028208_BR_X(maxx - 1) | S_028208_BR_Y(maxy - 1)); /* inclusive */
+      radeon_set_context_reg_seq(R_028204_PA_SC_WINDOW_SCISSOR_TL, 2);
+      radeon_emit(S_028204_TL_X(minx) | S_028204_TL_Y_GFX12(miny));
+      radeon_emit(S_028208_BR_X(maxx - 1) | S_028208_BR_Y(maxy - 1)); /* inclusive */
       radeon_set_context_reg(R_028184_PA_SC_SCREEN_SCISSOR_BR,
                              S_028034_BR_X(screen_scissor.width) | S_028034_BR_Y(screen_scissor.height));
    } else {
-      radeon_set_context_reg(R_028204_PA_SC_WINDOW_SCISSOR_TL, S_028204_TL_X(minx) | S_028204_TL_Y_GFX6(miny));
-      radeon_set_context_reg(R_028208_PA_SC_WINDOW_SCISSOR_BR, S_028208_BR_X(maxx) | S_028208_BR_Y(maxy));
+      radeon_set_context_reg_seq(R_028204_PA_SC_WINDOW_SCISSOR_TL, 2);
+      radeon_emit(S_028204_TL_X(minx) | S_028204_TL_Y_GFX6(miny));
+      radeon_emit(S_028208_BR_X(maxx) | S_028208_BR_Y(maxy));
       radeon_set_context_reg(R_028034_PA_SC_SCREEN_SCISSOR_BR,
                              S_028034_BR_X(screen_scissor.width) | S_028034_BR_Y(screen_scissor.height));
 
