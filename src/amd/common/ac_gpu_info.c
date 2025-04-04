@@ -340,9 +340,6 @@ has_tmz_support(ac_drm_device *dev, struct radeon_info *info, uint32_t ids_flags
    if (info->gfx_level < GFX9)
       return false;
 
-   if (info->drm_minor < 36)
-      return false;
-
    request.alloc_size = 256;
    request.phys_alignment = 1024;
    request.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
@@ -573,9 +570,9 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    assert(info->drm_major == 3);
    info->is_amdgpu = true;
 
-   if (info->drm_minor < 27) {
+   if (info->drm_minor < 42) {
       fprintf(stderr, "amdgpu: DRM version is %u.%u.%u, but this driver is "
-                      "only compatible with 3.27.0 (kernel 4.20+) or later.\n",
+                      "only compatible with 3.42.0 (kernel 5.15+) or later.\n",
               info->drm_major, info->drm_minor, info->drm_patchlevel);
       return false;
    }
@@ -738,12 +735,10 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->vram_size_kb = DIV_ROUND_UP(fix_vram_size(meminfo.vram.total_heap_size), 1024);
    info->vram_vis_size_kb = DIV_ROUND_UP(meminfo.cpu_accessible_vram.total_heap_size, 1024);
 
-   if (info->drm_minor >= 41) {
-      ac_drm_query_video_caps_info(dev, AMDGPU_INFO_VIDEO_CAPS_DECODE,
-                                   sizeof(info->dec_caps), &(info->dec_caps));
-      ac_drm_query_video_caps_info(dev, AMDGPU_INFO_VIDEO_CAPS_ENCODE,
-                                   sizeof(info->enc_caps), &(info->enc_caps));
-   }
+   ac_drm_query_video_caps_info(dev, AMDGPU_INFO_VIDEO_CAPS_DECODE,
+                                sizeof(info->dec_caps), &(info->dec_caps));
+   ac_drm_query_video_caps_info(dev, AMDGPU_INFO_VIDEO_CAPS_ENCODE,
+                                sizeof(info->enc_caps), &(info->enc_caps));
 
    /* Add some margin of error, though this shouldn't be needed in theory. */
    info->all_vram_visible = info->vram_size_kb * 0.9 < info->vram_vis_size_kb;
@@ -1050,15 +1045,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    if (info->gfx_level >= GFX10) {
       info->tcc_cache_line_size = info->gfx_level >= GFX12 ? 256 : 128;
-
-      if (info->drm_minor >= 35) {
-         info->num_tcc_blocks = info->max_tcc_blocks - util_bitcount64(device_info.tcc_disabled_mask);
-      } else {
-         /* This is a hack, but it's all we can do without a kernel upgrade. */
-         info->num_tcc_blocks = info->vram_size_kb / (512 * 1024);
-         if (info->num_tcc_blocks > info->max_tcc_blocks)
-            info->num_tcc_blocks /= 2;
-      }
+      info->num_tcc_blocks = info->max_tcc_blocks - util_bitcount64(device_info.tcc_disabled_mask);
    } else {
       if (!info->has_graphics && info->family >= CHIP_MI200)
          info->tcc_cache_line_size = 128;
@@ -1449,8 +1436,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
        * displayable DCC doesn't regress bigger chips in the same way.
        */
       info->use_display_dcc_with_retile_blit = info->num_cu > 4;
-   } else if (info->gfx_level == GFX9 && !info->has_dedicated_vram &&
-              info->drm_minor >= 31) {
+   } else if (info->gfx_level == GFX9 && !info->has_dedicated_vram) {
       if (info->max_render_backends == 1) {
          info->use_display_dcc_unaligned = true;
       } else {
@@ -1969,9 +1955,8 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    if (info->ip[AMD_IP_VCN_JPEG].num_queues)
       fprintf(f, "    jpeg_decode = %u\n", info->ip[AMD_IP_VCN_JPEG].num_instances);
 
-   if ((info->drm_minor >= 41) &&
-       (info->ip[AMD_IP_VCN_DEC].num_queues || info->ip[AMD_IP_VCN_UNIFIED].num_queues
-       || info->ip[AMD_IP_VCE].num_queues || info->ip[AMD_IP_UVD].num_queues)) {
+   if (info->ip[AMD_IP_VCN_DEC].num_queues || info->ip[AMD_IP_VCN_UNIFIED].num_queues
+       || info->ip[AMD_IP_VCE].num_queues || info->ip[AMD_IP_UVD].num_queues) {
       char max_res_dec[64] = {0}, max_res_enc[64] = {0};
       char codec_str[][8] = {
          [AMDGPU_INFO_VIDEO_CAPS_CODEC_IDX_MPEG2] = "mpeg2",
