@@ -609,19 +609,22 @@ static int eg_surface_init_1d(struct radeon_surface_manager *surf_man,
                               struct radeon_surface_level *level,
                               unsigned bpe,
                               unsigned align_maginify,
+                              unsigned align_mask,
                               uint64_t offset, unsigned start_level)
 {
-    uint32_t xalign, yalign, zalign, tilew;
+    uint32_t xalign, yalign, zalign, tilew, xalign_masked;
     unsigned i;
 
     /* compute alignment */
     tilew = 8;
     xalign = surf_man->hw_info.group_bytes / (tilew * bpe * surf->nsamples);
+    xalign_masked = MAX2(tilew, xalign);
     xalign = MAX2(tilew, xalign * align_maginify);
     yalign = tilew;
     zalign = 1;
     if (surf->flags & RADEON_SURF_SCANOUT) {
         xalign = MAX2((bpe == 1) ? 64 : 32, xalign);
+        xalign_masked = MAX2((bpe == 1) ? 64 : 32, xalign_masked);
     }
 
     if (!start_level) {
@@ -636,7 +639,9 @@ static int eg_surface_init_1d(struct radeon_surface_manager *surf_man,
     /* build mipmap tree */
     for (i = start_level; i <= surf->last_level; i++) {
         level[i].mode = RADEON_SURF_MODE_1D;
-        surf_minify(surf, level+i, bpe, i, xalign, yalign, zalign, offset);
+        surf_minify(surf, level+i, bpe, i,
+                    align_mask & (1U<<i) ? xalign : xalign_masked,
+                    yalign, zalign, offset);
         /* level0 and first mipmap need to have alignment */
         offset = surf->bo_size;
         if (i == 0) {
@@ -689,7 +694,7 @@ static int eg_surface_init_2d(struct radeon_surface_manager *surf_man,
         level[i].mode = RADEON_SURF_MODE_2D;
         eg_surf_minify(surf, level+i, bpe, i, slice_pt, mtilew, mtileh, mtileb, offset);
         if (level[i].mode == RADEON_SURF_MODE_1D) {
-            return eg_surface_init_1d(surf_man, surf, level, bpe, align_magnify, offset, i);
+            return eg_surface_init_1d(surf_man, surf, level, bpe, align_magnify, ~0, offset, i);
         }
         /* level0 and first mipmap need to have alignment */
         offset = surf->bo_size;
@@ -805,12 +810,15 @@ static int eg_surface_init_1d_miptrees(struct radeon_surface_manager *surf_man,
                            !surf->last_level));
 
     r = eg_surface_init_1d(surf_man, surf, surf->level, surf->bpe,
-                           magnify_align ? surf->bpe : 1, 0, 0);
+                           magnify_align ? surf->bpe : 1,
+                           magnify_align && surf->npix_x >= 4 && surf->npix_x < 32 ? 1 : ~0,
+                           0, 0);
     if (r)
         return r;
 
     if (is_depth_stencil) {
        r = eg_surface_init_1d(surf_man, surf, stencil_level, 1, 1,
+                              ~0,
                               surf->bo_size, 0);
        surf->stencil_offset = stencil_level[0].offset;
     }
@@ -831,7 +839,7 @@ static int eg_surface_init_2d_miptrees(struct radeon_surface_manager *surf_man,
      * stencil and depth texture have the same block size. Use this only in
      * the 1d code path that uses the non-specific minify. */
     int magnify_align = is_depth_stencil &&
-                        ((surf->npix_x < 32)  ||
+                        ((surf->npix_x < 16)  ||
                          (!util_is_power_of_two_or_zero(surf->npix_x) &&
                           !surf->last_level));
 
