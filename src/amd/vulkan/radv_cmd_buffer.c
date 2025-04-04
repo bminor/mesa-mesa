@@ -1235,14 +1235,18 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_pixel[3][0]);
       break;
    case 8:
-      radeon_set_context_reg(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_pixel[0][0]);
-      radeon_set_context_reg(R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, sample_locs_pixel[1][0]);
-      radeon_set_context_reg(R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, sample_locs_pixel[2][0]);
-      radeon_set_context_reg(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, sample_locs_pixel[3][0]);
-      radeon_set_context_reg(R_028BFC_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_1, sample_locs_pixel[0][1]);
-      radeon_set_context_reg(R_028C0C_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_1, sample_locs_pixel[1][1]);
-      radeon_set_context_reg(R_028C1C_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_1, sample_locs_pixel[2][1]);
-      radeon_set_context_reg(R_028C2C_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_1, sample_locs_pixel[3][1]);
+      radeon_set_context_reg_seq(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, 2);
+      radeon_emit(sample_locs_pixel[0][0]);
+      radeon_emit(sample_locs_pixel[0][1]);
+      radeon_set_context_reg_seq(R_028C08_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y0_0, 2);
+      radeon_emit(sample_locs_pixel[1][0]);
+      radeon_emit(sample_locs_pixel[1][1]);
+      radeon_set_context_reg_seq(R_028C18_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y1_0, 2);
+      radeon_emit(sample_locs_pixel[2][0]);
+      radeon_emit(sample_locs_pixel[2][1]);
+      radeon_set_context_reg_seq(R_028C28_PA_SC_AA_SAMPLE_LOCS_PIXEL_X1Y1_0, 2);
+      radeon_emit(sample_locs_pixel[3][0]);
+      radeon_emit(sample_locs_pixel[3][1]);
       break;
    default:
       unreachable("invalid number of samples");
