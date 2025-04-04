@@ -260,12 +260,10 @@ impl BlockLiveness for SimpleBlockLiveness {
     fn is_live_after_ip(&self, val: &SSAValue, ip: usize) -> bool {
         if self.live_out.get(val.idx().try_into().unwrap()) {
             true
+        } else if let Some(last_use_ip) = self.last_use.get(&val.idx()) {
+            *last_use_ip > ip
         } else {
-            if let Some(last_use_ip) = self.last_use.get(&val.idx()) {
-                *last_use_ip > ip
-            } else {
-                false
-            }
+            false
         }
     }
 

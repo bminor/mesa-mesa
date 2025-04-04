@@ -20,11 +20,7 @@ fn should_lower_to_warp(
         }
     });
 
-    if num_non_uniform_srcs >= 2 {
-        return true;
-    }
-
-    return false;
+    num_non_uniform_srcs >= 2
 }
 
 fn propagate_r2ur(

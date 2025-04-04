@@ -3650,13 +3650,14 @@ impl<'a> ShaderFromNir<'a> {
             b.push_op(phi);
         }
 
-        if self.sm.sm() < 70 && nb.cf_node.prev().is_none() {
-            if let Some(_) = nb.parent().as_loop() {
-                b.push_op(OpPCnt {
-                    target: self.get_block_label(nb),
-                });
-                self.push_crs(nb, SyncType::Cont);
-            }
+        if self.sm.sm() < 70
+            && nb.cf_node.prev().is_none()
+            && nb.parent().as_loop().is_some()
+        {
+            b.push_op(OpPCnt {
+                target: self.get_block_label(nb),
+            });
+            self.push_crs(nb, SyncType::Cont);
         }
 
         let mut goto = None;

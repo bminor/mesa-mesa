@@ -61,15 +61,13 @@ fn get_ssa_or_phi(
                 // This is a loop back-edge, add a phi just in case.  We'll
                 // remove it later if it's not needed
                 all_same = false;
-            } else {
-                if let Some(&p_ssa) = blocks[p_idx].defs.borrow().get(&ssa) {
-                    if *pred_ssa.get_or_insert(p_ssa) != p_ssa {
-                        all_same = false;
-                    }
-                } else {
-                    worklist.push(Reverse(p_idx));
-                    pushed_pred = true;
+            } else if let Some(&p_ssa) = blocks[p_idx].defs.borrow().get(&ssa) {
+                if *pred_ssa.get_or_insert(p_ssa) != p_ssa {
+                    all_same = false;
                 }
+            } else {
+                worklist.push(Reverse(p_idx));
+                pushed_pred = true;
             }
         }
 
