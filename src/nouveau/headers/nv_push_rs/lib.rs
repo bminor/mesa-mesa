@@ -213,6 +213,12 @@ impl Push {
     }
 }
 
+impl Default for Push {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl std::ops::Deref for Push {
     type Target = [u32];
 
