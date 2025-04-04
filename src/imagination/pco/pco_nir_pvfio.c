@@ -1136,6 +1136,38 @@ bool pco_nir_lower_alpha_to_coverage(nir_shader *shader)
                                         NULL);
 }
 
+static nir_def *
+lower_alpha_to_one(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   nir_src *input_src = &intr->src[0];
+   nir_def *input = input_src->ssa;
+   nir_src *offset = &intr->src[1];
+   assert(nir_src_as_uint(*offset) == 0);
+
+   /* Skip color write that don't include alpha. */
+   if (input->num_components != 4)
+      return NULL;
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   /* TODO: define or other way of representing bit 0 of metadata... */
+   nir_def *alpha_to_one_enabled =
+      nir_ine_imm(b,
+                  nir_ubitfield_extract_imm(b, nir_load_fs_meta_pco(b), 0, 1),
+                  0);
+
+   nir_def *alpha = nir_bcsel(b,
+                              alpha_to_one_enabled,
+                              nir_imm_float(b, 1.0f),
+                              nir_channel(b, input, 3));
+
+   nir_src_rewrite(input_src, nir_vector_insert_imm(b, input, alpha, 3));
+
+   return NIR_LOWER_INSTR_PROGRESS;
+}
+
 static bool is_load_sample_mask(const nir_instr *instr,
                                 UNUSED const void *cb_data)
 {
@@ -1190,6 +1222,12 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
    util_dynarray_init(&state.stores, NULL);
 
    bool progress = false;
+
+   if (fs->meta_present.alpha_to_one)
+      progress |= nir_shader_lower_instructions(shader,
+                                                is_frag_color_out,
+                                                lower_alpha_to_one,
+                                                &state);
 
    progress |= nir_shader_lower_instructions(shader, is_pfo, lower_pfo, &state);
    progress |= lower_isp_fb(&b, &state);

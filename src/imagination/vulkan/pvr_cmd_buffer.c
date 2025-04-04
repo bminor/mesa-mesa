@@ -3930,6 +3930,9 @@ static VkResult pvr_setup_descriptor_mappings(
          case PVR_BUFFER_TYPE_FS_META: {
             uint32_t fs_meta = 0;
 
+            if (cmd_buffer->vk.dynamic_graphics_state.ms.alpha_to_one_enable)
+               fs_meta |= (1 << 0);
+
             fs_meta |= cmd_buffer->vk.dynamic_graphics_state.ms.sample_mask
                        << 9;
 

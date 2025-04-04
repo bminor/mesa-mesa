@@ -1846,6 +1846,7 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 
    assert(BITSET_IS_EMPTY(system_values_read));
 
+   has_meta |= data->fs.meta_present.alpha_to_one;
    has_meta |= data->fs.meta_present.sample_mask;
    if (!has_meta)
       return;
@@ -2478,6 +2479,11 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_tile_buffers(data);
 
       data->fs.uses.alpha_to_coverage = state->ms->alpha_to_coverage_enable;
+
+      if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_ONE_ENABLE) ||
+          (state->ms && state->ms->alpha_to_one_enable)) {
+         data->fs.meta_present.alpha_to_one = true;
+      }
 
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) ||
           (state->ms && state->ms->sample_mask != 0xffff)) {
