@@ -2062,6 +2062,17 @@ void r600_emit_clip_misc_state(struct r600_context *rctx, struct r600_atom *atom
 {
 	struct radeon_cmdbuf *cs = &rctx->b.gfx.cs;
 	struct r600_clip_misc_state *state = &rctx->clip_misc_state;
+	unsigned clipdist_mask = state->clip_dist_write;
+	unsigned culldist_mask = state->cull_dist_write;
+
+	/* Clip distances on points have no effect, so need to be implemented
+	 * as cull distances. This applies for the clipvertex case as well.
+	 *
+	 * Setting this for primitives other than points should have no adverse
+	 * effects.
+	 */
+	clipdist_mask &= state->clip_plane_enable;
+	culldist_mask |= clipdist_mask;
 
 	radeon_set_context_reg(cs, R_028810_PA_CL_CLIP_CNTL,
 			       state->pa_cl_clip_cntl |
@@ -2069,8 +2080,8 @@ void r600_emit_clip_misc_state(struct r600_context *rctx, struct r600_atom *atom
                                S_028810_CLIP_DISABLE(state->clip_disable));
 	radeon_set_context_reg(cs, R_02881C_PA_CL_VS_OUT_CNTL,
 			       state->pa_cl_vs_out_cntl |
-			       (state->clip_plane_enable & state->clip_dist_write) |
-			       (state->cull_dist_write << 8));
+			       clipdist_mask |
+			       (culldist_mask << 8));
 	/* reuse needs to be set off if we write oViewport */
 	if (rctx->b.gfx_level >= EVERGREEN)
 		radeon_set_context_reg(cs, R_028AB4_VGT_REUSE_OFF,
