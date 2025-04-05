@@ -1481,6 +1481,8 @@ RADV driver environment variables
       Dump shader disassembly for selected shader stages.
    ``bvh4``
       Use bvh4 encoding on GPUs that support bvh8 encoding.
+   ``validatevas``
+      Enable tracking of VA ranges for radv_build_is_valid_va.
 
 .. envvar:: RADV_FORCE_FAMILY
 

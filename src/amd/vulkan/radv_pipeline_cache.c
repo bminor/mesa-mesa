@@ -138,6 +138,10 @@ radv_is_cache_disabled(const struct radv_device *device, const struct vk_pipelin
    if (device->printf.buffer_addr)
       return true;
 
+   /* The buffer address used for validating VAs is hardcoded. */
+   if (device->valid_vas_addr)
+      return true;
+
    /* Pipeline caches can be disabled with RADV_DEBUG=nocache, with MESA_GLSL_CACHE_DISABLE=1 and
     * when ACO_DEBUG is used. MESA_GLSL_CACHE_DISABLE is done elsewhere.
     */

@@ -53,6 +53,8 @@ radv_free_memory(struct radv_device *device, const VkAllocationCallbacks *pAlloc
 #endif
 
    if (mem->bo) {
+      radv_va_validation_update_page(device, mem->bo->va, mem->alloc_size, false);
+
       if (device->overallocation_disallowed) {
          mtx_lock(&device->overallocation_mutex);
          device->allocated_memory_size[mem->heap_index] -= mem->alloc_size;
@@ -292,6 +294,8 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
 
       mem->heap_index = heap_index;
       mem->alloc_size = alloc_size;
+
+      radv_va_validation_update_page(device, mem->bo->va, alloc_size, true);
    }
 
    if (!wsi_info) {

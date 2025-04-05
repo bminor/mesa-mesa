@@ -709,6 +709,12 @@ radv_device_init_tools(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
+   if (instance->debug_flags & RADV_DEBUG_VALIDATE_VAS) {
+      result = radv_init_va_validation(device);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
    result = radv_device_init_rgp(device);
    if (result != VK_SUCCESS)
       return result;
@@ -740,6 +746,7 @@ radv_device_finish_tools(struct radv_device *device)
    radv_trap_handler_finish(device);
    radv_memory_trace_finish(device);
    radv_device_finish_rgp(device);
+   radv_finish_va_validation(device);
    radv_device_finish_device_fault_detection(device);
 }
 
