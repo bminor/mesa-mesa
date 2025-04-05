@@ -366,10 +366,12 @@ tu_perfetto_init(void)
 static void
 emit_sync_timestamp(uint64_t cpu_ts, uint64_t gpu_ts)
 {
+   uint32_t cpu_clock_id = perfetto::protos::pbzero::BUILTIN_CLOCK_BOOTTIME;
    TuRenderpassDataSource::Trace([=](auto tctx) {
       MesaRenderpassDataSource<TuRenderpassDataSource,
                                TuRenderpassTraits>::EmitClockSync(tctx, cpu_ts,
-                                                                  gpu_ts, gpu_clock_id);
+                                                                  gpu_ts, cpu_clock_id,
+                                                                  gpu_clock_id);
    });
 }
 

@@ -99,10 +99,12 @@ emit_clock_snapshot_packet(struct panvk_device *dev,
 {
    const struct panvk_utrace_perfetto *utp = &dev->utrace.utp;
    const uint64_t gpu_ns = get_gpu_time_ns(dev);
+   const uint32_t cpu_clock_id =
+      perfetto::protos::pbzero::BUILTIN_CLOCK_BOOTTIME;
    const uint64_t cpu_ns = perfetto::base::GetBootTimeNs().count();
 
    MesaRenderpassDataSource<PanVKRenderpassDataSource, PanVKRenderpassTraits>::
-      EmitClockSync(ctx, cpu_ns, gpu_ns, utp->gpu_clock_id);
+      EmitClockSync(ctx, cpu_ns, gpu_ns, cpu_clock_id, utp->gpu_clock_id);
 }
 
 static void

@@ -137,6 +137,8 @@ sync_timestamp(IntelRenderpassDataSource::TraceContext &ctx,
       intel_gem_read_render_timestamp(device->fd, device->info.kmd_type,
                                       &gpu_ts);
    }
+
+   uint32_t cpu_clock_id = perfetto::protos::pbzero::BUILTIN_CLOCK_BOOTTIME;
    gpu_ts = intel_device_info_timebase_scale(&device->info, gpu_ts);
 
    if (cpu_ts < device->next_clock_sync_ns)
@@ -148,7 +150,7 @@ sync_timestamp(IntelRenderpassDataSource::TraceContext &ctx,
    device->next_clock_sync_ns = cpu_ts + 1000000000ull;
 
    MesaRenderpassDataSource<IntelRenderpassDataSource, IntelRenderpassTraits>::EmitClockSync(ctx,
-      cpu_ts, gpu_ts, device->gpu_clock_id);
+      cpu_ts, gpu_ts, cpu_clock_id, device->gpu_clock_id);
 }
 
 static void
