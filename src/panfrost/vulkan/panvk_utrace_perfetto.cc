@@ -100,8 +100,8 @@ emit_clock_snapshot_packet(struct panvk_device *dev,
    const struct panvk_utrace_perfetto *utp = &dev->utrace.utp;
    const uint64_t gpu_ns = get_gpu_time_ns(dev);
    const uint32_t cpu_clock_id =
-      perfetto::protos::pbzero::BUILTIN_CLOCK_BOOTTIME;
-   const uint64_t cpu_ns = perfetto::base::GetBootTimeNs().count();
+      perfetto::protos::pbzero::BUILTIN_CLOCK_MONOTONIC_RAW;
+   const uint64_t cpu_ns = perfetto::base::GetWallTimeRawNs().count();
 
    MesaRenderpassDataSource<PanVKRenderpassDataSource, PanVKRenderpassTraits>::
       EmitClockSync(ctx, cpu_ns, gpu_ns, cpu_clock_id, utp->gpu_clock_id);
@@ -305,6 +305,12 @@ panvk_utrace_perfetto_init(struct panvk_device *dev, uint32_t queue_count)
       utp->queue_iids[i] = next_iid++;
    for (uint32_t i = 0; i < ARRAY_SIZE(utp->stage_iids); i++)
       utp->stage_iids[i] = next_iid++;
+
+   /* Mali GPU timestamps map to the system arch counter. CLOCK_MONOTONIC_RAW
+    * is therefore better for synchronization with the GPU timestamps than the
+    * default CLOCK_BOOTTIME, which drifts from the arch counter's rate
+    * slightly due to NTP adjustment. */
+   util_perfetto_set_default_clock(CLOCK_MONOTONIC_RAW);
 
    static once_flag register_ds_once = ONCE_FLAG_INIT;
    call_once(&register_ds_once, register_data_source);
