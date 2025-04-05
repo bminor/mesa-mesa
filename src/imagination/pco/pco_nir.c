@@ -716,7 +716,10 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, pco_nir_lower_tex);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      bool backup = nir->info.fs.uses_sample_shading;
       NIR_PASS(_, nir, nir_lower_blend, &data->fs.blend_opts);
+      nir->info.fs.uses_sample_shading = backup;
+
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_,
