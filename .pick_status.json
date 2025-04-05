@@ -634,7 +634,7 @@
         "description": "brw: fix shuffle with scalar/uniform index",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1b24612c570727a0c637159eeebbd88e79715435",
         "notes": null
