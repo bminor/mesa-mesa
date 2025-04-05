@@ -13,7 +13,7 @@
 
 /* We now include binding definition */
 #if (PAN_ARCH == 4)
-#include "libpan_v5.h"
+#include "libpan_v4.h"
 #elif (PAN_ARCH == 5)
 #include "libpan_v5.h"
 #elif (PAN_ARCH == 6)
