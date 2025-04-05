@@ -7,7 +7,7 @@
  */
 
 #include "radv_meta.h"
-#include "radv_printf.h"
+#include "radv_debug_nir.h"
 
 #include "vk_common_entrypoints.h"
 #include "vk_pipeline_cache.h"

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "radv_printf.h"
+#include "radv_debug_nir.h"
 #include "radv_device.h"
 #include "radv_physical_device.h"
 

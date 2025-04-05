@@ -22,9 +22,9 @@
 #include "util/u_atomic.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
+#include "radv_debug_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_nir_to_llvm.h"
-#include "radv_printf.h"
 #include "radv_sdma.h"
 #include "radv_shader_args.h"
 

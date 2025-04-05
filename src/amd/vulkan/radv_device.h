@@ -17,8 +17,8 @@
 
 #include "util/mesa-blake3.h"
 
+#include "radv_debug_nir.h"
 #include "radv_pipeline.h"
-#include "radv_printf.h"
 #include "radv_queue.h"
 #include "radv_radeon_winsys.h"
 #include "radv_rra.h"
