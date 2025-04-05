@@ -904,7 +904,7 @@
         "description": "v3dv: avoid TFU reading unmapped pages beyond the end of the buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ca330f7f0464820a72d5a525a71276e9636dc611",
         "notes": null
