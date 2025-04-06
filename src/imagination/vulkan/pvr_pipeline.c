@@ -1424,7 +1424,10 @@ static void pvr_graphics_pipeline_setup_fragment_coeff_program(
          douti_src.size = ROGUE_PDSINST_DOUTI_SIZE_1D;
       }
 
+      frag_coeff_program->z_iterator = fpu;
       frag_coeff_program->destination[fpu++] = dest++;
+   } else {
+      frag_coeff_program->z_iterator = ~0u;
    }
 
    if (fs_data->uses.w) {

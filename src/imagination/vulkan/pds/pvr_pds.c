@@ -4156,6 +4156,11 @@ uint32_t *pvr_pds_coefficient_loading(
          else
             program->dout_src_offsets[iterator] = ~0u;
 
+         if (program->z_iterator == ~0u)
+            program->dout_z_iterator_offset = ~0u;
+         else if (program->z_iterator == iterator)
+            program->dout_z_iterator_offset = constant;
+
          /* Write the first iterator. */
          iterator_word =
             (uint64_t)program->FPU_iterators[iterator]

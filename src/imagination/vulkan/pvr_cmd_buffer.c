@@ -5132,6 +5132,19 @@ setup_pds_coeff_program(struct pvr_cmd_buffer *const cmd_buffer,
                                                &douti_src);
    }
 
+   if (program->dout_z_iterator_offset != ~0u) {
+      struct ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC douti_src;
+      ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_unpack(
+         &pds_coeff_program_buffer[program->dout_z_iterator_offset],
+         &douti_src);
+
+      douti_src.depthbias = dynamic_state->rs.depth_bias.enable;
+
+      ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_pack(
+         &pds_coeff_program_buffer[program->dout_z_iterator_offset],
+         &douti_src);
+   }
+
    /* FIXME: Figure out the define for alignment of 16. */
    return pvr_cmd_buffer_upload_pds(
       cmd_buffer,

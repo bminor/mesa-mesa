@@ -272,6 +272,9 @@ struct pvr_pds_coeff_loading_program {
    BITSET_DECLARE(flat_iter_mask, PVR_MAXIMUM_ITERATIONS);
    uint32_t dout_src_offsets[PVR_MAXIMUM_ITERATIONS];
 
+   uint32_t z_iterator;
+   uint32_t dout_z_iterator_offset;
+
    uint32_t data_size;
    uint32_t code_size;
 
