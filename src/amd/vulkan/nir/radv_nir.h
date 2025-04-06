@@ -71,6 +71,8 @@ bool radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_sta
 
 bool radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_level, unsigned wave_size);
 
+bool radv_nir_opt_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_level);
+
 bool radv_nir_lower_draw_id_to_zero(nir_shader *shader);
 
 bool radv_nir_remap_color_attachment(nir_shader *shader, const struct radv_graphics_state_key *gfx_state);
