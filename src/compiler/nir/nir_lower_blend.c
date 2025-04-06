@@ -527,6 +527,25 @@ nir_lower_blend_instr(nir_builder *b, nir_intrinsic_instr *store, void *data)
    const enum pipe_format format = options->format[rt];
    enum pipe_logicop logicop_func = options->logicop_func;
 
+   /* From the Vulkan spec ("Logical operations"):
+    *
+    *    Logical operations are not applied to floating-point or sRGB format
+    *    color attachments...
+    *
+    *    If logicOpEnable is VK_TRUE... blending of all attachments is treated
+    *    as if it were disabled. Any attachments using color formats for which
+    *    logical operations are not supported simply pass through the color
+    *    values unmodified.
+    *
+    * The semantic for unsupported formats is equivalent to a logicop of COPY.
+    * It is /not/ equivalent to disabled logicops (which would incorrectly apply
+    * blending). To implement this spec text with minimal special casing, we
+    * override the logicop func to COPY for unsupported formats.
+    */
+   if (util_format_is_float(format) || util_format_is_srgb(format)) {
+      logicop_func = PIPE_LOGICOP_COPY;
+   }
+
    /* Don't bother copying the destination to the source for disabled RTs */
    if (options->rt[rt].colormask == 0 ||
        (options->logicop_enable && logicop_func == PIPE_LOGICOP_NOOP)) {
