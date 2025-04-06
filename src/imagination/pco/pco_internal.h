@@ -1683,6 +1683,7 @@ bool pco_nir_compute_instance_check(nir_shader *shader);
 bool pco_nir_link_clip_cull_vars(nir_shader *producer, nir_shader *consumer);
 bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
+bool pco_nir_lower_alpha_to_coverage(nir_shader *shader);
 bool pco_nir_lower_atomics(nir_shader *shader, bool *uses_usclib);
 bool pco_nir_lower_barriers(nir_shader *shader, bool *uses_usclib);
 bool pco_nir_lower_clip_cull_vars(nir_shader *shader);

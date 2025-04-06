@@ -1086,6 +1086,57 @@ static bool z_replicate(nir_shader *shader, struct pfo_state *state)
    return true;
 }
 
+static bool is_frag_color_out(const nir_instr *instr,
+                              UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   if (intr->intrinsic != nir_intrinsic_store_output)
+      return false;
+
+   gl_frag_result location = nir_intrinsic_io_semantics(intr).location;
+   return location >= FRAG_RESULT_DATA0 && location < FRAG_RESULT_MAX;
+}
+
+static nir_def *
+lower_alpha_to_coverage(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   /* "If multiple output colors, alpha for a2c is output color 0." */
+   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intr);
+   if (io_sem.location != FRAG_RESULT_DATA0)
+      return NULL;
+
+   nir_def *input = intr->src[0].ssa;
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def *alpha = input->num_components < 4 ? nir_imm_float(b, 1.0f)
+                                              : nir_channel(b, input, 3);
+
+   nir_def *a2c_mask = nir_alpha_to_coverage_pco(b, alpha);
+
+   a2c_mask = nir_iand(b, a2c_mask, nir_load_savmsk_vm_pco(b));
+
+   a2c_mask = nir_iand(b,
+                       a2c_mask,
+                       nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b)));
+
+   nir_terminate_if(b, nir_ieq_imm(b, a2c_mask, 0));
+
+   return NULL;
+}
+
+bool pco_nir_lower_alpha_to_coverage(nir_shader *shader)
+{
+   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
+   return nir_shader_lower_instructions(shader,
+                                        is_frag_color_out,
+                                        lower_alpha_to_coverage,
+                                        NULL);
+}
+
 static bool is_load_sample_mask(const nir_instr *instr,
                                 UNUSED const void *cb_data)
 {

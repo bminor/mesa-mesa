@@ -113,6 +113,7 @@ typedef struct _pco_fs_data {
       bool discard;
       bool early_frag;
       bool sample_shading;
+      bool alpha_to_coverage;
    } uses;
 
    struct {

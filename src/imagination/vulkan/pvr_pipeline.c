@@ -2402,6 +2402,8 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_blend(data, state->cb);
       pvr_init_fs_tile_buffers(data);
 
+      data->fs.uses.alpha_to_coverage = state->ms->alpha_to_coverage_enable;
+
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) ||
           (state->ms && state->ms->sample_mask != 0xffff)) {
          data->fs.meta_present.sample_mask = true;

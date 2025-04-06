@@ -1620,6 +1620,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
    }
 
+   case nir_intrinsic_alpha_to_coverage_pco:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      instr = pco_pck(&tctx->b, dest, src[0], .pck_fmt = PCO_PCK_FMT_COV);
+      break;
+
    case nir_intrinsic_mutex_pco:
       instr = pco_mutex(&tctx->b,
                         pco_ref_imm8(nir_intrinsic_mutex_id_pco(intr)),
