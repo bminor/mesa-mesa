@@ -566,7 +566,8 @@ instr_cp(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr)
     */
    if (is_tex(instr) && (instr->flags & IR3_INSTR_S2EN) &&
        !(instr->flags & IR3_INSTR_B) &&
-       !(ir3_shader_debug & IR3_DBG_FORCES2EN)) {
+       !(ir3_shader_debug & IR3_DBG_FORCES2EN) &&
+       !(instr->srcs[0]->flags & IR3_REG_ALIAS)) {
       /* The first src will be a collect, if both of it's
        * two sources are mov from imm, then we can
        */
