@@ -970,6 +970,7 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
       load_op->clears_loads_state.mrt_setup;
 
    pco_data data = { 0 };
+   bool has_non_tile_buffer_stores = false;
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
                                                   pco_nir_options(),
@@ -1035,6 +1036,7 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
 
       struct usc_mrt_resource *mrt_resource = &mrt_setup->mrt_resources[rt_idx];
       bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+      has_non_tile_buffer_stores |= !tile_buffer;
 
       data.fs.outputs[FRAG_RESULT_DATA0 + rt_idx] = (pco_range){
          .start = tile_buffer ? mrt_resource->mem.tile_buffer
@@ -1081,6 +1083,7 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
       struct usc_mrt_resource *mrt_resource =
          &mrt_setup->mrt_resources[depth_idx];
       bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+      has_non_tile_buffer_stores |= !tile_buffer;
 
       unsigned accum_size_dwords =
          DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t));
@@ -1196,6 +1199,9 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
 
       load_op->num_tile_buffers = data.fs.num_tile_buffers;
    }
+
+   if (!has_non_tile_buffer_stores)
+      nir_dummy_load_store_pco(&b);
 
    nir_jump(&b, nir_jump_return);
 

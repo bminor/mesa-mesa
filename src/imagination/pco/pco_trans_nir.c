@@ -1433,6 +1433,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_load_output_fs(tctx, intr, dest);
       break;
 
+   case nir_intrinsic_dummy_load_store_pco: {
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      pco_ref pixout =
+         pco_ref_hwreg(nir_intrinsic_base(intr), PCO_REG_CLASS_PIXOUT);
+      return pco_mov(&tctx->b, pixout, pixout, .olchk = true);
+      break;
+   }
+
    case nir_intrinsic_flush_tile_buffer_pco:
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
       instr = trans_flush_tile_buffer(tctx, intr, src[0], src[1]);
