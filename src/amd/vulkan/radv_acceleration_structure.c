@@ -390,6 +390,12 @@ radv_get_encode_key(struct vk_device *vk_device, VkAccelerationStructureTypeKHR 
    return 0;
 }
 
+static uint32_t
+radv_get_update_key(struct vk_device *vk_device, bool in_place)
+{
+   return in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
+}
+
 static void
 radv_bvh_build_bind_pipeline(VkCommandBuffer commandBuffer, enum radv_meta_object_key_type type, const uint32_t *spirv,
                              uint32_t spirv_size, uint32_t push_constants_size, uint32_t flags)
@@ -696,12 +702,15 @@ radv_update_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
                                    radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                                                          VK_ACCESS_2_SHADER_READ_BIT, 0, NULL, NULL);
 
+   bool in_place = key & RADV_BUILD_FLAG_UPDATE_IN_PLACE;
+   uint32_t flags = in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
+
    if (radv_use_bvh8(pdev)) {
       radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_UPDATE, update_gfx12_spv,
-                                   sizeof(update_gfx12_spv), sizeof(struct update_args), 0);
+                                   sizeof(update_gfx12_spv), sizeof(struct update_args), flags);
    } else {
       radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_UPDATE, update_spv, sizeof(update_spv),
-                                   sizeof(struct update_args), 0);
+                                   sizeof(struct update_args), flags);
    }
 }
 
@@ -832,6 +841,7 @@ radv_device_init_accel_struct_build_state(struct radv_device *device)
       .encode_bind_pipeline[1] = radv_init_header_bind_pipeline,
       .encode_as[1] = radv_init_header,
       .init_update_scratch = radv_init_update_scratch,
+      .get_update_key[0] = radv_get_update_key,
       .update_bind_pipeline[0] = radv_update_bind_pipeline,
       .update_as[0] = radv_update_as,
    };

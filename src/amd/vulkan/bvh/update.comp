@@ -108,8 +108,10 @@ void main() {
         if (ready_child_count != valid_child_count - 1)
             break;
 
-        for (uint32_t i = 0; i < 4; ++i)
-            DEREF(dst_node).children[i] = children[i];
+        if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
+            for (uint32_t i = 0; i < 4; ++i)
+                DEREF(dst_node).children[i] = children[i];
+        }
 
         for (uint32_t i = 0; i < valid_child_count; ++i) {
             uint32_t child_offset = id_to_offset(children[i]);

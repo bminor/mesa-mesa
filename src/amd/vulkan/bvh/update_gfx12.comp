@@ -108,8 +108,10 @@ main()
       uint32_t child_internal_id = DEREF(src_node).internal_base_id;
       uint32_t child_primitive_id = DEREF(src_node).primitive_base_id;
 
-      DEREF(dst_node).internal_base_id = child_internal_id;
-      DEREF(dst_node).primitive_base_id = child_primitive_id;
+      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
+         DEREF(dst_node).internal_base_id = child_internal_id;
+         DEREF(dst_node).primitive_base_id = child_primitive_id;
+      }
 
       uint32_t child_offsets[8];
       vk_aabb total_bounds = vk_aabb(vec3(INFINITY), vec3(-INFINITY));
@@ -158,7 +160,8 @@ main()
       DEREF(dst_node).origin = origin;
       DEREF(dst_node).child_count_exponents = extent_exponents.x | (extent_exponents.y << 8) |
                                               (extent_exponents.z << 16) | (valid_child_count_minus_one << 28);
-      DEREF(dst_node).obb_matrix_index = 0x7f;
+      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE))
+         DEREF(dst_node).obb_matrix_index = 0x7f;
 
       for (uint32_t i = 0; i <= valid_child_count_minus_one; i++) {
          uint32_t child_offset = child_offsets[i];
@@ -195,12 +198,14 @@ main()
          DEREF(dst_node).children[i] = box_child;
       }
 
-      for (uint32_t i = valid_child_count_minus_one + 1; i < 8; i++) {
-         radv_gfx12_box_child null_child;
-         null_child.dword0 = 0xffffffff;
-         null_child.dword1 = 0xfff;
-         null_child.dword2 = 0;
-         DEREF(dst_node).children[i] = null_child;
+      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
+         for (uint32_t i = valid_child_count_minus_one + 1; i < 8; i++) {
+            radv_gfx12_box_child null_child;
+            null_child.dword0 = 0xffffffff;
+            null_child.dword1 = 0xfff;
+            null_child.dword2 = 0;
+            DEREF(dst_node).children[i] = null_child;
+         }
       }
 
       if (parent_id == RADV_BVH_ROOT_NODE)
