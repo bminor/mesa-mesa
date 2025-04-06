@@ -2311,7 +2311,8 @@ bool ir3_cf(struct ir3 *ir);
 bool ir3_shared_fold(struct ir3 *ir);
 
 /* copy-propagate: */
-bool ir3_cp(struct ir3 *ir, struct ir3_shader_variant *so);
+bool ir3_cp(struct ir3 *ir, struct ir3_shader_variant *so,
+            bool lower_imm_to_const);
 
 /* common subexpression elimination: */
 bool ir3_cse(struct ir3 *ir);

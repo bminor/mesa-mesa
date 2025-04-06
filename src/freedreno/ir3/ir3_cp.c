@@ -29,6 +29,7 @@ struct ir3_cp_ctx {
    struct ir3 *shader;
    struct ir3_shader_variant *so;
    bool progress;
+   bool lower_imm_to_const;
 };
 
 /* is it a type preserving mov, with ok flags?
@@ -124,6 +125,9 @@ static bool
 lower_immed(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr, unsigned n,
             struct ir3_register *reg, unsigned new_flags)
 {
+   if (!ctx->lower_imm_to_const)
+      return false;
+
    if (!(new_flags & IR3_REG_IMMED))
       return false;
 
@@ -591,11 +595,12 @@ instr_cp(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr)
 }
 
 bool
-ir3_cp(struct ir3 *ir, struct ir3_shader_variant *so)
+ir3_cp(struct ir3 *ir, struct ir3_shader_variant *so, bool lower_imm_to_const)
 {
    struct ir3_cp_ctx ctx = {
       .shader = ir,
       .so = so,
+      .lower_imm_to_const = lower_imm_to_const,
    };
 
    /* This is a bit annoying, and probably wouldn't be necessary if we
