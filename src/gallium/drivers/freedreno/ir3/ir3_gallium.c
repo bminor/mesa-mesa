@@ -68,7 +68,7 @@ dump_shader_info(struct ir3_shader_variant *v,
       "%u dwords, %u last-baryf, %u last-helper, %u half, %u full, %u constlen, "
       "%u cat0, %u cat1, %u cat2, %u cat3, %u cat4, %u cat5, %u cat6, %u cat7, "
       "%u stp, %u ldp, %u sstall, %u (ss), %u systall, %u (sy), %d waves, "
-      "%d loops, %u preamble inst, %d early-preamble\n",
+      "%d loops, %u preamble-inst, %d early-preamble\n",
       ir3_shader_stage(v), v->info.instrs_count, v->info.nops_count,
       v->info.instrs_count - v->info.nops_count, v->info.mov_count,
       v->info.cov_count, v->info.sizedwords, v->info.last_baryf,
