@@ -211,34 +211,22 @@ aspect_format(VkFormat fmt, VkImageAspectFlags aspect)
    bool depth = (aspect & VK_IMAGE_ASPECT_DEPTH_BIT);
    bool stencil = (aspect & VK_IMAGE_ASPECT_STENCIL_BIT);
 
-   enum pipe_format p_format = hk_format_to_pipe_format(fmt);
+   assert(!(depth && stencil));
 
-   if (util_format_is_depth_or_stencil(p_format)) {
-      assert(depth ^ stencil);
-      if (depth) {
-         switch (fmt) {
-         case VK_FORMAT_D32_SFLOAT:
-         case VK_FORMAT_D32_SFLOAT_S8_UINT:
-            return VK_FORMAT_D32_SFLOAT;
-         case VK_FORMAT_D16_UNORM:
-         case VK_FORMAT_D16_UNORM_S8_UINT:
-            return VK_FORMAT_D16_UNORM;
-         default:
-            unreachable("invalid depth");
-         }
-      } else {
-         switch (fmt) {
-         case VK_FORMAT_S8_UINT:
-         case VK_FORMAT_D32_SFLOAT_S8_UINT:
-         case VK_FORMAT_D16_UNORM_S8_UINT:
-            return VK_FORMAT_S8_UINT;
-         default:
-            unreachable("invalid stencil");
-         }
-      }
+   switch (fmt) {
+   case VK_FORMAT_D32_SFLOAT:
+      return VK_FORMAT_R32_SFLOAT;
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      return stencil ? VK_FORMAT_R8_UINT : VK_FORMAT_R32_SFLOAT;
+   case VK_FORMAT_D16_UNORM:
+      return VK_FORMAT_R16_UNORM;
+   case VK_FORMAT_S8_UINT:
+      return VK_FORMAT_R8_UINT;
+   case VK_FORMAT_D16_UNORM_S8_UINT:
+      return stencil ? VK_FORMAT_R8_UINT : VK_FORMAT_R16_UNORM;
+   default:
+      break;
    }
-
-   assert(!depth && !stencil);
 
    const struct vk_format_ycbcr_info *ycbcr_info =
       vk_format_get_ycbcr_info(fmt);
@@ -265,11 +253,8 @@ aspect_format(VkFormat fmt, VkImageAspectFlags aspect)
  * the unfortunate exception).
  */
 static enum pipe_format
-canonical_format_pipe(enum pipe_format fmt, bool canonicalize_zs)
+canonical_format_pipe(enum pipe_format fmt)
 {
-   if (!canonicalize_zs && util_format_is_depth_or_stencil(fmt))
-      return fmt;
-
    assert(ail_is_valid_pixel_format(fmt));
 
    if (util_format_is_compressed(fmt)) {
@@ -313,7 +298,7 @@ static VkFormat
 canonical_format(VkFormat fmt)
 {
    return vk_format_from_pipe_format(
-      canonical_format_pipe(hk_format_to_pipe_format(fmt), false));
+      canonical_format_pipe(hk_format_to_pipe_format(fmt)));
 }
 
 enum copy_type {
@@ -401,7 +386,7 @@ load_store_formatted(nir_builder *b, nir_def *base, nir_def *index,
                      nir_def *value, enum pipe_format format)
 {
    if (util_format_is_depth_or_stencil(format))
-      format = canonical_format_pipe(format, true);
+      format = canonical_format_pipe(format);
 
    if (is_format_native(format)) {
       enum pipe_format isa = ail_pixel_format[format].renderable;
@@ -500,7 +485,7 @@ build_image_copy_shader(const struct vk_meta_image_copy_key *key)
    /* The destination format is already canonical, convert to an ISA format */
    enum pipe_format isa_format = PIPE_FORMAT_NONE;
    if (key->block_based) {
-      enum pipe_format pipe = canonical_format_pipe(key->dst_format, true);
+      enum pipe_format pipe = canonical_format_pipe(key->dst_format);
       isa_format = ail_pixel_format[pipe].renderable;
       assert(isa_format != PIPE_FORMAT_NONE);
    }
@@ -995,8 +980,7 @@ hk_meta_copy_buffer_to_image2(struct vk_command_buffer *cmd,
             .nr_samples = image->samples,
             .src_format = hk_format_to_pipe_format(canonical),
             .dst_format = canonical_format_pipe(
-               hk_format_to_pipe_format(aspect_format(image->format, aspect)),
-               false),
+               hk_format_to_pipe_format(aspect_format(image->format, aspect))),
 
             /* TODO: MSAA path */
             .block_based =
@@ -1141,11 +1125,15 @@ hk_meta_copy_image2(struct vk_command_buffer *cmd, struct vk_meta_device *meta,
             uint32_t blocksize_B =
                util_format_get_blocksize(hk_format_to_pipe_format(canonical));
 
-            VkImageAspectFlagBits dst_aspect_mask =
+            bool use_dst_aspect_mask =
                vk_format_get_ycbcr_info(dst_image->format) ||
-                     vk_format_get_ycbcr_info(src_image->format)
-                  ? region->dstSubresource.aspectMask
-                  : (1 << aspect);
+               vk_format_get_ycbcr_info(src_image->format) ||
+               (vk_format_is_depth_or_stencil(dst_image->format) &&
+                !vk_format_is_depth_or_stencil(src_image->format));
+
+            VkImageAspectFlagBits dst_aspect_mask =
+               use_dst_aspect_mask ? region->dstSubresource.aspectMask
+                                   : (1 << aspect);
 
             struct vk_meta_image_copy_key key = {
                .key_type = VK_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
@@ -1153,10 +1141,8 @@ hk_meta_copy_image2(struct vk_command_buffer *cmd, struct vk_meta_device *meta,
                .block_size = blocksize_B,
                .nr_samples = dst_image->samples,
                .src_format = hk_format_to_pipe_format(canonical),
-               .dst_format =
-                  canonical_format_pipe(hk_format_to_pipe_format(aspect_format(
-                                           dst_image->format, dst_aspect_mask)),
-                                        false),
+               .dst_format = canonical_format_pipe(hk_format_to_pipe_format(
+                  aspect_format(dst_image->format, dst_aspect_mask))),
 
                /* TODO: MSAA path */
                .block_based = (dst_image->image_type != VK_IMAGE_TYPE_1D) &&

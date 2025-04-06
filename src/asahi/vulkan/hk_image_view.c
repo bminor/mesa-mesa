@@ -121,7 +121,11 @@ vk_swizzle_to_pipe(VkComponentSwizzle swizzle)
 static enum pipe_format
 get_stencil_format(enum pipe_format format)
 {
+   /* Note: R8 is not a stencil format, but our copy code will internally cast
+    * between R8 and S8. It's simplest to handle here.
+    */
    switch (format) {
+   case PIPE_FORMAT_R8_UINT:
    case PIPE_FORMAT_S8_UINT:
       return PIPE_FORMAT_S8_UINT;
    case PIPE_FORMAT_Z24_UNORM_S8_UINT:
