@@ -326,8 +326,11 @@ lower_regular_texture(nir_builder *b, nir_instr *instr, UNUSED void *data)
          nir_def *nibble = nir_iand_imm(b, nir_channel(b, offset, c), 0xF);
          nir_def *shifted = nir_ishl_imm(b, nibble, 4 * c);
 
+         /* We pack with iadd instead of ior to let us fuse in the shift with an
+          * iadd-lsl instruction.
+          */
          if (packed != NULL)
-            packed = nir_ior(b, packed, shifted);
+            packed = nir_iadd(b, packed, shifted);
          else
             packed = shifted;
       }
