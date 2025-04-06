@@ -419,13 +419,13 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                nir_def *A = radv_nir_load_cmat(&b, &params, intr->src[1].ssa);
                nir_def *B = radv_nir_load_cmat(&b, &params, intr->src[2].ssa);
                nir_def *C = radv_nir_load_cmat(&b, &params, intr->src[3].ssa);
-               nir_def *ret;
 
-               ret = nir_cmat_muladd_amd(&b, A, B, C, .saturate = nir_intrinsic_saturate(intr),
-                                         .cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intr));
+               nir_deref_instr *dst_deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
 
-               nir_store_deref(&b, nir_instr_as_deref(intr->src[0].ssa->parent_instr), ret,
-                               nir_component_mask(ret->num_components));
+               nir_def *ret = nir_cmat_muladd_amd(&b, A, B, C, .saturate = nir_intrinsic_saturate(intr),
+                                                  .cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intr));
+
+               nir_store_deref(&b, dst_deref, ret, nir_component_mask(ret->num_components));
                nir_instr_remove(instr);
                progress = true;
                break;

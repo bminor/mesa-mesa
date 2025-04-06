@@ -7964,8 +7964,9 @@ static void
 visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    aco_opcode opcode = aco_opcode::num_opcodes;
-   unsigned signed_mask = 0;
-   bool clamp = false;
+
+   bitarray8 neg_lo = nir_intrinsic_neg_lo_amd(instr);
+   bitarray8 neg_hi = nir_intrinsic_neg_hi_amd(instr);
 
    switch (instr->src[0].ssa->bit_size) {
    case 16:
@@ -7974,11 +7975,13 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
       case 16: opcode = aco_opcode::v_wmma_f16_16x16x16_f16; break;
       }
       break;
-   case 8:
+   case 8: {
       opcode = aco_opcode::v_wmma_i32_16x16x16_iu8;
-      signed_mask = nir_intrinsic_cmat_signed_mask(instr);
-      clamp = nir_intrinsic_saturate(instr);
+      unsigned signed_mask = nir_intrinsic_cmat_signed_mask(instr);
+      neg_lo[0] = signed_mask & NIR_CMAT_A_SIGNED;
+      neg_lo[1] = signed_mask & NIR_CMAT_B_SIGNED;
       break;
+   }
    }
 
    if (opcode == aco_opcode::num_opcodes)
@@ -7992,9 +7995,9 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
    Operand C(as_vgpr(ctx, get_ssa_temp(ctx, instr->src[2].ssa)));
 
    VALU_instruction& vop3p = bld.vop3p(opcode, Definition(dst), A, B, C, 0, 0x7)->valu();
-   vop3p.neg_lo[0] = (signed_mask & 0x1) != 0;
-   vop3p.neg_lo[1] = (signed_mask & 0x2) != 0;
-   vop3p.clamp = clamp;
+   vop3p.neg_lo = neg_lo;
+   vop3p.neg_hi = neg_hi;
+   vop3p.clamp = nir_intrinsic_saturate(instr);
 
    emit_split_vector(ctx, dst, instr->def.num_components);
 }
