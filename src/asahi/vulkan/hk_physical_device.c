@@ -88,6 +88,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_maintenance4 = true,
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
+      .KHR_maintenance7 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -391,6 +392,9 @@ hk_get_device_features(
 
       /* VK_KHR_maintenance6 */
       .maintenance6 = true,
+
+      /* VK_KHR_maintenance7 */
+      .maintenance7 = true,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
@@ -900,6 +904,19 @@ hk_get_device_properties(const struct agx_device *dev,
       .blockTexelViewCompatibleMultipleLayers = false,
       .maxCombinedImageSamplerDescriptorCount = 3,
       .fragmentShadingRateClampCombinerInputs = false,
+
+      /* VK_KHR_maintenance7 */
+      .robustFragmentShadingRateAttachmentAccess = false,
+      .separateDepthStencilAttachmentAccess = false, /* TODO */
+      .maxDescriptorSetTotalUniformBuffersDynamic = HK_MAX_DYNAMIC_BUFFERS / 2,
+      .maxDescriptorSetTotalStorageBuffersDynamic = HK_MAX_DYNAMIC_BUFFERS / 2,
+      .maxDescriptorSetTotalBuffersDynamic = HK_MAX_DYNAMIC_BUFFERS,
+      .maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic =
+         HK_MAX_DYNAMIC_BUFFERS / 2,
+      .maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic =
+         HK_MAX_DYNAMIC_BUFFERS / 2,
+      .maxDescriptorSetUpdateAfterBindTotalBuffersDynamic =
+         HK_MAX_DYNAMIC_BUFFERS,
 
       /* VK_EXT_map_memory_placed */
       .minPlacedMemoryMapAlignment = os_page_size,
