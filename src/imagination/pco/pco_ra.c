@@ -627,6 +627,21 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   /* Make srcs and dests interfere for instructions with repeat > 1. */
+   pco_foreach_instr_in_func_rev (instr, func) {
+      if (!pco_instr_has_rpt(instr))
+         continue;
+
+      if (pco_instr_get_rpt(instr) < 2)
+         continue;
+
+      pco_foreach_instr_dest_ssa (pdest, instr) {
+         pco_foreach_instr_src_ssa (psrc, instr) {
+            ra_add_node_interference(ra_graph, pdest->val, psrc->val);
+         }
+      }
+   }
+
    bool allocated = ra_allocate(ra_graph);
    assert(allocated);
    /* TODO: spilling. */
