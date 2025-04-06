@@ -44,19 +44,7 @@ ir3_imm_const_to_preamble(struct ir3 *ir, struct ir3_shader_variant *so)
       struct ir3_instruction *src =
          ir3_create_collect(&build, movs, components);
       unsigned dst = ir3_const_imm_index_to_reg(consts, i);
-      struct ir3_instruction *stc = ir3_store_const(so, &build, src, dst);
-
-      /* We cannot run ir3_cp anymore as that would potentially lower more
-       * immediates to const registers because we reset count to 0 below (which
-       * is necessary to stop the driver from uploading the immediates). So we
-       * have to manually propagate the stc immediate.
-       */
-      struct ir3_instruction *mov_imm = stc->srcs[0]->def->instr;
-      assert(mov_imm->opc == OPC_MOV);
-      assert(mov_imm->srcs[0]->flags & IR3_REG_IMMED);
-
-      stc->srcs[0] = mov_imm->srcs[0];
-      list_del(&mov_imm->node);
+      ir3_store_const(so, &build, src, dst);
    }
 
    imms->count = 0;

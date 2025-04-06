@@ -5818,6 +5818,11 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    if (IR3_PASS(ir, ir3_imm_const_to_preamble, so)) {
       progress = true;
 
+      /* Propagate immediates created by ir3_imm_const_to_preamble but make sure
+       * we don't lower any more immediates to const registers.
+       */
+      IR3_PASS(ir, ir3_cp, so, false);
+
       /* ir3_imm_const_to_preamble might create duplicate a1.x movs. */
       IR3_PASS(ir, ir3_cse);
    }
