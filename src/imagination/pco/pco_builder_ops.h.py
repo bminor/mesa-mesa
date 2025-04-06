@@ -32,6 +32,9 @@ static inline
 bool pco_instr_dest_has_mod(const pco_instr *instr, unsigned dest, enum pco_ref_mod mod)
 {
    const struct pco_op_info *info = &pco_op_info[instr->op];
+   if (info->num_dests == ~0)
+      return false;
+
    assert(dest < info->num_dests);
    assert(mod < _PCO_REF_MOD_COUNT);
    return (info->dest_mods[dest] & (1ULL << mod)) != 0;
@@ -41,6 +44,9 @@ static inline
 bool pco_instr_src_has_mod(const pco_instr *instr, unsigned src, enum pco_ref_mod mod)
 {
    const struct pco_op_info *info = &pco_op_info[instr->op];
+   if (info->num_srcs == ~0)
+      return false;
+
    assert(src < info->num_srcs);
    assert(mod < _PCO_REF_MOD_COUNT);
    return (info->src_mods[src] & (1ULL << mod)) != 0;

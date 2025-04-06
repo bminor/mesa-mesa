@@ -478,7 +478,7 @@ O_FABS = pseudo_op('fabs', OM_ALU, 1, 1)
 O_FFLR = pseudo_op('fflr', OM_ALU, 1, 1)
 O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
 O_MOV_OFFSET = pseudo_op('mov.offset', OM_ALU + [OM_OFFSET_SD], 1, 2)
-O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
+O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE)
 O_COMP = pseudo_op('comp', [], 1, 2)
 
 O_IADD32_ATOMIC_OFFSET = pseudo_op('iadd32.atomic.offset', OM_ALU_ATOMEXT + [OM_S], 2, 4, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
