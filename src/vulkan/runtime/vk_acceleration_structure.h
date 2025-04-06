@@ -80,6 +80,7 @@ struct vk_acceleration_structure_build_ops {
    uint32_t (*get_encode_key[MAX_ENCODE_PASSES])(struct vk_device *device,
                                                  VkAccelerationStructureTypeKHR type,
                                                  VkBuildAccelerationStructureFlagBitsKHR flags);
+   uint32_t (*get_update_key[MAX_ENCODE_PASSES])(struct vk_device *device, bool in_place);
    VkResult (*encode_bind_pipeline[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer,
                                                        uint32_t key);
    void (*encode_as[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer,
@@ -95,11 +96,12 @@ struct vk_acceleration_structure_build_ops {
                                uint32_t leaf_count,
                                struct vk_acceleration_structure *src_as,
                                struct vk_acceleration_structure *dst_as);
-   void (*update_bind_pipeline[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer);
+   void (*update_bind_pipeline[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer, uint32_t key);
    void (*update_as[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
                                         const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos,
                                         uint32_t leaf_count,
+                                        uint32_t key,
                                         struct vk_acceleration_structure *src,
                                         struct vk_acceleration_structure *dst);
 

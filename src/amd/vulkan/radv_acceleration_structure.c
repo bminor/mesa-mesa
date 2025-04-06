@@ -683,7 +683,7 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
 }
 
 static void
-radv_update_bind_pipeline(VkCommandBuffer commandBuffer)
+radv_update_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -717,7 +717,7 @@ pack_geometry_id_and_flags(uint32_t geometry_id, uint32_t flags)
 
 static void
 radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-               const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count,
+               const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count, uint32_t key,
                struct vk_acceleration_structure *src, struct vk_acceleration_structure *dst)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);

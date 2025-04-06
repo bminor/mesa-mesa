@@ -122,6 +122,7 @@ struct build_config {
    enum internal_build_type internal_type;
    bool updateable;
    uint32_t encode_key[MAX_ENCODE_PASSES];
+   uint32_t update_key[MAX_ENCODE_PASSES];
 };
 
 struct scratch_layout {
@@ -169,10 +170,11 @@ build_config(struct vk_device *device, uint32_t leaf_count,
        ops->update_as[0])
       config.updateable = true;
 
-   for (unsigned i = 0; i < ARRAY_SIZE(config.encode_key); i++) {
-      if (!ops->get_encode_key[i])
-         break;
-      config.encode_key[i] = ops->get_encode_key[i](device, leaf_count, build_info->flags);
+   for (unsigned i = 0; i < MAX_ENCODE_PASSES; i++) {
+      if (ops->get_encode_key[i])
+         config.encode_key[i] = ops->get_encode_key[i](device, leaf_count, build_info->flags);
+      if (ops->get_update_key[i])
+         config.update_key[i] = ops->get_update_key[i](device, build_info->srcAccelerationStructure == build_info->dstAccelerationStructure);
    }
 
    return config;
@@ -1224,6 +1226,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
          bool update;
          uint32_t encode_key = 0;
+         uint32_t update_key = 0;
          for (uint32_t i = 0; i < infoCount; ++i) {
             if (bvh_states[i].last_encode_pass == pass + 1)
                continue;
@@ -1236,15 +1239,17 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                if (!update && !ops->encode_as[pass])
                   continue;
                encode_key = bvh_states[i].config.encode_key[pass];
+               update_key = bvh_states[i].config.update_key[pass];
                progress = true;
                if (update)
-                  ops->update_bind_pipeline[pass](commandBuffer);
+                  ops->update_bind_pipeline[pass](commandBuffer, update_key);
                else
                   ops->encode_bind_pipeline[pass](commandBuffer, encode_key);
             } else {
                if (update != (bvh_states[i].config.internal_type ==
                               INTERNAL_BUILD_TYPE_UPDATE) ||
-                   encode_key != bvh_states[i].config.encode_key[pass])
+                   encode_key != bvh_states[i].config.encode_key[pass] ||
+                   update_key != bvh_states[i].config.update_key[pass])
                   continue;
             }
 
@@ -1256,6 +1261,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                                     &pInfos[i],
                                     ppBuildRangeInfos[i],
                                     bvh_states[i].leaf_node_count,
+                                    update_key,
                                     src,
                                     accel_struct);
 
