@@ -299,7 +299,7 @@ TEST_F(scoreboard_test, WAR_outoforder_inorder)
    brw_builder bld = make_shader();
    brw_builder exp = make_shader();
 
-   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_D, 8);
+   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_D, 10);
    brw_reg  x = vgrf(bld, exp, BRW_TYPE_D);
 
    emit_SEND(bld, g[1], g[2],    x);
@@ -320,7 +320,7 @@ TEST_F(scoreboard_test, WAR_outoforder_outoforder)
    brw_builder bld = make_shader();
    brw_builder exp = make_shader();
 
-   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_D, 8);
+   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_D, 10);
    brw_reg  x = vgrf(bld, exp, BRW_TYPE_D);
 
    emit_SEND(bld, g[1], g[2],    x);
