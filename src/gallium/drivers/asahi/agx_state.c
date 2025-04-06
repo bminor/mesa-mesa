@@ -209,8 +209,8 @@ agx_create_blend_state(struct pipe_context *ctx,
    key->alpha_to_coverage = state->alpha_to_coverage;
    key->alpha_to_one = state->alpha_to_one;
 
-   key->logicop_func =
-      state->logicop_enable ? state->logicop_func : PIPE_LOGICOP_COPY;
+   key->logicop_enable = state->logicop_enable;
+   key->logicop_func = state->logicop_func;
 
    for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; ++i) {
       unsigned rti = state->independent_blend_enable ? i : 0;

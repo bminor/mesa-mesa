@@ -392,7 +392,7 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
    bool force_translucent = false;
    nir_lower_blend_options opts = {
       .scalar_blend_const = true,
-      .logicop_enable = key->blend.logicop_func != PIPE_LOGICOP_COPY,
+      .logicop_enable = key->blend.logicop_enable,
       .logicop_func = key->blend.logicop_func,
    };
 

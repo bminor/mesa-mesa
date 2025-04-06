@@ -2738,9 +2738,8 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
             .nr_samples = MAX2(dyn->ms.rasterization_samples, 1),
             .blend.alpha_to_coverage = dyn->ms.alpha_to_coverage_enable,
             .blend.alpha_to_one = dyn->ms.alpha_to_one_enable,
-            .blend.logicop_func = dyn->cb.logic_op_enable
-                                     ? vk_logic_op_to_pipe(dyn->cb.logic_op)
-                                     : PIPE_LOGICOP_COPY,
+            .blend.logicop_enable = dyn->cb.logic_op_enable,
+            .blend.logicop_func = vk_logic_op_to_pipe(dyn->cb.logic_op),
          };
 
          for (unsigned rt = 0; rt < ARRAY_SIZE(dyn->cal.color_map); ++rt) {

@@ -107,7 +107,7 @@ struct agx_blend_key {
    struct agx_blend_rt_key rt[8];
    uint8_t logicop_func;
    bool alpha_to_coverage, alpha_to_one;
-   bool padding;
+   bool logicop_enable;
 };
 static_assert(sizeof(struct agx_blend_key) == 36, "packed");
 
