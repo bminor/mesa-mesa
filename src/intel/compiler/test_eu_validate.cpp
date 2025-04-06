@@ -121,7 +121,9 @@ validate(struct brw_codegen *p, char **error = nullptr)
    }
 
    if (error)
-      *error = group->error;
+      *error = ralloc_strdup(p, group->error);
+
+   ralloc_free(disasm);
 
    return ret;
 }
