@@ -9746,14 +9746,43 @@ radv_cs_emit_compute_predication(const struct radv_device *device, struct radv_c
    radv_emit_cond_exec(device, cs, va, dwords);
 }
 
+ALWAYS_INLINE static void
+radv_gfx12_emit_hiz_his_wa(const struct radv_device *device, const struct radv_cmd_state *cmd_state,
+                           struct radeon_cmdbuf *cs)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_rendering_state *render = &cmd_state->render;
+
+   /* On GFX12, HiZ/HiS is buggy and can cause random GPU hangs. There are basically two alternatives:
+    * - disable HiZ/HiS completely which is the safest workaround but this is known to decrease performance
+    * - emit a dummy BOTTOM_OF_PIPE_TS after every draw which should workaround the hang and maintain performance
+    */
+   if (pdev->info.gfx_level == GFX12 && render->has_hiz_his) {
+      radeon_begin(cs);
+      radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
+      radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5));
+      radeon_emit(0); /* DST_SEL, INT_SEL = no write confirm, DATA_SEL = no data */
+      radeon_emit(0); /* ADDRESS_LO */
+      radeon_emit(0); /* ADDRESS_HI */
+      radeon_emit(0); /* DATA_LO */
+      radeon_emit(0); /* DATA_HI */
+      radeon_emit(0); /* INT_CTXID */
+      radeon_end();
+   }
+}
+
 static void
 radv_cs_emit_draw_packet(struct radv_cmd_buffer *cmd_buffer, uint32_t vertex_count, uint32_t use_opaque)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
    radeon_begin(cmd_buffer->cs);
    radeon_emit(PKT3(PKT3_DRAW_INDEX_AUTO, 1, cmd_buffer->state.predicating));
    radeon_emit(vertex_count);
    radeon_emit(V_0287F0_DI_SRC_SEL_AUTO_INDEX | use_opaque);
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, &cmd_buffer->state, cmd_buffer->cs);
 }
 
 /**
@@ -9767,6 +9796,8 @@ static void
 radv_cs_emit_draw_indexed_packet(struct radv_cmd_buffer *cmd_buffer, uint64_t index_va, uint32_t max_index_count,
                                  uint32_t index_count, bool not_eop)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
    radeon_begin(cmd_buffer->cs);
    radeon_emit(PKT3(PKT3_DRAW_INDEX_2, 4, cmd_buffer->state.predicating));
    radeon_emit(max_index_count);
@@ -9779,6 +9810,8 @@ radv_cs_emit_draw_indexed_packet(struct radv_cmd_buffer *cmd_buffer, uint64_t in
     */
    radeon_emit(V_0287F0_DI_SRC_SEL_DMA | S_0287F0_NOT_EOP(not_eop));
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, &cmd_buffer->state, cmd_buffer->cs);
 }
 
 /* MUST inline this function to avoid massive perf loss in drawoverhead */
@@ -9786,6 +9819,7 @@ ALWAYS_INLINE static void
 radv_cs_emit_indirect_draw_packet(struct radv_cmd_buffer *cmd_buffer, bool indexed, uint32_t draw_count,
                                   uint64_t count_va, uint32_t stride)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    const unsigned di_src_sel = indexed ? V_0287F0_DI_SRC_SEL_DMA : V_0287F0_DI_SRC_SEL_AUTO_INDEX;
    bool draw_id_enable = cmd_buffer->state.uses_drawid;
@@ -9828,6 +9862,8 @@ radv_cs_emit_indirect_draw_packet(struct radv_cmd_buffer *cmd_buffer, bool index
    }
 
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, &cmd_buffer->state, cs);
 
    cmd_buffer->state.uses_draw_indirect = true;
 }
@@ -9872,6 +9908,8 @@ radv_cs_emit_indirect_mesh_draw_packet(struct radv_cmd_buffer *cmd_buffer, uint3
    radeon_emit(stride);
    radeon_emit(V_0287F0_DI_SRC_SEL_AUTO_INDEX);
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, &cmd_buffer->state, cs);
 }
 
 ALWAYS_INLINE static void
@@ -9954,6 +9992,8 @@ radv_cs_emit_dispatch_taskmesh_gfx_packet(const struct radv_device *device, cons
       radeon_emit(S_4D1_THREAD_TRACE_MARKER_ENABLE(sqtt_en));
    radeon_emit(V_0287F0_DI_SRC_SEL_AUTO_INDEX);
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, cmd_state, cs);
 }
 
 ALWAYS_INLINE static void
@@ -10246,6 +10286,8 @@ radv_emit_direct_draw_packets(struct radv_cmd_buffer *cmd_buffer, const struct r
 static void
 radv_cs_emit_mesh_dispatch_packet(struct radv_cmd_buffer *cmd_buffer, uint32_t x, uint32_t y, uint32_t z)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
    radeon_begin(cmd_buffer->cs);
    radeon_emit(PKT3(PKT3_DISPATCH_MESH_DIRECT, 3, cmd_buffer->state.predicating));
    radeon_emit(x);
@@ -10253,6 +10295,8 @@ radv_cs_emit_mesh_dispatch_packet(struct radv_cmd_buffer *cmd_buffer, uint32_t x
    radeon_emit(z);
    radeon_emit(S_0287F0_SOURCE_SELECT(V_0287F0_DI_SRC_SEL_AUTO_INDEX));
    radeon_end();
+
+   radv_gfx12_emit_hiz_his_wa(device, &cmd_buffer->state, cmd_buffer->cs);
 }
 
 ALWAYS_INLINE static void
