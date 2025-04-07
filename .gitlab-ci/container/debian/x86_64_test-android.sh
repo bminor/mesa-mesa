@@ -171,12 +171,16 @@ section_end android-cts
 
 ############### Uninstall the build software
 
+uncollapsed_section_switch debian_cleanup "Cleaning up base Debian system"
+
 rm -rf "/${ndk:?}"
 
 export SUDO_FORCE_REMOVE=yes
 apt-get purge -y "${EPHEMERAL[@]}"
 
 . .gitlab-ci/container/container_post_build.sh
+
+section_end debian_cleanup
 
 ############### Remove unused packages
 
