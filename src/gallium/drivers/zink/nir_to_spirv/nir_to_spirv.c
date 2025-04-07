@@ -685,7 +685,8 @@ create_shared_block(struct ntv_context *ctx, unsigned bit_size)
    }
 
    ctx->shared_block_arr_type[idx] = array;
-   spirv_builder_emit_array_stride(&ctx->builder, array, bit_size / 8);
+   if (ctx->sinfo->have_workgroup_memory_explicit_layout)
+      spirv_builder_emit_array_stride(&ctx->builder, array, bit_size / 8);
 
    /* Create wrapper struct for Block, Offset and Aliased decorations. */
    SpvId block = spirv_builder_type_struct(&ctx->builder, &array, 1);

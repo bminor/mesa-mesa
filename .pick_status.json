@@ -994,7 +994,7 @@
         "description": "zink: don't set shared block stride without KHR_workgroup_memory_explicit_layout",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
