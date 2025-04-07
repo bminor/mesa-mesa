@@ -2109,6 +2109,7 @@ enum block_kind {
    block_kind_resume = 1 << 12,
    block_kind_export_end = 1 << 13,
    block_kind_end_with_regs = 1 << 14,
+   block_kind_contains_call = 1 << 15,
 };
 
 /* CFG */
@@ -2319,6 +2320,10 @@ public:
    bool pending_lds_access = false;
 
    bool should_repair_ssa = false;
+
+   bool is_callee = false;
+   bool has_call = false;
+   bool bypass_reg_preservation = false;
 
    struct {
       monotonic_buffer_resource memory;
