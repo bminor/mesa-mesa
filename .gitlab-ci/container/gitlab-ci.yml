@@ -111,7 +111,7 @@ debian/x86_64_build-base:
     - .debian-container-version
     - .use-base-image
   variables:
-    MESA_BASE_IMAGE: ${DEBIAN_X86_64_BUILD_BASE_IMAGE}
+    MESA_BASE_IMAGE: "debian/x86_64_build-base"
     MESA_BASE_TAG: *debian-x86_64_build-base
     MESA_ARTIFACTS_BASE_TAG: *debian-x86_64_build-base
     LLVM_VERSION: *debian-x86_64-llvm
@@ -133,7 +133,7 @@ debian/x86_64_build:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-x86_64_build-base
-    MESA_IMAGE_PATH: ${DEBIAN_X86_64_BUILD_IMAGE_PATH}
+    MESA_IMAGE_PATH: "debian/x86_64_build"
     MESA_IMAGE_TAG: *debian-x86_64_build
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
@@ -346,7 +346,7 @@ debian/x86_64_test-base:
     - .debian-container-version
     - .use-base-image
   variables:
-    MESA_BASE_IMAGE: ${DEBIAN_X86_64_TEST_BASE_IMAGE}
+    MESA_BASE_IMAGE: "debian/x86_64_test-base"
     MESA_BASE_TAG: *debian-x86_64_test-base
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
@@ -372,7 +372,7 @@ debian/arm32_test-base:
     - .debian-container-version
     - .use-base-image
   variables:
-    MESA_BASE_IMAGE: ${DEBIAN_ARM32_TEST_BASE_IMAGE}
+    MESA_BASE_IMAGE: "debian/arm32_test-base"
     MESA_BASE_TAG: *debian-arm32_test-base
     LLVM_VERSION: *debian-arm64-llvm
     FDO_DISTRIBUTION_PLATFORM: "linux/arm/v7"
@@ -397,7 +397,7 @@ debian/arm64_test-base:
     - .debian-container-version
     - .use-base-image
   variables:
-    MESA_BASE_IMAGE: ${DEBIAN_ARM64_TEST_BASE_IMAGE}
+    MESA_BASE_IMAGE: "debian/arm64_test-base"
     MESA_BASE_TAG: *debian-arm64_test-base
     LLVM_VERSION: *debian-arm64-llvm
   needs:
@@ -416,7 +416,7 @@ debian/x86_64_test-gl:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-x86_64_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_X86_64_TEST_IMAGE_GL_PATH}
+    MESA_IMAGE_PATH: "debian/x86_64_test-gl"
     MESA_IMAGE_TAG: *debian-x86_64_test-gl
   needs:
     - debian/x86_64_test-gl
@@ -434,7 +434,7 @@ debian/x86_64_test-vk:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-x86_64_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_X86_64_TEST_IMAGE_VK_PATH}
+    MESA_IMAGE_PATH: "debian/x86_64_test-vk"
     MESA_IMAGE_TAG: *debian-x86_64_test-vk
   needs:
     - debian/x86_64_test-vk
@@ -455,7 +455,7 @@ debian/x86_64_test-android:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-x86_64_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_X86_64_TEST_ANDROID_IMAGE_PATH}
+    MESA_IMAGE_PATH: "debian/x86_64_test-android"
     MESA_IMAGE_TAG: *debian-x86_64_test-android
   needs:
     - debian/x86_64_test-android
@@ -475,7 +475,7 @@ debian/x86_64_pyutils:
     - .debian-container-version
     - .set-image
   variables:
-    MESA_IMAGE_PATH: ${DEBIAN_PYUTILS_IMAGE}
+    MESA_IMAGE_PATH: "debian/x86_64_pyutils"
     MESA_IMAGE_TAG: *debian-x86_64_pyutils
   needs:
     - debian/x86_64_pyutils
@@ -495,7 +495,7 @@ debian/arm32_test-gl:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-arm32_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_ARM32_TEST_IMAGE_GL_PATH}
+    MESA_IMAGE_PATH: "debian/arm32_test-gl"
     MESA_IMAGE_TAG: *debian-arm32_test-gl
   needs:
     - debian/arm32_test-gl
@@ -517,7 +517,7 @@ debian/arm32_test-vk:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-arm32_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_ARM32_TEST_IMAGE_VK_PATH}
+    MESA_IMAGE_PATH: "debian/arm32_test-vk"
     MESA_IMAGE_TAG: *debian-arm32_test-vk
   needs:
     - debian/arm32_test-vk
@@ -539,7 +539,7 @@ debian/arm64_test-gl:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-arm64_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_ARM64_TEST_IMAGE_GL_PATH}
+    MESA_IMAGE_PATH: "debian/arm64_test-gl"
     MESA_IMAGE_TAG: *debian-arm64_test-gl
   needs:
     - debian/arm64_test-gl
@@ -559,7 +559,7 @@ debian/arm64_test-vk:
     - .set-image-base-tag
   variables:
     MESA_BASE_TAG: *debian-arm64_test-base
-    MESA_IMAGE_PATH: ${DEBIAN_ARM64_TEST_IMAGE_VK_PATH}
+    MESA_IMAGE_PATH: "debian/arm64_test-vk"
     MESA_IMAGE_TAG: *debian-arm64_test-vk
   needs:
     - debian/arm64_test-vk
@@ -733,7 +733,7 @@ windows_msvc:
   extends:
     - .windows_container_build
   variables:
-    MESA_IMAGE_PATH: &windows_msvc_image_path ${WINDOWS_X64_MSVC_PATH}
+    MESA_IMAGE_PATH: &windows_msvc_image_path "windows/x86_64_msvc"
     MESA_IMAGE_TAG: ${WINDOWS_X64_MSVC_TAG}
     DOCKERFILE: Dockerfile_msvc
     MESA_BASE_IMAGE: "mcr.microsoft.com/windows/server:ltsc2022"
@@ -748,7 +748,7 @@ windows_build_msvc:
     - !reference [.microsoft-farm-rules, rules]
     - !reference [.container+build-rules, rules]
   variables:
-    MESA_IMAGE_PATH: &windows_build_image_path ${WINDOWS_X64_BUILD_PATH}
+    MESA_IMAGE_PATH: &windows_build_image_path "windows/x86_64_build"
     MESA_IMAGE_TAG: &windows_build_image_tag ${WINDOWS_X64_MSVC_TAG}--${WINDOWS_X64_BUILD_TAG}
     DOCKERFILE: Dockerfile_build
     MESA_BASE_IMAGE_PATH: *windows_msvc_image_path
@@ -767,7 +767,7 @@ windows_test_msvc:
     - !reference [.microsoft-farm-rules, rules]
     - !reference [.container+build-rules, rules]
   variables:
-    MESA_IMAGE_PATH: &windows_test_image_path ${WINDOWS_X64_TEST_PATH}
+    MESA_IMAGE_PATH: &windows_test_image_path "windows/x86_64_test"
     MESA_IMAGE_TAG: &windows_test_image_tag ${WINDOWS_X64_MSVC_TAG}--${WINDOWS_X64_TEST_TAG}
     DOCKERFILE: Dockerfile_test
     MESA_BASE_IMAGE_PATH: *windows_msvc_image_path
