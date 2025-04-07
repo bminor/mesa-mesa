@@ -114,6 +114,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       }
 
       NIR_PASS(progress, nir, nir_opt_undef);
+      NIR_PASS(progress, nir, nir_opt_shrink_vectors, true);
 
       nir_opt_peephole_select_options peephole_discard_options = {
          .limit = 0,
