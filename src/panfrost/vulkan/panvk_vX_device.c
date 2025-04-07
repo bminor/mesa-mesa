@@ -353,6 +353,7 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    u_printf_init(&device->printf.ctx, device->printf.bo,
                  device->printf.bo->addr.host);
 
+   device->drm_fd = device->kmod.dev->fd;
    vk_device_set_drm_fd(&device->vk, device->kmod.dev->fd);
 
 

@@ -84,6 +84,8 @@ struct panvk_device {
       struct u_printf_ctx ctx;
       struct panvk_priv_bo *bo;
    } printf;
+
+   int drm_fd;
 };
 
 VK_DEFINE_HANDLE_CASTS(panvk_device, vk.base, VkDevice, VK_OBJECT_TYPE_DEVICE)

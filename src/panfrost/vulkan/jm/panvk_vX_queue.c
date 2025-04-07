@@ -69,11 +69,11 @@ panvk_queue_submit_batch(struct panvk_queue *queue, struct panvk_batch *batch,
          .jc = batch->vtc_jc.first_job,
       };
 
-      ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANFROST_SUBMIT, &submit);
+      ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANFROST_SUBMIT, &submit);
       assert(!ret);
 
       if (debug & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC)) {
-         ret = drmSyncobjWait(dev->vk.drm_fd, &submit.out_sync, 1, INT64_MAX, 0,
+         ret = drmSyncobjWait(dev->drm_fd, &submit.out_sync, 1, INT64_MAX, 0,
                               NULL);
          assert(!ret);
       }
@@ -108,10 +108,10 @@ panvk_queue_submit_batch(struct panvk_queue *queue, struct panvk_batch *batch,
          submit.in_sync_count = nr_in_fences;
       }
 
-      ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANFROST_SUBMIT, &submit);
+      ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANFROST_SUBMIT, &submit);
       assert(!ret);
       if (debug & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC)) {
-         ret = drmSyncobjWait(dev->vk.drm_fd, &submit.out_sync, 1, INT64_MAX, 0,
+         ret = drmSyncobjWait(dev->drm_fd, &submit.out_sync, 1, INT64_MAX, 0,
                               NULL);
          assert(!ret);
       }
@@ -146,12 +146,12 @@ panvk_queue_transfer_sync(struct panvk_queue *queue, uint32_t syncobj)
       .fd = -1,
    };
 
-   ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD, &handle);
+   ret = drmIoctl(dev->drm_fd, DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD, &handle);
    assert(!ret);
    assert(handle.fd >= 0);
 
    handle.handle = syncobj;
-   ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE, &handle);
+   ret = drmIoctl(dev->drm_fd, DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE, &handle);
    assert(!ret);
 
    close(handle.fd);
@@ -197,7 +197,7 @@ panvk_signal_event_syncobjs(struct panvk_queue *queue,
             .handles = (uint64_t)(uintptr_t)&event->syncobj,
             .count_handles = 1};
 
-         int ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_SYNCOBJ_RESET, &objs);
+         int ret = drmIoctl(dev->drm_fd, DRM_IOCTL_SYNCOBJ_RESET, &objs);
          assert(!ret);
          break;
       }
@@ -324,7 +324,7 @@ panvk_per_arch(queue_init)(struct panvk_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   int ret = drmSyncobjCreate(device->vk.drm_fd, DRM_SYNCOBJ_CREATE_SIGNALED,
+   int ret = drmSyncobjCreate(device->drm_fd, DRM_SYNCOBJ_CREATE_SIGNALED,
                               &queue->sync);
    if (ret) {
       vk_queue_finish(&queue->vk);
@@ -347,7 +347,7 @@ panvk_per_arch(QueueWaitIdle)(VkQueue _queue)
    if (vk_device_is_lost(&dev->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   int ret = drmSyncobjWait(queue->vk.base.device->drm_fd, &queue->sync, 1,
+   int ret = drmSyncobjWait(dev->drm_fd, &queue->sync, 1,
                             INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
    assert(!ret);
 

@@ -29,7 +29,7 @@ panvk_per_arch(queue_finish)(struct panvk_queue *queue)
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
 
    vk_queue_finish(&queue->vk);
-   drmSyncobjDestroy(dev->vk.drm_fd, queue->sync);
+   drmSyncobjDestroy(dev->drm_fd, queue->sync);
 }
 
 VkResult panvk_per_arch(queue_init)(struct panvk_device *device,

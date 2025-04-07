@@ -463,18 +463,18 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       .queue_submits = DRM_PANTHOR_OBJ_ARRAY(1, &qsubmit),
    };
 
-   int ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
+   int ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
    if (ret)
       return panvk_errorf(dev->vk.physical, VK_ERROR_INITIALIZATION_FAILED,
                           "Failed to initialized subqueue: %m");
 
-   ret = drmSyncobjWait(dev->vk.drm_fd, &queue->syncobj_handle, 1, INT64_MAX, 0,
+   ret = drmSyncobjWait(dev->drm_fd, &queue->syncobj_handle, 1, INT64_MAX, 0,
                         NULL);
    if (ret)
       return panvk_errorf(dev->vk.physical, VK_ERROR_INITIALIZATION_FAILED,
                           "SyncobjWait failed: %m");
 
-   drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
+   drmSyncobjReset(dev->drm_fd, &queue->syncobj_handle, 1);
 
    if (debug & PANVK_DEBUG_TRACE) {
       pandecode_user_msg(dev->debug.decode_ctx, "Init subqueue %d binary\n\n",
@@ -610,7 +610,7 @@ create_group(struct panvk_queue *queue,
       .vm_id = pan_kmod_vm_handle(dev->kmod.vm),
    };
 
-   int ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_CREATE, &gc);
+   int ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_CREATE, &gc);
    if (ret)
       return panvk_errorf(dev, VK_ERROR_INITIALIZATION_FAILED,
                           "Failed to create a scheduling group");
@@ -628,7 +628,7 @@ destroy_group(struct panvk_queue *queue)
    };
 
    ASSERTED int ret =
-      drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
+      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
    assert(!ret);
 }
 
@@ -665,7 +665,7 @@ init_tiler(struct panvk_queue *queue)
    };
 
    int ret =
-      drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE, &thc);
+      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE, &thc);
    if (ret) {
       result = panvk_errorf(dev, VK_ERROR_INITIALIZATION_FAILED,
                             "Failed to create a tiler heap context");
@@ -699,7 +699,7 @@ cleanup_tiler(struct panvk_queue *queue)
       .handle = tiler_heap->context.handle,
    };
    ASSERTED int ret =
-      drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
+      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
    assert(!ret);
 
    panvk_pool_free_mem(&tiler_heap->desc);
@@ -1052,7 +1052,7 @@ panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
          DRM_PANTHOR_OBJ_ARRAY(submit->qsubmit_count, submit->qsubmits),
    };
 
-   ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
+   ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
    if (ret)
       return vk_queue_set_lost(&queue->vk, "GROUP_SUBMIT: %m");
 
@@ -1072,7 +1072,7 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
 
    if (submit->force_sync) {
       uint64_t point = util_bitcount(submit->used_queue_mask);
-      ret = drmSyncobjTimelineWait(dev->vk.drm_fd, &queue->syncobj_handle,
+      ret = drmSyncobjTimelineWait(dev->drm_fd, &queue->syncobj_handle,
                                    &point, 1, INT64_MAX,
                                    DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
       assert(!ret);
@@ -1084,7 +1084,7 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
          vk_sync_as_drm_syncobj(signal->sync);
       assert(syncobj);
 
-      drmSyncobjTransfer(dev->vk.drm_fd, syncobj->syncobj, signal->signal_value,
+      drmSyncobjTransfer(dev->drm_fd, syncobj->syncobj, signal->signal_value,
                          queue->syncobj_handle, 0, 0);
    }
 
@@ -1092,7 +1092,7 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
       const struct vk_drm_syncobj *syncobj =
          vk_sync_as_drm_syncobj(queue->utrace.sync);
 
-      drmSyncobjTransfer(dev->vk.drm_fd, syncobj->syncobj,
+      drmSyncobjTransfer(dev->drm_fd, syncobj->syncobj,
                          queue->utrace.next_value++, queue->syncobj_handle, 0,
                          0);
 
@@ -1100,7 +1100,7 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
       u_trace_context_process(&dev->utrace.utctx, false);
    }
 
-   drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
+   drmSyncobjReset(dev->drm_fd, &queue->syncobj_handle, 1);
 }
 
 static void
@@ -1238,7 +1238,7 @@ panvk_per_arch(queue_init)(struct panvk_device *dev, struct panvk_queue *queue,
    if (result != VK_SUCCESS)
       return result;
 
-   int ret = drmSyncobjCreate(dev->vk.drm_fd, 0, &queue->syncobj_handle);
+   int ret = drmSyncobjCreate(dev->drm_fd, 0, &queue->syncobj_handle);
    if (ret) {
       result = panvk_errorf(dev, VK_ERROR_INITIALIZATION_FAILED,
                             "Failed to create our internal sync object");
@@ -1267,7 +1267,7 @@ err_cleanup_tiler:
    cleanup_tiler(queue);
 
 err_destroy_syncobj:
-   drmSyncobjDestroy(dev->vk.drm_fd, queue->syncobj_handle);
+   drmSyncobjDestroy(dev->drm_fd, queue->syncobj_handle);
 
 err_finish_queue:
    vk_queue_finish(&queue->vk);
@@ -1282,7 +1282,7 @@ panvk_per_arch(queue_finish)(struct panvk_queue *queue)
    cleanup_queue(queue);
    destroy_group(queue);
    cleanup_tiler(queue);
-   drmSyncobjDestroy(dev->vk.drm_fd, queue->syncobj_handle);
+   drmSyncobjDestroy(dev->drm_fd, queue->syncobj_handle);
    vk_queue_finish(&queue->vk);
 }
 
@@ -1295,7 +1295,7 @@ panvk_per_arch(queue_check_status)(struct panvk_queue *queue)
    };
 
    int ret =
-      drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
+      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
    if (!ret && !state.state)
       return VK_SUCCESS;
 
