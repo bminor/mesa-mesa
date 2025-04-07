@@ -23,6 +23,82 @@ shouldn't be concerned with this information. But if your distributions
 lacks the driver or you want to update to the latest code these
 instructions explain what to do.
 
+Getting VMware Workstation Pro for Linux
+----------------------------------------
+
+Before you can run Mesa on an SVGA3D device in a VM, you need to actually have
+a hypervisor that supports SVGA3D in its entirety. Such hypervisors are VMware's
+Workstaton Pro (Linux, Windows) and Fusion (macOS). Here we list the steps to
+get VMware Workstation Pro running on Linux.
+
+-  Step 1: Find VMware Workstation Pro to download
+
+-  Step 1.1: Create a broadcom.com account
+
+   * Go to https://support.broadcom.com and click "log in" at the top-right
+   * Create an account
+     * Go to your email to verify your account
+   * Log in to your account
+
+-  Step 1.2: Once logged in, navigate to the Free Downloads section
+
+   * Follow link to Free Downloads section https://support.broadcom.com/group/ecx/free-downloads
+
+-  Step 1.3: Select your VMware Workstation Pro release
+
+   * In the search box type "VMware Workstation Pro", wait for results to show up
+   * Select "VMware Workstation Pro"
+   * Select version 17 (as of this writing) platform -- Linux or Windows
+   * Select the desired full version -- 17.6.3 as of this writing
+
+-  Step 1.4: Accept the Terms & Conditions and download
+
+   * There's a checkbox for this above the file list - tick it
+   * Click the cloud-download button-icon for the Linux version at the bottom of the list
+   * You will now be prompted to enter your full name and address for export controls
+   * It will probably return you to the base support page now, so repeat steps 1.2, 1.3, 1.4
+   * You are now downloading the vmware workstation bundle
+
+-  Step 2: Install VMware Workstation Pro
+
+   * It is advisable to uninstall any previous version first; check for potentially installed *vmware-workstation*
+
+   ::
+
+      sudo ./VMware-Workstation-Full-17.6.3-24583834.x86_64.bundle -l
+
+   * If present, proceed to uninstall it; make sure to keep your old configuration if asked!
+
+   ::
+
+      sudo ./VMware-Workstation-Full-17.6.3-24583834.x86_64.bundle --uninstall-component=vmware-workstation
+
+   * Provide kernel headers for Workstation kernel modules built by the bundle setup script
+     * On Ubuntu
+
+     ::
+
+         sudo apt-get install linux-headers-$(uname -r)
+
+     * On Fedora
+
+     ::
+
+         sudo dnf install linux-devel-$(uname -r)
+
+   * Run the following to install the package
+
+   ::
+
+      sudo ./VMware-Workstation-Full-17.6.3-24583834.x86_64.bundle
+
+-  Step 3: Run VMware Workstation Pro
+
+   ::
+
+      /usr/bin/vmware
+
+
 Components
 ----------
 
