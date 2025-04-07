@@ -199,7 +199,7 @@
     # Ensure that we are using the release build artifact
     S3_ARTIFACT_NAME: mesa-arm64-default-release
   needs:
-    - debian/baremetal_arm64_test
+    - debian/baremetal_arm64_test-gl
     - debian-arm64-release
   dependencies: null
 
@@ -272,9 +272,22 @@
     VK_DRIVER: freedreno
 
 
-.google-freedreno-test:
+.google-freedreno-test-gl:
   extends:
-    - .baremetal-test-arm64
+    - .baremetal-test-arm64-gl
+    - .google-freedreno-rules
+  variables:
+    VK_DRIVER: freedreno
+    FLAKES_CHANNEL: "#freedreno-ci"
+    PIGLIT_PLATFORM: mixed_glx_egl
+    BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 $BM_KERNEL_EXTRA_ARGS root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init $BM_KERNELARGS"
+    FARM: google
+  script:
+    - ./install/bare-metal/fastboot.sh
+
+.google-freedreno-test-vk:
+  extends:
+    - .baremetal-test-arm64-vk
     - .google-freedreno-rules
   variables:
     VK_DRIVER: freedreno
@@ -297,7 +310,7 @@
 
 .a306-test:
   extends:
-    - .google-freedreno-test
+    - .google-freedreno-test-gl
   variables:
     BM_KERNEL: Image.gz
     BM_DTB: apq8016-sbc-usb-host
@@ -310,7 +323,7 @@
 # 8 devices (2023-04-15)
 .a530-test:
   extends:
-    - .google-freedreno-test
+    - .google-freedreno-test-gl
   variables:
     BM_KERNEL: Image.gz
     BM_DTB: apq8096-db820c
@@ -322,8 +335,6 @@
 
 # 6 devices (2023-07-06)
 .a630-test:
-  extends:
-    - .google-freedreno-test
   variables:
     FDO_CI_CONCURRENT: 10
     BM_KERNEL: cheza-kernel

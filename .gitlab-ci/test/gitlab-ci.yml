@@ -268,62 +268,98 @@ yaml-toml-shell-py-test:
       junit: results/junit.xml
 
 # ARM testing of bare-metal boards attached to an x86 gitlab-runner system
-.baremetal-test-arm32:
+.baremetal-test-arm32-gl:
   extends:
     - .baremetal-test
-    - .use-debian/baremetal_arm32_test
+    - .use-debian/baremetal_arm32_test-gl
   variables:
     DEBIAN_ARCH: armhf
     S3_ARTIFACT_NAME: mesa-arm32-default-debugoptimized
   needs:
-    - debian/baremetal_arm32_test
+    - debian/baremetal_arm32_test-gl
     - job: debian-arm32
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
 
 # ARM64 testing of bare-metal boards attached to an x86 gitlab-runner system
-.baremetal-test-arm64:
+.baremetal-test-arm64-gl:
   extends:
     - .baremetal-test
-    - .use-debian/baremetal_arm64_test
+    - .use-debian/baremetal_arm64_test-gl
   variables:
     DEBIAN_ARCH: arm64
     S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
   needs:
-    - debian/baremetal_arm64_test
+    - debian/baremetal_arm64_test-gl
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+# ARM64 testing of bare-metal boards attached to an x86 gitlab-runner system
+.baremetal-test-arm64-vk:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-vk
+  variables:
+    DEBIAN_ARCH: arm64
+    S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
+  needs:
+    - debian/baremetal_arm64_test-vk
     - job: debian-arm64
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
 
 # ARM32/64 testing of bare-metal boards attached to an x86 gitlab-runner system, using an asan mesa build
-.baremetal-arm32-asan-test:
+.baremetal-arm32-asan-test-gl:
   variables:
     S3_ARTIFACT_NAME: mesa-arm32-asan-debugoptimized
     DEQP_FORCE_ASAN: 1
   needs:
-    - debian/baremetal_arm32_test
+    - debian/baremetal_arm32_test-gl
     - job: debian-arm32-asan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
 
-.baremetal-arm64-asan-test:
+.baremetal-arm64-asan-test-gl:
   variables:
     S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
     DEQP_FORCE_ASAN: 1
   needs:
-    - debian/baremetal_arm64_test
+    - debian/baremetal_arm64_test-gl
     - job: debian-arm64-asan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
 
-.baremetal-arm64-ubsan-test:
+.baremetal-arm64-asan-test-vk:
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - debian/baremetal_arm64_test-vk
+    - job: debian-arm64-asan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-ubsan-test-gl:
   extends:
     - .baremetal-test
-    - .use-debian/baremetal_arm64_test
+    - .use-debian/baremetal_arm64_test-vk
   variables:
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
   needs:
-    - debian/baremetal_arm64_test
+    - debian/baremetal_arm64_test-vk
+    - job: debian-arm64-ubsan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-ubsan-test-vk:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-vk
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
+  needs:
+    - debian/baremetal_arm64_test-vk
     - job: debian-arm64-ubsan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]

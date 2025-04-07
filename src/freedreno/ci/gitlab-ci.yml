@@ -301,6 +301,7 @@ a660-vk-full:
 a630-gl:
   extends:
     - .baremetal-deqp-test
+    - .google-freedreno-test-gl
     - .a630-test
   parallel: 3
   variables:
@@ -311,8 +312,9 @@ a630-gl:
 a630-gles-asan:
   extends:
     - .baremetal-deqp-test
+    - .google-freedreno-test-gl
     - .a630-test
-    - .baremetal-arm64-asan-test
+    - .baremetal-arm64-asan-test-gl
   variables:
     DEQP_SUITE: freedreno-a630-gles-asan
     FDO_CI_CONCURRENT: 2 # We get OOMkills if we go too wide with asan enabled
@@ -332,6 +334,7 @@ a630-gles-asan-full:
 
 .a630-vk:
   extends:
+    - .google-freedreno-test-vk
     - .a630-test
     - .baremetal-deqp-test
     - .google-turnip-rules
@@ -355,9 +358,10 @@ a630-vk-full:
 
 a630-vk-asan:
   extends:
+    - .google-freedreno-test-vk
     - .a630-test
     - .baremetal-deqp-test
-    - .baremetal-arm64-asan-test
+    - .baremetal-arm64-asan-test-vk
     - .google-turnip-rules
   variables:
     DEQP_SUITE: freedreno-a630-vk-asan
@@ -365,6 +369,7 @@ a630-vk-asan:
 
 a630-piglit:
   extends:
+    - .google-freedreno-test-gl
     - .baremetal-deqp-test
     - .a630-test
     - .test-piglit
@@ -377,6 +382,7 @@ a630-piglit:
 a630-piglit-full:
   extends:
     - .baremetal-deqp-test
+    - .google-freedreno-test-gl
     - .a630-test
     - .test-piglit
     # Note that piglit has GL+VK integration testing.
@@ -390,6 +396,7 @@ a630-piglit-full:
 a630-traces:
   extends:
     - .google-freedreno-test-traces
+    - .google-freedreno-test-gl
     - .a630-test
   rules:
     - when: never # Google nginx needs updating

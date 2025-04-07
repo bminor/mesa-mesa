@@ -133,7 +133,7 @@
   extends:
     - .piglit-performance-base
   needs:
-    - debian/baremetal_arm64_test
+    - debian/baremetal_arm64_test-gl
     - debian-arm64-release
 
 # Mesa source file dependencies that may impact any GL driver test job.

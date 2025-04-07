@@ -3,7 +3,7 @@ include:
 
 .gk20a-gles:
   extends:
-    - .baremetal-test-arm32
+    - .baremetal-test-arm32-gl
     - .nouveau-bm-test
     - .anholt-tegra124-jetson-tk1:arm32
   parallel: 4
@@ -15,7 +15,7 @@ include:
 # Single Jetson Nano board at anholt's house.
 .gm20b-gles-full:
   extends:
-    - .baremetal-test-arm64
+    - .baremetal-test-arm64-gl
     - .nouveau-bm-test
     - .google-tegra210-p3450-0000:arm64
     - .nouveau-manual-rules
