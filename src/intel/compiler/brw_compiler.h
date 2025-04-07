@@ -722,6 +722,13 @@ struct brw_wm_prog_data {
    bool contains_flat_varying;
    bool contains_noperspective_varying;
 
+   /** Fragment shader barycentrics
+    *
+    * Request that the HW delta computation of attributes be turned off. This is needed
+    * when the FS has per-vertex inputs or reads BaryCoordKHR/BaryCoordNoPerspKHR.
+    */
+   bool vertex_attributes_bypass;
+
    /** True if the shader wants sample shading
     *
     * This corresponds to whether or not a gl_SampleId, gl_SamplePosition, or

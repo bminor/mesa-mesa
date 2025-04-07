@@ -995,6 +995,8 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
       const unsigned offset_bary_modes =
          brw_compute_offset_barycentric_interp_modes(key, shader);
 
+      prog_data->vertex_attributes_bypass = brw_needs_vertex_attributes_bypass(shader);
+
       prog_data->uses_npc_bary_coefficients =
          offset_bary_modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS;
       prog_data->uses_pc_bary_coefficients =

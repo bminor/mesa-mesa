@@ -675,6 +675,25 @@ lower_indirect_primitive_id(nir_builder *b,
    return true;
 }
 
+bool
+brw_needs_vertex_attributes_bypass(const nir_shader *shader)
+{
+   /* Even if there are no actual per-vertex inputs, if the fragment
+    * shader uses BaryCoord*, we need to set everything accordingly
+    * so the barycentrics don't get reordered.
+    */
+   if (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_BARYCENTRIC_LINEAR_COORD) ||
+       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_BARYCENTRIC_PERSP_COORD))
+      return true;
+
+   nir_foreach_shader_in_variable(var, shader) {
+      if (var->data.per_vertex)
+         return true;
+   }
+
+   return false;
+}
+
 void
 brw_nir_lower_fs_inputs(nir_shader *nir,
                         const struct intel_device_info *devinfo,
