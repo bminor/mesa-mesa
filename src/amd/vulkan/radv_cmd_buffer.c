@@ -5639,6 +5639,9 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
          /* Adjust MSAA state if conservative rasterization is enabled. */
          db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(4);
          pa_sc_aa_config |= S_028BE0_AA_MASK_CENTROID_DTMN(1);
+
+         /* GFX12 programs it in SPI_PS_INPUT_ENA.COVERAGE_TO_SHADER_SELECT */
+         pa_sc_aa_config |= S_028BE0_COVERAGE_TO_SHADER_SELECT(pdev->info.gfx_level < GFX12 && uses_inner_coverage);
       } else {
          pa_sc_conservative_rast |= S_028C4C_NULL_SQUAD_AA_MASK_ENABLE(1);
       }
@@ -5690,10 +5693,6 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
       if (radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)
          db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(log_samples);
    }
-
-   /* GFX12 programs it in SPI_PS_INPUT_ENA.COVERAGE_TO_SHADER_SELECT */
-   pa_sc_aa_config |=
-      S_028BE0_COVERAGE_TO_SHADER_SELECT(pdev->info.gfx_level < GFX12 && ps && ps->info.ps.reads_fully_covered);
 
    radeon_begin(cmd_buffer->cs);
 
