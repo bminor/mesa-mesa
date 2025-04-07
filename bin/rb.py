@@ -9,6 +9,7 @@ import unittest
 import sys
 import subprocess
 import os
+import shlex
 from unidecode import unidecode
 
 def normalize(x):
@@ -77,7 +78,29 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--ack', action='store_true', help="Apply an acked-by tag")
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help="Print trailer without applying")
+    parser.add_argument('-r', '--rebase', nargs='?',
+                        help="Rebase on the specified branch applying tags to all commits")
     args = parser.parse_args()
+
+    # If we are rebasing, let git reinvoke this script with the rebase related
+    # arguments stripped.
+    if args.rebase is not None:
+        relevant_args = [sys.argv[0]]
+        if args.ack:
+            relevant_args.append("--ack")
+
+        relevant_args += args.person
+
+        cmd = f"python3 {' '.join(relevant_args)}"
+        rebase = ['git', 'rebase', '--exec', cmd, args.rebase]
+
+        if args.dry_run:
+            print(' '.join([shlex.quote(s) for s in rebase]))
+            returncode = 0
+        else:
+            returncode = subprocess.run(rebase).returncode
+
+        sys.exit(returncode)
 
     for p in args.person:
         person = find_person(p)
