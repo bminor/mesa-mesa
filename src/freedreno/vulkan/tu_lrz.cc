@@ -222,6 +222,7 @@ tu_lrz_init_state(struct tu_cmd_buffer *cmd,
       return;
 
    cmd->state.lrz.valid = true;
+   cmd->state.lrz.valid_at_start = true;
    cmd->state.lrz.disable_write_for_rp = false;
    cmd->state.lrz.prev_direction = TU_LRZ_UNKNOWN;
    /* Be optimistic and unconditionally enable fast-clear in
@@ -256,6 +257,7 @@ tu_lrz_init_secondary(struct tu_cmd_buffer *cmd,
       return;
 
    cmd->state.lrz.valid = true;
+   cmd->state.lrz.valid_at_start = true;
    cmd->state.lrz.disable_write_for_rp = false;
    cmd->state.lrz.prev_direction = TU_LRZ_UNKNOWN;
    cmd->state.lrz.gpu_dir_tracking = has_gpu_tracking;
@@ -352,7 +354,7 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
     /* Track LRZ valid state */
    tu_lrz_begin_resumed_renderpass<CHIP>(cmd);
 
-   if (!cmd->state.lrz.valid || TU_DEBUG(NOLRZ)) {
+   if (!cmd->state.lrz.valid_at_start || TU_DEBUG(NOLRZ)) {
       tu6_write_lrz_cntl<CHIP>(cmd, &cmd->cs, {});
       tu6_emit_lrz_buffer<CHIP>(&cmd->cs, NULL);
    }
@@ -397,15 +399,19 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       return;
    }
 
-   if (lrz->disable_for_rp) {
-      /* We may deem necessary to disable LRZ for the whole renderpass.
+   if (!lrz->valid_at_start) {
+      /* If LRZ was never valid so disable it manually here.
        * This is accomplished by making later GRAS_LRZ_CNTL (in binning pass)
        * to fail the comparison of depth views.
-       * TODO: Find if there are conditions where it is beneficial.
        */
-      tu6_disable_lrz_via_depth_view<CHIP>(cmd, cs);
-      tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = 0));
-   } else if (lrz->fast_clear || lrz->gpu_dir_tracking) {
+      if (lrz->gpu_dir_tracking) {
+         tu6_disable_lrz_via_depth_view<CHIP>(cmd, cs);
+         tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = 0));
+      }
+      return;
+   }
+
+   if (lrz->fast_clear || lrz->gpu_dir_tracking) {
       if (lrz->gpu_dir_tracking) {
          tu6_write_lrz_reg(cmd, cs,
             A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = lrz->image_view->view.GRAS_LRZ_DEPTH_VIEW));
@@ -426,7 +432,7 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_CLEAR);
    }
 
-   if (!lrz->fast_clear && !lrz->disable_for_rp) {
+   if (!lrz->fast_clear) {
       tu6_clear_lrz<CHIP>(cmd, cs, lrz->image_view->image, &lrz->depth_clear_value);
       /* Even though we disable fast-clear we still have to dirty
        * fast-clear buffer because both secondary cmdbufs and following
@@ -456,7 +462,7 @@ tu_lrz_before_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu6_emit_lrz_buffer<CHIP>(cs, lrz->image_view->image);
 
       if (lrz->gpu_dir_tracking) {
-         if (lrz->disable_for_rp) {
+         if (!lrz->valid_at_start) {
             /* Make sure we fail the comparison of depth views */
             tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(.dword = 0));
          } else {
@@ -493,7 +499,7 @@ tu_lrz_tiling_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    /* If we haven't disabled LRZ during renderpass, we need to disable it here
     * for next renderpass to not use invalid LRZ values.
     */
-   if (cmd->state.lrz.gpu_dir_tracking && !cmd->state.lrz.disable_for_rp &&
+   if (cmd->state.lrz.gpu_dir_tracking && cmd->state.lrz.valid_at_start &&
        !cmd->state.lrz.valid) {
       tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(
          .base_layer = 0b11111111111,
@@ -686,9 +692,6 @@ void
 tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
                                      struct tu_cs *cs)
 {
-   if (cmd->state.lrz.disable_for_rp)
-      return;
-
    /* Even if state is valid, we cannot be sure that secondary
     * command buffer has the same sticky disable_write_for_rp.
     */
