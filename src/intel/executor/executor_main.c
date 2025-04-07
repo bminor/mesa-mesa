@@ -305,7 +305,7 @@ open_intel_render_device(drmDevicePtr dev,
       return false;
 
    *fd = open(dev->nodes[DRM_NODE_RENDER], O_RDWR | O_CLOEXEC);
-   if (fd < 0)
+   if (*fd < 0)
       return false;
 
    if (!intel_get_device_info_from_fd(*fd, devinfo, -1, -1) ||
