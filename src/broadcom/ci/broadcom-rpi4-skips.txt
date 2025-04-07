@@ -35,6 +35,7 @@ dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_linear.vk
 dEQP-VK.rasterization.culling.back_triangle_fan_reverse
 dEQP-VK.spirv_assembly.instruction.graphics.spirv_ids_abuse.lots_ids_geom
 dEQP-VK.ssbo.layout.random.8bit.all_per_block_buffers.5
+dEQP-VK.ssbo.layout.random.16bit.all_shared_buffer.31
 dEQP-VK.ssbo.layout.random.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.8bit.all_per_block_buffers.46
 dEQP-VK.ssbo.phys.layout.random.8bit.nested_structs_arrays.17
