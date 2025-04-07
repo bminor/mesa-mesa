@@ -7,6 +7,7 @@
 #include "radv_dgc.h"
 #include "meta/radv_meta.h"
 #include "nir/radv_meta_nir.h"
+#include "radv_debug.h"
 #include "radv_entrypoints.h"
 #include "radv_pipeline_rt.h"
 
@@ -205,6 +206,7 @@ radv_get_sequence_size_graphics(const struct radv_indirect_command_layout *layou
 {
    const struct radv_device *device = container_of(layout->vk.base.device, struct radv_device, vk);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    const VkGeneratedCommandsPipelineInfoEXT *pipeline_info =
       vk_find_struct_const(pNext, GENERATED_COMMANDS_PIPELINE_INFO_EXT);
@@ -284,6 +286,11 @@ radv_get_sequence_size_graphics(const struct radv_indirect_command_layout *layou
             *cmd_size += (5 + 2 + 3) * 4;
          }
       }
+   }
+
+   if (pdev->info.gfx_level == GFX12 && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
+      /* HiZ/HiS hw workaround */
+      *cmd_size += 8 * 4;
    }
 
    if (device->sqtt.bo) {
@@ -1130,6 +1137,27 @@ build_dgc_buffer_preamble_ace(nir_builder *b, nir_def *sequence_count, const str
  * Draw
  */
 static void
+dgc_gfx12_emit_hiz_his_wa(struct dgc_cmdbuf *cs)
+{
+   const struct radv_device *device = cs->dev;
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   if (pdev->info.gfx_level == GFX12 && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
+      dgc_cs_begin(cs);
+      dgc_cs_emit_imm(PKT3(PKT3_RELEASE_MEM, 6, 0));
+      dgc_cs_emit_imm(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5));
+      dgc_cs_emit_imm(0); /* DST_SEL, INT_SEL = no write confirm, DATA_SEL = no data */
+      dgc_cs_emit_imm(0); /* ADDRESS_LO */
+      dgc_cs_emit_imm(0); /* ADDRESS_HI */
+      dgc_cs_emit_imm(0); /* DATA_LO */
+      dgc_cs_emit_imm(0); /* DATA_HI */
+      dgc_cs_emit_imm(0); /* INT_CTXID */
+      dgc_cs_end();
+   }
+}
+
+static void
 dgc_emit_userdata_vertex(struct dgc_cmdbuf *cs, nir_def *first_vertex, nir_def *first_instance, nir_def *drawid)
 {
    nir_builder *b = cs->b;
@@ -1271,6 +1299,7 @@ dgc_emit_draw_indirect(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *seq
    dgc_emit_pkt3_set_base(cs, va);
    dgc_emit_pkt3_draw_indirect(cs, indexed);
 
+   dgc_gfx12_emit_hiz_his_wa(cs);
    dgc_emit_sqtt_thread_trace_marker(cs);
    dgc_emit_sqtt_end_api_marker(cs, indexed ? ApiCmdDrawIndexedIndirect : ApiCmdDrawIndirect);
 }
@@ -1297,6 +1326,7 @@ dgc_emit_draw(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *sequence_id)
       dgc_emit_instance_count(cs, instance_count);
       dgc_emit_draw_index_auto(cs, vertex_count);
 
+      dgc_gfx12_emit_hiz_his_wa(cs);
       dgc_emit_sqtt_thread_trace_marker(cs);
       dgc_emit_sqtt_end_api_marker(cs, ApiCmdDraw);
    }
@@ -1329,6 +1359,7 @@ dgc_emit_draw_indexed(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *sequ
       dgc_emit_instance_count(cs, instance_count);
       dgc_emit_draw_index_offset_2(cs, first_index, index_count, max_index_count);
 
+      dgc_gfx12_emit_hiz_his_wa(cs);
       dgc_emit_sqtt_thread_trace_marker(cs);
       dgc_emit_sqtt_end_api_marker(cs, ApiCmdDrawIndexed);
    }
@@ -1379,6 +1410,7 @@ dgc_emit_draw_with_count(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *s
    dgc_cs_emit(di_src_sel);
    dgc_cs_end();
 
+   dgc_gfx12_emit_hiz_his_wa(cs);
    dgc_emit_sqtt_thread_trace_marker(cs);
    dgc_emit_sqtt_end_api_marker(cs, indexed ? ApiCmdDrawIndexedIndirectCount : ApiCmdDrawIndirectCount);
 }
@@ -2080,6 +2112,7 @@ dgc_emit_dispatch_taskmesh_gfx(struct dgc_cmdbuf *cs, nir_def *sequence_id)
    dgc_cs_emit_imm(V_0287F0_DI_SRC_SEL_AUTO_INDEX);
    dgc_cs_end();
 
+   dgc_gfx12_emit_hiz_his_wa(cs);
    dgc_emit_sqtt_thread_trace_marker(cs);
    dgc_emit_sqtt_end_api_marker(cs, ApiCmdDrawMeshTasksEXT);
 }
@@ -2119,6 +2152,7 @@ dgc_emit_draw_mesh_tasks_gfx(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_de
             dgc_emit_draw_index_auto(cs, vertex_count);
          }
 
+         dgc_gfx12_emit_hiz_his_wa(cs);
          dgc_emit_sqtt_thread_trace_marker(cs);
          dgc_emit_sqtt_end_api_marker(cs, ApiCmdDrawMeshTasksEXT);
       }
@@ -2191,6 +2225,7 @@ dgc_emit_draw_mesh_tasks_with_count_gfx(struct dgc_cmdbuf *cs, nir_def *stream_a
       dgc_cs_emit_imm(V_0287F0_DI_SRC_SEL_AUTO_INDEX);
       dgc_cs_end();
 
+      dgc_gfx12_emit_hiz_his_wa(cs);
       dgc_emit_sqtt_thread_trace_marker(cs);
       dgc_emit_sqtt_end_api_marker(cs, ApiCmdDrawMeshTasksIndirectCountEXT);
    }
