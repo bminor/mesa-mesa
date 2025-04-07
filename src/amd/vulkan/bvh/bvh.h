@@ -195,4 +195,13 @@ struct radv_gfx12_primitive_node {
    uint32_t dwords[32];
 };
 
+#define RADV_TRIANGLE_ENCODE_TASK_TRIANGLE_COUNT 16
+#define RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT 8
+
+struct radv_triangle_encode_task {
+   uint32_t parent_offset;
+   /* The pair index is stored in the 4 high bits and the node index is stored in the low bits. */
+   uint32_t pair_index_node_index[RADV_TRIANGLE_ENCODE_TASK_TRIANGLE_COUNT];
+};
+
 #endif /* BVH_H */

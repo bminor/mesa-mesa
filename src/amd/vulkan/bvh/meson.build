@@ -14,6 +14,9 @@ bvh_shaders = [
   [
     'encode_gfx12.comp',
     'encode_gfx12',
+  ],[
+    'encode_triangles_gfx12.comp',
+    'encode_triangles_gfx12',
   ],
   [
     'encode.comp',
