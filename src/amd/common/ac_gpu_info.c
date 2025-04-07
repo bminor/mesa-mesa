@@ -322,35 +322,6 @@ static uint64_t fix_vram_size(uint64_t size)
    return align64(size, 256 * 1024 * 1024);
 }
 
-static bool
-has_tmz_support(ac_drm_device *dev, struct radeon_info *info, uint32_t ids_flags)
-{
-   struct amdgpu_bo_alloc_request request = {0};
-   int r;
-   ac_drm_bo bo;
-
-   if (ids_flags & AMDGPU_IDS_FLAGS_TMZ)
-      return true;
-
-   /* AMDGPU_IDS_FLAGS_TMZ is supported starting from drm_minor 40 */
-   if (info->drm_minor >= 40)
-      return false;
-
-   /* Find out ourselves if TMZ is enabled */
-   if (info->gfx_level < GFX9)
-      return false;
-
-   request.alloc_size = 256;
-   request.phys_alignment = 1024;
-   request.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
-   request.flags = AMDGPU_GEM_CREATE_ENCRYPTED;
-   r = ac_drm_bo_alloc(dev, &request, &bo);
-   if (r)
-      return false;
-   ac_drm_bo_free(dev, bo);
-   return true;
-}
-
 static void set_custom_cu_en_mask(struct radeon_info *info)
 {
    info->spi_cu_en = ~0;
@@ -1020,7 +991,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_sparse_vm_mappings = info->gfx_level >= GFX7;
    info->has_gang_submit = info->drm_minor >= 49;
    info->has_gpuvm_fault_query = info->drm_minor >= 55;
-   info->has_tmz_support = has_tmz_support(dev, info, device_info.ids_flags);
+   info->has_tmz_support = device_info.ids_flags & AMDGPU_IDS_FLAGS_TMZ;
    info->kernel_has_modifiers = has_modifiers(fd);
    info->uses_kernel_cu_mask = false; /* Not implemented in the kernel. */
    info->has_graphics = info->ip[AMD_IP_GFX].num_queues > 0;
