@@ -202,7 +202,6 @@ fi
 
 # crosvm build fails on ARMv7 due to Xlib type-size issues
 if [ "$DEBIAN_ARCH" != "armhf" ]; then
-  uncollapsed_section_switch crosvm "Building crosvm"
   . .gitlab-ci/container/build-crosvm.sh
 fi
 
@@ -211,8 +210,6 @@ fi
 . .gitlab-ci/container/build-deqp-runner.sh
 
 ############### Build apitrace
-
-uncollapsed_section_switch apitrace "Building apitrace"
 
 . .gitlab-ci/container/build-apitrace.sh
 

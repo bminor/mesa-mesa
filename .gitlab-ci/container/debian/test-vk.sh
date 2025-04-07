@@ -120,7 +120,6 @@ rm -rf /VK-GL-CTS
 ############### Build Fossilize
 
 if [ "$DEBIAN_ARCH" != "armhf" ]; then
-  uncollapsed_section_switch fossilize "Building Fossilize"
   . .gitlab-ci/container/build-fossilize.sh
 fi
 
@@ -128,7 +127,6 @@ fi
 
 # gfxreconstruct thinks that ARMv7-on-AArch64 is cross-compilation
 if [ "$DEBIAN_ARCH" != "armhf" ]; then
-  uncollapsed_section_switch gfxreconstruct "Building gfxreconstruct"
   . .gitlab-ci/container/build-gfxreconstruct.sh
 fi
 
