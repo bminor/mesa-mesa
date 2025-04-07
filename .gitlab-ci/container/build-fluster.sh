@@ -10,21 +10,40 @@
 
 # Install fluster in /usr/local.
 
+set -uex
+
 section_start fluster "Install fluster"
 
 FLUSTER_REVISION="e997402978f62428fffc8e5a4a709690d9ca9bc5"
 
 git clone https://github.com/fluendo/fluster.git --single-branch --no-checkout
 
+export SKIP_UPDATE_FLUSTER_VECTORS=false
+
+check_fluster()
+{
+    S3_PATH_FLUSTER="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_VECTORS_VERSION}/vectors.tar.zst"
+    if curl -L --retry 4 -f --retry-connrefused --retry-delay 30 -s --head \
+      "https://${S3_PATH_FLUSTER}"; then
+        echo "Fluster vectors are up-to-date, skip rebuilding them."
+        export SKIP_UPDATE_FLUSTER_VECTORS=true
+    fi
+}
+
+check_fluster "${FDO_UPSTREAM_REPO}"
+if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
+    check_fluster "${CI_PROJECT_PATH}"
+fi
+
 pushd fluster || exit
-git checkout ${FLUSTER_REVISION}
+git checkout "${FLUSTER_REVISION}"
 popd || exit
 
-if [ "${SKIP_UPDATE_FLUSTER_VECTORS}" != 1 ]; then
+if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
     # Download the necessary vectors: H264, H265 and VP9
     # When updating FLUSTER_REVISION, make sure to update the vectors if necessary or
     # fluster-runner will report Missing results.
-    fluster/fluster.py download \
+    fluster/fluster.py download -j ${FDO_CI_CONCURRENT:-4} \
 	JVT-AVC_V1 JVT-FR-EXT JVT-MVC JVT-SVC_V1 \
 	JCT-VC-3D-HEVC JCT-VC-HEVC_V1 JCT-VC-MV-HEVC JCT-VC-RExt JCT-VC-SCC JCT-VC-SHVC \
 	VP9-TEST-VECTORS-HIGH VP9-TEST-VECTORS
@@ -32,15 +51,14 @@ if [ "${SKIP_UPDATE_FLUSTER_VECTORS}" != 1 ]; then
     # Build fluster vectors archive and upload it
     tar --zstd -cf "vectors.tar.zst" fluster/resources/
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" "vectors.tar.zst" \
-          "https://${S3_PATH_FLUSTER}/vectors.tar.zst"
-
-    touch /lava-files/done
-    ci-fairy s3cp --token-file "${S3_JWT_FILE}" /lava-files/done "https://${S3_PATH_FLUSTER}/done"
-
-    # Don't include the vectors in the rootfs
-    rm -fr fluster/resources/*
+      "https://${S3_PATH_FLUSTER}/vectors.tar.zst"
 fi
 
 mv fluster/ /usr/local/
+
+if $SKIP_UPDATE_FLUSTER_VECTORS; then
+    curl -L --retry 4 -f --retry-connrefused --retry-delay 30 \
+      "${FDO_HTTP_CACHE_URI:-}https://${S3_PATH_FLUSTER}" | tar --zstd -x -C /usr/local/
+fi
 
 section_end fluster

@@ -20,7 +20,6 @@ set -o xtrace
 export DEBIAN_FRONTEND=noninteractive
 : "${LLVM_VERSION:?llvm version not set!}"
 export FIRMWARE_FILES="${FIRMWARE_FILES}"
-export SKIP_UPDATE_FLUSTER_VECTORS=0
 
 check_minio()
 {
@@ -32,21 +31,8 @@ check_minio()
     fi
 }
 
-check_fluster()
-{
-    S3_PATH_FLUSTER="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_VECTORS_VERSION}"
-    if curl -L --retry 4 -f --retry-delay 60 -s \
-      "https://${S3_PATH_FLUSTER}/done"; then
-        echo "Fluster vectors are up-to-date, skip downloading them."
-        export SKIP_UPDATE_FLUSTER_VECTORS=1
-    fi
-}
-
 check_minio "${FDO_UPSTREAM_REPO}"
 check_minio "${CI_PROJECT_PATH}"
-
-check_fluster "${FDO_UPSTREAM_REPO}"
-check_fluster "${CI_PROJECT_PATH}"
 
 . .gitlab-ci/container/container_pre_build.sh
 
