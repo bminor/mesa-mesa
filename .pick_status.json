@@ -954,7 +954,7 @@
         "description": "tu/vdrm: Fix userspace fence cmds",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84d6eedd5e8fae3190259a3c23385f48596dc148",
         "notes": null
