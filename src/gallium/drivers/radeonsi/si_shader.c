@@ -2499,11 +2499,19 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    }
 
    NIR_PASS_V(nir, nir_divergence_analysis); /* required by ac_nir_flag_smem_for_loads */
+   /* This is required by ac_nir_scalarize_overfetching_loads_callback. */
    NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
             !sel->info.base.use_aco_amd, false);
+   /* Scalarize overfetching loads, so that we don't load more components than necessary.
+    * Adjacent loads will be re-vectorized with a conservative overfetching limit.
+    */
    NIR_PASS(progress, nir, nir_lower_io_to_scalar,
             nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared | nir_var_mem_global,
             ac_nir_scalarize_overfetching_loads_callback, &sel->screen->info.gfx_level);
+   /* Scalarize shared memory ops to get ds_load_2addr/ds_store_2addr more often.
+    * If we don't do that, we might get pairs of ds_load_2addr + ds_load for vec3 loads, etc.
+    */
+   NIR_PASS(progress, nir, nir_lower_io_to_scalar, nir_var_mem_shared, NULL, NULL);
    NIR_PASS(progress, nir, si_nir_lower_resource, shader, &ctx->args);
 
    /* This must be done before load/store vectorization to lower 16-bit SMEM loads to 32 bits,
