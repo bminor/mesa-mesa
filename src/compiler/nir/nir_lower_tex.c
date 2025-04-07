@@ -195,16 +195,9 @@ lower_offset(nir_builder *b, nir_tex_instr *tex)
 
    if (tex->is_array) {
       /* The offset is not applied to the array index */
-      if (tex->coord_components == 2) {
-         offset_coord = nir_vec2(b, nir_channel(b, offset_coord, 0),
-                                 nir_channel(b, coord, 1));
-      } else if (tex->coord_components == 3) {
-         offset_coord = nir_vec3(b, nir_channel(b, offset_coord, 0),
-                                 nir_channel(b, offset_coord, 1),
-                                 nir_channel(b, coord, 2));
-      } else {
-         unreachable("Invalid number of components");
-      }
+      unsigned a = tex->coord_components - 1;
+      offset_coord = nir_vector_insert_imm(b, offset_coord,
+                                           nir_channel(b, coord, a), a);
    }
 
    nir_src_rewrite(&tex->src[coord_index].src, offset_coord);
