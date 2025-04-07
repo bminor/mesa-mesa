@@ -1033,7 +1033,9 @@ wsi_wl_display_determine_colorspaces(struct wsi_wl_display *display)
 
    struct u_vector *tfs = &display->color_transfer_funcs;
    struct u_vector *primaries = &display->color_primaries;
-   for (int i = 0; i < ARRAY_SIZE(colorspace_mapping); i++) {
+   /* Skip SRGB_NONLINEAR (i = 0), which has already been added above. */
+   assert(colorspace_mapping[0].colorspace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
+   for (int i = 1; i < ARRAY_SIZE(colorspace_mapping); i++) {
       if (!vector_contains(primaries, colorspace_mapping[i].primaries))
          continue;
       if (!vector_contains(tfs, colorspace_mapping[i].tf))
