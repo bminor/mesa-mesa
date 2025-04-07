@@ -69,7 +69,7 @@ section_end debian_setup
 
 ############### Build ANGLE
 
-if [ "$DEBIAN_ARCH" == "arm64" ]; then
+if [ "$DEBIAN_ARCH" != "armhf" ]; then
   ANGLE_TARGET=linux \
   . .gitlab-ci/container/build-angle.sh
 fi
