@@ -33,29 +33,10 @@ if [[ $arch == "arm64" ]]; then
     DEVICE_TREES=""
     DEVICE_TREES="$DEVICE_TREES apq8016-sbc-usb-host.dtb"
     DEVICE_TREES="$DEVICE_TREES apq8096-db820c.dtb"
-    DEVICE_TREES="$DEVICE_TREES tegra210-p3450-0000.dtb"
-    DEVICE_TREES="$DEVICE_TREES imx8mq-nitrogen.dtb"
 
     for DTB in $DEVICE_TREES; do
 	curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
             -O "${KERNEL_IMAGE_BASE}/arm64/$DTB"
-    done
-
-    popd
-elif [[ $arch == "armhf" ]]; then
-    mkdir -p /baremetal-files
-    pushd /baremetal-files
-
-    curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-        -O "${KERNEL_IMAGE_BASE}"/armhf/zImage
-
-    DEVICE_TREES=""
-    DEVICE_TREES="$DEVICE_TREES imx6q-cubox-i.dtb"
-    DEVICE_TREES="$DEVICE_TREES tegra124-jetson-tk1.dtb"
-
-    for DTB in $DEVICE_TREES; do
-	curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-            -O "${KERNEL_IMAGE_BASE}/armhf/$DTB"
     done
 
     popd

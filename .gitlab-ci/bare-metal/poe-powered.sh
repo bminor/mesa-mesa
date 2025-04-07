@@ -144,33 +144,6 @@ fi
 
 date +'%F %T'
 
-# Set up the pxelinux config for Jetson Nano
-mkdir -p /tftp/pxelinux.cfg
-cat <<EOF >/tftp/pxelinux.cfg/default-arm-tegra210-p3450-0000
-PROMPT 0
-TIMEOUT 30
-DEFAULT primary
-MENU TITLE jetson nano boot options
-LABEL primary
-      MENU LABEL CI kernel on TFTP
-      LINUX Image
-      FDT tegra210-p3450-0000.dtb
-      APPEND \${cbootargs} $BM_CMDLINE
-EOF
-
-# Set up the pxelinux config for Jetson TK1
-cat <<EOF >/tftp/pxelinux.cfg/default-arm-tegra124-jetson-tk1
-PROMPT 0
-TIMEOUT 30
-DEFAULT primary
-MENU TITLE jetson TK1 boot options
-LABEL primary
-      MENU LABEL CI kernel on TFTP
-      LINUX zImage
-      FDT tegra124-jetson-tk1.dtb
-      APPEND \${cbootargs} $BM_CMDLINE
-EOF
-
 # Create the rootfs in the NFS directory
 . $BM/rootfs-setup.sh /nfs
 
