@@ -17,8 +17,14 @@ bool si_alu_to_scalar_packed_math_filter(const nir_instr *instr, const void *dat
       nir_alu_instr *alu = nir_instr_as_alu(instr);
 
       if (alu->def.bit_size == 16 && alu->def.num_components == 2 &&
-          aco_nir_op_supports_packed_math_16bit(alu))
+          aco_nir_op_supports_packed_math_16bit(alu)) {
+         /* ACO requires that all but the first bit of swizzle must be equal. */
+         for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
+            if ((alu->src[i].swizzle[0] >> 1) != (alu->src[i].swizzle[1] >> 1))
+               return true;
+         }
          return false;
+      }
    }
 
    return true;
