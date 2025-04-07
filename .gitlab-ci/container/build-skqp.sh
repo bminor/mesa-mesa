@@ -6,11 +6,12 @@
 #
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
+# DEBIAN_TEST_GL_TAG
 # KERNEL_ROOTFS_TAG
 
 set -uex
 
-uncollapsed_section_start skqp "Building skqp"
+uncollapsed_section_start skqp "Building SkQP"
 
 SKQP_BRANCH=android-cts-12.1_r5
 
@@ -75,7 +76,7 @@ popd
 # Fetch some needed build tools needed to build skia/skqp.
 # Basically, it clones repositories with commits SHAs from ${SKIA_DIR}/DEPS
 # directory.
-python tools/git-sync-deps
+python3 tools/git-sync-deps
 
 mkdir -p "${SKQP_OUT_DIR}"
 mkdir -p "${SKQP_INSTALL_DIR}"
