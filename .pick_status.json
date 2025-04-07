@@ -1054,7 +1054,7 @@
         "description": "panfrost: fix transaction elimination crc valid calculation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eac8f1d4602cb1e44793b959c5680c92c9854be7",
         "notes": null
