@@ -250,7 +250,7 @@ tu_lrz_init_secondary(struct tu_cmd_buffer *cmd,
    if (!has_gpu_tracking)
       return;
 
-   if (!cmd->device->use_lrz)
+   if (!cmd->device->use_lrz || TU_DEBUG(NOLRZ))
       return;
 
    if (!vk_format_has_depth(att->format))
@@ -292,6 +292,11 @@ tu_lrz_begin_resumed_renderpass(struct tu_cmd_buffer *cmd)
 {
     /* Track LRZ valid state */
    memset(&cmd->state.lrz, 0, sizeof(cmd->state.lrz));
+
+   if (TU_DEBUG(NOLRZ)) {
+      cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
+      return;
+   }
 
    uint32_t a;
    for (a = 0; a < cmd->state.pass->attachment_count; a++) {
@@ -354,7 +359,7 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
     /* Track LRZ valid state */
    tu_lrz_begin_resumed_renderpass<CHIP>(cmd);
 
-   if (!cmd->state.lrz.valid_at_start || TU_DEBUG(NOLRZ)) {
+   if (!cmd->state.lrz.valid_at_start) {
       tu6_write_lrz_cntl<CHIP>(cmd, &cmd->cs, {});
       tu6_emit_lrz_buffer<CHIP>(&cmd->cs, NULL);
    }
