@@ -69,6 +69,7 @@ struct update_scratch_layout {
 enum radv_encode_key_bits {
    RADV_ENCODE_KEY_COMPACT = (1 << 0),
    RADV_ENCODE_KEY_WRITE_LEAF_NODE_OFFSETS = (1 << 1),
+   RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12 = (1 << 2),
 };
 
 static void
@@ -262,6 +263,12 @@ radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_s
       if ((state->build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR) ||
           state->build_info->type != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
          encode_key |= RADV_ENCODE_KEY_WRITE_LEAF_NODE_OFFSETS;
+
+      VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
+      if (!(state->build_info->flags & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR |
+                                        VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR)) &&
+          geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
+         encode_key |= RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12;
    }
 
    if (state->build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
@@ -343,6 +350,8 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
    }
    if (key & RADV_ENCODE_KEY_WRITE_LEAF_NODE_OFFSETS)
       flags |= RADV_BUILD_FLAG_WRITE_LEAF_NODE_OFFSETS;
+   if (key & RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12)
+      flags |= RADV_BUILD_FLAG_PAIR_COMPRESS_TRIANGLES;
 
    return flags;
 }

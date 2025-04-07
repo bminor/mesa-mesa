@@ -81,6 +81,8 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
       if (cluster.invocation_index < 2)
          child = src.children[cluster.invocation_index];
 
+      uint32_t second_child = RADV_BVH_INVALID_NODE;
+
       while (true) {
          uint32_t valid_children = radv_ballot(cluster, child != RADV_BVH_INVALID_NODE);
          if ((valid_children & 0x80) != 0 || valid_children == 0)
@@ -110,11 +112,29 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
             if (left == RADV_BVH_INVALID_NODE) {
                left = right;
                right = RADV_BVH_INVALID_NODE;
+            } else if (right != RADV_BVH_INVALID_NODE && ir_id_to_type(left) == vk_ir_node_triangle &&
+                       ir_id_to_type(right) == vk_ir_node_triangle &&
+                       VK_BUILD_FLAG(RADV_BUILD_FLAG_PAIR_COMPRESS_TRIANGLES)) {
+               second_child = right;
+               right = RADV_BVH_INVALID_NODE;
             }
 
             child = left;
          }
          right = radv_read_invocation(cluster, collapse_index, right);
+
+         if (VK_BUILD_FLAG(RADV_BUILD_FLAG_PAIR_COMPRESS_TRIANGLES)) {
+            bool is_valid_triangle = child != RADV_BVH_INVALID_NODE && ir_id_to_type(child) == vk_ir_node_triangle;
+            uint32_t right_pair_mask =
+               radv_ballot(cluster, is_valid_triangle && second_child == RADV_BVH_INVALID_NODE &&
+                                       right != RADV_BVH_INVALID_NODE && ir_id_to_type(right) == vk_ir_node_triangle);
+
+            if (right_pair_mask != 0) {
+               if (cluster.invocation_index == findLSB(right_pair_mask))
+                  second_child = right;
+               continue;
+            }
+         }
 
          if (cluster.invocation_index == findMSB(valid_children) + 1)
             child = right;
@@ -193,26 +213,46 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
          uint32_t cull_flags = 0;
          if (type == vk_ir_node_internal) {
             encoded_type = 5;
-            REF(vk_ir_box_node) child_node = REF(vk_ir_box_node)OFFSET(args.intermediate_bvh, offset);
+            REF(vk_ir_box_node) child_node = REF(vk_ir_box_node) OFFSET(args.intermediate_bvh, offset);
             cull_flags = DEREF(child_node).flags & 0x3;
          } else {
             if (VK_BUILD_FLAG(RADV_BUILD_FLAG_WRITE_LEAF_NODE_OFFSETS)) {
                /* Write leaf node offset. */
-               uint32_t leaf_index = offset / ir_leaf_node_size;
-               REF(uint32_t) child_dst_offset = REF(uint32_t)(args.output_base + args.leaf_node_offsets_offset);
-               child_dst_offset = INDEX(uint32_t, child_dst_offset, leaf_index);
-               DEREF(child_dst_offset) = dst_offset;
+               {
+                  uint32_t leaf_index = offset / ir_leaf_node_size;
+                  REF(uint32_t) child_dst_offset = REF(uint32_t)(args.output_base + args.leaf_node_offsets_offset);
+                  child_dst_offset = INDEX(uint32_t, child_dst_offset, leaf_index);
+                  DEREF(child_dst_offset) = dst_offset;
+               }
+
+               if (second_child != RADV_BVH_INVALID_NODE) {
+                  uint32_t leaf_index = ir_id_to_offset(second_child) / ir_leaf_node_size;
+                  REF(uint32_t) child_dst_offset = REF(uint32_t)(args.output_base + args.leaf_node_offsets_offset);
+                  child_dst_offset = INDEX(uint32_t, child_dst_offset, leaf_index);
+                  DEREF(child_dst_offset) = dst_offset;
+               }
             }
 
             VOID_REF dst_leaf_addr = args.output_base + args.output_bvh_offset + dst_offset;
 
             switch (args.geometry_type) {
             case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
-               vk_ir_triangle_node src_node = DEREF(REF(vk_ir_triangle_node)(OFFSET(args.intermediate_bvh, offset)));
-               radv_encode_triangle_gfx12(dst_leaf_addr, src_node);
+               vk_ir_triangle_node src_node0 = DEREF(REF(vk_ir_triangle_node)(OFFSET(args.intermediate_bvh, offset)));
 
-               bool opaque = (src_node.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+               bool opaque = (src_node0.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
                cull_flags = opaque ? VK_BVH_BOX_FLAG_ONLY_OPAQUE : VK_BVH_BOX_FLAG_NO_OPAQUE;
+
+               if (VK_BUILD_FLAG(RADV_BUILD_FLAG_PAIR_COMPRESS_TRIANGLES) && second_child != RADV_BVH_INVALID_NODE) {
+                  vk_ir_triangle_node src_node1 =
+                     DEREF(REF(vk_ir_triangle_node)(OFFSET(args.intermediate_bvh, ir_id_to_offset(second_child))));
+
+                  opaque = (src_node1.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+                  cull_flags &= opaque ? VK_BVH_BOX_FLAG_ONLY_OPAQUE : VK_BVH_BOX_FLAG_NO_OPAQUE;
+
+                  radv_encode_triangle_gfx12(dst_leaf_addr, src_node0, src_node1);
+               } else {
+                  radv_encode_triangle_gfx12(dst_leaf_addr, src_node0);
+               }
                break;
             }
             case VK_GEOMETRY_TYPE_AABBS_KHR: {
@@ -238,6 +278,12 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
          }
 
          vk_aabb child_aabb = DEREF(REF(vk_ir_node) OFFSET(args.intermediate_bvh, offset)).aabb;
+         if (second_child != RADV_BVH_INVALID_NODE) {
+            vk_aabb second_child_aabb =
+               DEREF(REF(vk_ir_node) OFFSET(args.intermediate_bvh, ir_id_to_offset(second_child))).aabb;
+            child_aabb.min = min(child_aabb.min, second_child_aabb.min);
+            child_aabb.max = max(child_aabb.max, second_child_aabb.max);
+         }
 
          radv_gfx12_box_child box_child;
          box_child.dword0 =

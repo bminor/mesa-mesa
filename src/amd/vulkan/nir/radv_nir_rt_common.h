@@ -108,6 +108,9 @@ struct radv_ray_traversal_vars {
    nir_deref_instr *instance_top_node;
    nir_deref_instr *instance_bottom_node;
 
+   /* Whether the current iteration revisits the last triangle node to handle the second triangle. */
+   nir_deref_instr *second_iteration;
+
    /* Information about the current instance used for culling. */
    nir_deref_instr *instance_addr;
    nir_deref_instr *sbt_offset_and_flags;

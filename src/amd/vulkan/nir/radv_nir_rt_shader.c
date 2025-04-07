@@ -1226,6 +1226,7 @@ struct rt_traversal_vars {
    nir_variable *previous_node;
    nir_variable *instance_top_node;
    nir_variable *instance_bottom_node;
+   nir_variable *second_iteration;
 };
 
 static struct rt_traversal_vars
@@ -1251,6 +1252,7 @@ init_traversal_vars(nir_builder *b)
    ret.instance_top_node = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "instance_top_node");
    ret.instance_bottom_node =
       nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "instance_bottom_node");
+   ret.second_iteration = nir_variable_create(b->shader, nir_var_shader_temp, glsl_bool_type(), "second_iteration");
    return ret;
 }
 
@@ -1578,6 +1580,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
    nir_store_var(b, trav_vars.previous_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_top_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 0x1);
+   nir_store_var(b, trav_vars.second_iteration, nir_imm_false(b), 0x1);
 
    nir_store_var(b, trav_vars.top_stack, nir_imm_int(b, -1), 1);
 
@@ -1594,6 +1597,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       .previous_node = nir_build_deref_var(b, trav_vars.previous_node),
       .instance_top_node = nir_build_deref_var(b, trav_vars.instance_top_node),
       .instance_bottom_node = nir_build_deref_var(b, trav_vars.instance_bottom_node),
+      .second_iteration = nir_build_deref_var(b, trav_vars.second_iteration),
       .instance_addr = nir_build_deref_var(b, trav_vars.instance_addr),
       .sbt_offset_and_flags = nir_build_deref_var(b, trav_vars.sbt_offset_and_flags),
    };

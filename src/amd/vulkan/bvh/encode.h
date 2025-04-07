@@ -186,6 +186,70 @@ radv_encode_triangle_gfx12(VOID_REF dst, vk_ir_triangle_node src)
 }
 
 void
+radv_encode_triangle_gfx12(VOID_REF dst, vk_ir_triangle_node src0, vk_ir_triangle_node src1)
+{
+   bit_writer child_writer;
+   bit_writer_init(child_writer, dst);
+
+   bit_writer_write(child_writer, 31, 5); /* x_vertex_bits_minus_one */
+   bit_writer_write(child_writer, 31, 5); /* y_vertex_bits_minus_one */
+   bit_writer_write(child_writer, 31, 5); /* z_vertex_bits_minus_one */
+   bit_writer_write(child_writer, 0, 5);  /* trailing_zero_bits */
+   bit_writer_write(child_writer, 14, 4); /* geometry_index_base_bits_div_2 */
+   bit_writer_write(child_writer, 14, 4); /* geometry_index_bits_div_2 */
+   bit_writer_write(child_writer, 0, 3);  /* triangle_pair_count_minus_one */
+   bit_writer_write(child_writer, 0, 1);  /* vertex_type */
+   bit_writer_write(child_writer, 28, 5); /* primitive_index_base_bits */
+   bit_writer_write(child_writer, 28, 5); /* primitive_index_bits */
+   /* header + (9 floats + geometry_id) * 2 triangles */
+   bit_writer_write(child_writer, RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE + 2 * 9 * 32 + 2 * 28, 10);
+
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[0][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[0][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[0][2]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[1][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[1][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[1][2]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[2][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[2][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src0.coords[2][2]), 32);
+
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[0][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[0][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[0][2]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[1][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[1][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[1][2]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[2][0]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[2][1]), 32);
+   bit_writer_write(child_writer, floatBitsToUint(src1.coords[2][2]), 32);
+
+   bit_writer_write(child_writer, src1.geometry_id_and_flags & 0xfffffff, 28);
+   bit_writer_write(child_writer, src0.geometry_id_and_flags & 0xfffffff, 28);
+   bit_writer_write(child_writer, src0.triangle_id, 28);
+   bit_writer_write(child_writer, src1.triangle_id, 28);
+
+   bit_writer_skip_to(child_writer, 32 * 32 - RADV_GFX12_PRIMITIVE_NODE_PAIR_DESC_SIZE);
+
+   uint32_t opaque0 = (src0.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0 ? 1 : 0;
+   uint32_t opaque1 = (src1.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0 ? 1 : 0;
+
+   bit_writer_write(child_writer, 1, 1);       /* prim_range_stop */
+   bit_writer_write(child_writer, 0, 1);       /* tri1_double_sided */
+   bit_writer_write(child_writer, opaque1, 1); /* tri1_opaque */
+   bit_writer_write(child_writer, 3, 4);       /* tri1_v0_index */
+   bit_writer_write(child_writer, 4, 4);       /* tri1_v1_index */
+   bit_writer_write(child_writer, 5, 4);       /* tri1_v2_index */
+   bit_writer_write(child_writer, 0, 1);       /* tri0_double_sided */
+   bit_writer_write(child_writer, opaque0, 1); /* tri0_opaque */
+   bit_writer_write(child_writer, 0, 4);       /* tri0_v0_index */
+   bit_writer_write(child_writer, 1, 4);       /* tri0_v1_index */
+   bit_writer_write(child_writer, 2, 4);       /* tri0_v2_index */
+
+   bit_writer_finish(child_writer);
+}
+
+void
 radv_encode_aabb_gfx12(VOID_REF dst, vk_ir_aabb_node src)
 {
    bit_writer child_writer;
