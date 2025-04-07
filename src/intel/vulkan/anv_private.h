@@ -1196,6 +1196,9 @@ struct anv_shader {
    struct brw_compile_stats stats[3];
    uint32_t num_stats;
 
+   char *nir_str;
+   char *asm_str;
+
    struct nir_xfb_info *xfb_info;
 
    struct anv_push_descriptor_info push_desc_info;

@@ -46,6 +46,7 @@ struct anv_shader_data {
 
 VkResult anv_shader_create(struct anv_device *device,
                            mesa_shader_stage stage,
+                           void *mem_ctx,
                            struct anv_shader_data *shader_data,
                            const VkAllocationCallbacks *pAllocator,
                            struct vk_shader **shader_out);

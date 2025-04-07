@@ -1824,7 +1824,7 @@ anv_shader_compile(struct vk_device *vk_device,
       shader_data->xfb_info = shader_data->info->nir->xfb_info;
 
       result = anv_shader_create(device, shader_data->info->stage,
-                                 shader_data, pAllocator,
+                                 mem_ctx, shader_data, pAllocator,
                                  shader_data->shader_out);
       if (result != VK_SUCCESS)
          goto fail;

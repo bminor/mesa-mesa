@@ -7,6 +7,8 @@
 
 #include "nir/nir_serialize.h"
 
+#include "compiler/brw_disasm.h"
+
 static void
 anv_shader_destroy(struct vk_device *vk_device,
                    struct vk_shader *vk_shader,
@@ -83,7 +85,7 @@ anv_shader_deserialize(struct vk_device *vk_device,
       return vk_error(device, VK_ERROR_UNKNOWN);
 
    VkResult result =
-      anv_shader_create(device, stage, &data, pAllocator, shader_out);
+      anv_shader_create(device, stage, NULL, &data, pAllocator, shader_out);
 
    return result;
 }
@@ -161,32 +163,263 @@ anv_shader_serialize(struct vk_device *device,
 
 static VkResult
 anv_shader_get_executable_properties(struct vk_device *device,
-                                     const struct vk_shader *shader,
+                                     const struct vk_shader *vk_shader,
                                      uint32_t *executable_count,
                                      VkPipelineExecutablePropertiesKHR *properties)
 {
-   return VK_SUCCESS;
+   VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutablePropertiesKHR, out,
+                          properties, executable_count);
+   struct anv_shader *shader =
+      container_of(vk_shader, struct anv_shader, vk);
+
+   for (uint32_t i = 0; i < shader->num_stats; i++) {
+      const struct brw_compile_stats *stats = &shader->stats[i];
+
+      vk_outarray_append_typed(VkPipelineExecutablePropertiesKHR, &out, props) {
+         mesa_shader_stage stage = vk_shader->stage;
+         props->stages = mesa_to_vk_shader_stage(stage);
+
+         unsigned simd_width = stats->dispatch_width;
+         if (stage == MESA_SHADER_FRAGMENT) {
+            if (stats->max_polygons > 1)
+               VK_PRINT_STR(props->name, "SIMD%dx%d %s",
+                            stats->max_polygons,
+                            simd_width / stats->max_polygons,
+                            _mesa_shader_stage_to_string(stage));
+            else
+               VK_PRINT_STR(props->name, "%s%d %s",
+                            simd_width ? "SIMD" : "vec",
+                            simd_width ? simd_width : 4,
+                            _mesa_shader_stage_to_string(stage));
+         } else {
+            VK_COPY_STR(props->name, _mesa_shader_stage_to_string(stage));
+         }
+         VK_PRINT_STR(props->description, "%s%d %s shader",
+                      simd_width ? "SIMD" : "vec",
+                      simd_width ? simd_width : 4,
+                      _mesa_shader_stage_to_string(stage));
+
+         /* The compiler gives us a dispatch width of 0 for vec4 but Vulkan
+          * wants a subgroup size of 1.
+          */
+         props->subgroupSize = MAX2(simd_width, 1);
+      }
+   }
+
+   return vk_outarray_status(&out);
 }
 
 static VkResult
-anv_shader_get_executable_statistics(struct vk_device *device,
-                                     const struct vk_shader *shader,
+anv_shader_get_executable_statistics(struct vk_device *vk_device,
+                                     const struct vk_shader *vk_shader,
                                      uint32_t executable_index,
                                      uint32_t *statistic_count,
                                      VkPipelineExecutableStatisticKHR *statistics)
 {
+   VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out,
+                          statistics, statistic_count);
+   struct anv_device *device =
+      container_of(vk_device, struct anv_device, vk);
+   struct anv_shader *shader =
+      container_of(vk_shader, struct anv_shader, vk);
+
+   assert(executable_index < shader->num_stats);
+
+   const struct brw_compile_stats *stats = &shader->stats[executable_index];
+   const struct brw_stage_prog_data *prog_data = shader->prog_data;
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Instruction Count");
+      VK_COPY_STR(stat->description,
+                  "Number of GEN instructions in the final generated "
+                  "shader executable.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->instructions;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "SEND Count");
+      VK_COPY_STR(stat->description,
+                  "Number of instructions in the final generated shader "
+                  "executable which access external units such as the "
+                  "constant cache or the sampler.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->sends;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Loop Count");
+      VK_COPY_STR(stat->description,
+                  "Number of loops (not unrolled) in the final generated "
+                  "shader executable.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->loops;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Cycle Count");
+      VK_COPY_STR(stat->description,
+                  "Estimate of the number of EU cycles required to execute "
+                  "the final generated executable.  This is an estimate only "
+                  "and may vary greatly from actual run-time performance.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->cycles;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Spill Count");
+      VK_COPY_STR(stat->description,
+                  "Number of scratch spill operations.  This gives a rough "
+                  "estimate of the cost incurred due to spilling temporary "
+                  "values to memory.  If this is non-zero, you may want to "
+                  "adjust your shader to reduce register pressure.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->spills;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Fill Count");
+      VK_COPY_STR(stat->description,
+                  "Number of scratch fill operations.  This gives a rough "
+                  "estimate of the cost incurred due to spilling temporary "
+                  "values to memory.  If this is non-zero, you may want to "
+                  "adjust your shader to reduce register pressure.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->fills;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Scratch Memory Size");
+      VK_COPY_STR(stat->description,
+                  "Number of bytes of scratch memory required by the "
+                  "generated shader executable.  If this is non-zero, you "
+                  "may want to adjust your shader to reduce register "
+                  "pressure.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = prog_data->total_scratch;
+   }
+
+   if (device->info->ver >= 30) {
+      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+         VK_COPY_STR(stat->name, "GRF registers");
+         VK_COPY_STR(stat->description,
+                     "Number of GRF registers required by the shader.");
+         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+         stat->value.u64 = prog_data->grf_used;
+      }
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Max dispatch width");
+      VK_COPY_STR(stat->description,
+                  "Largest SIMD dispatch width.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      /* Report the max dispatch width only on the smallest SIMD variant */
+      if (vk_shader->stage != MESA_SHADER_FRAGMENT || stats->dispatch_width == 8)
+         stat->value.u64 = stats->max_dispatch_width;
+      else
+         stat->value.u64 = 0;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Max live registers");
+      VK_COPY_STR(stat->description,
+                  "Maximum number of registers used across the entire shader.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->max_live_registers;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Workgroup Memory Size");
+      VK_COPY_STR(stat->description,
+                  "Number of bytes of workgroup shared memory used by this "
+                  "shader including any padding.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      if (mesa_shader_stage_uses_workgroup(vk_shader->stage))
+         stat->value.u64 = prog_data->total_shared;
+      else
+         stat->value.u64 = 0;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Source hash");
+      VK_PRINT_STR(stat->description,
+                   "hash = 0x%08x. Hash generated from shader source.",
+                   prog_data->source_hash);
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = prog_data->source_hash;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      VK_COPY_STR(stat->name, "Non SSA regs after NIR");
+      VK_COPY_STR(stat->description, "Non SSA regs after NIR translation to BRW.");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = stats->non_ssa_registers_after_nir;
+   }
+
    return VK_SUCCESS;
+}
+
+static bool
+write_ir_text(VkPipelineExecutableInternalRepresentationKHR* ir,
+              const char *data)
+{
+   ir->isText = VK_TRUE;
+
+   size_t data_len = strlen(data) + 1;
+
+   if (ir->pData == NULL) {
+      ir->dataSize = data_len;
+      return true;
+   }
+
+   strncpy(ir->pData, data, ir->dataSize);
+   if (ir->dataSize < data_len)
+      return false;
+
+   ir->dataSize = data_len;
+   return true;
 }
 
 static VkResult
 anv_shader_get_executable_internal_representations(
    struct vk_device *device,
-   const struct vk_shader *shader,
+   const struct vk_shader *vk_shader,
    uint32_t executable_index,
    uint32_t *internal_representation_count,
    VkPipelineExecutableInternalRepresentationKHR *internal_representations)
 {
-   return VK_SUCCESS;
+   VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableInternalRepresentationKHR, out,
+                          internal_representations,
+                          internal_representation_count);
+   bool incomplete_text = false;
+   struct anv_shader *shader =
+      container_of(vk_shader, struct anv_shader, vk);
+   assert(executable_index < shader->num_stats);
+
+   if (shader->nir_str) {
+      vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
+         VK_COPY_STR(ir->name, "Final NIR");
+         VK_COPY_STR(ir->description,
+                     "Final NIR before going into the back-end compiler");
+
+         if (!write_ir_text(ir, shader->nir_str))
+            incomplete_text = true;
+      }
+   }
+
+   if (shader->asm_str) {
+      vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
+         VK_COPY_STR(ir->name, "GEN Assembly");
+         VK_COPY_STR(ir->description,
+                     "Final GEN assembly for the generated shader binary");
+
+         if (!write_ir_text(ir, shader->asm_str))
+            incomplete_text = true;
+      }
+   }
+
+   return incomplete_text ? VK_INCOMPLETE : vk_outarray_status(&out);
 }
 
 static struct vk_shader_ops anv_shader_ops = {
@@ -305,13 +538,138 @@ anv_shader_reloc(struct anv_device *device,
    return VK_SUCCESS;
 }
 
+struct internal_representation {
+   char *nir_str;
+   uint32_t nir_str_len;
+   char *asm_str;
+   uint32_t asm_str_len;
+};
+
+static void
+get_internal_representation_data(struct internal_representation *output,
+                                 struct anv_device *device,
+                                 struct anv_shader_data *shader_data,
+                                 void *mem_ctx)
+{
+   assert(mem_ctx != NULL);
+
+   output->nir_str = nir_shader_as_str(shader_data->info->nir, mem_ctx);
+   output->nir_str_len = strlen(output->nir_str) + 1;
+
+   char *stream_data = NULL;
+   size_t stream_size = 0;
+   FILE *stream = open_memstream(&stream_data, &stream_size);
+
+   const struct anv_pipeline_bind_map *bind_map = &shader_data->bind_map;
+   uint32_t push_size = 0;
+   for (unsigned i = 0; i < 4; i++)
+      push_size += bind_map->push_ranges[i].length;
+   if (push_size > 0) {
+      fprintf(stream, "Push constant ranges:\n");
+      for (unsigned i = 0; i < 4; i++) {
+         if (bind_map->push_ranges[i].length == 0)
+            continue;
+
+         fprintf(stream, "    RANGE%d (%dB): ", i,
+                 bind_map->push_ranges[i].length * 32);
+
+         switch (bind_map->push_ranges[i].set) {
+         case ANV_DESCRIPTOR_SET_NULL:
+            fprintf(stream, "NULL");
+            break;
+
+         case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:
+            fprintf(stream, "Vulkan push constants and API params");
+            break;
+
+         case ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER:
+            fprintf(stream, "Descriptor buffer (desc buffer) for set %d (start=%dB)",
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+            break;
+
+         case ANV_DESCRIPTOR_SET_DESCRIPTORS:
+            fprintf(stream, "Descriptor buffer for set %d (start=%dB)",
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+               break;
+
+         case ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS:
+            UNREACHABLE("Color attachments can't be pushed");
+
+         case ANV_DESCRIPTOR_SET_PER_PRIM_PADDING:
+            fprintf(stream, "Per primitive alignment (gfx libs & mesh)");
+            break;
+
+         default:
+            fprintf(stream, "UBO (set=%d binding=%d start=%dB)",
+                    bind_map->push_ranges[i].set,
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+            break;
+            }
+         fprintf(stream, "\n");
+      }
+      fprintf(stream, "\n");
+
+   }
+
+   /* Creating this is far cheaper than it looks.  It's perfectly fine to
+    * do it for every binary.
+    */
+   if (shader_data->info->stage == MESA_SHADER_FRAGMENT) {
+      const struct brw_wm_prog_data *wm_prog_data = &shader_data->prog_data.wm;
+
+      if (wm_prog_data->dispatch_8 ||
+          wm_prog_data->dispatch_multi) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader_data->code, 0, NULL, stream);
+      }
+
+      if (wm_prog_data->dispatch_16) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader_data->code,
+                                     wm_prog_data->prog_offset_16, NULL, stream);
+      }
+
+      if (wm_prog_data->dispatch_32) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader_data->code,
+                                     wm_prog_data->prog_offset_32, NULL, stream);
+      }
+   } else {
+      brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                  shader_data->code, 0, NULL, stream);
+   }
+
+   fclose(stream);
+
+   /* Copy it to a ralloc'd thing */
+   output->asm_str = ralloc_size(mem_ctx, stream_size + 1);
+   memcpy(output->asm_str, stream_data, stream_size);
+   output->asm_str[stream_size] = 0;
+   output->asm_str_len = stream_size + 1;
+
+   free(stream_data);
+}
+
 VkResult
 anv_shader_create(struct anv_device *device,
                   mesa_shader_stage stage,
+                  void *mem_ctx,
                   struct anv_shader_data *shader_data,
                   const VkAllocationCallbacks *pAllocator,
                   struct vk_shader **shader_out)
 {
+   const bool save_internal_representations = shader_data->info &&
+      (shader_data->info->flags & VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA);
+
+   struct internal_representation internal_representations = {0};
+   if (save_internal_representations) {
+      get_internal_representation_data(&internal_representations, device,
+                                       shader_data, mem_ctx);
+   }
+
    /* We never need this at runtime */
    shader_data->prog_data.base.param = NULL;
 
@@ -336,6 +694,8 @@ anv_shader_create(struct anv_device *device,
                       shader_data->bind_map.embedded_sampler_count);
    VK_MULTIALLOC_DECL(&ma, struct anv_embedded_sampler *, embedded_samplers,
                       shader_data->bind_map.embedded_sampler_count);
+   VK_MULTIALLOC_DECL(&ma, char, nir_str, internal_representations.nir_str_len);
+   VK_MULTIALLOC_DECL(&ma, char, asm_str, internal_representations.asm_str_len);
 
    if (!vk_shader_multizalloc(&device->vk, &ma, &anv_shader_ops,
                               stage, pAllocator))
@@ -356,6 +716,15 @@ anv_shader_create(struct anv_device *device,
    if (shader->kernel.alloc_size == 0) {
       result = vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       goto error_embedded_samplers;
+   }
+
+   if (save_internal_representations) {
+      shader->nir_str = nir_str;
+      memcpy(shader->nir_str, internal_representations.nir_str,
+             internal_representations.nir_str_len);
+      shader->asm_str = asm_str;
+      memcpy(shader->asm_str, internal_representations.asm_str,
+             internal_representations.asm_str_len);
    }
 
    memcpy(prog_data, &shader_data->prog_data, brw_prog_data_size(stage));
