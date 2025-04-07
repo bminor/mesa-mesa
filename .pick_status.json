@@ -854,7 +854,7 @@
         "description": "vk/overlay-layer: fix regression in non-control pathway",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06423b1792b5c734108e6e11146b861a213e64f6",
         "notes": null
