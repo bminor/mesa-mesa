@@ -369,12 +369,15 @@ struct brw_wm_prog_key {
    /* Whether the shader is dispatch with a preceeding mesh shader */
    enum intel_sometimes mesh_input:2;
 
+   /* Is provoking vertex last? */
+   enum intel_sometimes provoking_vertex_last:2;
+
    bool coherent_fb_fetch:1;
    bool ignore_sample_mask_out:1;
    bool coarse_pixel:1;
    bool null_push_constant_tbimr_workaround:1;
 
-   uint64_t padding:35;
+   uint64_t padding:33;
 };
 
 static inline bool
@@ -382,6 +385,7 @@ brw_wm_prog_key_is_dynamic(const struct brw_wm_prog_key *key)
 {
    return
       key->mesh_input == INTEL_SOMETIMES ||
+      key->provoking_vertex_last == INTEL_SOMETIMES ||
       key->alpha_to_coverage == INTEL_SOMETIMES ||
       key->persample_interp == INTEL_SOMETIMES ||
       key->multisample_fbo == INTEL_SOMETIMES ||
@@ -763,6 +767,12 @@ struct brw_wm_prog_data {
     */
    enum intel_sometimes mesh_input;
 
+   /*
+    * Provoking vertex may be dynamically set to last and we need to know
+    * its value for fragment shader barycentrics and flat inputs.
+    */
+   enum intel_sometimes provoking_vertex_last;
+
    /**
     * Push constant location of intel_msaa_flags (dynamic configuration of the
     * pixel shader).
@@ -821,6 +831,8 @@ static inline bool
 brw_wm_prog_data_is_dynamic(const struct brw_wm_prog_data *prog_data)
 {
    return prog_data->mesh_input == INTEL_SOMETIMES ||
+      (prog_data->vertex_attributes_bypass &&
+       prog_data->provoking_vertex_last == INTEL_SOMETIMES) ||
       prog_data->alpha_to_coverage == INTEL_SOMETIMES ||
       prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES ||
       prog_data->persample_dispatch == INTEL_SOMETIMES;

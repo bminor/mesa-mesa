@@ -25,7 +25,9 @@ brw_nir_lower_fs_msaa_intel_instr(nir_builder *b,
        (INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH |
         INTEL_MSAA_FLAG_PERSAMPLE_INTERP) : 0) |
       (key->alpha_to_coverage == INTEL_ALWAYS ?
-       INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE : 0);
+       INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE : 0) |
+      (key->provoking_vertex_last == INTEL_ALWAYS ?
+       INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST : 0);
 
    nir_def_replace(&intrin->def, nir_imm_int(b, fs_msaa_flags));
 

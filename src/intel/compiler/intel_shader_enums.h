@@ -53,6 +53,9 @@ enum intel_msaa_flags {
    /** True if this shader has been dispatched with alpha-to-coverage */
    INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE = (1 << 4),
 
+   /** True if provoking vertex is last */
+   INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST = (1 << 5),
+
    /** True if this shader has been dispatched coarse
     *
     * This is intentionally chose to be bit 15 to correspond to the coarse bit
@@ -436,6 +439,7 @@ struct intel_fs_params {
    uint32_t rasterization_samples;
    bool coarse_pixel;
    bool alpha_to_coverage;
+   bool provoking_vertex_last;
    uint32_t primitive_id_index;
 };
 
@@ -470,6 +474,9 @@ intel_fs_msaa_flags(struct intel_fs_params params)
 
    fs_msaa_flags |= (enum intel_msaa_flags)(
       params.primitive_id_index << INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET);
+
+   if (params.provoking_vertex_last)
+      fs_msaa_flags |= INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST;
 
    return fs_msaa_flags;
 }
