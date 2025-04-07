@@ -370,9 +370,9 @@ mv /ci-kdl $ROOTFS/
 
 ############### Install fluster
 if [[ ${DEBIAN_ARCH} = "amd64" ]]; then
-    section_start fluster "Install fluster"
     . .gitlab-ci/container/build-fluster.sh
-    section_end fluster
+    mkdir -p "${ROOTFS}/usr/local/"
+    mv /usr/local/fluster "${ROOTFS}/usr/local/"
 fi
 
 ############### Build local stuff for use by igt and kernel testing, which

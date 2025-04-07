@@ -6,6 +6,8 @@
 
 # Install fluster in /usr/local.
 
+section_start fluster "Install fluster"
+
 FLUSTER_REVISION="e997402978f62428fffc8e5a4a709690d9ca9bc5"
 
 git clone https://github.com/fluendo/fluster.git --single-branch --no-checkout
@@ -35,6 +37,6 @@ if [ "${SKIP_UPDATE_FLUSTER_VECTORS}" != 1 ]; then
     rm -fr fluster/resources/*
 fi
 
-mkdir -p "${ROOTFS}/usr/local/"
-mv fluster "${ROOTFS}/usr/local/"
+mv fluster/ /usr/local/
 
+section_end fluster
