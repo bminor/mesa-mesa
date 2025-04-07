@@ -1494,7 +1494,7 @@
         "description": "nir/load_store_vectorize: Skip new bit-sizes that are unaligned with high_offset",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce9205c03bd20d26af23ca891e97a9f848a612d1",
         "notes": null
