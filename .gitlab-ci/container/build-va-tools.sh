@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2086 # we want word splitting
+
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
+# DEBIAN_TEST_VIDEO_TAG
 # KERNEL_ROOTFS_TAG
 
 set -uex
