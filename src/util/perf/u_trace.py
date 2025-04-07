@@ -133,6 +133,7 @@ class TracepointArgStruct():
         self.c_format = c_format
         self.fields = fields
         self.to_prim_type = None
+        self.perfetto_field = None
 
         if self.is_indirect:
             self.func_param = f"struct u_trace_address {self.var}"
@@ -154,7 +155,7 @@ class TracepointArg(object):
     """Class that represents either an argument being passed or a field in a struct
     """
     def __init__(self, type, var, c_format=None, name=None, to_prim_type=None,
-                 length_arg=None, copy_func=None, is_indirect=False):
+                 length_arg=None, copy_func=None, is_indirect=False, perfetto_field=None):
         """Parameters:
 
         - type: argument's C type.
@@ -165,6 +166,8 @@ class TracepointArg(object):
         - to_prim_type: (optional) C function to convert from arg's type to a type
           compatible with c_format.
         - length_arg: whether this argument is a variable length array
+        - perfetto_field: Whether the argument should be set to a perfetto field
+          with the given name, as opposed to attached with add_extra_data().
         """
         assert isinstance(type, str)
         assert isinstance(var, str)
@@ -178,6 +181,7 @@ class TracepointArg(object):
         self.to_prim_type = to_prim_type
         self.length_arg = length_arg
         self.copy_func = copy_func
+        self.perfetto_field = perfetto_field
 
         self.is_struct = False
         self.is_indirect = is_indirect
@@ -688,20 +692,26 @@ trace_payload_as_extra_${trace_name}(perfetto::protos::pbzero::GpuRenderStageEve
                                      const void *indirect_data)
 {
  % if trace.tp_perfetto is not None and len(trace.tp_print) > 0:
+ % if any(not arg.perfetto_field for arg in trace.tp_print):
    char buf[128];
+ % endif
 
   % for arg in trace.tp_print:
+   % if arg.perfetto_field:
+   event->set_${arg.name}(${arg.value_expr("payload")});
+   % else:
    {
       auto data = event->add_extra_data();
       data->set_name("${arg.name}");
 
-   % if arg.is_indirect:
+    % if arg.is_indirect:
       const ${arg.type}* __${arg.var} = (const ${arg.type}*)((uint8_t *)indirect_data + ${arg.indirect_offset});
-   % endif
+    % endif
       sprintf(buf, "${arg.c_format}", ${arg.value_expr("payload")});
 
       data->set_value(buf);
    }
+   % endif
   % endfor
 
  % endif
