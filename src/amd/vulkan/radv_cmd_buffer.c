@@ -3773,7 +3773,6 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
    unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
@@ -3783,20 +3782,8 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.gfx_level >= GFX12) {
       const struct radv_rendering_state *render = &cmd_buffer->state.render;
-      bool has_hiz_his = false;
 
-      if (render->ds_att.iview) {
-         const struct radeon_surf *surf = &render->ds_att.iview->image->planes[0].surface;
-         has_hiz_his = surf->u.gfx9.zs.hiz.offset || surf->u.gfx9.zs.his.offset;
-      } else if (render->ds_att.format && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
-         /* For inherited rendering with secondary commands buffers, assume HiZ/HiS is enabled if
-          * there is a depth/stencil attachment. This shouldn't hurt and it's required to disable
-          * WALK_ALIGN8 to avoid GPU hangs.
-          */
-         has_hiz_his = true;
-      }
-
-      walk_align8 = !has_hiz_his && !cmd_buffer->state.uses_vrs_attachment;
+      walk_align8 = !render->has_hiz_his && !cmd_buffer->state.uses_vrs_attachment;
    } else if (pdev->info.gfx_level >= GFX11) {
       walk_align8 = !cmd_buffer->state.uses_vrs_attachment;
    } else {
@@ -7182,6 +7169,7 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
       if (resume_info) {
          radv_CmdBeginRendering(commandBuffer, resume_info);
       } else {
+         const struct radv_instance *instance = radv_physical_device_instance(pdev);
          const VkCommandBufferInheritanceRenderingInfo *inheritance_info =
             vk_get_command_buffer_inheritance_rendering_info(cmd_buffer->vk.level, pBeginInfo);
 
@@ -7209,6 +7197,14 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
             render->ds_att_aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
          if (vk_format_has_stencil(render->ds_att.format))
             render->ds_att_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
+
+         if (pdev->info.gfx_level >= GFX12 && render->ds_att.format && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
+            /* For inherited rendering with secondary commands buffers, assume HiZ/HiS is enabled if
+             * there is a depth/stencil attachment. This is required to apply hardware workarounds
+             * on GFX12.
+             */
+            render->has_hiz_his = true;
+         }
       }
 
       cmd_buffer->state.inherited_pipeline_statistics = pBeginInfo->pInheritanceInfo->pipelineStatistics;
@@ -9474,6 +9470,8 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    VkImageAspectFlags ds_att_aspects = 0;
    const VkRenderingAttachmentInfo *d_att_info = pRenderingInfo->pDepthAttachment;
    const VkRenderingAttachmentInfo *s_att_info = pRenderingInfo->pStencilAttachment;
+   bool has_hiz_his = false;
+
    if ((d_att_info != NULL && d_att_info->imageView != VK_NULL_HANDLE) ||
        (s_att_info != NULL && s_att_info->imageView != VK_NULL_HANDLE)) {
       struct radv_image_view *d_iview = NULL, *s_iview = NULL;
@@ -9514,6 +9512,12 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
          ds_att_aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
       } else {
          ds_att_aspects = VK_IMAGE_ASPECT_STENCIL_BIT;
+      }
+
+      if (pdev->info.gfx_level >= GFX12) {
+         const struct radeon_surf *surf = &ds_att.iview->image->planes[0].surface;
+
+         has_hiz_his = surf->u.gfx9.zs.hiz.offset || surf->u.gfx9.zs.his.offset;
       }
 
       radv_initialise_ds_surface(device, &ds_att.ds, ds_att.iview, ds_att_aspects);
@@ -9568,6 +9572,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    typed_memcpy(render->color_att, color_att, render->color_att_count);
    render->ds_att = ds_att;
    render->ds_att_aspects = ds_att_aspects;
+   render->has_hiz_his = has_hiz_his;
    render->vrs_att = vrs_att;
    render->vrs_texel_size = vrs_texel_size;
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_FBFETCH_OUTPUT;
