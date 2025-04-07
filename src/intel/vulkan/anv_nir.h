@@ -68,9 +68,6 @@ struct anv_pipeline_push_map {
    struct anv_pipeline_binding *block_to_descriptor;
 };
 
-enum brw_robustness_flags
-anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate);
-
 bool anv_check_for_primitive_replication(struct anv_device *device,
                                          VkShaderStageFlags stages,
                                          nir_shader **shaders,
@@ -78,9 +75,6 @@ bool anv_check_for_primitive_replication(struct anv_device *device,
 
 bool anv_nir_lower_multiview(nir_shader *shader, uint32_t view_mask,
                              bool use_primitive_replication);
-
-bool anv_nir_lower_ycbcr_textures(nir_shader *shader,
-                                  const struct anv_pipeline_sets_layout *layout);
 
 static inline nir_address_format
 anv_nir_ssbo_addr_format(const struct anv_physical_device *pdevice,

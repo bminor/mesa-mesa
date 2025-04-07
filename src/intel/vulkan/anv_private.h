@@ -1776,7 +1776,6 @@ struct anv_queue {
 };
 
 struct nir_xfb_info;
-struct anv_pipeline_sets_layout;
 struct anv_push_descriptor_info;
 
 extern const struct vk_pipeline_cache_object_ops *const anv_cache_import_ops[2];
@@ -3732,40 +3731,6 @@ anv_descriptor_set_write_template(struct anv_device *device,
                                   const struct vk_descriptor_update_template *template,
                                   const void *data);
 
-struct anv_pipeline_sets_layout {
-   struct anv_device *device;
-
-   struct anv_descriptor_set_layout *set_layouts[MAX_SETS];
-   uint32_t dynamic_offset_start[MAX_SETS];
-
-   enum anv_descriptor_set_layout_type type;
-
-   uint32_t num_sets;
-   uint32_t num_dynamic_buffers;
-   int push_descriptor_set_index;
-
-   bool independent_sets;
-
-   blake3_hash blake3;
-};
-
-void anv_pipeline_sets_layout_init(struct anv_pipeline_sets_layout *layout,
-                                   struct anv_device *device,
-                                   bool independent_sets);
-
-void anv_pipeline_sets_layout_fini(struct anv_pipeline_sets_layout *layout);
-
-void anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
-                                  uint32_t set_idx,
-                                  struct anv_descriptor_set_layout *set_layout);
-
-uint32_t
-anv_pipeline_sets_layout_embedded_sampler_count(const struct anv_pipeline_sets_layout *layout);
-
-void anv_pipeline_sets_layout_hash(struct anv_pipeline_sets_layout *layout);
-
-void anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout);
-
 struct anv_sparse_binding_data {
    uint64_t address;
    uint64_t size;
@@ -4402,11 +4367,6 @@ struct anv_cmd_pipeline_state {
     * Push descriptor index for currently bound shaders (UINT8_MAX if unused).
     */
    uint8_t push_descriptor_index;
-
-   /**
-    * The current bound pipeline.
-    */
-   struct anv_pipeline      *pipeline;
 };
 
 enum anv_depth_reg_mode {
@@ -5230,330 +5190,10 @@ struct anv_pipeline_executable {
 };
 
 enum anv_pipeline_type {
-   ANV_PIPELINE_GRAPHICS,
-   ANV_PIPELINE_GRAPHICS_LIB,
-   ANV_PIPELINE_COMPUTE,
    ANV_PIPELINE_RAY_TRACING,
 };
 
 void anv_shader_init_uuid(struct anv_physical_device *device);
-
-struct anv_pipeline {
-   struct vk_pipeline                           vk;
-
-   struct anv_device *                          device;
-
-   struct anv_batch                             batch;
-   struct anv_reloc_list                        batch_relocs;
-
-   void *                                       mem_ctx;
-
-   enum anv_pipeline_type                       type;
-   VkPipelineCreateFlags2KHR                    flags;
-
-   VkShaderStageFlags                           active_stages;
-
-   uint32_t                                     ray_queries;
-
-   /**
-    * Mask of stages that are accessing push descriptors.
-    */
-   VkShaderStageFlags                           use_push_descriptor;
-
-   /**
-    * Mask of stages that are accessing the push descriptors buffer.
-    */
-   VkShaderStageFlags                           use_push_descriptor_buffer;
-
-   /**
-    * Maximum scratch size for all shaders in this pipeline.
-    */
-   uint32_t                                     scratch_size;
-
-   /* Layout of the sets used by the pipeline. */
-   struct anv_pipeline_sets_layout              layout;
-
-   struct util_dynarray                         executables;
-};
-
-/* The base graphics pipeline object only hold shaders. */
-struct anv_graphics_base_pipeline {
-   struct anv_pipeline                          base;
-
-   struct vk_sample_locations_state             sample_locations;
-
-   /* Shaders */
-   struct anv_shader_bin *                      shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-
-   /* Feedback index in
-    * VkPipelineCreationFeedbackCreateInfo::pPipelineStageCreationFeedbacks
-    *
-    * For pipeline libraries, we need to remember the order at creation when
-    * included into a linked pipeline.
-    */
-   uint32_t                                     feedback_index[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-
-   /* Robustness flags used shaders
-    */
-   enum brw_robustness_flags                    robust_flags[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-};
-
-/* The library graphics pipeline object has a partial graphic state and
- * possibly some shaders. If requested, shaders are also present in NIR early
- * form.
- */
-struct anv_graphics_lib_pipeline {
-   struct anv_graphics_base_pipeline            base;
-
-   VkGraphicsPipelineLibraryFlagsEXT            lib_flags;
-
-   struct vk_graphics_pipeline_all_state        all_state;
-   struct vk_graphics_pipeline_state            state;
-
-   /* Retained shaders for link optimization. */
-   struct {
-      /* This hash is the same as computed in
-       * anv_graphics_pipeline_gather_shaders().
-       */
-      unsigned char                             shader_sha1[20];
-
-      enum gl_subgroup_size                     subgroup_size_type;
-
-      /* Hold on the value of VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT
-       * from library that introduces the stage, so it remains consistent.
-       */
-      bool                                      view_index_from_device_index;
-
-      /* NIR captured in anv_pipeline_stage_get_nir(), includes specialization
-       * constants.
-       */
-      nir_shader *                              nir;
-   }                                            retained_shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
-
-   /* Whether the shaders have been retained */
-   bool                                         retain_shaders;
-};
-
-/* The final graphics pipeline object has all the graphics state ready to be
- * programmed into HW packets (dynamic_state field) or fully baked in its
- * batch.
- */
-struct anv_graphics_pipeline {
-   struct anv_graphics_base_pipeline            base;
-
-   uint32_t                                     vs_source_hash;
-   uint32_t                                     fs_source_hash;
-
-   struct vk_vertex_input_state                 vertex_input;
-   struct vk_sample_locations_state             sample_locations;
-   struct vk_dynamic_graphics_state             dynamic_state;
-
-   uint32_t                                     view_mask;
-   uint32_t                                     instance_multiplier;
-
-   bool                                         kill_pixel;
-   bool                                         uses_xfb;
-
-   /* Number of VERTEX_ELEMENT_STATE input elements used by the shader */
-   uint32_t                                     vs_input_elements;
-
-   /* Number of VERTEX_ELEMENT_STATE elements we need to implement some of the
-    * draw parameters
-    */
-   uint32_t                                     svgs_count;
-
-   /* Pre computed VERTEX_ELEMENT_STATE structures for the vertex input that
-    * can be copied into the anv_cmd_buffer behind a 3DSTATE_VERTEX_BUFFER.
-    *
-    * When MESA_VK_DYNAMIC_VI is not dynamic
-    *
-    *     vertex_input_elems = vs_input_elements + svgs_count
-    *
-    * All the VERTEX_ELEMENT_STATE can be directly copied behind a
-    * 3DSTATE_VERTEX_ELEMENTS instruction in the command buffer. Otherwise
-    * this array only holds the svgs_count elements.
-    */
-   uint32_t                                     vertex_input_elems;
-   uint32_t                                     vertex_input_data[2 * 31 /* MAX_VES + 2 internal */];
-
-   /* Number of color outputs used by the fragment shader. */
-   uint8_t                                      num_color_outputs;
-   /* Map of color output of the fragment shader to color attachments in the
-    * render pass.
-    */
-   uint8_t                                      color_output_mapping[MAX_RTS];
-
-   /* Pre computed CS instructions that can directly be copied into
-    * anv_cmd_buffer.
-    */
-   uint32_t                                     batch_data[480];
-
-   /* Urb setup utilized by this pipeline. */
-   struct intel_urb_config urb_cfg;
-
-   /* Fully backed instructions, ready to be emitted in the anv_cmd_buffer */
-   struct {
-      struct anv_gfx_state_ptr                  vf_sgvs;
-      struct anv_gfx_state_ptr                  vf_sgvs_2;
-      struct anv_gfx_state_ptr                  vf_sgvs_instancing;
-      struct anv_gfx_state_ptr                  vf_instancing;
-      struct anv_gfx_state_ptr                  vf_component_packing;
-      struct anv_gfx_state_ptr                  so_decl_list;
-      struct anv_gfx_state_ptr                  vs;
-      struct anv_gfx_state_ptr                  hs;
-      struct anv_gfx_state_ptr                  ds;
-      struct anv_gfx_state_ptr                  vs_protected;
-      struct anv_gfx_state_ptr                  hs_protected;
-      struct anv_gfx_state_ptr                  ds_protected;
-
-      struct anv_gfx_state_ptr                  task_control;
-      struct anv_gfx_state_ptr                  task_control_protected;
-      struct anv_gfx_state_ptr                  task_shader;
-      struct anv_gfx_state_ptr                  task_redistrib;
-      struct anv_gfx_state_ptr                  clip_mesh;
-      struct anv_gfx_state_ptr                  mesh_control;
-      struct anv_gfx_state_ptr                  mesh_control_protected;
-      struct anv_gfx_state_ptr                  mesh_shader;
-      struct anv_gfx_state_ptr                  mesh_distrib;
-   } final;
-
-   /* Pre packed CS instructions & structures that need to be merged later
-    * with dynamic state.
-    */
-   struct {
-      struct anv_gfx_state_ptr                  ps_extra;
-      struct anv_gfx_state_ptr                  wm;
-      struct anv_gfx_state_ptr                  so;
-      struct anv_gfx_state_ptr                  gs;
-      struct anv_gfx_state_ptr                  gs_protected;
-      struct anv_gfx_state_ptr                  te;
-      struct anv_gfx_state_ptr                  ps;
-      struct anv_gfx_state_ptr                  ps_protected;
-   } partial;
-};
-
-#define anv_batch_emit_pipeline_state(batch, pipeline, state)           \
-   do {                                                                 \
-      if ((pipeline)->state.len == 0)                                   \
-         break;                                                         \
-      uint32_t *dw;                                                     \
-      dw = anv_batch_emit_dwords((batch), (pipeline)->state.len);       \
-      if (!dw)                                                          \
-         break;                                                         \
-      memcpy(dw, &(pipeline)->batch_data[(pipeline)->state.offset],     \
-             4 * (pipeline)->state.len);                                \
-   } while (0)
-
-#define anv_batch_emit_pipeline_state_protected(batch, pipeline,        \
-                                                state, protected)       \
-   do {                                                                 \
-      struct anv_gfx_state_ptr *_cmd_state = protected ?                \
-         &(pipeline)->state##_protected : &(pipeline)->state;           \
-      if (_cmd_state->len == 0)                                         \
-         break;                                                         \
-      uint32_t *dw;                                                     \
-      dw = anv_batch_emit_dwords((batch), _cmd_state->len);             \
-      if (!dw)                                                          \
-         break;                                                         \
-      memcpy(dw, &(pipeline)->batch_data[_cmd_state->offset],           \
-             4 * _cmd_state->len);                                      \
-   } while (0)
-
-struct anv_compute_pipeline {
-   struct anv_pipeline                          base;
-
-   struct anv_shader_bin *                      cs;
-   uint32_t                                     batch_data[9];
-
-   union {
-      struct {
-         uint32_t                               interface_descriptor_data[8];
-         uint32_t                               gpgpu_walker[15];
-      } gfx9;
-      struct {
-         uint32_t                               compute_walker_body[39];
-      } gfx125;
-   };
-};
-
-struct anv_rt_shader_group {
-   VkRayTracingShaderGroupTypeKHR type;
-
-   /* Whether this group was imported from another pipeline */
-   bool imported;
-
-   struct anv_shader_bin *general;
-   struct anv_shader_bin *closest_hit;
-   struct anv_shader_bin *any_hit;
-   struct anv_shader_bin *intersection;
-
-   /* VK_KHR_ray_tracing requires shaderGroupHandleSize == 32 */
-   uint32_t handle[8];
-};
-
-struct anv_ray_tracing_pipeline {
-   struct anv_pipeline                          base;
-
-   /* All shaders in the pipeline */
-   struct util_dynarray                         shaders;
-
-   uint32_t                                     group_count;
-   struct anv_rt_shader_group *                 groups;
-
-   /* If non-zero, this is the default computed stack size as per the stack
-    * size computation in the Vulkan spec.  If zero, that indicates that the
-    * client has requested a dynamic stack size.
-    */
-   uint32_t                                     stack_size;
-};
-
-#define ANV_DECL_PIPELINE_DOWNCAST(pipe_type, pipe_enum)             \
-   static inline struct anv_##pipe_type##_pipeline *                 \
-   anv_pipeline_to_##pipe_type(struct anv_pipeline *pipeline)      \
-   {                                                                 \
-      assert(pipeline->type == pipe_enum);                           \
-      return (struct anv_##pipe_type##_pipeline *) pipeline;         \
-   }
-
-ANV_DECL_PIPELINE_DOWNCAST(graphics, ANV_PIPELINE_GRAPHICS)
-ANV_DECL_PIPELINE_DOWNCAST(graphics_lib, ANV_PIPELINE_GRAPHICS_LIB)
-ANV_DECL_PIPELINE_DOWNCAST(compute, ANV_PIPELINE_COMPUTE)
-ANV_DECL_PIPELINE_DOWNCAST(ray_tracing, ANV_PIPELINE_RAY_TRACING)
-
-/* Can't use the macro because we need to handle both types. */
-static inline struct anv_graphics_base_pipeline *
-anv_pipeline_to_graphics_base(struct anv_pipeline *pipeline)
-{
-   assert(pipeline->type == ANV_PIPELINE_GRAPHICS ||
-          pipeline->type == ANV_PIPELINE_GRAPHICS_LIB);
-   return (struct anv_graphics_base_pipeline *) pipeline;
-}
-
-static inline bool
-anv_pipeline_has_stage(const struct anv_graphics_pipeline *pipeline,
-                       mesa_shader_stage stage)
-{
-   return (pipeline->base.base.active_stages & mesa_to_vk_shader_stage(stage)) != 0;
-}
-
-static inline bool
-anv_pipeline_base_has_stage(const struct anv_graphics_base_pipeline *pipeline,
-                            mesa_shader_stage stage)
-{
-   return (pipeline->base.active_stages & mesa_to_vk_shader_stage(stage)) != 0;
-}
-
-static inline bool
-anv_pipeline_is_primitive(const struct anv_graphics_pipeline *pipeline)
-{
-   return anv_pipeline_has_stage(pipeline, MESA_SHADER_VERTEX);
-}
-
-static inline bool
-anv_pipeline_is_mesh(const struct anv_graphics_pipeline *pipeline)
-{
-   return anv_pipeline_has_stage(pipeline, MESA_SHADER_MESH);
-}
 
 static inline bool
 anv_gfx_has_stage(const struct anv_cmd_graphics_state *gfx,
@@ -5594,18 +5234,6 @@ anv_cmd_graphic_state_update_has_uint_rt(struct anv_cmd_graphics_state *state)
 }
 
 #define ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(prefix, stage)             \
-static inline const struct brw_##prefix##_prog_data *                   \
-get_pipeline_##prefix##_prog_data(                                      \
-   const struct anv_graphics_pipeline *pipeline)                        \
-{                                                                       \
-   if (anv_pipeline_has_stage(pipeline, stage)) {                       \
-      return (const struct brw_##prefix##_prog_data *)                  \
-         pipeline->base.shaders[stage]->prog_data;                      \
-   } else {                                                             \
-      return NULL;                                                      \
-   }                                                                    \
-}                                                                       \
-                                                                        \
 static inline const struct brw_##prefix##_prog_data *                   \
 get_gfx_##prefix##_prog_data(                                           \
    const struct anv_cmd_graphics_state *gfx)                            \
@@ -5666,17 +5294,6 @@ static inline const struct brw_cs_prog_data *
 get_shader_cs_prog_data(const struct anv_shader *shader)
 {
    return (const struct brw_cs_prog_data *) shader->prog_data;
-}
-
-static inline const struct brw_vue_prog_data *
-anv_pipeline_get_last_vue_prog_data(const struct anv_graphics_pipeline *pipeline)
-{
-   if (anv_pipeline_has_stage(pipeline, MESA_SHADER_GEOMETRY))
-      return &get_pipeline_gs_prog_data(pipeline)->base;
-   else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL))
-      return &get_pipeline_tes_prog_data(pipeline)->base;
-   else
-      return &get_pipeline_vs_prog_data(pipeline)->base;
 }
 
 VkResult
@@ -7177,8 +6794,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_image_view, vk.base, VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW);
-VK_DEFINE_NONDISP_HANDLE_CASTS(anv_pipeline, vk.base, VkPipeline,
-                               VK_OBJECT_TYPE_PIPELINE)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_query_pool, vk.base, VkQueryPool,
                                VK_OBJECT_TYPE_QUERY_POOL)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_sampler, vk.base, VkSampler,

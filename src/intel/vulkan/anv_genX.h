@@ -103,11 +103,6 @@ void genX(emit_pipeline_select)(struct anv_batch *batch, uint32_t pipeline,
 
 void genX(apply_task_urb_workaround)(struct anv_cmd_buffer *cmd_buffer);
 
-void genX(batch_emit_pipeline_vertex_input)(struct anv_batch *batch,
-                                            struct anv_device *device,
-                                            struct anv_graphics_pipeline *pipeline,
-                                            const struct vk_vertex_input_state *vi);
-
 void genX(batch_emit_vertex_input)(struct anv_batch *batch,
                                    struct anv_device *device,
                                    struct anv_shader *shader,
@@ -298,16 +293,6 @@ genX(batch_emit_post_3dprimitive_was)(struct anv_batch *batch,
 
 void genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
                                             struct anv_device *device);
-
-void
-genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
-                             const struct vk_graphics_pipeline_state *state);
-
-void
-genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline);
-
-void
-genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline);
 
 #if GFX_VERx10 >= 300
 #define anv_shader_bin_get_handler(bin, local_arg_offset) ({         \

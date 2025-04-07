@@ -497,37 +497,6 @@ anv_cmd_buffer_set_rt_query_buffer(struct anv_cmd_buffer *cmd_buffer,
    pipeline_state->push_constants_data_dirty = true;
 }
 
-static enum anv_cmd_dirty_bits
-get_pipeline_dirty_stages(struct anv_device *device,
-                          struct anv_graphics_pipeline *old_pipeline,
-                          struct anv_graphics_pipeline *new_pipeline)
-{
-   if (!old_pipeline)
-      return ANV_CMD_DIRTY_ALL_SHADERS(device);
-
-   enum anv_cmd_dirty_bits bits = 0;
-#define STAGE_CHANGED(_name) \
-   (old_pipeline->base.shaders[MESA_SHADER_##_name] != \
-    new_pipeline->base.shaders[MESA_SHADER_##_name])
-   if (STAGE_CHANGED(VERTEX))
-      bits |= ANV_CMD_DIRTY_VS;
-   if (STAGE_CHANGED(TESS_CTRL))
-      bits |= ANV_CMD_DIRTY_HS;
-   if (STAGE_CHANGED(TESS_EVAL))
-      bits |= ANV_CMD_DIRTY_DS;
-   if (STAGE_CHANGED(GEOMETRY))
-      bits |= ANV_CMD_DIRTY_GS;
-   if (STAGE_CHANGED(TASK))
-      bits |= ANV_CMD_DIRTY_TASK;
-   if (STAGE_CHANGED(MESH))
-      bits |= ANV_CMD_DIRTY_MESH;
-   if (STAGE_CHANGED(FRAGMENT))
-      bits |= ANV_CMD_DIRTY_PS;
-#undef STAGE_CHANGED
-
-   return bits;
-}
-
 static void
 update_push_descriptor_flags(struct anv_cmd_pipeline_state *state,
                              struct anv_shader ** const shaders,

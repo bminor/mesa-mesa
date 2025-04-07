@@ -16,6 +16,18 @@
 #include "compiler/brw_nir_rt.h"
 #include "compiler/intel_nir.h"
 
+static enum brw_robustness_flags
+anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate)
+{
+   return
+      ((rstate->storage_buffers !=
+        VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT) ?
+       BRW_ROBUSTNESS_SSBO : 0) |
+      ((rstate->uniform_buffers !=
+        VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT) ?
+       BRW_ROBUSTNESS_UBO : 0);
+}
+
 static enum anv_descriptor_set_layout_type
 set_layouts_get_layout_type(struct anv_descriptor_set_layout * const *set_layouts,
                             uint32_t set_layout_count)
