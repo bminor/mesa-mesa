@@ -1047,6 +1047,11 @@ struct RegisterDemand {
       return a.vgpr == b.vgpr && a.sgpr == b.sgpr;
    }
 
+   constexpr friend bool operator!=(const RegisterDemand a, const RegisterDemand b) noexcept
+   {
+      return !(a == b);
+   }
+
    constexpr bool exceeds(const RegisterDemand other) const noexcept
    {
       return vgpr > other.vgpr || sgpr > other.sgpr;
