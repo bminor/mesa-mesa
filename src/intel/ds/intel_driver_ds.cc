@@ -203,7 +203,7 @@ setup_incremental_state(IntelRenderpassDataSource::TraceContext &ctx,
                 * by intel_ds_queue_stage.
                 */
                char name[100];
-               snprintf(name, sizeof(name), "%.10s-%s-%u-%s",
+               snprintf(name, sizeof(name), "%.10s-%s-%02u-%s",
                         util_get_process_name(),
                         queue->name, s, intel_queue_stage_desc[s].name);
 
