@@ -11268,13 +11268,13 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
 
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
+
+      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
+         radv_emit_raster_state(cmd_buffer);
+
+      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
+         radv_emit_depth_stencil_state(cmd_buffer);
    }
-
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
-      radv_emit_raster_state(cmd_buffer);
-
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
-      radv_emit_depth_stencil_state(cmd_buffer);
 
    radv_emit_shaders_state(cmd_buffer);
 
