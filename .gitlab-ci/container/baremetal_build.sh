@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154 # arch is assigned in previous scripts
 
 set -e
 set -o xtrace
@@ -6,11 +7,12 @@ set -o xtrace
 # Fetch the arm-built rootfs image and unpack it in our x86_64 container (saves
 # network transfer, disk usage, and runtime on test jobs)
 
-# shellcheck disable=SC2154 # arch is assigned in previous scripts
-if curl --fail -L -s "${ARTIFACTS_PREFIX}/${FDO_UPSTREAM_REPO}/${ARTIFACTS_SUFFIX}/${arch}/done"; then
-  ARTIFACTS_URL="${ARTIFACTS_PREFIX}/${FDO_UPSTREAM_REPO}/${ARTIFACTS_SUFFIX}/${arch}"
+S3_PATH="https://${S3_HOST}/${S3_KERNEL_BUCKET}"
+
+if curl -L --retry 3 -f --retry-delay 10 -s --head "${S3_PATH}/${FDO_UPSTREAM_REPO}/${LAVA_DISTRIBUTION_TAG}"; then
+  ARTIFACTS_URL="${S3_PATH}/${FDO_UPSTREAM_REPO}/${LAVA_DISTRIBUTION_TAG}"
 else
-  ARTIFACTS_URL="${ARTIFACTS_PREFIX}/${CI_PROJECT_PATH}/${ARTIFACTS_SUFFIX}/${arch}"
+  ARTIFACTS_URL="${S3_PATH}/${CI_PROJECT_PATH}/${LAVA_DISTRIBUTION_TAG}"
 fi
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
