@@ -46,6 +46,9 @@ tu_default_tps = []
 # Tracepoint definitions:
 #
 
+command_buffer_arg = ArgStruct(type='struct tu_cmd_buffer *', var='cmd')
+command_buffer_struct = Arg(type='VkCommandBuffer', name='command_buffer_handle', var='vk_command_buffer_to_handle(&cmd->vk)', c_format='%" PRIu64 "', to_prim_type='(uint64_t){}', perfetto_field=True)
+
 def begin_end_tp(name, args=[], tp_struct=None, tp_print=None,
                  end_args=[], end_tp_struct=None, end_tp_print=None,
                  tp_default_enabled=True, marker_tp=True,
@@ -53,6 +56,12 @@ def begin_end_tp(name, args=[], tp_struct=None, tp_print=None,
     global tu_default_tps
     if tp_default_enabled:
         tu_default_tps.append(name)
+
+    # Make all the GPU render stage events take a cmdbuf, so that the
+    # command_buffer field can be set appropriately in the UI.
+    tp_struct = [command_buffer_struct] + (tp_struct if tp_struct else [])
+    args = [command_buffer_arg] + (args if args else [])
+
     Tracepoint('start_{0}'.format(name),
                toggle_name=name,
                args=args,
@@ -69,8 +78,7 @@ def begin_end_tp(name, args=[], tp_struct=None, tp_print=None,
                tp_markers='tu_cs_trace_end' if marker_tp else None)
 
 begin_end_tp('cmd_buffer',
-    args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd'),
-          Arg(type='str',                       var='TUdebugFlags', c_format='%s', length_arg='96', copy_func='strncpy'),
+    args=[Arg(type='str',                       var='TUdebugFlags', c_format='%s', length_arg='96', copy_func='strncpy'),
           Arg(type='str',                       var='IR3debugFlags', c_format='%s', length_arg='96', copy_func='strncpy')],
     tp_struct=[Arg(type='const char *',         name='appName',              var='cmd->device->instance->vk.app_info.app_name', c_format='%s'),
                Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name', c_format='%s')],
@@ -79,7 +87,6 @@ begin_end_tp('cmd_buffer',
                    Arg(type='uint32_t',         name='dispatches',           var='cmd->state.total_dispatches', c_format='%u')])
 
 begin_end_tp('secondary_cmd_buffer', tp_default_enabled=False,
-    args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd')],
     tp_struct=[Arg(type='uint8_t',              name='render_pass_continue', var='!!(cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)', c_format='%u')])
 
 

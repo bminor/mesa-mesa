@@ -1992,7 +1992,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit_regs(cs,
                    A6XX_SP_TP_WINDOW_OFFSET(.x = 0, .y = 0));
 
-   trace_start_binning_ib(&cmd->trace, cs);
+   trace_start_binning_ib(&cmd->trace, cs, cmd);
 
    /* emit IB to binning drawcmds: */
    tu_cs_emit_call(cs, &cmd->draw_cs);
@@ -2260,7 +2260,7 @@ tu_trace_start_render_pass(struct tu_cmd_buffer *cmd)
       max_samples = MAX2(max_samples, cmd->state.pass->subpasses[i].samples);
    }
 
-   trace_start_render_pass(&cmd->trace, &cmd->cs, cmd->state.framebuffer,
+   trace_start_render_pass(&cmd->trace, &cmd->cs, cmd, cmd->state.framebuffer,
                            cmd->state.tiling, max_samples, clear_cpp,
                            load_cpp, store_cpp, has_depth, ubwc);
 }
@@ -2509,7 +2509,7 @@ tu6_render_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu6_emit_tile_select<CHIP>(cmd, &cmd->cs, tile, fdm, fdm_offsets);
    tu_lrz_before_tile<CHIP>(cmd, &cmd->cs);
 
-   trace_start_draw_ib_gmem(&cmd->trace, &cmd->cs);
+   trace_start_draw_ib_gmem(&cmd->trace, &cmd->cs, cmd);
 
    /* Primitives that passed all tests are still counted in in each
     * tile even with HW binning beforehand. Do not permit it.
@@ -2981,7 +2981,7 @@ tu_cmd_render_sysmem(struct tu_cmd_buffer *cmd,
 
    tu6_sysmem_render_begin<CHIP>(cmd, &cmd->cs, autotune_result);
 
-   trace_start_draw_ib_sysmem(&cmd->trace, &cmd->cs);
+   trace_start_draw_ib_sysmem(&cmd->trace, &cmd->cs, cmd);
 
    tu_cs_emit_call(&cmd->cs, &cmd->draw_cs);
 
@@ -7691,7 +7691,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
    }
 
    if (info->indirect) {
-      trace_start_compute_indirect(&cmd->trace, cs, info->unaligned);
+      trace_start_compute_indirect(&cmd->trace, cs, cmd, info->unaligned);
 
       if (info->unaligned) {
          tu_cs_emit_pkt7(cs, CP_RUN_OPENCL, 1);
@@ -7713,7 +7713,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                                     .offset = info->indirect,
                                  });
    } else {
-      trace_start_compute(&cmd->trace, cs, info->indirect != 0,
+      trace_start_compute(&cmd->trace, cs, cmd, info->indirect != 0,
                           info->unaligned, local_size[0], local_size[1],
                           local_size[2], info->blocks[0], info->blocks[1],
                           info->blocks[2]);

@@ -3644,10 +3644,10 @@ tu_CmdBeginDebugUtilsLabelEXT(VkCommandBuffer _commandBuffer,
    const char *label = pLabelInfo->pLabelName;
    if (cmd_buffer->state.pass) {
       trace_start_cmd_buffer_annotation_rp(
-         &cmd_buffer->trace, &cmd_buffer->draw_cs, strlen(label), label);
+         &cmd_buffer->trace, &cmd_buffer->draw_cs, cmd_buffer, strlen(label), label);
    } else {
       trace_start_cmd_buffer_annotation(&cmd_buffer->trace, &cmd_buffer->cs,
-                                        strlen(label), label);
+                                        cmd_buffer, strlen(label), label);
    }
 }
 
