@@ -47,8 +47,7 @@ struct pfo_state {
 
 /** Per-vertex input pass state. */
 struct pvi_state {
-   struct util_dynarray loads; /** List of vertex loads. */
-
+   nir_def *attribs[MAX_VERTEX_GENERIC_ATTRIBS]; /** Loaded vertex attribs. */
    pco_vs_data *vs; /** Vertex-specific data. */
 };
 
@@ -1214,68 +1213,19 @@ static nir_def *lower_pvi(nir_builder *b, nir_instr *instr, void *cb_data)
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    struct pvi_state *state = cb_data;
 
-   /* Skip loads we've already processed. */
-   if (is_processed(intr)) {
-      util_dynarray_append(&state->loads, nir_intrinsic_instr *, intr);
-      return NULL;
-   }
+   unsigned start_comp = nir_intrinsic_component(intr);
+   unsigned num_comps = intr->def.num_components;
 
-   nir_src *offset = &intr->src[0];
+   ASSERTED nir_src *offset = &intr->src[0];
    assert(nir_src_as_uint(*offset) == 0);
 
    struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
    gl_vert_attrib location = io_semantics.location;
+   nir_def *attrib = state->attribs[location - VERT_ATTRIB_GENERIC0];
+   assert(attrib);
 
    b->cursor = nir_before_instr(&intr->instr);
-
-   enum pipe_format format = state->vs->attrib_formats[location];
-
-   nir_def *input_comps[4];
-   for (unsigned c = 0; c < ARRAY_SIZE(input_comps); ++c) {
-      input_comps[c] = nir_load_input(b,
-                                      1,
-                                      32,
-                                      offset->ssa,
-                                      .base = nir_intrinsic_base(intr),
-                                      .component = c,
-                                      .dest_type = nir_type_invalid | 32,
-                                      .io_semantics = io_semantics);
-
-      nir_intrinsic_instr *load =
-         nir_instr_as_intrinsic(input_comps[c]->parent_instr);
-
-      util_dynarray_append(&state->loads, nir_intrinsic_instr *, load);
-   }
-
-   nir_def *input = nir_vec(b, input_comps, ARRAY_SIZE(input_comps));
-   nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
-   nir_def *output = unpack_from_format(b, input, dest_type, format);
-   if (output->num_components > intr->def.num_components)
-      output = nir_trim_vector(b, output, intr->def.num_components);
-
-   /* Update the type of the stored variable, remove any fractional vars. */
-   nir_variable *var = NULL;
-   nir_foreach_variable_with_modes_safe (iter_var,
-                                         b->shader,
-                                         nir_var_shader_in) {
-      if (iter_var->data.location != location)
-         continue;
-
-      if (!iter_var->data.location_frac) {
-         var = iter_var;
-         continue;
-      }
-
-      exec_node_remove(&iter_var->node);
-   }
-   assert(var);
-
-   unsigned format_dwords =
-      DIV_ROUND_UP(util_format_get_blocksize(format), sizeof(uint32_t));
-
-   var->type = glsl_uvec_type(format_dwords);
-
-   return output;
+   return nir_channels(b, attrib, BITFIELD_RANGE(start_comp, num_comps));
 }
 
 static bool is_pvi(const nir_instr *instr, const void *cb_data)
@@ -1287,7 +1237,10 @@ static bool is_pvi(const nir_instr *instr, const void *cb_data)
    if (intr->intrinsic != nir_intrinsic_load_input)
       return false;
 
-   gl_vert_attrib location = nir_intrinsic_io_semantics(intr).location;
+   if (is_processed(intr))
+      return false;
+
+   ASSERTED gl_vert_attrib location = nir_intrinsic_io_semantics(intr).location;
    assert(location >= VERT_ATTRIB_GENERIC0 &&
           location <= VERT_ATTRIB_GENERIC15);
 
@@ -1305,18 +1258,76 @@ bool pco_nir_pvi(nir_shader *shader, pco_vs_data *vs)
 {
    assert(shader->info.stage == MESA_SHADER_VERTEX);
 
-   /* TODO: format conversion and inserting unspecified/missing components. */
-
    struct pvi_state state = { .vs = vs };
 
-   util_dynarray_init(&state.loads, NULL);
+   nir_builder b = nir_builder_at(
+      nir_before_block(nir_start_block(nir_shader_get_entrypoint(shader))));
+   for (unsigned u = 0; u < ARRAY_SIZE(state.attribs); ++u) {
+      gl_vert_attrib location = u + VERT_ATTRIB_GENERIC0;
+      enum pipe_format format = vs->attrib_formats[location];
+      if (format == PIPE_FORMAT_NONE)
+         continue;
 
-   bool progress =
-      nir_shader_lower_instructions(shader, is_pvi, lower_pvi, &state);
+      /* Update the type of the stored variable, remove any fractional vars. */
+      nir_variable *var = NULL;
+      nir_alu_type base_type = 0;
+      nir_foreach_variable_with_modes_safe (iter_var,
+                                            shader,
+                                            nir_var_shader_in) {
+         if (iter_var->data.location != location)
+            continue;
 
-   util_dynarray_fini(&state.loads);
+         if (!base_type)
+            base_type = nir_get_nir_type_for_glsl_type(iter_var->type);
+#ifndef NDEBUG
+         else
+            assert(base_type == nir_get_nir_type_for_glsl_type(iter_var->type));
+#endif /* NDEBUG */
 
-   return progress;
+         if (!iter_var->data.location_frac) {
+            assert(!var);
+            var = iter_var;
+            continue;
+         }
+
+         exec_node_remove(&iter_var->node);
+      }
+
+      if (!var) {
+         if (!base_type)
+            continue;
+
+         /* An attrib var was found but was fractional so we dropped it. */
+         var = nir_variable_create(shader, nir_var_shader_in, NULL, NULL);
+         var->data.location = location;
+      }
+
+      unsigned format_dwords =
+         DIV_ROUND_UP(util_format_get_blocksize(format), sizeof(uint32_t));
+      var->type = glsl_uvec_type(format_dwords);
+
+      nir_def *input_comps[4];
+      for (unsigned c = 0; c < ARRAY_SIZE(input_comps); ++c) {
+         input_comps[c] = nir_load_input(&b,
+                                         1,
+                                         32,
+                                         nir_imm_int(&b, 0),
+                                         .range = 1,
+                                         .component = c,
+                                         .dest_type = nir_type_invalid | 32,
+                                         .io_semantics = (nir_io_semantics){
+                                            .location = location,
+                                            .num_slots = 1,
+                                         });
+      }
+
+      nir_def *input = nir_vec(&b, input_comps, ARRAY_SIZE(input_comps));
+      state.attribs[u] = unpack_from_format(&b, input, base_type, format);
+   }
+
+   nir_shader_lower_instructions(shader, is_pvi, lower_pvi, &state);
+
+   return true;
 }
 
 /**
