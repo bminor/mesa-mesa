@@ -196,6 +196,13 @@ is_intrinsic_load(nir_intrinsic_op op)
 
 uint32_t ir3_nir_max_imm_offset(nir_intrinsic_instr *intrin, const void *data);
 
+/* TODO: make this a common NIR helper?
+ * there is a nir_system_value_from_intrinsic but it takes nir_intrinsic_op so
+ * it can't be extended to work with this
+ */
+gl_system_value
+ir3_nir_intrinsic_barycentric_sysval(nir_intrinsic_instr *intr);
+
 ENDC;
 
 #endif /* IR3_NIR_H_ */

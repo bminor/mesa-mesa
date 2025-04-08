@@ -2216,47 +2216,11 @@ get_barycentric(struct ir3_context *ctx, enum ir3_bary bary)
    return ctx->ij[bary];
 }
 
-/* TODO: make this a common NIR helper?
- * there is a nir_system_value_from_intrinsic but it takes nir_intrinsic_op so
- * it can't be extended to work with this
- */
-static gl_system_value
-nir_intrinsic_barycentric_sysval(nir_intrinsic_instr *intr)
-{
-   enum glsl_interp_mode interp_mode = nir_intrinsic_interp_mode(intr);
-   gl_system_value sysval;
-
-   switch (intr->intrinsic) {
-   case nir_intrinsic_load_barycentric_pixel:
-      if (interp_mode == INTERP_MODE_NOPERSPECTIVE)
-         sysval = SYSTEM_VALUE_BARYCENTRIC_LINEAR_PIXEL;
-      else
-         sysval = SYSTEM_VALUE_BARYCENTRIC_PERSP_PIXEL;
-      break;
-   case nir_intrinsic_load_barycentric_centroid:
-      if (interp_mode == INTERP_MODE_NOPERSPECTIVE)
-         sysval = SYSTEM_VALUE_BARYCENTRIC_LINEAR_CENTROID;
-      else
-         sysval = SYSTEM_VALUE_BARYCENTRIC_PERSP_CENTROID;
-      break;
-   case nir_intrinsic_load_barycentric_sample:
-      if (interp_mode == INTERP_MODE_NOPERSPECTIVE)
-         sysval = SYSTEM_VALUE_BARYCENTRIC_LINEAR_SAMPLE;
-      else
-         sysval = SYSTEM_VALUE_BARYCENTRIC_PERSP_SAMPLE;
-      break;
-   default:
-      unreachable("invalid barycentric intrinsic");
-   }
-
-   return sysval;
-}
-
 static void
 emit_intrinsic_barycentric(struct ir3_context *ctx, nir_intrinsic_instr *intr,
                            struct ir3_instruction **dst)
 {
-   gl_system_value sysval = nir_intrinsic_barycentric_sysval(intr);
+   gl_system_value sysval = ir3_nir_intrinsic_barycentric_sysval(intr);
 
    if (!ctx->so->key.msaa && ctx->compiler->gen < 6) {
       switch (sysval) {
