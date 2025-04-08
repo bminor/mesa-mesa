@@ -90,3 +90,26 @@ dEQP-VK.api.version_check.unavailable_entry_points
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT
 
+# These tests attempt to read from the front buffer after a swap. They are skipped
+# on both X11 and gbm, but for different reasons:
+#
+# On X11: Given that we run piglit tests in parallel in Mesa CI, and don't have a
+# compositor running, the frontbuffer reads may end up with undefined results from
+# windows overlapping us.
+# Piglit does mark these tests as not to be run in parallel, but deqp-runner
+# doesn't respect that.  We need to extend deqp-runner to allow some tests to be
+# marked as single-threaded and run after the rayon loop if we want to support
+# them.
+# Other front-buffer access tests like fbo-sys-blit, fbo-sys-sub-blit, or
+# fcc-front-buffer-distraction don't appear here, because the DRI3 fake-front
+# handling should be holding the pixels drawn by the test even if we happen to fail
+# GL's window system pixel occlusion test.
+# Note that glx skips don't appear here, they're in all-skips.txt (in case someone
+# sets PIGLIT_PLATFORM=gbm to mostly use gbm, but still has an X server running).
+#
+# On gbm: gbm does not support reading the front buffer after a swapbuffers, and
+# that's intentional. Don't bother running these tests when PIGLIT_PLATFORM=gbm.
+# Note that this doesn't include tests like fbo-sys-blit, which draw/read front
+# but don't swap.
+spec@!opengl 1.0@gl-1.0-swapbuffers-behavior
+spec@!opengl 1.1@read-front

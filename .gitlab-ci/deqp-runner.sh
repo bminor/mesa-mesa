@@ -69,14 +69,6 @@ if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [[ $CI_JOB_NAME != *full* ]]
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GPU_VERSION-slow-skips.txt"
 fi
 
-if [ "$PIGLIT_PLATFORM" != "gbm" ] ; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/x11-skips.txt"
-fi
-
-if [ "$PIGLIT_PLATFORM" = "gbm" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/gbm-skips.txt"
-fi
-
 if [ -n "$ANGLE_TAG" ]; then
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/angle-skips.txt"
 fi
