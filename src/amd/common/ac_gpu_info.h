@@ -218,6 +218,7 @@ struct radeon_info {
 
    enum vcn_version vcn_ip_version;
    enum sdma_version sdma_ip_version;
+   enum rt_version rt_ip_version;
 
    /* Kernel & winsys capabilities. */
    uint32_t drm_major; /* version */

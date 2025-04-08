@@ -1719,6 +1719,13 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3 ||
                                        info->family == CHIP_GFX1013;
 
+   if (info->gfx_level >= GFX12)
+      info->rt_ip_version = RT_3_1;
+   else if (info->gfx_level >= GFX11)
+      info->rt_ip_version = RT_2_0;
+   else if (info->has_image_bvh_intersect_ray)
+      info->rt_ip_version = RT_1_1;
+
    set_custom_cu_en_mask(info);
 
    const char *ib_filename = debug_get_option("AMD_PARSE_IB", NULL);
