@@ -152,7 +152,6 @@ variables:
   variables:
     PIGLIT_REPLAY_DEVICE_NAME: "gl-${GPU_VERSION}"
     PIGLIT_RESULTS: "${GPU_VERSION}-replay"
-    HWCI_TEST_SCRIPT: "/install/piglit/piglit-runner.sh"
 
 .lava-piglit-traces:x86_64:
   extends:

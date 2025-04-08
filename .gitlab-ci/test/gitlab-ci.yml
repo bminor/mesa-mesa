@@ -200,7 +200,7 @@ yaml-toml-shell-py-test:
     DEVICE_HANGING_TIMEOUT_SEC: 600
     PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PUBLIC_BUCKET} --jwt-file=${S3_JWT_FILE}
     PIGLIT_NO_WINDOW: 1
-    HWCI_TEST_SCRIPT: "/install/piglit/piglit-runner.sh"
+    HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
   script:
     - section_start variables "Variables passed through:"
     - install/common/export-gitlab-job-env-for-dut.sh

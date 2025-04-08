@@ -289,7 +289,6 @@
   extends:
     - .piglit-traces-test
   variables:
-    HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     HWCI_START_XORG: 1
     PIGLIT_TRACES_FILE: traces-freedreno.yml
   artifacts:
