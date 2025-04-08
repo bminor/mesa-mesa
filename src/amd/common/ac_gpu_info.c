@@ -2501,8 +2501,38 @@ void ac_get_task_info(const struct radeon_info *info,
 {
    /* Size of each payload entry in the task payload ring.
     * Spec requires minimum 16K bytes.
+    *
+    * Add 256B to make consecutive payloads start on different memory channels to increase memory
+    * performance. (each 256B region maps to a different memory channel)
+    *
+    * Navi48 improvement from adding 256B to the payload entry size:
+    * (using https://github.com/zeux/niagara/discussions/41 at commit 745700c)
+    *
+    *    With cluster culling (press K):
+    *               |FPS for 16K        |FPS for 16K+256    |
+    *    num_entries|(payload ring size)|(payload ring size)|diff for +256
+    *    -----------|-------------------|-------------------|-------------
+    *    1K         | 582 (16 MB)       | 582 (17 MB)       | +0%
+    *    2K         | 587 (32 MB)       | 591 (33 MB)       | +0.7%
+    *    4K         | 608 (64 MB)       | 611 (65 MB)       | +0.5%
+    *    8K         | 653 (128 MB)      | 660 (130 MB)      | +1.1%
+    *    16K        | 765 (256 MB)      | 789 (260 MB)      | +3.1%
+    *    32K        | 880 (512 MB)      | 984 (520 MB)      | +11.8%
+    *    64K        | 874 (1024 MB)     | 970 (1040 MB)     | +11%
+    *
+    *    Without cluster culling (don't press K):
+    *    num_entries|FPS for 16K        |FPS for 16K+256    |diff for +256
+    *    -----------|-------------------|-------------------|-------------
+    *    1K         | 578               | 578               | +0%
+    *    2K         | 578               | 578               | +0%
+    *    4K         | 574               | 578               | +0.7%
+    *    8K         | 573               | 578               | +0.9%
+    *    16K        | 565               | 579               | +2.4%
+    *    32K        | 550               | 574               | +4.3%
+    *    64K        | 550               | 574               | +4.3%
+    *    # Adding 256 mitigates the performance loss from increasing num_entries.
     */
-   const uint32_t payload_entry_size = 16384;
+   const uint32_t payload_entry_size = 16384 + 256;
    const uint16_t num_entries = get_task_num_entries(info->family);
    const uint32_t draw_ring_bytes = num_entries * AC_TASK_DRAW_ENTRY_BYTES;
    const uint32_t payload_ring_bytes = num_entries * payload_entry_size;
