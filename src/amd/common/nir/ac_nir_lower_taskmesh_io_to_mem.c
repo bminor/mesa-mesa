@@ -191,7 +191,7 @@ lower_task_launch_mesh_workgroups(nir_builder *b,
       /* When either Y or Z are 0, also set X to 0.
        * Not necessary, but speeds up the job of the CP.
        */
-      x = nir_bcsel(b, nir_ieq_imm(b, nir_ior(b, y, z), 0), nir_imm_int(b, 0), x);
+      x = nir_bcsel(b, nir_ior(b, nir_ieq_imm(b, y, 0), nir_ieq_imm(b, z, 0)), nir_imm_int(b, 0), x);
 
       /* Dispatch dimensions of mesh shader workgroups. */
       task_write_draw_ring(b, nir_vec3(b, x, y, z), 0, s);
