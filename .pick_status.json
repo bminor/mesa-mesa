@@ -2414,7 +2414,7 @@
         "description": "panfrost: don't overwrite push uniforms and sysvals UBO with user's UBO",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b3cd59fb85b5b200acce45f950869eb9d7b69a6",
         "notes": null
