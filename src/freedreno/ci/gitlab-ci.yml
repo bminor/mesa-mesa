@@ -90,7 +90,7 @@ a530-piglit:
 
 a618-angle:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .collabora-turnip-manual-rules
     - .test-angle
@@ -99,7 +99,7 @@ a618-angle:
 
 a618-vk:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-vk
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .collabora-turnip-rules
   parallel: 9
@@ -125,7 +125,7 @@ a618-vk-full:
 
 .a618-gl:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
     - .collabora-freedreno-rules
   variables:
@@ -145,7 +145,7 @@ a618-gl-full:
 # X11 takes over the screen, wayland is run headless.
 .a618-egl:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
     - .collabora-freedreno-rules
   variables:
@@ -156,7 +156,7 @@ a618-gl-full:
 
 a618-skqp:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .collabora-freedreno-rules
     # SKQP tests both the GL and VK drivers.
@@ -168,7 +168,7 @@ a618-skqp:
 
 .a618-piglit:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
     - .test-piglit
     # Note that piglit has GL+VK integration testing.
@@ -181,7 +181,7 @@ a618-skqp:
 
 a618-piglit-full:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .test-piglit
     # Note that piglit has GL+VK integration testing.
@@ -194,7 +194,7 @@ a618-piglit-full:
 
 a618-piglit-cl:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
     - .test-piglit
     - .collabora-freedreno-rules
@@ -239,7 +239,7 @@ a618-traces-performance:
 
 a660-angle:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sm8350-hdk:arm64
     - .collabora-turnip-manual-rules
     - .test-angle
@@ -248,7 +248,7 @@ a660-angle:
 
 a660-piglit-cl:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lava-sm8350-hdk:arm64
     - .test-piglit
     - .collabora-freedreno-rules
@@ -261,7 +261,7 @@ a660-piglit-cl:
 
 a660-gl:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .collabora-freedreno-rules
     - .lava-sm8350-hdk:arm64
   parallel: 2
@@ -279,7 +279,7 @@ a660-gl-full:
 
 a660-vk:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-vk
     - .collabora-turnip-rules
     - .lava-sm8350-hdk:arm64
   parallel: 5
