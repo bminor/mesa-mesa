@@ -149,6 +149,18 @@ vk_zalloc2(const VkAllocationCallbacks *parent_alloc,
    return mem;
 }
 
+static inline void *
+vk_realloc2(const VkAllocationCallbacks *parent_alloc,
+            const VkAllocationCallbacks *alloc,
+            void *ptr, size_t size, size_t align,
+            VkSystemAllocationScope scope)
+{
+   if (alloc)
+      return vk_realloc(alloc, ptr, size, align, scope);
+   else
+      return vk_realloc(parent_alloc, ptr, size, align, scope);
+}
+
 static inline void
 vk_free2(const VkAllocationCallbacks *parent_alloc,
          const VkAllocationCallbacks *alloc,
