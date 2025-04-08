@@ -168,7 +168,8 @@ jm_submit_jc(struct panfrost_batch *batch, uint64_t first_job_desc,
    if (ctx->is_noop)
       ret = 0;
    else
-      ret = drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANFROST_SUBMIT, &submit);
+      ret = pan_kmod_ioctl(panfrost_device_fd(dev), DRM_IOCTL_PANFROST_SUBMIT,
+                           &submit);
    free(bo_handles);
 
    if (ret)

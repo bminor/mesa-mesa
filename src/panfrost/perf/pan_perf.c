@@ -115,8 +115,8 @@ static int
 panfrost_perf_query(struct panfrost_perf *perf, uint32_t enable)
 {
    struct drm_panfrost_perfcnt_enable perfcnt_enable = {enable, 0};
-   return drmIoctl(perf->dev->fd, DRM_IOCTL_PANFROST_PERFCNT_ENABLE,
-                   &perfcnt_enable);
+   return pan_kmod_ioctl(perf->dev->fd, DRM_IOCTL_PANFROST_PERFCNT_ENABLE,
+                         &perfcnt_enable);
 }
 
 int
@@ -138,6 +138,6 @@ panfrost_perf_dump(struct panfrost_perf *perf)
    // counter_values
    struct drm_panfrost_perfcnt_dump perfcnt_dump = {
       (uint64_t)(uintptr_t)perf->counter_values};
-   return drmIoctl(perf->dev->fd, DRM_IOCTL_PANFROST_PERFCNT_DUMP,
-                   &perfcnt_dump);
+   return pan_kmod_ioctl(perf->dev->fd, DRM_IOCTL_PANFROST_PERFCNT_DUMP,
+                         &perfcnt_dump);
 }

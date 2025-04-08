@@ -324,8 +324,8 @@ csf_submit_gsubmit(struct panfrost_context *ctx,
    int ret = 0;
 
    if (!ctx->is_noop) {
-      ret = drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_SUBMIT,
-                     gsubmit);
+      ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                           DRM_IOCTL_PANTHOR_GROUP_SUBMIT, gsubmit);
    }
 
    if (ret)
@@ -523,8 +523,8 @@ csf_check_ctx_state_and_reinit(struct panfrost_context *ctx)
    };
    int ret;
 
-   ret = drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_GET_STATE,
-                  &state);
+   ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                        DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
    if (ret) {
       mesa_loge("DRM_IOCTL_PANTHOR_GROUP_GET_STATE failed (err=%d)", errno);
       return;
@@ -1422,7 +1422,8 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    };
 
    int ret =
-      drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_CREATE, &gc);
+      pan_kmod_ioctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_CREATE,
+                     &gc);
 
    if (ret)
       goto err_group_create;
@@ -1442,8 +1443,8 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
       .max_chunks = pan_screen(ctx->base.screen)->csf_tiler_heap.max_chunks,
       .target_in_flight = 65535,
    };
-   ret = drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE,
-                  &thc);
+   ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                        DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE, &thc);
 
    if (ret)
       goto err_tiler_heap;
@@ -1551,10 +1552,11 @@ err_tiler_heap_cs_bo:
 err_tiler_heap_tmp_geom_bo:
    panfrost_bo_unreference(ctx->csf.heap.desc_bo);
 err_tiler_heap_desc_bo:
-   drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY,
-            &thd);
+   pan_kmod_ioctl(panfrost_device_fd(dev),
+                  DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
 err_tiler_heap:
-   drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
+   pan_kmod_ioctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_DESTROY,
+                  &gd);
 err_group_create:
    return -1;
 }
@@ -1576,8 +1578,8 @@ GENX(csf_cleanup_context)(struct panfrost_context *ctx)
                         NULL);
    assert(!ret);
 
-   ret = drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY,
-                  &thd);
+   ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                        DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
    assert(!ret);
 
    struct drm_panthor_group_destroy gd = {
@@ -1585,7 +1587,8 @@ GENX(csf_cleanup_context)(struct panfrost_context *ctx)
    };
 
    ret =
-      drmIoctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
+      pan_kmod_ioctl(panfrost_device_fd(dev), DRM_IOCTL_PANTHOR_GROUP_DESTROY,
+                     &gd);
    assert(!ret);
 
    panfrost_bo_unreference(ctx->csf.tmp_geom_bo);

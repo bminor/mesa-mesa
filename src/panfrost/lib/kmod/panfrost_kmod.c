@@ -83,7 +83,7 @@ panfrost_query_raw(int fd, enum drm_panfrost_param param, bool required,
    ASSERTED int ret;
 
    get_param.param = param;
-   ret = drmIoctl(fd, DRM_IOCTL_PANFROST_GET_PARAM, &get_param);
+   ret = pan_kmod_ioctl(fd, DRM_IOCTL_PANFROST_GET_PARAM, &get_param);
 
    if (ret) {
       assert(!required);
@@ -251,7 +251,7 @@ panfrost_kmod_bo_alloc(struct pan_kmod_dev *dev,
       .flags = to_panfrost_bo_flags(dev, flags),
    };
 
-   int ret = drmIoctl(dev->fd, DRM_IOCTL_PANFROST_CREATE_BO, &req);
+   int ret = pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANFROST_CREATE_BO, &req);
    if (ret) {
       mesa_loge("DRM_IOCTL_PANFROST_CREATE_BO failed (err=%d)", errno);
       goto err_free_bo;
@@ -286,7 +286,8 @@ panfrost_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, size_t size,
 
    struct drm_panfrost_get_bo_offset get_bo_offset = {.handle = handle, 0};
    int ret =
-      drmIoctl(dev->fd, DRM_IOCTL_PANFROST_GET_BO_OFFSET, &get_bo_offset);
+      pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANFROST_GET_BO_OFFSET,
+                     &get_bo_offset);
    if (ret) {
       mesa_loge("DRM_IOCTL_PANFROST_GET_BO_OFFSET failed (err=%d)", errno);
       goto err_free_bo;
@@ -307,7 +308,8 @@ static off_t
 panfrost_kmod_bo_get_mmap_offset(struct pan_kmod_bo *bo)
 {
    struct drm_panfrost_mmap_bo mmap_bo = {.handle = bo->handle};
-   int ret = drmIoctl(bo->dev->fd, DRM_IOCTL_PANFROST_MMAP_BO, &mmap_bo);
+   int ret = pan_kmod_ioctl(bo->dev->fd, DRM_IOCTL_PANFROST_MMAP_BO,
+                            &mmap_bo);
    if (ret) {
       fprintf(stderr, "DRM_IOCTL_PANFROST_MMAP_BO failed: %m\n");
       assert(0);
@@ -328,7 +330,7 @@ panfrost_kmod_bo_wait(struct pan_kmod_bo *bo, int64_t timeout_ns,
    /* The ioctl returns >= 0 value when the BO we are waiting for is ready
     * -1 otherwise.
     */
-   if (drmIoctl(bo->dev->fd, DRM_IOCTL_PANFROST_WAIT_BO, &req) != -1)
+   if (pan_kmod_ioctl(bo->dev->fd, DRM_IOCTL_PANFROST_WAIT_BO, &req) != -1)
       return true;
 
    assert(errno == ETIMEDOUT || errno == EBUSY);
@@ -343,7 +345,7 @@ panfrost_kmod_bo_make_evictable(struct pan_kmod_bo *bo)
       .madv = PANFROST_MADV_DONTNEED,
    };
 
-   drmIoctl(bo->dev->fd, DRM_IOCTL_PANFROST_MADVISE, &req);
+   pan_kmod_ioctl(bo->dev->fd, DRM_IOCTL_PANFROST_MADVISE, &req);
 }
 
 static bool
@@ -354,7 +356,7 @@ panfrost_kmod_bo_make_unevictable(struct pan_kmod_bo *bo)
       .madv = PANFROST_MADV_WILLNEED,
    };
 
-   if (drmIoctl(bo->dev->fd, DRM_IOCTL_PANFROST_MADVISE, &req) == 0 &&
+   if (pan_kmod_ioctl(bo->dev->fd, DRM_IOCTL_PANFROST_MADVISE, &req) == 0 &&
        req.retained == 0)
       return false;
 

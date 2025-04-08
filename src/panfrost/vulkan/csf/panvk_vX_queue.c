@@ -463,7 +463,8 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       .queue_submits = DRM_PANTHOR_OBJ_ARRAY(1, &qsubmit),
    };
 
-   int ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
+   int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT,
+                            &gsubmit);
    if (ret)
       return panvk_errorf(dev->vk.physical, VK_ERROR_INITIALIZATION_FAILED,
                           "Failed to initialized subqueue: %m");
@@ -609,7 +610,7 @@ create_group(struct panvk_queue *queue,
       .vm_id = pan_kmod_vm_handle(dev->kmod.vm),
    };
 
-   int ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_CREATE, &gc);
+   int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_CREATE, &gc);
    if (ret)
       return panvk_errorf(dev, VK_ERROR_INITIALIZATION_FAILED,
                           "Failed to create a scheduling group");
@@ -627,7 +628,7 @@ destroy_group(struct panvk_queue *queue)
    };
 
    ASSERTED int ret =
-      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
+      pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_DESTROY, &gd);
    assert(!ret);
 }
 
@@ -663,8 +664,8 @@ init_tiler(struct panvk_queue *queue)
       .target_in_flight = 65535,
    };
 
-   int ret =
-      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE, &thc);
+   int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_CREATE,
+                            &thc);
    if (ret) {
       result = panvk_errorf(dev, VK_ERROR_INITIALIZATION_FAILED,
                             "Failed to create a tiler heap context");
@@ -698,7 +699,7 @@ cleanup_tiler(struct panvk_queue *queue)
       .handle = tiler_heap->context.handle,
    };
    ASSERTED int ret =
-      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
+      pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_TILER_HEAP_DESTROY, &thd);
    assert(!ret);
 
    panvk_pool_free_mem(&tiler_heap->desc);
@@ -1056,7 +1057,7 @@ panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
          DRM_PANTHOR_OBJ_ARRAY(submit->qsubmit_count, submit->qsubmits),
    };
 
-   ret = drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
+   ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
    if (ret)
       return vk_queue_set_lost(&queue->vk, "GROUP_SUBMIT: %m");
 
@@ -1298,8 +1299,8 @@ panvk_per_arch(queue_check_status)(struct panvk_queue *queue)
       .group_handle = queue->group_handle,
    };
 
-   int ret =
-      drmIoctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
+   int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE,
+                            &state);
    if (!ret && !state.state)
       return VK_SUCCESS;
 
