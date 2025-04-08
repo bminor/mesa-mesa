@@ -928,6 +928,8 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
       struct panvk_cmd_buffer *cmdbuf = container_of(
          vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
 
+      uint32_t flush_id = panthor_kmod_get_flush_id(dev->kmod.dev);
+
       for (uint32_t j = 0; j < ARRAY_SIZE(cmdbuf->state.cs); j++) {
          struct cs_builder *b = panvk_get_cs_builder(cmdbuf, j);
          if (cs_is_empty(b))
@@ -938,9 +940,12 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
                .queue_index = j,
                .stream_size = cs_root_chunk_size(b),
                .stream_addr = cs_root_chunk_gpu_addr(b),
-               .latest_flush = panthor_kmod_get_flush_id(dev->kmod.dev),
+               .latest_flush = flush_id,
             };
       }
+
+      if (util_bitcount(submit->utrace.queue_mask) > 0)
+         flush_id = panthor_kmod_get_flush_id(dev->kmod.dev);
 
       u_foreach_bit(j, submit->utrace.queue_mask) {
          struct u_trace *ut = &cmdbuf->utrace.uts[j];
@@ -971,7 +976,7 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
                   .queue_index = j,
                   .stream_size = cs_root_chunk_size(&clone_builder),
                   .stream_addr = cs_root_chunk_gpu_addr(&clone_builder),
-                  .latest_flush = panthor_kmod_get_flush_id(dev->kmod.dev),
+                  .latest_flush = flush_id,
                };
 
             ut = &clone_ut;
