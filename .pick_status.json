@@ -174,7 +174,7 @@
         "description": "ac/surface: select 3D tile mode without overallocating too much for gfx6-8",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c87ce78d1013a52a78a05470ca33fd8597d3f289",
         "notes": null
