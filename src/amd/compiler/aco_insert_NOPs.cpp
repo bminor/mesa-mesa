@@ -1688,7 +1688,8 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
 
    /* WMMA Hazards */
    if (instr_info.classes[(int)instr->opcode] == instr_class::wmma) {
-      assert(instr->operands.back().regClass() == instr->definitions[0].regClass());
+      assert(instr->operands.back().isConstant() ||
+             instr->operands.back().regClass() == instr->definitions[0].regClass());
 
       bool is_swmma = instr->operands.size() == 4;
       if (test_vgpr_bitset(ctx.vgpr_written_by_wmma, instr->operands[0]) ||
