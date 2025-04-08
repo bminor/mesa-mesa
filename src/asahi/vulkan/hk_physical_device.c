@@ -615,6 +615,14 @@ hk_get_device_properties(const struct agx_device *dev,
    uint64_t os_page_size = 16384;
    os_get_page_size(&os_page_size);
 
+   /* The hardware limit is 128. However, we need to set a lower limit to
+    * account for duplicated system values: clip/cull and viewport targets.
+    * There are up to 8 combined clip/cull planes and only 1 viewport target,
+    * giving a theoretical limit of 119. We round down to 116 to give a sensible
+    * limit in vec4s.
+    */
+   unsigned max_vgt_output_components = 116;
+
    *properties = (struct vk_properties){
       .apiVersion = hk_get_vk_version(),
       .driverVersion = vk_get_driver_version(),
@@ -666,13 +674,10 @@ hk_get_device_properties(const struct agx_device *dev,
       .maxVertexInputAttributeOffset = 65535,
       .maxVertexInputBindingStride = 2048,
 
-      /* Hardware limit is 128 but we need to reserve some for internal purposes
-       * (like cull distance emulation). Set 96 to be safe.
-       */
-      .maxVertexOutputComponents = 96,
+      .maxVertexOutputComponents = max_vgt_output_components,
       .maxGeometryShaderInvocations = 32,
       .maxGeometryInputComponents = 128,
-      .maxGeometryOutputComponents = 128,
+      .maxGeometryOutputComponents = max_vgt_output_components,
       .maxGeometryOutputVertices = 1024,
       .maxGeometryTotalOutputComponents = 1024,
       .maxTessellationGenerationLevel = 64,
@@ -682,10 +687,10 @@ hk_get_device_properties(const struct agx_device *dev,
       .maxTessellationControlPerPatchOutputComponents = 120,
       .maxTessellationControlTotalOutputComponents = 4216,
       .maxTessellationEvaluationInputComponents = 128,
-      .maxTessellationEvaluationOutputComponents = 128,
+      .maxTessellationEvaluationOutputComponents = max_vgt_output_components,
 
       /* Set to match maxVertexOutputComponents, hardware limit is higher. */
-      .maxFragmentInputComponents = 96,
+      .maxFragmentInputComponents = max_vgt_output_components,
       .maxFragmentOutputAttachments = HK_MAX_RTS,
       .maxFragmentDualSrcAttachments = 1,
       .maxFragmentCombinedOutputResources = 16,
