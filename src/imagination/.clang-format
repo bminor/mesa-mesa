@@ -240,6 +240,7 @@ ForEachMacros: [
   'nir_foreach_use',
   'nir_foreach_use_safe',
   'nir_foreach_variable_with_modes',
+  'nir_foreach_variable_with_modes_safe',
   'pco_foreach_block_in_func',
   'pco_foreach_block_in_func_from',
   'pco_foreach_block_in_func_from_rev',

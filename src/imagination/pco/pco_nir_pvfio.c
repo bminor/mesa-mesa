@@ -1253,9 +1253,21 @@ static nir_def *lower_pvi(nir_builder *b, nir_instr *instr, void *cb_data)
    if (output->num_components > intr->def.num_components)
       output = nir_trim_vector(b, output, intr->def.num_components);
 
-   /* Update the type of the stored variable. */
-   nir_variable *var =
-      nir_find_variable_with_location(b->shader, nir_var_shader_in, location);
+   /* Update the type of the stored variable, remove any fractional vars. */
+   nir_variable *var = NULL;
+   nir_foreach_variable_with_modes_safe (iter_var,
+                                         b->shader,
+                                         nir_var_shader_in) {
+      if (iter_var->data.location != location)
+         continue;
+
+      if (!iter_var->data.location_frac) {
+         var = iter_var;
+         continue;
+      }
+
+      exec_node_remove(&iter_var->node);
+   }
    assert(var);
 
    unsigned format_dwords =

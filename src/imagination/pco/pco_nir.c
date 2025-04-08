@@ -58,6 +58,8 @@ static const nir_shader_compiler_options nir_options = {
    .scalarize_ddx = true,
 
    .max_unroll_iterations = 16,
+
+   .io_options = nir_io_vectorizer_ignores_types,
 };
 
 /**
@@ -760,13 +762,14 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             glsl_type_size,
             nir_lower_io_lower_64bit_to_32);
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
-      NIR_PASS(_, nir, nir_copy_prop);
-      NIR_PASS(_, nir, nir_opt_dce);
-      NIR_PASS(_, nir, nir_opt_cse);
-      NIR_PASS(_, nir, nir_opt_vectorize_io, nir_var_shader_out, false);
-   }
+   nir_variable_mode vec_modes = nir->info.stage == MESA_SHADER_FRAGMENT
+                                    ? nir_var_shader_out
+                                    : nir_var_shader_in;
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, vec_modes, NULL, NULL);
+   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_cse);
+   NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes, false);
 
    NIR_PASS(_, nir, nir_opt_dce);
    NIR_PASS(_, nir, nir_opt_constant_folding);
@@ -865,13 +868,12 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
       NIR_PASS(_, nir, nir_opt_cse);
    } while (progress);
 
-   nir_variable_mode vec_modes = nir_var_shader_in;
+   vec_modes = nir_var_shader_in;
    /* Fragment shader needs scalar writes after pfo. */
    if (nir->info.stage != MESA_SHADER_FRAGMENT)
       vec_modes |= nir_var_shader_out;
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes, false);
+   NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes, false);
 
    /* Special case for frag coords:
     * - x,y come from (non-consecutive) special regs - always scalar.
