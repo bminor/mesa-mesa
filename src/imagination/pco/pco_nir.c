@@ -551,6 +551,16 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_function_temp | nir_var_shader_temp,
             NULL);
 
+   NIR_PASS(_,
+            nir,
+            nir_io_add_const_offset_to_base,
+            nir_var_shader_in | nir_var_shader_out);
+
+   NIR_PASS(_,
+            nir,
+            nir_lower_io_array_vars_to_elements_no_indirects,
+            nir->info.stage == MESA_SHADER_VERTEX);
+
    pco_nir_opt(ctx, nir);
 
    if (pco_should_print_nir(nir)) {
