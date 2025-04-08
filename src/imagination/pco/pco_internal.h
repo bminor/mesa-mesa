@@ -1700,7 +1700,7 @@ bool pco_nir_lower_clip_cull_vars(nir_shader *shader);
 bool pco_nir_lower_fs_intrinsics(nir_shader *shader);
 bool pco_nir_lower_images(nir_shader *shader, pco_data *data);
 bool pco_nir_lower_io(nir_shader *shader);
-bool pco_nir_lower_tex(nir_shader *shader);
+bool pco_nir_lower_tex(nir_shader *shader, pco_data *data);
 bool pco_nir_lower_variables(nir_shader *shader, bool inputs, bool outputs);
 bool pco_nir_lower_vk(nir_shader *shader, pco_data *data);
 bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs);

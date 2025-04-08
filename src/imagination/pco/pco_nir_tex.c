@@ -461,10 +461,10 @@ static nir_def *lower_tex_shadow(nir_builder *b,
  * \param[in] cb_data User callback data.
  * \return The replacement/lowered def.
  */
-static nir_def *
-lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    nir_tex_instr *tex = nir_instr_as_tex(instr);
+   pco_data *data = cb_data;
 
    unsigned tex_desc_set;
    unsigned tex_binding;
@@ -531,6 +531,7 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 
    bool is_cube_array = tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
                         tex->is_array;
+   bool is_2d_view_of_3d = false;
 
    /* Special case, override buffers to be 2D. */
    if ((tex->op == nir_texop_txf || tex->op == nir_texop_txf_ms) &&
@@ -543,6 +544,28 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
          nir_vec2(b,
                   nir_umod_imm(b, tex_srcs[nir_tex_src_coord], 8192),
                   nir_udiv_imm(b, tex_srcs[nir_tex_src_coord], 8192));
+   } else if (data->common.image_2d_view_of_3d && tex->op != nir_texop_lod &&
+              tex->sampler_dim == GLSL_SAMPLER_DIM_2D && !tex->is_array) {
+      tex->sampler_dim = GLSL_SAMPLER_DIM_3D;
+      params.sampler_dim = tex->sampler_dim;
+
+      nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                PCO_IMAGE_META_COUNT,
+                                                tex_elem,
+                                                .desc_set = tex_desc_set,
+                                                .binding = tex_binding);
+
+      nir_def *z_slice = nir_channel(b, tex_meta, PCO_IMAGE_META_Z_SLICE);
+
+      if (tex_src_is_float(tex, nir_tex_src_coord))
+         z_slice = nir_i2f32(b, z_slice);
+
+      tex_srcs[nir_tex_src_coord] =
+         nir_pad_vector(b, tex_srcs[nir_tex_src_coord], 3);
+      tex_srcs[nir_tex_src_coord] =
+         nir_vector_insert_imm(b, tex_srcs[nir_tex_src_coord], z_slice, 2);
+
+      is_2d_view_of_3d = true;
    }
 
    nir_def *float_coords;
@@ -604,6 +627,16 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
       params.lod_ddx = tex_srcs[nir_tex_src_ddx];
       params.lod_ddy = tex_srcs[nir_tex_src_ddy];
 
+      if (is_2d_view_of_3d) {
+         params.lod_ddx = nir_pad_vector(b, params.lod_ddx, 3);
+         params.lod_ddx =
+            nir_vector_insert_imm(b, params.lod_ddx, nir_imm_int(b, 0), 2);
+
+         params.lod_ddy = nir_pad_vector(b, params.lod_ddy, 3);
+         params.lod_ddy =
+            nir_vector_insert_imm(b, params.lod_ddy, nir_imm_int(b, 0), 2);
+      }
+
       lod_set = true;
       BITSET_CLEAR(tex_src_set, nir_tex_src_ddx);
       BITSET_CLEAR(tex_src_set, nir_tex_src_ddy);
@@ -612,6 +645,11 @@ lower_tex(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    if (tex->op == nir_texop_tg4) {
       assert(!lod_set);
       params.lod_replace = nir_imm_int(b, 0);
+      lod_set = true;
+   }
+
+   if (!lod_set && is_2d_view_of_3d) {
+      params.lod_bias = nir_imm_int(b, 0);
       lod_set = true;
    }
 
@@ -744,11 +782,12 @@ static bool is_tex(const nir_instr *instr, UNUSED const void *cb_data)
  * \brief Texture lowering pass.
  *
  * \param[in,out] shader NIR shader.
+ * \param[in,out] data Shader data.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_tex(nir_shader *shader)
+bool pco_nir_lower_tex(nir_shader *shader, pco_data *data)
 {
-   return nir_shader_lower_instructions(shader, is_tex, lower_tex, NULL);
+   return nir_shader_lower_instructions(shader, is_tex, lower_tex, data);
 }
 
 static enum util_format_type nir_type_to_util_type(nir_alu_type nir_type)

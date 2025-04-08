@@ -277,7 +277,8 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_image_2d_view_of_3d */
       .image2DViewOf3D = true,
-      .sampler2DViewOf3D = false,
+      .sampler2DViewOf3D = true,
+
       /* Vulkan 1.3 / VK_EXT_private_data */
       .privateData = true,
 
