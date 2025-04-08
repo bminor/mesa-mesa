@@ -382,12 +382,8 @@ struct ac_task_info {
    uint32_t payload_ring_offset;
    uint32_t bo_size_bytes;
    uint16_t num_entries;
+   uint32_t payload_entry_size;
 };
-
-/* Size of each payload entry in the task payload ring.
- * Spec requires minimum 16K bytes.
- */
-#define AC_TASK_PAYLOAD_ENTRY_BYTES 16384
 
 /* Size of each draw entry in the task draw ring.
  * 4 DWORDs per entry.

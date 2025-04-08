@@ -2499,11 +2499,16 @@ static uint16_t get_task_num_entries(enum radeon_family fam)
 void ac_get_task_info(const struct radeon_info *info,
                       struct ac_task_info *task_info)
 {
+   /* Size of each payload entry in the task payload ring.
+    * Spec requires minimum 16K bytes.
+    */
+   const uint32_t payload_entry_size = 16384;
    const uint16_t num_entries = get_task_num_entries(info->family);
    const uint32_t draw_ring_bytes = num_entries * AC_TASK_DRAW_ENTRY_BYTES;
-   const uint32_t payload_ring_bytes = num_entries * AC_TASK_PAYLOAD_ENTRY_BYTES;
+   const uint32_t payload_ring_bytes = num_entries * payload_entry_size;
 
    /* Ensure that the addresses of each ring are 256 byte aligned. */
+   task_info->payload_entry_size = payload_entry_size;
    task_info->num_entries = num_entries;
    task_info->draw_ring_offset = ALIGN(AC_TASK_CTRLBUF_BYTES, 256);
    task_info->payload_ring_offset = ALIGN(task_info->draw_ring_offset + draw_ring_bytes, 256);

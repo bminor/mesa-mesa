@@ -326,7 +326,7 @@ radv_fill_shader_rings(struct radv_device *device, uint32_t *desc, struct radeon
                            pdev->task_info.num_entries * AC_TASK_DRAW_ENTRY_BYTES, false, false, false, 0, 0, &desc[0]);
 
       radv_set_ring_buffer(pdev, task_rings_bo, pdev->task_info.payload_ring_offset,
-                           pdev->task_info.num_entries * AC_TASK_PAYLOAD_ENTRY_BYTES, false, false, false, 0, 0,
+                           pdev->task_info.num_entries * pdev->task_info.payload_entry_size, false, false, false, 0, 0,
                            &desc[4]);
    }
 
