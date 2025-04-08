@@ -879,6 +879,7 @@ struct ir3_shader_variant {
    /* texture sampler pre-dispatches */
    uint32_t num_sampler_prefetch;
    struct ir3_sampler_prefetch sampler_prefetch[IR3_MAX_SAMPLER_PREFETCH];
+   enum ir3_bary prefetch_bary_type;
 
    /* If true, the last use of helper invocations is the texture prefetch and
     * they should be disabled for the actual shader. Equivalent to adding
