@@ -2177,7 +2177,7 @@ emit_pixel_interpolater_alu_at_offset(const brw_builder &bld,
 
    /* Account for half-pixel X/Y coordinate offset. */
    const brw_reg off_x = bld.vgrf(BRW_TYPE_F);
-   bld.ADD(off_x, offs, brw_imm_f(0.5));
+   bld.ADD(off_x, offset(offs, bld, 0), brw_imm_f(0.5));
 
    const brw_reg off_y = bld.vgrf(BRW_TYPE_F);
    bld.ADD(off_y, offset(offs, bld, 1), brw_imm_f(0.5));

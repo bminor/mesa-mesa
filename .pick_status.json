@@ -204,7 +204,7 @@
         "description": "brw/nir: Use offset() for all uses of offs in emit_pixel_interpolater_alu_at_offset",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "38b58e286fa5b972a43fd43cb01151ce112c10cc",
         "notes": null
