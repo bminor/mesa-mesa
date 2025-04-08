@@ -1250,10 +1250,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    device->disable_trunc_coord = instance->drirc.disable_trunc_coord;
 
    if (instance->vk.app_info.engine_name && !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
-      /* For DXVK 2.3.0 and older, use dualSrcBlend to determine if this is D3D9. */
-      bool is_d3d9 = !device->vk.enabled_features.dualSrcBlend;
-      if (instance->vk.app_info.engine_version > VK_MAKE_VERSION(2, 3, 0))
-         is_d3d9 = instance->vk.app_info.app_version & 0x1;
+      /* Since 2.3.1+, DXVK uses the application version to notice the driver about D3D9. */
+      const bool is_d3d9 = instance->vk.app_info.app_version & 0x1;
 
       device->disable_trunc_coord &= !is_d3d9;
    }
