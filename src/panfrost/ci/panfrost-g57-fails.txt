@@ -299,7 +299,7 @@ spec@ext_clear_texture@ext_clear_texture-base-formats,Fail
 spec@ext_disjoint_timer_query@simple,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 spec@ext_timer_query@time-elapsed,Fail
-spec@ext_transform_feedback@max-varyings,Crash
+spec@ext_transform_feedback@max-varyings,Fail
 spec@ext_transform_feedback@max-varyings@max-varying-single-dimension-array,Fail
 spec@glsl-1.30@execution@tex-miplevel-selection texturegrad 1d,Fail
 spec@glsl-1.30@execution@tex-miplevel-selection texturegrad 1darray,Fail
