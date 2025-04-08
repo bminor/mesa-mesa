@@ -1570,35 +1570,6 @@ static void try_allocate_var(pco_range *allocation_list,
    allocate_var(allocation_list, counter, var, dwords_each);
 }
 
-static void try_allocate_vars(pco_range *allocation_list,
-                              unsigned *counter,
-                              nir_shader *nir,
-                              uint64_t *bitset,
-                              nir_variable_mode mode,
-                              bool f16,
-                              enum glsl_interp_mode interp_mode,
-                              unsigned dwords_each)
-{
-   uint64_t skipped = 0;
-
-   while (*bitset) {
-      int location = u_bit_scan64(bitset);
-
-      nir_variable *var = nir_find_variable_with_location(nir, mode, location);
-      assert(var);
-
-      if (glsl_type_is_16bit(glsl_without_array_or_matrix(var->type)) != f16 ||
-          var->data.interpolation != interp_mode) {
-         skipped |= BITFIELD64_BIT(location);
-         continue;
-      }
-
-      allocate_var(allocation_list, counter, var, dwords_each);
-   }
-
-   *bitset |= skipped;
-}
-
 static void allocate_val(pco_range *allocation_list,
                          unsigned *counter,
                          unsigned location,
@@ -1610,6 +1581,46 @@ static void allocate_val(pco_range *allocation_list,
    };
 
    *counter += dwords_each;
+}
+
+static void try_allocate_vars(pco_range *allocation_list,
+                              unsigned *counter,
+                              nir_shader *nir,
+                              uint64_t *bitset,
+                              nir_variable_mode mode,
+                              bool any,
+                              bool f16,
+                              enum glsl_interp_mode interp_mode,
+                              unsigned dwords_each)
+{
+   uint64_t skipped = 0;
+
+   while (*bitset) {
+      int location = u_bit_scan64(bitset);
+      unsigned accum = 0;
+
+      nir_foreach_variable_with_modes (var, nir, mode) {
+         if (var->data.location != location)
+            continue;
+
+         if (!any && (glsl_type_is_16bit(
+                         glsl_without_array_or_matrix(var->type)) != f16 ||
+                      var->data.interpolation != interp_mode)) {
+            skipped |= BITFIELD64_BIT(location);
+            break;
+         }
+
+         accum += glsl_count_dword_slots(var->type, false);
+      }
+
+      if (skipped & BITFIELD64_BIT(location))
+         continue;
+
+      accum *= dwords_each;
+      allocate_val(allocation_list, counter, location, accum);
+   }
+
+   *bitset |= skipped;
 }
 
 static void pvr_alloc_vs_sysvals(pco_data *data, nir_shader *nir)
@@ -1679,10 +1690,11 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
                     1);
 
    /* Save varying counts. */
-   u_foreach_bit64 (location, vars_mask) {
-      nir_variable *var =
-         nir_find_variable_with_location(nir, nir_var_shader_out, location);
-      assert(var);
+   nir_foreach_variable_with_modes (var, nir, nir_var_shader_out) {
+      if (var->data.location < VARYING_SLOT_VAR0 ||
+          var->data.location >= VARYING_SLOT_VAR0 + MAX_VARYING) {
+         continue;
+      }
 
       /* TODO: f16 support. */
       bool f16 = glsl_type_is_16bit(glsl_without_array_or_matrix(var->type));
@@ -1733,6 +1745,7 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
                            nir,
                            &vars_mask,
                            nir_var_shader_out,
+                           false,
                            f16,
                            interp_mode,
                            1);
@@ -1808,6 +1821,9 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 
 static void pvr_alloc_fs_varyings(pco_data *data, nir_shader *nir)
 {
+   uint64_t vars_mask = nir->info.inputs_read &
+                        BITFIELD64_RANGE(VARYING_SLOT_VAR0, MAX_VARYING);
+
    assert(!data->common.coeffs);
 
    /* Save the z/w locations. */
@@ -1835,17 +1851,15 @@ static void pvr_alloc_fs_varyings(pco_data *data, nir_shader *nir)
    }
 
    /* Allocate the rest of the input varyings. */
-   nir_foreach_shader_in_variable (var, nir) {
-      /* Already handled. */
-      if (var->data.location == VARYING_SLOT_POS ||
-          var->data.location == VARYING_SLOT_PNTC)
-         continue;
-
-      allocate_var(data->fs.varyings,
-                   &data->common.coeffs,
-                   var,
-                   ROGUE_USC_COEFFICIENT_SET_SIZE);
-   }
+   try_allocate_vars(data->fs.varyings,
+                     &data->common.coeffs,
+                     nir,
+                     &vars_mask,
+                     nir_var_shader_in,
+                     true,
+                     false,
+                     0,
+                     ROGUE_USC_COEFFICIENT_SET_SIZE);
 }
 
 static void
