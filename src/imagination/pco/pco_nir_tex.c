@@ -16,6 +16,7 @@
 #include "nir_builtin_builder.h"
 #include "pco.h"
 #include "pco_builder.h"
+#include "pco_common.h"
 #include "pco_internal.h"
 #include "util/macros.h"
 
@@ -890,162 +891,138 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       enum pipe_format data_format =
          nir_type_to_pipe_format(type, desc->nr_channels);
 
-      /* TODO: u/sint need clamping? */
-
       if (format != data_format) {
-         nir_def *write_data_comps[4];
-         for (unsigned c = 0; c < desc->nr_channels; ++c) {
-            enum pipe_swizzle chan = desc->swizzle[c];
-            nir_def *input = nir_channel(b, write_data, c);
+         enum pco_pck_format pck_format = ~0;
+         bool scale = false;
+         bool roundzero = false;
+         bool split = false;
 
-            switch (format) {
-            case PIPE_FORMAT_R8_UINT:
-            case PIPE_FORMAT_R8G8_UINT:
-            case PIPE_FORMAT_R8G8B8_UINT:
-            case PIPE_FORMAT_R8G8B8A8_UINT:
+         switch (format) {
+         case PIPE_FORMAT_R8_UNORM:
+         case PIPE_FORMAT_R8G8_UNORM:
+         case PIPE_FORMAT_R8G8B8_UNORM:
+         case PIPE_FORMAT_R8G8B8A8_UNORM:
+            pck_format = PCO_PCK_FORMAT_U8888;
+            scale = true;
+            break;
 
-            case PIPE_FORMAT_R8_SINT:
-            case PIPE_FORMAT_R8G8_SINT:
-            case PIPE_FORMAT_R8G8B8_SINT:
-            case PIPE_FORMAT_R8G8B8A8_SINT:
-               write_data_comps[chan] =
-                  nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 8);
-               break;
+         case PIPE_FORMAT_R8_SNORM:
+         case PIPE_FORMAT_R8G8_SNORM:
+         case PIPE_FORMAT_R8G8B8_SNORM:
+         case PIPE_FORMAT_R8G8B8A8_SNORM:
+            pck_format = PCO_PCK_FORMAT_S8888;
+            scale = true;
+            break;
 
-            case PIPE_FORMAT_R8_UNORM:
-            case PIPE_FORMAT_R8G8_UNORM:
-            case PIPE_FORMAT_R8G8B8_UNORM:
-            case PIPE_FORMAT_R8G8B8A8_UNORM:
-               write_data_comps[chan] = nir_pack_unorm_8(b, input);
-               break;
+         case PIPE_FORMAT_R11G11B10_FLOAT:
+            pck_format = PCO_PCK_FORMAT_F111110;
+            break;
 
-            case PIPE_FORMAT_R8_SNORM:
-            case PIPE_FORMAT_R8G8_SNORM:
-            case PIPE_FORMAT_R8G8B8_SNORM:
-            case PIPE_FORMAT_R8G8B8A8_SNORM:
-               write_data_comps[chan] = nir_pack_snorm_8(b, input);
-               break;
+         case PIPE_FORMAT_R10G10B10A2_UNORM:
+            pck_format = PCO_PCK_FORMAT_U1010102;
+            scale = true;
+            break;
 
-            case PIPE_FORMAT_R11G11B10_FLOAT:
-               switch (chan) {
-               case PIPE_SWIZZLE_X:
-               case PIPE_SWIZZLE_Y:
-                  write_data_comps[chan] = nir_pack_float_11(b, input);
-                  break;
+         case PIPE_FORMAT_R10G10B10A2_SNORM:
+            pck_format = PCO_PCK_FORMAT_S1010102;
+            scale = true;
+            break;
 
-               case PIPE_SWIZZLE_Z:
-                  write_data_comps[chan] = nir_pack_float_10(b, input);
-                  break;
+         case PIPE_FORMAT_R16_FLOAT:
+         case PIPE_FORMAT_R16G16_FLOAT:
+         case PIPE_FORMAT_R16G16B16_FLOAT:
+         case PIPE_FORMAT_R16G16B16A16_FLOAT:
+            pck_format = PCO_PCK_FORMAT_F16F16;
+            split = true;
+            break;
 
-               default:
-                  UNREACHABLE("");
-               }
-               break;
+         case PIPE_FORMAT_R16_UNORM:
+         case PIPE_FORMAT_R16G16_UNORM:
+         case PIPE_FORMAT_R16G16B16_UNORM:
+         case PIPE_FORMAT_R16G16B16A16_UNORM:
+            pck_format = PCO_PCK_FORMAT_U1616;
+            scale = true;
+            split = true;
+            break;
 
-            case PIPE_FORMAT_R10G10B10A2_UINT:
+         case PIPE_FORMAT_R16_SNORM:
+         case PIPE_FORMAT_R16G16_SNORM:
+         case PIPE_FORMAT_R16G16B16_SNORM:
+         case PIPE_FORMAT_R16G16B16A16_SNORM:
+            pck_format = PCO_PCK_FORMAT_S1616;
+            scale = true;
+            split = true;
+            break;
 
-            case PIPE_FORMAT_R10G10B10A2_SINT:
+         case PIPE_FORMAT_R8_UINT:
+         case PIPE_FORMAT_R8G8_UINT:
+         case PIPE_FORMAT_R8G8B8_UINT:
+         case PIPE_FORMAT_R8G8B8A8_UINT:
 
-               switch (chan) {
-               case PIPE_SWIZZLE_X:
-               case PIPE_SWIZZLE_Y:
-               case PIPE_SWIZZLE_Z:
-                  write_data_comps[chan] =
-                     nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 10);
-                  break;
+         case PIPE_FORMAT_R8_SINT:
+         case PIPE_FORMAT_R8G8_SINT:
+         case PIPE_FORMAT_R8G8B8_SINT:
+         case PIPE_FORMAT_R8G8B8A8_SINT:
 
-               case PIPE_SWIZZLE_W:
-                  write_data_comps[chan] =
-                     nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 2);
-                  break;
+         case PIPE_FORMAT_R10G10B10A2_UINT:
+         case PIPE_FORMAT_R10G10B10A2_SINT:
 
-               default:
-                  UNREACHABLE("");
-               }
-               break;
+         case PIPE_FORMAT_R16_UINT:
+         case PIPE_FORMAT_R16G16_UINT:
+         case PIPE_FORMAT_R16G16B16_UINT:
+         case PIPE_FORMAT_R16G16B16A16_UINT:
 
-            /* TODO: better way to do the 1x2 component. */
-            case PIPE_FORMAT_R10G10B10A2_UNORM:
-               switch (chan) {
-               case PIPE_SWIZZLE_X:
-               case PIPE_SWIZZLE_Y:
-               case PIPE_SWIZZLE_Z:
-                  write_data_comps[chan] = nir_pack_unorm_10(b, input);
-                  break;
+         case PIPE_FORMAT_R16_SINT:
+         case PIPE_FORMAT_R16G16_SINT:
+         case PIPE_FORMAT_R16G16B16_SINT:
+         case PIPE_FORMAT_R16G16B16A16_SINT:
 
-               case PIPE_SWIZZLE_W:
-                  write_data_comps[chan] =
-                     nir_f2i32_rtne(b,
-                                    nir_fmul_imm(b, nir_fsat(b, input), 3.0f));
-                  break;
+         case PIPE_FORMAT_R32_UINT:
+         case PIPE_FORMAT_R32G32_UINT:
+         case PIPE_FORMAT_R32G32B32_UINT:
+         case PIPE_FORMAT_R32G32B32A32_UINT:
 
-               default:
-                  UNREACHABLE("");
-               }
-               break;
+         case PIPE_FORMAT_R32_SINT:
+         case PIPE_FORMAT_R32G32_SINT:
+         case PIPE_FORMAT_R32G32B32_SINT:
+         case PIPE_FORMAT_R32G32B32A32_SINT:
+            /* No conversion needed. */
+            break;
 
-            /* TODO: better way to do the 1x2 component. */
-            case PIPE_FORMAT_R10G10B10A2_SNORM:
-               switch (chan) {
-               case PIPE_SWIZZLE_X:
-               case PIPE_SWIZZLE_Y:
-               case PIPE_SWIZZLE_Z:
-                  write_data_comps[chan] = nir_pack_snorm_10(b, input);
-                  break;
-
-               case PIPE_SWIZZLE_W:
-                  write_data_comps[chan] =
-                     nir_f2i32_rtne(b, nir_fsat_signed(b, input));
-                  break;
-
-               default:
-                  UNREACHABLE("");
-               }
-               break;
-
-            case PIPE_FORMAT_R16_UINT:
-            case PIPE_FORMAT_R16G16_UINT:
-            case PIPE_FORMAT_R16G16B16_UINT:
-            case PIPE_FORMAT_R16G16B16A16_UINT:
-
-            case PIPE_FORMAT_R16_SINT:
-            case PIPE_FORMAT_R16G16_SINT:
-            case PIPE_FORMAT_R16G16B16_SINT:
-            case PIPE_FORMAT_R16G16B16A16_SINT:
-               write_data_comps[chan] =
-                  nir_bitfield_insert_imm(b, nir_imm_int(b, 0), input, 0, 16);
-               break;
-
-            case PIPE_FORMAT_R16_FLOAT:
-            case PIPE_FORMAT_R16G16_FLOAT:
-            case PIPE_FORMAT_R16G16B16_FLOAT:
-            case PIPE_FORMAT_R16G16B16A16_FLOAT:
-               write_data_comps[chan] = nir_pack_half_16(b, input);
-               break;
-
-            case PIPE_FORMAT_R16_UNORM:
-            case PIPE_FORMAT_R16G16_UNORM:
-            case PIPE_FORMAT_R16G16B16_UNORM:
-            case PIPE_FORMAT_R16G16B16A16_UNORM:
-               write_data_comps[chan] = nir_pack_unorm_16(b, input);
-               break;
-
-            case PIPE_FORMAT_R16_SNORM:
-            case PIPE_FORMAT_R16G16_SNORM:
-            case PIPE_FORMAT_R16G16B16_SNORM:
-            case PIPE_FORMAT_R16G16B16A16_SNORM:
-               write_data_comps[chan] = nir_pack_snorm_16(b, input);
-               break;
-
-            default:
-               printf("Unsupported image write pack format %s.\n",
-                      util_format_name(format));
-               UNREACHABLE("");
-            }
+         default:
+            printf("Unsupported image write pack format %s.\n",
+                   util_format_name(format));
+            UNREACHABLE("");
          }
 
-         write_data = nir_vec(b, write_data_comps, desc->nr_channels);
-         write_data = nir_pad_vector(b, write_data, 4);
+         if (pck_format != ~0) {
+            if (split) {
+               nir_def *lower =
+                  nir_pck_prog_pco(b,
+                                   nir_channels(b, write_data, 0b0011),
+                                   nir_imm_int(b, pck_format),
+                                   .scale = scale,
+                                   .roundzero = roundzero);
+               nir_def *upper =
+                  nir_pck_prog_pco(b,
+                                   nir_channels(b, write_data, 0b1100),
+                                   nir_imm_int(b, pck_format),
+                                   .scale = scale,
+                                   .roundzero = roundzero);
+
+               write_data = nir_vec4(b,
+                                     nir_channel(b, lower, 0),
+                                     nir_channel(b, lower, 1),
+                                     nir_channel(b, upper, 0),
+                                     nir_channel(b, upper, 1));
+            } else {
+               write_data = nir_pck_prog_pco(b,
+                                             write_data,
+                                             nir_imm_int(b, pck_format),
+                                             .scale = scale,
+                                             .roundzero = roundzero);
+            }
+         }
       }
    }
 

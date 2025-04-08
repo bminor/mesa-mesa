@@ -1113,6 +1113,18 @@ encode_map(O_PCK,
    op_ref_maps=[('2_pck', ['ft2'], [['is3', '_']])]
 )
 
+encode_map(O_PCK_PROG,
+   encodings=[
+      (I_PCK, [
+         ('prog', True),
+         ('rtz', OM_ROUNDZERO),
+         ('scale', OM_SCALE),
+         ('pck_format', 0)
+      ])
+   ],
+   op_ref_maps=[('2_pck', ['ft2'], ['is3', 'fte'])]
+)
+
 encode_map(O_UNPCK,
    encodings=[
       (I_UPCK, [
@@ -2028,6 +2040,33 @@ group_map(O_PCK,
    iss=[
       ('is[0]', 's2'),
       ('is[3]', 'fte'),
+      ('is[4]', 'ft2')
+   ],
+   dests=[('w[0]', ('2_pck', DEST(0)), 'ft2')]
+)
+
+group_map(O_PCK_PROG,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, ['ft0'], [SRC(0)]),
+      ('2_pck', O_PCK_PROG, [DEST(0)], ['is3', SRC(1)], [(OM_ROUNDZERO, OM_ROUNDZERO), (OM_SCALE, OM_SCALE)])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[3]', ('2_pck', SRC(1)), 'fte')
+   ],
+   iss=[
+      ('is[0]', 's3'),
+      ('is[3]', 'ft0'),
       ('is[4]', 'ft2')
    ],
    dests=[('w[0]', ('2_pck', DEST(0)), 'ft2')]

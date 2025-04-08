@@ -2746,3 +2746,7 @@ intrinsic("flush_tile_buffer_pco", src_comp=[1, 1])
 intrinsic("dummy_load_store_pco", indices=[BASE])
 
 intrinsic("alpha_to_coverage_pco", src_comp=[1], dest_comp=1, flags=[CAN_REORDER], bit_sizes=[32])
+
+index("bool", "scale")
+index("bool", "roundzero")
+intrinsic("pck_prog_pco", src_comp=[0, 1], dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[SCALE, ROUNDZERO], bit_sizes=[32])
