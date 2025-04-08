@@ -102,7 +102,6 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float_controls = true,
-      // TODO: wait for nvk
       .KHR_shader_float_controls2 = true,
       .KHR_shader_float16_int8 = true,
       .KHR_shader_integer_dot_product = true,
