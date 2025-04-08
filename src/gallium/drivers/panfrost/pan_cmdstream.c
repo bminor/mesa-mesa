@@ -1462,8 +1462,8 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
       panfrost_emit_ubo(ubos.cpu, ubo_count, transfer.gpu, sys_size);
 
    /* The rest are honest-to-goodness UBOs */
-
-   u_foreach_bit(ubo, ss->info.ubo_mask & buf->enabled_mask) {
+   unsigned user_ubo_mask = ss->info.ubo_mask & BITFIELD_MASK(ubo_count);
+   u_foreach_bit(ubo, user_ubo_mask & buf->enabled_mask) {
       size_t usz = buf->cb[ubo].buffer_size;
       uint64_t address = 0;
 
