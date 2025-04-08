@@ -25,6 +25,7 @@
 #include <vulkan/vulkan.h>
 
 #include "hwdef/rogue_hw_defs.h"
+#include "pco/pco_common.h"
 #include "pvr_csb.h"
 #include "pvr_device_info.h"
 #include "pvr_formats.h"
@@ -59,6 +60,94 @@ static enum ROGUE_TEXSTATE_SWIZ pvr_get_hw_swizzle(VkComponentSwizzle comp,
    default:
       UNREACHABLE("Unknown enum pipe_swizzle");
    };
+}
+
+static uint32_t setup_pck_info(VkFormat vk_format)
+{
+   /* TODO NEXT: commonize this.*/
+   enum pipe_format format = vk_format_to_pipe_format(vk_format);
+   enum pco_pck_format pck_format = ~0;
+   bool scale = false;
+   bool roundzero = false;
+   bool split = false;
+
+   switch (format) {
+   case PIPE_FORMAT_R8_UNORM:
+   case PIPE_FORMAT_R8G8_UNORM:
+   case PIPE_FORMAT_R8G8B8_UNORM:
+   case PIPE_FORMAT_R8G8B8A8_UNORM:
+      pck_format = PCO_PCK_FORMAT_U8888;
+      scale = true;
+      break;
+
+   case PIPE_FORMAT_R8_SNORM:
+   case PIPE_FORMAT_R8G8_SNORM:
+   case PIPE_FORMAT_R8G8B8_SNORM:
+   case PIPE_FORMAT_R8G8B8A8_SNORM:
+      pck_format = PCO_PCK_FORMAT_S8888;
+      scale = true;
+      break;
+
+   case PIPE_FORMAT_R11G11B10_FLOAT:
+      pck_format = PCO_PCK_FORMAT_F111110;
+      break;
+
+   /* TODO: better way to do the 1x2 component. */
+   case PIPE_FORMAT_R10G10B10A2_UNORM:
+      pck_format = PCO_PCK_FORMAT_U1010102;
+      scale = true;
+      break;
+
+   /* TODO: better way to do the 1x2 component. */
+   case PIPE_FORMAT_R10G10B10A2_SNORM:
+      pck_format = PCO_PCK_FORMAT_S1010102;
+      scale = true;
+      break;
+
+   case PIPE_FORMAT_R16_FLOAT:
+   case PIPE_FORMAT_R16G16_FLOAT:
+   case PIPE_FORMAT_R16G16B16_FLOAT:
+   case PIPE_FORMAT_R16G16B16A16_FLOAT:
+      pck_format = PCO_PCK_FORMAT_F16F16;
+      split = true;
+      break;
+
+   case PIPE_FORMAT_R16_UNORM:
+   case PIPE_FORMAT_R16G16_UNORM:
+   case PIPE_FORMAT_R16G16B16_UNORM:
+   case PIPE_FORMAT_R16G16B16A16_UNORM:
+      pck_format = PCO_PCK_FORMAT_U1616;
+      scale = true;
+      split = true;
+      break;
+
+   case PIPE_FORMAT_R16_SNORM:
+   case PIPE_FORMAT_R16G16_SNORM:
+   case PIPE_FORMAT_R16G16B16_SNORM:
+   case PIPE_FORMAT_R16G16B16A16_SNORM:
+      pck_format = PCO_PCK_FORMAT_S1616;
+      scale = true;
+      split = true;
+      break;
+
+   default:
+      break;
+   }
+
+   if (pck_format == ~0)
+      return pck_format;
+
+   uint32_t pck_info = pck_format;
+   if (split)
+      pck_info |= BITFIELD_BIT(5);
+
+   if (scale)
+      pck_info |= BITFIELD_BIT(6);
+
+   if (roundzero)
+      pck_info |= BITFIELD_BIT(7);
+
+   return pck_info;
 }
 
 VkResult pvr_pack_tex_state(struct pvr_device *device,
@@ -253,7 +342,7 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
    state->meta[PCO_IMAGE_META_LAYER_SIZE] = info->layer_size;
    state->meta[PCO_IMAGE_META_BUFFER_ELEMS] = info->buffer_elems;
    state->meta[PCO_IMAGE_META_Z_SLICE] = info->z_slice;
-   state->meta[PCO_IMAGE_META_RSVD0] = 0;
+   state->meta[PCO_IMAGE_META_PCK_INFO] = setup_pck_info(info->format);
 
    return VK_SUCCESS;
 }

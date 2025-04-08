@@ -928,147 +928,223 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       assert(intr->num_components == 4);
       assert(write_data->num_components == 4);
 
-      /* TODO: formatless write support */
-      assert(format != PIPE_FORMAT_NONE);
+      if (format != PIPE_FORMAT_NONE) {
+         const struct util_format_description *desc =
+            util_format_description(format);
 
-      const struct util_format_description *desc =
-         util_format_description(format);
+         enum pipe_format data_format =
+            nir_type_to_pipe_format(type, desc->nr_channels);
 
-      enum pipe_format data_format =
-         nir_type_to_pipe_format(type, desc->nr_channels);
+         if (format != data_format) {
+            enum pco_pck_format pck_format = ~0;
+            bool scale = false;
+            bool roundzero = false;
+            bool split = false;
 
-      if (format != data_format) {
-         enum pco_pck_format pck_format = ~0;
-         bool scale = false;
-         bool roundzero = false;
-         bool split = false;
+            switch (format) {
+            case PIPE_FORMAT_R8_UNORM:
+            case PIPE_FORMAT_R8G8_UNORM:
+            case PIPE_FORMAT_R8G8B8_UNORM:
+            case PIPE_FORMAT_R8G8B8A8_UNORM:
+               pck_format = PCO_PCK_FORMAT_U8888;
+               scale = true;
+               break;
 
-         switch (format) {
-         case PIPE_FORMAT_R8_UNORM:
-         case PIPE_FORMAT_R8G8_UNORM:
-         case PIPE_FORMAT_R8G8B8_UNORM:
-         case PIPE_FORMAT_R8G8B8A8_UNORM:
-            pck_format = PCO_PCK_FORMAT_U8888;
-            scale = true;
-            break;
+            case PIPE_FORMAT_R8_SNORM:
+            case PIPE_FORMAT_R8G8_SNORM:
+            case PIPE_FORMAT_R8G8B8_SNORM:
+            case PIPE_FORMAT_R8G8B8A8_SNORM:
+               pck_format = PCO_PCK_FORMAT_S8888;
+               scale = true;
+               break;
 
-         case PIPE_FORMAT_R8_SNORM:
-         case PIPE_FORMAT_R8G8_SNORM:
-         case PIPE_FORMAT_R8G8B8_SNORM:
-         case PIPE_FORMAT_R8G8B8A8_SNORM:
-            pck_format = PCO_PCK_FORMAT_S8888;
-            scale = true;
-            break;
+            case PIPE_FORMAT_R11G11B10_FLOAT:
+               pck_format = PCO_PCK_FORMAT_F111110;
+               break;
 
-         case PIPE_FORMAT_R11G11B10_FLOAT:
-            pck_format = PCO_PCK_FORMAT_F111110;
-            break;
+            case PIPE_FORMAT_R10G10B10A2_UNORM:
+               pck_format = PCO_PCK_FORMAT_U1010102;
+               scale = true;
+               break;
 
-         case PIPE_FORMAT_R10G10B10A2_UNORM:
-            pck_format = PCO_PCK_FORMAT_U1010102;
-            scale = true;
-            break;
+            case PIPE_FORMAT_R10G10B10A2_SNORM:
+               pck_format = PCO_PCK_FORMAT_S1010102;
+               scale = true;
+               break;
 
-         case PIPE_FORMAT_R10G10B10A2_SNORM:
-            pck_format = PCO_PCK_FORMAT_S1010102;
-            scale = true;
-            break;
+            case PIPE_FORMAT_R16_FLOAT:
+            case PIPE_FORMAT_R16G16_FLOAT:
+            case PIPE_FORMAT_R16G16B16_FLOAT:
+            case PIPE_FORMAT_R16G16B16A16_FLOAT:
+               pck_format = PCO_PCK_FORMAT_F16F16;
+               split = true;
+               break;
 
-         case PIPE_FORMAT_R16_FLOAT:
-         case PIPE_FORMAT_R16G16_FLOAT:
-         case PIPE_FORMAT_R16G16B16_FLOAT:
-         case PIPE_FORMAT_R16G16B16A16_FLOAT:
-            pck_format = PCO_PCK_FORMAT_F16F16;
-            split = true;
-            break;
+            case PIPE_FORMAT_R16_UNORM:
+            case PIPE_FORMAT_R16G16_UNORM:
+            case PIPE_FORMAT_R16G16B16_UNORM:
+            case PIPE_FORMAT_R16G16B16A16_UNORM:
+               pck_format = PCO_PCK_FORMAT_U1616;
+               scale = true;
+               split = true;
+               break;
 
-         case PIPE_FORMAT_R16_UNORM:
-         case PIPE_FORMAT_R16G16_UNORM:
-         case PIPE_FORMAT_R16G16B16_UNORM:
-         case PIPE_FORMAT_R16G16B16A16_UNORM:
-            pck_format = PCO_PCK_FORMAT_U1616;
-            scale = true;
-            split = true;
-            break;
+            case PIPE_FORMAT_R16_SNORM:
+            case PIPE_FORMAT_R16G16_SNORM:
+            case PIPE_FORMAT_R16G16B16_SNORM:
+            case PIPE_FORMAT_R16G16B16A16_SNORM:
+               pck_format = PCO_PCK_FORMAT_S1616;
+               scale = true;
+               split = true;
+               break;
 
-         case PIPE_FORMAT_R16_SNORM:
-         case PIPE_FORMAT_R16G16_SNORM:
-         case PIPE_FORMAT_R16G16B16_SNORM:
-         case PIPE_FORMAT_R16G16B16A16_SNORM:
-            pck_format = PCO_PCK_FORMAT_S1616;
-            scale = true;
-            split = true;
-            break;
+            case PIPE_FORMAT_R8_UINT:
+            case PIPE_FORMAT_R8G8_UINT:
+            case PIPE_FORMAT_R8G8B8_UINT:
+            case PIPE_FORMAT_R8G8B8A8_UINT:
 
-         case PIPE_FORMAT_R8_UINT:
-         case PIPE_FORMAT_R8G8_UINT:
-         case PIPE_FORMAT_R8G8B8_UINT:
-         case PIPE_FORMAT_R8G8B8A8_UINT:
+            case PIPE_FORMAT_R8_SINT:
+            case PIPE_FORMAT_R8G8_SINT:
+            case PIPE_FORMAT_R8G8B8_SINT:
+            case PIPE_FORMAT_R8G8B8A8_SINT:
 
-         case PIPE_FORMAT_R8_SINT:
-         case PIPE_FORMAT_R8G8_SINT:
-         case PIPE_FORMAT_R8G8B8_SINT:
-         case PIPE_FORMAT_R8G8B8A8_SINT:
+            case PIPE_FORMAT_R10G10B10A2_UINT:
+            case PIPE_FORMAT_R10G10B10A2_SINT:
 
-         case PIPE_FORMAT_R10G10B10A2_UINT:
-         case PIPE_FORMAT_R10G10B10A2_SINT:
+            case PIPE_FORMAT_R16_UINT:
+            case PIPE_FORMAT_R16G16_UINT:
+            case PIPE_FORMAT_R16G16B16_UINT:
+            case PIPE_FORMAT_R16G16B16A16_UINT:
 
-         case PIPE_FORMAT_R16_UINT:
-         case PIPE_FORMAT_R16G16_UINT:
-         case PIPE_FORMAT_R16G16B16_UINT:
-         case PIPE_FORMAT_R16G16B16A16_UINT:
+            case PIPE_FORMAT_R16_SINT:
+            case PIPE_FORMAT_R16G16_SINT:
+            case PIPE_FORMAT_R16G16B16_SINT:
+            case PIPE_FORMAT_R16G16B16A16_SINT:
 
-         case PIPE_FORMAT_R16_SINT:
-         case PIPE_FORMAT_R16G16_SINT:
-         case PIPE_FORMAT_R16G16B16_SINT:
-         case PIPE_FORMAT_R16G16B16A16_SINT:
+            case PIPE_FORMAT_R32_UINT:
+            case PIPE_FORMAT_R32G32_UINT:
+            case PIPE_FORMAT_R32G32B32_UINT:
+            case PIPE_FORMAT_R32G32B32A32_UINT:
 
-         case PIPE_FORMAT_R32_UINT:
-         case PIPE_FORMAT_R32G32_UINT:
-         case PIPE_FORMAT_R32G32B32_UINT:
-         case PIPE_FORMAT_R32G32B32A32_UINT:
+            case PIPE_FORMAT_R32_SINT:
+            case PIPE_FORMAT_R32G32_SINT:
+            case PIPE_FORMAT_R32G32B32_SINT:
+            case PIPE_FORMAT_R32G32B32A32_SINT:
+               /* No conversion needed. */
+               break;
 
-         case PIPE_FORMAT_R32_SINT:
-         case PIPE_FORMAT_R32G32_SINT:
-         case PIPE_FORMAT_R32G32B32_SINT:
-         case PIPE_FORMAT_R32G32B32A32_SINT:
-            /* No conversion needed. */
-            break;
+            default:
+               printf("Unsupported image write pack format %s.\n",
+                      util_format_name(format));
+               UNREACHABLE("");
+            }
 
-         default:
-            printf("Unsupported image write pack format %s.\n",
-                   util_format_name(format));
-            UNREACHABLE("");
-         }
+            if (pck_format != ~0) {
+               if (split) {
+                  nir_def *lower =
+                     nir_pck_prog_pco(b,
+                                      nir_channels(b, write_data, 0b0011),
+                                      nir_imm_int(b, pck_format),
+                                      .scale = scale,
+                                      .roundzero = roundzero);
+                  nir_def *upper =
+                     nir_pck_prog_pco(b,
+                                      nir_channels(b, write_data, 0b1100),
+                                      nir_imm_int(b, pck_format),
+                                      .scale = scale,
+                                      .roundzero = roundzero);
 
-         if (pck_format != ~0) {
-            if (split) {
-               nir_def *lower =
-                  nir_pck_prog_pco(b,
-                                   nir_channels(b, write_data, 0b0011),
-                                   nir_imm_int(b, pck_format),
-                                   .scale = scale,
-                                   .roundzero = roundzero);
-               nir_def *upper =
-                  nir_pck_prog_pco(b,
-                                   nir_channels(b, write_data, 0b1100),
-                                   nir_imm_int(b, pck_format),
-                                   .scale = scale,
-                                   .roundzero = roundzero);
-
-               write_data = nir_vec4(b,
-                                     nir_channel(b, lower, 0),
-                                     nir_channel(b, lower, 1),
-                                     nir_channel(b, upper, 0),
-                                     nir_channel(b, upper, 1));
-            } else {
-               write_data = nir_pck_prog_pco(b,
-                                             write_data,
-                                             nir_imm_int(b, pck_format),
-                                             .scale = scale,
-                                             .roundzero = roundzero);
+                  write_data = nir_vec4(b,
+                                        nir_channel(b, lower, 0),
+                                        nir_channel(b, lower, 1),
+                                        nir_channel(b, upper, 0),
+                                        nir_channel(b, upper, 1));
+               } else {
+                  write_data = nir_pck_prog_pco(b,
+                                                write_data,
+                                                nir_imm_int(b, pck_format),
+                                                .scale = scale,
+                                                .roundzero = roundzero);
+               }
             }
          }
+      } else {
+         /* Formatless write. */
+         nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                   PCO_IMAGE_META_COUNT,
+                                                   elem,
+                                                   .desc_set = desc_set,
+                                                   .binding = binding);
+
+         nir_def *pck_info = nir_channel(b, tex_meta, PCO_IMAGE_META_PCK_INFO);
+         nir_def *pck_skip = nir_ieq_imm(b, pck_info, 0xffffffff);
+         nir_def *pck_format = nir_ubitfield_extract_imm(b, pck_info, 0, 5);
+         nir_def *pck_split = nir_ubitfield_extract_imm(b, pck_info, 5, 1);
+         pck_split = nir_ine_imm(b, pck_split, 0);
+         nir_def *pck_scale = nir_ubitfield_extract_imm(b, pck_info, 6, 1);
+         pck_scale = nir_ine_imm(b, pck_scale, 0);
+         /* nir_def *pck_roundzero = nir_ubitfield_extract_imm(b, pck_info, 7,
+          * 1); */
+         /* pck_roundzero = nir_ine_imm(b, pck_roundzero, 0); */
+
+         /* TODO: ideally would like for only 4 regs to be used, since only one
+          * of these code paths is going to be taken... look into conditional
+          * execution instead
+          */
+         /* TODO: probably nicest to do this in uscgen? */
+
+         nir_def *write_data_scale =
+            nir_pck_prog_pco(b, write_data, pck_format, .scale = true);
+         nir_def *write_data_noscale =
+            nir_pck_prog_pco(b, write_data, pck_format, .scale = false);
+
+         nir_def *split_lower_scale =
+            nir_pck_prog_pco(b,
+                             nir_channels(b, write_data, 0b0011),
+                             pck_format,
+                             .scale = true);
+         nir_def *split_upper_scale =
+            nir_pck_prog_pco(b,
+                             nir_channels(b, write_data, 0b1100),
+                             pck_format,
+                             .scale = true);
+         nir_def *write_data_split_scale =
+            nir_vec4(b,
+                     nir_channel(b, split_lower_scale, 0),
+                     nir_channel(b, split_lower_scale, 1),
+                     nir_channel(b, split_upper_scale, 0),
+                     nir_channel(b, split_upper_scale, 1));
+
+         nir_def *split_lower_noscale =
+            nir_pck_prog_pco(b,
+                             nir_channels(b, write_data, 0b0011),
+                             pck_format,
+                             .scale = false);
+         nir_def *split_upper_noscale =
+            nir_pck_prog_pco(b,
+                             nir_channels(b, write_data, 0b1100),
+                             pck_format,
+                             .scale = false);
+         nir_def *write_data_split_noscale =
+            nir_vec4(b,
+                     nir_channel(b, split_lower_noscale, 0),
+                     nir_channel(b, split_lower_noscale, 1),
+                     nir_channel(b, split_upper_noscale, 0),
+                     nir_channel(b, split_upper_noscale, 1));
+
+         nir_def *write_data_split = nir_bcsel(b,
+                                               pck_scale,
+                                               write_data_split_scale,
+                                               write_data_split_noscale);
+
+         nir_def *write_data_unsplit =
+            nir_bcsel(b, pck_scale, write_data_scale, write_data_noscale);
+
+         write_data = nir_bcsel(
+            b,
+            pck_skip,
+            write_data,
+            nir_bcsel(b, pck_split, write_data_split, write_data_unsplit));
       }
    }
 
