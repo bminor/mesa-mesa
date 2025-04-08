@@ -11,6 +11,8 @@
 /* we can't include tu_common.h because ir3 headers are not C++-compatible */
 #include <stdint.h>
 
+#include <vulkan/vulkan.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,6 +65,14 @@ void tu_perfetto_log_destroy_buffer(struct tu_device *dev, struct tu_buffer *buf
 void tu_perfetto_log_create_image(struct tu_device *dev, struct tu_image *image);
 void tu_perfetto_log_bind_image(struct tu_device *dev, struct tu_image *image);
 void tu_perfetto_log_destroy_image(struct tu_device *dev, struct tu_image *image);
+
+void
+tu_perfetto_set_debug_utils_object_name(
+   const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
+
+void
+tu_perfetto_refresh_debug_utils_object_name(
+   const struct vk_object_base *object);
 
 #ifdef __cplusplus
 }

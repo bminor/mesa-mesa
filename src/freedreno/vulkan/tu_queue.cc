@@ -182,6 +182,14 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 
    util_dynarray_fini(&dump_cmds);
 
+#ifdef HAVE_PERFETTO
+   if (u_trace_should_process(&device->trace_context)) {
+      for (int i = 0; i < vk_submit->command_buffer_count; i++)
+         tu_perfetto_refresh_debug_utils_object_name(
+            &vk_submit->command_buffers[i]->base);
+   }
+#endif
+
    result =
       tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,
                       vk_submit->signals, vk_submit->signal_count,

@@ -17,6 +17,8 @@
 
 #include "tu_tracepoints.h"
 #include "tu_tracepoints_perfetto.h"
+#include "vk_object.h"
+#include "vk_util.h"
 
 /* we can't include tu_knl.h and tu_device.h */
 
@@ -661,6 +663,28 @@ tu_perfetto_log_destroy_image(struct tu_device *dev, struct tu_image *image)
 }
 
 
+
+void
+tu_perfetto_set_debug_utils_object_name(const VkDebugUtilsObjectNameInfoEXT *pNameInfo)
+{
+   TuRenderpassDataSource::Trace([=](auto tctx) {
+      /* Do we need this for SEQ_INCREMENTAL_STATE_CLEARED for the object name to stick? */
+      setup_incremental_state(tctx);
+
+      tctx.GetDataSourceLocked()->SetDebugUtilsObjectNameEXT(tctx, pNameInfo);
+   });
+}
+
+void
+tu_perfetto_refresh_debug_utils_object_name(const struct vk_object_base *object)
+{
+   TuRenderpassDataSource::Trace([=](auto tctx) {
+      /* Do we need this for SEQ_INCREMENTAL_STATE_CLEARED for the object name to stick? */
+      setup_incremental_state(tctx);
+
+      tctx.GetDataSourceLocked()->RefreshSetDebugUtilsObjectNameEXT(tctx, object);
+   });
+}
 
 #ifdef __cplusplus
 }
