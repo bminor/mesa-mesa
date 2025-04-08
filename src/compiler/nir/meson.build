@@ -115,6 +115,7 @@ files_libnir = files(
   'nir_loop_analyze.h',
   'nir_lower_alu.c',
   'nir_lower_alu_width.c',
+  'nir_lower_alpha.c',
   'nir_lower_alpha_test.c',
   'nir_lower_amul.c',
   'nir_lower_array_deref_of_vec.c',

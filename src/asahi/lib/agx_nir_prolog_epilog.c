@@ -447,7 +447,7 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
 
    /* Alpha-to-coverage must be lowered before alpha-to-one */
    if (key->blend.alpha_to_coverage)
-      NIR_PASS(_, b->shader, agx_nir_lower_alpha_to_coverage, tib.nr_samples);
+      NIR_PASS(_, b->shader, nir_lower_alpha_to_coverage, tib.nr_samples);
 
    /* Depth/stencil writes must be deferred until after all discards,
     * particularly alpha-to-coverage.
@@ -468,7 +468,7 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
 
    /* Alpha-to-one must be lowered before blending */
    if (key->blend.alpha_to_one)
-      NIR_PASS(_, b->shader, agx_nir_lower_alpha_to_one);
+      NIR_PASS(_, b->shader, nir_lower_alpha_to_one);
 
    NIR_PASS(_, b->shader, nir_lower_blend, &opts);
 
@@ -550,7 +550,7 @@ lower_output_to_epilog(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return true;
    }
 
-   if (intr->intrinsic == nir_intrinsic_discard_agx &&
+   if (intr->intrinsic == nir_intrinsic_demote_samples &&
        b->shader->info.fs.early_fragment_tests) {
 
       if (!ctx->masked_samples) {
@@ -697,7 +697,7 @@ agx_nir_fs_prolog(nir_builder *b, const void *key_)
    /* First, insert code for any emulated features */
    if (key->api_sample_mask != 0xff) {
       /* Kill samples that are NOT covered by the mask */
-      nir_discard_agx(b, nir_imm_intN_t(b, key->api_sample_mask ^ 0xff, 16));
+      nir_demote_samples(b, nir_imm_intN_t(b, key->api_sample_mask ^ 0xff, 16));
       b->shader->info.fs.uses_discard = true;
    }
 

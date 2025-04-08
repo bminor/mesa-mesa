@@ -65,7 +65,7 @@
  * 5. zs_emit may be used in the shader exactly once to trigger tests.
  * sample_mask with 0 may be used to discard early.
  *
- * This pass lowers discard_agx to sample_mask instructions satisfying these
+ * This pass lowers demote_samples to sample_mask instructions satisfying these
  * rules. Other passes should not generate sample_mask instructions, as there
  * are too many footguns.
  */
@@ -78,7 +78,7 @@ static bool
 lower_discard_to_sample_mask_0(nir_builder *b, nir_intrinsic_instr *intr,
                                UNUSED void *data)
 {
-   if (intr->intrinsic != nir_intrinsic_discard_agx)
+   if (intr->intrinsic != nir_intrinsic_demote_samples)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);
@@ -95,7 +95,7 @@ last_discard_in_block(nir_block *block)
          continue;
 
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-      if (intr->intrinsic == nir_intrinsic_discard_agx)
+      if (intr->intrinsic == nir_intrinsic_demote_samples)
          return intr;
    }
 

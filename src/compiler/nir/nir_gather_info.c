@@ -806,7 +806,7 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
       shader->info.outputs_written |= BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK);
       break;
 
-   case nir_intrinsic_discard_agx:
+   case nir_intrinsic_demote_samples:
       shader->info.fs.uses_discard = true;
       break;
 

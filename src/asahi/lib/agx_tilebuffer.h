@@ -106,11 +106,6 @@ bool agx_nir_lower_monolithic_msaa(struct nir_shader *shader,
 bool agx_nir_lower_sample_intrinsics(struct nir_shader *shader,
                                      bool ignore_sample_mask_without_msaa);
 
-bool agx_nir_lower_alpha_to_coverage(struct nir_shader *shader,
-                                     uint8_t nr_samples);
-
-bool agx_nir_lower_alpha_to_one(struct nir_shader *shader);
-
 uint32_t agx_tilebuffer_total_size(struct agx_tilebuffer_layout *tib);
 
 enum pipe_format

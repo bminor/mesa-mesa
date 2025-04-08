@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "agx_tilebuffer.h"
 #include "nir.h"
 #include "nir_builder.h"
 
@@ -13,7 +12,7 @@
  * monolithic pixel shader or a fragment epilogue.
  */
 bool
-agx_nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples)
+nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples)
 {
    /* nir_lower_io_to_temporaries ensures that stores are in the last block */
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
@@ -65,7 +64,7 @@ agx_nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples)
       nir_iadd_imm(b, nir_ishl(b, nir_imm_intN_t(b, 1, 16), bits), -1);
 
    /* Discard samples that aren't covered */
-   nir_discard_agx(b, nir_inot(b, mask));
+   nir_demote_samples(b, nir_inot(b, mask));
    shader->info.fs.uses_discard = true;
    return nir_progress(true, impl, nir_metadata_control_flow);
 }
@@ -76,7 +75,7 @@ agx_nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples)
  * fragment epilogue.
  */
 bool
-agx_nir_lower_alpha_to_one(nir_shader *shader)
+nir_lower_alpha_to_one(nir_shader *shader)
 {
    bool progress = false;
 

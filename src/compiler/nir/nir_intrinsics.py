@@ -1120,6 +1120,10 @@ barycentric("coord_at_offset", 3, [2])
 intrinsic("load_sample_pos_from_id", src_comp=[1], dest_comp=2,
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# Demote a subset of samples given by a specified sample mask. This acts like a
+# per-sample demote, or an inverted accumulating gl_SampleMask write.
+intrinsic("demote_samples", src_comp=[1])
+
 intrinsic("load_persp_center_rhw_ir3", dest_comp=1,
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
@@ -2172,12 +2176,6 @@ load("sysval_agx", [], [DESC_SET, BINDING, FLAGS], [CAN_REORDER, CAN_ELIMINATE])
 # masks. Maps to the corresponding AGX instruction, the actual workings are
 # documented elsewhere as they are too complicated for this comment.
 intrinsic("sample_mask_agx", src_comp=[1, 1])
-
-# Discard a subset of samples given by a specified sample mask. This acts like a
-# per-sample discard, or an inverted accumulating gl_SampleMask write. The
-# compiler will lower to sample_mask_agx, but that lowering is nontrivial as
-# sample_mask_agx also triggers depth/stencil testing.
-intrinsic("discard_agx", src_comp=[1])
 
 # For a given row of the polygon stipple given as an integer source in [0, 31],
 # load the 32-bit stipple pattern for that row.

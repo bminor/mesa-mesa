@@ -27,7 +27,7 @@ lower_to_per_sample(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    case nir_intrinsic_load_local_pixel_agx:
    case nir_intrinsic_store_local_pixel_agx:
    case nir_intrinsic_store_zs_agx:
-   case nir_intrinsic_discard_agx:
+   case nir_intrinsic_demote_samples:
    case nir_intrinsic_sample_mask_agx: {
       /* Fragment I/O inside the loop should only affect active samples. */
       unsigned mask_index =
