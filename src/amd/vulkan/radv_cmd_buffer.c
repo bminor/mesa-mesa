@@ -10863,22 +10863,24 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
                                        radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
    }
 
+   const uint32_t pa_su_line_cntl = S_028A08_WIDTH(CLAMP(d->vk.rs.line.width * 8, 0, 0xFFFF));
+
+   /* The DX10 diamond test is unnecessary with Vulkan and it decreases line rasterization
+    * performance.
+    */
+   const uint32_t pa_sc_line_cntl =
+      S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
+
    radeon_begin(cmd_buffer->cs);
 
-   radeon_opt_set_context_reg(cmd_buffer, R_028A08_PA_SU_LINE_CNTL, RADV_TRACKED_PA_SU_LINE_CNTL,
-                              S_028A08_WIDTH(CLAMP(d->vk.rs.line.width * 8, 0, 0xFFFF)));
+   radeon_opt_set_context_reg(cmd_buffer, R_028A08_PA_SU_LINE_CNTL, RADV_TRACKED_PA_SU_LINE_CNTL, pa_su_line_cntl);
 
    radeon_opt_set_context_reg(cmd_buffer, R_028A0C_PA_SC_LINE_STIPPLE, RADV_TRACKED_PA_SC_LINE_STIPPLE,
                               S_028A0C_LINE_PATTERN(d->vk.rs.line.stipple.pattern) |
                                  S_028A0C_REPEAT_COUNT(d->vk.rs.line.stipple.factor - 1) |
                                  S_028A0C_AUTO_RESET_CNTL(pdev->info.gfx_level < GFX12 ? auto_reset_cntl : 0));
 
-   /* The DX10 diamond test is unnecessary with Vulkan and it decreases line rasterization
-    * performance.
-    */
-   radeon_opt_set_context_reg(
-      cmd_buffer, R_028BDC_PA_SC_LINE_CNTL, RADV_TRACKED_PA_SC_LINE_CNTL,
-      S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR));
+   radeon_opt_set_context_reg(cmd_buffer, R_028BDC_PA_SC_LINE_CNTL, RADV_TRACKED_PA_SC_LINE_CNTL, pa_sc_line_cntl);
 
    radeon_opt_set_context_reg(
       cmd_buffer, R_028810_PA_CL_CLIP_CNTL, RADV_TRACKED_PA_CL_CLIP_CNTL,
