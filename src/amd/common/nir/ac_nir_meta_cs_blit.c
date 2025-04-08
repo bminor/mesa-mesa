@@ -143,6 +143,11 @@ ac_create_blit_cs(const struct ac_cs_blit_options *options, const union ac_cs_bl
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, options->nir_options,
                                                   "blit_non_scaled_cs");
+   blake3_hasher blake3;
+   _mesa_blake3_init(&blake3);
+   _mesa_blake3_update(&blake3, b.shader->info.name, strlen(b.shader->info.name));
+   _mesa_blake3_update(&blake3, key, sizeof(*key));
+   _mesa_blake3_final(&blake3, b.shader->info.source_blake3);
    b.shader->info.use_aco_amd = options->use_aco ||
                                 (key->use_aco && aco_is_gpu_supported(options->info));
    b.shader->info.num_images = key->is_clear ? 1 : 2;
