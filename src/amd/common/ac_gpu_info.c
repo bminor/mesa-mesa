@@ -1651,7 +1651,21 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       unsigned num_prim_exports = 0, num_pos_exports = 0;
 
       if (info->gfx_level >= GFX12) {
-         info->attribute_ring_size_per_se = 1024 * 1024;
+         /* Navi48 results:
+          *
+          * Without NGG culling:
+          * - 1024 is the best for <=4 varyings, though longer GS waves may need more (see below).
+          * - 1400 is in between (a tiny bit slower for <=4 varyings, faster for >=6 varyings).
+          * - 1900 is the best for >=6 varyings because smaller sizes are throttled by not enough space.
+          *
+          * With NGG culling:
+          * - 1024 is the worst because NGG culling has longer GS waves, so it needs more space to
+          *   prevent getting throttled even if it doesn't end up using it. gs_alloc_req doesn't
+          *   deallocate the unused portion.
+          * - 1400 is the best for <=4 varyings.
+          * - 1900 is the best for >=6 varyings.
+          */
+         info->attribute_ring_size_per_se = 1400 * 1024;
          num_prim_exports = 16368; /* also includes gs_alloc_req */
          num_pos_exports = 16384;
       } else if (info->l3_cache_size_mb || info->family_overridden) {
