@@ -206,13 +206,11 @@ iris-amly-egl:
 iris-kbl-piglit:
   extends:
     - .iris-kbl-test
-    - .lava-piglit
   parallel: 2
   variables:
     HWCI_START_XORG: 1
     PIGLIT_NO_WINDOW: 0
-    PIGLIT_PLATFORM: mixed_glx_egl
-    PIGLIT_PROFILES: gpu
+    DEQP_SUITE: iris-kbl-piglit
 
 iris-apl-traces:
   variables:
