@@ -192,6 +192,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_zero_initialize_workgroup_memory = false,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
+      .EXT_image_2d_view_of_3d = true,
       .EXT_index_type_uint8 = false,
       .EXT_private_data = true,
       .EXT_scalar_block_layout = true,
@@ -274,6 +275,9 @@ static void pvr_physical_device_get_supported_features(
       /* Vulkan 1.2 / VK_EXT_host_query_reset */
       .hostQueryReset = true,
 
+      /* VK_EXT_image_2d_view_of_3d */
+      .image2DViewOf3D = true,
+      .sampler2DViewOf3D = false,
       /* Vulkan 1.3 / VK_EXT_private_data */
       .privateData = true,
 

@@ -787,6 +787,7 @@ static enum pipe_format nir_type_to_pipe_format(nir_alu_type nir_type,
 static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   pco_data *data = cb_data;
 
    enum glsl_sampler_dim image_dim = nir_intrinsic_image_dim(intr);
    bool is_array = nir_intrinsic_image_array(intr);
@@ -1156,6 +1157,20 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       coords = nir_pad_vector(b, coords, 3);
       coords = nir_vector_insert_imm(b, coords, layer, 2);
       is_array = true;
+   } else if (data->common.image_2d_view_of_3d &&
+              image_dim == GLSL_SAMPLER_DIM_2D && !is_array) {
+      image_dim = GLSL_SAMPLER_DIM_3D;
+
+      nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                PCO_IMAGE_META_COUNT,
+                                                elem,
+                                                .desc_set = desc_set,
+                                                .binding = binding);
+
+      nir_def *z_slice = nir_channel(b, tex_meta, PCO_IMAGE_META_Z_SLICE);
+
+      coords = nir_pad_vector(b, coords, 3);
+      coords = nir_vector_insert_imm(b, coords, z_slice, 2);
    }
 
    nir_def *float_coords;

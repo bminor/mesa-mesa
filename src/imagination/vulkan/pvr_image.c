@@ -312,7 +312,7 @@ VkResult pvr_CreateImageView(VkDevice _device,
                              VkImageView *pView)
 {
    PVR_FROM_HANDLE(pvr_device, device, _device);
-   struct pvr_texture_state_info info;
+   struct pvr_texture_state_info info = { 0 };
    unsigned char input_swizzle[4];
    const uint8_t *format_swizzle;
    const struct pvr_image *image;
@@ -353,6 +353,11 @@ VkResult pvr_CreateImageView(VkDevice _device,
 
    info.format = pCreateInfo->format;
    info.layer_size = image->layer_size;
+
+   if (image->vk.create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
+      info.offset = 0;
+      info.z_slice = iview->vk.base_array_layer;
+   }
 
    pvr_adjust_non_compressed_view(image, &info);
 
@@ -462,7 +467,7 @@ VkResult pvr_CreateBufferView(VkDevice _device,
 {
    PVR_FROM_HANDLE(pvr_buffer, buffer, pCreateInfo->buffer);
    PVR_FROM_HANDLE(pvr_device, device, _device);
-   struct pvr_texture_state_info info;
+   struct pvr_texture_state_info info = { 0 };
    const uint8_t *format_swizzle;
    struct pvr_buffer_view *bview;
    VkResult result;

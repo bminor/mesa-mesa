@@ -135,8 +135,8 @@ typedef struct _pco_cs_data {
 enum pco_image_meta {
    PCO_IMAGE_META_LAYER_SIZE,
    PCO_IMAGE_META_BUFFER_ELEMS,
+   PCO_IMAGE_META_Z_SLICE,
    PCO_IMAGE_META_RSVD0,
-   PCO_IMAGE_META_RSVD1,
 
    PCO_IMAGE_META_COUNT,
 };
@@ -217,6 +217,7 @@ typedef struct _pco_common_data {
    } uses;
 
    bool robust_buffer_access;
+   bool image_2d_view_of_3d;
 } pco_common_data;
 
 /** PCO shader data. */

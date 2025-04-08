@@ -2247,6 +2247,9 @@ static void pvr_init_descriptors(pco_data *data,
    data->common.robust_buffer_access =
       device->vk.enabled_features.robustBufferAccess;
 
+   data->common.image_2d_view_of_3d =
+      device->vk.enabled_features.image2DViewOf3D;
+
    for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
       const struct pvr_descriptor_set_layout *set_layout =
          vk_to_pvr_descriptor_set_layout(layout->set_layouts[desc_set]);

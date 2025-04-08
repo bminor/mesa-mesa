@@ -209,7 +209,10 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
          word1.mipmaps_present = info->mipmaps_present;
          word1.baselevel = info->base_level;
 
-         if (iview_type == VK_IMAGE_VIEW_TYPE_3D) {
+         if (iview_type == VK_IMAGE_VIEW_TYPE_3D ||
+             /* 2d view of 3d */
+             (iview_type == VK_IMAGE_VIEW_TYPE_2D &&
+              mem_layout == PVR_MEMLAYOUT_3DTWIDDLED)) {
             if (info->extent.depth > 0)
                word1.depth = info->extent.depth - 1;
          } else {
@@ -249,8 +252,8 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
 
    state->meta[PCO_IMAGE_META_LAYER_SIZE] = info->layer_size;
    state->meta[PCO_IMAGE_META_BUFFER_ELEMS] = info->buffer_elems;
+   state->meta[PCO_IMAGE_META_Z_SLICE] = info->z_slice;
    state->meta[PCO_IMAGE_META_RSVD0] = 0;
-   state->meta[PCO_IMAGE_META_RSVD1] = 0;
 
    return VK_SUCCESS;
 }

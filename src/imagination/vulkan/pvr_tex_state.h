@@ -106,6 +106,7 @@ struct pvr_texture_state_info {
 
    uint32_t layer_size;
    uint32_t buffer_elems;
+   uint32_t z_slice;
 };
 
 VkResult pvr_pack_tex_state(struct pvr_device *device,
