@@ -85,5 +85,4 @@
     CROSVM_GALLIUM_DRIVER: iris
     CROSVM_GPU_ARGS: "gles=false,backend=virglrenderer,egl=true,surfaceless=true"
     EGL_PLATFORM: surfaceless
-    PIGLIT_PROFILES: replay
     PIGLIT_TRACES_FILE: traces-virgl-iris.yml

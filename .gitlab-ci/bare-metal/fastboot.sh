@@ -82,11 +82,7 @@ else
   # Finally, pack it up into a cpio rootfs.  Skip the vulkan CTS since none of
   # these devices use it and it would take up space in the initrd.
 
-  if [ -n "$PIGLIT_PROFILES" ]; then
-    EXCLUDE_FILTER="deqp|arb_gpu_shader5|arb_gpu_shader_fp64|arb_gpu_shader_int64|glsl-4.[0123456]0|arb_tessellation_shader"
-  else
-    EXCLUDE_FILTER="piglit|python"
-  fi
+  EXCLUDE_FILTER="deqp|arb_gpu_shader5|arb_gpu_shader_fp64|arb_gpu_shader_int64|glsl-4.[0123456]0|arb_tessellation_shader"
 
   pushd rootfs
   find -H . | \

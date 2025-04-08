@@ -197,7 +197,6 @@ a618-piglit-cl:
     DEQP_SUITE: freedreno-a618-piglit-cl
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_WESTON: 1
-    PIGLIT_PROFILES: cl
 
 a618-traces:
   extends:
@@ -251,7 +250,6 @@ a660-piglit-cl:
   variables:
     DEQP_SUITE: freedreno-a660-piglit-cl
     HWCI_START_WESTON: 1
-    PIGLIT_PROFILES: cl
 
 a660-gl:
   extends:
@@ -461,7 +459,6 @@ a750-piglit-cl:
   variables:
     DEQP_SUITE: freedreno-a750-piglit-cl
     HWCI_START_WESTON: 1
-    PIGLIT_PROFILES: cl
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
     VK_DRIVER: freedreno
 

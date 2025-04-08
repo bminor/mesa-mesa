@@ -87,7 +87,6 @@
     - .llvmpipe-test
   variables:
     LP_NUM_THREADS: 1
-    PIGLIT_PROFILES: cl
 
 .llvmpipe-deqp-test:
   variables:
