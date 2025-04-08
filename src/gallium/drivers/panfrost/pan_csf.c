@@ -1401,6 +1401,7 @@ get_panthor_group_priority(struct panfrost_context *ctx)
 int
 GENX(csf_init_context)(struct panfrost_context *ctx)
 {
+   struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct drm_panthor_queue_create qc[] = {{
       .priority = 1,
@@ -1408,11 +1409,11 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    }};
 
    struct drm_panthor_group_create gc = {
-      .compute_core_mask = dev->kmod.props.shader_present,
-      .fragment_core_mask = dev->kmod.props.shader_present,
+      .compute_core_mask = screen->compute_core_mask,
+      .fragment_core_mask = screen->fragment_core_mask,
       .tiler_core_mask = 1,
-      .max_compute_cores = util_bitcount64(dev->kmod.props.shader_present),
-      .max_fragment_cores = util_bitcount64(dev->kmod.props.shader_present),
+      .max_compute_cores = util_bitcount64(screen->compute_core_mask),
+      .max_fragment_cores = util_bitcount64(screen->fragment_core_mask),
       .max_tiler_cores = 1,
       .priority = get_panthor_group_priority(ctx),
       .queues = DRM_PANTHOR_OBJ_ARRAY(ARRAY_SIZE(qc), qc),

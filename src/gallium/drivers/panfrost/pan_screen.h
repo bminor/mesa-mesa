@@ -129,6 +129,8 @@ struct panfrost_screen {
    unsigned max_afbc_packing_ratio;
    bool force_afbc_packing;
    int force_afrc_rate;
+   uint64_t compute_core_mask;
+   uint64_t fragment_core_mask;
 
    struct {
       unsigned chunk_size;

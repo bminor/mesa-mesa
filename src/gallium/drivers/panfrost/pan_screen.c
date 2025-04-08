@@ -780,6 +780,24 @@ panfrost_get_timestamp(struct pipe_screen *pscreen)
    return pan_gpu_time_to_ns(dev, pan_kmod_query_timestamp(dev->kmod.dev));
 }
 
+static int
+get_core_mask(const struct panfrost_device *dev,
+              const struct pipe_screen_config *config,
+              const char *option_name, uint64_t *mask)
+{
+   uint64_t present = dev->kmod.props.shader_present;
+   *mask = driQueryOptionu64(config->options, option_name) & present;
+
+   if (!*mask) {
+      debug_printf("panfrost: None of the cores specified in %s are present. "
+                   "Available shader cores are 0x%" PRIx64 ".\n",
+                   option_name, present);
+      return -1;
+   }
+
+   return 0;
+}
+
 struct pipe_screen *
 panfrost_create_screen(int fd, const struct pipe_screen_config *config,
                        struct renderonly *ro)
@@ -834,6 +852,19 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
       int64_t rate =
          debug_parse_num_option(option, PIPE_COMPRESSION_FIXED_RATE_NONE);
       screen->force_afrc_rate = rate;
+   }
+
+   int result = get_core_mask(dev, config, "pan_compute_core_mask",
+                              &screen->compute_core_mask);
+   if (result) {
+      panfrost_destroy_screen(&(screen->base));
+      return NULL;
+   }
+   result = get_core_mask(dev, config, "pan_fragment_core_mask",
+                          &screen->fragment_core_mask);
+   if (result) {
+      panfrost_destroy_screen(&(screen->base));
+      return NULL;
    }
 
    screen->csf_tiler_heap.chunk_size = driQueryOptioni(config->options,
