@@ -486,6 +486,14 @@ struct lp_build_sample_context
    struct lp_type lodi_type;
    struct lp_build_context lodi_bld;
 
+   /** Aniso filtering direction type */
+   struct lp_type aniso_rate_type;
+   struct lp_build_context aniso_rate_bld;
+
+   /** Aniso filtering rate type */
+   struct lp_type aniso_direction_type;
+   struct lp_build_context aniso_direction_bld;
+
    /* Common dynamic state values */
    LLVMTypeRef row_stride_type;
    LLVMValueRef row_stride_array;
@@ -532,6 +540,11 @@ struct lp_build_img_op_array_switch {
    LLVMValueRef switch_ref;
    LLVMBasicBlockRef merge_ref;
    LLVMValueRef phi[4];
+};
+
+struct lp_aniso_values {
+   LLVMValueRef rate;
+   LLVMValueRef direction; /* true: X, false: Y */
 };
 
 
@@ -645,7 +658,8 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
                       LLVMValueRef *out_lod,
                       LLVMValueRef *out_lod_ipart,
                       LLVMValueRef *out_lod_fpart,
-                      LLVMValueRef *out_lod_positive);
+                      LLVMValueRef *out_lod_positive,
+                      struct lp_aniso_values *out_aniso);
 
 void
 lp_build_nearest_mip_level(struct lp_build_sample_context *bld,

@@ -217,6 +217,12 @@ lp_build_clamp(struct lp_build_context *bld,
                LLVMValueRef max);
 
 LLVMValueRef
+lp_build_clamp_nanmin(struct lp_build_context *bld,
+                      LLVMValueRef a,
+                      LLVMValueRef min,
+                      LLVMValueRef max);
+
+LLVMValueRef
 lp_build_clamp_zero_one_nanzero(struct lp_build_context *bld,
                                 LLVMValueRef a);
 

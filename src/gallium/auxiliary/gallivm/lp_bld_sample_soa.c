@@ -2182,9 +2182,6 @@ lp_build_sample_ms_offset(struct lp_build_context *int_coord_bld,
 }
 
 
-#define WEIGHT_LUT_SIZE 1024
-
-
 static void
 lp_build_sample_aniso(struct lp_build_sample_context *bld,
                       const LLVMValueRef *coords,
@@ -2192,18 +2189,20 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
                       LLVMValueRef ilevel0,
                       LLVMValueRef ilevel1,
                       LLVMValueRef lod_fpart,
+                      struct lp_aniso_values *aniso_values,
                       LLVMValueRef *colors_out)
 {
+   assert(aniso_values);
+
    struct gallivm_state *gallivm = bld->gallivm;
    LLVMBuilderRef builder = gallivm->builder;
    struct lp_build_context *coord_bld = &bld->coord_bld;
    struct lp_build_context *int_coord_bld = &bld->int_coord_bld;
-   struct lp_build_context uint_coord_bld;
+   struct lp_build_context *rate_bld = &bld->aniso_rate_bld;
+   struct lp_build_context *direction_bld = &bld->aniso_direction_bld;
 
    LLVMValueRef size0, row_stride0_vec, img_stride0_vec;
    LLVMValueRef data_ptr0, mipoff0 = NULL;
-
-   lp_build_context_init(&uint_coord_bld, gallivm, lp_uint_type(int_coord_bld->type));
 
    lp_build_mipmap_level_sizes(bld, ilevel0,
                                &size0,
@@ -2216,40 +2215,18 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
       mipoff0 = lp_build_get_mip_offsets(bld, ilevel0);
    }
 
-   LLVMValueRef float_size_lvl = lp_build_int_to_float(&bld->float_size_bld, size0);
+   LLVMValueRef N = aniso_values->rate;
+   if (rate_bld->type.length != int_coord_bld->type.length) {
+      N = lp_build_unpack_broadcast_aos_scalars(bld->gallivm,
+         rate_bld->type, int_coord_bld->type, N);
+   }
 
-   /* extract width and height into vectors for use later */
-   static const unsigned char swizzle15[] = { /* no-op swizzle */
-      1, 1, 1, 1, 5, 5, 5, 5
-   };
-   static const unsigned char swizzle04[] = { /* no-op swizzle */
-      0, 0, 0, 0, 4, 4, 4, 4
-   };
-   LLVMValueRef width_dim, height_dim;
+   LLVMValueRef sample_along_x = aniso_values->direction;
+   if (direction_bld->type.length != int_coord_bld->type.length) {
+      sample_along_x = lp_build_unpack_broadcast_aos_scalars(bld->gallivm,
+         direction_bld->type, int_coord_bld->type, sample_along_x);
+   }
 
-   width_dim = lp_build_swizzle_aos_n(gallivm, float_size_lvl, swizzle04,
-                                      bld->float_size_bld.type.length,
-                                      bld->coord_bld.type.length);
-   height_dim = lp_build_swizzle_aos_n(gallivm, float_size_lvl, swizzle15,
-                                       bld->float_size_bld.type.length,
-                                       bld->coord_bld.type.length);
-
-   /* Gradient of the u coordinate in screen space. */
-   LLVMValueRef dudx = lp_build_ddx(coord_bld, coords[0]);
-   LLVMValueRef dudy = lp_build_ddy(coord_bld, coords[0]);
-
-   /* Gradient of the v coordinate in screen space. */
-   LLVMValueRef dvdx = lp_build_ddx(coord_bld, coords[1]);
-   LLVMValueRef dvdy = lp_build_ddy(coord_bld, coords[1]);
-
-   LLVMValueRef rho_x = lp_build_mul(coord_bld, lp_build_max(coord_bld, lp_build_abs(coord_bld, dudx), lp_build_abs(coord_bld, dvdx)), width_dim);
-   LLVMValueRef rho_y = lp_build_mul(coord_bld, lp_build_max(coord_bld, lp_build_abs(coord_bld, dudy), lp_build_abs(coord_bld, dvdy)), height_dim);
-
-   /* Number of samples used for averaging. */
-   LLVMValueRef N = lp_build_iceil(coord_bld, lp_build_max(coord_bld, rho_x, rho_y));
-
-   /* Use uint min so in case of NaNs/overflows loop iterations are clamped to max aniso */
-   N = lp_build_min(&uint_coord_bld, N, lp_build_const_int_vec(gallivm, int_coord_bld->type, bld->static_sampler_state->aniso));
    LLVMValueRef wave_max_N = NULL;
    for (uint32_t i = 0; i < coord_bld->type.length; i++) {
       LLVMValueRef invocation_N = LLVMBuildExtractElement(builder, N, lp_build_const_int32(gallivm, i), "");
@@ -2259,9 +2236,16 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
          wave_max_N = invocation_N;
    }
 
-   LLVMValueRef sample_along_x_axis = lp_build_cmp(coord_bld, PIPE_FUNC_GREATER, rho_x, rho_y);
-   LLVMValueRef dudk = lp_build_select(coord_bld, sample_along_x_axis, dudx, dudy);
-   LLVMValueRef dvdk = lp_build_select(coord_bld, sample_along_x_axis, dvdx, dvdy);
+   /* Gradient of the u coordinate in screen space. */
+   LLVMValueRef dudx = lp_build_ddx(coord_bld, coords[0]);
+   LLVMValueRef dudy = lp_build_ddy(coord_bld, coords[0]);
+
+   /* Gradient of the v coordinate in screen space. */
+   LLVMValueRef dvdx = lp_build_ddx(coord_bld, coords[1]);
+   LLVMValueRef dvdy = lp_build_ddy(coord_bld, coords[1]);
+
+   LLVMValueRef dudk = lp_build_select(coord_bld, sample_along_x, dudx, dudy);
+   LLVMValueRef dvdk = lp_build_select(coord_bld, sample_along_x, dvdx, dvdy);
 
    LLVMValueRef accumulator[4] = {
       lp_build_alloca(gallivm, bld->texel_bld.vec_type, "r"),
@@ -2270,10 +2254,27 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
       lp_build_alloca(gallivm, bld->texel_bld.vec_type, "a"),
    };
 
+   /*
+    * We use the suggested anisotropic filtering algorithm from the Vulkan spec:
+    * https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#textures-texel-anisotropic-filtering
+    * The coordinate offset expression is the same in all cases: -1/2 + i / (N + 1)
+    * We can rewrite this expression as: (-N - 1) / (2N + 2) + 2i / (2N + 2) =
+    *     (-N - 1 + 2i) / (2N + 2) = (-0.5N - 0.5 + i) / (N + 1)
+    * Instead of 1-based indexing with i, we use 0-based k: i = k + 1
+    * Subtituting k, we get our final expression: (-0.5N + 0.5 + k) / (N + 1)
+    * We split this into base_k = -0.5N + 0.5 and rcp_N_plus_one = 1 / (N + 1)
+    * In the loop we obtain our offset by doing (k + base_k) * rcp_N_plus_one
+    */
    LLVMValueRef float_N = lp_build_int_to_float(coord_bld, N);
    LLVMValueRef rcp_N = lp_build_rcp(coord_bld, float_N);
+   LLVMValueRef rcp_N_plus_one = lp_build_rcp(coord_bld, lp_build_add(coord_bld, float_N, coord_bld->one));
    LLVMValueRef base_k = LLVMBuildFMul(builder, float_N, lp_build_const_vec(gallivm, coord_bld->type, -0.5), "");
    base_k = lp_build_add(coord_bld, base_k, lp_build_const_vec(gallivm, coord_bld->type, 0.5));
+
+   LLVMValueRef tmp_color[4];
+   for (int i = 0; i < ARRAY_SIZE(tmp_color); i++) {
+      tmp_color[i] = lp_build_alloca(gallivm, bld->texel_bld.vec_type, "");
+   }
 
    struct lp_build_for_loop_state loop_state;
    lp_build_for_loop_begin(&loop_state, gallivm, lp_build_const_int32(gallivm, 0),
@@ -2284,7 +2285,7 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
 
       LLVMValueRef float_k = lp_build_int_to_float(coord_bld, k);
       float_k = lp_build_add(coord_bld, float_k, base_k);
-      float_k = lp_build_mul(coord_bld, float_k, rcp_N);
+      float_k = lp_build_mul(coord_bld, float_k, rcp_N_plus_one);
 
       LLVMValueRef u_offset = lp_build_mul(coord_bld, float_k, dudk);
       LLVMValueRef v_offset = lp_build_mul(coord_bld, float_k, dvdk);
@@ -2296,23 +2297,33 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
       for (uint32_t i = 2; i < ARRAY_SIZE(sample_coords); i++)
          sample_coords[i] = coords[i];
 
-
       if (bld->static_texture_state->target == PIPE_TEXTURE_CUBE ||
           bld->static_texture_state->target == PIPE_TEXTURE_CUBE_ARRAY) {
          /* Make sure the coordinates stay in bounds for PIPE_TEXTURE_CUBE loads since
           * lp_build_sample_image_linear uses less clamping for them.
           */
-         sample_coords[0] = lp_build_max(coord_bld, sample_coords[0], bld->coord_bld.zero);
-         sample_coords[0] = lp_build_min(coord_bld, sample_coords[0], bld->coord_bld.one);
-         sample_coords[1] = lp_build_max(coord_bld, sample_coords[1], bld->coord_bld.zero);
-         sample_coords[1] = lp_build_min(coord_bld, sample_coords[1], bld->coord_bld.one);
+         sample_coords[0] = lp_build_clamp(coord_bld, sample_coords[0], bld->coord_bld.zero, bld->coord_bld.one);
+         sample_coords[1] = lp_build_clamp(coord_bld, sample_coords[1], bld->coord_bld.zero, bld->coord_bld.one);
       }
 
+      /* Anisotropic filtering is allowed to ignore min and mag filters. We always use linear.
+       * Mip filtering has a big quality impact though, so we use that if enabled.
+       */
       LLVMValueRef sample_color[4];
-      lp_build_sample_image_linear(bld, false, size0, NULL,
-                                   row_stride0_vec, img_stride0_vec,
-                                   data_ptr0, mipoff0, ilevel0, sample_coords, offsets,
-                                   sample_color);
+      if (bld->static_sampler_state->min_mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
+         lp_build_sample_mipmap(bld, PIPE_TEX_FILTER_LINEAR, PIPE_TEX_MIPFILTER_LINEAR,
+                                false, sample_coords, offsets,
+                                ilevel0, ilevel1, lod_fpart,
+                                tmp_color);
+         for (int i = 0; i < ARRAY_SIZE(sample_color); i++) {
+            sample_color[i] = LLVMBuildLoad2(builder, bld->texel_bld.vec_type, tmp_color[i], "");
+         }
+      } else {
+         lp_build_sample_image_linear(bld, false, size0, NULL,
+                                      row_stride0_vec, img_stride0_vec,
+                                      data_ptr0, mipoff0, ilevel0, sample_coords, offsets,
+                                      sample_color);
+      }
 
       LLVMValueRef oob = lp_build_cmp(int_coord_bld, PIPE_FUNC_GEQUAL, k, N);
 
@@ -2347,7 +2358,8 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
                        LLVMValueRef *lod,
                        LLVMValueRef *lod_fpart,
                        LLVMValueRef *ilevel0,
-                       LLVMValueRef *ilevel1)
+                       LLVMValueRef *ilevel1,
+                       struct lp_aniso_values *aniso_values)
 {
    const unsigned mip_filter = bld->static_sampler_state->min_mip_filter;
    const unsigned min_filter = bld->static_sampler_state->min_img_filter;
@@ -2431,10 +2443,11 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
    /*
     * Compute the level of detail (float).
     */
-   if (min_filter != mag_filter ||
-       mip_filter != PIPE_TEX_MIPFILTER_NONE || is_lodq) {
-      /* Need to compute lod either to choose mipmap levels or to
-       * distinguish between minification/magnification with one mipmap level.
+   if (min_filter != mag_filter || mip_filter != PIPE_TEX_MIPFILTER_NONE ||
+         is_lodq || aniso) {
+      /* Need to compute lod either to choose mipmap levels, or to
+       * distinguish between minification/magnification with one mipmap level,
+       * or to compute anisotropic sampling rate.
        */
       LLVMValueRef first_level_vec =
          lp_build_broadcast_scalar(&bld->int_size_in_bld, first_level);
@@ -2443,7 +2456,8 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
                             coords[0], coords[1], coords[2],
                             derivs, lod_bias, explicit_lod,
                             mip_filter, lod,
-                            &lod_ipart, lod_fpart, lod_pos_or_zero);
+                            &lod_ipart, lod_fpart, lod_pos_or_zero,
+                            aniso_values);
       if (is_lodq) {
          last_level = lp_build_sub(&bld->int_bld, last_level, first_level);
          last_level = lp_build_int_to_float(&bld->float_bld, last_level);
@@ -2481,13 +2495,6 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
    /*
     * Compute integer mipmap level(s) to fetch texels from: ilevel0, ilevel1
     */
-
-   if (aniso) {
-      lp_build_nearest_mip_level(bld,
-                                 first_level, last_level,
-                                 lod_ipart, ilevel0, NULL);
-      return;
-   }
 
    switch (mip_filter) {
    default:
@@ -2755,6 +2762,7 @@ lp_build_sample_general(struct lp_build_sample_context *bld,
                         LLVMValueRef lod_fpart,
                         LLVMValueRef ilevel0,
                         LLVMValueRef ilevel1,
+                        struct lp_aniso_values *aniso_values,
                         LLVMValueRef *colors_out)
 {
    LLVMBuilderRef builder = bld->gallivm->builder;
@@ -2792,7 +2800,8 @@ lp_build_sample_general(struct lp_build_sample_context *bld,
 
    if (sampler_state->aniso) {
       lp_build_sample_aniso(bld, coords, offsets, ilevel0,
-                            ilevel1, lod_fpart, texels);
+                            ilevel1, lod_fpart, aniso_values,
+                            texels);
    } else if (min_filter == mag_filter) {
       /* no need to distinguish between minification and magnification */
       lp_build_sample_mipmap(bld, min_filter, mip_filter,
@@ -3379,6 +3388,9 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
    bld.leveli_type = lp_int_type(bld.levelf_type);
    bld.float_size_type = bld.float_size_in_type;
 
+   bld.aniso_rate_type = bld.lodi_type;
+   bld.aniso_direction_type = bld.lodi_type;
+
    /* Note: size vectors may not be native. They contain minified w/h/d/_
     * values, with per-element lod that is w0/h0/d0/_/w1/h1/d1_/... so up to
     * 8x4f32
@@ -3404,6 +3416,8 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
    lp_build_context_init(&bld.leveli_bld, gallivm, bld.leveli_type);
    lp_build_context_init(&bld.lodf_bld, gallivm, bld.lodf_type);
    lp_build_context_init(&bld.lodi_bld, gallivm, bld.lodi_type);
+   lp_build_context_init(&bld.aniso_rate_bld, gallivm, bld.aniso_rate_type);
+   lp_build_context_init(&bld.aniso_direction_bld, gallivm, bld.aniso_direction_type);
 
    /* Get the dynamic state */
    LLVMValueRef tex_width = dynamic_state->width(gallivm, resources_type,
@@ -3542,6 +3556,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
    } else {
       LLVMValueRef lod_fpart = NULL, lod_positive = NULL;
       LLVMValueRef ilevel0 = NULL, ilevel1 = NULL, lod = NULL;
+      struct lp_aniso_values aniso_values = {};
       bool use_aos = util_format_fits_8unorm(bld.format_desc) &&
                 op_is_tex &&
                 /* not sure this is strictly needed or simply impossible */
@@ -3593,7 +3608,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
       lp_build_sample_common(&bld, op_is_lodq, texture_index, sampler_index,
                              newcoords, derivs, lod_bias, explicit_lod,
                              &lod_positive, &lod, &lod_fpart,
-                             &ilevel0, &ilevel1);
+                             &ilevel0, &ilevel1, &aniso_values);
 
       if (op_is_lodq) {
          texel_out[0] = lod_fpart;
@@ -3632,7 +3647,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                                     op_type == LP_SAMPLER_OP_GATHER,
                                     newcoords, offsets,
                                     lod_positive, lod_fpart,
-                                    ilevel0, ilevel1,
+                                    ilevel0, ilevel1, &aniso_values,
                                     texel_out);
             if (bld.residency)
                texel_out[4] = bld.resident;
@@ -3722,6 +3737,9 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
          }
          bld4.int_size_type = lp_int_type(bld4.float_size_type);
 
+         bld4.aniso_rate_type = bld4.lodi_type;
+         bld4.aniso_direction_type = bld4.lodi_type;
+
          lp_build_context_init(&bld4.float_bld, gallivm, bld4.float_type);
          lp_build_context_init(&bld4.float_vec_bld, gallivm, type4);
          lp_build_context_init(&bld4.int_bld, gallivm, bld4.int_type);
@@ -3736,6 +3754,8 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
          lp_build_context_init(&bld4.leveli_bld, gallivm, bld4.leveli_type);
          lp_build_context_init(&bld4.lodf_bld, gallivm, bld4.lodf_type);
          lp_build_context_init(&bld4.lodi_bld, gallivm, bld4.lodi_type);
+         lp_build_context_init(&bld4.aniso_rate_bld, gallivm, bld4.aniso_rate_type);
+         lp_build_context_init(&bld4.aniso_direction_bld, gallivm, bld4.aniso_direction_type);
 
          for (unsigned i = 0; i < num_quads; i++) {
             LLVMValueRef s4, t4, r4;
@@ -3785,7 +3805,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                                        op_type == LP_SAMPLER_OP_GATHER,
                                        newcoords4, offsets4,
                                        lod_positive4, lod_fpart4,
-                                       ilevel04, ilevel14,
+                                       ilevel04, ilevel14, &aniso_values,
                                        texelout4);
             }
             for (unsigned j = 0; j < 4; j++) {

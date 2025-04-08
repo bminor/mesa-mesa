@@ -263,19 +263,23 @@ lp_sampler_static_sampler_state(struct lp_static_sampler_state *state,
 }
 
 
-/* build aniso pmin value */
+/* build aniso rho value */
 static LLVMValueRef
-lp_build_pmin(struct lp_build_sample_context *bld,
-              LLVMValueRef first_level,
-              LLVMValueRef s,
-              LLVMValueRef t)
+lp_build_rho_aniso(struct lp_build_sample_context *bld,
+                   LLVMValueRef first_level,
+                   LLVMValueRef s,
+                   LLVMValueRef t,
+                   struct lp_aniso_values *aniso_values)
 {
    struct gallivm_state *gallivm = bld->gallivm;
    LLVMBuilderRef builder = bld->gallivm->builder;
    struct lp_build_context *coord_bld = &bld->coord_bld;
+   struct lp_build_context *int_coord_bld = &bld->int_coord_bld;
    struct lp_build_context *int_size_bld = &bld->int_size_in_bld;
    struct lp_build_context *float_size_bld = &bld->float_size_in_bld;
-   struct lp_build_context *pmin_bld = &bld->lodf_bld;
+   struct lp_build_context *rho_bld = &bld->lodf_bld;
+   struct lp_build_context *rate_bld = &bld->aniso_rate_bld;
+   struct lp_build_context *direction_bld = &bld->aniso_direction_bld;
    LLVMTypeRef i32t = LLVMInt32TypeInContext(bld->gallivm->context);
    LLVMValueRef index0 = LLVMConstInt(i32t, 0, 0);
    LLVMValueRef index1 = LLVMConstInt(i32t, 1, 0);
@@ -283,7 +287,7 @@ lp_build_pmin(struct lp_build_sample_context *bld,
    LLVMValueRef int_size, float_size;
    const unsigned length = coord_bld->type.length;
    const unsigned num_quads = length / 4;
-   const bool pmin_per_quad = pmin_bld->type.length != length;
+   const bool rho_per_quad = rho_bld->type.length != length;
 
    int_size = lp_build_minify(int_size_bld, bld->int_size, first_level, true);
    float_size = lp_build_int_to_float(float_size_bld, int_size);
@@ -311,7 +315,7 @@ lp_build_pmin(struct lp_build_sample_context *bld,
    ddx_ddys = lp_build_swizzle_aos(coord_bld, ddx_ddy, swizzle01);
    ddx_ddyt = lp_build_swizzle_aos(coord_bld, ddx_ddy, swizzle23);
 
-   LLVMValueRef px2_py2 = lp_build_add(coord_bld, ddx_ddys, ddx_ddyt);
+   LLVMValueRef rho_x2_rho_y2 = lp_build_add(coord_bld, ddx_ddys, ddx_ddyt);
 
    static const unsigned char swizzle0[] = { /* no-op swizzle */
      0, LP_BLD_SWIZZLE_DONTCARE,
@@ -321,30 +325,37 @@ lp_build_pmin(struct lp_build_sample_context *bld,
      1, LP_BLD_SWIZZLE_DONTCARE,
      LP_BLD_SWIZZLE_DONTCARE, LP_BLD_SWIZZLE_DONTCARE
    };
-   LLVMValueRef px2 = lp_build_swizzle_aos(coord_bld, px2_py2, swizzle0);
-   LLVMValueRef py2 = lp_build_swizzle_aos(coord_bld, px2_py2, swizzle1);
+   LLVMValueRef rho_x2 = lp_build_swizzle_aos(coord_bld, rho_x2_rho_y2, swizzle0);
+   LLVMValueRef rho_y2 = lp_build_swizzle_aos(coord_bld, rho_x2_rho_y2, swizzle1);
 
-   LLVMValueRef pmax2 = lp_build_max(coord_bld, px2, py2);
-   LLVMValueRef pmin2 = lp_build_min(coord_bld, px2, py2);
+   LLVMValueRef rho_max2 = lp_build_max(coord_bld, rho_x2, rho_y2);
+   LLVMValueRef rho_min2 = lp_build_min(coord_bld, rho_x2, rho_y2);
 
-   LLVMValueRef temp = lp_build_mul(
-      coord_bld, pmin2, lp_build_const_vec(gallivm, coord_bld->type, bld->static_sampler_state->aniso *
-                                           bld->static_sampler_state->aniso));
+   LLVMValueRef min_aniso2 = coord_bld->one;
+   LLVMValueRef max_aniso2 = lp_build_const_vec(gallivm, coord_bld->type, bld->static_sampler_state->aniso * bld->static_sampler_state->aniso);
+   LLVMValueRef eta2 = lp_build_clamp_nanmin(coord_bld, lp_build_div(coord_bld, rho_max2, rho_min2), min_aniso2, max_aniso2);
+   LLVMValueRef N = lp_build_iceil(coord_bld, lp_build_sqrt(coord_bld, eta2));
 
-   LLVMValueRef comp = lp_build_compare(gallivm, coord_bld->type, PIPE_FUNC_GREATER,
-                                        pmax2, temp);
+   LLVMValueRef direction = lp_build_cmp(coord_bld, PIPE_FUNC_GREATER, rho_x2, rho_y2);
 
-   LLVMValueRef pmin2_alt = lp_build_div(coord_bld, pmax2,
-      lp_build_const_vec(gallivm, coord_bld->type, bld->static_sampler_state->aniso));
+   /* If eta2 was clamped this will increase the rho_min2 value,
+    * increasing the LOD value (using a lower resolution mip) so
+    * that the sampling loop does not skip pixels.
+    */
+   rho_min2 = lp_build_div(coord_bld, rho_max2, eta2);
 
-   pmin2 = lp_build_select(coord_bld, comp, pmin2_alt, pmin2);
+   if (rho_per_quad) {
+      aniso_values->rate = lp_build_pack_aos_scalars(bld->gallivm, int_coord_bld->type,
+         rate_bld->type, N, 0);
+      aniso_values->direction = lp_build_pack_aos_scalars(bld->gallivm, int_coord_bld->type,
+         direction_bld->type, direction, 0);
+      return lp_build_pack_aos_scalars(bld->gallivm, coord_bld->type,
+                                        rho_bld->type, rho_min2, 0);
+   }
 
-   if (pmin_per_quad)
-      pmin2 = lp_build_pack_aos_scalars(bld->gallivm, coord_bld->type,
-                                        pmin_bld->type, pmin2, 0);
-   else
-      pmin2 = lp_build_swizzle_scalar_aos(pmin_bld, pmin2, 0, 4);
-   return pmin2;
+   aniso_values->rate = lp_build_swizzle_scalar_aos(rate_bld, N, 0, 4);
+   aniso_values->direction = lp_build_swizzle_scalar_aos(direction_bld, direction, 0, 4);
+   return lp_build_swizzle_scalar_aos(rho_bld, rho_min2, 0, 4);
 }
 
 
@@ -801,6 +812,7 @@ lp_build_ilog2_sqrt(struct lp_build_context *bld,
  * \param out_lod_ipart  integer part of lod
  * \param out_lod_fpart  float part of lod (never larger than 1 but may be negative)
  * \param out_lod_positive  (mask) if lod is positive (i.e. texture is minified)
+ * \param out_aniso_values  aniso sampling values
  *
  * The resulting lod can be scalar per quad or be per element.
  */
@@ -819,7 +831,8 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
                       LLVMValueRef *out_lod,
                       LLVMValueRef *out_lod_ipart,
                       LLVMValueRef *out_lod_fpart,
-                      LLVMValueRef *out_lod_positive)
+                      LLVMValueRef *out_lod_positive,
+                      struct lp_aniso_values *out_aniso_values)
 
 {
    LLVMBuilderRef builder = bld->gallivm->builder;
@@ -830,6 +843,8 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
    *out_lod_ipart = bld->lodi_bld.zero;
    *out_lod_positive = bld->lodi_bld.zero;
    *out_lod_fpart = lodf_bld->zero;
+   out_aniso_values->rate = bld->aniso_rate_bld.one;
+   out_aniso_values->direction = bld->aniso_direction_bld.zero;
 
    /*
     * For determining min/mag, we follow GL 4.1 spec, 3.9.12 Texture
@@ -849,6 +864,17 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
     * have no clue about the (undocumented) wishes of d3d9/d3d10 here!
     */
 
+   LLVMValueRef rho = NULL;
+   bool rho_squared;
+
+   /* When anisotropic filtering is enabled, we always compute rho,
+    * since it's used to derive the anisotropic sampling rate.
+    */
+   if (bld->static_sampler_state->aniso) {
+      rho = lp_build_rho_aniso(bld, first_level, s, t, out_aniso_values);
+      rho_squared = true;
+   }
+
    if (bld->static_sampler_state->min_max_lod_equal && !is_lodq) {
       /* User is forcing sampling from a particular mipmap level.
        * This is hit during mipmap generation.
@@ -860,21 +886,16 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
       lod = lp_build_broadcast_scalar(lodf_bld, min_lod);
    } else {
       if (explicit_lod) {
-         if (bld->num_lods != bld->coord_type.length)
+         if (bld->num_lods != bld->coord_type.length) {
             lod = lp_build_pack_aos_scalars(bld->gallivm, bld->coord_bld.type,
                                             lodf_bld->type, explicit_lod, 0);
-         else
-            lod = explicit_lod;
-      } else {
-         LLVMValueRef rho;
-         bool rho_squared = bld->no_rho_approx && (bld->dims > 1);
-
-         if (bld->static_sampler_state->aniso &&
-             !explicit_lod) {
-            rho = lp_build_pmin(bld, first_level, s, t);
-            rho_squared = true;
          } else {
+            lod = explicit_lod;
+         }
+      } else {
+         if (!rho) {
             rho = lp_build_rho(bld, first_level, s, t, r, derivs);
+            rho_squared = bld->no_rho_approx && (bld->dims > 1);
          }
 
          /*
@@ -882,7 +903,6 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
           */
 
          if (!lod_bias && !is_lodq &&
-             !bld->static_sampler_state->aniso &&
              !bld->static_sampler_state->lod_bias_non_zero &&
              !bld->static_sampler_state->apply_max_lod &&
              !bld->static_sampler_state->apply_min_lod) {
@@ -908,8 +928,7 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
                return;
             }
             if (mip_filter == PIPE_TEX_MIPFILTER_LINEAR &&
-                !bld->no_brilinear && !rho_squared &&
-                !bld->static_sampler_state->aniso) {
+                !bld->no_brilinear && !rho_squared) {
                /*
                 * This can't work if rho is squared. Not sure if it could be
                 * fixed while keeping it worthwile, could also do sqrt here
@@ -990,9 +1009,7 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
    *out_lod_positive = lp_build_cmp(lodf_bld, PIPE_FUNC_GREATER,
                                     lod, lodf_bld->zero);
 
-   if (bld->static_sampler_state->aniso) {
-      *out_lod_ipart = lp_build_itrunc(lodf_bld, lod);
-   } else if (mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
+   if (mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
       if (!bld->no_brilinear) {
          lp_build_brilinear_lod(lodf_bld, lod, BRILINEAR_FACTOR,
                                 out_lod_ipart, out_lod_fpart);
