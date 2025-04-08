@@ -297,6 +297,16 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
       }                                                                                                                \
    } while (0)
 
+/* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
+#define __gfx12_push_reg(cmdbuf, reg, value, base_offset)                                                              \
+   do {                                                                                                                \
+      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
+      unsigned __i = __cmdbuf->num_buffered_sh_regs++;                                                                 \
+      assert(__i < ARRAY_SIZE(__cmdbuf->gfx12.buffered_sh_regs));                                                      \
+      __cmdbuf->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                                 \
+      __cmdbuf->gfx12.buffered_sh_regs[__i].reg_value = value;                                                         \
+   } while (0)
+
 /* GFX12 packet building helpers for PAIRS packets. */
 #define gfx12_begin_context_regs() __gfx12_begin_regs(__cs_context_reg_header)
 
@@ -309,6 +319,25 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    __gfx12_opt_set_reg2(cmdbuf, reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET)
 
 #define gfx12_end_context_regs() __gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
+
+/* GFX12 packet building helpers for buffered registers. */
+#define gfx12_push_sh_reg(cmdbuf, reg, value) __gfx12_push_reg(cmdbuf, reg, value, SI_SH_REG_OFFSET)
+
+#define gfx12_push_32bit_pointer(cmdbuf, sh_offset, va, info)                                                          \
+   do {                                                                                                                \
+      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
+      gfx12_push_sh_reg(cmdbuf, sh_offset, va);                                                                        \
+   } while (0)
+
+#define gfx12_emit_buffered_sh_regs(num_regs, regs)                                                                    \
+   do {                                                                                                                \
+      unsigned __reg_count = *(num_regs);                                                                              \
+      if (__reg_count) {                                                                                               \
+         radeon_emit(PKT3(PKT3_SET_SH_REG_PAIRS, __reg_count * 2 - 1, 0) | PKT3_RESET_FILTER_CAM_S(1));                \
+         radeon_emit_array(regs, __reg_count * 2);                                                                     \
+         *(num_regs) = 0;                                                                                              \
+      }                                                                                                                \
+   } while (0)
 
 ALWAYS_INLINE static void
 radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
