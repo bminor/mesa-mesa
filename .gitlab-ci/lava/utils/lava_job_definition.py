@@ -257,7 +257,8 @@ class LAVAJobDefinition:
         # since the license isn't bundled inside the repository
         if self.job_submitter.device_type == "sm8350-hdk":
             run_steps.append(
-                "curl -L --retry 4 -f --retry-all-errors --retry-delay 60 "
+                "mkdir -p /lib/firmware/qcom/sm8350 && "
+                + "curl -L --retry 4 -f --retry-all-errors --retry-delay 60 "
                 + "https://github.com/allahjasif1990/hdk888-firmware/raw/main/a660_zap.mbn "
                 + '-o "/lib/firmware/qcom/sm8350/a660_zap.mbn"'
             )
