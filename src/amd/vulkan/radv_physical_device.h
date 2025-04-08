@@ -46,6 +46,7 @@ struct radv_physical_device_cache_key {
    uint32_t disable_aniso_single_level : 1;
    uint32_t disable_shrink_image_store : 1;
    uint32_t disable_sinking_load_input_fs : 1;
+   uint32_t disable_trunc_coord : 1;
    uint32_t emulate_rt : 1;
    uint32_t ge_wave32 : 1;
    uint32_t invariant_geom : 1;
@@ -62,7 +63,7 @@ struct radv_physical_device_cache_key {
    uint32_t use_ngg : 1;
    uint32_t use_ngg_culling : 1;
 
-   uint32_t reserved : 11;
+   uint32_t reserved : 10;
 };
 
 enum radv_video_enc_hw_ver {

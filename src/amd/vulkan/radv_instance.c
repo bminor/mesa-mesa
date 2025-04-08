@@ -238,6 +238,12 @@ radv_init_dri_options(struct radv_instance *instance)
       driQueryOptionb(&instance->drirc.options, "radv_disable_aniso_single_level");
 
    instance->drirc.disable_trunc_coord = driQueryOptionb(&instance->drirc.options, "radv_disable_trunc_coord");
+   if (instance->vk.app_info.engine_name && !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
+      /* Since 2.3.1+, DXVK uses the application version to notify the driver about D3D9. */
+      const bool is_d3d9 = instance->vk.app_info.app_version & 0x1;
+
+      instance->drirc.disable_trunc_coord &= !is_d3d9;
+   }
 
    instance->drirc.disable_sinking_load_input_fs =
       driQueryOptionb(&instance->drirc.options, "radv_disable_sinking_load_input_fs");
