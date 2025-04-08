@@ -417,11 +417,9 @@
 
 .iris-traces:
   extends:
-    - .lava-traces-base
+    - .lava-piglit-traces
   variables:
     EGL_PLATFORM: surfaceless
-    PIGLIT_REPLAY_DEVICE_NAME: "gl-${GPU_VERSION}"
-    PIGLIT_RESULTS: "${GPU_VERSION}-replay"
     PIGLIT_TRACES_FILE: traces-iris.yml
 
 .iris-whl-traces:

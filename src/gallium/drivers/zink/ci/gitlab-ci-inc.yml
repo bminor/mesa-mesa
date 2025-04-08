@@ -147,6 +147,7 @@
     # trace replay, instead.
     # https://gitlab.freedesktop.org/mesa/mesa/-/issues/6753
     HWCI_START_XORG: ""
+    HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     WAFFLE_PLATFORM: gbm
     PIGLIT_PLATFORM: gbm
 
@@ -198,10 +199,6 @@
     - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
     - .zink-anv-rules
     - .zink-trace-test
-    # Add .lava-traces-base again to override .anv-test setting the
-    # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
-    # dependencies right.
-    - .lava-traces-base
   variables:
     VK_DRIVER: intel
     GPU_VERSION: zink-anv-adl
@@ -223,10 +220,6 @@
     - .lava-acer-cp514-2h-1130g7-volteer:x86_64
     - .zink-anv-rules
     - .zink-trace-test
-    # Add .lava-traces-base again to override .anv-test setting the
-    # HWCI_TEST_SCRIPT, but .lava-piglit-traces having to come first to get
-    # dependencies right.
-    - .lava-traces-base
   variables:
     VK_DRIVER: intel
     GPU_VERSION: zink-anv-tgl

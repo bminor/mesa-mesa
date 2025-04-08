@@ -156,7 +156,6 @@ zink-tu-a618-traces:
     - a618-traces
     - .zink-turnip-collabora-rules
     - .zink-trace-test
-  parallel: null
   variables:
     PIGLIT_REPLAY_DEVICE_NAME: "zink-a618"
 

@@ -210,7 +210,6 @@ a618-traces:
     FDO_CI_CONCURRENT: 5  # 6 is too much leading to OOM
     FLAKES_CHANNEL: "#freedreno-ci"
     PIGLIT_REPLAY_DEVICE_NAME: "${GPU_VERSION}"
-    PIGLIT_RESULTS: "${GPU_VERSION}-replay"
     # This lets us run several more traces which don't use any features we're
     # missing.
     MESA_GLSL_VERSION_OVERRIDE: "460"

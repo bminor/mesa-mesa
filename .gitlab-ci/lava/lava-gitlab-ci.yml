@@ -139,37 +139,31 @@ variables:
   extends:
     - .lava-test:x86_64
 
-.lava-traces-base:
+.lava-piglit-traces:
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     # until we overcome Infrastructure issues, give traces extra 5 min before timeout
     DEVICE_HANGING_TIMEOUT_SEC: 600
+    PIGLIT_REPLAY_DEVICE_NAME: "gl-${GPU_VERSION}"
+    PIGLIT_RESULTS: "${GPU_VERSION}-replay"
   artifacts:
     reports:
       junit: results/junit.xml
 
-.lava-piglit:
-  variables:
-    PIGLIT_REPLAY_DEVICE_NAME: "gl-${GPU_VERSION}"
-    PIGLIT_RESULTS: "${GPU_VERSION}-replay"
-
 .lava-piglit-traces:x86_64:
   extends:
     - .lava-test:x86_64
-    - .lava-piglit
-    - .lava-traces-base
+    - .lava-piglit-traces
 
 .lava-piglit-traces:arm32:
   extends:
     - .lava-test:arm32
-    - .lava-piglit
-    - .lava-traces-base
+    - .lava-piglit-traces
 
 .lava-piglit-traces:arm64:
   extends:
     - .lava-test:arm64
-    - .lava-piglit
-    - .lava-traces-base
+    - .lava-piglit-traces
 
 .lava-fluster:
   variables:
