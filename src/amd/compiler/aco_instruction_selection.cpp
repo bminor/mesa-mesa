@@ -7960,6 +7960,23 @@ create_fs_dual_src_export_gfx11(isel_context* ctx, const struct aco_export_mrt* 
    ctx->program->has_color_exports = true;
 }
 
+static bool
+get_replicated_constant(nir_def* def, unsigned stride, uint32_t* constant)
+{
+   nir_scalar comp = nir_scalar_resolved(def, 0);
+   if (!nir_scalar_is_const(comp))
+      return false;
+
+   *constant = nir_scalar_as_uint(comp);
+
+   for (unsigned i = stride; i < def->num_components; i += stride) {
+      comp = nir_scalar_resolved(def, i);
+      if (!nir_scalar_is_const(comp) || nir_scalar_as_uint(comp) != *constant)
+         return false;
+   }
+   return true;
+}
+
 static void
 visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
 {
@@ -7993,6 +8010,23 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
    Operand A(as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa)));
    Operand B(as_vgpr(ctx, get_ssa_temp(ctx, instr->src[1].ssa)));
    Operand C(as_vgpr(ctx, get_ssa_temp(ctx, instr->src[2].ssa)));
+
+   uint32_t constant;
+   uint32_t acc_stride = ctx->program->gfx_level < GFX12 && instr->def.bit_size == 16 ? 2 : 1;
+   if (get_replicated_constant(instr->src[2].ssa, acc_stride, &constant)) {
+      Operand constC =
+         Operand::get_const(ctx->program->gfx_level, constant, instr->def.bit_size / 8);
+      if (!constC.isLiteral()) {
+         C = constC;
+      } else if (opcode != aco_opcode::v_wmma_i32_16x16x16_iu8) {
+         constant ^= 1 << (instr->def.bit_size - 1);
+         constC = Operand::get_const(ctx->program->gfx_level, constant, instr->def.bit_size / 8);
+         if (!constC.isLiteral()) {
+            C = constC;
+            neg_lo[2] ^= !neg_hi[2];
+         }
+      }
+   }
 
    VALU_instruction& vop3p = bld.vop3p(opcode, Definition(dst), A, B, C, 0, 0x7)->valu();
    vop3p.neg_lo = neg_lo;
