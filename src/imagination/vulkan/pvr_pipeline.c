@@ -251,6 +251,17 @@ static inline size_t pvr_pds_get_max_vertex_program_const_map_size_in_bytes(
            sizeof(struct pvr_const_map_entry_doutu_address));
 }
 
+static inline void
+pvr_pds_free_pds_info_map_entries(struct pvr_device *const device,
+                                  const VkAllocationCallbacks *const allocator,
+                                  struct pvr_const_map_entry **const entries)
+{
+   if (entries && *entries) {
+      vk_free2(&device->vk.alloc, allocator, *entries);
+      *entries = NULL;
+   }
+}
+
 static VkResult pvr_pds_vertex_attrib_program_create_and_upload(
    struct pvr_device *const device,
    const VkAllocationCallbacks *const allocator,
@@ -313,12 +324,12 @@ static VkResult pvr_pds_vertex_attrib_program_create_and_upload(
 
    assert(info->code_size_in_dwords <= code_size_in_dwords);
 
-   /* FIXME: Add a vk_realloc2() ? */
-   new_entries = vk_realloc((!allocator) ? &device->vk.alloc : allocator,
-                            info->entries,
-                            info->entries_written_size_in_bytes,
-                            8,
-                            VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   new_entries = vk_realloc2(&device->vk.alloc,
+                             allocator,
+                             info->entries,
+                             info->entries_written_size_in_bytes,
+                             8,
+                             VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!new_entries) {
       result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
       goto err_free_staging_buffer;
@@ -348,7 +359,7 @@ err_free_staging_buffer:
    vk_free2(&device->vk.alloc, allocator, staging_buffer);
 
 err_free_entries:
-   vk_free2(&device->vk.alloc, allocator, info->entries);
+   pvr_pds_free_pds_info_map_entries(device, allocator, &info->entries);
 
 err_out:
    return result;
@@ -360,7 +371,7 @@ static inline void pvr_pds_vertex_attrib_program_destroy(
    struct pvr_pds_attrib_program *const program)
 {
    pvr_bo_suballoc_free(program->program.pvr_bo);
-   vk_free2(&device->vk.alloc, allocator, program->info.entries);
+   pvr_pds_free_pds_info_map_entries(device, allocator, &program->info.entries);
 }
 
 /* This is a const pointer to an array of pvr_pds_attrib_program structs.
@@ -660,12 +671,12 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
 
    assert(pds_info->code_size_in_dwords <= code_size_in_dwords);
 
-   /* FIXME: use vk_realloc2() ? */
-   new_entries = vk_realloc((!allocator) ? &device->vk.alloc : allocator,
-                            pds_info->entries,
-                            pds_info->entries_written_size_in_bytes,
-                            8,
-                            VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   new_entries = vk_realloc2(&device->vk.alloc,
+                             allocator,
+                             pds_info->entries,
+                             pds_info->entries_written_size_in_bytes,
+                             8,
+                             VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!new_entries) {
       result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
       goto err_free_staging_buffer;
@@ -695,7 +706,7 @@ err_free_staging_buffer:
    vk_free2(&device->vk.alloc, allocator, staging_buffer);
 
 err_free_entries:
-   vk_free2(&device->vk.alloc, allocator, pds_info->entries);
+   pvr_pds_free_pds_info_map_entries(device, allocator, &pds_info->entries);
 
 err_free_static_consts:
    pvr_bo_suballoc_free(descriptor_state->static_consts);
@@ -712,7 +723,9 @@ static void pvr_pds_descriptor_program_destroy(
       return;
 
    pvr_bo_suballoc_free(descriptor_state->pds_code.pvr_bo);
-   vk_free2(&device->vk.alloc, allocator, descriptor_state->pds_info.entries);
+   pvr_pds_free_pds_info_map_entries(device,
+                                     allocator,
+                                     &descriptor_state->pds_info.entries);
    pvr_bo_suballoc_free(descriptor_state->static_consts);
 }
 
