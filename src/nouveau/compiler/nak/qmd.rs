@@ -5,7 +5,7 @@ extern crate nvidia_headers;
 
 use compiler::bindings::*;
 use nak_bindings::*;
-use nvidia_headers::classes::{cla0c0, clc0c0, clc3c0, clc6c0};
+use nvidia_headers::classes::{cla0c0, clc0c0, clc3c0, clc6c0, clcbc0};
 
 use bitview::*;
 use paste::paste;
@@ -115,6 +115,7 @@ macro_rules! qmd_impl_set_crs_size {
 
 const CBUF_NONE_SHIFT: u8 = 0;
 const CBUF_SHIFTED4_SHIFT: u8 = 4;
+const CBUF_SHIFTED6_SHIFT: u8 = 6;
 
 macro_rules! cbuf_suffix_shift {
     ($suffix:ident) => {
@@ -381,6 +382,45 @@ mod qmd_3_0 {
 }
 use qmd_3_0::Qmd3_0;
 
+mod qmd_4_0 {
+    use crate::qmd::*;
+    mod clcbc0 {
+        pub use nvidia_headers::classes::clcbc0::qmd::*;
+
+        // Some renames we have to carry for Hopper
+        pub use QMDV04_00_GRID_DEPTH as QMDV04_00_CTA_RASTER_DEPTH;
+        pub use QMDV04_00_GRID_HEIGHT as QMDV04_00_CTA_RASTER_HEIGHT;
+        pub use QMDV04_00_GRID_WIDTH as QMDV04_00_CTA_RASTER_WIDTH;
+        pub use QMDV04_00_QMD_MINOR_VERSION as QMDV04_00_QMD_VERSION;
+    }
+
+    #[repr(transparent)]
+    pub struct Qmd4_0 {
+        qmd: [u32; 64],
+    }
+
+    impl QMD for Qmd4_0 {
+        fn new() -> Self {
+            let mut qmd = [0; 64];
+            let mut bv = QMDBitView::new(&mut qmd);
+            qmd_init!(bv, clcbc0, QMDV04_00, 4, 0);
+            Self { qmd }
+        }
+
+        qmd_impl_common!(clcbc0, QMDV04_00);
+
+        fn set_crs_size(&mut self, crs_size: u32) {
+            assert!(crs_size == 0);
+        }
+
+        qmd_impl_set_cbuf!(clcbc0, QMDV04_00, SHIFTED6, SHIFTED4);
+        qmd_impl_set_prog_addr_64!(clcbc0, QMDV04_00);
+        qmd_impl_set_register_count!(clcbc0, QMDV04_00, REGISTER_COUNT);
+        qmd_impl_set_smem_size_bounded!(clcbc0, QMDV04_00);
+    }
+}
+use qmd_4_0::Qmd4_0;
+
 fn fill_qmd<Q: QMD>(info: &nak_shader_info, qmd_info: &nak_qmd_info) -> Q {
     let cs_info = unsafe {
         assert!(info.stage == MESA_SHADER_COMPUTE);
@@ -437,7 +477,11 @@ pub extern "C" fn nak_fill_qmd(
     let qmd_info = unsafe { &*qmd_info };
 
     unsafe {
-        if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
+        if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+            let qmd_out = qmd_out as *mut Qmd4_0;
+            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            qmd_out.write(fill_qmd(info, qmd_info));
+        } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd3_0;
             assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
@@ -463,7 +507,9 @@ pub extern "C" fn nak_fill_qmd(
 pub extern "C" fn nak_get_qmd_dispatch_size_layout(
     dev: &nv_device_info,
 ) -> nak_qmd_dispatch_size_layout {
-    if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
+    if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+        Qmd4_0::GLOBAL_SIZE_LAYOUT
+    } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
         Qmd3_0::GLOBAL_SIZE_LAYOUT
     } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
         Qmd2_2::GLOBAL_SIZE_LAYOUT
@@ -481,7 +527,9 @@ pub extern "C" fn nak_get_qmd_cbuf_desc_layout(
     dev: &nv_device_info,
     idx: u8,
 ) -> nak_qmd_cbuf_desc_layout {
-    if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
+    if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+        Qmd4_0::cbuf_desc_layout(idx.into())
+    } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
         Qmd3_0::cbuf_desc_layout(idx.into())
     } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
         Qmd2_2::cbuf_desc_layout(idx.into())

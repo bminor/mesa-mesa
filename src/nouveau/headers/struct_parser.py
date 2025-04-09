@@ -57,6 +57,7 @@ STRUCTS = [
     'QMDV02_03',
     'QMDV02_04',
     'QMDV03_00',
+    'QMDV04_00',
 ]
 
 Enum = namedtuple('Enum', ['name', 'value'])
