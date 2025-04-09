@@ -7464,6 +7464,8 @@ pvr_cmd_buffer_insert_mid_frag_barrier_event(struct pvr_cmd_buffer *cmd_buffer,
    cmd_buffer->state.current_sub_cmd->gfx.barrier_load = true;
    cmd_buffer->state.current_sub_cmd->gfx.barrier_store = false;
 
+   cmd_buffer->state.current_sub_cmd->gfx.empty_cmd = false;
+
    return VK_SUCCESS;
 }
 
