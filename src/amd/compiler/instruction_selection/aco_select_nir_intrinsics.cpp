@@ -3762,6 +3762,20 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
       neg_lo[0] = type_a == GLSL_TYPE_INT8;
       neg_lo[1] = type_b == GLSL_TYPE_INT8;
       break;
+   case GLSL_TYPE_FLOAT_E4M3FN:
+      switch (type_b) {
+      case GLSL_TYPE_FLOAT_E4M3FN: opcode = aco_opcode::v_wmma_f32_16x16x16_fp8_fp8; break;
+      case GLSL_TYPE_FLOAT_E5M2: opcode = aco_opcode::v_wmma_f32_16x16x16_fp8_bf8; break;
+      default: unreachable("invalid cmat_muladd_amd type");
+      }
+      break;
+   case GLSL_TYPE_FLOAT_E5M2:
+      switch (type_b) {
+      case GLSL_TYPE_FLOAT_E4M3FN: opcode = aco_opcode::v_wmma_f32_16x16x16_bf8_fp8; break;
+      case GLSL_TYPE_FLOAT_E5M2: opcode = aco_opcode::v_wmma_f32_16x16x16_bf8_bf8; break;
+      default: unreachable("invalid cmat_muladd_amd type");
+      }
+      break;
    }
    default: unreachable("invalid cmat_muladd_amd type");
    }
