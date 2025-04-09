@@ -324,7 +324,6 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    nvk_queue_finish(dev, &dev->queue);
    if (dev->vab_memory)
       nvkmd_mem_unref(dev->vab_memory);
-   vk_device_finish(&dev->vk);
 
    /* Idle the upload queue before we tear down heaps */
    nvk_upload_queue_sync(dev, &dev->upload);
@@ -340,6 +339,8 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    nvkmd_mem_unref(dev->zero_page);
    nvk_upload_queue_finish(dev, &dev->upload);
    nvkmd_dev_destroy(dev->nvkmd);
+
+   vk_device_finish(&dev->vk);
    vk_free(&dev->vk.alloc, dev);
 }
 
