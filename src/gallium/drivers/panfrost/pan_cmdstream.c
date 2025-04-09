@@ -1435,7 +1435,6 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    *buffer_count = ubo_count + (sys_size ? 1 : 0);
 
    /* Upload sysval as a final UBO */
-
    if (sys_size)
       panfrost_emit_ubo(ubos.cpu, ubo_count, transfer.gpu, sys_size);
 
