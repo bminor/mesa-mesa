@@ -310,23 +310,6 @@ lower_ssbo_ubo_intrinsic(struct tu_device *dev,
       }
    }
 
-   /* Descriptor index has to be adjusted in the following cases:
-    *  - isam loads, when the 16-bit descriptor cannot also be used for 32-bit
-    *    loads -- next-index descriptor will be able to do that;
-    *  - 8-bit SSBO loads and stores -- next-index descriptor is dedicated to
-    *    storage accesses of that size.
-    */
-   if ((dev->physical_device->info->a6xx.storage_16bit &&
-        !dev->physical_device->info->a6xx.has_isam_v &&
-        intrin->intrinsic == nir_intrinsic_load_ssbo &&
-        (nir_intrinsic_access(intrin) & ACCESS_CAN_REORDER) &&
-        intrin->def.bit_size > 16) ||
-       (dev->physical_device->info->a7xx.storage_8bit &&
-        ((intrin->intrinsic == nir_intrinsic_load_ssbo && intrin->def.bit_size == 8) ||
-         (intrin->intrinsic == nir_intrinsic_store_ssbo && intrin->src[0].ssa->bit_size == 8)))) {
-      descriptor_idx = nir_iadd_imm(b, descriptor_idx, 1);
-   }
-
    nir_def *results[MAX_SETS] = { NULL };
 
    if (nir_scalar_is_const(scalar_idx)) {
@@ -1097,6 +1080,62 @@ tu_nir_lower_fdm(nir_shader *shader, const struct lower_fdm_options *options)
 {
    return nir_shader_lower_instructions(shader, lower_fdm_filter,
                                         lower_fdm_instr, (void *)options);
+}
+
+static bool
+lower_ssbo_descriptor_instr(nir_builder *b, nir_intrinsic_instr *intrin,
+                            void *cb_data)
+{
+   struct tu_device *dev = (struct tu_device *)cb_data;
+
+   /* Descriptor index has to be adjusted in the following cases:
+    *  - isam loads, when the 16-bit descriptor cannot also be used for 32-bit
+    *    loads -- next-index descriptor will be able to do that;
+    *  - 8-bit SSBO loads and stores -- next-index descriptor is dedicated to
+    *    storage accesses of that size.
+    */
+   if ((dev->physical_device->info->a6xx.storage_16bit &&
+        !dev->physical_device->info->a6xx.has_isam_v &&
+        intrin->intrinsic == nir_intrinsic_load_ssbo &&
+        (nir_intrinsic_access(intrin) & ACCESS_CAN_REORDER) &&
+        intrin->def.bit_size > 16) ||
+       (dev->physical_device->info->a7xx.storage_8bit &&
+        ((intrin->intrinsic == nir_intrinsic_load_ssbo && intrin->def.bit_size == 8) ||
+         (intrin->intrinsic == nir_intrinsic_store_ssbo && intrin->src[0].ssa->bit_size == 8)))) {
+      unsigned buffer_src;
+      if (intrin->intrinsic == nir_intrinsic_store_ssbo) {
+         /* This has the value first */
+         buffer_src = 1;
+      } else {
+         buffer_src = 0;
+      }
+
+      b->cursor = nir_before_instr(&intrin->instr);
+      nir_def *buffer = intrin->src[buffer_src].ssa;
+      assert(buffer->parent_instr->type == nir_instr_type_intrinsic);
+      nir_intrinsic_instr *bindless =
+         nir_instr_as_intrinsic(buffer->parent_instr);
+      assert(bindless->intrinsic == nir_intrinsic_bindless_resource_ir3);
+      nir_def *descriptor_idx = bindless->src[0].ssa;
+      descriptor_idx = nir_iadd_imm(b, descriptor_idx, 1);
+      nir_def *new_buffer =
+         nir_bindless_resource_ir3(b, 32, descriptor_idx,
+                                   .desc_set = nir_intrinsic_desc_set(bindless));
+      nir_src_rewrite(&intrin->src[buffer_src], new_buffer);
+
+      return true;
+   }
+
+   return false;
+}
+
+static bool
+tu_nir_lower_ssbo_descriptor(nir_shader *shader,
+                             struct tu_device *dev)
+{
+   return nir_shader_intrinsics_pass(shader, lower_ssbo_descriptor_instr,
+                                     nir_metadata_control_flow,
+                                     (void *)dev);
 }
 
 static void
@@ -2619,6 +2658,11 @@ tu_shader_create(struct tu_device *dev,
    init_ir3_nir_options(&nir_options, key);
 
    ir3_finalize_nir(dev->compiler, &nir_options, nir);
+
+   /* This has to happen after finalizing, so that we know the final bitsize
+    * after vectorizing.
+    */
+   NIR_PASS(_, nir, tu_nir_lower_ssbo_descriptor, dev);
 
    const struct ir3_shader_options options = {
       .api_wavesize = key->api_wavesize,
