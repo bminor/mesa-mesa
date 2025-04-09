@@ -20,6 +20,7 @@ use std::sync::OnceLock;
 
 #[repr(u8)]
 enum DebugFlags {
+    Panic,
     Print,
     Serial,
     Spill,
@@ -45,6 +46,7 @@ impl Debug {
         let mut flags = 0;
         for flag in debug_str.split(',') {
             match flag.trim() {
+                "panic" => flags |= 1 << DebugFlags::Panic as u8,
                 "print" => flags |= 1 << DebugFlags::Print as u8,
                 "serial" => flags |= 1 << DebugFlags::Serial as u8,
                 "spill" => flags |= 1 << DebugFlags::Spill as u8,
@@ -60,6 +62,10 @@ impl Debug {
 
 pub trait GetDebugFlags {
     fn debug_flags(&self) -> u32;
+
+    fn panic(&self) -> bool {
+        self.debug_flags() & (1 << DebugFlags::Panic as u8) != 0
+    }
 
     fn print(&self) -> bool {
         self.debug_flags() & (1 << DebugFlags::Print as u8) != 0
@@ -469,8 +475,12 @@ pub extern "C" fn nak_compile_shader(
     robust2_modes: nir_variable_mode,
     fs_key: *const nak_fs_key,
 ) -> *mut nak_shader_bin {
-    panic::catch_unwind(|| {
+    let compile = || {
         nak_compile_shader_internal(nir, dump_asm, nak, robust2_modes, fs_key)
-    })
-    .unwrap_or(std::ptr::null_mut())
+    };
+    if DEBUG.panic() {
+        compile()
+    } else {
+        panic::catch_unwind(compile).unwrap_or(std::ptr::null_mut())
+    }
 }
