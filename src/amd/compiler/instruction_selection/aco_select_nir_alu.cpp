@@ -2596,6 +2596,30 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          emit_split_vector(ctx, dst, 2);
       break;
    }
+   case nir_op_e4m3fn2f: {
+      if (instr->def.num_components == 2) {
+         Temp src = get_alu_src(ctx, instr->src[0], 2);
+         bld.vop1(aco_opcode::v_cvt_pk_f32_fp8, Definition(dst), src);
+         emit_split_vector(ctx, dst, 2);
+      } else {
+         Temp src = get_alu_src(ctx, instr->src[0]);
+         assert(instr->def.num_components == 1);
+         bld.vop1(aco_opcode::v_cvt_f32_fp8, Definition(dst), src);
+      }
+      break;
+   }
+   case nir_op_e5m22f: {
+      if (instr->def.num_components == 2) {
+         Temp src = get_alu_src(ctx, instr->src[0], 2);
+         bld.vop1(aco_opcode::v_cvt_pk_f32_bf8, Definition(dst), src);
+         emit_split_vector(ctx, dst, 2);
+      } else {
+         Temp src = get_alu_src(ctx, instr->src[0]);
+         assert(instr->def.num_components == 1);
+         bld.vop1(aco_opcode::v_cvt_f32_bf8, Definition(dst), src);
+      }
+      break;
+   }
    case nir_op_i2f16: {
       Temp src = get_alu_src(ctx, instr->src[0]);
       const unsigned input_size = instr->src[0].src.ssa->bit_size;

@@ -420,6 +420,8 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_op_f2e4m3fn_satfn:
                case nir_op_f2e5m2:
                case nir_op_f2e5m2_sat:
+               case nir_op_e4m3fn2f:
+               case nir_op_e5m22f:
                case nir_op_fmulz:
                case nir_op_ffmaz:
                case nir_op_f2f64:
