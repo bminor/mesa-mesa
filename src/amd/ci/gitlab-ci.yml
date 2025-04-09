@@ -130,7 +130,7 @@ radeonsi-raven-cdna-lower-image-piglit:
 
 radeonsi-raven-va:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-video
     - .radeonsi-raven-test:x86_64
     - .radeonsi-vaapi-rules
     - .lava-hp-x360-14a-cb0001xx-zork:x86_64
@@ -150,7 +150,7 @@ radeonsi-raven-vaapi-fluster:
     - radeonsi-raven-va
     - .radeonsi-raven-vaapi-fluster
   timeout: 30m
-  parallel: 6
+  parallel: 2
   variables:
     FLUSTER_CODECS: VP9 H.264 H.265
     # FIXME: Downloading the vectors can take about 4-5 minutes

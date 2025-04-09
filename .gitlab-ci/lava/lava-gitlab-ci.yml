@@ -88,6 +88,16 @@ variables:
     - job: debian/x86_64_test-gl
       artifacts: false
 
+.lava-x86_64-test-video:
+  variables:
+    LAVA_DISTRIBUTION_TAG: !reference [debian/x86_64_test-video, variables, LAVA_DISTRIBUTION_TAG]
+  extends:
+    - .lava-x86_64-test
+  needs:
+    - !reference [.lava-x86_64-test, needs]
+    - job: debian/x86_64_test-video
+      artifacts: false
+
 .lava-x86_64-test-vk:
   variables:
     LAVA_DISTRIBUTION_TAG: !reference [debian/x86_64_test-vk, variables, LAVA_DISTRIBUTION_TAG]
