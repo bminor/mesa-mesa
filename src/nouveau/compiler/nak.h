@@ -264,6 +264,7 @@ struct nak_qmd_dispatch_size_layout
 nak_get_qmd_dispatch_size_layout(const struct nv_device_info *dev);
 
 struct nak_qmd_cbuf_desc_layout {
+   uint16_t addr_shift;
    uint16_t addr_lo_start, addr_lo_end;
    uint16_t addr_hi_start, addr_hi_end;
 };
