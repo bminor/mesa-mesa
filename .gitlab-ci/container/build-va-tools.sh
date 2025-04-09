@@ -6,7 +6,7 @@
 
 set -uex
 
-uncollapsed_section_start va-tools "Building va-tools"
+section_start va-tools "Building va-tools"
 
 git config --global user.email "mesa@example.com"
 git config --global user.name "Mesa CI"
