@@ -1387,8 +1387,12 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
       si_vs_ps_key_update_rast_prim_smooth_stipple(sctx);
 
    /* Used by si_get_vs_key_outputs in si_update_shaders: */
-   if (old_rs->clip_plane_enable != rs->clip_plane_enable)
-      sctx->do_update_shaders = true;
+   if (old_rs->clip_plane_enable != rs->clip_plane_enable) {
+      sctx->dirty_shaders_mask |=
+         BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+         BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+         BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
+   }
 
    if (old_rs->line_smooth != rs->line_smooth ||
        old_rs->poly_smooth != rs->poly_smooth ||
@@ -1730,13 +1734,17 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
    if (old_dsa->alpha_func != dsa->alpha_func) {
       si_ps_key_update_dsa(sctx);
       si_update_ps_inputs_read_or_disabled(sctx);
-      sctx->do_update_shaders = true;
+      sctx->dirty_shaders_mask |=
+         BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+         BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+         BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
+         BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
    }
 
    if (old_dsa->depth_enabled != dsa->depth_enabled ||
        old_dsa->stencil_enabled != dsa->stencil_enabled) {
       si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
-      sctx->do_update_shaders = true;
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
    }
 
    if (sctx->occlusion_query_mode == SI_OCCLUSION_QUERY_MODE_PRECISE_BOOLEAN &&
@@ -2769,7 +2777,11 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    si_vs_ps_key_update_rast_prim_smooth_stipple(sctx);
    si_update_ps_inputs_read_or_disabled(sctx);
    si_update_vrs_flat_shading(sctx);
-   sctx->do_update_shaders = true;
+   sctx->dirty_shaders_mask |=
+      BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+      BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+      BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
+      BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
 
    if (sctx->gfx_level < GFX12 && !sctx->decompression_enabled) {
       /* Prevent textures decompression when the framebuffer state
@@ -3611,7 +3623,7 @@ static void si_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
    sctx->ps_iter_samples = min_samples;
 
    si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
-   sctx->do_update_shaders = true;
+   sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
 
    si_update_ps_iter_samples(sctx);
 }
@@ -4650,7 +4662,7 @@ static void si_bind_vertex_elements(struct pipe_context *ctx, void *state)
        memcmp(old->fix_fetch, v->fix_fetch, sizeof(v->fix_fetch[0]) *
               MAX2(old->count, v->count))) {
       si_vs_key_update_inputs(sctx);
-      sctx->do_update_shaders = true;
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
    }
 
    if (v->instance_divisor_is_fetched) {
@@ -4730,7 +4742,7 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
     */
    if (sctx->vertex_elements->vb_alignment_check_mask & unaligned) {
       si_vs_key_update_inputs(sctx);
-      sctx->do_update_shaders = true;
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
    }
 }
 
