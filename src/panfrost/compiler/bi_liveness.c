@@ -32,8 +32,13 @@ bi_liveness_ins_update_ssa(BITSET_WORD *live, const bi_instr *I)
    bi_foreach_dest(I, d)
       BITSET_CLEAR(live, I->dest[d].value);
 
-   bi_foreach_ssa_src(I, s)
+   bi_foreach_ssa_src(I, s) {
+      /* If the source is not live after this instruction, but becomes live
+       * at this instruction, this is the use that kills the source
+       */
+      I->src[s].kill_ssa = !BITSET_TEST(live, I->src[s].value);
       BITSET_SET(live, I->src[s].value);
+   }
 }
 
 void
@@ -89,21 +94,17 @@ bi_compute_liveness_ssa(bi_context *ctx)
          memcpy(live, blk->ssa_live_in, words * sizeof(BITSET_WORD));
 
          /* Kill write */
-         bi_foreach_instr_in_block(blk, I) {
-            if (I->op != BI_OPCODE_PHI)
-               break;
-
+         bi_foreach_phi_in_block(blk, I) {
             BITSET_CLEAR(live, I->dest[0].value);
          }
 
          /* Make live the corresponding source */
-         bi_foreach_instr_in_block(blk, I) {
-            if (I->op != BI_OPCODE_PHI)
-               break;
-
+         bi_foreach_phi_in_block(blk, I) {
             bi_index operand = I->src[bi_predecessor_index(blk, *pred)];
-            if (bi_is_ssa(operand))
+            if (bi_is_ssa(operand)) {
                BITSET_SET(live, operand.value);
+               I->src[bi_predecessor_index(blk, *pred)].kill_ssa = false;
+            }
          }
 
          BITSET_WORD progress = 0;

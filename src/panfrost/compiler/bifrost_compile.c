@@ -57,6 +57,7 @@ static const struct debug_named_value bifrost_debug_options[] = {
    {"nosb",       BIFROST_DBG_NOSB,       "Disable scoreboarding"},
    {"nopreload",  BIFROST_DBG_NOPRELOAD,  "Disable message preloading"},
    {"spill",      BIFROST_DBG_SPILL,      "Test register spilling"},
+   {"nossara",    BIFROST_DBG_NOSSARA,    "Disable SSA in register allocation"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */

@@ -193,8 +193,16 @@ typedef struct {
    uint32_t offset         : 3;
    enum bi_index_type type : 3;
 
+   /* Last use of an SSA value; similar to discard, but applies to the
+    * SSA analysis and does not have any HW restrictions (discard gets
+    * sent to the hardware eventually. */
+   bool kill_ssa : 1;
+
+   /* Register class */
+   bool memory : 1;
+
    /* Must be zeroed so we can hash the whole 64-bits at a time */
-   unsigned padding : (32 - 14);
+   unsigned padding : (32 - 16);
 } bi_index;
 
 static inline bi_index
@@ -205,6 +213,23 @@ bi_get_index(unsigned value)
       .swizzle = BI_SWIZZLE_H01,
       .type = BI_INDEX_NORMAL,
    };
+}
+
+enum ra_class {
+   /* General purpose register */
+   RA_GPR,
+
+   /* Memory, used to assign stack slots */
+   RA_MEM,
+
+   /* Keep last */
+   RA_CLASSES,
+};
+
+static inline enum ra_class
+ra_class_for_index(bi_index idx)
+{
+   return idx.memory ? RA_MEM : RA_GPR;
 }
 
 static inline bi_index
@@ -911,6 +936,8 @@ enum bi_idvs_mode {
    BI_IDVS_ALL = 3,
 };
 
+#define BI_MAX_REGS 64
+
 typedef struct {
    const struct pan_compile_inputs *inputs;
    nir_shader *nir;
@@ -950,7 +977,7 @@ typedef struct {
    /* During NIR->BIR, table of preloaded registers, or NULL if never
     * preloaded.
     */
-   bi_index preloaded[64];
+   bi_index preloaded[BI_MAX_REGS];
 
    /* For creating temporaries */
    unsigned ssa_alloc;
@@ -963,6 +990,15 @@ typedef struct {
     * components, populated by a split.
     */
    struct hash_table_u64 *allocated_vec;
+
+   /* Beginning of our stack allocation used for spilling, below that is
+    * NIR-level scratch.
+    */
+   unsigned spill_base_B;
+
+   /* Beginning of stack allocation used for parallel copy lowering */
+   bool has_spill_pcopy_reserved;
+   unsigned spill_pcopy_base;
 
    /* Stats for shader-db */
    unsigned loop_count;
@@ -1148,11 +1184,17 @@ bi_src_index(nir_src *src)
    util_dynarray_foreach(&(blk)->predecessors, bi_block *, v)
 
 #define bi_foreach_src(ins, v) for (unsigned v = 0; v < ins->nr_srcs; ++v)
+#define bi_foreach_src_rev(ins, v) for (signed v = ins->nr_srcs-1; v >= 0; --v)
 
 #define bi_foreach_dest(ins, v) for (unsigned v = 0; v < ins->nr_dests; ++v)
+#define bi_foreach_dest_rev(ins, v) for (signed v = ins->nr_dests-1; v >= 0; --v)
 
 #define bi_foreach_ssa_src(ins, v)                                             \
    bi_foreach_src(ins, v)                                                      \
+      if (ins->src[v].type == BI_INDEX_NORMAL)
+
+#define bi_foreach_ssa_src_rev(ins, v)                                         \
+   bi_foreach_src_rev(ins, v)                                                  \
       if (ins->src[v].type == BI_INDEX_NORMAL)
 
 #define bi_foreach_ssa_dest(ins, v)                                            \
@@ -1162,6 +1204,25 @@ bi_src_index(nir_src *src)
 #define bi_foreach_instr_and_src_in_tuple(tuple, ins, s)                       \
    bi_foreach_instr_in_tuple(tuple, ins)                                       \
       bi_foreach_src(ins, s)
+
+#define bi_foreach_ssa_dest_rev(ins, v)                                        \
+   bi_foreach_dest_rev(ins, v)                                                 \
+      if (ins->dest[v].type == BI_INDEX_NORMAL)
+
+/* Phis only come at the start (after else instructions) so we stop as soon as
+ * we hit a non-phi
+ */
+#define bi_foreach_phi_in_block(block, v)                                      \
+   bi_foreach_instr_in_block(block, v)                                        \
+      if (v->op != BI_OPCODE_PHI)                                              \
+         break;                                                                \
+      else
+
+#define bi_foreach_phi_in_block_safe(block, v)                                 \
+   bi_foreach_instr_in_block_safe(block, v)                                    \
+      if (v->op != BI_OPCODE_PHI)                                             \
+         break;                                                                \
+      else
 
 /*
  * Find the index of a predecessor, used as the implicit order of phi sources.
@@ -1285,8 +1346,13 @@ bool bi_opt_constant_fold(bi_context *ctx);
 void bi_compute_liveness_ssa(bi_context *ctx);
 void bi_liveness_ins_update_ssa(BITSET_WORD *live, const bi_instr *ins);
 
+unsigned bi_calc_register_demand(bi_context *ctx);
+
 void bi_postra_liveness(bi_context *ctx);
 uint64_t MUST_CHECK bi_postra_liveness_ins(uint64_t live, bi_instr *ins);
+
+/* SSA spilling; returns number of spilled registers */
+unsigned bi_spill_ssa(bi_context *ctx, unsigned num_registers, unsigned tls_size);
 
 /* Layout */
 
@@ -1477,6 +1543,15 @@ bi_after_clause(bi_clause *clause)
    return bi_after_instr(bi_last_instr_in_clause(clause));
 }
 
+/* Get a cursor at the start of a function, after any preloads */
+static inline bi_cursor
+bi_before_function(bi_context *ctx)
+{
+   bi_block *block = bi_start_block(&ctx->blocks);
+
+   return bi_before_block(block);
+}
+
 /* IR builder in terms of cursor infrastructure */
 
 typedef struct {
@@ -1489,6 +1564,10 @@ bi_init_builder(bi_context *ctx, bi_cursor cursor)
 {
    return (bi_builder){.shader = ctx, .cursor = cursor};
 }
+
+/* insert load/store for spills */
+bi_instr *bi_load_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset);
+void bi_store_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset);
 
 /* Insert an instruction at the cursor and move the cursor */
 

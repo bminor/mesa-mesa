@@ -88,6 +88,8 @@ bi_print_index(FILE *fp, bi_index index)
 {
     if (index.discard)
         fputs("^", fp);
+    if (index.kill_ssa)
+        fputs("!", fp);
 
     if (bi_is_null(index))
         fprintf(fp, "_");
@@ -95,6 +97,8 @@ bi_print_index(FILE *fp, bi_index index)
         fprintf(fp, "#0x%x", index.value);
     else if (index.type == BI_INDEX_FAU && index.value >= BIR_FAU_UNIFORM)
         fprintf(fp, "u%u", index.value & ~BIR_FAU_UNIFORM);
+    else if (index.type == BI_INDEX_FAU && index.memory)
+        fprintf(fp, "m%u", index.value);
     else if (index.type == BI_INDEX_FAU)
         fprintf(fp, "%s", bir_fau_name(index.value));
     else if (index.type == BI_INDEX_PASS)
