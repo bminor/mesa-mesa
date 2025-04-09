@@ -1431,8 +1431,8 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
 
    memset(ubos.cpu, 0, desc_size * (ubo_count + 1));
 
-   if (buffer_count)
-      *buffer_count = ubo_count + (sys_size ? 1 : 0);
+   assert(buffer_count);
+   *buffer_count = ubo_count + (sys_size ? 1 : 0);
 
    /* Upload sysval as a final UBO */
 
@@ -1452,8 +1452,8 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
       panfrost_emit_ubo(ubos.cpu, ubo, address, usz);
    }
 
-   if (pushed_words)
-      *pushed_words = ss->info.push.count;
+   assert(pushed_words);
+   *pushed_words = ss->info.push.count;
 
    if (ss->info.push.count == 0)
       return ubos.gpu;
