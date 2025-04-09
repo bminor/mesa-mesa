@@ -62,6 +62,8 @@ vector_type("int8_t",    "i8vec",  "GLSL_TYPE_INT8",    "GL_INT8", "_NV")
 vector_type("uint8_t",   "u8vec",  "GLSL_TYPE_UINT8",   "GL_UNSIGNED_INT8", "_NV")
 
 vector_type("bfloat16_t", "bf16vec", "GLSL_TYPE_BFLOAT16", None)
+vector_type("e4m3fn_t", "e4m3fnvec", "GLSL_TYPE_FLOAT_E4M3FN", None)
+vector_type("e5m2_t", "e5m2vec", "GLSL_TYPE_FLOAT_E5M2", None)
 
 simple_type("mat2",   "GL_FLOAT_MAT2",   "GLSL_TYPE_FLOAT", 2, 2)
 simple_type("mat3",   "GL_FLOAT_MAT3",   "GLSL_TYPE_FLOAT", 3, 3)
