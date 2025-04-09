@@ -379,10 +379,13 @@ build_process_cs_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
             assert(cb0_layout.addr_hi_start == cb0_layout.addr_lo_start + 32);
             const uint32_t cb0_addr_lo_dw = cb0_layout.addr_lo_start / 32;
             const uint32_t cb0_addr_hi_dw = cb0_layout.addr_hi_start / 32;
-            qmd_repl[cb0_addr_lo_dw] = nir_unpack_64_2x32_split_x(b, root_addr);
+            nir_def *root_addr_shifted =
+               nir_ushr_imm(b, root_addr, cb0_layout.addr_shift);
+            qmd_repl[cb0_addr_lo_dw] =
+               nir_unpack_64_2x32_split_x(b, root_addr_shifted);
             qmd_repl[cb0_addr_hi_dw] =
                nir_ior(b, load_global_dw(b, shader_qmd_addr, cb0_addr_hi_dw),
-                          nir_unpack_64_2x32_split_y(b, root_addr));
+                          nir_unpack_64_2x32_split_y(b, root_addr_shifted));
 
             copy_repl_global_dw(b, qmd_addr, shader_qmd_addr,
                                 qmd_repl, ARRAY_SIZE(qmd_repl));
