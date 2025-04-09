@@ -2450,18 +2450,36 @@ emit_pipe_control(struct anv_batch *batch,
 
    /* XXX - insert all workarounds and GFX specific things below. */
 
-#if INTEL_WA_1607156449_GFX_VER
+#if INTEL_WA_1607156449_GFX_VER || INTEL_NEEDS_WA_18040903259
    /* Wa_1607156449: For COMPUTE Workload - Any PIPE_CONTROL command with
     * POST_SYNC Operation Enabled MUST be preceded by a PIPE_CONTROL with
     * CS_STALL Bit set (with No POST_SYNC ENABLED)
+    *
+    * Wa_18040903259 says that timestamp are incorrect (not doing the CS Stall
+    * prior to writing the timestamp) with a command like this:
+    *
+    *   PIPE_CONTROL(CS Stall, Post Sync = Timestamp)
+    *
+    * should be turned into :
+    *
+    *   PIPE_CONTROL(CS Stall)
+    *   PIPE_CONTROL(CS Stall, Post Sync = Timestamp)
+    *
+    * Also : "This WA needs to be applied only when we have done a Compute
+    *         Walker and there is a request for a Timestamp."
+    *
+    * At the moment it's unclear whether all other parameters should go in the
+    * first or second PIPE_CONTROL. It seems logical that it should go to the
+    * first so that the timestamp accounts for all the associated flushes.
     */
-   if (intel_needs_workaround(devinfo, 1607156449) &&
+   if ((intel_needs_workaround(devinfo, 1607156449) ||
+        intel_needs_workaround(devinfo, 18040903259)) &&
        current_pipeline == GPGPU &&
        post_sync_op != NoWrite) {
-      anv_batch_emit(batch, GENX(PIPE_CONTROL), pipe) {
-         pipe.CommandStreamerStallEnable = true;
-         anv_debug_dump_pc(pipe, "Wa_14014966230");
-      };
+      emit_pipe_control(batch, devinfo, current_pipeline,
+                        NoWrite, ANV_NULL_ADDRESS, 0,
+                        bits, "Wa_18040903259/Wa_18040903259");
+      bits = ANV_PIPE_CS_STALL_BIT;
    }
 #endif
 
