@@ -18,6 +18,7 @@
 #include "clc597.h"
 #include "clc697.h"
 #include "clc997.h"
+#include "clcb97.h"
 
 #include "cla0c0.h"
 #include "clb0c0.h"
@@ -27,6 +28,7 @@
 #include "clc6c0.h"
 #include "clc7c0.h"
 #include "clc9c0.h"
+#include "clcbc0.h"
 
 #define KEPLER_DMA_COPY_A 0x0000a0b5
 #define MAXWELL_DMA_COPY_A 0x0000b0b5
@@ -70,6 +72,10 @@ static struct nv_device_info get_fake_device_info(const char *arch_name) {
     info.cls_eng3d = ADA_A;
     info.cls_compute = ADA_COMPUTE_A;
     info.cls_copy = AMPERE_DMA_COPY_A;
+  } else if (!strcmp(arch_name, "HOPPER")) {
+    info.cls_eng3d = HOPPER_A;
+    info.cls_compute = HOPPER_COMPUTE_A;
+    info.cls_copy = AMPERE_DMA_COPY_A;
   } else {
     fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
             arch_name);
@@ -95,7 +101,7 @@ int main(int argc, char **argv) {
 
   if (argc != 3) {
     fprintf(stderr, "Usage: nv_push_dump file.bin "
-                    "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA>\n");
+                    "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA|HOPPER>\n");
     return 1;
   }
 
