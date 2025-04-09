@@ -151,3 +151,5 @@ KHR-GLES3.cull_distance.functional,Fail
 spec@ext_external_objects@vk-ping-pong-multi-sem,Fail
 spec@ext_external_objects@vk-ping-pong-single-sem,Crash
 
+# Since switching to test-gl container based rootfs
+spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail

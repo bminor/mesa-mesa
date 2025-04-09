@@ -4,7 +4,7 @@ include:
 # Run five jobs in parallel each running 1/55th of the test suite
 radv-stoney-vkcts:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-vk
     - .radv-stoney-test:x86_64
   parallel: 5
   variables:
@@ -13,7 +13,7 @@ radv-stoney-vkcts:
 
 radv-stoney-angle:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-gl
     - .radv-stoney-test:x86_64
     - .test-angle
   variables:
@@ -32,7 +32,7 @@ radv-stoney-angle-full:
 
 radeonsi-stoney-glcts-piglit:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-gl
     - .radeonsi-stoney-test:x86_64
     - .test-piglit
   parallel: 11
@@ -59,7 +59,7 @@ radeonsi-stoney-traces:
 
 radv-raven-vkcts:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-vk
     - .radv-raven-test:x86_64
     - .lava-asus-CM1400CXA-dalboz:x86_64
   parallel: 9
@@ -69,7 +69,7 @@ radv-raven-vkcts:
 
 amd-raven-skqp:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-gl
     - .amd-raven-test:x86_64
     - .lava-hp-x360-14a-cb0001xx-zork:x86_64
   variables:
@@ -108,7 +108,7 @@ radv-raven-traces-restricted:
 
 radeonsi-raven-piglit:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-gl
     - .radeonsi-raven-test:x86_64
     - .test-piglit
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
@@ -120,7 +120,7 @@ radeonsi-raven-piglit:
 # lower image opcodes to emulate CDNA compute devices
 radeonsi-raven-cdna-lower-image-piglit:
   extends:
-    - .lava-test-deqp:x86_64
+    - .lava-x86_64-test-gl
     - .radeonsi-raven-test:x86_64
     - .test-piglit
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
