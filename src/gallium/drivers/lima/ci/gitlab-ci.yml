@@ -23,7 +23,7 @@
 
 lima-mali450-deqp:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .lima-rules
     - .lava-meson-gxl-s805x-libretech-ac:arm64
   variables:
@@ -33,7 +33,7 @@ lima-mali450-deqp:arm64:
 
 lima-mali450-piglit:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .test-piglit
     - .lima-rules
     - .lava-meson-gxl-s805x-libretech-ac:arm64
