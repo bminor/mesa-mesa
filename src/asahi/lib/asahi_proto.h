@@ -7,7 +7,7 @@
 #ifndef ASAHI_PROTO_H_
 #define ASAHI_PROTO_H_
 
-#define ASAHI_PROTO_UNSTABLE_UABI_VERSION 1
+#include "drm-uapi/asahi_drm.h"
 
 /**
  * Defines the layout of shmem buffer used for host->guest communication.
@@ -37,7 +37,7 @@ enum asahi_ccmd {
    ASAHI_CCMD_IOCTL_SIMPLE,
    ASAHI_CCMD_GET_PARAMS,
    ASAHI_CCMD_GEM_NEW,
-   ASAHI_CCMD_GEM_BIND,
+   ASAHI_CCMD_VM_BIND,
    ASAHI_CCMD_SUBMIT,
    ASAHI_CCMD_GEM_BIND_OBJECT,
 };
@@ -93,7 +93,6 @@ DEFINE_CAST(vdrm_ccmd_req, asahi_ccmd_get_params_req)
 struct asahi_ccmd_get_params_rsp {
    struct vdrm_ccmd_rsp hdr;
    int32_t ret;
-   uint32_t virt_uabi_version;
    uint8_t payload[];
 };
 
@@ -108,11 +107,14 @@ struct asahi_ccmd_gem_new_req {
 };
 DEFINE_CAST(vdrm_ccmd_req, asahi_ccmd_gem_new_req)
 
-struct asahi_ccmd_gem_bind_req {
+struct asahi_ccmd_vm_bind_req {
    struct vdrm_ccmd_req hdr;
-   struct drm_asahi_gem_bind bind;
+   uint32_t vm_id;
+   uint32_t stride;
+   uint32_t count;
+   uint8_t payload[];
 };
-DEFINE_CAST(vdrm_ccmd_req, asahi_ccmd_gem_bind_req)
+DEFINE_CAST(vdrm_ccmd_req, asahi_ccmd_vm_bind_req)
 
 struct asahi_ccmd_gem_bind_object_req {
    struct vdrm_ccmd_req hdr;
@@ -138,8 +140,7 @@ struct asahi_ccmd_submit_req {
    struct vdrm_ccmd_req hdr;
    uint32_t flags;
    uint32_t queue_id;
-   uint32_t result_res_id;
-   uint32_t command_count;
+   uint32_t cmdbuf_size;
    uint32_t extres_count;
 
    uint8_t payload[];

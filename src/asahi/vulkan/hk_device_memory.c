@@ -52,7 +52,7 @@ hk_memory_type_flags(const VkMemoryType *type,
 static void
 hk_add_ext_bo_locked(struct hk_device *dev, struct agx_bo *bo)
 {
-   uint32_t id = bo->vbo_res_id;
+   uint32_t id = bo->uapi_handle;
 
    unsigned count = util_dynarray_num_elements(&dev->external_bos.list,
                                                struct asahi_ccmd_submit_res);
@@ -89,7 +89,7 @@ hk_add_ext_bo(struct hk_device *dev, struct agx_bo *bo)
 static void
 hk_remove_ext_bo_locked(struct hk_device *dev, struct agx_bo *bo)
 {
-   uint32_t id = bo->vbo_res_id;
+   uint32_t id = bo->uapi_handle;
    unsigned count = util_dynarray_num_elements(&dev->external_bos.list,
                                                struct asahi_ccmd_submit_res);
 

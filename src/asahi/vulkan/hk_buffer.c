@@ -81,17 +81,9 @@ VkResult
 hk_bind_scratch(struct hk_device *dev, struct agx_va *va, unsigned offset_B,
                 size_t size_B)
 {
-   VkResult result = VK_SUCCESS;
-
-   for (unsigned i = 0; i < size_B; i += AIL_PAGESIZE) {
-      result = dev->dev.ops.bo_bind(&dev->dev, dev->sparse.write,
-                                    va->addr + offset_B + i, AIL_PAGESIZE, 0,
-                                    ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   return result;
+   return agx_bo_bind(
+      &dev->dev, dev->sparse.write, va->addr + offset_B, size_B, 0,
+      DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE | DRM_ASAHI_BIND_SINGLE_PAGE);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -253,11 +245,9 @@ hk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
       if (buffer->va) {
          VK_FROM_HANDLE(hk_device, dev, device);
          size_t size = MIN2(mem->bo->size, buffer->va->size_B);
-         int ret =
-            dev->dev.ops.bo_bind(&dev->dev, mem->bo, buffer->vk.device_address,
-                                 size, pBindInfos[i].memoryOffset,
-                                 ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
-
+         int ret = agx_bo_bind(&dev->dev, mem->bo, buffer->vk.device_address,
+                               size, pBindInfos[i].memoryOffset,
+                               DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE);
          if (ret)
             return VK_ERROR_UNKNOWN;
       } else {

@@ -11,6 +11,7 @@
 #include "util/ralloc.h"
 #include "agx_device.h"
 #include "decode.h"
+#include "layout.h"
 
 /* Helper to calculate the bucket index of a BO */
 static unsigned
@@ -355,8 +356,8 @@ agx_bo_create(struct agx_device *dev, size_t size, unsigned align,
    assert(size > 0);
 
    /* BOs are allocated in pages */
-   size = ALIGN_POT(size, (size_t)dev->params.vm_page_size);
-   align = MAX2(align, dev->params.vm_page_size);
+   size = ALIGN_POT(size, AIL_PAGESIZE);
+   align = MAX2(align, AIL_PAGESIZE);
 
    /* See if we have a BO already in the cache */
    bo = agx_bo_cache_fetch(dev, size, align, flags, true);

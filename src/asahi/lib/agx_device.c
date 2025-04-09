@@ -8,6 +8,7 @@
 #include "agx_device.h"
 #include <inttypes.h>
 #include "clc/asahi_clc.h"
+#include "drm-uapi/asahi_drm.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/timespec.h"
@@ -18,6 +19,7 @@
 #include "agx_scratch.h"
 #include "decode.h"
 #include "glsl_types.h"
+#include "layout.h"
 #include "libagx_dgc.h"
 #include "libagx_shaders.h"
 
@@ -34,7 +36,6 @@
 #include "util/u_printf.h"
 #include "git_sha1.h"
 #include "nir_serialize.h"
-#include "unstable_asahi_drm.h"
 #include "vdrm.h"
 
 static inline int
@@ -80,7 +81,7 @@ static const struct debug_named_value agx_debug_options[] = {
 void
 agx_bo_free(struct agx_device *dev, struct agx_bo *bo)
 {
-   const uint64_t handle = bo->handle;
+   const uint64_t handle = bo->uapi_handle;
 
    if (bo->_map)
       munmap(bo->_map, bo->size);
@@ -103,33 +104,58 @@ agx_bo_free(struct agx_device *dev, struct agx_bo *bo)
 }
 
 static int
+agx_drm_bo_bind(struct agx_device *dev, struct drm_asahi_gem_bind_op *ops,
+                uint32_t count)
+{
+   struct drm_asahi_vm_bind vm_bind = {
+      .num_binds = count,
+      .vm_id = dev->vm_id,
+      .userptr = (uintptr_t)ops,
+      .stride = sizeof(*ops),
+   };
+
+   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_VM_BIND, &vm_bind);
+   if (ret) {
+      fprintf(stderr, "DRM_IOCTL_ASAHI_VM_BIND failed\n");
+   }
+
+   return ret;
+}
+
+/*
+ * Convenience helper to bind a single BO regardless of kernel module.
+ */
+int
 agx_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
-            size_t size_B, uint64_t offset_B, uint32_t flags, bool unbind)
+            size_t size_B, uint64_t offset_B, uint32_t flags)
 {
    assert((size_B % 16384) == 0 && "alignment required");
    assert((offset_B % 16384) == 0 && "alignment required");
    assert((addr % 16384) == 0 && "alignment required");
 
-   struct drm_asahi_gem_bind gem_bind = {
-      .op = unbind ? ASAHI_BIND_OP_UNBIND : ASAHI_BIND_OP_BIND,
+   struct drm_asahi_gem_bind_op op = {
       .flags = flags,
-      .handle = bo ? bo->handle : 0,
-      .vm_id = dev->vm_id,
+      .handle = bo ? bo->uapi_handle : 0,
       .offset = offset_B,
       .range = size_B,
       .addr = addr,
    };
 
-   assert((size_B % 16384) == 0 && "page alignment required");
-   assert((offset_B % 16384) == 0 && "page alignment required");
-   assert((addr % 16384) == 0 && "page alignment required");
+   return dev->ops.bo_bind(dev, &op, 1);
+}
 
-   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND, &gem_bind);
-   if (ret) {
-      fprintf(stderr, "DRM_IOCTL_ASAHI_GEM_BIND failed: %m (handle=%d)\n",
-              bo ? bo->handle : 0);
-   }
+int
+agx_bind_timestamps(struct agx_device *dev, struct agx_bo *bo, uint32_t *handle)
+{
+   struct drm_asahi_gem_bind_object bind = {
+      .op = DRM_ASAHI_BIND_OBJECT_OP_BIND,
+      .flags = DRM_ASAHI_BIND_OBJECT_USAGE_TIMESTAMPS,
+      .handle = bo->uapi_handle,
+      .range = bo->size,
+   };
 
+   int ret = dev->ops.bo_bind_object(dev, &bind);
+   *handle = bind.object_handle;
    return ret;
 }
 
@@ -146,10 +172,10 @@ agx_bo_alloc(struct agx_device *dev, size_t size, size_t align,
    struct drm_asahi_gem_create gem_create = {.size = size};
 
    if (flags & AGX_BO_WRITEBACK)
-      gem_create.flags |= ASAHI_GEM_WRITEBACK;
+      gem_create.flags |= DRM_ASAHI_GEM_WRITEBACK;
 
    if (!(flags & (AGX_BO_SHARED | AGX_BO_SHAREABLE))) {
-      gem_create.flags |= ASAHI_GEM_VM_PRIVATE;
+      gem_create.flags |= DRM_ASAHI_GEM_VM_PRIVATE;
       gem_create.vm_id = dev->vm_id;
    }
 
@@ -173,7 +199,7 @@ agx_bo_alloc(struct agx_device *dev, size_t size, size_t align,
    bo->size = gem_create.size;
    bo->align = align;
    bo->flags = flags;
-   bo->handle = handle;
+   bo->handle = bo->uapi_handle = handle;
    bo->prime_fd = -1;
 
    enum agx_va_flags va_flags = flags & AGX_BO_LOW_VA ? AGX_VA_USC : 0;
@@ -184,12 +210,12 @@ agx_bo_alloc(struct agx_device *dev, size_t size, size_t align,
       return NULL;
    }
 
-   uint32_t bind = ASAHI_BIND_READ;
+   uint32_t bind = DRM_ASAHI_BIND_READ;
    if (!(flags & AGX_BO_READONLY)) {
-      bind |= ASAHI_BIND_WRITE;
+      bind |= DRM_ASAHI_BIND_WRITE;
    }
 
-   ret = dev->ops.bo_bind(dev, bo, bo->va->addr, bo->size, 0, bind, false);
+   ret = agx_bo_bind(dev, bo, bo->va->addr, bo->size, 0, bind);
    if (ret) {
       agx_bo_free(dev, bo);
       return NULL;
@@ -203,7 +229,8 @@ agx_bo_mmap(struct agx_device *dev, struct agx_bo *bo)
 {
    assert(bo->_map == NULL && "not double mapped");
 
-   struct drm_asahi_gem_mmap_offset gem_mmap_offset = {.handle = bo->handle};
+   struct drm_asahi_gem_mmap_offset gem_mmap_offset = {.handle =
+                                                          bo->uapi_handle};
    int ret;
 
    ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_MMAP_OFFSET, &gem_mmap_offset);
@@ -245,7 +272,7 @@ agx_bo_import(struct agx_device *dev, int fd)
    if (!bo->size) {
       bo->dev = dev;
       bo->size = lseek(fd, 0, SEEK_END);
-      bo->align = dev->params.vm_page_size;
+      bo->align = AIL_PAGESIZE;
 
       /* Sometimes this can fail and return -1. size of -1 is not
        * a nice thing for mmap to try mmap. Be more robust also
@@ -255,7 +282,7 @@ agx_bo_import(struct agx_device *dev, int fd)
          pthread_mutex_unlock(&dev->bo_map_lock);
          return NULL;
       }
-      if (bo->size & (dev->params.vm_page_size - 1)) {
+      if (bo->size & (AIL_PAGESIZE - 1)) {
          fprintf(
             stderr,
             "import failed: BO is not a multiple of the page size (0x%llx bytes)\n",
@@ -281,11 +308,13 @@ agx_bo_import(struct agx_device *dev, int fd)
       }
 
       if (dev->is_virtio) {
-         bo->vbo_res_id = vdrm_handle_to_res_id(dev->vdrm, bo->handle);
+         bo->uapi_handle = vdrm_handle_to_res_id(dev->vdrm, bo->handle);
+      } else {
+         bo->uapi_handle = bo->handle;
       }
 
-      ret = dev->ops.bo_bind(dev, bo, bo->va->addr, bo->size, 0,
-                             ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
+      ret = agx_bo_bind(dev, bo, bo->va->addr, bo->size, 0,
+                        DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE);
       if (ret) {
          fprintf(stderr, "import failed: Could not bind BO at 0x%llx\n",
                  (long long)bo->va->addr);
@@ -361,38 +390,24 @@ agx_bo_export(struct agx_device *dev, struct agx_bo *bo)
 }
 
 static int
-agx_bo_bind_object(struct agx_device *dev, struct agx_bo *bo,
-                   uint32_t *object_handle, size_t size_B, uint64_t offset_B,
-                   uint32_t flags)
+agx_bo_bind_object(struct agx_device *dev,
+                   struct drm_asahi_gem_bind_object *bind)
 {
-   struct drm_asahi_gem_bind_object gem_bind = {
-      .op = ASAHI_BIND_OBJECT_OP_BIND,
-      .flags = flags,
-      .handle = bo->handle,
-      .vm_id = 0,
-      .offset = offset_B,
-      .range = size_B,
-   };
-
-   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND_OBJECT, &gem_bind);
+   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND_OBJECT, bind);
    if (ret) {
       fprintf(stderr,
               "DRM_IOCTL_ASAHI_GEM_BIND_OBJECT failed: %m (handle=%d)\n",
-              bo->handle);
+              bind->handle);
    }
-
-   *object_handle = gem_bind.object_handle;
 
    return ret;
 }
 
 static int
-agx_bo_unbind_object(struct agx_device *dev, uint32_t object_handle,
-                     uint32_t flags)
+agx_bo_unbind_object(struct agx_device *dev, uint32_t object_handle)
 {
    struct drm_asahi_gem_bind_object gem_bind = {
-      .op = ASAHI_BIND_OBJECT_OP_UNBIND,
-      .flags = flags,
+      .op = DRM_ASAHI_BIND_OBJECT_OP_UNBIND,
       .object_handle = object_handle,
    };
 
@@ -404,23 +419,6 @@ agx_bo_unbind_object(struct agx_device *dev, uint32_t object_handle,
    }
 
    return ret;
-}
-
-static void
-agx_get_global_ids(struct agx_device *dev)
-{
-   dev->next_global_id = 0;
-   dev->last_global_id = 0x1000000;
-}
-
-uint64_t
-agx_get_global_id(struct agx_device *dev)
-{
-   if (unlikely(dev->next_global_id >= dev->last_global_id)) {
-      agx_get_global_ids(dev);
-   }
-
-   return dev->next_global_id++;
 }
 
 static ssize_t
@@ -452,7 +450,7 @@ agx_submit(struct agx_device *dev, struct drm_asahi_submit *submit,
 
 const agx_device_ops_t agx_device_drm_ops = {
    .bo_alloc = agx_bo_alloc,
-   .bo_bind = agx_bo_bind,
+   .bo_bind = agx_drm_bo_bind,
    .bo_mmap = agx_bo_mmap,
    .get_params = agx_get_params,
    .submit = agx_submit,
@@ -475,16 +473,12 @@ gcd(uint64_t n, uint64_t m)
 static void
 agx_init_timestamps(struct agx_device *dev)
 {
-   uint64_t ts_gcd = gcd(dev->params.timer_frequency_hz, NSEC_PER_SEC);
-
-   dev->timestamp_to_ns.num = NSEC_PER_SEC / ts_gcd;
-   dev->timestamp_to_ns.den = dev->params.timer_frequency_hz / ts_gcd;
-
-   uint64_t user_ts_gcd = gcd(dev->params.timer_frequency_hz, NSEC_PER_SEC);
+   uint64_t user_ts_gcd =
+      gcd(dev->params.command_timestamp_frequency_hz, NSEC_PER_SEC);
 
    dev->user_timestamp_to_ns.num = NSEC_PER_SEC / user_ts_gcd;
    dev->user_timestamp_to_ns.den =
-      dev->params.user_timestamp_frequency_hz / user_ts_gcd;
+      dev->params.command_timestamp_frequency_hz / user_ts_gcd;
 }
 
 bool
@@ -533,47 +527,6 @@ agx_open_device(void *memctx, struct agx_device *dev)
    }
    assert(params_size >= sizeof(dev->params));
 
-   /* Refuse to probe. */
-   if (dev->params.unstable_uabi_version != DRM_ASAHI_UNSTABLE_UABI_VERSION) {
-      fprintf(
-         stderr,
-         "You are attempting to use upstream Mesa with a downstream kernel!\n"
-         "This WILL NOT work.\n"
-         "The Asahi UABI is unstable and NOT SUPPORTED in upstream Mesa.\n"
-         "UABI related code in upstream Mesa is not for use!\n"
-         "\n"
-         "Do NOT attempt to patch out checks, you WILL break your system.\n"
-         "Do NOT report bugs.\n"
-         "Do NOT ask Mesa developers for support.\n"
-         "Do NOT write guides about how to patch out these checks.\n"
-         "Do NOT package patches to Mesa to bypass this.\n"
-         "\n"
-         "~~~\n"
-         "This is not a place of honor.\n"
-         "No highly esteemed deed is commemorated here.\n"
-         "Nothing valued is here.\n"
-         "\n"
-         "What is here was dangerous and repulsive to us.\n"
-         "This message is a warning about danger.\n"
-         "\n"
-         "The danger is still present, in your time, as it was in ours.\n"
-         "The danger is unleashed only if you substantially disturb this place physically.\n"
-         "This place is best shunned and left uninhabited.\n"
-         "~~~\n"
-         "\n"
-         "THIS IS NOT A BUG. THIS IS YOU DOING SOMETHING BROKEN!\n");
-      abort();
-   }
-
-   uint64_t incompat =
-      dev->params.feat_incompat & (~AGX_SUPPORTED_INCOMPAT_FEATURES);
-   if (incompat) {
-      fprintf(stderr, "Missing GPU incompat features: 0x%" PRIx64 "\n",
-              incompat);
-      assert(0);
-      return false;
-   }
-
    assert(dev->params.gpu_generation >= 13);
    const char *variant = " Unknown";
    switch (dev->params.gpu_variant) {
@@ -611,14 +564,10 @@ agx_open_device(void *memctx, struct agx_device *dev)
    assert(reservation == LIBAGX_PRINTF_BUFFER_ADDRESS);
    reservation += LIBAGX_PRINTF_BUFFER_SIZE;
 
-   dev->guard_size = dev->params.vm_page_size;
-   if (dev->params.vm_usc_start) {
-      dev->shader_base = dev->params.vm_usc_start;
-   } else {
-      // Put the USC heap at the bottom of the user address space, 4GiB aligned
-      dev->shader_base = ALIGN_POT(MAX2(dev->params.vm_user_start, reservation),
-                                   0x100000000ull);
-   }
+   dev->guard_size = AIL_PAGESIZE;
+   // Put the USC heap at the bottom of the user address space, 4GiB aligned
+   dev->shader_base =
+      ALIGN_POT(MAX2(dev->params.vm_start, reservation), 0x100000000ull);
 
    if (dev->shader_base < reservation) {
       /* Our robustness implementation requires the bottom unmapped */
@@ -631,8 +580,8 @@ agx_open_device(void *memctx, struct agx_device *dev)
    // Put the user heap after the USC heap
    uint64_t user_start = dev->shader_base + shader_size;
 
-   assert(dev->shader_base >= dev->params.vm_user_start);
-   assert(user_start < dev->params.vm_user_end);
+   assert(dev->shader_base >= dev->params.vm_start);
+   assert(user_start < dev->params.vm_end);
 
    dev->agxdecode = agxdecode_new_context(dev->shader_base);
 
@@ -652,8 +601,8 @@ agx_open_device(void *memctx, struct agx_device *dev)
    // reasonable use case.
    uint64_t kernel_size = MAX2(dev->params.vm_kernel_min_size, 32ull << 30);
    struct drm_asahi_vm_create vm_create = {
-      .kernel_start = dev->params.vm_user_end - kernel_size,
-      .kernel_end = dev->params.vm_user_end,
+      .kernel_start = dev->params.vm_end - kernel_size,
+      .kernel_end = dev->params.vm_end,
    };
 
    uint64_t user_size = vm_create.kernel_start - user_start;
@@ -670,8 +619,6 @@ agx_open_device(void *memctx, struct agx_device *dev)
    util_vma_heap_init(&dev->usc_heap, dev->shader_base, shader_size);
 
    dev->vm_id = vm_create.vm_id;
-
-   agx_get_global_ids(dev);
 
    glsl_type_singleton_init_or_ref();
 
@@ -698,8 +645,8 @@ agx_open_device(void *memctx, struct agx_device *dev)
     */
    {
       void *bo = agx_bo_create(dev, 16384, 0, 0, "Zero page");
-      int ret = dev->ops.bo_bind(dev, bo, AGX_ZERO_PAGE_ADDRESS, 16384, 0,
-                                 ASAHI_BIND_READ, false);
+      int ret = agx_bo_bind(dev, bo, AGX_ZERO_PAGE_ADDRESS, 16384, 0,
+                            DRM_ASAHI_BIND_READ);
       if (ret) {
          fprintf(stderr, "Failed to bind zero page");
          return false;
@@ -709,9 +656,9 @@ agx_open_device(void *memctx, struct agx_device *dev)
    void *bo = agx_bo_create(dev, LIBAGX_PRINTF_BUFFER_SIZE, 0, AGX_BO_WRITEBACK,
                             "Printf/abort");
 
-   ret = dev->ops.bo_bind(dev, bo, LIBAGX_PRINTF_BUFFER_ADDRESS,
-                          LIBAGX_PRINTF_BUFFER_SIZE, 0,
-                          ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
+   ret = agx_bo_bind(dev, bo, LIBAGX_PRINTF_BUFFER_ADDRESS,
+                     LIBAGX_PRINTF_BUFFER_SIZE, 0,
+                     DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE);
    if (ret) {
       fprintf(stderr, "Failed to bind printf buffer");
       return false;
@@ -738,8 +685,8 @@ agx_close_device(struct agx_device *dev)
 }
 
 uint32_t
-agx_create_command_queue(struct agx_device *dev, uint32_t caps,
-                         uint32_t priority)
+agx_create_command_queue(struct agx_device *dev,
+                         enum drm_asahi_priority priority)
 {
 
    if (dev->debug & AGX_DBG_1QUEUE) {
@@ -753,9 +700,8 @@ agx_create_command_queue(struct agx_device *dev, uint32_t caps,
 
    struct drm_asahi_queue_create queue_create = {
       .vm_id = dev->vm_id,
-      .queue_caps = caps,
       .priority = priority,
-      .flags = 0,
+      .usc_exec_base = dev->shader_base,
    };
 
    int ret =
@@ -873,28 +819,14 @@ agx_debug_fault(struct agx_device *dev, uint64_t addr)
 uint64_t
 agx_get_gpu_timestamp(struct agx_device *dev)
 {
-   if (dev->params.feat_compat & DRM_ASAHI_FEAT_GETTIME) {
-      struct drm_asahi_get_time get_time = {.flags = 0, .extensions = 0};
+   struct drm_asahi_get_time get_time = {.flags = 0};
 
-      int ret = asahi_simple_ioctl(dev, DRM_IOCTL_ASAHI_GET_TIME, &get_time);
-      if (ret) {
-         fprintf(stderr, "DRM_IOCTL_ASAHI_GET_TIME failed: %m\n");
-      } else {
-         return get_time.gpu_timestamp;
-      }
+   int ret = asahi_simple_ioctl(dev, DRM_IOCTL_ASAHI_GET_TIME, &get_time);
+   if (ret) {
+      fprintf(stderr, "DRM_IOCTL_ASAHI_GET_TIME failed: %m\n");
    }
-#if DETECT_ARCH_AARCH64
-   uint64_t ret;
-   __asm__ volatile("mrs \t%0, cntvct_el0" : "=r"(ret));
-   return ret;
-#elif DETECT_ARCH_X86 || DETECT_ARCH_X86_64
-   /* Maps to the above when run under FEX without thunking */
-   uint32_t high, low;
-   __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-   return (uint64_t)low | ((uint64_t)high << 32);
-#else
-#error "invalid architecture for asahi"
-#endif
+
+   return get_time.gpu_timestamp;
 }
 
 /* (Re)define UUID_SIZE to avoid including vulkan.h (or p_defines.h) here. */

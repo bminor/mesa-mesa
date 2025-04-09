@@ -151,7 +151,6 @@ struct hk_render_registers {
    uint32_t isp_bgobjdepth;
    uint32_t isp_bgobjvals;
    struct agx_zls_control_packed zls_control, zls_control_partial;
-   uint32_t iogpu_unk_214;
    uint32_t depth_dimensions;
    bool process_empty_tiles;
    enum u_tristate dbias_is_int;

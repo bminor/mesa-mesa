@@ -10,6 +10,7 @@
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
 #include "util/u_range.h"
+#include "agx_device.h"
 #include "agx_state.h"
 #include "vdrm.h"
 
@@ -159,137 +160,14 @@ agx_batch_init(struct agx_context *ctx,
       assert(!ret && batch->syncobj);
    }
 
-   batch->result_off =
-      (2 * sizeof(union agx_batch_result)) * agx_batch_idx(batch);
-   batch->result =
-      (void *)(((uint8_t *)agx_bo_map(ctx->result_buf)) + batch->result_off);
-   memset(batch->result, 0, sizeof(union agx_batch_result) * 2);
-
    agx_batch_mark_active(batch);
 }
 
-const char *status_str[] = {
-   [DRM_ASAHI_STATUS_PENDING] = "(pending)",
-   [DRM_ASAHI_STATUS_COMPLETE] = "Complete",
-   [DRM_ASAHI_STATUS_UNKNOWN_ERROR] = "UNKNOWN ERROR",
-   [DRM_ASAHI_STATUS_TIMEOUT] = "TIMEOUT",
-   [DRM_ASAHI_STATUS_FAULT] = "FAULT",
-   [DRM_ASAHI_STATUS_KILLED] = "KILLED",
-   [DRM_ASAHI_STATUS_NO_DEVICE] = "NO DEVICE",
-};
-
-const char *fault_type_str[] = {
-   [DRM_ASAHI_FAULT_NONE] = "(none)",
-   [DRM_ASAHI_FAULT_UNKNOWN] = "Unknown",
-   [DRM_ASAHI_FAULT_UNMAPPED] = "Unmapped",
-   [DRM_ASAHI_FAULT_AF_FAULT] = "AF Fault",
-   [DRM_ASAHI_FAULT_WRITE_ONLY] = "Write Only",
-   [DRM_ASAHI_FAULT_READ_ONLY] = "Read Only",
-   [DRM_ASAHI_FAULT_NO_ACCESS] = "No Access",
-};
-
-const char *low_unit_str[16] = {
-   "DCMP", "UL1C", "CMP", "GSL1",    "IAP", "VCE",    "TE",  "RAS",
-   "VDM",  "PPP",  "IPF", "IPF_CPF", "VF",  "VF_CPF", "ZLS", "UNK",
-};
-
-const char *mid_unit_str[16] = {
-   "UNK",     "dPM",      "dCDM_KS0", "dCDM_KS1", "dCDM_KS2", "dIPP",
-   "dIPP_CS", "dVDM_CSD", "dVDM_SSD", "dVDM_ILF", "dVDM_ILD", "dRDE0",
-   "dRDE1",   "FC",       "GSL2",     "UNK",
-};
-
-const char *high_unit_str[16] = {
-   "gPM_SP",         "gVDM_CSD_SP", "gVDM_SSD_SP",    "gVDM_ILF_SP",
-   "gVDM_TFP_SP",    "gVDM_MMB_SP", "gCDM_CS_KS0_SP", "gCDM_CS_KS1_SP",
-   "gCDM_CS_KS2_SP", "gCDM_KS0_SP", "gCDM_KS1_SP",    "gCDM_KS2_SP",
-   "gIPP_SP",        "gIPP_CS_SP",  "gRDE0_SP",       "gRDE1_SP",
-};
-
-static void
-agx_print_result(struct agx_device *dev, struct agx_context *ctx,
-                 struct drm_asahi_result_info *info, unsigned batch_idx,
-                 bool is_compute)
+static struct agx_timestamps *
+agx_batch_timestamps(struct agx_batch *batch)
 {
-   if (unlikely(info->status != DRM_ASAHI_STATUS_COMPLETE)) {
-      ctx->any_faults = true;
-   }
-
-   if (likely(info->status == DRM_ASAHI_STATUS_COMPLETE &&
-              !((dev)->debug & AGX_DBG_STATS)))
-      return;
-
-   if (is_compute) {
-      struct drm_asahi_result_compute *r = (void *)info;
-      float time = (r->ts_end - r->ts_start) / dev->params.timer_frequency_hz;
-
-      mesa_logw(
-         "[Batch %d] Compute %s: %.06f\n", batch_idx,
-         info->status < ARRAY_SIZE(status_str) ? status_str[info->status] : "?",
-         time);
-   } else {
-      struct drm_asahi_result_render *r = (void *)info;
-      float time_vtx = (r->vertex_ts_end - r->vertex_ts_start) /
-                       (float)dev->params.timer_frequency_hz;
-      float time_frag = (r->fragment_ts_end - r->fragment_ts_start) /
-                        (float)dev->params.timer_frequency_hz;
-      mesa_logw(
-         "[Batch %d] Render %s: TVB %9ld/%9ld bytes (%d ovf) %c%c%c | vtx %.06f frag %.06f\n",
-         batch_idx,
-         info->status < ARRAY_SIZE(status_str) ? status_str[info->status] : "?",
-         (long)r->tvb_usage_bytes, (long)r->tvb_size_bytes,
-         (int)r->num_tvb_overflows,
-         r->flags & DRM_ASAHI_RESULT_RENDER_TVB_GROW_OVF ? 'G' : ' ',
-         r->flags & DRM_ASAHI_RESULT_RENDER_TVB_GROW_MIN ? 'M' : ' ',
-         r->flags & DRM_ASAHI_RESULT_RENDER_TVB_OVERFLOWED ? 'O' : ' ',
-         time_vtx, time_frag);
-   }
-
-   if (info->fault_type != DRM_ASAHI_FAULT_NONE) {
-      const char *unit_name;
-      int unit_index;
-
-      switch (info->unit) {
-      case 0x00 ... 0x9f:
-         unit_name = low_unit_str[info->unit & 0xf];
-         unit_index = info->unit >> 4;
-         break;
-      case 0xa0 ... 0xaf:
-         unit_name = mid_unit_str[info->unit & 0xf];
-         unit_index = 0;
-         break;
-      case 0xb0 ... 0xb7:
-         unit_name = "GL2CC_META";
-         unit_index = info->unit & 0x7;
-         break;
-      case 0xb8:
-         unit_name = "GL2CC_MB";
-         unit_index = 0;
-         break;
-      case 0xe0 ... 0xff:
-         unit_name = high_unit_str[info->unit & 0xf];
-         unit_index = (info->unit >> 4) & 1;
-         break;
-      default:
-         unit_name = "UNK";
-         unit_index = 0;
-         break;
-      }
-
-      mesa_logw(
-         "[Batch %d] Fault: %s : Addr 0x%llx %c Unit %02x (%s/%d) SB 0x%02x L%d Extra 0x%x\n",
-         batch_idx,
-         info->fault_type < ARRAY_SIZE(fault_type_str)
-            ? fault_type_str[info->fault_type]
-            : "?",
-         (long long)info->address, info->is_read ? 'r' : 'W', info->unit,
-         unit_name, unit_index, info->sideband, info->level, info->extra);
-
-      agx_debug_fault(dev, info->address);
-   }
-
-   assert(info->status == DRM_ASAHI_STATUS_COMPLETE ||
-          info->status == DRM_ASAHI_STATUS_KILLED);
+   struct agx_timestamps *ts = agx_bo_map(batch->ctx->timestamps);
+   return ts + agx_batch_idx(batch);
 }
 
 static void
@@ -302,17 +180,25 @@ agx_batch_print_stats(struct agx_device *dev, struct agx_batch *batch)
       abort();
    }
 
-   if (!batch->result)
+   if (likely(!(dev->debug & AGX_DBG_STATS)))
       return;
 
+   struct agx_timestamps *ts = agx_batch_timestamps(batch);
+
    if (batch->cdm.bo) {
-      agx_print_result(dev, batch->ctx, &batch->result[0].compute.info,
-                       batch_idx, true);
+      float time = (ts->comp_end - ts->comp_start) /
+                   (float)dev->params.command_timestamp_frequency_hz;
+
+      mesa_logw("[Batch %d] Compute: %.06f\n", batch_idx, time);
    }
 
    if (batch->vdm.bo) {
-      agx_print_result(dev, batch->ctx, &batch->result[1].render.info,
-                       batch_idx, false);
+      float time_vtx = (ts->vtx_end - ts->vtx_start) /
+                       (float)dev->params.command_timestamp_frequency_hz;
+      float time_frag = (ts->frag_end - ts->frag_start) /
+                        (float)dev->params.command_timestamp_frequency_hz;
+      mesa_logw("[Batch %d] vtx %.06f frag %.06f\n", batch_idx, time_vtx,
+                time_frag);
    }
 }
 
@@ -328,15 +214,17 @@ agx_batch_cleanup(struct agx_context *ctx, struct agx_batch *batch, bool reset)
    assert(ctx->batch != batch);
 
    uint64_t begin_ts = ~0, end_ts = 0;
-   if (batch->result) {
+   if (batch->timestamps.size) {
+      struct agx_timestamps *ts = agx_batch_timestamps(batch);
+
       if (batch->cdm.bo) {
-         begin_ts = MIN2(begin_ts, batch->result[0].compute.ts_start);
-         end_ts = MAX2(end_ts, batch->result[0].compute.ts_end);
+         begin_ts = MIN2(begin_ts, ts->comp_start);
+         end_ts = MAX2(end_ts, ts->comp_end);
       }
 
       if (batch->vdm.bo) {
-         begin_ts = MIN2(begin_ts, batch->result[1].render.vertex_ts_start);
-         end_ts = MAX2(end_ts, batch->result[1].render.fragment_ts_end);
+         begin_ts = MIN2(begin_ts, ts->vtx_start);
+         end_ts = MAX2(end_ts, ts->frag_end);
       }
    }
 
@@ -733,6 +621,24 @@ agx_add_sync(struct drm_asahi_sync *syncs, unsigned *count, uint32_t handle)
    };
 }
 
+#define MAX_ATTACHMENTS 16
+
+struct attachments {
+   struct drm_asahi_attachment list[MAX_ATTACHMENTS];
+   size_t count;
+};
+
+static void
+asahi_add_attachment(struct attachments *att, struct agx_resource *rsrc)
+{
+   assert(att->count < MAX_ATTACHMENTS);
+
+   att->list[att->count++] = (struct drm_asahi_attachment){
+      .size = rsrc->layout.size_B,
+      .pointer = rsrc->bo->va->addr,
+   };
+}
+
 void
 agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
                  struct drm_asahi_cmd_compute *compute,
@@ -741,34 +647,19 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
    struct agx_device *dev = agx_device(ctx->base.screen);
    struct agx_screen *screen = agx_screen(ctx->base.screen);
 
-   bool feedback = dev->debug & (AGX_DBG_TRACE | AGX_DBG_SYNC | AGX_DBG_STATS);
-
-#ifndef NDEBUG
-   /* Debug builds always get feedback (for fault checks) */
-   feedback = true;
-#endif
-
-   /* Timer queries use the feedback timestamping */
-   feedback |= (batch->timestamps.size > 0);
-
-   if (!feedback)
-      batch->result = NULL;
-
    /* We allocate the worst-case sync array size since this won't be excessive
     * for most workloads
     */
    unsigned max_syncs = batch->bo_list.bit_count + 2;
    unsigned in_sync_count = 0;
    unsigned shared_bo_count = 0;
-   struct drm_asahi_sync *in_syncs =
-      malloc(max_syncs * sizeof(struct drm_asahi_sync));
+   struct drm_asahi_sync *syncs =
+      malloc((max_syncs * sizeof(struct drm_asahi_sync)) + 2);
    struct agx_bo **shared_bos = malloc(max_syncs * sizeof(struct agx_bo *));
 
    uint64_t wait_seqid = p_atomic_read(&screen->flush_wait_seqid);
 
-   struct agx_submit_virt virt = {
-      .vbo_res_id = ctx->result_buf->vbo_res_id,
-   };
+   struct agx_submit_virt virt = {0};
 
    /* Elide syncing against our own queue */
    if (wait_seqid && wait_seqid == ctx->flush_my_seqid) {
@@ -783,37 +674,6 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
    assert(seqid > wait_seqid);
 
    batch_debug(batch, "Sync point is %" PRIu64, seqid);
-
-   /* Subtle concurrency note: Since we assign seqids atomically and do
-    * not lock submission across contexts, it is possible for two threads
-    * to submit timeline syncobj updates out of order. As far as I can
-    * tell, this case is handled in the kernel conservatively: it triggers
-    * a fence context bump and effectively "splits" the timeline at the
-    * larger point, causing future lookups for earlier points to return a
-    * later point, waiting more. The signaling code still makes sure all
-    * prior fences have to be signaled before considering a given point
-    * signaled, regardless of order. That's good enough for us.
-    *
-    * (Note: this case breaks drm_syncobj_query_ioctl and for this reason
-    * triggers a DRM_DEBUG message on submission, but we don't use that
-    * so we don't care.)
-    *
-    * This case can be tested by setting seqid = 1 unconditionally here,
-    * causing every single syncobj update to reuse the same timeline point.
-    * Everything still works (but over-synchronizes because this effectively
-    * serializes all submissions once any context flushes once).
-    */
-   struct drm_asahi_sync out_syncs[2] = {
-      {
-         .sync_type = DRM_ASAHI_SYNC_SYNCOBJ,
-         .handle = batch->syncobj,
-      },
-      {
-         .sync_type = DRM_ASAHI_SYNC_TIMELINE_SYNCOBJ,
-         .handle = screen->flush_syncobj,
-         .timeline_value = seqid,
-      },
-   };
 
    /* This lock protects against a subtle race scenario:
     * - Context 1 submits and registers itself as writer for a BO
@@ -861,7 +721,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
          close(in_sync_fd);
 
          /* Add it to our wait list */
-         agx_add_sync(in_syncs, &in_sync_count, sync_handle);
+         agx_add_sync(syncs, &in_sync_count, sync_handle);
 
          /* And keep track of the BO for cloning the out_sync */
          shared_bos[shared_bo_count++] = bo;
@@ -879,8 +739,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
                batch, "Waits on inter-context BO @ 0x%" PRIx64 " from queue %u",
                bo->va->addr, queue_id);
 
-            agx_add_sync(in_syncs, &in_sync_count,
-                         agx_bo_writer_syncobj(writer));
+            agx_add_sync(syncs, &in_sync_count, agx_bo_writer_syncobj(writer));
             shared_bos[shared_bo_count++] = NULL;
          }
       }
@@ -894,7 +753,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       for (unsigned i = 0; i < virt.extres_count; i++) {
          while (!*p)
             p++; // Skip inter-context slots which are not recorded here
-         virt.extres[i].res_id = (*p)->vbo_res_id;
+         virt.extres[i].res_id = (*p)->uapi_handle;
          virt.extres[i].flags = ASAHI_EXTRES_READ | ASAHI_EXTRES_WRITE;
          p++;
       }
@@ -910,63 +769,109 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
    }
 
    /* Add an explicit fence from gallium, if any */
-   agx_add_sync(in_syncs, &in_sync_count, agx_get_in_sync(ctx));
+   agx_add_sync(syncs, &in_sync_count, agx_get_in_sync(ctx));
 
    /* Add an implicit cross-context flush sync point, if any */
    if (wait_seqid) {
       batch_debug(batch, "Waits on inter-context sync point %" PRIu64,
                   wait_seqid);
-      in_syncs[in_sync_count++] = (struct drm_asahi_sync){
+      syncs[in_sync_count++] = (struct drm_asahi_sync){
          .sync_type = DRM_ASAHI_SYNC_TIMELINE_SYNCOBJ,
          .handle = screen->flush_syncobj,
          .timeline_value = wait_seqid,
       };
    }
 
+   /* Subtle concurrency note: Since we assign seqids atomically and do
+    * not lock submission across contexts, it is possible for two threads
+    * to submit timeline syncobj updates out of order. As far as I can
+    * tell, this case is handled in the kernel conservatively: it triggers
+    * a fence context bump and effectively "splits" the timeline at the
+    * larger point, causing future lookups for earlier points to return a
+    * later point, waiting more. The signaling code still makes sure all
+    * prior fences have to be signaled before considering a given point
+    * signaled, regardless of order. That's good enough for us.
+    *
+    * (Note: this case breaks drm_syncobj_query_ioctl and for this reason
+    * triggers a DRM_DEBUG message on submission, but we don't use that
+    * so we don't care.)
+    *
+    * This case can be tested by setting seqid = 1 unconditionally here,
+    * causing every single syncobj update to reuse the same timeline point.
+    * Everything still works (but over-synchronizes because this effectively
+    * serializes all submissions once any context flushes once).
+    */
+   struct drm_asahi_sync *out_syncs = syncs + in_sync_count;
+
+   out_syncs[0] = (struct drm_asahi_sync){
+      .sync_type = DRM_ASAHI_SYNC_SYNCOBJ,
+      .handle = batch->syncobj,
+   };
+
+   out_syncs[1] = (struct drm_asahi_sync){
+      .sync_type = DRM_ASAHI_SYNC_TIMELINE_SYNCOBJ,
+      .handle = screen->flush_syncobj,
+      .timeline_value = seqid,
+   };
+
    /* Submit! */
-   struct drm_asahi_command commands[2];
-   unsigned command_count = 0;
+   struct util_dynarray cmdbuf;
+   util_dynarray_init(&cmdbuf, NULL);
 
    if (compute) {
-      commands[command_count++] = (struct drm_asahi_command){
-         .cmd_type = DRM_ASAHI_CMD_COMPUTE,
-         .flags = 0,
-         .cmd_buffer = (uint64_t)(uintptr_t)compute,
+      /* Barrier on previous submission */
+      struct drm_asahi_cmd_header header = agx_cmd_header(true, 0, 0);
 
-         /* Work around for shipping 6.11.8 kernels, remove when we bump uapi
-          */
-         .cmd_buffer_size = sizeof(struct drm_asahi_cmd_compute) - 8,
-         .result_offset = feedback ? batch->result_off : 0,
-         .result_size = feedback ? sizeof(union agx_batch_result) : 0,
-         /* Barrier on previous submission */
-         .barriers = {0, 0},
-      };
+      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
+      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_compute, *compute);
    }
 
    if (render) {
-      commands[command_count++] = (struct drm_asahi_command){
-         .cmd_type = DRM_ASAHI_CMD_RENDER,
-         .flags = 0,
-         .cmd_buffer = (uint64_t)(uintptr_t)render,
-         .cmd_buffer_size = sizeof(struct drm_asahi_cmd_render),
-         .result_offset =
-            feedback ? (batch->result_off + sizeof(union agx_batch_result)) : 0,
-         .result_size = feedback ? sizeof(union agx_batch_result) : 0,
-         /* Barrier on previous submission */
-         .barriers = {compute ? DRM_ASAHI_BARRIER_NONE : 0, compute ? 1 : 0},
-      };
+      struct attachments att = {.count = 0};
+      struct pipe_framebuffer_state *fb = &batch->key;
+
+      for (unsigned i = 0; i < fb->nr_cbufs; ++i) {
+         if (fb->cbufs[i])
+            asahi_add_attachment(&att, agx_resource(fb->cbufs[i]->texture));
+      }
+
+      if (fb->zsbuf) {
+         struct agx_resource *rsrc = agx_resource(fb->zsbuf->texture);
+         asahi_add_attachment(&att, rsrc);
+
+         if (rsrc->separate_stencil)
+            asahi_add_attachment(&att, rsrc->separate_stencil);
+      }
+
+      if (att.count) {
+         struct drm_asahi_cmd_header header = {
+            .cmd_type = DRM_ASAHI_SET_FRAGMENT_ATTACHMENTS,
+            .size = sizeof(att.list[0]) * att.count,
+            .cdm_barrier = DRM_ASAHI_BARRIER_NONE,
+            .vdm_barrier = DRM_ASAHI_BARRIER_NONE,
+         };
+
+         util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
+         util_dynarray_append_array(&cmdbuf, struct drm_asahi_attachment,
+                                    att.list, att.count);
+      }
+
+      /* Barrier on previous submission */
+      struct drm_asahi_cmd_header header = agx_cmd_header(
+         false, compute ? DRM_ASAHI_BARRIER_NONE : 0, compute ? 1 : 0);
+
+      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
+      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_render, *render);
    }
 
    struct drm_asahi_submit submit = {
       .flags = 0,
       .queue_id = ctx->queue_id,
-      .result_handle = feedback ? ctx->result_buf->handle : 0,
       .in_sync_count = in_sync_count,
       .out_sync_count = 2,
-      .command_count = command_count,
-      .in_syncs = (uint64_t)(uintptr_t)(in_syncs),
-      .out_syncs = (uint64_t)(uintptr_t)(out_syncs),
-      .commands = (uint64_t)(uintptr_t)(&commands[0]),
+      .syncs = (uint64_t)(uintptr_t)(syncs),
+      .cmdbuf = (uint64_t)(uintptr_t)(cmdbuf.data),
+      .cmdbuf_size = cmdbuf.size,
    };
 
    int ret = dev->ops.submit(dev, &submit, &virt);
@@ -983,7 +888,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
          fprintf(
             stderr,
             "DRM_IOCTL_ASAHI_SUBMIT render failed: %m (%dx%d tile %dx%d layers %d samples %d)\n",
-            c->fb_width, c->fb_height, c->utile_width, c->utile_height,
+            c->width_px, c->height_px, c->utile_width_px, c->utile_height_px,
             c->layers, c->samples);
       }
 
@@ -1009,7 +914,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
                      shared_bos[i]->va->addr);
 
          /* Free the in_sync handle we just acquired */
-         ret = drmSyncobjDestroy(dev->fd, in_syncs[i].handle);
+         ret = drmSyncobjDestroy(dev->fd, syncs[i].handle);
          assert(ret >= 0);
          /* And then import the out_sync sync file into it */
          ret = agx_import_sync_file(dev, shared_bos[i], out_sync_fd);
@@ -1039,21 +944,12 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       batch_debug(batch, "Writes to BO @ 0x%" PRIx64, bo->va->addr);
    }
 
-   free(in_syncs);
+   free(syncs);
    free(shared_bos);
 
    if (dev->debug & (AGX_DBG_TRACE | AGX_DBG_SYNC | AGX_DBG_SCRATCH)) {
       if (dev->debug & AGX_DBG_TRACE) {
-         if (compute) {
-            agxdecode_drm_cmd_compute(dev->agxdecode, &dev->params, compute,
-                                      true);
-         }
-
-         if (render) {
-            agxdecode_drm_cmd_render(dev->agxdecode, &dev->params, render,
-                                     true);
-         }
-
+         agxdecode_drm_cmdbuf(dev->agxdecode, &dev->params, &cmdbuf, true);
          agxdecode_next_frame();
       }
 
@@ -1077,6 +973,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       }
    }
 
+   util_dynarray_fini(&cmdbuf);
    agx_batch_mark_submitted(batch);
 
    if (virt.extres)
@@ -1154,9 +1051,6 @@ agx_batch_reset(struct agx_context *ctx, struct agx_batch *batch)
 
    if (ctx->batch == batch)
       ctx->batch = NULL;
-
-   /* Elide printing stats */
-   batch->result = NULL;
 
    agx_batch_cleanup(ctx, batch, true);
 }

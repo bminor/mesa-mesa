@@ -1119,4 +1119,9 @@
     <field name="S Resolve" start="58" size="1" type="bool"/>
   </struct>
 
+  <struct name="CR ISP ZLS Pixels" size="4">
+    <field name="X" start="0" size="15" type="uint" modifier="minus(1)"/>
+    <field name="Y" start="15" size="15" type="uint" modifier="minus(1)"/>
+  </struct>
+
 </genxml>

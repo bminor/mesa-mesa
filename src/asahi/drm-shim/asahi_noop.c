@@ -6,21 +6,17 @@
 
 #include <string.h>
 
-#include "../lib/unstable_asahi_drm.h"
 #include "drm-shim/drm_shim.h"
+#include "drm-uapi/asahi_drm.h"
 
 bool drm_shim_driver_prefers_first_render_node = true;
 
 static const struct drm_asahi_params_global params = {
-   .unstable_uabi_version = DRM_ASAHI_UNSTABLE_UABI_VERSION,
    .gpu_generation = 13,
    .gpu_variant = 'G',
    .gpu_revision = 0,
-   .vm_user_start = 0x1000000,
-   .vm_user_end = 0x5000000,
-   .vm_usc_start = 0,
-   .vm_usc_end = 0,
-   .vm_page_size = 4096,
+   .vm_start = 0x1000000,
+   .vm_end = 0x5000000,
 };
 
 struct asahi_bo {
@@ -44,12 +40,6 @@ static struct asahi_device asahi = {
 
 static int
 asahi_ioctl_noop(int fd, unsigned long request, void *arg)
-{
-   return 0;
-}
-
-static int
-asahi_ioctl_submit(int fd, unsigned long request, void *arg)
 {
    return 0;
 }
@@ -110,12 +100,12 @@ static ioctl_fn_t driver_ioctls[] = {
    [DRM_ASAHI_GET_PARAMS] = asahi_ioctl_get_param,
    [DRM_ASAHI_VM_CREATE] = asahi_ioctl_noop,
    [DRM_ASAHI_VM_DESTROY] = asahi_ioctl_noop,
+   [DRM_ASAHI_VM_BIND] = asahi_ioctl_noop,
    [DRM_ASAHI_GEM_CREATE] = asahi_ioctl_gem_create,
    [DRM_ASAHI_GEM_MMAP_OFFSET] = asahi_ioctl_gem_mmap_offset,
-   [DRM_ASAHI_GEM_BIND] = asahi_ioctl_noop,
    [DRM_ASAHI_QUEUE_CREATE] = asahi_ioctl_noop,
    [DRM_ASAHI_QUEUE_DESTROY] = asahi_ioctl_noop,
-   [DRM_ASAHI_SUBMIT] = asahi_ioctl_submit,
+   [DRM_ASAHI_SUBMIT] = asahi_ioctl_noop,
 };
 
 void

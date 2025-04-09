@@ -23,7 +23,6 @@
 #include "util/simple_mtx.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/wsi/wsi_common.h"
-#include "unstable_asahi_drm.h"
 #include "vk_drm_syncobj.h"
 #include "vk_shader_module.h"
 
@@ -274,13 +273,10 @@ hk_get_device_features(
       .sparseResidencyAliased = true,
       .sparseResidencyImage2D = true,
 
-      /* We depend on soft fault to implement sparse residency on buffers with
-       * the appropriate semantics. Lifting this requirement would be possible
-       * but challenging, given the requirements imposed by
-       * sparseResidencyNonResidentStrict.
+      /* TODO: We need to implement sparse buffer without soft fault to avoid
+       * tying our hands later.
        */
-      .sparseResidencyBuffer =
-         (dev->params.feat_compat & DRM_ASAHI_FEAT_SOFT_FAULTS),
+      .sparseResidencyBuffer = false,
 
       /* This needs investigation. */
       .sparseResidencyImage3D = false,
@@ -743,7 +739,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .sampledImageStencilSampleCounts = sample_counts,
       .storageImageSampleCounts = sample_counts,
       .maxSampleMaskWords = 1,
-      .timestampComputeAndGraphics = agx_supports_timestamps(dev),
+      .timestampComputeAndGraphics = true,
       /* FIXME: Is timestamp period actually 1? */
       .timestampPeriod = 1.0f,
       .maxClipDistances = 8,
@@ -1141,9 +1137,6 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
    struct hk_instance *instance = (struct hk_instance *)_instance;
    VkResult result;
 
-   /* Blanket refusal to probe due to unstable UAPI. */
-   return VK_ERROR_INCOMPATIBLE_DRIVER;
-
    if (!(drm_device->available_nodes & (1 << DRM_NODE_RENDER)) ||
        drm_device->bustype != DRM_BUS_PLATFORM)
       return VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -1433,8 +1426,7 @@ hk_GetPhysicalDeviceQueueFamilyProperties2(
       {
          p->queueFamilyProperties.queueFlags = queue_family->queue_flags;
          p->queueFamilyProperties.queueCount = queue_family->queue_count;
-         p->queueFamilyProperties.timestampValidBits =
-            agx_supports_timestamps(&pdev->dev) ? 64 : 0;
+         p->queueFamilyProperties.timestampValidBits = 64;
          p->queueFamilyProperties.minImageTransferGranularity =
             (VkExtent3D){1, 1, 1};
 

@@ -24,6 +24,7 @@
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 
+#include "drm-uapi/asahi_drm.h"
 #include "util/os_time.h"
 #include "util/u_dynarray.h"
 #include "vulkan/vulkan_core.h"
@@ -88,10 +89,6 @@ hk_CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
    bool timestamp = pCreateInfo->queryType == VK_QUERY_TYPE_TIMESTAMP;
    unsigned occlusion_queries = occlusion ? pCreateInfo->queryCount : 0;
 
-   /* Workaround for DXVK on old kernels */
-   if (!agx_supports_timestamps(&dev->dev))
-      timestamp = false;
-
    pool =
       vk_query_pool_create(&dev->vk, pCreateInfo, pAllocator, sizeof(*pool));
    if (!pool)
@@ -131,10 +128,7 @@ hk_CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
        * them.
        */
       if (timestamp) {
-         int ret = dev->dev.ops.bo_bind_object(
-            &dev->dev, pool->bo, &pool->handle, pool->bo->size, 0,
-            ASAHI_BIND_OBJECT_USAGE_TIMESTAMPS);
-
+         int ret = agx_bind_timestamps(&dev->dev, pool->bo, &pool->handle);
          if (ret) {
             hk_DestroyQueryPool(device, hk_query_pool_to_handle(pool),
                                 pAllocator);
@@ -186,7 +180,7 @@ hk_DestroyQueryPool(VkDevice device, VkQueryPool queryPool,
    }
 
    if (pool->handle)
-      dev->dev.ops.bo_unbind_object(&dev->dev, pool->handle, 0);
+      dev->dev.ops.bo_unbind_object(&dev->dev, pool->handle);
 
    agx_bo_unreference(&dev->dev, pool->bo);
    vk_query_pool_destroy(&dev->vk, pAllocator, &pool->vk);
@@ -390,12 +384,7 @@ hk_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(hk_query_pool, pool, queryPool);
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
-   /* Workaround for DXVK on old kernels */
-   if (!agx_supports_timestamps(&dev->dev))
-      return;
-
    uint64_t report_addr = hk_query_report_addr(dev, pool, query);
-
    bool after_gfx = cmd->current_cs.gfx != NULL;
 
    /* When writing timestamps for compute, we split the control stream at each

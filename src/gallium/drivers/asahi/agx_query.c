@@ -408,12 +408,12 @@ agx_get_query_result(struct pipe_context *pctx, struct pipe_query *pquery,
       return true;
 
    case QUERY_COPY_TIMESTAMP:
-      vresult->u64 = agx_gpu_time_to_ns(dev, value);
+      vresult->u64 = agx_gpu_timestamp_to_ns(dev, value);
       return true;
 
    case QUERY_COPY_TIME_ELAPSED:
       /* end - begin */
-      vresult->u64 = agx_gpu_time_to_ns(dev, ptr[0] - ptr[1]);
+      vresult->u64 = agx_gpu_timestamp_to_ns(dev, ptr[0] - ptr[1]);
       return true;
 
    default:

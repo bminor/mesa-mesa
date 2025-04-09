@@ -680,8 +680,6 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
    const VkRenderingAttachmentInfo *attach_s =
       pRenderingInfo->pStencilAttachment;
 
-   render->cr.iogpu_unk_214 = 0xc000;
-
    struct ail_layout *z_layout = NULL, *s_layout = NULL;
 
    if (attach_z != NULL && attach_z != VK_NULL_HANDLE && attach_z->imageView) {

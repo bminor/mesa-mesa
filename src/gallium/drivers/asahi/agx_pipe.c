@@ -11,7 +11,7 @@
 #include "asahi/compiler/agx_compile.h"
 #include "asahi/layout/layout.h"
 #include "asahi/lib/decode.h"
-#include "asahi/lib/unstable_asahi_drm.h"
+#include "drm-uapi/asahi_drm.h"
 #include "drm-uapi/drm_fourcc.h"
 #include "frontend/winsys_handle.h"
 #include "gallium/auxiliary/renderonly/renderonly.h"
@@ -1199,26 +1199,6 @@ agx_flush_resource(struct pipe_context *pctx, struct pipe_resource *pres)
    }
 }
 
-#define MAX_ATTACHMENTS 16
-
-struct attachments {
-   struct drm_asahi_attachment list[MAX_ATTACHMENTS];
-   size_t count;
-};
-
-static void
-asahi_add_attachment(struct attachments *att, struct agx_resource *rsrc,
-                     struct pipe_surface *surf)
-{
-   assert(att->count < MAX_ATTACHMENTS);
-   int idx = att->count++;
-
-   att->list[idx].size = rsrc->layout.size_B;
-   att->list[idx].pointer = rsrc->bo->va->addr;
-   att->list[idx].order = 1; // TODO: What does this do?
-   att->list[idx].flags = 0;
-}
-
 static bool
 is_aligned(unsigned x, unsigned pot_alignment)
 {
@@ -1226,12 +1206,20 @@ is_aligned(unsigned x, unsigned pot_alignment)
    return (x & (pot_alignment - 1)) == 0;
 }
 
+static unsigned
+build_timestamp_offset(struct agx_batch *batch, unsigned offset)
+{
+   return (agx_batch_idx(batch) * sizeof(struct agx_timestamps)) + offset;
+}
+
+#define timestamp_offset(batch, offs)                                          \
+   build_timestamp_offset(batch, offsetof(struct agx_timestamps, offs))
+
 static void
 agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
-           struct attachments *att, struct agx_pool *pool,
-           struct agx_batch *batch, struct pipe_framebuffer_state *framebuffer,
-           uint64_t encoder_ptr, uint64_t encoder_id, uint64_t cmd_ta_id,
-           uint64_t cmd_3d_id, uint64_t scissor_ptr, uint64_t depth_bias_ptr,
+           struct agx_pool *pool, struct agx_batch *batch,
+           struct pipe_framebuffer_state *framebuffer, uint64_t encoder_ptr,
+           uint64_t scissor_ptr, uint64_t depth_bias_ptr,
            uint64_t visibility_result_ptr, struct asahi_bg_eot pipeline_clear,
            struct asahi_bg_eot pipeline_load,
            struct asahi_bg_eot pipeline_store, bool clear_pipeline_textures,
@@ -1240,27 +1228,26 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 {
    memset(c, 0, sizeof(*c));
 
-   c->encoder_ptr = encoder_ptr;
-   c->encoder_id = encoder_id;
-   c->cmd_3d_id = cmd_3d_id;
-   c->cmd_ta_id = cmd_ta_id;
-
-   c->fragment_usc_base = dev->shader_base;
-   c->vertex_usc_base = dev->shader_base;
+   c->vdm_ctrl_stream_base = encoder_ptr;
 
    /* bit 0 specifies OpenGL clip behaviour. Since ARB_clip_control is
     * advertised, we don't set it and lower in the vertex shader.
     */
    c->ppp_ctrl = 0x202;
 
-   c->fb_width = framebuffer->width;
-   c->fb_height = framebuffer->height;
-
-   c->iogpu_unk_214 = 0xc000;
+   c->width_px = framebuffer->width;
+   c->height_px = framebuffer->height;
 
    c->isp_bgobjvals = 0x300;
 
    struct agx_resource *zres = NULL, *sres = NULL;
+
+   if (framebuffer->zsbuf) {
+      agx_pack(&c->isp_zls_pixels, CR_ISP_ZLS_PIXELS, cfg) {
+         cfg.x = c->width_px;
+         cfg.y = c->height_px;
+      }
+   }
 
    agx_pack(&c->zls_ctrl, ZLS_CONTROL, zls_control) {
 
@@ -1279,9 +1266,6 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                 desc->format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT ||
                 desc->format == PIPE_FORMAT_S8_UINT);
 
-         c->depth_dimensions =
-            (framebuffer->width - 1) | ((framebuffer->height - 1) << 15);
-
          if (util_format_has_depth(desc))
             zres = zsres;
          else
@@ -1297,11 +1281,8 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
             zls_control.z_store_enable = (batch->resolve & PIPE_CLEAR_DEPTH);
             zls_control.z_load_enable = !clear && load;
 
-            c->depth_buffer_load = agx_map_texture_gpu(zres, first_layer) +
-                                   ail_get_level_offset_B(&zres->layout, level);
-
-            c->depth_buffer_store = c->depth_buffer_load;
-            c->depth_buffer_partial = c->depth_buffer_load;
+            c->depth.base = agx_map_texture_gpu(zres, first_layer) +
+                            ail_get_level_offset_B(&zres->layout, level);
 
             /* Main stride in pages */
             assert((zres->layout.depth_px == 1 ||
@@ -1309,14 +1290,12 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                    "Page aligned Z layers");
 
             unsigned stride_pages = zres->layout.layer_stride_B / AIL_PAGESIZE;
-            c->depth_buffer_load_stride = ((stride_pages - 1) << 14) | 1;
-            c->depth_buffer_store_stride = c->depth_buffer_load_stride;
-            c->depth_buffer_partial_stride = c->depth_buffer_load_stride;
+            c->depth.stride = ((stride_pages - 1) << 14) | 1;
 
             assert(zres->layout.tiling != AIL_TILING_LINEAR && "must tile");
 
             if (zres->layout.compressed) {
-               c->depth_meta_buffer_load =
+               c->depth.comp_base =
                   agx_map_texture_gpu(zres, 0) +
                   zres->layout.metadata_offset_B +
                   (first_layer * zres->layout.compression_layer_stride_B) +
@@ -1328,14 +1307,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                       "Cacheline aligned Z meta layers");
                unsigned stride_lines =
                   zres->layout.compression_layer_stride_B / AIL_CACHELINE;
-               c->depth_meta_buffer_load_stride = (stride_lines - 1) << 14;
-
-               c->depth_meta_buffer_store = c->depth_meta_buffer_load;
-               c->depth_meta_buffer_store_stride =
-                  c->depth_meta_buffer_load_stride;
-               c->depth_meta_buffer_partial = c->depth_meta_buffer_load;
-               c->depth_meta_buffer_partial_stride =
-                  c->depth_meta_buffer_load_stride;
+               c->depth.comp_stride = (stride_lines - 1) << 14;
 
                zls_control.z_compress_1 = true;
                zls_control.z_compress_2 = true;
@@ -1346,7 +1318,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                c->isp_bgobjdepth =
                   (uint16_t)(SATURATE(clear_depth) * scale + 0.5f);
                zls_control.z_format = AGX_ZLS_FORMAT_16;
-               c->iogpu_unk_214 |= 0x40000;
+               c->flags |= DRM_ASAHI_RENDER_DBIAS_IS_INT;
             } else {
                c->isp_bgobjdepth = fui(clear_depth);
                zls_control.z_format = AGX_ZLS_FORMAT_32F;
@@ -1360,24 +1332,18 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
             zls_control.s_store_enable = (batch->resolve & PIPE_CLEAR_STENCIL);
             zls_control.s_load_enable = !clear && load;
 
-            c->stencil_buffer_load =
-               agx_map_texture_gpu(sres, first_layer) +
-               ail_get_level_offset_B(&sres->layout, level);
-
-            c->stencil_buffer_store = c->stencil_buffer_load;
-            c->stencil_buffer_partial = c->stencil_buffer_load;
+            c->stencil.base = agx_map_texture_gpu(sres, first_layer) +
+                              ail_get_level_offset_B(&sres->layout, level);
 
             /* Main stride in pages */
             assert((sres->layout.depth_px == 1 ||
                     is_aligned(sres->layout.layer_stride_B, AIL_PAGESIZE)) &&
                    "Page aligned S layers");
             unsigned stride_pages = sres->layout.layer_stride_B / AIL_PAGESIZE;
-            c->stencil_buffer_load_stride = ((stride_pages - 1) << 14) | 1;
-            c->stencil_buffer_store_stride = c->stencil_buffer_load_stride;
-            c->stencil_buffer_partial_stride = c->stencil_buffer_load_stride;
+            c->stencil.stride = ((stride_pages - 1) << 14) | 1;
 
             if (sres->layout.compressed) {
-               c->stencil_meta_buffer_load =
+               c->stencil.comp_base =
                   agx_map_texture_gpu(sres, 0) +
                   sres->layout.metadata_offset_B +
                   (first_layer * sres->layout.compression_layer_stride_B) +
@@ -1389,14 +1355,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                       "Cacheline aligned S meta layers");
                unsigned stride_lines =
                   sres->layout.compression_layer_stride_B / AIL_CACHELINE;
-               c->stencil_meta_buffer_load_stride = (stride_lines - 1) << 14;
-
-               c->stencil_meta_buffer_store = c->stencil_meta_buffer_load;
-               c->stencil_meta_buffer_store_stride =
-                  c->stencil_meta_buffer_load_stride;
-               c->stencil_meta_buffer_partial = c->stencil_meta_buffer_load;
-               c->stencil_meta_buffer_partial_stride =
-                  c->stencil_meta_buffer_load_stride;
+               c->stencil.comp_stride = (stride_lines - 1) << 14;
 
                zls_control.s_compress_1 = true;
                zls_control.s_compress_2 = true;
@@ -1407,71 +1366,48 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
       }
    }
 
-   if (clear_pipeline_textures)
-      c->flags |= ASAHI_RENDER_SET_WHEN_RELOADING_Z_OR_S;
-   else
-      c->flags |= ASAHI_RENDER_NO_CLEAR_PIPELINE_TEXTURES;
-
-   if (zres && !(batch->clear & PIPE_CLEAR_DEPTH))
-      c->flags |= ASAHI_RENDER_SET_WHEN_RELOADING_Z_OR_S;
-
-   if (sres && !(batch->clear & PIPE_CLEAR_STENCIL))
-      c->flags |= ASAHI_RENDER_SET_WHEN_RELOADING_Z_OR_S;
-
    if (dev->debug & AGX_DBG_NOCLUSTER)
-      c->flags |= ASAHI_RENDER_NO_VERTEX_CLUSTERING;
+      c->flags |= DRM_ASAHI_RENDER_NO_VERTEX_CLUSTERING;
 
-   /* XXX is this for just MSAA+Z+S or MSAA+(Z|S)? */
-   if (tib->nr_samples > 1 && framebuffer->zsbuf)
-      c->flags |= ASAHI_RENDER_MSAA_ZS;
-
-   memcpy(&c->load_pipeline_bind, &pipeline_clear.counts,
+   memcpy(&c->bg.rsrc_spec, &pipeline_clear.counts,
           sizeof(struct agx_counts_packed));
 
-   memcpy(&c->store_pipeline_bind, &pipeline_store.counts,
+   memcpy(&c->eot.rsrc_spec, &pipeline_store.counts,
           sizeof(struct agx_counts_packed));
 
-   memcpy(&c->partial_reload_pipeline_bind, &pipeline_load.counts,
+   memcpy(&c->partial_bg.rsrc_spec, &pipeline_load.counts,
           sizeof(struct agx_counts_packed));
 
-   memcpy(&c->partial_store_pipeline_bind, &pipeline_store.counts,
+   memcpy(&c->partial_eot.rsrc_spec, &pipeline_store.counts,
           sizeof(struct agx_counts_packed));
 
    /* XXX is this correct? */
-   c->load_pipeline = pipeline_clear.usc | (framebuffer->nr_cbufs >= 4 ? 8 : 4);
-   c->store_pipeline = pipeline_store.usc | 4;
-   c->partial_reload_pipeline = pipeline_load.usc | 4;
-   c->partial_store_pipeline = pipeline_store.usc | 4;
+   c->bg.usc = pipeline_clear.usc | (framebuffer->nr_cbufs >= 4 ? 8 : 4);
+   c->eot.usc = pipeline_store.usc | 4;
+   c->partial_bg.usc = pipeline_load.usc | 4;
+   c->partial_eot.usc = pipeline_store.usc | 4;
 
-   c->utile_width = tib->tile_size.width;
-   c->utile_height = tib->tile_size.height;
+   c->utile_width_px = tib->tile_size.width;
+   c->utile_height_px = tib->tile_size.height;
 
    c->samples = tib->nr_samples;
    c->layers = MAX2(util_framebuffer_get_num_layers(framebuffer), 1);
 
    c->ppp_multisamplectl = batch->uniforms.ppp_multisamplectl;
-   c->sample_size = tib->sample_size_B;
-
-   /* XXX OR 0x80 with eMRT? */
-   c->tib_blocks = ALIGN_POT(agx_tilebuffer_total_size(tib), 2048) / 2048;
+   c->sample_size_B = tib->sample_size_B;
 
    float tan_60 = 1.732051f;
-   c->merge_upper_x = fui(tan_60 / framebuffer->width);
-   c->merge_upper_y = fui(tan_60 / framebuffer->height);
+   c->isp_merge_upper_x = fui(tan_60 / framebuffer->width);
+   c->isp_merge_upper_y = fui(tan_60 / framebuffer->height);
 
-   c->scissor_array = scissor_ptr;
-   c->depth_bias_array = depth_bias_ptr;
-   c->visibility_result_buffer = visibility_result_ptr;
+   c->isp_scissor_base = scissor_ptr;
+   c->isp_dbias_base = depth_bias_ptr;
+   c->isp_oclqry_base = visibility_result_ptr;
 
-   c->vertex_sampler_array =
-      batch->sampler_heap.bo ? batch->sampler_heap.bo->va->addr : 0;
-   c->vertex_sampler_count = batch->sampler_heap.count;
-   c->vertex_sampler_max = batch->sampler_heap.count + 1;
-
-   /* In the future we could split the heaps if useful */
-   c->fragment_sampler_array = c->vertex_sampler_array;
-   c->fragment_sampler_count = c->vertex_sampler_count;
-   c->fragment_sampler_max = c->vertex_sampler_max;
+   if (batch->sampler_heap.bo) {
+      c->sampler_heap = batch->sampler_heap.bo->va->addr;
+      c->sampler_count = batch->sampler_heap.count;
+   }
 
    /* If a tile is empty, we do not want to process it, as the redundant
     * roundtrip of memory-->tilebuffer-->memory wastes a tremendous amount of
@@ -1483,39 +1419,25 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
     * This case matters a LOT for performance in workloads that split batches.
     */
    if (batch->clear & batch->resolve)
-      c->flags |= ASAHI_RENDER_PROCESS_EMPTY_TILES;
-
-   for (unsigned i = 0; i < framebuffer->nr_cbufs; ++i) {
-      if (!framebuffer->cbufs[i])
-         continue;
-
-      asahi_add_attachment(att, agx_resource(framebuffer->cbufs[i]->texture),
-                           framebuffer->cbufs[i]);
-   }
-
-   if (framebuffer->zsbuf) {
-      struct agx_resource *rsrc = agx_resource(framebuffer->zsbuf->texture);
-
-      asahi_add_attachment(att, rsrc, framebuffer->zsbuf);
-
-      if (rsrc->separate_stencil) {
-         asahi_add_attachment(att, rsrc->separate_stencil, framebuffer->zsbuf);
-      }
-   }
-
-   c->fragment_attachments = (uint64_t)(uintptr_t)&att->list[0];
-   c->fragment_attachment_count = att->count;
+      c->flags |= DRM_ASAHI_RENDER_PROCESS_EMPTY_TILES;
 
    if (batch->vs_scratch) {
-      c->flags |= ASAHI_RENDER_VERTEX_SPILLS;
-      c->vertex_helper_arg = batch->ctx->scratch_vs.buf->va->addr;
-      c->vertex_helper_cfg = batch->vs_preamble_scratch << 16;
-      c->vertex_helper_program = agx_helper_program(&batch->ctx->bg_eot);
+      c->flags |= DRM_ASAHI_RENDER_VERTEX_SCRATCH;
+      c->vertex_helper.data = batch->ctx->scratch_vs.buf->va->addr;
+      c->vertex_helper.cfg = batch->vs_preamble_scratch << 16;
+      c->vertex_helper.binary = agx_helper_program(&batch->ctx->bg_eot);
    }
    if (batch->fs_scratch) {
-      c->fragment_helper_arg = batch->ctx->scratch_fs.buf->va->addr;
-      c->fragment_helper_cfg = batch->fs_preamble_scratch << 16;
-      c->fragment_helper_program = agx_helper_program(&batch->ctx->bg_eot);
+      c->fragment_helper.data = batch->ctx->scratch_fs.buf->va->addr;
+      c->fragment_helper.cfg = batch->fs_preamble_scratch << 16;
+      c->fragment_helper.binary = agx_helper_program(&batch->ctx->bg_eot);
+   }
+
+   if (batch->timestamps.size > 0) {
+      c->ts_vtx.start.handle = batch->ctx->timestamp_handle;
+      c->ts_frag.end.handle = batch->ctx->timestamp_handle;
+      c->ts_vtx.start.offset = timestamp_offset(batch, vtx_start);
+      c->ts_frag.end.offset = timestamp_offset(batch, frag_end);
    }
 }
 
@@ -1595,8 +1517,6 @@ static void
 agx_flush_compute(struct agx_context *ctx, struct agx_batch *batch,
                   struct drm_asahi_cmd_compute *cmdbuf)
 {
-   struct agx_device *dev = agx_device(ctx->base.screen);
-
    /* Finalize the encoder */
    agx_pack(batch->cdm.current, CDM_STREAM_TERMINATE, _)
       ;
@@ -1606,27 +1526,14 @@ agx_flush_compute(struct agx_context *ctx, struct agx_batch *batch,
    if (batch->cs_scratch)
       agx_batch_add_bo(batch, ctx->scratch_cs.buf);
 
-   unsigned cmdbuf_id = agx_get_global_id(dev);
-   unsigned encoder_id = agx_get_global_id(dev);
-
    *cmdbuf = (struct drm_asahi_cmd_compute){
-      .flags = 0,
-      .encoder_ptr = batch->cdm.bo->va->addr,
-      .encoder_end =
+      .cdm_ctrl_stream_base = batch->cdm.bo->va->addr,
+      .cdm_ctrl_stream_end =
          batch->cdm.bo->va->addr +
          (batch->cdm.current - (uint8_t *)agx_bo_map(batch->cdm.bo)),
-      .usc_base = dev->shader_base,
-      .helper_arg = 0,
-      .helper_cfg = 0,
-      .helper_program = 0,
-      .iogpu_unk_40 = 0,
-      .sampler_array =
+      .sampler_heap =
          batch->sampler_heap.bo ? batch->sampler_heap.bo->va->addr : 0,
       .sampler_count = batch->sampler_heap.count,
-      .sampler_max = batch->sampler_heap.count + 1,
-      .encoder_id = encoder_id,
-      .cmd_id = cmdbuf_id,
-      .unk_mask = 0xffffffff,
    };
 
    if (batch->cs_scratch) {
@@ -1635,16 +1542,23 @@ agx_flush_compute(struct agx_context *ctx, struct agx_batch *batch,
       // helper. Disable them for now.
 
       // cmdbuf->iogpu_unk_40 = 0x1c;
-      cmdbuf->helper_arg = ctx->scratch_cs.buf->va->addr;
-      cmdbuf->helper_cfg = batch->cs_preamble_scratch << 16;
-      // cmdbuf->helper_cfg |= 0x40;
-      cmdbuf->helper_program = agx_helper_program(&batch->ctx->bg_eot);
+      cmdbuf->helper.data = ctx->scratch_cs.buf->va->addr;
+      cmdbuf->helper.cfg = batch->cs_preamble_scratch << 16;
+      // cmdbuf->helper.cfg |= 0x40;
+      cmdbuf->helper.binary = agx_helper_program(&batch->ctx->bg_eot);
+   }
+
+   if (batch->timestamps.size > 0) {
+      cmdbuf->ts.start.handle = ctx->timestamp_handle;
+      cmdbuf->ts.end.handle = ctx->timestamp_handle;
+      cmdbuf->ts.start.offset = timestamp_offset(batch, comp_start);
+      cmdbuf->ts.end.offset = timestamp_offset(batch, comp_start);
    }
 }
 
 static void
 agx_flush_render(struct agx_context *ctx, struct agx_batch *batch,
-                 struct drm_asahi_cmd_render *cmdbuf, struct attachments *att)
+                 struct drm_asahi_cmd_render *cmdbuf)
 {
    struct agx_device *dev = agx_device(ctx->base.screen);
 
@@ -1694,16 +1608,11 @@ agx_flush_render(struct agx_context *ctx, struct agx_batch *batch,
     */
    agx_batch_add_bo(batch, batch->vdm.bo);
 
-   unsigned cmd_ta_id = agx_get_global_id(dev);
-   unsigned cmd_3d_id = agx_get_global_id(dev);
-   unsigned encoder_id = agx_get_global_id(dev);
-
-   agx_cmdbuf(dev, cmdbuf, att, &batch->pool, batch, &batch->key,
-              batch->vdm.bo->va->addr, encoder_id, cmd_ta_id, cmd_3d_id,
-              scissor, zbias, agx_get_occlusion_heap(batch),
-              pipeline_background, pipeline_background_partial, pipeline_store,
-              clear_pipeline_textures, batch->clear_depth, batch->clear_stencil,
-              &batch->tilebuffer_layout);
+   agx_cmdbuf(
+      dev, cmdbuf, &batch->pool, batch, &batch->key, batch->vdm.bo->va->addr,
+      scissor, zbias, agx_get_occlusion_heap(batch), pipeline_background,
+      pipeline_background_partial, pipeline_store, clear_pipeline_textures,
+      batch->clear_depth, batch->clear_stencil, &batch->tilebuffer_layout);
 }
 
 void
@@ -1712,7 +1621,6 @@ agx_flush_batch(struct agx_context *ctx, struct agx_batch *batch)
    assert(agx_batch_is_active(batch));
    assert(!agx_batch_is_submitted(batch));
 
-   struct attachments att = {.count = 0};
    struct drm_asahi_cmd_render render;
    struct drm_asahi_cmd_compute compute;
    bool has_vdm = false, has_cdm = false;
@@ -1723,7 +1631,7 @@ agx_flush_batch(struct agx_context *ctx, struct agx_batch *batch)
    }
 
    if (batch->vdm.bo && (batch->clear || batch->initialized)) {
-      agx_flush_render(ctx, batch, &render, &att);
+      agx_flush_render(ctx, batch, &render);
       has_vdm = true;
    }
 
@@ -1761,8 +1669,6 @@ agx_destroy_context(struct pipe_context *pctx)
    agx_bg_eot_cleanup(&ctx->bg_eot);
    agx_destroy_meta_shaders(ctx);
 
-   agx_bo_unreference(dev, ctx->result_buf);
-
    /* Lock around the syncobj destruction, to avoid racing
     * command submission in another context.
     **/
@@ -1777,6 +1683,9 @@ agx_destroy_context(struct pipe_context *pctx)
       if (ctx->batches.slots[i].syncobj)
          drmSyncobjDestroy(dev->fd, ctx->batches.slots[i].syncobj);
    }
+
+   dev->ops.bo_unbind_object(dev, ctx->timestamp_handle);
+   agx_bo_unreference(dev, ctx->timestamps);
 
    u_rwlock_wrunlock(&screen->destroy_lock);
 
@@ -1841,21 +1750,18 @@ agx_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
    }
    pctx->const_uploader = pctx->stream_uploader;
 
-   uint32_t priority = 2;
-   if (flags & PIPE_CONTEXT_PRIORITY_LOW)
-      priority = 3;
-   else if (flags & PIPE_CONTEXT_PRIORITY_MEDIUM)
-      priority = 2;
-   else if (flags & PIPE_CONTEXT_PRIORITY_HIGH)
-      priority = 1;
-   else if (flags & PIPE_CONTEXT_PRIORITY_REALTIME)
-      priority = 0;
+   enum drm_asahi_priority priority = DRM_ASAHI_PRIORITY_MEDIUM;
 
-   ctx->queue_id = agx_create_command_queue(agx_device(screen),
-                                            DRM_ASAHI_QUEUE_CAP_RENDER |
-                                               DRM_ASAHI_QUEUE_CAP_BLIT |
-                                               DRM_ASAHI_QUEUE_CAP_COMPUTE,
-                                            priority);
+   if (flags & PIPE_CONTEXT_PRIORITY_LOW)
+      priority = DRM_ASAHI_PRIORITY_LOW;
+   else if (flags & PIPE_CONTEXT_PRIORITY_MEDIUM)
+      priority = DRM_ASAHI_PRIORITY_MEDIUM;
+
+   /* TODO: High/realtime need us to handle errors since we might not have
+    * permission. Sort this out later.
+    */
+
+   ctx->queue_id = agx_create_command_queue(agx_device(screen), priority);
 
    pctx->destroy = agx_destroy_context;
    pctx->flush = agx_flush;
@@ -1893,11 +1799,17 @@ agx_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
    ctx->blitter = util_blitter_create(pctx);
    ctx->compute_blitter.blit_cs = asahi_blit_key_table_create(ctx);
 
-   ctx->result_buf =
-      agx_bo_create(agx_device(screen),
-                    (2 * sizeof(union agx_batch_result)) * AGX_MAX_BATCHES, 0,
-                    AGX_BO_WRITEBACK, "Batch result buffer");
-   assert(ctx->result_buf);
+   struct agx_device *dev = agx_device(screen);
+   size_t timestamps_size = sizeof(struct agx_timestamps) * AGX_MAX_BATCHES;
+
+   /* The kernel requires that timestamp buffers are SHARED */
+   ctx->timestamps =
+      agx_bo_create(dev, timestamps_size, 0, AGX_BO_WRITEBACK | AGX_BO_SHARED,
+                    "Timestamp buffer");
+   assert(ctx->timestamps);
+
+   ret = agx_bind_timestamps(dev, ctx->timestamps, &ctx->timestamp_handle);
+   assert(!ret);
 
    /* Sync object/FD used for NATIVE_FENCE_FD. */
    ctx->in_sync_fd = -1;
@@ -2101,7 +2013,7 @@ agx_init_screen_caps(struct pipe_screen *pscreen)
    caps->texture_barrier = true;
 
    /* Timer resolution is the length of a single tick in nanos */
-   caps->timer_resolution = agx_gpu_time_to_ns(agx_device(pscreen), 1);
+   caps->timer_resolution = agx_gpu_timestamp_to_ns(agx_device(pscreen), 1);
 
    caps->sampler_view_target = true;
    caps->texture_swizzle = true;
@@ -2452,8 +2364,7 @@ agx_screen_get_fd(struct pipe_screen *pscreen)
 static uint64_t
 agx_get_timestamp(struct pipe_screen *pscreen)
 {
-   struct agx_device *dev = agx_device(pscreen);
-   return agx_gpu_time_to_ns(dev, agx_get_gpu_timestamp(dev));
+   return agx_get_gpu_timestamp(agx_device(pscreen));
 }
 
 static void
@@ -2487,13 +2398,6 @@ agx_screen_create(int fd, struct renderonly *ro,
 {
    struct agx_screen *agx_screen;
    struct pipe_screen *screen;
-
-   /* Refuse to probe. There is no stable UAPI yet. Upstream Mesa cannot be used
-    * yet with Asahi. Do not try. Do not patch out this check. Do not teach
-    * others about patching this check. Do not distribute upstream Mesa with
-    * this check patched out.
-    */
-   return NULL;
 
    agx_screen = rzalloc(NULL, struct agx_screen);
    if (!agx_screen)

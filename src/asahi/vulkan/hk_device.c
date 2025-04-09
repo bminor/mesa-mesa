@@ -285,7 +285,7 @@ static VkResult
 hk_get_timestamp(struct vk_device *device, uint64_t *timestamp)
 {
    struct hk_device *dev = container_of(device, struct hk_device, vk);
-   *timestamp = agx_gpu_time_to_ns(&dev->dev, agx_get_gpu_timestamp(&dev->dev));
+   *timestamp = agx_get_gpu_timestamp(&dev->dev);
    return VK_SUCCESS;
 }
 

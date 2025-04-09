@@ -18,7 +18,6 @@
 #include "asahi/lib/agx_tilebuffer.h"
 #include "asahi/lib/agx_uvs.h"
 #include "asahi/lib/pool.h"
-#include "asahi/lib/unstable_asahi_drm.h"
 #include "asahi/libagx/geometry.h"
 #include "compiler/shader_enums.h"
 #include "gallium/auxiliary/util/u_blitter.h"
@@ -355,9 +354,13 @@ struct agx_stage {
    uint32_t valid_samplers;
 };
 
-union agx_batch_result {
-   struct drm_asahi_result_render render;
-   struct drm_asahi_result_compute compute;
+struct agx_timestamps {
+   uint64_t vtx_start;
+   uint64_t vtx_end;
+   uint64_t frag_start;
+   uint64_t frag_end;
+   uint64_t comp_start;
+   uint64_t comp_end;
 };
 
 /* This is a firmware limit. It should be possible to raise to 2048 in the
@@ -453,10 +456,6 @@ struct agx_batch {
 
    /* Arrays of GPU pointers that should be written with the batch timestamps */
    struct util_dynarray timestamps;
-
-   /* Result buffer where the kernel places command execution information */
-   union agx_batch_result *result;
-   size_t result_off;
 
    /* Actual pointer in a uniform */
    struct agx_bo *geom_params_bo, *geom_index_bo;
@@ -646,7 +645,8 @@ struct agx_context {
    uint32_t queue_id;
 
    struct agx_batch *batch;
-   struct agx_bo *result_buf;
+   struct agx_bo *timestamps;
+   uint32_t timestamp_handle;
 
    struct pipe_vertex_buffer vertex_buffers[PIPE_MAX_ATTRIBS];
    uint32_t vb_mask;

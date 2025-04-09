@@ -18,7 +18,6 @@
 
 #include "util/u_hexdump.h"
 #include "decode.h"
-#include "unstable_asahi_drm.h"
 
 struct libagxdecode_config lib_config;
 
@@ -801,106 +800,119 @@ agxdecode_helper(struct agxdecode_ctx *ctx, const char *prefix, uint64_t helper)
    }
 }
 
-void
+static void
 agxdecode_drm_cmd_render(struct agxdecode_ctx *ctx,
                          struct drm_asahi_params_global *params,
                          struct drm_asahi_cmd_render *c, bool verbose)
 {
-   agxdecode_dump_file_open();
-
-   DUMP_FIELD(c, "%llx", flags);
-   DUMP_FIELD(c, "0x%llx", encoder_ptr);
-   agxdecode_stateful(ctx, c->encoder_ptr, "Encoder", agxdecode_vdm, verbose,
-                      params, NULL);
-   DUMP_FIELD(c, "0x%x", encoder_id);
-   DUMP_FIELD(c, "0x%x", cmd_ta_id);
-   DUMP_FIELD(c, "0x%x", cmd_3d_id);
+   DUMP_FIELD(c, "%x", flags);
+   DUMP_FIELD(c, "0x%llx", vdm_ctrl_stream_base);
+   agxdecode_stateful(ctx, c->vdm_ctrl_stream_base, "Encoder", agxdecode_vdm,
+                      verbose, params, NULL);
    DUMP_FIELD(c, "0x%x", ppp_ctrl);
    DUMP_FIELD(c, "0x%llx", ppp_multisamplectl);
    DUMP_CL(ZLS_CONTROL, &c->zls_ctrl, "ZLS Control");
-   DUMP_FIELD(c, "0x%llx", depth_buffer_load);
-   DUMP_FIELD(c, "0x%llx", depth_buffer_store);
-   DUMP_FIELD(c, "0x%llx", depth_buffer_partial);
-   DUMP_FIELD(c, "0x%llx", stencil_buffer_load);
-   DUMP_FIELD(c, "0x%llx", stencil_buffer_store);
-   DUMP_FIELD(c, "0x%llx", stencil_buffer_partial);
-   DUMP_FIELD(c, "0x%llx", scissor_array);
-   DUMP_FIELD(c, "0x%llx", depth_bias_array);
-   DUMP_FIELD(c, "%d", fb_width);
-   DUMP_FIELD(c, "%d", fb_height);
+   DUMP_FIELD(c, "0x%llx", depth.base);
+   DUMP_FIELD(c, "0x%llx", depth.comp_base);
+   DUMP_FIELD(c, "%u", depth.stride);
+   DUMP_FIELD(c, "%u", depth.comp_stride);
+   DUMP_FIELD(c, "0x%llx", stencil.base);
+   DUMP_FIELD(c, "0x%llx", stencil.comp_base);
+   DUMP_FIELD(c, "%u", stencil.stride);
+   DUMP_FIELD(c, "%u", stencil.comp_stride);
+   DUMP_FIELD(c, "0x%llx", isp_scissor_base);
+   DUMP_FIELD(c, "0x%llx", isp_dbias_base);
+   DUMP_FIELD(c, "%d", width_px);
+   DUMP_FIELD(c, "%d", height_px);
    DUMP_FIELD(c, "%d", layers);
    DUMP_FIELD(c, "%d", samples);
-   DUMP_FIELD(c, "%d", sample_size);
-   DUMP_FIELD(c, "%d", tib_blocks);
-   DUMP_FIELD(c, "%d", utile_width);
-   DUMP_FIELD(c, "%d", utile_height);
-   DUMP_FIELD(c, "0x%x", load_pipeline);
-   DUMP_FIELD(c, "0x%x", load_pipeline_bind);
-   agxdecode_stateful(ctx, decode_usc(ctx, c->load_pipeline & ~0x7),
-                      "Load pipeline", agxdecode_usc, verbose, params, NULL);
-   DUMP_FIELD(c, "0x%x", store_pipeline);
-   DUMP_FIELD(c, "0x%x", store_pipeline_bind);
-   agxdecode_stateful(ctx, decode_usc(ctx, c->store_pipeline & ~0x7),
-                      "Store pipeline", agxdecode_usc, verbose, params, NULL);
-   DUMP_FIELD(c, "0x%x", partial_reload_pipeline);
-   DUMP_FIELD(c, "0x%x", partial_reload_pipeline_bind);
-   agxdecode_stateful(ctx, decode_usc(ctx, c->partial_reload_pipeline & ~0x7),
+   DUMP_FIELD(c, "%d", sample_size_B);
+   DUMP_FIELD(c, "%d", utile_width_px);
+   DUMP_FIELD(c, "%d", utile_height_px);
+   DUMP_FIELD(c, "0x%x", bg.usc);
+   DUMP_FIELD(c, "0x%x", bg.rsrc_spec);
+   agxdecode_stateful(ctx, decode_usc(ctx, c->bg.usc & ~0x7), "Load pipeline",
+                      agxdecode_usc, verbose, params, NULL);
+   DUMP_FIELD(c, "0x%x", eot.usc);
+   DUMP_FIELD(c, "0x%x", eot.rsrc_spec);
+   agxdecode_stateful(ctx, decode_usc(ctx, c->eot.usc & ~0x7), "Store pipeline",
+                      agxdecode_usc, verbose, params, NULL);
+   DUMP_FIELD(c, "0x%x", partial_bg.usc);
+   DUMP_FIELD(c, "0x%x", partial_bg.rsrc_spec);
+   agxdecode_stateful(ctx, decode_usc(ctx, c->partial_bg.usc & ~0x7),
                       "Partial reload pipeline", agxdecode_usc, verbose, params,
                       NULL);
-   DUMP_FIELD(c, "0x%x", partial_store_pipeline);
-   DUMP_FIELD(c, "0x%x", partial_store_pipeline_bind);
-   agxdecode_stateful(ctx, decode_usc(ctx, c->partial_store_pipeline & ~0x7),
+   DUMP_FIELD(c, "0x%x", partial_eot.usc);
+   DUMP_FIELD(c, "0x%x", partial_eot.rsrc_spec);
+   agxdecode_stateful(ctx, decode_usc(ctx, c->partial_eot.usc & ~0x7),
                       "Partial store pipeline", agxdecode_usc, verbose, params,
                       NULL);
 
-   DUMP_FIELD(c, "0x%x", depth_dimensions);
+   DUMP_FIELD(c, "0x%x", isp_zls_pixels);
    DUMP_FIELD(c, "0x%x", isp_bgobjdepth);
    DUMP_FIELD(c, "0x%x", isp_bgobjvals);
 
-   agxdecode_sampler_heap(ctx, c->vertex_sampler_array,
-                          c->vertex_sampler_count);
+   agxdecode_sampler_heap(ctx, c->sampler_heap, c->sampler_count);
 
-   /* Linux driver doesn't use this, at least for now */
-   assert(c->fragment_sampler_array == c->vertex_sampler_array);
-   assert(c->fragment_sampler_count == c->vertex_sampler_count);
-
-   DUMP_FIELD(c, "%d", vertex_attachment_count);
-   struct drm_asahi_attachment *vertex_attachments =
-      (void *)(uintptr_t)c->vertex_attachments;
-   for (unsigned i = 0; i < c->vertex_attachment_count; i++) {
-      DUMP_FIELD((&vertex_attachments[i]), "0x%x", order);
-      DUMP_FIELD((&vertex_attachments[i]), "0x%llx", size);
-      DUMP_FIELD((&vertex_attachments[i]), "0x%llx", pointer);
-   }
-   DUMP_FIELD(c, "%d", fragment_attachment_count);
-   struct drm_asahi_attachment *fragment_attachments =
-      (void *)(uintptr_t)c->fragment_attachments;
-   for (unsigned i = 0; i < c->fragment_attachment_count; i++) {
-      DUMP_FIELD((&fragment_attachments[i]), "0x%x", order);
-      DUMP_FIELD((&fragment_attachments[i]), "0x%llx", size);
-      DUMP_FIELD((&fragment_attachments[i]), "0x%llx", pointer);
-   }
-
-   agxdecode_helper(ctx, "Vertex", c->vertex_helper_program);
-   agxdecode_helper(ctx, "Fragment", c->fragment_helper_program);
+   agxdecode_helper(ctx, "Vertex", c->vertex_helper.binary);
+   agxdecode_helper(ctx, "Fragment", c->fragment_helper.binary);
 }
 
-void
+static void
 agxdecode_drm_cmd_compute(struct agxdecode_ctx *ctx,
                           struct drm_asahi_params_global *params,
                           struct drm_asahi_cmd_compute *c, bool verbose)
 {
+   DUMP_FIELD(c, "%x", flags);
+   DUMP_FIELD(c, "0x%llx", cdm_ctrl_stream_base);
+   agxdecode_stateful(ctx, c->cdm_ctrl_stream_base, "Encoder", agxdecode_cdm,
+                      verbose, params, NULL);
+
+   agxdecode_sampler_heap(ctx, c->sampler_heap, c->sampler_count);
+   agxdecode_helper(ctx, "Compute", c->helper.binary);
+}
+
+static void
+agxdecode_drm_attachments(const char *name, struct drm_asahi_attachment *atts,
+                          size_t size)
+{
+   fprintf(agxdecode_dump_stream, "%s attachments:\n", name);
+   unsigned count = size / sizeof(struct drm_asahi_attachment);
+   for (unsigned i = 0; i < count; i++) {
+      DUMP_FIELD((&atts[i]), "0x%llx", size);
+      DUMP_FIELD((&atts[i]), "0x%llx", pointer);
+   }
+}
+
+void
+agxdecode_drm_cmdbuf(struct agxdecode_ctx *ctx,
+                     struct drm_asahi_params_global *params,
+                     struct util_dynarray *cmdbuf, bool verbose)
+{
    agxdecode_dump_file_open();
 
-   DUMP_FIELD(c, "%llx", flags);
-   DUMP_FIELD(c, "0x%llx", encoder_ptr);
-   agxdecode_stateful(ctx, c->encoder_ptr, "Encoder", agxdecode_cdm, verbose,
-                      params, NULL);
-   DUMP_FIELD(c, "0x%x", encoder_id);
-   DUMP_FIELD(c, "0x%x", cmd_id);
+   for (unsigned offs = 0; offs < cmdbuf->size;) {
+      struct drm_asahi_cmd_header *header =
+         (void *)((uint8_t *)cmdbuf->data) + offs;
+      offs += sizeof(*header);
+      void *data = (void *)((uint8_t *)cmdbuf->data) + offs;
 
-   agxdecode_sampler_heap(ctx, c->sampler_array, c->sampler_count);
-   agxdecode_helper(ctx, "Compute", c->helper_program);
+      if (header->cmd_type == DRM_ASAHI_CMD_RENDER) {
+         agxdecode_drm_cmd_render(ctx, params, data, verbose);
+      } else if (header->cmd_type == DRM_ASAHI_CMD_COMPUTE) {
+         agxdecode_drm_cmd_compute(ctx, params, data, verbose);
+      } else if (header->cmd_type == DRM_ASAHI_SET_VERTEX_ATTACHMENTS) {
+         agxdecode_drm_attachments("Vertex", data, header->size);
+      } else if (header->cmd_type == DRM_ASAHI_SET_FRAGMENT_ATTACHMENTS) {
+         agxdecode_drm_attachments("Fragment", data, header->size);
+      } else if (header->cmd_type == DRM_ASAHI_SET_COMPUTE_ATTACHMENTS) {
+         agxdecode_drm_attachments("Compute", data, header->size);
+      } else {
+         unreachable("Invalid command type");
+      }
+
+      offs += header->size;
+   }
 }
 
 static void

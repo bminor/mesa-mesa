@@ -59,7 +59,7 @@
 #include "util/u_math.h"
 
 #include <xf86drm.h>
-#include "asahi/lib/unstable_asahi_drm.h"
+#include "drm-uapi/asahi_drm.h"
 #include "drm-uapi/amdgpu_drm.h"
 #include "drm-uapi/i915_drm.h"
 #include "drm-uapi/v3d_drm.h"
