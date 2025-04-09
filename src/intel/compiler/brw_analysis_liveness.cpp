@@ -246,10 +246,13 @@ brw_live_variables::brw_live_variables(const brw_shader *s)
 
    num_vgrfs = s->alloc.count;
    num_vars = 0;
+   max_vgrf_size = 0;
    var_from_vgrf = linear_alloc_array(lin_ctx, int, num_vgrfs);
    for (int i = 0; i < num_vgrfs; i++) {
       var_from_vgrf[i] = num_vars;
       num_vars += s->alloc.sizes[i];
+
+      max_vgrf_size = MAX2(max_vgrf_size, s->alloc.sizes[i]);
    }
 
    vgrf_from_var = linear_alloc_array(lin_ctx, int, num_vars);

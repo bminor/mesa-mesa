@@ -477,6 +477,8 @@ public:
    int num_vgrfs;
    int bitset_words;
 
+   unsigned max_vgrf_size;
+
    /** @{
     * Final computed live ranges for each var (each component of each virtual
     * GRF).
