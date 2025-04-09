@@ -50,7 +50,7 @@ radeonsi-stoney-glcts-piglit-full:
 
 radeonsi-stoney-traces:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .radeonsi-stoney-test:x86_64
   variables:
     EGL_PLATFORM: surfaceless
@@ -81,7 +81,7 @@ amd-raven-skqp:
 # being disabled due to being flaky.
 .radv-raven-traces:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .radv-raven-test:x86_64
     - .lava-asus-CM1400CXA-dalboz:x86_64
   variables:
@@ -92,7 +92,7 @@ amd-raven-skqp:
 
 radv-raven-traces-restricted:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .radv-raven-test:x86_64
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
     - .radv-collabora-restricted-rules

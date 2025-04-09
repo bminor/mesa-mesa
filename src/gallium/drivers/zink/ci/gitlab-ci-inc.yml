@@ -194,7 +194,7 @@
 
 .zink-anv-adl-trace-test:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .anv-test
     - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
     - .zink-anv-rules
@@ -215,7 +215,7 @@
 
 .zink-anv-tgl-trace-test:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .anv-test
     - .lava-acer-cp514-2h-1130g7-volteer:x86_64
     - .zink-anv-rules

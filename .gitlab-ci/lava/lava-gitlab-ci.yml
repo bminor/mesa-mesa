@@ -248,19 +248,19 @@ variables:
     reports:
       junit: results/junit.xml
 
-.lava-piglit-traces:x86_64:
+.lava-x86_64-piglit-traces:
   extends:
-    - .lava-test:x86_64
+    - .lava-x86_64-test-gl
     - .lava-piglit-traces
 
-.lava-piglit-traces:arm32:
+.lava-arm32-piglit-traces:
   extends:
-    - .lava-test:arm32
+    - .lava-arm32-test-gl
     - .lava-piglit-traces
 
-.lava-piglit-traces:arm64:
+.lava-arm64-piglit-traces:
   extends:
-    - .lava-test:arm64
+    - .lava-arm64-test-gl
     - .lava-piglit-traces
 
 .lava-fluster:

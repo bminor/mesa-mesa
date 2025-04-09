@@ -71,7 +71,7 @@
 
 .virgl-iris-test:
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .lava-acer-cp514-2h-1130g7-volteer:x86_64
   variables:
     HWCI_KERNEL_MODULES: vhost_vsock

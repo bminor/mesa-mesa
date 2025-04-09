@@ -4,7 +4,7 @@ include:
 .vmware-qemu-traces:x86_64:
   stage: software-renderer
   extends:
-    - .lava-piglit-traces:x86_64
+    - .lava-x86_64-piglit-traces
     - .vmware-manual-rules
   timeout: 30m
   variables:

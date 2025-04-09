@@ -208,7 +208,7 @@ a618-piglit-cl:
 
 a618-traces:
   extends:
-    - .lava-piglit-traces:arm64
+    - .lava-arm64-piglit-traces
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .collabora-freedreno-rules
   variables:
