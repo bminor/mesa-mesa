@@ -461,11 +461,7 @@ radv_enc_spec_misc_h264(struct radv_cmd_buffer *cmd_buffer, const struct VkVideo
    RADEON_ENC_CS(vk_video_get_h264_level(sps->level_idc));
 
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3) {
-      bool b_pic_enabled = false;
-      if (sps->pSequenceParameterSetVui) {
-         b_pic_enabled = !!sps->pSequenceParameterSetVui->max_num_reorder_frames;
-      }
-      RADEON_ENC_CS(b_pic_enabled);            // v3 b_picture_enabled
+      RADEON_ENC_CS(1);                        // v3 b_picture_enabled
       RADEON_ENC_CS(pps->weighted_bipred_idc); // v3 weighted bipred idc
    }
 
