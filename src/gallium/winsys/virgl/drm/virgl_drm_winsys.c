@@ -560,6 +560,8 @@ virgl_drm_winsys_resource_create_handle(struct virgl_winsys *qws,
    info_arg.bo_handle = res->bo_handle;
 
    if (drmIoctl(qdws->fd, DRM_IOCTL_VIRTGPU_RESOURCE_INFO, &info_arg)) {
+      drmCloseBufferHandle(qdws->fd, res->bo_handle);
+
       /* close */
       FREE(res);
       res = NULL;
