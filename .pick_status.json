@@ -1374,7 +1374,7 @@
         "description": "brw: Don't assert about MAX_VGRF_SIZE in brw_opt_split_virtual_grfs()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
