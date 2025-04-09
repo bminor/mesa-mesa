@@ -3,6 +3,7 @@ include:
 
 anv-jsl-vk:
   extends:
+    - .lava-x86_64-test-vk
     - .anv-test
     - .lava-acer-cb317-1h-c3z6-dedede:x86_64
   variables:
@@ -21,6 +22,7 @@ anv-jsl-vk-full:
 
 anv-adl-vk:
   extends:
+    - .lava-x86_64-test-vk
     - .anv-test
     - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
@@ -40,6 +42,7 @@ anv-adl-vk-full:
 
 anv-tgl-vk:
   extends:
+    - .lava-x86_64-test-vk
     - .anv-test
     - .lava-acer-cp514-2h-1160g7-volteer:x86_64
   variables:

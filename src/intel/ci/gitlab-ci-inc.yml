@@ -131,7 +131,7 @@
     LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
     S3_ARTIFACT_NAME: mesa-python-ci-artifacts
   needs:
-    - kernel+rootfs_x86_64
+    - debian/x86_64_test-gl
     - debian-release
 
 .anv-rules:
@@ -337,8 +337,6 @@
 
 
 .intel-common-test:
-  extends:
-    - .lava-test-deqp:x86_64
   variables:
     DTB: ""
     BOOT_METHOD: depthcharge
@@ -356,6 +354,7 @@
 
 .iris-test:
   extends:
+    - .lava-x86_64-test-gl
     - .intel-common-test
     - .iris-rules
   variables:
@@ -369,7 +368,9 @@
 ## ANV only
 .anv-angle-test:
   extends:
-    - .anv-test
+    - .lava-x86_64-test-gl
+    - .intel-common-test
+    - .anv-rules
     - .test-angle
   variables:
     VK_DRIVER: intel
@@ -468,6 +469,7 @@
 ## Intel (anv + iris)
 .intel-adl-test:
   extends:
+    - .lava-x86_64-test-gl
     - .anv-test
     - .intel-test
   variables:
@@ -475,6 +477,7 @@
 
 .intel-tgl-test:
   extends:
+    - .lava-x86_64-test-gl
     - .anv-test
     - .intel-test
   variables:
@@ -482,6 +485,7 @@
 
 .intel-whl-test:
   extends:
+    - .lava-x86_64-test-gl
     - .iris-whl-test
     - .intel-test
   variables:

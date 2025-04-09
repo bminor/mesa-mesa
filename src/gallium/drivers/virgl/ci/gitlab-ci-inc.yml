@@ -41,7 +41,7 @@
     LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
     S3_ARTIFACT_NAME: mesa-python-ci-artifacts
   needs:
-    - kernel+rootfs_x86_64
+    - debian/x86_64_test-gl
     - debian-release
 
 .virpipe-test:

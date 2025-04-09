@@ -184,6 +184,7 @@
 
 .zink-anv-adl-test:
   extends:
+    - .lava-x86_64-test-gl
     - .anv-test
     - .lava-acer-cbv514-1h-34uz-brya:x86_64
     - .zink-anv-rules
@@ -205,6 +206,7 @@
 
 .zink-anv-tgl-test:
   extends:
+    - .lava-x86_64-test-gl
     - .anv-test
     - .lava-acer-cp514-2h-1160g7-volteer:x86_64
     - .zink-anv-rules
