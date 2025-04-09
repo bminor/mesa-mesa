@@ -1020,15 +1020,21 @@ bi_write_count(bi_instr *instr, uint64_t live_after_temp)
 }
 
 /*
- * Test if an instruction required flush-to-zero mode. Currently only supported
- * for f16<-->f32 conversions to implement fquantize16
+ * Test if an instruction requires a specific flush-to-zero mode.
+ *
+ * This could be optimized to allow pairing integer instructions with
+ * instructions with differently-sized float instructions regardless of float
+ * controls, but punting on this until we have a workload that cares.
  */
-static bool
-bi_needs_ftz(bi_instr *I)
+static enum bi_ftz_state
+bi_instr_ftz(bi_instr *I)
 {
-   return (I->op == BI_OPCODE_F16_TO_F32 ||
-           I->op == BI_OPCODE_V2F32_TO_V2F16) &&
-          I->ftz;
+   /* f16<->f32 conversions have a ftz override flag to implement fquantize16 */
+   if ((I->op == BI_OPCODE_F16_TO_F32 || I->op == BI_OPCODE_V2F32_TO_V2F16) &&
+       I->ftz)
+      return BI_FTZ_STATE_ENABLE;
+   else
+      return BI_FTZ_STATE_DISABLE;
 }
 
 /*
@@ -1038,8 +1044,10 @@ bi_needs_ftz(bi_instr *I)
 static bool
 bi_numerically_incompatible(struct bi_clause_state *clause, bi_instr *instr)
 {
+   enum bi_ftz_state instr_ftz = bi_instr_ftz(instr);
    return (clause->ftz != BI_FTZ_STATE_NONE) &&
-          ((clause->ftz == BI_FTZ_STATE_ENABLE) != bi_needs_ftz(instr));
+          (instr_ftz != BI_FTZ_STATE_NONE) &&
+          (clause->ftz != instr_ftz);
 }
 
 /* Instruction placement entails two questions: what subset of instructions in
@@ -1246,12 +1254,9 @@ bi_pop_instr(struct bi_clause_state *clause, struct bi_tuple_state *tuple,
          tuple->reg.reads[tuple->reg.nr_reads++] = instr->src[s];
    }
 
-   /* This could be optimized to allow pairing integer instructions with
-    * special flush-to-zero instructions, but punting on this until we have
-    * a workload that cares.
-    */
-   clause->ftz =
-      bi_needs_ftz(instr) ? BI_FTZ_STATE_ENABLE : BI_FTZ_STATE_DISABLE;
+   enum bi_ftz_state ftz = bi_instr_ftz(instr);
+   if (ftz != BI_FTZ_STATE_NONE)
+      clause->ftz = ftz;
 }
 
 /* Choose the best instruction and pop it off the worklist. Returns NULL if no
