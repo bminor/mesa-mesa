@@ -1933,6 +1933,18 @@ vtn_handle_type(struct vtn_builder *b, SpvOp opcode,
          val->type->type = glsl_bfloatN_t_type(bit_size);
          break;
 
+      case SpvFPEncodingFloat8E4M3EXT:
+         vtn_fail_if(bit_size != 8,
+                     "Invalid E4M3 bit size: %u", bit_size);
+         val->type->type = glsl_e4m3fn_t_type();
+         break;
+
+      case SpvFPEncodingFloat8E5M2EXT:
+         vtn_fail_if(bit_size != 8,
+                     "Invalid E5M2 bit size: %u", bit_size);
+         val->type->type = glsl_e5m2_t_type();
+         break;
+
       default:
          vtn_fail("Unsupported OpTypeFloat encoding: %d", encoding);
       }
