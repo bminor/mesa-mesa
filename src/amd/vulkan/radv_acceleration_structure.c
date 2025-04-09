@@ -502,7 +502,7 @@ radv_encode_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
 
    if (key & RADV_ENCODE_KEY_COMPACT) {
       uint32_t dst_offset = layout.internal_nodes_offset - layout.bvh_offset;
-      radv_update_buffer_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset),
+      radv_update_memory_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset),
                             &dst_offset, sizeof(uint32_t));
       if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
          cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
@@ -552,7 +552,7 @@ radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
    };
 
    const uint8_t *update_data = ((const uint8_t *)&header + offsetof(struct vk_ir_header, sync_data));
-   radv_update_buffer_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, sync_data), update_data,
+   radv_update_memory_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, sync_data), update_data,
                          sizeof(struct vk_ir_header) - offsetof(struct vk_ir_header, sync_data));
    if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
@@ -656,7 +656,7 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
    header.geometry_count = build_info->geometryCount;
    header.primitive_base_indices_offset = layout.primitive_base_indices_offset;
 
-   radv_update_buffer_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
+   radv_update_memory_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
                          sizeof(header) - base);
 
    if (device->rra_trace.accel_structs) {
@@ -810,7 +810,7 @@ static void
 radv_write_buffer_cp(VkCommandBuffer commandBuffer, VkDeviceAddress addr, void *data, uint32_t size)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   radv_update_buffer_cp(cmd_buffer, addr, data, size);
+   radv_update_memory_cp(cmd_buffer, addr, data, size);
 }
 
 static void
@@ -1157,5 +1157,5 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
    memcpy(header_data, pdev->driver_uuid, VK_UUID_SIZE);
    memcpy(header_data + VK_UUID_SIZE, pdev->cache_uuid, VK_UUID_SIZE);
 
-   radv_update_buffer_cp(cmd_buffer, pInfo->dst.deviceAddress, header_data, sizeof(header_data));
+   radv_update_memory_cp(cmd_buffer, pInfo->dst.deviceAddress, header_data, sizeof(header_data));
 }

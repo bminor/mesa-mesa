@@ -12631,7 +12631,7 @@ radv_trace_trace_rays(struct radv_cmd_buffer *cmd_buffer, const VkTraceRaysIndir
                                    radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                                                          VK_ACCESS_2_SHADER_READ_BIT, 0, NULL, NULL);
 
-   radv_update_buffer_cp(cmd_buffer,
+   radv_update_memory_cp(cmd_buffer,
                          device->rra_trace.ray_history_addr + offsetof(struct radv_ray_history_header, dispatch_index),
                          &dispatch_index, sizeof(dispatch_index));
 }

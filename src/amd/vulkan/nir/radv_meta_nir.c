@@ -123,7 +123,7 @@ radv_meta_nir_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
 }
 
 nir_shader *
-radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev)
+radv_meta_nir_build_fill_memory_shader(struct radv_device *dev)
 {
    nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_fill");
    b.shader->info.workgroup_size[0] = 64;
@@ -145,7 +145,7 @@ radv_meta_nir_build_buffer_fill_shader(struct radv_device *dev)
 }
 
 nir_shader *
-radv_meta_nir_build_buffer_copy_shader(struct radv_device *dev)
+radv_meta_nir_build_copy_memory_shader(struct radv_device *dev)
 {
    nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_copy");
    b.shader->info.workgroup_size[0] = 64;

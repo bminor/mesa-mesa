@@ -78,8 +78,8 @@ enum radv_meta_object_key_type {
    RADV_META_OBJECT_KEY_BLIT2D_COLOR,
    RADV_META_OBJECT_KEY_BLIT2D_DEPTH,
    RADV_META_OBJECT_KEY_BLIT2D_STENCIL,
-   RADV_META_OBJECT_KEY_FILL_BUFFER,
-   RADV_META_OBJECT_KEY_COPY_BUFFER,
+   RADV_META_OBJECT_KEY_FILL_MEMORY,
+   RADV_META_OBJECT_KEY_COPY_MEMORY,
    RADV_META_OBJECT_KEY_COPY_IMAGE_TO_BUFFER,
    RADV_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE,
    RADV_META_OBJECT_KEY_COPY_BUFFER_TO_IMAGE_R32G32B32,
@@ -218,7 +218,7 @@ uint32_t radv_clear_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *i
 uint32_t radv_clear_htile(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image,
                           const VkImageSubresourceRange *range, uint32_t value, bool is_clear);
 
-void radv_update_buffer_cp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, const void *data, uint64_t size);
+void radv_update_memory_cp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, const void *data, uint64_t size);
 
 void radv_meta_decode_etc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, VkImageLayout layout,
                           const VkImageSubresourceLayers *subresource, VkOffset3D offset, VkExtent3D extent);
