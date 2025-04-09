@@ -61,6 +61,7 @@ template = """\
 #include "util/double.h"
 #include "util/softfloat.h"
 #include "util/bfloat.h"
+#include "util/float8.h"
 #include "util/bigmath.h"
 #include "util/format/format_utils.h"
 #include "util/format_r11g11b10f.h"
