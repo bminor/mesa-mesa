@@ -3,7 +3,7 @@ include:
 
 panfrost-t720-gles2:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-midgard-rules
     - .panfrost-test
     - .lava-sun50i-h6-pine-h64:arm64
@@ -12,7 +12,7 @@ panfrost-t720-gles2:arm64:
 # Keep the second t760 job manual.
 panfrost-t760-gles:arm32:
   extends:
-    - .lava-test-deqp:arm32
+    - .lava-arm32-test-gl
     - .panfrost-midgard-manual-rules
     - .panfrost-test
     - .lava-rk3288-veyron-jaq:arm32
@@ -27,7 +27,7 @@ panfrost-t760-traces:arm32:
 
 panfrost-t860-cl:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-midgard-manual-rules
     - .panfrost-test
     - .test-piglit
@@ -42,7 +42,7 @@ panfrost-t860-cl:arm64:
 panfrost-t860-gl:arm64:
   parallel: 3
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-midgard-rules
     - .panfrost-test
     - .lava-rk3399-gru-kevin:arm64
@@ -52,7 +52,7 @@ panfrost-t860-gl:arm64:
 
 panfrost-t860-egl:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-midgard-rules
     - .panfrost-test
     - .lava-rk3399-gru-kevin:arm64
@@ -71,7 +71,7 @@ panfrost-t860-traces:arm64:
 panfrost-g52-gl:arm64:
   parallel: 4
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
     - .lava-meson-g12b-a311d-khadas-vim3:arm64
@@ -83,7 +83,7 @@ panfrost-g52-gl:arm64:
 panfrost-g52-vk:arm64:
   parallel: 7
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-vk
     - .panfrost-test
     - .lava-mt8186-corsola-steelix-sku131072:arm64
     - .panfrost-vk-rules
@@ -109,7 +109,7 @@ panfrost-g52-vk-full:arm64:
 
 panfrost-g52-piglit:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-manual-rules
     - .panfrost-test
     - .test-piglit
@@ -121,7 +121,7 @@ panfrost-g52-piglit:arm64:
 panfrost-g72-gl:arm64:
   parallel: 3
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
     - .lava-mt8183-kukui-jacuzzi-juniper-sku16:arm64
@@ -130,7 +130,7 @@ panfrost-g72-gl:arm64:
 
 panfrost-g57-gl:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
     - .lava-mt8195-cherry-tomato-r2:arm64
@@ -142,7 +142,7 @@ panfrost-g57-gl:arm64:
 
 panfrost-g57-piglit:arm64:
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
     - .test-piglit
@@ -157,7 +157,7 @@ panfrost-g57-piglit:arm64:
 panfrost-g610-gl:arm64:
   parallel: 2
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-gl
     - .panfrost-valhall-gl-rules
     - .panfrost-test
     - .lava-rk3588-rock-5b:arm64
@@ -179,7 +179,7 @@ panfrost-g610-gl:arm64:
 panfrost-g610-vk:arm64:
   parallel: 5
   extends:
-    - .lava-test-deqp:arm64
+    - .lava-arm64-test-vk
     - .panfrost-test
     - .lava-rk3588-rock-5b:arm64
     - .panfrost-vk-rules
