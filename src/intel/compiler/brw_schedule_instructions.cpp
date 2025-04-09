@@ -648,6 +648,7 @@ public:
 
    bool post_reg_alloc;
    int grf_count;
+   unsigned max_vgrf_size;
    const brw_shader *s;
 
    /**
@@ -713,9 +714,6 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
    this->grf_count = grf_count;
    this->post_reg_alloc = post_reg_alloc;
 
-   const unsigned grf_write_scale = MAX_VGRF_SIZE(s->devinfo);
-   this->last_grf_write = linear_zalloc_array(lin_ctx, schedule_node *, grf_count * grf_write_scale);
-
    this->nodes_len = s->cfg->total_instructions;
    this->nodes = linear_zalloc_array(lin_ctx, schedule_node, this->nodes_len);
 
@@ -779,7 +777,10 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
       this->written = NULL;
       this->reads_remaining = NULL;
       this->hw_reads_remaining = NULL;
+      this->max_vgrf_size = MAX_VGRF_SIZE(s->devinfo);
    }
+
+   this->last_grf_write = linear_zalloc_array(lin_ctx, schedule_node *, grf_count * this->max_vgrf_size);
 
    const brw_ip_ranges &ips = s->ip_ranges_analysis.require();
 
@@ -888,6 +889,8 @@ brw_instruction_scheduler::setup_liveness(cfg_t *cfg)
             BITSET_SET(hw_liveout[block], i);
       }
    }
+
+   this->max_vgrf_size = live.max_vgrf_size;
 
    ralloc_free(payload_last_use_ip);
 }
@@ -1225,13 +1228,13 @@ brw_instruction_scheduler::clear_last_grf_write()
 
          if (inst->dst.file == VGRF) {
             /* Don't bother being careful with regs_written(), quicker to just clear 2 cachelines. */
-            memset(&last_grf_write[inst->dst.nr * MAX_VGRF_SIZE(s->devinfo)], 0,
-                   sizeof(*last_grf_write) * MAX_VGRF_SIZE(s->devinfo));
+            memset(&last_grf_write[inst->dst.nr * max_vgrf_size], 0,
+                   sizeof(*last_grf_write) * max_vgrf_size);
          }
       }
    } else {
       memset(last_grf_write, 0,
-             sizeof(*last_grf_write) * grf_count * MAX_VGRF_SIZE(s->devinfo));
+             sizeof(*last_grf_write) * grf_count * max_vgrf_size);
    }
 }
 
@@ -1240,7 +1243,7 @@ brw_instruction_scheduler::grf_index(const brw_reg &reg)
 {
    if (post_reg_alloc)
       return reg.nr;
-   return reg.nr * MAX_VGRF_SIZE(s->devinfo) + reg.offset / REG_SIZE;
+   return reg.nr * max_vgrf_size + reg.offset / REG_SIZE;
 }
 
 void
