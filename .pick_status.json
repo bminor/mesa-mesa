@@ -534,7 +534,7 @@
         "description": "nak: Allow predicates in nir_intrinsic_as_uniform",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "76e542e92a17baf3ec250b8e2c09c8b6ccfe0730",
         "notes": null
