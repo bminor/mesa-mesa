@@ -415,6 +415,10 @@ init_context(isel_context* ctx, nir_shader* shader)
                       regclasses[alu_instr->src[0].src.ssa->index].type() == RegType::vgpr)
                      type = RegType::vgpr;
                   break;
+               case nir_op_f2e4m3fn:
+               case nir_op_f2e4m3fn_sat:
+               case nir_op_f2e5m2:
+               case nir_op_f2e5m2_sat:
                case nir_op_fmulz:
                case nir_op_ffmaz:
                case nir_op_f2f64:

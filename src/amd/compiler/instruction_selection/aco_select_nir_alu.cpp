@@ -2553,6 +2553,47 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       bld.vop1(aco_opcode::v_cvt_f64_f32, Definition(dst), src);
       break;
    }
+   case nir_op_f2e4m3fn:
+   case nir_op_f2e4m3fn_sat:
+   case nir_op_f2e5m2:
+   case nir_op_f2e5m2_sat: {
+      Operand src[2];
+      if (instr->def.num_components == 2) {
+         Temp pk_src = get_ssa_temp(ctx, instr->src[0].src.ssa);
+         RegClass rc = RegClass(pk_src.regClass().type(), 1);
+         for (unsigned i = 0; i < 2; i++)
+            src[i] = Operand(emit_extract_vector(ctx, pk_src, instr->src[0].swizzle[i], rc));
+      } else {
+         assert(instr->def.num_components == 1);
+         src[0] = Operand(get_alu_src(ctx, instr->src[0]));
+         src[1] = Operand::c32(0);
+      }
+
+      /* Ideally we would want to use FP16_OVFL for the sat variants,
+       * but the ISA doc is wrong and Inf isn't clamped to max_float.
+       */
+      bool clamp = instr->op == nir_op_f2e4m3fn_sat || instr->op == nir_op_f2e5m2_sat;
+      if (clamp) {
+         Temp max_float = bld.copy(
+            bld.def(s1), Operand::c32(fui(instr->op == nir_op_f2e4m3fn_sat ? 448.0f : 57344.0f)));
+
+         for (unsigned i = 0; i < instr->def.num_components; i++) {
+            /* use minimum variant because it preserves NaN. */
+            Instruction* clamped = bld.vop3(aco_opcode::v_minimummaximum_f32, bld.def(v1), src[i],
+                                            max_float, max_float);
+            clamped->valu().neg[2] = true;
+            src[i] = Operand(clamped->definitions[0].getTemp());
+         }
+      }
+
+      aco_opcode opcode = instr->op == nir_op_f2e4m3fn || instr->op == nir_op_f2e4m3fn_sat
+                             ? aco_opcode::v_cvt_pk_fp8_f32
+                             : aco_opcode::v_cvt_pk_bf8_f32;
+      bld.vop3(opcode, Definition(dst), src[0], src[1]);
+      if (instr->def.num_components == 2)
+         emit_split_vector(ctx, dst, 2);
+      break;
+   }
    case nir_op_i2f16: {
       Temp src = get_alu_src(ctx, instr->src[0]);
       const unsigned input_size = instr->src[0].src.ssa->bit_size;
