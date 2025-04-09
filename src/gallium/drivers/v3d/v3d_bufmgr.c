@@ -156,6 +156,7 @@ v3d_bo_alloc(struct v3d_screen *screen, uint32_t size, const char *name)
 
  retry:
         ret = v3d_ioctl(screen->fd, DRM_IOCTL_V3D_CREATE_BO, &create);
+        MESA_TRACE_SCOPE("%s size=%u name=\"%s\"", __func__, size, name);
 
         if (ret != 0) {
                 if (!list_is_empty(&screen->bo_cache.time_list)) {
@@ -263,6 +264,7 @@ free_stale_bos(struct v3d_screen *screen, time_t time)
 static void
 v3d_bo_cache_free_all(struct v3d_bo_cache *cache)
 {
+        MESA_TRACE_FUNC();
         mtx_lock(&cache->lock);
         list_for_each_entry_safe(struct v3d_bo, bo, &cache->time_list,
                                  time_list) {
@@ -482,7 +484,7 @@ v3d_bo_wait(struct v3d_bo *bo, uint64_t timeout_ns, const char *reason)
 {
         struct v3d_screen *screen = bo->screen;
 
-        MESA_TRACE_FUNC();
+        MESA_TRACE_SCOPE("%s reason=\"%s\"", __func__, reason);
 
         if (V3D_DBG(PERF) && timeout_ns && reason) {
                 if (v3d_wait_bo_ioctl(screen->fd, bo->handle, 0) == -ETIME) {
