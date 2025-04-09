@@ -613,6 +613,19 @@ uint16_t vpe_get_num_segments(struct vpe_priv *vpe_priv, const struct vpe_rect *
     return (uint16_t)(max(max(num_seg_src, num_seg_dst), 1));
 }
 
+bool should_generate_cmd_info(enum vpe_stream_type stream_type)
+{
+    switch (stream_type) {
+    case VPE_STREAM_TYPE_INPUT:
+    case VPE_STREAM_TYPE_BG_GEN:
+        return true;
+    default:
+        /* destination-as-input virtual stream doesn't need a new cmd_info,
+           it is used as one of the inputs in blending normal input stream only */
+        return false;
+    }
+}
+
 void vpe_clip_stream(
     struct vpe_rect *src_rect, struct vpe_rect *dst_rect, const struct vpe_rect *target_rect)
 {

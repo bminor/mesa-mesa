@@ -28,42 +28,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-struct plane_desc_header {
-    int32_t nps0;
-    int32_t npd0;
-    int32_t nps1;
-    int32_t npd1;
-    int32_t subop;
-};
-
-struct plane_desc_src {
-    uint8_t                      tmz;
-    enum vpe_swizzle_mode_values swizzle;
-    enum vpe_rotation_angle      rotation;
-    uint32_t                     base_addr_lo;
-    uint32_t                     base_addr_hi;
-    uint16_t                     pitch;
-    uint16_t                     viewport_x;
-    uint16_t                     viewport_y;
-    uint16_t                     viewport_w;
-    uint16_t                     viewport_h;
-    uint8_t                      elem_size;
-};
-
-struct plane_desc_dst {
-    uint8_t                      tmz;
-    enum vpe_swizzle_mode_values swizzle;
-    enum vpe_mirror              mirror;
-    uint32_t                     base_addr_lo;
-    uint32_t                     base_addr_hi;
-    uint16_t                     pitch;
-    uint16_t                     viewport_x;
-    uint16_t                     viewport_y;
-    uint16_t                     viewport_w;
-    uint16_t                     viewport_h;
-    uint8_t                      elem_size;
-};
-
 
 struct plane_desc_writer {
     struct vpe_buf *buf; /**< store the current buf pointer */
@@ -78,12 +42,9 @@ struct plane_desc_writer {
     int32_t         num_dst;
     enum vpe_status status;
 
-    void (*init)(
-        struct plane_desc_writer *writer, struct vpe_buf *buf, struct plane_desc_header *header);
-    void (*add_source)(
-        struct plane_desc_writer *writer, struct plane_desc_src *source, bool is_plane0);
-    void (*add_destination)(
-        struct plane_desc_writer *writer, struct plane_desc_dst *destination, bool is_plane0);
+    void (*init)(struct plane_desc_writer *writer, struct vpe_buf *buf, void *p_header);
+    void (*add_source)(struct plane_desc_writer *writer, void *p_source, bool is_plane0);
+    void (*add_destination)(struct plane_desc_writer *writer, void *p_destination, bool is_plane0);
 };
 
 #ifdef __cplusplus

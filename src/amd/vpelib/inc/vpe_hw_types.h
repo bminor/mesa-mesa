@@ -177,7 +177,7 @@ struct vpe_plane_size {
 };
 
 /** @struct vpe_plane_dcc_param
- *  @brief Not used
+ *  @brief dcc params
  */
 struct vpe_plane_dcc_param {
     bool enable;

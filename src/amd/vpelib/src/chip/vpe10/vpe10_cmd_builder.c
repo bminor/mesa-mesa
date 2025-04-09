@@ -26,10 +26,12 @@
 #include "common.h"
 #include "vpe_priv.h"
 #include "vpe10_command.h"
+#include "vpe10_plane_desc_writer.h"
 #include "vpe10_cmd_builder.h"
 
 /***** Internal helpers *****/
-static void get_np_and_subop(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,  struct plane_desc_header *header);
+static void get_np_and_subop(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
+    struct vpe10_plane_desc_header *header);
 
 static enum VPE_PLANE_CFG_ELEMENT_SIZE vpe_get_element_size(
     enum vpe_surface_pixel_format format, int plane_idx);
@@ -182,16 +184,16 @@ enum vpe_status vpe10_build_vpe_cmd(
 enum vpe_status vpe10_build_plane_descriptor(
     struct vpe_priv *vpe_priv, struct vpe_buf *buf, uint32_t cmd_idx)
 {
-    struct stream_ctx       *stream_ctx;
-    struct vpe_surface_info *surface_info;
-    int32_t                  stream_idx;
-    PHYSICAL_ADDRESS_LOC    *addrloc;
-    struct plane_desc_src    src;
-    struct plane_desc_dst    dst;
-    struct plane_desc_header  header            = {0};
-    struct cmd_builder       *builder           = &vpe_priv->resource.cmd_builder;
-    struct plane_desc_writer *plane_desc_writer = &vpe_priv->plane_desc_writer;
-    struct vpe_cmd_info      *cmd_info          = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
+    struct stream_ctx             *stream_ctx;
+    struct vpe_surface_info       *surface_info;
+    int32_t                        stream_idx;
+    PHYSICAL_ADDRESS_LOC          *addrloc;
+    struct vpe10_plane_desc_src    src;
+    struct vpe10_plane_desc_dst    dst;
+    struct vpe10_plane_desc_header header            = {0};
+    struct cmd_builder            *builder           = &vpe_priv->resource.cmd_builder;
+    struct plane_desc_writer      *plane_desc_writer = &vpe_priv->plane_desc_writer;
+    struct vpe_cmd_info           *cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
     VPE_ASSERT(cmd_info);
 
     VPE_ASSERT(cmd_info->num_inputs == 1);
@@ -280,7 +282,7 @@ enum vpe_status vpe10_build_plane_descriptor(
 }
 
 static void get_np_and_subop(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
-    struct plane_desc_header *header)
+    struct vpe10_plane_desc_header *header)
 {
     header->npd1 = 0;
 

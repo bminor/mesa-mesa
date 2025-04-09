@@ -31,6 +31,42 @@
 extern "C" {
 #endif
 
+struct vpe10_plane_desc_header {
+    int32_t nps0;
+    int32_t npd0;
+    int32_t nps1;
+    int32_t npd1;
+    int32_t subop;
+};
+
+struct vpe10_plane_desc_src {
+    uint8_t                      tmz;
+    enum vpe_swizzle_mode_values swizzle;
+    enum vpe_rotation_angle      rotation;
+    uint32_t                     base_addr_lo;
+    uint32_t                     base_addr_hi;
+    uint16_t                     pitch;
+    uint16_t                     viewport_x;
+    uint16_t                     viewport_y;
+    uint16_t                     viewport_w;
+    uint16_t                     viewport_h;
+    uint8_t                      elem_size;
+};
+
+struct vpe10_plane_desc_dst {
+    uint8_t                      tmz;
+    enum vpe_swizzle_mode_values swizzle;
+    enum vpe_mirror              mirror;
+    uint32_t                     base_addr_lo;
+    uint32_t                     base_addr_hi;
+    uint16_t                     pitch;
+    uint16_t                     viewport_x;
+    uint16_t                     viewport_y;
+    uint16_t                     viewport_w;
+    uint16_t                     viewport_h;
+    uint8_t                      elem_size;
+};
+
 /** initialize the plane descriptor writer.
  * Calls right before building any plane descriptor
  *
@@ -40,15 +76,15 @@ extern "C" {
  */
 
 void vpe10_plane_desc_writer_init(
-    struct plane_desc_writer *writer, struct vpe_buf *buf, struct plane_desc_header *header);
+    struct plane_desc_writer *writer, struct vpe_buf *buf, void *p_header);
 
 /** fill the value to the embedded buffer. */
 void vpe10_plane_desc_writer_add_source(
-    struct plane_desc_writer *writer, struct plane_desc_src *source, bool is_plane0);
+    struct plane_desc_writer *writer, void *p_source, bool is_plane0);
 
 /** fill the value to the embedded buffer. */
 void vpe10_plane_desc_writer_add_destination(
-    struct plane_desc_writer *writer, struct plane_desc_dst *destination, bool is_plane0);
+    struct plane_desc_writer *writer, void *p_destination, bool is_plane0);
 
 void vpe10_construct_plane_desc_writer(struct plane_desc_writer *writer);
 

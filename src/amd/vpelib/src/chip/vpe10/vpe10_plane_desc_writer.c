@@ -35,10 +35,12 @@ void vpe10_construct_plane_desc_writer(struct plane_desc_writer *writer)
 }
 
 void vpe10_plane_desc_writer_init(
-    struct plane_desc_writer *writer, struct vpe_buf *buf, struct plane_desc_header *header)
+    struct plane_desc_writer *writer, struct vpe_buf *buf, void *p_header)
 {
     uint32_t *cmd_space;
     uint64_t  size      = 4;
+    struct vpe10_plane_desc_header *header    = (struct vpe10_plane_desc_header *)p_header;
+
     writer->status      = VPE_STATUS_OK;
     writer->base_cpu_va = buf->cpu_va;
     writer->base_gpu_va = buf->gpu_va;
@@ -63,11 +65,12 @@ void vpe10_plane_desc_writer_init(
 
 /** fill the value to the embedded buffer. */
 void vpe10_plane_desc_writer_add_source(
-    struct plane_desc_writer *writer, struct plane_desc_src *src, bool is_plane0)
+    struct plane_desc_writer *writer, void *p_source, bool is_plane0)
 {
     uint32_t *cmd_space, *cmd_start;
     uint32_t  num_wd = is_plane0 ? 6 : 5;
     uint64_t  size   = num_wd * sizeof(uint32_t);
+    struct vpe10_plane_desc_src *src    = (struct vpe10_plane_desc_src *)p_source;
 
     if (writer->status != VPE_STATUS_OK)
         return;
@@ -107,11 +110,12 @@ void vpe10_plane_desc_writer_add_source(
 
 /** fill the value to the embedded buffer. */
 void vpe10_plane_desc_writer_add_destination(
-    struct plane_desc_writer *writer, struct plane_desc_dst *dst, bool is_plane0)
+    struct plane_desc_writer *writer, void *p_destination, bool is_plane0)
 {
     uint32_t *cmd_space, *cmd_start;
     uint32_t  num_wd = is_plane0 ? 6 : 5;
     uint64_t  size   = num_wd * sizeof(uint32_t);
+    struct vpe10_plane_desc_dst *dst    = (struct vpe10_plane_desc_dst *)p_destination;
 
     if (writer->status != VPE_STATUS_OK)
         return;
