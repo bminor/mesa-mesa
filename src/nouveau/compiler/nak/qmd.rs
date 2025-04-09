@@ -113,11 +113,26 @@ macro_rules! qmd_impl_set_crs_size {
     };
 }
 
-const SIZE_SHIFT: u8 = 0;
-const SIZE_SHIFTED4_SHIFT: u8 = 4;
+const CBUF_NONE_SHIFT: u8 = 0;
+const CBUF_SHIFTED4_SHIFT: u8 = 4;
+
+macro_rules! cbuf_suffix_shift {
+    ($suffix:ident) => {
+        paste! { [<CBUF_ $suffix _SHIFT>] }
+    };
+}
+
+macro_rules! cbuf_suffix_field {
+    ($c:ident, $s:ident, $field:ident, NONE) => {
+        paste! { $c::[<$s _CONSTANT_BUFFER_ $field>] }
+    };
+    ($c:ident, $s:ident, $field:ident, $suffix:ident) => {
+        paste! { $c::[<$s _CONSTANT_BUFFER_ $field _ $suffix>] }
+    };
+}
 
 macro_rules! qmd_impl_set_cbuf {
-    ($c:ident, $s:ident, $size_field:ident) => {
+    ($c:ident, $s:ident, $size_suffix:ident) => {
         fn set_cbuf(&mut self, idx: u8, addr: u64, size: u32) {
             let mut bv = QMDBitView::new(&mut self.qmd);
             let idx = idx.into();
@@ -127,12 +142,12 @@ macro_rules! qmd_impl_set_cbuf {
             set_array!(bv, $c, $s, CONSTANT_BUFFER_ADDR_LOWER, idx, addr_lo);
             set_array!(bv, $c, $s, CONSTANT_BUFFER_ADDR_UPPER, idx, addr_hi);
 
-            paste! {
-                let shift = [<$size_field _SHIFT>];
-                let range = $c::[<$s _CONSTANT_BUFFER_ $size_field>](idx);
-                assert!(((size >> shift) << shift) == size);
-                bv.set_field(range, size >> shift);
-            }
+            let size_shift = cbuf_suffix_shift!($size_suffix);
+            assert!(((size >> size_shift) << size_shift) == size);
+            bv.set_field(
+                cbuf_suffix_field!($c, $s, SIZE, $size_suffix)(idx),
+                size >> size_shift,
+            );
 
             set_array!(bv, $c, $s, CONSTANT_BUFFER_VALID, idx, true);
         }
@@ -203,7 +218,7 @@ mod qmd_0_6 {
 
         qmd_impl_common!(cla0c0, QMDV00_06);
         qmd_impl_set_crs_size!(cla0c0, QMDV00_06);
-        qmd_impl_set_cbuf!(cla0c0, QMDV00_06, SIZE);
+        qmd_impl_set_cbuf!(cla0c0, QMDV00_06, NONE);
         qmd_impl_set_prog_addr_32!(cla0c0, QMDV00_06);
         qmd_impl_set_register_count!(cla0c0, QMDV00_06, REGISTER_COUNT);
 
@@ -248,7 +263,7 @@ mod qmd_2_1 {
 
         qmd_impl_common!(clc0c0, QMDV02_01);
         qmd_impl_set_crs_size!(clc0c0, QMDV02_01);
-        qmd_impl_set_cbuf!(clc0c0, QMDV02_01, SIZE_SHIFTED4);
+        qmd_impl_set_cbuf!(clc0c0, QMDV02_01, SHIFTED4);
         qmd_impl_set_prog_addr_32!(clc0c0, QMDV02_01);
         qmd_impl_set_register_count!(clc0c0, QMDV02_01, REGISTER_COUNT);
 
@@ -316,7 +331,7 @@ mod qmd_2_2 {
 
         qmd_impl_common!(clc3c0, QMDV02_02);
         qmd_impl_set_crs_size!(clc3c0, QMDV02_02);
-        qmd_impl_set_cbuf!(clc3c0, QMDV02_02, SIZE_SHIFTED4);
+        qmd_impl_set_cbuf!(clc3c0, QMDV02_02, SHIFTED4);
         qmd_impl_set_prog_addr_64!(clc3c0, QMDV02_02);
         qmd_impl_set_register_count!(clc3c0, QMDV02_02, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc3c0, QMDV02_02);
@@ -348,7 +363,7 @@ mod qmd_3_0 {
             assert!(crs_size == 0);
         }
 
-        qmd_impl_set_cbuf!(clc6c0, QMDV03_00, SIZE_SHIFTED4);
+        qmd_impl_set_cbuf!(clc6c0, QMDV03_00, SHIFTED4);
         qmd_impl_set_prog_addr_64!(clc6c0, QMDV03_00);
         qmd_impl_set_register_count!(clc6c0, QMDV03_00, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc6c0, QMDV03_00);
