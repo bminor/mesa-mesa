@@ -457,7 +457,10 @@ radv_enc_session_info(struct radv_cmd_buffer *cmd_buffer)
    RADEON_ENC_CS(pdev->encoder_interface_version);
    RADEON_ENC_CS(va >> 32);
    RADEON_ENC_CS(va & 0xffffffff);
-   RADEON_ENC_CS(RENCODE_ENGINE_TYPE_ENCODE);
+   if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_3)
+      RADEON_ENC_CS(RENCODE_ENGINE_TYPE_ENCODE);
+   else
+      RADEON_ENC_CS(0);
    RADEON_ENC_END();
 }
 
