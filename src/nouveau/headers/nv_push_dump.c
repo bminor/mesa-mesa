@@ -26,6 +26,7 @@
 #include "clc5c0.h"
 #include "clc6c0.h"
 #include "clc7c0.h"
+#include "clc9c0.h"
 
 #define KEPLER_DMA_COPY_A 0x0000a0b5
 #define MAXWELL_DMA_COPY_A 0x0000b0b5
@@ -67,6 +68,7 @@ static struct nv_device_info get_fake_device_info(const char *arch_name) {
     info.cls_copy = AMPERE_DMA_COPY_A;
   } else if (!strcmp(arch_name, "ADA")) {
     info.cls_eng3d = ADA_A;
+    info.cls_compute = ADA_COMPUTE_A;
     info.cls_copy = AMPERE_DMA_COPY_A;
   } else {
     fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
