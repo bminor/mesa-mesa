@@ -29,8 +29,8 @@ using mask_t = uint16_t;
 static_assert(std::numeric_limits<mask_t>::digits >= num_nodes);
 
 struct VOPDInfo {
-   VOPDInfo() : is_opy_only(0), is_dst_odd(0), src_banks(0), has_literal(0), is_commutative(0) {}
-   uint16_t is_opy_only : 1;
+   VOPDInfo() : can_be_opx(0), is_dst_odd(0), src_banks(0), has_literal(0), is_commutative(0) {}
+   uint16_t can_be_opx : 1;
    uint16_t is_dst_odd : 1;
    uint16_t src_banks : 10; /* 0-3: src0, 4-7: src1, 8-9: src2 */
    uint16_t has_literal : 1;
@@ -133,6 +133,7 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
       return VOPDInfo();
 
    VOPDInfo info;
+   info.can_be_opx = true;
    info.is_commutative = true;
    switch (instr->opcode) {
    case aco_opcode::v_fmac_f32: info.op = aco_opcode::v_dual_fmac_f32; break;
@@ -161,16 +162,16 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
    case aco_opcode::v_dot2c_f32_f16: info.op = aco_opcode::v_dual_dot2acc_f32_f16; break;
    case aco_opcode::v_add_u32:
       info.op = aco_opcode::v_dual_add_nc_u32;
-      info.is_opy_only = true;
+      info.can_be_opx = false;
       break;
    case aco_opcode::v_lshlrev_b32:
       info.op = aco_opcode::v_dual_lshlrev_b32;
-      info.is_opy_only = true;
+      info.can_be_opx = false;
       info.is_commutative = false;
       break;
    case aco_opcode::v_and_b32:
       info.op = aco_opcode::v_dual_and_b32;
-      info.is_opy_only = true;
+      info.can_be_opx = false;
       break;
    default: return VOPDInfo();
    }
@@ -215,7 +216,7 @@ get_vopd_info(const SchedILPContext& ctx, const Instruction* instr)
 bool
 is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b, bool* swap)
 {
-   if ((a.is_opy_only && b.is_opy_only) || (a.is_dst_odd == b.is_dst_odd))
+   if ((!a.can_be_opx && !b.can_be_opx) || (a.is_dst_odd == b.is_dst_odd))
       return false;
 
    /* Both can use a literal, but it must be the same literal. */
@@ -241,9 +242,9 @@ is_vopd_compatible(const VOPDInfo& a, const VOPDInfo& b, bool* swap)
    /* If we have to turn v_mov_b32 into v_add_u32 but there is already an OPY-only instruction,
     * we can't do it.
     */
-   if (a.op == aco_opcode::v_dual_mov_b32 && !b.is_commutative && b.is_opy_only)
+   if (!b.is_commutative && !b.can_be_opx && a.op == aco_opcode::v_dual_mov_b32)
       return false;
-   if (b.op == aco_opcode::v_dual_mov_b32 && !a.is_commutative && a.is_opy_only)
+   if (!a.is_commutative && !a.can_be_opx && b.op == aco_opcode::v_dual_mov_b32)
       return false;
 
    *swap = true;
@@ -270,7 +271,7 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx, bool* prev_can_be_opx)
 
    /* If we have to swap a v_mov_b32, it will become an OPY-only opcode. */
    if (swap && !ctx.prev_vopd_info.is_commutative && cur_vopd.op == aco_opcode::v_dual_mov_b32)
-      cur_vopd.is_opy_only = true;
+      cur_vopd.can_be_opx = false;
 
    assert(first->definitions.size() == 1);
    assert(first->definitions[0].size() == 1);
@@ -304,7 +305,7 @@ can_use_vopd(const SchedILPContext& ctx, unsigned idx, bool* prev_can_be_opx)
          *prev_can_be_opx = false;
    }
 
-   return *prev_can_be_opx || !cur_vopd.is_opy_only;
+   return *prev_can_be_opx || cur_vopd.can_be_opx;
 }
 
 Instruction_cycle_info
@@ -752,7 +753,7 @@ create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, bool prev_can_
    Instruction* y = ctx.nodes[idx].instr;
    VOPDInfo x_info = ctx.prev_vopd_info;
    VOPDInfo y_info = ctx.vopd[idx];
-   x_info.is_opy_only |= !prev_can_be_opx;
+   x_info.can_be_opx &= prev_can_be_opx;
 
    bool swap_x = false, swap_y = false;
    if (x_info.src_banks & y_info.src_banks) {
@@ -760,19 +761,19 @@ create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, bool prev_can_
       /* Avoid swapping v_mov_b32 because it will become an OPY-only opcode. */
       if (x_info.op == aco_opcode::v_dual_mov_b32 && !y_info.is_commutative) {
          swap_x = true;
-         x_info.is_opy_only = true;
+         x_info.can_be_opx = false;
       } else {
          swap_x = x_info.is_commutative && x_info.op != aco_opcode::v_dual_mov_b32;
          swap_y = y_info.is_commutative && !swap_x;
       }
    }
 
-   if (x_info.is_opy_only) {
+   if (!x_info.can_be_opx) {
       std::swap(x, y);
       std::swap(x_info, y_info);
       std::swap(swap_x, swap_y);
    }
-   assert(!x_info.is_opy_only);
+   assert(x_info.can_be_opx);
 
    aco_opcode x_op, y_op;
    unsigned num_operands = 0;
