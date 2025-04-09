@@ -179,7 +179,10 @@ eustall_dump_results(void *cfg, FILE *file)
          data->dist_acc_count + data->sbid_count + data->sync_count +
          data->inst_fetch_count + data->active_count;
 
-      fprintf(file, "0x%08lx,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+      fprintf(file,
+           "0x%08" PRIx64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ","
+           "%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ","
+           "%" PRIu64 ",%" PRIu64 "\n",
          ip_addr, data->tdr_count, data->other_count, data->control_count,
          data->pipestall_count, data->send_count, data->dist_acc_count,
          data->sbid_count, data->sync_count, data->inst_fetch_count,
