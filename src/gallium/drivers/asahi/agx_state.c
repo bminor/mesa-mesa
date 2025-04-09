@@ -4925,20 +4925,10 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       return;
    }
 
-   if (info->mode == MESA_PRIM_PATCHES) {
-      agx_draw_patches(ctx, info, drawid_offset, indirect, draws, num_draws);
-      return;
-   }
-
+   /* We must legalize feedback loops before getting the batch, since once we
+    * have the batch we're not allowed to flush the bound render targets.
+    */
    agx_legalize_feedback_loops(ctx);
-
-   /* Only the rasterization stream counts */
-   if (ctx->active_queries && ctx->prims_generated[0] &&
-       !ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
-
-      assert(!indirect && "we force a passthrough GS for this");
-      agx_primitives_update_direct(ctx, info, draws);
-   }
 
    struct agx_batch *batch = agx_get_batch(ctx);
    uint64_t ib = 0;
@@ -4949,7 +4939,11 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          agx_index_buffer_ptr(batch, info, indirect ? NULL : draws, &ib_extent);
    }
 
-   if (ctx->active_queries && !ctx->active_draw_without_restart &&
+   /* Increment IA statistics before lowering tessellation. This ensures we
+    * count the patches instead of counting the tessellated outputs.
+    */
+   if (ctx->active_queries && !ctx->in_tess &&
+       !ctx->active_draw_without_restart &&
        (ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_VERTICES] ||
         ctx->pipeline_statistics[PIPE_STAT_QUERY_IA_PRIMITIVES] ||
         ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS] ||
@@ -4967,6 +4961,19 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
       agx_ia_update(batch, info, ptr, ib,
                     info->index_size ? ib_extent / info->index_size : 1);
+   }
+
+   if (info->mode == MESA_PRIM_PATCHES) {
+      agx_draw_patches(ctx, info, drawid_offset, indirect, draws, num_draws);
+      return;
+   }
+
+   /* Only the rasterization stream counts */
+   if (ctx->active_queries && ctx->prims_generated[0] &&
+       !ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+
+      assert(!indirect && "we force a passthrough GS for this");
+      agx_primitives_update_direct(ctx, info, draws);
    }
 
    if (ctx->stage[PIPE_SHADER_GEOMETRY].shader && info->primitive_restart &&
