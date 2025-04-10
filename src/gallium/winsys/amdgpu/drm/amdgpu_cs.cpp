@@ -1751,6 +1751,8 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
     */
    unsigned num_shared_buf_write;
    unsigned num_shared_buf_read;
+   unsigned num_submit_real_buffers;
+
    /* Store write handles in the begining and read handles at the end in shared_buf_kms_handles.
     * If usage is read and write then store the handle in write list.
     */
@@ -1758,6 +1760,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    if (queue_type != USERQ) {
       bo_list = (struct drm_amdgpu_bo_list_entry *)
          alloca(num_real_buffers * sizeof(struct drm_amdgpu_bo_list_entry));
+      num_submit_real_buffers = 0;
    } else {
       num_shared_buf_write = 0;
       num_shared_buf_read = 0;
@@ -1777,7 +1780,8 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
          amdgpu_set_bo_seq_no(queue_index, bo, next_seq_no);
 
       if (queue_type != USERQ) {
-         amdgpu_add_to_kernel_bo_list(&bo_list[i], bo, buffer->usage);
+         if (!get_real_bo(buffer->bo)->vm_always_valid)
+            amdgpu_add_to_kernel_bo_list(&bo_list[num_submit_real_buffers++], bo, buffer->usage);
       } else {
          vm_timeline_point = MAX2(vm_timeline_point, get_real_bo(bo)->vm_timeline_point);
 
@@ -1806,7 +1810,8 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
          amdgpu_set_bo_seq_no(queue_index, bo, next_seq_no);
 
       if (queue_type != USERQ) {
-         amdgpu_add_to_kernel_bo_list(&bo_list[i], bo, buffer->usage);
+         if (!get_real_bo(buffer->bo)->vm_always_valid)
+            amdgpu_add_to_kernel_bo_list(&bo_list[num_submit_real_buffers++], bo, buffer->usage);
       } else {
          vm_timeline_point = MAX2(vm_timeline_point, get_real_bo(bo)->vm_timeline_point);
 
@@ -1829,7 +1834,8 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
       struct amdgpu_cs_buffer *buffer = &real_buffers[i];
 
       if (queue_type != USERQ) {
-         amdgpu_add_to_kernel_bo_list(&bo_list[i], buffer->bo, buffer->usage);
+         if (!get_real_bo(buffer->bo)->vm_always_valid)
+            amdgpu_add_to_kernel_bo_list(&bo_list[num_submit_real_buffers++], buffer->bo, buffer->usage);
       } else {
          if (!get_real_bo(buffer->bo)->is_shared)
             continue;
@@ -1908,11 +1914,13 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
       if (queue_type != USERQ) {
          bo_list = (struct drm_amdgpu_bo_list_entry *)
                    alloca(aws->num_buffers * sizeof(struct drm_amdgpu_bo_list_entry));
-         num_real_buffers = 0;
+         num_submit_real_buffers = 0;
          list_for_each_entry(struct amdgpu_bo_real, bo, &aws->global_bo_list, global_list_item) {
-            bo_list[num_real_buffers].bo_handle = bo->kms_handle;
-            bo_list[num_real_buffers].bo_priority = 0;
-            ++num_real_buffers;
+            if (!bo->vm_always_valid) {
+               bo_list[num_submit_real_buffers].bo_handle = bo->kms_handle;
+               bo_list[num_submit_real_buffers].bo_priority = 0;
+               ++num_submit_real_buffers;
+            }
          }
       } else {
          shared_buf_kms_handles = (uint32_t*)alloca(aws->num_buffers * sizeof(uint32_t));
@@ -1927,8 +1935,8 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    }
 #endif
 
-   if (acs->ip_type == AMD_IP_GFX)
-      aws->gfx_bo_list_counter += num_real_buffers;
+   if (acs->ip_type == AMD_IP_GFX && queue_type != USERQ)
+      aws->gfx_bo_list_counter += num_submit_real_buffers;
 
    if (out_of_memory) {
       r = -ENOMEM;
@@ -1951,7 +1959,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
             if (r == -ENOMEM)
                os_time_sleep(1000);
 
-            r = amdgpu_cs_submit_ib_kernelq(acs, num_real_buffers, bo_list, &seq_no);
+            r = amdgpu_cs_submit_ib_kernelq(acs, num_submit_real_buffers, bo_list, &seq_no);
          } while (r == -ENOMEM);
 
          if (!r) {

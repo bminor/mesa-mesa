@@ -109,6 +109,7 @@ struct amdgpu_bo_real {
 
    /* Whether this is a slab buffer and alt_fence was set on one of the slab entries. */
    bool slab_has_busy_alt_fences;
+   bool vm_always_valid;
 };
 
 /* Same as amdgpu_bo_real except this BO isn't destroyed when its reference count drops to 0.

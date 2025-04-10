@@ -700,6 +700,7 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
    bo->bo = buf_handle;
    bo->va_handle = va_handle;
    bo->kms_handle = kms_handle;
+   bo->vm_always_valid = request.flags & AMDGPU_GEM_CREATE_VM_ALWAYS_VALID;
 
    if (initial_domain & RADEON_DOMAIN_VRAM)
       aws->allocated_vram += align64(size, aws->info.gart_page_size);
