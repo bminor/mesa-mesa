@@ -159,13 +159,9 @@ struct radv_meta_blit2d_rect {
    uint32_t width, height;
 };
 
-void radv_meta_begin_blit2d(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_saved_state *save);
-
 void radv_meta_blit2d(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *src_img,
                       struct radv_meta_blit2d_buffer *src_buf, struct radv_meta_blit2d_surf *dst,
                       struct radv_meta_blit2d_rect *rect);
-
-void radv_meta_end_blit2d(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_saved_state *save);
 
 void radv_meta_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *src,
                                struct radv_meta_blit2d_buffer *dst, struct radv_meta_blit2d_rect *rect);

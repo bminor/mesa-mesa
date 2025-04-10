@@ -96,13 +96,6 @@ radv_meta_nir_build_resolve_shader_core(struct radv_device *device, nir_builder 
 }
 
 nir_def *
-radv_meta_nir_load_descriptor(nir_builder *b, unsigned desc_set, unsigned binding)
-{
-   nir_def *rsrc = nir_vulkan_resource_index(b, 3, 32, nir_imm_int(b, 0), .desc_set = desc_set, .binding = binding);
-   return nir_trim_vector(b, rsrc, 2);
-}
-
-nir_def *
 radv_meta_nir_get_global_ids(nir_builder *b, unsigned num_components)
 {
    unsigned mask = BITFIELD_MASK(num_components);
