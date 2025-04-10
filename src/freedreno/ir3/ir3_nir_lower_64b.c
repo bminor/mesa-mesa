@@ -262,14 +262,25 @@ lower_64b_global(nir_builder *b, nir_instr *instr, void *unused)
          .atomic_op = nir_intrinsic_atomic_op(intr));
    }
 
+   enum gl_access_qualifier access = nir_intrinsic_access(intr);
+
    if (load) {
       unsigned num_comp = nir_intrinsic_dest_components(intr);
       nir_def *components[num_comp];
+
+      /* load_global_constant is redundant and should be removed, because we can
+       * express the same thing with extra access flags, but for now translate
+       * it to load_global_ir3 with those extra flags.
+       */
+      if (intr->intrinsic == nir_intrinsic_load_global_constant)
+         access |= ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER;
+
       for (unsigned off = 0; off < num_comp;) {
          unsigned c = MIN2(num_comp - off, 4);
          nir_def *val = nir_load_global_ir3(
                b, c, intr->def.bit_size,
-               addr, nir_imm_int(b, off));
+               addr, nir_imm_int(b, off),
+               .access = access);
          for (unsigned i = 0; i < c; i++) {
             components[off++] = nir_channel(b, val, i);
          }
