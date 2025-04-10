@@ -964,7 +964,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    map->further7 = 0x0;
    map->further8 = 0x0;
 
-   struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
+   struct pipe_resource *input = etna_ml_get_resource(subgraph, operation->input_tensors[0]);
    unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
    map->in_image_address = etna_bo_gpu_va(etna_buffer_resource(input)->bo) + offset;
    map->in_image_x_size = input_width;
@@ -1012,7 +1012,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
       }
    }
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+   struct pipe_resource *output = etna_ml_get_resource(subgraph, operation->output_tensors[0]);
    offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
    map->out_image_address = etna_bo_gpu_va(etna_buffer_resource(output)->bo) + offset;
    map->out_image_x_size = output_width;
@@ -1184,15 +1184,17 @@ etna_ml_compile_operation_nn(struct etna_ml_subgraph *subgraph, const struct etn
    else
       instruction->coefficients = etna_ml_create_coeffs_v8(subgraph, operation, &coef_cache_size);
 
-   struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
+   struct pipe_resource *input = etna_ml_get_resource(subgraph, operation->input_tensors[0]);
    assert(input);
    pipe_resource_reference(&instruction->input, input);
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+   struct pipe_resource *output = etna_ml_get_resource(subgraph, operation->output_tensors[0]);
    assert(output);
    pipe_resource_reference(&instruction->output, output);
 
    instruction->configs[0] = create_nn_config(subgraph, operation, instruction->coefficients, coef_cache_size);
+   instruction->input_offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
+   instruction->output_offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
 }
 
 void
