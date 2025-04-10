@@ -2467,11 +2467,12 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
 
    /* XXX - insert all workarounds and GFX specific things below. */
 
-   /* Wa_14014966230: For COMPUTE Workload - Any PIPE_CONTROL command with
-    * POST_SYNC Operation Enabled MUST be preceded by a PIPE_CONTROL
-    * with CS_STALL Bit set (with No POST_SYNC ENABLED)
+#if INTEL_WA_1607156449_GFX_VER
+   /* Wa_1607156449: For COMPUTE Workload - Any PIPE_CONTROL command with
+    * POST_SYNC Operation Enabled MUST be preceded by a PIPE_CONTROL with
+    * CS_STALL Bit set (with No POST_SYNC ENABLED)
     */
-   if (intel_device_info_is_adln(devinfo) &&
+   if (intel_needs_workaround(devinfo, 1607156449) &&
        current_pipeline == GPGPU &&
        post_sync_op != NoWrite) {
       anv_batch_emit(batch, GENX(PIPE_CONTROL), pipe) {
@@ -2479,6 +2480,7 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
          anv_debug_dump_pc(pipe, "Wa_14014966230");
       };
    }
+#endif
 
    /* SKL PRMs, Volume 7: 3D-Media-GPGPU, Programming Restrictions for
     * PIPE_CONTROL, Flush Types:
