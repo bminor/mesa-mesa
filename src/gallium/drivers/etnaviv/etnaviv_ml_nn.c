@@ -807,7 +807,7 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
    operation->stride = 1;
 
    operation->input_count = 1;
-   operation->input_width = poperation->input_tensors[0]->dims[1];
+   operation->input_width = poperation->input_tensors[0]->dims[3];
    operation->input_height = 1;
    operation->input_channels = 1;
    operation->input_zero_point = etna_tensor_zero_point(poperation->input_tensors[0]);
@@ -819,7 +819,7 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
    operation->output_count = 1;
    operation->output_width = 1;
    operation->output_height = 1;
-   operation->output_channels = poperation->output_tensors[0]->dims[1];
+   operation->output_channels = poperation->output_tensors[0]->dims[3];
    operation->output_zero_point = etna_tensor_zero_point(poperation->output_tensors[0]);
    operation->output_scale = poperation->output_tensors[0]->scale;
    operation->output_tensor_sizes[0] = operation->output_width *
@@ -827,7 +827,7 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
                                        operation->output_channels;
 
    pipe_resource_reference(&operation->weight_tensor, poperation->conv.weight_tensor->resource);
-   operation->weight_width = poperation->conv.weight_tensor->dims[1];
+   operation->weight_width = poperation->conv.weight_tensor->dims[3];
    operation->weight_height = 1;
    operation->weight_zero_point = poperation->conv.weight_tensor->zero_point;
    operation->weight_scale = poperation->conv.weight_tensor->scale;
