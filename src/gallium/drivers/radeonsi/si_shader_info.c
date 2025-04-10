@@ -269,92 +269,9 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       nir_tex_instr *tex = nir_instr_as_tex(instr);
 
       info->uses_bindless_samplers |= get_texture_src(tex, nir_tex_src_texture_handle) != NULL;
-
-      /* Gather the types of used VMEM instructions that return something. */
-      switch (tex->op) {
-      case nir_texop_tex:
-      case nir_texop_txb:
-      case nir_texop_txl:
-      case nir_texop_txd:
-      case nir_texop_lod:
-      case nir_texop_tg4:
-         info->uses_vmem_sampler_or_bvh = true;
-         break;
-      case nir_texop_txs:
-      case nir_texop_query_levels:
-      case nir_texop_texture_samples:
-      case nir_texop_descriptor_amd:
-      case nir_texop_sampler_descriptor_amd:
-         /* These just return the descriptor or information from it. */
-         break;
-      default:
-         info->uses_vmem_load_other = true;
-         break;
-      }
-
-      info->has_non_uniform_tex_access |=
-         tex->texture_non_uniform || tex->sampler_non_uniform;
-
-      info->has_shadow_comparison |= tex->is_shadow;
    } else if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       const char *intr_name = nir_intrinsic_infos[intr->intrinsic].name;
-
-      /* Gather the types of used VMEM instructions that return something. */
-      if (nir_intrinsic_infos[intr->intrinsic].has_dest) {
-         switch (intr->intrinsic) {
-         case nir_intrinsic_load_ubo:
-            if (intr->src[1].ssa->divergent)
-               info->uses_vmem_load_other = true;
-            break;
-
-         case nir_intrinsic_load_input:
-         case nir_intrinsic_load_input_vertex:
-         case nir_intrinsic_load_per_vertex_input:
-            if (nir->info.stage == MESA_SHADER_VERTEX ||
-                nir->info.stage == MESA_SHADER_TESS_EVAL)
-               info->uses_vmem_load_other = true;
-            break;
-
-         case nir_intrinsic_load_constant:
-            if (intr->src[0].ssa->divergent)
-               info->uses_vmem_load_other = true;
-            break;
-
-         /* Global */
-         case nir_intrinsic_load_global:
-         case nir_intrinsic_global_atomic:
-         case nir_intrinsic_global_atomic_swap:
-         /* SSBOs (this list is from si_nir_lower_resource.c) */
-         case nir_intrinsic_load_ssbo:
-         case nir_intrinsic_ssbo_atomic:
-         case nir_intrinsic_ssbo_atomic_swap:
-         /* Images (this list is from si_nir_lower_resource.c) */
-         case nir_intrinsic_image_deref_load:
-         case nir_intrinsic_image_deref_sparse_load:
-         case nir_intrinsic_image_deref_fragment_mask_load_amd:
-         case nir_intrinsic_image_deref_atomic:
-         case nir_intrinsic_image_deref_atomic_swap:
-         case nir_intrinsic_bindless_image_load:
-         case nir_intrinsic_bindless_image_sparse_load:
-         case nir_intrinsic_bindless_image_fragment_mask_load_amd:
-         case nir_intrinsic_bindless_image_atomic:
-         case nir_intrinsic_bindless_image_atomic_swap:
-         /* Scratch */
-         case nir_intrinsic_load_scratch:
-         /* AMD-specific. */
-         case nir_intrinsic_load_buffer_amd:
-            /* Atomics without return are not treated as loads. */
-            if (nir_def_components_read(&intr->def) &&
-                (!nir_intrinsic_has_atomic_op(intr) ||
-                 nir_intrinsic_atomic_op(intr) != nir_atomic_op_ordered_add_gfx12_amd))
-               info->uses_vmem_load_other = true;
-            break;
-
-         default:
-            break;
-         }
-      }
 
       info->uses_bindless_images |= strstr(intr_name, "bindless_image") == intr_name;
 
@@ -625,8 +542,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_POS) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_HELPER_INVOCATION));
-
-      info->uses_vmem_load_other |= nir->info.fs.uses_fbfetch_output;
 
       /* Add both front and back color inputs. */
       unsigned num_inputs_with_colors = info->num_inputs;

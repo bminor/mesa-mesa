@@ -561,11 +561,6 @@ struct si_shader_info {
    bool uses_bindless_samplers;
    bool uses_bindless_images;
    bool has_divergent_loop;
-   bool has_non_uniform_tex_access;
-   bool has_shadow_comparison;
-
-   bool uses_vmem_sampler_or_bvh;
-   bool uses_vmem_load_other; /* all other VMEM loads and atomics with return */
 
    /** Whether all codepaths write tess factors in all invocations. */
    bool tessfactors_are_def_in_all_invocs;
@@ -877,9 +872,11 @@ struct si_shader_binary_info {
    uint8_t ps_colors_read;
    uint8_t num_input_sgprs;
    uint8_t num_input_vgprs;
-   bool uses_vmem_load_other; /* all other VMEM loads and atomics with return */
-   bool uses_vmem_sampler_or_bvh;
-   bool uses_instanceid;
+   bool uses_vmem_load_other : 1; /* all other VMEM loads and atomics with return */
+   bool uses_vmem_sampler_or_bvh : 1;
+   bool has_non_uniform_tex_access : 1;
+   bool has_shadow_comparison : 1;
+   bool uses_instanceid : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    unsigned private_mem_vgprs;

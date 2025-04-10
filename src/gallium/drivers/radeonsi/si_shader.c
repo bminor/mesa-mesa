@@ -2393,7 +2393,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       NIR_PASS(progress, nir, ac_nir_lower_image_opcodes);
 
    /* LLVM does not work well with this, so is handled in llvm backend waterfall. */
-   if (nir->info.use_aco_amd && sel->info.has_non_uniform_tex_access) {
+   if (nir->info.use_aco_amd && ctx->shader->info.has_non_uniform_tex_access) {
       nir_lower_non_uniform_access_options options = {
          .types = nir_lower_non_uniform_texture_access,
       };
@@ -2571,7 +2571,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    /* LLVM keep non-uniform sampler as index, so can't do this in NIR.
     * Must be done after si_nir_lower_resource().
     */
-   if (nir->info.use_aco_amd && sel->info.has_shadow_comparison &&
+   if (nir->info.use_aco_amd && ctx->shader->info.has_shadow_comparison &&
        sel->screen->info.gfx_level >= GFX8 && sel->screen->info.gfx_level <= GFX9) {
       NIR_PASS(progress, nir, si_nir_clamp_shadow_comparison_value);
    }
@@ -2744,6 +2744,8 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
    /* Find out which frag coord components are used. */
    uint8_t frag_coord_mask = 0;
 
+   nir_divergence_analysis(nir);
+
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* Since flat+convergent and non-flat components can occur in the same vec4, start with
        * all PS inputs as flat and change them to smooth when we find a component that's
@@ -2756,7 +2758,7 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
       nir_foreach_instr(instr, block) {
          switch (instr->type) {
-         case nir_instr_type_intrinsic:
+         case nir_instr_type_intrinsic: {
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
             switch (intr->intrinsic) {
@@ -2765,8 +2767,13 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                frag_coord_mask |= nir_def_components_read(&intr->def);
                break;
             case nir_intrinsic_load_input:
+            case nir_intrinsic_load_input_vertex:
+            case nir_intrinsic_load_per_vertex_input:
             case nir_intrinsic_load_interpolated_input: {
-               if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+               if (nir->info.stage == MESA_SHADER_VERTEX ||
+                   nir->info.stage == MESA_SHADER_TESS_EVAL) {
+                  shader->info.uses_vmem_load_other = true;
+               } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
                   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
                   unsigned index = nir_intrinsic_base(intr);
                   assert(sem.num_slots == 1);
@@ -2792,9 +2799,79 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                assert(!shader->is_monolithic);
                shader->info.ps_colors_read |= nir_def_components_read(&intr->def) << 4;
                break;
+            case nir_intrinsic_load_ubo:
+               if (intr->src[1].ssa->divergent)
+                  shader->info.uses_vmem_load_other = true;
+               break;
+            case nir_intrinsic_load_constant:
+               if (intr->src[0].ssa->divergent)
+                  shader->info.uses_vmem_load_other = true;
+               break;
+            /* Global */
+            case nir_intrinsic_load_global:
+            case nir_intrinsic_global_atomic:
+            case nir_intrinsic_global_atomic_swap:
+            /* SSBOs (this list is from si_nir_lower_resource.c) */
+            case nir_intrinsic_load_ssbo:
+            case nir_intrinsic_ssbo_atomic:
+            case nir_intrinsic_ssbo_atomic_swap:
+            /* Images (this list is from si_nir_lower_resource.c) */
+            case nir_intrinsic_image_deref_load:
+            case nir_intrinsic_image_deref_sparse_load:
+            case nir_intrinsic_image_deref_fragment_mask_load_amd:
+            case nir_intrinsic_image_deref_atomic:
+            case nir_intrinsic_image_deref_atomic_swap:
+            case nir_intrinsic_bindless_image_load:
+            case nir_intrinsic_bindless_image_sparse_load:
+            case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+            case nir_intrinsic_bindless_image_atomic:
+            case nir_intrinsic_bindless_image_atomic_swap:
+            /* Scratch */
+            case nir_intrinsic_load_scratch:
+            /* AMD-specific. */
+            case nir_intrinsic_load_buffer_amd:
+               /* Atomics without return are not treated as loads. */
+               if (nir_def_components_read(&intr->def) &&
+                   (!nir_intrinsic_has_atomic_op(intr) ||
+                    nir_intrinsic_atomic_op(intr) != nir_atomic_op_ordered_add_gfx12_amd))
+                  shader->info.uses_vmem_load_other = true;
+               break;
             default:
                break;
             }
+            break;
+         }
+
+         case nir_instr_type_tex: {
+            nir_tex_instr *tex = nir_instr_as_tex(instr);
+
+            shader->info.has_non_uniform_tex_access |= tex->texture_non_uniform || tex->sampler_non_uniform;
+            shader->info.has_shadow_comparison |= tex->is_shadow;
+
+            /* Gather the types of used VMEM instructions that return something. */
+            switch (tex->op) {
+            case nir_texop_tex:
+            case nir_texop_txb:
+            case nir_texop_txl:
+            case nir_texop_txd:
+            case nir_texop_lod:
+            case nir_texop_tg4:
+               shader->info.uses_vmem_sampler_or_bvh = true;
+               break;
+            case nir_texop_txs:
+            case nir_texop_query_levels:
+            case nir_texop_texture_samples:
+            case nir_texop_descriptor_amd:
+            case nir_texop_sampler_descriptor_amd:
+               /* These just return the descriptor or information from it. */
+               break;
+            default:
+               shader->info.uses_vmem_load_other = true;
+               break;
+            }
+            break;
+         }
+
          default:
             break;
          }
@@ -2902,21 +2979,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       if (linked->shader[i].nir) {
          si_get_shader_variant_info(shader, linked->shader[i].nir);
          run_late_optimization_and_lowering_passes(&linked->shader[i]);
-      }
-   }
-
-   /* TODO: gather this where other shader_info is gathered */
-   for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
-      if (linked->shader[i].nir) {
-         struct si_shader_info info;
-
-         /* Save and restore use_aco_amd because si_nir_scan_shader changes it. */
-         bool use_aco_amd = linked->shader[i].nir->info.use_aco_amd;
-         si_nir_scan_shader(shader->selector->screen, linked->shader[i].nir, &info, true);
-         linked->shader[i].nir->info.use_aco_amd = use_aco_amd;
-
-         shader->info.uses_vmem_load_other |= info.uses_vmem_load_other;
-         shader->info.uses_vmem_sampler_or_bvh |= info.uses_vmem_sampler_or_bvh;
       }
    }
 }
