@@ -76,6 +76,7 @@ static struct v3d_simulator_state {
 
         struct v3d_hw *v3d;
         int ver;
+        int rev;
 
         /* Size of the heap. */
         uint64_t mem_size;
@@ -1175,6 +1176,7 @@ v3d_simulator_init_global()
         v3d_hw_set_mem(sim_state.v3d, b->ofs, 0xd0, 4096);
 
         sim_state.ver = v3d_hw_get_version(sim_state.v3d);
+        sim_state.rev = v3d_hw_get_revision(sim_state.v3d);
 
         simple_mtx_unlock(&sim_state.mutex);
 
