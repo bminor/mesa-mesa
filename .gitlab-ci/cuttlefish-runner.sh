@@ -49,6 +49,14 @@ ulimit -S -n 32768
 VSOCK_BASE=10000 # greater than all the default vsock ports
 VSOCK_CID=$((VSOCK_BASE + (CI_JOB_ID & 0xfff)))
 
+# Venus requires a custom kernel for now
+if [ "$ANDROID_GPU_MODE" = "venus" ] || [ "$ANDROID_GPU_MODE" = "venus_guest_angle" ]; then
+  CUSTOM_KERNEL_ARGS="
+  -kernel_path=/cuttlefish/bzImage
+  -initramfs_path=/cuttlefish/initramfs.img
+  "
+fi
+
 HOME=/cuttlefish launch_cvd \
   -daemon \
   -verbosity=VERBOSE \
@@ -64,8 +72,7 @@ HOME=/cuttlefish launch_cvd \
   -gpu_mode="$ANDROID_GPU_MODE" \
   -cpus=${FDO_CI_CONCURRENT:-4} \
   -memory_mb 8192 \
-  -kernel_path="/cuttlefish/bzImage" \
-  -initramfs_path="/cuttlefish/initramfs.img"
+  $CUSTOM_KERNEL_ARGS
 
 sleep 1
 
