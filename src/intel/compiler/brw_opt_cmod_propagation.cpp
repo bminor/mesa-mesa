@@ -24,6 +24,7 @@
 #include "brw_shader.h"
 #include "brw_cfg.h"
 #include "brw_eu.h"
+#include "util/half_float.h"
 
 /** @file
  *
@@ -47,6 +48,26 @@
  * we can recognize that the CMP is generating the flag value that already
  * exists and therefore remove the instruction.
  */
+
+static double
+src_as_float(const brw_reg &src)
+{
+   assert(src.file == IMM);
+
+   switch (src.type) {
+   case BRW_TYPE_HF:
+      return _mesa_half_to_float((uint16_t)src.d);
+
+   case BRW_TYPE_F:
+      return src.f;
+
+   case BRW_TYPE_DF:
+      return src.df;
+
+   default:
+      unreachable("Invalid float type.");
+   }
+}
 
 static bool
 cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
@@ -116,17 +137,31 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
           * For negative values:
           * (sat(x) >  0) == (x >  0) --- false
           * (sat(x) <= 0) == (x <= 0) --- true
+          *
+          * Except for the x = NaN cases. sat(NaN) is 0, so add.sat.le of a
+          * NaN result will be true. add.sat.g of a NaN result is false, so
+          * the optimization is also incorrect when the second source of the
+          * comparison is less than zero. All of the fsat(x) > is_negative
+          * cases should have been eliminated in NIR.
           */
          const enum brw_conditional_mod cond =
             negate ? brw_swap_cmod(inst->conditional_mod)
             : inst->conditional_mod;
 
-         if (scan_inst->saturate &&
-             (brw_type_is_float(scan_inst->dst.type) ||
-              brw_type_is_uint(scan_inst->dst.type)) &&
-             (cond != BRW_CONDITIONAL_G &&
-              cond != BRW_CONDITIONAL_LE))
-            goto not_match;
+         if (scan_inst->saturate) {
+            if (cond != BRW_CONDITIONAL_G)
+               goto not_match;
+
+            if (inst->src[1].file != IMM)
+               goto not_match;
+
+            double v = src_as_float(inst->src[1]);
+            if (negate)
+               v = -v;
+
+            if (v < 0.0)
+               goto not_match;
+         }
 
          /* Otherwise, try propagating the conditional. */
          if (scan_inst->can_do_cmod() &&
