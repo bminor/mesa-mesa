@@ -2420,32 +2420,15 @@ genX(cmd_buffer_emit_push_descriptor_surfaces)(struct anv_cmd_buffer *cmd_buffer
    }
 }
 
-ALWAYS_INLINE void
-genX(batch_emit_pipe_control)(struct anv_batch *batch,
-                              const struct intel_device_info *devinfo,
-                              uint32_t current_pipeline,
-                              enum anv_pipe_bits bits,
-                              const char *reason)
-{
-   genX(batch_emit_pipe_control_write)(batch,
-                                       devinfo,
-                                       current_pipeline,
-                                       NoWrite,
-                                       ANV_NULL_ADDRESS,
-                                       0,
-                                       bits,
-                                       reason);
-}
-
-ALWAYS_INLINE void
-genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
-                                    const struct intel_device_info *devinfo,
-                                    uint32_t current_pipeline,
-                                    uint32_t post_sync_op,
-                                    struct anv_address address,
-                                    uint32_t imm_data,
-                                    enum anv_pipe_bits bits,
-                                    const char *reason)
+static void
+emit_pipe_control(struct anv_batch *batch,
+                  const struct intel_device_info *devinfo,
+                  uint32_t current_pipeline,
+                  uint32_t post_sync_op,
+                  struct anv_address address,
+                  uint32_t imm_data,
+                  enum anv_pipe_bits bits,
+                  const char *reason)
 {
    if ((batch->engine_class == INTEL_ENGINE_CLASS_COPY) ||
        (batch->engine_class == INTEL_ENGINE_CLASS_VIDEO))
@@ -2604,6 +2587,31 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
       batch->pc_reasons[3] = NULL;
       batch->pc_reasons_count = 0;
    }
+}
+
+void
+genX(batch_emit_pipe_control)(struct anv_batch *batch,
+                              const struct intel_device_info *devinfo,
+                              uint32_t current_pipeline,
+                              enum anv_pipe_bits bits,
+                              const char *reason)
+{
+   emit_pipe_control(batch, devinfo, current_pipeline,
+                     NoWrite, ANV_NULL_ADDRESS, 0, bits, reason);
+}
+
+void
+genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
+                                    const struct intel_device_info *devinfo,
+                                    uint32_t current_pipeline,
+                                    uint32_t post_sync_op,
+                                    struct anv_address address,
+                                    uint32_t imm_data,
+                                    enum anv_pipe_bits bits,
+                                    const char *reason)
+{
+   emit_pipe_control(batch, devinfo, current_pipeline,
+                     post_sync_op, address, imm_data, bits, reason);
 }
 
 /* Set preemption on/off. */
