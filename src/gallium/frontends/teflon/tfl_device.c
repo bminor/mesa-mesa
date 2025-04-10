@@ -223,7 +223,13 @@ fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct 
       tensor->resource = create_resource(context, tf_tensor);
 
    tensor->index = index;
-   memcpy(tensor->dims, tf_tensor.dims->data, tf_tensor.dims->size * sizeof(*tensor->dims));
+   for (int out_dim = 0; out_dim < 4; out_dim++) {
+      int in_dim = tf_tensor.dims->size - 4 + out_dim;
+      if (in_dim >= 0)
+         tensor->dims[out_dim] = tf_tensor.dims->data[in_dim];
+      else
+         tensor->dims[out_dim] = 1;
+   }
 
    if (tf_tensor.quantization.type == kTfLiteAffineQuantization) {
       const TfLiteAffineQuantization *quant = (const TfLiteAffineQuantization *)tf_tensor.quantization.params;
