@@ -276,6 +276,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .EXT_provoking_vertex                  = true,
    .EXT_line_rasterization                = true,
    .EXT_robustness2                       = true,
+   .EXT_zero_initialize_device_memory     = true,
    .AMDX_shader_enqueue                   = true,
 #if DETECT_OS_ANDROID
    .ANDROID_native_buffer                 = true,
@@ -617,6 +618,9 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
 
       /* VK_EXT_multi_draw */
       .multiDraw = true,
+
+      /* VK_EXT_zero_initialize_device_memory */
+      .zeroInitializeDeviceMemory = true,
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = (pdevice->pscreen->caps.depth_clamp_enable != 0),
@@ -1924,6 +1928,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    struct lvp_device_memory *mem;
    ASSERTED const VkExportMemoryAllocateInfo *export_info = NULL;
    ASSERTED const VkImportMemoryFdInfoKHR *import_info = NULL;
+   const VkMemoryAllocateFlagsInfo *mem_flags = NULL;
 #if DETECT_OS_ANDROID
    ASSERTED const VkImportAndroidHardwareBufferInfoANDROID *ahb_import_info = NULL;
 #endif
@@ -1957,6 +1962,9 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
          priority = get_mem_priority(prio->priority);
          break;
       }
+      case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
+         mem_flags = (void*)ext;
+         break;
 #if DETECT_OS_ANDROID
       case VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID: {
          ahb_import_info = (VkImportAndroidHardwareBufferInfoANDROID*)ext;
@@ -2044,6 +2052,9 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
 
       mem->map = device->pscreen->map_memory(device->pscreen, mem->pmem);
       mem->memory_type = dmabuf ? LVP_DEVICE_MEMORY_TYPE_DMA_BUF : LVP_DEVICE_MEMORY_TYPE_OPAQUE_FD;
+      /* XXX: this should be memset_s or memset_explicit but they are not supported */
+      if (mem_flags && mem_flags->flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT)
+         memset(mem->map, 0, pAllocateInfo->allocationSize);
    }
 #endif
    else {
@@ -2057,6 +2068,9 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
          memset(mem->map, UINT8_MAX / 2 + 1, pAllocateInfo->allocationSize);
       }
       set_mem_priority(mem, priority);
+      /* XXX: this should be memset_s or memset_explicit but they are not supported */
+      if (mem_flags && mem_flags->flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT)
+         memset(mem->map, 0, pAllocateInfo->allocationSize);
    }
 
    mem->type_index = pAllocateInfo->memoryTypeIndex;
