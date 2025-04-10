@@ -249,11 +249,11 @@ To integrate structured tagging for a new component (for example, ``my_component
             variables:
                MY_COMPONENT_TAG: "${CONDITIONAL_BUILD_MY_COMPONENT_TAG}"
 
-   - It is time to modify the job that builds the component image to include the new component tag. Let's suppose that only the ``kernel+rootfs_x86_64`` job builds the component image. We need to add the new component tag to the job as an extension:
+   - It is time to modify the job that builds the component image to include the new component tag. Let's suppose that only the ``debian/arm64_test-gl`` job builds the component image. We need to add the new component tag to the job as an extension:
 
       .. code-block:: yaml
 
-         kernel+rootfs_x86_64:
+         debian/arm64_test-gl:
             extends:
                - .container-builds-my-component
                - .container-builds-my-component2

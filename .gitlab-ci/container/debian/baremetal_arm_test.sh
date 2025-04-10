@@ -3,7 +3,6 @@
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
 # DEBIAN_BASE_TAG
-# KERNEL_ROOTFS_TAG
 
 set -e
 

@@ -5,7 +5,6 @@
 # .gitlab-ci/image-tags.yml tags:
 # DEBIAN_TEST_ANDROID_TAG
 # DEBIAN_BASE_TAG
-# KERNEL_ROOTFS_TAG
 
 set -uex
 

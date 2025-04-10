@@ -14,7 +14,6 @@ uncollapsed_section_start wayland "Building Wayland"
 # DEBIAN_TEST_GL_TAG
 # DEBIAN_TEST_VK_TAG
 # FEDORA_X86_64_BUILD_TAG
-# KERNEL_ROOTFS_TAG
 
 export LIBWAYLAND_VERSION="1.21.0"
 export WAYLAND_PROTOCOLS_VERSION="1.41"

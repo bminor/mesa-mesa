@@ -8,7 +8,6 @@ set -ex
 # DEBIAN_BASE_TAG
 # DEBIAN_BUILD_TAG
 # FEDORA_X86_64_BUILD_TAG
-# KERNEL_ROOTFS_TAG
 
 uncollapsed_section_start mold "Building mold"
 
