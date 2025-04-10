@@ -321,8 +321,14 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
     * barrier flag set to true.
     */
    if (cmdbuf->cur_batch) {
+      bool preload_fb =
+         cmdbuf->cur_batch && cmdbuf->cur_batch->vtc_jc.first_tiler;
+
       panvk_per_arch(cmd_close_batch)(cmdbuf);
-      panvk_per_arch(cmd_preload_fb_after_batch_split)(cmdbuf);
+
+      if (preload_fb)
+         panvk_per_arch(cmd_preload_fb_after_batch_split)(cmdbuf);
+
       panvk_per_arch(cmd_open_batch)(cmdbuf);
    }
 }
