@@ -359,7 +359,7 @@ class VulkanSubDecoder(VulkanWrapperGenerator):
         self.cgen.line("""
         // packetLen should be at least 8 (op code and packet length) and should not be excessively large
         if (packetLen < 8 || packetLen > MAX_PACKET_LENGTH) {
-            WARN("Bad packet length %d detected, subdecode may fail", packetLen);
+            GFXSTREAM_WARNING("Bad packet length %d detected, subdecode may fail", packetLen);
             metricsLogger.logMetricEvent(MetricEventBadPacketLength{ .len = packetLen });
         }
         """)
@@ -399,7 +399,7 @@ class VulkanSubDecoder(VulkanWrapperGenerator):
         self.cgen.line("default:")
         self.cgen.beginBlock()
         self.cgen.stmt(
-            "GFXSTREAM_ABORT(::emugl::FatalError(::emugl::ABORT_REASON_OTHER)) << \"Unrecognized opcode \" << opcode")
+            "GFXSTREAM_FATAL(\"Unrecognized opcode %\" PRIu32, opcode)")
         self.cgen.endBlock()
 
         self.cgen.endBlock()  # switch stmt
