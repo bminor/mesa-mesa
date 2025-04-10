@@ -61,6 +61,28 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
    run_model(model, EXECUTOR_CPU, &input, &num_inputs, &cpu_output, &output_sizes, &output_types, &num_outputs, cache_dir);
    run_model(model, EXECUTOR_NPU, &input, &num_inputs, &npu_output, &output_sizes, &output_types, &num_outputs, cache_dir);
 
+   char *dump_output = getenv("TEFLON_DUMP_OUTPUT");
+   if (dump_output && atoi(dump_output) == 1) {
+      for (unsigned i = 0; i < num_outputs; i++) {
+         char name[250];
+         int fd;
+         unsigned size = output_sizes[i];
+
+         if (output_types[i] == kTfLiteFloat32)
+            size *= 4;
+
+         sprintf(name, "out-%d.bin", i);
+         fd = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+         write(fd, npu_output[i], size);
+         close(fd);
+
+         sprintf(name, "cpu-out-%d.bin", i);
+         fd = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+         write(fd, cpu_output[i], size);
+         close(fd);
+      }
+   }
+
    for (size_t i = 0; i < num_outputs; i++) {
       for (size_t j = 0; j < output_sizes[i]; j++) {
          switch (output_types[i]) {
