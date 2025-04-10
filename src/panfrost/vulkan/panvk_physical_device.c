@@ -576,7 +576,7 @@ get_api_version(unsigned arch)
       return version_override;
 
    if (arch >= 10)
-      return VK_MAKE_API_VERSION(0, 1, 1, VK_HEADER_VERSION);
+      return VK_MAKE_API_VERSION(0, 1, 2, VK_HEADER_VERSION);
 
    return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
 }
