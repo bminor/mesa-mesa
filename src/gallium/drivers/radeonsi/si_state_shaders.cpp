@@ -3400,21 +3400,20 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
    /* Serialize NIR to save memory. Monolithic shader variants
     * have to deserialize NIR before compilation.
     */
-   if (sel->nir) {
-      struct blob blob;
-      size_t size;
+   struct blob blob;
+   size_t size;
+   assert(sel->nir);
 
-      blob_init(&blob);
-      /* true = remove optional debugging data to increase
-       * the likehood of getting more shader cache hits.
-       * It also drops variable names, so we'll save more memory.
-       * If NIR debug prints are used we don't strip to get more
-       * useful logs.
-       */
-      nir_serialize(&blob, sel->nir, NIR_DEBUG(PRINT) == 0);
-      blob_finish_get_buffer(&blob, &sel->nir_binary, &size);
-      sel->nir_size = size;
-   }
+   blob_init(&blob);
+   /* true = remove optional debugging data to increase
+    * the likehood of getting more shader cache hits.
+    * It also drops variable names, so we'll save more memory.
+    * If NIR debug prints are used we don't strip to get more
+    * useful logs.
+    */
+   nir_serialize(&blob, sel->nir, NIR_DEBUG(PRINT) == 0);
+   blob_finish_get_buffer(&blob, &sel->nir_binary, &size);
+   sel->nir_size = size;
 
    /* Compile the main shader part for use with a prolog and/or epilog.
     * If this fails, the driver will try to compile a monolithic shader
@@ -3449,13 +3448,11 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
 
       shader->wave_size = si_determine_wave_size(sscreen, shader);
 
-      if (sel->nir) {
-         if (sel->stage <= MESA_SHADER_GEOMETRY) {
-            si_get_ir_cache_key(sel, shader->key.ge.as_ngg, shader->key.ge.as_es,
-                                shader->wave_size, ir_sha1_cache_key);
-         } else {
-            si_get_ir_cache_key(sel, false, false, shader->wave_size, ir_sha1_cache_key);
-         }
+      if (sel->stage <= MESA_SHADER_GEOMETRY) {
+         si_get_ir_cache_key(sel, shader->key.ge.as_ngg, shader->key.ge.as_es,
+                             shader->wave_size, ir_sha1_cache_key);
+      } else {
+         si_get_ir_cache_key(sel, false, false, shader->wave_size, ir_sha1_cache_key);
       }
 
       /* Try to load the shader from the shader cache. */
@@ -3524,10 +3521,8 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
    }
 
    /* Free NIR. We only keep serialized NIR after this point. */
-   if (sel->nir) {
-      ralloc_free(sel->nir);
-      sel->nir = NULL;
-   }
+   ralloc_free(sel->nir);
+   sel->nir = NULL;
 }
 
 void si_schedule_initial_compile(struct si_context *sctx, gl_shader_stage stage,
