@@ -111,6 +111,14 @@ lower_alu_instr(nir_builder *bld, nir_alu_instr *alu, unsigned bit_size)
          assert(op == nir_op_uadd_carry);
          lowered_dst = nir_ushr_imm(bld, lowered_dst, dst_bit_size);
       }
+   } else if (op == nir_op_bitfield_reverse) {
+      lowered_dst = nir_bitfield_reverse(bld, srcs[0]);
+
+      /* We need to shift down to the original bit size, else we would just
+       * always return 0.
+       */
+      assert(bit_size > dst_bit_size);
+      lowered_dst = nir_ushr_imm(bld, lowered_dst, bit_size - dst_bit_size);
    } else {
       lowered_dst = nir_build_alu_src_arr(bld, op, srcs);
    }

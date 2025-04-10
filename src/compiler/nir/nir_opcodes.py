@@ -459,11 +459,11 @@ unop_convert("unpack_64_2x32_split_y", tuint32, tuint64, "src0 >> 32")
 # Bit operations, part of ARB_gpu_shader5.
 
 
-unop("bitfield_reverse", tuint32, """
+unop("bitfield_reverse", tuint, """
 /* we're not winning any awards for speed here, but that's ok */
 dst = 0;
-for (unsigned bit = 0; bit < 32; bit++)
-   dst |= ((src0 >> bit) & 1) << (31 - bit);
+for (unsigned bit = 0; bit < bit_size; bit++)
+   dst |= ((src0 >> bit) & 1) << ((bit_size - 1) - bit);
 """)
 unop_convert("bit_count", tuint32, tuint, """
 dst = 0;

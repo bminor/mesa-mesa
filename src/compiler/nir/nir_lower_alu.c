@@ -49,6 +49,8 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
    switch (instr->op) {
    case nir_op_bitfield_reverse:
       if (b->shader->options->lower_bitfield_reverse) {
+         assert(instr->def.bit_size == 32);
+
          /* For more details, see:
           *
           * http://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
