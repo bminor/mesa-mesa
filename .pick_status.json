@@ -874,7 +874,7 @@
         "description": "radeonsi: add ACO-specific main shader parts",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ba718fb7db7514e627f704d7c244511937efc36",
         "notes": null
