@@ -4,8 +4,10 @@ test_copy_texture_bc_rgba,Crash
 # src/gallium/frontends/lavapipe/lvp_private.h:773: lvp_image_aspects_to_plane: Assertion `!(aspectMask & ~image->vk.aspects)' failed.
 test_get_resource_tiling,Crash
 
-# src/gallium/auxiliary/gallivm/lp_bld_arit.c:413: lp_build_add: Assertion `lp_check_value(type, a)' failed.
-test_shader_waveop_maximal_convergence,Crash
+# The tests assumes a dubgroup size >= 16
+test_shader_waveop_maximal_convergence,Fail
+
+test_sampler_feedback_implicit_lod_aniso,Fail
 
 test_get_resource_tiling,Fail
 test_planar_video_formats,Fail
