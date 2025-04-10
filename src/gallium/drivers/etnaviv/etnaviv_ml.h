@@ -18,6 +18,7 @@ enum etna_job_type {
     ETNA_JOB_TYPE_TP,
     ETNA_JOB_TYPE_CONCAT, /* Fake operation, won't execute on HW. Hack will go away after the move to NIR. */
     ETNA_JOB_TYPE_SPLIT, /* Fake operation, won't execute on HW. Hack will go away after the move to NIR. */
+    ETNA_JOB_TYPE_BYPASS, /* Fake operation, won't execute on HW. Hack will go away after the move to NIR. */
 };
 
 enum etna_ml_tp_type {

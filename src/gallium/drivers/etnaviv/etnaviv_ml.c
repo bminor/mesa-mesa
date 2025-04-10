@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include "pipe/p_state.h"
 #include <sys/time.h>
 
 #include "util/u_inlines.h"
@@ -272,11 +273,34 @@ dump_graph(struct list_head *etna_operations)
          ML_DBG("%3d %-4s %3d %3d out2: %3d",
                 i, "SPLIT", operation->input_tensors[0], operation->output_tensors[0], operation->output_tensors[1]);
          break;
+      case ETNA_JOB_TYPE_BYPASS:
+         ML_DBG("%3d %-4s %3d %3d",
+                i, "BYPASS", operation->input_tensors[0], operation->output_tensors[0]);
+         break;
       }
       ML_DBG("\n");
       i++;
    }
    ML_DBG("\n");
+}
+
+static void
+add_bypass(const struct pipe_ml_operation *poperation, unsigned input_tensor,
+           struct etna_operation *operation, struct list_head *etna_operations)
+{
+   operation->type = ETNA_JOB_TYPE_BYPASS;
+   operation->input_count = 1;
+   operation->input_tensors[0] = input_tensor;
+   operation->input_tensor_sizes[0] = poperation->input_tensors[0]->dims[1] *
+                                      poperation->input_tensors[0]->dims[2] *
+                                      poperation->input_tensors[0]->dims[3];
+   operation->output_count = 1;
+   operation->output_tensors[0] = poperation->output_tensors[0]->index;
+   operation->output_tensor_sizes[0] = poperation->output_tensors[0]->dims[1] *
+                                       poperation->output_tensors[0]->dims[2] *
+                                       poperation->output_tensors[0]->dims[3];
+
+   list_addtail(&operation->link, etna_operations);
 }
 
 static bool
@@ -438,6 +462,10 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             list_addtail(&operation->link, etna_operations);
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_RESHAPE: {
+            add_bypass(poperation, input_tensors[0], operation, etna_operations);
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -498,6 +526,13 @@ lower_operations(struct etna_ml_subgraph *subgraph,
                                       operation->input_tensors[1],
                                       operation->input_tensor_sizes[0],
                                       operation->input_tensor_sizes[1]);
+      } else if (operation->type == ETNA_JOB_TYPE_BYPASS) {
+         etna_ml_create_tensor(subgraph, operation->input_tensors[0], operation->input_tensor_sizes[0]);
+         reference_tensor_with_offset(subgraph,
+                                      operation->input_tensors[0],
+                                      operation->output_tensors[0],
+                                      0,
+                                      operation->output_tensor_sizes[0]);
       } else {
          for (int i = 0; i < operation->input_count; i++)
             etna_ml_create_tensor(subgraph, operation->input_tensors[i], operation->input_tensor_sizes[i]);
@@ -548,6 +583,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
       case PIPE_ML_OPERATION_TYPE_ADD:
       case PIPE_ML_OPERATION_TYPE_CONCATENATION:
       case PIPE_ML_OPERATION_TYPE_SPLIT:
+      case PIPE_ML_OPERATION_TYPE_RESHAPE:
          break;
       default:
          unreachable("Unsupported ML operation type");
@@ -632,6 +668,9 @@ etna_ml_operation_supported(struct pipe_context *pcontext,
          supported = operation->input_tensors[0]->dims[3] < 1280;
          break;
       }
+      case PIPE_ML_OPERATION_TYPE_RESHAPE:
+         supported = true;
+         break;
       default:
          return false;
    }
@@ -682,6 +721,7 @@ etna_ml_subgraph_create(struct pipe_context *pcontext,
             break;
          case ETNA_JOB_TYPE_CONCAT:
          case ETNA_JOB_TYPE_SPLIT:
+         case ETNA_JOB_TYPE_BYPASS:
             continue;
       }
 
