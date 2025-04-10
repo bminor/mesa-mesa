@@ -185,7 +185,7 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
              rb->_BaseFormat == GL_STENCIL_INDEX) {
             /* Find a supported depth-stencil format. */
             for (unsigned samples = start;
-                 samples <= ctx->Const.MaxDepthStencilFramebufferSamples;
+                 samples <= MAX_SAMPLES;
                  samples++) {
                format = choose_renderbuffer_format(ctx, internalFormat,
                                                    samples, samples);
@@ -199,7 +199,7 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
          } else {
             /* Find a supported color format, samples >= storage_samples. */
             for (unsigned storage_samples = start_storage;
-                 storage_samples <= ctx->Const.MaxColorFramebufferStorageSamples;
+                 storage_samples <= MAX_SAMPLES;
                  storage_samples++) {
                for (unsigned samples = MAX2(start, storage_samples);
                     samples <= ctx->Const.MaxColorFramebufferSamples;
@@ -218,7 +218,7 @@ renderbuffer_alloc_storage(struct gl_context * ctx,
             found:;
          }
       } else {
-         for (unsigned samples = start; samples <= ctx->Const.MaxSamples;
+         for (unsigned samples = start; samples <= MAX_SAMPLES;
               samples++) {
             format = choose_renderbuffer_format(ctx, internalFormat,
                                                 samples, samples);

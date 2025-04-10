@@ -3470,7 +3470,7 @@ st_texture_storage(struct gl_context *ctx,
          num_samples = 2;
       }
 
-      for (; num_samples <= ctx->Const.MaxSamples; num_samples++) {
+      for (; num_samples <= MAX_SAMPLES; num_samples++) {
          if (screen->is_format_supported(screen, fmt, ptarget,
                                          num_samples, num_samples,
                                          PIPE_BIND_SAMPLER_VIEW)) {
