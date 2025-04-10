@@ -103,6 +103,17 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
          if (isinf(src_as_float(inst->src[1])) != 0)
             return false;
       }
+   } else {
+      /* This optimization can fail for integers.  For inputs a = 0x80000000,
+       * b = 4, int(0x80000000) < 4, but int(0x80000000) - 4 overflows and
+       * results in 0x7ffffffc.  that's not less than zero, so the flags get
+       * set differently than for (a < b).
+       *
+       * However, it is safe if the comparison is Z or NZ.
+       */
+      if (inst->conditional_mod != BRW_CONDITIONAL_Z &&
+          inst->conditional_mod != BRW_CONDITIONAL_NZ)
+         return false;
    }
 
    foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
@@ -179,8 +190,13 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
             : inst->conditional_mod;
 
          if (scan_inst->saturate) {
+            /* Note: Integer types can only have NZ or Z, so this path does
+             * not need to worry about integer handling.
+             */
             if (cond != BRW_CONDITIONAL_G)
                goto not_match;
+
+            assert(!brw_type_is_int(scan_inst->dst.type));
 
             if (inst->src[1].file != IMM)
                goto not_match;
@@ -252,15 +268,9 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
       /* A CMP with a second source of zero can match with anything.  A CMP
        * with a second source that is not zero can only match with an ADD
        * instruction.
-       *
-       * Only apply this optimization to float-point sources.  It can fail for
-       * integers.  For inputs a = 0x80000000, b = 4, int(0x80000000) < 4, but
-       * int(0x80000000) - 4 overflows and results in 0x7ffffffc.  that's not
-       * less than zero, so the flags get set differently than for (a < b).
        */
       if (inst->opcode == BRW_OPCODE_CMP && !inst->src[1].is_zero()) {
-         if (brw_type_is_float(inst->src[0].type) &&
-             cmod_propagate_cmp_to_add(devinfo, inst))
+         if (cmod_propagate_cmp_to_add(devinfo, inst))
             progress = true;
 
          continue;
