@@ -164,17 +164,18 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       offset_mode = NAK_NIR_OFFSET_MODE_PER_PX;
    }
 
-   nir_def *src0[4] = { NULL, };
-   nir_def *src1[4] = { NULL, };
-   unsigned src0_comps = 0, src1_comps = 0;
-
 #define PUSH(a, x) do { \
    nir_def *val = (x); \
    assert(a##_comps < ARRAY_SIZE(a)); \
    a[a##_comps++] = val; \
 } while(0)
 
+   unsigned num_backend_srcs = 0;
    if (nak->sm >= 50) {
+      nir_def *src0[4] = { NULL, };
+      nir_def *src1[4] = { NULL, };
+      unsigned src0_comps = 0, src1_comps = 0;
+
       if (tex->op == nir_texop_txd) {
          if (tex_h != NULL)
             PUSH(src0, tex_h);
@@ -224,18 +225,78 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
          if (z_cmpr != NULL)
             PUSH(src1, z_cmpr);
       }
+
+      num_backend_srcs = 1;
+      tex->src[0].src_type = nir_tex_src_backend1;
+      nir_src_rewrite(&tex->src[0].src, nir_vec(b, src0, src0_comps));
+
+      if (src1_comps > 0) {
+         while (src1_comps < 4)
+            PUSH(src1, nir_undef(b, 1, 32));
+         num_backend_srcs = 2;
+         tex->src[1].src_type = nir_tex_src_backend2;
+         nir_src_rewrite(&tex->src[1].src, nir_vec(b, src1, src1_comps));
+      }
+   } else if (nak->sm >= 32) {
+      nir_def *src[8] = { NULL, };
+      unsigned src_comps = 0;
+
+      if (tex_h != NULL)
+         PUSH(src, tex_h);
+
+      if (offset != NULL && tex->op == nir_texop_txd) {
+         nir_def *arr_idx_or_zero = arr_idx ? arr_idx : nir_imm_int(b, 0);
+         // TODO: This may be backwards?
+         nir_def *arr_off = nir_prmt_nv(b, nir_imm_int(b, 0x1054),
+                                        offset, arr_idx_or_zero);
+         PUSH(src, arr_off);
+      } else if (arr_idx != NULL) {
+         PUSH(src, arr_idx);
+      }
+
+      for (uint32_t i = 0; i < coord_components; i++)
+         PUSH(src, nir_channel(b, coord, i));
+
+      if (ms_idx != NULL)
+         PUSH(src, ms_idx);
+      if (lod != NULL)
+         PUSH(src, lod);
+
+      if (tex->op != nir_texop_txd) {
+         if (offset_mode == NAK_NIR_OFFSET_MODE_AOFFI) {
+            PUSH(src, offset);
+         } else if (offset_mode == NAK_NIR_OFFSET_MODE_PER_PX) {
+            PUSH(src, nir_channel(b, offset, 0));
+            PUSH(src, nir_channel(b, offset, 1));
+         }
+      }
+
+      if (z_cmpr != NULL)
+         PUSH(src, z_cmpr);
+
+      if (tex->op == nir_texop_txd) {
+         assert(ddx->num_components == coord_components);
+         for (uint32_t i = 0; i < coord_components; i++) {
+            PUSH(src, nir_channel(b, ddx, i));
+            PUSH(src, nir_channel(b, ddy, i));
+         }
+      }
+
+      /* Both sources are vec4s so we need an even multiple of 4 */
+      while (src_comps % 4)
+         PUSH(src, nir_undef(b, 1, 32));
+
+      num_backend_srcs = 1;
+      tex->src[0].src_type = nir_tex_src_backend1;
+      nir_src_rewrite(&tex->src[0].src, nir_vec(b, src, 4));
+
+      if (src_comps > 4) {
+         num_backend_srcs = 2;
+         tex->src[1].src_type = nir_tex_src_backend2;
+         nir_src_rewrite(&tex->src[1].src, nir_vec(b, src + 4, 4));
+      }
    } else {
       unreachable("Unsupported shader model");
-   }
-
-   unsigned num_backend_srcs = 1;
-   tex->src[0].src_type = nir_tex_src_backend1;
-   nir_src_rewrite(&tex->src[0].src, nir_vec(b, src0, src0_comps));
-
-   if (src1_comps > 0) {
-      num_backend_srcs = 2;
-      tex->src[1].src_type = nir_tex_src_backend2;
-      nir_src_rewrite(&tex->src[1].src, nir_vec(b, src1, src1_comps));
    }
 
    /* Remove any extras */
