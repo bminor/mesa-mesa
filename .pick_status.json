@@ -1264,7 +1264,7 @@
         "description": "nvk/nvkmd: Check the correct flag for the Kepler GART workaround",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1db57bb41424359569b195a93dc7269b1392ab26",
         "notes": null
