@@ -121,6 +121,24 @@ vk_shader_cmp_graphics_stages(mesa_shader_stage a, mesa_shader_stage b)
    return stage_order[a] - stage_order[b];
 }
 
+int
+vk_shader_cmp_rt_stages(mesa_shader_stage a, mesa_shader_stage b)
+{
+   static const int stage_order[MESA_SHADER_CALLABLE + 1] = {
+      [MESA_SHADER_RAYGEN] = 1,
+      [MESA_SHADER_ANY_HIT] = 2,
+      [MESA_SHADER_CLOSEST_HIT] = 3,
+      [MESA_SHADER_MISS] = 4,
+      [MESA_SHADER_INTERSECTION] = 5,
+      [MESA_SHADER_CALLABLE] = 6,
+   };
+
+   assert(a < ARRAY_SIZE(stage_order) && stage_order[a] > 0);
+   assert(b < ARRAY_SIZE(stage_order) && stage_order[b] > 0);
+
+   return stage_order[a] - stage_order[b];
+}
+
 struct stage_idx {
    mesa_shader_stage stage;
    uint32_t idx;
