@@ -261,27 +261,14 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
    }
 }
 
-static bool is_bindless_handle_indirect(nir_instr *src)
-{
-   /* Check if the bindless handle comes from indirect load_ubo. */
-   if (src->type == nir_instr_type_intrinsic &&
-       nir_instr_as_intrinsic(src)->intrinsic == nir_intrinsic_load_ubo) {
-      if (!nir_src_is_const(nir_instr_as_intrinsic(src)->src[0]))
-         return true;
-   } else {
-      /* Some other instruction. Return the worst-case result. */
-      return true;
-   }
-   return false;
-}
-
 /* TODO: convert to nir_shader_instructions_pass */
 static void scan_instruction(const struct nir_shader *nir, struct si_shader_info *info,
                              nir_instr *instr, bool colors_lowered)
 {
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
-      const nir_src *handle = get_texture_src(tex, nir_tex_src_texture_handle);
+
+      info->uses_bindless_samplers |= get_texture_src(tex, nir_tex_src_texture_handle) != NULL;
 
       /* Gather the types of used VMEM instructions that return something. */
       switch (tex->op) {
@@ -296,18 +283,6 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       default:
          info->uses_vmem_load_other = true;
          break;
-      }
-
-      if (handle) {
-         info->uses_bindless_samplers = true;
-
-         if (is_bindless_handle_indirect(handle->ssa->parent_instr))
-            info->uses_indirect_descriptor = true;
-      } else {
-         const nir_src *deref = get_texture_src(tex, nir_tex_src_texture_deref);
-
-         if (nir_deref_instr_has_indirect(nir_src_as_deref(*deref)))
-            info->uses_indirect_descriptor = true;
       }
 
       info->has_non_uniform_tex_access |=
@@ -359,30 +334,12 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       if (is_bindless_image)
          info->uses_bindless_images = true;
 
-      if (is_image && nir_deref_instr_has_indirect(nir_src_as_deref(intr->src[0])))
-         info->uses_indirect_descriptor = true;
-
-      if (is_bindless_image && is_bindless_handle_indirect(intr->src[0].ssa->parent_instr))
-         info->uses_indirect_descriptor = true;
-
-      if (intr->intrinsic != nir_intrinsic_store_ssbo && is_ssbo &&
-          !nir_src_is_const(intr->src[0]))
-         info->uses_indirect_descriptor = true;
-
       if (nir_intrinsic_has_atomic_op(intr)) {
          if (nir_intrinsic_atomic_op(intr) == nir_atomic_op_ordered_add_gfx12_amd)
             info->uses_atomic_ordered_add = true;
       }
 
       switch (intr->intrinsic) {
-      case nir_intrinsic_store_ssbo:
-         if (!nir_src_is_const(intr->src[1]))
-            info->uses_indirect_descriptor = true;
-         break;
-      case nir_intrinsic_load_ubo:
-         if (!nir_src_is_const(intr->src[0]))
-            info->uses_indirect_descriptor = true;
-         break;
       case nir_intrinsic_load_local_invocation_id:
       case nir_intrinsic_load_workgroup_id: {
          unsigned mask = nir_def_components_read(&intr->def);
@@ -666,7 +623,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       }
    }
 
-   info->uses_vmem_load_other |= info->uses_indirect_descriptor;
    info->has_divergent_loop = nir_has_divergent_loop(nir);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {

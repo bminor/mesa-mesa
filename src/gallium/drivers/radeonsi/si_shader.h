@@ -560,7 +560,6 @@ struct si_shader_info {
    bool writes_layer;
    bool uses_bindless_samplers;
    bool uses_bindless_images;
-   bool uses_indirect_descriptor;
    bool has_divergent_loop;
    bool has_non_uniform_tex_access;
    bool has_shadow_comparison;
