@@ -170,7 +170,6 @@ copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
    struct radv_meta_blit2d_buffer buf_bsurf = {
       .addr = buffer_addr,
       .size = buffer_size,
-      .bs = img_bsurf.bs,
       .format = img_bsurf.format,
       .offset = region->bufferOffset,
       .pitch = buf_layout.row_stride_B / buf_layout.element_size_B,
@@ -335,7 +334,6 @@ copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
    struct radv_meta_blit2d_buffer buf_info = {
       .addr = buffer_addr,
       .size = buffer_size,
-      .bs = img_info.bs,
       .format = img_info.format,
       .offset = region->bufferOffset,
       .pitch = buf_extent_el.width,
@@ -357,7 +355,7 @@ copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
       /* Perform Blit */
       radv_meta_image_to_buffer(cmd_buffer, &img_info, &buf_info, &rect);
 
-      buf_info.offset += buf_extent_el.width * buf_extent_el.height * buf_info.bs;
+      buf_info.offset += buf_extent_el.width * buf_extent_el.height * img_info.bs;
       img_info.layer++;
       if (image->vk.image_type == VK_IMAGE_TYPE_3D)
          slice_3d++;

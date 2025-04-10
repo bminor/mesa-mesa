@@ -148,7 +148,6 @@ struct radv_meta_blit2d_buffer {
    uint64_t size;
    uint32_t offset;
    uint32_t pitch;
-   uint8_t bs;
    VkFormat format;
    enum radv_copy_flags copy_flags;
 };
