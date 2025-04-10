@@ -32,10 +32,9 @@ vk_format_for_size(int bs)
 }
 
 static struct radv_meta_blit2d_surf
-blit_surf_for_image_level_layer(struct radv_image *image, VkImageLayout layout, const VkImageSubresourceLayers *subres,
-                                VkImageAspectFlags aspect_mask)
+blit_surf_for_image_level_layer(struct radv_image *image, VkImageLayout layout, const VkImageSubresourceLayers *subres)
 {
-   VkFormat format = radv_get_aspect_format(image, aspect_mask);
+   VkFormat format = radv_get_aspect_format(image, subres->aspectMask);
 
    if (!radv_dcc_enabled(image, subres->mipLevel) && !(radv_tc_compat_htile_enabled(image, subres->mipLevel)))
       format = vk_format_for_size(vk_format_get_blocksize(format));
@@ -48,7 +47,7 @@ blit_surf_for_image_level_layer(struct radv_image *image, VkImageLayout layout, 
       .level = subres->mipLevel,
       .layer = subres->baseArrayLayer,
       .image = image,
-      .aspect_mask = aspect_mask,
+      .aspect_mask = subres->aspectMask,
       .current_layout = layout,
    };
 }
@@ -141,8 +140,7 @@ copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
    };
 
    /* Create blit surfaces */
-   struct radv_meta_blit2d_surf img_bsurf =
-      blit_surf_for_image_level_layer(image, layout, &region->imageSubresource, region->imageSubresource.aspectMask);
+   struct radv_meta_blit2d_surf img_bsurf = blit_surf_for_image_level_layer(image, layout, &region->imageSubresource);
 
    if (!radv_is_buffer_format_supported(img_bsurf.format, NULL)) {
       uint32_t queue_mask = radv_image_queue_family_mask(image, cmd_buffer->qf, cmd_buffer->qf);
@@ -306,8 +304,7 @@ copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
    };
 
    /* Create blit surfaces */
-   struct radv_meta_blit2d_surf img_info =
-      blit_surf_for_image_level_layer(image, layout, &region->imageSubresource, region->imageSubresource.aspectMask);
+   struct radv_meta_blit2d_surf img_info = blit_surf_for_image_level_layer(image, layout, &region->imageSubresource);
 
    if (!radv_is_buffer_format_supported(img_info.format, NULL)) {
       uint32_t queue_mask = radv_image_queue_family_mask(image, cmd_buffer->qf, cmd_buffer->qf);
@@ -519,11 +516,11 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
    }
 
    /* Create blit surfaces */
-   struct radv_meta_blit2d_surf b_src = blit_surf_for_image_level_layer(
-      src_image, src_image_layout, &region->srcSubresource, region->srcSubresource.aspectMask);
+   struct radv_meta_blit2d_surf b_src =
+      blit_surf_for_image_level_layer(src_image, src_image_layout, &region->srcSubresource);
 
-   struct radv_meta_blit2d_surf b_dst = blit_surf_for_image_level_layer(
-      dst_image, dst_image_layout, &region->dstSubresource, region->dstSubresource.aspectMask);
+   struct radv_meta_blit2d_surf b_dst =
+      blit_surf_for_image_level_layer(dst_image, dst_image_layout, &region->dstSubresource);
 
    uint32_t dst_queue_mask = radv_image_queue_family_mask(dst_image, cmd_buffer->qf, cmd_buffer->qf);
    bool dst_compressed =
