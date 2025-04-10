@@ -709,9 +709,13 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
                         padding[7] == 0;
             break;
          }
-         case kTfLiteBuiltinFullyConnected:
-            supported = true;
+         case kTfLiteBuiltinFullyConnected: {
+            TfLiteTensor *input_tensor = &context->tensors[node->inputs->data[0]];
+            supported = input_tensor->type == kTfLiteInt8 ||
+                        input_tensor->type == kTfLiteUInt8;
+            supported = input_tensor->dims->data[input_tensor->dims->size - 1] < 1280;
             break;
+         }
       }
 
       teflon_debug("%3d %7s v%-2d %-11s in:", node_index,
