@@ -10121,16 +10121,18 @@ iris_emit_raw_pipe_control(struct iris_batch *batch,
       flags |= PIPE_CONTROL_DEPTH_STALL;
    }
 
-   /* Wa_14014966230: For COMPUTE Workload - Any PIPE_CONTROL command with
-    * POST_SYNC Operation Enabled MUST be preceded by a PIPE_CONTROL
-    * with CS_STALL Bit set (with No POST_SYNC ENABLED)
+#if INTEL_WA_1607156449_GFX_VER
+   /* Wa_1607156449: For COMPUTE Workload - Any PIPE_CONTROL command with
+    * POST_SYNC Operation Enabled MUST be preceded by a PIPE_CONTROL with
+    * CS_STALL Bit set (with No POST_SYNC ENABLED)
     */
-   if (intel_device_info_is_adln(devinfo) &&
+   if (intel_needs_workaround(devinfo, 1607156449) &&
        IS_COMPUTE_PIPELINE(batch) &&
        flags_to_post_sync_op(flags) != NoWrite) {
-      iris_emit_raw_pipe_control(batch, "Wa_14014966230",
+      iris_emit_raw_pipe_control(batch, "Wa_1607156449",
                                  PIPE_CONTROL_CS_STALL, NULL, 0, 0);
    }
+#endif
 
    batch_mark_sync_for_pipe_control(batch, flags);
 
