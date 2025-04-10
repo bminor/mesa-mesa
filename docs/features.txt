@@ -470,7 +470,7 @@ Vulkan 1.2 -- all DONE: anv, hk, nvk, panvk/v10+, tu, vn
   VK_KHR_image_format_list                              DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_imageless_framebuffer                          DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_sampler_mirror_clamp_to_edge                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
-  VK_KHR_separate_depth_stencil_layouts                 DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
+  VK_KHR_separate_depth_stencil_layouts                 DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_shader_atomic_int64                            DONE (anv, lvp, nvk, panvk/v10+, radv, vn, tu/a740+)
   VK_KHR_shader_float16_int8                            DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, vn)
   VK_KHR_shader_float_controls                          DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
