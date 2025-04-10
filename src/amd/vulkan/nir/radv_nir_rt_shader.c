@@ -702,7 +702,9 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
    case nir_intrinsic_load_ray_triangle_vertex_positions: {
       nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
       nir_def *primitive_id = nir_load_var(b, vars->primitive_id);
-      ret = radv_load_vertex_position(vars->device, b, instance_node_addr, primitive_id, nir_intrinsic_column(intr));
+      nir_def *geometry_id = nir_iand_imm(b, nir_load_var(b, vars->geometry_id_and_flags), 0xFFFFFFF);
+      ret = radv_load_vertex_position(vars->device, b, instance_node_addr, geometry_id, primitive_id,
+                                      nir_intrinsic_column(intr));
       break;
    }
    default:

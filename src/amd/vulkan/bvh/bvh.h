@@ -59,6 +59,7 @@ struct radv_accel_struct_header {
 
    /* Everything after this gets updated/copied from the CPU. */
    uint32_t geometry_count;
+   uint32_t primitive_base_indices_offset;
    uint64_t instance_offset;
    uint64_t instance_count;
    uint32_t build_flags;

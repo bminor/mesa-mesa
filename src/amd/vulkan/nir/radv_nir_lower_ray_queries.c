@@ -391,7 +391,9 @@ lower_rq_load(struct radv_device *device, nir_builder *b, nir_intrinsic_instr *i
    case nir_ray_query_value_intersection_triangle_vertex_positions: {
       nir_def *instance_node_addr = isec_load(b, intersection, instance_addr);
       nir_def *primitive_id = isec_load(b, intersection, primitive_id);
-      return radv_load_vertex_position(device, b, instance_node_addr, primitive_id, nir_intrinsic_column(instr));
+      nir_def *geometry_id = nir_iand_imm(b, isec_load(b, intersection, geometry_id_and_flags), 0xFFFFFF);
+      return radv_load_vertex_position(device, b, instance_node_addr, geometry_id, primitive_id,
+                                       nir_intrinsic_column(instr));
    }
    default:
       unreachable("Invalid nir_ray_query_value!");

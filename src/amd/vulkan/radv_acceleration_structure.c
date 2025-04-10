@@ -46,6 +46,7 @@ static const uint32_t leaf_always_active_spv[] = {
 
 struct acceleration_structure_layout {
    uint32_t geometry_info_offset;
+   uint32_t primitive_base_indices_offset;
    uint32_t bvh_offset;
    uint32_t leaf_nodes_offset;
    uint32_t internal_nodes_offset;
@@ -94,6 +95,12 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
       accel_struct->geometry_info_offset = offset;
       offset += sizeof(struct radv_accel_struct_geometry_info) * build_info->geometryCount;
    }
+
+   if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+      accel_struct->primitive_base_indices_offset = offset;
+      offset += sizeof(uint32_t) * build_info->geometryCount;
+   }
+
    /* Parent links, which have to go directly before bvh_offset as we index them using negative
     * offsets from there. */
    offset += bvh_size / 64 * 4;
@@ -513,6 +520,7 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
 
    header.build_flags = build_info->flags;
    header.geometry_count = build_info->geometryCount;
+   header.primitive_base_indices_offset = layout.primitive_base_indices_offset;
 
    radv_update_buffer_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
                          sizeof(header) - base);
@@ -537,6 +545,27 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
                            geometry_infos);
 
       free(geometry_infos);
+   }
+
+   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(build_info);
+   if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+      uint32_t base_indices_size = sizeof(uint32_t) * build_info->geometryCount;
+      uint32_t *base_indices = malloc(base_indices_size);
+      if (!base_indices) {
+         vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+         return;
+      }
+
+      uint32_t base_index = 0;
+      for (uint32_t i = 0; i < build_info->geometryCount; i++) {
+         base_indices[i] = base_index;
+         base_index += build_range_infos[i].primitiveCount;
+      }
+
+      radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer),
+                           dst->offset + layout.primitive_base_indices_offset, base_indices_size, base_indices);
+
+      free(base_indices);
    }
 }
 
