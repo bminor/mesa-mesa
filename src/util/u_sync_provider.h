@@ -34,6 +34,7 @@ struct util_sync_provider {
                    uint32_t src_handle, uint64_t src_point, uint32_t flags);
 
    void (*finalize)(struct util_sync_provider *p);
+   struct util_sync_provider * (*clone)(struct util_sync_provider *p);
 };
 
 #if HAVE_LIBDRM

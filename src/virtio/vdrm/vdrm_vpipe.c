@@ -1300,6 +1300,13 @@ vpipe_sync_finalize(struct util_sync_provider *p)
    free(p);
 }
 
+static struct util_sync_provider *
+vpipe_sync_clone(struct util_sync_provider *p)
+{
+   struct vpipe_sync_provider *vp = to_vpipe_sync_provider(p);
+   return vdrm_vpipe_get_sync(&vp->vtdev->base);
+}
+
 struct util_sync_provider *
 vdrm_vpipe_get_sync(struct vdrm_device *vdrm)
 {
@@ -1322,6 +1329,7 @@ vdrm_vpipe_get_sync(struct vdrm_device *vdrm)
       .query = vpipe_drm_sync_query,
       .transfer = vpipe_drm_sync_transfer,
       .finalize = vpipe_sync_finalize,
+      .clone = vpipe_sync_clone,
    };
 
    if (vtdev->has_timeline_syncobj) {

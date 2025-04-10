@@ -109,6 +109,12 @@ drm_syncobj_finalize(struct util_sync_provider *p)
    free(p);
 }
 
+static struct util_sync_provider *
+drm_sync_provider_clone(struct util_sync_provider *p)
+{
+   return util_sync_provider_drm(drm_fd(p));
+}
+
 
 struct util_sync_provider *
 util_sync_provider_drm(int drm_fd)
@@ -129,6 +135,7 @@ util_sync_provider_drm(int drm_fd)
       .query = drm_syncobj_query,
       .transfer = drm_syncobj_transfer,
       .finalize = drm_syncobj_finalize,
+      .clone = drm_sync_provider_clone,
    };
 
    uint64_t cap;
