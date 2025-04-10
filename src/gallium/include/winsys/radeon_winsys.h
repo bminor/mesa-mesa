@@ -446,6 +446,9 @@ struct radeon_winsys {
    /** Whether the buffer was suballocated. */
    bool (*buffer_is_suballocated)(struct pb_buffer_lean *buf);
 
+   /** Whether the buffer has AMDGPU_GEM_CREATE_VM_ALWAYS_VALID. */
+   bool (*buffer_has_vm_always_valid)(struct pb_buffer_lean *buf);
+
    /**
     * Get a winsys handle from a winsys buffer. The internal structure
     * of the handle is platform-specific and only a winsys should access it.

@@ -1344,6 +1344,11 @@ static bool radeon_winsys_bo_is_suballocated(struct pb_buffer_lean *buf)
    return !((struct radeon_bo*)buf)->handle;
 }
 
+static bool radeon_winsys_bo_has_vm_always_valid(struct pb_buffer_lean *buf)
+{
+   return false;
+}
+
 static uint64_t radeon_winsys_bo_va(struct pb_buffer_lean *buf)
 {
    return ((struct radeon_bo*)buf)->va;
@@ -1372,6 +1377,7 @@ void radeon_drm_bo_init_functions(struct radeon_drm_winsys *ws)
    ws->base.buffer_from_ptr = radeon_winsys_bo_from_ptr;
    ws->base.buffer_is_user_ptr = radeon_winsys_bo_is_user_ptr;
    ws->base.buffer_is_suballocated = radeon_winsys_bo_is_suballocated;
+   ws->base.buffer_has_vm_always_valid = radeon_winsys_bo_has_vm_always_valid;
    ws->base.buffer_get_handle = radeon_winsys_bo_get_handle;
    ws->base.buffer_get_virtual_address = radeon_winsys_bo_va;
    ws->base.buffer_get_reloc_offset = radeon_winsys_bo_get_reloc_offset;

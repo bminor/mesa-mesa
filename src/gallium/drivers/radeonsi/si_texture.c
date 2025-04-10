@@ -791,9 +791,9 @@ static bool si_texture_get_handle(struct pipe_screen *screen, struct pipe_contex
       }
 
       /* Move a suballocated texture into a non-suballocated allocation. */
-      if (sscreen->ws->buffer_is_suballocated(res->buf) || tex->surface.tile_swizzle ||
-          (tex->buffer.flags & RADEON_FLAG_NO_INTERPROCESS_SHARING &&
-           sscreen->info.has_local_buffers)) {
+      if (sscreen->ws->buffer_is_suballocated(res->buf) ||
+          sscreen->ws->buffer_has_vm_always_valid(res->buf) ||
+          tex->surface.tile_swizzle) {
          assert(!res->b.is_shared);
          si_reallocate_texture_inplace(sctx, tex, PIPE_BIND_SHARED, false);
          flush = true;
@@ -868,9 +868,7 @@ static bool si_texture_get_handle(struct pipe_screen *screen, struct pipe_contex
       /* Buffer exports are for the OpenCL interop. */
       /* Move a suballocated buffer into a non-suballocated allocation. */
       if (sscreen->ws->buffer_is_suballocated(res->buf) ||
-          /* A DMABUF export always fails if the BO is local. */
-          (tex->buffer.flags & RADEON_FLAG_NO_INTERPROCESS_SHARING &&
-           sscreen->info.has_local_buffers)) {
+          sscreen->ws->buffer_has_vm_always_valid(res->buf)) {
          assert(!res->b.is_shared);
 
          /* Allocate a new buffer with PIPE_BIND_SHARED. */

@@ -1899,6 +1899,13 @@ static bool amdgpu_bo_is_suballocated(struct pb_buffer_lean *buf)
    return bo->type == AMDGPU_BO_SLAB_ENTRY;
 }
 
+static bool amdgpu_bo_has_vm_always_valid(struct pb_buffer_lean *buf)
+{
+   struct amdgpu_winsys_bo *bo = (struct amdgpu_winsys_bo*)buf;
+
+   return get_real_bo(bo)->vm_always_valid;
+}
+
 uint64_t amdgpu_bo_get_va(struct pb_buffer_lean *buf)
 {
    struct amdgpu_winsys_bo *bo = amdgpu_winsys_bo(buf);
@@ -1940,6 +1947,7 @@ void amdgpu_bo_init_functions(struct amdgpu_screen_winsys *sws)
    sws->base.buffer_from_ptr = amdgpu_bo_from_ptr;
    sws->base.buffer_is_user_ptr = amdgpu_bo_is_user_ptr;
    sws->base.buffer_is_suballocated = amdgpu_bo_is_suballocated;
+   sws->base.buffer_has_vm_always_valid = amdgpu_bo_has_vm_always_valid;
    sws->base.buffer_get_handle = amdgpu_bo_get_handle;
    sws->base.buffer_commit = amdgpu_bo_sparse_commit;
    sws->base.buffer_find_next_committed_memory = amdgpu_bo_find_next_committed_memory;
