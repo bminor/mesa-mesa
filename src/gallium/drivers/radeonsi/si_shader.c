@@ -2199,7 +2199,7 @@ si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *ou
  * better code or lower undesirable representations (like derefs). Lowering passes that prevent
  * linking optimizations or destroy shader_info shouldn't be run here.
  */
-static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
+static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
@@ -2356,7 +2356,9 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 
    /* Lower all other indirect indexing to if-else ladders or scratch. */
    progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
-   return progress;
+
+   if (progress)
+      si_nir_opts(shader->selector->screen, nir, false);
 }
 
 /* Late optimization passes and lowering passes. The majority of lowering passes are here.
@@ -2364,13 +2366,13 @@ static bool run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
  * (those should be run before this) because any changes in shader_info won't be reflected
  * in hw registers from now on.
  */
-static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *ctx,
-                                                      bool progress)
+static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *ctx)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
    nir_shader *nir = ctx->nir;
+   bool progress = false;
 
    si_init_shader_args(shader, &ctx->args, &nir->info);
 
@@ -2871,12 +2873,9 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
         shader->selector->stage == MESA_SHADER_GEOMETRY))
       get_prev_stage_input_nir(shader, linked);
 
-   bool progress[SI_NUM_LINKED_SHADERS] = {0};
-
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
-      if (linked->shader[i].nir) {
-         progress[i] = run_pre_link_optimization_passes(&linked->shader[i]);
-      }
+      if (linked->shader[i].nir)
+         run_pre_link_optimization_passes(&linked->shader[i]);
    }
 
    /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
@@ -2895,11 +2894,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
    }
 
    if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
-      if (progress[1]) {
-         si_nir_opts(shader->selector->screen, linked->consumer.nir, false);
-         progress[1] = false;
-      }
-
       /* Remove holes after removed PS inputs by renumbering them. Holes can only occur with
        * monolithic PS.
        */
@@ -2910,9 +2904,8 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
    }
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
-      if (linked->shader[i].nir) {
-         run_late_optimization_and_lowering_passes(&linked->shader[i], progress[i]);
-      }
+      if (linked->shader[i].nir)
+         run_late_optimization_and_lowering_passes(&linked->shader[i]);
    }
 
    /* TODO: gather this where other shader_info is gathered */
