@@ -3614,7 +3614,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       sel->nir = tgsi_to_nir(state->tokens, ctx->screen, true);
    } else {
       assert(state->type == PIPE_SHADER_IR_NIR);
-      sel->nir = (nir_shader*)state->ir.nir;
+      sel->nir = state->ir.nir;
    }
 
    si_nir_scan_shader(sscreen, sel->nir, &sel->info, false);

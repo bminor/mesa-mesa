@@ -604,7 +604,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->writes_position = nir->info.outputs_written & VARYING_BIT_POS;
    }
 
-   nir_function_impl *impl = nir_shader_get_entrypoint((nir_shader*)nir);
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    nir_foreach_block (block, impl) {
       nir_foreach_instr (instr, block)
          scan_instruction(nir, info, instr, colors_lowered);
@@ -666,7 +666,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    info->uses_vmem_load_other |= info->uses_indirect_descriptor;
-   info->has_divergent_loop = nir_has_divergent_loop((nir_shader*)nir);
+   info->has_divergent_loop = nir_has_divergent_loop(nir);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       info->num_vs_inputs =

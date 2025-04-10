@@ -4106,7 +4106,7 @@ pipe_shader_state_to_tgsi_tokens(struct pipe_screen *screen,
                                  const struct pipe_shader_state *cso)
 {
    if (cso->type == PIPE_SHADER_IR_NIR) {
-      return nir_to_tgsi((nir_shader *)cso->ir.nir, screen);
+      return nir_to_tgsi(cso->ir.nir, screen);
    } else {
       assert(cso->type == PIPE_SHADER_IR_TGSI);
       /* we need to keep a local copy of the tokens */
