@@ -694,7 +694,7 @@
         "description": "mesa/main: remove non-existing function prototype",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a347a0f53fbdd9b607d7eae4a483e62f82c68cb1",
         "notes": null
