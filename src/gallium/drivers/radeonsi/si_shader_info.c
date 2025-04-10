@@ -280,6 +280,13 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       case nir_texop_tg4:
          info->uses_vmem_sampler_or_bvh = true;
          break;
+      case nir_texop_txs:
+      case nir_texop_query_levels:
+      case nir_texop_texture_samples:
+      case nir_texop_descriptor_amd:
+      case nir_texop_sampler_descriptor_amd:
+         /* These just return the descriptor or information from it. */
+         break;
       default:
          info->uses_vmem_load_other = true;
          break;
@@ -292,15 +299,12 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
    } else if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       const char *intr_name = nir_intrinsic_infos[intr->intrinsic].name;
-      bool is_ssbo = strstr(intr_name, "ssbo");
-      bool is_image = strstr(intr_name, "image") == intr_name;
-      bool is_bindless_image = strstr(intr_name, "bindless_image") == intr_name;
 
       /* Gather the types of used VMEM instructions that return something. */
       if (nir_intrinsic_infos[intr->intrinsic].has_dest) {
          switch (intr->intrinsic) {
          case nir_intrinsic_load_ubo:
-            if (!nir_src_is_const(intr->src[1]))
+            if (intr->src[1].ssa->divergent)
                info->uses_vmem_load_other = true;
             break;
 
@@ -313,26 +317,46 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
             break;
 
          case nir_intrinsic_load_constant:
-         case nir_intrinsic_load_barycentric_at_sample: /* This loads sample positions. */
+            if (intr->src[0].ssa->divergent)
+               info->uses_vmem_load_other = true;
+            break;
+
+         /* Global */
+         case nir_intrinsic_load_global:
+         case nir_intrinsic_global_atomic:
+         case nir_intrinsic_global_atomic_swap:
+         /* SSBOs (this list is from si_nir_lower_resource.c) */
+         case nir_intrinsic_load_ssbo:
+         case nir_intrinsic_ssbo_atomic:
+         case nir_intrinsic_ssbo_atomic_swap:
+         /* Images (this list is from si_nir_lower_resource.c) */
+         case nir_intrinsic_image_deref_load:
+         case nir_intrinsic_image_deref_sparse_load:
+         case nir_intrinsic_image_deref_fragment_mask_load_amd:
+         case nir_intrinsic_image_deref_atomic:
+         case nir_intrinsic_image_deref_atomic_swap:
+         case nir_intrinsic_bindless_image_load:
+         case nir_intrinsic_bindless_image_sparse_load:
+         case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+         case nir_intrinsic_bindless_image_atomic:
+         case nir_intrinsic_bindless_image_atomic_swap:
+         /* Scratch */
+         case nir_intrinsic_load_scratch:
+         /* AMD-specific. */
          case nir_intrinsic_load_buffer_amd:
-            info->uses_vmem_load_other = true;
+            /* Atomics without return are not treated as loads. */
+            if (nir_def_components_read(&intr->def) &&
+                (!nir_intrinsic_has_atomic_op(intr) ||
+                 nir_intrinsic_atomic_op(intr) != nir_atomic_op_ordered_add_gfx12_amd))
+               info->uses_vmem_load_other = true;
             break;
 
          default:
-            if (is_image ||
-                is_bindless_image ||
-                is_ssbo ||
-                (strstr(intr_name, "global") == intr_name ||
-                 intr->intrinsic == nir_intrinsic_load_global ||
-                 intr->intrinsic == nir_intrinsic_store_global) ||
-                strstr(intr_name, "scratch"))
-               info->uses_vmem_load_other = true;
             break;
          }
       }
 
-      if (is_bindless_image)
-         info->uses_bindless_images = true;
+      info->uses_bindless_images |= strstr(intr_name, "bindless_image") == intr_name;
 
       if (nir_intrinsic_has_atomic_op(intr)) {
          if (nir_intrinsic_atomic_op(intr) == nir_atomic_op_ordered_add_gfx12_amd)
@@ -442,6 +466,8 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
+   nir_divergence_analysis(nir);
+
 #if AMD_LLVM_AVAILABLE
    bool force_use_aco = sscreen->use_aco_shader_type == nir->info.stage;
    for (unsigned i = 0; i < sscreen->num_use_aco_shader_blakes; i++) {
