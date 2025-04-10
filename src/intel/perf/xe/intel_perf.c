@@ -18,6 +18,27 @@
 
 #define FIELD_PREP_ULL(_mask, _val) (((_val) << (ffsll(_mask) - 1)) & (_mask))
 
+/*
+ * EU stall data format for Xe2 arch GPUs (LNL, BMG).
+ */
+struct xe_eu_stall_data_xe2 {
+   uint64_t ip_addr:29;          /* Bits 0  to 28  */
+   uint64_t tdr_count:8;         /* Bits 29 to 36  */
+   uint64_t other_count:8;       /* Bits 37 to 44  */
+   uint64_t control_count:8;     /* Bits 45 to 52  */
+   uint64_t pipestall_count:8;   /* Bits 53 to 60  */
+   uint64_t send_count:8;        /* Bits 61 to 68  */
+   uint64_t dist_acc_count:8;    /* Bits 69 to 76  */
+   uint64_t sbid_count:8;        /* Bits 77 to 84  */
+   uint64_t sync_count:8;        /* Bits 85 to 92  */
+   uint64_t inst_fetch_count:8;  /* Bits 93 to 100 */
+   uint64_t active_count:8;      /* Bits 101 to 108 */
+   uint64_t ex_id:3;             /* Bits 109 to 111 */
+   uint64_t end_flag:1;          /* Bit  112 */
+   uint64_t unused_bits:15;
+   uint64_t unused[6];
+} __packed;
+
 uint64_t xe_perf_get_oa_format(struct intel_perf_config *perf)
 {
    uint64_t fmt;
@@ -385,7 +406,7 @@ int
 xe_perf_eustall_stream_open(int drm_fd, uint32_t sample_rate,
                             uint32_t min_event_count)
 {
-   struct drm_xe_ext_set_property props[DRM_XE_EU_STALL_PROP_MAX] = {};
+   struct drm_xe_ext_set_property props[DRM_XE_EU_STALL_PROP_WAIT_NUM_REPORTS + 1] = {};
    struct drm_xe_observation_param observation_param = {
       .observation_type = DRM_XE_OBSERVATION_TYPE_EU_STALL,
       .observation_op = DRM_XE_OBSERVATION_OP_STREAM_OPEN,
@@ -475,8 +496,8 @@ xe_perf_eustall_accumulate_results(struct intel_perf_query_eustall_result *resul
    assert(((end - start) % record_size) == 0);
 
    for (offset = start; offset < end; offset += record_size) {
-      const struct drm_xe_eu_stall_data_xe2* stall_data =
-         (const struct drm_xe_eu_stall_data_xe2*)offset;
+      const struct xe_eu_stall_data_xe2* stall_data =
+         (const struct xe_eu_stall_data_xe2*)offset;
       struct intel_perf_query_eustall_event* stall_result;
       uint64_t ip_addr = stall_data->ip_addr;
       struct hash_entry *e = _mesa_hash_table_search(result->accumulator,
