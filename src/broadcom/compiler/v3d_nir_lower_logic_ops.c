@@ -354,6 +354,9 @@ v3d_nir_lower_logic_ops_block(nir_block *block, struct v3d_compile *c)
                         const int rt = driver_loc;
                         assert(rt < V3D_MAX_DRAW_BUFFERS);
 
+                        if (!(c->fs_key->cbufs & (1 << rt)))
+                                continue;
+
                         const enum pipe_format format =
                                 c->fs_key->color_fmt[rt].format;
                         if (util_format_is_float(format) ||
