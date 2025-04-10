@@ -2739,31 +2739,32 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    assert(nir->info.use_aco_amd == si_shader_uses_aco(shader));
    const BITSET_WORD *sysvals = nir->info.system_values_read;
+   /* Find out which frag coord components are used. */
+   uint8_t frag_coord_mask = 0;
 
-   /* ACO needs spi_ps_input_ena before si_init_shader_args. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* Find out which frag coord components are used. */
-      uint8_t frag_coord_mask = 0;
-
       /* Since flat+convergent and non-flat components can occur in the same vec4, start with
        * all PS inputs as flat and change them to smooth when we find a component that's
        * interpolated.
        */
       for (unsigned i = 0; i < ARRAY_SIZE(shader->info.ps_inputs); i++)
          shader->info.ps_inputs[i].interpolate = INTERP_MODE_FLAT;
+   }
 
-      nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
-         nir_foreach_instr(instr, block) {
-            if (instr->type == nir_instr_type_intrinsic) {
-               nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
+      nir_foreach_instr(instr, block) {
+         switch (instr->type) {
+         case nir_instr_type_intrinsic:
+            nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
-               switch (intr->intrinsic) {
-               case nir_intrinsic_load_frag_coord:
-               case nir_intrinsic_load_sample_pos:
-                  frag_coord_mask |= nir_def_components_read(&intr->def);
-                  break;
-               case nir_intrinsic_load_input:
-               case nir_intrinsic_load_interpolated_input: {
+            switch (intr->intrinsic) {
+            case nir_intrinsic_load_frag_coord:
+            case nir_intrinsic_load_sample_pos:
+               frag_coord_mask |= nir_def_components_read(&intr->def);
+               break;
+            case nir_intrinsic_load_input:
+            case nir_intrinsic_load_interpolated_input: {
+               if (nir->info.stage == MESA_SHADER_FRAGMENT) {
                   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
                   unsigned index = nir_intrinsic_base(intr);
                   assert(sem.num_slots == 1);
@@ -2778,23 +2779,27 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                      if (intr->def.bit_size == 16)
                         shader->info.ps_inputs[index].fp16_lo_hi_valid |= 0x1 << sem.high_16bits;
                   }
-                  break;
                }
-               case nir_intrinsic_load_color0:
-                  assert(!shader->is_monolithic);
-                  shader->info.ps_colors_read |= nir_def_components_read(&intr->def);
-                  break;
-               case nir_intrinsic_load_color1:
-                  assert(!shader->is_monolithic);
-                  shader->info.ps_colors_read |= nir_def_components_read(&intr->def) << 4;
-                  break;
-               default:
-                  break;
-               }
+               break;
             }
+            case nir_intrinsic_load_color0:
+               assert(!shader->is_monolithic);
+               shader->info.ps_colors_read |= nir_def_components_read(&intr->def);
+               break;
+            case nir_intrinsic_load_color1:
+               assert(!shader->is_monolithic);
+               shader->info.ps_colors_read |= nir_def_components_read(&intr->def) << 4;
+               break;
+            default:
+               break;
+            }
+         default:
+            break;
          }
       }
+   }
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* Add both front and back color inputs. */
       if (!shader->is_monolithic) {
          unsigned index = shader->info.num_ps_inputs;
@@ -2822,6 +2827,7 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
          }
       }
 
+      /* ACO needs spi_ps_input_ena before si_init_shader_args. */
       shader->config.spi_ps_input_ena =
          S_0286CC_PERSP_SAMPLE_ENA(BITSET_TEST(sysvals, SYSTEM_VALUE_BARYCENTRIC_PERSP_SAMPLE)) |
          S_0286CC_PERSP_CENTER_ENA(BITSET_TEST(sysvals, SYSTEM_VALUE_BARYCENTRIC_PERSP_PIXEL)) |
