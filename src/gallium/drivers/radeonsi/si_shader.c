@@ -2762,6 +2762,18 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
             switch (intr->intrinsic) {
+            case nir_intrinsic_load_instance_id:
+               shader->info.uses_instance_id = true;
+               break;
+            case nir_intrinsic_load_base_vertex:
+               shader->info.uses_vs_state_indexed = true;
+               break;
+            case nir_intrinsic_load_base_instance:
+               shader->info.uses_base_instance = true;
+               break;
+            case nir_intrinsic_load_draw_id:
+               shader->info.uses_draw_id = true;
+               break;
             case nir_intrinsic_load_frag_coord:
             case nir_intrinsic_load_sample_pos:
                frag_coord_mask |= nir_def_components_read(&intr->def);
@@ -2770,8 +2782,19 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
             case nir_intrinsic_load_input_vertex:
             case nir_intrinsic_load_per_vertex_input:
             case nir_intrinsic_load_interpolated_input: {
-               if (nir->info.stage == MESA_SHADER_VERTEX ||
-                   nir->info.stage == MESA_SHADER_TESS_EVAL) {
+               if (nir->info.stage == MESA_SHADER_VERTEX) {
+                  shader->info.uses_vmem_load_other = true;
+
+                  if (intr->intrinsic == nir_intrinsic_load_input) {
+                     if ((shader->key.ge.mono.instance_divisor_is_one |
+                          shader->key.ge.mono.instance_divisor_is_fetched) &
+                          BITFIELD_BIT(nir_intrinsic_base(intr))) {
+                        /* Instanced attribs. */
+                        shader->info.uses_instance_id = true;
+                        shader->info.uses_base_instance = true;
+                     }
+                  }
+               } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
                   shader->info.uses_vmem_load_other = true;
                } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
                   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
@@ -2957,18 +2980,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
 
-   if (shader->selector->stage <= MESA_SHADER_GEOMETRY) {
-      shader->info.uses_instanceid |=
-         shader->key.ge.mono.instance_divisor_is_one ||
-         shader->key.ge.mono.instance_divisor_is_fetched;
-
-      if (linked->producer.nir) {
-         shader->info.uses_instanceid |=
-            linked->producer.shader->selector->info.uses_instanceid ||
-            linked->producer.shader->info.uses_instanceid;
-      }
-   }
-
    /* Remove holes after removed PS inputs by renumbering them. Holes can only occur with
     * monolithic PS.
     */
@@ -3138,8 +3149,6 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
       shader->info.vs_output_ps_input_cntl[i] = SI_PS_INPUT_CNTL_UNUSED;
    shader->info.vs_output_ps_input_cntl[VARYING_SLOT_COL0] = SI_PS_INPUT_CNTL_UNUSED_COLOR0;
 
-   /* uses_instanceid may be set by si_nir_lower_vs_inputs(). */
-   shader->info.uses_instanceid |= sel->info.uses_instanceid;
    shader->info.private_mem_vgprs = DIV_ROUND_UP(nir->scratch_size, 4);
 
    /* Set the FP ALU behavior. */
@@ -3744,9 +3753,13 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
          shader->config.scratch_bytes_per_wave =
             MAX2(shader->config.scratch_bytes_per_wave,
                  shader->previous_stage->config.scratch_bytes_per_wave);
-         shader->info.uses_instanceid |= shader->previous_stage->info.uses_instanceid;
+
          shader->info.uses_vmem_load_other |= shader->previous_stage->info.uses_vmem_load_other;
          shader->info.uses_vmem_sampler_or_bvh |= shader->previous_stage->info.uses_vmem_sampler_or_bvh;
+         shader->info.uses_instance_id |= shader->previous_stage->info.uses_instance_id;
+         shader->info.uses_base_instance |= shader->previous_stage->info.uses_base_instance;
+         shader->info.uses_draw_id |= shader->previous_stage->info.uses_draw_id;
+         shader->info.uses_vs_state_indexed |= shader->previous_stage->info.uses_vs_state_indexed;
       }
       if (shader->epilog) {
          shader->config.num_sgprs =
@@ -3782,22 +3795,6 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
                                    sel->stage == MESA_SHADER_VERTEX &&
                                    (si_shader_uses_streamout(shader) ||
                                     shader->uses_vs_state_provoking_vertex);
-
-   if (sel->stage == MESA_SHADER_VERTEX) {
-      shader->uses_base_instance = sel->info.uses_base_instance ||
-                                   shader->key.ge.mono.instance_divisor_is_one ||
-                                   shader->key.ge.mono.instance_divisor_is_fetched;
-   } else if (sel->stage == MESA_SHADER_TESS_CTRL) {
-      shader->uses_base_instance = shader->previous_stage_sel &&
-                                   (shader->previous_stage_sel->info.uses_base_instance ||
-                                    shader->key.ge.mono.instance_divisor_is_one ||
-                                    shader->key.ge.mono.instance_divisor_is_fetched);
-   } else if (sel->stage == MESA_SHADER_GEOMETRY) {
-      shader->uses_base_instance = shader->previous_stage_sel &&
-                                   (shader->previous_stage_sel->info.uses_base_instance ||
-                                    shader->key.ge.mono.instance_divisor_is_one ||
-                                    shader->key.ge.mono.instance_divisor_is_fetched);
-   }
 
    si_fix_resource_usage(sscreen, shader);
 

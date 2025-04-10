@@ -159,12 +159,10 @@ static bool si_update_shaders(struct si_context *sctx)
       }
    }
 
-   if (GFX_VERSION >= GFX9 && HAS_TESS)
-      sctx->vs_uses_base_instance = sctx->queued.named.hs->uses_base_instance;
-   else if (GFX_VERSION >= GFX9 && HAS_GS)
-      sctx->vs_uses_base_instance = sctx->shader.gs.current->uses_base_instance;
-   else
-      sctx->vs_uses_base_instance = sctx->shader.vs.current->uses_base_instance;
+   struct si_shader *api_vs = si_get_api_vs_inline(sctx, GFX_VERSION, HAS_TESS, HAS_GS);
+   sctx->vs_uses_base_instance = api_vs->info.uses_base_instance;
+   sctx->vs_uses_draw_id = api_vs->info.uses_draw_id;
+   sctx->vs_uses_vs_state_indexed = api_vs->info.uses_vs_state_indexed;
 
    /* Update VGT_SHADER_STAGES_EN. */
    uint32_t vgt_stages = 0;
@@ -1002,7 +1000,7 @@ static void si_emit_vs_state(struct si_context *sctx, unsigned index_size)
    unsigned vs_state = sctx->current_vs_state; /* all VS bits */
    unsigned gs_state = sctx->current_gs_state; /* only GS and NGG bits; VS bits will be copied here */
 
-   if (sctx->shader.vs.cso->info.uses_base_vertex && index_size)
+   if (sctx->vs_uses_vs_state_indexed && index_size)
       vs_state |= ENCODE_FIELD(VS_STATE_INDEXED, 1);
 
    /* Copy all state bits from vs_state to gs_state. */
@@ -1473,7 +1471,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
          radeon_emit((sh_base_reg + SI_SGPR_BASE_VERTEX * 4 - SI_SH_REG_OFFSET) >> 2);
          radeon_emit((sh_base_reg + SI_SGPR_START_INSTANCE * 4 - SI_SH_REG_OFFSET) >> 2);
          radeon_emit(((sh_base_reg + SI_SGPR_DRAWID * 4 - SI_SH_REG_OFFSET) >> 2) |
-                     S_2C3_DRAW_INDEX_ENABLE(sctx->shader.vs.cso->info.uses_drawid) |
+                     S_2C3_DRAW_INDEX_ENABLE(sctx->vs_uses_draw_id) |
                      S_2C3_COUNT_INDIRECT_ENABLE(!!indirect->indirect_draw_count));
          radeon_emit(indirect->draw_count);
          radeon_emit(count_va);

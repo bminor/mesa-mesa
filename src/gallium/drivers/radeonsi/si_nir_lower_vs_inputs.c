@@ -48,11 +48,8 @@ get_vertex_index(nir_builder *b, int input_index, struct lower_vs_inputs_state *
 
    if (divisor_is_one || divisor_is_fetched) {
       nir_def *instance_id = nir_load_instance_id(b);
-
-      /* This is used to determine vs vgpr count in si_get_vs_vgpr_comp_cnt(). */
-      s->shader->info.uses_instanceid = true;
-
       nir_def *index = NULL;
+
       if (divisor_is_one) {
          index = instance_id;
       } else {

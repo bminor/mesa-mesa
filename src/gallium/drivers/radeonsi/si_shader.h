@@ -539,10 +539,6 @@ struct si_shader_info {
    bool uses_linear_sample;
    bool uses_interp_at_offset;
    bool uses_interp_at_sample;
-   bool uses_instanceid;
-   bool uses_base_vertex;
-   bool uses_base_instance;
-   bool uses_drawid;
    bool uses_primid;
    bool uses_frontface;
    bool uses_invocationid;
@@ -876,7 +872,10 @@ struct si_shader_binary_info {
    bool uses_vmem_sampler_or_bvh : 1;
    bool has_non_uniform_tex_access : 1;
    bool has_shadow_comparison : 1;
-   bool uses_instanceid : 1;
+   bool uses_instance_id : 1;
+   bool uses_base_instance : 1;
+   bool uses_draw_id : 1;
+   bool uses_vs_state_indexed : 1; /* VS_STATE_INDEXED */
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    unsigned private_mem_vgprs;
@@ -956,8 +955,6 @@ struct si_shader {
    /* SI_SGPR_VS_STATE_BITS */
    bool uses_vs_state_provoking_vertex;
    bool uses_gs_state_outprim;
-
-   bool uses_base_instance;
 
    /* Shader key + LLVM IR + disassembly + statistics.
     * Generated for debug contexts only.

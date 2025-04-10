@@ -110,16 +110,10 @@ retry_select_mode:
       }
    } else {
       /* VS and TES. */
-
-      bool uses_instance_id = gs_sel->info.uses_instanceid;
       bool uses_primitive_id = gs_sel->info.uses_primid;
-      if (gs_stage == MESA_SHADER_VERTEX) {
-         uses_instance_id |=
-            shader->key.ge.mono.instance_divisor_is_one ||
-            shader->key.ge.mono.instance_divisor_is_fetched;
-      } else {
+
+      if (gs_stage == MESA_SHADER_TESS_EVAL)
          uses_primitive_id |= shader->key.ge.mono.u.vs_export_prim_id;
-      }
 
       esvert_lds_size = ac_ngg_nogs_get_pervertex_lds_size(
          gs_stage, gs_sel->info.num_outputs,
@@ -127,7 +121,7 @@ retry_select_mode:
          shader->key.ge.mono.u.vs_export_prim_id,
          gfx10_ngg_writes_user_edgeflags(shader),
          si_shader_culling_enabled(shader),
-         uses_instance_id,
+         shader->info.uses_instance_id,
          uses_primitive_id) / 4;
    }
 

@@ -1091,6 +1091,7 @@ struct si_context {
    bool compute_image_sgprs_dirty;
    bool vs_uses_base_instance;
    bool vs_uses_draw_id;
+   bool vs_uses_vs_state_indexed;
    uint8_t patch_vertices;
    bool has_tessellation; /* whether si_screen::tess_rings* are valid */
 
@@ -1833,6 +1834,18 @@ si_get_vs_inline(struct si_context *sctx, enum si_has_tess has_tess, enum si_has
       return &sctx->shader.tes;
 
    return &sctx->shader.vs;
+}
+
+static ALWAYS_INLINE struct si_shader *
+si_get_api_vs_inline(struct si_context *sctx, enum amd_gfx_level gfx_level,
+                     enum si_has_tess has_tess, enum si_has_gs has_gs)
+{
+   if (gfx_level >= GFX9 && has_tess)
+      return sctx->queued.named.hs; /* this can also be the passthrough TCS */
+   else if (gfx_level >= GFX9 && has_gs)
+      return sctx->shader.gs.current;
+   else
+      return sctx->shader.vs.current;
 }
 
 static inline struct si_shader_ctx_state *si_get_vs(struct si_context *sctx)

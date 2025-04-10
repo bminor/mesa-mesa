@@ -660,7 +660,7 @@ static unsigned si_get_vs_vgpr_comp_cnt(struct si_screen *sscreen, struct si_sha
    bool is_ls = shader->selector->stage == MESA_SHADER_TESS_CTRL || shader->key.ge.as_ls;
    unsigned max = 0;
 
-   if (shader->info.uses_instanceid) {
+   if (shader->info.uses_instance_id) {
       if (sscreen->info.gfx_level >= GFX12)
          max = MAX2(max, 1);
       else if (sscreen->info.gfx_level >= GFX10)
@@ -3836,7 +3836,6 @@ static void si_bind_vs_shader(struct pipe_context *ctx, void *state)
    sctx->shader.vs.key.ge.use_aco = sel ? sel->info.base.use_aco_amd : 0;
 #endif
    sctx->num_vs_blit_sgprs = sel ? sel->info.base.vs.blit_sgprs_amd : 0;
-   sctx->vs_uses_draw_id = sel ? sel->info.uses_drawid : false;
 
    if (old_uses_vbos != new_uses_vbos) {
       sctx->num_vertex_elements = new_uses_vbos ? sctx->vertex_elements->count : 0;
