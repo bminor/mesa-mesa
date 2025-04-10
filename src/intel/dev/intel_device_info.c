@@ -984,12 +984,6 @@ static const struct intel_device_info intel_device_info_adl_gt1 = {
    .platform = INTEL_PLATFORM_ADL,
 };
 
-static const struct intel_device_info intel_device_info_adl_n = {
-   GFX12_GT_CONFIG(1),
-   .platform = INTEL_PLATFORM_ADL,
-   .is_adl_n = true,
-};
-
 static const struct intel_device_info intel_device_info_adl_gt2 = {
    GFX12_GT_CONFIG(2),
    .platform = INTEL_PLATFORM_ADL,
@@ -1858,7 +1852,7 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min
       drmFreeDevice(&drmdev);
       return false;
    }
-   
+
    if ((min_ver > 0 && devinfo->ver < min_ver) || (max_ver > 0 && devinfo->ver > max_ver)) {
       drmFreeDevice(&drmdev);
       return false;

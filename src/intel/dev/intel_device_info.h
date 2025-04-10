@@ -55,9 +55,6 @@ extern "C" {
 #define intel_device_info_is_mtl(devinfo) \
    intel_platform_in_range((devinfo)->platform, MTL)
 
-#define intel_device_info_is_adln(devinfo) \
-   (devinfo->is_adl_n == true)
-
 #define intel_device_info_is_arl(devinfo) \
    intel_platform_in_range((devinfo)->platform, ARL)
 
