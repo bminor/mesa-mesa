@@ -1483,7 +1483,7 @@ st_ChooseTextureFormat(struct gl_context *ctx, GLenum target,
  */
 static size_t
 st_QuerySamplesForFormat(struct gl_context *ctx, GLenum target,
-                         GLenum internalFormat, int samples[16])
+                         GLenum internalFormat, int samples[MAX_SAMPLES])
 {
    struct st_context *st = st_context(ctx);
    enum pipe_format format;
@@ -1512,7 +1512,7 @@ st_QuerySamplesForFormat(struct gl_context *ctx, GLenum target,
    }
 
    /* Set sample counts in descending order. */
-   for (i = 16; i > 1; i--) {
+   for (i = MAX_SAMPLES; i > 1; i--) {
       format = st_choose_format(st, internalFormat, GL_NONE, GL_NONE,
                                 PIPE_TEXTURE_2D, i, i, bind,
                                 false, false);
@@ -1545,7 +1545,7 @@ st_QueryTextureFormatSupport(struct gl_context *ctx, GLenum target, GLenum inter
    /* multisample textures need >= 2 samples */
    unsigned min_samples = target == GL_TEXTURE_2D_MULTISAMPLE ||
                           target == GL_TEXTURE_2D_MULTISAMPLE_ARRAY ? 1 : 0;
-   unsigned max_samples = min_samples ? 16 : 1;
+   unsigned max_samples = min_samples ? MAX_SAMPLES : 1;
 
    /* compressed textures will be allocated as e.g., RGBA8, so check that instead */
    enum pipe_format pf = st_choose_format(st, internalFormat, GL_NONE, GL_NONE,
@@ -1628,7 +1628,7 @@ st_QueryInternalFormat(struct gl_context *ctx, GLenum target,
       break;
 
    case GL_NUM_SAMPLE_COUNTS: {
-      int samples[16];
+      int samples[MAX_SAMPLES];
       size_t num_samples;
       num_samples = st_QuerySamplesForFormat(ctx, target, internalFormat,
                                              samples);

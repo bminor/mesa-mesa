@@ -1144,7 +1144,7 @@ guess_and_alloc_texture(struct st_context *st,
    unsigned nr_samples = 0;
    if (stObj->TargetIndex == TEXTURE_2D_MULTISAMPLE_INDEX ||
        stObj->TargetIndex == TEXTURE_2D_MULTISAMPLE_ARRAY_INDEX) {
-      int samples[16];
+      int samples[MAX_SAMPLES];
       st_QueryInternalFormat(st->ctx, 0, stImage->InternalFormat, GL_SAMPLES, samples);
       nr_samples = samples[0];
    }

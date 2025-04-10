@@ -909,7 +909,7 @@ void GLAPIENTRY
 _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
                           GLsizei bufSize, GLint *params)
 {
-   GLint buffer[16];
+   GLint buffer[MAX_SAMPLES];
    GET_CURRENT_CONTEXT(ctx);
 
    ASSERT_OUTSIDE_BEGIN_END(ctx);
@@ -925,7 +925,7 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
       return;
 
    /* initialize the contents of the temporary buffer */
-   memcpy(buffer, params, MIN2(bufSize, 16) * sizeof(GLint));
+   memcpy(buffer, params, MIN2(bufSize, MAX_SAMPLES) * sizeof(GLint));
 
    /* Use the 'unsupported' response defined by the spec for every pname
     * as the default answer.

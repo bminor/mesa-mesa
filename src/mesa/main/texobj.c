@@ -1089,7 +1089,7 @@ _mesa_get_fallback_texture(struct gl_context *ctx, gl_texture_index tex, bool is
          GLenum internalFormat = is_depth ? GL_DEPTH_COMPONENT : GL_RGBA;
          if (tex == TEXTURE_2D_MULTISAMPLE_INDEX ||
              tex == TEXTURE_2D_MULTISAMPLE_ARRAY_INDEX) {
-            int samples[16];
+            int samples[MAX_SAMPLES];
             st_QueryInternalFormat(ctx, 0, internalFormat, GL_SAMPLES, samples);
             _mesa_init_teximage_fields_ms(ctx, texImage,
                                           width,

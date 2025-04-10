@@ -1373,12 +1373,12 @@ void st_init_extensions(struct pipe_screen *screen,
 
       consts->MaxSamples =
          get_max_samples_for_formats(screen, ARRAY_SIZE(color_formats),
-                                     color_formats, 16,
+                                     color_formats, MAX_SAMPLES,
                                      PIPE_BIND_RENDER_TARGET);
 
       consts->MaxImageSamples =
          get_max_samples_for_formats(screen, ARRAY_SIZE(color_formats),
-                                     color_formats, 16,
+                                     color_formats, MAX_SAMPLES,
                                      PIPE_BIND_SHADER_IMAGE);
 
       consts->MaxColorTextureSamples =
@@ -1408,7 +1408,7 @@ void st_init_extensions(struct pipe_screen *screen,
          consts->MaxColorFramebufferSamples =
             get_max_samples_for_formats_advanced(screen,
                                                 ARRAY_SIZE(color_formats),
-                                                color_formats, 16,
+                                                color_formats, MAX_SAMPLES,
                                                 consts->MaxSamples,
                                                 PIPE_BIND_RENDER_TARGET);
 

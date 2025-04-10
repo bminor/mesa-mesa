@@ -302,6 +302,10 @@
  */
 #define MAX_CLIPPED_VERTICES ((2 * (6 + MAX_CLIP_PLANES))+1)
 
+/**
+ * Maximum number of MSAA samples
+ */
+#define MAX_SAMPLES 16
 
 /** For GL_ARB_sample_locations - maximum of SAMPLE_LOCATION_PIXEL_GRID_*_ARB */
 #define MAX_SAMPLE_LOCATION_GRID_SIZE 4

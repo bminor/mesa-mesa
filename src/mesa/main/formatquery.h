@@ -25,6 +25,7 @@
 #define FORMATQUERY_H
 
 #include "util/glheader.h"
+#include "config.h"
 
 void
 _mesa_query_internal_format_default(struct gl_context *ctx, GLenum target,
