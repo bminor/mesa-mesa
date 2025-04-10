@@ -136,13 +136,6 @@
     - debian/baremetal_arm64_test
     - debian-arm64-release
 
-.piglit-performance:x86_64:
-  extends:
-    - .piglit-performance-base
-  needs:
-    - kernel+rootfs_x86_64
-    - debian-release
-
 # Mesa source file dependencies that may impact any GL driver test job.
 .gallium-core-rules:
   rules:

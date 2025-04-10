@@ -687,17 +687,6 @@ kernel+rootfs_arm32:
     DEBIAN_ARCH: "armhf"
     LLVM_VERSION: &debian-arm32-llvm 15 # no armhf builds for LLVM
 
-# Cannot use anchors defined here from included files, so use extends: instead
-.use-kernel+rootfs-arm:
-  variables:
-    DISTRIBUTION_TAG: *distribution-tag-arm
-    MESA_ROOTFS_TAG: *kernel-rootfs
-
-.use-kernel+rootfs-x86_64:
-  variables:
-    DISTRIBUTION_TAG: *distribution-tag-x86_64
-    MESA_ROOTFS_TAG: *kernel-rootfs
-
 # x86_64 image with ARM64 & ARM32 kernel & rootfs for baremetal testing
 .debian/baremetal_arm_test:
   extends:
