@@ -3285,8 +3285,8 @@ static bool si_shader_select_tcs_parts(struct si_screen *sscreen, struct ac_llvm
 {
    if (sscreen->info.gfx_level >= GFX9) {
       assert(shader->wave_size == 32 || shader->wave_size == 64);
-      unsigned index = shader->wave_size / 32 - 1;
-      shader->previous_stage = shader->key.ge.part.tcs.ls->main_shader_part_ls[index];
+      unsigned wave_size_index = shader->wave_size == 64;
+      shader->previous_stage = shader->key.ge.part.tcs.ls->main_parts.named.ls[wave_size_index];
    }
 
    return true;
@@ -3301,10 +3301,10 @@ static bool si_shader_select_gs_parts(struct si_screen *sscreen, struct ac_llvm_
    if (sscreen->info.gfx_level >= GFX9) {
       if (shader->key.ge.as_ngg) {
          assert(shader->wave_size == 32 || shader->wave_size == 64);
-         unsigned index = shader->wave_size / 32 - 1;
-         shader->previous_stage = shader->key.ge.part.gs.es->main_shader_part_ngg_es[index];
+         unsigned wave_size_index = shader->wave_size == 64;
+         shader->previous_stage = shader->key.ge.part.gs.es->main_parts.named.ngg_es[wave_size_index];
       } else {
-         shader->previous_stage = shader->key.ge.part.gs.es->main_shader_part_es;
+         shader->previous_stage = shader->key.ge.part.gs.es->main_parts.named.es;
       }
    }
 

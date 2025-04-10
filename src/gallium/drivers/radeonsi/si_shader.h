@@ -587,6 +587,18 @@ struct si_shader_info {
    uint8_t reads_frag_coord_mask;
 };
 
+union si_main_shader_parts {
+   struct si_main_shader_parts_named {
+      /* indices: [wave_size == 64] */
+      struct si_shader *other[2];
+      struct si_shader *ls[2];     /* as_ls is set in the key */
+      struct si_shader *es;        /* as_es && !as_ngg in the key */
+      struct si_shader *ngg[2];    /* !as_es && as_ngg in the key */
+      struct si_shader *ngg_es[2]; /* as_es && as_ngg in the key */
+   } named;
+   struct si_shader *variants[sizeof(struct si_main_shader_parts_named) / sizeof(struct si_shader*)];
+};
+
 /* A shader selector is a gallium CSO and contains shader variants and
  * binaries for one NIR program. This can be shared by multiple contexts.
  */
@@ -605,14 +617,8 @@ struct si_shader_selector {
 
    /* The compiled NIR shader without a prolog and/or epilog (not
     * uploaded to a buffer object).
-    *
-    * [0] for wave32, [1] for wave64.
     */
-   struct si_shader *main_shader_part[2];
-   struct si_shader *main_shader_part_ls[2];     /* as_ls is set in the key */
-   struct si_shader *main_shader_part_es;        /* as_es && !as_ngg in the key */
-   struct si_shader *main_shader_part_ngg[2];    /* !as_es && as_ngg in the key */
-   struct si_shader *main_shader_part_ngg_es[2]; /* as_es && as_ngg in the key */
+   union si_main_shader_parts main_parts;
 
    struct nir_shader *nir;
    void *nir_binary;
@@ -1108,22 +1114,22 @@ static inline struct si_shader **si_get_main_shader_part(struct si_shader_select
                                                          unsigned wave_size)
 {
    assert(wave_size == 32 || wave_size == 64);
-   unsigned index = wave_size / 32 - 1;
+   unsigned wave_size_index = wave_size == 64;
 
    if (sel->stage <= MESA_SHADER_GEOMETRY) {
       if (key->ge.as_ls)
-         return &sel->main_shader_part_ls[index];
+         return &sel->main_parts.named.ls[wave_size_index];
       if (key->ge.as_es && key->ge.as_ngg)
-         return &sel->main_shader_part_ngg_es[index];
+         return &sel->main_parts.named.ngg_es[wave_size_index];
       if (key->ge.as_es) {
          /* legacy GS only support wave 64 */
          assert(wave_size == 64);
-         return &sel->main_shader_part_es;
+         return &sel->main_parts.named.es;
       }
       if (key->ge.as_ngg)
-         return &sel->main_shader_part_ngg[index];
+         return &sel->main_parts.named.ngg[wave_size_index];
    }
-   return &sel->main_shader_part[index];
+   return &sel->main_parts.named.other[wave_size_index];
 }
 
 static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
