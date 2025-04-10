@@ -2880,7 +2880,6 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
 
-   /* TODO: gather shader_info here */
    if (shader->selector->stage <= MESA_SHADER_GEOMETRY) {
       shader->info.uses_instanceid |=
          shader->key.ge.mono.instance_divisor_is_one ||
@@ -2893,19 +2892,17 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       }
    }
 
-   if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
-      /* Remove holes after removed PS inputs by renumbering them. Holes can only occur with
-       * monolithic PS.
-       */
-      if (shader->is_monolithic)
-         NIR_PASS_V(linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
-
-      si_get_shader_variant_info(shader, linked->consumer.nir);
-   }
+   /* Remove holes after removed PS inputs by renumbering them. Holes can only occur with
+    * monolithic PS.
+    */
+   if (shader->selector->stage == MESA_SHADER_FRAGMENT && shader->is_monolithic)
+      NIR_PASS_V(linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
-      if (linked->shader[i].nir)
+      if (linked->shader[i].nir) {
+         si_get_shader_variant_info(shader, linked->shader[i].nir);
          run_late_optimization_and_lowering_passes(&linked->shader[i]);
+      }
    }
 
    /* TODO: gather this where other shader_info is gathered */
