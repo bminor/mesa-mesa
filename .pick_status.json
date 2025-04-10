@@ -1044,7 +1044,7 @@
         "description": "brw/cmod: Don't propagate from CMP to possible Inf + (-Inf)",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "020b0055e7a085a6a8c961ad12ce94e58606a1ae",
         "notes": null

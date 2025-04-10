@@ -75,6 +75,36 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
    bool read_flag = false;
    const unsigned flags_written = inst->flags_written(devinfo);
 
+   /* The floating point comparison can only be removed if we can prove that
+    * either the addition is not ±Inf - (±Inf) or that ±Inf - (±Inf) compared
+    * with zero has the same result as ±Inf compared with ±Inf.
+    *
+    * The former can only be proven at this point in compilation if src[1] is
+    * an immediate value. Otherwise we can't know that nether value is
+    * ±Inf. For the latter, consider this table:
+    *
+    *      A     B   A+(-B)  A<B  A-B<0  A<=B  A-B<=0  A>B  A-B>0  A>=B  A-B>=0  A==B  A-B==0  A!=B  A-B!=0
+    *     Inf   Inf   NaN     F     F     T       F     F     F     T      F      T      F      F       T
+    *     Inf  -Inf   Inf     F     F     F       F     T     T     T      T      F      F      T       T
+    *    -Inf   Inf  -Inf     T     T     T       T     F     F     F      F      F      F      T       T
+    *    -Inf  -Inf   NaN     F     F     T       F     F     F     T      F      T      F      F       T
+    *
+    * The column for A<B and A-B<0 is identical, and the column for A>B and
+    * A-B>0 are identical.
+    *
+    * If src[1] is NaN, the transformation is always valid.
+    */
+   if (brw_type_is_float(inst->src[0].type)) {
+      if (inst->conditional_mod != BRW_CONDITIONAL_L &&
+          inst->conditional_mod != BRW_CONDITIONAL_G) {
+         if (inst->src[1].file != IMM)
+            return false;
+
+         if (isinf(src_as_float(inst->src[1])) != 0)
+            return false;
+      }
+   }
+
    foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
       if (scan_inst->opcode == BRW_OPCODE_ADD &&
           !scan_inst->predicate &&
