@@ -206,6 +206,13 @@ void *vk_pipeline_zalloc(struct vk_device *device,
                          const VkAllocationCallbacks *alloc,
                          size_t size);
 
+void *vk_pipeline_multizalloc(struct vk_device *device,
+                              struct vk_multialloc *ma,
+                              const struct vk_pipeline_ops *ops,
+                              VkPipelineBindPoint bind_point,
+                              VkPipelineCreateFlags2KHR flags,
+                              const VkAllocationCallbacks *alloc);
+
 void vk_pipeline_free(struct vk_device *device,
                       const VkAllocationCallbacks *alloc,
                       struct vk_pipeline *pipeline);
