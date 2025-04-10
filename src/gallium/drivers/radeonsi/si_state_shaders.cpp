@@ -3700,19 +3700,10 @@ static void *si_create_shader(struct pipe_context *ctx, const struct pipe_shader
       ctx, &sscreen->live_shader_cache, state, &cache_hit);
 
    if (sel && cache_hit && sctx->debug.debug_message) {
-      for (unsigned i = 0; i < 2; i++) {
-         if (sel->main_shader_part[i])
-            si_shader_dump_stats_for_shader_db(sscreen, sel->main_shader_part[i], &sctx->debug);
-         if (sel->main_shader_part_ls[i])
-            si_shader_dump_stats_for_shader_db(sscreen, sel->main_shader_part_ls[i], &sctx->debug);
-         if (sel->main_shader_part_ngg[i])
-            si_shader_dump_stats_for_shader_db(sscreen, sel->main_shader_part_ngg[i], &sctx->debug);
-         if (sel->main_shader_part_ngg_es[i])
-            si_shader_dump_stats_for_shader_db(sscreen, sel->main_shader_part_ngg_es[i], &sctx->debug);
+      for (unsigned i = 0; i < ARRAY_SIZE(sel->main_parts.variants); i++) {
+         if (sel->main_parts.variants[i])
+            si_shader_dump_stats_for_shader_db(sscreen, sel->main_parts.variants[i], &sctx->debug);
       }
-
-      if (sel->main_shader_part_es)
-         si_shader_dump_stats_for_shader_db(sscreen, sel->main_shader_part_es, &sctx->debug);
    }
    return sel;
 }
@@ -4145,19 +4136,10 @@ static void si_destroy_shader_selector(struct pipe_context *ctx, void *cso)
       si_delete_shader(sctx, sel->variants[i]);
    }
 
-   for (unsigned i = 0; i < 2; i++) {
-      if (sel->main_shader_part[i])
-         si_delete_shader(sctx, sel->main_shader_part[i]);
-      if (sel->main_shader_part_ls[i])
-         si_delete_shader(sctx, sel->main_shader_part_ls[i]);
-      if (sel->main_shader_part_ngg[i])
-         si_delete_shader(sctx, sel->main_shader_part_ngg[i]);
-      if (sel->main_shader_part_ngg_es[i])
-         si_delete_shader(sctx, sel->main_shader_part_ngg_es[i]);
+   for (unsigned i = 0; i < ARRAY_SIZE(sel->main_parts.variants); i++) {
+      if (sel->main_parts.variants[i])
+         si_delete_shader(sctx, sel->main_parts.variants[i]);
    }
-
-   if (sel->main_shader_part_es)
-      si_delete_shader(sctx, sel->main_shader_part_es);
 
    free(sel->keys);
    free(sel->variants);
