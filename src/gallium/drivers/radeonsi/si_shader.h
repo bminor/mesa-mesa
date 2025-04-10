@@ -589,12 +589,12 @@ struct si_shader_info {
 
 union si_main_shader_parts {
    struct si_main_shader_parts_named {
-      /* indices: [wave_size == 64] */
-      struct si_shader *other[2];
-      struct si_shader *ls[2];     /* as_ls is set in the key */
-      struct si_shader *es;        /* as_es && !as_ngg in the key */
-      struct si_shader *ngg[2];    /* !as_es && as_ngg in the key */
-      struct si_shader *ngg_es[2]; /* as_es && as_ngg in the key */
+      /* indices: [wave_size == 64][use_aco] */
+      struct si_shader *other[2][2];
+      struct si_shader *ls[2][2];     /* as_ls is set in the key */
+      struct si_shader *es[2];        /* as_es && !as_ngg in the key, always wave64 */
+      struct si_shader *ngg[2][2];    /* !as_es && as_ngg in the key */
+      struct si_shader *ngg_es[2][2]; /* as_es && as_ngg in the key */
    } named;
    struct si_shader *variants[sizeof(struct si_main_shader_parts_named) / sizeof(struct si_shader*)];
 };
@@ -750,6 +750,7 @@ struct si_shader_key_ge {
    unsigned as_ls : 1;  /* whether it's VS before TCS */
    unsigned as_ngg : 1; /* whether it's the last GE stage and NGG is enabled,
                            also set for the stage right before GS */
+   unsigned use_aco : 1; /* whether the shader variant is using ACO */
 
    /* Flags for monolithic compilation only. */
    struct {
@@ -1118,18 +1119,19 @@ static inline struct si_shader **si_get_main_shader_part(struct si_shader_select
 
    if (sel->stage <= MESA_SHADER_GEOMETRY) {
       if (key->ge.as_ls)
-         return &sel->main_parts.named.ls[wave_size_index];
+         return &sel->main_parts.named.ls[wave_size_index][key->ge.use_aco];
       if (key->ge.as_es && key->ge.as_ngg)
-         return &sel->main_parts.named.ngg_es[wave_size_index];
+         return &sel->main_parts.named.ngg_es[wave_size_index][key->ge.use_aco];
       if (key->ge.as_es) {
          /* legacy GS only support wave 64 */
          assert(wave_size == 64);
-         return &sel->main_parts.named.es;
+         return &sel->main_parts.named.es[key->ge.use_aco];
       }
       if (key->ge.as_ngg)
-         return &sel->main_parts.named.ngg[wave_size_index];
+         return &sel->main_parts.named.ngg[wave_size_index][key->ge.use_aco];
+      return &sel->main_parts.named.other[wave_size_index][key->ge.use_aco];
    }
-   return &sel->main_parts.named.other[wave_size_index];
+   return &sel->main_parts.named.other[wave_size_index][sel->info.base.use_aco_amd];
 }
 
 static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
@@ -1173,6 +1175,12 @@ static inline bool si_shader_culling_enabled(struct si_shader *shader)
    /* This enables NGG culling for non-monolithic TES and GS. */
    return shader->selector->ngg_cull_vert_threshold == 0 &&
           (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_LINES);
+}
+
+static inline bool si_shader_uses_aco(struct si_shader *shader)
+{
+   return shader->selector->stage <= MESA_SHADER_GEOMETRY ?
+            shader->key.ge.use_aco : shader->selector->info.base.use_aco_amd;
 }
 
 #ifdef __cplusplus
