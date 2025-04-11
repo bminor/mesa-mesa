@@ -48,8 +48,9 @@
 
 static void
 test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
-     uint32_t flags)
+     bool expected_shader_readonly_zs, uint32_t flags)
 {
+   enum pan_earlyzs_zs_tilebuf_read zs_read = PAN_EARLYZS_ZS_TILEBUF_NOT_READ;
    struct pan_shader_info info = {};
    info.fs.can_discard = !!(flags & DISCARD);
    info.fs.writes_depth = !!(flags & WRITES_Z);
@@ -58,17 +59,30 @@ test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
    info.fs.early_fragment_tests = !!(flags & API_EARLY);
    info.writes_global = !!(flags & SIDEFX);
 
+   if (flags & SHADER_READS_ZS) {
+      if (flags & (WRITES_Z | WRITES_S))
+         zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT;
+      else
+         zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_OPT;
+   }
+
    struct pan_earlyzs_state result = pan_earlyzs_get(
       pan_earlyzs_analyze(&info, flags & ARCH_HAS_READONLY_ZS_OPT ? 10 : 9),
       !!(flags & ZS_WRITEMASK), !!(flags & ALPHA2COV),
-      !!(flags & ZS_ALWAYS_PASSES), !!(flags & SHADER_READS_ZS));
+      !!(flags & ZS_ALWAYS_PASSES), zs_read);
 
    ASSERT_EQ(result.update, expected_update);
    ASSERT_EQ(result.kill, expected_kill);
+   ASSERT_EQ(result.shader_readonly_zs, expected_shader_readonly_zs);
 }
 
 #define CASE(expected_update, expected_kill, flags)                            \
-   test(PAN_EARLYZS_##expected_update, PAN_EARLYZS_##expected_kill, flags)
+   test(PAN_EARLYZS_##expected_update, PAN_EARLYZS_##expected_kill, false,     \
+        flags)
+
+#define CASE_RO_ZS(expected_update, expected_kill, expected_ro_zs, flags)      \
+   test(PAN_EARLYZS_##expected_update, PAN_EARLYZS_##expected_kill,            \
+        expected_ro_zs, flags)
 
 TEST(EarlyZS, APIForceEarly)
 {
@@ -137,13 +151,20 @@ TEST(EarlyZS, NoSideFXNoShaderZS)
    CASE(FORCE_EARLY, FORCE_EARLY, ZS_WRITEMASK);
 }
 
-TEST(EarlyZS, ShaderReadOnlyZS)
+TEST(EarlyZS, ShaderReadZS)
 {
-   CASE(FORCE_LATE, FORCE_LATE, SIDEFX | SHADER_READS_ZS);
-   CASE(FORCE_EARLY, FORCE_LATE, SIDEFX | SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
-   CASE(FORCE_EARLY, FORCE_EARLY, SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
-   CASE(FORCE_LATE, WEAK_EARLY, SHADER_READS_ZS | ZS_ALWAYS_PASSES);
-   CASE(FORCE_LATE, FORCE_EARLY, SHADER_READS_ZS);
+   CASE_RO_ZS(FORCE_LATE, FORCE_LATE, false, SIDEFX | SHADER_READS_ZS);
+   CASE_RO_ZS(FORCE_EARLY, FORCE_LATE, true,
+              SIDEFX | SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
+   CASE_RO_ZS(FORCE_LATE, FORCE_LATE, false,
+              SIDEFX | SHADER_READS_ZS | WRITES_Z | ARCH_HAS_READONLY_ZS_OPT);
+   CASE_RO_ZS(FORCE_EARLY, FORCE_EARLY, true,
+              SHADER_READS_ZS | ARCH_HAS_READONLY_ZS_OPT);
+   CASE_RO_ZS(FORCE_LATE, FORCE_LATE, false,
+              SHADER_READS_ZS | WRITES_Z | ARCH_HAS_READONLY_ZS_OPT);
+   CASE_RO_ZS(FORCE_LATE, WEAK_EARLY, false,
+              SHADER_READS_ZS | ZS_ALWAYS_PASSES);
+   CASE_RO_ZS(FORCE_LATE, FORCE_EARLY, false, SHADER_READS_ZS);
 }
 
 TEST(EarlyZS, NoSideFXNoShaderZSAlt)

@@ -1536,7 +1536,15 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
       struct mali_dcd_flags_0_packed dcd0;
       pan_pack(&dcd0, DCD_FLAGS_0, cfg) {
          if (fs) {
-            bool zs_read = zs_attachment_read(fs, &dyns->ial);
+            enum pan_earlyzs_zs_tilebuf_read zs_read =
+               PAN_EARLYZS_ZS_TILEBUF_NOT_READ;
+
+            if (zs_attachment_read(fs, &dyns->ial)) {
+               if (writes_z || writes_s || PAN_ARCH != 10)
+                  zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT;
+               else
+                  zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_OPT;
+            }
 
             cfg.allow_forward_pixel_to_kill =
                fs->info.fs.can_fpk && !(rt_mask & ~rt_written) &&
