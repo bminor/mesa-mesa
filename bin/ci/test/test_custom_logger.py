@@ -667,3 +667,80 @@ def test_check_dut_timings_valid_timing_sequence(custom_logger, caplog):
     # Check that no error messages are logged
     assert "Job submission is happening before job start." not in caplog.text
     assert "Job ended before it started." not in caplog.text
+
+
+@pytest.mark.parametrize("start_time,end_time,expected", [
+    ("2023-01-01T12:00:00", "2023-01-01T12:30:00", "0:30:00"),
+    ("invalid", "2023-01-01T12:30:00", ""),
+    ("", "", ""),
+])
+def test_get_duration_time(custom_logger, start_time, end_time, expected):
+    duration = custom_logger.get_duration_time(start_time, end_time)
+    assert duration == expected
+
+
+# Test case for DUT job duration tracking
+def test_dut_job_duration(custom_logger):
+    custom_logger.create_dut_job(status="pass")
+
+    # Set start time
+    custom_logger.update_dut_time("start", "2023-01-01T12:00:00")
+    logger_data = custom_logger.logger.data
+    dut_job = logger_data["dut_jobs"][0]
+    assert dut_job["dut_duration_time"] == ""
+
+    # Set end time
+    custom_logger.update_dut_time("end", "2023-01-01T12:30:00")
+    logger_data = custom_logger.logger.data
+    dut_job = logger_data["dut_jobs"][0]
+    assert dut_job["dut_duration_time"] == "0:30:00"
+
+
+# Test case for job phase duration tracking
+def test_job_phase_duration(custom_logger):
+    custom_logger.create_dut_job(status="pass")
+
+    # Create first phase
+    custom_logger.create_job_phase("Phase1")
+    logger_data = custom_logger.logger.data
+    job = logger_data["dut_jobs"][0]
+    phase = job["dut_job_phases"][0]
+    assert phase["duration_time"] == ""
+
+    # Create second phase (which should close the first phase)
+    custom_logger.create_job_phase("Phase2")
+    logger_data = custom_logger.logger.data
+    job = logger_data["dut_jobs"][0]
+
+    # First phase should have duration
+    phase1 = job["dut_job_phases"][0]
+    assert phase1["duration_time"] != ""
+
+    # Verify duration format
+    start = datetime.fromisoformat(phase1["start_time"])
+    end = datetime.fromisoformat(phase1["end_time"])
+    duration = end - start
+    assert phase1["duration_time"] == str(duration)
+
+    # Second phase should have empty duration
+    phase2 = job["dut_job_phases"][1]
+    assert phase2["duration_time"] == ""
+
+
+# Test case for closing job with phases
+def test_close_job_with_phases_duration(custom_logger):
+    custom_logger.create_dut_job(status="pass")
+    custom_logger.create_job_phase("Phase1")
+    custom_logger.close_dut_job()
+
+    logger_data = custom_logger.logger.data
+    job = logger_data["dut_jobs"][0]
+    phase = job["dut_job_phases"][0]
+
+    assert phase["duration_time"] != ""
+
+    # Verify duration format
+    start = datetime.fromisoformat(phase["start_time"])
+    end = datetime.fromisoformat(phase["end_time"])
+    duration = end - start
+    assert phase["duration_time"] == str(duration)
