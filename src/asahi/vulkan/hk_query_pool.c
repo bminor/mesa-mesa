@@ -665,7 +665,7 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       .oq_index = pool->oq_queries ? pool->bo->va->addr + pool->query_start : 0,
 
       .first_query = firstQuery,
-      .dst_addr = hk_buffer_address(dst_buffer, dstOffset),
+      .dst_addr = hk_buffer_address_rw(dst_buffer, dstOffset),
       .dst_stride = stride,
       .reports_per_query = hk_reports_per_query(pool),
       .flags = flags,

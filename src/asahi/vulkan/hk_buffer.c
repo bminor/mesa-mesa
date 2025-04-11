@@ -296,5 +296,25 @@ hk_GetBufferOpaqueCaptureAddress(UNUSED VkDevice device,
 {
    VK_FROM_HANDLE(hk_buffer, buffer, pInfo->buffer);
 
-   return hk_buffer_address(buffer, 0);
+   return hk_buffer_address_rw(buffer, 0);
+}
+
+uint64_t
+hk_buffer_address(const struct hk_buffer *buffer, uint64_t offset,
+                  bool read_only)
+{
+   struct hk_device *dev = (struct hk_device *)buffer->vk.base.device;
+   uint64_t addr = vk_buffer_address(&buffer->vk, offset);
+
+   /* If we are accessing the buffer read-only, we want to return the read-only
+    * shadow mapping so non-resident pages return zeroes. That only applies to
+    * sparse resident buffers, which will have buffer->va != NULL. If buffer->va
+    * is NULL, the buffer is not sparse resident, so we don't need the fix up...
+    * and indeed, there may not be a shadow map available.
+    */
+   if (read_only && buffer->va) {
+      addr = agx_rw_addr_to_ro(&dev->dev, addr);
+   }
+
+   return addr;
 }

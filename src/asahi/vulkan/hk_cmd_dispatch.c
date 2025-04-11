@@ -160,7 +160,7 @@ hk_CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    desc->root.cs.base_group[1] = 0;
    desc->root.cs.base_group[2] = 0;
 
-   uint64_t dispatch_addr = hk_buffer_address(buffer, offset);
+   uint64_t dispatch_addr = hk_buffer_address(buffer, offset, true);
    assert(dispatch_addr != 0);
 
    desc->root.cs.group_count_addr = dispatch_addr;

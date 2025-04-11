@@ -161,43 +161,42 @@ write_storage_image_view_desc(struct hk_descriptor_set *set,
    write_desc(set, binding, elem, &desc, sizeof(desc));
 }
 
-static void
-write_buffer_desc(struct hk_descriptor_set *set,
-                  const VkDescriptorBufferInfo *const info, uint32_t binding,
-                  uint32_t elem)
+static struct hk_buffer_address
+get_buffer_address(const VkDescriptorBufferInfo *const info, bool read_only)
 {
    VK_FROM_HANDLE(hk_buffer, buffer, info->buffer);
-
    const struct hk_addr_range addr_range =
-      hk_buffer_addr_range(buffer, info->offset, info->range);
+      hk_buffer_addr_range(buffer, info->offset, info->range, read_only);
    assert(addr_range.range <= UINT32_MAX);
 
-   const struct hk_buffer_address desc = {
+   return (struct hk_buffer_address){
       .base_addr = addr_range.addr,
       .size = addr_range.range,
    };
+}
+
+static void
+write_buffer_desc(struct hk_descriptor_set *set,
+                  const VkDescriptorBufferInfo *const info, uint32_t binding,
+                  uint32_t elem, bool read_only)
+{
+   const struct hk_buffer_address desc = get_buffer_address(info, read_only);
+
    write_desc(set, binding, elem, &desc, sizeof(desc));
 }
 
 static void
 write_dynamic_buffer_desc(struct hk_descriptor_set *set,
                           const VkDescriptorBufferInfo *const info,
-                          uint32_t binding, uint32_t elem)
+                          uint32_t binding, uint32_t elem, bool read_only)
 {
-   VK_FROM_HANDLE(hk_buffer, buffer, info->buffer);
    const struct hk_descriptor_set_binding_layout *binding_layout =
       &set->layout->binding[binding];
 
-   const struct hk_addr_range addr_range =
-      hk_buffer_addr_range(buffer, info->offset, info->range);
-   assert(addr_range.range <= UINT32_MAX);
-
    struct hk_buffer_address *desc =
       &set->dynamic_buffers[binding_layout->dynamic_buffer_index + elem];
-   *desc = (struct hk_buffer_address){
-      .base_addr = addr_range.addr,
-      .size = addr_range.range,
-   };
+
+   *desc = get_buffer_address(info, read_only);
 }
 
 static void
@@ -273,17 +272,21 @@ hk_UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
-            write_buffer_desc(set, write->pBufferInfo + j, write->dstBinding,
-                              write->dstArrayElement + j);
+            write_buffer_desc(
+               set, write->pBufferInfo + j, write->dstBinding,
+               write->dstArrayElement + j,
+               write->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
          }
          break;
 
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
-            write_dynamic_buffer_desc(set, write->pBufferInfo + j,
-                                      write->dstBinding,
-                                      write->dstArrayElement + j);
+            write_dynamic_buffer_desc(
+               set, write->pBufferInfo + j, write->dstBinding,
+               write->dstArrayElement + j,
+               write->descriptorType ==
+                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
          }
          break;
 
@@ -387,8 +390,10 @@ hk_push_descriptor_set_update(struct hk_push_descriptor_set *push_set,
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
          for (uint32_t j = 0; j < write->descriptorCount; j++) {
-            write_buffer_desc(&set, write->pBufferInfo + j, write->dstBinding,
-                              write->dstArrayElement + j);
+            write_buffer_desc(
+               &set, write->pBufferInfo + j, write->dstBinding,
+               write->dstArrayElement + j,
+               write->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
          }
          break;
 
@@ -749,7 +754,8 @@ hk_descriptor_set_write_template(
                data + entry->offset + j * entry->stride;
 
             write_buffer_desc(set, info, entry->binding,
-                              entry->array_element + j);
+                              entry->array_element + j,
+                              entry->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
          }
          break;
 
@@ -759,8 +765,9 @@ hk_descriptor_set_write_template(
             const VkDescriptorBufferInfo *info =
                data + entry->offset + j * entry->stride;
 
-            write_dynamic_buffer_desc(set, info, entry->binding,
-                                      entry->array_element + j);
+            write_dynamic_buffer_desc(
+               set, info, entry->binding, entry->array_element + j,
+               entry->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
          }
          break;
 

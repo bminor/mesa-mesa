@@ -3285,7 +3285,7 @@ hk_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    VK_FROM_HANDLE(hk_buffer, buffer, _buffer);
 
    cmd->state.gfx.index = (struct hk_index_buffer_state){
-      .buffer = hk_buffer_addr_range(buffer, offset, size),
+      .buffer = hk_buffer_addr_range(buffer, offset, size, true),
       .size = agx_translate_index_size(vk_index_type_to_bytes(indexType)),
       .restart = vk_index_to_restart(indexType),
    };
@@ -3323,7 +3323,7 @@ hk_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
 
       uint64_t size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
       const struct hk_addr_range addr_range =
-         hk_buffer_addr_range(buffer, pOffsets[i], size);
+         hk_buffer_addr_range(buffer, pOffsets[i], size, true);
 
       hk_cmd_bind_vertex_buffer(cmd, idx, addr_range);
    }
@@ -3678,7 +3678,7 @@ hk_CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
 {
    VK_FROM_HANDLE(hk_buffer, buffer, _buffer);
 
-   hk_draw_indirect_inner(commandBuffer, hk_buffer_address(buffer, offset),
+   hk_draw_indirect_inner(commandBuffer, hk_buffer_address_ro(buffer, offset),
                           drawCount, stride);
 }
 
@@ -3722,7 +3722,7 @@ hk_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    VK_FROM_HANDLE(hk_buffer, buffer, _buffer);
 
    hk_draw_indexed_indirect_inner(
-      commandBuffer, hk_buffer_address(buffer, offset), drawCount, stride);
+      commandBuffer, hk_buffer_address_ro(buffer, offset), drawCount, stride);
 }
 
 /*
@@ -3746,8 +3746,8 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
 
    size_t out_stride = sizeof(uint32_t) * (indexed ? 5 : 4);
    uint64_t patched = hk_pool_alloc(cmd, out_stride * maxDrawCount, 4).gpu;
-   uint64_t in = hk_buffer_address(buffer, offset);
-   uint64_t count_addr = hk_buffer_address(count_buffer, countBufferOffset);
+   uint64_t in = hk_buffer_address_ro(buffer, offset);
+   uint64_t count_addr = hk_buffer_address_ro(count_buffer, countBufferOffset);
 
    libagx_predicate_indirect(cmd, agx_1d(maxDrawCount),
                              AGX_BARRIER_ALL | AGX_PREGFX, patched, in,
@@ -3807,7 +3807,7 @@ hk_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
       uint32_t idx = firstBinding + i;
       uint64_t size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
 
-      gfx->xfb[idx] = hk_buffer_addr_range(buffer, pOffsets[i], size);
+      gfx->xfb[idx] = hk_buffer_addr_range(buffer, pOffsets[i], size, false);
    }
 }
 
@@ -3844,7 +3844,7 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
       VK_FROM_HANDLE(hk_buffer, buffer, pCounterBuffers[i]);
 
       uint64_t offset = pCounterBufferOffsets ? pCounterBufferOffsets[i] : 0;
-      uint64_t cb_addr = hk_buffer_address(buffer, offset);
+      uint64_t cb_addr = hk_buffer_address_rw(buffer, offset);
       uint32_t cmd_idx = firstCounterBuffer + i;
 
       if (begin) {

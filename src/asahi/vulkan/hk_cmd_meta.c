@@ -870,7 +870,7 @@ hk_meta_copy_image_to_buffer2(struct vk_command_buffer *cmd,
             hk_format_to_pipe_format(src_image->format);
 
          struct vk_meta_push_data push = {
-            .buffer = hk_buffer_address(buffer, region->bufferOffset),
+            .buffer = hk_buffer_address_rw(buffer, region->bufferOffset),
             .row_extent = row_extent,
             .slice_or_layer_extent = is_3d ? slice_extent : layer_extent,
 
@@ -1070,7 +1070,7 @@ hk_meta_copy_buffer_to_image2(struct vk_command_buffer *cmd,
                                VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
          struct vk_meta_push_data push = {
-            .buffer = hk_buffer_address(buffer, region->bufferOffset),
+            .buffer = hk_buffer_address_ro(buffer, region->bufferOffset),
             .row_extent = row_extent,
             .slice_or_layer_extent = is_3d ? slice_extent : layer_extent,
          };
@@ -1396,8 +1396,8 @@ hk_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *info)
 
    for (unsigned i = 0; i < info->regionCount; i++) {
       const VkBufferCopy2 *region = &info->pRegions[i];
-      uint64_t src = vk_meta_buffer_address(&dev->vk, info->srcBuffer,
-                                            region->srcOffset, region->size);
+      VK_FROM_HANDLE(hk_buffer, src_buffer, info->srcBuffer);
+      uint64_t src = hk_buffer_address_ro(src_buffer, region->srcOffset);
       uint64_t dst = vk_meta_buffer_address(&dev->vk, info->dstBuffer,
                                             region->dstOffset, region->size);
       hk_cmd_copy(cmd, dst, src, region->size);

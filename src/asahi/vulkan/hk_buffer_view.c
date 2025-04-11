@@ -93,7 +93,9 @@ hk_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInfo,
     * This lets us offset partially in the shader instead, getting
     * around alignment restrictions on the base address pointer.
     */
-   uint64_t base = hk_buffer_address(buffer, 0) + (view->vk.offset & ~0xf);
+   uint64_t head_offset_B = view->vk.offset & ~0xf;
+   uint64_t rw_base = hk_buffer_address_rw(buffer, 0) + head_offset_B;
+   uint64_t ro_base = hk_buffer_address_ro(buffer, 0) + head_offset_B;
    uint32_t tail_offset_B = view->vk.offset & 0xf;
    uint32_t tail_offset_el = tail_offset_B / util_format_get_blocksize(format);
    assert(tail_offset_el * util_format_get_blocksize(format) == tail_offset_B &&
@@ -114,7 +116,7 @@ hk_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInfo,
       cfg.height = DIV_ROUND_UP(view->vk.elements, cfg.width);
       cfg.first_level = cfg.last_level = 0;
 
-      cfg.address = base;
+      cfg.address = ro_base;
       cfg.buffer_size_sw = view->vk.elements;
       cfg.buffer_offset_sw = tail_offset_el;
 
@@ -146,7 +148,7 @@ hk_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInfo,
             cfg.swizzle_a = i;
       }
 
-      cfg.buffer = base;
+      cfg.buffer = rw_base;
       cfg.buffer_offset_sw = tail_offset_el;
 
       cfg.width = AGX_TEXTURE_BUFFER_WIDTH;
