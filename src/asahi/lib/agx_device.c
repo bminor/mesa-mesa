@@ -670,6 +670,8 @@ agx_open_device(void *memctx, struct agx_device *dev)
          fprintf(stderr, "Failed to bind zero page");
          return false;
       }
+
+      dev->zero_bo = bo;
    }
 
    void *bo = agx_bo_create(dev, LIBAGX_PRINTF_BUFFER_SIZE, 0, AGX_BO_WRITEBACK,
@@ -691,6 +693,7 @@ void
 agx_close_device(struct agx_device *dev)
 {
    agx_bo_unreference(dev, dev->printf.bo);
+   agx_bo_unreference(dev, dev->zero_bo);
    u_printf_destroy(&dev->printf);
    agx_bo_cache_evict_all(dev);
    util_sparse_array_finish(&dev->bo_map);

@@ -133,6 +133,8 @@ struct agx_device {
     */
    uint64_t sparse_ro_offset;
 
+   struct agx_bo *zero_bo;
+
    struct renderonly *ro;
 
    pthread_mutex_t bo_map_lock;
