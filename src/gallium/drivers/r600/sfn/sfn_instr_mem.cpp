@@ -457,6 +457,10 @@ get_rat_opcode(const nir_atomic_op opcode)
       return RatInstr::CMPXCHG_INT_RTN;
    case nir_atomic_op_xchg:
       return RatInstr::XCHG_RTN;
+   case nir_atomic_op_inc_wrap:
+      return RatInstr::WRAP_INC_RTN;
+   case nir_atomic_op_dec_wrap:
+      return RatInstr::WRAP_DEC_RTN;
    default:
       unreachable("Unsupported atomic");
    }

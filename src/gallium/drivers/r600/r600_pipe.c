@@ -440,7 +440,8 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->shader_array_components =
 	caps->query_buffer_object =
 	caps->image_store_formatted =
-	caps->alpha_to_coverage_dither_control = family >= CHIP_CEDAR;
+	caps->alpha_to_coverage_dither_control =
+	caps->image_atomic_inc_wrap = family >= CHIP_CEDAR;
 	caps->max_texture_gather_components = family >= CHIP_CEDAR ? 4 : 0;
 	/* kernel command checker support is also required */
 	caps->draw_indirect = family >= CHIP_CEDAR;
