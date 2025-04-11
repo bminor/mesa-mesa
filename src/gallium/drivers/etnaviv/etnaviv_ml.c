@@ -496,6 +496,14 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             list_addtail(&operation->link, etna_operations);
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_TRANSPOSE: {
+            add_bypass(poperation, input_tensors[0], operation, etna_operations);
+            struct etna_ml_tensor *tensor = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+            tensor->act_layout = ETNA_ML_LAYOUT_NCHW;
+            tensor->exp_layout = ETNA_ML_LAYOUT_NCHW;
+
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -618,6 +626,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
       case PIPE_ML_OPERATION_TYPE_RELU:
       case PIPE_ML_OPERATION_TYPE_ABSOLUTE:
       case PIPE_ML_OPERATION_TYPE_LOGISTIC:
+      case PIPE_ML_OPERATION_TYPE_TRANSPOSE:
          break;
       default:
          unreachable("Unsupported ML operation type");
@@ -701,6 +710,19 @@ etna_ml_operation_supported(struct pipe_context *pcontext,
       }
       case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED: {
          supported = operation->input_tensors[0]->dims[3] < 1280;
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_TRANSPOSE: {
+         if (operation->transpose.perm[0] == 0 &&
+             operation->transpose.perm[1] == 3 &&
+             operation->transpose.perm[2] == 1 &&
+             operation->transpose.perm[3] == 2)
+            supported = true;  /* Channels-last to channels-first */
+         if (operation->transpose.perm[0] == 0 &&
+             operation->transpose.perm[1] == 2 &&
+             operation->transpose.perm[2] == 3 &&
+             operation->transpose.perm[3] == 1)
+            supported = true;  /* Channels-first to channels-last */
          break;
       }
       case PIPE_ML_OPERATION_TYPE_RESHAPE:
