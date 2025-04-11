@@ -43,7 +43,11 @@ test-docs:
   stage: deploy
   rules:
     - !reference [.common-rules, rules]
-    # pre-merge or merge pipeline
+    # merge pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $GITLAB_USER_LOGIN == "marge-bot"'
+      changes: *docs-or-ci
+      when: on_success
+    # pre-merge pipeline
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *docs-or-ci
       when: on_success
