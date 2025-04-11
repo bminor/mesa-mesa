@@ -177,6 +177,27 @@ struct agx_device {
    struct u_printf_ctx printf;
 };
 
+/*
+ * Determine if an address is in the read-only section. See the documentation
+ * for sparse_ro_offset.
+ */
+static inline bool
+agx_addr_is_ro(struct agx_device *dev, uint64_t addr)
+{
+   return (addr & dev->sparse_ro_offset);
+}
+
+/*
+ * Convert a read-write address to its read-only shadow address. See the
+ * documentation for sparse_ro_offset.
+ */
+static inline uint64_t
+agx_rw_addr_to_ro(struct agx_device *dev, uint64_t addr)
+{
+   assert(!agx_addr_is_ro(dev, addr));
+   return addr + dev->sparse_ro_offset;
+}
+
 static inline void *
 agx_bo_map(struct agx_bo *bo)
 {
