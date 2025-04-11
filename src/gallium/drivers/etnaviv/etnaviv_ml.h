@@ -26,6 +26,7 @@ enum etna_ml_tp_type {
    ETNA_ML_TP_DETRANSPOSE,
    ETNA_ML_TP_RESHUFFLE,
    ETNA_ML_TP_PAD,
+   ETNA_ML_TP_RELU,
 };
 
 enum etna_ml_tensor_layout {
@@ -57,6 +58,7 @@ struct etna_vip_instruction {
 
    struct etna_bo *configs[MAX_CONFIG_BOS];
    struct etna_bo *coefficients;
+   struct etna_bo *pwl_lut;
    struct pipe_resource *input;
    unsigned input_offset;
    struct pipe_resource *output;
