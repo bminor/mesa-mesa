@@ -534,6 +534,13 @@ _mesa_has_pipeline_statistics(const struct gl_context *ctx)
           (_mesa_is_desktop_gl(ctx) && ctx->Version >= 46);
 }
 
+static inline bool
+_mesa_has_internalformat_query(const struct gl_context *ctx)
+{
+   return _mesa_has_ARB_internalformat_query(ctx) ||
+          _mesa_is_gles3(ctx);
+}
+
 #ifdef __cplusplus
 }
 #endif

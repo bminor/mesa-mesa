@@ -306,10 +306,10 @@ _mesa_check_sample_count(struct gl_context *ctx, GLenum target,
     *
     * From the ARB_internalformat_query spec:
     *
-    * "If <samples is greater than the maximum number of samples supported
+    * "If <samples> is greater than the maximum number of samples supported
     * for <internalformat> then the error INVALID_OPERATION is generated."
     */
-   if (ctx->Extensions.ARB_internalformat_query) {
+   if (_mesa_has_internalformat_query(ctx)) {
       GLint buffer[MAX_SAMPLES] = {-1};
       GLint limit;
 
