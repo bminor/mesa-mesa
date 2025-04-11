@@ -42,7 +42,6 @@ struct etna_surface {
    struct etna_reloc reloc[ETNA_MAX_PIXELPIPES];
    struct etna_reloc ts_reloc;
    uint32_t offset; /* pre-calculated level + layer offset */
-   uint32_t ts_offset; /* pre-calculated level + layer TS offset */
    /* keep pointer to original resource (for when a render compatible resource is used) */
    struct pipe_resource *prsc;
 };

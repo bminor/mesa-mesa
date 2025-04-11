@@ -146,10 +146,8 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    if (surf->level->ts_size) {
       assert(layer == 0);
 
-      surf->ts_offset = surf->level->ts_offset;
-
       surf->ts_reloc.bo = rsc->ts_bo;
-      surf->ts_reloc.offset = surf->ts_offset;
+      surf->ts_reloc.offset = surf->level->ts_offset;
       surf->ts_reloc.flags = 0;
 
       if (!screen->specs.use_blt) {
@@ -161,7 +159,7 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
             .source_format = RS_FORMAT_A8R8G8B8,
             .dest_format = RS_FORMAT_A8R8G8B8,
             .dest = ts_bo,
-            .dest_offset = surf->ts_offset,
+            .dest_offset = surf->level->ts_offset,
             .dest_stride = 0x40,
             .dest_tiling = ETNA_LAYOUT_TILED,
             .dither = {0xffffffff, 0xffffffff},
