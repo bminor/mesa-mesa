@@ -173,10 +173,6 @@ void si_llvm_create_func(struct si_shader_context *ctx, const char *name, LLVMTy
                                            ctx->screen->info.address32_hi);
    }
 
-   if (ctx->screen->info.gfx_level < GFX12 && ctx->stage <= MESA_SHADER_GEOMETRY &&
-       ctx->shader->key.ge.as_ngg && si_shader_uses_streamout(ctx->shader))
-      ac_llvm_add_target_dep_function_attr(ctx->main_fn.value, "amdgpu-gds-size", 256);
-
    ac_llvm_set_workgroup_size(ctx->main_fn.value, max_workgroup_size);
    ac_llvm_set_target_features(ctx->main_fn.value, &ctx->ac, false);
 }
