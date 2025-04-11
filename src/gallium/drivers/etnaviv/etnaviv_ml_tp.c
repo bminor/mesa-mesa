@@ -1054,6 +1054,36 @@ etna_ml_lower_relu(struct etna_ml_subgraph *subgraph,
                                   relu->output_channels;
 }
 
+void
+etna_ml_lower_absolute(struct etna_ml_subgraph *subgraph,
+                       const struct pipe_ml_operation *abs,
+                       struct etna_operation *operation)
+{
+   operation->type = ETNA_JOB_TYPE_TP;
+   operation->tp_type = ETNA_ML_TP_ABSOLUTE;
+   operation->stride = 1;
+
+   operation->input_count = 1;
+   operation->input_width = abs->input_tensors[0]->dims[1];
+   operation->input_height = abs->input_tensors[0]->dims[2];
+   operation->input_channels = abs->input_tensors[0]->dims[3];
+   operation->input_tensor_sizes[0] = operation->input_width *
+                                      operation->input_height *
+                                      operation->input_channels;
+   operation->input_zero_point = etna_tensor_zero_point(abs->input_tensors[0]);
+   operation->input_scale = abs->input_tensors[0]->scale;
+
+   operation->output_count = 1;
+   operation->output_width = abs->output_tensors[0]->dims[1];
+   operation->output_height = abs->output_tensors[0]->dims[2];
+   operation->output_channels = abs->output_tensors[0]->dims[3];
+   operation->output_zero_point = etna_tensor_zero_point(abs->output_tensors[0]);
+   operation->output_scale = abs->output_tensors[0]->scale;
+   operation->output_tensor_sizes[0] = operation->output_width *
+                                       operation->output_height *
+                                       operation->output_channels;
+}
+
 static struct etna_bo *
 create_relu_lut_bo(struct etna_ml_subgraph *subgraph,
                    const struct etna_operation *operation)
@@ -1078,6 +1108,41 @@ create_relu_lut_bo(struct etna_ml_subgraph *subgraph,
          map[i] = 0xf7fff;
       else
          map[i] = 0x100000;
+   }
+
+   etna_bo_cpu_fini(pwl_lut);
+
+   return pwl_lut;
+}
+
+static struct etna_bo *
+create_abs_lut_bo(struct etna_ml_subgraph *subgraph,
+                  const struct etna_operation *operation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   struct etna_context *ctx = etna_context(context);
+   unsigned lut_length = 1024;
+   struct etna_bo *pwl_lut = etna_bo_new(ctx->screen->dev,
+                                         lut_length * sizeof(uint32_t),
+                                         DRM_ETNA_GEM_CACHE_WC);
+
+   etna_bo_cpu_prep(pwl_lut, DRM_ETNA_PREP_WRITE);
+
+   uint32_t *map = etna_bo_map(pwl_lut);
+
+   for (int i = 0; i < lut_length; i++) {
+      if (i < 16)
+         map[i] = 0x0;
+      else if (i < 496)
+         map[i] = 0x8000 + (i - 16) * 0x800;
+      else if (i < 512)
+         map[i] = 0xf7fff;
+      else if (i < 528)
+         map[i] = 0x100000;
+      else if (i < 1008)
+         map[i] = 0x8000 + (i - 528) * 0x800;
+      else if (i < 1024)
+         map[i] = 0xf7fff;
    }
 
    etna_bo_cpu_fini(pwl_lut);
@@ -1151,6 +1216,16 @@ etna_ml_compile_operation_tp(struct etna_ml_subgraph *subgraph,
       }
       break;
    }
+   case ETNA_ML_TP_ABSOLUTE: {
+      unsigned tp_cores_used = etna_ml_get_core_info(ctx)->tp_core_count;
+
+      ML_DBG("absolute: input_width %d tp_cores_used %d\n", operation->input_width, tp_cores_used);
+      instruction->pwl_lut = create_abs_lut_bo(subgraph, operation);
+      for (unsigned i = 0; i < tp_cores_used; i++) {
+         instruction->configs[i] = create_pwl_lut_config(subgraph, operation, i, tp_cores_used, instruction->pwl_lut);
+      }
+      break;
+   }
    }
    instruction->type = ETNA_JOB_TYPE_TP;
    instruction->tp_type = operation->tp_type;
@@ -1179,7 +1254,8 @@ etna_ml_emit_operation_tp(struct etna_ml_subgraph *subgraph,
 
       if (more_than_one_tp_job &&
           (operation->tp_type == ETNA_ML_TP_PAD ||
-           operation->tp_type == ETNA_ML_TP_RELU)) {
+           operation->tp_type == ETNA_ML_TP_RELU ||
+           operation->tp_type == ETNA_ML_TP_ABSOLUTE)) {
          etna_set_state(stream, VIVS_GL_UNK03950, j < tp_core_count - 1 ? 0x8 : 0x0);
       } else {
          etna_set_state(stream, VIVS_GL_UNK03950, 0x0);

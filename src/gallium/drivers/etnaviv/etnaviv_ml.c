@@ -473,6 +473,13 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             list_addtail(&operation->link, etna_operations);
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_ABSOLUTE: {
+            etna_ml_lower_absolute(subgraph, poperation, operation);
+            operation->input_tensors[0] = input_tensors[0];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
+            list_addtail(&operation->link, etna_operations);
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -592,6 +599,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
       case PIPE_ML_OPERATION_TYPE_SPLIT:
       case PIPE_ML_OPERATION_TYPE_RESHAPE:
       case PIPE_ML_OPERATION_TYPE_RELU:
+      case PIPE_ML_OPERATION_TYPE_ABSOLUTE:
          break;
       default:
          unreachable("Unsupported ML operation type");
@@ -678,6 +686,7 @@ etna_ml_operation_supported(struct pipe_context *pcontext,
       }
       case PIPE_ML_OPERATION_TYPE_RESHAPE:
       case PIPE_ML_OPERATION_TYPE_RELU:
+      case PIPE_ML_OPERATION_TYPE_ABSOLUTE:
          supported = true;
          break;
       default:

@@ -27,6 +27,7 @@ enum etna_ml_tp_type {
    ETNA_ML_TP_RESHUFFLE,
    ETNA_ML_TP_PAD,
    ETNA_ML_TP_RELU,
+   ETNA_ML_TP_ABSOLUTE,
 };
 
 enum etna_ml_tensor_layout {
