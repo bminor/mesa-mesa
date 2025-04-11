@@ -2454,7 +2454,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          .use_aco = nir->info.use_aco_amd,
          .bc_optimize_for_persp = key->ps.part.prolog.bc_optimize_for_persp,
          .bc_optimize_for_linear = key->ps.part.prolog.bc_optimize_for_linear,
-         .uses_discard = si_shader_uses_discard(shader),
+         .uses_discard = shader->info.uses_discard,
          .alpha_to_coverage_via_mrtz = key->ps.part.epilog.alpha_to_coverage_via_mrtz,
          .dual_src_blend_swizzle = key->ps.part.epilog.dual_src_blend_swizzle,
          .spi_shader_col_format = key->ps.part.epilog.spi_shader_col_format,
@@ -2868,6 +2868,13 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                   else if (sem.location == FRAG_RESULT_SAMPLE_MASK)
                      shader->info.writes_sample_mask = true;
                }
+               break;
+            case nir_intrinsic_demote:
+            case nir_intrinsic_demote_if:
+            case nir_intrinsic_terminate:
+            case nir_intrinsic_terminate_if:
+               if (nir->info.stage == MESA_SHADER_FRAGMENT)
+                  shader->info.uses_discard = true;
                break;
             default:
                break;
@@ -3588,7 +3595,9 @@ static void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_
    memset(key, 0, sizeof(*key));
    key->ps_epilog.use_aco = info->base.use_aco_amd;
    key->ps_epilog.wave32 = shader->wave_size == 32;
-   key->ps_epilog.uses_discard = si_shader_uses_discard(shader);
+   key->ps_epilog.uses_discard = shader->info.uses_discard ||
+                                 shader->key.ps.part.prolog.poly_stipple ||
+                                 shader->key.ps.part.epilog.alpha_func != PIPE_FUNC_ALWAYS;
    key->ps_epilog.colors_written = info->colors_written;
    key->ps_epilog.color_types = info->output_color_types;
    key->ps_epilog.writes_all_cbufs = info->color0_writes_all_cbufs &&
@@ -3758,6 +3767,8 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
          shader->info.writes_z &= !shader->key.ps.part.epilog.kill_z;
          shader->info.writes_stencil &= !shader->key.ps.part.epilog.kill_stencil;
          shader->info.writes_sample_mask &= !shader->key.ps.part.epilog.kill_samplemask;
+         shader->info.uses_discard |= shader->key.ps.part.prolog.poly_stipple ||
+                                      shader->key.ps.part.epilog.alpha_func != PIPE_FUNC_ALWAYS;
          break;
       default:;
       }

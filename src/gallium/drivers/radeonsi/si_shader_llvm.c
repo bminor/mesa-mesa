@@ -805,7 +805,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
                      shader->info.writes_sample_mask ||
                      shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz;
       if (!exports_mrtz && !exports_color_null)
-         exports_color_null = si_shader_uses_discard(shader) || sscreen->info.gfx_level < GFX10;
+         exports_color_null = shader->info.uses_discard || sscreen->info.gfx_level < GFX10;
    }
 
    si_llvm_context_init(&ctx, sscreen, compiler, shader->wave_size, exports_color_null, exports_mrtz,

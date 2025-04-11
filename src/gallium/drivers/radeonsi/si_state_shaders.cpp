@@ -2118,7 +2118,7 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
       S_02880C_MASK_EXPORT_ENABLE(shader->info.writes_sample_mask) |
       S_02880C_COVERAGE_TO_MASK_ENABLE(sscreen->info.gfx_level <= GFX10_3 &&
                                        shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz) |
-      S_02880C_KILL_ENABLE(si_shader_uses_discard(shader));
+      S_02880C_KILL_ENABLE(shader->info.uses_discard);
 
    if (sscreen->info.gfx_level >= GFX12)
       shader->ps.pa_sc_hisz_control = S_028BBC_ROUND(2); /* required minimum value */

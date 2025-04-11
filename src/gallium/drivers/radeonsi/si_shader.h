@@ -881,6 +881,7 @@ struct si_shader_binary_info {
    bool writes_z : 1;
    bool writes_stencil : 1;
    bool writes_sample_mask : 1;
+   bool uses_discard : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    unsigned private_mem_vgprs;
@@ -1139,15 +1140,6 @@ static inline bool si_shader_uses_streamout(const struct si_shader *shader)
           shader->selector->info.enabled_streamout_buffer_mask &&
           !shader->key.ge.opt.remove_streamout &&
           !shader->key.ge.mono.remove_streamout;
-}
-
-static inline bool si_shader_uses_discard(struct si_shader *shader)
-{
-   /* Changes to this should also update ps_modifies_zs. */
-   return shader->selector->info.base.fs.uses_discard ||
-          shader->key.ps.part.prolog.poly_stipple ||
-          shader->key.ps.mono.point_smoothing ||
-          shader->key.ps.part.epilog.alpha_func != PIPE_FUNC_ALWAYS;
 }
 
 static inline bool si_shader_culling_enabled(struct si_shader *shader)
