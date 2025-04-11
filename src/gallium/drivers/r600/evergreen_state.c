@@ -2597,9 +2597,9 @@ static void cayman_convert_border_color(union pipe_color_union *in,
 	}
 }
 
-static void evergreen_convert_border_color(union pipe_color_union *in,
-                                           union pipe_color_union *out,
-                                           struct pipe_sampler_view *view)
+void evergreen_convert_border_color(const union pipe_color_union *in,
+				    union pipe_color_union *out,
+				    const struct pipe_sampler_view *view)
 {
 	const enum pipe_format format = view->format;
 	const struct util_format_description *d = util_format_description(format);
