@@ -231,6 +231,9 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
    case kTfLiteBuiltinAbs:
       operation->type = PIPE_ML_OPERATION_TYPE_ABSOLUTE;
       break;
+   case kTfLiteBuiltinLogistic:
+      operation->type = PIPE_ML_OPERATION_TYPE_LOGISTIC;
+      break;
    default:
       return false;
    }
@@ -369,6 +372,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_ABSOLUTE:
          teflon_debug("%-6s ", "ABS");
+         break;
+      case PIPE_ML_OPERATION_TYPE_LOGISTIC:
+         teflon_debug("%-6s ", "LOG");
          break;
       }
 
