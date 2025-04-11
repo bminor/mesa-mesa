@@ -4027,6 +4027,32 @@ check_level(struct gl_context *ctx, struct gl_texture_object *texObj,
    return true;
 }
 
+/**
+ * Common code called by all gl*FramebufferTexture*() entry points to verify
+ * the samples.
+ *
+ * \return true if no errors, false if errors
+ */
+static bool
+check_samples(struct gl_context *ctx, struct gl_texture_object *texObj,
+            GLenum target, GLint level, GLint samples, const char *caller)
+{
+   if (samples > 0) {
+      const struct gl_texture_image *texImage =
+         texObj->Image[_mesa_tex_target_to_face(target)][level];
+      assert(texImage);
+      GLenum sample_count_error =
+         _mesa_check_sample_count(ctx, target, texImage->InternalFormat,
+                                 samples, samples);
+      if (sample_count_error != GL_NO_ERROR) {
+         _mesa_error(ctx, sample_count_error, "%s(samples=%d)", caller,
+                     samples);
+         return false;
+      }
+   }
+
+   return true;
+}
 
 struct gl_renderbuffer_attachment *
 _mesa_get_and_validate_attachment(struct gl_context *ctx,
@@ -4354,25 +4380,6 @@ frame_buffer_texture(GLuint framebuffer, GLenum target,
       }
 
       if (!no_error) {
-         /* EXT_multisampled_render_to_texture:
-
-            If samples is greater than the 
-            value of MAX_SAMPLES_EXT, then the error INVALID_VALUE is generated. 
-            An INVALID_OPERATION error is generated if samples is greater than
-            the maximum number of samples supported for target and its
-            internalformat. If samples is zero, then TEXTURE_SAMPLES_EXT is set
-            to zero, and FramebufferTexture2DMultisampleEXT behaves like
-            FramebufferTexture2D.
-          */
-         if (samples > ctx->Const.MaxSamples) {
-            _mesa_error(ctx, GL_INVALID_VALUE, "%s(invalid sample count %u)",
-                        func, samples);
-         }
-         if (samples > ctx->Const.MaxFramebufferSamples) {
-            _mesa_error(ctx, GL_INVALID_OPERATION, "%s(invalid sample count %u)",
-                        func, samples);
-         }
-
          if (!check_layered) {
             if (!check_texture_target(ctx, texObj->Target, func))
                return;
@@ -4382,6 +4389,9 @@ frame_buffer_texture(GLuint framebuffer, GLenum target,
          }
 
          if (!check_level(ctx, texObj, texObj->Target, level, func))
+            return;
+
+         if (!check_samples(ctx, texObj, texObj->Target, level, samples, func))
             return;
       }
 
