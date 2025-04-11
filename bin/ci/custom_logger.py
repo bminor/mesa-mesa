@@ -59,6 +59,7 @@ class CustomLogger:
                 "dut_submit_time": "",
                 "dut_start_time": "",
                 "dut_end_time": "",
+                "dut_duration_time": "",
                 "dut_name": "",
                 "dut_state": "pending",
                 "dut_job_phases": [],
@@ -104,13 +105,16 @@ class CustomLogger:
             job = self.get_last_dut_job()
             if job["dut_job_phases"] and job["dut_job_phases"][-1]["end_time"] == "":
                 # If the last phase exists and its end time is empty, set the end time
-                job["dut_job_phases"][-1]["end_time"] = datetime.now().isoformat()
+                timestamp = datetime.now().isoformat()
+                job["dut_job_phases"][-1]["end_time"] = timestamp
+                job["dut_job_phases"][-1]["duration_time"] = self.get_duration_time(job["dut_job_phases"][-1]["start_time"], timestamp)
 
             # Create a new phase
             phase_data = {
                 "name": phase_name,
                 "start_time": datetime.now().isoformat(),
                 "end_time": "",
+                "duration_time": "",
             }
             job["dut_job_phases"].append(phase_data)
 
@@ -146,6 +150,18 @@ class CustomLogger:
             if job["dut_end_time"] < job["dut_start_time"]:
                 logging.error("Job ended before it started.")
 
+    def get_duration_time(self, start_time, end_time):
+        """
+        Computes duration time, in minutes and seconds.
+        """
+        try:
+            start = datetime.fromisoformat(start_time)
+            end = datetime.fromisoformat(end_time)
+            duration = end - start
+            return str(duration)
+        except ValueError:
+            return ""
+
     # Method to update DUT start, submit and end time
     def update_dut_time(self, value, custom_time):
         """
@@ -171,6 +187,7 @@ class CustomLogger:
             elif value == "end":
                 job["dut_end_time"] = timestamp
                 job["dut_state"] = "finished"
+                job["dut_duration_time"] = self.get_duration_time(job["dut_start_time"], job["dut_end_time"])
             else:
                 raise ValueError(
                     "Error: Invalid argument provided for --update-dut-time. Use 'start', 'submit', 'end'."
@@ -193,7 +210,9 @@ class CustomLogger:
             job = self.get_last_dut_job()
             # Check if the last phase exists and its end time is empty, then set the end time
             if job["dut_job_phases"] and job["dut_job_phases"][-1]["end_time"] == "":
-                job["dut_job_phases"][-1]["end_time"] = datetime.now().isoformat()
+                timestamp = datetime.now().isoformat()
+                job["dut_job_phases"][-1]["end_time"] = timestamp
+                job["dut_job_phases"][-1]["duration_time"] = self.get_duration_time(job["dut_job_phases"][-1]["start_time"], timestamp)
 
     def close(self):
         """
