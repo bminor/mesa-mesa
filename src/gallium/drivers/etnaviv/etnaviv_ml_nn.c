@@ -182,7 +182,7 @@ struct etna_nn_params {
 static void *
 map_resource(struct pipe_resource *resource)
 {
-   return etna_bo_map(etna_resource(resource)->bo);
+   return etna_bo_map(etna_buffer_resource(resource)->bo);
 }
 
 
@@ -835,7 +835,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
 
    struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
    unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
-   map->in_image_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
+   map->in_image_address = etna_bo_gpu_va(etna_buffer_resource(input)->bo) + offset;
    map->in_image_x_size = input_width;
    map->in_image_y_size = input_height;
    map->in_image_x_stride = input_width;
@@ -883,7 +883,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
 
    struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
    offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
-   map->out_image_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
+   map->out_image_address = etna_bo_gpu_va(etna_buffer_resource(output)->bo) + offset;
    map->out_image_x_size = output_width;
    map->out_image_y_size = output_height;
    map->out_image_z_size = output_channels;
