@@ -14,6 +14,7 @@
       -D werror=true
     - meson compile -C _build
     - meson install -C _build
+    - echo "Documentation website preview is available at $ARTIFACTS_BASE_URL/public/index.html"
 
 deploy-docs:
   extends: .docs-base
