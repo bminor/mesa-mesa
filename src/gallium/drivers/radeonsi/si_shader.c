@@ -1636,111 +1636,6 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
    }
 }
 
-/* TODO: convert to nir_shader_instructions_pass */
-static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
-{
-   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-   assert(impl);
-   assert(nir->info.stage <= MESA_SHADER_GEOMETRY);
-
-   if (!key->ge.opt.kill_outputs &&
-       !key->ge.opt.kill_pointsize &&
-       !key->ge.opt.kill_layer &&
-       !key->ge.opt.kill_clip_distances &&
-       !(nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER)) &&
-       !key->ge.opt.remove_streamout &&
-       !key->ge.mono.remove_streamout) {
-      return nir_no_progress(impl);
-   }
-
-   bool progress = false;
-
-   if ((key->ge.opt.remove_streamout || key->ge.mono.remove_streamout) && nir->xfb_info) {
-      ralloc_free(nir->xfb_info);
-      nir->xfb_info = NULL;
-   }
-
-   nir_foreach_block(block, impl) {
-      nir_foreach_instr_safe(instr, block) {
-         if (instr->type != nir_instr_type_intrinsic)
-            continue;
-
-         nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-         if (intr->intrinsic != nir_intrinsic_store_output)
-            continue;
-
-         /* No indirect indexing allowed. */
-         ASSERTED nir_src offset = *nir_get_io_offset_src(intr);
-         assert(nir_src_is_const(offset) && nir_src_as_uint(offset) == 0);
-
-         assert(intr->num_components == 1); /* only scalar stores expected */
-         nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-
-         if ((key->ge.opt.remove_streamout || key->ge.mono.remove_streamout) &&
-             nir_instr_xfb_write_mask(intr)) {
-            /* Remove the output store if the output is not used as a sysval or varying. */
-            if ((sem.no_sysval_output ||
-                 !nir_slot_is_sysval_output(sem.location, MESA_SHADER_FRAGMENT)) &&
-                (sem.no_varying ||
-                 !nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT))) {
-               nir_instr_remove(instr);
-               progress = true;
-               continue;
-            }
-
-            /* Clear xfb info if the output is used as a sysval or varying. */
-            static const nir_io_xfb zeroed;
-            nir_intrinsic_set_io_xfb(intr, zeroed);
-            nir_intrinsic_set_io_xfb2(intr, zeroed);
-            progress = true;
-         }
-
-         if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) &&
-             key->ge.opt.kill_outputs &
-             (1ull << si_shader_io_get_unique_index(sem.location)))
-            progress |= nir_remove_varying(intr, MESA_SHADER_FRAGMENT);
-
-         switch (sem.location) {
-         case VARYING_SLOT_PSIZ:
-            if (key->ge.opt.kill_pointsize)
-               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
-            break;
-
-         case VARYING_SLOT_CLIP_VERTEX:
-            /* TODO: We should only kill specific clip planes as required by kill_clip_distance,
-             * not whole gl_ClipVertex. Lower ClipVertex in NIR.
-             */
-            if ((key->ge.opt.kill_clip_distances & SI_USER_CLIP_PLANE_MASK) ==
-                SI_USER_CLIP_PLANE_MASK)
-               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
-            break;
-
-         case VARYING_SLOT_CLIP_DIST0:
-         case VARYING_SLOT_CLIP_DIST1:
-            if (key->ge.opt.kill_clip_distances) {
-               assert(nir_intrinsic_src_type(intr) == nir_type_float32);
-               unsigned index = (sem.location - VARYING_SLOT_CLIP_DIST0) * 4 +
-                                nir_intrinsic_component(intr);
-
-               if (key->ge.opt.kill_clip_distances & BITFIELD_BIT(index))
-                  progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
-            }
-            break;
-
-         case VARYING_SLOT_LAYER:
-            /* LAYER is never passed to FS. Instead, we load it there as a system value. */
-            progress |= nir_remove_varying(intr, MESA_SHADER_FRAGMENT);
-
-            if (key->ge.opt.kill_layer)
-               progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
-            break;
-         }
-      }
-   }
-
-   return nir_progress(progress, impl, nir_metadata_control_flow);
-}
-
 static unsigned si_map_io_driver_location(unsigned semantic)
 {
    if ((semantic >= VARYING_SLOT_PATCH0 && semantic < VARYING_SLOT_TESS_MAX) ||
@@ -2014,178 +1909,10 @@ static unsigned si_get_nr_pos_exports(const struct si_shader_selector *sel,
    return nr_pos_exports;
 }
 
-static bool lower_ps_load_color_intrinsic(nir_builder *b, nir_instr *instr, void *state)
-{
-   nir_def **colors = (nir_def **)state;
-
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-   if (intrin->intrinsic != nir_intrinsic_load_color0 &&
-       intrin->intrinsic != nir_intrinsic_load_color1)
-      return false;
-
-   unsigned index = intrin->intrinsic == nir_intrinsic_load_color0 ? 0 : 1;
-   assert(colors[index]);
-
-   nir_def_replace(&intrin->def, colors[index]);
-   return true;
-}
-
-static bool si_nir_lower_ps_color_input(nir_shader *nir, const union si_shader_key *key,
-                                        const struct si_shader_info *info)
-{
-   bool progress = false;
-   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-
-   nir_builder builder = nir_builder_at(nir_before_impl(impl));
-   nir_builder *b = &builder;
-
-   /* Build ready to be used colors at the beginning of the shader. */
-   nir_def *colors[2] = {0};
-   for (int i = 0; i < 2; i++) {
-      if (!(info->colors_read & (0xf << (i * 4))))
-         continue;
-
-      enum glsl_interp_mode interp_mode = info->color_interpolate[i];
-      if (interp_mode == INTERP_MODE_COLOR) {
-         interp_mode = key->ps.part.prolog.flatshade_colors ?
-            INTERP_MODE_FLAT : INTERP_MODE_SMOOTH;
-      }
-
-      nir_def *back_color = NULL;
-      if (interp_mode == INTERP_MODE_FLAT) {
-         colors[i] = nir_load_input(b, 4, 32, nir_imm_int(b, 0),
-                                   .io_semantics.location = VARYING_SLOT_COL0 + i);
-
-         if (key->ps.part.prolog.color_two_side) {
-            back_color = nir_load_input(b, 4, 32, nir_imm_int(b, 0),
-                                        .io_semantics.location = VARYING_SLOT_BFC0 + i,
-                                        .io_semantics.num_slots = 1);
-         }
-      } else {
-         nir_intrinsic_op op = 0;
-         switch (info->color_interpolate_loc[i]) {
-         case TGSI_INTERPOLATE_LOC_CENTER:
-            op = nir_intrinsic_load_barycentric_pixel;
-            break;
-         case TGSI_INTERPOLATE_LOC_CENTROID:
-            op = nir_intrinsic_load_barycentric_centroid;
-            break;
-         case TGSI_INTERPOLATE_LOC_SAMPLE:
-            op = nir_intrinsic_load_barycentric_sample;
-            break;
-         default:
-            unreachable("invalid color interpolate location");
-            break;
-         }
-
-         nir_def *barycentric = nir_load_barycentric(b, op, interp_mode);
-
-         colors[i] =
-            nir_load_interpolated_input(b, 4, 32, barycentric, nir_imm_int(b, 0),
-                                        .io_semantics.location = VARYING_SLOT_COL0 + i);
-
-         if (key->ps.part.prolog.color_two_side) {
-            back_color =
-               nir_load_interpolated_input(b, 4, 32, barycentric, nir_imm_int(b, 0),
-                                           .io_semantics.location = VARYING_SLOT_BFC0 + i);
-         }
-      }
-
-      if (back_color) {
-         nir_def *is_front_face = nir_load_front_face(b, 1);
-         colors[i] = nir_bcsel(b, is_front_face, colors[i], back_color);
-      }
-
-      progress = true;
-   }
-
-   /* lower nir_load_color0/1 to use the color value. */
-   return nir_shader_instructions_pass(nir, lower_ps_load_color_intrinsic,
-                                       nir_metadata_control_flow,
-                                       colors) || progress;
-}
-
-static bool si_nir_emit_polygon_stipple(nir_shader *nir)
-{
-   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-
-   nir_builder builder = nir_builder_at(nir_before_impl(impl));
-   nir_builder *b = &builder;
-
-   /* Load the buffer descriptor. */
-   nir_def *desc = nir_load_polygon_stipple_buffer_amd(b);
-
-   /* Use the fixed-point gl_FragCoord input.
-    * Since the stipple pattern is 32x32 and it repeats, just get 5 bits
-    * per coordinate to get the repeating effect.
-    */
-   nir_def *pixel_coord = nir_u2u32(b, nir_iand_imm(b, nir_load_pixel_coord(b), 0x1f));
-
-   nir_def *zero = nir_imm_int(b, 0);
-   /* The stipple pattern is 32x32, each row has 32 bits. */
-   nir_def *offset = nir_ishl_imm(b, nir_channel(b, pixel_coord, 1), 2);
-   nir_def *row = nir_load_buffer_amd(b, 1, 32, desc, offset, zero, zero);
-   nir_def *bit = nir_ubfe(b, row, nir_channel(b, pixel_coord, 0), nir_imm_int(b, 1));
-
-   nir_def *pass = nir_i2b(b, bit);
-   nir_discard_if(b, nir_inot(b, pass));
-
-   return nir_progress(true, impl, nir_metadata_control_flow);
-}
-
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)
 {
    return gl_shader_stage_is_compute(shader->info.stage) &&
       shader->info.shared_size > 0 && sscreen->options.clear_lds;
-}
-
-static bool clamp_shadow_comparison_value(nir_builder *b, nir_tex_instr *tex,
-                                          void *state)
-{
-   if (!tex->is_shadow)
-      return false;
-
-   b->cursor = nir_before_instr(&tex->instr);
-
-   int samp_index = nir_tex_instr_src_index(tex, nir_tex_src_sampler_handle);
-   int comp_index = nir_tex_instr_src_index(tex, nir_tex_src_comparator);
-   assert(samp_index >= 0 && comp_index >= 0);
-
-   nir_def *sampler = tex->src[samp_index].src.ssa;
-   nir_def *compare = tex->src[comp_index].src.ssa;
-   /* Must have been lowered to descriptor. */
-   assert(sampler->num_components > 1);
-
-   nir_def *upgraded = nir_channel(b, sampler, 3);
-   upgraded = nir_i2b(b, nir_ubfe_imm(b, upgraded, 29, 1));
-
-   nir_def *clamped = nir_fsat(b, compare);
-   compare = nir_bcsel(b, upgraded, clamped, compare);
-
-   nir_src_rewrite(&tex->src[comp_index].src, compare);
-   return true;
-}
-
-static bool si_nir_clamp_shadow_comparison_value(nir_shader *nir)
-{
-   /* Section 8.23.1 (Depth Texture Comparison Mode) of the
-    * OpenGL 4.5 spec says:
-    *
-    *    "If the texture’s internal format indicates a fixed-point
-    *     depth texture, then D_t and D_ref are clamped to the
-    *     range [0, 1]; otherwise no clamping is performed."
-    *
-    * TC-compatible HTILE promotes Z16 and Z24 to Z32_FLOAT,
-    * so the depth comparison value isn't clamped for Z16 and
-    * Z24 anymore. Do it manually here for GFX8-9; GFX10 has
-    * an explicitly clamped 32-bit float format.
-    */
-   return nir_shader_tex_pass(nir, clamp_shadow_comparison_value,
-                              nir_metadata_control_flow, NULL);
 }
 
 static void
@@ -2294,7 +2021,7 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
           * selection.
           */
          if (sel->info.colors_read)
-            NIR_PASS(progress, nir, si_nir_lower_ps_color_input, &shader->key, &sel->info);
+            NIR_PASS(progress, nir, si_nir_lower_ps_color_inputs, &shader->key, &sel->info);
 
          /* This adds discard and barycentrics. */
          if (key->ps.mono.point_smoothing)
@@ -2345,7 +2072,7 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 
          /* This adds discard. */
          if (key->ps.part.prolog.poly_stipple)
-            NIR_PASS(progress, nir, si_nir_emit_polygon_stipple);
+            NIR_PASS(progress, nir, si_nir_lower_polygon_stipple);
       } else {
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
