@@ -205,7 +205,7 @@ static void *si_vce_encode_headers(struct rvce_encoder *enc)
    if (!data)
       return NULL;
 
-   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, &enc->cs,
+   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, NULL,
                                       PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
    if (!ptr) {
       RVID_ERR("Can't map bs buffer.\n");
@@ -297,7 +297,7 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
    struct rvid_buffer *fb = feedback;
 
-   uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, &enc->cs,
+   uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, NULL,
                                        PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
 
    if (ptr[1]) {
@@ -364,11 +364,6 @@ static void rvce_flush(struct pipe_video_codec *encoder)
    flush(enc, PIPE_FLUSH_ASYNC, NULL);
 }
 
-static void rvce_cs_flush(void *ctx, unsigned flags, struct pipe_fence_handle **fence)
-{
-   // just ignored
-}
-
 struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,
                                                const struct pipe_video_codec *templ,
                                                struct radeon_winsys *ws, rvce_get_buffer get_buffer)
@@ -414,7 +409,7 @@ struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,
    enc->screen = context->screen;
    enc->ws = ws;
 
-   if (!ws->cs_create(&enc->cs, sctx->ctx, AMD_IP_VCE, rvce_cs_flush, enc)) {
+   if (!ws->cs_create(&enc->cs, sctx->ctx, AMD_IP_VCE, NULL, NULL)) {
       RVID_ERR("Can't get command submission context.\n");
       goto error;
    }
