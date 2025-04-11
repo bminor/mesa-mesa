@@ -498,7 +498,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->writes_psize = nir->info.outputs_written & VARYING_BIT_PSIZ;
       info->writes_clipvertex = nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX;
       info->writes_edgeflag = nir->info.outputs_written & VARYING_BIT_EDGE;
-      info->writes_position = nir->info.outputs_written & VARYING_BIT_POS;
    }
 
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);

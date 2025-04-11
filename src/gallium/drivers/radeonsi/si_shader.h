@@ -548,7 +548,6 @@ struct si_shader_info {
    bool uses_grid_size;
    bool uses_tg_size;
    bool uses_atomic_ordered_add;
-   bool writes_position;
    bool writes_psize;
    bool writes_clipvertex;
    bool writes_primid;
