@@ -878,6 +878,9 @@ struct si_shader_binary_info {
    bool uses_vs_state_indexed : 1; /* VS_STATE_INDEXED */
    bool uses_gs_state_provoking_vtx_first : 1;
    bool uses_gs_state_outprim : 1;
+   bool writes_z : 1;
+   bool writes_stencil : 1;
+   bool writes_sample_mask : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    unsigned private_mem_vgprs;
@@ -1027,9 +1030,6 @@ struct si_shader {
          unsigned num_interp;
          unsigned spi_gs_out_config_ps;
          unsigned pa_sc_hisz_control;
-         bool writes_z;
-         bool writes_stencil;
-         bool writes_samplemask;
       } ps;
    };
 

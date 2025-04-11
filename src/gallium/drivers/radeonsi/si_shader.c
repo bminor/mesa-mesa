@@ -1325,9 +1325,9 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
          unreachable("invalid shader key");
    } else if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
       num_ps_outputs = util_bitcount(shader->selector->info.colors_written) +
-                       (shader->ps.writes_z ||
-                        shader->ps.writes_stencil ||
-                        shader->ps.writes_samplemask);
+                       (shader->info.writes_z ||
+                        shader->info.writes_stencil ||
+                        shader->info.writes_sample_mask);
    }
 
    util_debug_message(debug, SHADER_INFO,
@@ -2857,6 +2857,18 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                     nir_intrinsic_atomic_op(intr) != nir_atomic_op_ordered_add_gfx12_amd))
                   shader->info.uses_vmem_load_other = true;
                break;
+            case nir_intrinsic_store_output:
+               if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+                  nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+
+                  if (sem.location == FRAG_RESULT_DEPTH)
+                     shader->info.writes_z = true;
+                  else if (sem.location == FRAG_RESULT_STENCIL)
+                     shader->info.writes_stencil = true;
+                  else if (sem.location == FRAG_RESULT_SAMPLE_MASK)
+                     shader->info.writes_sample_mask = true;
+               }
+               break;
             default:
                break;
             }
@@ -3144,29 +3156,13 @@ debug_message_stderr(void *data, unsigned *id, enum util_debug_type ptype,
    fprintf(stderr, "\n");
 }
 
-static void
-determine_shader_variant_info(struct si_screen *sscreen, struct si_shader *shader)
-{
-   struct si_shader_selector *sel = shader->selector;
-
-   if (sel->stage == MESA_SHADER_FRAGMENT) {
-      shader->ps.writes_z = sel->info.writes_z && !shader->key.ps.part.epilog.kill_z;
-      shader->ps.writes_stencil = sel->info.writes_stencil &&
-                                  !shader->key.ps.part.epilog.kill_stencil;
-      shader->ps.writes_samplemask = sel->info.writes_samplemask &&
-                                     !shader->key.ps.part.epilog.kill_samplemask;
-   }
-}
-
 bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                        struct si_shader *shader, struct util_debug_callback *debug)
 {
    bool ret = true;
    struct si_shader_selector *sel = shader->selector;
-
-   determine_shader_variant_info(sscreen, shader);
-
    struct si_linked_shaders linked;
+
    get_nir_shaders(shader, &linked);
    nir_shader *nir = linked.consumer.nir;
 
@@ -3712,8 +3708,6 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
       if (!mainp)
          return false;
 
-      determine_shader_variant_info(sscreen, shader);
-
       /* Copy the compiled shader data over. */
       shader->is_binary_shared = true;
       shader->binary = mainp->binary;
@@ -3760,6 +3754,10 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
           * are allocated inputs.
           */
          shader->config.num_vgprs = MAX2(shader->config.num_vgprs, shader->info.num_input_vgprs);
+
+         shader->info.writes_z &= !shader->key.ps.part.epilog.kill_z;
+         shader->info.writes_stencil &= !shader->key.ps.part.epilog.kill_stencil;
+         shader->info.writes_sample_mask &= !shader->key.ps.part.epilog.kill_samplemask;
          break;
       default:;
       }

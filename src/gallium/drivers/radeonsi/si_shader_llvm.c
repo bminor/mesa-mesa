@@ -801,8 +801,8 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       exports_color_null = sel->info.colors_written;
-      exports_mrtz = shader->ps.writes_z || shader->ps.writes_stencil ||
-                     shader->ps.writes_samplemask ||
+      exports_mrtz = shader->info.writes_z || shader->info.writes_stencil ||
+                     shader->info.writes_sample_mask ||
                      shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz;
       if (!exports_mrtz && !exports_color_null)
          exports_color_null = si_shader_uses_discard(shader) || sscreen->info.gfx_level < GFX10;

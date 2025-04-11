@@ -2113,9 +2113,9 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
 
    /* DB_SHADER_CONTROL */
    shader->ps.db_shader_control =
-      S_02880C_Z_EXPORT_ENABLE(shader->ps.writes_z) |
-      S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(shader->ps.writes_stencil) |
-      S_02880C_MASK_EXPORT_ENABLE(shader->ps.writes_samplemask) |
+      S_02880C_Z_EXPORT_ENABLE(shader->info.writes_z) |
+      S_02880C_STENCIL_TEST_VAL_EXPORT_ENABLE(shader->info.writes_stencil) |
+      S_02880C_MASK_EXPORT_ENABLE(shader->info.writes_sample_mask) |
       S_02880C_COVERAGE_TO_MASK_ENABLE(sscreen->info.gfx_level <= GFX10_3 &&
                                        shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz) |
       S_02880C_KILL_ENABLE(si_shader_uses_discard(shader));
@@ -2187,8 +2187,8 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
    shader->ps.spi_ps_input_addr = shader->config.spi_ps_input_addr;
    shader->ps.num_interp = si_get_ps_num_interp(shader);
    shader->ps.spi_shader_z_format =
-      ac_get_spi_shader_z_format(shader->ps.writes_z, shader->ps.writes_stencil,
-                                 shader->ps.writes_samplemask,
+      ac_get_spi_shader_z_format(shader->info.writes_z, shader->info.writes_stencil,
+                                 shader->info.writes_sample_mask,
                                  shader->key.ps.part.epilog.alpha_to_coverage_via_mrtz);
 
    /* Ensure that some export memory is always allocated, for two reasons:
