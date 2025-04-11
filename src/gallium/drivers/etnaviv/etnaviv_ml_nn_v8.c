@@ -16,7 +16,7 @@
 static void *
 map_resource(struct pipe_resource *resource)
 {
-   return etna_bo_map(etna_resource(resource)->bo);
+   return etna_bo_map(etna_buffer_resource(resource)->bo);
 }
 
 #define FIELD(field, bits) uint32_t field : bits;

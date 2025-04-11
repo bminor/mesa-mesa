@@ -104,7 +104,7 @@ struct pipe_resource *
 etna_ml_create_resource(struct pipe_context *pctx, size_t size)
 {
    struct pipe_resource *res = pipe_buffer_create(pctx->screen, 0, PIPE_USAGE_DEFAULT, size);
-   void *ptr = etna_bo_map(etna_resource(res)->bo);
+   void *ptr = etna_bo_map(etna_buffer_resource(res)->bo);
    memset(ptr, 0, pipe_buffer_size(res));
 
    return res;
@@ -739,8 +739,8 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
          etna_cmd_stream_ref_bo(stream, operation->configs[j], ETNA_RELOC_READ);
       if (operation->coefficients)
          etna_cmd_stream_ref_bo(stream, operation->coefficients, ETNA_RELOC_READ);
-      etna_cmd_stream_ref_bo(stream, etna_resource(operation->input)->bo, ETNA_RELOC_READ);
-      etna_cmd_stream_ref_bo(stream, etna_resource(operation->output)->bo, ETNA_RELOC_WRITE);
+      etna_cmd_stream_ref_bo(stream, etna_buffer_resource(operation->input)->bo, ETNA_RELOC_READ);
+      etna_cmd_stream_ref_bo(stream, etna_buffer_resource(operation->output)->bo, ETNA_RELOC_WRITE);
 
       switch (operation->type) {
          case ETNA_JOB_TYPE_TP:
@@ -766,11 +766,11 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
             struct pipe_transfer *transfer = NULL;
 
             pipe_buffer_map(pctx, operation->input, PIPE_MAP_READ, &transfer);
-            dump_bo(etna_resource(operation->input)->bo, "input", i, 0, operation->input_offset, 0);
+            dump_bo(etna_buffer_resource(operation->input)->bo, "input", i, 0, operation->input_offset, 0);
             pipe_buffer_unmap(pctx, transfer);
 
             pipe_buffer_map(pctx, operation->output, PIPE_MAP_READ, &transfer);
-            dump_bo(etna_resource(operation->output)->bo, "output", i, 0, operation->output_offset, 0);
+            dump_bo(etna_buffer_resource(operation->output)->bo, "output", i, 0, operation->output_offset, 0);
             pipe_buffer_unmap(pctx, transfer);
          }
 
