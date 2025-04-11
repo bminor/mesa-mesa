@@ -2978,6 +2978,15 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
                                             SI_SPI_PS_INPUT_ADDR_FOR_PROLOG;
       }
    }
+
+   if (nir->info.stage <= MESA_SHADER_GEOMETRY && nir->xfb_info &&
+       !shader->key.ge.as_ls && !shader->key.ge.as_es) {
+      unsigned num_streamout_dwords = 0;
+
+      for (unsigned i = 0; i < 4; i++)
+         num_streamout_dwords += nir->info.xfb_stride[i];
+      shader->info.num_streamout_vec4s = DIV_ROUND_UP(num_streamout_dwords, 4);
+   }
 }
 
 /* Late shader variant info for AMD-specific intrinsics. */
@@ -3073,6 +3082,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    shader->selector = gs_selector;
    shader->is_gs_copy_shader = true;
    shader->wave_size = si_determine_wave_size(sscreen, shader);
+   shader->info.num_streamout_vec4s = gs_shader->info.num_streamout_vec4s;
 
    STATIC_ASSERT(sizeof(shader->info.vs_output_param_offset[0]) == 1);
    memset(shader->info.vs_output_param_offset, AC_EXP_PARAM_DEFAULT_VAL_0000,

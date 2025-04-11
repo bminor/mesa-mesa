@@ -184,8 +184,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                      info->enabled_streamout_buffer_mask |=
                         BITFIELD_BIT(stream * 4 + xfb.out[i % 2].buffer);
                   }
-
-                  info->output_xfb_writemask[loc] |= nir_instr_xfb_write_mask(intr);
                }
             }
 
@@ -504,13 +502,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    nir_foreach_block (block, impl) {
       nir_foreach_instr (instr, block)
          scan_instruction(nir, info, instr, colors_lowered);
-   }
-
-   if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       nir->info.stage == MESA_SHADER_GEOMETRY) {
-      info->num_streamout_components = 0;
-      for (unsigned i = 0; i < info->num_outputs; i++)
-         info->num_streamout_components += util_bitcount(info->output_xfb_writemask[i]);
    }
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL) {

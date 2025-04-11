@@ -1633,7 +1633,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
 
       /* This tuning adds up to 50% streamout performance. */
       if (si_shader_uses_streamout(shader)) {
-         unsigned num_streamout_vec4s = DIV_ROUND_UP(shader->selector->info.num_streamout_components, 4);
+         unsigned num_streamout_vec4s = shader->info.num_streamout_vec4s;
 
          /* TODO: Tested on a pre-production chip. Re-test on the final chip. */
          if (num_streamout_vec4s <= 4)
