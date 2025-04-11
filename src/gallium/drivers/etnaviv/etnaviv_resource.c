@@ -95,9 +95,11 @@ etna_screen_resource_alloc_ts(struct pipe_screen *pscreen,
    size_t tile_size, ts_size, ts_bo_size, ts_layer_stride, ts_data_offset = 0;
    uint8_t ts_mode = TS_MODE_128B;
    int8_t ts_compress_fmt = -1;
-   unsigned layers;
 
    assert(!rsc->ts_bo);
+
+   assert(prsc->depth0 == 1);
+   assert(prsc->array_size == 1);
 
    /* pre-v4 compression is largely useless, so disable it when not wanted for MSAA
     * v4 compression can be enabled everywhere without any known drawback,
@@ -131,11 +133,10 @@ etna_screen_resource_alloc_ts(struct pipe_screen *pscreen,
    }
 
    tile_size = etna_screen_get_tile_size(screen, ts_mode, prsc->nr_samples > 1);
-   layers = prsc->target == PIPE_TEXTURE_3D ? prsc->depth0 : prsc->array_size;
    ts_layer_stride = align(DIV_ROUND_UP(lvl->layer_stride,
                                         tile_size * 8 / screen->specs.bits_per_tile),
                            0x100 * screen->specs.pixel_pipes);
-   ts_size = ts_bo_size = ts_layer_stride * layers;
+   ts_size = ts_bo_size = ts_layer_stride;
    if (ts_size == 0)
       return true;
 
