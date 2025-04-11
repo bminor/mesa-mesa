@@ -272,11 +272,7 @@ hk_get_device_features(
       .sparseResidency8Samples = false,
       .sparseResidencyAliased = true,
       .sparseResidencyImage2D = true,
-
-      /* TODO: We need to implement sparse buffer without soft fault to avoid
-       * tying our hands later.
-       */
-      .sparseResidencyBuffer = false,
+      .sparseResidencyBuffer = true,
 
       /* This needs investigation. */
       .sparseResidencyImage3D = false,
