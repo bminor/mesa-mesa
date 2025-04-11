@@ -4806,7 +4806,10 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    unsigned num_patches, lds_size;
 
    /* Compute NUM_PATCHES and LDS_SIZE. */
-   ac_nir_compute_tess_wg_info(&sctx->screen->info, &tcs->info.base, ls_current->wave_size,
+   ac_nir_compute_tess_wg_info(&sctx->screen->info, tcs->info.base.outputs_read,
+                               tcs->info.base.outputs_written, tcs->info.base.patch_outputs_read,
+                               tcs->info.base.patch_outputs_written,
+                               tcs->info.base.tess.tcs_vertices_out, ls_current->wave_size,
                                tess_uses_primid, tcs->info.tessfactors_are_def_in_all_invocs,
                                num_tcs_input_cp, lds_input_vertex_size,
                                num_mem_tcs_outputs, num_mem_tcs_patch_outputs,

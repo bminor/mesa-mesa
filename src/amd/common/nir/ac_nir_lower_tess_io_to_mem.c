@@ -1289,19 +1289,20 @@ ac_nir_lower_tes_inputs_to_mem(nir_shader *shader,
 }
 
 void
-ac_nir_compute_tess_wg_info(const struct radeon_info *info, const struct shader_info *tcs_info,
+ac_nir_compute_tess_wg_info(const struct radeon_info *info, uint64_t outputs_read, uint64_t outputs_written,
+                            uint32_t patch_outputs_read, uint32_t patch_outputs_written, unsigned tcs_vertices_out,
                             unsigned wave_size, bool tess_uses_primid, bool all_invocations_define_tess_levels,
                             unsigned num_tcs_input_cp, unsigned lds_input_vertex_size,
                             unsigned num_mem_tcs_outputs, unsigned num_mem_tcs_patch_outputs,
                             unsigned *num_patches_per_wg, unsigned *hw_lds_size)
 {
-   unsigned num_tcs_output_cp = tcs_info->tess.tcs_vertices_out;
+   unsigned num_tcs_output_cp = tcs_vertices_out;
    unsigned lds_output_vertex_size =
-      util_bitcount64(tcs_info->outputs_read & tcs_info->outputs_written & ~TESS_LVL_MASK) * 16;
+      util_bitcount64(outputs_read & outputs_written & ~TESS_LVL_MASK) * 16;
    unsigned lds_perpatch_output_patch_size =
       (util_bitcount64(all_invocations_define_tess_levels ?
-                          0 : tcs_info->outputs_written & TESS_LVL_MASK) +
-       util_bitcount(tcs_info->patch_outputs_read & tcs_info->patch_outputs_written)) * 16;
+                          0 : outputs_written & TESS_LVL_MASK) +
+       util_bitcount(patch_outputs_read & patch_outputs_written)) * 16;
 
    unsigned lds_per_patch = num_tcs_input_cp * lds_input_vertex_size +
                             num_tcs_output_cp * lds_output_vertex_size +

@@ -3604,9 +3604,11 @@ radv_get_tess_wg_info(const struct radv_physical_device *pdev, const struct shad
 {
    const uint32_t lds_input_vertex_size = get_tcs_input_vertex_stride(tcs_num_lds_inputs);
 
-   ac_nir_compute_tess_wg_info(&pdev->info, tcs_info, pdev->ge_wave_size, false, all_invocations_define_tess_levels,
-                               tcs_num_input_vertices, lds_input_vertex_size, tcs_num_vram_outputs,
-                               tcs_num_vram_patch_outputs, num_patches_per_wg, hw_lds_size);
+   ac_nir_compute_tess_wg_info(&pdev->info, tcs_info->outputs_read, tcs_info->outputs_written,
+                               tcs_info->patch_outputs_read, tcs_info->patch_outputs_written,
+                               tcs_info->tess.tcs_vertices_out, pdev->ge_wave_size, false,
+                               all_invocations_define_tess_levels, tcs_num_input_vertices, lds_input_vertex_size,
+                               tcs_num_vram_outputs, tcs_num_vram_patch_outputs, num_patches_per_wg, hw_lds_size);
 }
 
 VkResult
