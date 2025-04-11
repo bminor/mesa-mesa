@@ -9,6 +9,7 @@
 #include "hk_device_memory.h"
 #include "hk_private.h"
 
+#include "agx_abi.h"
 #include "vk_buffer.h"
 
 struct hk_device_memory;
@@ -43,12 +44,12 @@ static inline struct hk_addr_range
 hk_buffer_addr_range(const struct hk_buffer *buffer, uint64_t offset,
                      uint64_t range, bool read_only)
 {
-   /* If range == 0, return a NULL pointer. Thanks to soft fault, that allows
-    * eliding robustness2 bounds checks for index = 0, as the bottom of VA space
-    * is reserved.
+   /* If range == 0, return a pointer to the zero page. That allows
+    * eliding robustness2 bounds checks for index = 0, even without soft fault.
     */
-   if (buffer == NULL || range == 0)
-      return (struct hk_addr_range){.range = 0};
+   if (buffer == NULL || range == 0) {
+      return (struct hk_addr_range){.addr = AGX_ZERO_PAGE_ADDRESS, .range = 0};
+   }
 
    return (struct hk_addr_range){
       .addr = hk_buffer_address(buffer, offset, read_only),
