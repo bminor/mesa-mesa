@@ -876,6 +876,8 @@ struct si_shader_binary_info {
    bool uses_base_instance : 1;
    bool uses_draw_id : 1;
    bool uses_vs_state_indexed : 1; /* VS_STATE_INDEXED */
+   bool uses_gs_state_provoking_vtx_first : 1;
+   bool uses_gs_state_outprim : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    unsigned private_mem_vgprs;
@@ -951,10 +953,6 @@ struct si_shader {
    struct si_shader_binary binary;
    struct ac_shader_config config;
    struct si_shader_binary_info info;
-
-   /* SI_SGPR_VS_STATE_BITS */
-   bool uses_vs_state_provoking_vertex;
-   bool uses_gs_state_outprim;
 
    /* Shader key + LLVM IR + disassembly + statistics.
     * Generated for debug contexts only.

@@ -2154,7 +2154,7 @@ static inline void si_set_clip_discard_distance(struct si_context *sctx, float d
 static inline void
 si_update_ngg_sgpr_state_provoking_vtx(struct si_context *sctx, struct si_shader *hw_vs, bool ngg)
 {
-   if (ngg && hw_vs && hw_vs->uses_vs_state_provoking_vertex) {
+   if (ngg && hw_vs && hw_vs->info.uses_gs_state_provoking_vtx_first) {
       SET_FIELD(sctx->current_gs_state, GS_STATE_PROVOKING_VTX_FIRST,
                 sctx->queued.named.rasterizer->flatshade_first);
    }
@@ -2163,7 +2163,7 @@ si_update_ngg_sgpr_state_provoking_vtx(struct si_context *sctx, struct si_shader
 static inline void
 si_update_ngg_sgpr_state_out_prim(struct si_context *sctx, struct si_shader *hw_vs, bool ngg)
 {
-   if (ngg && hw_vs && hw_vs->uses_gs_state_outprim)
+   if (ngg && hw_vs && hw_vs->info.uses_gs_state_outprim)
       SET_FIELD(sctx->current_gs_state, GS_STATE_OUTPRIM, sctx->gs_out_prim);
 }
 

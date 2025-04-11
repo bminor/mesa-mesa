@@ -9,6 +9,7 @@
 #include "ac_rtld.h"
 #include "nir.h"
 #include "nir_builder.h"
+#include "nir_range_analysis.h"
 #include "nir_serialize.h"
 #include "nir_tcs_info.h"
 #include "nir_xfb_info.h"
@@ -2765,9 +2766,6 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
             case nir_intrinsic_load_instance_id:
                shader->info.uses_instance_id = true;
                break;
-            case nir_intrinsic_load_base_vertex:
-               shader->info.uses_vs_state_indexed = true;
-               break;
             case nir_intrinsic_load_base_instance:
                shader->info.uses_base_instance = true;
                break;
@@ -2963,6 +2961,42 @@ si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
    }
 }
 
+/* Late shader variant info for AMD-specific intrinsics. */
+static void
+si_get_late_shader_variant_info(struct si_shader *shader, struct si_shader_args *args,
+                                nir_shader *nir)
+{
+   if ((nir->info.stage != MESA_SHADER_VERTEX || nir->info.vs.blit_sgprs_amd) &&
+       nir->info.stage != MESA_SHADER_TESS_EVAL &&
+       (nir->info.stage != MESA_SHADER_GEOMETRY || !shader->key.ge.as_ngg))
+      return;
+
+   nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
+      nir_foreach_instr(instr, block) {
+         if (instr->type == nir_instr_type_intrinsic &&
+             nir_instr_as_intrinsic(instr)->intrinsic == nir_intrinsic_load_scalar_arg_amd &&
+             nir_intrinsic_base(nir_instr_as_intrinsic(instr)) == args->vs_state_bits.arg_index) {
+            assert(args->vs_state_bits.used);
+
+            /* Gather which VS_STATE and GS_STATE user SGPR bits are used. */
+            uint32_t bits_used = nir_def_bits_used(nir_instr_def(instr));
+
+            if (nir->info.stage == MESA_SHADER_VERTEX &&
+                bits_used & ENCODE_FIELD(VS_STATE_INDEXED, ~0))
+               shader->info.uses_vs_state_indexed = true;
+
+            if (!shader->key.ge.as_es && shader->key.ge.as_ngg) {
+               if (bits_used & ENCODE_FIELD(GS_STATE_PROVOKING_VTX_FIRST, ~0))
+                  shader->info.uses_gs_state_provoking_vtx_first = true;
+
+               if (bits_used & ENCODE_FIELD(GS_STATE_OUTPRIM, ~0))
+                  shader->info.uses_gs_state_outprim = true;
+            }
+         }
+      }
+   }
+}
+
 static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *linked)
 {
    memset(linked, 0, sizeof(*linked));
@@ -2990,6 +3024,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
       if (linked->shader[i].nir) {
          si_get_shader_variant_info(shader, linked->shader[i].nir);
          run_late_optimization_and_lowering_passes(&linked->shader[i]);
+         si_get_late_shader_variant_info(shader, &linked->shader[i].args, linked->shader[i].nir);
       }
    }
 }
@@ -3760,6 +3795,8 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
          shader->info.uses_base_instance |= shader->previous_stage->info.uses_base_instance;
          shader->info.uses_draw_id |= shader->previous_stage->info.uses_draw_id;
          shader->info.uses_vs_state_indexed |= shader->previous_stage->info.uses_vs_state_indexed;
+         shader->info.uses_gs_state_provoking_vtx_first |= shader->previous_stage->info.uses_gs_state_provoking_vtx_first;
+         shader->info.uses_gs_state_outprim |= shader->previous_stage->info.uses_gs_state_outprim;
       }
       if (shader->epilog) {
          shader->config.num_sgprs =
@@ -3779,22 +3816,6 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
    } else if (sscreen->info.gfx_level >= GFX9 && sel->stage == MESA_SHADER_GEOMETRY) {
       gfx9_get_gs_info(shader->previous_stage_sel, sel, &shader->gs_info);
    }
-
-   shader->uses_vs_state_provoking_vertex =
-      sscreen->use_ngg &&
-      /* Used to convert triangle strips from GS to triangles. */
-      ((sel->stage == MESA_SHADER_GEOMETRY &&
-        util_rast_prim_is_triangles(sel->info.base.gs.output_primitive)) ||
-       (sel->stage == MESA_SHADER_VERTEX &&
-        /* Used to export PrimitiveID from the correct vertex. */
-        shader->key.ge.mono.u.vs_export_prim_id));
-
-   shader->uses_gs_state_outprim = sscreen->use_ngg &&
-                                   /* Only used by streamout and the PrimID export in vertex
-                                    * shaders. */
-                                   sel->stage == MESA_SHADER_VERTEX &&
-                                   (si_shader_uses_streamout(shader) ||
-                                    shader->uses_vs_state_provoking_vertex);
 
    si_fix_resource_usage(sscreen, shader);
 
