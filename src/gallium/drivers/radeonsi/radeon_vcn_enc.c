@@ -1115,11 +1115,6 @@ static void radeon_enc_flush(struct pipe_video_codec *encoder)
    flush(enc, PIPE_FLUSH_ASYNC, NULL);
 }
 
-static void radeon_enc_cs_flush(void *ctx, unsigned flags, struct pipe_fence_handle **fence)
-{
-   // just ignored
-}
-
 /* configure reconstructed picture offset */
 static void radeon_enc_rec_offset(rvcn_enc_reconstructed_picture_t *recon,
                                   uint32_t *offset,
@@ -1201,7 +1196,7 @@ static int setup_cdf(struct radeon_encoder *enc)
 
    p_cdf = enc->ws->buffer_map(enc->ws,
                                enc->cdf->res->buf,
-                              &enc->cs,
+                               NULL,
                                PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
    if (!p_cdf)
       goto error;
@@ -1449,7 +1444,7 @@ static int generate_roi_map(struct radeon_encoder *enc)
 
    p_roi = enc->ws->buffer_map(enc->ws,
                                enc->roi->res->buf,
-                              &enc->cs,
+                               NULL,
                                PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
    if (!p_roi)
       goto error;
@@ -1712,7 +1707,7 @@ static void *radeon_vcn_enc_encode_headers(struct radeon_encoder *enc)
    if (!data)
       return NULL;
 
-   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, &enc->cs,
+   uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, NULL,
                                       PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
    if (!ptr) {
       RADEON_ENC_ERR("Can't map bs buffer.\n");
@@ -1836,7 +1831,7 @@ static void radeon_enc_get_feedback(struct pipe_video_codec *encoder, void *feed
    struct radeon_encoder *enc = (struct radeon_encoder *)encoder;
    struct rvid_buffer *fb = feedback;
 
-   uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, &enc->cs,
+   uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, NULL,
                                        PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
    if (ptr[1])
       *size = ptr[6] - ptr[8];
@@ -2021,7 +2016,7 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
 
    if (!ws->cs_create(&enc->cs,
        (sctx->vcn_has_ctx) ? ((struct si_context *)enc->ectx)->ctx : sctx->ctx,
-       AMD_IP_VCN_ENC, radeon_enc_cs_flush, enc)) {
+       AMD_IP_VCN_ENC, NULL, NULL)) {
       RADEON_ENC_ERR("Can't get command submission context.\n");
       goto error;
    }
