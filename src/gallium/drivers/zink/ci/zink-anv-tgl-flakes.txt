@@ -147,3 +147,19 @@ dEQP-EGL.functional.sharing.gles2.multithread.random.programs.link.7
 
 # Fails in the pre-merge job and passes in the nightly
 KHR-GL46.shader_viewport_layer_array.ShaderViewportIndexTestCase
+
+glx@extension string sanity
+glx@glx-close-display
+glx@glx-copy-context-dest-current
+glx@glx-dont-care-mask
+glx@glx-fbconfig-bad
+glx@glx-multi-context-ib-1
+glx@glx-multithread-shader-compile
+glx@glx-query-drawable-glx_width
+glx@glx-swap-exchange
+glx@glx-swap-singlebuffer
+glx@glx_arb_create_context@invalid render type
+glx@glx_arb_create_context@null attribute list
+glx@glx_arb_create_context_profile@pre-gl3.2 profile
+glx@glx_ext_import_context@get current display
+glx@glx_ext_import_context@imported context has same context id
