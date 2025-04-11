@@ -324,3 +324,35 @@ TEST_F(ssa_def_bits_used_test, ubfe_iand)
 
    EXPECT_EQ(nir_def_bits_used(load), BITFIELD_BIT(15));
 }
+
+TEST_F(ssa_def_bits_used_test, ishr_signed)
+{
+   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *alu1 = nir_iand_imm(b, nir_ishr_imm(b, load1, 13), 0x80000000);
+   nir_def *alu2 = nir_iand_imm(b, nir_ishr_imm(b, load2, 13), 0x8000);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu1, 0x1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu2, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load1), BITFIELD_BIT(31)); /* last bit */
+   EXPECT_EQ(nir_def_bits_used(load2), BITFIELD_BIT(15 + 13)); /* not last bit */
+}
+
+TEST_F(ssa_def_bits_used_test, ushr_ishr_ishl)
+{
+   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load3 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+
+   nir_def *alu1 = nir_ushr_imm(b, load1, 7);
+   nir_def *alu2 = nir_ishr_imm(b, load2, 11);
+   nir_def *alu3 = nir_ishl_imm(b, load3, 13);
+
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu1, 0x1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu2, 0x1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu3, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load1), BITFIELD_RANGE(7, 32 - 7));
+   EXPECT_EQ(nir_def_bits_used(load2), BITFIELD_RANGE(11, 32 - 11));
+   EXPECT_EQ(nir_def_bits_used(load3), BITFIELD_RANGE(0, 32 - 13));
+}

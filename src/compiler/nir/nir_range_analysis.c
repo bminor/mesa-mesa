@@ -2183,8 +2183,26 @@ ssa_def_bits_used(const nir_def *def, int recur)
          case nir_op_ishl:
          case nir_op_ishr:
          case nir_op_ushr:
-            if (src_idx == 1) {
-               bits_used |= (nir_src_bit_size(use_alu->src[0].src) - 1);
+            if (src_idx == 0 && nir_src_is_const(use_alu->src[1].src)) {
+               unsigned bit_size = def->bit_size;
+               unsigned shift = nir_alu_src_as_uint(use_alu->src[1]) & (bit_size - 1);
+               uint64_t def_bits_used = ssa_def_bits_used(&use_alu->def, recur);
+
+               /* If one of the sign-extended bits is used, set the "last src
+                * bit before shifting" as used.
+                */
+               if (use_alu->op == nir_op_ishr &&
+                   def_bits_used & ~(all_bits >> shift))
+                  def_bits_used |= BITFIELD64_BIT(bit_size - 1 - shift);
+
+               /* Reverse the shift to get the bits before shifting. */
+               if (use_alu->op == nir_op_ushr || use_alu->op == nir_op_ishr)
+                  bits_used |= (def_bits_used << shift) & all_bits;
+               else
+                  bits_used |= def_bits_used >> shift;
+               break;
+            } else if (src_idx == 1) {
+               bits_used |= use_alu->def.bit_size - 1;
                break;
             } else {
                return all_bits;
