@@ -6,8 +6,9 @@
 
 #include "ac_nir.h"
 #include "ac_shader_util.h"
-#include "compiler/nir/nir_serialize.h"
-#include "compiler/nir/nir.h"
+#include "nir.h"
+#include "nir_xfb_info.h"
+#include "nir_serialize.h"
 #include "nir/tgsi_to_nir.h"
 #include "si_build_pm4.h"
 #include "sid.h"
@@ -3342,12 +3343,13 @@ int si_shader_select(struct pipe_context *ctx, struct si_shader_ctx_state *state
    }
 }
 
-static void si_parse_next_shader_property(const struct si_shader_info *info,
-                                          union si_shader_key *key)
+static void si_parse_next_shader_property(nir_shader *nir, union si_shader_key *key)
 {
-   gl_shader_stage next_shader = info->base.next_stage;
+   gl_shader_stage next_shader = nir->info.next_stage;
+   bool writes_position = nir->info.outputs_written & VARYING_BIT_POS;
+   assert(!nir->xfb_info || nir->xfb_info->buffers_written);
 
-   switch (info->base.stage) {
+   switch (nir->info.stage) {
    case MESA_SHADER_VERTEX:
       switch (next_shader) {
       case MESA_SHADER_GEOMETRY:
@@ -3363,13 +3365,13 @@ static void si_parse_next_shader_property(const struct si_shader_info *info,
           * assume that it's a HW LS. (the next shader is TCS)
           * This heuristic is needed for separate shader objects.
           */
-         if (!info->writes_position && !info->enabled_streamout_buffer_mask)
+         if (!writes_position && !nir->xfb_info)
             key->ge.as_ls = 1;
       }
       break;
 
    case MESA_SHADER_TESS_EVAL:
-      if (next_shader == MESA_SHADER_GEOMETRY || !info->writes_position)
+      if (next_shader == MESA_SHADER_GEOMETRY || !writes_position)
          key->ge.as_es = 1;
       break;
 
@@ -3434,7 +3436,7 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
 
       shader->selector = sel;
       shader->is_monolithic = false;
-      si_parse_next_shader_property(&sel->info, &shader->key);
+      si_parse_next_shader_property(sel->nir, &shader->key);
 
       if (sel->stage <= MESA_SHADER_GEOMETRY) {
          if (sscreen->use_ngg && (!sel->info.enabled_streamout_buffer_mask ||
