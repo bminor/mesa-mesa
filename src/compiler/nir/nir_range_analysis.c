@@ -2263,6 +2263,11 @@ ssa_def_bits_used(const nir_def *def, int recur)
                return all_bits;
             }
 
+         case nir_op_imul24:
+         case nir_op_umul24:
+            bits_used |= all_bits & 0xffffff;
+            break;
+
          default:
             /* We don't know what this op does */
             return all_bits;
