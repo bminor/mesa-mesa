@@ -1030,7 +1030,7 @@ static void si_emit_shader_gs(struct si_context *sctx, unsigned index)
 static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
 {
    struct si_shader_selector *sel = shader->selector;
-   const uint8_t *num_components = sel->info.num_stream_output_components;
+   const uint8_t *num_components = sel->info.num_gs_stream_components;
    unsigned gs_num_invocations = sel->info.base.gs.invocations;
    struct si_pm4_state *pm4;
    uint64_t va;
@@ -3671,7 +3671,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       !sel->nir->info.writes_memory &&
       /* NGG GS supports culling with streamout because it culls after streamout. */
       (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
-      (sel->stage != MESA_SHADER_GEOMETRY || sel->info.num_stream_output_components[0]) &&
+      (sel->stage != MESA_SHADER_GEOMETRY || sel->info.num_gs_stream_components[0]) &&
       (sel->stage != MESA_SHADER_VERTEX ||
        (!sel->nir->info.vs.blit_sgprs_amd &&
         !sel->nir->info.vs.window_space_position));

@@ -173,7 +173,7 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
                if (new_mask & (1 << i)) {
                   info->output_streams[loc] |= stream << (i * 2);
-                  info->num_stream_output_components[stream]++;
+                  info->num_gs_stream_components[stream]++;
                }
             }
 

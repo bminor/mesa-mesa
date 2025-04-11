@@ -481,7 +481,7 @@ struct si_shader_info {
 
    uint8_t num_vs_inputs;
    uint8_t num_vbos_in_user_sgprs;
-   uint8_t num_stream_output_components[4]; /* for GS streams, not streamout */
+   uint8_t num_gs_stream_components[4];
    uint16_t enabled_streamout_buffer_mask;
 
    uint64_t inputs_read; /* "get_unique_index" bits */

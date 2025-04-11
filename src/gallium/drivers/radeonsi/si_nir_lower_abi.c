@@ -127,7 +127,7 @@ static bool build_gsvs_ring_desc(nir_builder *b, struct lower_abi_state *s)
        */
 
       for (unsigned stream = 0; stream < 4; stream++) {
-         unsigned num_components = sel->info.num_stream_output_components[stream];
+         unsigned num_components = sel->info.num_gs_stream_components[stream];
          if (!num_components)
             continue;
 
