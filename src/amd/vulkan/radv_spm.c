@@ -20,7 +20,7 @@ radv_spm_init_bo(struct radv_device *device)
    VkResult result;
 
    struct radeon_winsys_bo *bo = NULL;
-   result = radv_bo_create(device, NULL, device->spm.buffer_size, 4096, RADEON_DOMAIN_VRAM,
+   result = radv_bo_create(device, NULL, device->spm.buffer_size, 4096, RADEON_DOMAIN_GTT,
                            RADEON_FLAG_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_ZERO_VRAM,
                            RADV_BO_PRIORITY_SCRATCH, 0, true, &bo);
    device->spm.bo = bo;
