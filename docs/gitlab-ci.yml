@@ -23,6 +23,7 @@ deploy-docs:
   rules:
     - !reference [.common-rules, rules]
     - !reference [.no_scheduled_pipelines-rules, rules]
+    # post-merge pipeline
     - if: '$CI_PROJECT_NAMESPACE == "mesa" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $CI_COMMIT_BRANCH'
       changes: &docs-or-ci
         - docs/**/*
