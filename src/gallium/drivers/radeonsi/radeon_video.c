@@ -64,7 +64,7 @@ void si_vid_destroy_buffer(struct rvid_buffer *buffer)
 }
 
 /* reallocate a buffer, preserving its content */
-bool si_vid_resize_buffer(struct pipe_context *context, struct radeon_cmdbuf *cs,
+bool si_vid_resize_buffer(struct pipe_context *context,
                           struct rvid_buffer *new_buf, unsigned new_size,
                           struct rvid_buf_offset_info *buf_ofst_info)
 {
@@ -79,11 +79,11 @@ bool si_vid_resize_buffer(struct pipe_context *context, struct radeon_cmdbuf *cs
       goto error;
 
    if (old_buf.usage == PIPE_USAGE_STAGING) {
-      src = ws->buffer_map(ws, old_buf.res->buf, cs, PIPE_MAP_READ | RADEON_MAP_TEMPORARY);
+      src = ws->buffer_map(ws, old_buf.res->buf, NULL, PIPE_MAP_READ | RADEON_MAP_TEMPORARY);
       if (!src)
          goto error;
 
-      dst = ws->buffer_map(ws, new_buf->res->buf, cs, PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
+      dst = ws->buffer_map(ws, new_buf->res->buf, NULL, PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
       if (!dst)
          goto error;
 
