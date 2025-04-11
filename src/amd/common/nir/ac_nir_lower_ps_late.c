@@ -690,7 +690,7 @@ export_ps_outputs(nir_builder *b, lower_ps_state *s)
       emit_ps_null_export(b, s);
    }
 
-   return true;
+   return nir_progress(true, b->impl, nir_metadata_control_flow);
 }
 
 bool
