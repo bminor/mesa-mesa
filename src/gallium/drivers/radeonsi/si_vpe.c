@@ -1108,7 +1108,7 @@ si_vpe_construct_blt(struct vpe_video_processor *vpeproc,
    /* Map EmbBuf for CPU access */
    vpe_ptr = (uint64_t *)vpeproc->ws->buffer_map(vpeproc->ws,
                                                  emb_buf->res->buf,
-                                                 &vpeproc->cs,
+                                                 NULL,
                                                  PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
    if (!vpe_ptr) {
       SIVPE_ERR("Mapping Embbuf failed\n");
