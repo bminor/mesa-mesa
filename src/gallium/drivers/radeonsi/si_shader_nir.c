@@ -9,7 +9,7 @@
 #include "si_pipe.h"
 #include "ac_nir.h"
 #include "aco_interface.h"
-
+#include "si_shader_internal.h"
 
 bool si_alu_to_scalar_packed_math_filter(const nir_instr *instr, const void *data)
 {
@@ -414,7 +414,7 @@ char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, nir_lower_color_inputs);
+      NIR_PASS_V(nir, si_nir_lower_color_inputs_to_sysvals);
 
    NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
 

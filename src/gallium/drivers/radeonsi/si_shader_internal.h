@@ -142,29 +142,18 @@ bool gfx10_ngg_calculate_subgroup_info(struct si_shader *shader);
 struct nir_def;
 typedef struct nir_def nir_def;
 
-/* si_nir_clamp_shadow_comparison_value.c */
+/* si_nir_*.c */
 bool si_nir_clamp_shadow_comparison_value(nir_shader *nir);
-
-/* si_nir_kill_outputs.c */
 bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key);
-
-/* si_nir_lower_abi.c */
 nir_def *si_nir_load_internal_binding(nir_builder *b, struct si_shader_args *args,
                                           unsigned slot, unsigned num_components);
 bool si_nir_lower_abi(nir_shader *nir, struct si_shader *shader, struct si_shader_args *args);
-
-/* si_nir_lower_polygon_stipple.c */
+bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir);
 bool si_nir_lower_polygon_stipple(nir_shader *nir);
-
-/* si_nir_lower_ps_color_inputs.c */
 bool si_nir_lower_ps_color_inputs(nir_shader *nir, const union si_shader_key *key,
                                   const struct si_shader_info *info);
-
-/* si_nir_lower_resource.c */
 bool si_nir_lower_resource(nir_shader *nir, struct si_shader *shader,
                            struct si_shader_args *args);
-
-/* si_nir_lower_vs_inputs.c */
 bool si_nir_lower_vs_inputs(nir_shader *nir, struct si_shader *shader,
                             struct si_shader_args *args);
 
