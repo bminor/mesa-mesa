@@ -3,6 +3,7 @@ glx@glx-multi-context-front
 glx@glx-swap-singlebuffer
 glx@glx-visuals-depth
 glx@glx-visuals-stencil
+program@execute@builtin@builtin-float-sincos-1.0.generated
 spec@!opengl 1.0@gl-1.0-front-invalidate-back
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=2

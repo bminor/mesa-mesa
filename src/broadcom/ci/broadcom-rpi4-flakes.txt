@@ -1,6 +1,7 @@
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
 
+fast_color_clear@fcc-front-buffer-distraction
 glx@glx-visuals-depth
 glx@glx-visuals-stencil
 glx@glx_arb_sync_control@waitformsc
@@ -12,6 +13,7 @@ spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=4
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=4
 spec@!opengl 1.1@masked-clear
+spec@!opengl 3.0@gl30basic
 spec@amd_performance_monitor@api
 spec@amd_performance_monitor@vc4
 spec@amd_performance_monitor@vc4@test_counter_string_normal_buffer
@@ -99,3 +101,5 @@ dEQP-VK.synchronization.cross_instance.dedicated.write_ssbo_vertex_read_vertex_i
 dEQP-VK.memory.pipeline_barrier.transfer_dst_uniform_texel_buffer.65536
 dEQP-VK.rasterization.primitives_multisample_4_bit.no_stipple.lines
 dEQP-VK.glsl.builtin.function.pack_unpack.unpackunorm4x8_geometry
+
+dEQP-VK.synchronization2.op.single_queue.barrier.write_fill_buffer_read_vertex_input.buffer_262144
