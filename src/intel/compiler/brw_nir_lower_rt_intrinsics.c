@@ -388,8 +388,8 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
       }
    }
 
-   nir_progress(true, impl,
-                progress ? nir_metadata_none : (nir_metadata_control_flow));
+   nir_progress(progress, impl, nir_metadata_none);
+
    return progress;
 }
 
@@ -424,5 +424,6 @@ brw_nir_lower_rt_intrinsics(nir_shader *nir,
    nir_foreach_function_impl(impl, nir) {
       progress |= lower_rt_intrinsics_impl(impl, key, devinfo);
    }
+
    return progress;
 }
