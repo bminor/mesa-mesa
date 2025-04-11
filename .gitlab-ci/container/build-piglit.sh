@@ -10,7 +10,7 @@ uncollapsed_section_start piglit "Building piglit"
 # DEBIAN_TEST_VK_TAG
 # KERNEL_ROOTFS_TAG
 
-REV="ebdf60e0d4b0dc23e79373cb923fdee023eb3b2b"
+REV="0ecdebb0f5927728ddeeb851639a559b0f7d6590"
 
 git clone https://gitlab.freedesktop.org/mesa/piglit.git --single-branch --no-checkout /piglit
 pushd /piglit
