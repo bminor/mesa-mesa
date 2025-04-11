@@ -1132,14 +1132,6 @@ static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
           (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_UNKNOWN);
 }
 
-static inline bool si_shader_uses_streamout(const struct si_shader *shader)
-{
-   return shader->selector->stage <= MESA_SHADER_GEOMETRY &&
-          shader->selector->info.enabled_streamout_buffer_mask &&
-          !shader->key.ge.opt.remove_streamout &&
-          !shader->key.ge.mono.remove_streamout;
-}
-
 static inline bool si_shader_culling_enabled(struct si_shader *shader)
 {
    /* Legacy VS/TES/GS and ES don't cull in the shader. */

@@ -41,7 +41,7 @@ unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader)
    return ac_ngg_get_scratch_lds_size(sel->stage,
                                       si_get_max_workgroup_size(shader),
                                       shader->wave_size,
-                                      si_shader_uses_streamout(shader),
+                                      shader->info.num_streamout_vec4s != 0,
                                       si_shader_culling_enabled(shader),
                                       false) / 4;
 }
@@ -117,7 +117,7 @@ retry_select_mode:
 
       esvert_lds_size = ac_ngg_nogs_get_pervertex_lds_size(
          gs_stage, gs_sel->info.num_outputs,
-         si_shader_uses_streamout(shader),
+         shader->info.num_streamout_vec4s != 0,
          shader->key.ge.mono.u.vs_export_prim_id,
          gfx10_ngg_writes_user_edgeflags(shader),
          si_shader_culling_enabled(shader),

@@ -1475,7 +1475,7 @@ unsigned si_shader_num_alloc_param_exports(struct si_shader *shader)
     * The recommended solution is to use the alloc/dealloc mechanism of the attribute ring to limit
     * the number of workgroups in flight and thus the number of ordered IDs in flight.
     */
-   if (shader->selector->screen->info.gfx_level >= GFX12 && si_shader_uses_streamout(shader))
+   if (shader->selector->screen->info.gfx_level >= GFX12 && shader->info.num_streamout_vec4s)
       num_params = MAX2(num_params, 8);
 
    return num_params;
@@ -1632,7 +1632,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       unsigned wave_limit_per_se = 0x3ff;
 
       /* This tuning adds up to 50% streamout performance. */
-      if (si_shader_uses_streamout(shader)) {
+      if (shader->info.num_streamout_vec4s) {
          unsigned num_streamout_vec4s = shader->info.num_streamout_vec4s;
 
          /* TODO: Tested on a pre-production chip. Re-test on the final chip. */
@@ -1758,7 +1758,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
          S_028A98_GS_EN(gs_stage == MESA_SHADER_GEOMETRY) |
          S_028A98_PRIMGEN_PASSTHRU_NO_MSG(gfx10_is_ngg_passthrough(shader)) |
          S_028A98_GS_W32_EN(shader->wave_size == 32) |
-         S_028A98_NGG_WAVE_ID_EN(si_shader_uses_streamout(shader));
+         S_028A98_NGG_WAVE_ID_EN(shader->info.num_streamout_vec4s != 0);
    } else {
       shader->ngg.vgt_shader_stages_en =
          S_028B54_ES_EN(es_stage == MESA_SHADER_TESS_EVAL ?
@@ -1768,7 +1768,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
          S_028B54_PRIMGEN_PASSTHRU_EN(gfx10_is_ngg_passthrough(shader)) |
          S_028B54_PRIMGEN_PASSTHRU_NO_MSG(gfx10_is_ngg_passthrough(shader) &&
                                           sscreen->info.family >= CHIP_NAVI23) |
-         S_028B54_NGG_WAVE_ID_EN(si_shader_uses_streamout(shader)) |
+         S_028B54_NGG_WAVE_ID_EN(shader->info.num_streamout_vec4s != 0) |
          S_028B54_GS_W32_EN(shader->wave_size == 32) |
          S_028B54_MAX_PRIMGRP_IN_WAVE(2);
    }
@@ -1957,7 +1957,7 @@ static void si_shader_vs(struct si_screen *sscreen, struct si_shader *shader,
    else if (sscreen->info.gfx_level == GFX9)
       rsrc2 |= S_00B12C_USER_SGPR_MSB_GFX9(num_user_sgprs >> 5);
 
-   if (si_shader_uses_streamout(shader)) {
+   if (shader->info.num_streamout_vec4s) {
       rsrc2 |= S_00B12C_SO_BASE0_EN(!!shader->selector->info.base.xfb_stride[0]) |
                S_00B12C_SO_BASE1_EN(!!shader->selector->info.base.xfb_stride[1]) |
                S_00B12C_SO_BASE2_EN(!!shader->selector->info.base.xfb_stride[2]) |

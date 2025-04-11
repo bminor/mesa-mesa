@@ -132,7 +132,7 @@ static void declare_streamout_params(struct si_shader_args *args, struct si_shad
    }
 
    /* Streamout SGPRs. */
-   if (si_shader_uses_streamout(shader)) {
+   if (shader->info.num_streamout_vec4s) {
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_config);
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_write_index);
 
@@ -160,7 +160,7 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
    case MESA_SHADER_TESS_EVAL:
       /* Use the largest workgroup size for streamout */
       if (shader->key.ge.as_ngg)
-         return si_shader_uses_streamout(shader) ? 256 : 128;
+         return shader->info.num_streamout_vec4s ? 256 : 128;
 
       /* As part of merged shader. */
       return shader->selector->screen->info.gfx_level >= GFX9 &&
@@ -1826,7 +1826,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
       .max_workgroup_size = si_get_max_workgroup_size(shader),
       .wave_size = shader->wave_size,
       .can_cull = si_shader_culling_enabled(shader),
-      .disable_streamout = !si_shader_uses_streamout(shader),
+      .disable_streamout = !shader->info.num_streamout_vec4s,
       .vs_output_param_offset = shader->info.vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,
       .clip_cull_dist_mask = clip_cull_dist_mask,
@@ -2462,7 +2462,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
                     shader->info.vs_output_param_offset,
                     shader->info.nr_param_exports,
                     shader->key.ge.mono.u.vs_export_prim_id,
-                    !si_shader_uses_streamout(shader),
+                    !shader->info.num_streamout_vec4s,
                     key->ge.opt.kill_pointsize,
                     key->ge.opt.kill_layer,
                     sel->screen->options.vrs2x2);
@@ -3139,7 +3139,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
                                    clip_cull_mask,
                                    shader->info.vs_output_param_offset,
                                    shader->info.nr_param_exports,
-                                   !si_shader_uses_streamout(gs_shader),
+                                   !gs_shader->info.num_streamout_vec4s,
                                    gskey->ge.opt.kill_pointsize,
                                    gskey->ge.opt.kill_layer,
                                    sscreen->options.vrs2x2,
