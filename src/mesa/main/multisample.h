@@ -39,7 +39,10 @@ _mesa_init_multisample(struct gl_context *ctx);
 
 extern GLenum
 _mesa_check_sample_count(struct gl_context *ctx, GLenum target,
-                         GLenum internalFormat, GLsizei samples,
-                         GLsizei storageSamples);
+                         GLenum internalFormat, GLsizei samples);
+
+extern GLenum
+_mesa_check_storage_sample_count(struct gl_context *ctx, GLenum internalFormat,
+                                 GLsizei samples, GLsizei storageSamples);
 
 #endif

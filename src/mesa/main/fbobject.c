@@ -2759,8 +2759,12 @@ _mesa_renderbuffer_storage(struct gl_context *ctx, struct gl_renderbuffer *rb,
    if (samples != 0) {
       assert(samples > 0);
       assert(_mesa_check_sample_count(ctx, GL_RENDERBUFFER,
-                                      internalFormat, samples,
-                                      storageSamples) == GL_NO_ERROR);
+                                      internalFormat, samples) == GL_NO_ERROR);
+   }
+   if (samples != storageSamples) {
+      assert(_mesa_check_storage_sample_count(ctx,
+                                              internalFormat, samples,
+                                              storageSamples) == GL_NO_ERROR);
    }
 
    FLUSH_VERTICES(ctx, _NEW_BUFFERS, 0);
@@ -2850,7 +2854,7 @@ renderbuffer_storage(struct gl_context *ctx, struct gl_renderbuffer *rb,
        * note: driver may choose to use more samples than what's requested
        */
       sample_count_error = _mesa_check_sample_count(ctx, GL_RENDERBUFFER,
-            internalFormat, samples, storageSamples);
+            internalFormat, samples);
 
       /* Section 2.5 (GL Errors) of OpenGL 3.0 specification, page 16:
        *
@@ -2951,7 +2955,6 @@ renderbuffer_storage_target(GLenum target, GLenum internalFormat,
                         height, samples, storageSamples, func);
 }
 
-
 void GLAPIENTRY
 _mesa_EGLImageTargetRenderbufferStorageOES(GLenum target, GLeglImageOES image)
 {
@@ -3037,6 +3040,17 @@ _mesa_RenderbufferStorageMultisampleAdvancedAMD(
       GLenum target, GLsizei samples, GLsizei storageSamples,
       GLenum internalFormat, GLsizei width, GLsizei height)
 {
+   GET_CURRENT_CONTEXT(ctx);
+   GLenum sample_count_error =
+      _mesa_check_storage_sample_count(ctx, internalFormat, samples,
+                                       storageSamples);
+   if (sample_count_error != GL_NO_ERROR) {
+      _mesa_error(ctx, sample_count_error,
+                  "glRenderbufferStorageMultisampleAdvancedAMD(samples=%d)",
+                  samples);
+      return;
+   }
+
    renderbuffer_storage_target(target, internalFormat, width, height,
                                samples, storageSamples,
                                "glRenderbufferStorageMultisampleAdvancedAMD");
@@ -3113,6 +3127,17 @@ _mesa_NamedRenderbufferStorageMultisampleAdvancedAMD(
       GLuint renderbuffer, GLsizei samples, GLsizei storageSamples,
       GLenum internalformat, GLsizei width, GLsizei height)
 {
+   GET_CURRENT_CONTEXT(ctx);
+   GLenum sample_count_error =
+      _mesa_check_storage_sample_count(ctx, internalformat, samples,
+                                       storageSamples);
+   if (sample_count_error != GL_NO_ERROR) {
+      _mesa_error(ctx, sample_count_error,
+                  "glNamedRenderbufferStorageMultisampleAdvancedAMD(samples=%d)",
+                  samples);
+      return;
+   }
+
    renderbuffer_storage_named(renderbuffer, internalformat, width, height,
                               samples, storageSamples,
                               "glNamedRenderbufferStorageMultisampleAdvancedAMD");
@@ -4043,7 +4068,7 @@ check_samples(struct gl_context *ctx, struct gl_texture_object *texObj,
       assert(texImage);
       GLenum sample_count_error =
          _mesa_check_sample_count(ctx, target, texImage->InternalFormat,
-                                 samples, samples);
+                                 samples);
       if (sample_count_error != GL_NO_ERROR) {
          _mesa_error(ctx, sample_count_error, "%s(samples=%d)", caller,
                      samples);
