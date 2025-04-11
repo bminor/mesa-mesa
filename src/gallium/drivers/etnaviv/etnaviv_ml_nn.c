@@ -758,9 +758,11 @@ etna_ml_lower_add_v8(struct etna_ml_subgraph *subgraph,
                      struct etna_operation *operation)
 {
    struct pipe_context *context = subgraph->base.context;
+   bool subtract = poperation->type == PIPE_ML_OPERATION_TYPE_SUBTRACT;
    unsigned max_input_dim = (1 << 13) - 1;  /* in_image_x_size is 13 bits long */
 
-   assert(poperation->type == PIPE_ML_OPERATION_TYPE_ADD);
+   assert(poperation->type == PIPE_ML_OPERATION_TYPE_ADD ||
+          poperation->type == PIPE_ML_OPERATION_TYPE_SUBTRACT);
 
    operation->type = ETNA_JOB_TYPE_NN;
    operation->addition = false;
@@ -836,6 +838,9 @@ etna_ml_lower_add_v8(struct etna_ml_subgraph *subgraph,
    float min = 1.0 * (poperation->input_tensors[1]->scale / poperation->input_tensors[0]->scale);
    float max = 1.0;
 
+   if (subtract)
+      min *= -1.0;
+
    calc_quant_params(min, max, &operation->weight_scale, &operation->weight_zero_point);
 
    unsigned kernel_size = operation->output_channels * operation->weight_width * operation->weight_height * operation->input_channels;
@@ -860,6 +865,9 @@ etna_ml_lower_add_v8(struct etna_ml_subgraph *subgraph,
    int zero_point_diff = input_zero_point_1 - input_zero_point_2;
    double scale_factor = poperation->input_tensors[0]->scale * operation->weight_scale;
    double bias_scale = poperation->input_tensors[1]->scale / scale_factor;
+
+   if (subtract)
+      bias_scale *= -1.0;
 
    int bias = zero_point_diff * round(bias_scale);
    for(unsigned oc = 0; oc < operation->output_channels; oc++)

@@ -487,6 +487,15 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             list_addtail(&operation->link, etna_operations);
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_SUBTRACT: {
+            struct etna_operation *operation = calloc(1, sizeof(*operation));
+            etna_ml_lower_add(subgraph, poperation, operation);
+            operation->input_tensors[0] = input_tensors[0];
+            operation->input_tensors[1] = input_tensors[1];
+            operation->output_tensors[0] = poperation->output_tensors[0]->index;
+            list_addtail(&operation->link, etna_operations);
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -601,6 +610,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
          tensor_count = MAX2(tensor_count, poperation->fcon.bias_tensor->index);
          break;
       case PIPE_ML_OPERATION_TYPE_PAD:
+      case PIPE_ML_OPERATION_TYPE_SUBTRACT:
       case PIPE_ML_OPERATION_TYPE_ADD:
       case PIPE_ML_OPERATION_TYPE_CONCATENATION:
       case PIPE_ML_OPERATION_TYPE_SPLIT:
@@ -651,6 +661,7 @@ etna_ml_operation_supported(struct pipe_context *pcontext,
          }
          break;
       }
+      case PIPE_ML_OPERATION_TYPE_SUBTRACT:
       case PIPE_ML_OPERATION_TYPE_ADD: {
          supported = operation->input_tensors[0]->resource == NULL &&
                      operation->input_tensors[1]->resource == NULL;
