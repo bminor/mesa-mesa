@@ -715,6 +715,10 @@ bool evergreen_adjust_gprs(struct r600_context *rctx);
 void evergreen_setup_scratch_buffers(struct r600_context *rctx);
 uint32_t evergreen_construct_rat_mask(struct r600_context *rctx, struct r600_cb_misc_state *a,
 				      unsigned nr_cbufs);
+void evergreen_convert_border_color(const union pipe_color_union *in,
+				    union pipe_color_union *out,
+				    const struct pipe_sampler_view *view);
+
 /* r600_blit.c */
 void r600_init_blit_functions(struct r600_context *rctx);
 void r600_decompress_depth_textures(struct r600_context *rctx,

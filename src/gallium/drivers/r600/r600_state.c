@@ -1861,12 +1861,18 @@ static void r600_emit_sampler_states(struct r600_context *rctx,
 		radeon_emit_array(cs, rstate->tex_sampler_words, 3);
 
 		if (rstate->border_color_use) {
+			union pipe_color_union border_color = {{0,0,0,1}};
 			unsigned offset;
+
+			/* The rv770 border color is fully compatible with
+			 * evergreen. */
+			evergreen_convert_border_color(&rstate->border_color,
+						       &border_color, &rview->base);
 
 			offset = border_color_reg;
 			offset += i * 16;
 			radeon_set_config_reg_seq(cs, offset, 4);
-			radeon_emit_array(cs, rstate->border_color.ui, 4);
+			radeon_emit_array(cs, border_color.ui, 4);
 		}
 	}
 	texinfo->states.dirty_mask = 0;
