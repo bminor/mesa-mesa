@@ -28,6 +28,7 @@ enum etna_ml_tp_type {
    ETNA_ML_TP_PAD,
    ETNA_ML_TP_RELU,
    ETNA_ML_TP_ABSOLUTE,
+   ETNA_ML_TP_LOGISTIC,
 };
 
 enum etna_ml_tensor_layout {
