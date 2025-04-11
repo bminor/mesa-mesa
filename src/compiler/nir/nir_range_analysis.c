@@ -2212,6 +2212,39 @@ ssa_def_bits_used(const nir_def *def, int recur)
                return all_bits;
             }
 
+         case nir_op_ibfe:
+         case nir_op_ubfe:
+            if (src_idx == 0 && nir_src_is_const(use_alu->src[1].src)) {
+               uint64_t def_bits_used = ssa_def_bits_used(&use_alu->def, recur);
+               unsigned bit_size = use_alu->def.bit_size;
+               unsigned offset = nir_alu_src_as_uint(use_alu->src[1]) & (bit_size - 1);
+               unsigned bits = nir_src_is_const(use_alu->src[2].src) ?
+                                  nir_alu_src_as_uint(use_alu->src[2]) & (bit_size - 1) :
+                                  /* Worst case if bits is not constant. */
+                                  (bit_size - offset);
+               uint64_t field_bitmask = BITFIELD64_MASK(bits);
+
+               /* If one of the sign-extended bits is used, set the last src
+                * bit as used.
+                * If bits is not constant, all bits can be the last one.
+                */
+               if (use_alu->op == nir_op_ibfe &&
+                   (def_bits_used >> offset) & ~field_bitmask) {
+                  if (nir_alu_src_as_uint(use_alu->src[2]))
+                     def_bits_used |= BITFIELD64_BIT(bits - 1);
+                  else
+                     def_bits_used |= field_bitmask;
+               }
+
+               bits_used |= (field_bitmask & def_bits_used) << offset;
+               break;
+            } else if (src_idx == 1 || src_idx == 2) {
+               bits_used |= use_alu->src[0].src.ssa->bit_size - 1;
+               break;
+            } else {
+               return all_bits;
+            }
+
          default:
             /* We don't know what this op does */
             return all_bits;

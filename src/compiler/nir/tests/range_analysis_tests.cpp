@@ -291,3 +291,36 @@ TEST_F(unsigned_upper_bound_test, loop_phi_bcsel)
    EXPECT_EQ(nir_unsigned_upper_bound(b->shader, range_ht, scalar, NULL), 2);
    _mesa_hash_table_destroy(range_ht, NULL);
 }
+
+TEST_F(ssa_def_bits_used_test, ubfe_ibfe)
+{
+   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+
+   nir_def *alu1 = nir_ubfe_imm(b, load1, 14, 3);
+   nir_def *alu2 = nir_ibfe_imm(b, load2, 12, 7);
+
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu1, 0x1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu2, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load1), BITFIELD_RANGE(14, 3));
+   EXPECT_EQ(nir_def_bits_used(load2), BITFIELD_RANGE(12, 7));
+}
+
+TEST_F(ssa_def_bits_used_test, ibfe_iand)
+{
+   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *alu = nir_iand_imm(b, nir_ibfe_imm(b, load, 14, 3), 0x80000000);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load), BITFIELD_BIT(16));
+}
+
+TEST_F(ssa_def_bits_used_test, ubfe_iand)
+{
+   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *alu = nir_iand_imm(b, nir_ubfe_imm(b, load, 14, 3), 0x2);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load), BITFIELD_BIT(15));
+}
