@@ -1053,6 +1053,7 @@ enum pipe_ml_operation_type {
    PIPE_ML_OPERATION_TYPE_ABSOLUTE,
    PIPE_ML_OPERATION_TYPE_LOGISTIC,
    PIPE_ML_OPERATION_TYPE_SUBTRACT,
+   PIPE_ML_OPERATION_TYPE_TRANSPOSE,
 };
 
 /**
@@ -1216,6 +1217,10 @@ struct pipe_ml_operation
           */
          unsigned shape[4];
       } reshape;
+
+      struct {
+         unsigned perm[4];
+      } transpose;
    };
 };
 

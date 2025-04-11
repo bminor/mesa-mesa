@@ -237,6 +237,13 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
    case kTfLiteBuiltinSub:
       operation->type = PIPE_ML_OPERATION_TYPE_SUBTRACT;
       break;
+   case kTfLiteBuiltinTranspose: {
+      int32_t *perm = tf_context->tensors[node->inputs->data[1]].data.data;
+
+      operation->type = PIPE_ML_OPERATION_TYPE_TRANSPOSE;
+      memcpy(operation->transpose.perm, perm, 4 * sizeof(*operation->transpose.perm));
+      break;
+   }
    default:
       return false;
    }
@@ -381,6 +388,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_SUBTRACT:
          teflon_debug("%-6s ", "SUB");
+         break;
+      case PIPE_ML_OPERATION_TYPE_TRANSPOSE:
+         teflon_debug("%-6s ", "TRANSPOSE");
          break;
       }
 
