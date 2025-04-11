@@ -978,8 +978,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    if (!amdgpu_get_new_ib(ctx->aws, rcs, &acs->main_ib, acs))
       goto fail;
 
-   /* Currently only gfx, compute and sdma queues supports user queue. */
-   if (acs->aws->info.use_userq && ip_type <= AMD_IP_SDMA) {
+   if (acs->aws->info.userq_ip_mask & BITFIELD_BIT(acs->ip_type)) {
       if (!amdgpu_userq_init(acs->aws, &acs->aws->queues[acs->queue_index].userq, ip_type))
          goto fail;
    }
@@ -1202,7 +1201,8 @@ static void amdgpu_cs_add_fence_dependency(struct radeon_cmdbuf *rcs,
    util_queue_fence_wait(&fence->submitted);
 
    if (!fence->imported) {
-      if (!aws->info.use_userq || fence->ip_type != acs->ip_type || acs->ip_type > AMD_IP_SDMA) {
+      if (!(aws->info.userq_ip_mask & BITFIELD_BIT(acs->ip_type)) ||
+          fence->ip_type != acs->ip_type) {
          /* Ignore idle fences. This will only check the user fence in memory. */
          if (!amdgpu_fence_wait((struct pipe_fence_handle *)fence, 0, false)) {
             add_seq_no_to_list(acs->aws, &csc->seq_no_dependencies, fence->queue_index,
@@ -2162,8 +2162,7 @@ static int amdgpu_cs_flush(struct radeon_cmdbuf *rcs,
       csc_current = amdgpu_csc_get_current(acs);
       struct amdgpu_cs_context *csc_submitted = amdgpu_csc_get_submitted(acs);
 
-      /* only gfx, compute and sdma queues are supported in userqueues. */
-      if (aws->info.use_userq && acs->ip_type <= AMD_IP_SDMA) {
+      if (aws->info.userq_ip_mask & BITFIELD_BIT(acs->ip_type)) {
          util_queue_add_job(&aws->cs_queue, acs, &acs->flush_completed,
                             amdgpu_cs_submit_ib<USERQ>, NULL, 0);
       } else {

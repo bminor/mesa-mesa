@@ -202,6 +202,9 @@ struct drm_amdgpu_info_device {
 	uint32_t csa_size;
 	/* context save area base virtual alignment for gfx11 */
 	uint32_t csa_alignment;
+	/* Userq IP mask (1 << AMDGPU_HW_IP_*) */
+	uint32_t userq_ip_mask;
+	uint32_t pad;
 };
 struct drm_amdgpu_info_hw_ip {
    uint32_t hw_ip_version_major;
@@ -568,12 +571,27 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       return false;
    }
 
+   info->userq_ip_mask = device_info.userq_ip_mask;
+
    for (unsigned ip_type = 0; ip_type < AMD_NUM_IP_TYPES; ip_type++) {
       struct drm_amdgpu_info_hw_ip ip_info = {0};
 
       r = ac_drm_query_hw_ip_info(dev, ip_type, 0, &ip_info);
-      if (r || !ip_info.available_rings)
+      if (r)
          continue;
+
+      if (ip_info.available_rings) {
+         info->ip[ip_type].num_queues = util_bitcount(ip_info.available_rings);
+         /* Kernel can set both available_rings and userq_ip_mask. Clear userq_ip_mask. */
+         info->userq_ip_mask &= ~BITFIELD_BIT(ip_type);
+      } else if (info->userq_ip_mask & BITFIELD_BIT(ip_type)) {
+         /* info[ip_type].num_queues variable is also used to describe if that ip_type is
+          * supported or not. Setting this variable to 1 for userqueues.
+          */
+         info->ip[ip_type].num_queues = 1;
+      } else {
+         continue;
+      }
 
       /* Gfx6-8 don't set ip_discovery_version. */
       if (info->drm_minor >= 48 && ip_info.ip_discovery_version) {
@@ -597,7 +615,6 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                   device_info.family == FAMILY_MDN)
             info->ip[AMD_IP_GFX].ver_minor = info->ip[AMD_IP_COMPUTE].ver_minor = 3;
       }
-      info->ip[ip_type].num_queues = util_bitcount(ip_info.available_rings);
 
       /* query ip count */
       r = ac_drm_query_hw_ip_count(dev, ip_type, &num_instances);

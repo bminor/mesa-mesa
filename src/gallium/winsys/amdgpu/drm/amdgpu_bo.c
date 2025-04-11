@@ -180,7 +180,7 @@ static int amdgpu_bo_va_op_common(struct amdgpu_winsys *aws, struct amdgpu_winsy
 {
    int r;
 
-   if (aws->info.use_userq) {
+   if (aws->info.userq_ip_mask) {
       uint32_t syncobj_arr[AMDGPU_MAX_QUEUES + 1];
       uint32_t num_fences = 0;
 

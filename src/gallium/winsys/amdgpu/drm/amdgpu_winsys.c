@@ -56,13 +56,12 @@ static bool do_winsys_init(struct amdgpu_winsys *aws,
                       strstr(debug_get_option("AMD_DEBUG", ""), "sqtt") != NULL;
    aws->zero_all_vram_allocs = strstr(debug_get_option("R600_DEBUG", ""), "zerovram") != NULL ||
                               driQueryOptionb(config->options, "radeonsi_zerovram");
-   aws->info.use_userq = debug_get_bool_option("AMD_USERQ", false);
 
    for (unsigned i = 0; i < ARRAY_SIZE(aws->queues); i++)
       simple_mtx_init(&aws->queues[i].userq.lock, mtx_plain);
 
    /* TODO: Enable this once the kernel handles it efficiently. */
-   if (!aws->info.use_userq)
+   if (!aws->info.userq_ip_mask)
       aws->info.has_local_buffers = false;
 
    return true;
