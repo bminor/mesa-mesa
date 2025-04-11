@@ -282,10 +282,10 @@ alpine/x86_64_build:
     LLVM_VERSION: &alpine-llvm_version 19
   rules:
     # Note: the next three lines must remain in that order, so that the rules
-    # in `linkcheck-docs` catch nightly pipelines before the rules in `pages`
+    # in `linkcheck-docs` catch nightly pipelines before the rules in `deploy-docs`
     # exclude them.
     - !reference [linkcheck-docs, rules]
-    - !reference [pages, rules]
+    - !reference [deploy-docs, rules]
     - !reference [test-docs, rules]
     - !reference [.container, rules]
 

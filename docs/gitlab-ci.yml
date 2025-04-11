@@ -15,9 +15,10 @@
     - meson compile -C _build
     - meson install -C _build
 
-pages:
+deploy-docs:
   extends: .docs-base
   stage: deploy
+  pages: true
   rules:
     - !reference [.common-rules, rules]
     - !reference [.no_scheduled_pipelines-rules, rules]
