@@ -27,8 +27,8 @@ fi
 
 set +e
 eval "/android-tools/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
-  $EXCLUDE_FILTERS \
-  $INCLUDE_FILTERS
+  $INCLUDE_FILTERS \
+  $EXCLUDE_FILTERS
 
 [ "$(grep "^FAILED" /android-tools/android-cts/results/latest/invocation_summary.txt | tr -d ' ' | cut -d ':' -f 2)" = "0" ]
 
