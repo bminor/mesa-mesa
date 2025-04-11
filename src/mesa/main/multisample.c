@@ -248,7 +248,7 @@ _mesa_check_sample_count(struct gl_context *ctx, GLenum target,
       return GL_INVALID_OPERATION;
    }
 
-   if (ctx->Extensions.AMD_framebuffer_multisample_advanced &&
+   if (_mesa_has_AMD_framebuffer_multisample_advanced(ctx) &&
        target == GL_RENDERBUFFER) {
       if (!_mesa_is_depth_or_stencil_format(internalFormat)) {
          /* From the AMD_framebuffer_multisample_advanced spec:
