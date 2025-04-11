@@ -50,11 +50,11 @@ test-docs:
     # pre-merge pipeline
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *docs-or-ci
-      when: on_success
+      when: manual
     # fork pipeline
     - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_NAMESPACE != "mesa"'
       changes: *docs-or-ci
-      when: on_success
+      when: manual
     # Other cases default to never
 
 linkcheck-docs:
