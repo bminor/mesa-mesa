@@ -829,8 +829,9 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
    pipe_resource_reference(&operation->weight_tensor, poperation->conv.weight_tensor->resource);
    operation->weight_width = poperation->conv.weight_tensor->dims[3];
    operation->weight_height = 1;
-   operation->weight_zero_point = poperation->conv.weight_tensor->zero_point;
+   operation->weight_zero_point = etna_tensor_zero_point(poperation->conv.weight_tensor);
    operation->weight_scale = poperation->conv.weight_tensor->scale;
+   operation->weight_signed = poperation->conv.weight_tensor->is_signed;
 
    pipe_resource_reference(&operation->bias_tensor, poperation->conv.bias_tensor->resource);
 }
