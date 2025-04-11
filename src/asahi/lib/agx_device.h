@@ -120,6 +120,19 @@ struct agx_device {
    struct util_vma_heap usc_heap;
    uint64_t guard_size;
 
+   /* To emulate sparse-resident buffers, we map buffers in both the bottom half
+    * and top half of the address space. sparse_ro_offset controls the
+    * partitioning. This is a power-of-two that &'s zero in bottom (read-write)
+    * buffers but non-zero in top (read-only) shadow mappings.
+    *
+    * In other words, given an address X, we can check if it is in the top half
+    * if (X & sparse_ro_offset) != 0.
+    *
+    * Given a bottom half address X, we can get the top half address
+    * equivalently as (X + sparse_ro_offset) or (X | sparse_ro_offset).
+    */
+   uint64_t sparse_ro_offset;
+
    struct renderonly *ro;
 
    pthread_mutex_t bo_map_lock;

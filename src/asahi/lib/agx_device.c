@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include "clc/asahi_clc.h"
 #include "drm-uapi/asahi_drm.h"
+#include "util/bitscan.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/timespec.h"
@@ -33,6 +34,7 @@
 #include "util/os_mman.h"
 #include "util/os_time.h"
 #include "util/simple_mtx.h"
+#include "util/u_math.h"
 #include "util/u_printf.h"
 #include "git_sha1.h"
 #include "nir_serialize.h"
@@ -613,6 +615,23 @@ agx_open_device(void *memctx, struct agx_device *dev)
       assert(0);
       return false;
    }
+
+   /* Round the user VA window to powers-of-two... */
+   user_start = util_next_power_of_two64(user_start);
+   user_size = util_next_power_of_two64(user_size + 1) >> 1;
+
+   /* ...so when we cut user size in half to emulate sparse buffers... */
+   user_size /= 2;
+
+   /* ...or maybe in quarters if necessary to disambiguate */
+   if (user_size == user_start) {
+      user_size /= 2;
+   }
+
+   /* ...we can distinguish the top/bottom half by an address bit */
+   dev->sparse_ro_offset = user_size;
+   assert((user_start & dev->sparse_ro_offset) == 0);
+   assert(((user_start + (user_size - 1)) & dev->sparse_ro_offset) == 0);
 
    simple_mtx_init(&dev->vma_lock, mtx_plain);
    util_vma_heap_init(&dev->main_heap, user_start, user_size);
