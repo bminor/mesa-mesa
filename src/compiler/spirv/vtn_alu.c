@@ -280,8 +280,12 @@ vtn_convert_op_dst_type(SpvOp opcode)
 nir_op
 vtn_nir_alu_op_for_spirv_opcode(struct vtn_builder *b,
                                 SpvOp opcode, bool *swap, bool *exact,
-                                unsigned src_bit_size, unsigned dst_bit_size)
+                                const glsl_type *src_type,
+                                const glsl_type *dst_type)
 {
+   const unsigned src_bit_size = glsl_get_bit_size(src_type);
+   const unsigned dst_bit_size = glsl_get_bit_size(dst_type);
+
    /* Indicates that the first two arguments should be swapped.  This is
     * used for implementing greater-than and less-than-or-equal.
     */
@@ -890,11 +894,9 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpFUnordGreaterThanEqual: {
       bool swap;
       bool unused_exact;
-      unsigned src_bit_size = glsl_get_bit_size(vtn_src[0]->type);
-      unsigned dst_bit_size = glsl_get_bit_size(dest_type);
       nir_op op = vtn_nir_alu_op_for_spirv_opcode(b, opcode, &swap,
                                                   &unused_exact,
-                                                  src_bit_size, dst_bit_size);
+                                                  vtn_src[0]->type, dest_type);
 
       if (swap) {
          nir_def *tmp = src[0];
@@ -969,10 +971,8 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpShiftRightLogical: {
       bool swap;
       bool exact;
-      unsigned src0_bit_size = glsl_get_bit_size(vtn_src[0]->type);
-      unsigned dst_bit_size = glsl_get_bit_size(dest_type);
       nir_op op = vtn_nir_alu_op_for_spirv_opcode(b, opcode, &swap, &exact,
-                                                  src0_bit_size, dst_bit_size);
+                                                  vtn_src[0]->type, dest_type);
 
       assert(!exact);
 
@@ -1029,11 +1029,9 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    default: {
       bool swap;
       bool exact;
-      unsigned src_bit_size = glsl_get_bit_size(vtn_src[0]->type);
-      unsigned dst_bit_size = glsl_get_bit_size(dest_type);
       nir_op op = vtn_nir_alu_op_for_spirv_opcode(b, opcode, &swap,
                                                   &exact,
-                                                  src_bit_size, dst_bit_size);
+                                                  vtn_src[0]->type, dest_type);
 
       if (swap) {
          nir_def *tmp = src[0];

@@ -2677,8 +2677,10 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
 
       default: {
          bool swap;
-         nir_alu_type dst_alu_type = nir_get_nir_type_for_glsl_type(val->type->type);
-         nir_alu_type src_alu_type = dst_alu_type;
+
+         const glsl_type *dst_type = val->type->type;
+         const glsl_type *src_type = dst_type;
+
          unsigned num_components = glsl_get_vector_elements(val->type->type);
 
          vtn_assert(count <= 7);
@@ -2688,8 +2690,7 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
          case SpvOpFConvert:
          case SpvOpUConvert:
             /* We have a different source type in a conversion. */
-            src_alu_type =
-               nir_get_nir_type_for_glsl_type(vtn_get_value_type(b, w[4])->type);
+            src_type = vtn_get_value_type(b, w[4])->type;
             break;
          default:
             break;
@@ -2697,8 +2698,7 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
 
          bool exact;
          nir_op op = vtn_nir_alu_op_for_spirv_opcode(b, opcode, &swap, &exact,
-                                                     nir_alu_type_get_type_size(src_alu_type),
-                                                     nir_alu_type_get_type_size(dst_alu_type));
+                                                     src_type, dst_type);
 
          /* No SPIR-V opcodes handled through this path should set exact.
           * Since it is ignored, assert on it.
