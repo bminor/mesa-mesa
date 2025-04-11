@@ -480,6 +480,17 @@ hk_flush_bind(struct hk_bind_builder *b)
    }
 
    util_dynarray_append(&b->binds, struct drm_asahi_gem_bind_op, op);
+
+   /* Shadow a read-only mapping to the upper half */
+   op.flags &= ~DRM_ASAHI_BIND_WRITE;
+   op.addr = agx_rw_addr_to_ro(&b->dev->dev, op.addr);
+
+   if (!b->mem) {
+      op.handle = b->dev->dev.zero_bo->uapi_handle;
+   }
+
+   util_dynarray_append(&b->binds, struct drm_asahi_gem_bind_op, op);
+
    return VK_SUCCESS;
 }
 

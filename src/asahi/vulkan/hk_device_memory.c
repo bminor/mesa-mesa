@@ -219,6 +219,13 @@ hk_AllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
       }
    }
 
+   /* Shadow map in case this is used for a sparse resident buffer */
+   int ret = agx_bo_bind(&dev->dev, mem->bo,
+                         agx_rw_addr_to_ro(&dev->dev, mem->bo->va->addr),
+                         mem->bo->size, 0, DRM_ASAHI_BIND_READ);
+   if (ret)
+      return VK_ERROR_UNKNOWN;
+
    if (mem->bo->flags & (AGX_BO_SHAREABLE | AGX_BO_SHARED))
       hk_add_ext_bo(dev, mem->bo);
 

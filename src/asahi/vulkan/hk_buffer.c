@@ -81,9 +81,22 @@ VkResult
 hk_bind_scratch(struct hk_device *dev, struct agx_va *va, unsigned offset_B,
                 size_t size_B)
 {
-   return agx_bo_bind(
-      &dev->dev, dev->sparse.write, va->addr + offset_B, size_B, 0,
-      DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE | DRM_ASAHI_BIND_SINGLE_PAGE);
+   uint64_t addr = va->addr + offset_B;
+   uint32_t flags = DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_SINGLE_PAGE;
+
+   /* Map read-write scratch to the primary (bottom half) VA range */
+   int ret = agx_bo_bind(&dev->dev, dev->sparse.write, addr, size_B, 0,
+                         flags | DRM_ASAHI_BIND_WRITE);
+   if (ret)
+      return VK_ERROR_UNKNOWN;
+
+   /* Map read-only scratch to the secondary (top half) VA range */
+   ret = agx_bo_bind(&dev->dev, dev->dev.zero_bo,
+                     addr + dev->dev.sparse_ro_offset, size_B, 0, flags);
+   if (ret)
+      return VK_ERROR_UNKNOWN;
+
+   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -132,6 +145,9 @@ hk_CreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                           "Sparse VMA allocation failed");
       }
       buffer->vk.device_address = buffer->va->addr;
+
+      /* Bind scratch pages to make read/write across the VA valid */
+      hk_bind_scratch(dev, buffer->va, 0, vma_size_B);
    }
 
    *pBuffer = hk_buffer_to_handle(buffer);
@@ -245,9 +261,19 @@ hk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
       if (buffer->va) {
          VK_FROM_HANDLE(hk_device, dev, device);
          size_t size = MIN2(mem->bo->size, buffer->va->size_B);
+
+         /* Lower mapping: read-write */
          int ret = agx_bo_bind(&dev->dev, mem->bo, buffer->vk.device_address,
                                size, pBindInfos[i].memoryOffset,
                                DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE);
+         if (ret)
+            return VK_ERROR_UNKNOWN;
+
+         /* Upper mapping: read-only */
+         ret =
+            agx_bo_bind(&dev->dev, mem->bo,
+                        buffer->vk.device_address + dev->dev.sparse_ro_offset,
+                        size, pBindInfos[i].memoryOffset, DRM_ASAHI_BIND_READ);
          if (ret)
             return VK_ERROR_UNKNOWN;
       } else {
