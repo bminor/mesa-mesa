@@ -1647,11 +1647,18 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
        !key->ge.opt.kill_pointsize &&
        !key->ge.opt.kill_layer &&
        !key->ge.opt.kill_clip_distances &&
-       !(nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER))) {
+       !(nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER)) &&
+       !key->ge.opt.remove_streamout &&
+       !key->ge.mono.remove_streamout) {
       return nir_no_progress(impl);
    }
 
    bool progress = false;
+
+   if ((key->ge.opt.remove_streamout || key->ge.mono.remove_streamout) && nir->xfb_info) {
+      ralloc_free(nir->xfb_info);
+      nir->xfb_info = NULL;
+   }
 
    nir_foreach_block(block, impl) {
       nir_foreach_instr_safe(instr, block) {
@@ -1668,6 +1675,25 @@ static bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
 
          assert(intr->num_components == 1); /* only scalar stores expected */
          nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+
+         if ((key->ge.opt.remove_streamout || key->ge.mono.remove_streamout) &&
+             nir_instr_xfb_write_mask(intr)) {
+            /* Remove the output store if the output is not used as a sysval or varying. */
+            if ((sem.no_sysval_output ||
+                 !nir_slot_is_sysval_output(sem.location, MESA_SHADER_FRAGMENT)) &&
+                (sem.no_varying ||
+                 !nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT))) {
+               nir_instr_remove(instr);
+               progress = true;
+               continue;
+            }
+
+            /* Clear xfb info if the output is used as a sysval or varying. */
+            static const nir_io_xfb zeroed;
+            nir_intrinsic_set_io_xfb(intr, zeroed);
+            nir_intrinsic_set_io_xfb2(intr, zeroed);
+            progress = true;
+         }
 
          if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) &&
              key->ge.opt.kill_outputs &
