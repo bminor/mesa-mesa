@@ -81,6 +81,32 @@ static uint64_t etna_resource_modifier(struct etna_resource *rsc)
    return layout_to_modifier(rsc->layout);
 }
 
+bool
+etna_resource_is_render_compatible(struct pipe_screen *pscreen,
+                                   struct etna_resource *rsc)
+{
+   struct etna_screen *screen = etna_screen(pscreen);
+
+   if (rsc->layout == ETNA_LAYOUT_LINEAR) {
+      if (!VIV_FEATURE(screen, ETNA_FEATURE_LINEAR_PE))
+         return false;
+
+      if (VIV_FEATURE(screen, ETNA_FEATURE_FAST_CLEAR)) {
+         unsigned int min_tilesize = etna_screen_get_tile_size(screen, TS_MODE_128B,
+                                                               rsc->base.nr_samples > 1);
+
+         if (rsc->levels[rsc->base.last_level].stride % min_tilesize != 0)
+            return false;
+      }
+   }
+
+   if (screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer &&
+       !(rsc->layout & ETNA_LAYOUT_BIT_MULTI))
+      return false;
+
+   return true;
+}
+
 /* A tile is either 64 bytes or, when the GPU has the CACHE128B256BPERLINE
  * feature, 128/256 bytes of color/depth data, tracked by
  * 'screen->specs.bits_per_tile' bits of tile status.

@@ -40,25 +40,15 @@
 
 static struct etna_resource *
 etna_render_handle_incompatible(struct pipe_context *pctx,
-                                struct pipe_resource *prsc,
-                                unsigned int level)
+                                struct pipe_resource *prsc)
 {
    struct etna_context *ctx = etna_context(pctx);
    struct etna_screen *screen = ctx->screen;
    struct etna_resource *res = etna_resource(prsc);
    bool need_multitiled = screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer;
    bool want_supertiled = screen->specs.can_supertile;
-   unsigned int min_tilesize = etna_screen_get_tile_size(screen, TS_MODE_128B,
-                                                         prsc->nr_samples > 1);
 
-   /* Resource is compatible if it is tiled or PE is able to render to linear
-    * and has multi tiling when required.
-    */
-   if ((res->layout != ETNA_LAYOUT_LINEAR ||
-        (VIV_FEATURE(screen, ETNA_FEATURE_LINEAR_PE) &&
-         (!VIV_FEATURE(screen, ETNA_FEATURE_FAST_CLEAR) ||
-          res->levels[level].stride % min_tilesize == 0))) &&
-       (!need_multitiled || (res->layout & ETNA_LAYOUT_BIT_MULTI)))
+   if (etna_resource_is_render_compatible(pctx->screen, res))
       return res;
 
    if (!res->render) {
@@ -87,7 +77,7 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    struct etna_screen *screen = ctx->screen;
    unsigned layer = templat->u.tex.first_layer;
    unsigned level = templat->u.tex.level;
-   struct etna_resource *rsc = etna_render_handle_incompatible(pctx, prsc, level);
+   struct etna_resource *rsc = etna_render_handle_incompatible(pctx, prsc);
    struct etna_resource_level *lev = &rsc->levels[level];
    struct etna_surface *surf = CALLOC_STRUCT(etna_surface);
 
