@@ -202,7 +202,7 @@ union si_ps_input_info {
 };
 
 /* Final shader info from fully compiled and optimized shader variants. */
-struct si_shader_binary_info {
+struct si_shader_variant_info {
    uint8_t vs_output_param_offset[NUM_TOTAL_VARYING_SLOTS];
    uint32_t vs_output_ps_input_cntl[NUM_TOTAL_VARYING_SLOTS];
    union si_ps_input_info ps_inputs[SI_NUM_INTERP];

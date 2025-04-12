@@ -795,7 +795,7 @@ struct si_shader {
    /* The following data is all that's needed for binary shaders. */
    struct si_shader_binary binary;
    struct ac_shader_config config;
-   struct si_shader_binary_info info;
+   struct si_shader_variant_info info;
 
    /* Shader key + LLVM IR + disassembly + statistics.
     * Generated for debug contexts only.
