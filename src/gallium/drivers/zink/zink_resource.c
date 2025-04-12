@@ -2376,6 +2376,7 @@ zink_buffer_map(struct pipe_context *pctx,
          }
          res = zink_resource(trans->staging_res);
          usage |= PIPE_MAP_UNSYNCHRONIZED;
+         map_offset = trans->offset;
          ptr = ((uint8_t *)ptr);
       } else {
          /* At this point, the buffer is always idle (we checked it above). */
