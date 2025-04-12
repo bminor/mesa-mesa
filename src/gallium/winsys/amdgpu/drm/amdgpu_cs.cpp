@@ -1495,6 +1495,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
 
    struct drm_amdgpu_userq_fence_info *fence_info;
    struct drm_amdgpu_userq_wait userq_wait_data = {
+      .waitq_id = userq->userq_handle,
       .syncobj_handles = (uintptr_t)syncobj_dependencies_list,
       .syncobj_timeline_handles = (uintptr_t)&syncobj_timeline_dependency,
       .syncobj_timeline_points = (uintptr_t)&syncobj_timeline_dependency_point,
