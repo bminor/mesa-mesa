@@ -266,6 +266,7 @@ struct lvp_ray_tracing_state {
    nir_variable *tmax;
 
    nir_variable *instance_addr;
+   nir_variable *primitive_addr;
    nir_variable *primitive_id;
    nir_variable *geometry_id_and_flags;
    nir_variable *hit_kind;
@@ -312,8 +313,10 @@ lvp_ray_tracing_pipeline_compiler_get_stack_size(
 }
 
 static void
-lvp_ray_tracing_state_init(nir_shader *nir, struct lvp_ray_tracing_state *state)
+lvp_ray_tracing_state_init(nir_shader *nir, struct lvp_ray_tracing_pipeline_compiler *compiler)
 {
+   struct lvp_ray_tracing_state *state = &compiler->state;
+
    state->bvh_base = nir_variable_create(nir, nir_var_shader_temp, glsl_uint64_t_type(), "bvh_base");
    state->flags = nir_variable_create(nir, nir_var_shader_temp, glsl_uint_type(), "flags");
    state->cull_mask = nir_variable_create(nir, nir_var_shader_temp, glsl_uint_type(), "cull_mask");
@@ -338,6 +341,9 @@ lvp_ray_tracing_state_init(nir_shader *nir, struct lvp_ray_tracing_state *state)
    state->accept = nir_variable_create(nir, nir_var_shader_temp, glsl_bool_type(), "accept");
    state->terminate = nir_variable_create(nir, nir_var_shader_temp, glsl_bool_type(), "terminate");
    state->opaque = nir_variable_create(nir, nir_var_shader_temp, glsl_bool_type(), "opaque");
+
+   if (compiler->pipeline->device->vk.enabled_features.rayTracingPositionFetch)
+      state->primitive_addr = nir_variable_create(nir, nir_var_shader_temp, glsl_uint64_t_type(), "primitive_addr");
 }
 
 static void
@@ -655,6 +661,12 @@ lvp_handle_triangle_intersection(nir_builder *b,
    nir_store_var(b, state->hit_kind,
                  nir_bcsel(b, intersection->frontface, nir_imm_int(b, 0xFE), nir_imm_int(b, 0xFF)), 0x1);
 
+   nir_def *prev_primitive_addr = NULL;
+   if (state->primitive_addr) {
+      prev_primitive_addr = nir_load_var(b, state->primitive_addr);
+      nir_store_var(b, state->primitive_addr, intersection->base.node_addr, 0x1);
+   }         
+
    nir_store_scratch(b, intersection->barycentrics, barycentrics_offset);
 
    nir_def *geometry_id = nir_iand_imm(b, intersection->base.geometry_id_and_flags, 0xfffffff);
@@ -702,6 +714,8 @@ lvp_handle_triangle_intersection(nir_builder *b,
       nir_store_var(b, state->geometry_id_and_flags, prev_geometry_id_and_flags, 0x1);
       nir_store_var(b, state->hit_kind, prev_hit_kind, 0x1);
       nir_store_scratch(b, prev_barycentrics, barycentrics_offset);
+      if (state->primitive_addr)
+         nir_store_var(b, state->primitive_addr, prev_primitive_addr, 0x1);
    }
    nir_pop_if(b, NULL);
 }
@@ -993,8 +1007,7 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
    }
    case nir_intrinsic_load_ray_triangle_vertex_positions: {
       def = lvp_load_vertex_position(
-         b, nir_load_var(b, state->instance_addr), nir_load_var(b, state->primitive_id),
-         nir_intrinsic_column(intr));
+         b, nir_load_var(b, state->primitive_addr), nir_intrinsic_column(intr));
       break;
    }
    /* Internal system values */
@@ -1041,7 +1054,7 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
       .pipeline = pipeline,
       .flags = vk_rt_pipeline_create_flags(create_info),
    };
-   lvp_ray_tracing_state_init(b->shader, &compiler.state);
+   lvp_ray_tracing_state_init(b->shader, &compiler);
    compiler.functions = _mesa_pointer_hash_table_create(NULL);
 
    nir_def *launch_id = nir_load_ray_launch_id(b);

@@ -14,8 +14,7 @@ nir_def *lvp_mul_vec3_mat(nir_builder *b, nir_def *vec, nir_def *matrix[], bool 
 
 void lvp_load_wto_matrix(nir_builder *b, nir_def *instance_addr, nir_def **node_data, nir_def **out);
 
-nir_def *lvp_load_vertex_position(nir_builder *b, nir_def *instance_addr,
-                                  nir_def *primitive_id, uint32_t index);
+nir_def *lvp_load_vertex_position(nir_builder *b, nir_def *primitive_addr, uint32_t index);
 
 struct lvp_ray_traversal_args;
 
