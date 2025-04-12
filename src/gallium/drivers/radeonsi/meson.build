@@ -55,6 +55,7 @@ files_libradeonsi = files(
   'si_nir_lower_ps_color_inputs.c',
   'si_nir_lower_resource.c',
   'si_nir_lower_vs_inputs.c',
+  'si_nir_mark_divergent_texture_non_uniform.c',
   'si_nir_optim.c',
   'si_sdma_copy_image.c',
   'si_shader.c',

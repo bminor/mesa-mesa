@@ -156,6 +156,7 @@ bool si_nir_lower_resource(nir_shader *nir, struct si_shader *shader,
                            struct si_shader_args *args);
 bool si_nir_lower_vs_inputs(nir_shader *nir, struct si_shader *shader,
                             struct si_shader_args *args);
+bool si_nir_mark_divergent_texture_non_uniform(struct nir_shader *nir);
 
 /* si_shader_llvm.c */
 bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
