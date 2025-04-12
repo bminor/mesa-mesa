@@ -1324,33 +1324,33 @@ bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *sha
 }
 
 static void
-si_init_gs_output_info(struct si_shader_info *info, struct si_gs_output_info *out_info)
+si_init_gs_output_info(struct si_shader_info *info, struct si_temp_shader_variant_info *out_info)
 {
    for (int i = 0; i < info->num_outputs; i++) {
       unsigned slot = info->output_semantic[i];
       if (slot < VARYING_SLOT_VAR0_16BIT) {
-         out_info->streams[slot] = info->output_streams[i];
-         out_info->usage_mask[slot] = info->output_usagemask[i];
+         out_info->gs_streams[slot] = info->output_streams[i];
+         out_info->gs_out_usage_mask[slot] = info->output_usagemask[i];
       } else {
          unsigned index = slot - VARYING_SLOT_VAR0_16BIT;
          /* TODO: 16bit need separated fields for lo/hi part. */
-         out_info->streams_16bit_lo[index] = info->output_streams[i];
-         out_info->streams_16bit_hi[index] = info->output_streams[i];
-         out_info->usage_mask_16bit_lo[index] = info->output_usagemask[i];
-         out_info->usage_mask_16bit_hi[index] = info->output_usagemask[i];
+         out_info->gs_streams_16bit_lo[index] = info->output_streams[i];
+         out_info->gs_streams_16bit_hi[index] = info->output_streams[i];
+         out_info->gs_out_usage_mask_16bit_lo[index] = info->output_usagemask[i];
+         out_info->gs_out_usage_mask_16bit_hi[index] = info->output_usagemask[i];
       }
    }
 
-   ac_nir_gs_output_info *ac_info = &out_info->info;
+   ac_nir_gs_output_info *ac_info = &out_info->gs_out_info;
 
-   ac_info->streams = out_info->streams;
-   ac_info->streams_16bit_lo = out_info->streams_16bit_lo;
-   ac_info->streams_16bit_hi = out_info->streams_16bit_hi;
+   ac_info->streams = out_info->gs_streams;
+   ac_info->streams_16bit_lo = out_info->gs_streams_16bit_lo;
+   ac_info->streams_16bit_hi = out_info->gs_streams_16bit_hi;
 
-   ac_info->sysval_mask = out_info->usage_mask;
-   ac_info->varying_mask = out_info->usage_mask;
-   ac_info->varying_mask_16bit_lo = out_info->usage_mask_16bit_lo;
-   ac_info->varying_mask_16bit_hi = out_info->usage_mask_16bit_hi;
+   ac_info->sysval_mask = out_info->gs_out_usage_mask;
+   ac_info->varying_mask = out_info->gs_out_usage_mask;
+   ac_info->varying_mask_16bit_lo = out_info->gs_out_usage_mask_16bit_lo;
+   ac_info->varying_mask_16bit_hi = out_info->gs_out_usage_mask_16bit_hi;
 
    /* TODO: construct 16bit slot per component store type. */
    ac_info->types_16bit_lo = ac_info->types_16bit_hi = NULL;
@@ -1604,9 +1604,9 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
-      si_init_gs_output_info(&sel->info, &ctx->legacy_gs_output_info);
+      si_init_gs_output_info(&sel->info, &ctx->temp_info);
       NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg,
-                 &ctx->legacy_gs_output_info.info);
+                 &ctx->temp_info.gs_out_info);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
       ac_nir_lower_ps_late_options late_options = {
@@ -1864,8 +1864,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
                                struct si_shader *gs_shader,
                                struct si_temp_shader_variant_info *temp_info,
                                nir_shader *gs_nir,
-                               struct util_debug_callback *debug,
-                               ac_nir_gs_output_info *output_info)
+                               struct util_debug_callback *debug)
 {
    struct si_shader *shader;
    struct si_shader_selector *gs_selector = gs_shader->selector;
@@ -1894,10 +1893,10 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 
       /* Skip if no channel writes to stream 0. */
       if (!nir_slot_is_varying(semantic, MESA_SHADER_FRAGMENT) ||
-          (gsinfo->output_streams[i] & 0x03 &&
-           gsinfo->output_streams[i] & 0x0c &&
-           gsinfo->output_streams[i] & 0x30 &&
-           gsinfo->output_streams[i] & 0xc0))
+          (gsinfo->output_streams[i] & 0x03 && /* whether component 0 writes to non-zero stream */
+           gsinfo->output_streams[i] & 0x0c && /* whether component 1 writes to non-zero stream */
+           gsinfo->output_streams[i] & 0x30 && /* whether component 2 writes to non-zero stream */
+           gsinfo->output_streams[i] & 0xc0))  /* whether component 3 writes to non-zero stream */
          continue;
 
       temp_info->vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
@@ -1918,7 +1917,7 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
                                    gskey->ge.opt.kill_pointsize,
                                    gskey->ge.opt.kill_layer,
                                    sscreen->options.vrs2x2,
-                                   output_info);
+                                   &temp_info->gs_out_info);
 
    struct si_linked_shaders linked;
    memset(&linked, 0, sizeof(linked));
@@ -2047,7 +2046,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    if (nir->info.stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
       shader->gs_copy_shader =
          si_nir_generate_gs_copy_shader(sscreen, compiler, shader, &linked.consumer.temp_info,
-                                        nir, debug, &linked.consumer.legacy_gs_output_info.info);
+                                        nir, debug);
       if (!shader->gs_copy_shader) {
          fprintf(stderr, "radeonsi: can't create GS copy shader\n");
          ret = false;
