@@ -7,7 +7,8 @@
 #include "nir_range_analysis.h"
 #include "sid.h"
 
-void si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
+void si_get_shader_variant_info(struct si_shader *shader,
+                                struct si_temp_shader_variant_info *temp_info, nir_shader *nir)
 {
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    assert(nir->info.use_aco_amd == si_shader_uses_aco(shader));
@@ -154,8 +155,8 @@ void si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir)
          case nir_instr_type_tex: {
             nir_tex_instr *tex = nir_instr_as_tex(instr);
 
-            shader->info.has_non_uniform_tex_access |= tex->texture_non_uniform || tex->sampler_non_uniform;
-            shader->info.has_shadow_comparison |= tex->is_shadow;
+            temp_info->has_non_uniform_tex_access |= tex->texture_non_uniform || tex->sampler_non_uniform;
+            temp_info->has_shadow_comparison |= tex->is_shadow;
 
             /* Gather the types of used VMEM instructions that return something. */
             switch (tex->op) {

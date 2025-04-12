@@ -95,6 +95,7 @@ struct si_nir_shader_ctx {
    struct si_shader *shader;
    struct si_shader_args args;
    struct si_gs_output_info legacy_gs_output_info;
+   struct si_temp_shader_variant_info temp_info;
    nir_shader *nir;
    bool free_nir;
 };
@@ -182,7 +183,8 @@ bool si_aco_build_shader_part(struct si_screen *screen, gl_shader_stage stage, b
                               struct si_shader_part *result);
 
 /* si_shader_variant_info.c */
-void si_get_shader_variant_info(struct si_shader *shader, nir_shader *nir);
+void si_get_shader_variant_info(struct si_shader *shader,
+                                struct si_temp_shader_variant_info *temp_info, nir_shader *nir);
 void si_get_late_shader_variant_info(struct si_shader *shader, struct si_shader_args *args,
                                      nir_shader *nir);
 void si_set_spi_ps_input_config_for_separate_prolog(struct si_shader *shader);

@@ -192,6 +192,15 @@ struct si_shader_info {
    uint8_t reads_frag_coord_mask;
 };
 
+/* Temporary info used during shader variant compilation that's forgotten after compilation is
+ * finished.
+ */
+struct si_temp_shader_variant_info {
+   uint8_t vs_output_param_offset[NUM_TOTAL_VARYING_SLOTS];
+   bool has_non_uniform_tex_access : 1;
+   bool has_shadow_comparison : 1;
+};
+
 union si_ps_input_info {
    struct {
       uint8_t semantic;
@@ -203,7 +212,6 @@ union si_ps_input_info {
 
 /* Final shader info from fully compiled and optimized shader variants. */
 struct si_shader_variant_info {
-   uint8_t vs_output_param_offset[NUM_TOTAL_VARYING_SLOTS];
    uint32_t vs_output_ps_input_cntl[NUM_TOTAL_VARYING_SLOTS];
    union si_ps_input_info ps_inputs[SI_NUM_INTERP];
    uint8_t num_ps_inputs;
@@ -212,8 +220,6 @@ struct si_shader_variant_info {
    uint8_t num_input_vgprs;
    bool uses_vmem_load_other : 1; /* all other VMEM loads and atomics with return */
    bool uses_vmem_sampler_or_bvh : 1;
-   bool has_non_uniform_tex_access : 1;
-   bool has_shadow_comparison : 1;
    bool uses_instance_id : 1;
    bool uses_base_instance : 1;
    bool uses_draw_id : 1;
