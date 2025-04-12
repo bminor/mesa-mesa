@@ -60,8 +60,8 @@ LLVM is required by Panfrost's compilers at build time.
 
 In case of cross compilation without LLVM,
 you can build and install the required tools on the host (with LLVM installed) with
-``meson . build-host/ -Dvulkan-drivers=panfrost -Dgallium-drivers=panfrost
--Dmesa-clc=enabled -Dinstall-mesa-clc=true -Dprecomp-compiler=enabled -Dinstall-precomp-compiler=true``
+``meson . build-host/ -Dtools=panfrost -Dmesa-clc=enabled -Dinstall-mesa-clc=true
+-Dprecomp-compiler=enabled -Dinstall-precomp-compiler=true``
 and then use ``-Dmesa-clc=system -Dprecomp-compiler=system`` on the cross compile side.
 
 For general information on building Mesa, read :doc:`the install documentation
