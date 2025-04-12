@@ -1254,7 +1254,7 @@
         "description": "nil: Multiply by array_stride_B instead of adding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5577128c8315dbdca3cecbec9e06118025a1d069",
         "notes": null
