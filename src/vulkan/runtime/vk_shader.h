@@ -87,6 +87,17 @@ struct vk_shader {
 
    mesa_shader_stage stage;
 
+   /* Stack size for RT shaders */
+   VkDeviceSize stack_size;
+
+   /* Scratch size used by the shader */
+   VkDeviceSize scratch_size;
+
+   /* Number of ray queries used by the shader (useful to avoid going through
+    * all of the shaders in the RT pipelines)
+    */
+   uint32_t ray_queries;
+
    /* Used for the generic VkPipeline implementation */
    struct {
       struct vk_pipeline_cache_object cache_obj;
