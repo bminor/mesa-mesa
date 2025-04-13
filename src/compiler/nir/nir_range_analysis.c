@@ -2145,18 +2145,25 @@ ssa_def_bits_used(const nir_def *def, int recur)
          switch (use_alu->op) {
          case nir_op_u2u8:
          case nir_op_i2i8:
-            bits_used |= 0xff;
-            break;
-
          case nir_op_u2u16:
          case nir_op_i2i16:
-            bits_used |= all_bits & 0xffff;
-            break;
-
          case nir_op_u2u32:
          case nir_op_i2i32:
-            bits_used |= all_bits & 0xffffffff;
+         case nir_op_u2u64:
+         case nir_op_i2i64: {
+            uint64_t def_bits_used = ssa_def_bits_used(&use_alu->def, recur);
+
+            /* If one of the sign-extended bits is used, set the last src bit
+             * as used.
+             */
+            if ((use_alu->op == nir_op_i2i8 || use_alu->op == nir_op_i2i16 ||
+                 use_alu->op == nir_op_i2i32 || use_alu->op == nir_op_i2i64) &&
+                def_bits_used & ~all_bits)
+               def_bits_used |= BITFIELD64_BIT(def->bit_size - 1);
+
+            bits_used |= def_bits_used & all_bits;
             break;
+         }
 
          case nir_op_extract_u8:
          case nir_op_extract_i8:

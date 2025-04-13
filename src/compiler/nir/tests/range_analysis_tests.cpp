@@ -356,3 +356,59 @@ TEST_F(ssa_def_bits_used_test, ushr_ishr_ishl)
    EXPECT_EQ(nir_def_bits_used(load2), BITFIELD_RANGE(11, 32 - 11));
    EXPECT_EQ(nir_def_bits_used(load3), BITFIELD_RANGE(0, 32 - 13));
 }
+
+typedef nir_def *(*unary_op)(nir_builder *build, nir_def *src0);
+
+TEST_F(ssa_def_bits_used_test, u2u_i2i_iand)
+{
+   static const unary_op ops[] = {
+      nir_u2u8,
+      nir_i2i8,
+      nir_u2u16,
+      nir_i2i16,
+      nir_u2u32,
+      nir_i2i32,
+   };
+   nir_def *load[ARRAY_SIZE(ops)];
+
+   for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
+      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 64);
+      nir_def *alu = nir_iand_imm(b, ops[i](b, load[i]), 0x1020304050607080ull);
+      nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+   }
+
+   EXPECT_EQ(nir_def_bits_used(load[0]), 0x80);
+   EXPECT_EQ(nir_def_bits_used(load[1]), 0x80);
+   EXPECT_EQ(nir_def_bits_used(load[2]), 0x7080);
+   EXPECT_EQ(nir_def_bits_used(load[3]), 0x7080);
+   EXPECT_EQ(nir_def_bits_used(load[4]), 0x50607080);
+   EXPECT_EQ(nir_def_bits_used(load[5]), 0x50607080);
+}
+
+TEST_F(ssa_def_bits_used_test, u2u_i2i_upcast_bits)
+{
+   static const unary_op ops[] = {
+      nir_u2u16,
+      nir_i2i16,
+      nir_u2u32,
+      nir_i2i32,
+      nir_u2u64,
+      nir_i2i64,
+   };
+   nir_def *load[ARRAY_SIZE(ops)];
+
+   for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
+      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 8);
+      nir_def *upcast = ops[i](b, load[i]);
+      /* Using one of the sing-extended bits implies using the last bit. */
+      nir_def *alu = nir_iand_imm(b, upcast, BITFIELD64_BIT(upcast->bit_size - 1));
+      nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+   }
+
+   EXPECT_EQ(nir_def_bits_used(load[0]), 0x0);
+   EXPECT_EQ(nir_def_bits_used(load[1]), 0x80);
+   EXPECT_EQ(nir_def_bits_used(load[2]), 0x0);
+   EXPECT_EQ(nir_def_bits_used(load[3]), 0x80);
+   EXPECT_EQ(nir_def_bits_used(load[4]), 0x0);
+   EXPECT_EQ(nir_def_bits_used(load[5]), 0x80);
+}
