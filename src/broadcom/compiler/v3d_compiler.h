@@ -360,6 +360,14 @@ enum quniform_contents {
          * Current value of DrawIndex for Multidraw
          */
         QUNIFORM_DRAW_ID,
+
+        /**
+         * Blend constants for software blend.
+         */
+        QUNIFORM_BLEND_CONSTANT_R,
+        QUNIFORM_BLEND_CONSTANT_G,
+        QUNIFORM_BLEND_CONSTANT_B,
+        QUNIFORM_BLEND_CONSTANT_A,
 };
 
 static inline uint32_t v3d_unit_data_create(uint32_t unit, uint32_t value)
@@ -427,6 +435,7 @@ struct v3d_fs_key {
         bool sample_alpha_to_coverage;
         bool sample_alpha_to_one;
         bool can_earlyz_with_discard;
+        bool software_blend;
         /* Mask of which color render targets are present. */
         uint8_t cbufs;
         uint8_t swap_color_rb;
@@ -439,12 +448,25 @@ struct v3d_fs_key {
         uint8_t uint_color_rb;
 
         /* Color format information per render target. Only set when logic
-         * operations are enabled or when fbfetch is in use.
+         * operations are enabled, when fbfetch is in use or when falling back
+         * to software blend.
          */
         struct {
                 enum pipe_format format;
                 uint8_t swizzle[4];
         } color_fmt[V3D_MAX_DRAW_BUFFERS];
+
+        /* Software blend state. Only set when software blend is enabled.
+         * (currently only for handling the dual source case)
+         */
+        struct {
+                enum pipe_blend_func rgb_func;
+                enum pipe_blendfactor rgb_src_factor;
+                enum pipe_blendfactor rgb_dst_factor;
+                enum pipe_blend_func alpha_func;
+                enum pipe_blendfactor alpha_src_factor;
+                enum pipe_blendfactor alpha_dst_factor;
+        } blend[V3D_MAX_DRAW_BUFFERS];
 
         enum pipe_logicop logicop_func;
         uint32_t point_sprite_mask;
@@ -1212,6 +1234,7 @@ bool v3d_nir_lower_global_2x32(nir_shader *s);
 bool v3d_nir_lower_load_store_bitsize(nir_shader *s);
 bool v3d_nir_lower_algebraic(struct nir_shader *shader, const struct v3d_compile *c);
 bool v3d_nir_lower_load_output(nir_shader *s, struct v3d_compile *c);
+bool v3d_nir_lower_blend(nir_shader *s, struct v3d_compile *c);
 
 nir_def *v3d_nir_get_tlb_color(nir_builder *b, struct v3d_compile *c, int rt, int sample);
 

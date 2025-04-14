@@ -107,6 +107,7 @@ static const struct debug_named_value debug_control[] = {
           "Disable TFU (v3dv only)" },
         { "sync", V3D_DEBUG_SYNC,
           "Sync wait for each job to complete after submission." },
+        { "soft_blend", V3D_DEBUG_SOFT_BLEND, "Force fallback to software blending" },
         DEBUG_NAMED_VALUE_END
 };
 

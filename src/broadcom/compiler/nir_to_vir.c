@@ -1960,7 +1960,8 @@ emit_frag_end(struct v3d_compile *c)
                         has_any_tlb_color_write = true;
         }
 
-        if (c->fs_key->sample_alpha_to_coverage && c->output_color_var[0]) {
+        if (!c->fs_key->software_blend &&
+            c->fs_key->sample_alpha_to_coverage && c->output_color_var[0]) {
                 struct nir_variable *var = c->output_color_var[0];
                 struct qreg *color = &c->outputs[var->data.driver_location * 4];
 
@@ -2485,6 +2486,15 @@ ntq_setup_outputs(struct v3d_compile *c)
                 case FRAG_RESULT_DATA5:
                 case FRAG_RESULT_DATA6:
                 case FRAG_RESULT_DATA7:
+                        /* Dual source outputs have an index that is != 0.
+                         * If they have not been removed by now they end up
+                         * clobbering `output_color_var` with the wrong
+                         * variable.
+                         */
+                        if (var->data.index != 0 && var->data.index != NIR_VARIABLE_NO_INDEX) {
+                            break;
+                        }
+
                         c->output_color_var[var->data.location -
                                             FRAG_RESULT_DATA0] = var;
                         break;
@@ -3597,6 +3607,15 @@ ntq_emit_intrinsic(struct v3d_compile *c, nir_intrinsic_instr *instr)
                               vir_uniform(c, QUNIFORM_AA_LINE_WIDTH, 0));
                 break;
 
+        case nir_intrinsic_demote_samples: {
+                struct qreg mask =
+                        vir_NOT(c, ntq_get_src(c, instr->src[0], 0));
+
+                vir_SETMSF_dest(c, vir_nop_reg(),
+                                vir_AND(c, mask, vir_MSF(c)));
+                break;
+        }
+
         case nir_intrinsic_load_sample_mask_in:
                 ntq_store_def(c, &instr->def, 0, vir_MSF(c));
                 break;
@@ -4120,6 +4139,34 @@ ntq_emit_intrinsic(struct v3d_compile *c, nir_intrinsic_instr *instr)
         case nir_intrinsic_load_view_index:
                 ntq_store_def(c, &instr->def, 0,
                               vir_uniform(c, QUNIFORM_VIEW_INDEX, 0));
+                break;
+
+        /* We only use these when doing software blending. */
+        case nir_intrinsic_load_blend_const_color_r_float:
+                ntq_store_def(c, &instr->def, 0,
+                              vir_uniform(c, QUNIFORM_BLEND_CONSTANT_R, 0));
+                break;
+        case nir_intrinsic_load_blend_const_color_g_float:
+                ntq_store_def(c, &instr->def, 0,
+                              vir_uniform(c, QUNIFORM_BLEND_CONSTANT_G, 0));
+                break;
+        case nir_intrinsic_load_blend_const_color_b_float:
+                ntq_store_def(c, &instr->def, 0,
+                              vir_uniform(c, QUNIFORM_BLEND_CONSTANT_B, 0));
+                break;
+        case nir_intrinsic_load_blend_const_color_a_float:
+                ntq_store_def(c, &instr->def, 0,
+                              vir_uniform(c, QUNIFORM_BLEND_CONSTANT_A, 0));
+                break;
+
+
+        /* We only use this if alpha to coverage is enabled when using
+         * software blending.
+         */
+        case nir_intrinsic_alpha_to_coverage:
+                assert(c->fs_key->msaa);
+                ntq_store_def(c, &instr->def, 0,
+                              vir_FTOC(c, ntq_get_src(c, instr->src[0], 0)));
                 break;
 
         default:

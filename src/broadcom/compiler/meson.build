@@ -17,6 +17,7 @@ libbroadcom_compiler_files = files(
   'qpu_validate.c',
   'v3d_tex.c',
   'v3d_compiler.h',
+  'v3d_nir_lower_blend.c',
   'v3d_nir_lower_io.c',
   'v3d_nir_lower_image_load_store.c',
   'v3d_nir_lower_line_smooth.c',
