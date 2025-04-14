@@ -1840,16 +1840,39 @@ visit_bvh8_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
 
-   std::vector<Temp> args = {bvh_base,
-                             bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), tmax, cull_mask),
-                             origin, dir, node_id};
+   std::vector<Temp> args = {bvh_base, tmax, cull_mask, origin, dir, node_id};
 
-   MIMG_instruction* mimg = emit_mimg(bld, aco_opcode::image_bvh8_intersect_ray,
-                                      {new_origin, new_dir, result}, resource, Operand(s4), args);
-   mimg->dim = ac_image_1d;
-   mimg->dmask = 0xf;
-   mimg->unrm = true;
-   mimg->r128 = true;
+   /* Use vector-aligned scalar operands in order to avoid unnecessary copies
+    * when creating vectors.
+    */
+   std::vector<Operand> scalar_args;
+   for (unsigned i = 0; i < args.size(); ++i) {
+      Temp tmp = args[i];
+      for (unsigned j = 0; j < tmp.size(); j++) {
+         scalar_args.emplace_back(emit_extract_vector(ctx, tmp, j, v1));
+         scalar_args.back().setVectorAligned(true);
+      }
+      /* (tmax, cull_mask) is passed as one vector */
+      if (i != 1)
+         scalar_args.back().setVectorAligned(false);
+   }
+
+   Instruction* mimg = create_instruction(aco_opcode::image_bvh8_intersect_ray, Format::MIMG,
+                                          3 + scalar_args.size(), 3);
+   mimg->definitions[0] = Definition(new_origin);
+   mimg->definitions[1] = Definition(new_dir);
+   mimg->definitions[2] = Definition(result);
+   mimg->operands[0] = Operand(resource);
+   mimg->operands[1] = Operand(s4);
+   mimg->operands[2] = Operand(v1);
+   for (unsigned i = 0; i < scalar_args.size(); i++)
+      mimg->operands[3 + i] = scalar_args[i];
+
+   mimg->mimg().dim = ac_image_1d;
+   mimg->mimg().dmask = 0xf;
+   mimg->mimg().unrm = true;
+   mimg->mimg().r128 = true;
+   bld.insert(std::move(mimg));
    emit_split_vector(ctx, result, 10);
    emit_split_vector(ctx, new_origin, 3);
    emit_split_vector(ctx, new_dir, 3);

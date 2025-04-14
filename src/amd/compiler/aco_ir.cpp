@@ -1453,8 +1453,8 @@ get_tied_defs(Instruction* instr)
       ops.push_back(2);
    } else if (instr->opcode == aco_opcode::image_bvh8_intersect_ray) {
       /* VADDR starts at 3. */
-      ops.push_back(3 + 2);
-      ops.push_back(3 + 3);
+      ops.push_back(3 + 4);
+      ops.push_back(3 + 7);
    }
    return ops;
 }

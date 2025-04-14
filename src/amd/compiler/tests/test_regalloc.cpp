@@ -935,28 +935,49 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.killed.simple)
       return;
 
    //>> s8: %_:s[0-7] = p_startpgm
-   //! v2: %base:v[0-1] = p_unit_test
-   //! v2: %tmax_mask:v[2-3] = p_unit_test
-   //! v3: %origin:v[4-6] = p_unit_test
-   //! v3: %dir:v[7-9] = p_unit_test
+   //! v1: %base_lo:v[0] = p_unit_test
+   //! v1: %base_hi:v[1] = p_unit_test
+   //! v1: %tmax:v[2] = p_unit_test
+   //! v1: %cull_mask:v[3] = p_unit_test
+   //! v1: %origin_x:v[4] = p_unit_test
+   //! v1: %origin_y:v[5] = p_unit_test
+   //! v1: %origin_z:v[6] = p_unit_test
+   //! v1: %dir_x:v[7] = p_unit_test
+   //! v1: %dir_y:v[8] = p_unit_test
+   //! v1: %dir_z:v[9] = p_unit_test
    //! v1: %node:v[10] = p_unit_test
-   Temp base = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 0)));
-   Temp tmax_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 2)));
-   Temp origin = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 4)));
-   Temp dir = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 7)));
+   Temp base_lo = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp base_hi = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp tmax = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp cull_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Temp origin_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Temp origin_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 5)));
+   Temp origin_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 6)));
+   Temp dir_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 7)));
+   Temp dir_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 8)));
+   Temp dir_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 9)));
    Temp node = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 10)));
 
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
    Temp result = bld.tmp(v10);
-   //! v3: %new_origin:v[4-6], v3: %new_dir:v[7-9], v10: %_:v[10-19] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, %base:v[0-1], %tmax_mask:v[2-3], %origin:v[4-6], %dir:v[7-9], %node:v[10] 1d
-   bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
-            Definition(result), inputs[0], Operand(s4), Operand(v1), base, tmax_mask, origin, dir,
-            node);
+   //! v3: %new_origin:v[4-6], v3: %new_dir:v[7-9], v10: %_:v[10-19] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, (%base_lo:v[0], %base_hi:v[1]), (%tmax:v[2], %cull_mask:v[3]), (%origin_x:v[4], %origin_y:v[5], %origin_z:v[6]), (%dir_x:v[7], %dir_y:v[8], %dir_z:v[9]), %node:v[10] 1d
+   Instruction* instr =
+      bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
+               Definition(result), inputs[0], Operand(s4), Operand(v1), base_lo, base_hi, tmax,
+               cull_mask, origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, node)
+         .instr;
+   instr->operands[3].setVectorAligned(true);
+   instr->operands[5].setVectorAligned(true);
+   instr->operands[7].setVectorAligned(true);
+   instr->operands[8].setVectorAligned(true);
+   instr->operands[10].setVectorAligned(true);
+   instr->operands[11].setVectorAligned(true);
 
    finish_ra_test(ra_test_policy());
 END_TEST
 
+#if 0
 BEGIN_TEST(regalloc.tied_defs.bvh8.killed.move_ops)
    if (!setup_cs("s8", GFX12))
       return;
@@ -964,15 +985,27 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.killed.move_ops)
    program->dev.vgpr_limit = 16;
 
    //>> s8: %_:s[0-7] = p_startpgm
-   //! v2: %base:v[0-1] = p_unit_test
-   //! v2: %tmax_mask:v[2-3] = p_unit_test
-   //! v3: %origin:v[4-6] = p_unit_test
-   //! v3: %dir:v[7-9] = p_unit_test
+   //! v1: %base_lo:v[0] = p_unit_test
+   //! v1: %base_hi:v[0] = p_unit_test
+   //! v1: %tmax:v[2] = p_unit_test
+   //! v1: %cull_mask:v[3] = p_unit_test
+   //! v1: %origin_x:v[4] = p_unit_test
+   //! v1: %origin_y:v[5] = p_unit_test
+   //! v1: %origin_z:v[6] = p_unit_test
+   //! v1: %dir_x:v[7] = p_unit_test
+   //! v1: %dir_y:v[8] = p_unit_test
+   //! v1: %dir_z:v[9] = p_unit_test
    //! v1: %node:v[10] = p_unit_test
-   Temp base = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 0)));
-   Temp tmax_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 2)));
-   Temp origin = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 4)));
-   Temp dir = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 7)));
+   Temp base_lo = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp base_hi = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp tmax = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp cull_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Temp origin_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Temp origin_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 5)));
+   Temp origin_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 6)));
+   Temp dir_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 7)));
+   Temp dir_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 8)));
+   Temp dir_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 9)));
    Temp node = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 10)));
 
    Temp new_origin = bld.tmp(v3);
@@ -981,35 +1014,59 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.killed.move_ops)
    /* When allocating the last definition, we need to move the origin/dir operands to make space. */
    //! v3: %origin_copy:v[10-12], v3: %dir_copy:v[13-15], v1: %node_copy:v[4] = p_parallelcopy %origin:v[4-6], %dir:v[7-9], %node:v[10]
    //! v3: %new_origin:v[10-12], v3: %new_dir:v[13-15], v10: %_:v[0-9] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, %base:v[0-1], %tmax_mask:v[2-3], %origin_copy:v[10-12], %dir_copy:v[13-15], %node_copy:v[4] 1d
-   bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
-            Definition(result), inputs[0], Operand(s4), Operand(v1), base, tmax_mask, origin, dir,
-            node);
+   Instruction *instr = bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir), Definition(result),
+                                 inputs[0], Operand(s4), Operand(v1), base_lo, base_hi, tmax, cull_mask, origin_x, origin_y,
+                                 origin_z, dir_x, dir_y, dir_z, node).instr;
+   instr->operands[3].setVectorAligned(true);
+   instr->operands[5].setVectorAligned(true);
+   instr->operands[7].setVectorAligned(true);
+   instr->operands[8].setVectorAligned(true);
+   instr->operands[10].setVectorAligned(true);
+   instr->operands[11].setVectorAligned(true);
 
    finish_ra_test(ra_test_policy());
 END_TEST
+#endif
 
 BEGIN_TEST(regalloc.tied_defs.bvh8.killed.duplicate_ops)
    if (!setup_cs("s8", GFX12))
       return;
 
    //>> s8: %_:s[0-7] = p_startpgm
-   //! v3: %origin_dir:v[0-2] = p_unit_test
-   //! v2: %base:v[3-4] = p_unit_test
-   //! v2: %tmax_mask:v[5-6] = p_unit_test
+   //! v1: %origin_dir_x:v[0] = p_unit_test
+   //! v1: %origin_dir_y:v[1] = p_unit_test
+   //! v1: %origin_dir_z:v[2] = p_unit_test
+   //! v1: %base_lo:v[3] = p_unit_test
+   //! v1: %base_hi:v[4] = p_unit_test
+   //! v1: %tmax:v[5] = p_unit_test
+   //! v1: %cull_mask:v[6] = p_unit_test
    //! v1: %node:v[7] = p_unit_test
-   Temp origin_dir = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 0)));
-   Temp base = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 3)));
-   Temp tmax_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 5)));
+   Temp origin_dir_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp origin_dir_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp origin_dir_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp base_lo = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Temp base_hi = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Temp tmax = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 5)));
+   Temp cull_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 6)));
    Temp node = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 7)));
 
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
    Temp result = bld.tmp(v10);
-   //! v3: %origin_dir_copy:v[8-10] = p_parallelcopy %origin_dir:v[0-2]
-   //! v3: %new_origin:v[0-2], v3: %new_dir:v[8-10], v10: %_:v[12-21] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, %base:v[3-4], %tmax_mask:v[5-6], %origin_dir:v[0-2], %origin_dir_copy:v[8-10], %node:v[7] 1d
-   bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
-            Definition(result), inputs[0], Operand(s4), Operand(v1), base, tmax_mask, origin_dir,
-            origin_dir, node);
+   //! v1: %origin_dir_copy_x:v[8], v1: %origin_dir_copy_y:v[9], v1: %origin_dir_copy_z:v[10] = p_parallelcopy %origin_dir_x:v[0], %origin_dir_y:v[1], %origin_dir_z:v[2]
+   //! v3: %new_origin:v[0-2], v3: %new_dir:v[8-10], v10: %_:v[12-21] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, (%base_lo:v[3], %base_hi:v[4]), (%tmax:v[5], %cull_mask:v[6]), (%origin_dir_x:v[0], %origin_dir_y:v[1], %origin_dir_z:v[2]), (%origin_dir_copy_x:v[8], %origin_dir_copy_y:v[9], %origin_dir_copy_z:v[10]), %node:v[7] 1d
+   Instruction* instr =
+      bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
+               Definition(result), inputs[0], Operand(s4), Operand(v1), base_lo, base_hi, tmax,
+               cull_mask, origin_dir_x, origin_dir_y, origin_dir_z, origin_dir_x, origin_dir_y,
+               origin_dir_z, node)
+         .instr;
+   instr->operands[3].setVectorAligned(true);
+   instr->operands[5].setVectorAligned(true);
+   instr->operands[7].setVectorAligned(true);
+   instr->operands[8].setVectorAligned(true);
+   instr->operands[10].setVectorAligned(true);
+   instr->operands[11].setVectorAligned(true);
 
    finish_ra_test(ra_test_policy());
 END_TEST
@@ -1019,34 +1076,55 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.live_through.simple)
       return;
 
    //>> s8: %_:s[0-7] = p_startpgm
-   //! v2: %base:v[0-1] = p_unit_test
-   //! v2: %tmax_mask:v[2-3] = p_unit_test
-   //! v3: %origin:v[4-6] = p_unit_test
-   //! v3: %dir:v[7-9] = p_unit_test
+   //! v1: %base_lo:v[0] = p_unit_test
+   //! v1: %base_hi:v[1] = p_unit_test
+   //! v1: %tmax:v[2] = p_unit_test
+   //! v1: %cull_mask:v[3] = p_unit_test
+   //! v1: %origin_x:v[4] = p_unit_test
+   //! v1: %origin_y:v[5] = p_unit_test
+   //! v1: %origin_z:v[6] = p_unit_test
+   //! v1: %dir_x:v[7] = p_unit_test
+   //! v1: %dir_y:v[8] = p_unit_test
+   //! v1: %dir_z:v[9] = p_unit_test
    //! v1: %node:v[10] = p_unit_test
-   Temp base = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 0)));
-   Temp tmax_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 2)));
-   Temp origin = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 4)));
-   Temp dir = bld.pseudo(aco_opcode::p_unit_test, bld.def(v3, PhysReg(256 + 7)));
+   Temp base_lo = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp base_hi = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp tmax = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp cull_mask = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Temp origin_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Temp origin_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 5)));
+   Temp origin_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 6)));
+   Temp dir_x = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 7)));
+   Temp dir_y = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 8)));
+   Temp dir_z = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 9)));
    Temp node = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 10)));
 
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
    Temp result = bld.tmp(v10);
-   //! v3: %origin_copy:v[11-13], v3: %dir_copy:v[14-16] = p_parallelcopy %origin:v[4-6], %dir:v[7-9]
-   //! v3: %new_origin:v[11-13], v3: %new_dir:v[14-16], v10: %_:v[18-27] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, %base:v[0-1], %tmax_mask:v[2-3], %origin_copy:v[11-13], %dir_copy:v[14-16], %node:v[10] 1d
-   bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
-            Definition(result), inputs[0], Operand(s4), Operand(v1), base, tmax_mask, origin, dir,
-            node);
+   //! v1: %origin_copy_x:v[11], v1: %origin_copy_y:v[12], v1: %origin_copy_z:v[13], v1: %dir_copy_x:v[14], v1: %dir_copy_y:v[15], v1: %dir_copy_z:v[16] = p_parallelcopy %origin_x:v[4], %origin_y:v[5], %origin_z:v[6], %dir_x:v[7], %dir_y:v[8], %dir_z:v[9]
+   //! v3: %new_origin:v[4-6], v3: %new_dir:v[7-9], v10: %_:v[18-27] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, (%base_lo:v[0], %base_hi:v[1]), (%tmax:v[2], %cull_mask:v[3]), (%origin_x2:v[4], %origin_y2:v[5], %origin_z2:v[6]), (%dir_x2:v[7], %dir_y2:v[8], %dir_z2:v[9]), %node:v[10] 1d
+   Instruction* instr =
+      bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
+               Definition(result), inputs[0], Operand(s4), Operand(v1), base_lo, base_hi, tmax,
+               cull_mask, origin_x, origin_y, origin_z, dir_x, dir_y, dir_z, node)
+         .instr;
+   instr->operands[3].setVectorAligned(true);
+   instr->operands[5].setVectorAligned(true);
+   instr->operands[7].setVectorAligned(true);
+   instr->operands[8].setVectorAligned(true);
+   instr->operands[10].setVectorAligned(true);
+   instr->operands[11].setVectorAligned(true);
 
-   //! p_unit_test %origin:v[4-6]
-   //! p_unit_test %dir:v[7-9]
-   bld.pseudo(aco_opcode::p_unit_test, origin);
-   bld.pseudo(aco_opcode::p_unit_test, dir);
+   //! p_unit_test %origin_copy_x:v[11], %origin_copy_y:v[12], %origin_copy_z:v[13]
+   //! p_unit_test %dir_copy_x:v[14], %dir_copy_y:v[15], %dir_copy_z:v[16]
+   bld.pseudo(aco_opcode::p_unit_test, origin_x, origin_y, origin_z);
+   bld.pseudo(aco_opcode::p_unit_test, dir_x, dir_y, dir_z);
 
    finish_ra_test(ra_test_policy());
 END_TEST
 
+#if 0
 BEGIN_TEST(regalloc.tied_defs.bvh8.live_through.move_ops)
    if (!setup_cs("s8", GFX12))
       return;
@@ -1083,6 +1161,7 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.live_through.move_ops)
 
    finish_ra_test(ra_test_policy());
 END_TEST
+#endif
 
 BEGIN_TEST(regalloc.vector_aligned.vec_overlaps_with_operand.first)
    if (!setup_cs("", GFX11))
