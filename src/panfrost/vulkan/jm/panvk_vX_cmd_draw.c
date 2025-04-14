@@ -288,7 +288,8 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
             fs, &cmdbuf->vk.dynamic_graphics_state.cal);
          uint8_t rt_read = color_attachment_read_mask(fs, &dyns->ial, rt_mask);
          enum pan_earlyzs_zs_tilebuf_read zs_read =
-            zs_attachment_read(fs, &dyns->ial)
+            (z_attachment_read(fs, &dyns->ial) ||
+             s_attachment_read(fs, &dyns->ial))
                ? PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT
                : PAN_EARLYZS_ZS_TILEBUF_NOT_READ;
 

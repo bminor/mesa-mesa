@@ -1359,7 +1359,11 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf, struct pan_earlyzs_state earlyzs)
          cfg.depth_clamp_mode = MALI_DEPTH_CLAMP_MODE_BOUNDS;
 
       if (fs) {
+#if PAN_ARCH == 10
          cfg.shader_read_only_z_s = earlyzs.shader_readonly_zs;
+#elif PAN_ARCH == 11
+         cfg.separated_dependency_tracking = true;
+#endif
          cfg.depth_source = pan_depth_source(&fs->info);
       }
 
@@ -1539,7 +1543,8 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
             enum pan_earlyzs_zs_tilebuf_read zs_read =
                PAN_EARLYZS_ZS_TILEBUF_NOT_READ;
 
-            if (zs_attachment_read(fs, &dyns->ial)) {
+            if (z_attachment_read(fs, &dyns->ial) ||
+                s_attachment_read(fs, &dyns->ial)) {
                if (writes_z || writes_s || PAN_ARCH != 10)
                   zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT;
                else
@@ -1614,6 +1619,12 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
       pan_pack(&dcd2, DCD_FLAGS_2, cfg) {
          cfg.read_mask = rt_read;
          cfg.write_mask = rt_written;
+#if PAN_ARCH >= 11
+         if (fs) {
+            cfg.no_shader_depth_read = z_attachment_read(fs, &dyns->ial);
+            cfg.no_shader_stencil_read = s_attachment_read(fs, &dyns->ial);
+         }
+#endif
       }
 
       cs_update_vt_ctx(b)

@@ -407,21 +407,28 @@ color_attachment_read_mask(const struct panvk_shader *fs,
 }
 
 static inline bool
-zs_attachment_read(const struct panvk_shader *fs,
-                   const struct vk_input_attachment_location_state *ial)
+z_attachment_read(const struct panvk_shader *fs,
+                  const struct vk_input_attachment_location_state *ial)
 {
    uint32_t depth_mask = ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX
                             ? BITFIELD_BIT(0)
                          : ial->depth_att != MESA_VK_ATTACHMENT_UNUSED
                             ? BITFIELD_BIT(ial->depth_att + 1)
                             : 0;
+   return depth_mask & fs->fs.input_attachment_read;
+}
+
+static inline bool
+s_attachment_read(const struct panvk_shader *fs,
+                  const struct vk_input_attachment_location_state *ial)
+{
    uint32_t stencil_mask = ial->stencil_att == MESA_VK_ATTACHMENT_NO_INDEX
                               ? BITFIELD_BIT(0)
                            : ial->stencil_att != MESA_VK_ATTACHMENT_UNUSED
                               ? BITFIELD_BIT(ial->stencil_att + 1)
                               : 0;
 
-   return (depth_mask | stencil_mask) & fs->fs.input_attachment_read;
+   return stencil_mask & fs->fs.input_attachment_read;
 }
 
 #endif
