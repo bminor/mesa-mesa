@@ -3382,11 +3382,13 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
    case nir_texop_tex_prefetch:
       vtn_fail("unexpected nir_texop_tex_prefetch");
       break;
+   case nir_texop_lod_bias:
+      vtn_fail("unexpected nir_texop_lod_bias");
+      break;
    case nir_texop_descriptor_amd:
    case nir_texop_sampler_descriptor_amd:
       vtn_fail("unexpected nir_texop_*descriptor_amd");
       break;
-   case nir_texop_lod_bias_agx:
    case nir_texop_image_min_lod_agx:
    case nir_texop_custom_border_color_agx:
    case nir_texop_has_custom_border_color_agx:

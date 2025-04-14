@@ -253,7 +253,7 @@ lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       nir_tex_instr *tex = nir_instr_as_tex(instr);
       old = &tex->def;
 
-      if (tex->op != nir_texop_lod_bias_agx)
+      if (tex->op != nir_texop_lod_bias)
          return false;
 
       struct agx_stage_uniforms *s = NULL;

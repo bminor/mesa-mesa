@@ -710,7 +710,7 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_robust_access, should_lower_robust, NULL);
 
    /* We must do early lowering before hk_nir_lower_descriptors, since this will
-    * create lod_bias_agx instructions.
+    * create lod_bias instructions.
     */
    NIR_PASS(_, nir, agx_nir_lower_texture_early, true /* support_lod_bias */);
 

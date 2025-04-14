@@ -2309,6 +2309,8 @@ typedef enum nir_texop {
    nir_texop_samples_identical,
    /** Regular texture look-up, eligible for pre-dispatch */
    nir_texop_tex_prefetch,
+   /** Returns the sampler's LOD bias (if sampler LOD bias is lowered) */
+   nir_texop_lod_bias,
    /** Multisample fragment color texture fetch */
    nir_texop_fragment_fetch_amd,
    /** Multisample fragment mask texture fetch */
@@ -2317,8 +2319,6 @@ typedef enum nir_texop {
    nir_texop_descriptor_amd,
    /** Returns a sampler descriptor. */
    nir_texop_sampler_descriptor_amd,
-   /** Returns the sampler's LOD bias */
-   nir_texop_lod_bias_agx,
    /** Returns the image view's min LOD */
    nir_texop_image_min_lod_agx,
    /** Returns a bool indicating that the sampler uses a custom border colour */

@@ -598,7 +598,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
     * the sampler descriptor. There's no spot in the hardware descriptor,
     * plus this saves on precious sampler heap spots.
     */
-   if (tex->op == nir_texop_lod_bias_agx) {
+   if (tex->op == nir_texop_lod_bias) {
       unsigned offs =
          offsetof(struct hk_sampled_image_descriptor, lod_bias_fp16);
 
