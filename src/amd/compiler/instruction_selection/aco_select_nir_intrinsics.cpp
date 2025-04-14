@@ -4062,9 +4062,19 @@ emit_ds_bvh_stack_push8_pop1_rtn(isel_context* ctx, nir_intrinsic_instr* instr, 
 
    Temp dst_stack_addr = bld.tmp(v1);
    Temp dst_node_pointer = bld.tmp(v1);
-   bld.ds(aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32, Definition(dst_stack_addr),
-          Definition(dst_node_pointer), Operand(stack_addr), Operand(last_node),
-          Operand(intersection_result), nir_intrinsic_stack_size(instr), 0);
+   Instruction* ds_instr =
+      create_instruction(aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32, Format::DS, 2 + 8, 2);
+   ds_instr->definitions[0] = Definition(dst_stack_addr);
+   ds_instr->definitions[1] = Definition(dst_node_pointer);
+   ds_instr->operands[0] = Operand(stack_addr);
+   ds_instr->operands[1] = Operand(last_node);
+   for (unsigned i = 0; i < 8; ++i) {
+      ds_instr->operands[2 + i] = Operand(emit_extract_vector(ctx, intersection_result, i, v1));
+      if (i < 7)
+         ds_instr->operands[2 + i].setVectorAligned(true);
+   }
+   ds_instr->ds().offset0 = nir_intrinsic_stack_size(instr);
+   bld.insert(aco_ptr<Instruction>(ds_instr));
    bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand(dst_stack_addr),
               Operand(dst_node_pointer));
 }
