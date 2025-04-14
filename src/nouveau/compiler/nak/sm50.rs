@@ -206,6 +206,14 @@ impl SetFieldU64 for SM50Encoder<'_> {
     }
 }
 
+fn zero_reg() -> RegRef {
+    RegRef::new(RegFile::GPR, 255, 1)
+}
+
+fn true_reg() -> RegRef {
+    RegRef::new(RegFile::Pred, 7, 1)
+}
+
 impl SM50Encoder<'_> {
     fn set_opcode(&mut self, opcode: u16) {
         self.set_field(48..64, opcode);
@@ -224,7 +232,7 @@ impl SM50Encoder<'_> {
         self.set_pred_reg(
             16..19,
             match pred.pred_ref {
-                PredRef::None => RegRef::zero(RegFile::Pred, 1),
+                PredRef::None => true_reg(),
                 PredRef::Reg(reg) => reg,
                 PredRef::SSA(_) => panic!("SSA values must be lowered"),
             },
@@ -251,7 +259,7 @@ impl SM50Encoder<'_> {
 
     fn set_reg_src_ref(&mut self, range: Range<usize>, src_ref: SrcRef) {
         match src_ref {
-            SrcRef::Zero => self.set_reg(range, RegRef::zero(RegFile::GPR, 1)),
+            SrcRef::Zero => self.set_reg(range, zero_reg()),
             SrcRef::Reg(reg) => self.set_reg(range, reg),
             _ => panic!("Not a register"),
         }
@@ -297,7 +305,7 @@ impl SM50Encoder<'_> {
     fn set_pred_dst(&mut self, range: Range<usize>, dst: Dst) {
         match dst {
             Dst::None => {
-                self.set_pred_reg(range, RegRef::zero(RegFile::Pred, 1));
+                self.set_pred_reg(range, true_reg());
             }
             Dst::Reg(reg) => self.set_pred_reg(range, reg),
             _ => panic!("Not a register"),
@@ -305,12 +313,9 @@ impl SM50Encoder<'_> {
     }
 
     fn set_pred_src(&mut self, range: Range<usize>, not_bit: usize, src: Src) {
-        // The default for predicates is true
-        let true_reg = RegRef::new(RegFile::Pred, 7, 1);
-
         let (not, reg) = match src.src_ref {
-            SrcRef::True => (false, true_reg),
-            SrcRef::False => (true, true_reg),
+            SrcRef::True => (false, true_reg()),
+            SrcRef::False => (true, true_reg()),
             SrcRef::Reg(reg) => (false, reg),
             _ => panic!("Not a register"),
         };
@@ -320,7 +325,7 @@ impl SM50Encoder<'_> {
 
     fn set_dst(&mut self, dst: Dst) {
         let reg = match dst {
-            Dst::None => RegRef::zero(RegFile::GPR, 1),
+            Dst::None => zero_reg(),
             Dst::Reg(reg) => reg,
             _ => panic!("invalid dst {dst}"),
         };
