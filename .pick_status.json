@@ -784,7 +784,7 @@
         "description": "panvk: set shared_addr_format",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e111c259cd46ed3b12225ec90ee2821684a22c1",
         "notes": null
