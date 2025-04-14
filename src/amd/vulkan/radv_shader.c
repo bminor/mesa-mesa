@@ -2296,9 +2296,11 @@ radv_shader_combine_cfg_vs_tcs(const struct radv_shader *vs, const struct radv_s
 }
 
 void
-radv_shader_combine_cfg_vs_gs(const struct radv_shader *vs, const struct radv_shader *gs, uint32_t *rsrc1_out,
-                              uint32_t *rsrc2_out)
+radv_shader_combine_cfg_vs_gs(const struct radv_device *device, const struct radv_shader *vs,
+                              const struct radv_shader *gs, uint32_t *rsrc1_out, uint32_t *rsrc2_out)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    assert(G_00B12C_USER_SGPR(vs->config.rsrc2) == G_00B12C_USER_SGPR(gs->config.rsrc2));
 
    if (rsrc1_out) {
@@ -2316,22 +2318,30 @@ radv_shader_combine_cfg_vs_gs(const struct radv_shader *vs, const struct radv_sh
 
    if (rsrc2_out) {
       uint32_t rsrc2 = vs->config.rsrc2;
+      uint32_t lds_size;
 
       if (G_00B22C_ES_VGPR_COMP_CNT(gs->config.rsrc2) > G_00B22C_ES_VGPR_COMP_CNT(rsrc2))
          rsrc2 = (rsrc2 & C_00B22C_ES_VGPR_COMP_CNT) | (gs->config.rsrc2 & ~C_00B22C_ES_VGPR_COMP_CNT);
 
       rsrc2 |= gs->config.rsrc2 & ~(C_00B12C_SCRATCH_EN & C_00B12C_SO_EN & C_00B12C_SO_BASE0_EN & C_00B12C_SO_BASE1_EN &
                                     C_00B12C_SO_BASE2_EN & C_00B12C_SO_BASE3_EN);
+      if (gs->info.is_ngg) {
+         lds_size = DIV_ROUND_UP(gs->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
+      } else {
+         lds_size = gs->info.gs_ring_info.lds_size;
+      }
+
+      rsrc2 |= S_00B22C_LDS_SIZE(lds_size);
 
       *rsrc2_out = rsrc2;
    }
 }
 
 void
-radv_shader_combine_cfg_tes_gs(const struct radv_shader *tes, const struct radv_shader *gs, uint32_t *rsrc1_out,
-                               uint32_t *rsrc2_out)
+radv_shader_combine_cfg_tes_gs(const struct radv_device *device, const struct radv_shader *tes,
+                               const struct radv_shader *gs, uint32_t *rsrc1_out, uint32_t *rsrc2_out)
 {
-   radv_shader_combine_cfg_vs_gs(tes, gs, rsrc1_out, rsrc2_out);
+   radv_shader_combine_cfg_vs_gs(device, tes, gs, rsrc1_out, rsrc2_out);
 
    if (rsrc2_out) {
       *rsrc2_out |= S_00B22C_OC_LDS_EN(1);

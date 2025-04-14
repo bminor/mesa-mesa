@@ -2271,18 +2271,11 @@ radv_emit_vertex_shader(struct radv_cmd_buffer *cmd_buffer)
 
             radeon_set_sh_reg(vs->info.regs.pgm_rsrc1, rsrc1);
          } else {
-            radv_shader_combine_cfg_vs_gs(vs, next_stage, &rsrc1, &rsrc2);
-
-            unsigned lds_size;
-            if (next_stage->info.is_ngg) {
-               lds_size = DIV_ROUND_UP(next_stage->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
-            } else {
-               lds_size = next_stage->info.gs_ring_info.lds_size;
-            }
+            radv_shader_combine_cfg_vs_gs(device, vs, next_stage, &rsrc1, &rsrc2);
 
             radeon_set_sh_reg_seq(vs->info.regs.pgm_rsrc1, 2);
             radeon_emit(rsrc1);
-            radeon_emit(rsrc2 | S_00B22C_LDS_SIZE(lds_size));
+            radeon_emit(rsrc2);
          }
 
          radeon_end();
@@ -2333,21 +2326,14 @@ radv_emit_tess_eval_shader(struct radv_cmd_buffer *cmd_buffer)
       const struct radv_shader *gs = cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY];
       uint32_t rsrc1, rsrc2;
 
-      radv_shader_combine_cfg_tes_gs(tes, gs, &rsrc1, &rsrc2);
-
-      unsigned lds_size;
-      if (gs->info.is_ngg) {
-         lds_size = DIV_ROUND_UP(gs->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
-      } else {
-         lds_size = gs->info.gs_ring_info.lds_size;
-      }
+      radv_shader_combine_cfg_tes_gs(device, tes, gs, &rsrc1, &rsrc2);
 
       radeon_begin(cmd_buffer->cs);
       radeon_set_sh_reg(tes->info.regs.pgm_lo, tes->va >> 8);
 
       radeon_set_sh_reg_seq(tes->info.regs.pgm_rsrc1, 2);
       radeon_emit(rsrc1);
-      radeon_emit(rsrc2 | S_00B22C_LDS_SIZE(lds_size));
+      radeon_emit(rsrc2);
 
       const uint32_t next_stage_pc_offset = radv_get_user_sgpr_loc(tes, AC_UD_NEXT_STAGE_PC);
       radeon_emit_32bit_pointer(next_stage_pc_offset, gs->va, &pdev->info);
@@ -5109,7 +5095,8 @@ emit_prolog_regs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
 
    if (vs_shader->info.merged_shader_compiled_separately) {
       if (vs_shader->info.next_stage == MESA_SHADER_GEOMETRY) {
-         radv_shader_combine_cfg_vs_gs(vs_shader, cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY], &rsrc1, &rsrc2);
+         radv_shader_combine_cfg_vs_gs(device, vs_shader, cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY], &rsrc1,
+                                       &rsrc2);
       } else {
          assert(vs_shader->info.next_stage == MESA_SHADER_TESS_CTRL);
 
@@ -5131,20 +5118,7 @@ emit_prolog_regs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
    radeon_set_sh_reg(vs_shader->info.regs.pgm_rsrc1, rsrc1);
 
    if (vs_shader->info.merged_shader_compiled_separately) {
-      if (vs_shader->info.next_stage == MESA_SHADER_GEOMETRY) {
-         const struct radv_shader *gs = cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY];
-         unsigned lds_size;
-
-         if (gs->info.is_ngg) {
-            lds_size = DIV_ROUND_UP(gs->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
-         } else {
-            lds_size = gs->info.gs_ring_info.lds_size;
-         }
-
-         radeon_set_sh_reg(vs_shader->info.regs.pgm_rsrc2, rsrc2 | S_00B22C_LDS_SIZE(lds_size));
-      } else {
-         radeon_set_sh_reg(vs_shader->info.regs.pgm_rsrc2, rsrc2);
-      }
+      radeon_set_sh_reg(vs_shader->info.regs.pgm_rsrc2, rsrc2);
    }
 
    radeon_end();
