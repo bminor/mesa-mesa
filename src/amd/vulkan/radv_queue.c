@@ -313,10 +313,10 @@ radv_fill_shader_rings(struct radv_device *device, uint32_t *desc, struct radeon
    desc += 8;
 
    if (tess_rings_bo) {
-      radv_set_ring_buffer(pdev, tess_rings_bo, 0, pdev->hs.tess_factor_ring_size, false, false, true, 0, 0, &desc[0]);
+      radv_set_ring_buffer(pdev, tess_rings_bo, pdev->hs.tess_offchip_ring_size, pdev->hs.tess_factor_ring_size, false,
+                           false, true, 0, 0, &desc[0]);
 
-      radv_set_ring_buffer(pdev, tess_rings_bo, pdev->hs.tess_offchip_ring_offset, pdev->hs.tess_offchip_ring_size,
-                           false, false, true, 0, 0, &desc[4]);
+      radv_set_ring_buffer(pdev, tess_rings_bo, 0, pdev->hs.tess_offchip_ring_size, false, false, true, 0, 0, &desc[4]);
    }
 
    desc += 8;
@@ -398,7 +398,7 @@ radv_emit_tess_factor_ring(struct radv_device *device, struct radeon_cmdbuf *cs,
       return;
 
    tf_ring_size = pdev->hs.tess_factor_ring_size / 4;
-   tf_va = radv_buffer_get_va(tess_rings_bo);
+   tf_va = radv_buffer_get_va(tess_rings_bo) + pdev->hs.tess_offchip_ring_size;
 
    radv_cs_add_buffer(device->ws, cs, tess_rings_bo);
 

@@ -2472,10 +2472,9 @@ void ac_get_hs_info(const struct radeon_info *info,
                              S_0089B0_OFFCHIP_GRANULARITY(wg_size_enum);
    }
 
-   hs->tess_factor_ring_size = 48 * 1024 * info->max_se;
-   hs->tess_offchip_ring_offset = align(hs->tess_factor_ring_size, 64 * 1024);
    hs->tess_offchip_ring_size = num_workgroups * wg_size_in_dwords * 4;
-   hs->total_tess_ring_size = hs->tess_offchip_ring_offset + hs->tess_offchip_ring_size;
+   hs->tess_factor_ring_size = 48 * 1024 * info->max_se;
+   hs->total_tess_ring_size = hs->tess_offchip_ring_size + hs->tess_factor_ring_size;
 }
 
 static uint16_t get_task_num_entries(enum radeon_family fam)
