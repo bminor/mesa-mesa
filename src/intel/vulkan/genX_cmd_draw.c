@@ -258,8 +258,12 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
    }
 
    case ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER:
-      return gfx_state->base.pipeline->layout.set_layouts[
-         range->index]->descriptor_buffer_surface_size;
+      /* It's hard to bound a reference to a descriptor buffer because we
+       * don't have an actual buffer, only an address. So just return the
+       * maximum size of the heap (which bounds the largest buffer size).
+       */
+      return anv_physical_device_bindless_heap_size(
+         cmd_buffer->device->physical, true);
 
    case ANV_DESCRIPTOR_SET_NULL:
    case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:
