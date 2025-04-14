@@ -582,8 +582,11 @@ lower_min_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
       assert(other_min_lod == NULL && "txl doesn't have an API min lod");
 
       nir_def *lod = nir_steal_tex_src(tex, nir_tex_src_lod);
-      lod = lod ? nir_fmax(b, lod, min_lod) : min_lod;
-      nir_tex_instr_add_src(tex, nir_tex_src_lod, lod);
+      if (lod) {
+         min_lod = nir_fmax(b, nir_f2fN(b, lod, min_lod->bit_size), min_lod);
+      }
+
+      nir_tex_instr_add_src(tex, nir_tex_src_lod, min_lod);
    } else {
       if (other_min_lod) {
          assert(!int_coords && "no API min lod");
