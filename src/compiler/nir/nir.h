@@ -5580,6 +5580,12 @@ typedef struct nir_lower_tex_options {
     */
    bool lower_lod_zero_width;
 
+   /**
+    * If true, emulates sampler descriptor LOD bias by adding the sampler
+    * LOD bias to every texture instruction's LOD.
+    */
+   bool lower_sampler_lod_bias;
+
    /* Turns nir_op_tex and other ops with an implicit derivative, in stages
     * without implicit derivatives (like the vertex shader) to have an explicit
     * LOD with a value of 0.

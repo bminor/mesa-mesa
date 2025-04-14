@@ -1471,6 +1471,41 @@ nir_lower_lod_zero_width(nir_builder *b, nir_tex_instr *tex)
    nir_def_rewrite_uses_after(&tex->def, def, def->parent_instr);
 }
 
+static void
+lower_sampler_lod_bias(nir_builder *b, nir_tex_instr *tex)
+{
+   nir_def *bias = nir_build_texture_query(b, tex, nir_texop_lod_bias, 1,
+                                           nir_type_float16, false, false);
+
+   if (tex->op == nir_texop_txd) {
+      /* For txd, the computed level-of-detail is log2(rho) where rho should
+       * scale proportionally to all derivatives. Scale derivatives by
+       * exp2(bias) to get LOD = log2(exp2(bias) * rho) = bias + log2(rho).
+       */
+      nir_def *ddx = nir_f2f32(b, nir_steal_tex_src(tex, nir_tex_src_ddx));
+      nir_def *ddy = nir_f2f32(b, nir_steal_tex_src(tex, nir_tex_src_ddy));
+      nir_def *scale = nir_fexp2(b, nir_f2f32(b, bias));
+
+      nir_tex_instr_add_src(tex, nir_tex_src_ddx, nir_fmul(b, ddx, scale));
+      nir_tex_instr_add_src(tex, nir_tex_src_ddy, nir_fmul(b, ddy, scale));
+   } else if (tex->op == nir_texop_tex) {
+      /* Unbiased textures need their opcode fixed up */
+      tex->op = nir_texop_txb;
+      nir_tex_instr_add_src(tex, nir_tex_src_bias, bias);
+   } else {
+      /* Otherwise, add to the appropriate source (if one exists) */
+      nir_tex_src_type src =
+         tex->op == nir_texop_txl ? nir_tex_src_lod : nir_tex_src_bias;
+
+      nir_def *orig = nir_steal_tex_src(tex, src);
+      if (orig) {
+         bias = nir_fadd(b, bias, nir_f2f16(b, orig));
+      }
+
+      nir_tex_instr_add_src(tex, src, bias);
+   }
+}
+
 static bool
 lower_index_to_offset(nir_builder *b, nir_tex_instr *tex)
 {
@@ -1683,6 +1718,13 @@ nir_lower_tex_block(nir_block *block, nir_builder *b,
           tex->op != nir_texop_query_levels &&
           tex->op != nir_texop_texture_samples) {
          progress |= lower_tex_packing(b, tex, options);
+      }
+
+      /* Although tg4 takes a sampler, it ignores the LOD bias. */
+      if (options->lower_sampler_lod_bias &&
+          nir_tex_instr_need_sampler(tex) && tex->op != nir_texop_tg4) {
+         lower_sampler_lod_bias(b, tex);
+         progress = true;
       }
 
       if (tex->op == nir_texop_txd &&
