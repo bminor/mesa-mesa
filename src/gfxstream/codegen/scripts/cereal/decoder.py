@@ -837,6 +837,11 @@ custom_decodes = {
     # VK_KHR_device_group_creation / VK_VERSION_1_1
     "vkEnumeratePhysicalDeviceGroups" : emit_global_state_wrapped_decoding,
     "vkEnumeratePhysicalDeviceGroupsKHR" : emit_global_state_wrapped_decoding,
+
+    # Sparse binding and formats (Support can be disabled from the host)
+    "vkGetPhysicalDeviceSparseImageFormatProperties" : emit_global_state_wrapped_decoding,
+    "vkGetPhysicalDeviceSparseImageFormatProperties2" : emit_global_state_wrapped_decoding,
+    "vkGetPhysicalDeviceSparseImageFormatProperties2KHR" : emit_global_state_wrapped_decoding,
 }
 
 class VulkanDecoder(VulkanWrapperGenerator):
