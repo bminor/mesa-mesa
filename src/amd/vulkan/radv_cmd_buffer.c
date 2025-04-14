@@ -3538,7 +3538,6 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
    const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
-   const struct radv_shader *tes = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_TESS_EVAL);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned ls_hs_config;
 
@@ -3570,55 +3569,11 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
                   S_028B58_HS_NUM_OUTPUT_CP(tcs->info.tcs.tcs_vertices_out);
 
    radeon_begin(cmd_buffer->cs);
-
    if (pdev->info.gfx_level >= GFX7) {
       radeon_set_context_reg_idx(R_028B58_VGT_LS_HS_CONFIG, 2, ls_hs_config);
    } else {
       radeon_set_context_reg(R_028B58_VGT_LS_HS_CONFIG, ls_hs_config);
    }
-
-   if (pdev->info.gfx_level >= GFX9) {
-      unsigned hs_rsrc2;
-
-      if (tcs->info.merged_shader_compiled_separately) {
-         radv_shader_combine_cfg_vs_tcs(cmd_buffer->state.shaders[MESA_SHADER_VERTEX], tcs, NULL, &hs_rsrc2);
-      } else {
-         hs_rsrc2 = tcs->config.rsrc2;
-      }
-
-      if (pdev->info.gfx_level >= GFX10) {
-         hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(cmd_buffer->state.tess_lds_size);
-      } else {
-         hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(cmd_buffer->state.tess_lds_size);
-      }
-
-      radeon_set_sh_reg(tcs->info.regs.pgm_rsrc2, hs_rsrc2);
-   } else {
-      unsigned ls_rsrc2 = vs->config.rsrc2 | S_00B52C_LDS_SIZE(cmd_buffer->state.tess_lds_size);
-
-      radeon_set_sh_reg(vs->info.regs.pgm_rsrc2, ls_rsrc2);
-   }
-
-   /* Emit user SGPRs for dynamic patch control points. */
-   uint32_t tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tcs, AC_UD_TCS_OFFCHIP_LAYOUT);
-   if (tcs_offchip_layout_offset) {
-      unsigned tcs_offchip_layout =
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS, d->vk.ts.patch_control_points - 1) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP, tcs->info.tcs.tcs_vertices_out - 1) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
-         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
-
-      radeon_set_sh_reg(tcs_offchip_layout_offset, tcs_offchip_layout);
-
-      tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
-      assert(tcs_offchip_layout_offset);
-
-      radeon_set_sh_reg(tcs_offchip_layout_offset, tcs_offchip_layout);
-   }
-
    radeon_end();
 }
 
@@ -10579,6 +10534,64 @@ radv_emit_task_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
+   const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
+   const struct radv_shader *tes = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_TESS_EVAL);
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   uint32_t tcs_offchip_layout = 0;
+   uint32_t pgm_hs_rsrc2 = 0;
+
+   if (pdev->info.gfx_level >= GFX9) {
+      if (tcs->info.merged_shader_compiled_separately) {
+         radv_shader_combine_cfg_vs_tcs(cmd_buffer->state.shaders[MESA_SHADER_VERTEX], tcs, NULL, &pgm_hs_rsrc2);
+      } else {
+         pgm_hs_rsrc2 = tcs->config.rsrc2;
+      }
+
+      if (pdev->info.gfx_level >= GFX10) {
+         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(cmd_buffer->state.tess_lds_size);
+      } else {
+         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(cmd_buffer->state.tess_lds_size);
+      }
+   }
+
+   const uint32_t tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tcs, AC_UD_TCS_OFFCHIP_LAYOUT);
+   const uint32_t tes_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
+   if (tcs_offchip_layout_offset) {
+      tcs_offchip_layout = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS, d->vk.ts.patch_control_points - 1) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP, tcs->info.tcs.tcs_vertices_out - 1) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
+                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
+      assert(tes_offchip_layout_offset);
+   }
+
+   radeon_begin(cs);
+
+   if (pdev->info.gfx_level >= GFX9) {
+      radeon_set_sh_reg(tcs->info.regs.pgm_rsrc2, pgm_hs_rsrc2);
+   } else {
+      const uint32_t ls_rsrc2 = vs->config.rsrc2 | S_00B52C_LDS_SIZE(cmd_buffer->state.tess_lds_size);
+
+      radeon_set_sh_reg(vs->info.regs.pgm_rsrc2, ls_rsrc2);
+   }
+
+   if (tcs_offchip_layout) {
+      radeon_set_sh_reg(tcs_offchip_layout_offset, tcs_offchip_layout);
+      radeon_set_sh_reg(tes_offchip_layout_offset, tcs_offchip_layout);
+   }
+
+   radeon_end();
+}
+
+static void
 radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
 {
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FS_STATE) {
@@ -10594,6 +10607,11 @@ radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TASK_STATE) {
       radv_emit_task_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TASK_STATE;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_STATE) {
+      radv_emit_tess_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TESS_STATE;
    }
 }
 
@@ -11163,6 +11181,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & (RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_PROVOKING_VERTEX_MODE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
+
+   if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_STATE;
 
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_TEST_ENABLE | RADV_DYNAMIC_DEPTH_WRITE_ENABLE | RADV_DYNAMIC_DEPTH_COMPARE_OP |
