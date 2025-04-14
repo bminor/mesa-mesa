@@ -50,10 +50,6 @@
  * condition variables.
  */
 
-typedef struct {
-   uint32_t val;
-} simple_mtx_t;
-
 #ifndef __OPENCL_VERSION__
 
 #include "util/futex.h"
@@ -78,6 +74,9 @@ extern "C" {
 #endif
 
 #if UTIL_FUTEX_SUPPORTED
+typedef struct {
+   uint32_t val;
+} simple_mtx_t;
 
 #define SIMPLE_MTX_INITIALIZER { 0 }
 
@@ -208,6 +207,11 @@ simple_mtx_assert_locked(simple_mtx_t *mtx)
 #endif
 
 #else
+
+/* Dummy implementation to let more headers compile with OpenCL */
+typedef struct {
+   uint32_t _;
+} simple_mtx_t;
 
 #endif
 
