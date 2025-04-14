@@ -2100,6 +2100,22 @@
   channels: [X4, UN12]
   swizzles: [X, Y, Z, W]
 
+# for YUV420_8BIT, each 2x2 block needs 6 8 bit values to describe it
+- name: R8G8B8_420_UNORM_PACKED
+  layout: subsampled
+  colorspace: RGB
+  block: {width: 2, height: 2, depth: 1}
+  channels: [X48]
+  swizzles: [X, Y, Z, 1]
+# similarly for YUV420_10BIT, for a 2x2 block we need 60 bits; but this
+# does not fit in an even multiple of bytes, so do a 4x2 block -> 120 bits
+- name: R10G10B10_420_UNORM_PACKED
+  layout: subsampled
+  colorspace: RGB
+  block: {width: 4, height: 2, depth: 1}
+  channels: [X120]
+  swizzles: [X, Y, Z, 1]
+
 # While most of Mesa uses R8 for Y, U, and V planes, freedreno requires
 # distinguishing between tiled Y8 data and tiled R8 data.
 - name: Y8_UNORM
@@ -2255,6 +2271,20 @@
   channels: [UN16, UN16, UN16, UN16]
   swizzles: [Y, Z, X, W]
 
+# YUV 420 with an unspecified (hardware specific) internal format
+# (block: {width: 1, height: 1, depth: 1} is a lie)
+- name: Y8U8V8_420_UNORM_PACKED
+  layout: subsampled
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y10U10V10_420_UNORM_PACKED
+  layout: subsampled
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
 
 # Usually used to implement IA44 and AI44 formats in video decoding
 - name: A4R4_UNORM
