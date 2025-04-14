@@ -322,7 +322,7 @@ lower_lod(nir_builder *b, nir_tex_instr *tex, nir_def *lod)
    /* If we have a bias, add it in */
    nir_def *bias = nir_steal_tex_src(tex, nir_tex_src_bias);
    if (bias)
-      lod = nir_fadd(b, lod, bias);
+      lod = nir_fadd(b, lod, nir_f2fN(b, bias, lod->bit_size));
 
    /* If we have a minimum LOD, clamp LOD accordingly */
    nir_def *min_lod = nir_steal_tex_src(tex, nir_tex_src_min_lod);
