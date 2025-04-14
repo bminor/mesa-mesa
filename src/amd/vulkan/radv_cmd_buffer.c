@@ -1962,24 +1962,22 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_shader *ps_shader = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+   uint32_t pgm_rsrc1 = 0;
 
    if (cmd_buffer->state.emitted_ps_epilog == ps_epilog)
       return;
 
    assert(ps_shader->config.num_shared_vgprs == 0);
    if (G_00B848_VGPRS(ps_epilog->rsrc1) > G_00B848_VGPRS(ps_shader->config.rsrc1)) {
-      uint32_t rsrc1 = ps_shader->config.rsrc1;
-      rsrc1 = (rsrc1 & C_00B848_VGPRS) | (ps_epilog->rsrc1 & ~C_00B848_VGPRS);
-
-      radeon_begin(cmd_buffer->cs);
-      radeon_set_sh_reg(ps_shader->info.regs.pgm_rsrc1, rsrc1);
-      radeon_end();
+      pgm_rsrc1 = (ps_shader->config.rsrc1 & C_00B848_VGPRS) | (ps_epilog->rsrc1 & ~C_00B848_VGPRS);
    }
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, ps_epilog->bo);
 
    const uint32_t epilog_pc_offset = radv_get_user_sgpr_loc(ps_shader, AC_UD_EPILOG_PC);
    radeon_begin(cmd_buffer->cs);
+   if (pgm_rsrc1)
+      radeon_set_sh_reg(ps_shader->info.regs.pgm_rsrc1, pgm_rsrc1);
    radeon_emit_32bit_pointer(epilog_pc_offset, ps_epilog->va, &pdev->info);
    radeon_end();
 
