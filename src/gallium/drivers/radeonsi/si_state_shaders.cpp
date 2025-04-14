@@ -4544,8 +4544,7 @@ void si_init_tess_factor_ring(struct si_context *sctx)
                                                        SI_RESOURCE_FLAG_DRIVER_INTERNAL |
                                                        SI_RESOURCE_FLAG_DISCARDABLE,
                                                        PIPE_USAGE_DEFAULT,
-                                                       sscreen->hs.tess_offchip_ring_size +
-                                                       sscreen->hs.tess_factor_ring_size,
+                                                       sscreen->hs.total_tess_ring_size,
                                                        2 * 1024 * 1024);
       if (!sscreen->tess_rings) {
          simple_mtx_unlock(&sscreen->tess_ring_lock);
@@ -4560,8 +4559,7 @@ void si_init_tess_factor_ring(struct si_context *sctx)
                                                               SI_RESOURCE_FLAG_DRIVER_INTERNAL |
                                                               SI_RESOURCE_FLAG_DISCARDABLE,
                                                               PIPE_USAGE_DEFAULT,
-                                                              sscreen->hs.tess_offchip_ring_size +
-                                                              sscreen->hs.tess_factor_ring_size,
+                                                              sscreen->hs.total_tess_ring_size,
                                                               2 * 1024 * 1024);
       }
    }
