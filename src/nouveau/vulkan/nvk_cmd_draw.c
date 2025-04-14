@@ -28,6 +28,7 @@
 #include "nv_push_clc197.h"
 #include "nv_push_clc397.h"
 #include "nv_push_clc597.h"
+#include "clcb97.h"
 #include "clcd97.h"
 #include "drf.h"
 
@@ -37,6 +38,34 @@ nvk_cmd_buffer_3d_cls(struct nvk_cmd_buffer *cmd)
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    return pdev->info.cls_eng3d;
+}
+
+static uint32_t
+get_sm_disp_ctrl_reg(const struct nv_device_info *devinfo)
+{
+   if (devinfo->cls_eng3d >= HOPPER_A)
+      return 0x4243a4;
+   if (devinfo->cls_eng3d >= VOLTA_A)
+      return 0x419ba4;
+   return 0x419f78;
+}
+
+static uint32_t
+get_sms_hww_warp_esp_report_mask_reg(const struct nv_device_info *devinfo)
+{
+   if (devinfo->cls_eng3d >= HOPPER_A)
+      return 0x4246a8;
+   if (devinfo->cls_eng3d >= VOLTA_A)
+      return 0x419ea8;
+   return 0x419e44;
+}
+
+static uint32_t
+get_conservative_raster_reg(const struct nv_device_info *devinfo)
+{
+   if (devinfo->cls_eng3d >= HOPPER_A)
+      return 0x420800;
+   return 0x418800;
 }
 
 static void
@@ -84,7 +113,7 @@ nvk_mme_set_conservative_raster_state(struct mme_builder *b)
    mme_if(b, ine, new_state, old_state) {
       nvk_mme_store_scratch(b, CONSERVATIVE_RASTER_STATE, new_state);
       mme_set_priv_reg(b, new_state, mme_imm(BITFIELD_RANGE(23, 2)),
-                       mme_imm(0x418800));
+                       mme_imm(get_conservative_raster_reg(b->devinfo)));
    }
 }
 
@@ -155,7 +184,7 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
     * occasionally fail.
     */
    if (pdev->info.cls_eng3d >= MAXWELL_B) {
-      unsigned reg = pdev->info.cls_eng3d >= VOLTA_A ? 0x419ba4 : 0x419f78;
+      unsigned reg = get_sm_disp_ctrl_reg(&pdev->info);
       P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_SET_PRIV_REG));
       P_INLINE_DATA(p, 0);
       P_INLINE_DATA(p, BITFIELD_BIT(3));
@@ -209,7 +238,7 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
     * This clears bit 14 of gr_gpcs_tpcs_sms_hww_warp_esr_report_mask
     */
    if (pdev->info.cls_eng3d >= MAXWELL_B) {
-      unsigned reg = pdev->info.cls_eng3d >= VOLTA_A ? 0x419ea8 : 0x419e44;
+      unsigned reg = get_sms_hww_warp_esp_report_mask_reg(&pdev->info);
       P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_SET_PRIV_REG));
       P_INLINE_DATA(p, 0);
       P_INLINE_DATA(p, BITFIELD_BIT(14));
