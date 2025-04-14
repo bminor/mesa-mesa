@@ -2258,32 +2258,31 @@ radv_emit_vertex_shader(struct radv_cmd_buffer *cmd_buffer)
       assert(vs->info.next_stage == MESA_SHADER_TESS_CTRL || vs->info.next_stage == MESA_SHADER_GEOMETRY);
 
       const struct radv_shader *next_stage = cmd_buffer->state.shaders[vs->info.next_stage];
+      uint32_t rsrc1, rsrc2;
 
       if (!vs->info.vs.has_prolog) {
-         uint32_t rsrc1, rsrc2;
-
-         radeon_begin(cmd_buffer->cs);
-
-         radeon_set_sh_reg(vs->info.regs.pgm_lo, vs->va >> 8);
-
          if (vs->info.next_stage == MESA_SHADER_TESS_CTRL) {
             radv_shader_combine_cfg_vs_tcs(vs, next_stage, &rsrc1, NULL);
-
-            radeon_set_sh_reg(vs->info.regs.pgm_rsrc1, rsrc1);
          } else {
             radv_shader_combine_cfg_vs_gs(device, vs, next_stage, &rsrc1, &rsrc2);
+         }
+      }
 
+      const uint32_t next_stage_pc_offset = radv_get_user_sgpr_loc(vs, AC_UD_NEXT_STAGE_PC);
+
+      radeon_begin(cmd_buffer->cs);
+      radeon_emit_32bit_pointer(next_stage_pc_offset, next_stage->va, &pdev->info);
+
+      if (!vs->info.vs.has_prolog) {
+         radeon_set_sh_reg(vs->info.regs.pgm_lo, vs->va >> 8);
+         if (vs->info.next_stage == MESA_SHADER_TESS_CTRL) {
+            radeon_set_sh_reg(vs->info.regs.pgm_rsrc1, rsrc1);
+         } else {
             radeon_set_sh_reg_seq(vs->info.regs.pgm_rsrc1, 2);
             radeon_emit(rsrc1);
             radeon_emit(rsrc2);
          }
-
-         radeon_end();
       }
-
-      const uint32_t next_stage_pc_offset = radv_get_user_sgpr_loc(vs, AC_UD_NEXT_STAGE_PC);
-      radeon_begin(cmd_buffer->cs);
-      radeon_emit_32bit_pointer(next_stage_pc_offset, next_stage->va, &pdev->info);
       radeon_end();
       return;
    }
