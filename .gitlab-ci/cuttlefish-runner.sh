@@ -30,6 +30,9 @@ pushd /cuttlefish
 # Add a function to perform some tasks when exiting the script
 function my_atexit()
 {
+  section_switch cuttlefish_stop "cuttlefish: stop + storing logs"
+  set -x
+
   # shellcheck disable=SC2317
   HOME=/cuttlefish stop_cvd -wait_for_launcher=40
 
@@ -39,6 +42,9 @@ function my_atexit()
   cp /cuttlefish/cuttlefish/instances/cvd-1/kernel.log $RESULTS_DIR || true
   # shellcheck disable=SC2317
   cp /cuttlefish/cuttlefish/instances/cvd-1/logs/launcher.log $RESULTS_DIR || true
+
+  set +x
+  section_end cuttlefish_stop
 }
 
 # stop cuttlefish if the script ends prematurely or is interrupted
