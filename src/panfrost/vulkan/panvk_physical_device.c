@@ -261,6 +261,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_shader_subgroup_extended_types = has_vk1_1,
       .KHR_shader_subgroup_rotate = true,
       .KHR_shader_subgroup_uniform_control_flow = has_vk1_1,
+      .KHR_spirv_1_4 = arch >= 10,
       .KHR_storage_buffer_storage_class = true,
 #ifdef PANVK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
