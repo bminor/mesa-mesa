@@ -76,6 +76,7 @@ TEST_F(ssa_def_bits_used_test, iand_with_const_vector)
    nir_def *src1 = nir_imm_int(b, 0xffffffff);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_iand, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
@@ -105,6 +106,7 @@ TEST_F(ssa_def_bits_used_test, ior_with_const_vector)
    nir_def *src1 = nir_imm_int(b, 0xffffffff);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_ior, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
@@ -415,4 +417,24 @@ TEST_F(ssa_def_bits_used_test, u2u_i2i_upcast_bits)
    EXPECT_EQ(nir_def_bits_used(load[3]), 0x80);
    EXPECT_EQ(nir_def_bits_used(load[4]), 0x0);
    EXPECT_EQ(nir_def_bits_used(load[5]), 0x80);
+}
+
+typedef nir_def *(*binary_op_imm)(nir_builder *build, nir_def *x, uint64_t y);
+
+TEST_F(ssa_def_bits_used_test, iand_ior_ishl)
+{
+   static const binary_op_imm ops[] = {
+      nir_iand_imm,
+      nir_ior_imm,
+   };
+   nir_def *load[ARRAY_SIZE(ops)];
+
+   for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
+      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+      nir_def *alu = nir_ishl_imm(b, ops[i](b, load[i], 0x12345678), 8);
+      nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+   }
+
+   EXPECT_EQ(nir_def_bits_used(load[0]), 0x345678);
+   EXPECT_EQ(nir_def_bits_used(load[1]), ~0xff345678);
 }

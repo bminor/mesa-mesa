@@ -2220,22 +2220,14 @@ ssa_def_bits_used(const nir_def *def, int recur)
             }
 
          case nir_op_iand:
-            assert(src_idx < 2);
-            if (nir_src_is_const(use_alu->src[1 - src_idx].src)) {
-               uint64_t u64 = nir_src_comp_as_uint(use_alu->src[1 - src_idx].src,
-                                                   use_alu->src[1 - src_idx].swizzle[0]);
-               bits_used |= u64;
-               break;
-            } else {
-               return all_bits;
-            }
-
          case nir_op_ior:
             assert(src_idx < 2);
             if (nir_src_is_const(use_alu->src[1 - src_idx].src)) {
-               uint64_t u64 = nir_src_comp_as_uint(use_alu->src[1 - src_idx].src,
-                                                   use_alu->src[1 - src_idx].swizzle[0]);
-               bits_used |= all_bits & ~u64;
+               uint64_t other_src = nir_alu_src_as_uint(use_alu->src[1 - src_idx]);
+               if (use_alu->op == nir_op_iand)
+                  bits_used |= ssa_def_bits_used(&use_alu->def, recur) & other_src;
+               else
+                  bits_used |= ssa_def_bits_used(&use_alu->def, recur) & ~other_src;
                break;
             } else {
                return all_bits;
