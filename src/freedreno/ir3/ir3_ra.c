@@ -2035,9 +2035,6 @@ handle_live_out(struct ra_ctx *ctx, struct ir3_register *def)
 static void
 handle_phi(struct ra_ctx *ctx, struct ir3_register *def)
 {
-   if (!(def->flags & IR3_REG_SSA))
-      return;
-
    struct ra_file *file = ra_get_file(ctx, def);
    struct ra_interval *interval = ra_interval_get(ctx, def);
 
@@ -2311,6 +2308,11 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
       if (instr->opc == OPC_META_PHI) {
          struct ir3_register *dst = instr->dsts[0];
 
+         /* Some phis may have been handled by shared RA already. */
+         if (!(dst->flags & IR3_REG_SSA)) {
+            continue;
+         }
+
          if (dst->merge_set && dst->merge_set->preferred_reg != (physreg_t)~0) {
             handle_phi(ctx, dst);
          } else {
@@ -2328,6 +2330,10 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
       foreach_instr (instr, &block->instr_list) {
          if (instr->opc == OPC_META_PHI) {
             struct ir3_register *dst = instr->dsts[0];
+
+            if (!(dst->flags & IR3_REG_SSA)) {
+               continue;
+            }
 
             if (!ra_interval_get(ctx, dst)->interval.inserted) {
                handle_phi(ctx, dst);
