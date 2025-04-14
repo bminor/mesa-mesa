@@ -564,6 +564,7 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
 
    key->mesh_input = is_mesh;
 
+   key->api_sample_shading = ms ? ms->sample_shading_enable : false;
    key->min_sample_shading = ms ? ms->min_sample_shading : 1.0f;
 
    /* Vulkan doesn't support fixed-function alpha test */
@@ -2919,9 +2920,6 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
       assert(anv_pipeline_is_mesh(pipeline));
       /* TODO(mesh): Mesh vs. Multiview with Instancing. */
    }
-
-   if (pipeline->base.shaders[MESA_SHADER_FRAGMENT] && state->ms)
-      pipeline->sample_shading_enable = state->ms->sample_shading_enable;
 
    /* Mark all color output as unused by default */
    memset(pipeline->color_output_mapping,

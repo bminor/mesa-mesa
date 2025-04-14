@@ -397,8 +397,7 @@ struct brw_wm_prog_key {
    bool ignore_sample_mask_out:1;
    bool coarse_pixel:1;
    bool null_push_constant_tbimr_workaround:1;
-
-   uint64_t padding:1;
+   bool api_sample_shading:1;
 };
 
 static inline bool
@@ -757,6 +756,13 @@ struct brw_wm_prog_data {
     * GL_MIN_SAMPLE_SHADING_VALUE in GL or minSampleShading in Vulkan.
     */
    bool sample_shading;
+
+   /** True if the API wants sample shading
+    *
+    * Not used by the compiler, but useful for restore from the cache. The
+    * driver is expected to write the value it wants.
+    */
+   bool api_sample_shading;
 
    /** Min sample shading value
     *

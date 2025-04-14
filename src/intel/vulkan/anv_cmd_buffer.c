@@ -767,7 +767,6 @@ void anv_CmdBindPipeline(
       cmd_buffer->state.gfx.vs_source_hash = new_pipeline->vs_source_hash;
       cmd_buffer->state.gfx.fs_source_hash = new_pipeline->fs_source_hash;
 
-      cmd_buffer->state.gfx.sample_shading_enable = new_pipeline->sample_shading_enable;
       cmd_buffer->state.gfx.instance_multiplier = new_pipeline->instance_multiplier;
       cmd_buffer->state.gfx.primitive_id_index = new_pipeline->primitive_id_index;
       cmd_buffer->state.gfx.first_vue_slot = new_pipeline->first_vue_slot;

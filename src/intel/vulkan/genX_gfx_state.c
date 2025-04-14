@@ -842,7 +842,7 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
       intel_fs_msaa_flags((struct intel_fs_params) {
             .shader_sample_shading     = wm_prog_data->sample_shading,
             .shader_min_sample_shading = wm_prog_data->min_sample_shading,
-            .state_sample_shading      = gfx->sample_shading_enable,
+            .state_sample_shading      = wm_prog_data->api_sample_shading,
             .rasterization_samples     = dyn->ms.rasterization_samples,
             .coarse_pixel              = !vk_fragment_shading_rate_is_disabled(&dyn->fsr),
             .alpha_to_coverage         = dyn->ms.alpha_to_coverage_enable,
