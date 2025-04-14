@@ -232,6 +232,12 @@ glsl_signed_base_type_of(enum glsl_base_type type)
    }
 }
 
+/* Change integer types to be signed or unsigned.  Other types remain
+ * unchanged.
+ */
+enum glsl_base_type
+glsl_apply_signedness_to_base_type(enum glsl_base_type type, bool signedness);
+
 int
 glsl_get_sampler_dim_coordinate_components(enum glsl_sampler_dim dim);
 

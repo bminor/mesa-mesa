@@ -430,16 +430,26 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                progress = true;
                break;
             }
-            case nir_intrinsic_cmat_unary_op: {
+            case nir_intrinsic_cmat_convert: {
                nir_deref_instr *dst_deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
                nir_deref_instr *src_deref = nir_instr_as_deref(intr->src[1].ssa->parent_instr);
-               struct glsl_cmat_description desc = *glsl_get_cmat_description(dst_deref->type);
+               struct glsl_cmat_description dst_desc = *glsl_get_cmat_description(dst_deref->type);
                struct glsl_cmat_description src_desc = *glsl_get_cmat_description(src_deref->type);
                nir_def *src = radv_nir_load_cmat(&b, &params, intr->src[1].ssa);
-               nir_op op = nir_intrinsic_alu_op(intr);
 
-               if (gfx_level < GFX12 && glsl_base_type_bit_size(src_desc.element_type) == 16 &&
-                   glsl_base_type_bit_size(desc.element_type) == 32 && desc.use == GLSL_CMAT_USE_ACCUMULATOR) {
+               const nir_cmat_signed cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intr);
+
+               enum glsl_base_type dst_element_type = glsl_apply_signedness_to_base_type(
+                  dst_desc.element_type, cmat_signed_mask & NIR_CMAT_RESULT_SIGNED);
+               enum glsl_base_type src_element_type = glsl_apply_signedness_to_base_type(
+                  src_desc.element_type, cmat_signed_mask & NIR_CMAT_A_SIGNED);
+
+               nir_op op = nir_type_conversion_op(nir_get_nir_type_for_glsl_base_type(src_element_type),
+                                                  nir_get_nir_type_for_glsl_base_type(dst_element_type),
+                                                  nir_rounding_mode_undef);
+
+               if (gfx_level < GFX12 && glsl_base_type_bit_size(src_element_type) == 16 &&
+                   glsl_base_type_bit_size(dst_element_type) == 32 && dst_desc.use == GLSL_CMAT_USE_ACCUMULATOR) {
                   nir_def *components[NIR_MAX_VEC_COMPONENTS];
                   for (unsigned i = 0; i * 2 < src->num_components; ++i) {
                      components[i] = nir_channel(&b, src, i * 2);
@@ -449,8 +459,8 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
 
                nir_def *ret = nir_build_alu1(&b, op, src);
 
-               if (gfx_level < GFX12 && glsl_base_type_bit_size(src_desc.element_type) == 32 &&
-                   glsl_base_type_bit_size(desc.element_type) == 16 && desc.use == GLSL_CMAT_USE_ACCUMULATOR) {
+               if (gfx_level < GFX12 && glsl_base_type_bit_size(src_element_type) == 32 &&
+                   glsl_base_type_bit_size(dst_element_type) == 16 && dst_desc.use == GLSL_CMAT_USE_ACCUMULATOR) {
                   nir_def *components[NIR_MAX_VEC_COMPONENTS];
                   for (unsigned i = 0; i < ret->num_components; ++i) {
                      components[i * 2] = nir_channel(&b, ret, i);
@@ -460,6 +470,16 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                }
 
                nir_store_deref(&b, dst_deref, ret, nir_component_mask(ret->num_components));
+               nir_instr_remove(instr);
+               progress = true;
+               break;
+            }
+            case nir_intrinsic_cmat_unary_op: {
+               nir_def *src = radv_nir_load_cmat(&b, &params, intr->src[1].ssa);
+               nir_op op = nir_intrinsic_alu_op(intr);
+               nir_def *ret = nir_build_alu1(&b, op, src);
+               nir_store_deref(&b, nir_instr_as_deref(intr->src[0].ssa->parent_instr), ret,
+                               nir_component_mask(ret->num_components));
                nir_instr_remove(instr);
                progress = true;
                break;

@@ -101,6 +101,7 @@ lower_cmat_filter(const nir_instr *instr, const void *_state)
    case nir_intrinsic_cmat_store:
    case nir_intrinsic_cmat_length:
    case nir_intrinsic_cmat_muladd:
+   case nir_intrinsic_cmat_convert:
    case nir_intrinsic_cmat_unary_op:
    case nir_intrinsic_cmat_binary_op:
    case nir_intrinsic_cmat_scalar_op:
@@ -418,7 +419,22 @@ lower_cmat_unary_op(nir_builder *b, nir_intrinsic_instr *intrin,
    const unsigned src_packing_factor =
       get_packing_factor(src_desc, src_slice->type);
 
-   const nir_op op = nir_intrinsic_alu_op(intrin);
+   nir_op op;
+
+   if (intrin->intrinsic == nir_intrinsic_cmat_unary_op) {
+      op = nir_intrinsic_alu_op(intrin);
+   } else {
+      const nir_cmat_signed cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intrin);
+
+      enum glsl_base_type src_base_type = glsl_apply_signedness_to_base_type(
+         src_desc.element_type, cmat_signed_mask & NIR_CMAT_A_SIGNED);
+      enum glsl_base_type dst_base_type = glsl_apply_signedness_to_base_type(
+         dst_desc.element_type, cmat_signed_mask & NIR_CMAT_RESULT_SIGNED);
+
+      op = nir_type_conversion_op(nir_get_nir_type_for_glsl_base_type(src_base_type),
+                                  nir_get_nir_type_for_glsl_base_type(dst_base_type),
+                                  nir_rounding_mode_undef);
+   }
 
    /* With the combinations of formats exposed on all platforms, matrices with
     * the same dimensions will always have the same data size. The only real
@@ -585,6 +601,7 @@ lower_cmat_instr(nir_builder *b, nir_instr *instr, void *_state)
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
    }
 
+   case nir_intrinsic_cmat_convert:
    case nir_intrinsic_cmat_unary_op:
       lower_cmat_unary_op(b, intrin, state);
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;

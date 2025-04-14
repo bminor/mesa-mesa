@@ -3923,3 +3923,24 @@ glsl_type_get_image_count(const glsl_type *type)
 {
    return glsl_type_count(type, GLSL_TYPE_IMAGE);
 }
+
+enum glsl_base_type
+glsl_apply_signedness_to_base_type(enum glsl_base_type type, bool signedness)
+{
+   switch (type) {
+   case GLSL_TYPE_UINT:
+   case GLSL_TYPE_INT:
+      return signedness ? GLSL_TYPE_INT : GLSL_TYPE_UINT;
+   case GLSL_TYPE_UINT8:
+   case GLSL_TYPE_INT8:
+      return signedness ? GLSL_TYPE_INT8 : GLSL_TYPE_UINT8;
+   case GLSL_TYPE_UINT16:
+   case GLSL_TYPE_INT16:
+      return signedness ? GLSL_TYPE_INT16 : GLSL_TYPE_UINT16;
+   case GLSL_TYPE_UINT64:
+   case GLSL_TYPE_INT64:
+      return signedness ? GLSL_TYPE_INT64 : GLSL_TYPE_UINT64;
+   default:
+      return type;
+   }
+}

@@ -235,8 +235,8 @@ vtn_handle_matrix_alu(struct vtn_builder *b, SpvOp opcode,
    }
 }
 
-static nir_alu_type
-convert_op_src_type(SpvOp opcode)
+nir_alu_type
+vtn_convert_op_src_type(SpvOp opcode)
 {
    switch (opcode) {
    case SpvOpFConvert:
@@ -256,8 +256,8 @@ convert_op_src_type(SpvOp opcode)
    }
 }
 
-static nir_alu_type
-convert_op_dst_type(SpvOp opcode)
+nir_alu_type
+vtn_convert_op_dst_type(SpvOp opcode)
 {
    switch (opcode) {
    case SpvOpFConvert:
@@ -378,8 +378,8 @@ vtn_nir_alu_op_for_spirv_opcode(struct vtn_builder *b,
    case SpvOpConvertUToF:
    case SpvOpSConvert:
    case SpvOpFConvert: {
-      nir_alu_type src_type = convert_op_src_type(opcode) | src_bit_size;
-      nir_alu_type dst_type = convert_op_dst_type(opcode) | dst_bit_size;
+      nir_alu_type src_type = vtn_convert_op_src_type(opcode) | src_bit_size;
+      nir_alu_type dst_type = vtn_convert_op_dst_type(opcode) | dst_bit_size;
       return nir_type_conversion_op(src_type, dst_type, nir_rounding_mode_undef);
    }
 
@@ -914,8 +914,8 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpSatConvertUToS: {
       unsigned src_bit_size = src[0]->bit_size;
       unsigned dst_bit_size = glsl_get_bit_size(dest_type);
-      nir_alu_type src_type = convert_op_src_type(opcode) | src_bit_size;
-      nir_alu_type dst_type = convert_op_dst_type(opcode) | dst_bit_size;
+      nir_alu_type src_type = vtn_convert_op_src_type(opcode) | src_bit_size;
+      nir_alu_type dst_type = vtn_convert_op_dst_type(opcode) | dst_bit_size;
 
       struct conversion_opts opts = {
          .rounding_mode = nir_rounding_mode_undef,
