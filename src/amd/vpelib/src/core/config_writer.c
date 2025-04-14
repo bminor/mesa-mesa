@@ -89,7 +89,7 @@ static inline void config_writer_new(struct config_writer *writer)
     writer->base_cpu_va = writer->buf->cpu_va;
     writer->base_gpu_va = writer->buf->gpu_va;
 
-    // new header. don't need to fill it yet until completion
+    // new header. do not need to fill it yet until completion
     writer->buf->cpu_va += sizeof(uint32_t);
     writer->buf->gpu_va += sizeof(uint32_t);
     writer->buf->size -= sizeof(uint32_t);
@@ -105,7 +105,7 @@ void config_writer_set_type(struct config_writer *writer, enum config_type type,
 
     if ((writer->type != type) || (writer->pipe_idx != pipe_idx)) {
         if (writer->type == CONFIG_TYPE_UNKNOWN) {
-            // new header or only pipe change. don't need to fill it yet until completion
+            // new header or only pipe change. do not need to fill it yet until completion
             writer->pipe_idx = pipe_idx;
             config_writer_new(writer);
         } else {
@@ -129,7 +129,7 @@ void config_writer_force_new_with_type(struct config_writer *writer, enum config
     uint64_t size = writer->buf->cpu_va - writer->base_cpu_va;
 
     if (writer->type == CONFIG_TYPE_UNKNOWN) {
-        // new header. don't need to fill it yet until completion
+        // new header. do not need to fill it yet until completion
         config_writer_new(writer);
     } else if (size > 0) {
         // command not empty, close the previous one

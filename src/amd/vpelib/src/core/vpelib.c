@@ -297,7 +297,7 @@ static enum vpe_status populate_bg_stream(struct vpe_priv *vpe_priv, const struc
     stream = &stream_ctx->stream;
     stream_ctx->stream_type = VPE_STREAM_TYPE_BG_GEN;
 
-    // if output surface is too small, don't use it as dummy input
+    // if output surface is too small, do not use it as dummy input
     // request 2x2 instead of 1x1 for bpc safety
     // as we are to treat output as input for RGB 1x1, need 4bytes at least
     // but if output is YUV, bpc will be smaller and need larger dimension
@@ -415,7 +415,7 @@ static enum vpe_status populate_input_streams(struct vpe_priv *vpe_priv, const s
 
         /* if top-bottom blending is not supported,
          * the 1st stream still can support blending with background,
-         * however, the 2nd stream and onward can't enable blending.
+         * however, the 2nd stream and onward can not enable blending.
          */
         if (i && param->streams[i].blend_info.blending &&
             !vpe_priv->pub.caps->color_caps.mpc.top_bottom_blending) {
@@ -779,7 +779,7 @@ enum vpe_status vpe_build_commands(
                     break;
                 }
 
-                // Add next collaborate sync start command when this vpe_cmd isn't the final one.
+                // Add next collaborate sync start command when this vpe_cmd is not the final one.
                 if (cmd_idx < (uint32_t)(vpe_priv->vpe_cmd_vector->num_elements - 1)) {
                     status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
                     if (status != VPE_STATUS_OK) {

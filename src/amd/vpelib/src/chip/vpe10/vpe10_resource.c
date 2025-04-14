@@ -221,7 +221,7 @@ static bool vpe10_init_scaler_data(struct vpe_priv *vpe_priv, struct stream_ctx 
     }
 
     if ((stream_ctx->stream.use_external_scaling_coeffs ==
-            false) || /* don't try to optimize is the scaler is configured externally*/
+            false) || /* do not try to optimize is the scaler is configured externally*/
         (stream_ctx->stream.polyphase_scaling_coeffs.taps.h_taps == 0) ||
         (stream_ctx->stream.polyphase_scaling_coeffs.taps.v_taps == 0)) {
         scl_data->polyphase_filter_coeffs = 0;
@@ -585,7 +585,7 @@ static uint16_t get_max_gap_num(
     */
 
     if (!is_color_fill) {
-        // full colorfillOnly case, no need to + 1 as the gap won't be seaprated by stream dst
+        // full colorfillOnly case, no need to + 1 as the gap will not be seaprated by stream dst
         // for non-colorfillOnly case, +1 for worst case the gap is separated by stream dst
         max_gaps += 1;
     }

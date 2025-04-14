@@ -175,7 +175,7 @@ void vpe10_dscl_calc_lb_num_partitions(const struct scaler_data *scl_data,
         *num_part_c = 12;
 }
 
-/* Not used as we don't enable prealpha dealpha currently
+/* Not used as we do not enable prealpha dealpha currently
  * Can skip for optimize performance and use default val
  */
 static void vpe10_dpp_program_prealpha_dealpha(struct dpp *dpp)
@@ -191,7 +191,7 @@ static void vpe10_dpp_program_prealpha_dealpha(struct dpp *dpp)
         VPCNVC_PRE_REALPHA, 0, PRE_REALPHA_EN, realpha_en, PRE_REALPHA_ABLND_EN, realpha_ablnd_en);
 }
 
-/* Not used as we don't have special 2bit LUt currently
+/* Not used as we do not have special 2bit LUt currently
  * Can skip for optimize performance and use default val
  */
 static void vpe10_dpp_program_alpha_2bit_lut(

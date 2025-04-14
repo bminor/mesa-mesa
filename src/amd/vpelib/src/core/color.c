@@ -751,7 +751,7 @@ enum vpe_status vpe_color_update_shaper(const struct vpe_priv *vpe_priv, uint16_
         struct vpe_shaper_setup_in shaper_in;
 
         shaper_in.shaper_in_max      = 1 << 16;
-        shaper_in.use_const_hdr_mult = false; // can't be true. Fix is required.
+        shaper_in.use_const_hdr_mult = false; // can not be true. Fix is required.
 
         ret = vpe_build_shaper(&shaper_in, shaper_func->tf, pq_norm_gain, &shaper_func->pwl);
 
@@ -933,7 +933,7 @@ void vpe_color_get_color_space_and_tf(
             *cs = colorRange == VPE_COLOR_RANGE_FULL ? COLOR_SPACE_2020_RGB_FULLRANGE
                                                      : COLOR_SPACE_2020_RGB_LIMITEDRANGE;
             break;
-        /* VPE doesn't support JFIF format of RGB output, but geometric down scaling will change cs
+        /* VPE does not support JFIF format of RGB output, but geometric down scaling will change cs
          * parameters to JFIF. Therefore, we need to add JFIF format in RGB output to avoid output
          * color check fail.
          */

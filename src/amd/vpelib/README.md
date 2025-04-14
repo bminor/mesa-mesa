@@ -164,7 +164,7 @@ struct vpe_build_param {
     struct vpe_stream      *streams;        /**< List of input streams */
     struct vpe_surface_info dst_surface;    /**< Destination/Output surface */
     struct vpe_rect         target_rect;    /**< rectangle in target surface to be blt'd.
-                                               Ranges out of target_rect won't be touched */
+                                               Ranges out of target_rect will not be touched */
     struct vpe_color    bg_color;           /**< Background Color */
     enum vpe_alpha_mode alpha_mode;         /**< Alpha Mode. Output alpha in the output
                                                surface */

@@ -194,7 +194,7 @@ void vpe10_mpc_power_on_ogam_lut(struct mpc *mpc, bool power_on)
      */
     REG_UPDATE(VPMPCC_MEM_PWR_CTRL, VPMPCC_OGAM_MEM_PWR_DIS, power_on ? 1 : 0);
 
-    /* Wait for memory to be powered on - we won't be able to write to it otherwise. */
+    /* Wait for memory to be powered on - we will not be able to write to it otherwise. */
     if (power_on) {
         // dummy write as delay in power up
         REG_UPDATE(VPMPCC_MEM_PWR_CTRL, VPMPCC_OGAM_MEM_PWR_DIS, power_on ? 1 : 0);

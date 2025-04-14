@@ -70,7 +70,7 @@ struct vpep_direct_config_packet {
 
 /* config writer only help initialize the 1st DWORD,
  * and 'close' the config (i.e. finalize the size) once it is completed.
- * it doesn't help generate the content, which shall be prepared by the caller
+ * it does not help generate the content, which shall be prepared by the caller
  * and then call config_writer_fill()
  */
 struct config_writer {

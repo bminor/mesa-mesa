@@ -643,7 +643,7 @@ void vpe10_cm_helper_program_pwl(struct config_writer *config_writer,
     uint32_t i;
     uint32_t lut_data = 0;
 
-    // For LUT, we keep write the same address with entire LUT data, so don't set INC bit
+    // For LUT, we keep write the same address with entire LUT data, so do not set INC bit
     config_writer_fill(
         config_writer, VPEC_FIELD_VALUE(VPE_DIR_CFG_PKT_DATA_SIZE, num) |
                            VPEC_FIELD_VALUE(VPE_DIR_CFG_PKT_REGISTER_OFFSET, lut_data_reg_offset));

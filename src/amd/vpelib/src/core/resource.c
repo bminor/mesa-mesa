@@ -620,7 +620,7 @@ bool should_generate_cmd_info(enum vpe_stream_type stream_type)
     case VPE_STREAM_TYPE_BG_GEN:
         return true;
     default:
-        /* destination-as-input virtual stream doesn't need a new cmd_info,
+        /* destination-as-input virtual stream does not need a new cmd_info,
            it is used as one of the inputs in blending normal input stream only */
         return false;
     }
