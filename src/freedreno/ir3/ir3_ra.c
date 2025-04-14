@@ -387,6 +387,13 @@ rb_node_to_interval_const(const struct rb_node *node)
 }
 
 static struct ra_interval *
+ra_interval_get(struct ra_ctx *ctx, struct ir3_register *dst)
+{
+   assert(dst->name != 0 && dst->name < ctx->live->definitions_count);
+   return &ctx->intervals[dst->name];
+}
+
+static struct ra_interval *
 ra_interval_next(struct ra_interval *interval)
 {
    struct rb_node *next = rb_node_next(&interval->physreg_node);
@@ -755,7 +762,7 @@ check_dst_overlap(struct ra_ctx *ctx, struct ra_file *file,
       if (ra_get_file(ctx, other_dst) != file)
          continue;
 
-      struct ra_interval *other_interval = &ctx->intervals[other_dst->name];
+      struct ra_interval *other_interval = ra_interval_get(ctx, other_dst);
       assert(!other_interval->interval.parent);
       physreg_t other_start = other_interval->physreg_start;
       physreg_t other_end = other_interval->physreg_end;
@@ -1075,7 +1082,7 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
          if (dst_inserted[n])
             continue;
 
-         struct ra_interval *other_interval = &ctx->intervals[other_dst->name];
+         struct ra_interval *other_interval = ra_interval_get(ctx, other_dst);
          /* if the destination partially overlaps this interval, we need to
           * extend candidate_start to the end.
           */
@@ -1093,7 +1100,7 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
           */
          if (other_dst->tied) {
             struct ra_interval *tied_interval =
-               &ctx->intervals[other_dst->tied->def->name];
+               ra_interval_get(ctx, other_dst->tied->def);
             if (tied_interval->is_killed)
                continue;
          }
@@ -1247,7 +1254,7 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
          if (cur_reg == reg) {
             ret_reg = physreg;
          } else {
-            struct ra_interval *interval = &ctx->intervals[cur_reg->name];
+            struct ra_interval *interval = ra_interval_get(ctx, cur_reg);
             interval->physreg_start = physreg;
             interval->physreg_end = physreg + interval_size;
          }
@@ -1277,11 +1284,11 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
       if (!tied)
          continue;
 
-      struct ra_interval *tied_interval = &ctx->intervals[tied->def->name];
+      struct ra_interval *tied_interval = ra_interval_get(ctx, tied->def);
       if (!tied_interval->is_killed)
          continue;
 
-      struct ra_interval *dst_interval = &ctx->intervals[dst->name];
+      struct ra_interval *dst_interval = ra_interval_get(ctx, dst);
       unsigned dst_size = reg_size(dst);
       dst_interval->physreg_start = ra_interval_get_physreg(tied_interval);
       dst_interval->physreg_end = dst_interval->physreg_start + dst_size;
@@ -1363,7 +1370,7 @@ try_allocate_src(struct ra_ctx *ctx, struct ra_file *file,
       if (!ra_reg_is_src(src))
          continue;
       if (ra_get_file(ctx, src) == file && reg_size(src) >= size) {
-         struct ra_interval *src_interval = &ctx->intervals[src->def->name];
+         struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
          physreg_t src_physreg = ra_interval_get_physreg(src_interval);
          if (src_physreg % reg_elem_size(reg) == 0 &&
              src_physreg + size <= file_size &&
@@ -1512,7 +1519,7 @@ assign_reg(struct ir3_instruction *instr, struct ir3_register *reg,
 static void
 mark_src_killed(struct ra_ctx *ctx, struct ir3_register *src)
 {
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
 
    if (!(src->flags & IR3_REG_FIRST_KILL) || interval->is_killed ||
        interval->interval.parent ||
@@ -1526,7 +1533,7 @@ static void
 insert_dst(struct ra_ctx *ctx, struct ir3_register *dst)
 {
    struct ra_file *file = ra_get_file(ctx, dst);
-   struct ra_interval *interval = &ctx->intervals[dst->name];
+   struct ra_interval *interval = ra_interval_get(ctx, dst);
 
    d("insert dst %u physreg %u", dst->name, ra_interval_get_physreg(interval));
 
@@ -1541,7 +1548,7 @@ allocate_dst_fixed(struct ra_ctx *ctx, struct ir3_register *dst,
                    physreg_t physreg)
 {
    struct ra_file *file = ra_get_file(ctx, dst);
-   struct ra_interval *interval = &ctx->intervals[dst->name];
+   struct ra_interval *interval = ra_interval_get(ctx, dst);
    ra_update_affinity(file->size, dst, physreg);
 
    ra_interval_init(interval, dst);
@@ -1566,8 +1573,8 @@ insert_tied_dst_copy(struct ra_ctx *ctx, struct ir3_register *dst)
    if (!tied)
       return;
 
-   struct ra_interval *tied_interval = &ctx->intervals[tied->def->name];
-   struct ra_interval *dst_interval = &ctx->intervals[dst->name];
+   struct ra_interval *tied_interval = ra_interval_get(ctx, tied->def);
+   struct ra_interval *dst_interval = ra_interval_get(ctx, dst);
 
    if (tied_interval->is_killed)
       return;
@@ -1588,7 +1595,7 @@ allocate_dst(struct ra_ctx *ctx, struct ir3_register *dst)
 
    struct ir3_register *tied = dst->tied;
    if (tied) {
-      struct ra_interval *tied_interval = &ctx->intervals[tied->def->name];
+      struct ra_interval *tied_interval = ra_interval_get(ctx, tied->def);
       if (tied_interval->is_killed) {
          /* The easy case: the source is killed, so we can just reuse it
           * for the destination.
@@ -1608,13 +1615,13 @@ static void
 assign_src(struct ra_ctx *ctx, struct ir3_instruction *instr,
            struct ir3_register *src)
 {
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
    struct ra_file *file = ra_get_file(ctx, src);
 
    struct ir3_register *tied = src->tied;
    physreg_t physreg;
    if (tied) {
-      struct ra_interval *tied_interval = &ctx->intervals[tied->name];
+      struct ra_interval *tied_interval = ra_interval_get(ctx, tied);
       physreg = ra_interval_get_physreg(tied_interval);
    } else {
       physreg = ra_interval_get_physreg(interval);
@@ -1712,7 +1719,7 @@ handle_split(struct ra_ctx *ctx, struct ir3_instruction *instr)
       return;
    }
 
-   struct ra_interval *src_interval = &ctx->intervals[src->def->name];
+   struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
 
    physreg_t physreg = ra_interval_get_physreg(src_interval);
    assign_src(ctx, instr, src);
@@ -1758,7 +1765,7 @@ handle_collect(struct ra_ctx *ctx, struct ir3_instruction *instr)
          mark_src_killed(ctx, src);
       }
 
-      struct ra_interval *interval = &ctx->intervals[src->def->name];
+      struct ra_interval *interval = ra_interval_get(ctx, src->def);
 
       /* We only need special handling if the source's interval overlaps with
        * the destination's interval.
@@ -1792,13 +1799,13 @@ handle_collect(struct ra_ctx *ctx, struct ir3_instruction *instr)
 
    /* Remove the temporary is_killed we added */
    ra_foreach_src (src, instr) {
-      struct ra_interval *interval = &ctx->intervals[src->def->name];
+      struct ra_interval *interval = ra_interval_get(ctx, src->def);
       while (interval->interval.parent != NULL) {
          interval = ir3_reg_interval_to_ra_interval(interval->interval.parent);
       }
 
       /* Filter out cases where it actually should be killed */
-      if (interval != &ctx->intervals[src->def->name] ||
+      if (interval != ra_interval_get(ctx, src->def) ||
           !(src->flags & IR3_REG_KILL)) {
          ra_file_unmark_killed(ra_get_file(ctx, src), interval);
       }
@@ -1854,7 +1861,7 @@ handle_precolored_input(struct ra_ctx *ctx, struct ir3_instruction *instr)
       return;
 
    struct ra_file *file = ra_get_file(ctx, instr->dsts[0]);
-   struct ra_interval *interval = &ctx->intervals[instr->dsts[0]->name];
+   struct ra_interval *interval = ra_interval_get(ctx, instr->dsts[0]);
    physreg_t physreg = ra_reg_get_physreg(instr->dsts[0]);
    allocate_dst_fixed(ctx, instr->dsts[0], physreg);
 
@@ -1874,7 +1881,7 @@ handle_input(struct ra_ctx *ctx, struct ir3_instruction *instr)
    allocate_dst(ctx, instr->dsts[0]);
 
    struct ra_file *file = ra_get_file(ctx, instr->dsts[0]);
-   struct ra_interval *interval = &ctx->intervals[instr->dsts[0]->name];
+   struct ra_interval *interval = ra_interval_get(ctx, instr->dsts[0]);
    ra_file_insert(file, interval);
 }
 
@@ -1884,7 +1891,7 @@ assign_input(struct ra_ctx *ctx, struct ir3_instruction *instr)
    if (!(instr->dsts[0]->flags & IR3_REG_SSA))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[instr->dsts[0]->name];
+   struct ra_interval *interval = ra_interval_get(ctx, instr->dsts[0]);
    struct ra_file *file = ra_get_file(ctx, instr->dsts[0]);
 
    if (instr->dsts[0]->num == INVALID_REG) {
@@ -1920,7 +1927,7 @@ static void
 handle_precolored_source(struct ra_ctx *ctx, struct ir3_register *src)
 {
    struct ra_file *file = ra_get_file(ctx, src);
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
    physreg_t physreg = ra_reg_get_physreg(src);
 
    if (ra_interval_get_num(interval) == src->num)
@@ -1957,7 +1964,7 @@ handle_chmask(struct ra_ctx *ctx, struct ir3_instruction *instr)
 
    ra_foreach_src (src, instr) {
       struct ra_file *file = ra_get_file(ctx, src);
-      struct ra_interval *interval = &ctx->intervals[src->def->name];
+      struct ra_interval *interval = ra_interval_get(ctx, src->def);
       if (src->flags & IR3_REG_FIRST_KILL)
          ra_file_remove(file, interval);
    }
@@ -1997,7 +2004,7 @@ handle_live_in(struct ra_ctx *ctx, struct ir3_register *def)
 
    assert(physreg != (physreg_t)~0);
 
-   struct ra_interval *interval = &ctx->intervals[def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, def);
    struct ra_file *file = ra_get_file(ctx, def);
    ra_interval_init(interval, def);
    interval->physreg_start = physreg;
@@ -2016,7 +2023,7 @@ handle_live_out(struct ra_ctx *ctx, struct ir3_register *def)
       return;
 
    struct ra_block_state *state = &ctx->blocks[ctx->block->index];
-   struct ra_interval *interval = &ctx->intervals[def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, def);
    physreg_t physreg = ra_interval_get_physreg(interval);
    if (physreg != ra_reg_get_physreg(def)) {
       if (!state->renames)
@@ -2032,7 +2039,7 @@ handle_phi(struct ra_ctx *ctx, struct ir3_register *def)
       return;
 
    struct ra_file *file = ra_get_file(ctx, def);
-   struct ra_interval *interval = &ctx->intervals[def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, def);
 
    /* phis are always scalar, so they should already be the smallest possible
     * size. However they may be coalesced with other live-in values/phi
@@ -2061,7 +2068,7 @@ assign_phi(struct ra_ctx *ctx, struct ir3_instruction *phi)
       return;
 
    struct ra_file *file = ra_get_file(ctx, phi->dsts[0]);
-   struct ra_interval *interval = &ctx->intervals[phi->dsts[0]->name];
+   struct ra_interval *interval = ra_interval_get(ctx, phi->dsts[0]);
    assert(!interval->interval.parent);
    unsigned num = ra_interval_get_num(interval);
    assign_reg(phi, phi->dsts[0], num);
@@ -2322,7 +2329,7 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
          if (instr->opc == OPC_META_PHI) {
             struct ir3_register *dst = instr->dsts[0];
 
-            if (!ctx->intervals[dst->name].interval.inserted) {
+            if (!ra_interval_get(ctx, dst)->interval.inserted) {
                handle_phi(ctx, dst);
             }
          } else {

@@ -140,6 +140,13 @@ ra_interval_search_sloppy(struct rb_tree *tree, physreg_t reg)
    return node ? rb_node_to_interval(node) : NULL;
 }
 
+static struct ra_interval *
+ra_interval_get(struct ra_ctx *ctx, struct ir3_register *dst)
+{
+   assert(dst->name != 0 && dst->name < ctx->live->definitions_count);
+   return &ctx->intervals[dst->name];
+}
+
 /* Get the interval covering the reg, or the closest to the right if it
  * doesn't exist.
  */
@@ -556,9 +563,9 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
       /* We need one source to either be demotable or an immediate. */
       if (instr->srcs_count > 1) {
          struct ra_interval *src0_interval =
-            (instr->srcs[0]->flags & IR3_REG_SSA) ? &ctx->intervals[instr->srcs[0]->def->name] : NULL;
+            (instr->srcs[0]->flags & IR3_REG_SSA) ? ra_interval_get(ctx, instr->srcs[0]->def) : NULL;
          struct ra_interval *src1_interval =
-            (instr->srcs[0]->flags & IR3_REG_SSA) ? &ctx->intervals[instr->srcs[0]->def->name] : NULL;
+            (instr->srcs[0]->flags & IR3_REG_SSA) ? ra_interval_get(ctx, instr->srcs[0]->def) : NULL;
          if (!(src0_interval && src0_interval->spill_def) &&
              !(src1_interval && src1_interval->spill_def) &&
              !(instr->srcs[0]->flags & IR3_REG_IMMED) &&
@@ -569,9 +576,9 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
    }
    case 3: {
       struct ra_interval *src0_interval =
-         (instr->srcs[0]->flags & IR3_REG_SSA) ? &ctx->intervals[instr->srcs[0]->def->name] : NULL;
+         (instr->srcs[0]->flags & IR3_REG_SSA) ? ra_interval_get(ctx, instr->srcs[0]->def) : NULL;
       struct ra_interval *src1_interval =
-         (instr->srcs[1]->flags & IR3_REG_SSA) ? &ctx->intervals[instr->srcs[1]->def->name] : NULL;
+         (instr->srcs[1]->flags & IR3_REG_SSA) ? ra_interval_get(ctx, instr->srcs[1]->def) : NULL;
 
       /* src1 cannot be shared */
       if (src1_interval && !src1_interval->spill_def) {
@@ -592,7 +599,7 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
    }
    case 4: {
       assert(instr->srcs[0]->flags & IR3_REG_SSA);
-      struct ra_interval *src_interval = &ctx->intervals[instr->srcs[0]->def->name];
+      struct ra_interval *src_interval = ra_interval_get(ctx, instr->srcs[0]->def);
       if (!src_interval->spill_def)
          return false;
       break;
@@ -613,7 +620,7 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
    /* Now we actually demote the instruction */
    ra_foreach_src (src, instr) {
       assert(src->flags & IR3_REG_SHARED);
-      struct ra_interval *interval = &ctx->intervals[src->def->name];
+      struct ra_interval *interval = ra_interval_get(ctx, src->def);
       if (interval->spill_def) {
          src->def = interval->spill_def;
          src->flags &= ~IR3_REG_SHARED;
@@ -626,7 +633,7 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
       }
    }
 
-   struct ra_interval *dst_interval = &ctx->intervals[instr->dsts[0]->name];
+   struct ra_interval *dst_interval = ra_interval_get(ctx, instr->dsts[0]);
    instr->dsts[0]->flags &= ~IR3_REG_SHARED;
    ra_interval_init(dst_interval, instr->dsts[0]);
    dst_interval->spill_def = instr->dsts[0];
@@ -687,7 +694,7 @@ get_reg(struct ra_ctx *ctx, struct ir3_register *reg, bool src)
          if (!ra_reg_is_src(src))
             continue;
          if ((src->flags & IR3_REG_SHARED) && reg_size(src) >= size) {
-            struct ra_interval *src_interval = &ctx->intervals[src->def->name];
+            struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
             physreg_t src_physreg = ra_interval_get_physreg(src_interval);
             if (src_physreg % reg_elem_size(reg) == 0 &&
                 src_physreg + size <= reg_file_size(reg) &&
@@ -714,7 +721,7 @@ reload_src(struct ra_ctx *ctx, struct ir3_instruction *instr,
            struct ir3_register *src)
 {
    struct ir3_register *reg = src->def;
-   struct ra_interval *interval = &ctx->intervals[reg->name];
+   struct ra_interval *interval = ra_interval_get(ctx, reg);
    unsigned size = reg_size(reg);
 
    physreg_t best_reg = get_reg(ctx, reg, true);
@@ -767,7 +774,7 @@ reload_src_finalize(struct ra_ctx *ctx, struct ir3_instruction *instr,
                     struct ir3_register *src)
 {
    struct ir3_register *reg = src->def;
-   struct ra_interval *interval = &ctx->intervals[reg->name];
+   struct ra_interval *interval = ra_interval_get(ctx, reg);
 
    if (!interval->needs_reload)
       return;
@@ -807,7 +814,7 @@ mark_src(struct ra_ctx *ctx, struct ir3_register *src)
    if (!(src->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
 
    if (interval->interval.inserted) {
       while (interval->interval.parent)
@@ -824,7 +831,7 @@ ensure_src_live(struct ra_ctx *ctx, struct ir3_instruction *instr,
    if (!(src->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
 
    if (!interval->interval.inserted) {
       /* In some cases we cannot demote shared reg sources to non-shared regs,
@@ -852,7 +859,7 @@ assign_src(struct ra_ctx *ctx, struct ir3_register *src)
    if (!(src->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
    assert(interval->interval.inserted);
    src->num = ra_physreg_to_num(ra_interval_get_physreg(interval), src->flags);
 
@@ -874,13 +881,13 @@ handle_dst(struct ra_ctx *ctx, struct ir3_instruction *instr,
    if (!(dst->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[dst->name];
+   struct ra_interval *interval = ra_interval_get(ctx, dst);
    ra_interval_init(interval, dst);
    interval->spill_def = NULL;
 
    if (dst->tied) {
       struct ir3_register *tied_def = dst->tied->def;
-      struct ra_interval *tied_interval = &ctx->intervals[tied_def->name];
+      struct ra_interval *tied_interval = ra_interval_get(ctx, tied_def);
       if ((dst->tied->flags & IR3_REG_KILL) &&
           !tied_interval->interval.parent &&
           rb_tree_is_empty(&tied_interval->interval.children)) {
@@ -949,7 +956,7 @@ handle_src_late(struct ra_ctx *ctx, struct ir3_instruction *instr,
    if (!(src->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *interval = &ctx->intervals[src->def->name];
+   struct ra_interval *interval = ra_interval_get(ctx, src->def);
    reload_src_finalize(ctx, instr, src);
 
    /* Remove killed sources that have to be killed late due to being merged with
@@ -995,8 +1002,8 @@ handle_split(struct ra_ctx *ctx, struct ir3_instruction *split)
       return;
    }
 
-   struct ra_interval *src_interval = &ctx->intervals[src->def->name];
-   struct ra_interval *dst_interval = &ctx->intervals[dst->name];
+   struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
+   struct ra_interval *dst_interval = ra_interval_get(ctx, dst);
 
    ra_interval_init(dst_interval, dst);
    dst_interval->spill_def = NULL;
@@ -1036,7 +1043,7 @@ handle_phi(struct ra_ctx *ctx, struct ir3_instruction *phi)
    if (!(dst->flags & IR3_REG_SHARED))
       return;
 
-   struct ra_interval *dst_interval = &ctx->intervals[dst->name];
+   struct ra_interval *dst_interval = ra_interval_get(ctx, dst);
    ra_interval_init(dst_interval, dst);
 
    /* In some rare cases, it's possible to have a phi node with a physical-only
