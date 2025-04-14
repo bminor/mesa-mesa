@@ -153,6 +153,18 @@ panthor_kmod_dev_create(int fd, uint32_t flags, drmVersionPtr version,
    }
 
    /* Map the LATEST_FLUSH_ID register at device creation time. */
+   if (version->version_major > 1 || version->version_minor >= 5) {
+      struct drm_panthor_set_user_mmio_offset user_mmio_offset = {
+         .offset = DRM_PANTHOR_USER_MMIO_OFFSET,
+      };
+
+      ret = drmIoctl(fd, DRM_IOCTL_PANTHOR_SET_USER_MMIO_OFFSET, &user_mmio_offset);
+      if (ret) {
+         mesa_loge("DRM_IOCTL_PANTHOR_SET_USER_MMIO_OFFSET, failed (err=%d)", errno);
+         goto err_free_dev;
+      }
+   }
+
    panthor_dev->flush_id = os_mmap(0, getpagesize(), PROT_READ, MAP_SHARED, fd,
                                    DRM_PANTHOR_USER_FLUSH_ID_MMIO_OFFSET);
    if (panthor_dev->flush_id == MAP_FAILED) {
