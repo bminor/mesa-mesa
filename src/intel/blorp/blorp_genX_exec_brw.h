@@ -2157,6 +2157,7 @@ blorp_xy_fast_color_blit(struct blorp_batch *batch,
 
       blt.DestinationPitch = (dst_surf->row_pitch_B / dst_pitch_unit) - 1;
       blt.DestinationTiling = xy_bcb_tiling(dst_surf);
+      blt.DestinationMOCS = params->dst.addr.mocs;
       blt.DestinationX1 = params->x0;
       blt.DestinationY1 = params->y0;
       blt.DestinationX2 = params->x1;
@@ -2197,8 +2198,6 @@ blorp_xy_fast_color_blit(struct blorp_batch *batch,
          blt.DestinationCompressionFormat =
             isl_get_render_compression_format(dst_surf->format);
       }
-
-      blt.DestinationMOCS = params->dst.addr.mocs;
 #endif
    }
 #endif
