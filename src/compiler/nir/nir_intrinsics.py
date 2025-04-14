@@ -1124,6 +1124,10 @@ intrinsic("load_sample_pos_from_id", src_comp=[1], dest_comp=2,
 # per-sample demote, or an inverted accumulating gl_SampleMask write.
 intrinsic("demote_samples", src_comp=[1])
 
+# Convert float value to coverage mask.
+intrinsic("alpha_to_coverage", src_comp=[1], dest_comp=1, indices=[],
+          flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[16])
+
 intrinsic("load_persp_center_rhw_ir3", dest_comp=1,
           flags=[CAN_ELIMINATE, CAN_REORDER])
 

@@ -5224,7 +5224,8 @@ bool nir_lower_alpha_test(nir_shader *shader, enum compare_func func,
                           const gl_state_index16 *alpha_ref_state_tokens);
 
 bool nir_lower_alpha_to_coverage(nir_shader *shader,
-                                 uint8_t nr_samples);
+                                 uint8_t nr_samples,
+                                 bool has_intrinsic);
 
 bool nir_lower_alpha_to_one(nir_shader *shader);
 
