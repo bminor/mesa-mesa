@@ -236,8 +236,7 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 #define radeon_emit_32bit_pointer(sh_offset, va, info)                                                                 \
    do {                                                                                                                \
       assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
-      radeon_set_sh_reg_seq(sh_offset, 1);                                                                             \
-      radeon_emit(va);                                                                                                 \
+      radeon_set_sh_reg(sh_offset, va);                                                                                \
    } while (0)
 
 #define radeon_emit_64bit_pointer(sh_offset, va)                                                                       \

@@ -9876,8 +9876,7 @@ radv_emit_userdata_task(const struct radv_cmd_state *cmd_state, struct radeon_cm
    }
 
    if (draw_id_offset) {
-      radeon_set_sh_reg_seq(draw_id_offset, 1);
-      radeon_emit(0);
+      radeon_set_sh_reg(draw_id_offset, 0);
    }
 
    radeon_end();
@@ -10132,8 +10131,7 @@ radv_emit_indirect_mesh_draw_packets(struct radv_cmd_buffer *cmd_buffer, const s
       unsigned reg = state->vtx_base_sgpr + (mesh_shader->info.cs.uses_grid_size ? 12 : 0);
 
       radeon_begin(cs);
-      radeon_set_sh_reg_seq(reg, 1);
-      radeon_emit(0);
+      radeon_set_sh_reg(reg, 0);
       radeon_end();
    }
 
