@@ -14,13 +14,13 @@ SKIP_FILE="$INSTALL/${GPU_VERSION}-android-cts-skips.txt"
 
 EXCLUDE_FILTERS=""
 if [ -e "$SKIP_FILE" ]; then
-  EXCLUDE_FILTERS="$(grep -v -E "(^#|^[[:space:]]*$)" "$SKIP_FILE" | sed -s 's/.*/--exclude-filter "\0" /g')"
+  EXCLUDE_FILTERS="$(grep -v -E "(^#|^[[:space:]]*$)" "$SKIP_FILE" | sed -e 's/\s*$//g' -e 's/.*/--exclude-filter "\0" /g')"
 fi
 
 INCLUDE_FILE="$INSTALL/${GPU_VERSION}-android-cts-include.txt"
 
 if [ -e "$INCLUDE_FILE" ]; then
-  INCLUDE_FILTERS="$(grep -v -E "(^#|^[[:space:]]*$)" "$INCLUDE_FILE" | sed -s 's/.*/--include-filter "\0" /g')"
+  INCLUDE_FILTERS="$(grep -v -E "(^#|^[[:space:]]*$)" "$INCLUDE_FILE" | sed -e 's/\s*$//g' -e 's/.*/--include-filter "\0" /g')"
 else
   INCLUDE_FILTERS=$(printf -- "--include-filter %s " $ANDROID_CTS_MODULES | sed -e 's/ $//g')
 fi
