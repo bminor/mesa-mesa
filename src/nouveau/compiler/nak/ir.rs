@@ -609,18 +609,6 @@ pub struct RegRef {
 impl RegRef {
     pub const MAX_IDX: u32 = (1 << 26) - 1;
 
-    fn zero_idx(file: RegFile) -> u32 {
-        match file {
-            RegFile::GPR => 255,
-            RegFile::UGPR => 63,
-            RegFile::Pred => 7,
-            RegFile::UPred => 7,
-            RegFile::Carry => panic!("Carry has no zero index"),
-            RegFile::Bar => panic!("Bar has no zero index"),
-            RegFile::Mem => panic!("Mem has no zero index"),
-        }
-    }
-
     pub fn new(file: RegFile, base_idx: u32, comps: u8) -> RegRef {
         assert!(base_idx <= Self::MAX_IDX);
         let mut packed = base_idx;
@@ -629,10 +617,6 @@ impl RegRef {
         assert!(u8::from(file) < 8);
         packed |= u32::from(u8::from(file)) << 29;
         RegRef { packed: packed }
-    }
-
-    pub fn zero(file: RegFile, comps: u8) -> RegRef {
-        RegRef::new(file, RegRef::zero_idx(file), comps)
     }
 
     pub fn base_idx(&self) -> u32 {
