@@ -2167,21 +2167,25 @@ ssa_def_bits_used(const nir_def *def, int recur)
 
          case nir_op_extract_u8:
          case nir_op_extract_i8:
-            if (src_idx == 0 && nir_src_is_const(use_alu->src[1].src)) {
-               unsigned chunk = nir_src_comp_as_uint(use_alu->src[1].src,
-                                                     use_alu->src[1].swizzle[0]);
-               bits_used |= 0xffull << (chunk * 8);
-               break;
-            } else {
-               return all_bits;
-            }
-
          case nir_op_extract_u16:
          case nir_op_extract_i16:
             if (src_idx == 0 && nir_src_is_const(use_alu->src[1].src)) {
-               unsigned chunk = nir_src_comp_as_uint(use_alu->src[1].src,
-                                                     use_alu->src[1].swizzle[0]);
-               bits_used |= 0xffffull << (chunk * 16);
+               unsigned chunk = nir_alu_src_as_uint(use_alu->src[1]);
+               uint64_t defs_bits_used = ssa_def_bits_used(&use_alu->def, recur);
+               unsigned field_bits = use_alu->op == nir_op_extract_u8 ||
+                                     use_alu->op == nir_op_extract_i8 ? 8 : 16;
+               uint64_t field_bitmask = BITFIELD64_MASK(field_bits);
+
+               /* If one of the sign-extended bits is used, set the last src bit
+                * as used.
+                */
+               if ((use_alu->op == nir_op_extract_i8 ||
+                    use_alu->op == nir_op_extract_i16) &&
+                   defs_bits_used & ~field_bitmask)
+                  defs_bits_used |= BITFIELD64_BIT(field_bits - 1);
+
+               bits_used |= (field_bitmask & defs_bits_used) <<
+                            (chunk * field_bits);
                break;
             } else {
                return all_bits;

@@ -137,6 +137,7 @@ TEST_F(ssa_def_bits_used_test, extract_i16_with_const_index)
                                      src1_imm[3]);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_extract_i16, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
@@ -168,6 +169,7 @@ TEST_F(ssa_def_bits_used_test, extract_u16_with_const_index)
                                      src1_imm[3]);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_extract_u16, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
@@ -199,6 +201,7 @@ TEST_F(ssa_def_bits_used_test, extract_i8_with_const_index)
                                      src1_imm[3]);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_extract_i8, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
@@ -230,6 +233,7 @@ TEST_F(ssa_def_bits_used_test, extract_u8_with_const_index)
                                      src1_imm[3]);
 
    nir_alu_instr *alu = build_alu_instr(nir_op_extract_u8, src0, src1);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, &alu->def, 0x1);
 
    ASSERT_NE((void *) 0, alu);
 
