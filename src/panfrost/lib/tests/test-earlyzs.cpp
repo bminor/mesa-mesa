@@ -45,6 +45,7 @@
 #define API_EARLY                BITFIELD_BIT(8)
 #define SHADER_READS_ZS          BITFIELD_BIT(9)
 #define ARCH_HAS_READONLY_ZS_OPT BITFIELD_BIT(10)
+#define ARCH_HAS_STATE_TRACK_OPT BITFIELD_BIT(11)
 
 static void
 test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
@@ -59,6 +60,13 @@ test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
    info.fs.early_fragment_tests = !!(flags & API_EARLY);
    info.writes_global = !!(flags & SIDEFX);
 
+   unsigned arch = 9;
+
+   if (flags & ARCH_HAS_STATE_TRACK_OPT)
+      arch = 11;
+   else if (flags & ARCH_HAS_READONLY_ZS_OPT)
+      arch = 10;
+
    if (flags & SHADER_READS_ZS) {
       if (flags & (WRITES_Z | WRITES_S))
          zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT;
@@ -67,9 +75,8 @@ test(enum pan_earlyzs expected_update, enum pan_earlyzs expected_kill,
    }
 
    struct pan_earlyzs_state result = pan_earlyzs_get(
-      pan_earlyzs_analyze(&info, flags & ARCH_HAS_READONLY_ZS_OPT ? 10 : 9),
-      !!(flags & ZS_WRITEMASK), !!(flags & ALPHA2COV),
-      !!(flags & ZS_ALWAYS_PASSES), zs_read);
+      pan_earlyzs_analyze(&info, arch), !!(flags & ZS_WRITEMASK),
+      !!(flags & ALPHA2COV), !!(flags & ZS_ALWAYS_PASSES), zs_read);
 
    ASSERT_EQ(result.update, expected_update);
    ASSERT_EQ(result.kill, expected_kill);
@@ -170,6 +177,7 @@ TEST(EarlyZS, ShaderReadZS)
 TEST(EarlyZS, NoSideFXNoShaderZSAlt)
 {
    CASE(WEAK_EARLY, WEAK_EARLY, ZS_ALWAYS_PASSES);
+   CASE(FORCE_EARLY, WEAK_EARLY, ZS_ALWAYS_PASSES | ARCH_HAS_STATE_TRACK_OPT);
    CASE(FORCE_LATE, WEAK_EARLY,
         ZS_ALWAYS_PASSES | ALPHA2COV | DISCARD | WRITES_COV);
    CASE(WEAK_EARLY, WEAK_EARLY, ZS_ALWAYS_PASSES | ZS_WRITEMASK);

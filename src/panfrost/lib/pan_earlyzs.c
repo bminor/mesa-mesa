@@ -46,7 +46,8 @@ best_early_mode(bool zs_always_passes, bool force_early)
 static struct pan_earlyzs_state
 analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
         bool alpha_to_coverage, bool zs_always_passes,
-        enum pan_earlyzs_zs_tilebuf_read zs_read)
+        enum pan_earlyzs_zs_tilebuf_read zs_read,
+        bool should_force_early_update)
 {
    /* If the shader writes depth or stencil, all depth/stencil tests must
     * be deferred until the value is known after the ZS_EMIT instruction,
@@ -63,7 +64,8 @@ analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
    bool shader_writes_zs = (s->fs.writes_depth || s->fs.writes_stencil);
    bool late_update = shader_writes_zs || alpha_to_coverage;
    bool late_kill = shader_writes_zs;
-   bool force_early_update = s->fs.early_fragment_tests;
+   bool force_early_update =
+      s->fs.early_fragment_tests || should_force_early_update;
    bool force_early_kill = s->fs.early_fragment_tests;
 
    /* Late coverage updates are required if the coverage mask depends on
@@ -134,6 +136,9 @@ analyze(const struct pan_shader_info *s, bool writes_zs_or_oq,
 struct pan_earlyzs_lut
 pan_earlyzs_analyze(const struct pan_shader_info *s, unsigned arch)
 {
+   /* On v11+, update operation cannot be weak early */
+   bool should_force_early_update = arch >= 11;
+
    struct pan_earlyzs_lut lut;
 
    for (unsigned v0 = 0; v0 < 2; ++v0) {
@@ -148,7 +153,7 @@ pan_earlyzs_analyze(const struct pan_shader_info *s, unsigned arch)
                   zs_read = PAN_EARLYZS_ZS_TILEBUF_READ_NO_OPT;
 
                lut.states[v0][v1][v2][v3] =
-                  analyze(s, v0, v1, v2, zs_read);
+                  analyze(s, v0, v1, v2, zs_read, should_force_early_update);
             }
          }
       }
