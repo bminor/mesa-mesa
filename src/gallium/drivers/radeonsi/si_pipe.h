@@ -1094,6 +1094,8 @@ struct si_context {
       struct si_shader_ctx_state shaders[SI_NUM_GRAPHICS_SHADERS];
    };
    struct si_cs_shader_state cs_shader_state;
+   struct si_cs_shader_state ts_shader_state;
+   struct si_shader_ctx_state ms_shader_state;
    bool compute_ping_pong_launch;
    /* if current tcs set by user */
    bool is_user_tcs;

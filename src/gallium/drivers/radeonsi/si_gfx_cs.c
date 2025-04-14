@@ -524,6 +524,7 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
    si_add_all_descriptors_to_bo_list(ctx);
    si_shader_pointers_mark_dirty(ctx);
    ctx->cs_shader_state.emitted_program = NULL;
+   ctx->ts_shader_state.emitted_program = NULL;
 
    /* The CS initialization should be emitted before everything else. */
    if (ctx->cs_preamble_state) {
