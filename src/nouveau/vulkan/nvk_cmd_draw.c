@@ -28,6 +28,7 @@
 #include "nv_push_clc197.h"
 #include "nv_push_clc397.h"
 #include "nv_push_clc597.h"
+#include "clcd97.h"
 #include "drf.h"
 
 static inline uint16_t
@@ -138,7 +139,7 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
       free(dw);
    }
 
-   if (pdev->info.cls_eng3d >= TURING_A)
+   if (pdev->info.cls_eng3d >= TURING_A && pdev->info.cls_eng3d < BLACKWELL_A)
       P_IMMD(p, NVC597, SET_MME_DATA_FIFO_CONFIG, FIFO_SIZE_SIZE_4KB);
 
    /* Enable FP helper invocation memory loads

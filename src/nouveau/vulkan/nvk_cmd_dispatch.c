@@ -15,6 +15,7 @@
 #include "cla1c0.h"
 #include "clc0c0.h"
 #include "clc5c0.h"
+#include "clcdc0.h"
 #include "nv_push_cl90c0.h"
 #include "nv_push_cl9097.h"
 #include "nv_push_cla0c0.h"
@@ -514,7 +515,8 @@ nvk_CmdDispatchIndirect(VkCommandBuffer commandBuffer,
    struct nv_push *p;
    if (nvk_cmd_buffer_compute_cls(cmd) >= TURING_COMPUTE_A) {
       p = nvk_cmd_buffer_push(cmd, 14);
-      P_IMMD(p, NVC597, SET_MME_DATA_FIFO_CONFIG, FIFO_SIZE_SIZE_4KB);
+      if (nvk_cmd_buffer_compute_cls(cmd) < BLACKWELL_COMPUTE_A)
+         P_IMMD(p, NVC597, SET_MME_DATA_FIFO_CONFIG, FIFO_SIZE_SIZE_4KB);
       P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_DISPATCH_INDIRECT));
       P_INLINE_DATA(p, dispatch_addr >> 32);
       P_INLINE_DATA(p, dispatch_addr);

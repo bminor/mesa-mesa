@@ -5,6 +5,7 @@
 #include "mme_runner.h"
 #include "mme_tu104_sim.h"
 
+#include "clcd97.h"
 #include "nv_push_clc597.h"
 
 class mme_tu104_sim_test : public ::testing::Test, public mme_hw_runner {
@@ -1638,7 +1639,8 @@ TEST_F(mme_tu104_sim_test, dma_read_fifoed)
 
    auto macro = mme_builder_finish_vec(&b);
 
-   P_IMMD(p, NVC597, SET_MME_DATA_FIFO_CONFIG, FIFO_SIZE_SIZE_4KB);
+   if (devinfo->cls_eng3d < BLACKWELL_A)
+      P_IMMD(p, NVC597, SET_MME_DATA_FIFO_CONFIG, FIFO_SIZE_SIZE_4KB);
 
    for (uint32_t i = 0; i < 64; i++)
       data[i] = 1000 + i;
