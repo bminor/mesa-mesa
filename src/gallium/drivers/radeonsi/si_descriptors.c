@@ -1185,18 +1185,20 @@ void si_get_inline_uniform_state(union si_shader_key *key, mesa_shader_stage sha
 
 void si_invalidate_inlinable_uniforms(struct si_context *sctx, mesa_shader_stage shader)
 {
-   if (shader == MESA_SHADER_COMPUTE)
+   if (shader == MESA_SHADER_COMPUTE || shader == MESA_SHADER_TASK)
       return;
 
    bool inline_uniforms;
    uint32_t *inlined_values;
-   si_get_inline_uniform_state(&sctx->shaders[shader].key, shader, &inline_uniforms, &inlined_values);
+   struct si_shader_ctx_state *state = shader == MESA_SHADER_MESH ?
+      &sctx->ms_shader_state : &sctx->shaders[shader];
+   si_get_inline_uniform_state(&state->key, shader, &inline_uniforms, &inlined_values);
 
    if (inline_uniforms) {
       if (shader == MESA_SHADER_FRAGMENT)
-         sctx->shaders[shader].key.ps.opt.inline_uniforms = false;
+         state->key.ps.opt.inline_uniforms = false;
       else
-         sctx->shaders[shader].key.ge.opt.inline_uniforms = false;
+         state->key.ge.opt.inline_uniforms = false;
 
       memset(inlined_values, 0, MAX_INLINABLE_UNIFORMS * 4);
       sctx->dirty_shaders_mask |= BITFIELD_BIT(shader);
@@ -1238,19 +1240,21 @@ static void si_set_inlinable_constants(struct pipe_context *ctx,
 {
    struct si_context *sctx = (struct si_context *)ctx;
 
-   if (shader == MESA_SHADER_COMPUTE)
+   if (shader == MESA_SHADER_COMPUTE || shader == MESA_SHADER_TASK)
       return;
 
    bool inline_uniforms;
    uint32_t *inlined_values;
-   si_get_inline_uniform_state(&sctx->shaders[shader].key, shader, &inline_uniforms, &inlined_values);
+   struct si_shader_ctx_state *state = shader == MESA_SHADER_MESH ?
+      &sctx->ms_shader_state : &sctx->shaders[shader];
+   si_get_inline_uniform_state(&state->key, shader, &inline_uniforms, &inlined_values);
 
    if (!inline_uniforms) {
       /* It's the first time we set the constants. Always update shaders. */
       if (shader == MESA_SHADER_FRAGMENT)
-         sctx->shaders[shader].key.ps.opt.inline_uniforms = true;
+         state->key.ps.opt.inline_uniforms = true;
       else
-         sctx->shaders[shader].key.ge.opt.inline_uniforms = true;
+         state->key.ge.opt.inline_uniforms = true;
 
       memcpy(inlined_values, values, num_values * 4);
       sctx->dirty_shaders_mask |= BITFIELD_BIT(shader);
