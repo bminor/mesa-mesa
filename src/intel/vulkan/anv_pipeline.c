@@ -564,6 +564,8 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
 
    key->mesh_input = is_mesh;
 
+   key->min_sample_shading = ms ? ms->min_sample_shading : 1.0f;
+
    /* Vulkan doesn't support fixed-function alpha test */
    key->alpha_test_replicate_alpha = false;
 
@@ -1569,6 +1571,7 @@ anv_pipeline_compile_fs(const struct brw_compiler *compiler,
                         struct anv_graphics_base_pipeline *pipeline,
                         uint32_t view_mask,
                         bool use_primitive_replication,
+                        const struct vk_multisample_state *ms,
                         char **error_str)
 {
    /* When using Primitive Replication for multiview, each view gets its own
@@ -2519,7 +2522,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
          anv_pipeline_compile_fs(compiler, stage_ctx, device,
                                  stage, prev_stage, pipeline,
                                  view_mask, use_primitive_replication,
-                                 &error_str);
+                                 state->ms, &error_str);
          break;
       default:
          UNREACHABLE("Invalid graphics shader stage");
@@ -2917,10 +2920,8 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
       /* TODO(mesh): Mesh vs. Multiview with Instancing. */
    }
 
-   if (pipeline->base.shaders[MESA_SHADER_FRAGMENT] && state->ms) {
+   if (pipeline->base.shaders[MESA_SHADER_FRAGMENT] && state->ms)
       pipeline->sample_shading_enable = state->ms->sample_shading_enable;
-      pipeline->min_sample_shading = state->ms->min_sample_shading;
-   }
 
    /* Mark all color output as unused by default */
    memset(pipeline->color_output_mapping,

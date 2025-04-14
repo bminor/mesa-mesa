@@ -960,6 +960,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
    prog_data->sample_shading =
       shader->info.fs.uses_sample_shading ||
       shader->info.outputs_read;
+   prog_data->min_sample_shading = key->min_sample_shading;
 
    assert(key->multisample_fbo != INTEL_NEVER ||
           key->persample_interp == INTEL_NEVER);

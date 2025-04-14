@@ -4123,7 +4123,6 @@ struct anv_cmd_graphics_state {
    bool kill_pixel;
    bool uses_xfb;
    bool sample_shading_enable;
-   float min_sample_shading;
    uint32_t primitive_id_index;
    uint32_t first_vue_slot;
 
@@ -5096,7 +5095,6 @@ struct anv_graphics_pipeline {
    bool                                         kill_pixel;
    bool                                         uses_xfb;
    bool                                         sample_shading_enable;
-   float                                        min_sample_shading;
 
    /* Number of VERTEX_ELEMENT_STATE input elements used by the shader */
    uint32_t                                     vs_input_elements;
