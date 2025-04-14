@@ -60,7 +60,14 @@ nvk_push_dispatch_state_init(struct nvk_queue *queue, struct nv_push *p)
        *
        * Really?!?  TODO: Fix this for realz.
        */
-      uint64_t temp = 0xfeULL << 24;
+      uint64_t temp;
+
+      /* shared memory window needs 4GB alignment on hopper+ */
+      if (pdev->info.cls_compute >= HOPPER_COMPUTE_A)
+         temp = 1ULL << 32;
+      else
+         temp = 0xfeULL << 24;
+
       P_MTHD(p, NVC3C0, SET_SHADER_SHARED_MEMORY_WINDOW_A);
       P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_A(p, temp >> 32);
       P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_B(p, temp & 0xffffffff);
