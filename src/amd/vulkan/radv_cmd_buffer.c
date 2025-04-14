@@ -2472,6 +2472,24 @@ radv_emit_vgt_gs_out(struct radv_cmd_buffer *cmd_buffer, uint32_t vgt_gs_out_pri
 }
 
 static void
+radv_gfx11_emit_meshlet(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ms)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   assert(pdev->info.gfx_level >= GFX11);
+
+   radeon_begin(cs);
+   radeon_set_sh_reg_seq(R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, 2);
+   radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_dim);
+   radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_exp_alloc);
+   if (pdev->info.gfx_level >= GFX12)
+      radeon_set_sh_reg(R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL, ms->info.regs.ms.spi_shader_gs_meshlet_ctrl);
+   radeon_end();
+}
+
+static void
 radv_emit_mesh_shader(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -2486,17 +2504,10 @@ radv_emit_mesh_shader(struct radv_cmd_buffer *cmd_buffer)
    radeon_opt_set_context_reg(cmd_buffer, R_028B38_VGT_GS_MAX_VERT_OUT, RADV_TRACKED_VGT_GS_MAX_VERT_OUT,
                               ms->info.regs.vgt_gs_max_vert_out);
    radeon_set_uconfig_reg_idx(&pdev->info, R_030908_VGT_PRIMITIVE_TYPE, 1, V_008958_DI_PT_POINTLIST);
-
-   if (pdev->mesh_fast_launch_2) {
-      radeon_set_sh_reg_seq(R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, 2);
-      radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_dim);
-      radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_exp_alloc);
-
-      if (pdev->info.gfx_level >= GFX12)
-         radeon_set_sh_reg(R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL, ms->info.regs.ms.spi_shader_gs_meshlet_ctrl);
-   }
-
    radeon_end();
+
+   if (pdev->mesh_fast_launch_2)
+      radv_gfx11_emit_meshlet(cmd_buffer, ms);
 
    radv_emit_vgt_gs_out(cmd_buffer, gs_out);
 }
