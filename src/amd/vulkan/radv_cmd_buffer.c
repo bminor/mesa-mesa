@@ -1978,8 +1978,6 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, ps_epilog->bo);
 
-   assert((ps_epilog->va >> 32) == pdev->info.address32_hi);
-
    const uint32_t epilog_pc_offset = radv_get_user_sgpr_loc(ps_shader, AC_UD_EPILOG_PC);
    radeon_begin(cmd_buffer->cs);
    radeon_emit_32bit_pointer(epilog_pc_offset, ps_epilog->va, &pdev->info);
