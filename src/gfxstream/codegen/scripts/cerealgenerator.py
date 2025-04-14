@@ -531,11 +531,10 @@ class BumpPool;
 #include "{self.baseLibDirPrefix}/BumpPool.h"
 #include "{self.baseLibDirPrefix}/system/System.h"
 #include "{self.baseLibDirPrefix}/Metrics.h"
-#include "render-utils/IOStream.h"
 #include "FrameBuffer.h"
 #include "gfxstream/host/Tracing.h"
+#include "gfxstream/host/iostream.h"
 #include "gfxstream/host/logging.h"
-
 #include "VkDecoderGlobalState.h"
 #include "VkDecoderSnapshot.h"
 
