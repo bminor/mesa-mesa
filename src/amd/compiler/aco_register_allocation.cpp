@@ -3036,6 +3036,14 @@ get_affinities(ra_ctx& ctx)
                ctx.assignments[instr->operands[0].tempId()].vcc = true;
          } else if (instr->opcode == aco_opcode::s_sendmsg) {
             ctx.assignments[instr->operands[0].tempId()].m0 = true;
+         } else if (instr->format == Format::DS) {
+            bool is_vector = false;
+            for (unsigned i = 0, vector_begin = 0; i < instr->operands.size(); i++) {
+               if (is_vector || instr->operands[i].isVectorAligned())
+                  ctx.vectors[instr->operands[i].tempId()] = vector_info(instr.get(), vector_begin);
+               is_vector = instr->operands[i].isVectorAligned();
+               vector_begin = is_vector ? vector_begin : i + 1;
+            }
          }
 
          auto tied_defs = get_tied_defs(instr.get());
