@@ -3,9 +3,9 @@ Panfrost
 
 The Panfrost driver stack includes an OpenGL ES implementation for Arm Mali
 GPUs based on the Midgard and Bifrost microarchitectures. It is **conformant**
-on `Mali-G52 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_949>`_,
-`Mali-G57 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_980>`_
-and `Mali-G610 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_1053>`_,
+on `Mali-G52 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_949>`__,
+`Mali-G57 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_980>`__
+and `Mali-G610 <https://www.khronos.org/conformance/adopters/conformant-products/opengles#submission_1053>`__,
 but **non-conformant** on other GPUs.
 
 PanVK, the Vulkan implementation in the Panfrost driver stack, is currently
@@ -68,7 +68,7 @@ Chat
 
 Panfrost developers and users hang out on IRC at ``#panfrost`` on OFTC. Note
 that registering and authenticating with ``NickServ`` is required to prevent
-spam. `Join the chat. <https://webchat.oftc.net/?channels=panfrost>`_
+spam. `Join the chat. <https://webchat.oftc.net/?channels=panfrost>`__
 
 Technical details
 -----------------
