@@ -234,7 +234,7 @@ struct radeon_info {
    bool has_syncobj;
    bool has_timeline_syncobj;
    bool has_fence_to_handle;
-   bool has_local_buffers;
+   bool has_vm_always_valid;
    bool has_bo_metadata;
    bool has_eqaa_surface_allocator;
    bool has_sparse_vm_mappings;

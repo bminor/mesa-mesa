@@ -62,7 +62,7 @@ static bool do_winsys_init(struct amdgpu_winsys *aws,
 
    /* TODO: Enable this once the kernel handles it efficiently. */
    if (!aws->info.userq_ip_mask)
-      aws->info.has_local_buffers = false;
+      aws->info.has_vm_always_valid = false;
 
    return true;
 
