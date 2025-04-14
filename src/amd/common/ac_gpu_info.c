@@ -2413,91 +2413,68 @@ ac_get_compute_resource_limits(const struct radeon_info *info, unsigned waves_pe
 void ac_get_hs_info(const struct radeon_info *info,
                     struct ac_hs_info *hs)
 {
-   bool double_offchip_buffers = info->gfx_level >= GFX7 &&
-                                 info->family != CHIP_CARRIZO &&
-                                 info->family != CHIP_STONEY;
-   unsigned max_offchip_buffers_per_se;
-   unsigned max_offchip_buffers;
-   unsigned offchip_granularity;
-   unsigned hs_offchip_param;
-
-   hs->tess_offchip_block_dw_size =
-      info->family == CHIP_HAWAII ? 4096 : 8192;
-
-   /*
-    * Per RadeonSI:
-    * This must be one less than the maximum number due to a hw limitation.
-    * Various hardware bugs need this.
-    *
-    * Per AMDVLK:
-    * Vega10 should limit max_offchip_buffers to 508 (4 * 127).
-    * Gfx7 should limit max_offchip_buffers to 508
-    * Gfx6 should limit max_offchip_buffers to 126 (2 * 63)
-    *
-    * Follow AMDVLK here.
+   bool double_offchip_wg = info->gfx_level >= GFX7 &&
+                            info->family != CHIP_CARRIZO &&
+                            info->family != CHIP_STONEY;
+   /* This is the size of all TCS outputs in memory per workgroup.
+    * Hawaii can't handle num_workgroups > 256 with 8K per workgroup, so use 4K.
     */
-   if (info->gfx_level >= GFX11) {
-      max_offchip_buffers_per_se = 256; /* TODO: we could decrease this to reduce memory/cache usage */
-   } else if (info->gfx_level >= GFX10) {
-      max_offchip_buffers_per_se = 128;
-   } else if (info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20) {
-      /* Only certain chips can use the maximum value. */
-      max_offchip_buffers_per_se = double_offchip_buffers ? 128 : 64;
-   } else {
-      max_offchip_buffers_per_se = double_offchip_buffers ? 127 : 63;
-   }
+   unsigned wg_size_in_dwords = info->family == CHIP_HAWAII ? 4096 : 8192;
+   unsigned wg_size_enum;
+   unsigned num_workgroups_per_se;
 
-   max_offchip_buffers = max_offchip_buffers_per_se * info->max_se;
-
-   /* Hawaii has a bug with offchip buffers > 256 that can be worked
-    * around by setting 4K granularity.
-    */
-   if (hs->tess_offchip_block_dw_size == 4096) {
-      assert(info->family == CHIP_HAWAII);
-      offchip_granularity = V_03093C_X_4K_DWORDS;
-   } else {
-      assert(hs->tess_offchip_block_dw_size == 8192);
-      offchip_granularity = V_03093C_X_8K_DWORDS;
-   }
-
-   switch (info->gfx_level) {
-   case GFX6:
-      max_offchip_buffers = MIN2(max_offchip_buffers, 126);
+   switch (wg_size_in_dwords) {
+   case 8192:
+      wg_size_enum = V_03093C_X_8K_DWORDS;
       break;
-   case GFX7:
-   case GFX8:
-   case GFX9:
-      max_offchip_buffers = MIN2(max_offchip_buffers, 508);
+   case 4096:
+      wg_size_enum = V_03093C_X_4K_DWORDS;
       break;
-   case GFX10:
+   case 2048:
+      wg_size_enum = V_03093C_X_2K_DWORDS;
+      break;
+   case 1024:
+      wg_size_enum = V_03093C_X_1K_DWORDS;
       break;
    default:
-      break;
+      unreachable("invalid TCS workgroup size");
    }
 
-   hs->max_offchip_buffers = max_offchip_buffers;
+   /* Vega10 should limit num_workgroups to 508 (127 per SE)
+    * Gfx7 should limit num_workgroups to 508 (127 per SE)
+    * Gfx6 should limit num_workgroups to 126 (63 per SE)
+    */
+   if (info->gfx_level >= GFX11) {
+      num_workgroups_per_se = 256;
+   } else if (info->gfx_level >= GFX10) {
+      num_workgroups_per_se = 128;
+   } else if (info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20) {
+      num_workgroups_per_se = double_offchip_wg ? 128 : 64;
+   } else {
+      num_workgroups_per_se = double_offchip_wg ? 127 : 63;
+   }
+
+   unsigned num_workgroups = num_workgroups_per_se * info->max_se;
 
    if (info->gfx_level >= GFX11) {
       /* OFFCHIP_BUFFERING is per SE. */
-      hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(max_offchip_buffers_per_se - 1) |
-                         S_03093C_OFFCHIP_GRANULARITY_GFX103(offchip_granularity);
+      hs->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(num_workgroups_per_se - 1) |
+                             S_03093C_OFFCHIP_GRANULARITY_GFX103(wg_size_enum);
    } else if (info->gfx_level >= GFX10_3) {
-      hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(max_offchip_buffers - 1) |
-                         S_03093C_OFFCHIP_GRANULARITY_GFX103(offchip_granularity);
+      hs->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(num_workgroups - 1) |
+                             S_03093C_OFFCHIP_GRANULARITY_GFX103(wg_size_enum);
    } else if (info->gfx_level >= GFX7) {
-      if (info->gfx_level >= GFX8)
-         --max_offchip_buffers;
-      hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX7(max_offchip_buffers) |
-                         S_03093C_OFFCHIP_GRANULARITY_GFX7(offchip_granularity);
+      hs->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX7(num_workgroups -
+                                                             (info->gfx_level >= GFX8 ? 1 : 0)) |
+                             S_03093C_OFFCHIP_GRANULARITY_GFX7(wg_size_enum);
    } else {
-      hs_offchip_param = S_0089B0_OFFCHIP_BUFFERING(max_offchip_buffers);
+      hs->hs_offchip_param = S_0089B0_OFFCHIP_BUFFERING(num_workgroups) |
+                             S_0089B0_OFFCHIP_GRANULARITY(wg_size_enum);
    }
-
-   hs->hs_offchip_param = hs_offchip_param;
 
    hs->tess_factor_ring_size = 48 * 1024 * info->max_se;
    hs->tess_offchip_ring_offset = align(hs->tess_factor_ring_size, 64 * 1024);
-   hs->tess_offchip_ring_size = hs->max_offchip_buffers * hs->tess_offchip_block_dw_size * 4;
+   hs->tess_offchip_ring_size = num_workgroups * wg_size_in_dwords * 4;
 }
 
 static uint16_t get_task_num_entries(enum radeon_family fam)

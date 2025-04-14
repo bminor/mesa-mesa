@@ -348,8 +348,6 @@ unsigned ac_get_compute_resource_limits(const struct radeon_info *info,
                                         unsigned threadgroups_per_cu);
 
 struct ac_hs_info {
-   uint32_t tess_offchip_block_dw_size;
-   uint32_t max_offchip_buffers;
    uint32_t hs_offchip_param;
    uint32_t tess_factor_ring_size;
    uint32_t tess_offchip_ring_offset;
