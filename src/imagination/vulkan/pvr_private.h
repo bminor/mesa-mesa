@@ -109,8 +109,6 @@ struct pvr_physical_device {
 
    VkPhysicalDeviceMemoryProperties memory;
 
-   uint64_t heap_used;
-
    struct wsi_device wsi_device;
 
    struct rogue_compiler *compiler;
