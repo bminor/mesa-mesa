@@ -359,6 +359,7 @@ get_features(const struct panvk_physical_device *device,
       /* Vulkan 1.0 */
       .depthClamp = true,
       .depthBiasClamp = true,
+      .dualSrcBlend = true,
       .robustBufferAccess = true,
       .fullDrawIndexUint32 = true,
       .imageCubeArray = true,
@@ -758,8 +759,7 @@ get_device_properties(const struct panvk_instance *instance,
       .maxFragmentInputComponents = 128,
       /* 8 render targets. */
       .maxFragmentOutputAttachments = 8,
-      /* We don't support dual source blending yet. */
-      .maxFragmentDualSrcAttachments = 0,
+      .maxFragmentDualSrcAttachments = max_cbuf_atts,
       /* 8 render targets, 2^12 storage buffers and 2^8 storage images (see
        * above).
        */
