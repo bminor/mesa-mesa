@@ -346,53 +346,93 @@ amdvgpu_cs_submit_raw2(amdvgpu_device_handle dev, uint32_t ctx_id,
    /* Extract pointers from each chunk and copy them to the payload. */
    for (int i = 0; i < num_chunks; i++) {
       int extra_idx = 1 + chunk_count;
-      if (chunks[i].chunk_id == AMDGPU_CHUNK_ID_BO_HANDLES) {
+      const uint32_t cid = chunks[i].chunk_id;
+      if (cid == AMDGPU_CHUNK_ID_BO_HANDLES) {
          struct drm_amdgpu_bo_list_in *list_in = (void*) (uintptr_t)chunks[i].chunk_data;
          extra[extra_idx].ptr = (void*) (uintptr_t)list_in->bo_info_ptr;
          extra[extra_idx].size = list_in->bo_info_size * list_in->bo_number;
-      } else if (chunks[i].chunk_id == AMDGPU_CHUNK_ID_DEPENDENCIES ||
-                 chunks[i].chunk_id == AMDGPU_CHUNK_ID_FENCE ||
-                 chunks[i].chunk_id == AMDGPU_CHUNK_ID_IB) {
+      } else if (cid == AMDGPU_CHUNK_ID_DEPENDENCIES ||
+                 cid == AMDGPU_CHUNK_ID_FENCE ||
+                 cid == AMDGPU_CHUNK_ID_IB) {
          extra[extra_idx].ptr = (void*)(uintptr_t)chunks[i].chunk_data;
          extra[extra_idx].size = chunks[i].length_dw * 4;
 
-         if (chunks[i].chunk_id == AMDGPU_CHUNK_ID_IB) {
+         if (cid == AMDGPU_CHUNK_ID_IB) {
             struct drm_amdgpu_cs_chunk_ib *ib = (void*)(uintptr_t)chunks[i].chunk_data;
             virtio_ring_idx = cs_chunk_ib_to_virtio_ring_idx(dev, ib);
          }
-      } else if (chunks[i].chunk_id == AMDGPU_CHUNK_ID_SYNCOBJ_OUT ||
-                 chunks[i].chunk_id == AMDGPU_CHUNK_ID_SYNCOBJ_IN) {
+      } else if (cid == AMDGPU_CHUNK_ID_SYNCOBJ_OUT ||
+                 cid == AMDGPU_CHUNK_ID_SYNCOBJ_IN ||
+                 cid == AMDGPU_CHUNK_ID_SYNCOBJ_TIMELINE_WAIT ||
+                 cid == AMDGPU_CHUNK_ID_SYNCOBJ_TIMELINE_SIGNAL) {
          /* Translate from amdgpu CHUNK_ID_SYNCOBJ_* to drm_virtgpu_execbuffer_syncobj */
-         struct drm_amdgpu_cs_chunk_sem *amd_syncobj = (void*) (uintptr_t)chunks[i].chunk_data;
-         unsigned syncobj_count = (chunks[i].length_dw * 4) / sizeof(struct drm_amdgpu_cs_chunk_sem);
-         struct drm_virtgpu_execbuffer_syncobj *syncobjs =
-            calloc(syncobj_count, sizeof(struct drm_virtgpu_execbuffer_syncobj));
+         struct drm_amdgpu_cs_chunk_sem *amd_sem = NULL;
+         struct drm_amdgpu_cs_chunk_syncobj *amd_syncobj = NULL;
+         unsigned new_syncobj_count;
+         struct drm_virtgpu_execbuffer_syncobj **syncobjs;
+         uint32_t *count;
 
+         switch (cid) {
+            case AMDGPU_CHUNK_ID_SYNCOBJ_OUT:
+               syncobjs = &syncobj_out;
+               count = &syncobj_out_count;
+               new_syncobj_count = (chunks[i].length_dw * 4) / sizeof(*amd_sem);
+               amd_sem = (void*) (uintptr_t)chunks[i].chunk_data;
+               break;
+            case AMDGPU_CHUNK_ID_SYNCOBJ_IN:
+               syncobjs = &syncobj_in;
+               count = &syncobj_in_count;
+               new_syncobj_count = (chunks[i].length_dw * 4) / sizeof(*amd_sem);
+               amd_sem = (void*) (uintptr_t)chunks[i].chunk_data;
+               break;
+            case AMDGPU_CHUNK_ID_SYNCOBJ_TIMELINE_SIGNAL:
+               syncobjs = &syncobj_out;
+               count = &syncobj_out_count;
+               new_syncobj_count = (chunks[i].length_dw * 4) / sizeof(*amd_syncobj);
+               amd_syncobj = (void*) (uintptr_t)chunks[i].chunk_data;
+               break;
+            case AMDGPU_CHUNK_ID_SYNCOBJ_TIMELINE_WAIT:
+               syncobjs = &syncobj_in;
+               count = &syncobj_in_count;
+               new_syncobj_count = (chunks[i].length_dw * 4) / sizeof(*amd_syncobj);
+               amd_syncobj = (void*) (uintptr_t)chunks[i].chunk_data;
+               break;
+            default:
+               assert(false);
+               ret = -EINVAL;
+               goto error;
+         }
+
+
+         *syncobjs = realloc(*syncobjs, (*count + new_syncobj_count) * sizeof(struct drm_virtgpu_execbuffer_syncobj));
          if (syncobjs == NULL) {
             ret = -ENOMEM;
             goto error;
          }
 
-         for (int j = 0; j < syncobj_count; j++)
-            syncobjs[j].handle = amd_syncobj[j].handle;
-
-         if (chunks[i].chunk_id == AMDGPU_CHUNK_ID_SYNCOBJ_IN) {
-            syncobj_in_count = syncobj_count;
-            syncobj_in = syncobjs;
-         } else {
-            syncobj_out_count = syncobj_count;
-            syncobj_out = syncobjs;
+         int start = *count;
+         for (int j = 0; j < new_syncobj_count; j++) {
+            if (amd_syncobj) {
+               (*syncobjs)[start + j].handle = amd_syncobj[j].handle;
+               (*syncobjs)[start + j].flags = amd_syncobj[j].flags;
+               (*syncobjs)[start + j].point = amd_syncobj[j].point;
+            } else {
+               (*syncobjs)[start + j].handle = amd_sem[j].handle;
+               (*syncobjs)[start + j].flags = 0;
+               (*syncobjs)[start + j].point = 0;
+            }
          }
+         *count += new_syncobj_count;
 
          /* This chunk was converted to virtgpu UAPI so we don't need to forward it
           * to the host.
           */
          continue;
       } else {
-         mesa_loge("Unhandled chunk_id: %d\n", chunks[i].chunk_id);
+         mesa_loge("Unhandled chunk_id: %d\n", cid);
          continue;
       }
-      descriptors[chunk_count].chunk_id = chunks[i].chunk_id;
+      descriptors[chunk_count].chunk_id = cid;
       descriptors[chunk_count].offset = offset;
       descriptors[chunk_count].length_dw = extra[extra_idx].size / 4;
       offset += extra[extra_idx].size;
