@@ -358,8 +358,6 @@ unsigned radv_get_default_max_sample_dist(int log_samples);
 void radv_emit_default_sample_locations(const struct radv_physical_device *pdev, struct radeon_cmdbuf *cs,
                                         int nr_samples);
 
-unsigned radv_get_dcc_max_uncompressed_block_size(const struct radv_device *device, const struct radv_image *image);
-
 struct radv_color_buffer_info {
    struct ac_cb_surface ac;
 };

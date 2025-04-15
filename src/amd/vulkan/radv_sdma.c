@@ -208,11 +208,10 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
    const uint32_t number_type = radv_translate_buffer_numformat(desc, vk_format_get_first_non_void_channel(format));
    const uint32_t surface_type = radv_sdma_surface_type_from_aspect_mask(subresource.aspectMask);
    const uint32_t max_comp_block_size = surf->u.gfx9.color.dcc.max_compressed_block_size;
-   const uint32_t max_uncomp_block_size = radv_get_dcc_max_uncompressed_block_size(device, image);
    const uint32_t pipe_aligned = radv_htile_enabled(image, subresource.mipLevel) || surf->u.gfx9.color.dcc.pipe_aligned;
 
    return data_format | alpha_is_on_msb << 8 | number_type << 9 | surface_type << 12 | max_comp_block_size << 24 |
-          max_uncomp_block_size << 26 | pipe_aligned << 31;
+          V_028C78_MAX_BLOCK_SIZE_256B << 26 | pipe_aligned << 31;
 }
 
 static uint32_t
