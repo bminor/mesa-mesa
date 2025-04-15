@@ -578,13 +578,19 @@ enum vpe_transfer_function {
  *  @brief Alpha mode of the stream.
  */
 enum vpe_alpha_mode {
-    VPE_ALPHA_OPAQUE, /**< Opaque. In this mode, If output has alpha channel, it is set to
-                       * maximum value. For FP16 format it is set to 125.0f,
-                       * and 2^(AlphaChannelBitDepth)-1 for other formats.
-                       */
-    VPE_ALPHA_BGCOLOR /**< If the output has alpha channel, sets the output alpha to be the
-                       * alpha value of the user-provided background color.
-                       */
+    VPE_ALPHA_OPAQUE,        /**< Opaque. In this mode, If output has alpha channel, it is set to
+                              * maximum value. For FP16 format it is set to 125.0f,
+                              * and 2^(AlphaChannelBitDepth)-1 for other formats.
+                              */
+    VPE_ALPHA_BGCOLOR,       /**< If the output has alpha channel, sets the output alpha to be the
+                              * alpha value of the user-provided background color.
+                              */
+    VPE_ALPHA_DESTINATION,   /**< If the output has alpha channel, sets the output alpha to be the
+                              * alpha value of the destination pixel.
+                              */
+    VPE_ALPHA_SOURCE_STREAM, /**< If the output has alpha channel, sets the output alpha to be the
+                              * alpha value of the source pixel.
+                              */
 };
 
 /** @struct vpe_color_space
