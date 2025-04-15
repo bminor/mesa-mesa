@@ -1024,7 +1024,7 @@
         "description": "EGL: legacy-x11=dri2 should support hardware driver",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "323bad6b18717fcc395f67ef508e5a3d0aed7d02",
         "notes": null
