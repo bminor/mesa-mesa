@@ -377,6 +377,7 @@ get_features(const struct panvk_physical_device *device,
       .fragmentStoresAndAtomics = arch >= 10,
       .shaderImageGatherExtended = true,
       .shaderStorageImageExtendedFormats = true,
+      .shaderStorageImageReadWithoutFormat = true,
       .shaderUniformBufferArrayDynamicIndexing = true,
       .shaderSampledImageArrayDynamicIndexing = true,
       .shaderStorageBufferArrayDynamicIndexing = true,
@@ -1396,7 +1397,8 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    }
 
    if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
-      features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
+      features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+                  VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
 
    if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
       features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
@@ -1459,7 +1461,8 @@ get_image_format_features(struct panvk_physical_device *physical_device,
                  VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
                  VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
                  VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT |
-                 VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT);
+                 VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+                 VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT);
 
    /* This is supported on all YCbCr formats */
    features |=
@@ -1514,7 +1517,8 @@ get_buffer_format_features(struct panvk_physical_device *physical_device,
       features |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
    if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
-      features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
+      features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
+                  VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
 
    if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
       features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
