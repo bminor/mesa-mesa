@@ -104,6 +104,7 @@ LOCAL_SHARED_LIBRARIES += \
     libutils
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 35; echo $$?), 0)
 LOCAL_SHARED_LIBRARIES += libui
+LOCAL_STATIC_LIBRARIES += libzstd
 MESON_GEN_PKGCONFIGS += ui
 endif
 MESON_GEN_PKGCONFIGS += android.hardware.graphics.mapper:4.0
