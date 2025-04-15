@@ -219,7 +219,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_depth_clip_control = true,
       .EXT_depth_clip_enable = true,
       .EXT_depth_range_unrestricted = info->cls_eng3d >= VOLTA_A,
-      .EXT_descriptor_buffer = true,
+      .EXT_descriptor_buffer = info->cls_eng3d >= MAXWELL_A,
       .EXT_descriptor_indexing = true,
       .EXT_device_generated_commands = info->cls_eng3d >= MAXWELL_B,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
@@ -558,10 +558,10 @@ nvk_get_device_features(const struct nv_device_info *info,
       .depthClipEnable = true,
 
       /* VK_EXT_descriptor_buffer */
-      .descriptorBuffer = true,
-      .descriptorBufferCaptureReplay = true,
-      .descriptorBufferImageLayoutIgnored = true,
-      .descriptorBufferPushDescriptors = true,
+      .descriptorBuffer = info->cls_eng3d >= MAXWELL_A,
+      .descriptorBufferCaptureReplay = info->cls_eng3d >= MAXWELL_A,
+      .descriptorBufferImageLayoutIgnored = info->cls_eng3d >= MAXWELL_A,
+      .descriptorBufferPushDescriptors = info->cls_eng3d >= MAXWELL_A,
 
       /* VK_EXT_device_generated_commands
        *
