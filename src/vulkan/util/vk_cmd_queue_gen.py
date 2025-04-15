@@ -544,15 +544,13 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
 
 def get_struct_free(command, param, types):
     field_name = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
-    const_cast = remove_suffix(param.decl.replace("const", ""), param.name)
-    struct_free = "vk_free(queue->alloc, (%s)%s);" % (const_cast, field_name)
+    struct_free = "vk_free(queue->alloc, (void*)%s);" % field_name
     member_frees = ""
     if (param.type in types):
         for member in types[param.type].members:
             if member.len and member.len != 'null-terminated':
                 member_name = "cmd->u.%s.%s->%s" % (to_struct_field_name(command.name), to_field_name(param.name), member.name)
-                const_cast = remove_suffix(member.decl.replace("const", ""), member.name)
-                member_frees += "vk_free(queue->alloc, (%s)%s);\n" % (const_cast, member_name)
+                member_frees += "vk_free(queue->alloc, (void*)%s);\n" % member_name
     return "%s   %s\n" % (member_frees, struct_free)
 
 EntrypointType = namedtuple('EntrypointType', 'name enum members extended_by guard')
