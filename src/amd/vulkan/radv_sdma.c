@@ -204,9 +204,15 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
    const uint32_t max_comp_block_size = surf->u.gfx9.color.dcc.max_compressed_block_size;
    const uint32_t pipe_aligned = radv_htile_enabled(image, subresource.mipLevel) || surf->u.gfx9.color.dcc.pipe_aligned;
 
-   return SDMA5_DCC_DATA_FORMAT(data_format) | SDMA5_DCC_ALPHA_IS_ON_MSB(alpha_is_on_msb) |
-          SDMA5_DCC_NUM_TYPE(number_type) | SDMA5_DCC_SURF_TYPE(surface_type) | SDMA5_DCC_MAX_COM(max_comp_block_size) |
-          SDMA5_DCC_MAX_UCOM(V_028C78_MAX_BLOCK_SIZE_256B) | SDMA5_DCC_PIPE_ALIGNED(pipe_aligned);
+   if (pdev->info.sdma_ip_version >= SDMA_7_0) {
+      return SDMA7_DCC_DATA_FORMAT(data_format) | SDMA7_DCC_NUM_TYPE(number_type) | SDMA7_DCC_READ_CM(2) |
+             SDMA7_DCC_MAX_COM(max_comp_block_size) | SDMA7_DCC_MAX_UCOM(1);
+   } else {
+      return SDMA5_DCC_DATA_FORMAT(data_format) | SDMA5_DCC_ALPHA_IS_ON_MSB(alpha_is_on_msb) |
+             SDMA5_DCC_NUM_TYPE(number_type) | SDMA5_DCC_SURF_TYPE(surface_type) |
+             SDMA5_DCC_MAX_COM(max_comp_block_size) | SDMA5_DCC_MAX_UCOM(V_028C78_MAX_BLOCK_SIZE_256B) |
+             SDMA5_DCC_PIPE_ALIGNED(pipe_aligned);
+   }
 }
 
 static uint32_t
@@ -262,7 +268,8 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
    const unsigned plane_idx = radv_plane_from_aspect(subresource.aspectMask);
    const unsigned binding_idx = image->disjoint ? plane_idx : 0;
    const struct radeon_surf *const surf = &image->planes[plane_idx].surface;
-   const uint64_t va = image->bindings[binding_idx].addr;
+   const struct radv_image_binding *binding = &image->bindings[binding_idx];
+   const uint64_t va = binding->addr;
    const uint32_t bpe = radv_sdma_get_bpe(image, subresource.aspectMask);
    struct radv_sdma_surf info = {
       .extent =
@@ -302,9 +309,14 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
       info.info_dword = radv_sdma_get_tiled_info_dword(device, image, surf, subresource);
       info.header_dword = radv_sdma_get_tiled_header_dword(device, image, subresource);
 
-      if (pdev->info.sdma_supports_compression &&
-          (radv_dcc_enabled(image, subresource.mipLevel) || radv_htile_enabled(image, subresource.mipLevel))) {
+      if (pdev->info.gfx_level >= GFX12) {
+         info.is_compressed = binding->bo && binding->bo->gfx12_allow_dcc;
+      } else if (pdev->info.sdma_supports_compression &&
+                 (radv_dcc_enabled(image, subresource.mipLevel) || radv_htile_enabled(image, subresource.mipLevel))) {
          info.is_compressed = true;
+      }
+
+      if (info.is_compressed) {
          info.meta_va = va + surf->meta_offset;
          info.meta_config = radv_sdma_get_metadata_config(device, image, surf, subresource);
       }
@@ -551,13 +563,17 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    radeon_emit((ext.depth - 1));
 
    if (tiled->is_compressed) {
-      radeon_emit(tiled->meta_va);
-      radeon_emit(tiled->meta_va >> 32);
-      radeon_emit(tiled->meta_config | SDMA5_DCC_WRITE_COMPRESS(!detile));
+      if (pdev->info.sdma_ip_version >= SDMA_7_0) {
+         radeon_emit(tiled->meta_config | SDMA7_DCC_WRITE_CM(!detile));
+      } else {
+         radeon_emit(tiled->meta_va);
+         radeon_emit(tiled->meta_va >> 32);
+         radeon_emit(tiled->meta_config | SDMA5_DCC_WRITE_COMPRESS(!detile));
+      }
    }
 
    radeon_end();
-   assert(cs->cdw == cdw_end);
+   assert(cs->cdw <= cdw_end);
 }
 
 static void
@@ -616,18 +632,26 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
    radeon_emit((ext.depth - 1));
 
-   if (dst->is_compressed) {
-      radeon_emit(dst->meta_va);
-      radeon_emit(dst->meta_va >> 32);
-      radeon_emit(dst->meta_config | SDMA5_DCC_WRITE_COMPRESS(1));
-   } else if (src->is_compressed) {
-      radeon_emit(src->meta_va);
-      radeon_emit(src->meta_va >> 32);
-      radeon_emit(src->meta_config);
+   if (pdev->info.sdma_ip_version >= SDMA_7_0) {
+      /* Compress only when dst has DCC. If src has DCC, it automatically decompresses according to
+       * PTE.D (page table bit) even if we don't enable DCC in the packet.
+       */
+      if (dst->is_compressed)
+         radeon_emit(dst->meta_config | SDMA7_DCC_WRITE_CM(1));
+   } else {
+      if (dst->is_compressed) {
+         radeon_emit(dst->meta_va);
+         radeon_emit(dst->meta_va >> 32);
+         radeon_emit(dst->meta_config | SDMA5_DCC_WRITE_COMPRESS(1));
+      } else if (src->is_compressed) {
+         radeon_emit(src->meta_va);
+         radeon_emit(src->meta_va >> 32);
+         radeon_emit(src->meta_config);
+      }
    }
 
    radeon_end();
-   assert(cs->cdw == cdw_end);
+   assert(cs->cdw <= cdw_end);
 }
 
 void
