@@ -1310,21 +1310,22 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const struct shader_
    unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp, mem_per_patch,
                                                       lds_per_patch, wave_size, tess_uses_primid);
    unsigned lds_size = lds_per_patch * num_patches;
-   unsigned mem_size = mem_per_patch * num_patches;
 
    /* The first vec4 is reserved for the tf0/1 shader message group vote. */
    if (info->gfx_level >= GFX11)
       lds_size += AC_HS_MSG_VOTE_LDS_BYTES;
 
-   /* SPI_SHADER_PGM_RSRC2_HS.LDS_SIZE specifies the allocation size for both LDS and the HS
-    * offchip ring buffer. LDS is only used for TCS inputs (with cross-invocation or indirect
-    * access only or if TCS in/out vertex counts are different) and for TCS outputs that are read
-    * (including tess level outputs if they need to be re-read in invocation 0), while the HS ring
-    * buffer is only used for TCS outputs consumed by TES.
+   /* SPI_SHADER_PGM_RSRC2_HS.LDS_SIZE specifies the allocation size only for LDS. The HS offchip
+    * ring buffer always uses a fixed allocation size per workgroup determined by
+    * info->hs_offchip_workgroup_dw_size.
+    *
+    * LDS is only used for TCS inputs (with cross-invocation or indirect access only or if TCS in/out
+    * vertex counts are different) and for TCS outputs that are read (including tess level outputs
+    * if they need to be re-read in invocation 0), while the HS ring buffer is only used for TCS
+    * outputs consumed by TES.
     */
-   unsigned merged_size = MAX2(lds_size, mem_size);
-   assert(merged_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
+   assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
 
    *num_patches_per_wg = num_patches;
-   *hw_lds_size = DIV_ROUND_UP(merged_size, info->lds_encode_granularity);
+   *hw_lds_size = DIV_ROUND_UP(lds_size, info->lds_encode_granularity);
 }
