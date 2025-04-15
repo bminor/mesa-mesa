@@ -325,11 +325,10 @@ pub fn test_foldable_op_with(
                 let data = b.ld_test_data(comps * 4, MemType::B32);
                 comps += 1;
 
-                let bit = b.lop2(LogicOp2::And, data.into(), 1.into());
                 let pred = b.isetp(
                     IntCmpType::U32,
                     IntCmpOp::Ne,
-                    bit.into(),
+                    data.into(),
                     0.into(),
                 );
                 src.src_ref = pred.into();
@@ -339,13 +338,12 @@ pub fn test_foldable_op_with(
                 let data = b.ld_test_data(comps * 4, MemType::B32);
                 comps += 1;
 
-                let bit = b.lop2(LogicOp2::And, data.into(), 1.into());
                 let dst = b.alloc_ssa(RegFile::GPR, 1);
                 let carry = b.alloc_ssa(RegFile::Carry, 1);
                 b.push_op(OpIAdd2 {
                     dst: dst.into(),
                     carry_out: carry.into(),
-                    srcs: [u32::MAX.into(), bit.into()],
+                    srcs: [u32::MAX.into(), data.into()],
                 });
                 src.src_ref = carry.into();
                 fold_src.push(FoldData::Carry(false));
@@ -425,8 +423,14 @@ pub fn test_foldable_op_with(
                 panic!("Should be an ssa value");
             };
 
-            for _ in 0..vec.comps() {
-                data.push(rand_u32(i));
+            if matches!(src_types[i], SrcType::Pred | SrcType::Carry) {
+                for _ in 0..vec.comps() {
+                    data.push(rand_u32(i) & 1);
+                }
+            } else {
+                for _ in 0..vec.comps() {
+                    data.push(rand_u32(i));
+                }
             }
         }
         for _ in 0..dst_comps {
