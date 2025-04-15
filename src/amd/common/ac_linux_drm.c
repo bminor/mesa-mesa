@@ -7,6 +7,7 @@
 #include "ac_linux_drm.h"
 #include "util/u_math.h"
 #include "util/u_sync_provider.h"
+#include "ac_gpu_info.h"
 
 #include <stdlib.h>
 #include <time.h>
@@ -1080,4 +1081,32 @@ int ac_drm_userq_wait(ac_drm_device *dev, struct drm_amdgpu_userq_wait *wait_dat
 {
    return drm_ioctl_write_read(dev->fd, DRM_AMDGPU_USERQ_WAIT, wait_data,
                                sizeof(struct drm_amdgpu_userq_wait));
+}
+
+int ac_drm_query_pci_bus_info(ac_drm_device *dev, struct radeon_info *info)
+{
+   if (dev->is_virtio && dev->fd < 0) {
+      info->pci.domain = 0;
+      info->pci.bus = 0;
+      info->pci.dev = 0;
+      info->pci.func = 0;
+   } else {
+      drmDevicePtr devinfo;
+
+      /* Get PCI info. */
+      int r = drmGetDevice2(dev->fd, 0, &devinfo);
+      if (r) {
+         fprintf(stderr, "amdgpu: drmGetDevice2 failed.\n");
+         return -1;
+      }
+      info->pci.domain = devinfo->businfo.pci->domain;
+      info->pci.bus = devinfo->businfo.pci->bus;
+      info->pci.dev = devinfo->businfo.pci->dev;
+      info->pci.func = devinfo->businfo.pci->func;
+
+      drmFreeDevice(&devinfo);
+   }
+   info->pci.valid = true;
+
+   return 0;
 }

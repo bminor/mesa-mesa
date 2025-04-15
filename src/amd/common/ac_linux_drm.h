@@ -43,6 +43,7 @@ typedef void* amdgpu_va_handle;
 struct ac_drm_device;
 typedef struct ac_drm_device ac_drm_device;
 struct util_sync_provider;
+struct radeon_info;
 
 typedef union ac_drm_bo {
 #ifdef _WIN32
@@ -161,6 +162,8 @@ PROC int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t 
 PROC int ac_drm_free_userqueue(ac_drm_device *dev, uint32_t queue_id) TAIL;
 PROC int ac_drm_userq_signal(ac_drm_device *dev, struct drm_amdgpu_userq_signal *signal_data) TAIL;
 PROC int ac_drm_userq_wait(ac_drm_device *dev, struct drm_amdgpu_userq_wait *wait_data) TAIL;
+
+PROC int ac_drm_query_pci_bus_info(ac_drm_device *dev, struct radeon_info *info) TAIL;
 
 #ifdef __cplusplus
 }

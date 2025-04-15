@@ -464,27 +464,6 @@ static void set_custom_cu_en_mask(struct radeon_info *info)
    }
 }
 
-static bool ac_query_pci_bus_info(int fd, struct radeon_info *info)
-{
-   drmDevicePtr devinfo;
-
-   /* Get PCI info. */
-   int r = drmGetDevice2(fd, 0, &devinfo);
-   if (r) {
-      fprintf(stderr, "amdgpu: drmGetDevice2 failed.\n");
-      info->pci.valid = false;
-      return false;
-   }
-   info->pci.domain = devinfo->businfo.pci->domain;
-   info->pci.bus = devinfo->businfo.pci->bus;
-   info->pci.dev = devinfo->businfo.pci->dev;
-   info->pci.func = devinfo->businfo.pci->func;
-   info->pci.valid = true;
-
-   drmFreeDevice(&devinfo);
-   return true;
-}
-
 static void handle_env_var_force_family(struct radeon_info *info)
 {
    const char *family = debug_get_option("AMD_FORCE_FAMILY", NULL);
@@ -516,7 +495,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    uint32_t num_instances = 0;
    int r, i, j;
    ac_drm_device *dev = dev_p;
-   bool is_virtio_vpipe = info->is_virtio && fd < 0;
 
    STATIC_ASSERT(AMDGPU_HW_IP_GFX == AMD_IP_GFX);
    STATIC_ASSERT(AMDGPU_HW_IP_COMPUTE == AMD_IP_COMPUTE);
@@ -531,10 +509,9 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    handle_env_var_force_family(info);
 
-   if (!is_virtio_vpipe && !ac_query_pci_bus_info(fd, info)) {
-      if (require_pci_bus_info)
-         return AC_QUERY_GPU_INFO_FAIL;
-   }
+   info->pci.valid = ac_drm_query_pci_bus_info(dev, info) == 0;
+   if (require_pci_bus_info && !info->pci.valid)
+      return AC_QUERY_GPU_INFO_FAIL;
 
    assert(info->drm_major == 3);
    info->is_amdgpu = true;
