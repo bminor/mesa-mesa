@@ -931,27 +931,20 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
                                      uint32_t lds_per_patch, uint32_t wave_size,
                                      bool tess_uses_primid)
 {
-   /* The VGT HS block increments the patch ID unconditionally
-    * within a single threadgroup. This results in incorrect
-    * patch IDs when instanced draws are used.
+   /* The VGT HS block increments the patch ID unconditionally within a single threadgroup.
+    * This results in incorrect patch IDs when instanced draws are used.
     *
-    * The intended solution is to restrict threadgroups to
-    * a single instance by setting SWITCH_ON_EOI, which
-    * should cause IA to split instances up. However, this
-    * doesn't work correctly on GFX6 when there is no other
-    * SE to switch to.
+    * The intended solution is to restrict threadgroups to a single instance by setting
+    * SWITCH_ON_EOI, which should cause IA to split instances up. However, this doesn't work
+    * correctly on GFX6 when there is no other SE to switch to.
     */
    const bool has_primid_instancing_bug = info->gfx_level == GFX6 && info->max_se == 1;
    if (has_primid_instancing_bug && tess_uses_primid)
       return 1;
 
-   /* Ensure that we only need 4 waves per CU, so that we don't need to check
-    * resource usage (such as whether we have enough VGPRs to fit the whole
-    * threadgroup into the CU). It also ensures that the number of tcs in and out
-    * vertices per threadgroup are at most 256, which is the hw limit.
-    */
-   const unsigned max_verts_per_patch = MAX2(num_tcs_input_cp, num_tcs_output_cp);
-   unsigned num_patches = 256 / max_verts_per_patch;
+   /* 256 threads per workgroup is the hw limit. */
+   const unsigned num_threads_per_patch = MAX2(num_tcs_input_cp, num_tcs_output_cp);
+   unsigned num_patches = 256 / num_threads_per_patch;
 
    /* Not necessary for correctness, but higher numbers are slower.
     * The hardware can do more, but we prefer fully occupied waves.
@@ -985,17 +978,17 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
    /* Make sure that vector lanes are fully occupied by cutting off the last wave
     * if it's only partially filled.
     */
-   const unsigned temp_verts_per_tg = num_patches * max_verts_per_patch;
+   const unsigned threads_per_tg = num_patches * num_threads_per_patch;
 
-   if (temp_verts_per_tg > wave_size &&
-       (wave_size - temp_verts_per_tg % wave_size >= MAX2(max_verts_per_patch, 8)))
-      num_patches = (temp_verts_per_tg & ~(wave_size - 1)) / max_verts_per_patch;
+   if (threads_per_tg > wave_size &&
+       (wave_size - threads_per_tg % wave_size >= MAX2(num_threads_per_patch, 8)))
+      num_patches = (threads_per_tg & ~(wave_size - 1)) / num_threads_per_patch;
 
    if (info->gfx_level == GFX6) {
       /* GFX6 bug workaround, related to power management. Limit LS-HS
        * threadgroups to only one wave.
        */
-      const unsigned one_wave = wave_size / max_verts_per_patch;
+      const unsigned one_wave = wave_size / num_threads_per_patch;
       num_patches = MIN2(num_patches, one_wave);
    }
 
