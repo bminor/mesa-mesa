@@ -327,6 +327,8 @@ print_reg_name(struct log_stream *stream, struct ir3_instruction *instr,
 
    if (reg->flags & IR3_REG_FIRST_KILL)
       mesa_log_stream_printf(stream, "(kill)");
+   if (reg->flags & IR3_REG_LAST_USE)
+      mesa_log_stream_printf(stream, "(last)");
    if (reg->flags & IR3_REG_UNUSED)
       mesa_log_stream_printf(stream, "(unused)");
 

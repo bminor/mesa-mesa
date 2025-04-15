@@ -75,7 +75,8 @@ validate_src(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
    if (reg->flags & IR3_REG_ALIAS) {
       unsigned valid_flags = IR3_REG_ALIAS | IR3_REG_FIRST_ALIAS |
                              IR3_REG_HALF | IR3_REG_CONST | IR3_REG_IMMED |
-                             IR3_REG_SSA | IR3_REG_KILL | IR3_REG_FIRST_KILL;
+                             IR3_REG_SSA | IR3_REG_KILL | IR3_REG_FIRST_KILL |
+                             IR3_REG_LAST_USE;
       validate_assert(ctx, !(reg->flags & ~valid_flags));
    }
 

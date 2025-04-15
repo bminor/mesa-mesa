@@ -148,8 +148,13 @@ typedef enum ir3_register_flags {
    IR3_REG_EARLY_CLOBBER = BIT(17),
 
    /* If this is the last usage of a specific value in the register, the
-    * register cannot be read without being written to first after this. 
-    * Note: This effectively has the same semantics as IR3_REG_KILL.
+    * register cannot be read without being written to first after this.
+    * This maps to the "(last)" attribute on source GPRs in shader
+    * instructions which was introduced in A7XX.
+    *
+    * Note: This effectively has the same semantics as IR3_REG_KILL but
+    * is tracked after register assignment. Additionally, this doesn't
+    * cover any const or shared registers.
     */
    IR3_REG_LAST_USE = BIT(18),
 

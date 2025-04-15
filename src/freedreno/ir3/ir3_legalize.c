@@ -1720,6 +1720,89 @@ helper_sched(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
    }
 }
 
+struct ir3_last_block_data {
+   /* Whether a read will be done on a register at a later point, it is
+    * considered safe to set (last) when this is false for a particular
+    * register.
+    */
+   regmask_t will_read;
+};
+
+/* Use a backwards dataflow analysis to determine when a certain register is
+ * always written to prior to being read in a similar manner to SSA liveness
+ * which we can use to determine when we can insert (last) on src regs.
+ */
+static void
+track_last(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
+           struct ir3_shader_variant *so)
+{
+   foreach_block (block, &ir->block_list) {
+      struct ir3_last_block_data *bd = rzalloc(ctx, struct ir3_last_block_data);
+
+      regmask_init(&bd->will_read, so->mergedregs);
+
+      block->data = bd;
+   }
+
+   bool progress;
+   do {
+      progress = false;
+      regmask_t will_read;
+      regmask_init(&will_read, so->mergedregs);
+
+      foreach_block_rev (block, &ir->block_list) {
+         struct ir3_last_block_data *bd = block->data;
+
+         for (unsigned i = 0; i < ARRAY_SIZE(block->successors); i++) {
+            struct ir3_block *succ = block->successors[i];
+            if (!succ)
+               continue;
+
+            struct ir3_last_block_data *succ_bd = succ->data;
+            regmask_or(&will_read, &will_read, &succ_bd->will_read);
+         }
+
+         foreach_instr_rev (instr, &block->instr_list) {
+            for (unsigned i = 0; i < instr->dsts_count; i++) {
+               struct ir3_register *dst = instr->dsts[i];
+               if (dst->flags & (IR3_REG_IMMED | IR3_REG_CONST |
+                                 IR3_REG_SHARED | IR3_REG_RT)) {
+                  continue;
+               }
+
+               regmask_clear(&will_read, dst);
+            }
+
+            for (unsigned i = 0; i < instr->srcs_count; i++) {
+               struct ir3_register *src = instr->srcs[i];
+               if (src->flags &
+                   (IR3_REG_IMMED | IR3_REG_CONST | IR3_REG_SHARED)) {
+                  continue;
+               }
+
+               if (!regmask_get(&will_read, src)) {
+                  if (!(src->flags & IR3_REG_LAST_USE)) {
+                     progress = true;
+                     src->flags |= IR3_REG_LAST_USE;
+                  }
+               } else if (src->flags & IR3_REG_LAST_USE) {
+                  progress = true;
+                  src->flags &= ~IR3_REG_LAST_USE;
+               }
+
+               /* Setting will_read immediately ensures that only the first src
+                * of multiple identical srcs will have (last) set. This matches
+                * the blob's behavior.
+                */
+               regmask_set(&will_read, src);
+            }
+         }
+
+         bd->will_read = will_read;
+      }
+   } while (progress);
+}
+
 bool
 ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
 {
@@ -1892,6 +1975,13 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
    foreach_block (block, &ir->block_list) {
       progress |= expand_dummy_dests(block);
    }
+
+   /* Note: insert (last) before alias.tex to have the sources that are actually
+    * read by instructions (as opposed to alias registers) more easily
+    * available.
+    */
+   if (so->compiler->gen >= 7)
+      track_last(ctx, ir, so);
 
    ir3_insert_alias_tex(ir);
    ir3_count_instructions(ir);
