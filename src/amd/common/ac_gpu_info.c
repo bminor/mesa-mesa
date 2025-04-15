@@ -1792,6 +1792,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                S_0089B0_OFFCHIP_GRANULARITY(wg_size_enum);
    }
 
+   info->hs_offchip_workgroup_dw_size = wg_size_in_dwords;
    info->tess_offchip_ring_size = num_workgroups * wg_size_in_dwords * 4;
    info->tess_factor_ring_size = 48 * 1024 * info->max_se;
    info->total_tess_ring_size = info->tess_offchip_ring_size + info->tess_factor_ring_size;

@@ -966,11 +966,8 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
       num_patches = MIN2(num_patches, 16); /* recommended */
 
    /* Make sure the output data fits in the offchip buffer */
-   if (vram_per_patch) {
-      const uint32_t tess_offchip_block_dw_size = info->family == CHIP_HAWAII ? 4096 : 8192;
-      num_patches =
-         MIN2(num_patches, (tess_offchip_block_dw_size * 4) / vram_per_patch);
-   }
+   if (vram_per_patch)
+      num_patches = MIN2(num_patches, (info->hs_offchip_workgroup_dw_size * 4) / vram_per_patch);
 
    /* Make sure that the data fits in LDS. This assumes the shaders only
     * use LDS for the inputs and outputs.

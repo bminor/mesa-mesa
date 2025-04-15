@@ -295,6 +295,7 @@ struct radeon_info {
 
    /* Tessellation rings. */
    uint32_t hs_offchip_param;
+   uint32_t hs_offchip_workgroup_dw_size;
    uint32_t tess_factor_ring_size;
    uint32_t tess_offchip_ring_size;
    uint32_t total_tess_ring_size;
