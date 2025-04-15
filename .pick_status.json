@@ -1464,7 +1464,7 @@
         "description": "aco: combine VALU lanemask hazard into VALUMaskWriteHazard",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
