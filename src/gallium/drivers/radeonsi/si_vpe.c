@@ -481,16 +481,17 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
    case PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED:
       color_space->range = VPE_COLOR_RANGE_STUDIO;
       break;
-   default:
    case PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL:
       color_space->range = VPE_COLOR_RANGE_FULL;
       break;
-   }
-
-   /* Force RGB output range is Full to have better color performance */
-   /* TO-DO: Should Mesa have to know the display console is TV or PC Monitor? */
-   if (!util_format_is_yuv(format) && (which_surface == USE_DST_SURFACE))
+   case PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE:
+   default:
+      if (util_format_is_yuv(format))
+         color_space->range = VPE_COLOR_RANGE_STUDIO;
+      else
          color_space->range = VPE_COLOR_RANGE_FULL;
+      break;
+   }
 
    /* Default use VPE_CHROMA_COSITING_NONE (CENTER | CENTER) */
    color_space->cositing = VPE_CHROMA_COSITING_NONE;
