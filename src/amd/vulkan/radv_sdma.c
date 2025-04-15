@@ -304,6 +304,7 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
 
       if (pdev->info.sdma_supports_compression &&
           (radv_dcc_enabled(image, subresource.mipLevel) || radv_htile_enabled(image, subresource.mipLevel))) {
+         info.is_compressed = true;
          info.meta_va = va + surf->meta_offset;
          info.meta_config = radv_sdma_get_metadata_config(device, image, surf, subresource);
       }
@@ -515,7 +516,7 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (!pdev->info.sdma_supports_compression) {
-      assert(!tiled->meta_va);
+      assert(!tiled->is_compressed);
    }
 
    const VkOffset3D linear_off = radv_sdma_pixel_offset_to_blocks(linear->offset, linear->blk_w, linear->blk_h);
@@ -524,7 +525,7 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    const VkExtent3D ext = radv_sdma_pixel_extent_to_blocks(pix_extent, tiled->blk_w, tiled->blk_h);
    const unsigned linear_pitch = radv_sdma_pixels_to_blocks(linear->pitch, tiled->blk_w);
    const unsigned linear_slice_pitch = radv_sdma_pixel_area_to_blocks(linear->slice_pitch, tiled->blk_w, tiled->blk_h);
-   const bool dcc = !!tiled->meta_va;
+   const bool dcc = tiled->is_compressed;
    const bool uses_depth = linear_off.z != 0 || tiled_off.z != 0 || ext.depth != 1;
 
    assert(util_is_power_of_two_nonzero(tiled->bpp));
@@ -549,7 +550,7 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
    radeon_emit((ext.depth - 1));
 
-   if (tiled->meta_va) {
+   if (tiled->is_compressed) {
       radeon_emit(tiled->meta_va);
       radeon_emit(tiled->meta_va >> 32);
       radeon_emit(tiled->meta_config | SDMA5_DCC_WRITE_COMPRESS(!detile));
@@ -570,21 +571,21 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    assert(pdev->info.sdma_ip_version >= SDMA_4_0);
 
    /* On GFX10+ this supports DCC, but cannot copy a compressed surface to another compressed surface. */
-   assert(!src->meta_va || !dst->meta_va);
+   assert(!src->is_compressed || !dst->is_compressed);
 
    if (pdev->info.sdma_ip_version >= SDMA_4_0 && pdev->info.sdma_ip_version < SDMA_5_0) {
       /* SDMA v4 doesn't support mip_id selection in the T2T copy packet. */
       assert(src->header_dword >> 24 == 0);
       assert(dst->header_dword >> 24 == 0);
       /* SDMA v4 doesn't support any image metadata. */
-      assert(!src->meta_va);
-      assert(!dst->meta_va);
+      assert(!src->is_compressed);
+      assert(!dst->is_compressed);
    }
 
    /* Despite the name, this can indicate DCC or HTILE metadata. */
-   const uint32_t dcc = src->meta_va || dst->meta_va;
+   const uint32_t dcc = src->is_compressed || dst->is_compressed;
    /* 0 = compress (src is uncompressed), 1 = decompress (src is compressed). */
-   const uint32_t dcc_dir = src->meta_va && !dst->meta_va;
+   const uint32_t dcc_dir = src->is_compressed && !dst->is_compressed;
 
    const VkOffset3D src_off = radv_sdma_pixel_offset_to_blocks(src->offset, src->blk_w, src->blk_h);
    const VkOffset3D dst_off = radv_sdma_pixel_offset_to_blocks(dst->offset, dst->blk_w, dst->blk_h);
@@ -615,11 +616,11 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
    radeon_emit((ext.depth - 1));
 
-   if (dst->meta_va) {
+   if (dst->is_compressed) {
       radeon_emit(dst->meta_va);
       radeon_emit(dst->meta_va >> 32);
       radeon_emit(dst->meta_config | SDMA5_DCC_WRITE_COMPRESS(1));
-   } else if (src->meta_va) {
+   } else if (src->is_compressed) {
       radeon_emit(src->meta_va);
       radeon_emit(src->meta_va >> 32);
       radeon_emit(src->meta_config);
@@ -781,7 +782,7 @@ radv_sdma_use_t2t_scanline_copy(const struct radv_device *device, const struct r
     * It can either compress or decompress, or copy uncompressed images, but it
     * can't copy from a compressed image to another.
     */
-   if (src->meta_va && dst->meta_va)
+   if (src->is_compressed && dst->is_compressed)
       return true;
 
    const bool needs_3d_alignment = src->is_3d && (src->micro_tile_mode == RADEON_MICRO_MODE_DISPLAY ||

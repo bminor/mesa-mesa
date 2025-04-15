@@ -37,6 +37,7 @@ struct radv_sdma_surf {
          uint32_t meta_config;  /* Metadata configuration DWORD. */
          uint32_t header_dword; /* Extra bits for the copy packet header. */
          uint32_t info_dword;   /* Image information DWORD. */
+         bool is_compressed;
       };
    };
 };
