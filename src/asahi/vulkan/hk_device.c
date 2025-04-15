@@ -65,6 +65,11 @@ hk_upload_rodata(struct hk_device *dev)
    if (!dev->rodata.bo || !dev->sparse.write)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
+   /* The contents of sparse.write are undefined, but making them nonzero helps
+    * fuzz for bugs where we incorrectly read from the write section.
+    */
+   memset(agx_bo_map(dev->sparse.write), 0xCA, AIL_PAGESIZE);
+
    uint8_t *map = agx_bo_map(dev->rodata.bo);
    uint32_t offs = 0;
 
