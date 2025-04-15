@@ -122,6 +122,7 @@ LOG_SECTIONS = (
         section_id="{}",
         section_header="test_case {}",
         section_type=LogSectionType.TEST_CASE,
+        collapsed=True,
     ),
     LogSection(
         regex=re.compile(r"<?STARTRUN>? ([^>]*ssh.*server.*)"),
@@ -129,6 +130,7 @@ LOG_SECTIONS = (
         section_id="{}",
         section_header="[dut] test_suite {}",
         section_type=LogSectionType.TEST_DUT_SUITE,
+        collapsed=True,
     ),
     LogSection(
         regex=re.compile(r"<?STARTRUN>? ([^>]*)"),
@@ -136,13 +138,14 @@ LOG_SECTIONS = (
         section_id="{}",
         section_header="[docker] test_suite {}",
         section_type=LogSectionType.TEST_SUITE,
+        collapsed=True,
     ),
     LogSection(
         regex=re.compile(r"ENDTC>? ([^>]+)"),
         levels=("target", "debug"),
         section_id="post-{}",
         section_header="Post test_case {}",
-        collapsed=True,
         section_type=LogSectionType.LAVA_POST_PROCESSING,
+        collapsed=True,
     ),
 )
