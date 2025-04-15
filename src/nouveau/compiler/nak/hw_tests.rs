@@ -918,6 +918,9 @@ fn test_op_popc() {
 #[test]
 fn test_op_shf() {
     let sm = &RunSingleton::get().sm;
+    if sm.sm() < 32 {
+        return;
+    }
 
     let types = [IntType::U32, IntType::I32, IntType::U64, IntType::I64];
 
@@ -1249,6 +1252,10 @@ fn test_isetp64() {
 #[test]
 fn test_shl64() {
     let run = RunSingleton::get();
+    if run.sm.sm() < 32 {
+        return;
+    }
+
     let invocations = 100;
 
     let mut b = TestShaderBuilder::new(run.sm.as_ref());
@@ -1283,6 +1290,10 @@ fn test_shl64() {
 #[test]
 fn test_shr64() {
     let run = RunSingleton::get();
+    if run.sm.sm() < 32 {
+        return;
+    }
+
     let invocations = 100;
 
     let cases = [true, false];

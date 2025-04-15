@@ -156,6 +156,9 @@ fn nir_options(dev: &nv_device_info) -> nir_shader_compiler_options {
         | nir_lower_shift64
         | nir_lower_imul_2x32_64
         | nir_lower_conv64);
+    if dev.sm < 32 {
+        op.lower_int64_options |= nir_lower_shift64;
+    }
     op.lower_ldexp = true;
     op.lower_fmod = true;
     op.lower_ffract = true;
