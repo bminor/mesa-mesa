@@ -19,6 +19,7 @@
 .d3d12-test-piglit:
   extends:
     - .d3d12-test
+    - .test-piglit
   script:
     - . _install/piglit_run.ps1
   # temporarily restrict to GSt runners until we discover why GL testing is

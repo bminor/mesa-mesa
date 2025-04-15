@@ -4,6 +4,7 @@ include:
 zink-lvp:
   extends:
     - .test-gl
+    - .test-piglit
     - .deqp-test
     - .zink-lvp-test
   tags:
@@ -27,6 +28,7 @@ zink-venus-lvp:
     - .test-gl
     - .deqp-test
     - .zink-venus-lvp-test
+    - .test-piglit
   timeout: 15min  # base run time = 8min, but it's on the shared runners so it can go up
   variables:
     DEQP_SUITE: zink-venus-lvp
@@ -54,6 +56,7 @@ zink-venus-lvp-full:
 zink-anv-adl:
   extends:
     - .zink-anv-adl-test
+    - .test-piglit
   variables:
     DEQP_SUITE: zink-anv-adl
     PIGLIT_NO_WINDOW: 1
@@ -69,6 +72,7 @@ zink-anv-adl-full:
   extends:
     - zink-anv-adl
     - .zink-anv-manual-rules
+    - .test-piglit
   variables:
     DEQP_SUITE: zink-anv-adl-full
   timeout: 2h
@@ -92,6 +96,7 @@ zink-anv-adl-traces-restricted:
 zink-anv-tgl:
   extends:
     - .zink-anv-tgl-test
+    - .test-piglit
   timeout: 30m
   variables:
     DEQP_SUITE: zink-anv-tgl
@@ -109,6 +114,7 @@ zink-anv-tgl-full:
   extends:
     - zink-anv-tgl
     - .zink-anv-manual-rules
+    - .test-piglit
   variables:
     DEQP_SUITE: zink-anv-tgl-full
   timeout: 1h 45m
@@ -181,6 +187,7 @@ zink-tu-a750:
     - .tu-zink-test-valve
     - .a750-mupuf
     - .zink-turnip-valve-manual-rules
+    - .test-piglit
   timeout: 25m  # base runtime 11min total, 9min of testing
   variables:
     B2C_TIMEOUT_BOOT_MINUTES: 18

@@ -4,6 +4,7 @@ include:
 virpipe-on-gl:
   extends:
     - .deqp-test
+    - .test-piglit
     - .virpipe-test
   variables:
     DEQP_SUITE: virpipe-gl

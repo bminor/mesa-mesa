@@ -140,6 +140,8 @@ variables:
     - .lava-test:x86_64
 
 .lava-piglit-traces:
+  extends:
+    - .test-piglit
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     # until we overcome Infrastructure issues, give traces extra 5 min before timeout

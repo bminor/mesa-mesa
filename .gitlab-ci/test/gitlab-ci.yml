@@ -181,6 +181,10 @@ yaml-toml-shell-py-test:
   variables:
     ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}
 
+.test-piglit:
+  variables:
+    PIGLIT_TAG: ${CONDITIONAL_BUILD_PIGLIT_TAG}
+
 .b2c-vkd3d-proton-test:
   variables:
     HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
@@ -195,6 +199,8 @@ yaml-toml-shell-py-test:
       - results/
     exclude:
       - results/*.shader_cache
+  extends:
+    - .test-piglit
   variables:
     # until we overcome Infrastructure issues, give traces extra 5 min before timeout
     DEVICE_HANGING_TIMEOUT_SEC: 600

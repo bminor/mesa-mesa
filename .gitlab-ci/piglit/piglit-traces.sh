@@ -12,6 +12,9 @@ set -ex
 # Our rootfs may not have "less", which apitrace uses during apitrace dump
 export PAGER=cat  # FIXME: export everywhere
 
+# Check we're using the version of Piglit we think we are
+ci_tag_test_time_check "PIGLIT_TAG"
+
 INSTALL=$(realpath -s "$PWD"/install)
 
 export PIGLIT_REPLAY_DESCRIPTION_FILE="$INSTALL/$PIGLIT_TRACES_FILE"

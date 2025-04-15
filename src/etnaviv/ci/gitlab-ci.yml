@@ -133,6 +133,7 @@ gc2000-gles2:
 gc2000-piglit:
   extends:
     - gc2000-gles2
+    - .test-piglit
   variables:
     DEQP_SUITE: etnaviv-gc2000-piglit
     B2C_TIMEOUT_OVERALL_MINUTES: 25

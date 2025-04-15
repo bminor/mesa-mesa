@@ -204,6 +204,7 @@ iris-amly-egl:
 iris-kbl-piglit:
   extends:
     - .iris-kbl-test
+    - .test-piglit
   parallel: 2
   variables:
     HWCI_START_XORG: 1
@@ -280,6 +281,7 @@ intel-adl-cl:
     - .intel-adl-test
     - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
     - .intel-rules
+    - .test-piglit
   rules:
     - !reference [.intel-adl-test, rules]
     - !reference [.intel-rules, rules]

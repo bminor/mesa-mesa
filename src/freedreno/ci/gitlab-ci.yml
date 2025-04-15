@@ -14,6 +14,7 @@ a306-piglit:
   extends:
     - .baremetal-deqp-test
     - .a306-test
+    - .test-piglit
     - .google-freedreno-manual-rules
   timeout: 40m
   variables:
@@ -27,6 +28,7 @@ a306-piglit:
   extends:
     - .baremetal-deqp-test
     - .a306-test
+    - .test-piglit
     - .google-freedreno-manual-rules
   variables:
     BM_KERNEL_EXTRA_ARGS: "msm.num_hw_submissions=1"
@@ -38,6 +40,7 @@ a306-piglit-shader:
   extends:
     - .baremetal-deqp-test
     - .a306-test
+    - .test-piglit
     - .google-freedreno-manual-rules
   variables:
     DEQP_SUITE: freedreno-a306-piglit-quick-shader
@@ -57,6 +60,7 @@ a306-traces:
 a530-gl:
   extends:
     - .baremetal-deqp-test
+    - .test-piglit
     - .a530-test
   variables:
     DEQP_SUITE: freedreno-a530
@@ -77,6 +81,7 @@ a530-piglit:
   extends:
     - .baremetal-deqp-test
     - .a530-test
+    - .test-piglit
     - .google-freedreno-manual-rules
   parallel: 2
   variables:
@@ -165,6 +170,7 @@ a618-skqp:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
+    - .test-piglit
     # Note that piglit has GL+VK integration testing.
     - .collabora-freedreno-turnip-rules
   variables:
@@ -177,6 +183,7 @@ a618-piglit-full:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-kingoftown:arm64
+    - .test-piglit
     # Note that piglit has GL+VK integration testing.
     - .collabora-freedreno-turnip-manual-rules
   timeout: 60m
@@ -189,6 +196,7 @@ a618-piglit-cl:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
+    - .test-piglit
     - .collabora-freedreno-rules
   rules:
     - !reference [.collabora-freedreno-rules, rules]
@@ -242,6 +250,7 @@ a660-piglit-cl:
   extends:
     - .lava-test-deqp:arm64
     - .lava-sm8350-hdk:arm64
+    - .test-piglit
     - .collabora-freedreno-rules
   rules:
     - !reference [.collabora-freedreno-rules, rules]
@@ -358,6 +367,7 @@ a630-piglit:
   extends:
     - .baremetal-deqp-test
     - .a630-test
+    - .test-piglit
     # Note that piglit has GL+VK integration testing.
     - .google-freedreno-turnip-rules
   variables:
@@ -368,6 +378,7 @@ a630-piglit-full:
   extends:
     - .baremetal-deqp-test
     - .a630-test
+    - .test-piglit
     # Note that piglit has GL+VK integration testing.
     - .google-freedreno-turnip-manual-rules
   timeout: 60m
@@ -450,6 +461,7 @@ a750-gl:
 a750-piglit-cl:
   extends:
     - .b2c-arm64-test-gl
+    - .test-piglit
     - .a750-mupuf
     - .valve-freedreno-manual-rules
   rules:

@@ -5,6 +5,7 @@ llvmpipe-piglit-rusticl:
   extends:
     - .llvmpipe-piglit-cl
     - .llvmpipe-rusticl-rules
+    - .test-piglit
   needs:
     - debian-testing
     - debian/x86_64_test-gl
@@ -28,7 +29,9 @@ llvmpipe:
     DEQP_SUITE: llvmpipe
     XVFB_SCRIPT: "install/deqp-runner.sh"
     DEQP_FRACTION: 4
-  extends: .llvmpipe-deqp-test
+  extends:
+    - .llvmpipe-deqp-test
+    - .test-piglit
   script: |
     . "$SCRIPTS_DIR"/setup-test-env.sh
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"

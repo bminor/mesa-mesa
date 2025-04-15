@@ -34,6 +34,7 @@ radeonsi-stoney-glcts-piglit:
   extends:
     - .lava-test-deqp:x86_64
     - .radeonsi-stoney-test:x86_64
+    - .test-piglit
   parallel: 11
   variables:
     DEQP_SUITE: radeonsi-stoney
@@ -109,6 +110,7 @@ radeonsi-raven-piglit:
   extends:
     - .lava-test-deqp:x86_64
     - .radeonsi-raven-test:x86_64
+    - .test-piglit
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
   parallel: 2
   variables:
@@ -120,6 +122,7 @@ radeonsi-raven-cdna-lower-image-piglit:
   extends:
     - .lava-test-deqp:x86_64
     - .radeonsi-raven-test:x86_64
+    - .test-piglit
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
   variables:
     DEQP_SUITE: radeonsi-raven-cdna
@@ -272,6 +275,7 @@ radv-vangogh-vkcts:
   extends:
     - .b2c-x86_64-test-gl
     - .b2c-deqp-test
+    - .test-piglit
     - .vangogh-test-valve
   variables:
     GPU_VERSION: radeonsi-vangogh

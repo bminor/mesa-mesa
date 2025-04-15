@@ -5,6 +5,7 @@ vc4-rpi3-gl:arm64:
   extends:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-test:arm64
+    - .test-piglit
     - .vc4-rules
   parallel: 4
   variables:
@@ -59,6 +60,7 @@ v3d-rpi4-gl:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64
+    - .test-piglit
     - .v3d-rules
   parallel: 8
   variables:
@@ -83,6 +85,7 @@ v3d-rpi4-rusticl:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64
+    - .test-piglit
     - .v3d-rusticl-manual-rules
   timeout: 40m  # base run time = 25min test, 32min total
   variables:
@@ -190,6 +193,7 @@ v3d-rpi5-gl:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-test:arm64
+    - .test-piglit
     - .v3d-rules
   variables:
     HWCI_START_WESTON: 1
@@ -213,6 +217,7 @@ v3d-rpi5-rusticl:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-test:arm64
+    - .test-piglit
     - .v3d-rusticl-manual-rules
   tags:
     - igalia-rpi5

@@ -24,6 +24,7 @@ vmware-vmx-piglit:x86_64:
   stage: layered-backends
   extends:
     - .lava-test-deqp:x86_64
+    - .test-piglit
     - .vmware-rules
   timeout: 30m
   parallel: 2

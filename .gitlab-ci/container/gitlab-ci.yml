@@ -78,17 +78,29 @@
     # should make CI_BUILD_COMPONENTS="angle piglit"
     CI_BUILD_COMPONENTS: "angle"
 
+.container-builds-piglit:
+  variables:
+    PIGLIT_TAG: "${CONDITIONAL_BUILD_PIGLIT_TAG}"
+
 .container-builds-x86_64:
   extends:
     - .container-builds-angle
+    - .container-builds-piglit
   variables:
-    CI_BUILD_COMPONENTS: "angle"
+    CI_BUILD_COMPONENTS: "angle piglit"
+
+.container-builds-arm32:
+  extends:
+    - .container-builds-piglit
+  variables:
+    CI_BUILD_COMPONENTS: "piglit"
 
 .container-builds-arm64:
   extends:
     - .container-builds-angle
+    - .container-builds-piglit
   variables:
-    CI_BUILD_COMPONENTS: "angle"
+    CI_BUILD_COMPONENTS: "angle piglit"
 
 .use-base-image:
   extends:
@@ -405,7 +417,9 @@ debian/arm64_test-base:
 
 # Debian based x86_64 test image for GL
 debian/x86_64_test-gl:
-  extends: .use-debian/x86_64_test-base
+  extends:
+    - .use-debian/x86_64_test-base
+    - .container-builds-x86_64
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-gl ${DEBIAN_TEST_GL_TAG}
 
@@ -423,7 +437,9 @@ debian/x86_64_test-gl:
 
 # Debian based x86_64 test image for VK
 debian/x86_64_test-vk:
-  extends: .use-debian/x86_64_test-base
+  extends:
+    - .use-debian/x86_64_test-base
+    - .container-builds-x86_64
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-vk ${DEBIAN_TEST_VK_TAG}
 
@@ -484,7 +500,9 @@ debian/x86_64_pyutils:
 debian/arm32_test-gl:
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
-  extends: .use-debian/arm32_test-base
+  extends:
+    - .use-debian/arm32_test-base
+    - .container-builds-arm32
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-gl ${DEBIAN_TEST_GL_TAG}
 
@@ -506,7 +524,9 @@ debian/arm32_test-vk:
     - when: never # There are currently no arm32 VK jobs
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
-  extends: .use-debian/arm32_test-base
+  extends:
+    - .use-debian/arm32_test-base
+    - .container-builds-arm32
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-vk ${DEBIAN_TEST_VK_TAG}
 
@@ -548,7 +568,9 @@ debian/arm64_test-gl:
 debian/arm64_test-vk:
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
-  extends: .use-debian/arm64_test-base
+  extends:
+    - .use-debian/arm64_test-base
+    - .container-builds-arm64
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-vk ${DEBIAN_TEST_VK_TAG}
 

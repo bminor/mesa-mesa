@@ -20,6 +20,7 @@
   extends:
     - .anholt-g41-test
     - .test-gl
+    - .test-piglit
     - .deqp-test
   variables:
     DEQP_SUITE: crocus-g41

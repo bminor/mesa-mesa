@@ -228,6 +228,7 @@
   extends:
     - .b2c-x86_64-test-gl-manual
     - .nvk-vkcts
+    - .test-piglit
     - .zink-test
   variables:
     DEQP_SUITE: zink-nvk
@@ -248,6 +249,7 @@
   timeout: 30m
   extends:
     - .zink-test
+    - .test-piglit
     - .test-radv
     - .b2c-x86_64-test-gl
   variables:

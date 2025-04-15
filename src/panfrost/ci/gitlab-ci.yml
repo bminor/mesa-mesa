@@ -30,6 +30,7 @@ panfrost-t860-cl:arm64:
     - .lava-test-deqp:arm64
     - .panfrost-midgard-manual-rules
     - .panfrost-test
+    - .test-piglit
     - .lava-rk3399-gru-kevin:arm64
   rules:
     - !reference [.panfrost-midgard-manual-rules, rules]
@@ -111,6 +112,7 @@ panfrost-g52-piglit:arm64:
     - .lava-test-deqp:arm64
     - .panfrost-bifrost-gl-manual-rules
     - .panfrost-test
+    - .test-piglit
     - .lava-meson-g12b-a311d-khadas-vim3:arm64
   variables:
     HWCI_START_WESTON: 1
@@ -143,6 +145,7 @@ panfrost-g57-piglit:arm64:
     - .lava-test-deqp:arm64
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
+    - .test-piglit
     - .lava-mt8195-cherry-tomato-r2:arm64
   variables:
     HWCI_START_WESTON: 1
@@ -167,6 +170,7 @@ panfrost-g610-gl:arm64:
 .panfrost-g610-piglit:arm64:
   extends:
     - panfrost-g610-gl:arm64
+    - .test-piglit
     - .panfrost-valhall-gl-manual-rules
   variables:
     DEQP_SUITE: panfrost-g610-piglit
