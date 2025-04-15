@@ -476,3 +476,74 @@ pub fn test_texture() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_lea() {
+    let r0 = RegRef::new(RegFile::GPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+    let r2 = RegRef::new(RegFile::GPR, 2, 1);
+    let r3 = RegRef::new(RegFile::GPR, 3, 1);
+    let p0 = RegRef::new(RegFile::Pred, 0, 1);
+
+    let src_mods = [
+        (SrcMod::None, SrcMod::None),
+        (SrcMod::INeg, SrcMod::None),
+        (SrcMod::None, SrcMod::INeg),
+    ];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+
+        for (intermediate_mod, b_mod) in src_mods {
+            for shift in 0..32 {
+                let intermediate_mod_str = match intermediate_mod {
+                    SrcMod::None => "",
+                    SrcMod::INeg => "-",
+                    _ => unreachable!(),
+                };
+
+                let mut instr = OpLea {
+                    dst: Dst::Reg(r0),
+                    overflow: Dst::Reg(p0),
+
+                    a: SrcRef::Reg(r1).into(),
+                    b: SrcRef::Reg(r2).into(),
+
+                    a_high: 0.into(),
+
+                    shift,
+                    dst_high: false,
+                    intermediate_mod,
+                };
+                instr.b.src_mod = b_mod;
+                let disasm = format!(
+                    "lea r0, p0, {0}r1, {1}, 0x{2:x};",
+                    intermediate_mod_str, instr.b, shift
+                );
+                c.push(instr, disasm);
+
+                let mut instr = OpLea {
+                    dst: Dst::Reg(r0),
+                    overflow: Dst::Reg(p0),
+
+                    a: SrcRef::Reg(r1).into(),
+                    b: SrcRef::Reg(r2).into(),
+
+                    a_high: SrcRef::Reg(r3).into(),
+
+                    shift,
+                    dst_high: true,
+                    intermediate_mod,
+                };
+                instr.b.src_mod = b_mod;
+                let disasm = format!(
+                    "lea.hi r0, p0, {0}r1, {1}, r3, 0x{2:x};",
+                    intermediate_mod_str, instr.b, shift
+                );
+                c.push(instr, disasm);
+            }
+        }
+
+        c.check(sm);
+    }
+}
