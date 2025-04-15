@@ -595,6 +595,9 @@ lower_hs_output_store(nir_builder *b,
             ac_nir_store_var_components(b, st->tcs_tess_level_outer, store_val,
                                         component, write_mask);
       }
+
+      if (semantics.no_varying)
+         st->tes_inputs_read &= ~BITFIELD64_BIT(semantics.location);
    }
 
    return NIR_LOWER_INSTR_PROGRESS_REPLACE;
