@@ -34,6 +34,6 @@ VK_KHR_shader_float_controls2 on panvk/v10+
 storageBuffer8BitAccess on panvk
 uniformAndStorageBuffer8BitAccess on panvk
 MSAA with 8 and 16 sample counts on panvk
-KHR_spirv_1_4 on panvk/v10+
+VK_KHR_spirv_1_4 on panvk/v10+
 Mali G720 and G725 on Panfrost and panvk
 dualSrcBlend on panvk
