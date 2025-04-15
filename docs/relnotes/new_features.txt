@@ -33,8 +33,11 @@ GL_ARB_shader_clock on panvk
 VK_KHR_shader_float_controls on panvk
 VK_KHR_shader_float_controls2 on panvk/v10+
 storageBuffer8BitAccess on panvk
+storagePushConstant8 on panvk
 uniformAndStorageBuffer8BitAccess on panvk
 MSAA with 8 and 16 sample counts on panvk
 VK_KHR_spirv_1_4 on panvk/v10+
 Mali G720 and G725 on Panfrost and panvk
 dualSrcBlend on panvk
+VK_KHR_dynamic_rendering_local_read on panvk
+VK_EXT_subgroup_size_control on panvk/v10+

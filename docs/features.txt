@@ -510,7 +510,7 @@ Vulkan 1.3 -- all DONE: anv, lvp, nvk, radv, tu, vn, v3dv
 
 Vulkan 1.4 -- all DONE: anv, lvp, nvk, radv/gfx8+, tu/a7xx+, vn
 
-  VK_KHR_dynamic_rendering_local_read                   DONE (anv, lvp, nvk, radv, tu, vn)
+  VK_KHR_dynamic_rendering_local_read                   DONE (anv, lvp, nvk, panvk, radv, tu, vn)
   VK_KHR_global_priority                                DONE (anv, lvp, nvk, panvk, radv, tu, vn)
   VK_KHR_index_type_uint8                               DONE (anv, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_line_rasterization                             DONE (anv, lvp, nvk, panvk, radv, tu, v3dv, vn)
