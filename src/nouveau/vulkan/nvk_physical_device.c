@@ -187,6 +187,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_shader_subgroup_rotate = true,
       .KHR_shader_subgroup_uniform_control_flow = true,
       .KHR_shader_terminate_invocation = true,
+      .KHR_shader_untyped_pointers = true,
       .KHR_spirv_1_4 = true,
       .KHR_storage_buffer_storage_class = true,
 #ifdef NVK_USE_WSI_PLATFORM
@@ -507,6 +508,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_KHR_shader_subgroup_uniform_control_flow */
       .shaderSubgroupUniformControlFlow = true,
+
+      /* KHR_shader_untyped_pointers */
+      .shaderUntypedPointers = true,
 
       /* VK_KHR_unified_image_layouts */
       .unifiedImageLayouts = true,
