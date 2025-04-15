@@ -41,6 +41,7 @@ typedef uint32_t mali_pixel_format;
 #define PAN_BIND_RENDER_TARGET (1 << 1)
 #define PAN_BIND_SAMPLER_VIEW  (1 << 3)
 #define PAN_BIND_VERTEX_BUFFER (1 << 4)
+#define PAN_BIND_STORAGE_IMAGE (1 << 15) /* == PIPE_BIND_SHADER_IMAGE */
 
 struct panfrost_format {
    uint32_t hw : 22;

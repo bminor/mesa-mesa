@@ -1378,12 +1378,10 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
          features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
       features |= VK_FORMAT_FEATURE_BLIT_SRC_BIT;
-      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
    }
 
    if (fmt.bind & PAN_BIND_RENDER_TARGET) {
       features |= VK_FORMAT_FEATURE_BLIT_DST_BIT;
-      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 
       /* SNORM rendering isn't working yet (nir_lower_blend bugs), disable for
        * now.
@@ -1395,6 +1393,9 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
          features |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
       }
    }
+
+   if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
+      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 
    if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
       features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
@@ -1508,8 +1509,7 @@ get_buffer_format_features(struct panvk_physical_device *physical_device,
        !util_format_is_depth_or_stencil(pfmt))
       features |= VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT;
 
-   if ((fmt.bind & PAN_BIND_RENDER_TARGET) &&
-       !util_format_is_depth_and_stencil(pfmt))
+   if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
       features |= VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT;
 
    if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
