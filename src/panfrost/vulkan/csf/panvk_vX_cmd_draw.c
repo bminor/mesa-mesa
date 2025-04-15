@@ -1741,8 +1741,8 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
          cfg.write_mask = rt_written;
 #if PAN_ARCH >= 11
          if (fs) {
-            cfg.no_shader_depth_read = z_attachment_read(fs, &dyns->ial);
-            cfg.no_shader_stencil_read = s_attachment_read(fs, &dyns->ial);
+            cfg.no_shader_depth_read = !z_attachment_read(fs, &dyns->ial);
+            cfg.no_shader_stencil_read = !s_attachment_read(fs, &dyns->ial);
          }
 #endif
       }
