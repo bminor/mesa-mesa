@@ -269,6 +269,29 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         }
     }
 
+    fn copy_alu_src_and_lower_ineg(
+        &mut self,
+        src: &mut Src,
+        src_type: SrcType,
+    ) {
+        assert!(src_type == SrcType::I32);
+        let val = self.alloc_ssa(RegFile::GPR, 1);
+        if self.sm() >= 70 {
+            self.push_op(OpIAdd3 {
+                srcs: [Src::new_zero(), *src, Src::new_zero()],
+                overflow: [Dst::None; 2],
+                dst: val.into(),
+            });
+        } else {
+            self.push_op(OpIAdd2 {
+                dst: val.into(),
+                carry_out: Dst::None,
+                srcs: [Src::new_zero(), *src],
+            });
+        }
+        *src = val.into();
+    }
+
     fn copy_ssa_ref_if_uniform(&mut self, ssa_ref: &mut SSARef) {
         for ssa in &mut ssa_ref[..] {
             if ssa.is_uniform() {
