@@ -492,6 +492,7 @@ bool ac_init_spm(const struct radeon_info *info,
       create_info = gfx11_spm_counters;
       break;
    default:
+      fprintf(stderr, "radv: Failed to initialize SPM because SPM counters aren't implemented.\n");
       return false; /* not implemented */
    }
 

@@ -282,8 +282,10 @@ radv_spm_init(struct radv_device *device)
    struct ac_perfcounters *pc = &pdev->ac_perfcounters;
 
    /* We failed to initialize the performance counters. */
-   if (!pc->blocks)
+   if (!pc->blocks) {
+      fprintf(stderr, "radv: Failed to initialize SPM because perf counters aren't implemented.\n");
       return false;
+   }
 
    if (!ac_init_spm(gpu_info, pc, &device->spm))
       return false;
