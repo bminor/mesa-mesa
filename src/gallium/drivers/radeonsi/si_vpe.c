@@ -1270,8 +1270,10 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
    scaling_ratio[1] = (float)src_rect_height / dst_rect_height;
 
    /* Perform general processing */
-   if ((scaling_ratio[0] <= VPE_MAX_GEOMETRIC_DOWNSCALE) && (scaling_ratio[1] <= VPE_MAX_GEOMETRIC_DOWNSCALE))
-      return si_vpe_construct_blt(vpeproc, process_properties, vpeproc->src_surfaces, vpeproc->dst_surfaces);
+   if ((scaling_ratio[0] <= VPE_MAX_GEOMETRIC_DOWNSCALE) && (scaling_ratio[1] <= VPE_MAX_GEOMETRIC_DOWNSCALE)) {
+      result = si_vpe_construct_blt(vpeproc, process_properties, vpeproc->src_surfaces, vpeproc->dst_surfaces);
+      return result == VPE_STATUS_OK ? 0 : 1;
+   }
 
    /* If fast scaling is required, the geometric scaling should not be performed */
    if (process_properties->filter_flags & PIPE_VIDEO_VPP_FILTER_FLAG_SCALING_FAST)
@@ -1454,7 +1456,7 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       }
    }
 
-   return result;
+   return result == VPE_STATUS_OK ? 0 : 1;
 }
 
 static int
