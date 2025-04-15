@@ -168,6 +168,14 @@ done
 # always goes through ssh or https.
 python3 external/fetch_sources.py --insecure
 
+case "${DEQP_API}" in
+  VK-main)
+    # Video tests rely on external files
+    python3 external/fetch_video_decode_samples.py
+    python3 external/fetch_video_encode_samples.py
+    ;;
+esac
+
 if [[ "$DEQP_API" = tools ]]; then
   # Save the testlog stylesheets:
   cp doc/testlog-stylesheet/testlog.{css,xsl} /deqp-$deqp_api
