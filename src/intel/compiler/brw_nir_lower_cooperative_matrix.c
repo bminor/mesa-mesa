@@ -68,6 +68,8 @@ typedef struct {
    nir_variable *var;
 } slice_info;
 
+#define BRW_MAX_PACKING_FACTOR 4
+
 struct lower_cmat_state {
    void *temp_ctx;
 
@@ -78,6 +80,10 @@ struct lower_cmat_state {
    struct hash_table *mat_var_to_slice_info;
 
    unsigned subgroup_size;
+
+   struct {
+      nir_def *tmp[NIR_MAX_VEC_COMPONENTS * BRW_MAX_PACKING_FACTOR];
+   } scratch;
 };
 
 static bool
@@ -171,6 +177,7 @@ init_slice_info(struct lower_cmat_state *state,
     * matrix of uint8_t data must pack 4 values in each entry.
     */
    const unsigned packing_factor = element_bits / bits;
+   assert(packing_factor <= BRW_MAX_PACKING_FACTOR);
 
    assert(elements_per_invocation >= packing_factor);
 
@@ -378,45 +385,55 @@ lower_cmat_load_store(nir_builder *b, nir_intrinsic_instr *intrin,
 /* Unpack, apply operation, then pack again. */
 static nir_def *
 emit_packed_alu1(nir_builder *b,
+                 struct lower_cmat_state *state,
                  const slice_info *src_info,
                  const slice_info *dst_info,
                  nir_op op,
                  nir_def *src)
 {
-   nir_def *results[NIR_MAX_VEC_COMPONENTS];
-
    const unsigned dst_bits = glsl_base_type_bit_size(dst_info->desc.element_type);
    const unsigned src_bits = glsl_base_type_bit_size(src_info->desc.element_type);
 
-   /* With the combinations of formats exposed on all platforms, matrices with
-    * the same dimensions will always have the same data size. The only real
-    * type conversion possible is int32 <-> float32. As a result
-    * dst_packing_factor == src_packing_factor.
-    */
-   assert(dst_info->packing_factor == src_info->packing_factor);
+   const unsigned src_components = glsl_get_vector_elements(src_info->type);
+   const unsigned dst_components = glsl_get_vector_elements(dst_info->type);
+   assert(src_components * src_info->packing_factor ==
+          dst_components * dst_info->packing_factor);
 
-   const unsigned num_components = glsl_get_vector_elements(dst_info->type);
+   /* Store the result of all individual unpacked values. */
+   assert(src_components * src_info->packing_factor <= ARRAY_SIZE(state->scratch.tmp));
+   nir_def **tmp = state->scratch.tmp;
 
-   /* Stores at most dst_packing_factor partial results. */
-   nir_def *v[4];
-   assert(dst_info->packing_factor <= 4);
-
-   for (unsigned i = 0; i < num_components; i++) {
+   for (unsigned i = 0; i < src_components; i++) {
       nir_def *chan = nir_channel(b, src, i);
 
-      for (unsigned j = 0; j < dst_info->packing_factor; j++) {
-         nir_def *src =
-            nir_channel(b, nir_unpack_bits(b, chan, src_bits), j);
+      for (unsigned j = 0; j < src_info->packing_factor; j++) {
+         const unsigned pos = (i * src_info->packing_factor) + j;
+         nir_def *val = nir_channel(b, nir_unpack_bits(b, chan, src_bits), j);
+         tmp[pos] = nir_build_alu1(b, op, val);
+      }
+   }
 
-         v[j] = nir_build_alu1(b, op, src);
+   /* Store each element of the result, might pack multiple values. */
+   nir_def *results[NIR_MAX_VEC_COMPONENTS] = {};
+   assert(dst_components <= ARRAY_SIZE(results));
+
+   /* Store each packed element in destination, to be combined
+    * into results.
+    */
+   nir_def *partial[BRW_MAX_PACKING_FACTOR];
+
+   for (unsigned i = 0; i < dst_components; i++) {
+      for (unsigned j = 0; j < dst_info->packing_factor; j++) {
+         const unsigned pos = (i * dst_info->packing_factor) + j;
+         partial[j] = tmp[pos];
       }
 
       results[i] =
-         nir_pack_bits(b, nir_vec(b, v, dst_info->packing_factor),
+         nir_pack_bits(b, nir_vec(b, partial, dst_info->packing_factor),
                        dst_info->packing_factor * dst_bits);
    }
 
-   return nir_vec(b, results, num_components);
+   return nir_vec(b, results, dst_components);
 }
 
 static void
@@ -450,7 +467,7 @@ lower_cmat_unary_op(nir_builder *b, nir_intrinsic_instr *intrin,
                                   nir_rounding_mode_undef);
    }
 
-   nir_def *result = emit_packed_alu1(b, src_info, dst_info, op,
+   nir_def *result = emit_packed_alu1(b, state, src_info, dst_info, op,
                                       nir_load_deref(b, src_slice));
 
    nir_store_deref(b, dst_slice, result, nir_component_mask(result->num_components));
