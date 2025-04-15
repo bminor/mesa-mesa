@@ -531,7 +531,9 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     member_copies = ""
     if src_type in types:
         for member in types[src_type].members:
-            if member.len and member.len != 'null-terminated':
+            if member.len and member.len == 'struct-ptr':
+                member_copies += get_struct_copy("%s->%s" % (tmp_dst_name, member.name), "%s->%s" % (tmp_src_name, member.name), member.type, 'sizeof(%s)' % member.type, types, level + 1)
+            elif member.len and member.len != 'null-terminated':
                 member_copies += get_array_member_copy(tmp_dst_name, tmp_src_name, member, level + 1)
             elif member.name == 'pNext':
                 member_copies += get_pnext_member_copy(tmp_dst_name, src_type, member, types, level + 1)
