@@ -34,7 +34,7 @@
         "description": "etnaviv: Release screen->dummy_desc_reloc.bo",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bca5ef70a436380d1b6cb0f5bd84f1872cabc5e5",
         "notes": null
