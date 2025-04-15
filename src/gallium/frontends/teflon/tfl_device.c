@@ -369,9 +369,6 @@ partition_init(TfLiteContext *tf_context, const char *buffer, size_t length)
                                           operations,
                                           params->nodes_to_replace->size);
 
-   for (int i = 0; i < tf_context->tensors_size; i++)
-      pipe_resource_reference(&tensors[i].resource, NULL);
-
    struct teflon_subgraph *tsubgraph = calloc(1, sizeof(*tsubgraph));
    tsubgraph->base = subgraph;
 
@@ -401,6 +398,14 @@ partition_init(TfLiteContext *tf_context, const char *buffer, size_t length)
       free(tensors[i].scales);
       free(tensors[i].zero_points);
    }
+
+   for (int i = 0; i < params->nodes_to_replace->size; i++) {
+      free(operations[i].input_tensors);
+      free(operations[i].output_tensors);
+   }
+
+   for (int i = 0; i < tf_context->tensors_size; i++)
+      pipe_resource_reference(&tensors[i].resource, NULL);
 
    return tsubgraph;
 }
