@@ -977,6 +977,74 @@ fn test_op_psetp() {
 }
 
 #[test]
+fn test_plop2() {
+    let run = RunSingleton::get();
+    let invocations = 100;
+
+    let logic_ops =
+        [LogicOp2::And, LogicOp2::Or, LogicOp2::Xor, LogicOp2::PassB];
+    let mods = [
+        (SrcMod::None, SrcMod::None),
+        (SrcMod::BNot, SrcMod::None),
+        (SrcMod::None, SrcMod::BNot),
+        (SrcMod::BNot, SrcMod::BNot),
+    ];
+
+    for op in logic_ops {
+        for (x_mod, y_mod) in mods {
+            let mut b = TestShaderBuilder::new(run.sm.as_ref());
+
+            let x = b.ld_test_data(0, MemType::B32)[0];
+            let y = b.ld_test_data(4, MemType::B32)[0];
+
+            let x = b.isetp(IntCmpType::U32, IntCmpOp::Ne, x.into(), 0.into());
+            let y = b.isetp(IntCmpType::U32, IntCmpOp::Ne, y.into(), 0.into());
+
+            let mut x = Src::from(x);
+            x.src_mod = x_mod;
+            let mut y = Src::from(y);
+            y.src_mod = y_mod;
+
+            let res = b.lop2(op, x, y);
+
+            let res = b.sel(res.into(), 1.into(), 0.into());
+            b.st_test_data(8, MemType::B32, res.into());
+
+            let bin = b.compile();
+
+            let mut a = Acorn::new();
+            let mut data = Vec::new();
+            for _ in 0..invocations {
+                data.push([a.get_uint(1) as u32, a.get_uint(1) as u32, 0_u32]);
+            }
+
+            run.run.run(&bin, &mut data).unwrap();
+
+            for d in &data {
+                let mut x = d[0] != 0;
+                let mut y = d[1] != 0;
+                if x_mod.is_bnot() {
+                    x = !x;
+                }
+                if y_mod.is_bnot() {
+                    y = !y;
+                }
+
+                let res = match op {
+                    LogicOp2::And => x & y,
+                    LogicOp2::Or => x | y,
+                    LogicOp2::Xor => x ^ y,
+                    LogicOp2::PassB => y,
+                };
+                let res = if res { 1 } else { 0 };
+
+                assert_eq!(d[2], res);
+            }
+        }
+    }
+}
+
+#[test]
 fn test_iadd64() {
     let run = RunSingleton::get();
     let invocations = 100;
