@@ -2224,18 +2224,28 @@ BEGIN_TEST(insert_nops.setpc_gfx12)
 
    //! p_unit_test 9
    //! v1: %0:v[0] = v_mov_b32 %0:s[4]
-   //! v1: %0:v[1] = v_mov_b32 %0:s[5]
    //! v1: %0:v[2] = v_mov_b32 %0:vcc_lo
-   //! s1: %0:s[4] = s_mov_b32 0
-   //! s1: %0:s[5] = v_readfirstlane_b32 %0:v[0]
    //! s1: %0:vcc_lo = v_readfirstlane_b32 %0:v[1]
-   //! s_waitcnt_depctr va_vdst(0) va_sdst(0) va_vcc(0) sa_sdst(0)
+   //! s1: %0:s[4] = s_mov_b32 0
+   //! s_waitcnt_depctr va_vdst(0) va_vcc(0) sa_sdst(0)
    //! s_setpc_b64 0
    bld.pseudo(aco_opcode::p_unit_test, Operand::c32(9));
    bld.vop1(aco_opcode::v_mov_b32, Definition(PhysReg(256), v1), Operand(PhysReg(4), s1));
+   bld.vop1(aco_opcode::v_mov_b32, Definition(PhysReg(258), v1), Operand(PhysReg(vcc), s1));
+   bld.vop1(aco_opcode::v_readfirstlane_b32, Definition(vcc, s1), Operand(PhysReg(257), v1));
+   bld.sop1(aco_opcode::s_mov_b32, Definition(PhysReg(4), s1), Operand::zero(4));
+   bld.sop1(aco_opcode::s_setpc_b64, Operand::zero(8));
+
+   //! p_unit_test 10
+   //! v1: %0:v[1] = v_mov_b32 %0:s[5]
+   //! v1: %0:v[2] = v_mov_b32 %0:vcc_lo
+   //! s1: %0:s[5] = v_readfirstlane_b32 %0:v[0]
+   //! s1: %0:vcc_lo = v_readfirstlane_b32 %0:v[1]
+   //! s_waitcnt_depctr va_vdst(0) va_sdst(0) va_vcc(0)
+   //! s_setpc_b64 0
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(10));
    bld.vop1(aco_opcode::v_mov_b32, Definition(PhysReg(257), v1), Operand(PhysReg(5), s1));
    bld.vop1(aco_opcode::v_mov_b32, Definition(PhysReg(258), v1), Operand(PhysReg(vcc), s1));
-   bld.sop1(aco_opcode::s_mov_b32, Definition(PhysReg(4), s1), Operand::zero(4));
    bld.vop1(aco_opcode::v_readfirstlane_b32, Definition(PhysReg(5), s1), Operand(PhysReg(256), v1));
    bld.vop1(aco_opcode::v_readfirstlane_b32, Definition(vcc, s1), Operand(PhysReg(257), v1));
    bld.sop1(aco_opcode::s_setpc_b64, Operand::zero(8));

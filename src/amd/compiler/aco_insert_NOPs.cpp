@@ -1395,22 +1395,14 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
    }
 
    depctr_wait wait = parse_depctr_wait(instr.get());
-   unsigned va_vdst = wait.va_vdst;
-   unsigned vm_vsrc = 7;
-   unsigned sa_sdst = 1;
+   if (debug_flags & DEBUG_FORCE_WAITDEPS)
+      wait = parse_depctr_wait(bld.sopp(aco_opcode::s_waitcnt_depctr, 0x0000));
+   else if (instr->isLDSDIR() && state.program->gfx_level >= GFX12)
+      wait.vm_vsrc = instr->ldsdir().wait_vsrc ? 7 : 0;
 
-   if (debug_flags & DEBUG_FORCE_WAITDEPS) {
-      bld.sopp(aco_opcode::s_waitcnt_depctr, 0x0000);
-      va_vdst = 0;
-      vm_vsrc = 0;
-      sa_sdst = 0;
-   } else if (instr->opcode == aco_opcode::s_waitcnt_depctr) {
-      /* va_vdst already obtained through parse_depctr_wait(). */
-      vm_vsrc = (instr->salu().imm >> 2) & 0x7;
-      sa_sdst = instr->salu().imm & 0x1;
-   } else if (instr->isLDSDIR() && state.program->gfx_level >= GFX12) {
-      vm_vsrc = instr->ldsdir().wait_vsrc ? 7 : 0;
-   }
+   unsigned va_vdst = wait.va_vdst;
+   unsigned vm_vsrc = wait.vm_vsrc;
+   unsigned sa_sdst = wait.sa_sdst;
 
    if (instr->isLDSDIR()) {
       unsigned count = handle_lds_direct_valu_hazard(state, instr);
