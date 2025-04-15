@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -176,10 +177,13 @@ test_model_file(std::string file_name, unsigned tolerance, bool use_cache)
 
    set_seed(4);
 
-   std::ifstream model_file(file_name, std::ios::binary);
-   std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(model_file)),
-                               std::istreambuf_iterator<char>());
-   test_model(buffer.data(), buffer.size(), cache_dir.str(), tolerance);
+   struct stat sb;
+   int model_fd = open(file_name.c_str(), O_RDONLY);
+   fstat(model_fd, &sb);
+   void *model_data = mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, model_fd, 0);
+   test_model(model_data, sb.st_size, cache_dir.str(), tolerance);
+   munmap(model_data, sb.st_size);
+   close(model_fd);
 }
 
 void
