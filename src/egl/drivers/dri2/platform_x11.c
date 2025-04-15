@@ -1989,8 +1989,15 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
       /* the status here is ignored for zink-with-kopper and swrast,
        * otherwise return whatever error/fallback status as failure
        */
-      if (!dri2_dpy->kopper && !disp->Options.ForceSoftware && !status)
-         return EGL_FALSE;
+      if (!dri2_dpy->kopper && !disp->Options.ForceSoftware) {
+#ifdef HAVE_X11_DRI2
+         *allow_dri2 = !debug_get_bool_option("LIBGL_DRI2_DISABLE", false);
+#else
+         *allow_dri2 = false;
+#endif
+         if (!status)
+            return EGL_FALSE;
+      }
    }
 #endif
    if (!dri2_load_driver(disp))
