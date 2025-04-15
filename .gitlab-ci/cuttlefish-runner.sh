@@ -32,17 +32,19 @@ function my_atexit()
 {
   section_switch cuttlefish_stop "cuttlefish: stop + storing logs"
   set -x
+  set +e  # Be resilient and get logs even if stop_cvd fails
 
   # shellcheck disable=SC2317
   HOME=/cuttlefish stop_cvd -wait_for_launcher=40
 
   # shellcheck disable=SC2317
-  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/logcat $RESULTS_DIR || true
+  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/logcat $RESULTS_DIR
   # shellcheck disable=SC2317
-  cp /cuttlefish/cuttlefish/instances/cvd-1/kernel.log $RESULTS_DIR || true
+  cp /cuttlefish/cuttlefish/instances/cvd-1/kernel.log $RESULTS_DIR
   # shellcheck disable=SC2317
-  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/launcher.log $RESULTS_DIR || true
+  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/launcher.log $RESULTS_DIR
 
+  set -e
   set +x
   section_end cuttlefish_stop
 }
