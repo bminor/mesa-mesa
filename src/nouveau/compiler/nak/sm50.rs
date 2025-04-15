@@ -423,38 +423,6 @@ impl SM50Encoder<'_> {
 // Legalization helpers
 //
 
-pub trait SM50LegalizeBuildHelpers: LegalizeBuildHelpers {
-    fn copy_alu_src_if_fabs(&mut self, src: &mut Src, src_type: SrcType) {
-        if src.src_mod.has_fabs() {
-            self.copy_alu_src_and_lower_fmod(src, src_type);
-        }
-    }
-
-    fn copy_alu_src_if_i20_overflow(
-        &mut self,
-        src: &mut Src,
-        reg_file: RegFile,
-        src_type: SrcType,
-    ) {
-        if src.as_imm_not_i20().is_some() {
-            self.copy_alu_src(src, reg_file, src_type);
-        }
-    }
-
-    fn copy_alu_src_if_f20_overflow(
-        &mut self,
-        src: &mut Src,
-        reg_file: RegFile,
-        src_type: SrcType,
-    ) {
-        if src.as_imm_not_f20().is_some() {
-            self.copy_alu_src(src, reg_file, src_type);
-        }
-    }
-}
-
-impl SM50LegalizeBuildHelpers for LegalizeBuilder<'_> {}
-
 /// Helper to legalize extended or external instructions
 ///
 /// These are instructions which reach out external units such as load/store

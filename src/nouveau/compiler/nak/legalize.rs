@@ -292,6 +292,34 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         *src = val.into();
     }
 
+    fn copy_alu_src_if_fabs(&mut self, src: &mut Src, src_type: SrcType) {
+        if src.src_mod.has_fabs() {
+            self.copy_alu_src_and_lower_fmod(src, src_type);
+        }
+    }
+
+    fn copy_alu_src_if_i20_overflow(
+        &mut self,
+        src: &mut Src,
+        reg_file: RegFile,
+        src_type: SrcType,
+    ) {
+        if src.as_imm_not_i20().is_some() {
+            self.copy_alu_src(src, reg_file, src_type);
+        }
+    }
+
+    fn copy_alu_src_if_f20_overflow(
+        &mut self,
+        src: &mut Src,
+        reg_file: RegFile,
+        src_type: SrcType,
+    ) {
+        if src.as_imm_not_f20().is_some() {
+            self.copy_alu_src(src, reg_file, src_type);
+        }
+    }
+
     fn copy_ssa_ref_if_uniform(&mut self, ssa_ref: &mut SSARef) {
         for ssa in &mut ssa_ref[..] {
             if ssa.is_uniform() {
