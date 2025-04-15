@@ -41,3 +41,4 @@ Mali G720 and G725 on Panfrost and panvk
 dualSrcBlend on panvk
 VK_KHR_dynamic_rendering_local_read on panvk
 VK_EXT_subgroup_size_control on panvk/v10+
+VK_KHR_format_feature_flags2 on panvk
