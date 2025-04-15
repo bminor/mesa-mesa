@@ -103,33 +103,17 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
          lowered = nir_ssa_for_alu_src(b, instr, 0);
          unsigned bit_size = lowered->bit_size;
 
-         nir_def *c1 = nir_imm_int(b, 1);
-         nir_def *c2 = nir_imm_int(b, 2);
-         nir_def *c4 = nir_imm_int(b, 4);
-         nir_def *cshift = nir_imm_int(b, bit_size - 8);
-         nir_def *c33333333 = nir_imm_intN_t(b, 0x33333333, bit_size);
-         nir_def *c55555555 = nir_imm_intN_t(b, 0x55555555, bit_size);
-         nir_def *c0f0f0f0f = nir_imm_intN_t(b, 0x0f0f0f0f, bit_size);
-         nir_def *c01010101 = nir_imm_intN_t(b, 0x01010101, bit_size);
-
          lowered = nir_isub(b, lowered,
-                            nir_iand(b, nir_ushr(b, lowered, c1), c55555555));
+                            nir_iand_imm(b, nir_ushr_imm(b, lowered, 1), 0x55555555));
 
-         lowered = nir_iadd(b,
-                            nir_iand(b, lowered, c33333333),
-                            nir_iand(b, nir_ushr(b, lowered, c2), c33333333));
+         lowered = nir_iadd(b, nir_iand_imm(b, lowered, 0x33333333),
+                            nir_iand_imm(b, nir_ushr_imm(b, lowered, 2), 0x33333333));
 
-         lowered = nir_ushr(b,
-                            nir_imul(b,
-                                     nir_iand(b,
-                                              nir_iadd(b,
-                                                       lowered,
-                                                       nir_ushr(b, lowered, c4)),
-                                              c0f0f0f0f),
-                                     c01010101),
-                            cshift);
+         lowered = nir_iadd(b, lowered, nir_ushr_imm(b, lowered, 4));
 
-         lowered = nir_u2u32(b, lowered);
+         lowered = nir_iand_imm(b, lowered, 0x0f0f0f0f);
+         lowered = nir_imul_imm(b, lowered, 0x01010101);
+         lowered = nir_u2u32(b, nir_ushr_imm(b, lowered, bit_size - 8));
       }
       break;
 
