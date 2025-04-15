@@ -26,6 +26,7 @@ mod opt_uniform_instrs;
 mod qmd;
 mod reg_tracker;
 mod repair_ssa;
+mod sm32;
 mod sm50;
 mod sm70;
 mod sm70_encode;

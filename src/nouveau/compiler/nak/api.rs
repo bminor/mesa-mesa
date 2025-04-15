@@ -3,6 +3,7 @@
 
 use crate::from_nir::*;
 use crate::ir::{ShaderInfo, ShaderIoInfo, ShaderModel, ShaderStageInfo};
+use crate::sm32::ShaderModel32;
 use crate::sm50::ShaderModel50;
 use crate::sm70::ShaderModel70;
 use crate::sph;
@@ -421,6 +422,8 @@ fn nak_compile_shader_internal(
         Box::new(ShaderModel70::new(nak.sm))
     } else if nak.sm >= 50 {
         Box::new(ShaderModel50::new(nak.sm))
+    } else if nak.sm >= 32 {
+        Box::new(ShaderModel32::new(nak.sm))
     } else {
         panic!("Unsupported shader model");
     };

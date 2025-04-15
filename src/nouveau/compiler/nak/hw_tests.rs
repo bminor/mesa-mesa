@@ -4,6 +4,7 @@
 use crate::api::{GetDebugFlags, ShaderBin, DEBUG};
 use crate::hw_runner::{Runner, CB0};
 use crate::ir::*;
+use crate::sm32::ShaderModel32;
 use crate::sm50::ShaderModel50;
 use crate::sm70::ShaderModel70;
 
@@ -36,6 +37,8 @@ impl RunSingleton {
                 Box::new(ShaderModel70::new(sm_nr))
             } else if sm_nr >= 50 {
                 Box::new(ShaderModel50::new(sm_nr))
+            } else if sm_nr >= 32 {
+                Box::new(ShaderModel32::new(sm_nr))
             } else {
                 panic!("Unsupported shader model");
             };
