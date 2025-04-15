@@ -64,7 +64,7 @@
         "description": "radeonsi/vpe: Use float division to get scaling ratio",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e85a6b6a63a6e30072ffb1bd423c51d14d3f9ab9",
         "notes": null
