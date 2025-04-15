@@ -10,6 +10,7 @@
 #include "ac_surface.h"
 #include "ac_fake_hw_db.h"
 #include "ac_linux_drm.h"
+#include "util/u_sync_provider.h"
 
 #include "addrlib/src/amdgpu_asic_addr.h"
 #include "sid.h"
@@ -301,14 +302,6 @@ drmGetFormatModifierName(uint64_t modifier)
 
 #define CIK_TILE_MODE_COLOR_2D 14
 
-static bool has_timeline_syncobj(int fd)
-{
-   uint64_t value;
-   if (drmGetCap(fd, DRM_CAP_SYNCOBJ_TIMELINE, &value))
-      return false;
-   return value ? true : false;
-}
-
 static bool has_modifiers(int fd)
 {
    uint64_t value;
@@ -553,16 +546,9 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       return AC_QUERY_GPU_INFO_FAIL;
    }
 
-   uint64_t cap;
-   /* In the vpipe case, the fd will be < 0 and we can't do direct ioctls.
-    * Assume syncobjs are supported in this case.
-    */
-   if (!is_virtio_vpipe) {
-      r = drmGetCap(fd, DRM_CAP_SYNCOBJ, &cap);
-      if (r != 0 || cap == 0) {
-         fprintf(stderr, "amdgpu: syncobj support is missing but is required.\n");
-         return AC_QUERY_GPU_INFO_FAIL;
-      }
+   if (ac_drm_device_get_sync_provider(dev)->wait == NULL) {
+      fprintf(stderr, "amdgpu: syncobj support is missing but is required.\n");
+      return AC_QUERY_GPU_INFO_FAIL;
    }
 
    /* Query hardware and driver information. */
@@ -1009,7 +995,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    info->has_userptr = !info->is_virtio;
    info->has_syncobj = true;
-   info->has_timeline_syncobj = !info->is_virtio && has_timeline_syncobj(fd);
+   info->has_timeline_syncobj = ac_drm_device_get_sync_provider(dev)->timeline_wait != NULL;
    info->has_fence_to_handle = true;
    info->has_vm_always_valid = !info->is_virtio;
    info->has_bo_metadata = true;
