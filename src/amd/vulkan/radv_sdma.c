@@ -195,11 +195,6 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (!pdev->info.sdma_supports_compression ||
-       !(radv_dcc_enabled(image, subresource.mipLevel) || radv_htile_enabled(image, subresource.mipLevel))) {
-      return 0;
-   }
-
    const VkFormat format = vk_format_get_aspect_format(image->vk.format, subresource.aspectMask);
    const struct util_format_description *desc = radv_format_description(format);
 
