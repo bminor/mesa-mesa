@@ -277,6 +277,21 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
             insn->operands[op_idx].setCopyKill(true);
          }
          insn->operands[op_idx].setClobbered(true);
+
+         /* We use lateKill as a mitigation for RA issues when allocating definitions with
+          * partially-killed vectors. In case of a vector-aligned operand tied to a definition,
+          * this is irrelevant because the tied definition and the vector occupy the same
+          * register space, and all other definitions are allocated elsewhere.
+          * lateKill operands can't be tied to a definition because their live ranges would
+          * intersect, so remove the lateKill flag again.
+          */
+         if (insn->operands[op_idx].isVectorAligned())
+            insn->operands[op_idx].setLateKill(false);
+         while (insn->operands[op_idx].isVectorAligned()) {
+            ++op_idx;
+            insn->operands[op_idx].setClobbered(true);
+            insn->operands[op_idx].setLateKill(false);
+         }
       }
 
       /* GEN */
