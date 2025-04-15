@@ -155,11 +155,18 @@ static rvcn_dec_message_avc_t get_h264_msg(struct radeon_decoder *dec,
          if (!found)
             dec->render_pic_list[i] = NULL;
       }
-      if (dec->render_pic_list[i] == target) {
+      if (dec->render_pic_list[i] == target)
          result.decoded_pic_idx = i;
-      } else if (result.decoded_pic_idx == 0xff && !dec->render_pic_list[i]) {
-         dec->render_pic_list[i] = target;
-         result.decoded_pic_idx = i;
+   }
+
+   /* Target surface can also be a reference (other field) */
+   if (result.decoded_pic_idx == 0xff) {
+      for (i = 0; i < ARRAY_SIZE(pic->ref) + 1; i++) {
+         if (!dec->render_pic_list[i]) {
+            dec->render_pic_list[i] = target;
+            result.decoded_pic_idx = i;
+            break;
+         }
       }
    }
 

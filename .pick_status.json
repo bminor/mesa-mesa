@@ -224,7 +224,7 @@
         "description": "radeonsi/vcn: Fix decode target index for H264 interlaced streams",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e68a2655f46b2a1d2ce969cf18fbababa09a099",
         "notes": null
