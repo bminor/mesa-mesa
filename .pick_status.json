@@ -434,7 +434,7 @@
         "description": "pan/format: Update format flags to follow HW spec",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "861e7dcae6b1156f9eca5ad28b6e21a1e62358da",
         "notes": null
