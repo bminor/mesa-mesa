@@ -781,6 +781,8 @@ iris_slab_alloc(void *priv,
       flags |= BO_ALLOC_COMPRESSED;
       break;
    case IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT:
+      flags |= BO_ALLOC_CACHED_COHERENT | BO_ALLOC_SMEM;
+      break;
    case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED:
       flags |= BO_ALLOC_SMEM;
       break;
