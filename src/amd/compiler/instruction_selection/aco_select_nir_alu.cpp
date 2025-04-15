@@ -101,7 +101,7 @@ get_alu_src(struct isel_context* ctx, nir_alu_src src, unsigned size = 1)
          elems[i] = emit_extract_vector(ctx, vec, src.swizzle[i], elem_rc);
          vec_instr->operands[i] = Operand{elems[i]};
       }
-      Temp dst = ctx->program->allocateTmp(RegClass(vec.type(), elem_size * size / 4));
+      Temp dst = ctx->program->allocateTmp(RegClass::get(vec.type(), elem_size * size));
       vec_instr->definitions[0] = Definition(dst);
       ctx->block->instructions.emplace_back(std::move(vec_instr));
       ctx->allocated_vec.emplace(dst.id(), elems);
