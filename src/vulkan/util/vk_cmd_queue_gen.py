@@ -529,19 +529,21 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     tmp_dst = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_dst_name, dst, tmp_dst_name)
     tmp_src = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_src_name, src_name, tmp_src_name)
     member_copies = ""
+    indent = "\n%s" % ("   " * (level + 1))
+    indent_sameline = "\n%s" % ("   " * level)
     if src_type in types:
         for member in types[src_type].members:
             if member.len and member.len == 'struct-ptr':
                 member_copies += get_struct_copy("%s->%s" % (tmp_dst_name, member.name), "%s->%s" % (tmp_src_name, member.name), member.type, 'sizeof(%s)' % member.type, types, level + 1)
-            elif member.len and member.len != 'null-terminated':
+            elif member.len and member.len == 'null-terminated':
+                member_copies += "%s%s->%s = strdup(%s->%s);" % (indent_sameline, tmp_dst_name, member.name, tmp_src_name, member.name)
+            elif member.len:
                 member_copies += get_array_member_copy(tmp_dst_name, tmp_src_name, member, level + 1)
             elif member.name == 'pNext':
                 member_copies += get_pnext_member_copy(tmp_dst_name, src_type, member, types, level + 1)
 
     null_assignment = "%s = NULL;" % dst
     if_stmt = "if (%s) {" % src_name
-    indent = "\n%s" % ("   " * (level + 1))
-    indent_sameline = "\n%s" % ("   " * level)
     return "%s%s%s%s%s%s%s%s%s%s%s%s} else {%s%s%s}" % (if_stmt, indent, allocation, indent, copy, indent, tmp_dst, indent, tmp_src, indent, member_copies, indent_sameline, indent, null_assignment, indent_sameline)
 
 def get_struct_free(command, param, types):
