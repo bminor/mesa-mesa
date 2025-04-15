@@ -210,8 +210,9 @@ radv_sdma_get_metadata_config(const struct radv_device *const device, const stru
    const uint32_t max_comp_block_size = surf->u.gfx9.color.dcc.max_compressed_block_size;
    const uint32_t pipe_aligned = radv_htile_enabled(image, subresource.mipLevel) || surf->u.gfx9.color.dcc.pipe_aligned;
 
-   return data_format | alpha_is_on_msb << 8 | number_type << 9 | surface_type << 12 | max_comp_block_size << 24 |
-          V_028C78_MAX_BLOCK_SIZE_256B << 26 | pipe_aligned << 31;
+   return SDMA5_DCC_DATA_FORMAT(data_format) | SDMA5_DCC_ALPHA_IS_ON_MSB(alpha_is_on_msb) |
+          SDMA5_DCC_NUM_TYPE(number_type) | SDMA5_DCC_SURF_TYPE(surface_type) | SDMA5_DCC_MAX_COM(max_comp_block_size) |
+          SDMA5_DCC_MAX_UCOM(V_028C78_MAX_BLOCK_SIZE_256B) | SDMA5_DCC_PIPE_ALIGNED(pipe_aligned);
 }
 
 static uint32_t
@@ -555,10 +556,9 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    radeon_emit((ext.depth - 1));
 
    if (tiled->meta_va) {
-      const unsigned write_compress_enable = !detile;
       radeon_emit(tiled->meta_va);
       radeon_emit(tiled->meta_va >> 32);
-      radeon_emit(tiled->meta_config | write_compress_enable << 28);
+      radeon_emit(tiled->meta_config | SDMA5_DCC_WRITE_COMPRESS(!detile));
    }
 
    radeon_end();
@@ -622,10 +622,9 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    radeon_emit((ext.depth - 1));
 
    if (dst->meta_va) {
-      const uint32_t write_compress_enable = 1;
       radeon_emit(dst->meta_va);
       radeon_emit(dst->meta_va >> 32);
-      radeon_emit(dst->meta_config | write_compress_enable << 28);
+      radeon_emit(dst->meta_config | SDMA5_DCC_WRITE_COMPRESS(1));
    } else if (src->meta_va) {
       radeon_emit(src->meta_va);
       radeon_emit(src->meta_va >> 32);
