@@ -1792,9 +1792,14 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                S_0089B0_OFFCHIP_GRANULARITY(wg_size_enum);
    }
 
+   /* The typical size of tess factors of 1 TCS workgroup if all patches are triangles. */
+   unsigned typical_tess_factor_size_per_wg = (192 / 3) * 16;
+   unsigned num_tess_factor_wg_per_cu = 3;
+
    info->hs_offchip_workgroup_dw_size = wg_size_in_dwords;
    info->tess_offchip_ring_size = num_workgroups * wg_size_in_dwords * 4;
-   info->tess_factor_ring_size = 48 * 1024 * info->max_se;
+   info->tess_factor_ring_size = typical_tess_factor_size_per_wg * num_tess_factor_wg_per_cu *
+                                 info->max_good_cu_per_sa * info->max_sa_per_se * info->max_se;
    info->total_tess_ring_size = info->tess_offchip_ring_size + info->tess_factor_ring_size;
 
    /* GFX1013 is GFX10 plus ray tracing instructions */
