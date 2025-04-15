@@ -1813,8 +1813,11 @@ impl fmt::Display for FloatCmpOp {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub enum IntCmpOp {
+    False,
+    True,
     Eq,
     Ne,
     Lt,
@@ -1826,6 +1829,7 @@ pub enum IntCmpOp {
 impl IntCmpOp {
     pub fn flip(self) -> IntCmpOp {
         match self {
+            IntCmpOp::False | IntCmpOp::True => self,
             IntCmpOp::Eq | IntCmpOp::Ne => self,
             IntCmpOp::Lt => IntCmpOp::Gt,
             IntCmpOp::Le => IntCmpOp::Ge,
@@ -1838,6 +1842,8 @@ impl IntCmpOp {
 impl fmt::Display for IntCmpOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            IntCmpOp::False => write!(f, ".f"),
+            IntCmpOp::True => write!(f, ".t"),
             IntCmpOp::Eq => write!(f, ".eq"),
             IntCmpOp::Ne => write!(f, ".ne"),
             IntCmpOp::Lt => write!(f, ".lt"),
@@ -3769,6 +3775,8 @@ impl Foldable for OpISetP {
             let x = x as i32;
             let y = y as i32;
             match &self.cmp_op {
+                IntCmpOp::False => false,
+                IntCmpOp::True => true,
                 IntCmpOp::Eq => x == y,
                 IntCmpOp::Ne => x != y,
                 IntCmpOp::Lt => x < y,
@@ -3778,6 +3786,8 @@ impl Foldable for OpISetP {
             }
         } else {
             match &self.cmp_op {
+                IntCmpOp::False => false,
+                IntCmpOp::True => true,
                 IntCmpOp::Eq => x == y,
                 IntCmpOp::Ne => x != y,
                 IntCmpOp::Lt => x < y,
@@ -3787,7 +3797,9 @@ impl Foldable for OpISetP {
             }
         };
 
-        let cmp = if self.ex && x == y {
+        let cmp_op_is_const =
+            matches!(self.cmp_op, IntCmpOp::False | IntCmpOp::True);
+        let cmp = if self.ex && x == y && !cmp_op_is_const {
             // Pre-Volta, isetp.x takes the accumulator into account.  If we
             // want to support this, we need to take an an accumulator into
             // account.  Disallow it for now.

@@ -540,6 +540,9 @@ pub trait SSABuilder: Builder {
 
         let dst = self.alloc_ssa(RegFile::Pred, 1);
         match cmp_op {
+            IntCmpOp::False | IntCmpOp::True => {
+                panic!("These don't make sense for the builder helper");
+            }
             IntCmpOp::Eq | IntCmpOp::Ne => {
                 self.push_op(OpISetP {
                     dst: dst.into(),

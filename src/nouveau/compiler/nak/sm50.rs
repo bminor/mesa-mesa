@@ -844,6 +844,8 @@ impl SM50Encoder<'_> {
         self.set_field(
             range,
             match op {
+                IntCmpOp::False => 0_u8,
+                IntCmpOp::True => 7_u8,
                 IntCmpOp::Eq => 2_u8,
                 IntCmpOp::Ne => 5_u8,
                 IntCmpOp::Lt => 1_u8,

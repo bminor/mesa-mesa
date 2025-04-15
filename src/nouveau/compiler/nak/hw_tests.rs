@@ -680,6 +680,8 @@ fn test_op_iadd3x() {
 fn test_op_isetp() {
     let set_ops = [PredSetOp::And, PredSetOp::Or, PredSetOp::Xor];
     let cmp_ops = [
+        IntCmpOp::False,
+        IntCmpOp::True,
         IntCmpOp::Eq,
         IntCmpOp::Ne,
         IntCmpOp::Lt,
@@ -1211,6 +1213,8 @@ fn test_isetp64() {
                 let x = x as i64;
                 let y = y as i64;
                 match cmp_op {
+                    IntCmpOp::False => false,
+                    IntCmpOp::True => true,
                     IntCmpOp::Eq => x == y,
                     IntCmpOp::Ne => x != y,
                     IntCmpOp::Lt => x < y,
@@ -1220,6 +1224,8 @@ fn test_isetp64() {
                 }
             } else {
                 match cmp_op {
+                    IntCmpOp::False => false,
+                    IntCmpOp::True => true,
                     IntCmpOp::Eq => x == y,
                     IntCmpOp::Ne => x != y,
                     IntCmpOp::Lt => x < y,
