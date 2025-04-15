@@ -490,7 +490,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_ring_tess_factors_amd: {
       assert(s->tess_offchip_ring);
       nir_def *addr = nir_channel(b, s->tess_offchip_ring, 0);
-      addr = nir_iadd_imm(b, addr, sel->screen->hs.tess_offchip_ring_size);
+      addr = nir_iadd_imm(b, addr, sel->screen->info.tess_offchip_ring_size);
       replacement = nir_vector_insert_imm(b, s->tess_offchip_ring, addr, 0);
       break;
    }

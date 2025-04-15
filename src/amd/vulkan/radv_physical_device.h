@@ -158,7 +158,6 @@ struct radv_physical_device {
 
    uint32_t gs_table_depth;
 
-   struct ac_hs_info hs;
    struct ac_task_info task_info;
 
    struct radv_binning_settings binning_settings;

@@ -313,10 +313,11 @@ radv_fill_shader_rings(struct radv_device *device, uint32_t *desc, struct radeon
    desc += 8;
 
    if (tess_rings_bo) {
-      radv_set_ring_buffer(pdev, tess_rings_bo, pdev->hs.tess_offchip_ring_size, pdev->hs.tess_factor_ring_size, false,
-                           false, true, 0, 0, &desc[0]);
+      radv_set_ring_buffer(pdev, tess_rings_bo, pdev->info.tess_offchip_ring_size, pdev->info.tess_factor_ring_size,
+                           false, false, true, 0, 0, &desc[0]);
 
-      radv_set_ring_buffer(pdev, tess_rings_bo, 0, pdev->hs.tess_offchip_ring_size, false, false, true, 0, 0, &desc[4]);
+      radv_set_ring_buffer(pdev, tess_rings_bo, 0, pdev->info.tess_offchip_ring_size, false, false, true, 0, 0,
+                           &desc[4]);
    }
 
    desc += 8;
@@ -397,8 +398,8 @@ radv_emit_tess_factor_ring(struct radv_device *device, struct radeon_cmdbuf *cs,
    if (!tess_rings_bo)
       return;
 
-   tf_ring_size = pdev->hs.tess_factor_ring_size / 4;
-   tf_va = radv_buffer_get_va(tess_rings_bo) + pdev->hs.tess_offchip_ring_size;
+   tf_ring_size = pdev->info.tess_factor_ring_size / 4;
+   tf_va = radv_buffer_get_va(tess_rings_bo) + pdev->info.tess_offchip_ring_size;
 
    radv_cs_add_buffer(device->ws, cs, tess_rings_bo);
 
@@ -421,11 +422,11 @@ radv_emit_tess_factor_ring(struct radv_device *device, struct radeon_cmdbuf *cs,
          radeon_set_uconfig_reg(R_030944_VGT_TF_MEMORY_BASE_HI, S_030944_BASE_HI(tf_va >> 40));
       }
 
-      radeon_set_uconfig_reg(R_03093C_VGT_HS_OFFCHIP_PARAM, pdev->hs.hs_offchip_param);
+      radeon_set_uconfig_reg(R_03093C_VGT_HS_OFFCHIP_PARAM, pdev->info.hs_offchip_param);
    } else {
       radeon_set_config_reg(R_008988_VGT_TF_RING_SIZE, S_008988_SIZE(tf_ring_size));
       radeon_set_config_reg(R_0089B8_VGT_TF_MEMORY_BASE, tf_va >> 8);
-      radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, pdev->hs.hs_offchip_param);
+      radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, pdev->info.hs_offchip_param);
    }
 
    radeon_end();
@@ -997,11 +998,11 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
    }
 
    if (!queue->ring_info.tess_rings && needs->tess_rings) {
-      result = radv_bo_create(device, NULL, pdev->hs.total_tess_ring_size, 256, RADEON_DOMAIN_VRAM, ring_bo_flags,
+      result = radv_bo_create(device, NULL, pdev->info.total_tess_ring_size, 256, RADEON_DOMAIN_VRAM, ring_bo_flags,
                               RADV_BO_PRIORITY_SCRATCH, 0, true, &tess_rings_bo);
       if (result != VK_SUCCESS)
          goto fail;
-      radv_rmv_log_command_buffer_bo_create(device, tess_rings_bo, 0, 0, pdev->hs.total_tess_ring_size);
+      radv_rmv_log_command_buffer_bo_create(device, tess_rings_bo, 0, 0, pdev->info.total_tess_ring_size);
    }
 
    if (!queue->ring_info.task_rings && needs->task_rings) {

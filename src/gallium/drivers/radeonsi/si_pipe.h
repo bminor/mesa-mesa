@@ -519,7 +519,6 @@ struct si_screen {
    unsigned pa_sc_raster_config_1;
    unsigned se_tile_repeat;
    unsigned gs_table_depth;
-   struct ac_hs_info hs;
    unsigned eqaa_force_coverage_samples;
    unsigned eqaa_force_z_samples;
    unsigned eqaa_force_color_samples;

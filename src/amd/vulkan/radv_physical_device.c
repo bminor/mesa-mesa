@@ -2285,7 +2285,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 
    pdev->gs_table_depth = ac_get_gs_table_depth(pdev->info.gfx_level, pdev->info.family);
 
-   ac_get_hs_info(&pdev->info, &pdev->hs);
    ac_get_task_info(&pdev->info, &pdev->task_info);
    radv_get_binning_settings(pdev, &pdev->binning_settings);
 

@@ -293,6 +293,12 @@ struct radeon_info {
    uint32_t total_attribute_pos_prim_ring_size; /* GFX11+ */
    bool has_attr_ring;
 
+   /* Tessellation rings. */
+   uint32_t hs_offchip_param;
+   uint32_t tess_factor_ring_size;
+   uint32_t tess_offchip_ring_size;
+   uint32_t total_tess_ring_size;
+
    /* Render backends (color + depth blocks). */
    uint32_t r300_num_gb_pipes;
    uint32_t r300_num_z_pipes;
@@ -346,16 +352,6 @@ void ac_get_harvested_configs(const struct radeon_info *info, unsigned raster_co
 unsigned ac_get_compute_resource_limits(const struct radeon_info *info,
                                         unsigned waves_per_threadgroup, unsigned max_waves_per_sh,
                                         unsigned threadgroups_per_cu);
-
-struct ac_hs_info {
-   uint32_t hs_offchip_param;
-   uint32_t tess_factor_ring_size;
-   uint32_t tess_offchip_ring_size;
-   uint32_t total_tess_ring_size;
-};
-
-void ac_get_hs_info(const struct radeon_info *info,
-                    struct ac_hs_info *hs);
 
 /* Task rings BO layout information.
  * This BO is shared between GFX and ACE queues so that the ACE and GFX

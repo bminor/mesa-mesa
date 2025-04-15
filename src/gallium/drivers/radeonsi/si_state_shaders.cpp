@@ -4544,7 +4544,7 @@ void si_init_tess_factor_ring(struct si_context *sctx)
                                                        SI_RESOURCE_FLAG_DRIVER_INTERNAL |
                                                        SI_RESOURCE_FLAG_DISCARDABLE,
                                                        PIPE_USAGE_DEFAULT,
-                                                       sscreen->hs.total_tess_ring_size,
+                                                       sscreen->info.total_tess_ring_size,
                                                        2 * 1024 * 1024);
       if (!sscreen->tess_rings) {
          simple_mtx_unlock(&sscreen->tess_ring_lock);
@@ -4559,7 +4559,7 @@ void si_init_tess_factor_ring(struct si_context *sctx)
                                                               SI_RESOURCE_FLAG_DRIVER_INTERNAL |
                                                               SI_RESOURCE_FLAG_DISCARDABLE,
                                                               PIPE_USAGE_DEFAULT,
-                                                              sscreen->hs.total_tess_ring_size,
+                                                              sscreen->info.total_tess_ring_size,
                                                               2 * 1024 * 1024);
       }
    }
@@ -5085,9 +5085,9 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
       struct pipe_resource *tf_ring =
          sctx->ws->cs_is_secure(&sctx->gfx_cs) ? sscreen->tess_rings_tmz : sscreen->tess_rings;
       uint64_t factor_va = si_resource(tf_ring)->gpu_address +
-                           sscreen->hs.tess_offchip_ring_size;
+                           sscreen->info.tess_offchip_ring_size;
 
-      unsigned tf_ring_size_field = sscreen->hs.tess_factor_ring_size / 4;
+      unsigned tf_ring_size_field = sscreen->info.tess_factor_ring_size / 4;
       if (sctx->gfx_level >= GFX11)
          tf_ring_size_field /= sscreen->info.max_se;
 
@@ -5104,7 +5104,7 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
       if (sctx->gfx_level >= GFX7) {
          radeon_set_uconfig_reg_seq(R_030938_VGT_TF_RING_SIZE, 3);
          radeon_emit(S_030938_SIZE(tf_ring_size_field)); /* R_030938_VGT_TF_RING_SIZE */
-         radeon_emit(sscreen->hs.hs_offchip_param);      /* R_03093C_VGT_HS_OFFCHIP_PARAM */
+         radeon_emit(sscreen->info.hs_offchip_param);      /* R_03093C_VGT_HS_OFFCHIP_PARAM */
          radeon_emit(factor_va >> 8);                    /* R_030940_VGT_TF_MEMORY_BASE */
 
          if (sctx->gfx_level >= GFX12)
@@ -5116,7 +5116,7 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
       } else {
          radeon_set_config_reg(R_008988_VGT_TF_RING_SIZE, S_008988_SIZE(tf_ring_size_field));
          radeon_set_config_reg(R_0089B8_VGT_TF_MEMORY_BASE, factor_va >> 8);
-         radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, sscreen->hs.hs_offchip_param);
+         radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, sscreen->info.hs_offchip_param);
       }
       radeon_end();
    }
