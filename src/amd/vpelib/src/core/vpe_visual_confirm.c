@@ -101,11 +101,12 @@ struct vpe_color vpe_get_visual_confirm_color(enum vpe_surface_pixel_format form
         switch (cs.tf) {
         case VPE_TF_G22:
         case VPE_TF_G24:
+        case VPE_TF_SRGB:
             visual_confirm_color.rgba.r = 1.0;
             visual_confirm_color.rgba.g = 1.0;
             visual_confirm_color.rgba.b = 0.0;
             break;
-            // YUV420 10bit: White (HDR)
+            // YUV420 10bit 3dlut enable: White (HDR)
         case VPE_TF_PQ:
         case VPE_TF_HLG:
             if (enable_3dlut) {
@@ -113,6 +114,7 @@ struct vpe_color vpe_get_visual_confirm_color(enum vpe_surface_pixel_format form
                 visual_confirm_color.rgba.g = 1.0;
                 visual_confirm_color.rgba.b = 1.0;
             } else {
+            // YUV420 10bit 3dlut disable: Red (HDR)
                 visual_confirm_color.rgba.r = 1.0;
                 visual_confirm_color.rgba.g = 0.0;
                 visual_confirm_color.rgba.b = 0.0;
