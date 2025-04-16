@@ -2594,7 +2594,7 @@
         "description": "mesa_interface: fix legacy dri2 compatibility",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b603d164662d0f5c70a9c8dcbfc6a987ed8b94e",
         "notes": null
