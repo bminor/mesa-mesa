@@ -215,6 +215,19 @@ radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 }
 
 uint32_t
+radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t offset, uint64_t size,
+                uint32_t value)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const uint64_t va = image->bindings[0].addr + offset;
+   struct radeon_winsys_bo *bo = image->bindings[0].bo;
+
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
+
+   return radv_fill_memory(cmd_buffer, image, va, size, value);
+}
+
+uint32_t
 radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, struct radeon_winsys_bo *bo,
                  uint64_t va, uint64_t size, uint32_t value)
 {

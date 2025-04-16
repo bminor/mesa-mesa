@@ -266,6 +266,9 @@ uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 uint32_t radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t va,
                           uint64_t size, uint32_t value);
 
+uint32_t radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t offset,
+                         uint64_t size, uint32_t value);
+
 void radv_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size);
 
 void radv_cmd_buffer_clear_attachment(struct radv_cmd_buffer *cmd_buffer, const VkClearAttachment *attachment);

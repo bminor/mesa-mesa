@@ -810,8 +810,7 @@ radv_clear_cmask(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, c
       size = slice_size * vk_image_subresource_layer_count(&image->vk, range);
    }
 
-   return radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo, image->bindings[0].addr + cmask_offset, size,
-                           value);
+   return radv_fill_image(cmd_buffer, image, cmask_offset, size, value);
 }
 
 uint32_t
@@ -828,8 +827,7 @@ radv_clear_fmask(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, c
    fmask_offset += slice_size * range->baseArrayLayer;
    size = slice_size * vk_image_subresource_layer_count(&image->vk, range);
 
-   return radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo, image->bindings[0].addr + fmask_offset, size,
-                           value);
+   return radv_fill_image(cmd_buffer, image, fmask_offset, size, value);
 }
 
 uint32_t
@@ -876,8 +874,7 @@ radv_clear_dcc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, con
       if (!size)
          continue;
 
-      flush_bits |=
-         radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo, image->bindings[0].addr + dcc_offset, size, value);
+      flush_bits |= radv_fill_image(cmd_buffer, image, dcc_offset, size, value);
    }
 
    return flush_bits;
@@ -1096,8 +1093,7 @@ radv_clear_htile(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 
          if (htile_mask == UINT_MAX) {
             /* Clear the whole HTILE buffer. */
-            flush_bits |= radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo,
-                                           image->bindings[0].addr + htile_offset, size, value);
+            flush_bits |= radv_fill_image(cmd_buffer, image, htile_offset, size, value);
          } else {
             /* Only clear depth or stencil bytes in the HTILE buffer. */
             flush_bits |= clear_htile_mask(cmd_buffer, image, image->bindings[0].bo,
@@ -1112,8 +1108,7 @@ radv_clear_htile(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 
       if (htile_mask == UINT_MAX) {
          /* Clear the whole HTILE buffer. */
-         flush_bits = radv_fill_buffer(cmd_buffer, image, image->bindings[0].bo, image->bindings[0].addr + htile_offset,
-                                       size, value);
+         flush_bits = radv_fill_image(cmd_buffer, image, htile_offset, size, value);
       } else {
          /* Only clear depth or stencil bytes in the HTILE buffer. */
          flush_bits = clear_htile_mask(cmd_buffer, image, image->bindings[0].bo, image->bindings[0].addr + htile_offset,
