@@ -866,6 +866,16 @@ lower_bit_count64(nir_builder *b, nir_def *x)
    return nir_iadd(b, lo_count, hi_count);
 }
 
+static nir_def *
+lower_bitfield_reverse64(nir_builder *b, nir_def *x)
+{
+   nir_def *x_lo = nir_unpack_64_2x32_split_x(b, x);
+   nir_def *x_hi = nir_unpack_64_2x32_split_y(b, x);
+   nir_def *lo_rev = nir_bitfield_reverse(b, x_lo);
+   nir_def *hi_rev = nir_bitfield_reverse(b, x_hi);
+   return nir_pack_64_2x32_split(b, hi_rev, lo_rev);
+}
+
 nir_lower_int64_options
 nir_lower_int64_op_to_options_mask(nir_op opcode)
 {
@@ -946,6 +956,8 @@ nir_lower_int64_op_to_options_mask(nir_op opcode)
       return nir_lower_find_lsb64;
    case nir_op_bit_count:
       return nir_lower_bit_count64;
+   case nir_op_bitfield_reverse:
+      return nir_lower_bitfield_reverse64;
    default:
       return 0;
    }
@@ -1050,6 +1062,8 @@ lower_int64_alu_instr(nir_builder *b, nir_alu_instr *alu)
       return lower_find_lsb64(b, src[0]);
    case nir_op_bit_count:
       return lower_bit_count64(b, src[0]);
+   case nir_op_bitfield_reverse:
+      return lower_bitfield_reverse64(b, src[0]);
    case nir_op_i2f64:
    case nir_op_i2f32:
    case nir_op_i2f16:
