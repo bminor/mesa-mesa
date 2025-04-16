@@ -278,6 +278,8 @@ struct radeon_info {
    uint32_t min_wave64_vgpr_alloc;
    uint32_t max_vgpr_alloc;
    uint32_t wave64_vgpr_alloc_granularity;
+   uint32_t scratch_wavesize_granularity_shift;
+   uint32_t scratch_wavesize_granularity;
    uint32_t max_scratch_waves;
    bool has_scratch_base_registers;
 

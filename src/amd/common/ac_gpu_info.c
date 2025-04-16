@@ -1550,6 +1550,10 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                        info->has_dedicated_vram &&
                                        info->drm_minor >= 47;
 
+   /* Compute the scratch WAVESIZE granularity in bytes. */
+   info->scratch_wavesize_granularity_shift = info->gfx_level >= GFX11 ? 8 : 10;
+   info->scratch_wavesize_granularity = BITFIELD_BIT(info->scratch_wavesize_granularity_shift);
+
    /* The maximum number of scratch waves. The number is only a function of the number of CUs.
     * It should be large enough to hold at least 1 threadgroup. Use the minimum per-SA CU count.
     *

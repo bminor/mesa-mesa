@@ -12391,10 +12391,8 @@ radv_emit_rt_stack_size(struct radv_cmd_buffer *cmd_buffer)
    uint32_t scratch_bytes_per_wave = rt_prolog->config.scratch_bytes_per_wave;
    const uint32_t wave_size = rt_prolog->info.wave_size;
 
-   /* The hardware register is specified as a multiple of 64 or 256 DWORDS. */
-   const unsigned scratch_alloc_granule = pdev->info.gfx_level >= GFX11 ? 256 : 1024;
-
-   scratch_bytes_per_wave += align(cmd_buffer->state.rt_stack_size * wave_size, scratch_alloc_granule);
+   scratch_bytes_per_wave +=
+      align(cmd_buffer->state.rt_stack_size * wave_size, pdev->info.scratch_wavesize_granularity);
 
    cmd_buffer->compute_scratch_size_per_wave_needed =
       MAX2(cmd_buffer->compute_scratch_size_per_wave_needed, scratch_bytes_per_wave);

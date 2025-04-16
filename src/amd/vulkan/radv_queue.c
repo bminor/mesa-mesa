@@ -507,12 +507,14 @@ radv_emit_graphics_scratch(struct radv_device *device, struct radeon_cmdbuf *cs,
       waves /= gpu_info->max_se;
 
       radeon_set_context_reg_seq(R_0286E8_SPI_TMPRING_SIZE, 3);
-      radeon_emit(S_0286E8_WAVES(waves) | S_0286E8_WAVESIZE(DIV_ROUND_UP(size_per_wave, 256)));
+      radeon_emit(S_0286E8_WAVES(waves) |
+                  S_0286E8_WAVESIZE(DIV_ROUND_UP(size_per_wave, gpu_info->scratch_wavesize_granularity)));
       radeon_emit(va >> 8);  /* SPI_GFX_SCRATCH_BASE_LO */
       radeon_emit(va >> 40); /* SPI_GFX_SCRATCH_BASE_HI */
    } else {
       radeon_set_context_reg(R_0286E8_SPI_TMPRING_SIZE,
-                             S_0286E8_WAVES(waves) | S_0286E8_WAVESIZE(DIV_ROUND_UP(size_per_wave, 1024)));
+                             S_0286E8_WAVES(waves) |
+                                S_0286E8_WAVESIZE(DIV_ROUND_UP(size_per_wave, gpu_info->scratch_wavesize_granularity)));
    }
 
    radeon_end();
@@ -554,9 +556,9 @@ radv_emit_compute_scratch(struct radv_device *device, struct radeon_cmdbuf *cs, 
    radeon_emit(scratch_va);
    radeon_emit(rsrc1);
 
-   radeon_set_sh_reg(R_00B860_COMPUTE_TMPRING_SIZE,
-                     S_00B860_WAVES(waves) |
-                        S_00B860_WAVESIZE(DIV_ROUND_UP(size_per_wave, gpu_info->gfx_level >= GFX11 ? 256 : 1024)));
+   radeon_set_sh_reg(
+      R_00B860_COMPUTE_TMPRING_SIZE,
+      S_00B860_WAVES(waves) | S_00B860_WAVESIZE(DIV_ROUND_UP(size_per_wave, gpu_info->scratch_wavesize_granularity)));
 
    radeon_end();
 }

@@ -1048,18 +1048,16 @@ void ac_get_scratch_tmpring_size(const struct radeon_info *info,
     *
     * Shaders with SCRATCH_EN=0 don't allocate scratch space.
     */
-   const unsigned size_shift = info->gfx_level >= GFX11 ? 8 : 10;
-   const unsigned min_size_per_wave = BITFIELD_BIT(size_shift);
 
    /* The LLVM shader backend should be reporting aligned scratch_sizes. */
-   assert((bytes_per_wave & BITFIELD_MASK(size_shift)) == 0 &&
+   assert((bytes_per_wave & BITFIELD_MASK(info->scratch_wavesize_granularity_shift)) == 0 &&
           "scratch size per wave should be aligned");
 
    /* Add 1 scratch item to make the number of items odd. This should improve scratch
     * performance by more randomly distributing scratch waves among memory channels.
     */
    if (bytes_per_wave)
-      bytes_per_wave |= min_size_per_wave;
+      bytes_per_wave |= info->scratch_wavesize_granularity;
 
    *max_seen_bytes_per_wave = MAX2(*max_seen_bytes_per_wave, bytes_per_wave);
 
@@ -1069,7 +1067,7 @@ void ac_get_scratch_tmpring_size(const struct radeon_info *info,
 
    /* TODO: We could decrease WAVES to make the whole buffer fit into the infinity cache. */
    *tmpring_size = S_0286E8_WAVES(max_scratch_waves) |
-                   S_0286E8_WAVESIZE(*max_seen_bytes_per_wave >> size_shift);
+                   S_0286E8_WAVESIZE(*max_seen_bytes_per_wave >> info->scratch_wavesize_granularity_shift);
 }
 
 /* Convert chip-agnostic memory access flags into hw-specific cache flags.
