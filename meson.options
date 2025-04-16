@@ -787,6 +787,16 @@ option(
 )
 
 option(
+  'mesa-clc-bundle-headers',
+  type : 'combo',
+  value : 'auto',
+  choices : [
+    'enabled', 'auto'
+  ],
+  description : 'Bundle the OpenCL headers into the mesa-clc binary (default to bundle if static LLVM is used). Note, it might require rebuilding mesa-clc if opencl-c.h or opencl-c-base.h are changed (e.g. on Clang upgrades).'
+)
+
+option(
   'precomp-compiler',
   type : 'combo',
   value : 'auto',
