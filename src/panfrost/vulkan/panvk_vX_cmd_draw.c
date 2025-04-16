@@ -14,6 +14,40 @@
 #include "pan_util.h"
 
 static void
+att_set_clear_preload(const VkRenderingAttachmentInfo *att, bool *clear, bool *preload)
+{
+   switch (att->loadOp) {
+   case VK_ATTACHMENT_LOAD_OP_CLEAR:
+      *clear = true;
+      break;
+   case VK_ATTACHMENT_LOAD_OP_LOAD:
+      *preload = true;
+      break;
+   case VK_ATTACHMENT_LOAD_OP_NONE:
+      break;
+   case VK_ATTACHMENT_LOAD_OP_DONT_CARE:
+      /* This is a very frustrating corner case. From the spec:
+       *
+       *     VK_ATTACHMENT_STORE_OP_NONE specifies the contents within the
+       *     render area are not accessed by the store operation as long as
+       *     no values are written to the attachment during the render pass.
+       *
+       * With VK_ATTACHMENT_LOAD_OP_DONT_CARE + VK_ATTACHMENT_STORE_OP_NONE,
+       * we need to preserve the contents throughout partial renders. The
+       * easiest way to do that is forcing a preload, so that partial stores
+       * for unused attachments will be no-op'd by writing existing contents.
+       *
+       * TODO: disable preload when we have clean_pixel_write_enable = false
+       * as an optimization
+       */
+      *preload |= att->storeOp == VK_ATTACHMENT_STORE_OP_NONE;
+      break;
+   default:
+      unreachable("Unsupported loadOp");
+   }
+}
+
+static void
 render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
                                   const VkRenderingAttachmentInfo *att,
                                   uint32_t index)
@@ -45,13 +79,12 @@ render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
       enum pipe_format fmt = vk_format_to_pipe_format(iview->vk.format);
       union pipe_color_union *col =
          (union pipe_color_union *)&att->clearValue.color;
-
-      fbinfo->rts[index].clear = true;
       pan_pack_color(phys_dev->formats.blendable,
                      fbinfo->rts[index].clear_value, col, fmt, false);
-   } else if (att->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-      fbinfo->rts[index].preload = true;
    }
+
+   att_set_clear_preload(att, &fbinfo->rts[index].clear,
+                         &fbinfo->rts[index].preload);
 
    if (att->resolveMode != VK_RESOLVE_MODE_NONE) {
       struct panvk_resolve_attachment *resolve_info =
@@ -109,12 +142,10 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
          vk_format_to_pipe_format(vk_format_depth_only(img->vk.format));
    }
 
-   if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-      fbinfo->zs.clear.z = true;
+   if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)
       fbinfo->zs.clear_value.depth = att->clearValue.depthStencil.depth;
-   } else if (att->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-      fbinfo->zs.preload.z = true;
-   }
+
+   att_set_clear_preload(att, &fbinfo->zs.clear.z, &fbinfo->zs.preload.z);
 
    if (att->resolveMode != VK_RESOLVE_MODE_NONE) {
       struct panvk_resolve_attachment *resolve_info =
@@ -188,12 +219,10 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
       fbinfo->zs.view.s = NULL;
    }
 
-   if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-      fbinfo->zs.clear.s = true;
+   if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)
       fbinfo->zs.clear_value.stencil = att->clearValue.depthStencil.stencil;
-   } else if (att->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-      fbinfo->zs.preload.s = true;
-   }
+
+   att_set_clear_preload(att, &fbinfo->zs.clear.s, &fbinfo->zs.preload.s);
 
    if (att->resolveMode != VK_RESOLVE_MODE_NONE) {
       struct panvk_resolve_attachment *resolve_info =
