@@ -125,12 +125,8 @@ def test_gl_sections():
     assert "section_end" in parsed_lines[3]
     assert "section_start" in parsed_lines[4]
     assert "collapsed=true" in parsed_lines[4]
-    assert "section_end" in parsed_lines[5]
-    assert "section_start" in parsed_lines[6]
-    assert "collapsed=true" in parsed_lines[6]
     assert section_types == [
         # LogSectionType.LAVA_BOOT,  True, if LogFollower started with Boot section
-        LogSectionType.TEST_DUT_SUITE,
         LogSectionType.TEST_SUITE,
         LogSectionType.TEST_CASE,
         LogSectionType.LAVA_POST_PROCESSING,

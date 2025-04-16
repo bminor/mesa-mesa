@@ -40,7 +40,6 @@ section_start prepare_rootfs "Preparing root filesystem"
 
 set -ex
 
-section_switch rootfs "Assembling root filesystem"
 ROOTFS_URL="$(get_path_to_artifact lava-rootfs.tar.zst)"
 [ $? != 1 ] || exit 1
 
