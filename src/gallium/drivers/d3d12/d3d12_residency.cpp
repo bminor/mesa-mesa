@@ -228,10 +228,13 @@ d3d12_process_batch_residency(struct d3d12_screen *screen, struct d3d12_batch *b
                ++screen->residency_fence_value;
          }
 
-         if (SUCCEEDED(hr) && batch_count == residency_batch_size) {
+         if (SUCCEEDED(hr)) {
+            bool batch_full = batch_count == residency_batch_size;
             batch_count = 0;
             size_to_make_resident -= batch_memory_size;
-            continue;
+            batch_memory_size = 0;
+            if (batch_full)
+               continue;
          }
       }
 
