@@ -1247,6 +1247,84 @@ impl SM20Op for OpShr {
     }
 }
 
+impl SM20Op for OpF2F {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_f20_overflow(&mut self.src, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_b(SM20Unit::Move, 0x4, self.dst, self.src);
+        e.set_bit(5, false); // .sat
+        e.set_bit(6, self.src.src_mod.has_fabs());
+        e.set_bit(7, self.integer_rnd);
+        e.set_bit(8, self.src.src_mod.has_fneg());
+        e.set_field(20..22, (self.dst_type.bits() / 8).ilog2());
+        e.set_field(23..25, (self.src_type.bits() / 8).ilog2());
+        e.set_rnd_mode(49..51, self.rnd_mode);
+        e.set_bit(55, self.ftz);
+        e.set_bit(56, self.high);
+    }
+}
+
+impl SM20Op for OpF2I {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_f20_overflow(&mut self.src, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_b(SM20Unit::Move, 0x5, self.dst, self.src);
+        e.set_bit(6, self.src.src_mod.has_fabs());
+        e.set_bit(7, self.dst_type.is_signed());
+        e.set_bit(8, self.src.src_mod.has_fneg());
+        e.set_field(20..22, (self.dst_type.bits() / 8).ilog2());
+        e.set_field(23..25, (self.src_type.bits() / 8).ilog2());
+        e.set_rnd_mode(49..51, self.rnd_mode);
+        e.set_bit(55, self.ftz);
+        e.set_bit(56, false); // .high
+    }
+}
+
+impl SM20Op for OpI2F {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_i20_overflow(&mut self.src, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(self.src.src_mod.is_none());
+        e.encode_form_b(SM20Unit::Move, 0x6, self.dst, self.src);
+        e.set_bit(6, false); // .abs
+        e.set_bit(8, false); // .neg
+        e.set_bit(9, self.src_type.is_signed());
+        e.set_field(20..22, (self.dst_type.bits() / 8).ilog2());
+        e.set_field(23..25, (self.src_type.bits() / 8).ilog2());
+        e.set_rnd_mode(49..51, self.rnd_mode);
+        e.set_field(55..57, 0_u8); // 1: .h0, 2: .h1
+    }
+}
+
+impl SM20Op for OpI2I {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_i20_overflow(&mut self.src, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(self.src.src_mod.is_none());
+        e.encode_form_b(SM20Unit::Move, 0x7, self.dst, self.src);
+        e.set_bit(5, self.saturate);
+        e.set_bit(6, self.abs);
+        e.set_bit(7, self.dst_type.is_signed());
+        e.set_bit(8, self.neg);
+        e.set_bit(9, self.src_type.is_signed());
+        e.set_field(20..22, (self.dst_type.bits() / 8).ilog2());
+        e.set_field(23..25, (self.src_type.bits() / 8).ilog2());
+        e.set_field(55..57, 0_u8); // 1: .h0, 2: .h1
+    }
+}
+
 impl SM20Op for OpMov {
     fn legalize(&mut self, _b: &mut LegalizeBuilder) {
         // Nothing to do
@@ -1545,6 +1623,10 @@ macro_rules! as_sm20_op_match {
             Op::PopC(op) => op,
             Op::Shl(op) => op,
             Op::Shr(op) => op,
+            Op::F2F(op) => op,
+            Op::F2I(op) => op,
+            Op::I2F(op) => op,
+            Op::I2I(op) => op,
             Op::Mov(op) => op,
             Op::Prmt(op) => op,
             Op::Sel(op) => op,
