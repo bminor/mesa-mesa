@@ -2484,7 +2484,7 @@
         "description": "nak/sm70: Fix the bit74_75_ar_mod assert",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "40422927dcb1249cdb1444557aca671387140428",
         "notes": null
