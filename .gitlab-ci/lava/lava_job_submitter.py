@@ -225,10 +225,9 @@ def wait_for_job_get_started(job, attempt_no):
 
 
 def bootstrap_log_follower(main_test_case, timestamp_relative_to) -> LogFollower:
-    deploy_timeout = GL_SECTION_TIMEOUTS[LogSectionType.LAVA_DEPLOY]
     start_section = GitlabSection(
         id="dut_deploy",
-        header=f"Running LAVA deploy action - Timeout: {deploy_timeout}",
+        header="Running LAVA deploy action",
         type=LogSectionType.LAVA_DEPLOY,
         start_collapsed=True,
         timestamp_relative_to=timestamp_relative_to,

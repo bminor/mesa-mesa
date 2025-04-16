@@ -95,10 +95,9 @@ class LogSection:
             section_id = self.section_id.format(*match.groups())
             section_header = self.section_header.format(*match.groups())
             is_main_test_case = section_id == main_test_case
-            timeout = DEFAULT_GITLAB_SECTION_TIMEOUTS[self.section_type]
             return GitlabSection(
                 id=section_id,
-                header=f"{section_header} - Timeout: {timeout}",
+                header=section_header,
                 type=self.section_type,
                 start_collapsed=self.collapsed,
                 suppress_start=is_main_test_case,
