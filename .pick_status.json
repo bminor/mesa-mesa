@@ -1474,7 +1474,7 @@
         "description": "nak: Handle idp4 ureg latencies",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6b8a4e6bb73117e1141fe80e6d8fdfe5d2a39d33",
         "notes": null
