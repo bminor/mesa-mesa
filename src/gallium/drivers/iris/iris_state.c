@@ -9108,7 +9108,8 @@ iris_upload_compute_walker(struct iris_context *ice,
    }
 
    struct GENX(INTERFACE_DESCRIPTOR_DATA) idd = {};
-   idd.KernelStartPointer = KSP(shader);
+   idd.KernelStartPointer =
+      KSP(shader) + iris_cs_data_prog_offset(cs_data, dispatch.simd_size);
    idd.NumberofThreadsinGPGPUThreadGroup = dispatch.threads;
    idd.SharedLocalMemorySize =
       intel_compute_slm_encode_size(GFX_VER, shader->total_shared);
