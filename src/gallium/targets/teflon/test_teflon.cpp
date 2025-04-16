@@ -23,9 +23,6 @@
 #define TEST_YOLOX            1
 
 #define TOLERANCE       2
-#define MODEL_TOLERANCE 8
-#define YOLOX_TOLERANCE 38
-#define QUANT_TOLERANCE 2
 
 std::vector<bool> is_signed{false}; /* TODO: Support INT8? */
 std::vector<bool> padding_same{false, true};
@@ -412,7 +409,7 @@ TEST_P(AddQuant, Op)
             false, /* is_signed */
             false, /* depthwise */
             GetParam(),
-            QUANT_TOLERANCE);
+            TOLERANCE);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -468,7 +465,7 @@ TEST(MobileNetV1, Whole)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mobilenet_v1_1.0_224_quant.tflite";
 
-   test_model_file(file_path.str(), MODEL_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 TEST_P(MobileNetV1Param, Op)
@@ -477,7 +474,7 @@ TEST_P(MobileNetV1Param, Op)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mb-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
-   test_model_file(file_path.str(), MODEL_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 static inline std::string
@@ -513,7 +510,7 @@ TEST(MobileDet, Whole)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/ssdlite_mobiledet_coco_qat_postprocess.tflite";
 
-   test_model_file(file_path.str(), MODEL_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 TEST_P(MobileDetParam, Op)
@@ -522,7 +519,7 @@ TEST_P(MobileDetParam, Op)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mobiledet-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
-   test_model_file(file_path.str(), MODEL_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 static inline std::string
@@ -558,7 +555,7 @@ TEST(YoloX, Whole)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/yolox.tflite";
 
-   test_model_file(file_path.str(), YOLOX_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 TEST_P(YoloXParam, Op)
@@ -567,7 +564,7 @@ TEST_P(YoloXParam, Op)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/yolox-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
-   test_model_file(file_path.str(), MODEL_TOLERANCE, true);
+   test_model_file(file_path.str(), TOLERANCE, true);
 }
 
 static inline std::string
@@ -626,7 +623,7 @@ main(int argc, char **argv)
 
       return 0;
    } else if (argc > 1 && !strcmp(argv[1], "run_model")) {
-      test_model_file(std::string(argv[2]), MODEL_TOLERANCE, false);
+      test_model_file(std::string(argv[2]), TOLERANCE, false);
    } else {
       testing::InitGoogleTest(&argc, argv);
       return RUN_ALL_TESTS();
