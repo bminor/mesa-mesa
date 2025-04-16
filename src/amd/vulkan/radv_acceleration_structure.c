@@ -580,7 +580,7 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
    radv_get_scratch_layout(device, leaf_count, &layout);
 
    /* Prepare ready counts for internal nodes */
-   radv_fill_buffer(cmd_buffer, NULL, NULL, scratch + layout.internal_ready_count_offset,
+   radv_fill_memory(cmd_buffer, NULL, scratch + layout.internal_ready_count_offset,
                     layout.update_size - layout.internal_ready_count_offset, 0x0);
 }
 
@@ -721,7 +721,7 @@ static void
 radv_cmd_fill_buffer_addr(VkCommandBuffer commandBuffer, VkDeviceAddress addr, VkDeviceSize size, uint32_t data)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   radv_fill_buffer(cmd_buffer, NULL, NULL, addr, size, data);
+   radv_fill_memory(cmd_buffer, NULL, addr, size, data);
 }
 
 VkResult

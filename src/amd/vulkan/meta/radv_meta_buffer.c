@@ -190,7 +190,7 @@ radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, ui
    radv_meta_restore(&saved_state, cmd_buffer);
 }
 
-static uint32_t
+uint32_t
 radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t va, uint64_t size,
                  uint32_t value)
 {
@@ -220,8 +220,7 @@ radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   if (bo)
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
+   radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
    return radv_fill_memory(cmd_buffer, image, va, size, value);
 }
