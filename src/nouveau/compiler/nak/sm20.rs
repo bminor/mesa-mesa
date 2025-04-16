@@ -11,7 +11,7 @@ use bitview::{
 };
 
 use std::fmt;
-use std::ops::Range;
+use std::{collections::HashMap, ops::Range};
 
 pub struct ShaderModel20 {
     sm: u8,
@@ -191,6 +191,8 @@ trait SM20Op {
 
 struct SM20Encoder<'a> {
     _sm: &'a ShaderModel20,
+    ip: usize,
+    labels: &'a HashMap<Label, usize>,
     inst: [u32; 2],
 }
 
@@ -1644,6 +1646,103 @@ impl SM20Op for OpIpa {
     }
 }
 
+impl SM20Encoder<'_> {
+    fn set_rel_offset(&mut self, range: Range<usize>, label: &Label) {
+        let ip = u32::try_from(self.ip).unwrap();
+        let ip = i32::try_from(ip).unwrap();
+
+        let target_ip = *self.labels.get(label).unwrap();
+        let target_ip = u32::try_from(target_ip).unwrap();
+        let target_ip = i32::try_from(target_ip).unwrap();
+
+        let rel_offset = target_ip - ip - 8;
+
+        self.set_field(range, rel_offset);
+    }
+}
+
+impl SM20Op for OpBra {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x10);
+        e.set_field(5..9, 0xf_u8); // flags
+        e.set_bit(15, false); // .u
+        e.set_bit(16, false); // .lmt
+        e.set_rel_offset(26..50, &self.target);
+    }
+}
+
+impl SM20Op for OpSSy {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x18);
+        e.set_rel_offset(26..50, &self.target);
+    }
+}
+
+impl SM20Op for OpSync {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        // SM20 doesn't have sync.  It's just nop.s
+        e.set_opcode(SM20Unit::Move, 0x10);
+        e.set_field(5..9, 0xf_u8); // flags
+        e.set_bit(4, true);
+    }
+}
+
+impl SM20Op for OpBrk {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x2a);
+        e.set_field(5..9, 0xf_u8); // flags
+    }
+}
+
+impl SM20Op for OpPBk {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x1a);
+        e.set_rel_offset(26..50, &self.target);
+    }
+}
+
+impl SM20Op for OpCont {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x2c);
+        e.set_field(5..9, 0xf_u8); // flags
+    }
+}
+
+impl SM20Op for OpPCnt {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x1c);
+        e.set_rel_offset(26..50, &self.target);
+    }
+}
+
 impl SM20Op for OpExit {
     fn legalize(&mut self, _b: &mut LegalizeBuilder) {
         // Nothing to do
@@ -1791,6 +1890,13 @@ macro_rules! as_sm20_op_match {
             Op::ALd(op) => op,
             Op::ASt(op) => op,
             Op::Ipa(op) => op,
+            Op::Bra(op) => op,
+            Op::SSy(op) => op,
+            Op::Sync(op) => op,
+            Op::Brk(op) => op,
+            Op::PBk(op) => op,
+            Op::Cont(op) => op,
+            Op::PCnt(op) => op,
             Op::Exit(op) => op,
             Op::Isberd(op) => op,
             Op::Kill(op) => op,
@@ -1815,11 +1921,23 @@ fn encode_sm20_shader(sm: &ShaderModel20, s: &Shader<'_>) -> Vec<u32> {
     assert!(s.functions.len() == 1);
     let func = &s.functions[0];
 
+    let mut ip = 0_usize;
+    let mut labels = HashMap::new();
+    for b in &func.blocks {
+        // We ensure blocks will have groups of 7 instructions with a
+        // schedule instruction before each groups.  As we should never jump
+        // to a schedule instruction, we account for that here.
+        labels.insert(b.label, ip);
+        ip += b.instrs.len() * 8;
+    }
+
     let mut encoded = Vec::new();
     for b in &func.blocks {
         for instr in &b.instrs {
             let mut e = SM20Encoder {
                 _sm: sm,
+                ip: encoded.len() * 4,
+                labels: &labels,
                 inst: [0_u32; 2],
             };
             as_sm20_op(&instr.op).encode(&mut e);
