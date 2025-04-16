@@ -486,7 +486,7 @@ impl SM70Encoder<'_> {
         let bit74_75_are_mod = !is_fp16_alu
             || matches!(src1, ALUSrc::None)
             || matches!(src2, ALUSrc::None);
-        debug_assert!(bit74_75_are_mod || !src0.has_src_mod());
+        debug_assert!(bit74_75_are_mod || !src2.has_src_mod());
 
         self.encode_alu_src0(&src0, RegFile::GPR, is_fp16_alu);
 
