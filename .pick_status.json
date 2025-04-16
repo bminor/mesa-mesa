@@ -464,7 +464,7 @@
         "description": "mesa-clc: add an option to force inclusion of OpenCL headers",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
