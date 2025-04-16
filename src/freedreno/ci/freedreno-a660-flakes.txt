@@ -94,3 +94,5 @@ angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch.vertex_io_ar
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch.vertex_io_array_size_implicit.isolines
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch.vertex_io_array_size_shader_builtin.isolines
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_vertex.vertex_io_array_size_shader_builtin.triangles_explicit_tcs_out_size
+angle-dEQP-GLES31.functional.tessellation.invariance.outer_edge_symmetry.isolines_fractional_odd_spacing_cw_point_mode
+
