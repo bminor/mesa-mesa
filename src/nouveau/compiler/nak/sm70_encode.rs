@@ -1115,7 +1115,7 @@ impl SM70Op for OpHFma2 {
 
         // HFMA2 doesn't have fabs or fneg on SRC2.
         if !src2.src_mod.is_none() {
-            b.copy_alu_src_and_lower_fmod(src2, SrcType::F16v2);
+            b.copy_alu_src_and_lower_fmod(src2, gpr, SrcType::F16v2);
         }
     }
 
