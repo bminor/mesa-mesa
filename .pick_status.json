@@ -4,7 +4,7 @@
         "description": "winsys/amdgpu: disable VM_ALWAYS_VALID",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8c91624614c1f939974fe0d2d1a3baf83335cecb",
         "notes": null
