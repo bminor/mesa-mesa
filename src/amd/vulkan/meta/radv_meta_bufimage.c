@@ -622,6 +622,7 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
    const struct radeon_surf *surf = &image->planes[0].surface;
    const struct radeon_info *gpu_info = &pdev->info;
    struct ac_surf_info surf_info = radv_get_ac_surf_info(device, image);
+   enum radv_copy_flags img_copy_flags = 0, mem_copy_flags = 0;
 
    /* GFX10 will use a different workaround unless this is not a 2D image */
    if (gpu_info->gfx_level < GFX9 || (gpu_info->gfx_level >= GFX10 && image->vk.image_type == VK_IMAGE_TYPE_2D) ||
@@ -654,6 +655,10 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_INV_VCACHE;
    }
 
+   if (image->bindings[0].bo && (image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
+      img_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   mem_copy_flags |= buf_bsurf->copy_flags;
+
    for (uint32_t y = 0; y < mip_extent.height; y++) {
       uint32_t coordY = y + mip_offset.y;
       /* If the default copy algorithm (done previously) has already seen this
@@ -670,9 +675,9 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
          /* buf_bsurf->offset already includes the layer offset */
          const uint64_t mem_va = buf_bsurf->addr + buf_bsurf->offset + y * buf_bsurf->pitch * surf->bpe + x * surf->bpe;
          if (to_image) {
-            radv_copy_memory(cmd_buffer, mem_va, img_va, surf->bpe);
+            radv_copy_memory(cmd_buffer, mem_va, img_va, surf->bpe, mem_copy_flags, img_copy_flags);
          } else {
-            radv_copy_memory(cmd_buffer, img_va, mem_va, surf->bpe);
+            radv_copy_memory(cmd_buffer, img_va, mem_va, surf->bpe, img_copy_flags, mem_copy_flags);
          }
       }
    }

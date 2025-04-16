@@ -93,6 +93,7 @@ static void
 radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *src_image,
                              const struct radv_image *dst_image)
 {
+   enum radv_copy_flags src_copy_flags = 0, dst_copy_flags = 0;
    uint64_t src_va, dst_va, size;
 
    assert(src_image->planes[0].surface.cmask_size == dst_image->planes[0].surface.cmask_size &&
@@ -102,12 +103,17 @@ radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct ra
           dst_image->planes[0].surface.fmask_offset + dst_image->planes[0].surface.fmask_size ==
              dst_image->planes[0].surface.cmask_offset);
 
+   if (src_image->bindings[0].bo && (src_image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
+      src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   if (dst_image->bindings[0].bo && (dst_image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
+      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+
    /* Copy CMASK+FMASK. */
    size = src_image->planes[0].surface.cmask_size + src_image->planes[0].surface.fmask_size;
    src_va = src_image->bindings[0].addr + src_image->planes[0].surface.fmask_offset;
    dst_va = dst_image->bindings[0].addr + dst_image->planes[0].surface.fmask_offset;
 
-   radv_copy_memory(cmd_buffer, src_va, dst_va, size);
+   radv_copy_memory(cmd_buffer, src_va, dst_va, size, src_copy_flags, dst_copy_flags);
 }
 
 bool

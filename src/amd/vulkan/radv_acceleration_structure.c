@@ -581,7 +581,7 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
 
    /* Prepare ready counts for internal nodes */
    radv_fill_memory(cmd_buffer, scratch + layout.internal_ready_count_offset,
-                    layout.update_size - layout.internal_ready_count_offset, 0x0);
+                    layout.update_size - layout.internal_ready_count_offset, 0x0, RADV_COPY_FLAGS_DEVICE_LOCAL);
 }
 
 static void
@@ -627,7 +627,8 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
       const uint64_t src_va = vk_acceleration_structure_get_va(src);
       const uint64_t dst_va = vk_acceleration_structure_get_va(dst);
 
-      radv_copy_memory(cmd_buffer, src_va, dst_va, layout.bvh_offset);
+      radv_copy_memory(cmd_buffer, src_va, dst_va, layout.bvh_offset, RADV_COPY_FLAGS_DEVICE_LOCAL,
+                       RADV_COPY_FLAGS_DEVICE_LOCAL);
    }
 
    struct scratch_layout layout;
@@ -721,7 +722,7 @@ static void
 radv_cmd_fill_buffer_addr(VkCommandBuffer commandBuffer, VkDeviceAddress addr, VkDeviceSize size, uint32_t data)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   radv_fill_memory(cmd_buffer, addr, size, data);
+   radv_fill_memory(cmd_buffer, addr, size, data, RADV_COPY_FLAGS_DEVICE_LOCAL);
 }
 
 VkResult

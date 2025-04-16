@@ -98,7 +98,8 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
 
 static void
 copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
-                     struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
+                     enum radv_copy_flags src_copy_flags, struct radv_image *image, VkImageLayout layout,
+                     const VkBufferImageCopy2 *region)
 {
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       transfer_copy_memory_image(cmd_buffer, buffer_addr, image, region, true);
@@ -173,6 +174,7 @@ copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
       .format = img_bsurf.format,
       .offset = region->bufferOffset,
       .pitch = buf_layout.row_stride_B / buf_layout.element_size_B,
+      .copy_flags = src_copy_flags,
    };
 
    if (image->vk.image_type == VK_IMAGE_TYPE_3D)
@@ -218,6 +220,10 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
    VK_FROM_HANDLE(radv_image, dst_image, pCopyBufferToImageInfo->dstImage);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   enum radv_copy_flags src_copy_flags = 0;
+
+   if (src_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
+      src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
@@ -230,7 +236,7 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
 
-      copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, dst_image,
+      copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags, dst_image,
                            pCopyBufferToImageInfo->dstImageLayout, region);
    }
 
@@ -262,7 +268,8 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
 static void
 copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
-                     struct radv_image *image, VkImageLayout layout, const VkBufferImageCopy2 *region)
+                     enum radv_copy_flags dst_copy_flags, struct radv_image *image, VkImageLayout layout,
+                     const VkBufferImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
@@ -332,6 +339,7 @@ copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
       .format = img_info.format,
       .offset = region->bufferOffset,
       .pitch = buf_extent_el.width,
+      .copy_flags = dst_copy_flags,
    };
 
    if (image->vk.image_type == VK_IMAGE_TYPE_3D)
@@ -367,6 +375,10 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
    VK_FROM_HANDLE(radv_image, src_image, pCopyImageToBufferInfo->srcImage);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyImageToBufferInfo->dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   enum radv_copy_flags dst_copy_flags = 0;
+
+   if (dst_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
+      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
@@ -379,7 +391,7 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
 
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
 
-      copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, src_image,
+      copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags, src_image,
                            pCopyImageToBufferInfo->srcImageLayout, region);
    }
 

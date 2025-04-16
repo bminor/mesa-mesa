@@ -65,6 +65,10 @@ struct radv_meta_saved_state {
    unsigned active_occlusion_queries;
 };
 
+enum radv_copy_flags {
+   RADV_COPY_FLAGS_DEVICE_LOCAL = 1 << 0,
+};
+
 enum radv_blit_ds_layout {
    RADV_BLIT_DS_LAYOUT_TILE_ENABLE,
    RADV_BLIT_DS_LAYOUT_TILE_DISABLE,
@@ -182,6 +186,7 @@ struct radv_meta_blit2d_buffer {
    uint32_t pitch;
    uint8_t bs;
    VkFormat format;
+   enum radv_copy_flags copy_flags;
 };
 
 struct radv_meta_blit2d_rect {
@@ -263,12 +268,14 @@ void radv_meta_decode_astc(struct radv_cmd_buffer *cmd_buffer, struct radv_image
 uint32_t radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *bo, uint64_t va, uint64_t size,
                           uint32_t value);
 
-uint32_t radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, uint32_t value);
+uint32_t radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, uint32_t value,
+                          enum radv_copy_flags copy_flags);
 
 uint32_t radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t offset,
                          uint64_t size, uint32_t value);
 
-void radv_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size);
+void radv_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size,
+                      enum radv_copy_flags src_copy_flags, enum radv_copy_flags dst_copy_flags);
 
 void radv_cmd_buffer_clear_attachment(struct radv_cmd_buffer *cmd_buffer, const VkClearAttachment *attachment);
 
