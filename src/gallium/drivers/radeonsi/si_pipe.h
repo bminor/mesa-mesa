@@ -1622,6 +1622,8 @@ struct ac_llvm_compiler *si_create_llvm_compiler(struct si_screen *sscreen);
 void si_init_aux_async_compute_ctx(struct si_screen *sscreen);
 struct si_context *si_get_aux_context(struct si_aux_context *ctx);
 void si_put_aux_context_flush(struct si_aux_context *ctx);
+void si_get_scratch_tmpring_size(struct si_context *sctx, unsigned bytes_per_wave,
+                                 unsigned *spi_tmpring_size);
 void si_destroy_screen(struct pipe_screen *pscreen);
 
 /* si_perfcounters.c */

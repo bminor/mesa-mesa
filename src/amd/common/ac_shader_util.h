@@ -301,9 +301,10 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
 uint32_t ac_apply_cu_en(uint32_t value, uint32_t clear_mask, unsigned value_shift,
                         const struct radeon_info *info);
 
-void ac_get_scratch_tmpring_size(const struct radeon_info *info,
-                                 unsigned bytes_per_wave, unsigned *max_seen_bytes_per_wave,
-                                 uint32_t *tmpring_size);
+uint32_t ac_compute_scratch_wavesize(const struct radeon_info *info, uint32_t bytes_per_wave);
+
+void ac_get_scratch_tmpring_size(const struct radeon_info *info, unsigned num_scratch_waves,
+                                 unsigned bytes_per_wave, uint32_t *tmpring_size);
 
 unsigned
 ac_ngg_nogs_get_pervertex_lds_size(gl_shader_stage stage,

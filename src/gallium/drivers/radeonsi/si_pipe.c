@@ -889,15 +889,28 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       goto fail;
 
    /* Initialize compute_tmpring_size. */
-   ac_get_scratch_tmpring_size(&sctx->screen->info, 0,
-                               &sctx->max_seen_compute_scratch_bytes_per_wave,
-                               &sctx->compute_tmpring_size);
+   si_get_scratch_tmpring_size(sctx, 0,  &sctx->compute_tmpring_size);
 
    return &sctx->b;
 fail:
    fprintf(stderr, "radeonsi: Failed to create a context.\n");
    si_destroy_context(&sctx->b);
    return NULL;
+}
+
+void
+si_get_scratch_tmpring_size(struct si_context *sctx, unsigned bytes_per_wave,
+                            unsigned *spi_tmpring_size)
+{
+   bytes_per_wave = ac_compute_scratch_wavesize(&sctx->screen->info, bytes_per_wave);
+
+   sctx->max_seen_scratch_bytes_per_wave =
+      MAX2(sctx->max_seen_scratch_bytes_per_wave, bytes_per_wave);
+
+   /* TODO: We could decrease WAVES to make the whole buffer fit into the infinity cache. */
+   ac_get_scratch_tmpring_size(&sctx->screen->info, sctx->screen->info.max_scratch_waves,
+                               sctx->max_seen_scratch_bytes_per_wave,
+                               spi_tmpring_size);
 }
 
 static bool si_is_resource_busy(struct pipe_screen *screen, struct pipe_resource *resource,

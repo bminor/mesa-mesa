@@ -1030,10 +1030,23 @@ uint32_t ac_apply_cu_en(uint32_t value, uint32_t clear_mask, unsigned value_shif
           (((cu_en & spi_cu_en) << cu_en_shift) & cu_en_mask);
 }
 
-/* Return the register value and tune bytes_per_wave to increase scratch performance. */
-void ac_get_scratch_tmpring_size(const struct radeon_info *info,
-                                 unsigned bytes_per_wave, unsigned *max_seen_bytes_per_wave,
-                                 uint32_t *tmpring_size)
+/* Compute the optimal scratch wavesize. */
+uint32_t
+ac_compute_scratch_wavesize(const struct radeon_info *info, uint32_t bytes_per_wave)
+{
+   /* Add 1 scratch item to make the number of items odd. This should improve
+    * scratch performance by more randomly distributing scratch waves among
+    * memory channels.
+    */
+   if (bytes_per_wave)
+      bytes_per_wave |= info->scratch_wavesize_granularity;
+
+   return bytes_per_wave;
+}
+
+/* Return the scratch register value. */
+void ac_get_scratch_tmpring_size(const struct radeon_info *info, unsigned num_scratch_waves,
+                                 unsigned bytes_per_wave, uint32_t *tmpring_size)
 {
    /* SPI_TMPRING_SIZE and COMPUTE_TMPRING_SIZE are essentially scratch buffer descriptors.
     * WAVES means NUM_RECORDS. WAVESIZE is the size of each element, meaning STRIDE.
@@ -1049,25 +1062,15 @@ void ac_get_scratch_tmpring_size(const struct radeon_info *info,
     * Shaders with SCRATCH_EN=0 don't allocate scratch space.
     */
 
-   /* The LLVM shader backend should be reporting aligned scratch_sizes. */
+   /* The compiler shader backend should be reporting aligned scratch_sizes. */
    assert((bytes_per_wave & BITFIELD_MASK(info->scratch_wavesize_granularity_shift)) == 0 &&
           "scratch size per wave should be aligned");
 
-   /* Add 1 scratch item to make the number of items odd. This should improve scratch
-    * performance by more randomly distributing scratch waves among memory channels.
-    */
-   if (bytes_per_wave)
-      bytes_per_wave |= info->scratch_wavesize_granularity;
-
-   *max_seen_bytes_per_wave = MAX2(*max_seen_bytes_per_wave, bytes_per_wave);
-
-   unsigned max_scratch_waves = info->max_scratch_waves;
    if (info->gfx_level >= GFX11)
-      max_scratch_waves /= info->max_se; /* WAVES is per SE */
+      num_scratch_waves /= info->max_se; /* WAVES is per SE */
 
-   /* TODO: We could decrease WAVES to make the whole buffer fit into the infinity cache. */
-   *tmpring_size = S_0286E8_WAVES(max_scratch_waves) |
-                   S_0286E8_WAVESIZE(*max_seen_bytes_per_wave >> info->scratch_wavesize_granularity_shift);
+   *tmpring_size = S_0286E8_WAVES(num_scratch_waves) |
+                   S_0286E8_WAVESIZE(bytes_per_wave >> info->scratch_wavesize_granularity_shift);
 }
 
 /* Convert chip-agnostic memory access flags into hw-specific cache flags.
