@@ -9127,15 +9127,16 @@ iris_upload_compute_walker(struct iris_context *ice,
       }
    }
 
+   uint32_t total_shared = shader->total_shared + grid->variable_shared_mem;
    struct GENX(INTERFACE_DESCRIPTOR_DATA) idd = {};
    idd.KernelStartPointer =
       KSP(shader) + iris_cs_data_prog_offset(cs_data, dispatch.simd_size);
    idd.NumberofThreadsinGPGPUThreadGroup = dispatch.threads;
    idd.SharedLocalMemorySize =
-      intel_compute_slm_encode_size(GFX_VER, shader->total_shared);
+      intel_compute_slm_encode_size(GFX_VER, total_shared);
    idd.PreferredSLMAllocationSize =
       intel_compute_preferred_slm_calc_encode_size(devinfo,
-                                                   shader->total_shared,
+                                                   total_shared,
                                                    dispatch.group_size,
                                                    dispatch.simd_size);
    idd.SamplerStatePointer = shs->sampler_table.offset;
