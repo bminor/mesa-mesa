@@ -1341,6 +1341,10 @@ radv_update_preambles(struct radv_queue_state *queue, struct radv_device *device
          ? MIN2(needs.compute_scratch_waves, UINT32_MAX / needs.compute_scratch_size_per_wave)
          : 0;
 
+   /* Compute the optimal scratch wavesize. */
+   needs.scratch_size_per_wave = ac_compute_scratch_wavesize(&pdev->info, needs.scratch_size_per_wave);
+   needs.compute_scratch_size_per_wave = ac_compute_scratch_wavesize(&pdev->info, needs.compute_scratch_size_per_wave);
+
    if (pdev->info.gfx_level >= GFX11 && queue->qf == RADV_QUEUE_GENERAL) {
       needs.ge_rings = true;
    }
