@@ -77,7 +77,7 @@ interp_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
             comps[c] = nir_fmul(b, comps[c], inv_w);
       }
       return nir_vec(b, comps, num_components);
-   } else if (nak->sm >= 50) {
+   } else if (nak->sm >= 20) {
       struct nak_nir_ipa_flags flags = {
          .interp_mode = interp_mode,
          .interp_freq = NAK_INTERP_FREQ_PASS,
@@ -100,7 +100,7 @@ interp_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
       }
       return nir_vec(b, comps, num_components);
    } else {
-      unreachable("Figure out input interpolation on Kepler");
+      unreachable("Unsupported shader model");
    }
 }
 
