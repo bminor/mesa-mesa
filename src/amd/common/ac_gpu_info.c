@@ -1733,28 +1733,25 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->has_set_sh_pairs_packed = info->register_shadowing_required;
    }
 
-   bool double_offchip_wg = info->gfx_level >= GFX7 &&
-                            info->family != CHIP_CARRIZO &&
-                            info->family != CHIP_STONEY;
    /* This is the size of all TCS outputs in memory per workgroup.
     * Hawaii can't handle num_workgroups > 256 with 8K per workgroup, so use 4K.
     */
-   unsigned wg_size_in_dwords = info->family == CHIP_HAWAII ? 4096 : 8192;
-   unsigned wg_size_enum;
+   unsigned max_hs_out_vram_dwords_per_wg = info->family == CHIP_HAWAII ? 4096 : 8192;
+   unsigned max_hs_out_vram_dwords_enum;
    unsigned max_workgroups_per_se;
 
-   switch (wg_size_in_dwords) {
+   switch (max_hs_out_vram_dwords_per_wg) {
    case 8192:
-      wg_size_enum = V_03093C_X_8K_DWORDS;
+      max_hs_out_vram_dwords_enum = V_03093C_X_8K_DWORDS;
       break;
    case 4096:
-      wg_size_enum = V_03093C_X_4K_DWORDS;
+      max_hs_out_vram_dwords_enum = V_03093C_X_4K_DWORDS;
       break;
    case 2048:
-      wg_size_enum = V_03093C_X_2K_DWORDS;
+      max_hs_out_vram_dwords_enum = V_03093C_X_2K_DWORDS;
       break;
    case 1024:
-      wg_size_enum = V_03093C_X_1K_DWORDS;
+      max_hs_out_vram_dwords_enum = V_03093C_X_1K_DWORDS;
       break;
    default:
       unreachable("invalid TCS workgroup size");
@@ -1766,12 +1763,13 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    if (info->gfx_level >= GFX11) {
       max_workgroups_per_se = 256;
-   } else if (info->gfx_level >= GFX10) {
+   } else if (info->gfx_level >= GFX10 ||
+              info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20) {
       max_workgroups_per_se = 128;
-   } else if (info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20) {
-      max_workgroups_per_se = double_offchip_wg ? 128 : 64;
+   } else if (info->gfx_level >= GFX7 && info->family != CHIP_CARRIZO && info->family != CHIP_STONEY) {
+      max_workgroups_per_se = 127;
    } else {
-      max_workgroups_per_se = double_offchip_wg ? 127 : 63;
+      max_workgroups_per_se = 63;
    }
 
    /* Limit to 4 workgroups per CU for TCS, which exhausts LDS if each workgroup occupies 16KB.
@@ -1785,25 +1783,25 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    if (info->gfx_level >= GFX11) {
       /* OFFCHIP_BUFFERING is per SE. */
       info->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(num_workgroups_per_se - 1) |
-                               S_03093C_OFFCHIP_GRANULARITY_GFX103(wg_size_enum);
+                               S_03093C_OFFCHIP_GRANULARITY_GFX103(max_hs_out_vram_dwords_enum);
    } else if (info->gfx_level >= GFX10_3) {
       info->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX103(num_workgroups - 1) |
-                               S_03093C_OFFCHIP_GRANULARITY_GFX103(wg_size_enum);
+                               S_03093C_OFFCHIP_GRANULARITY_GFX103(max_hs_out_vram_dwords_enum);
    } else if (info->gfx_level >= GFX7) {
       info->hs_offchip_param = S_03093C_OFFCHIP_BUFFERING_GFX7(num_workgroups -
                                                                (info->gfx_level >= GFX8 ? 1 : 0)) |
-                               S_03093C_OFFCHIP_GRANULARITY_GFX7(wg_size_enum);
+                               S_03093C_OFFCHIP_GRANULARITY_GFX7(max_hs_out_vram_dwords_enum);
    } else {
       info->hs_offchip_param = S_0089B0_OFFCHIP_BUFFERING(num_workgroups) |
-                               S_0089B0_OFFCHIP_GRANULARITY(wg_size_enum);
+                               S_0089B0_OFFCHIP_GRANULARITY(max_hs_out_vram_dwords_enum);
    }
 
    /* The typical size of tess factors of 1 TCS workgroup if all patches are triangles. */
    unsigned typical_tess_factor_size_per_wg = (192 / 3) * 16;
    unsigned num_tess_factor_wg_per_cu = 3;
 
-   info->hs_offchip_workgroup_dw_size = wg_size_in_dwords;
-   info->tess_offchip_ring_size = num_workgroups * wg_size_in_dwords * 4;
+   info->hs_offchip_workgroup_dw_size = max_hs_out_vram_dwords_per_wg;
+   info->tess_offchip_ring_size = num_workgroups * max_hs_out_vram_dwords_per_wg * 4;
    info->tess_factor_ring_size = typical_tess_factor_size_per_wg * num_tess_factor_wg_per_cu *
                                  info->max_good_cu_per_sa * info->max_sa_per_se * info->max_se;
    info->total_tess_ring_size = info->tess_offchip_ring_size + info->tess_factor_ring_size;
