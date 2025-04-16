@@ -494,12 +494,16 @@ d3d12_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
       ctx->batches[i].ctx_index = i;
    }
 
-   if (flags & PIPE_CONTEXT_PREFER_THREADED)
-      return threaded_context_create(&ctx->base,
+   if (flags & PIPE_CONTEXT_PREFER_THREADED) {
+      struct pipe_context *ret = threaded_context_create(&ctx->base,
          &screen->transfer_pool,
          d3d12_replace_buffer_storage,
          NULL,
          &ctx->threaded_context);
+      ctx->threaded_context->bytes_replaced_limit = 1024 * 1024 * 1024; /* 1GiB */
+      threaded_context_init_bytes_mapped_limit(ctx->threaded_context, 4);
+      return ret;
+   }
 
    return &ctx->base;
 }
