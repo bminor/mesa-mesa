@@ -190,9 +190,9 @@ radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, ui
    radv_meta_restore(&saved_state, cmd_buffer);
 }
 
-uint32_t
-radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t va, uint64_t size,
-                 uint32_t value)
+static uint32_t
+radv_fill_memory_internal(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t va,
+                          uint64_t size, uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    uint32_t flush_bits = 0;
@@ -215,6 +215,12 @@ radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *im
 }
 
 uint32_t
+radv_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, uint32_t value)
+{
+   return radv_fill_memory_internal(cmd_buffer, NULL, va, size, value);
+}
+
+uint32_t
 radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t offset, uint64_t size,
                 uint32_t value)
 {
@@ -224,18 +230,18 @@ radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *ima
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
-   return radv_fill_memory(cmd_buffer, image, va, size, value);
+   return radv_fill_memory_internal(cmd_buffer, image, va, size, value);
 }
 
 uint32_t
-radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, struct radeon_winsys_bo *bo,
-                 uint64_t va, uint64_t size, uint32_t value)
+radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *bo, uint64_t va, uint64_t size,
+                 uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
-   return radv_fill_memory(cmd_buffer, image, va, size, value);
+   return radv_fill_memory(cmd_buffer, va, size, value);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -249,7 +255,7 @@ radv_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSi
 
    fillSize = vk_buffer_range(&dst_buffer->vk, dstOffset, fillSize) & ~3ull;
 
-   radv_fill_buffer(cmd_buffer, NULL, dst_buffer->bo, vk_buffer_address(&dst_buffer->vk, dstOffset), fillSize, data);
+   radv_fill_buffer(cmd_buffer, dst_buffer->bo, vk_buffer_address(&dst_buffer->vk, dstOffset), fillSize, data);
 
    radv_resume_conditional_rendering(cmd_buffer);
 }

@@ -2535,13 +2535,13 @@ radv_CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uin
     */
    cmd_buffer->state.flush_bits |= cmd_buffer->active_query_flush_bits;
 
-   flush_bits |= radv_fill_buffer(cmd_buffer, NULL, pool->bo, radv_buffer_get_va(pool->bo) + firstQuery * pool->stride,
+   flush_bits |= radv_fill_buffer(cmd_buffer, pool->bo, radv_buffer_get_va(pool->bo) + firstQuery * pool->stride,
                                   queryCount * pool->stride, value);
 
    if (pool->vk.query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS ||
        (pool->vk.query_type == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT && pdev->info.gfx_level >= GFX11)) {
       flush_bits |=
-         radv_fill_buffer(cmd_buffer, NULL, pool->bo,
+         radv_fill_buffer(cmd_buffer, pool->bo,
                           radv_buffer_get_va(pool->bo) + pool->availability_offset + firstQuery * 4, queryCount * 4, 0);
    }
 
