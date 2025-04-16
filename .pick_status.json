@@ -1984,7 +1984,7 @@
         "description": "nak/legalize: Take a RegFile in copy_alu_src_and_lower_fmod",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

@@ -231,11 +231,12 @@ pub trait LegalizeBuildHelpers: SSABuilder {
     fn copy_alu_src_and_lower_fmod(
         &mut self,
         src: &mut Src,
+        reg_file: RegFile,
         src_type: SrcType,
     ) {
         match src_type {
             SrcType::F16 | SrcType::F16v2 => {
-                let val = self.alloc_ssa(RegFile::GPR, 1);
+                let val = self.alloc_ssa(reg_file, 1);
                 self.push_op(OpHAdd2 {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -246,7 +247,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 *src = val.into();
             }
             SrcType::F32 => {
-                let val = self.alloc_ssa(RegFile::GPR, 1);
+                let val = self.alloc_ssa(reg_file, 1);
                 self.push_op(OpFAdd {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -257,7 +258,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 *src = val.into();
             }
             SrcType::F64 => {
-                let val = self.alloc_ssa(RegFile::GPR, 2);
+                let val = self.alloc_ssa(reg_file, 2);
                 self.push_op(OpDAdd {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -292,9 +293,14 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         *src = val.into();
     }
 
-    fn copy_alu_src_if_fabs(&mut self, src: &mut Src, src_type: SrcType) {
+    fn copy_alu_src_if_fabs(
+        &mut self,
+        src: &mut Src,
+        reg_file: RegFile,
+        src_type: SrcType,
+    ) {
         if src.src_mod.has_fabs() {
-            self.copy_alu_src_and_lower_fmod(src, src_type);
+            self.copy_alu_src_and_lower_fmod(src, reg_file, src_type);
         }
     }
 

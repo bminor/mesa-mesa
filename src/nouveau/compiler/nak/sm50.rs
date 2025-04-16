@@ -538,9 +538,9 @@ impl SM50Op for OpFFma {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1, src2] = &mut self.srcs;
-        b.copy_alu_src_if_fabs(src0, SrcType::F32);
-        b.copy_alu_src_if_fabs(src1, SrcType::F32);
-        b.copy_alu_src_if_fabs(src2, SrcType::F32);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src2, GPR, SrcType::F32);
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
         b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::F32);
@@ -645,8 +645,8 @@ impl SM50Op for OpFMul {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1] = &mut self.srcs;
-        b.copy_alu_src_if_fabs(src0, SrcType::F32);
-        b.copy_alu_src_if_fabs(src1, SrcType::F32);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
 
@@ -986,9 +986,9 @@ impl SM50Op for OpDFma {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1, src2] = &mut self.srcs;
-        b.copy_alu_src_if_fabs(src0, SrcType::F64);
-        b.copy_alu_src_if_fabs(src1, SrcType::F64);
-        b.copy_alu_src_if_fabs(src2, SrcType::F64);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F64);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F64);
+        b.copy_alu_src_if_fabs(src2, GPR, SrcType::F64);
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F64);
         b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::F64);
@@ -1085,8 +1085,8 @@ impl SM50Op for OpDMul {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1] = &mut self.srcs;
-        b.copy_alu_src_if_fabs(src0, SrcType::F64);
-        b.copy_alu_src_if_fabs(src1, SrcType::F64);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F64);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F64);
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F64);
         b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::F64);
