@@ -824,6 +824,30 @@ impl SM20Op for OpFSetP {
     }
 }
 
+impl SM20Op for OpBfe {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.base, GPR, SrcType::I32);
+        if let SrcRef::Imm32(imm32) = &mut self.range.src_ref {
+            // Only the bottom 16 bits of the immediate matter
+            *imm32 &= 0xffff;
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Int,
+            0x1c,
+            Some(&self.dst),
+            Some(&self.base),
+            Some(&self.range),
+            None,
+        );
+        e.set_bit(5, self.signed);
+        e.set_bit(8, self.reverse);
+    }
+}
+
 impl SM20Op for OpFlo {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
@@ -1032,6 +1056,38 @@ impl SM20Encoder<'_> {
     }
 }
 
+impl SM20Op for OpIMnMx {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(self.srcs[1].src_mod.is_none());
+        assert!(self.srcs[0].src_mod.is_none());
+
+        e.encode_form_a(
+            SM20Unit::Int,
+            0x2,
+            Some(&self.dst),
+            Some(&self.srcs[0]),
+            Some(&self.srcs[1]),
+            None,
+        );
+        e.set_field(
+            5..6,
+            match self.cmp_type {
+                IntCmpType::U32 => 0_u8,
+                IntCmpType::I32 => 1_u8,
+            },
+        );
+        e.set_pred_src(49..53, self.min);
+    }
+}
+
 impl SM20Op for OpISetP {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
@@ -1135,6 +1191,59 @@ impl SM20Op for OpPopC {
         );
         e.set_bit(8, self.src.src_mod.is_bnot());
         e.set_bit(9, mask.src_mod.is_bnot());
+    }
+}
+
+impl SM20Op for OpShl {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
+        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
+            if self.wrap {
+                *imm32 = *imm32 & 0x1f;
+            } else {
+                *imm32 = (*imm32).min(32);
+            }
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Int,
+            0x18,
+            Some(&self.dst),
+            Some(&self.src),
+            Some(&self.shift),
+            None,
+        );
+        e.set_bit(9, self.wrap);
+    }
+}
+
+impl SM20Op for OpShr {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
+        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
+            if self.wrap {
+                *imm32 = *imm32 & 0x1f;
+            } else {
+                *imm32 = (*imm32).min(32);
+            }
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Int,
+            0x16,
+            Some(&self.dst),
+            Some(&self.src),
+            Some(&self.shift),
+            None,
+        );
+        e.set_bit(5, self.signed);
+        e.set_bit(9, self.wrap);
     }
 }
 
@@ -1424,14 +1533,18 @@ macro_rules! as_sm20_op_match {
             Op::MuFu(op) => op,
             Op::FSet(op) => op,
             Op::FSetP(op) => op,
+            Op::Bfe(op) => op,
             Op::Flo(op) => op,
             Op::IAdd2(op) => op,
             Op::IAdd2X(op) => op,
             Op::IMad(op) => op,
             Op::IMul(op) => op,
+            Op::IMnMx(op) => op,
             Op::ISetP(op) => op,
             Op::Lop2(op) => op,
             Op::PopC(op) => op,
+            Op::Shl(op) => op,
+            Op::Shr(op) => op,
             Op::Mov(op) => op,
             Op::Prmt(op) => op,
             Op::Sel(op) => op,
