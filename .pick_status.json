@@ -1,5 +1,445 @@
 [
     {
+        "sha": "555821ff93118d4a6ea441127cd0427a95743d47",
+        "description": "winsys/amdgpu: disable VM_ALWAYS_VALID",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8c91624614c1f939974fe0d2d1a3baf83335cecb",
+        "notes": null
+    },
+    {
+        "sha": "3f7345a0ce04ce28073a1f8d557fe45c24cc8a9c",
+        "description": "docs: reset new_features.txt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8968276e6d5d54483bd5baf74d73b43f111ddaa",
+        "description": "VERSION: bump to 25.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93547d45ceb0a59f429f6029b339c044f8aaabaa",
+        "description": "ir3/a7xx: Add post-RA pass to track liveness and insert (last)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65866896615547fd7b99f80c3f53e189363c5803",
+        "description": "radeonsi/vpe: Use studio range for YUV and full for RGB by default",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a502fcd898db197c89d38f99528333bd805e23e",
+        "description": "radeonsi/vpe: Fix process_frame return value",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4fe586f71ef98452df6c29830c19273e7c73444c",
+        "notes": null
+    },
+    {
+        "sha": "bd6f9e8aee0bb9ceba345b8c9434436dd82ac59f",
+        "description": "radeonsi/vpe: Use float division to get scaling ratio",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e85a6b6a63a6e30072ffb1bd423c51d14d3f9ab9",
+        "notes": null
+    },
+    {
+        "sha": "b4940255edcad74ecbbfdb570c1f6411d58a6b61",
+        "description": "radv/sdma: add support for compression on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efa0b16bb2526a2e2b7357a59780a5054b5ae82d",
+        "description": "radv/sdma: add a new flag to know if the surface is compressed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03671ccf9edde94297b729fa98627a580ba652d1",
+        "description": "radv/sdma: use the correct helper to get the number type field",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b44dc98cde52c409fb7bc82d2972f8f5dfbdc099",
+        "description": "radv/sdma: remove redundant check for compression when getting metadata",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3d5d2fe866bf03c9a1ac3c894f0e2312eb8cc92",
+        "description": "radv/sdma: use SDMA5_DCC_xxx bitfields",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f44342199abeff74299c1a3522aebff6b1506b18",
+        "description": "radv/sdma: simplify configuring the number of uncompressed DCC blocks",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13db408e597b5b8ae931e19cd5652b8f5e718423",
+        "description": "ac/perfcounter: add support for GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c42d43e8ebef51d36fc617cd5822c3b968f0e166",
+        "description": "radv: print more error messages during SPM initialization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "177427877bb50ad7ba24abfa13e55a2684d804df",
+        "description": "radeonsi: use nir_opt_shrink_vectors",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b7eff9cd87384d541851ac2bbc0b3bc47df934d6",
+        "description": "radeonsi: always scalarize shared memory instructions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78cacfd9cecc712fa670bf13062912dcfd8836fa",
+        "description": "ac/surface: select 3D tile mode without overallocating too much for gfx6-8",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c87ce78d1013a52a78a05470ca33fd8597d3f289",
+        "notes": null
+    },
+    {
+        "sha": "195e7b4f75305b1559212c50f3697aeeb0d9eb99",
+        "description": "ac/surface: make gfx12_estimate_size reusable by gfx6",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c87ce78d1013a52a78a05470ca33fd8597d3f289",
+        "notes": null
+    },
+    {
+        "sha": "2c122d478b4ece422da1a4187fc0ad86d9eaf690",
+        "description": "ac/nir: set X=0 for task->mesh shader dispatch when Y or Z is 0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "963147d7fd03694e3e93d8caef126b14db6dc35f",
+        "description": "ac/gpu_info: add 256 to payload_entry_size to increase future task shader perf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7c903f258b3f47a7dc27eb637e37d331ac0169d",
+        "description": "ac/gpu_info: add payload_entry_size into ac_task_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0dafd0469561c644b531b4b86185219646772936",
+        "description": "ac/gpu_info: remove has_tmz_support function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0be5a3559aa9b98ed010f1f658d8a4a4ff5fce2c",
+        "description": "ac/gpu_info: increase the attribute ring size for gfx12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e783930b105c3fde643800d47532720c47d5e96e",
+        "description": "elk/algebraic: Don't optimize float SEL.CMOD to MOV",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
+        "notes": null
+    },
+    {
+        "sha": "f4ede9c10a494ca82343fdc370033f0dd9e0f0f1",
+        "description": "elk/algebraic: Clear condition modifier on optimized SEL instruction",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
+        "notes": null
+    },
+    {
+        "sha": "6a19d8915fe2e07509ab2eeeea268af9728c3b42",
+        "description": "brw/algebraic: Don't optimize float SEL.CMOD to MOV",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
+        "notes": null
+    },
+    {
+        "sha": "07dc1d40437ce6a5ac417f0b20146d9512a595a1",
+        "description": "brw/algebraic: Clear condition modifier on optimized SEL instruction",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fab92fa1cba4196a4947731e7105bd1494dfffc4",
+        "notes": null
+    },
+    {
+        "sha": "1d2ebeca17961b30975f42c9def40008c18de0bb",
+        "description": "nir/algebraic: Allow fmin(a,a) optimization when flush denorm to zero is not set",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "44b01b55d5788f971522a82174e26d7cc1295577",
+        "description": "nvk: Handle shifted QMD cbuf addrs in indirect command processing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b2f0be254106b660cc0679f4d3486e883aea8cc",
+        "description": "nak/qmd: Add QMD version 4.0 for Hopper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a62c59d7e0817cc5c31db6c2dc5015fec0122a6b",
+        "description": "nak/qmd: Add support for shifted cbuf addresses",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7050a285a3d83b27713bbabc1df5f10e6a11bbef",
+        "description": "nak/qmd: Rework cbuf size suffix handling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8a5086213e077834ef3515fd25119f55b3e7546",
+        "description": "nvk: Disable VK_EXT_descriptor_buffer pre-Maxwell",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c135bd654209edc2a377e8c068f4a1f9056c385d",
+        "description": "nak: Get rid of RegRef::zero",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7125b258001c9d0485916cab0614f9fcc794015e",
+        "description": "nak/sm70: Add zero_reg() and true_reg() helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4452c5fa42e132f51f1a0b4ec98ec6ae94bd8d5",
+        "description": "nak/sm50: Add zero_reg() and true_reg() helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32570924cfbcb91d103b898d86e127da531b3e1a",
+        "description": "nak: Move some legalization helpers from sm50 to common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a4c1ac4642316117952e6b8d226c61e37ac8f52",
+        "description": "nak: add F2FP to sm75 instr latencies",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6b8a4e6bb73117e1141fe80e6d8fdfe5d2a39d33",
+        "notes": null
+    },
+    {
+        "sha": "1efa53ac17f3f950ea015d74cccb0f079b14a6d4",
+        "description": "panvk: shaderStorageImageWriteWithoutFormat support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e79a568442af022109eae93409954c9148cfedb2",
+        "description": "panvk: shaderStorageImageReadWithoutFormat support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "70b8056df16a1f9273105fab3ef1c91389ba1cc8",
+        "description": "panvk: Enable KHR_format_feature_flags2 and use them",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d95423686fda6c8a96702b1535a967132f8887f8",
+        "description": "pan/format: Add PAN_BIND_STORAGE_IMAGE flag",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9a9798c4685e6db15378c35dc03a5d69a52a63c",
+        "description": "pan/format: Update format flags to follow HW spec",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "861e7dcae6b1156f9eca5ad28b6e21a1e62358da",
+        "notes": null
+    },
+    {
         "sha": "58321cf2e57279079bf742be1063ac2900ea2436",
         "description": "nak: Add stubs for Fermi and Kepler A",
         "nominated": false,
