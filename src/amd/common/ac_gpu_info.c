@@ -2126,15 +2126,19 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    max_scratch_waves = %i\n", info->max_scratch_waves);
    fprintf(f, "    has_scratch_base_registers = %i\n", info->has_scratch_base_registers);
    fprintf(f, "Ring info:\n");
-   fprintf(f, "    attribute_ring_size_per_se = %u KB\n",
-           DIV_ROUND_UP(info->attribute_ring_size_per_se, 1024));
-   if (info->gfx_level >= GFX12) {
-      fprintf(f, "    pos_ring_size_per_se = %u KB\n", DIV_ROUND_UP(info->pos_ring_size_per_se, 1024));
-      fprintf(f, "    prim_ring_size_per_se = %u KB\n", DIV_ROUND_UP(info->prim_ring_size_per_se, 1024));
+   if (info->gfx_level >= GFX11) {
+      fprintf(f, "    attribute_ring_size_per_se = %u KB\n",
+              DIV_ROUND_UP(info->attribute_ring_size_per_se, 1024));
+      if (info->gfx_level >= GFX12) {
+         fprintf(f, "    pos_ring_size_per_se = %u KB\n", DIV_ROUND_UP(info->pos_ring_size_per_se, 1024));
+         fprintf(f, "    prim_ring_size_per_se = %u KB\n", DIV_ROUND_UP(info->prim_ring_size_per_se, 1024));
+      }
+      fprintf(f, "    total_attribute_pos_prim_ring_size = %u KB\n",
+              DIV_ROUND_UP(info->total_attribute_pos_prim_ring_size, 1024));
    }
-   fprintf(f, "    total_attribute_pos_prim_ring_size = %u KB\n",
-           DIV_ROUND_UP(info->total_attribute_pos_prim_ring_size, 1024));
-
+   fprintf(f, "    hs_offchip_workgroup_size = %u B\n", info->hs_offchip_workgroup_dw_size * 4);
+   fprintf(f, "    tess_factor_ring_size = %u KB\n", DIV_ROUND_UP(info->tess_factor_ring_size, 1024));
+   fprintf(f, "    tess_offchip_ring_size = %u KB\n", DIV_ROUND_UP(info->tess_offchip_ring_size, 1024));
    fprintf(f, "Render backend info:\n");
    fprintf(f, "    pa_sc_tile_steering_override = 0x%x\n", info->pa_sc_tile_steering_override);
    fprintf(f, "    max_render_backends = %i\n", info->max_render_backends);
