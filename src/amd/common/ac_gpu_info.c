@@ -1741,7 +1741,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    unsigned wg_size_in_dwords = info->family == CHIP_HAWAII ? 4096 : 8192;
    unsigned wg_size_enum;
-   unsigned num_workgroups_per_se;
+   unsigned max_workgroups_per_se;
 
    switch (wg_size_in_dwords) {
    case 8192:
@@ -1765,15 +1765,21 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     * Gfx6 should limit num_workgroups to 126 (63 per SE)
     */
    if (info->gfx_level >= GFX11) {
-      num_workgroups_per_se = 256;
+      max_workgroups_per_se = 256;
    } else if (info->gfx_level >= GFX10) {
-      num_workgroups_per_se = 128;
+      max_workgroups_per_se = 128;
    } else if (info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20) {
-      num_workgroups_per_se = double_offchip_wg ? 128 : 64;
+      max_workgroups_per_se = double_offchip_wg ? 128 : 64;
    } else {
-      num_workgroups_per_se = double_offchip_wg ? 127 : 63;
+      max_workgroups_per_se = double_offchip_wg ? 127 : 63;
    }
 
+   /* Limit to 4 workgroups per CU for TCS, which exhausts LDS if each workgroup occupies 16KB.
+    * Note that the offchip allocation isn't deallocated until the corresponding TES waves finish.
+    */
+   unsigned num_offchip_wg_per_cu = 4;
+   unsigned num_workgroups_per_se = MIN2(num_offchip_wg_per_cu * info->max_good_cu_per_sa *
+                                         info->max_sa_per_se, max_workgroups_per_se);
    unsigned num_workgroups = num_workgroups_per_se * info->max_se;
 
    if (info->gfx_level >= GFX11) {
