@@ -883,6 +883,7 @@ impl URegLatencySM75 {
             Op::Flo(_) => vdecoupled,
             Op::IAdd3(_) | Op::IAdd3X(_) => vcoupled,
             Op::IAbs(_) => vcoupled,
+            Op::IDp4(_) => vcoupled,
             Op::IMnMx(_) => vcoupled,
             Op::IMad(_) => vcoupled,
 
