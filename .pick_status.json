@@ -1484,7 +1484,7 @@
         "description": "nak/spill_values: Spill constants across edges if needed",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b82e26e3c289b2937df65f610d6ffc734e3bbde",
         "notes": null

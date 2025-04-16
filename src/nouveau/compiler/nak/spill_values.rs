@@ -1003,7 +1003,8 @@ fn spill_values<S: Spill>(
         }
 
         for ssa in s_in.s.iter() {
-            if p_out.w.contains(ssa) && !p_out.s.contains(ssa) {
+            if !p_out.s.contains(ssa) {
+                assert!(p_out.w.contains(ssa) || spill.is_const(ssa));
                 spills.push(*ssa);
             }
         }
