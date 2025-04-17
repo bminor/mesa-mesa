@@ -1959,6 +1959,13 @@ impl<'a> ShaderFromNir<'a> {
                 di += 1;
             }
         }
+
+        if self.sm.sm() < 50 {
+            // TODO: texbar should be created by calc_instr_deps() and
+            // should be less conservative than textures_left=0.
+            // See the old pass: NVC0LegalizePostRA::insertTextureBarriers
+            b.push_op(OpTexDepBar { textures_left: 0 });
+        }
         self.set_ssa(tex.def.as_def(), nir_dst);
     }
 

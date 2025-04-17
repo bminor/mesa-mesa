@@ -5816,6 +5816,25 @@ impl DisplayOp for OpBar {
 }
 impl_display_for_op!(OpBar);
 
+/// Instruction only used on Kepler(A|B).
+/// Kepler has explicit dependency tracking for texture loads.
+/// When a texture load is executed, it is put on some kind of FIFO queue
+/// for later execution.
+/// Before the results of a texture are used we need to wait on the queue,
+/// texdepbar waits until the queue has at most `textures_left` elements.
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpTexDepBar {
+    pub textures_left: i8,
+}
+
+impl DisplayOp for OpTexDepBar {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "texdepbar {}", self.textures_left)
+    }
+}
+impl_display_for_op!(OpTexDepBar);
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpCS2R {
@@ -6535,6 +6554,7 @@ pub enum Op {
     Exit(OpExit),
     WarpSync(OpWarpSync),
     Bar(OpBar),
+    TexDepBar(OpTexDepBar),
     CS2R(OpCS2R),
     Isberd(OpIsberd),
     Kill(OpKill),
@@ -6699,6 +6719,7 @@ impl Op {
 
             // Miscellaneous ops
             Op::Bar(_)
+            | Op::TexDepBar(_)
             | Op::CS2R(_)
             | Op::Isberd(_)
             | Op::Kill(_)
@@ -7089,6 +7110,7 @@ impl Instr {
             | Op::Exit(_)
             | Op::WarpSync(_)
             | Op::Bar(_)
+            | Op::TexDepBar(_)
             | Op::RegOut(_)
             | Op::Out(_)
             | Op::OutFinal(_)
