@@ -994,7 +994,7 @@
         "description": "vulkan: add missing include for FALLTHROUGH",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3bc7564bb03c2d9b3f96d9cc81b5a852f8af2c72",
         "notes": null
