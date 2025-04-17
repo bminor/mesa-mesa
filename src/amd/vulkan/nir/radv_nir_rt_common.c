@@ -1041,6 +1041,8 @@ radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b, const
          nir_bvh8_intersect_ray_amd(b, 32, desc, nir_unpack_64_2x32(b, nir_load_deref(b, args->vars.bvh_base)),
                                     nir_ishr_imm(b, args->cull_mask, 24), nir_load_deref(b, args->vars.tmax),
                                     nir_load_deref(b, args->vars.origin), nir_load_deref(b, args->vars.dir), bvh_node);
+      nir_store_deref(b, args->vars.origin, nir_channels(b, result, 0x7 << 10), 0x7);
+      nir_store_deref(b, args->vars.dir, nir_channels(b, result, 0x7 << 13), 0x7);
 
       nir_push_if(b, nir_test_mask(b, bvh_node, BITFIELD64_BIT(ffs(radv_bvh_node_box16) - 1)));
       {
@@ -1054,6 +1056,8 @@ radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b, const
 
             nir_def *next_node = nir_iand_imm(b, nir_channel(b, result, 7), 0xff);
             nir_push_if(b, nir_ieq_imm(b, next_node, 0xff));
+            nir_store_deref(b, args->vars.origin, args->origin, 7);
+            nir_store_deref(b, args->vars.dir, args->dir, 7);
             nir_jump(b, nir_jump_continue);
             nir_pop_if(b, NULL);
 
@@ -1062,9 +1066,6 @@ radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b, const
             nir_store_deref(b, args->vars.instance_addr, instance_node_addr, 1);
 
             nir_store_deref(b, args->vars.sbt_offset_and_flags, nir_channel(b, result, 6), 1);
-
-            nir_store_deref(b, args->vars.origin, nir_channels(b, result, 0x7 << 10), 0x7);
-            nir_store_deref(b, args->vars.dir, nir_channels(b, result, 0x7 << 13), 0x7);
 
             nir_store_deref(b, args->vars.top_stack, nir_load_deref(b, args->vars.stack), 1);
             nir_store_deref(b, args->vars.bvh_base, nir_pack_64_2x32(b, nir_channels(b, result, 0x3 << 2)), 1);
