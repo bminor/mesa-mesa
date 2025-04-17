@@ -16,7 +16,7 @@ import argparse
 import re
 import sys
 import time
-from collections import defaultdict
+from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from itertools import chain
@@ -118,7 +118,6 @@ def run_target_job(
     job: gitlab.v4.objects.ProjectPipelineJob,
     enable_job_fn: Callable,
     stress: int,
-    stress_status_counter: dict,
     execution_times: dict,
     target_statuses: dict,
     name_field_pad: int,
@@ -126,9 +125,8 @@ def run_target_job(
     if stress and job.status in COMPLETED_STATUSES:
         if (
             stress < 0
-            or sum(stress_status_counter[job.name].values()) < stress
+            or len(execution_times[job.name]) < stress
         ):
-            stress_status_counter[job.name][job.status] += 1
             execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
             enable_job_fn(job=job, action_type="retry")
             # Wait for the next loop to get the updated job object
@@ -153,8 +151,7 @@ def monitor_pipeline(
     """Monitors pipeline and delegate canceling jobs"""
     statuses: dict[str, str] = defaultdict(str)
     target_statuses: dict[str, str] = defaultdict(str)
-    stress_status_counter: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    execution_times = defaultdict(lambda: defaultdict(tuple))
+    execution_times: dict[str, dict[str, tuple[float, str, str]]] = defaultdict(lambda: defaultdict(tuple))
     target_id: int = -1
     name_field_pad: int = len(max(dependencies, key=len))+2
     # In a running pipeline, we can skip following job traces that are in these statuses.
@@ -168,7 +165,6 @@ def monitor_pipeline(
                include_stage_regex.fullmatch(job.stage) and \
                not exclude_stage_regex.fullmatch(job.stage) and \
                job.status in COMPLETED_STATUSES:
-                stress_status_counter[job.name][job.status] += 1
                 execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
 
     # jobs_waiting is a list of job names that are waiting for status update.
@@ -197,7 +193,6 @@ def monitor_pipeline(
                     job,
                     enable_job_fn,
                     stress,
-                    stress_status_counter,
                     execution_times,
                     target_statuses,
                     name_field_pad,
@@ -223,14 +218,22 @@ def monitor_pipeline(
 
         if stress:
             enough = True
-            for job_name, status in sorted(stress_status_counter.items()):
+            status_counters = {
+                name: Counter(info[1] for info in runs.values())
+                for name, runs in execution_times.items()
+            }
+            for job_name, counter in sorted(status_counters.items()):
+                n_succeed = counter.get("success", 0)
+                n_failed = counter.get("failed", 0)
+                n_total_completed = n_succeed + n_failed
+                n_total_seen = len(execution_times[job_name])
                 print(
-                    f"* {job_name:{name_field_pad}}succ: {status['success']}; "
-                    f"fail: {status['failed']}; "
-                    f"total: {sum(status.values())} of {stress}",
+                    f"* {job_name:{name_field_pad}}succ: {n_succeed}; "
+                    f"fail: {n_failed}; "
+                    f"total: {n_total_seen} of {stress}",
                     flush=False,
                 )
-                if stress < 0 or sum(status.values()) < stress:
+                if stress < 0 or n_total_completed < stress:
                     enough = False
 
             if not enough:
@@ -246,8 +249,10 @@ def monitor_pipeline(
             pretty_wait(REFRESH_WAIT_JOBS)
             continue
 
-        if len(target_statuses) == 1 and RUNNING_STATUSES.intersection(
-            target_statuses.values()
+        if (
+            stress in [0, 1]
+            and len(target_statuses) == 1
+            and RUNNING_STATUSES.intersection(target_statuses.values())
         ):
             return target_id, None, execution_times
 
