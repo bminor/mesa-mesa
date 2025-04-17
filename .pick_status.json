@@ -1,0 +1,232 @@
+[
+    {
+        "sha": "d5ad7981401c2393cac38fc3215e8bbb97de06b9",
+        "description": "spirv, radv, intel: Add NIR intrinsic for cmat conversion",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f02fa5db4baae40711a11e743ea0c156d9dae7b",
+        "description": "intel/ci: Start using the new 6.14 kernel on JSL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da71656dd95793b1d5e3f8a139fe44b751255766",
+        "description": "ci/lava: Merge and deduplicate log sections",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "70b033d2adf961b2793f6e4ac5aaa5df11ce1106",
+        "description": "ci/lava: Don't include the timeout in the log sections",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7224dd159c2c74ccd5cab1637b4552ecee6442b",
+        "description": "ci/lava: Collapse more log sections",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60a31156b09e7ed16d0f4434cdc3dd93cb1488a6",
+        "description": "mesa_interface: fix legacy dri2 compatibility",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3b603d164662d0f5c70a9c8dcbfc6a987ed8b94e",
+        "notes": null
+    },
+    {
+        "sha": "de6efc01c123d63508a8c32936c1ff2cfd4c1081",
+        "description": "zink: verify that surface exists when adding implicit feedback loop",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "251d1e2551c556b561c5a4278dc6b13f940ec056",
+        "description": "etnaviv/ml: Use etna_buffer_resource instead of etna_resource",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d738b3ea2b78df138758dfd166262c1890e94c22",
+        "notes": null
+    },
+    {
+        "sha": "1f5bc6ddbf995863c66228b1f81bcc124ddc17c8",
+        "description": "etnaviv/tests: Add comment on why the SSDLite MobileDet test fails",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0213eef3b358c9e190e6d6286fe49796cd4e6146",
+        "description": "teflon/tests: Dump output buffers to disk",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80e09e9b1ff23c05723633c17cbc3786d4a8e516",
+        "description": "teflon/tests: Divide the tolerance level by a constant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15a8c49ad5a3bd9b46f91afee84aef169105264b",
+        "description": "teflon/tests: Print shorter negative INT8s",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "554fb8af11a17653ea0e65c1003643ae6acc7c59",
+        "description": "teflon/tests: Take into account signedness when checking the output tensors",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3746305eae8d7412672fb5ee2b65e065f1f1dc3",
+        "description": "teflon/tests: Test all models in /models",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68200ac9619be79954979b323b683820d80c630f",
+        "description": "teflon/tests: Use a single tolerance value",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ca4e4d34bab4c8536e5e28829931c43534411fe",
+        "description": "microsoft/compiler: Force load_output => undef in tess_ctrl main func",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab591dc642aafd6c33a9a9ba7b3a4f59d56e1f3d",
+        "description": "iris: Fix IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT slab parent allocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b55451ea7baf3a6f487765fa6d1c0fb5be5ddb6",
+        "description": "hk: fix underbinding scratch",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "678134add50eb4c4e388ea9233e0f457de68fe75",
+        "notes": null
+    },
+    {
+        "sha": "dbe6c3927020eb75d07fdc1323a5ad30628b9659",
+        "description": "docs: update calendar for 25.1.0-rc1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5844dea31620f36c41ac738e17fefd57084b2dbb",
+        "description": "delete clover",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "555821ff93118d4a6ea441127cd0427a95743d47",
+        "description": "winsys/amdgpu: disable VM_ALWAYS_VALID",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8c91624614c1f939974fe0d2d1a3baf83335cecb",
+        "notes": null
+    },
+    {
+        "sha": "3f7345a0ce04ce28073a1f8d557fe45c24cc8a9c",
+        "description": "docs: reset new_features.txt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8968276e6d5d54483bd5baf74d73b43f111ddaa",
+        "description": "VERSION: bump to 25.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    }
+]
