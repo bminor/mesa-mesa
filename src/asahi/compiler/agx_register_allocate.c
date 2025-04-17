@@ -348,7 +348,7 @@ find_regs_simple(struct ra_ctx *rctx, enum ra_class cls, unsigned count,
  */
 static unsigned
 find_best_region_to_evict(struct ra_ctx *rctx, enum ra_class cls, unsigned size,
-                          BITSET_WORD *already_evicted, BITSET_WORD *killed)
+                          BITSET_WORD *already_evicted)
 {
    assert(util_is_power_of_two_or_zero(size) && "precondition");
    assert((rctx->bound[cls] % size) == 0 &&
@@ -397,18 +397,10 @@ find_best_region_to_evict(struct ra_ctx *rctx, enum ra_class cls, unsigned size,
             moves++;
          else
             any_free = true;
-
-         /* Each clobbered killed register requires a move or a swap. Since
-          * swaps require more instructions, assign a higher cost here. In
-          * practice, 3 is too high but 2 is slightly better than 1.
-          */
-         if (BITSET_TEST(killed, reg))
-            moves += 2;
       }
 
       /* Pick the region requiring fewest moves as a heuristic. Regions with no
-       * free registers are skipped even if the heuristic estimates a lower cost
-       * (due to killed sources), since the recursive splitting algorithm
+       * free registers are skipped, since the recursive splitting algorithm
        * requires at least one free register.
        */
       if (any_free && ((moves < best_moves) ^ invert)) {
@@ -460,9 +452,9 @@ insert_copy(struct ra_ctx *rctx, struct util_dynarray *copies, unsigned new_reg,
 
 static unsigned
 assign_regs_by_copying(struct ra_ctx *rctx, agx_index dest, const agx_instr *I,
-                       struct util_dynarray *copies, BITSET_WORD *clobbered,
-                       BITSET_WORD *killed)
+                       struct util_dynarray *copies)
 {
+   BITSET_DECLARE(clobbered, AGX_NUM_REGS) = {0};
    assert(dest.type == AGX_INDEX_NORMAL);
 
    /* Initialize the worklist with the variable we're assigning */
@@ -492,8 +484,7 @@ assign_regs_by_copying(struct ra_ctx *rctx, agx_index dest, const agx_instr *I,
       /* We need to shuffle some variables to make room. Look for a range of
        * the register file that is partially blocked.
        */
-      unsigned new_reg =
-         find_best_region_to_evict(rctx, RA_GPR, nr, clobbered, killed);
+      unsigned new_reg = find_best_region_to_evict(rctx, RA_GPR, nr, clobbered);
 
       /* Blocked registers need to get reassigned. Add them to the worklist. */
       for (unsigned i = 0; i < nr; ++i) {
@@ -556,90 +547,6 @@ sort_by_size(const void *a_, const void *b_, void *sizes_)
 }
 
 /*
- * Allocating a destination of n consecutive registers may require moving those
- * registers' contents to the locations of killed sources. For the instruction
- * to read the correct values, the killed sources themselves need to be moved to
- * the space where the destination will go.
- *
- * This is legal because there is no interference between the killed source and
- * the destination. This is always possible because, after this insertion, the
- * destination needs to contain the killed sources already overlapping with the
- * destination (size k) plus the killed sources clobbered to make room for
- * livethrough sources overlapping with the destination (at most size |dest|-k),
- * so the total size is at most k + |dest| - k = |dest| and so fits in the dest.
- * Sorting by alignment may be necessary.
- */
-static void
-insert_copies_for_clobbered_killed(struct ra_ctx *rctx, unsigned reg,
-                                   unsigned count, const agx_instr *I,
-                                   struct util_dynarray *copies,
-                                   BITSET_WORD *clobbered)
-{
-   unsigned vars[16] = {0};
-   unsigned nr_vars = 0;
-
-   /* Precondition: the reserved region is not shuffled. */
-   assert(reg >= reserved_size(rctx->shader) && "reserved is never moved");
-
-   /* Consider the destination clobbered for the purpose of source collection.
-    * This way, killed sources already in the destination will be preserved
-    * (though possibly compacted).
-    */
-   BITSET_SET_RANGE(clobbered, reg, reg + count - 1);
-
-   /* Collect killed clobbered sources, if any */
-   agx_foreach_ssa_src(I, s) {
-      unsigned reg = rctx->ssa_to_reg[I->src[s].value];
-      unsigned nr = rctx->ncomps[I->src[s].value];
-
-      if (I->src[s].kill && ra_class_for_index(I->src[s]) == RA_GPR &&
-          BITSET_TEST_RANGE(clobbered, reg, reg + nr - 1)) {
-
-         assert(nr_vars < ARRAY_SIZE(vars) &&
-                "cannot clobber more than max variable size");
-
-         vars[nr_vars++] = I->src[s].value;
-      }
-   }
-
-   if (nr_vars == 0)
-      return;
-
-   assert(I->op != AGX_OPCODE_PHI && "kill bit not set for phis");
-
-   /* Sort by descending alignment so they are packed with natural alignment */
-   util_qsort_r(vars, nr_vars, sizeof(vars[0]), sort_by_size, rctx->sizes);
-
-   /* Reassign in the destination region */
-   unsigned base = reg;
-
-   /* We align vectors to their sizes, so this assertion holds as long as no
-    * instruction has a source whose scalar size is greater than the entire size
-    * of the vector destination. Yet the killed source must fit within this
-    * destination, so the destination must be bigger and therefore have bigger
-    * alignment.
-    */
-   assert((base % agx_size_align_16(rctx->sizes[vars[0]])) == 0 &&
-          "destination alignment >= largest killed source alignment");
-
-   for (unsigned i = 0; i < nr_vars; ++i) {
-      unsigned var = vars[i];
-      unsigned var_count = rctx->ncomps[var];
-      unsigned var_align = agx_size_align_16(rctx->sizes[var]);
-
-      assert(rctx->classes[var] == RA_GPR && "construction");
-      assert((base % var_align) == 0 && "induction");
-      assert((var_count % var_align) == 0 && "no partial variables");
-
-      insert_copy(rctx, copies, base, var);
-      set_ssa_to_reg(rctx, var, base);
-      base += var_count;
-   }
-
-   assert(base <= reg + count && "no overflow");
-}
-
-/*
  * When shuffling registers to assign a phi destination, we can't simply insert
  * the required moves before the phi, since phis happen in parallel along the
  * edge. Instead, there are two cases:
@@ -699,28 +606,10 @@ find_regs(struct ra_ctx *rctx, agx_instr *I, unsigned dest_idx, unsigned count,
    } else {
       assert(cls == RA_GPR && "no memory live range splits");
 
-      BITSET_DECLARE(clobbered, AGX_NUM_REGS) = {0};
-      BITSET_DECLARE(killed, AGX_NUM_REGS) = {0};
       struct util_dynarray copies = {0};
       util_dynarray_init(&copies, NULL);
 
-      /* Initialize the set of registers killed by this instructions' sources */
-      agx_foreach_ssa_src(I, s) {
-         unsigned v = I->src[s].value;
-
-         if (BITSET_TEST(rctx->visited, v) && !I->src[s].memory) {
-            unsigned base = rctx->ssa_to_reg[v];
-            unsigned nr = rctx->ncomps[v];
-
-            assert(base + nr <= AGX_NUM_REGS);
-            BITSET_SET_RANGE(killed, base, base + nr - 1);
-         }
-      }
-
-      reg = assign_regs_by_copying(rctx, I->dest[dest_idx], I, &copies,
-                                   clobbered, killed);
-      insert_copies_for_clobbered_killed(rctx, reg, count, I, &copies,
-                                         clobbered);
+      reg = assign_regs_by_copying(rctx, I->dest[dest_idx], I, &copies);
 
       /* Insert the necessary copies. Phis need special handling since we can't
        * insert instructions before the phi.
@@ -1196,7 +1085,17 @@ agx_ra_assign_local(struct ra_ctx *rctx)
          continue;
       }
 
-      /* First, free killed sources */
+      /* Next, assign destinations one at a time. This is always legal
+       * because of the SSA form.
+       */
+      agx_foreach_ssa_dest(I, d) {
+         if (I->op == AGX_OPCODE_PHI && I->dest[d].has_reg)
+            continue;
+
+         assign_regs(rctx, I->dest[d], pick_regs(rctx, I, d));
+      }
+
+      /* Free killed sources */
       agx_foreach_ssa_src(I, s) {
          if (I->src[s].kill) {
             assert(I->op != AGX_OPCODE_PHI && "phis don't use .kill");
@@ -1208,16 +1107,6 @@ agx_ra_assign_local(struct ra_ctx *rctx)
             assert(count >= 1);
             BITSET_CLEAR_RANGE(rctx->used_regs[cls], reg, reg + count - 1);
          }
-      }
-
-      /* Next, assign destinations one at a time. This is always legal
-       * because of the SSA form.
-       */
-      agx_foreach_ssa_dest(I, d) {
-         if (I->op == AGX_OPCODE_PHI && I->dest[d].has_reg)
-            continue;
-
-         assign_regs(rctx, I->dest[d], pick_regs(rctx, I, d));
       }
 
       /* Phi sources are special. Set in the corresponding predecessors */
