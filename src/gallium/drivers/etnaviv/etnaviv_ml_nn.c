@@ -691,14 +691,13 @@ compute_bias_add(float input1_scale, float input2_scale, uint8_t input1_zp, uint
    return (int) (round(bias) - round(addition_offset) * input2_zp);
 }
 
-void
-etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
-                  const struct pipe_ml_operation *poperation,
-                  struct etna_operation *operation)
+
+static void
+etna_ml_lower_add_v7(struct etna_ml_subgraph *subgraph,
+                     const struct pipe_ml_operation *poperation,
+                     struct etna_operation *operation)
 {
    struct pipe_context *context = subgraph->base.context;
-   struct etna_context *ctx = etna_context(context);
-   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
 
    assert(poperation->type == PIPE_ML_OPERATION_TYPE_ADD);
 
@@ -735,59 +734,151 @@ etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
                                        operation->output_height *
                                        operation->output_channels;
 
-   if (nn_core_version < 8) {
-      operation->weight_tensor = etna_ml_create_resource(context, 8);
-      operation->weight_width = 2;
-      operation->weight_height = 2;
-      operation->weight_zero_point = 0x0;
-      operation->weight_scale = compute_weight_scale_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale);
-      operation->weight_signed = false;
-      operation->addition_offset = compute_addition_offset(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
+   operation->weight_tensor = etna_ml_create_resource(context, 8);
+   operation->weight_width = 2;
+   operation->weight_height = 2;
+   operation->weight_zero_point = 0x0;
+   operation->weight_scale = compute_weight_scale_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale);
+   operation->weight_signed = false;
+   operation->addition_offset = compute_addition_offset(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
 
-      uint8_t *weight_map = map_resource(operation->weight_tensor);
-      weight_map[0] = compute_weight_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
+   uint8_t *weight_map = map_resource(operation->weight_tensor);
+   weight_map[0] = compute_weight_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
 
-      operation->bias_tensor = etna_ml_create_resource(context, 4);
-      int32_t *bias_map = map_resource(operation->bias_tensor);
-      bias_map[0] = compute_bias_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale,
-                                    poperation->input_tensors[1]->zero_point, poperation->input_tensors[0]->zero_point,
-                                    operation->weight_scale);
+   operation->bias_tensor = etna_ml_create_resource(context, 4);
+   int32_t *bias_map = map_resource(operation->bias_tensor);
+   bias_map[0] = compute_bias_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale,
+                                  poperation->input_tensors[1]->zero_point, poperation->input_tensors[0]->zero_point,
+                                  operation->weight_scale);
+}
+
+static void
+etna_ml_lower_add_v8(struct etna_ml_subgraph *subgraph,
+                     const struct pipe_ml_operation *poperation,
+                     struct etna_operation *operation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   unsigned max_input_dim = (1 << 13) - 1;  /* in_image_x_size is 13 bits long */
+
+   assert(poperation->type == PIPE_ML_OPERATION_TYPE_ADD);
+
+   operation->type = ETNA_JOB_TYPE_NN;
+   operation->addition = false;
+   operation->depthwise = false;
+   operation->pointwise = false;
+   operation->pooling_first_pixel = false;
+   operation->padding_same = false;
+   operation->stride = 1;
+
+   unsigned input_width = poperation->input_tensors[0]->dims[1];
+   unsigned input_height = poperation->input_tensors[0]->dims[2];
+   unsigned input_channels = poperation->input_tensors[0]->dims[3];
+
+   operation->input_count = 2;
+   if (input_width % 2 == 0 &&
+       input_height * input_channels <= max_input_dim) {
+      operation->input_width = 4;
+      operation->input_height = input_height * input_channels;
+      operation->input_channels = (input_width * 2) / 4;
+
+      operation->output_width = 1;
+      operation->output_height = poperation->output_tensors[0]->dims[2] * poperation->output_tensors[0]->dims[3];
+      operation->output_channels = poperation->output_tensors[0]->dims[1];
+
+      operation->weight_width = 1;
+      operation->weight_height = operation->input_width;
+   } else if (input_channels % 3 == 0 &&
+              input_height * input_width <= max_input_dim) {
+      operation->input_width = 3;
+      operation->input_height = input_height * input_width;
+      operation->input_channels = (input_channels * 2) / 3;
+
+      operation->output_width = 1;
+      operation->output_height = poperation->output_tensors[0]->dims[1] * poperation->output_tensors[0]->dims[2];
+      operation->output_channels = poperation->output_tensors[0]->dims[3];
+
+      operation->weight_width = 1;
+      operation->weight_height = operation->input_width;
    } else {
-      operation->input_channels = 2 * operation->output_channels;
+      operation->input_width = input_width;
+      operation->input_height = input_height;
+      operation->input_channels = (input_channels * 2) / 1;
 
-      operation->weight_tensor = etna_ml_create_resource(context, operation->input_channels * operation->output_channels);
+      operation->output_width = input_width;
+      operation->output_height = input_height;
+      operation->output_channels = input_channels;
+
       operation->weight_width = 1;
       operation->weight_height = 1;
-      operation->weight_zero_point = 0x0;
-      operation->weight_scale = compute_weight_scale_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale);
-      operation->weight_signed = false;
-      operation->addition_offset = compute_addition_offset(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
-
-      uint8_t (*weight_map)[operation->input_channels] = map_resource(operation->weight_tensor);
-      memset(weight_map, 0, pipe_buffer_size(operation->weight_tensor));
-
-      uint8_t first_weight = compute_weight_add(poperation->input_tensors[1]->scale, poperation->input_tensors[0]->scale, operation->weight_scale);
-      uint8_t second_weight = round((poperation->input_tensors[1]->scale / poperation->input_tensors[0]->scale) / operation->weight_scale);
-
-      for(unsigned oc = 0; oc < operation->output_channels; oc++) {
-         for(unsigned ic = 0; ic < operation->input_channels; ic++) {
-            if (ic == oc) {
-               weight_map[oc][ic] = first_weight;
-            } else if(ic == operation->output_channels + oc) {
-               weight_map[oc][ic] = second_weight;
-            }
-         }
-      }
-
-      operation->bias_tensor = etna_ml_create_resource(context, 4 * operation->output_channels);
-      uint32_t *bias_map = map_resource(operation->bias_tensor);
-
-      int zero_point_diff = poperation->input_tensors[0]->zero_point - poperation->input_tensors[1]->zero_point;
-      double bias = zero_point_diff * poperation->input_tensors[1]->scale;
-      bias /= operation->weight_scale * poperation->input_tensors[0]->scale;
-      for(unsigned oc = 0; oc < operation->output_channels; oc++)
-         bias_map[oc] = (int)round(bias);
    }
+
+   operation->input_zero_point = etna_tensor_zero_point(poperation->input_tensors[0]);
+   operation->input_scale = poperation->input_tensors[0]->scale;
+
+   operation->input_tensor_sizes[0] = operation->input_width *
+                                       operation->input_height *
+                                       operation->input_channels /
+                                       2;
+
+   operation->input_tensor_sizes[1] = operation->input_width *
+                                       operation->input_height *
+                                       operation->input_channels /
+                                       2;
+
+   operation->output_count = 1;
+   operation->output_zero_point = etna_tensor_zero_point(poperation->output_tensors[0]);
+   operation->output_scale = poperation->output_tensors[0]->scale;
+
+   operation->output_tensor_sizes[0] = operation->output_width *
+                                       operation->output_height *
+                                       operation->output_channels;
+
+   float min = 1.0 * (poperation->input_tensors[1]->scale / poperation->input_tensors[0]->scale);
+   float max = 1.0;
+
+   calc_quant_params(min, max, &operation->weight_scale, &operation->weight_zero_point);
+
+   unsigned kernel_size = operation->output_channels * operation->weight_width * operation->weight_height * operation->input_channels;
+   operation->weight_tensor = etna_ml_create_resource(context, kernel_size);
+   uint8_t (*weight_map) = map_resource(operation->weight_tensor);
+
+   uint8_t first_weight = round(max / operation->weight_scale) + operation->weight_zero_point;
+   uint8_t second_weight = round(min / operation->weight_scale);
+   for(unsigned i = 0; i < kernel_size; i++) {
+      if (i % (operation->weight_width * operation->weight_height * operation->input_channels + 1) == 0)
+         weight_map[i] = first_weight;
+      else if (i % (operation->weight_width * operation->weight_height * operation->input_channels + 1) == operation->output_channels)
+         weight_map[i] = second_weight;
+      else
+         weight_map[i] = operation->weight_zero_point;
+   }
+
+   operation->bias_tensor = etna_ml_create_resource(context, 4 * operation->output_channels);
+   uint32_t *bias_map = map_resource(operation->bias_tensor);
+   uint8_t input_zero_point_1 = etna_tensor_zero_point(poperation->input_tensors[0]);
+   uint8_t input_zero_point_2 = etna_tensor_zero_point(poperation->input_tensors[1]);
+   int zero_point_diff = input_zero_point_1 - input_zero_point_2;
+   double scale_factor = poperation->input_tensors[0]->scale * operation->weight_scale;
+   double bias_scale = poperation->input_tensors[1]->scale / scale_factor;
+
+   int bias = zero_point_diff * round(bias_scale);
+   for(unsigned oc = 0; oc < operation->output_channels; oc++)
+      bias_map[oc] = bias;
+}
+
+void
+etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
+                  const struct pipe_ml_operation *poperation,
+                  struct etna_operation *operation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   struct etna_context *ctx = etna_context(context);
+   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
+
+   if (nn_core_version < 8)
+      etna_ml_lower_add_v7(subgraph, poperation, operation);
+   else
+      etna_ml_lower_add_v8(subgraph, poperation, operation);
 }
 
 void
