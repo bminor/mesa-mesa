@@ -1494,7 +1494,7 @@
         "description": "meson: remove duplicate `deprecated` for `power8` option",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c4b305079d70790ee9d34a25a2f70759ece96f0d",
         "notes": null
