@@ -1504,7 +1504,7 @@
         "description": "meson: remove duplicate `deprecated` for `gallium-xa` option",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cf40099730c4af304227c30c891834cec220abff",
         "notes": null
