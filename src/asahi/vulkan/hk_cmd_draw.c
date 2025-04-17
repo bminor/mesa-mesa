@@ -2681,119 +2681,115 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          perf_debug(cmd, "Emulating sample mask");
       }
 
-      {
-         unsigned samples_shaded = 0;
-         if (fs->info.fs.epilog_key.sample_shading)
-            samples_shaded = dyn->ms.rasterization_samples;
+      unsigned samples_shaded = 0;
+      if (fs->info.fs.epilog_key.sample_shading)
+         samples_shaded = dyn->ms.rasterization_samples;
 
-         struct hk_fast_link_key_fs key = {
-            .prolog.statistics = hk_pipeline_stat_addr(
-               cmd,
-               VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT),
+      struct hk_fast_link_key_fs key = {
+         .prolog.statistics = hk_pipeline_stat_addr(
+            cmd, VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT),
 
-            .prolog.cull_distance_size = hw_vs->info.cull_distance_array_size,
-            .prolog.api_sample_mask = has_sample_mask ? api_sample_mask : 0xff,
-            .nr_samples_shaded = samples_shaded,
-         };
+         .prolog.cull_distance_size = hw_vs->info.cull_distance_array_size,
+         .prolog.api_sample_mask = has_sample_mask ? api_sample_mask : 0xff,
+         .nr_samples_shaded = samples_shaded,
+      };
 
-         bool prolog_discards =
-            has_sample_mask || key.prolog.cull_distance_size;
+      bool prolog_discards = has_sample_mask || key.prolog.cull_distance_size;
 
-         bool needs_prolog = key.prolog.statistics || prolog_discards;
+      bool needs_prolog = key.prolog.statistics || prolog_discards;
 
-         if (needs_prolog) {
-            /* With late main shader tests, the prolog runs tests if neither the
-             * main shader nor epilog will.
-             *
-             * With (nontrivial) early main shader tests, the prolog does not
-             * run tests, the tests will run at the start of the main shader.
-             * This ensures tests are after API sample mask and cull distance
-             * discards.
-             */
-            key.prolog.run_zs_tests = !nontrivial_force_early &&
-                                      !fs->b.info.writes_sample_mask &&
-                                      !epilog_discards && prolog_discards;
+      if (needs_prolog) {
+         /* With late main shader tests, the prolog runs tests if neither the
+          * main shader nor epilog will.
+          *
+          * With (nontrivial) early main shader tests, the prolog does not
+          * run tests, the tests will run at the start of the main shader.
+          * This ensures tests are after API sample mask and cull distance
+          * discards.
+          */
+         key.prolog.run_zs_tests = !nontrivial_force_early &&
+                                   !fs->b.info.writes_sample_mask &&
+                                   !epilog_discards && prolog_discards;
 
-            if (key.prolog.cull_distance_size) {
-               key.prolog.cf_base = fs->b.info.varyings.fs.nr_cf;
-            }
+         if (key.prolog.cull_distance_size) {
+            key.prolog.cf_base = fs->b.info.varyings.fs.nr_cf;
          }
-
-         key.epilog = (struct agx_fs_epilog_key){
-            .link = fs->info.fs.epilog_key,
-            .nr_samples = MAX2(dyn->ms.rasterization_samples, 1),
-            .blend.alpha_to_coverage = dyn->ms.alpha_to_coverage_enable,
-            .blend.alpha_to_one = dyn->ms.alpha_to_one_enable,
-            .blend.logicop_enable = dyn->cb.logic_op_enable,
-            .blend.logicop_func = vk_logic_op_to_pipe(dyn->cb.logic_op),
-         };
-
-         for (unsigned rt = 0; rt < ARRAY_SIZE(dyn->cal.color_map); ++rt) {
-            int map = dyn->cal.color_map[rt];
-            key.epilog.remap[rt] = map == MESA_VK_ATTACHMENT_UNUSED ? -1 : map;
-         }
-
-         if (dyn->ms.alpha_to_one_enable || dyn->ms.alpha_to_coverage_enable ||
-             dyn->cb.logic_op_enable) {
-
-            perf_debug(
-               cmd, "Epilog with%s%s%s",
-               dyn->ms.alpha_to_one_enable ? " alpha-to-one" : "",
-               dyn->ms.alpha_to_coverage_enable ? " alpha-to-coverage" : "",
-               dyn->cb.logic_op_enable ? " logic-op" : "");
-         }
-
-         key.epilog.link.already_ran_zs |= nontrivial_force_early;
-
-         struct hk_rendering_state *render = &cmd->state.gfx.render;
-         for (uint32_t i = 0; i < render->color_att_count; i++) {
-            key.epilog.rt_formats[i] =
-               hk_format_to_pipe_format(render->color_att[i].vk_format);
-
-            const struct vk_color_blend_attachment_state *cb =
-               &dyn->cb.attachments[i];
-
-            bool write_enable = dyn->cb.color_write_enables & BITFIELD_BIT(i);
-            unsigned write_mask = write_enable ? cb->write_mask : 0;
-
-            /* nir_lower_blend always blends, so use a default blend state when
-             * blending is disabled at an API level.
-             */
-            if (!dyn->cb.attachments[i].blend_enable) {
-               key.epilog.blend.rt[i] = (struct agx_blend_rt_key){
-                  .colormask = write_mask,
-                  .rgb_func = PIPE_BLEND_ADD,
-                  .alpha_func = PIPE_BLEND_ADD,
-                  .rgb_src_factor = PIPE_BLENDFACTOR_ONE,
-                  .alpha_src_factor = PIPE_BLENDFACTOR_ONE,
-                  .rgb_dst_factor = PIPE_BLENDFACTOR_ZERO,
-                  .alpha_dst_factor = PIPE_BLENDFACTOR_ZERO,
-               };
-            } else {
-               key.epilog.blend.rt[i] = (struct agx_blend_rt_key){
-                  .colormask = write_mask,
-
-                  .rgb_src_factor =
-                     vk_blend_factor_to_pipe(cb->src_color_blend_factor),
-
-                  .rgb_dst_factor =
-                     vk_blend_factor_to_pipe(cb->dst_color_blend_factor),
-
-                  .rgb_func = vk_blend_op_to_pipe(cb->color_blend_op),
-
-                  .alpha_src_factor =
-                     vk_blend_factor_to_pipe(cb->src_alpha_blend_factor),
-
-                  .alpha_dst_factor =
-                     vk_blend_factor_to_pipe(cb->dst_alpha_blend_factor),
-
-                  .alpha_func = vk_blend_op_to_pipe(cb->alpha_blend_op),
-               };
-            }
-         }
-
-         hk_update_fast_linked(cmd, fs, &key);
       }
+
+      key.epilog = (struct agx_fs_epilog_key){
+         .link = fs->info.fs.epilog_key,
+         .nr_samples = MAX2(dyn->ms.rasterization_samples, 1),
+         .blend.alpha_to_coverage = dyn->ms.alpha_to_coverage_enable,
+         .blend.alpha_to_one = dyn->ms.alpha_to_one_enable,
+         .blend.logicop_enable = dyn->cb.logic_op_enable,
+         .blend.logicop_func = vk_logic_op_to_pipe(dyn->cb.logic_op),
+      };
+
+      for (unsigned rt = 0; rt < ARRAY_SIZE(dyn->cal.color_map); ++rt) {
+         int map = dyn->cal.color_map[rt];
+         key.epilog.remap[rt] = map == MESA_VK_ATTACHMENT_UNUSED ? -1 : map;
+      }
+
+      if (dyn->ms.alpha_to_one_enable || dyn->ms.alpha_to_coverage_enable ||
+          dyn->cb.logic_op_enable) {
+
+         perf_debug(
+            cmd, "Epilog with%s%s%s",
+            dyn->ms.alpha_to_one_enable ? " alpha-to-one" : "",
+            dyn->ms.alpha_to_coverage_enable ? " alpha-to-coverage" : "",
+            dyn->cb.logic_op_enable ? " logic-op" : "");
+      }
+
+      key.epilog.link.already_ran_zs |= nontrivial_force_early;
+
+      struct hk_rendering_state *render = &cmd->state.gfx.render;
+      for (uint32_t i = 0; i < render->color_att_count; i++) {
+         key.epilog.rt_formats[i] =
+            hk_format_to_pipe_format(render->color_att[i].vk_format);
+
+         const struct vk_color_blend_attachment_state *cb =
+            &dyn->cb.attachments[i];
+
+         bool write_enable = dyn->cb.color_write_enables & BITFIELD_BIT(i);
+         unsigned write_mask = write_enable ? cb->write_mask : 0;
+
+         /* nir_lower_blend always blends, so use a default blend state when
+          * blending is disabled at an API level.
+          */
+         if (!dyn->cb.attachments[i].blend_enable) {
+            key.epilog.blend.rt[i] = (struct agx_blend_rt_key){
+               .colormask = write_mask,
+               .rgb_func = PIPE_BLEND_ADD,
+               .alpha_func = PIPE_BLEND_ADD,
+               .rgb_src_factor = PIPE_BLENDFACTOR_ONE,
+               .alpha_src_factor = PIPE_BLENDFACTOR_ONE,
+               .rgb_dst_factor = PIPE_BLENDFACTOR_ZERO,
+               .alpha_dst_factor = PIPE_BLENDFACTOR_ZERO,
+            };
+         } else {
+            key.epilog.blend.rt[i] = (struct agx_blend_rt_key){
+               .colormask = write_mask,
+
+               .rgb_src_factor =
+                  vk_blend_factor_to_pipe(cb->src_color_blend_factor),
+
+               .rgb_dst_factor =
+                  vk_blend_factor_to_pipe(cb->dst_color_blend_factor),
+
+               .rgb_func = vk_blend_op_to_pipe(cb->color_blend_op),
+
+               .alpha_src_factor =
+                  vk_blend_factor_to_pipe(cb->src_alpha_blend_factor),
+
+               .alpha_dst_factor =
+                  vk_blend_factor_to_pipe(cb->dst_alpha_blend_factor),
+
+               .alpha_func = vk_blend_op_to_pipe(cb->alpha_blend_op),
+            };
+         }
+      }
+
+      hk_update_fast_linked(cmd, fs, &key);
    }
 
    /* If the vertex shader uses draw parameters, vertex uniforms are dirty every
