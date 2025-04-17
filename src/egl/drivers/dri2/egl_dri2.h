@@ -325,7 +325,7 @@ struct dri2_egl_surface {
    int dx;
    int dy;
    struct wl_event_queue *wl_queue;
-   struct wl_surface *wl_surface_wrapper;
+   struct loader_wayland_surface wayland_surface;
    struct wl_display *wl_dpy_wrapper;
    struct wl_drm *wl_drm_wrapper;
    struct wl_callback *throttle_callback;
