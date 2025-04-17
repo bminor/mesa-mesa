@@ -122,17 +122,16 @@ def run_target_job(
     target_statuses: dict,
     name_field_pad: int,
 ) -> None:
+    execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
     if stress and job.status in COMPLETED_STATUSES:
         if (
             stress < 0
             or len(execution_times[job.name]) < stress
         ):
-            execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
             enable_job_fn(job=job, action_type="retry")
             # Wait for the next loop to get the updated job object
             return
     else:
-        execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
         enable_job_fn(job=job, action_type="target")
 
     print_job_status(job, job.status not in target_statuses[job.name], name_field_pad)
