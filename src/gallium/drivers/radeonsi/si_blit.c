@@ -757,14 +757,12 @@ static void si_check_render_feedback(struct si_context *sctx)
    if (!si_any_colorbuffer_written(sctx))
       return;
 
-   for (int i = 0; i < SI_NUM_GRAPHICS_SHADERS; ++i) {
-      if (!sctx->shaders[i].cso)
-         continue;
+   if (sctx->shaders[PIPE_SHADER_FRAGMENT].cso) {
+      struct si_shader_info *info = &sctx->shaders[PIPE_SHADER_FRAGMENT].cso->info;
 
-      struct si_shader_info *info = &sctx->shaders[i].cso->info;
-      si_check_render_feedback_images(sctx, &sctx->images[i],
+      si_check_render_feedback_images(sctx, &sctx->images[PIPE_SHADER_FRAGMENT],
                                       BITFIELD_MASK(info->base.num_images));
-      si_check_render_feedback_textures(sctx, &sctx->samplers[i],
+      si_check_render_feedback_textures(sctx, &sctx->samplers[PIPE_SHADER_FRAGMENT],
                                         info->base.textures_used);
    }
 
