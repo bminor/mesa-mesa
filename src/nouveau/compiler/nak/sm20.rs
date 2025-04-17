@@ -477,6 +477,351 @@ impl SM20Encoder<'_> {
         self.set_dst(14..20, dst);
         self.set_field(26..58, imm_src);
     }
+
+    fn set_rnd_mode(&mut self, range: Range<usize>, rnd_mode: FRndMode) {
+        self.set_field(
+            range,
+            match rnd_mode {
+                FRndMode::NearestEven => 0_u8,
+                FRndMode::NegInf => 1_u8,
+                FRndMode::PosInf => 2_u8,
+                FRndMode::Zero => 3_u8,
+            },
+        );
+    }
+
+    fn set_float_cmp_op(&mut self, range: Range<usize>, op: FloatCmpOp) {
+        assert!(range.len() == 4);
+        self.set_field(
+            range,
+            match op {
+                FloatCmpOp::OrdLt => 0x01_u8,
+                FloatCmpOp::OrdEq => 0x02_u8,
+                FloatCmpOp::OrdLe => 0x03_u8,
+                FloatCmpOp::OrdGt => 0x04_u8,
+                FloatCmpOp::OrdNe => 0x05_u8,
+                FloatCmpOp::OrdGe => 0x06_u8,
+                FloatCmpOp::UnordLt => 0x09_u8,
+                FloatCmpOp::UnordEq => 0x0a_u8,
+                FloatCmpOp::UnordLe => 0x0b_u8,
+                FloatCmpOp::UnordGt => 0x0c_u8,
+                FloatCmpOp::UnordNe => 0x0d_u8,
+                FloatCmpOp::UnordGe => 0x0e_u8,
+                FloatCmpOp::IsNum => 0x07_u8,
+                FloatCmpOp::IsNan => 0x08_u8,
+            },
+        );
+    }
+}
+
+impl SM20Op for OpFAdd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+        if src1.as_imm_not_f20().is_some()
+            && (self.saturate || self.rnd_mode == FRndMode::NearestEven)
+        {
+            b.copy_alu_src(src1, GPR, SrcType::F32);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
+            // Technically the modifier bits for these do work but legalization
+            // should fold any modifiers on immediates for us.
+            assert!(self.srcs[1].src_mod.is_none());
+            e.encode_form_a_imm32(
+                0xa,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                imm32,
+            );
+            assert!(self.saturate);
+            assert!(self.rnd_mode == FRndMode::NearestEven);
+        } else {
+            e.encode_form_a(
+                SM20Unit::Float,
+                0x14,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                Some(&self.srcs[1]),
+                None,
+            );
+            e.set_bit(49, self.saturate);
+            e.set_rnd_mode(55..57, self.rnd_mode);
+        }
+        e.set_bit(5, self.ftz);
+        e.set_bit(6, self.srcs[1].src_mod.has_fabs());
+        e.set_bit(7, self.srcs[0].src_mod.has_fabs());
+        e.set_bit(8, self.srcs[1].src_mod.has_fneg());
+        e.set_bit(9, self.srcs[0].src_mod.has_fneg());
+    }
+}
+
+impl SM20Op for OpFFma {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1, src2] = &mut self.srcs;
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src2, GPR, SrcType::F32);
+        if src1.as_imm_not_f20().is_some()
+            && (self.saturate
+                || self.rnd_mode != FRndMode::NearestEven
+                || self.dst.as_reg().is_none()
+                || self.dst.as_reg() != src2.src_ref.as_reg())
+        {
+            b.copy_alu_src(src1, GPR, SrcType::F32);
+        }
+        b.copy_alu_src_if_not_reg(src2, GPR, SrcType::F32);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(!self.srcs[0].src_mod.has_fabs());
+        assert!(!self.srcs[1].src_mod.has_fabs());
+        assert!(!self.srcs[2].src_mod.has_fabs());
+
+        if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
+            // Long immediates are only allowed if src2 == dst.
+            assert!(self.dst.as_reg().is_some());
+            assert!(self.dst.as_reg() == self.srcs[2].src_ref.as_reg());
+
+            // Technically the modifier bits for these do work but legalization
+            // should fold any modifiers on immediates for us.
+            assert!(self.srcs[1].src_mod.is_none());
+
+            e.encode_form_a_imm32(
+                0x8,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                imm32,
+            );
+            assert!(self.rnd_mode == FRndMode::NearestEven);
+        } else {
+            e.encode_form_a(
+                SM20Unit::Float,
+                0xc,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                Some(&self.srcs[1]),
+                Some(&self.srcs[2]),
+            );
+            e.set_rnd_mode(55..57, self.rnd_mode);
+        }
+
+        e.set_bit(5, self.saturate);
+        e.set_bit(6, self.ftz);
+        e.set_bit(7, self.dnz);
+
+        e.set_bit(8, self.srcs[2].src_mod.has_fneg());
+        let neg0 = self.srcs[0].src_mod.has_fneg();
+        let neg1 = self.srcs[1].src_mod.has_fneg();
+        e.set_bit(9, neg0 ^ neg1);
+    }
+}
+
+impl SM20Op for OpFMnMx {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::F32);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Float,
+            0x2,
+            Some(&self.dst),
+            Some(&self.srcs[0]),
+            Some(&self.srcs[1]),
+            None,
+        );
+        e.set_bit(5, self.ftz);
+        e.set_bit(6, self.srcs[1].src_mod.has_fabs());
+        e.set_bit(7, self.srcs[0].src_mod.has_fabs());
+        e.set_bit(8, self.srcs[1].src_mod.has_fneg());
+        e.set_bit(9, self.srcs[0].src_mod.has_fneg());
+        e.set_pred_src(49..53, self.min);
+    }
+}
+
+impl SM20Op for OpFMul {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
+        b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
+        if src1.as_imm_not_f20().is_some()
+            && self.rnd_mode != FRndMode::NearestEven
+        {
+            b.copy_alu_src(src1, GPR, SrcType::F32);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(!self.srcs[0].src_mod.has_fabs());
+        assert!(!self.srcs[1].src_mod.has_fabs());
+
+        if let Some(mut imm32) = self.srcs[1].as_imm_not_f20() {
+            // Technically the modifier bits for these do work but legalization
+            // should fold any modifiers on immediates for us.
+            assert!(self.srcs[1].src_mod.is_none());
+
+            // We don't, however, have a modifier for src0.  Just flip the
+            // immediate in that case.
+            if self.srcs[0].src_mod.has_fneg() {
+                imm32 ^= 0x80000000;
+            }
+            e.encode_form_a_imm32(
+                0xc,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                imm32,
+            );
+            assert!(self.rnd_mode == FRndMode::NearestEven);
+        } else {
+            e.encode_form_a(
+                SM20Unit::Float,
+                0x16,
+                Some(&self.dst),
+                Some(&self.srcs[0]),
+                Some(&self.srcs[1]),
+                None,
+            );
+            e.set_rnd_mode(55..57, self.rnd_mode);
+            let neg0 = self.srcs[0].src_mod.has_fneg();
+            let neg1 = self.srcs[1].src_mod.has_fneg();
+            e.set_bit(25, neg0 ^ neg1);
+        }
+
+        e.set_bit(5, self.saturate);
+        e.set_bit(6, self.ftz);
+        e.set_bit(7, self.dnz);
+    }
+}
+
+impl SM20Op for OpRro {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_f20_overflow(&mut self.src, GPR, SrcType::F32);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_b(SM20Unit::Float, 0x18, self.dst, self.src);
+        e.set_field(
+            5..6,
+            match self.op {
+                RroOp::SinCos => 0u8,
+                RroOp::Exp2 => 1u8,
+            },
+        );
+        e.set_bit(6, self.src.src_mod.has_fabs());
+        e.set_bit(8, self.src.src_mod.has_fneg());
+    }
+}
+
+impl SM20Op for OpMuFu {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::I32);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Float, 0x32);
+
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src_ref(20..26, &self.src.src_ref);
+
+        e.set_bit(5, false); // .sat
+        e.set_bit(6, self.src.src_mod.has_fabs());
+        e.set_bit(8, self.src.src_mod.has_fneg());
+        e.set_field(
+            26..30,
+            match self.op {
+                MuFuOp::Cos => 0_u8,
+                MuFuOp::Sin => 1_u8,
+                MuFuOp::Exp2 => 2_u8,
+                MuFuOp::Log2 => 3_u8,
+                MuFuOp::Rcp => 4_u8,
+                MuFuOp::Rsq => 5_u8,
+                MuFuOp::Rcp64H => 6_u8,
+                MuFuOp::Rsq64H => 7_u8,
+                _ => panic!("mufu{} not supported on SM20", self.op),
+            },
+        );
+    }
+}
+
+impl SM20Op for OpFSet {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        if swap_srcs_if_not_reg(src0, src1, GPR) {
+            self.cmp_op = self.cmp_op.flip();
+        }
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Float,
+            0x6,
+            Some(&self.dst),
+            Some(&self.srcs[0]),
+            Some(&self.srcs[1]),
+            None,
+        );
+
+        e.set_bit(5, self.ftz);
+        e.set_bit(6, self.srcs[1].src_mod.has_fabs());
+        e.set_bit(7, self.srcs[0].src_mod.has_fabs());
+        e.set_bit(8, self.srcs[1].src_mod.has_fneg());
+        e.set_bit(9, self.srcs[0].src_mod.has_fneg());
+        e.set_float_cmp_op(55..59, self.cmp_op);
+    }
+}
+
+impl SM20Op for OpFSetP {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1] = &mut self.srcs;
+        if swap_srcs_if_not_reg(src0, src1, GPR) {
+            self.cmp_op = self.cmp_op.flip();
+        }
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Float,
+            0x8,
+            None,
+            Some(&self.srcs[0]),
+            Some(&self.srcs[1]),
+            None,
+        );
+
+        e.set_bit(6, self.srcs[1].src_mod.has_fabs());
+        e.set_bit(7, self.srcs[0].src_mod.has_fabs());
+        e.set_bit(8, self.srcs[1].src_mod.has_fneg());
+        e.set_bit(9, self.srcs[0].src_mod.has_fneg());
+        e.set_pred_dst(14..17, Dst::None);
+        e.set_pred_dst(17..20, self.dst);
+        e.set_pred_src(49..53, self.accum);
+        e.set_pred_set_op(53..55, self.set_op);
+        e.set_float_cmp_op(55..59, self.cmp_op);
+        e.set_bit(59, self.ftz);
+    }
 }
 
 impl SM20Op for OpFlo {
@@ -1071,6 +1416,14 @@ impl SM20Op for OpS2R {
 macro_rules! as_sm20_op_match {
     ($op: expr) => {
         match $op {
+            Op::FAdd(op) => op,
+            Op::FFma(op) => op,
+            Op::FMnMx(op) => op,
+            Op::FMul(op) => op,
+            Op::Rro(op) => op,
+            Op::MuFu(op) => op,
+            Op::FSet(op) => op,
+            Op::FSetP(op) => op,
             Op::Flo(op) => op,
             Op::IAdd2(op) => op,
             Op::IAdd2X(op) => op,
