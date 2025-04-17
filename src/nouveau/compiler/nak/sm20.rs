@@ -1566,6 +1566,84 @@ impl SM20Op for OpSt {
     }
 }
 
+impl SM20Op for OpALd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x1);
+        e.set_field(5..7, self.comps - 1);
+
+        if self.phys {
+            assert!(!self.patch);
+            assert!(self.offset.src_ref.as_reg().is_some());
+        } else if !self.patch {
+            assert!(self.offset.is_zero());
+        }
+        e.set_bit(8, self.patch);
+        e.set_bit(9, self.output);
+
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, self.offset);
+        e.set_reg_src(26..32, self.vtx);
+        e.set_field(32..42, self.addr);
+    }
+}
+
+impl SM20Op for OpASt {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x2);
+        e.set_field(5..7, self.comps - 1);
+
+        e.set_bit(8, self.patch);
+        assert!(!self.phys);
+
+        e.set_reg_src(20..26, self.offset);
+        e.set_reg_src(26..32, self.data);
+        e.set_field(32..42, self.addr);
+        e.set_reg_src(49..55, self.vtx);
+    }
+}
+
+impl SM20Op for OpIpa {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Float, 0x30);
+
+        e.set_bit(5, false); // .sat
+        e.set_field(
+            6..8,
+            match self.freq {
+                InterpFreq::Pass => 0_u8,
+                InterpFreq::PassMulW => 1_u8,
+                InterpFreq::Constant => 2_u8,
+                InterpFreq::State => 3_u8,
+            },
+        );
+        e.set_field(
+            8..10,
+            match self.loc {
+                InterpLoc::Default => 0_u8,
+                InterpLoc::Centroid => 1_u8,
+                InterpLoc::Offset => 2_u8,
+            },
+        );
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, 0.into()); // indirect
+        e.set_reg_src(26..32, self.inv_w);
+        e.set_reg_src(49..55, self.offset);
+        e.set_field(32..42, self.addr);
+    }
+}
+
 impl SM20Op for OpExit {
     fn legalize(&mut self, _b: &mut LegalizeBuilder) {
         // Nothing to do
@@ -1573,6 +1651,30 @@ impl SM20Op for OpExit {
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         e.set_opcode(SM20Unit::Exec, 0x20);
+        e.set_field(5..9, 0xf_u8); // flags
+    }
+}
+
+impl SM20Op for OpIsberd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x0);
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, self.idx);
+        e.set_field(26..42, 0_u16); // offset
+    }
+}
+
+impl SM20Op for OpKill {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Exec, 0x26);
         e.set_field(5..9, 0xf_u8); // flags
     }
 }
@@ -1588,6 +1690,31 @@ impl SM20Op for OpNop {
     }
 }
 
+impl SM20Op for OpPixLd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x4);
+        e.set_field(
+            5..8,
+            match &self.val {
+                PixVal::CovMask => 1_u8,
+                PixVal::Covered => 2_u8,
+                PixVal::Offset => 3_u8,
+                PixVal::CentroidOffset => 4_u8,
+                PixVal::MyIndex => 5_u8,
+                other => panic!("Unsupported PixVal: {other}"),
+            },
+        );
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, 0.into());
+        e.set_field(26..34, 0_u16); // offset
+        e.set_pred_dst(53..56, Dst::None);
+    }
+}
+
 impl SM20Op for OpS2R {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
@@ -1597,6 +1724,33 @@ impl SM20Op for OpS2R {
         e.set_opcode(SM20Unit::Move, 0xb);
         e.set_dst(14..20, self.dst);
         e.set_field(26..32, self.idx);
+    }
+}
+
+impl SM20Op for OpOut {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.handle, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.stream, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Tex,
+            0x7,
+            Some(&self.dst),
+            Some(&self.handle),
+            Some(&self.stream),
+            None,
+        );
+        e.set_field(
+            5..7,
+            match self.out_type {
+                OutType::Emit => 1_u8,
+                OutType::Cut => 2_u8,
+                OutType::EmitThenCut => 3_u8,
+            },
+        );
     }
 }
 
@@ -1634,9 +1788,16 @@ macro_rules! as_sm20_op_match {
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::St(op) => op,
+            Op::ALd(op) => op,
+            Op::ASt(op) => op,
+            Op::Ipa(op) => op,
             Op::Exit(op) => op,
+            Op::Isberd(op) => op,
+            Op::Kill(op) => op,
             Op::Nop(op) => op,
+            Op::PixLd(op) => op,
             Op::S2R(op) => op,
+            Op::Out(op) => op,
             _ => panic!("Unhandled instruction {}", $op),
         }
     };
