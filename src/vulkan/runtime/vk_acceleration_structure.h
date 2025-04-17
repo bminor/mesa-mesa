@@ -26,6 +26,7 @@
 #define VK_ACCELERATION_STRUCTURE_H
 
 #include "vk_buffer.h"
+#include "vk_meta.h"
 #include "vk_object.h"
 #include "radix_sort/radix_sort_vk.h"
 
@@ -113,7 +114,14 @@ struct vk_acceleration_structure_build_args {
    const radix_sort_vk_t *radix_sort;
 };
 
-struct vk_meta_device;
+VkResult vk_get_bvh_build_pipeline_layout(struct vk_device *device, struct vk_meta_device *meta,
+                                          unsigned push_constant_size, VkPipelineLayout *layout);
+
+VkResult vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_device *meta,
+                                       enum vk_meta_object_key_type type, const uint32_t *spv,
+                                       uint32_t spv_size, unsigned push_constant_size,
+                                       const struct vk_acceleration_structure_build_args *args,
+                                       uint32_t flags, VkPipeline *pipeline);
 
 void vk_cmd_build_acceleration_structures(VkCommandBuffer cmdbuf,
                                           struct vk_device *device,
