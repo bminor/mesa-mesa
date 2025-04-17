@@ -237,9 +237,8 @@ agx_calc_register_demand(agx_context *ctx)
 
       max_demand = MAX2(demand, max_demand);
 
-      /* To handle non-power-of-two vectors, sometimes live range splitting
-       * needs extra registers for 1 instruction. This counter tracks the number
-       * of registers to be freed after 1 extra instruction.
+      /* To handle late-kill sources, this counter tracks the number of
+       * registers to be freed after 1 extra instruction.
        */
       unsigned late_kill_count = 0;
 
@@ -271,7 +270,9 @@ agx_calc_register_demand(agx_context *ctx)
          demand -= late_kill_count;
          late_kill_count = 0;
 
-         /* Kill sources the first time we see them */
+         /* Late-kill sources the first time we see them. This simplifies RA. We
+          * could optimize to early-kill in some situations if we wanted.
+          */
          agx_foreach_src(I, s) {
             if (!I->src[s].kill)
                continue;
@@ -289,7 +290,7 @@ agx_calc_register_demand(agx_context *ctx)
             }
 
             if (!skip)
-               demand -= widths[I->src[s].value];
+               late_kill_count += widths[I->src[s].value];
          }
 
          /* Make destinations live */
