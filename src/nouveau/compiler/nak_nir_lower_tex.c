@@ -237,7 +237,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
          tex->src[1].src_type = nir_tex_src_backend2;
          nir_src_rewrite(&tex->src[1].src, nir_vec(b, src1, src1_comps));
       }
-   } else if (nak->sm >= 32) {
+   } else if (nak->sm >= 30) {
       nir_def *src[8] = { NULL, };
       unsigned src_comps = 0;
 
