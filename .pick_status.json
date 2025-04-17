@@ -1974,7 +1974,7 @@
         "description": "nak/legalize: Take a RegFile in copy_alu_src_and_lower_ineg()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "af6093a71267f6be5392c74491ab68f83ff750d0",
         "notes": null
