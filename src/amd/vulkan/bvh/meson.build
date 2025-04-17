@@ -51,12 +51,7 @@ bvh_shaders = [
   [
     'leaf.comp',
     'radv_leaf',
-    ['ALWAYS_ACTIVE=0'],
-  ],
-  [
-    'leaf.comp',
-    'radv_leaf_always_active',
-    ['ALWAYS_ACTIVE=1'],
+    [],
   ],
 ]
 

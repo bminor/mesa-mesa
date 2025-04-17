@@ -35,10 +35,17 @@
 
 #define SUBGROUP_SIZE_ID 0
 #define BVH_BOUNDS_OFFSET_ID 1
+#define BUILD_FLAGS_ID 2
 #ifdef VULKAN
 layout (constant_id = SUBGROUP_SIZE_ID) const int SUBGROUP_SIZE = 64;
 layout (constant_id = BVH_BOUNDS_OFFSET_ID) const int BVH_BOUNDS_OFFSET = 0;
+layout (constant_id = BUILD_FLAGS_ID) const int BUILD_FLAGS = 0;
 #endif
+
+#define VK_BUILD_FLAG_ALWAYS_ACTIVE (1u << 0)
+#define VK_BUILD_FLAG_COUNT 1
+
+#define VK_BUILD_FLAG(flag) ((BUILD_FLAGS & flag) != 0)
 
 struct leaf_args {
    VOID_REF bvh;

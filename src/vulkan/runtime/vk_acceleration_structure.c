@@ -43,10 +43,6 @@ static const uint32_t leaf_spv[] = {
 #include "bvh/leaf.spv.h"
 };
 
-static const uint32_t leaf_always_active_spv[] = {
-#include "bvh/leaf_always_active.spv.h"
-};
-
 static const uint32_t morton_spv[] = {
 #include "bvh/morton.spv.h"
 };
@@ -287,13 +283,23 @@ struct bvh_batch_state {
    bool any_update;
 };
 
+struct vk_bvh_build_pipeline_key {
+   enum vk_meta_object_key_type type;
+   uint32_t flags;
+};
+
 static VkResult
 get_pipeline_spv(struct vk_device *device, struct vk_meta_device *meta,
-                 enum vk_meta_object_key_type key, const uint32_t *spv, uint32_t spv_size,
+                 enum vk_meta_object_key_type type, const uint32_t *spv, uint32_t spv_size,
                  unsigned push_constant_size,
-                 const struct vk_acceleration_structure_build_args *args,
+                 const struct vk_acceleration_structure_build_args *args, uint32_t flags,
                  VkPipeline *pipeline, VkPipelineLayout *layout)
 {
+   struct vk_bvh_build_pipeline_key key = {
+      .type = type,
+      .flags = flags,
+   };
+
    VkResult result = vk_meta_get_pipeline_layout(
          device, meta, NULL,
          &(VkPushConstantRange){
@@ -318,7 +324,7 @@ get_pipeline_spv(struct vk_device *device, struct vk_meta_device *meta,
       .pCode = spv,
    };
 
-   VkSpecializationMapEntry spec_map[2] = {
+   VkSpecializationMapEntry spec_map[3] = {
       {
          .constantID = SUBGROUP_SIZE_ID,
          .offset = 0,
@@ -329,11 +335,17 @@ get_pipeline_spv(struct vk_device *device, struct vk_meta_device *meta,
          .offset = sizeof(args->subgroup_size),
          .size = sizeof(args->bvh_bounds_offset),
       },
+      {
+         .constantID = BUILD_FLAGS_ID,
+         .offset = sizeof(args->subgroup_size) + sizeof(args->bvh_bounds_offset),
+         .size = sizeof(flags),
+      },
    };
 
-   uint32_t spec_constants[2] = {
+   uint32_t spec_constants[3] = {
       args->subgroup_size,
-      args->bvh_bounds_offset
+      args->bvh_bounds_offset,
+      flags,
    };
 
    VkSpecializationInfo spec_info = {
@@ -490,31 +502,17 @@ build_leaves(VkCommandBuffer commandBuffer,
     * nodes as if they were active, with an empty bounding box. It's then the
     * driver or HW's responsibility to filter out inactive nodes.
     */
-    VkResult result;
-   if (updateable) {
-      const uint32_t *spirv = leaf_always_active_spv;
-      size_t spirv_size = sizeof(leaf_always_active_spv);
+   const uint32_t *spirv = leaf_spv;
+   size_t spirv_size = sizeof(leaf_spv);
 
-      if (device->as_build_ops->leaf_always_active_spirv_override) {
-         spirv = device->as_build_ops->leaf_always_active_spirv_override;
-         spirv_size = device->as_build_ops->leaf_always_active_spirv_override_size;
-      }
-
-      result = get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LEAF_ALWAYS_ACTIVE, spirv,
-                                spirv_size, sizeof(struct leaf_args), args,
-                                &pipeline, &layout);
-   } else {
-      const uint32_t *spirv = leaf_spv;
-      size_t spirv_size = sizeof(leaf_spv);
-
-      if (device->as_build_ops->leaf_spirv_override) {
-         spirv = device->as_build_ops->leaf_spirv_override;
-         spirv_size = device->as_build_ops->leaf_spirv_override_size;
-      }
-
-      result = get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LEAF, spirv, spirv_size,
-                                sizeof(struct leaf_args), args, &pipeline, &layout);
+   if (device->as_build_ops->leaf_spirv_override) {
+      spirv = device->as_build_ops->leaf_spirv_override;
+      spirv_size = device->as_build_ops->leaf_spirv_override_size;
    }
+
+   VkResult result = get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LEAF, spirv, spirv_size,
+                                      sizeof(struct leaf_args), args, updateable ? VK_BUILD_FLAG_ALWAYS_ACTIVE : 0,
+                                      &pipeline, &layout);
 
    if (result != VK_SUCCESS)
       return result;
@@ -579,7 +577,7 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
 
    VkResult result =
       get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_MORTON, morton_spv, sizeof(morton_spv),
-                       sizeof(struct morton_args), args, &pipeline, &layout);
+                       sizeof(struct morton_args), args, 0, &pipeline, &layout);
 
    if (result != VK_SUCCESS)
       return result;
@@ -865,7 +863,7 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
    VkResult result =
       get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LBVH_MAIN, lbvh_main_spv,
                        sizeof(lbvh_main_spv),
-                       sizeof(struct lbvh_main_args), args, &pipeline, &layout);
+                       sizeof(struct lbvh_main_args), args, 0, &pipeline, &layout);
 
    if (result != VK_SUCCESS)
       return result;
@@ -906,7 +904,7 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
    result =
       get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LBVH_GENERATE_IR, lbvh_generate_ir_spv,
                        sizeof(lbvh_generate_ir_spv),
-                       sizeof(struct lbvh_generate_ir_args), args, &pipeline, &layout);
+                       sizeof(struct lbvh_generate_ir_args), args, 0, &pipeline, &layout);
 
    if (result != VK_SUCCESS)
       return result;
@@ -949,7 +947,7 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
    VkResult result =
       get_pipeline_spv(device, meta, VK_META_OBJECT_KEY_PLOC, ploc_spv,
                        sizeof(ploc_spv),
-                       sizeof(struct ploc_args), args, &pipeline, &layout);
+                       sizeof(struct ploc_args), args, 0, &pipeline, &layout);
 
    if (result != VK_SUCCESS)
       return result;

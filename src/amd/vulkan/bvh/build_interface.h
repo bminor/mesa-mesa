@@ -7,6 +7,8 @@
 #ifndef BVH_BUILD_INTERFACE_H
 #define BVH_BUILD_INTERFACE_H
 
+#include "vk_build_interface.h"
+
 #ifdef VULKAN
 #include "build_helpers.h"
 #else

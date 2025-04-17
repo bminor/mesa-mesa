@@ -56,10 +56,6 @@ static const uint32_t leaf_spv[] = {
 #include "bvh/radv_leaf.spv.h"
 };
 
-static const uint32_t leaf_always_active_spv[] = {
-#include "bvh/radv_leaf_always_active.spv.h"
-};
-
 struct acceleration_structure_layout {
    uint32_t geometry_info_offset;
    uint32_t primitive_base_indices_offset;
@@ -915,9 +911,6 @@ radv_device_init_accel_struct_build_state(struct radv_device *device)
       device->meta_state.accel_struct_build.build_ops.encode_as[0] = radv_encode_as;
       device->meta_state.accel_struct_build.build_ops.leaf_spirv_override = leaf_spv;
       device->meta_state.accel_struct_build.build_ops.leaf_spirv_override_size = sizeof(leaf_spv);
-      device->meta_state.accel_struct_build.build_ops.leaf_always_active_spirv_override = leaf_always_active_spv;
-      device->meta_state.accel_struct_build.build_ops.leaf_always_active_spirv_override_size =
-         sizeof(leaf_always_active_spv);
    }
 
    device->vk.as_build_ops = &device->meta_state.accel_struct_build.build_ops;

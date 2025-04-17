@@ -23,32 +23,22 @@ bvh_shaders = [
   [
     'lbvh_generate_ir.comp',
     'lbvh_generate_ir',
-    [],
   ],
   [
     'lbvh_main.comp',
     'lbvh_main',
-    [],
   ],
   [
     'leaf.comp',
     'leaf',
-    ['ALWAYS_ACTIVE=0'],
-  ],
-  [
-    'leaf.comp',
-    'leaf_always_active',
-    ['ALWAYS_ACTIVE=1'],
   ],
   [
     'morton.comp',
     'morton',
-    [],
   ],
   [
     'ploc_internal.comp',
     'ploc_internal',
-    [],
   ],
 ]
 
@@ -66,10 +56,6 @@ foreach s : bvh_shaders
     prog_glslang, '-V', '-I' + vk_bvh_include_dir, '--target-env', 'spirv1.5', '-x', '-o', '@OUTPUT@', '@INPUT@'
   ] + (with_mesa_debug ? ['-g'] : [])
   command += glslang_quiet
-
-  foreach define : s[2]
-    command += '-D' + define
-  endforeach
 
   bvh_spv += custom_target(
     s[1] + '.spv.h',
