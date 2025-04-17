@@ -45,6 +45,7 @@ struct tu_lrz_state
    bool gpu_dir_tracking : 1;
    /* Continue using old LRZ state (LOAD_OP_LOAD of depth) */
    bool reuse_previous_state : 1;
+   bool gpu_dir_set : 1;
    enum tu_lrz_direction prev_direction;
 };
 

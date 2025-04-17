@@ -4960,6 +4960,12 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
           */
          if (!secondary->state.lrz.valid)
             cmd->state.lrz.valid = false;
+         if (secondary->state.lrz.gpu_dir_set)
+            cmd->state.lrz.gpu_dir_set = true;
+         if (cmd->state.lrz.prev_direction == TU_LRZ_UNKNOWN &&
+             secondary->state.lrz.prev_direction != TU_LRZ_UNKNOWN)
+            cmd->state.lrz.prev_direction =
+               secondary->state.lrz.prev_direction;
 
          tu_clone_trace(cmd, &cmd->draw_cs, &secondary->trace);
          tu_render_pass_state_merge(&cmd->state.rp, &secondary->state.rp);

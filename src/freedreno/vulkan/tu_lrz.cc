@@ -504,8 +504,18 @@ tu_lrz_tiling_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    /* If we haven't disabled LRZ during renderpass, we need to disable it here
     * for next renderpass to not use invalid LRZ values.
     */
-   if (cmd->state.lrz.gpu_dir_tracking && cmd->state.lrz.valid_at_start &&
-       !cmd->state.lrz.valid) {
+   bool disable_for_next_rp = cmd->state.lrz.valid_at_start &&
+       !cmd->state.lrz.valid;
+   /* If the render pass writes depth (with direction) but doesn't set
+    * direction on the GPU, the LRZ buffer cannot be used in subsequent
+    * render passes because the direction information is lost.
+    */
+   if (!cmd->state.lrz.gpu_dir_set &&
+       cmd->state.lrz.prev_direction != TU_LRZ_UNKNOWN) {
+      disable_for_next_rp = true;
+   }
+
+   if (cmd->state.lrz.gpu_dir_tracking && disable_for_next_rp) {
       tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_DEPTH_VIEW(
          .base_layer = 0b11111111111,
          .layer_count = 0b11111111111,
@@ -961,6 +971,11 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
    cmd->state.lrz.enabled = cmd->state.lrz.valid && gras_lrz_cntl.enable;
    if (!cmd->state.lrz.enabled)
       memset(&gras_lrz_cntl, 0, sizeof(gras_lrz_cntl));
+
+   if (cmd->state.lrz.enabled && gras_lrz_cntl.lrz_write &&
+       cmd->state.lrz.prev_direction != TU_LRZ_UNKNOWN) {
+      cmd->state.lrz.gpu_dir_set = true;
+   }
 
    return gras_lrz_cntl;
 }
