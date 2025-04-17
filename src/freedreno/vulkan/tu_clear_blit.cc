@@ -3286,8 +3286,21 @@ copy_buffer(struct tu_cmd_buffer *cmd,
 {
    const struct blit_ops *ops = &r2d_ops<CHIP>;
    struct tu_cs *cs = &cmd->cs;
-   enum pipe_format format = block_size == 4 ? PIPE_FORMAT_R32_UINT : PIPE_FORMAT_R8_UNORM;
    uint64_t blocks = size / block_size;
+   enum pipe_format format;
+
+   switch (block_size) {
+   case 16:
+      format = PIPE_FORMAT_R32G32B32A32_UINT;
+      break;
+   case 4:
+      format = PIPE_FORMAT_R32_UINT;
+      break;
+   default:
+      assert(block_size == 1);
+      format = PIPE_FORMAT_R8_UNORM;
+      break;
+   }
 
    handle_buffer_unaligned_store<CHIP>(cmd, dst_va, size, unaligned_store);
 
@@ -3321,13 +3334,33 @@ tu_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_buffer, src_buffer, pCopyBufferInfo->srcBuffer);
    VK_FROM_HANDLE(tu_buffer, dst_buffer, pCopyBufferInfo->dstBuffer);
 
+   /* Choose the largest common block size for all copy regions
+    * to prevent WaW hazards when potentially performing non-overlapping
+    * unaligned stores through CCU. See handle_buffer_unaligned_store.
+    */
+   uint32_t block_size = 16;
+   for (unsigned i = 0; i < pCopyBufferInfo->regionCount; ++i) {
+      const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[i];
+      uint64_t alignment_target = region->size |
+                                  vk_buffer_address(&src_buffer->vk, region->srcOffset) |
+                                  vk_buffer_address(&dst_buffer->vk, region->dstOffset);
+
+      uint32_t region_block_size = 1;
+      if (!(alignment_target & 15))
+         region_block_size = 16;
+      else if (!(alignment_target & 3))
+         region_block_size = 4;
+
+      block_size = MIN2(block_size, region_block_size);
+   }
+
    bool unaligned_store = false;
    for (unsigned i = 0; i < pCopyBufferInfo->regionCount; ++i) {
       const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[i];
       copy_buffer<CHIP>(cmd,
                         vk_buffer_address(&dst_buffer->vk, region->dstOffset),
                         vk_buffer_address(&src_buffer->vk, region->srcOffset),
-                        region->size, 1, &unaligned_store);
+                        region->size, block_size, &unaligned_store);
    }
 
    after_buffer_unaligned_buffer_store<CHIP>(cmd, unaligned_store);
@@ -3352,10 +3385,18 @@ tu_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
       return;
    }
 
+   /* As in tu_CmdCopyBuffer2(), the largest viable block size is used. */
+   uint64_t alignment_target = dataSize | vk_buffer_address(&buffer->vk, dstOffset);
+   uint32_t block_size = 1;
+   if (!(alignment_target & 15))
+      block_size = 16;
+   else if (!(alignment_target & 3))
+      block_size = 4;
+
    bool unaligned_store = false;
    memcpy(tmp.map, pData, dataSize);
    copy_buffer<CHIP>(cmd, vk_buffer_address(&buffer->vk, dstOffset),
-                     tmp.iova, dataSize, 4, &unaligned_store);
+                     tmp.iova, dataSize, block_size, &unaligned_store);
 
    after_buffer_unaligned_buffer_store<CHIP>(cmd, unaligned_store);
 }
