@@ -34,7 +34,7 @@
         "description": "radeonsi: fix potential use after free in si_set_debug_callback",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "59a3f38ff6fdc7bd47309dd58ce5070c903a0c28",
         "notes": null
