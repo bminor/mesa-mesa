@@ -33,8 +33,8 @@
 #include <smmintrin.h>
 #endif
 
-/* Copies memory from src to dst, using SSE 4.1's MOVNTDQA to get streaming
- * read performance from uncached memory.
+/* Copies memory from src to dst, using non-temporal load instructions to get
+ * streaming read performance from uncached memory.
  */
 void
 util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
@@ -42,9 +42,14 @@ util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
    char *restrict d = dst;
    char *restrict s = src;
 
-#ifdef USE_SSE41
-   /* If dst and src are not co-aligned, or if SSE4.1 is not present, fallback to memcpy(). */
-   if (((uintptr_t)d & 15) != ((uintptr_t)s & 15) || !util_get_cpu_caps()->has_sse4_1) {
+#if defined(USE_SSE41) || defined(USE_AARCH64_ASM)
+   /* If dst and src are not co-aligned, or if non-temporal load instructions
+    * are not present, fallback to memcpy(). */
+   if (((uintptr_t)d & 15) != ((uintptr_t)s & 15)
+#if defined(USE_SSE41)
+       || !util_get_cpu_caps()->has_sse4_1
+#endif
+       ) {
       memcpy(d, s, len);
       return;
    }
@@ -63,6 +68,7 @@ util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
       len -= MIN2(bytes_before_alignment_boundary, len);
    }
 
+#if defined(USE_SSE41)
    if (len >= 64)
       _mm_mfence();
 
@@ -84,6 +90,37 @@ util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
       s += 64;
       len -= 64;
    }
+
+#elif defined(USE_AARCH64_ASM)
+   if (len >= 64) {
+      __asm__ volatile(
+         /* Memory barrier for loads completion in the non-shareable domain:
+          * https://developer.arm.com/documentation/102336/0100/Limiting-the-scope-of-memory-barriers */
+         "  dmb nshld\n"
+
+         /* Allow branching on negative flag using subs. */
+         "  sub %[len], %[len], #64\n"
+
+         /* Based on ARM optimized routines, using non-temporal loads:
+          * https://github.com/ARM-software/optimized-routines/blob/master/string/aarch64/memcpy-sve.S */
+         "loop64:\n"
+         "  ldnp q0, q1, [%[s]]\n"
+         "  stp q0, q1, [%[d]]\n"
+         "  ldnp q0, q1, [%[s], #32]\n"
+         "  stp q0, q1, [%[d], #32]\n"
+         "  add %[s], %[s], #64\n"
+         "  add %[d], %[d], #64\n"
+         "  subs %[len], %[len], #64\n"
+         "  b.pl loop64\n"
+
+         /* Restore <len>. */
+         "  add %[len], %[len], #64\n"
+
+         : [d]"+r"(d), [s]"+r"(s), [len]"+r"(len) :
+         : "v0", "v1", "cc", "memory");
+   }
+#endif
+
 #endif
    /* memcpy() the tail. */
    if (len) {

@@ -26,8 +26,8 @@
  *
  */
 
-/* Copies memory from src to dst, using SSE 4.1's MOVNTDQA to get streaming
- * read performance from uncached memory.
+/* Copies memory from src to dst, using using non-temporal load instructions
+ * to get streaming read performance from uncached memory.
  */
 
 #ifndef STREAMING_LOAD_MEMCPY_H
