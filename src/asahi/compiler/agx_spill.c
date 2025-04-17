@@ -642,17 +642,17 @@ calculate_local_next_use(struct spill_ctx *ctx, struct util_dynarray *out)
       ip -= instr_cycles(I);
 
       if (I->op != AGX_OPCODE_PHI) {
-         agx_foreach_ssa_dest_rev(I, d) {
-            unsigned v = I->dest[d].value;
-
-            util_dynarray_append(out, dist_t, search_next_uses(&nu, v));
-         }
-
          agx_foreach_ssa_src(I, s) {
             unsigned v = I->src[s].value;
 
             util_dynarray_append(out, dist_t, search_next_uses(&nu, v));
             set_next_use(&nu, v, ip);
+         }
+
+         agx_foreach_ssa_dest_rev(I, d) {
+            unsigned v = I->dest[d].value;
+
+            util_dynarray_append(out, dist_t, search_next_uses(&nu, v));
          }
       }
    }
@@ -753,22 +753,6 @@ min_algorithm(struct spill_ctx *ctx)
       /* Limit W to make space for the sources we just added */
       limit(ctx, I, ctx->k);
 
-      /* Update next-use distances for this instruction. Unlike the paper, we
-       * prune dead values from W as we go. This doesn't affect correctness, but
-       * it speeds up limit() on average.
-       */
-      agx_foreach_ssa_src_rev(I, s) {
-         assert(next_use_cursor >= 1);
-
-         unsigned next_ip = next_ips[--next_use_cursor];
-         assert((next_ip == DIST_INFINITY) == I->src[s].kill);
-
-         if (next_ip == DIST_INFINITY)
-            remove_W_if_present(ctx, I->src[s].value);
-         else
-            ctx->next_uses[I->src[s].value] = next_ip;
-      }
-
       agx_foreach_ssa_dest(I, d) {
          assert(next_use_cursor >= 1);
          unsigned next_ip = next_ips[--next_use_cursor];
@@ -793,6 +777,27 @@ min_algorithm(struct spill_ctx *ctx)
       /* Destinations are now in the register file */
       agx_foreach_ssa_dest(I, d) {
          insert_W(ctx, I->dest[d].value);
+      }
+
+      /* Update next-use distances for this instruction. Unlike the paper, we
+       * prune dead values from W as we go. This doesn't affect correctness, but
+       * it speeds up limit() on average.
+       *
+       * This happens after the above limit() calls to model sources as
+       * late-kill. This is conservative and could be improved, but it matches
+       * how we currently estimate register demand.
+       */
+      agx_foreach_ssa_src_rev(I, s) {
+         assert(next_use_cursor >= 1);
+
+         unsigned next_ip = next_ips[--next_use_cursor];
+         assert((next_ip == DIST_INFINITY) == I->src[s].kill);
+
+         if (I->src[s].kill) {
+            remove_W_if_present(ctx, I->src[s].value);
+         } else {
+            ctx->next_uses[I->src[s].value] = next_ip;
+         }
       }
 
       /* Add reloads for the sources in front of the instruction. We need to be
