@@ -97,6 +97,7 @@ struct libagx_tess_args {
     */
    enum libagx_tess_partitioning partitioning;
    uint32_t points_mode;
+   uint32_t isolines;
 
    /* When fed into a geometry shader, triangles should be counter-clockwise.
     * The tessellator always produces clockwise triangles, but we can swap
@@ -104,4 +105,4 @@ struct libagx_tess_args {
     */
    uint32_t ccw;
 } PACKED;
-static_assert(sizeof(struct libagx_tess_args) == 35 * 4);
+static_assert(sizeof(struct libagx_tess_args) == 36 * 4);

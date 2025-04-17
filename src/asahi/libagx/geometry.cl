@@ -758,7 +758,8 @@ libagx_prefix_sum_geom(constant struct agx_geometry_params *p)
 }
 
 KERNEL(1024)
-libagx_prefix_sum_tess(global struct libagx_tess_args *p)
+libagx_prefix_sum_tess(global struct libagx_tess_args *p, global uint *c_prims,
+                       global uint *c_invs, uint increment_stats__2)
 {
    _libagx_prefix_sum(p->counts, p->nr_patches, 1 /* words */, 0 /* word */);
 
@@ -786,6 +787,19 @@ libagx_prefix_sum_tess(global struct libagx_tess_args *p)
    desc[2] = alloc_B / elsize_B; /* start */
    desc[3] = 0;                  /* index_bias */
    desc[4] = 0;                  /* start_instance */
+
+   /* If necessary, increment clipper statistics too. This is only used when
+    * there's no geometry shader following us. See agx_nir_lower_gs.c for more
+    * info on the emulation. We just need to calculate the # of primitives
+    * tessellated.
+    */
+   if (increment_stats__2) {
+      uint prims = p->points_mode ? total
+                   : p->isolines  ? (total / 2)
+                                  : (total / 3);
+
+      increment_counters(c_prims, c_invs, NULL, prims);
+   }
 }
 
 uintptr_t

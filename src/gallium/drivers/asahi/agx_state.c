@@ -3907,13 +3907,14 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
    uint64_t c_invs = agx_get_query_address(
       batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]);
 
-   /* With a geometry shader, clipper counters are written by the pre-GS kernel
-    * since they depend on the output on the geometry shader. Without a geometry
-    * shader, they are written along with IA.
-    *
-    * TODO: Broken tessellation interaction, but nobody cares.
+   /* With a geometry/tessellation shader, clipper counters are written by the
+    * pre-GS/tess prefix sum kernel since they depend on the output on the
+    * geometry/tessellation shader.  Without a geometry/tessellation shader,
+    * they are written along with IA.
     */
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader ||
+       ctx->stage[PIPE_SHADER_TESS_EVAL].shader) {
+
       c_prims = 0;
       c_invs = 0;
    }
@@ -4620,6 +4621,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .patch_coord_buffer = agx_resource(ctx->heap)->bo->va->addr,
       .partitioning = partitioning,
       .points_mode = point_mode,
+      .isolines = mode == TESS_PRIMITIVE_ISOLINES,
    };
 
    if (!point_mode && tes->tess.primitive != TESS_PRIMITIVE_ISOLINES) {
@@ -4736,10 +4738,24 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    batch->uniforms.vertex_output_buffer_ptr = 0;
 
+   uint64_t c_prims = agx_get_query_address(
+      batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES]);
+   uint64_t c_invs = agx_get_query_address(
+      batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]);
+
+   /* If there's a geometry shader, it will increment the clipper stats.
+    * Otherwise, we do when tessellating.
+    */
+   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+      c_prims = 0;
+      c_invs = 0;
+   }
+
    /* Generate counts, then prefix sum them, then finally tessellate. */
    libagx_tessellate(batch, tess_grid, AGX_BARRIER_ALL, mode,
                      LIBAGX_TESS_MODE_COUNT, state);
-   libagx_prefix_sum_tess(batch, agx_1d(1024), AGX_BARRIER_ALL, state);
+   libagx_prefix_sum_tess(batch, agx_1d(1024), AGX_BARRIER_ALL, state, c_prims,
+                          c_invs, c_prims || c_invs);
    libagx_tessellate(batch, tess_grid, AGX_BARRIER_ALL, mode,
                      LIBAGX_TESS_MODE_WITH_COUNTS, state);
 
@@ -4949,6 +4965,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
         ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS] ||
         ((ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES] ||
           ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]) &&
+         !ctx->stage[PIPE_SHADER_TESS_EVAL].shader &&
          !ctx->stage[PIPE_SHADER_GEOMETRY].shader))) {
 
       uint64_t ptr;
