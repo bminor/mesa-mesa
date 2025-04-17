@@ -245,10 +245,11 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
       }
 
       /* Check if a definition clobbers some operand */
-      auto fixed_ops = get_ops_fixed_to_def(insn);
-      for (auto op_idx : fixed_ops) {
-         assert(std::none_of(fixed_ops.begin(), fixed_ops.end(),
-                             [&](uint32_t i) {
+      auto tied_defs = get_tied_defs(insn);
+      for (auto op_idx : tied_defs) {
+         assert(std::none_of(tied_defs.begin(), tied_defs.end(),
+                             [&](uint32_t i)
+                             {
                                 return i != op_idx && insn->operands[i].getTemp() ==
                                                          insn->operands[op_idx].getTemp();
                              }));

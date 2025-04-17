@@ -1423,7 +1423,7 @@ should_form_clause(const Instruction* a, const Instruction* b)
 }
 
 aco::small_vec<uint32_t, 2>
-get_ops_fixed_to_def(Instruction* instr)
+get_tied_defs(Instruction* instr)
 {
    aco::small_vec<uint32_t, 2> ops;
    if (instr->opcode == aco_opcode::v_interp_p2_f32 || instr->opcode == aco_opcode::v_mac_f32 ||

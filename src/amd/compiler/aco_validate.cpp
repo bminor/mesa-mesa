@@ -1474,7 +1474,7 @@ validate_ra(Program* program)
          }
 
          unsigned fixed_def_idx = 0;
-         for (auto op_idx : get_ops_fixed_to_def(instr.get())) {
+         for (auto op_idx : get_tied_defs(instr.get())) {
             if (instr->definitions[fixed_def_idx++].physReg() !=
                 instr->operands[op_idx].physReg()) {
                err |= ra_fail(program, loc, Location(),

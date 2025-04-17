@@ -2147,8 +2147,8 @@ operand_can_use_reg(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr, unsign
       FALLTHROUGH;
    case Format::SOP2:
    case Format::SOP1: {
-      auto fixed_ops = get_ops_fixed_to_def(instr.get());
-      return std::all_of(fixed_ops.begin(), fixed_ops.end(),
+      auto tied_defs = get_tied_defs(instr.get());
+      return std::all_of(tied_defs.begin(), tied_defs.end(),
                          [idx](auto op_idx) { return op_idx != idx; }) ||
              is_sgpr_writable_without_side_effects(gfx_level, reg);
    }
@@ -2858,7 +2858,7 @@ get_affinities(ra_ctx& ctx)
             ctx.assignments[instr->operands[0].tempId()].m0 = true;
          }
 
-         auto ops_fixed_to_defs = get_ops_fixed_to_def(instr.get());
+         auto tied_defs = get_tied_defs(instr.get());
          for (unsigned i = 0; i < instr->definitions.size(); i++) {
             const Definition& def = instr->definitions[i];
             if (!def.isTemp())
@@ -2872,8 +2872,8 @@ get_affinities(ra_ctx& ctx)
                Operand op;
                if (instr->opcode == aco_opcode::p_parallelcopy) {
                   op = instr->operands[i];
-               } else if (i < ops_fixed_to_defs.size()) {
-                  op = instr->operands[ops_fixed_to_defs[i]];
+               } else if (i < tied_defs.size()) {
+                  op = instr->operands[tied_defs[i]];
                } else if (vop3_can_use_vop2acc(ctx, instr.get())) {
                   op = instr->operands[2];
                } else if (i == 0 && sop2_can_use_sopk(ctx, instr.get())) {
@@ -3299,7 +3299,7 @@ register_allocation(Program* program, ra_test_policy policy)
           * location because that's used by a live-through operand.
           */
          unsigned fixed_def_idx = 0;
-         for (auto op_idx : get_ops_fixed_to_def(instr.get())) {
+         for (auto op_idx : get_tied_defs(instr.get())) {
             instr->definitions[fixed_def_idx++].setPrecolored(instr->operands[op_idx].physReg());
             instr->operands[op_idx].setPrecolored(instr->operands[op_idx].physReg());
          }
