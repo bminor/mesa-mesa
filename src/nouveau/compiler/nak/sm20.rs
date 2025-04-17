@@ -190,7 +190,7 @@ trait SM20Op {
 }
 
 struct SM20Encoder<'a> {
-    _sm: &'a ShaderModel20,
+    sm: &'a ShaderModel20,
     ip: usize,
     labels: &'a HashMap<Label, usize>,
     inst: [u32; 2],
@@ -1421,6 +1421,300 @@ impl SM20Op for OpPSetP {
 }
 
 impl SM20Encoder<'_> {
+    fn set_tex_dim(&mut self, range: Range<usize>, dim: TexDim) {
+        assert!(range.len() == 3);
+        self.set_field(
+            range,
+            match dim {
+                TexDim::_1D => 0_u8,
+                TexDim::Array1D => 1_u8,
+                TexDim::_2D => 2_u8,
+                TexDim::Array2D => 3_u8,
+                TexDim::_3D => 4_u8,
+                TexDim::Cube => 6_u8,
+                TexDim::ArrayCube => 7_u8,
+            },
+        );
+    }
+
+    fn set_tex_lod_mode(&mut self, range: Range<usize>, lod_mode: TexLodMode) {
+        assert!(range.len() == 2);
+        self.set_field(
+            range,
+            match lod_mode {
+                TexLodMode::Auto => 0_u8,
+                TexLodMode::Zero => 1_u8,
+                TexLodMode::Bias => 2_u8,
+                TexLodMode::Lod => 3_u8,
+                _ => panic!("Unknown LOD mode"),
+            },
+        );
+    }
+
+    fn set_tex_channel_mask(
+        &mut self,
+        range: Range<usize>,
+        channel_mask: ChannelMask,
+    ) {
+        self.set_field(range, channel_mask.to_bits());
+    }
+}
+
+fn legalize_tex_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
+    // Texture instructions have one or two sources.  When they have two, the
+    // second one is optional and we can set rZ instead.
+    let srcs = op.srcs_as_mut_slice();
+    assert!(matches!(&srcs[0].src_ref, SrcRef::SSA(_)));
+    if srcs.len() > 1 {
+        debug_assert!(srcs.len() == 2);
+        assert!(matches!(&srcs[1].src_ref, SrcRef::SSA(_) | SrcRef::Zero));
+    }
+}
+
+impl SM20Op for OpTex {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x20);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_tex_dim(51..54, self.dim);
+        e.set_bit(54, self.offset);
+        e.set_bit(56, self.z_cmpr);
+        e.set_tex_lod_mode(57..59, self.lod_mode);
+    }
+}
+
+impl SM20Op for OpTld {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x24);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_tex_dim(51..54, self.dim);
+        e.set_bit(54, self.offset);
+        e.set_bit(55, self.is_ms);
+        e.set_bit(56, false); // z_cmpr
+        e.set_field(
+            57..58,
+            match self.lod_mode {
+                TexLodMode::Zero => 0_u8,
+                TexLodMode::Lod => 1_u8,
+                _ => panic!("Tld does not support {}", self.lod_mode),
+            },
+        );
+    }
+}
+
+impl SM20Op for OpTld4 {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x28);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(5..7, self.comp);
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_bit(45, false); // .ndv
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_tex_dim(51..54, self.dim);
+        e.set_field(
+            54..56,
+            match self.offset_mode {
+                Tld4OffsetMode::None => 0_u8,
+                Tld4OffsetMode::AddOffI => 1_u8,
+                Tld4OffsetMode::PerPx => 2_u8,
+            },
+        );
+        e.set_bit(56, self.z_cmpr);
+    }
+}
+
+impl SM20Op for OpTmml {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x2c);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_tex_dim(51..54, self.dim);
+    }
+}
+
+impl SM20Op for OpTxd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x38);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_tex_dim(51..54, self.dim);
+        e.set_bit(54, self.offset);
+    }
+}
+
+impl SM20Op for OpTxq {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x30);
+
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_field(32..40, idx);
+                e.set_bit(50, false); // .b
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM20 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                assert!(e.sm.sm() >= 30);
+                e.set_field(32..40, 0xff_u8);
+                e.set_bit(50, true); // .b
+            }
+        }
+
+        e.set_field(7..9, 0x2_u8); // TODO: .p
+        e.set_bit(9, self.nodep);
+        e.set_dst(14..20, self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        e.set_reg_src(20..26, self.src);
+        e.set_reg_src(26..32, 0.into());
+        e.set_tex_channel_mask(46..50, self.channel_mask);
+        e.set_field(
+            54..57,
+            match self.query {
+                TexQuery::Dimension => 0_u8,
+                TexQuery::TextureType => 1_u8,
+                TexQuery::SamplerPos => 2_u8,
+                // TexQuery::Filter => 0x3_u8,
+                // TexQuery::Lod => 0x4_u8,
+                // TexQuery::BorderColour => 0x5_u8,
+            },
+        );
+    }
+}
+
+impl SM20Encoder<'_> {
     fn set_mem_type(&mut self, range: Range<usize>, mem_type: MemType) {
         assert!(range.len() == 3);
         self.set_field(
@@ -1754,6 +2048,18 @@ impl SM20Op for OpExit {
     }
 }
 
+impl SM20Op for OpTexDepBar {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x3c);
+        e.set_field(5..9, 0xf_u8); // flags
+        e.set_field(26..30, self.textures_left);
+    }
+}
+
 impl SM20Op for OpIsberd {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
@@ -1884,6 +2190,12 @@ macro_rules! as_sm20_op_match {
             Op::Prmt(op) => op,
             Op::Sel(op) => op,
             Op::PSetP(op) => op,
+            Op::Tex(op) => op,
+            Op::Tld(op) => op,
+            Op::Tld4(op) => op,
+            Op::Tmml(op) => op,
+            Op::Txd(op) => op,
+            Op::Txq(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::St(op) => op,
@@ -1898,6 +2210,7 @@ macro_rules! as_sm20_op_match {
             Op::Cont(op) => op,
             Op::PCnt(op) => op,
             Op::Exit(op) => op,
+            Op::TexDepBar(op) => op,
             Op::Isberd(op) => op,
             Op::Kill(op) => op,
             Op::Nop(op) => op,
@@ -1935,7 +2248,7 @@ fn encode_sm20_shader(sm: &ShaderModel20, s: &Shader<'_>) -> Vec<u32> {
     for b in &func.blocks {
         for instr in &b.instrs {
             let mut e = SM20Encoder {
-                _sm: sm,
+                sm: sm,
                 ip: encoded.len() * 4,
                 labels: &labels,
                 inst: [0_u32; 2],
