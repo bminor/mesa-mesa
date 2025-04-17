@@ -565,7 +565,7 @@ formats = [("pseudo", [Format.PSEUDO], list(itertools.product(range(5), range(6)
            ("ldsdir", [Format.LDSDIR], [(1, 1)]),
            ("mubuf", [Format.MUBUF], [(0, 4), (1, 3), (1, 4)]),
            ("mtbuf", [Format.MTBUF], [(0, 4), (1, 3)]),
-           ("mimg", [Format.MIMG], itertools.product([0, 1], [3, 4, 5, 6, 7])),
+           ("mimg", [Format.MIMG], list(itertools.product([0, 1], [3, 4, 5, 6, 7])) + [(3, 8)]),
            ("exp", [Format.EXP], [(0, 4), (0, 5)]),
            ("branch", [Format.PSEUDO_BRANCH], [(0, 0), (0, 1)]),
            ("barrier", [Format.PSEUDO_BARRIER], [(0, 0)]),
