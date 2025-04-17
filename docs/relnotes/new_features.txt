@@ -13,3 +13,4 @@ VK_EXT_extended_dynamic_state[2] on panvk
 Vulkan 1.2 on panvk/v10+
 VK_KHR_shader_quad_control on panvk/v10+
 multiDrawIndirect on panvk/v10+
+VK_KHR_draw_indirect_count on panvk/v10+
