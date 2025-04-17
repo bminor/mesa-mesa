@@ -6570,6 +6570,21 @@ impl Op {
         }
     }
 
+    pub fn is_fp64(&self) -> bool {
+        match self {
+            Op::MuFu(op) => matches!(op.op, MuFuOp::Rcp64H | MuFuOp::Rsq64H),
+            Op::DAdd(_)
+            | Op::DFma(_)
+            | Op::DMnMx(_)
+            | Op::DMul(_)
+            | Op::DSetP(_) => true,
+            Op::F2F(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
+            Op::F2I(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
+            Op::I2F(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
+            _ => false,
+        }
+    }
+
     pub fn has_fixed_latency(&self, sm: u8) -> bool {
         match self {
             // Float ALU
@@ -7766,6 +7781,7 @@ impl Shader<'_> {
         let mut num_instrs = 0;
         let mut uses_global_mem = false;
         let mut writes_global_mem = false;
+        let mut uses_fp64 = false;
 
         self.for_each_instr(&mut |instr| {
             num_instrs += 1;
@@ -7777,11 +7793,16 @@ impl Shader<'_> {
             if !writes_global_mem {
                 writes_global_mem = instr.writes_global_mem();
             }
+
+            if !uses_fp64 {
+                uses_fp64 = instr.op.is_fp64();
+            }
         });
 
         self.info.num_instrs = num_instrs;
         self.info.uses_global_mem = uses_global_mem;
         self.info.writes_global_mem = writes_global_mem;
+        self.info.uses_fp64 = uses_fp64;
 
         self.info.max_warps_per_sm = max_warps_per_sm(
             self.info.num_gprs as u32 + self.sm.hw_reserved_gprs(),
