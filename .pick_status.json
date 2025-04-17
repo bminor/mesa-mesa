@@ -1704,7 +1704,7 @@
         "description": "pick-ui: make `Backport-to: 25.0` backport to 25.0 *and more recent release branches*",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
