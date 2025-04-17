@@ -3103,6 +3103,30 @@ void si_compute_resources_add_all_to_bo_list(struct si_context *sctx)
    sctx->bo_list_add_all_compute_resources = false;
 }
 
+void si_mesh_resources_add_all_to_bo_list(struct si_context *sctx)
+{
+   unsigned stages[] = {
+      MESA_SHADER_TASK,
+      MESA_SHADER_MESH,
+      MESA_SHADER_FRAGMENT,
+   };
+
+   for (unsigned i = 0; i < ARRAY_SIZE(stages); i++) {
+      unsigned sh = stages[i];
+      si_buffer_resources_begin_new_cs(sctx, &sctx->const_and_shader_buffers[sh]);
+      si_sampler_views_begin_new_cs(sctx, &sctx->samplers[sh]);
+      si_image_views_begin_new_cs(sctx, &sctx->images[sh]);
+   }
+
+   si_buffer_resources_begin_new_cs(sctx, &sctx->internal_bindings);
+
+   if (sctx->bo_list_add_all_resident_resources)
+      si_resident_buffers_add_all_to_bo_list(sctx);
+
+   assert(sctx->bo_list_add_all_mesh_resources);
+   sctx->bo_list_add_all_mesh_resources = false;
+}
+
 void si_add_all_descriptors_to_bo_list(struct si_context *sctx)
 {
    for (unsigned i = 0; i < SI_NUM_DESCS; ++i)
@@ -3112,6 +3136,7 @@ void si_add_all_descriptors_to_bo_list(struct si_context *sctx)
    sctx->bo_list_add_all_resident_resources = true;
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_add_all_to_bo_list);
    sctx->bo_list_add_all_compute_resources = true;
+   sctx->bo_list_add_all_mesh_resources = true;
 }
 
 void si_set_active_descriptors(struct si_context *sctx, unsigned desc_idx, uint64_t new_active_mask)

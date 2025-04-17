@@ -600,6 +600,7 @@ void si_set_ring_buffer(struct si_context *sctx, uint slot, struct pipe_resource
 void si_init_all_descriptors(struct si_context *sctx);
 void si_release_all_descriptors(struct si_context *sctx);
 void si_compute_resources_add_all_to_bo_list(struct si_context *sctx);
+void si_mesh_resources_add_all_to_bo_list(struct si_context *sctx);
 int si_gfx_resources_check_encrypted(struct si_context *sctx);
 bool si_compute_resources_check_encrypted(struct si_context *sctx);
 void si_shader_pointers_mark_dirty(struct si_context *sctx);
