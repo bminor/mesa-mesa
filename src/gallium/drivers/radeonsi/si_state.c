@@ -5123,15 +5123,9 @@ static void gfx10_init_gfx_preamble_state(struct si_context *sctx)
          ac_pm4_cmd_add(&pm4->base, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
       }
 
-      if (sscreen->info.has_clear_state) {
+      if (sctx->gfx_level < GFX11) {
          ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CLEAR_STATE, 0, 0));
          ac_pm4_cmd_add(&pm4->base, 0);
-      } else {
-         /* PA_SC_TILE_STEERING_OVERRIDE needs to be written else observing corruption in
-          * gfx11 with userq.
-          */
-         ac_pm4_set_reg(&pm4->base, R_02835C_PA_SC_TILE_STEERING_OVERRIDE,
-                        sscreen->info.pa_sc_tile_steering_override);
       }
    }
 
@@ -5159,6 +5153,19 @@ static void gfx10_init_gfx_preamble_state(struct si_context *sctx)
       ac_pm4_set_reg(&pm4->base, R_028848_PA_CL_VRS_CNTL,
                      S_028848_VERTEX_RATE_COMBINER_MODE(V_028848_SC_VRS_COMB_MODE_OVERRIDE) |
                      S_028848_SAMPLE_ITER_COMBINER_MODE(V_028848_SC_VRS_COMB_MODE_OVERRIDE));
+   }
+
+   if (sctx->gfx_level >= GFX11) {
+      /* These are set by CLEAR_STATE on gfx10. We don't use CLEAR_STATE on gfx11. */
+      ac_pm4_set_reg(&pm4->base, R_028034_PA_SC_SCREEN_SCISSOR_BR,
+                     S_028034_BR_X(16384) | S_028034_BR_Y(16384));
+      ac_pm4_set_reg(&pm4->base, R_028204_PA_SC_WINDOW_SCISSOR_TL, S_028204_WINDOW_OFFSET_DISABLE(1));
+      ac_pm4_set_reg(&pm4->base, R_0286E0_SPI_BARYC_CNTL, 0);
+      ac_pm4_set_reg(&pm4->base, R_028828_PA_SU_LINE_STIPPLE_SCALE, 0);
+      ac_pm4_set_reg(&pm4->base, R_028A98_VGT_DRAW_PAYLOAD_CNTL, 0);
+      ac_pm4_set_reg(&pm4->base, R_028B28_VGT_STRMOUT_DRAW_OPAQUE_OFFSET, 0);
+      ac_pm4_set_reg(&pm4->base, R_028C4C_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL,
+                     S_028C4C_NULL_SQUAD_AA_MASK_ENABLE(1));
    }
 
 done:

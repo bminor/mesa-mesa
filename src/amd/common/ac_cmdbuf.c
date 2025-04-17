@@ -453,6 +453,29 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
                   S_00B524_MEM_BASE(info->address32_hi >> 8));
 
    /* Context registers. */
+   if (info->gfx_level >= GFX11) {
+      /* These are set by CLEAR_STATE on gfx10. We don't use CLEAR_STATE on gfx11. */
+      ac_pm4_set_reg(pm4, R_028030_PA_SC_SCREEN_SCISSOR_TL, 0);
+      ac_pm4_set_reg(pm4, R_028240_PA_SC_GENERIC_SCISSOR_TL, S_028240_WINDOW_OFFSET_DISABLE(1));
+      ac_pm4_set_reg(pm4, R_028244_PA_SC_GENERIC_SCISSOR_BR, S_028244_BR_X(16384) | S_028244_BR_Y(16384));
+      ac_pm4_set_reg(pm4, R_02835C_PA_SC_TILE_STEERING_OVERRIDE, info->pa_sc_tile_steering_override);
+      ac_pm4_set_reg(pm4, R_0283E4_PA_SC_VRS_RATE_CACHE_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_028428_CB_COVERAGE_OUT_CONTROL, 0);
+      ac_pm4_set_reg(pm4, R_0286DC_SPI_BARYC_SSAA_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_0287D4_PA_CL_POINT_X_RAD, 0);
+      ac_pm4_set_reg(pm4, R_0287D8_PA_CL_POINT_Y_RAD, 0);
+      ac_pm4_set_reg(pm4, R_0287DC_PA_CL_POINT_SIZE, 0);
+      ac_pm4_set_reg(pm4, R_0287E0_PA_CL_POINT_CULL_RAD, 0);
+      ac_pm4_set_reg(pm4, R_028820_PA_CL_NANINF_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_028824_PA_SU_LINE_STIPPLE_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_02883C_PA_SU_OVER_RASTERIZATION_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_028840_PA_STEREO_CNTL, 0);
+      ac_pm4_set_reg(pm4, R_028A50_VGT_ENHANCE, 0);
+      ac_pm4_set_reg(pm4, R_028A8C_VGT_PRIMITIVEID_RESET, 0);
+      ac_pm4_set_reg(pm4, R_028AB4_VGT_REUSE_OFF, 0);
+      ac_pm4_set_reg(pm4, R_028C40_PA_SC_SHADER_CONTROL, 0);
+   }
+
    if (info->gfx_level < GFX11) {
       ac_pm4_set_reg(pm4, R_028038_DB_DFSM_CONTROL, S_028038_PUNCHOUT_MODE(V_028038_FORCE_OFF));
    }
@@ -491,6 +514,8 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
                   S_028830_SMALL_PRIM_FILTER_ENABLE(1));
 
    ac_pm4_set_reg(pm4, R_028A18_VGT_HOS_MAX_TESS_LEVEL, fui(64));
+   if (info->gfx_level >= GFX11) /* cleared by CLEAR_STATE on gfx10 */
+      ac_pm4_set_reg(pm4, R_028A1C_VGT_HOS_MIN_TESS_LEVEL, fui(0));
    ac_pm4_set_reg(pm4, R_028AAC_VGT_ESGS_RING_ITEMSIZE, 1);
    ac_pm4_set_reg(pm4, R_028B50_VGT_TESS_DISTRIBUTION,
                   info->gfx_level >= GFX11 ?
@@ -511,10 +536,10 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_028C48_PA_SC_BINNER_CNTL_1,
                   S_028C48_MAX_ALLOC_COUNT(info->pbb_max_alloc_count - gfx10_one) |
                   S_028C48_MAX_PRIM_PER_BATCH(1023));
-
-   if (info->gfx_level >= GFX11_5)
+   if (info->gfx_level >= GFX11) {
       ac_pm4_set_reg(pm4, R_028C54_PA_SC_BINNER_CNTL_2,
-                     S_028C54_ENABLE_PING_PONG_BIN_ORDER(1));
+                     S_028C54_ENABLE_PING_PONG_BIN_ORDER(info->gfx_level >= GFX11_5));
+   }
 
    /* Break up a pixel wave if it contains deallocs for more than
     * half the parameter cache.

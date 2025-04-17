@@ -1143,12 +1143,11 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->lds_encode_granularity = info->gfx_level >= GFX7 ? 128 * 4 : 64 * 4;
    info->lds_alloc_granularity = info->gfx_level >= GFX10_3 ? 256 * 4 : info->lds_encode_granularity;
 
-   /* The mere presence of CLEAR_STATE in the IB causes random GPU hangs
-    * on GFX6. Some CLEAR_STATE cause asic hang on radeon kernel, etc.
-    * SPI_VS_OUT_CONFIG. So only enable GFX7 CLEAR_STATE on amdgpu kernel.
+   /* The mere presence of CLEAR_STATE in the IB causes random GPU hangs on GFX6. CLEAR_STATE
+    * causes GPU hangs with the radeon kernel driver, so only enable GFX7 CLEAR_STATE on amdgpu.
+    * GFX11+ supports CLEAR_STATE, but we have decided not to use it.
     */
-   info->has_clear_state = info->gfx_level >= GFX7 && info->gfx_level < GFX12 &&
-                           !(info->userq_ip_mask & BITFIELD_BIT(AMD_IP_GFX));
+   info->has_clear_state = info->gfx_level >= GFX7 && info->gfx_level < GFX11;
 
    info->has_distributed_tess =
       info->gfx_level >= GFX10 || (info->gfx_level >= GFX8 && info->max_se >= 2);
