@@ -100,7 +100,7 @@ main(int argc, char * const* argv)
    if (!whole_program)
       usage_fail(argv[0]);
 
-   standalone_compiler_cleanup(whole_program);
+   standalone_compiler_cleanup(whole_program, &local_ctx);
 
    return status;
 }

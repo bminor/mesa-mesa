@@ -756,14 +756,6 @@ nvc0_screen_bind_cb_3d(struct nvc0_screen *screen, struct nouveau_pushbuf *push,
    IMMED_NVC0(push, NVC0_3D(CB_BIND(stage)), (index << 4) | (size >= 0));
 }
 
-static const struct nir_shader_compiler_options *
-nvc0_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_type shader)
-{
-   struct nvc0_screen *screen = nvc0_screen(pscreen);
-   return nv50_ir_nir_shader_compiler_options(screen->base.device->chipset, shader);
-}
-
 #define FAIL_SCREEN_INIT(str, err)                    \
    do {                                               \
       NOUVEAU_ERR(str, err);                          \
@@ -835,13 +827,14 @@ nvc0_screen_create(struct nouveau_device *dev)
       screen->base.vidmem_bindings = 0;
    }
 
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      pscreen->nir_options[i] = nv50_ir_nir_shader_compiler_options(screen->base.device->chipset, i);
+
    pscreen->context_create = nvc0_create;
    pscreen->is_format_supported = nvc0_screen_is_format_supported;
    pscreen->get_sample_pixel_grid = nvc0_screen_get_sample_pixel_grid;
    pscreen->get_driver_query_info = nvc0_screen_get_driver_query_info;
    pscreen->get_driver_query_group_info = nvc0_screen_get_driver_query_group_info;
-   /* nir stuff */
-   pscreen->get_compiler_options = nvc0_screen_get_compiler_options;
 
    nvc0_screen_init_resource_functions(pscreen);
 

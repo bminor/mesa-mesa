@@ -1337,8 +1337,7 @@ void si_gfx_blit(struct pipe_context *ctx, const struct pipe_blit_info *info)
       fs = _mesa_hash_table_u64_search(sctx->ps_resolve_shaders, key.key);
       if (!fs) {
          struct ac_ps_resolve_options options = {
-            .nir_options = sctx->b.screen->get_compiler_options(sctx->b.screen,
-                                                                PIPE_SHADER_FRAGMENT),
+            .nir_options = sctx->b.screen->nir_options[PIPE_SHADER_FRAGMENT],
             .info = &sctx->screen->info,
             .use_aco = sctx->screen->use_aco,
             .no_fmask = sctx->screen->debug_flags & DBG(NO_FMASK),

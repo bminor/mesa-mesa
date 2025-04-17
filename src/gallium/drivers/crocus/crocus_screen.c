@@ -481,16 +481,6 @@ crocus_query_memory_info(struct pipe_screen *pscreen,
 {
 }
 
-static const struct nir_shader_compiler_options *
-crocus_get_compiler_options(struct pipe_screen *pscreen,
-                            enum pipe_shader_type pstage)
-{
-   struct crocus_screen *screen = (struct crocus_screen *) pscreen;
-   gl_shader_stage stage = stage_from_pipe(pstage);
-
-   return screen->compiler->nir_options[stage];
-}
-
 static struct disk_cache *
 crocus_get_disk_shader_cache(struct pipe_screen *pscreen)
 {
@@ -635,12 +625,14 @@ crocus_screen_create(int fd, const struct pipe_screen_config *config)
    crocus_init_screen_fence_functions(pscreen);
    crocus_init_screen_resource_functions(pscreen);
 
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      pscreen->nir_options[i] = screen->compiler->nir_options[i];
+
    pscreen->destroy = crocus_screen_unref;
    pscreen->get_name = crocus_get_name;
    pscreen->get_vendor = crocus_get_vendor;
    pscreen->get_device_vendor = crocus_get_device_vendor;
    pscreen->get_screen_fd = crocus_screen_get_fd;
-   pscreen->get_compiler_options = crocus_get_compiler_options;
    pscreen->get_device_uuid = crocus_get_device_uuid;
    pscreen->get_driver_uuid = crocus_get_driver_uuid;
    pscreen->get_disk_shader_cache = crocus_get_disk_shader_cache;

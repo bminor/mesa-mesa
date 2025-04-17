@@ -512,10 +512,12 @@ vc4_screen_create(int fd, const struct pipe_screen_config *config,
 
         vc4_resource_screen_init(pscreen);
 
+        for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+           pscreen->nir_options[i] = vc4_screen_get_compiler_options(pscreen, i);
+
         pscreen->get_name = vc4_screen_get_name;
         pscreen->get_vendor = vc4_screen_get_vendor;
         pscreen->get_device_vendor = vc4_screen_get_vendor;
-        pscreen->get_compiler_options = vc4_screen_get_compiler_options;
         pscreen->query_dmabuf_modifiers = vc4_screen_query_dmabuf_modifiers;
         pscreen->is_dmabuf_modifier_supported = vc4_screen_is_dmabuf_modifier_supported;
 

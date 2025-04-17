@@ -950,13 +950,6 @@ etna_screen_bo_from_handle(struct pipe_screen *pscreen,
    return bo;
 }
 
-static const struct nir_shader_compiler_options *
-etna_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_type shader)
-{
-   return etna_compiler_get_options(etna_screen(pscreen)->compiler);
-}
-
 static struct disk_cache *
 etna_get_disk_shader_cache(struct pipe_screen *pscreen)
 {
@@ -1036,7 +1029,6 @@ etna_screen_create(struct etna_device *dev, struct etna_gpu *gpu,
 
    pscreen->destroy = etna_screen_destroy;
    pscreen->get_screen_fd = etna_screen_get_fd;
-   pscreen->get_compiler_options = etna_get_compiler_options;
    pscreen->get_disk_shader_cache = etna_get_disk_shader_cache;
 
    pscreen->get_name = etna_screen_get_name;

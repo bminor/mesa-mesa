@@ -2245,10 +2245,8 @@ ttn_compile_init(const void *tgsi_tokens,
    tgsi_scan_shader(tgsi_tokens, &scan);
    c->scan = &scan;
 
-   if (!options) {
-      options =
-         screen->get_compiler_options(screen, scan.processor);
-   }
+   if (!options)
+      options = screen->nir_options[scan.processor];
 
    c->build = nir_builder_init_simple_shader(tgsi_processor_to_shader_stage(scan.processor),
                                              options, "TTN%d", (int)p_atomic_inc_return(&ttn_sh_counter));
@@ -2607,8 +2605,7 @@ load_nir_from_disk_cache(struct disk_cache *cache,
                          uint8_t key[CACHE_KEY_SIZE],
                          unsigned processor)
 {
-   const nir_shader_compiler_options *options =
-      screen->get_compiler_options(screen, processor);
+   const nir_shader_compiler_options *options = screen->nir_options[processor];
    struct blob_reader blob_reader;
    size_t size;
    nir_shader *s;

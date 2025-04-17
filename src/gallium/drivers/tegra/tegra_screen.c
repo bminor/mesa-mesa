@@ -407,19 +407,6 @@ tegra_screen_query_memory_info(struct pipe_screen *pscreen,
    screen->gpu->query_memory_info(screen->gpu, info);
 }
 
-static const struct nir_shader_compiler_options *
-tegra_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                  enum pipe_shader_type shader)
-{
-   struct tegra_screen *screen = to_tegra_screen(pscreen);
-   const struct nir_shader_compiler_options *options = NULL;
-
-   if (screen->gpu->get_compiler_options)
-      options = screen->gpu->get_compiler_options(screen->gpu, shader);
-
-   return options;
-}
-
 static struct disk_cache *
 tegra_screen_get_disk_shader_cache(struct pipe_screen *pscreen)
 {
@@ -593,7 +580,6 @@ tegra_screen_create(int fd)
    screen->base.get_driver_query_group_info = tegra_screen_get_driver_query_group_info;
    screen->base.query_memory_info = tegra_screen_query_memory_info;
 
-   screen->base.get_compiler_options = tegra_screen_get_compiler_options;
    screen->base.get_disk_shader_cache = tegra_screen_get_disk_shader_cache;
 
    screen->base.resource_create_with_modifiers = tegra_screen_resource_create_with_modifiers;
@@ -605,6 +591,7 @@ tegra_screen_create(int fd)
    memcpy((void *)&screen->base.caps, &screen->gpu->caps, sizeof(screen->base.caps));
    memcpy((void *)screen->base.shader_caps, screen->gpu->shader_caps, sizeof(screen->base.shader_caps));
    memcpy((void *)&screen->base.compute_caps, &screen->gpu->compute_caps, sizeof(screen->base.compute_caps));
+   memcpy((void *)&screen->base.nir_options, &screen->gpu->nir_options, sizeof(screen->base.nir_options));
 
    return &screen->base;
 }

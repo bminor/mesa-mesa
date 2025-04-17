@@ -974,15 +974,6 @@ fixup_renderer(union virgl_caps *caps)
    memcpy(caps->v2.renderer, renderer, renderer_len + 1);
 }
 
-static const struct nir_shader_compiler_options *
-virgl_get_compiler_options(struct pipe_screen *pscreen,
-                           enum pipe_shader_type shader)
-{
-   struct virgl_screen *vscreen = virgl_screen(pscreen);
-
-   return &vscreen->compiler_options;
-}
-
 static int
 virgl_screen_get_fd(struct pipe_screen *pscreen)
 {
@@ -1031,12 +1022,14 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    screen->tweak_l8_srgb_readback |= !!(virgl_debug & VIRGL_DEBUG_L8_SRGB_ENABLE_READBACK);
    screen->shader_sync |= !!(virgl_debug & VIRGL_DEBUG_SHADER_SYNC);
 
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      screen->base.nir_options[i] = &screen->compiler_options;
+
    screen->vws = vws;
    screen->base.get_name = virgl_get_name;
    screen->base.get_vendor = virgl_get_vendor;
    screen->base.get_screen_fd = virgl_screen_get_fd;
    screen->base.get_video_param = virgl_get_video_param;
-   screen->base.get_compiler_options = virgl_get_compiler_options;
    screen->base.is_format_supported = virgl_is_format_supported;
    screen->base.is_video_format_supported = virgl_is_video_format_supported;
    screen->base.destroy = virgl_destroy_screen;
@@ -1069,8 +1062,7 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    virgl_init_screen_caps(screen);
 
    /* Set up the NIR shader compiler options now that we've figured out the caps. */
-   screen->compiler_options = *(nir_shader_compiler_options *)
-      nir_to_tgsi_get_compiler_options(&screen->base, PIPE_SHADER_IR_NIR, PIPE_SHADER_FRAGMENT);
+   screen->compiler_options = nir_to_tgsi_compiler_options;
    if (screen->base.caps.doubles) {
       /* virglrenderer is missing DFLR support, so avoid turning 64-bit
        * ffract+fsub back into ffloor.

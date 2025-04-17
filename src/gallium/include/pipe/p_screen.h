@@ -95,6 +95,7 @@ struct pipe_screen {
    const struct pipe_caps caps;
    const struct pipe_shader_caps shader_caps[PIPE_SHADER_MESH_TYPES];
    const struct pipe_compute_caps compute_caps;
+   const struct nir_shader_compiler_options *nir_options[PIPE_SHADER_MESH_TYPES];
 
    /**
     * Get the fd associated with the screen
@@ -466,12 +467,6 @@ struct pipe_screen {
     */
    void (*query_memory_info)(struct pipe_screen *screen,
                              struct pipe_memory_info *info);
-
-   /**
-    * Get nir compiler options struct.
-    */
-   const struct nir_shader_compiler_options *(*get_compiler_options)(
-      struct pipe_screen *screen, enum pipe_shader_type shader);
 
    /**
     * Returns a pointer to a driver-specific on-disk shader cache. If the

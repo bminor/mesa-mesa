@@ -138,8 +138,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 	struct r600_pipe_shader_selector *sel = shader->selector;
 	int r;
 	const nir_shader_compiler_options *nir_options =
-		ctx->screen->get_compiler_options(ctx->screen,
-						  shader->shader.processor_type);
+		ctx->screen->nir_options[shader->shader.processor_type];
 	if (!sel->nir && !(sel->ir_type == PIPE_SHADER_IR_TGSI)) {
 		assert(sel->nir_blob);
 		struct blob_reader blob_reader;

@@ -98,13 +98,6 @@ static const nir_shader_compiler_options sp_compiler_options = {
    .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
 };
 
-static const struct nir_shader_compiler_options *
-softpipe_get_compiler_options(struct pipe_screen *pscreen,
-                              enum pipe_shader_type shader)
-{
-   return &sp_compiler_options;
-}
-
 /**
  * Query format support for creating a texture, drawing surface, etc.
  * \param format  the format to test
@@ -463,8 +456,10 @@ softpipe_create_screen(struct sw_winsys *winsys)
    screen->base.is_format_supported = softpipe_is_format_supported;
    screen->base.context_create = softpipe_create_context;
    screen->base.flush_frontbuffer = softpipe_flush_frontbuffer;
-   screen->base.get_compiler_options = softpipe_get_compiler_options;
    screen->use_llvm = sp_debug & SP_DBG_USE_LLVM;
+
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      screen->base.nir_options[i] = &sp_compiler_options;
 
    softpipe_init_screen_texture_funcs(&screen->base);
    softpipe_init_screen_fence_funcs(&screen->base);

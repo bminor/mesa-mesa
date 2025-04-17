@@ -358,21 +358,6 @@ static const nir_shader_compiler_options nv30_base_compiler_options = {
    .no_integers = true,
 };
 
-static const struct nir_shader_compiler_options *
-nv30_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_type shader)
-{
-   struct nv30_screen *screen = nv30_screen(pscreen);
-
-   /* The FS compiler options are different between nv30 and nv40, and are set
-    * up at screen creation time.
-    */
-   if (shader == PIPE_SHADER_FRAGMENT)
-      return &screen->fs_compiler_options;
-
-   return &nv30_base_compiler_options;
-}
-
 static void
 nv30_screen_fence_emit(struct pipe_context *pcontext, uint32_t *sequence,
                        struct nouveau_bo *wait)
@@ -504,7 +489,9 @@ nv30_screen_create(struct nouveau_device *dev)
 
    pscreen->context_create = nv30_context_create;
    pscreen->is_format_supported = nv30_screen_is_format_supported;
-   pscreen->get_compiler_options = nv30_screen_get_compiler_options;
+
+   pscreen->nir_options[MESA_SHADER_VERTEX] = &nv30_base_compiler_options;
+   pscreen->nir_options[MESA_SHADER_FRAGMENT] = &screen->fs_compiler_options;
 
    nv30_resource_screen_init(pscreen);
    nouveau_screen_init_vdec(&screen->base);

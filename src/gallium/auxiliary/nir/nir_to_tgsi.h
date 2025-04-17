@@ -42,17 +42,14 @@ struct nir_to_tgsi_options {
    uint32_t ubo_vec4_max;
 };
 
+extern const struct nir_shader_compiler_options nir_to_tgsi_compiler_options;
+
 const void *nir_to_tgsi(struct nir_shader *s,
                         struct pipe_screen *screen);
 
 const void *nir_to_tgsi_options(struct nir_shader *s,
                                 struct pipe_screen *screen,
                                 const struct nir_to_tgsi_options *ntt_options);
-
-const void *
-nir_to_tgsi_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
-                                 unsigned shader);
 
 const void *
 pipe_shader_state_to_tgsi_tokens(struct pipe_screen *screen,

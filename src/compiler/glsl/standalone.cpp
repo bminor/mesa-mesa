@@ -457,9 +457,11 @@ fail:
 }
 
 extern "C" void
-standalone_compiler_cleanup(struct gl_shader_program *whole_program)
+standalone_compiler_cleanup(struct gl_shader_program *whole_program,
+                            struct gl_context *ctx)
 {
    standalone_destroy_shader_program(whole_program);
 
+   free(ctx->screen);
    _mesa_glsl_builtin_functions_decref();
 }

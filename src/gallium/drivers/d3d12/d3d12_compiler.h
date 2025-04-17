@@ -64,10 +64,6 @@ enum d3d12_state_var {
 
 #define D3D12_MAX_POINT_SIZE 255.0f
 
-const struct nir_shader_compiler_options *
-d3d12_get_compiler_options(struct pipe_screen *screen,
-                           enum pipe_shader_type shader);
-
 
 void
 d3d12_varying_cache_init(struct d3d12_screen *ctx);

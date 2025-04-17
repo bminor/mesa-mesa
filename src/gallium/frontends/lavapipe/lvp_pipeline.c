@@ -1186,7 +1186,7 @@ create_shader_object(struct lvp_device *device, const VkShaderCreateInfoEXT *pCr
          return VK_NULL_HANDLE;
 
       blob_reader_init(&blob, data + SHA1_DIGEST_LENGTH + VK_UUID_SIZE, size);
-      nir = nir_deserialize(NULL, device->pscreen->get_compiler_options(device->pscreen, stage), &blob);
+      nir = nir_deserialize(NULL, device->pscreen->nir_options[stage], &blob);
       if (!nir)
          goto fail;
    }

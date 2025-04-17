@@ -105,29 +105,6 @@ trace_screen_get_device_vendor(struct pipe_screen *_screen)
 }
 
 
-static const struct nir_shader_compiler_options *
-trace_screen_get_compiler_options(struct pipe_screen *_screen,
-                                  enum pipe_shader_type shader)
-{
-   struct trace_screen *tr_scr = trace_screen(_screen);
-   struct pipe_screen *screen = tr_scr->screen;
-   const struct nir_shader_compiler_options *result;
-
-   trace_dump_call_begin("pipe_screen", "get_compiler_options");
-
-   trace_dump_arg(ptr, screen);
-   trace_dump_arg_enum(pipe_shader_type, shader);
-
-   result = screen->get_compiler_options(screen, shader);
-
-   trace_dump_ret(ptr, result);
-
-   trace_dump_call_end();
-
-   return result;
-}
-
-
 static struct disk_cache *
 trace_screen_get_disk_shader_cache(struct pipe_screen *_screen)
 {
@@ -1502,7 +1479,6 @@ trace_screen_create(struct pipe_screen *screen)
    tr_scr->base.get_name = trace_screen_get_name;
    tr_scr->base.get_vendor = trace_screen_get_vendor;
    tr_scr->base.get_device_vendor = trace_screen_get_device_vendor;
-   SCR_INIT(get_compiler_options);
    SCR_INIT(get_disk_shader_cache);
    SCR_INIT(get_video_param);
    tr_scr->base.is_format_supported = trace_screen_is_format_supported;
@@ -1574,6 +1550,7 @@ trace_screen_create(struct pipe_screen *screen)
    *(struct pipe_caps *)&tr_scr->base.caps = screen->caps;
    *(struct pipe_compute_caps *)&tr_scr->base.compute_caps = screen->compute_caps;
    memcpy((void *)tr_scr->base.shader_caps, screen->shader_caps, sizeof(screen->shader_caps));
+   memcpy((void *)tr_scr->base.nir_options, screen->nir_options, sizeof(screen->nir_options));
 
    return &tr_scr->base;
 

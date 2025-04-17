@@ -827,11 +827,13 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         pscreen->get_name = v3d_screen_get_name;
         pscreen->get_vendor = v3d_screen_get_vendor;
         pscreen->get_device_vendor = v3d_screen_get_vendor;
-        pscreen->get_compiler_options = v3d_screen_get_compiler_options;
         pscreen->get_disk_shader_cache = v3d_screen_get_disk_shader_cache;
         pscreen->query_dmabuf_modifiers = v3d_screen_query_dmabuf_modifiers;
         pscreen->is_dmabuf_modifier_supported =
                 v3d_screen_is_dmabuf_modifier_supported;
+
+        for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+           pscreen->nir_options[i] = v3d_screen_get_compiler_options(pscreen, i);
 
         if (screen->has_perfmon) {
                 pscreen->get_driver_query_group_info = v3d_get_driver_query_group_info;

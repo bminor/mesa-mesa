@@ -56,15 +56,6 @@ dd_screen_get_device_vendor(struct pipe_screen *_screen)
    return screen->get_device_vendor(screen);
 }
 
-static const struct nir_shader_compiler_options *
-dd_screen_get_compiler_options(struct pipe_screen *_screen,
-                               enum pipe_shader_type shader)
-{
-   struct pipe_screen *screen = dd_screen(_screen)->screen;
-
-   return screen->get_compiler_options(screen, shader);
-}
-
 static struct disk_cache *
 dd_screen_get_disk_shader_cache(struct pipe_screen *_screen)
 {
@@ -664,7 +655,6 @@ ddebug_screen_create(struct pipe_screen *screen)
    SCR_INIT(memobj_destroy);
    SCR_INIT(get_driver_query_info);
    SCR_INIT(get_driver_query_group_info);
-   SCR_INIT(get_compiler_options);
    SCR_INIT(get_driver_uuid);
    SCR_INIT(get_device_uuid);
    SCR_INIT(finalize_nir);
@@ -679,6 +669,7 @@ ddebug_screen_create(struct pipe_screen *screen)
    *(struct pipe_caps *)&dscreen->base.caps = screen->caps;
    *(struct pipe_compute_caps *)&dscreen->base.compute_caps = screen->compute_caps;
    memcpy((void *)dscreen->base.shader_caps, screen->shader_caps, sizeof(screen->shader_caps));
+   memcpy((void *)dscreen->base.nir_options, screen->nir_options, sizeof(screen->nir_options));
 
 #undef SCR_INIT
 

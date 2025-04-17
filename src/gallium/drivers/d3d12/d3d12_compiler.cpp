@@ -49,13 +49,6 @@
 #include "dxil_validator.h"
 #endif
 
-const struct nir_shader_compiler_options *
-d3d12_get_compiler_options(struct pipe_screen *screen,
-                           enum pipe_shader_type shader)
-{
-   return &d3d12_screen(screen)->nir_options;
-}
-
 static uint32_t
 resource_dimension(enum glsl_sampler_dim dim)
 {

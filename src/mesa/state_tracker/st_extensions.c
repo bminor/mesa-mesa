@@ -204,14 +204,9 @@ void st_init_limits(struct pipe_screen *screen,
       struct gl_shader_compiler_options *options =
          &c->ShaderCompilerOptions[stage];
       struct gl_program_constants *pc = &c->Program[stage];
-
-      if (screen->get_compiler_options)
-         options->NirOptions = screen->get_compiler_options(screen, sh);
-
-      if (!options->NirOptions) {
-         options->NirOptions =
-            nir_to_tgsi_get_compiler_options(screen, PIPE_SHADER_IR_NIR, sh);
-      }
+      options->NirOptions =
+         screen->nir_options[stage] ? screen->nir_options[stage] :
+                                      &nir_to_tgsi_compiler_options;
 
       if (sh == PIPE_SHADER_COMPUTE) {
          if (!screen->caps.compute)

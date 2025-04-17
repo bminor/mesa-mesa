@@ -1054,8 +1054,10 @@ fd_screen_create(int fd,
    pscreen->destroy = fd_screen_destroy;
    pscreen->get_screen_fd = fd_screen_get_fd;
    pscreen->query_memory_info = fd_query_memory_info;
-   pscreen->get_compiler_options = fd_get_compiler_options;
    pscreen->get_disk_shader_cache = fd_get_disk_shader_cache;
+
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      pscreen->nir_options[i] = fd_get_compiler_options(pscreen, i);
 
    fd_resource_screen_init(pscreen);
    fd_query_screen_init(pscreen);

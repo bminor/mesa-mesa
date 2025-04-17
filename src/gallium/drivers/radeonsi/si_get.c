@@ -56,14 +56,6 @@ si_is_compute_copy_faster(struct pipe_screen *pscreen,
    return false;
 }
 
-static const struct nir_shader_compiler_options *si_get_compiler_options(
-   struct pipe_screen *screen, enum pipe_shader_type shader)
-{
-   struct si_screen *sscreen = (struct si_screen *)screen;
-
-   return sscreen->nir_options;
-}
-
 static void si_get_driver_uuid(struct pipe_screen *pscreen, char *uuid)
 {
    ac_compute_driver_uuid(uuid, PIPE_UUID_SIZE);
@@ -836,7 +828,6 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
    sscreen->b.is_compute_copy_faster = si_is_compute_copy_faster;
    sscreen->b.driver_thread_add_job = si_driver_thread_add_job;
    sscreen->b.get_timestamp = si_get_timestamp;
-   sscreen->b.get_compiler_options = si_get_compiler_options;
    sscreen->b.get_device_uuid = si_get_device_uuid;
    sscreen->b.get_driver_uuid = si_get_driver_uuid;
    sscreen->b.query_memory_info = si_query_memory_info;
@@ -929,6 +920,9 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
                                       BITFIELD_BIT(MESA_SHADER_TESS_EVAL);
    options->support_indirect_outputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
    options->varying_expression_max_cost = si_varying_expression_max_cost;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(sscreen->b.nir_options); i++)
+      sscreen->b.nir_options[i] = options;
 }
 
 void si_init_shader_caps(struct si_screen *sscreen)

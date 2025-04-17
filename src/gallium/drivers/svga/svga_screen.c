@@ -789,7 +789,6 @@ svga_screen_create(struct svga_winsys_screen *sws)
    screen->get_vendor = svga_get_vendor;
    screen->get_device_vendor = svga_get_vendor; // TODO actual device vendor
    screen->get_screen_fd = svga_screen_get_fd;
-   screen->get_compiler_options = svga_get_compiler_options;
    screen->get_timestamp = NULL;
    screen->is_format_supported = svga_is_format_supported;
    screen->context_create = svga_context_create;
@@ -836,6 +835,9 @@ svga_screen_create(struct svga_winsys_screen *sws)
        */
       svgascreen->debug.sampler_state_mapping = false;
    }
+
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      screen->nir_options[i] = svga_get_compiler_options(screen, i);
 
    debug_printf("%s enabled\n",
                 sws->have_gl43 ? "SM5+" :

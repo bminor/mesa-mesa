@@ -1363,13 +1363,6 @@ zink_screen_init_compiler(struct zink_screen *screen)
    screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
 }
 
-const struct nir_shader_compiler_options *
-zink_get_compiler_options(struct pipe_screen *pscreen,
-                          gl_shader_stage shader)
-{
-   return &zink_screen(pscreen)->nir_options;
-}
-
 struct nir_shader *
 zink_tgsi_to_nir(struct pipe_screen *screen, const struct tgsi_token *tokens)
 {

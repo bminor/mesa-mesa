@@ -158,8 +158,7 @@ build_f16_copy_fs_shader(struct pipe_screen *pscreen, enum pipe_texture_target t
       [PIPE_TEXTURE_CUBE_ARRAY] = GLSL_SAMPLER_DIM_CUBE,
    };
 
-   const nir_shader_compiler_options *options =
-      pscreen->get_compiler_options(pscreen, PIPE_SHADER_FRAGMENT);
+   const nir_shader_compiler_options *options = pscreen->nir_options[PIPE_SHADER_FRAGMENT];
    nir_builder _b =
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
                                      "f16 copy %s fs",

@@ -644,6 +644,9 @@ etna_shader_screen_init(struct pipe_screen *pscreen)
    if (!screen->compiler)
       return false;
 
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+      pscreen->nir_options[i] = etna_compiler_get_options(screen->compiler);
+
    pscreen->set_max_shader_compiler_threads = etna_set_max_shader_compiler_threads;
    pscreen->is_parallel_shader_compilation_finished = etna_is_parallel_shader_compilation_finished;
 

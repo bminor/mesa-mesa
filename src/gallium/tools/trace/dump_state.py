@@ -759,7 +759,6 @@ class Interpreter(parser.SimpleTraceDumper):
             ('pipe_screen', 'get_vendor'),
             ('pipe_screen', 'get_device_uuid'),
             ('pipe_screen', 'get_driver_uuid'),
-            ('pipe_screen', 'get_compiler_options'),
             ('pipe_screen', 'get_param'),
             ('pipe_screen', 'get_paramf'),
             ('pipe_screen', 'get_shader_param'),

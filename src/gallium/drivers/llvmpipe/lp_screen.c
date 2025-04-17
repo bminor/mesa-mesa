@@ -481,14 +481,6 @@ llvmpipe_finalize_nir(struct pipe_screen *screen,
 }
 
 
-static inline const struct nir_shader_compiler_options *
-llvmpipe_get_compiler_options(struct pipe_screen *screen,
-                              enum pipe_shader_type shader)
-{
-   return &gallivm_nir_options;
-}
-
-
 bool
 lp_storage_render_image_format_supported(enum pipe_format format)
 {
@@ -966,7 +958,6 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->base.get_vendor = llvmpipe_get_vendor;
    screen->base.get_device_vendor = llvmpipe_get_vendor; // TODO should be the CPU vendor
    screen->base.get_screen_fd = llvmpipe_screen_get_fd;
-   screen->base.get_compiler_options = llvmpipe_get_compiler_options;
    screen->base.is_format_supported = llvmpipe_is_format_supported;
 
    screen->base.context_create = llvmpipe_create_context;
@@ -991,6 +982,9 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->num_threads = debug_get_num_option("LP_NUM_THREADS",
                                               screen->num_threads);
    screen->num_threads = MIN2(screen->num_threads, LP_MAX_THREADS);
+
+   for (unsigned i = 0; i < PIPE_SHADER_MESH_TYPES; i++)
+      screen->base.nir_options[i] = &gallivm_nir_options;
 
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    screen->udmabuf_fd = open("/dev/udmabuf", O_RDWR);

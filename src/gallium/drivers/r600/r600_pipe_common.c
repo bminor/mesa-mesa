@@ -933,14 +933,6 @@ struct pipe_resource *r600_resource_create_common(struct pipe_screen *screen,
 	}
 }
 
-static const struct nir_shader_compiler_options *
-r600_get_compiler_options(struct pipe_screen *screen,
-			  enum pipe_shader_type shader)
-{
-       struct r600_common_screen *rscreen = (struct r600_common_screen *)screen;
-       return &rscreen->nir_options;
-}
-
 extern bool r600_lower_to_scalar_instr_filter(const nir_instr *instr, const void *);
 
 static void r600_resource_destroy(struct pipe_screen *screen,
@@ -1039,7 +1031,6 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 	rscreen->b.get_disk_shader_cache = r600_get_disk_shader_cache;
 	rscreen->b.get_screen_fd = r600_get_screen_fd;
 	rscreen->b.get_timestamp = r600_get_timestamp;
-	rscreen->b.get_compiler_options = r600_get_compiler_options;
 	rscreen->b.fence_finish = r600_fence_finish;
 	rscreen->b.fence_reference = r600_fence_reference;
 	rscreen->b.resource_destroy = r600_resource_destroy;
@@ -1055,6 +1046,9 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 		rscreen->b.get_video_param = r600_get_video_param;
 		rscreen->b.is_video_format_supported = vl_video_buffer_is_format_supported;
 	}
+
+	for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
+		rscreen->b.nir_options[i] = &rscreen->nir_options;
 
 	r600_init_screen_texture_functions(rscreen);
 	r600_init_screen_query_functions(rscreen);

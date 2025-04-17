@@ -4058,7 +4058,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
    return tgsi_tokens;
 }
 
-static const nir_shader_compiler_options nir_to_tgsi_compiler_options = {
+const nir_shader_compiler_options nir_to_tgsi_compiler_options = {
    .fdot_replicates = true,
    .fuse_ffma32 = true,
    .fuse_ffma64 = true,
@@ -4082,18 +4082,6 @@ static const nir_shader_compiler_options nir_to_tgsi_compiler_options = {
     */
    .lower_cs_local_index_to_id = true,
 };
-
-/* Returns a default compiler options for drivers with only nir-to-tgsi-based
- * NIR support.
- */
-const void *
-nir_to_tgsi_get_compiler_options(struct pipe_screen *pscreen,
-                                 enum pipe_shader_ir ir,
-                                 unsigned shader)
-{
-   assert(ir == PIPE_SHADER_IR_NIR);
-   return &nir_to_tgsi_compiler_options;
-}
 
 /** Helper for getting TGSI tokens to store for a pipe_shader_state CSO. */
 const void *
