@@ -1362,7 +1362,7 @@ impl SM70Op for OpIAdd3 {
         if !src0.src_mod.is_none() && !src1.src_mod.is_none() {
             assert!(self.overflow[0].is_none());
             assert!(self.overflow[1].is_none());
-            b.copy_alu_src_and_lower_ineg(src0, SrcType::I32);
+            b.copy_alu_src_and_lower_ineg(src0, gpr, SrcType::I32);
         }
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::I32);
         b.copy_alu_src_if_both_not_reg(src1, src2, gpr, SrcType::I32);
