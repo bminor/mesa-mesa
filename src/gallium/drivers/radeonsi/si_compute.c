@@ -380,7 +380,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
          simple_mtx_lock(&shader->selector->mutex);
 
       /* Update max_seen_compute_scratch_bytes_per_wave and compute_tmpring_size. */
-      si_get_scratch_tmpring_size(sctx, config->scratch_bytes_per_wave,
+      si_get_scratch_tmpring_size(sctx, config->scratch_bytes_per_wave, true,
                                   &sctx->compute_tmpring_size);
 
       if (!si_setup_compute_scratch_buffer(sctx, shader))

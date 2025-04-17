@@ -4493,7 +4493,7 @@ static bool si_update_scratch_relocs(struct si_context *sctx)
 bool si_update_spi_tmpring_size(struct si_context *sctx, unsigned bytes)
 {
    unsigned spi_tmpring_size;
-   si_get_scratch_tmpring_size(sctx, bytes, &spi_tmpring_size);
+   si_get_scratch_tmpring_size(sctx, bytes, false, &spi_tmpring_size);
 
    unsigned scratch_needed_size = sctx->max_seen_scratch_bytes_per_wave *
                                   sctx->screen->info.max_scratch_waves;
