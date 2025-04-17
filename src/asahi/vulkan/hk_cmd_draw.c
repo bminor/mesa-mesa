@@ -1230,6 +1230,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       .tcs_per_vertex_outputs = tcs->info.tess.tcs_per_vertex_outputs,
       .partitioning = partitioning,
       .points_mode = gfx->tess.info.points,
+      .isolines = gfx->tess.info.mode == TESS_PRIMITIVE_ISOLINES,
    };
 
    if (!args.points_mode && gfx->tess.info.mode != TESS_PRIMITIVE_ISOLINES) {
@@ -1538,7 +1539,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
 static struct agx_draw
 hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-               struct agx_draw draw)
+               struct agx_draw draw, uint64_t c_prims, uint64_t c_inv)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1621,7 +1622,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                      LIBAGX_TESS_MODE_COUNT, state);
 
    libagx_prefix_sum_tess(cmd, agx_1d(1024), AGX_BARRIER_ALL | AGX_PREGFX,
-                          state);
+                          state, c_prims, c_inv, c_prims || c_inv);
 
    libagx_tessellate(cmd, grid_tess, AGX_BARRIER_ALL | AGX_PREGFX, info.mode,
                      LIBAGX_TESS_MODE_WITH_COUNTS, state);
@@ -3373,8 +3374,6 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
    /* Clipper counters depend on geom/tess outputs and must be written with the
     * geom/tess output. They are updated as IA counters only when geom/tess is
     * not used.
-    *
-    * TODO: Tessellation clipper counters not actually wired up, pending CTS.
     */
    if (geom || tess) {
       c_prims = 0;
@@ -3471,7 +3470,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
       }
 
       if (tess) {
-         draw = hk_launch_tess(cmd, ccs, draw);
+         draw = hk_launch_tess(cmd, ccs, draw, geom ? 0 : stat_c_prims,
+                               geom ? 0 : stat_c_inv);
       }
 
       if (geom) {
