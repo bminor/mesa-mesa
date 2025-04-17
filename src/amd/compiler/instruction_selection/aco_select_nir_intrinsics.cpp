@@ -1850,9 +1850,18 @@ visit_bvh8_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    mimg->dmask = 0xf;
    mimg->unrm = true;
    mimg->r128 = true;
+   emit_split_vector(ctx, result, 10);
+   emit_split_vector(ctx, new_origin, 3);
+   emit_split_vector(ctx, new_dir, 3);
 
-   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand(result), Operand(new_origin),
-              Operand(new_dir));
+   Temp vec[16];
+   for (unsigned i = 0; i < 10; ++i)
+      vec[i] = emit_extract_vector(ctx, result, i, RegClass::v1);
+   for (unsigned i = 0; i < 3; ++i) {
+      vec[10 + i] = emit_extract_vector(ctx, new_origin, i, RegClass::v1);
+      vec[13 + i] = emit_extract_vector(ctx, new_dir, i, RegClass::v1);
+   }
+   create_vec_from_array(ctx, vec, 16, RegType::vgpr, 4, 0, dst);
 }
 
 static std::vector<Temp>
