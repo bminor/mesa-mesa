@@ -215,8 +215,6 @@ debian/s390x_build:
 
 # Android NDK cross-build image
 .android-variables:
-  extends:
-    - .container-builds-android
   variables:
     ANDROID_VERSION: 14
     ANDROID_NDK_VERSION: "r27c"
@@ -236,7 +234,6 @@ debian/s390x_build:
 debian/android_build:
   extends:
     - .android-variables
-    - .container-builds-android
     - .use-debian/x86_64_build-base
   variables:
     MESA_IMAGE_TAG: &debian-android_build ${DEBIAN_BUILD_TAG}
@@ -463,6 +460,7 @@ debian/x86_64_test-android:
   extends:
     - .android-variables
     - .use-debian/x86_64_test-base
+    - .container-builds-android
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-android ${DEBIAN_TEST_ANDROID_TAG}
 
