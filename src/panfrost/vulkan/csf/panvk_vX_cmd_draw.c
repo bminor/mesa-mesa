@@ -2251,18 +2251,30 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    struct cs_index attrib_offset = cs_scratch_reg32(b, 4);
    struct cs_index multiplicand = cs_scratch_reg32(b, 5);
    struct cs_index draw_count = cs_scratch_reg32(b, 6);
+   struct cs_index max_draw_count = cs_scratch_reg32(b, 7);
    struct cs_index draw_id = cs_scratch_reg32(b, 7);
    struct cs_index vs_fau_addr = cs_scratch_reg64(b, 8);
    struct cs_index tracing_scratch_regs = cs_scratch_reg_tuple(b, 10, 4);
    uint32_t vs_fau_count = BITSET_COUNT(vs->fau.used_sysvals) +
                            BITSET_COUNT(vs->fau.used_push_consts);
 
+   if (draw->indirect.count_buffer_dev_addr) {
+      cs_move32_to(b, max_draw_count, draw->indirect.draw_count);
+      cs_move64_to(b, draw_params_addr, draw->indirect.count_buffer_dev_addr);
+      cs_load32_to(b, draw_count, draw_params_addr, 0);
+
+      /* wait for draw_count to load from buffer */
+      cs_wait_slot(b, SB_ID(LS), false);
+      cs_umin32(b, draw_count, draw_count, max_draw_count);
+   } else {
+      cs_move32_to(b, draw_count, draw->indirect.draw_count);
+   }
+
    if (patch_faus)
       cs_move64_to(b, vs_fau_addr, cmdbuf->state.gfx.vs.push_uniforms);
 
    cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
    cs_move32_to(b, draw_id, 0);
-   cs_move32_to(b, draw_count, draw->indirect.draw_count);
 
    cs_req_res(b, CS_IDVS_RES);
 
@@ -2428,6 +2440,61 @@ panvk_per_arch(CmdDrawIndexedIndirect)(VkCommandBuffer commandBuffer,
       .index.size = cmdbuf->state.gfx.ib.index_size,
       .indirect.buffer_dev_addr = panvk_buffer_gpu_ptr(buffer, offset),
       .indirect.draw_count = drawCount,
+      .indirect.stride = stride,
+   };
+
+   panvk_cmd_draw_indirect(cmdbuf, &draw);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_per_arch(CmdDrawIndirectCount)(VkCommandBuffer commandBuffer,
+                                     VkBuffer _buffer,
+                                     VkDeviceSize offset,
+                                     VkBuffer countBuffer,
+                                     VkDeviceSize countBufferOffset,
+                                     uint32_t maxDrawCount,
+                                     uint32_t stride)
+{
+   VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(panvk_buffer, count_buffer, countBuffer);
+
+   if (maxDrawCount == 0)
+      return;
+
+   struct panvk_draw_info draw = {
+      .indirect.buffer_dev_addr = panvk_buffer_gpu_ptr(buffer, offset),
+      .indirect.count_buffer_dev_addr =
+         panvk_buffer_gpu_ptr(count_buffer, countBufferOffset),
+      .indirect.draw_count = maxDrawCount,
+      .indirect.stride = stride,
+   };
+
+   panvk_cmd_draw_indirect(cmdbuf, &draw);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_per_arch(CmdDrawIndexedIndirectCount)(VkCommandBuffer commandBuffer,
+                                            VkBuffer _buffer,
+                                            VkDeviceSize offset,
+                                            VkBuffer countBuffer,
+                                            VkDeviceSize countBufferOffset,
+                                            uint32_t maxDrawCount,
+                                            uint32_t stride)
+{
+   VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(panvk_buffer, count_buffer, countBuffer);
+
+   if (maxDrawCount == 0)
+      return;
+
+   struct panvk_draw_info draw = {
+      .index.size = cmdbuf->state.gfx.ib.index_size,
+      .indirect.buffer_dev_addr = panvk_buffer_gpu_ptr(buffer, offset),
+      .indirect.count_buffer_dev_addr =
+         panvk_buffer_gpu_ptr(count_buffer, countBufferOffset),
+      .indirect.draw_count = maxDrawCount,
       .indirect.stride = stride,
    };
 

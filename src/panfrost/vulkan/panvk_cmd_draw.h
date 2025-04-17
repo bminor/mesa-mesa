@@ -352,6 +352,7 @@ struct panvk_draw_info {
 
    struct {
       uint64_t buffer_dev_addr;
+      uint64_t count_buffer_dev_addr;
       uint32_t draw_count;
       uint32_t stride;
    } indirect;
