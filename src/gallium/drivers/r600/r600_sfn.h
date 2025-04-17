@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-char *
+void
 r600_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir);
 
 int

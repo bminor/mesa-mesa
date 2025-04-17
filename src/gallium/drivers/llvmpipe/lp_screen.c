@@ -473,12 +473,11 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
 };
 
 
-static char *
+static void
 llvmpipe_finalize_nir(struct pipe_screen *screen,
                       struct nir_shader *nir)
 {
    lp_build_opt_nir(nir);
-   return NULL;
 }
 
 

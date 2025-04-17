@@ -579,11 +579,11 @@ static const struct nir_shader_compiler_options *noop_get_compiler_options(
    return screen->get_compiler_options(screen, shader);
 }
 
-static char *noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir)
+static void noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir)
 {
    struct pipe_screen *screen = ((struct noop_pipe_screen*)pscreen)->oscreen;
 
-   return screen->finalize_nir(screen, nir);
+   screen->finalize_nir(screen, nir);
 }
 
 static bool noop_check_resource_capability(struct pipe_screen *screen,

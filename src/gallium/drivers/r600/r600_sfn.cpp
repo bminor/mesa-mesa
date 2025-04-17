@@ -24,12 +24,11 @@
 #include <cstring>
 #include <iostream>
 
-char *
+void
 r600_finalize_nir(pipe_screen *screen, struct nir_shader *nir)
 {
    auto rs = container_of(screen, r600_screen, b.b);
    r600_finalize_nir_common(nir, rs->b.gfx_level);
-   return nullptr;
 }
 
 class MallocPoolRelease {

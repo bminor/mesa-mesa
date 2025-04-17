@@ -925,7 +925,7 @@ void si_lower_mediump_io_option(struct nir_shader *nir);
 bool si_alu_to_scalar_packed_math_filter(const struct nir_instr *instr, const void *data);
 void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_array_temps);
 void si_nir_late_opts(struct nir_shader *nir);
-char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir);
+void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir);
 
 /* si_state_shaders.cpp */
 unsigned si_shader_num_alloc_param_exports(struct si_shader *shader);

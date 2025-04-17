@@ -235,7 +235,7 @@ i915_optimize_nir(struct nir_shader *s)
    NIR_PASS(_, s, nir_group_loads, nir_group_all, ~0);
 }
 
-static char *
+static void
 i915_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
 {
    if (s->info.stage == MESA_SHADER_FRAGMENT)
@@ -258,7 +258,6 @@ i915_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
    nir_validate_shader(s, "after uniform var removal");
 
    nir_sweep(s);
-   return NULL;
 }
 
 static void

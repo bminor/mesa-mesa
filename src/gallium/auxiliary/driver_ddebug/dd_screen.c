@@ -466,12 +466,12 @@ dd_screen_memobj_destroy(struct pipe_screen *_screen,
  * screen
  */
 
-static char *
+static void
 dd_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct pipe_screen *screen = dd_screen(_screen)->screen;
 
-   return screen->finalize_nir(screen, nir);
+   screen->finalize_nir(screen, nir);
 }
 
 static void

@@ -3769,7 +3769,7 @@ iris_bind_cs_state(struct pipe_context *ctx, void *state)
    bind_shader_state((void *) ctx, state, MESA_SHADER_COMPUTE);
 }
 
-static char *
+static void
 iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct iris_screen *screen = (struct iris_screen *)_screen;
@@ -3813,8 +3813,6 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
    NIR_PASS(_, nir, iris_lower_storage_image_derefs);
 
    nir_sweep(nir);
-
-   return NULL;
 }
 
 static void
