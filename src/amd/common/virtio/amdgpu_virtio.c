@@ -414,7 +414,12 @@ amdvgpu_cs_submit_raw2(amdvgpu_device_handle dev, uint32_t ctx_id,
          for (int j = 0; j < new_syncobj_count; j++) {
             if (amd_syncobj) {
                (*syncobjs)[start + j].handle = amd_syncobj[j].handle;
-               (*syncobjs)[start + j].flags = amd_syncobj[j].flags;
+               /* radv uses DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT but vk_queue already used
+                * WAIT_AVAILABLE, so clear the flag. This is not 100% correct as between
+                * the wait and the submit the syncobj fence might get changed but since
+                * virtgpu doesn't support WAIT_FOR_SUBMIT yet, this is the best we can do.
+                */
+               (*syncobjs)[start + j].flags = 0;
                (*syncobjs)[start + j].point = amd_syncobj[j].point;
             } else {
                (*syncobjs)[start + j].handle = amd_sem[j].handle;
