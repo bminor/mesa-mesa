@@ -89,6 +89,11 @@ struct ra_ctx {
    BITSET_WORD *visited;
    BITSET_WORD *used_regs[RA_CLASSES];
 
+   /* Were any sources killed early this instruction? We assert this is not true
+    * when shuffling.
+    */
+   bool early_killed;
+
    /* Maintained while assigning registers. Count of registers required, i.e.
     * the maximum register assigned + 1.
     */
@@ -604,6 +609,7 @@ find_regs(struct ra_ctx *rctx, agx_instr *I, unsigned dest_idx, unsigned count,
    if (find_regs_simple(rctx, cls, count, align, &reg)) {
       return reg;
    } else {
+      assert(!rctx->early_killed && "no live range splits with early kill");
       assert(cls == RA_GPR && "no memory live range splits");
 
       struct util_dynarray copies = {0};
@@ -998,6 +1004,47 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
    return find_regs(rctx, I, d, count, align);
 }
 
+static void
+kill_source(struct ra_ctx *rctx, const agx_instr *I, unsigned s)
+{
+   enum ra_class cls = ra_class_for_index(I->src[s]);
+   unsigned reg = rctx->ssa_to_reg[I->src[s].value];
+   unsigned count = rctx->ncomps[I->src[s].value];
+
+   assert(I->op != AGX_OPCODE_PHI && "phis don't use .kill");
+   assert(count >= 1);
+
+   BITSET_CLEAR_RANGE(rctx->used_regs[cls], reg, reg + count - 1);
+}
+
+static void
+try_kill_early_sources(struct ra_ctx *rctx, const agx_instr *I,
+                       unsigned first_source, unsigned last_source,
+                       unsigned region_end, unsigned region_base)
+{
+   unsigned dest_size = util_next_power_of_two(rctx->ncomps[I->dest[0].value]);
+   unsigned dest_end = region_base + dest_size;
+
+   /* We can only early-kill a region if we can trivially allocate the
+    * destination to it. That way we never shuffle killed sources.
+    *
+    * To ensure that, the region must be aligned and cover the destination.
+    */
+   if (region_base == region_end ||
+       (rctx->ssa_to_reg[I->src[first_source].value] & (dest_size - 1)) ||
+       ((region_end < dest_end) &&
+        BITSET_TEST_RANGE(rctx->used_regs[RA_GPR], region_end, dest_end)))
+      return;
+
+   for (unsigned s = first_source; s <= last_source; ++s) {
+      if (I->src[s].kill && !I->src[s].memory) {
+         kill_source(rctx, I, s);
+         rctx->early_killed = true;
+         I->src[s].kill = false;
+      }
+   }
+}
+
 /** Assign registers to SSA values in a block. */
 
 static void
@@ -1008,7 +1055,6 @@ agx_ra_assign_local(struct ra_ctx *rctx)
    uint16_t *ssa_to_reg = calloc(rctx->shader->alloc, sizeof(uint16_t));
 
    agx_block *block = rctx->block;
-   uint8_t *ncomps = rctx->ncomps;
    rctx->used_regs[RA_GPR] = used_regs_gpr;
    rctx->used_regs[RA_MEM] = used_regs_mem;
    rctx->ssa_to_reg = ssa_to_reg;
@@ -1085,6 +1131,31 @@ agx_ra_assign_local(struct ra_ctx *rctx)
          continue;
       }
 
+      /* Search for regions of contiguous killed sources to early-kill. */
+      rctx->early_killed = false;
+
+      if (I->nr_dests == 1) {
+         unsigned first_src = 0;
+         unsigned end = 0;
+         unsigned start = 0;
+
+         agx_foreach_ssa_src(I, s) {
+            if (I->src[s].kill && !I->src[s].memory) {
+               unsigned reg = rctx->ssa_to_reg[I->src[s].value];
+
+               if (start == end || end != reg) {
+                  try_kill_early_sources(rctx, I, first_src, s, end, start);
+                  first_src = s;
+                  start = reg;
+               }
+
+               end = reg + rctx->ncomps[I->src[s].value];
+            }
+         }
+
+         try_kill_early_sources(rctx, I, first_src, I->nr_srcs - 1, end, start);
+      }
+
       /* Next, assign destinations one at a time. This is always legal
        * because of the SSA form.
        */
@@ -1095,17 +1166,10 @@ agx_ra_assign_local(struct ra_ctx *rctx)
          assign_regs(rctx, I->dest[d], pick_regs(rctx, I, d));
       }
 
-      /* Free killed sources */
+      /* Free late-killed sources */
       agx_foreach_ssa_src(I, s) {
          if (I->src[s].kill) {
-            assert(I->op != AGX_OPCODE_PHI && "phis don't use .kill");
-
-            enum ra_class cls = ra_class_for_index(I->src[s]);
-            unsigned reg = ssa_to_reg[I->src[s].value];
-            unsigned count = ncomps[I->src[s].value];
-
-            assert(count >= 1);
-            BITSET_CLEAR_RANGE(rctx->used_regs[cls], reg, reg + count - 1);
+            kill_source(rctx, I, s);
          }
       }
 
