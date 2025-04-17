@@ -426,10 +426,10 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
 
    t = pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
    pan_cast_and_pack(t.cpu, TILER_CONTEXT, tiler) {
-      tiler.hierarchy_mask =
-         pan_select_tiler_hierarchy_mask(batch->key.width,
-                                         batch->key.height,
-                                         dev->tiler_features.max_levels);
+      /* On JM, we don't care of passing the tile_size as it only matters for v12+ */
+      tiler.hierarchy_mask = GENX(pan_select_tiler_hierarchy_mask)(
+         batch->key.width, batch->key.height, dev->tiler_features.max_levels, 0,
+         panfrost_bo_size(dev->tiler_heap));
 
       tiler.fb_width = batch->key.width;
       tiler.fb_height = batch->key.height;

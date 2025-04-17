@@ -7,7 +7,3 @@ dEQP-VK.pipeline.fast_linked_library.misc.interpolate_at_sample_no_sample_shadin
 # Seems to be a precision issues because of floor fp16 being dropped since v11 (and the conversion done as a result)
 dEQP-GLES3.functional.shaders.builtin_functions.common.fract.vec2_lowp_vertex,Fail
 dEQP-GLES31.functional.shaders.builtin_functions.common.fract.vec2_lowp_compute,Fail
-
-# Issue with color / depth internal buffer overrun
-dEQP-GLES31.functional.fbo.no_attachments.maximums.all,Crash
-dEQP-GLES31.functional.fbo.no_attachments.maximums.size,Crash

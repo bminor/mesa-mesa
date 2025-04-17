@@ -687,23 +687,16 @@ csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_device *dev = pan_device(ctx->base.screen);
+   struct panfrost_screen *screen = pan_screen(ctx->base.screen);
 
    if (!batch->csf.pending_tiler_desc)
       return;
 
+   /* The tiler chunk start with a header of 64 bytes */
    pan_pack(batch->csf.pending_tiler_desc, TILER_CONTEXT, tiler) {
-      tiler.hierarchy_mask =
-         pan_select_tiler_hierarchy_mask(batch->key.width,
-                                         batch->key.height,
-                                         dev->tiler_features.max_levels);
-
-      /* Disable hierarchies falling under the effective tile size. */
-      uint32_t disable_hierarchies;
-      for (disable_hierarchies = 0;
-           fb->tile_size > (16 * 16) << (disable_hierarchies * 2);
-           disable_hierarchies++)
-         ;
-      tiler.hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
+      tiler.hierarchy_mask = GENX(pan_select_tiler_hierarchy_mask)(
+         batch->key.width, batch->key.height, dev->tiler_features.max_levels,
+         fb->tile_size, screen->csf_tiler_heap.chunk_size - 64);
 
 #if PAN_ARCH >= 12
       tiler.effective_tile_size = fb->tile_size;

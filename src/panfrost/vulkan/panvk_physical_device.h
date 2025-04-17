@@ -34,6 +34,16 @@ struct panvk_physical_device {
 
    const struct panfrost_model *model;
 
+   union {
+      struct {
+         struct {
+            uint32_t chunk_size;
+            uint32_t initial_chunks;
+            uint32_t max_chunks;
+         } tiler;
+      } csf;
+   };
+
    struct {
       dev_t primary_rdev;
       dev_t render_rdev;
