@@ -30,15 +30,24 @@ void add_subdword_definition(Program* program, aco_ptr<Instruction>& instr, Phys
                              bool allow_16bit_write);
 
 struct parallelcopy {
-   constexpr parallelcopy(Operand op_, Definition def_) : op(op_), def(def_), skip_renaming(false)
-   {}
-   constexpr parallelcopy(Operand op_, Definition def_, bool skip_renaming_)
-       : op(op_), def(def_), skip_renaming(skip_renaming_)
+   constexpr parallelcopy(Operand op_, Definition def_, int copy_kill_ = -1)
+       : op(op_), def(def_), copy_kill(copy_kill_)
    {}
 
    Operand op;
    Definition def;
-   bool skip_renaming;
+
+   /* If not negative, this copy is only used by a single operand of the instruction and not after
+    * the instruction. There might also be more copy-kill copies or a normal copy with the same
+    * operand.
+    *
+    * update_renames() assumes that the copy's source temporary is still live after the parallelcopy
+    * instruction unless there's a normal copy of the temporary.
+    *
+    * update_renames() also assumes that when a copy-kill copy is added, the register file is before
+    * the current instruction but after the parallelcopy instruction.
+    */
+   int copy_kill;
 };
 
 struct assignment {
@@ -838,7 +847,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
    /* clear operands */
    for (parallelcopy& copy : parallelcopies) {
       /* the definitions with id are not from this function and already handled */
-      if (copy.def.isTemp() || copy.skip_renaming)
+      if (copy.def.isTemp() || copy.copy_kill >= 0)
          continue;
       reg_file.clear(copy.op);
    }
@@ -851,10 +860,13 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
          continue;
       }
 
+      bool is_copy_kill = it->copy_kill >= 0;
+
       /* check if we moved a definition: change the register and remove copy */
       bool is_def = false;
       for (Definition& def : instr->definitions) {
          if (def.isTemp() && def.getTemp() == it->op.getTemp()) {
+            assert(!is_copy_kill);
             // FIXME: ensure that the definition can use this reg
             def.setFixed(it->def.physReg());
             reg_file.fill(def);
@@ -867,11 +879,19 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
       if (is_def)
          continue;
 
-      /* check if we moved another parallelcopy definition */
+      /* The loop below might change this if is_copy_kill=true, but we will want the original */
+      Operand copy_op = it->op;
+
+      /* Check if we moved another parallelcopy definition. We use a different path for copy-kill
+       * copies, since they are able to exist alongside a normal copy with the same operand.
+       */
       for (parallelcopy& other : parallelcopies) {
          if (!other.def.isTemp())
             continue;
-         if (it->op.getTemp() == other.def.getTemp()) {
+         if (is_copy_kill && it->op.getTemp() == other.def.getTemp()) {
+            it->op = other.op;
+            break;
+         } else if (it->op.getTemp() == other.def.getTemp()) {
             other.def.setFixed(it->def.physReg());
             ctx.assignments[other.def.tempId()].reg = other.def.physReg();
             it = parallelcopies.erase(it);
@@ -900,20 +920,27 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
 
       /* check if we moved an operand */
       bool first[2] = {true, true};
-      bool fill = true;
+      bool fill = !is_copy_kill;
       for (unsigned i = 0; i < instr->operands.size(); i++) {
          Operand& op = instr->operands[i];
          if (!op.isTemp())
             continue;
-         if (op.tempId() == copy.op.tempId()) {
+         if (op.tempId() == copy_op.tempId()) {
             /* only rename precolored operands if the copy-location matches */
             bool omit_renaming = op.isPrecolored() && op.physReg() != copy.def.physReg();
+            omit_renaming |= is_copy_kill && i != (unsigned)copy.copy_kill;
+
+            /* If this is a copy-kill, then the renamed operand is killed since we don't rename any
+             * uses in other instructions. If it's a normal copy, then this operand is killed if we
+             * don't rename it since any future uses will be renamed to use the copy definition. */
+            bool kill =
+               op.isKill() || (omit_renaming && !is_copy_kill) || (!omit_renaming && is_copy_kill);
 
             /* Fix the kill flags */
             if (first[omit_renaming])
-               op.setFirstKill((omit_renaming && !copy.skip_renaming) || op.isKill());
+               op.setFirstKill(kill);
             else
-               op.setKill((omit_renaming && !copy.skip_renaming) || op.isKill());
+               op.setKill(kill);
             first[omit_renaming] = false;
 
             if (omit_renaming)
@@ -922,7 +949,11 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
             op.setTemp(copy.def.getTemp());
             op.setFixed(copy.def.physReg());
 
-            fill = !op.isKillBeforeDef() || op.isPrecolored();
+            /* Copy-kill or precolored operand parallelcopies are only added when setting up
+             * operands.
+             */
+            bool is_reg_file_before_instr = op.isPrecolored() || is_copy_kill;
+            fill = !op.isKillBeforeDef() || is_reg_file_before_instr;
          }
       }
 
@@ -2238,7 +2269,7 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
       Operand pc_op(instr->operands[i].getTemp());
       pc_op.setFixed(src);
       Definition pc_def = Definition(op.physReg(), pc_op.regClass());
-      parallelcopy.emplace_back(pc_op, pc_def, op.isCopyKill());
+      parallelcopy.emplace_back(pc_op, pc_def, op.isCopyKill() ? i : -1);
    }
 
    if (BITSET_IS_EMPTY(mask))
@@ -3136,7 +3167,7 @@ emit_parallel_copy_internal(ra_ctx& ctx, std::vector<parallelcopy>& parallelcopy
       pc->definitions[i] = parallelcopy[i].def;
       assert(pc->operands[i].size() == pc->definitions[i].size());
 
-      if (!parallelcopy[i].skip_renaming) {
+      if (parallelcopy[i].copy_kill < 0) {
          /* it might happen that the operand is already renamed. we have to restore the
           * original name. */
          auto it =
