@@ -1283,7 +1283,7 @@
     </field>
     <field name="Destination Pitch" start="32" end="49" type="uint" />
     <field name="Destination Encrypt En" start="53" end="53" type="bool" />
-    <field name="Destination MOCS" start="56" end="59" type="uint" />
+    <field name="Destination MOCS index" start="56" end="59" type="uint" />
     <field name="Destination Tiling" start="62" end="63" type="uint" prefix="XY_TILE">
       <value name="LINEAR" value="0" />
       <value name="X" value="1" />

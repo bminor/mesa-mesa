@@ -2157,7 +2157,12 @@ blorp_xy_fast_color_blit(struct blorp_batch *batch,
 
       blt.DestinationPitch = (dst_surf->row_pitch_B / dst_pitch_unit) - 1;
       blt.DestinationTiling = xy_bcb_tiling(dst_surf);
+#if GFX_VERx10 >= 200
+      blt.DestinationMOCSindex = MOCS_GET_INDEX(params->dst.addr.mocs);
+      blt.DestinationEncryptEn = MOCS_GET_ENCRYPT_EN(params->dst.addr.mocs);
+#else
       blt.DestinationMOCS = params->dst.addr.mocs;
+#endif
       blt.DestinationX1 = params->x0;
       blt.DestinationY1 = params->y0;
       blt.DestinationX2 = params->x1;
