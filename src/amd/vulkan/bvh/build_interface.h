@@ -18,6 +18,9 @@
 #define VOID_REF  uint64_t
 #endif
 
+#define RADV_BUILD_FLAG_COMPACT (1u << (VK_BUILD_FLAG_COUNT + 0))
+#define RADV_BUILD_FLAG_BVH8    (1u << (VK_BUILD_FLAG_COUNT + 1))
+
 #define RADV_COPY_MODE_COPY        0
 #define RADV_COPY_MODE_SERIALIZE   1
 #define RADV_COPY_MODE_DESERIALIZE 2

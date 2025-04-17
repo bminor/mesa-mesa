@@ -91,17 +91,6 @@ struct radv_meta_state {
    mtx_t mtx;
 
    struct {
-      VkPipelineLayout encode_p_layout;
-      VkPipeline encode_pipeline;
-      VkPipeline encode_compact_pipeline;
-      VkPipelineLayout header_p_layout;
-      VkPipeline header_pipeline;
-      VkPipelineLayout update_p_layout;
-      VkPipeline update_pipeline;
-      VkPipelineLayout copy_p_layout;
-      VkPipeline copy_pipeline;
-      VkPipeline copy_blas_addrs_gfx12_pipeline;
-
       struct radix_sort_vk *radix_sort;
       struct vk_acceleration_structure_build_ops build_ops;
       struct vk_acceleration_structure_build_args build_args;
