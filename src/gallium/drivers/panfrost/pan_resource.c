@@ -1730,31 +1730,50 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       struct pan_image_slice_layout *src_slice =
          &prsrc->image.layout.slices[level];
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
-
-      unsigned width = u_minify(prsrc->base.width0, level);
-      unsigned height = u_minify(prsrc->base.height0, level);
       unsigned src_stride =
          pan_afbc_stride_blocks(src_modifier, src_slice->row_stride);
-      unsigned dst_stride =
-         DIV_ROUND_UP(width, panfrost_afbc_superblock_width(dst_modifier));
-      unsigned dst_height =
-         DIV_ROUND_UP(height, panfrost_afbc_superblock_height(dst_modifier));
-
       uint32_t offset = 0;
       struct pan_afbc_block_info *meta =
          metadata_bo->ptr.cpu + metadata_offsets[level];
 
-      for (unsigned y = 0, i = 0; y < dst_height; ++y) {
-         for (unsigned x = 0; x < dst_stride; ++x, ++i) {
-            unsigned idx = is_tiled ? get_morton_index(x, y, src_stride) : i;
-            uint32_t size = meta[idx].size;
-            meta[idx].offset = offset; /* write the start offset */
-            offset += size;
+      /* Stack allocated chunk used to copy AFBC block info from non-cacheable
+       * memory to cacheable memory. Each iteration of the offset computation
+       * loop below otherwise forces a flush of the write combining buffer
+       * because of the 32-bit read interleaved with the 32-bit write. A tile
+       * is composed of 8x8 header blocks. A chunk is made of 16 tiles so that
+       * at most 8 kB can be copied at each iteration (smaller values tend to
+       * increase latency). */
+      struct pan_afbc_block_info meta_chunk[64 * 16];
+      unsigned nr_blocks_per_chunk = ARRAY_SIZE(meta_chunk);
+
+      for (unsigned i = 0; i < src_slice->afbc.nr_blocks;
+           i += nr_blocks_per_chunk) {
+         unsigned nr_blocks = MIN2(nr_blocks_per_chunk,
+                                   src_slice->afbc.nr_blocks - i);
+
+         memcpy(meta_chunk, &meta[i],
+                nr_blocks * sizeof(struct pan_afbc_block_info));
+
+         for (unsigned j = 0; j < nr_blocks; j++) {
+            unsigned idx = j;
+            if (is_tiled) {
+               idx &= ~63;
+               idx += get_morton_index(j & 7, (j & 63) >> 3, src_stride);
+            }
+            meta[i + idx].offset = offset;
+            offset += meta_chunk[idx].size;
          }
       }
 
       total_size = ALIGN_POT(total_size, pan_slice_align(dst_modifier));
       {
+         unsigned width = u_minify(prsrc->base.width0, level);
+         unsigned height = u_minify(prsrc->base.height0, level);
+         unsigned dst_stride =
+            DIV_ROUND_UP(width, panfrost_afbc_superblock_width(dst_modifier));
+         unsigned dst_height =
+            DIV_ROUND_UP(height, panfrost_afbc_superblock_height(dst_modifier));
+
          dst_slice->afbc.stride = dst_stride;
          dst_slice->afbc.nr_blocks = dst_stride * dst_height;
          dst_slice->afbc.header_size =
