@@ -978,8 +978,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                });
    }
 
-   if (nir->info.stage == MESA_SHADER_MESH ||
-         nir->info.stage == MESA_SHADER_TASK) {
+   if (gl_shader_stage_is_mesh(nir->info.stage)) {
       nir_lower_compute_system_values_options options = {
             .lower_workgroup_id_to_index = true,
             /* nir_lower_idiv generates expensive code */
