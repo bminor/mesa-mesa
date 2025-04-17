@@ -1130,7 +1130,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 
    struct agx_geometry_params params = {
       .state = hk_geometry_state(cmd),
-      .flat_outputs = fs ? fs->info.fs.interp.flat : 0,
+      .flat_outputs = fs->info.fs.interp.flat,
       .input_topology = mode,
 
       /* Overriden by the indirect setup kernel. As tess->GS is always indirect,
@@ -1685,8 +1685,8 @@ hk_flush_shaders(struct hk_cmd_buffer *cmd)
     * shaders.
     */
    agx_assign_uvs(&gfx->linked_varyings, &hw_vs->info.uvs,
-                  fs ? hk_only_variant(fs)->info.fs.interp.flat : 0,
-                  fs ? hk_only_variant(fs)->info.fs.interp.linear : 0);
+                  hk_only_variant(fs)->info.fs.interp.flat,
+                  hk_only_variant(fs)->info.fs.interp.linear);
 
    for (unsigned i = 0; i < VARYING_SLOT_MAX; ++i) {
       desc->root.draw.uvs_index[i] = gfx->linked_varyings.slots[i];
@@ -2278,11 +2278,8 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
               IS_SHADER_DIRTY(TESS_EVAL) || IS_DIRTY(TS_DOMAIN_ORIGIN),
       .cull_2 = varyings_dirty,
 
-      /* With a null FS, the fragment shader PPP word is ignored and doesn't
-       * need to be present.
-       */
-      .fragment_shader = fs && (fs_dirty || linked_fs_dirty || varyings_dirty ||
-                                gfx->descriptors.root_dirty),
+      .fragment_shader = fs_dirty || linked_fs_dirty || varyings_dirty ||
+                         gfx->descriptors.root_dirty,
 
       .occlusion_query = gfx->dirty & HK_DIRTY_OCCLUSION,
       .output_size = hw_vs_dirty,
@@ -2328,24 +2325,14 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    }
 
    if (dirty.fragment_control_2) {
-      if (linked_fs) {
-         /* Annoying, rasterizer_discard seems to be ignored (sometimes?) in the
-          * main fragment control word and has to be combined into the secondary
-          * word for reliable behaviour.
-          */
-         agx_ppp_push_merged(&ppp, FRAGMENT_CONTROL, cfg,
-                             linked_fs->b.fragment_control) {
+      /* Annoying, rasterizer_discard seems to be ignored (sometimes?) in the
+       * main fragment control word and has to be combined into the secondary
+       * word for reliable behaviour.
+       */
+      agx_ppp_push_merged(&ppp, FRAGMENT_CONTROL, cfg,
+                          linked_fs->b.fragment_control) {
 
-            cfg.tag_write_disable = dyn->rs.rasterizer_discard_enable;
-         }
-      } else {
-         /* If there is no fragment shader, we must disable tag writes to avoid
-          * executing the missing shader. This optimizes depth-only passes.
-          */
-         agx_ppp_push(&ppp, FRAGMENT_CONTROL, cfg) {
-            cfg.tag_write_disable = true;
-            cfg.pass_type = AGX_PASS_TYPE_OPAQUE;
-         }
+         cfg.tag_write_disable = dyn->rs.rasterizer_discard_enable;
       }
    }
 
@@ -2373,16 +2360,12 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    }
 
    if (dirty.fragment_front_face_2) {
-      if (fs) {
-         agx_pack(&fragment_face_2, FRAGMENT_FACE_2, cfg) {
-            cfg.object_type = gfx->object_type;
-         }
-
-         agx_merge(fragment_face_2, fs->frag_face, FRAGMENT_FACE_2);
-         agx_ppp_push_packed(&ppp, &fragment_face_2, FRAGMENT_FACE_2);
-      } else {
-         agx_ppp_fragment_face_2(&ppp, gfx->object_type, NULL);
+      agx_pack(&fragment_face_2, FRAGMENT_FACE_2, cfg) {
+         cfg.object_type = gfx->object_type;
       }
+
+      agx_merge(fragment_face_2, fs->frag_face, FRAGMENT_FACE_2);
+      agx_ppp_push_packed(&ppp, &fragment_face_2, FRAGMENT_FACE_2);
    }
 
    if (dirty.fragment_front_stencil) {
@@ -2412,12 +2395,8 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    if (dirty.output_select) {
       struct agx_output_select_packed osel = hw_vs->info.uvs.osel;
 
-      if (linked_fs) {
-         agx_ppp_push_merged_blobs(&ppp, AGX_OUTPUT_SELECT_LENGTH, &osel,
-                                   &linked_fs->b.osel);
-      } else {
-         agx_ppp_push_packed(&ppp, &osel, OUTPUT_SELECT);
-      }
+      agx_ppp_push_merged_blobs(&ppp, AGX_OUTPUT_SELECT_LENGTH, &osel,
+                                &linked_fs->b.osel);
    }
 
    assert(dirty.varying_counts_32 == dirty.varying_counts_16);
@@ -2694,17 +2673,15 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       bool has_sample_mask = api_sample_mask != tib_sample_mask;
 
       if (hw_vs->info.cull_distance_array_size) {
-         perf_debug(cmd, "Emulating cull distance (size %u, %s a frag shader)",
-                    hw_vs->info.cull_distance_array_size,
-                    fs ? "with" : "without");
+         perf_debug(cmd, "Emulating cull distance (size %u)",
+                    hw_vs->info.cull_distance_array_size);
       }
 
       if (has_sample_mask) {
-         perf_debug(cmd, "Emulating sample mask (%s a frag shader)",
-                    fs ? "with" : "without");
+         perf_debug(cmd, "Emulating sample mask");
       }
 
-      if (fs) {
+      {
          unsigned samples_shaded = 0;
          if (fs->info.fs.epilog_key.sample_shading)
             samples_shaded = dyn->ms.rasterization_samples;
@@ -2816,12 +2793,6 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          }
 
          hk_update_fast_linked(cmd, fs, &key);
-      } else {
-         /* TODO: prolog without fs needs to work too... */
-         if (cmd->state.gfx.linked[MESA_SHADER_FRAGMENT] != NULL) {
-            cmd->state.gfx.linked_dirty |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
-            cmd->state.gfx.linked[MESA_SHADER_FRAGMENT] = NULL;
-         }
       }
    }
 
@@ -2937,7 +2908,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    bool linked_fs_dirty = IS_LINKED_DIRTY(FRAGMENT);
 
    if ((gfx->dirty & HK_DIRTY_PROVOKING) || vgt_dirty || linked_fs_dirty) {
-      unsigned bindings = linked_fs ? linked_fs->b.cf.nr_bindings : 0;
+      unsigned bindings = linked_fs->b.cf.nr_bindings;
       if (bindings) {
          size_t linkage_size =
             AGX_CF_BINDING_HEADER_LENGTH + (bindings * AGX_CF_BINDING_LENGTH);
