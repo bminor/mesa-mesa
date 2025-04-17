@@ -484,6 +484,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
+#if AMD_LLVM_AVAILABLE
    bool force_use_aco = sscreen->use_aco_shader_type == nir->info.stage;
    for (unsigned i = 0; i < sscreen->num_use_aco_shader_blakes; i++) {
       if (!memcmp(sscreen->use_aco_shader_blakes[i], nir->info.source_blake3,
@@ -499,6 +500,10 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                             /* Use ACO for streamout on gfx12 because it's faster. */
                             (sscreen->info.gfx_level >= GFX12 && nir->xfb_info &&
                              nir->xfb_info->output_count));
+#else
+   assert(aco_is_gpu_supported(&sscreen->info));
+   nir->info.use_aco_amd = true;
+#endif
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       /* post_depth_coverage implies early_fragment_tests */

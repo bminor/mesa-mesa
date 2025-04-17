@@ -643,6 +643,13 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       }
    }
 
+#if !AMD_LLVM_AVAILABLE
+   sctx->shader.vs.key.ge.use_aco = 1;
+   sctx->shader.gs.key.ge.use_aco = 1;
+   sctx->shader.tcs.key.ge.use_aco = 1;
+   sctx->shader.tes.key.ge.use_aco = 1;
+#endif
+
    sctx->ngg = sscreen->use_ngg;
    si_shader_change_notify(sctx);
 

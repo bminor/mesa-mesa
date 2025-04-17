@@ -3013,6 +3013,10 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 #endif
       si_aco_compile_shader(shader, &linked, debug);
 
+#if !AMD_LLVM_AVAILABLE
+   assert(gs_nir->info.use_aco_amd);
+#endif
+
    if (ok) {
       assert(!shader->config.scratch_bytes_per_wave);
       ok = si_shader_binary_upload(sscreen, shader, 0) >= 0;
@@ -3114,6 +3118,10 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
       !nir->info.use_aco_amd ? si_llvm_compile_shader(sscreen, compiler, shader, &linked, debug) :
 #endif
       si_aco_compile_shader(shader, &linked, debug);
+
+#if !AMD_LLVM_AVAILABLE
+   assert(nir->info.use_aco_amd);
+#endif
 
    if (!ret)
       goto out;
