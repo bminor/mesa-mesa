@@ -46,6 +46,7 @@
 #include "util/u_transfer.h"
 #include "util/u_transfer_helper.h"
 #include "util/perf/cpu_trace.h"
+#include "util/streaming-load-memcpy.h"
 
 #include "decode.h"
 #include "pan_bo.h"
@@ -1743,7 +1744,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
        * is composed of 8x8 header blocks. A chunk is made of 16 tiles so that
        * at most 8 kB can be copied at each iteration (smaller values tend to
        * increase latency). */
-      struct pan_afbc_block_info meta_chunk[64 * 16];
+      alignas(16) struct pan_afbc_block_info meta_chunk[64 * 16];
       unsigned nr_blocks_per_chunk = ARRAY_SIZE(meta_chunk);
 
       for (unsigned i = 0; i < src_slice->afbc.nr_blocks;
@@ -1751,8 +1752,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          unsigned nr_blocks = MIN2(nr_blocks_per_chunk,
                                    src_slice->afbc.nr_blocks - i);
 
-         memcpy(meta_chunk, &meta[i],
-                nr_blocks * sizeof(struct pan_afbc_block_info));
+         util_streaming_load_memcpy(meta_chunk, &meta[i], nr_blocks
+                                    * sizeof(struct pan_afbc_block_info));
 
          for (unsigned j = 0; j < nr_blocks; j++) {
             unsigned idx = j;
