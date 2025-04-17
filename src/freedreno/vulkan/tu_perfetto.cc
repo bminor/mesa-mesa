@@ -46,6 +46,7 @@ enum tu_stage_id {
    CMD_BUFFER_STAGE_ID,
    CMD_BUFFER_ANNOTATION_STAGE_ID,
    RENDER_PASS_STAGE_ID,
+   SECONDARY_CMD_BUFFER_STAGE_ID,
    CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID,
    BINNING_STAGE_ID,
    GMEM_STAGE_ID,
@@ -75,6 +76,7 @@ static const struct {
    [CMD_BUFFER_STAGE_ID]     = { "Command Buffer" },
    [CMD_BUFFER_ANNOTATION_STAGE_ID]     = { "Annotation", "Command Buffer Annotation" },
    [RENDER_PASS_STAGE_ID]    = { "Render Pass" },
+   [SECONDARY_CMD_BUFFER_STAGE_ID] = { "Secondary Command Buffer" },
    [CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID]    = { "Annotation", "Render Pass Command Buffer Annotation" },
    [BINNING_STAGE_ID]        = { "Binning", "Perform Visibility pass and determine target bins" },
    [GMEM_STAGE_ID]           = { "GMEM", "Rendering to GMEM" },
@@ -511,6 +513,7 @@ tu_perfetto_end_submit(struct tu_queue *queue,
    }
 
 CREATE_EVENT_CALLBACK(cmd_buffer, CMD_BUFFER_STAGE_ID)
+CREATE_EVENT_CALLBACK(secondary_cmd_buffer, SECONDARY_CMD_BUFFER_STAGE_ID)
 CREATE_EVENT_CALLBACK(render_pass, RENDER_PASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(binning_ib, BINNING_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_gmem, GMEM_STAGE_ID)
