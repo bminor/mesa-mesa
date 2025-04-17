@@ -4994,6 +4994,29 @@ validate_opt_ctx(opt_ctx& ctx)
    }
 }
 
+void rename_loop_header_phis(opt_ctx& ctx) {
+   for (Block& block : ctx.program->blocks) {
+      if (!(block.kind & block_kind_loop_header))
+         continue;
+
+      for (auto& instr : block.instructions) {
+         if (!is_phi(instr))
+            break;
+
+         for (unsigned i = 0; i < instr->operands.size(); i++) {
+            if (!instr->operands[i].isTemp())
+               continue;
+
+            ssa_info info = ctx.info[instr->operands[i].tempId()];
+            while (info.is_temp()) {
+               pseudo_propagate_temp(ctx, instr, info.temp, i);
+               info = ctx.info[info.temp.id()];
+            }
+         }
+      }
+   }
+}
+
 } /* end namespace */
 
 void
@@ -5009,6 +5032,10 @@ optimize(Program* program)
       for (aco_ptr<Instruction>& instr : block.instructions)
          label_instruction(ctx, instr);
    }
+
+   validate_opt_ctx(ctx);
+
+   rename_loop_header_phis(ctx);
 
    validate_opt_ctx(ctx);
 
