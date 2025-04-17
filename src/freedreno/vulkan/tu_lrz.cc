@@ -942,8 +942,10 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * fragments from draw A which should be visible due to draw B.
     */
    if (reads_dest && z_write_enable && cmd->device->instance->conservative_lrz) {
-      tu_lrz_write_disable_reason(cmd, "Depth write + blending");
-      cmd->state.lrz.disable_write_for_rp = true;
+      if (!cmd->state.lrz.disable_write_for_rp) {
+         tu_lrz_write_disable_reason(cmd, "Depth write + blending");
+         cmd->state.lrz.disable_write_for_rp = true;
+      }
       temporary_disable_lrz = true;
    }
 
