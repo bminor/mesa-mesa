@@ -1140,6 +1140,13 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    if (result != VK_SUCCESS)
       goto fail;
 
+   if (arch >= 10) {
+      /* XXX: Make dri options for thoses */
+      device->csf.tiler.chunk_size = 2 * 1024 * 1024;
+      device->csf.tiler.initial_chunks = 5;
+      device->csf.tiler.max_chunks = 64;
+   }
+
    if (arch != 10)
       vk_warn_non_conformant_implementation("panvk");
 

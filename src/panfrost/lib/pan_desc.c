@@ -34,6 +34,8 @@
 #include "pan_props.h"
 #include "pan_texture.h"
 
+#define PAN_BIN_LEVEL_COUNT 12
+
 static unsigned
 mod_to_block_fmt(uint64_t mod)
 {
@@ -1158,5 +1160,105 @@ GENX(pan_emit_fragment_job_payload)(const struct pan_fb_info *fb, uint64_t fbd,
       }
 #endif
    }
+}
+#endif
+
+#if PAN_ARCH >= 6
+static uint32_t
+pan_calc_bins_pointer_size(uint32_t width, uint32_t height, uint32_t tile_size,
+                           uint32_t hierarchy_mask)
+{
+   const uint32_t bin_ptr_size = PAN_ARCH >= 12 ? 16 : 8;
+
+   uint32_t bins_x[PAN_BIN_LEVEL_COUNT];
+   uint32_t bins_y[PAN_BIN_LEVEL_COUNT];
+   uint32_t bins[PAN_BIN_LEVEL_COUNT];
+   uint32_t bins_enabled;
+
+   /* On v12+, hierarchy_mask is only used if 4 levels are used at most,
+    * otherwise it selects another mask (0xAC with a tile_size greater than
+    * 32x32, 0xAC with 32x32 and lower) */
+   if ((hierarchy_mask == 0 || util_bitcount(hierarchy_mask) > 4) &&
+       PAN_ARCH >= 12) {
+      if (tile_size > 32 * 32)
+         hierarchy_mask = 0xAC;
+      else
+         hierarchy_mask = 0xAA;
+   }
+
+   bins_x[0] = DIV_ROUND_UP(width, 16);
+   bins_y[0] = DIV_ROUND_UP(height, 16);
+   bins[0] = bins_x[0] * bins_y[0];
+
+   for (uint32_t i = 1; i < ARRAY_SIZE(bins); i++) {
+      bins_x[i] = DIV_ROUND_UP(bins_x[i - 1], 2);
+      bins_y[i] = DIV_ROUND_UP(bins_y[i - 1], 2);
+      bins[i] = bins_x[i] * bins_y[i];
+   }
+
+   bins_enabled = 0;
+   for (uint32_t i = 0; i < ARRAY_SIZE(bins); i++) {
+      if ((hierarchy_mask & (1 << i)) != 0)
+         bins_enabled += bins[i];
+   }
+
+   return DIV_ROUND_UP(bins_enabled, 8) * 8 * bin_ptr_size;
+}
+
+unsigned
+GENX(pan_select_tiler_hierarchy_mask)(unsigned width, unsigned height,
+                                      unsigned max_levels, unsigned tile_size,
+                                      unsigned mem_budget)
+{
+   /* On v12+, the hierarchy_mask is deprecated and letting the hardware decide
+    * is prefered. We attempt to use hierarchy_mask of 0 in case the bins can
+    * fit in our memory budget.
+    */
+   if (PAN_ARCH >= 12 &&
+       pan_calc_bins_pointer_size(width, height, tile_size, 0) <= mem_budget)
+      return 0;
+
+   uint32_t max_fb_wh = MAX2(width, height);
+   uint32_t last_hierarchy_bit = util_last_bit(DIV_ROUND_UP(max_fb_wh, 16));
+   uint32_t hierarchy_mask = BITFIELD_MASK(max_levels);
+
+   /* Always enable the level covering the whole FB, and disable the finest
+    * levels if we don't have enough to cover everything.
+    * This is suboptimal for small primitives, since it might force
+    * primitives to be walked multiple times even if they don't cover the
+    * the tile being processed. On the other hand, it's hard to guess
+    * the draw pattern, so it's probably good enough for now.
+    */
+   if (last_hierarchy_bit > max_levels)
+      hierarchy_mask <<= last_hierarchy_bit - max_levels;
+
+   /* Disable hierarchies falling under the effective tile size. */
+   uint32_t disable_hierarchies;
+   for (disable_hierarchies = 0;
+        tile_size > (16 * 16) << (disable_hierarchies * 2);
+        disable_hierarchies++)
+      ;
+   hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
+
+   /* Disable hierachies that would cause the bins to fit in our budget */
+   while (disable_hierarchies < PAN_BIN_LEVEL_COUNT) {
+      uint32_t bins_ptr_size =
+         pan_calc_bins_pointer_size(width, height, tile_size, hierarchy_mask);
+
+      if (bins_ptr_size < mem_budget)
+         break;
+
+      disable_hierarchies++;
+      hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
+   }
+
+   /* We should fit in our budget at this point */
+   assert(pan_calc_bins_pointer_size(width, height, tile_size,
+                                     hierarchy_mask) <= mem_budget);
+
+   /* Before v12, at least one hierarchy level must be enabled. */
+   assert(hierarchy_mask != 0 || PAN_ARCH >= 12);
+
+   return hierarchy_mask;
 }
 #endif

@@ -641,6 +641,8 @@ static VkResult
 init_tiler(struct panvk_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   const struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(dev->vk.physical);
    struct panvk_tiler_heap *tiler_heap = &queue->tiler_heap;
    VkResult result;
 
@@ -659,13 +661,13 @@ init_tiler(struct panvk_queue *queue)
       goto err_free_desc;
    }
 
-   tiler_heap->chunk_size = 2 * 1024 * 1024;
+   tiler_heap->chunk_size = phys_dev->csf.tiler.chunk_size;
 
    struct drm_panthor_tiler_heap_create thc = {
       .vm_id = pan_kmod_vm_handle(dev->kmod.vm),
       .chunk_size = tiler_heap->chunk_size,
-      .initial_chunk_count = 5,
-      .max_chunks = 64,
+      .initial_chunk_count = phys_dev->csf.tiler.initial_chunks,
+      .max_chunks = phys_dev->csf.tiler.max_chunks,
       .target_in_flight = 65535,
    };
 

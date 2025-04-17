@@ -200,23 +200,16 @@ struct panvk_cmd_graphics_state {
 
 static inline uint32_t
 panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
-                                  const struct panvk_cmd_graphics_state *state)
+                                  const struct panvk_cmd_graphics_state *state,
+                                  unsigned bin_ptr_mem_budget)
 {
    struct panfrost_tiler_features tiler_features =
       panfrost_query_tiler_features(&phys_dev->kmod.props);
 
-   uint32_t hierarchy_mask =
-      pan_select_tiler_hierarchy_mask(state->render.fb.info.width,
-                                      state->render.fb.info.height,
-                                      tiler_features.max_levels);
-
-   /* Disable hierarchies falling under the effective tile size. */
-   uint32_t disable_hierarchies;
-   for (disable_hierarchies = 0; state->render.fb.info.tile_size >
-                                 (16 * 16) << (disable_hierarchies * 2);
-        disable_hierarchies++)
-      ;
-   hierarchy_mask &= ~BITFIELD_MASK(disable_hierarchies);
+   uint32_t hierarchy_mask = GENX(pan_select_tiler_hierarchy_mask)(
+      state->render.fb.info.width, state->render.fb.info.height,
+      tiler_features.max_levels, state->render.fb.info.tile_size,
+      bin_ptr_mem_budget);
 
    return hierarchy_mask;
 }

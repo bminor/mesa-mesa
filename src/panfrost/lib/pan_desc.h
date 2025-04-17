@@ -198,6 +198,13 @@ unsigned GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
                             const struct pan_tiler_context *tiler_ctx,
                             void *out);
 
+#if PAN_ARCH >= 6
+unsigned GENX(pan_select_tiler_hierarchy_mask)(uint32_t width, uint32_t height,
+                                               uint32_t max_levels,
+                                               uint32_t tile_size,
+                                               uint32_t mem_budget);
+#endif
+
 #if PAN_ARCH <= 9
 void GENX(pan_emit_fragment_job_payload)(const struct pan_fb_info *fb,
                                          uint64_t fbd, void *out);
