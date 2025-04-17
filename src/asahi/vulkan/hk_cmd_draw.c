@@ -1636,7 +1636,17 @@ hk_cmd_bind_graphics_shader(struct hk_cmd_buffer *cmd,
                             const gl_shader_stage stage,
                             struct hk_api_shader *shader)
 {
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
+
+   /* Null fragment shaders are annoying to handle, because we may still need an
+    * actual fragment shader to attach a prolog to. Rather than adding special
+    * cases, we just bind an empty fragment shader instead of NULL to make
+    * everything work correctly.
+    */
+   if (stage == MESA_SHADER_FRAGMENT && shader == NULL) {
+      shader = dev->null_fs;
+   }
 
    assert(stage < ARRAY_SIZE(cmd->state.gfx.shaders));
    if (cmd->state.gfx.shaders[stage] == shader)
