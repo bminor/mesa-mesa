@@ -3009,7 +3009,9 @@ optimize_encoding_vop2(ra_ctx& ctx, RegisterFile& register_file, aco_ptr<Instruc
    if (ctx.assignments[def_id].affinity) {
       assignment& affinity = ctx.assignments[ctx.assignments[def_id].affinity];
       if (affinity.assigned && affinity.reg != instr->operands[2].physReg() &&
-          !register_file.test(affinity.reg, instr->operands[2].bytes()))
+          (!register_file.test(affinity.reg, instr->operands[2].bytes()) ||
+           std::any_of(instr->operands.begin(), instr->operands.end(), [&](Operand op)
+                       { return op.isKillBeforeDef() && op.physReg() == affinity.reg; })))
          return;
    }
 
@@ -3057,7 +3059,9 @@ optimize_encoding_sopk(ra_ctx& ctx, RegisterFile& register_file, aco_ptr<Instruc
    if (ctx.assignments[def_id].affinity) {
       assignment& affinity = ctx.assignments[ctx.assignments[def_id].affinity];
       if (affinity.assigned && affinity.reg != instr->operands[!literal_idx].physReg() &&
-          !register_file.test(affinity.reg, instr->operands[!literal_idx].bytes()))
+          (!register_file.test(affinity.reg, instr->operands[!literal_idx].bytes()) ||
+           std::any_of(instr->operands.begin(), instr->operands.end(), [&](Operand op)
+                       { return op.isKillBeforeDef() && op.physReg() == affinity.reg; })))
          return;
    }
 
@@ -3315,13 +3319,13 @@ register_allocation(Program* program, ra_test_policy policy)
          }
          bool temp_in_scc = register_file[scc];
 
+         optimize_encoding(ctx, register_file, instr);
+
          /* remove dead vars from register file */
          for (const Operand& op : instr->operands) {
             if (op.isTemp() && op.isFirstKillBeforeDef())
                register_file.clear(op);
          }
-
-         optimize_encoding(ctx, register_file, instr);
 
          /* Handle definitions which must have the same register as an operand.
           * We expect that the definition has the same size as the operand, otherwise the new
