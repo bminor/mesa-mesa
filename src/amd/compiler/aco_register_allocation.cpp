@@ -1824,6 +1824,10 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
         std::vector<parallelcopy>& parallelcopies, aco_ptr<Instruction>& instr,
         int operand_index = -1)
 {
+   /* Note that "temp" might already be filled in the register file if we're making a copy of the
+    * temporary.
+    */
+
    auto split_vec = ctx.split_vectors.find(temp.id());
    if (split_vec != ctx.split_vectors.end()) {
       unsigned offset = 0;
@@ -3139,6 +3143,68 @@ undo_renames(ra_ctx& ctx, std::vector<parallelcopy>& parallelcopies,
 }
 
 void
+handle_operands_tied_to_definitions(ra_ctx& ctx, std::vector<parallelcopy>& parallelcopies,
+                                    aco_ptr<Instruction>& instr, RegisterFile& reg_file,
+                                    aco::small_vec<uint32_t, 2> tied_defs)
+{
+   for (uint32_t op_idx : tied_defs) {
+      Operand& op = instr->operands[op_idx];
+      assert((!op.isLateKill() || op.isCopyKill()) && !op.isPrecolored());
+
+      /* If the operand is copy-kill, then there's an earlier operand which is also tied to a
+       * definition but uses the same temporary as this one.
+       *
+       * We also need to copy if there is different definition which is precolored and intersects
+       * with this operand, but we don't bother since it shouldn't happen.
+       */
+      if (!op.isKill() || op.isCopyKill()) {
+         PhysReg reg = get_reg(ctx, reg_file, op.getTemp(), parallelcopies, instr, op_idx);
+
+         /* update_renames() in case we moved this operand. */
+         update_renames(ctx, reg_file, parallelcopies, instr);
+
+         Operand pc_op(op.getTemp());
+         pc_op.setFixed(ctx.assignments[op.tempId()].reg);
+         Definition pc_def(reg, op.regClass());
+         parallelcopies.emplace_back(pc_op, pc_def, op_idx);
+
+         update_renames(ctx, reg_file, parallelcopies, instr);
+      }
+
+      /* Flag the operand's temporary as lateKill. This serves as placeholder
+       * for the tied definition until the instruction is fully handled.
+       */
+      for (Operand& other_op : instr->operands) {
+         if (other_op.isTemp() && other_op.getTemp() == op.getTemp())
+            other_op.setLateKill(true);
+      }
+   }
+}
+
+void
+assign_tied_definitions(ra_ctx& ctx, aco_ptr<Instruction>& instr, RegisterFile& reg_file,
+                        aco::small_vec<uint32_t, 2> tied_defs)
+{
+   unsigned fixed_def_idx = 0;
+   for (auto op_idx : tied_defs) {
+      Definition& def = instr->definitions[fixed_def_idx++];
+      Operand& op = instr->operands[op_idx];
+      assert(op.isKill());
+      assert(def.regClass().type() == op.regClass().type() && def.size() <= op.size());
+
+      def.setFixed(op.physReg());
+      ctx.assignments[def.tempId()].set(def);
+      reg_file.clear(op);
+      reg_file.fill(def);
+
+      for (Operand& other_op : instr->operands) {
+         if (other_op.isTemp() && other_op.getTemp() == op.getTemp())
+            other_op.setLateKill(false);
+      }
+   }
+}
+
+void
 emit_parallel_copy_internal(ra_ctx& ctx, std::vector<parallelcopy>& parallelcopy,
                             aco_ptr<Instruction>& instr,
                             std::vector<aco_ptr<Instruction>>& instructions, bool temp_in_scc,
@@ -3321,22 +3387,13 @@ register_allocation(Program* program, ra_test_policy policy)
 
          optimize_encoding(ctx, register_file, instr);
 
+         auto tied_defs = get_tied_defs(instr.get());
+         handle_operands_tied_to_definitions(ctx, parallelcopy, instr, register_file, tied_defs);
+
          /* remove dead vars from register file */
          for (const Operand& op : instr->operands) {
             if (op.isTemp() && op.isFirstKillBeforeDef())
                register_file.clear(op);
-         }
-
-         /* Handle definitions which must have the same register as an operand.
-          * We expect that the definition has the same size as the operand, otherwise the new
-          * location for the operand (if it's not killed) might intersect with the old one.
-          * We can't read from the old location because it's corrupted, and we can't write the new
-          * location because that's used by a live-through operand.
-          */
-         unsigned fixed_def_idx = 0;
-         for (auto op_idx : get_tied_defs(instr.get())) {
-            instr->definitions[fixed_def_idx++].setPrecolored(instr->operands[op_idx].physReg());
-            instr->operands[op_idx].setPrecolored(instr->operands[op_idx].physReg());
          }
 
          /* handle fixed definitions first */
@@ -3344,6 +3401,8 @@ register_allocation(Program* program, ra_test_policy policy)
             auto& definition = instr->definitions[i];
             if (!definition.isFixed())
                continue;
+
+            assert(i >= tied_defs.size());
 
             adjust_max_used_regs(ctx, definition.regClass(), definition.physReg());
             /* check if the target register is blocked */
@@ -3371,11 +3430,11 @@ register_allocation(Program* program, ra_test_policy policy)
             register_file.fill(definition);
          }
 
-         /* handle all other definitions */
+         /* handle normal definitions */
          for (unsigned i = 0; i < instr->definitions.size(); ++i) {
             Definition* definition = &instr->definitions[i];
 
-            if (definition->isFixed() || !definition->isTemp())
+            if (definition->isFixed() || !definition->isTemp() || i < tied_defs.size())
                continue;
 
             /* find free reg */
@@ -3450,7 +3509,10 @@ register_allocation(Program* program, ra_test_policy policy)
             register_file.fill(*definition);
          }
 
+         /* This avoids renaming tied operands because they are both killed and late-kill. */
          undo_renames(ctx, parallelcopy, instr);
+
+         assign_tied_definitions(ctx, instr, register_file, tied_defs);
 
          handle_pseudo(ctx, register_file, instr.get());
 
