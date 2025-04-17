@@ -1676,20 +1676,18 @@ iris_flush_resource(struct pipe_context *ctx, struct pipe_resource *resource)
    struct iris_resource *res = (void *) resource;
    const struct isl_drm_modifier_info *mod = res->mod_info;
    bool newly_external = false;
-
-   /* We need to reallocate because original texture is compressed and we
-    * might end up doing a resolve.
-    */
-   bool need_reallocate =
-      res->aux.usage == ISL_AUX_USAGE_CCS_E &&
-      iris_bo_is_real(res->bo) && iris_heap_is_compressed(res->bo->real.heap);
-
    /* flush_resource() may be used to prepare an image for sharing externally
     * with other clients (e.g. via eglCreateImage).  To account for this, we
     * make sure to eliminate suballocation and any compression that a consumer
     * wouldn't know how to handle.
+    *
+    * On Xe2+ platforms, when an image wasn't created with a modifier that
+    * supports compression, we need to resolve by copying the image to an
+    * uncompressed bo.
     */
-   if (!iris_bo_is_real(res->bo) || need_reallocate) {
+   bool need_pat_resolve = iris_heap_is_compressed(res->bo->real.heap) &&
+                           !(res->base.b.bind & PIPE_BIND_SHARED);
+   if (!iris_bo_is_real(res->bo) || need_pat_resolve) {
       assert(!(res->base.b.bind & PIPE_BIND_SHARED));
       iris_reallocate_resource_inplace(ice, res, PIPE_BIND_SHARED);
       assert(res->base.b.bind & PIPE_BIND_SHARED);
