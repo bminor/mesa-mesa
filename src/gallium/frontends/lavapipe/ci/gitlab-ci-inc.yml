@@ -26,7 +26,7 @@
       when: on_success
 
 .lavapipe-manual-rules:
-  stage: software-renderer-postmerge
+  stage: software-renderer-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]

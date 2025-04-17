@@ -35,7 +35,7 @@
       when: on_success
 
 .radeonsi-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -63,7 +63,7 @@
       when: on_success
 
 .radv-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   rules:
     - !reference [.test, rules]
     - !reference [.vulkan-manual-rules, rules]
@@ -89,7 +89,7 @@
     - !reference [.radv-collabora-rules, rules]
 
 .radv-collabora-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -104,7 +104,7 @@
     - !reference [.radv-rules, rules]
 
 .radv-valve-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -129,7 +129,7 @@
       when: on_success
 
 .radeonsi-vaapi-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-manual-rules, rules]
@@ -146,7 +146,7 @@
     - !reference [.radeonsi-rules, rules]
 
 .radeonsi-valve-manual-rules:
-  stage: amd-postmerge
+  stage: amd-nightly
   rules:
     - !reference [.test, rules]
     - !reference [.valve-farm-manual-rules, rules]

@@ -426,9 +426,9 @@ def parse_args() -> argparse.Namespace:
         help="Job stages to exclude when searching for target jobs. "
              "For multiple targets, pass multiple values, eg. "
              "`--exclude-stage foo bar`. By default, performance and "
-             "post-merge jobs are excluded; pass --exclude-stage '' to "
+             "nightly jobs are excluded; pass --exclude-stage '' to "
              "include them for consideration.",
-        default=["performance", ".*-postmerge"],
+        default=["performance", ".*-postmerge", ".*-nightly"],
         nargs=argparse.ONE_OR_MORE,
     )
     parser.add_argument(

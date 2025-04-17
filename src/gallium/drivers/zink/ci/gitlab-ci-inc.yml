@@ -41,7 +41,7 @@
     - !reference [.zink-common-rules, rules]
 
 .zink-venus-lvp-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -57,7 +57,7 @@
     - !reference [.zink-common-rules, rules]
 
 .zink-anv-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -80,7 +80,7 @@
     - !reference [.zink-common-rules, rules]
 
 .zink-nvk-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -97,7 +97,7 @@
     ZINK_DEBUG: optimal_keys
 
 .zink-turnip-collabora-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -105,7 +105,7 @@
     - !reference [.zink-common-manual-rules, rules]
 
 .zink-turnip-valve-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -120,7 +120,7 @@
     - !reference [.zink-common-rules, rules]
 
 .zink-radv-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]

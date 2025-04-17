@@ -169,23 +169,23 @@ stages:
   - build-only
   - code-validation
   - amd
-  - amd-postmerge
+  - amd-nightly
   - intel
-  - intel-postmerge
+  - intel-nightly
   - nouveau
-  - nouveau-postmerge
+  - nouveau-nightly
   - arm
-  - arm-postmerge
+  - arm-nightly
   - broadcom
-  - broadcom-postmerge
+  - broadcom-nightly
   - freedreno
-  - freedreno-postmerge
+  - freedreno-nightly
   - etnaviv
-  - etnaviv-postmerge
+  - etnaviv-nightly
   - software-renderer
-  - software-renderer-postmerge
+  - software-renderer-nightly
   - layered-backends
-  - layered-backends-postmerge
+  - layered-backends-nightly
   - performance
   - deploy
 

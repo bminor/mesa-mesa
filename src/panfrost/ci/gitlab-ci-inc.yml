@@ -28,7 +28,7 @@
       when: on_success
 
 .panfrost-midgard-manual-rules:
-  stage: arm-postmerge
+  stage: arm-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -59,7 +59,7 @@
       when: on_success
 
 .panfrost-bifrost-gl-manual-rules:
-  stage: arm-postmerge
+  stage: arm-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -92,7 +92,7 @@
       when: on_success
 
 .panfrost-vk-manual-rules:
-  stage: arm-postmerge
+  stage: arm-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
@@ -125,7 +125,7 @@
       when: on_success
 
 .panfrost-valhall-gl-manual-rules:
-  stage: arm-postmerge
+  stage: arm-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]

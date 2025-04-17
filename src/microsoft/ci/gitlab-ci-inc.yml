@@ -73,7 +73,7 @@
       when: on_success
 
 .dozen-manual-rules:
-  stage: layered-backends-postmerge
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]

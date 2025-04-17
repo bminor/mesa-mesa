@@ -34,7 +34,7 @@ lavapipe-vk-asan:
     - debian-testing-asan
 
 lavapipe-vkd3d:
-  stage: software-renderer-postmerge
+  stage: software-renderer-nightly
   extends:
     - .lavapipe-test
     - .lavapipe-manual-rules
