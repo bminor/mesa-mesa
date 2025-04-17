@@ -66,7 +66,7 @@ void si_init_cp_reg_shadowing(struct si_context *sctx)
                                    RADEON_USAGE_READWRITE | RADEON_PRIO_DESCRIPTORS);
       si_pm4_emit_commands(sctx, shadowing_preamble);
 
-      if (sctx->gfx_level < GFX12) {
+      if (sctx->gfx_level < GFX11) {
          struct ac_pm4_state *clear_state = ac_emulate_clear_state(&sctx->screen->info);
          si_pm4_emit_commands(sctx, clear_state);
          ac_pm4_free_state(clear_state);

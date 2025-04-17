@@ -122,7 +122,7 @@ radv_init_shadowed_regs_buffer_state(const struct radv_device *device, struct ra
 
    radv_emit_shadow_regs_preamble(cs, device, &queue->state);
 
-   if (pdev->info.gfx_level < GFX12) {
+   if (pdev->info.gfx_level < GFX11) {
       struct ac_pm4_state *pm4 = ac_emulate_clear_state(gpu_info);
       if (!pm4) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
