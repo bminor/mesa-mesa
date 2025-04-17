@@ -441,7 +441,7 @@ if args.piglit:
         "--skips",
         skips_list,
         "--skips",
-        os.path.join(path_above_mesa, "mesa", ".gitlab-ci", "gbm-skips.txt")
+        os.path.join(path_above_mesa, "mesa", ".gitlab-ci", "all-skips.txt")
     ] + filters_args + flakes_args
 
     if os.path.exists(baseline):
