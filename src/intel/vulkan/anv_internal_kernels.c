@@ -144,11 +144,12 @@ compile_shader(struct anv_device *device,
 
    nir->num_uniforms = uniform_size;
 
+   void *temp_ctx = ralloc_context(NULL);
+
    prog_data.base.nr_params = nir->num_uniforms / 4;
+   prog_data.base.param = rzalloc_array(temp_ctx, uint32_t, prog_data.base.nr_params);
 
    brw_nir_analyze_ubo_ranges(compiler, nir, prog_data.base.ubo_ranges);
-
-   void *temp_ctx = ralloc_context(NULL);
 
    const unsigned *program;
    if (stage == MESA_SHADER_FRAGMENT) {
