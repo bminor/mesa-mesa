@@ -105,8 +105,14 @@ for T, sizes, one in [('f', [16, 32], 1.0),
 # This needs to be a separate pass that runs after lower_selects, in order to
 # pick up patterns like b2f32(iand(...))
 opt_selects = [
+        (('bcsel', ('ior(is_used_once)', ('inot', a), b), c, d),
+         ('bcsel', a, ('bcsel', b, c, d), c)),
+
         (('bcsel', ('ior(is_used_once)', a, b), c, d),
          ('bcsel', a, c, ('bcsel', b, c, d))),
+
+        (('bcsel', ('iand(is_used_once)', ('inot', a), b), c, d),
+         ('bcsel', a, d, ('bcsel', b, c, d))),
 
         (('bcsel', ('iand(is_used_once)', a, b), c, d),
          ('bcsel', a, ('bcsel', b, c, d), d)),
