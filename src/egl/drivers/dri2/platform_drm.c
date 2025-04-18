@@ -632,10 +632,7 @@ dri2_initialize_drm(_EGLDisplay *disp)
 
    dri2_dpy->driver_name = strdup(dri2_dpy->gbm_dri->driver_name);
 
-   if (!dri2_load_driver(disp)) {
-      err = "DRI3: failed to load driver";
-      goto cleanup;
-   }
+   dri2_detect_swrast(disp);
 
    dri2_dpy->dri_screen_render_gpu = dri2_dpy->gbm_dri->screen;
    dri2_dpy->driver_configs = dri2_dpy->gbm_dri->driver_configs;

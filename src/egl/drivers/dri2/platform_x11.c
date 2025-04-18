@@ -1907,8 +1907,7 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
    if (!dri2_x11_connect(dri2_dpy))
       goto cleanup;
 
-   if (!dri2_load_driver(disp))
-      goto cleanup;
+   dri2_detect_swrast(disp);
 
    if (dri2_dpy->dri2_minor >= 1)
       dri2_dpy->loader_extensions = dri2_loader_extensions;
@@ -2000,8 +1999,7 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
       }
    }
 #endif
-   if (!dri2_load_driver(disp))
-      return EGL_FALSE;
+   dri2_detect_swrast(disp);
 
    if (disp->Options.ForceSoftware || dri2_dpy->kopper)
       return dri2_initialize_x11_swrast(disp);

@@ -1045,9 +1045,7 @@ droid_load_driver(_EGLDisplay *disp, bool swrast)
    }
 
    dri2_dpy->loader_extensions = droid_image_loader_extensions;
-   if (!dri2_load_driver(disp)) {
-      goto error;
-   }
+   dri2_detect_swrast(disp);
 
    return true;
 
@@ -1201,10 +1199,7 @@ dri2_initialize_android(_EGLDisplay *disp)
       dri2_dpy->loader_extensions = droid_swrast_image_loader_extensions;
       dri2_dpy->fd_render_gpu = -1;
       dri2_dpy->pure_swrast = true;
-      if(!dri2_load_driver(disp)) {
-         err = "DRI2: Failed to load swrast";
-         goto cleanup;
-      }
+      dri2_detect_swrast(disp);
 
       if (!dri2_create_screen(disp)) {
          err = "DRI2: Failed to create swrast screen";
