@@ -250,9 +250,31 @@ surfaceless_probe_device(_EGLDisplay *disp, bool swrast, bool zink)
       if (dri2_dpy->fd_render_gpu < 0)
          goto next;
 
-      disp->Device = dev_list;
+#ifdef HAVE_WAYLAND_PLATFORM
+      loader_get_user_preferred_fd(&dri2_dpy->fd_render_gpu,
+                                   &dri2_dpy->fd_display_gpu);
 
+      if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu) {
+         free(dri2_dpy->device_name);
+         dri2_dpy->device_name =
+            loader_get_device_name_for_fd(dri2_dpy->fd_render_gpu);
+         if (!dri2_dpy->device_name) {
+            _eglError(EGL_BAD_ALLOC, "surfaceless-egl: failed to get device name "
+                                     "for requested GPU");
+            goto retry;
+         }
+      }
+
+      /* we have to do the check now, because loader_get_user_preferred_fd
+       * will return a render-node when the requested gpu is different
+       * to the server, but also if the client asks for the same gpu than
+       * the server by requesting its pci-id */
+      dri2_dpy->is_render_node =
+         drmGetNodeTypeFromFd(dri2_dpy->fd_render_gpu) == DRM_NODE_RENDER;
+#endif
       char *driver_name = loader_get_driver_for_fd(dri2_dpy->fd_render_gpu);
+
+      disp->Device = dev_list;
       if (swrast) {
          /* Use kms swrast only with vgem / virtio_gpu.
           * virtio-gpu fallbacks to software rendering when 3D features
@@ -274,8 +296,6 @@ surfaceless_probe_device(_EGLDisplay *disp, bool swrast, bool zink)
             dri2_dpy->loader_extensions = swrast_loader_extensions;
          else
             dri2_dpy->loader_extensions = image_loader_extensions;
-
-         dri2_dpy->fd_display_gpu = dri2_dpy->fd_render_gpu;
 
          if (!dri2_create_screen(disp)) {
             _eglLog(_EGL_WARNING, "DRI2: failed to create screen");
@@ -305,6 +325,9 @@ surfaceless_probe_device(_EGLDisplay *disp, bool swrast, bool zink)
    retry:
       free(dri2_dpy->driver_name);
       dri2_dpy->driver_name = NULL;
+      if (dri2_dpy->fd_display_gpu != dri2_dpy->fd_render_gpu)
+         close(dri2_dpy->fd_display_gpu);
+      dri2_dpy->fd_display_gpu = -1;
       close(dri2_dpy->fd_render_gpu);
       dri2_dpy->fd_render_gpu = -1;
 
