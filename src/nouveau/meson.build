@@ -5,6 +5,7 @@ subdir('drm')
 subdir('headers')
 subdir('winsys')
 if with_nouveau_vk
+  subdir('rust')
   subdir('compiler')
 endif
 if with_tools.contains('drm-shim')
