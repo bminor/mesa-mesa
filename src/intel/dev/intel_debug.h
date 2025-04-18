@@ -42,73 +42,76 @@ extern "C" {
 
 extern uint64_t intel_debug;
 
-/* Returns 0/1, not the matching bit mask. */
-#define INTEL_DEBUG(flags)        unlikely(intel_debug & (flags))
+/* Check if a debug flag is enabled by testing its bit position */
+#define INTEL_DEBUG(flag) unlikely(intel_debug & (1ull << (flag)))
 
-#define DEBUG_TEXTURE             (1ull <<  0)
-#define DEBUG_BLIT                (1ull <<  1)
-#define DEBUG_PERF                (1ull <<  2)
-#define DEBUG_PERFMON             (1ull <<  3)
-#define DEBUG_BATCH               (1ull <<  4)
-#define DEBUG_BUFMGR              (1ull <<  5)
-#define DEBUG_GS                  (1ull <<  6)
-#define DEBUG_SYNC                (1ull <<  7)
-#define DEBUG_SF                  (1ull <<  8)
-#define DEBUG_SUBMIT              (1ull <<  9)
-#define DEBUG_WM                  (1ull << 10)
-#define DEBUG_URB                 (1ull << 11)
-#define DEBUG_VS                  (1ull << 12)
-#define DEBUG_CLIP                (1ull << 13)
-#define DEBUG_STALL               (1ull << 14)
-#define DEBUG_BLORP               (1ull << 15)
-/* reserved                       (1ull << 16) */
-#define DEBUG_NO_DUAL_OBJECT_GS   (1ull << 17)
-#define DEBUG_OPTIMIZER           (1ull << 18)
-#define DEBUG_ANNOTATION          (1ull << 19)
-/* reserved                       (1ull << 20) */
-#define DEBUG_NO_OACONFIG         (1ull << 21)
-#define DEBUG_SPILL_FS            (1ull << 22)
-#define DEBUG_SPILL_VEC4          (1ull << 23)
-#define DEBUG_CS                  (1ull << 24)
-#define DEBUG_HEX                 (1ull << 25)
-#define DEBUG_NO_COMPACTION       (1ull << 26)
-#define DEBUG_TCS                 (1ull << 27)
-#define DEBUG_TES                 (1ull << 28)
-#define DEBUG_L3                  (1ull << 29)
-#define DEBUG_DO32                (1ull << 30)
-#define DEBUG_NO_CCS              (1ull << 31)
-#define DEBUG_NO_HIZ              (1ull << 32)
-#define DEBUG_COLOR               (1ull << 33)
-#define DEBUG_REEMIT              (1ull << 34)
-#define DEBUG_SOFT64              (1ull << 35)
-#define DEBUG_BT                  (1ull << 36)
-#define DEBUG_PIPE_CONTROL        (1ull << 37)
-#define DEBUG_NO_FAST_CLEAR       (1ull << 38)
-/* reserved                       (1ull << 39) */
-#define DEBUG_RT                  (1ull << 40)
-#define DEBUG_TASK                (1ull << 41)
-#define DEBUG_MESH                (1ull << 42)
-#define DEBUG_CAPTURE_ALL         (1ull << 43)
-#define DEBUG_PERF_SYMBOL_NAMES   (1ull << 44)
-#define DEBUG_SWSB_STALL          (1ull << 45)
-#define DEBUG_HEAPS               (1ull << 46)
-#define DEBUG_ISL                 (1ull << 47)
-#define DEBUG_SPARSE              (1ull << 48)
-#define DEBUG_DRAW_BKP            (1ull << 49)
-#define DEBUG_BATCH_STATS         (1ull << 50)
-#define DEBUG_REG_PRESSURE        (1ull << 51)
-#define DEBUG_SHADER_PRINT        (1ull << 52)
-#define DEBUG_CL_QUIET            (1ull << 53)
-#define DEBUG_BVH_BLAS            (1ull << 54)
-#define DEBUG_BVH_TLAS            (1ull << 55)
-#define DEBUG_BVH_BLAS_IR_HDR     (1ull << 56)
-#define DEBUG_BVH_TLAS_IR_HDR     (1ull << 57)
-#define DEBUG_BVH_BLAS_IR_AS      (1ull << 58)
-#define DEBUG_BVH_TLAS_IR_AS      (1ull << 59)
-#define DEBUG_BVH_NO_BUILD        (1ull << 60)
-#define DEBUG_NO_SEND_GATHER      (1ull << 61)
-#define DEBUG_RT_NO_TRACE         (1ull << 62)
-#define DEBUG_SHADERS_LINENO      (1ull << 63)
+enum intel_debug_flag {
+   DEBUG_TEXTURE = 0,
+   DEBUG_BLIT,
+   DEBUG_PERF,
+   DEBUG_PERFMON,
+   DEBUG_BATCH,
+   DEBUG_BUFMGR,
+   DEBUG_GS,
+   DEBUG_SYNC,
+   DEBUG_SF,
+   DEBUG_SUBMIT,
+   DEBUG_WM,
+   DEBUG_URB,
+   DEBUG_VS,
+   DEBUG_CLIP,
+   DEBUG_STALL,
+   DEBUG_BLORP,
+   /* 16 is reserved */
+   DEBUG_NO_DUAL_OBJECT_GS = 17,
+   DEBUG_OPTIMIZER,
+   DEBUG_ANNOTATION,
+   /* 20 is reserved */
+   DEBUG_NO_OACONFIG = 21,
+   DEBUG_SPILL_FS,
+   DEBUG_SPILL_VEC4,
+   DEBUG_CS,
+   DEBUG_HEX,
+   DEBUG_NO_COMPACTION,
+   DEBUG_TCS,
+   DEBUG_TES,
+   DEBUG_L3,
+   DEBUG_DO32,
+   DEBUG_NO_CCS,
+   DEBUG_NO_HIZ,
+   DEBUG_COLOR,
+   DEBUG_REEMIT,
+   DEBUG_SOFT64,
+   DEBUG_BT,
+   DEBUG_PIPE_CONTROL,
+   DEBUG_NO_FAST_CLEAR,
+   /* 39 is reserved */
+   DEBUG_RT = 40,
+   DEBUG_TASK,
+   DEBUG_MESH,
+   DEBUG_CAPTURE_ALL,
+   DEBUG_PERF_SYMBOL_NAMES,
+   DEBUG_SWSB_STALL,
+   DEBUG_HEAPS,
+   DEBUG_ISL,
+   DEBUG_SPARSE,
+   DEBUG_DRAW_BKP,
+   DEBUG_BATCH_STATS,
+   DEBUG_REG_PRESSURE,
+   DEBUG_SHADER_PRINT,
+   DEBUG_CL_QUIET,
+   DEBUG_BVH_BLAS,
+   DEBUG_BVH_TLAS,
+   DEBUG_BVH_BLAS_IR_HDR,
+   DEBUG_BVH_TLAS_IR_HDR,
+   DEBUG_BVH_BLAS_IR_AS,
+   DEBUG_BVH_TLAS_IR_AS,
+   DEBUG_BVH_NO_BUILD,
+   DEBUG_NO_SEND_GATHER,
+   DEBUG_RT_NO_TRACE,
+   DEBUG_SHADERS_LINENO,
+};
+
 
 #define DEBUG_ANY                 (~0ull)
 
