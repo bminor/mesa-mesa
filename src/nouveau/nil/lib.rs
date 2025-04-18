@@ -9,6 +9,7 @@ mod extent;
 mod format;
 mod image;
 mod modifiers;
+mod su_info;
 mod tic;
 mod tiling;
 

@@ -8,7 +8,7 @@ use crate::tiling::Tiling;
 use crate::Minify;
 
 use nil_rs_bindings::*;
-use nvidia_headers::classes::{cl9097, clc597};
+use nvidia_headers::classes::{cl9097, cla097, clb197, clc597};
 
 use std::panic;
 
@@ -225,7 +225,7 @@ impl Image {
     }
 
     fn new_linear(
-        _dev: &nil_rs_bindings::nv_device_info,
+        dev: &nil_rs_bindings::nv_device_info,
         info: &ImageInitInfo,
     ) -> Self {
         // Linear images need to be 2D
@@ -238,7 +238,7 @@ impl Image {
         assert!(info.samples == 1);
         let sample_layout = SampleLayout::_1x1;
 
-        let align_B = if info.explicit_row_stride_B > 0 {
+        let mut align_B = if info.explicit_row_stride_B > 0 {
             // If we're importing an image, allow smaller stride and offset
             // alignments.  The texture headers can handle as low as 32B-aligned
             // and NVK has workarounds for rendering if needed.
@@ -250,6 +250,13 @@ impl Image {
             // render to the image without workarounds.
             128
         };
+
+        // Kepler image storage needs 256B-aligned addresses.
+        if dev.cls_eng3d >= cla097::KEPLER_A
+            && dev.cls_eng3d < clb197::MAXWELL_B
+        {
+            align_B = align_B.max(256);
+        }
 
         let extent_B = info.extent_px.to_B(info.format, sample_layout);
         let row_stride_B = if info.explicit_row_stride_B > 0 {

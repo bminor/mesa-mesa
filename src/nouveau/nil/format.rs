@@ -101,13 +101,11 @@ impl Format {
     }
 
     pub fn supports_storage(&self, dev: &nv_device_info) -> bool {
-        if (self.p_format == PIPE_FORMAT_R64_UINT
-            || self.p_format == PIPE_FORMAT_R64_SINT)
-            && dev.cls_eng3d < clb097::MAXWELL_A
-        {
-            return false;
+        if dev.cls_eng3d >= clb097::MAXWELL_A {
+            self.info().support() & NIL_FORMAT_SUPPORTS_STORAGE_BIT != 0
+        } else {
+            self.supports_kepler_storage()
         }
-        self.info().support() & NIL_FORMAT_SUPPORTS_STORAGE_BIT != 0
     }
 
     pub fn supports_color_targets(&self, _dev: &nv_device_info) -> bool {
