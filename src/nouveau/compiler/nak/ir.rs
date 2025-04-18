@@ -2869,6 +2869,80 @@ impl DisplayOp for OpFSwzAdd {
 }
 impl_display_for_op!(OpFSwzAdd);
 
+/// Describes where the second src is taken before doing the ops
+#[allow(dead_code)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum FSwzShuffle {
+    Quad0,
+    Quad1,
+    Quad2,
+    Quad3,
+    // swap [0, 1] and [2, 3]
+    SwapHorizontal,
+    // swap [0, 2] and [1, 3]
+    SwapVertical,
+}
+
+impl fmt::Display for FSwzShuffle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FSwzShuffle::Quad0 => write!(f, ".0000"),
+            FSwzShuffle::Quad1 => write!(f, ".1111"),
+            FSwzShuffle::Quad2 => write!(f, ".2222"),
+            FSwzShuffle::Quad3 => write!(f, ".3333"),
+            FSwzShuffle::SwapHorizontal => write!(f, ".1032"),
+            FSwzShuffle::SwapVertical => write!(f, ".2301"),
+        }
+    }
+}
+
+/// Op only present in Kepler and older
+/// It first does a shuffle on the second src and then applies
+/// src0 op src1, each thread on a quad might do a different operation.
+///
+/// This is used to encode ddx/ddy
+/// ex: ddx
+///   src1 = shuffle swap horizontal src1
+///   ops = [sub, subr, sub, subr]
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpFSwz {
+    #[dst_type(F32)]
+    pub dst: Dst,
+
+    #[src_type(GPR)]
+    pub srcs: [Src; 2],
+
+    pub rnd_mode: FRndMode,
+    pub ftz: bool,
+    pub shuffle: FSwzShuffle,
+
+    pub ops: [FSwzAddOp; 4],
+}
+
+impl DisplayOp for OpFSwz {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fswz{}", self.shuffle)?;
+        if self.rnd_mode != FRndMode::NearestEven {
+            write!(f, "{}", self.rnd_mode)?;
+        }
+        if self.ftz {
+            write!(f, ".ftz")?;
+        }
+        write!(
+            f,
+            " {} {} [{}, {}, {}, {}]",
+            self.srcs[0],
+            self.srcs[1],
+            self.ops[0],
+            self.ops[1],
+            self.ops[2],
+            self.ops[3],
+        )
+    }
+}
+impl_display_for_op!(OpFSwz);
+
 pub enum RroOp {
     SinCos,
     Exp2,
@@ -6472,6 +6546,7 @@ pub enum Op {
     FSet(OpFSet),
     FSetP(OpFSetP),
     FSwzAdd(OpFSwzAdd),
+    FSwz(OpFSwz),
     DAdd(OpDAdd),
     DFma(OpDFma),
     DMnMx(OpDMnMx),
@@ -6621,6 +6696,7 @@ impl Op {
             | Op::HSet2(_)
             | Op::HSetP2(_)
             | Op::HMnMx2(_)
+            | Op::FSwz(_)
             | Op::FSwzAdd(_) => true,
 
             // Multi-function unit is variable latency

@@ -96,6 +96,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::HSet2(_)
         | Op::HSetP2(_)
         | Op::HMnMx2(_)
+        | Op::FSwz(_)
         | Op::FSwzAdd(_) => SideEffect::None,
 
         // Multi-function unit
