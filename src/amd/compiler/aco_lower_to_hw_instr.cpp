@@ -1595,6 +1595,40 @@ do_pack_2x16(lower_context* ctx, Builder& bld, Definition def, Operand lo, Opera
       return;
    }
 
+   if (ctx->program->gfx_level >= GFX10 && !lo.constantEquals(0) && !hi.constantEquals(0)) {
+      uint8_t swiz[4];
+      Operand ops[2] = {lo, hi};
+      for (unsigned i = 0; i < 2; i++) {
+         ops[i] =
+            ops[i].isConstant() ? Operand::c32((int32_t)(int16_t)ops[i].constantValue()) : ops[i];
+
+         swiz[i * 2 + 0] = i * 4 + ops[i].physReg().byte();
+         swiz[i * 2 + 1] = i * 4 + ops[i].physReg().byte() + 1;
+
+         if (ops[i].isLiteral()) {
+            Operand b0 = Operand::c32((int32_t)(int8_t)ops[i].constantValue());
+            Operand b1 = Operand::c32((int32_t)(int8_t)(ops[i].constantValue() >> 8));
+            if (!b0.isLiteral() &&
+                (b1.constantValue() == 0x00 || b1.constantValue() == 0xffffffff)) {
+               ops[i] = b0;
+               swiz[i * 2 + 1] = b1.constantValue() ? 13 : 12;
+            } else if (!b1.isLiteral() &&
+                       (b0.constantValue() == 0x00 || b0.constantValue() == 0xffffffff)) {
+               ops[i] = b1;
+               swiz[i * 2 + 0] = b0.constantValue() ? 13 : 12;
+               swiz[i * 2 + 1]--;
+            } else if (b0.constantValue() == b1.constantValue()) {
+               ops[i] = b0;
+               swiz[i * 2 + 1]--;
+            }
+         }
+      }
+      if (!ops[0].isLiteral() && !ops[1].isLiteral()) {
+         create_bperm(bld, swiz, def, ops[0], ops[1]);
+         return;
+      }
+   }
+
    Definition def_lo = Definition(def.physReg(), v2b);
    Definition def_hi = Definition(def.physReg().advance(2), v2b);
 
