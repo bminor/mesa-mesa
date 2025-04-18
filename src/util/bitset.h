@@ -276,11 +276,10 @@ static inline unsigned
 __bitset_extract(const BITSET_WORD *r, unsigned start, unsigned count)
 {
    unsigned shift = start % BITSET_WORDBITS;
-   unsigned lower = r[BITSET_BITWORD(start)] >> shift;
-   unsigned upper = shift ? r[BITSET_BITWORD(start) + 1] << (32 - shift) : 0;
-   unsigned total = lower | upper;
-
-   return count != 32 ? total & ((1u << count) - 1u) : total;
+   BITSET_WORD lower = r[BITSET_BITWORD(start)] >> shift;
+   BITSET_WORD upper = shift ? r[BITSET_BITWORD(start + count - 1)] << (BITSET_WORDBITS - shift) : 0;
+   BITSET_WORD total = lower | upper;
+   return count != BITSET_WORDBITS ? total & ((1u << count) - 1u) : total;
 }
 
 #define BITSET_EXTRACT(x, s, c) \
