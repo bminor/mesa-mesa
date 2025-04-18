@@ -418,6 +418,24 @@ brw_opt_cse_defs(brw_shader &s)
             last_flag_write = last;
          last = inst;
 
+         /* Discard jumps aren't represented in the CFG unfortunately, so we need
+          * to make sure that they behave as a CSE barrier, since we lack global
+          * dataflow information.  This is particularly likely to cause problems
+          * with instructions dependent on the current execution mask like
+          * SHADER_OPCODE_FIND_LIVE_CHANNEL.
+          */
+         if (inst->opcode == BRW_OPCODE_HALT ||
+             inst->opcode == SHADER_OPCODE_HALT_TARGET) {
+            /* Treat each side of the HALT separately for local_only
+             * expressions as it's altering the channel enables.
+             */
+            set_foreach(set, e) {
+               brw_inst *match = (brw_inst *) e->key;
+               if (match->block == block && local_only(match))
+                  _mesa_set_remove(set, e);
+            }
+         }
+
          if (inst->dst.is_null()) {
             bool ignored;
             if (last_flag_write && !inst->writes_accumulator &&
