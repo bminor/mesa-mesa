@@ -907,6 +907,12 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_vild_nv:
    case nir_intrinsic_al2p_nv:
    case nir_intrinsic_ald_nv:
+   case nir_intrinsic_suclamp_nv:
+   case nir_intrinsic_subfm_nv:
+   case nir_intrinsic_sueau_nv:
+   case nir_intrinsic_imadsp_nv:
+   case nir_intrinsic_suldga_nv:
+   case nir_intrinsic_sustga_nv:
    case nir_intrinsic_ipa_nv:
    case nir_intrinsic_ldtram_nv:
    case nir_intrinsic_printf:
