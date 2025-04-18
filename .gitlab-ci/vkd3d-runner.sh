@@ -89,7 +89,7 @@ fi
 printf "%s\n" "Running vkd3d-proton testsuite..."
 
 LOGFILE="$RESULTS_DIR/vkd3d-proton-log.txt"
-TEST_LOGS="$RESULTS_DIR/test-logs"
+TEST_LOGS="/test-logs"
 (cd /vkd3d-proton-tests && tests/test-runner.sh ./d3d12 --jobs "${FDO_CI_CONCURRENT:-4}" --output-dir "$TEST_LOGS" | tee "$LOGFILE")
 
 printf '\n\n'
