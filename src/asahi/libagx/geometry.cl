@@ -771,7 +771,7 @@ libagx_prefix_sum_tess(global struct libagx_tess_args *p, global uint *c_prims,
       return;
 
    /* The last element of an inclusive prefix sum is the total sum */
-   uint total = p->counts[p->nr_patches - 1];
+   uint total = p->nr_patches > 0 ? p->counts[p->nr_patches - 1] : 0;
 
    /* Allocate 4-byte indices */
    uint32_t elsize_B = sizeof(uint32_t);
