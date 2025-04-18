@@ -118,7 +118,7 @@ fi
 
 # Save test output for failed tests (before excluding flakes)
 for failed_test in "${fails[@]}"; do
-  cp "$TEST_LOGS/$failed_test.log" "$RESULTS/$failed_test.log"
+  cp "$TEST_LOGS/$failed_test.log" "$RESULTS_DIR/$failed_test.log"
 done
 
 # Ignore flakes when comparing
@@ -128,11 +128,11 @@ for flake in "${flakes[@]}"; do
   done
 done
 
-RESULTSFILE="$RESULTS/$GPU_VERSION.txt"
+RESULTSFILE="$RESULTS_DIR/$GPU_VERSION.txt"
 for failed_test in "${fails[@]}"; do
-  if ! grep -qE "$failed_test end" "$RESULTS/$failed_test.log"; then
+  if ! grep -qE "$failed_test end" "$RESULTS_DIR/$failed_test.log"; then
     test_status=Crash
-  elif grep -qE "Test failed:" "$RESULTS/$failed_test.log"; then
+  elif grep -qE "Test failed:" "$RESULTS_DIR/$failed_test.log"; then
     test_status=Fail
   else
     test_status=Unknown
@@ -146,7 +146,7 @@ for expected_fail_line in "${expected_fail_lines[@]}"; do
   test_name=$(cut -d, -f1 <<< "$expected_fail_line")
   if [ ! -f "$TEST_LOGS/$test_name.log" ]; then
     test_status='UnexpectedImprovement(Skip)'
-  elif [ ! -f "$RESULTS/$test_name.log" ]; then
+  elif [ ! -f "$RESULTS_DIR/$test_name.log" ]; then
     test_status='UnexpectedImprovement(Pass)'
   else
     continue
