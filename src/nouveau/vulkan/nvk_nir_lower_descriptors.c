@@ -1111,6 +1111,21 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
 }
 
 static bool
+lower_load_image_info(nir_builder *b, nir_intrinsic_instr *load,
+                      const struct lower_descriptors_ctx *ctx)
+{
+   b->cursor = nir_before_instr(&load->instr);
+   nir_deref_instr *deref = nir_src_as_deref(load->src[0]);
+   unsigned offset = nir_intrinsic_base(load);
+   assert(load->def.bit_size == 32);
+   nir_def *desc = load_resource_deref_desc(b, load->num_components, 32,
+                                            deref, offset, ctx);
+   nir_def_rewrite_uses(&load->def, desc);
+
+   return true;
+}
+
+static bool
 lower_interp_at_sample(nir_builder *b, nir_intrinsic_instr *interp,
                        const struct lower_descriptors_ctx *ctx)
 {
@@ -1186,6 +1201,9 @@ try_lower_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_image_deref_size:
    case nir_intrinsic_image_deref_samples:
       return lower_image_intrin(b, intrin, ctx);
+
+   case nir_intrinsic_image_deref_load_info_nv:
+      return lower_load_image_info(b, intrin, ctx);
 
    case nir_intrinsic_interp_deref_at_sample:
       return lower_interp_at_sample(b, intrin, ctx);
