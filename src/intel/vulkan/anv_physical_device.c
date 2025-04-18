@@ -147,6 +147,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_create_renderpass2                = true,
       .KHR_dedicated_allocation              = true,
       .KHR_deferred_host_operations          = true,
+      .KHR_depth_clamp_zero_one              = true,
       .KHR_depth_stencil_resolve             = true,
       .KHR_descriptor_update_template        = true,
       .KHR_device_group                      = true,
@@ -580,7 +581,7 @@ get_features(const struct anv_physical_device *pdevice,
       .customBorderColorWithoutFormat =
          pdevice->instance->custom_border_colors_without_format,
 
-      /* VK_EXT_depth_clamp_zero_one */
+      /* VK_KHR_depth_clamp_zero_one */
       .depthClampZeroOne = true,
 
       /* VK_EXT_depth_clip_enable */
