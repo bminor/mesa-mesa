@@ -3,7 +3,7 @@
 
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
-set -eu
+set -eu -o pipefail
 
 comma_separated() {
   local IFS=,
@@ -51,7 +51,10 @@ fi
 # Gather the list expected failures
 EXPECTATIONFILE="$RESULTS_DIR/$GPU_VERSION-vkd3d-fails.txt"
 if [ -f "$INSTALL/$GPU_VERSION-vkd3d-fails.txt" ]; then
-    grep -vE '^(#|$)' "$INSTALL/$GPU_VERSION-vkd3d-fails.txt" | sort > "$EXPECTATIONFILE"
+    # Ignore the grep "failure" if the file exists but contains only comments
+    # or empty lines; the expectation file used will be empty in this case,
+    # which is not a problem.
+    grep -vE '^(#|$)' "$INSTALL/$GPU_VERSION-vkd3d-fails.txt" | sort > "$EXPECTATIONFILE" || true
 else
     printf "%s\n" "$GPU_VERSION-vkd3d-fails.txt not found, assuming a \"no failures\" baseline."
     touch "$EXPECTATIONFILE"
@@ -90,7 +93,9 @@ printf "%s\n" "Running vkd3d-proton testsuite..."
 
 LOGFILE="$RESULTS_DIR/vkd3d-proton-log.txt"
 TEST_LOGS="/test-logs"
-(cd /vkd3d-proton-tests && tests/test-runner.sh ./d3d12 --jobs "${FDO_CI_CONCURRENT:-4}" --output-dir "$TEST_LOGS" | tee "$LOGFILE")
+pushd /vkd3d-proton-tests
+tests/test-runner.sh ./d3d12 --jobs "${FDO_CI_CONCURRENT:-4}" --output-dir "$TEST_LOGS" | tee "$LOGFILE" || true
+popd
 
 printf '\n\n'
 
@@ -108,8 +113,8 @@ if [ ${#flakes_seen[@]} -gt 0 ]; then
   printf >&2 '  %s\n' "${flakes_seen[@]}"
 fi
 
-# Collect all the failures
-fails_lines=$(grep -oE "^FAILED .+$" "$LOGFILE" | cut -d' ' -f2 | sort)
+# Collect all the failures; ignore grep "failure" if there are none
+fails_lines=$(grep -oE "^FAILED .+$" "$LOGFILE" | cut -d' ' -f2 | sort) || true
 if [ -n "$fails_lines" ]; then
   mapfile -t fails < <(echo "$fails_lines")
 else
