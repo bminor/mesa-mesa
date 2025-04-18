@@ -5324,7 +5324,7 @@
         "description": "util: Fix `BITSET_EXTRACT` out-of-bounds read",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0cc9443e9b5419f927a3f81d4ed9b7e9c1829907",
         "notes": null
