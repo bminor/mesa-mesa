@@ -109,7 +109,12 @@ if [ ${#flakes_seen[@]} -gt 0 ]; then
 fi
 
 # Collect all the failures
-mapfile -t fails < <(grep -oE "^FAILED .+$" "$LOGFILE" | cut -d' ' -f2 | sort)
+fails_lines=$(grep -oE "^FAILED .+$" "$LOGFILE" | cut -d' ' -f2 | sort)
+if [ -n "$fails_lines" ]; then
+  mapfile -t fails < <(echo "$fails_lines")
+else
+  fails=()
+fi
 
 # Save test output for failed tests (before excluding flakes)
 for failed_test in "${fails[@]}"; do
