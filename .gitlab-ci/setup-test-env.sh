@@ -285,25 +285,6 @@ export -f get_tag_file
 
 # Structured tagging ------
 
-s3_upload() {
-    x_off
-    local file=$1 s3_folder_url=$2
-    if [ ! -f "$file" ] || [[ "$s3_folder_url" != https://*/ ]]
-    then
-      echo "Error: s3_upload incorrect usage."
-      echo "Usage: s3_upload <file> <s3_folder_url>"
-      echo "  - <file> must exist."
-      echo "  - <s3_folder_url> must start with 'https://' and end with '/'."
-      exit 1
-    fi
-    curl --fail --retry-all-errors --retry 4 --retry-delay 60 \
-      --header "Authorization: Bearer $(cat "${S3_JWT_FILE}")" \
-      -X PUT --form file=@"$file" \
-      "$s3_folder_url"
-    x_restore
-}
-export -f s3_upload
-
 export -f error
 export -f trap_err
 

@@ -25,10 +25,11 @@ if [ "${SKIP_UPDATE_FLUSTER_VECTORS}" != 1 ]; then
 
     # Build fluster vectors archive and upload it
     tar --zstd -cf "vectors.tar.zst" fluster/resources/
-    s3_upload vectors.tar.zst "https://${S3_PATH_FLUSTER}/"
+    ci-fairy s3cp --token-file "${S3_JWT_FILE}" "vectors.tar.zst" \
+          "https://${S3_PATH_FLUSTER}/vectors.tar.zst"
 
     touch /lava-files/done
-    s3_upload /lava-files/done "https://${S3_PATH_FLUSTER}/"
+    ci-fairy s3cp --token-file "${S3_JWT_FILE}" /lava-files/done "https://${S3_PATH_FLUSTER}/done"
 
     # Don't include the vectors in the rootfs
     rm -fr fluster/resources/*
