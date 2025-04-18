@@ -272,7 +272,7 @@ TEST_F(SIMDSelectionCS, SpillAtSIMD16)
 
 TEST_F(SIMDSelectionCS, EnvironmentVariable32)
 {
-   intel_debug |= DEBUG_DO32;
+   BITSET_SET(intel_debug, DEBUG_DO32);
 
    ASSERT_TRUE(elk_simd_should_compile(simd_state, SIMD8));
    elk_simd_mark_compiled(simd_state, SIMD8, not_spilled);
@@ -286,7 +286,7 @@ TEST_F(SIMDSelectionCS, EnvironmentVariable32)
 
 TEST_F(SIMDSelectionCS, EnvironmentVariable32ButSpills)
 {
-   intel_debug |= DEBUG_DO32;
+   BITSET_SET(intel_debug, DEBUG_DO32);
 
    ASSERT_TRUE(elk_simd_should_compile(simd_state, SIMD8));
    elk_simd_mark_compiled(simd_state, SIMD8, not_spilled);

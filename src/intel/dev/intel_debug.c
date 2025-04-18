@@ -39,7 +39,7 @@
 #include "util/u_math.h"
 #include "c11/threads.h"
 
-uint64_t intel_debug = 0;
+BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_BIT_COUNT)] = {0};
 
 enum intel_no_x {
    DEBUG_NO16 = 16,
@@ -47,85 +47,80 @@ enum intel_no_x {
    DEBUG_NO32 = 39,
 };
 
-#define DEBUG_BIT(x) (1ull << (x))
 
 static const struct debug_control debug_control[] = {
-   { "tex",         DEBUG_BIT(DEBUG_TEXTURE) },
-   { "blit",        DEBUG_BIT(DEBUG_BLIT) },
-   { "fall",        DEBUG_BIT(DEBUG_PERF) },
-   { "perf",        DEBUG_BIT(DEBUG_PERF) },
-   { "perfmon",     DEBUG_BIT(DEBUG_PERFMON) },
-   { "bat",         DEBUG_BIT(DEBUG_BATCH) },
-   { "buf",         DEBUG_BIT(DEBUG_BUFMGR) },
-   { "fs",          DEBUG_BIT(DEBUG_WM) },
-   { "gs",          DEBUG_BIT(DEBUG_GS) },
-   { "sync",        DEBUG_BIT(DEBUG_SYNC) },
-   { "sf",          DEBUG_BIT(DEBUG_SF) },
-   { "submit",      DEBUG_BIT(DEBUG_SUBMIT) },
-   { "wm",          DEBUG_BIT(DEBUG_WM) },
-   { "urb",         DEBUG_BIT(DEBUG_URB) },
-   { "vs",          DEBUG_BIT(DEBUG_VS) },
-   { "clip",        DEBUG_BIT(DEBUG_CLIP) },
-   { "no16",        DEBUG_BIT(DEBUG_NO16) },
-   { "blorp",       DEBUG_BIT(DEBUG_BLORP) },
-   { "nodualobj",   DEBUG_BIT(DEBUG_NO_DUAL_OBJECT_GS) },
-   { "optimizer",   DEBUG_BIT(DEBUG_OPTIMIZER) },
-   { "ann",         DEBUG_BIT(DEBUG_ANNOTATION) },
-   { "no8",         DEBUG_BIT(DEBUG_NO8) },
-   { "no-oaconfig", DEBUG_BIT(DEBUG_NO_OACONFIG) },
-   { "spill_fs",    DEBUG_BIT(DEBUG_SPILL_FS) },
-   { "spill_vec4",  DEBUG_BIT(DEBUG_SPILL_VEC4) },
-   { "cs",          DEBUG_BIT(DEBUG_CS) },
-   { "hex",         DEBUG_BIT(DEBUG_HEX) },
-   { "nocompact",   DEBUG_BIT(DEBUG_NO_COMPACTION) },
-   { "hs",          DEBUG_BIT(DEBUG_TCS) },
-   { "tcs",         DEBUG_BIT(DEBUG_TCS) },
-   { "ds",          DEBUG_BIT(DEBUG_TES) },
-   { "tes",         DEBUG_BIT(DEBUG_TES) },
-   { "l3",          DEBUG_BIT(DEBUG_L3) },
-   { "do32",        DEBUG_BIT(DEBUG_DO32) },
-   { "norbc",       DEBUG_BIT(DEBUG_NO_CCS) },
-   { "noccs",       DEBUG_BIT(DEBUG_NO_CCS) },
-   { "nohiz",       DEBUG_BIT(DEBUG_NO_HIZ) },
-   { "color",       DEBUG_BIT(DEBUG_COLOR) },
-   { "reemit",      DEBUG_BIT(DEBUG_REEMIT) },
-   { "soft64",      DEBUG_BIT(DEBUG_SOFT64) },
-   { "bt",          DEBUG_BIT(DEBUG_BT) },
-   { "pc",          DEBUG_BIT(DEBUG_PIPE_CONTROL) },
-   { "nofc",        DEBUG_BIT(DEBUG_NO_FAST_CLEAR) },
-   { "no32",        DEBUG_BIT(DEBUG_NO32) },
-   { "shaders",     DEBUG_BIT(DEBUG_WM) | DEBUG_BIT(DEBUG_VS) | DEBUG_BIT(DEBUG_TCS) |
-                    DEBUG_BIT(DEBUG_TES) | DEBUG_BIT(DEBUG_GS) | DEBUG_BIT(DEBUG_CS) |
-                    DEBUG_BIT(DEBUG_RT) | DEBUG_BIT(DEBUG_TASK) | DEBUG_BIT(DEBUG_MESH) },
-   { "rt",          DEBUG_BIT(DEBUG_RT) },
-   { "rt_notrace",  DEBUG_BIT(DEBUG_RT_NO_TRACE) },
-   { "bvh_blas",        DEBUG_BIT(DEBUG_BVH_BLAS) },
-   { "bvh_tlas",        DEBUG_BIT(DEBUG_BVH_TLAS) },
-   { "bvh_blas_ir_hdr", DEBUG_BIT(DEBUG_BVH_BLAS_IR_HDR) },
-   { "bvh_tlas_ir_hdr", DEBUG_BIT(DEBUG_BVH_TLAS_IR_HDR) },
-   { "bvh_blas_ir_as",  DEBUG_BIT(DEBUG_BVH_BLAS_IR_AS) },
-   { "bvh_tlas_ir_as",  DEBUG_BIT(DEBUG_BVH_TLAS_IR_AS) },
-   { "bvh_no_build",    DEBUG_BIT(DEBUG_BVH_NO_BUILD) },
-   { "task",        DEBUG_BIT(DEBUG_TASK) },
-   { "mesh",        DEBUG_BIT(DEBUG_MESH) },
-   { "stall",       DEBUG_BIT(DEBUG_STALL) },
-   { "capture-all", DEBUG_BIT(DEBUG_CAPTURE_ALL) },
-   { "perf-symbol-names", DEBUG_BIT(DEBUG_PERF_SYMBOL_NAMES) },
-   { "swsb-stall",  DEBUG_BIT(DEBUG_SWSB_STALL) },
-   { "heaps",       DEBUG_BIT(DEBUG_HEAPS) },
-   { "isl",         DEBUG_BIT(DEBUG_ISL) },
-   { "sparse",      DEBUG_BIT(DEBUG_SPARSE) },
-   { "draw_bkp",    DEBUG_BIT(DEBUG_DRAW_BKP) },
-   { "bat-stats",   DEBUG_BIT(DEBUG_BATCH_STATS) },
-   { "reg-pressure", DEBUG_BIT(DEBUG_REG_PRESSURE) },
-   { "shader-print", DEBUG_BIT(DEBUG_SHADER_PRINT) },
-   { "cl-quiet",     DEBUG_BIT(DEBUG_CL_QUIET) },
-   { "no-send-gather", DEBUG_BIT(DEBUG_NO_SEND_GATHER) },
-   { "shaders-lineno", DEBUG_BIT(DEBUG_SHADERS_LINENO) },
-
+   { "tex",         DEBUG_TEXTURE },
+   { "blit",        DEBUG_BLIT },
+   { "fall",        DEBUG_PERF },
+   { "perf",        DEBUG_PERF },
+   { "perfmon",     DEBUG_PERFMON },
+   { "bat",         DEBUG_BATCH },
+   { "buf",         DEBUG_BUFMGR },
+   { "fs",          DEBUG_WM },
+   { "gs",          DEBUG_GS },
+   { "sync",        DEBUG_SYNC },
+   { "sf",          DEBUG_SF },
+   { "submit",      DEBUG_SUBMIT },
+   { "wm",          DEBUG_WM },
+   { "urb",         DEBUG_URB },
+   { "vs",          DEBUG_VS },
+   { "clip",        DEBUG_CLIP },
+   { "no16",        DEBUG_NO16 },
+   { "blorp",       DEBUG_BLORP },
+   { "nodualobj",   DEBUG_NO_DUAL_OBJECT_GS },
+   { "optimizer",   DEBUG_OPTIMIZER },
+   { "ann",         DEBUG_ANNOTATION },
+   { "no8",         DEBUG_NO8 },
+   { "no-oaconfig", DEBUG_NO_OACONFIG },
+   { "spill_fs",    DEBUG_SPILL_FS },
+   { "spill_vec4",  DEBUG_SPILL_VEC4 },
+   { "cs",          DEBUG_CS },
+   { "hex",         DEBUG_HEX },
+   { "nocompact",   DEBUG_NO_COMPACTION },
+   { "hs",          DEBUG_TCS },
+   { "tcs",         DEBUG_TCS },
+   { "ds",          DEBUG_TES },
+   { "tes",         DEBUG_TES },
+   { "l3",          DEBUG_L3 },
+   { "do32",        DEBUG_DO32 },
+   { "norbc",       DEBUG_NO_CCS },
+   { "noccs",       DEBUG_NO_CCS },
+   { "nohiz",       DEBUG_NO_HIZ },
+   { "color",       DEBUG_COLOR },
+   { "reemit",      DEBUG_REEMIT },
+   { "soft64",      DEBUG_SOFT64 },
+   { "bt",          DEBUG_BT },
+   { "pc",          DEBUG_PIPE_CONTROL },
+   { "nofc",        DEBUG_NO_FAST_CLEAR },
+   { "no32",        DEBUG_NO32 },
+   { "shaders",     DEBUG_WM },
+   { "rt",          DEBUG_RT },
+   { "rt_notrace",  DEBUG_RT_NO_TRACE },
+   { "bvh_blas",    DEBUG_BVH_BLAS },
+   { "bvh_tlas",    DEBUG_BVH_TLAS },
+   { "bvh_blas_ir_hdr", DEBUG_BVH_BLAS_IR_HDR },
+   { "bvh_tlas_ir_hdr", DEBUG_BVH_TLAS_IR_HDR },
+   { "bvh_blas_ir_as",  DEBUG_BVH_BLAS_IR_AS },
+   { "bvh_tlas_ir_as",  DEBUG_BVH_TLAS_IR_AS },
+   { "bvh_no_build",    DEBUG_BVH_NO_BUILD },
+   { "task",        DEBUG_TASK },
+   { "mesh",        DEBUG_MESH },
+   { "stall",       DEBUG_STALL },
+   { "capture-all", DEBUG_CAPTURE_ALL },
+   { "perf-symbol-names", DEBUG_PERF_SYMBOL_NAMES },
+   { "swsb-stall",  DEBUG_SWSB_STALL },
+   { "heaps",       DEBUG_HEAPS },
+   { "isl",         DEBUG_ISL },
+   { "sparse",      DEBUG_SPARSE },
+   { "draw_bkp",    DEBUG_DRAW_BKP },
+   { "bat-stats",   DEBUG_BATCH_STATS },
+   { "reg-pressure", DEBUG_REG_PRESSURE },
+   { "shader-print", DEBUG_SHADER_PRINT },
+   { "cl-quiet",     DEBUG_CL_QUIET },
+   { "no-send-gather", DEBUG_NO_SEND_GATHER },
+   { "shaders-lineno", DEBUG_SHADERS_LINENO },
    { NULL, 0 }
 };
-
 uint64_t intel_simd = 0;
 
 static const struct debug_control simd_control[] = {
@@ -210,9 +205,46 @@ uint32_t intel_debug_bkp_before_draw_count = 0;
 uint32_t intel_debug_bkp_after_draw_count = 0;
 
 static void
+parse_debug_bitset(const char *env, const struct debug_control *tbl)
+{
+   /* Check if env is NULL or empty */
+   if (!env || !*env)
+      return;
+
+   char *copy = strdup(env);
+   if (!copy)
+      return;
+
+   /* Tokenize the string by space or comma */
+   for (char *tok = strtok(copy, ", "); tok; tok = strtok(NULL, ", ")) {
+      /* Check for negation prefix, useful if user would like to disable certian flags */
+      bool negate = (*tok == '~' || *tok == '-');
+      if (negate)
+         tok++;
+
+      for (unsigned i = 0; tbl[i].string; i++) {
+         if (strcasecmp(tok, tbl[i].string) != 0)
+            continue;
+
+         unsigned bit = tbl[i].flag;
+
+         if (negate)
+            BITSET_CLEAR(intel_debug, bit);
+         else
+            BITSET_SET(intel_debug, bit);
+
+         break;
+      }
+   }
+   free(copy);
+}
+
+static void
 process_intel_debug_variable_once(void)
 {
-   intel_debug = parse_debug_string(getenv("INTEL_DEBUG"), debug_control);
+   BITSET_ZERO(intel_debug);
+   parse_debug_bitset(getenv("INTEL_DEBUG"), debug_control);
+
    intel_simd = parse_debug_string(getenv("INTEL_SIMD_DEBUG"), simd_control);
    intel_debug_batch_frame_start =
       debug_get_num_option("INTEL_DEBUG_BATCH_FRAME_START", 0);
@@ -235,13 +267,18 @@ process_intel_debug_variable_once(void)
    if (!(intel_simd & DEBUG_RT_SIMD))
       intel_simd |=   DEBUG_RT_SIMD;
 
-   if (intel_debug & DEBUG_NO8)
+   if (BITSET_TEST(intel_debug, DEBUG_NO8))
       intel_simd &= ~DEBUG_SIMD8_ALL;
-   if (intel_debug & DEBUG_NO16)
+
+   if (BITSET_TEST(intel_debug, DEBUG_NO16))
       intel_simd &= ~DEBUG_SIMD16_ALL;
-   if (intel_debug & DEBUG_NO32)
+
+   if (BITSET_TEST(intel_debug, DEBUG_NO32))
       intel_simd &= ~DEBUG_SIMD32_ALL;
-   intel_debug &= ~(DEBUG_NO8 | DEBUG_NO16 | DEBUG_NO32);
+
+   BITSET_CLEAR(intel_debug, DEBUG_NO8);
+   BITSET_CLEAR(intel_debug, DEBUG_NO16);
+   BITSET_CLEAR(intel_debug, DEBUG_NO32);
 }
 
 void

@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include "compiler/shader_enums.h"
+#include "util/bitset.h"
 #include "util/macros.h"
 
 #ifdef __cplusplus
@@ -40,10 +41,12 @@ extern "C" {
  * list of debugging flags, as well as some macros for handling them.
  */
 
-extern uint64_t intel_debug;
+#define INTEL_DEBUG_BIT_COUNT 128
+extern BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_BIT_COUNT)];
+
 
 /* Check if a debug flag is enabled by testing its bit position */
-#define INTEL_DEBUG(flag) unlikely(intel_debug & (1ull << (flag)))
+#define INTEL_DEBUG(flag) unlikely(BITSET_TEST(intel_debug, (flag)))
 
 enum intel_debug_flag {
    DEBUG_TEXTURE = 0,

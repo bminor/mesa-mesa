@@ -93,7 +93,7 @@ main(int argc, char *argv[])
    }
 
    /* Force metric loading. */
-   intel_debug |= DEBUG_NO_OACONFIG;
+   BITSET_SET(intel_debug, DEBUG_NO_OACONFIG);
 
    struct intel_perf_config *perf_cfg = intel_perf_new(NULL);
    intel_perf_init_metrics(perf_cfg, &devinfo, -1, true, true);
