@@ -396,11 +396,13 @@ vn_DestroyInstance(VkInstance _instance,
 {
    VN_TRACE_FUNC();
    struct vn_instance *instance = vn_instance_from_handle(_instance);
-   const VkAllocationCallbacks *alloc =
-      pAllocator ? pAllocator : &instance->base.base.alloc;
+   const VkAllocationCallbacks *alloc = pAllocator;
 
    if (!instance)
       return;
+
+   if (!alloc)
+      alloc = &instance->base.base.alloc;
 
    if (instance->physical_device.initialized) {
       for (uint32_t i = 0; i < instance->physical_device.device_count; i++)
