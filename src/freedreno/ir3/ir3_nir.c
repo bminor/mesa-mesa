@@ -363,6 +363,9 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
       progress |= OPT(s, nir_lower_bit_size, ir3_lower_bit_size, NULL);
       progress |= OPT(s, nir_opt_constant_folding);
 
+      /* Remove unused components from IO loads. */
+      progress |= OPT(s, nir_opt_shrink_vectors, true);
+
       const nir_opt_offsets_options offset_options = {
          /* How large an offset we can encode in the instr's immediate field.
           */
