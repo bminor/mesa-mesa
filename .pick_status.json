@@ -444,7 +444,7 @@
         "description": "venus: Do not use instance pointer before NULL check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a753f50668e9b97351f30ac985202bcfcd10fb7f",
         "notes": null
