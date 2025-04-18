@@ -12,6 +12,8 @@
 
 #include "vk_format.h"
 
+#include "clb097.h"
+
 static enum nil_view_type
 vk_image_view_type_to_nil_view_type(VkImageViewType view_type)
 {
@@ -230,29 +232,38 @@ nvk_image_view_init(struct nvk_device *dev,
             }
          }
 
-         if (image->vk.samples != VK_SAMPLE_COUNT_1_BIT)
-            nil_image = nil_msaa_image_as_sa(&nil_image);
+         if (pdev->info.cls_eng3d >= MAXWELL_A) {
+            if (image->vk.samples != VK_SAMPLE_COUNT_1_BIT)
+               nil_image = nil_msaa_image_as_sa(&nil_image);
 
-         uint32_t tic[8];
-         nil_image_fill_tic(&nil_image, &pdev->info, &nil_view,
-                            base_addr, &tic);
+            uint32_t tic[8];
+            nil_image_fill_tic(&nil_image, &pdev->info, &nil_view,
+                               base_addr, &tic);
 
-         uint32_t desc_index = 0;
-         if (cap_info != NULL) {
-            assert(view->plane_count == 1);
-            desc_index = cap.single_plane.storage_desc_index;
-            result = nvk_descriptor_table_insert(dev, &dev->images,
-                                                 desc_index, tic, sizeof(tic));
+            uint32_t desc_index = 0;
+            if (cap_info != NULL) {
+               assert(view->plane_count == 1);
+               desc_index = cap.single_plane.storage_desc_index;
+               result = nvk_descriptor_table_insert(dev, &dev->images,
+                                                    desc_index, tic,
+                                                    sizeof(tic));
+            } else {
+               result = nvk_descriptor_table_add(dev, &dev->images,
+                                                 tic, sizeof(tic),
+                                                 &desc_index);
+            }
+            if (result != VK_SUCCESS) {
+               nvk_image_view_finish(dev, view);
+               return result;
+            }
+
+            view->planes[view_plane].storage_desc_index = desc_index;
          } else {
-            result = nvk_descriptor_table_add(dev, &dev->images,
-                                              tic, sizeof(tic), &desc_index);
+            assert(view_plane == 0);
+            view->su_info = nil_fill_su_info(&pdev->info,
+                                             &nil_image, &nil_view,
+                                             base_addr);
          }
-         if (result != VK_SUCCESS) {
-            nvk_image_view_finish(dev, view);
-            return result;
-         }
-
-         view->planes[view_plane].storage_desc_index = desc_index;
       }
    }
 

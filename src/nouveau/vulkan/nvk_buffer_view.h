@@ -21,7 +21,12 @@ struct nvk_buffer_view {
    struct vk_buffer_view vk;
 
    struct nvk_buffer_view_descriptor desc;
+
+   /* Used for uniform texel buffers on Kepler and everything on Maxwell+ */
    struct nvk_edb_buffer_view_descriptor edb_desc;
+
+   /* Used for storage texel buffers on Kepler */
+   struct nil_su_info su_info;
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_buffer_view, vk.base, VkBufferView,

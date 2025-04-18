@@ -67,22 +67,33 @@ nvk_CreateBufferView(VkDevice _device,
          nvk_edb_bview_cache_get_descriptor(dev, &dev->edb_bview_cache,
                                             addr, view->vk.range, format);
    } else {
-      uint32_t desc[8];
-      nil_buffer_fill_tic(&pdev->info, addr, nil_format(format),
-                          view->vk.elements, &desc);
+      if (pdev->info.cls_eng3d >= MAXWELL_A ||
+          (buffer->vk.usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
+         uint32_t desc[8];
+         nil_buffer_fill_tic(&pdev->info, addr, nil_format(format),
+                           view->vk.elements, &desc);
 
-      uint32_t desc_index;
-      result = nvk_descriptor_table_add(dev, &dev->images,
-                                        desc, sizeof(desc),
-                                        &desc_index);
-      if (result != VK_SUCCESS) {
-         vk_buffer_view_destroy(&dev->vk, pAllocator, &view->vk);
-         return result;
+         uint32_t desc_index;
+         result = nvk_descriptor_table_add(dev, &dev->images,
+                                          desc, sizeof(desc),
+                                          &desc_index);
+         if (result != VK_SUCCESS) {
+            vk_buffer_view_destroy(&dev->vk, pAllocator, &view->vk);
+            return result;
+         }
+
+         view->desc = (struct nvk_buffer_view_descriptor) {
+            .image_index = desc_index,
+         };
       }
-
-      view->desc = (struct nvk_buffer_view_descriptor) {
-         .image_index = desc_index,
-      };
+      if (pdev->info.cls_eng3d < MAXWELL_A &&
+          (buffer->vk.usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
+         // Kepler
+         view->su_info = nil_buffer_fill_su_info(&pdev->info,
+                                                   addr,
+                                                   nil_format(format),
+                                                   view->vk.elements);
+      }
    }
 
    *pBufferView = nvk_buffer_view_to_handle(view);

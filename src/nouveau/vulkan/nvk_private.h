@@ -19,7 +19,9 @@
 #define NVK_MIN_TEXEL_BUFFER_ALIGNMENT 16
 #define NVK_MIN_UBO_ALIGNMENT 64
 #define NVK_MAX_VIEWPORTS 16
-#define NVK_MAX_DESCRIPTOR_SIZE 16
+// This constant tracks the biggest descriptor size, it must be conservative
+// From Maxwell we only use much smaller descriptors.
+#define NVK_MAX_DESCRIPTOR_SIZE 32
 #define NVK_MAX_PUSH_DESCRIPTORS 32
 #define NVK_MAX_DESCRIPTOR_SET_SIZE (1u << 30)
 #define NVK_MAX_DESCRIPTORS (1 << 20)

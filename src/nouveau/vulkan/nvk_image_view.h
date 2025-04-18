@@ -28,6 +28,9 @@ struct nvk_image_view {
       /** Index in the image descriptor table for the storage image descriptor */
       uint32_t storage_desc_index;
    } planes[NVK_MAX_IMAGE_PLANES];
+
+   /* Surface info for Kepler storage images */
+   struct nil_su_info su_info;
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_image_view, vk.base, VkImageView,

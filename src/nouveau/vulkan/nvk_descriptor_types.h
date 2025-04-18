@@ -9,6 +9,8 @@
 
 #include "nvk_physical_device.h"
 
+#include "nil.h"
+
 #define NVK_IMAGE_DESCRIPTOR_IMAGE_INDEX_MASK   0x000fffff
 #define NVK_IMAGE_DESCRIPTOR_SAMPLER_INDEX_MASK 0xfff00000
 
@@ -39,6 +41,14 @@ struct nvk_storage_image_descriptor {
 PRAGMA_DIAGNOSTIC_POP
 static_assert(sizeof(struct nvk_storage_image_descriptor) == 8,
               "nvk_storage_image_descriptor has no holes");
+
+struct nvk_kepler_storage_image_descriptor {
+   struct nil_su_info su_info;
+};
+
+struct nvk_kepler_storage_buffer_view_descriptor {
+   struct nil_su_info su_info;
+};
 
 PRAGMA_DIAGNOSTIC_PUSH
 PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)

@@ -13,6 +13,8 @@
 
 #include "vk_pipeline_layout.h"
 
+#include "clb097.h"
+
 static bool
 binding_has_immutable_samplers(const VkDescriptorSetLayoutBinding *binding)
 {
@@ -24,6 +26,27 @@ binding_has_immutable_samplers(const VkDescriptorSetLayoutBinding *binding)
    default:
       return false;
    }
+}
+
+static uint32_t
+nvk_max_descriptor_size(const struct nv_device_info *info)
+{
+   // This should be constant-folded.
+   uint32_t max_desc_size = 0;
+
+   max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_sampled_image_descriptor));
+   max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_edb_buffer_view_descriptor));
+   max_desc_size = MAX2(max_desc_size, sizeof(union nvk_buffer_descriptor));
+
+   if (info->cls_eng3d >= MAXWELL_A) {
+      max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_storage_image_descriptor));
+      max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_buffer_view_descriptor));
+   } else {
+      max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_kepler_storage_image_descriptor));
+      max_desc_size = MAX2(max_desc_size, sizeof(struct nvk_kepler_storage_buffer_view_descriptor));
+   }
+
+   return max_desc_size;
 }
 
 void
@@ -43,7 +66,12 @@ nvk_descriptor_stride_align_for_type(const struct nvk_physical_device *pdev,
       break;
 
    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-      *stride = *alignment = sizeof(struct nvk_storage_image_descriptor);
+      if (pdev->info.cls_eng3d >= MAXWELL_A) {
+         *stride = *alignment = sizeof(struct nvk_storage_image_descriptor);
+      } else {
+         *stride = sizeof(struct nvk_kepler_storage_image_descriptor);
+         *alignment = 16;
+      }
       break;
 
    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -51,8 +79,12 @@ nvk_descriptor_stride_align_for_type(const struct nvk_physical_device *pdev,
       if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) ||
           nvk_use_edb_buffer_views(pdev)) {
          *stride = *alignment = sizeof(struct nvk_edb_buffer_view_descriptor);
-      } else {
+      } else if (pdev->info.cls_eng3d >= MAXWELL_A ||
+                 type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
          *stride = *alignment = sizeof(struct nvk_buffer_view_descriptor);
+      } else {
+         *stride = sizeof(struct nvk_kepler_storage_buffer_view_descriptor);
+         *alignment = 16;
       }
       break;
 
@@ -74,7 +106,7 @@ nvk_descriptor_stride_align_for_type(const struct nvk_physical_device *pdev,
    case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
       *stride = *alignment = 0;
       if (type_list == NULL)
-         *stride = *alignment = NVK_MAX_DESCRIPTOR_SIZE;
+         *stride = *alignment = nvk_max_descriptor_size(&pdev->info);
       for (unsigned i = 0; type_list && i < type_list->descriptorTypeCount; i++) {
          /* This shouldn't recurse */
          assert(type_list->pDescriptorTypes[i] !=
@@ -470,7 +502,7 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
    uint32_t max_buffer_size;
    if (pCreateInfo->flags &
        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
-      max_buffer_size = NVK_PUSH_DESCRIPTOR_SET_SIZE;
+      max_buffer_size = NVK_MAX_PUSH_DESCRIPTORS * nvk_max_descriptor_size(&pdev->info);
    else
       max_buffer_size = NVK_MAX_DESCRIPTOR_SET_SIZE;
 
