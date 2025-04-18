@@ -21,7 +21,7 @@ INSTALL=$(realpath -s "$PWD"/install)
 # Modifiying here directly LD_LIBRARY_PATH may cause problems when
 # using a command wrapper. Hence, we will just set it when running the
 # command.
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$INSTALL/lib/:/vkd3d-proton-tests/x64/"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$INSTALL/lib/:/vkd3d-proton-tests/lib/"
 
 
 # Set the Vulkan driver to use.
@@ -90,7 +90,7 @@ printf "%s\n" "Running vkd3d-proton testsuite..."
 
 LOGFILE="$RESULTS_DIR/vkd3d-proton-log.txt"
 TEST_LOGS="$RESULTS_DIR/test-logs"
-(cd /vkd3d-proton-tests && tests/test-runner.sh x64/bin/d3d12 --jobs "${FDO_CI_CONCURRENT:-4}" --output-dir "$TEST_LOGS" | tee "$LOGFILE")
+(cd /vkd3d-proton-tests && tests/test-runner.sh ./d3d12 --jobs "${FDO_CI_CONCURRENT:-4}" --output-dir "$TEST_LOGS" | tee "$LOGFILE")
 
 printf '\n\n'
 
