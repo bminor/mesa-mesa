@@ -252,6 +252,26 @@ impl SM20Encoder<'_> {
         self.set_pred_reg(range, reg);
     }
 
+    fn set_pred_dst2(
+        &mut self,
+        range1: Range<usize>,
+        range2: Range<usize>,
+        dst: Dst,
+    ) {
+        assert!(range1.len() == 2);
+        assert!(range2.len() == 1);
+        let reg = match dst {
+            Dst::None => true_reg(),
+            Dst::Reg(reg) => reg,
+            _ => panic!("Dst is not pred {dst}"),
+        };
+        assert!(reg.file() == RegFile::Pred);
+        assert!(reg.base_idx() <= 7);
+        assert!(reg.comps() == 1);
+        self.set_field(range1, reg.base_idx() & 0x3);
+        self.set_field(range2, reg.base_idx() >> 2);
+    }
+
     fn set_pred(&mut self, pred: &Pred) {
         // predicates are 4 bits starting at 18, last one denotes inversion
         assert!(!pred.is_false());
@@ -823,6 +843,50 @@ impl SM20Op for OpFSetP {
         e.set_pred_set_op(53..55, self.set_op);
         e.set_float_cmp_op(55..59, self.cmp_op);
         e.set_bit(59, self.ftz);
+    }
+}
+
+impl SM20Op for OpFSwz {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.srcs[0], GPR, SrcType::GPR);
+        b.copy_alu_src_if_not_reg(&mut self.srcs[1], GPR, SrcType::GPR);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Float, 0x12);
+
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, self.srcs[0]);
+        e.set_reg_src(26..32, self.srcs[1]);
+
+        e.set_bit(5, self.ftz);
+        e.set_field(
+            6..9,
+            match self.shuffle {
+                FSwzShuffle::Quad0 => 0_u8,
+                FSwzShuffle::Quad1 => 1_u8,
+                FSwzShuffle::Quad2 => 2_u8,
+                FSwzShuffle::Quad3 => 3_u8,
+                FSwzShuffle::SwapHorizontal => 4_u8,
+                FSwzShuffle::SwapVertical => 5_u8,
+            },
+        );
+        e.set_bit(9, false); // .ndv
+
+        for (i, op) in self.ops.iter().enumerate() {
+            e.set_field(
+                32 + i * 2..32 + (i + 1) * 2,
+                match op {
+                    FSwzAddOp::Add => 0u8,
+                    FSwzAddOp::SubLeft => 1u8,
+                    FSwzAddOp::SubRight => 2u8,
+                    FSwzAddOp::MoveLeft => 3u8,
+                },
+            );
+        }
+
+        e.set_rnd_mode(55..57, self.rnd_mode);
     }
 }
 
@@ -1399,6 +1463,65 @@ impl SM20Op for OpSel {
             None,
         );
         e.set_pred_src(49..53, self.cond);
+    }
+}
+
+impl SM20Op for OpShfl {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        if matches!(self.lane.src_ref, SrcRef::CBuf(_)) {
+            b.copy_alu_src(&mut self.lane, GPR, SrcType::ALU);
+        }
+        if matches!(self.c.src_ref, SrcRef::CBuf(_)) {
+            b.copy_alu_src(&mut self.c, GPR, SrcType::ALU);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Mem, 0x22);
+        e.set_pred_dst2(8..10, 58..59, self.in_bounds);
+        e.set_dst(14..20, self.dst);
+        e.set_reg_src(20..26, self.src);
+
+        assert!(self.lane.src_mod.is_none());
+        match AluSrc::from_src(Some(&self.lane)) {
+            AluSrc::Reg(reg) => {
+                e.set_reg(26..32, reg);
+                e.set_bit(5, false);
+            }
+            AluSrc::Imm(imm) => {
+                e.set_field(26..32, imm & 0x1f);
+                e.set_bit(5, true);
+            }
+            AluSrc::None | AluSrc::CBuf(_) => {
+                panic!("Unsupported shfl lane: {}", self.lane);
+            }
+        }
+
+        assert!(self.c.src_mod.is_none());
+        match AluSrc::from_src(Some(&self.c)) {
+            AluSrc::Reg(reg) => {
+                e.set_reg(49..55, reg);
+                e.set_bit(6, false);
+            }
+            AluSrc::Imm(imm) => {
+                e.set_field(42..55, imm & 0x1fff);
+                e.set_bit(6, true);
+            }
+            AluSrc::None | AluSrc::CBuf(_) => {
+                panic!("Unsupported shfl lane: {}", self.lane);
+            }
+        }
+
+        e.set_field(
+            55..57,
+            match self.op {
+                ShflOp::Idx => 0_u8,
+                ShflOp::Up => 1_u8,
+                ShflOp::Down => 2_u8,
+                ShflOp::Bfly => 3_u8,
+            },
+        );
     }
 }
 
@@ -2308,6 +2431,27 @@ impl SM20Op for OpS2R {
     }
 }
 
+impl SM20Op for OpVote {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Move, 0x12);
+        e.set_field(
+            5..7,
+            match self.op {
+                VoteOp::All => 0_u8,
+                VoteOp::Any => 1_u8,
+                VoteOp::Eq => 2_u8,
+            },
+        );
+        e.set_dst(14..20, self.ballot);
+        e.set_pred_src(20..24, self.pred);
+        e.set_pred_dst(54..57, self.vote);
+    }
+}
+
 impl SM20Op for OpOut {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
@@ -2346,6 +2490,7 @@ macro_rules! as_sm20_op_match {
             Op::MuFu(op) => op,
             Op::FSet(op) => op,
             Op::FSetP(op) => op,
+            Op::FSwz(op) => op,
             Op::Bfe(op) => op,
             Op::Flo(op) => op,
             Op::IAdd2(op) => op,
@@ -2365,6 +2510,7 @@ macro_rules! as_sm20_op_match {
             Op::Mov(op) => op,
             Op::Prmt(op) => op,
             Op::Sel(op) => op,
+            Op::Shfl(op) => op,
             Op::PSetP(op) => op,
             Op::Tex(op) => op,
             Op::Tld(op) => op,
@@ -2395,6 +2541,7 @@ macro_rules! as_sm20_op_match {
             Op::Nop(op) => op,
             Op::PixLd(op) => op,
             Op::S2R(op) => op,
+            Op::Vote(op) => op,
             Op::Out(op) => op,
             _ => panic!("Unhandled instruction {}", $op),
         }
