@@ -320,6 +320,7 @@ opt_shrink_vectors_intrinsic(nir_builder *b, nir_intrinsic_instr *instr,
    switch (instr->intrinsic) {
    case nir_intrinsic_load_uniform:
    case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ubo_vec4:
    case nir_intrinsic_load_input:
    case nir_intrinsic_load_per_primitive_input:
    case nir_intrinsic_load_input_vertex:
