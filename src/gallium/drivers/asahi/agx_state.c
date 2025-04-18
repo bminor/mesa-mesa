@@ -5238,7 +5238,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       draw.restart = info->primitive_restart;
       draw.indexed = true;
    } else {
-      draw.start = draws->start;
+      draw.start = indirect ? 0 : draws->start;
    }
 
    if (indirect) {
