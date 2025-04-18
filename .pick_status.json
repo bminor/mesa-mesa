@@ -54,7 +54,7 @@
         "description": "brw: make HALT instruction act as barrier in new CSE pass",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9690bd369d5a6739142eeb23f92d34429b75855d",
         "notes": null
