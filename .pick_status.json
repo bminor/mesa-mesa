@@ -434,7 +434,7 @@
         "description": "venus: fix missing renderer destructions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "25b8f4f7143f2e022df245ba2e1a2ab3ed4a2f90",
         "notes": null

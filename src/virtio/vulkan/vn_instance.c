@@ -181,7 +181,7 @@ vn_instance_init_renderer(struct vn_instance *instance)
          vn_log(instance, "wire format version %d != %d",
                 renderer_info->wire_format_version, version);
       }
-      return VK_ERROR_INITIALIZATION_FAILED;
+      goto out_renderer_destroy;
    }
 
    version = vn_info_vk_xml_version();
@@ -197,7 +197,7 @@ vn_instance_init_renderer(struct vn_instance *instance)
                 VK_VERSION_MINOR(VN_MIN_RENDERER_VERSION),
                 VK_VERSION_PATCH(VN_MIN_RENDERER_VERSION));
       }
-      return VK_ERROR_INITIALIZATION_FAILED;
+      goto out_renderer_destroy;
    }
 
    uint32_t spec_version =
@@ -226,6 +226,12 @@ vn_instance_init_renderer(struct vn_instance *instance)
    }
 
    return VK_SUCCESS;
+
+out_renderer_destroy:
+   vn_renderer_destroy(instance->renderer, alloc);
+   /* needed by stub instance creation */
+   instance->renderer = NULL;
+   return VK_ERROR_INITIALIZATION_FAILED;
 }
 
 /* instance commands */
@@ -309,6 +315,7 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 
    result = vn_instance_init_renderer(instance);
    if (result == VK_ERROR_INITIALIZATION_FAILED) {
+      assert(!instance->renderer);
       *pInstance = instance_handle;
       return VK_SUCCESS;
    }
