@@ -3647,21 +3647,20 @@ static void si_update_rasterized_prim(struct si_context *sctx)
    si_update_ngg_sgpr_state_out_prim(sctx, hw_vs, sctx->ngg);
 }
 
-static void si_update_common_shader_state(struct si_context *sctx, struct si_shader_selector *sel,
-                                          enum pipe_shader_type type)
+void si_update_common_shader_state(struct si_context *sctx, struct si_shader_selector *sel,
+                                   enum pipe_shader_type type)
 {
    si_set_active_descriptors_for_shader(sctx, sel);
 
-   sctx->uses_bindless_samplers = si_shader_uses_bindless_samplers(sctx->shader.vs.cso) ||
-                                  si_shader_uses_bindless_samplers(sctx->shader.gs.cso) ||
-                                  si_shader_uses_bindless_samplers(sctx->shader.ps.cso) ||
-                                  si_shader_uses_bindless_samplers(sctx->shader.tcs.cso) ||
-                                  si_shader_uses_bindless_samplers(sctx->shader.tes.cso);
-   sctx->uses_bindless_images = si_shader_uses_bindless_images(sctx->shader.vs.cso) ||
-                                si_shader_uses_bindless_images(sctx->shader.gs.cso) ||
-                                si_shader_uses_bindless_images(sctx->shader.ps.cso) ||
-                                si_shader_uses_bindless_images(sctx->shader.tcs.cso) ||
-                                si_shader_uses_bindless_images(sctx->shader.tes.cso);
+   if (si_shader_uses_bindless_samplers(sel))
+      sctx->uses_bindless_samplers |= BITFIELD_BIT(type);
+   else
+      sctx->uses_bindless_samplers &= ~BITFIELD_BIT(type);
+
+   if (si_shader_uses_bindless_images(sel))
+      sctx->uses_bindless_images |= BITFIELD_BIT(type);
+   else
+      sctx->uses_bindless_images &= ~BITFIELD_BIT(type);
 
    if (type == PIPE_SHADER_VERTEX || type == PIPE_SHADER_TESS_EVAL || type == PIPE_SHADER_GEOMETRY)
       sctx->ngg_culling = 0; /* this will be enabled on the first draw if needed */

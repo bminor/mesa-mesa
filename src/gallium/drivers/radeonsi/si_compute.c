@@ -220,11 +220,7 @@ static void si_bind_compute_state(struct pipe_context *ctx, void *state)
    /* Wait because we need active slot usage masks. */
    util_queue_fence_wait(&sel->ready);
 
-   si_set_active_descriptors(sctx,
-                             SI_DESCS_FIRST_COMPUTE + SI_SHADER_DESCS_CONST_AND_SHADER_BUFFERS,
-                             sel->active_const_and_shader_buffers);
-   si_set_active_descriptors(sctx, SI_DESCS_FIRST_COMPUTE + SI_SHADER_DESCS_SAMPLERS_AND_IMAGES,
-                             sel->active_samplers_and_images);
+   si_update_common_shader_state(sctx, sel, PIPE_SHADER_COMPUTE);
 
    sctx->compute_shaderbuf_sgprs_dirty = true;
    sctx->compute_image_sgprs_dirty = true;

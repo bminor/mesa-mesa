@@ -855,14 +855,15 @@ void gfx6_decompress_textures(struct si_context *sctx, unsigned shader_mask)
       sctx->b.flush(&sctx->b, NULL, RADEON_FLUSH_ASYNC_START_NEXT_GFX_IB_NOW);
    }
 
-   if (shader_mask & BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS)) {
-      if (sctx->uses_bindless_samplers) {
-         si_decompress_resident_color_textures(sctx);
-         si_decompress_resident_depth_textures(sctx);
-      }
-      if (sctx->uses_bindless_images)
-         si_decompress_resident_images(sctx);
+   if (sctx->uses_bindless_samplers & shader_mask) {
+      si_decompress_resident_color_textures(sctx);
+      si_decompress_resident_depth_textures(sctx);
+   }
 
+   if (sctx->uses_bindless_images & shader_mask)
+      si_decompress_resident_images(sctx);
+
+   if (shader_mask & BITFIELD_BIT(PIPE_SHADER_FRAGMENT)) {
       if (sctx->ps_uses_fbfetch) {
          struct pipe_surface *cb0 = &sctx->framebuffer.state.cbufs[0];
          si_decompress_color_texture(sctx, (struct si_texture *)cb0->texture,
@@ -870,13 +871,6 @@ void gfx6_decompress_textures(struct si_context *sctx, unsigned shader_mask)
       }
 
       si_check_render_feedback(sctx);
-   } else if (shader_mask & (1 << PIPE_SHADER_COMPUTE)) {
-      if (sctx->cs_shader_state.program->sel.info.uses_bindless_samplers) {
-         si_decompress_resident_color_textures(sctx);
-         si_decompress_resident_depth_textures(sctx);
-      }
-      if (sctx->cs_shader_state.program->sel.info.uses_bindless_images)
-         si_decompress_resident_images(sctx);
    }
 }
 
@@ -893,15 +887,11 @@ void gfx11_decompress_textures(struct si_context *sctx, unsigned shader_mask)
    }
 
    /* Decompress bindless depth textures and disable DCC for render feedback. */
-   if (shader_mask & BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS)) {
-      if (sctx->uses_bindless_samplers)
-         si_decompress_resident_depth_textures(sctx);
+   if (sctx->uses_bindless_samplers & shader_mask)
+      si_decompress_resident_depth_textures(sctx);
 
+   if (shader_mask & BITFIELD_BIT(PIPE_SHADER_FRAGMENT))
       si_check_render_feedback(sctx);
-   } else if (shader_mask & (1 << PIPE_SHADER_COMPUTE)) {
-      if (sctx->cs_shader_state.program->sel.info.uses_bindless_samplers)
-         si_decompress_resident_depth_textures(sctx);
-   }
 }
 
 /* Helper for decompressing a portion of a color or depth resource before

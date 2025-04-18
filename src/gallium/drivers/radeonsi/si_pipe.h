@@ -1272,8 +1272,8 @@ struct si_context {
    struct util_dynarray resident_tex_needs_depth_decompress;
 
    /* Bindless state */
-   bool uses_bindless_samplers;
-   bool uses_bindless_images;
+   uint8_t uses_bindless_samplers;
+   uint8_t uses_bindless_images;
 
    /* Misc stats. */
    unsigned num_draw_calls;
