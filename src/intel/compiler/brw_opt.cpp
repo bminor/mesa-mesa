@@ -103,7 +103,9 @@ brw_optimize(brw_shader &s)
       OPT(brw_opt_dead_code_eliminate);
    }
 
-   OPT(brw_lower_subgroup_ops);
+   if (OPT(brw_lower_subgroup_ops))
+      OPT(brw_opt_cmod_propagation);
+
    OPT(brw_lower_csel);
    OPT(brw_lower_simd_width);
    OPT(brw_lower_scalar_fp64_MAD);
