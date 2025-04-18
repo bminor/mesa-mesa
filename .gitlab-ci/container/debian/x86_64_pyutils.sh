@@ -54,8 +54,8 @@ apt-get update
 apt-get install -y --no-remove --no-install-recommends "${DEPS[@]}" "${EPHEMERAL[@]}" \
         "${EXTRA_LOCAL_PACKAGES:-}"
 
-# Needed for ci-fairy, this revision is able to upload files to S3
-pip3 install --break-system-packages git+http://gitlab.freedesktop.org/freedesktop/ci-templates@ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2
+# Needed for ci-fairy s3cp
+pip3 install --break-system-packages "ci-fairy[s3] @ git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
 
 pip3 install --break-system-packages -r bin/ci/test/requirements.txt
 

@@ -157,9 +157,8 @@ apt-get install -y --no-install-recommends "${EPHEMERAL[@]}"
 
 . .gitlab-ci/container/container_pre_build.sh
 
-# Needed for ci-fairy, this revision is able to upload files to MinIO
-# and doesn't depend on git
-pip3 install --break-system-packages git+http://gitlab.freedesktop.org/freedesktop/ci-templates@ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2
+# Needed for ci-fairy s3cp
+pip3 install --break-system-packages "ci-fairy[s3] @ git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
 
 # Needed for manipulation with traces yaml files.
 pip3 install --break-system-packages yq
