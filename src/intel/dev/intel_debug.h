@@ -113,6 +113,7 @@ enum intel_debug_flag {
    DEBUG_NO_SEND_GATHER,
    DEBUG_RT_NO_TRACE,
    DEBUG_SHADERS_LINENO,
+   DEBUG_SHOW_SHADER_STAGE,
 };
 
 

@@ -119,6 +119,7 @@ static const struct debug_control debug_control[] = {
    { "cl-quiet",     DEBUG_CL_QUIET },
    { "no-send-gather", DEBUG_NO_SEND_GATHER },
    { "shaders-lineno", DEBUG_SHADERS_LINENO },
+   { "show_shader_stage", DEBUG_SHOW_SHADER_STAGE },
    { NULL, 0 }
 };
 uint64_t intel_simd = 0;
