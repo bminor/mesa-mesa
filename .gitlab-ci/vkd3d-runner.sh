@@ -3,7 +3,7 @@
 
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
-set -e
+set -eu
 
 comma_separated() {
   local IFS=,
@@ -21,7 +21,7 @@ INSTALL=$(realpath -s "$PWD"/install)
 # Modifiying here directly LD_LIBRARY_PATH may cause problems when
 # using a command wrapper. Hence, we will just set it when running the
 # command.
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$INSTALL/lib/:/vkd3d-proton-tests/lib/"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$INSTALL/lib/:/vkd3d-proton-tests/lib/"
 
 
 # Set the Vulkan driver to use.
