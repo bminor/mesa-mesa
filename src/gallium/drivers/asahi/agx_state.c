@@ -5297,6 +5297,8 @@ agx_launch(struct agx_batch *batch, struct agx_grid grid,
            unsigned variable_shared_mem)
 {
    struct agx_context *ctx = batch->ctx;
+   if (!linked && agx_is_shader_empty(&cs->b))
+      return;
 
    /* To implement load_num_workgroups, the number of workgroups needs to be
     * available in GPU memory. This is either the indirect buffer, or just a
