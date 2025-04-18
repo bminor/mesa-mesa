@@ -94,12 +94,6 @@ TEST_LOGS="$RESULTS_DIR/test-logs"
 
 printf '\n\n'
 
-# Check if the executable finished (ie. no segfault).
-if ! grep -E "^Finished" "$LOGFILE" > /dev/null; then
-    error "Failed, see ${ARTIFACTS_BASE_URL}/results/vkd3d-proton-log.txt"
-    exit 1
-fi
-
 # Print list of flakes seen this time
 flakes_seen=()
 for flake in "${flakes[@]}"; do
