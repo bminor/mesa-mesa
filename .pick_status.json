@@ -314,7 +314,7 @@
         "description": "intel: fix null render target setup logic",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "98cdb9349a7fa181c3895655d217589f909a7beb",
         "notes": null
