@@ -458,11 +458,6 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
       NIR_PASS(_, nir, nir_lower_non_uniform_access, &opts);
    }
 
-   /* TODO: Kepler image lowering requires image params to be loaded from the
-    * descriptor set which we don't currently support.
-    */
-   assert(pdev->info.cls_eng3d >= MAXWELL_A || !nir_has_image_var(nir));
-
    struct nvk_cbuf_map *cbuf_map = NULL;
    if (use_nak(pdev, nir->info.stage) &&
        !(pdev->debug_flags & NVK_DEBUG_NO_CBUF)) {
@@ -966,11 +961,21 @@ nvk_compile_shader(struct nvk_device *dev,
                    const VkAllocationCallbacks* pAllocator,
                    struct vk_shader **shader_out)
 {
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_shader *shader;
    VkResult result;
 
    /* We consume the NIR, regardless of success or failure */
    nir_shader *nir = info->nir;
+
+   /* TODO: Kepler image lowering requires image params to be loaded from the
+    * descriptor set, which we don't currently support.
+    */
+   if (pdev->info.cls_eng3d < MAXWELL_A && nir_has_image_var(nir)) {
+      ralloc_free(nir);
+      return vk_errorf(dev, VK_ERROR_UNKNOWN,
+                       "Storage images are not supported on Kepler");
+   }
 
    shader = vk_shader_zalloc(&dev->vk, &nvk_shader_ops, info->stage,
                              pAllocator, sizeof(*shader));
