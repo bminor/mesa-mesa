@@ -1938,6 +1938,102 @@ impl SM20Op for OpTxq {
     }
 }
 
+impl SM20Op for OpSuClamp {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.coords, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.params, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        use SuClampMode::*;
+        e.encode_form_a(
+            SM20Unit::Move,
+            0x16,
+            &self.dst,
+            &self.coords,
+            &self.params,
+            None,
+        );
+
+        e.set_field(
+            5..9,
+            match (self.mode, self.round) {
+                (StoredInDescriptor, SuClampRound::R1) => 0_u8,
+                (StoredInDescriptor, SuClampRound::R2) => 1_u8,
+                (StoredInDescriptor, SuClampRound::R4) => 2_u8,
+                (StoredInDescriptor, SuClampRound::R8) => 3_u8,
+                (StoredInDescriptor, SuClampRound::R16) => 4_u8,
+                (PitchLinear, SuClampRound::R1) => 5_u8,
+                (PitchLinear, SuClampRound::R2) => 6_u8,
+                (PitchLinear, SuClampRound::R4) => 7_u8,
+                (PitchLinear, SuClampRound::R8) => 8_u8,
+                (PitchLinear, SuClampRound::R16) => 9_u8,
+                (BlockLinear, SuClampRound::R1) => 10_u8,
+                (BlockLinear, SuClampRound::R2) => 11_u8,
+                (BlockLinear, SuClampRound::R4) => 12_u8,
+                (BlockLinear, SuClampRound::R8) => 13_u8,
+                (BlockLinear, SuClampRound::R16) => 14_u8,
+            },
+        );
+        e.set_bit(9, self.is_s32);
+        e.set_bit(48, self.is_2d);
+        e.set_field(49..55, self.imm);
+        e.set_pred_dst(55..58, &self.out_of_bounds);
+    }
+}
+
+impl SM20Op for OpSuBfm {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1, src2] = &mut self.srcs;
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);
+        if src_is_reg(src1, GPR) {
+            b.copy_alu_src_if_imm(src2, GPR, SrcType::ALU);
+        } else {
+            b.copy_alu_src_if_not_reg(src2, GPR, SrcType::ALU);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Move,
+            0x17,
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
+            Some(&self.srcs[2]),
+        );
+        e.set_bit(48, self.is_3d);
+        e.set_pred_dst(55..58, &self.pdst);
+    }
+}
+
+impl SM20Op for OpSuEau {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        b.copy_alu_src_if_not_reg(&mut self.off, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.bit_field, GPR, SrcType::ALU);
+        if src_is_reg(&self.bit_field, GPR) {
+            b.copy_alu_src_if_imm(&mut self.addr, GPR, SrcType::ALU);
+        } else {
+            b.copy_alu_src_if_not_reg(&mut self.addr, GPR, SrcType::ALU);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Move,
+            0x18,
+            &self.dst,
+            &self.off,
+            &self.bit_field,
+            Some(&self.addr),
+        );
+    }
+}
+
 impl SM20Encoder<'_> {
     fn set_mem_type(&mut self, range: Range<usize>, mem_type: MemType) {
         assert!(range.len() == 3);
@@ -2698,6 +2794,9 @@ macro_rules! as_sm20_op_match {
             Op::Tmml(op) => op,
             Op::Txd(op) => op,
             Op::Txq(op) => op,
+            Op::SuClamp(op) => op,
+            Op::SuBfm(op) => op,
+            Op::SuEau(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::LdSharedLock(op) => op,
