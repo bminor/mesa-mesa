@@ -32,13 +32,6 @@ static LLVMValueRef si_nir_load_tcs_varyings(struct ac_shader_abi *abi, LLVMType
    return ac_build_varying_gather_values(&ctx->ac, value, num_components, component);
 }
 
-void si_llvm_tcs_build_end(struct si_shader_context *ctx)
-{
-   if (ctx->screen->info.gfx_level >= GFX9) {
-      ac_build_endif(&ctx->ac, SI_MERGED_WRAP_IF_LABEL);
-   }
-}
-
 void si_llvm_ls_build_end(struct si_shader_context *ctx)
 {
    struct si_shader *shader = ctx->shader;

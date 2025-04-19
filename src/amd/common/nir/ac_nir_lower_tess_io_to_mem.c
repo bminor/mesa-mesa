@@ -1112,6 +1112,23 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
    }
    nir_pop_if(b, if_invocation_id_zero);
 
+   if (st->gfx_level >= GFX9) {
+      /* Wrap the whole shader in a conditional block, allowing only TCS (HS) invocations to execute
+       * in the LS-HS workgroup.
+       */
+      nir_cf_list *extracted = rzalloc(shader, nir_cf_list);
+      nir_cf_extract(extracted, nir_before_impl(impl), nir_after_impl(impl));
+
+      builder = nir_builder_at(nir_before_impl(impl));
+      nir_if *if_tcs =
+         nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, nir_load_merged_wave_info_amd(b),
+                                                          .base = 8));
+      {
+         nir_cf_reinsert(extracted, b->cursor);
+      }
+      nir_pop_if(b, if_tcs);
+   }
+
    nir_progress(true, impl, nir_metadata_none);
 }
 

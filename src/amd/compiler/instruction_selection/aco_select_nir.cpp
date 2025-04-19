@@ -1358,6 +1358,7 @@ select_program_merged(isel_context& ctx, const unsigned shader_count, nir_shader
 {
    if_context ic_merged_wave_info;
    const bool ngg_gs = ctx.stage.hw == AC_HW_NEXT_GEN_GEOMETRY_SHADER && ctx.stage.has(SWStage::GS);
+   const bool hs = ctx.stage.hw == AC_HW_HULL_SHADER;
 
    for (unsigned i = 0; i < shader_count; i++) {
       nir_shader* nir = shaders[i];
@@ -1378,9 +1379,9 @@ select_program_merged(isel_context& ctx, const unsigned shader_count, nir_shader
 
       /* See if we need to emit a check of the merged wave info SGPR. */
       const bool check_merged_wave_info =
-         ctx.tcs_in_out_eq ? i == 0 : (shader_count >= 2 && !empty_shader && !(ngg_gs && i == 1));
-      const bool endif_merged_wave_info =
-         ctx.tcs_in_out_eq ? i == 1 : (check_merged_wave_info && !(ngg_gs && i == 1));
+         ctx.tcs_in_out_eq ? i == 0
+                           : (shader_count >= 2 && !empty_shader && ((!ngg_gs && !hs) || i != 1));
+      const bool endif_merged_wave_info = ctx.tcs_in_out_eq ? i == 1 : check_merged_wave_info;
 
       /* Skip s_barrier from TCS when VS outputs are not stored in the LDS. */
       const bool tcs_skip_barrier =
