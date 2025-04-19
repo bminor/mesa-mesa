@@ -181,6 +181,9 @@ set_io_mask(nir_shader *shader, nir_variable *var, int offset, int len,
                shader->info.outputs_written |= bitfield;
                if (indirect)
                   shader->info.outputs_accessed_indirectly |= bitfield;
+
+               if (cross_invocation && shader->info.stage == MESA_SHADER_TESS_CTRL)
+                  shader->info.tess.tcs_cross_invocation_outputs_written |= bitfield;
             }
          }
 
@@ -630,6 +633,11 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
          }
       }
 
+      if (shader->info.stage == MESA_SHADER_TESS_CTRL &&
+          instr->intrinsic == nir_intrinsic_store_per_vertex_output &&
+          !src_is_invocation_id(nir_get_io_arrayed_index_src(instr)))
+         shader->info.tess.tcs_cross_invocation_outputs_written |= slot_mask;
+
       if (shader->info.stage == MESA_SHADER_MESH &&
           (instr->intrinsic == nir_intrinsic_store_per_vertex_output ||
            instr->intrinsic == nir_intrinsic_store_per_primitive_output) &&
@@ -1020,6 +1028,7 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.tess.tcs_same_invocation_inputs_read = 0;
       shader->info.tess.tcs_cross_invocation_inputs_read = 0;
       shader->info.tess.tcs_cross_invocation_outputs_read = 0;
+      shader->info.tess.tcs_cross_invocation_outputs_written = 0;
    }
    if (shader->info.stage == MESA_SHADER_MESH) {
       shader->info.mesh.ms_cross_invocation_output_access = 0;
