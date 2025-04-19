@@ -305,6 +305,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_shader_module_identifier = true,
       .EXT_subgroup_size_control = has_vk1_1,
       .EXT_tooling_info = true,
+      .EXT_vertex_input_dynamic_state = true,
       .EXT_ycbcr_2plane_444_formats = arch >= 10,
       .EXT_ycbcr_image_arrays = arch >= 10,
       .GOOGLE_decorate_string = true,
@@ -490,6 +491,9 @@ get_features(const struct panvk_physical_device *device,
       /* VK_KHR_vertex_attribute_divisor */
       .vertexAttributeInstanceRateDivisor = true,
       .vertexAttributeInstanceRateZeroDivisor = true,
+
+      /* VK_EXT_vertex_input_dynamic_state */
+      .vertexInputDynamicState = true,
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
