@@ -158,6 +158,20 @@ SOFTWARE.
 
 
 <bitset name="#instruction-cat2-2src-input" extends="#instruction-cat2">
+	<override expr="#cat2-cat3-nop-encoding">
+		<display>
+			{SY}{SS}{JP}{SAT}(nop{NOP}) {UL}{NAME} {EI}{DST_HALF}{DST}, {SRC1}, {SRC2}
+		</display>
+		<derived name="NOP" expr="#cat2-cat3-nop-value" type="uint"/>
+		<field name="SRC1" low="0" high="15" type="#multisrc">
+			<param name="ZERO" as="SRC_R"/>
+			<param name="FULL"/>
+		</field>
+		<field name="SRC2" low="16" high="31" type="#multisrc">
+			<param name="ZERO" as="SRC_R"/>
+			<param name="FULL"/>
+		</field>
+	</override>
 	<display>
 		{SY}{SS}{JP}{SAT}{REPEAT}{UL}{NAME} {EI}{DST_HALF}{DST}, {SRC1}, {SRC2}
 	</display>
