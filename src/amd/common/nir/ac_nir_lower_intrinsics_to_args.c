@@ -62,9 +62,36 @@ load_subgroup_id_lowered(lower_intrinsics_to_args_state *s, nir_builder *b)
           */
          return ac_nir_unpack_arg(b, s->args, s->args->tg_size, 6, 6);
       }
-   } else if (s->hw_stage == AC_HW_HULL_SHADER && s->gfx_level >= GFX11) {
-      assert(s->args->tcs_wave_id.used);
-      return ac_nir_unpack_arg(b, s->args, s->args->tcs_wave_id, 0, 3);
+   } else if (s->hw_stage == AC_HW_HULL_SHADER) {
+      if (s->gfx_level >= GFX11) {
+         assert(s->args->tcs_wave_id.used);
+         return ac_nir_unpack_arg(b, s->args, s->args->tcs_wave_id, 0, 3);
+      } else if (b->shader->info.stage == MESA_SHADER_TESS_CTRL) {
+         /* GFX6-10 don't have the subgroup ID sysval in TCS, so compute it like this:
+          *    subgroup_id = (rel_patch_id * tcs_out_vertices + invocation_id) / wave_size;
+          * Use the values from any invocation because the result should be the same for all.
+          */
+         nir_def *sgpr_rel_ids = nir_read_first_invocation(b, ac_nir_load_arg(b, s->args, s->args->tcs_rel_ids));
+         nir_def *sgpr_rel_patch_id = nir_ubfe_imm(b, sgpr_rel_ids, 0, 8);
+         nir_def *sgpr_local_invocation_index = sgpr_rel_patch_id;
+
+         /* If the number of vertices per patch is a power of two, all invocations of a patch are
+          * always in the same subgroup.
+          */
+         if (b->shader->info.tess.tcs_vertices_out > 1) {
+            nir_def *sgpr_patch_start = nir_imul_imm(b, sgpr_rel_patch_id, b->shader->info.tess.tcs_vertices_out);
+
+            if (util_is_power_of_two_nonzero(b->shader->info.tess.tcs_vertices_out)) {
+               sgpr_local_invocation_index = sgpr_patch_start;
+            } else {
+               nir_def *sgpr_invocation_id = nir_ubfe_imm(b, sgpr_rel_ids, 8, 5);
+               sgpr_local_invocation_index = nir_iadd(b, sgpr_patch_start, sgpr_invocation_id);
+            }
+         }
+         return nir_ushr_imm(b, sgpr_local_invocation_index, util_logbase2(s->wave_size));
+      } else {
+         unreachable("unimplemented for LS");
+      }
    } else if (s->hw_stage == AC_HW_LEGACY_GEOMETRY_SHADER ||
               s->hw_stage == AC_HW_NEXT_GEN_GEOMETRY_SHADER) {
       assert(s->args->merged_wave_info.used);
@@ -417,7 +444,7 @@ lower_intrinsic_to_arg(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    }
    case nir_intrinsic_load_local_invocation_index:
       /* GFX11 HS has subgroup_id, so use it instead of vs_rel_patch_id. */
-      if (s->gfx_level < GFX11 &&
+      if (s->gfx_level < GFX11 && b->shader->info.stage == MESA_SHADER_VERTEX &&
           (s->hw_stage == AC_HW_LOCAL_SHADER || s->hw_stage == AC_HW_HULL_SHADER)) {
          if (!s->vs_rel_patch_id) {
             s->vs_rel_patch_id = preload_arg(s, b->impl, s->args->vs_rel_patch_id,
