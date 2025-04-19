@@ -2597,7 +2597,7 @@ impl SM20Op for OpS2R {
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         e.set_opcode(SM20Unit::Move, 0xb);
         e.set_dst(14..20, self.dst);
-        e.set_field(26..32, self.idx);
+        e.set_field(26..36, self.idx);
     }
 }
 
