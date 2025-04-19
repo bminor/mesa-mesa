@@ -2982,7 +2982,9 @@ impl<'a> ShaderFromNir<'a> {
                 );
                 let comps = intrin.def.bit_size / 32;
                 let dst = b.alloc_ssa(RegFile::GPR, comps);
-                if idx == NAK_SV_CLOCK || idx == NAK_SV_CLOCK + 1 {
+                if self.sm.sm() >= 50
+                    && (idx == NAK_SV_CLOCK || idx == NAK_SV_CLOCK + 1)
+                {
                     debug_assert!(idx + comps <= NAK_SV_CLOCK + 2);
                     b.push_op(OpCS2R {
                         dst: dst.into(),
