@@ -60,6 +60,12 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
 
    pan_pack(desc, ATTRIBUTE, cfg) {
       cfg.offset = attrib_info->offset;
+
+      if (per_instance) {
+         cfg.offset +=
+            cmdbuf->state.gfx.sysvals.vs.base_instance * buf_info->stride;
+      }
+
       cfg.format = GENX(panfrost_format_from_pipe_format)(f)->hw;
       cfg.table = 0;
       cfg.buffer_index = buf_idx;
@@ -115,8 +121,19 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
       cmdbuf->vk.dynamic_graphics_state.vi;
    uint32_t vb_count = 0;
 
-   u_foreach_bit(i, vi->attributes_valid)
+   cmdbuf->state.gfx.vi.attribs_changing_on_base_instance = 0;
+   u_foreach_bit(i, vi->attributes_valid) {
+      const struct vk_vertex_binding_state *binding =
+         &vi->bindings[vi->attributes[i].binding];
+
+      if (binding->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE &&
+          binding->stride != 0) {
+         cmdbuf->state.gfx.vi.attribs_changing_on_base_instance |=
+            BITFIELD_BIT(i);
+      }
+
       vb_count = MAX2(vi->attributes[i].binding + 1, vb_count);
+   }
 
    uint32_t vb_offset = vs->desc_info.dyn_bufs.count + MAX_VS_ATTRIBS + 1;
    uint32_t desc_count = vb_offset + vb_count;
@@ -1900,6 +1917,14 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (result != VK_SUCCESS)
       return result;
 
+   /* Changes to base_instance will modify the offset of per-instance
+    * attributes, so we manually invalidate the VI state to trigger a
+    * new attribute table generation in that case. */
+   if ((draw->instance.base != cmdbuf->state.gfx.sysvals.vs.base_instance ||
+        draw->indirect.buffer_dev_addr) &&
+       cmdbuf->state.gfx.vi.attribs_changing_on_base_instance != 0)
+      BITSET_SET(cmdbuf->vk.dynamic_graphics_state.dirty, MESA_VK_DYNAMIC_VI);
+
    panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, draw);
 
    result = prepare_push_uniforms(cmdbuf);
@@ -2164,7 +2189,13 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    if (result != VK_SUCCESS)
       return;
 
+   uint32_t patch_attribs =
+      cmdbuf->state.gfx.vi.attribs_changing_on_base_instance;
    struct cs_index draw_params_addr = cs_scratch_reg64(b, 0);
+   struct cs_index vs_drv_set = cs_scratch_reg64(b, 2);
+   struct cs_index attrib_offset = cs_scratch_reg32(b, 4);
+   struct cs_index multiplicand = cs_scratch_reg32(b, 5);
+
    cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
 
    cs_update_vt_ctx(b) {
@@ -2198,6 +2229,60 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       /* Wait for the store using SR-37 as src to finish, so we can overwrite
        * it. */
       cs_wait_slot(b, SB_ID(LS), false);
+   }
+
+   if (patch_attribs != 0) {
+      struct panvk_shader_desc_state *vs_desc_state =
+         &cmdbuf->state.gfx.vs.desc;
+      const struct vk_vertex_input_state *vi =
+         cmdbuf->vk.dynamic_graphics_state.vi;
+
+      cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
+
+      /* If firstInstance=0, skip the offset adjustment. */
+      cs_if(b, MALI_CS_CONDITION_NEQUAL,
+            cs_sr_reg32(b, IDVS, INSTANCE_OFFSET)) {
+         u_foreach_bit(i, patch_attribs) {
+            const struct vk_vertex_attribute_state *attrib_info =
+               &vi->attributes[i];
+            const struct vk_vertex_binding_state *binding =
+               &vi->bindings[attrib_info->binding];
+
+            cs_load32_to(b, attrib_offset, vs_drv_set,
+                         pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
+            cs_wait_slot(b, SB_ID(LS), false);
+
+            /* Emulated immediate multiply: we walk the bits in
+             * base_instance, and accumulate (stride << bit_pos) if the bit
+             * is present. This is sub-optimal, but it's simple :-). */
+            cs_add32(b, multiplicand, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+            for (uint32_t i = 31; i > 0; i--) {
+               uint32_t add = binding->stride << i;
+
+               /* bit31 is the sign bit, so we don't need to subtract to
+                * check the presence of the bit. */
+               if (i < 31)
+                  cs_add32(b, multiplicand, multiplicand, -(1 << i));
+
+               if (add) {
+                  cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
+                     cs_add32(b, multiplicand, multiplicand, 1 << i);
+                  cs_else(b)
+                     cs_add32(b, attrib_offset, attrib_offset, add);
+               } else {
+                  cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
+                     cs_add32(b, multiplicand, multiplicand, 1 << i);
+               }
+            }
+
+            cs_if(b, MALI_CS_CONDITION_NEQUAL, multiplicand)
+               cs_add32(b, attrib_offset, attrib_offset, binding->stride);
+
+            cs_store32(b, attrib_offset, vs_drv_set,
+                       pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
+            cs_wait_slot(b, SB_ID(LS), false);
+         }
+      }
    }
 
    /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
