@@ -161,7 +161,9 @@ lower_es_output_store(nir_builder *b,
 
    b->cursor = nir_before_instr(&intrin->instr);
    unsigned mapped = ac_nir_map_io_location(io_sem.location, st->gs_inputs_read, st->map_io);
-   nir_def *io_off = ac_nir_calc_io_off(b, intrin, nir_imm_int(b, 16u), 4u, mapped);
+   nir_def *io_off = ac_nir_calc_io_off(b, nir_intrinsic_component(intrin),
+                                        nir_get_io_offset_src(intrin)->ssa,
+                                        nir_imm_int(b, 16u), 4u, mapped);
    nir_def *store_val = intrin->src[0].ssa;
 
    if (st->gfx_level <= GFX8) {
@@ -292,7 +294,9 @@ gs_per_vertex_input_offset(nir_builder *b,
    unsigned base_stride = st->gfx_level >= GFX9 ? 1 : 64 /* Wave size on GFX6-8 */;
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(instr);
    unsigned mapped = ac_nir_map_io_location(io_sem.location, st->gs_inputs_read, st->map_io);
-   nir_def *io_off = ac_nir_calc_io_off(b, instr, nir_imm_int(b, base_stride * 4u), base_stride, mapped);
+   nir_def *io_off = ac_nir_calc_io_off(b, nir_intrinsic_component(instr),
+                                        nir_get_io_offset_src(instr)->ssa,
+                                        nir_imm_int(b, base_stride * 4u), base_stride, mapped);
    nir_def *off = nir_iadd(b, io_off, vertex_offset);
    return nir_imul_imm(b, off, 4u);
 }

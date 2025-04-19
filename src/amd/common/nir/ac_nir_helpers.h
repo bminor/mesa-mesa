@@ -133,11 +133,8 @@ ac_nir_store_parameters_to_attr_ring(nir_builder *b,
                                      nir_def *num_export_threads_in_wave);
 
 nir_def *
-ac_nir_calc_io_off(nir_builder *b,
-                             nir_intrinsic_instr *intrin,
-                             nir_def *base_stride,
-                             unsigned component_stride,
-                             unsigned mapped_location);
+ac_nir_calc_io_off(nir_builder *b, unsigned component, nir_def *io_offset, nir_def *base_stride,
+                   unsigned component_stride, unsigned mapped_driver_location);
 
 unsigned
 ac_nir_map_io_location(unsigned location,

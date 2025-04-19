@@ -57,16 +57,11 @@ ac_nir_map_io_location(unsigned location,
 }
 
 /**
- * This function takes an I/O intrinsic like load/store_input,
- * and emits a sequence that calculates the full offset of that instruction,
- * including a stride to the base and component offsets.
+ * This function calculates the full offset of an input/output.
  */
 nir_def *
-ac_nir_calc_io_off(nir_builder *b,
-                             nir_intrinsic_instr *intrin,
-                             nir_def *base_stride,
-                             unsigned component_stride,
-                             unsigned mapped_driver_location)
+ac_nir_calc_io_off(nir_builder *b, unsigned component, nir_def *io_offset, nir_def *base_stride,
+                   unsigned component_stride, unsigned mapped_driver_location)
 {
    /* base is the driver_location, which is in slots (1 slot = 4x4 bytes) */
    nir_def *base_op = nir_imul_imm(b, base_stride, mapped_driver_location);
@@ -75,11 +70,10 @@ ac_nir_calc_io_off(nir_builder *b,
     * so the instruction effectively reads/writes another input/output
     * when it has an offset
     */
-   nir_def *offset_op = nir_imul(b, base_stride,
-                                 nir_get_io_offset_src(intrin)->ssa);
+   nir_def *offset_op = nir_imul(b, base_stride, io_offset);
 
    /* component is in bytes */
-   unsigned const_op = nir_intrinsic_component(intrin) * component_stride;
+   unsigned const_op = component * component_stride;
 
    return nir_iadd_imm_nuw(b, nir_iadd_nuw(b, base_op, offset_op), const_op);
 }
