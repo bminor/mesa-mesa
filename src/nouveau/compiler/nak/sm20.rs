@@ -598,7 +598,11 @@ impl SM20Op for OpFFma {
         {
             b.copy_alu_src(src1, GPR, SrcType::F32);
         }
-        b.copy_alu_src_if_not_reg(src2, GPR, SrcType::F32);
+        if src_is_reg(src1, GPR) {
+            b.copy_alu_src_if_imm(src2, GPR, SrcType::ALU);
+        } else {
+            b.copy_alu_src_if_not_reg(src2, GPR, SrcType::I32);
+        }
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
@@ -925,7 +929,11 @@ impl SM20Op for OpDFma {
         swap_srcs_if_not_reg(src0, src1, GPR);
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F64);
         b.copy_alu_src_if_f20_overflow(src1, GPR, SrcType::F64);
-        b.copy_alu_src_if_not_reg(src2, GPR, SrcType::F64);
+        if src_is_reg(src1, GPR) {
+            b.copy_alu_src_if_imm(src2, GPR, SrcType::ALU);
+        } else {
+            b.copy_alu_src_if_not_reg(src2, GPR, SrcType::I32);
+        }
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
