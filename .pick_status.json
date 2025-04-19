@@ -274,7 +274,7 @@
         "description": "radv: fix incorrect patch_outputs_read for TCS with dynamic state",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8c2f9f0665d03b0fd0042354eb79cc069a77736b",
         "notes": null
