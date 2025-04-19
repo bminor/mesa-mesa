@@ -224,7 +224,7 @@
         "description": "panvk/csf: Fix instance attribute offseting",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1570f0172e02aa660bb0b2619d67c1cff52b3914",
         "notes": null

@@ -203,9 +203,7 @@ panvk_lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin,
       PAN_ARCH <= 7 ?
          nir_load_raw_vertex_id_pan(b) :
          nir_load_vertex_id(b),
-      PAN_ARCH >= 9 ?
-         nir_iadd(b, nir_load_instance_id(b), nir_load_base_instance(b)) :
-         nir_load_instance_id(b),
+      nir_load_instance_id(b),
       nir_get_io_offset_src(intrin)->ssa,
       .base = nir_intrinsic_base(intrin),
       .component = nir_intrinsic_component(intrin),
