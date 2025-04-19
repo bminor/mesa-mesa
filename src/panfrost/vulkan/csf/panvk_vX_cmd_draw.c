@@ -44,11 +44,16 @@
 #include "vk_render_pass.h"
 
 static void
-emit_vs_attrib(const struct vk_vertex_attribute_state *attrib_info,
-               const struct vk_vertex_binding_state *buf_info,
-               const struct panvk_attrib_buf *buf, uint32_t vb_desc_offset,
+emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
+               uint32_t attrib_idx, uint32_t vb_desc_offset,
                struct mali_attribute_packed *desc)
 {
+   const struct vk_vertex_input_state *vi =
+      cmdbuf->vk.dynamic_graphics_state.vi;
+   const struct vk_vertex_attribute_state *attrib_info =
+      &vi->attributes[attrib_idx];
+   const struct vk_vertex_binding_state *buf_info =
+      &vi->bindings[attrib_info->binding];
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
    enum pipe_format f = vk_format_to_pipe_format(attrib_info->format);
    unsigned buf_idx = vb_desc_offset + attrib_info->binding;
@@ -126,10 +131,7 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    for (uint32_t i = 0; i < MAX_VS_ATTRIBS; i++) {
       if (vi->attributes_valid & BITFIELD_BIT(i)) {
-         unsigned binding = vi->attributes[i].binding;
-
-         emit_vs_attrib(&vi->attributes[i], &vi->bindings[binding],
-                        &cmdbuf->state.gfx.vb.bufs[binding], vb_offset,
+         emit_vs_attrib(cmdbuf, i, vb_offset,
                         (struct mali_attribute_packed *)(&descs[i]));
       } else {
          memset(&descs[i], 0, sizeof(descs[0]));
