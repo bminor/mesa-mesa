@@ -119,6 +119,10 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
 #endif
 
    case nir_intrinsic_load_draw_id:
+      /* Multidraw is supported on v10. */
+      if (PAN_ARCH >= 10)
+         return false;
+
       /* TODO: We only implement single-draw direct and indirect draws, so this
        * is sufficient. We'll revisit this when we get around to implementing
        * multidraw. */

@@ -110,7 +110,8 @@ vs_driver_set_is_dirty(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static VkResult
-prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
+prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf,
+                      const struct panvk_draw_info *draw)
 {
    if (!vs_driver_set_is_dirty(cmdbuf))
       return VK_SUCCESS;
@@ -139,45 +140,56 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    uint32_t vb_offset = vs->desc_info.dyn_bufs.count + MAX_VS_ATTRIBS + 1;
    uint32_t desc_count = vb_offset + vb_count;
+   uint32_t repeat_count = 1;
+
+   if (draw->indirect.draw_count > 1 &&
+       cmdbuf->state.gfx.vi.attribs_changing_on_base_instance != 0)
+      repeat_count = draw->indirect.draw_count;
+
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
    struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
-      cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
+      cmdbuf, desc, repeat_count * desc_count * PANVK_DESCRIPTOR_SIZE,
+      PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
 
    if (!driver_set.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   for (uint32_t i = 0; i < MAX_VS_ATTRIBS; i++) {
-      if (vi->attributes_valid & BITFIELD_BIT(i)) {
-         emit_vs_attrib(cmdbuf, i, vb_offset,
-                        (struct mali_attribute_packed *)(&descs[i]));
-      } else {
-         memset(&descs[i], 0, sizeof(descs[0]));
-      }
-   }
-
-   /* Dummy sampler always comes right after the vertex attribs. */
-   pan_cast_and_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, cfg) {
-      cfg.clamp_integer_array_indices = false;
-   }
-
-   panvk_per_arch(cmd_fill_dyn_bufs)(
-      desc_state, vs,
-      (struct mali_buffer_packed *)(&descs[MAX_VS_ATTRIBS + 1]));
-
-   for (uint32_t i = 0; i < vb_count; i++) {
-      const struct panvk_attrib_buf *vb = &cmdbuf->state.gfx.vb.bufs[i];
-
-      pan_cast_and_pack(&descs[vb_offset + i], BUFFER, cfg) {
-         if (vi->bindings_valid & BITFIELD_BIT(i)) {
-            cfg.address = vb->address;
-            cfg.size = vb->size;
+   for (uint32_t r = 0; r < repeat_count; r++) {
+      for (uint32_t i = 0; i < MAX_VS_ATTRIBS; i++) {
+         if (vi->attributes_valid & BITFIELD_BIT(i)) {
+            emit_vs_attrib(cmdbuf, i, vb_offset,
+                           (struct mali_attribute_packed *)(&descs[i]));
          } else {
-            cfg.address = 0;
-            cfg.size = 0;
+            memset(&descs[i], 0, sizeof(descs[0]));
          }
       }
+
+      /* Dummy sampler always comes right after the vertex attribs. */
+      pan_cast_and_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, cfg) {
+         cfg.clamp_integer_array_indices = false;
+      }
+
+      panvk_per_arch(cmd_fill_dyn_bufs)(
+         desc_state, vs,
+         (struct mali_buffer_packed *)(&descs[MAX_VS_ATTRIBS + 1]));
+
+      for (uint32_t i = 0; i < vb_count; i++) {
+         const struct panvk_attrib_buf *vb = &cmdbuf->state.gfx.vb.bufs[i];
+
+         pan_cast_and_pack(&descs[vb_offset + i], BUFFER, cfg) {
+            if (vi->bindings_valid & BITFIELD_BIT(i)) {
+               cfg.address = vb->address;
+               cfg.size = vb->size;
+            } else {
+               cfg.address = 0;
+               cfg.size = 0;
+            }
+         }
+      }
+
+      descs += desc_count;
    }
 
    vs_desc_state->driver_set.dev_addr = driver_set.gpu;
@@ -1326,7 +1338,7 @@ get_render_ctx(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static VkResult
-prepare_vs(struct panvk_cmd_buffer *cmdbuf)
+prepare_vs(struct panvk_cmd_buffer *cmdbuf, const struct panvk_draw_info *draw)
 {
    struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
    struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
@@ -1335,14 +1347,20 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
    bool upd_res_table = false;
 
-   VkResult result = prepare_vs_driver_set(cmdbuf);
+   VkResult result = prepare_vs_driver_set(cmdbuf, draw);
    if (result != VK_SUCCESS)
       return result;
 
    if (gfx_state_dirty(cmdbuf, VS) || gfx_state_dirty(cmdbuf, DESC_STATE) ||
        vs_driver_set_is_dirty(cmdbuf)) {
+      uint32_t repeat_count = 1;
+
+      if (draw->indirect.draw_count > 1 &&
+          cmdbuf->state.gfx.vi.attribs_changing_on_base_instance != 0)
+         repeat_count = draw->indirect.draw_count;
+
       result = panvk_per_arch(cmd_prepare_shader_res_table)(
-         cmdbuf, desc_state, vs, vs_desc_state, 1);
+         cmdbuf, desc_state, vs, vs_desc_state, repeat_count);
       if (result != VK_SUCCESS)
          return result;
 
@@ -1406,7 +1424,8 @@ prepare_fs(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static VkResult
-prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
+prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf,
+                      const struct panvk_draw_info *draw)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1415,7 +1434,15 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
    VkResult result;
 
    if (gfx_state_dirty(cmdbuf, VS_PUSH_UNIFORMS)) {
-      result = panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, vs, 1);
+      uint32_t repeat_count = 1;
+
+      if (draw->indirect.draw_count > 1 &&
+          (shader_uses_sysval(vs, graphics, vs.first_vertex) ||
+           shader_uses_sysval(vs, graphics, vs.base_instance)))
+         repeat_count = draw->indirect.draw_count;
+
+      result =
+         panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, vs, repeat_count);
       if (result != VK_SUCCESS)
          return result;
 
@@ -1961,11 +1988,11 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, draw);
 
-   result = prepare_push_uniforms(cmdbuf);
+   result = prepare_push_uniforms(cmdbuf, draw);
    if (result != VK_SUCCESS)
       return result;
 
-   result = prepare_vs(cmdbuf);
+   result = prepare_vs(cmdbuf, draw);
    if (result != VK_SUCCESS)
       return result;
 
@@ -2197,9 +2224,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    assert(cmdbuf->state.gfx.render.layer_count <= 1 ||
           cmdbuf->state.gfx.render.view_mask);
 
-   /* MultiDrawIndirect (.maxDrawIndirectCount) needs additional changes. */
-   assert(draw->indirect.draw_count == 1);
-
    /* Force a new push uniform block to be allocated */
    gfx_state_set_dirty(cmdbuf, VS_PUSH_UNIFORMS);
 
@@ -2207,124 +2231,165 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    if (result != VK_SUCCESS)
       return;
 
-   uint32_t patch_attribs =
-      cmdbuf->state.gfx.vi.attribs_changing_on_base_instance;
-   struct cs_index draw_params_addr = cs_scratch_reg64(b, 0);
-   struct cs_index vs_drv_set = cs_scratch_reg64(b, 2);
-   struct cs_index attrib_offset = cs_scratch_reg32(b, 4);
-   struct cs_index multiplicand = cs_scratch_reg32(b, 5);
-
-   cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
-
-   cs_update_vt_ctx(b) {
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, GLOBAL_ATTRIBUTE_OFFSET), 0);
-      /* Load SR33-37 from indirect buffer. */
-      unsigned reg_mask = draw->index.size ? 0b11111 : 0b11011;
-      cs_load_to(b, cs_sr_reg_tuple(b, IDVS, INDEX_COUNT, 5),
-                 draw_params_addr, reg_mask, 0);
-   }
-
-   /* Wait for the SR33-37 indirect buffer load. */
-   cs_wait_slot(b, SB_ID(LS), false);
-
-   if (shader_uses_sysval(vs, graphics, vs.first_vertex) ||
-       shader_uses_sysval(vs, graphics, vs.base_instance)) {
-      struct cs_index fau_block_addr = cs_scratch_reg64(b, 2);
-      cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.vs.push_uniforms);
-
-      if (shader_uses_sysval(vs, graphics, vs.first_vertex)) {
-         cs_store32(b, cs_sr_reg32(b, IDVS, VERTEX_OFFSET), fau_block_addr,
-                    shader_remapped_sysval_offset(
-                       vs, sysval_offset(graphics, vs.first_vertex)));
-      }
-
-      if (shader_uses_sysval(vs, graphics, vs.base_instance)) {
-         cs_store32(b, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), fau_block_addr,
-                    shader_remapped_sysval_offset(
-                       vs, sysval_offset(graphics, vs.base_instance)));
-      }
-
-      /* Wait for the store using SR-37 as src to finish, so we can overwrite
-       * it. */
-      cs_wait_slot(b, SB_ID(LS), false);
-   }
-
-   if (patch_attribs != 0) {
-      struct panvk_shader_desc_state *vs_desc_state =
-         &cmdbuf->state.gfx.vs.desc;
-      const struct vk_dynamic_graphics_state *dyns =
-         &cmdbuf->vk.dynamic_graphics_state;
-      const struct vk_vertex_input_state *vi = dyns->vi;
-
-      cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
-
-      /* If firstInstance=0, skip the offset adjustment. */
-      cs_if(b, MALI_CS_CONDITION_NEQUAL,
-            cs_sr_reg32(b, IDVS, INSTANCE_OFFSET)) {
-         u_foreach_bit(i, patch_attribs) {
-            const struct vk_vertex_attribute_state *attrib_info =
-               &vi->attributes[i];
-            const uint32_t stride =
-               dyns->vi_binding_strides[attrib_info->binding];
-
-            cs_load32_to(b, attrib_offset, vs_drv_set,
-                         pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
-            cs_wait_slot(b, SB_ID(LS), false);
-
-            /* Emulated immediate multiply: we walk the bits in
-             * base_instance, and accumulate (stride << bit_pos) if the bit
-             * is present. This is sub-optimal, but it's simple :-). */
-            cs_add32(b, multiplicand, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
-            for (uint32_t i = 31; i > 0; i--) {
-               uint32_t add = stride << i;
-
-               /* bit31 is the sign bit, so we don't need to subtract to
-                * check the presence of the bit. */
-               if (i < 31)
-                  cs_add32(b, multiplicand, multiplicand, -(1 << i));
-
-               if (add) {
-                  cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
-                     cs_add32(b, multiplicand, multiplicand, 1 << i);
-                  cs_else(b)
-                     cs_add32(b, attrib_offset, attrib_offset, add);
-               } else {
-                  cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
-                     cs_add32(b, multiplicand, multiplicand, 1 << i);
-               }
-            }
-
-            cs_if(b, MALI_CS_CONDITION_NEQUAL, multiplicand)
-               cs_add32(b, attrib_offset, attrib_offset, stride);
-
-            cs_store32(b, attrib_offset, vs_drv_set,
-                       pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
-            cs_wait_slot(b, SB_ID(LS), false);
-         }
-      }
-   }
-
-   /* NIR expects zero-based instance ID, but even if it did have an intrinsic to
-    * load the absolute instance ID, we'd want to keep it zero-based to work around
-    * Mali's limitation on non-zero firstInstance when a instance divisor is used.
-    */
-   cs_update_vt_ctx(b)
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+   struct panvk_shader_desc_state *vs_desc_state =
+      &cmdbuf->state.gfx.vs.desc;
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
+   const struct vk_vertex_input_state *vi = dyns->vi;
 
    struct mali_primitive_flags_packed flags_override =
       get_tiler_flags_override(draw);
 
+   uint32_t patch_attribs =
+      cmdbuf->state.gfx.vi.attribs_changing_on_base_instance;
+   uint32_t vs_res_table_size =
+      (util_last_bit(vs->desc_info.used_set_mask) + 1) * pan_size(RESOURCE);
+   bool patch_faus = shader_uses_sysval(vs, graphics, vs.first_vertex) ||
+                     shader_uses_sysval(vs, graphics, vs.base_instance);
+   struct cs_index draw_params_addr = cs_scratch_reg64(b, 0);
+   struct cs_index vs_drv_set = cs_scratch_reg64(b, 2);
+   struct cs_index attrib_offset = cs_scratch_reg32(b, 4);
+   struct cs_index multiplicand = cs_scratch_reg32(b, 5);
+   struct cs_index draw_count = cs_scratch_reg32(b, 6);
+   struct cs_index draw_id = cs_scratch_reg32(b, 7);
+   struct cs_index vs_fau_addr = cs_scratch_reg64(b, 8);
+   struct cs_index tracing_scratch_regs = cs_scratch_reg_tuple(b, 10, 4);
+   uint32_t vs_fau_count = BITSET_COUNT(vs->fau.used_sysvals) +
+                           BITSET_COUNT(vs->fau.used_push_consts);
+
+   if (patch_faus)
+      cs_move64_to(b, vs_fau_addr, cmdbuf->state.gfx.vs.push_uniforms);
+
+   cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
+   cs_move32_to(b, draw_id, 0);
+   cs_move32_to(b, draw_count, draw->indirect.draw_count);
+
    cs_req_res(b, CS_IDVS_RES);
+
+   cs_while(b, MALI_CS_CONDITION_GREATER, draw_count) {
+      cs_update_vt_ctx(b) {
+         cs_move32_to(b, cs_sr_reg32(b, IDVS, GLOBAL_ATTRIBUTE_OFFSET), 0);
+         /* Load SR33-37 from indirect buffer. */
+         unsigned reg_mask = draw->index.size ? 0b11111 : 0b11011;
+         cs_load_to(b, cs_sr_reg_tuple(b, IDVS, INDEX_COUNT, 5),
+                    draw_params_addr, reg_mask, 0);
+      }
+
+      /* Wait for the SR33-37 indirect buffer load. */
+      cs_wait_slot(b, SB_ID(LS), false);
+
+      if (patch_faus) {
+         if (shader_uses_sysval(vs, graphics, vs.first_vertex)) {
+            cs_store32(b, cs_sr_reg32(b, IDVS, VERTEX_OFFSET), vs_fau_addr,
+                       shader_remapped_sysval_offset(
+                          vs, sysval_offset(graphics, vs.first_vertex)));
+         }
+
+         if (shader_uses_sysval(vs, graphics, vs.base_instance)) {
+            cs_store32(b, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), vs_fau_addr,
+                       shader_remapped_sysval_offset(
+                          vs, sysval_offset(graphics, vs.base_instance)));
+         }
+
+         /* Wait for the store using SR-37 as src to finish, so we can
+          * overwrite it. */
+         cs_wait_slot(b, SB_ID(LS), false);
+      }
+
+      if (patch_attribs != 0) {
+         cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
+
+         /* If firstInstance=0, skip the offset adjustment. */
+         cs_if(b, MALI_CS_CONDITION_NEQUAL,
+               cs_sr_reg32(b, IDVS, INSTANCE_OFFSET)) {
+            u_foreach_bit(i, patch_attribs) {
+               const struct vk_vertex_attribute_state *attrib_info =
+                  &vi->attributes[i];
+               const uint32_t stride =
+                  dyns->vi_binding_strides[attrib_info->binding];
+
+               cs_load32_to(b, attrib_offset, vs_drv_set,
+                            pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
+               cs_wait_slot(b, SB_ID(LS), false);
+
+               /* Emulated immediate multiply: we walk the bits in
+                * base_instance, and accumulate (stride << bit_pos) if the bit
+                * is present. This is sub-optimal, but it's simple :-). */
+               cs_add32(b, multiplicand,
+                        cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+               for (uint32_t i = 31; i > 0; i--) {
+                  uint32_t add = stride << i;
+
+                  /* bit31 is the sign bit, so we don't need to subtract to
+                   * check the presence of the bit. */
+                  if (i < 31)
+                     cs_add32(b, multiplicand, multiplicand, -(1 << i));
+
+                  if (add) {
+                     cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
+                        cs_add32(b, multiplicand, multiplicand, 1 << i);
+                     cs_else(b)
+                        cs_add32(b, attrib_offset, attrib_offset, add);
+                  } else {
+                     cs_if(b, MALI_CS_CONDITION_LESS, multiplicand)
+                        cs_add32(b, multiplicand, multiplicand, 1 << i);
+                  }
+               }
+
+               cs_if(b, MALI_CS_CONDITION_NEQUAL, multiplicand)
+                  cs_add32(b, attrib_offset, attrib_offset, stride);
+
+               cs_store32(b, attrib_offset, vs_drv_set,
+                          pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
+               cs_wait_slot(b, SB_ID(LS), false);
+            }
+         }
+      }
+
+      /* NIR expects zero-based instance ID, but even if it did have an
+       * intrinsic to load the absolute instance ID, we'd want to keep it
+       * zero-based to work around Mali's limitation on non-zero firstInstance
+       * when a instance divisor is used.
+       */
+      cs_update_vt_ctx(b)
+         cs_move32_to(b, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+
 #if PAN_ARCH >= 12
-   cs_trace_run_idvs2(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
-                     flags_override.opaque[0], false, true, cs_undef(),
-                     MALI_IDVS_SHADING_MODE_EARLY);
+      cs_trace_run_idvs2(b, tracing_ctx, tracing_scratch_regs,
+                        flags_override.opaque[0], false, true, draw_id,
+                        MALI_IDVS_SHADING_MODE_EARLY);
 #else
-   cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
-                     flags_override.opaque[0], false, true,
-                     cs_shader_res_sel(0, 0, 1, 0),
-                     cs_shader_res_sel(2, 2, 2, 0), cs_undef());
+      cs_trace_run_idvs(b, tracing_ctx, tracing_scratch_regs,
+                        flags_override.opaque[0], false, true,
+                        cs_shader_res_sel(0, 0, 1, 0),
+                        cs_shader_res_sel(2, 2, 2, 0), draw_id);
 #endif
+
+      cs_add32(b, draw_count, draw_count, -1);
+      cs_add32(b, draw_id, draw_id, 1);
+      cs_add64(b, draw_params_addr, draw_params_addr,
+               draw->indirect.stride);
+
+      if (patch_faus) {
+         cs_add64(b, vs_fau_addr, vs_fau_addr, vs_fau_count * sizeof(uint64_t));
+         cs_update_vt_ctx(b) {
+            cs_add64(b, cs_sr_reg64(b, IDVS, VERTEX_FAU),
+                     cs_sr_reg64(b, IDVS, VERTEX_FAU),
+                     vs_fau_count * sizeof(uint64_t));
+         }
+
+      }
+
+      if (patch_attribs != 0) {
+         cs_add64(b, vs_drv_set, vs_drv_set,
+                  vs_desc_state->driver_set.size);
+         cs_update_vt_ctx(b) {
+            cs_add64(b, cs_sr_reg64(b, IDVS, VERTEX_SRT),
+                     cs_sr_reg64(b, IDVS, VERTEX_SRT), vs_res_table_size);
+         }
+      }
+   }
+
    cs_req_res(b, 0);
 }
 
