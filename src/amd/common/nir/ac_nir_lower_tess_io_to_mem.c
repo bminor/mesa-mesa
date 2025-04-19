@@ -147,9 +147,7 @@ typedef struct {
    /* Save TCS tess factor for tess factor writer. */
    nir_variable *tcs_tess_level_outer;
    nir_variable *tcs_tess_level_inner;
-   unsigned tcs_tess_level_outer_base;
    unsigned tcs_tess_level_outer_mask;
-   unsigned tcs_tess_level_inner_base;
    unsigned tcs_tess_level_inner_mask;
 } lower_tess_io_state;
 
@@ -577,18 +575,15 @@ lower_hs_output_store(nir_builder *b,
     */
    if (semantics.location == VARYING_SLOT_TESS_LEVEL_INNER ||
        semantics.location == VARYING_SLOT_TESS_LEVEL_OUTER) {
-      const unsigned base = nir_intrinsic_base(intrin);
       const unsigned component = nir_intrinsic_component(intrin);
 
       if (semantics.location == VARYING_SLOT_TESS_LEVEL_INNER) {
-         st->tcs_tess_level_inner_base = base;
          st->tcs_tess_level_inner_mask |= write_mask << component;
 
          if (st->tcs_info.all_invocations_define_tess_levels)
             ac_nir_store_var_components(b, st->tcs_tess_level_inner, store_val,
                                         component, write_mask);
       } else {
-         st->tcs_tess_level_outer_base = base;
          st->tcs_tess_level_outer_mask |= write_mask << component;
 
          if (st->tcs_info.all_invocations_define_tess_levels)
