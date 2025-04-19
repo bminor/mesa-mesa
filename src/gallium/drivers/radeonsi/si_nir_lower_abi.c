@@ -309,24 +309,23 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    }
    case nir_intrinsic_load_hs_out_patch_data_offset_amd: {
-      nir_def *per_vtx_out_patch_size = NULL;
+      nir_def *tcs_num_patches =
+         nir_iadd_imm_nuw(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7), 1);
+      nir_def *tcs_out_vertices, *num_tcs_mem_outputs;
 
       if (stage == MESA_SHADER_TESS_CTRL) {
-         const unsigned num_hs_out = util_last_bit64(sel->info.tcs_outputs_written_for_tes);
-         const unsigned out_vtx_size = num_hs_out * 16;
-         const unsigned out_vtx_per_patch = b->shader->info.tess.tcs_vertices_out;
-         per_vtx_out_patch_size = nir_imm_int(b, out_vtx_size * out_vtx_per_patch);
+         tcs_out_vertices = nir_imm_int(b, b->shader->info.tess.tcs_vertices_out);
+         num_tcs_mem_outputs = nir_imm_int(b, util_last_bit64(sel->info.tcs_outputs_written_for_tes));
       } else {
-         nir_def *num_hs_out = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 23, 6);
-         nir_def *out_vtx_size = nir_ishl_imm(b, num_hs_out, 4);
-         nir_def *o = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 7, 5);
-         nir_def *out_vtx_per_patch = nir_iadd_imm_nuw(b, o, 1);
-         per_vtx_out_patch_size = nir_imul(b, out_vtx_per_patch, out_vtx_size);
+         tcs_out_vertices =
+            nir_iadd_imm_nuw(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 7, 5), 1);
+         num_tcs_mem_outputs = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 23, 6);
       }
 
-      nir_def *p = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
-      nir_def *num_patches = nir_iadd_imm_nuw(b, p, 1);
-      replacement = nir_imul(b, per_vtx_out_patch_size, num_patches);
+      /* Compute the stride of a single output. */
+      nir_def *attr_stride = nir_imul(b, tcs_num_patches, nir_imul_imm(b, tcs_out_vertices, 16));
+      attr_stride = nir_align_imm(b, attr_stride, 256);
+      replacement = nir_imul(b, attr_stride, num_tcs_mem_outputs);
       break;
    }
    case nir_intrinsic_load_clip_half_line_width_amd: {

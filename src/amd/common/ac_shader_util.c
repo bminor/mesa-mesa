@@ -926,10 +926,27 @@ unsigned ac_compute_ngg_workgroup_size(unsigned es_verts, unsigned gs_inst_prims
    return CLAMP(workgroup_size, 1, 256);
 }
 
+static unsigned get_tcs_wg_output_mem_size(uint32_t num_tcs_output_cp, uint32_t num_mem_tcs_outputs,
+                                           uint32_t num_mem_tcs_patch_outputs, uint32_t num_patches)
+{
+   /* Align each per-vertex and per-patch output to 16 vec4 elements = 256B. It's most optimal when
+    * the 16 vec4 elements are written by 16 consecutive lanes.
+    *
+    * 256B is the granularity of interleaving memory channels, which means a single output store
+    * in wave64 will cover 4 channels (1024B). If an output was only aligned to 128B, wave64 could
+    * cover 5 channels (128B .. 1.125K) instead of 4, which could increase VMEM latency.
+    */
+   unsigned mem_one_pervertex_output = align(16 * num_tcs_output_cp * num_patches, 256);
+   unsigned mem_one_perpatch_output = align(16 * num_patches, 256);
+
+   return mem_one_pervertex_output * num_mem_tcs_outputs +
+          mem_one_perpatch_output * num_mem_tcs_patch_outputs;
+}
+
 uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t num_tcs_input_cp,
-                                     uint32_t num_tcs_output_cp, uint32_t vram_per_patch,
-                                     uint32_t lds_per_patch, uint32_t wave_size,
-                                     bool tess_uses_primid)
+                                     uint32_t num_tcs_output_cp, uint32_t num_mem_tcs_outputs,
+                                     uint32_t num_mem_tcs_patch_outputs, uint32_t lds_per_patch,
+                                     uint32_t wave_size, bool tess_uses_primid)
 {
    /* The VGT HS block increments the patch ID unconditionally within a single threadgroup.
     * This results in incorrect patch IDs when instanced draws are used.
@@ -956,8 +973,24 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
       num_patches = MIN2(num_patches, 16); /* recommended */
 
    /* Make sure the output data fits in the offchip buffer */
-   if (vram_per_patch)
-      num_patches = MIN2(num_patches, (info->hs_offchip_workgroup_dw_size * 4) / vram_per_patch);
+   unsigned mem_size = get_tcs_wg_output_mem_size(num_tcs_output_cp, num_mem_tcs_outputs,
+                                                  num_mem_tcs_patch_outputs, num_patches);
+   if (mem_size > info->hs_offchip_workgroup_dw_size * 4) {
+      /* Find the number of patches that fit in memory. Each output is aligned separately,
+       * so this division won't return a precise result.
+       */
+      num_patches = info->hs_offchip_workgroup_dw_size * 4 /
+                    get_tcs_wg_output_mem_size(num_tcs_output_cp, num_mem_tcs_outputs,
+                                               num_mem_tcs_patch_outputs, 1);
+      assert(get_tcs_wg_output_mem_size(num_tcs_output_cp, num_mem_tcs_outputs,
+                                        num_mem_tcs_patch_outputs, num_patches) <=
+             info->hs_offchip_workgroup_dw_size * 4);
+
+      while (get_tcs_wg_output_mem_size(num_tcs_output_cp, num_mem_tcs_outputs,
+                                        num_mem_tcs_patch_outputs, num_patches + 1) <=
+             info->hs_offchip_workgroup_dw_size * 4)
+         num_patches++;
+   }
 
    /* Make sure that the data fits in LDS. This assumes the shaders only
     * use LDS for the inputs and outputs.

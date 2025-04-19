@@ -76,28 +76,31 @@
  * ### VRAM layout used by TCS-TES I/O:
  *
  * ```
- * attr 0 of patch 0 vertex 0   <─── "off-chip LDS" offset
+ * attr 0 of patch 0 vertex 0   <─── "off-chip LDS" offset, aligned to >= 4K
  * attr 0 of patch 0 vertex 1
  * attr 0 of patch 0 vertex 2
  * ...
  * attr 0 of patch 1 vertex 0
  * attr 0 of patch 1 vertex 1
- * attr 0 of patch 1 vertex 2   <─── hs_per_vertex_output_vmem_offset (attribute slot = 0, rel_patch_id = 1, vertex index = 1)
+ * attr 0 of patch 1 vertex 2   <─── hs_per_vertex_output_vmem_offset (attribute slot = 0, rel_patch_id = 1, vertex index = 2)
  * ...
  * attr 0 of patch 2 vertex 0
  * attr 0 of patch 2 vertex 1
  * attr 0 of patch 2 vertex 2
  * ...
- * attr 1 of patch 0 vertex 0
+ * [pad to 256B]
+ * attr 1 of patch 0 vertex 0   <─── aligned to 256B
  * attr 1 of patch 0 vertex 1
  * attr 1 of patch 0 vertex 2
  * ...
  * ...
- * per-patch attr 0 of patch 0  <─── hs_out_patch_data_offset_amd
+ * [pad to 256B]
+ * per-patch attr 0 of patch 0  <─── hs_out_patch_data_offset_amd, aligned to 256B
  * per-patch attr 0 of patch 1
  * per-patch attr 0 of patch 2  <─── hs_per_patch_output_vmem_offset (attribute slot = 0, rel_patch_id = 2)
  * ...
- * per-patch attr 1 of patch 0
+ * [pad to 256B]
+ * per-patch attr 1 of patch 0  <─── aligned to 256B
  * per-patch attr 1 of patch 1
  * per-patch attr 1 of patch 2
  * ...
@@ -477,6 +480,8 @@ hs_per_vertex_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsign
 
    nir_def *tcs_num_patches = nir_load_tcs_num_patches_amd(b);
    nir_def *attr_stride = nir_imul(b, tcs_num_patches, nir_imul_imm(b, out_vertices_per_patch, 16u));
+   /* Align the stride to 256B. */
+   attr_stride = nir_align_imm(b, attr_stride, 256);
    nir_def *off =
       ac_nir_calc_io_off(b, component, io_offset, attr_stride, 4u,
                          hs_output_vram_map_io_location(b->shader, true, location, st));
@@ -495,10 +500,12 @@ hs_per_patch_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsigne
 {
    nir_def *tcs_num_patches = nir_load_tcs_num_patches_amd(b);
    nir_def *per_patch_data_offset = nir_load_hs_out_patch_data_offset_amd(b);
+   /* Align the stride to 256B. */
+   nir_def *attr_stride = nir_align_imm(b, nir_imul_imm(b, tcs_num_patches, 16u), 256);
 
    nir_def *off =
       io_offset
-      ? ac_nir_calc_io_off(b, component, io_offset, nir_imul_imm(b, tcs_num_patches, 16u), 4u,
+      ? ac_nir_calc_io_off(b, component, io_offset, attr_stride, 4u,
                            hs_output_vram_map_io_location(b->shader, false, location, st))
       : nir_imm_int(b, 0);
 
@@ -1023,8 +1030,7 @@ hs_store_tess_factors_for_tes(nir_builder *b, tess_levels tessfactors, lower_tes
    const bool tes_reads_inner = st->tes_inputs_read & VARYING_BIT_TESS_LEVEL_INNER;
 
    if (st->tcs_tess_level_outer_mask && tes_reads_outer) {
-      const unsigned tf_outer_loc = hs_output_vram_map_io_location(b->shader, false, VARYING_SLOT_TESS_LEVEL_OUTER, st);
-      nir_def *vmem_off_outer = hs_per_patch_output_vmem_offset(b, st, 0, 0, NULL, tf_outer_loc * 16);
+      nir_def *vmem_off_outer = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER, 0, zero, 0);
 
       nir_store_buffer_amd(b, tessfactors.outer, hs_ring_tess_offchip,
                            vmem_off_outer, offchip_offset, zero,
@@ -1033,8 +1039,7 @@ hs_store_tess_factors_for_tes(nir_builder *b, tess_levels tessfactors, lower_tes
    }
 
    if (tessfactors.inner && st->tcs_tess_level_inner_mask && tes_reads_inner) {
-      const unsigned tf_inner_loc = hs_output_vram_map_io_location(b->shader, false, VARYING_SLOT_TESS_LEVEL_INNER, st);
-      nir_def *vmem_off_inner = hs_per_patch_output_vmem_offset(b, st, 0, 0, NULL, tf_inner_loc * 16);
+      nir_def *vmem_off_inner = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_INNER, 0, zero, 0);
 
       nir_store_buffer_amd(b, tessfactors.inner, hs_ring_tess_offchip,
                            vmem_off_inner, offchip_offset, zero,
@@ -1328,8 +1333,8 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, uint64_t outputs_rea
    unsigned lds_per_patch = num_tcs_input_cp * lds_input_vertex_size +
                             num_tcs_output_cp * lds_output_vertex_size +
                             lds_perpatch_output_patch_size;
-   unsigned mem_per_patch = (num_tcs_output_cp * num_mem_tcs_outputs + num_mem_tcs_patch_outputs) * 16;
-   unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp, mem_per_patch,
+   unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp,
+                                                      num_mem_tcs_outputs, num_mem_tcs_patch_outputs,
                                                       lds_per_patch, wave_size, tess_uses_primid);
    unsigned lds_size = lds_per_patch * num_patches;
 

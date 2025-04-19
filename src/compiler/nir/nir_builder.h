@@ -1222,6 +1222,16 @@ nir_umod_imm(nir_builder *build, nir_def *x, uint64_t y)
 }
 
 static inline nir_def *
+nir_align_imm(nir_builder *b, nir_def *x, uint64_t align)
+{
+   if (align == 1)
+      return x;
+
+   assert(util_is_power_of_two_nonzero64(align));
+   return nir_iand_imm(b, nir_iadd_imm(b, x, align - 1), ~(align - 1));
+}
+
+static inline nir_def *
 nir_ibfe_imm(nir_builder *build, nir_def *x, uint32_t offset, uint32_t size)
 {
    return nir_ibfe(build, x, nir_imm_int(build, offset), nir_imm_int(build, size));
