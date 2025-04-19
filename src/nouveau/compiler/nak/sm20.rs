@@ -2490,6 +2490,25 @@ impl SM20Op for OpExit {
     }
 }
 
+impl SM20Op for OpBar {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Move, 0x14);
+
+        e.set_field(5..7, 0_u8); // 0: .popc, 1: .and, 2: .or
+        e.set_field(7..9, 0_u8); // 0: .sync, 1: .arv, 2: .red
+        e.set_reg_src(20..26, 0.into());
+        e.set_reg_src(26..32, 0.into());
+        e.set_bit(46, false); // src1_is_imm
+        e.set_bit(47, false); // src0_is_imm
+        e.set_pred_src(49..53, true.into());
+        e.set_pred_dst(53..56, Dst::None);
+    }
+}
+
 impl SM20Op for OpTexDepBar {
     fn legalize(&mut self, _b: &mut LegalizeBuilder) {
         // Nothing to do
@@ -2683,6 +2702,7 @@ macro_rules! as_sm20_op_match {
             Op::Cont(op) => op,
             Op::PCnt(op) => op,
             Op::Exit(op) => op,
+            Op::Bar(op) => op,
             Op::TexDepBar(op) => op,
             Op::Isberd(op) => op,
             Op::Kill(op) => op,
