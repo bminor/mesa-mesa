@@ -1,3 +1,5 @@
 removed clover frontend
 VK_EXT_vertex_input_dynamic_state/vertexInputDynamicState on panvk
 pushDescriptor on panvk
+VK_EXT_vertex_input_dynamic_state on panvk
+VK_EXT_vertex_attribute_divisor on panvk
