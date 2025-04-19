@@ -411,6 +411,8 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.outputs_written = nir->info.outputs_written;
    info->base.patch_outputs_read = nir->info.patch_outputs_read;
    info->base.patch_outputs_written = nir->info.patch_outputs_written;
+   info->base.outputs_read_indirectly = nir->info.outputs_read_indirectly;
+   info->base.outputs_written_indirectly = nir->info.outputs_written_indirectly;
 
    info->base.num_ubos = nir->info.num_ubos;
    info->base.num_ssbos = nir->info.num_ssbos;
@@ -440,6 +442,8 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->base.tess.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
       info->base.tess.ccw = nir->info.tess.ccw;
       info->base.tess.point_mode = nir->info.tess.point_mode;
+      info->base.tess.tcs_cross_invocation_outputs_read = nir->info.tess.tcs_cross_invocation_outputs_read;
+      info->base.tess.tcs_cross_invocation_outputs_written = nir->info.tess.tcs_cross_invocation_outputs_written;
       break;
 
    case MESA_SHADER_GEOMETRY:

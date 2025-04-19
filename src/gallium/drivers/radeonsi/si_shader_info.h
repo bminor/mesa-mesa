@@ -34,6 +34,8 @@ struct si_shader_info {
       uint64_t outputs_written;
       uint32_t patch_outputs_read;
       uint32_t patch_outputs_written;
+      uint64_t outputs_read_indirectly;
+      uint64_t outputs_written_indirectly;
 
       uint8_t num_ubos;
       uint8_t num_ssbos;
@@ -62,6 +64,8 @@ struct si_shader_info {
             uint8_t tcs_vertices_out;
             bool ccw:1;
             bool point_mode:1;
+            uint64_t tcs_cross_invocation_outputs_read;
+            uint64_t tcs_cross_invocation_outputs_written;
          } tess;
 
          struct {

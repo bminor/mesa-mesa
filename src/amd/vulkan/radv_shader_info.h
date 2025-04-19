@@ -242,8 +242,10 @@ struct radv_shader_info {
       uint64_t tes_patch_inputs_read;
       uint64_t tcs_outputs_read;
       uint64_t tcs_outputs_written;
+      uint64_t tcs_outputs_accessed_indirectly;
       uint32_t tcs_patch_outputs_read;
       uint32_t tcs_patch_outputs_written;
+      uint64_t tcs_cross_invocation_outputs_written;
       unsigned tcs_vertices_out;
       uint32_t num_lds_blocks;
       uint8_t num_linked_inputs;          /* Number of reserved per-vertex input slots in LDS. */
