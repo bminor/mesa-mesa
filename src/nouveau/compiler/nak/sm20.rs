@@ -1634,34 +1634,20 @@ impl SM20Op for OpShfl {
         e.set_dst(14..20, self.dst);
         e.set_reg_src(20..26, self.src);
 
-        assert!(self.lane.src_mod.is_none());
-        match AluSrc::from_src(Some(&self.lane)) {
-            AluSrc::Reg(reg) => {
-                e.set_reg(26..32, reg);
-                e.set_bit(5, false);
-            }
-            AluSrc::Imm(imm) => {
-                e.set_field(26..32, imm & 0x1f);
-                e.set_bit(5, true);
-            }
-            AluSrc::None | AluSrc::CBuf(_) => {
-                panic!("Unsupported shfl lane: {}", self.lane);
-            }
+        if let Some(u) = self.lane.as_u32() {
+            e.set_field(26..32, u & 0x1f);
+            e.set_bit(5, true);
+        } else {
+            e.set_reg_src(26..32, self.lane);
+            e.set_bit(5, false);
         }
 
-        assert!(self.c.src_mod.is_none());
-        match AluSrc::from_src(Some(&self.c)) {
-            AluSrc::Reg(reg) => {
-                e.set_reg(49..55, reg);
-                e.set_bit(6, false);
-            }
-            AluSrc::Imm(imm) => {
-                e.set_field(42..55, imm & 0x1fff);
-                e.set_bit(6, true);
-            }
-            AluSrc::None | AluSrc::CBuf(_) => {
-                panic!("Unsupported shfl lane: {}", self.lane);
-            }
+        if let Some(u) = self.c.as_u32() {
+            e.set_field(42..55, u & 0x1fff);
+            e.set_bit(6, true);
+        } else {
+            e.set_reg_src(49..55, self.c);
+            e.set_bit(6, false);
         }
 
         e.set_field(
