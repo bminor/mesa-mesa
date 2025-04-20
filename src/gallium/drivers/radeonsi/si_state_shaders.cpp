@@ -4888,24 +4888,13 @@ static void gfx6_emit_tess_io_layout_state(struct si_context *sctx, unsigned ind
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
 
+   assert(sctx->gfx_level < GFX12);
+
    if (!sctx->shader.tes.cso || !sctx->shader.tcs.current)
       return;
 
    radeon_begin(cs);
-   if (sctx->gfx_level >= GFX12) {
-      gfx12_opt_push_gfx_sh_reg(R_00B42C_SPI_SHADER_PGM_RSRC2_HS,
-                                SI_TRACKED_SPI_SHADER_PGM_RSRC2_HS, sctx->ls_hs_rsrc2);
-
-      /* Set userdata SGPRs for merged LS-HS. */
-      gfx12_opt_push_gfx_sh_reg(R_00B430_SPI_SHADER_USER_DATA_HS_0 +
-                                GFX9_SGPR_TCS_OFFCHIP_LAYOUT * 4,
-                                SI_TRACKED_SPI_SHADER_USER_DATA_HS__TCS_OFFCHIP_LAYOUT,
-                                sctx->tcs_offchip_layout);
-      gfx12_opt_push_gfx_sh_reg(R_00B430_SPI_SHADER_USER_DATA_HS_0 +
-                                GFX9_SGPR_TCS_OFFCHIP_ADDR * 4,
-                                SI_TRACKED_SPI_SHADER_USER_DATA_HS__TCS_OFFCHIP_ADDR,
-                                sctx->tes_offchip_ring_va_sgpr);
-   } else if (sctx->screen->info.has_set_sh_pairs_packed) {
+   if (sctx->screen->info.has_set_sh_pairs_packed) {
       gfx11_opt_push_gfx_sh_reg(R_00B42C_SPI_SHADER_PGM_RSRC2_HS,
                                 SI_TRACKED_SPI_SHADER_PGM_RSRC2_HS, sctx->ls_hs_rsrc2);
 
