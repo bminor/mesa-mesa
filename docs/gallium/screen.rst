@@ -765,8 +765,6 @@ pipe_screen::get_compute_param.
   This may be less than the product of the components of MAX_BLOCK_SIZE and is
   usually limited by the number of threads that can be resident simultaneously
   on a compute unit.
-* ``pipe_compute_caps.max_threads_per_block_clover``: Same as
-  ``pipe_compute_caps.max_threads_per_block`` but used by clover only.
 * ``pipe_compute_caps.max_global_size``: Maximum size of the GLOBAL
   resource.
 * ``pipe_compute_caps.max_local_size``: Maximum size of the LOCAL
