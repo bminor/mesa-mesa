@@ -332,7 +332,7 @@ static bool si_setup_compute_scratch_buffer(struct si_context *sctx, struct si_s
 }
 
 static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute *program,
-                                     struct si_shader *shader, unsigned offset, bool *prefetch,
+                                     struct si_shader *shader, bool *prefetch,
                                      unsigned variable_shared_size)
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
@@ -343,7 +343,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    *prefetch = false;
 
    assert(variable_shared_size == 0 || stage == MESA_SHADER_KERNEL);
-   if (sctx->cs_shader_state.emitted_program == program && sctx->cs_shader_state.offset == offset &&
+   if (sctx->cs_shader_state.emitted_program == program &&
        sctx->cs_shader_state.variable_shared_size == variable_shared_size)
       return true;
 
@@ -390,7 +390,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
                                 RADEON_USAGE_READWRITE | RADEON_PRIO_SCRATCH_BUFFER);
    }
 
-   uint64_t shader_va = shader->bo->gpu_address + offset;
+   uint64_t shader_va = shader->bo->gpu_address;
 
    radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, shader->bo,
                              RADEON_USAGE_READ | RADEON_PRIO_SHADER_BINARY);
@@ -466,7 +466,6 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
                config->rsrc1, config->rsrc2);
 
    sctx->cs_shader_state.emitted_program = program;
-   sctx->cs_shader_state.offset = offset;
    sctx->cs_shader_state.variable_shared_size = variable_shared_size;
 
    *prefetch = true;
@@ -959,7 +958,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
 
    /* First emit registers. */
    bool prefetch;
-   if (!si_switch_compute_shader(sctx, program, &program->shader, info->pc, &prefetch,
+   if (!si_switch_compute_shader(sctx, program, &program->shader, &prefetch,
                                  info->variable_shared_mem))
       return;
 
