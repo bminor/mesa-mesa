@@ -1016,7 +1016,7 @@ get_device_properties(const struct panvk_instance *instance,
       /* VK_KHR_vertex_attribute_divisor */
       /* We will have to restrict this a bit for multiview */
       .maxVertexAttribDivisor = UINT32_MAX,
-      .supportsNonZeroFirstInstance = false,
+      .supportsNonZeroFirstInstance = true,
 
       /* VK_KHR_push_descriptor */
       .maxPushDescriptors = MAX_PUSH_DESCRIPTORS,
