@@ -778,8 +778,6 @@ pipe_screen::get_compute_param.
   inside a block. Non 0 indicates support for OpenCL subgroups including
   implementing ``get_compute_state_subgroup_size`` if multiple subgroup sizes
   are supported.
-* ``pipe_compute_caps.images_supported``: Whether images are supported
-  non-zero means yes, zero means no
 * ``pipe_compute_caps.subgroup_sizes``: Ored power of two sizes of a basic execution
   unit in threads. Also known as wavefront size, warp size or SIMD width.
   E.g. ``64 | 32``.

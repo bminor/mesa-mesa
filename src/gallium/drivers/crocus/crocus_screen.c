@@ -222,8 +222,6 @@ crocus_init_compute_caps(struct crocus_screen *screen)
    /* MaxComputeSharedMemorySize */
    caps->max_local_size = 64 * 1024;
 
-   caps->images_supported = true;
-
    caps->subgroup_sizes = ELK_SUBGROUP_SIZE;
 
    caps->max_variable_threads_per_block = max_invocations;

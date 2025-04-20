@@ -269,8 +269,6 @@ iris_init_compute_caps(struct iris_screen *screen)
    /* MaxComputeSharedMemorySize */
    caps->max_local_size = 64 * 1024;
 
-   caps->images_supported = true;
-
    caps->subgroup_sizes = 32 | 16 | 8;
 
    caps->max_subgroups = devinfo->max_cs_workgroup_threads;

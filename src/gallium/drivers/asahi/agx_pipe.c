@@ -1951,8 +1951,6 @@ agx_init_compute_caps(struct pipe_screen *pscreen)
 
    caps->max_compute_units = agx_get_num_cores(dev);
 
-   caps->images_supported = true;
-
    caps->subgroup_sizes = 32;
 
    caps->max_variable_threads_per_block = 1024; // TODO

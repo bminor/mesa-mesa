@@ -182,7 +182,6 @@ llvmpipe_init_compute_caps(struct pipe_screen *screen)
    caps->max_mem_alloc_size = 1 << 31;
    caps->max_private_size = 1 << 31;
    caps->max_input_size = 1576;
-   caps->images_supported = !!LP_MAX_TGSI_SHADER_IMAGES;
    caps->subgroup_sizes = lp_native_vector_width / 32;
    caps->max_subgroups = 1024 / (lp_native_vector_width / 32);
    caps->max_compute_units = 8;

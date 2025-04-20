@@ -344,8 +344,6 @@ fd_init_compute_caps(struct fd_screen *screen)
 
    caps->max_compute_units = 9999; // TODO
 
-   caps->images_supported = true;
-
    caps->subgroup_sizes = 32; // TODO
 
    caps->max_variable_threads_per_block = compiler->max_variable_workgroup_size;

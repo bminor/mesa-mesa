@@ -459,7 +459,6 @@ panfrost_init_compute_caps(struct panfrost_screen *screen)
    caps->max_input_size = 4096;
    caps->max_clock_frequency = 800; /* MHz -- TODO */
    caps->max_compute_units = dev->core_count;
-   caps->images_supported = true;
    caps->subgroup_sizes = pan_subgroup_size(dev->arch);
    caps->max_variable_threads_per_block = 1024; // TODO
 }

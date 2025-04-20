@@ -669,7 +669,6 @@ zink_init_compute_caps(struct zink_screen *screen)
    caps->max_local_size =
       screen->info.props.limits.maxComputeSharedMemorySize;
 
-   caps->images_supported = true;
    caps->subgroup_sizes = screen->info.props11.subgroupSize;
    caps->max_mem_alloc_size = screen->clamp_video_mem;
    caps->max_global_size = screen->total_video_mem;
