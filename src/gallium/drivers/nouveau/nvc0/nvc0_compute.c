@@ -362,25 +362,6 @@ nvc0_compute_upload_input(struct nvc0_context *nvc0,
 {
    struct nouveau_pushbuf *push = nvc0->base.pushbuf;
    struct nvc0_screen *screen = nvc0->screen;
-   struct nvc0_program *cp = nvc0->compprog;
-
-   if (cp->parm_size) {
-      struct nouveau_bo *bo = screen->uniform_bo;
-      const unsigned base = NVC0_CB_USR_INFO(5);
-
-      BEGIN_NVC0(push, NVC0_CP(CB_SIZE), 3);
-      PUSH_DATA (push, align(cp->parm_size, 0x100));
-      PUSH_DATAh(push, bo->offset + base);
-      PUSH_DATA (push, bo->offset + base);
-      BEGIN_NVC0(push, NVC0_CP(CB_BIND), 1);
-      PUSH_DATA (push, (0 << 8) | 1);
-      /* NOTE: size is limited to 4 KiB, which is < NV04_PFIFO_MAX_PACKET_LEN */
-      BEGIN_1IC0(push, NVC0_CP(CB_POS), 1 + cp->parm_size / 4);
-      PUSH_DATA (push, 0);
-      PUSH_DATAp(push, info->input, cp->parm_size / 4);
-
-      nvc0_compute_invalidate_constbufs(nvc0);
-   }
 
    BEGIN_NVC0(push, NVC0_CP(CB_SIZE), 3);
    PUSH_DATA (push, NVC0_CB_AUX_SIZE);

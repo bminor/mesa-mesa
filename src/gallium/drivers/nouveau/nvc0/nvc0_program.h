@@ -32,7 +32,6 @@ struct nvc0_program {
    uint32_t *code;
    unsigned code_base;
    unsigned code_size;
-   unsigned parm_size; /* size of non-bindable uniforms (c0[]) */
 
    uint32_t hdr[NVC0_MAX_SHADER_HEADER_SIZE/4];
    uint32_t flags[2];

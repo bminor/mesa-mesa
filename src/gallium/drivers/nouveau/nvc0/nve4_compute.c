@@ -479,22 +479,10 @@ nve4_compute_upload_input(struct nvc0_context *nvc0,
 {
    struct nvc0_screen *screen = nvc0->screen;
    struct nouveau_pushbuf *push = nvc0->base.pushbuf;
-   struct nvc0_program *cp = nvc0->compprog;
    uint64_t address;
 
    address = screen->uniform_bo->offset + NVC0_CB_AUX_INFO(5);
 
-   if (cp->parm_size) {
-      BEGIN_NVC0(push, NVE4_CP(UPLOAD_DST_ADDRESS_HIGH), 2);
-      PUSH_DATAh(push, screen->uniform_bo->offset + NVC0_CB_USR_INFO(5));
-      PUSH_DATA (push, screen->uniform_bo->offset + NVC0_CB_USR_INFO(5));
-      BEGIN_NVC0(push, NVE4_CP(UPLOAD_LINE_LENGTH_IN), 2);
-      PUSH_DATA (push, cp->parm_size);
-      PUSH_DATA (push, 0x1);
-      BEGIN_1IC0(push, NVE4_CP(UPLOAD_EXEC), 1 + DIV_ROUND_UP(cp->parm_size, 4));
-      PUSH_DATA (push, NVE4_COMPUTE_UPLOAD_EXEC_LINEAR | (0x20 << 1));
-      PUSH_DATAb(push, info->input, cp->parm_size);
-   }
    BEGIN_NVC0(push, NVE4_CP(UPLOAD_DST_ADDRESS_HIGH), 2);
    PUSH_DATAh(push, address + NVC0_CB_AUX_GRID_INFO(0));
    PUSH_DATA (push, address + NVC0_CB_AUX_GRID_INFO(0));
@@ -631,7 +619,7 @@ nve4_compute_setup_launch_desc(struct nvc0_context *nvc0, uint32_t *qmd,
    // Only bind user uniforms and the driver constant buffer through the
    // launch descriptor because UBOs are sticked to the driver cb to avoid the
    // limitation of 8 CBs.
-   if (nvc0->constbuf[5][0].user || cp->parm_size) {
+   if (nvc0->constbuf[5][0].user) {
       nve4_cp_launch_desc_set_cb(qmd, 0, screen->uniform_bo,
                                  NVC0_CB_USR_INFO(5), 1 << 16);
 
@@ -678,7 +666,7 @@ gp100_compute_setup_launch_desc(struct nvc0_context *nvc0, uint32_t *qmd,
    // Only bind user uniforms and the driver constant buffer through the
    // launch descriptor because UBOs are sticked to the driver cb to avoid the
    // limitation of 8 CBs.
-   if (nvc0->constbuf[5][0].user || cp->parm_size) {
+   if (nvc0->constbuf[5][0].user) {
       gp100_cp_launch_desc_set_cb(qmd, 0, screen->uniform_bo,
                                   NVC0_CB_USR_INFO(5), 1 << 16);
 
@@ -739,7 +727,7 @@ gv100_compute_setup_launch_desc(struct nvc0_context *nvc0, u32 *qmd,
    // Only bind user uniforms and the driver constant buffer through the
    // launch descriptor because UBOs are sticked to the driver cb to avoid the
    // limitation of 8 CBs.
-   if (nvc0->constbuf[5][0].user || cp->parm_size) {
+   if (nvc0->constbuf[5][0].user) {
       gp100_cp_launch_desc_set_cb(qmd, 0, screen->uniform_bo,
                                   NVC0_CB_USR_INFO(5), 1 << 16);
 
