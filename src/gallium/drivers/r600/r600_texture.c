@@ -1021,13 +1021,6 @@ r600_choose_tiling(struct r600_common_screen *rscreen,
 	if (templ->flags & R600_RESOURCE_FLAG_TRANSFER)
 		return RADEON_SURF_MODE_LINEAR_ALIGNED;
 
-	/* r600g: force tiling on TEXTURE_2D and TEXTURE_3D compute resources. */
-	if (rscreen->gfx_level >= R600 && rscreen->gfx_level <= CAYMAN &&
-	    (templ->bind & PIPE_BIND_COMPUTE_RESOURCE) &&
-	    (templ->target == PIPE_TEXTURE_2D ||
-	     templ->target == PIPE_TEXTURE_3D))
-		force_tiling = true;
-
 	/* Handle common candidates for the linear mode.
 	 * Compressed textures and DB surfaces must always be tiled.
 	 */

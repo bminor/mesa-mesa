@@ -273,8 +273,6 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_sampler_views = 16;
 
 		caps->supported_irs = 1 << PIPE_SHADER_IR_NIR;
-		if (i == PIPE_SHADER_COMPUTE)
-			caps->supported_irs |= 1 << PIPE_SHADER_IR_NATIVE;
 
 		caps->max_shader_buffers =
 		caps->max_shader_images =
@@ -298,9 +296,6 @@ static void r600_init_compute_caps(struct r600_screen *screen)
 
 	struct pipe_compute_caps *caps =
 		(struct pipe_compute_caps *)&rscreen->b.compute_caps;
-
-	snprintf(caps->ir_target, sizeof(caps->ir_target), "%s-r600--",
-		 r600_get_llvm_processor_name(rscreen->family));
 
 	caps->grid_dimension = 3;
 
@@ -332,7 +327,6 @@ static void r600_init_compute_caps(struct r600_screen *screen)
 
 	/* Value reported by the closed source driver. */
 	caps->max_local_size = 32768;
-	caps->max_input_size = 1024;
 	caps->max_clock_frequency = rscreen->info.max_gpu_freq_mhz;
 	caps->max_compute_units = rscreen->info.num_cu;
 	caps->subgroup_sizes = r600_wavefront_size(rscreen->family);

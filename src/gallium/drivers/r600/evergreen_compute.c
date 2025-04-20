@@ -5,10 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifdef HAVE_OPENCL
-#include <gelf.h>
-#include <libelf.h>
-#endif
 #include <stdio.h>
 #include <errno.h>
 #include "pipe/p_defines.h"
@@ -62,25 +58,6 @@ writable images should be listed first < 10, so their id corresponds to RAT(id+1
 writable images will consume TEX slots, VTX slots too because of linear indexing
 
 */
-
-#ifdef HAVE_OPENCL
-static void radeon_shader_binary_init(struct r600_shader_binary *b)
-{
-	memset(b, 0, sizeof(*b));
-}
-
-static void radeon_shader_binary_clean(struct r600_shader_binary *b)
-{
-	if (!b)
-		return;
-	FREE(b->code);
-	FREE(b->config);
-	FREE(b->rodata);
-	FREE(b->global_symbol_offsets);
-	FREE(b->relocs);
-	FREE(b->disasm_string);
-}
-#endif
 
 struct r600_resource *r600_compute_buffer_alloc_vram(struct r600_screen *screen,
 						     unsigned size)
@@ -180,221 +157,6 @@ static void evergreen_cs_set_constant_buffer(struct r600_context *rctx,
 #define R_028868_SQ_PGM_RESOURCES_VS                 0x028868
 #define R_028850_SQ_PGM_RESOURCES_PS                 0x028850
 
-#ifdef HAVE_OPENCL
-static void parse_symbol_table(Elf_Data *symbol_table_data,
-				const GElf_Shdr *symbol_table_header,
-				struct r600_shader_binary *binary)
-{
-	GElf_Sym symbol;
-	unsigned i = 0;
-	unsigned symbol_count =
-		symbol_table_header->sh_size / symbol_table_header->sh_entsize;
-
-	/* We are over allocating this list, because symbol_count gives the
-	 * total number of symbols, and we will only be filling the list
-	 * with offsets of global symbols.  The memory savings from
-	 * allocating the correct size of this list will be small, and
-	 * I don't think it is worth the cost of pre-computing the number
-	 * of global symbols.
-	 */
-	binary->global_symbol_offsets = CALLOC(symbol_count, sizeof(uint64_t));
-
-	while (gelf_getsym(symbol_table_data, i++, &symbol)) {
-		unsigned i;
-		if (GELF_ST_BIND(symbol.st_info) != STB_GLOBAL ||
-		    symbol.st_shndx == 0 /* Undefined symbol */) {
-			continue;
-		}
-
-		binary->global_symbol_offsets[binary->global_symbol_count] =
-					symbol.st_value;
-
-		/* Sort the list using bubble sort.  This list will usually
-		 * be small. */
-		for (i = binary->global_symbol_count; i > 0; --i) {
-			uint64_t lhs = binary->global_symbol_offsets[i - 1];
-			uint64_t rhs = binary->global_symbol_offsets[i];
-			if (lhs < rhs) {
-				break;
-			}
-			binary->global_symbol_offsets[i] = lhs;
-			binary->global_symbol_offsets[i - 1] = rhs;
-		}
-		++binary->global_symbol_count;
-	}
-}
-
-
-static void parse_relocs(Elf *elf, Elf_Data *relocs, Elf_Data *symbols,
-			unsigned symbol_sh_link,
-			struct r600_shader_binary *binary)
-{
-	unsigned i;
-
-	if (!relocs || !symbols || !binary->reloc_count) {
-		return;
-	}
-	binary->relocs = CALLOC(binary->reloc_count,
-			sizeof(struct r600_shader_reloc));
-	for (i = 0; i < binary->reloc_count; i++) {
-		GElf_Sym symbol;
-		GElf_Rel rel;
-		char *symbol_name;
-		struct r600_shader_reloc *reloc = &binary->relocs[i];
-
-		gelf_getrel(relocs, i, &rel);
-		gelf_getsym(symbols, GELF_R_SYM(rel.r_info), &symbol);
-		symbol_name = elf_strptr(elf, symbol_sh_link, symbol.st_name);
-
-		reloc->offset = rel.r_offset;
-		strncpy(reloc->name, symbol_name, sizeof(reloc->name)-1);
-		reloc->name[sizeof(reloc->name)-1] = 0;
-	}
-}
-
-static void r600_elf_read(const char *elf_data, unsigned elf_size,
-		 struct r600_shader_binary *binary)
-{
-	char *elf_buffer;
-	Elf *elf;
-	Elf_Scn *section = NULL;
-	Elf_Data *symbols = NULL, *relocs = NULL;
-	size_t section_str_index;
-	unsigned symbol_sh_link = 0;
-
-	/* One of the libelf implementations
-	 * (http://www.mr511.de/software/english.htm) requires calling
-	 * elf_version() before elf_memory().
-	 */
-	elf_version(EV_CURRENT);
-	elf_buffer = MALLOC(elf_size);
-	memcpy(elf_buffer, elf_data, elf_size);
-
-	elf = elf_memory(elf_buffer, elf_size);
-
-	elf_getshdrstrndx(elf, &section_str_index);
-
-	while ((section = elf_nextscn(elf, section))) {
-		const char *name;
-		Elf_Data *section_data = NULL;
-		GElf_Shdr section_header;
-		if (gelf_getshdr(section, &section_header) != &section_header) {
-			fprintf(stderr, "Failed to read ELF section header\n");
-			return;
-		}
-		name = elf_strptr(elf, section_str_index, section_header.sh_name);
-		if (!strcmp(name, ".text")) {
-			section_data = elf_getdata(section, section_data);
-			binary->code_size = section_data->d_size;
-			binary->code = MALLOC(binary->code_size * sizeof(unsigned char));
-			memcpy(binary->code, section_data->d_buf, binary->code_size);
-		} else if (!strcmp(name, ".AMDGPU.config")) {
-			section_data = elf_getdata(section, section_data);
-			binary->config_size = section_data->d_size;
-			binary->config = MALLOC(binary->config_size * sizeof(unsigned char));
-			memcpy(binary->config, section_data->d_buf, binary->config_size);
-		} else if (!strcmp(name, ".AMDGPU.disasm")) {
-			/* Always read disassembly if it's available. */
-			section_data = elf_getdata(section, section_data);
-			binary->disasm_string = strndup(section_data->d_buf,
-							section_data->d_size);
-		} else if (!strncmp(name, ".rodata", 7)) {
-			section_data = elf_getdata(section, section_data);
-			binary->rodata_size = section_data->d_size;
-			binary->rodata = MALLOC(binary->rodata_size * sizeof(unsigned char));
-			memcpy(binary->rodata, section_data->d_buf, binary->rodata_size);
-		} else if (!strncmp(name, ".symtab", 7)) {
-			symbols = elf_getdata(section, section_data);
-			symbol_sh_link = section_header.sh_link;
-			parse_symbol_table(symbols, &section_header, binary);
-		} else if (!strcmp(name, ".rel.text")) {
-			relocs = elf_getdata(section, section_data);
-			binary->reloc_count = section_header.sh_size /
-					section_header.sh_entsize;
-		}
-	}
-
-	parse_relocs(elf, relocs, symbols, symbol_sh_link, binary);
-
-	if (elf){
-		elf_end(elf);
-	}
-	FREE(elf_buffer);
-
-	/* Cache the config size per symbol */
-	if (binary->global_symbol_count) {
-		binary->config_size_per_symbol =
-			binary->config_size / binary->global_symbol_count;
-	} else {
-		binary->global_symbol_count = 1;
-		binary->config_size_per_symbol = binary->config_size;
-	}
-}
-
-static const unsigned char *r600_shader_binary_config_start(
-	const struct r600_shader_binary *binary,
-	uint64_t symbol_offset)
-{
-	unsigned i;
-	for (i = 0; i < binary->global_symbol_count; ++i) {
-		if (binary->global_symbol_offsets[i] == symbol_offset) {
-			unsigned offset = i * binary->config_size_per_symbol;
-			return binary->config + offset;
-		}
-	}
-	return binary->config;
-}
-
-static void r600_shader_binary_read_config(const struct r600_shader_binary *binary,
-					   struct r600_bytecode *bc,
-					   uint64_t symbol_offset,
-					   bool *use_kill)
-{
-       unsigned i;
-       const unsigned char *config =
-               r600_shader_binary_config_start(binary, symbol_offset);
-
-       for (i = 0; i < binary->config_size_per_symbol; i+= 8) {
-               unsigned reg =
-                       util_le32_to_cpu(*(uint32_t*)(config + i));
-               unsigned value =
-                       util_le32_to_cpu(*(uint32_t*)(config + i + 4));
-               switch (reg) {
-               /* R600 / R700 */
-               case R_028850_SQ_PGM_RESOURCES_PS:
-               case R_028868_SQ_PGM_RESOURCES_VS:
-               /* Evergreen / Northern Islands */
-               case R_028844_SQ_PGM_RESOURCES_PS:
-               case R_028860_SQ_PGM_RESOURCES_VS:
-               case R_0288D4_SQ_PGM_RESOURCES_LS:
-                       bc->ngpr = MAX2(bc->ngpr, G_028844_NUM_GPRS(value));
-                       bc->nstack = MAX2(bc->nstack, G_028844_STACK_SIZE(value));
-                       break;
-               case R_02880C_DB_SHADER_CONTROL:
-                       *use_kill = G_02880C_KILL_ENABLE(value);
-                       break;
-               case R_0288E8_SQ_LDS_ALLOC:
-                       bc->nlds_dw = value;
-                       break;
-               }
-       }
-}
-
-static unsigned r600_create_shader(struct r600_bytecode *bc,
-				   const struct r600_shader_binary *binary,
-				   bool *use_kill)
-
-{
-	assert(binary->code_size % 4 == 0);
-	bc->bytecode = CALLOC(1, binary->code_size);
-	memcpy(bc->bytecode, binary->code, binary->code_size);
-	bc->ndw = binary->code_size / 4;
-
-	r600_shader_binary_read_config(binary, bc, 0, use_kill);
-	return 0;
-}
-
-#endif
 
 static void r600_destroy_shader(struct r600_bytecode *bc)
 {
@@ -406,47 +168,16 @@ static void *evergreen_create_compute_state(struct pipe_context *ctx,
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
 	struct r600_pipe_compute *shader = CALLOC_STRUCT(r600_pipe_compute);
-#ifdef HAVE_OPENCL
-	const struct pipe_binary_program_header *header;
-	void *p;
-	bool use_kill;
-#endif
 
 	shader->ctx = rctx;
 	shader->local_size = cso->static_shared_mem;
-	shader->input_size = cso->req_input_mem;
+	shader->sel = r600_create_shader_state_tokens(ctx, cso->prog, cso->ir_type, PIPE_SHADER_COMPUTE);
 
-	shader->ir_type = cso->ir_type;
-
-	if (shader->ir_type == PIPE_SHADER_IR_TGSI ||
-	    shader->ir_type == PIPE_SHADER_IR_NIR) {
-		shader->sel = r600_create_shader_state_tokens(ctx, cso->prog, cso->ir_type, PIPE_SHADER_COMPUTE);
-
-		/* Precompile the shader with the expected shader key, to reduce jank at
-		 * draw time. Also produces output for shader-db.
-		 */
-		bool dirty;
-		r600_shader_select(ctx, shader->sel, &dirty, true);
-
-		return shader;
-	}
-#ifdef HAVE_OPENCL
-	COMPUTE_DBG(rctx->screen, "*** evergreen_create_compute_state\n");
-	header = cso->prog;
-	radeon_shader_binary_init(&shader->binary);
-	r600_elf_read(header->blob, header->num_bytes, &shader->binary);
-	r600_create_shader(&shader->bc, &shader->binary, &use_kill);
-
-	/* Upload code + ROdata */
-	shader->code_bo = r600_compute_buffer_alloc_vram(rctx->screen,
-							shader->bc.ndw * 4);
-	p = r600_buffer_map_sync_with_rings(
-		&rctx->b, shader->code_bo,
-		PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
-	//TODO: use util_memcpy_cpu_to_le32 ?
-	memcpy(p, shader->bc.bytecode, shader->bc.ndw * 4);
-	rctx->b.ws->buffer_unmap(rctx->b.ws, shader->code_bo->buf);
-#endif
+	/* Precompile the shader with the expected shader key, to reduce jank at
+	 * draw time. Also produces output for shader-db.
+	 */
+	bool dirty;
+	r600_shader_select(ctx, shader->sel, &dirty, true);
 
 	return shader;
 }
@@ -461,17 +192,7 @@ static void evergreen_delete_compute_state(struct pipe_context *ctx, void *state
 	if (!shader)
 		return;
 
-	if (shader->ir_type == PIPE_SHADER_IR_TGSI ||
-	    shader->ir_type == PIPE_SHADER_IR_NIR) {
-		r600_delete_shader_selector(ctx, shader->sel);
-	} else {
-#ifdef HAVE_OPENCL
-		radeon_shader_binary_clean(&shader->binary);
-		pipe_resource_reference((struct pipe_resource**)&shader->code_bo, NULL);
-		pipe_resource_reference((struct pipe_resource**)&shader->kernel_param, NULL);
-#endif
-		r600_destroy_shader(&shader->bc);
-	}
+	r600_delete_shader_selector(ctx, shader->sel);
 	FREE(shader);
 }
 
@@ -486,94 +207,11 @@ static void evergreen_bind_compute_state(struct pipe_context *ctx, void *state)
 		return;
 	}
 
-	if (cstate->ir_type == PIPE_SHADER_IR_TGSI ||
-	    cstate->ir_type == PIPE_SHADER_IR_NIR) {
-		bool compute_dirty;
-		if (r600_shader_select(ctx, cstate->sel, &compute_dirty, false))
-			R600_ERR("Failed to select compute shader\n");
-	}
+	bool compute_dirty;
+	if (r600_shader_select(ctx, cstate->sel, &compute_dirty, false))
+		R600_ERR("Failed to select compute shader\n");
 	
 	rctx->cs_shader_state.shader = (struct r600_pipe_compute *)state;
-}
-
-/* The kernel parameters are stored a vtx buffer (ID=0), besides the explicit
- * kernel parameters there are implicit parameters that need to be stored
- * in the vertex buffer as well.  Here is how these parameters are organized in
- * the buffer:
- *
- * DWORDS 0-2: Number of work groups in each dimension (x,y,z)
- * DWORDS 3-5: Number of global work items in each dimension (x,y,z)
- * DWORDS 6-8: Number of work items within each work group in each dimension
- *             (x,y,z)
- * DWORDS 9+ : Kernel parameters
- */
-static void evergreen_compute_upload_input(struct pipe_context *ctx,
-					   const struct pipe_grid_info *info)
-{
-	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_pipe_compute *shader = rctx->cs_shader_state.shader;
-	unsigned i;
-	/* We need to reserve 9 dwords (36 bytes) for implicit kernel
-	 * parameters.
-	 */
-	unsigned input_size;
-	uint32_t *num_work_groups_start;
-	uint32_t *global_size_start;
-	uint32_t *local_size_start;
-	uint32_t *kernel_parameters_start;
-	struct pipe_box box;
-	struct pipe_transfer *transfer = NULL;
-
-	if (!shader)
-		return;
-	if (shader->input_size == 0) {
-		return;
-	}
-	input_size = shader->input_size + 36;
-	if (!shader->kernel_param) {
-		/* Add space for the grid dimensions */
-		shader->kernel_param = (struct r600_resource *)
-			pipe_buffer_create(ctx->screen, 0,
-					PIPE_USAGE_IMMUTABLE, input_size);
-	}
-
-	u_box_1d(0, input_size, &box);
-	num_work_groups_start = ctx->buffer_map(ctx,
-			(struct pipe_resource*)shader->kernel_param,
-			0, PIPE_MAP_WRITE | PIPE_MAP_DISCARD_RANGE,
-			&box, &transfer);
-	global_size_start = num_work_groups_start + (3 * (sizeof(uint) /4));
-	local_size_start = global_size_start + (3 * (sizeof(uint)) / 4);
-	kernel_parameters_start = local_size_start + (3 * (sizeof(uint)) / 4);
-
-	/* Copy the work group size */
-	memcpy(num_work_groups_start, info->grid, 3 * sizeof(uint));
-
-	/* Copy the global size */
-	for (i = 0; i < 3; i++) {
-		global_size_start[i] = info->grid[i] * info->block[i];
-	}
-
-	/* Copy the local dimensions */
-	memcpy(local_size_start, info->block, 3 * sizeof(uint));
-
-	/* Copy the kernel inputs */
-	memcpy(kernel_parameters_start, info->input, shader->input_size);
-
-	for (i = 0; i < (input_size / 4); i++) {
-		COMPUTE_DBG(rctx->screen, "input %i : %u\n", i,
-			((unsigned*)num_work_groups_start)[i]);
-	}
-
-	ctx->buffer_unmap(ctx, transfer);
-
-	/* ID=0 and ID=3 are reserved for the parameters.
-	 * LLVM will preferably use ID=0, but it does not work for dynamic
-	 * indices. */
-	evergreen_cs_set_vertex_buffer(rctx, 3, 0,
-			(struct pipe_resource*)shader->kernel_param);
-	evergreen_cs_set_constant_buffer(rctx, 0, 0, input_size,
-			(struct pipe_resource*)shader->kernel_param);
 }
 
 static void evergreen_emit_dispatch(struct r600_context *rctx,
@@ -590,10 +228,6 @@ static void evergreen_emit_dispatch(struct r600_context *rctx,
 	int group_size = 1;
 	unsigned lds_size = (shader->local_size + info->variable_shared_mem) / 4;
 
-	if (shader->ir_type != PIPE_SHADER_IR_TGSI &&
-	    shader->ir_type != PIPE_SHADER_IR_NIR)
-		lds_size += shader->bc.nlds_dw;
-	
 	/* Calculate group_size */
 	for (i = 0; i < 3; i++) {
 		group_size *= info->block[i];
@@ -654,47 +288,6 @@ static void evergreen_emit_dispatch(struct r600_context *rctx,
 		eg_trace_emit(rctx);
 }
 
-static void compute_setup_cbs(struct r600_context *rctx)
-{
-	struct radeon_cmdbuf *cs = &rctx->b.gfx.cs;
-	unsigned i;
-
-	/* Emit colorbuffers. */
-	/* XXX support more than 8 colorbuffers (the offsets are not a multiple of 0x3C for CB8-11) */
-	for (i = 0; i < 8 && i < rctx->framebuffer.state.nr_cbufs; i++) {
-		struct r600_surface *cb = (struct r600_surface*)rctx->framebuffer.state.cbufs[i];
-		unsigned reloc = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-						       (struct r600_resource*)cb->base.texture,
-						       RADEON_USAGE_READWRITE |
-						       RADEON_PRIO_SHADER_RW_BUFFER);
-
-		radeon_compute_set_context_reg_seq(cs, R_028C60_CB_COLOR0_BASE + i * 0x3C, 7);
-		radeon_emit(cs, cb->cb_color_base);	/* R_028C60_CB_COLOR0_BASE */
-		radeon_emit(cs, cb->cb_color_pitch);	/* R_028C64_CB_COLOR0_PITCH */
-		radeon_emit(cs, cb->cb_color_slice);	/* R_028C68_CB_COLOR0_SLICE */
-		radeon_emit(cs, cb->cb_color_view);	/* R_028C6C_CB_COLOR0_VIEW */
-		radeon_emit(cs, cb->cb_color_info);	/* R_028C70_CB_COLOR0_INFO */
-		radeon_emit(cs, cb->cb_color_attrib);	/* R_028C74_CB_COLOR0_ATTRIB */
-		radeon_emit(cs, cb->cb_color_dim);		/* R_028C78_CB_COLOR0_DIM */
-
-		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0)); /* R_028C60_CB_COLOR0_BASE */
-		radeon_emit(cs, reloc);
-
-		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0)); /* R_028C74_CB_COLOR0_ATTRIB */
-		radeon_emit(cs, reloc);
-	}
-	for (; i < 8 ; i++)
-		radeon_compute_set_context_reg(cs, R_028C70_CB_COLOR0_INFO + i * 0x3C,
-					       S_028C70_FORMAT(V_028C70_COLOR_INVALID));
-	for (; i < 12; i++)
-		radeon_compute_set_context_reg(cs, R_028E50_CB_COLOR8_INFO + (i - 8) * 0x1C,
-					       S_028C70_FORMAT(V_028C70_COLOR_INVALID));
-
-	/* Set CB_TARGET_MASK  XXX: Use cb_misc_state */
-	radeon_compute_set_context_reg(cs, R_028238_CB_TARGET_MASK,
-				       rctx->compute_cb_target_mask);
-}
-
 static void compute_emit_cs(struct r600_context *rctx,
 			    const struct pipe_grid_info *info)
 {
@@ -717,53 +310,49 @@ static void compute_emit_cs(struct r600_context *rctx,
 		rctx->cmd_buf_is_compute = true;
 	}
 
-	if (rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_TGSI||
-	    rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_NIR) {
-		if (r600_shader_select(&rctx->b.b, rctx->cs_shader_state.shader->sel, &compute_dirty, false)) {
-			R600_ERR("Failed to select compute shader\n");
-			return;
-		}
-		
-		current = rctx->cs_shader_state.shader->sel->current;
-		if (compute_dirty) {
-			rctx->cs_shader_state.atom.num_dw = current->command_buffer.num_dw;
-			r600_context_add_resource_size(&rctx->b.b, (struct pipe_resource *)current->bo);
-			r600_set_atom_dirty(rctx, &rctx->cs_shader_state.atom, true);
-		}
+	if (r600_shader_select(&rctx->b.b, rctx->cs_shader_state.shader->sel, &compute_dirty, false)) {
+		R600_ERR("Failed to select compute shader\n");
+		return;
+	}
+	
+	current = rctx->cs_shader_state.shader->sel->current;
+	if (compute_dirty) {
+		rctx->cs_shader_state.atom.num_dw = current->command_buffer.num_dw;
+		r600_context_add_resource_size(&rctx->b.b, (struct pipe_resource *)current->bo);
+		r600_set_atom_dirty(rctx, &rctx->cs_shader_state.atom, true);
+	}
 
-		bool need_buf_const = current->shader.uses_tex_buffers ||
-			current->shader.has_txq_cube_array_z_comp;
+	bool need_buf_const = current->shader.uses_tex_buffers ||
+		current->shader.has_txq_cube_array_z_comp;
 
-		if (info->indirect) {
-			struct r600_resource *indirect_resource = (struct r600_resource *)info->indirect;
-			unsigned *data = r600_buffer_map_sync_with_rings(&rctx->b, indirect_resource, PIPE_MAP_READ);
-			unsigned offset = info->indirect_offset / 4;
-			indirect_grid[0] = data[offset];
-			indirect_grid[1] = data[offset + 1];
-			indirect_grid[2] = data[offset + 2];
-		}
-		for (int i = 0; i < 3; i++) {
-			rctx->cs_block_grid_sizes[i] = info->block[i];
-			rctx->cs_block_grid_sizes[i + 4] = info->indirect ? indirect_grid[i] : info->grid[i];
-		}
-		rctx->cs_block_grid_sizes[3] = rctx->cs_block_grid_sizes[7] = 0;
-		rctx->driver_consts[PIPE_SHADER_COMPUTE].cs_block_grid_size_dirty = true;
+	if (info->indirect) {
+		struct r600_resource *indirect_resource = (struct r600_resource *)info->indirect;
+		unsigned *data = r600_buffer_map_sync_with_rings(&rctx->b, indirect_resource, PIPE_MAP_READ);
+		unsigned offset = info->indirect_offset / 4;
+		indirect_grid[0] = data[offset];
+		indirect_grid[1] = data[offset + 1];
+		indirect_grid[2] = data[offset + 2];
+	}
+	for (int i = 0; i < 3; i++) {
+		rctx->cs_block_grid_sizes[i] = info->block[i];
+		rctx->cs_block_grid_sizes[i + 4] = info->indirect ? indirect_grid[i] : info->grid[i];
+	}
+	rctx->cs_block_grid_sizes[3] = rctx->cs_block_grid_sizes[7] = 0;
+	rctx->driver_consts[PIPE_SHADER_COMPUTE].cs_block_grid_size_dirty = true;
 
-		evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, &atomic_used_mask);
-		r600_need_cs_space(rctx, 0, true, util_bitcount(atomic_used_mask));
+	evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, &atomic_used_mask);
+	r600_need_cs_space(rctx, 0, true, util_bitcount(atomic_used_mask));
 
-		if (need_buf_const) {
-			eg_setup_buffer_constants(rctx, PIPE_SHADER_COMPUTE);
-		}
-		r600_update_driver_const_buffers(rctx, true);
+	if (need_buf_const) {
+		eg_setup_buffer_constants(rctx, PIPE_SHADER_COMPUTE);
+	}
+	r600_update_driver_const_buffers(rctx, true);
 
-		evergreen_emit_atomic_buffer_setup(rctx, true, combined_atomics, atomic_used_mask);
-		if (atomic_used_mask) {
-			radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
-			radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_CS_PARTIAL_FLUSH) | EVENT_INDEX(4));
-		}
-	} else
-		r600_need_cs_space(rctx, 0, true, 0);
+	evergreen_emit_atomic_buffer_setup(rctx, true, combined_atomics, atomic_used_mask);
+	if (atomic_used_mask) {
+		radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
+		radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_CS_PARTIAL_FLUSH) | EVENT_INDEX(4));
+	}
 
 	/* Initialize all the compute-related registers.
 	 *
@@ -774,35 +363,21 @@ static void compute_emit_cs(struct r600_context *rctx,
 
 	/* emit config state */
 	if (rctx->b.gfx_level == EVERGREEN) {
-		if (rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_TGSI||
-		    rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_NIR) {
-			radeon_set_config_reg_seq(cs, R_008C04_SQ_GPR_RESOURCE_MGMT_1, 3);
-			radeon_emit(cs, S_008C04_NUM_CLAUSE_TEMP_GPRS(rctx->r6xx_num_clause_temp_gprs));
-			radeon_emit(cs, 0);
-			radeon_emit(cs, 0);
-			radeon_set_config_reg(cs, R_008D8C_SQ_DYN_GPR_CNTL_PS_FLUSH_REQ, (1 << 8));
-		} else
-			r600_emit_atom(rctx, &rctx->config_state.atom);
+		radeon_set_config_reg_seq(cs, R_008C04_SQ_GPR_RESOURCE_MGMT_1, 3);
+		radeon_emit(cs, S_008C04_NUM_CLAUSE_TEMP_GPRS(rctx->r6xx_num_clause_temp_gprs));
+		radeon_emit(cs, 0);
+		radeon_emit(cs, 0);
+		radeon_set_config_reg(cs, R_008D8C_SQ_DYN_GPR_CNTL_PS_FLUSH_REQ, (1 << 8));
 	}
 
 	rctx->b.flags |= R600_CONTEXT_WAIT_3D_IDLE | R600_CONTEXT_FLUSH_AND_INV;
 	r600_flush_emit(rctx);
 
-	if (rctx->cs_shader_state.shader->ir_type != PIPE_SHADER_IR_TGSI &&
-	    rctx->cs_shader_state.shader->ir_type != PIPE_SHADER_IR_NIR) {
+	uint32_t rat_mask;
 
-		compute_setup_cbs(rctx);
-
-		/* Emit vertex buffer state */
-		rctx->cs_vertex_buffer_state.atom.num_dw = 12 * util_bitcount(rctx->cs_vertex_buffer_state.dirty_mask);
-		r600_emit_atom(rctx, &rctx->cs_vertex_buffer_state.atom);
-	} else {
-		uint32_t rat_mask;
-
-		rat_mask = evergreen_construct_rat_mask(rctx, &rctx->cb_misc_state, 0);
-		radeon_compute_set_context_reg(cs, R_028238_CB_TARGET_MASK,
-					       rat_mask);
-	}
+	rat_mask = evergreen_construct_rat_mask(rctx, &rctx->cb_misc_state, 0);
+	radeon_compute_set_context_reg(cs, R_028238_CB_TARGET_MASK,
+						rat_mask);
 
 	r600_emit_atom(rctx, &rctx->b.render_cond_atom);
 
@@ -846,9 +421,7 @@ static void compute_emit_cs(struct r600_context *rctx,
 		radeon_emit(cs, 0);
 		rctx->cayman_dealloc_state = true;
 	}
-	if (rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_TGSI ||
-	    rctx->cs_shader_state.shader->ir_type == PIPE_SHADER_IR_NIR)
-		evergreen_emit_atomic_buffer_save(rctx, true, combined_atomics, &atomic_used_mask);
+	evergreen_emit_atomic_buffer_save(rctx, true, combined_atomics, &atomic_used_mask);
 
 #if 0
 	COMPUTE_DBG(rctx->screen, "cdw: %i\n", cs->cdw);
@@ -870,22 +443,10 @@ void evergreen_emit_cs_shader(struct r600_context *rctx,
 					(struct r600_cs_shader_state*)atom;
 	struct r600_pipe_compute *shader = state->shader;
 	struct radeon_cmdbuf *cs = &rctx->b.gfx.cs;
-	uint64_t va;
-	struct r600_resource *code_bo;
-	unsigned ngpr, nstack;
-
-	if (shader->ir_type == PIPE_SHADER_IR_TGSI ||
-	    shader->ir_type == PIPE_SHADER_IR_NIR) {
-		code_bo = shader->sel->current->bo;
-		va = shader->sel->current->bo->gpu_address;
-		ngpr = shader->sel->current->shader.bc.ngpr;
-		nstack = shader->sel->current->shader.bc.nstack;
-	} else {
-		code_bo = shader->code_bo;
-		va = shader->code_bo->gpu_address + state->pc;
-		ngpr = shader->bc.ngpr;
-		nstack = shader->bc.nstack;
-	}
+	uint64_t va = shader->sel->current->bo->gpu_address;
+	struct r600_resource *code_bo = shader->sel->current->bo;
+	unsigned ngpr = shader->sel->current->shader.bc.ngpr;
+	unsigned nstack = shader->sel->current->shader.bc.nstack;
 
 	radeon_compute_set_context_reg_seq(cs, R_0288D0_SQ_PGM_START_LS, 3);
 	radeon_emit(cs, va >> 8); /* R_0288D0_SQ_PGM_START_LS */
@@ -905,61 +466,10 @@ static void evergreen_launch_grid(struct pipe_context *ctx,
 				  const struct pipe_grid_info *info)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-#ifdef HAVE_OPENCL
-	struct r600_pipe_compute *shader = rctx->cs_shader_state.shader;
-	bool use_kill;
-
-	if (shader->ir_type != PIPE_SHADER_IR_TGSI &&
-	    shader->ir_type != PIPE_SHADER_IR_NIR) {
-		rctx->cs_shader_state.pc = info->pc;
-		/* Get the config information for this kernel. */
-		r600_shader_binary_read_config(&shader->binary, &shader->bc,
-					       info->pc, &use_kill);
-	} else {
-		use_kill = false;
-		rctx->cs_shader_state.pc = 0;
-	}
-#endif
 
 	COMPUTE_DBG(rctx->screen, "*** evergreen_launch_grid: pc = %u\n", info->pc);
 
-
-	evergreen_compute_upload_input(ctx, info);
 	compute_emit_cs(rctx, info);
-}
-
-static void evergreen_set_compute_resources(struct pipe_context *ctx,
-					    unsigned start, unsigned count,
-					    struct pipe_surface **surfaces)
-{
-	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_surface **resources = (struct r600_surface **)surfaces;
-
-	COMPUTE_DBG(rctx->screen, "*** evergreen_set_compute_resources: start = %u count = %u\n",
-			start, count);
-
-	for (unsigned i = 0; i < count; i++) {
-		/* The First four vertex buffers are reserved for parameters and
-		 * global buffers. */
-		unsigned vtx_id = 4 + i;
-		if (resources[i]) {
-			struct r600_resource_global *buffer =
-				(struct r600_resource_global*)
-				resources[i]->base.texture;
-			if (resources[i]->base.writable) {
-				assert(i+1 < 12);
-
-				evergreen_set_rat(rctx->cs_shader_state.shader, i+1,
-				(struct r600_resource *)resources[i]->base.texture,
-				buffer->chunk->start_in_dw*4,
-				resources[i]->base.texture->width0);
-			}
-
-			evergreen_cs_set_vertex_buffer(rctx, vtx_id,
-					buffer->chunk->start_in_dw * 4,
-					resources[i]->base.texture);
-		}
-	}
 }
 
 static void evergreen_set_global_binding(struct pipe_context *ctx,
@@ -1013,10 +523,6 @@ static void evergreen_set_global_binding(struct pipe_context *ctx,
 	/* globals for reading */
 	evergreen_cs_set_vertex_buffer(rctx, 1, 0,
 				(struct pipe_resource*)pool->bo);
-
-	/* constants for reading, LLVM puts them in text segment */
-	evergreen_cs_set_vertex_buffer(rctx, 2, 0,
-				(struct pipe_resource*)rctx->cs_shader_state.shader->code_bo);
 }
 
 /**
@@ -1219,7 +725,6 @@ void evergreen_init_compute_state_functions(struct r600_context *rctx)
 	rctx->b.b.delete_compute_state = evergreen_delete_compute_state;
 	rctx->b.b.bind_compute_state = evergreen_bind_compute_state;
 //	 rctx->context.create_sampler_view = evergreen_compute_create_sampler_view;
-	rctx->b.b.set_compute_resources = evergreen_set_compute_resources;
 	rctx->b.b.set_global_binding = evergreen_set_global_binding;
 	rctx->b.b.launch_grid = evergreen_launch_grid;
 	rctx->b.b.get_compute_state_info = evergreen_get_compute_state_info;
