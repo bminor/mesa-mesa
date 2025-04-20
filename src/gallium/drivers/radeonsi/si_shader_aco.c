@@ -88,7 +88,6 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
       info->vs.any_tcs_inputs_via_lds = sel->info.tcs_inputs_via_lds ||
                                         (!shader->key.ge.opt.same_patch_vertices &&
                                          sel->info.tcs_inputs_via_temp);
-      info->tcs.tcs_offchip_layout = args->tcs_offchip_layout;
       break;
    case MESA_SHADER_FRAGMENT:
       info->ps.num_inputs = si_get_ps_num_interp(shader);

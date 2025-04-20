@@ -120,8 +120,6 @@ struct aco_shader_info {
       bool has_prolog;
    } vs;
    struct {
-      struct ac_arg tcs_offchip_layout;
-
       /* Vulkan only */
       uint32_t num_lds_blocks;
    } tcs;
