@@ -806,7 +806,6 @@ struct pipe_compute_caps {
    unsigned max_variable_threads_per_block;
    uint64_t max_mem_alloc_size;
    uint64_t max_global_size;
-   char ir_target[32];
    bool images_supported;
 };
 

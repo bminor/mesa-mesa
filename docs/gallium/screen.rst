@@ -750,10 +750,6 @@ pipe_compute_caps
 Compute-specific capabilities. They can be queried using
 pipe_screen::get_compute_param.
 
-* ``pipe_compute_caps.ir_target``: A description of the target of the form
-  ``processor-arch-manufacturer-os`` that will be passed on to the compiler.
-  This CAP is only relevant for drivers that specify PIPE_SHADER_IR_NATIVE for
-  their preferred IR.
 * ``pipe_compute_caps.grid_dimension``: Number of supported dimensions
   for grid and block coordinates.
 * ``pipe_compute_caps.max_grid_size``: Maximum grid size in block

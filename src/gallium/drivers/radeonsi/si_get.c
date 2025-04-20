@@ -972,9 +972,6 @@ void si_init_compute_caps(struct si_screen *sscreen)
    struct pipe_compute_caps *caps =
       (struct pipe_compute_caps *)&sscreen->b.compute_caps;
 
-   snprintf(caps->ir_target, sizeof(caps->ir_target), "%s-amdgcn-mesa-mesa3d",
-            ac_get_llvm_processor_name(sscreen->info.family));
-
    caps->grid_dimension = 3;
 
    /* Use this size, so that internal counters don't overflow 64 bits. */
