@@ -2222,17 +2222,6 @@ tc_set_stream_output_targets(struct pipe_context *_pipe,
 }
 
 static void
-tc_set_compute_resources(struct pipe_context *_pipe, unsigned start,
-                         unsigned count, struct pipe_surface **resources)
-{
-   struct threaded_context *tc = threaded_context(_pipe);
-   struct pipe_context *pipe = tc->pipe;
-
-   tc_sync(tc);
-   pipe->set_compute_resources(pipe, start, count, resources);
-}
-
-static void
 tc_set_global_binding(struct pipe_context *_pipe, unsigned first,
                       unsigned count, struct pipe_resource **resources,
                       uint32_t **handles)
@@ -5483,7 +5472,6 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(resource_commit);
    CTX_INIT(create_video_codec);
    CTX_INIT(create_video_buffer);
-   CTX_INIT(set_compute_resources);
    CTX_INIT(set_global_binding);
    CTX_INIT(get_sample_position);
    CTX_INIT(invalidate_resource);

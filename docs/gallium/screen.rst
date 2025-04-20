@@ -825,8 +825,6 @@ resources might be created and handled quite differently.
   to a shader and can be used with load, store, and atomic instructions.
 * ``PIPE_BIND_SHADER_IMAGE``: A buffer or texture with a format that can be
   bound to a shader and can be used with load, store, and atomic instructions.
-* ``PIPE_BIND_COMPUTE_RESOURCE``: A buffer or texture that can be
-  bound to the compute program as a shader resource.
 * ``PIPE_BIND_COMMAND_ARGS_BUFFER``: A buffer that may be sourced by the
   GPU command processor. It can contain, for example, the arguments to
   indirect draw calls.

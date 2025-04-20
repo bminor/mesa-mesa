@@ -1051,18 +1051,12 @@ static void si_delete_compute_state(struct pipe_context *ctx, void *state)
    si_compute_reference(&program, NULL);
 }
 
-static void si_set_compute_resources(struct pipe_context *ctx_, unsigned start, unsigned count,
-                                     struct pipe_surface **surfaces)
-{
-}
-
 void si_init_compute_functions(struct si_context *sctx)
 {
    sctx->b.create_compute_state = si_create_compute_state;
    sctx->b.delete_compute_state = si_delete_compute_state;
    sctx->b.bind_compute_state = si_bind_compute_state;
    sctx->b.get_compute_state_info = si_get_compute_state_info;
-   sctx->b.set_compute_resources = si_set_compute_resources;
    sctx->b.set_global_binding = si_set_global_binding;
    sctx->b.launch_grid = si_launch_grid;
 

@@ -977,22 +977,6 @@ struct pipe_context {
                                                const uint32_t block[3]);
 
    /**
-    * Bind an array of shader resources that will be used by the
-    * compute program.  Any resources that were previously bound to
-    * the specified range will be unbound after this call.
-    *
-    * \param start      first resource to bind.
-    * \param count      number of consecutive resources to bind.
-    * \param resources  array of pointers to the resources to bind, it
-    *                   should contain at least \a count elements
-    *                   unless it's NULL, in which case no new
-    *                   resources will be bound.
-    */
-   void (*set_compute_resources)(struct pipe_context *,
-                                 unsigned start, unsigned count,
-                                 struct pipe_surface **resources);
-
-   /**
     * Bind an array of buffers to be mapped into the address space of
     * the GLOBAL resource.  Any buffers that were previously bound
     * between [first, first + count - 1] are unbound after this call.
