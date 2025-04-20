@@ -1423,12 +1423,21 @@ add_all_surfaces_explicit_layout(
 
 static const struct isl_drm_modifier_info *
 choose_drm_format_mod(const struct anv_physical_device *device,
-                      uint32_t modifier_count, const uint64_t *modifiers)
+                      uint32_t modifier_count,
+                      const uint64_t *modifiers,
+                      isl_surf_usage_flags_t isl_usage_flags)
 {
    uint64_t best_mod = UINT64_MAX;
    uint32_t best_score = 0;
 
    for (uint32_t i = 0; i < modifier_count; ++i) {
+      if ((isl_usage_flags & ISL_SURF_USAGE_DISABLE_AUX_BIT) &&
+          isl_drm_modifier_has_aux(modifiers[i])) {
+         /* When aux is disabled, we simply cannot choose a modifier with
+          * compression.
+          */
+         continue;
+      }
       uint32_t score = isl_drm_modifier_get_score(&device->info, modifiers[i]);
       if (score > best_score) {
          best_mod = modifiers[i];
@@ -1621,8 +1630,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
                const struct anv_image_create_info *create_info)
 {
    const VkImageCreateInfo *pCreateInfo = create_info->vk_info;
-   const struct VkImageDrmFormatModifierExplicitCreateInfoEXT *mod_explicit_info = NULL;
-   const struct isl_drm_modifier_info *isl_mod_info = NULL;
    VkResult r;
 
    vk_image_init(&device->vk, &image->vk, pCreateInfo);
@@ -1633,38 +1640,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
 
    isl_surf_usage_flags_t isl_extra_usage_flags =
       create_info->isl_extra_usage_flags;
-   if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-      assert(!image->vk.wsi_legacy_scanout);
-      mod_explicit_info =
-         vk_find_struct_const(pCreateInfo->pNext,
-                              IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
-      if (mod_explicit_info) {
-         isl_mod_info = isl_drm_modifier_get_info(mod_explicit_info->drmFormatModifier);
-      } else {
-         const struct VkImageDrmFormatModifierListCreateInfoEXT *mod_list_info =
-            vk_find_struct_const(pCreateInfo->pNext,
-                                 IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
-         isl_mod_info = choose_drm_format_mod(device->physical,
-                                              mod_list_info->drmFormatModifierCount,
-                                              mod_list_info->pDrmFormatModifiers);
-      }
-
-      assert(isl_mod_info);
-      assert(image->vk.drm_format_mod == DRM_FORMAT_MOD_INVALID);
-      image->vk.drm_format_mod = isl_mod_info->modifier;
-
-      if (isl_drm_modifier_needs_display_layout(image->vk.drm_format_mod))
-         isl_extra_usage_flags |= ISL_SURF_USAGE_DISPLAY_BIT;
-
-      /* Disable compression on gen12+ if the selected/requested modifier
-       * doesn't support it. Prior to that we can use a private binding for
-       * the aux surface and it should be transparent to users.
-       */
-      if (device->info->ver >= 12 &&
-          !isl_drm_modifier_has_aux(image->vk.drm_format_mod)) {
-         isl_extra_usage_flags |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
-      }
-   }
 
    for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; ++i) {
       image->bindings[i] = (struct anv_image_binding) {
@@ -1765,9 +1740,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
    if (image->from_wsi)
       isl_extra_usage_flags |= ISL_SURF_USAGE_DISPLAY_BIT;
 
-   const isl_tiling_flags_t isl_tiling_flags =
-      choose_isl_tiling_flags(device->info, image, create_info, isl_mod_info);
-
    const VkImageFormatListCreateInfo *fmt_list =
       vk_find_struct_const(pCreateInfo->pNext,
                            IMAGE_FORMAT_LIST_CREATE_INFO);
@@ -1846,6 +1818,46 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       }
    }
 
+   const struct VkImageDrmFormatModifierExplicitCreateInfoEXT *mod_explicit_info = NULL;
+   const struct isl_drm_modifier_info *isl_mod_info = NULL;
+   if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+      assert(!image->vk.wsi_legacy_scanout);
+      mod_explicit_info =
+         vk_find_struct_const(pCreateInfo->pNext,
+                              IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
+      if (mod_explicit_info) {
+         isl_mod_info = isl_drm_modifier_get_info(mod_explicit_info->drmFormatModifier);
+      } else {
+         const struct VkImageDrmFormatModifierListCreateInfoEXT *mod_list_info =
+            vk_find_struct_const(pCreateInfo->pNext,
+                                 IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
+         isl_mod_info = choose_drm_format_mod(device->physical,
+                                              mod_list_info->drmFormatModifierCount,
+                                              mod_list_info->pDrmFormatModifiers,
+                                              isl_extra_usage_flags);
+      }
+
+      if (!isl_mod_info) {
+         return vk_errorf(device, VK_ERROR_UNKNOWN,
+                          "Cannot choose a suitable modifier to create image");
+      }
+
+      assert(image->vk.drm_format_mod == DRM_FORMAT_MOD_INVALID);
+      image->vk.drm_format_mod = isl_mod_info->modifier;
+
+      if (isl_drm_modifier_needs_display_layout(image->vk.drm_format_mod))
+         isl_extra_usage_flags |= ISL_SURF_USAGE_DISPLAY_BIT;
+
+      /* Disable compression on gen12+ if the selected/requested modifier
+       * doesn't support it. Prior to that we can use a private binding for
+       * the aux surface and it should be transparent to users.
+       */
+      if (device->info->ver >= 12 &&
+          !isl_drm_modifier_has_aux(image->vk.drm_format_mod)) {
+         isl_extra_usage_flags |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+      }
+   }
+
    if (isl_mod_info && isl_mod_info->supports_clear_color) {
       if (image->num_view_formats > 1) {
          /* We use the number of view formats to determine the number of
@@ -1858,7 +1870,8 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       }
       assert(image->num_view_formats == 1);
    }
-
+   const isl_tiling_flags_t isl_tiling_flags =
+      choose_isl_tiling_flags(device->info, image, create_info, isl_mod_info);
    if (mod_explicit_info) {
       r = add_all_surfaces_explicit_layout(device, image, fmt_list,
                                            mod_explicit_info, isl_tiling_flags,
