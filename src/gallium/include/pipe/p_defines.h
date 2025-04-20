@@ -797,7 +797,6 @@ struct pipe_compute_caps {
    unsigned max_block_size[3];
    unsigned max_threads_per_block;
    unsigned max_local_size;
-   unsigned max_input_size;
    unsigned max_clock_frequency;
    unsigned max_compute_units;
    unsigned max_subgroups;

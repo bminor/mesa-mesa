@@ -180,7 +180,6 @@ llvmpipe_init_compute_caps(struct pipe_screen *screen)
    caps->grid_dimension = 3;
    caps->max_global_size = 1 << 31;
    caps->max_mem_alloc_size = 1 << 31;
-   caps->max_input_size = 1576;
    caps->subgroup_sizes = lp_native_vector_width / 32;
    caps->max_subgroups = 1024 / (lp_native_vector_width / 32);
    caps->max_compute_units = 8;

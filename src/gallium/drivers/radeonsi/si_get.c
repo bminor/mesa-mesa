@@ -1002,7 +1002,6 @@ void si_init_compute_caps(struct si_screen *sscreen)
 
    /* Value reported by the closed source driver. */
    caps->max_local_size = sscreen->info.gfx_level == GFX6 ? 32 * 1024 : 64 * 1024;
-   caps->max_input_size = 1024;
 
    caps->max_clock_frequency = sscreen->info.max_gpu_freq_mhz;
    caps->max_compute_units = sscreen->info.num_cu;

@@ -218,8 +218,6 @@ v3d_init_compute_caps(struct v3d_screen *screen)
         /* GL_MAX_COMPUTE_SHARED_MEMORY_SIZE */
         caps->max_local_size = 32768;
 
-        caps->max_input_size = 4096;
-
         struct sysinfo si;
         sysinfo(&si);
         caps->max_global_size = si.totalram;

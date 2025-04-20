@@ -455,7 +455,6 @@ panfrost_init_compute_caps(struct panfrost_screen *screen)
    caps->max_mem_alloc_size = MIN2(available_ram, user_va_end - user_va_start);
 
    caps->max_local_size = 32768;
-   caps->max_input_size = 4096;
    caps->max_clock_frequency = 800; /* MHz -- TODO */
    caps->max_compute_units = dev->core_count;
    caps->subgroup_sizes = pan_subgroup_size(dev->arch);
