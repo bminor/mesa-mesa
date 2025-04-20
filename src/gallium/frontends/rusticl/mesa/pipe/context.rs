@@ -301,7 +301,6 @@ impl PipeContext {
         let state = pipe_compute_state {
             ir_type: pipe_shader_ir::PIPE_SHADER_IR_NIR,
             prog: nir.dup_for_driver().cast(),
-            req_input_mem: 0,
             static_shared_mem: static_local_mem,
         };
         unsafe { self.pipe.as_ref().create_compute_state.unwrap()(self.pipe.as_ptr(), &state) }

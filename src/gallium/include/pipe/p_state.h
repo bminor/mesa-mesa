@@ -1230,7 +1230,6 @@ struct pipe_compute_state
    enum pipe_shader_ir ir_type; /**< IR type contained in prog. */
    const void *prog; /**< Compute program to be executed. */
    unsigned static_shared_mem; /**< equal to info.shared_size, used for shaders passed as TGSI */
-   unsigned req_input_mem; /**< Required size of the INPUT resource. */
 };
 
 struct pipe_compute_state_object_info
