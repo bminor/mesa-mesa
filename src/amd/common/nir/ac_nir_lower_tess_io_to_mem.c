@@ -886,6 +886,12 @@ hs_tess_level_group_vote(nir_builder *b, lower_tess_io_state *st,
                               VOTE_RESULT_ALL_TF_ZERO : VOTE_RESULT_ALL_TF_ONE);
    }
 
+   /* If TCS never discards patches, GFX6-10 don't need the group vote because the vote is only
+    * used to skip output stores there.
+    */
+   if (st->gfx_level < GFX11 && !st->tcs_info.can_discard_patches)
+      return nir_imm_int(b, VOTE_RESULT_NORMAL);
+
    /* Initialize the first LDS dword for the tf0/1 group vote at the beginning of TCS. */
    nir_block *start_block = nir_start_block(nir_shader_get_entrypoint(b->shader));
    nir_builder top_b = nir_builder_at(nir_before_block(start_block));
@@ -1215,6 +1221,8 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
    nir_def *invocation_id = nir_load_invocation_id(b);
    nir_def *zero = nir_imm_int(b, 0);
 
+   /* Don't load per-vertex outputs from LDS if all tess factors are 0. */
+   nir_if *if_not_discarded = nir_push_if(b, nir_ine_imm(b, vote_result, VOTE_RESULT_ALL_TF_ZERO));
    u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
       if (!st->tcs_per_vertex_output_vmem_chan_mask[slot])
          continue;
@@ -1236,6 +1244,11 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
 
       outputs[slot] = make_vec4(b, comp);
    }
+   nir_pop_if(b, if_not_discarded);
+   u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
+      if (outputs[slot])
+         outputs[slot] = nir_if_phi(b, outputs[slot], nir_undef(b, 4, 32));
+   }
 
    if (st->gfx_level >= GFX9) {
       /* Wrap the whole shader in a conditional block, allowing only TCS (HS) invocations to execute
@@ -1252,6 +1265,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
          nir_cf_reinsert(extracted, b->cursor);
       }
       nir_pop_if(b, if_tcs);
+      vote_result = nir_if_phi(b, vote_result, nir_undef(b, 1, 32)); /* no-op, it should be an SGPR */
 
       u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
          if (outputs[slot])
@@ -1274,7 +1288,9 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
       is_pervertex_store_thread = nir_is_subgroup_invocation_lt_amd(b, aligned_tcs_threads);
    }
 
-   nir_if *if_pervertex_stores = nir_push_if(b, is_pervertex_store_thread);
+   nir_if *if_pervertex_stores =
+      nir_push_if(b, nir_iand(b, is_pervertex_store_thread,
+                              nir_ine_imm(b, vote_result, VOTE_RESULT_ALL_TF_ZERO)));
    {
       nir_def *hs_ring_tess_offchip = nir_load_ring_tess_offchip_amd(b);
       nir_def *offchip_offset = nir_load_ring_tess_offchip_offset_amd(b);
