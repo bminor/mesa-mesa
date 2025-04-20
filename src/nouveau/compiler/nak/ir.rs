@@ -6676,6 +6676,9 @@ impl Op {
             Op::F2F(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
             Op::F2I(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
             Op::I2F(op) => op.src_type.bits() == 64 || op.dst_type.bits() == 64,
+            Op::FRnd(op) => {
+                op.src_type.bits() == 64 || op.dst_type.bits() == 64
+            }
             _ => false,
         }
     }
