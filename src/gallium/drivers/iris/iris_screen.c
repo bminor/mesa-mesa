@@ -280,9 +280,6 @@ iris_init_compute_caps(struct iris_screen *screen)
 
    caps->max_compute_units = intel_device_info_subslice_total(devinfo);
 
-   /* MaxComputeSharedMemorySize */
-   caps->max_private_size = 64 * 1024;
-
    /* We could probably allow more; this is the OpenCL minimum */
    caps->max_input_size = 1024;
 }

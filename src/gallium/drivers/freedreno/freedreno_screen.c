@@ -335,7 +335,6 @@ fd_init_compute_caps(struct fd_screen *screen)
 
    caps->max_local_size = screen->info->cs_shared_mem_size;
 
-   caps->max_private_size =
    caps->max_input_size = 4096;
 
    caps->max_mem_alloc_size = screen->ram_size;

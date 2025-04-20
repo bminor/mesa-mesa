@@ -765,8 +765,6 @@ pipe_screen::get_compute_param.
   resource.
 * ``pipe_compute_caps.max_local_size``: Maximum size of the LOCAL
   resource.
-* ``pipe_compute_caps.max_private_size``: Maximum size of the PRIVATE
-  resource.
 * ``pipe_compute_caps.max_input_size``: Maximum size of the INPUT
   resource.
 * ``pipe_compute_caps.max_mem_alloc_size``: Maximum size of a memory object

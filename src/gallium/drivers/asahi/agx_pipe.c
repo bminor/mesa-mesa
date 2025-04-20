@@ -1945,7 +1945,7 @@ agx_init_compute_caps(struct pipe_screen *pscreen)
 
    caps->max_local_size = 32768;
 
-   caps->max_private_size = caps->max_input_size = 4096;
+   caps->max_input_size = 4096;
 
    caps->max_clock_frequency = dev->params.max_frequency_khz / 1000;
 

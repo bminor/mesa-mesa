@@ -158,7 +158,6 @@ nv50_init_compute_caps(struct nv50_screen *screen)
    caps->max_mem_alloc_size =
    caps->max_global_size = nouveau_device_get_global_mem_size(dev); /* g0-15[] */
    caps->max_local_size = 16 << 10; /* s[] */
-   caps->max_private_size = 16 << 10; /* l[] */
    caps->max_input_size = 4096; /* c[], arbitrary limit */
    caps->subgroup_sizes = 32;
    caps->max_compute_units = screen->mp_count;
