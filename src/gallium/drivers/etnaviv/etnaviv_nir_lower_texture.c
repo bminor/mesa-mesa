@@ -38,6 +38,34 @@ legalize_txf_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
    return true;
 }
 
+static bool
+legalize_txd_derivatives(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
+{
+   if (tex->op != nir_texop_txd)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   int coord_index = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   int ddx_index = nir_tex_instr_src_index(tex, nir_tex_src_ddx);
+   int ddy_index = nir_tex_instr_src_index(tex, nir_tex_src_ddy);
+
+   assert(coord_index >= 0);
+   assert(ddx_index >= 0);
+   assert(ddy_index >= 0);
+
+   nir_def *coord = tex->src[coord_index].src.ssa;
+   nir_def *ddx = tex->src[ddx_index].src.ssa;
+   nir_def *ddy = tex->src[ddy_index].src.ssa;
+
+   coord = nir_trim_vector(b, coord, ddx->num_components);
+
+   nir_src_rewrite(&tex->src[ddx_index].src, nir_fadd(b, coord, ddx));
+   nir_src_rewrite(&tex->src[ddy_index].src, nir_fadd(b, coord, ddy));
+
+   return true;
+}
+
 bool
 etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key)
 {
@@ -61,6 +89,9 @@ etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key)
          nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, legalize_txf_lod,
+      nir_metadata_control_flow, NULL);
+
+   NIR_PASS(progress, s, nir_shader_tex_pass, legalize_txd_derivatives,
       nir_metadata_control_flow, NULL);
 
    return progress;
