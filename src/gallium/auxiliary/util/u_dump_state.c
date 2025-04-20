@@ -976,7 +976,6 @@ void util_dump_grid_info(FILE *stream, const struct pipe_grid_info *state)
 
    util_dump_struct_begin(stream, "pipe_grid_info");
 
-   util_dump_member(stream, ptr, state, input);
    util_dump_member(stream, uint, state, work_dim);
 
    util_dump_member_begin(stream, "block");

@@ -941,12 +941,6 @@ struct pipe_blit_info
 struct pipe_grid_info
 {
    /**
-    * Will be used to initialize the INPUT resource, and it should point to a
-    * buffer of at least pipe_compute_state::req_input_mem bytes.
-    */
-   const void *input;
-
-   /**
     * Variable shared memory used by this invocation.
     *
     * This comes on top of shader declared shared memory.

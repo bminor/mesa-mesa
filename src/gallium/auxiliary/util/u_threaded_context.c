@@ -4415,7 +4415,6 @@ tc_launch_grid(struct pipe_context *_pipe,
    struct threaded_context *tc = threaded_context(_pipe);
    struct tc_launch_grid_call *p = tc_add_call(tc, TC_CALL_launch_grid,
                                                tc_launch_grid_call);
-   assert(info->input == NULL);
 
    tc_set_resource_reference(&p->info.indirect, info->indirect);
    memcpy(&p->info, info, sizeof(*info));
