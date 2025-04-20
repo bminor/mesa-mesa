@@ -301,9 +301,8 @@ lower_ls_output_store(nir_builder *b,
 
       nir_def *off = nir_iadd_nuw(b, base_off_var, io_off);
 
-      /* The first vec4 is reserved for the tf0/1 shader message group vote. */
-      if (st->gfx_level >= GFX11)
-         off = nir_iadd_imm_nuw(b, off, AC_HS_MSG_VOTE_LDS_BYTES);
+      /* The beginning of LDS is reserved for the tess level group vote. */
+      off = nir_iadd_imm_nuw(b, off, AC_TESS_LEVEL_VOTE_LDS_BYTES);
 
       AC_NIR_STORE_IO(b, intrin->src[0].ssa, 0, write_mask, io_sem.high_16bits,
                       nir_store_shared, off, .write_mask = store_write_mask, .base = store_const_offset);
@@ -369,8 +368,8 @@ hs_per_vertex_input_lds_offset(nir_builder *b,
                                            nir_imm_int(b, 16u), 4u, mapped);
    nir_def *lds_offset = nir_iadd_nuw(b, nir_iadd_nuw(b, tcs_in_current_patch_offset, vertex_index_off), io_offset);
 
-   /* The first LDS vec4 is reserved for the tf0/1 shader message group vote. */
-   return st->gfx_level >= GFX11 ? nir_iadd_imm_nuw(b, lds_offset, AC_HS_MSG_VOTE_LDS_BYTES) : lds_offset;
+   /* The beginning of LDS is reserved for the tess level group vote. */
+   return nir_iadd_imm_nuw(b, lds_offset, AC_TESS_LEVEL_VOTE_LDS_BYTES);
 }
 
 static unsigned
@@ -442,8 +441,8 @@ hs_output_lds_offset(nir_builder *b, lower_tess_io_state *st, unsigned location,
       lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
    }
 
-   /* The first LDS vec4 is reserved for the tf0/1 shader message group vote. */
-   return st->gfx_level >= GFX11 ? nir_iadd_imm_nuw(b, lds_offset, AC_HS_MSG_VOTE_LDS_BYTES) : lds_offset;
+   /* The beginning of LDS is reserved for the tess level group vote. */
+   return nir_iadd_imm_nuw(b, lds_offset, AC_TESS_LEVEL_VOTE_LDS_BYTES);
 }
 
 static unsigned
@@ -854,10 +853,14 @@ tess_level_has_effect(nir_builder *b, nir_def *prim_mode, unsigned comp, bool ou
       unreachable("invalid comp");
 }
 
-/* Return true if memory should be used. If false is returned, the shader message has been used. */
+#define VOTE_RESULT_NORMAL       0  /* execute output stores and tess factor stores */
+#define VOTE_RESULT_ALL_TF_ZERO  1  /* skip output stores, skip tess factor stores on GFX11+ */
+#define VOTE_RESULT_ALL_TF_ONE   2  /* execute output stores, skip tess factor stores on GFX11+ */
+
+/* Return VOTE_RESULT_*. This also sends the HS_TESSFACTOR shader message on GFX11+. */
 static nir_def *
-hs_msg_group_vote_use_memory(nir_builder *b, lower_tess_io_state *st,
-                             tess_levels *tessfactors, nir_def *prim_mode)
+hs_tess_level_group_vote(nir_builder *b, lower_tess_io_state *st,
+                         tess_levels *tessfactors, nir_def *prim_mode)
 {
    /* Don't do the group vote and send the message directly if tess level values were determined
     * by nir_gather_tcs_info at compile time.
@@ -867,16 +870,20 @@ hs_msg_group_vote_use_memory(nir_builder *b, lower_tess_io_state *st,
    if (debug_get_bool_option("AMD_FAST_HS_MSG", true) &&
        (st->tcs_info.all_tess_levels_are_effectively_zero ||
         st->tcs_info.all_tess_levels_are_effectively_one)) {
-      nir_if *if_subgroup0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
-      {
-         /* m0[0] == 0 means all TF are 0 in the workgroup.
-          * m0[0] == 1 means all TF are 1 in the workgroup.
-          */
-         nir_def *m0 = nir_imm_int(b, st->tcs_info.all_tess_levels_are_effectively_zero ? 0 : 1);
-         nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_HS_TESSFACTOR);
+      if (st->gfx_level >= GFX11) {
+         nir_if *if_subgroup0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
+         {
+            /* m0[0] == 0 means all TF are 0 in the workgroup.
+             * m0[0] == 1 means all TF are 1 in the workgroup.
+             */
+            nir_def *m0 = nir_imm_int(b, st->tcs_info.all_tess_levels_are_effectively_zero ? 0 : 1);
+            nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_HS_TESSFACTOR);
+         }
+         nir_pop_if(b, if_subgroup0);
       }
-      nir_pop_if(b, if_subgroup0);
-      return nir_imm_false(b);
+
+      return nir_imm_int(b, st->tcs_info.all_tess_levels_are_effectively_zero ?
+                              VOTE_RESULT_ALL_TF_ZERO : VOTE_RESULT_ALL_TF_ONE);
    }
 
    /* Initialize the first LDS dword for the tf0/1 group vote at the beginning of TCS. */
@@ -1014,21 +1021,23 @@ hs_msg_group_vote_use_memory(nir_builder *b, lower_tess_io_state *st,
    lds_result = nir_if_phi(b, lds_result, nir_undef(b, 1, 32));
    lds_result = nir_read_invocation(b, lds_result, nir_imm_int(b, 0));
 
-   /* Determine the vote value and send the message. */
-   nir_def *use_memory = nir_ieq_imm(b, lds_result, 0);
+   /* Send the message. */
+   if (st->gfx_level >= GFX11) {
+      nir_def *use_memory = nir_ieq_imm(b, lds_result, 0);
 
-   nir_if *if_subgroup0_sendmsg = nir_push_if(b, nir_iand(b, nir_inot(b, use_memory),
-                                                          nir_ieq_imm(b, nir_load_subgroup_id(b), 0)));
-   {
-      /* m0[0] == 0 means all TF are 0 in the workgroup.
-       * m0[0] == 1 means all TF are 1 in the workgroup.
-       */
-      nir_def *m0 = nir_iadd_imm(b, lds_result, -1);
-      nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_HS_TESSFACTOR);
+      nir_if *if_subgroup0_sendmsg = nir_push_if(b, nir_iand(b, nir_inot(b, use_memory),
+                                                             nir_ieq_imm(b, nir_load_subgroup_id(b), 0)));
+      {
+         /* m0[0] == 0 means all TF are 0 in the workgroup.
+          * m0[0] == 1 means all TF are 1 in the workgroup.
+          */
+         nir_def *m0 = nir_iadd_imm(b, lds_result, -1);
+         nir_sendmsg_amd(b, m0, .base = AC_SENDMSG_HS_TESSFACTOR);
+      }
+      nir_pop_if(b, if_subgroup0_sendmsg);
    }
-   nir_pop_if(b, if_subgroup0_sendmsg);
 
-   return use_memory;
+   return lds_result;
 }
 
 static void
@@ -1156,12 +1165,8 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
    }
 
    nir_def *prim_mode = nir_load_tcs_primitive_mode_amd(b);
-   nir_def *use_memory = NULL;
    tess_levels tessfactors = {0};
-
-   /* This also loads tess levels for patch invocation 0. */
-   if (st->gfx_level >= GFX11)
-      use_memory = hs_msg_group_vote_use_memory(b, st, &tessfactors, prim_mode);
+   nir_def *vote_result = hs_tess_level_group_vote(b, st, &tessfactors, prim_mode);
 
    /* Only the 1st invocation of each patch needs to access VRAM and/or LDS. */
    nir_if *if_invocation_id_zero = hs_if_invocation_id_zero(b);
@@ -1170,8 +1175,8 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
          tessfactors = hs_load_tess_levels(b, st);
 
       nir_if *if_use_memory = NULL;
-      if (use_memory != NULL)
-         if_use_memory = nir_push_if(b, use_memory);
+      if (st->gfx_level >= GFX11)
+         if_use_memory = nir_push_if(b, nir_ieq_imm(b, vote_result, VOTE_RESULT_NORMAL));
 
       if (st->gfx_level <= GFX8)
          hs_store_dynamic_control_word_gfx6(b);
@@ -1194,7 +1199,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
       }
       nir_pop_if(b, if_triangles);
 
-      if (use_memory != NULL)
+      if (if_use_memory != NULL)
          nir_pop_if(b, if_use_memory);
 
       nir_if *if_tes_reads_tf = nir_push_if(b, nir_load_tcs_tess_levels_to_tes_amd(b));
@@ -1496,11 +1501,7 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, uint64_t outputs_rea
    unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp,
                                                       num_mem_tcs_outputs, num_mem_tcs_patch_outputs,
                                                       lds_per_patch, wave_size, tess_uses_primid);
-   unsigned lds_size = lds_per_patch * num_patches;
-
-   /* The first vec4 is reserved for the tf0/1 shader message group vote. */
-   if (info->gfx_level >= GFX11)
-      lds_size += AC_HS_MSG_VOTE_LDS_BYTES;
+   unsigned lds_size = lds_per_patch * num_patches + AC_TESS_LEVEL_VOTE_LDS_BYTES;
 
    /* SPI_SHADER_PGM_RSRC2_HS.LDS_SIZE specifies the allocation size only for LDS. The HS offchip
     * ring buffer always uses a fixed allocation size per workgroup determined by

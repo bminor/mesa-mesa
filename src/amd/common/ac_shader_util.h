@@ -30,8 +30,8 @@ extern "C" {
 #define AC_SENDMSG_GS_OP_EMIT     (2 << 4)
 #define AC_SENDMSG_GS_OP_EMIT_CUT (3 << 4)
 
-/* Reserve this size at the beginning of LDS for the tf0/1 shader message group vote. */
-#define AC_HS_MSG_VOTE_LDS_BYTES 16
+/* Reserve this size at the beginning of LDS for the tess level group vote. */
+#define AC_TESS_LEVEL_VOTE_LDS_BYTES 16
 
 /* An extension of gl_access_qualifier describing other aspects of memory operations
  * for code generation.
