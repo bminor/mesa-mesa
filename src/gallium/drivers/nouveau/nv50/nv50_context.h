@@ -405,5 +405,8 @@ nv98_video_buffer_create(struct pipe_context *pipe,
 /* nv50_compute.c */
 void
 nv50_launch_grid(struct pipe_context *, const struct pipe_grid_info *);
+void
+nv50_launch_grid_with_input(struct pipe_context *, const struct pipe_grid_info *,
+                            const void *input, uint32_t input_size);
 
 #endif
