@@ -795,7 +795,6 @@ struct pipe_compute_caps {
    unsigned grid_dimension;
    unsigned max_grid_size[3];
    unsigned max_block_size[3];
-   unsigned max_block_size_clover[3];
    unsigned max_threads_per_block;
    unsigned max_threads_per_block_clover;
    unsigned max_local_size;

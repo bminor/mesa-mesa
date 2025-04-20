@@ -307,10 +307,6 @@ static void r600_init_compute_caps(struct r600_screen *screen)
 	caps->max_block_size[1] =
 	caps->max_block_size[2] = rscreen->gfx_level >= EVERGREEN ? 1024 : 256;
 
-	caps->max_block_size_clover[0] =
-	caps->max_block_size_clover[1] =
-	caps->max_block_size_clover[2] = 256;
-
 	caps->max_threads_per_block = rscreen->gfx_level >= EVERGREEN ? 1024 : 256;
 	caps->max_threads_per_block_clover = 256;
 	caps->address_bits = 32;

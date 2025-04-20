@@ -760,8 +760,6 @@ pipe_screen::get_compute_param.
   units.
 * ``pipe_compute_caps.max_block_size``: Maximum block size in thread
   units.
-* ``pipe_compute_caps.max_block_size_clover``: Same as ``pipe_compute_caps.max_block_size``
-  but used by clover only.
 * ``pipe_compute_caps.max_threads_per_block``: Maximum number of threads that
   a single block can contain.
   This may be less than the product of the components of MAX_BLOCK_SIZE and is
