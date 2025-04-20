@@ -1164,7 +1164,6 @@ void trace_dump_grid_info(const struct pipe_grid_info *state)
 
    trace_dump_struct_begin("pipe_grid_info");
 
-   trace_dump_member(uint, state, pc);
    trace_dump_member(ptr, state, input);
    trace_dump_member(uint, state, variable_shared_mem);
 

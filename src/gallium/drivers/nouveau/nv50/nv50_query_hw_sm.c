@@ -268,7 +268,6 @@ nv50_hw_sm_end_query(struct nv50_context *nv50, struct nv50_hw_query *hq)
       info.block[i] = block[i];
       info.grid[i] = grid[i];
    }
-   info.pc = 0;
    nv50_launch_grid_with_input(pipe, &info, input, 8);
    pipe->bind_compute_state(pipe, old);
 

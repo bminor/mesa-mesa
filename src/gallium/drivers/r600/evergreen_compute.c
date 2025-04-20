@@ -467,7 +467,7 @@ static void evergreen_launch_grid(struct pipe_context *ctx,
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
 
-	COMPUTE_DBG(rctx->screen, "*** evergreen_launch_grid: pc = %u\n", info->pc);
+	COMPUTE_DBG(rctx->screen, "*** evergreen_launch_grid\n");
 
 	compute_emit_cs(rctx, info);
 }

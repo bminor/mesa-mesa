@@ -750,7 +750,6 @@ enum pipe_endian
 enum pipe_shader_ir
 {
    PIPE_SHADER_IR_TGSI = 0,
-   PIPE_SHADER_IR_NATIVE,
    PIPE_SHADER_IR_NIR,
 };
 

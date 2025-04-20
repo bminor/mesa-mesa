@@ -2584,7 +2584,6 @@ nvc0_hw_sm_end_query(struct nvc0_context *nvc0, struct nvc0_hw_query *hq)
       info.block[i] = block[i];
       info.grid[i] = grid[i];
    }
-   info.pc = 0;
    pipe->launch_grid(pipe, &info);
    pipe->bind_compute_state(pipe, old);
 

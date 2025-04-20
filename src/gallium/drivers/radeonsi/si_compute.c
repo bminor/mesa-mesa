@@ -156,10 +156,6 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_screen *sscreen = (struct si_screen *)ctx->screen;
-
-   if (cso->ir_type == PIPE_SHADER_IR_NATIVE)
-      return NULL;
-
    struct si_compute *program = CALLOC_STRUCT(si_compute);
    struct si_shader_selector *sel = &program->sel;
 
