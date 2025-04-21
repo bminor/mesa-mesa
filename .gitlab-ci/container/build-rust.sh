@@ -5,7 +5,7 @@
 
 set -ex
 
-uncollapsed_section_start rust "Building Rust toolchain"
+section_start rust "Building Rust toolchain"
 
 # Pick a specific snapshot from rustup so the compiler doesn't drift on us.
 RUST_VERSION=1.78.0-2024-05-02
