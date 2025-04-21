@@ -739,12 +739,9 @@ previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
        */
       return nir_imul_imm(b, unrolled_id, static_count);
    } else if (state->prefix_summing) {
-      /* Otherwise, we need to load from the prefix sum buffer. Note that the
-       * sums are inclusive, so index 0 is nonzero. This requires a little
-       * fixup here. We use a saturating unsigned subtraction so we don't read
-       * out-of-bounds for zero.
-       *
-       * TODO: Optimize this.
+      /* If we prefix summed, load from the sum buffer. Note that the sums are
+       * inclusive, so index 0 is nonzero. This requires a little fixup here. We
+       * use a saturating unsigned subtraction so we don't read out-of-bounds.
        */
       nir_def *prim_minus_1 = nir_usub_sat(b, unrolled_id, nir_imm_int(b, 1));
       nir_def *addr = load_xfb_count_address(b, state, prim_minus_1, stream);
