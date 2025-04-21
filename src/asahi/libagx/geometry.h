@@ -11,12 +11,6 @@
 #include "util/bitscan.h"
 #include "util/u_math.h"
 
-#ifndef __OPENCL_VERSION__
-#define libagx_sub_sat(x, y) ((x >= y) ? (x - y) : 0)
-#else
-#define libagx_sub_sat(x, y) sub_sat(x, y)
-#endif
-
 #pragma once
 
 #define MAX_SO_BUFFERS     4
@@ -84,7 +78,7 @@ libagx_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
 static inline uint
 libagx_index_buffer_range_el(uint size_el, uint offset_el)
 {
-   return libagx_sub_sat(size_el, offset_el);
+   return offset_el < size_el ? (size_el - offset_el) : 0;
 }
 
 struct agx_geometry_params {
