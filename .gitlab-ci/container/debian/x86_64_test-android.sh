@@ -12,6 +12,8 @@ set -e
 
 set -o xtrace
 
+section_start debian_setup "Base Debian system setup"
+
 export DEBIAN_FRONTEND=noninteractive
 
 # Ephemeral packages (installed for this script and removed again at the end)
@@ -38,14 +40,20 @@ apt-get install -y --no-remove --no-install-recommends \
 
 . .gitlab-ci/container/container_pre_build.sh
 
+section_end debian_setup
+
 ############### Downloading NDK for native builds for the guest ...
+
+section_start android-ndk "Downloading Android NDK"
 
 # Fetch the NDK and extract just the toolchain we want.
 ndk="android-ndk-${ANDROID_NDK_VERSION}"
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o "$ndk.zip" "https://dl.google.com/android/repository/$ndk-linux.zip"
-unzip -d / "$ndk.zip"
+unzip -q -d / "$ndk.zip"
 rm "$ndk.zip"
+
+section_end android-ndk
 
 ############### Build ANGLE
 
@@ -84,7 +92,7 @@ rm -rf /VK-GL-CTS
 
 ############### Downloading Cuttlefish resources ...
 
-uncollapsed_section_start cuttlefish "Downloading, building and installing Cuttlefish"
+section_start cuttlefish "Downloading, building and installing Cuttlefish"
 
 CUTTLEFISH_PROJECT_PATH=ao2/aosp-manifest
 CUTTLEFISH_BUILD_VERSION_TAGS=mesa-venus
@@ -141,7 +149,7 @@ section_end cuttlefish
 
 ############### Downloading Android CTS
 
-uncollapsed_section_start android-cts "Downloading Android CTS"
+section_start android-cts "Downloading Android CTS"
 
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
@@ -152,7 +160,7 @@ pushd /android-tools
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip" \
   "https://dl.google.com/dl/android/cts/android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
-unzip "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+unzip -q "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
 rm "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
 
 # Keep only the interesting tests to save space
@@ -166,7 +174,7 @@ section_end android-cts
 
 ############### Uninstall the build software
 
-uncollapsed_section_switch debian_cleanup "Cleaning up base Debian system"
+section_switch debian_cleanup "Cleaning up base Debian system"
 
 rm -rf "/${ndk:?}"
 
