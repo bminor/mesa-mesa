@@ -71,15 +71,10 @@ find src/ -path '*/ci/*' \
   \) \
   -exec cp -p {} install/ \;
 
-# Tar up the install dir so that symlinks and hardlinks aren't each
-# packed separately in the zip file.
-mkdir -p artifacts/
-tar -cf artifacts/install.tar install
-
 if [ -n "$S3_ARTIFACT_NAME" ]; then
     # Pass needed files to the test stage
     S3_ARTIFACT_TAR="$S3_ARTIFACT_NAME.tar.zst"
-    zstd --quiet --threads ${FDO_CI_CONCURRENT:-0} artifacts/install.tar -o ${S3_ARTIFACT_TAR}
+    tar -c install | zstd --quiet --threads ${FDO_CI_CONCURRENT:-0} -o ${S3_ARTIFACT_TAR}
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" ${S3_ARTIFACT_TAR} https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_TAR}
 fi
 
