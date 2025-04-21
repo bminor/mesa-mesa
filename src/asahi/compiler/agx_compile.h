@@ -198,6 +198,15 @@ struct agx_shader_part {
    void *binary;
 };
 
+static inline bool
+agx_is_shader_empty(struct agx_shader_part *s)
+{
+   /* Last instruction is a stop, so if there's one instruction, there is
+    * nothing but a stop. The shader is thus empty.
+    */
+   return (s->info.stats.instrs == 1);
+}
+
 #define AGX_MAX_RTS (8)
 
 enum agx_format {
