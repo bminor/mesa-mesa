@@ -224,9 +224,6 @@ lower_tes(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 static bool
 lower_tes_indexing(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-   if (intr->intrinsic == nir_intrinsic_load_instance_id)
-      unreachable("todo");
-
    if (intr->intrinsic != nir_intrinsic_load_vertex_id)
       return false;
 
