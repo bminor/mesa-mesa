@@ -777,18 +777,12 @@ lower_end_primitive(nir_builder *b, nir_intrinsic_instr *intr,
       nir_imm_bool(b, b->shader->info.gs.output_primitive != MESA_PRIM_POINTS));
 }
 
-static unsigned
-verts_in_output_prim(nir_shader *gs)
-{
-   return mesa_vertices_per_prim(gs->info.gs.output_primitive);
-}
-
 static void
 write_xfb(nir_builder *b, struct lower_gs_state *state, unsigned stream,
           nir_def *index_in_strip, nir_def *prim_id_in_invocation)
 {
    struct nir_xfb_info *xfb = b->shader->xfb_info;
-   unsigned verts = verts_in_output_prim(b->shader);
+   unsigned verts = nir_verts_in_output_prim(b->shader);
 
    /* Get the index of this primitive in the XFB buffer. That is, the base for
     * this invocation for the stream plus the offset within this invocation.
@@ -870,7 +864,7 @@ lower_emit_vertex_xfb(nir_builder *b, nir_intrinsic_instr *intr,
     * we're writing strips, that means we output XFB for each vertex after the
     * first complete primitive is formed.
     */
-   unsigned first_prim = verts_in_output_prim(b->shader) - 1;
+   unsigned first_prim = nir_verts_in_output_prim(b->shader) - 1;
    nir_def *index_in_strip = intr->src[1].ssa;
 
    nir_push_if(b, nir_uge_imm(b, index_in_strip, first_prim));
@@ -895,11 +889,11 @@ lower_emit_vertex_xfb(nir_builder *b, nir_intrinsic_instr *intr,
     * vertex.
     */
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
-      /* Note: if we're outputting points, verts_in_output_prim will be 1, so
-       * this loop will not execute. This is intended: points are self-contained
-       * primitives and do not need these copies.
+      /* Note: if we're outputting points, nir_verts_in_output_prim will be 1,
+       * so this loop will not execute. This is intended: points are
+       * self-contained primitives and do not need these copies.
        */
-      for (int v = verts_in_output_prim(b->shader) - 1; v >= 1; --v) {
+      for (int v = nir_verts_in_output_prim(b->shader) - 1; v >= 1; --v) {
          nir_def *value = nir_load_var(b, state->outputs[slot][v - 1]);
 
          nir_store_var(b, state->outputs[slot][v], value,
@@ -941,7 +935,7 @@ lower_gs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *state)
       if (!state_->info->dynamic_topology)
          break;
 
-      unsigned min = verts_in_output_prim(b->shader);
+      unsigned min = nir_verts_in_output_prim(b->shader);
 
       /* We only write out complete primitives */
       nir_push_if(b, nir_uge_imm(b, intr->src[1].ssa, min));
@@ -1261,7 +1255,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return false;
    }
 
-   unsigned min = verts_in_output_prim(b->shader);
+   unsigned min = nir_verts_in_output_prim(b->shader);
 
    if (nir_src_as_uint(intr->src[1]) >= min) {
       _libagx_end_primitive(info->topology, nir_src_as_uint(intr->src[0]),
@@ -1344,7 +1338,7 @@ optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
    }
 
    /* Try to pattern match a list topology */
-   unsigned count = verts_in_output_prim(gs);
+   unsigned count = nir_verts_in_output_prim(gs);
    if (match_list_topology(info, count))
       return;
 
@@ -1566,7 +1560,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
 
    /* Create auxiliary programs */
    *pre_gs = agx_nir_create_pre_gs(
-      &gs_state, gs->xfb_info, verts_in_output_prim(gs),
+      &gs_state, gs->xfb_info, nir_verts_in_output_prim(gs),
       gs->info.gs.active_stream_mask, gs->info.gs.invocations);
 
    return true;
