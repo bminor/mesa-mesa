@@ -183,7 +183,7 @@ yaml-toml-shell-py-test:
   variables:
     PIGLIT_TAG: ${CONDITIONAL_BUILD_PIGLIT_TAG}
 
-.b2c-vkd3d-proton-test:
+.test-vkd3d-proton:
   variables:
     HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
 

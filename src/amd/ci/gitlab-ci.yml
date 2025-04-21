@@ -362,7 +362,7 @@ radv-fossils:
 radv-tahiti-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .tahiti-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -373,7 +373,7 @@ radv-tahiti-vkd3d:
 radv-hawaii-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .hawaii-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -384,7 +384,7 @@ radv-hawaii-vkd3d:
 radv-polaris10-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
   variables:
@@ -395,7 +395,7 @@ radv-polaris10-vkd3d:
 radv-vega10-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .vega10-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -406,7 +406,7 @@ radv-vega10-vkd3d:
 radv-renoir-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .renoir-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -417,7 +417,7 @@ radv-renoir-vkd3d:
 radv-navi10-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .navi10-test-valve-mupuf
     - .radv-valve-manual-rules
   variables:
@@ -428,7 +428,7 @@ radv-navi10-vkd3d:
 radv-navi21-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .navi21-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -439,7 +439,7 @@ radv-navi21-vkd3d:
 radv-vangogh-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .vangogh-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -450,7 +450,7 @@ radv-vangogh-vkd3d:
 radv-raphael-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .raphael-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -461,7 +461,7 @@ radv-raphael-vkd3d:
 radv-navi31-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .navi31-test-valve
     - .radv-valve-manual-rules
   variables:
@@ -472,7 +472,7 @@ radv-navi31-vkd3d:
 .radv-kabini-vkd3d:
   extends:
     - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
+    - .test-vkd3d-proton
     - .kabini-test-valve
     - .radv-valve-manual-rules
   variables:
