@@ -354,7 +354,7 @@
         "description": "tu,freedreno: Don't fallback to LINEAR with DRM_FORMAT_MOD_QCOM_COMPRESSED",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fc50fb35b0526a10da5e5fe72d4291c5175a9759",
         "notes": null
