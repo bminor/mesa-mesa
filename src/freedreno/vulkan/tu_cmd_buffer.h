@@ -557,6 +557,9 @@ struct tu_cmd_state
    struct tu_tess_params tess_params;
 
    uint64_t descriptor_buffer_iova[MAX_SETS];
+
+   uint32_t total_renderpasses;
+   uint32_t total_dispatches;
 };
 
 struct tu_cmd_buffer

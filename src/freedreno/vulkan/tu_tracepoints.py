@@ -73,7 +73,10 @@ begin_end_tp('cmd_buffer',
           Arg(type='str',                       var='TUdebugFlags', c_format='%s', length_arg='96', copy_func='strncpy'),
           Arg(type='str',                       var='IR3debugFlags', c_format='%s', length_arg='96', copy_func='strncpy')],
     tp_struct=[Arg(type='const char *',         name='appName',              var='cmd->device->instance->vk.app_info.app_name', c_format='%s'),
-               Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name', c_format='%s')])
+               Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name', c_format='%s')],
+    end_args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd')],
+    end_tp_struct=[Arg(type='uint32_t',         name='renderpasses',         var='cmd->state.total_renderpasses', c_format='%u'),
+                   Arg(type='uint32_t',         name='dispatches',           var='cmd->state.total_dispatches', c_format='%u')])
 
 begin_end_tp('secondary_cmd_buffer', tp_default_enabled=False,
     args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd')],
