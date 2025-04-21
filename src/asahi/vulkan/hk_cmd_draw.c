@@ -1425,6 +1425,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    uint64_t geometry_params = desc->root.draw.geometry_params;
    unsigned count_words = count->info.gs.count_words;
+   struct agx_workgroup wg;
 
    if (false /* TODO */)
       perf_debug(cmd, "Transform feedbck");
@@ -1477,9 +1478,13 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       grid_gs = agx_grid_indirect(
          geometry_params + offsetof(struct agx_geometry_params, gs_grid));
+
+      /* TODO: Optimize */
+      wg = agx_workgroup(1, 1, 1);
    } else {
       grid_vs = grid_gs = draw.b;
       grid_gs.count[0] = u_decomposed_prims_for_vertices(mode, draw.b.count[0]);
+      wg = agx_workgroup(64, 1, 1);
    }
 
    /* Launch the vertex shader first */
@@ -1489,7 +1494,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                                             vs->info.stage == MESA_SHADER_VERTEX
                                                ? gfx->linked[MESA_SHADER_VERTEX]
                                                : vs->only_linked),
-                        grid_vs, agx_workgroup(1, 1, 1));
+                        grid_vs, wg);
 
    /* Transform feedback and various queries require extra dispatching,
     * determine if we need that here.
@@ -1508,8 +1513,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       /* If we need counts, launch the count shader and prefix sum the results. */
       if (count_words) {
          perf_debug(dev, "Geometry shader count");
-         hk_dispatch_with_local_size(cmd, cs, count, grid_gs,
-                                     agx_workgroup(1, 1, 1));
+         hk_dispatch_with_local_size(cmd, cs, count, grid_gs, wg);
       }
 
       if (count->info.gs.prefix_sum) {
@@ -1525,7 +1529,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    }
 
    /* Pre-rast geometry shader */
-   hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
+   hk_dispatch_with_local_size(cmd, cs, main, grid_gs, wg);
 
    if (agx_is_indirect(draw.b)) {
       if (count->info.gs.indexed) {
