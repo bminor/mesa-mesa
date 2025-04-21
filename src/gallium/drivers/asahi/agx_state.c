@@ -4039,6 +4039,11 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       params.count_buffer = T.gpu;
    }
 
+   /* Workgroup size */
+   params.vs_grid[3] = params.gs_grid[3] = 64;
+   params.vs_grid[4] = params.gs_grid[4] = 1;
+   params.vs_grid[5] = params.gs_grid[5] = 1;
+
    if (indirect) {
       batch->uniforms.vertex_output_buffer_ptr =
          agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
@@ -4133,7 +4138,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
 
    uint64_t gp = batch->uniforms.geometry_params;
    struct agx_grid grid_vs, grid_gs;
-   struct agx_workgroup wg;
+   struct agx_workgroup wg = agx_workgroup(64, 1, 1);
 
    /* Setup grids */
    if (indirect) {
@@ -4163,14 +4168,12 @@ agx_launch_gs_prerast(struct agx_batch *batch,
 
       libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
 
-      wg = agx_workgroup(1, 1, 1);
-      grid_vs =
-         agx_grid_indirect(gp + offsetof(struct agx_geometry_params, vs_grid));
+      grid_vs = agx_grid_indirect_local(
+         gp + offsetof(struct agx_geometry_params, vs_grid));
 
-      grid_gs =
-         agx_grid_indirect(gp + offsetof(struct agx_geometry_params, gs_grid));
+      grid_gs = agx_grid_indirect_local(
+         gp + offsetof(struct agx_geometry_params, gs_grid));
    } else {
-      wg = agx_workgroup(64, 1, 1);
       grid_vs = agx_3d(draws->count, info->instance_count, 1);
 
       grid_gs =

@@ -140,10 +140,13 @@ struct agx_geometry_params {
    uint32_t xfb_prims[MAX_VERTEX_STREAMS];
 
    /* Within an indirect GS draw, the grids used to dispatch the VS/GS written
-    * out by the GS indirect setup kernel or the CPU for a direct draw.
+    * out by the GS indirect setup kernel or the CPU for a direct draw. This is
+    * the "indirect local" format: first 3 is in threads, second 3 is in grid
+    * blocks. This lets us use nontrivial workgroups with indirect draws without
+    * needing any predication.
     */
-   uint32_t vs_grid[3];
-   uint32_t gs_grid[3];
+   uint32_t vs_grid[6];
+   uint32_t gs_grid[6];
 
    /* Number of input primitives across all instances, calculated by the CPU for
     * a direct draw or the GS indirect setup kernel for an indirect draw.
@@ -167,7 +170,7 @@ struct agx_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct agx_geometry_params) == 82 * 4);
+static_assert(sizeof(struct agx_geometry_params) == 88 * 4);
 
 /* TCS shared memory layout:
  *

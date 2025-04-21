@@ -1151,6 +1151,11 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       params.count_buffer = T.gpu;
    }
 
+   /* Workgroup size */
+   params.vs_grid[3] = params.gs_grid[3] = 64;
+   params.vs_grid[4] = params.gs_grid[4] = 1;
+   params.vs_grid[5] = params.gs_grid[5] = 1;
+
    if (indirect) {
       /* TODO: size */
       cmd->geom_indirect = hk_pool_alloc(cmd, 64, 4).gpu;
@@ -1425,7 +1430,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    uint64_t geometry_params = desc->root.draw.geometry_params;
    unsigned count_words = count->info.gs.count_words;
-   struct agx_workgroup wg;
+   struct agx_workgroup wg = agx_workgroup(64, 1, 1);
 
    if (false /* TODO */)
       perf_debug(cmd, "Transform feedbck");
@@ -1473,18 +1478,14 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       libagx_gs_setup_indirect_struct(cmd, agx_1d(1),
                                       AGX_BARRIER_ALL | AGX_PREGFX, gsi);
 
-      grid_vs = agx_grid_indirect(
+      grid_vs = agx_grid_indirect_local(
          geometry_params + offsetof(struct agx_geometry_params, vs_grid));
 
-      grid_gs = agx_grid_indirect(
+      grid_gs = agx_grid_indirect_local(
          geometry_params + offsetof(struct agx_geometry_params, gs_grid));
-
-      /* TODO: Optimize */
-      wg = agx_workgroup(1, 1, 1);
    } else {
       grid_vs = grid_gs = draw.b;
       grid_gs.count[0] = u_decomposed_prims_for_vertices(mode, draw.b.count[0]);
-      wg = agx_workgroup(64, 1, 1);
    }
 
    /* Launch the vertex shader first */
