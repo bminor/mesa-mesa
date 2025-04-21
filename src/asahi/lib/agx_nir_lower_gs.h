@@ -12,13 +12,6 @@
 
 enum mesa_prim;
 
-struct agx_lower_output_to_var_state {
-   struct nir_variable *outputs[NUM_TOTAL_VARYING_SLOTS];
-};
-
-bool agx_lower_output_to_var(struct nir_builder *b, struct nir_instr *instr,
-                             void *data);
-
 struct nir_def *agx_load_per_vertex_input(struct nir_builder *b,
                                           nir_intrinsic_instr *intr,
                                           struct nir_def *vertex);

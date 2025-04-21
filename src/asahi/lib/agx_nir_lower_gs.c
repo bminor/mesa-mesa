@@ -89,9 +89,13 @@ add_counter(nir_builder *b, nir_def *counter, nir_def *increment)
 }
 
 /* Helpers for lowering I/O to variables */
+struct lower_output_to_var_state {
+   nir_variable *outputs[NUM_TOTAL_VARYING_SLOTS];
+};
+
 static void
 lower_store_to_var(nir_builder *b, nir_intrinsic_instr *intr,
-                   struct agx_lower_output_to_var_state *state)
+                   struct lower_output_to_var_state *state)
 {
    b->cursor = nir_instr_remove(&intr->instr);
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
@@ -120,8 +124,8 @@ lower_store_to_var(nir_builder *b, nir_intrinsic_instr *intr,
    nir_store_var(b, var, value, BITFIELD_BIT(component));
 }
 
-bool
-agx_lower_output_to_var(nir_builder *b, nir_instr *instr, void *data)
+static bool
+lower_output_to_var(nir_builder *b, nir_instr *instr, void *data)
 {
    if (instr->type != nir_instr_type_intrinsic)
       return false;
@@ -391,8 +395,8 @@ agx_nir_create_geometry_count_shader(nir_shader *gs,
 struct lower_gs_rast_state {
    nir_def *raw_instance_id;
    nir_def *instance_id, *primitive_id, *output_id;
-   struct agx_lower_output_to_var_state outputs;
-   struct agx_lower_output_to_var_state selected;
+   struct lower_output_to_var_state outputs;
+   struct lower_output_to_var_state selected;
 };
 
 static void
@@ -1484,7 +1488,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       *gs_count = NULL;
 
    /* Geometry shader outputs are staged to temporaries */
-   struct agx_lower_output_to_var_state state = {0};
+   struct lower_output_to_var_state state = {0};
 
    u_foreach_bit64(slot, gs->info.outputs_written) {
       /* After enough optimizations, the shader metadata can go out of sync, fix
@@ -1508,7 +1512,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
       state.outputs[slot] = gs_state.outputs[slot][0];
    }
 
-   NIR_PASS(_, gs, nir_shader_instructions_pass, agx_lower_output_to_var,
+   NIR_PASS(_, gs, nir_shader_instructions_pass, lower_output_to_var,
             nir_metadata_control_flow, &state);
 
    NIR_PASS(_, gs, nir_shader_intrinsics_pass, lower_gs_instr,
