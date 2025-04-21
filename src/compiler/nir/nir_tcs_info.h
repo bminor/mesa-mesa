@@ -36,36 +36,45 @@ extern "C" {
 #endif
 
 typedef struct nir_tcs_info {
-   /* Whether all invocations write tess level outputs.
-    *
-    * This is useful when a pass wants to read tess level values at the end
-    * of the shader. If this is true, the pass doesn't have to insert a barrier
-    * and use output loads, it can just use the SSA defs that are being stored
-    * (or phis thereof) to get the tess level output values.
+    /* The bitmask of patch outputs that are always written by all invocations
+     * in all execution paths.
+     *
+     * This is useful when a pass wants to read patch output values at the end
+     * of the shader. If this is true, the pass doesn't have to insert a barrier
+     * and use output loads, it can just use the SSA defs that are being stored
+     * (or phis thereof) to get the patch output values.
+     */
+   uint32_t patch_outputs_defined_by_all_invoc;
+
+   /* The bitmask of tess level outputs that are written by all invocations.
+    * Bit 0 is outer levels, bit 1 is inner levels.
     */
-   bool all_invocations_define_tess_levels;
+   uint8_t tess_levels_defined_by_all_invoc : 2;
+
+   /* Whether all tess levels that are written in all invocations. */
+   bool all_invocations_define_tess_levels : 1;
 
    /* Whether any of the outer tess level components is effectively 0, meaning
     * that the shader discards the patch. NaNs and negative values are included
     * in this. If the patch is discarded, inner tess levels have no effect.
     */
-   bool all_tess_levels_are_effectively_zero;
+   bool all_tess_levels_are_effectively_zero : 1;
 
    /* Whether all tess levels are effectively 1, meaning that the tessellator
     * behaves as if they were 1. There is a range of values that lead to that
     * behavior depending on the tessellation spacing.
     */
-   bool all_tess_levels_are_effectively_one;
+   bool all_tess_levels_are_effectively_one : 1;
 
    /* Whether the shader uses a barrier synchronizing TCS output stores.
     * For example, passes that write an output at the beginning of the shader
     * and load it at the end can use this to determine whether they have to
     * insert a barrier or whether the shader already contains a barrier.
     */
-   bool always_executes_barrier;
+   bool always_executes_barrier : 1;
 
    /* Whether outer tess levels <= 0 are written anywhere in the shader. */
-   bool discards_patches;
+   bool discards_patches : 1;
 } nir_tcs_info;
 
 void
