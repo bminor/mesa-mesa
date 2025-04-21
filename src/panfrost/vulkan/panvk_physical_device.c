@@ -552,6 +552,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_ycbcr_image_arrays */
       .ycbcrImageArrays = arch >= 10,
+
+      /* VK_KHR_push_descriptor */
+      .pushDescriptor = true,
    };
 }
 
