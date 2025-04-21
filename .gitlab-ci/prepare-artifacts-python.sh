@@ -14,7 +14,6 @@ mkdir -p artifacts/
 
 # Test runs don't pull down the git tree, so put the dEQP helper
 # script and associated bits there.
-echo "$(cat VERSION) (git-$(git rev-parse HEAD | cut -b -10))" > artifacts/VERSION
 cp -Rp .gitlab-ci/report-flakes.py artifacts/
 cp -Rp .gitlab-ci/setup-test-env.sh artifacts/
 cp -Rp .gitlab-ci/common artifacts/ci-common
