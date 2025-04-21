@@ -32,7 +32,8 @@ fi
 
 # Test runs don't pull down the git tree, so put the dEQP helper
 # script and associated bits there.
-echo "$(cat VERSION) (git-$(git rev-parse HEAD | cut -b -10))" > install/VERSION
+git_sha=$(git rev-parse --short=10 HEAD)
+echo "$(cat VERSION) (git-$git_sha)" > install/VERSION
 cp -Rp .gitlab-ci/bare-metal install/
 cp -Rp .gitlab-ci/common install/
 cp -Rp .gitlab-ci/piglit install/
