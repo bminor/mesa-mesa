@@ -3896,6 +3896,30 @@ before_lower_int64_optimizations = [
     (('iadd', ('u2u64', a), ('u2u64', a)), ('ishl', ('u2u64', a), 1)),
 ]
 
+# Those optimizations try to reverse integer promotion found in e.g. OpenCL C. Those should be ran
+# before any bit_size lowering is done.
+integer_promotion_optimizations = []
+for s in [8, 16]:
+    u2u = 'u2u{}'.format(s)
+    aN = 'a@{}'.format(s)
+    bN = 'b@{}'.format(s)
+
+    for op in ['ineg', 'inot']:
+        integer_promotion_optimizations.extend([
+            ((u2u, (op, 'a@32')), (op, (u2u, a))),
+        ])
+
+    for op in ['iadd', 'imul', 'iand', 'ior', 'ixor']:
+        integer_promotion_optimizations.extend([
+            ((u2u, (op, 'a@32', 'b@32')), (op, (u2u, a), (u2u, b))),
+        ])
+
+    # idiv and irem are more restrictive because we can't simply trim the inputs arbitrarily.
+    for op in ['idiv', 'irem']:
+        integer_promotion_optimizations.extend([
+            ((u2u, (op, ('i2i32', aN), ('i2i32', bN))), (op, a, b)),
+        ])
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--out', required=True)
 args = parser.parse_args()
@@ -3910,3 +3934,5 @@ with open(args.out, "w", encoding='utf-8') as f:
                                         late_optimizations).render())
     f.write(nir_algebraic.AlgebraicPass("nir_opt_algebraic_distribute_src_mods",
                                         distribute_src_mods).render())
+    f.write(nir_algebraic.AlgebraicPass("nir_opt_algebraic_integer_promotion",
+                                        integer_promotion_optimizations).render())

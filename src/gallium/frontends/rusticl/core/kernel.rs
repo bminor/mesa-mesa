@@ -601,6 +601,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
         nir_pass!(nir, nir_lower_alu);
         progress |= nir_pass!(nir, nir_opt_phi_precision);
         progress |= nir_pass!(nir, nir_opt_algebraic);
+        progress |= nir_pass!(nir, nir_opt_algebraic_integer_promotion);
         progress |= nir_pass!(
             nir,
             nir_opt_if,
