@@ -122,26 +122,6 @@ nvk_meta_begin(struct nvk_cmd_buffer *cmd,
 }
 
 static void
-nvk_meta_init_render(struct nvk_cmd_buffer *cmd,
-                     struct vk_meta_rendering_info *info)
-{
-   const struct nvk_rendering_state *render = &cmd->state.gfx.render;
-
-   *info = (struct vk_meta_rendering_info) {
-      .view_mask = render->view_mask,
-      .color_attachment_count = render->color_att_count,
-      .depth_attachment_format = render->depth_att.vk_format,
-      .stencil_attachment_format = render->stencil_att.vk_format,
-   };
-   for (uint32_t a = 0; a < render->color_att_count; a++) {
-      info->color_attachment_formats[a] = render->color_att[a].vk_format;
-      info->color_attachment_write_masks[a] =
-         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-   }
-}
-
-static void
 nvk_meta_end(struct nvk_cmd_buffer *cmd,
              struct nvk_meta_save *save)
 {
