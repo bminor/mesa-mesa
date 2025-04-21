@@ -1588,13 +1588,7 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
 
-   /* We inline the outputs_written because it's known at compile-time, even
-    * with shader objects. This lets us constant fold a bit of address math.
-    */
-   nir_def *mask = nir_imm_int64(b, b->shader->info.outputs_written);
-
-   nir_def *buffer;
-   nir_def *nr_verts;
+   nir_def *buffer, *nr_verts;
    if (b->shader->info.stage == MESA_SHADER_VERTEX) {
       buffer = nir_load_vs_output_buffer_agx(b);
       nr_verts =
@@ -1610,8 +1604,9 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *linear_id = nir_iadd(b, nir_imul(b, load_instance_id(b), nr_verts),
                                  load_primitive_id(b));
 
-   nir_def *addr =
-      libagx_vertex_output_address(b, buffer, mask, linear_id, location);
+   nir_def *addr = libagx_vertex_output_address(
+      b, buffer, nir_imm_int64(b, b->shader->info.outputs_written), linear_id,
+      location);
 
    assert(nir_src_bit_size(intr->src[0]) == 32);
    addr = nir_iadd_imm(b, addr, nir_intrinsic_component(intr) * 4);
