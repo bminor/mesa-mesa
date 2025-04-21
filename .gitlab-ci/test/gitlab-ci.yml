@@ -2,7 +2,7 @@
   # Cancel job if a newer commit is pushed to the same branch
   interruptible: true
   variables:
-    GIT_STRATEGY: none # testing doesn't build anything from source
+    GIT_STRATEGY: none  # testing doesn't build anything from source
   before_script:
     - !reference [default, before_script]
     # Note: Build dir (and thus install) may be dirty due to GIT_STRATEGY
@@ -213,7 +213,7 @@ yaml-toml-shell-py-test:
 
 .deqp-test:
   script:
-    - rm -rf results # Clear out old results if the docker container was cached
+    - rm -rf results  # Clear out old results if the docker container was cached
     - ./install/deqp-runner.sh
   artifacts:
     exclude:
@@ -327,7 +327,7 @@ yaml-toml-shell-py-test:
 .baremetal-deqp-test:
   variables:
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    FDO_CI_CONCURRENT: 0 # Default to number of CPUs
+    FDO_CI_CONCURRENT: 0  # Default to number of CPUs
 
 # For Valve's bare-metal testing farm jobs.
 .b2c-test:
