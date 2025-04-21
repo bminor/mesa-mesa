@@ -300,6 +300,7 @@
     # Enable ETC2 emulation on non-native platforms (RENOIR,RDNA+, GFX6-8 dGPUs)
     vk_require_etc2: 'true'
     CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .b2c-test-radv-vk:
   extends:
@@ -315,27 +316,23 @@
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:TAHITI
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .hawaii-test-valve:
   variables:
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:HAWAII
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .kabini-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:KABINI
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .polaris10-test-valve:
   variables:
     FDO_CI_CONCURRENT: 16
     CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:POLARIS10
-    CI_TRON__B2C_SWAP_SIZE: '16g'
     # (2022-01) tsc=unstable was added in response to this message in kmsg,
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
     CI_TRON_KERNEL_CMDLINE__TSC_WORKAROUND: 'tsc=unstable'
@@ -355,14 +352,12 @@
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VEGA10
     FDO_CI_CONCURRENT: 16
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .renoir-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RENOIR
     FDO_CI_CONCURRENT: 16
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .navi10-test-valve:
   variables:
@@ -371,7 +366,6 @@
     # IRQs. This tends to confuse the interrupt controller and breaks
     # MSI IRQs leading to GPU hangs on amdgpu.
     CI_TRON_KERNEL_CMDLINE__APIC_WORKAROUND: 'noapic'
-    CI_TRON__B2C_SWAP_SIZE: '16g'
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI10
 
 .navi10-test-valve-mupuf:
@@ -393,14 +387,12 @@
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI21
     FDO_CI_CONCURRENT: 32
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .vangogh-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VANGOGH
     FDO_CI_CONCURRENT: 8
-    CI_TRON__B2C_SWAP_SIZE: '16g'
   tags:
     - farm:$RUNNER_FARM_LOCATION
     - $CI_TRON_DUT_SETUP_TAGS
@@ -411,14 +403,12 @@
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RAPHAEL
     FDO_CI_CONCURRENT: 32
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .navi31-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI31
     FDO_CI_CONCURRENT: 32
-    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 ############### Fluster tests ###############
 .radeonsi-vaapi-fluster-rules:
