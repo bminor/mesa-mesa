@@ -504,7 +504,7 @@
         "description": "nvk: Override render enable for blits and resolves",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32f2317223c4e5dfc085bd1c0f506bd0831e7fb2",
         "notes": null
