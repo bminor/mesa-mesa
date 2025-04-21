@@ -163,11 +163,11 @@ set_io_mask(nir_shader *shader, nir_variable *var, int offset, int len,
             if (is_patch_generic) {
                shader->info.patch_outputs_read |= bitfield;
                if (indirect)
-                  shader->info.patch_outputs_accessed_indirectly |= bitfield;
+                  shader->info.patch_outputs_read_indirectly |= bitfield;
             } else {
                shader->info.outputs_read |= bitfield;
                if (indirect)
-                  shader->info.outputs_accessed_indirectly |= bitfield;
+                  shader->info.outputs_written_indirectly |= bitfield;
             }
 
             if (cross_invocation && shader->info.stage == MESA_SHADER_TESS_CTRL)
@@ -176,11 +176,11 @@ set_io_mask(nir_shader *shader, nir_variable *var, int offset, int len,
             if (is_patch_generic) {
                shader->info.patch_outputs_written |= bitfield;
                if (indirect)
-                  shader->info.patch_outputs_accessed_indirectly |= bitfield;
+                  shader->info.patch_outputs_written_indirectly |= bitfield;
             } else if (!var->data.read_only) {
                shader->info.outputs_written |= bitfield;
                if (indirect)
-                  shader->info.outputs_accessed_indirectly |= bitfield;
+                  shader->info.outputs_written_indirectly |= bitfield;
 
                if (cross_invocation && shader->info.stage == MESA_SHADER_TESS_CTRL)
                   shader->info.tess.tcs_cross_invocation_outputs_written |= bitfield;
@@ -585,13 +585,13 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
           !is_patch_special) {
          shader->info.patch_outputs_read |= slot_mask;
          if (!nir_src_is_const(*nir_get_io_offset_src(instr)))
-            shader->info.patch_outputs_accessed_indirectly |= slot_mask;
+            shader->info.patch_outputs_read_indirectly |= slot_mask;
       } else {
          shader->info.outputs_read |= slot_mask;
          shader->info.outputs_read_16bit |= slot_mask_16bit;
          if (!nir_src_is_const(*nir_get_io_offset_src(instr))) {
-            shader->info.outputs_accessed_indirectly |= slot_mask;
-            shader->info.outputs_accessed_indirectly_16bit |= slot_mask_16bit;
+            shader->info.outputs_read_indirectly |= slot_mask;
+            shader->info.outputs_read_indirectly_16bit |= slot_mask_16bit;
          }
       }
 
@@ -621,15 +621,15 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
           !is_patch_special) {
          shader->info.patch_outputs_written |= slot_mask;
          if (!nir_src_is_const(*nir_get_io_offset_src(instr)))
-            shader->info.patch_outputs_accessed_indirectly |= slot_mask;
+            shader->info.patch_outputs_written_indirectly |= slot_mask;
       } else {
          shader->info.outputs_written |= slot_mask;
          shader->info.outputs_written_16bit |= slot_mask_16bit;
          if (instr->intrinsic == nir_intrinsic_store_per_primitive_output)
             shader->info.per_primitive_outputs |= slot_mask;
          if (!nir_src_is_const(*nir_get_io_offset_src(instr))) {
-            shader->info.outputs_accessed_indirectly |= slot_mask;
-            shader->info.outputs_accessed_indirectly_16bit |= slot_mask_16bit;
+            shader->info.outputs_written_indirectly |= slot_mask;
+            shader->info.outputs_written_indirectly_16bit |= slot_mask_16bit;
          }
       }
 
@@ -999,15 +999,18 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
    shader->info.outputs_written_16bit = 0;
    shader->info.outputs_read_16bit = 0;
    shader->info.inputs_read_indirectly_16bit = 0;
-   shader->info.outputs_accessed_indirectly_16bit = 0;
+   shader->info.outputs_read_indirectly_16bit = 0;
+   shader->info.outputs_written_indirectly_16bit = 0;
    shader->info.patch_outputs_read = 0;
    shader->info.patch_inputs_read = 0;
    shader->info.patch_outputs_written = 0;
    BITSET_ZERO(shader->info.system_values_read);
    shader->info.inputs_read_indirectly = 0;
-   shader->info.outputs_accessed_indirectly = 0;
+   shader->info.outputs_read_indirectly = 0;
+   shader->info.outputs_written_indirectly = 0;
    shader->info.patch_inputs_read_indirectly = 0;
-   shader->info.patch_outputs_accessed_indirectly = 0;
+   shader->info.patch_outputs_read_indirectly = 0;
+   shader->info.patch_outputs_written_indirectly = 0;
    shader->info.per_primitive_inputs = 0;
    shader->info.per_primitive_outputs = 0;
 

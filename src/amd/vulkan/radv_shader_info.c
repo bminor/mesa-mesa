@@ -1800,14 +1800,16 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *pro
                vs_stage->nir->info.float_controls_execution_mode == tcs_stage->nir->info.float_controls_execution_mode;
 
             if (vs_stage->info.vs.tcs_in_out_eq) {
-               vs_stage->info.vs.tcs_inputs_via_temp = vs_stage->nir->info.outputs_written &
-                                                       ~vs_stage->nir->info.outputs_accessed_indirectly &
-                                                       tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read;
-               vs_stage->info.vs.tcs_inputs_via_lds = tcs_stage->nir->info.tess.tcs_cross_invocation_inputs_read |
-                                                      (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
-                                                       tcs_stage->nir->info.inputs_read_indirectly) |
-                                                      (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
-                                                       vs_stage->nir->info.outputs_accessed_indirectly);
+               vs_stage->info.vs.tcs_inputs_via_temp =
+                  vs_stage->nir->info.outputs_written &
+                  ~(vs_stage->nir->info.outputs_read_indirectly | vs_stage->nir->info.outputs_written_indirectly) &
+                  tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read;
+               vs_stage->info.vs.tcs_inputs_via_lds =
+                  tcs_stage->nir->info.tess.tcs_cross_invocation_inputs_read |
+                  (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
+                   tcs_stage->nir->info.inputs_read_indirectly) |
+                  (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
+                   (vs_stage->nir->info.outputs_read_indirectly | vs_stage->nir->info.outputs_written_indirectly));
             }
          }
       }

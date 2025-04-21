@@ -5472,7 +5472,8 @@ rework_io_vars(nir_shader *nir, nir_variable_mode mode, struct zink_shader *zs)
    uint64_t inputs_read = nir->info.inputs_read;
    uint64_t inputs_read_indirectly = nir->info.inputs_read_indirectly;
    uint64_t outputs_accessed = nir->info.outputs_written | nir->info.outputs_read;
-   uint64_t outputs_accessed_indirectly = nir->info.outputs_accessed_indirectly;
+   uint64_t outputs_accessed_indirectly = nir->info.outputs_read_indirectly |
+                                          nir->info.outputs_written_indirectly;
 
    /* fragment outputs are special: handle separately */
    if (mode == nir_var_shader_out && nir->info.stage == MESA_SHADER_FRAGMENT) {
@@ -5620,7 +5621,10 @@ rework_io_vars(nir_shader *nir, nir_variable_mode mode, struct zink_shader *zs)
    if ((nir->info.stage == MESA_SHADER_TESS_CTRL && mode == nir_var_shader_out) ||
        (nir->info.stage == MESA_SHADER_TESS_EVAL && mode == nir_var_shader_in)) {
       uint64_t patch_outputs_accessed = nir->info.patch_outputs_read | nir->info.patch_outputs_written;
-      uint64_t indirect_patch_mask = mode == nir_var_shader_in ? nir->info.patch_inputs_read_indirectly : nir->info.patch_outputs_accessed_indirectly;
+      uint64_t indirect_patch_mask =
+         mode == nir_var_shader_in ? nir->info.patch_inputs_read_indirectly
+                                   : (nir->info.patch_outputs_read_indirectly |
+                                      nir->info.patch_outputs_written_indirectly);
       uint64_t patch_mask = mode == nir_var_shader_in ? nir->info.patch_inputs_read : patch_outputs_accessed;
 
       loop_io_var_mask(nir, mode, true, true, indirect_patch_mask);

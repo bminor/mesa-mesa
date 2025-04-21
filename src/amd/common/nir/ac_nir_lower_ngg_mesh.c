@@ -1365,7 +1365,8 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    bool uses_cull = shader->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
    /* Can't handle indirect register addressing, pretend as if they were cross-invocation. */
    uint64_t cross_invocation_access = shader->info.mesh.ms_cross_invocation_output_access |
-                                      shader->info.outputs_accessed_indirectly;
+                                      (shader->info.outputs_read_indirectly |
+                                       shader->info.outputs_written_indirectly);
 
    unsigned max_vertices = shader->info.mesh.max_vertices_out;
    unsigned max_primitives = shader->info.mesh.max_primitives_out;

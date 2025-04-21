@@ -2600,16 +2600,19 @@ print_shader_info(const struct shader_info *info, FILE *fp)
    print_nz_x16(fp, "outputs_written_16bit", info->outputs_written_16bit);
    print_nz_x16(fp, "outputs_read_16bit", info->outputs_read_16bit);
    print_nz_x16(fp, "inputs_read_indirectly_16bit", info->inputs_read_indirectly_16bit);
-   print_nz_x16(fp, "outputs_accessed_indirectly_16bit", info->outputs_accessed_indirectly_16bit);
+   print_nz_x16(fp, "outputs_read_indirectly_16bit", info->outputs_read_indirectly_16bit);
+   print_nz_x16(fp, "outputs_written_indirectly_16bit", info->outputs_written_indirectly_16bit);
 
    print_nz_x32(fp, "patch_inputs_read", info->patch_inputs_read);
    print_nz_x32(fp, "patch_outputs_written", info->patch_outputs_written);
    print_nz_x32(fp, "patch_outputs_read", info->patch_outputs_read);
 
    print_nz_x64(fp, "inputs_read_indirectly", info->inputs_read_indirectly);
-   print_nz_x64(fp, "outputs_accessed_indirectly", info->outputs_accessed_indirectly);
+   print_nz_x64(fp, "outputs_read_indirectly", info->outputs_read_indirectly);
+   print_nz_x64(fp, "outputs_written_indirectly", info->outputs_written_indirectly);
    print_nz_x64(fp, "patch_inputs_read_indirectly", info->patch_inputs_read_indirectly);
-   print_nz_x64(fp, "patch_outputs_accessed_indirectly", info->patch_outputs_accessed_indirectly);
+   print_nz_x64(fp, "patch_outputs_read_indirectly", info->patch_outputs_read_indirectly);
+   print_nz_x64(fp, "patch_outputs_written_indirectly", info->patch_outputs_written_indirectly);
 
    print_nz_bitset(fp, "textures_used", info->textures_used, ARRAY_SIZE(info->textures_used));
    print_nz_bitset(fp, "textures_used_by_txf", info->textures_used_by_txf, ARRAY_SIZE(info->textures_used_by_txf));

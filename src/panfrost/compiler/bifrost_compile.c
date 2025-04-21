@@ -5384,11 +5384,12 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
 
    /* We might lower attribute, varying, and image indirects. Use the
     * gathered info to skip the extra analysis in the happy path. */
-   bool any_indirects = nir->info.inputs_read_indirectly ||
-                        nir->info.outputs_accessed_indirectly ||
-                        nir->info.patch_inputs_read_indirectly ||
-                        nir->info.patch_outputs_accessed_indirectly ||
-                        nir->info.images_used[0];
+   bool any_indirects =
+      nir->info.inputs_read_indirectly || nir->info.outputs_read_indirectly ||
+      nir->info.outputs_written_indirectly ||
+      nir->info.patch_inputs_read_indirectly ||
+      nir->info.patch_outputs_read_indirectly ||
+      nir->info.patch_outputs_written_indirectly || nir->info.images_used[0];
 
    if (any_indirects) {
       nir_divergence_analysis(nir);

@@ -611,7 +611,8 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
          info->output_usagemask[i] = 0xf;
       }
       num_outputs = util_bitcount64(nir->info.outputs_written);
-      if (nir->info.outputs_accessed_indirectly)
+      if (nir->info.outputs_read_indirectly ||
+          nir->info.outputs_written_indirectly)
          info->indirect_files |= 1 << TGSI_FILE_OUTPUT;
    }
 
