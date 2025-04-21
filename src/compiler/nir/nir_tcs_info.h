@@ -46,10 +46,22 @@ typedef struct nir_tcs_info {
      */
    uint32_t patch_outputs_defined_by_all_invoc;
 
+   /* The bitmask of patch outputs that are only written by invocation 0. */
+   uint32_t patch_outputs_only_written_by_invoc0;
+
+   /* The bitmask of patch outputs that are only read by invocation 0. */
+   uint32_t patch_outputs_only_read_by_invoc0;
+
    /* The bitmask of tess level outputs that are written by all invocations.
     * Bit 0 is outer levels, bit 1 is inner levels.
     */
    uint8_t tess_levels_defined_by_all_invoc : 2;
+
+   /* The bitmask of tess level outputs that are only written by invocation 0. */
+   uint8_t tess_levels_only_written_by_invoc0 : 2;
+
+   /* The bitmask of tess level outputs that are only read by invocation 0. */
+   uint8_t tess_levels_only_read_by_invoc0 : 2;
 
    /* Whether all tess levels that are written in all invocations. */
    bool all_invocations_define_tess_levels : 1;

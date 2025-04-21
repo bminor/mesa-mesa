@@ -36,6 +36,14 @@ struct writemasks {
    BITSET_DECLARE(chan_mask, NUM_BITS);
 };
 
+static unsigned
+get_io_index(nir_io_semantics sem)
+{
+   return sem.location >= VARYING_SLOT_PATCH0 ?
+            sem.location - VARYING_SLOT_PATCH0 :
+            (32 + sem.location - VARYING_SLOT_TESS_LEVEL_OUTER);
+}
+
 static void
 accum_result_defined_by_all_invocs(struct writemasks *outer_block_writemasks,
                                    struct writemasks *cond_block_writemasks,
@@ -117,9 +125,7 @@ scan_cf_list_defined_by_all_invocs(struct exec_list *cf_list,
                    sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
                    (sem.location >= VARYING_SLOT_PATCH0 &&
                     sem.location <= VARYING_SLOT_PATCH31)) {
-                  unsigned index = sem.location >= VARYING_SLOT_PATCH0 ?
-                                      sem.location - VARYING_SLOT_PATCH0 :
-                                      (32 + sem.location - VARYING_SLOT_TESS_LEVEL_OUTER);
+                  unsigned index = get_io_index(sem);
                   unsigned writemask = nir_intrinsic_write_mask(intrin) <<
                                        (nir_intrinsic_component(intrin) +
                                         sem.high_16bits * 4);
@@ -182,22 +188,134 @@ scan_cf_list_defined_by_all_invocs(struct exec_list *cf_list,
 }
 
 static void
+scan_cf_list_for_invoc0(struct exec_list *cf_list,
+                        struct writemasks *written_by_invoc0,
+                        struct writemasks *read_by_invoc0,
+                        struct writemasks *written_by_unknown_invoc,
+                        struct writemasks *read_by_unknown_invoc,
+                        bool is_inside_invoc0)
+{
+   foreach_list_typed(nir_cf_node, cf_node, node, cf_list) {
+      switch (cf_node->type) {
+      case nir_cf_node_block:
+         nir_foreach_instr(instr, nir_cf_node_as_block(cf_node)) {
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+
+            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+
+            if (!nir_intrinsic_has_io_semantics(intrin))
+               continue;
+
+            nir_io_semantics sem = nir_intrinsic_io_semantics(intrin);
+            if (!(sem.location == VARYING_SLOT_TESS_LEVEL_OUTER ||
+                  sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
+                  (sem.location >= VARYING_SLOT_PATCH0 &&
+                   sem.location <= VARYING_SLOT_PATCH31)))
+               continue;
+
+            struct writemasks *masks = NULL;
+            unsigned mask = 0;
+
+            if (intrin->intrinsic == nir_intrinsic_store_output) {
+               masks = is_inside_invoc0 ?
+                          written_by_invoc0 : written_by_unknown_invoc;
+               mask = nir_intrinsic_write_mask(intrin) <<
+                      (nir_intrinsic_component(intrin) + sem.high_16bits * 4);
+            } else if (intrin->intrinsic == nir_intrinsic_load_output) {
+               masks = is_inside_invoc0 ? read_by_invoc0 : read_by_unknown_invoc;
+               mask = nir_def_components_read(&intrin->def) <<
+                      (nir_intrinsic_component(intrin) + sem.high_16bits * 4);
+            } else {
+               continue;
+            }
+
+            unsigned index = get_io_index(sem);
+
+            u_foreach_bit(i, mask) {
+               BITSET_SET(masks->chan_mask, index * 8 + i);
+            }
+         }
+         break;
+
+      case nir_cf_node_if: {
+         nir_if *if_stmt = nir_cf_node_as_if(cf_node);
+         nir_scalar cond = nir_scalar_resolved(if_stmt->condition.ssa, 0);
+         bool then_is_invoc0 = is_inside_invoc0;
+
+         if (!is_inside_invoc0 && nir_scalar_is_alu(cond)) {
+            nir_op op = nir_scalar_alu_op(cond);
+
+            if (op == nir_op_ieq) {
+               nir_scalar src[] = { nir_scalar_chase_movs(nir_scalar_chase_alu_src(cond, 0)),
+                                    nir_scalar_chase_movs(nir_scalar_chase_alu_src(cond, 1)) };
+               for (unsigned i = 0; i < 2; i++) {
+                  if (nir_scalar_is_const(src[i]) && nir_scalar_is_intrinsic(src[!i]) &&
+                      nir_scalar_as_uint(src[i]) == 0 &&
+                      nir_scalar_intrinsic_op(src[!i]) == nir_intrinsic_load_invocation_id) {
+                     then_is_invoc0 = true;
+                  }
+               }
+            } else if (op == nir_op_ilt || op == nir_op_ult) {
+               nir_scalar src0 = nir_scalar_chase_movs(nir_scalar_chase_alu_src(cond, 0));
+               nir_scalar src1 = nir_scalar_chase_movs(nir_scalar_chase_alu_src(cond, 1));
+               if (nir_scalar_is_const(src1) && nir_scalar_is_intrinsic(src0) &&
+                   nir_scalar_as_uint(src1) == 1 &&
+                   nir_scalar_intrinsic_op(src0) == nir_intrinsic_load_invocation_id) {
+                  then_is_invoc0 = true;
+               }
+            }
+         }
+
+         scan_cf_list_for_invoc0(&if_stmt->then_list, written_by_invoc0,
+                                 read_by_invoc0, written_by_unknown_invoc,
+                                 read_by_unknown_invoc, then_is_invoc0);
+
+         scan_cf_list_for_invoc0(&if_stmt->else_list, written_by_invoc0,
+                                 read_by_invoc0, written_by_unknown_invoc,
+                                 read_by_unknown_invoc, is_inside_invoc0);
+         break;
+      }
+      case nir_cf_node_loop: {
+         nir_loop *loop = nir_cf_node_as_loop(cf_node);
+         assert(!nir_loop_has_continue_construct(loop));
+
+         scan_cf_list_for_invoc0(&loop->body, written_by_invoc0,
+                                 read_by_invoc0, written_by_unknown_invoc,
+                                 read_by_unknown_invoc, is_inside_invoc0);
+         break;
+      }
+      default:
+         unreachable("unknown cf node type");
+      }
+   }
+}
+
+static void
 analyze_patch_outputs(const struct nir_shader *nir, nir_tcs_info *info)
 {
    assert(nir->info.stage == MESA_SHADER_TESS_CTRL);
    unsigned tess_levels_written =
       (nir->info.outputs_written & VARYING_BIT_TESS_LEVEL_OUTER ? 0x1 : 0) |
       (nir->info.outputs_written & VARYING_BIT_TESS_LEVEL_INNER ? 0x2 : 0);
+   unsigned tess_levels_read =
+      (nir->info.outputs_read & VARYING_BIT_TESS_LEVEL_OUTER ? 0x1 : 0) |
+      (nir->info.outputs_read & VARYING_BIT_TESS_LEVEL_INNER ? 0x2 : 0);
 
    /* Trivial case, nothing to do. */
    if (nir->info.tess.tcs_vertices_out == 1) {
       info->patch_outputs_defined_by_all_invoc = nir->info.patch_outputs_written;
+      info->patch_outputs_only_written_by_invoc0 = nir->info.patch_outputs_written;
+      info->patch_outputs_only_read_by_invoc0 = nir->info.patch_outputs_read;
       info->all_invocations_define_tess_levels = true;
       info->tess_levels_defined_by_all_invoc = tess_levels_written;
+      info->tess_levels_only_written_by_invoc0 = tess_levels_written;
+      info->tess_levels_only_read_by_invoc0 = tess_levels_read;
       return;
    }
 
-   /* The pass works as follows:
+   /* The first part of this analysis determines patch_outputs_defined_by_all_invoc.
+    * It works as follows:
     *
     * If all codepaths write patch outputs, we can say that all invocations
     * define patch output values. Whether a patch output value is defined is
@@ -237,6 +355,45 @@ analyze_patch_outputs(const struct nir_shader *nir, nir_tcs_info *info)
       (result_mask >> 32) & tess_levels_written;
    info->all_invocations_define_tess_levels =
       info->tess_levels_defined_by_all_invoc == tess_levels_written;
+
+   /* The second part of this analysis determines patch_outputs_written/read_by_invoc0.
+    * It works as follows:
+    *
+    * If we are inside a conditional block with the condition "invocation_id == 0",
+    * mark those patch output components that are stored inside it as being
+    * defined by invocation 0. Same for reads. If we are not inside such
+    * conditional blocks, mark those patch outputs components as being written
+    * or read by unknown invocations.
+    */
+   struct writemasks written_by_invoc0 = {0};
+   struct writemasks read_by_invoc0 = {0};
+   struct writemasks written_by_unknown_invoc = {0};
+   struct writemasks read_by_unknown_invoc = {0};
+
+   nir_foreach_function_impl(impl, nir) {
+      scan_cf_list_for_invoc0(&impl->body, &written_by_invoc0, &read_by_invoc0,
+                              &written_by_unknown_invoc, &read_by_unknown_invoc,
+                              false);
+   }
+
+   /* Reduce the masks to 1 bit per output. */
+   for (unsigned i = 0; i < NUM_OUTPUTS; i++) {
+      if (BITSET_GET_RANGE_INSIDE_WORD(written_by_invoc0.chan_mask, i * 8, i * 8 + 7) &&
+          !BITSET_GET_RANGE_INSIDE_WORD(written_by_unknown_invoc.chan_mask, i * 8, i * 8 + 7)) {
+         if (i < 32)
+            info->patch_outputs_only_written_by_invoc0 |= BITFIELD_BIT(i);
+         else
+            info->tess_levels_only_written_by_invoc0 |= BITFIELD_BIT(i - 32);
+      }
+
+      if (BITSET_GET_RANGE_INSIDE_WORD(read_by_invoc0.chan_mask, i * 8, i * 8 + 7) &&
+          !BITSET_GET_RANGE_INSIDE_WORD(read_by_unknown_invoc.chan_mask, i * 8, i * 8 + 7)) {
+         if (i < 32)
+            info->patch_outputs_only_read_by_invoc0 |= BITFIELD_BIT(i);
+         else
+            info->tess_levels_only_read_by_invoc0 |= BITFIELD_BIT(i - 32);
+      }
+   }
 }
 
 /* It's OK to pass UNSPECIFIED to prim and spacing. */
