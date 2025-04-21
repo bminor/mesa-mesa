@@ -16,18 +16,6 @@
 #include "shader_enums.h"
 
 static nir_def *
-tcs_patch_id(nir_builder *b)
-{
-   return nir_channel(b, nir_load_workgroup_id(b), 0);
-}
-
-static nir_def *
-tcs_instance_id(nir_builder *b)
-{
-   return nir_channel(b, nir_load_workgroup_id(b), 1);
-}
-
-static nir_def *
 tcs_unrolled_id(nir_builder *b)
 {
    return libagx_tcs_unrolled_id(b, nir_load_tess_param_buffer_agx(b),
@@ -111,10 +99,10 @@ lower_tcs_impl(nir_builder *b, nir_intrinsic_instr *intr)
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
 
    case nir_intrinsic_load_primitive_id:
-      return tcs_patch_id(b);
+      return nir_channel(b, nir_load_workgroup_id(b), 0);
 
    case nir_intrinsic_load_instance_id:
-      return tcs_instance_id(b);
+      return nir_channel(b, nir_load_workgroup_id(b), 1);
 
    case nir_intrinsic_load_invocation_id:
       if (b->shader->info.tess.tcs_vertices_out == 1)
