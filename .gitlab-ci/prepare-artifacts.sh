@@ -75,9 +75,6 @@ find src/ -path '*/ci/*' \
 # packed separately in the zip file.
 mkdir -p artifacts/
 tar -cf artifacts/install.tar install
-cp -Rp .gitlab-ci/common artifacts/ci-common
-cp -Rp .gitlab-ci/lava artifacts/
-cp bin/ci/structured_logger.py artifacts/
 
 if [ -n "$S3_ARTIFACT_NAME" ]; then
     # Pass needed files to the test stage
