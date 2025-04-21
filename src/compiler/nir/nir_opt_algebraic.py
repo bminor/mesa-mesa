@@ -2020,6 +2020,31 @@ optimizations.extend([
    (('extract_u8', ('iand', a, 0x00ff0000), 2), ('extract_u8', a, 2)),
    (('extract_u8', ('iand', a, 0xff000000), 3), ('extract_u8', a, 3)),
 
+   (('ior', ('bcsel', ('ieq', ('iand', a, 0x00000080), 0), 0, ~0xff), ('extract_u8', a, 0)), ('extract_i8', a, 0)),
+   (('ior', ('bcsel', ('ieq', ('iand', a, 0x00008000), 0), 0, ~0xff), ('extract_u8', a, 1)), ('extract_i8', a, 1)),
+   (('ior', ('bcsel', ('ieq', ('iand', a, 0x00800000), 0), 0, ~0xff), ('extract_u8', a, 2)), ('extract_i8', a, 2)),
+   (('ior', ('bcsel', ('ige',          'a@32',         0), 0, ~0xff), ('extract_u8', a, 3)), ('extract_i8', a, 3)),
+   (('ior', ('bcsel', ('ine', ('iand', a, 0x00000080), 0), ~0xff, 0), ('extract_u8', a, 0)), ('extract_i8', a, 0)),
+   (('ior', ('bcsel', ('ine', ('iand', a, 0x00008000), 0), ~0xff, 0), ('extract_u8', a, 1)), ('extract_i8', a, 1)),
+   (('ior', ('bcsel', ('ine', ('iand', a, 0x00800000), 0), ~0xff, 0), ('extract_u8', a, 2)), ('extract_i8', a, 2)),
+   (('ior', ('bcsel', ('ilt',          'a@32',         0), ~0xff, 0), ('extract_u8', a, 3)), ('extract_i8', a, 3)),
+
+   (('extract_i8', ('ushr', a, 8), 0), ('extract_i8', a, 1)),
+   (('extract_i8', ('ushr', a, 8), 1), ('extract_i8', a, 2)),
+   (('extract_i8', ('ushr', a, 8), 2), ('extract_i8', a, 3)),
+   (('extract_u8', ('ushr', a, 8), 0), ('extract_u8', a, 1)),
+   (('extract_u8', ('ushr', a, 8), 1), ('extract_u8', a, 2)),
+   (('extract_u8', ('ushr', a, 8), 2), ('extract_u8', a, 3)),
+
+   (('extract_i8', ('extract_i16', a, 1), 0), ('extract_i8', a, 2)),
+   (('extract_i8', ('extract_i16', a, 1), 1), ('extract_i8', a, 3)),
+   (('extract_i8', ('extract_u16', a, 1), 0), ('extract_i8', a, 2)),
+   (('extract_i8', ('extract_u16', a, 1), 1), ('extract_i8', a, 3)),
+   (('extract_u8', ('extract_i16', a, 1), 0), ('extract_u8', a, 2)),
+   (('extract_u8', ('extract_i16', a, 1), 1), ('extract_u8', a, 3)),
+   (('extract_u8', ('extract_u16', a, 1), 0), ('extract_u8', a, 2)),
+   (('extract_u8', ('extract_u16', a, 1), 1), ('extract_u8', a, 3)),
+
    (('iand', ('extract_u8',  a, 0), '#b'), ('iand', a, ('iand', b, 0x00ff))),
    (('iand', ('extract_u16', a, 0), '#b'), ('iand', a, ('iand', b, 0xffff))),
 
