@@ -585,11 +585,11 @@ impl SM20Op for OpFFma {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1, src2] = &mut self.srcs;
-        swap_srcs_if_not_reg(src0, src1, GPR);
-        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
         b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
         b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
         b.copy_alu_src_if_fabs(src2, GPR, SrcType::F32);
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
         if src1.as_imm_not_f20().is_some()
             && (self.saturate
                 || self.rnd_mode != FRndMode::NearestEven
@@ -680,10 +680,10 @@ impl SM20Op for OpFMul {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         let [src0, src1] = &mut self.srcs;
-        swap_srcs_if_not_reg(src0, src1, GPR);
-        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
         b.copy_alu_src_if_fabs(src0, GPR, SrcType::F32);
         b.copy_alu_src_if_fabs(src1, GPR, SrcType::F32);
+        swap_srcs_if_not_reg(src0, src1, GPR);
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
         if src1.as_imm_not_f20().is_some()
             && self.rnd_mode != FRndMode::NearestEven
         {
