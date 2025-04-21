@@ -12,10 +12,8 @@
 #include "util/u_math.h"
 
 #ifndef __OPENCL_VERSION__
-#define libagx_popcount(x)   util_bitcount64(x)
 #define libagx_sub_sat(x, y) ((x >= y) ? (x - y) : 0)
 #else
-#define libagx_popcount(x)   popcount(x)
 #define libagx_sub_sat(x, y) sub_sat(x, y)
 #endif
 
@@ -181,8 +179,8 @@ static inline uint
 libagx_tcs_in_offs_el(uint vtx, gl_varying_slot location,
                       uint64_t crosslane_vs_out_mask)
 {
-   uint base = vtx * libagx_popcount(crosslane_vs_out_mask);
-   uint offs = libagx_popcount(crosslane_vs_out_mask &
+   uint base = vtx * util_bitcount64(crosslane_vs_out_mask);
+   uint offs = util_bitcount64(crosslane_vs_out_mask &
                                (((uint64_t)(1) << location) - 1));
 
    return base + offs;
@@ -198,7 +196,7 @@ libagx_tcs_in_offs(uint vtx, gl_varying_slot location,
 static inline uint
 libagx_tcs_in_size(uint32_t vertices_in_patch, uint64_t crosslane_vs_out_mask)
 {
-   return vertices_in_patch * libagx_popcount(crosslane_vs_out_mask) * 16;
+   return vertices_in_patch * util_bitcount64(crosslane_vs_out_mask) * 16;
 }
 
 /*
@@ -232,9 +230,9 @@ libagx_tcs_out_offs_el(uint vtx_id, gl_varying_slot location, uint nr_patch_out,
 
    /* Anything else is a per-vtx output */
    off += 4 * nr_patch_out;
-   off += 4 * vtx_id * libagx_popcount(vtx_out_mask);
+   off += 4 * vtx_id * util_bitcount64(vtx_out_mask);
 
-   uint idx = libagx_popcount(vtx_out_mask & (((uint64_t)(1) << location) - 1));
+   uint idx = util_bitcount64(vtx_out_mask & (((uint64_t)(1) << location) - 1));
    return off + (4 * idx);
 }
 
