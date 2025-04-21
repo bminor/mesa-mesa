@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2038 # TODO: rewrite the find
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
