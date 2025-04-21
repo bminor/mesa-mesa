@@ -7,7 +7,7 @@
 
 set -uex
 
-uncollapsed_section_start angle "Building ANGLE"
+section_start angle "Building ANGLE"
 
 # Do a very early check to make sure the tag is correct without the need of
 # setting up the environment variables locally
