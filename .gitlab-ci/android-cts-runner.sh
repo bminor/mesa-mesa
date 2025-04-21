@@ -4,7 +4,7 @@
 
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
-export PATH=/android-tools/android-cts/jdk/bin/:/android-tools/build-tools:$PATH
+export PATH=/android-tools/android-cts/jdk/bin/:$PATH
 export JAVA_HOME=/android-tools/android-cts/jdk
 
 # Wait for the appops service to show up

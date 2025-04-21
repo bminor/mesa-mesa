@@ -16,18 +16,19 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Ephemeral packages (installed for this script and removed again at the end)
 EPHEMERAL=(
-   build-essential:native
-   ccache
-   cmake
-   config-package-dev
-   debhelper-compat
-   dpkg-dev
-   ninja-build
-   sudo
-   unzip
+    build-essential:native
+    ccache
+    cmake
+    config-package-dev
+    debhelper-compat
+    dpkg-dev
+    ninja-build
+    sudo
+    unzip
 )
 
 DEPS=(
+    aapt
     iproute2
 )
 apt-get install -y --no-remove --no-install-recommends \
@@ -138,9 +139,9 @@ usermod -a -G kvm,cvdnetwork root
 
 section_end cuttlefish
 
-############### Downloading Android CTS tools
+############### Downloading Android CTS
 
-uncollapsed_section_start android-cts "Downloading Android CTS tools"
+uncollapsed_section_start android-cts "Downloading Android CTS"
 
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
@@ -158,12 +159,6 @@ rm "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
 # shellcheck disable=SC2086 # we want word splitting
 ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
 find android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
-
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o "build-tools_r${ANDROID_SDK_VERSION}-linux.zip" "https://dl.google.com/android/repository/build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-unzip "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-rm "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-mv "android-$ANDROID_VERSION" build-tools
 
 popd
 
