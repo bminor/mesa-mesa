@@ -514,7 +514,7 @@
         "description": "nvk: SET_STATISTICS_COUNTER at start of meta_begin",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f85e6b06bef9f315511bf38c833df41d8c1952a",
         "notes": null
