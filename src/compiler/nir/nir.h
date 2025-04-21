@@ -6447,6 +6447,13 @@ void nir_print_use_dominators(nir_use_dominance_state *state,
                               nir_instr **instructions,
                               unsigned num_instructions);
 
+static inline unsigned
+nir_verts_in_output_prim(nir_shader *gs)
+{
+   assert(gs->info.stage == MESA_SHADER_GEOMETRY);
+   return mesa_vertices_per_prim(gs->info.gs.output_primitive);
+}
+
 #include "nir_inline_helpers.h"
 
 #ifdef __cplusplus
