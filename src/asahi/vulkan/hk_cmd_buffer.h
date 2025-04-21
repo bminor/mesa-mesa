@@ -793,6 +793,9 @@ hk_dispatch_with_local_size(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                             struct hk_shader *s, struct agx_grid grid,
                             struct agx_workgroup local_size)
 {
+   if (agx_is_shader_empty(&s->b))
+      return;
+
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    uint32_t usc = hk_upload_usc_words(cmd, s, s->only_linked);
 

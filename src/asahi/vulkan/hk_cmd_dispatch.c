@@ -87,6 +87,9 @@ static void
 dispatch(struct hk_cmd_buffer *cmd, struct agx_grid grid)
 {
    struct hk_shader *s = hk_only_variant(cmd->state.cs.shader);
+   if (agx_is_shader_empty(&s->b))
+      return;
+
    struct hk_cs *cs = hk_cmd_buffer_get_cs(cmd, true /* compute */);
    if (!cs)
       return;
