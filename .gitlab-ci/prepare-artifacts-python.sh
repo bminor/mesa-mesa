@@ -23,32 +23,6 @@ cp -Rp .gitlab-ci/bare-metal artifacts/
 cp -Rp .gitlab-ci/lava artifacts/
 cp -Rp .gitlab-ci/bin/*_logger.py artifacts/
 
-mapfile -t duplicate_files < <(
-  find src/ -path '*/ci/*' \
-    \( \
-      -name '*.txt' \
-      -o -name '*.toml' \
-      -o -name '*traces*.yml' \
-    \) \
-    -exec basename -a {} + | sort | uniq -d
-)
-if [ ${#duplicate_files[@]} -gt 0 ]; then
-  echo 'Several files with the same name in various ci/ folders:'
-  printf -- '  %s\n' "${duplicate_files[@]}"
-  exit 1
-fi
-
-if [ -d "src/" ]; then
-  find src/ -path '*/ci/*' \
-    \( \
-      -name '*.txt' \
-      -o -name '*.toml' \
-      -o -name '*traces*.yml' \
-    \) \
-    -exec cp -p {} artifacts/ \;
-fi
-cp -Rp .gitlab-ci/*.txt artifacts/
-
 if [ -n "$S3_ARTIFACT_NAME" ]; then
     # Pass needed files to the test stage
     S3_ARTIFACT_TAR="$S3_ARTIFACT_NAME.tar.zst"
