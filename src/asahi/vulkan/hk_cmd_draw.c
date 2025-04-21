@@ -1092,6 +1092,7 @@ hk_rast_prim(struct hk_cmd_buffer *cmd)
 static uint64_t
 hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1156,6 +1157,8 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 
       params.indirect_desc = cmd->geom_indirect;
       params.vs_grid[2] = params.gs_grid[2] = 1;
+      cmd->geom_index_buffer = dev->heap->va->addr;
+      cmd->geom_index_count = dev->heap->size;
    } else {
       uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
 
@@ -1170,13 +1173,27 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
          params.count_buffer = hk_pool_alloc(cmd, size, 4).gpu;
       }
 
-      cmd->geom_index_count =
-         params.input_primitives * count->info.gs.max_indices;
+      if (count->info.gs.instanced) {
+         cmd->geom_index_count = count->info.gs.max_indices;
+         cmd->geom_instance_count = params.input_primitives;
+      } else {
+         cmd->geom_index_count =
+            params.input_primitives * count->info.gs.max_indices;
 
-      params.output_index_buffer =
-         hk_pool_alloc(cmd, cmd->geom_index_count * 4, 4).gpu;
+         cmd->geom_instance_count = 1;
+      }
 
-      cmd->geom_index_buffer = params.output_index_buffer;
+      if (count->info.gs.dynamic_topology) {
+         params.output_index_buffer =
+            hk_pool_alloc(cmd, cmd->geom_index_count * 4, 4).gpu;
+
+         cmd->geom_index_buffer = params.output_index_buffer;
+      }
+   }
+
+   if (count->info.gs.indexed && !count->info.gs.dynamic_topology) {
+      cmd->geom_index_buffer = hk_pool_upload(
+         cmd, count->info.gs.topology, count->info.gs.max_indices * 4, 4);
    }
 
    desc->root_dirty = true;
@@ -1434,6 +1451,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .prim = mode,
          .is_prefix_summing = count->info.gs.prefix_sum,
          .indices_per_in_prim = count->info.gs.max_indices,
+         .dynamic_topology = count->info.gs.dynamic_topology,
+         .instanced = count->info.gs.instanced,
       };
 
       if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
@@ -1509,13 +1528,24 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
 
    if (agx_is_indirect(draw.b)) {
-      return agx_draw_indexed_indirect(cmd->geom_indirect, dev->heap->va->addr,
-                                       dev->heap->size, AGX_INDEX_SIZE_U32,
-                                       true);
+      if (count->info.gs.indexed) {
+         return agx_draw_indexed_indirect(
+            cmd->geom_indirect, cmd->geom_index_buffer, cmd->geom_index_count,
+            AGX_INDEX_SIZE_U32, true);
+      } else {
+         return agx_draw_indirect(cmd->geom_indirect);
+      }
    } else {
-      return agx_draw_indexed(cmd->geom_index_count, 1, 0, 0, 0,
-                              cmd->geom_index_buffer, cmd->geom_index_count * 4,
-                              AGX_INDEX_SIZE_U32, true);
+      if (count->info.gs.indexed) {
+         return agx_draw_indexed(
+            cmd->geom_index_count, cmd->geom_instance_count, 0, 0, 0,
+            cmd->geom_index_buffer, cmd->geom_index_count * 4,
+            AGX_INDEX_SIZE_U32, true);
+      } else {
+         return (struct agx_draw){
+            .b = agx_3d(cmd->geom_index_count, cmd->geom_instance_count, 1),
+         };
+      }
    }
 }
 

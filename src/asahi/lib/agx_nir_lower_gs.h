@@ -45,6 +45,18 @@ struct agx_gs_info {
 
    /* Whether a prefix sum is required on the count outputs. Implies xfb */
    bool prefix_sum;
+
+   /* Whether we need to dynamically allocate an index buffer. */
+   bool dynamic_topology;
+
+   /* Whether the topology requires an index buffer */
+   bool indexed;
+
+   /* Whether the topology requires hardware instancing */
+   bool instanced;
+
+   /* Static topology used if dynamic_topology is false. */
+   uint32_t topology[384];
 };
 
 bool agx_nir_lower_gs(struct nir_shader *gs, bool rasterizer_discard,

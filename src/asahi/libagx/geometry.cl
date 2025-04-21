@@ -583,7 +583,8 @@ libagx_gs_setup_indirect(
    uint32_t index_size_B /* 0 if no index bffer */,
    uint32_t index_buffer_range_el,
    uint32_t prim /* Input primitive type, enum mesa_prim */,
-   int is_prefix_summing, uint indices_per_in_prim)
+   int is_prefix_summing, uint indices_per_in_prim, int dynamic_topology,
+   int instanced)
 {
    /* Determine the (primitives, instances) grid size. */
    uint vertex_count = draw[0];
@@ -636,17 +637,21 @@ libagx_gs_setup_indirect(
 
    /* Allocate the index buffer and write the draw consuming it */
    global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
-   uint count = p->input_primitives * indices_per_in_prim;
-   uint index_buffer_offset_B = agx_heap_alloc_nonatomic_offs(state, count * 4);
+   uint count = (instanced ? 1 : p->input_primitives) * indices_per_in_prim;
+   uint index_buffer_offset_B = 0;
+
+   if (dynamic_topology) {
+      index_buffer_offset_B = agx_heap_alloc_nonatomic_offs(state, count * 4);
+
+      p->output_index_buffer =
+         (global uint *)(state->heap + index_buffer_offset_B);
+   }
 
    *cmd = (VkDrawIndexedIndirectCommand){
       .indexCount = count,
-      .instanceCount = 1,
+      .instanceCount = instanced ? p->input_primitives : 1,
       .firstIndex = index_buffer_offset_B / 4,
    };
-
-   p->output_index_buffer =
-      (global uint *)(state->heap + index_buffer_offset_B);
 }
 
 /*

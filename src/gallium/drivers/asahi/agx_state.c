@@ -4073,14 +4073,16 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
          params.input_buffer = addr;
       }
 
-      unsigned idx_size =
-         params.input_primitives * batch->ctx->gs->gs.max_indices;
+      if (batch->ctx->gs->gs.dynamic_topology) {
+         unsigned idx_size =
+            params.input_primitives * batch->ctx->gs->gs.max_indices;
 
-      params.output_index_buffer =
-         agx_pool_alloc_aligned_with_bo(&batch->pool, idx_size * 4, 4,
-                                        &batch->geom_index_bo)
-            .gpu;
-      batch->geom_index = params.output_index_buffer;
+         params.output_index_buffer =
+            agx_pool_alloc_aligned_with_bo(&batch->pool, idx_size * 4, 4,
+                                           &batch->geom_index_bo)
+               .gpu;
+         batch->geom_index = params.output_index_buffer;
+      }
    }
 
    return agx_pool_upload_aligned_with_bo(&batch->pool, &params, sizeof(params),
@@ -4155,6 +4157,8 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .prim = info->mode,
          .is_prefix_summing = gs->gs.prefix_sum,
          .indices_per_in_prim = gs->gs.max_indices,
+         .instanced = gs->gs.instanced,
+         .dynamic_topology = gs->gs.dynamic_topology,
       };
 
       libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
@@ -5147,13 +5151,14 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       /* Setup to rasterize the GS results */
       info_gs = (struct pipe_draw_info){
          .mode = ctx->gs->gs.mode,
-         .index_size = 4,
-         .primitive_restart = true,
+         .index_size = ctx->gs->gs.indexed ? 4 : 0,
+         .primitive_restart = ctx->gs->gs.indexed,
          .restart_index = ~0,
          .index.resource = &index_rsrc.base,
          .instance_count = 1,
       };
 
+      unsigned unrolled_prims = 0;
       if (indirect) {
          indirect_gs = (struct pipe_draw_indirect_info){
             .draw_count = 1,
@@ -5163,15 +5168,20 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
          indirect = &indirect_gs;
       } else {
-         unsigned unrolled_prims =
+         bool instanced = ctx->gs->gs.instanced;
+         unrolled_prims =
             u_decomposed_prims_for_vertices(info->mode, draws->count) *
             info->instance_count;
 
          draw_gs = (struct pipe_draw_start_count_bias){
-            .count = ctx->gs->gs.max_indices * unrolled_prims,
+            .count = ctx->gs->gs.max_indices * (instanced ? 1 : unrolled_prims),
          };
 
          draws = &draw_gs;
+
+         if (ctx->gs->gs.instanced) {
+            info_gs.instance_count = unrolled_prims;
+         }
       }
 
       info = &info_gs;
@@ -5180,8 +5190,13 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       batch->reduced_prim = u_reduced_prim(info->mode);
       ctx->dirty |= AGX_DIRTY_PRIM;
 
-      ib = batch->geom_index;
-      ib_extent = index_rsrc.bo->size - (batch->geom_index - ib);
+      if (ctx->gs->gs.dynamic_topology) {
+         ib = batch->geom_index;
+         ib_extent = index_rsrc.bo->size - (batch->geom_index - ib);
+      } else if (ctx->gs->gs.indexed) {
+         ib_extent = ctx->gs->gs.max_indices * 4;
+         ib = agx_pool_upload(&batch->pool, ctx->gs->gs.topology, ib_extent);
+      }
 
       /* We need to reemit geometry descriptors since the txf sampler may change
        * between the GS prepass and the GS rast program.

@@ -462,6 +462,7 @@ struct hk_cmd_buffer {
    uint64_t geom_indirect;
    uint64_t geom_index_buffer;
    uint32_t geom_index_count;
+   uint32_t geom_instance_count;
 
    /* Does the command buffer use the geometry heap? */
    bool uses_heap;
