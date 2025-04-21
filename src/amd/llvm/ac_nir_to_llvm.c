@@ -612,9 +612,13 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
       else
          result = LLVMBuildSub(ctx->ac.builder, src[0], src[1], "");
       break;
-   case nir_op_imul:
    case nir_op_imul24_relaxed:
+      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.mul.i24", ctx->ac.i32, src, 2, 0);
+      break;
    case nir_op_umul24_relaxed:
+      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.mul.u24", ctx->ac.i32, src, 2, 0);
+      break;
+   case nir_op_imul:
       if (instr->no_unsigned_wrap)
          result = LLVMBuildNUWMul(ctx->ac.builder, src[0], src[1], "");
       else if (instr->no_signed_wrap)
