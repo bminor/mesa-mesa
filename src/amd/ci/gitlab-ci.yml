@@ -468,3 +468,12 @@ radv-navi31-vkd3d:
     GPU_VERSION: radv-navi31
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
+
+.radv-kabini-vkd3d:
+  extends:
+    - .b2c-test-radv-vk
+    - .b2c-vkd3d-proton-test
+    - .kabini-test-valve
+    - .radv-valve-manual-rules
+  variables:
+    GPU_VERSION: radv-kabini

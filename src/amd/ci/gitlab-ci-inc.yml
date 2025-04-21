@@ -467,16 +467,6 @@
   variables:
     DEQP_SUITE: radv-valve
 
-############### vkd3d-proton
-.vkd3d-kabini-valve:
-  extends:
-    - .b2c-test-radv-vk
-    - .b2c-vkd3d-proton-test
-    - .kabini-test-valve
-    - .radv-valve-manual-rules
-  variables:
-    GPU_VERSION: radv-kabini
-
 ############### Fluster tests ###############
 .radeonsi-raven-vaapi-fluster:
   extends:
