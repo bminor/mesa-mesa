@@ -874,6 +874,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.stmt("auto& gfx_logger = *context.gfxApiLogger")
         self.cgen.stmt("auto* healthMonitor = context.healthMonitor")
         self.cgen.stmt("auto& metricsLogger = *context.metricsLogger")
+        self.cgen.stmt("auto& shouldExit = *context.shouldExit")
         self.cgen.stmt("if (len < 8) return 0")
         self.cgen.stmt("unsigned char *ptr = (unsigned char *)buf")
         self.cgen.stmt("const unsigned char* const end = (const unsigned char*)buf + len")
@@ -945,6 +946,11 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
                             })
                             .build();
                     while ((seqno - seqnoPtr->load(std::memory_order_seq_cst) != 1)) {
+                        if (shouldExit.load(std::memory_order_relaxed)) {
+                            GFXSTREAM_WARNING("Process=%s is exitting. Skip processing seqno=%d on thread=0x%x.",
+                                 processName ? processName : "null", seqno, getCurrentThreadId());
+                            return 0;
+                        }
                         #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64)))
                         _mm_pause();
                         #elif (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
