@@ -19,8 +19,7 @@
 #define libagx_sub_sat(x, y) sub_sat(x, y)
 #endif
 
-#ifndef LIBAGX_GEOMETRY_H
-#define LIBAGX_GEOMETRY_H
+#pragma once
 
 #define MAX_SO_BUFFERS     4
 #define MAX_VERTEX_STREAMS 4
@@ -325,5 +324,3 @@ _libagx_end_primitive(GLOBAL uint32_t *index_buffer, uint32_t total_verts,
    if (restart)
       out[verts_in_prim] = -1;
 }
-
-#endif
