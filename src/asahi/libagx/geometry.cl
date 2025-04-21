@@ -555,43 +555,13 @@ libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)
    return off;
 }
 
-/*
- * Translate EndPrimitive for LINE_STRIP or TRIANGLE_STRIP output prims into
- * writes into the 32-bit output index buffer. We write the sequence (b, b + 1,
- * b + 2, ..., b + n - 1, -1), where b (base) is the first vertex in the prim, n
- * (count) is the number of verts in the prims, and -1 is the prim restart index
- * used to signal the end of the prim.
- *
- * For points, we write index buffers without restart, just as a sideband to
- * pass data into the vertex shader.
- */
 void
 libagx_end_primitive(global int *index_buffer, uint total_verts,
                      uint verts_in_prim, uint total_prims, uint index_offs,
                      uint geometry_base, bool restart)
 {
-   /* Previous verts/prims are from previous invocations plus earlier
-    * prims in this invocation. For the intra-invocation counts, we
-    * subtract the count for this prim from the inclusive sum NIR gives us.
-    */
-   uint previous_verts_in_invoc = (total_verts - verts_in_prim);
-   uint previous_verts = previous_verts_in_invoc;
-   uint previous_prims = restart ? (total_prims - 1) : 0;
-
-   /* The indices are encoded as: (unrolled ID * output vertices) + vertex. */
-   uint index_base = geometry_base + previous_verts_in_invoc;
-
-   /* Index buffer contains 1 index for each vertex and 1 for each prim */
-   global int *out =
-      &index_buffer[index_offs + previous_verts + previous_prims];
-
-   /* Write out indices for the strip */
-   for (uint i = 0; i < verts_in_prim; ++i) {
-      out[i] = index_base + i;
-   }
-
-   if (restart)
-      out[verts_in_prim] = -1;
+   _libagx_end_primitive(index_buffer, total_verts, verts_in_prim, total_prims,
+                         index_offs, geometry_base, restart);
 }
 
 void

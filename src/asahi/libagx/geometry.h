@@ -284,4 +284,43 @@ libagx_uncompact_prim(uint packed)
    return (packed >= MESA_PRIM_QUADS) ? (packed + 3) : packed;
 }
 
+/*
+ * Translate EndPrimitive for LINE_STRIP or TRIANGLE_STRIP output prims into
+ * writes into the 32-bit output index buffer. We write the sequence (b, b + 1,
+ * b + 2, ..., b + n - 1, -1), where b (base) is the first vertex in the prim, n
+ * (count) is the number of verts in the prims, and -1 is the prim restart index
+ * used to signal the end of the prim.
+ *
+ * For points, we write index buffers without restart, just as a sideband to
+ * pass data into the vertex shader.
+ */
+static inline void
+_libagx_end_primitive(GLOBAL uint32_t *index_buffer, uint32_t total_verts,
+                      uint32_t verts_in_prim, uint32_t total_prims,
+                      uint32_t index_offs, uint32_t geometry_base, bool restart)
+{
+   /* Previous verts/prims are from previous invocations plus earlier
+    * prims in this invocation. For the intra-invocation counts, we
+    * subtract the count for this prim from the inclusive sum NIR gives us.
+    */
+   uint32_t previous_verts_in_invoc = (total_verts - verts_in_prim);
+   uint32_t previous_verts = previous_verts_in_invoc;
+   uint32_t previous_prims = restart ? (total_prims - 1) : 0;
+
+   /* The indices are encoded as: (unrolled ID * output vertices) + vertex. */
+   uint32_t index_base = geometry_base + previous_verts_in_invoc;
+
+   /* Index buffer contains 1 index for each vertex and 1 for each prim */
+   GLOBAL uint32_t *out =
+      &index_buffer[index_offs + previous_verts + previous_prims];
+
+   /* Write out indices for the strip */
+   for (uint32_t i = 0; i < verts_in_prim; ++i) {
+      out[i] = index_base + i;
+   }
+
+   if (restart)
+      out[verts_in_prim] = -1;
+}
+
 #endif
