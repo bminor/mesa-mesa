@@ -10,8 +10,6 @@
 #include "nir.h"
 #include "shader_enums.h"
 
-enum mesa_prim;
-
 struct nir_def *agx_load_per_vertex_input(struct nir_builder *b,
                                           nir_intrinsic_instr *intr,
                                           struct nir_def *vertex);
