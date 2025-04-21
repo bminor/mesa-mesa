@@ -28,6 +28,7 @@ lavapipe-vk-asan:
     DEQP_SUITE: lvp-asan
     GPU_VERSION: lvp-asan
     DEQP_FORCE_ASAN: 1
+    S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
   needs:
     - debian/x86_64_test-vk
     - debian-testing-asan

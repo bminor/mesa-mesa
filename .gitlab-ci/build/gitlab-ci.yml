@@ -130,7 +130,7 @@ debian-testing-asan:
       -D mesa-clc=system
       -D tools=dlclose-skip
       -D valgrind=disabled
-    S3_ARTIFACT_NAME: ""
+    S3_ARTIFACT_NAME: mesa-x86_64-asan-${BUILDTYPE}
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
     # Do a host build for mesa-clc (asan complains not being loaded as

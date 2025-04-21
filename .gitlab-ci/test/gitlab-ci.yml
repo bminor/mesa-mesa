@@ -3,11 +3,10 @@
   interruptible: true
   variables:
     GIT_STRATEGY: none  # testing doesn't build anything from source
+  # `before_script:` is only used by test jobs on generic fdo runners
+  # it's overwritten by hardware test jobs
   before_script:
-    - !reference [default, before_script]
-    # Note: Build dir (and thus install) may be dirty due to GIT_STRATEGY
-    - rm -rf install
-    - tar -xf artifacts/install.tar
+    - !reference [.download_s3, before_script]
     - section_start ldd_section "Checking ldd on driver build"
     - LD_LIBRARY_PATH=install/lib find install/lib -name "*.so" -print -exec ldd {} \;
     - section_end ldd_section
@@ -128,6 +127,7 @@ yaml-toml-shell-py-test:
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     DEBIAN_ARCH: amd64
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
 
 .test-vk:
   extends:
@@ -139,6 +139,7 @@ yaml-toml-shell-py-test:
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     DEBIAN_ARCH: amd64
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
 
 .test-cl:
   extends:
@@ -147,6 +148,8 @@ yaml-toml-shell-py-test:
   needs:
     - debian/x86_64_test-gl
     - !reference [.required-for-hardware-jobs, needs]
+  variables:
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
 
 .test-android:
   extends:
@@ -156,6 +159,7 @@ yaml-toml-shell-py-test:
     # This is for the guest artifacts from debian-android which will be
     # downloaded explicitly by cuttlefish-runner.sh
     S3_ANDROID_ARTIFACT_NAME: mesa-x86_64-android-debug
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
     # Set the default Vulkan driver to lavapipe for some preliminary checks
     # that Cuttlefish always performs before starting the VM. This can be
     # overwritten depending on the physical machine running the job.
