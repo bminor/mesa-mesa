@@ -1228,7 +1228,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    bool set_prim =
       intr->intrinsic == nir_intrinsic_set_vertex_and_primitive_count;
 
-   struct lower_gs_state *ctx = data;
+   struct agx_gs_info *info = data;
    if (!(set_prim && points) && !end_prim)
       return false;
 
@@ -1245,7 +1245,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
     * other stuff).
     */
    if (intr->instr.block != nir_start_block(b->impl)) {
-      ctx->info->dynamic_topology = true;
+      info->dynamic_topology = true;
       return false;
    }
 
@@ -1253,14 +1253,14 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    if (!nir_src_is_const(intr->src[0]) || !nir_src_is_const(intr->src[1]) ||
        !nir_src_is_const(intr->src[2])) {
 
-      ctx->info->dynamic_topology = true;
+      info->dynamic_topology = true;
       return false;
    }
 
    unsigned min = verts_in_output_prim(b->shader);
 
    if (nir_src_as_uint(intr->src[1]) >= min) {
-      _libagx_end_primitive(ctx->info->topology, nir_src_as_uint(intr->src[0]),
+      _libagx_end_primitive(info->topology, nir_src_as_uint(intr->src[0]),
                             nir_src_as_uint(intr->src[1]),
                             nir_src_as_uint(intr->src[2]), 0, 0, !points);
    }
@@ -1327,30 +1327,30 @@ is_strip_topology(uint32_t *indices, uint32_t index_count)
  * VS(compute) + GS(vertex) sequences without auxiliary programs.
  */
 static void
-optimize_static_topology(struct lower_gs_state *state, nir_shader *gs)
+optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
 {
-   nir_shader_intrinsics_pass(gs, evaluate_topology, nir_metadata_all, state);
-   if (state->info->dynamic_topology)
+   nir_shader_intrinsics_pass(gs, evaluate_topology, nir_metadata_all, info);
+   if (info->dynamic_topology)
       return;
 
    /* Points are always lists, we never have restarts/instancing */
    if (gs->info.gs.output_primitive == MESA_PRIM_POINTS) {
-      state->info->indexed = false;
+      info->indexed = false;
       return;
    }
 
    /* Try to pattern match a list topology */
    unsigned count = verts_in_output_prim(gs);
-   if (match_list_topology(state->info, count))
+   if (match_list_topology(info, count))
       return;
 
    /* Because we're instancing, we can always drop the trailing restart index */
-   state->info->instanced = true;
-   state->info->max_indices--;
+   info->instanced = true;
+   info->max_indices--;
 
    /* Try to pattern match a strip topology */
-   if (is_strip_topology(state->info->topology, state->info->max_indices)) {
-      state->info->indexed = false;
+   if (is_strip_topology(info->topology, info->max_indices)) {
+      info->indexed = false;
       return;
    }
 }
@@ -1459,7 +1459,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    info->prefix_sum = info->count_words > 0 && gs->xfb_info != NULL;
 
    if (static_vertices >= 0 && static_primitives >= 0) {
-      optimize_static_topology(&gs_state, gs);
+      optimize_static_topology(info, gs);
    } else {
       info->dynamic_topology = true;
    }
