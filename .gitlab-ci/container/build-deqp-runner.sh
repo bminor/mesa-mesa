@@ -9,7 +9,7 @@
 
 set -uex
 
-uncollapsed_section_start deqp-runner "Building deqp-runner"
+section_start deqp-runner "Building deqp-runner"
 
 DEQP_RUNNER_VERSION=0.20.3
 
