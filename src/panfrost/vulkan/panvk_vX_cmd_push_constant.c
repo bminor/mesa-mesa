@@ -9,7 +9,8 @@
 
 VkResult
 panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
-                                          const struct panvk_shader *shader)
+                                          const struct panvk_shader *shader,
+                                          uint32_t repeat_count)
 {
    uint64_t *push_ptr;
 
@@ -40,7 +41,7 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    struct panfrost_ptr push_uniforms = panvk_cmd_alloc_dev_mem(
-      cmdbuf, desc, shader->fau.total_count * sizeof(uint64_t),
+      cmdbuf, desc, shader->fau.total_count * sizeof(uint64_t) * repeat_count,
       sizeof(uint64_t));
 
    if (!push_uniforms.gpu)
@@ -61,13 +62,16 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
    uint64_t *faus = push_uniforms.cpu;
    uint32_t w, fau = 0;
 
-   /* After packing, the sysvals come first, followed by the user push constants.
-    * The ordering is encoded shader side, so don't re-order these loops. */
-   BITSET_FOREACH_SET(w, shader->fau.used_sysvals, MAX_SYSVAL_FAUS)
-      faus[fau++] = sysvals[w];
+   for (uint32_t i = 0; i < repeat_count; i++) {
+      /* After packing, the sysvals come first, followed by the user push
+       * constants. The ordering is encoded shader side, so don't re-order
+       * these loops. */
+      BITSET_FOREACH_SET(w, shader->fau.used_sysvals, MAX_SYSVAL_FAUS)
+         faus[fau++] = sysvals[w];
 
-   BITSET_FOREACH_SET(w, shader->fau.used_push_consts, MAX_PUSH_CONST_FAUS)
-      faus[fau++] = push_consts[w];
+      BITSET_FOREACH_SET(w, shader->fau.used_push_consts, MAX_PUSH_CONST_FAUS)
+         faus[fau++] = push_consts[w];
+   }
 
    *push_ptr = push_uniforms.gpu;
    return VK_SUCCESS;

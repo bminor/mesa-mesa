@@ -21,6 +21,7 @@ struct panvk_push_constant_state {
 
 VkResult
 panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
-                                          const struct panvk_shader *shader);
+                                          const struct panvk_shader *shader,
+                                          uint32_t repeat_count);
 
 #endif

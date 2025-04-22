@@ -107,7 +107,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    panvk_per_arch(cmd_prepare_dispatch_sysvals)(cmdbuf, &info);
 
    result = panvk_per_arch(cmd_prepare_push_uniforms)(
-      cmdbuf, cmdbuf->state.compute.shader);
+      cmdbuf, cmdbuf->state.compute.shader, 1);
    if (result != VK_SUCCESS)
       return;
 

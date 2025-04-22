@@ -1320,13 +1320,13 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
       }
 
       result = panvk_per_arch(cmd_prepare_push_uniforms)(
-         cmdbuf, cmdbuf->state.gfx.vs.shader);
+         cmdbuf, cmdbuf->state.gfx.vs.shader, 1);
       if (result != VK_SUCCESS)
          return;
 
       if (fs) {
          result = panvk_per_arch(cmd_prepare_push_uniforms)(
-            cmdbuf, cmdbuf->state.gfx.fs.shader);
+            cmdbuf, cmdbuf->state.gfx.fs.shader, 1);
          if (result != VK_SUCCESS)
             return;
       }
