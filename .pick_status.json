@@ -694,7 +694,7 @@
         "description": "wsi/headless: Override finish_create",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "579578f10acda284c39cab2b12ccb8de2d2f793c",
         "notes": null
