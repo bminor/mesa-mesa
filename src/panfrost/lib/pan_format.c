@@ -512,7 +512,7 @@ const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(X24S8_UINT,              RGBA8UI,         AAAA, L, _T_Z_),
    FMT(S8_UINT,                 R8UI,            RRRR, L, _T_Z_),
 
-   FMT(A8_UNORM,                R8_UNORM,        000R, L, VTR_I),
+   FMT(A8_UNORM,                R8_UNORM,        000R, L, VTR__),
    FMT(L8A8_UNORM,              RG8_UNORM,       RRRG, L, VTR_I),
    FMT(L8A8_SRGB,               RG8_UNORM,       RRRG, S, VTR_I),
 
@@ -549,7 +549,7 @@ const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
 
    /* similarly, the interchange format is RGBA8, but we only
       actually store 1 component in memory here */
-   FMT(A8_UNORM,                RGBA8_UNORM,     000A, L, VTR_I),
+   FMT(A8_UNORM,                RGBA8_UNORM,     000A, L, VTR__),
 #else
    /* Specify real formats on Bifrost */
    FMT(Z32_FLOAT_S8X24_UINT,    Z32_X32,         RGBA, L, _T_Z_),
@@ -558,7 +558,7 @@ const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(S8_UINT,                 S8,              GRBA, L, _T_Z_),
 
    /* Obsolete formats removed in Valhall */
-   FMT(A8_UNORM,                A8_UNORM,        000A, L, VTR_I),
+   FMT(A8_UNORM,                A8_UNORM,        000A, L, VTR__),
    FMT(L8A8_UNORM,              R8A8_UNORM,      RRRA, L, VTR_I),
    FMT(L8A8_SRGB,               R8A8_UNORM,      RRRA, S, VTR_I),
 #endif

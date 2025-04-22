@@ -994,7 +994,7 @@
         "description": "pan/format: Disable image storage on A8_UNORM",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d95423686fda6c8a96702b1535a967132f8887f8",
         "notes": null
