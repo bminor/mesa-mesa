@@ -4,7 +4,7 @@
         "description": "aco/insert_exec: reset temporary when recreating wqm mask from exact mask",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b872ff6ef28bc44ac0f7aa5f963a273e40c79a61",
         "notes": null
