@@ -224,7 +224,7 @@ lower_gs_inputs(nir_builder *b, nir_intrinsic_instr *intr, void *_)
    if (intr->intrinsic != nir_intrinsic_load_per_vertex_input)
       return false;
 
-   b->cursor = nir_instr_remove(&intr->instr);
+   b->cursor = nir_before_instr(&intr->instr);
 
    /* Calculate the vertex ID we're pulling, based on the topology class */
    nir_def *vert_in_prim = intr->src[0].ssa;
@@ -236,7 +236,7 @@ lower_gs_inputs(nir_builder *b, nir_intrinsic_instr *intr, void *_)
       nir_iadd(b, nir_imul(b, nir_load_instance_id(b), verts), vertex);
 
    nir_def *val = agx_load_per_vertex_input(b, intr, unrolled);
-   nir_def_rewrite_uses(&intr->def, val);
+   nir_def_replace(&intr->def, val);
    return true;
 }
 
@@ -356,8 +356,7 @@ lower_id(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    else
       return false;
 
-   b->cursor = nir_instr_remove(&intr->instr);
-   nir_def_rewrite_uses(&intr->def, id);
+   nir_def_replace(&intr->def, id);
    return true;
 }
 
@@ -438,7 +437,7 @@ lower_to_gs_rast(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return true;
 
    case nir_intrinsic_load_primitive_id:
-      nir_def_rewrite_uses(&intr->def, state->primitive_id);
+      nir_def_replace(&intr->def, state->primitive_id);
       return true;
 
    case nir_intrinsic_load_instance_id:
@@ -446,7 +445,7 @@ lower_to_gs_rast(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       if (state->raw_instance_id == &intr->def)
          return false;
 
-      nir_def_rewrite_uses(&intr->def, state->instance_id);
+      nir_def_replace(&intr->def, state->instance_id);
       return true;
 
    case nir_intrinsic_load_flat_mask:
@@ -1130,8 +1129,8 @@ rewrite_invocation_id(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    if (intr->intrinsic != nir_intrinsic_load_invocation_id)
       return false;
 
-   b->cursor = nir_instr_remove(&intr->instr);
-   nir_def_rewrite_uses(&intr->def, nir_u2uN(b, data, intr->def.bit_size));
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def_replace(&intr->def, nir_u2uN(b, data, intr->def.bit_size));
    return true;
 }
 
