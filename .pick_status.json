@@ -1,5 +1,525 @@
 [
     {
+        "sha": "5f3a3740dcc6d243f2ef14138fb1c09bcbb9b5fd",
+        "description": "zink: use util_dynarray_resize_zero() for descriptor pool",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b17dbd0c05bceef8a620b73bfdf4fc68e02dc69",
+        "description": "util/dynarray: add util_dynarray_resize_zero()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a99e5be44642cb6e56f567f41854aac93dff66dc",
+        "description": "teflon: Release the arrays of tensors in operations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63251d43ae433e1cdaceb8ca4d1bc897987d3df0",
+        "description": "etnaviv: Release screen->dummy_desc_reloc.bo",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bca5ef70a436380d1b6cb0f5bd84f1872cabc5e5",
+        "notes": null
+    },
+    {
+        "sha": "113143a47034ea5e110ca06d222028a5051c8c80",
+        "description": "teflon/tests: Read model data with mmap, for speed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "baafa9172a0461cab6e6efc4d75fb957c41cac89",
+        "description": "etnaviv/ml: Rework tensor addition on V8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "104309ede383b8ca328b7405d28e707998fa6dae",
+        "description": "etnaviv/ml: Support padding the channels dimension",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a951a73e7a7b5af82776500649135cc76a20fb6",
+        "description": "teflon: Support more Pad configurations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c31ce2d71f8ee30664f8db7c1ee1f43b09f0388b",
+        "description": "etnaviv/ml: Fix depthwise convolutions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e26fc4498948e3a320469ff12be80b9ba5005a7",
+        "description": "nir/opt_algebraic: disable fsat(a + 1.0) opt if a can be NaN",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a4a3487aae98cc83990b1c79785983b65124145f",
+        "notes": null
+    },
+    {
+        "sha": "a60d61cce855cf053cbd290e399cc5991ddd1369",
+        "description": "nir: improve fadd is_a_number analysis by using the range",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6fd9f488ac401c9236b2cc3f319f8713517242d",
+        "description": "nir: add is_a_number analysis for ffma",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb6d03592527d687438bbce215be906fc9fc5192",
+        "description": "nir: add range analysis for ffmaz",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ad695195eec69488fd7770a2d6884aebc4fad91",
+        "description": "nir/opt_algebraic: turn exact fmin(1.0, a) into fsat if a is not NaN and not negative",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18a0de18344e1bae7afb62b38ff20b74dd130552",
+        "description": "nir/opt_algebraic: optimize fmax(ffma(a, b, c), 0.0) to fsat",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f71fc26393e5dab0d49c2cd9a6be55b00bb87790",
+        "description": "nir/opt_algebraic: generalize fmax(fadd(a, b), 0.0) to fsat by not requiring fneg",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1050c6983375dca3575872e221e8f572ec2c7143",
+        "description": "libagx: drop libagx_sub_sat",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bfc18b6fb1642625925e54ce9fa570e6b3e3f0f1",
+        "description": "libagx: drop libagx_popcount",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c4660d1a6de3253b501a19627b1d0a17b82ae7e",
+        "description": "libagx: use #pragma once in geometry.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63a28319670a7352d942a91d206a1f5970c5d9f5",
+        "description": "agx/nir_lower_tess: drop dead todo",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "41960652e1700a669de5bef3f6e0ad5cee5fa3b4",
+        "description": "agx/nir_lower_tess: drop pointless helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a065fc446ef8f458cf5f4e7151db5bb23b4dbbf",
+        "description": "agx/nir_lower_gs: use common nir_verts_in_output_prim",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea209c98fcb387a8732a5152e7e3c829b1bcda09",
+        "description": "agx/nir_lower_gs: drop silly fwd decl",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba9f86df518cf2c5e65d6d60edde2bfa4578e82b",
+        "description": "agx/nir_lower_gs: privatize lower_output_to_var_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d42a92fd93df14325f4cad72954f64ab28fa2c05",
+        "description": "agx/nir_lower_gs: clean up more state->info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "470f226ed846469eeadadeb9b3318b40045fb029",
+        "description": "agx/nir_lower_gs: remove silly comment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1017095c5af8ae76bf5cc2bd331ae318a1bfe641",
+        "description": "agx/nir_lower_gs: clean up state/info duplication",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "753e3ba55bc4f5e25ff922190294667e6ede7b34",
+        "description": "asahi,hk: use indirect-local dispatches for GS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "70c805d8631bd3e5eb78f7da7066a300392c86c4",
+        "description": "hk: bump wg sizes for geometry shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "164fc8a1582254960cff5d9c1bff75fd025dfa87",
+        "description": "agx/nir_lower_gs: clean comment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9b6828fdaebb037a3b842b4a33e9d622db4d21a",
+        "description": "agx/nir_lower_gs: optimize static topologies",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3da89391978aeb4f92327d5d7309d3597aa19e30",
+        "description": "libagx: factor out _libagx_end_primitive",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2cc7f38d3530b4e232e8137b8b039a03c4a12ca",
+        "description": "asahi: optimize out empty dispatches",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b916c38c76465429cfaa69201c94dab9c173f98f",
+        "description": "hk: optimize out empty dispatches",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6ee36a43731a074b643c6685142484a02a4ab67",
+        "description": "agx: add agx_is_shader_empty helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1aeb46a34a58fce4d87009e7f4f203ae64fcb37",
+        "description": "nir: factor out nir_verts_in_output_prim helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c33b1e8c16cf6a6a3042fc562a4fdf46a4d733a",
+        "description": "ci: replace s3_upload wrapper with ci-fairy s3cp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b3b3d4c703ab3153092ddf0bb7da6e2c013311f",
+        "description": "ci: use MESA_TEMPLATES_COMMIT for ci-fairy install",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4aeef02e28c90460a0b71126cd9fdac1b735234",
+        "description": "ci: bump ci-templates",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba64e92641be464167420aca68b53321a6185b1d",
+        "description": "Add libzstd static library.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de78a75f13d5d5c7c332920ce620fb2428d53ad6",
+        "description": "panvk: Set .pushDescriptor=true",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b7e5db14909e1a56cd7225f5640a0a10c7f780c",
+        "description": "panvk: Advertise support for VK_EXT_vertex_input_dynamic_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b5ca87927ea357c93254b3a064c34b633f0be39",
+        "description": "gallium/pipe: Increase hevc max slice to 600",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f65c858ea20681a2fc9f7525c89ce48b96422dc",
+        "description": "nak: Add test for lea disasm.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f5cb088a9f5218de3e11ace26f90be7cd397284",
+        "description": "nak: Disable cbuf textures on blackwell",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd90b072f166aad4c6a9933fc4b36e4237f79b3b",
+        "description": "nak: sm100+ texture encodings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f70b7d10c2e6435702641db4dd98e34841bf64e0",
+        "description": "nak: Fix sm90+ atomg/redg encoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "869452aaf08083ff37b3806961cecbfed0226133",
+        "description": "nak: Remove range parameter from set_atom_type",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b8218425090ef6bfbd7061efe2a531150227f74",
+        "description": "nak: Add nvdisasm_tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d31172d092f93eb8e67de666c7adb9221a4d2e38",
+        "description": "nvk: Remove dead function nvk_meta_init_render",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2fc4c98aaff49d54187724f0452fce6df23c60bf",
+        "description": "nvk: Override render enable for blits and resolves",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "32f2317223c4e5dfc085bd1c0f506bd0831e7fb2",
+        "notes": null
+    },
+    {
+        "sha": "52085f2a0e1cdb218a2d3c241c9c6d25309b901b",
+        "description": "nvk: SET_STATISTICS_COUNTER at start of meta_begin",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6f85e6b06bef9f315511bf38c833df41d8c1952a",
+        "notes": null
+    },
+    {
         "sha": "1bf8542490679fa2a244e27fb2b04bbc3d122f74",
         "description": "anv: Enable VK_EXT_external_memory_acquire_unmodified",
         "nominated": false,
