@@ -336,7 +336,7 @@ is_disjoint(const struct panvk_image *image)
 }
 
 static void
-panvk_image_init(struct panvk_device *dev, struct panvk_image *image,
+panvk_image_init(struct panvk_image *image,
                  const VkImageCreateInfo *pCreateInfo)
 {
    /* Add any create/usage flags that might be needed for meta operations.
@@ -372,7 +372,7 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    if (!image)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   panvk_image_init(dev, image, pCreateInfo);
+   panvk_image_init(image, pCreateInfo);
 
    /*
     * From the Vulkan spec:
@@ -480,7 +480,7 @@ panvk_GetDeviceImageMemoryRequirements(VkDevice device,
 
    struct panvk_image image;
    vk_image_init(&dev->vk, &image.vk, pInfo->pCreateInfo);
-   panvk_image_init(dev, &image, pInfo->pCreateInfo);
+   panvk_image_init(&image, pInfo->pCreateInfo);
 
    VkImageMemoryRequirementsInfo2 info2 = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
