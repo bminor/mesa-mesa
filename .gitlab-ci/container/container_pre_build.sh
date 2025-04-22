@@ -38,14 +38,6 @@ chmod +x /usr/local/bin/ninja
 # flags (doesn't apply to non-container builds, but we don't run make there)
 export MAKEFLAGS="-j${FDO_CI_CONCURRENT:-4}"
 
-# make wget to try more than once, when download fails or timeout
-echo -e "retry_connrefused = on\n" \
-        "read_timeout = 300\n" \
-        "tries = 4\n" \
-	"retry_on_host_error = on\n" \
-	"retry_on_http_error = 429,500,502,503,504\n" \
-        "wait_retry = 32" >> /etc/wgetrc
-
 # Ensure that rust tools are in PATH if they exist
 CARGO_ENV_FILE="$HOME/.cargo/env"
 if [ -f "$CARGO_ENV_FILE" ]; then
