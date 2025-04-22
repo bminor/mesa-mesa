@@ -60,8 +60,6 @@ get_blend_shader(struct panvk_device *dev,
          .src0_type = src0_type,
          .src1_type = src1_type,
          .rt = rt,
-         .has_constants =
-            pan_blend_constant_mask(state->rts[rt].equation) != 0,
          .logicop_enable = state->logicop_enable,
          .logicop_func = state->logicop_func,
          .nr_samples = state->rts[rt].nr_samples,

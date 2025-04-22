@@ -70,11 +70,16 @@ panfrost_analyze_sysvals(struct panfrost_compiled_shader *ss)
          dirty |= PAN_DIRTY_DRAWID;
          break;
 
+      case PAN_SYSVAL_BLEND_CONSTANTS:
+         dirty |= PAN_DIRTY_BLEND;
+         break;
+
       case PAN_SYSVAL_SAMPLE_POSITIONS:
       case PAN_SYSVAL_MULTISAMPLED:
       case PAN_SYSVAL_RT_CONVERSION:
          /* Nothing beyond the batch itself */
          break;
+
       default:
          unreachable("Invalid sysval");
       }

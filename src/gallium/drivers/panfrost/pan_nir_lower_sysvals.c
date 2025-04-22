@@ -118,6 +118,9 @@ sysval_for_intrinsic(unsigned arch, nir_intrinsic_instr *intr, unsigned *offset)
    case nir_intrinsic_load_printf_buffer_address:
       return PAN_SYSVAL_PRINTF_BUFFER;
 
+   case nir_intrinsic_load_blend_const_color_rgba:
+      return PAN_SYSVAL_BLEND_CONSTANTS;
+
    case nir_intrinsic_load_rt_conversion_pan: {
       unsigned size = nir_alu_type_get_type_size(nir_intrinsic_src_type(intr));
       unsigned rt = nir_intrinsic_base(intr);
@@ -141,6 +144,10 @@ sysval_for_intrinsic(unsigned arch, nir_intrinsic_instr *intr, unsigned *offset)
 static bool
 uses_sysvals(unsigned arch, nir_shader *shader)
 {
+   /* Fragment shaders always use the blend constant sysval */
+   if (shader->info.stage == MESA_SHADER_FRAGMENT)
+      return true;
+
    nir_foreach_function_impl(impl, shader) {
       nir_foreach_block(block, impl) {
          nir_foreach_instr(instr, block) {
@@ -258,6 +265,11 @@ panfrost_nir_lower_sysvals(nir_shader *shader, unsigned arch,
    /* If we don't have any UBOs, we need to insert an empty UBO0 to put the
     * sysval at UBO1 */
    shader->info.num_ubos = MAX2(PAN_UBO_SYSVALS, shader->info.num_ubos) + 1;
+
+   /* Reserve the first slot for blend constants, so that they can be accessed
+    * from a fixed offset in the blend shader */
+   if (shader->info.stage == MESA_SHADER_FRAGMENT)
+      lookup_sysval(ctx.sysval_to_id, ctx.sysvals, PAN_SYSVAL_BLEND_CONSTANTS);
 
    nir_shader_instructions_pass(
       shader, lower, nir_metadata_control_flow, &ctx);

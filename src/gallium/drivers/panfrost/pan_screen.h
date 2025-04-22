@@ -82,7 +82,7 @@ struct panfrost_vtable {
    int (*submit_batch)(struct panfrost_batch *batch, struct pan_fb_info *fb);
 
    /* Get blend shader */
-   struct pan_blend_shader_variant *(*get_blend_shader)(
+   struct pan_blend_shader *(*get_blend_shader)(
       struct pan_blend_shader_cache *cache, const struct pan_blend_state *,
       nir_alu_type, nir_alu_type, unsigned rt);
 

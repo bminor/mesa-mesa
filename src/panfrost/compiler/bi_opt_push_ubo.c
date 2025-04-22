@@ -84,6 +84,15 @@ bi_analyze_ranges(bi_context *ctx)
       assert(ubo < res.nr_blocks);
       assert(channels > 0 && channels <= 4);
 
+      /* Blend constants are always loaded from the sysval UBO in blend shaders,
+       * do not push them. */
+      if (ctx->stage == MESA_SHADER_FRAGMENT) {
+         /* PAN_UBO_SYSVALS from the gallium driver */
+         unsigned sysval_ubo = 1;
+         if(ubo == sysval_ubo && word == 0)
+            continue;
+      }
+
       if (word >= MAX_UBO_WORDS)
          continue;
 
@@ -136,6 +145,7 @@ void
 bi_opt_push_ubo(bi_context *ctx)
 {
    struct bi_ubo_analysis analysis = bi_analyze_ranges(ctx);
+
    bi_pick_ubo(ctx->info.push, &analysis);
 
    ctx->ubo_mask = 0;

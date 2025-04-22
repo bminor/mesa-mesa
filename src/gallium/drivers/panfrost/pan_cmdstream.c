@@ -1254,6 +1254,15 @@ panfrost_upload_multisampled_sysval(struct panfrost_batch *batch,
    uniform->u[0] = (samples > 1) ? ~0 : 0;
 }
 
+static void
+panfrost_upload_blend_constants_sysval(struct panfrost_batch *batch,
+                                       struct sysval_uniform *uniform)
+{
+   struct panfrost_context *ctx = batch->ctx;
+   for (unsigned i = 0; i < 4; i++)
+      uniform->f[i] = ctx->blend_color.color[i];
+}
+
 #if PAN_ARCH >= 6
 static void
 panfrost_upload_rt_conversion_sysval(struct panfrost_batch *batch,
@@ -1366,6 +1375,9 @@ panfrost_upload_sysvals(struct panfrost_batch *batch, void *ptr_cpu,
          break;
       case PAN_SYSVAL_MULTISAMPLED:
          panfrost_upload_multisampled_sysval(batch, &uniforms[i]);
+         break;
+      case PAN_SYSVAL_BLEND_CONSTANTS:
+         panfrost_upload_blend_constants_sysval(batch, &uniforms[i]);
          break;
 #if PAN_ARCH >= 6
       case PAN_SYSVAL_RT_CONVERSION:

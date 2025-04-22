@@ -367,7 +367,7 @@ pan_preload_get_blend_shaders(struct pan_fb_preload_cache *cache,
       };
 
       pthread_mutex_lock(&cache->blend_shader_cache->lock);
-      struct pan_blend_shader_variant *b = GENX(pan_blend_get_shader_locked)(
+      struct pan_blend_shader *b = GENX(pan_blend_get_shader_locked)(
          cache->blend_shader_cache, &blend_state,
          preload_shader->blend_types[i], nir_type_float32, /* unused */
          i);

@@ -70,7 +70,6 @@ struct pan_blend_shader_key {
    enum pipe_format format;
    nir_alu_type src0_type, src1_type;
    uint32_t rt             : 3;
-   uint32_t has_constants  : 1;
    uint32_t logicop_enable : 1;
    uint32_t logicop_func   : 4;
    uint32_t nr_samples     : 5;

@@ -65,20 +65,12 @@ struct pan_blend_shader_cache {
    pthread_mutex_t lock;
 };
 
-struct pan_blend_shader_variant {
-   struct list_head node;
-   float constants[4];
+struct pan_blend_shader {
+   struct pan_blend_shader_key key;
+
    struct util_dynarray binary;
    unsigned first_tag;
    unsigned work_reg_count;
-};
-
-#define PAN_BLEND_SHADER_MAX_VARIANTS 32
-
-struct pan_blend_shader {
-   struct pan_blend_shader_key key;
-   unsigned nvariants;
-   struct list_head variants;
 };
 
 uint64_t panfrost_get_blend(struct panfrost_batch *batch, unsigned rt,
@@ -94,7 +86,7 @@ void pan_blend_shader_cache_cleanup(struct pan_blend_shader_cache *cache);
 /* Take blend_shaders.lock before calling this function and release it when
  * you're done with the shader variant object.
  */
-struct pan_blend_shader_variant *GENX(pan_blend_get_shader_locked)(
+struct pan_blend_shader *GENX(pan_blend_get_shader_locked)(
    struct pan_blend_shader_cache *cache, const struct pan_blend_state *state,
    nir_alu_type src0_type, nir_alu_type src1_type, unsigned rt);
 

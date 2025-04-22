@@ -88,6 +88,15 @@ mir_analyze_ranges(compiler_context *ctx)
 
       assert(ubo < res.nr_blocks);
 
+      /* Blend constants are always loaded from the sysval UBO in blend shaders,
+       * do not push them. */
+      if (ctx->stage == MESA_SHADER_FRAGMENT) {
+         /* PAN_UBO_SYSVALS from the gallium driver */
+         unsigned sysval_ubo = 1;
+         if(ubo == sysval_ubo && offset == 0)
+            continue;
+      }
+
       if (offset < MAX_UBO_QWORDS)
          BITSET_SET(res.blocks[ubo].uses, offset);
    }
