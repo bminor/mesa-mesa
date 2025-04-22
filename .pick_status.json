@@ -274,7 +274,7 @@
         "description": "pick-ui: add missing dependency",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c37a468a8a109cbaece70760fd748fc838185b88",
         "notes": null
