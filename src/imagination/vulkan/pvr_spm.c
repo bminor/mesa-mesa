@@ -933,14 +933,6 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
 
    consts_buffer_size = PVR_DW_TO_BYTES(info->const_shared_regs);
 
-   /* TODO: Remove this check, along with the pvr_finishme(), once the zeroed
-    * shaders are replaced by the real shaders.
-    */
-   if (!consts_buffer_size)
-      return VK_SUCCESS;
-
-   pvr_finishme("Remove consts buffer size check");
-
    result = pvr_bo_alloc(device,
                          device->heaps.general_heap,
                          consts_buffer_size,
@@ -1007,7 +999,7 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
       uint64_t *mem_ptr_u64 = (uint64_t *)mem_ptr;
       uint64_t mem_used = 0;
 
-      assert((sizeof(struct pvr_image_descriptor) / sizeof(uint32_t)) ==
+      assert((sizeof(struct pvr_image_descriptor) / sizeof(uint64_t)) ==
              PVR_IMAGE_DESCRIPTOR_SIZE);
       mem_ptr_u64 +=
          i * (sizeof(struct pvr_image_descriptor) / sizeof(uint64_t));
