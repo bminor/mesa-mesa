@@ -1709,6 +1709,7 @@ struct pipe_h265_picture_desc
    uint8_t RefPicList[PIPE_H265_MAX_SLICES][2][15];
    bool UseRefPicList;
    bool UseStRpsBits;
+   bool LtCurrDone;
 
    struct
    {

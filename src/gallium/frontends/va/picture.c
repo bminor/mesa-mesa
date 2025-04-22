@@ -455,6 +455,7 @@ handleVASliceDataBufferType(vlVaContext *context, vlVaBuffer *buf)
 
          context->bs.buffers[context->bs.num_buffers] = (void *const)&start_code_h265;
          context->bs.sizes[context->bs.num_buffers++] = sizeof(start_code_h265);
+         vlVaDecoderHEVCBitstreamHeader(context, buf);
          break;
       case PIPE_VIDEO_FORMAT_VC1:
          if (bufHasStartcode(buf, 0x000001, 24))
