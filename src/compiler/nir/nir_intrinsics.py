@@ -2474,7 +2474,10 @@ intrinsic("load_inline_data_intel", [], dest_comp=0,
           indices=[BASE],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
-# Dynamic fragment shader parameters.
+# Dynamic tesselation parameters (see intel_tess_config).
+system_value("tess_config_intel", 1)
+
+# Dynamic fragment shader parameters (see intel_msaa_flags) .
 system_value("fs_msaa_intel", 1)
 
 # Per primitive remapping table offset.

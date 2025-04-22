@@ -362,6 +362,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_core_count_arm:
    case nir_intrinsic_load_core_max_id_arm:
    case nir_intrinsic_load_warp_max_id_arm:
+   case nir_intrinsic_load_tess_config_intel:
       is_divergent = false;
       break;
 
