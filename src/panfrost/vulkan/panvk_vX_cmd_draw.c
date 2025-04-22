@@ -809,23 +809,30 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-panvk_per_arch(CmdBindVertexBuffers)(VkCommandBuffer commandBuffer,
-                                     uint32_t firstBinding,
-                                     uint32_t bindingCount,
-                                     const VkBuffer *pBuffers,
-                                     const VkDeviceSize *pOffsets)
+panvk_per_arch(CmdBindVertexBuffers2)(VkCommandBuffer commandBuffer,
+                                      uint32_t firstBinding,
+                                      uint32_t bindingCount,
+                                      const VkBuffer *pBuffers,
+                                      const VkDeviceSize *pOffsets,
+                                      const VkDeviceSize *pSizes,
+                                      const VkDeviceSize *pStrides)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
 
    assert(firstBinding + bindingCount <= MAX_VBS);
+
+   if (pStrides) {
+      vk_cmd_set_vertex_binding_strides(&cmdbuf->vk, firstBinding,
+                                        bindingCount, pStrides);
+   }
 
    for (uint32_t i = 0; i < bindingCount; i++) {
       VK_FROM_HANDLE(panvk_buffer, buffer, pBuffers[i]);
 
       cmdbuf->state.gfx.vb.bufs[firstBinding + i].address =
          panvk_buffer_gpu_ptr(buffer, pOffsets[i]);
-      cmdbuf->state.gfx.vb.bufs[firstBinding + i].size =
-         panvk_buffer_range(buffer, pOffsets[i], VK_WHOLE_SIZE);
+      cmdbuf->state.gfx.vb.bufs[firstBinding + i].size = panvk_buffer_range(
+         buffer, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
    }
 
    cmdbuf->state.gfx.vb.count =

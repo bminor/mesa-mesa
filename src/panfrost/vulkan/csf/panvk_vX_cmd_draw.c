@@ -48,12 +48,14 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
                uint32_t attrib_idx, uint32_t vb_desc_offset,
                struct mali_attribute_packed *desc)
 {
-   const struct vk_vertex_input_state *vi =
-      cmdbuf->vk.dynamic_graphics_state.vi;
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
+   const struct vk_vertex_input_state *vi = dyns->vi;
    const struct vk_vertex_attribute_state *attrib_info =
       &vi->attributes[attrib_idx];
    const struct vk_vertex_binding_state *buf_info =
       &vi->bindings[attrib_info->binding];
+   const uint32_t stride = dyns->vi_binding_strides[attrib_info->binding];
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
    enum pipe_format f = vk_format_to_pipe_format(attrib_info->format);
    unsigned buf_idx = vb_desc_offset + attrib_info->binding;
@@ -61,15 +63,13 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
    pan_pack(desc, ATTRIBUTE, cfg) {
       cfg.offset = attrib_info->offset;
 
-      if (per_instance) {
-         cfg.offset +=
-            cmdbuf->state.gfx.sysvals.vs.base_instance * buf_info->stride;
-      }
+      if (per_instance)
+         cfg.offset += cmdbuf->state.gfx.sysvals.vs.base_instance * stride;
 
       cfg.format = GENX(panfrost_format_from_pipe_format)(f)->hw;
       cfg.table = 0;
       cfg.buffer_index = buf_idx;
-      cfg.stride = buf_info->stride;
+      cfg.stride = stride;
       if (!per_instance) {
          /* Per-vertex */
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D;
@@ -117,17 +117,19 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
-   const struct vk_vertex_input_state *vi =
-      cmdbuf->vk.dynamic_graphics_state.vi;
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
+   const struct vk_vertex_input_state *vi = dyns->vi;
    uint32_t vb_count = 0;
 
    cmdbuf->state.gfx.vi.attribs_changing_on_base_instance = 0;
    u_foreach_bit(i, vi->attributes_valid) {
       const struct vk_vertex_binding_state *binding =
          &vi->bindings[vi->attributes[i].binding];
+      const uint32_t stride =
+         dyns->vi_binding_strides[vi->attributes[i].binding];
 
-      if (binding->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE &&
-          binding->stride != 0) {
+      if (binding->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE && stride != 0) {
          cmdbuf->state.gfx.vi.attribs_changing_on_base_instance |=
             BITFIELD_BIT(i);
       }
@@ -2250,8 +2252,9 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    if (patch_attribs != 0) {
       struct panvk_shader_desc_state *vs_desc_state =
          &cmdbuf->state.gfx.vs.desc;
-      const struct vk_vertex_input_state *vi =
-         cmdbuf->vk.dynamic_graphics_state.vi;
+      const struct vk_dynamic_graphics_state *dyns =
+         &cmdbuf->vk.dynamic_graphics_state;
+      const struct vk_vertex_input_state *vi = dyns->vi;
 
       cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
 
@@ -2261,8 +2264,8 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
          u_foreach_bit(i, patch_attribs) {
             const struct vk_vertex_attribute_state *attrib_info =
                &vi->attributes[i];
-            const struct vk_vertex_binding_state *binding =
-               &vi->bindings[attrib_info->binding];
+            const uint32_t stride =
+               dyns->vi_binding_strides[attrib_info->binding];
 
             cs_load32_to(b, attrib_offset, vs_drv_set,
                          pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
@@ -2273,7 +2276,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
              * is present. This is sub-optimal, but it's simple :-). */
             cs_add32(b, multiplicand, cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
             for (uint32_t i = 31; i > 0; i--) {
-               uint32_t add = binding->stride << i;
+               uint32_t add = stride << i;
 
                /* bit31 is the sign bit, so we don't need to subtract to
                 * check the presence of the bit. */
@@ -2292,7 +2295,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
             }
 
             cs_if(b, MALI_CS_CONDITION_NEQUAL, multiplicand)
-               cs_add32(b, attrib_offset, attrib_offset, binding->stride);
+               cs_add32(b, attrib_offset, attrib_offset, stride);
 
             cs_store32(b, attrib_offset, vs_drv_set,
                        pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
