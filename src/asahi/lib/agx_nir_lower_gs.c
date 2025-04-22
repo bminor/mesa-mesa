@@ -1456,7 +1456,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
 
    info->prefix_sum = info->count_words > 0 && gs->xfb_info != NULL;
 
-   if (static_vertices >= 0 && static_primitives >= 0) {
+   if (static_vertices[0] >= 0 && static_primitives[0] >= 0) {
       optimize_static_topology(info, gs);
    } else {
       info->dynamic_topology = true;
