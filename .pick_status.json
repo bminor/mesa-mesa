@@ -394,7 +394,7 @@
         "description": "panvk: reset dyn_bufs map count to 0 in create_copy_table",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e350c334b6b2c7b420f326501533984c43d7c900",
         "notes": null
