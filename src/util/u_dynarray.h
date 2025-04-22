@@ -135,6 +135,18 @@ util_dynarray_resize_bytes(struct util_dynarray *buf, unsigned nelts, size_t elt
    return p;
 }
 
+MUST_CHECK static inline void *
+util_dynarray_resize_bytes_zero(struct util_dynarray *buf, unsigned nelts, size_t eltsize)
+{
+   size_t size = buf->capacity;
+   void *ret = util_dynarray_resize_bytes(buf, nelts, eltsize);
+   if (ret) {
+      uint8_t *data = (uint8_t*)buf->data;
+      memset(data + size, 0, buf->capacity - size);
+   }
+   return ret;
+}
+
 static inline void
 util_dynarray_clone(struct util_dynarray *buf, void *mem_ctx,
                     struct util_dynarray *from_buf)
@@ -203,6 +215,7 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 #define util_dynarray_append_array(buf, type, v, count) do {memcpy(util_dynarray_grow_bytes((buf), count, sizeof(type)), v, sizeof(type) * count);} while(0)
 /* Returns a pointer to the space of the first new element (in case of growth) or NULL on failure. */
 #define util_dynarray_resize(buf, type, nelts) util_dynarray_resize_bytes(buf, (nelts), sizeof(type))
+#define util_dynarray_resize_zero(buf, type, nelts) util_dynarray_resize_bytes_zero(buf, (nelts), sizeof(type))
 #define util_dynarray_grow(buf, type, ngrow) util_dynarray_grow_bytes(buf, (ngrow), sizeof(type))
 #define util_dynarray_top_ptr(buf, type) ((type*)((char*)(buf)->data + (buf)->size - sizeof(type)))
 #define util_dynarray_top(buf, type) *util_dynarray_top_ptr(buf, type)
@@ -243,4 +256,3 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 #endif
 
 #endif /* U_DYNARRAY_H */
-
