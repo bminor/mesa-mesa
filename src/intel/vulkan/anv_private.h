@@ -1562,7 +1562,7 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_WA_14018283232, /* Fake state to implement workaround */
    ANV_GFX_STATE_TBIMR_TILE_PASS_INFO,
    ANV_GFX_STATE_FS_MSAA_FLAGS,
-   ANV_GFX_STATE_TCS_INPUT_VERTICES,
+   ANV_GFX_STATE_TESS_CONFIG,
    ANV_GFX_STATE_MESH_PROVOKING_VERTEX,
 
    ANV_GFX_STATE_MAX,
@@ -1949,12 +1949,9 @@ struct anv_gfx_dynamic_state {
    enum intel_msaa_flags fs_msaa_flags;
 
    /**
-    * Dynamic TCS input vertices, this value can be different from
-    * anv_driver_constants::gfx::tcs_input_vertices, as the push constant
-    * value only needs to be updated for tesselation control shaders
-    * dynamically checking the value.
+    * Dynamic tesselation configuration (see enum intel_tess_config).
     */
-   uint32_t tcs_input_vertices;
+   uint32_t tess_config;
 
    /**
     * Provoking vertex index, sent to the mesh shader for Wa_18019110168.
@@ -3972,8 +3969,8 @@ struct anv_push_constants {
          /** Dynamic MSAA value */
          uint32_t fs_msaa_flags;
 
-         /** Dynamic TCS input vertices */
-         uint32_t tcs_input_vertices;
+         /** Dynamic TCS/TES configuration */
+         uint32_t tess_config;
 
          /** Robust access pushed registers. */
          uint8_t push_reg_mask[MESA_SHADER_STAGES][4];

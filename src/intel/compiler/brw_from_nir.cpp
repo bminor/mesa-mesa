@@ -3321,6 +3321,11 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
       break;
    }
 
+   case nir_intrinsic_load_tess_config_intel:
+      bld.MOV(retype(dst, BRW_TYPE_UD),
+              brw_uniform_reg(tcs_prog_data->tess_config_param, BRW_TYPE_UD));
+      break;
+
    default:
       brw_from_nir_emit_intrinsic(ntb, bld, instr);
       break;
@@ -3429,6 +3434,12 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
       }
       break;
    }
+
+   case nir_intrinsic_load_tess_config_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD),
+              brw_uniform_reg(tes_prog_data->tess_config_param, BRW_TYPE_UD));
+      break;
+
    default:
       brw_from_nir_emit_intrinsic(ntb, bld, instr);
       break;

@@ -2440,10 +2440,19 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
     * reemit if needed.
     */
    const struct brw_tcs_prog_data *tcs_prog_data = get_gfx_tcs_prog_data(gfx);
-   if (tcs_prog_data && tcs_prog_data->input_vertices == 0 &&
+   const bool tcs_dynamic =
+      tcs_prog_data && tcs_prog_data->input_vertices == 0;
+   if (tcs_dynamic &&
        ((gfx->dirty & ANV_CMD_DIRTY_HS) ||
-        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
-      SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
+        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS))) {
+      SET(TESS_CONFIG, tess_config,
+          intel_tess_config(dyn->ts.patch_control_points,
+                            tcs_prog_data->instances,
+                            0,
+                            tcs_prog_data->base.vue_map.num_per_patch_slots,
+                            tcs_prog_data->base.vue_map.num_per_vertex_slots,
+                            tcs_prog_data->base.vue_map.builtins_slot_offset));
+   }
 
 #if INTEL_WA_18019110168_GFX_VER
    const struct brw_mesh_prog_data *mesh_prog_data = get_gfx_mesh_prog_data(gfx);
@@ -3388,7 +3397,7 @@ genX(emit_urb_setup)(struct anv_batch *batch,
    }
 
 #if GFX_VERx10 >= 125
-   if (device->vk.enabled_extensions.EXT_mesh_shader) {
+   if (device->vk.enabled_features.meshShader) {
       anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_TASK), urb) {
          if (urb_cfg->size[MESA_SHADER_TASK] > 0)
             urb.TASKURBEntryAllocationSize = urb_cfg->size[MESA_SHADER_TASK] - 1;
@@ -3463,8 +3472,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
     * Values provided by push constants
     */
 
-   if (IS_DIRTY(TCS_INPUT_VERTICES)) {
-      push_consts->gfx.tcs_input_vertices = dyn->ts.patch_control_points;
+   if (IS_DIRTY(TESS_CONFIG)) {
+      push_consts->gfx.tess_config = hw_state->tess_config;
       cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
       gfx->base.push_constants_data_dirty = true;
    }

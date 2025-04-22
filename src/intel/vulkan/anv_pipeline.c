@@ -940,12 +940,6 @@ accept_64bit_atomic_cb(const nir_intrinsic_instr *intrin, const void *data)
           intrin->def.bit_size == 64;
 }
 
-static nir_def *
-build_tcs_input_vertices(nir_builder *b, nir_instr *instr, void *data)
-{
-   return anv_load_driver_uniform(b, 1, gfx.tcs_input_vertices);
-}
-
 static void
 fixup_large_workgroup_image_coherency(nir_shader *nir)
 {
@@ -1055,15 +1049,6 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
       NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
    }
 
-   /* The patch control points are delivered through a push constant when
-    * dynamic.
-    */
-   if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-      NIR_PASS(_, nir, intel_nir_lower_patch_vertices_in,
-               stage->key.tcs.input_vertices,
-               build_tcs_input_vertices, NULL);
-   }
-
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    /* Apply lowering for 64bit atomics pre-Xe2 */
@@ -1169,9 +1154,12 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
 
    NIR_PASS(_, nir, anv_nir_compute_push_layout,
               pdevice, stage->key.base.robust_flags,
-              anv_graphics_pipeline_stage_fragment_dynamic(stage),
-              anv_graphics_pipeline_stage_mesh_dynamic(stage),
-              prog_data, &stage->bind_map, &push_map, mem_ctx);
+              &(struct anv_nir_push_layout_info) {
+                 .fragment_dynamic = anv_graphics_pipeline_stage_fragment_dynamic(stage),
+                 .mesh_dynamic = anv_graphics_pipeline_stage_mesh_dynamic(stage),
+              },
+              &stage->key.base, prog_data,
+              &stage->bind_map, &push_map, mem_ctx);
 
    NIR_PASS(_, nir, anv_nir_lower_resource_intel, pdevice,
                stage->bind_map.layout_type);

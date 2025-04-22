@@ -9,6 +9,7 @@
 #include "brw_generator.h"
 #include "brw_nir.h"
 #include "brw_private.h"
+#include "intel_nir.h"
 #include "dev/intel_debug.h"
 #include "util/macros.h"
 
@@ -65,7 +66,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
    const struct intel_device_info *devinfo = compiler->devinfo;
    nir_shader *nir = params->base.nir;
    const struct brw_tes_prog_key *key = params->key;
-   const struct intel_vue_map *input_vue_map = params->input_vue_map;
+   struct intel_vue_map input_vue_map;
    struct brw_tes_prog_data *prog_data = params->prog_data;
    const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
@@ -73,12 +74,23 @@ brw_compile_tes(const struct brw_compiler *compiler,
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 
-   nir->info.inputs_read = key->inputs_read;
-   nir->info.patch_inputs_read = key->patch_inputs_read;
+   if (params->input_vue_map != NULL) {
+      assert(!key->separate_tess_vue_layout);
+      nir->info.inputs_read = key->inputs_read;
+      nir->info.patch_inputs_read = key->patch_inputs_read;
+      memcpy(&input_vue_map, params->input_vue_map,
+             sizeof(input_vue_map));
+   } else {
+      brw_compute_tess_vue_map(&input_vue_map,
+                               nir->info.inputs_read,
+                               nir->info.patch_inputs_read,
+                               key->separate_tess_vue_layout);
+   }
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
-   brw_nir_lower_tes_inputs(nir, input_vue_map);
+   brw_nir_lower_tes_inputs(nir, &input_vue_map);
    brw_nir_lower_vue_outputs(nir);
+   NIR_PASS(_, nir, intel_nir_lower_patch_vertices_tes);
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);
 
@@ -155,7 +167,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
 
    if (unlikely(debug_enabled)) {
       fprintf(stderr, "TES Input ");
-      brw_print_vue_map(stderr, input_vue_map, MESA_SHADER_TESS_EVAL);
+      brw_print_vue_map(stderr, &input_vue_map, MESA_SHADER_TESS_EVAL);
       fprintf(stderr, "TES Output ");
       brw_print_vue_map(stderr, &prog_data->base.vue_map,
                         MESA_SHADER_TESS_EVAL);

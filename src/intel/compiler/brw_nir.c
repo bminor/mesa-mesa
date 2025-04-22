@@ -142,15 +142,45 @@ type_size_dvec4(const struct glsl_type *type, bool bindless)
 }
 
 static bool
-remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
-                  enum tess_primitive_mode _primitive_mode)
+is_input(nir_intrinsic_instr *intrin)
 {
-   const int location = nir_intrinsic_base(intr);
+   return intrin->intrinsic == nir_intrinsic_load_input ||
+          intrin->intrinsic == nir_intrinsic_load_per_primitive_input ||
+          intrin->intrinsic == nir_intrinsic_load_per_vertex_input ||
+          intrin->intrinsic == nir_intrinsic_load_interpolated_input;
+}
+
+static bool
+is_output(nir_intrinsic_instr *intrin)
+{
+   return intrin->intrinsic == nir_intrinsic_load_output ||
+          intrin->intrinsic == nir_intrinsic_load_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_load_per_view_output ||
+          intrin->intrinsic == nir_intrinsic_store_output ||
+          intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_store_per_view_output;
+}
+
+static bool
+remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intr)) &&
+       !(b->shader->info.stage == MESA_SHADER_TESS_EVAL && is_input(intr)))
+      return false;
+
+   /* Handled in a different pass */
+   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intr);
+   if (io_sem.location != VARYING_SLOT_TESS_LEVEL_INNER &&
+       io_sem.location != VARYING_SLOT_TESS_LEVEL_OUTER)
+      return false;
+
    const unsigned component = nir_intrinsic_component(intr);
    bool out_of_bounds = false;
    bool write = !nir_intrinsic_infos[intr->intrinsic].has_dest;
    unsigned mask = write ? nir_intrinsic_write_mask(intr) : 0;
    nir_def *src = NULL, *dest = NULL;
+
+   enum tess_primitive_mode _primitive_mode = (uintptr_t)data;
 
    if (write) {
       assert(intr->num_components == intr->src[0].ssa->num_components);
@@ -158,7 +188,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
       assert(intr->num_components == intr->def.num_components);
    }
 
-   if (location == VARYING_SLOT_TESS_LEVEL_INNER) {
+   if (io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER) {
       b->cursor = write ? nir_before_instr(&intr->instr)
                         : nir_after_instr(&intr->instr);
 
@@ -201,7 +231,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
       default:
          UNREACHABLE("Bogus tessellation domain");
       }
-   } else if (location == VARYING_SLOT_TESS_LEVEL_OUTER) {
+   } else {
       b->cursor = write ? nir_before_instr(&intr->instr)
                         : nir_after_instr(&intr->instr);
 
@@ -253,8 +283,6 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
       default:
          UNREACHABLE("Bogus tessellation domain");
       }
-   } else {
-      return false;
    }
 
    if (out_of_bounds) {
@@ -275,72 +303,190 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
 }
 
 static bool
-is_input(nir_intrinsic_instr *intrin)
+remap_tess_header_values(nir_shader *nir, enum tess_primitive_mode _primitive_mode)
 {
-   return intrin->intrinsic == nir_intrinsic_load_input ||
-          intrin->intrinsic == nir_intrinsic_load_per_primitive_input ||
-          intrin->intrinsic == nir_intrinsic_load_per_vertex_input ||
-          intrin->intrinsic == nir_intrinsic_load_interpolated_input;
+   return nir_shader_intrinsics_pass(nir, remap_tess_levels,
+                                     nir_metadata_control_flow,
+                                     (void*)(uintptr_t)_primitive_mode);
 }
 
-static bool
-is_output(nir_intrinsic_instr *intrin)
-{
-   return intrin->intrinsic == nir_intrinsic_load_output ||
-          intrin->intrinsic == nir_intrinsic_load_per_vertex_output ||
-          intrin->intrinsic == nir_intrinsic_load_per_view_output ||
-          intrin->intrinsic == nir_intrinsic_store_output ||
-          intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
-          intrin->intrinsic == nir_intrinsic_store_per_view_output;
-}
-
-struct remap_patch_urb_offset_state {
-   const struct intel_vue_map *vue_map;
-   enum tess_primitive_mode tes_primitive_mode;
+struct tess_levels_temporary_state {
+   nir_variable *inner_factors_var;
+   nir_variable *outer_factors_var;
 };
 
 static bool
-remap_patch_urb_offsets(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
+remap_tess_levels_to_temporary(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 {
-   struct remap_patch_urb_offset_state *state = data;
+   if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intrin)))
+      return false;
 
+   /* Handled in a different pass */
+   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+   if (io_sem.location != VARYING_SLOT_TESS_LEVEL_INNER &&
+       io_sem.location != VARYING_SLOT_TESS_LEVEL_OUTER)
+      return false;
+
+   struct tess_levels_temporary_state *state = data;
+
+   nir_variable *var = io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ?
+      state->inner_factors_var : state->outer_factors_var;
+   if (nir_intrinsic_infos[intrin->intrinsic].has_dest) {
+      b->cursor = nir_after_instr(&intrin->instr);
+      nir_def *new_val =
+         nir_load_array_var(b, var,
+                            nir_iadd_imm(b, nir_get_io_offset_src(intrin)->ssa,
+                                            nir_intrinsic_component(intrin)));
+      nir_def_replace(&intrin->def, new_val);
+   } else {
+      b->cursor = nir_instr_remove(&intrin->instr);
+      nir_store_array_var(b, var,
+                          nir_iadd_imm(b, nir_get_io_offset_src(intrin)->ssa,
+                                          nir_intrinsic_component(intrin)),
+                          intrin->src[0].ssa,
+                          nir_intrinsic_write_mask(intrin));
+   }
+
+   return true;
+}
+
+static bool
+remap_tess_header_values_dynamic(nir_shader *nir, const struct intel_device_info *devinfo)
+{
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+
+   struct tess_levels_temporary_state state = {
+      .inner_factors_var = nir_local_variable_create(
+         impl, glsl_array_type(glsl_uint_type(), 2, 0),
+         "__temp_inner_factors"),
+      .outer_factors_var = nir_local_variable_create(
+         impl, glsl_array_type(glsl_uint_type(), 4, 0),
+         "__temp_outer_factors"),
+   };
+
+   nir_shader_intrinsics_pass(nir, remap_tess_levels_to_temporary,
+                              nir_metadata_control_flow, &state);
+
+   nir_builder _b = nir_builder_at(nir_after_impl(impl)), *b = &_b;
+
+   nir_def *tess_config = nir_load_tess_config_intel(b);
+   nir_def *is_quad =
+      nir_test_mask(b, tess_config, INTEL_TESS_CONFIG_QUADS);
+   nir_def *is_tri =
+      nir_test_mask(b, tess_config, INTEL_TESS_CONFIG_TRIANGLES);
+   nir_def *is_quad_tri =
+      nir_test_mask(b, tess_config, (INTEL_TESS_CONFIG_QUADS |
+                                     INTEL_TESS_CONFIG_TRIANGLES));
+   nir_def *zero = nir_imm_int(b, 0);
+
+   /* Format below is described in the SKL PRMs, Volume 7: 3D-Media-GPGPU,
+    * Patch URB Entry (Patch Record) Output, Patch Header DW0-7
+    *
+    * Based on topology we use one of those :
+    *    - Patch Header: QUAD Domain / LEGACY Patch Header Layout
+    *    - Patch Header: TRI Domain / LEGACY Patch Header Layout
+    *    - Patch Header: ISOLINE Domain / LEGACY Patch Header Layout
+    *
+    * There are more convenient layouts in more recent generations but they're
+    * not available on all platforms.
+    */
+   nir_def *values[8] = {
+      zero,
+      zero,
+      nir_bcsel(b, is_quad_tri, nir_load_array_var_imm(b, state.inner_factors_var, 1), zero),
+      nir_bcsel(b, is_quad_tri, nir_load_array_var_imm(b, state.inner_factors_var, 0), zero),
+
+      nir_bcsel(b, is_quad, nir_load_array_var_imm(b, state.outer_factors_var, 3),
+                            nir_bcsel(b, is_tri, nir_load_array_var_imm(b, state.inner_factors_var, 0),
+                                                 zero)),
+      nir_bcsel(b, is_quad_tri, nir_load_array_var_imm(b, state.outer_factors_var, 2), zero),
+      nir_bcsel(b, is_quad_tri, nir_load_array_var_imm(b, state.outer_factors_var, 1),
+                                nir_load_array_var_imm(b, state.outer_factors_var, 0)),
+      nir_bcsel(b, is_quad_tri, nir_load_array_var_imm(b, state.outer_factors_var, 0),
+                                nir_load_array_var_imm(b, state.outer_factors_var, 1)),
+   };
+
+   nir_store_output(b, nir_vec(b, &values[0], 4), zero, .base = 0,
+                    .io_semantics.location = VARYING_SLOT_TESS_LEVEL_INNER);
+   nir_store_output(b, nir_vec(b, &values[4], 4), zero, .base = 1,
+                    .io_semantics.location = VARYING_SLOT_TESS_LEVEL_OUTER);
+
+   nir_progress(true, impl, nir_metadata_none);
+
+   return true;
+}
+
+static bool
+remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
+{
    if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intrin)) &&
        !(b->shader->info.stage == MESA_SHADER_TESS_EVAL && is_input(intrin)))
       return false;
 
-   if (remap_tess_levels(b, intrin, state->tes_primitive_mode))
+   /* Handled in a different pass */
+   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+   if (io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
+       io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER)
       return false;
 
-   int vue_slot = state->vue_map->varying_to_slot[intrin->const_index[0]];
+   gl_varying_slot varying = intrin->const_index[0];
+
+   const struct intel_vue_map *vue_map = data;
+   int vue_slot = vue_map->varying_to_slot[varying];
    assert(vue_slot != -1);
    intrin->const_index[0] = vue_slot;
 
    nir_src *vertex = nir_get_io_arrayed_index_src(intrin);
    if (vertex) {
-      if (nir_src_is_const(*vertex)) {
-         intrin->const_index[0] += nir_src_as_uint(*vertex) *
-            state->vue_map->num_per_vertex_slots;
-      } else {
-         b->cursor = nir_before_instr(&intrin->instr);
+      b->cursor = nir_before_instr(&intrin->instr);
 
-         /* Multiply by the number of per-vertex slots. */
-         nir_def *vertex_offset =
-            nir_imul(b,
-                     vertex->ssa,
-                     nir_imm_int(b,
-                                 state->vue_map->num_per_vertex_slots));
+      bool dyn_tess_config =
+         b->shader->info.stage == MESA_SHADER_TESS_EVAL &&
+         vue_map->layout != INTEL_VUE_LAYOUT_FIXED;
+      nir_def *num_per_vertex_slots =
+         dyn_tess_config ? intel_nir_tess_field(b, PER_VERTEX_SLOTS) :
+         nir_imm_int(b, vue_map->num_per_vertex_slots);
 
-         /* Add it to the existing offset */
-         nir_src *offset = nir_get_io_offset_src(intrin);
-         nir_def *total_offset =
-            nir_iadd(b, vertex_offset,
-                     offset->ssa);
+      /* Multiply by the number of per-vertex slots. */
+      nir_def *vertex_offset = nir_imul(b, vertex->ssa, num_per_vertex_slots);
 
-         nir_src_rewrite(offset, total_offset);
+      /* Add it to the existing offset */
+      nir_src *offset = nir_get_io_offset_src(intrin);
+      nir_def *total_offset = nir_iadd(b, vertex_offset, offset->ssa);
+
+      /* In the Tessellation evaluation shader, reposition the offset of
+       * builtins when using separate layout.
+       */
+      if (dyn_tess_config) {
+         if (varying < VARYING_SLOT_VAR0) {
+            nir_def *builtins_offset = intel_nir_tess_field(b, BUILTINS);
+            nir_def *builtins_base_offset = nir_iadd_imm(
+               b, builtins_offset,
+               vue_map->varying_to_slot[varying] - vue_map->builtins_slot_offset);
+
+            total_offset = nir_iadd(b, total_offset, builtins_base_offset);
+         } else {
+            nir_def *vertices_offset = intel_nir_tess_field(b, PER_PATCH_SLOTS);
+            nir_def *vertices_base_offset = nir_iadd_imm(
+               b, vertices_offset,
+               vue_map->varying_to_slot[varying] - vue_map->num_per_patch_slots);
+
+            total_offset = nir_iadd(b, total_offset, vertices_base_offset);
+         }
+         nir_intrinsic_set_base(intrin, 0);
       }
+
+      nir_src_rewrite(offset, total_offset);
    }
 
    return true;
+}
+
+static bool
+remap_non_header_patch_urb_offsets(nir_shader *nir, const struct intel_vue_map *vue_map)
+{
+   return nir_shader_intrinsics_pass(nir, remap_patch_urb_offsets_instr,
+                                     nir_metadata_control_flow, (void *)vue_map);
 }
 
 /* Replace store_per_view_output to plain store_output, mapping the view index
@@ -596,17 +742,22 @@ brw_nir_lower_tes_inputs(nir_shader *nir, const struct intel_vue_map *vue_map)
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Run add_const_offset_to_base to allow update base/io_semantic::location
+    * for the remapping pass to look into the VUE mapping.
+    */
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
+
+   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
+   NIR_PASS(_, nir, remap_tess_header_values, nir->info.tess._primitive_mode);
+
+   /* remap_non_header_patch_urb_offsets can add constant math into the
+    * shader, just fold it for the backend.
+    */
+   NIR_PASS(_, nir, nir_opt_algebraic);
    NIR_PASS(_, nir, nir_opt_constant_folding);
 
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
-
-   NIR_PASS(_, nir, nir_shader_intrinsics_pass, remap_patch_urb_offsets,
-            nir_metadata_control_flow,
-            &(struct remap_patch_urb_offset_state) {
-               .vue_map = vue_map,
-               .tes_primitive_mode = nir->info.tess._primitive_mode,
-            });
 }
 
 static bool
@@ -874,7 +1025,9 @@ brw_nir_lower_vue_outputs(nir_shader *nir)
 }
 
 void
-brw_nir_lower_tcs_outputs(nir_shader *nir, const struct intel_vue_map *vue_map,
+brw_nir_lower_tcs_outputs(nir_shader *nir,
+                          const struct intel_device_info *devinfo,
+                          const struct intel_vue_map *vue_map,
                           enum tess_primitive_mode tes_primitive_mode)
 {
    nir_foreach_shader_out_variable(var, nir) {
@@ -884,17 +1037,23 @@ brw_nir_lower_tcs_outputs(nir_shader *nir, const struct intel_vue_map *vue_map,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Run add_const_offset_to_base to allow update base/io_semantic::location
+    * for the remapping pass to look into the VUE mapping.
+    */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
-   NIR_PASS(_, nir, nir_shader_intrinsics_pass, remap_patch_urb_offsets,
-            nir_metadata_control_flow,
-            &(struct remap_patch_urb_offset_state) {
-               .vue_map = vue_map,
-               .tes_primitive_mode = tes_primitive_mode,
-            });
+   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
+   if (tes_primitive_mode != TESS_PRIMITIVE_UNSPECIFIED)
+      NIR_PASS(_, nir, remap_tess_header_values, tes_primitive_mode);
+   else
+      NIR_PASS(_, nir, remap_tess_header_values_dynamic, devinfo);
+
+   /* remap_non_header_patch_urb_offsets can add constant math into the
+    * shader, just fold it for the backend.
+    */
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 }
 
 void

@@ -263,6 +263,7 @@ brw_compute_vue_map(const struct intel_device_info *devinfo,
     * recompute state when TF changes, so we just always include it.
     */
    if (layout != INTEL_VUE_LAYOUT_SEPARATE_MESH) {
+      vue_map->builtins_slot_offset = slot;
       const uint64_t builtins = slots_valid & BITFIELD64_MASK(VARYING_SLOT_VAR0);
       u_foreach_bit64(varying, builtins) {
          /* Already assigned above? */
@@ -273,7 +274,11 @@ brw_compute_vue_map(const struct intel_device_info *devinfo,
    }
 
    const int first_generic_slot = slot;
-   const uint64_t generics = slots_valid & ~BITFIELD64_MASK(VARYING_SLOT_VAR0);
+   const uint64_t generics =
+      (layout != INTEL_VUE_LAYOUT_FIXED ?
+       BITFIELD64_MASK(util_last_bit64(slots_valid)) :
+       slots_valid) &
+      ~BITFIELD64_MASK(VARYING_SLOT_VAR0);
    u_foreach_bit64(varying, generics) {
       if (layout != INTEL_VUE_LAYOUT_FIXED) {
          slot = first_generic_slot + varying - VARYING_SLOT_VAR0;
@@ -282,6 +287,7 @@ brw_compute_vue_map(const struct intel_device_info *devinfo,
    }
 
    if (layout == INTEL_VUE_LAYOUT_SEPARATE_MESH) {
+      vue_map->builtins_slot_offset = slot;
       const uint64_t builtins = slots_valid & BITFIELD64_MASK(VARYING_SLOT_VAR0);
       u_foreach_bit64(varying, builtins) {
          /* Already assigned above? */
@@ -314,8 +320,11 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
    vertex_slots &= ~(VARYING_BIT_TESS_LEVEL_OUTER |
                      VARYING_BIT_TESS_LEVEL_INNER);
 
-   if (separate)
+   if (separate) {
       vertex_slots |= VARYING_BIT_POS;
+      vertex_slots |= VARYING_BIT_CLIP_DIST0;
+      vertex_slots |= VARYING_BIT_CLIP_DIST1;
+   }
 
    /* Make sure that the values we store in vue_map->varying_to_slot and
     * vue_map->slot_to_varying won't overflow the signed chars that are used
@@ -381,9 +390,11 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
          slot = first_generics_slot + varying - VARYING_SLOT_VAR0;
          assign_vue_slot(vue_map, varying, slot++);
       }
+      vue_map->builtins_slot_offset = slot;
       u_foreach_bit64(varying, builtins)
          assign_vue_slot(vue_map, varying, slot++);
    } else {
+      vue_map->builtins_slot_offset = slot;
       u_foreach_bit64(varying, builtins) {
          assign_vue_slot(vue_map, varying, slot++);
       }

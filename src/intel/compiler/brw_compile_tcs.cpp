@@ -204,14 +204,13 @@ brw_compile_tcs(const struct brw_compiler *compiler,
    brw_compute_tess_vue_map(&vue_prog_data->vue_map,
                             nir->info.outputs_written,
                             nir->info.patch_outputs_written,
-                            nir->info.separate_shader);
+                            key->separate_tess_vue_layout);
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_vue_inputs(nir, &input_vue_map);
-   brw_nir_lower_tcs_outputs(nir, &vue_prog_data->vue_map,
+   brw_nir_lower_tcs_outputs(nir, devinfo, &vue_prog_data->vue_map,
                              key->_tes_primitive_mode);
-   if (key->input_vertices > 0)
-      intel_nir_lower_patch_vertices_in(nir, key->input_vertices, NULL, NULL);
+   intel_nir_lower_patch_vertices_in(nir, key->input_vertices);
 
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);

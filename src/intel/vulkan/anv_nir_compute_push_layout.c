@@ -30,8 +30,8 @@ bool
 anv_nir_compute_push_layout(nir_shader *nir,
                             const struct anv_physical_device *pdevice,
                             enum brw_robustness_flags robust_flags,
-                            bool fragment_dynamic,
-                            bool mesh_dynamic,
+                            const struct anv_nir_push_layout_info *push_info,
+                            struct brw_base_prog_key *prog_key,
                             struct brw_stage_prog_data *prog_data,
                             struct anv_pipeline_bind_map *map,
                             const struct anv_pipeline_push_map *push_map,
@@ -92,7 +92,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
    const bool needs_wa_18019110168 =
       nir->info.stage == MESA_SHADER_FRAGMENT &&
       brw_nir_fragment_shader_needs_wa_18019110168(
-         devinfo, mesh_dynamic ? INTEL_SOMETIMES : INTEL_NEVER, nir);
+         devinfo, push_info->mesh_dynamic ? INTEL_SOMETIMES : INTEL_NEVER, nir);
 
    if (push_ubo_ranges && (robust_flags & BRW_ROBUSTNESS_UBO)) {
       /* We can't on-the-fly adjust our push ranges because doing so would
@@ -111,7 +111,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      if (fragment_dynamic) {
+      if (push_info->fragment_dynamic) {
          const uint32_t fs_msaa_flags_start =
             anv_drv_const_offset(gfx.fs_msaa_flags);
          const uint32_t fs_msaa_flags_end =
@@ -130,6 +130,17 @@ anv_nir_compute_push_layout(nir_shader *nir,
          push_start = MIN2(push_start, fs_per_prim_remap_start);
          push_end = MAX2(push_end, fs_per_prim_remap_end);
       }
+   }
+
+   const bool needs_dyn_tess_config =
+      nir->info.stage == MESA_SHADER_TESS_CTRL &&
+      container_of(prog_key, struct brw_tcs_prog_key, base)->input_vertices == 0;
+   if (needs_dyn_tess_config) {
+      const uint32_t tess_config_start = anv_drv_const_offset(gfx.tess_config);
+      const uint32_t tess_config_end = tess_config_start +
+                                       anv_drv_const_size(gfx.tess_config);
+      push_start = MIN2(push_start, tess_config_start);
+      push_end = MAX2(push_end, tess_config_end);
    }
 
    if (nir->info.stage == MESA_SHADER_COMPUTE && devinfo->verx10 < 125) {
@@ -244,7 +255,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
     */
    const bool needs_padding_per_primitive =
       needs_wa_18019110168 ||
-      (mesh_dynamic &&
+      (push_info->mesh_dynamic &&
        (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID));
 
    unsigned n_push_ranges = 0;
@@ -344,11 +355,20 @@ anv_nir_compute_push_layout(nir_shader *nir,
 
    assert(n_push_ranges <= 4);
 
+   if (nir->info.stage == MESA_SHADER_TESS_CTRL && needs_dyn_tess_config) {
+      struct brw_tcs_prog_data *tcs_prog_data =
+         container_of(prog_data, struct brw_tcs_prog_data, base.base);
+
+      const uint32_t tess_config_offset =
+         anv_drv_const_offset(gfx.tess_config);
+      assert(tess_config_offset >= push_start);
+      tcs_prog_data->tess_config_param = (tess_config_offset - push_start) / 4;
+   }
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct brw_wm_prog_data *wm_prog_data =
          container_of(prog_data, struct brw_wm_prog_data, base);
 
-      if (fragment_dynamic) {
+      if (push_info->fragment_dynamic) {
          const uint32_t fs_msaa_flags_offset =
             anv_drv_const_offset(gfx.fs_msaa_flags);
          assert(fs_msaa_flags_offset >= push_start);

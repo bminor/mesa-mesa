@@ -114,11 +114,16 @@ bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    struct anv_pipeline_push_map *push_map,
                                    void *push_map_mem_ctx);
 
+struct anv_nir_push_layout_info {
+   bool fragment_dynamic;
+   bool mesh_dynamic;
+};
+
 bool anv_nir_compute_push_layout(nir_shader *nir,
                                  const struct anv_physical_device *pdevice,
                                  enum brw_robustness_flags robust_flags,
-                                 bool fragment_dynamic,
-                                 bool mesh_dynamic,
+                                 const struct anv_nir_push_layout_info *info,
+                                 struct brw_base_prog_key *prog_key,
                                  struct brw_stage_prog_data *prog_data,
                                  struct anv_pipeline_bind_map *map,
                                  const struct anv_pipeline_push_map *push_map,
