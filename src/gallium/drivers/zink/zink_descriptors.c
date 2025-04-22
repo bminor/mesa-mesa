@@ -857,15 +857,9 @@ set_pool(struct zink_batch_state *bs, struct zink_program *pg, struct zink_descr
    assert(type != ZINK_DESCRIPTOR_TYPE_UNIFORMS);
    assert(mpool);
    const struct zink_descriptor_pool_key *pool_key = pg->dd.pool_key[type];
-   size_t size = bs->dd.pools[type].capacity;
    /* ensure the pool array is big enough to have an element for this key */
-   if (!util_dynarray_resize(&bs->dd.pools[type], struct zink_descriptor_pool_multi*, pool_key->id + 1))
+   if (!util_dynarray_resize_zero(&bs->dd.pools[type], struct zink_descriptor_pool_multi*, pool_key->id + 1))
       return false;
-   if (size != bs->dd.pools[type].capacity) {
-      /* when resizing, always zero the new data to avoid garbage */
-      uint8_t *data = bs->dd.pools[type].data;
-      memset(data + size, 0, bs->dd.pools[type].capacity - size);
-   }
    /* dynarray can't track sparse array sizing, so the array size must be manually tracked */
    bs->dd.pool_size[type] = MAX2(bs->dd.pool_size[type], pool_key->id + 1);
    struct zink_descriptor_pool_multi **mppool = util_dynarray_element(&bs->dd.pools[type], struct zink_descriptor_pool_multi*, pool_key->id);
