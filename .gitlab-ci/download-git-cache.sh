@@ -16,8 +16,8 @@ fi
 TMP_DIR=$(mktemp -d)
 
 echo "$(date +"%F %T") Downloading archived master..."
-if ! /usr/bin/wget \
-	      -O "$TMP_DIR/$CI_PROJECT_NAME.tar.gz" \
+if ! curl --location --fail --retry-connrefused --retry 3 --retry-delay 10 \
+              --output "$TMP_DIR/$CI_PROJECT_NAME.tar.gz" \
               "https://${S3_HOST}/${S3_GITCACHE_BUCKET}/${FDO_UPSTREAM_REPO}/$CI_PROJECT_NAME.tar.gz";
 then
     echo "Repository cache not available"

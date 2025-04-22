@@ -81,9 +81,8 @@ variables:
   MESA_TEMPLATES_COMMIT: &ci-templates-commit ea3f77641d91765396beba192b8defd3085fa343
   CI_PRE_CLONE_SCRIPT: |-
           set -o xtrace
-          wget -q -O download-git-cache.sh ${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/download-git-cache.sh
-          bash download-git-cache.sh
-          rm download-git-cache.sh
+          curl --silent --location --fail --retry-connrefused --retry 3 --retry-delay 10 \
+            ${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/download-git-cache.sh | bash
           set +o xtrace
   S3_JWT_FILE: /s3_jwt
   S3_JWT_FILE_SCRIPT: |-
