@@ -487,6 +487,7 @@ panvk_GetDeviceImageMemoryRequirements(VkDevice device,
       .image = panvk_image_to_handle(&image),
    };
    panvk_GetImageMemoryRequirements2(device, &info2, pMemoryRequirements);
+   vk_image_finish(&image.vk);
 }
 
 VKAPI_ATTR void VKAPI_CALL
