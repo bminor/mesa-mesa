@@ -102,6 +102,7 @@ struct vpe_color vpe_get_visual_confirm_color(enum vpe_surface_pixel_format form
         case VPE_TF_G22:
         case VPE_TF_G24:
         case VPE_TF_SRGB:
+        case VPE_TF_BT709:
             visual_confirm_color.rgba.r = 1.0;
             visual_confirm_color.rgba.g = 1.0;
             visual_confirm_color.rgba.b = 0.0;
