@@ -326,7 +326,7 @@ panvk_image_get_total_size(const struct panvk_image *image)
 }
 
 static bool
-is_disjoint(struct panvk_image *image)
+is_disjoint(const struct panvk_image *image)
 {
    assert((image->plane_count > 1 &&
            image->vk.format != VK_FORMAT_D32_SFLOAT_S8_UINT) ||
