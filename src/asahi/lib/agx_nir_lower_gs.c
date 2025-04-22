@@ -1586,7 +1586,7 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
 
-   nir_def *buffer, *nr_verts;
+   nir_def *buffer, *nr_verts, *instance_id, *primitive_id;
    if (b->shader->info.stage == MESA_SHADER_VERTEX) {
       buffer = nir_load_vs_output_buffer_agx(b);
       nr_verts =
@@ -1599,8 +1599,17 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       buffer = libagx_tes_buffer(b, nir_load_tess_param_buffer_agx(b));
    }
 
-   nir_def *linear_id = nir_iadd(b, nir_imul(b, load_instance_id(b), nr_verts),
-                                 load_primitive_id(b));
+   if (b->shader->info.stage == MESA_SHADER_VERTEX &&
+       !b->shader->info.vs.tes_agx) {
+      primitive_id = nir_load_vertex_id_zero_base(b);
+      instance_id = nir_load_instance_id(b);
+   } else {
+      primitive_id = load_primitive_id(b);
+      instance_id = load_instance_id(b);
+   }
+
+   nir_def *linear_id =
+      nir_iadd(b, nir_imul(b, instance_id, nr_verts), primitive_id);
 
    nir_def *addr = libagx_vertex_output_address(
       b, buffer, nir_imm_int64(b, b->shader->info.outputs_written), linear_id,
