@@ -396,6 +396,7 @@ get_device_extensions(const struct anv_physical_device *device,
    if (vk_android_get_ugralloc() != NULL) {
       ext->ANDROID_external_memory_android_hardware_buffer = true,
       ext->ANDROID_native_buffer = true;
+      ext->ANDROID_external_format_resolve = true;
    }
 }
 
