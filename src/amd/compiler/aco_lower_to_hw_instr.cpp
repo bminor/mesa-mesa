@@ -1399,15 +1399,18 @@ do_copy(lower_context* ctx, Builder& bld, const copy_operation& copy, bool* pres
 }
 
 void
+swap_bytes_bperm(Builder& bld, Definition def, Operand op)
+{
+   assert(def.physReg().reg() == op.physReg().reg());
+   uint8_t swiz[] = {4, 5, 6, 7};
+   std::swap(swiz[def.physReg().byte()], swiz[op.physReg().byte()]);
+   create_bperm(bld, swiz, def, Operand::zero());
+}
+
+void
 swap_subdword_gfx11(Builder& bld, Definition def, Operand op)
 {
-   if (def.physReg().reg() == op.physReg().reg()) {
-      assert(def.bytes() != 2); /* handled by caller */
-      uint8_t swiz[] = {4, 5, 6, 7};
-      std::swap(swiz[def.physReg().byte()], swiz[op.physReg().byte()]);
-      create_bperm(bld, swiz, def, Operand::zero());
-      return;
-   }
+   assert(def.physReg().reg() != op.physReg().reg()); /* handled by caller */
 
    if (def.bytes() == 2) {
       Operand def_as_op = Operand(def.physReg(), def.regClass());
@@ -1446,7 +1449,7 @@ swap_subdword_gfx11(Builder& bld, Definition def, Operand op)
        * into the same VGPR.
        */
       swap_subdword_gfx11(bld, Definition(def_other_half, v2b), Operand(op_half, v2b));
-      swap_subdword_gfx11(bld, def, Operand(def_other_half.advance(op.physReg().byte() & 1), v1b));
+      swap_bytes_bperm(bld, def, Operand(def_other_half.advance(op.physReg().byte() & 1), v1b));
       swap_subdword_gfx11(bld, Definition(def_other_half, v2b), Operand(op_half, v2b));
    }
 }
@@ -1532,6 +1535,9 @@ do_swap(lower_context* ctx, Builder& bld, const copy_operation& copy, bool prese
       } else if (def.bytes() == 2 && def.physReg().reg() == op.physReg().reg()) {
          bld.vop3(aco_opcode::v_alignbyte_b32, Definition(def.physReg(), v1), def_as_op, op,
                   Operand::c32(2u));
+      } else if (def.bytes() == 1 && def.physReg().reg() == op.physReg().reg() &&
+                 ctx->program->gfx_level >= GFX10) {
+         swap_bytes_bperm(bld, def, op);
       } else {
          assert(def.regClass().is_subdword());
          if (ctx->program->gfx_level >= GFX11) {
