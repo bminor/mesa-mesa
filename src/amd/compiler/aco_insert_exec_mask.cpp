@@ -54,6 +54,7 @@ struct exec_ctx {
    std::vector<block_info> info;
    std::vector<loop_info> loop;
    bool handle_wqm = false;
+   bool had_demote_in_cf = false;
    exec_ctx(Program* program_) : program(program_), info(program->blocks.size()) {}
 };
 
@@ -370,11 +371,15 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
             ctx.handle_wqm = false;
             restore_exec = false;
             i++;
-         } else if (restore_exec && ctx.info[idx].exec[1].type & mask_type_global) {
-            /* Use s_wqm to restore exec after divergent CF in order to disable dead quads. */
+         } else if (restore_exec && ctx.info[idx].exec[1].type & mask_type_global &&
+                    ctx.had_demote_in_cf) {
+            /* Use s_wqm to restore exec after demote in divergent CF in order to disable dead
+             * quads.
+             */
             bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), bld.def(s1, scc),
                      ctx.info[idx].exec[0].op);
             restore_exec = false;
+            ctx.had_demote_in_cf = false;
          }
       }
    }
@@ -546,6 +551,8 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
                bld.sop2(Builder::s_cselect, Definition(exec, bld.lm), Operand(exec, bld.lm),
                         Operand::zero(bld.lm.bytes()), bld.scc(cond));
                exit_cond = Operand(cond, scc);
+               /* Remember to disable empty quads in top level control flow. */
+               ctx.had_demote_in_cf = true;
             }
          }
 
