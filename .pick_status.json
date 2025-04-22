@@ -14,7 +14,7 @@
         "description": "aco/insert_exec: only restore wqm mask after control flow if necessary",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b872ff6ef28bc44ac0f7aa5f963a273e40c79a61",
         "notes": null
