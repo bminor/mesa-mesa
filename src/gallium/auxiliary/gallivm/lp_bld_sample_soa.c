@@ -3556,7 +3556,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
    } else {
       LLVMValueRef lod_fpart = NULL, lod_positive = NULL;
       LLVMValueRef ilevel0 = NULL, ilevel1 = NULL, lod = NULL;
-      struct lp_aniso_values aniso_values = {};
+      struct lp_aniso_values aniso_values = {0};
       bool use_aos = util_format_fits_8unorm(bld.format_desc) &&
                 op_is_tex &&
                 /* not sure this is strictly needed or simply impossible */
