@@ -16,6 +16,81 @@
 #define MAX_SO_BUFFERS     4
 #define MAX_VERTEX_STREAMS 4
 
+enum agx_gs_shape {
+   /* Indexed, where indices are encoded as:
+    *
+    *    round_to_pot(max_indices) * round_to_pot(input_primitives) *
+    *                              * instance_count
+    *
+    * invoked for max_indices * input_primitives * instance_count indices.
+    *
+    * This is used with any dynamic topology. No hardware instancing used.
+    */
+   AGX_GS_SHAPE_DYNAMIC_INDEXED,
+
+   /* Indexed with a static index buffer. Indices ranges up to max_indices.
+    * Hardware instance count = input_primitives * software instance count.
+    */
+   AGX_GS_SHAPE_STATIC_INDEXED,
+
+   /* Non-indexed. Dispatched as:
+    *
+    *    (max_indices, input_primitives * instance count).
+    */
+   AGX_GS_SHAPE_STATIC_PER_PRIM,
+
+   /* Non-indexed. Dispatched as:
+    *
+    *    (max_indices * input_primitives, instance count).
+    */
+   AGX_GS_SHAPE_STATIC_PER_INSTANCE,
+};
+
+static inline unsigned
+agx_gs_rast_vertices(enum agx_gs_shape shape, unsigned max_indices,
+                     unsigned input_primitives, unsigned instance_count)
+{
+   switch (shape) {
+   case AGX_GS_SHAPE_DYNAMIC_INDEXED:
+      return max_indices * input_primitives * instance_count;
+
+   case AGX_GS_SHAPE_STATIC_INDEXED:
+   case AGX_GS_SHAPE_STATIC_PER_PRIM:
+      return max_indices;
+
+   case AGX_GS_SHAPE_STATIC_PER_INSTANCE:
+      return max_indices * input_primitives;
+   }
+
+   unreachable("invalid shape");
+}
+
+static inline unsigned
+agx_gs_rast_instances(enum agx_gs_shape shape, unsigned max_indices,
+                      unsigned input_primitives, unsigned instance_count)
+{
+   switch (shape) {
+   case AGX_GS_SHAPE_DYNAMIC_INDEXED:
+      return 1;
+
+   case AGX_GS_SHAPE_STATIC_INDEXED:
+   case AGX_GS_SHAPE_STATIC_PER_PRIM:
+      return input_primitives * instance_count;
+
+   case AGX_GS_SHAPE_STATIC_PER_INSTANCE:
+      return instance_count;
+   }
+
+   unreachable("invalid shape");
+}
+
+static inline bool
+agx_gs_indexed(enum agx_gs_shape shape)
+{
+   return shape == AGX_GS_SHAPE_DYNAMIC_INDEXED ||
+          shape == AGX_GS_SHAPE_STATIC_INDEXED;
+}
+
 /* Packed geometry state buffer */
 struct agx_geometry_state {
    /* Heap to allocate from. */

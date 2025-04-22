@@ -615,45 +615,45 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast,
    if (shader->info.gs.output_primitive != MESA_PRIM_POINTS)
       shader->info.outputs_written &= ~VARYING_BIT_PSIZ;
 
-   nir_def *output_id, *unrolled;
-   if (state->info->instanced) {
-      /* vertex ID = ID within the primitive, instance ID = unrolled prim ID */
-      output_id = nir_load_vertex_id(b);
-      unrolled = nir_load_instance_id(b);
-   } else {
-      /* vertex ID = unrolled (see calc_unrolled_index_id), no instancing */
-      nir_def *raw_id = nir_load_vertex_id(b);
-      unsigned stride = state->info->indexed
-                           ? output_vertex_id_pot_stride(gs)
-                           : MAX2(state->info->max_indices, 1);
+   nir_def *raw_vertex_id = nir_load_vertex_id(b);
+   struct lower_gs_rast_state rs = {.raw_instance_id = nir_load_instance_id(b)};
 
-      output_id = nir_umod_imm(b, raw_id, stride);
-      unrolled = nir_udiv_imm(b, raw_id, stride);
-   }
+   switch (state->info->shape) {
+   case AGX_GS_SHAPE_DYNAMIC_INDEXED: {
+      unsigned stride = output_vertex_id_pot_stride(gs);
 
-   /* If we are indexed, we know indices are sparse and rounded up to powers of
-    * two, so we can just shift & mask to pick apart. Otherwise, we fall back on
-    * a slower integer division.
-    */
-   nir_def *instance_id, *primitive_id;
-   if (state->info->indexed) {
+      nir_def *unrolled = nir_udiv_imm(b, raw_vertex_id, stride);
       nir_def *primitives_log2 = load_geometry_param(b, primitives_log2);
-      instance_id = nir_ushr(b, unrolled, primitives_log2);
-      primitive_id = nir_iand(
-         b, unrolled,
-         nir_iadd_imm(b, nir_ishl(b, nir_imm_int(b, 1), primitives_log2), -1));
-   } else {
-      nir_def *primitives = load_geometry_param(b, gs_grid[0]);
-      instance_id = nir_udiv(b, unrolled, primitives);
-      primitive_id = nir_umod(b, unrolled, primitives);
+      nir_def *bit = nir_ishl(b, nir_imm_int(b, 1), primitives_log2);
+
+      rs.output_id = nir_umod_imm(b, raw_vertex_id, stride);
+      rs.instance_id = nir_ushr(b, unrolled, primitives_log2);
+      rs.primitive_id = nir_iand(b, unrolled, nir_iadd_imm(b, bit, -1));
+      break;
    }
 
-   struct lower_gs_rast_state rast_state = {
-      .raw_instance_id = unrolled,
-      .instance_id = instance_id,
-      .primitive_id = primitive_id,
-      .output_id = output_id,
-   };
+   case AGX_GS_SHAPE_STATIC_INDEXED:
+   case AGX_GS_SHAPE_STATIC_PER_PRIM: {
+      nir_def *stride = load_geometry_param(b, gs_grid[0]);
+
+      rs.output_id = raw_vertex_id;
+      rs.instance_id = nir_udiv(b, rs.raw_instance_id, stride);
+      rs.primitive_id = nir_umod(b, rs.raw_instance_id, stride);
+      break;
+   }
+
+   case AGX_GS_SHAPE_STATIC_PER_INSTANCE: {
+      unsigned stride = MAX2(state->info->max_indices, 1);
+
+      rs.output_id = nir_umod_imm(b, raw_vertex_id, stride);
+      rs.primitive_id = nir_udiv_imm(b, raw_vertex_id, stride);
+      rs.instance_id = rs.raw_instance_id;
+      break;
+   }
+
+   default:
+      unreachable("invalid shape");
+   }
 
    u_foreach_bit64(slot, shader->info.outputs_written) {
       const char *slot_name =
@@ -664,24 +664,24 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast,
                     (slot == VARYING_SLOT_VIEWPORT);
       unsigned comps = scalar ? 1 : 4;
 
-      rast_state.outputs.outputs[slot] = nir_variable_create(
+      rs.outputs.outputs[slot] = nir_variable_create(
          shader, nir_var_shader_temp, glsl_vector_type(GLSL_TYPE_UINT, comps),
          ralloc_asprintf(shader, "%s-temp", slot_name));
 
-      rast_state.selected.outputs[slot] = nir_variable_create(
+      rs.selected.outputs[slot] = nir_variable_create(
          shader, nir_var_shader_temp, glsl_vector_type(GLSL_TYPE_UINT, comps),
          ralloc_asprintf(shader, "%s-selected", slot_name));
    }
 
    nir_shader_intrinsics_pass(shader, lower_to_gs_rast,
-                              nir_metadata_control_flow, &rast_state);
+                              nir_metadata_control_flow, &rs);
 
    b->cursor = nir_after_impl(b->impl);
 
    /* Forward each selected output to the rasterizer */
    u_foreach_bit64(slot, shader->info.outputs_written) {
-      assert(rast_state.selected.outputs[slot] != NULL);
-      nir_def *value = nir_load_var(b, rast_state.selected.outputs[slot]);
+      assert(rs.selected.outputs[slot] != NULL);
+      nir_def *value = nir_load_var(b, rs.selected.outputs[slot]);
 
       /* We set NIR_COMPACT_ARRAYS so clip/cull distance needs to come all in
        * DIST0. Undo the offset if we need to.
@@ -909,7 +909,7 @@ lower_gs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *state)
 
    switch (intr->intrinsic) {
    case nir_intrinsic_set_vertex_and_primitive_count: {
-      if (!state_->info->dynamic_topology)
+      if (state_->info->shape != AGX_GS_SHAPE_DYNAMIC_INDEXED)
          break;
 
       /* Points write their index buffer here, other primitives write on end. We
@@ -930,8 +930,7 @@ lower_gs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *state)
    }
 
    case nir_intrinsic_end_primitive_with_counter: {
-      /* If the topology is static, we use the static index buffer instead. */
-      if (!state_->info->dynamic_topology)
+      if (state_->info->shape != AGX_GS_SHAPE_DYNAMIC_INDEXED)
          break;
 
       unsigned min = nir_verts_in_output_prim(b->shader);
@@ -1242,7 +1241,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
     * other stuff).
     */
    if (intr->instr.block != nir_start_block(b->impl)) {
-      info->dynamic_topology = true;
+      info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
       return false;
    }
 
@@ -1250,7 +1249,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    if (!nir_src_is_const(intr->src[0]) || !nir_src_is_const(intr->src[1]) ||
        !nir_src_is_const(intr->src[2])) {
 
-      info->dynamic_topology = true;
+      info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
       return false;
    }
 
@@ -1289,7 +1288,7 @@ match_list_topology(struct agx_gs_info *info, uint32_t count)
    }
 
    /* If we match, rewrite the topology and drop indexing */
-   info->indexed = false;
+   info->shape = AGX_GS_SHAPE_STATIC_PER_INSTANCE;
    info->mode = u_decomposed_prim(info->mode);
    info->max_indices = (info->max_indices / count_with_restart) * count;
    return true;
@@ -1327,12 +1326,12 @@ static void
 optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
 {
    nir_shader_intrinsics_pass(gs, evaluate_topology, nir_metadata_all, info);
-   if (info->dynamic_topology)
+   if (info->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED)
       return;
 
-   /* Points are always lists, we never have restarts/instancing */
+   /* Points are always lists */
    if (gs->info.gs.output_primitive == MESA_PRIM_POINTS) {
-      info->indexed = false;
+      info->shape = AGX_GS_SHAPE_STATIC_PER_INSTANCE;
       return;
    }
 
@@ -1341,14 +1340,14 @@ optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
    if (match_list_topology(info, count))
       return;
 
-   /* Because we're instancing, we can always drop the trailing restart index */
-   info->instanced = true;
+   /* Instancing means we can always drop the trailing restart index */
    info->max_indices--;
 
    /* Try to pattern match a strip topology */
    if (is_strip_topology(info->topology, info->max_indices)) {
-      info->indexed = false;
-      return;
+      info->shape = AGX_GS_SHAPE_STATIC_PER_PRIM;
+   } else {
+      info->shape = AGX_GS_SHAPE_STATIC_INDEXED;
    }
 }
 
@@ -1433,7 +1432,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    *info = (struct agx_gs_info){
       .mode = gs->info.gs.output_primitive,
       .xfb = gs->xfb_info != NULL,
-      .indexed = true,
+      .shape = -1,
    };
 
    int static_vertices[4] = {0}, static_primitives[4] = {0};
@@ -1458,7 +1457,7 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    if (static_vertices[0] >= 0 && static_primitives[0] >= 0) {
       optimize_static_topology(info, gs);
    } else {
-      info->dynamic_topology = true;
+      info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
    }
 
    bool side_effects_for_rast = false;

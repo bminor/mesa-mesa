@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "libagx/geometry.h"
 #include "nir.h"
 #include "shader_enums.h"
 
@@ -37,16 +38,10 @@ struct agx_gs_info {
    /* Whether a prefix sum is required on the count outputs. Implies xfb */
    bool prefix_sum;
 
-   /* Whether we need to dynamically allocate an index buffer. */
-   bool dynamic_topology;
+   /* Shape of the rasterization draw, named by the instance ID */
+   enum agx_gs_shape shape;
 
-   /* Whether the topology requires an index buffer */
-   bool indexed;
-
-   /* Whether the topology requires hardware instancing */
-   bool instanced;
-
-   /* Static topology used if dynamic_topology is false. */
+   /* Static topology used if shape = AGX_GS_SHAPE_STATIC_INDEXED */
    uint32_t topology[384];
 };
 
