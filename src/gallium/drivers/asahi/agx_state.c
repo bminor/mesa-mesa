@@ -5155,9 +5155,9 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       struct agx_gs_info *gsi = &ctx->gs->gs;
       info_gs = (struct pipe_draw_info){
          .mode = gsi->mode,
-         .index_size = agx_gs_indexed(gsi->shape) ? 4 : 0,
+         .index_size = agx_gs_index_size(gsi->shape),
          .primitive_restart = agx_gs_indexed(gsi->shape),
-         .restart_index = ~0,
+         .restart_index = agx_gs_index_size(gsi->shape) == 1 ? 0xFF : ~0,
          .index.resource = &index_rsrc.base,
          .instance_count = 1,
       };
@@ -5195,8 +5195,8 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          ib = batch->geom_index;
          ib_extent = index_rsrc.bo->size - (batch->geom_index - ib);
       } else if (gsi->shape == AGX_GS_SHAPE_STATIC_INDEXED) {
-         ib_extent = gsi->max_indices * 4;
-         ib = agx_pool_upload(&batch->pool, gsi->topology, ib_extent);
+         ib = agx_pool_upload(&batch->pool, gsi->topology, gsi->max_indices);
+         ib_extent = gsi->max_indices;
       }
 
       /* We need to reemit geometry descriptors since the txf sampler may change

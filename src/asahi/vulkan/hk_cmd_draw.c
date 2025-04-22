@@ -1532,20 +1532,23 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, wg);
 
-   if (agx_is_indirect(draw.b)) {
-      if (agx_gs_indexed(count->info.gs.shape)) {
+   if (agx_gs_indexed(count->info.gs.shape)) {
+      enum agx_index_size index_size =
+         agx_translate_index_size(agx_gs_index_size(count->info.gs.shape));
+
+      if (agx_is_indirect(draw.b)) {
          return agx_draw_indexed_indirect(
             cmd->geom_indirect, cmd->geom_index_buffer, cmd->geom_index_count,
-            AGX_INDEX_SIZE_U32, true);
+            index_size, true);
       } else {
-         return agx_draw_indirect(cmd->geom_indirect);
+         return agx_draw_indexed(cmd->geom_index_count,
+                                 cmd->geom_instance_count, 0, 0, 0,
+                                 cmd->geom_index_buffer,
+                                 cmd->geom_index_count * 4, index_size, true);
       }
    } else {
-      if (agx_gs_indexed(count->info.gs.shape)) {
-         return agx_draw_indexed(
-            cmd->geom_index_count, cmd->geom_instance_count, 0, 0, 0,
-            cmd->geom_index_buffer, cmd->geom_index_count * 4,
-            AGX_INDEX_SIZE_U32, true);
+      if (agx_is_indirect(draw.b)) {
+         return agx_draw_indirect(cmd->geom_indirect);
       } else {
          return (struct agx_draw){
             .b = agx_3d(cmd->geom_index_count, cmd->geom_instance_count, 1),
@@ -2174,9 +2177,13 @@ translate_ppp_vertex(unsigned vtx)
 static void
 hk_flush_index(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
 {
-   uint32_t index = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY]
-                       ? BITFIELD_MASK(32)
-                       : cmd->state.gfx.index.restart;
+   struct hk_api_shader *gs = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
+   uint32_t index = cmd->state.gfx.index.restart;
+
+   if (gs) {
+      enum agx_gs_shape shape = gs->variants[HK_GS_VARIANT_COUNT].info.gs.shape;
+      index = BITFIELD_MASK(8 * agx_gs_index_size(shape));
+   }
 
    /* VDM State updates are relatively expensive, so only emit them when the
     * restart index changes. This is simpler than accurate dirty tracking.

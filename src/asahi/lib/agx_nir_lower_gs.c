@@ -1216,6 +1216,11 @@ calculate_max_indices(enum mesa_prim prim, unsigned verts, signed static_verts,
       return verts + (verts / mesa_vertices_per_prim(prim));
 }
 
+struct topology_ctx {
+   struct agx_gs_info *info;
+   uint32_t topology[384];
+};
+
 static bool
 evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
@@ -1224,7 +1229,8 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    bool set_prim =
       intr->intrinsic == nir_intrinsic_set_vertex_and_primitive_count;
 
-   struct agx_gs_info *info = data;
+   struct topology_ctx *ctx = data;
+   struct agx_gs_info *info = ctx->info;
    if (!(set_prim && points) && !end_prim)
       return false;
 
@@ -1256,7 +1262,7 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    unsigned min = nir_verts_in_output_prim(b->shader);
 
    if (nir_src_as_uint(intr->src[1]) >= min) {
-      _libagx_end_primitive(info->topology, nir_src_as_uint(intr->src[0]),
+      _libagx_end_primitive(ctx->topology, nir_src_as_uint(intr->src[0]),
                             nir_src_as_uint(intr->src[1]),
                             nir_src_as_uint(intr->src[2]), 0, 0, !points);
    }
@@ -1270,7 +1276,8 @@ evaluate_topology(nir_builder *b, nir_intrinsic_instr *intr, void *data)
  *    0, 1, 2, -1, 3, 4, 5, -1, ...
  */
 static bool
-match_list_topology(struct agx_gs_info *info, uint32_t count)
+match_list_topology(struct agx_gs_info *info, uint32_t count,
+                    uint32_t *topology)
 {
    unsigned count_with_restart = count + 1;
 
@@ -1283,7 +1290,7 @@ match_list_topology(struct agx_gs_info *info, uint32_t count)
       bool restart = (i % count_with_restart) == count;
       uint32_t expected = restart ? -1 : (i - (i / count_with_restart));
 
-      if (info->topology[i] != expected)
+      if (topology[i] != expected)
          return false;
    }
 
@@ -1325,7 +1332,8 @@ is_strip_topology(uint32_t *indices, uint32_t index_count)
 static void
 optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
 {
-   nir_shader_intrinsics_pass(gs, evaluate_topology, nir_metadata_all, info);
+   struct topology_ctx ctx = {.info = info};
+   nir_shader_intrinsics_pass(gs, evaluate_topology, nir_metadata_all, &ctx);
    if (info->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED)
       return;
 
@@ -1337,18 +1345,32 @@ optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
 
    /* Try to pattern match a list topology */
    unsigned count = nir_verts_in_output_prim(gs);
-   if (match_list_topology(info, count))
+   if (match_list_topology(info, count, ctx.topology))
       return;
 
    /* Instancing means we can always drop the trailing restart index */
    info->max_indices--;
 
    /* Try to pattern match a strip topology */
-   if (is_strip_topology(info->topology, info->max_indices)) {
+   if (is_strip_topology(ctx.topology, info->max_indices)) {
       info->shape = AGX_GS_SHAPE_STATIC_PER_PRIM;
-   } else {
-      info->shape = AGX_GS_SHAPE_STATIC_INDEXED;
+      return;
    }
+
+   /* Otherwise, use a small static index buffer. There's no theoretical reason
+    * to bound this, but we want small serialized shader info structs. We assume
+    * that large static index buffers are rare and hence fall back to dynamic.
+    */
+   for (unsigned i = 0; i < info->max_indices; ++i) {
+      if (ctx.topology[i] != ~0 && ctx.topology[i] >= 0xFF) {
+         info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
+         return;
+      }
+
+      info->topology[i] = ctx.topology[i];
+   }
+
+   info->shape = AGX_GS_SHAPE_STATIC_INDEXED;
 }
 
 bool

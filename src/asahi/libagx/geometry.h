@@ -91,6 +91,19 @@ agx_gs_indexed(enum agx_gs_shape shape)
           shape == AGX_GS_SHAPE_STATIC_INDEXED;
 }
 
+static inline unsigned
+agx_gs_index_size(enum agx_gs_shape shape)
+{
+   switch (shape) {
+   case AGX_GS_SHAPE_DYNAMIC_INDEXED:
+      return 4;
+   case AGX_GS_SHAPE_STATIC_INDEXED:
+      return 1;
+   default:
+      return 0;
+   }
+}
+
 /* Packed geometry state buffer */
 struct agx_geometry_state {
    /* Heap to allocate from. */
