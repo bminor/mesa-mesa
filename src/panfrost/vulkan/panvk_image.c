@@ -405,19 +405,18 @@ panvk_DestroyImage(VkDevice _device, VkImage _image,
    vk_image_destroy(&device->vk, pAllocator, &image->vk);
 }
 
-VKAPI_ATTR void VKAPI_CALL
-panvk_GetImageSubresourceLayout(VkDevice _device, VkImage _image,
-                                const VkImageSubresource *pSubresource,
-                                VkSubresourceLayout *pLayout)
+static void
+get_image_subresource_layout(const struct panvk_image *image,
+                             const VkImageSubresource2 *subres2,
+                             VkSubresourceLayout2 *layout2)
 {
-   VK_FROM_HANDLE(panvk_image, image, _image);
-
-   unsigned plane =
-      panvk_plane_index(image->vk.format, pSubresource->aspectMask);
+   const VkImageSubresource *subres = &subres2->imageSubresource;
+   VkSubresourceLayout *layout = &layout2->subresourceLayout;
+   unsigned plane = panvk_plane_index(image->vk.format, subres->aspectMask);
    assert(plane < PANVK_MAX_PLANES);
 
    const struct pan_image_slice_layout *slice_layout =
-      &image->planes[plane].layout.slices[pSubresource->mipLevel];
+      &image->planes[plane].layout.slices[subres->mipLevel];
 
    uint64_t base_offset = 0;
    if (!is_disjoint(image)) {
@@ -425,13 +424,37 @@ panvk_GetImageSubresourceLayout(VkDevice _device, VkImage _image,
          base_offset += image->planes[plane_idx].layout.data_size;
    }
 
-   pLayout->offset = base_offset +
-      slice_layout->offset + (pSubresource->arrayLayer *
+   layout->offset = base_offset +
+      slice_layout->offset + (subres->arrayLayer *
                               image->planes[plane].layout.array_stride);
-   pLayout->size = slice_layout->size;
-   pLayout->rowPitch = slice_layout->row_stride;
-   pLayout->arrayPitch = image->planes[plane].layout.array_stride;
-   pLayout->depthPitch = slice_layout->surface_stride;
+   layout->size = slice_layout->size;
+   layout->rowPitch = slice_layout->row_stride;
+   layout->arrayPitch = image->planes[plane].layout.array_stride;
+   layout->depthPitch = slice_layout->surface_stride;
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_GetImageSubresourceLayout2(VkDevice device, VkImage image,
+                                 const VkImageSubresource2 *pSubresource,
+                                 VkSubresourceLayout2 *pLayout)
+{
+   VK_FROM_HANDLE(panvk_image, img, image);
+
+   get_image_subresource_layout(img, pSubresource, pLayout);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_GetDeviceImageSubresourceLayoutKHR(
+   VkDevice device, const VkDeviceImageSubresourceInfoKHR *pInfo,
+   VkSubresourceLayout2KHR *pLayout)
+{
+   VK_FROM_HANDLE(panvk_device, dev, device);
+   struct panvk_image image = {0};
+
+   vk_image_init(&dev->vk, &image.vk, pInfo->pCreateInfo);
+   panvk_image_init(&image, pInfo->pCreateInfo);
+   get_image_subresource_layout(&image, pInfo->pSubresource, pLayout);
+   vk_image_finish(&image.vk);
 }
 
 VKAPI_ATTR void VKAPI_CALL
