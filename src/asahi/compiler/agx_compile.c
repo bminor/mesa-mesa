@@ -8,6 +8,7 @@
 #include "agx_compile.h"
 #include "asahi/clc/asahi_clc.h"
 #include "asahi/layout/layout.h"
+#include "asahi/lib/agx_abi.h"
 #include "compiler/nir/nir_builder.h"
 #include "util/bitset.h"
 #include "util/glheader.h"
@@ -101,13 +102,13 @@ agx_tess_coord_y(agx_builder *b)
 static agx_index
 agx_vertex_id(agx_builder *b)
 {
-   return agx_cached_preload(b->shader, 10, AGX_SIZE_32);
+   return agx_cached_preload(b->shader, AGX_ABI_VIN_VERTEX_ID, AGX_SIZE_32);
 }
 
 static agx_index
 agx_instance_id(agx_builder *b)
 {
-   return agx_cached_preload(b->shader, 12, AGX_SIZE_32);
+   return agx_cached_preload(b->shader, AGX_ABI_VIN_INSTANCE_ID, AGX_SIZE_32);
 }
 
 #define VARYING_NUM_COMPONENTS (VARYING_SLOT_MAX * 4)
