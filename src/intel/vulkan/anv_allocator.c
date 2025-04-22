@@ -1294,6 +1294,19 @@ anv_bo_pool_free(struct anv_bo_pool *pool, struct anv_bo *bo)
 {
    VG(VALGRIND_MEMPOOL_FREE(pool, bo->map));
 
+   /* When a BO is part of a slab, don't put it on the free list. First
+    * it doesn't have a GEM handle that we could use in managing the free
+    * list, second the BO is going to return to the slab and will not
+    * necessarily get freed immediately which is what the bo_pool is also
+    * trying to achieve.
+    */
+   if (anv_bo_get_real(bo) != bo) {
+      VG(VALGRIND_MALLOCLIKE_BLOCK(bo->map, bo->size, 0, 1));
+      anv_device_release_bo(pool->device, bo);
+
+      return;
+   }
+
    assert(util_is_power_of_two_or_zero(bo->size));
    const unsigned size_log2 = util_logbase2_ceil(bo->size);
    const unsigned bucket = size_log2 - 12;
