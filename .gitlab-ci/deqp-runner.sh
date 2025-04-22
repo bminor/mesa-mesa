@@ -22,8 +22,8 @@ INSTALL=$(realpath -s "$PWD"/install)
 export LD_LIBRARY_PATH="$INSTALL"/lib/:$LD_LIBRARY_PATH
 export EGL_PLATFORM=surfaceless
 ARCH=$(uname -m)
-export VK_DRIVER_FILES="$PWD"/install/share/vulkan/icd.d/"$VK_DRIVER"_icd."$ARCH".json
-export OCL_ICD_VENDORS="$PWD"/install/etc/OpenCL/vendors/
+export VK_DRIVER_FILES="$INSTALL"/share/vulkan/icd.d/"$VK_DRIVER"_icd."$ARCH".json
+export OCL_ICD_VENDORS="$INSTALL"/etc/OpenCL/vendors/
 
 if [ -n "${ANGLE_TAG:-}" ]; then
   # Are we using the right ANGLE version?
