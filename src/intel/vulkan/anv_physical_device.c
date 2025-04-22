@@ -359,6 +359,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .EXT_shader_demote_to_helper_invocation = true,
       .EXT_shader_image_atomic_int64         = true,
       .EXT_shader_module_identifier          = true,
+      .EXT_shader_object                     = true,
       .EXT_shader_replicated_composites      = true,
       .EXT_shader_stencil_export             = true,
       .EXT_shader_subgroup_ballot            = true,
@@ -979,6 +980,9 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_shader_untyped_pointers */
       .shaderUntypedPointers = true,
+
+      /* VK_EXT_shader_object */
+      .shaderObject = true,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
@@ -2014,10 +2018,24 @@ get_properties(const struct anv_physical_device *pdevice,
       props->supportedImageAlignmentMask = (1 << 12) | (1 << 16);
    }
 
-   /* For the runtime common code (even thought we don't support
-    * VK_EXT_shader_object)
-    */
-   memcpy(props->shaderBinaryUUID, pdevice->shader_binary_uuid, VK_UUID_SIZE);
+   /* VK_EXT_shader_object */
+   {
+      memcpy(props->shaderBinaryUUID, pdevice->shader_binary_uuid, VK_UUID_SIZE);
+      /* We currently leave this to 0 because shaderBinaryUUID includes the
+       * entire git tree hash a well as all the compiler's tune knobs
+       * (INTEL_PRECISE_TRIG, INTEL_LOWER_DPAS, etc...) and the driver's
+       * workaround booleans.
+       *
+       * Supporting different binary version would mean supporting binaries
+       * from another driver version which we're really not setup to do at the
+       * moment. Any driver change in particular apply_pipeline_layout
+       * decisions (like where to find the workgroup_size value) would need to
+       * be versioned and the driver ready to deal with different ways of
+       * doing these things. Clearly a nighmare of testing across various HW
+       * generations & driver versions.
+       */
+      props->shaderBinaryVersion = 0;
+   }
 }
 
 /* This function restricts the maximum size of system memory heap. The
