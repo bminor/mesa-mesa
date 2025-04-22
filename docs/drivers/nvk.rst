@@ -6,9 +6,12 @@ NVK is a Vulkan driver for NVIDIA GPUs.
 Hardware support
 ----------------
 
-NVK currently supports Turing (RTX 20XX and GTX 16XX) and later GPUs.
-Eventually, we plan to support as far back as Kepler (GeForce 600 and 700
-series) GPUs but anything pre-Turing is currently disabled by default.
+NVK currently supports Maxwell (some GTX 700 and 800 series, most 900
+series) and later GPUs.  Kepler (GeForce 600 and 700 series) work is
+currently in-progress but incomplete.  Support for new GPU generations may
+take up to a year after the launch of the hardware because it takes time
+for Nouveau developers to get access to hardware and documentation from
+NVIDIA.
 
 Kernel requirements
 -------------------
@@ -18,8 +21,8 @@ NVK requires at least a Linux 6.6 kernel
 Conformance status:
 -------------------
 
-NVK is a conformant Vulkan 1.3 implementation for all Turing (RTX 20XX and
-GTX 16XX) and later GPUs.
+NVK is a conformant Vulkan 1.4 implementation for all Maxwell (some GTX 700
+and 800 series, most 900 series) and later GPUs.
 
 Debugging
 ---------
