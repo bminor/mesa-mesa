@@ -378,6 +378,7 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
              */
             bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), bld.def(s1, scc),
                      ctx.info[idx].exec[0].op);
+            ctx.info[idx].exec[1].op = Operand(exec, bld.lm);
             restore_exec = false;
             ctx.had_demote_in_cf = false;
          }
