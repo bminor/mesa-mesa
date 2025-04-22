@@ -815,15 +815,20 @@ panvk_per_arch(CmdBindVertexBuffers)(VkCommandBuffer commandBuffer,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-panvk_per_arch(CmdBindIndexBuffer)(VkCommandBuffer commandBuffer,
-                                   VkBuffer buffer, VkDeviceSize offset,
-                                   VkIndexType indexType)
+panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
+                                    VkBuffer buffer, VkDeviceSize offset,
+                                    VkDeviceSize size, VkIndexType indexType)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    VK_FROM_HANDLE(panvk_buffer, buf, buffer);
 
-   cmdbuf->state.gfx.ib.buffer = buf;
-   cmdbuf->state.gfx.ib.offset = offset;
+   cmdbuf->state.gfx.ib.size = panvk_buffer_range(buf, offset, size);
+   assert(cmdbuf->state.gfx.ib.size <= UINT32_MAX);
+   cmdbuf->state.gfx.ib.dev_addr = panvk_buffer_gpu_ptr(buf, offset);
+#if PAN_ARCH <= 7
+   cmdbuf->state.gfx.ib.host_addr =
+      buf && buf->host_ptr ? buf->host_ptr + offset : NULL;
+#endif
    cmdbuf->state.gfx.ib.index_size = vk_index_type_to_bytes(indexType);
    gfx_state_set_dirty(cmdbuf, IB);
 }

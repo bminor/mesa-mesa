@@ -1780,15 +1780,11 @@ prepare_index_buffer(struct panvk_cmd_buffer *cmdbuf,
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
 
    if (draw->index.size && gfx_state_dirty(cmdbuf, IB)) {
-      uint64_t ib_size =
-         panvk_buffer_range(cmdbuf->state.gfx.ib.buffer,
-                            cmdbuf->state.gfx.ib.offset, VK_WHOLE_SIZE);
-      assert(ib_size <= UINT32_MAX);
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, INDEX_BUFFER_SIZE), ib_size);
+      cs_move32_to(b, cs_sr_reg32(b, IDVS, INDEX_BUFFER_SIZE),
+                   cmdbuf->state.gfx.ib.size);
 
       cs_move64_to(b, cs_sr_reg64(b, IDVS, INDEX_BUFFER),
-                   panvk_buffer_gpu_ptr(cmdbuf->state.gfx.ib.buffer,
-                                        cmdbuf->state.gfx.ib.offset));
+                   cmdbuf->state.gfx.ib.dev_addr);
    }
 }
 

@@ -154,8 +154,11 @@ struct panvk_cmd_graphics_state {
 
    /* Index buffer */
    struct {
-      struct panvk_buffer *buffer;
-      uint64_t offset;
+      uint64_t dev_addr;
+#if PAN_ARCH <= 7
+      void *host_addr;
+#endif
+      uint64_t size;
       uint8_t index_size;
    } ib;
 

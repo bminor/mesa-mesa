@@ -1409,14 +1409,9 @@ panvk_index_minmax_search(struct panvk_cmd_buffer *cmdbuf, uint32_t start,
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
-   void *ptr =
-      cmdbuf->state.gfx.ib.buffer->host_ptr + cmdbuf->state.gfx.ib.offset;
+   void *ptr = cmdbuf->state.gfx.ib.host_addr;
 
-   assert(PAN_ARCH < 9 && cmdbuf->state.gfx.ib.buffer->host_ptr);
-
-   assert(cmdbuf->state.gfx.ib.buffer);
-   assert(cmdbuf->state.gfx.ib.buffer->bo);
-   assert(cmdbuf->state.gfx.ib.buffer->host_ptr);
+   assert(PAN_ARCH < 9 && ptr);
 
    if (!(instance->debug_flags & PANVK_DEBUG_NO_KNOWN_WARN)) {
       mesa_logw("Crawling index buffers from the CPU isn't valid in Vulkan\n");
@@ -1487,8 +1482,7 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
       .vertex_range = vertex_range,
       .padded_vertex_count =
          padded_vertex_count(cmdbuf, vertex_range, instanceCount),
-      .indices = panvk_buffer_gpu_ptr(cmdbuf->state.gfx.ib.buffer,
-                                      cmdbuf->state.gfx.ib.offset) +
+      .indices = cmdbuf->state.gfx.ib.dev_addr +
                  (firstIndex * cmdbuf->state.gfx.ib.index_size),
    };
 
