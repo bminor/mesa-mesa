@@ -1525,17 +1525,32 @@ compact_relocate_vars(ra_ctx& ctx, const std::vector<IDAndRegClass>& vars,
 
    std::sort(
       sorted.begin(), sorted.end(),
-      [&ctx](const IDAndInfo& a, const IDAndInfo& b)
+      [=, &ctx](const IDAndInfo& a, const IDAndInfo& b)
       {
-         unsigned a_stride = a.info.stride * (a.info.rc.is_subdword() ? 1 : 4);
-         unsigned b_stride = b.info.stride * (b.info.rc.is_subdword() ? 1 : 4);
-         if (a_stride > b_stride)
-            return true;
-         if (a_stride < b_stride)
-            return false;
+         unsigned a_stride = MAX2(a.info.stride * (a.info.rc.is_subdword() ? 1 : 4), 4);
+         unsigned b_stride = MAX2(b.info.stride * (b.info.rc.is_subdword() ? 1 : 4), 4);
+         /* Since the SGPR bounds should always be a multiple of two, we can place
+          * variables in this order:
+          * - the usual 4 SGPR aligned variables
+          * - then the 0xffffffff variable
+          * - then the unaligned variables
+          * - and finally the 2 SGPR aligned variables
+          * This way, we should always be able to place variables if the 0xffffffff one
+          * had a NPOT size.
+          *
+          * This also lets us avoid placing the 0xffffffff variable in VCC if it's s1/s2
+          * (required for pseudo-scalar transcendental) and places it first if it's a
+          * VGPR variable (required for ImageGather4D16Bug).
+          */
+         assert(a.info.rc.type() != RegType::sgpr || get_reg_bounds(ctx, a.info.rc).size % 2 == 0);
+         assert(a_stride == 16 || a_stride == 8 || a_stride == 4);
+         assert(b_stride == 16 || b_stride == 8 || b_stride == 4);
+         if ((a_stride == 16) != (b_stride == 16))
+            return a_stride > b_stride;
          if (a.id == 0xffffffff || b.id == 0xffffffff)
-            return a.id ==
-                   0xffffffff; /* place 0xffffffff before others if possible, not for any reason */
+            return a.id == 0xffffffff;
+         if (a_stride != b_stride)
+            return a_stride < b_stride;
          return ctx.assignments[a.id].reg < ctx.assignments[b.id].reg;
       });
 
