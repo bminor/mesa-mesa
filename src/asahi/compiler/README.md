@@ -15,9 +15,12 @@ The following section describes the ABI used by non-monolithic programs.
 Registers have the following layout at the beginning of the vertex shader
 (written by the vertex prolog):
 
-* `r0-r4` and `r7` undefined. This avoids preloading into the nesting counter or
+* `r0-r3` and `r7` undefined. This avoids preloading into the nesting counter or
   having unaligned values. The prolog is free to use these registers as
   temporaries.
+* `r4` is the zero-based vertex ID if the vertex shader is running as a hardware
+  compute shader, useful to avoid a redundant special register read in the main
+  shader. Undefined in hardware vertex shaders.
 * `r5-r6` retain their usual meanings, even if the vertex shader is running as a
   hardware compute shader. This allows software index fetch code to run in the
   prolog without contaminating the main shader key.

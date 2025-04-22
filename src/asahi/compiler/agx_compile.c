@@ -100,6 +100,13 @@ agx_tess_coord_y(agx_builder *b)
 }
 
 static agx_index
+agx_vertex_id_zero_base(agx_builder *b)
+{
+   return agx_cached_preload(b->shader, AGX_ABI_VIN_VERTEX_ID_ZERO_BASE,
+                             AGX_SIZE_32);
+}
+
+static agx_index
 agx_vertex_id(agx_builder *b)
 {
    return agx_cached_preload(b->shader, AGX_ABI_VIN_VERTEX_ID, AGX_SIZE_32);
@@ -1416,6 +1423,10 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
       return agx_icmp_to(b, dst,
                          agx_get_sr_coverage(b, 32, AGX_SR_IS_ACTIVE_THREAD),
                          agx_zero(), AGX_ICOND_UEQ, false);
+
+   case nir_intrinsic_load_vertex_id_zero_base:
+      assert(stage == MESA_SHADER_COMPUTE && "only for SW VS");
+      return agx_mov_to(b, dst, agx_abs(agx_vertex_id_zero_base(b)));
 
    case nir_intrinsic_load_vertex_id:
       /* We don't assert the HW stage since we use this same ABI with SW VS */

@@ -193,6 +193,11 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
       nir_export_agx(b, nir_channel(b, vec, c), .base = AGX_ABI_VIN_ATTRIB(i));
    }
 
+   if (!key->hw) {
+      nir_export_agx(b, nir_channel(b, nir_load_global_invocation_id(b, 32), 0),
+                     .base = AGX_ABI_VIN_VERTEX_ID_ZERO_BASE);
+   }
+
    nir_export_agx(b, nir_load_vertex_id(b), .base = AGX_ABI_VIN_VERTEX_ID);
    nir_export_agx(b, nir_load_instance_id(b), .base = AGX_ABI_VIN_INSTANCE_ID);
 

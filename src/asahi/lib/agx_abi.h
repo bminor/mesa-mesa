@@ -8,9 +8,10 @@
 
 /* See compiler/README.md for the ABI */
 
-#define AGX_ABI_VIN_ATTRIB(i)   (2 * (8 + i))
-#define AGX_ABI_VIN_VERTEX_ID   (2 * 5)
-#define AGX_ABI_VIN_INSTANCE_ID (2 * 6)
+#define AGX_ABI_VIN_ATTRIB(i)           (2 * (8 + i))
+#define AGX_ABI_VIN_VERTEX_ID_ZERO_BASE (2 * 4)
+#define AGX_ABI_VIN_VERTEX_ID           (2 * 5)
+#define AGX_ABI_VIN_INSTANCE_ID         (2 * 6)
 
 #define AGX_ABI_FIN_SAMPLE_MASK (2)
 
