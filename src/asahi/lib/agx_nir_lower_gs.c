@@ -1361,12 +1361,13 @@ optimize_static_topology(struct agx_gs_info *info, nir_shader *gs)
     * to bound this, but we want small serialized shader info structs. We assume
     * that large static index buffers are rare and hence fall back to dynamic.
     */
-   for (unsigned i = 0; i < info->max_indices; ++i) {
-      if (ctx.topology[i] != ~0 && ctx.topology[i] >= 0xFF) {
-         info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
-         return;
-      }
+   if (info->max_indices >= ARRAY_SIZE(info->topology)) {
+      info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
+      return;
+   }
 
+   for (unsigned i = 0; i < info->max_indices; ++i) {
+      assert((ctx.topology[i] < 0xFF || ctx.topology[i] == ~0) && "small");
       info->topology[i] = ctx.topology[i];
    }
 

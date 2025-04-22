@@ -42,7 +42,7 @@ struct agx_gs_info {
    enum agx_gs_shape shape;
 
    /* Static topology used if shape = AGX_GS_SHAPE_STATIC_INDEXED */
-   uint8_t topology[384];
+   uint8_t topology[64];
 };
 
 bool agx_nir_lower_gs(struct nir_shader *gs, bool rasterizer_discard,
