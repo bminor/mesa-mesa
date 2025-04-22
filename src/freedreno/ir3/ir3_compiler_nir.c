@@ -5770,24 +5770,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
 
    ir3_debug_print(ir, "AFTER: ir3_sched");
 
-   /* Pre-assign VS inputs on a6xx+ binning pass shader, to align
-    * with draw pass VS, so binning and draw pass can both use the
-    * same VBO state.
-    *
-    * Note that VS inputs are expected to be full precision.
-    */
-   bool pre_assign_inputs = (ir->compiler->gen >= 6) &&
-                            (ir->type == MESA_SHADER_VERTEX) &&
-                            so->binning_pass;
-
-   if (pre_assign_inputs) {
-      foreach_input (in, ir) {
-         assert(in->opc == OPC_META_INPUT);
-         unsigned inidx = in->input.inidx;
-
-         in->dsts[0]->num = so->nonbinning->inputs[inidx].regid;
-      }
-   } else if (ctx->tcs_header) {
+   if (ctx->tcs_header) {
       /* We need to have these values in the same registers between VS and TCS
        * since the VS chains to TCS and doesn't get the sysvals redelivered.
        */
@@ -5869,20 +5852,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    foreach_input (in, ir) {
       assert(in->opc == OPC_META_INPUT);
       unsigned inidx = in->input.inidx;
-
-      if (pre_assign_inputs && !so->inputs[inidx].sysval) {
-         if (VALIDREG(so->nonbinning->inputs[inidx].regid)) {
-            compile_assert(
-               ctx, in->dsts[0]->num == so->nonbinning->inputs[inidx].regid);
-            compile_assert(ctx, !!(in->dsts[0]->flags & IR3_REG_HALF) ==
-                                   so->nonbinning->inputs[inidx].half);
-         }
-         so->inputs[inidx].regid = so->nonbinning->inputs[inidx].regid;
-         so->inputs[inidx].half = so->nonbinning->inputs[inidx].half;
-      } else {
-         so->inputs[inidx].regid = in->dsts[0]->num;
-         so->inputs[inidx].half = !!(in->dsts[0]->flags & IR3_REG_HALF);
-      }
+      so->inputs[inidx].regid = in->dsts[0]->num;
+      so->inputs[inidx].half = !!(in->dsts[0]->flags & IR3_REG_HALF);
    }
 
    uint8_t clip_cull_mask = ctx->so->clip_mask | ctx->so->cull_mask;
