@@ -30,13 +30,6 @@ struct si_shader_info {
       bool writes_memory:1;
       enum gl_subgroup_size subgroup_size;
 
-      uint64_t outputs_read;
-      uint64_t outputs_written;
-      uint32_t patch_outputs_read;
-      uint32_t patch_outputs_written;
-      uint64_t outputs_read_indirectly;
-      uint64_t outputs_written_indirectly;
-
       uint8_t num_ubos;
       uint8_t num_ssbos;
       uint8_t num_images;
@@ -64,8 +57,6 @@ struct si_shader_info {
             uint8_t tcs_vertices_out;
             bool ccw:1;
             bool point_mode:1;
-            uint64_t tcs_cross_invocation_outputs_read;
-            uint64_t tcs_cross_invocation_outputs_written;
          } tess;
 
          struct {
@@ -92,6 +83,8 @@ struct si_shader_info {
          } cs;
       };
    } base;
+
+   ac_nir_tess_io_info tess_io_info;
 
    uint32_t options; /* bitmask of SI_PROFILE_* */
 
@@ -178,9 +171,6 @@ struct si_shader_info {
    bool uses_bindless_samplers;
    bool uses_bindless_images;
    bool has_divergent_loop;
-
-   /** Whether all codepaths write tess factors in all invocations. */
-   bool tessfactors_are_def_in_all_invocs;
 
    /* A flag to check if vrs2x2 can be enabled to reduce number of
     * fragment shader invocations if flat shading.

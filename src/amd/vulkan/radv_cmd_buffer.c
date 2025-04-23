@@ -3616,25 +3616,10 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
     * is dynamic.
     */
    if (cmd_buffer->state.uses_dynamic_patch_control_points) {
-      struct shader_info tcs_info;
-
-      /* No other shader_info fields are needed. */
-      tcs_info.tess.tcs_vertices_out = tcs->info.tcs.tcs_vertices_out;
-      /* These are only used to determine the LDS layout for TCS outputs. */
-      tcs_info.outputs_read = tcs->info.tcs.tcs_outputs_read;
-      tcs_info.outputs_written = tcs->info.tcs.tcs_outputs_written;
-      /* "read" and "written" are OR'd by radv_get_tess_wg_info. */
-      tcs_info.outputs_read_indirectly = tcs->info.tcs.tcs_outputs_accessed_indirectly;
-      tcs_info.outputs_written_indirectly = tcs->info.tcs.tcs_outputs_accessed_indirectly;
-      tcs_info.patch_outputs_read = tcs->info.tcs.tcs_patch_outputs_read;
-      tcs_info.patch_outputs_written = tcs->info.tcs.tcs_patch_outputs_written;
-      tcs_info.tess.tcs_cross_invocation_outputs_written = tcs->info.tcs.tcs_cross_invocation_outputs_written;
-
-      radv_get_tess_wg_info(pdev, &tcs_info, d->vk.ts.patch_control_points,
+      radv_get_tess_wg_info(pdev, &tcs->info.tcs.io_info, tcs->info.tcs.tcs_vertices_out, d->vk.ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
                             vs->info.vs.num_linked_outputs, tcs->info.tcs.num_linked_outputs,
-                            tcs->info.tcs.num_linked_patch_outputs,
-                            tcs->info.tcs.info.all_invocations_define_tess_levels, &cmd_buffer->state.tess_num_patches,
+                            tcs->info.tcs.num_linked_patch_outputs, &cmd_buffer->state.tess_num_patches,
                             &cmd_buffer->state.tess_lds_size);
    }
 

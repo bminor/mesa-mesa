@@ -7,6 +7,7 @@
 #include "nir/nir.h"
 #include "nir/nir_xfb_info.h"
 #include "nir/radv_nir.h"
+#include "nir_tcs_info.h"
 #include "radv_device.h"
 #include "radv_physical_device.h"
 #include "radv_pipeline_graphics.h"
@@ -631,14 +632,10 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   nir_gather_tcs_info(nir, &info->tcs.info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
+   nir_tcs_info tcs_info;
+   nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
+   ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, &info->tcs.io_info);
 
-   info->tcs.tcs_outputs_read = nir->info.outputs_read;
-   info->tcs.tcs_outputs_written = nir->info.outputs_written;
-   info->tcs.tcs_outputs_accessed_indirectly = nir->info.outputs_read_indirectly | nir->info.outputs_written_indirectly;
-   info->tcs.tcs_patch_outputs_read = nir->info.patch_outputs_read;
-   info->tcs.tcs_patch_outputs_written = nir->info.patch_outputs_written;
-   info->tcs.tcs_cross_invocation_outputs_written = nir->info.tess.tcs_cross_invocation_outputs_written;
    info->tcs.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
    info->tcs.tes_inputs_read = ~0ULL;
    info->tcs.tes_patch_inputs_read = ~0ULL;
@@ -653,12 +650,11 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
    }
 
    if (gfx_state->ts.patch_control_points) {
-
-      radv_get_tess_wg_info(pdev, &nir->info, gfx_state->ts.patch_control_points,
+      radv_get_tess_wg_info(pdev, &info->tcs.io_info, nir->info.tess.tcs_vertices_out,
+                            gfx_state->ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
                             info->tcs.num_linked_inputs, info->tcs.num_linked_outputs,
-                            info->tcs.num_linked_patch_outputs, info->tcs.info.all_invocations_define_tess_levels,
-                            &info->num_tess_patches, &info->tcs.num_lds_blocks);
+                            info->tcs.num_linked_patch_outputs, &info->num_tess_patches, &info->tcs.num_lds_blocks);
    }
 }
 

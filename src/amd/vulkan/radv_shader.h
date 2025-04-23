@@ -672,9 +672,9 @@ get_tcs_input_vertex_stride(unsigned tcs_num_inputs)
    return stride;
 }
 
-void radv_get_tess_wg_info(const struct radv_physical_device *pdev, const struct shader_info *tcs_info,
-                           unsigned tcs_num_input_vertices, unsigned tcs_num_lds_inputs, unsigned tcs_num_vram_outputs,
-                           unsigned tcs_num_vram_patch_outputs, bool all_invocations_define_tess_levels,
+void radv_get_tess_wg_info(const struct radv_physical_device *pdev, const ac_nir_tess_io_info *io_info,
+                           unsigned tcs_vertices_out, unsigned tcs_num_input_vertices, unsigned tcs_num_lds_inputs,
+                           unsigned tcs_num_vram_outputs, unsigned tcs_num_vram_patch_outputs,
                            unsigned *num_patches_per_wg, unsigned *hw_lds_size);
 
 void radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,

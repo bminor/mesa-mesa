@@ -14,10 +14,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "nir_tcs_info.h"
+#include "util/set.h"
+#include "ac_nir.h"
 #include "radv_constants.h"
 #include "radv_shader_args.h"
-#include "util/set.h"
 
 struct radv_device;
 struct nir_shader;
@@ -238,21 +238,15 @@ struct radv_shader_info {
       unsigned derivative_group : 2;
    } cs;
    struct {
+      ac_nir_tess_io_info io_info;
       uint64_t tes_inputs_read;
       uint64_t tes_patch_inputs_read;
-      uint64_t tcs_outputs_read;
-      uint64_t tcs_outputs_written;
-      uint64_t tcs_outputs_accessed_indirectly;
-      uint32_t tcs_patch_outputs_read;
-      uint32_t tcs_patch_outputs_written;
-      uint64_t tcs_cross_invocation_outputs_written;
       unsigned tcs_vertices_out;
       uint32_t num_lds_blocks;
       uint8_t num_linked_inputs;          /* Number of reserved per-vertex input slots in LDS. */
       uint8_t num_linked_outputs;         /* Number of reserved per-vertex output slots in VRAM. */
       uint8_t num_linked_patch_outputs;   /* Number of reserved per-patch output slots in VRAM. */
       bool tes_reads_tess_factors : 1;
-      nir_tcs_info info;
    } tcs;
    struct {
       enum mesa_prim output_prim;

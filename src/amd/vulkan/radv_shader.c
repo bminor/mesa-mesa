@@ -3602,19 +3602,16 @@ radv_get_user_sgpr(const struct radv_shader *shader, int idx)
 }
 
 void
-radv_get_tess_wg_info(const struct radv_physical_device *pdev, const struct shader_info *tcs_info,
-                      unsigned tcs_num_input_vertices, unsigned tcs_num_lds_inputs, unsigned tcs_num_vram_outputs,
-                      unsigned tcs_num_vram_patch_outputs, bool all_invocations_define_tess_levels,
-                      unsigned *num_patches_per_wg, unsigned *hw_lds_size)
+radv_get_tess_wg_info(const struct radv_physical_device *pdev, const ac_nir_tess_io_info *io_info,
+                      unsigned tcs_vertices_out, unsigned tcs_num_input_vertices, unsigned tcs_num_lds_inputs,
+                      unsigned tcs_num_vram_outputs, unsigned tcs_num_vram_patch_outputs, unsigned *num_patches_per_wg,
+                      unsigned *hw_lds_size)
 {
    const uint32_t lds_input_vertex_size = get_tcs_input_vertex_stride(tcs_num_lds_inputs);
 
-   ac_nir_compute_tess_wg_info(
-      &pdev->info, tcs_info->outputs_read, tcs_info->outputs_written, tcs_info->patch_outputs_read,
-      tcs_info->patch_outputs_written, tcs_info->tess.tcs_cross_invocation_outputs_written,
-      tcs_info->outputs_read_indirectly | tcs_info->outputs_written_indirectly, tcs_info->tess.tcs_vertices_out,
-      pdev->ge_wave_size, false, all_invocations_define_tess_levels, tcs_num_input_vertices, lds_input_vertex_size,
-      tcs_num_vram_outputs, tcs_num_vram_patch_outputs, num_patches_per_wg, hw_lds_size);
+   ac_nir_compute_tess_wg_info(&pdev->info, io_info, tcs_vertices_out, pdev->ge_wave_size, false,
+                               tcs_num_input_vertices, lds_input_vertex_size, tcs_num_vram_outputs,
+                               tcs_num_vram_patch_outputs, num_patches_per_wg, hw_lds_size);
 }
 
 VkResult

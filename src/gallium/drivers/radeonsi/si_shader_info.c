@@ -407,13 +407,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.writes_memory = nir->info.writes_memory;
    info->base.subgroup_size = nir->info.subgroup_size;
 
-   info->base.outputs_read = nir->info.outputs_read;
-   info->base.outputs_written = nir->info.outputs_written;
-   info->base.patch_outputs_read = nir->info.patch_outputs_read;
-   info->base.patch_outputs_written = nir->info.patch_outputs_written;
-   info->base.outputs_read_indirectly = nir->info.outputs_read_indirectly;
-   info->base.outputs_written_indirectly = nir->info.outputs_written_indirectly;
-
    info->base.num_ubos = nir->info.num_ubos;
    info->base.num_ssbos = nir->info.num_ssbos;
    info->base.num_images = nir->info.num_images;
@@ -442,8 +435,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->base.tess.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
       info->base.tess.ccw = nir->info.tess.ccw;
       info->base.tess.point_mode = nir->info.tess.point_mode;
-      info->base.tess.tcs_cross_invocation_outputs_read = nir->info.tess.tcs_cross_invocation_outputs_read;
-      info->base.tess.tcs_cross_invocation_outputs_written = nir->info.tess.tcs_cross_invocation_outputs_written;
       break;
 
    case MESA_SHADER_GEOMETRY:
@@ -508,8 +499,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       nir_tcs_info tcs_info;
       nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode,
                           nir->info.tess.spacing);
-
-      info->tessfactors_are_def_in_all_invocs = tcs_info.all_invocations_define_tess_levels;
+      ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, &info->tess_io_info);
    }
 
    /* tess factors are loaded as input instead of system value */
