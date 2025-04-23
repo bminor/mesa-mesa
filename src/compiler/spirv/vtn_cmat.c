@@ -179,6 +179,26 @@ vtn_handle_cooperative_instruction(struct vtn_builder *b, SpvOp opcode,
       break;
    }
 
+   case SpvOpCooperativeMatrixConvertNV: {
+      struct vtn_type *dst_type = vtn_get_type(b, w[1]);
+      nir_deref_instr *src = vtn_get_cmat_deref(b, w[3]);
+
+      nir_deref_instr *dst = vtn_create_cmat_temporary(b, dst_type->type, "cmat_convert_nv");
+      nir_cmat_convert(&b->nb, &dst->def, &src->def);
+      vtn_push_var_ssa(b, w[2], dst->var);
+      break;
+   }
+
+   case SpvOpCooperativeMatrixTransposeNV: {
+      struct vtn_type *dst_type = vtn_get_type(b, w[1]);
+      nir_deref_instr *src = vtn_get_cmat_deref(b, w[3]);
+
+      nir_deref_instr *dst = vtn_create_cmat_temporary(b, dst_type->type, "cmat_transpose_nv");
+      nir_cmat_transpose(&b->nb, &dst->def, &src->def);
+      vtn_push_var_ssa(b, w[2], dst->var);
+      break;
+   }
+
    default:
       unreachable("Unexpected opcode for cooperative matrix instruction");
    }

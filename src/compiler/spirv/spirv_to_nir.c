@@ -68,6 +68,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .ComputeDerivativeGroupLinearKHR = true,
    .ComputeDerivativeGroupQuadsKHR = true,
    .CooperativeMatrixKHR = true,
+   .CooperativeMatrixConversionsNV = true,
    .CullDistance = true,
    .DemoteToHelperInvocation = true,
    .DenormFlushToZero = true,
@@ -6862,6 +6863,8 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpCooperativeMatrixStoreKHR:
    case SpvOpCooperativeMatrixLengthKHR:
    case SpvOpCooperativeMatrixMulAddKHR:
+   case SpvOpCooperativeMatrixConvertNV:
+   case SpvOpCooperativeMatrixTransposeNV:
       vtn_handle_cooperative_instruction(b, opcode, w, count);
       break;
 
