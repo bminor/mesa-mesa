@@ -1244,7 +1244,7 @@
         "description": "anv: put parenthesis to the set_sampler_size equation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "76096d04bbafddb523ffc360f6d738d16d94816b",
         "notes": null
