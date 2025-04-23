@@ -979,18 +979,18 @@ anv_descriptor_set_layout_descriptor_buffer_size(const struct anv_descriptor_set
       /* Inline uniform blocks are specified to use the descriptor array
        * size as the size in bytes of the block.
        */
-      set_surface_size = set_layout->descriptor_buffer_surface_size -
-                         dynamic_binding->array_size + var_desc_count;
+      set_surface_size = (set_layout->descriptor_buffer_surface_size -
+                          dynamic_binding->array_size) + var_desc_count;
       set_sampler_size = 0;
    } else {
       set_surface_size =
-         set_layout->descriptor_buffer_surface_size -
-         dynamic_binding->array_size * dynamic_binding->descriptor_surface_stride +
-         var_desc_count * dynamic_binding->descriptor_surface_stride;
+         (set_layout->descriptor_buffer_surface_size -
+          dynamic_binding->array_size * dynamic_binding->descriptor_surface_stride) +
+          var_desc_count * dynamic_binding->descriptor_surface_stride;
       set_sampler_size =
-         set_layout->descriptor_buffer_sampler_size -
-         dynamic_binding->array_size * dynamic_binding->descriptor_sampler_stride -
-         var_desc_count * dynamic_binding->descriptor_sampler_stride;
+         (set_layout->descriptor_buffer_sampler_size -
+          dynamic_binding->array_size * dynamic_binding->descriptor_sampler_stride) +
+          var_desc_count * dynamic_binding->descriptor_sampler_stride;
    }
 
    *out_surface_size = ALIGN(set_surface_size, ANV_UBO_ALIGNMENT);
