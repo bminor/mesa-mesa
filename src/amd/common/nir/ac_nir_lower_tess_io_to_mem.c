@@ -175,8 +175,9 @@ void
 ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uint64_t tes_inputs_read,
                         uint32_t tes_patch_inputs_read, ac_nir_tess_io_info *io_info)
 {
-   io_info->vram_output_mask = tcs->info.outputs_written & tes_inputs_read;
-   io_info->vram_patch_output_mask = tcs->info.patch_outputs_written & tes_patch_inputs_read;
+   io_info->vram_output_mask = tcs->info.tess.tcs_outputs_read_by_tes & tes_inputs_read;
+   io_info->vram_patch_output_mask = tcs->info.tess.tcs_patch_outputs_read_by_tes & tes_patch_inputs_read;
+
    io_info->lds_output_mask = (((tcs->info.outputs_read & tcs->info.outputs_written) |
                                 tcs->info.tess.tcs_cross_invocation_outputs_written |
                                 tcs->info.outputs_written_indirectly) & ~TESS_LVL_MASK) |
@@ -211,10 +212,6 @@ tcs_output_needs_vmem(nir_intrinsic_instr *intrin,
                       nir_shader *shader,
                       lower_tess_io_state *st)
 {
-   /* no_varying indicates that TES doesn't read the output. */
-   if (nir_intrinsic_io_semantics(intrin).no_varying)
-      return false;
-
    const unsigned loc = nir_intrinsic_io_semantics(intrin).location;
    const bool per_vertex = intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
                            intrin->intrinsic == nir_intrinsic_load_per_vertex_output;
