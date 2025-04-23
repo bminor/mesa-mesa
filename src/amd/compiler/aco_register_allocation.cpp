@@ -3372,19 +3372,16 @@ register_allocation(Program* program, ra_test_policy policy)
 
             if (!definition->isFixed()) {
                Temp tmp = definition->getTemp();
-               if (definition->regClass().is_subdword() && definition->bytes() < 4) {
-                  PhysReg reg = get_reg(ctx, register_file, tmp, parallelcopy, instr);
-                  definition->setFixed(reg);
-                  if (reg.byte() || register_file.test(reg, 4)) {
-                     bool allow_16bit_write = reg.byte() % 2 == 0 && !register_file.test(reg, 2);
-                     add_subdword_definition(program, instr, reg, allow_16bit_write);
-                     definition = &instr->definitions[i]; /* add_subdword_definition can invalidate
-                                                             the reference */
-                  }
-               } else {
-                  definition->setFixed(get_reg(ctx, register_file, tmp, parallelcopy, instr));
-               }
+               PhysReg reg = get_reg(ctx, register_file, tmp, parallelcopy, instr);
+               definition->setFixed(reg);
                update_renames(ctx, register_file, parallelcopy, instr);
+               if (definition->regClass().is_subdword() && definition->bytes() < 4 &&
+                   (reg.byte() || register_file.test(reg, 4))) {
+                  bool allow_16bit_write = reg.byte() % 2 == 0 && !register_file.test(reg, 2);
+                  add_subdword_definition(program, instr, reg, allow_16bit_write);
+                  /* add_subdword_definition can invalidate the reference */
+                  definition = &instr->definitions[i];
+               }
             }
 
             assert(
