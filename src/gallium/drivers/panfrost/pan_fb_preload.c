@@ -99,19 +99,6 @@ struct pan_preload_shader_data {
    nir_alu_type blend_types[8];
 };
 
-struct pan_preload_blend_shader_key {
-   enum pipe_format format;
-   nir_alu_type type;
-   unsigned rt         : 3;
-   unsigned nr_samples : 5;
-   unsigned pad        : 24;
-};
-
-struct pan_preload_blend_shader_data {
-   struct pan_preload_blend_shader_key key;
-   uint64_t address;
-};
-
 struct pan_preload_rsd_key {
    struct {
       enum pipe_format format;
@@ -335,27 +322,6 @@ pan_preload_get_blend_shaders(struct pan_fb_preload_cache *cache,
       if (!rts[i] || panfrost_blendable_formats_v7[rts[i]->format].internal)
          continue;
 
-      struct pan_preload_blend_shader_key key = {
-         .format = rts[i]->format,
-         .rt = i,
-         .nr_samples = pan_image_view_get_nr_samples(rts[i]),
-         .type = preload_shader->blend_types[i],
-      };
-
-      pthread_mutex_lock(&cache->shaders.lock);
-      struct hash_entry *he =
-         _mesa_hash_table_search(cache->shaders.blend, &key);
-      struct pan_preload_blend_shader_data *blend_shader = he ? he->data : NULL;
-      if (blend_shader) {
-         blend_shaders[i] = blend_shader->address;
-         pthread_mutex_unlock(&cache->shaders.lock);
-         continue;
-      }
-
-      blend_shader =
-         rzalloc(cache->shaders.blend, struct pan_preload_blend_shader_data);
-      blend_shader->key = key;
-
       blend_state.rts[i] = (struct pan_blend_rt_state){
          .format = rts[i]->format,
          .nr_samples = pan_image_view_get_nr_samples(rts[i]),
@@ -373,16 +339,8 @@ pan_preload_get_blend_shaders(struct pan_fb_preload_cache *cache,
          i);
 
       assert(b->work_reg_count <= 4);
-      struct panfrost_ptr bin =
-         pan_pool_alloc_aligned(cache->shaders.pool, b->binary.size, 64);
-      memcpy(bin.cpu, b->binary.data, b->binary.size);
-
-      blend_shader->address = bin.gpu | b->first_tag;
+      blend_shaders[i] = b->address;
       pthread_mutex_unlock(&cache->blend_shader_cache->lock);
-      _mesa_hash_table_insert(cache->shaders.blend, &blend_shader->key,
-                              blend_shader);
-      pthread_mutex_unlock(&cache->shaders.lock);
-      blend_shaders[i] = blend_shader->address;
    }
 }
 #endif
@@ -1397,7 +1355,6 @@ GENX(pan_preload_fb)(struct pan_fb_preload_cache *cache, struct pan_pool *pool,
 }
 
 DERIVE_HASH_TABLE(pan_preload_shader_key);
-DERIVE_HASH_TABLE(pan_preload_blend_shader_key);
 DERIVE_HASH_TABLE(pan_preload_rsd_key);
 
 static void
@@ -1445,7 +1402,6 @@ GENX(pan_fb_preload_cache_init)(
 {
    cache->gpu_id = gpu_id;
    cache->shaders.preload = pan_preload_shader_key_table_create(NULL);
-   cache->shaders.blend = pan_preload_blend_shader_key_table_create(NULL);
    cache->shaders.pool = bin_pool;
    pthread_mutex_init(&cache->shaders.lock, NULL);
    pan_preload_prefill_preload_shader_cache(cache);
@@ -1460,7 +1416,6 @@ void
 GENX(pan_fb_preload_cache_cleanup)(struct pan_fb_preload_cache *cache)
 {
    _mesa_hash_table_destroy(cache->shaders.preload, NULL);
-   _mesa_hash_table_destroy(cache->shaders.blend, NULL);
    pthread_mutex_destroy(&cache->shaders.lock);
    _mesa_hash_table_destroy(cache->rsds.rsds, NULL);
    pthread_mutex_destroy(&cache->rsds.lock);

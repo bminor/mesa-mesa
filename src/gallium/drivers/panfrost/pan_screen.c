@@ -722,7 +722,6 @@ panfrost_destroy_screen(struct pipe_screen *pscreen)
    panfrost_resource_screen_destroy(pscreen);
    panfrost_pool_cleanup(&screen->mempools.bin);
    panfrost_pool_cleanup(&screen->mempools.desc);
-   pan_blend_shader_cache_cleanup(&dev->blend_shaders);
 
    if (screen->vtbl.screen_destroy)
       screen->vtbl.screen_destroy(pscreen);
@@ -902,8 +901,6 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
       panfrost_query_compression_modifiers;
 
    panfrost_resource_screen_init(&screen->base);
-   pan_blend_shader_cache_init(&dev->blend_shaders,
-                               panfrost_device_gpu_id(dev));
 
    panfrost_init_shader_caps(screen);
    panfrost_init_compute_caps(screen);

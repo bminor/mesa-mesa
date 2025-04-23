@@ -41,7 +41,6 @@ struct pan_fb_preload_cache {
    struct {
       struct pan_pool *pool;
       struct hash_table *preload;
-      struct hash_table *blend;
       pthread_mutex_t lock;
    } shaders;
    struct {

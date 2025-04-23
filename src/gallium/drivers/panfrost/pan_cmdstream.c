@@ -274,17 +274,17 @@ static void
 panfrost_get_blend_shaders(struct panfrost_batch *batch,
                            uint64_t *blend_shaders)
 {
-   unsigned shader_offset = 0;
-   struct panfrost_bo *shader_bo = NULL;
+   bool used = false;
 
    for (unsigned c = 0; c < batch->key.nr_cbufs; ++c) {
       if (batch->key.cbufs[c]) {
-         blend_shaders[c] =
-            panfrost_get_blend(batch, c, &shader_bo, &shader_offset);
+         blend_shaders[c] = panfrost_get_blend(batch, c);
+         if (blend_shaders[c])
+            used = true;
       }
    }
 
-   if (shader_bo)
+   if (used)
       perf_debug(batch->ctx, "Blend shader use");
 }
 
@@ -4230,6 +4230,7 @@ screen_destroy(struct pipe_screen *pscreen)
 {
    struct panfrost_device *dev = pan_device(pscreen);
    GENX(pan_fb_preload_cache_cleanup)(&dev->fb_preload_cache);
+   pan_blend_shader_cache_cleanup(&dev->blend_shaders);
 }
 
 static void
@@ -4393,6 +4394,9 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.mtk_detile = panfrost_mtk_detile_compute;
    screen->vtbl.emit_write_timestamp = emit_write_timestamp;
    screen->vtbl.select_tile_size = GENX(pan_select_tile_size);
+
+   pan_blend_shader_cache_init(&dev->blend_shaders, panfrost_device_gpu_id(dev),
+                               &screen->mempools.bin.base);
 
    GENX(pan_fb_preload_cache_init)
    (&dev->fb_preload_cache, panfrost_device_gpu_id(dev), &dev->blend_shaders,

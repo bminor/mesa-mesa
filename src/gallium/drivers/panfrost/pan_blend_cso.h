@@ -32,6 +32,7 @@
 #include "nir.h"
 #include "pipe/p_state.h"
 #include "pan_blend.h"
+#include "pan_pool.h"
 
 struct panfrost_bo;
 struct panfrost_batch;
@@ -61,6 +62,7 @@ struct panfrost_blend_state {
 
 struct pan_blend_shader_cache {
    unsigned gpu_id;
+   struct pan_pool *bin_pool;
    struct hash_table *shaders;
    pthread_mutex_t lock;
 };
@@ -68,16 +70,14 @@ struct pan_blend_shader_cache {
 struct pan_blend_shader {
    struct pan_blend_shader_key key;
 
-   struct util_dynarray binary;
-   unsigned first_tag;
+   uint64_t address;
    unsigned work_reg_count;
 };
 
-uint64_t panfrost_get_blend(struct panfrost_batch *batch, unsigned rt,
-                            struct panfrost_bo **bo, unsigned *shader_offset);
+uint64_t panfrost_get_blend(struct panfrost_batch *batch, unsigned rt);
 
 void pan_blend_shader_cache_init(struct pan_blend_shader_cache *cache,
-                                 unsigned gpu_id);
+                                 unsigned gpu_id, struct pan_pool *bin_pool);
 
 void pan_blend_shader_cache_cleanup(struct pan_blend_shader_cache *cache);
 

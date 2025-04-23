@@ -18,9 +18,10 @@ DERIVE_HASH_TABLE(pan_blend_shader_key);
 
 void
 pan_blend_shader_cache_init(struct pan_blend_shader_cache *cache,
-                            unsigned gpu_id)
+                            unsigned gpu_id, struct pan_pool *bin_pool)
 {
    cache->gpu_id = gpu_id;
+   cache->bin_pool = bin_pool;
    cache->shaders = pan_blend_shader_key_table_create(NULL);
    pthread_mutex_init(&cache->lock, NULL);
 }
@@ -118,12 +119,20 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
             cache->gpu_id < 0x700);
 #endif
 
-   GENX(pan_shader_compile)(nir, &inputs, &shader->binary, &info);
+   struct util_dynarray binary;
+   util_dynarray_init(&binary, NULL);
+   GENX(pan_shader_compile)(nir, &inputs, &binary, &info);
+
+   struct panfrost_ptr bin =
+      pan_pool_alloc_aligned(cache->bin_pool, binary.size, 64);
+   memcpy(bin.cpu, binary.data, binary.size);
+   util_dynarray_fini(&binary);
 
    shader->work_reg_count = info.work_reg_count;
 
+   shader->address = bin.gpu;
 #if PAN_ARCH <= 5
-   shader->first_tag = info.midgard.first_tag;
+   shader->address |= info.midgard.first_tag;
 #endif
 
    ralloc_free(nir);
