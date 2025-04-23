@@ -2134,11 +2134,11 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       bi_emit_ld_tile(b, instr);
       break;
 
-   case nir_intrinsic_terminate_if:
+   case nir_intrinsic_demote_if:
       bi_discard_b32(b, bi_src_index(&instr->src[0]));
       break;
 
-   case nir_intrinsic_terminate:
+   case nir_intrinsic_demote:
       bi_discard_f32(b, bi_zero(), bi_zero(), BI_CMPF_EQ);
       break;
 
@@ -5702,6 +5702,18 @@ void
 bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
    MESA_TRACE_FUNC();
+
+   /* The DISCARD instruction just flags the thread as discarded, but the
+    * actual termination only happens when all threads in the quad are
+    * discarded, or when an instruction with a .discard flow is
+    * encountered (Valhall) or when a clause with a .terminate_discarded_thread
+    * is reached (Bifrost).
+    * We could do without nir_lower_terminate_to_demote(), but this allows
+    * for extra dead-code elimination when code sections are detected as
+    * being unused after a termination is crossed.
+    */
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(_, nir, nir_lower_terminate_to_demote);
 
    /* Ensure that halt are translated to returns and get ride of them */
    NIR_PASS(_, nir, nir_shader_instructions_pass, bi_lower_halt_to_return,
