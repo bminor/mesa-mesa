@@ -168,7 +168,10 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
        program->family == CHIP_MI100 || program->family == CHIP_MI200)
       program->dev.fused_mad_mix = true;
 
-   if (program->gfx_level >= GFX11) {
+   if (program->gfx_level >= GFX12) {
+      program->dev.scratch_global_offset_min = -8388608;
+      program->dev.scratch_global_offset_max = 8388607;
+   } else if (program->gfx_level >= GFX11) {
       program->dev.scratch_global_offset_min = -4096;
       program->dev.scratch_global_offset_max = 4095;
    } else if (program->gfx_level >= GFX10 || program->gfx_level == GFX8) {

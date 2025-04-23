@@ -1699,12 +1699,11 @@ static_assert(sizeof(MIMG_instruction) == sizeof(Instruction) + 8, "Unexpected p
 struct FLAT_instruction : public Instruction {
    memory_sync_info sync;
    ac_hw_cache_flags cache;
-   bool lds : 1;
-   bool nv : 1;
-   bool disable_wqm : 1; /* Require an exec mask without helper invocations */
-   uint8_t padding0 : 5;
-   uint8_t padding1;
-   int16_t offset; /* Vega/Navi only */
+   int32_t offset : 24;
+   uint32_t lds : 1;
+   uint32_t nv : 1;
+   uint32_t disable_wqm : 1; /* Require an exec mask without helper invocations */
+   uint32_t padding0 : 5;
 };
 static_assert(sizeof(FLAT_instruction) == sizeof(Instruction) + 8, "Unexpected padding");
 
@@ -2102,8 +2101,8 @@ struct DeviceInfo {
    bool xnack_enabled = false;
    bool sram_ecc_enabled = false;
 
-   int16_t scratch_global_offset_min;
-   int16_t scratch_global_offset_max;
+   int32_t scratch_global_offset_min;
+   int32_t scratch_global_offset_max;
    unsigned max_nsa_vgprs;
 
    /* Note that GFX6/7 ignore the low 2 bits and this is only for positive offsets. */

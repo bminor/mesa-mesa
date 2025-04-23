@@ -184,7 +184,7 @@ class Format(IntEnum):
          return [('uint8_t', 'opsel', 0),
                  ('unsigned', 'wait_exp', 7)]
       elif self in [Format.FLAT, Format.GLOBAL, Format.SCRATCH]:
-         return [('int16_t', 'offset', 0),
+         return [('int32_t', 'offset', 0),
                  ('memory_sync_info', 'sync', 'memory_sync_info()'),
                  ('ac_hw_cache_flags', 'cache', '{{0, 0, 0, 0, 0}}'),
                  ('bool', 'lds', 'false'),
