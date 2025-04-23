@@ -41,13 +41,6 @@ extern "C" {
  * list of debugging flags, as well as some macros for handling them.
  */
 
-#define INTEL_DEBUG_BIT_COUNT 128
-extern BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_BIT_COUNT)];
-
-
-/* Check if a debug flag is enabled by testing its bit position */
-#define INTEL_DEBUG(flag) unlikely(BITSET_TEST(intel_debug, (flag)))
-
 enum intel_debug_flag {
    DEBUG_TEXTURE = 0,
    DEBUG_BLIT,
@@ -55,31 +48,22 @@ enum intel_debug_flag {
    DEBUG_PERFMON,
    DEBUG_BATCH,
    DEBUG_BUFMGR,
-   DEBUG_GS,
    DEBUG_SYNC,
    DEBUG_SF,
    DEBUG_SUBMIT,
-   DEBUG_WM,
    DEBUG_URB,
-   DEBUG_VS,
    DEBUG_CLIP,
    DEBUG_STALL,
    DEBUG_BLORP,
-   /* 16 is reserved */
-   DEBUG_NO_DUAL_OBJECT_GS = 17,
+   DEBUG_NO_DUAL_OBJECT_GS,
    DEBUG_OPTIMIZER,
    DEBUG_ANNOTATION,
-   /* 20 is reserved */
-   DEBUG_NO_OACONFIG = 21,
+   DEBUG_NO_OACONFIG,
    DEBUG_SPILL_FS,
    DEBUG_SPILL_VEC4,
-   DEBUG_CS,
    DEBUG_HEX,
    DEBUG_NO_COMPACTION,
-   DEBUG_TCS,
-   DEBUG_TES,
    DEBUG_L3,
-   DEBUG_DO32,
    DEBUG_NO_CCS,
    DEBUG_NO_HIZ,
    DEBUG_COLOR,
@@ -88,10 +72,6 @@ enum intel_debug_flag {
    DEBUG_BT,
    DEBUG_PIPE_CONTROL,
    DEBUG_NO_FAST_CLEAR,
-   /* 39 is reserved */
-   DEBUG_RT = 40,
-   DEBUG_TASK,
-   DEBUG_MESH,
    DEBUG_CAPTURE_ALL,
    DEBUG_PERF_SYMBOL_NAMES,
    DEBUG_SWSB_STALL,
@@ -114,25 +94,42 @@ enum intel_debug_flag {
    DEBUG_RT_NO_TRACE,
    DEBUG_SHADERS_LINENO,
    DEBUG_SHOW_SHADER_STAGE,
+   /* Keep the stages grouped */
+   DEBUG_VS,
+   DEBUG_TCS,
+   DEBUG_TES,
+   DEBUG_GS,
+   DEBUG_WM,
+   DEBUG_TASK,
+   DEBUG_MESH,
+   DEBUG_CS,
+   DEBUG_RT,
+   DEBUG_NO8,
+
+   DEBUG_NO16,
+   DEBUG_NO32,
+   DEBUG_DO32,
+
+   /* Must be the last entry */
+   INTEL_DEBUG_MAX,
 };
 
+extern BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_MAX)];
 
-#define DEBUG_ANY                 (~0ull)
+
+/* Check if a debug flag is enabled by testing its bit position */
+#define INTEL_DEBUG(flag) unlikely(BITSET_TEST(intel_debug, (flag)))
 
 /* These flags are not compatible with the disk shader cache */
 #define DEBUG_DISK_CACHE_DISABLE_MASK 0
 
-/* These flags may affect program generation */
-#define DEBUG_DISK_CACHE_MASK \
-   (DEBUG_NO_DUAL_OBJECT_GS | DEBUG_SPILL_FS | \
-   DEBUG_SPILL_VEC4 | DEBUG_NO_COMPACTION | DEBUG_DO32 | DEBUG_SOFT64 | \
-   DEBUG_NO_SEND_GATHER)
-
 /* Flags to determine what bvh to dump out */
-#define DEBUG_BVH_ANV (DEBUG_BVH_BLAS | DEBUG_BVH_TLAS)
-#define DEBUG_BVH_IR_HDR (DEBUG_BVH_BLAS_IR_HDR | DEBUG_BVH_TLAS_IR_HDR)
-#define DEBUG_BVH_IR_AS (DEBUG_BVH_BLAS_IR_AS | DEBUG_BVH_TLAS_IR_AS)
-#define DEBUG_BVH_ANY (DEBUG_BVH_ANV | DEBUG_BVH_IR_HDR | DEBUG_BVH_IR_AS)
+#define INTEL_DEBUG_BVH_ANY (unlikely(INTEL_DEBUG(DEBUG_BVH_BLAS) ||    \
+                                      INTEL_DEBUG(DEBUG_BVH_TLAS) ||    \
+                                      INTEL_DEBUG(DEBUG_BVH_BLAS_IR_HDR) || \
+                                      INTEL_DEBUG(DEBUG_BVH_TLAS_IR_HDR) || \
+                                      INTEL_DEBUG(DEBUG_BVH_BLAS_IR_AS) || \
+                                      INTEL_DEBUG(DEBUG_BVH_TLAS_IR_AS)))
 
 extern uint64_t intel_simd;
 extern uint32_t intel_debug_bkp_before_draw_count;

@@ -1264,7 +1264,7 @@ anv_cmd_buffer_exec_batch_debug(struct anv_queue *queue,
                                 struct anv_query_pool *perf_query_pool,
                                 uint32_t perf_query_pass)
 {
-   if (!INTEL_DEBUG(DEBUG_BATCH | DEBUG_BATCH_STATS))
+   if (!INTEL_DEBUG(DEBUG_BATCH) && !INTEL_DEBUG(DEBUG_BATCH_STATS))
       return;
 
    struct anv_device *device = queue->device;

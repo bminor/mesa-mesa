@@ -2363,7 +2363,7 @@ anv_queue_post_submit(struct anv_queue *queue, VkResult submit_result)
 
 #if ANV_SUPPORT_RT && !ANV_SUPPORT_RT_GRL
    /* The recorded bvh is dumped to files upon command buffer completion */
-   if (INTEL_DEBUG(DEBUG_BVH_ANY))
+   if (INTEL_DEBUG_BVH_ANY)
       anv_dump_bvh_to_files(queue->device);
 #endif
 

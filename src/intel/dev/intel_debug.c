@@ -39,88 +39,92 @@
 #include "util/u_math.h"
 #include "c11/threads.h"
 
-BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_BIT_COUNT)] = {0};
+BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_MAX)] = {0};
 
-enum intel_no_x {
-   DEBUG_NO16 = 16,
-   DEBUG_NO8 = 20,
-   DEBUG_NO32 = 39,
+struct debug_control_bitset {
+   const char *string;
+   uint32_t range[2];
 };
 
-
-static const struct debug_control debug_control[] = {
-   { "tex",         DEBUG_TEXTURE },
-   { "blit",        DEBUG_BLIT },
-   { "fall",        DEBUG_PERF },
-   { "perf",        DEBUG_PERF },
-   { "perfmon",     DEBUG_PERFMON },
-   { "bat",         DEBUG_BATCH },
-   { "buf",         DEBUG_BUFMGR },
-   { "fs",          DEBUG_WM },
-   { "gs",          DEBUG_GS },
-   { "sync",        DEBUG_SYNC },
-   { "sf",          DEBUG_SF },
-   { "submit",      DEBUG_SUBMIT },
-   { "wm",          DEBUG_WM },
-   { "urb",         DEBUG_URB },
-   { "vs",          DEBUG_VS },
-   { "clip",        DEBUG_CLIP },
-   { "no16",        DEBUG_NO16 },
-   { "blorp",       DEBUG_BLORP },
-   { "nodualobj",   DEBUG_NO_DUAL_OBJECT_GS },
-   { "optimizer",   DEBUG_OPTIMIZER },
-   { "ann",         DEBUG_ANNOTATION },
-   { "no8",         DEBUG_NO8 },
-   { "no-oaconfig", DEBUG_NO_OACONFIG },
-   { "spill_fs",    DEBUG_SPILL_FS },
-   { "spill_vec4",  DEBUG_SPILL_VEC4 },
-   { "cs",          DEBUG_CS },
-   { "hex",         DEBUG_HEX },
-   { "nocompact",   DEBUG_NO_COMPACTION },
-   { "hs",          DEBUG_TCS },
-   { "tcs",         DEBUG_TCS },
-   { "ds",          DEBUG_TES },
-   { "tes",         DEBUG_TES },
-   { "l3",          DEBUG_L3 },
-   { "do32",        DEBUG_DO32 },
-   { "norbc",       DEBUG_NO_CCS },
-   { "noccs",       DEBUG_NO_CCS },
-   { "nohiz",       DEBUG_NO_HIZ },
-   { "color",       DEBUG_COLOR },
-   { "reemit",      DEBUG_REEMIT },
-   { "soft64",      DEBUG_SOFT64 },
-   { "bt",          DEBUG_BT },
-   { "pc",          DEBUG_PIPE_CONTROL },
-   { "nofc",        DEBUG_NO_FAST_CLEAR },
-   { "no32",        DEBUG_NO32 },
-   { "shaders",     DEBUG_WM },
-   { "rt",          DEBUG_RT },
-   { "rt_notrace",  DEBUG_RT_NO_TRACE },
-   { "bvh_blas",    DEBUG_BVH_BLAS },
-   { "bvh_tlas",    DEBUG_BVH_TLAS },
-   { "bvh_blas_ir_hdr", DEBUG_BVH_BLAS_IR_HDR },
-   { "bvh_tlas_ir_hdr", DEBUG_BVH_TLAS_IR_HDR },
-   { "bvh_blas_ir_as",  DEBUG_BVH_BLAS_IR_AS },
-   { "bvh_tlas_ir_as",  DEBUG_BVH_TLAS_IR_AS },
-   { "bvh_no_build",    DEBUG_BVH_NO_BUILD },
-   { "task",        DEBUG_TASK },
-   { "mesh",        DEBUG_MESH },
-   { "stall",       DEBUG_STALL },
-   { "capture-all", DEBUG_CAPTURE_ALL },
-   { "perf-symbol-names", DEBUG_PERF_SYMBOL_NAMES },
-   { "swsb-stall",  DEBUG_SWSB_STALL },
-   { "heaps",       DEBUG_HEAPS },
-   { "isl",         DEBUG_ISL },
-   { "sparse",      DEBUG_SPARSE },
-   { "draw_bkp",    DEBUG_DRAW_BKP },
-   { "bat-stats",   DEBUG_BATCH_STATS },
-   { "reg-pressure", DEBUG_REG_PRESSURE },
-   { "shader-print", DEBUG_SHADER_PRINT },
-   { "cl-quiet",     DEBUG_CL_QUIET },
-   { "no-send-gather", DEBUG_NO_SEND_GATHER },
-   { "shaders-lineno", DEBUG_SHADERS_LINENO },
-   { "show_shader_stage", DEBUG_SHOW_SHADER_STAGE },
-   { NULL, 0 }
+static const struct debug_control_bitset debug_control[] = {
+#define OPT1(name, bit) \
+   { .string = name, .range = { bit, bit }, }
+#define OPT2(name, start, end) \
+   { .string = name, .range = { start, end }, }
+   OPT1("tex",               DEBUG_TEXTURE),
+   OPT1("blit",              DEBUG_BLIT),
+   OPT1("fall",              DEBUG_PERF),
+   OPT1("perf",              DEBUG_PERF),
+   OPT1("perfmon",           DEBUG_PERFMON),
+   OPT1("bat",               DEBUG_BATCH),
+   OPT1("buf",               DEBUG_BUFMGR),
+   OPT1("fs",                DEBUG_WM),
+   OPT1("gs",                DEBUG_GS),
+   OPT1("sync",              DEBUG_SYNC),
+   OPT1("sf",                DEBUG_SF),
+   OPT1("submit",            DEBUG_SUBMIT),
+   OPT1("wm",                DEBUG_WM),
+   OPT1("urb",               DEBUG_URB),
+   OPT1("vs",                DEBUG_VS),
+   OPT1("clip",              DEBUG_CLIP),
+   OPT1("no16",              DEBUG_NO16),
+   OPT1("blorp",             DEBUG_BLORP),
+   OPT1("nodualobj",         DEBUG_NO_DUAL_OBJECT_GS),
+   OPT1("optimizer",         DEBUG_OPTIMIZER),
+   OPT1("ann",               DEBUG_ANNOTATION),
+   OPT1("no8",               DEBUG_NO8),
+   OPT1("no-oaconfig",       DEBUG_NO_OACONFIG),
+   OPT1("spill_fs",          DEBUG_SPILL_FS),
+   OPT1("spill_vec4",        DEBUG_SPILL_VEC4),
+   OPT1("cs",                DEBUG_CS),
+   OPT1("hex",               DEBUG_HEX),
+   OPT1("nocompact",         DEBUG_NO_COMPACTION),
+   OPT1("hs",                DEBUG_TCS),
+   OPT1("tcs",               DEBUG_TCS),
+   OPT1("ds",                DEBUG_TES),
+   OPT1("tes",               DEBUG_TES),
+   OPT1("l3",                DEBUG_L3),
+   OPT1("do32",              DEBUG_DO32),
+   OPT1("norbc",             DEBUG_NO_CCS),
+   OPT1("noccs",             DEBUG_NO_CCS),
+   OPT1("nohiz",             DEBUG_NO_HIZ),
+   OPT1("color",             DEBUG_COLOR),
+   OPT1("reemit",            DEBUG_REEMIT),
+   OPT1("soft64",            DEBUG_SOFT64),
+   OPT1("bt",                DEBUG_BT),
+   OPT1("pc",                DEBUG_PIPE_CONTROL),
+   OPT1("nofc",              DEBUG_NO_FAST_CLEAR),
+   OPT1("no32",              DEBUG_NO32),
+   OPT2("shaders",           DEBUG_VS, DEBUG_RT),
+   OPT1("rt",                DEBUG_RT),
+   OPT1("rt_notrace",        DEBUG_RT_NO_TRACE),
+   OPT1("bvh_blas",          DEBUG_BVH_BLAS),
+   OPT1("bvh_tlas",          DEBUG_BVH_TLAS),
+   OPT1("bvh_blas_ir_hdr",   DEBUG_BVH_BLAS_IR_HDR),
+   OPT1("bvh_tlas_ir_hdr",   DEBUG_BVH_TLAS_IR_HDR),
+   OPT1("bvh_blas_ir_as",    DEBUG_BVH_BLAS_IR_AS),
+   OPT1("bvh_tlas_ir_as",    DEBUG_BVH_TLAS_IR_AS),
+   OPT1("bvh_no_build",      DEBUG_BVH_NO_BUILD),
+   OPT1("task",              DEBUG_TASK),
+   OPT1("mesh",              DEBUG_MESH),
+   OPT1("stall",             DEBUG_STALL),
+   OPT1("capture-all",       DEBUG_CAPTURE_ALL),
+   OPT1("perf-symbol-names", DEBUG_PERF_SYMBOL_NAMES),
+   OPT1("swsb-stall",        DEBUG_SWSB_STALL),
+   OPT1("heaps",             DEBUG_HEAPS),
+   OPT1("isl",               DEBUG_ISL),
+   OPT1("sparse",            DEBUG_SPARSE),
+   OPT1("draw_bkp",          DEBUG_DRAW_BKP),
+   OPT1("bat-stats",         DEBUG_BATCH_STATS),
+   OPT1("reg-pressure",      DEBUG_REG_PRESSURE),
+   OPT1("shader-print",      DEBUG_SHADER_PRINT),
+   OPT1("cl-quiet",          DEBUG_CL_QUIET),
+   OPT1("no-send-gather",    DEBUG_NO_SEND_GATHER),
+   OPT1("shaders-lineno",    DEBUG_SHADERS_LINENO),
+   OPT1("show_shader_stage", DEBUG_SHOW_SHADER_STAGE),
+   { NULL, }
+#undef OPT1
+#undef OPT2
 };
 uint64_t intel_simd = 0;
 
@@ -206,7 +210,7 @@ uint32_t intel_debug_bkp_before_draw_count = 0;
 uint32_t intel_debug_bkp_after_draw_count = 0;
 
 static void
-parse_debug_bitset(const char *env, const struct debug_control *tbl)
+parse_debug_bitset(const char *env, const struct debug_control_bitset *tbl)
 {
    /* Check if env is NULL or empty */
    if (!env || !*env)
@@ -227,13 +231,12 @@ parse_debug_bitset(const char *env, const struct debug_control *tbl)
          if (strcasecmp(tok, tbl[i].string) != 0)
             continue;
 
-         unsigned bit = tbl[i].flag;
-
-         if (negate)
-            BITSET_CLEAR(intel_debug, bit);
-         else
-            BITSET_SET(intel_debug, bit);
-
+         for (unsigned bit = tbl[i].range[0]; bit <= tbl[i].range[1]; bit++) {
+            if (negate)
+               BITSET_CLEAR(intel_debug, bit);
+            else
+               BITSET_SET(intel_debug, bit);
+         }
          break;
       }
    }

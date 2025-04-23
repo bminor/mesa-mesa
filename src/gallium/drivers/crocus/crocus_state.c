@@ -771,7 +771,7 @@ crocus_calculate_urb_fence(struct crocus_batch *batch, unsigned csize,
             exit(1);
          }
 
-         if (INTEL_DEBUG(DEBUG_URB|DEBUG_PERF))
+         if (INTEL_DEBUG(DEBUG_URB) || INTEL_DEBUG(DEBUG_PERF))
             fprintf(stderr, "URB CONSTRAINED\n");
       }
 

@@ -1964,8 +1964,12 @@ elk_compact_instructions(struct elk_codegen *p, int start_offset,
       if (try_compact_instruction(&c, dst, &inst)) {
          compacted_count++;
 
-         if (INTEL_DEBUG(DEBUG_VS | DEBUG_GS | DEBUG_TCS |
-                         DEBUG_WM | DEBUG_CS | DEBUG_TES)) {
+         if (INTEL_DEBUG(DEBUG_VS) ||
+             INTEL_DEBUG(DEBUG_GS) ||
+             INTEL_DEBUG(DEBUG_TCS) ||
+             INTEL_DEBUG(DEBUG_WM) ||
+             INTEL_DEBUG(DEBUG_CS) ||
+             INTEL_DEBUG(DEBUG_TES)) {
             elk_inst uncompacted;
             uncompact_instruction(&c, &uncompacted, dst);
             if (memcmp(&saved, &uncompacted, sizeof(uncompacted))) {

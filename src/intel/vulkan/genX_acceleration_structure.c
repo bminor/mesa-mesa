@@ -573,7 +573,7 @@ anv_init_header(VkCommandBuffer commandBuffer,
       anv_cmd_buffer_update_addr(cmd_buffer, addr, header_size, header_ptr);
    }
 
-   if (INTEL_DEBUG(DEBUG_BVH_ANY)) {
+   if (INTEL_DEBUG_BVH_ANY) {
       genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
                                    cmd_buffer->state.current_pipeline,
                                    ANV_PIPE_END_OF_PIPE_SYNC_BIT |
