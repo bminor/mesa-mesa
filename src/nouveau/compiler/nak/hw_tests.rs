@@ -950,7 +950,7 @@ fn test_op_shf() {
         let mut a = Acorn::new();
         test_foldable_op_with(op, &mut |i| {
             if i == shift_idx {
-                a.get_uint(6) as u32
+                a.get_uint(7) as u32
             } else {
                 a.get_u32()
             }

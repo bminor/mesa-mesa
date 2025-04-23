@@ -4007,21 +4007,22 @@ impl Foldable for OpShf {
             && self.data_type != IntType::I64
         {
             if self.right {
-                x.checked_shr(shift).unwrap_or(0) as u64
+                x.checked_shr(shift).unwrap_or(0)
             } else {
-                x.checked_shl(shift).unwrap_or(0) as u64
+                x.checked_shl(shift).unwrap_or(0)
             }
         } else if self.data_type.is_signed() {
             if self.right {
-                (x as i64).checked_shr(shift).unwrap_or(0) as u64
+                let x = x as i64;
+                x.checked_shr(shift).unwrap_or(x >> 63) as u64
             } else {
-                (x as i64).checked_shl(shift).unwrap_or(0) as u64
+                x.checked_shl(shift).unwrap_or(0)
             }
         } else {
             if self.right {
-                x.checked_shr(shift).unwrap_or(0) as u64
+                x.checked_shr(shift).unwrap_or(0)
             } else {
-                x.checked_shl(shift).unwrap_or(0) as u64
+                x.checked_shl(shift).unwrap_or(0)
             }
         };
 
