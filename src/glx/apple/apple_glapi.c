@@ -39,7 +39,7 @@
 #include <GL/gl.h>
 
 #include "glapi.h"
-#include "glapitable.h"
+#include "dispatch.h"
 
 #include "apple_glx.h"
 #include "apple_xgl_api.h"
@@ -55,9 +55,10 @@ static void _apple_glapi_create_table(void) {
     __ogl_framework_api = _glapi_create_table_from_handle(apple_cgl_get_dl_handle(), "gl");
     assert(__ogl_framework_api);
 
-    __applegl_api = malloc(sizeof(struct _glapi_table));
+    size_t glapi_table_size = _gloffset_COUNT * sizeof(_glapi_proc*);
+    __applegl_api = malloc(glapi_table_size);
     assert(__applegl_api);
-    memcpy(__applegl_api, __ogl_framework_api, sizeof(struct _glapi_table));
+    memcpy(__applegl_api, __ogl_framework_api, glapi_table_size);
 
     _glapi_table_patch(__applegl_api, "ReadPixels", __applegl_glReadPixels);
     _glapi_table_patch(__applegl_api, "CopyPixels", __applegl_glCopyPixels);
@@ -72,6 +73,7 @@ void apple_mesa_glapi_set_dispatch(void) {
 
 void apple_glapi_oglfw_viewport_scissor(GLint x, GLint y, GLsizei width, GLsizei height) {
     _apple_glapi_create_table();
-    __ogl_framework_api->Viewport(x, y, width, height);
-    __ogl_framework_api->Scissor(x, y, width, height);
+
+    CALL_Viewport(__ogl_framework_api, (x, y, width, height));
+    CALL_Scissor(__ogl_framework_api, (x, y, width, height));
 }

@@ -674,7 +674,7 @@
         "description": "Get rid of 5 remaining references to glapitable.h",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0cebfb15b568c79bfc7c3298954dff7302407722",
         "notes": null

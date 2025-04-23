@@ -40,7 +40,8 @@
 #include "glxclient.h"
 #include "apple_glx_context.h"
 #include "apple_xgl_api.h"
-#include "glapitable.h"
+#include "glapi.h"
+#include "dispatch.h"
 
 extern struct _glapi_table * __ogl_framework_api;
 
@@ -75,10 +76,10 @@ __applegl_glDrawBuffer(GLenum mode)
          break;
       }
 
-      __ogl_framework_api->DrawBuffers(n, buf);
+      CALL_DrawBuffers(__ogl_framework_api, (n, buf));
    }
    else {
-      __ogl_framework_api->DrawBuffer(mode);
+      CALL_DrawBuffer(__ogl_framework_api, (mode));
    }
 }
 
@@ -116,9 +117,9 @@ __applegl_glDrawBuffers(GLsizei n, const GLenum * bufs)
          newbuf[outi++] = GL_FRONT_RIGHT;
       }
 
-      __ogl_framework_api->DrawBuffers(outi, newbuf);
+      CALL_DrawBuffers(__ogl_framework_api, (outi, newbuf));
    }
    else {
-      __ogl_framework_api->DrawBuffers(n, bufs);
+      CALL_DrawBuffers(__ogl_framework_api, (n, bufs));
    }
 }
