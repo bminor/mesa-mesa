@@ -139,10 +139,6 @@ typedef struct {
     */
    uint64_t tcs_inputs_via_lds;
 
-   /* Bit mask of TCS outputs read by TES. */
-   uint64_t tes_inputs_read;
-   uint32_t tes_patch_inputs_read;
-
    /* True if the output patch fits the subgroup, so all TCS outputs are always written in the same
     * subgroup that reads them.
     */
@@ -661,9 +657,6 @@ lower_hs_output_store(nir_builder *b,
             ac_nir_store_var_components(b, st->tcs_tess_level_outer, store_val,
                                         component, write_mask);
       }
-
-      if (semantics.no_varying)
-         st->tes_inputs_read &= ~BITFIELD64_BIT(semantics.location);
    }
 
    return NIR_LOWER_INSTR_PROGRESS_REPLACE;
@@ -1108,8 +1101,8 @@ hs_store_tess_factors_for_tes(nir_builder *b, tess_levels tessfactors, lower_tes
    /* For linked shaders, we must only write the tess factors that the TES actually reads,
     * otherwise we would write to a memory location reserved for another per-patch output.
     */
-   const bool tes_reads_outer = st->tes_inputs_read & VARYING_BIT_TESS_LEVEL_OUTER;
-   const bool tes_reads_inner = st->tes_inputs_read & VARYING_BIT_TESS_LEVEL_INNER;
+   const bool tes_reads_outer = st->io_info.vram_output_mask & VARYING_BIT_TESS_LEVEL_OUTER;
+   const bool tes_reads_inner = st->io_info.vram_output_mask & VARYING_BIT_TESS_LEVEL_INNER;
 
    if (st->tcs_tess_level_outer_mask && tes_reads_outer) {
       nir_def *vmem_off_outer = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER, 0, zero, 0, NULL);
@@ -1443,10 +1436,9 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
 
 bool
 ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
+                               const ac_nir_tess_io_info *io_info,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
-                               uint64_t tes_inputs_read,
-                               uint32_t tes_patch_inputs_read,
                                unsigned wave_size)
 {
    assert(shader->info.stage == MESA_SHADER_TESS_CTRL);
@@ -1456,13 +1448,10 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
       .tcs_info = *info,
-      .tes_inputs_read = tes_inputs_read,
-      .tes_patch_inputs_read = tes_patch_inputs_read,
+      .io_info = *io_info,
       .tcs_out_patch_fits_subgroup = wave_size % shader->info.tess.tcs_vertices_out == 0,
       .map_io = map,
    };
-
-   ac_nir_get_tess_io_info(shader, info, tes_inputs_read, tes_patch_inputs_read, &state.io_info);
 
    if (state.tcs_info.all_invocations_define_tess_levels) {
       nir_function_impl *impl = nir_shader_get_entrypoint(shader);
@@ -1497,8 +1486,6 @@ ac_nir_lower_tes_inputs_to_mem(nir_shader *shader,
       .io_info.vram_output_mask = shader->info.inputs_read,
       .io_info.vram_patch_output_mask = shader->info.patch_inputs_read,
       .map_io = map,
-      .tes_inputs_read = shader->info.inputs_read,
-      .tes_patch_inputs_read = shader->info.patch_inputs_read,
    };
 
    return nir_shader_lower_instructions(shader,
