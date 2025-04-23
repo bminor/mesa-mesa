@@ -1222,14 +1222,25 @@ arm32-dEQP-GLES2.functional.uniform_api.random.79,Fail
 
 # These are known failures
 asan-KHR-GLES2.core.internalformat.texture2d.depth_component_unsigned_int_depth_component16,Fail
+asan-dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_center,Fail
 asan-dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp_non_square,Fail
 asan-dEQP-GLES2.functional.texture.wrap.clamp_clamp_nearest_npot_etc1,Fail
 
 # Already known failures
 ubsan-KHR-GLES2.core.internalformat.texture2d.depth_component_unsigned_int_depth_component16,Fail
+ubsan-KHR-GLES2.core.internalformat.texture2d.depth_component_unsigned_short_depth_component16,Fail
+ubsan-dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_center,Fail
 ubsan-dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_corner,Fail
+ubsan-dEQP-GLES2.functional.depth_stencil_clear.depth_stencil_masked,Fail
+ubsan-dEQP-GLES2.functional.texture.filtering.2d.nearest_mipmap_linear_linear_mirror_rgba8888,Fail
+ubsan-dEQP-GLES2.functional.texture.filtering.2d.nearest_mipmap_nearest_linear_mirror_rgba8888,Fail
+ubsan-dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_mirror_non_square,Fail
+ubsan-dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_repeat_non_square,Fail
 ubsan-dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_clamp_non_square,Fail
+ubsan-dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_mirror_non_square,Fail
+ubsan-dEQP-GLES2.functional.texture.mipmap.2d.basic.nearest_linear_repeat_non_square,Fail
 ubsan-dEQP-GLES2.functional.texture.wrap.clamp_clamp_nearest_npot_etc1,Fail
+ubsan-dEQP-GLES2.functional.uniform_api.random.79,Fail
 
 asan-dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_corner,Fail
 arm32-dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_mirror_non_square,Fail

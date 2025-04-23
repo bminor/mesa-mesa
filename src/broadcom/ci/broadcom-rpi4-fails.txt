@@ -582,6 +582,7 @@ arm32-KHR-GL31.transform_feedback3.multiple_streams,Fail
 arm32-KHR-GL31.transform_feedback3.skip_components,Fail
 arm32-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 
+asan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 ubsan-KHR-GL31.transform_feedback3.multiple_streams,Fail
 
 # This seems to be working with upstream

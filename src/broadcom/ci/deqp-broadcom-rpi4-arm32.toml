@@ -10,7 +10,7 @@ deqp_args = [
 ]
 version_check = "GL ES 3.1.*git"
 renderer_check = "V3D 4.2.14"
-fraction = 4
+fraction = 2
 prefix = "arm32-"
 
 [[deqp]]

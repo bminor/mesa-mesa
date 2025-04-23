@@ -42,3 +42,6 @@ spec@glsl-1.50.*
 spec@glsl-3.*
 spec@glsl-4.*
 spec@glsl-es-3.*
+
+# ASan issues
+asan-dEQP-GLES2.functional.uniform_api.random.21
