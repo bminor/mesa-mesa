@@ -1271,7 +1271,7 @@ get_reg_impl(ra_ctx& ctx, const RegisterFile& reg_file, std::vector<parallelcopy
 {
    const PhysRegInterval& bounds = info.bounds;
    uint32_t size = info.size;
-   uint32_t stride = info.stride;
+   uint32_t stride = info.rc.is_subdword() ? DIV_ROUND_UP(info.stride, 4) : info.stride;
    RegClass rc = info.rc;
 
    /* check how many free regs we have */
