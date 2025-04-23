@@ -8,3 +8,4 @@ GL_ARB_blend_func_extended on v3d
 dualSrcBlend on v3dv
 VK_KHR_maintenance4 on panvk/v10+
 VK_KHR_maintenance5 on panvk/v10+
+VK_EXT_direct_mode_display on panvk
