@@ -89,6 +89,20 @@ bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,
                              int8_t slot_remap[NUM_TOTAL_VARYING_SLOTS],
                              uint8_t param_export_index[NUM_TOTAL_VARYING_SLOTS]);
 
+typedef struct {
+   /* Per-vertex slots and tess levels. */
+   uint64_t vram_output_mask;
+   uint64_t lds_output_mask;
+   uint64_t vgpr_output_mask; /* Hold the output values in VGPRs until the end. */
+   /* Generic per-patch slots. */
+   uint32_t vram_patch_output_mask;
+   uint32_t lds_patch_output_mask;
+} ac_nir_tess_io_info;
+
+void
+ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uint64_t tes_inputs_read,
+                        uint32_t tes_patch_inputs_read, ac_nir_tess_io_info *io_info);
+
 bool
 ac_nir_lower_ls_outputs_to_mem(nir_shader *ls,
                                ac_nir_map_io_driver_location map,
