@@ -363,9 +363,10 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
    }
 
    if (ctx.handle_wqm) {
-      if (block->kind & block_kind_top_level && ctx.info[idx].exec.size() == 2) {
+      if (ctx.info[idx].exec.size() == 2) {
          /* End WQM handling if not needed anymore */
          if (block->instructions[i]->opcode == aco_opcode::p_end_wqm) {
+            assert(block->kind & block_kind_top_level);
             ctx.info[idx].exec.back().type |= mask_type_global;
             transition_to_Exact(ctx, bld, idx);
             ctx.handle_wqm = false;
