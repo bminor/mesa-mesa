@@ -1934,6 +1934,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v1 && instr->def.bit_size == 16) {
          emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_sub_u16, dst);
          break;
+      } else if (dst.regClass() == s2 && ctx->program->gfx_level >= GFX12) {
+         emit_sop2_instruction(ctx, instr, aco_opcode::s_sub_u64, dst, false);
+         break;
       }
 
       Temp src0 = get_alu_src(ctx, instr->src[0]);
