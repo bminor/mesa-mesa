@@ -2105,6 +2105,9 @@ struct DeviceInfo {
    int16_t scratch_global_offset_min;
    int16_t scratch_global_offset_max;
    unsigned max_nsa_vgprs;
+
+   /* Note that GFX6/7 ignore the low 2 bits and this is only for positive offsets. */
+   uint32_t smem_offset_max;
 };
 
 enum class CompilationProgress {

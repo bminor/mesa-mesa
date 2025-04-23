@@ -6673,7 +6673,9 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
          info.resource = bld.as_uniform(info.resource);
       info.offset = Operand(bld.as_uniform(info.offset));
       info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_SMEM);
-      emit_load(ctx, bld, info, smem_load_params);
+      EmitLoadParameters params = smem_load_params;
+      params.max_const_offset_plus_one = ctx->program->dev.smem_offset_max + 1;
+      emit_load(ctx, bld, info, params);
    } else {
       EmitLoadParameters params = global_load_params;
       info.cache = get_cache_flags(ctx, access);
