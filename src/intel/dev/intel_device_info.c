@@ -1156,6 +1156,12 @@ static const struct intel_device_info intel_device_info_arl_h = {
     { INTEL_CMAT_SCOPE_SUBGROUP, 8, 16, 32, INTEL_CMAT_UINT8, INTEL_CMAT_UINT8, INTEL_CMAT_UINT32, INTEL_CMAT_UINT32 },       \
    }
 
+/* Note, do not enable PAT 10 or 12 on BMG, according to
+ * Wa_18038669374 we should not not use any MOCS/PAT settings
+ * that has "Compressible UC policy"
+ *
+ * (both 10 and 12 map to different compressed L3UC entries)
+ */
 #define XE2_PAT_ENTRIES                                         \
    /* BSpec 71582 (r59285) */                                   \
    .pat = {                                                     \
