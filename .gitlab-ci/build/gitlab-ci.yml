@@ -301,6 +301,7 @@ alpine-build-testing:
       -Wno-error=array-bounds
       -Wno-error=stringop-overflow
       -Wno-error=stringop-overread
+      -Wno-error=misleading-indentation
     DRI_LOADERS: >
       -D glx=disabled
       -D gbm=enabled
