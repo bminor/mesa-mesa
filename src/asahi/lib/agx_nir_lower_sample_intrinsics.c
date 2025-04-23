@@ -196,8 +196,8 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
  * The load_sample_id intrinsics themselves are lowered later, with different
  * lowerings for monolithic vs epilogs.
  *
- * Note that fragment I/O (like store_local_pixel_agx and demote_samples) does not
- * get lowered here, because that lowering is different for monolithic vs FS
+ * Note that fragment I/O (like store_local_pixel_agx and demote_samples) does
+ * not get lowered here, because that lowering is different for monolithic vs FS
  * epilogs even though there's no dependency on sample count.
  */
 bool

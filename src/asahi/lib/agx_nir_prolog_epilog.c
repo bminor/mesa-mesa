@@ -447,7 +447,8 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
 
    /* Alpha-to-coverage must be lowered before alpha-to-one */
    if (key->blend.alpha_to_coverage)
-      NIR_PASS(_, b->shader, nir_lower_alpha_to_coverage, tib.nr_samples, false);
+      NIR_PASS(_, b->shader, nir_lower_alpha_to_coverage, tib.nr_samples,
+               false);
 
    /* Depth/stencil writes must be deferred until after all discards,
     * particularly alpha-to-coverage.
