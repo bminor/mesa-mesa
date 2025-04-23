@@ -344,7 +344,7 @@
         "description": "radv: Clear dirty flag for MSAA state after emitting it.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "08918f08805f87ba82e3dcf611e186d51ae4db41",
         "notes": null

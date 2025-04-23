@@ -11091,6 +11091,8 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
                                     RADV_TRACKED_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
       radeon_end();
    }
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_MSAA_STATE;
 }
 
 static void
