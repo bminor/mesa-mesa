@@ -835,6 +835,10 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
 
    const struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
 
+   /* At this point, we should know sample count and the tile size should have
+    * been calculated */
+   assert(fbinfo->nr_samples > 0 && fbinfo->tile_size > 0);
+
    pan_pack(&tiler_tmpl, TILER_CONTEXT, cfg) {
       unsigned max_levels = tiler_features.max_levels;
       assert(max_levels >= 2);
@@ -1119,6 +1123,11 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
 
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+
+   /* At this point, we should know sample count and the tile size should have
+    * been calculated */
+   assert(fbinfo->nr_samples > 0 && fbinfo->tile_size > 0);
+
    bool simul_use =
       cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
@@ -1305,6 +1314,8 @@ set_provoking_vertex_mode(struct panvk_cmd_buffer *cmdbuf)
 static VkResult
 get_render_ctx(struct panvk_cmd_buffer *cmdbuf)
 {
+   panvk_per_arch(cmd_select_tile_size)(cmdbuf);
+
    VkResult result = get_tiler_desc(cmdbuf);
    if (result != VK_SUCCESS)
       return result;
@@ -1889,6 +1900,31 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (result != VK_SUCCESS)
       return result;
 
+   if (!cmdbuf->vk.dynamic_graphics_state.rs.rasterizer_discard_enable) {
+      const struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+      uint32_t *nr_samples = &cmdbuf->state.gfx.render.fb.nr_samples;
+      uint32_t rasterization_samples =
+         cmdbuf->vk.dynamic_graphics_state.ms.rasterization_samples;
+
+      /* If there's no attachment, we patch nr_samples to match
+       * rasterization_samples, otherwise, we make sure those two numbers match.
+       */
+      if (!cmdbuf->state.gfx.render.bound_attachments) {
+         assert(rasterization_samples > 0);
+         *nr_samples = rasterization_samples;
+      } else {
+         assert(rasterization_samples == *nr_samples);
+      }
+
+      /* In case we already emitted tiler/framebuffer descriptors, we ensure
+       * that the sample count didn't change
+       * XXX: This currently can happen in case we resume a render pass with no
+       * attachements and without any draw as the FBD is emitted when suspending.
+       */
+      assert(fbinfo->nr_samples == 0 ||
+             fbinfo->nr_samples == cmdbuf->state.gfx.render.fb.nr_samples);
+   }
+
    if (!inherits_render_ctx(cmdbuf)) {
       result = get_render_ctx(cmdbuf);
       if (result != VK_SUCCESS)
@@ -1983,22 +2019,6 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
     * fs.required being initialized. */
    cmdbuf->state.gfx.fs.required =
       fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
-
-   if (!cmdbuf->vk.dynamic_graphics_state.rs.rasterizer_discard_enable) {
-      struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-      uint32_t rasterization_samples =
-         cmdbuf->vk.dynamic_graphics_state.ms.rasterization_samples;
-
-      /* If there's no attachment, we patch nr_samples to match
-       * rasterization_samples, otherwise, we make sure those two numbers match.
-       */
-      if (!cmdbuf->state.gfx.render.bound_attachments) {
-         assert(rasterization_samples > 0);
-         fbinfo->nr_samples = rasterization_samples;
-      } else {
-         assert(rasterization_samples == fbinfo->nr_samples);
-      }
-   }
 
    result = prepare_draw(cmdbuf, draw);
    if (result != VK_SUCCESS)
@@ -2161,22 +2181,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
     * fs.required being initialized. */
    cmdbuf->state.gfx.fs.required =
       fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
-
-   if (!cmdbuf->vk.dynamic_graphics_state.rs.rasterizer_discard_enable) {
-      struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-      uint32_t rasterization_samples =
-         cmdbuf->vk.dynamic_graphics_state.ms.rasterization_samples;
-
-      /* If there's no attachment, we patch nr_samples to match
-       * rasterization_samples, otherwise, we make sure those two numbers match.
-       */
-      if (!cmdbuf->state.gfx.render.bound_attachments) {
-         assert(rasterization_samples > 0);
-         fbinfo->nr_samples = rasterization_samples;
-      } else {
-         assert(rasterization_samples == fbinfo->nr_samples);
-      }
-   }
 
    /* Layered indirect draw (VK_EXT_shader_viewport_index_layer) needs
     * additional changes. We allow layer_count == 0 because that happens
@@ -2409,12 +2413,18 @@ panvk_per_arch(cmd_inherit_render_state)(
    cmdbuf->state.gfx.render.layer_count = inheritance_info->viewMask ?
       util_last_bit(inheritance_info->viewMask) :
       0;
+
+   /* If a draw was performed, the inherited sample count should match our current sample count */
+   assert(fbinfo->nr_samples == 0 || inheritance_info->rasterizationSamples == fbinfo->nr_samples);
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
       .z_tile_buf_budget = panfrost_query_optimal_z_tib_size(phys_dev->model),
+      .tile_size = fbinfo->tile_size,
+      .cbuf_allocation = fbinfo->cbuf_allocation,
       .nr_samples = inheritance_info->rasterizationSamples,
       .rt_count = inheritance_info->colorAttachmentCount,
    };
+   cmdbuf->state.gfx.render.fb.nr_samples = inheritance_info->rasterizationSamples;
 
    assert(inheritance_info->colorAttachmentCount <= ARRAY_SIZE(fbinfo->rts));
 
@@ -2890,6 +2900,10 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
 
    if (!suspending) {
       struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+
+      /* If no draw was performed, we should ensure sample count is valid and that we emit tile size */
+      panvk_per_arch(cmd_select_tile_size)(cmdbuf);
+
       bool clear = fbinfo->zs.clear.z | fbinfo->zs.clear.s;
       for (unsigned i = 0; i < fbinfo->rt_count; i++)
          clear |= fbinfo->rts[i].clear;

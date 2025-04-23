@@ -137,6 +137,12 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
       GENX(pan_emit_tls)(&batch->tlsinfo, batch->tls.cpu);
 
    if (batch->fb.desc.cpu) {
+      panvk_per_arch(cmd_select_tile_size)(cmdbuf);
+
+      /* At this point, we should know sample count and the tile size should have
+       * been calculated */
+      assert(fbinfo->nr_samples > 0 && fbinfo->tile_size > 0);
+
       fbinfo->sample_positions = dev->sample_positions->addr.dev +
                                  panfrost_sample_positions_offset(
                                     pan_sample_pattern(fbinfo->nr_samples));

@@ -64,6 +64,9 @@ struct panvk_rendering_state {
       struct pan_fb_info info;
       bool crc_valid[MAX_RTS];
 
+      /* nr_samples to be used before framebuffer / tiler descriptor are emitted */
+      uint32_t nr_samples;
+
 #if PAN_ARCH <= 7
       uint32_t bo_count;
       struct pan_kmod_bo *bos[MAX_RTS + 2];
@@ -326,6 +329,7 @@ panvk_per_arch(cmd_preload_render_area_border)(struct panvk_cmd_buffer *cmdbuf,
                                                const VkRenderingInfo *render_info);
 
 void panvk_per_arch(cmd_resolve_attachments)(struct panvk_cmd_buffer *cmdbuf);
+void panvk_per_arch(cmd_select_tile_size)(struct panvk_cmd_buffer *cmdbuf);
 
 struct panvk_draw_info {
    struct {

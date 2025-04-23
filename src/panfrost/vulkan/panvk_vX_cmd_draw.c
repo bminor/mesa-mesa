@@ -36,8 +36,9 @@ render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
 
    fbinfo->rts[index].view = &iview->pview;
    fbinfo->rts[index].crc_valid = &state->render.fb.crc_valid[index];
-   fbinfo->nr_samples =
-      MAX2(fbinfo->nr_samples, pan_image_view_get_nr_samples(&iview->pview));
+   state->render.fb.nr_samples =
+      MAX2(state->render.fb.nr_samples,
+           pan_image_view_get_nr_samples(&iview->pview));
 
    if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
       enum pipe_format fmt = vk_format_to_pipe_format(iview->vk.format);
@@ -89,8 +90,9 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
 
    state->render.zs_pview.planes[0] = &img->planes[0];
    state->render.zs_pview.planes[1] = NULL;
-   fbinfo->nr_samples =
-      MAX2(fbinfo->nr_samples, pan_image_view_get_nr_samples(&iview->pview));
+   state->render.fb.nr_samples =
+      MAX2(state->render.fb.nr_samples,
+           pan_image_view_get_nr_samples(&iview->pview));
    state->render.z_attachment.iview = iview;
 
    /* D24S8 is a single plane format where the depth/stencil are interleaved.
@@ -157,8 +159,9 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
       state->render.s_pview.planes[1] = NULL;
    }
 
-   fbinfo->nr_samples =
-      MAX2(fbinfo->nr_samples, pan_image_view_get_nr_samples(&iview->pview));
+   state->render.fb.nr_samples =
+      MAX2(state->render.fb.nr_samples,
+           pan_image_view_get_nr_samples(&iview->pview));
    state->render.s_attachment.iview = iview;
 
    /* If the depth and stencil attachments point to the same image,
@@ -234,9 +237,10 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
       .z_tile_buf_budget = panfrost_query_optimal_z_tib_size(phys_dev->model),
-      .nr_samples = 1,
+      .nr_samples = 0,
       .rt_count = pRenderingInfo->colorAttachmentCount,
    };
+   cmdbuf->state.gfx.render.fb.nr_samples = 1;
 
    assert(pRenderingInfo->colorAttachmentCount <= ARRAY_SIZE(fbinfo->rts));
 
@@ -295,15 +299,30 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    assert(fbinfo->width && fbinfo->height);
+}
 
-   GENX(pan_select_tile_size)(fbinfo);
+void
+panvk_per_arch(cmd_select_tile_size)(struct panvk_cmd_buffer *cmdbuf)
+{
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+
+   /* In case we never emitted tiler/framebuffer descriptors, we emit the
+    * current sample count and compute tile size */
+   if (fbinfo->nr_samples == 0) {
+      fbinfo->nr_samples = cmdbuf->state.gfx.render.fb.nr_samples;
+      GENX(pan_select_tile_size)(fbinfo);
 
 #if PAN_ARCH != 6
-   if (fbinfo->cbuf_allocation > fbinfo->tile_buf_budget) {
-      vk_perf(VK_LOG_OBJS(&cmdbuf->vk.base),
-              "Using too much tile-memory, disabling pipelining");
-   }
+      if (fbinfo->cbuf_allocation > fbinfo->tile_buf_budget) {
+         vk_perf(VK_LOG_OBJS(&cmdbuf->vk.base),
+                 "Using too much tile-memory, disabling pipelining");
+      }
 #endif
+   } else {
+      /* In case we already emitted tiler/framebuffer descriptors, we ensure
+       * that the sample count didn't change (this should never happen) */
+      assert(fbinfo->nr_samples == cmdbuf->state.gfx.render.fb.nr_samples);
+   }
 }
 
 void
