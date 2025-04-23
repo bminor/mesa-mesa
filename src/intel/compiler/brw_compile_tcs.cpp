@@ -203,7 +203,8 @@ brw_compile_tcs(const struct brw_compiler *compiler,
                        key->base.vue_layout, 1);
    brw_compute_tess_vue_map(&vue_prog_data->vue_map,
                             nir->info.outputs_written,
-                            nir->info.patch_outputs_written);
+                            nir->info.patch_outputs_written,
+                            nir->info.separate_shader);
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_vue_inputs(nir, &input_vue_map);

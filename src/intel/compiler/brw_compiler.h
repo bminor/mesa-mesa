@@ -1139,7 +1139,8 @@ void brw_compute_vue_map(const struct intel_device_info *devinfo,
 
 void brw_compute_tess_vue_map(struct intel_vue_map *const vue_map,
                               uint64_t slots_valid,
-                              uint32_t is_patch);
+                              uint32_t is_patch,
+                              bool separate_shader);
 
 struct brw_vue_prog_data {
    struct brw_stage_prog_data base;

@@ -2323,7 +2323,7 @@ iris_compile_tes(struct iris_screen *screen,
 
       struct intel_vue_map input_vue_map;
       brw_compute_tess_vue_map(&input_vue_map, key->inputs_read,
-                               key->patch_inputs_read);
+                               key->patch_inputs_read, false /* separate */);
 
       struct brw_tes_prog_key brw_key = iris_to_brw_tes_key(screen, key);
 

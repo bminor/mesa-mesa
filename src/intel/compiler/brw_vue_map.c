@@ -286,7 +286,7 @@ brw_compute_vue_map(const struct intel_device_info *devinfo,
       u_foreach_bit64(varying, builtins) {
          /* Already assigned above? */
          if (vue_map->varying_to_slot[varying] != -1)
-         continue;
+            continue;
          assign_vue_slot(vue_map, varying, slot++);
       }
    }
@@ -304,18 +304,18 @@ brw_compute_vue_map(const struct intel_device_info *devinfo,
 void
 brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
                          uint64_t vertex_slots,
-                         uint32_t patch_slots)
+                         uint32_t patch_slots,
+                         bool separate)
 {
    /* I don't think anything actually uses this... */
    vue_map->slots_valid = vertex_slots;
-
-   /* separate isn't really meaningful, we always compiled tessellation
-    * shaders together, so use a fixed layout.
-    */
-   vue_map->layout = INTEL_VUE_LAYOUT_FIXED;
+   vue_map->layout = separate ? INTEL_VUE_LAYOUT_SEPARATE : INTEL_VUE_LAYOUT_FIXED;
 
    vertex_slots &= ~(VARYING_BIT_TESS_LEVEL_OUTER |
                      VARYING_BIT_TESS_LEVEL_INNER);
+
+   if (separate)
+      vertex_slots |= VARYING_BIT_POS;
 
    /* Make sure that the values we store in vue_map->varying_to_slot and
     * vue_map->slot_to_varying won't overflow the signed chars that are used
@@ -354,16 +354,44 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
    /* apparently, including the patch header... */
    vue_map->num_per_patch_slots = slot;
 
-   /* then assign per-vertex varyings for each vertex in our patch */
-   while (vertex_slots != 0) {
-      const int varying = ffsll(vertex_slots) - 1;
-      if (vue_map->varying_to_slot[varying] == -1) {
+   /* We have 2 blocks of varyings, generics for the app & builtins. Builtins
+    * have to match according to the Vulkan spec, but generics don't have to.
+    *
+    * In fixed layout we can put all the builtins together at the beginning
+    * and pack the generics after that.
+    *
+    * In separate layout we lay out the generics in a position independent way
+    * at the beginning first then followed by the builtins. An offset will be
+    * pushed into the tessellation evaluation shader to indicate where to find
+    * the builtins.
+    */
+   const int first_vertex_slot = slot;
+
+   const uint64_t generics =
+      (separate ? BITFIELD64_MASK(util_last_bit64(vertex_slots)) : vertex_slots) &
+      ~BITFIELD64_MASK(VARYING_SLOT_VAR0);
+   const uint64_t builtins = vertex_slots & BITFIELD64_MASK(VARYING_SLOT_VAR0);
+
+   /* TODO: consider only using a single layout (just allowing position
+    * independent generics), since there should be no difference in VUE size.
+    */
+   if (separate) {
+      const int first_generics_slot = slot;
+      u_foreach_bit64(varying, generics) {
+         slot = first_generics_slot + varying - VARYING_SLOT_VAR0;
          assign_vue_slot(vue_map, varying, slot++);
       }
-      vertex_slots &= ~BITFIELD64_BIT(varying);
+      u_foreach_bit64(varying, builtins)
+         assign_vue_slot(vue_map, varying, slot++);
+   } else {
+      u_foreach_bit64(varying, builtins) {
+         assign_vue_slot(vue_map, varying, slot++);
+      }
+      u_foreach_bit64(varying, generics)
+         assign_vue_slot(vue_map, varying, slot++);
    }
 
-   vue_map->num_per_vertex_slots = slot - vue_map->num_per_patch_slots;
+   vue_map->num_per_vertex_slots = slot - first_vertex_slot;
    vue_map->num_pos_slots = 0;
    vue_map->num_slots = slot;
 }
