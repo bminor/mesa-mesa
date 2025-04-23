@@ -30,17 +30,10 @@
 #include "compiler/nir/nir.h"
 #include "util/blend.h"
 #include "util/format/u_format.h"
-#include "util/u_dynarray.h"
 
 #include "panfrost/util/pan_ir.h"
 
 struct MALI_BLEND_EQUATION;
-
-struct pan_blend_shader_cache {
-   unsigned gpu_id;
-   struct hash_table *shaders;
-   pthread_mutex_t lock;
-};
 
 struct pan_blend_equation {
    unsigned blend_enable                  : 1;
@@ -84,22 +77,6 @@ struct pan_blend_shader_key {
    uint32_t alpha_to_one   : 1;
    uint32_t padding        : 17;
    struct pan_blend_equation equation;
-};
-
-struct pan_blend_shader_variant {
-   struct list_head node;
-   float constants[4];
-   struct util_dynarray binary;
-   unsigned first_tag;
-   unsigned work_reg_count;
-};
-
-#define PAN_BLEND_SHADER_MAX_VARIANTS 32
-
-struct pan_blend_shader {
-   struct pan_blend_shader_key key;
-   unsigned nvariants;
-   struct list_head variants;
 };
 
 bool pan_blend_reads_dest(const struct pan_blend_equation eq);
@@ -150,11 +127,6 @@ void pan_blend_to_fixed_function_equation(const struct pan_blend_equation eq,
 
 uint32_t pan_pack_blend(const struct pan_blend_equation equation);
 
-void pan_blend_shader_cache_init(struct pan_blend_shader_cache *cache,
-                                 unsigned gpu_id);
-
-void pan_blend_shader_cache_cleanup(struct pan_blend_shader_cache *cache);
-
 #ifdef PAN_ARCH
 
 nir_shader *GENX(pan_blend_create_shader)(const struct pan_blend_state *state,
@@ -168,12 +140,6 @@ uint64_t GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
 bool GENX(pan_inline_rt_conversion)(nir_shader *s, enum pipe_format *formats);
 #endif
 
-/* Take blend_shaders.lock before calling this function and release it when
- * you're done with the shader variant object.
- */
-struct pan_blend_shader_variant *GENX(pan_blend_get_shader_locked)(
-   struct pan_blend_shader_cache *cache, const struct pan_blend_state *state,
-   nir_alu_type src0_type, nir_alu_type src1_type, unsigned rt);
 #endif
 
 #endif

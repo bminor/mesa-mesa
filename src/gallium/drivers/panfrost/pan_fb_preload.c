@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "compiler/nir/nir_builder.h"
 #include "util/u_math.h"
-#include "pan_blend.h"
+#include "pan_blend_cso.h"
 #include "pan_desc.h"
 #include "pan_encoder.h"
 #include "pan_fb_preload.h"

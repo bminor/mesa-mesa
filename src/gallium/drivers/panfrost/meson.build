@@ -16,6 +16,7 @@ files_panfrost = files(
   'pan_resource.c',
   'pan_resource.h',
   'pan_context.c',
+  'pan_blend_cso.c',
   'pan_blit.c',
   'pan_job.c',
   'pan_shader.c',
@@ -47,6 +48,7 @@ libpanfrost_versions = []
 foreach ver : panfrost_versions
   files_panfrost_vx = [
     'pan_cmdstream.c',
+    'pan_blend_cso.c',
     'pan_fb_preload.c',
     'pan_precomp.c',
     pan_packers,

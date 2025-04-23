@@ -39,7 +39,7 @@
 #include "util/u_dynarray.h"
 
 #include "panfrost/util/pan_ir.h"
-#include "pan_blend.h"
+#include "pan_blend_cso.h"
 #include "pan_fb_preload.h"
 #include "pan_indirect_dispatch.h"
 #include "pan_pool.h"
