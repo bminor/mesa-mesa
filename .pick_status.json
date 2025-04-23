@@ -334,7 +334,7 @@
         "description": "radv: Clear dirty flag for clip rects state after emitting it.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0ba3a8b3cce74e40c9545dbbb047f11159ac3c7e",
         "notes": null

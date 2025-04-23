@@ -11146,6 +11146,8 @@ radv_emit_clip_rects_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, cliprect_rule);
    radeon_end();
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CLIP_RECTS_STATE;
 }
 
 static void
