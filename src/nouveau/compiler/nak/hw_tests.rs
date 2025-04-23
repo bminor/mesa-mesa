@@ -959,6 +959,61 @@ fn test_op_shf() {
 }
 
 #[test]
+fn test_op_shr() {
+    let sm = &RunSingleton::get().sm;
+    if sm.sm() >= 70 {
+        return;
+    }
+
+    for i in 0..4 {
+        let op = OpShr {
+            dst: Dst::None,
+            src: 0.into(),
+            shift: 0.into(),
+            wrap: i & 0x1 != 0,
+            signed: i & 0x2 != 0,
+        };
+
+        let shift_idx = op.src_idx(&op.shift);
+        let mut a = Acorn::new();
+        test_foldable_op_with(op, &mut |i| {
+            if i == shift_idx {
+                a.get_uint(6) as u32
+            } else {
+                a.get_u32()
+            }
+        });
+    }
+}
+
+#[test]
+fn test_op_shl() {
+    let sm = &RunSingleton::get().sm;
+    if sm.sm() >= 70 {
+        return;
+    }
+
+    for i in 0..2 {
+        let op = OpShl {
+            dst: Dst::None,
+            src: 0.into(),
+            shift: 0.into(),
+            wrap: i & 0x1 != 0,
+        };
+
+        let shift_idx = op.src_idx(&op.shift);
+        let mut a = Acorn::new();
+        test_foldable_op_with(op, &mut |i| {
+            if i == shift_idx {
+                a.get_uint(6) as u32
+            } else {
+                a.get_u32()
+            }
+        });
+    }
+}
+
+#[test]
 fn test_op_prmt() {
     let op = OpPrmt {
         dst: Dst::None,

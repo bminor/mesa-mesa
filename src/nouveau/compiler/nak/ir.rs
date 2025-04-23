@@ -4058,7 +4058,7 @@ impl_display_for_op!(OpShf);
 
 /// Only used on SM50
 #[repr(C)]
-#[derive(SrcsAsSlice, DstsAsSlice)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpShl {
     #[dst_type(GPR)]
     pub dst: Dst,
@@ -4082,9 +4082,24 @@ impl DisplayOp for OpShl {
     }
 }
 
+impl Foldable for OpShl {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let x = f.get_u32_src(self, &self.src);
+        let shift = f.get_u32_src(self, &self.shift);
+
+        let shift = if self.wrap {
+            shift & 31
+        } else {
+            min(shift, 32)
+        };
+        let dst = x.checked_shl(shift).unwrap_or(0);
+        f.set_u32_dst(self, &self.dst, dst);
+    }
+}
+
 /// Only used on SM50
 #[repr(C)]
-#[derive(SrcsAsSlice, DstsAsSlice)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpShr {
     #[dst_type(GPR)]
     pub dst: Dst,
@@ -4109,6 +4124,26 @@ impl DisplayOp for OpShr {
             write!(f, ".u32")?;
         }
         write!(f, " {} {}", self.src, self.shift)
+    }
+}
+
+impl Foldable for OpShr {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let x = f.get_u32_src(self, &self.src);
+        let shift = f.get_u32_src(self, &self.shift);
+
+        let shift = if self.wrap {
+            shift & 31
+        } else {
+            min(shift, 32)
+        };
+        let dst = if self.signed {
+            let x = x as i32;
+            x.checked_shr(shift).unwrap_or(x >> 31) as u32
+        } else {
+            x.checked_shr(shift).unwrap_or(0)
+        };
+        f.set_u32_dst(self, &self.dst, dst);
     }
 }
 
