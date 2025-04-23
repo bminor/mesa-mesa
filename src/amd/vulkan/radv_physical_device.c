@@ -140,6 +140,17 @@ radv_cooperative_matrix_enabled(const struct radv_physical_device *pdev)
    return pdev->info.gfx_level >= GFX11 && !pdev->use_llvm;
 }
 
+static bool
+radv_cooperative_matrix2_nv_enabled(const struct radv_physical_device *pdev)
+{
+   if (!radv_cooperative_matrix_enabled(pdev))
+      return false;
+
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   return instance->drirc.cooperative_matrix2_nv;
+}
+
 bool
 radv_enable_rt(const struct radv_physical_device *pdev)
 {
@@ -764,6 +775,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .INTEL_shader_integer_functions2 = true,
       .MESA_image_alignment_control = pdev->info.gfx_level >= GFX9,
       .NV_compute_shader_derivatives = true,
+      .NV_cooperative_matrix2 = radv_cooperative_matrix2_nv_enabled(pdev),
       .VALVE_mutable_descriptor_type = true,
    };
    *out_ext = ext;
@@ -1345,6 +1357,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       /* VK_EXT_shader_float8 */
       .shaderFloat8 = true,
       .shaderFloat8CooperativeMatrix = radv_cooperative_matrix_enabled(pdev),
+
+      /* VK_NV_cooperative_matrix2 */
+      .cooperativeMatrixConversions = true,
    };
 }
 
@@ -2987,4 +3002,13 @@ radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDe
    }
 
    return vk_outarray_status(&out);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+   VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+   VkCooperativeMatrixFlexibleDimensionsPropertiesNV *pProperties)
+{
+   *pPropertyCount = 0;
+   return VK_SUCCESS;
 }

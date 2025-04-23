@@ -196,6 +196,7 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_EMULATE_RT(false)
       DRI_CONF_RADV_ENABLE_FLOAT16_GFX8(false)
       DRI_CONF_RADV_DISABLE_HIZ_HIS_GFX12(false)
+      DRI_CONF_RADV_COOPERATIVE_MATRIX2_NV(false)
    DRI_CONF_SECTION_END
 };
 // clang-format on
@@ -300,6 +301,8 @@ radv_init_dri_options(struct radv_instance *instance)
    instance->drirc.expose_float16_gfx8 = driQueryOptionb(&instance->drirc.options, "radv_enable_float16_gfx8");
 
    instance->drirc.disable_hiz_his_gfx12 = driQueryOptionb(&instance->drirc.options, "radv_disable_hiz_his_gfx12");
+
+   instance->drirc.cooperative_matrix2_nv = driQueryOptionb(&instance->drirc.options, "radv_cooperative_matrix2_nv");
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {

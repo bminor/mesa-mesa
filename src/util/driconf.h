@@ -788,6 +788,10 @@
    DRI_CONF_OPT_B(radv_disable_hiz_his_gfx12, def, \
                   "Disable HiZ/HiS on GFX12 (RDNA4) to workaround a hw bug that causes random GPU hangs")
 
+#define DRI_CONF_RADV_COOPERATIVE_MATRIX2_NV(def) \
+   DRI_CONF_OPT_B(radv_cooperative_matrix2_nv, def, \
+                  "Expose VK_NV_cooperative_matrix2 on supported hardware.")
+
 /**
  * \brief ANV specific configuration options
  */
