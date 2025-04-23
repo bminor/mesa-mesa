@@ -534,7 +534,7 @@
         "description": "panvk: Take rasterization sample into account in indirect draw on v10+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1f3b8bb9188e0520dea18c0b20fa7f857a2532a2",
         "notes": null
