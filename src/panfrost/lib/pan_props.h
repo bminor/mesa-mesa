@@ -138,8 +138,8 @@ pan_arch(unsigned gpu_id)
 static inline unsigned
 panfrost_max_effective_tile_size(unsigned arch)
 {
-   /* XXX: On v12+, the max effective tile size is 64x64 but it is possible to
-    * overrun the internal depth buffer for now */
+   if (arch >= 12)
+      return 64 * 64;
 
    if (arch >= 10)
       return 32 * 32;
