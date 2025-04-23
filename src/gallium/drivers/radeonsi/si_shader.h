@@ -848,6 +848,9 @@ struct si_shader {
          unsigned spi_shader_pgm_rsrc3_gs;
          unsigned spi_shader_pgm_rsrc4_gs;
          unsigned vgt_shader_stages_en;
+         unsigned spi_shader_gs_meshlet_dim;
+         unsigned spi_shader_gs_meshlet_exp_alloc;
+         unsigned spi_shader_gs_meshlet_ctrl;
       } ngg;
 
       struct {
@@ -916,6 +919,7 @@ struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel);
 unsigned si_get_ps_num_interp(struct si_shader *ps);
 unsigned si_get_shader_prefetch_size(struct si_shader *shader);
 unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *shader);
+unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 
 /* si_shader_info.c */
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,

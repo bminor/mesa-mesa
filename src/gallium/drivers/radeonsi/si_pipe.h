@@ -127,6 +127,11 @@ enum si_has_ngg {
    NGG_ON,
 };
 
+enum si_has_ms {
+   MS_OFF,
+   MS_ON,
+};
+
 #define DCC_CODE(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
 
 enum si_clear_code

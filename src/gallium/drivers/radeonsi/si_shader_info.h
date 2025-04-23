@@ -221,6 +221,7 @@ struct si_shader_variant_info {
    bool writes_stencil : 1;
    bool writes_sample_mask : 1;
    bool uses_discard : 1;
+   bool uses_mesh_scratch_ring : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    uint8_t clipdist_mask;
