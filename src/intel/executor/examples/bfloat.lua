@@ -17,16 +17,18 @@ local r = execute {
     add(8)   g12<1>BF  g11<1>BF  g4<1>F              {A@1};
 
     // Converting F to packed BF doesn't work, so add the value
-    // to 0.0f instead.  This will preserve the NaN.
+    // to -0.0f instead.  This will preserve the NaN.  Note +0.0f
+    // would not work since it doesn't preserve -0.0f!
 
-    add(8)   g20<1>BF  g4<1>F    0F                  {A@1}; // F -> BF.
+    mov(8)   g20<1>UD  0x80000000UD                  {A@1}; // -0.0f.
+    add(8)   g21<1>BF  g4<1>F    g20<1>F             {A@1}; // F -> BF.
 
     // Converting BF to F doesn't work, so for a packed source,
     // shift-left the bits to expand it into an UD instead.
 
-    shl(8)   g30<1>UD  g20<1>UW  16UW                {A@1}; // BF -> F.
+    shl(8)   g30<1>UD  g21<1>UW  16UW                {A@1}; // BF -> F.
 
-    mad(8)   g40<1>BF  g12<1>BF  g20<1>BF  g5<1>F    {A@1};
+    mad(8)   g40<1>BF  g12<1>BF  g21<1>BF  g5<1>F    {A@1};
     add(8)   g41<1>BF  g40<1>BF  g30<1>F             {A@1};
 
     shl(8)   g42<1>UD  g41<1>UW  16UW                {A@1}; // BF -> F.
