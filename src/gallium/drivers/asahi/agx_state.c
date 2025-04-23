@@ -3938,11 +3938,11 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
 }
 
 static uint64_t
-agx_batch_geometry_state(struct agx_batch *batch)
+agx_batch_heap(struct agx_batch *batch)
 {
    struct agx_context *ctx = batch->ctx;
 
-   if (!batch->geometry_state) {
+   if (!batch->heap) {
       uint32_t size = 128 * 1024 * 1024;
 
       if (!ctx->heap) {
@@ -3950,18 +3950,18 @@ agx_batch_geometry_state(struct agx_batch *batch)
                                         PIPE_USAGE_DEFAULT, size);
       }
 
-      struct agx_geometry_state state = {
-         .heap = agx_resource(ctx->heap)->bo->va->addr,
-         .heap_size = size,
+      struct agx_heap heap = {
+         .base = agx_resource(ctx->heap)->bo->va->addr,
+         .size = size,
       };
 
       agx_batch_writes(batch, agx_resource(ctx->heap), 0);
 
-      batch->geometry_state =
-         agx_pool_upload_aligned(&batch->pool, &state, sizeof(state), 8);
+      batch->heap =
+         agx_pool_upload_aligned(&batch->pool, &heap, sizeof(heap), 8);
    }
 
-   return batch->geometry_state;
+   return batch->heap;
 }
 
 static uint64_t
@@ -4154,7 +4154,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .vertex_buffer = batch->uniforms.vertex_output_buffer_ptr,
          .ia = batch->uniforms.input_assembly,
          .p = batch->uniforms.geometry_params,
-         .state = agx_batch_geometry_state(batch),
+         .heap = agx_batch_heap(batch),
          .vs_outputs = batch->uniforms.vertex_outputs,
          .index_size_B = info->index_size,
          .prim = info->mode,
@@ -4274,7 +4274,7 @@ agx_draw_without_restart(struct agx_batch *batch,
       &out_draws_rsrc.bo);
 
    struct libagx_unroll_restart_args unroll = {
-      .heap = agx_batch_geometry_state(batch),
+      .heap = agx_batch_heap(batch),
       .index_buffer = ib,
       .out_draw = out_draws.gpu,
       .restart_index = info->restart_index,
@@ -4610,11 +4610,11 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    agx_upload_draw_params(batch, indirect, draws, info);
 
    /* Setup parameters */
-   uint64_t geom_state = agx_batch_geometry_state(batch);
+   uint64_t heap = agx_batch_heap(batch);
    assert((tcs->tess.output_stride & 3) == 0 && "must be aligned");
 
    struct libagx_tess_args args = {
-      .heap = geom_state,
+      .heap = heap,
       .tcs_stride_el = tcs->tess.output_stride / 4,
       .statistic = agx_get_query_address(
          batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_DS_INVOCATIONS]),

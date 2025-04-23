@@ -419,8 +419,8 @@ struct agx_batch {
    uint64_t geom_indirect;
    struct agx_bo *geom_indirect_bo;
 
-   /* Geometry state buffer if geometry/etc shaders are used */
-   uint64_t geometry_state;
+   /* Heap descriptor if dynamic allocation is required */
+   uint64_t heap;
 
    /* Uploaded descriptors */
    uint32_t texture_count[PIPE_SHADER_TYPES];

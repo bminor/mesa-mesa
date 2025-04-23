@@ -118,10 +118,10 @@ tess_factors(constant struct libagx_tess_args *p, uint patch)
 }
 
 static inline uint
-libagx_heap_alloc(global struct agx_geometry_state *heap, uint size_B)
+libagx_heap_alloc(global struct agx_heap *heap, uint size_B)
 {
    // TODO: drop align to 4 I think
-   return atomic_fetch_add((volatile atomic_uint *)(&heap->heap_bottom),
+   return atomic_fetch_add((volatile atomic_uint *)(&heap->bottom),
                            align(size_B, 8));
 }
 
@@ -200,7 +200,7 @@ libagx_heap_alloc_points(constant struct libagx_tess_args *p, uint patch,
    uint32_t alloc_el = alloc_B / elsize_B;
 
    p->coord_allocs[patch] = alloc_el;
-   return (global struct libagx_tess_point *)(((uintptr_t)p->heap->heap) +
+   return (global struct libagx_tess_point *)(((uintptr_t)p->heap->base) +
                                               alloc_B);
 }
 

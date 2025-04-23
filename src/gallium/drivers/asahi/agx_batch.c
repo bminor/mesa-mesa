@@ -133,7 +133,7 @@ agx_batch_init(struct agx_context *ctx,
    batch->clear_depth = 0;
    batch->clear_stencil = 0;
    batch->varyings = 0;
-   batch->geometry_state = 0;
+   batch->heap = 0;
    batch->initialized = false;
    batch->draws = 0;
    batch->incoherent_writes = false;

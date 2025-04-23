@@ -104,27 +104,25 @@ agx_gs_index_size(enum agx_gs_shape shape)
    }
 }
 
-/* Packed geometry state buffer */
-struct agx_geometry_state {
-   /* Heap to allocate from. */
-   DEVICE(uchar) heap;
-   uint32_t heap_bottom, heap_size;
+/* Heap to allocate from. */
+struct agx_heap {
+   DEVICE(uchar) base;
+   uint32_t bottom, size;
 } PACKED;
-static_assert(sizeof(struct agx_geometry_state) == 4 * 4);
+static_assert(sizeof(struct agx_heap) == 4 * 4);
 
 #ifdef __OPENCL_VERSION__
 static inline uint
-agx_heap_alloc_nonatomic_offs(global struct agx_geometry_state *heap,
-                              uint size_B)
+agx_heap_alloc_nonatomic_offs(global struct agx_heap *heap, uint size_B)
 {
-   uint offs = heap->heap_bottom;
-   heap->heap_bottom += align(size_B, 16);
+   uint offs = heap->bottom;
+   heap->bottom += align(size_B, 16);
 
-   // Use printf+abort because assert is stripped from release builds.
-   if (heap->heap_bottom >= heap->heap_size) {
+   /* Use printf+abort because assert is stripped from release builds. */
+   if (heap->bottom >= heap->size) {
       printf(
          "FATAL: GPU heap overflow, allocating size %u, at offset %u, heap size %u!",
-         size_B, offs, heap->heap_size);
+         size_B, offs, heap->size);
 
       abort();
    }
@@ -133,9 +131,9 @@ agx_heap_alloc_nonatomic_offs(global struct agx_geometry_state *heap,
 }
 
 static inline global void *
-agx_heap_alloc_nonatomic(global struct agx_geometry_state *heap, uint size_B)
+agx_heap_alloc_nonatomic(global struct agx_heap *heap, uint size_B)
 {
-   return heap->heap + agx_heap_alloc_nonatomic_offs(heap, size_B);
+   return heap->base + agx_heap_alloc_nonatomic_offs(heap, size_B);
 }
 #endif
 

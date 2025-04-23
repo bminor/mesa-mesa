@@ -994,11 +994,10 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
 }
 
 static uint64_t
-hk_geometry_state(struct hk_cmd_buffer *cmd)
+hk_heap(struct hk_cmd_buffer *cmd)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
-   /* We tie heap allocation to geometry state allocation, so allocate now. */
    if (unlikely(!dev->heap)) {
       perf_debug(cmd, "Allocating heap");
 
@@ -1008,29 +1007,28 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
       /* The geometry state buffer is initialized here and then is treated by
        * the CPU as rodata, even though the GPU uses it for scratch internally.
        */
-      off_t off = dev->rodata.geometry_state - dev->rodata.bo->va->addr;
-      struct agx_geometry_state *map = agx_bo_map(dev->rodata.bo) + off;
+      off_t off = dev->rodata.heap - dev->rodata.bo->va->addr;
+      struct agx_heap *map = agx_bo_map(dev->rodata.bo) + off;
 
-      *map = (struct agx_geometry_state){
-         .heap = dev->heap->va->addr,
-         .heap_size = size,
+      *map = (struct agx_heap){
+         .base = dev->heap->va->addr,
+         .size = size,
       };
    }
 
    /* We need to free all allocations after each command buffer execution */
    if (!cmd->uses_heap) {
       perf_debug(cmd, "Freeing heap");
-      uint64_t addr = dev->rodata.geometry_state;
+      uint64_t addr = dev->rodata.heap;
 
       /* Zeroing the allocated index frees everything */
-      hk_queue_write(cmd,
-                     addr + offsetof(struct agx_geometry_state, heap_bottom), 0,
+      hk_queue_write(cmd, addr + offsetof(struct agx_heap, bottom), 0,
                      true /* after gfx */);
 
       cmd->uses_heap = true;
    }
 
-   return dev->rodata.geometry_state;
+   return dev->rodata.heap;
 }
 
 static uint64_t
@@ -1222,7 +1220,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
          : LIBAGX_TESS_PARTITIONING_FRACTIONAL_EVEN;
 
    struct libagx_tess_args args = {
-      .heap = hk_geometry_state(cmd),
+      .heap = hk_heap(cmd),
       .tcs_stride_el = tcs->info.tess.tcs_output_stride / 4,
       .statistic = hk_pipeline_stat_addr(
          cmd,
@@ -1246,7 +1244,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
    uint32_t draw_stride_el = 5;
    size_t draw_stride_B = draw_stride_el * sizeof(uint32_t);
 
-   /* heap is allocated by hk_geometry_state */
+   /* heap is allocated by hk_heap */
    args.patch_coord_buffer = dev->heap->va->addr;
 
    if (!agx_is_indirect(draw.b)) {
@@ -1389,7 +1387,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
    assert(draw_count == 1 && "TODO: multidraw");
 
    struct libagx_unroll_restart_args ia = {
-      .heap = hk_geometry_state(cmd),
+      .heap = hk_heap(cmd),
       .index_buffer = draw.index_buffer,
       .in_draw = draw.b.ptr,
       .out_draw = hk_pool_alloc(cmd, 5 * sizeof(uint32_t) * draw_count, 4).gpu,
@@ -1449,7 +1447,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Setup grids */
    if (agx_is_indirect(draw.b)) {
       struct libagx_gs_setup_indirect_args gsi = {
-         .state = hk_geometry_state(cmd),
+         .heap = hk_heap(cmd),
          .index_buffer = draw.index_buffer,
          .draw = draw.b.ptr,
          .ia = desc->root.draw.input_assembly,
@@ -3534,7 +3532,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
          uint64_t target = hk_cs_alloc_for_indirect(cs, size_B);
 
          libagx_draw_robust_index(cmd, agx_1d(32), AGX_BARRIER_ALL | AGX_PREGFX,
-                                  target, hk_geometry_state(cmd), draw.b.ptr,
+                                  target, hk_heap(cmd), draw.b.ptr,
                                   draw.index_buffer, draw.index_buffer_range_B,
                                   draw.restart, topology, draw.index_size);
       } else {
