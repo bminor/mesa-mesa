@@ -9,7 +9,7 @@ vc4-rpi3-gl:arm64:
     - .vc4-rules
   parallel: 3
   variables:
-    DEQP_SUITE: broadcom-rpi3
+    DEQP_SUITE: broadcom-rpi3-gl
     HWCI_START_WESTON: 1
 
 vc4-rpi3-gl-piglit-full:arm64:
@@ -31,7 +31,7 @@ vc4-rpi3-gl:arm32:
     - igalia-rpi3
     - igalia-fullrun
   variables:
-    DEQP_SUITE: broadcom-rpi3-arm32
+    DEQP_SUITE: broadcom-rpi3-gl-arm32
 
 vc4-rpi3-gl-asan:arm64:
   extends:
@@ -41,7 +41,7 @@ vc4-rpi3-gl-asan:arm64:
   variables:
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    DEQP_SUITE: broadcom-rpi3-asan
+    DEQP_SUITE: broadcom-rpi3-gl-asan
     DEQP_FRACTION: 5
 
 vc4-rpi3-gl-ubsan:arm64:
@@ -53,7 +53,7 @@ vc4-rpi3-gl-ubsan:arm64:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    DEQP_SUITE: broadcom-rpi3-ubsan
+    DEQP_SUITE: broadcom-rpi3-gl-ubsan
     DEQP_FRACTION: 2
 
 v3d-rpi4-gl:arm64:
@@ -65,7 +65,7 @@ v3d-rpi4-gl:arm64:
   parallel: 8
   variables:
     HWCI_START_WESTON: 1
-    DEQP_SUITE: broadcom-rpi4
+    DEQP_SUITE: broadcom-rpi4-gl
 
 v3d-rpi4-gl-full:arm64:
   extends:
@@ -112,7 +112,7 @@ v3d-rpi4-gl:arm32:
     - igalia-fullrun
   timeout: 35m
   variables:
-    DEQP_SUITE: broadcom-rpi4-arm32
+    DEQP_SUITE: broadcom-rpi4-gl-arm32
 
 v3d-rpi4-gl-asan:arm64:
   extends:
@@ -122,7 +122,7 @@ v3d-rpi4-gl-asan:arm64:
   variables:
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    DEQP_SUITE: broadcom-rpi4-asan
+    DEQP_SUITE: broadcom-rpi4-gl-asan
     # FIXME: set to 9 once the new failures are investigated
     DEQP_FRACTION: 30
 
@@ -135,7 +135,7 @@ v3d-rpi4-gl-ubsan:arm64:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
-    DEQP_SUITE: broadcom-rpi4-ubsan
+    DEQP_SUITE: broadcom-rpi4-gl-ubsan
     DEQP_FRACTION: 6
 
 v3dv-rpi4-vk:arm64:
@@ -197,7 +197,7 @@ v3d-rpi5-gl:arm64:
     - .v3d-rules
   variables:
     HWCI_START_WESTON: 1
-    DEQP_SUITE: broadcom-rpi5
+    DEQP_SUITE: broadcom-rpi5-gl
     DEQP_FRACTION: 4
 
 v3d-rpi5-gl-full:arm64:
