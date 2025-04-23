@@ -76,7 +76,7 @@ VkResult panvk_per_arch(cmd_prepare_shader_res_table)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,
    const struct panvk_shader *shader,
-   struct panvk_shader_desc_state *shader_desc_state);
+   struct panvk_shader_desc_state *shader_desc_state, uint32_t repeat_count);
 #endif
 
 VkResult panvk_per_arch(cmd_prepare_push_descs)(

@@ -274,7 +274,7 @@ panvk_per_arch(cmd_prepare_shader_res_table)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,
    const struct panvk_shader *shader,
-   struct panvk_shader_desc_state *shader_desc_state)
+   struct panvk_shader_desc_state *shader_desc_state, uint32_t repeat_count)
 {
    if (!shader) {
       shader_desc_state->res_table = 0;
@@ -284,34 +284,41 @@ panvk_per_arch(cmd_prepare_shader_res_table)(
    uint32_t first_unused_set = util_last_bit(shader->desc_info.used_set_mask);
    uint32_t res_count = 1 + first_unused_set;
    struct panfrost_ptr ptr =
-      panvk_cmd_alloc_desc_array(cmdbuf, res_count, RESOURCE);
+      panvk_cmd_alloc_desc_array(cmdbuf, res_count * repeat_count, RESOURCE);
    if (!ptr.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
    struct mali_resource_packed *res_table = ptr.cpu;
 
-   /* First entry is the driver set table, where we store the vertex attributes,
-    * the dummy sampler, the dynamic buffers and the vertex buffers. */
-   pan_pack(&res_table[0], RESOURCE, cfg) {
-      cfg.address = shader_desc_state->driver_set.dev_addr;
-      cfg.size = shader_desc_state->driver_set.size;
-      cfg.contains_descriptors = cfg.size > 0;
-   }
+   for (uint32_t r = 0; r < repeat_count; r++) {
+      uint64_t drv_set_addr = shader_desc_state->driver_set.dev_addr +
+                              (r * shader_desc_state->driver_set.size);
+      /* First entry is the driver set table, where we store the vertex
+       * attributes, the dummy sampler, the dynamic buffers and the vertex
+       * buffers. */
+      pan_pack(&res_table[0], RESOURCE, cfg) {
+         cfg.address = drv_set_addr;
+         cfg.size = shader_desc_state->driver_set.size;
+         cfg.contains_descriptors = cfg.size > 0;
+      }
 
-   for (uint32_t i = 0; i < first_unused_set; i++) {
-      const struct panvk_descriptor_set *set = desc_state->sets[i];
+      for (uint32_t i = 0; i < first_unused_set; i++) {
+         const struct panvk_descriptor_set *set = desc_state->sets[i];
 
-      pan_pack(&res_table[i + 1], RESOURCE, cfg) {
-         if (shader->desc_info.used_set_mask & BITFIELD_BIT(i)) {
-            cfg.address = set->descs.dev;
-            cfg.contains_descriptors = true;
-            cfg.size = set->desc_count * PANVK_DESCRIPTOR_SIZE;
-         } else {
-            cfg.address = 0;
-            cfg.contains_descriptors = false;
-            cfg.size = 0;
+         pan_pack(&res_table[i + 1], RESOURCE, cfg) {
+            if (shader->desc_info.used_set_mask & BITFIELD_BIT(i)) {
+               cfg.address = set->descs.dev;
+               cfg.contains_descriptors = true;
+               cfg.size = set->desc_count * PANVK_DESCRIPTOR_SIZE;
+            } else {
+               cfg.address = 0;
+               cfg.contains_descriptors = false;
+               cfg.size = 0;
+            }
          }
       }
+
+      res_table += first_unused_set + 1;
    }
 
    shader_desc_state->res_table = ptr.gpu | res_count;

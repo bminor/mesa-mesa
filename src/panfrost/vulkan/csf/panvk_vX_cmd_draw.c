@@ -1341,8 +1341,8 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
 
    if (gfx_state_dirty(cmdbuf, VS) || gfx_state_dirty(cmdbuf, DESC_STATE) ||
        vs_driver_set_is_dirty(cmdbuf)) {
-      result = panvk_per_arch(cmd_prepare_shader_res_table)(cmdbuf, desc_state,
-                                                            vs, vs_desc_state);
+      result = panvk_per_arch(cmd_prepare_shader_res_table)(
+         cmdbuf, desc_state, vs, vs_desc_state, 1);
       if (result != VK_SUCCESS)
          return result;
 
@@ -1387,8 +1387,8 @@ prepare_fs(struct panvk_cmd_buffer *cmdbuf)
       if (result != VK_SUCCESS)
          return result;
 
-      result = panvk_per_arch(cmd_prepare_shader_res_table)(cmdbuf, desc_state,
-                                                            fs, fs_desc_state);
+      result = panvk_per_arch(cmd_prepare_shader_res_table)(
+         cmdbuf, desc_state, fs, fs_desc_state, 1);
       if (result != VK_SUCCESS)
          return result;
    }

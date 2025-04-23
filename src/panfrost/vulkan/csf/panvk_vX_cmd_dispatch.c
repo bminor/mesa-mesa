@@ -216,7 +216,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    if (compute_state_dirty(cmdbuf, CS) ||
        compute_state_dirty(cmdbuf, DESC_STATE)) {
       result = panvk_per_arch(cmd_prepare_shader_res_table)(
-         cmdbuf, desc_state, shader, cs_desc_state);
+         cmdbuf, desc_state, shader, cs_desc_state, 1);
       if (result != VK_SUCCESS)
          return;
    }
