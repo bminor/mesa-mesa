@@ -1627,15 +1627,14 @@ static_assert(sizeof(LDSDIR_instruction) == sizeof(Instruction) + 8, "Unexpected
 struct MUBUF_instruction : public Instruction {
    memory_sync_info sync;
    ac_hw_cache_flags cache;
-   bool offen : 1;           /* Supply an offset from VGPR (VADDR) */
-   bool idxen : 1;           /* Supply an index from VGPR (VADDR) */
-   bool addr64 : 1;          /* SI, CIK: Address size is 64-bit */
-   bool tfe : 1;             /* texture fail enable */
-   bool lds : 1;             /* Return read-data to LDS instead of VGPRs */
-   bool disable_wqm : 1;     /* Require an exec mask without helper invocations */
-   uint8_t padding0 : 2;
-   uint8_t padding1;
-   uint16_t offset; /* Unsigned byte offset - 12 bit */
+   uint32_t offset : 23;     /* Unsigned byte offset */
+   uint32_t offen : 1;       /* Supply an offset from VGPR (VADDR) */
+   uint32_t idxen : 1;       /* Supply an index from VGPR (VADDR) */
+   uint32_t addr64 : 1;      /* SI, CIK: Address size is 64-bit */
+   uint32_t tfe : 1;         /* texture fail enable */
+   uint32_t lds : 1;         /* Return read-data to LDS instead of VGPRs */
+   uint32_t disable_wqm : 1; /* Require an exec mask without helper invocations */
+   uint32_t padding : 3;
 };
 static_assert(sizeof(MUBUF_instruction) == sizeof(Instruction) + 8, "Unexpected padding");
 
@@ -1656,10 +1655,12 @@ struct MTBUF_instruction : public Instruction {
    bool idxen : 1;           /* Supply an index from VGPR (VADDR) */
    bool tfe : 1;             /* texture fail enable */
    bool disable_wqm : 1;     /* Require an exec mask without helper invocations */
-   uint8_t padding : 5;
-   uint16_t offset; /* Unsigned byte offset - 12 bit */
+   uint8_t padding0 : 5;
+   uint16_t padding1;
+   uint32_t offset : 23;     /* Unsigned byte offset */
+   uint32_t padding2 : 9;
 };
-static_assert(sizeof(MTBUF_instruction) == sizeof(Instruction) + 8, "Unexpected padding");
+static_assert(sizeof(MTBUF_instruction) == sizeof(Instruction) + 12, "Unexpected padding");
 
 /**
  * Vector Memory Image Instructions
@@ -2105,6 +2106,7 @@ struct DeviceInfo {
    int32_t scratch_global_offset_max;
    unsigned max_nsa_vgprs;
 
+   uint32_t buf_offset_max;
    /* Note that GFX6/7 ignore the low 2 bits and this is only for positive offsets. */
    uint32_t smem_offset_max;
 };

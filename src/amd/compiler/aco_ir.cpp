@@ -184,6 +184,11 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    }
 
    if (program->gfx_level >= GFX12)
+      program->dev.buf_offset_max = 0x7fffff;
+   else
+      program->dev.buf_offset_max = 0xfff;
+
+   if (program->gfx_level >= GFX12)
       program->dev.smem_offset_max = 0x7fffff;
    else if (program->gfx_level >= GFX8)
       program->dev.smem_offset_max = 0xfffff;

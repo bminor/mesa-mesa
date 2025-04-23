@@ -4783,7 +4783,7 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
    if (bld.program->gfx_level >= GFX9)
       max_const_offset_plus_one = bld.program->dev.scratch_global_offset_max;
    else if (bld.program->gfx_level == GFX6)
-      max_const_offset_plus_one = 4096; /* MUBUF has a 12-bit unsigned offset field */
+      max_const_offset_plus_one = bld.program->dev.buf_offset_max + 1;
    uint64_t excess_offset = const_offset - (const_offset % max_const_offset_plus_one);
    const_offset %= max_const_offset_plus_one;
 
@@ -5297,9 +5297,10 @@ create_vec_from_array(isel_context* ctx, Temp arr[], unsigned cnt, RegType reg_t
 inline unsigned
 resolve_excess_vmem_const_offset(Builder& bld, Temp& voffset, unsigned const_offset)
 {
-   if (const_offset >= 4096) {
-      unsigned excess_const_offset = const_offset / 4096u * 4096u;
-      const_offset %= 4096u;
+   uint32_t limit = bld.program->dev.buf_offset_max + 1;
+   if (const_offset >= limit) {
+      unsigned excess_const_offset = const_offset / limit * limit;
+      const_offset %= limit;
 
       if (!voffset.id())
          voffset = bld.copy(bld.def(v1), Operand::c32(excess_const_offset));
@@ -6990,14 +6991,18 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
       info.component_stride = can_split ? vtx_info->chan_byte_size : 0;
       info.split_by_component_stride = false;
 
-      emit_load(ctx, bld, info, mtbuf_load_params);
+      EmitLoadParameters params = mtbuf_load_params;
+      params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+      emit_load(ctx, bld, info, params);
    } else {
       assert(intrin->intrinsic == nir_intrinsic_load_buffer_amd);
 
       if (nir_intrinsic_access(intrin) & ACCESS_USES_FORMAT_AMD) {
          assert(!swizzled);
 
-         emit_load(ctx, bld, info, mubuf_load_format_params);
+         EmitLoadParameters params = mubuf_load_format_params;
+         params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+         emit_load(ctx, bld, info, params);
       } else {
          const unsigned swizzle_element_size =
             swizzled ? (ctx->program->gfx_level <= GFX8 ? 4 : 16) : 0;
@@ -7007,7 +7012,9 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
          info.align_mul = align_mul;
          info.align_offset = align_offset;
 
-         emit_load(ctx, bld, info, mubuf_load_params);
+         EmitLoadParameters params = mubuf_load_params;
+         params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+         emit_load(ctx, bld, info, params);
       }
    }
 }

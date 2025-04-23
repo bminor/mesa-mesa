@@ -1202,8 +1202,8 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
       offset_range =
          ctx.program->dev.scratch_global_offset_max - ctx.program->dev.scratch_global_offset_min;
    } else {
-      if (scratch_size < 4095)
-         offset_range = 4095 - scratch_size;
+      if (scratch_size < ctx.program->dev.buf_offset_max)
+         offset_range = ctx.program->dev.buf_offset_max - scratch_size;
       else
          offset_range = 0;
    }
