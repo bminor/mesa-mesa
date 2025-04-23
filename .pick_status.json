@@ -394,7 +394,7 @@
         "description": "intel/executor: Fix bfloat example for converting F to packed BF",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fafdd242850657d58ae66836ee5d154f1187fe8b",
         "notes": null
