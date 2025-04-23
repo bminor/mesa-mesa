@@ -113,10 +113,17 @@ static_assert(sizeof(struct agx_heap) == 4 * 4);
 
 #ifdef __OPENCL_VERSION__
 static inline uint
-agx_heap_alloc_nonatomic_offs(global struct agx_heap *heap, uint size_B)
+_agx_heap_alloc_offs(global struct agx_heap *heap, uint size_B, bool atomic)
 {
-   uint offs = heap->bottom;
-   heap->bottom += align(size_B, 16);
+   size_B = align(size_B, 16);
+
+   uint offs;
+   if (atomic) {
+      offs = atomic_fetch_add((volatile atomic_uint *)(&heap->bottom), size_B);
+   } else {
+      offs = heap->bottom;
+      heap->bottom = offs + size_B;
+   }
 
    /* Use printf+abort because assert is stripped from release builds. */
    if (heap->bottom >= heap->size) {
@@ -128,6 +135,18 @@ agx_heap_alloc_nonatomic_offs(global struct agx_heap *heap, uint size_B)
    }
 
    return offs;
+}
+
+static inline uint
+agx_heap_alloc_nonatomic_offs(global struct agx_heap *heap, uint size_B)
+{
+   return _agx_heap_alloc_offs(heap, size_B, false);
+}
+
+static inline uint
+agx_heap_alloc_atomic_offs(global struct agx_heap *heap, uint size_B)
+{
+   return _agx_heap_alloc_offs(heap, size_B, true);
 }
 
 static inline global void *
