@@ -37,7 +37,8 @@
 #include "glxclient.h"
 #include "apple_glx_context.h"
 #include "apple_xgl_api.h"
-#include "glapitable.h"
+#include "glapi.h"
+#include "dispatch.h"
 
 extern struct _glapi_table * __ogl_framework_api;
 
@@ -102,8 +103,7 @@ __applegl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
    struct apple_xgl_saved_state saved;
 
    SetRead(&saved);
-
-   __ogl_framework_api->ReadPixels(x, y, width, height, format, type, pixels);
+   CALL_ReadPixels(__ogl_framework_api, (x, y, width, height, format, type, pixels));
 
    UnsetRead(&saved);
 }
@@ -115,7 +115,7 @@ __applegl_glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum t
 
    SetRead(&saved);
 
-   __ogl_framework_api->CopyPixels(x, y, width, height, type);
+   CALL_CopyPixels(__ogl_framework_api, (x, y, width, height, type));
 
    UnsetRead(&saved);
 }
