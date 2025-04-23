@@ -170,9 +170,6 @@ libagx_index_buffer_range_el(uint size_el, uint offset_el)
 }
 
 struct agx_geometry_params {
-   /* Persistent (cross-draw) geometry state */
-   DEVICE(struct agx_geometry_state) state;
-
    /* Address of associated indirect draw buffer */
    DEVICE(uint) indirect_desc;
 
@@ -249,7 +246,7 @@ struct agx_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct agx_geometry_params) == 88 * 4);
+static_assert(sizeof(struct agx_geometry_params) == 86 * 4);
 
 /* TCS shared memory layout:
  *

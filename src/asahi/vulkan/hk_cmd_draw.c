@@ -1112,7 +1112,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    }
 
    struct agx_geometry_params params = {
-      .state = hk_geometry_state(cmd),
       .flat_outputs = fs->info.fs.interp.flat,
       .input_topology = mode,
 
@@ -1450,6 +1449,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Setup grids */
    if (agx_is_indirect(draw.b)) {
       struct libagx_gs_setup_indirect_args gsi = {
+         .state = hk_geometry_state(cmd),
          .index_buffer = draw.index_buffer,
          .draw = draw.b.ptr,
          .ia = desc->root.draw.input_assembly,

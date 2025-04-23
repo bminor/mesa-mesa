@@ -556,7 +556,7 @@ libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)
 }
 
 void
-libagx_end_primitive(global int *index_buffer, uint total_verts,
+libagx_end_primitive(global uint32_t *index_buffer, uint total_verts,
                      uint verts_in_prim, uint total_prims, uint index_offs,
                      uint geometry_base, bool restart)
 {
@@ -579,6 +579,7 @@ libagx_gs_setup_indirect(
    global uintptr_t *vertex_buffer /* output */,
    global struct agx_ia_state *ia /* output */,
    global struct agx_geometry_params *p /* output */,
+   global struct agx_geometry_state *state,
    uint64_t vs_outputs /* Vertex (TES) output mask */,
    uint32_t index_size_B /* 0 if no index bffer */,
    uint32_t index_buffer_range_el,
@@ -618,8 +619,6 @@ libagx_gs_setup_indirect(
    }
 
    /* We need to allocate VS and GS count buffers, do so now */
-   global struct agx_geometry_state *state = p->state;
-
    uint vertex_buffer_size =
       libagx_tcs_in_size(vertex_count * instance_count, vs_outputs);
 

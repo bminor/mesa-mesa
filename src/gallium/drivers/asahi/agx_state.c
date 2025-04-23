@@ -3981,7 +3981,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       agx_pool_upload_aligned(&batch->pool, &ia, sizeof(ia), 8);
 
    struct agx_geometry_params params = {
-      .state = agx_batch_geometry_state(batch),
       .indirect_desc = batch->geom_indirect,
       .flat_outputs =
          batch->ctx->stage[PIPE_SHADER_FRAGMENT].shader->info.inputs_flat_shaded,
@@ -4050,9 +4049,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
          agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
 
       params.vs_grid[2] = params.gs_grid[2] = 1;
-
-      batch->geom_index_bo = agx_resource(batch->ctx->heap)->bo;
-      batch->geom_index = batch->geom_index_bo->va->addr;
    } else {
       params.vs_grid[0] = draw->count;
       params.gs_grid[0] =
@@ -4158,6 +4154,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .vertex_buffer = batch->uniforms.vertex_output_buffer_ptr,
          .ia = batch->uniforms.input_assembly,
          .p = batch->uniforms.geometry_params,
+         .state = agx_batch_geometry_state(batch),
          .vs_outputs = batch->uniforms.vertex_outputs,
          .index_size_B = info->index_size,
          .prim = info->mode,
@@ -5142,7 +5139,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    /* Wrap the pool allocation in a fake resource for meta-Gallium use */
    struct agx_resource indirect_rsrc = {.bo = batch->geom_indirect_bo};
-   struct agx_resource index_rsrc = {.bo = batch->geom_index_bo};
+   struct agx_resource index_rsrc = {};
 
    if (ctx->gs) {
       /* Launch the pre-rasterization parts of the geometry shader */
@@ -5170,6 +5167,9 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          };
 
          indirect = &indirect_gs;
+
+         batch->geom_index_bo = agx_resource(batch->ctx->heap)->bo;
+         batch->geom_index = batch->geom_index_bo->va->addr;
       } else {
          unsigned prims =
             u_decomposed_prims_for_vertices(info->mode, draws->count);
@@ -5186,6 +5186,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       }
 
       info = &info_gs;
+      index_rsrc.bo = batch->geom_index_bo;
 
       /* TODO: Deduplicate? */
       batch->reduced_prim = u_reduced_prim(info->mode);
