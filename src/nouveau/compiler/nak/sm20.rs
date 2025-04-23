@@ -362,13 +362,13 @@ impl SM20Encoder<'_> {
         self.set_field(sign_bit..sign_bit + 1, f >> 31);
     }
 
-    fn encode_form_a(
+    fn encode_form_a_opt_dst(
         &mut self,
         unit: SM20Unit,
         opcode: u8,
         dst: Option<&Dst>,
-        src0: Option<&Src>,
-        src1: Option<&Src>,
+        src0: &Src,
+        src1: &Src,
         src2: Option<&Src>,
     ) {
         self.set_opcode(unit, opcode);
@@ -376,13 +376,13 @@ impl SM20Encoder<'_> {
             self.set_dst(14..20, dst);
         }
 
-        if let AluSrc::Reg(reg0) = AluSrc::from_src(src0) {
+        if let AluSrc::Reg(reg0) = AluSrc::from_src(Some(src0)) {
             self.set_reg(20..26, reg0);
         } else {
             panic!("Unsupported src0");
         }
 
-        match AluSrc::from_src(src1) {
+        match AluSrc::from_src(Some(src1)) {
             AluSrc::None => panic!("Unsupported src1"),
             AluSrc::Reg(reg1) => match AluSrc::from_src(src2) {
                 AluSrc::None => {
@@ -434,19 +434,39 @@ impl SM20Encoder<'_> {
         }
     }
 
+    fn encode_form_a(
+        &mut self,
+        unit: SM20Unit,
+        opcode: u8,
+        dst: &Dst,
+        src0: &Src,
+        src1: &Src,
+        src2: Option<&Src>,
+    ) {
+        self.encode_form_a_opt_dst(unit, opcode, Some(dst), src0, src1, src2)
+    }
+
+    fn encode_form_a_no_dst(
+        &mut self,
+        unit: SM20Unit,
+        opcode: u8,
+        src0: &Src,
+        src1: &Src,
+    ) {
+        self.encode_form_a_opt_dst(unit, opcode, None, src0, src1, None)
+    }
+
     fn encode_form_a_imm32(
         &mut self,
         opcode: u8,
-        dst: Option<&Dst>,
-        src0: Option<&Src>,
+        dst: &Dst,
+        src0: &Src,
         imm_src1: u32,
     ) {
         self.set_opcode(SM20Unit::Imm32, opcode);
-        if let Some(dst) = dst {
-            self.set_dst(14..20, dst);
-        }
+        self.set_dst(14..20, dst);
 
-        if let AluSrc::Reg(reg0) = AluSrc::from_src(src0) {
+        if let AluSrc::Reg(reg0) = AluSrc::from_src(Some(src0)) {
             self.set_reg(20..26, reg0);
         } else {
             panic!("Unsupported src0");
@@ -552,22 +572,17 @@ impl SM20Op for OpFAdd {
         if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
             // Technically the modifier bits for these do work but legalization
             // should fold any modifiers on immediates for us.
-            assert!(self.srcs[1].is_unmodified());
-            e.encode_form_a_imm32(
-                0xa,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            assert!(self.srcs[1].src_mod.is_none());
+            e.encode_form_a_imm32(0xa, &self.dst, &self.srcs[0], imm32);
             assert!(self.saturate);
             assert!(self.rnd_mode == FRndMode::NearestEven);
         } else {
             e.encode_form_a(
                 SM20Unit::Float,
                 0x14,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
             e.set_bit(49, self.saturate);
@@ -619,20 +634,15 @@ impl SM20Op for OpFFma {
             // should fold any modifiers on immediates for us.
             assert!(self.srcs[1].is_unmodified());
 
-            e.encode_form_a_imm32(
-                0x8,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0x8, &self.dst, &self.srcs[0], imm32);
             assert!(self.rnd_mode == FRndMode::NearestEven);
         } else {
             e.encode_form_a(
                 SM20Unit::Float,
                 0xc,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 Some(&self.srcs[2]),
             );
             e.set_rnd_mode(55..57, self.rnd_mode);
@@ -662,9 +672,9 @@ impl SM20Op for OpFMnMx {
         e.encode_form_a(
             SM20Unit::Float,
             0x2,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         e.set_bit(5, self.ftz);
@@ -705,20 +715,15 @@ impl SM20Op for OpFMul {
             if self.srcs[0].src_mod.has_fneg() {
                 imm32 ^= 0x80000000;
             }
-            e.encode_form_a_imm32(
-                0xc,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0xc, &self.dst, &self.srcs[0], imm32);
             assert!(self.rnd_mode == FRndMode::NearestEven);
         } else {
             e.encode_form_a(
                 SM20Unit::Float,
                 0x16,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
             e.set_rnd_mode(55..57, self.rnd_mode);
@@ -800,9 +805,9 @@ impl SM20Op for OpFSet {
         e.encode_form_a(
             SM20Unit::Float,
             0x6,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
 
@@ -827,13 +832,11 @@ impl SM20Op for OpFSetP {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        e.encode_form_a(
+        e.encode_form_a_no_dst(
             SM20Unit::Float,
             0x8,
-            None,
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
-            None,
+            &self.srcs[0],
+            &self.srcs[1],
         );
 
         e.set_bit(6, self.srcs[1].src_mod.has_fabs());
@@ -906,9 +909,9 @@ impl SM20Op for OpDAdd {
         e.encode_form_a(
             SM20Unit::Double,
             0x12,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         e.set_bit(6, self.srcs[1].src_mod.has_fabs());
@@ -944,9 +947,9 @@ impl SM20Op for OpDFma {
         e.encode_form_a(
             SM20Unit::Double,
             0x8,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             Some(&self.srcs[2]),
         );
         e.set_bit(8, self.srcs[2].src_mod.has_fneg());
@@ -970,9 +973,9 @@ impl SM20Op for OpDMnMx {
         e.encode_form_a(
             SM20Unit::Double,
             0x2,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         e.set_bit(6, self.srcs[1].src_mod.has_fabs());
@@ -999,9 +1002,9 @@ impl SM20Op for OpDMul {
         e.encode_form_a(
             SM20Unit::Double,
             0x14,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         let neg0 = self.srcs[0].src_mod.has_fneg();
@@ -1021,13 +1024,11 @@ impl SM20Op for OpDSetP {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        e.encode_form_a(
+        e.encode_form_a_no_dst(
             SM20Unit::Double,
             0x6,
-            None,
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
-            None,
+            &self.srcs[0],
+            &self.srcs[1],
         );
         e.set_bit(6, self.srcs[1].src_mod.has_fabs());
         e.set_bit(7, self.srcs[0].src_mod.has_fabs());
@@ -1055,9 +1056,9 @@ impl SM20Op for OpBfe {
         e.encode_form_a(
             SM20Unit::Int,
             0x1c,
-            Some(&self.dst),
-            Some(&self.base),
-            Some(&self.range),
+            &self.dst,
+            &self.base,
+            &self.range,
             None,
         );
         e.set_bit(5, self.signed);
@@ -1098,20 +1099,15 @@ impl SM20Op for OpIAdd2 {
         assert!(self.srcs[0].is_unmodified() || self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
-            e.encode_form_a_imm32(
-                0x2,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0x2, &self.dst, &self.srcs[0], imm32);
             e.set_carry_out(58, &self.carry_out);
         } else {
             e.encode_form_a(
                 SM20Unit::Int,
                 0x12,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
             e.set_carry_out(48, &self.carry_out);
@@ -1135,20 +1131,15 @@ impl SM20Op for OpIAdd2X {
         assert!(self.srcs[0].is_unmodified() || self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
-            e.encode_form_a_imm32(
-                0x2,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0x2, &self.dst, &self.srcs[0], imm32);
             e.set_carry_out(58, &self.carry_out);
         } else {
             e.encode_form_a(
                 SM20Unit::Int,
                 0x12,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
             e.set_carry_out(48, &self.carry_out);
@@ -1185,9 +1176,9 @@ impl SM20Op for OpIMad {
         e.encode_form_a(
             SM20Unit::Int,
             0x8,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             Some(&self.srcs[2]),
         );
 
@@ -1220,19 +1211,14 @@ impl SM20Op for OpIMul {
         assert!(self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
-            e.encode_form_a_imm32(
-                0x4,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0x4, &self.dst, &self.srcs[0], imm32);
         } else {
             e.encode_form_a(
                 SM20Unit::Int,
                 0x14,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
         }
@@ -1290,9 +1276,9 @@ impl SM20Op for OpIMnMx {
         e.encode_form_a(
             SM20Unit::Int,
             0x2,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         e.set_field(
@@ -1321,13 +1307,11 @@ impl SM20Op for OpISetP {
         assert!(self.srcs[1].is_unmodified());
         assert!(self.srcs[0].is_unmodified());
 
-        e.encode_form_a(
+        e.encode_form_a_no_dst(
             SM20Unit::Int,
             0x6,
-            None,
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
-            None,
+            &self.srcs[0],
+            &self.srcs[1],
         );
 
         e.set_bit(5, self.cmp_type.is_signed());
@@ -1358,20 +1342,15 @@ impl SM20Op for OpLop2 {
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
-            e.encode_form_a_imm32(
-                0xe,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                imm32,
-            );
+            e.encode_form_a_imm32(0xe, &self.dst, &self.srcs[0], imm32);
             assert!(self.op != LogicOp2::PassB);
         } else {
             e.encode_form_a(
                 SM20Unit::Int,
                 0x1a,
-                Some(&self.dst),
-                Some(&self.srcs[0]),
-                Some(&self.srcs[1]),
+                &self.dst,
+                &self.srcs[0],
+                &self.srcs[1],
                 None,
             );
         }
@@ -1402,9 +1381,9 @@ impl SM20Op for OpPopC {
         e.encode_form_a(
             SM20Unit::Move,
             0x15,
-            Some(&self.dst),
-            Some(&mask),
-            Some(&self.src),
+            &self.dst,
+            &mask,
+            &self.src,
             None,
         );
         e.set_bit(8, self.src.src_mod.is_bnot());
@@ -1429,9 +1408,9 @@ impl SM20Op for OpShl {
         e.encode_form_a(
             SM20Unit::Int,
             0x18,
-            Some(&self.dst),
-            Some(&self.src),
-            Some(&self.shift),
+            &self.dst,
+            &self.src,
+            &self.shift,
             None,
         );
         e.set_bit(9, self.wrap);
@@ -1455,9 +1434,9 @@ impl SM20Op for OpShr {
         e.encode_form_a(
             SM20Unit::Int,
             0x16,
-            Some(&self.dst),
-            Some(&self.src),
-            Some(&self.shift),
+            &self.dst,
+            &self.src,
+            &self.shift,
             None,
         );
         e.set_bit(5, self.signed);
@@ -1574,9 +1553,9 @@ impl SM20Op for OpPrmt {
         e.encode_form_a(
             SM20Unit::Move,
             0x9,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.sel),
+            &self.dst,
+            &self.srcs[0],
+            &self.sel,
             Some(&self.srcs[1]),
         );
         e.set_field(
@@ -1609,9 +1588,9 @@ impl SM20Op for OpSel {
         e.encode_form_a(
             SM20Unit::Move,
             0x8,
-            Some(&self.dst),
-            Some(&self.srcs[0]),
-            Some(&self.srcs[1]),
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
             None,
         );
         e.set_pred_src(49..53, &self.cond);
@@ -2622,9 +2601,9 @@ impl SM20Op for OpOut {
         e.encode_form_a(
             SM20Unit::Tex,
             0x7,
-            Some(&self.dst),
-            Some(&self.handle),
-            Some(&self.stream),
+            &self.dst,
+            &self.handle,
+            &self.stream,
             None,
         );
         e.set_field(
