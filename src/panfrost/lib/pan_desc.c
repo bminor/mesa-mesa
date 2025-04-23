@@ -1221,7 +1221,19 @@ GENX(pan_select_tiler_hierarchy_mask)(unsigned width, unsigned height,
 
    uint32_t max_fb_wh = MAX2(width, height);
    uint32_t last_hierarchy_bit = util_last_bit(DIV_ROUND_UP(max_fb_wh, 16));
-   uint32_t hierarchy_mask = BITFIELD_MASK(max_levels);
+   uint32_t hierarchy_mask;
+
+   if (max_levels < 8) {
+      /* spread the bits out somewhat */
+      static uint32_t default_mask[] = {
+         0, 0x80, 0x82, 0xa2,
+         0xaa, 0xea, 0xee, 0xfe
+      };
+      hierarchy_mask = default_mask[max_levels];
+      max_levels = 8; /* the high bit of the mask is always set */
+   } else {
+      hierarchy_mask = BITFIELD_MASK(max_levels);
+   }
 
    /* Always enable the level covering the whole FB, and disable the finest
     * levels if we don't have enough to cover everything.
