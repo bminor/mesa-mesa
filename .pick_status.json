@@ -1,5 +1,375 @@
 [
     {
+        "sha": "091d52965f805d61dd3a8e091ac20869a794e632",
+        "description": "radeonsi: init use_aco properly when llvm is disabled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ab7ff51b9d86a6bdaf6f8ed398ca2b1b51aa4ff",
+        "description": "radeonsi: skip blit incompatible scenarios",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "992a340eab07797bf161262a189f7eca2fdf80e0",
+        "description": "ac/nir: init blake3 for cs blit shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a381bbc3cec1a54095cf4a51df8516d25207fe4",
+        "description": "radeonsi: fix potential use after free in si_set_debug_callback",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "59a3f38ff6fdc7bd47309dd58ce5070c903a0c28",
+        "notes": null
+    },
+    {
+        "sha": "48bccb7d55633d8d53e15397bbec2bc7a64c6135",
+        "description": "bin/ci: crnm: bug stress mode retry formula",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6843c170518c55001b20543004eb5d3e8d7ce11",
+        "description": "bin/ci: crnm: bug while stressing a single job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce200e6a4a086f20ba64b07d02e3cf67ca877599",
+        "description": "bin/ci: crnm: Fix job duration calculation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3a9125014105e072eae3720547c5823e35a1eb9",
+        "description": "bin/ci: crnm: Improve timer display formatting",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "769c9bf27cc24408a4b569009216431a9d93892c",
+        "description": "bin/ci: crnm: Improve job enabling robustness",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6464083a6b056ba87d8b613fd0a6dd465863994b",
+        "description": "ci: Extract target job handling in CI monitor script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "098ee11c1c3df22d033553227b7a343c47291f5f",
+        "description": "panvk: Set supportsNonZeroFirstInstance=true",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a3f1da321cd5c41bbdd37c817c440f5d6f44a08",
+        "description": "panvk: Advertise support for VK_EXT_vertex_attribute_divisor",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2a8e3838d6f70d94d785622ea89fd65acb0d322",
+        "description": "panvk/csf: Fix instance attribute offseting",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "1570f0172e02aa660bb0b2619d67c1cff52b3914",
+        "notes": null
+    },
+    {
+        "sha": "b093855caaeb0f8c45e7cbe3a7ce2d31f1e1d6a5",
+        "description": "panvk/csf: Pass less arguments to emit_vs_attrib()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93484bf38ab08052f1240839720fcd7246328254",
+        "description": "rusticl: allow packagers to enable radeonsi by default",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f080ac5324b7cf1d394ea1a08a8002be74326f6",
+        "description": "rusticl/device: fix panic when disabling 3D image write support",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3edc6029b253090c04c34b6bea59eedd14524f4",
+        "description": "ac/llvm: use mul24 intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c267535ae46b09152bb2d9146efb69269efff3a",
+        "description": "anv: Add new debug flag to show shader stage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad328bc58d0bbbfddf9a5d4b0ae4c0aa27f21f9d",
+        "description": "intel: Switch uint64_t intel_debug to a bitset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a1aa129ed6535a63b39f7b1a86515c379b0751b",
+        "description": "intel: Switch debug flags to enums to prep for bitset conversion",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff95e506d9d6d3f60f9257f31f367c8df8b88541",
+        "description": "docs/nvk: Update conformance and hardware support information",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8514452cf78609f86e36a79910b57c6398e51a9b",
+        "description": "Uprev Piglit to c50d9aa54f85e0af9d72fab86c73f89356d96399",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f49272944b39fa424aac6d5c33ff9eabdabc3b8",
+        "description": "Uprev ANGLE to f355e2b37ed43939e2753fc7dacccf75abb4c1a3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fcb6dfb29c76454a7e24c177609e6b5dfda79c94",
+        "description": "intel: Fix the MOCS values in XY_BLOCK_COPY_BLT for Xe2+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "161c412a8296961f21f06761f89d58ad124ecc0d",
+        "description": "intel: Fix the MOCS values in XY_FAST_COLOR_BLT for Xe2+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36f22cc951c3249ebe36ab722739317d49e17f84",
+        "description": "tu,freedreno: Don't fallback to LINEAR with DRM_FORMAT_MOD_QCOM_COMPRESSED",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fc50fb35b0526a10da5e5fe72d4291c5175a9759",
+        "notes": null
+    },
+    {
+        "sha": "ee10938beed3840b9583ad4d67ff96052a9daaf1",
+        "description": "tu: Fix flushing when using a staging buffer for copies",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a41200f821c4993e1eb6651ddab02f51a8986b1",
+        "description": "pick-ui: add missing dependency",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c37a468a8a109cbaece70760fd748fc838185b88",
+        "notes": null
+    },
+    {
+        "sha": "501ed5be497f74e436f1ab89b47d07aeab814582",
+        "description": "lp: fix gnu-empty-initializer warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d2e16cc110b081c4fd8910aac93715cdf6d005c",
+        "description": "panvk: reset dyn_bufs map count to 0 in create_copy_table",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e350c334b6b2c7b420f326501533984c43d7c900",
+        "notes": null
+    },
+    {
+        "sha": "6901f74fbf112fa129197b7b0101578ba992d24a",
+        "description": "intel/executor: Reorganize -h and --help",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d383d78e8c0544e6ebf9b23f57969bc6f5288fe7",
+        "description": "nvk: Maxwell+ is now conformant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f3489f351fc352e116e575884af5bc11423b4a2",
+        "description": "aco/isel: create WMMA with constant C matrix if possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4fa3fb87c78628105559cc934bd3d5add852523f",
+        "description": "aco/insert_NOPs: allow WMMA with constant C matrix",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c3964e87f805af48ae6f3b86aa58c97a110a8c25",
+        "description": "radv: apply fneg/fabs modifiers to wmma",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d7e67d98632e0fff202cd196af05179e7c6eefe",
+        "description": "nir,amd: add neg_lo/hi modifiers to cmat_matmul_amd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b0c8f316001c3050f268d9eca9dd22a1a8a822f6",
+        "description": "aco: set opsel_hi to 1 for WMMA",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "5f3a3740dcc6d243f2ef14138fb1c09bcbb9b5fd",
         "description": "zink: use util_dynarray_resize_zero() for descriptor pool",
         "nominated": false,
