@@ -169,10 +169,15 @@ typedef struct {
 
 void
 ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uint64_t tes_inputs_read,
-                        uint32_t tes_patch_inputs_read, ac_nir_tess_io_info *io_info)
+                        uint32_t tes_patch_inputs_read, ac_nir_map_io_driver_location map_io,
+                        bool remapped_outputs_include_tess_levels, ac_nir_tess_io_info *io_info)
 {
    io_info->vram_output_mask = tcs->info.tess.tcs_outputs_read_by_tes & tes_inputs_read;
    io_info->vram_patch_output_mask = tcs->info.tess.tcs_patch_outputs_read_by_tes & tes_patch_inputs_read;
+
+   /* These shouldn't occur in TCS. */
+   io_info->vram_output_mask &= ~(VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT |
+                                  VARYING_BIT_PRIMITIVE_ID | VARYING_BIT_PRIMITIVE_SHADING_RATE);
 
    io_info->lds_output_mask = (((tcs->info.outputs_read & tcs->info.outputs_written) |
                                 tcs->info.tess.tcs_cross_invocation_outputs_written |
@@ -183,6 +188,36 @@ ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uin
    io_info->vgpr_output_mask = (tcs->info.outputs_written &
                                 ~(tcs->info.tess.tcs_cross_invocation_outputs_written |
                                   tcs->info.outputs_written_indirectly) & ~TESS_LVL_MASK);
+
+   io_info->highest_remapped_vram_output = 0;
+   io_info->highest_remapped_vram_patch_output = 0;
+
+   if (map_io) {
+      u_foreach_bit64(i, io_info->vram_output_mask & ~TESS_LVL_MASK) {
+         unsigned index = map_io(i);
+         io_info->highest_remapped_vram_output = MAX2(io_info->highest_remapped_vram_output, index + 1);
+      }
+
+      u_foreach_bit(i, io_info->vram_patch_output_mask) {
+         unsigned index = map_io(VARYING_SLOT_PATCH0 + i);
+         io_info->highest_remapped_vram_patch_output = MAX2(io_info->highest_remapped_vram_patch_output, index + 1);
+      }
+
+      if (remapped_outputs_include_tess_levels) {
+         u_foreach_bit64(i, io_info->vram_output_mask & TESS_LVL_MASK) {
+            unsigned index = map_io(i);
+            io_info->highest_remapped_vram_patch_output = MAX2(io_info->highest_remapped_vram_patch_output, index + 1);
+         }
+      }
+   } else {
+      io_info->highest_remapped_vram_output = util_bitcount64(io_info->vram_output_mask & ~TESS_LVL_MASK);
+      io_info->highest_remapped_vram_patch_output = util_bitcount(io_info->vram_patch_output_mask);
+
+      if (remapped_outputs_include_tess_levels) {
+         io_info->highest_remapped_vram_patch_output +=
+            util_bitcount64(io_info->vram_output_mask & TESS_LVL_MASK);
+      }
+   }
 }
 
 static uint64_t
@@ -1498,8 +1533,8 @@ void
 ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io_info *io_info,
                             unsigned tcs_vertices_out, unsigned wave_size, bool tess_uses_primid,
                             unsigned num_tcs_input_cp, unsigned lds_input_vertex_size,
-                            unsigned num_mem_tcs_outputs, unsigned num_mem_tcs_patch_outputs,
-                            unsigned *num_patches_per_wg, unsigned *hw_lds_size)
+                            unsigned num_remapped_tess_level_outputs, unsigned *num_patches_per_wg,
+                            unsigned *hw_lds_size)
 {
    unsigned num_tcs_output_cp = tcs_vertices_out;
    unsigned lds_output_vertex_size = util_bitcount64(io_info->lds_output_mask & ~TESS_LVL_MASK) * 16;
@@ -1510,7 +1545,9 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
                             num_tcs_output_cp * lds_output_vertex_size +
                             lds_perpatch_output_patch_size;
    unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp,
-                                                      num_mem_tcs_outputs, num_mem_tcs_patch_outputs,
+                                                      io_info->highest_remapped_vram_output,
+                                                      MAX2(io_info->highest_remapped_vram_patch_output,
+                                                           num_remapped_tess_level_outputs),
                                                       lds_per_patch, wave_size, tess_uses_primid);
    unsigned lds_size = lds_per_patch * num_patches + AC_TESS_LEVEL_VOTE_LDS_BYTES;
 

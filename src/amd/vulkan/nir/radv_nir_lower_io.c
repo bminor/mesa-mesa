@@ -243,8 +243,8 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
       nir_tcs_info tcs_info;
       nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
       ac_nir_tess_io_info tess_io_info;
-      ac_nir_get_tess_io_info(nir, &tcs_info, info->tcs.tes_inputs_read, info->tcs.tes_patch_inputs_read,
-                              &tess_io_info);
+      ac_nir_get_tess_io_info(nir, &tcs_info, info->tcs.tes_inputs_read, info->tcs.tes_patch_inputs_read, map_output,
+                              true, &tess_io_info);
 
       NIR_PASS(_, nir, ac_nir_lower_hs_outputs_to_mem, &tcs_info, &tess_io_info, map_output, pdev->info.gfx_level,
                info->wave_size);

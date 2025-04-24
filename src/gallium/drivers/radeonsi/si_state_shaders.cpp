@@ -4809,19 +4809,16 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
     */
    unsigned num_tcs_output_cp = tcs->info.base.tess.tcs_vertices_out;
    unsigned lds_input_vertex_size = si_shader_lshs_vertex_stride(ls_current);
-   unsigned num_mem_tcs_outputs = util_last_bit64(tcs->info.tcs_outputs_written_for_tes);
-   unsigned num_mem_tcs_patch_outputs =
-      util_last_bit(tcs->info.patch_outputs_written_for_tes |
-                    (!ls_current->is_monolithic || ls_current->key.ge.opt.tes_reads_tess_factors ?
-                        tcs->info.tess_levels_written_for_tes : 0));
+   unsigned num_remapped_tess_level_outputs =
+      util_last_bit(!ls_current->is_monolithic || ls_current->key.ge.opt.tes_reads_tess_factors ?
+                       tcs->info.tess_levels_written_for_tes : 0);
    unsigned num_patches, lds_size;
 
    /* Compute NUM_PATCHES and LDS_SIZE. */
    ac_nir_compute_tess_wg_info(&sctx->screen->info, &tcs->info.tess_io_info,
                                tcs->info.base.tess.tcs_vertices_out, ls_current->wave_size,
                                tess_uses_primid, num_tcs_input_cp, lds_input_vertex_size,
-                               num_mem_tcs_outputs, num_mem_tcs_patch_outputs,
-                               &num_patches, &lds_size);
+                               num_remapped_tess_level_outputs, &num_patches, &lds_size);
 
    if (sctx->num_patches_per_workgroup != num_patches) {
       sctx->num_patches_per_workgroup = num_patches;
@@ -4838,7 +4835,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    assert(num_patches <= 127);
    assert(tcs_mem_attrib_stride <= 31);
    assert(num_lds_vs_outputs <= 63);
-   assert(num_mem_tcs_outputs <= 63);
+   assert(tcs->info.tess_io_info.highest_remapped_vram_output <= 63);
 
    uint64_t ring_va =
       sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
@@ -4847,7 +4844,8 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    assert((ring_va & BITFIELD_MASK(19)) == 0);
 
    unsigned shared_fields = num_patches | (tcs_mem_attrib_stride << 12) |
-                            (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
+                            (num_lds_vs_outputs << 17) |
+                            (tcs->info.tess_io_info.highest_remapped_vram_output << 23);
 
    sctx->tes_offchip_ring_va_sgpr = ring_va;
    sctx->tcs_offchip_layout = (sctx->tcs_offchip_layout & 0xe0000000) |

@@ -3618,8 +3618,7 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.uses_dynamic_patch_control_points) {
       radv_get_tess_wg_info(pdev, &tcs->info.tcs.io_info, tcs->info.tcs.tcs_vertices_out, d->vk.ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
-                            vs->info.vs.num_linked_outputs, tcs->info.tcs.num_linked_outputs,
-                            tcs->info.tcs.num_linked_patch_outputs, &cmd_buffer->state.tess_num_patches,
+                            vs->info.vs.num_linked_outputs, &cmd_buffer->state.tess_num_patches,
                             &cmd_buffer->state.tess_lds_size);
    }
 
@@ -10646,12 +10645,13 @@ radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
       unsigned tcs_out_mem_attrib_stride =
          align(cmd_buffer->state.tess_num_patches * tcs->info.tcs.tcs_vertices_out * 16, 256) / 256;
 
-      uint32_t tmp = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches) |
-                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TCS_MEM_ATTRIB_STRIDE, tcs_out_mem_attrib_stride) |
-                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
-                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
-                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
-                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
+      uint32_t tmp =
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TCS_MEM_ATTRIB_STRIDE, tcs_out_mem_attrib_stride) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.io_info.highest_remapped_vram_output) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
+         SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
       tcs_offchip_layout =
          tmp | SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN, d->vk.ts.patch_control_points - 1);
       tes_offchip_layout =

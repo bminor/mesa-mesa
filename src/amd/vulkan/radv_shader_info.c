@@ -631,10 +631,11 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
                        const struct radv_graphics_state_key *gfx_state, struct radv_shader_info *info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   ac_nir_map_io_driver_location map_output = info->outputs_linked ? NULL : radv_map_io_driver_location;
 
    nir_tcs_info tcs_info;
    nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
-   ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, &info->tcs.io_info);
+   ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, map_output, true, &info->tcs.io_info);
 
    info->tcs.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
    info->tcs.tes_inputs_read = ~0ULL;
@@ -642,19 +643,12 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
 
    if (!info->inputs_linked)
       info->tcs.num_linked_inputs = util_last_bit64(radv_gather_unlinked_io_mask(nir->info.inputs_read));
-   if (!info->outputs_linked) {
-      info->tcs.num_linked_outputs = util_last_bit64(radv_gather_unlinked_io_mask(
-         nir->info.outputs_written & ~(VARYING_BIT_TESS_LEVEL_OUTER | VARYING_BIT_TESS_LEVEL_INNER)));
-      info->tcs.num_linked_patch_outputs = util_last_bit64(
-         radv_gather_unlinked_patch_io_mask(nir->info.outputs_written, nir->info.patch_outputs_written));
-   }
 
    if (gfx_state->ts.patch_control_points) {
       radv_get_tess_wg_info(pdev, &info->tcs.io_info, nir->info.tess.tcs_vertices_out,
                             gfx_state->ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
-                            info->tcs.num_linked_inputs, info->tcs.num_linked_outputs,
-                            info->tcs.num_linked_patch_outputs, &info->num_tess_patches, &info->tcs.num_lds_blocks);
+                            info->tcs.num_linked_inputs, &info->num_tess_patches, &info->tcs.num_lds_blocks);
    }
 }
 

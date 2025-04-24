@@ -260,7 +260,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          nir_def *num_tcs_mem_outputs;
 
          if (stage == MESA_SHADER_TESS_CTRL) {
-            num_tcs_mem_outputs = nir_imm_int(b, s->info->tcs.num_linked_outputs);
+            num_tcs_mem_outputs = nir_imm_int(b, s->info->tcs.io_info.highest_remapped_vram_output);
          } else if (s->info->inputs_linked) {
             num_tcs_mem_outputs = nir_imm_int(b, s->info->tes.num_linked_inputs);
          } else {

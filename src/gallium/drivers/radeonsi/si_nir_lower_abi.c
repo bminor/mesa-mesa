@@ -309,7 +309,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       nir_def *num_tcs_mem_outputs;
 
       if (stage == MESA_SHADER_TESS_CTRL)
-         num_tcs_mem_outputs = nir_imm_int(b, util_last_bit64(sel->info.tcs_outputs_written_for_tes));
+         num_tcs_mem_outputs = nir_imm_int(b, sel->info.tess_io_info.highest_remapped_vram_output);
       else
          num_tcs_mem_outputs = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 23, 6);
 

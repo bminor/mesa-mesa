@@ -891,6 +891,7 @@ struct si_shader_part {
 /* si_shader.c */
 struct ac_rtld_binary;
 
+unsigned si_map_io_driver_location(unsigned semantic);
 bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                        struct si_shader *shader, struct util_debug_callback *debug);
 bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,

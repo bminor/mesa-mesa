@@ -1508,8 +1508,6 @@ radv_graphics_shaders_fill_linked_tcs_tes_io_info(struct radv_shader_stage *tcs_
    const unsigned num_reserved_patch_slots =
       util_bitcount64(tess_lvl_mask) + util_bitcount64(tes_stage->nir->info.patch_inputs_read);
 
-   tcs_stage->info.tcs.num_linked_outputs = num_reserved_slots;
-   tcs_stage->info.tcs.num_linked_patch_outputs = num_reserved_patch_slots;
    tcs_stage->info.outputs_linked = true;
 
    tes_stage->info.tes.num_linked_inputs = num_reserved_slots;

@@ -977,7 +977,8 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
          }
 
          /* TCS -> TES outputs */
-         s->value.u64 += shader->info.tcs.num_linked_outputs + shader->info.tcs.num_linked_patch_outputs;
+         s->value.u64 += shader->info.tcs.io_info.highest_remapped_vram_output +
+                         shader->info.tcs.io_info.highest_remapped_vram_patch_output;
          break;
 
       case MESA_SHADER_TESS_EVAL:

@@ -97,11 +97,16 @@ typedef struct {
    /* Generic per-patch slots. */
    uint32_t vram_patch_output_mask;
    uint32_t lds_patch_output_mask;
+
+   /* The highest index returned by map_io + 1. */
+   uint8_t highest_remapped_vram_output;
+   uint8_t highest_remapped_vram_patch_output;
 } ac_nir_tess_io_info;
 
 void
 ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uint64_t tes_inputs_read,
-                        uint32_t tes_patch_inputs_read, ac_nir_tess_io_info *io_info);
+                        uint32_t tes_patch_inputs_read, ac_nir_map_io_driver_location map_io,
+                        bool remapped_outputs_include_tess_levels, ac_nir_tess_io_info *io_info);
 
 bool
 ac_nir_lower_ls_outputs_to_mem(nir_shader *ls,
@@ -134,8 +139,8 @@ void
 ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io_info *io_info,
                             unsigned tcs_vertices_out, unsigned wave_size, bool tess_uses_primid,
                             unsigned num_tcs_input_cp, unsigned lds_input_vertex_size,
-                            unsigned num_mem_tcs_outputs, unsigned num_mem_tcs_patch_outputs,
-                            unsigned *num_patches_per_wg, unsigned *hw_lds_size);
+                            unsigned num_remapped_tess_level_outputs, unsigned *num_patches_per_wg,
+                            unsigned *hw_lds_size);
 
 bool
 ac_nir_lower_es_outputs_to_mem(nir_shader *shader,

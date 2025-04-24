@@ -197,12 +197,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                      info->tess_levels_written_for_tes |=
                         BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
                   }
-               } else if (slot_semantic >= VARYING_SLOT_PATCH0 &&
-                          slot_semantic < VARYING_SLOT_TESS_MAX) {
-                  if (!nir_intrinsic_io_semantics(intr).no_varying) {
-                     info->patch_outputs_written_for_tes |=
-                        BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
-                  }
                } else if ((slot_semantic <= VARYING_SLOT_VAR31 ||
                            slot_semantic >= VARYING_SLOT_VAR0_16BIT) &&
                           slot_semantic != VARYING_SLOT_EDGE) {
@@ -217,12 +211,8 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
                   /* LAYER and VIEWPORT have no effect if they don't feed the rasterizer. */
                   if (slot_semantic != VARYING_SLOT_LAYER &&
-                      slot_semantic != VARYING_SLOT_VIEWPORT) {
+                      slot_semantic != VARYING_SLOT_VIEWPORT)
                      info->ls_es_outputs_written |= bit;
-
-                     if (!nir_intrinsic_io_semantics(intr).no_varying)
-                        info->tcs_outputs_written_for_tes |= bit;
-                  }
                }
             }
 
@@ -499,7 +489,8 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       nir_tcs_info tcs_info;
       nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode,
                           nir->info.tess.spacing);
-      ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, &info->tess_io_info);
+      ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, si_map_io_driver_location, false,
+                              &info->tess_io_info);
    }
 
    /* tess factors are loaded as input instead of system value */
