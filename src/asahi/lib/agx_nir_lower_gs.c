@@ -78,14 +78,9 @@ store_geometry_param_offset(nir_builder *b, nir_def *def, uint32_t offset,
 static void
 add_counter(nir_builder *b, nir_def *counter, nir_def *increment)
 {
-   /* If the counter is NULL, the counter is disabled. Skip the update. */
-   nir_if *nif = nir_push_if(b, nir_ine_imm(b, counter, 0));
-   {
-      nir_def *old = nir_load_global(b, counter, 4, 1, 32);
-      nir_def *new_ = nir_iadd(b, old, increment);
-      nir_store_global(b, counter, 4, new_, nir_component_mask(1));
-   }
-   nir_pop_if(b, nif);
+   nir_def *old = nir_load_global(b, counter, 4, 1, 32);
+   nir_def *new_ = nir_iadd(b, old, increment);
+   nir_store_global(b, counter, 4, new_, nir_component_mask(1));
 }
 
 /* Helpers for lowering I/O to variables */
@@ -1055,9 +1050,9 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, struct nir_xfb_info *xfb,
          uint32_t prim_stride_B = xfb->buffers[i].stride * vertices_per_prim;
          unsigned stream = xfb->buffer_to_stream[i];
 
-         nir_def *off_ptr = load_geometry_param(b, xfb_offs_ptrs[i]);
          nir_def *size = nir_imul_imm(b, prims[stream], prim_stride_B);
-         add_counter(b, off_ptr, size);
+         libagx_update_xfb_counter(b, nir_load_geometry_param_buffer_agx(b),
+                                   nir_imm_int(b, i), size);
       }
    }
 

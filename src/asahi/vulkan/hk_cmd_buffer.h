@@ -10,6 +10,7 @@
 #include "util/macros.h"
 
 #include "util/list.h"
+#include "agx_abi.h"
 #include "agx_helpers.h"
 #include "agx_linker.h"
 #include "agx_pack.h"
@@ -752,8 +753,14 @@ hk_pipeline_stat_addr(struct hk_cmd_buffer *cmd,
       return root->draw.pipeline_stats + (sizeof(uint64_t) * index);
    } else {
       /* Query disabled */
-      return 0;
+      return AGX_SCRATCH_PAGE_ADDRESS;
    }
+}
+
+static inline bool
+hk_stat_enabled(uint64_t addr)
+{
+   return addr != AGX_SCRATCH_PAGE_ADDRESS;
 }
 
 void hk_cmd_buffer_begin_graphics(struct hk_cmd_buffer *cmd,

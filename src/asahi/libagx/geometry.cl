@@ -544,13 +544,22 @@ libagx_unroll_restart(global struct agx_heap *heap, uint64_t index_buffer,
 uint
 libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)
 {
-   global uint *off_ptr = p->xfb_offs_ptrs[i];
-   if (!off_ptr)
+   if (p->xfb_offs_ptrs[i]) {
+      uint off = *(p->xfb_offs_ptrs[i]);
+      p->xfb_base[i] = p->xfb_base_original[i] + off;
+      return off;
+   } else {
       return 0;
+   }
+}
 
-   uint off = *off_ptr;
-   p->xfb_base[i] = p->xfb_base_original[i] + off;
-   return off;
+void
+libagx_update_xfb_counter(global struct agx_geometry_params *p, uint i,
+                          uint count)
+{
+   if (p->xfb_offs_ptrs[i]) {
+      *(p->xfb_offs_ptrs[i]) += count;
+   }
 }
 
 void

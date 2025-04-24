@@ -102,7 +102,7 @@ dispatch(struct hk_cmd_buffer *cmd, struct agx_grid grid)
    uint64_t stat = hk_pipeline_stat_addr(
       cmd, VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT);
 
-   if (stat) {
+   if (hk_stat_enabled(stat)) {
       perf_debug(cmd, "CS invocation statistic");
       uint64_t grid = cmd->state.cs.descriptors.root.cs.group_count_addr;
 

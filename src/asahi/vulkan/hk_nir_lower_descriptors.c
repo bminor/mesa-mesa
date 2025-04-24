@@ -497,7 +497,8 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          present = nir_iand(b, present, nir_ine_imm(b, api_gs, 0));
       }
 
-      addr = nir_bcsel(b, present, addr, nir_imm_int64(b, 0));
+      addr = nir_bcsel(b, present, addr,
+                       nir_imm_int64(b, AGX_SCRATCH_PAGE_ADDRESS));
 
       nir_def_rewrite_uses(&intrin->def, addr);
       return true;
