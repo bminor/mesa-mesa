@@ -1247,6 +1247,7 @@ etna_compile_shader(struct etna_shader_variant *v)
    NIR_PASS(_, s, nir_lower_vars_to_ssa);
    NIR_PASS(_, s, nir_lower_indirect_derefs, nir_var_all, UINT32_MAX);
    NIR_PASS(_, s, etna_nir_lower_texture, &v->key);
+   NIR_PASS(_, s, nir_lower_alu_width, NULL, NULL);
 
    NIR_PASS(_, s, nir_lower_alu_to_scalar, etna_alu_to_scalar_filter_cb, c->info);
    if (c->info->halti >= 2) {
