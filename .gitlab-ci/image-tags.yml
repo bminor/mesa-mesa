@@ -34,7 +34,7 @@ variables:
   ALPINE_X86_64_LAVA_SSH_TAG: "20250422-ci-fairy"
   FEDORA_X86_64_BUILD_TAG: "20250420-42"
 
-  KERNEL_TAG: "v6.14-mesa-0bdd"
+  KERNEL_TAG: "v6.14-mesa-dea4"
   KERNEL_REPO: "gfx-ci/linux"
   PKG_REPO_REV: "95bf62c"
 
