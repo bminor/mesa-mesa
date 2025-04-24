@@ -3773,16 +3773,6 @@ agx_preprocess_nir(nir_shader *nir)
    /* Clean up deref gunk after lowering I/O */
    NIR_PASS(_, nir, nir_opt_dce);
 
-   /* Runs before we lower away idiv, to work at all. But runs after lowering
-    * textures, since the cube map array lowering generates division by 6.
-    */
-   NIR_PASS(_, nir, nir_opt_idiv_const, 16);
-
-   nir_lower_idiv_options idiv_options = {
-      .allow_fp16 = true,
-   };
-
-   NIR_PASS(_, nir, nir_lower_idiv, &idiv_options);
    NIR_PASS(_, nir, nir_lower_frexp);
    NIR_PASS(_, nir, nir_lower_alu);
    NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
@@ -3802,6 +3792,16 @@ agx_preprocess_nir(nir_shader *nir)
     */
    agx_optimize_loop_nir(nir);
 
+   /* Lower idiv after an optimization loop so we can constant fold more before
+    * nir_opt_idiv_const.
+    */
+   NIR_PASS(_, nir, nir_opt_idiv_const, 16);
+
+   nir_lower_idiv_options idiv_options = {
+      .allow_fp16 = true,
+   };
+
+   NIR_PASS(_, nir, nir_lower_idiv, &idiv_options);
    NIR_PASS(_, nir, nir_opt_deref);
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
