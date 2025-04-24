@@ -337,7 +337,7 @@ include:
 
 # Git archive
 
-make git archive:
+make-git-archive:
   extends:
     - .fdo.ci-fairy
   stage: git-archive
