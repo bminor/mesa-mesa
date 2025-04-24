@@ -24,4 +24,4 @@
  * addressed with only small integers in the low/high. That lets us do some
  * robustness optimization even without soft fault.
  */
-#define AGX_ZERO_PAGE_ADDRESS (1ull << 32)
+#define AGX_ZERO_PAGE_ADDRESS (((uint64_t)1) << 32)

@@ -3,6 +3,7 @@
  * Copyright 2023 Valve Corporation
  * SPDX-License-Identifier: MIT
  */
+#include "asahi/lib/agx_abi.h"
 #include "compiler/libcl/libcl.h"
 #include "libagx_intrinsics.h"
 #include <agx_pack.h>
@@ -18,7 +19,7 @@ libagx_txs(constant struct agx_texture_packed *ptr, uint16_t lod,
     *
     *    OpImageQuery*...  return 0 if the bound descriptor is a null descriptor
     */
-   if (d.mode == AGX_IMAGE_MODE_NULL)
+   if (d.address == AGX_ZERO_PAGE_ADDRESS)
       return 0;
 
    /* Buffer textures are lowered to 2D so the original size is irrecoverable.
@@ -67,7 +68,7 @@ libagx_texture_samples(constant struct agx_texture_packed *ptr)
    agx_unpack(NULL, ptr, TEXTURE, d);
 
    /* As above */
-   if (d.mode == AGX_IMAGE_MODE_NULL)
+   if (d.address == AGX_ZERO_PAGE_ADDRESS)
       return 0;
 
    /* We may assume the input is multisampled, so just check the samples */
@@ -79,7 +80,7 @@ libagx_texture_levels(constant struct agx_texture_packed *ptr)
 {
    agx_unpack(NULL, ptr, TEXTURE, d);
 
-   if (d.mode == AGX_IMAGE_MODE_NULL)
+   if (d.address == AGX_ZERO_PAGE_ADDRESS)
       return 0;
    else
       return (d.last_level - d.first_level) + 1;

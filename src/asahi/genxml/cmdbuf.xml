@@ -203,12 +203,9 @@
 
   <enum name="Image Mode">
     <value name="Normal" value="0"/>
-    <!-- Needs investigation, only seen with null textures so far -->
-    <value name="Null" value="1"/>
-    <!-- This is r/e, I can name things however I'd like.
-         Might be a legacy mode of some kind, we should investigate.
-      -->
-    <value name="Sparse but it does not seem to work" value="2"/>
+    <!-- This is r/e, I can name things however I'd like. -->
+    <value name="Not sparse but probably with counters" value="1"/>
+    <value name="Sparse but probably no counters" value="2"/>
     <value name="Sparse" value="3"/>
   </enum>
 

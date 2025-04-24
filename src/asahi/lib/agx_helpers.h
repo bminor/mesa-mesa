@@ -168,7 +168,7 @@ agx_pack_line_width(float line_width)
  * the texture descriptor itself.
  */
 static void
-agx_set_null_texture(struct agx_texture_packed *tex, uint64_t valid_address)
+agx_set_null_texture(struct agx_texture_packed *tex)
 {
    agx_pack(tex, TEXTURE, cfg) {
       cfg.layout = AGX_LAYOUT_TWIDDLED;
@@ -178,8 +178,7 @@ agx_set_null_texture(struct agx_texture_packed *tex, uint64_t valid_address)
       cfg.swizzle_g = AGX_CHANNEL_0;
       cfg.swizzle_b = AGX_CHANNEL_0;
       cfg.swizzle_a = AGX_CHANNEL_0;
-      cfg.address = valid_address;
-      cfg.mode = AGX_IMAGE_MODE_NULL;
+      cfg.address = AGX_ZERO_PAGE_ADDRESS;
    }
 }
 
