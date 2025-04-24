@@ -176,7 +176,7 @@ debian-testing-msan:
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
-      -D gallium-drivers=panfrost
+      -D gallium-drivers=
       -D vulkan-drivers=
       -D video-codecs=
       -D glx=disabled
@@ -185,6 +185,7 @@ debian-testing-msan:
       -D install-mesa-clc=true
       -D precomp-compiler=enabled
       -D install-precomp-compiler=true
+      -D tools=panfrost
 
 debian-testing-ubsan:
   extends:
@@ -416,7 +417,7 @@ debian-android:
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
-      -D gallium-drivers=panfrost
+      -D gallium-drivers=
       -D vulkan-drivers=
       -D video-codecs=
       -D glx=disabled
@@ -425,6 +426,7 @@ debian-android:
       -D install-mesa-clc=true
       -D precomp-compiler=enabled
       -D install-precomp-compiler=true
+      -D tools=panfrost
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
     # x86_64 build:
@@ -494,7 +496,7 @@ debian-arm32:
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
-      -D gallium-drivers=panfrost
+      -D gallium-drivers=
       -D vulkan-drivers=
       -D video-codecs=
       -D glx=disabled
@@ -503,6 +505,7 @@ debian-arm32:
       -D install-mesa-clc=true
       -D precomp-compiler=enabled
       -D install-precomp-compiler=true
+      -D tools=panfrost
     S3_ARTIFACT_NAME: mesa-arm32-default-${BUILDTYPE}
     # The strip command segfaults, failing to strip the binary and leaving
     # tempfiles in our artifacts.
