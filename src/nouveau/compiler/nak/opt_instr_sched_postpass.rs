@@ -89,12 +89,10 @@ fn generate_dep_graph(sm: &dyn ShaderModel, instrs: &[Instr]) -> DepGraph {
                 } else {
                     sm.raw_latency(&instr.op, i, &instrs[r_ip].op, r_src_idx)
                 };
-                if sm.op_needs_scoreboard(&instr.op) {
-                    latency = max(
-                        latency,
-                        estimate_variable_latency(sm.sm(), &instr.op),
-                    );
-                }
+
+                latency =
+                    max(latency, estimate_variable_latency(sm, &instr.op));
+
                 g.add_edge(ip, r_ip, EdgeLabel { latency });
             }
         });
@@ -126,11 +124,11 @@ fn generate_dep_graph(sm: &dyn ShaderModel, instrs: &[Instr]) -> DepGraph {
             .map(|i| sm.worst_latency(&instr.op, i))
             .max()
             .unwrap_or(0);
-        if sm.op_needs_scoreboard(&instr.op) {
-            let var_latency = estimate_variable_latency(sm.sm(), &instr.op)
-                + sm.exec_latency(&instrs[instrs.len() - 1].op);
-            ready_cycle = max(ready_cycle, var_latency);
-        }
+
+        let var_latency = estimate_variable_latency(sm, &instr.op)
+            + sm.exec_latency(&instrs[instrs.len() - 1].op);
+        ready_cycle = max(ready_cycle, var_latency);
+
         let label = &mut g.nodes[ip].label;
         label.exec_latency = sm.exec_latency(&instr.op);
         label.ready_cycle = ready_cycle;
