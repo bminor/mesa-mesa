@@ -1700,9 +1700,9 @@ optimizations.extend([
    # bfi is either b or c.
    (('bfi', ('ineg', ('b2i', 'a@1')), b, c), ('bcsel', a, b, c)),
 
-   # bfi(a, 0, 0) = ((0 << find_lsb(a)) & a) | (0 & ~a)
-   #              = 0
-   (('bfi', a, 0, 0), 0),
+   # bfi(a, 0, b) = (0 << find_lsb(a)) & a) | (b & ~a)
+   #              = b & ~a
+   (('bfi', a, 0, b), ('iand', ('inot', a), b)),
 
    # bfi(a, b, b) = ((b << find_lsb(a)) & a) | (b & ~a)
    #              = (a & b) | (b & ~a)    If a is odd, find_lsb(a) == 0
