@@ -87,28 +87,9 @@ program@execute@vector-conversion,Fail
 angle-KHR-GLES3.clip_distance.coverage,Fail
 angle-KHR-GLES3.cull_distance.functional,Fail
 angle-KHR-GLES3.texture_lod_basic.lod_selection,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.25,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.29,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.85,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.98,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.22,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.40,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.55,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.69,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.86,Fail
 angle-dEQP-GLES2.functional.shaders.algorithm.rgb_to_hsl_vertex,Fail
 angle-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
-angle-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.28,Fail
-angle-dEQP-GLES3.functional.fragment_ops.random.53,Fail
-angle-dEQP-GLES3.functional.fragment_ops.random.55,Fail
-angle-dEQP-GLES3.functional.fragment_ops.random.61,Fail
-angle-dEQP-GLES3.functional.fragment_ops.random.69,Fail
 angle-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.28,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.random.53,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.random.55,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.random.61,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.random.69,Fail
 
 # GPU hangs with ANGLE 2025-02-12, were passing with ANGLE 2024-10-17
 angle-dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_highp_mat3,Crash
@@ -163,14 +144,3 @@ angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch_block.vertex
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_patch_block_array.vertex_io_array_size_query.quads,Crash
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_vertex_block.vertex_io_array_size_implicit.quads_explicit_tcs_out_size,Crash
 angle-dEQP-GLES31.functional.tessellation.user_defined_io.per_vertex_block.vertex_io_array_size_shader_builtin.quads_explicit_tcs_out_size,Crash
-
-# Turnip regression in https://gitlab.freedesktop.org/mesa/mesa/-/compare/e210b79ce3932f7fb1387d68a4cad495b77746f4...5ad00bae8b39b3731efc694d01470156b6fa7594
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.7,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.93,Fail
-angle-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.94,Fail
-angle-dEQP-GLES2.functional.fragment_ops.random.18,Fail
-angle-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.45,Fail
-angle-dEQP-GLES3.functional.fragment_ops.random.18,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.45,Fail
-angle-multisample-dEQP-GLES3.functional.fragment_ops.random.18,Fail
-
