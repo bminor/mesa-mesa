@@ -102,14 +102,6 @@ hk_upload_rodata(struct hk_device *dev)
    dev->rodata.heap = dev->rodata.bo->va->addr + offs;
    offs += sizeof(struct agx_heap);
 
-   /* For null storage descriptors, we need to reserve 16 bytes to catch writes.
-    * No particular content is required; we cannot get robustness2 semantics
-    * without more work.
-    */
-   offs = align(offs, 16);
-   dev->rodata.null_sink = dev->rodata.bo->va->addr + offs;
-   offs += 16;
-
    return VK_SUCCESS;
 }
 

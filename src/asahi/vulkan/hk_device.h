@@ -84,7 +84,6 @@ struct hk_device {
    struct {
       struct agx_bo *bo;
       uint64_t image_heap_ptr;
-      uint64_t null_sink;
       uint64_t heap;
    } rodata;
 

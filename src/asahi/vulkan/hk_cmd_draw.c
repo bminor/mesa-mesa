@@ -3047,7 +3047,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
           */
          desc->root.draw.vertex_output_buffer =
             vb_size ? hk_pool_alloc(cmd, vb_size, 4).gpu
-                    : dev->rodata.null_sink;
+                    : AGX_SCRATCH_PAGE_ADDRESS;
       }
    }
 
