@@ -1000,36 +1000,14 @@ agx_nir_create_pre_gs(struct lower_gs_state *state, struct nir_xfb_info *xfb,
          max_output_end[buffer] = MAX2(max_output_end[buffer], output_end);
       }
 
-      /* Write XFB addresses */
       u_foreach_bit(i, xfb->buffers_written) {
-         nir_def *xfb_offset = libagx_setup_xfb_buffer(
-            b, nir_load_geometry_param_buffer_agx(b), nir_imm_int(b, i));
+         nir_def *max_prims = libagx_setup_xfb_buffer(
+            b, nir_load_geometry_param_buffer_agx(b), nir_imm_int(b, i),
+            nir_imm_int(b, xfb->buffers[i].stride),
+            nir_imm_int(b, max_output_end[i]),
+            nir_imm_int(b, vertices_per_prim));
 
          unsigned stream = xfb->buffer_to_stream[i];
-         unsigned stride = xfb->buffers[i].stride;
-
-         /* Let output_end = output_offset + output_size.
-          *
-          * Primitive P will write up to (but not including) offset:
-          *
-          *    xfb_offset + ((P - 1) * (verts_per_prim * stride))
-          *               + ((verts_per_prim - 1) * stride)
-          *               + output_end
-          *
-          *
-          * To fit all outputs for P, that value must be less than the XFB
-          * buffer size for the output with maximal output_end, as everything
-          * else is constant here across outputs within a buffer/primitive:
-          *
-          *    floor(P) <= (stride + size - xfb_offset - output_end)
-          *                 // (stride * verts_per_prim)
-          */
-         nir_def *size = load_geometry_param(b, xfb_size[i]);
-         size = nir_iadd_imm(b, size, stride - max_output_end[i]);
-         size = nir_isub(b, size, xfb_offset);
-         size = nir_imax(b, size, nir_imm_int(b, 0));
-         nir_def *max_prims = nir_udiv_imm(b, size, stride * vertices_per_prim);
-
          prims[stream] = nir_umin(b, prims[stream], max_prims);
       }
 

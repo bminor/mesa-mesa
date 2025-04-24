@@ -543,11 +543,31 @@ libagx_unroll_restart(global struct agx_heap *heap, uint64_t index_buffer,
 }
 
 uint
-libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)
+libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i,
+                        uint stride, uint max_output_end,
+                        uint vertices_per_prim)
 {
-   uint off = *(p->xfb_offs_ptrs[i]);
-   p->xfb_base[i] = p->xfb_base_original[i] + off;
-   return off;
+   uint xfb_offset = *(p->xfb_offs_ptrs[i]);
+   p->xfb_base[i] = p->xfb_base_original[i] + xfb_offset;
+
+   /* Let output_end = output_offset + output_size.
+    *
+    * Primitive P will write up to (but not including) offset:
+    *
+    *    xfb_offset + ((P - 1) * (verts_per_prim * stride))
+    *               + ((verts_per_prim - 1) * stride)
+    *               + output_end
+    *
+    * To fit all outputs for P, that value must be less than the XFB
+    * buffer size for the output with maximal output_end, as everything
+    * else is constant here across outputs within a buffer/primitive:
+    *
+    *    floor(P) <= (stride + size - xfb_offset - output_end)
+    *                 // (stride * verts_per_prim)
+    */
+   int numer_s = p->xfb_size[i] + (stride - max_output_end) - xfb_offset;
+   uint numer = max(numer_s, 0);
+   return numer / (stride * vertices_per_prim);
 }
 
 void
