@@ -2767,7 +2767,7 @@ agx_upload_textures(struct agx_batch *batch, struct agx_compiled_shader *cs,
 
       if (!(ctx->stage[stage].image_mask & BITFIELD_BIT(i))) {
          agx_set_null_texture(texture);
-         agx_set_null_pbe(pbe, agx_pool_alloc_aligned(&batch->pool, 1, 64).gpu);
+         agx_set_null_pbe(pbe);
          continue;
       }
 

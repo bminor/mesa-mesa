@@ -233,7 +233,7 @@ agx_set_null_texture(struct agx_texture_packed *tex)
 }
 
 static void
-agx_set_null_pbe(struct agx_pbe_packed *pbe, uint64_t sink)
+agx_set_null_pbe(struct agx_pbe_packed *pbe)
 {
    agx_pack(pbe, PBE, cfg) {
       cfg.width = 1;
@@ -246,7 +246,7 @@ agx_set_null_pbe(struct agx_pbe_packed *pbe, uint64_t sink)
       cfg.swizzle_g = AGX_CHANNEL_R;
       cfg.swizzle_b = AGX_CHANNEL_R;
       cfg.swizzle_a = AGX_CHANNEL_R;
-      cfg.buffer = sink;
+      cfg.buffer = AGX_SCRATCH_PAGE_ADDRESS;
    }
 }
 
