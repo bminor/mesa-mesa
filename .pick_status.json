@@ -1194,7 +1194,7 @@
         "description": "aco: fix get_temp_reg_changes with clobbered operands",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d6cb45dbb03941edd65c948a243e73774184eeee",
         "notes": null
