@@ -307,7 +307,7 @@ hk_upload_null_descriptors(struct hk_device *dev)
    struct agx_pbe_packed null_pbe;
    uint32_t offset_tex, offset_pbe;
 
-   agx_set_null_texture(&null_tex, dev->rodata.null_sink);
+   agx_set_null_texture(&null_tex);
    agx_set_null_pbe(&null_pbe, dev->rodata.null_sink);
 
    hk_descriptor_table_add(dev, &dev->images, &null_tex, sizeof(null_tex),

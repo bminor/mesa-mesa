@@ -2778,7 +2778,7 @@ agx_upload_textures(struct agx_batch *batch, struct agx_compiled_shader *cs,
       struct agx_sampler_view *tex = ctx->stage[stage].textures[i];
 
       if (tex == NULL) {
-         agx_set_null_texture(&textures[i], T_tex.gpu);
+         agx_set_null_texture(&textures[i]);
          continue;
       }
 
@@ -2794,7 +2794,7 @@ agx_upload_textures(struct agx_batch *batch, struct agx_compiled_shader *cs,
    }
 
    for (unsigned i = nr_active_textures; i < nr_textures; ++i)
-      agx_set_null_texture(&textures[i], T_tex.gpu);
+      agx_set_null_texture(&textures[i]);
 
    for (unsigned i = 0; i < nr_images; ++i) {
       /* Image descriptors come in pairs after the textures */
@@ -2804,7 +2804,7 @@ agx_upload_textures(struct agx_batch *batch, struct agx_compiled_shader *cs,
       struct agx_pbe_packed *pbe = (struct agx_pbe_packed *)(texture + 1);
 
       if (!(ctx->stage[stage].image_mask & BITFIELD_BIT(i))) {
-         agx_set_null_texture(texture, T_tex.gpu);
+         agx_set_null_texture(texture);
          agx_set_null_pbe(pbe, agx_pool_alloc_aligned(&batch->pool, 1, 64).gpu);
          continue;
       }
