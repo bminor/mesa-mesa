@@ -60,16 +60,8 @@ hk_upload_rodata(struct hk_device *dev)
    dev->rodata.bo =
       agx_bo_create(&dev->dev, AGX_SAMPLER_LENGTH, 0, 0, "Read only data");
 
-   dev->sparse.write =
-      agx_bo_create(&dev->dev, AIL_PAGESIZE, 0, 0, "Sparse write page");
-
-   if (!dev->rodata.bo || !dev->sparse.write)
+   if (!dev->rodata.bo)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-   /* The contents of sparse.write are undefined, but making them nonzero helps
-    * fuzz for bugs where we incorrectly read from the write section.
-    */
-   memset(agx_bo_map(dev->sparse.write), 0xCA, AIL_PAGESIZE);
 
    uint8_t *map = agx_bo_map(dev->rodata.bo);
    uint32_t offs = 0;
@@ -507,7 +499,6 @@ fail_queue:
    hk_queue_finish(dev, &dev->queue);
 fail_rodata:
    agx_bo_unreference(&dev->dev, dev->rodata.bo);
-   agx_bo_unreference(&dev->dev, dev->sparse.write);
 fail_bg_eot:
    agx_bg_eot_cleanup(&dev->bg_eot);
 fail_internal_shaders_2:
@@ -564,7 +555,6 @@ hk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    hk_descriptor_table_finish(dev, &dev->images);
    hk_descriptor_table_finish(dev, &dev->occlusion_queries);
    agx_bo_unreference(&dev->dev, dev->rodata.bo);
-   agx_bo_unreference(&dev->dev, dev->sparse.write);
    agx_bo_unreference(&dev->dev, dev->heap);
    agx_bg_eot_cleanup(&dev->bg_eot);
    agx_close_device(&dev->dev);

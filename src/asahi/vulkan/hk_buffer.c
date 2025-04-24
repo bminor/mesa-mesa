@@ -85,7 +85,7 @@ hk_bind_scratch(struct hk_device *dev, struct agx_va *va, unsigned offset_B,
    uint32_t flags = DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_SINGLE_PAGE;
 
    /* Map read-write scratch to the primary (bottom half) VA range */
-   int ret = agx_bo_bind(&dev->dev, dev->sparse.write, addr, size_B, 0,
+   int ret = agx_bo_bind(&dev->dev, dev->dev.scratch_bo, addr, size_B, 0,
                          flags | DRM_ASAHI_BIND_WRITE);
    if (ret)
       return VK_ERROR_UNKNOWN;

@@ -476,7 +476,7 @@ hk_flush_bind(struct hk_bind_builder *b)
    struct drm_asahi_gem_bind_op op;
    if (!b->mem) {
       op = (struct drm_asahi_gem_bind_op){
-         .handle = b->dev->sparse.write->uapi_handle,
+         .handle = b->dev->dev.scratch_bo->uapi_handle,
          .flags = DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE |
                   DRM_ASAHI_BIND_SINGLE_PAGE,
          .addr = b->va->addr + b->resourceOffset,

@@ -676,6 +676,23 @@ agx_open_device(void *memctx, struct agx_device *dev)
       dev->zero_bo = bo;
    }
 
+   {
+      void *bo = agx_bo_create(dev, AIL_PAGESIZE, 0, 0, "Scratch page");
+      int ret = agx_bo_bind(dev, bo, AGX_SCRATCH_PAGE_ADDRESS, AIL_PAGESIZE, 0,
+                            DRM_ASAHI_BIND_READ | DRM_ASAHI_BIND_WRITE);
+      if (ret) {
+         fprintf(stderr, "Failed to bind zero page");
+         return false;
+      }
+
+      dev->scratch_bo = bo;
+
+      /* The contents of the scratch page are undefined, but making them nonzero
+       * helps fuzz for bugs where we incorrectly read from the write section.
+       */
+      memset(agx_bo_map(dev->scratch_bo), 0xCA, AIL_PAGESIZE);
+   }
+
    void *bo = agx_bo_create(dev, LIBAGX_PRINTF_BUFFER_SIZE, 0, AGX_BO_WRITEBACK,
                             "Printf/abort");
 
@@ -696,6 +713,7 @@ agx_close_device(struct agx_device *dev)
 {
    agx_bo_unreference(dev, dev->printf.bo);
    agx_bo_unreference(dev, dev->zero_bo);
+   agx_bo_unreference(dev, dev->scratch_bo);
    u_printf_destroy(&dev->printf);
    agx_bo_cache_evict_all(dev);
    util_sparse_array_finish(&dev->bo_map);
