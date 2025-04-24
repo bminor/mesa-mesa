@@ -19,6 +19,9 @@
 
 #include "pan_props.h"
 
+/* Maximum kmod BO label length, including NUL-terminator */
+#define PANFROST_BO_LABEL_MAXLEN 4096
+
 const struct pan_kmod_ops panfrost_kmod_ops;
 
 struct panfrost_kmod_vm {
@@ -480,6 +483,33 @@ panfrost_kmod_query_timestamp(const struct pan_kmod_dev *dev)
                              false, 0);
 }
 
+static void
+panfrost_kmod_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const char *label)
+{
+   char truncated_label[PANFROST_BO_LABEL_MAXLEN];
+
+   if (!(dev->driver.version.major > 1 || dev->driver.version.minor >= 4))
+      return;
+
+   if (strnlen(label, PANFROST_BO_LABEL_MAXLEN) == PANFROST_BO_LABEL_MAXLEN) {
+      strncpy(truncated_label, label, PANFROST_BO_LABEL_MAXLEN - 1);
+      truncated_label[PANFROST_BO_LABEL_MAXLEN - 1] = '\0';
+      label = truncated_label;
+   }
+
+   struct drm_panfrost_set_label_bo set_label =
+      (struct drm_panfrost_set_label_bo) {
+      .handle = bo->handle,
+      .label = (uint64_t)(uintptr_t)label,
+   };
+
+   int ret =
+      pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANFROST_SET_LABEL_BO,
+                     &set_label);
+   if (ret)
+      mesa_loge("DRM_IOCTL_PANFROST_SET_LABEL_BO failed (err=%d)", errno);
+}
+
 const struct pan_kmod_ops panfrost_kmod_ops = {
    .dev_create = panfrost_kmod_dev_create,
    .dev_destroy = panfrost_kmod_dev_destroy,
@@ -496,4 +526,5 @@ const struct pan_kmod_ops panfrost_kmod_ops = {
    .vm_destroy = panfrost_kmod_vm_destroy,
    .vm_bind = panfrost_kmod_vm_bind,
    .query_timestamp = panfrost_kmod_query_timestamp,
+   .bo_set_label = panfrost_kmod_bo_label,
 };
