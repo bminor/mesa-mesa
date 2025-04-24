@@ -698,8 +698,6 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast,
       nir_lower_default_point_size(shader);
    }
 
-   nir_opt_idiv_const(shader, 16);
-
    agx_preprocess_nir(shader);
    return shader;
 }
