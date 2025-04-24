@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "asahi/lib/agx_abi.h"
 #include "compiler/libcl/libcl_vk.h"
 #include "util/u_math.h"
 #include "geometry.h"
@@ -544,22 +545,21 @@ libagx_unroll_restart(global struct agx_heap *heap, uint64_t index_buffer,
 uint
 libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)
 {
-   if (p->xfb_offs_ptrs[i]) {
-      uint off = *(p->xfb_offs_ptrs[i]);
-      p->xfb_base[i] = p->xfb_base_original[i] + off;
-      return off;
-   } else {
-      return 0;
-   }
+   uint off = *(p->xfb_offs_ptrs[i]);
+   p->xfb_base[i] = p->xfb_base_original[i] + off;
+   return off;
 }
 
 void
 libagx_update_xfb_counter(global struct agx_geometry_params *p, uint i,
                           uint count)
 {
-   if (p->xfb_offs_ptrs[i]) {
-      *(p->xfb_offs_ptrs[i]) += count;
+   global uint *ptr = p->xfb_offs_ptrs[i];
+   if ((uintptr_t)ptr == AGX_ZERO_PAGE_ADDRESS) {
+      ptr = (global uint *)AGX_SCRATCH_PAGE_ADDRESS;
    }
+
+   *ptr += count;
 }
 
 void

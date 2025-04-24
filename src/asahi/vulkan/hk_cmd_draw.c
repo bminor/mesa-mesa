@@ -1147,6 +1147,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       }
    } else {
       for (unsigned i = 0; i < ARRAY_SIZE(gfx->xfb); ++i) {
+         params.xfb_offs_ptrs[i] = AGX_ZERO_PAGE_ADDRESS;
          params.xfb_base_original[i] = AGX_ZERO_PAGE_ADDRESS;
          params.xfb_size[i] = 0;
       }

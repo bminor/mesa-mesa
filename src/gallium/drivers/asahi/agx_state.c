@@ -3945,6 +3945,8 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       .flat_outputs =
          batch->ctx->stage[PIPE_SHADER_FRAGMENT].shader->info.inputs_flat_shaded,
       .input_topology = info->mode,
+      .xfb_offs_ptrs = {AGX_ZERO_PAGE_ADDRESS, AGX_ZERO_PAGE_ADDRESS,
+                        AGX_ZERO_PAGE_ADDRESS, AGX_ZERO_PAGE_ADDRESS},
    };
 
    for (unsigned i = 0; i < ARRAY_SIZE(batch->ctx->streamout.targets); ++i) {
@@ -3960,8 +3962,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
          params.xfb_offs_ptrs[i] = rsrc->bo->va->addr;
          agx_batch_writes(batch, rsrc, 0);
          batch->incoherent_writes = true;
-      } else {
-         params.xfb_offs_ptrs[i] = 0;
       }
    }
 
