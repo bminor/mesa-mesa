@@ -23,7 +23,7 @@ libasahi = static_library(
   include_directories : [inc_gallium_aux, inc_gallium, inc_include, inc_src, inc_asahi, inc_virtio_gpu, inc_virtio_vdrm],
   c_args : [c_msvc_compat_args, '-Wno-c2x-extensions'],
   gnu_symbol_visibility : 'hidden',
-  dependencies : [idep_nir, idep_mesautil, idep_agx_pack, dep_libdrm, idep_mesaclc, idep_libagx, idep_libagx_shaders_h],
+  dependencies : [idep_nir, idep_mesautil, idep_agx_pack, dep_libdrm, idep_libagx, idep_libagx_shaders_h],
 )
 
 driver_asahi = declare_dependency(
