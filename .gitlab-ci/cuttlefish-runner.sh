@@ -81,7 +81,7 @@ HOME=/cuttlefish launch_cvd \
   -report_anonymous_usage_stats=no \
   -gpu_mode="$ANDROID_GPU_MODE" \
   -cpus=${FDO_CI_CONCURRENT:-4} \
-  -memory_mb 8192 \
+  -memory_mb ${CUTTLEFISH_MEMORY:-4096} \
   $CUSTOM_KERNEL_ARGS
 
 sleep 1
