@@ -191,15 +191,12 @@ stages:
 
 include:
   - project: 'freedesktop/ci-templates'
-    ref: 16bc29078de5e0a067ff84a1a199a3760d3b3811
-    file:
-      - '/templates/ci-fairy.yml'
-  - project: 'freedesktop/ci-templates'
     ref: *ci-templates-commit
     file:
       - '/templates/alpine.yml'
       - '/templates/debian.yml'
       - '/templates/fedora.yml'
+      - '/templates/ci-fairy.yml'
   - local: '.gitlab-ci/image-tags.yml'
   - local: '.gitlab-ci/lava/lava-gitlab-ci.yml'
   - local: '.gitlab-ci/container/gitlab-ci.yml'
