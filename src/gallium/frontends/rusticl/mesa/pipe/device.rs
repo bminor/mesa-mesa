@@ -64,7 +64,7 @@ fn get_enabled_devs() -> HashMap<String, u32> {
     let default_devs: &[&str] = &[
         #[cfg(any(rusticl_enable_asahi, rusticl_enable_auto))]
         "asahi",
-        #[cfg(any(rusticl_enable_radeonsi))]
+        #[cfg(rusticl_enable_radeonsi)]
         "radeonsi",
     ];
 
