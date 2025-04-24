@@ -108,7 +108,7 @@ struct si_shader_info {
    /* For VS before {TCS, TES, GS} and TES before GS. */
    uint64_t ls_es_outputs_written;     /* "get_unique_index" bits */
    uint64_t outputs_written_before_ps; /* "get_unique_index" bits */
-   uint32_t tess_levels_written_for_tes;   /* "get_unique_index_patch" bits */
+   uint8_t num_tess_level_vram_outputs; /* max "get_unique_index_patch" + 1*/
 
    uint8_t clipdist_mask;
    uint8_t culldist_mask;

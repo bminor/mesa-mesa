@@ -4810,8 +4810,8 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    unsigned num_tcs_output_cp = tcs->info.base.tess.tcs_vertices_out;
    unsigned lds_input_vertex_size = si_shader_lshs_vertex_stride(ls_current);
    unsigned num_remapped_tess_level_outputs =
-      util_last_bit(!ls_current->is_monolithic || ls_current->key.ge.opt.tes_reads_tess_factors ?
-                       tcs->info.tess_levels_written_for_tes : 0);
+      !ls_current->is_monolithic || ls_current->key.ge.opt.tes_reads_tess_factors ?
+            tcs->info.num_tess_level_vram_outputs : 0;
    unsigned num_patches, lds_size;
 
    /* Compute NUM_PATCHES and LDS_SIZE. */
