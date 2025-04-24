@@ -928,6 +928,7 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
             float score = 0.0;
             Temp to_spill = Temp();
             bool spill_is_operand = false;
+            bool spill_is_clobbered = false;
             unsigned respill_slot = -1u;
             unsigned do_rematerialize = 0;
             unsigned avoid_respill = 0;
@@ -950,6 +951,7 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
                if (can_rematerialize > do_rematerialize || loop_variable > avoid_respill ||
                    ctx.ssa_infos[t].score() > score) {
                   bool is_operand = false;
+                  bool is_clobbered = false;
                   bool can_spill = true;
                   for (auto& op : instr->operands) {
                      if (!op.isTemp() || op.getTemp() != var)
@@ -966,12 +968,13 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
                         live_changes = get_temp_reg_changes(instr.get());
 
                      /* Don't spill operands if killing operands won't help with register pressure */
-                     if (RegisterDemand(op.getTemp()).exceeds(*live_changes)) {
+                     if (!op.isClobbered() && RegisterDemand(op.getTemp()).exceeds(*live_changes)) {
                         can_spill = false;
                         break;
                      }
 
                      is_operand = true;
+                     is_clobbered = op.isClobbered();
                      break;
                   }
                   if (!can_spill)
@@ -984,6 +987,7 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
                   do_rematerialize = can_rematerialize;
                   avoid_respill = loop_variable || is_spilled_operand;
                   spill_is_operand = is_operand;
+                  spill_is_clobbered = is_clobbered;
 
                   /* This variable is spilled at the loop-header of the current loop.
                    * Re-use the spill-slot in order to avoid an extra store.
@@ -1000,7 +1004,8 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
                /* We might not be able to spill all operands. Keep live_changes up-to-date so we
                 * stop when we spilled every operand we can.
                 */
-               *live_changes -= to_spill;
+               if (!spill_is_clobbered)
+                  *live_changes -= to_spill;
             }
 
             if (avoid_respill) {
