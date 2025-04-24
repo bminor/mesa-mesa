@@ -144,12 +144,6 @@ typedef struct {
     */
    bool tcs_out_patch_fits_subgroup;
 
-   /* Save TCS tess factor for tess factor writer. */
-   nir_variable *tcs_tess_level_outer;
-   nir_variable *tcs_tess_level_inner;
-   unsigned tcs_tess_level_outer_mask;
-   unsigned tcs_tess_level_inner_mask;
-
    /* TCS output values, 8 channels per slot. The last 4 channels are high 16 bits of the first 4 channels.
     * Output values that are not stored with cross-invocation access and indirect indexing are stored here.
     * Output values stored with cross-invocation access or indirect indexing are stored in LDS.
@@ -158,6 +152,13 @@ typedef struct {
    nir_variable *tcs_per_vertex_outputs[VARYING_SLOT_MAX][8];
    /* Max. 4 channels, always 32 bits per channel. */
    uint8_t tcs_per_vertex_output_vmem_chan_mask[VARYING_SLOT_MAX];
+
+   /* Same, but for tess levels. LDS isn't used if only invocation 0 writes and reads tess levels or
+    * if all invocations write tess levels.
+    */
+   nir_variable *tcs_tess_level[2]; /* outer, inner */
+   /* We can't use uint8_t due to a buggy gcc warning. */
+   uint16_t tcs_tess_level_chan_mask[2]; /* outer, inner */
 } lower_tess_io_state;
 
 typedef struct {
@@ -179,15 +180,41 @@ ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uin
    io_info->vram_output_mask &= ~(VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT |
                                   VARYING_BIT_PRIMITIVE_ID | VARYING_BIT_PRIMITIVE_SHADING_RATE);
 
+   /* Convert tess levels from 2-bit masks to 32-bit varying slot masks. */
+   uint32_t tess_levels_defined_by_all_invoc =
+      (uint32_t)tcs_info->tess_levels_defined_by_all_invoc << VARYING_SLOT_TESS_LEVEL_OUTER;
+   uint32_t tess_levels_only_written_by_invoc0 =
+      (uint32_t)tcs_info->tess_levels_only_written_by_invoc0 << VARYING_SLOT_TESS_LEVEL_OUTER;
+   uint32_t tess_levels_only_read_by_invoc0 =
+      (uint32_t)tcs_info->tess_levels_only_read_by_invoc0 << VARYING_SLOT_TESS_LEVEL_OUTER;
+
+   /* Per-patch outputs and tess levels don't need LDS if:
+    * - There is no indirect indexing
+    * AND
+    *    - only written by invocation 0 and never read or only read by invocation 0
+    *      (always true when the number of output patch vertices is 1)
+    *    OR
+    *    - written by all invocations in all execution paths (so that output reads can always
+    *      return values from VGPRs instead of LDS)
+    */
+   uint32_t tess_levels_written = tcs->info.outputs_written & TESS_LVL_MASK;
+   uint32_t tess_levels_dont_need_lds =
+      tess_levels_written & ~tcs->info.outputs_read_indirectly & ~tcs->info.outputs_written_indirectly &
+      ((tess_levels_only_written_by_invoc0 & ~tcs->info.outputs_read) |
+       (tess_levels_only_written_by_invoc0 & tess_levels_only_read_by_invoc0) |
+       tess_levels_defined_by_all_invoc);
+
+   /* Determine which outputs use LDS. */
    io_info->lds_output_mask = (((tcs->info.outputs_read & tcs->info.outputs_written) |
                                 tcs->info.tess.tcs_cross_invocation_outputs_written |
                                 tcs->info.outputs_written_indirectly) & ~TESS_LVL_MASK) |
-                              (tcs_info->all_invocations_define_tess_levels ?
-                                  0 : (tcs->info.outputs_written & TESS_LVL_MASK));
+                              (tess_levels_written & ~tess_levels_dont_need_lds);
    io_info->lds_patch_output_mask = tcs->info.patch_outputs_read & tcs->info.patch_outputs_written;
    io_info->vgpr_output_mask = (tcs->info.outputs_written &
                                 ~(tcs->info.tess.tcs_cross_invocation_outputs_written |
-                                  tcs->info.outputs_written_indirectly) & ~TESS_LVL_MASK);
+                                  tcs->info.outputs_written_indirectly) & ~TESS_LVL_MASK) |
+                               (tess_levels_written &
+                                (tess_levels_defined_by_all_invoc | tess_levels_only_written_by_invoc0));
 
    io_info->highest_remapped_vram_output = 0;
    io_info->highest_remapped_vram_patch_output = 0;
@@ -674,24 +701,15 @@ lower_hs_output_store(nir_builder *b,
                             st->tcs_per_vertex_outputs[semantics.location]);
    }
 
-   /* Save tess factor to be used by tess factor writer or reconstruct
-    * store output instruction later.
-    */
+   /* Save tess levels that don't need to be stored in LDS into local variables. */
    if (semantics.location == VARYING_SLOT_TESS_LEVEL_INNER ||
        semantics.location == VARYING_SLOT_TESS_LEVEL_OUTER) {
-      if (semantics.location == VARYING_SLOT_TESS_LEVEL_INNER) {
-         st->tcs_tess_level_inner_mask |= write_mask << component;
+      unsigned i = semantics.location - VARYING_SLOT_TESS_LEVEL_OUTER;
 
-         if (st->tcs_info.all_invocations_define_tess_levels)
-            ac_nir_store_var_components(b, st->tcs_tess_level_inner, store_val,
-                                        component, write_mask);
-      } else {
-         st->tcs_tess_level_outer_mask |= write_mask << component;
+      st->tcs_tess_level_chan_mask[i] |= write_mask << component;
 
-         if (st->tcs_info.all_invocations_define_tess_levels)
-            ac_nir_store_var_components(b, st->tcs_tess_level_outer, store_val,
-                                        component, write_mask);
-      }
+      if (st->io_info.vgpr_output_mask & BITFIELD64_BIT(semantics.location))
+         ac_nir_store_var_components(b, st->tcs_tess_level[i], store_val, component, write_mask);
    }
 
    return NIR_LOWER_INSTR_PROGRESS_REPLACE;
@@ -703,19 +721,16 @@ lower_hs_output_load(nir_builder *b,
                      lower_tess_io_state *st)
 {
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
-   const bool is_tess_factor = io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
-                               io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER;
 
-   if (is_tess_factor && st->tcs_info.all_invocations_define_tess_levels) {
+   if ((io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
+        io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER) &&
+       !tcs_output_needs_lds(intrin, b->shader, st)) {
       const unsigned component = nir_intrinsic_component(intrin);
       const unsigned num_components = intrin->def.num_components;
       const unsigned bit_size = intrin->def.bit_size;
+      unsigned i = io_sem.location - VARYING_SLOT_TESS_LEVEL_OUTER;
 
-      nir_def *var =
-         io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER
-            ? nir_load_var(b, st->tcs_tess_level_outer)
-            : nir_load_var(b, st->tcs_tess_level_inner);
-
+      nir_def *var = nir_load_var(b, st->tcs_tess_level[i]);
       return nir_extract_bits(b, &var, 1, component * bit_size, num_components, bit_size);
    }
 
@@ -783,51 +798,41 @@ static tess_levels
 hs_load_tess_levels(nir_builder *b,
                     lower_tess_io_state *st)
 {
-   unsigned outer_comps, inner_comps;
+   unsigned output_comps[2];
    mesa_count_tess_level_components(b->shader->info.tess._primitive_mode,
-                                    &outer_comps, &inner_comps);
+                                    &output_comps[0], &output_comps[1]);
 
-   nir_def *outer = NULL;
-   nir_def *inner = NULL;
+   nir_def *outputs[2] = {0};
+   nir_def *lds_base = NULL;
 
-   if (st->tcs_info.all_invocations_define_tess_levels) {
-      if (st->tcs_tess_level_outer_mask) {
-         outer = nir_load_var(b, st->tcs_tess_level_outer);
-         outer = nir_trim_vector(b, outer, outer_comps);
+   for (unsigned i = 0; i < 2; i++) {
+      if (!output_comps[i] || !st->tcs_tess_level_chan_mask[i]) {
+         /* Set tess levels to zero if the shader doesn't write them. */
+         if (output_comps[i])
+            outputs[i] = nir_imm_zero(b, output_comps[i], 32);
+         continue;
       }
 
-      if (inner_comps && st->tcs_tess_level_inner_mask) {
-         inner = nir_load_var(b, st->tcs_tess_level_inner);
-         inner = nir_trim_vector(b, inner, inner_comps);
+      if (st->io_info.vgpr_output_mask & BITFIELD64_BIT(VARYING_SLOT_TESS_LEVEL_OUTER + i)) {
+         outputs[i] = nir_load_var(b, st->tcs_tess_level[i]);
+         outputs[i] = nir_trim_vector(b, outputs[i], output_comps[i]);
+         continue;
       }
-   } else {
+
       /* Base LDS address of per-patch outputs in the current patch. */
-      nir_def *lds_base = hs_output_lds_offset(b, st, 0, 0, NULL, NULL);
+      if (!lds_base)
+         lds_base = hs_output_lds_offset(b, st, 0, 0, NULL, NULL);
 
-      /* Load all tessellation factors (aka. tess levels) from LDS. */
-      if (st->tcs_tess_level_outer_mask) {
-         const unsigned mapped = hs_output_lds_map_io_location(b->shader, false, VARYING_SLOT_TESS_LEVEL_OUTER, st);
-         outer = nir_load_shared(b, outer_comps, 32, lds_base, .base = mapped * 16);
-      }
-
-      if (inner_comps && st->tcs_tess_level_inner_mask) {
-         const unsigned mapped = hs_output_lds_map_io_location(b->shader, false, VARYING_SLOT_TESS_LEVEL_INNER, st);
-         inner = nir_load_shared(b, inner_comps, 32, lds_base, .base = mapped * 16);
-      }
+      /* Load tessellation levels from LDS. */
+      const unsigned mapped = hs_output_lds_map_io_location(b->shader, false,
+                                                            VARYING_SLOT_TESS_LEVEL_OUTER + i, st);
+      outputs[i] = nir_load_shared(b, output_comps[i], 32, lds_base, .base = mapped * 16);
    }
 
-   /* Set tess factor to zero if the shader did not write them. */
-   if (!outer)
-      outer = nir_imm_zero(b, outer_comps, 32);
-   if (inner_comps && !inner)
-      inner = nir_imm_zero(b, inner_comps, 32);
-
-   tess_levels r = {
-      .outer = outer,
-      .inner = inner,
+   return (tess_levels){
+      .outer = outputs[0],
+      .inner = outputs[1],
    };
-
-   return r;
 }
 
 static void
@@ -1136,23 +1141,19 @@ hs_store_tess_factors_for_tes(nir_builder *b, tess_levels tessfactors, lower_tes
    /* For linked shaders, we must only write the tess factors that the TES actually reads,
     * otherwise we would write to a memory location reserved for another per-patch output.
     */
-   const bool tes_reads_outer = st->io_info.vram_output_mask & VARYING_BIT_TESS_LEVEL_OUTER;
-   const bool tes_reads_inner = st->io_info.vram_output_mask & VARYING_BIT_TESS_LEVEL_INNER;
+   for (unsigned i = 0; i < 2; i++) {
+      nir_def *output_value = i ? tessfactors.inner : tessfactors.outer;
 
-   if (st->tcs_tess_level_outer_mask && tes_reads_outer) {
-      nir_def *vmem_off_outer = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER, 0, zero, 0, NULL);
+      if (!output_value || !(st->io_info.vram_output_mask & (VARYING_BIT_TESS_LEVEL_OUTER << i)))
+         continue;
 
-      nir_store_buffer_amd(b, tessfactors.outer, hs_ring_tess_offchip,
-                           vmem_off_outer, offchip_offset, zero,
-                           .memory_modes = nir_var_shader_out,
-                           .access = ACCESS_COHERENT);
-   }
+      nir_def *vmem_off = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER + i, 0, zero, 0, NULL);
 
-   if (tessfactors.inner && st->tcs_tess_level_inner_mask && tes_reads_inner) {
-      nir_def *vmem_off_inner = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_INNER, 0, zero, 0, NULL);
-
-      nir_store_buffer_amd(b, tessfactors.inner, hs_ring_tess_offchip,
-                           vmem_off_inner, offchip_offset, zero,
+      /* Always store whole vec4s to get cached bandwidth. Non-vec4 stores cause implicit memory loads
+       * to fill the rest of cache lines with this layout.
+       */
+      nir_store_buffer_amd(b, nir_pad_vec4(b, output_value), hs_ring_tess_offchip, vmem_off,
+                           offchip_offset, zero,
                            .memory_modes = nir_var_shader_out,
                            .access = ACCESS_COHERENT);
    }
@@ -1200,8 +1201,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
    nir_builder *b = &builder; /* This is to avoid the & */
 
    /* Insert a barrier to wait for output stores to LDS. */
-   if (!st->tcs_info.all_invocations_define_tess_levels ||
-       shader->info.outputs_written & ~st->io_info.vgpr_output_mask) {
+   if (shader->info.outputs_written & ~st->io_info.vgpr_output_mask) {
       mesa_scope scope = st->tcs_out_patch_fits_subgroup ? SCOPE_SUBGROUP : SCOPE_WORKGROUP;
       nir_barrier(b, .execution_scope = scope, .memory_scope = scope,
                      .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_shared);
@@ -1488,12 +1488,9 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
       .map_io = map,
    };
 
-   if (state.tcs_info.all_invocations_define_tess_levels) {
-      nir_function_impl *impl = nir_shader_get_entrypoint(shader);
-      state.tcs_tess_level_outer =
-         nir_local_variable_create(impl, glsl_vec4_type(), "tess outer");
-      state.tcs_tess_level_inner =
-         nir_local_variable_create(impl, glsl_vec4_type(), "tess inner");
+   for (unsigned i = 0; i < 2; i++) {
+      state.tcs_tess_level[i] =
+         nir_local_variable_create(nir_shader_get_entrypoint(shader), glsl_vec4_type(), "tess outer");
    }
 
    nir_shader_lower_instructions(shader,
