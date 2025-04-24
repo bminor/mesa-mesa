@@ -424,7 +424,7 @@
         "description": "panvk: Take resource index in valhall_lower_get_ssbo_size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e4613f8b2388e583b15bbbe9595458b2595f1cc2",
         "notes": null
