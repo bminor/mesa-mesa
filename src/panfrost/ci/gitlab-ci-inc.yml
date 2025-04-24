@@ -16,9 +16,9 @@
         - src/panfrost/ci/$GPU_VERSION-skips.txt
         - src/panfrost/ci/$DRIVER_NAME-skips.txt
         - src/panfrost/ci/$PIGLIT_TRACES_FILE
+        - src/panfrost/genxml/*
         - src/panfrost/include/*
         - src/panfrost/lib/*
-        - src/panfrost/lib/genxml/*
         - src/panfrost/lib/kmod/*
         - src/panfrost/shared/*
         - src/panfrost/util/*

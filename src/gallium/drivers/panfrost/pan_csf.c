@@ -26,7 +26,6 @@
 #include "drm-uapi/panthor_drm.h"
 
 #include "genxml/cs_builder.h"
-#include "panfrost/lib/genxml/cs_builder.h"
 
 #include "gen_macros.h"
 #include "pan_cmdstream.h"
