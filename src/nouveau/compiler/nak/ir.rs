@@ -497,6 +497,14 @@ impl Dst {
         }
         .iter_mut()
     }
+
+    pub fn comps(&self) -> u8 {
+        match self {
+            Dst::None => 0,
+            Dst::SSA(ssa) => ssa.comps(),
+            Dst::Reg(reg) => reg.comps(),
+        }
+    }
 }
 
 impl From<RegRef> for Dst {

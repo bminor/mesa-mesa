@@ -186,7 +186,7 @@ impl RegLatencySM80 {
                 }
             }
             Op::CS2R(cs2r) => {
-                if cs2r.dst.as_reg().unwrap().comps() == 2 {
+                if cs2r.dst.comps() == 2 {
                     CoupledDisp64
                 } else {
                     CoupledAlu
