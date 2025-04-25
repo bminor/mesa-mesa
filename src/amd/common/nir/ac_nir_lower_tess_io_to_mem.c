@@ -247,24 +247,6 @@ ac_nir_get_tess_io_info(const nir_shader *tcs, const nir_tcs_info *tcs_info, uin
    }
 }
 
-static uint64_t
-tcs_vram_per_vtx_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.vram_output_mask & ~TESS_LVL_MASK;
-}
-
-static uint32_t
-tcs_vram_tf_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.vram_output_mask & TESS_LVL_MASK;
-}
-
-static uint32_t
-tcs_vram_per_patch_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.vram_patch_output_mask;
-}
-
 static bool
 tcs_output_needs_vmem(nir_intrinsic_instr *intrin,
                       nir_shader *shader,
@@ -275,30 +257,12 @@ tcs_output_needs_vmem(nir_intrinsic_instr *intrin,
                            intrin->intrinsic == nir_intrinsic_load_per_vertex_output;
 
    if (per_vertex) {
-      return tcs_vram_per_vtx_out_mask(st) & BITFIELD64_BIT(loc);
+      return st->io_info.vram_output_mask & ~TESS_LVL_MASK & BITFIELD64_BIT(loc);
    } else if (loc == VARYING_SLOT_TESS_LEVEL_OUTER || loc == VARYING_SLOT_TESS_LEVEL_INNER) {
       return false;
    } else {
-      return tcs_vram_per_patch_out_mask(st) & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0);
+      return st->io_info.vram_patch_output_mask & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0);
    }
-}
-
-static uint64_t
-tcs_lds_per_vtx_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.lds_output_mask & ~TESS_LVL_MASK;
-}
-
-static uint64_t
-tcs_lds_tf_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.lds_output_mask & TESS_LVL_MASK;
-}
-
-static uint32_t
-tcs_lds_per_patch_out_mask(lower_tess_io_state *st)
-{
-   return st->io_info.lds_patch_output_mask;
 }
 
 static bool
@@ -311,11 +275,11 @@ tcs_output_needs_lds(nir_intrinsic_instr *intrin,
                            intrin->intrinsic == nir_intrinsic_load_per_vertex_output;
 
    if (per_vertex) {
-      return tcs_lds_per_vtx_out_mask(st) & BITFIELD64_BIT(loc);
+      return st->io_info.lds_output_mask & ~TESS_LVL_MASK & BITFIELD64_BIT(loc);
    } else if (loc == VARYING_SLOT_TESS_LEVEL_OUTER || loc == VARYING_SLOT_TESS_LEVEL_INNER) {
-      return tcs_lds_tf_out_mask(st) & BITFIELD64_BIT(loc);
+      return st->io_info.lds_output_mask & TESS_LVL_MASK & BITFIELD64_BIT(loc);
    } else {
-      return tcs_lds_per_patch_out_mask(st) & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0);
+      return st->io_info.lds_patch_output_mask & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0);
    }
 }
 
@@ -449,18 +413,18 @@ hs_output_lds_map_io_location(nir_shader *shader,
                               lower_tess_io_state *st)
 {
    if (!per_vertex) {
-      const uint64_t tf_mask = tcs_lds_tf_out_mask(st);
+      const uint64_t tf_mask = st->io_info.lds_output_mask & TESS_LVL_MASK;
       if (loc == VARYING_SLOT_TESS_LEVEL_INNER || loc == VARYING_SLOT_TESS_LEVEL_OUTER) {
          assert(tf_mask & BITFIELD64_BIT(loc));
          return util_bitcount64(tf_mask & BITFIELD64_MASK(loc));
       }
 
-      const uint32_t patch_out_mask = tcs_lds_per_patch_out_mask(st);
+      const uint32_t patch_out_mask = st->io_info.lds_patch_output_mask;
       assert(patch_out_mask & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0));
       return util_bitcount64(tf_mask) +
              util_bitcount(patch_out_mask & BITFIELD_MASK(loc - VARYING_SLOT_PATCH0));
    } else {
-      const uint64_t per_vertex_mask = tcs_lds_per_vtx_out_mask(st);
+      const uint64_t per_vertex_mask = st->io_info.lds_output_mask & ~TESS_LVL_MASK;
       assert(per_vertex_mask & BITFIELD64_BIT(loc));
       return util_bitcount64(per_vertex_mask & BITFIELD64_MASK(loc));
    }
@@ -470,9 +434,9 @@ static nir_def *
 hs_output_lds_offset(nir_builder *b, lower_tess_io_state *st, unsigned location, unsigned component,
                      nir_def *vertex_index, nir_def *io_offset)
 {
-   const uint64_t per_vertex_mask = tcs_lds_per_vtx_out_mask(st);
-   const uint64_t tf_mask = tcs_lds_tf_out_mask(st);
-   const uint32_t patch_out_mask = tcs_lds_per_patch_out_mask(st);
+   const uint64_t per_vertex_mask = st->io_info.lds_output_mask & ~TESS_LVL_MASK;
+   const uint64_t tf_mask = st->io_info.lds_output_mask & TESS_LVL_MASK;
+   const uint32_t patch_out_mask = st->io_info.lds_patch_output_mask;
 
    unsigned tcs_num_reserved_outputs = util_bitcount64(per_vertex_mask);
    unsigned tcs_num_reserved_patch_outputs = util_bitcount64(tf_mask) + util_bitcount(patch_out_mask);
@@ -533,18 +497,18 @@ hs_output_vram_map_io_location(nir_shader *shader,
     * Map varyings to a prefix sum of the IO mask to save space in VRAM.
     */
    if (!per_vertex) {
-      const uint64_t tf_mask = tcs_vram_tf_out_mask(st);
+      const uint64_t tf_mask = st->io_info.vram_output_mask & TESS_LVL_MASK;
       if (loc == VARYING_SLOT_TESS_LEVEL_INNER || loc == VARYING_SLOT_TESS_LEVEL_OUTER) {
          assert(tf_mask & BITFIELD64_BIT(loc));
          return util_bitcount64(tf_mask & BITFIELD64_MASK(loc));
       }
 
-      const uint32_t patch_out_mask = tcs_vram_per_patch_out_mask(st);
+      const uint32_t patch_out_mask = st->io_info.vram_patch_output_mask;
       assert(patch_out_mask & BITFIELD_BIT(loc - VARYING_SLOT_PATCH0));
       return util_bitcount64(tf_mask) +
              util_bitcount(patch_out_mask & BITFIELD_MASK(loc - VARYING_SLOT_PATCH0));
    } else {
-      const uint64_t per_vertex_mask = tcs_vram_per_vtx_out_mask(st);
+      const uint64_t per_vertex_mask = st->io_info.vram_output_mask & ~TESS_LVL_MASK;
       assert(per_vertex_mask & BITFIELD64_BIT(loc));
       return util_bitcount64(per_vertex_mask & BITFIELD64_MASK(loc));
    }
@@ -1262,7 +1226,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
    /* Don't load per-vertex outputs from LDS if all tess factors are 0. */
    nir_if *if_not_discarded = nir_push_if(b, nir_ine_imm(b, vote_result, VOTE_RESULT_ALL_TF_ZERO));
    {
-      u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(st)) {
+      u_foreach_bit64(slot, st->io_info.vram_output_mask & ~TESS_LVL_MASK) {
          if (!st->tcs_per_vertex_output_vmem_chan_mask[slot])
             continue;
 
@@ -1284,7 +1248,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
       }
    }
    nir_pop_if(b, if_not_discarded);
-   u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(st)) {
+   u_foreach_bit64(slot, st->io_info.vram_output_mask & ~TESS_LVL_MASK) {
       if (outputs[slot])
          outputs[slot] = nir_if_phi(b, outputs[slot], nir_undef(b, 4, 32));
    }
@@ -1306,7 +1270,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
       nir_pop_if(b, if_tcs);
       vote_result = nir_if_phi(b, vote_result, nir_undef(b, 1, 32)); /* no-op, it should be an SGPR */
 
-      u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(st)) {
+      u_foreach_bit64(slot, st->io_info.vram_output_mask & ~TESS_LVL_MASK) {
          if (outputs[slot])
             outputs[slot] = nir_if_phi(b, outputs[slot], nir_undef(b, 4, 32));
       }
@@ -1336,7 +1300,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
       nir_def *local_invocation_index = nir_load_local_invocation_index(b);
       nir_def *zero = nir_imm_int(b, 0);
 
-      u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(st)) {
+      u_foreach_bit64(slot, st->io_info.vram_output_mask & ~TESS_LVL_MASK) {
          if (!outputs[slot])
             continue;
 
