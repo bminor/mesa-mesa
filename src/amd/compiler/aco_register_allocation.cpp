@@ -200,7 +200,7 @@ get_stride(RegClass rc)
       uint32_t size = rc.size();
       if (size == 2) {
          return 2;
-      } else if (size >= 4) {
+      } else if (size >= 4 && util_is_power_of_two_or_zero(size)) {
          return 4;
       } else {
          return 1;
@@ -1545,6 +1545,8 @@ compact_relocate_vars(ra_ctx& ctx, const std::vector<IDAndRegClass>& vars,
          assert(a.info.rc.type() != RegType::sgpr || get_reg_bounds(ctx, a.info.rc).size % 2 == 0);
          assert(a_stride == 16 || a_stride == 8 || a_stride == 4);
          assert(b_stride == 16 || b_stride == 8 || b_stride == 4);
+         assert(a.info.rc.size() % (a_stride / 4u) == 0);
+         assert(b.info.rc.size() % (b_stride / 4u) == 0);
          if ((a_stride == 16) != (b_stride == 16))
             return a_stride > b_stride;
          if (a.id == 0xffffffff || b.id == 0xffffffff)
