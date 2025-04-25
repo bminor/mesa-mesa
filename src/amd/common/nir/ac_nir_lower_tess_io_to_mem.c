@@ -848,19 +848,6 @@ hs_if_invocation_id_zero(nir_builder *b)
    return invocation_id_zero;
 }
 
-static nir_def *
-tess_level_has_effect(nir_builder *b, nir_def *prim_mode, unsigned comp, bool outer)
-{
-   if (outer && comp <= 1)
-      return nir_imm_true(b);
-   else if ((outer && comp == 2) || (!outer && comp == 0))
-      return nir_ine_imm(b, prim_mode, TESS_PRIMITIVE_ISOLINES);
-   else if ((outer && comp == 3) || (!outer && comp == 1))
-      return nir_ieq_imm(b, prim_mode, TESS_PRIMITIVE_QUADS);
-   else
-      unreachable("invalid comp");
-}
-
 #define VOTE_RESULT_NORMAL       0  /* execute output stores and tess factor stores */
 #define VOTE_RESULT_ALL_TF_ZERO  1  /* skip output stores, skip tess factor stores on GFX11+ */
 #define VOTE_RESULT_ALL_TF_ONE   2  /* execute output stores, skip tess factor stores on GFX11+ */
@@ -952,35 +939,66 @@ hs_tess_level_group_vote(nir_builder *b, lower_tess_io_state *st,
    {
       *tessfactors = hs_load_tess_levels(b, st);
 
-      nir_def *lane_tf_effectively_0 = nir_imm_false(b);
-      for (unsigned i = 0; i < tessfactors->outer->num_components; i++) {
-         nir_def *valid = tess_level_has_effect(b, prim_mode, i, true);
-         /* fgeu returns true for NaN */
-         nir_def *le0 = nir_fgeu(b, nir_imm_float(b, 0), nir_channel(b, tessfactors->outer, i));
-         lane_tf_effectively_0 = nir_ior(b, lane_tf_effectively_0, nir_iand(b, le0, valid));
-      }
+      nir_if *if0 = NULL, *if1 = NULL;
+      nir_def *lane_tf_effectively_0[3] = {0};
+      nir_def *lane_tf_effectively_1[3] = {0};
 
-      /* Use case 1: unknown spacing */
-      nir_def *lane_tf_effectively_1 = nir_imm_true(b);
-      for (unsigned i = 0; i < tessfactors->outer->num_components; i++) {
-         nir_def *valid = tess_level_has_effect(b, prim_mode, i, true);
-         nir_def *le1 = nir_fle_imm(b, nir_channel(b, tessfactors->outer, i), 1);
-         lane_tf_effectively_1 = nir_iand(b, lane_tf_effectively_1, nir_ior(b, le1, nir_inot(b, valid)));
-      }
+      static_assert(TESS_PRIMITIVE_TRIANGLES == 1, "");
+      static_assert(TESS_PRIMITIVE_QUADS == 2, "");
+      static_assert(TESS_PRIMITIVE_ISOLINES == 3, "");
 
-      if (tessfactors->inner) {
-         for (unsigned i = 0; i < tessfactors->inner->num_components; i++) {
-            nir_def *valid = tess_level_has_effect(b, prim_mode, i, false);
+      for (unsigned prim = TESS_PRIMITIVE_TRIANGLES; prim <= TESS_PRIMITIVE_ISOLINES; prim++) {
+         /* Generate:
+          *    if (triangles) ...
+          *    else if (quads) ...
+          *    else // isolines
+          */
+         if (prim == TESS_PRIMITIVE_TRIANGLES) {
+            if0 = nir_push_if(b, nir_ieq_imm(b, prim_mode, prim));
+         } else if (prim == TESS_PRIMITIVE_QUADS) {
+            nir_push_else(b, if0);
+            if1 = nir_push_if(b, nir_ieq_imm(b, prim_mode, prim));
+         } else {
+            nir_push_else(b, if1);
+         }
+
+         unsigned outer_comps, inner_comps;
+         mesa_count_tess_level_components(prim, &outer_comps, &inner_comps);
+         outer_comps = MIN2(outer_comps, tessfactors->outer->num_components);
+         inner_comps = tessfactors->inner ? MIN2(inner_comps, tessfactors->inner->num_components) : 0;
+
+         lane_tf_effectively_0[prim - 1] = nir_imm_false(b);
+         for (unsigned i = 0; i < outer_comps; i++) {
+            /* fgeu returns true for NaN */
+            nir_def *le0 = nir_fgeu(b, nir_imm_float(b, 0), nir_channel(b, tessfactors->outer, i));
+            lane_tf_effectively_0[prim - 1] = nir_ior(b, lane_tf_effectively_0[prim - 1], le0);
+         }
+
+         /* Use case 1: unknown spacing */
+         lane_tf_effectively_1[prim - 1] = nir_imm_true(b);
+         for (unsigned i = 0; i < outer_comps; i++) {
+            nir_def *le1 = nir_fle_imm(b, nir_channel(b, tessfactors->outer, i), 1);
+            lane_tf_effectively_1[prim - 1] = nir_iand(b, lane_tf_effectively_1[prim - 1], le1);
+         }
+
+         for (unsigned i = 0; i < inner_comps; i++) {
             nir_def *le1 = nir_fle_imm(b, nir_channel(b, tessfactors->inner, i), 1);
-            lane_tf_effectively_1 = nir_iand(b, lane_tf_effectively_1, nir_ior(b, le1, nir_inot(b, valid)));
+            lane_tf_effectively_1[prim - 1] = nir_iand(b, lane_tf_effectively_1[prim - 1], le1);
          }
       }
 
-      /* Make them mutually exclusive. */
-      lane_tf_effectively_1 = nir_iand(b, lane_tf_effectively_1, nir_inot(b, lane_tf_effectively_0));
+      nir_pop_if(b, if1);
+      lane_tf_effectively_0[1] = nir_if_phi(b, lane_tf_effectively_0[1], lane_tf_effectively_0[2]);
+      lane_tf_effectively_1[1] = nir_if_phi(b, lane_tf_effectively_1[1], lane_tf_effectively_1[2]);
+      nir_pop_if(b, if0);
+      lane_tf_effectively_0[0] = nir_if_phi(b, lane_tf_effectively_0[0], lane_tf_effectively_0[1]);
+      lane_tf_effectively_1[0] = nir_if_phi(b, lane_tf_effectively_1[0], lane_tf_effectively_1[1]);
 
-      nir_def *subgroup_uses_tf0 = nir_b2i32(b, nir_vote_all(b, 1, lane_tf_effectively_0));
-      nir_def *subgroup_uses_tf1 = nir_b2i32(b, nir_vote_all(b, 1, lane_tf_effectively_1));
+      /* Make them mutually exclusive. */
+      lane_tf_effectively_1[0] = nir_iand(b, lane_tf_effectively_1[0], nir_inot(b, lane_tf_effectively_0[0]));
+
+      nir_def *subgroup_uses_tf0 = nir_b2i32(b, nir_vote_all(b, 1, lane_tf_effectively_0[0]));
+      nir_def *subgroup_uses_tf1 = nir_b2i32(b, nir_vote_all(b, 1, lane_tf_effectively_1[0]));
 
       /* Pack the value for LDS. Encoding:
        *    0 = none of the below
