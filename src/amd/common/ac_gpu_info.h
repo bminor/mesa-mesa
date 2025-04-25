@@ -156,6 +156,8 @@ struct radeon_info {
     * AnisoPoint is treated as Point.
     */
    bool conformant_trunc_coord;
+   /* Support GS_FAST_LAUNCH(2) for mesh shaders. */
+   bool mesh_fast_launch_2;
 
    /* Display features. */
    /* There are 2 display DCC codepaths, because display expects unaligned DCC. */

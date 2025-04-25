@@ -2575,7 +2575,7 @@ radv_emit_mesh_shader(struct radv_cmd_buffer *cmd_buffer)
    radeon_set_uconfig_reg_idx(&pdev->info, R_030908_VGT_PRIMITIVE_TYPE, 1, V_008958_DI_PT_POINTLIST);
    radeon_end();
 
-   if (pdev->mesh_fast_launch_2)
+   if (pdev->info.mesh_fast_launch_2)
       radv_gfx11_emit_meshlet(cmd_buffer, ms);
 
    radv_emit_vgt_gs_out(cmd_buffer, gs_out);
@@ -2868,7 +2868,7 @@ radv_emit_vgt_shader_config_gfx6(struct radv_cmd_buffer *cmd_buffer, const struc
       stages |= S_028B54_ES_EN(V_028B54_ES_STAGE_REAL) | S_028B54_GS_EN(1);
    } else if (key->mesh) {
       assert(!key->ngg_passthrough);
-      unsigned gs_fast_launch = pdev->mesh_fast_launch_2 ? 2 : 1;
+      unsigned gs_fast_launch = pdev->info.mesh_fast_launch_2 ? 2 : 1;
       stages |=
          S_028B54_GS_EN(1) | S_028B54_GS_FAST_LAUNCH(gs_fast_launch) | S_028B54_NGG_WAVE_ID_EN(key->mesh_scratch_ring);
    } else if (key->ngg) {
@@ -9727,7 +9727,7 @@ radv_cs_emit_indirect_mesh_draw_packet(struct radv_cmd_buffer *cmd_buffer, uint3
    uint32_t draw_id_enable = !!cmd_buffer->state.uses_drawid;
    uint32_t draw_id_reg = !draw_id_enable ? 0 : (base_reg + (xyz_dim_enable ? 12 : 0) - SI_SH_REG_OFFSET) >> 2;
 
-   uint32_t mode1_enable = !pdev->mesh_fast_launch_2;
+   uint32_t mode1_enable = !pdev->info.mesh_fast_launch_2;
 
    radeon_begin(cs);
    radeon_emit(PKT3(PKT3_DISPATCH_MESH_INDIRECT_MULTI, 7, predicating) | PKT3_RESET_FILTER_CAM_S(1));
@@ -9814,7 +9814,7 @@ radv_cs_emit_dispatch_taskmesh_gfx_packet(const struct radv_device *device, cons
 
    uint32_t xyz_dim_en = mesh_shader->info.cs.uses_grid_size;
    uint32_t xyz_dim_reg = !xyz_dim_en ? 0 : (cmd_state->vtx_base_sgpr - SI_SH_REG_OFFSET) >> 2;
-   uint32_t mode1_en = !pdev->mesh_fast_launch_2;
+   uint32_t mode1_en = !pdev->info.mesh_fast_launch_2;
    uint32_t linear_dispatch_en = cmd_state->shaders[MESA_SHADER_TASK]->info.cs.linear_taskmesh_dispatch;
    const bool sqtt_en = !!device->sqtt.bo;
 
@@ -10143,7 +10143,7 @@ radv_emit_direct_mesh_draw_packet(struct radv_cmd_buffer *cmd_buffer, uint32_t x
 
    radv_emit_userdata_mesh(cmd_buffer, x, y, z);
 
-   if (pdev->mesh_fast_launch_2) {
+   if (pdev->info.mesh_fast_launch_2) {
       if (!view_mask) {
          radv_cs_emit_mesh_dispatch_packet(cmd_buffer, x, y, z);
       } else {

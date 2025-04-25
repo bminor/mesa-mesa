@@ -231,8 +231,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
                       unsigned wave_size,
                       unsigned workgroup_size,
                       bool multiview,
-                      bool has_query,
-                      bool fast_launch_2);
+                      bool has_query);
 
 bool
 ac_nir_lower_task_outputs_to_mem(nir_shader *shader,

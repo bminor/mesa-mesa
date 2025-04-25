@@ -1804,6 +1804,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    set_custom_cu_en_mask(info);
 
+   info->mesh_fast_launch_2 = info->gfx_level >= GFX11;
+
    const char *ib_filename = debug_get_option("AMD_PARSE_IB", NULL);
    if (ib_filename) {
       FILE *f = fopen(ib_filename, "r");
@@ -1967,6 +1969,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    has_set_sh_pairs_packed = %i\n", info->has_set_sh_pairs_packed);
    fprintf(f, "    has_set_uconfig_pairs = %i\n", info->has_set_uconfig_pairs);
    fprintf(f, "    conformant_trunc_coord = %i\n", info->conformant_trunc_coord);
+   fprintf(f, "    mesh_fast_launch_2 = %i\n", info->mesh_fast_launch_2);
 
    if (info->gfx_level < GFX12) {
       fprintf(f, "Display features:\n");

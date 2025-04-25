@@ -1342,8 +1342,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
                       unsigned wave_size,
                       unsigned hw_workgroup_size,
                       bool multiview,
-                      bool has_query,
-                      bool fast_launch_2)
+                      bool has_query)
 {
    unsigned vertices_per_prim =
       mesa_vertices_per_prim(shader->info.mesh.primitive_type);
@@ -1380,6 +1379,8 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    unsigned api_workgroup_size = shader->info.workgroup_size[0] *
                                  shader->info.workgroup_size[1] *
                                  shader->info.workgroup_size[2];
+
+   bool fast_launch_2 = hw_info->mesh_fast_launch_2;
 
    lower_ngg_ms_state state = {
       .layout = layout,

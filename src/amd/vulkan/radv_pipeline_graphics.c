@@ -2653,7 +2653,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
          active_nir_stages |= mesa_to_vk_shader_stage(i);
    }
 
-   if (!pdev->mesh_fast_launch_2 && stages[MESA_SHADER_MESH].nir &&
+   if (!pdev->info.mesh_fast_launch_2 && stages[MESA_SHADER_MESH].nir &&
        BITSET_TEST(stages[MESA_SHADER_MESH].nir->info.system_values_read, SYSTEM_VALUE_WORKGROUP_ID)) {
       nir_shader *mesh = stages[MESA_SHADER_MESH].nir;
       nir_shader *task = stages[MESA_SHADER_TASK].nir;

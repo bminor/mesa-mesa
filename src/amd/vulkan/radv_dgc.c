@@ -277,7 +277,7 @@ radv_get_sequence_size_graphics(const struct radv_indirect_command_layout *layou
                *ace_cmd_size += 6 * 4;
             } else {
                /* userdata writes + instance count + non-indexed draw */
-               *cmd_size += (6 + 2 + (pdev->mesh_fast_launch_2 ? 5 : 3)) * 4;
+               *cmd_size += (6 + 2 + (pdev->info.mesh_fast_launch_2 ? 5 : 3)) * 4;
             }
          } else {
             /* userdata writes + instance count + non-indexed draw */
@@ -2105,7 +2105,7 @@ dgc_emit_dispatch_taskmesh_gfx(struct dgc_cmdbuf *cs, nir_def *sequence_id)
    nir_def *ring_entry_reg = load_param16(b, mesh_ring_entry_sgpr);
 
    nir_def *xyz_dim_enable = nir_bcsel(b, has_grid_size, nir_imm_int(b, S_4D1_XYZ_DIM_ENABLE(1)), nir_imm_int(b, 0));
-   nir_def *mode1_enable = nir_imm_int(b, S_4D1_MODE1_ENABLE(!pdev->mesh_fast_launch_2));
+   nir_def *mode1_enable = nir_imm_int(b, S_4D1_MODE1_ENABLE(!pdev->info.mesh_fast_launch_2));
    nir_def *linear_dispatch_en =
       nir_bcsel(b, has_linear_dispatch_en, nir_imm_int(b, S_4D1_LINEAR_DISPATCH_ENABLE(1)), nir_imm_int(b, 0));
    nir_def *sqtt_enable = nir_imm_int(b, device->sqtt.bo ? S_4D1_THREAD_TRACE_MARKER_ENABLE(1) : 0);
@@ -2154,7 +2154,7 @@ dgc_emit_draw_mesh_tasks_gfx(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_de
          dgc_emit_userdata_mesh(cs, x, y, z, sequence_id);
          dgc_emit_instance_count(cs, nir_imm_int(b, 1));
 
-         if (pdev->mesh_fast_launch_2) {
+         if (pdev->info.mesh_fast_launch_2) {
             dgc_emit_dispatch_mesh_direct(cs, x, y, z);
          } else {
             nir_def *vertex_count = nir_imul(b, x, nir_imul(b, y, z));
@@ -2220,7 +2220,7 @@ dgc_emit_draw_mesh_tasks_with_count_gfx(struct dgc_cmdbuf *cs, nir_def *stream_a
          nir_ior(b, nir_iand_imm(b, xyz_dim_reg, 0xFFFF), nir_ishl_imm(b, nir_iand_imm(b, draw_id_reg, 0xFFFF), 16)));
       if (pdev->info.gfx_level >= GFX11) {
          dgc_cs_emit(nir_ior_imm(b, nir_ior(b, draw_index_enable, xyz_dim_enable),
-                                 S_4C2_MODE1_ENABLE(!pdev->mesh_fast_launch_2)));
+                                 S_4C2_MODE1_ENABLE(!pdev->info.mesh_fast_launch_2)));
       } else {
          dgc_cs_emit(draw_index_enable);
       }
