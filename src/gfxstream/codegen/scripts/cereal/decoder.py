@@ -283,7 +283,7 @@ def emit_call_log(api, cgen):
         paramLogFormat += "0x%llx "
     for p in paramsToRead:
         paramLogArgs.append("(unsigned long long)%s" % (p.paramName))
-    cgen.stmt("fprintf(stderr, \"stream %%p: call %s %s\\n\", ioStream, %s)" % (api.name, paramLogFormat, ", ".join(paramLogArgs)))
+    cgen.stmt("GFXSTREAM_INFO(\"stream %%p: call %s %s\", ioStream, %s)" % (api.name, paramLogFormat, ", ".join(paramLogArgs)))
     cgen.endIf()
 
 def emit_decode_parameters(typeInfo: VulkanTypeInfo, api: VulkanAPI, cgen, globalWrapped=False):
