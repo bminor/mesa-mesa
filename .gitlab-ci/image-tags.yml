@@ -19,7 +19,7 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250422-ci-fairy"
+  DEBIAN_BASE_TAG: "20250425-apitrace"
 
   DEBIAN_BUILD_TAG: "20250422-ci-fairy"
 
