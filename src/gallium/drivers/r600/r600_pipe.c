@@ -441,6 +441,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->compute = rscreen->b.gfx_level > R700;
 
 	caps->tgsi_texcoord = true;
+	caps->shader_group_vote = true;
 
 	caps->nir_images_as_deref = false;
 	caps->fake_sw_msaa = false;

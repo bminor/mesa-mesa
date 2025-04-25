@@ -879,6 +879,18 @@ r600_finalize_nir_common(nir_shader *nir, enum amd_gfx_level gfx_level)
    NIR_PASS(_, nir, r600_lower_shared_io);
    NIR_PASS(_, nir, r600_nir_lower_atomics);
 
+   static const nir_lower_subgroups_options r600_nir_subgroups_options = {
+      .ballot_bit_size = 32,
+      .ballot_components = 1,
+      .lower_vote_trivial = true,
+      .lower_relative_shuffle = true,
+      .lower_quad_broadcast_dynamic = true,
+      .lower_elect = true,
+      .lower_inverse_ballot = true,
+   };
+
+   NIR_PASS(_, nir, nir_lower_subgroups, &r600_nir_subgroups_options);
+
    if (gfx_level == CAYMAN)
       NIR_PASS(_, nir, r600_legalize_image_load_store);
 
