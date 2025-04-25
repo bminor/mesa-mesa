@@ -664,7 +664,7 @@
         "description": "vulkan/wsi/wayland: make needs_color_surface_old check if surface exists",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "789507c99c672320d50a6d8eb6910da51aa75443",
         "notes": null
