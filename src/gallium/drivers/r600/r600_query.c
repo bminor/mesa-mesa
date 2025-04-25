@@ -728,9 +728,12 @@ static void r600_query_hw_do_emit_start(struct r600_common_context *ctx,
 		emit_sample_streamout(cs, va, query->stream);
 		break;
 	case PIPE_QUERY_SO_OVERFLOW_ANY_PREDICATE:
-		for (unsigned stream = 0; stream < R600_MAX_STREAMS; ++stream)
+		for (unsigned stream = 0; stream < R600_MAX_STREAMS; ++stream) {
 			emit_sample_streamout(cs, va + 32 * stream, stream);
-		break;
+			r600_emit_reloc(ctx, &ctx->gfx, query->buffer.buf, RADEON_USAGE_WRITE |
+					RADEON_PRIO_QUERY);
+		}
+		return;
 	case PIPE_QUERY_TIME_ELAPSED:
 		/* Write the timestamp after the last draw is done.
 		 * (bottom-of-pipe)
@@ -814,9 +817,12 @@ static void r600_query_hw_do_emit_stop(struct r600_common_context *ctx,
 		break;
 	case PIPE_QUERY_SO_OVERFLOW_ANY_PREDICATE:
 		va += 16;
-		for (unsigned stream = 0; stream < R600_MAX_STREAMS; ++stream)
+		for (unsigned stream = 0; stream < R600_MAX_STREAMS; ++stream) {
 			emit_sample_streamout(cs, va + 32 * stream, stream);
-		break;
+			r600_emit_reloc(ctx, &ctx->gfx, query->buffer.buf, RADEON_USAGE_WRITE |
+					RADEON_PRIO_QUERY);
+		}
+		return;
 	case PIPE_QUERY_TIME_ELAPSED:
 		va += 8;
 		FALLTHROUGH;
