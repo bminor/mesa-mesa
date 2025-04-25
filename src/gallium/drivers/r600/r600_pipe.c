@@ -24,6 +24,7 @@
 #include "radeon_video.h"
 #include "radeon_uvd.h"
 #include "util/os_time.h"
+#include "util/libdrm.h"
 
 static const struct debug_named_value r600_debug_options[] = {
 	/* features */
@@ -361,9 +362,33 @@ static void r600_init_compute_caps(struct r600_screen *screen)
 	caps->max_variable_threads_per_block = R600_MAX_VARIABLE_THREADS_PER_BLOCK;
 }
 
+static inline unsigned
+r600_version_simple(const unsigned version_major,
+		    const unsigned version_minor,
+		    const unsigned version_patchlevel)
+{
+	return version_major * 1000000 +
+		version_minor * 1000 +
+		version_patchlevel;
+}
+
+static inline unsigned
+r600_get_drm_version(struct r600_screen *rscreen)
+{
+	drmVersionPtr version = drmGetVersion(rscreen->b.ws->get_fd(rscreen->b.ws));
+	const unsigned drm_version = r600_version_simple(version->version_major,
+							 version->version_minor,
+							 version->version_patchlevel);
+
+	drmFreeVersion(version);
+
+	return drm_version;
+}
+
 static void r600_init_screen_caps(struct r600_screen *rscreen)
 {
 	struct pipe_caps *caps = (struct pipe_caps *)&rscreen->b.b.caps;
+	const unsigned drm_version = r600_get_drm_version(rscreen);
 
 	u_init_pipe_screen_caps(&rscreen->b.b, 1);
 
@@ -481,6 +506,8 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->multi_draw_indirect_partial_stride =
 	caps->multi_draw_indirect =
 	caps->draw_parameters = family >= CHIP_CEDAR;
+	caps->multi_draw_indirect_params = family >= CHIP_CEDAR &&
+		drm_version >= r600_version_simple(2, 50, 1);
 
 	caps->buffer_sampler_view_rgba_only = family < CHIP_CEDAR;
 

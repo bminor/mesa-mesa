@@ -2214,6 +2214,295 @@ r600_draw_indirect(struct r600_context *rctx,
 	assert(radeon_check_cs(rctx, cs) == R600_DRAW_PARAMETERS_DRAW_INDIRECT_CS);
 }
 
+#ifndef PKT3_EVENT_WRITE_EOS
+#define PKT3_EVENT_WRITE_EOS                   0x48
+#endif
+#ifndef EVENT_TYPE_PS_DONE
+#define EVENT_TYPE_PS_DONE                     0x30
+#endif
+
+#define R600_INDIRECT_PARAMETERS_DELAY_EG 9
+#define R600_INDIRECT_PARAMETERS_WAIT_PIPELINE_CS 16
+#define R600_INDIRECT_PARAMETERS_COND_CS 13
+#define R600_INDIRECT_PARAMETERS_DELAY_CS \
+	(2 * (r600_indirect_parameters_delay[rctx->b.family - CHIP_CEDAR] ? \
+	      r600_indirect_parameters_delay[rctx->b.family - CHIP_CEDAR] : \
+	      R600_INDIRECT_PARAMETERS_DELAY_EG))
+#define R600_INDIRECT_PARAMETERS_END_CS 9
+#define R600_INDIRECT_PARAMETERS_CS \
+	(R600_INDIRECT_PARAMETERS_WAIT_PIPELINE_CS + \
+	 R600_INDIRECT_PARAMETERS_COND_CS + \
+	 R600_INDIRECT_PARAMETERS_DELAY_CS + \
+	 R600_INDIRECT_PARAMETERS_END_CS)
+
+struct r600_indirect_parameters {
+	bool enabled;
+	uint32_t counter;
+	struct pipe_resource *internal;
+	unsigned internal_offset;
+};
+
+struct r600_indirect_gpu_internal {
+	uint32_t condition;
+	uint32_t pad0;
+	uint32_t fence;
+	uint32_t pad1;
+};
+
+static const uint8_t r600_indirect_parameters_delay[CHIP_TAHITI - CHIP_CEDAR] = {
+	[CHIP_REDWOOD - CHIP_CEDAR] = 3,
+	[CHIP_JUNIPER - CHIP_CEDAR] = 3,
+	[CHIP_CYPRESS - CHIP_CEDAR] = 3,
+	[CHIP_PALM - CHIP_CEDAR] = 9,
+	[CHIP_BARTS - CHIP_CEDAR] = 3,
+	[CHIP_CAYMAN - CHIP_CEDAR] = 2,
+};
+
+static inline bool
+r600_is_indirect_parameters(const struct r600_indirect_parameters *const indirect_parameters)
+{
+	return indirect_parameters->enabled;
+}
+
+static inline int
+r600_find_atomic_index(const struct r600_context *const rctx,
+		       const struct pipe_resource *const buffer)
+{
+	int i;
+
+	for (i = 0; i < EG_MAX_ATOMIC_BUFFERS; i++) {
+		if (rctx->atomic_buffer_state.buffer[i].buffer == buffer)
+			return i;
+	}
+
+	return -1;
+}
+
+static inline void
+r600_indirect_parameters_init(struct r600_context *rctx,
+			      struct radeon_cmdbuf *cs,
+			      const struct pipe_draw_indirect_info *indirect,
+			      struct r600_indirect_parameters *indirect_parameters,
+			      unsigned *cs_space)
+{
+	if (unlikely(indirect && indirect->indirect_draw_count)) {
+		uint64_t va_condition, va_fence;
+		unsigned reloc_internal;
+		void *ptr;
+
+		assert(rctx->b.gfx_level >= EVERGREEN);
+
+		assert(r600_find_atomic_index(rctx, indirect->indirect_draw_count) < 0);
+
+		indirect_parameters->enabled = true;
+		indirect_parameters->counter = 0;
+		indirect_parameters->internal = NULL;
+
+		u_upload_alloc(rctx->b.b.stream_uploader, 0,
+			       sizeof(struct r600_indirect_gpu_internal),
+			       256,
+			       &indirect_parameters->internal_offset,
+			       &indirect_parameters->internal, &ptr);
+
+		if (unlikely(!ptr)) {
+			indirect_parameters->enabled = false;
+			return;
+		}
+
+		reloc_internal = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
+							   r600_resource(indirect_parameters->internal),
+							   RADEON_USAGE_READWRITE |
+							   RADEON_PRIO_SHADER_RW_BUFFER);
+
+		va_fence = r600_resource(indirect_parameters->internal)->gpu_address +
+			indirect_parameters->internal_offset +
+			offsetof(struct r600_indirect_gpu_internal, fence);
+
+		assert((va_fence - offsetof(struct r600_indirect_gpu_internal, fence)) % 16 == 0);
+
+		/* fence = 0 */
+		radeon_emit(cs, PKT3(PKT3_MEM_WRITE, 3, 0));
+		radeon_emit(cs, va_fence);
+		radeon_emit(cs, ((va_fence >> 32) & 0xff) | MEM_WRITE_32_BITS);
+		radeon_emit(cs, 0);
+		radeon_emit(cs, 0);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+
+		va_condition = r600_resource(indirect_parameters->internal)->gpu_address +
+			indirect_parameters->internal_offset +
+			offsetof(struct r600_indirect_gpu_internal, condition);
+
+		assert((va_condition - offsetof(struct r600_indirect_gpu_internal, condition)) % 16 == 0);
+
+		/* condition = 1 */
+		radeon_emit(cs, PKT3(PKT3_MEM_WRITE, 3, 0));
+		radeon_emit(cs, va_condition);
+		radeon_emit(cs, ((va_condition >> 32) & 0xff) | MEM_WRITE_32_BITS);
+		radeon_emit(cs, 1);
+		radeon_emit(cs, 0);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+
+		*cs_space += (R600_INDIRECT_PARAMETERS_CS -
+			      R600_DRAW_PARAMETERS_DRAW_INDIRECT_CS) *
+			indirect->draw_count;
+	} else {
+		indirect_parameters->enabled = false;
+	}
+}
+
+static inline void
+r600_indirect_parameters_draw(struct r600_context *rctx,
+			      struct radeon_cmdbuf *cs,
+			      const struct pipe_draw_indirect_info *indirect,
+			      const unsigned index_size,
+			      const bool render_cond_bit,
+			      const unsigned multi_draw_offset,
+			      struct r600_indirect_parameters *indirect_parameters)
+{
+	uint64_t va_draw_count, va_condition, va_fence;
+	unsigned reloc_draw_count, reloc_internal;
+	const unsigned wait_loop = r600_indirect_parameters_delay[rctx->b.family - CHIP_CEDAR] ?
+		r600_indirect_parameters_delay[rctx->b.family - CHIP_CEDAR] :
+		R600_INDIRECT_PARAMETERS_DELAY_EG;
+
+	assert(radeon_check_cs(rctx, cs) || true);
+
+	va_draw_count = r600_resource(indirect->indirect_draw_count)->gpu_address +
+		indirect->indirect_draw_count_offset;
+
+	va_condition = r600_resource(indirect_parameters->internal)->gpu_address +
+		indirect_parameters->internal_offset +
+		offsetof(struct r600_indirect_gpu_internal, condition);
+
+	va_fence = r600_resource(indirect_parameters->internal)->gpu_address +
+		indirect_parameters->internal_offset +
+		offsetof(struct r600_indirect_gpu_internal, fence);
+
+	reloc_draw_count = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
+						     r600_resource(indirect->indirect_draw_count),
+						     RADEON_USAGE_READWRITE |
+						     RADEON_PRIO_SHADER_RW_BUFFER);
+
+	reloc_internal = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
+						   r600_resource(indirect_parameters->internal),
+						   RADEON_USAGE_READWRITE |
+						   RADEON_PRIO_SHADER_RW_BUFFER);
+
+	assert((va_draw_count - indirect->indirect_draw_count_offset) % 16 == 0);
+	assert((va_condition - offsetof(struct r600_indirect_gpu_internal, condition)) % 16 == 0);
+
+	/* Wait until the graphic pipeline is empty */
+	{
+		radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_EOS, 3, 0));
+		radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_PS_DONE) |
+			    EVENT_INDEX(6));
+		radeon_emit(cs, va_fence);
+		radeon_emit(cs, (2 << 29) |
+			    ((va_fence >> 32) & 0xff));
+		radeon_emit(cs, indirect_parameters->counter ^
+			    0x42f9dab5);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+	}
+	{
+		radeon_emit(cs, PKT3(PKT3_WAIT_REG_MEM, 5, 0));
+		radeon_emit(cs, WAIT_REG_MEM_EQUAL |
+			    WAIT_REG_MEM_MEMORY |
+			    (0 << 8));
+		radeon_emit(cs, va_fence);
+		radeon_emit(cs, (va_fence >> 32) & 0xff);
+		radeon_emit(cs, indirect_parameters->counter ^
+			    0x42f9dab5);
+		radeon_emit(cs, ~0);
+		radeon_emit(cs, 0xa);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+	}
+
+	assert(radeon_check_cs(rctx, cs) == R600_INDIRECT_PARAMETERS_WAIT_PIPELINE_CS);
+
+	/* condition = draw_count <= counter ? 0 : 1;
+	 * poll=memory write=memory
+	 * draw_count (2=less than or equal) counter */
+	{
+		radeon_emit(cs, PKT3(PKT3_COND_WRITE, 7, 0));
+		radeon_emit(cs, (1<<8) | (1<<4) | 2);
+		radeon_emit(cs, va_draw_count);
+		radeon_emit(cs, (va_draw_count >> 32) & 0xff);
+		radeon_emit(cs, indirect_parameters->counter);
+		radeon_emit(cs, ~0);
+		radeon_emit(cs, va_condition);
+		radeon_emit(cs, (va_condition >> 32) & 0xff);
+		radeon_emit(cs, 0);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_draw_count);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+	}
+
+	assert(radeon_check_cs(rctx, cs) == R600_INDIRECT_PARAMETERS_COND_CS);
+
+	/* The PKT3_COND_WRITE result is not available immediately.
+	 * Nine PKT3_PFP_SYNC_ME packets are sufficient to get the proper
+	 * delay on palm. We could also proceed with PKT3_NOP, but it
+	 * needs a loop of 192 packets. This loop count could be
+	 * calibrated with the piglit tf-count-arrays test.
+	 *
+	 * Three packets are sufficient on cypress and barts. The
+	 * value of nine should work on the remaining gpus. */
+	for (int k = 0; k < wait_loop; k++) {
+		radeon_emit(cs, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
+		radeon_emit(cs, 0);
+	}
+
+	assert(radeon_check_cs(rctx, cs) == R600_INDIRECT_PARAMETERS_DELAY_CS);
+
+	/* Skip the next 5 dwords when the previous condition is false
+	 * PKT3_NOP: 2 dwords + EG_PKT3_DRAW_INDEX_INDIRECT or
+	 * EG_PKT3_DRAW_INDIRECT: 3 dwords */
+	{
+		radeon_emit(cs, PKT3(PKT3_COND_EXEC, 2, 0));
+		radeon_emit(cs, va_condition);
+		radeon_emit(cs, (va_condition >> 32) & 0xff);
+		radeon_emit(cs, 5);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
+		radeon_emit(cs, reloc_internal);
+	}
+
+	if (index_size) {
+		radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDEX_INDIRECT, 1, render_cond_bit));
+		radeon_emit(cs, indirect->offset + multi_draw_offset);
+		radeon_emit(cs, V_0287F0_DI_SRC_SEL_DMA);
+	} else {
+		radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDIRECT, 1, render_cond_bit));
+		radeon_emit(cs, indirect->offset + multi_draw_offset);
+		radeon_emit(cs, V_0287F0_DI_SRC_SEL_AUTO_INDEX);
+	}
+
+	assert(radeon_check_cs(rctx, cs) == R600_INDIRECT_PARAMETERS_END_CS);
+
+	++indirect_parameters->counter;
+}
+
+static inline void
+r600_indirect_parameters_close(struct r600_context *rctx,
+			       const struct pipe_draw_indirect_info *indirect,
+			       struct r600_indirect_parameters *indirect_parameters)
+{
+	if (unlikely(indirect_parameters->enabled)) {
+		pipe_resource_reference(&indirect_parameters->internal, NULL);
+	}
+}
+
 static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info *info,
                           unsigned drawid_offset,
                           const struct pipe_draw_indirect_info *indirect,
@@ -2241,6 +2530,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	const uint8_t *indirect_ptr = NULL;
 	unsigned multi_draw_loop = 1;
 	unsigned multi_draw_offset = 0;
+	struct r600_indirect_parameters indirect_parameters;
 
 	if (indirect && indirect->count_from_stream_output) {
 		count_from_so = indirect->count_from_stream_output;
@@ -2409,6 +2699,13 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 						       &indirect_ptr,
 						       &num_patches,
 						       &cs_space);
+		r600_indirect_parameters_init(rctx,
+					      cs,
+					      indirect,
+					      &indirect_parameters,
+					      &cs_space);
+	} else {
+		indirect_parameters.enabled = false;
 	}
 
 	/* Emit states. */
@@ -2569,9 +2866,21 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 				radeon_emit(cs, PKT3(EG_PKT3_INDEX_BUFFER_SIZE, 0, 0));
 				radeon_emit(cs, max_size);
 
-				radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDEX_INDIRECT, 1, render_cond_bit));
-				radeon_emit(cs, indirect->offset);
-				radeon_emit(cs, V_0287F0_DI_SRC_SEL_DMA);
+				if (likely(!r600_is_indirect_parameters(&indirect_parameters))) {
+					radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDEX_INDIRECT, 1, render_cond_bit));
+					radeon_emit(cs, indirect->offset);
+					radeon_emit(cs, V_0287F0_DI_SRC_SEL_DMA);
+				} else {
+					assert(radeon_check_cs(rctx, cs) || true);
+
+					r600_indirect_parameters_draw(rctx,
+								      cs,
+								      indirect,
+								      index_size,
+								      render_cond_bit,
+								      multi_draw_offset,
+								      &indirect_parameters);
+				}
 			}
 		}
 	} else {
@@ -2597,13 +2906,27 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 		if (likely(!indirect)) {
 			radeon_emit(cs, PKT3(PKT3_DRAW_INDEX_AUTO, 1, render_cond_bit));
 			radeon_emit(cs, draws[0].count);
+			radeon_emit(cs, V_0287F0_DI_SRC_SEL_AUTO_INDEX |
+				    (count_from_so ? S_0287F0_USE_OPAQUE(1) : 0));
 		}
 		else {
-			radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDIRECT, 1, render_cond_bit));
-			radeon_emit(cs, indirect->offset);
+			if (likely(!r600_is_indirect_parameters(&indirect_parameters))) {
+				radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDIRECT, 1, render_cond_bit));
+				radeon_emit(cs, indirect->offset);
+				radeon_emit(cs, V_0287F0_DI_SRC_SEL_AUTO_INDEX |
+					    (count_from_so ? S_0287F0_USE_OPAQUE(1) : 0));
+			} else {
+				assert(radeon_check_cs(rctx, cs) || true);
+
+				r600_indirect_parameters_draw(rctx,
+							      cs,
+							      indirect,
+							      index_size,
+							      render_cond_bit,
+							      multi_draw_offset,
+							      &indirect_parameters);
+			}
 		}
-		radeon_emit(cs, V_0287F0_DI_SRC_SEL_AUTO_INDEX |
-				(count_from_so ? S_0287F0_USE_OPAQUE(1) : 0));
 	}
 
 	/* SMX returns CONTEXT_DONE too early workaround */
@@ -2646,16 +2969,29 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 		assert(radeon_check_cs(rctx, cs) <= R600_DRAW_PARAMETERS_ENABLED_CS);
 
-		r600_draw_indirect(rctx,
-				   cs,
-				   indirect,
-				   index_size,
-				   render_cond_bit,
-				   multi_draw_offset);
+		if (likely(!r600_is_indirect_parameters(&indirect_parameters)))
+			r600_draw_indirect(rctx,
+					   cs,
+					   indirect,
+					   index_size,
+					   render_cond_bit,
+					   multi_draw_offset);
+		else
+			r600_indirect_parameters_draw(rctx,
+						      cs,
+						      indirect,
+						      index_size,
+						      render_cond_bit,
+						      multi_draw_offset,
+						      &indirect_parameters);
 	}
 
-	if (rctx->b.gfx_level >= EVERGREEN)
+	if (rctx->b.gfx_level >= EVERGREEN) {
 		evergreen_emit_atomic_buffer_save(rctx, false, combined_atomics, global_atomic_count);
+		r600_indirect_parameters_close(rctx,
+					       indirect,
+					       &indirect_parameters);
+	}
 
 	if (rctx->trace_buf)
 		eg_trace_emit(rctx);
