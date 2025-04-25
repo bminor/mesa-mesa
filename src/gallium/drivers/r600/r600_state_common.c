@@ -2227,7 +2227,10 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	if (rctx->b.gfx_level >= EVERGREEN) {
-		global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, NULL, combined_atomics, global_atomic_count);
+		if (rctx->b.gfx_level == EVERGREEN)
+			global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, NULL, combined_atomics, global_atomic_count);
+		else
+			global_atomic_count = cayman_emit_atomic_buffer_setup_count(rctx, NULL, combined_atomics, global_atomic_count);
 	}
 
 	if (index_size) {

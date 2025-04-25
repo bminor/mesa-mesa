@@ -342,7 +342,11 @@ static void compute_emit_cs(struct r600_context *rctx,
 	rctx->cs_block_grid_sizes[3] = rctx->cs_block_grid_sizes[7] = 0;
 	rctx->driver_consts[PIPE_SHADER_COMPUTE].cs_block_grid_size_dirty = true;
 
-	global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, global_atomic_count);
+	if (rctx->b.gfx_level == CAYMAN)
+		global_atomic_count = cayman_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, global_atomic_count);
+	else
+		global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, global_atomic_count);
+
 	r600_need_cs_space(rctx, 0, true, global_atomic_count);
 
 	if (need_buf_const) {

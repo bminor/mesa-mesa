@@ -5075,7 +5075,7 @@ static void cayman_emit_event_write_eos(struct r600_context *rctx,
 	radeon_emit(cs, EVENT_TYPE(event) | EVENT_INDEX(6));
 	radeon_emit(cs, (dst_offset) & 0xffffffff);
 	radeon_emit(cs, (1 << 29) | ((dst_offset >> 32) & 0xff));
-	radeon_emit(cs, (atomic->hw_idx) | (1 << 16));
+	radeon_emit(cs, (atomic->hw_idx) | (atomic->count << 16));
 	radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 	radeon_emit(cs, reloc);
 }
@@ -5098,11 +5098,13 @@ static void cayman_write_count_to_gds(struct r600_context *rctx,
 	radeon_emit(cs, PKT3_CP_DMA_CP_SYNC | PKT3_CP_DMA_DST_SEL(1) | ((dst_offset >> 32) & 0xff));// GDS
 	radeon_emit(cs, atomic->hw_idx * 4);
 	radeon_emit(cs, 0);
-	radeon_emit(cs, PKT3_CP_DMA_CMD_DAS | 4);
+	radeon_emit(cs, PKT3_CP_DMA_CMD_DAS | (atomic->count * 4));
 	radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 	radeon_emit(cs, reloc);
 }
 
+/* The evergreen_emit_atomic_buffer_setup_count() implementation is designed to map one atomic counter
+ * per R_02872C_GDS_APPEND_COUNT_x register which limits the total number of atomic counters to 12. */
 unsigned evergreen_emit_atomic_buffer_setup_count(struct r600_context *rctx,
 						  struct r600_pipe_shader *cs_shader,
 						  struct r600_shader_atomic *combined_atomics,
@@ -5143,6 +5145,58 @@ unsigned evergreen_emit_atomic_buffer_setup_count(struct r600_context *rctx,
 				combined_atomics[global_atomic_count].count = 1;
 				atomic_used_mask |= (1u << hw_index);
 				global_atomic_count++;
+			}
+		}
+	}
+
+	return global_atomic_count;
+}
+
+unsigned cayman_emit_atomic_buffer_setup_count(struct r600_context *rctx,
+					       struct r600_pipe_shader *cs_shader,
+					       struct r600_shader_atomic *combined_atomics,
+					       unsigned global_atomic_count)
+{
+	const bool is_compute = !!cs_shader;
+	int i, j;
+
+	for (i = 0; i < (is_compute ? 1 : EG_NUM_HW_STAGES); i++) {
+		unsigned num_atomic_ranges;
+		struct r600_pipe_shader *pshader;
+
+		if (is_compute)
+			pshader = cs_shader;
+		else
+			pshader = rctx->hw_shader_stages[i].shader;
+		if (!pshader)
+			continue;
+
+		num_atomic_ranges = pshader->shader.nhwatomic_ranges;
+		if (!num_atomic_ranges)
+			continue;
+
+		for (j = 0; j < num_atomic_ranges; j++) {
+			const struct r600_shader_atomic *atomic = &pshader->shader.atomics[j];
+			const int k = global_atomic_count;
+			bool found = false;
+
+			for (int atomic_offset = 0; atomic_offset < k; atomic_offset++) {
+				if (combined_atomics[atomic_offset].resource_id == atomic->resource_id &&
+				    combined_atomics[atomic_offset].hw_idx == atomic->hw_idx &&
+				    combined_atomics[atomic_offset].start == atomic->start &&
+				    combined_atomics[atomic_offset].count == atomic->count) {
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				assert(k < EG_MAX_ATOMIC_BUFFERS);
+				combined_atomics[k].hw_idx = atomic->hw_idx;
+				combined_atomics[k].resource_id = atomic->resource_id;
+				combined_atomics[k].start = atomic->start;
+				combined_atomics[k].count = atomic->count;
+				global_atomic_count = k + 1;
 			}
 		}
 	}

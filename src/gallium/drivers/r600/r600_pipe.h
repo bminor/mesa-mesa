@@ -1074,6 +1074,10 @@ unsigned evergreen_emit_atomic_buffer_setup_count(struct r600_context *rctx,
 						  struct r600_pipe_shader *cs_shader,
 						  struct r600_shader_atomic *combined_atomics,
 						  unsigned global_atomic_count);
+unsigned cayman_emit_atomic_buffer_setup_count(struct r600_context *rctx,
+					       struct r600_pipe_shader *cs_shader,
+					       struct r600_shader_atomic *combined_atomics,
+					       unsigned global_atomic_count);
 void evergreen_emit_atomic_buffer_setup(struct r600_context *rctx,
 					const bool is_compute,
 					const struct r600_shader_atomic *combined_atomics,
