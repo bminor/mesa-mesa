@@ -52,36 +52,10 @@ load_geometry_param_offset(nir_builder *b, uint32_t offset, uint8_t bytes)
    return nir_load_global_constant(b, addr, bytes, 1, bytes * 8);
 }
 
-static void
-store_geometry_param_offset(nir_builder *b, nir_def *def, uint32_t offset,
-                            uint8_t bytes)
-{
-   nir_def *base = nir_load_geometry_param_buffer_agx(b);
-   nir_def *addr = nir_iadd_imm(b, base, offset);
-
-   assert((offset % bytes) == 0 && "must be naturally aligned");
-
-   nir_store_global(b, addr, 4, def, nir_component_mask(def->num_components));
-}
-
-#define store_geometry_param(b, field, def)                                    \
-   store_geometry_param_offset(                                                \
-      b, def, offsetof(struct agx_geometry_params, field),                     \
-      sizeof(((struct agx_geometry_params *)0)->field))
-
 #define load_geometry_param(b, field)                                          \
    load_geometry_param_offset(                                                 \
       b, offsetof(struct agx_geometry_params, field),                          \
       sizeof(((struct agx_geometry_params *)0)->field))
-
-/* Helper for updating counters */
-static void
-add_counter(nir_builder *b, nir_def *counter, nir_def *increment)
-{
-   nir_def *old = nir_load_global(b, counter, 4, 1, 32);
-   nir_def *new_ = nir_iadd(b, old, increment);
-   nir_store_global(b, counter, 4, new_, nir_component_mask(1));
-}
 
 /* Helpers for lowering I/O to variables */
 struct lower_output_to_var_state {
@@ -275,35 +249,22 @@ calc_unrolled_index_id(nir_builder *b)
    return nir_imul_imm(b, prim, vertex_stride);
 }
 
-static nir_def *
-load_xfb_count_address(nir_builder *b, struct lower_gs_state *state,
-                       nir_def *unrolled_id, unsigned stream)
-{
-   int index = state->count_index[stream];
-   if (index < 0)
-      return NULL;
-
-   nir_def *prim_offset_el =
-      nir_imul_imm(b, unrolled_id, state->info->count_words);
-
-   nir_def *offset_el = nir_iadd_imm(b, prim_offset_el, index);
-
-   return nir_iadd(b, load_geometry_param(b, count_buffer),
-                   nir_u2u64(b, nir_imul_imm(b, offset_el, 4)));
-}
-
 static void
 write_xfb_counts(nir_builder *b, nir_intrinsic_instr *intr,
                  struct lower_gs_state *state)
 {
+   unsigned stream = nir_intrinsic_stream_id(intr);
+   if (state->count_index[stream] < 0)
+      return;
+
    /* Store each required counter */
    nir_def *id =
       state->info->prefix_sum ? calc_unrolled_id(b) : nir_imm_int(b, 0);
 
-   nir_def *addr =
-      load_xfb_count_address(b, state, id, nir_intrinsic_stream_id(intr));
-   if (!addr)
-      return;
+   nir_def *addr = libagx_load_xfb_count_address(
+      b, nir_load_geometry_param_buffer_agx(b),
+      nir_imm_int(b, state->count_index[stream]),
+      nir_imm_int(b, state->info->count_words), id);
 
    if (state->info->prefix_sum) {
       nir_store_global(b, addr, 4, intr->src[2].ssa, nir_component_mask(1));
@@ -702,37 +663,6 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast,
    return shader;
 }
 
-static nir_def *
-previous_xfb_primitives(nir_builder *b, struct lower_gs_state *state,
-                        unsigned stream, nir_def *unrolled_id)
-{
-   assert(stream < MAX_VERTEX_STREAMS);
-   int static_count = state->static_count[stream];
-
-   if (static_count >= 0) {
-      /* If the number of outputted vertices per invocation is known statically,
-       * we can calculate the base.
-       */
-      return nir_imul_imm(b, unrolled_id, static_count);
-   } else if (state->info->prefix_sum) {
-      /* If we prefix summed, load from the sum buffer. Note that the sums are
-       * inclusive, so index 0 is nonzero. This requires a little fixup here. We
-       * use a saturating unsigned subtraction so we don't read out-of-bounds.
-       */
-      nir_def *prim_minus_1 = nir_usub_sat(b, unrolled_id, nir_imm_int(b, 1));
-      nir_def *addr = load_xfb_count_address(b, state, prim_minus_1, stream);
-
-      return nir_bcsel(b, nir_ieq_imm(b, unrolled_id, 0), nir_imm_int(b, 0),
-                       nir_load_global_constant(b, addr, 4, 1, 32));
-   } else {
-      /* If we aren't prefix summing, the count is the only element */
-      nir_def *addr =
-         load_xfb_count_address(b, state, nir_imm_int(b, 0), stream);
-
-      return nir_load_global_constant(b, addr, 4, 1, 32);
-   }
-}
-
 static void
 lower_end_primitive(nir_builder *b, nir_intrinsic_instr *intr,
                     struct lower_gs_state *state)
@@ -767,8 +697,12 @@ write_xfb(nir_builder *b, struct lower_gs_state *state, unsigned stream,
    /* Get the index of this primitive in the XFB buffer. That is, the base for
     * this invocation for the stream plus the offset within this invocation.
     */
-   nir_def *invocation_base =
-      previous_xfb_primitives(b, state, stream, calc_unrolled_id(b));
+   nir_def *invocation_base = libagx_previous_xfb_primitives(
+      b, nir_load_geometry_param_buffer_agx(b),
+      nir_imm_int(b, state->static_count[stream]),
+      nir_imm_int(b, state->count_index[stream]),
+      nir_imm_int(b, state->info->count_words),
+      nir_imm_bool(b, state->info->prefix_sum), calc_unrolled_id(b));
 
    nir_def *prim_index = nir_iadd(b, invocation_base, prim_id_in_invocation);
    nir_def *base_index = nir_imul_imm(b, prim_index, verts);
@@ -958,131 +892,50 @@ collect_components(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    return true;
 }
 
+struct agx_xfb_key {
+   uint8_t streams;
+   uint8_t buffers_written;
+   uint8_t buffer_to_stream[NIR_MAX_XFB_BUFFERS];
+   int8_t count_index[4];
+   uint16_t stride[NIR_MAX_XFB_BUFFERS];
+   uint16_t output_end[NIR_MAX_XFB_BUFFERS];
+   int16_t static_count[MAX_VERTEX_STREAMS];
+   uint16_t invocations;
+   uint16_t vertices_per_prim;
+};
+
 /*
  * Create the pre-GS shader. This is a small compute 1x1x1 kernel that produces
  * an indirect draw to rasterize the produced geometry, as well as updates
  * transform feedback offsets and counters as applicable.
  */
 static nir_shader *
-agx_nir_create_pre_gs(struct lower_gs_state *state, struct nir_xfb_info *xfb,
-                      unsigned vertices_per_prim, uint8_t streams,
-                      unsigned invocations)
+agx_nir_create_pre_gs(struct agx_xfb_key *key)
 {
    nir_builder b_ = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
    nir_builder *b = &b_;
 
-   /* Load the number of primitives input to the GS */
-   nir_def *unrolled_in_prims = load_geometry_param(b, input_primitives);
-
-   /* Determine the number of primitives generated in each stream */
-   nir_def *in_prims[MAX_VERTEX_STREAMS], *prims[MAX_VERTEX_STREAMS];
-
-   u_foreach_bit(i, streams) {
-      in_prims[i] = previous_xfb_primitives(b, state, i, unrolled_in_prims);
-      prims[i] = in_prims[i];
-
-      add_counter(b, load_geometry_param(b, prims_generated_counter[i]),
-                  prims[i]);
-   }
-
-   if (xfb) {
-      unsigned max_output_end[4] = {0};
-      for (unsigned i = 0; i < xfb->output_count; ++i) {
-         nir_xfb_output_info output = xfb->outputs[i];
-         unsigned buffer = xfb->outputs[i].buffer;
-
-         unsigned words_written = util_bitcount(output.component_mask);
-         unsigned bytes_written = words_written * 4;
-         unsigned output_end = output.offset + bytes_written;
-         max_output_end[buffer] = MAX2(max_output_end[buffer], output_end);
-      }
-
-      u_foreach_bit(i, xfb->buffers_written) {
-         nir_def *max_prims = libagx_setup_xfb_buffer(
-            b, nir_load_geometry_param_buffer_agx(b), nir_imm_int(b, i),
-            nir_imm_int(b, xfb->buffers[i].stride),
-            nir_imm_int(b, max_output_end[i]),
-            nir_imm_int(b, vertices_per_prim));
-
-         unsigned stream = xfb->buffer_to_stream[i];
-         prims[stream] = nir_umin(b, prims[stream], max_prims);
-      }
-
-      nir_def *any_overflow = nir_imm_false(b);
-
-      u_foreach_bit(i, streams) {
-         nir_def *overflow = nir_ult(b, prims[i], in_prims[i]);
-         any_overflow = nir_ior(b, any_overflow, overflow);
-
-         store_geometry_param(b, xfb_prims[i], prims[i]);
-
-         add_counter(b, load_geometry_param(b, xfb_overflow[i]),
-                     nir_b2i32(b, overflow));
-
-         add_counter(b, load_geometry_param(b, xfb_prims_generated_counter[i]),
-                     prims[i]);
-      }
-
-      add_counter(b, load_geometry_param(b, xfb_any_overflow),
-                  nir_b2i32(b, any_overflow));
-
-      /* Update XFB counters */
-      u_foreach_bit(i, xfb->buffers_written) {
-         uint32_t prim_stride_B = xfb->buffers[i].stride * vertices_per_prim;
-         unsigned stream = xfb->buffer_to_stream[i];
-
-         nir_def *size = nir_imul_imm(b, prims[stream], prim_stride_B);
-         libagx_update_xfb_counter(b, nir_load_geometry_param_buffer_agx(b),
-                                   nir_imm_int(b, i), size);
-      }
-   }
-
-   /* The geometry shader is invoked once per primitive (after unrolling
-    * primitive restart). From the spec:
-    *
-    *    In case of instanced geometry shaders (see section 11.3.4.2) the
-    *    geometry shader invocations count is incremented for each separate
-    *    instanced invocation.
-    */
-   add_counter(b,
-               nir_load_stat_query_address_agx(
-                  b, .base = PIPE_STAT_QUERY_GS_INVOCATIONS),
-               nir_imul_imm(b, unrolled_in_prims, invocations));
-
-   nir_def *emitted_prims = nir_imm_int(b, 0);
-   u_foreach_bit(i, streams) {
-      emitted_prims = nir_iadd(b, emitted_prims, in_prims[i]);
-   }
-
-   add_counter(
-      b,
+   libagx_pre_gs(
+      b, nir_load_geometry_param_buffer_agx(b), nir_imm_int(b, key->streams),
+      nir_imm_int(b, key->buffers_written),
+      nir_imm_ivec4(b, key->buffer_to_stream[0], key->buffer_to_stream[1],
+                    key->buffer_to_stream[2], key->buffer_to_stream[3]),
+      nir_imm_ivec4(b, key->count_index[0], key->count_index[1],
+                    key->count_index[2], key->count_index[3]),
+      nir_imm_ivec4(b, key->stride[0], key->stride[1], key->stride[2],
+                    key->stride[3]),
+      nir_imm_ivec4(b, key->output_end[0], key->output_end[1],
+                    key->output_end[2], key->output_end[3]),
+      nir_imm_ivec4(b, key->static_count[0], key->static_count[1],
+                    key->static_count[2], key->static_count[3]),
+      nir_imm_int(b, key->invocations), nir_imm_int(b, key->vertices_per_prim),
+      nir_load_stat_query_address_agx(b,
+                                      .base = PIPE_STAT_QUERY_GS_INVOCATIONS),
       nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_GS_PRIMITIVES),
-      emitted_prims);
-
-   /* Clipper queries are not well-defined, so we can emulate them in lots of
-    * silly ways. We need the hardware counters to implement them properly. For
-    * now, just consider all primitives emitted as passing through the clipper.
-    * This satisfies spec text:
-    *
-    *    The number of primitives that reach the primitive clipping stage.
-    *
-    * and
-    *
-    *    If at least one vertex of the primitive lies inside the clipping
-    *    volume, the counter is incremented by one or more. Otherwise, the
-    *    counter is incremented by zero or more.
-    */
-   add_counter(
-      b,
       nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_C_PRIMITIVES),
-      emitted_prims);
-
-   add_counter(
-      b,
-      nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_C_INVOCATIONS),
-      emitted_prims);
-
+      nir_load_stat_query_address_agx(b,
+                                      .base = PIPE_STAT_QUERY_C_INVOCATIONS));
    agx_preprocess_nir(b->shader);
    return b->shader;
 }
@@ -1544,11 +1397,40 @@ agx_nir_lower_gs(nir_shader *gs, bool rasterizer_discard, nir_shader **gs_count,
    NIR_PASS(_, gs, nir_shader_intrinsics_pass, lower_id,
             nir_metadata_control_flow, NULL);
 
-   /* Create auxiliary programs */
-   *pre_gs = agx_nir_create_pre_gs(
-      &gs_state, gs->xfb_info, nir_verts_in_output_prim(gs),
-      gs->info.gs.active_stream_mask, gs->info.gs.invocations);
+   /* Gather information required for transform feedback / query programs */
+   struct nir_xfb_info *xfb = gs->xfb_info;
 
+   struct agx_xfb_key key = {
+      .streams = gs->info.gs.active_stream_mask,
+      .invocations = gs->info.gs.invocations,
+      .vertices_per_prim = nir_verts_in_output_prim(gs),
+   };
+
+   for (unsigned i = 0; i < 4; ++i) {
+      key.count_index[i] = gs_state.count_index[i];
+      key.static_count[i] = gs_state.static_count[i];
+   }
+
+   if (xfb) {
+      key.buffers_written = xfb->buffers_written;
+      for (unsigned i = 0; i < 4; ++i) {
+         key.buffer_to_stream[i] = xfb->buffer_to_stream[i];
+         key.stride[i] = xfb->buffers[i].stride;
+      }
+
+      for (unsigned i = 0; i < xfb->output_count; ++i) {
+         nir_xfb_output_info output = xfb->outputs[i];
+         unsigned buffer = xfb->outputs[i].buffer;
+
+         unsigned words_written = util_bitcount(output.component_mask);
+         unsigned bytes_written = words_written * 4;
+         unsigned output_end = output.offset + bytes_written;
+         key.output_end[buffer] = MAX2(key.output_end[buffer], output_end);
+      }
+   }
+
+   /* Create auxiliary programs */
+   *pre_gs = agx_nir_create_pre_gs(&key);
    return true;
 }
 
