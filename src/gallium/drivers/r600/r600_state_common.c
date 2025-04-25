@@ -2149,6 +2149,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	struct r600_shader_atomic combined_atomics[EG_MAX_ATOMIC_BUFFERS];
 	unsigned global_atomic_count = 0;
 	struct pipe_stream_output_target *count_from_so = NULL;
+	unsigned cs_space = 0;
 
 	if (indirect && indirect->count_from_stream_output) {
 		count_from_so = indirect->count_from_stream_output;
@@ -2278,6 +2279,8 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 				      (char*)info->index.user + start_offset,
 				      &index_offset, &indexbuf);
 			has_user_indices = false;
+		} else if (has_user_indices) {
+			cs_space += 5;
 		}
 		index_bias = unlikely(indirect) ? 0 : draws->index_bias;
 	} else {
@@ -2327,7 +2330,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	/* Emit states. */
-	r600_need_cs_space(rctx, has_user_indices ? 5 : 0, true, global_atomic_count);
+	r600_need_cs_space(rctx, cs_space, true, global_atomic_count);
 	r600_flush_emit(rctx);
 
 	mask = rctx->dirty_atoms;

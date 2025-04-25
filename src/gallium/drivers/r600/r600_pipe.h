@@ -615,6 +615,11 @@ struct r600_context {
 	struct pipe_resource *append_fence;
 	uint32_t append_fence_id;
 	bool cayman_dealloc_state;
+
+	/* Debug */
+#ifndef NDEBUG
+	unsigned cdw_saved;
+#endif
 };
 
 static inline void r600_emit_command_buffer(struct radeon_cmdbuf *cs,
@@ -1019,6 +1024,18 @@ static inline void radeon_set_ctl_const(struct radeon_cmdbuf *cs, unsigned reg, 
 	radeon_set_ctl_const_seq(cs, reg, 1);
 	radeon_emit(cs, value);
 }
+
+#ifndef NDEBUG
+static inline unsigned
+radeon_check_cs(struct r600_context *const rctx,
+		const struct radeon_cmdbuf *const rcs)
+{
+	const unsigned count = rcs->current.cdw - rctx->cdw_saved;
+	assert(rcs->current.cdw < rcs->current.max_dw);
+	rctx->cdw_saved = rcs->current.cdw;
+	return count;
+}
+#endif
 
 /*
  * common helpers
