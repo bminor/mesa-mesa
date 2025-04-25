@@ -2270,11 +2270,10 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 						 draws[0].count*index_size > 20)) {
 			unsigned start_offset = draws[0].start * index_size;
 			indexbuf = NULL;
-			u_upload_data(ctx->stream_uploader, start_offset,
+			u_upload_data(ctx->stream_uploader, 0,
                                       draws[0].count * index_size, 256,
 				      (char*)info->index.user + start_offset,
 				      &index_offset, &indexbuf);
-			index_offset -= start_offset;
 			has_user_indices = false;
 		}
 		index_bias = unlikely(indirect) ? 0 : draws->index_bias;
