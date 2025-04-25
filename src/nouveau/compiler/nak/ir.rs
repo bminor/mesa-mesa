@@ -505,6 +505,14 @@ impl Dst {
             Dst::Reg(reg) => reg.comps(),
         }
     }
+
+    pub fn file(&self) -> Option<RegFile> {
+        match self {
+            Dst::None => None,
+            Dst::SSA(ssa) => Some(ssa.file()),
+            Dst::Reg(reg) => Some(reg.file()),
+        }
+    }
 }
 
 impl From<RegRef> for Dst {

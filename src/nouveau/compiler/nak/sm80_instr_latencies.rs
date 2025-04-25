@@ -1473,10 +1473,8 @@ impl SM80Latency {
         read: Option<&Op>,
         src_idx: usize,
     ) -> u32 {
-        let dst_file = match &write.dsts_as_slice()[dst_idx] {
-            Dst::None => return 0,
-            Dst::SSA(vec) => vec.file(),
-            Dst::Reg(reg) => reg.file(),
+        let Some(dst_file) = write.dsts_as_slice()[dst_idx].file() else {
+            return 0;
         };
 
         match dst_file {
@@ -1530,10 +1528,8 @@ impl SM80Latency {
     }
 
     pub fn war(read: &Op, src_idx: usize, write: &Op, dst_idx: usize) -> u32 {
-        let dst_file = match &write.dsts_as_slice()[dst_idx] {
-            Dst::None => return 0,
-            Dst::SSA(vec) => vec.file(),
-            Dst::Reg(reg) => reg.file(),
+        let Some(dst_file) = write.dsts_as_slice()[dst_idx].file() else {
+            return 0;
         };
 
         match dst_file {
@@ -1582,10 +1578,8 @@ impl SM80Latency {
         b_dst_idx: usize,
         a_op_pred: bool,
     ) -> u32 {
-        let dst_file = match &a.dsts_as_slice()[a_dst_idx] {
-            Dst::None => return 0,
-            Dst::SSA(vec) => vec.file(),
-            Dst::Reg(reg) => reg.file(),
+        let Some(dst_file) = a.dsts_as_slice()[a_dst_idx].file() else {
+            return 0;
         };
 
         match dst_file {
