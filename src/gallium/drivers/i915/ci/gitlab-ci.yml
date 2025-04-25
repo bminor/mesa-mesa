@@ -17,7 +17,6 @@ include:
 i915-g33:
   extends:
     - .ondracka-g33-test
-    - .b2c-deqp-test
     - .test-piglit
   variables:
     DEQP_SUITE: i915g

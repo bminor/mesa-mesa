@@ -29,7 +29,6 @@ include:
 r300-rv530-deqp-gles2:
   extends:
     - .ondracka-rv530
-    - .b2c-deqp-test
   variables:
     DEQP_SUITE: r300-rv530
     GPU_VERSION: r300-rv530-nohiz
@@ -52,7 +51,6 @@ r300-rv530-nine:
 r300-rv380-deqp-gles2:
   extends:
     - .ondracka-rv380
-    - .b2c-deqp-test
   variables:
     DEQP_SUITE: r300-rv380
     GPU_VERSION: r300-rv380
@@ -60,7 +58,6 @@ r300-rv380-deqp-gles2:
 r300-rv410-deqp-piglit:
   extends:
     - .ondracka-generic
-    - .b2c-deqp-test
     - .test-piglit
   variables:
     DEQP_SUITE: r300-rv410
@@ -73,7 +70,6 @@ r300-rv410-deqp-piglit:
 r300-rv530-piglit:
   extends:
     - .ondracka-rv530
-    - .b2c-deqp-test
     - .test-piglit
   variables:
     DEQP_SUITE: r300-piglit

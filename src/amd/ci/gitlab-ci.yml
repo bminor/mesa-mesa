@@ -274,7 +274,6 @@ radv-vangogh-vkcts:
 .radeonsi-vangogh-glcts-common:
   extends:
     - .b2c-x86_64-test-gl
-    - .b2c-deqp-test
     - .test-piglit
     - .vangogh-test-valve
   variables:
