@@ -161,6 +161,7 @@ private:
    PRegister m_instance_id{nullptr};
    PRegister m_rel_vertex_id{nullptr};
    bool m_vs_as_gs_a;
+   bool m_draw_parameters_enabled{false};
 };
 
 } // namespace r600

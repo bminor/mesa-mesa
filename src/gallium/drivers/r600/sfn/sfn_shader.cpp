@@ -909,6 +909,17 @@ Shader::process_intrinsic(nir_intrinsic_instr *intr)
       return emit_get_lds_info_uint(intr,
                                     offsetof(struct r600_lds_constant_buffer,
                                              vertexid_base));
+   case nir_intrinsic_load_base_vertex:
+      return emit_get_lds_info_uint(intr,
+                                    offsetof(struct r600_lds_constant_buffer,
+                                             vertex_base));
+   case nir_intrinsic_load_base_instance:
+      return emit_get_lds_info_uint(intr,
+                                    offsetof(struct r600_lds_constant_buffer,
+                                             instance_base));
+   case nir_intrinsic_load_draw_id:
+      return emit_get_lds_info_uint(intr,
+                                    offsetof(struct r600_lds_constant_buffer, draw_id));
    case nir_intrinsic_barrier:
       return emit_barrier(intr);
    case nir_intrinsic_shared_atomic:

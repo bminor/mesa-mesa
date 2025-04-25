@@ -116,7 +116,7 @@ struct r600_shader {
 	uint8_t			rat_base;
 	uint8_t                 image_size_const_offset;
         bool			disable_sb;
-	bool			vs_vertexid;
+	bool                    vs_draw_parameters_enabled;
 };
 
 union r600_shader_key {

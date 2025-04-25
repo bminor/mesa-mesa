@@ -265,6 +265,9 @@ protected:
       es_tess_coord,
       es_primitive_id,
       es_helper_invocation,
+      es_base_instance,
+      es_base_vertex,
+      es_draw_id,
       es_last
    };
 

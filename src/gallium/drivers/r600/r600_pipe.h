@@ -477,7 +477,9 @@ struct r600_lds_constant_buffer {
 
 	/* Processed by the vertex shader */
 	uint32_t vertexid_base;
-	uint32_t pad[3];
+	uint32_t instance_base;
+	uint32_t vertex_base;
+	uint32_t draw_id;
 };
 
 struct r600_context {

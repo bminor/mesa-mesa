@@ -477,7 +477,10 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->image_atomic_inc_wrap = family >= CHIP_CEDAR;
 	caps->max_texture_gather_components = family >= CHIP_CEDAR ? 4 : 0;
 	/* kernel command checker support is also required */
-	caps->draw_indirect = family >= CHIP_CEDAR;
+	caps->draw_indirect =
+	caps->multi_draw_indirect_partial_stride =
+	caps->multi_draw_indirect =
+	caps->draw_parameters = family >= CHIP_CEDAR;
 
 	caps->buffer_sampler_view_rgba_only = family < CHIP_CEDAR;
 

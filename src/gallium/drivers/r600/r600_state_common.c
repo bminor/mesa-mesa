@@ -2126,6 +2126,94 @@ static inline void r600_emit_rasterizer_prim_state(struct r600_context *rctx)
 	rctx->last_rast_prim = rast_prim;
 }
 
+#define R600_DRAW_PARAMETERS_DRAW_INDIRECT_CS 3
+#define R600_DRAW_PARAMETERS_ENABLED_CS 12
+
+static inline unsigned
+r600_draw_parameters(struct r600_context *rctx,
+		     const struct pipe_draw_info *info,
+		     const struct pipe_draw_indirect_info *indirect,
+		     const struct pipe_draw_start_count_bias *draws,
+		     const unsigned draw_id,
+		     const unsigned multi_draw_offset,
+		     const bool is_mapped,
+		     const uint8_t **indirect_ptr,
+		     unsigned *num_patches,
+		     unsigned *cs_space)
+{
+	const bool draw_parameters_enabled =
+		rctx->vs_shader->current->shader.vs_draw_parameters_enabled;
+
+	if (unlikely(draw_parameters_enabled)) {
+		if (indirect) {
+			const uint32_t indirect_offset =
+				indirect->offset + (info->index_size ?
+						    3 * sizeof(uint32_t) :
+						    2 * sizeof(uint32_t));
+			const uint32_t *indirect_data;
+
+			if (!is_mapped) {
+				*indirect_ptr =
+					r600_buffer_map_sync_with_rings(&rctx->b,
+									(struct r600_resource *)indirect->buffer,
+									PIPE_MAP_READ);
+				*cs_space += R600_DRAW_PARAMETERS_ENABLED_CS * indirect->draw_count;
+			}
+
+			indirect_data = (uint32_t *)(*indirect_ptr +
+						     indirect_offset +
+						     multi_draw_offset);
+
+			rctx->lds_constant_buffer.vertexid_base = indirect_data[0];
+			rctx->lds_constant_buffer.vertex_base = info->index_size ?
+				indirect_data[0] :
+				0;
+			rctx->lds_constant_buffer.instance_base = indirect_data[1];
+			rctx->lds_constant_buffer.draw_id = draw_id;
+		} else {
+			rctx->lds_constant_buffer.vertexid_base = 0;
+			rctx->lds_constant_buffer.vertex_base = info->index_size ?
+				draws->index_bias :
+				0;
+			rctx->lds_constant_buffer.instance_base = info->start_instance;
+			rctx->lds_constant_buffer.draw_id = draw_id;
+		}
+	}
+
+	if (unlikely(!is_mapped && indirect)) {
+		*cs_space += R600_DRAW_PARAMETERS_DRAW_INDIRECT_CS * indirect->draw_count;
+	}
+
+	evergreen_setup_tess_constants(rctx, info, num_patches, draw_parameters_enabled);
+
+	return unlikely(indirect) ?
+		indirect->draw_count :
+		1;
+}
+
+static inline void
+r600_draw_indirect(struct r600_context *rctx,
+		   struct radeon_cmdbuf *cs,
+		   const struct pipe_draw_indirect_info *indirect,
+		   const unsigned index_size,
+		   const bool render_cond_bit,
+		   const unsigned multi_draw_offset)
+{
+	assert(rctx->b.gfx_level >= EVERGREEN);
+
+	if (index_size) {
+		radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDEX_INDIRECT, 1, render_cond_bit));
+		radeon_emit(cs, indirect->offset + multi_draw_offset);
+		radeon_emit(cs, V_0287F0_DI_SRC_SEL_DMA);
+	} else {
+		radeon_emit(cs, PKT3(EG_PKT3_DRAW_INDIRECT, 1, render_cond_bit));
+		radeon_emit(cs, indirect->offset + multi_draw_offset);
+		radeon_emit(cs, V_0287F0_DI_SRC_SEL_AUTO_INDEX);
+	}
+
+	assert(radeon_check_cs(rctx, cs) == R600_DRAW_PARAMETERS_DRAW_INDIRECT_CS);
+}
+
 static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info *info,
                           unsigned drawid_offset,
                           const struct pipe_draw_indirect_info *indirect,
@@ -2150,6 +2238,9 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	unsigned global_atomic_count = 0;
 	struct pipe_stream_output_target *count_from_so = NULL;
 	unsigned cs_space = 0;
+	const uint8_t *indirect_ptr = NULL;
+	unsigned multi_draw_loop = 1;
+	unsigned multi_draw_offset = 0;
 
 	if (indirect && indirect->count_from_stream_output) {
 		count_from_so = indirect->count_from_stream_output;
@@ -2308,25 +2399,16 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	if (rctx->b.gfx_level >= EVERGREEN) {
-		const bool vertexid = rctx->vs_shader->current->shader.vs_vertexid;
-
-		if (unlikely(indirect && vertexid)) {
-			const uint32_t indirect_offset =
-				indirect->offset + (info->index_size ?
-						    3 * sizeof(uint32_t) :
-						    2 * sizeof(uint32_t));
-			uint8_t *indirect_data =
-				r600_buffer_map_sync_with_rings(&rctx->b,
-								(struct r600_resource *)indirect->buffer,
-								PIPE_MAP_READ);
-
-			rctx->lds_constant_buffer.vertexid_base =
-				*(uint32_t *)(indirect_data + indirect_offset);
-		} else {
-			rctx->lds_constant_buffer.vertexid_base = 0;
-		}
-
-		evergreen_setup_tess_constants(rctx, info, &num_patches, vertexid);
+		multi_draw_loop = r600_draw_parameters(rctx,
+						       info,
+						       indirect,
+						       draws,
+						       drawid_offset,
+						       multi_draw_offset,
+						       false,
+						       &indirect_ptr,
+						       &num_patches,
+						       &cs_space);
 	}
 
 	/* Emit states. */
@@ -2542,6 +2624,35 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 		radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_SQ_NON_EVENT));
 	}
 
+	for (; multi_draw_loop > 1; --multi_draw_loop) {
+		multi_draw_offset += indirect->stride;
+		r600_draw_parameters(rctx,
+				     info,
+				     indirect,
+				     draws,
+				     ++drawid_offset,
+				     multi_draw_offset,
+				     true,
+				     &indirect_ptr,
+				     &num_patches,
+				     &cs_space);
+
+		assert(radeon_check_cs(rctx, cs) || true);
+
+		mask = rctx->dirty_atoms;
+		while (mask != 0) {
+			r600_emit_atom(rctx, rctx->atoms[u_bit_scan64(&mask)]);
+		}
+
+		assert(radeon_check_cs(rctx, cs) <= R600_DRAW_PARAMETERS_ENABLED_CS);
+
+		r600_draw_indirect(rctx,
+				   cs,
+				   indirect,
+				   index_size,
+				   render_cond_bit,
+				   multi_draw_offset);
+	}
 
 	if (rctx->b.gfx_level >= EVERGREEN)
 		evergreen_emit_atomic_buffer_save(rctx, false, combined_atomics, global_atomic_count);

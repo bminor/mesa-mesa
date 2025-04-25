@@ -168,7 +168,8 @@ void
 VertexShader::do_get_shader_info(r600_shader *sh_info)
 {
    sh_info->processor_type = PIPE_SHADER_VERTEX;
-   sh_info->vs_vertexid = m_vertex_id != nullptr;
+   sh_info->vs_draw_parameters_enabled =
+      m_vertex_id != nullptr || m_draw_parameters_enabled;
    m_export_stage->get_shader_info(sh_info);
 }
 
@@ -454,6 +455,15 @@ VertexShader::do_scan_instruction(nir_instr *instr)
    case nir_intrinsic_load_tcs_rel_patch_id_r600:
       m_sv_values.set(es_rel_patch_id);
       break;
+   case nir_intrinsic_load_base_instance:
+      m_sv_values.set(es_base_instance);
+      break;
+   case nir_intrinsic_load_base_vertex:
+      m_sv_values.set(es_base_vertex);
+      break;
+   case nir_intrinsic_load_draw_id:
+      m_sv_values.set(es_draw_id);
+      break;
    default:
       return false;
    }
@@ -505,6 +515,18 @@ VertexShader::do_allocate_reserved_registers()
 
    if (m_sv_values.test(es_rel_patch_id)) {
       m_rel_vertex_id = value_factory().allocate_pinned_register(0, 1);
+   }
+
+   if (m_sv_values.test(es_base_instance)) {
+      m_draw_parameters_enabled = true;
+   }
+
+   if (m_sv_values.test(es_base_vertex)) {
+      m_draw_parameters_enabled = true;
+   }
+
+   if (m_sv_values.test(es_draw_id)) {
+      m_draw_parameters_enabled = true;
    }
 
    return m_last_vertex_attribute_register + 1;
