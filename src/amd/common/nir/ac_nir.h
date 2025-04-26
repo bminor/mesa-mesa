@@ -97,6 +97,7 @@ typedef struct {
    /* Generic per-patch slots. */
    uint32_t vram_patch_output_mask;
    uint32_t lds_patch_output_mask;
+   uint32_t vgpr_patch_output_mask; /* Hold the output values in VGPRs until the end. */
 
    /* The highest index returned by map_io + 1. */
    uint8_t highest_remapped_vram_output;
