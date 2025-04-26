@@ -100,7 +100,7 @@ apt-get install -y --no-remove "${DEPS[@]}" "${EPHEMERAL[@]}" \
 . .gitlab-ci/container/build-libclc.sh
 
 # Needed for ci-fairy s3cp
-pip3 install --break-system-packages "ci-fairy[s3] @ git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
+pip3 install --break-system-packages "ci-fairy[s3] @ git+https://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
 
 . .gitlab-ci/container/install-meson.sh
 

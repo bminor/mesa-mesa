@@ -55,7 +55,7 @@ apt-get install -y --no-remove --no-install-recommends "${DEPS[@]}" "${EPHEMERAL
         "${EXTRA_LOCAL_PACKAGES:-}"
 
 # Needed for ci-fairy s3cp
-pip3 install --break-system-packages "ci-fairy[s3] @ git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
+pip3 install --break-system-packages "ci-fairy[s3] @ git+https://gitlab.freedesktop.org/freedesktop/ci-templates@$MESA_TEMPLATES_COMMIT"
 
 pip3 install --break-system-packages -r bin/ci/test/requirements.txt
 
