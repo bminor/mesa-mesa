@@ -155,7 +155,6 @@
         - src/gallium/frontends/dri/*
         - src/gallium/frontends/glx/**/*
         - src/gallium/targets/**/*
-        - src/gallium/tests/**/*
         - src/gallium/winsys/*
       when: on_success
 
