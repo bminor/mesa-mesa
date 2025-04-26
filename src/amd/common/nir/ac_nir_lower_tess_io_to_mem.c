@@ -1223,26 +1223,28 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
 
    /* Don't load per-vertex outputs from LDS if all tess factors are 0. */
    nir_if *if_not_discarded = nir_push_if(b, nir_ine_imm(b, vote_result, VOTE_RESULT_ALL_TF_ZERO));
-   u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
-      if (!st->tcs_per_vertex_output_vmem_chan_mask[slot])
-         continue;
+   {
+      u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
+         if (!st->tcs_per_vertex_output_vmem_chan_mask[slot])
+            continue;
 
-      nir_def *comp[4] = {0};
+         nir_def *comp[4] = {0};
 
-      /* Gather stored components either from LDS or from local variables.  */
-      if ((shader->info.tess.tcs_cross_invocation_outputs_written |
-           shader->info.outputs_written_indirectly) & BITFIELD64_BIT(slot)) {
-         u_foreach_bit(i, st->tcs_per_vertex_output_vmem_chan_mask[slot]) {
-            nir_def *lds_off = hs_output_lds_offset(b, st, slot, i, invocation_id, zero);
-            comp[i] = nir_load_shared(b, 1, 32, lds_off);
+         /* Gather stored components either from LDS or from local variables.  */
+         if ((shader->info.tess.tcs_cross_invocation_outputs_written |
+              shader->info.outputs_written_indirectly) & BITFIELD64_BIT(slot)) {
+            u_foreach_bit(i, st->tcs_per_vertex_output_vmem_chan_mask[slot]) {
+               nir_def *lds_off = hs_output_lds_offset(b, st, slot, i, invocation_id, zero);
+               comp[i] = nir_load_shared(b, 1, 32, lds_off);
+            }
+         } else {
+            u_foreach_bit(i, st->tcs_per_vertex_output_vmem_chan_mask[slot]) {
+               comp[i] = load_output_channel_from_var(b, st->tcs_per_vertex_outputs[slot], i);
+            }
          }
-      } else {
-         u_foreach_bit(i, st->tcs_per_vertex_output_vmem_chan_mask[slot]) {
-            comp[i] = load_output_channel_from_var(b, st->tcs_per_vertex_outputs[slot], i);
-         }
+
+         outputs[slot] = make_vec4(b, comp);
       }
-
-      outputs[slot] = make_vec4(b, comp);
    }
    nir_pop_if(b, if_not_discarded);
    u_foreach_bit64(slot, tcs_vram_per_vtx_out_mask(shader, st)) {
