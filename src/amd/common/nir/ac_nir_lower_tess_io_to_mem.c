@@ -430,20 +430,33 @@ hs_output_lds_map_io_location(nir_shader *shader,
    }
 }
 
+static unsigned
+get_lds_output_vertex_size(const ac_nir_tess_io_info *io_info)
+{
+   return util_bitcount64(io_info->lds_output_mask & ~TESS_LVL_MASK) * 16;
+}
+
+static unsigned
+get_lds_pervertex_output_patch_size(const ac_nir_tess_io_info *io_info, unsigned tcs_vertices_out)
+{
+   return tcs_vertices_out * get_lds_output_vertex_size(io_info);
+}
+
+static unsigned
+get_lds_output_patch_stride(const ac_nir_tess_io_info *io_info, unsigned tcs_vertices_out)
+{
+   unsigned lds_perpatch_output_patch_size = (util_bitcount64(io_info->lds_output_mask & TESS_LVL_MASK) +
+                                              util_bitcount(io_info->lds_patch_output_mask)) * 16;
+   /* Add 4 to the output patch size to minimize LDS bank conflicts. */
+   return get_lds_pervertex_output_patch_size(io_info, tcs_vertices_out) +
+          lds_perpatch_output_patch_size + 4;
+}
+
 static nir_def *
 hs_output_lds_offset(nir_builder *b, lower_tess_io_state *st, unsigned location, unsigned component,
                      nir_def *vertex_index, nir_def *io_offset)
 {
-   const uint64_t per_vertex_mask = st->io_info.lds_output_mask & ~TESS_LVL_MASK;
-   const uint64_t tf_mask = st->io_info.lds_output_mask & TESS_LVL_MASK;
-   const uint32_t patch_out_mask = st->io_info.lds_patch_output_mask;
-
-   unsigned tcs_num_reserved_outputs = util_bitcount64(per_vertex_mask);
-   unsigned tcs_num_reserved_patch_outputs = util_bitcount64(tf_mask) + util_bitcount(patch_out_mask);
-   unsigned output_vertex_size = tcs_num_reserved_outputs * 16u;
-   unsigned pervertex_output_patch_size = b->shader->info.tess.tcs_vertices_out * output_vertex_size;
-   unsigned output_patch_stride = pervertex_output_patch_size + tcs_num_reserved_patch_outputs * 16u;
-
+   unsigned tcs_vertices_out = b->shader->info.tess.tcs_vertices_out;
    nir_def *off = NULL;
 
    if (io_offset) {
@@ -456,24 +469,21 @@ hs_output_lds_offset(nir_builder *b, lower_tess_io_state *st, unsigned location,
    }
 
    nir_def *rel_patch_id = nir_load_tess_rel_patch_id_amd(b);
-   nir_def *patch_offset = nir_imul_imm(b, rel_patch_id, output_patch_stride);
+   nir_def *patch_offset = nir_imul_imm(b, rel_patch_id,
+                                        get_lds_output_patch_stride(&st->io_info, tcs_vertices_out));
 
    nir_def *tcs_in_vtxcnt = nir_load_patch_vertices_in(b);
    nir_def *tcs_num_patches = nir_load_tcs_num_patches_amd(b);
    nir_def *input_patch_size = nir_imul(b, tcs_in_vtxcnt, nir_load_lshs_vertex_stride_amd(b));
    nir_def *output_patch0_offset = nir_imul(b, input_patch_size, tcs_num_patches);
    nir_def *output_patch_offset = nir_iadd_nuw(b, patch_offset, output_patch0_offset);
-   nir_def *lds_offset;
 
-   if (vertex_index) {
-      nir_def *vertex_index_off = nir_imul_imm(b, vertex_index, output_vertex_size);
+   if (vertex_index)
+      off = nir_iadd_nuw(b, off, nir_imul_imm(b, vertex_index, get_lds_output_vertex_size(&st->io_info)));
+   else
+      off = nir_iadd_imm_nuw(b, off, get_lds_pervertex_output_patch_size(&st->io_info, tcs_vertices_out));
 
-      off = nir_iadd_nuw(b, off, vertex_index_off);
-      lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
-   } else {
-      off = nir_iadd_imm_nuw(b, off, pervertex_output_patch_size);
-      lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
-   }
+   nir_def *lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
 
    /* The beginning of LDS is reserved for the tess level group vote. */
    return nir_iadd_imm_nuw(b, lds_offset, AC_TESS_LEVEL_VOTE_LDS_BYTES);
@@ -1515,15 +1525,9 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
                             unsigned num_remapped_tess_level_outputs, unsigned *num_patches_per_wg,
                             unsigned *hw_lds_size)
 {
-   unsigned num_tcs_output_cp = tcs_vertices_out;
-   unsigned lds_output_vertex_size = util_bitcount64(io_info->lds_output_mask & ~TESS_LVL_MASK) * 16;
-   unsigned lds_perpatch_output_patch_size = (util_bitcount64(io_info->lds_output_mask & TESS_LVL_MASK) +
-                                              util_bitcount(io_info->lds_patch_output_mask)) * 16;
-
    unsigned lds_per_patch = num_tcs_input_cp * lds_input_vertex_size +
-                            num_tcs_output_cp * lds_output_vertex_size +
-                            lds_perpatch_output_patch_size;
-   unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, num_tcs_output_cp,
+                            get_lds_output_patch_stride(io_info, tcs_vertices_out);
+   unsigned num_patches = ac_compute_num_tess_patches(info, num_tcs_input_cp, tcs_vertices_out,
                                                       io_info->highest_remapped_vram_output,
                                                       MAX2(io_info->highest_remapped_vram_patch_output,
                                                            num_remapped_tess_level_outputs),
