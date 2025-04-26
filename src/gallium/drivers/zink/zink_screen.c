@@ -3406,6 +3406,13 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
       goto fail;
    }
 
+   /* Reject IMG blobs with DDK below 24.1@6554834 if not forced */
+   if (zink_driverid(screen) == VK_DRIVER_ID_IMAGINATION_PROPRIETARY && screen->info.props.driverVersion < 6554834) {
+      debug_printf("zink: Imagination proprietary driver is too old to be supported, expect failure\n");
+      if (screen->driver_name_is_inferred)
+         goto fail;
+   }
+
    if (zink_debug & ZINK_DEBUG_MEM) {
       simple_mtx_init(&screen->debug_mem_lock, mtx_plain);
       screen->debug_mem_sizes = _mesa_hash_table_create(screen, _mesa_hash_string, _mesa_key_string_equal);
