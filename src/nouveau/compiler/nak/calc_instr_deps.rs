@@ -452,11 +452,12 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
         if instr.deps.delay > MAX_INSTR_DELAY {
             let mut delay = instr.deps.delay - MAX_INSTR_DELAY;
             instr.deps.set_delay(MAX_INSTR_DELAY);
-            let instrs = vec![instr];
+            let mut instrs = vec![instr];
             while delay > 0 {
                 let mut nop = Instr::new_boxed(OpNop { label: None });
                 nop.deps.set_delay(delay.min(MAX_INSTR_DELAY));
                 delay -= nop.deps.delay;
+                instrs.push(nop);
             }
             MappedInstrs::Many(instrs)
         } else if matches!(instr.op, Op::SrcBar(_)) {
