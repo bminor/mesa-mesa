@@ -26,11 +26,11 @@ enum RegLatencySM75 {
     IMADWideUpper,
     RedirectedFP64,
     RedirectedFP16,
-    RedirectedHMMA_884_F16,
-    RedirectedHMMA_884_F32,
+    RedirectedHMMA_884_F16(usize),
+    RedirectedHMMA_884_F32(usize),
     RedirectedHMMA_1688,
     RedirectedHMMA_16816,
-    IMMA,
+    IMMA(usize),
     Decoupled,
     DecoupledOther, //reads only
     BMov,
@@ -163,7 +163,7 @@ impl RegLatencySM75 {
             // PMTRIG => CoupledDisp64
             // CSMTEST =>  CoupledAlu,
             Op::Bar(_) => Decoupled,
-            Op::Imma(_) => IMMA,
+            Op::Imma(_) => IMMA(op_reg_idx),
             Op::IDp4(_) => CoupledFMA,
             Op::BClear(_) => Decoupled,
             Op::Bra(_) => Decoupled,
@@ -223,11 +223,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => 5,
                 RedirectedFP64 => 9,
                 RedirectedFP16 => 8,
-                RedirectedHMMA_884_F16 => 13,
-                RedirectedHMMA_884_F32 => 10,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
                 RedirectedHMMA_1688 => 14,
                 RedirectedHMMA_16816 => 22,
-                IMMA => 10,
+                IMMA(_) => 10,
                 _ => 1,
             },
             CoupledFMA | IMADLo => match writer {
@@ -238,11 +238,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => 4,
                 RedirectedFP64 => 9,
                 RedirectedFP16 => 8,
-                RedirectedHMMA_884_F16 => 13,
-                RedirectedHMMA_884_F32 => 10,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
                 RedirectedHMMA_1688 => 14,
                 RedirectedHMMA_16816 => 22,
-                IMMA => 10,
+                IMMA(_) => 10,
                 _ => 1,
             },
             IMADWideAB => match writer {
@@ -253,11 +253,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => 6,
                 RedirectedFP64 => 9,
                 RedirectedFP16 => 8,
-                RedirectedHMMA_884_F16 => 13,
-                RedirectedHMMA_884_F32 => 10,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
                 RedirectedHMMA_1688 => 14,
                 RedirectedHMMA_16816 => 22,
-                IMMA => 10,
+                IMMA(_) => 10,
                 _ => 1,
             },
             IMADWideLower | IMADWideUpper => match reader {
@@ -269,11 +269,11 @@ impl RegLatencySM75 {
                     IMADWideUpper => 2,
                     RedirectedFP64 => 9,
                     RedirectedFP16 => 8,
-                    RedirectedHMMA_884_F16 => 13,
-                    RedirectedHMMA_884_F32 => 10,
+                    RedirectedHMMA_884_F16(_) => 13,
+                    RedirectedHMMA_884_F32(_) => 10,
                     RedirectedHMMA_1688 => 14,
                     RedirectedHMMA_16816 => 22,
-                    IMMA => 10,
+                    IMMA(_) => 10,
                     _ => 1,
                 },
                 IMADWideUpper => match writer {
@@ -284,11 +284,11 @@ impl RegLatencySM75 {
                     IMADWideUpper => 2,
                     RedirectedFP64 => 7,
                     RedirectedFP16 => 6,
-                    RedirectedHMMA_884_F16 => 11,
-                    RedirectedHMMA_884_F32 => 8,
+                    RedirectedHMMA_884_F16(_) => 11,
+                    RedirectedHMMA_884_F32(_) => 8,
                     RedirectedHMMA_1688 => 12,
                     RedirectedHMMA_16816 => 20,
-                    IMMA => 8,
+                    IMMA(_) => 8,
                     _ => 1,
                 },
                 _ => {
@@ -303,11 +303,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => 6,
                 RedirectedFP64 => 8,
                 RedirectedFP16 => 8,
-                RedirectedHMMA_884_F16 => 13,
-                RedirectedHMMA_884_F32 => 10,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
                 RedirectedHMMA_1688 => 14,
                 RedirectedHMMA_16816 => 22,
-                IMMA => 10,
+                IMMA(_) => 10,
                 _ => 1,
             },
             RedirectedFP16 => match writer {
@@ -318,18 +318,46 @@ impl RegLatencySM75 {
                 IMADWideUpper => 6,
                 RedirectedFP64 => 9,
                 RedirectedFP16 => 6,
-                RedirectedHMMA_884_F16 => 13,
-                RedirectedHMMA_884_F32 => 10,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
                 RedirectedHMMA_1688 => 14,
                 RedirectedHMMA_16816 => 22,
-                IMMA => 10,
+                IMMA(_) => 10,
                 _ => 1,
             },
-            RedirectedHMMA_884_F16
-            | RedirectedHMMA_884_F32
-            | RedirectedHMMA_1688
-            | RedirectedHMMA_16816
-            | Decoupled => {
+            RedirectedHMMA_884_F16(read_idx) => match writer {
+                CoupledDisp64 => 6,
+                CoupledAlu | CoupledDisp => 6,
+                CoupledFMA | IMADLo => 6,
+                IMADWideLower => 6,
+                IMADWideUpper => 6,
+                RedirectedFP64 => 9,
+                RedirectedFP16 => 8,
+                RedirectedHMMA_884_F16(_) if read_idx == 2 => 4,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
+                RedirectedHMMA_1688 => 14,
+                RedirectedHMMA_16816 => 22,
+                IMMA(_) => 10,
+                _ => 1,
+            },
+            RedirectedHMMA_884_F32(read_idx) => match writer {
+                CoupledDisp64 => 6,
+                CoupledAlu | CoupledDisp => 6,
+                CoupledFMA | IMADLo => 6,
+                IMADWideLower => 6,
+                IMADWideUpper => 6,
+                RedirectedFP64 => 9,
+                RedirectedFP16 => 8,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) if read_idx == 2 => 4,
+                RedirectedHMMA_884_F32(_) => 10,
+                RedirectedHMMA_1688 => 14,
+                RedirectedHMMA_16816 => 22,
+                IMMA(_) => 10,
+                _ => 1,
+            },
+            RedirectedHMMA_1688 | RedirectedHMMA_16816 | Decoupled => {
                 match writer {
                     CoupledDisp64 => 6,
                     CoupledAlu | CoupledDisp => 6,
@@ -338,31 +366,45 @@ impl RegLatencySM75 {
                     IMADWideUpper => 6,
                     RedirectedFP64 => 9,
                     RedirectedFP16 => 8,
-                    RedirectedHMMA_884_F16 => 13, //4 for back to back FMA for 884
-                    RedirectedHMMA_884_F32 => 10, //4 for back o back FMA for 884
+                    RedirectedHMMA_884_F16(_) => 13,
+                    RedirectedHMMA_884_F32(_) => 10,
                     RedirectedHMMA_1688 => 14,
                     RedirectedHMMA_16816 => 22,
-                    IMMA => 10,
+                    IMMA(_) => 10,
                     _ => 1,
                 }
             }
-            IMMA | DecoupledOther => {
-                match writer {
-                    CoupledDisp64 => 8,
-                    CoupledAlu | CoupledDisp => 8,
-                    CoupledFMA | IMADLo => 8,
-                    IMADWideLower => 8,
-                    IMADWideUpper => 8,
-                    RedirectedFP64 => 9,
-                    RedirectedFP16 => 8,
-                    RedirectedHMMA_884_F16 => 13,
-                    RedirectedHMMA_884_F32 => 10,
-                    RedirectedHMMA_1688 => 14,
-                    RedirectedHMMA_16816 => 22,
-                    IMMA => 10, // 4 for back to back IMMA
-                    _ => 1,
-                }
-            }
+            IMMA(read_idx) => match writer {
+                CoupledDisp64 => 8,
+                CoupledAlu | CoupledDisp => 8,
+                CoupledFMA | IMADLo => 8,
+                IMADWideLower => 8,
+                IMADWideUpper => 8,
+                RedirectedFP64 => 9,
+                RedirectedFP16 => 8,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
+                RedirectedHMMA_1688 => 14,
+                RedirectedHMMA_16816 => 22,
+                IMMA(_) if read_idx == 2 => 4,
+                IMMA(_) => 10,
+                _ => 1,
+            },
+            DecoupledOther => match writer {
+                CoupledDisp64 => 8,
+                CoupledAlu | CoupledDisp => 8,
+                CoupledFMA | IMADLo => 8,
+                IMADWideLower => 8,
+                IMADWideUpper => 8,
+                RedirectedFP64 => 9,
+                RedirectedFP16 => 8,
+                RedirectedHMMA_884_F16(_) => 13,
+                RedirectedHMMA_884_F32(_) => 10,
+                RedirectedHMMA_1688 => 14,
+                RedirectedHMMA_16816 => 22,
+                IMMA(_) => 10,
+                _ => 1,
+            },
             BMov | GuardPredicate => {
                 panic!("Not a RAW category")
             }
@@ -387,11 +429,11 @@ impl RegLatencySM75 {
                 | IMADLo | IMADWideLower | IMADWideUpper => 1,
                 RedirectedFP64 => 4,
                 RedirectedFP16 => 3,
-                RedirectedHMMA_884_F16 => 8,
-                RedirectedHMMA_884_F32 => pred(has_pred, 2, 2),
+                RedirectedHMMA_884_F16(_) => 8,
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 2, 2),
                 RedirectedHMMA_1688 => 9,
                 RedirectedHMMA_16816 => 17,
-                IMMA => 5,
+                IMMA(_) => 5,
                 _ => 1,
             },
             CoupledDisp | CoupledAlu => match writer1 {
@@ -400,11 +442,11 @@ impl RegLatencySM75 {
                 | IMADWideLower | IMADWideUpper => 1,
                 RedirectedFP64 => pred(has_pred, 4, 1),
                 RedirectedFP16 => pred(has_pred, 3, 1),
-                RedirectedHMMA_884_F16 => pred(has_pred, 8, 1),
-                RedirectedHMMA_884_F32 => pred(has_pred, 5, 1),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 8, 1),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 5, 1),
                 RedirectedHMMA_1688 => pred(has_pred, 9, 1),
                 RedirectedHMMA_16816 => pred(has_pred, 17, 1),
-                IMMA => pred(has_pred, 5, 1),
+                IMMA(_) => pred(has_pred, 5, 1),
                 _ => 1,
             },
             CoupledFMA | IMADLo => match writer1 {
@@ -414,11 +456,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => pred(has_pred, 1, 1),
                 RedirectedFP64 => pred(has_pred, 4, 1),
                 RedirectedFP16 => pred(has_pred, 3, 1),
-                RedirectedHMMA_884_F16 => pred(has_pred, 8, 1),
-                RedirectedHMMA_884_F32 => pred(has_pred, 5, 1),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 8, 1),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 5, 1),
                 RedirectedHMMA_1688 => pred(has_pred, 9, 1),
                 RedirectedHMMA_16816 => pred(has_pred, 17, 1),
-                IMMA => pred(has_pred, 5, 1),
+                IMMA(_) => pred(has_pred, 5, 1),
                 _ => 1,
             },
             IMADWideLower => match writer1 {
@@ -429,11 +471,11 @@ impl RegLatencySM75 {
                 IMADWideUpper => 1,
                 RedirectedFP64 => pred(has_pred, 4, 3),
                 RedirectedFP16 => pred(has_pred, 3, 3),
-                RedirectedHMMA_884_F16 => pred(has_pred, 8, 3),
-                RedirectedHMMA_884_F32 => pred(has_pred, 5, 3),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 8, 3),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 5, 3),
                 RedirectedHMMA_1688 => pred(has_pred, 9, 3),
                 RedirectedHMMA_16816 => pred(has_pred, 17, 3),
-                IMMA => pred(has_pred, 5, 3),
+                IMMA(_) => pred(has_pred, 5, 3),
                 _ => 1,
             },
             IMADWideUpper => match writer1 {
@@ -442,11 +484,11 @@ impl RegLatencySM75 {
                 | IMADWideLower | IMADWideUpper => 1,
                 RedirectedFP64 => pred(has_pred, 4, 1),
                 RedirectedFP16 => pred(has_pred, 3, 1),
-                RedirectedHMMA_884_F16 => pred(has_pred, 8, 1),
-                RedirectedHMMA_884_F32 => pred(has_pred, 5, 1),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 8, 1),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 5, 1),
                 RedirectedHMMA_1688 => pred(has_pred, 9, 1),
                 RedirectedHMMA_16816 => pred(has_pred, 17, 1),
-                IMMA => pred(has_pred, 5, 1),
+                IMMA(_) => pred(has_pred, 5, 1),
                 _ => 1,
             },
             RedirectedFP64 => match writer1 {
@@ -454,11 +496,11 @@ impl RegLatencySM75 {
                 | IMADLo | IMADWideLower | IMADWideUpper => 2,
                 RedirectedFP64 => 1,
                 RedirectedFP16 => 2,
-                RedirectedHMMA_884_F16 => 5,
-                RedirectedHMMA_884_F32 => 2,
+                RedirectedHMMA_884_F16(_) => 5,
+                RedirectedHMMA_884_F32(_) => 2,
                 RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 14,
-                IMMA => 2,
+                IMMA(_) => 2,
                 _ => 1,
             },
             RedirectedFP16 => match writer1 {
@@ -466,71 +508,71 @@ impl RegLatencySM75 {
                 | IMADLo | IMADWideLower | IMADWideUpper => 2,
                 RedirectedFP64 => pred(has_pred, 1, 1),
                 RedirectedFP16 => 1,
-                RedirectedHMMA_884_F16 => pred(has_pred, 6, 1),
-                RedirectedHMMA_884_F32 => pred(has_pred, 3, 1),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 6, 1),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 3, 1),
                 RedirectedHMMA_1688 => pred(has_pred, 7, 1),
                 RedirectedHMMA_16816 => pred(has_pred, 15, 1),
-                IMMA => pred(has_pred, 3, 1),
+                IMMA(_) => pred(has_pred, 3, 1),
                 _ => 1,
             },
-            RedirectedHMMA_884_F16 => match writer1 {
+            RedirectedHMMA_884_F16(_) => match writer1 {
                 CoupledDisp64 | CoupledDisp | CoupledAlu | CoupledFMA
                 | IMADLo | IMADWideLower | IMADWideUpper => 2,
                 RedirectedFP64 => pred(has_pred, 3, 2),
                 RedirectedFP16 => pred(has_pred, 2, 2),
-                RedirectedHMMA_884_F16 => 1,
-                RedirectedHMMA_884_F32 => pred(has_pred, 2, 4),
+                RedirectedHMMA_884_F16(_) => 1,
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 2, 4),
                 RedirectedHMMA_1688 => pred(has_pred, 6, 4),
                 RedirectedHMMA_16816 => pred(has_pred, 16, 2),
-                IMMA => pred(has_pred, 2, 4),
+                IMMA(_) => pred(has_pred, 2, 4),
                 _ => 1,
             },
-            RedirectedHMMA_884_F32 => match writer1 {
+            RedirectedHMMA_884_F32(_) => match writer1 {
                 CoupledDisp64 | CoupledDisp | CoupledAlu | CoupledFMA
                 | IMADLo | IMADWideLower | IMADWideUpper => 2,
                 RedirectedFP64 => pred(has_pred, 3, 2),
                 RedirectedFP16 => pred(has_pred, 2, 2),
-                RedirectedHMMA_884_F16 => pred(has_pred, 4, 5),
-                RedirectedHMMA_884_F32 => 1,
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 4, 5),
+                RedirectedHMMA_884_F32(_) => 1,
                 RedirectedHMMA_1688 => pred(has_pred, 6, 4),
                 RedirectedHMMA_16816 => pred(has_pred, 16, 2),
-                IMMA => pred(has_pred, 2, 4),
+                IMMA(_) => pred(has_pred, 2, 4),
                 _ => 1,
             },
             RedirectedHMMA_1688 => match writer1 {
                 CoupledDisp64 | CoupledDisp | CoupledAlu | CoupledFMA
                 | IMADLo | IMADWideLower | IMADWideUpper | RedirectedFP64
                 | RedirectedFP16 => 2,
-                RedirectedHMMA_884_F16 => 4,
-                RedirectedHMMA_884_F32 => 2,
+                RedirectedHMMA_884_F16(_) => 4,
+                RedirectedHMMA_884_F32(_) => 2,
                 RedirectedHMMA_1688 => 1,
                 RedirectedHMMA_16816 => 16,
-                IMMA => 2,
+                IMMA(_) => 2,
                 _ => 1,
             },
             RedirectedHMMA_16816 => match writer1 {
                 CoupledDisp64 | CoupledDisp | CoupledAlu | CoupledFMA
                 | IMADLo | IMADWideLower | IMADWideUpper | RedirectedFP64
                 | RedirectedFP16 => 2,
-                RedirectedHMMA_884_F16 => 4,
-                RedirectedHMMA_884_F32 => 2,
+                RedirectedHMMA_884_F16(_) => 4,
+                RedirectedHMMA_884_F32(_) => 2,
                 RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 1,
-                IMMA => 2,
+                IMMA(_) => 2,
                 _ => 1,
             },
-            IMMA => match writer1 {
+            IMMA(_) => match writer1 {
                 CoupledDisp64 | CoupledDisp | CoupledAlu | CoupledFMA
                 | IMADLo | IMADWideLower | IMADWideUpper => {
                     pred(has_pred, 2, 2)
                 }
                 RedirectedFP64 => pred(has_pred, 2, 3),
                 RedirectedFP16 => pred(has_pred, 2, 2),
-                RedirectedHMMA_884_F16 => pred(has_pred, 2, 7),
-                RedirectedHMMA_884_F32 => pred(has_pred, 2, 4),
+                RedirectedHMMA_884_F16(_) => pred(has_pred, 2, 7),
+                RedirectedHMMA_884_F32(_) => pred(has_pred, 2, 4),
                 RedirectedHMMA_1688 => pred(has_pred, 6, 4),
                 RedirectedHMMA_16816 => pred(has_pred, 14, 4),
-                IMMA => 1,
+                IMMA(_) => 1,
                 _ => 1,
             },
             Decoupled => match writer1 {
@@ -543,11 +585,11 @@ impl RegLatencySM75 {
                 | IMADWideUpper
                 | RedirectedFP64
                 | RedirectedFP16
-                | RedirectedHMMA_884_F16
-                | RedirectedHMMA_884_F32
+                | RedirectedHMMA_884_F16(_)
+                | RedirectedHMMA_884_F32(_)
                 | RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 14,
-                IMMA => 2,
+                IMMA(_) => 2,
                 _ => 1,
             },
             BMov => {
@@ -562,11 +604,11 @@ impl RegLatencySM75 {
                     | IMADWideUpper
                     | RedirectedFP64
                     | RedirectedFP16
-                    | RedirectedHMMA_884_F16
-                    | RedirectedHMMA_884_F32
+                    | RedirectedHMMA_884_F16(_)
+                    | RedirectedHMMA_884_F32(_)
                     | RedirectedHMMA_1688 => 9,
                     RedirectedHMMA_16816 => 14,
-                    IMMA => 9,
+                    IMMA(_) => 9,
                     _ => 1,
                 }
             }
@@ -599,15 +641,15 @@ impl RegLatencySM75 {
                 Decoupled => 1,
                 _ => 2,
             },
-            RedirectedHMMA_884_F16 => match reader {
-                RedirectedHMMA_884_F16 => 1,
+            RedirectedHMMA_884_F16(_) => match reader {
+                RedirectedHMMA_884_F16(_) => 1,
                 RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 14,
                 Decoupled => 1,
                 _ => 2,
             },
-            RedirectedHMMA_884_F32 => match reader {
-                RedirectedHMMA_884_F32 => 1,
+            RedirectedHMMA_884_F32(_) => match reader {
+                RedirectedHMMA_884_F32(_) => 1,
                 RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 14,
                 Decoupled => 1,
@@ -625,10 +667,10 @@ impl RegLatencySM75 {
                 Decoupled => 1,
                 _ => 2,
             },
-            IMMA => match reader {
+            IMMA(_) => match reader {
                 RedirectedHMMA_1688 => 6,
                 RedirectedHMMA_16816 => 14,
-                IMMA => 1,
+                IMMA(_) => 1,
                 Decoupled => 1,
                 _ => 2,
             },
@@ -1154,11 +1196,11 @@ impl SM75Latency {
                 // We don't think fp16 needs scoreboarding on any known hw
                 // Put this back if we figure out it does.
                 //RegLatencySM75::RedirectedFP16 |
-                RegLatencySM75::RedirectedHMMA_884_F16 |
-                RegLatencySM75::RedirectedHMMA_884_F32 |
+                RegLatencySM75::RedirectedHMMA_884_F16(_) |
+                RegLatencySM75::RedirectedHMMA_884_F32(_) |
                 RegLatencySM75::RedirectedHMMA_1688 |
                 RegLatencySM75::RedirectedHMMA_16816 |
-                RegLatencySM75::IMMA |
+                RegLatencySM75::IMMA(_) |
                 RegLatencySM75::Decoupled => true,
                 _ => false
             }
