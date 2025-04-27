@@ -17,6 +17,7 @@
 #include "vl/vl_video_buffer.h"
 #include <sys/utsname.h>
 #include "drm-uapi/drm.h"
+#include "aco_interface.h"
 
 /* The capabilities reported by the kernel has priority
    over the existing logic in si_get_video_param */
@@ -740,6 +741,17 @@ si_driver_thread_add_job(struct pipe_screen *screen, void *data,
    util_queue_add_job(&sscreen->shader_compiler_queue, data, fence, execute, cleanup, job_size);
 }
 
+static bool enable_mesh_shader(struct si_screen *sscreen)
+{
+   return sscreen->use_ngg &&
+      sscreen->info.gfx_level >= GFX10_3 &&
+      sscreen->info.has_gang_submit &&
+      /* TODO: not support user queue for now */
+      !(sscreen->info.userq_ip_mask & BITFIELD_BIT(AMD_IP_GFX)) &&
+      /* don't support LLVM */
+      aco_is_gpu_supported(&sscreen->info) &&
+      !(sscreen->debug_flags & DBG(USE_LLVM));
+}
 
 void si_init_screen_get_functions(struct si_screen *sscreen)
 {
@@ -839,13 +851,18 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
     */
    options->varying_expression_max_cost = si_varying_expression_max_cost;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++)
+   unsigned max_support_shader = enable_mesh_shader(sscreen) ?
+      MESA_SHADER_MESH : MESA_SHADER_COMPUTE;
+   for (unsigned i = 0; i <= max_support_shader; i++)
       sscreen->b.nir_options[i] = options;
 }
 
 void si_init_shader_caps(struct si_screen *sscreen)
 {
-   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_MESH; i++) {
+      if (!sscreen->b.nir_options[i])
+         continue;
+
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&sscreen->b.shader_caps[i];
 
@@ -942,6 +959,57 @@ void si_init_compute_caps(struct si_screen *sscreen)
       caps->subgroup_sizes = sscreen->info.gfx_level < GFX10 ? 64 : 64 | 32;
 
    caps->max_variable_threads_per_block = SI_MAX_VARIABLE_THREADS_PER_BLOCK;
+}
+
+static void si_init_mesh_caps(struct si_screen *sscreen)
+{
+   struct pipe_mesh_caps *caps = (struct pipe_mesh_caps *)&sscreen->b.caps.mesh;
+
+   caps->max_task_work_group_total_count = 1 << 22;
+   caps->max_mesh_work_group_total_count = 1 << 22;
+   caps->max_mesh_work_group_invocations = 256;
+   caps->max_task_work_group_invocations = 1024;
+   caps->max_task_payload_size = 16384;
+   caps->max_task_shared_memory_size = 65536;
+   caps->max_mesh_shared_memory_size = 28672;
+   caps->max_task_payload_and_shared_memory_size = 65536;
+   caps->max_mesh_payload_and_shared_memory_size =
+      caps->max_task_payload_size + caps->max_mesh_shared_memory_size;
+   caps->max_mesh_output_memory_size = 32 * 1024;
+   caps->max_mesh_payload_and_output_memory_size =
+      caps->max_task_payload_size + caps->max_mesh_output_memory_size;
+   caps->max_mesh_output_vertices = 256;
+   caps->max_mesh_output_primitives = 256;
+   caps->max_mesh_output_components = 128;
+   caps->max_mesh_output_layers = 8;
+   caps->max_mesh_multiview_view_count = 1;
+   caps->mesh_output_per_vertex_granularity = 1;
+   caps->mesh_output_per_primitive_granularity = 1;
+
+   caps->max_preferred_task_work_group_invocations = 64;
+   caps->max_preferred_mesh_work_group_invocations = 128;
+   caps->mesh_prefers_local_invocation_vertex_output = true;
+   caps->mesh_prefers_local_invocation_primitive_output = true;
+   caps->mesh_prefers_compact_vertex_output = true;
+   caps->mesh_prefers_compact_primitive_output = false;
+
+   caps->max_task_work_group_count[0] =
+   caps->max_task_work_group_count[1] =
+   caps->max_task_work_group_count[2] = 65535;
+
+   caps->max_mesh_work_group_count[0] =
+   caps->max_mesh_work_group_count[1] =
+   caps->max_mesh_work_group_count[2] = 65535;
+
+   caps->max_task_work_group_size[0] =
+   caps->max_task_work_group_size[1] =
+   caps->max_task_work_group_size[2] = 1024;
+
+   caps->max_mesh_work_group_size[0] =
+   caps->max_mesh_work_group_size[1] =
+   caps->max_mesh_work_group_size[2] = 256;
+
+   caps->pipeline_statistic_queries = sscreen->info.gfx_level >= GFX11;
 }
 
 void si_init_screen_caps(struct si_screen *sscreen)
@@ -1242,8 +1310,13 @@ void si_init_screen_caps(struct si_screen *sscreen)
    /* Conversion to nanos from cycles per millisecond */
    caps->timer_resolution = DIV_ROUND_UP(1000000, sscreen->info.clock_crystal_freq);
 
+   caps->mesh_shader = enable_mesh_shader(sscreen);
+   if (caps->mesh_shader)
+      si_init_mesh_caps(sscreen);
+
    caps->shader_subgroup_size = 64;
-   caps->shader_subgroup_supported_stages = BITFIELD_MASK(MESA_SHADER_STAGES);
+   caps->shader_subgroup_supported_stages =
+      BITFIELD_MASK(caps->mesh_shader ? MESA_SHADER_MESH_STAGES : MESA_SHADER_STAGES);
    caps->shader_subgroup_supported_features = BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES);
    caps->shader_subgroup_quad_all_stages = true;
 
