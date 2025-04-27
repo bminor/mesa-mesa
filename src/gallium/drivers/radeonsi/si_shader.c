@@ -117,6 +117,7 @@ unsigned si_shader_io_get_unique_index(unsigned semantic)
 
 unsigned si_get_max_workgroup_size(const struct si_shader *shader)
 {
+   struct si_screen *sscreen = shader->selector->screen;
    mesa_shader_stage stage = shader->is_gs_copy_shader ?
       MESA_SHADER_VERTEX : shader->selector->stage;
 
@@ -130,18 +131,20 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
          return shader->info.num_streamout_vec4s ? 256 : 128;
 
       /* As part of merged shader. */
-      return shader->selector->screen->info.gfx_level >= GFX9 &&
+      return sscreen->info.gfx_level >= GFX9 &&
          (shader->key.ge.as_ls || shader->key.ge.as_es) ? 128 : shader->wave_size;
 
    case MESA_SHADER_TESS_CTRL:
       /* Return this so that LLVM doesn't remove s_barrier
        * instructions on chips where we use s_barrier. */
-      return shader->selector->screen->info.gfx_level >= GFX7 ? 128 : shader->wave_size;
+      return sscreen->info.gfx_level >= GFX7 ? 128 : shader->wave_size;
 
    case MESA_SHADER_GEOMETRY:
       /* GS can always generate up to 256 vertices. */
-      return shader->selector->screen->info.gfx_level >= GFX9 ? 256 : shader->wave_size;
+      return sscreen->info.gfx_level >= GFX9 ? 256 : shader->wave_size;
 
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH:
    case MESA_SHADER_COMPUTE:
       break; /* see below */
 
@@ -157,6 +160,16 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
    unsigned max_work_group_size = (uint32_t)local_size[0] *
                                   (uint32_t)local_size[1] *
                                   (uint32_t)local_size[2];
+
+   /* Without multi-row export, we need at least number of output vertex/primitive
+    * threads in workgroup for export (one vertex/primitive per thread).
+    */
+   if (stage == MESA_SHADER_MESH && !sscreen->info.mesh_fast_launch_2) {
+      max_work_group_size = MAX3(max_work_group_size,
+                                 shader->selector->info.base.mesh.max_vertices_out,
+                                 shader->selector->info.base.mesh.max_primitives_out);
+   }
+
    assert(max_work_group_size);
    return max_work_group_size;
 }
