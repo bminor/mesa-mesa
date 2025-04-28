@@ -696,6 +696,9 @@ struct si_screen {
    /* NGG streamout. */
    simple_mtx_t gds_mutex;
    struct pb_buffer_lean *gds_oa;
+
+   /* mesh shader */
+   struct ac_task_info task_info;
 };
 
 struct si_compute {
