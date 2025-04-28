@@ -329,3 +329,18 @@ nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
    nir_vprintf_fmt(b, ptr_bit_size, fmt, ap);
    va_end(ap);
 }
+
+/* Debug helper to allow us to printf at a single pixel */
+void nir_printf_fmt_at_px(nir_builder *b, unsigned ptr_bit_size, unsigned x_px, unsigned y_px, const char *fmt, ...)
+{
+   va_list ap;
+
+   nir_def *xy_px = nir_f2u32(b,nir_load_frag_coord(b));
+   nir_def *is_at_px = nir_ball_iequal(b, nir_imm_ivec2(b, x_px, y_px), xy_px);
+
+   nir_push_if(b, is_at_px);
+   va_start(ap, fmt);
+   nir_vprintf_fmt(b, ptr_bit_size, fmt, ap);
+   va_end(ap);
+   nir_pop_if(b, NULL);
+}

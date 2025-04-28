@@ -2404,6 +2404,8 @@ nir_gen_rect_vertices(nir_builder *b, nir_def *z, nir_def *w);
  */
 void nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size,
                     const char *fmt, ...);
+void nir_printf_fmt_at_px(nir_builder *b, unsigned ptr_bit_size,
+                          unsigned x, unsigned y, const char *fmt, ...);
 
 /* Call a serialized function. This is used internally by vtn_bindgen, it is not
  * intended for end-users of NIR.
