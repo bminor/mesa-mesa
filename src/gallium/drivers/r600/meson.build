@@ -18,6 +18,7 @@ files_r600 = files(
   'r600_asm.h',
   'r600_blit.c',
   'r600d.h',
+  'r600_atomics.h',
   'r600_dump.c',
   'r600_dump.h',
   'r600_formats.h',

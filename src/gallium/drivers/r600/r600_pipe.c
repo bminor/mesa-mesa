@@ -308,14 +308,17 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 			rscreen->b.family >= CHIP_CEDAR &&
 			(i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) ? 8 : 0;
 
-		caps->max_hw_atomic_counters =
-			rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ? 8 : 0;
+		if (rscreen->b.family >= CHIP_CEDAR &&
+		    rscreen->has_atomics) {
+			caps->max_hw_atomic_counters =
+				rscreen->b.family < CHIP_CAYMAN ?
+				EG_MAX_ATOMIC_COUNTERS :
+				CM_MAX_ATOMIC_COUNTERS;
 
-		/* having to allocate the atomics out amongst shaders stages is messy,
-		   so give compute 8 buffers and all the others one */
-		caps->max_hw_atomic_counter_buffers =
-			rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ?
-			EG_MAX_ATOMIC_BUFFERS : 0;
+			/* having to allocate the atomics out amongst shaders stages is messy,
+			 * so give compute EG_MAX_ATOMIC_BUFFERS buffers and all the others one */
+			caps->max_hw_atomic_counter_buffers = EG_MAX_ATOMIC_BUFFERS;
+		}
 	}
 }
 
@@ -558,8 +561,13 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->pci_device = rscreen->b.info.pci.dev;
 	caps->pci_function = rscreen->b.info.pci.func;
 
-	caps->max_combined_hw_atomic_counters =
-		rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ? 8 : 0;
+	if (rscreen->b.family >= CHIP_CEDAR &&
+	    rscreen->has_atomics) {
+		caps->max_combined_hw_atomic_counters =
+			rscreen->b.family < CHIP_CAYMAN ?
+			EG_MAX_ATOMIC_COUNTERS :
+			CM_MAX_ATOMIC_COUNTERS;
+	}
 
 	caps->max_combined_hw_atomic_counter_buffers =
 		rscreen->b.family >= CHIP_CEDAR && rscreen->has_atomics ?

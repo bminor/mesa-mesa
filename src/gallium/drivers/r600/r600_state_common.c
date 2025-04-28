@@ -2146,8 +2146,8 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	unsigned num_patches, dirty_tex_counter, index_offset = 0;
 	unsigned index_size = info->index_size;
 	int index_bias;
-	struct r600_shader_atomic combined_atomics[8];
-	uint8_t atomic_used_mask = 0;
+	struct r600_shader_atomic combined_atomics[EG_MAX_ATOMIC_BUFFERS];
+	unsigned global_atomic_count = 0;
 	struct pipe_stream_output_target *count_from_so = NULL;
 
 	if (indirect && indirect->count_from_stream_output) {
@@ -2227,7 +2227,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	if (rctx->b.gfx_level >= EVERGREEN) {
-		evergreen_emit_atomic_buffer_setup_count(rctx, NULL, combined_atomics, &atomic_used_mask);
+		global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, NULL, combined_atomics, global_atomic_count);
 	}
 
 	if (index_size) {
@@ -2324,7 +2324,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	/* Emit states. */
-	r600_need_cs_space(rctx, has_user_indices ? 5 : 0, true, util_bitcount(atomic_used_mask));
+	r600_need_cs_space(rctx, has_user_indices ? 5 : 0, true, global_atomic_count);
 	r600_flush_emit(rctx);
 
 	mask = rctx->dirty_atoms;
@@ -2333,7 +2333,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	}
 
 	if (rctx->b.gfx_level >= EVERGREEN) {
-		evergreen_emit_atomic_buffer_setup(rctx, false, combined_atomics, atomic_used_mask);
+		evergreen_emit_atomic_buffer_setup(rctx, false, combined_atomics, global_atomic_count);
 	}
 		
 	if (rctx->b.gfx_level == CAYMAN) {
@@ -2538,7 +2538,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 
 	if (rctx->b.gfx_level >= EVERGREEN)
-		evergreen_emit_atomic_buffer_save(rctx, false, combined_atomics, &atomic_used_mask);
+		evergreen_emit_atomic_buffer_save(rctx, false, combined_atomics, global_atomic_count);
 
 	if (rctx->trace_buf)
 		eg_trace_emit(rctx);

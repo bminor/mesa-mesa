@@ -60,8 +60,8 @@ void print_shader_info(FILE *f , int id, struct r600_shader *shader)
 
    for (unsigned i = 0; i < shader->nhwatomic; ++i) {
       PRINT_UINT_ARRAY_ELM(atomics, start);
-      PRINT_UINT_ARRAY_ELM(atomics, end);
-      PRINT_UINT_ARRAY_ELM(atomics, buffer_id);
+      PRINT_UINT_ARRAY_ELM(atomics, count);
+      PRINT_UINT_ARRAY_ELM(atomics, resource_id);
       PRINT_UINT_ARRAY_ELM(atomics, hw_idx);
    }
 

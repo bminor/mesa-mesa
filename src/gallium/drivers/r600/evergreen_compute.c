@@ -296,8 +296,8 @@ static void compute_emit_cs(struct r600_context *rctx,
 	struct radeon_cmdbuf *cs = &rctx->b.gfx.cs;
 	bool compute_dirty = false;
 	struct r600_pipe_shader *current;
-	struct r600_shader_atomic combined_atomics[8];
-	uint8_t atomic_used_mask;
+	struct r600_shader_atomic combined_atomics[EG_MAX_ATOMIC_BUFFERS];
+	unsigned global_atomic_count = 0;
 	uint32_t indirect_grid[3] = { 0, 0, 0 };
 
 	/* make sure that the gfx ring is only one active */
@@ -342,16 +342,16 @@ static void compute_emit_cs(struct r600_context *rctx,
 	rctx->cs_block_grid_sizes[3] = rctx->cs_block_grid_sizes[7] = 0;
 	rctx->driver_consts[PIPE_SHADER_COMPUTE].cs_block_grid_size_dirty = true;
 
-	evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, &atomic_used_mask);
-	r600_need_cs_space(rctx, 0, true, util_bitcount(atomic_used_mask));
+	global_atomic_count = evergreen_emit_atomic_buffer_setup_count(rctx, current, combined_atomics, global_atomic_count);
+	r600_need_cs_space(rctx, 0, true, global_atomic_count);
 
 	if (need_buf_const) {
 		eg_setup_buffer_constants(rctx, PIPE_SHADER_COMPUTE);
 	}
 	r600_update_driver_const_buffers(rctx, true);
 
-	evergreen_emit_atomic_buffer_setup(rctx, true, combined_atomics, atomic_used_mask);
-	if (atomic_used_mask) {
+	evergreen_emit_atomic_buffer_setup(rctx, true, combined_atomics, global_atomic_count);
+	if (global_atomic_count) {
 		radeon_emit(cs, PKT3(PKT3_EVENT_WRITE, 0, 0));
 		radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_CS_PARTIAL_FLUSH) | EVENT_INDEX(4));
 	}
@@ -423,7 +423,7 @@ static void compute_emit_cs(struct r600_context *rctx,
 		radeon_emit(cs, 0);
 		rctx->cayman_dealloc_state = true;
 	}
-	evergreen_emit_atomic_buffer_save(rctx, true, combined_atomics, &atomic_used_mask);
+	evergreen_emit_atomic_buffer_save(rctx, true, combined_atomics, global_atomic_count);
 
 #if 0
 	COMPUTE_DBG(rctx->screen, "cdw: %i\n", cs->cdw);

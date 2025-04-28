@@ -573,18 +573,18 @@ Shader::scan_uniforms(nir_variable *uniform)
 
       r600_shader_atomic atom = {0};
 
-      atom.buffer_id = uniform->data.binding;
+      atom.resource_id = uniform->data.binding;
       atom.hw_idx = m_atomic_base + m_next_hwatomic_loc;
 
       atom.start = uniform->data.offset >> 2;
-      atom.end = atom.start + natomics - 1;
+      atom.count = natomics;
 
       if (m_atomic_base_map.find(uniform->data.binding) == m_atomic_base_map.end())
          m_atomic_base_map[uniform->data.binding] = m_next_hwatomic_loc;
 
       m_next_hwatomic_loc += natomics;
 
-      m_atomic_file_count += atom.end - atom.start + 1;
+      m_atomic_file_count += atom.count;
 
       sfn_log << SfnLog::io << "HW_ATOMIC file count: " << m_atomic_file_count << "\n";
 
