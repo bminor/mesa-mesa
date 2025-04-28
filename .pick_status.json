@@ -5604,7 +5604,7 @@
         "description": "freedreno/a6xx: Define CONSTANTRAMMODE",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5879eaac185ed1c167fd01aff9b91c7cbe43ab0a",
         "notes": null
