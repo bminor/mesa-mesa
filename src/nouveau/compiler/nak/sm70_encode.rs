@@ -350,7 +350,6 @@ impl SM70Encoder<'_> {
         swizzle_range: Range<usize>,
         file: RegFile,
         is_fp16_alu: bool,
-        has_mod: bool,
         reg: &ALURegRef,
     ) {
         match file {
@@ -359,12 +358,8 @@ impl SM70Encoder<'_> {
             _ => panic!("Invalid ALU src register file"),
         }
 
-        if has_mod {
-            self.set_bit(abs_bit, reg.abs);
-            self.set_bit(neg_bit, reg.neg);
-        } else {
-            assert!(!reg.abs && !reg.neg);
-        }
+        self.set_bit(abs_bit, reg.abs);
+        self.set_bit(neg_bit, reg.neg);
 
         if is_fp16_alu {
             self.set_swizzle(swizzle_range, reg.swizzle);
@@ -384,7 +379,7 @@ impl SM70Encoder<'_> {
             ALUSrc::Reg(reg) => reg,
             _ => panic!("Invalid ALU src"),
         };
-        self.set_alu_reg(24..32, 73, 72, 74..76, file, is_fp16_alu, true, reg);
+        self.set_alu_reg(24..32, 73, 72, 74..76, file, is_fp16_alu, reg);
     }
 
     fn encode_alu_src2(
@@ -405,7 +400,6 @@ impl SM70Encoder<'_> {
             81..83,
             file,
             is_fp16_alu,
-            true,
             reg,
         );
     }
@@ -418,7 +412,6 @@ impl SM70Encoder<'_> {
             60..62,
             RegFile::GPR,
             is_fp16_alu,
-            true,
             reg,
         );
     }
