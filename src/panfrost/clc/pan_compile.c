@@ -265,7 +265,7 @@ main(int argc, const char **argv)
    const char *output_h_path = argv[4];
    const char *output_c_path = argv[5];
 
-   int target_arch = atoi(target_arch_str);
+   unsigned target_arch = atoi(target_arch_str);
 
    if (target_arch < 4 || target_arch > 13) {
       fprintf(stderr, "Unsupported target arch %d\n", target_arch);
@@ -337,8 +337,10 @@ main(int argc, const char **argv)
             libfunc, v, get_compiler_options(target_arch), &opt,
             load_kernel_input);
 
+         unsigned gpu_prod_id = (target_arch & 0xf) << 12;
+
          struct pan_compile_inputs inputs = {
-            .gpu_id = target_arch << 12,
+            .gpu_id = gpu_prod_id << 16,
          };
 
          nir_link_shader_functions(s, nir);

@@ -190,13 +190,19 @@ panfrost_device_fd(const struct panfrost_device *dev)
 static inline uint32_t
 panfrost_device_gpu_id(const struct panfrost_device *dev)
 {
-   return dev->kmod.props.gpu_prod_id;
+   return dev->kmod.props.gpu_id;
+}
+
+static inline uint32_t
+panfrost_device_gpu_prod_id(const struct panfrost_device *dev)
+{
+   return dev->kmod.props.gpu_id >> 16;
 }
 
 static inline uint32_t
 panfrost_device_gpu_rev(const struct panfrost_device *dev)
 {
-   return dev->kmod.props.gpu_revision;
+   return dev->kmod.props.gpu_id & BITFIELD_MASK(16);
 }
 
 static inline int

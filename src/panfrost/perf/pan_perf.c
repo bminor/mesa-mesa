@@ -86,7 +86,7 @@ pan_perf_init(struct pan_perf *perf, int fd)
    pan_kmod_dev_query_props(perf->dev, &props);
 
    const struct pan_model *model =
-      pan_get_model(props.gpu_prod_id, props.gpu_variant);
+      pan_get_model(props.gpu_id, props.gpu_variant);
    if (model == NULL)
       unreachable("Invalid GPU ID");
 

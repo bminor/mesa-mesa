@@ -184,7 +184,7 @@ static VkResult
 get_device_sync_types(struct panvk_physical_device *device,
                       const struct panvk_instance *instance)
 {
-   const unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
+   const unsigned arch = pan_arch(device->kmod.props.gpu_id);
    uint32_t sync_type_count = 0;
 
    device->drm_syncobj_type = vk_drm_syncobj_get_type(device->kmod.dev->fd);
@@ -254,15 +254,15 @@ panvk_physical_device_init(struct panvk_physical_device *device,
 
    pan_kmod_dev_query_props(device->kmod.dev, &device->kmod.props);
 
-   device->model = pan_get_model(device->kmod.props.gpu_prod_id,
+   device->model = pan_get_model(device->kmod.props.gpu_id,
                                  device->kmod.props.gpu_variant);
 
-   unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(device->kmod.props.gpu_id);
 
    if (!device->model) {
       result = panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
                             "Unknown gpu_id (%#x) or variant (%#x)",
-                            device->kmod.props.gpu_prod_id,
+                            device->kmod.props.gpu_id,
                             device->kmod.props.gpu_variant);
       goto fail;
    }
@@ -300,7 +300,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    memset(device->name, 0, sizeof(device->name));
    sprintf(device->name, "%s", device->model->name);
 
-   if (get_cache_uuid(device->kmod.props.gpu_prod_id, device->cache_uuid)) {
+   if (get_cache_uuid(device->kmod.props.gpu_id, device->cache_uuid)) {
       result = panvk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
                             "cannot generate UUID");
       goto fail;
@@ -397,7 +397,7 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkQueueFamilyProperties2, out, pQueueFamilyProperties,
                           pQueueFamilyPropertyCount);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
    vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p)
    {
@@ -464,7 +464,7 @@ panvk_CreateDevice(VkPhysicalDevice physicalDevice,
                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
 
    panvk_arch_dispatch_ret(arch, create_device, result, physical_device,
@@ -479,7 +479,7 @@ panvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    VK_FROM_HANDLE(panvk_device, device, _device);
    struct panvk_physical_device *physical_device =
       to_panvk_physical_device(device->vk.physical);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
    panvk_arch_dispatch(arch, destroy_device, device, pAllocator);
 }
@@ -535,7 +535,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
    const struct pan_format fmt = physical_device->formats.all[pfmt];
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
    if (!format_is_supported(physical_device, fmt, pfmt))
       return 0;
@@ -592,7 +592,7 @@ get_image_format_features(struct panvk_physical_device *physical_device,
 {
    const struct vk_format_ycbcr_info *ycbcr_info =
          vk_format_get_ycbcr_info(format);
-   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
    /* TODO: Bifrost YCbCr support */
    if (ycbcr_info && arch <= 7)
@@ -684,7 +684,7 @@ static VkFormatFeatureFlags2
 get_image_format_sample_counts(struct panvk_physical_device *physical_device,
                                VkFormat format)
 {
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
    unsigned max_tib_size = pan_get_max_tib_size(arch, physical_device->model);
    unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
 
@@ -778,7 +778,7 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 static VkExtent3D
 get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    const uint64_t max_img_size_B =
       arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    const enum pipe_format pfmt = vk_format_to_pipe_format(format);
@@ -801,7 +801,7 @@ get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 static VkExtent3D
 get_max_3d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    const uint64_t max_img_size_B =
       arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    enum pipe_format pfmt = vk_format_to_pipe_format(format);

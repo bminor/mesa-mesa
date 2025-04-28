@@ -549,7 +549,8 @@ panvk_per_arch(get_physical_device_properties)(
       /* Collect arch_major, arch_minor, arch_rev and product_major,
        * as done by the Arm driver.
        */
-      .deviceID = device->kmod.props.gpu_prod_id << 16,
+      .deviceID =
+         device->kmod.props.gpu_id & (ARCH_MAJOR | ARCH_MINOR | ARCH_REV | PRODUCT_MAJOR),
       .deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
 
       /* Vulkan 1.0 limits */
@@ -947,7 +948,7 @@ panvk_per_arch(get_physical_device_properties)(
       uint8_t pad[8];
    } dev_uuid = {
       .vendor_id = ARM_VENDOR_ID,
-      .device_id = device->model->gpu_id,
+      .device_id = properties->deviceID,
    };
 
    STATIC_ASSERT(sizeof(dev_uuid) == VK_UUID_SIZE);

@@ -5441,7 +5441,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
    }
 
    /* This opt currently helps on Bifrost but not Valhall */
-   if (gpu_id < 0x9000)
+   if (pan_arch(gpu_id) < 9)
       NIR_PASS(progress, nir, bifrost_nir_opt_boolean_bitwise);
 
    NIR_PASS(progress, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
@@ -5849,8 +5849,8 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
     * scratch access.
     */
    glsl_type_size_align_func vars_to_scratch_size_align_func =
-      (gpu_id >= 0x9000) ? glsl_get_vec4_size_align_bytes
-                         : glsl_get_natural_size_align_bytes;
+      (pan_arch(gpu_id) >= 9) ? glsl_get_vec4_size_align_bytes
+                              : glsl_get_natural_size_align_bytes;
    /* Lower large arrays to scratch and small arrays to bcsel */
    NIR_PASS(_, nir, nir_lower_scratch_to_var);
    NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
@@ -5884,7 +5884,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 
       NIR_PASS(_, nir, bifrost_nir_lower_load_output);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
-      if (gpu_id >= 0x9000) {
+      if (pan_arch(gpu_id) >= 9) {
          NIR_PASS(_, nir, nir_lower_mediump_io, nir_var_shader_out,
                   VARYING_BIT_PSIZ, false);
       }
@@ -6377,7 +6377,7 @@ bi_should_idvs(nir_shader *nir, const struct pan_compile_inputs *inputs)
       return false;
 
    /* Bifrost cannot write gl_PointSize during IDVS */
-   if ((inputs->gpu_id < 0x9000) &&
+   if ((pan_arch(inputs->gpu_id) < 9) &&
        nir->info.outputs_written & VARYING_BIT_PSIZ)
       return false;
 

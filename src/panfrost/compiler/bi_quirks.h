@@ -42,9 +42,9 @@
 #define BIFROST_LIMITED_CLPER (1 << 1)
 
 static inline unsigned
-bifrost_get_quirks(unsigned product_id)
+bifrost_get_quirks(unsigned gpu_id)
 {
-   switch (product_id >> 8) {
+   switch (gpu_id >> 24) {
    case 0x60: /* G71 */
       return BIFROST_NO_FP32_TRANSCENDENTALS | BIFROST_LIMITED_CLPER;
    case 0x62: /* G72 */

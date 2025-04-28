@@ -116,7 +116,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
 #else
    NIR_PASS(_, nir, pan_lower_framebuffer, rt_formats,
             pan_raw_format_mask_midgard(rt_formats), MAX2(key.nr_samples, 1),
-            cache->gpu_id < 0x700);
+            (cache->gpu_id >> 16) < 0x700);
 #endif
 
    struct util_dynarray binary;

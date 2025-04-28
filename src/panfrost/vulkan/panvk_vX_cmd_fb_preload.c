@@ -170,7 +170,7 @@ get_preload_shader(struct panvk_device *dev,
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    struct pan_compile_inputs inputs = {
-      .gpu_id = phys_dev->kmod.props.gpu_prod_id,
+      .gpu_id = phys_dev->kmod.props.gpu_id,
       .is_blit = true,
    };
 
@@ -522,11 +522,11 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
        */
       struct panvk_physical_device *pdev =
          to_panvk_physical_device(dev->vk.physical);
-      unsigned gpu_id = pdev->kmod.props.gpu_prod_id;
+      unsigned gpu_prod_id = pdev->kmod.props.gpu_id >> 16;
 
       /* the PAN_ARCH check is redundant but allows compiler optimization
          when PAN_ARCH <= 6 */
-      if (PAN_ARCH > 6 && gpu_id >= 0x7200)
+      if (PAN_ARCH > 6 && gpu_prod_id >= 0x7200)
          fbinfo->bifrost.pre_post.modes[dcd_idx] =
             MALI_PRE_POST_FRAME_SHADER_MODE_EARLY_ZS_ALWAYS;
       else

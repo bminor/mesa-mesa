@@ -45,9 +45,20 @@ struct pan_tiler_features {
    unsigned max_levels;
 };
 
+#define ARCH_MAJOR     BITFIELD_RANGE(28, 4)
+#define ARCH_MINOR     BITFIELD_RANGE(24, 4)
+#define ARCH_REV       BITFIELD_RANGE(20, 4)
+#define PRODUCT_MAJOR  BITFIELD_RANGE(16, 4)
+#define VERSION_MAJOR  BITFIELD_RANGE(12, 4)
+#define VERSION_MINOR  BITFIELD_RANGE(4, 8)
+#define VERSION_STATUS BITFIELD_RANGE(0, 4)
+
 struct pan_model {
-   /* GPU ID */
-   uint32_t gpu_id;
+   /* GPU product ID */
+   uint32_t gpu_prod_id;
+
+   /* Mask to apply to the GPU ID to get a product ID. */
+   uint32_t gpu_prod_id_mask;
 
    /* GPU variant. */
    uint32_t gpu_variant;
@@ -65,11 +76,13 @@ struct pan_model {
     */
    uint32_t min_rev_anisotropic;
 
-   /* Default tilebuffer size in bytes for the model. */
-   unsigned tilebuffer_size;
+   struct {
+      /* Default tilebuffer size in bytes for the model. */
+      uint32_t color_size;
 
-   /* Default tilebuffer depth size in bytes for the model. */
-   unsigned tilebuffer_z_size;
+      /* Default tilebuffer depth size in bytes for the model. */
+      uint32_t z_size;
+   } tilebuffer;
 
    struct {
       /* The GPU lacks the capability for hierarchical tiling, without
@@ -116,7 +129,7 @@ unsigned pan_compute_max_thread_count(const struct pan_kmod_dev_props *props,
 static inline unsigned
 pan_arch(unsigned gpu_id)
 {
-   switch (gpu_id) {
+   switch (gpu_id >> 16) {
    case 0x600:
    case 0x620:
    case 0x720:
@@ -128,7 +141,7 @@ pan_arch(unsigned gpu_id)
    case 0x880:
       return 5;
    default:
-      return gpu_id >> 12;
+      return gpu_id >> 28;
    }
 }
 

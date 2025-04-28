@@ -154,7 +154,7 @@ get_max_msaa(struct panfrost_device *dev, enum pipe_format format)
    /* t760 (GPU ID 0x750 - not a typo) has a HW issue in versions before
     * the r1p0 version, which prevents 16x MSAA from working properly.
     */
-   if (panfrost_device_gpu_id(dev) == 0x750 &&
+   if (panfrost_device_gpu_prod_id(dev) == 0x750 &&
        panfrost_device_gpu_rev(dev) < 0x1000)
       max_msaa = MIN2(max_msaa, 8);
 
@@ -990,7 +990,7 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    /* Bail early on unsupported hardware */
    if (dev->model == NULL) {
       debug_printf("panfrost: Unsupported model %X",
-                   panfrost_device_gpu_id(dev));
+                   panfrost_device_gpu_prod_id(dev));
       panfrost_destroy_screen(&(screen->base));
       return NULL;
    }

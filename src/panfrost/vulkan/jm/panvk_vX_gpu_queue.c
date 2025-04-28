@@ -80,7 +80,7 @@ panvk_queue_submit_batch(struct panvk_gpu_queue *queue, struct panvk_batch *batc
 
       if (debug & PANVK_DEBUG_TRACE) {
          pandecode_jc(dev->debug.decode_ctx, batch->vtc_jc.first_job,
-                      phys_dev->kmod.props.gpu_prod_id);
+                      phys_dev->kmod.props.gpu_id);
       }
 
       if (debug & PANVK_DEBUG_DUMP)
@@ -88,7 +88,7 @@ panvk_queue_submit_batch(struct panvk_gpu_queue *queue, struct panvk_batch *batc
 
       if (debug & PANVK_DEBUG_SYNC)
          pandecode_abort_on_fault(dev->debug.decode_ctx, submit.jc,
-                                  phys_dev->kmod.props.gpu_prod_id);
+                                  phys_dev->kmod.props.gpu_id);
    }
 
    if (batch->frag_jc.first_job) {
@@ -118,14 +118,14 @@ panvk_queue_submit_batch(struct panvk_gpu_queue *queue, struct panvk_batch *batc
 
       if (debug & PANVK_DEBUG_TRACE)
          pandecode_jc(dev->debug.decode_ctx, batch->frag_jc.first_job,
-                      phys_dev->kmod.props.gpu_prod_id);
+                      phys_dev->kmod.props.gpu_id);
 
       if (debug & PANVK_DEBUG_DUMP)
          pandecode_dump_mappings(dev->debug.decode_ctx);
 
       if (debug & PANVK_DEBUG_SYNC)
          pandecode_abort_on_fault(dev->debug.decode_ctx, submit.jc,
-                                  phys_dev->kmod.props.gpu_prod_id);
+                                  phys_dev->kmod.props.gpu_id);
    }
 
    if (debug & PANVK_DEBUG_TRACE)

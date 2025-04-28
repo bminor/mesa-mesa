@@ -197,7 +197,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    if (dev->arch <= 5 && s->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, s, pan_lower_framebuffer, key->fs.rt_formats,
                pan_raw_format_mask_midgard(key->fs.rt_formats), 0,
-               panfrost_device_gpu_id(dev) < 0x700);
+               panfrost_device_gpu_prod_id(dev) < 0x700);
    }
 
    if (s->info.stage == MESA_SHADER_VERTEX)

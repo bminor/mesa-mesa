@@ -105,7 +105,7 @@ panfrost_dev_query_thread_props(const struct pan_kmod_dev *dev,
    props->max_threads_per_core =
       panfrost_query_raw(fd, DRM_PANFROST_PARAM_MAX_THREADS, true, 0);
    if (!props->max_threads_per_core) {
-      switch (pan_arch(props->gpu_prod_id)) {
+      switch (pan_arch(props->gpu_id)) {
       case 4:
       case 5:
          props->max_threads_per_core = 256;
@@ -141,7 +141,7 @@ panfrost_dev_query_thread_props(const struct pan_kmod_dev *dev,
    props->max_tasks_per_core = MAX2(thread_features >> 24, 1);
    props->num_registers_per_core = thread_features & 0xffff;
    if (!props->num_registers_per_core) {
-      switch (pan_arch(props->gpu_prod_id)) {
+      switch (pan_arch(props->gpu_id)) {
       case 4:
       case 5:
          /* Assume we can always schedule max_threads_per_core when using 4
@@ -183,9 +183,8 @@ panfrost_dev_query_props(const struct pan_kmod_dev *dev,
    int fd = dev->fd;
 
    memset(props, 0, sizeof(*props));
-   props->gpu_prod_id =
-      panfrost_query_raw(fd, DRM_PANFROST_PARAM_GPU_PROD_ID, true, 0);
-   props->gpu_revision =
+   props->gpu_id =
+      (panfrost_query_raw(fd, DRM_PANFROST_PARAM_GPU_PROD_ID, true, 0) << 16) |
       panfrost_query_raw(fd, DRM_PANFROST_PARAM_GPU_REVISION, true, 0);
    props->shader_present =
       panfrost_query_raw(fd, DRM_PANFROST_PARAM_SHADER_PRESENT, true, 0);

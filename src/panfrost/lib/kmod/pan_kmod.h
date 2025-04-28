@@ -149,11 +149,8 @@ struct pan_kmod_bo {
 
 /* List of GPU properties needed by the UMD. */
 struct pan_kmod_dev_props {
-   /* GPU product ID. */
-   uint32_t gpu_prod_id;
-
-   /* GPU revision. */
-   uint32_t gpu_revision;
+   /* GPU ID. */
+   uint32_t gpu_id;
 
    /* GPU variant. */
    uint32_t gpu_variant;

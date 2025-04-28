@@ -29,8 +29,9 @@
 #include "bifrost/disassemble.h"
 #include "util/macros.h"
 #include "valhall/disassemble.h"
+#include "panfrost/lib/pan_props.h"
 
-unsigned gpu_id = 0x7212;
+unsigned gpu_id = 0x72120000;
 int verbose = 0;
 
 #define BI_FOURCC(ch0, ch1, ch2, ch3)                                          \
@@ -70,7 +71,7 @@ disassemble(const char *filename)
       }
    }
 
-   if ((gpu_id >> 12) >= 9)
+   if (pan_arch(gpu_id) >= 9)
       disassemble_valhall(stdout, entrypoint, filesize, verbose);
    else
       disassemble_bifrost(stdout, entrypoint, filesize, verbose);
@@ -115,6 +116,7 @@ main(int argc, char **argv)
             return 1;
          }
 
+         gpu_id <<= 16;
          break;
       case 'g':
          gpu_id = 0;

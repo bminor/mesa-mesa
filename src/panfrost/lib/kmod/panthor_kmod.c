@@ -266,8 +266,7 @@ panthor_dev_query_props(const struct pan_kmod_dev *dev,
       container_of(dev, struct panthor_kmod_dev, base);
 
    *props = (struct pan_kmod_dev_props){
-      .gpu_prod_id = panthor_dev->props.gpu.gpu_id >> 16,
-      .gpu_revision = panthor_dev->props.gpu.gpu_id & 0xffff,
+      .gpu_id = panthor_dev->props.gpu.gpu_id,
       .gpu_variant = panthor_dev->props.gpu.core_features & 0xff,
       .shader_present = panthor_dev->props.gpu.shader_present,
       .tiler_features = panthor_dev->props.gpu.tiler_features,

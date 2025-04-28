@@ -368,7 +368,7 @@ panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
                       UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    struct panvk_physical_device *phys_dev = to_panvk_physical_device(vk_pdev);
-   return pan_shader_get_compiler_options(pan_arch(phys_dev->kmod.props.gpu_prod_id));
+   return pan_shader_get_compiler_options(pan_arch(phys_dev->kmod.props.gpu_id));
 }
 
 static struct spirv_to_nir_options
@@ -1282,7 +1282,7 @@ panvk_compile_shader(struct panvk_device *dev,
 
    shader->own_bin = true;
    struct pan_compile_inputs inputs = {
-      .gpu_id = phys_dev->kmod.props.gpu_prod_id,
+      .gpu_id = phys_dev->kmod.props.gpu_id,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
    };
 

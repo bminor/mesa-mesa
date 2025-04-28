@@ -51,7 +51,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    struct panvk_instance *instance =
       to_panvk_instance(image->vk.base.device->physical->instance);
    enum pipe_format pfmt = vk_format_to_pipe_format(image->vk.format);
@@ -250,7 +250,7 @@ panvk_image_init_layouts(struct panvk_image *image,
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit_info =
       vk_find_struct_const(
          pCreateInfo->pNext,

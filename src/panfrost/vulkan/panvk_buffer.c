@@ -57,7 +57,7 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
    VK_FROM_HANDLE(panvk_device, device, _device);
    const struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(device->vk.physical);
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {

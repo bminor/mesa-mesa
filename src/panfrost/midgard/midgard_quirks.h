@@ -73,7 +73,7 @@
 static inline unsigned
 midgard_get_quirks(unsigned gpu_id)
 {
-   switch (gpu_id) {
+   switch (gpu_id >> 16) {
    case 0x600:
       return MIDGARD_OLD_BLEND | MIDGARD_BROKEN_BLEND_LOADS |
              MIDGARD_BROKEN_LOD | MIDGARD_NO_UPPER_ALU | MIDGARD_NO_OOO |

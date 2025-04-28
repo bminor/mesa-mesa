@@ -1274,7 +1274,7 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
        * The PAN_ARCH check is redundant but allows the compiler to optimize
        * when PAN_ARCH < 7.
        */
-      if (PAN_ARCH >= 7 && cache->gpu_id >= 0x7200)
+      if (PAN_ARCH >= 7 && (cache->gpu_id >> 16) >= 0x7200)
          fb->bifrost.pre_post.modes[dcd_idx] =
             MALI_PRE_POST_FRAME_SHADER_MODE_EARLY_ZS_ALWAYS;
       else

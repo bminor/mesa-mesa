@@ -509,7 +509,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
                          subqueue);
       pandecode_cs_binary(dev->debug.decode_ctx, qsubmit.stream_addr,
                           qsubmit.stream_size,
-                          phys_dev->kmod.props.gpu_prod_id);
+                          phys_dev->kmod.props.gpu_id);
    }
 
    return VK_SUCCESS;
@@ -1123,7 +1123,7 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
          pandecode_user_msg(decode_ctx, "CS %d on subqueue %d binaries\n\n", i,
                             qsubmit->queue_index);
          pandecode_cs_binary(decode_ctx, qsubmit->stream_addr,
-                             qsubmit->stream_size, props->gpu_prod_id);
+                             qsubmit->stream_size, props->gpu_id);
          pandecode_user_msg(decode_ctx, "\n");
       }
 
@@ -1148,7 +1148,7 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
          uint64_t trace = queue->subqueues[i].tracebuf.addr.dev;
 
          pandecode_user_msg(decode_ctx, "\nCS traces on subqueue %d\n\n", i);
-         pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_prod_id);
+         pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_id);
          pandecode_user_msg(decode_ctx, "\n");
       }
    }
