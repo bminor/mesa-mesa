@@ -976,7 +976,7 @@ output_slot_used_for_binning(gl_varying_slot slot)
 {
    return slot == VARYING_SLOT_POS || slot == VARYING_SLOT_PSIZ ||
           slot == VARYING_SLOT_CLIP_DIST0 || slot == VARYING_SLOT_CLIP_DIST1 ||
-          slot == VARYING_SLOT_VIEWPORT;
+          slot == VARYING_SLOT_VIEWPORT || slot == VARYING_SLOT_LAYER;
 }
 
 static bool
