@@ -980,8 +980,9 @@ static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
 
 static inline bool si_shader_culling_enabled(struct si_shader *shader)
 {
-   /* Legacy VS/TES/GS and ES don't cull in the shader. */
-   if (!shader->key.ge.as_ngg || shader->key.ge.as_es) {
+   /* Legacy VS/TES/GS and ES/MS don't cull in the shader. */
+   if (!shader->key.ge.as_ngg || shader->key.ge.as_es ||
+       shader->selector->stage == MESA_SHADER_MESH) {
       assert(!shader->key.ge.opt.ngg_culling);
       return false;
    }
