@@ -1131,9 +1131,27 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
    const union si_shader_key *key = &shader->key;
    assert(key->ge.as_ngg);
 
+   unsigned max_workgroup_size = si_get_max_workgroup_size(shader);
+
+   if (nir->info.stage == MESA_SHADER_MESH) {
+      bool out_needs_scratch_ring;
+      NIR_PASS(_, nir, ac_nir_lower_ngg_mesh,
+               &sel->screen->info,
+               shader->info.clipdist_mask | shader->info.culldist_mask,
+               temp_info->vs_output_param_offset,
+               shader->info.nr_param_exports || shader->info.nr_prim_param_exports,
+               &out_needs_scratch_ring,
+               shader->wave_size,
+               ALIGN(max_workgroup_size, shader->wave_size),
+               false,
+               false);
+      shader->info.uses_mesh_scratch_ring = out_needs_scratch_ring;
+      return;
+   }
+
    ac_nir_lower_ngg_options options = {
       .hw_info = &sel->screen->info,
-      .max_workgroup_size = si_get_max_workgroup_size(shader),
+      .max_workgroup_size = max_workgroup_size,
       .wave_size = shader->wave_size,
       .can_cull = si_shader_culling_enabled(shader),
       .disable_streamout = !shader->info.num_streamout_vec4s,
@@ -1554,10 +1572,11 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
 
    /* Legacy GS is not the last VGT stage because there is also the GS copy shader. */
    bool is_last_vgt_stage =
-      (nir->info.stage == MESA_SHADER_VERTEX ||
-       nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       (nir->info.stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)) &&
-      !shader->key.ge.as_ls && !shader->key.ge.as_es;
+      nir->info.stage == MESA_SHADER_MESH ||
+      ((nir->info.stage == MESA_SHADER_VERTEX ||
+        nir->info.stage == MESA_SHADER_TESS_EVAL ||
+        (nir->info.stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)) &&
+       !shader->key.ge.as_ls && !shader->key.ge.as_es);
 
    if (nir->info.stage == MESA_SHADER_VERTEX)
       NIR_PASS(progress, nir, si_nir_lower_vs_inputs, shader, &ctx->args);
