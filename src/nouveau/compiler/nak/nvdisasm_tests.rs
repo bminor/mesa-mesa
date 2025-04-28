@@ -547,3 +547,48 @@ pub fn test_lea() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_hfma2() {
+    let r0 = RegRef::new(RegFile::GPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+    let r2 = RegRef::new(RegFile::GPR, 2, 1);
+    let r3 = RegRef::new(RegFile::GPR, 3, 1);
+
+    let src_mods = [SrcMod::None, SrcMod::FAbs, SrcMod::FNeg, SrcMod::FNegAbs];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+
+        for a_mod in src_mods {
+            for b_mod in src_mods {
+                for c_mod in src_mods {
+                    let mut instr = OpHFma2 {
+                        dst: Dst::Reg(r0),
+
+                        srcs: [
+                            SrcRef::Reg(r1).into(),
+                            SrcRef::Reg(r2).into(),
+                            SrcRef::Reg(r3).into(),
+                        ],
+
+                        saturate: false,
+                        ftz: false,
+                        dnz: false,
+                        f32: false,
+                    };
+                    instr.srcs[0].src_mod = a_mod;
+                    instr.srcs[1].src_mod = b_mod;
+                    instr.srcs[2].src_mod = c_mod;
+                    let disasm = format!(
+                        "hfma2 r0, {}, {}, {};",
+                        instr.srcs[0], instr.srcs[1], instr.srcs[2],
+                    );
+                    c.push(instr, disasm);
+                }
+            }
+        }
+
+        c.check(sm);
+    }
+}

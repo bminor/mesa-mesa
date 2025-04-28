@@ -326,14 +326,6 @@ impl ALUSrc {
             _ => panic!("Invalid ALU source"),
         }
     }
-
-    pub fn has_src_mod(&self) -> bool {
-        match self {
-            ALUSrc::Reg(reg) | ALUSrc::UReg(reg) => reg.abs || reg.neg,
-            ALUSrc::CBuf(cb) => cb.abs || cb.neg,
-            _ => false,
-        }
-    }
 }
 
 impl SM70Encoder<'_> {
@@ -400,7 +392,6 @@ impl SM70Encoder<'_> {
         src: &ALUSrc,
         file: RegFile,
         is_fp16_alu: bool,
-        bit74_75_are_mod: bool,
     ) {
         let reg = match src {
             ALUSrc::None => return,
@@ -409,12 +400,12 @@ impl SM70Encoder<'_> {
         };
         self.set_alu_reg(
             64..72,
-            74,
-            75,
+            if is_fp16_alu { 83 } else { 74 },
+            if is_fp16_alu { 84 } else { 75 },
             81..83,
             file,
             is_fp16_alu,
-            bit74_75_are_mod,
+            true,
             reg,
         );
     }
@@ -479,25 +470,11 @@ impl SM70Encoder<'_> {
         let src1 = ALUSrc::from_src(self, src1, false);
         let src2 = ALUSrc::from_src(self, src2, false);
 
-        // Bits 74..76 are used both for the swizzle on src0 and for the source
-        // modifier for the register source of src1 and src2.  When both are
-        // registers, it's used for src2.  The hardware elects to always support
-        // a swizzle and not support source modifiers in that case.
-        let bit74_75_are_mod = !is_fp16_alu
-            || matches!(src1, ALUSrc::None)
-            || matches!(src2, ALUSrc::None);
-        debug_assert!(bit74_75_are_mod || !src2.has_src_mod());
-
         self.encode_alu_src0(&src0, RegFile::GPR, is_fp16_alu);
 
         let form = match &src2 {
             ALUSrc::None | ALUSrc::Reg(_) => {
-                self.encode_alu_src2(
-                    &src2,
-                    RegFile::GPR,
-                    is_fp16_alu,
-                    bit74_75_are_mod,
-                );
+                self.encode_alu_src2(&src2, RegFile::GPR, is_fp16_alu);
                 match &src1 {
                     ALUSrc::None => 1_u8, // form
                     ALUSrc::Reg(reg1) => {
@@ -520,33 +497,18 @@ impl SM70Encoder<'_> {
             }
             ALUSrc::UReg(reg2) => {
                 self.encode_alu_ureg(reg2, is_fp16_alu);
-                self.encode_alu_src2(
-                    &src1,
-                    RegFile::GPR,
-                    is_fp16_alu,
-                    bit74_75_are_mod,
-                );
+                self.encode_alu_src2(&src1, RegFile::GPR, is_fp16_alu);
                 7_u8 // form
             }
             ALUSrc::Imm32(imm2) => {
                 self.encode_alu_imm(imm2);
-                self.encode_alu_src2(
-                    &src1,
-                    RegFile::GPR,
-                    is_fp16_alu,
-                    bit74_75_are_mod,
-                );
+                self.encode_alu_src2(&src1, RegFile::GPR, is_fp16_alu);
                 2_u8 // form
             }
             ALUSrc::CBuf(cb2) => {
                 // TODO set_src_cx
                 self.encode_alu_cb(cb2, is_fp16_alu);
-                self.encode_alu_src2(
-                    &src1,
-                    RegFile::GPR,
-                    is_fp16_alu,
-                    bit74_75_are_mod,
-                );
+                self.encode_alu_src2(&src1, RegFile::GPR, is_fp16_alu);
                 3_u8 // form
             }
         };
@@ -599,7 +561,7 @@ impl SM70Encoder<'_> {
         self.encode_alu_src0(&src0, RegFile::UGPR, false);
         let form = match &src2 {
             ALUSrc::None | ALUSrc::Reg(_) => {
-                self.encode_alu_src2(&src2, RegFile::UGPR, false, true);
+                self.encode_alu_src2(&src2, RegFile::UGPR, false);
                 match &src1 {
                     ALUSrc::None => 1_u8, // form
                     ALUSrc::Reg(reg1) => {
@@ -617,7 +579,7 @@ impl SM70Encoder<'_> {
             ALUSrc::UReg(_) => panic!("UALU never has UReg"),
             ALUSrc::Imm32(imm2) => {
                 self.encode_alu_imm(imm2);
-                self.encode_alu_src2(&src1, RegFile::UGPR, false, true);
+                self.encode_alu_src2(&src1, RegFile::UGPR, false);
                 2_u8 // form
             }
             ALUSrc::CBuf(_) => panic!("UALU does not support cbufs"),
@@ -1112,19 +1074,9 @@ impl SM70Op for OpHFma2 {
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::F16v2);
         b.copy_alu_src_if_not_reg(src1, gpr, SrcType::F16v2);
         b.copy_alu_src_if_both_not_reg(src1, src2, gpr, SrcType::F16v2);
-
-        if !src1.src_mod.is_none() {
-            b.copy_alu_src_and_lower_fmod(src1, gpr, SrcType::F16v2);
-        }
-        if !src2.src_mod.is_none() {
-            b.copy_alu_src_and_lower_fmod(src2, gpr, SrcType::F16v2);
-        }
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        assert!(self.srcs[1].src_mod.is_none());
-        assert!(self.srcs[2].src_mod.is_none());
-
         e.encode_fp16_alu(
             0x031,
             Some(&self.dst),
