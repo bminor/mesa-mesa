@@ -91,3 +91,26 @@ nir_lower_point_size(nir_shader *s, float min, float max)
                                      nir_metadata_control_flow,
                                      minmax);
 }
+
+/*
+ * For hardware that requires point size writes when drawing points, this pass
+ * stores the default point size (1.0) if no point size is written by the
+ * shader. This is required to implement VK_KHR_maintenance5 and GLES
+ * geometry/tessellation semantics.
+ */
+bool
+nir_lower_default_point_size(nir_shader *nir)
+{
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+
+   if (nir->info.outputs_written & VARYING_BIT_PSIZ) {
+      return nir_no_progress(impl);
+   }
+
+   nir_builder b = nir_builder_at(nir_after_impl(impl));
+   nir_store_output(&b, nir_imm_float(&b, 1.0), nir_imm_int(&b, 0),
+                    .io_semantics.location = VARYING_SLOT_PSIZ);
+
+   nir->info.outputs_written |= VARYING_BIT_PSIZ;
+   return nir_progress(true, impl, nir_metadata_control_flow);
+}
