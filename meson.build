@@ -53,7 +53,10 @@ cl_args = [
   # Set the OpenCL standard to CL 2.0, enabling everything at a frontend.
   # Drivers may not actually support everything but that's ok.
   '-cl-std=cl2.0',
-  '-D__OPENCL_VERSION__=200'
+  '-D__OPENCL_VERSION__=200',
+
+  # Declare supported clang builtins since we don't autodetect for OpenCL
+  '-DHAVE___BUILTIN_FFS',
 ]
 
 if with_mesa_ndebug
