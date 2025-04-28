@@ -901,7 +901,8 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
             for (Operand& op : instr->operands) {
                if (op.isTemp() && op.tempId() == other.def.tempId()) {
                   // FIXME: ensure that the operand can use this reg
-                  op.setFixed(other.def.physReg());
+                  if (op.isFixed())
+                     op.setFixed(other.def.physReg());
                   fill = !op.isKillBeforeDef();
                }
             }
@@ -947,7 +948,8 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
                continue;
 
             op.setTemp(copy.def.getTemp());
-            op.setFixed(copy.def.physReg());
+            if (op.isFixed())
+               op.setFixed(copy.def.physReg());
 
             /* Copy-kill or precolored operand parallelcopies are only added when setting up
              * operands.
@@ -2311,6 +2313,7 @@ get_reg_for_operand(ra_ctx& ctx, RegisterFile& register_file,
    parallelcopy.emplace_back(pc_op, pc_def);
    update_renames(ctx, register_file, parallelcopy, instr);
    register_file.fill(Definition(operand.getTemp(), dst));
+   operand.setFixed(dst);
 }
 
 PhysReg
