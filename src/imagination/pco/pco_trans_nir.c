@@ -2992,6 +2992,60 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                         .scale = true);
       break;
 
+   case nir_op_pack_snorm_10_10_10_2:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 4,
+                      .pck_fmt = PCO_PCK_FORMAT_S1010102,
+                      .scale = true);
+      break;
+
+   case nir_op_unpack_snorm_10_10_10_2:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 4,
+                        .pck_fmt = PCO_PCK_FMT_S1010102,
+                        .scale = true);
+      break;
+
+   case nir_op_pack_uscaled_10_10_10_2:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 4,
+                      .pck_fmt = PCO_PCK_FORMAT_U1010102,
+                      .scale = false);
+      break;
+
+   case nir_op_unpack_uscaled_10_10_10_2:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 4,
+                        .pck_fmt = PCO_PCK_FMT_U1010102,
+                        .scale = false);
+      break;
+
+   case nir_op_pack_sscaled_10_10_10_2:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 4,
+                      .pck_fmt = PCO_PCK_FORMAT_S1010102,
+                      .scale = false);
+      break;
+
+   case nir_op_unpack_sscaled_10_10_10_2:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .rpt = 4,
+                        .pck_fmt = PCO_PCK_FMT_S1010102,
+                        .scale = false);
+      break;
+
    case nir_op_pack_unorm_10:
       instr = pco_pck(&tctx->b,
                       dest,

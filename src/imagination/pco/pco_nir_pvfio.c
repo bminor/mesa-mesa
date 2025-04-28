@@ -504,6 +504,11 @@ static nir_def *unpack_from_format(nir_builder *b,
       unpacked = nir_unpack_unorm_10_10_10_2(b, input_comps[0]);
       break;
 
+   case PIPE_FORMAT_R10G10B10A2_SNORM:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_snorm_10_10_10_2(b, input_comps[0]);
+      break;
+
    case PIPE_FORMAT_R10G10B10A2_UINT:
       assert(dest_type == nir_type_uint);
       unpacked = nir_vec4(b,
@@ -511,6 +516,18 @@ static nir_def *unpack_from_format(nir_builder *b,
                           nir_ubitfield_extract_imm(b, input_comps[0], 10, 10),
                           nir_ubitfield_extract_imm(b, input_comps[0], 20, 10),
                           nir_ubitfield_extract_imm(b, input_comps[0], 30, 2));
+      break;
+
+   case PIPE_FORMAT_R10G10B10A2_USCALED:
+   case PIPE_FORMAT_B10G10R10A2_USCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_uscaled_10_10_10_2(b, input_comps[0]);
+      break;
+
+   case PIPE_FORMAT_R10G10B10A2_SSCALED:
+   case PIPE_FORMAT_B10G10R10A2_SSCALED:
+      assert(dest_type == nir_type_float);
+      unpacked = nir_unpack_sscaled_10_10_10_2(b, input_comps[0]);
       break;
 
    case PIPE_FORMAT_R11G11B10_FLOAT:

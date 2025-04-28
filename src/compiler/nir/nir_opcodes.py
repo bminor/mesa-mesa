@@ -1853,7 +1853,11 @@ pack_r("snorm", 16)
 pack_r("unorm", 16)
 pack_r("half", 16)
 
+pack_rgba("snorm", 10, 10, 10, 2)
 pack_rgba("unorm", 10, 10, 10, 2)
+
+pack_rgba("sscaled", 10, 10, 10, 2)
+pack_rgba("uscaled", 10, 10, 10, 2)
 
 unop_horiz(f"pack_float_10", 1, tuint32, 1, tfloat32, f"""
 dst.x = f32_to_uf10(src0.x) & 0x3ff;
@@ -1916,7 +1920,11 @@ unop_horiz(f"unpack_half_16", 1, tfloat32, 1, tuint32, """
 dst.x = unpack_half_1x16(src0.x & ((1u << 16) - 1), nir_is_denorm_flush_to_zero(execution_mode, 16));
 """)
 
+unpack_rgba("snorm", 10, 10, 10, 2)
 unpack_rgba("unorm", 10, 10, 10, 2)
+
+unpack_rgba("sscaled", 10, 10, 10, 2)
+unpack_rgba("uscaled", 10, 10, 10, 2)
 
 unop_horiz(f"unpack_float_11_11_10", 3, tfloat32, 1, tuint32, f"""
 dst.x = uf11_to_f32(src0.x & 0x7ff);
