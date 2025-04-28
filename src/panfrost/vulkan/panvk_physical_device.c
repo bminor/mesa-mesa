@@ -312,6 +312,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_separate_stencil_usage = true,
       .EXT_shader_module_identifier = true,
       .EXT_shader_demote_to_helper_invocation = true,
+      .EXT_shader_replicated_composites = true,
       .EXT_subgroup_size_control = has_vk1_1,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
@@ -562,6 +563,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_shader_module_identifier */
       .shaderModuleIdentifier = true,
+
+      /* VK_EXT_shader_replicated_composites */
+      .shaderReplicatedComposites = true,
 
       /* VK_EXT_ycbcr_2plane_444_formats */
       .ycbcr2plane444Formats = arch >= 10,
