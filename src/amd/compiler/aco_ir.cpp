@@ -180,7 +180,9 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
       program->dev.scratch_global_offset_max = 4095;
    }
 
-   if (program->gfx_level >= GFX8)
+   if (program->gfx_level >= GFX12)
+      program->dev.smem_offset_max = 0x7fffff;
+   else if (program->gfx_level >= GFX8)
       program->dev.smem_offset_max = 0xfffff;
    else if (program->gfx_level >= GFX7)
       program->dev.smem_offset_max = 0xffffffff;
