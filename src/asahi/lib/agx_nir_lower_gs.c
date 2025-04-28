@@ -698,21 +698,9 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs, bool *side_effects_for_rast,
                        .src_type = nir_type_uint32);
    }
 
-   /* It is legal to omit the point size write from the geometry shader when
-    * drawing points. In this case, the point size is implicitly 1.0. To
-    * implement, insert a synthetic `gl_PointSize = 1.0` write into the GS copy
-    * shader, if the GS does not export a point size while drawing points.
-    */
-   bool is_points = gs->info.gs.output_primitive == MESA_PRIM_POINTS;
-
-   if (!(shader->info.outputs_written & VARYING_BIT_PSIZ) && is_points) {
-      nir_store_output(b, nir_imm_float(b, 1.0), nir_imm_int(b, 0),
-                       .io_semantics.location = VARYING_SLOT_PSIZ,
-                       .io_semantics.num_slots = 1,
-                       .write_mask = nir_component_mask(1),
-                       .src_type = nir_type_float32);
-
-      shader->info.outputs_written |= VARYING_BIT_PSIZ;
+   /* The geometry shader might not write point size - ensure it does. */
+   if (gs->info.gs.output_primitive == MESA_PRIM_POINTS) {
+      nir_lower_default_point_size(shader);
    }
 
    nir_opt_idiv_const(shader, 16);
