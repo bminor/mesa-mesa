@@ -4,8 +4,8 @@
 
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
-export PATH=/android-tools/android-cts/jdk/bin/:$PATH
-export JAVA_HOME=/android-tools/android-cts/jdk
+export PATH=/android-cts/jdk/bin/:$PATH
+export JAVA_HOME=/android-cts/jdk
 
 # Wait for the appops service to show up
 while [ "$($ADB shell dumpsys -l | grep appops)" = "" ] ; do sleep 1; done
@@ -26,11 +26,11 @@ else
 fi
 
 set +e
-eval "/android-tools/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
+eval "/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
   $INCLUDE_FILTERS \
   $EXCLUDE_FILTERS
 
-[ "$(grep "^FAILED" /android-tools/android-cts/results/latest/invocation_summary.txt | tr -d ' ' | cut -d ':' -f 2)" = "0" ]
+[ "$(grep "^FAILED" /android-cts/results/latest/invocation_summary.txt | tr -d ' ' | cut -d ':' -f 2)" = "0" ]
 
 # shellcheck disable=SC2034 # EXIT_CODE is used by the script that sources this one
 EXIT_CODE=$?
@@ -38,7 +38,7 @@ set -e
 
 section_switch cuttlefish_results "cuttlefish: gathering the results"
 
-cp -r "/android-tools/android-cts/results/latest"/* $RESULTS_DIR
-cp -r "/android-tools/android-cts/logs/latest"/* $RESULTS_DIR
+cp -r "/android-cts/results/latest"/* $RESULTS_DIR
+cp -r "/android-cts/logs/latest"/* $RESULTS_DIR
 
 section_end cuttlefish_results

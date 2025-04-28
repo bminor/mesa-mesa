@@ -154,21 +154,16 @@ section_start android-cts "Downloading Android CTS"
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
 
-mkdir /android-tools
-pushd /android-tools
-
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip" \
   "https://dl.google.com/dl/android/cts/android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
-unzip -q "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+unzip -q -d / "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
 rm "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
 
 # Keep only the interesting tests to save space
 # shellcheck disable=SC2086 # we want word splitting
 ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
-find android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
-
-popd
+find /android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
 
 section_end android-cts
 
