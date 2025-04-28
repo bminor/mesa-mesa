@@ -199,8 +199,8 @@ nir_lower_printf_buffer(nir_shader *nir, uint64_t address, uint32_t size)
                                      nir_metadata_control_flow, &opts);
 }
 
-void
-nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
+static void
+nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list aq)
 {
    u_printf_info info = {
       .strings = ralloc_strdup(b->shader, fmt),
@@ -211,7 +211,7 @@ nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
    size_t pos = 0;
    size_t args_size = 0;
 
-   va_start(ap, fmt);
+   va_copy(ap, aq);
    while ((pos = util_printf_next_spec_pos(fmt, pos)) != -1) {
       unsigned arg_size;
       switch (fmt[pos]) {
@@ -294,7 +294,7 @@ nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
       nir_store_global(b, store_addr, 4, identifier, 0x1);
 
       /* Arguments */
-      va_start(ap, fmt);
+      va_copy(ap, aq);
       unsigned store_offset = sizeof(uint32_t);
       for (unsigned a = 0; a < info.num_args; a++) {
          nir_def *def = va_arg(ap, nir_def *);
@@ -319,4 +319,13 @@ nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
     * cache while debugging compiler issues is a good practice anyway.
     */
    u_printf_singleton_add(&info, 1);
+}
+
+void
+nir_printf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, ...)
+{
+   va_list ap;
+   va_start(ap, fmt);
+   nir_vprintf_fmt(b, ptr_bit_size, fmt, ap);
+   va_end(ap);
 }
