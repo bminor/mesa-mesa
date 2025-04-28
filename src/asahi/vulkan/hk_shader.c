@@ -421,31 +421,6 @@ hk_lower_multiview(nir_shader *nir)
    b.shader->info.outputs_written |= VARYING_BIT_LAYER;
 }
 
-/*
- * KHR_maintenance5 requires that points rasterize with a default point size of
- * 1.0, while our hardware requires an explicit point size write for this.
- * Since topology may be dynamic, we insert an unconditional write if necessary.
- */
-static bool
-hk_nir_insert_psiz_write(nir_shader *nir)
-{
-   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-
-   if (nir->info.outputs_written & VARYING_BIT_PSIZ) {
-      return nir_no_progress(impl);
-   }
-
-   nir_builder b = nir_builder_at(nir_after_impl(impl));
-
-   nir_store_output(&b, nir_imm_float(&b, 1.0), nir_imm_int(&b, 0),
-                    .write_mask = nir_component_mask(1),
-                    .io_semantics.location = VARYING_SLOT_PSIZ,
-                    .io_semantics.num_slots = 1, .src_type = nir_type_float32);
-
-   nir->info.outputs_written |= VARYING_BIT_PSIZ;
-   return nir_progress(true, b.impl, nir_metadata_control_flow);
-}
-
 static nir_def *
 query_custom_border(nir_builder *b, nir_tex_instr *tex)
 {
@@ -1066,7 +1041,7 @@ hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader)
    NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
 
    /* TODO: Optimize out for monolithic? */
-   NIR_PASS(_, nir, hk_nir_insert_psiz_write);
+   NIR_PASS(_, nir, nir_lower_default_point_size);
 
    NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
    NIR_PASS(_, nir, agx_nir_lower_cull_distance_vs);
