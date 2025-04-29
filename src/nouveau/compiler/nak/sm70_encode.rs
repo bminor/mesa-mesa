@@ -1113,14 +1113,16 @@ impl SM70Op for OpHFma2 {
         b.copy_alu_src_if_not_reg(src1, gpr, SrcType::F16v2);
         b.copy_alu_src_if_both_not_reg(src1, src2, gpr, SrcType::F16v2);
 
-        // HFMA2 doesn't have fabs or fneg on SRC2.
+        if !src1.src_mod.is_none() {
+            b.copy_alu_src_and_lower_fmod(src1, gpr, SrcType::F16v2);
+        }
         if !src2.src_mod.is_none() {
             b.copy_alu_src_and_lower_fmod(src2, gpr, SrcType::F16v2);
         }
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        // HFMA2 doesn't have fneg and fabs on SRC2.
+        assert!(self.srcs[1].src_mod.is_none());
         assert!(self.srcs[2].src_mod.is_none());
 
         e.encode_fp16_alu(
