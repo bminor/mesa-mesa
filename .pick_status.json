@@ -45584,7 +45584,7 @@
         "description": "frontend/dri: don't call set_damage_region with a null resource",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
