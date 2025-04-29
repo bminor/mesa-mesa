@@ -18,3 +18,4 @@ VK_KHR_shader_integer_dot_product on panvk
 VK_KHR_shader_terminate_invocation on panvk
 VK_EXT_shader_demote_to_helper_invocation on panvk
 VK_EXT_shader_replicated_composites on panvk
+VK_EXT_depth_bias_control on panvk

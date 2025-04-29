@@ -283,6 +283,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_border_color_swizzle = true,
       .EXT_buffer_device_address = true,
       .EXT_custom_border_color = true,
+      .EXT_depth_bias_control = true,
       .EXT_depth_clip_enable = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
@@ -511,6 +512,12 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_vertex_input_dynamic_state */
       .vertexInputDynamicState = true,
+
+      /* VK_EXT_depth_bias_control */
+      .depthBiasControl = true,
+      .leastRepresentableValueForceUnormRepresentation = false,
+      .floatRepresentation = false,
+      .depthBiasExact = true,
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
