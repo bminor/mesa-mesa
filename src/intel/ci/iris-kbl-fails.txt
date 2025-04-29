@@ -10,8 +10,8 @@ glx@glx-swap-pixmap-bad,Fail
 #   Value in failed request:  0x1e
 #   Serial number of failed request:  1177
 #   Current serial number in output stream:  1181
-glx@glx-visuals-depth -pixmap,Crash
-glx@glx-visuals-stencil -pixmap,Crash
+glx@glx-visuals-depth -pixmap,Fail
+glx@glx-visuals-stencil -pixmap,Fail
 
 spec@!opengl 1.0@rasterpos,Fail
 
