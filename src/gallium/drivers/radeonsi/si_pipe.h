@@ -2276,6 +2276,45 @@ static inline bool si_vs_uses_vbos(struct si_shader_selector *sel)
    return !sel || !sel->info.base.vs.blit_sgprs_amd;
 }
 
+static inline bool si_is_line_stipple_enabled(struct si_context *sctx)
+{
+   struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
+
+   return rs->line_stipple_enable && sctx->current_rast_prim != MESA_PRIM_POINTS &&
+          (rs->polygon_mode_is_lines || util_prim_is_lines(sctx->current_rast_prim));
+}
+
+static ALWAYS_INLINE void
+si_emit_all_states(struct si_context *sctx, uint64_t skip_atom_mask)
+{
+   /* Emit states by calling their emit functions. */
+   uint64_t dirty = sctx->dirty_atoms & ~skip_atom_mask;
+
+   if (dirty) {
+      sctx->dirty_atoms &= skip_atom_mask;
+
+      /* u_bit_scan64 is too slow on i386. */
+      if (sizeof(void*) == 8) {
+         do {
+            unsigned i = u_bit_scan64(&dirty);
+            sctx->atoms.array[i].emit(sctx, i);
+         } while (dirty);
+      } else {
+         unsigned dirty_lo = dirty;
+         unsigned dirty_hi = dirty >> 32;
+
+         while (dirty_lo) {
+            unsigned i = u_bit_scan(&dirty_lo);
+            sctx->atoms.array[i].emit(sctx, i);
+         }
+         while (dirty_hi) {
+            unsigned i = 32 + u_bit_scan(&dirty_hi);
+            sctx->atoms.array[i].emit(sctx, i);
+         }
+      }
+   }
+}
+
 #define PRINT_ERR(fmt, args...)                                                                    \
    mesa_loge("%s:%d %s - " fmt, __FILE__, __LINE__, __func__, ##args)
 

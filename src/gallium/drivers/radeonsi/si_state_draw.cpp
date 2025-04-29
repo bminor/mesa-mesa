@@ -842,14 +842,6 @@ static void si_init_ia_multi_vgt_param_table(struct si_context *sctx)
                            }
 }
 
-static bool si_is_line_stipple_enabled(struct si_context *sctx)
-{
-   struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
-
-   return rs->line_stipple_enable && sctx->current_rast_prim != MESA_PRIM_POINTS &&
-          (rs->polygon_mode_is_lines || util_prim_is_lines(sctx->current_rast_prim));
-}
-
 enum si_is_draw_vertex_state {
    DRAW_VERTEX_STATE_OFF,
    DRAW_VERTEX_STATE_ON,
@@ -2044,37 +2036,6 @@ static void si_get_draw_start_count(struct si_context *sctx, const struct pipe_d
 
       *start = min_element;
       *count = max_element - min_element;
-   }
-}
-
-ALWAYS_INLINE
-static void si_emit_all_states(struct si_context *sctx, uint64_t skip_atom_mask)
-{
-   /* Emit states by calling their emit functions. */
-   uint64_t dirty = sctx->dirty_atoms & ~skip_atom_mask;
-
-   if (dirty) {
-      sctx->dirty_atoms &= skip_atom_mask;
-
-      /* u_bit_scan64 is too slow on i386. */
-      if (sizeof(void*) == 8) {
-         do {
-            unsigned i = u_bit_scan64(&dirty);
-            sctx->atoms.array[i].emit(sctx, i);
-         } while (dirty);
-      } else {
-         unsigned dirty_lo = dirty;
-         unsigned dirty_hi = dirty >> 32;
-
-         while (dirty_lo) {
-            unsigned i = u_bit_scan(&dirty_lo);
-            sctx->atoms.array[i].emit(sctx, i);
-         }
-         while (dirty_hi) {
-            unsigned i = 32 + u_bit_scan(&dirty_hi);
-            sctx->atoms.array[i].emit(sctx, i);
-         }
-      }
    }
 }
 
