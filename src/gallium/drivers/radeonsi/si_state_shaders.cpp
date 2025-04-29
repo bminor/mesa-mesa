@@ -4497,6 +4497,12 @@ static bool si_update_scratch_relocs(struct si_context *sctx)
          si_pm4_bind_state(sctx, vs, sctx->shader.tes.current);
    }
 
+   r = si_update_scratch_buffer(sctx, sctx->ms_shader_state.current);
+   if (r < 0)
+      return false;
+   if (r == 1)
+      si_pm4_bind_state(sctx, gs, sctx->ms_shader_state.current);
+
    return true;
 }
 
