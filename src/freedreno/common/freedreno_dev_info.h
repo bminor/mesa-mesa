@@ -335,9 +335,6 @@ struct fd_dev_info {
        */
       bool has_persistent_counter;
 
-      /* Whether only 256 vec4 constants are available for compute */
-      bool compute_constlen_quirk;
-
       bool has_primitive_shading_rate;
 
       /* A7XX gen1 and gen2 seem to require declaring SAMPLEMASK input

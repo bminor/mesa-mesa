@@ -1181,7 +1181,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050c01, name="Adreno X1-85"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_gen2, A7XXProps(compute_constlen_quirk = True)],
+        [a7xx_base, a7xx_gen2],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
