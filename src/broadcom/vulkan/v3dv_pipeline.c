@@ -962,17 +962,6 @@ pipeline_populate_v3d_key(struct v3d_key *key,
     */
    struct v3dv_descriptor_map *sampler_map =
       &p_stage->pipeline->shared_data->maps[p_stage->stage]->sampler_map;
-   struct v3dv_descriptor_map *texture_map =
-      &p_stage->pipeline->shared_data->maps[p_stage->stage]->texture_map;
-
-   key->num_tex_used = texture_map->num_desc;
-   assert(key->num_tex_used <= V3D_MAX_TEXTURE_SAMPLERS);
-   for (uint32_t tex_idx = 0; tex_idx < texture_map->num_desc; tex_idx++) {
-      key->tex[tex_idx].swizzle[0] = PIPE_SWIZZLE_X;
-      key->tex[tex_idx].swizzle[1] = PIPE_SWIZZLE_Y;
-      key->tex[tex_idx].swizzle[2] = PIPE_SWIZZLE_Z;
-      key->tex[tex_idx].swizzle[3] = PIPE_SWIZZLE_W;
-   }
 
    key->num_samplers_used = sampler_map->num_desc;
    assert(key->num_samplers_used <= V3D_MAX_TEXTURE_SAMPLERS);

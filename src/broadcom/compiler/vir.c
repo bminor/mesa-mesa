@@ -740,19 +740,8 @@ v3d_lower_nir(struct v3d_compile *c)
 
                 .lower_rect = false, /* XXX: Use this on V3D 3.x */
                 .lower_txp = ~0,
-                /* Apply swizzles to all samplers. */
-                .swizzle_result = ~0,
                 .lower_invalid_implicit_lod = true,
         };
-
-        /* Lower the format swizzle and (for 32-bit returns)
-         * ARB_texture_swizzle-style swizzle.
-         */
-        assert(c->key->num_tex_used <= ARRAY_SIZE(c->key->tex));
-        for (int i = 0; i < c->key->num_tex_used; i++) {
-                for (int j = 0; j < 4; j++)
-                        tex_options.swizzles[i][j] = c->key->tex[i].swizzle[j];
-        }
 
         tex_options.lower_tex_packing_cb = lower_tex_packing_cb;
         tex_options.lower_tex_packing_data = c;

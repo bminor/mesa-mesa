@@ -409,13 +409,9 @@ static inline uint8_t v3d_slot_get_component(struct v3d_varying_slot slot)
 
 struct v3d_key {
         struct {
-                uint8_t swizzle[4];
-        } tex[V3D_MAX_TEXTURE_SAMPLERS];
-        struct {
                 uint8_t return_size;
         } sampler[V3D_MAX_TEXTURE_SAMPLERS];
 
-        uint8_t num_tex_used;
         uint8_t num_samplers_used;
         uint8_t ucp_enables;
         bool is_last_geometry_stage;
