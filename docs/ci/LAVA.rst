@@ -85,3 +85,46 @@ relevant as we have many stable branches all using CI).
 
 Now it's time to define your test jobs in the driver-specific
 gitlab-ci.yml file, using the device-specific tags.
+
+Caching downloads
+-----------------
+
+To improve the runtime for downloading traces during traces job runs, you will
+want a pass-through HTTP cache.  On your runner box, install nginx:
+
+.. code-block:: sh
+
+   sudo apt install nginx libnginx-mod-http-lua
+
+Add the server setup files:
+
+.. literalinclude:: fdo-cache
+   :name: /etc/nginx/sites-available/fdo-cache
+   :caption: /etc/nginx/sites-available/fdo-cache
+
+.. literalinclude:: uri-caching.conf
+   :name: /etc/nginx/snippets/uri-caching.conf
+   :caption: /etc/nginx/snippets/uri-caching.conf
+
+Edit the listener addresses in fdo-cache to suit the ethernet interface that
+your devices are on.
+
+Enable the site and restart nginx:
+
+.. code-block:: sh
+
+   sudo rm /etc/nginx/sites-enabled/default
+   sudo ln -s /etc/nginx/sites-available/fdo-cache /etc/nginx/sites-enabled/fdo-cache
+   sudo systemctl restart nginx
+
+   # First download will hit the internet
+   wget http://localhost/cache/?uri=https://s3.freedesktop.org/mesa-tracie-public/itoral-gl-terrain-demo/demo-v2.trace
+   # Second download should be cached.
+   wget http://localhost/cache/?uri=https://s3.freedesktop.org/mesa-tracie-public/itoral-gl-terrain-demo/demo-v2.trace
+
+Now, set ``download-url`` in your ``traces-*.yml`` entry to something like
+``http://caching-proxy/cache/?uri=https://s3.freedesktop.org/mesa-tracie-public``
+and you should have cached downloads for traces.  Add it to
+``FDO_HTTP_CACHE_URI=`` in your ``config.toml`` runner environment lines and you
+can use it for cached artifact downloads instead of going all the way to
+freedesktop.org on each job.
