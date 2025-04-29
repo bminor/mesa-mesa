@@ -1962,6 +1962,8 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
                       bool monolithic, bool has_position_fetch,
                       const struct radv_ray_tracing_stage_info *traversal_info)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
 
    const VkPipelineCreateFlagBits2 create_flags = vk_rt_pipeline_create_flags(pCreateInfo);
@@ -2013,7 +2015,8 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
    }
 
    nir_def *traversal_addr = ac_nir_load_arg(&b, &args->ac, args->ac.rt.traversal_shader_addr);
-   nir_store_var(&b, vars.traversal_addr, nir_pack_64_2x32(&b, traversal_addr), 1);
+   nir_store_var(&b, vars.traversal_addr,
+                 nir_pack_64_2x32_split(&b, traversal_addr, nir_imm_int(&b, pdev->info.address32_hi)), 1);
 
    nir_def *shader_addr = ac_nir_load_arg(&b, &args->ac, args->ac.rt.shader_addr);
    shader_addr = nir_pack_64_2x32(&b, shader_addr);

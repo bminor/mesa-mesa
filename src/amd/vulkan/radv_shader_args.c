@@ -322,7 +322,8 @@ radv_declare_rt_shader_args(enum amd_gfx_level gfx_level, struct radv_shader_arg
    add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTOR_SETS);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.push_constants);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors);
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, NULL); /* unused */
 
    for (uint32_t i = 0; i < ARRAY_SIZE(args->ac.rt.launch_sizes); i++)
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.rt.launch_sizes[i]);
@@ -588,7 +589,8 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
 
       if (info->type == RADV_SHADER_TYPE_RT_PROLOG) {
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors, AC_UD_CS_SBT_DESCRIPTORS);
-         add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
+         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
+         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, NULL, AC_UD_PS_STATE); /* unused */
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.launch_size_addr, AC_UD_CS_RAY_LAUNCH_SIZE_ADDR);
          add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.rt.dynamic_callable_stack_base,
                     AC_UD_CS_RAY_DYNAMIC_CALLABLE_STACK_BASE);

@@ -7974,9 +7974,9 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
 
          radeon_begin(cs);
          if (pdev->info.gfx_level >= GFX12) {
-            gfx12_push_64bit_pointer(traversal_shader_addr_offset, traversal_va);
+            gfx12_push_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
          } else {
-            radeon_emit_64bit_pointer(traversal_shader_addr_offset, traversal_va);
+            radeon_emit_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
          }
          radeon_end();
       }
