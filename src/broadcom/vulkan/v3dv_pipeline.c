@@ -396,11 +396,10 @@ descriptor_map_add(struct v3dv_descriptor_map *map,
                    int array_index,
                    int array_size,
                    int start_index,
-                   uint8_t return_size,
+                   bool sampler_is_32b,
                    uint8_t plane)
 {
    assert(array_index < array_size);
-   assert(return_size == 16 || return_size == 32);
 
    unsigned index = start_index;
    for (; index < map->num_desc; index++) {
@@ -410,14 +409,13 @@ descriptor_map_add(struct v3dv_descriptor_map *map,
           array_index == map->array_index[index] &&
           plane == map->plane[index]) {
          assert(array_size == map->array_size[index]);
-         if (return_size != map->return_size[index]) {
-            /* It the return_size is different it means that the same sampler
-             * was used for operations with different precision
-             * requirement. In this case we need to ensure that we use the
-             * larger one.
-             */
-            map->return_size[index] = 32;
-         }
+         /* It the return_size is different it means that the same sampler
+          * was used for operations with different precision
+          * requirement. In this case we need to ensure that we use the
+          * larger one.
+          */
+         if (sampler_is_32b != map->sampler_is_32b[index])
+            map->sampler_is_32b[index] = true;
          return index;
       } else if (!map->used[index]) {
          break;
@@ -432,7 +430,7 @@ descriptor_map_add(struct v3dv_descriptor_map *map,
    map->binding[index] = binding;
    map->array_index[index] = array_index;
    map->array_size[index] = array_size;
-   map->return_size[index] = return_size;
+   map->sampler_is_32b[index] = sampler_is_32b;
    map->plane[index] = plane;
    map->num_desc = MAX2(map->num_desc, index + 1);
 
@@ -541,7 +539,7 @@ lower_vulkan_resource_index(nir_builder *b,
                                  const_val->u32,
                                  binding_layout->array_size,
                                  start_index,
-                                 32 /* return_size: doesn't really apply for this case */,
+                                 true /* sampler_is_32b: doesn't really apply for this case */,
                                  0);
       break;
    }
@@ -570,10 +568,10 @@ tex_instr_get_and_remove_plane_src(nir_tex_instr *tex)
    return plane;
 }
 
-/* Returns return_size, so it could be used for the case of not having a
- * sampler object
+/* Returns true if we need 32bit, so we know what size to use when we do not
+ * have a sampler object
  */
-static uint8_t
+static bool
 lower_tex_src(nir_builder *b,
               nir_tex_instr *instr,
               unsigned src_idx,
@@ -644,13 +642,13 @@ lower_tex_src(nir_builder *b,
    struct v3dv_descriptor_set_binding_layout *binding_layout =
       &set_layout->binding[binding];
 
-   uint8_t return_size;
+   uint8_t sampler_is_32b;
    if (V3D_DBG(TMU_16BIT))
-      return_size = 16;
+      sampler_is_32b = false;
    else  if (V3D_DBG(TMU_32BIT))
-      return_size = 32;
+      sampler_is_32b = true;
    else
-      return_size = relaxed_precision ? 16 : 32;
+      sampler_is_32b = !relaxed_precision;
 
    struct v3dv_descriptor_map *map =
       pipeline_get_descriptor_map(state->pipeline, binding_layout->type,
@@ -662,7 +660,7 @@ lower_tex_src(nir_builder *b,
                          base_index,
                          binding_layout->array_size,
                          0,
-                         return_size,
+                         sampler_is_32b,
                          plane);
 
    if (is_sampler)
@@ -670,7 +668,7 @@ lower_tex_src(nir_builder *b,
    else
       instr->texture_index = desc_index;
 
-   return return_size;
+   return sampler_is_32b;
 }
 
 static bool
@@ -678,13 +676,13 @@ lower_sampler(nir_builder *b,
               nir_tex_instr *instr,
               struct lower_pipeline_layout_state *state)
 {
-   uint8_t return_size = 0;
+   bool sampler_is_32b = false;
 
    int texture_idx =
       nir_tex_instr_src_index(instr, nir_tex_src_texture_deref);
 
    if (texture_idx >= 0)
-      return_size = lower_tex_src(b, instr, texture_idx, state);
+      sampler_is_32b = lower_tex_src(b, instr, texture_idx, state);
 
    int sampler_idx =
       nir_tex_instr_src_index(instr, nir_tex_src_sampler_deref);
@@ -702,8 +700,8 @@ lower_sampler(nir_builder *b,
     */
    if (sampler_idx < 0) {
       state->needs_default_sampler_state = true;
-      instr->backend_flags = return_size == 16 ?
-         V3DV_NO_SAMPLER_16BIT_IDX : V3DV_NO_SAMPLER_32BIT_IDX;
+      instr->backend_flags = sampler_is_32b ?
+         V3DV_NO_SAMPLER_32BIT_IDX : V3DV_NO_SAMPLER_16BIT_IDX;
    }
 
    return true;
@@ -769,7 +767,7 @@ lower_image_deref(nir_builder *b,
                          base_index,
                          binding_layout->array_size,
                          0,
-                         32 /* return_size: doesn't apply for textures */,
+                         true /* return_size: doesn't apply for textures */,
                          0);
 
    /* Note: we don't need to do anything here in relation to the precision and
@@ -965,8 +963,8 @@ pipeline_populate_v3d_key(struct v3d_key *key,
 
    for (uint32_t sampler_idx = 0; sampler_idx < sampler_map->num_desc;
         sampler_idx++) {
-      key->sampler[sampler_idx].return_size =
-         sampler_map->return_size[sampler_idx];
+      if (sampler_map->sampler_is_32b[sampler_idx])
+         key->sampler_is_32b |= 1 << sampler_idx;
    }
 
    switch (p_stage->stage) {
@@ -1767,10 +1765,10 @@ pipeline_lower_nir(struct v3dv_pipeline *pipeline,
       pipeline->shared_data->maps[p_stage->stage];
 
    UNUSED unsigned index;
-   index = descriptor_map_add(&maps->sampler_map, -1, -1, -1, 0, 0, 16, 0);
+   index = descriptor_map_add(&maps->sampler_map, -1, -1, -1, 0, 0, false, 0);
    assert(index == V3DV_NO_SAMPLER_16BIT_IDX);
 
-   index = descriptor_map_add(&maps->sampler_map, -2, -2, -2, 0, 0, 32, 0);
+   index = descriptor_map_add(&maps->sampler_map, -2, -2, -2, 0, 0, true, 0);
    assert(index == V3DV_NO_SAMPLER_32BIT_IDX);
 
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */

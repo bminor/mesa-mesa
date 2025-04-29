@@ -408,9 +408,11 @@ static inline uint8_t v3d_slot_get_component(struct v3d_varying_slot slot)
 }
 
 struct v3d_key {
-        struct {
-                uint8_t return_size;
-        } sampler[V3D_MAX_TEXTURE_SAMPLERS];
+        /* Mask of sampler return sizes.
+         * 0 is 16bit
+         * 1 is 32bit
+         */
+        uint32_t sampler_is_32b;
 
         uint8_t ucp_enables;
         bool is_last_geometry_stage;

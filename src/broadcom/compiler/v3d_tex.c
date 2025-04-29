@@ -239,7 +239,7 @@ v3d_vir_emit_tex(struct v3d_compile *c, nir_tex_instr *instr)
          * parameter if the output is 32 bit
          */
         bool output_type_32_bit =
-                c->key->sampler[sampler_idx].return_size == 32;
+                (c->key->sampler_is_32b & (1 << sampler_idx));
 
         struct V3D42_TMU_CONFIG_PARAMETER_0 p0_unpacked = {
         };

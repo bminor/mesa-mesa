@@ -43,10 +43,6 @@ v3d_get_compiled_shader(struct v3d_context *v3d,
                         struct v3d_key *key, size_t key_size,
                         struct v3d_uncompiled_shader *uncompiled);
 
-static void
-v3d_setup_shared_precompile_key(struct v3d_uncompiled_shader *uncompiled,
-                                struct v3d_key *key);
-
 static gl_varying_slot
 v3d_get_slot_for_driver_location(nir_shader *s, uint32_t driver_location)
 {
@@ -238,14 +234,11 @@ v3d_shader_precompile(struct v3d_context *v3d,
 
                 key.logicop_func = PIPE_LOGICOP_COPY;
 
-                v3d_setup_shared_precompile_key(so, &key.base);
                 v3d_get_compiled_shader(v3d, &key.base, sizeof(key), so);
         } else if (s->info.stage == MESA_SHADER_GEOMETRY) {
                 struct v3d_gs_key key = {
                         .base.is_last_geometry_stage = true,
                 };
-
-                v3d_setup_shared_precompile_key(so, &key.base);
 
                 precompile_all_outputs(s,
                                        key.used_outputs,
@@ -268,8 +261,6 @@ v3d_shader_precompile(struct v3d_context *v3d,
                         .base.is_last_geometry_stage = true,
                 };
 
-                v3d_setup_shared_precompile_key(so, &key.base);
-
                 precompile_all_outputs(s,
                                        key.used_outputs,
                                        &key.num_used_outputs);
@@ -288,7 +279,6 @@ v3d_shader_precompile(struct v3d_context *v3d,
         } else {
                 assert(s->info.stage == MESA_SHADER_COMPUTE);
                 struct v3d_key key = { 0 };
-                v3d_setup_shared_precompile_key(so, &key);
                 v3d_get_compiled_shader(v3d, &key, sizeof(key), so);
         }
 }
@@ -582,23 +572,12 @@ v3d_setup_shared_key(struct v3d_context *v3d, struct v3d_key *key,
                 if (!sampler)
                         continue;
 
-                key->sampler[i].return_size =
+                uint8_t return_size =
                         v3d_get_tex_return_size(devinfo, sampler->format);
-        }
-}
+                assert(return_size == 16 || return_size == 32);
 
-static void
-v3d_setup_shared_precompile_key(struct v3d_uncompiled_shader *uncompiled,
-                                struct v3d_key *key)
-{
-        nir_shader *s = uncompiled->base.ir.nir;
-
-        /* Note that below we access they key's texture and sampler fields
-         * using the same index. On OpenGL they are the same (they are
-         * combined)
-         */
-        for (int i = 0; i < s->info.num_textures; i++) {
-                key->sampler[i].return_size = 16;
+                if (return_size == 32)
+                        key->sampler_is_32b |= (1 << i);
         }
 }
 

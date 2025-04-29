@@ -2175,7 +2175,7 @@ struct v3dv_descriptor_map {
    /* NOTE: the following is only for sampler, but this is the easier place to
     * put it.
     */
-   uint8_t return_size[DESCRIPTOR_MAP_SIZE];
+   bool sampler_is_32b[DESCRIPTOR_MAP_SIZE];
 };
 
 struct v3dv_sampler {

@@ -601,8 +601,8 @@ lower_tex_packing_cb(const nir_tex_instr *tex, const void *data)
    int sampler_index = nir_tex_instr_need_sampler(tex) ?
       tex->sampler_index : tex->backend_flags;
 
-   return c->key->sampler[sampler_index].return_size == 16 ?
-      nir_lower_tex_packing_16 : nir_lower_tex_packing_none;
+   return (c->key->sampler_is_32b & (1 << sampler_index)) ?
+      nir_lower_tex_packing_none : nir_lower_tex_packing_16;
 }
 
 static bool
