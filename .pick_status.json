@@ -84,7 +84,7 @@
         "description": "nak: Remove hfma2 src 1 modifiers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "567cae69c3efd0070e3b9b8444dc8a24f0f83838",
         "notes": null
