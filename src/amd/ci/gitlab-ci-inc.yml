@@ -147,6 +147,7 @@
 
 .radeonsi-valve-manual-rules:
   stage: amd-nightly
+  extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
     - !reference [.valve-farm-manual-rules, rules]
