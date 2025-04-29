@@ -1215,7 +1215,7 @@ elk_varying_to_offset(const struct intel_vue_map *vue_map, unsigned varying)
 void elk_compute_vue_map(const struct intel_device_info *devinfo,
                          struct intel_vue_map *vue_map,
                          uint64_t slots_valid,
-                         bool separate_shader,
+                         enum intel_vue_layout layout,
                          uint32_t pos_slots);
 
 void elk_compute_tess_vue_map(struct intel_vue_map *const vue_map,

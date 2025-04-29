@@ -1662,12 +1662,9 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    brw_nir_lower_tue_inputs(nir, params->tue_map);
 
-   /* Incorrectly set separate to false until we fix the anv/brw in the next
-    * commit.
-    */
    brw_compute_mue_map(compiler, nir, &prog_data->map,
                        prog_data->index_format,
-                       false /* TODO: use nir->info.separate_shader */);
+                       key->base.vue_layout);
    brw_nir_lower_mue_outputs(nir, &prog_data->map);
 
    prog_data->autostrip_enable = brw_mesh_autostrip_enable(compiler, nir, &prog_data->map);

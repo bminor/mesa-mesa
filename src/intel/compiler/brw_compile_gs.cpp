@@ -161,7 +161,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
    GLbitfield64 inputs_read = nir->info.inputs_read;
    brw_compute_vue_map(compiler->devinfo,
                        &input_vue_map, inputs_read,
-                       nir->info.separate_shader, 1);
+                       key->base.vue_layout, 1);
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_vue_inputs(nir, &input_vue_map);

@@ -610,7 +610,9 @@ elk_compile_gs(const struct elk_compiler *compiler,
    GLbitfield64 inputs_read = nir->info.inputs_read;
    elk_compute_vue_map(compiler->devinfo,
                        &c.input_vue_map, inputs_read,
-                       nir->info.separate_shader, 1);
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED, 1);
 
    elk_nir_apply_key(nir, compiler, &key->base, 8);
    elk_nir_lower_vue_inputs(nir, &c.input_vue_map);

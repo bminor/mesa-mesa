@@ -825,7 +825,7 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
          struct intel_vue_map prev_stage_vue_map;
          brw_compute_vue_map(devinfo, &prev_stage_vue_map,
                              key->input_slots_valid,
-                             nir->info.separate_shader, 1);
+                             key->base.vue_layout, 1);
 
          int first_slot =
             brw_compute_first_fs_urb_slot_required(unique_fs_attrs,

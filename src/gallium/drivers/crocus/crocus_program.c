@@ -1204,7 +1204,9 @@ crocus_compile_vs(struct crocus_context *ice,
       crocus_vs_outputs_written(ice, key, nir->info.outputs_written);
    elk_compute_vue_map(devinfo,
                        &vue_prog_data->vue_map, outputs_written,
-                       nir->info.separate_shader, /* pos slots */ 1);
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED, /* pos slots */ 1);
 
    /* Don't tell the backend about our clip plane constants, we've already
     * lowered them in NIR and we don't want it doing it again.
@@ -1694,7 +1696,9 @@ crocus_compile_gs(struct crocus_context *ice,
 
    elk_compute_vue_map(devinfo,
                        &vue_prog_data->vue_map, nir->info.outputs_written,
-                       nir->info.separate_shader, /* pos slots */ 1);
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED, /* pos slots */ 1);
 
    if (devinfo->ver == 6)
       gfx6_gs_xfb_setup(&ish->stream_output, gs_prog_data);
@@ -1969,7 +1973,7 @@ update_last_vue_map(struct crocus_context *ice,
          ice->state.stage_dirty_for_nos[CROCUS_NOS_LAST_VUE_MAP];
    }
 
-   if (changed_slots || (old_map && old_map->separate != vue_map->separate)) {
+   if (changed_slots || (old_map && old_map->layout != vue_map->layout)) {
       ice->state.dirty |= CROCUS_DIRTY_GEN7_SBE;
       if (devinfo->ver < 6)
          ice->state.dirty |= CROCUS_DIRTY_GEN4_FF_GS_PROG;
@@ -2872,7 +2876,7 @@ crocus_create_fs_state(struct pipe_context *ctx,
       if (devinfo->ver < 6) {
          elk_compute_vue_map(devinfo, &vue_map,
                              info->inputs_read | VARYING_BIT_POS,
-                             false, /* pos slots */ 1);
+                             INTEL_VUE_LAYOUT_FIXED, /* pos slots */ 1);
       }
       if (!crocus_disk_cache_retrieve(ice, ish, &key, sizeof(key)))
          crocus_compile_fs(ice, ish, &key, &vue_map);

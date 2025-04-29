@@ -122,6 +122,19 @@ enum intel_barycentric_mode {
     (1 << INTEL_BARYCENTRIC_NONPERSPECTIVE_CENTROID) | \
     (1 << INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))
 
+enum intel_vue_layout {
+   /**
+    * Layout is fixed and shared by producer/consumer, allowing for tigh
+    * packing
+    */
+   INTEL_VUE_LAYOUT_FIXED = 0,
+   /**
+    * Layout is separate, works for ARB_separate_shader_objects but without
+    * Mesh support.
+    */
+   INTEL_VUE_LAYOUT_SEPARATE,
+};
+
 /**
  * Data structure recording the relationship between the gl_varying_slot enum
  * and "slots" within the vertex URB entry (VUE).  A "slot" is defined as a
@@ -142,7 +155,7 @@ struct intel_vue_map {
    uint64_t slots_valid;
 
    /**
-    * Is this VUE map for a separate shader pipeline?
+    * The layout of the VUE
     *
     * Separable programs (GL_ARB_separate_shader_objects) can be mixed and matched
     * without the linker having a chance to dead code eliminate unused varyings.
@@ -150,7 +163,7 @@ struct intel_vue_map {
     * This means that we have to use a fixed slot layout, based on the output's
     * location field, rather than assigning slots in a compact contiguous block.
     */
-   bool separate;
+   enum intel_vue_layout layout;
 
    /**
     * Map from gl_varying_slot value to VUE slot.  For gl_varying_slots that are

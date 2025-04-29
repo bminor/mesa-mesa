@@ -210,14 +210,16 @@ struct brw_base_prog_key {
 
    bool uses_inline_push_addr:1;
 
-   unsigned padding:21;
+   enum intel_vue_layout vue_layout:2;
 
    /**
     * Apply workarounds for SIN and COS input range problems.
     * This limits input range for SIN and COS to [-2p : 2p] to
     * avoid precision issues.
     */
-   bool limit_trig_input_range;
+   bool limit_trig_input_range:1;
+
+   unsigned padding:26;
 };
 
 /**
@@ -1070,7 +1072,7 @@ brw_varying_to_offset(const struct intel_vue_map *vue_map, unsigned varying)
 void brw_compute_vue_map(const struct intel_device_info *devinfo,
                          struct intel_vue_map *vue_map,
                          uint64_t slots_valid,
-                         bool separate_shader,
+                         enum intel_vue_layout layout,
                          uint32_t pos_slots);
 
 void brw_compute_tess_vue_map(struct intel_vue_map *const vue_map,

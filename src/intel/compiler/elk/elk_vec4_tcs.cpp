@@ -373,7 +373,9 @@ elk_compile_tcs(const struct elk_compiler *compiler,
 
    struct intel_vue_map input_vue_map;
    elk_compute_vue_map(devinfo, &input_vue_map, nir->info.inputs_read,
-                       nir->info.separate_shader, 1);
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED, 1);
    elk_compute_tess_vue_map(&vue_prog_data->vue_map,
                             nir->info.outputs_written,
                             nir->info.patch_outputs_written);

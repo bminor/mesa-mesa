@@ -91,7 +91,9 @@ blorp_compile_vs_elk(struct blorp_context *blorp, void *mem_ctx,
    elk_compute_vue_map(compiler->devinfo,
                        &vs_prog_data->base.vue_map,
                        nir->info.outputs_written,
-                       nir->info.separate_shader,
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED,
                        1);
 
    struct elk_vs_prog_key vs_key = { 0, };
@@ -231,7 +233,8 @@ blorp_ensure_sf_program_elk(struct blorp_batch *batch,
    unsigned program_size;
 
    struct intel_vue_map vue_map;
-   elk_compute_vue_map(compiler->devinfo, &vue_map, slots_valid, false, 1);
+   elk_compute_vue_map(compiler->devinfo, &vue_map, slots_valid,
+                       INTEL_VUE_LAYOUT_FIXED, 1);
 
    struct elk_sf_prog_data prog_data_tmp;
    program = elk_compile_sf(compiler, mem_ctx, &key.key,

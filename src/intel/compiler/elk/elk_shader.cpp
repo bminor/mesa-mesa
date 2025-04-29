@@ -1276,7 +1276,9 @@ elk_compile_tes(const struct elk_compiler *compiler,
 
    elk_compute_vue_map(devinfo, &prog_data->base.vue_map,
                        nir->info.outputs_written,
-                       nir->info.separate_shader, 1);
+                       nir->info.separate_shader ?
+                       INTEL_VUE_LAYOUT_SEPARATE :
+                       INTEL_VUE_LAYOUT_FIXED, 1);
 
    unsigned output_size_bytes = prog_data->base.vue_map.num_slots * 4 * 4;
 

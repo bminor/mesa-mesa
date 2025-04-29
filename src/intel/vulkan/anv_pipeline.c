@@ -316,20 +316,23 @@ anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate)
 
 static void
 populate_base_prog_key(struct anv_pipeline_stage *stage,
-                       const struct anv_device *device)
+                       const struct anv_device *device,
+                       const enum intel_vue_layout vue_layout)
 {
    stage->key.base.robust_flags = anv_get_robust_flags(&stage->rstate);
+   stage->key.base.vue_layout = vue_layout;
    stage->key.base.limit_trig_input_range =
       device->physical->instance->limit_trig_input_range;
 }
 
 static void
 populate_vs_prog_key(struct anv_pipeline_stage *stage,
-                     const struct anv_device *device)
+                     const struct anv_device *device,
+                     const enum intel_vue_layout vue_layout)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 
    stage->key.vs.vf_component_packing =
       device->physical->instance->vf_component_packing;
@@ -338,31 +341,34 @@ populate_vs_prog_key(struct anv_pipeline_stage *stage,
 static void
 populate_tcs_prog_key(struct anv_pipeline_stage *stage,
                       const struct anv_device *device,
-                      unsigned input_vertices)
+                      unsigned input_vertices,
+                      const enum intel_vue_layout vue_layout)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 
    stage->key.tcs.input_vertices = input_vertices;
 }
 
 static void
 populate_tes_prog_key(struct anv_pipeline_stage *stage,
-                      const struct anv_device *device)
+                      const struct anv_device *device,
+                      const enum intel_vue_layout vue_layout)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 }
 
 static void
 populate_gs_prog_key(struct anv_pipeline_stage *stage,
-                     const struct anv_device *device)
+                     const struct anv_device *device,
+                     const enum intel_vue_layout vue_layout)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 }
 
 static bool
@@ -424,18 +430,19 @@ populate_task_prog_key(struct anv_pipeline_stage *stage,
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, INTEL_VUE_LAYOUT_FIXED);
 
    stage->key.base.uses_inline_push_addr = true;
 }
 
 static void
 populate_mesh_prog_key(struct anv_pipeline_stage *stage,
-                       const struct anv_device *device)
+                       const struct anv_device *device,
+                       const enum intel_vue_layout vue_layout)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 
    stage->key.base.uses_inline_push_addr = true;
 }
@@ -462,13 +469,14 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
                      const struct vk_multisample_state *ms,
                      const struct vk_fragment_shading_rate_state *fsr,
                      const struct vk_render_pass_state *rp,
-                     const enum intel_sometimes is_mesh)
+                     const enum intel_sometimes is_mesh,
+                     const enum intel_vue_layout vue_layout)
 {
    const struct anv_device *device = pipeline->base.device;
 
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, vue_layout);
 
    struct brw_wm_prog_key *key = &stage->key.wm;
 
@@ -553,7 +561,7 @@ populate_cs_prog_key(struct anv_pipeline_stage *stage,
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, INTEL_VUE_LAYOUT_FIXED);
 
    stage->key.base.uses_inline_push_addr = device->info->verx10 >= 125;
 }
@@ -565,7 +573,7 @@ populate_bs_prog_key(struct anv_pipeline_stage *stage,
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
-   populate_base_prog_key(stage, device);
+   populate_base_prog_key(stage, device, INTEL_VUE_LAYOUT_FIXED);
 
    stage->key.bs.pipeline_ray_flags = ray_flags;
    stage->key.bs.pipeline_ray_flags = ray_flags;
@@ -1159,7 +1167,7 @@ anv_pipeline_compile_vs(const struct brw_compiler *compiler,
    brw_compute_vue_map(compiler->devinfo,
                        &vs_stage->prog_data.vs.base.vue_map,
                        vs_stage->nir->info.outputs_written,
-                       vs_stage->nir->info.separate_shader,
+                       vs_stage->key.base.vue_layout,
                        pos_slots);
 
    vs_stage->num_stats = 1;
@@ -1335,7 +1343,7 @@ anv_pipeline_compile_gs(const struct brw_compiler *compiler,
    brw_compute_vue_map(compiler->devinfo,
                        &gs_stage->prog_data.gs.base.vue_map,
                        gs_stage->nir->info.outputs_written,
-                       gs_stage->nir->info.separate_shader, 1);
+                       gs_stage->key.base.vue_layout, 1);
 
    gs_stage->num_stats = 1;
 
@@ -1522,7 +1530,7 @@ anv_pipeline_compile_fs(const struct brw_compiler *compiler,
       brw_compute_vue_map(compiler->devinfo,
                           &prev_vue_map,
                           fs_stage->nir->info.inputs_read,
-                          fs_stage->nir->info.separate_shader,
+                          fs_stage->key.base.vue_layout,
                           pos_slots);
 
       fs_stage->key.wm.input_slots_valid = prev_vue_map.slots_valid;
@@ -1742,6 +1750,16 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
                                 const struct vk_graphics_pipeline_state *state,
                                 struct anv_pipeline_stage *stages)
 {
+   struct anv_device *device = pipeline->base.device;
+   enum intel_vue_layout vue_layout;
+
+   if ((pipeline->base.flags & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) ||
+       !device->vk.enabled_extensions.EXT_graphics_pipeline_library) {
+      vue_layout = INTEL_VUE_LAYOUT_FIXED;
+   } else {
+      vue_layout = INTEL_VUE_LAYOUT_SEPARATE;
+   }
+
    for (uint32_t s = 0; s < ANV_GRAPHICS_SHADER_STAGE_COUNT; s++) {
       if (!anv_pipeline_base_has_stage(pipeline, s))
          continue;
@@ -1751,20 +1769,21 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
       const struct anv_device *device = pipeline->base.device;
       switch (stages[s].stage) {
       case MESA_SHADER_VERTEX:
-         populate_vs_prog_key(&stages[s], device);
+         populate_vs_prog_key(&stages[s], device, vue_layout);
          break;
       case MESA_SHADER_TESS_CTRL:
          populate_tcs_prog_key(&stages[s],
                                device,
                                BITSET_TEST(state->dynamic,
                                            MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS) ?
-                               0 : state->ts->patch_control_points);
+                               0 : state->ts->patch_control_points,
+                               vue_layout);
          break;
       case MESA_SHADER_TESS_EVAL:
-         populate_tes_prog_key(&stages[s], device);
+         populate_tes_prog_key(&stages[s], device, vue_layout);
          break;
       case MESA_SHADER_GEOMETRY:
-         populate_gs_prog_key(&stages[s], device);
+         populate_gs_prog_key(&stages[s], device, vue_layout);
          break;
       case MESA_SHADER_FRAGMENT: {
          /* Assume rasterization enabled in any of the following case :
@@ -1794,7 +1813,8 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
                               pipeline,
                               state->dynamic,
                               raster_enabled ? state->ms : NULL,
-                              state->fsr, state->rp, is_mesh);
+                              state->fsr, state->rp, is_mesh,
+                              vue_layout);
          break;
       }
 
@@ -1803,7 +1823,7 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
          break;
 
       case MESA_SHADER_MESH: {
-         populate_mesh_prog_key(&stages[s], device);
+         populate_mesh_prog_key(&stages[s], device, vue_layout);
          break;
       }
 
@@ -2019,8 +2039,11 @@ anv_pipeline_nir_preprocess(struct anv_pipeline *pipeline,
    };
    NIR_PASS(_, stage->nir, nir_opt_access, &opt_access_options);
 
-   /* Vulkan uses the separate-shader linking model */
-   stage->nir->info.separate_shader = true;
+   /* Use a separate-shader linking model for pipeline libraries, we do cross
+    * stage linking otherwise.
+    */
+   stage->nir->info.separate_shader =
+      stage->key.base.vue_layout != INTEL_VUE_LAYOUT_FIXED;
 
    struct brw_nir_compiler_opts opts = {
       .softfp64 = device->fp64_nir,
