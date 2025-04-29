@@ -890,27 +890,16 @@ update_ps_extra_has_uav(struct anv_gfx_dynamic_state *hw_state,
 {
    const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
 
-#if GFX_VERx10 >= 125
-   SET_STAGE(PS_EXTRA, ps_extra.PixelShaderHasUAV,
-                       wm_prog_data && wm_prog_data->has_side_effects,
-                       FRAGMENT);
-#else
-   /* Prior to Gfx12.5 the HW seems to avoid spawning fragment shaders even if
-    * 3DSTATE_PS_EXTRA::PixelShaderKillsPixel=true when
-    * 3DSTATE_PS_BLEND::HasWriteableRT=false. This is causing problems with
-    * occlusion queries with 0 attachments. There are no CTS tests exercising
-    * this but zink+anv fails a bunch of tests like piglit
-    * arb_framebuffer_no_attachments-query.
-    *
-    * Here we choose to tweak the PixelShaderHasUAV to make sure the fragment
-    * shaders are run properly.
+   /* Force fragment shader execution if occlusion queries are active to
+    * ensure PS_DEPTH_COUNT is correct. Otherwise a fragment shader with
+    * discard and no render target setup could be increment PS_DEPTH_COUNT if
+    * the HW internally decides to not run the shader because it has already
+    * established that depth-test is passing.
     */
    SET_STAGE(PS_EXTRA, ps_extra.PixelShaderHasUAV,
                        wm_prog_data && (wm_prog_data->has_side_effects ||
-                                        (gfx->color_att_count == 0 &&
-                                         gfx->n_occlusion_queries > 0)),
+                                        gfx->n_occlusion_queries > 0),
                        FRAGMENT);
-#endif
 }
 
 ALWAYS_INLINE static void
