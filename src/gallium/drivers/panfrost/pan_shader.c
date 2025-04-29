@@ -214,8 +214,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    inputs.pushable_ubos = BITFIELD_BIT(0);
 
    if (out->sysvals.sysval_count != 0) {
-      unsigned sysval_ubo = s->info.num_ubos - 1;
-      inputs.pushable_ubos |= BITFIELD_BIT(sysval_ubo);
+      inputs.pushable_ubos |= BITFIELD_BIT(PAN_UBO_SYSVALS);
    }
 
    /* Lower resource indices */

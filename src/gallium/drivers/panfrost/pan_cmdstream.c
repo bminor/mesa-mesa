@@ -1482,7 +1482,7 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    /* Next up, attach UBOs. UBO count includes gaps but no sysval UBO */
    struct panfrost_compiled_shader *shader = ctx->prog[stage];
    unsigned ubo_count = shader->info.ubo_count - (sys_size ? 1 : 0);
-   unsigned sysval_ubo = sys_size ? ubo_count : ~0;
+   unsigned sysval_ubo = sys_size ? PAN_UBO_SYSVALS : ~0;
    unsigned desc_size;
    struct panfrost_ptr ubos = {0};
 
@@ -1503,18 +1503,36 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    assert(buffer_count);
    *buffer_count = ubo_count + (sys_size ? 1 : 0);
 
-   /* Upload sysval as a final UBO */
+   /* If sysvals are present, panfrost_nir_lower_sysvals assigns UBO1 to
+    * sysvals and remaps UBOs from the original shader up by one to make
+    * space. Applications use the original UBO indices, which we call
+    * "adjusted" UBOs here to distinguish them from the actual indices we are
+    * using on the hardware. */
+
+   /* Upload sysvals to UBO1 */
    if (sys_size)
-      panfrost_emit_ubo(ubos.cpu, ubo_count, transfer.gpu, sys_size);
+      panfrost_emit_ubo(ubos.cpu, PAN_UBO_SYSVALS, transfer.gpu, sys_size);
 
    /* The rest are honest-to-goodness UBOs */
-   unsigned user_ubo_mask = ss->info.ubo_mask & BITFIELD_MASK(ubo_count);
-   u_foreach_bit(ubo, user_ubo_mask & buf->enabled_mask) {
-      size_t usz = buf->cb[ubo].buffer_size;
+
+   unsigned user_ubo_mask =
+      ss->info.ubo_mask & BITFIELD_MASK(shader->info.ubo_count);
+
+   unsigned user_ubo_mask_adj = user_ubo_mask;
+   /* Shift remapped bits to convert to a mask of adjusted indices */
+   if (sys_size)
+      user_ubo_mask_adj = (user_ubo_mask & BITFIELD_MASK(PAN_UBO_SYSVALS)) |
+         ((user_ubo_mask & ~BITFIELD_MASK(PAN_UBO_SYSVALS + 1)) >> 1);
+
+   u_foreach_bit(ubo_adj, user_ubo_mask_adj & buf->enabled_mask) {
+      unsigned ubo = ubo_adj + (ubo_adj >= sysval_ubo ? 1 : 0);
+
+      size_t usz = buf->cb[ubo_adj].buffer_size;
       uint64_t address = 0;
 
       if (usz > 0) {
-         address = panfrost_map_constant_buffer_gpu(batch, stage, buf, ubo);
+         address =
+            panfrost_map_constant_buffer_gpu(batch, stage, buf, ubo_adj);
       }
 
       panfrost_emit_ubo(ubos.cpu, ubo, address, usz);
@@ -1571,7 +1589,9 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
       if (src.ubo == sysval_ubo) {
          mapped_ubo = sysvals;
       } else {
-         struct pipe_constant_buffer *cb = &buf->cb[src.ubo];
+         unsigned ubo_adj = src.ubo - (src.ubo > sysval_ubo ? 1 : 0);
+
+         struct pipe_constant_buffer *cb = &buf->cb[ubo_adj];
          assert(!cb->buffer && cb->user_buffer &&
                 "only user buffers use this path");
 

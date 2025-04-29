@@ -28,7 +28,6 @@ struct ctx {
    unsigned arch;
    struct panfrost_sysvals *sysvals;
    struct hash_table_u64 *sysval_to_id;
-   unsigned sysval_ubo;
 };
 
 static unsigned
@@ -140,6 +139,48 @@ sysval_for_intrinsic(unsigned arch, nir_intrinsic_instr *intr, unsigned *offset)
 }
 
 static bool
+uses_sysvals(unsigned arch, nir_shader *shader)
+{
+   nir_foreach_function_impl(impl, shader) {
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr(instr, block) {
+            if (instr->type == nir_instr_type_intrinsic) {
+               nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+               unsigned offset;
+               if (sysval_for_intrinsic(arch, intr, &offset) != ~0)
+                  return true;
+            } else if (instr->type == nir_instr_type_tex) {
+               nir_tex_instr *tex = nir_instr_as_tex(instr);
+               if (tex->op == nir_texop_txs)
+                  return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+
+/* Move all UBO indexes after PAN_UBO_SYSVALS up by one to make space for the
+ * sysval UBO */
+static bool
+remap_load_ubo(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   nir_src *old_idx = &intr->src[0];
+
+   if (nir_src_is_const(*old_idx)) {
+      if (nir_src_as_uint(*old_idx) < PAN_UBO_SYSVALS)
+         return false;
+   } else {
+      /* Assume that all dynamic indices are into normal UBOs, not the default
+       * UBO0, and so should be adjusted */
+      assert(b->shader->info.first_ubo_is_default_ubo);
+   }
+
+   nir_src_rewrite(old_idx, nir_iadd_imm(b, old_idx->ssa, 1));
+   return true;
+}
+
+static bool
 lower(nir_builder *b, nir_instr *instr, void *data)
 {
    struct ctx *ctx = data;
@@ -149,6 +190,11 @@ lower(nir_builder *b, nir_instr *instr, void *data)
 
    if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+      if (intr->intrinsic == nir_intrinsic_load_ubo) {
+         return remap_load_ubo(b, intr);
+      }
+
       old = &intr->def;
       sysval = sysval_for_intrinsic(ctx->arch, intr, &offset);
 
@@ -171,16 +217,12 @@ lower(nir_builder *b, nir_instr *instr, void *data)
       return false;
    }
 
-   /* Allocate a UBO for the sysvals if we haven't yet */
-   if (ctx->sysvals->sysval_count == 0)
-      ctx->sysval_ubo = b->shader->info.num_ubos++;
-
    unsigned vec4_index = lookup_sysval(ctx->sysval_to_id, ctx->sysvals, sysval);
    unsigned ubo_offset = (vec4_index * 16) + offset;
 
    b->cursor = nir_after_instr(instr);
    nir_def *val = nir_load_ubo(
-      b, old->num_components, old->bit_size, nir_imm_int(b, ctx->sysval_ubo),
+      b, old->num_components, old->bit_size, nir_imm_int(b, PAN_UBO_SYSVALS),
       nir_imm_int(b, ubo_offset), .align_mul = old->bit_size / 8,
       .align_offset = 0, .range_base = offset, .range = old->bit_size / 8);
    nir_def_rewrite_uses(old, val);
@@ -202,6 +244,9 @@ panfrost_nir_lower_sysvals(nir_shader *shader, unsigned arch,
       NIR_PASS(progress, shader, nir_opt_dce);
    } while (progress);
 
+   if (!uses_sysvals(arch, shader))
+      return progress;
+
    struct ctx ctx = {
       .arch = arch,
       .sysvals = sysvals,
@@ -209,6 +254,10 @@ panfrost_nir_lower_sysvals(nir_shader *shader, unsigned arch,
    };
 
    memset(sysvals, 0, sizeof(*sysvals));
+
+   /* If we don't have any UBOs, we need to insert an empty UBO0 to put the
+    * sysval at UBO1 */
+   shader->info.num_ubos = MAX2(PAN_UBO_SYSVALS, shader->info.num_ubos) + 1;
 
    nir_shader_instructions_pass(
       shader, lower, nir_metadata_control_flow, &ctx);

@@ -312,6 +312,9 @@ enum {
 #define PAN_SYSVAL_ID_TO_TXS_DIM(id)      (((id) >> 7) & 0x3)
 #define PAN_SYSVAL_ID_TO_TXS_IS_ARRAY(id) !!((id) & (1 << 9))
 
+/* Sysvals are always mapped to UBO1 */
+#define PAN_UBO_SYSVALS 1
+
 struct panfrost_sysvals {
    /* The mapping of sysvals to uniforms, the count, and the off-by-one inverse */
    unsigned sysvals[MAX_SYSVAL_COUNT];
