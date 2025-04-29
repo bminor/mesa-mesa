@@ -2303,6 +2303,15 @@ image("load_raw_intel", src_comp=[1], dest_comp=0,
       flags=[CAN_ELIMINATE])
 image("store_raw_intel", src_comp=[1, 0])
 
+# Maximum number of polygons processed in the fragment shader
+system_value("max_polygon_intel", 1, bit_sizes=[32])
+
+# Read the attribute thread payload at a given offset
+# src[] = { offset }
+intrinsic("read_attribute_payload_intel", dest_comp=1, bit_sizes=[32],
+          src_comp=[1],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
+
 # Number of data items being operated on for a SIMD program.
 system_value("simd_width_intel", 1)
 

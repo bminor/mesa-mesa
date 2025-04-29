@@ -4593,6 +4593,17 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
               brw_dynamic_msaa_flags(brw_wm_prog_data(s.prog_data)));
       break;
 
+   case nir_intrinsic_load_max_polygon_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD), brw_imm_ud(s.max_polygons));
+      break;
+
+   case nir_intrinsic_read_attribute_payload_intel: {
+      const brw_reg offset = retype(get_nir_src(ntb, instr->src[0], 0),
+                                    BRW_TYPE_UD);
+      bld.emit(FS_OPCODE_READ_ATTRIBUTE_PAYLOAD, retype(dest, BRW_TYPE_UD), offset);
+      break;
+   }
+
    default:
       brw_from_nir_emit_intrinsic(ntb, bld, instr);
       break;

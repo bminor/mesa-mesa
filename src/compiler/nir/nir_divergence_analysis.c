@@ -354,6 +354,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_fs_msaa_intel:
    case nir_intrinsic_load_constant_base_ptr:
    case nir_intrinsic_load_const_buf_base_addr_lvp:
+   case nir_intrinsic_load_max_polygon_intel:
       is_divergent = false;
       break;
 
@@ -708,7 +709,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_frag_size_ir3:
    case nir_intrinsic_load_frag_offset_ir3:
    case nir_intrinsic_bindless_resource_ir3:
-   case nir_intrinsic_ray_intersection_ir3: {
+   case nir_intrinsic_ray_intersection_ir3:
+   case nir_intrinsic_read_attribute_payload_intel: {
       unsigned num_srcs = nir_intrinsic_infos[instr->intrinsic].num_srcs;
       for (unsigned i = 0; i < num_srcs; i++) {
          if (src_divergent(instr->src[i], state)) {

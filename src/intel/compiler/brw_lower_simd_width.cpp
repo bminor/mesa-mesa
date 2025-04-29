@@ -423,7 +423,8 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
               swiz == BRW_SWIZZLE_XYXY || swiz == BRW_SWIZZLE_ZWZW ? 4 :
               get_fpu_lowered_simd_width(shader, inst));
    }
-   case SHADER_OPCODE_MOV_INDIRECT: {
+   case SHADER_OPCODE_MOV_INDIRECT:
+   case FS_OPCODE_READ_ATTRIBUTE_PAYLOAD: {
       /* From IVB and HSW PRMs:
        *
        * "2.When the destination requires two registers and the sources are

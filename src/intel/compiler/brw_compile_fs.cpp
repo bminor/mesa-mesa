@@ -1198,11 +1198,23 @@ brw_assign_urb_setup(brw_shader &s)
    struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
 
    int urb_start = s.payload().num_regs + prog_data->base.curb_read_length;
+   bool read_attribute_payload = false;
 
    /* Offset all the urb_setup[] index by the actual position of the
     * setup regs, now that the location of the constants has been chosen.
     */
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
+      if (inst->opcode == FS_OPCODE_READ_ATTRIBUTE_PAYLOAD) {
+         brw_reg offset = inst->src[0];
+         inst->resize_sources(3);
+         inst->opcode = SHADER_OPCODE_MOV_INDIRECT;
+         inst->src[0] = retype(brw_vec8_grf(urb_start, 0), BRW_TYPE_UD);
+         inst->src[1] = offset;
+         inst->src[2] = brw_imm_ud(REG_SIZE * 2 * 32);
+         read_attribute_payload = true;
+         continue;
+      }
+
       for (int i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == ATTR) {
             /* ATTR brw_reg::nr in the FS is in units of logical scalar
@@ -1359,11 +1371,18 @@ brw_assign_urb_setup(brw_shader &s)
       }
    }
 
+   if (read_attribute_payload) {
+      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                            BRW_DEPENDENCY_VARIABLES);
+   }
+
    /* Each attribute is 4 setup channels, each of which is half a reg,
     * but they may be replicated multiple times for multipolygon
     * dispatch.
     */
-   s.first_non_payload_grf += prog_data->num_varying_inputs * 2 * s.max_polygons;
+   s.first_non_payload_grf +=
+      (read_attribute_payload ? 32 : prog_data->num_varying_inputs) *
+      2 * s.max_polygons;
 
    /* Unlike regular attributes, per-primitive attributes have all 4 channels
     * in the same slot, so each GRF can store two slots.
@@ -1439,6 +1458,9 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
          gfx9_ps_header_only_workaround(wm_prog_data);
 
       brw_assign_urb_setup(s);
+
+      s.debug_optimizer(nir, "urb_setup", 89, 0);
+
 
       brw_lower_3src_null_dest(s);
       brw_workaround_emit_dummy_mov_instruction(s);
