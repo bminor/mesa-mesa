@@ -13376,10 +13376,28 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, uint32_t dep_count, const VkDep
                          sample_locs_info->sampleLocationsCount);
          }
 
+         uint32_t src_qf_index = dep_info->pImageMemoryBarriers[i].srcQueueFamilyIndex;
+         uint32_t dst_qf_index = dep_info->pImageMemoryBarriers[i].dstQueueFamilyIndex;
+
+         /* The src and dst queue family indices may contrain arbitrary values
+          * that should be ignored if they are equal. For example, see
+          * VUID-VkBufferMemoryBarrier-buffer-09095 (Vulkan spec 1.4.313).
+          *
+          *   If buffer was created with a sharing mode of
+          *   VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and
+          *   dstQueueFamilyIndex are not equal, srcQueueFamilyIndex must be
+          *   VK_QUEUE_FAMILY_EXTERNAL, VK_QUEUE_FAMILY_FOREIGN_EXT, or a valid
+          *   queue family
+          */
+         if (src_qf_index == dst_qf_index)
+         {
+            src_qf_index = VK_QUEUE_FAMILY_IGNORED;
+            dst_qf_index = VK_QUEUE_FAMILY_IGNORED;
+         }
+
          radv_handle_image_transition(
             cmd_buffer, image, dep_info->pImageMemoryBarriers[i].oldLayout, dep_info->pImageMemoryBarriers[i].newLayout,
-            dep_info->pImageMemoryBarriers[i].srcQueueFamilyIndex,
-            dep_info->pImageMemoryBarriers[i].dstQueueFamilyIndex, &dep_info->pImageMemoryBarriers[i].subresourceRange,
+            src_qf_index, dst_qf_index, &dep_info->pImageMemoryBarriers[i].subresourceRange,
             sample_locs_info ? &sample_locations : NULL);
       }
    }
