@@ -6064,7 +6064,7 @@
         "description": "tu: Fix segfault in fail_submit KGSL path",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec268fa5b666a49adafc431dbc05b73bfd74526e",
         "notes": null
