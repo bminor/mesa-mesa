@@ -207,6 +207,9 @@ void config_writer_fill_direct_config_packet_header(
         return;
     }
 
+#ifdef VPE_REGISTER_PROFILE
+    writer->register_count += packet->bits.VPEP_CONFIG_DATA_SIZE + 1;
+#endif
     cmd_space    = (uint32_t *)(uintptr_t)writer->buf->cpu_va;
     *cmd_space++ = packet->u32all;
     writer->buf->cpu_va += w_size;
@@ -241,6 +244,9 @@ void config_writer_fill_direct_config_packet(
         return;
     }
 
+#ifdef VPE_REGISTER_PROFILE
+    writer->register_count++;
+#endif
     cmd_space    = (uint32_t *)(uintptr_t)writer->buf->cpu_va;
     *cmd_space++ = packet->u32all; // Write header
     writer->buf->cpu_va += sizeof(uint32_t);

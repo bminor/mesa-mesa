@@ -654,6 +654,11 @@ enum vpe_status vpe_build_commands(
 
     vpe_priv = container_of(vpe, struct vpe_priv, pub);
 
+#ifdef VPE_REGISTER_PROFILE
+    vpe_priv->config_writer.register_count = 0;
+    vpe_priv->config_writer.total_config_count = 0;
+    vpe_priv->config_writer.reused_config_count = 0;
+#endif
     if (!vpe_priv->ops_support) {
         VPE_ASSERT(vpe_priv->ops_support);
         status = VPE_STATUS_NOT_SUPPORTED;
@@ -788,7 +793,16 @@ enum vpe_status vpe_build_commands(
                     }
                 }
             }
+#ifdef VPE_REGISTER_PROFILE
+            vpe_priv->config_writer.total_config_count += vpe_priv->vpe_desc_writer.num_config_desc;
+            vpe_priv->config_writer.reused_config_count += vpe_priv->vpe_desc_writer.reuse_num_config_dec;
+#endif
         }
+#ifdef VPE_REGISTER_PROFILE
+        vpe_log("Total Registers Accessed: % d\n", vpe_priv->config_writer.register_count);
+        vpe_log("Total Config Descriptors: % d\n", vpe_priv->config_writer.total_config_count);
+        vpe_log("Total Re-used Config Descriptors: % d\n", vpe_priv->config_writer.reused_config_count);
+#endif
         if ((status == VPE_STATUS_OK) && (vpe_priv->collaboration_mode == true)) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
             if (status != VPE_STATUS_OK) {
