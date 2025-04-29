@@ -46,7 +46,7 @@ for asm_file in args.gen_folder.glob('*.asm'):
         command = elk_asm + [
             '--type', 'hex',
             '--gen', args.gen_name,
-            asm_file
+            asm_file.as_posix()
         ]
         stdout = subprocess.check_output(command, timeout=1).decode()
         lines_after = stdout.splitlines(keepends=True)
