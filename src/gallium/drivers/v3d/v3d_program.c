@@ -588,16 +588,6 @@ v3d_setup_shared_key(struct v3d_context *v3d, struct v3d_key *key,
                 key->sampler[i].return_size =
                         v3d_get_tex_return_size(devinfo, sampler->format);
 
-                /* For 16-bit, we set up the sampler to always return 2
-                 * channels (meaning no recompiles for most statechanges),
-                 * while for 32 we actually scale the returns with channels.
-                 */
-                if (key->sampler[i].return_size == 16) {
-                        key->sampler[i].return_channels = 2;
-                } else {
-                        key->sampler[i].return_channels = 4;
-                }
-
                 /* We let the sampler state handle the swizzle.
                  */
                 key->tex[i].swizzle[0] = PIPE_SWIZZLE_X;
@@ -634,7 +624,6 @@ v3d_setup_shared_precompile_key(struct v3d_uncompiled_shader *uncompiled,
          */
         for (int i = 0; i < s->info.num_textures; i++) {
                 key->sampler[i].return_size = 16;
-                key->sampler[i].return_channels = 2;
 
                 key->tex[i].swizzle[0] = PIPE_SWIZZLE_X;
                 key->tex[i].swizzle[1] = PIPE_SWIZZLE_Y;

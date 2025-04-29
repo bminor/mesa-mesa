@@ -413,7 +413,6 @@ struct v3d_key {
         } tex[V3D_MAX_TEXTURE_SAMPLERS];
         struct {
                 uint8_t return_size;
-                uint8_t return_channels;
         } sampler[V3D_MAX_TEXTURE_SAMPLERS];
 
         uint8_t num_tex_used;

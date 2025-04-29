@@ -980,9 +980,6 @@ pipeline_populate_v3d_key(struct v3d_key *key,
         sampler_idx++) {
       key->sampler[sampler_idx].return_size =
          sampler_map->return_size[sampler_idx];
-
-      key->sampler[sampler_idx].return_channels =
-         key->sampler[sampler_idx].return_size == 32 ? 4 : 2;
    }
 
    switch (p_stage->stage) {
