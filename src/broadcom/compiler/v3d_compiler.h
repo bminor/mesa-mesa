@@ -412,7 +412,6 @@ struct v3d_key {
                 uint8_t return_size;
         } sampler[V3D_MAX_TEXTURE_SAMPLERS];
 
-        uint8_t num_samplers_used;
         uint8_t ucp_enables;
         bool is_last_geometry_stage;
         bool robust_uniform_access;

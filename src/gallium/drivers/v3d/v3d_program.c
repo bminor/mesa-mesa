@@ -576,7 +576,6 @@ v3d_setup_shared_key(struct v3d_context *v3d, struct v3d_key *key,
 {
         const struct v3d_device_info *devinfo = &v3d->screen->devinfo;
 
-        key->num_samplers_used = texstate->num_textures;
         for (int i = 0; i < texstate->num_textures; i++) {
                 struct pipe_sampler_view *sampler = texstate->textures[i];
 
@@ -593,19 +592,6 @@ v3d_setup_shared_precompile_key(struct v3d_uncompiled_shader *uncompiled,
                                 struct v3d_key *key)
 {
         nir_shader *s = uncompiled->base.ir.nir;
-
-        /* The shader may have gaps in the texture bindings, so figure out
-         * the largest binding in use and setup the number of textures and
-         * samplers from there instead of just the texture count from shader
-         * info.
-         */
-        key->num_samplers_used = 0;
-        for (int i = V3D_MAX_TEXTURE_SAMPLERS - 1; i >= 0; i--) {
-                if (s->info.textures_used[0] & (1 << i)) {
-                        key->num_samplers_used = i + 1;
-                        break;
-                }
-        }
 
         /* Note that below we access they key's texture and sampler fields
          * using the same index. On OpenGL they are the same (they are

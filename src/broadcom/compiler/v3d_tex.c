@@ -238,7 +238,6 @@ v3d_vir_emit_tex(struct v3d_compile *c, nir_tex_instr *instr)
          * itself, we still need to add the sampler configuration
          * parameter if the output is 32 bit
          */
-        assert(sampler_idx < c->key->num_samplers_used);
         bool output_type_32_bit =
                 c->key->sampler[sampler_idx].return_size == 32;
 

@@ -963,8 +963,6 @@ pipeline_populate_v3d_key(struct v3d_key *key,
    struct v3dv_descriptor_map *sampler_map =
       &p_stage->pipeline->shared_data->maps[p_stage->stage]->sampler_map;
 
-   key->num_samplers_used = sampler_map->num_desc;
-   assert(key->num_samplers_used <= V3D_MAX_TEXTURE_SAMPLERS);
    for (uint32_t sampler_idx = 0; sampler_idx < sampler_map->num_desc;
         sampler_idx++) {
       key->sampler[sampler_idx].return_size =
