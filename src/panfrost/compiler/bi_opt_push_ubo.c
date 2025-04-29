@@ -84,8 +84,8 @@ bi_analyze_ranges(bi_context *ctx)
       assert(ubo < res.nr_blocks);
       assert(channels > 0 && channels <= 4);
 
-      /* Blend constants are always loaded from the sysval UBO in blend shaders,
-       * do not push them. */
+      /* Blend constants are handled by bi_pick_blend_constants, don't push
+       * them a second time. */
       if (ctx->stage == MESA_SHADER_FRAGMENT) {
          /* PAN_UBO_SYSVALS from the gallium driver */
          unsigned sysval_ubo = 1;
@@ -103,6 +103,34 @@ bi_analyze_ranges(bi_context *ctx)
    }
 
    return res;
+}
+
+/* We always map blend constants from the first slot in the sysval UBO to the
+ * first four FAU words, so that they can be accessed from a consistent
+ * location from the blend shader. */
+static void
+bi_pick_blend_constants(bi_context *ctx, struct bi_ubo_analysis *analysis)
+{
+   /* PAN_UBO_SYSVALS from the gallium driver */
+   unsigned sysval_ubo = 1;
+   unsigned offset = 0;
+
+   assert(ctx->inputs->pushable_ubos & BITFIELD_BIT(sysval_ubo));
+   assert(ctx->info.push->count == 0);
+
+   for (unsigned channel = 0; channel < 4; channel++) {
+      struct panfrost_ubo_word word = {
+         .ubo = sysval_ubo,
+         .offset = offset + channel * 4,
+      };
+      ctx->info.push->words[ctx->info.push->count++] = word;
+      assert(ctx->info.push->count < PAN_MAX_PUSH);
+   }
+
+   BITSET_SET(analysis->blocks[sysval_ubo].pushed, offset);
+
+   /* The blend constant FAU slots cannot be reordered */
+   ctx->info.push_offset = MAX2(ctx->info.push_offset, ctx->info.push->count);
 }
 
 /* Select UBO words to push. A sophisticated implementation would consider the
@@ -146,6 +174,8 @@ bi_opt_push_ubo(bi_context *ctx)
 {
    struct bi_ubo_analysis analysis = bi_analyze_ranges(ctx);
 
+   if (ctx->stage == MESA_SHADER_FRAGMENT)
+      bi_pick_blend_constants(ctx, &analysis);
    bi_pick_ubo(ctx->info.push, &analysis);
 
    ctx->ubo_mask = 0;
