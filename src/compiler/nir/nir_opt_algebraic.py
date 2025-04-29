@@ -2437,9 +2437,25 @@ optimizations.extend([
               ('ubfe', 'value', 'offset', 'bits')),
     'options->lower_bitfield_extract && options->has_bfe'),
 
-   # (src0 & src1) | (~src0 & src2). Constant fold if src2 is 0.
+   # (src0 & src1) | (~src0 & src2). Constant fold if a src is 0/-1.
    (('bitfield_select', a, b, 0), ('iand', a, b)),
+   (('bitfield_select', a, 0, b), ('iand', ('inot', a), b)),
+   (('bitfield_select', 0, a, b), b),
+   (('bitfield_select', a, b, -1), ('ior', ('inot', a), b)),
+   (('bitfield_select', a, -1, b), ('ior', a, b)),
+   (('bitfield_select', -1, a, b), a),
+   (('bitfield_select', a, b, b), b),
+   (('bitfield_select', a, ('inot', b), b), ('ixor', a, b)),
+   (('bitfield_select', a, b, ('inot', b)), ('inot', ('ixor', a, b))),
    (('bitfield_select', a, ('iand', a, b), c), ('bitfield_select', a, b, c)),
+   (('bitfield_select', a, b, ('iand', ('inot', a), c)), ('bitfield_select', a, b, c)),
+   (('bitfield_select', ('inot', a), b, c), ('bitfield_select', a, c, b)),
+   (('bitfield_select', ('ineg', ('b2i', 'a@1')), b, c), ('bcsel', a, b, c)),
+
+   (('ior@32', ('iand', a, b), ('iand', ('inot', a), c)), ('bitfield_select', a, b, c), 'options->has_bitfield_select'),
+   (('iadd@32', ('iand', a, b), ('iand', ('inot', a), c)), ('bitfield_select', a, b, c), 'options->has_bitfield_select'),
+   (('ixor@32', ('iand', a, b), ('iand', ('inot', a), c)), ('bitfield_select', a, b, c), 'options->has_bitfield_select'),
+   (('ixor@32', ('iand', a, ('ixor', b, c)), c), ('bitfield_select', a, b, c), 'options->has_bitfield_select'),
 
    # Note that these opcodes are defined to only use the five least significant bits of 'offset' and 'bits'
    (('ubfe', 'value', 'offset', ('iand', 31, 'bits')), ('ubfe', 'value', 'offset', 'bits')),
