@@ -350,7 +350,7 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
           * VMEM loads do not write the same lanes. Since GFX11, we track VMEM operations on the
           * linear CFG, so this is difficult */
          uint8_t vmem_type = get_vmem_type(ctx.gfx_level, instr);
-         if (vmem_type && ctx.gfx_level < GFX12) {
+         if (vmem_type) {
             wait_event event = get_vmem_event(ctx, instr, vmem_type);
             wait_type type = (wait_type)(ffs(ctx.info->get_counters_for_event(event)) - 1);
 
@@ -359,7 +359,13 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
             bool type_matches = type != wait_type_vm || (it->second.vmem_types == vmem_type &&
                                                          util_bitcount(vmem_type) == 1);
 
-            if (event_matches && type_matches)
+            bool different_halves = false;
+            if (event == event_vmem && event_matches) {
+               uint32_t mask = (get_vmem_mask(ctx, instr) >> (j * 2)) & 0x3;
+               different_halves = !(mask & it->second.vm_mask);
+            }
+
+            if ((event_matches && type_matches && ctx.gfx_level < GFX12) || different_halves)
                reg_imm[type] = wait_imm::unset_counter;
          }
 

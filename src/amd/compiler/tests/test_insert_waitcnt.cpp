@@ -612,3 +612,82 @@ BEGIN_TEST(insert_waitcnt.vmem_ds)
 
    finish_waitcnt_test();
 END_TEST
+
+BEGIN_TEST(insert_waitcnt.waw.vmem_different_halves)
+   if (!setup_cs(NULL, GFX12))
+      return;
+
+   Definition def_v4_lo(PhysReg(260), v2b);
+   Definition def_v4_hi(PhysReg(260).advance(2), v2b);
+   Operand op_v0(PhysReg(256), v1);
+   Operand desc_s4(PhysReg(0), s4);
+   Operand desc_s8(PhysReg(8), s8);
+
+   //>> p_unit_test 0
+   //! v2b: %0:v[4][0:16] = buffer_load_short_d16 %0:s[0-3], %0:v[0], 0
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   bld.pseudo(aco_opcode::p_unit_test, Operand::zero());
+   bld.mubuf(aco_opcode::buffer_load_short_d16, def_v4_lo, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+
+   //>> p_unit_test 1
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   //! v2b: %0:v[4][0:16] = buffer_load_short_d16 %0:s[0-3], %0:v[0], 0
+   bld.reset(program->create_and_insert_block());
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+   bld.mubuf(aco_opcode::buffer_load_short_d16, def_v4_lo, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+
+   //>> p_unit_test 2
+   //! v2b: %0:v[4][0:16] = buffer_load_short_d16 %0:s[0-3], %0:v[0], 0
+   //! s_wait_loadcnt imm:0
+   //! v2b: %0:v[4][0:16] = buffer_load_short_d16 %0:s[0-3], %0:v[0], 0
+   bld.reset(program->create_and_insert_block());
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
+   bld.mubuf(aco_opcode::buffer_load_short_d16, def_v4_lo, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+   bld.mubuf(aco_opcode::buffer_load_short_d16, def_v4_lo, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+
+   //>> p_unit_test 3
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   //! s_wait_loadcnt imm:0
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   bld.reset(program->create_and_insert_block());
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+
+   //>> p_unit_test 4
+   //! v2b: %0:v[4][0:16] = image_sample %0:s[8-15], %0:s[0-3],  v1: undef, %0:v[0] 1d d16
+   //! s_wait_samplecnt imm:0
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   bld.reset(program->create_and_insert_block());
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(4));
+   Instruction* instr =
+      bld.mimg(aco_opcode::image_sample, def_v4_lo, desc_s8, desc_s4, Operand(v1), op_v0);
+   instr->mimg().dmask = 0x1;
+   instr->mimg().d16 = true;
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+
+   //>> p_unit_test 5
+   //! v2b: %0:v[4][16:32] = buffer_load_short_d16_hi %0:s[0-3], %0:v[0], 0
+   //! s_wait_loadcnt imm:0
+   //! v2b: %0:v[4][0:16] = image_sample %0:s[8-15], %0:s[0-3],  v1: undef, %0:v[0] 1d d16
+   bld.reset(program->create_and_insert_block());
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(5));
+   bld.mubuf(aco_opcode::buffer_load_short_d16_hi, def_v4_hi, desc_s4, op_v0, Operand::zero(), 0,
+             false);
+   instr = bld.mimg(aco_opcode::image_sample, def_v4_lo, desc_s8, desc_s4, Operand(v1), op_v0);
+   instr->mimg().dmask = 0x1;
+   instr->mimg().d16 = true;
+
+   finish_waitcnt_test();
+END_TEST
