@@ -746,12 +746,10 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                         key->f32_color_rb |= 1 << i;
                 }
 
-                if (s->info.fs.untyped_color_outputs) {
-                        if (util_format_is_pure_uint(cbuf->format))
-                                key->uint_color_rb |= 1 << i;
-                        else if (util_format_is_pure_sint(cbuf->format))
-                                key->int_color_rb |= 1 << i;
-                }
+                if (util_format_is_pure_uint(cbuf->format))
+                        key->f32_color_rb |= 1 << i;
+                else if (util_format_is_pure_sint(cbuf->format))
+                        key->f32_color_rb |= 1 << i;
         }
 
         if (key->is_points) {

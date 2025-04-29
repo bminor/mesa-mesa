@@ -1101,45 +1101,8 @@ v3d_nir_lower_gs_early(struct v3d_compile *c)
 }
 
 static void
-v3d_fixup_fs_output_types(struct v3d_compile *c)
-{
-        nir_foreach_shader_out_variable(var, c->s) {
-                uint32_t mask = 0;
-
-                switch (var->data.location) {
-                case FRAG_RESULT_COLOR:
-                        mask = ~0;
-                        break;
-                case FRAG_RESULT_DATA0:
-                case FRAG_RESULT_DATA1:
-                case FRAG_RESULT_DATA2:
-                case FRAG_RESULT_DATA3:
-                case FRAG_RESULT_DATA4:
-                case FRAG_RESULT_DATA5:
-                case FRAG_RESULT_DATA6:
-                case FRAG_RESULT_DATA7:
-                        mask = 1 << (var->data.location - FRAG_RESULT_DATA0);
-                        break;
-                }
-
-                if (c->fs_key->int_color_rb & mask) {
-                        var->type =
-                                glsl_vector_type(GLSL_TYPE_INT,
-                                                 glsl_get_components(var->type));
-                } else if (c->fs_key->uint_color_rb & mask) {
-                        var->type =
-                                glsl_vector_type(GLSL_TYPE_UINT,
-                                                 glsl_get_components(var->type));
-                }
-        }
-}
-
-static void
 v3d_nir_lower_fs_early(struct v3d_compile *c)
 {
-        if (c->fs_key->int_color_rb || c->fs_key->uint_color_rb)
-                v3d_fixup_fs_output_types(c);
-
         if (c->fs_key->line_smoothing) {
                 NIR_PASS(_, c->s, v3d_nir_lower_line_smooth);
                 NIR_PASS(_, c->s, nir_lower_global_vars_to_local);

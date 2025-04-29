@@ -441,11 +441,6 @@ struct v3d_fs_key {
         uint8_t swap_color_rb;
         /* Mask of which render targets need to be written as 32-bit floats */
         uint8_t f32_color_rb;
-        /* Masks of which render targets need to be written as ints/uints.
-         * Used by gallium to work around lost information in TGSI.
-         */
-        uint8_t int_color_rb;
-        uint8_t uint_color_rb;
 
         /* Color format information per render target. Only set when logic
          * operations are enabled, when fbfetch is in use or when falling back

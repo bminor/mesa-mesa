@@ -32,6 +32,7 @@
 #include "compiler/nir/nir_lower_blend.h"
 #include "nir/nir_serialize.h"
 
+#include "util/format/u_format.h"
 #include "util/shader_stats.h"
 #include "util/u_atomic.h"
 #include "util/os_time.h"
@@ -1163,12 +1164,10 @@ v3d_fs_key_set_color_attachment(struct v3d_fs_key *key,
       key->f32_color_rb |= 1 << index;
    }
 
-   if (p_stage->nir->info.fs.untyped_color_outputs) {
-      if (util_format_is_pure_uint(fb_pipe_format))
-         key->uint_color_rb |= 1 << index;
-      else if (util_format_is_pure_sint(fb_pipe_format))
-         key->int_color_rb |= 1 << index;
-   }
+   if (util_format_is_pure_uint(fb_pipe_format))
+      key->f32_color_rb |= 1 << index;
+   else if (util_format_is_pure_sint(fb_pipe_format))
+      key->f32_color_rb |= 1 << index;
 }
 
 static void
@@ -2069,6 +2068,11 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
           desc->channel[0].size == 32) {
          key->f32_color_rb |= 1 << i;
       }
+
+      if (util_format_is_pure_uint(fb_pipe_format))
+         key->f32_color_rb |= 1 << i;
+      else if (util_format_is_pure_sint(fb_pipe_format))
+         key->f32_color_rb |= 1 << i;
    }
 
    const VkPipelineVertexInputStateCreateInfo *vi_info =
