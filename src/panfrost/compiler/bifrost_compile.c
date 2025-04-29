@@ -5034,6 +5034,19 @@ bi_lower_bit_size(const nir_instr *instr, void *data)
          if (pan_arch(gpu_id) < 11)
             return 0;
          return (nir_src_bit_size(alu->src[0].src) == 32) ? 0 : 32;
+      case nir_op_iadd:
+      case nir_op_isub:
+      case nir_op_iadd_sat:
+      case nir_op_uadd_sat:
+      case nir_op_isub_sat:
+      case nir_op_usub_sat:
+      case nir_op_ineg:
+      case nir_op_iabs:
+         /* On v11+, IABS.v4s8, IADD.v4s8 and ISUB.v4s8 are gone */
+         if (pan_arch(gpu_id) < 11)
+            return 0;
+
+         return (nir_src_bit_size(alu->src[0].src) == 8) ? 16 : 0;
       default:
          return 0;
       }

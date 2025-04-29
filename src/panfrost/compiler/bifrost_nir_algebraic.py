@@ -100,20 +100,6 @@ algebraic_late = [
     # On v11+, F16_TO_S32/F16_TO_U32 is gone but we still have F32_TO_S32/F32_TO_U32
     (('f2i32', 'a@16'), ('f2i32', ('f2f32', a)), 'gpu_arch >= 11'),
     (('f2u32', 'a@16'), ('f2u32', ('f2f32', a)), 'gpu_arch >= 11'),
-
-    # On v11+, IABS.v4s8 is gone
-    (('iabs', 'a@8'), ('i2i8', ('iabs', ('i2i16', a))), 'gpu_arch >= 11'),
-
-    # On v11+, IADD.v4s8 is gone
-    (('iadd', 'a@8', 'b@8'), ('i2i8', ('iadd', ('i2i16', a), ('i2i16', b))), 'gpu_arch >= 11'),
-    (('iadd_sat', 'a@8', 'b@8'), ('i2i8', ('iadd_sat', ('i2i16', a), ('i2i16', b))), 'gpu_arch >= 11'),
-    (('uadd_sat', 'a@8', 'b@8'), ('u2u8', ('uadd_sat', ('u2u16', a), ('u2u16', b))), 'gpu_arch >= 11'),
-
-    # On v11+, ISUB.v4s8 is gone
-    (('ineg', 'a@8'), ('i2i8', ('ineg', ('i2i16', a))), 'gpu_arch >= 11'),
-    (('isub', 'a@8', 'b@8'), ('i2i8', ('isub', ('i2i16', a), ('i2i16', b))), 'gpu_arch >= 11'),
-    (('isub_sat', 'a@8', 'b@8'), ('i2i8', ('isub_sat', ('i2i16', a), ('i2i16', b))), 'gpu_arch >= 11'),
-    (('usub_sat', 'a@8', 'b@8'), ('u2u8', ('usub_sat', ('u2u16', a), ('u2u16', b))), 'gpu_arch >= 11'),
 ]
 
 # On v11+, ICMP_OR.v4u8 was removed
