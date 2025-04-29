@@ -2362,22 +2362,67 @@ dominates_linear(const Block& parent, const Block& child)
           child.linear_dom_post_index <= parent.linear_dom_post_index;
 }
 
+struct aco_type {
+   aco_base_type base_type : 4;
+   uint8_t num_components : 4;
+   uint8_t bit_size;
+
+   inline unsigned bytes() const { return (bit_size * num_components) / 8; }
+   inline unsigned dwords() const { return DIV_ROUND_UP(bytes(), 4); }
+
+   /* Constant size used by Operand::c16/c32/c64/get_const.
+    * 0 means no inline constants are supported for this type.
+    */
+   inline unsigned constant_bits() const
+   {
+      switch (base_type) {
+      case aco_base_type_bfloat: /* XXX might be useful some day. */
+      case aco_base_type_none:
+      case aco_base_type_lanemask: return 0;
+      case aco_base_type_float:
+         if (bit_size == 16 && (num_components == 1 || num_components == 2))
+            return 16;
+         else if (bit_size == 32 && num_components == 1)
+            return 32;
+         else if (bit_size == 64 && num_components == 1)
+            return 64;
+         return 0;
+      case aco_base_type_uint:
+         if (bit_size == 16 && (num_components == 1 || num_components == 2))
+            return 32; /* 16bit int alu uses 32bit float constants. */
+         else if (bit_size == 32 && num_components == 1)
+            return 32;
+         else if (bit_size == 64 && num_components == 1)
+            return 64;
+         return 0;
+      case aco_base_type_int: assert(bit_size == 64 && num_components == 1); return 64;
+      }
+      return 0;
+   }
+};
+
+struct aco_alu_opcode_info {
+   uint8_t num_operands : 3;
+   uint8_t num_defs : 2;
+   uint8_t input_modifiers : 3;
+   uint8_t output_modifiers : 1;
+   aco_type op_types[4];
+   aco_type def_types[3];
+   fixed_reg op_fixed_reg[4];
+   fixed_reg def_fixed_reg[3];
+};
+
 typedef struct {
    const int16_t opcode_gfx7[static_cast<int>(aco_opcode::num_opcodes)];
    const int16_t opcode_gfx9[static_cast<int>(aco_opcode::num_opcodes)];
    const int16_t opcode_gfx10[static_cast<int>(aco_opcode::num_opcodes)];
    const int16_t opcode_gfx11[static_cast<int>(aco_opcode::num_opcodes)];
    const int16_t opcode_gfx12[static_cast<int>(aco_opcode::num_opcodes)];
-   const std::bitset<static_cast<int>(aco_opcode::num_opcodes)> can_use_input_modifiers;
-   const std::bitset<static_cast<int>(aco_opcode::num_opcodes)> can_use_output_modifiers;
    const std::bitset<static_cast<int>(aco_opcode::num_opcodes)> is_atomic;
    const char* name[static_cast<int>(aco_opcode::num_opcodes)];
    const aco::Format format[static_cast<int>(aco_opcode::num_opcodes)];
-   /* sizes used for input/output modifiers and constants */
-   const unsigned operand_size[static_cast<int>(aco_opcode::num_opcodes)];
    const instr_class classes[static_cast<int>(aco_opcode::num_opcodes)];
-   const uint32_t definitions[static_cast<int>(aco_opcode::num_opcodes)];
-   const uint32_t operands[static_cast<int>(aco_opcode::num_opcodes)];
+   const aco_alu_opcode_info alu_opcode_infos[static_cast<int>(aco_opcode::num_opcodes)];
 } Info;
 
 extern const Info instr_info;

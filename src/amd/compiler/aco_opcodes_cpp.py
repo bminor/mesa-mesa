@@ -14,9 +14,15 @@ namespace aco {
 
 <%
 opcode_names = sorted(instructions.keys())
-can_use_input_modifiers = "".join([instructions[name].input_mod for name in reversed(opcode_names)])
-can_use_output_modifiers = "".join([instructions[name].output_mod for name in reversed(opcode_names)])
 is_atomic = "".join([instructions[name].is_atomic for name in reversed(opcode_names)])
+# Record which operand of each instruction can use modifiers.
+operand_mods = dict();
+for name in opcode_names:
+    op_mods = 0
+    for operand in reversed(instructions[name].operands):
+        op_mods <<= 1
+        op_mods |= int(operand.mods)
+    operand_mods[name] = op_mods
 %>
 
 extern const aco::Info instr_info = {
@@ -45,8 +51,6 @@ extern const aco::Info instr_info = {
       ${instructions[name].op.gfx12},
       % endfor
    },
-   std::bitset<${len(opcode_names)}>("${can_use_input_modifiers}"),
-   std::bitset<${len(opcode_names)}>("${can_use_output_modifiers}"),
    std::bitset<${len(opcode_names)}>("${is_atomic}"),
    {
       % for name in opcode_names:
@@ -60,22 +64,45 @@ extern const aco::Info instr_info = {
    },
    {
       % for name in opcode_names:
-      ${instructions[name].operand_size},
-      % endfor
-   },
-   {
-      % for name in opcode_names:
       instr_class::${instructions[name].cls.value},
       % endfor
    },
    {
       % for name in opcode_names:
-      ${hex(instructions[name].definitions)},
-      % endfor
-   },
-   {
-      % for name in opcode_names:
-      ${hex(instructions[name].operands)},
+      { // ${name}
+         ${len(instructions[name].operands)},
+         ${len(instructions[name].definitions)},
+         ${operand_mods[name]},
+         ${int(instructions[name].definitions[0].mods) if len(instructions[name].definitions) > 0 else 0},
+         {
+            % for operand in instructions[name].operands:
+            {
+               ${operand.base_type.name},
+               ${operand.num_components},
+               ${operand.bit_size},
+            },
+            % endfor
+         },
+         {
+            % for definition in instructions[name].definitions:
+            {
+               ${definition.base_type.name},
+               ${definition.num_components},
+               ${definition.bit_size},
+            },
+            % endfor
+         },
+         {
+            % for operand in instructions[name].operands:
+               ${operand.fixed_reg.name},
+            % endfor
+         },
+         {
+            % for definition in instructions[name].definitions:
+               ${definition.fixed_reg.name},
+            % endfor
+         },
+      },
       % endfor
    },
 };

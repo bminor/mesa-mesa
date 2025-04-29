@@ -219,73 +219,92 @@ Opcode = namedtuple('Opcode', ['gfx6', 'gfx7', 'gfx8', 'gfx9', 'gfx10', 'gfx11',
 # to support older versions.
 Opcode.__new__.__defaults__=(-1, -1, -1, -1, -1, -1, -1)
 
+class AcoBaseType(IntEnum):
+   aco_base_type_none = 0
+   aco_base_type_lanemask = auto()
+   aco_base_type_uint = auto()
+   aco_base_type_int = auto()
+   aco_base_type_float = auto()
+   aco_base_type_bfloat = auto()
+
+class FixedReg(IntEnum):
+   not_fixed = 0
+   fixed_exec = auto()
+   fixed_scc = auto()
+   fixed_m0 = auto()
+   fixed_imm = auto()
+
+SrcDestInfo = namedtuple('SrcDestInfo', ['base_type', 'bit_size', 'num_components', 'fixed_reg', 'mods'])
+
+
+VCC = SrcDestInfo(AcoBaseType.aco_base_type_lanemask, 1, 1, FixedReg.not_fixed, False)
+M0 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 32, 1, FixedReg.fixed_m0, False)
+EXEC_LO = SrcDestInfo(AcoBaseType.aco_base_type_uint, 32, 1, FixedReg.fixed_exec, False)
+EXEC_LOHI = SrcDestInfo(AcoBaseType.aco_base_type_uint, 64, 1, FixedReg.fixed_exec, False)
+EXEC = SrcDestInfo(AcoBaseType.aco_base_type_lanemask, 1, 1, FixedReg.fixed_exec, False)
+SCC = SrcDestInfo(AcoBaseType.aco_base_type_uint, 32, 1, FixedReg.fixed_scc, False)
+IMM = SrcDestInfo(AcoBaseType.aco_base_type_none, 32, 1, FixedReg.fixed_imm, False)
+U16 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 16, 1, FixedReg.not_fixed, False)
+U32 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 32, 1, FixedReg.not_fixed, False)
+U64 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 64, 1, FixedReg.not_fixed, False)
+U128 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 32, 4, FixedReg.not_fixed, False)
+I64 = SrcDestInfo(AcoBaseType.aco_base_type_int, 64, 1, FixedReg.not_fixed, False)
+F16 = SrcDestInfo(AcoBaseType.aco_base_type_float, 16, 1, FixedReg.not_fixed, True)
+F32 = SrcDestInfo(AcoBaseType.aco_base_type_float, 32, 1, FixedReg.not_fixed, True)
+F64 = SrcDestInfo(AcoBaseType.aco_base_type_float, 64, 1, FixedReg.not_fixed, True)
+BF16 = SrcDestInfo(AcoBaseType.aco_base_type_bfloat, 16, 1, FixedReg.not_fixed, True)
+PkU16 = SrcDestInfo(AcoBaseType.aco_base_type_uint, 16, 2, FixedReg.not_fixed, False)
+PkF16 = SrcDestInfo(AcoBaseType.aco_base_type_float, 16, 2, FixedReg.not_fixed, True)
+PkF32 = SrcDestInfo(AcoBaseType.aco_base_type_float, 32, 2, FixedReg.not_fixed, False)
+PkBF16 = SrcDestInfo(AcoBaseType.aco_base_type_bfloat, 16, 2, FixedReg.not_fixed, True)
+F8 = SrcDestInfo(AcoBaseType.aco_base_type_float, 8, 1, FixedReg.not_fixed, False)
+PkF8 = SrcDestInfo(AcoBaseType.aco_base_type_float, 8, 2, FixedReg.not_fixed, False)
+Pk4F8 = SrcDestInfo(AcoBaseType.aco_base_type_float, 8, 4, FixedReg.not_fixed, False)
+BF8 = SrcDestInfo(AcoBaseType.aco_base_type_bfloat, 8, 1, FixedReg.not_fixed, False)
+PkBF8 = SrcDestInfo(AcoBaseType.aco_base_type_bfloat, 8, 2, FixedReg.not_fixed, False)
+Pk4BF8 = SrcDestInfo(AcoBaseType.aco_base_type_bfloat, 8, 4, FixedReg.not_fixed, False)
+
 class Instruction(object):
    """Class that represents all the information we have about the opcode
    NOTE: this must be kept in sync with aco_op_info
    """
-   def __init__(self, name, opcode, format, input_mod, output_mod, is_atomic, cls, definitions, operands):
+   def __init__(self, name, opcode, format, is_atomic, cls, definitions, operands):
       assert isinstance(name, str)
       assert isinstance(opcode, Opcode)
       assert isinstance(format, Format)
-      assert isinstance(input_mod, bool)
-      assert isinstance(output_mod, bool)
-      assert isinstance(definitions, int)
-      assert isinstance(operands, int)
+      assert isinstance(definitions, tuple) and len(definitions) <= 4
+      assert isinstance(operands, tuple) and len(operands) <= 4
+      for definition in definitions:
+         assert isinstance(definition, SrcDestInfo)
+      for operand in operands:
+         assert isinstance(operand, SrcDestInfo)
       assert opcode.gfx6 == -1 or opcode.gfx7 == -1 or opcode.gfx6 == opcode.gfx7
       assert opcode.gfx8 == -1 or opcode.gfx9 == -1 or opcode.gfx8 == opcode.gfx9
 
       self.name = name
       self.op = opcode
-      self.input_mod = "1" if input_mod else "0"
-      self.output_mod = "1" if output_mod else "0"
       self.is_atomic = "1" if is_atomic else "0"
       self.format = format
       self.cls = cls
       self.definitions = definitions
       self.operands = operands
 
-      parts = name.replace('_e64', '').rsplit('_', 2)
-      op_dtype = parts[-1]
 
-      op_dtype_sizes = {'{}{}'.format(prefix, size) : size for prefix in 'biuf' for size in [64, 32, 24, 16]}
-      # inline constants are 32-bit for 16-bit integer/typeless instructions: https://reviews.llvm.org/D81841
-      op_dtype_sizes['b16'] = 32
-      op_dtype_sizes['i16'] = 32
-      op_dtype_sizes['u16'] = 32
+def src(*argv):
+   return tuple(i for i in argv)
 
-      # If we can't tell the operand size, default to 32.
-      self.operand_size = op_dtype_sizes.get(op_dtype, 32)
+def dst(*argv):
+   return tuple(i for i in argv)
 
-      # exceptions for operands:
-      if 'qsad_' in name:
-        self.operand_size = 0
-      elif 'sad_' in name:
-        self.operand_size = 32
-      elif name in ['v_mad_u64_u32', 'v_mad_i64_i32',
-                    'v_interp_p10_f16_f32_inreg', 'v_interp_p10_rtz_f16_f32_inreg',
-                    'v_interp_p2_f16_f32_inreg', 'v_interp_p2_rtz_f16_f32_inreg']:
-        self.operand_size = 0
-      elif self.operand_size == 24:
-        self.operand_size = 32
-      elif op_dtype == 'u8' or op_dtype == 'i8':
-        self.operand_size = 32
-      elif name in ['v_cvt_f32_ubyte0', 'v_cvt_f32_ubyte1',
-                    'v_cvt_f32_ubyte2', 'v_cvt_f32_ubyte3']:
-        self.operand_size = 32
+def mods(src_def):
+   if not isinstance(src_def, SrcDestInfo):
+      return tuple(mods(i) for i in src_def)
+   return SrcDestInfo(src_def.base_type, src_def.bit_size, src_def.num_components, src_def.fixed_reg, True)
 
-
-# Matches PhysReg
-VCC = 106
-M0 = 124
-EXEC_LO = 126
-EXEC = 127 # Some instructins only write lo, so use exec_hi encoding here
-SCC = 253
-
-def src(op1 = 0, op2 = 0, op3 = 0, op4 = 0):
-   return op1 | (op2 << 8) | (op3 << 16) | (op4 << 24)
-
-def dst(def1 = 0, def2 = 0, def3 = 0, def4 = 0):
-   return def1 | (def2 << 8) | (def3 << 16) | (def4 << 24)
+def noMods(src_def):
+   if not isinstance(src_def, SrcDestInfo):
+      return tuple(noMods(i) for i in src_def)
+   return SrcDestInfo(src_def.base_type, src_def.bit_size, src_def.num_components, src_def.fixed_reg, False)
 
 def op(*args, **kwargs):
    enc = [None] * len(Opcode._fields)
@@ -307,9 +326,9 @@ def op(*args, **kwargs):
 # global dictionary of instructions
 instructions = {}
 
-def insn(name, opcode = Opcode(), format = Format.PSEUDO, cls = InstrClass.Other, input_mod = False, output_mod = False, is_atomic = False, definitions = 0, operands = 0):
+def insn(name, opcode = Opcode(), format = Format.PSEUDO, cls = InstrClass.Other, is_atomic = False, definitions = tuple(), operands = tuple()):
    assert name not in instructions
-   instructions[name] = Instruction(name, opcode, format, input_mod, output_mod, is_atomic, cls, definitions, operands)
+   instructions[name] = Instruction(name, opcode, format, is_atomic, cls, definitions, operands)
 
 def default_class(instructions, cls):
    for i in instructions:
@@ -443,282 +462,282 @@ insn("p_debug_info")
 
 # SOP2 instructions: 2 scalar inputs, 1 scalar output (+optional scc)
 SOP2 = {
-   ("s_add_u32",            dst(1, SCC), src(1, 1), op(0x00)),
-   ("s_sub_u32",            dst(1, SCC), src(1, 1), op(0x01)),
-   ("s_add_i32",            dst(1, SCC), src(1, 1), op(0x02)),
-   ("s_sub_i32",            dst(1, SCC), src(1, 1), op(0x03)),
-   ("s_addc_u32",           dst(1, SCC), src(1, 1, SCC), op(0x04)),
-   ("s_subb_u32",           dst(1, SCC), src(1, 1, SCC), op(0x05)),
-   ("s_min_i32",            dst(1, SCC), src(1, 1), op(0x06, gfx11=0x12)),
-   ("s_min_u32",            dst(1, SCC), src(1, 1), op(0x07, gfx11=0x13)),
-   ("s_max_i32",            dst(1, SCC), src(1, 1), op(0x08, gfx11=0x14)),
-   ("s_max_u32",            dst(1, SCC), src(1, 1), op(0x09, gfx11=0x15)),
-   ("s_cselect_b32",        dst(1), src(1, 1, SCC), op(0x0a, gfx11=0x30)),
-   ("s_cselect_b64",        dst(2), src(2, 2, SCC), op(0x0b, gfx11=0x31)),
-   ("s_and_b32",            dst(1, SCC), src(1, 1), op(0x0e, gfx8=0x0c, gfx10=0x0e, gfx11=0x16)),
-   ("s_and_b64",            dst(2, SCC), src(2, 2), op(0x0f, gfx8=0x0d, gfx10=0x0f, gfx11=0x17)),
-   ("s_or_b32",             dst(1, SCC), src(1, 1), op(0x10, gfx8=0x0e, gfx10=0x10, gfx11=0x18)),
-   ("s_or_b64",             dst(2, SCC), src(2, 2), op(0x11, gfx8=0x0f, gfx10=0x11, gfx11=0x19)),
-   ("s_xor_b32",            dst(1, SCC), src(1, 1), op(0x12, gfx8=0x10, gfx10=0x12, gfx11=0x1a)),
-   ("s_xor_b64",            dst(2, SCC), src(2, 2), op(0x13, gfx8=0x11, gfx10=0x13, gfx11=0x1b)),
-   ("s_andn2_b32",          dst(1, SCC), src(1, 1), op(0x14, gfx8=0x12, gfx10=0x14, gfx11=0x22)), #s_and_not1_b32 in GFX11
-   ("s_andn2_b64",          dst(2, SCC), src(2, 2), op(0x15, gfx8=0x13, gfx10=0x15, gfx11=0x23)), #s_and_not1_b64 in GFX11
-   ("s_orn2_b32",           dst(1, SCC), src(1, 1), op(0x16, gfx8=0x14, gfx10=0x16, gfx11=0x24)), #s_or_not1_b32 in GFX11
-   ("s_orn2_b64",           dst(2, SCC), src(2, 2), op(0x17, gfx8=0x15, gfx10=0x17, gfx11=0x25)), #s_or_not1_b64 in GFX11
-   ("s_nand_b32",           dst(1, SCC), src(1, 1), op(0x18, gfx8=0x16, gfx10=0x18, gfx11=0x1c)),
-   ("s_nand_b64",           dst(2, SCC), src(2, 2), op(0x19, gfx8=0x17, gfx10=0x19, gfx11=0x1d)),
-   ("s_nor_b32",            dst(1, SCC), src(1, 1), op(0x1a, gfx8=0x18, gfx10=0x1a, gfx11=0x1e)),
-   ("s_nor_b64",            dst(2, SCC), src(2, 2), op(0x1b, gfx8=0x19, gfx10=0x1b, gfx11=0x1f)),
-   ("s_xnor_b32",           dst(1, SCC), src(1, 1), op(0x1c, gfx8=0x1a, gfx10=0x1c, gfx11=0x20)),
-   ("s_xnor_b64",           dst(2, SCC), src(2, 2), op(0x1d, gfx8=0x1b, gfx10=0x1d, gfx11=0x21)),
-   ("s_lshl_b32",           dst(1, SCC), src(1, 1), op(0x1e, gfx8=0x1c, gfx10=0x1e, gfx11=0x08)),
-   ("s_lshl_b64",           dst(2, SCC), src(2, 1), op(0x1f, gfx8=0x1d, gfx10=0x1f, gfx11=0x09)),
-   ("s_lshr_b32",           dst(1, SCC), src(1, 1), op(0x20, gfx8=0x1e, gfx10=0x20, gfx11=0x0a)),
-   ("s_lshr_b64",           dst(2, SCC), src(2, 1), op(0x21, gfx8=0x1f, gfx10=0x21, gfx11=0x0b)),
-   ("s_ashr_i32",           dst(1, SCC), src(1, 1), op(0x22, gfx8=0x20, gfx10=0x22, gfx11=0x0c)),
-   ("s_ashr_i64",           dst(2, SCC), src(2, 1), op(0x23, gfx8=0x21, gfx10=0x23, gfx11=0x0d)),
-   ("s_bfm_b32",            dst(1), src(1, 1), op(0x24, gfx8=0x22, gfx10=0x24, gfx11=0x2a)),
-   ("s_bfm_b64",            dst(2), src(1, 1), op(0x25, gfx8=0x23, gfx10=0x25, gfx11=0x2b)),
-   ("s_mul_i32",            dst(1), src(1, 1), op(0x26, gfx8=0x24, gfx10=0x26, gfx11=0x2c)),
-   ("s_bfe_u32",            dst(1, SCC), src(1, 1), op(0x27, gfx8=0x25, gfx10=0x27, gfx11=0x26)),
-   ("s_bfe_i32",            dst(1, SCC), src(1, 1), op(0x28, gfx8=0x26, gfx10=0x28, gfx11=0x27)),
-   ("s_bfe_u64",            dst(2, SCC), src(2, 1), op(0x29, gfx8=0x27, gfx10=0x29, gfx11=0x28)),
-   ("s_bfe_i64",            dst(2, SCC), src(2, 1), op(0x2a, gfx8=0x28, gfx10=0x2a, gfx11=0x29)),
-   ("s_cbranch_g_fork",     dst(), src(), op(0x2b, gfx8=0x29, gfx10=-1), InstrClass.Branch),
-   ("s_absdiff_i32",        dst(1, SCC), src(1, 1), op(0x2c, gfx8=0x2a, gfx10=0x2c, gfx11=0x06)),
-   ("s_rfe_restore_b64",    dst(), src(), op(gfx8=0x2b, gfx10=-1), InstrClass.Branch),
-   ("s_lshl1_add_u32",      dst(1, SCC), src(1, 1), op(gfx9=0x2e, gfx11=0x0e)),
-   ("s_lshl2_add_u32",      dst(1, SCC), src(1, 1), op(gfx9=0x2f, gfx11=0x0f)),
-   ("s_lshl3_add_u32",      dst(1, SCC), src(1, 1), op(gfx9=0x30, gfx11=0x10)),
-   ("s_lshl4_add_u32",      dst(1, SCC), src(1, 1), op(gfx9=0x31, gfx11=0x11)),
-   ("s_pack_ll_b32_b16",    dst(1), src(1, 1), op(gfx9=0x32)),
-   ("s_pack_lh_b32_b16",    dst(1), src(1, 1), op(gfx9=0x33)),
-   ("s_pack_hh_b32_b16",    dst(1), src(1, 1), op(gfx9=0x34)),
-   ("s_pack_hl_b32_b16",    dst(1), src(1, 1), op(gfx11=0x35)),
-   ("s_mul_hi_u32",         dst(1), src(1, 1), op(gfx9=0x2c, gfx10=0x35, gfx11=0x2d)),
-   ("s_mul_hi_i32",         dst(1), src(1, 1), op(gfx9=0x2d, gfx10=0x36, gfx11=0x2e)),
-   ("s_add_f32",            dst(1), src(1, 1), op(gfx11=0x40), InstrClass.SFPU),
-   ("s_sub_f32",            dst(1), src(1, 1), op(gfx11=0x41), InstrClass.SFPU),
-   ("s_min_f32",            dst(1), src(1, 1), op(gfx11=0x42), InstrClass.SFPU),
-   ("s_max_f32",            dst(1), src(1, 1), op(gfx11=0x43), InstrClass.SFPU),
-   ("s_mul_f32",            dst(1), src(1, 1), op(gfx11=0x44), InstrClass.SFPU),
-   ("s_fmaak_f32",          dst(1), src(1, 1, 1), op(gfx11=0x45), InstrClass.SFPU),
-   ("s_fmamk_f32",          dst(1), src(1, 1, 1), op(gfx11=0x46), InstrClass.SFPU),
-   ("s_fmac_f32",           dst(1), src(1, 1, 1), op(gfx11=0x47), InstrClass.SFPU),
-   ("s_cvt_pk_rtz_f16_f32", dst(1), src(1, 1), op(gfx11=0x48), InstrClass.SFPU),
-   ("s_add_f16",            dst(1), src(1, 1), op(gfx11=0x49), InstrClass.SFPU),
-   ("s_sub_f16",            dst(1), src(1, 1), op(gfx11=0x4a), InstrClass.SFPU),
-   ("s_min_f16",            dst(1), src(1, 1), op(gfx11=0x4b), InstrClass.SFPU),
-   ("s_max_f16",            dst(1), src(1, 1), op(gfx11=0x4c), InstrClass.SFPU),
-   ("s_mul_f16",            dst(1), src(1, 1), op(gfx11=0x4d), InstrClass.SFPU),
-   ("s_fmac_f16",           dst(1), src(1, 1, 1), op(gfx11=0x4e), InstrClass.SFPU),
-   ("s_minimum_f32",        dst(1), src(1, 1), op(gfx12=0x4f), InstrClass.SFPU),
-   ("s_maximum_f32",        dst(1), src(1, 1), op(gfx12=0x50), InstrClass.SFPU),
-   ("s_minimum_f16",        dst(1), src(1, 1), op(gfx12=0x51), InstrClass.SFPU),
-   ("s_maximum_f16",        dst(1), src(1, 1), op(gfx12=0x52), InstrClass.SFPU),
-   ("s_add_u64",            dst(2), src(2, 2), op(gfx12=0x53)),
-   ("s_sub_u64",            dst(2), src(2, 2), op(gfx12=0x54)),
-   ("s_mul_u64",            dst(2), src(2, 2), op(gfx12=0x55)),
+   ("s_add_u32",            dst(U32, SCC), src(U32, U32), op(0x00)),
+   ("s_sub_u32",            dst(U32, SCC), src(U32, U32), op(0x01)),
+   ("s_add_i32",            dst(U32, SCC), src(U32, U32), op(0x02)),
+   ("s_sub_i32",            dst(U32, SCC), src(U32, U32), op(0x03)),
+   ("s_addc_u32",           dst(U32, SCC), src(U32, U32, SCC), op(0x04)),
+   ("s_subb_u32",           dst(U32, SCC), src(U32, U32, SCC), op(0x05)),
+   ("s_min_i32",            dst(U32, SCC), src(U32, U32), op(0x06, gfx11=0x12)),
+   ("s_min_u32",            dst(U32, SCC), src(U32, U32), op(0x07, gfx11=0x13)),
+   ("s_max_i32",            dst(U32, SCC), src(U32, U32), op(0x08, gfx11=0x14)),
+   ("s_max_u32",            dst(U32, SCC), src(U32, U32), op(0x09, gfx11=0x15)),
+   ("s_cselect_b32",        dst(U32),      src(U32, U32, SCC), op(0x0a, gfx11=0x30)),
+   ("s_cselect_b64",        dst(U64),      src(U64, U64, SCC), op(0x0b, gfx11=0x31)),
+   ("s_and_b32",            dst(U32, SCC), src(U32, U32), op(0x0e, gfx8=0x0c, gfx10=0x0e, gfx11=0x16)),
+   ("s_and_b64",            dst(U64, SCC), src(U64, U64), op(0x0f, gfx8=0x0d, gfx10=0x0f, gfx11=0x17)),
+   ("s_or_b32",             dst(U32, SCC), src(U32, U32), op(0x10, gfx8=0x0e, gfx10=0x10, gfx11=0x18)),
+   ("s_or_b64",             dst(U64, SCC), src(U64, U64), op(0x11, gfx8=0x0f, gfx10=0x11, gfx11=0x19)),
+   ("s_xor_b32",            dst(U32, SCC), src(U32, U32), op(0x12, gfx8=0x10, gfx10=0x12, gfx11=0x1a)),
+   ("s_xor_b64",            dst(U64, SCC), src(U64, U64), op(0x13, gfx8=0x11, gfx10=0x13, gfx11=0x1b)),
+   ("s_andn2_b32",          dst(U32, SCC), src(U32, U32), op(0x14, gfx8=0x12, gfx10=0x14, gfx11=0x22)), #s_and_not1_b32 in GFX11
+   ("s_andn2_b64",          dst(U64, SCC), src(U64, U64), op(0x15, gfx8=0x13, gfx10=0x15, gfx11=0x23)), #s_and_not1_b64 in GFX11
+   ("s_orn2_b32",           dst(U32, SCC), src(U32, U32), op(0x16, gfx8=0x14, gfx10=0x16, gfx11=0x24)), #s_or_not1_b32 in GFX11
+   ("s_orn2_b64",           dst(U64, SCC), src(U64, U64), op(0x17, gfx8=0x15, gfx10=0x17, gfx11=0x25)), #s_or_not1_b64 in GFX11
+   ("s_nand_b32",           dst(U32, SCC), src(U32, U32), op(0x18, gfx8=0x16, gfx10=0x18, gfx11=0x1c)),
+   ("s_nand_b64",           dst(U64, SCC), src(U64, U64), op(0x19, gfx8=0x17, gfx10=0x19, gfx11=0x1d)),
+   ("s_nor_b32",            dst(U32, SCC), src(U32, U32), op(0x1a, gfx8=0x18, gfx10=0x1a, gfx11=0x1e)),
+   ("s_nor_b64",            dst(U64, SCC), src(U64, U64), op(0x1b, gfx8=0x19, gfx10=0x1b, gfx11=0x1f)),
+   ("s_xnor_b32",           dst(U32, SCC), src(U32, U32), op(0x1c, gfx8=0x1a, gfx10=0x1c, gfx11=0x20)),
+   ("s_xnor_b64",           dst(U64, SCC), src(U64, U64), op(0x1d, gfx8=0x1b, gfx10=0x1d, gfx11=0x21)),
+   ("s_lshl_b32",           dst(U32, SCC), src(U32, U32), op(0x1e, gfx8=0x1c, gfx10=0x1e, gfx11=0x08)),
+   ("s_lshl_b64",           dst(U64, SCC), src(U64, U32), op(0x1f, gfx8=0x1d, gfx10=0x1f, gfx11=0x09)),
+   ("s_lshr_b32",           dst(U32, SCC), src(U32, U32), op(0x20, gfx8=0x1e, gfx10=0x20, gfx11=0x0a)),
+   ("s_lshr_b64",           dst(U64, SCC), src(U64, U32), op(0x21, gfx8=0x1f, gfx10=0x21, gfx11=0x0b)),
+   ("s_ashr_i32",           dst(U32, SCC), src(U32, U32), op(0x22, gfx8=0x20, gfx10=0x22, gfx11=0x0c)),
+   ("s_ashr_i64",           dst(I64, SCC), src(I64, U32), op(0x23, gfx8=0x21, gfx10=0x23, gfx11=0x0d)),
+   ("s_bfm_b32",            dst(U32),      src(U32, U32), op(0x24, gfx8=0x22, gfx10=0x24, gfx11=0x2a)),
+   ("s_bfm_b64",            dst(U64),      src(U32, U32), op(0x25, gfx8=0x23, gfx10=0x25, gfx11=0x2b)),
+   ("s_mul_i32",            dst(U32),      src(U32, U32), op(0x26, gfx8=0x24, gfx10=0x26, gfx11=0x2c)),
+   ("s_bfe_u32",            dst(U32, SCC), src(U32, U32), op(0x27, gfx8=0x25, gfx10=0x27, gfx11=0x26)),
+   ("s_bfe_i32",            dst(U32, SCC), src(U32, U32), op(0x28, gfx8=0x26, gfx10=0x28, gfx11=0x27)),
+   ("s_bfe_u64",            dst(U64, SCC), src(U64, U32), op(0x29, gfx8=0x27, gfx10=0x29, gfx11=0x28)),
+   ("s_bfe_i64",            dst(I64, SCC), src(I64, U32), op(0x2a, gfx8=0x28, gfx10=0x2a, gfx11=0x29)),
+   ("s_cbranch_g_fork",     dst(),         src(), op(0x2b, gfx8=0x29, gfx10=-1), InstrClass.Branch),
+   ("s_absdiff_i32",        dst(U32, SCC), src(U32, U32), op(0x2c, gfx8=0x2a, gfx10=0x2c, gfx11=0x06)),
+   ("s_rfe_restore_b64",    dst(),         src(), op(gfx8=0x2b, gfx10=-1), InstrClass.Branch),
+   ("s_lshl1_add_u32",      dst(U32, SCC), src(U32, U32), op(gfx9=0x2e, gfx11=0x0e)),
+   ("s_lshl2_add_u32",      dst(U32, SCC), src(U32, U32), op(gfx9=0x2f, gfx11=0x0f)),
+   ("s_lshl3_add_u32",      dst(U32, SCC), src(U32, U32), op(gfx9=0x30, gfx11=0x10)),
+   ("s_lshl4_add_u32",      dst(U32, SCC), src(U32, U32), op(gfx9=0x31, gfx11=0x11)),
+   ("s_pack_ll_b32_b16",    dst(U32),      src(U32, U32), op(gfx9=0x32)),
+   ("s_pack_lh_b32_b16",    dst(U32),      src(U32, U32), op(gfx9=0x33)),
+   ("s_pack_hh_b32_b16",    dst(U32),      src(U32, U32), op(gfx9=0x34)),
+   ("s_pack_hl_b32_b16",    dst(U32),      src(U32, U32), op(gfx11=0x35)),
+   ("s_mul_hi_u32",         dst(U32),      src(U32, U32), op(gfx9=0x2c, gfx10=0x35, gfx11=0x2d)),
+   ("s_mul_hi_i32",         dst(U32),      src(U32, U32), op(gfx9=0x2d, gfx10=0x36, gfx11=0x2e)),
+   ("s_add_f32",            dst(F32),      src(F32, F32), op(gfx11=0x40), InstrClass.SFPU),
+   ("s_sub_f32",            dst(F32),      src(F32, F32), op(gfx11=0x41), InstrClass.SFPU),
+   ("s_min_f32",            dst(F32),      src(F32, F32), op(gfx11=0x42), InstrClass.SFPU),
+   ("s_max_f32",            dst(F32),      src(F32, F32), op(gfx11=0x43), InstrClass.SFPU),
+   ("s_mul_f32",            dst(F32),      src(F32, F32), op(gfx11=0x44), InstrClass.SFPU),
+   ("s_fmaak_f32",          dst(F32),      src(F32, F32, IMM), op(gfx11=0x45), InstrClass.SFPU),
+   ("s_fmamk_f32",          dst(F32),      src(F32, F32, IMM), op(gfx11=0x46), InstrClass.SFPU),
+   ("s_fmac_f32",           dst(F32),      src(F32, F32, F32), op(gfx11=0x47), InstrClass.SFPU),
+   ("s_cvt_pk_rtz_f16_f32", dst(PkF16),    src(F32, F32), op(gfx11=0x48), InstrClass.SFPU),
+   ("s_add_f16",            dst(F16),      src(F16, F16), op(gfx11=0x49), InstrClass.SFPU),
+   ("s_sub_f16",            dst(F16),      src(F16, F16), op(gfx11=0x4a), InstrClass.SFPU),
+   ("s_min_f16",            dst(F16),      src(F16, F16), op(gfx11=0x4b), InstrClass.SFPU),
+   ("s_max_f16",            dst(F16),      src(F16, F16), op(gfx11=0x4c), InstrClass.SFPU),
+   ("s_mul_f16",            dst(F16),      src(F16, F16), op(gfx11=0x4d), InstrClass.SFPU),
+   ("s_fmac_f16",           dst(F16),      src(F16, F16, F16), op(gfx11=0x4e), InstrClass.SFPU),
+   ("s_minimum_f32",        dst(F32),      src(F32, F32), op(gfx12=0x4f), InstrClass.SFPU),
+   ("s_maximum_f32",        dst(F32),      src(F32, F32), op(gfx12=0x50), InstrClass.SFPU),
+   ("s_minimum_f16",        dst(F16),      src(F16, F16), op(gfx12=0x51), InstrClass.SFPU),
+   ("s_maximum_f16",        dst(F16),      src(F16, F16), op(gfx12=0x52), InstrClass.SFPU),
+   ("s_add_u64",            dst(U64),      src(U64, U64), op(gfx12=0x53)),
+   ("s_sub_u64",            dst(U64),      src(U64, U64), op(gfx12=0x54)),
+   ("s_mul_u64",            dst(U64),      src(U64, U64), op(gfx12=0x55)),
    # actually a pseudo-instruction. it's lowered to SALU during assembly though, so it's useful to identify it as a SOP2.
-   ("p_constaddr_addlo",    dst(1, SCC), src(1, 1, 1), op(-1)),
-   ("p_resumeaddr_addlo",   dst(1, SCC), src(1, 1, 1), op(-1)),
+   ("p_constaddr_addlo",    dst(U32, SCC), src(U32, U32, U32), op(-1)),
+   ("p_resumeaddr_addlo",   dst(U32, SCC), src(U32, U32, U32), op(-1)),
 }
 for (name, defs, ops, num, cls) in default_class(SOP2, InstrClass.Salu):
-    insn(name, num, Format.SOP2, cls, definitions = defs, operands = ops)
+    insn(name, num, Format.SOP2, cls, definitions = noMods(defs), operands = noMods(ops))
 
 
 # SOPK instructions: 0 input (+ imm), 1 output + optional scc
 SOPK = {
-   ("s_movk_i32",             dst(1), src(), op(0x00)),
-   ("s_version",              dst(), src(), op(gfx10=0x01)),
-   ("s_cmovk_i32",            dst(1), src(1, SCC), op(0x02, gfx8=0x01, gfx10=0x02)),
-   ("s_cmpk_eq_i32",          dst(SCC), src(1), op(0x03, gfx8=0x02, gfx10=0x03, gfx12=-1)),
-   ("s_cmpk_lg_i32",          dst(SCC), src(1), op(0x04, gfx8=0x03, gfx10=0x04, gfx12=-1)),
-   ("s_cmpk_gt_i32",          dst(SCC), src(1), op(0x05, gfx8=0x04, gfx10=0x05, gfx12=-1)),
-   ("s_cmpk_ge_i32",          dst(SCC), src(1), op(0x06, gfx8=0x05, gfx10=0x06, gfx12=-1)),
-   ("s_cmpk_lt_i32",          dst(SCC), src(1), op(0x07, gfx8=0x06, gfx10=0x07, gfx12=-1)),
-   ("s_cmpk_le_i32",          dst(SCC), src(1), op(0x08, gfx8=0x07, gfx10=0x08, gfx12=-1)),
-   ("s_cmpk_eq_u32",          dst(SCC), src(1), op(0x09, gfx8=0x08, gfx10=0x09, gfx12=-1)),
-   ("s_cmpk_lg_u32",          dst(SCC), src(1), op(0x0a, gfx8=0x09, gfx10=0x0a, gfx12=-1)),
-   ("s_cmpk_gt_u32",          dst(SCC), src(1), op(0x0b, gfx8=0x0a, gfx10=0x0b, gfx12=-1)),
-   ("s_cmpk_ge_u32",          dst(SCC), src(1), op(0x0c, gfx8=0x0b, gfx10=0x0c, gfx12=-1)),
-   ("s_cmpk_lt_u32",          dst(SCC), src(1), op(0x0d, gfx8=0x0c, gfx10=0x0d, gfx12=-1)),
-   ("s_cmpk_le_u32",          dst(SCC), src(1), op(0x0e, gfx8=0x0d, gfx10=0x0e, gfx12=-1)),
-   ("s_addk_i32",             dst(1, SCC), src(1), op(0x0f, gfx8=0x0e, gfx10=0x0f)),
-   ("s_mulk_i32",             dst(1), src(1), op(0x10, gfx8=0x0f, gfx10=0x10)),
-   ("s_cbranch_i_fork",       dst(), src(), op(0x11, gfx8=0x10, gfx10=-1), InstrClass.Branch),
-   ("s_getreg_b32",           dst(1), src(), op(0x12, gfx8=0x11, gfx10=0x12, gfx11=0x11)),
-   ("s_setreg_b32",           dst(), src(1), op(0x13, gfx8=0x12, gfx10=0x13, gfx11=0x12)),
-   ("s_setreg_imm32_b32",     dst(), src(1), op(0x15, gfx8=0x14, gfx10=0x15, gfx11=0x13)), # requires 32bit literal
-   ("s_call_b64",             dst(2), src(), op(gfx8=0x15, gfx10=0x16, gfx11=0x14), InstrClass.Branch),
-   ("s_waitcnt_vscnt",        dst(), src(1), op(gfx10=0x17, gfx11=0x18, gfx12=-1), InstrClass.Waitcnt),
-   ("s_waitcnt_vmcnt",        dst(), src(1), op(gfx10=0x18, gfx11=0x19, gfx12=-1), InstrClass.Waitcnt),
-   ("s_waitcnt_expcnt",       dst(), src(1), op(gfx10=0x19, gfx11=0x1a, gfx12=-1), InstrClass.Waitcnt),
-   ("s_waitcnt_lgkmcnt",      dst(), src(1), op(gfx10=0x1a, gfx11=0x1b, gfx12=-1), InstrClass.Waitcnt),
-   ("s_subvector_loop_begin", dst(), src(), op(gfx10=0x1b, gfx11=0x16, gfx12=-1), InstrClass.Branch),
-   ("s_subvector_loop_end",   dst(), src(), op(gfx10=0x1c, gfx11=0x17, gfx12=-1), InstrClass.Branch),
+   ("s_movk_i32",             dst(U32),      src(), op(0x00)),
+   ("s_version",              dst(),         src(), op(gfx10=0x01)),
+   ("s_cmovk_i32",            dst(U32),      src(U32, SCC), op(0x02, gfx8=0x01, gfx10=0x02)),
+   ("s_cmpk_eq_i32",          dst(SCC),      src(U32), op(0x03, gfx8=0x02, gfx10=0x03, gfx12=-1)),
+   ("s_cmpk_lg_i32",          dst(SCC),      src(U32), op(0x04, gfx8=0x03, gfx10=0x04, gfx12=-1)),
+   ("s_cmpk_gt_i32",          dst(SCC),      src(U32), op(0x05, gfx8=0x04, gfx10=0x05, gfx12=-1)),
+   ("s_cmpk_ge_i32",          dst(SCC),      src(U32), op(0x06, gfx8=0x05, gfx10=0x06, gfx12=-1)),
+   ("s_cmpk_lt_i32",          dst(SCC),      src(U32), op(0x07, gfx8=0x06, gfx10=0x07, gfx12=-1)),
+   ("s_cmpk_le_i32",          dst(SCC),      src(U32), op(0x08, gfx8=0x07, gfx10=0x08, gfx12=-1)),
+   ("s_cmpk_eq_u32",          dst(SCC),      src(U32), op(0x09, gfx8=0x08, gfx10=0x09, gfx12=-1)),
+   ("s_cmpk_lg_u32",          dst(SCC),      src(U32), op(0x0a, gfx8=0x09, gfx10=0x0a, gfx12=-1)),
+   ("s_cmpk_gt_u32",          dst(SCC),      src(U32), op(0x0b, gfx8=0x0a, gfx10=0x0b, gfx12=-1)),
+   ("s_cmpk_ge_u32",          dst(SCC),      src(U32), op(0x0c, gfx8=0x0b, gfx10=0x0c, gfx12=-1)),
+   ("s_cmpk_lt_u32",          dst(SCC),      src(U32), op(0x0d, gfx8=0x0c, gfx10=0x0d, gfx12=-1)),
+   ("s_cmpk_le_u32",          dst(SCC),      src(U32), op(0x0e, gfx8=0x0d, gfx10=0x0e, gfx12=-1)),
+   ("s_addk_i32",             dst(U32, SCC), src(U32), op(0x0f, gfx8=0x0e, gfx10=0x0f)),
+   ("s_mulk_i32",             dst(U32),      src(U32), op(0x10, gfx8=0x0f, gfx10=0x10)),
+   ("s_cbranch_i_fork",       dst(),         src(), op(0x11, gfx8=0x10, gfx10=-1), InstrClass.Branch),
+   ("s_getreg_b32",           dst(U32),      src(), op(0x12, gfx8=0x11, gfx10=0x12, gfx11=0x11)),
+   ("s_setreg_b32",           dst(),         src(U32), op(0x13, gfx8=0x12, gfx10=0x13, gfx11=0x12)),
+   ("s_setreg_imm32_b32",     dst(),         src(IMM), op(0x15, gfx8=0x14, gfx10=0x15, gfx11=0x13)), # requires 32bit literal
+   ("s_call_b64",             dst(U64),      src(), op(gfx8=0x15, gfx10=0x16, gfx11=0x14), InstrClass.Branch),
+   ("s_waitcnt_vscnt",        dst(),         src(U32), op(gfx10=0x17, gfx11=0x18, gfx12=-1), InstrClass.Waitcnt),
+   ("s_waitcnt_vmcnt",        dst(),         src(U32), op(gfx10=0x18, gfx11=0x19, gfx12=-1), InstrClass.Waitcnt),
+   ("s_waitcnt_expcnt",       dst(),         src(U32), op(gfx10=0x19, gfx11=0x1a, gfx12=-1), InstrClass.Waitcnt),
+   ("s_waitcnt_lgkmcnt",      dst(),         src(U32), op(gfx10=0x1a, gfx11=0x1b, gfx12=-1), InstrClass.Waitcnt),
+   ("s_subvector_loop_begin", dst(),         src(), op(gfx10=0x1b, gfx11=0x16, gfx12=-1), InstrClass.Branch),
+   ("s_subvector_loop_end",   dst(),         src(), op(gfx10=0x1c, gfx11=0x17, gfx12=-1), InstrClass.Branch),
 }
 for (name, defs, ops, num, cls) in default_class(SOPK, InstrClass.Salu):
-   insn(name, num, Format.SOPK, cls, definitions = defs, operands = ops)
+   insn(name, num, Format.SOPK, cls, definitions = noMods(defs), operands = noMods(ops))
 
 
 # SOP1 instructions: 1 input, 1 output (+optional SCC)
 SOP1 = {
-   ("s_mov_b32",                dst(1), src(1), op(0x03, gfx8=0x00, gfx10=0x03, gfx11=0x00)),
-   ("s_mov_b64",                dst(2), src(2), op(0x04, gfx8=0x01, gfx10=0x04, gfx11=0x01)),
-   ("s_cmov_b32",               dst(1), src(1, 1, SCC), op(0x05, gfx8=0x02, gfx10=0x05, gfx11=0x02)),
-   ("s_cmov_b64",               dst(2), src(2, 2, SCC), op(0x06, gfx8=0x03, gfx10=0x06, gfx11=0x03)),
-   ("s_not_b32",                dst(1, SCC), src(1), op(0x07, gfx8=0x04, gfx10=0x07, gfx11=0x1e)),
-   ("s_not_b64",                dst(2, SCC), src(2), op(0x08, gfx8=0x05, gfx10=0x08, gfx11=0x1f)),
-   ("s_wqm_b32",                dst(1, SCC), src(1), op(0x09, gfx8=0x06, gfx10=0x09, gfx11=0x1c)),
-   ("s_wqm_b64",                dst(2, SCC), src(2), op(0x0a, gfx8=0x07, gfx10=0x0a, gfx11=0x1d)),
-   ("s_brev_b32",               dst(1), src(1), op(0x0b, gfx8=0x08, gfx10=0x0b, gfx11=0x04)),
-   ("s_brev_b64",               dst(2), src(2), op(0x0c, gfx8=0x09, gfx10=0x0c, gfx11=0x05)),
-   ("s_bcnt0_i32_b32",          dst(1, SCC), src(1), op(0x0d, gfx8=0x0a, gfx10=0x0d, gfx11=0x16)),
-   ("s_bcnt0_i32_b64",          dst(1, SCC), src(2), op(0x0e, gfx8=0x0b, gfx10=0x0e, gfx11=0x17)),
-   ("s_bcnt1_i32_b32",          dst(1, SCC), src(1), op(0x0f, gfx8=0x0c, gfx10=0x0f, gfx11=0x18)),
-   ("s_bcnt1_i32_b64",          dst(1, SCC), src(2), op(0x10, gfx8=0x0d, gfx10=0x10, gfx11=0x19)),
-   ("s_ff0_i32_b32",            dst(1), src(1), op(0x11, gfx8=0x0e, gfx10=0x11, gfx11=-1)),
-   ("s_ff0_i32_b64",            dst(1), src(2), op(0x12, gfx8=0x0f, gfx10=0x12, gfx11=-1)),
-   ("s_ff1_i32_b32",            dst(1), src(1), op(0x13, gfx8=0x10, gfx10=0x13, gfx11=0x08)), #s_ctz_i32_b32 in GFX11
-   ("s_ff1_i32_b64",            dst(1), src(2), op(0x14, gfx8=0x11, gfx10=0x14, gfx11=0x09)), #s_ctz_i32_b64 in GFX11
-   ("s_flbit_i32_b32",          dst(1), src(1), op(0x15, gfx8=0x12, gfx10=0x15, gfx11=0x0a)), #s_clz_i32_u32 in GFX11
-   ("s_flbit_i32_b64",          dst(1), src(2), op(0x16, gfx8=0x13, gfx10=0x16, gfx11=0x0b)), #s_clz_i32_u64 in GFX11
-   ("s_flbit_i32",              dst(1), src(1), op(0x17, gfx8=0x14, gfx10=0x17, gfx11=0x0c)), #s_cls_i32 in GFX11
-   ("s_flbit_i32_i64",          dst(1), src(2), op(0x18, gfx8=0x15, gfx10=0x18, gfx11=0x0d)), #s_cls_i32_i64 in GFX11
-   ("s_sext_i32_i8",            dst(1), src(1), op(0x19, gfx8=0x16, gfx10=0x19, gfx11=0x0e)),
-   ("s_sext_i32_i16",           dst(1), src(1), op(0x1a, gfx8=0x17, gfx10=0x1a, gfx11=0x0f)),
-   ("s_bitset0_b32",            dst(1), src(1, 1), op(0x1b, gfx8=0x18, gfx10=0x1b, gfx11=0x10)),
-   ("s_bitset0_b64",            dst(2), src(1, 2), op(0x1c, gfx8=0x19, gfx10=0x1c, gfx11=0x11)),
-   ("s_bitset1_b32",            dst(1), src(1, 1), op(0x1d, gfx8=0x1a, gfx10=0x1d, gfx11=0x12)),
-   ("s_bitset1_b64",            dst(2), src(1, 2), op(0x1e, gfx8=0x1b, gfx10=0x1e, gfx11=0x13)),
-   ("s_getpc_b64",              dst(2), src(), op(0x1f, gfx8=0x1c, gfx10=0x1f, gfx11=0x47)),
-   ("s_setpc_b64",              dst(), src(2), op(0x20, gfx8=0x1d, gfx10=0x20, gfx11=0x48), InstrClass.Branch),
-   ("s_swappc_b64",             dst(2), src(2), op(0x21, gfx8=0x1e, gfx10=0x21, gfx11=0x49), InstrClass.Branch),
-   ("s_rfe_b64",                dst(), src(2), op(0x22, gfx8=0x1f, gfx10=0x22, gfx11=0x4a), InstrClass.Branch),
-   ("s_and_saveexec_b64",       dst(2, SCC, EXEC), src(2, EXEC), op(0x24, gfx8=0x20, gfx10=0x24, gfx11=0x21)),
-   ("s_or_saveexec_b64",        dst(2, SCC, EXEC), src(2, EXEC), op(0x25, gfx8=0x21, gfx10=0x25, gfx11=0x23)),
-   ("s_xor_saveexec_b64",       dst(2, SCC, EXEC), src(2, EXEC), op(0x26, gfx8=0x22, gfx10=0x26, gfx11=0x25)),
-   ("s_andn2_saveexec_b64",     dst(2, SCC, EXEC), src(2, EXEC), op(0x27, gfx8=0x23, gfx10=0x27, gfx11=0x31)), #s_and_not1_saveexec_b64 in GFX11
-   ("s_orn2_saveexec_b64",      dst(2, SCC, EXEC), src(2, EXEC), op(0x28, gfx8=0x24, gfx10=0x28, gfx11=0x33)), #s_or_not1_saveexec_b64 in GFX11
-   ("s_nand_saveexec_b64",      dst(2, SCC, EXEC), src(2, EXEC), op(0x29, gfx8=0x25, gfx10=0x29, gfx11=0x27)),
-   ("s_nor_saveexec_b64",       dst(2, SCC, EXEC), src(2, EXEC), op(0x2a, gfx8=0x26, gfx10=0x2a, gfx11=0x29)),
-   ("s_xnor_saveexec_b64",      dst(2, SCC, EXEC), src(2, EXEC), op(0x2b, gfx8=0x27, gfx10=0x2b)),
-   ("s_quadmask_b32",           dst(1, SCC), src(1), op(0x2c, gfx8=0x28, gfx10=0x2c, gfx11=0x1a)),
-   ("s_quadmask_b64",           dst(2, SCC), src(2), op(0x2d, gfx8=0x29, gfx10=0x2d, gfx11=0x1b)), # Always writes 0 to the second SGPR
-   ("s_movrels_b32",            dst(1), src(1, M0), op(0x2e, gfx8=0x2a, gfx10=0x2e, gfx11=0x40)),
-   ("s_movrels_b64",            dst(2), src(2, M0), op(0x2f, gfx8=0x2b, gfx10=0x2f, gfx11=0x41)),
-   ("s_movreld_b32",            dst(1), src(1, M0), op(0x30, gfx8=0x2c, gfx10=0x30, gfx11=0x42)),
-   ("s_movreld_b64",            dst(2), src(2, M0), op(0x31, gfx8=0x2d, gfx10=0x31, gfx11=0x43)),
-   ("s_cbranch_join",           dst(), src(), op(0x32, gfx8=0x2e, gfx10=-1), InstrClass.Branch),
-   ("s_abs_i32",                dst(1, SCC), src(1), op(0x34, gfx8=0x30, gfx10=0x34, gfx11=0x15)),
-   ("s_mov_fed_b32",            dst(), src(), op(0x35, gfx8=-1, gfx10=0x35, gfx11=-1)),
-   ("s_set_gpr_idx_idx",        dst(M0), src(1, M0), op(gfx8=0x32, gfx10=-1)),
-   ("s_andn1_saveexec_b64",     dst(2, SCC, EXEC), src(2, EXEC), op(gfx9=0x33, gfx10=0x37, gfx11=0x2d)), #s_and_not0_savexec_b64 in GFX11
-   ("s_orn1_saveexec_b64",      dst(2, SCC, EXEC), src(2, EXEC), op(gfx9=0x34, gfx10=0x38, gfx11=0x2f)), #s_or_not0_savexec_b64 in GFX11
-   ("s_andn1_wrexec_b64",       dst(2, SCC, EXEC), src(2, EXEC), op(gfx9=0x35, gfx10=0x39, gfx11=0x35)), #s_and_not0_wrexec_b64 in GFX11
-   ("s_andn2_wrexec_b64",       dst(2, SCC, EXEC), src(2, EXEC), op(gfx9=0x36, gfx10=0x3a, gfx11=0x37)), #s_and_not1_wrexec_b64 in GFX11
-   ("s_bitreplicate_b64_b32",   dst(2), src(1), op(gfx9=0x37, gfx10=0x3b, gfx11=0x14)),
-   ("s_and_saveexec_b32",       dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x3c, gfx11=0x20)),
-   ("s_or_saveexec_b32",        dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x3d, gfx11=0x22)),
-   ("s_xor_saveexec_b32",       dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x3e, gfx11=0x24)),
-   ("s_andn2_saveexec_b32",     dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x3f, gfx11=0x30)), #s_and_not1_saveexec_b32 in GFX11
-   ("s_orn2_saveexec_b32",      dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x40, gfx11=0x32)), #s_or_not1_saveexec_b32 in GFX11
-   ("s_nand_saveexec_b32",      dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x41, gfx11=0x26)),
-   ("s_nor_saveexec_b32",       dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x42, gfx11=0x28)),
-   ("s_xnor_saveexec_b32",      dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x43, gfx11=0x2a)),
-   ("s_andn1_saveexec_b32",     dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x44, gfx11=0x2c)), #s_and_not0_savexec_b32 in GFX11
-   ("s_orn1_saveexec_b32",      dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x45, gfx11=0x2e)), #s_or_not0_savexec_b32 in GFX11
-   ("s_andn1_wrexec_b32",       dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x46, gfx11=0x34)), #s_and_not0_wrexec_b32 in GFX11
-   ("s_andn2_wrexec_b32",       dst(1, SCC, EXEC_LO), src(1, EXEC_LO), op(gfx10=0x47, gfx11=0x36)), #s_and_not1_wrexec_b32 in GFX11
-   ("s_movrelsd_2_b32",         dst(1), src(1, M0), op(gfx10=0x49, gfx11=0x44)),
-   ("s_sendmsg_rtn_b32",        dst(1), src(1), op(gfx11=0x4c)),
-   ("s_sendmsg_rtn_b64",        dst(2), src(1), op(gfx11=0x4d)),
-   ("s_ceil_f32",               dst(1), src(1), op(gfx11=0x60), InstrClass.SFPU),
-   ("s_floor_f32",              dst(1), src(1), op(gfx11=0x61), InstrClass.SFPU),
-   ("s_trunc_f32",              dst(1), src(1), op(gfx11=0x62), InstrClass.SFPU),
-   ("s_rndne_f32",              dst(1), src(1), op(gfx11=0x63), InstrClass.SFPU),
-   ("s_cvt_f32_i32",            dst(1), src(1), op(gfx11=0x64), InstrClass.SFPU),
-   ("s_cvt_f32_u32",            dst(1), src(1), op(gfx11=0x65), InstrClass.SFPU),
-   ("s_cvt_i32_f32",            dst(1), src(1), op(gfx11=0x66), InstrClass.SFPU),
-   ("s_cvt_u32_f32",            dst(1), src(1), op(gfx11=0x67), InstrClass.SFPU),
-   ("s_cvt_f16_f32",            dst(1), src(1), op(gfx11=0x68), InstrClass.SFPU),
-   ("p_s_cvt_f16_f32_rtne",     dst(1), src(1), op(-1), InstrClass.SFPU),
-   ("s_cvt_f32_f16",            dst(1), src(1), op(gfx11=0x69), InstrClass.SFPU),
-   ("s_cvt_hi_f32_f16",         dst(1), src(1), op(gfx11=0x6a), InstrClass.SFPU),
-   ("s_ceil_f16",               dst(1), src(1), op(gfx11=0x6b), InstrClass.SFPU),
-   ("s_floor_f16",              dst(1), src(1), op(gfx11=0x6c), InstrClass.SFPU),
-   ("s_trunc_f16",              dst(1), src(1), op(gfx11=0x6d), InstrClass.SFPU),
-   ("s_rndne_f16",              dst(1), src(1), op(gfx11=0x6e), InstrClass.SFPU),
-   ("s_barrier_signal",         dst(), src(1), op(gfx12=0x4e), InstrClass.Barrier),
-   ("s_barrier_signal_isfirst", dst(SCC), src(1), op(gfx12=0x4f), InstrClass.Barrier),
-   ("s_get_barrier_state",      dst(1), src(1), op(gfx12=0x50), InstrClass.Barrier),
-   ("s_barrier_init",           dst(), src(1), op(gfx12=0x51), InstrClass.Barrier),
-   ("s_barrier_join",           dst(), src(1), op(gfx12=0x52), InstrClass.Barrier),
-   ("s_wakeup_barrier",         dst(), src(1), op(gfx12=0x57), InstrClass.Barrier),
-   ("s_sleep_var",              dst(), src(1), op(gfx12=0x58)),
+   ("s_mov_b32",                dst(U32),               src(U32), op(0x03, gfx8=0x00, gfx10=0x03, gfx11=0x00)),
+   ("s_mov_b64",                dst(U64),               src(U64), op(0x04, gfx8=0x01, gfx10=0x04, gfx11=0x01)),
+   ("s_cmov_b32",               dst(U32),               src(U32, U32, SCC), op(0x05, gfx8=0x02, gfx10=0x05, gfx11=0x02)),
+   ("s_cmov_b64",               dst(U64),               src(U64, U64, SCC), op(0x06, gfx8=0x03, gfx10=0x06, gfx11=0x03)),
+   ("s_not_b32",                dst(U32, SCC),          src(U32), op(0x07, gfx8=0x04, gfx10=0x07, gfx11=0x1e)),
+   ("s_not_b64",                dst(U64, SCC),          src(U64), op(0x08, gfx8=0x05, gfx10=0x08, gfx11=0x1f)),
+   ("s_wqm_b32",                dst(U32, SCC),          src(U32), op(0x09, gfx8=0x06, gfx10=0x09, gfx11=0x1c)),
+   ("s_wqm_b64",                dst(U64, SCC),          src(U64), op(0x0a, gfx8=0x07, gfx10=0x0a, gfx11=0x1d)),
+   ("s_brev_b32",               dst(U32),               src(U32), op(0x0b, gfx8=0x08, gfx10=0x0b, gfx11=0x04)),
+   ("s_brev_b64",               dst(U64),               src(U64), op(0x0c, gfx8=0x09, gfx10=0x0c, gfx11=0x05)),
+   ("s_bcnt0_i32_b32",          dst(U32, SCC),          src(U32), op(0x0d, gfx8=0x0a, gfx10=0x0d, gfx11=0x16)),
+   ("s_bcnt0_i32_b64",          dst(U32, SCC),          src(U64), op(0x0e, gfx8=0x0b, gfx10=0x0e, gfx11=0x17)),
+   ("s_bcnt1_i32_b32",          dst(U32, SCC),          src(U32), op(0x0f, gfx8=0x0c, gfx10=0x0f, gfx11=0x18)),
+   ("s_bcnt1_i32_b64",          dst(U32, SCC),          src(U64), op(0x10, gfx8=0x0d, gfx10=0x10, gfx11=0x19)),
+   ("s_ff0_i32_b32",            dst(U32),               src(U32), op(0x11, gfx8=0x0e, gfx10=0x11, gfx11=-1)),
+   ("s_ff0_i32_b64",            dst(U32),               src(U64), op(0x12, gfx8=0x0f, gfx10=0x12, gfx11=-1)),
+   ("s_ff1_i32_b32",            dst(U32),               src(U32), op(0x13, gfx8=0x10, gfx10=0x13, gfx11=0x08)), #s_ctz_i32_b32 in GFX11
+   ("s_ff1_i32_b64",            dst(U32),               src(U64), op(0x14, gfx8=0x11, gfx10=0x14, gfx11=0x09)), #s_ctz_i32_b64 in GFX11
+   ("s_flbit_i32_b32",          dst(U32),               src(U32), op(0x15, gfx8=0x12, gfx10=0x15, gfx11=0x0a)), #s_clz_i32_u32 in GFX11
+   ("s_flbit_i32_b64",          dst(U32),               src(U64), op(0x16, gfx8=0x13, gfx10=0x16, gfx11=0x0b)), #s_clz_i32_u64 in GFX11
+   ("s_flbit_i32",              dst(U32),               src(U32), op(0x17, gfx8=0x14, gfx10=0x17, gfx11=0x0c)), #s_cls_i32 in GFX11
+   ("s_flbit_i32_i64",          dst(U32),               src(I64), op(0x18, gfx8=0x15, gfx10=0x18, gfx11=0x0d)), #s_cls_i32_i64 in GFX11
+   ("s_sext_i32_i8",            dst(U32),               src(U32), op(0x19, gfx8=0x16, gfx10=0x19, gfx11=0x0e)),
+   ("s_sext_i32_i16",           dst(U32),               src(U32), op(0x1a, gfx8=0x17, gfx10=0x1a, gfx11=0x0f)),
+   ("s_bitset0_b32",            dst(U32),               src(U32, U32), op(0x1b, gfx8=0x18, gfx10=0x1b, gfx11=0x10)),
+   ("s_bitset0_b64",            dst(U64),               src(U32, U64), op(0x1c, gfx8=0x19, gfx10=0x1c, gfx11=0x11)),
+   ("s_bitset1_b32",            dst(U32),               src(U32, U32), op(0x1d, gfx8=0x1a, gfx10=0x1d, gfx11=0x12)),
+   ("s_bitset1_b64",            dst(U64),               src(U32, U64), op(0x1e, gfx8=0x1b, gfx10=0x1e, gfx11=0x13)),
+   ("s_getpc_b64",              dst(U64),               src(), op(0x1f, gfx8=0x1c, gfx10=0x1f, gfx11=0x47)),
+   ("s_setpc_b64",              dst(),                  src(U64), op(0x20, gfx8=0x1d, gfx10=0x20, gfx11=0x48), InstrClass.Branch),
+   ("s_swappc_b64",             dst(U64),               src(U64), op(0x21, gfx8=0x1e, gfx10=0x21, gfx11=0x49), InstrClass.Branch),
+   ("s_rfe_b64",                dst(),                  src(U64), op(0x22, gfx8=0x1f, gfx10=0x22, gfx11=0x4a), InstrClass.Branch),
+   ("s_and_saveexec_b64",       dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x24, gfx8=0x20, gfx10=0x24, gfx11=0x21)),
+   ("s_or_saveexec_b64",        dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x25, gfx8=0x21, gfx10=0x25, gfx11=0x23)),
+   ("s_xor_saveexec_b64",       dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x26, gfx8=0x22, gfx10=0x26, gfx11=0x25)),
+   ("s_andn2_saveexec_b64",     dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x27, gfx8=0x23, gfx10=0x27, gfx11=0x31)), #s_and_not1_saveexec_b64 in GFX11
+   ("s_orn2_saveexec_b64",      dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x28, gfx8=0x24, gfx10=0x28, gfx11=0x33)), #s_or_not1_saveexec_b64 in GFX11
+   ("s_nand_saveexec_b64",      dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x29, gfx8=0x25, gfx10=0x29, gfx11=0x27)),
+   ("s_nor_saveexec_b64",       dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x2a, gfx8=0x26, gfx10=0x2a, gfx11=0x29)),
+   ("s_xnor_saveexec_b64",      dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(0x2b, gfx8=0x27, gfx10=0x2b)),
+   ("s_quadmask_b32",           dst(U32, SCC),          src(U32), op(0x2c, gfx8=0x28, gfx10=0x2c, gfx11=0x1a)),
+   ("s_quadmask_b64",           dst(U64, SCC),          src(U64), op(0x2d, gfx8=0x29, gfx10=0x2d, gfx11=0x1b)), # Always writes 0 to the second SGPR
+   ("s_movrels_b32",            dst(U32),               src(U32, M0), op(0x2e, gfx8=0x2a, gfx10=0x2e, gfx11=0x40)),
+   ("s_movrels_b64",            dst(U64),               src(U64, M0), op(0x2f, gfx8=0x2b, gfx10=0x2f, gfx11=0x41)),
+   ("s_movreld_b32",            dst(U32),               src(U32, M0), op(0x30, gfx8=0x2c, gfx10=0x30, gfx11=0x42)),
+   ("s_movreld_b64",            dst(U64),               src(U64, M0), op(0x31, gfx8=0x2d, gfx10=0x31, gfx11=0x43)),
+   ("s_cbranch_join",           dst(),                  src(), op(0x32, gfx8=0x2e, gfx10=-1), InstrClass.Branch),
+   ("s_abs_i32",                dst(U32, SCC),          src(U32), op(0x34, gfx8=0x30, gfx10=0x34, gfx11=0x15)),
+   ("s_mov_fed_b32",            dst(),                  src(), op(0x35, gfx8=-1, gfx10=0x35, gfx11=-1)),
+   ("s_set_gpr_idx_idx",        dst(M0),                src(U32, M0), op(gfx8=0x32, gfx10=-1)),
+   ("s_andn1_saveexec_b64",     dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(gfx9=0x33, gfx10=0x37, gfx11=0x2d)), #s_and_not0_savexec_b64 in GFX11
+   ("s_orn1_saveexec_b64",      dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(gfx9=0x34, gfx10=0x38, gfx11=0x2f)), #s_or_not0_savexec_b64 in GFX11
+   ("s_andn1_wrexec_b64",       dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(gfx9=0x35, gfx10=0x39, gfx11=0x35)), #s_and_not0_wrexec_b64 in GFX11
+   ("s_andn2_wrexec_b64",       dst(U64, SCC, EXEC_LOHI), src(U64, EXEC_LOHI), op(gfx9=0x36, gfx10=0x3a, gfx11=0x37)), #s_and_not1_wrexec_b64 in GFX11
+   ("s_bitreplicate_b64_b32",   dst(U64),               src(U32), op(gfx9=0x37, gfx10=0x3b, gfx11=0x14)),
+   ("s_and_saveexec_b32",       dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x3c, gfx11=0x20)),
+   ("s_or_saveexec_b32",        dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x3d, gfx11=0x22)),
+   ("s_xor_saveexec_b32",       dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x3e, gfx11=0x24)),
+   ("s_andn2_saveexec_b32",     dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x3f, gfx11=0x30)), #s_and_not1_saveexec_b32 in GFX11
+   ("s_orn2_saveexec_b32",      dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x40, gfx11=0x32)), #s_or_not1_saveexec_b32 in GFX11
+   ("s_nand_saveexec_b32",      dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x41, gfx11=0x26)),
+   ("s_nor_saveexec_b32",       dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x42, gfx11=0x28)),
+   ("s_xnor_saveexec_b32",      dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x43, gfx11=0x2a)),
+   ("s_andn1_saveexec_b32",     dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x44, gfx11=0x2c)), #s_and_not0_savexec_b32 in GFX11
+   ("s_orn1_saveexec_b32",      dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x45, gfx11=0x2e)), #s_or_not0_savexec_b32 in GFX11
+   ("s_andn1_wrexec_b32",       dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x46, gfx11=0x34)), #s_and_not0_wrexec_b32 in GFX11
+   ("s_andn2_wrexec_b32",       dst(U32, SCC, EXEC_LO), src(U32, EXEC_LO), op(gfx10=0x47, gfx11=0x36)), #s_and_not1_wrexec_b32 in GFX11
+   ("s_movrelsd_2_b32",         dst(U32),               src(U32, M0), op(gfx10=0x49, gfx11=0x44)),
+   ("s_sendmsg_rtn_b32",        dst(U32),               src(U32), op(gfx11=0x4c)),
+   ("s_sendmsg_rtn_b64",        dst(U64),               src(U32), op(gfx11=0x4d)),
+   ("s_ceil_f32",               dst(F32),               src(F32), op(gfx11=0x60), InstrClass.SFPU),
+   ("s_floor_f32",              dst(F32),               src(F32), op(gfx11=0x61), InstrClass.SFPU),
+   ("s_trunc_f32",              dst(F32),               src(F32), op(gfx11=0x62), InstrClass.SFPU),
+   ("s_rndne_f32",              dst(F32),               src(F32), op(gfx11=0x63), InstrClass.SFPU),
+   ("s_cvt_f32_i32",            dst(F32),               src(U32), op(gfx11=0x64), InstrClass.SFPU),
+   ("s_cvt_f32_u32",            dst(F32),               src(U32), op(gfx11=0x65), InstrClass.SFPU),
+   ("s_cvt_i32_f32",            dst(U32),               src(F32), op(gfx11=0x66), InstrClass.SFPU),
+   ("s_cvt_u32_f32",            dst(U32),               src(F32), op(gfx11=0x67), InstrClass.SFPU),
+   ("s_cvt_f16_f32",            dst(F16),               src(F32), op(gfx11=0x68), InstrClass.SFPU),
+   ("p_s_cvt_f16_f32_rtne",     dst(F16),               src(F32), op(-1), InstrClass.SFPU),
+   ("s_cvt_f32_f16",            dst(F32),               src(F16), op(gfx11=0x69), InstrClass.SFPU),
+   ("s_cvt_hi_f32_f16",         dst(F32),               src(F16), op(gfx11=0x6a), InstrClass.SFPU),
+   ("s_ceil_f16",               dst(F16),               src(F16), op(gfx11=0x6b), InstrClass.SFPU),
+   ("s_floor_f16",              dst(F16),               src(F16), op(gfx11=0x6c), InstrClass.SFPU),
+   ("s_trunc_f16",              dst(F16),               src(F16), op(gfx11=0x6d), InstrClass.SFPU),
+   ("s_rndne_f16",              dst(F16),               src(F16), op(gfx11=0x6e), InstrClass.SFPU),
+   ("s_barrier_signal",         dst(),                  src(U32), op(gfx12=0x4e), InstrClass.Barrier),
+   ("s_barrier_signal_isfirst", dst(SCC),               src(U32), op(gfx12=0x4f), InstrClass.Barrier),
+   ("s_get_barrier_state",      dst(U32),               src(U32), op(gfx12=0x50), InstrClass.Barrier),
+   ("s_barrier_init",           dst(),                  src(U32), op(gfx12=0x51), InstrClass.Barrier),
+   ("s_barrier_join",           dst(),                  src(U32), op(gfx12=0x52), InstrClass.Barrier),
+   ("s_wakeup_barrier",         dst(),                  src(U32), op(gfx12=0x57), InstrClass.Barrier),
+   ("s_sleep_var",              dst(),                  src(U32), op(gfx12=0x58)),
    # actually a pseudo-instruction. it's lowered to SALU during assembly though, so it's useful to identify it as a SOP1.
-   ("p_constaddr_getpc",        dst(2), src(1), op(-1)),
-   ("p_resumeaddr_getpc",       dst(2), src(1), op(-1)),
-   ("p_load_symbol",            dst(1), src(1), op(-1)),
+   ("p_constaddr_getpc",        dst(U64),               src(U32), op(-1)),
+   ("p_resumeaddr_getpc",       dst(U64),               src(U32), op(-1)),
+   ("p_load_symbol",            dst(U32),               src(U32), op(-1)),
 }
 for (name, defs, ops, num, cls) in default_class(SOP1, InstrClass.Salu):
-   insn(name, num, Format.SOP1, cls, definitions = defs, operands = ops)
+   insn(name, num, Format.SOP1, cls, definitions = noMods(defs), operands = noMods(ops))
 
 
 # SOPC instructions: 2 inputs and 0 outputs (+SCC)
 SOPC = {
-   ("s_cmp_eq_i32",     dst(SCC), src(1, 1), op(0x00)),
-   ("s_cmp_lg_i32",     dst(SCC), src(1, 1), op(0x01)),
-   ("s_cmp_gt_i32",     dst(SCC), src(1, 1), op(0x02)),
-   ("s_cmp_ge_i32",     dst(SCC), src(1, 1), op(0x03)),
-   ("s_cmp_lt_i32",     dst(SCC), src(1, 1), op(0x04)),
-   ("s_cmp_le_i32",     dst(SCC), src(1, 1), op(0x05)),
-   ("s_cmp_eq_u32",     dst(SCC), src(1, 1), op(0x06)),
-   ("s_cmp_lg_u32",     dst(SCC), src(1, 1), op(0x07)),
-   ("s_cmp_gt_u32",     dst(SCC), src(1, 1), op(0x08)),
-   ("s_cmp_ge_u32",     dst(SCC), src(1, 1), op(0x09)),
-   ("s_cmp_lt_u32",     dst(SCC), src(1, 1), op(0x0a)),
-   ("s_cmp_le_u32",     dst(SCC), src(1, 1), op(0x0b)),
-   ("s_bitcmp0_b32",    dst(SCC), src(1, 1), op(0x0c)),
-   ("s_bitcmp1_b32",    dst(SCC), src(1, 1), op(0x0d)),
-   ("s_bitcmp0_b64",    dst(SCC), src(2, 1), op(0x0e)),
-   ("s_bitcmp1_b64",    dst(SCC), src(2, 1), op(0x0f)),
-   ("s_setvskip",       dst(), src(1, 1), op(0x10, gfx10=-1)),
-   ("s_set_gpr_idx_on", dst(M0), src(1, 1), op(gfx8=0x11, gfx10=-1)),
-   ("s_cmp_eq_u64",     dst(SCC), src(2, 2), op(gfx8=0x12, gfx11=0x10)),
-   ("s_cmp_lg_u64",     dst(SCC), src(2, 2), op(gfx8=0x13, gfx11=0x11)),
-   ("s_cmp_lt_f32",     dst(SCC), src(1, 1), op(gfx11=0x41), InstrClass.SFPU),
-   ("s_cmp_eq_f32",     dst(SCC), src(1, 1), op(gfx11=0x42), InstrClass.SFPU),
-   ("s_cmp_le_f32",     dst(SCC), src(1, 1), op(gfx11=0x43), InstrClass.SFPU),
-   ("s_cmp_gt_f32",     dst(SCC), src(1, 1), op(gfx11=0x44), InstrClass.SFPU),
-   ("s_cmp_lg_f32",     dst(SCC), src(1, 1), op(gfx11=0x45), InstrClass.SFPU),
-   ("s_cmp_ge_f32",     dst(SCC), src(1, 1), op(gfx11=0x46), InstrClass.SFPU),
-   ("s_cmp_o_f32",      dst(SCC), src(1, 1), op(gfx11=0x47), InstrClass.SFPU),
-   ("s_cmp_u_f32",      dst(SCC), src(1, 1), op(gfx11=0x48), InstrClass.SFPU),
-   ("s_cmp_nge_f32",    dst(SCC), src(1, 1), op(gfx11=0x49), InstrClass.SFPU),
-   ("s_cmp_nlg_f32",    dst(SCC), src(1, 1), op(gfx11=0x4a), InstrClass.SFPU),
-   ("s_cmp_ngt_f32",    dst(SCC), src(1, 1), op(gfx11=0x4b), InstrClass.SFPU),
-   ("s_cmp_nle_f32",    dst(SCC), src(1, 1), op(gfx11=0x4c), InstrClass.SFPU),
-   ("s_cmp_neq_f32",    dst(SCC), src(1, 1), op(gfx11=0x4d), InstrClass.SFPU),
-   ("s_cmp_nlt_f32",    dst(SCC), src(1, 1), op(gfx11=0x4e), InstrClass.SFPU),
-   ("s_cmp_lt_f16",     dst(SCC), src(1, 1), op(gfx11=0x51), InstrClass.SFPU),
-   ("s_cmp_eq_f16",     dst(SCC), src(1, 1), op(gfx11=0x52), InstrClass.SFPU),
-   ("s_cmp_le_f16",     dst(SCC), src(1, 1), op(gfx11=0x53), InstrClass.SFPU),
-   ("s_cmp_gt_f16",     dst(SCC), src(1, 1), op(gfx11=0x54), InstrClass.SFPU),
-   ("s_cmp_lg_f16",     dst(SCC), src(1, 1), op(gfx11=0x55), InstrClass.SFPU),
-   ("s_cmp_ge_f16",     dst(SCC), src(1, 1), op(gfx11=0x56), InstrClass.SFPU),
-   ("s_cmp_o_f16",      dst(SCC), src(1, 1), op(gfx11=0x57), InstrClass.SFPU),
-   ("s_cmp_u_f16",      dst(SCC), src(1, 1), op(gfx11=0x58), InstrClass.SFPU),
-   ("s_cmp_nge_f16",    dst(SCC), src(1, 1), op(gfx11=0x59), InstrClass.SFPU),
-   ("s_cmp_nlg_f16",    dst(SCC), src(1, 1), op(gfx11=0x5a), InstrClass.SFPU),
-   ("s_cmp_ngt_f16",    dst(SCC), src(1, 1), op(gfx11=0x5b), InstrClass.SFPU),
-   ("s_cmp_nle_f16",    dst(SCC), src(1, 1), op(gfx11=0x5c), InstrClass.SFPU),
-   ("s_cmp_neq_f16",    dst(SCC), src(1, 1), op(gfx11=0x5d), InstrClass.SFPU),
-   ("s_cmp_nlt_f16",    dst(SCC), src(1, 1), op(gfx11=0x5e), InstrClass.SFPU),
+   ("s_cmp_eq_i32",     dst(SCC), src(U32, U32), op(0x00)),
+   ("s_cmp_lg_i32",     dst(SCC), src(U32, U32), op(0x01)),
+   ("s_cmp_gt_i32",     dst(SCC), src(U32, U32), op(0x02)),
+   ("s_cmp_ge_i32",     dst(SCC), src(U32, U32), op(0x03)),
+   ("s_cmp_lt_i32",     dst(SCC), src(U32, U32), op(0x04)),
+   ("s_cmp_le_i32",     dst(SCC), src(U32, U32), op(0x05)),
+   ("s_cmp_eq_u32",     dst(SCC), src(U32, U32), op(0x06)),
+   ("s_cmp_lg_u32",     dst(SCC), src(U32, U32), op(0x07)),
+   ("s_cmp_gt_u32",     dst(SCC), src(U32, U32), op(0x08)),
+   ("s_cmp_ge_u32",     dst(SCC), src(U32, U32), op(0x09)),
+   ("s_cmp_lt_u32",     dst(SCC), src(U32, U32), op(0x0a)),
+   ("s_cmp_le_u32",     dst(SCC), src(U32, U32), op(0x0b)),
+   ("s_bitcmp0_b32",    dst(SCC), src(U32, U32), op(0x0c)),
+   ("s_bitcmp1_b32",    dst(SCC), src(U32, U32), op(0x0d)),
+   ("s_bitcmp0_b64",    dst(SCC), src(U64, U32), op(0x0e)),
+   ("s_bitcmp1_b64",    dst(SCC), src(U64, U32), op(0x0f)),
+   ("s_setvskip",       dst(),    src(U32, U32), op(0x10, gfx10=-1)),
+   ("s_set_gpr_idx_on", dst(M0),  src(U32, U32), op(gfx8=0x11, gfx10=-1)),
+   ("s_cmp_eq_u64",     dst(SCC), src(U64, U64), op(gfx8=0x12, gfx11=0x10)),
+   ("s_cmp_lg_u64",     dst(SCC), src(U64, U64), op(gfx8=0x13, gfx11=0x11)),
+   ("s_cmp_lt_f32",     dst(SCC), src(F32, F32), op(gfx11=0x41), InstrClass.SFPU),
+   ("s_cmp_eq_f32",     dst(SCC), src(F32, F32), op(gfx11=0x42), InstrClass.SFPU),
+   ("s_cmp_le_f32",     dst(SCC), src(F32, F32), op(gfx11=0x43), InstrClass.SFPU),
+   ("s_cmp_gt_f32",     dst(SCC), src(F32, F32), op(gfx11=0x44), InstrClass.SFPU),
+   ("s_cmp_lg_f32",     dst(SCC), src(F32, F32), op(gfx11=0x45), InstrClass.SFPU),
+   ("s_cmp_ge_f32",     dst(SCC), src(F32, F32), op(gfx11=0x46), InstrClass.SFPU),
+   ("s_cmp_o_f32",      dst(SCC), src(F32, F32), op(gfx11=0x47), InstrClass.SFPU),
+   ("s_cmp_u_f32",      dst(SCC), src(F32, F32), op(gfx11=0x48), InstrClass.SFPU),
+   ("s_cmp_nge_f32",    dst(SCC), src(F32, F32), op(gfx11=0x49), InstrClass.SFPU),
+   ("s_cmp_nlg_f32",    dst(SCC), src(F32, F32), op(gfx11=0x4a), InstrClass.SFPU),
+   ("s_cmp_ngt_f32",    dst(SCC), src(F32, F32), op(gfx11=0x4b), InstrClass.SFPU),
+   ("s_cmp_nle_f32",    dst(SCC), src(F32, F32), op(gfx11=0x4c), InstrClass.SFPU),
+   ("s_cmp_neq_f32",    dst(SCC), src(F32, F32), op(gfx11=0x4d), InstrClass.SFPU),
+   ("s_cmp_nlt_f32",    dst(SCC), src(F32, F32), op(gfx11=0x4e), InstrClass.SFPU),
+   ("s_cmp_lt_f16",     dst(SCC), src(F16, F16), op(gfx11=0x51), InstrClass.SFPU),
+   ("s_cmp_eq_f16",     dst(SCC), src(F16, F16), op(gfx11=0x52), InstrClass.SFPU),
+   ("s_cmp_le_f16",     dst(SCC), src(F16, F16), op(gfx11=0x53), InstrClass.SFPU),
+   ("s_cmp_gt_f16",     dst(SCC), src(F16, F16), op(gfx11=0x54), InstrClass.SFPU),
+   ("s_cmp_lg_f16",     dst(SCC), src(F16, F16), op(gfx11=0x55), InstrClass.SFPU),
+   ("s_cmp_ge_f16",     dst(SCC), src(F16, F16), op(gfx11=0x56), InstrClass.SFPU),
+   ("s_cmp_o_f16",      dst(SCC), src(F16, F16), op(gfx11=0x57), InstrClass.SFPU),
+   ("s_cmp_u_f16",      dst(SCC), src(F16, F16), op(gfx11=0x58), InstrClass.SFPU),
+   ("s_cmp_nge_f16",    dst(SCC), src(F16, F16), op(gfx11=0x59), InstrClass.SFPU),
+   ("s_cmp_nlg_f16",    dst(SCC), src(F16, F16), op(gfx11=0x5a), InstrClass.SFPU),
+   ("s_cmp_ngt_f16",    dst(SCC), src(F16, F16), op(gfx11=0x5b), InstrClass.SFPU),
+   ("s_cmp_nle_f16",    dst(SCC), src(F16, F16), op(gfx11=0x5c), InstrClass.SFPU),
+   ("s_cmp_neq_f16",    dst(SCC), src(F16, F16), op(gfx11=0x5d), InstrClass.SFPU),
+   ("s_cmp_nlt_f16",    dst(SCC), src(F16, F16), op(gfx11=0x5e), InstrClass.SFPU),
 }
 for (name, defs, ops, num, cls) in default_class(SOPC, InstrClass.Salu):
-   insn(name, num, Format.SOPC, cls, definitions = defs, operands = ops)
+   insn(name, num, Format.SOPC, cls, definitions = noMods(defs), operands = noMods(ops))
 
 
 # SOPP instructions: 0 inputs (+optional scc/vcc), 0 outputs
@@ -778,7 +797,7 @@ SOPP = {
    ("s_wait_storecnt_dscnt",      dst(), src(), op(gfx12=0x49), InstrClass.Waitcnt),
 }
 for (name, defs, ops, num, cls) in default_class(SOPP, InstrClass.Salu):
-   insn(name, num, Format.SOPP, cls, definitions = defs, operands = ops)
+   insn(name, num, Format.SOPP, cls, definitions = noMods(defs), operands = noMods(ops))
 
 
 # SMEM instructions: sbase input (2 sgpr), potentially 2 offset inputs, 1 sdata input/output
@@ -893,228 +912,229 @@ for (name, num) in SMEM:
 # VOP2 instructions: 2 inputs, 1 output (+ optional vcc)
 # TODO: misses some GFX6_7 opcodes which were shifted to VOP3 in GFX8
 VOP2 = {
-   ("v_cndmask_b32",       True, False, dst(1), src(1, 1, VCC), op(0x00, gfx10=0x01)),
-   ("v_readlane_b32",      False, False, dst(1), src(1, 1), op(0x01, gfx8=-1)),
-   ("v_writelane_b32",     False, False, dst(1), src(1, 1, 1), op(0x02, gfx8=-1)),
-   ("v_add_f32",           True, True, dst(1), src(1, 1), op(0x03, gfx8=0x01, gfx10=0x03)),
-   ("v_sub_f32",           True, True, dst(1), src(1, 1), op(0x04, gfx8=0x02, gfx10=0x04)),
-   ("v_subrev_f32",        True, True, dst(1), src(1, 1), op(0x05, gfx8=0x03, gfx10=0x05)),
-   ("v_mac_legacy_f32",    True, True, dst(1), src(1, 1, 1), op(0x06, gfx8=-1, gfx10=0x06, gfx11=-1)), #GFX6,7,10
-   ("v_fmac_legacy_f32",   True, True, dst(1), src(1, 1, 1), op(gfx10=0x06, gfx12=-1)), #GFX10.3+, v_fmac_dx9_zero_f32 in GFX11
-   ("v_mul_legacy_f32",    True, True, dst(1), src(1, 1), op(0x07, gfx8=0x04, gfx10=0x07)), #v_mul_dx9_zero_f32 in GFX11
-   ("v_mul_f32",           True, True, dst(1), src(1, 1), op(0x08, gfx8=0x05, gfx10=0x08)),
-   ("v_mul_i32_i24",       False, False, dst(1), src(1, 1), op(0x09, gfx8=0x06, gfx10=0x09)),
-   ("v_mul_hi_i32_i24",    False, False, dst(1), src(1, 1), op(0x0a, gfx8=0x07, gfx10=0x0a)),
-   ("v_mul_u32_u24",       False, False, dst(1), src(1, 1), op(0x0b, gfx8=0x08, gfx10=0x0b)),
-   ("v_mul_hi_u32_u24",    False, False, dst(1), src(1, 1), op(0x0c, gfx8=0x09, gfx10=0x0c)),
-   ("v_dot4c_i32_i8",      False, False, dst(1), src(1, 1, 1), op(gfx9=0x39, gfx10=0x0d, gfx11=-1)),
-   ("v_min_legacy_f32",    True, True, dst(1), src(1, 1), op(0x0d, gfx8=-1)),
-   ("v_max_legacy_f32",    True, True, dst(1), src(1, 1), op(0x0e, gfx8=-1)),
-   ("v_min_f32",           True, True, dst(1), src(1, 1), op(0x0f, gfx8=0x0a, gfx10=0x0f, gfx12=0x15)), #called v_min_num_f32 in GFX12
-   ("v_max_f32",           True, True, dst(1), src(1, 1), op(0x10, gfx8=0x0b, gfx10=0x10, gfx12=0x16)), #called v_max_num_f32 in GFX12
-   ("v_min_i32",           False, False, dst(1), src(1, 1), op(0x11, gfx8=0x0c, gfx10=0x11)),
-   ("v_max_i32",           False, False, dst(1), src(1, 1), op(0x12, gfx8=0x0d, gfx10=0x12)),
-   ("v_min_u32",           False, False, dst(1), src(1, 1), op(0x13, gfx8=0x0e, gfx10=0x13)),
-   ("v_max_u32",           False, False, dst(1), src(1, 1), op(0x14, gfx8=0x0f, gfx10=0x14)),
-   ("v_lshr_b32",          False, False, dst(1), src(1, 1), op(0x15, gfx8=-1)),
-   ("v_lshrrev_b32",       False, False, dst(1), src(1, 1), op(0x16, gfx8=0x10, gfx10=0x16, gfx11=0x19)),
-   ("v_ashr_i32",          False, False, dst(1), src(1, 1), op(0x17, gfx8=-1)),
-   ("v_ashrrev_i32",       False, False, dst(1), src(1, 1), op(0x18, gfx8=0x11, gfx10=0x18, gfx11=0x1a)),
-   ("v_lshl_b32",          False, False, dst(1), src(1, 1), op(0x19, gfx8=-1)),
-   ("v_lshlrev_b32",       False, False, dst(1), src(1, 1), op(0x1a, gfx8=0x12, gfx10=0x1a, gfx11=0x18)),
-   ("v_and_b32",           False, False, dst(1), src(1, 1), op(0x1b, gfx8=0x13, gfx10=0x1b)),
-   ("v_or_b32",            False, False, dst(1), src(1, 1), op(0x1c, gfx8=0x14, gfx10=0x1c)),
-   ("v_xor_b32",           False, False, dst(1), src(1, 1), op(0x1d, gfx8=0x15, gfx10=0x1d)),
-   ("v_xnor_b32",          False, False, dst(1), src(1, 1), op(gfx10=0x1e)),
-   ("v_mac_f32",           True, True, dst(1), src(1, 1, 1), op(0x1f, gfx8=0x16, gfx10=0x1f, gfx11=-1)),
-   ("v_madmk_f32",         False, False, dst(1), src(1, 1, 1), op(0x20, gfx8=0x17, gfx10=0x20, gfx11=-1)),
-   ("v_madak_f32",         False, False, dst(1), src(1, 1, 1), op(0x21, gfx8=0x18, gfx10=0x21, gfx11=-1)),
-   ("v_mbcnt_hi_u32_b32",  False, False, dst(1), src(1, 1), op(0x24, gfx8=-1)),
-   ("v_add_co_u32",        False, False, dst(1, VCC), src(1, 1), op(0x25, gfx8=0x19, gfx10=-1)), # VOP3B only in RDNA
-   ("v_sub_co_u32",        False, False, dst(1, VCC), src(1, 1), op(0x26, gfx8=0x1a, gfx10=-1)), # VOP3B only in RDNA
-   ("v_subrev_co_u32",     False, False, dst(1, VCC), src(1, 1), op(0x27, gfx8=0x1b, gfx10=-1)), # VOP3B only in RDNA
-   ("v_addc_co_u32",       False, False, dst(1, VCC), src(1, 1, VCC), op(0x28, gfx8=0x1c, gfx10=0x28, gfx11=0x20)), # v_add_co_ci_u32 in RDNA
-   ("v_subb_co_u32",       False, False, dst(1, VCC), src(1, 1, VCC), op(0x29, gfx8=0x1d, gfx10=0x29, gfx11=0x21)), # v_sub_co_ci_u32 in RDNA
-   ("v_subbrev_co_u32",    False, False, dst(1, VCC), src(1, 1, VCC), op(0x2a, gfx8=0x1e, gfx10=0x2a, gfx11=0x22)), # v_subrev_co_ci_u32 in RDNA
-   ("v_fmac_f32",          True, True, dst(1), src(1, 1, 1), op(gfx10=0x2b)),
-   ("v_fmamk_f32",         False, False, dst(1), src(1, 1, 1), op(gfx10=0x2c)),
-   ("v_fmaak_f32",         False, False, dst(1), src(1, 1, 1), op(gfx10=0x2d)),
-   ("v_cvt_pkrtz_f16_f32", True, False, dst(1), src(1, 1), op(0x2f, gfx8=-1, gfx10=0x2f)), #v_cvt_pk_rtz_f16_f32 in GFX11
-   ("v_add_f16",           True, True, dst(1), src(1, 1), op(gfx8=0x1f, gfx10=0x32)),
-   ("v_sub_f16",           True, True, dst(1), src(1, 1), op(gfx8=0x20, gfx10=0x33)),
-   ("v_subrev_f16",        True, True, dst(1), src(1, 1), op(gfx8=0x21, gfx10=0x34)),
-   ("v_mul_f16",           True, True, dst(1), src(1, 1), op(gfx8=0x22, gfx10=0x35)),
-   ("v_mac_f16",           True, True, dst(1), src(1, 1, 1), op(gfx8=0x23, gfx10=-1)),
-   ("v_madmk_f16",         False, False, dst(1), src(1, 1, 1), op(gfx8=0x24, gfx10=-1)),
-   ("v_madak_f16",         False, False, dst(1), src(1, 1, 1), op(gfx8=0x25, gfx10=-1)),
-   ("v_add_u16",           False, False, dst(1), src(1, 1), op(gfx8=0x26, gfx10=-1)),
-   ("v_sub_u16",           False, False, dst(1), src(1, 1), op(gfx8=0x27, gfx10=-1)),
-   ("v_subrev_u16",        False, False, dst(1), src(1, 1), op(gfx8=0x28, gfx10=-1)),
-   ("v_mul_lo_u16",        False, False, dst(1), src(1, 1), op(gfx8=0x29, gfx10=-1)),
-   ("v_lshlrev_b16",       False, False, dst(1), src(1, 1), op(gfx8=0x2a, gfx10=-1)),
-   ("v_lshrrev_b16",       False, False, dst(1), src(1, 1), op(gfx8=0x2b, gfx10=-1)),
-   ("v_ashrrev_i16",       False, False, dst(1), src(1, 1), op(gfx8=0x2c, gfx10=-1)),
-   ("v_max_f16",           True, True, dst(1), src(1, 1), op(gfx8=0x2d, gfx10=0x39, gfx12=0x31)), #called v_max_num_f16 in GFX12
-   ("v_min_f16",           True, True, dst(1), src(1, 1), op(gfx8=0x2e, gfx10=0x3a, gfx12=0x30)), #called v_min_num_f16 in GFX12
-   ("v_max_u16",           False, False, dst(1), src(1, 1), op(gfx8=0x2f, gfx10=-1)),
-   ("v_max_i16",           False, False, dst(1), src(1, 1), op(gfx8=0x30, gfx10=-1)),
-   ("v_min_u16",           False, False, dst(1), src(1, 1), op(gfx8=0x31, gfx10=-1)),
-   ("v_min_i16",           False, False, dst(1), src(1, 1), op(gfx8=0x32, gfx10=-1)),
-   ("v_ldexp_f16",         False, True, dst(1), src(1, 1), op(gfx8=0x33, gfx10=0x3b)),
-   ("v_add_u32",           False, False, dst(1), src(1, 1), op(gfx9=0x34, gfx10=0x25)), # called v_add_nc_u32 in RDNA
-   ("v_sub_u32",           False, False, dst(1), src(1, 1), op(gfx9=0x35, gfx10=0x26)), # called v_sub_nc_u32 in RDNA
-   ("v_subrev_u32",        False, False, dst(1), src(1, 1), op(gfx9=0x36, gfx10=0x27)), # called v_subrev_nc_u32 in RDNA
-   ("v_fmac_f16",          True, True, dst(1), src(1, 1, 1), op(gfx10=0x36)),
-   ("v_fmamk_f16",         False, False, dst(1), src(1, 1, 1), op(gfx10=0x37)),
-   ("v_fmaak_f16",         False, False, dst(1), src(1, 1, 1), op(gfx10=0x38)),
-   ("v_pk_fmac_f16",       False, False, dst(1), src(1, 1, 1), op(gfx10=0x3c)),
-   ("v_dot2c_f32_f16",     False, False, dst(1), src(1, 1, 1), op(gfx9=0x37, gfx10=0x02, gfx12=-1)), #v_dot2acc_f32_f16 in GFX11
-   ("v_add_f64",           True, True, dst(2), src(2, 2), op(gfx12=0x02), InstrClass.ValuDoubleAdd),
-   ("v_mul_f64",           True, True, dst(2), src(2, 2), op(gfx12=0x06), InstrClass.ValuDoubleAdd),
-   ("v_lshlrev_b64",       False, False, dst(2), src(1, 2), op(gfx12=0x1f), InstrClass.Valu64),
-   ("v_min_f64",           True, True, dst(2), src(2, 2), op(gfx12=0x0d), InstrClass.ValuDoubleAdd),
-   ("v_max_f64",           True, True, dst(2), src(2, 2), op(gfx12=0x0e), InstrClass.ValuDoubleAdd),
+   ("v_cndmask_b32",       dst(U32),      src(mods(U32), mods(U32), VCC), op(0x00, gfx10=0x01)),
+   ("v_readlane_b32",      dst(U32),      src(U32, U32), op(0x01, gfx8=-1)),
+   ("v_writelane_b32",     dst(U32),      src(U32, U32, U32), op(0x02, gfx8=-1)),
+   ("v_add_f32",           dst(F32),      src(F32, F32), op(0x03, gfx8=0x01, gfx10=0x03)),
+   ("v_sub_f32",           dst(F32),      src(F32, F32), op(0x04, gfx8=0x02, gfx10=0x04)),
+   ("v_subrev_f32",        dst(F32),      src(F32, F32), op(0x05, gfx8=0x03, gfx10=0x05)),
+   ("v_mac_legacy_f32",    dst(F32),      src(F32, F32, F32), op(0x06, gfx8=-1, gfx10=0x06, gfx11=-1)), #GFX6,7,10
+   ("v_fmac_legacy_f32",   dst(F32),      src(F32, F32, F32), op(gfx10=0x06, gfx12=-1)), #GFX10.3+, v_fmac_dx9_zero_f32 in GFX11
+   ("v_mul_legacy_f32",    dst(F32),      src(F32, F32), op(0x07, gfx8=0x04, gfx10=0x07)), #v_mul_dx9_zero_f32 in GFX11
+   ("v_mul_f32",           dst(F32),      src(F32, F32), op(0x08, gfx8=0x05, gfx10=0x08)),
+   ("v_mul_i32_i24",       dst(U32),      src(U32, U32), op(0x09, gfx8=0x06, gfx10=0x09)),
+   ("v_mul_hi_i32_i24",    dst(U32),      src(U32, U32), op(0x0a, gfx8=0x07, gfx10=0x0a)),
+   ("v_mul_u32_u24",       dst(U32),      src(U32, U32), op(0x0b, gfx8=0x08, gfx10=0x0b)),
+   ("v_mul_hi_u32_u24",    dst(U32),      src(U32, U32), op(0x0c, gfx8=0x09, gfx10=0x0c)),
+   ("v_dot4c_i32_i8",      dst(U32),      src(PkU16, PkU16, U32), op(gfx9=0x39, gfx10=0x0d, gfx11=-1)),
+   ("v_min_legacy_f32",    dst(F32),      src(F32, F32), op(0x0d, gfx8=-1)),
+   ("v_max_legacy_f32",    dst(F32),      src(F32, F32), op(0x0e, gfx8=-1)),
+   ("v_min_f32",           dst(F32),      src(F32, F32), op(0x0f, gfx8=0x0a, gfx10=0x0f, gfx12=0x15)), #called v_min_num_f32 in GFX12
+   ("v_max_f32",           dst(F32),      src(F32, F32), op(0x10, gfx8=0x0b, gfx10=0x10, gfx12=0x16)), #called v_max_num_f32 in GFX12
+   ("v_min_i32",           dst(U32),      src(U32, U32), op(0x11, gfx8=0x0c, gfx10=0x11)),
+   ("v_max_i32",           dst(U32),      src(U32, U32), op(0x12, gfx8=0x0d, gfx10=0x12)),
+   ("v_min_u32",           dst(U32),      src(U32, U32), op(0x13, gfx8=0x0e, gfx10=0x13)),
+   ("v_max_u32",           dst(U32),      src(U32, U32), op(0x14, gfx8=0x0f, gfx10=0x14)),
+   ("v_lshr_b32",          dst(U32),      src(U32, U32), op(0x15, gfx8=-1)),
+   ("v_lshrrev_b32",       dst(U32),      src(U32, U32), op(0x16, gfx8=0x10, gfx10=0x16, gfx11=0x19)),
+   ("v_ashr_i32",          dst(U32),      src(U32, U32), op(0x17, gfx8=-1)),
+   ("v_ashrrev_i32",       dst(U32),      src(U32, U32), op(0x18, gfx8=0x11, gfx10=0x18, gfx11=0x1a)),
+   ("v_lshl_b32",          dst(U32),      src(U32, U32), op(0x19, gfx8=-1)),
+   ("v_lshlrev_b32",       dst(U32),      src(U32, U32), op(0x1a, gfx8=0x12, gfx10=0x1a, gfx11=0x18)),
+   ("v_and_b32",           dst(U32),      src(U32, U32), op(0x1b, gfx8=0x13, gfx10=0x1b)),
+   ("v_or_b32",            dst(U32),      src(U32, U32), op(0x1c, gfx8=0x14, gfx10=0x1c)),
+   ("v_xor_b32",           dst(U32),      src(U32, U32), op(0x1d, gfx8=0x15, gfx10=0x1d)),
+   ("v_xnor_b32",          dst(U32),      src(U32, U32), op(gfx10=0x1e)),
+   ("v_mac_f32",           dst(F32),      src(F32, F32, F32), op(0x1f, gfx8=0x16, gfx10=0x1f, gfx11=-1)),
+   ("v_madmk_f32",         dst(noMods(F32)), noMods(src(F32, F32, IMM)), op(0x20, gfx8=0x17, gfx10=0x20, gfx11=-1)),
+   ("v_madak_f32",         dst(noMods(F32)), noMods(src(F32, F32, IMM)), op(0x21, gfx8=0x18, gfx10=0x21, gfx11=-1)),
+   ("v_mbcnt_hi_u32_b32",  dst(U32),      src(U32, U32), op(0x24, gfx8=-1)),
+   ("v_add_co_u32",        dst(U32, VCC), src(U32, U32), op(0x25, gfx8=0x19, gfx10=-1)), # VOP3B only in RDNA
+   ("v_sub_co_u32",        dst(U32, VCC), src(U32, U32), op(0x26, gfx8=0x1a, gfx10=-1)), # VOP3B only in RDNA
+   ("v_subrev_co_u32",     dst(U32, VCC), src(U32, U32), op(0x27, gfx8=0x1b, gfx10=-1)), # VOP3B only in RDNA
+   ("v_addc_co_u32",       dst(U32, VCC), src(U32, U32, VCC), op(0x28, gfx8=0x1c, gfx10=0x28, gfx11=0x20)), # v_add_co_ci_u32 in RDNA
+   ("v_subb_co_u32",       dst(U32, VCC), src(U32, U32, VCC), op(0x29, gfx8=0x1d, gfx10=0x29, gfx11=0x21)), # v_sub_co_ci_u32 in RDNA
+   ("v_subbrev_co_u32",    dst(U32, VCC), src(U32, U32, VCC), op(0x2a, gfx8=0x1e, gfx10=0x2a, gfx11=0x22)), # v_subrev_co_ci_u32 in RDNA
+   ("v_fmac_f32",          dst(F32),      src(F32, F32, F32), op(gfx10=0x2b)),
+   ("v_fmamk_f32",         dst(noMods(F32)), noMods(src(F32, F32, IMM)), op(gfx10=0x2c)),
+   ("v_fmaak_f32",         dst(noMods(F32)), noMods(src(F32, F32, IMM)), op(gfx10=0x2d)),
+   ("v_cvt_pkrtz_f16_f32", dst(noMods(PkF16)), src(F32, F32), op(0x2f, gfx8=-1, gfx10=0x2f)), #v_cvt_pk_rtz_f16_f32 in GFX11
+   ("v_add_f16",           dst(F16),      src(F16, F16), op(gfx8=0x1f, gfx10=0x32)),
+   ("v_sub_f16",           dst(F16),      src(F16, F16), op(gfx8=0x20, gfx10=0x33)),
+   ("v_subrev_f16",        dst(F16),      src(F16, F16), op(gfx8=0x21, gfx10=0x34)),
+   ("v_mul_f16",           dst(F16),      src(F16, F16), op(gfx8=0x22, gfx10=0x35)),
+   ("v_mac_f16",           dst(F16),      src(F16, F16, F16), op(gfx8=0x23, gfx10=-1)),
+   ("v_madmk_f16",         dst(noMods(F16)), noMods(src(F16, F16, IMM)), op(gfx8=0x24, gfx10=-1)),
+   ("v_madak_f16",         dst(noMods(F16)), noMods(src(F16, F16, IMM)), op(gfx8=0x25, gfx10=-1)),
+   ("v_add_u16",           dst(U16),      src(U16, U16), op(gfx8=0x26, gfx10=-1)),
+   ("v_sub_u16",           dst(U16),      src(U16, U16), op(gfx8=0x27, gfx10=-1)),
+   ("v_subrev_u16",        dst(U16),      src(U16, U16), op(gfx8=0x28, gfx10=-1)),
+   ("v_mul_lo_u16",        dst(U16),      src(U16, U16), op(gfx8=0x29, gfx10=-1)),
+   ("v_lshlrev_b16",       dst(U16),      src(U16, U16), op(gfx8=0x2a, gfx10=-1)),
+   ("v_lshrrev_b16",       dst(U16),      src(U16, U16), op(gfx8=0x2b, gfx10=-1)),
+   ("v_ashrrev_i16",       dst(U16),      src(U16, U16), op(gfx8=0x2c, gfx10=-1)),
+   ("v_max_f16",           dst(F16),      src(F16, F16), op(gfx8=0x2d, gfx10=0x39, gfx12=0x31)), #called v_max_num_f16 in GFX12
+   ("v_min_f16",           dst(F16),      src(F16, F16), op(gfx8=0x2e, gfx10=0x3a, gfx12=0x30)), #called v_min_num_f16 in GFX12
+   ("v_max_u16",           dst(U16),      src(U16, U16), op(gfx8=0x2f, gfx10=-1)),
+   ("v_max_i16",           dst(U16),      src(U16, U16), op(gfx8=0x30, gfx10=-1)),
+   ("v_min_u16",           dst(U16),      src(U16, U16), op(gfx8=0x31, gfx10=-1)),
+   ("v_min_i16",           dst(U16),      src(U16, U16), op(gfx8=0x32, gfx10=-1)),
+   ("v_ldexp_f16",         dst(F16),      src(F16, U16), op(gfx8=0x33, gfx10=0x3b)),
+   ("v_add_u32",           dst(U32),      src(U32, U32), op(gfx9=0x34, gfx10=0x25)), # called v_add_nc_u32 in RDNA
+   ("v_sub_u32",           dst(U32),      src(U32, U32), op(gfx9=0x35, gfx10=0x26)), # called v_sub_nc_u32 in RDNA
+   ("v_subrev_u32",        dst(U32),      src(U32, U32), op(gfx9=0x36, gfx10=0x27)), # called v_subrev_nc_u32 in RDNA
+   ("v_fmac_f16",          dst(F16),      src(F16, F16, F16), op(gfx10=0x36)),
+   ("v_fmamk_f16",         dst(noMods(F16)), noMods(src(F16, F16, IMM)), op(gfx10=0x37)),
+   ("v_fmaak_f16",         dst(noMods(F16)), noMods(src(F16, F16, IMM)), op(gfx10=0x38)),
+   ("v_pk_fmac_f16",       dst(noMods(PkF16)), noMods(src(PkF16, PkF16, PkF16)), op(gfx10=0x3c)),
+   ("v_dot2c_f32_f16",     dst(noMods(F32)), noMods(src(PkF16, PkF16, F32)), op(gfx9=0x37, gfx10=0x02, gfx12=-1)), #v_dot2acc_f32_f16 in GFX11
+   ("v_add_f64",           dst(F64),      src(F64, F64), op(gfx12=0x02), InstrClass.ValuDoubleAdd),
+   ("v_mul_f64",           dst(F64),      src(F64, F64), op(gfx12=0x06), InstrClass.ValuDoubleAdd),
+   ("v_lshlrev_b64",       dst(U64),      src(U32, U64), op(gfx12=0x1f), InstrClass.Valu64),
+   ("v_min_f64",           dst(F64),      src(F64, F64), op(gfx12=0x0d), InstrClass.ValuDoubleAdd),
+   ("v_max_f64",           dst(F64),      src(F64, F64), op(gfx12=0x0e), InstrClass.ValuDoubleAdd),
 }
-for (name, in_mod, out_mod, defs, ops, num, cls) in default_class(VOP2, InstrClass.Valu32):
-   insn(name, num, Format.VOP2, cls, in_mod, out_mod, definitions = defs, operands = ops)
+for (name, defs, ops, num, cls) in default_class(VOP2, InstrClass.Valu32):
+   insn(name, num, Format.VOP2, cls, definitions = defs, operands = ops)
 
 
 # VOP1 instructions: instructions with 1 input and 1 output
 VOP1 = {
-   ("v_nop",                      False, False, dst(), src(), op(0x00)),
-   ("v_mov_b32",                  False, False, dst(1), src(1), op(0x01)),
-   ("v_readfirstlane_b32",        False, False, dst(1), src(1), op(0x02)),
-   ("v_cvt_i32_f64",              True, False, dst(1), src(2), op(0x03), InstrClass.ValuDoubleConvert),
-   ("v_cvt_f64_i32",              False, True, dst(2), src(1), op(0x04), InstrClass.ValuDoubleConvert),
-   ("v_cvt_f32_i32",              False, True, dst(1), src(1), op(0x05)),
-   ("v_cvt_f32_u32",              False, True, dst(1), src(1), op(0x06)),
-   ("v_cvt_u32_f32",              True, False, dst(1), src(1), op(0x07)),
-   ("v_cvt_i32_f32",              True, False, dst(1), src(1), op(0x08)),
-   ("v_cvt_f16_f32",              True, True, dst(1), src(1), op(0x0a)),
-   ("p_v_cvt_f16_f32_rtne",       True, True, dst(1), src(1), op(-1)),
-   ("v_cvt_f32_f16",              True, True, dst(1), src(1), op(0x0b)),
-   ("v_cvt_rpi_i32_f32",          True, False, dst(1), src(1), op(0x0c)), #v_cvt_nearest_i32_f32 in GFX11
-   ("v_cvt_flr_i32_f32",          True, False, dst(1), src(1), op(0x0d)),#v_cvt_floor_i32_f32 in GFX11
-   ("v_cvt_off_f32_i4",           False, True, dst(1), src(1), op(0x0e)),
-   ("v_cvt_f32_f64",              True, True, dst(1), src(2), op(0x0f), InstrClass.ValuDoubleConvert),
-   ("v_cvt_f64_f32",              True, True, dst(2), src(1), op(0x10), InstrClass.ValuDoubleConvert),
-   ("v_cvt_f32_ubyte0",           False, True, dst(1), src(1), op(0x11)),
-   ("v_cvt_f32_ubyte1",           False, True, dst(1), src(1), op(0x12)),
-   ("v_cvt_f32_ubyte2",           False, True, dst(1), src(1), op(0x13)),
-   ("v_cvt_f32_ubyte3",           False, True, dst(1), src(1), op(0x14)),
-   ("v_cvt_u32_f64",              True, False, dst(1), src(2), op(0x15), InstrClass.ValuDoubleConvert),
-   ("v_cvt_f64_u32",              False, True, dst(2), src(1), op(0x16), InstrClass.ValuDoubleConvert),
-   ("v_trunc_f64",                True, True, dst(2), src(2), op(gfx7=0x17), InstrClass.ValuDouble),
-   ("v_ceil_f64",                 True, True, dst(2), src(2), op(gfx7=0x18), InstrClass.ValuDouble),
-   ("v_rndne_f64",                True, True, dst(2), src(2), op(gfx7=0x19), InstrClass.ValuDouble),
-   ("v_floor_f64",                True, True, dst(2), src(2), op(gfx7=0x1a), InstrClass.ValuDouble),
-   ("v_pipeflush",                False, False, dst(), src(), op(gfx10=0x1b)),
-   ("v_fract_f32",                True, True, dst(1), src(1), op(0x20, gfx8=0x1b, gfx10=0x20)),
-   ("v_trunc_f32",                True, True, dst(1), src(1), op(0x21, gfx8=0x1c, gfx10=0x21)),
-   ("v_ceil_f32",                 True, True, dst(1), src(1), op(0x22, gfx8=0x1d, gfx10=0x22)),
-   ("v_rndne_f32",                True, True, dst(1), src(1), op(0x23, gfx8=0x1e, gfx10=0x23)),
-   ("v_floor_f32",                True, True, dst(1), src(1), op(0x24, gfx8=0x1f, gfx10=0x24)),
-   ("v_exp_f32",                  True, True, dst(1), src(1), op(0x25, gfx8=0x20, gfx10=0x25), InstrClass.ValuTranscendental32),
-   ("v_log_clamp_f32",            True, True, dst(1), src(1), op(0x26, gfx8=-1), InstrClass.ValuTranscendental32),
-   ("v_log_f32",                  True, True, dst(1), src(1), op(0x27, gfx8=0x21, gfx10=0x27), InstrClass.ValuTranscendental32),
-   ("v_rcp_clamp_f32",            True, True, dst(1), src(1), op(0x28, gfx8=-1), InstrClass.ValuTranscendental32),
-   ("v_rcp_legacy_f32",           True, True, dst(1), src(1), op(0x29, gfx8=-1), InstrClass.ValuTranscendental32),
-   ("v_rcp_f32",                  True, True, dst(1), src(1), op(0x2a, gfx8=0x22, gfx10=0x2a), InstrClass.ValuTranscendental32),
-   ("v_rcp_iflag_f32",            True, True, dst(1), src(1), op(0x2b, gfx8=0x23, gfx10=0x2b), InstrClass.ValuTranscendental32),
-   ("v_rsq_clamp_f32",            True, True, dst(1), src(1), op(0x2c, gfx8=-1), InstrClass.ValuTranscendental32),
-   ("v_rsq_legacy_f32",           True, True, dst(1), src(1), op(0x2d, gfx8=-1), InstrClass.ValuTranscendental32),
-   ("v_rsq_f32",                  True, True, dst(1), src(1), op(0x2e, gfx8=0x24, gfx10=0x2e), InstrClass.ValuTranscendental32),
-   ("v_rcp_f64",                  True, True, dst(2), src(2), op(0x2f, gfx8=0x25, gfx10=0x2f), InstrClass.ValuDoubleTranscendental),
-   ("v_rcp_clamp_f64",            True, True, dst(2), src(2), op(0x30, gfx8=-1), InstrClass.ValuDoubleTranscendental),
-   ("v_rsq_f64",                  True, True, dst(2), src(2), op(0x31, gfx8=0x26, gfx10=0x31), InstrClass.ValuDoubleTranscendental),
-   ("v_rsq_clamp_f64",            True, True, dst(2), src(2), op(0x32, gfx8=-1), InstrClass.ValuDoubleTranscendental),
-   ("v_sqrt_f32",                 True, True, dst(1), src(1), op(0x33, gfx8=0x27, gfx10=0x33), InstrClass.ValuTranscendental32),
-   ("v_sqrt_f64",                 True, True, dst(2), src(2), op(0x34, gfx8=0x28, gfx10=0x34), InstrClass.ValuDoubleTranscendental),
-   ("v_sin_f32",                  True, True, dst(1), src(1), op(0x35, gfx8=0x29, gfx10=0x35), InstrClass.ValuTranscendental32),
-   ("v_cos_f32",                  True, True, dst(1), src(1), op(0x36, gfx8=0x2a, gfx10=0x36), InstrClass.ValuTranscendental32),
-   ("v_not_b32",                  False, False, dst(1), src(1), op(0x37, gfx8=0x2b, gfx10=0x37)),
-   ("v_bfrev_b32",                False, False, dst(1), src(1), op(0x38, gfx8=0x2c, gfx10=0x38)),
-   ("v_ffbh_u32",                 False, False, dst(1), src(1), op(0x39, gfx8=0x2d, gfx10=0x39)), #v_clz_i32_u32 in GFX11
-   ("v_ffbl_b32",                 False, False, dst(1), src(1), op(0x3a, gfx8=0x2e, gfx10=0x3a)), #v_ctz_i32_b32 in GFX11
-   ("v_ffbh_i32",                 False, False, dst(1), src(1), op(0x3b, gfx8=0x2f, gfx10=0x3b)), #v_cls_i32 in GFX11
-   ("v_frexp_exp_i32_f64",        True, False, dst(1), src(2), op(0x3c, gfx8=0x30, gfx10=0x3c), InstrClass.ValuDouble),
-   ("v_frexp_mant_f64",           True, False, dst(2), src(2), op(0x3d, gfx8=0x31, gfx10=0x3d), InstrClass.ValuDouble),
-   ("v_fract_f64",                True, True, dst(2), src(2), op(0x3e, gfx8=0x32, gfx10=0x3e), InstrClass.ValuDouble),
-   ("v_frexp_exp_i32_f32",        True, False, dst(1), src(1), op(0x3f, gfx8=0x33, gfx10=0x3f)),
-   ("v_frexp_mant_f32",           True, False, dst(1), src(1), op(0x40, gfx8=0x34, gfx10=0x40)),
-   ("v_clrexcp",                  False, False, dst(), src(), op(0x41, gfx8=0x35, gfx10=0x41, gfx11=-1)),
-   ("v_movreld_b32",              False, False, dst(1), src(1, M0), op(0x42, gfx8=0x36, gfx9=-1, gfx10=0x42)),
-   ("v_movrels_b32",              False, False, dst(1), src(1, M0), op(0x43, gfx8=0x37, gfx9=-1, gfx10=0x43)),
-   ("v_movrelsd_b32",             False, False, dst(1), src(1, M0), op(0x44, gfx8=0x38, gfx9=-1, gfx10=0x44)),
-   ("v_movrelsd_2_b32",           False, False, dst(1), src(1, M0), op(gfx10=0x48)),
-   ("v_screen_partition_4se_b32", False, False, dst(1), src(1), op(gfx9=0x37, gfx10=-1)),
-   ("v_cvt_f16_u16",              False, True, dst(1), src(1), op(gfx8=0x39, gfx10=0x50)),
-   ("v_cvt_f16_i16",              False, True, dst(1), src(1), op(gfx8=0x3a, gfx10=0x51)),
-   ("v_cvt_u16_f16",              True, False, dst(1), src(1), op(gfx8=0x3b, gfx10=0x52)),
-   ("v_cvt_i16_f16",              True, False, dst(1), src(1), op(gfx8=0x3c, gfx10=0x53)),
-   ("v_rcp_f16",                  True, True, dst(1), src(1), op(gfx8=0x3d, gfx10=0x54), InstrClass.ValuTranscendental32),
-   ("v_sqrt_f16",                 True, True, dst(1), src(1), op(gfx8=0x3e, gfx10=0x55), InstrClass.ValuTranscendental32),
-   ("v_rsq_f16",                  True, True, dst(1), src(1), op(gfx8=0x3f, gfx10=0x56), InstrClass.ValuTranscendental32),
-   ("v_log_f16",                  True, True, dst(1), src(1), op(gfx8=0x40, gfx10=0x57), InstrClass.ValuTranscendental32),
-   ("v_exp_f16",                  True, True, dst(1), src(1), op(gfx8=0x41, gfx10=0x58), InstrClass.ValuTranscendental32),
-   ("v_frexp_mant_f16",           True, False, dst(1), src(1), op(gfx8=0x42, gfx10=0x59)),
-   ("v_frexp_exp_i16_f16",        True, False, dst(1), src(1), op(gfx8=0x43, gfx10=0x5a)),
-   ("v_floor_f16",                True, True, dst(1), src(1), op(gfx8=0x44, gfx10=0x5b)),
-   ("v_ceil_f16",                 True, True, dst(1), src(1), op(gfx8=0x45, gfx10=0x5c)),
-   ("v_trunc_f16",                True, True, dst(1), src(1), op(gfx8=0x46, gfx10=0x5d)),
-   ("v_rndne_f16",                True, True, dst(1), src(1), op(gfx8=0x47, gfx10=0x5e)),
-   ("v_fract_f16",                True, True, dst(1), src(1), op(gfx8=0x48, gfx10=0x5f)),
-   ("v_sin_f16",                  True, True, dst(1), src(1), op(gfx8=0x49, gfx10=0x60), InstrClass.ValuTranscendental32),
-   ("v_cos_f16",                  True, True, dst(1), src(1), op(gfx8=0x4a, gfx10=0x61), InstrClass.ValuTranscendental32),
-   ("v_exp_legacy_f32",           True, True, dst(1), src(1), op(gfx7=0x46, gfx8=0x4b, gfx10=-1), InstrClass.ValuTranscendental32),
-   ("v_log_legacy_f32",           True, True, dst(1), src(1), op(gfx7=0x45, gfx8=0x4c, gfx10=-1), InstrClass.ValuTranscendental32),
-   ("v_sat_pk_u8_i16",            False, False, dst(1), src(1), op(gfx9=0x4f, gfx10=0x62)),
-   ("v_cvt_norm_i16_f16",         True, False, dst(1), src(1), op(gfx9=0x4d, gfx10=0x63)),
-   ("v_cvt_norm_u16_f16",         True, False, dst(1), src(1), op(gfx9=0x4e, gfx10=0x64)),
-   ("v_swap_b32",                 False, False, dst(1, 1), src(1, 1), op(gfx9=0x51, gfx10=0x65)),
-   ("v_swaprel_b32",              False, False, dst(1, 1), src(1, 1, M0), op(gfx10=0x68)),
-   ("v_permlane64_b32",           False, False, dst(1), src(1), op(gfx11=0x67)), #cannot use VOP3
-   ("v_not_b16",                  False, False, dst(1), src(1), op(gfx11=0x69)),
-   ("v_cvt_i32_i16",              False, False, dst(1), src(1), op(gfx11=0x6a)),
-   ("v_cvt_u32_u16",              False, False, dst(1), src(1), op(gfx11=0x6b)),
-   ("v_mov_b16",                  True, False, dst(1), src(1), op(gfx11=0x1c)),
-   ("v_swap_b16",                 False, False, dst(1, 1), src(1, 1), op(gfx11=0x66)),
-   ("v_cvt_f32_fp8",              False, False, dst(1), src(1), op(gfx12=0x6c)),
-   ("v_cvt_f32_bf8",              False, False, dst(1), src(1), op(gfx12=0x6d)),
-   ("v_cvt_pk_f32_fp8",           False, False, dst(2), src(1), op(gfx12=0x6e)),
-   ("v_cvt_pk_f32_bf8",           False, False, dst(2), src(1), op(gfx12=0x6f)),
+   ("v_nop",                      dst(),    src(), op(0x00)),
+   ("v_mov_b32",                  dst(U32), src(U32), op(0x01)),
+   ("v_readfirstlane_b32",        dst(U32), src(U32), op(0x02)),
+   ("v_cvt_i32_f64",              dst(U32), src(F64), op(0x03), InstrClass.ValuDoubleConvert),
+   ("v_cvt_f64_i32",              dst(F64), src(U32), op(0x04), InstrClass.ValuDoubleConvert),
+   ("v_cvt_f32_i32",              dst(F32), src(U32), op(0x05)),
+   ("v_cvt_f32_u32",              dst(F32), src(U32), op(0x06)),
+   ("v_cvt_u32_f32",              dst(U32), src(F32), op(0x07)),
+   ("v_cvt_i32_f32",              dst(U32), src(F32), op(0x08)),
+   ("v_cvt_f16_f32",              dst(F16), src(F32), op(0x0a)),
+   ("p_v_cvt_f16_f32_rtne",       dst(F16), src(F32), op(-1)),
+   ("v_cvt_f32_f16",              dst(F32), src(F16), op(0x0b)),
+   ("v_cvt_rpi_i32_f32",          dst(U32), src(F32), op(0x0c)), #v_cvt_nearest_i32_f32 in GFX11
+   ("v_cvt_flr_i32_f32",          dst(U32), src(F32), op(0x0d)),#v_cvt_floor_i32_f32 in GFX11
+   ("v_cvt_off_f32_i4",           dst(F32), src(U32), op(0x0e)),
+   ("v_cvt_f32_f64",              dst(F32), src(F64), op(0x0f), InstrClass.ValuDoubleConvert),
+   ("v_cvt_f64_f32",              dst(F64), src(F32), op(0x10), InstrClass.ValuDoubleConvert),
+   ("v_cvt_f32_ubyte0",           dst(F32), src(U32), op(0x11)),
+   ("v_cvt_f32_ubyte1",           dst(F32), src(U32), op(0x12)),
+   ("v_cvt_f32_ubyte2",           dst(F32), src(U32), op(0x13)),
+   ("v_cvt_f32_ubyte3",           dst(F32), src(U32), op(0x14)),
+   ("v_cvt_u32_f64",              dst(U32), src(F64), op(0x15), InstrClass.ValuDoubleConvert),
+   ("v_cvt_f64_u32",              dst(F64), src(U32), op(0x16), InstrClass.ValuDoubleConvert),
+   ("v_trunc_f64",                dst(F64), src(F64), op(gfx7=0x17), InstrClass.ValuDouble),
+   ("v_ceil_f64",                 dst(F64), src(F64), op(gfx7=0x18), InstrClass.ValuDouble),
+   ("v_rndne_f64",                dst(F64), src(F64), op(gfx7=0x19), InstrClass.ValuDouble),
+   ("v_floor_f64",                dst(F64), src(F64), op(gfx7=0x1a), InstrClass.ValuDouble),
+   ("v_pipeflush",                dst(),    src(), op(gfx10=0x1b)),
+   ("v_fract_f32",                dst(F32), src(F32), op(0x20, gfx8=0x1b, gfx10=0x20)),
+   ("v_trunc_f32",                dst(F32), src(F32), op(0x21, gfx8=0x1c, gfx10=0x21)),
+   ("v_ceil_f32",                 dst(F32), src(F32), op(0x22, gfx8=0x1d, gfx10=0x22)),
+   ("v_rndne_f32",                dst(F32), src(F32), op(0x23, gfx8=0x1e, gfx10=0x23)),
+   ("v_floor_f32",                dst(F32), src(F32), op(0x24, gfx8=0x1f, gfx10=0x24)),
+   ("v_exp_f32",                  dst(F32), src(F32), op(0x25, gfx8=0x20, gfx10=0x25), InstrClass.ValuTranscendental32),
+   ("v_log_clamp_f32",            dst(F32), src(F32), op(0x26, gfx8=-1), InstrClass.ValuTranscendental32),
+   ("v_log_f32",                  dst(F32), src(F32), op(0x27, gfx8=0x21, gfx10=0x27), InstrClass.ValuTranscendental32),
+   ("v_rcp_clamp_f32",            dst(F32), src(F32), op(0x28, gfx8=-1), InstrClass.ValuTranscendental32),
+   ("v_rcp_legacy_f32",           dst(F32), src(F32), op(0x29, gfx8=-1), InstrClass.ValuTranscendental32),
+   ("v_rcp_f32",                  dst(F32), src(F32), op(0x2a, gfx8=0x22, gfx10=0x2a), InstrClass.ValuTranscendental32),
+   ("v_rcp_iflag_f32",            dst(F32), src(F32), op(0x2b, gfx8=0x23, gfx10=0x2b), InstrClass.ValuTranscendental32),
+   ("v_rsq_clamp_f32",            dst(F32), src(F32), op(0x2c, gfx8=-1), InstrClass.ValuTranscendental32),
+   ("v_rsq_legacy_f32",           dst(F32), src(F32), op(0x2d, gfx8=-1), InstrClass.ValuTranscendental32),
+   ("v_rsq_f32",                  dst(F32), src(F32), op(0x2e, gfx8=0x24, gfx10=0x2e), InstrClass.ValuTranscendental32),
+   ("v_rcp_f64",                  dst(F64), src(F64), op(0x2f, gfx8=0x25, gfx10=0x2f), InstrClass.ValuDoubleTranscendental),
+   ("v_rcp_clamp_f64",            dst(F64), src(F64), op(0x30, gfx8=-1), InstrClass.ValuDoubleTranscendental),
+   ("v_rsq_f64",                  dst(F64), src(F64), op(0x31, gfx8=0x26, gfx10=0x31), InstrClass.ValuDoubleTranscendental),
+   ("v_rsq_clamp_f64",            dst(F64), src(F64), op(0x32, gfx8=-1), InstrClass.ValuDoubleTranscendental),
+   ("v_sqrt_f32",                 dst(F32), src(F32), op(0x33, gfx8=0x27, gfx10=0x33), InstrClass.ValuTranscendental32),
+   ("v_sqrt_f64",                 dst(F64), src(F64), op(0x34, gfx8=0x28, gfx10=0x34), InstrClass.ValuDoubleTranscendental),
+   ("v_sin_f32",                  dst(F32), src(F32), op(0x35, gfx8=0x29, gfx10=0x35), InstrClass.ValuTranscendental32),
+   ("v_cos_f32",                  dst(F32), src(F32), op(0x36, gfx8=0x2a, gfx10=0x36), InstrClass.ValuTranscendental32),
+   ("v_not_b32",                  dst(U32), src(U32), op(0x37, gfx8=0x2b, gfx10=0x37)),
+   ("v_bfrev_b32",                dst(U32), src(U32), op(0x38, gfx8=0x2c, gfx10=0x38)),
+   ("v_ffbh_u32",                 dst(U32), src(U32), op(0x39, gfx8=0x2d, gfx10=0x39)), #v_clz_i32_u32 in GFX11
+   ("v_ffbl_b32",                 dst(U32), src(U32), op(0x3a, gfx8=0x2e, gfx10=0x3a)), #v_ctz_i32_b32 in GFX11
+   ("v_ffbh_i32",                 dst(U32), src(U32), op(0x3b, gfx8=0x2f, gfx10=0x3b)), #v_cls_i32 in GFX11
+   ("v_frexp_exp_i32_f64",        dst(U32), src(F64), op(0x3c, gfx8=0x30, gfx10=0x3c), InstrClass.ValuDouble),
+   ("v_frexp_mant_f64",           dst(noMods(F64)), src(F64), op(0x3d, gfx8=0x31, gfx10=0x3d), InstrClass.ValuDouble),
+   ("v_fract_f64",                dst(F64), src(F64), op(0x3e, gfx8=0x32, gfx10=0x3e), InstrClass.ValuDouble),
+   ("v_frexp_exp_i32_f32",        dst(U32), src(F32), op(0x3f, gfx8=0x33, gfx10=0x3f)),
+   ("v_frexp_mant_f32",           dst(noMods(F32)), src(F32), op(0x40, gfx8=0x34, gfx10=0x40)),
+   ("v_clrexcp",                  dst(),  src(), op(0x41, gfx8=0x35, gfx10=0x41, gfx11=-1)),
+   ("v_movreld_b32",              dst(U32), src(U32, M0), op(0x42, gfx8=0x36, gfx9=-1, gfx10=0x42)),
+   ("v_movrels_b32",              dst(U32), src(U32, M0), op(0x43, gfx8=0x37, gfx9=-1, gfx10=0x43)),
+   ("v_movrelsd_b32",             dst(U32), src(U32, M0), op(0x44, gfx8=0x38, gfx9=-1, gfx10=0x44)),
+   ("v_movrelsd_2_b32",           dst(U32), src(U32, M0), op(gfx10=0x48)),
+   ("v_screen_partition_4se_b32", dst(U32), src(U32), op(gfx9=0x37, gfx10=-1)),
+   ("v_cvt_f16_u16",              dst(F16), src(U16), op(gfx8=0x39, gfx10=0x50)),
+   ("v_cvt_f16_i16",              dst(F16), src(U16), op(gfx8=0x3a, gfx10=0x51)),
+   ("v_cvt_u16_f16",              dst(U16), src(F16), op(gfx8=0x3b, gfx10=0x52)),
+   ("v_cvt_i16_f16",              dst(U16), src(F16), op(gfx8=0x3c, gfx10=0x53)),
+   ("v_rcp_f16",                  dst(F16), dst(F16), op(gfx8=0x3d, gfx10=0x54), InstrClass.ValuTranscendental32),
+   ("v_sqrt_f16",                 dst(F16), dst(F16), op(gfx8=0x3e, gfx10=0x55), InstrClass.ValuTranscendental32),
+   ("v_rsq_f16",                  dst(F16), dst(F16), op(gfx8=0x3f, gfx10=0x56), InstrClass.ValuTranscendental32),
+   ("v_log_f16",                  dst(F16), dst(F16), op(gfx8=0x40, gfx10=0x57), InstrClass.ValuTranscendental32),
+   ("v_exp_f16",                  dst(F16), dst(F16), op(gfx8=0x41, gfx10=0x58), InstrClass.ValuTranscendental32),
+   ("v_frexp_mant_f16",           dst(noMods(F16)), dst(F16), op(gfx8=0x42, gfx10=0x59)),
+   ("v_frexp_exp_i16_f16",        dst(U16), dst(F16), op(gfx8=0x43, gfx10=0x5a)),
+   ("v_floor_f16",                dst(F16), dst(F16), op(gfx8=0x44, gfx10=0x5b)),
+   ("v_ceil_f16",                 dst(F16), dst(F16), op(gfx8=0x45, gfx10=0x5c)),
+   ("v_trunc_f16",                dst(F16), dst(F16), op(gfx8=0x46, gfx10=0x5d)),
+   ("v_rndne_f16",                dst(F16), dst(F16), op(gfx8=0x47, gfx10=0x5e)),
+   ("v_fract_f16",                dst(F16), dst(F16), op(gfx8=0x48, gfx10=0x5f)),
+   ("v_sin_f16",                  dst(F16), dst(F16), op(gfx8=0x49, gfx10=0x60), InstrClass.ValuTranscendental32),
+   ("v_cos_f16",                  dst(F16), dst(F16), op(gfx8=0x4a, gfx10=0x61), InstrClass.ValuTranscendental32),
+   ("v_exp_legacy_f32",           dst(F32), src(F32), op(gfx7=0x46, gfx8=0x4b, gfx10=-1), InstrClass.ValuTranscendental32),
+   ("v_log_legacy_f32",           dst(F32), src(F32), op(gfx7=0x45, gfx8=0x4c, gfx10=-1), InstrClass.ValuTranscendental32),
+   ("v_sat_pk_u8_i16",            dst(U16), src(U32), op(gfx9=0x4f, gfx10=0x62)),
+   ("v_cvt_norm_i16_f16",         dst(U16), src(F16), op(gfx9=0x4d, gfx10=0x63)),
+   ("v_cvt_norm_u16_f16",         dst(U16), src(F16), op(gfx9=0x4e, gfx10=0x64)),
+   ("v_swap_b32",                 dst(U32, U32), src(U32, U32), op(gfx9=0x51, gfx10=0x65)),
+   ("v_swaprel_b32",              dst(U32, U32), src(U32, U32, M0), op(gfx10=0x68)),
+   ("v_permlane64_b32",           dst(U32), src(U32), op(gfx11=0x67)), #cannot use VOP3
+   ("v_not_b16",                  dst(U16), src(U16), op(gfx11=0x69)),
+   ("v_cvt_i32_i16",              dst(U32), src(U16), op(gfx11=0x6a)),
+   ("v_cvt_u32_u16",              dst(U32), src(U16), op(gfx11=0x6b)),
+   ("v_mov_b16",                  dst(U16), src(mods(U16)), op(gfx11=0x1c)),
+   ("v_swap_b16",                 dst(U16, U16), src(U16, U16), op(gfx11=0x66)),
+   ("v_cvt_f32_fp8",              dst(noMods(F32)), src(F8), op(gfx12=0x6c)),
+   ("v_cvt_f32_bf8",              dst(noMods(F32)), src(BF8), op(gfx12=0x6d)),
+   ("v_cvt_pk_f32_fp8",           dst(PkF32), src(PkF8), op(gfx12=0x6e)),
+   ("v_cvt_pk_f32_bf8",           dst(PkF32), src(PkBF8), op(gfx12=0x6f)),
 }
-for (name, in_mod, out_mod, defs, ops, num, cls) in default_class(VOP1, InstrClass.Valu32):
-   insn(name, num, Format.VOP1, cls, in_mod, out_mod, definitions = defs, operands = ops)
+for (name, defs, ops, num, cls) in default_class(VOP1, InstrClass.Valu32):
+   insn(name, num, Format.VOP1, cls, definitions = defs, operands = ops)
 
 
 # VOPC instructions:
 
 VOPC_CLASS = {
-   ("v_cmp_class_f32",  dst(VCC), src(1, 1), op(0x88, gfx8=0x10, gfx10=0x88, gfx11=0x7e)),
-   ("v_cmp_class_f16",  dst(VCC), src(1, 1), op(gfx8=0x14, gfx10=0x8f, gfx11=0x7d)),
-   ("v_cmpx_class_f32", dst(EXEC), src(1, 1), op(0x98, gfx8=0x11, gfx10=0x98, gfx11=0xfe)),
-   ("v_cmpx_class_f16", dst(EXEC), src(1, 1), op(gfx8=0x15, gfx10=0x9f, gfx11=0xfd)),
-   ("v_cmp_class_f64",  dst(VCC), src(2, 1), op(0xa8, gfx8=0x12, gfx10=0xa8, gfx11=0x7f), InstrClass.ValuDouble),
-   ("v_cmpx_class_f64", dst(EXEC), src(2, 1), op(0xb8, gfx8=0x13, gfx10=0xb8, gfx11=0xff), InstrClass.ValuDouble),
+   ("v_cmp_class_f32",  dst(VCC), src(F32, U32), op(0x88, gfx8=0x10, gfx10=0x88, gfx11=0x7e)),
+   ("v_cmp_class_f16",  dst(VCC), src(F16, U16), op(gfx8=0x14, gfx10=0x8f, gfx11=0x7d)),
+   ("v_cmpx_class_f32", dst(EXEC), src(F32, U32), op(0x98, gfx8=0x11, gfx10=0x98, gfx11=0xfe)),
+   ("v_cmpx_class_f16", dst(EXEC), src(F16, U16), op(gfx8=0x15, gfx10=0x9f, gfx11=0xfd)),
+   ("v_cmp_class_f64",  dst(VCC), src(F64, U32), op(0xa8, gfx8=0x12, gfx10=0xa8, gfx11=0x7f), InstrClass.ValuDouble),
+   ("v_cmpx_class_f64", dst(EXEC), src(F64, U32), op(0xb8, gfx8=0x13, gfx10=0xb8, gfx11=0xff), InstrClass.ValuDouble),
 }
 for (name, defs, ops, num, cls) in default_class(VOPC_CLASS, InstrClass.Valu32):
-    insn(name, num, Format.VOPC, cls, True, False, definitions = defs, operands = ops)
+    insn(name, num, Format.VOPC, cls, definitions = defs, operands = ops)
 
 VopcDataType = collections.namedtuple('VopcDataTypeInfo',
-                                      ['kind', 'size', 'gfx6', 'gfx8', 'gfx10', 'gfx11'])
+                                      ['type', 'kind', 'size', 'gfx6', 'gfx8', 'gfx10', 'gfx11'])
 
-#                  kind, size, gfx6, gfx8, gfx10,gfx11
-F16 = VopcDataType('f',  16,      0, 0x20, 0xc8, 0x00)
-F32 = VopcDataType('f',  32,   0x00, 0x40, 0x00, 0x10)
-F64 = VopcDataType('f',  64,   0x20, 0x60, 0x20, 0x20)
-I16 = VopcDataType('i',  16,      0, 0xa0, 0x88, 0x30)
-I32 = VopcDataType('i',  32,   0x80, 0xc0, 0x80, 0x40)
-I64 = VopcDataType('i',  64,   0xa0, 0xe0, 0xa0, 0x50)
-U16 = VopcDataType('u',  16,      0, 0xa8, 0xa8, 0x38)
-U32 = VopcDataType('u',  32,   0xc0, 0xc8, 0xc0, 0x48)
-U64 = VopcDataType('u',  64,   0xe0, 0xe8, 0xe0, 0x58)
-dtypes = [F16, F32, F64, I16, I32, I64, U16, U32, U64]
+#               type, kind, size, gfx6, gfx8, gfx10,gfx11
+dtypes = [
+   VopcDataType(F16,  'f',  16,      0, 0x20, 0xc8, 0x00),
+   VopcDataType(F32,  'f',  32,   0x00, 0x40, 0x00, 0x10),
+   VopcDataType(F64,  'f',  64,   0x20, 0x60, 0x20, 0x20),
+   VopcDataType(U16,  'i',  16,      0, 0xa0, 0x88, 0x30),
+   VopcDataType(U32,  'i',  32,   0x80, 0xc0, 0x80, 0x40),
+   VopcDataType(I64,  'i',  64,   0xa0, 0xe0, 0xa0, 0x50),
+   VopcDataType(U16,  'u',  16,      0, 0xa8, 0xa8, 0x38),
+   VopcDataType(U32,  'u',  32,   0xc0, 0xc8, 0xc0, 0x48),
+   VopcDataType(U64,  'u',  64,   0xe0, 0xe8, 0xe0, 0x58),
+]
 
 COMPF = ["f", "lt", "eq", "le", "gt", "lg", "ge", "o", "u", "nge", "nlg", "ngt", "nle", "neq", "nlt", "tru"]
 COMPI = ["f", "lt", "eq", "le", "gt", "lg", "ge", "tru"]
@@ -1127,7 +1147,7 @@ for comp, dtype, cmps, cmpx in itertools.product(range(16), dtypes, range(1), ra
 
    gfx6 = comp | (cmpx<<4) | (cmps<<6) | dtype.gfx6
    gfx8 = comp | (cmpx<<4) | dtype.gfx8
-   if dtype == F16:
+   if dtype.type == F16:
       gfx10 = (comp & 0x7) | ((comp & 0x8) << 2) | (cmpx<<4) | dtype.gfx10
    else:
       gfx10 = comp | (cmpx<<4) | dtype.gfx10
@@ -1141,7 +1161,7 @@ for comp, dtype, cmps, cmpx in itertools.product(range(16), dtypes, range(1), ra
    if dtype.size == 16:
       gfx6 = -1
 
-   if dtype in [I16, U16] and comp in [0, 7]:
+   if dtype.type == U16 and comp in [0, 7]:
       gfx10 = -1
       gfx11 = -1
 
@@ -1151,289 +1171,290 @@ for comp, dtype, cmps, cmpx in itertools.product(range(16), dtypes, range(1), ra
       gfx12 = -1 if comp in [0, 15] else gfx11
 
    cls = InstrClass.Valu32
-   if dtype == F64:
+   if dtype.type == F64:
       cls = InstrClass.ValuDouble
-   elif dtype in [I64, U64]:
+   elif dtype.type in [I64, U64]:
       cls = InstrClass.Valu64
 
    enc = Opcode(gfx6, gfx6, gfx8, gfx8, gfx10, gfx11, gfx12)
-   insn(name, enc, Format.VOPC, cls, dtype.kind == 'f', False,
+   insn(name, enc, Format.VOPC, cls,
         definitions = dst(EXEC if cmpx else VCC),
-        operands = src(2, 2) if dtype.size == 64 else src(1, 1))
+        operands = src(dtype.type, dtype.type))
 
 
 # VOPP instructions: packed 16bit instructions - 2 or 3 inputs and 1 output
 VOPP = {
-   ("v_pk_mad_i16",     False, dst(1), src(1, 1, 1), op(gfx9=0x00)),
-   ("v_pk_mul_lo_u16",  False, dst(1), src(1, 1), op(gfx9=0x01)),
-   ("v_pk_add_i16",     False, dst(1), src(1, 1), op(gfx9=0x02)),
-   ("v_pk_sub_i16",     False, dst(1), src(1, 1), op(gfx9=0x03)),
-   ("v_pk_lshlrev_b16", False, dst(1), src(1, 1), op(gfx9=0x04)),
-   ("v_pk_lshrrev_b16", False, dst(1), src(1, 1), op(gfx9=0x05)),
-   ("v_pk_ashrrev_i16", False, dst(1), src(1, 1), op(gfx9=0x06)),
-   ("v_pk_max_i16",     False, dst(1), src(1, 1), op(gfx9=0x07)),
-   ("v_pk_min_i16",     False, dst(1), src(1, 1), op(gfx9=0x08)),
-   ("v_pk_mad_u16",     False, dst(1), src(1, 1, 1), op(gfx9=0x09)),
-   ("v_pk_add_u16",     False, dst(1), src(1, 1), op(gfx9=0x0a)),
-   ("v_pk_sub_u16",     False, dst(1), src(1, 1), op(gfx9=0x0b)),
-   ("v_pk_max_u16",     False, dst(1), src(1, 1), op(gfx9=0x0c)),
-   ("v_pk_min_u16",     False, dst(1), src(1, 1), op(gfx9=0x0d)),
-   ("v_pk_fma_f16",     True, dst(1), src(1, 1, 1), op(gfx9=0x0e)),
-   ("v_pk_add_f16",     True, dst(1), src(1, 1), op(gfx9=0x0f)),
-   ("v_pk_mul_f16",     True, dst(1), src(1, 1), op(gfx9=0x10)),
-   ("v_pk_min_f16",     True, dst(1), src(1, 1), op(gfx9=0x11, gfx12=0x1b)), # called v_pk_min_num_f16 in GFX12
-   ("v_pk_max_f16",     True, dst(1), src(1, 1), op(gfx9=0x12, gfx12=0x1c)), # called v_pk_min_num_f16 in GFX12
-   ("v_pk_minimum_f16", True, dst(1), src(1, 1), op(gfx12=0x1d)),
-   ("v_pk_maximum_f16", True, dst(1), src(1, 1), op(gfx12=0x1e)),
-   ("v_fma_mix_f32",    True, dst(1), src(1, 1, 1), op(gfx9=0x20)), # v_mad_mix_f32 in VEGA ISA, v_fma_mix_f32 in RDNA ISA
-   ("v_fma_mixlo_f16",  True, dst(1), src(1, 1, 1), op(gfx9=0x21)), # v_mad_mixlo_f16 in VEGA ISA, v_fma_mixlo_f16 in RDNA ISA
-   ("v_fma_mixhi_f16",  True, dst(1), src(1, 1, 1), op(gfx9=0x22)), # v_mad_mixhi_f16 in VEGA ISA, v_fma_mixhi_f16 in RDNA ISA
-   ("v_dot2_i32_i16",      False, dst(1), src(1, 1, 1), op(gfx9=0x26, gfx10=0x14, gfx11=-1)),
-   ("v_dot2_u32_u16",      False, dst(1), src(1, 1, 1), op(gfx9=0x27, gfx10=0x15, gfx11=-1)),
-   ("v_dot4_i32_iu8",      False, dst(1), src(1, 1, 1), op(gfx11=0x16)),
-   ("v_dot4_i32_i8",       False, dst(1), src(1, 1, 1), op(gfx9=0x28, gfx10=0x16, gfx11=-1)),
-   ("v_dot4_u32_u8",       False, dst(1), src(1, 1, 1), op(gfx9=0x29, gfx10=0x17)),
-   ("v_dot8_i32_iu4",      False, dst(1), src(1, 1, 1), op(gfx11=0x18)),
-   ("v_dot8_u32_u4",       False, dst(1), src(1, 1, 1), op(gfx9=0x2b, gfx10=0x19)),
-   ("v_dot2_f32_f16",      False, dst(1), src(1, 1, 1), op(gfx9=0x23, gfx10=0x13)),
-   ("v_dot2_f32_bf16",     False, dst(1), src(1, 1, 1), op(gfx11=0x1a)),
-   ("v_dot4_f32_fp8_bf8",  False, dst(1), src(1, 1, 1), op(gfx12=0x24)),
-   ("v_dot4_f32_bf8_fp8",  False, dst(1), src(1, 1, 1), op(gfx12=0x25)),
-   ("v_dot4_f32_fp8_fp8",  False, dst(1), src(1, 1, 1), op(gfx12=0x26)),
-   ("v_dot4_f32_bf8_bf8",  False, dst(1), src(1, 1, 1), op(gfx12=0x27)),
-   ("v_wmma_f32_16x16x16_f16",       False, dst(), src(), op(gfx11=0x40), InstrClass.WMMA),
-   ("v_wmma_f32_16x16x16_bf16",      False, dst(), src(), op(gfx11=0x41), InstrClass.WMMA),
-   ("v_wmma_f16_16x16x16_f16",       False, dst(), src(), op(gfx11=0x42), InstrClass.WMMA),
-   ("v_wmma_bf16_16x16x16_bf16",     False, dst(), src(), op(gfx11=0x43), InstrClass.WMMA),
-   ("v_wmma_i32_16x16x16_iu8",       False, dst(), src(), op(gfx11=0x44), InstrClass.WMMA),
-   ("v_wmma_i32_16x16x16_iu4",       False, dst(), src(), op(gfx11=0x45), InstrClass.WMMA),
-   ("v_wmma_f32_16x16x16_fp8_fp8",   False, dst(), src(), op(gfx12=0x46), InstrClass.WMMA),
-   ("v_wmma_f32_16x16x16_fp8_bf8",   False, dst(), src(), op(gfx12=0x47), InstrClass.WMMA),
-   ("v_wmma_f32_16x16x16_bf8_fp8",   False, dst(), src(), op(gfx12=0x48), InstrClass.WMMA),
-   ("v_wmma_f32_16x16x16_bf8_bf8",   False, dst(), src(), op(gfx12=0x49), InstrClass.WMMA),
-   ("v_wmma_i32_16x16x32_iu4",       False, dst(), src(), op(gfx12=0x4a), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_f16",     False, dst(), src(), op(gfx12=0x50), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_bf16",    False, dst(), src(), op(gfx12=0x51), InstrClass.WMMA),
-   ("v_swmmac_f16_16x16x32_f16",     False, dst(), src(), op(gfx12=0x52), InstrClass.WMMA),
-   ("v_swmmac_bf16_16x16x32_bf16",   False, dst(), src(), op(gfx12=0x53), InstrClass.WMMA),
-   ("v_swmmac_i32_16x16x32_iu8",     False, dst(), src(), op(gfx12=0x54), InstrClass.WMMA),
-   ("v_swmmac_i32_16x16x32_iu4",     False, dst(), src(), op(gfx12=0x55), InstrClass.WMMA),
-   ("v_swmmac_i32_16x16x64_iu4",     False, dst(), src(), op(gfx12=0x56), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_fp8_fp8", False, dst(), src(), op(gfx12=0x57), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_fp8_bf8", False, dst(), src(), op(gfx12=0x58), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_bf8_fp8", False, dst(), src(), op(gfx12=0x59), InstrClass.WMMA),
-   ("v_swmmac_f32_16x16x32_bf8_bf8", False, dst(), src(), op(gfx12=0x5a), InstrClass.WMMA),
+   ("v_pk_mad_i16",     dst(PkU16), src(PkU16, PkU16, PkU16), op(gfx9=0x00)),
+   ("v_pk_mul_lo_u16",  dst(PkU16), src(PkU16, PkU16), op(gfx9=0x01)),
+   ("v_pk_add_i16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x02)),
+   ("v_pk_sub_i16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x03)),
+   ("v_pk_lshlrev_b16", dst(PkU16), src(PkU16, PkU16), op(gfx9=0x04)),
+   ("v_pk_lshrrev_b16", dst(PkU16), src(PkU16, PkU16), op(gfx9=0x05)),
+   ("v_pk_ashrrev_i16", dst(PkU16), src(PkU16, PkU16), op(gfx9=0x06)),
+   ("v_pk_max_i16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x07)),
+   ("v_pk_min_i16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x08)),
+   ("v_pk_mad_u16",     dst(PkU16), src(PkU16, PkU16, PkU16), op(gfx9=0x09)),
+   ("v_pk_add_u16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x0a)),
+   ("v_pk_sub_u16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x0b)),
+   ("v_pk_max_u16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x0c)),
+   ("v_pk_min_u16",     dst(PkU16), src(PkU16, PkU16), op(gfx9=0x0d)),
+   ("v_pk_fma_f16",     dst(PkF16), src(PkF16, PkF16, PkF16), op(gfx9=0x0e)),
+   ("v_pk_add_f16",     dst(PkF16), src(PkF16, PkF16), op(gfx9=0x0f)),
+   ("v_pk_mul_f16",     dst(PkF16), src(PkF16, PkF16), op(gfx9=0x10)),
+   ("v_pk_min_f16",     dst(PkF16), src(PkF16, PkF16), op(gfx9=0x11, gfx12=0x1b)), # called v_pk_min_num_f16 in GFX12
+   ("v_pk_max_f16",     dst(PkF16), src(PkF16, PkF16), op(gfx9=0x12, gfx12=0x1c)), # called v_pk_min_num_f16 in GFX12
+   ("v_pk_minimum_f16", dst(PkF16), src(PkF16, PkF16), op(gfx12=0x1d)),
+   ("v_pk_maximum_f16", dst(PkF16), src(PkF16, PkF16), op(gfx12=0x1e)),
+   ("v_fma_mix_f32",    dst(F32), src(F32, F32, F32), op(gfx9=0x20)), # v_mad_mix_f32 in VEGA ISA, v_fma_mix_f32 in RDNA ISA
+   ("v_fma_mixlo_f16",  dst(F16), src(F32, F32, F32), op(gfx9=0x21)), # v_mad_mixlo_f16 in VEGA ISA, v_fma_mixlo_f16 in RDNA ISA
+   ("v_fma_mixhi_f16",  dst(F16), src(F32, F32, F32), op(gfx9=0x22)), # v_mad_mixhi_f16 in VEGA ISA, v_fma_mixhi_f16 in RDNA ISA
+   ("v_dot2_i32_i16",      dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x26, gfx10=0x14, gfx11=-1)),
+   ("v_dot2_u32_u16",      dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x27, gfx10=0x15, gfx11=-1)),
+   ("v_dot4_i32_iu8",      dst(U32), src(PkU16, PkU16, U32), op(gfx11=0x16)),
+   ("v_dot4_i32_i8",       dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x28, gfx10=0x16, gfx11=-1)),
+   ("v_dot4_u32_u8",       dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x29, gfx10=0x17)),
+   ("v_dot8_i32_iu4",      dst(U32), src(PkU16, PkU16, U32), op(gfx11=0x18)),
+   ("v_dot8_i32_i4",       dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x2a, gfx10=0x18, gfx11=-1)),
+   ("v_dot8_u32_u4",       dst(U32), src(PkU16, PkU16, U32), op(gfx9=0x2b, gfx10=0x19)),
+   ("v_dot2_f32_f16",      dst(noMods(F32)), noMods(src(PkF16, PkF16, F32)), op(gfx9=0x23, gfx10=0x13)),
+   ("v_dot2_f32_bf16",     dst(noMods(F32)), noMods(src(PkBF16, PkBF16, F32)), op(gfx11=0x1a)),
+   ("v_dot4_f32_fp8_bf8",  dst(noMods(F32)), noMods(src(Pk4F8, Pk4BF8, F32)), op(gfx12=0x24)),
+   ("v_dot4_f32_bf8_fp8",  dst(noMods(F32)), noMods(src(Pk4BF8, Pk4F8, F32)), op(gfx12=0x25)),
+   ("v_dot4_f32_fp8_fp8",  dst(noMods(F32)), noMods(src(Pk4F8, Pk4F8, F32)), op(gfx12=0x26)),
+   ("v_dot4_f32_bf8_bf8",  dst(noMods(F32)), noMods(src(Pk4BF8, Pk4BF8, F32)), op(gfx12=0x27)),
+   ("v_wmma_f32_16x16x16_f16",       dst(), src(), op(gfx11=0x40), InstrClass.WMMA),
+   ("v_wmma_f32_16x16x16_bf16",      dst(), src(), op(gfx11=0x41), InstrClass.WMMA),
+   ("v_wmma_f16_16x16x16_f16",       dst(), src(), op(gfx11=0x42), InstrClass.WMMA),
+   ("v_wmma_bf16_16x16x16_bf16",     dst(), src(), op(gfx11=0x43), InstrClass.WMMA),
+   ("v_wmma_i32_16x16x16_iu8",       dst(), src(), op(gfx11=0x44), InstrClass.WMMA),
+   ("v_wmma_i32_16x16x16_iu4",       dst(), src(), op(gfx11=0x45), InstrClass.WMMA),
+   ("v_wmma_f32_16x16x16_fp8_fp8",   dst(), src(), op(gfx12=0x46), InstrClass.WMMA),
+   ("v_wmma_f32_16x16x16_fp8_bf8",   dst(), src(), op(gfx12=0x47), InstrClass.WMMA),
+   ("v_wmma_f32_16x16x16_bf8_fp8",   dst(), src(), op(gfx12=0x48), InstrClass.WMMA),
+   ("v_wmma_f32_16x16x16_bf8_bf8",   dst(), src(), op(gfx12=0x49), InstrClass.WMMA),
+   ("v_wmma_i32_16x16x32_iu4",       dst(), src(), op(gfx12=0x4a), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_f16",     dst(), src(), op(gfx12=0x50), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_bf16",    dst(), src(), op(gfx12=0x51), InstrClass.WMMA),
+   ("v_swmmac_f16_16x16x32_f16",     dst(), src(), op(gfx12=0x52), InstrClass.WMMA),
+   ("v_swmmac_bf16_16x16x32_bf16",   dst(), src(), op(gfx12=0x53), InstrClass.WMMA),
+   ("v_swmmac_i32_16x16x32_iu8",     dst(), src(), op(gfx12=0x54), InstrClass.WMMA),
+   ("v_swmmac_i32_16x16x32_iu4",     dst(), src(), op(gfx12=0x55), InstrClass.WMMA),
+   ("v_swmmac_i32_16x16x64_iu4",     dst(), src(), op(gfx12=0x56), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_fp8_fp8", dst(), src(), op(gfx12=0x57), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_fp8_bf8", dst(), src(), op(gfx12=0x58), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_bf8_fp8", dst(), src(), op(gfx12=0x59), InstrClass.WMMA),
+   ("v_swmmac_f32_16x16x32_bf8_bf8", dst(), src(), op(gfx12=0x5a), InstrClass.WMMA),
 }
-for (name, modifiers, defs, ops, num, cls) in default_class(VOPP, InstrClass.Valu32):
-   insn(name, num, Format.VOP3P, cls, modifiers, modifiers, definitions = defs, operands = ops)
+for (name, defs, ops, num, cls) in default_class(VOPP, InstrClass.Valu32):
+   insn(name, num, Format.VOP3P, cls, definitions = defs, operands = ops)
 
 
 # VINTRP (GFX6 - GFX10.3) instructions:
 VINTRP = {
-   ("v_interp_p1_f32",  dst(1), src(1, M0), op(0x00, gfx11=-1)),
-   ("v_interp_p2_f32",  dst(1), src(1, M0, 1), op(0x01, gfx11=-1)),
-   ("v_interp_mov_f32", dst(1), src(1, M0), op(0x02, gfx11=-1)),
+   ("v_interp_p1_f32",  dst(F32), src(F32, M0), op(0x00, gfx11=-1)),
+   ("v_interp_p2_f32",  dst(F32), src(F32, M0, F32), op(0x01, gfx11=-1)),
+   ("v_interp_mov_f32", dst(U32), src(U32, M0), op(0x02, gfx11=-1)),
 }
 for (name, defs, ops, num) in VINTRP:
-   insn(name, num, Format.VINTRP, InstrClass.Valu32, definitions = defs, operands = ops)
+   insn(name, num, Format.VINTRP, InstrClass.Valu32, definitions = noMods(defs), operands = noMods(ops))
 
 
 # VINTERP (GFX11+) instructions:
 VINTERP = {
-   ("v_interp_p10_f32_inreg",         op(gfx11=0x00)),
-   ("v_interp_p2_f32_inreg",          op(gfx11=0x01)),
-   ("v_interp_p10_f16_f32_inreg",     op(gfx11=0x02)),
-   ("v_interp_p2_f16_f32_inreg",      op(gfx11=0x03)),
-   ("v_interp_p10_rtz_f16_f32_inreg", op(gfx11=0x04)),
-   ("v_interp_p2_rtz_f16_f32_inreg",  op(gfx11=0x05)),
+   ("v_interp_p10_f32_inreg",         dst(F32), src(F32, F32, F32), op(gfx11=0x00)),
+   ("v_interp_p2_f32_inreg",          dst(F32), src(F32, F32, F32), op(gfx11=0x01)),
+   ("v_interp_p10_f16_f32_inreg",     dst(F32), src(F16, F32, F16), op(gfx11=0x02)),
+   ("v_interp_p2_f16_f32_inreg",      dst(F16), src(F16, F32, F32), op(gfx11=0x03)),
+   ("v_interp_p10_rtz_f16_f32_inreg", dst(F32), src(F16, F32, F16), op(gfx11=0x04)),
+   ("v_interp_p2_rtz_f16_f32_inreg",  dst(F16), src(F16, F32, F32), op(gfx11=0x05)),
 }
-for (name, num) in VINTERP:
-   insn(name, num, Format.VINTERP_INREG, InstrClass.Valu32, True, True, definitions = dst(1), operands = src(1, 1, 1))
+for (name, defs, ops, num) in VINTERP:
+   insn(name, num, Format.VINTERP_INREG, InstrClass.Valu32, definitions = defs, operands = ops)
 
 
 # VOP3 instructions: 3 inputs, 1 output
 # VOP3b instructions: have a unique scalar output, e.g. VOP2 with vcc out
 VOP3 = {
-   ("v_mad_legacy_f32",        True, True, dst(1), src(1, 1, 1), op(0x140, gfx8=0x1c0, gfx10=0x140, gfx11=-1)), # GFX6-GFX10
-   ("v_mad_f32",               True, True, dst(1), src(1, 1, 1), op(0x141, gfx8=0x1c1, gfx10=0x141, gfx11=-1)),
-   ("v_mad_i32_i24",           False, False, dst(1), src(1, 1, 1), op(0x142, gfx8=0x1c2, gfx10=0x142, gfx11=0x20a)),
-   ("v_mad_u32_u24",           False, False, dst(1), src(1, 1, 1), op(0x143, gfx8=0x1c3, gfx10=0x143, gfx11=0x20b)),
-   ("v_cubeid_f32",            True, True, dst(1), src(1, 1, 1), op(0x144, gfx8=0x1c4, gfx10=0x144, gfx11=0x20c)),
-   ("v_cubesc_f32",            True, True, dst(1), src(1, 1, 1), op(0x145, gfx8=0x1c5, gfx10=0x145, gfx11=0x20d)),
-   ("v_cubetc_f32",            True, True, dst(1), src(1, 1, 1), op(0x146, gfx8=0x1c6, gfx10=0x146, gfx11=0x20e)),
-   ("v_cubema_f32",            True, True, dst(1), src(1, 1, 1), op(0x147, gfx8=0x1c7, gfx10=0x147, gfx11=0x20f)),
-   ("v_bfe_u32",               False, False, dst(1), src(1, 1, 1), op(0x148, gfx8=0x1c8, gfx10=0x148, gfx11=0x210)),
-   ("v_bfe_i32",               False, False, dst(1), src(1, 1, 1), op(0x149, gfx8=0x1c9, gfx10=0x149, gfx11=0x211)),
-   ("v_bfi_b32",               False, False, dst(1), src(1, 1, 1), op(0x14a, gfx8=0x1ca, gfx10=0x14a, gfx11=0x212)),
-   ("v_fma_f32",               True, True, dst(1), src(1, 1, 1), op(0x14b, gfx8=0x1cb, gfx10=0x14b, gfx11=0x213), InstrClass.ValuFma),
-   ("v_fma_f64",               True, True, dst(2), src(2, 2, 2), op(0x14c, gfx8=0x1cc, gfx10=0x14c, gfx11=0x214), InstrClass.ValuDouble),
-   ("v_lerp_u8",               False, False, dst(1), src(1, 1, 1), op(0x14d, gfx8=0x1cd, gfx10=0x14d, gfx11=0x215)),
-   ("v_alignbit_b32",          False, False, dst(1), src(1, 1, 1), op(0x14e, gfx8=0x1ce, gfx10=0x14e, gfx11=0x216)),
-   ("v_alignbyte_b32",         False, False, dst(1), src(1, 1, 1), op(0x14f, gfx8=0x1cf, gfx10=0x14f, gfx11=0x217)),
-   ("v_mullit_f32",            True, True, dst(1), src(1, 1, 1), op(0x150, gfx8=-1, gfx10=0x150, gfx11=0x218)),
-   ("v_min3_f32",              True, True, dst(1), src(1, 1, 1), op(0x151, gfx8=0x1d0, gfx10=0x151, gfx11=0x219, gfx12=0x229)), # called v_min3_num_f32 in GFX12
-   ("v_min3_i32",              False, False, dst(1), src(1, 1, 1), op(0x152, gfx8=0x1d1, gfx10=0x152, gfx11=0x21a)),
-   ("v_min3_u32",              False, False, dst(1), src(1, 1, 1), op(0x153, gfx8=0x1d2, gfx10=0x153, gfx11=0x21b)),
-   ("v_max3_f32",              True, True, dst(1), src(1, 1, 1), op(0x154, gfx8=0x1d3, gfx10=0x154, gfx11=0x21c, gfx12=0x22a)), # called v_max3_num_f32 in GFX12
-   ("v_max3_i32",              False, False, dst(1), src(1, 1, 1), op(0x155, gfx8=0x1d4, gfx10=0x155, gfx11=0x21d)),
-   ("v_max3_u32",              False, False, dst(1), src(1, 1, 1), op(0x156, gfx8=0x1d5, gfx10=0x156, gfx11=0x21e)),
-   ("v_med3_f32",              True, True, dst(1), src(1, 1, 1), op(0x157, gfx8=0x1d6, gfx10=0x157, gfx11=0x21f, gfx12=0x231)), # called v_med3_num_f32 in GFX12
-   ("v_med3_i32",              False, False, dst(1), src(1, 1, 1), op(0x158, gfx8=0x1d7, gfx10=0x158, gfx11=0x220)),
-   ("v_med3_u32",              False, False, dst(1), src(1, 1, 1), op(0x159, gfx8=0x1d8, gfx10=0x159, gfx11=0x221)),
-   ("v_sad_u8",                False, False, dst(1), src(1, 1, 1), op(0x15a, gfx8=0x1d9, gfx10=0x15a, gfx11=0x222)),
-   ("v_sad_hi_u8",             False, False, dst(1), src(1, 1, 1), op(0x15b, gfx8=0x1da, gfx10=0x15b, gfx11=0x223)),
-   ("v_sad_u16",               False, False, dst(1), src(1, 1, 1), op(0x15c, gfx8=0x1db, gfx10=0x15c, gfx11=0x224)),
-   ("v_sad_u32",               False, False, dst(1), src(1, 1, 1), op(0x15d, gfx8=0x1dc, gfx10=0x15d, gfx11=0x225)),
-   ("v_cvt_pk_u8_f32",         True, False, dst(1), src(1, 1, 1), op(0x15e, gfx8=0x1dd, gfx10=0x15e, gfx11=0x226)),
-   ("p_v_cvt_pk_u8_f32",       True, False, dst(1), src(1), op(-1)),
-   ("v_div_fixup_f32",         True, True, dst(1), src(1, 1, 1), op(0x15f, gfx8=0x1de, gfx10=0x15f, gfx11=0x227)),
-   ("v_div_fixup_f64",         True, True, dst(2), src(2, 2, 2), op(0x160, gfx8=0x1df, gfx10=0x160, gfx11=0x228)),
-   ("v_lshl_b64",              False, False, dst(2), src(2, 1), op(0x161, gfx8=-1), InstrClass.Valu64),
-   ("v_lshr_b64",              False, False, dst(2), src(2, 1), op(0x162, gfx8=-1), InstrClass.Valu64),
-   ("v_ashr_i64",              False, False, dst(2), src(2, 1), op(0x163, gfx8=-1), InstrClass.Valu64),
-   ("v_add_f64_e64",           True, True, dst(2), src(2, 2), op(0x164, gfx8=0x280, gfx10=0x164, gfx11=0x327, gfx12=0x102), InstrClass.ValuDoubleAdd), # GFX12 is VOP2 opcode + 0x100
-   ("v_mul_f64_e64",           True, True, dst(2), src(2, 2), op(0x165, gfx8=0x281, gfx10=0x165, gfx11=0x328, gfx12=0x106), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
-   ("v_min_f64_e64",           True, True, dst(2), src(2, 2), op(0x166, gfx8=0x282, gfx10=0x166, gfx11=0x329, gfx12=0x10d), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
-   ("v_max_f64_e64",           True, True, dst(2), src(2, 2), op(0x167, gfx8=0x283, gfx10=0x167, gfx11=0x32a, gfx12=0x10e), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
-   ("v_ldexp_f64",             False, True, dst(2), src(2, 1), op(0x168, gfx8=0x284, gfx10=0x168, gfx11=0x32b), InstrClass.ValuDouble), # src1 can take input modifiers
-   ("v_mul_lo_u32",            False, False, dst(1), src(1, 1), op(0x169, gfx8=0x285, gfx10=0x169, gfx11=0x32c), InstrClass.ValuQuarterRate32),
-   ("v_mul_hi_u32",            False, False, dst(1), src(1, 1), op(0x16a, gfx8=0x286, gfx10=0x16a, gfx11=0x32d), InstrClass.ValuQuarterRate32),
-   ("v_mul_lo_i32",            False, False, dst(1), src(1, 1), op(0x16b, gfx8=0x285, gfx10=0x16b, gfx11=0x32c), InstrClass.ValuQuarterRate32), # identical to v_mul_lo_u32
-   ("v_mul_hi_i32",            False, False, dst(1), src(1, 1), op(0x16c, gfx8=0x287, gfx10=0x16c, gfx11=0x32e), InstrClass.ValuQuarterRate32),
-   ("v_div_scale_f32",         True, True, dst(1, VCC), src(1, 1, 1), op(0x16d, gfx8=0x1e0, gfx10=0x16d, gfx11=0x2fc)),
-   ("v_div_scale_f64",         True, True, dst(2, VCC), src(2, 2, 2), op(0x16e, gfx8=0x1e1, gfx10=0x16e, gfx11=0x2fd), InstrClass.ValuDouble),
-   ("v_div_fmas_f32",          True, True, dst(1), src(1, 1, 1, VCC), op(0x16f, gfx8=0x1e2, gfx10=0x16f, gfx11=0x237)),
-   ("v_div_fmas_f64",          True, True, dst(2), src(2, 2, 2, VCC), op(0x170, gfx8=0x1e3, gfx10=0x170, gfx11=0x238), InstrClass.ValuDouble),
-   ("v_msad_u8",               False, False, dst(1), src(1, 1, 1), op(0x171, gfx8=0x1e4, gfx10=0x171, gfx11=0x239)),
-   ("v_qsad_pk_u16_u8",        False, False, dst(2), src(2, 1, 2), op(0x172, gfx8=0x1e5, gfx10=0x172, gfx11=0x23a)),
-   ("v_mqsad_pk_u16_u8",       False, False, dst(2), src(2, 1, 2), op(0x173, gfx8=0x1e6, gfx10=0x173, gfx11=0x23b)),
-   ("v_trig_preop_f64",        False, False, dst(2), src(2, 2), op(0x174, gfx8=0x292, gfx10=0x174, gfx11=0x32f), InstrClass.ValuDouble),
-   ("v_mqsad_u32_u8",          False, False, dst(4), src(2, 1, 4), op(gfx7=0x175, gfx8=0x1e7, gfx10=0x175, gfx11=0x23d), InstrClass.ValuQuarterRate32),
-   ("v_mad_u64_u32",           False, False, dst(2, VCC), src(1, 1, 2), op(gfx7=0x176, gfx8=0x1e8, gfx10=0x176, gfx11=0x2fe), InstrClass.Valu64), # called v_mad_co_u64_u32 in GFX12
-   ("v_mad_i64_i32",           False, False, dst(2, VCC), src(1, 1, 2), op(gfx7=0x177, gfx8=0x1e9, gfx10=0x177, gfx11=0x2ff), InstrClass.Valu64), # called v_mad_co_i64_i32 in GFX12
-   ("v_mad_legacy_f16",        True, True, dst(1), src(1, 1, 1), op(gfx8=0x1ea, gfx10=-1)),
-   ("v_mad_legacy_u16",        False, False, dst(1), src(1, 1, 1), op(gfx8=0x1eb, gfx10=-1)),
-   ("v_mad_legacy_i16",        False, False, dst(1), src(1, 1, 1), op(gfx8=0x1ec, gfx10=-1)),
-   ("v_perm_b32",              False, False, dst(1), src(1, 1, 1), op(gfx8=0x1ed, gfx10=0x344, gfx11=0x244)),
-   ("v_fma_legacy_f16",        True, True, dst(1), src(1, 1, 1), op(gfx8=0x1ee, gfx10=-1), InstrClass.ValuFma),
-   ("v_div_fixup_legacy_f16",  True, True, dst(1), src(1, 1, 1), op(gfx8=0x1ef, gfx10=-1)),
-   ("v_cvt_pkaccum_u8_f32",    True, False, dst(1), src(1, 1, 1), op(0x12c, gfx8=0x1f0, gfx10=-1)),
-   ("v_mad_u32_u16",           False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f1, gfx10=0x373, gfx11=0x259)),
-   ("v_mad_i32_i16",           False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f2, gfx10=0x375, gfx11=0x25a)),
-   ("v_xad_u32",               False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f3, gfx10=0x345, gfx11=0x245)),
-   ("v_min3_f16",              True, True, dst(1), src(1, 1, 1), op(gfx9=0x1f4, gfx10=0x351, gfx11=0x249, gfx12=0x22b)), # called v_min3_num_f16 in GFX12
-   ("v_min3_i16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f5, gfx10=0x352, gfx11=0x24a)),
-   ("v_min3_u16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f6, gfx10=0x353, gfx11=0x24b)),
-   ("v_max3_f16",              True, True, dst(1), src(1, 1, 1), op(gfx9=0x1f7, gfx10=0x354, gfx11=0x24c, gfx12=0x22c)), # called v_max3_num_f16 in GFX12
-   ("v_max3_i16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f8, gfx10=0x355, gfx11=0x24d)),
-   ("v_max3_u16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1f9, gfx10=0x356, gfx11=0x24e)),
-   ("v_med3_f16",              True, True, dst(1), src(1, 1, 1), op(gfx9=0x1fa, gfx10=0x357, gfx11=0x24f, gfx12=0x232)), # called v_med3_num_f16 in GFX12
-   ("v_med3_i16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1fb, gfx10=0x358, gfx11=0x250)),
-   ("v_med3_u16",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1fc, gfx10=0x359, gfx11=0x251)),
-   ("v_lshl_add_u32",          False, False, dst(1), src(1, 1, 1), op(gfx9=0x1fd, gfx10=0x346, gfx11=0x246)),
-   ("v_add_lshl_u32",          False, False, dst(1), src(1, 1, 1), op(gfx9=0x1fe, gfx10=0x347, gfx11=0x247)),
-   ("v_add3_u32",              False, False, dst(1), src(1, 1, 1), op(gfx9=0x1ff, gfx10=0x36d, gfx11=0x255)),
-   ("v_lshl_or_b32",           False, False, dst(1), src(1, 1, 1), op(gfx9=0x200, gfx10=0x36f, gfx11=0x256)),
-   ("v_and_or_b32",            False, False, dst(1), src(1, 1, 1), op(gfx9=0x201, gfx10=0x371, gfx11=0x257)),
-   ("v_or3_b32",               False, False, dst(1), src(1, 1, 1), op(gfx9=0x202, gfx10=0x372, gfx11=0x258)),
-   ("v_mad_f16",               True, True, dst(1), src(1, 1, 1), op(gfx9=0x203, gfx10=-1)),
-   ("v_mad_u16",               False, False, dst(1), src(1, 1, 1), op(gfx9=0x204, gfx10=0x340, gfx11=0x241)),
-   ("v_mad_i16",               False, False, dst(1), src(1, 1, 1), op(gfx9=0x205, gfx10=0x35e, gfx11=0x253)),
-   ("v_fma_f16",               True, True, dst(1), src(1, 1, 1), op(gfx9=0x206, gfx10=0x34b, gfx11=0x248)),
-   ("v_div_fixup_f16",         True, True, dst(1), src(1, 1, 1), op(gfx9=0x207, gfx10=0x35f, gfx11=0x254)),
-   ("v_interp_p1ll_f16",       True, True, dst(1), src(1, M0), op(gfx8=0x274, gfx10=0x342, gfx11=-1)),
-   ("v_interp_p1lv_f16",       True, True, dst(1), src(1, M0, 1), op(gfx8=0x275, gfx10=0x343, gfx11=-1)),
-   ("v_interp_p2_legacy_f16",  True, True, dst(1), src(1, M0, 1), op(gfx8=0x276, gfx10=-1)),
-   ("v_interp_p2_f16",         True, True, dst(1), src(1, M0, 1), op(gfx9=0x277, gfx10=0x35a, gfx11=-1)),
-   ("v_interp_p2_hi_f16",      True, True, dst(1), src(1, M0, 1), op(gfx9=0x277, gfx10=0x35a, gfx11=-1)),
-   ("v_ldexp_f32",             False, True, dst(1), src(1, 1), op(0x12b, gfx8=0x288, gfx10=0x362, gfx11=0x31c)),
-   ("v_readlane_b32_e64",      False, False, dst(1), src(1, 1), op(gfx8=0x289, gfx10=0x360)),
-   ("v_writelane_b32_e64",     False, False, dst(1), src(1, 1, 1), op(gfx8=0x28a, gfx10=0x361)),
-   ("v_bcnt_u32_b32",          False, False, dst(1), src(1, 1), op(0x122, gfx8=0x28b, gfx10=0x364, gfx11=0x31e)),
-   ("v_mbcnt_lo_u32_b32",      False, False, dst(1), src(1, 1), op(0x123, gfx8=0x28c, gfx10=0x365, gfx11=0x31f)),
-   ("v_mbcnt_hi_u32_b32_e64",  False, False, dst(1), src(1, 1), op(gfx8=0x28d, gfx10=0x366, gfx11=0x320)),
-   ("v_lshlrev_b64_e64",       False, False, dst(2), src(1, 2), op(gfx8=0x28f, gfx10=0x2ff, gfx11=0x33c, gfx12=0x11f), InstrClass.Valu64), # GFX12 is VOP2 opcode + 0x100
-   ("v_lshrrev_b64",           False, False, dst(2), src(1, 2), op(gfx8=0x290, gfx10=0x300, gfx11=0x33d), InstrClass.Valu64),
-   ("v_ashrrev_i64",           False, False, dst(2), src(1, 2), op(gfx8=0x291, gfx10=0x301, gfx11=0x33e), InstrClass.Valu64),
-   ("v_bfm_b32",               False, False, dst(1), src(1, 1), op(0x11e, gfx8=0x293, gfx10=0x363, gfx11=0x31d)),
-   ("v_cvt_pknorm_i16_f32",    True, False, dst(1), src(1, 1), op(0x12d, gfx8=0x294, gfx10=0x368, gfx11=0x321)),
-   ("v_cvt_pknorm_u16_f32",    True, False, dst(1), src(1, 1), op(0x12e, gfx8=0x295, gfx10=0x369, gfx11=0x322)),
-   ("v_cvt_pkrtz_f16_f32_e64", True, False, dst(1), src(1, 1), op(gfx8=0x296, gfx10=-1)),
-   ("v_cvt_pk_u16_u32",        False, False, dst(1), src(1, 1), op(0x130, gfx8=0x297, gfx10=0x36a, gfx11=0x323)),
-   ("v_cvt_pk_i16_i32",        False, False, dst(1), src(1, 1), op(0x131, gfx8=0x298, gfx10=0x36b, gfx11=0x324)),
-   ("v_cvt_pknorm_i16_f16",    True, False, dst(1), src(1, 1), op(gfx9=0x299, gfx10=0x312)), #v_cvt_pk_norm_i16_f32 in GFX11
-   ("v_cvt_pknorm_u16_f16",    True, False, dst(1), src(1, 1), op(gfx9=0x29a, gfx10=0x313)), #v_cvt_pk_norm_u16_f32 in GFX11
-   ("v_add_i32",               False, False, dst(1), src(1, 1), op(gfx9=0x29c, gfx10=0x37f, gfx11=0x326)),
-   ("v_sub_i32",               False, False, dst(1), src(1, 1), op(gfx9=0x29d, gfx10=0x376, gfx11=0x325)),
-   ("v_add_i16",               False, False, dst(1), src(1, 1), op(gfx9=0x29e, gfx10=0x30d)),
-   ("v_sub_i16",               False, False, dst(1), src(1, 1), op(gfx9=0x29f, gfx10=0x30e)),
-   ("v_pack_b32_f16",          True, False, dst(1), src(1, 1), op(gfx9=0x2a0, gfx10=0x311)),
-   ("v_xor3_b32",              False, False, dst(1), src(1, 1, 1), op(gfx10=0x178, gfx11=0x240)),
-   ("v_permlane16_b32",        False, False, dst(1), src(1, 1, 1), op(gfx10=0x377, gfx11=0x25b)),
-   ("v_permlanex16_b32",       False, False, dst(1), src(1, 1, 1), op(gfx10=0x378, gfx11=0x25c)),
-   ("v_add_co_u32_e64",        False, False, dst(1, VCC), src(1, 1), op(gfx10=0x30f, gfx11=0x300)),
-   ("v_sub_co_u32_e64",        False, False, dst(1, VCC), src(1, 1), op(gfx10=0x310, gfx11=0x301)),
-   ("v_subrev_co_u32_e64",     False, False, dst(1, VCC), src(1, 1), op(gfx10=0x319, gfx11=0x302)),
-   ("v_add_u16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x303)),
-   ("v_sub_u16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x304)),
-   ("v_mul_lo_u16_e64",        False, False, dst(1), src(1, 1), op(gfx10=0x305)),
-   ("v_max_u16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x309)),
-   ("v_max_i16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x30a)),
-   ("v_min_u16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x30b)),
-   ("v_min_i16_e64",           False, False, dst(1), src(1, 1), op(gfx10=0x30c)),
-   ("v_lshrrev_b16_e64",       False, False, dst(1), src(1, 1), op(gfx10=0x307, gfx11=0x339)),
-   ("v_ashrrev_i16_e64",       False, False, dst(1), src(1, 1), op(gfx10=0x308, gfx11=0x33a)),
-   ("v_lshlrev_b16_e64",       False, False, dst(1), src(1, 1), op(gfx10=0x314, gfx11=0x338)),
-   ("v_fma_legacy_f32",        True, True, dst(1), src(1, 1, 1), op(gfx10=0x140, gfx11=0x209), InstrClass.ValuFma), #GFX10.3+, v_fma_dx9_zero_f32 in GFX11
-   ("v_maxmin_f32",            True, True, dst(1), src(1, 1, 1), op(gfx11=0x25e, gfx12=0x269)), # called v_maxmin_num_f32 in GFX12
-   ("v_minmax_f32",            True, True, dst(1), src(1, 1, 1), op(gfx11=0x25f, gfx12=0x268)), # called v_minmax_num_f32 in GFX12
-   ("v_maxmin_f16",            True, True, dst(1), src(1, 1, 1), op(gfx11=0x260, gfx12=0x26b)), # called v_maxmin_num_f16 in GFX12
-   ("v_minmax_f16",            True, True, dst(1), src(1, 1, 1), op(gfx11=0x261, gfx12=0x26a)), # called v_minmax_num_f16 in GFX12
-   ("v_maxmin_u32",            False, False, dst(1), src(1, 1, 1), op(gfx11=0x262)),
-   ("v_minmax_u32",            False, False, dst(1), src(1, 1, 1), op(gfx11=0x263)),
-   ("v_maxmin_i32",            False, False, dst(1), src(1, 1, 1), op(gfx11=0x264)),
-   ("v_minmax_i32",            False, False, dst(1), src(1, 1, 1), op(gfx11=0x265)),
-   ("v_dot2_f16_f16",          False, False, dst(1), src(1, 1, 1), op(gfx11=0x266)),
-   ("v_dot2_bf16_bf16",        False, False, dst(1), src(1, 1, 1), op(gfx11=0x267)),
-   ("v_cvt_pk_i16_f32",        True, False, dst(1), src(1, 1), op(gfx11=0x306)),
-   ("v_cvt_pk_u16_f32",        True, False, dst(1), src(1, 1), op(gfx11=0x307)),
-   ("v_and_b16",               False, False, dst(1), src(1, 1), op(gfx11=0x362)),
-   ("v_or_b16",                False, False, dst(1), src(1, 1), op(gfx11=0x363)),
-   ("v_xor_b16",               False, False, dst(1), src(1, 1), op(gfx11=0x364)),
-   ("v_cndmask_b16",           True, False, dst(1), src(1, 1, VCC), op(gfx11=0x25d)),
-   ("v_minimum3_f32",          True, True, dst(1), src(1, 1, 1), op(gfx12=0x22d)),
-   ("v_maximum3_f32",          True, True, dst(1), src(1, 1, 1), op(gfx12=0x22e)),
-   ("v_minimum3_f16",          True, True, dst(1), src(1, 1, 1), op(gfx12=0x22f)),
-   ("v_maximum3_f16",          True, True, dst(1), src(1, 1, 1), op(gfx12=0x230)),
-   ("v_minimummaximum_f32",    True, True, dst(1), src(1, 1, 1), op(gfx12=0x26c)),
-   ("v_maximumminimum_f32",    True, True, dst(1), src(1, 1, 1), op(gfx12=0x26d)),
-   ("v_minimummaximum_f16",    True, True, dst(1), src(1, 1, 1), op(gfx12=0x26e)),
-   ("v_maximumminimum_f16",    True, True, dst(1), src(1, 1, 1), op(gfx12=0x26f)),
-   ("v_s_exp_f32",             True, True, dst(1), src(1), op(gfx12=0x280), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_exp_f16",             True, True, dst(1), src(1), op(gfx12=0x281), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_log_f32",             True, True, dst(1), src(1), op(gfx12=0x282), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_log_f16",             True, True, dst(1), src(1), op(gfx12=0x283), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_rcp_f32",             True, True, dst(1), src(1), op(gfx12=0x284), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_rcp_f16",             True, True, dst(1), src(1), op(gfx12=0x285), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_rsq_f32",             True, True, dst(1), src(1), op(gfx12=0x286), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_rsq_f16",             True, True, dst(1), src(1), op(gfx12=0x287), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_sqrt_f32",            True, True, dst(1), src(1), op(gfx12=0x288), InstrClass.ValuPseudoScalarTrans),
-   ("v_s_sqrt_f16",            True, True, dst(1), src(1), op(gfx12=0x289), InstrClass.ValuPseudoScalarTrans),
-   ("v_minimum_f64",           True, True, dst(1), src(1, 1), op(gfx12=0x341)),
-   ("v_maximum_f64",           True, True, dst(1), src(1, 1), op(gfx12=0x342)),
-   ("v_minimum_f32",           True, True, dst(1), src(1, 1), op(gfx12=0x365)),
-   ("v_maximum_f32",           True, True, dst(1), src(1, 1), op(gfx12=0x366)),
-   ("v_minimum_f16",           True, True, dst(1), src(1, 1), op(gfx12=0x367)),
-   ("v_maximum_f16",           True, True, dst(1), src(1, 1), op(gfx12=0x368)),
-   ("v_permlane16_var_b32",    False, False, dst(1), src(1, 1), op(gfx12=0x30f)),
-   ("v_permlanex16_var_b32",   False, False, dst(1), src(1, 1), op(gfx12=0x310)),
-   ("v_cvt_pk_fp8_f32",        True, False, dst(1), src(1, 1), op(gfx12=0x369)),
-   ("v_cvt_pk_bf8_f32",        True, False, dst(1), src(1, 1), op(gfx12=0x36a)),
-   ("v_cvt_sr_fp8_f32",        True, False, dst(1), src(1, 1), op(gfx12=0x36b)),
-   ("v_cvt_sr_bf8_f32",        True, False, dst(1), src(1, 1), op(gfx12=0x36c)),
+   ("v_mad_legacy_f32",        dst(F32), src(F32, F32, F32), op(0x140, gfx8=0x1c0, gfx10=0x140, gfx11=-1)), # GFX6-GFX10
+   ("v_mad_f32",               dst(F32), src(F32, F32, F32), op(0x141, gfx8=0x1c1, gfx10=0x141, gfx11=-1)),
+   ("v_mad_i32_i24",           dst(U32), src(U32, U32, U32), op(0x142, gfx8=0x1c2, gfx10=0x142, gfx11=0x20a)),
+   ("v_mad_u32_u24",           dst(U32), src(U32, U32, U32), op(0x143, gfx8=0x1c3, gfx10=0x143, gfx11=0x20b)),
+   ("v_cubeid_f32",            dst(F32), src(F32, F32, F32), op(0x144, gfx8=0x1c4, gfx10=0x144, gfx11=0x20c)),
+   ("v_cubesc_f32",            dst(F32), src(F32, F32, F32), op(0x145, gfx8=0x1c5, gfx10=0x145, gfx11=0x20d)),
+   ("v_cubetc_f32",            dst(F32), src(F32, F32, F32), op(0x146, gfx8=0x1c6, gfx10=0x146, gfx11=0x20e)),
+   ("v_cubema_f32",            dst(F32), src(F32, F32, F32), op(0x147, gfx8=0x1c7, gfx10=0x147, gfx11=0x20f)),
+   ("v_bfe_u32",               dst(U32), src(U32, U32, U32), op(0x148, gfx8=0x1c8, gfx10=0x148, gfx11=0x210)),
+   ("v_bfe_i32",               dst(U32), src(U32, U32, U32), op(0x149, gfx8=0x1c9, gfx10=0x149, gfx11=0x211)),
+   ("v_bfi_b32",               dst(U32), src(U32, U32, U32), op(0x14a, gfx8=0x1ca, gfx10=0x14a, gfx11=0x212)),
+   ("v_fma_f32",               dst(F32), src(F32, F32, F32), op(0x14b, gfx8=0x1cb, gfx10=0x14b, gfx11=0x213), InstrClass.ValuFma),
+   ("v_fma_f64",               dst(F64), src(F64, F64, F64), op(0x14c, gfx8=0x1cc, gfx10=0x14c, gfx11=0x214), InstrClass.ValuDouble),
+   ("v_lerp_u8",               dst(U32), src(U32, U32, U32), op(0x14d, gfx8=0x1cd, gfx10=0x14d, gfx11=0x215)),
+   ("v_alignbit_b32",          dst(U32), src(U32, U32, U16), op(0x14e, gfx8=0x1ce, gfx10=0x14e, gfx11=0x216)),
+   ("v_alignbyte_b32",         dst(U32), src(U32, U32, U16), op(0x14f, gfx8=0x1cf, gfx10=0x14f, gfx11=0x217)),
+   ("v_mullit_f32",            dst(F32), src(F32, F32, F32), op(0x150, gfx8=-1, gfx10=0x150, gfx11=0x218)),
+   ("v_min3_f32",              dst(F32), src(F32, F32, F32), op(0x151, gfx8=0x1d0, gfx10=0x151, gfx11=0x219, gfx12=0x229)), # called v_min3_num_f32 in GFX12
+   ("v_min3_i32",              dst(U32), src(U32, U32, U32), op(0x152, gfx8=0x1d1, gfx10=0x152, gfx11=0x21a)),
+   ("v_min3_u32",              dst(U32), src(U32, U32, U32), op(0x153, gfx8=0x1d2, gfx10=0x153, gfx11=0x21b)),
+   ("v_max3_f32",              dst(F32), src(F32, F32, F32), op(0x154, gfx8=0x1d3, gfx10=0x154, gfx11=0x21c, gfx12=0x22a)), # called v_max3_num_f32 in GFX12
+   ("v_max3_i32",              dst(U32), src(U32, U32, U32), op(0x155, gfx8=0x1d4, gfx10=0x155, gfx11=0x21d)),
+   ("v_max3_u32",              dst(U32), src(U32, U32, U32), op(0x156, gfx8=0x1d5, gfx10=0x156, gfx11=0x21e)),
+   ("v_med3_f32",              dst(F32), src(F32, F32, F32), op(0x157, gfx8=0x1d6, gfx10=0x157, gfx11=0x21f, gfx12=0x231)), # called v_med3_num_f32 in GFX12
+   ("v_med3_i32",              dst(U32), src(U32, U32, U32), op(0x158, gfx8=0x1d7, gfx10=0x158, gfx11=0x220)),
+   ("v_med3_u32",              dst(U32), src(U32, U32, U32), op(0x159, gfx8=0x1d8, gfx10=0x159, gfx11=0x221)),
+   ("v_sad_u8",                dst(U32), src(U32, U32, U32), op(0x15a, gfx8=0x1d9, gfx10=0x15a, gfx11=0x222)),
+   ("v_sad_hi_u8",             dst(U32), src(U32, U32, U32), op(0x15b, gfx8=0x1da, gfx10=0x15b, gfx11=0x223)),
+   ("v_sad_u16",               dst(U32), src(U32, U32, U32), op(0x15c, gfx8=0x1db, gfx10=0x15c, gfx11=0x224)),
+   ("v_sad_u32",               dst(U32), src(U32, U32, U32), op(0x15d, gfx8=0x1dc, gfx10=0x15d, gfx11=0x225)),
+   ("v_cvt_pk_u8_f32",         dst(U32), src(F32, U32, U32), op(0x15e, gfx8=0x1dd, gfx10=0x15e, gfx11=0x226)),
+   ("p_v_cvt_pk_u8_f32",       dst(U32), src(F32), op(-1)),
+   ("v_div_fixup_f32",         dst(F32), src(F32, F32, F32), op(0x15f, gfx8=0x1de, gfx10=0x15f, gfx11=0x227)),
+   ("v_div_fixup_f64",         dst(F64), src(F64, F64, F64), op(0x160, gfx8=0x1df, gfx10=0x160, gfx11=0x228)),
+   ("v_lshl_b64",              dst(U64), src(U64, U32), op(0x161, gfx8=-1), InstrClass.Valu64),
+   ("v_lshr_b64",              dst(U64), src(U64, U32), op(0x162, gfx8=-1), InstrClass.Valu64),
+   ("v_ashr_i64",              dst(I64), src(I64, U32), op(0x163, gfx8=-1), InstrClass.Valu64),
+   ("v_add_f64_e64",           dst(F64), src(F64, F64), op(0x164, gfx8=0x280, gfx10=0x164, gfx11=0x327, gfx12=0x102), InstrClass.ValuDoubleAdd), # GFX12 is VOP2 opcode + 0x100
+   ("v_mul_f64_e64",           dst(F64), src(F64, F64), op(0x165, gfx8=0x281, gfx10=0x165, gfx11=0x328, gfx12=0x106), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
+   ("v_min_f64_e64",           dst(F64), src(F64, F64), op(0x166, gfx8=0x282, gfx10=0x166, gfx11=0x329, gfx12=0x10d), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
+   ("v_max_f64_e64",           dst(F64), src(F64, F64), op(0x167, gfx8=0x283, gfx10=0x167, gfx11=0x32a, gfx12=0x10e), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
+   ("v_ldexp_f64",             dst(F64), src(F64, U32), op(0x168, gfx8=0x284, gfx10=0x168, gfx11=0x32b), InstrClass.ValuDouble),
+   ("v_mul_lo_u32",            dst(U32), src(U32, U32), op(0x169, gfx8=0x285, gfx10=0x169, gfx11=0x32c), InstrClass.ValuQuarterRate32),
+   ("v_mul_hi_u32",            dst(U32), src(U32, U32), op(0x16a, gfx8=0x286, gfx10=0x16a, gfx11=0x32d), InstrClass.ValuQuarterRate32),
+   ("v_mul_lo_i32",            dst(U32), src(U32, U32), op(0x16b, gfx8=0x285, gfx10=0x16b, gfx11=0x32c), InstrClass.ValuQuarterRate32), # identical to v_mul_lo_u32
+   ("v_mul_hi_i32",            dst(U32), src(U32, U32), op(0x16c, gfx8=0x287, gfx10=0x16c, gfx11=0x32e), InstrClass.ValuQuarterRate32),
+   ("v_div_scale_f32",         dst(F32, VCC), src(F32, F32, F32), op(0x16d, gfx8=0x1e0, gfx10=0x16d, gfx11=0x2fc)),
+   ("v_div_scale_f64",         dst(F64, VCC), src(F64, F64, F64), op(0x16e, gfx8=0x1e1, gfx10=0x16e, gfx11=0x2fd), InstrClass.ValuDouble),
+   ("v_div_fmas_f32",          dst(F32), src(F32, F32, F32, VCC), op(0x16f, gfx8=0x1e2, gfx10=0x16f, gfx11=0x237)),
+   ("v_div_fmas_f64",          dst(F64), src(F64, F64, F64, VCC), op(0x170, gfx8=0x1e3, gfx10=0x170, gfx11=0x238), InstrClass.ValuDouble),
+   ("v_msad_u8",               dst(U32), src(U32, U32, U32), op(0x171, gfx8=0x1e4, gfx10=0x171, gfx11=0x239)),
+   ("v_qsad_pk_u16_u8",        dst(U64), src(U64, U32, U64), op(0x172, gfx8=0x1e5, gfx10=0x172, gfx11=0x23a)),
+   ("v_mqsad_pk_u16_u8",       dst(U64), src(U64, U32, U64), op(0x173, gfx8=0x1e6, gfx10=0x173, gfx11=0x23b)),
+   ("v_trig_preop_f64",        dst(noMods(F64)), src(noMods(F64), U32), op(0x174, gfx8=0x292, gfx10=0x174, gfx11=0x32f), InstrClass.ValuDouble),
+   ("v_mqsad_u32_u8",          dst(U128), src(U64, U32, U128), op(gfx7=0x175, gfx8=0x1e7, gfx10=0x175, gfx11=0x23d), InstrClass.ValuQuarterRate32),
+   ("v_mad_u64_u32",           dst(U64, VCC), src(U32, U32, U64), op(gfx7=0x176, gfx8=0x1e8, gfx10=0x176, gfx11=0x2fe), InstrClass.Valu64), # called v_mad_co_u64_u32 in GFX12
+   ("v_mad_i64_i32",           dst(I64, VCC), src(U32, U32, I64), op(gfx7=0x177, gfx8=0x1e9, gfx10=0x177, gfx11=0x2ff), InstrClass.Valu64), # called v_mad_co_i64_i32 in GFX12
+   ("v_mad_legacy_f16",        dst(F16), src(F16, F16, F16), op(gfx8=0x1ea, gfx10=-1)),
+   ("v_mad_legacy_u16",        dst(U16), src(U16, U16, U16), op(gfx8=0x1eb, gfx10=-1)),
+   ("v_mad_legacy_i16",        dst(U16), src(U16, U16, U16), op(gfx8=0x1ec, gfx10=-1)),
+   ("v_perm_b32",              dst(U32), src(U32, U32, U32), op(gfx8=0x1ed, gfx10=0x344, gfx11=0x244)),
+   ("v_fma_legacy_f16",        dst(F16), src(F16, F16, F16), op(gfx8=0x1ee, gfx10=-1), InstrClass.ValuFma),
+   ("v_div_fixup_legacy_f16",  dst(F16), src(F16, F16, F16), op(gfx8=0x1ef, gfx10=-1)),
+   ("v_cvt_pkaccum_u8_f32",    dst(U32), src(F32, U32, U32), op(0x12c, gfx8=0x1f0, gfx10=-1)),
+   ("v_mad_u32_u16",           dst(U32), src(U16, U16, U32), op(gfx9=0x1f1, gfx10=0x373, gfx11=0x259)),
+   ("v_mad_i32_i16",           dst(U32), src(U16, U16, U32), op(gfx9=0x1f2, gfx10=0x375, gfx11=0x25a)),
+   ("v_xad_u32",               dst(U32), src(U32, U32, U32), op(gfx9=0x1f3, gfx10=0x345, gfx11=0x245)),
+   ("v_min3_f16",              dst(F16), src(F16, F16, F16), op(gfx9=0x1f4, gfx10=0x351, gfx11=0x249, gfx12=0x22b)), # called v_min3_num_f16 in GFX12
+   ("v_min3_i16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1f5, gfx10=0x352, gfx11=0x24a)),
+   ("v_min3_u16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1f6, gfx10=0x353, gfx11=0x24b)),
+   ("v_max3_f16",              dst(F16), src(F16, F16, F16), op(gfx9=0x1f7, gfx10=0x354, gfx11=0x24c, gfx12=0x22c)), # called v_max3_num_f16 in GFX12
+   ("v_max3_i16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1f8, gfx10=0x355, gfx11=0x24d)),
+   ("v_max3_u16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1f9, gfx10=0x356, gfx11=0x24e)),
+   ("v_med3_f16",              dst(F16), src(F16, F16, F16), op(gfx9=0x1fa, gfx10=0x357, gfx11=0x24f, gfx12=0x232)), # called v_med3_num_f16 in GFX12
+   ("v_med3_i16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1fb, gfx10=0x358, gfx11=0x250)),
+   ("v_med3_u16",              dst(U16), src(U16, U16, U16), op(gfx9=0x1fc, gfx10=0x359, gfx11=0x251)),
+   ("v_lshl_add_u32",          dst(U32), src(U32, U32, U32), op(gfx9=0x1fd, gfx10=0x346, gfx11=0x246)),
+   ("v_add_lshl_u32",          dst(U32), src(U32, U32, U32), op(gfx9=0x1fe, gfx10=0x347, gfx11=0x247)),
+   ("v_add3_u32",              dst(U32), src(U32, U32, U32), op(gfx9=0x1ff, gfx10=0x36d, gfx11=0x255)),
+   ("v_lshl_or_b32",           dst(U32), src(U32, U32, U32), op(gfx9=0x200, gfx10=0x36f, gfx11=0x256)),
+   ("v_and_or_b32",            dst(U32), src(U32, U32, U32), op(gfx9=0x201, gfx10=0x371, gfx11=0x257)),
+   ("v_or3_b32",               dst(U32), src(U32, U32, U32), op(gfx9=0x202, gfx10=0x372, gfx11=0x258)),
+   ("v_mad_f16",               dst(F16), src(F16, F16, F16), op(gfx9=0x203, gfx10=-1)),
+   ("v_mad_u16",               dst(U16), src(U16, U16, U16), op(gfx9=0x204, gfx10=0x340, gfx11=0x241)),
+   ("v_mad_i16",               dst(U16), src(U16, U16, U16), op(gfx9=0x205, gfx10=0x35e, gfx11=0x253)),
+   ("v_fma_f16",               dst(F16), src(F16, F16, F16), op(gfx9=0x206, gfx10=0x34b, gfx11=0x248)),
+   ("v_div_fixup_f16",         dst(F16), src(F16, F16, F16), op(gfx9=0x207, gfx10=0x35f, gfx11=0x254)),
+   ("v_interp_p1ll_f16",       dst(F32), src(F32, M0), op(gfx8=0x274, gfx10=0x342, gfx11=-1)),
+   ("v_interp_p1lv_f16",       dst(F32), src(F32, M0, F16), op(gfx8=0x275, gfx10=0x343, gfx11=-1)),
+   ("v_interp_p2_legacy_f16",  dst(F16), src(F32, M0, F32), op(gfx8=0x276, gfx10=-1)),
+   ("v_interp_p2_f16",         dst(F16), src(F32, M0, F32), op(gfx9=0x277, gfx10=0x35a, gfx11=-1)),
+   ("v_interp_p2_hi_f16",      dst(F16), src(F32, M0, F32), op(gfx9=0x277, gfx10=0x35a, gfx11=-1)),
+   ("v_ldexp_f32",             dst(F32), src(F32, U32), op(0x12b, gfx8=0x288, gfx10=0x362, gfx11=0x31c)),
+   ("v_readlane_b32_e64",      dst(U32), src(U32, U32), op(gfx8=0x289, gfx10=0x360)),
+   ("v_writelane_b32_e64",     dst(U32), src(U32, U32, U32), op(gfx8=0x28a, gfx10=0x361)),
+   ("v_bcnt_u32_b32",          dst(U32), src(U32, U32), op(0x122, gfx8=0x28b, gfx10=0x364, gfx11=0x31e)),
+   ("v_mbcnt_lo_u32_b32",      dst(U32), src(U32, U32), op(0x123, gfx8=0x28c, gfx10=0x365, gfx11=0x31f)),
+   ("v_mbcnt_hi_u32_b32_e64",  dst(U32), src(U32, U32), op(gfx8=0x28d, gfx10=0x366, gfx11=0x320)),
+   ("v_lshlrev_b64_e64",       dst(U64), src(U32, U64), op(gfx8=0x28f, gfx10=0x2ff, gfx11=0x33c, gfx12=0x11f), InstrClass.Valu64), # GFX12 is VOP2 opcode + 0x100
+   ("v_lshrrev_b64",           dst(U64), src(U32, U64), op(gfx8=0x290, gfx10=0x300, gfx11=0x33d), InstrClass.Valu64),
+   ("v_ashrrev_i64",           dst(I64), src(U32, I64), op(gfx8=0x291, gfx10=0x301, gfx11=0x33e), InstrClass.Valu64),
+   ("v_bfm_b32",               dst(U32), src(U32, U32), op(0x11e, gfx8=0x293, gfx10=0x363, gfx11=0x31d)),
+   ("v_cvt_pknorm_i16_f32",    dst(PkU16), src(F32, F32), op(0x12d, gfx8=0x294, gfx10=0x368, gfx11=0x321)),
+   ("v_cvt_pknorm_u16_f32",    dst(PkU16), src(F32, F32), op(0x12e, gfx8=0x295, gfx10=0x369, gfx11=0x322)),
+   ("v_cvt_pkrtz_f16_f32_e64", dst(noMods(PkF16)), src(F32, F32), op(gfx8=0x296, gfx10=-1)),
+   ("v_cvt_pk_u16_u32",        dst(PkU16), src(U32, U32), op(0x130, gfx8=0x297, gfx10=0x36a, gfx11=0x323)),
+   ("v_cvt_pk_i16_i32",        dst(PkU16), src(U32, U32), op(0x131, gfx8=0x298, gfx10=0x36b, gfx11=0x324)),
+   ("v_cvt_pknorm_i16_f16",    dst(PkU16), src(F16, F16), op(gfx9=0x299, gfx10=0x312)), #v_cvt_pk_norm_i16_f32 in GFX11
+   ("v_cvt_pknorm_u16_f16",    dst(PkU16), src(F16, F16), op(gfx9=0x29a, gfx10=0x313)), #v_cvt_pk_norm_u16_f32 in GFX11
+   ("v_add_i32",               dst(U32), src(U32, U32), op(gfx9=0x29c, gfx10=0x37f, gfx11=0x326)),
+   ("v_sub_i32",               dst(U32), src(U32, U32), op(gfx9=0x29d, gfx10=0x376, gfx11=0x325)),
+   ("v_add_i16",               dst(U16), src(U32, U32), op(gfx9=0x29e, gfx10=0x30d)),
+   ("v_sub_i16",               dst(U16), src(U32, U32), op(gfx9=0x29f, gfx10=0x30e)),
+   ("v_pack_b32_f16",          dst(noMods(PkF16)), src(F16, F16), op(gfx9=0x2a0, gfx10=0x311)),
+   ("v_xor3_b32",              dst(U32), src(U32, U32, U32), op(gfx10=0x178, gfx11=0x240)),
+   ("v_permlane16_b32",        dst(U32), src(U32, U32, U32), op(gfx10=0x377, gfx11=0x25b)),
+   ("v_permlanex16_b32",       dst(U32), src(U32, U32, U32), op(gfx10=0x378, gfx11=0x25c)),
+   ("v_add_co_u32_e64",        dst(U32, VCC), src(U32, U32), op(gfx10=0x30f, gfx11=0x300)),
+   ("v_sub_co_u32_e64",        dst(U32, VCC), src(U32, U32), op(gfx10=0x310, gfx11=0x301)),
+   ("v_subrev_co_u32_e64",     dst(U32, VCC), src(U32, U32), op(gfx10=0x319, gfx11=0x302)),
+   ("v_add_u16_e64",           dst(U16), src(U16, U16), op(gfx10=0x303)),
+   ("v_sub_u16_e64",           dst(U16), src(U16, U16), op(gfx10=0x304)),
+   ("v_mul_lo_u16_e64",        dst(U16), src(U16, U16), op(gfx10=0x305)),
+   ("v_max_u16_e64",           dst(U16), src(U16, U16), op(gfx10=0x309)),
+   ("v_max_i16_e64",           dst(U16), src(U16, U16), op(gfx10=0x30a)),
+   ("v_min_u16_e64",           dst(U16), src(U16, U16), op(gfx10=0x30b)),
+   ("v_min_i16_e64",           dst(U16), src(U16, U16), op(gfx10=0x30c)),
+   ("v_lshrrev_b16_e64",       dst(U16), src(U16, U16), op(gfx10=0x307, gfx11=0x339)),
+   ("v_ashrrev_i16_e64",       dst(U16), src(U16, U16), op(gfx10=0x308, gfx11=0x33a)),
+   ("v_lshlrev_b16_e64",       dst(U16), src(U16, U16), op(gfx10=0x314, gfx11=0x338)),
+   ("v_fma_legacy_f32",        dst(F32), src(F32, F32, F32), op(gfx10=0x140, gfx11=0x209), InstrClass.ValuFma), #GFX10.3+, v_fma_dx9_zero_f32 in GFX11
+   ("v_maxmin_f32",            dst(F32), src(F32, F32, F32), op(gfx11=0x25e, gfx12=0x269)), # called v_maxmin_num_f32 in GFX12
+   ("v_minmax_f32",            dst(F32), src(F32, F32, F32), op(gfx11=0x25f, gfx12=0x268)), # called v_minmax_num_f32 in GFX12
+   ("v_maxmin_f16",            dst(F16), src(F16, F16, F16), op(gfx11=0x260, gfx12=0x26b)), # called v_maxmin_num_f16 in GFX12
+   ("v_minmax_f16",            dst(F16), src(F16, F16, F16), op(gfx11=0x261, gfx12=0x26a)), # called v_minmax_num_f16 in GFX12
+   ("v_maxmin_u32",            dst(U32), src(U32, U32, U32), op(gfx11=0x262)),
+   ("v_minmax_u32",            dst(U32), src(U32, U32, U32), op(gfx11=0x263)),
+   ("v_maxmin_i32",            dst(U32), src(U32, U32, U32), op(gfx11=0x264)),
+   ("v_minmax_i32",            dst(U32), src(U32, U32, U32), op(gfx11=0x265)),
+   ("v_dot2_f16_f16",          dst(noMods(F16)), noMods(src(PkF16, PkF16, F16)), op(gfx11=0x266)),
+   ("v_dot2_bf16_bf16",        dst(noMods(BF16)), noMods(src(PkBF16, PkBF16, BF16)), op(gfx11=0x267)),
+   ("v_cvt_pk_i16_f32",        dst(PkU16), src(F32, F32), op(gfx11=0x306)),
+   ("v_cvt_pk_u16_f32",        dst(PkU16), src(F32, F32), op(gfx11=0x307)),
+   ("v_and_b16",               dst(U16), src(U16, U16), op(gfx11=0x362)),
+   ("v_or_b16",                dst(U16), src(U16, U16), op(gfx11=0x363)),
+   ("v_xor_b16",               dst(U16), src(U16, U16), op(gfx11=0x364)),
+   ("v_cndmask_b16",           dst(U16), src(mods(U16), mods(U16), VCC), op(gfx11=0x25d)),
+   ("v_minimum3_f32",          dst(F32), src(F32, F32, F32), op(gfx12=0x22d)),
+   ("v_maximum3_f32",          dst(F32), src(F32, F32, F32), op(gfx12=0x22e)),
+   ("v_minimum3_f16",          dst(F16), src(F16, F16, F16), op(gfx12=0x22f)),
+   ("v_maximum3_f16",          dst(F16), src(F16, F16, F16), op(gfx12=0x230)),
+   ("v_minimummaximum_f32",    dst(F32), src(F32, F32, F32), op(gfx12=0x26c)),
+   ("v_maximumminimum_f32",    dst(F32), src(F32, F32, F32), op(gfx12=0x26d)),
+   ("v_minimummaximum_f16",    dst(F16), src(F16, F16, F16), op(gfx12=0x26e)),
+   ("v_maximumminimum_f16",    dst(F16), src(F16, F16, F16), op(gfx12=0x26f)),
+   ("v_s_exp_f32",             dst(F32), src(F32), op(gfx12=0x280), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_exp_f16",             dst(F16), src(F16), op(gfx12=0x281), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_log_f32",             dst(F32), src(F32), op(gfx12=0x282), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_log_f16",             dst(F16), src(F16), op(gfx12=0x283), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_rcp_f32",             dst(F32), src(F32), op(gfx12=0x284), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_rcp_f16",             dst(F16), src(F16), op(gfx12=0x285), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_rsq_f32",             dst(F32), src(F32), op(gfx12=0x286), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_rsq_f16",             dst(F16), src(F16), op(gfx12=0x287), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_sqrt_f32",            dst(F32), src(F32), op(gfx12=0x288), InstrClass.ValuPseudoScalarTrans),
+   ("v_s_sqrt_f16",            dst(F16), src(F16), op(gfx12=0x289), InstrClass.ValuPseudoScalarTrans),
+   ("v_minimum_f64",           dst(F64), src(F64, F64), op(gfx12=0x341)),
+   ("v_maximum_f64",           dst(F64), src(F64, F64), op(gfx12=0x342)),
+   ("v_minimum_f32",           dst(F32), src(F32, F32), op(gfx12=0x365)),
+   ("v_maximum_f32",           dst(F32), src(F32, F32), op(gfx12=0x366)),
+   ("v_minimum_f16",           dst(F16), src(F16, F16), op(gfx12=0x367)),
+   ("v_maximum_f16",           dst(F16), src(F16, F16), op(gfx12=0x368)),
+   ("v_permlane16_var_b32",    dst(U32), src(U32, U32), op(gfx12=0x30f)),
+   ("v_permlanex16_var_b32",   dst(U32), src(U32, U32), op(gfx12=0x310)),
+   ("v_cvt_pk_fp8_f32",        dst(PkF8), src(F32, F32), op(gfx12=0x369)),
+   ("v_cvt_pk_bf8_f32",        dst(PkBF8), src(F32, F32), op(gfx12=0x36a)),
+   ("v_cvt_sr_fp8_f32",        dst(F8), src(F32, U32), op(gfx12=0x36b)),
+   ("v_cvt_sr_bf8_f32",        dst(BF8), src(F32, U32), op(gfx12=0x36c)),
 }
-for (name, in_mod, out_mod, defs, ops, num, cls) in default_class(VOP3, InstrClass.Valu32):
-   insn(name, num, Format.VOP3, cls, in_mod, out_mod, definitions = defs, operands = ops)
+for (name, defs, ops, num, cls) in default_class(VOP3, InstrClass.Valu32):
+   insn(name, num, Format.VOP3, cls, definitions = defs, operands = ops)
 
 
 VOPD = {

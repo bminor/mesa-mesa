@@ -528,11 +528,7 @@ can_use_input_modifiers(amd_gfx_level gfx_level, aco_opcode op, int idx)
    if (op == aco_opcode::v_mov_b32)
       return gfx_level >= GFX10;
 
-   if (op == aco_opcode::v_ldexp_f16 || op == aco_opcode::v_ldexp_f32 ||
-       op == aco_opcode::v_ldexp_f64)
-      return idx == 0;
-
-   return instr_info.can_use_input_modifiers[(int)op];
+   return instr_info.alu_opcode_infos[(int)op].input_modifiers & BITFIELD_BIT(idx);
 }
 
 bool
@@ -842,21 +838,12 @@ get_operand_size(aco_ptr<Instruction>& instr, unsigned index)
 {
    if (instr->isPseudo())
       return instr->operands[index].bytes() * 8u;
-   else if (instr->opcode == aco_opcode::v_mad_u64_u32 ||
-            instr->opcode == aco_opcode::v_mad_i64_i32)
-      return index == 2 ? 64 : 32;
    else if (instr->opcode == aco_opcode::v_fma_mix_f32 ||
             instr->opcode == aco_opcode::v_fma_mixlo_f16 ||
             instr->opcode == aco_opcode::v_fma_mixhi_f16)
       return instr->valu().opsel_hi[index] ? 16 : 32;
-   else if (instr->opcode == aco_opcode::v_interp_p10_f16_f32_inreg ||
-            instr->opcode == aco_opcode::v_interp_p10_rtz_f16_f32_inreg)
-      return index == 1 ? 32 : 16;
-   else if (instr->opcode == aco_opcode::v_interp_p2_f16_f32_inreg ||
-            instr->opcode == aco_opcode::v_interp_p2_rtz_f16_f32_inreg)
-      return index == 0 ? 16 : 32;
    else if (instr->isVALU() || instr->isSALU())
-      return instr_info.operand_size[(int)instr->opcode];
+      return instr_info.alu_opcode_infos[(int)instr->opcode].op_types[index].constant_bits();
    else
       return 0;
 }
