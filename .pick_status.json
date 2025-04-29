@@ -404,7 +404,7 @@
         "description": "pan/bi: Properly lower add/sub with saturation on v11+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d79a31bf81a3527897f7c6f5178abd47d80fbaee",
         "notes": null
