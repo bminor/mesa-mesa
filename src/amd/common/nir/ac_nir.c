@@ -77,6 +77,7 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
    options->has_sudot_4x8_sat = info->has_accelerated_dot_product && info->gfx_level >= GFX11;
    options->has_udot_4x8_sat = info->has_accelerated_dot_product;
    options->has_dot_2x16 = info->has_accelerated_dot_product && info->gfx_level < GFX11;
+   options->has_bfdot2_bfadd = info->gfx_level >= GFX12;
    options->has_find_msb_rev = true;
    options->has_pack_32_4x8 = true;
    options->has_pack_half_2x16_rtz = true;
