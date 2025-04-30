@@ -202,18 +202,8 @@ brw_generator::generate_mov_indirect(brw_inst *inst,
    assert(indirect_byte_offset.type == BRW_TYPE_UD);
    assert(indirect_byte_offset.file == FIXED_GRF);
    assert(!reg.abs && !reg.negate);
-
-   /* Gen12.5 adds the following region restriction:
-    *
-    *    "Vx1 and VxH indirect addressing for Float, Half-Float, Double-Float
-    *    and Quad-Word data must not be used."
-    *
-    * We require the source and destination types to match so stomp to an
-    * unsigned integer type.
-    */
+   assert(brw_type_is_uint(reg.type));
    assert(reg.type == dst.type);
-   reg.type = dst.type =
-      brw_type_with_size(BRW_TYPE_UD, brw_type_size_bits(reg.type));
 
    unsigned imm_byte_offset = reg.nr * REG_SIZE + reg.subnr;
 
@@ -337,18 +327,8 @@ brw_generator::generate_shuffle(brw_inst *inst,
     * implement for 64-bit values so we just don't bother.
     */
    assert(devinfo->has_64bit_float || brw_type_size_bytes(src.type) <= 4);
-
-   /* Gen12.5 adds the following region restriction:
-    *
-    *    "Vx1 and VxH indirect addressing for Float, Half-Float, Double-Float
-    *    and Quad-Word data must not be used."
-    *
-    * We require the source and destination types to match so stomp to an
-    * unsigned integer type.
-    */
+   assert(brw_type_is_uint(src.type));
    assert(src.type == dst.type);
-   src.type = dst.type =
-      brw_type_with_size(BRW_TYPE_UD, brw_type_size_bits(src.type));
 
    /* Because we're using the address register, we're limited to 16-wide
     * by the address register file and 8-wide for 64-bit types.  We could try

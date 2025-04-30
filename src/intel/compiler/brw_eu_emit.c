@@ -1716,18 +1716,8 @@ brw_broadcast(struct brw_codegen *p,
    assert(src.file == FIXED_GRF &&
           src.address_mode == BRW_ADDRESS_DIRECT);
    assert(!src.abs && !src.negate);
-
-   /* Gen12.5 adds the following region restriction:
-    *
-    *    "Vx1 and VxH indirect addressing for Float, Half-Float, Double-Float
-    *    and Quad-Word data must not be used."
-    *
-    * We require the source and destination types to match so stomp to an
-    * unsigned integer type.
-    */
+   assert(brw_type_is_uint(src.type));
    assert(src.type == dst.type);
-   src.type = dst.type =
-      brw_type_with_size(BRW_TYPE_UD, brw_type_size_bits(src.type));
 
    if ((src.vstride == 0 && src.hstride == 0) ||
        idx.file == IMM) {

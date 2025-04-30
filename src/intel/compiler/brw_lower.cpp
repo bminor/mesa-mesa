@@ -727,6 +727,22 @@ brw_lower_alu_restrictions(brw_shader &s)
          }
          break;
 
+      case SHADER_OPCODE_SHUFFLE:
+      case SHADER_OPCODE_MOV_INDIRECT:
+      case SHADER_OPCODE_BROADCAST:
+         /* Gen12.5 adds the following region restriction:
+          *
+          *   "Vx1 and VxH indirect addressing for Float, Half-Float,
+          *    Double-Float and Quad-Word data must not be used."
+          *
+          * We require the source and destination types to match so stomp to
+          * an unsigned integer type.
+          */
+         assert(inst->src[0].type == inst->dst.type);
+         inst->src[0].type = inst->dst.type = brw_type_with_size(BRW_TYPE_UD,
+            brw_type_size_bits(inst->src[0].type));
+         break;
+
       default:
          break;
       }

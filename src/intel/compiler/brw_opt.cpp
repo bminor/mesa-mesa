@@ -161,8 +161,6 @@ brw_optimize(brw_shader &s)
 
    brw_shader_phase_update(s, BRW_SHADER_PHASE_AFTER_MIDDLE_LOWERING);
 
-   OPT(brw_lower_alu_restrictions);
-
    OPT(brw_opt_combine_constants);
    if (OPT(brw_lower_integer_multiplication)) {
       /* If lower_integer_multiplication made progress, it may have produced
@@ -212,6 +210,8 @@ brw_optimize(brw_shader &s)
    OPT(brw_lower_sends_overlapping_payload);
 
    OPT(brw_lower_indirect_mov);
+
+   OPT(brw_lower_alu_restrictions);
 
    OPT(brw_lower_find_live_channel);
 
