@@ -173,7 +173,7 @@ impl LopPass {
 
             for i in 0..3 {
                 if entry_srcs[i] != usize::MAX {
-                    srcs[entry_srcs[i]] = entry.srcs[i];
+                    srcs[entry_srcs[i]] = entry.srcs[i].clone();
                 }
             }
             for op in ops.iter_mut() {
@@ -215,7 +215,7 @@ impl LopPass {
 
         if let Dst::SSA(ssa) = op.dst {
             assert!(ssa.comps() == 1);
-            self.add_lop(ssa[0], op.op, op.srcs);
+            self.add_lop(ssa[0], op.op, op.srcs.clone());
         }
     }
 
@@ -248,7 +248,7 @@ impl LopPass {
         for i in 0..2 {
             if let Dst::SSA(ssa) = op.dsts[i] {
                 assert!(ssa.comps() == 1);
-                self.add_lop(ssa[0], op.ops[i], op.srcs);
+                self.add_lop(ssa[0], op.ops[i], op.srcs.clone());
             }
         }
     }

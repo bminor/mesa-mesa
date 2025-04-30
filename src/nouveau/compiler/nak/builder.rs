@@ -154,7 +154,7 @@ pub trait SSABuilder: Builder {
                 dst: dst[0].into(),
                 low: x[0].into(),
                 high: 0.into(),
-                shift,
+                shift: shift.clone(),
                 right: false,
                 wrap: true,
                 data_type: IntType::U64,
@@ -168,7 +168,7 @@ pub trait SSABuilder: Builder {
                 dst: dst[0].into(),
                 low: 0.into(),
                 high: x[0].into(),
-                shift,
+                shift: shift.clone(),
                 right: false,
                 wrap: true,
                 data_type: IntType::U64,
@@ -222,7 +222,7 @@ pub trait SSABuilder: Builder {
             dst: dst[0].into(),
             low: x[0].into(),
             high: x[1].into(),
-            shift,
+            shift: shift.clone(),
             right: true,
             wrap: true,
             data_type: if signed { IntType::I64 } else { IntType::U64 },
@@ -384,8 +384,8 @@ pub trait SSABuilder: Builder {
 
         let is_3src = !x.is_zero() && !y.is_zero() && !z.is_zero();
 
-        let x = split_iadd64_src(x);
-        let y = split_iadd64_src(y);
+        let [x0, x1] = split_iadd64_src(x);
+        let [y0, y1] = split_iadd64_src(y);
         let dst = self.alloc_ssa_vec(RegFile::GPR, 2);
         if self.sm() >= 70 {
             let carry1 = self.alloc_ssa(RegFile::Pred);
@@ -398,16 +398,16 @@ pub trait SSABuilder: Builder {
                 (Dst::None, false.into())
             };
 
-            let z = split_iadd64_src(z);
+            let [z0, z1] = split_iadd64_src(z);
             self.push_op(OpIAdd3 {
                 dst: dst[0].into(),
                 overflow: [carry1.into(), carry2_dst],
-                srcs: [x[0], y[0], z[0]],
+                srcs: [x0, y0, z0],
             });
             self.push_op(OpIAdd3X {
                 dst: dst[1].into(),
                 overflow: [Dst::None, Dst::None],
-                srcs: [x[1], y[1], z[1]],
+                srcs: [x1, y1, z1],
                 carry: [carry1.into(), carry2_src],
             });
         } else {
@@ -415,12 +415,12 @@ pub trait SSABuilder: Builder {
             let carry = self.alloc_ssa(RegFile::Carry);
             self.push_op(OpIAdd2 {
                 dst: dst[0].into(),
-                srcs: [x[0], y[0]],
+                srcs: [x0, y0],
                 carry_out: carry.into(),
             });
             self.push_op(OpIAdd2X {
                 dst: dst[1].into(),
-                srcs: [x[1], y[1]],
+                srcs: [x1, y1],
                 carry_out: Dst::None,
                 carry_in: carry.into(),
             });
@@ -469,7 +469,7 @@ pub trait SSABuilder: Builder {
         } else {
             self.push_op(OpIMul {
                 dst: dst[0].into(),
-                srcs: [x, y],
+                srcs: [x.clone(), y.clone()],
                 signed: [signed; 2],
                 high: false,
             });
@@ -772,8 +772,9 @@ pub trait SSABuilder: Builder {
 
     fn prmt4(&mut self, src: [Src; 4], sel: [u8; 4]) -> SSAValue {
         let max_sel = *sel.iter().max().unwrap();
+        let [src0, src1, src2, src3] = src;
         if max_sel < 8 {
-            self.prmt(src[0], src[1], sel)
+            self.prmt(src0, src1, sel)
         } else if max_sel < 12 {
             let mut sel_a = [0_u8; 4];
             let mut sel_b = [0_u8; 4];
@@ -785,8 +786,8 @@ pub trait SSABuilder: Builder {
                     sel_b[usize::from(i)] = (sel[usize::from(i)] - 8) + 4;
                 }
             }
-            let a = self.prmt(src[0], src[1], sel_a);
-            self.prmt(a.into(), src[2], sel_b)
+            let a = self.prmt(src0, src1, sel_a);
+            self.prmt(a.into(), src2, sel_b)
         } else if max_sel < 16 {
             let mut sel_a = [0_u8; 4];
             let mut sel_b = [0_u8; 4];
@@ -800,8 +801,8 @@ pub trait SSABuilder: Builder {
                     sel_c[usize::from(i)] = 4 + i;
                 }
             }
-            let a = self.prmt(src[0], src[1], sel_a);
-            let b = self.prmt(src[2], src[3], sel_b);
+            let a = self.prmt(src0, src1, sel_a);
+            let b = self.prmt(src2, src3, sel_b);
             self.prmt(a.into(), b.into(), sel_c)
         } else {
             panic!("Invalid permute value: {max_sel}");
@@ -827,7 +828,7 @@ pub trait SSABuilder: Builder {
                 self.push_op(OpPSetP {
                     dsts: [tmp.into(), Dst::None],
                     ops: [PredSetOp::And, PredSetOp::And],
-                    srcs: [cond, x, true.into()],
+                    srcs: [cond.clone(), x, true.into()],
                 });
                 self.push_op(OpPSetP {
                     dsts: [dst.into(), Dst::None],

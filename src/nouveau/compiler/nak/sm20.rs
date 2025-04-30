@@ -231,7 +231,7 @@ impl SM20Encoder<'_> {
         self.set_field(range, reg.base_idx());
     }
 
-    fn set_pred_src(&mut self, range: Range<usize>, src: Src) {
+    fn set_pred_src(&mut self, range: Range<usize>, src: &Src) {
         let (not, reg) = match src.src_ref {
             SrcRef::True => (false, true_reg()),
             SrcRef::False => (true, true_reg()),
@@ -299,7 +299,7 @@ impl SM20Encoder<'_> {
         }
     }
 
-    fn set_reg_src(&mut self, range: Range<usize>, src: Src) {
+    fn set_reg_src(&mut self, range: Range<usize>, src: &Src) {
         assert!(src.src_swizzle.is_none());
         self.set_reg_src_ref(range, &src.src_ref);
     }
@@ -313,7 +313,7 @@ impl SM20Encoder<'_> {
         self.set_reg(range, reg);
     }
 
-    fn set_carry_in(&mut self, bit: usize, src: Src) {
+    fn set_carry_in(&mut self, bit: usize, src: &Src) {
         assert!(src.src_mod.is_none());
         match src.src_ref {
             SrcRef::Zero => self.set_bit(bit, false),
@@ -672,7 +672,7 @@ impl SM20Op for OpFMnMx {
         e.set_bit(7, self.srcs[0].src_mod.has_fabs());
         e.set_bit(8, self.srcs[1].src_mod.has_fneg());
         e.set_bit(9, self.srcs[0].src_mod.has_fneg());
-        e.set_pred_src(49..53, self.min);
+        e.set_pred_src(49..53, &self.min);
     }
 }
 
@@ -842,7 +842,7 @@ impl SM20Op for OpFSetP {
         e.set_bit(9, self.srcs[0].src_mod.has_fneg());
         e.set_pred_dst(14..17, &Dst::None);
         e.set_pred_dst(17..20, &self.dst);
-        e.set_pred_src(49..53, self.accum);
+        e.set_pred_src(49..53, &self.accum);
         e.set_pred_set_op(53..55, self.set_op);
         e.set_float_cmp_op(55..59, self.cmp_op);
         e.set_bit(59, self.ftz);
@@ -860,8 +860,8 @@ impl SM20Op for OpFSwz {
         e.set_opcode(SM20Unit::Float, 0x12);
 
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
 
         e.set_bit(5, self.ftz);
         e.set_field(
@@ -979,7 +979,7 @@ impl SM20Op for OpDMnMx {
         e.set_bit(7, self.srcs[0].src_mod.has_fabs());
         e.set_bit(8, self.srcs[1].src_mod.has_fneg());
         e.set_bit(9, self.srcs[0].src_mod.has_fneg());
-        e.set_pred_src(49..53, self.min);
+        e.set_pred_src(49..53, &self.min);
     }
 }
 
@@ -1035,7 +1035,7 @@ impl SM20Op for OpDSetP {
         e.set_bit(9, self.srcs[0].src_mod.has_fneg());
         e.set_pred_dst(14..17, &Dst::None);
         e.set_pred_dst(17..20, &self.dst);
-        e.set_pred_src(49..53, self.accum);
+        e.set_pred_src(49..53, &self.accum);
         e.set_pred_set_op(53..55, self.set_op);
         e.set_float_cmp_op(55..59, self.cmp_op);
     }
@@ -1159,7 +1159,7 @@ impl SM20Op for OpIAdd2X {
         }
 
         e.set_bit(5, false); // saturate
-        e.set_carry_in(6, self.carry_in);
+        e.set_carry_in(6, &self.carry_in);
         e.set_bit(8, self.srcs[1].src_mod.is_bnot());
         e.set_bit(9, self.srcs[0].src_mod.is_bnot());
     }
@@ -1306,7 +1306,7 @@ impl SM20Op for OpIMnMx {
                 IntCmpType::I32 => 1_u8,
             },
         );
-        e.set_pred_src(49..53, self.min);
+        e.set_pred_src(49..53, &self.min);
     }
 }
 
@@ -1338,7 +1338,7 @@ impl SM20Op for OpISetP {
         e.set_bit(6, self.ex);
         e.set_pred_dst(14..17, &Dst::None);
         e.set_pred_dst(17..20, &self.dst);
-        e.set_pred_src(49..53, self.accum);
+        e.set_pred_src(49..53, &self.accum);
         e.set_pred_set_op(53..55, self.set_op);
         e.set_int_cmp_op(55..58, self.cmp_op);
     }
@@ -1618,7 +1618,7 @@ impl SM20Op for OpSel {
             Some(&self.srcs[1]),
             None,
         );
-        e.set_pred_src(49..53, self.cond);
+        e.set_pred_src(49..53, &self.cond);
     }
 }
 
@@ -1637,14 +1637,14 @@ impl SM20Op for OpShfl {
         e.set_opcode(SM20Unit::Mem, 0x22);
         e.set_pred_dst2(8..10, 58..59, &self.in_bounds);
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.src);
+        e.set_reg_src(20..26, &self.src);
 
         assert!(self.lane.src_mod.is_none());
         if let Some(u) = self.lane.src_ref.as_u32() {
             e.set_field(26..32, u & 0x1f);
             e.set_bit(5, true);
         } else {
-            e.set_reg_src(26..32, self.lane);
+            e.set_reg_src(26..32, &self.lane);
             e.set_bit(5, false);
         }
 
@@ -1653,7 +1653,7 @@ impl SM20Op for OpShfl {
             e.set_field(42..55, u & 0x1fff);
             e.set_bit(6, true);
         } else {
-            e.set_reg_src(49..55, self.c);
+            e.set_reg_src(49..55, &self.c);
             e.set_bit(6, false);
         }
 
@@ -1679,10 +1679,10 @@ impl SM20Op for OpPSetP {
 
         e.set_pred_dst(14..17, &self.dsts[1]);
         e.set_pred_dst(17..20, &self.dsts[0]);
-        e.set_pred_src(20..24, self.srcs[0]);
-        e.set_pred_src(26..30, self.srcs[1]);
+        e.set_pred_src(20..24, &self.srcs[0]);
+        e.set_pred_src(26..30, &self.srcs[1]);
         e.set_pred_set_op(30..32, self.ops[0]);
-        e.set_pred_src(49..53, self.srcs[2]);
+        e.set_pred_src(49..53, &self.srcs[2]);
         e.set_pred_set_op(53..55, self.ops[1]);
     }
 }
@@ -1766,8 +1766,8 @@ impl SM20Op for OpTex {
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
         e.set_bit(54, self.offset);
@@ -1804,8 +1804,8 @@ impl SM20Op for OpTld {
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
         e.set_bit(54, self.offset);
@@ -1851,8 +1851,8 @@ impl SM20Op for OpTld4 {
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
         e.set_bit(45, false); // .ndv
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
@@ -1895,8 +1895,8 @@ impl SM20Op for OpTmml {
         e.set_bit(9, self.nodep);
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
     }
@@ -1929,8 +1929,8 @@ impl SM20Op for OpTxd {
         e.set_bit(9, self.nodep);
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
-        e.set_reg_src(20..26, self.srcs[0]);
-        e.set_reg_src(26..32, self.srcs[1]);
+        e.set_reg_src(20..26, &self.srcs[0]);
+        e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
         e.set_bit(54, self.offset);
@@ -1964,8 +1964,8 @@ impl SM20Op for OpTxq {
         e.set_bit(9, self.nodep);
         e.set_dst(14..20, &self.dsts[0]);
         assert!(self.dsts[1].is_none());
-        e.set_reg_src(20..26, self.src);
-        e.set_reg_src(26..32, 0.into());
+        e.set_reg_src(20..26, &self.src);
+        e.set_reg_src(26..32, &0.into());
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_field(
             54..57,
@@ -2061,7 +2061,7 @@ impl SM20Op for OpLd {
         e.set_mem_type(5..8, self.access.mem_type);
         // 8..9: cache hints (.ca, .cg, .lu, .cv)
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.addr);
+        e.set_reg_src(20..26, &self.addr);
     }
 }
 
@@ -2093,7 +2093,7 @@ impl SM20Op for OpLdc {
             },
         );
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.offset);
+        e.set_reg_src(20..26, &self.offset);
         e.set_field(26..42, cb.offset);
         e.set_field(42..47, cb_idx);
     }
@@ -2124,14 +2124,14 @@ impl SM20Op for OpSt {
         }
         e.set_mem_type(5..8, self.access.mem_type);
         // 8..9: cache hints (.ca, .cg, .lu, .cv)
-        e.set_reg_src(14..20, self.data);
-        e.set_reg_src(20..26, self.addr);
+        e.set_reg_src(14..20, &self.data);
+        e.set_reg_src(20..26, &self.addr);
     }
 }
 
 fn atom_src_as_ssa(
     b: &mut LegalizeBuilder,
-    src: Src,
+    src: &Src,
     atom_type: AtomType,
 ) -> SSARef {
     if let Some(ssa) = src.as_ssa() {
@@ -2154,8 +2154,8 @@ fn atom_src_as_ssa(
 impl SM20Op for OpAtom {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         if self.atom_op == AtomOp::CmpExch(AtomCmpSrc::Separate) {
-            let cmpr = atom_src_as_ssa(b, self.cmpr, self.atom_type);
-            let data = atom_src_as_ssa(b, self.data, self.atom_type);
+            let cmpr = atom_src_as_ssa(b, &self.cmpr, self.atom_type);
+            let data = atom_src_as_ssa(b, &self.data, self.atom_type);
 
             let mut cmpr_data = Vec::new();
             cmpr_data.extend_from_slice(&cmpr);
@@ -2214,8 +2214,8 @@ impl SM20Op for OpAtom {
         e.set_field(9..10, typ & 0x1);
         e.set_field(59..62, typ >> 1);
 
-        e.set_reg_src(20..26, self.addr);
-        e.set_reg_src(14..20, self.data);
+        e.set_reg_src(20..26, &self.addr);
+        e.set_reg_src(14..20, &self.data);
 
         if self.dst.is_none() {
             e.set_field(26..58, self.addr_offset);
@@ -2235,9 +2235,9 @@ impl SM20Op for OpAtom {
             let data_idx = cmpr_data.base_idx() + u32::from(data_comps);
             let data = RegRef::new(cmpr_data.file(), data_idx, data_comps);
 
-            e.set_reg_src(49..55, data.into());
+            e.set_reg_src(49..55, &data.into());
         } else if !self.dst.is_none() {
-            e.set_reg_src(49..55, 0.into());
+            e.set_reg_src(49..55, &0.into());
         }
     }
 }
@@ -2261,8 +2261,8 @@ impl SM20Op for OpALd {
         e.set_bit(9, self.output);
 
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.offset);
-        e.set_reg_src(26..32, self.vtx);
+        e.set_reg_src(20..26, &self.offset);
+        e.set_reg_src(26..32, &self.vtx);
         e.set_field(32..42, self.addr);
     }
 }
@@ -2279,10 +2279,10 @@ impl SM20Op for OpASt {
         e.set_bit(8, self.patch);
         assert!(!self.phys);
 
-        e.set_reg_src(20..26, self.offset);
-        e.set_reg_src(26..32, self.data);
+        e.set_reg_src(20..26, &self.offset);
+        e.set_reg_src(26..32, &self.data);
         e.set_field(32..42, self.addr);
-        e.set_reg_src(49..55, self.vtx);
+        e.set_reg_src(49..55, &self.vtx);
     }
 }
 
@@ -2313,9 +2313,9 @@ impl SM20Op for OpIpa {
             },
         );
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, 0.into()); // indirect
-        e.set_reg_src(26..32, self.inv_w);
-        e.set_reg_src(49..55, self.offset);
+        e.set_reg_src(20..26, &0.into()); // indirect
+        e.set_reg_src(26..32, &self.inv_w);
+        e.set_reg_src(49..55, &self.offset);
         e.set_field(32..42, self.addr);
     }
 }
@@ -2353,7 +2353,7 @@ impl SM20Op for OpCCtl {
             },
         );
         e.set_dst(14..20, &Dst::None);
-        e.set_reg_src(20..26, self.addr);
+        e.set_reg_src(20..26, &self.addr);
         e.set_field(26..28, 0); // 1: .u, 2: .c: 3: .i
 
         assert!(self.addr_offset % 4 == 0);
@@ -2501,11 +2501,11 @@ impl SM20Op for OpBar {
 
         e.set_field(5..7, 0_u8); // 0: .popc, 1: .and, 2: .or
         e.set_field(7..9, 0_u8); // 0: .sync, 1: .arv, 2: .red
-        e.set_reg_src(20..26, 0.into());
-        e.set_reg_src(26..32, 0.into());
+        e.set_reg_src(20..26, &0.into());
+        e.set_reg_src(26..32, &0.into());
         e.set_bit(46, false); // src1_is_imm
         e.set_bit(47, false); // src0_is_imm
-        e.set_pred_src(49..53, true.into());
+        e.set_pred_src(49..53, &true.into());
         e.set_pred_dst(53..56, &Dst::None);
     }
 }
@@ -2530,7 +2530,7 @@ impl SM20Op for OpIsberd {
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         e.set_opcode(SM20Unit::Tex, 0x0);
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, self.idx);
+        e.set_reg_src(20..26, &self.idx);
         e.set_field(26..42, 0_u16); // offset
     }
 }
@@ -2576,7 +2576,7 @@ impl SM20Op for OpPixLd {
             },
         );
         e.set_dst(14..20, &self.dst);
-        e.set_reg_src(20..26, 0.into());
+        e.set_reg_src(20..26, &0.into());
         e.set_field(26..34, 0_u16); // offset
         e.set_pred_dst(53..56, &Dst::None);
     }
@@ -2610,7 +2610,7 @@ impl SM20Op for OpVote {
             },
         );
         e.set_dst(14..20, &self.ballot);
-        e.set_pred_src(20..24, self.pred);
+        e.set_pred_src(20..24, &self.pred);
         e.set_pred_dst(54..57, &self.vote);
     }
 }

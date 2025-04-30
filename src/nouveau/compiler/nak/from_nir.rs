@@ -568,7 +568,7 @@ impl<'a> ShaderFromNir<'a> {
                     }
                     8 => {
                         for dc in 0..bits.div_ceil(32) {
-                            let mut psrc = [None; 4];
+                            let mut psrc = [None, None, None, None];
                             let mut psel = [0_u8; 4];
 
                             for b in 0..4 {
@@ -594,9 +594,9 @@ impl<'a> ShaderFromNir<'a> {
                             let psrc = {
                                 let mut res = [Src::ZERO; 4];
 
-                                for (idx, src) in psrc.iter().enumerate() {
+                                for (idx, src) in psrc.into_iter().enumerate() {
                                     if let Some(src) = src {
-                                        res[idx] = *src;
+                                        res[idx] = src;
                                     }
                                 }
 
@@ -620,7 +620,8 @@ impl<'a> ShaderFromNir<'a> {
                                     psel[w * 2 + 1] = (w as u8 * 4) + byte + 1;
                                 }
                             }
-                            comps.push(b.prmt(psrc[0], psrc[1], psel));
+                            let [psrc0, psrc1] = psrc;
+                            comps.push(b.prmt(psrc0, psrc1, psel));
                         }
                     }
                     _ => panic!("Unknown bit size: {src_bit_size}"),
@@ -1290,7 +1291,7 @@ impl<'a> ShaderFromNir<'a> {
                     let x = restrict_f16v2_src(src0);
 
                     let lz = restrict_f16v2_src(
-                        b.hset2(FloatCmpOp::OrdLt, x, 0.into()).into(),
+                        b.hset2(FloatCmpOp::OrdLt, x.clone(), 0.into()).into(),
                     );
                     let gz = restrict_f16v2_src(
                         b.hset2(FloatCmpOp::OrdGt, x, 0.into()).into(),

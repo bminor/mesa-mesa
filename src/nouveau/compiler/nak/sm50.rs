@@ -257,17 +257,17 @@ impl SM50Encoder<'_> {
         self.set_field(range, reg.base_idx());
     }
 
-    fn set_reg_src_ref(&mut self, range: Range<usize>, src_ref: SrcRef) {
+    fn set_reg_src_ref(&mut self, range: Range<usize>, src_ref: &SrcRef) {
         match src_ref {
             SrcRef::Zero => self.set_reg(range, zero_reg()),
-            SrcRef::Reg(reg) => self.set_reg(range, reg),
+            SrcRef::Reg(reg) => self.set_reg(range, *reg),
             _ => panic!("Not a register"),
         }
     }
 
-    fn set_reg_src(&mut self, range: Range<usize>, src: Src) {
+    fn set_reg_src(&mut self, range: Range<usize>, src: &Src) {
         assert!(src.src_mod.is_none());
-        self.set_reg_src_ref(range, src.src_ref);
+        self.set_reg_src_ref(range, &src.src_ref);
     }
 
     fn set_reg_fmod_src(
@@ -275,9 +275,9 @@ impl SM50Encoder<'_> {
         range: Range<usize>,
         abs_bit: usize,
         neg_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
-        self.set_reg_src_ref(range, src.src_ref);
+        self.set_reg_src_ref(range, &src.src_ref);
         self.set_bit(abs_bit, src.src_mod.has_fabs());
         self.set_bit(neg_bit, src.src_mod.has_fneg());
     }
@@ -286,9 +286,9 @@ impl SM50Encoder<'_> {
         &mut self,
         range: Range<usize>,
         neg_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
-        self.set_reg_src_ref(range, src.src_ref);
+        self.set_reg_src_ref(range, &src.src_ref);
         self.set_bit(neg_bit, src.src_mod.is_ineg());
     }
 
@@ -296,9 +296,9 @@ impl SM50Encoder<'_> {
         &mut self,
         range: Range<usize>,
         not_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
-        self.set_reg_src_ref(range, src.src_ref);
+        self.set_reg_src_ref(range, &src.src_ref);
         self.set_bit(not_bit, src.src_mod.is_bnot());
     }
 
@@ -312,7 +312,7 @@ impl SM50Encoder<'_> {
         }
     }
 
-    fn set_pred_src(&mut self, range: Range<usize>, not_bit: usize, src: Src) {
+    fn set_pred_src(&mut self, range: Range<usize>, not_bit: usize, src: &Src) {
         let (not, reg) = match src.src_ref {
             SrcRef::True => (false, true_reg()),
             SrcRef::False => (true, true_reg()),
@@ -381,7 +381,7 @@ impl SM50Encoder<'_> {
         range: Range<usize>,
         abs_bit: usize,
         neg_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
         if let SrcRef::CBuf(cb) = &src.src_ref {
             self.set_src_cb(range, cb);
@@ -397,7 +397,7 @@ impl SM50Encoder<'_> {
         &mut self,
         range: Range<usize>,
         neg_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
         if let SrcRef::CBuf(cb) = &src.src_ref {
             self.set_src_cb(range, cb);
@@ -412,7 +412,7 @@ impl SM50Encoder<'_> {
         &mut self,
         range: Range<usize>,
         not_bit: usize,
-        src: Src,
+        src: &Src,
     ) {
         if let SrcRef::CBuf(cb) = &src.src_ref {
             self.set_src_cb(range, cb);
@@ -502,7 +502,7 @@ impl SM50Op for OpFAdd {
         if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
             e.set_opcode(0x0800);
             e.set_dst(&self.dst);
-            e.set_reg_fmod_src(8..16, 54, 56, self.srcs[0]);
+            e.set_reg_fmod_src(8..16, 54, 56, &self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
             assert!(self.rnd_mode == FRndMode::NearestEven);
             e.set_bit(55, self.ftz);
@@ -510,7 +510,7 @@ impl SM50Op for OpFAdd {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c58);
-                    e.set_reg_fmod_src(20..28, 49, 45, self.srcs[1]);
+                    e.set_reg_fmod_src(20..28, 49, 45, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3858);
@@ -519,13 +519,13 @@ impl SM50Op for OpFAdd {
                 }
                 SrcRef::CBuf(_) => {
                     e.set_opcode(0x4c58);
-                    e.set_cb_fmod_src(20..39, 49, 45, self.srcs[1]);
+                    e.set_cb_fmod_src(20..39, 49, 45, &self.srcs[1]);
                 }
                 src => panic!("Invalid fadd src1: {src}"),
             }
 
             e.set_dst(&self.dst);
-            e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
+            e.set_reg_fmod_src(8..16, 46, 48, &self.srcs[0]);
 
             e.set_rnd_mode(39..41, self.rnd_mode);
             e.set_bit(44, self.ftz);
@@ -567,7 +567,7 @@ impl SM50Op for OpFFma {
                 match &self.srcs[1].src_ref {
                     SrcRef::Zero | SrcRef::Reg(_) => {
                         e.set_opcode(0x5980);
-                        e.set_reg_src_ref(20..28, self.srcs[1].src_ref);
+                        e.set_reg_src_ref(20..28, &self.srcs[1].src_ref);
                     }
                     SrcRef::Imm32(imm32) => {
                         e.set_opcode(0x3280);
@@ -584,18 +584,18 @@ impl SM50Op for OpFFma {
                     src => panic!("Invalid ffma src1: {src}"),
                 }
 
-                e.set_reg_src_ref(39..47, self.srcs[2].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[2].src_ref);
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x5180);
                 e.set_src_cb(20..39, cb);
-                e.set_reg_src_ref(39..47, self.srcs[1].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[1].src_ref);
             }
             src => panic!("Invalid ffma src2: {src}"),
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
+        e.set_reg_src_ref(8..16, &self.srcs[0].src_ref);
 
         e.set_bit(48, fneg_fmul);
         e.set_bit(49, fneg_src2);
@@ -620,7 +620,7 @@ impl SM50Op for OpFMnMx {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c60);
-                e.set_reg_fmod_src(20..28, 49, 45, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3860);
@@ -629,14 +629,14 @@ impl SM50Op for OpFMnMx {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4c60);
-                e.set_cb_fmod_src(20..39, 49, 45, self.srcs[1]);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.srcs[1]);
             }
             src => panic!("Invalid fmnmx src2: {src}"),
         }
 
-        e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
+        e.set_reg_fmod_src(8..16, 46, 48, &self.srcs[0]);
         e.set_dst(&self.dst);
-        e.set_pred_src(39..42, 42, self.min);
+        e.set_pred_src(39..42, 42, &self.min);
         e.set_bit(44, self.ftz);
     }
 }
@@ -684,7 +684,7 @@ impl SM50Op for OpFMul {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c68);
-                    e.set_reg_src(20..28, self.srcs[1]);
+                    e.set_reg_src(20..28, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3868);
@@ -705,7 +705,7 @@ impl SM50Op for OpFMul {
             e.set_bit(50, self.saturate);
         }
 
-        e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
+        e.set_reg_src_ref(8..16, &self.srcs[0].src_ref);
         e.set_dst(&self.dst);
     }
 }
@@ -720,7 +720,7 @@ impl SM50Op for OpRro {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c90);
-                e.set_reg_fmod_src(20..28, 49, 45, self.src);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3890);
@@ -729,7 +729,7 @@ impl SM50Op for OpRro {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4c90);
-                e.set_cb_fmod_src(20..39, 49, 45, self.src);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.src);
             }
             src => panic!("Invalid rro src: {src}"),
         }
@@ -754,7 +754,7 @@ impl SM50Op for OpMuFu {
         e.set_opcode(0x5080);
 
         e.set_dst(&self.dst);
-        e.set_reg_fmod_src(8..16, 46, 48, self.src);
+        e.set_reg_fmod_src(8..16, 46, 48, &self.src);
 
         e.set_field(
             20..24,
@@ -845,7 +845,7 @@ impl SM50Op for OpFSet {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5800);
-                e.set_reg_fmod_src(20..28, 44, 53, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 44, 53, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3000);
@@ -854,13 +854,13 @@ impl SM50Op for OpFSet {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4800);
-                e.set_cb_fmod_src(20..39, 44, 6, self.srcs[1]);
+                e.set_cb_fmod_src(20..39, 44, 6, &self.srcs[1]);
             }
             src => panic!("Invalid fset src1: {src}"),
         }
 
-        e.set_reg_fmod_src(8..16, 54, 43, self.srcs[0]);
-        e.set_pred_src(39..42, 42, SrcRef::True.into());
+        e.set_reg_fmod_src(8..16, 54, 43, &self.srcs[0]);
+        e.set_pred_src(39..42, 42, &SrcRef::True.into());
         e.set_float_cmp_op(48..52, self.cmp_op);
         e.set_bit(52, true); // bool float
         e.set_bit(55, self.ftz);
@@ -883,7 +883,7 @@ impl SM50Op for OpFSetP {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5bb0);
-                e.set_reg_fmod_src(20..28, 44, 6, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 44, 6, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x36b0);
@@ -892,15 +892,15 @@ impl SM50Op for OpFSetP {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4bb0);
-                e.set_cb_fmod_src(20..39, 44, 6, self.srcs[1]);
+                e.set_cb_fmod_src(20..39, 44, 6, &self.srcs[1]);
             }
             src => panic!("Invalid fsetp src1: {src}"),
         }
 
         e.set_pred_dst(3..6, &self.dst);
         e.set_pred_dst(0..3, &Dst::None); // dst1
-        e.set_reg_fmod_src(8..16, 7, 43, self.srcs[0]);
-        e.set_pred_src(39..42, 42, self.accum);
+        e.set_reg_fmod_src(8..16, 7, 43, &self.srcs[0]);
+        e.set_pred_src(39..42, 42, &self.accum);
         e.set_pred_set_op(45..47, self.set_op);
         e.set_bit(47, self.ftz);
         e.set_float_cmp_op(48..52, self.cmp_op);
@@ -918,8 +918,8 @@ impl SM50Op for OpFSwzAdd {
         e.set_opcode(0x50f8);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_field(
             39..41,
@@ -962,7 +962,7 @@ impl SM50Op for OpDAdd {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c70);
-                e.set_reg_fmod_src(20..28, 49, 45, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3870);
@@ -971,13 +971,13 @@ impl SM50Op for OpDAdd {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4c70);
-                e.set_cb_fmod_src(20..39, 49, 45, self.srcs[1]);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.srcs[1]);
             }
             src => panic!("Invalid dadd src1: {src}"),
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
+        e.set_reg_fmod_src(8..16, 46, 48, &self.srcs[0]);
         e.set_rnd_mode(39..41, self.rnd_mode);
     }
 }
@@ -1015,7 +1015,7 @@ impl SM50Op for OpDFma {
                 match &self.srcs[1].src_ref {
                     SrcRef::Zero | SrcRef::Reg(_) => {
                         e.set_opcode(0x5b70);
-                        e.set_reg_src_ref(20..28, self.srcs[1].src_ref);
+                        e.set_reg_src_ref(20..28, &self.srcs[1].src_ref);
                     }
                     SrcRef::Imm32(imm32) => {
                         e.set_opcode(0x3670);
@@ -1028,18 +1028,18 @@ impl SM50Op for OpDFma {
                     src => panic!("Invalid dfma src1: {src}"),
                 }
 
-                e.set_reg_src_ref(39..47, self.srcs[2].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[2].src_ref);
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x5370);
                 e.set_src_cb(20..39, cb);
-                e.set_reg_src_ref(39..47, self.srcs[1].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[1].src_ref);
             }
             src => panic!("Invalid dfma src2: {src}"),
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
+        e.set_reg_src_ref(8..16, &self.srcs[0].src_ref);
 
         e.set_bit(48, fneg_fmul);
         e.set_bit(49, fneg_src2);
@@ -1061,7 +1061,7 @@ impl SM50Op for OpDMnMx {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c50);
-                e.set_reg_fmod_src(20..28, 49, 45, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3850);
@@ -1070,14 +1070,14 @@ impl SM50Op for OpDMnMx {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4c50);
-                e.set_cb_fmod_src(20..39, 49, 45, self.srcs[1]);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.srcs[1]);
             }
             src => panic!("Invalid dmnmx src1: {src}"),
         }
 
-        e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
+        e.set_reg_fmod_src(8..16, 46, 48, &self.srcs[0]);
         e.set_dst(&self.dst);
-        e.set_pred_src(39..42, 42, self.min);
+        e.set_pred_src(39..42, 42, &self.min);
     }
 }
 
@@ -1103,7 +1103,7 @@ impl SM50Op for OpDMul {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c80);
-                e.set_reg_src_ref(20..28, self.srcs[1].src_ref);
+                e.set_reg_src_ref(20..28, &self.srcs[1].src_ref);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3880);
@@ -1117,7 +1117,7 @@ impl SM50Op for OpDMul {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
+        e.set_reg_src_ref(8..16, &self.srcs[0].src_ref);
 
         e.set_rnd_mode(39..41, self.rnd_mode);
         e.set_bit(48, fneg);
@@ -1139,7 +1139,7 @@ impl SM50Op for OpDSetP {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5b80);
-                e.set_reg_fmod_src(20..28, 44, 6, self.srcs[1]);
+                e.set_reg_fmod_src(20..28, 44, 6, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3680);
@@ -1148,17 +1148,17 @@ impl SM50Op for OpDSetP {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4b80);
-                e.set_reg_fmod_src(20..39, 44, 6, self.srcs[1]);
+                e.set_reg_fmod_src(20..39, 44, 6, &self.srcs[1]);
             }
             src => panic!("Invalid dsetp src1: {src}"),
         }
 
         e.set_pred_dst(3..6, &self.dst);
         e.set_pred_dst(0..3, &Dst::None); // dst1
-        e.set_pred_src(39..42, 42, self.accum);
+        e.set_pred_src(39..42, 42, &self.accum);
         e.set_pred_set_op(45..47, self.set_op);
         e.set_float_cmp_op(48..52, self.cmp_op);
-        e.set_reg_fmod_src(8..16, 7, 43, self.srcs[0]);
+        e.set_reg_fmod_src(8..16, 7, 43, &self.srcs[0]);
     }
 }
 
@@ -1172,7 +1172,7 @@ impl SM50Op for OpBfe {
         match &self.range.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c00);
-                e.set_reg_src(20..28, self.range);
+                e.set_reg_src(20..28, &self.range);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3800);
@@ -1194,7 +1194,7 @@ impl SM50Op for OpBfe {
             e.set_bit(40, true);
         }
 
-        e.set_reg_src(8..16, self.base);
+        e.set_reg_src(8..16, &self.base);
         e.set_dst(&self.dst);
     }
 }
@@ -1209,7 +1209,7 @@ impl SM50Op for OpFlo {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c30);
-                e.set_reg_src_ref(20..28, self.src.src_ref);
+                e.set_reg_src_ref(20..28, &self.src.src_ref);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3830);
@@ -1263,7 +1263,7 @@ impl SM50Op for OpIAdd2 {
             e.set_opcode(0x1c00);
 
             e.set_dst(&self.dst);
-            e.set_reg_ineg_src(8..16, 56, self.srcs[0]);
+            e.set_reg_ineg_src(8..16, 56, &self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
 
             e.set_bit(52, carry_out);
@@ -1272,7 +1272,7 @@ impl SM50Op for OpIAdd2 {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c10);
-                    e.set_reg_ineg_src(20..28, 48, self.srcs[1]);
+                    e.set_reg_ineg_src(20..28, 48, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3810);
@@ -1281,13 +1281,13 @@ impl SM50Op for OpIAdd2 {
                 }
                 SrcRef::CBuf(_) => {
                     e.set_opcode(0x4c10);
-                    e.set_cb_ineg_src(20..39, 48, self.srcs[1]);
+                    e.set_cb_ineg_src(20..39, 48, &self.srcs[1]);
                 }
                 src => panic!("Invalid iadd src1: {src}"),
             }
 
             e.set_dst(&self.dst);
-            e.set_reg_ineg_src(8..16, 49, self.srcs[0]);
+            e.set_reg_ineg_src(8..16, 49, &self.srcs[0]);
 
             e.set_bit(43, false); // .X
             e.set_bit(47, carry_out);
@@ -1319,7 +1319,7 @@ impl SM50Op for OpIAdd2X {
             e.set_opcode(0x1c00);
 
             e.set_dst(&self.dst);
-            e.set_reg_bnot_src(8..16, 56, self.srcs[0]);
+            e.set_reg_bnot_src(8..16, 56, &self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
 
             e.set_bit(52, carry_out);
@@ -1328,7 +1328,7 @@ impl SM50Op for OpIAdd2X {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c10);
-                    e.set_reg_bnot_src(20..28, 48, self.srcs[1]);
+                    e.set_reg_bnot_src(20..28, 48, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3810);
@@ -1337,13 +1337,13 @@ impl SM50Op for OpIAdd2X {
                 }
                 SrcRef::CBuf(_) => {
                     e.set_opcode(0x4c10);
-                    e.set_cb_bnot_src(20..39, 48, self.srcs[1]);
+                    e.set_cb_bnot_src(20..39, 48, &self.srcs[1]);
                 }
                 src => panic!("Invalid iadd.x src1: {src}"),
             }
 
             e.set_dst(&self.dst);
-            e.set_reg_bnot_src(8..16, 49, self.srcs[0]);
+            e.set_reg_bnot_src(8..16, 49, &self.srcs[0]);
 
             e.set_bit(43, true); // .X
             e.set_bit(47, carry_out);
@@ -1376,7 +1376,7 @@ impl SM50Op for OpIMad {
                 match &self.srcs[1].src_ref {
                     SrcRef::Zero | SrcRef::Reg(_) => {
                         e.set_opcode(0x5a00);
-                        e.set_reg_src_ref(20..28, self.srcs[1].src_ref);
+                        e.set_reg_src_ref(20..28, &self.srcs[1].src_ref);
                     }
                     SrcRef::Imm32(imm32) => {
                         e.set_opcode(0x3400);
@@ -1389,18 +1389,18 @@ impl SM50Op for OpIMad {
                     src => panic!("Invalid imad src1: {src}"),
                 }
 
-                e.set_reg_src_ref(39..47, self.srcs[2].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[2].src_ref);
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x5200);
                 e.set_src_cb(20..39, cb);
-                e.set_reg_src_ref(39..47, self.srcs[1].src_ref);
+                e.set_reg_src_ref(39..47, &self.srcs[1].src_ref);
             }
             src => panic!("Invalid imad src2: {src}"),
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
+        e.set_reg_src(8..16, &self.srcs[0]);
 
         e.set_bit(48, self.signed); // src0 signed
         e.set_bit(51, ineg_imul);
@@ -1434,7 +1434,7 @@ impl SM50Op for OpIMul {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c38);
-                    e.set_reg_src(20..28, self.srcs[1]);
+                    e.set_reg_src(20..28, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3838);
@@ -1453,7 +1453,7 @@ impl SM50Op for OpIMul {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
+        e.set_reg_src(8..16, &self.srcs[0]);
     }
 }
 
@@ -1470,7 +1470,7 @@ impl SM50Op for OpIMnMx {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c20);
-                e.set_reg_src(20..28, self.srcs[1]);
+                e.set_reg_src(20..28, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3820);
@@ -1485,8 +1485,8 @@ impl SM50Op for OpIMnMx {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_pred_src(39..42, 42, self.min);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_pred_src(39..42, 42, &self.min);
         e.set_bit(47, false); // .CC
         e.set_bit(
             48,
@@ -1513,7 +1513,7 @@ impl SM50Op for OpISetP {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5b60);
-                e.set_reg_src(20..28, self.srcs[1]);
+                e.set_reg_src(20..28, &self.srcs[1]);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3660);
@@ -1529,8 +1529,8 @@ impl SM50Op for OpISetP {
 
         e.set_pred_dst(0..3, &Dst::None); // dst1
         e.set_pred_dst(3..6, &self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_pred_src(39..42, 42, self.accum);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_pred_src(39..42, 42, &self.accum);
 
         // isetp.x seems to take the accumulator into account and we don't fully
         // understand how.  Until we do, disallow it.
@@ -1570,7 +1570,7 @@ impl SM50Op for OpLop2 {
             e.set_opcode(0x0400);
 
             e.set_dst(&self.dst);
-            e.set_reg_bnot_src(8..16, 55, self.srcs[0]);
+            e.set_reg_bnot_src(8..16, 55, &self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
             e.set_field(
                 53..55,
@@ -1588,7 +1588,7 @@ impl SM50Op for OpLop2 {
             match &self.srcs[1].src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x5c40);
-                    e.set_reg_bnot_src(20..28, 40, self.srcs[1]);
+                    e.set_reg_bnot_src(20..28, 40, &self.srcs[1]);
                 }
                 SrcRef::Imm32(imm32) => {
                     e.set_opcode(0x3840);
@@ -1597,13 +1597,13 @@ impl SM50Op for OpLop2 {
                 }
                 SrcRef::CBuf(_) => {
                     e.set_opcode(0x4c40);
-                    e.set_cb_bnot_src(20..39, 40, self.srcs[1]);
+                    e.set_cb_bnot_src(20..39, 40, &self.srcs[1]);
                 }
                 src => panic!("Invalid lop2 src1: {src}"),
             }
 
             e.set_dst(&self.dst);
-            e.set_reg_bnot_src(8..16, 39, self.srcs[0]);
+            e.set_reg_bnot_src(8..16, 39, &self.srcs[0]);
 
             e.set_field(
                 41..43,
@@ -1630,7 +1630,7 @@ impl SM50Op for OpPopC {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c08);
-                e.set_reg_bnot_src(20..28, 40, self.src);
+                e.set_reg_bnot_src(20..28, 40, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3808);
@@ -1639,7 +1639,7 @@ impl SM50Op for OpPopC {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4c08);
-                e.set_cb_bnot_src(20..39, 40, self.src);
+                e.set_cb_bnot_src(20..39, 40, &self.src);
             }
             src => panic!("Invalid popc src1: {src}"),
         }
@@ -1661,7 +1661,7 @@ impl SM50Op for OpShf {
         match &self.shift.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(if self.right { 0x5cf8 } else { 0x5bf8 });
-                e.set_reg_src(20..28, self.shift);
+                e.set_reg_src(20..28, &self.shift);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(if self.right { 0x38f8 } else { 0x36f8 });
@@ -1683,8 +1683,8 @@ impl SM50Op for OpShf {
         );
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.low);
-        e.set_reg_src(39..47, self.high);
+        e.set_reg_src(8..16, &self.low);
+        e.set_reg_src(39..47, &self.high);
 
         e.set_bit(47, false); // .CC
 
@@ -1708,11 +1708,11 @@ impl SM50Op for OpShl {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.src);
+        e.set_reg_src(8..16, &self.src);
         match &self.shift.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c48);
-                e.set_reg_src(20..28, self.shift);
+                e.set_reg_src(20..28, &self.shift);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3848);
@@ -1738,11 +1738,11 @@ impl SM50Op for OpShr {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.src);
+        e.set_reg_src(8..16, &self.src);
         match &self.shift.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c28);
-                e.set_reg_src(20..28, self.shift);
+                e.set_reg_src(20..28, &self.shift);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x3828);
@@ -1770,7 +1770,7 @@ impl SM50Op for OpF2F {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5ca8);
-                e.set_reg_fmod_src(20..28, 49, 45, self.src);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x38a8);
@@ -1779,7 +1779,7 @@ impl SM50Op for OpF2F {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4ca8);
-                e.set_cb_fmod_src(20..39, 49, 45, self.src);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.src);
             }
             src => panic!("Invalid f2f src: {src}"),
         }
@@ -1812,7 +1812,7 @@ impl SM50Op for OpF2I {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5cb0);
-                e.set_reg_fmod_src(20..28, 49, 45, self.src);
+                e.set_reg_fmod_src(20..28, 49, 45, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x38b0);
@@ -1821,7 +1821,7 @@ impl SM50Op for OpF2I {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4cb0);
-                e.set_cb_fmod_src(20..39, 49, 45, self.src);
+                e.set_cb_fmod_src(20..39, 49, 45, &self.src);
             }
             src => panic!("Invalid f2i src: {src}"),
         }
@@ -1853,7 +1853,7 @@ impl SM50Op for OpI2F {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5cb8);
-                e.set_reg_ineg_src(20..28, 45, self.src);
+                e.set_reg_ineg_src(20..28, 45, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x38b8);
@@ -1862,7 +1862,7 @@ impl SM50Op for OpI2F {
             }
             SrcRef::CBuf(_) => {
                 e.set_opcode(0x4cb8);
-                e.set_cb_ineg_src(20..39, 45, self.src);
+                e.set_cb_ineg_src(20..39, 45, &self.src);
             }
             src => panic!("Invalid i2f src: {src}"),
         }
@@ -1894,7 +1894,7 @@ impl SM50Op for OpI2I {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5ce0);
-                e.set_reg_src(20..28, self.src);
+                e.set_reg_src(20..28, &self.src);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x38e0);
@@ -1936,7 +1936,7 @@ impl SM50Op for OpMov {
         match &self.src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5c98);
-                e.set_reg_src(20..28, self.src);
+                e.set_reg_src(20..28, &self.src);
                 e.set_field(39..43, self.quad_lanes);
             }
             SrcRef::Imm32(imm32) => {
@@ -1967,7 +1967,7 @@ impl SM50Op for OpPrmt {
         match &self.sel.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5bc0);
-                e.set_reg_src(20..28, self.sel);
+                e.set_reg_src(20..28, &self.sel);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x36c0);
@@ -1982,8 +1982,8 @@ impl SM50Op for OpPrmt {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(39..47, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(39..47, &self.srcs[1]);
         e.set_field(
             48..51,
             match self.mode {
@@ -2014,7 +2014,7 @@ impl SM50Op for OpSel {
         match &self.srcs[1].src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x5ca0);
-                e.set_reg_src_ref(20..28, self.srcs[1].src_ref);
+                e.set_reg_src_ref(20..28, &self.srcs[1].src_ref);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x38a0);
@@ -2028,8 +2028,8 @@ impl SM50Op for OpSel {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_pred_src(39..42, 42, self.cond);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_pred_src(39..42, 42, &self.cond);
     }
 }
 
@@ -2046,12 +2046,12 @@ impl SM50Op for OpShfl {
 
         e.set_dst(&self.dst);
         e.set_pred_dst(48..51, &self.in_bounds);
-        e.set_reg_src(8..16, self.src);
+        e.set_reg_src(8..16, &self.src);
 
         match &self.lane.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_bit(28, false);
-                e.set_reg_src(20..28, self.lane);
+                e.set_reg_src(20..28, &self.lane);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_bit(28, true);
@@ -2062,7 +2062,7 @@ impl SM50Op for OpShfl {
         match &self.c.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_bit(29, false);
-                e.set_reg_src(39..47, self.c);
+                e.set_reg_src(39..47, &self.c);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_bit(29, true);
@@ -2094,9 +2094,9 @@ impl SM50Op for OpPSetP {
         e.set_pred_dst(3..6, &self.dsts[0]);
         e.set_pred_dst(0..3, &self.dsts[1]);
 
-        e.set_pred_src(12..15, 15, self.srcs[0]);
-        e.set_pred_src(29..32, 32, self.srcs[1]);
-        e.set_pred_src(39..42, 42, self.srcs[2]);
+        e.set_pred_src(12..15, 15, &self.srcs[0]);
+        e.set_pred_src(29..32, 32, &self.srcs[1]);
+        e.set_pred_src(39..42, 42, &self.srcs[2]);
 
         e.set_pred_set_op(24..26, self.ops[0]);
         e.set_pred_set_op(45..47, self.ops[1]);
@@ -2180,8 +2180,8 @@ impl SM50Op for OpTex {
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
@@ -2213,8 +2213,8 @@ impl SM50Op for OpTld {
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
@@ -2261,8 +2261,8 @@ impl SM50Op for OpTld4 {
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
@@ -2293,8 +2293,8 @@ impl SM50Op for OpTmml {
 
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
@@ -2325,8 +2325,8 @@ impl SM50Op for OpTxd {
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
-        e.set_reg_src(8..16, self.srcs[0]);
-        e.set_reg_src(20..28, self.srcs[1]);
+        e.set_reg_src(8..16, &self.srcs[0]);
+        e.set_reg_src(20..28, &self.srcs[1]);
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
@@ -2356,7 +2356,7 @@ impl SM50Op for OpTxq {
 
         e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
-        e.set_reg_src(8..16, self.src);
+        e.set_reg_src(8..16, &self.src);
 
         e.set_field(
             22..28,
@@ -2477,8 +2477,8 @@ impl SM50Op for OpSuLd {
 
         e.set_dst(&self.dst);
 
-        e.set_reg_src(8..16, self.coord);
-        e.set_reg_src(39..47, self.handle);
+        e.set_reg_src(8..16, &self.coord);
+        e.set_reg_src(39..47, &self.handle);
     }
 }
 
@@ -2501,9 +2501,9 @@ impl SM50Op for OpSuSt {
             }
         }
 
-        e.set_reg_src(8..16, self.coord);
-        e.set_reg_src(0..8, self.data);
-        e.set_reg_src(39..47, self.handle);
+        e.set_reg_src(8..16, &self.coord);
+        e.set_reg_src(0..8, &self.data);
+        e.set_reg_src(39..47, &self.handle);
 
         e.set_image_dim(33..36, self.image_dim);
         e.set_mem_order(&self.mem_order);
@@ -2566,9 +2566,9 @@ impl SM50Op for OpSuAtom {
 
         e.set_dst(&self.dst);
 
-        e.set_reg_src(20..28, self.data);
-        e.set_reg_src(8..16, self.coord);
-        e.set_reg_src(39..47, self.handle);
+        e.set_reg_src(20..28, &self.data);
+        e.set_reg_src(8..16, &self.coord);
+        e.set_reg_src(39..47, &self.handle);
     }
 }
 
@@ -2585,7 +2585,7 @@ impl SM50Op for OpLd {
         });
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.addr);
+        e.set_reg_src(8..16, &self.addr);
         e.set_field(20..44, self.offset);
 
         e.set_mem_access(&self.access);
@@ -2610,7 +2610,7 @@ impl SM50Op for OpLdc {
         e.set_opcode(0xef90);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.offset);
+        e.set_reg_src(8..16, &self.offset);
         e.set_field(20..36, cb.offset);
         e.set_field(36..41, cb_idx);
         e.set_field(
@@ -2638,8 +2638,8 @@ impl SM50Op for OpSt {
             MemSpace::Shared => 0xef58,
         });
 
-        e.set_reg_src(0..8, self.data);
-        e.set_reg_src(8..16, self.addr);
+        e.set_reg_src(0..8, &self.data);
+        e.set_reg_src(8..16, &self.addr);
         e.set_field(20..44, self.offset);
         e.set_mem_access(&self.access);
     }
@@ -2647,7 +2647,7 @@ impl SM50Op for OpSt {
 
 fn atom_src_as_ssa(
     b: &mut LegalizeBuilder,
-    src: Src,
+    src: &Src,
     atom_type: AtomType,
 ) -> SSARef {
     if let Some(ssa) = src.as_ssa() {
@@ -2670,8 +2670,8 @@ fn atom_src_as_ssa(
 impl SM50Op for OpAtom {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         if self.atom_op == AtomOp::CmpExch(AtomCmpSrc::Separate) {
-            let cmpr = atom_src_as_ssa(b, self.cmpr, self.atom_type);
-            let data = atom_src_as_ssa(b, self.data, self.atom_type);
+            let cmpr = atom_src_as_ssa(b, &self.cmpr, self.atom_type);
+            let data = atom_src_as_ssa(b, &self.data, self.atom_type);
 
             let mut cmpr_data = Vec::new();
             cmpr_data.extend_from_slice(&cmpr);
@@ -2691,7 +2691,7 @@ impl SM50Op for OpAtom {
                 if self.dst.is_none() {
                     e.set_opcode(0xebf8);
 
-                    e.set_reg_src(0..8, self.data);
+                    e.set_reg_src(0..8, &self.data);
 
                     let data_type = match self.atom_type {
                         AtomType::U32 => 0_u8,
@@ -2715,13 +2715,13 @@ impl SM50Op for OpAtom {
                     let (data_src, data_layout) = match cmp_src {
                         AtomCmpSrc::Separate => {
                             if self.data.is_zero() {
-                                (self.cmpr, 1_u8)
+                                (&self.cmpr, 1_u8)
                             } else {
                                 assert!(self.cmpr.is_zero());
-                                (self.data, 2_u8)
+                                (&self.data, 2_u8)
                             }
                         }
-                        AtomCmpSrc::Packed => (self.data, 0_u8),
+                        AtomCmpSrc::Packed => (&self.data, 0_u8),
                     };
                     e.set_reg_src(20..28, data_src);
 
@@ -2737,7 +2737,7 @@ impl SM50Op for OpAtom {
                     e.set_opcode(0xed00);
 
                     e.set_dst(&self.dst);
-                    e.set_reg_src(20..28, self.data);
+                    e.set_reg_src(20..28, &self.data);
 
                     let data_type = match self.atom_type {
                         AtomType::U32 => 0_u8,
@@ -2754,7 +2754,7 @@ impl SM50Op for OpAtom {
 
                 e.set_mem_order(&self.mem_order);
 
-                e.set_reg_src(8..16, self.addr);
+                e.set_reg_src(8..16, &self.addr);
                 e.set_field(28..48, self.addr_offset);
                 e.set_field(
                     48..49,
@@ -2771,7 +2771,7 @@ impl SM50Op for OpAtom {
 
                     assert!(cmp_src == AtomCmpSrc::Packed);
                     assert!(self.cmpr.is_zero());
-                    e.set_reg_src(20..28, self.data);
+                    e.set_reg_src(20..28, &self.data);
 
                     let subop = match self.atom_type {
                         AtomType::U32 => 4_u8,
@@ -2782,7 +2782,7 @@ impl SM50Op for OpAtom {
                 } else {
                     e.set_opcode(0xec00);
 
-                    e.set_reg_src(20..28, self.data);
+                    e.set_reg_src(20..28, &self.data);
 
                     let data_type = match self.atom_type {
                         AtomType::U32 => 0_u8,
@@ -2801,7 +2801,7 @@ impl SM50Op for OpAtom {
                 }
 
                 e.set_dst(&self.dst);
-                e.set_reg_src(8..16, self.addr);
+                e.set_reg_src(8..16, &self.addr);
                 assert_eq!(self.addr_offset % 4, 0);
                 e.set_field(30..52, self.addr_offset / 4);
             }
@@ -2818,7 +2818,7 @@ impl SM50Op for OpAL2P {
         e.set_opcode(0xefa0);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.offset);
+        e.set_reg_src(8..16, &self.offset);
 
         e.set_field(20..31, self.addr);
         e.set_bit(32, self.output);
@@ -2843,8 +2843,8 @@ impl SM50Op for OpALd {
         } else if !self.patch {
             assert!(self.offset.is_zero());
         }
-        e.set_reg_src(8..16, self.offset);
-        e.set_reg_src(39..47, self.vtx);
+        e.set_reg_src(8..16, &self.offset);
+        e.set_reg_src(39..47, &self.vtx);
 
         e.set_field(20..30, self.addr);
         e.set_bit(31, self.patch);
@@ -2861,9 +2861,9 @@ impl SM50Op for OpASt {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xeff0);
 
-        e.set_reg_src(0..8, self.data);
-        e.set_reg_src(8..16, self.offset);
-        e.set_reg_src(39..47, self.vtx);
+        e.set_reg_src(0..8, &self.data);
+        e.set_reg_src(8..16, &self.offset);
+        e.set_reg_src(39..47, &self.vtx);
 
         assert!(!self.phys);
         e.set_field(20..30, self.addr);
@@ -2882,9 +2882,9 @@ impl SM50Op for OpIpa {
         e.set_opcode(0xe000);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, 0.into()); // addr
-        e.set_reg_src(20..28, self.inv_w);
-        e.set_reg_src(39..47, self.offset);
+        e.set_reg_src(8..16, &0.into()); // addr
+        e.set_reg_src(20..28, &self.inv_w);
+        e.set_reg_src(39..47, &self.offset);
 
         assert!(self.addr % 4 == 0);
         e.set_field(28..38, self.addr);
@@ -2955,7 +2955,7 @@ impl SM50Op for OpCCtl {
                 op => panic!("Unsupported cache control {op:?}"),
             },
         );
-        e.set_reg_src(8..16, self.addr);
+        e.set_reg_src(8..16, &self.addr);
     }
 }
 
@@ -3095,7 +3095,7 @@ impl SM50Op for OpBar {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xf0a8);
 
-        e.set_reg_src(8..16, SrcRef::Zero.into());
+        e.set_reg_src(8..16, &SrcRef::Zero.into());
 
         // 00: RED.POPC
         // 01: RED.AND
@@ -3108,7 +3108,7 @@ impl SM50Op for OpBar {
         // 03: SCAN
         e.set_field(32..35, 0_u8);
 
-        e.set_pred_src(39..42, 42, SrcRef::True.into());
+        e.set_pred_src(39..42, 42, &SrcRef::True.into());
     }
 }
 
@@ -3132,7 +3132,7 @@ impl SM50Op for OpIsberd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefd0);
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, self.idx);
+        e.set_reg_src(8..16, &self.idx);
     }
 }
 
@@ -3168,7 +3168,7 @@ impl SM50Op for OpPixLd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefe8);
         e.set_dst(&self.dst);
-        e.set_reg_src(8..16, 0.into());
+        e.set_reg_src(8..16, &0.into());
         e.set_field(
             31..34,
             match &self.val {
@@ -3206,7 +3206,7 @@ impl SM50Op for OpVote {
 
         e.set_dst(&self.ballot);
         e.set_pred_dst(45..48, &self.vote);
-        e.set_pred_src(39..42, 42, self.pred);
+        e.set_pred_src(39..42, 42, &self.pred);
 
         e.set_field(
             48..50,
@@ -3230,7 +3230,7 @@ impl SM50Op for OpOut {
         match &self.stream.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0xfbe0);
-                e.set_reg_src(20..28, self.stream);
+                e.set_reg_src(20..28, &self.stream);
             }
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0xf6e0);
@@ -3252,7 +3252,7 @@ impl SM50Op for OpOut {
             },
         );
 
-        e.set_reg_src(8..16, self.handle);
+        e.set_reg_src(8..16, &self.handle);
         e.set_dst(&self.dst);
     }
 }

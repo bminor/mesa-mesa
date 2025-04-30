@@ -237,34 +237,34 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         match src_type {
             SrcType::F16 | SrcType::F16v2 => {
                 let val = self.alloc_ssa(reg_file);
+                let old_src = std::mem::replace(src, val.into());
                 self.push_op(OpHAdd2 {
                     dst: val.into(),
-                    srcs: [Src::ZERO.fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), old_src],
                     saturate: false,
                     ftz: false,
                     f32: false,
                 });
-                *src = val.into();
             }
             SrcType::F32 => {
                 let val = self.alloc_ssa(reg_file);
+                let old_src = std::mem::replace(src, val.into());
                 self.push_op(OpFAdd {
                     dst: val.into(),
-                    srcs: [Src::ZERO.fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), old_src],
                     saturate: false,
                     rnd_mode: FRndMode::NearestEven,
                     ftz: false,
                 });
-                *src = val.into();
             }
             SrcType::F64 => {
                 let val = self.alloc_ssa_vec(reg_file, 2);
+                let old_src = std::mem::replace(src, val.into());
                 self.push_op(OpDAdd {
                     dst: val.into(),
-                    srcs: [Src::ZERO.fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), old_src],
                     rnd_mode: FRndMode::NearestEven,
                 });
-                *src = val.into();
             }
             _ => panic!("Invalid ffabs srouce type"),
         }
@@ -278,9 +278,10 @@ pub trait LegalizeBuildHelpers: SSABuilder {
     ) {
         assert!(src_type == SrcType::I32);
         let val = self.alloc_ssa(reg_file);
+        let old_src = std::mem::replace(src, val.into());
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
-                srcs: [Src::ZERO, *src, Src::ZERO],
+                srcs: [Src::ZERO, old_src, Src::ZERO],
                 overflow: [Dst::None, Dst::None],
                 dst: val.into(),
             });
@@ -288,10 +289,9 @@ pub trait LegalizeBuildHelpers: SSABuilder {
             self.push_op(OpIAdd2 {
                 dst: val.into(),
                 carry_out: Dst::None,
-                srcs: [Src::ZERO, *src],
+                srcs: [Src::ZERO, old_src],
             });
         }
-        *src = val.into();
     }
 
     fn copy_alu_src_if_fabs(
@@ -429,7 +429,7 @@ fn legalize_instr(
         }) => {
             let bar_in_ssa = bar_in.src_ref.as_ssa().unwrap();
             if !bar_out.is_none() && bl.is_live_after_ip(&bar_in_ssa[0], ip) {
-                let gpr = b.bmov_to_gpr(*bar_in);
+                let gpr = b.bmov_to_gpr(bar_in.clone());
                 let tmp = b.bmov_to_bar(gpr.into());
                 *bar_in = tmp.into();
             }

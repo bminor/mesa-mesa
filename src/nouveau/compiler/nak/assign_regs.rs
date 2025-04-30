@@ -1240,7 +1240,7 @@ impl AssignRegsBlock {
                 for (i, src) in out.srcs.iter().enumerate() {
                     let reg = u32::try_from(i).unwrap();
                     let dst = RegRef::new(RegFile::GPR, reg, 1);
-                    pcopy.push(dst.into(), *src);
+                    pcopy.push(dst.into(), src.clone());
                 }
 
                 None

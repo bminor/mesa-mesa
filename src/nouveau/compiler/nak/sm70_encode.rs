@@ -85,7 +85,7 @@ impl SM70Encoder<'_> {
         self.set_field(range, reg.base_idx());
     }
 
-    fn set_reg_src(&mut self, range: Range<usize>, src: Src) {
+    fn set_reg_src(&mut self, range: Range<usize>, src: &Src) {
         assert!(src.src_mod.is_none());
         match src.src_ref {
             SrcRef::Zero => self.set_reg(range, self.zero_reg(RegFile::GPR)),
@@ -106,7 +106,7 @@ impl SM70Encoder<'_> {
         &mut self,
         range: Range<usize>,
         not_bit: usize,
-        src: Src,
+        src: &Src,
         file: RegFile,
     ) {
         let (not, reg) = match src.src_ref {
@@ -122,11 +122,16 @@ impl SM70Encoder<'_> {
         self.set_bit(not_bit, not ^ src_mod_is_bnot(src.src_mod));
     }
 
-    fn set_pred_src(&mut self, range: Range<usize>, not_bit: usize, src: Src) {
+    fn set_pred_src(&mut self, range: Range<usize>, not_bit: usize, src: &Src) {
         self.set_pred_src_file(range, not_bit, src, RegFile::Pred);
     }
 
-    fn set_upred_src(&mut self, range: Range<usize>, not_bit: usize, src: Src) {
+    fn set_upred_src(
+        &mut self,
+        range: Range<usize>,
+        not_bit: usize,
+        src: &Src,
+    ) {
         self.set_pred_src_file(range, not_bit, src, RegFile::UPred);
     }
 
@@ -188,7 +193,7 @@ impl SM70Encoder<'_> {
         self.set_bar_reg(range, *dst.as_reg().unwrap());
     }
 
-    fn set_bar_src(&mut self, range: Range<usize>, src: Src) {
+    fn set_bar_src(&mut self, range: Range<usize>, src: &Src) {
         assert!(src.src_mod.is_none());
         self.set_bar_reg(range, *src.src_ref.as_reg().unwrap());
     }
@@ -724,7 +729,7 @@ impl SM70Op for OpFMnMx {
             Some(&self.srcs[1]),
             Some(&Src::ZERO),
         );
-        e.set_pred_src(87..90, 90, self.min);
+        e.set_pred_src(87..90, 90, &self.min);
         e.set_bit(80, self.ftz);
     }
 }
@@ -859,7 +864,7 @@ impl SM70Op for OpFSetP {
         e.set_pred_dst(81..84, &self.dst);
         e.set_pred_dst(84..87, &Dst::None); // dst1
 
-        e.set_pred_src(87..90, 90, self.accum);
+        e.set_pred_src(87..90, 90, &self.accum);
     }
 }
 
@@ -875,8 +880,8 @@ impl SM70Op for OpFSwzAdd {
         e.set_opcode(0x822);
         e.set_dst(&self.dst);
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(64..72, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(64..72, &self.srcs[1]);
 
         let mut subop = 0x0_u8;
 
@@ -1021,7 +1026,7 @@ impl SM70Op for OpDSetP {
         e.set_pred_dst(81..84, &self.dst);
         e.set_pred_dst(84..87, &Dst::None); /* dst1 */
 
-        e.set_pred_src(87..90, 90, self.accum);
+        e.set_pred_src(87..90, 90, &self.accum);
     }
 }
 
@@ -1151,7 +1156,7 @@ impl SM70Op for OpHSet2 {
         e.set_float_cmp_op(76..80, self.cmp_op);
         e.set_bit(80, self.ftz);
 
-        e.set_pred_src(87..90, 90, self.accum);
+        e.set_pred_src(87..90, 90, &self.accum);
     }
 }
 
@@ -1194,7 +1199,7 @@ impl SM70Op for OpHSetP2 {
         e.set_pred_dst(81..84, &self.dsts[0]);
         e.set_pred_dst(84..87, &self.dsts[1]);
 
-        e.set_pred_src(87..90, 90, self.accum);
+        e.set_pred_src(87..90, 90, &self.accum);
     }
 }
 
@@ -1224,7 +1229,7 @@ impl SM70Op for OpHMnMx2 {
         e.set_bit(82, false); // .XORSIGN
         e.set_bit(85, false); // .BF16_V2
 
-        e.set_pred_src(87..90, 90, self.min);
+        e.set_pred_src(87..90, 90, &self.min);
     }
 }
 
@@ -1343,8 +1348,8 @@ impl SM70Op for OpIAdd3 {
             )
         };
 
-        e.set_pred_src(87..90, 90, false.into());
-        e.set_pred_src(77..80, 80, false.into());
+        e.set_pred_src(87..90, 90, &false.into());
+        e.set_pred_src(77..80, 80, &false.into());
 
         e.set_pred_dst(81..84, &self.overflow[0]);
         e.set_pred_dst(84..87, &self.overflow[1]);
@@ -1359,13 +1364,13 @@ impl SM70Op for OpIAdd3X {
         swap_srcs_if_not_reg(src2, src1, gpr);
         if !src0.src_mod.is_none() && !src1.src_mod.is_none() {
             let val = b.alloc_ssa(gpr);
+            let old_src0 = std::mem::replace(src0, val.into());
             b.push_op(OpIAdd3X {
-                srcs: [Src::ZERO, *src0, Src::ZERO],
+                srcs: [Src::ZERO, old_src0, Src::ZERO],
                 overflow: [Dst::None, Dst::None],
                 dst: val.into(),
-                carry: [false.into(); 2],
+                carry: [false.into(), false.into()],
             });
-            *src0 = val.into();
         }
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::B32);
         b.copy_alu_src_if_both_not_reg(src1, src2, gpr, SrcType::B32);
@@ -1390,8 +1395,8 @@ impl SM70Op for OpIAdd3X {
                 Some(&self.srcs[2]),
             );
 
-            e.set_upred_src(87..90, 90, self.carry[0]);
-            e.set_upred_src(77..80, 80, self.carry[1]);
+            e.set_upred_src(87..90, 90, &self.carry[0]);
+            e.set_upred_src(77..80, 80, &self.carry[1]);
         } else {
             e.encode_alu(
                 0x010,
@@ -1401,8 +1406,8 @@ impl SM70Op for OpIAdd3X {
                 Some(&self.srcs[2]),
             );
 
-            e.set_pred_src(87..90, 90, self.carry[0]);
-            e.set_pred_src(77..80, 80, self.carry[1]);
+            e.set_pred_src(87..90, 90, &self.carry[0]);
+            e.set_pred_src(77..80, 80, &self.carry[1]);
         }
 
         e.set_bit(74, true); // .X
@@ -1533,7 +1538,7 @@ impl SM70Op for OpIMnMx {
             Some(&self.srcs[1]),
             None,
         );
-        e.set_pred_src(87..90, 90, self.min);
+        e.set_pred_src(87..90, 90, &self.min);
         e.set_bit(
             73,
             match self.cmp_type {
@@ -1569,8 +1574,8 @@ impl SM70Op for OpISetP {
                 None,
             );
 
-            e.set_upred_src(68..71, 71, self.low_cmp);
-            e.set_upred_src(87..90, 90, self.accum);
+            e.set_upred_src(68..71, 71, &self.low_cmp);
+            e.set_upred_src(87..90, 90, &self.accum);
         } else {
             e.encode_alu(
                 0x00c,
@@ -1580,8 +1585,8 @@ impl SM70Op for OpISetP {
                 None,
             );
 
-            e.set_pred_src(68..71, 71, self.low_cmp);
-            e.set_pred_src(87..90, 90, self.accum);
+            e.set_pred_src(68..71, 71, &self.low_cmp);
+            e.set_pred_src(87..90, 90, &self.accum);
         }
 
         e.set_bit(72, self.ex);
@@ -1689,7 +1694,7 @@ impl SM70Op for OpLeaX {
                 Some(&self.b),
                 c,
             );
-            e.set_upred_src(87..90, 90, self.carry);
+            e.set_upred_src(87..90, 90, &self.carry);
         } else {
             e.encode_alu(
                 0x011,
@@ -1698,7 +1703,7 @@ impl SM70Op for OpLeaX {
                 Some(&self.b),
                 c,
             );
-            e.set_pred_src(87..90, 90, self.carry);
+            e.set_pred_src(87..90, 90, &self.carry);
         }
 
         e.set_bit(72, self.intermediate_mod.is_bnot());
@@ -1778,7 +1783,7 @@ impl SM70Op for OpLop3 {
                 Some(&self.srcs[2]),
             );
 
-            e.set_upred_src(87..90, 90, SrcRef::False.into());
+            e.set_upred_src(87..90, 90, &SrcRef::False.into());
         } else {
             e.encode_alu(
                 0x012,
@@ -1788,7 +1793,7 @@ impl SM70Op for OpLop3 {
                 Some(&self.srcs[2]),
             );
 
-            e.set_pred_src(87..90, 90, SrcRef::False.into());
+            e.set_pred_src(87..90, 90, &SrcRef::False.into());
         }
 
         e.set_field(72..80, self.op.lut);
@@ -2069,7 +2074,7 @@ impl SM70Op for OpSel {
                 None,
             );
 
-            e.set_upred_src(87..90, 90, self.cond);
+            e.set_upred_src(87..90, 90, &self.cond);
         } else {
             e.encode_alu(
                 0x007,
@@ -2079,7 +2084,7 @@ impl SM70Op for OpSel {
                 None,
             );
 
-            e.set_pred_src(87..90, 90, self.cond);
+            e.set_pred_src(87..90, 90, &self.cond);
         }
     }
 }
@@ -2100,12 +2105,12 @@ impl SM70Op for OpShfl {
             SrcRef::Zero | SrcRef::Reg(_) => match &self.c.src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x389);
-                    e.set_reg_src(32..40, self.lane);
-                    e.set_reg_src(64..72, self.c);
+                    e.set_reg_src(32..40, &self.lane);
+                    e.set_reg_src(64..72, &self.c);
                 }
                 SrcRef::Imm32(imm_c) => {
                     e.set_opcode(0x589);
-                    e.set_reg_src(32..40, self.lane);
+                    e.set_reg_src(32..40, &self.lane);
                     e.set_field(40..53, *imm_c & 0x1f1f);
                 }
                 _ => panic!("Invalid instruction form"),
@@ -2114,7 +2119,7 @@ impl SM70Op for OpShfl {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x989);
                     e.set_field(53..58, *imm_lane & 0x1f);
-                    e.set_reg_src(64..72, self.c);
+                    e.set_reg_src(64..72, &self.c);
                 }
                 SrcRef::Imm32(imm_c) => {
                     e.set_opcode(0xf89);
@@ -2128,7 +2133,7 @@ impl SM70Op for OpShfl {
 
         e.set_dst(&self.dst);
         e.set_pred_dst(81..84, &self.in_bounds);
-        e.set_reg_src(24..32, self.src);
+        e.set_reg_src(24..32, &self.src);
         e.set_field(
             58..60,
             match self.op {
@@ -2185,9 +2190,9 @@ impl SM70Op for OpPLop3 {
         if self.is_uniform() {
             e.set_opcode(0x89c);
 
-            e.set_upred_src(68..71, 71, self.srcs[2]);
-            e.set_upred_src(77..80, 80, self.srcs[1]);
-            e.set_upred_src(87..90, 90, self.srcs[0]);
+            e.set_upred_src(68..71, 71, &self.srcs[2]);
+            e.set_upred_src(77..80, 80, &self.srcs[1]);
+            e.set_upred_src(87..90, 90, &self.srcs[0]);
         } else {
             e.set_opcode(0x81c);
 
@@ -2196,13 +2201,13 @@ impl SM70Op for OpPLop3 {
                 .as_reg()
                 .is_some_and(|r| r.is_uniform())
             {
-                e.set_upred_src(68..71, 71, self.srcs[2]);
+                e.set_upred_src(68..71, 71, &self.srcs[2]);
                 e.set_bit(67, true);
             } else {
-                e.set_pred_src(68..71, 71, self.srcs[2]);
+                e.set_pred_src(68..71, 71, &self.srcs[2]);
             }
-            e.set_pred_src(77..80, 80, self.srcs[1]);
-            e.set_pred_src(87..90, 90, self.srcs[0]);
+            e.set_pred_src(77..80, 80, &self.srcs[1]);
+            e.set_pred_src(87..90, 90, &self.srcs[0]);
         }
         e.set_field(16..24, self.ops[1].lut);
         e.set_field(64..67, self.ops[0].lut & 0x7);
@@ -2221,7 +2226,7 @@ impl SM70Op for OpR2UR {
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x3c2);
         e.set_udst(&self.dst);
-        e.set_reg_src(24..32, self.src);
+        e.set_reg_src(24..32, &self.src);
         e.set_pred_dst(81..84, &Dst::None);
     }
 }
@@ -2373,8 +2378,8 @@ impl SM70Op for OpTex {
         }
         e.set_pred_dst(81..84, &self.fault);
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(32..40, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
 
         if e.sm >= 100 {
             e.set_field(48..56, 0xff_u8); // ureg
@@ -2426,8 +2431,8 @@ impl SM70Op for OpTld {
         }
         e.set_pred_dst(81..84, &self.fault);
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(32..40, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
 
         if e.sm >= 100 {
             e.set_field(48..56, 0xff_u8); // ureg
@@ -2480,8 +2485,8 @@ impl SM70Op for OpTld4 {
         }
         e.set_pred_dst(81..84, &self.fault);
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(32..40, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
 
         if e.sm >= 100 {
             e.set_field(48..56, 0xff_u8); // ureg
@@ -2533,8 +2538,8 @@ impl SM70Op for OpTmml {
             e.set_field(64..72, 255_u8);
         }
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(32..40, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
@@ -2577,8 +2582,8 @@ impl SM70Op for OpTxd {
         }
         e.set_pred_dst(81..84, &self.fault);
 
-        e.set_reg_src(24..32, self.srcs[0]);
-        e.set_reg_src(32..40, self.srcs[1]);
+        e.set_reg_src(24..32, &self.srcs[0]);
+        e.set_reg_src(32..40, &self.srcs[1]);
 
         if e.sm >= 100 {
             e.set_field(48..56, 0xff_u8); // ureg
@@ -2621,7 +2626,7 @@ impl SM70Op for OpTxq {
             e.set_field(64..72, 255_u8);
         }
 
-        e.set_reg_src(24..32, self.src);
+        e.set_reg_src(24..32, &self.src);
         e.set_field(
             62..64,
             match self.query {
@@ -2737,8 +2742,8 @@ impl SM70Op for OpSuLd {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.coord);
-        e.set_reg_src(64..72, self.handle);
+        e.set_reg_src(24..32, &self.coord);
+        e.set_reg_src(64..72, &self.handle);
         e.set_pred_dst(81..84, &self.fault);
 
         e.set_image_dim(61..64, self.image_dim);
@@ -2764,9 +2769,9 @@ impl SM70Op for OpSuSt {
             }
         }
 
-        e.set_reg_src(24..32, self.coord);
-        e.set_reg_src(32..40, self.data);
-        e.set_reg_src(64..72, self.handle);
+        e.set_reg_src(24..32, &self.coord);
+        e.set_reg_src(32..40, &self.data);
+        e.set_reg_src(64..72, &self.handle);
 
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
@@ -2792,9 +2797,9 @@ impl SM70Op for OpSuAtom {
         };
 
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.coord);
-        e.set_reg_src(32..40, self.data);
-        e.set_reg_src(64..72, self.handle);
+        e.set_reg_src(24..32, &self.coord);
+        e.set_reg_src(32..40, &self.data);
+        e.set_reg_src(64..72, &self.handle);
         e.set_pred_dst(81..84, &self.fault);
 
         e.set_image_dim(61..64, self.image_dim);
@@ -2844,7 +2849,7 @@ impl SM70Op for OpLd {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.addr);
+        e.set_reg_src(24..32, &self.addr);
         e.set_field(40..64, self.offset);
     }
 }
@@ -2872,7 +2877,7 @@ impl SM70Op for OpLdc {
                     e.set_opcode(0xb82);
                     e.set_dst(&self.dst);
 
-                    e.set_reg_src(24..32, self.offset);
+                    e.set_reg_src(24..32, &self.offset);
                     e.set_field(
                         78..80,
                         match self.mode {
@@ -2896,11 +2901,11 @@ impl SM70Op for OpLdc {
                     e.set_opcode(0x582);
                     e.set_dst(&self.dst);
 
-                    e.set_reg_src(64..72, self.offset);
+                    e.set_reg_src(64..72, &self.offset);
                 }
 
                 e.set_ureg(24..32, handle);
-                e.set_reg_src(64..72, self.offset);
+                e.set_reg_src(64..72, &self.offset);
                 assert!(self.mode == LdcMode::Indexed);
                 e.set_bit(91, true); // Bindless
             }
@@ -2946,8 +2951,8 @@ impl SM70Op for OpSt {
             }
         }
 
-        e.set_reg_src(24..32, self.addr);
-        e.set_reg_src(32..40, self.data);
+        e.set_reg_src(24..32, &self.addr);
+        e.set_reg_src(32..40, &self.data);
         e.set_field(40..64, self.offset);
     }
 }
@@ -3030,14 +3035,14 @@ impl SM70Op for OpAtom {
                         e.set_opcode(0x98e);
                     }
 
-                    e.set_reg_src(32..40, self.data);
+                    e.set_reg_src(32..40, &self.data);
                     e.set_atom_op(87..90, self.atom_op);
                 } else if let AtomOp::CmpExch(cmp_src) = self.atom_op {
                     e.set_opcode(0x3a9);
 
                     assert!(cmp_src == AtomCmpSrc::Separate);
-                    e.set_reg_src(32..40, self.cmpr);
-                    e.set_reg_src(64..72, self.data);
+                    e.set_reg_src(32..40, &self.cmpr);
+                    e.set_reg_src(64..72, &self.data);
                 } else {
                     if e.sm >= 90 && self.atom_type.is_float() {
                         e.set_opcode(0x3a3);
@@ -3045,7 +3050,7 @@ impl SM70Op for OpAtom {
                         e.set_opcode(0x3a8);
                     }
 
-                    e.set_reg_src(32..40, self.data);
+                    e.set_reg_src(32..40, &self.data);
                     e.set_atom_op(87..91, self.atom_op);
                 }
 
@@ -3068,12 +3073,12 @@ impl SM70Op for OpAtom {
                     e.set_opcode(0x38d);
 
                     assert!(cmp_src == AtomCmpSrc::Separate);
-                    e.set_reg_src(32..40, self.cmpr);
-                    e.set_reg_src(64..72, self.data);
+                    e.set_reg_src(32..40, &self.cmpr);
+                    e.set_reg_src(64..72, &self.data);
                 } else {
                     e.set_opcode(0x38c);
 
-                    e.set_reg_src(32..40, self.data);
+                    e.set_reg_src(32..40, &self.data);
                     assert!(
                         self.atom_type != AtomType::U64
                             || self.atom_op == AtomOp::Exch,
@@ -3094,7 +3099,7 @@ impl SM70Op for OpAtom {
         }
 
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.addr);
+        e.set_reg_src(24..32, &self.addr);
         e.set_field(40..64, self.addr_offset);
         e.set_atom_type(self.atom_type);
     }
@@ -3109,7 +3114,7 @@ impl SM70Op for OpAL2P {
         e.set_opcode(0x920);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.offset);
+        e.set_reg_src(24..32, &self.offset);
 
         e.set_field(40..50, self.addr);
         e.set_field(74..76, 0_u8); // comps
@@ -3126,8 +3131,8 @@ impl SM70Op for OpALd {
         e.set_opcode(0x321);
 
         e.set_dst(&self.dst);
-        e.set_reg_src(32..40, self.vtx);
-        e.set_reg_src(24..32, self.offset);
+        e.set_reg_src(32..40, &self.vtx);
+        e.set_reg_src(24..32, &self.offset);
 
         e.set_field(40..50, self.addr);
         e.set_field(74..76, self.comps - 1);
@@ -3145,9 +3150,9 @@ impl SM70Op for OpASt {
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x322);
 
-        e.set_reg_src(32..40, self.data);
-        e.set_reg_src(64..72, self.vtx);
-        e.set_reg_src(24..32, self.offset);
+        e.set_reg_src(32..40, &self.data);
+        e.set_reg_src(64..72, &self.vtx);
+        e.set_reg_src(24..32, &self.offset);
 
         e.set_field(40..50, self.addr);
         e.set_field(74..76, self.comps - 1);
@@ -3190,7 +3195,7 @@ impl SM70Op for OpIpa {
         );
 
         assert!(self.inv_w.is_zero());
-        e.set_reg_src(32..40, self.offset);
+        e.set_reg_src(32..40, &self.offset);
 
         // TODO: What is this for?
         e.set_pred_dst(81..84, &Dst::None);
@@ -3226,7 +3231,7 @@ impl SM70Op for OpCCtl {
         assert!(matches!(self.mem_space, MemSpace::Global(_)));
         e.set_opcode(0x98f);
 
-        e.set_reg_src(24..32, self.addr);
+        e.set_reg_src(24..32, &self.addr);
         e.set_field(32..64, self.addr_offset);
 
         e.set_field(
@@ -3309,14 +3314,14 @@ impl SM70Op for OpBMov {
             e.set_opcode(0x356);
 
             e.set_bar_dst(24..28, &self.dst);
-            e.set_reg_src(32..40, self.src);
+            e.set_reg_src(32..40, &self.src);
 
             e.set_bit(84, self.clear);
         } else {
             e.set_opcode(0x355);
 
             e.set_dst(&self.dst);
-            e.set_bar_src(24..28, self.src);
+            e.set_bar_src(24..28, &self.src);
 
             e.set_bit(84, self.clear);
         }
@@ -3332,7 +3337,7 @@ impl SM70Op for OpBreak {
         e.set_opcode(0x942);
         assert!(self.bar_in.src_ref.as_reg() == self.bar_out.as_reg());
         e.set_bar_dst(16..20, &self.bar_out);
-        e.set_pred_src(87..90, 90, self.cond);
+        e.set_pred_src(87..90, 90, &self.cond);
     }
 }
 
@@ -3346,7 +3351,7 @@ impl SM70Op for OpBSSy {
         assert!(self.bar_in.src_ref.as_reg() == self.bar_out.as_reg());
         e.set_bar_dst(16..20, &self.bar_out);
         e.set_rel_offset(34..64, &self.target);
-        e.set_pred_src(87..90, 90, self.cond);
+        e.set_pred_src(87..90, 90, &self.cond);
     }
 }
 
@@ -3357,8 +3362,8 @@ impl SM70Op for OpBSync {
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x941);
-        e.set_bar_src(16..20, self.bar);
-        e.set_pred_src(87..90, 90, self.cond);
+        e.set_bar_src(16..20, &self.bar);
+        e.set_pred_src(87..90, 90, &self.cond);
     }
 }
 
@@ -3397,7 +3402,7 @@ impl SM70Op for OpWarpSync {
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.encode_alu(0x148, None, None, Some(&Src::from(self.mask)), None);
-        e.set_pred_src(87..90, 90, SrcRef::True.into());
+        e.set_pred_src(87..90, 90, &SrcRef::True.into());
     }
 }
 
@@ -3450,7 +3455,7 @@ impl SM70Op for OpIsberd {
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x923);
         e.set_dst(&self.dst);
-        e.set_reg_src(24..32, self.idx);
+        e.set_reg_src(24..32, &self.idx);
     }
 }
 
@@ -3461,7 +3466,7 @@ impl SM70Op for OpKill {
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x95b);
-        e.set_pred_src(87..90, 90, SrcRef::True.into());
+        e.set_pred_src(87..90, 90, &SrcRef::True.into());
     }
 }
 
@@ -3579,7 +3584,7 @@ impl SM70Op for OpVote {
         );
 
         e.set_pred_dst(81..84, &self.vote);
-        e.set_pred_src(87..90, 90, self.pred);
+        e.set_pred_src(87..90, 90, &self.pred);
     }
 }
 

@@ -1103,7 +1103,7 @@ impl fmt::Display for SrcSwizzle {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Src {
     pub src_ref: SrcRef,
     pub src_mod: SrcMod,
@@ -1236,7 +1236,7 @@ impl Src {
         }
     }
 
-    pub fn to_ssa(&self) -> SSARef {
+    pub fn to_ssa(self) -> SSARef {
         if self.src_mod.is_none() {
             self.src_ref.to_ssa()
         } else {
