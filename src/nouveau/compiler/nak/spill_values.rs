@@ -26,7 +26,7 @@ impl PhiDstMap {
         }
     }
 
-    fn add_phi_dst(&mut self, phi_idx: u32, dst: Dst) {
+    fn add_phi_dst(&mut self, phi_idx: u32, dst: &Dst) {
         let vec = dst.as_ssa().expect("Not an SSA destination");
         debug_assert!(vec.comps() == 1);
         self.ssa_phi.insert(vec[0], phi_idx);
@@ -36,7 +36,7 @@ impl PhiDstMap {
         let mut map = PhiDstMap::new();
         if let Some(phi) = block.phi_dsts() {
             for (idx, dst) in phi.dsts.iter() {
-                map.add_phi_dst(*idx, *dst);
+                map.add_phi_dst(*idx, dst);
             }
         }
         map
@@ -58,7 +58,7 @@ impl PhiSrcMap {
         }
     }
 
-    fn add_phi_src(&mut self, phi_idx: u32, src: Src) {
+    fn add_phi_src(&mut self, phi_idx: u32, src: &Src) {
         debug_assert!(src.src_mod.is_none());
         let vec = src.src_ref.as_ssa().expect("Not an SSA source");
         debug_assert!(vec.comps() == 1);
@@ -69,7 +69,7 @@ impl PhiSrcMap {
         let mut map = PhiSrcMap::new();
         if let Some(phi) = block.phi_srcs() {
             for (idx, src) in phi.srcs.iter() {
-                map.add_phi_src(*idx, *src);
+                map.add_phi_src(*idx, src);
             }
         }
         map
