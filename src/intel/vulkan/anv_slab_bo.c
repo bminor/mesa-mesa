@@ -234,7 +234,8 @@ anv_slab_alloc(void *priv,
       alloc_flags |= ANV_BO_ALLOC_COMPRESSED;
       break;
    case ANV_BO_SLAB_HEAP_LMEM_SMEM:
-      alloc_flags |= ANV_BO_ALLOC_MAPPED;
+      alloc_flags |= ANV_BO_ALLOC_MAPPED |
+                     ANV_BO_ALLOC_HOST_COHERENT;
       break;
    case ANV_BO_SLAB_HEAP_LMEM_ONLY:
       break;
