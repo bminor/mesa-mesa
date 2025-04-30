@@ -837,6 +837,18 @@ struct vpe_stream {
     } flags;
 };
 
+enum predication_polarity {
+    PREDICATION_OP_EQUAL_ZERO = 0, /**< Enables predication if all 64-bits are zero. */
+    PREDICATION_OP_NOT_EQUAL_ZERO =
+        1, /**< Enables predication if at least one of the 64-bits are not zero.*/
+};
+
+struct vpe_predication_info {
+    bool                      enable;   /**< Enable predication */
+    uint64_t                  gpu_va;   /**< GPU start address of the buffer */
+    enum predication_polarity polarity; /**< Predication polarity */
+};
+
 /** @struct vpe_build_param
  *  @brief Build parametrs for vpelib. Must get populated before vpe_check_support() call.
  */
@@ -852,7 +864,7 @@ struct vpe_build_param {
                                                surface */
     struct vpe_hdr_metadata   hdr_metadata; /**< HDR Metadata */
     struct vpe_reserved_param dst_reserved_param;
-
+    struct vpe_predication_info predication_info;
     // data flags
     struct {
         uint32_t hdr_metadata : 1;

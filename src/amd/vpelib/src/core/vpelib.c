@@ -39,6 +39,7 @@
 #include "geometric_scaling.h"
 #include <stdlib.h>
 #include <time.h>
+#include <vpe_command.h>
 
 static void dummy_sys_event(enum vpe_event_id eventId, ...)
 {
@@ -184,6 +185,33 @@ static void free_output_ctx(struct vpe_priv *vpe_priv)
         vpe_free(vpe_priv->output_ctx.output_tf);
 
     destroy_output_config_vector(vpe_priv);
+}
+
+static enum vpe_status vpe_build_set_predication(uint64_t buf_cpu_va,
+    enum predication_polarity polarity, uint64_t condition_address, uint32_t execution_count)
+{
+    if (!buf_cpu_va || !condition_address || !execution_count)
+        return VPE_STATUS_ERROR;
+
+    uint32_t *buffer = (uint32_t *)(uintptr_t)buf_cpu_va;
+    uint32_t  header = VPE_CMD_HEADER(VPE_CMD_OPCODE_SET_PREDICATION, VPE_PREDICATION_SUB_OPCODE);
+    header |= (polarity << VPE_PREDICATION_POLARITY_SHIFT);
+
+    uint32_t low_condition_addr = (condition_address & VPE_PREDICATION_LOW_ADDR_MASK);
+    uint32_t high_condition_addr =
+        (condition_address & VPE_PREDICATION_HIGH_ADDR_MASK) >> VPE_PREDICATION_ADDR_SHIFT;
+
+    uint32_t number_of_dwords = (execution_count + sizeof(uint32_t) - 1) / sizeof(uint32_t);
+
+    *buffer = header;
+    buffer++;
+    *buffer = low_condition_addr;
+    buffer++;
+    *buffer = high_condition_addr;
+    buffer++;
+    *buffer = number_of_dwords;
+
+    return VPE_STATUS_OK;
 }
 
 struct vpe *vpe_create(const struct vpe_init_data *params)
@@ -681,6 +709,10 @@ enum vpe_status vpe_build_commands(
             bufs->cmd_buf.size = vpe_priv->bufs_required.cmd_buf_size;
             bufs->emb_buf.size = vpe_priv->bufs_required.emb_buf_size;
 
+            if (param->predication_info.enable == true) {
+                bufs->cmd_buf.size += VPE_PREDICATION_CMD_SIZE;
+            }
+
             return VPE_STATUS_OK;
         } else if ((bufs->cmd_buf.size < vpe_priv->bufs_required.cmd_buf_size) ||
                    (bufs->emb_buf.size < vpe_priv->bufs_required.emb_buf_size)) {
@@ -758,6 +790,12 @@ enum vpe_status vpe_build_commands(
             vpe_priv->output_ctx.surface.format, &vpe_priv->output_ctx.mpc_bg_color,
             &vpe_priv->output_ctx.opp_bg_color, vpe_priv->stream_ctx[0].enable_3dlut);
 
+        if (param->predication_info.enable == true) {
+            curr_bufs.cmd_buf.cpu_va += VPE_PREDICATION_CMD_SIZE;
+            curr_bufs.cmd_buf.gpu_va += VPE_PREDICATION_CMD_SIZE;
+            curr_bufs.cmd_buf.size -= VPE_PREDICATION_CMD_SIZE;
+        }
+
         if (vpe_priv->collaboration_mode == true) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
             if (status != VPE_STATUS_OK) {
@@ -821,6 +859,17 @@ enum vpe_status vpe_build_commands(
         bufs->emb_buf.cpu_va = emb_buf_cpu_a;
     }
 
+    if (status == VPE_STATUS_OK && param->predication_info.enable == true) {
+        status = vpe_build_set_predication(bufs->cmd_buf.cpu_va, param->predication_info.polarity,
+            param->predication_info.gpu_va,
+            (uint32_t)(bufs->cmd_buf.size -
+                       VPE_PREDICATION_CMD_SIZE)); // build cmd size - predication size
+
+        if (status != VPE_STATUS_OK) {
+            vpe_log("failed in building vpe predication cmd %d\n", (int)status);
+        }
+    }
+
     vpe_priv->ops_support = false;
 
     if (vpe_priv->init.debug.assert_when_not_support)
@@ -839,4 +888,74 @@ void vpe_get_optimal_num_of_taps(struct vpe *vpe, struct vpe_scaling_info *scali
 
     dpp->funcs->get_optimal_number_of_taps(
         &scaling_info->src_rect, &scaling_info->dst_rect, &scaling_info->taps);
+}
+
+enum vpe_status vpe_build_timestamp(struct vpe_buf *buf, uint64_t dst_addr)
+{
+    if (!dst_addr || !buf)
+        return VPE_STATUS_ERROR;
+
+    enum vpe_status result = VPE_STATUS_OK;
+
+    // We return required size if size is equal to 0
+    if (buf->size == 0) {
+        buf->size = VPE_TIMESTAMP_CMD_SIZE;
+    } else if (buf->size < VPE_TIMESTAMP_CMD_SIZE) {
+        result = VPE_STATUS_BUFFER_OVERFLOW;
+    } else {
+        uint32_t *buffer    = (uint32_t *)(uintptr_t)buf->cpu_va;
+        uint32_t  header    = VPE_CMD_HEADER(VPE_CMD_OPCODE_TIMESTAMP, VPE_TIMESTAMP_SUB_OPCODE);
+        uint32_t  low_addr  = (dst_addr & VPE_TIMESTAMP_LOW_ADDR_MASK);
+        uint32_t  high_addr = (dst_addr & VPE_TIMESTAMP_HIGH_ADDR_MASK) >> VPE_TIMESTAMP_ADDR_SHIFT;
+
+        *buffer = header;
+        buffer++;
+        *buffer = low_addr;
+        buffer++;
+        *buffer = high_addr;
+    }
+
+    return result;
+}
+
+enum vpe_status vpe_build_resolve_query(
+    struct vpe_buf *buf, uint64_t read_addr, uint64_t write_addr, uint32_t dword_count)
+{
+    if (!buf || !read_addr || !write_addr || !dword_count)
+        return VPE_STATUS_ERROR;
+
+    enum vpe_status result = VPE_STATUS_OK;
+
+    // We return required size if size is equal to 0
+    if (buf->size == 0) {
+        buf->size = VPE_RESOLVE_QUERY_CMD_SIZE;
+    } else if (buf->size < VPE_RESOLVE_QUERY_CMD_SIZE) {
+        result = VPE_STATUS_BUFFER_OVERFLOW;
+    } else {
+        uint32_t *buffer = (uint32_t *)(uintptr_t)buf->cpu_va;
+        uint32_t  header =
+            VPE_CMD_HEADER(VPE_CMD_OPCODE_QUERY_RESOLVE, VPE_RESOLVE_QUERY_SUB_OPCODE);
+
+        uint32_t low_read_addr = (read_addr & VPE_RESOLVE_QUERY_LOW_ADDR_MASK);
+        uint32_t high_read_addr =
+            (read_addr & VPE_RESOLVE_QUERY_HIGH_ADDR_MASK) >> VPE_RESOLVE_QUERY_ADDR_SHIFT;
+
+        uint32_t low_write_addr = (write_addr & VPE_RESOLVE_QUERY_LOW_ADDR_MASK);
+        uint32_t high_write_addr =
+            (write_addr & VPE_RESOLVE_QUERY_HIGH_ADDR_MASK) >> VPE_RESOLVE_QUERY_ADDR_SHIFT;
+
+        *buffer = header;
+        buffer++;
+        *buffer = dword_count;
+        buffer++;
+        *buffer = low_read_addr;
+        buffer++;
+        *buffer = high_read_addr;
+        buffer++;
+        *buffer = low_write_addr;
+        buffer++;
+        *buffer = high_write_addr;
+    }
+
+    return result;
 }

@@ -136,6 +136,35 @@ enum vpe_status vpe_build_commands(
  */
 void vpe_get_optimal_num_of_taps(struct vpe *vpe, struct vpe_scaling_info *scaling_info);
 
+/**
+ * @brief
+ *  Build the command descriptor for timestamp operation
+ *  gets global gpu timestamp and writes it to the given gpu address
+ *
+ * @param[in,out]  bufs           [in]  memory allocated for the command buffer.
+ *                                If size is 0, it reports the required size for this checked
+ *                                operation. [out] the next write address and the filled sizes.
+ * @param[in]      dst_address    address where the data is written to
+ * @return status
+ */
+enum vpe_status vpe_build_timestamp(struct vpe_buf *buf, uint64_t dst_address);
+
+/**
+ * @brief
+ *  Build the command descriptor for resolve operation
+ *  copies the data from the read address to the write address to the number of dwords specified.
+ *
+ * @param[in,out]  bufs           [in]  memory allocated for the command buffer.
+ *                                If size is 0, it reports the required size for this checked
+ *                                operation. [out] the next write address and the filled sizes.
+ * @param[in]      read_addr      GPU virtual address where the data is read from
+ * @param[in]      write_addr     GPU virtual address where the data is written to
+ * @param[in]      dword_count    number of dwords to be copierd
+ * @return status
+ */
+enum vpe_status vpe_build_resolve_query(
+    struct vpe_buf *buf, uint64_t read_addr, uint64_t write_addr, uint32_t dword_count);
+
 #ifdef __cplusplus
 }
 #endif
