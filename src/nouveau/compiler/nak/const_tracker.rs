@@ -43,7 +43,7 @@ impl ConstTracker {
         };
 
         if is_const {
-            self.map.insert(dst, op.src.src_ref);
+            self.map.insert(dst, op.src.src_ref.clone());
         }
     }
 

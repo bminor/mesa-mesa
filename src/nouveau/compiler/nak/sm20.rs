@@ -1603,7 +1603,7 @@ impl SM20Op for OpSel {
         use RegFile::GPR;
         let [src0, src1] = &mut self.srcs;
         if swap_srcs_if_not_reg(src0, src1, GPR) {
-            self.cond = self.cond.bnot();
+            self.cond = self.cond.clone().bnot();
         }
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
         b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);

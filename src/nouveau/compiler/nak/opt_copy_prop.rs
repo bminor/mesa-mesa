@@ -280,7 +280,7 @@ impl CopyPropPass {
                         return;
                     }
 
-                    src.src_ref = entry.src.src_ref;
+                    src.src_ref = entry.src.src_ref.clone();
                     src.src_mod = entry.src.src_mod.modify(src.src_mod);
                 }
                 CopyPropEntry::Prmt(entry) => {
@@ -347,7 +347,7 @@ impl CopyPropPass {
                         }
                     };
 
-                    src.src_ref = entry_src.src_ref;
+                    src.src_ref = entry_src.src_ref.clone();
                     src.src_mod = entry_src.src_mod.modify(src.src_mod);
                     src.src_swizzle = new_swizzle;
                 }
@@ -365,7 +365,7 @@ impl CopyPropPass {
                         return;
                     };
 
-                    src.src_ref = par_entry.src.src_ref;
+                    src.src_ref = par_entry.src.src_ref.clone();
                     src.src_mod = par_entry.src.src_mod.modify(src.src_mod);
                     if entry.inverted {
                         src.src_mod = src.src_mod.bnot();

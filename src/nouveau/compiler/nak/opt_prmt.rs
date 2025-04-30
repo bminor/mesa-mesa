@@ -17,16 +17,16 @@ struct PrmtSrcs {
 impl PrmtSrcs {
     fn new() -> PrmtSrcs {
         PrmtSrcs {
-            srcs: [SrcRef::Zero; 2],
+            srcs: [const { SrcRef::Zero }; 2],
             num_srcs: 0,
             imm_src: usize::MAX,
             num_imm_bytes: 0,
         }
     }
 
-    fn try_add_src(&mut self, src: SrcRef) -> Option<usize> {
+    fn try_add_src(&mut self, src: &SrcRef) -> Option<usize> {
         for i in 0..self.num_srcs {
-            if self.srcs[i] == src {
+            if self.srcs[i] == *src {
                 return Some(i);
             }
         }
@@ -34,7 +34,7 @@ impl PrmtSrcs {
         if self.num_srcs < 2 {
             let i = self.num_srcs;
             self.num_srcs += 1;
-            self.srcs[i] = src;
+            self.srcs[i] = src.clone();
             Some(i)
         } else {
             None
@@ -105,7 +105,7 @@ impl PrmtPass {
 
         debug_assert!(op.srcs[0].src_mod.is_none());
         debug_assert!(op.srcs[1].src_mod.is_none());
-        let srcs = [op.srcs[0].src_ref, op.srcs[1].src_ref];
+        let srcs = [op.srcs[0].src_ref.clone(), op.srcs[1].src_ref.clone()];
 
         self.ssa_prmt.insert(dst_ssa, PrmtEntry { sel, srcs });
     }
@@ -166,7 +166,7 @@ impl PrmtPass {
             // This source is unused
             op.srcs[src_idx] = 0.into();
         } else {
-            op.srcs[src_idx] = src_prmt.srcs[src_prmt_src].into();
+            op.srcs[src_idx] = src_prmt.srcs[src_prmt_src].clone().into();
         }
         true
     }
@@ -200,7 +200,7 @@ impl PrmtPass {
                     new_sel[i] =
                         PrmtSelByte::new(srcs.imm_src, byte_idx, false);
                 } else {
-                    let Some(src_idx) = srcs.try_add_src(*src_prmt_src) else {
+                    let Some(src_idx) = srcs.try_add_src(src_prmt_src) else {
                         return false;
                     };
 
@@ -219,7 +219,7 @@ impl PrmtPass {
                 new_sel[i] = PrmtSelByte::new(srcs.imm_src, byte_idx, false);
             } else {
                 debug_assert!(src.src_mod.is_none());
-                let Some(src_idx) = srcs.try_add_src(src.src_ref) else {
+                let Some(src_idx) = srcs.try_add_src(&src.src_ref) else {
                     return false;
                 };
 
@@ -240,8 +240,9 @@ impl PrmtPass {
         }
 
         op.sel = new_sel.into();
-        op.srcs[0] = srcs.srcs[0].into();
-        op.srcs[1] = srcs.srcs[1].into();
+        let [srcs0, srcs1] = srcs.srcs;
+        op.srcs[0] = srcs0.into();
+        op.srcs[1] = srcs1.into();
         true
     }
 

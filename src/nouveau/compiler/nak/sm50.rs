@@ -1304,7 +1304,7 @@ impl SM50Op for OpIAdd2X {
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
-        match self.carry_in.src_ref {
+        match &self.carry_in.src_ref {
             SrcRef::Reg(reg) if reg.file() == RegFile::Carry => (),
             src => panic!("Invalid iadd.x carry_in: {src}"),
         }
@@ -2004,7 +2004,7 @@ impl SM50Op for OpSel {
         use RegFile::GPR;
         let [src0, src1] = &mut self.srcs;
         if swap_srcs_if_not_reg(src0, src1, GPR) {
-            self.cond = self.cond.bnot();
+            self.cond = self.cond.clone().bnot();
         }
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
         b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);

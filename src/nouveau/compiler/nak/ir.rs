@@ -785,7 +785,7 @@ impl fmt::Display for CBufRef {
     }
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub enum SrcRef {
     Zero,
     True,
@@ -1125,7 +1125,7 @@ impl Src {
         b.into()
     }
 
-    pub fn fabs(&self) -> Src {
+    pub fn fabs(self) -> Src {
         Src {
             src_ref: self.src_ref,
             src_mod: self.src_mod.fabs(),
@@ -1133,7 +1133,7 @@ impl Src {
         }
     }
 
-    pub fn fneg(&self) -> Src {
+    pub fn fneg(self) -> Src {
         Src {
             src_ref: self.src_ref,
             src_mod: self.src_mod.fneg(),
@@ -1141,7 +1141,7 @@ impl Src {
         }
     }
 
-    pub fn ineg(&self) -> Src {
+    pub fn ineg(self) -> Src {
         Src {
             src_ref: self.src_ref,
             src_mod: self.src_mod.ineg(),
@@ -1149,7 +1149,7 @@ impl Src {
         }
     }
 
-    pub fn bnot(&self) -> Src {
+    pub fn bnot(self) -> Src {
         Src {
             src_ref: self.src_ref,
             src_mod: self.src_mod.bnot(),

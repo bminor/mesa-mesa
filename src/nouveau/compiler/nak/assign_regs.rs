@@ -1024,7 +1024,7 @@ impl AssignRegsBlock {
                         let reg = self.get_scalar(ssa[0]);
                         self.phi_out.insert(*id, reg.into());
                     } else {
-                        self.phi_out.insert(*id, src.src_ref);
+                        self.phi_out.insert(*id, src.src_ref.clone());
                     }
                 }
                 assert!(dsts_killed.is_empty());
@@ -1376,7 +1376,7 @@ impl AssignRegsBlock {
         for lv in &target.live_in {
             let src = match lv.live_ref {
                 LiveRef::SSA(ssa) => SrcRef::from(self.get_scalar(ssa)),
-                LiveRef::Phi(phi) => *self.phi_out.get(&phi).unwrap(),
+                LiveRef::Phi(phi) => self.phi_out.get(&phi).unwrap().clone(),
             };
             let dst = lv.reg_ref;
             if let SrcRef::Reg(src_reg) = src {

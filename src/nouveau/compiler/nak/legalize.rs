@@ -144,7 +144,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         }
 
         if val.comps() == 1 {
-            self.copy_to(val.into(), src.src_ref.into());
+            self.copy_to(val.into(), src.src_ref.clone().into());
         } else {
             match src.src_ref {
                 SrcRef::Imm32(u) => {

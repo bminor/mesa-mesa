@@ -2059,7 +2059,7 @@ impl SM70Op for OpSel {
         }
         let [src0, src1] = &mut self.srcs;
         if swap_srcs_if_not_reg(src0, src1, gpr) {
-            self.cond = self.cond.bnot();
+            self.cond = self.cond.clone().bnot();
         }
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::ALU);
     }
