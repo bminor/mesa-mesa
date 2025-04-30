@@ -23,7 +23,7 @@ struct radv_buffer_view {
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_buffer_view, vk.base, VkBufferView, VK_OBJECT_TYPE_BUFFER_VIEW)
 
-void radv_make_texel_buffer_descriptor(struct radv_device *device, uint64_t va, VkFormat vk_format, unsigned offset,
-                                       unsigned range, uint32_t *state);
+void radv_make_texel_buffer_descriptor(struct radv_device *device, uint64_t va, VkFormat vk_format, unsigned range,
+                                       uint32_t *state);
 
 #endif /* RADV_BUFFER_VIEW_H */

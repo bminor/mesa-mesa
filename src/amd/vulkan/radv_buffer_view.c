@@ -20,8 +20,8 @@
 #include "vk_log.h"
 
 void
-radv_make_texel_buffer_descriptor(struct radv_device *device, uint64_t va, VkFormat vk_format, unsigned offset,
-                                  unsigned range, uint32_t *state)
+radv_make_texel_buffer_descriptor(struct radv_device *device, uint64_t va, VkFormat vk_format, unsigned range,
+                                  uint32_t *state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct util_format_description *desc;
@@ -32,8 +32,6 @@ radv_make_texel_buffer_descriptor(struct radv_device *device, uint64_t va, VkFor
    stride = desc->block.bits / 8;
 
    radv_compose_swizzle(desc, NULL, swizzle);
-
-   va += offset;
 
    if (pdev->info.gfx_level != GFX8 && stride) {
       range /= stride;
@@ -73,7 +71,7 @@ radv_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInf
 
    view->bo = buffer->bo;
 
-   radv_make_texel_buffer_descriptor(device, buffer->vk.device_address, view->vk.format, view->vk.offset,
+   radv_make_texel_buffer_descriptor(device, buffer->vk.device_address + view->vk.offset, view->vk.format,
                                      view->vk.range, view->state);
 
    *pView = radv_buffer_view_to_handle(view);

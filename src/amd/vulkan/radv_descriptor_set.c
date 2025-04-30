@@ -1702,7 +1702,7 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
       const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pUniformTexelBuffer;
 
       if (addr_info && addr_info->address) {
-         radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, 0, addr_info->range,
+         radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, addr_info->range,
                                            pDescriptor);
       } else {
          memset(pDescriptor, 0, 4 * 4);
@@ -1713,7 +1713,7 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
       const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pStorageTexelBuffer;
 
       if (addr_info && addr_info->address) {
-         radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, 0, addr_info->range,
+         radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, addr_info->range,
                                            pDescriptor);
       } else {
          memset(pDescriptor, 0, 4 * 4);
