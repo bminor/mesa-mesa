@@ -66,7 +66,7 @@ tu_rmv_fill_device_info(struct tu_device *device,
     */
    snprintf(info->device_name, sizeof(info->device_name), "%s (0x%" PRIx64 ")",
       physical_device->name, physical_device->dev_id.chip_id);
-   info->pcie_family_id = info->pcie_revision_id = info->pcie_device_id = 0;
+   info->pcie_family_id = info->pcie_revision_id = info->pcie_device_id = ~0;
 
    /* TODO: provide relevant information here. */
    info->vram_type = VK_RMV_MEMORY_TYPE_LPDDR5;

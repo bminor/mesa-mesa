@@ -87,7 +87,7 @@ anv_rmv_fill_device_info(const struct anv_physical_device *device,
    info->pcie_revision_id = device->info.pci_revision_id;
    info->pcie_device_id = device->info.pci_device_id;
    /* TODO: */
-   info->pcie_family_id = 0;
+   info->pcie_family_id = ~0;
    info->minimum_shader_clock = 0;
    info->maximum_shader_clock = 1 * 1024 * 1024 * 1024;
    info->vram_type = VK_RMV_MEMORY_TYPE_DDR4;
