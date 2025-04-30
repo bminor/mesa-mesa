@@ -155,7 +155,7 @@ radv_amdgpu_winsys_destroy(struct radeon_winsys *rws)
 
    simple_mtx_lock(&winsys_creation_mutex);
    if (!--ws->refcount) {
-      _mesa_hash_table_remove_key(winsyses, ws->dev);
+      _mesa_hash_table_remove_key(winsyses, (void *)ac_drm_device_get_cookie(ws->dev));
 
       /* Clean the hashtable up if empty, though there is no
        * empty function. */

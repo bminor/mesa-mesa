@@ -5304,7 +5304,7 @@
         "description": "radv/amdgpu: Fix hash key in radv_amdgpu_winsys_destroy().",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
