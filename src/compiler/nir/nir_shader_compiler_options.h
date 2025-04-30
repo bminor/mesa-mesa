@@ -456,6 +456,11 @@ typedef struct nir_shader_compiler_options {
     */
    bool lower_mul_32x16;
 
+   /**
+    * Set if bf2f and f2bf should be lowered to arithmetic.
+    */
+   bool lower_bfloat16_conversions;
+
    bool vectorize_tess_levels;
    bool lower_to_scalar;
    nir_instr_filter_cb lower_to_scalar_filter;

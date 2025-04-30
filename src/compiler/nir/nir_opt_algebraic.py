@@ -1450,6 +1450,11 @@ optimizations.extend([
    (('fany_nequal4', a, b), ('fsat', ('fdot4', ('sne', a, b), ('sne', a, b))), 'options->lower_vector_cmp'),
    (('fany_nequal8', a, b), ('fsat', ('fdot8', ('sne', a, b), ('sne', a, b))), 'options->lower_vector_cmp'),
    (('fany_nequal16', a, b), ('fsat', ('fdot16', ('sne', a, b), ('sne', a, b))), 'options->lower_vector_cmp'),
+
+   # Vulkan allows us to use any rounding mode, so choose rtz because it's simple.
+   # Avoid some NaNs being converted to Inf if the lsb are cut off.
+   (('f2bf', a), ('bcsel', ('!fneu', a, a), -1, ('unpack_32_2x16_split_y', a)), 'options->lower_bfloat16_conversions'),
+   (('bf2f', a), ('pack_32_2x16', ('vec2', 0, a)), 'options->lower_bfloat16_conversions'),
 ])
 
 def vector_cmp(reduce_op, cmp_op, comps):
