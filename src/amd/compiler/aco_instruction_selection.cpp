@@ -4230,7 +4230,7 @@ struct EmitLoadParameters {
                              Temp dst_hint);
 
    Callback callback;
-   unsigned max_const_offset_plus_one;
+   uint64_t max_const_offset_plus_one;
 };
 
 void
@@ -6675,7 +6675,7 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
       info.offset = Operand(bld.as_uniform(info.offset));
       info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_SMEM);
       EmitLoadParameters params = smem_load_params;
-      params.max_const_offset_plus_one = ctx->program->dev.smem_offset_max + 1;
+      params.max_const_offset_plus_one = ctx->program->dev.smem_offset_max + UINT64_C(1);
       emit_load(ctx, bld, info, params);
    } else {
       EmitLoadParameters params = global_load_params;
