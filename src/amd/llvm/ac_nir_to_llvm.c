@@ -1226,6 +1226,22 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
       break;
    }
 
+   case nir_op_bfdot2_bfadd: {
+      const char *name = "llvm.amdgcn.fdot2.bf16.bf16";
+      LLVMTypeRef vec2_type = ctx->ac.v2bf16;
+      LLVMTypeRef scalar_type = ctx->ac.bf16;
+#if LLVM_VERSION_MAJOR < 19 || (LLVM_VERSION_MAJOR == 19 && LLVM_VERSION_MINOR == 0)
+      /* Before LLVM 19.1, bf16 fdot used integer operands. */
+      vec2_type = ctx->ac.v2i16;
+      scalar_type = ctx->ac.i16;
+#endif
+      src[0] = LLVMBuildBitCast(ctx->ac.builder, src[0], vec2_type, "");
+      src[1] = LLVMBuildBitCast(ctx->ac.builder, src[1], vec2_type, "");
+      src[2] = LLVMBuildBitCast(ctx->ac.builder, src[2], scalar_type, "");
+      result = ac_build_intrinsic(&ctx->ac, name, scalar_type, src, 3, 0);
+      break;
+   }
+
    case nir_op_msad_4x8:
       result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.msad.u8", ctx->ac.i32,
                                   (LLVMValueRef[]){src[1], src[0], src[2]}, 3, 0);

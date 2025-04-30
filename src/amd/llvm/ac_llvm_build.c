@@ -61,12 +61,14 @@ void ac_llvm_context_init(struct ac_llvm_context *ctx, struct ac_llvm_compiler *
    ctx->i64 = LLVMIntTypeInContext(ctx->context, 64);
    ctx->i128 = LLVMIntTypeInContext(ctx->context, 128);
    ctx->intptr = ctx->i32;
+   ctx->bf16 = LLVMBFloatTypeInContext(ctx->context);
    ctx->f16 = LLVMHalfTypeInContext(ctx->context);
    ctx->f32 = LLVMFloatTypeInContext(ctx->context);
    ctx->f64 = LLVMDoubleTypeInContext(ctx->context);
    ctx->v4i8 = LLVMVectorType(ctx->i8, 4);
    ctx->v2i16 = LLVMVectorType(ctx->i16, 2);
    ctx->v4i16 = LLVMVectorType(ctx->i16, 4);
+   ctx->v2bf16 = LLVMVectorType(ctx->bf16, 2);
    ctx->v2f16 = LLVMVectorType(ctx->f16, 2);
    ctx->v4f16 = LLVMVectorType(ctx->f16, 4);
    ctx->v2i32 = LLVMVectorType(ctx->i32, 2);
@@ -154,7 +156,7 @@ int ac_get_elem_bits(struct ac_llvm_context *ctx, LLVMTypeRef type)
          return 32;
    }
 
-   if (type == ctx->f16)
+   if (type == ctx->f16 || type == ctx->bf16)
       return 16;
    if (type == ctx->f32)
       return 32;
@@ -172,6 +174,7 @@ unsigned ac_get_type_size(LLVMTypeRef type)
    case LLVMIntegerTypeKind:
       return LLVMGetIntTypeWidth(type) / 8;
    case LLVMHalfTypeKind:
+   case LLVMBFloatTypeKind:
       return 2;
    case LLVMFloatTypeKind:
       return 4;
@@ -197,7 +200,7 @@ static LLVMTypeRef to_integer_type_scalar(struct ac_llvm_context *ctx, LLVMTypeR
       return ctx->i1;
    else if (t == ctx->i8)
       return ctx->i8;
-   else if (t == ctx->f16 || t == ctx->i16)
+   else if (t == ctx->f16 || t == ctx->bf16 || t == ctx->i16)
       return ctx->i16;
    else if (t == ctx->f32 || t == ctx->i32)
       return ctx->i32;
@@ -355,6 +358,9 @@ void ac_build_type_name_for_intr(LLVMTypeRef type, char *buf, unsigned bufsize)
       break;
    case LLVMIntegerTypeKind:
       snprintf(buf, bufsize, "i%d", LLVMGetIntTypeWidth(elem_type));
+      break;
+   case LLVMBFloatTypeKind:
+      snprintf(buf, bufsize, "bf16");
       break;
    case LLVMHalfTypeKind:
       snprintf(buf, bufsize, "f16");
