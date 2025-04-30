@@ -1818,7 +1818,7 @@ impl<'a> ShaderFromNir<'a> {
         let dst = b.alloc_ssa_vec(RegFile::GPR, dst_comps);
 
         // On Volta and later, the destination is split in two
-        let mut dsts = [Dst::None; 2];
+        let mut dsts = [Dst::None, Dst::None];
         if dst_comps > 2 && b.sm() >= 70 {
             dsts[0] = SSARef::try_from(&dst[0..2]).unwrap().into();
             dsts[1] = SSARef::try_from(&dst[2..]).unwrap().into();

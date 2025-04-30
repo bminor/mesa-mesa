@@ -31,7 +31,7 @@ fn try_combine_outs(emit: &mut Instr, cut: &Instr) -> bool {
         return false;
     }
 
-    emit.dst = cut.dst;
+    emit.dst = cut.dst.clone();
     emit.out_type = OutType::EmitThenCut;
 
     true

@@ -354,7 +354,7 @@ pub trait SSABuilder: Builder {
             self.push_op(OpIAdd3 {
                 dst: dst.into(),
                 srcs: [x, y, z],
-                overflow: [Dst::None; 2],
+                overflow: [Dst::None, Dst::None],
             });
         } else {
             assert!(z.is_zero());
@@ -488,7 +488,7 @@ pub trait SSABuilder: Builder {
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
                 dst: dst.into(),
-                overflow: [Dst::None; 2],
+                overflow: [Dst::None, Dst::None],
                 srcs: [0.into(), i.ineg(), 0.into()],
             });
         } else {

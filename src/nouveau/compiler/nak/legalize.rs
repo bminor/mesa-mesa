@@ -281,7 +281,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
                 srcs: [Src::new_zero(), *src, Src::new_zero()],
-                overflow: [Dst::None; 2],
+                overflow: [Dst::None, Dst::None],
                 dst: val.into(),
             });
         } else {

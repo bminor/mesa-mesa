@@ -302,12 +302,12 @@ impl SM50Encoder<'_> {
         self.set_bit(not_bit, src.src_mod.is_bnot());
     }
 
-    fn set_pred_dst(&mut self, range: Range<usize>, dst: Dst) {
+    fn set_pred_dst(&mut self, range: Range<usize>, dst: &Dst) {
         match dst {
             Dst::None => {
                 self.set_pred_reg(range, true_reg());
             }
-            Dst::Reg(reg) => self.set_pred_reg(range, reg),
+            Dst::Reg(reg) => self.set_pred_reg(range, *reg),
             _ => panic!("Not a register"),
         }
     }
@@ -323,10 +323,10 @@ impl SM50Encoder<'_> {
         self.set_bit(not_bit, not ^ src.src_mod.is_bnot());
     }
 
-    fn set_dst(&mut self, dst: Dst) {
+    fn set_dst(&mut self, dst: &Dst) {
         let reg = match dst {
             Dst::None => zero_reg(),
-            Dst::Reg(reg) => reg,
+            Dst::Reg(reg) => *reg,
             _ => panic!("invalid dst {dst}"),
         };
         self.set_reg(0..8, reg);
@@ -501,7 +501,7 @@ impl SM50Op for OpFAdd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
             e.set_opcode(0x0800);
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_fmod_src(8..16, 54, 56, self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
             assert!(self.rnd_mode == FRndMode::NearestEven);
@@ -524,7 +524,7 @@ impl SM50Op for OpFAdd {
                 src => panic!("Invalid fadd src1: {src}"),
             }
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
 
             e.set_rnd_mode(39..41, self.rnd_mode);
@@ -594,7 +594,7 @@ impl SM50Op for OpFFma {
             src => panic!("Invalid ffma src2: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
 
         e.set_bit(48, fneg_fmul);
@@ -635,7 +635,7 @@ impl SM50Op for OpFMnMx {
         }
 
         e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_pred_src(39..42, 42, self.min);
         e.set_bit(44, self.ftz);
     }
@@ -706,7 +706,7 @@ impl SM50Op for OpFMul {
         }
 
         e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -734,7 +734,7 @@ impl SM50Op for OpRro {
             src => panic!("Invalid rro src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_field(
             39..40,
             match self.op {
@@ -753,7 +753,7 @@ impl SM50Op for OpMuFu {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0x5080);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_fmod_src(8..16, 46, 48, self.src);
 
         e.set_field(
@@ -864,7 +864,7 @@ impl SM50Op for OpFSet {
         e.set_float_cmp_op(48..52, self.cmp_op);
         e.set_bit(52, true); // bool float
         e.set_bit(55, self.ftz);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -897,8 +897,8 @@ impl SM50Op for OpFSetP {
             src => panic!("Invalid fsetp src1: {src}"),
         }
 
-        e.set_pred_dst(3..6, self.dst);
-        e.set_pred_dst(0..3, Dst::None); // dst1
+        e.set_pred_dst(3..6, &self.dst);
+        e.set_pred_dst(0..3, &Dst::None); // dst1
         e.set_reg_fmod_src(8..16, 7, 43, self.srcs[0]);
         e.set_pred_src(39..42, 42, self.accum);
         e.set_pred_set_op(45..47, self.set_op);
@@ -917,7 +917,7 @@ impl SM50Op for OpFSwzAdd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0x50f8);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_reg_src(20..28, self.srcs[1]);
 
@@ -976,7 +976,7 @@ impl SM50Op for OpDAdd {
             src => panic!("Invalid dadd src1: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
         e.set_rnd_mode(39..41, self.rnd_mode);
     }
@@ -1038,7 +1038,7 @@ impl SM50Op for OpDFma {
             src => panic!("Invalid dfma src2: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
 
         e.set_bit(48, fneg_fmul);
@@ -1076,7 +1076,7 @@ impl SM50Op for OpDMnMx {
         }
 
         e.set_reg_fmod_src(8..16, 46, 48, self.srcs[0]);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_pred_src(39..42, 42, self.min);
     }
 }
@@ -1116,7 +1116,7 @@ impl SM50Op for OpDMul {
             src => panic!("Invalid dmul src1: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src_ref(8..16, self.srcs[0].src_ref);
 
         e.set_rnd_mode(39..41, self.rnd_mode);
@@ -1153,8 +1153,8 @@ impl SM50Op for OpDSetP {
             src => panic!("Invalid dsetp src1: {src}"),
         }
 
-        e.set_pred_dst(3..6, self.dst);
-        e.set_pred_dst(0..3, Dst::None); // dst1
+        e.set_pred_dst(3..6, &self.dst);
+        e.set_pred_dst(0..3, &Dst::None); // dst1
         e.set_pred_src(39..42, 42, self.accum);
         e.set_pred_set_op(45..47, self.set_op);
         e.set_float_cmp_op(48..52, self.cmp_op);
@@ -1195,7 +1195,7 @@ impl SM50Op for OpBfe {
         }
 
         e.set_reg_src(8..16, self.base);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -1223,7 +1223,7 @@ impl SM50Op for OpFlo {
             src => panic!("Invalid flo src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_bit(40, self.src.src_mod.is_bnot());
         e.set_bit(48, self.signed);
         e.set_bit(41, self.return_shift_amount);
@@ -1253,7 +1253,7 @@ impl SM50Op for OpIAdd2 {
             self.srcs[0].src_mod.is_none() || self.srcs[1].src_mod.is_none()
         );
 
-        let carry_out = match self.carry_out {
+        let carry_out = match &self.carry_out {
             Dst::Reg(reg) if reg.file() == RegFile::Carry => true,
             Dst::None => false,
             dst => panic!("Invalid iadd carry_out: {dst}"),
@@ -1262,7 +1262,7 @@ impl SM50Op for OpIAdd2 {
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.set_opcode(0x1c00);
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_ineg_src(8..16, 56, self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
 
@@ -1286,7 +1286,7 @@ impl SM50Op for OpIAdd2 {
                 src => panic!("Invalid iadd src1: {src}"),
             }
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_ineg_src(8..16, 49, self.srcs[0]);
 
             e.set_bit(43, false); // .X
@@ -1309,7 +1309,7 @@ impl SM50Op for OpIAdd2X {
             src => panic!("Invalid iadd.x carry_in: {src}"),
         }
 
-        let carry_out = match self.carry_out {
+        let carry_out = match &self.carry_out {
             Dst::Reg(reg) if reg.file() == RegFile::Carry => true,
             Dst::None => false,
             dst => panic!("Invalid iadd.x carry_out: {dst}"),
@@ -1318,7 +1318,7 @@ impl SM50Op for OpIAdd2X {
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.set_opcode(0x1c00);
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_bnot_src(8..16, 56, self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
 
@@ -1342,7 +1342,7 @@ impl SM50Op for OpIAdd2X {
                 src => panic!("Invalid iadd.x src1: {src}"),
             }
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_bnot_src(8..16, 49, self.srcs[0]);
 
             e.set_bit(43, true); // .X
@@ -1399,7 +1399,7 @@ impl SM50Op for OpIMad {
             src => panic!("Invalid imad src2: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
 
         e.set_bit(48, self.signed); // src0 signed
@@ -1452,7 +1452,7 @@ impl SM50Op for OpIMul {
             e.set_bit(41, self.signed[1]);
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
     }
 }
@@ -1484,7 +1484,7 @@ impl SM50Op for OpIMnMx {
             src => panic!("Invalid imnmx src1: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_pred_src(39..42, 42, self.min);
         e.set_bit(47, false); // .CC
@@ -1527,8 +1527,8 @@ impl SM50Op for OpISetP {
             src => panic!("Invalid isetp src1: {src}"),
         }
 
-        e.set_pred_dst(0..3, Dst::None); // dst1
-        e.set_pred_dst(3..6, self.dst);
+        e.set_pred_dst(0..3, &Dst::None); // dst1
+        e.set_pred_dst(3..6, &self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_pred_src(39..42, 42, self.accum);
 
@@ -1569,7 +1569,7 @@ impl SM50Op for OpLop2 {
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.set_opcode(0x0400);
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_bnot_src(8..16, 55, self.srcs[0]);
             e.set_src_imm32(20..52, imm32);
             e.set_field(
@@ -1602,7 +1602,7 @@ impl SM50Op for OpLop2 {
                 src => panic!("Invalid lop2 src1: {src}"),
             }
 
-            e.set_dst(self.dst);
+            e.set_dst(&self.dst);
             e.set_reg_bnot_src(8..16, 39, self.srcs[0]);
 
             e.set_field(
@@ -1615,7 +1615,7 @@ impl SM50Op for OpLop2 {
                 },
             );
 
-            e.set_pred_dst(48..51, Dst::None);
+            e.set_pred_dst(48..51, &Dst::None);
         }
     }
 }
@@ -1644,7 +1644,7 @@ impl SM50Op for OpPopC {
             src => panic!("Invalid popc src1: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -1682,7 +1682,7 @@ impl SM50Op for OpShf {
             },
         );
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.low);
         e.set_reg_src(39..47, self.high);
 
@@ -1707,7 +1707,7 @@ impl SM50Op for OpShl {
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.src);
         match &self.shift.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
@@ -1737,7 +1737,7 @@ impl SM50Op for OpShr {
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.src);
         match &self.shift.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
@@ -1798,7 +1798,7 @@ impl SM50Op for OpF2F {
         e.set_bit(44, self.ftz);
         e.set_bit(50, false); // saturate
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -1826,7 +1826,7 @@ impl SM50Op for OpF2I {
             src => panic!("Invalid f2i src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
 
         // We can't span 32 bits
         assert!(
@@ -1867,7 +1867,7 @@ impl SM50Op for OpI2F {
             src => panic!("Invalid i2f src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
 
         // We can't span 32 bits
         assert!(
@@ -1907,7 +1907,7 @@ impl SM50Op for OpI2I {
             src => panic!("Invalid i2i src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
 
         // We can't span 32 bits
         assert!(
@@ -1952,7 +1952,7 @@ impl SM50Op for OpMov {
             src => panic!("Invalid mov src: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 
@@ -1981,7 +1981,7 @@ impl SM50Op for OpPrmt {
             src => panic!("Invalid prmt selector: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_reg_src(39..47, self.srcs[1]);
         e.set_field(
@@ -2027,7 +2027,7 @@ impl SM50Op for OpSel {
             src => panic!("Invalid sel src1: {src}"),
         }
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_pred_src(39..42, 42, self.cond);
     }
@@ -2044,8 +2044,8 @@ impl SM50Op for OpShfl {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xef10);
 
-        e.set_dst(self.dst);
-        e.set_pred_dst(48..51, self.in_bounds);
+        e.set_dst(&self.dst);
+        e.set_pred_dst(48..51, &self.in_bounds);
         e.set_reg_src(8..16, self.src);
 
         match &self.lane.src_ref {
@@ -2091,8 +2091,8 @@ impl SM50Op for OpPSetP {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0x5090);
 
-        e.set_pred_dst(3..6, self.dsts[0]);
-        e.set_pred_dst(0..3, self.dsts[1]);
+        e.set_pred_dst(3..6, &self.dsts[0]);
+        e.set_pred_dst(0..3, &self.dsts[1]);
 
         e.set_pred_src(12..15, 15, self.srcs[0]);
         e.set_pred_src(29..32, 32, self.srcs[1]);
@@ -2177,7 +2177,7 @@ impl SM50Op for OpTex {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
         e.set_reg_src(8..16, self.srcs[0]);
@@ -2210,7 +2210,7 @@ impl SM50Op for OpTld {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
         e.set_reg_src(8..16, self.srcs[0]);
@@ -2258,7 +2258,7 @@ impl SM50Op for OpTld4 {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
         e.set_reg_src(8..16, self.srcs[0]);
@@ -2291,7 +2291,7 @@ impl SM50Op for OpTmml {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         e.set_reg_src(8..16, self.srcs[0]);
         e.set_reg_src(20..28, self.srcs[1]);
@@ -2322,7 +2322,7 @@ impl SM50Op for OpTxd {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         assert!(self.fault.is_none());
         e.set_reg_src(8..16, self.srcs[0]);
@@ -2354,7 +2354,7 @@ impl SM50Op for OpTxq {
             }
         }
 
-        e.set_dst(self.dsts[0]);
+        e.set_dst(&self.dsts[0]);
         assert!(self.dsts[1].is_none());
         e.set_reg_src(8..16, self.src);
 
@@ -2475,7 +2475,7 @@ impl SM50Op for OpSuLd {
             },
         );
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
 
         e.set_reg_src(8..16, self.coord);
         e.set_reg_src(39..47, self.handle);
@@ -2564,7 +2564,7 @@ impl SM50Op for OpSuAtom {
         // image.
         e.set_bit(52, true); // .D
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
 
         e.set_reg_src(20..28, self.data);
         e.set_reg_src(8..16, self.coord);
@@ -2584,7 +2584,7 @@ impl SM50Op for OpLd {
             MemSpace::Shared => 0xef48,
         });
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.addr);
         e.set_field(20..44, self.offset);
 
@@ -2609,7 +2609,7 @@ impl SM50Op for OpLdc {
 
         e.set_opcode(0xef90);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.offset);
         e.set_field(20..36, cb.offset);
         e.set_field(36..41, cb_idx);
@@ -2707,7 +2707,7 @@ impl SM50Op for OpAtom {
                 } else if let AtomOp::CmpExch(cmp_src) = self.atom_op {
                     e.set_opcode(0xee00);
 
-                    e.set_dst(self.dst);
+                    e.set_dst(&self.dst);
 
                     // TODO: These are all supported by the disassembler but
                     // only the packed layout appears to be supported by real
@@ -2736,7 +2736,7 @@ impl SM50Op for OpAtom {
                 } else {
                     e.set_opcode(0xed00);
 
-                    e.set_dst(self.dst);
+                    e.set_dst(&self.dst);
                     e.set_reg_src(20..28, self.data);
 
                     let data_type = match self.atom_type {
@@ -2800,7 +2800,7 @@ impl SM50Op for OpAtom {
                     e.set_atom_op(52..56, self.atom_op);
                 }
 
-                e.set_dst(self.dst);
+                e.set_dst(&self.dst);
                 e.set_reg_src(8..16, self.addr);
                 assert_eq!(self.addr_offset % 4, 0);
                 e.set_field(30..52, self.addr_offset / 4);
@@ -2817,14 +2817,14 @@ impl SM50Op for OpAL2P {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefa0);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.offset);
 
         e.set_field(20..31, self.addr);
         e.set_bit(32, self.output);
 
         e.set_field(47..49, 0_u8); // comps
-        e.set_pred_dst(44..47, Dst::None);
+        e.set_pred_dst(44..47, &Dst::None);
     }
 }
 
@@ -2836,7 +2836,7 @@ impl SM50Op for OpALd {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefd8);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         if self.phys {
             assert!(!self.patch);
             assert!(self.offset.src_ref.as_reg().is_some());
@@ -2881,7 +2881,7 @@ impl SM50Op for OpIpa {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xe000);
 
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, 0.into()); // addr
         e.set_reg_src(20..28, self.inv_w);
         e.set_reg_src(39..47, self.offset);
@@ -2889,7 +2889,7 @@ impl SM50Op for OpIpa {
         assert!(self.addr % 4 == 0);
         e.set_field(28..38, self.addr);
         e.set_bit(38, false); // .IDX
-        e.set_pred_dst(47..50, Dst::None); // TODO: What is this for?
+        e.set_pred_dst(47..50, &Dst::None); // TODO: What is this for?
         e.set_bit(51, false); // .SAT
         e.set_field(
             52..54,
@@ -3119,7 +3119,7 @@ impl SM50Op for OpCS2R {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0x50c8);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_field(20..28, self.idx);
     }
 }
@@ -3131,7 +3131,7 @@ impl SM50Op for OpIsberd {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefd0);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, self.idx);
     }
 }
@@ -3167,7 +3167,7 @@ impl SM50Op for OpPixLd {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xefe8);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_reg_src(8..16, 0.into());
         e.set_field(
             31..34,
@@ -3180,7 +3180,7 @@ impl SM50Op for OpPixLd {
                 other => panic!("Unsupported PixVal: {other}"),
             },
         );
-        e.set_pred_dst(45..48, Dst::None);
+        e.set_pred_dst(45..48, &Dst::None);
     }
 }
 
@@ -3191,7 +3191,7 @@ impl SM50Op for OpS2R {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0xf0c8);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
         e.set_field(20..28, self.idx);
     }
 }
@@ -3204,8 +3204,8 @@ impl SM50Op for OpVote {
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         e.set_opcode(0x50d8);
 
-        e.set_dst(self.ballot);
-        e.set_pred_dst(45..48, self.vote);
+        e.set_dst(&self.ballot);
+        e.set_pred_dst(45..48, &self.vote);
         e.set_pred_src(39..42, 42, self.pred);
 
         e.set_field(
@@ -3253,7 +3253,7 @@ impl SM50Op for OpOut {
         );
 
         e.set_reg_src(8..16, self.handle);
-        e.set_dst(self.dst);
+        e.set_dst(&self.dst);
     }
 }
 

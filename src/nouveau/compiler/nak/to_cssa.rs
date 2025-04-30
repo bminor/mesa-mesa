@@ -333,8 +333,8 @@ impl Function {
                             }
 
                             let tmp = self.ssa_alloc.alloc(file);
-                            pcopy.push(*dst, tmp.into());
-                            *dst = tmp.into();
+                            let old_dst = std::mem::replace(dst, tmp.into());
+                            pcopy.push(old_dst, tmp.into());
                         }
 
                         instrs.push(instr);

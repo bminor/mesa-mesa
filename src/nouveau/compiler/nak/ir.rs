@@ -660,7 +660,7 @@ impl fmt::Display for RegRef {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum Dst {
     None,
     SSA(SSARef),
