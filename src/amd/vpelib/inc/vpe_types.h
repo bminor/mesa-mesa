@@ -841,12 +841,18 @@ struct vpe_stream {
     } flags; /**< Data flags */
 };
 
+/** @enum predication_polarity
+ *  @brief Predication polarity
+ */
 enum predication_polarity {
     PREDICATION_OP_EQUAL_ZERO = 0, /**< Enables predication if all 64-bits are zero. */
     PREDICATION_OP_NOT_EQUAL_ZERO =
         1, /**< Enables predication if at least one of the 64-bits are not zero.*/
 };
 
+/** @struct vpe_predication_info
+ *  @brief Predication info
+ */
 struct vpe_predication_info {
     bool                      enable;   /**< Enable predication */
     uint64_t                  gpu_va;   /**< GPU start address of the buffer */
