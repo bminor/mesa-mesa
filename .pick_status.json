@@ -674,7 +674,7 @@
         "description": "radv: do not clear unwritten color attachments with dual-source blending",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e1483d022b28218bd53aea1c4917739cf0398b3e",
         "notes": null
