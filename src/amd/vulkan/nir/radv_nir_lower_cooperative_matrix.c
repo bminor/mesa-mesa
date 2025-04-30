@@ -648,12 +648,20 @@ opt_cmat(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    if (intrin->intrinsic != nir_intrinsic_cmat_muladd_amd)
       return false;
 
+   enum glsl_base_type a_type = nir_intrinsic_src_base_type(intrin);
+
+   if (glsl_base_type_is_integer(a_type))
+      return false;
+
    bool progress = false;
 
-   if (intrin->src[0].ssa->bit_size != 8) {
-      for (unsigned i = 0; i < 3; i++)
+   if (a_type == GLSL_TYPE_FLOAT16) {
+      for (unsigned i = 0; i < 2; i++)
          progress |= opt_cmat_modifiers(b, intrin, gfx_level, i);
    }
+
+   if (a_type == GLSL_TYPE_FLOAT16 || intrin->def.bit_size == 32)
+      progress |= opt_cmat_modifiers(b, intrin, gfx_level, 2);
 
    return progress;
 }
