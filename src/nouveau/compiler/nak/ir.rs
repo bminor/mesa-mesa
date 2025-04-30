@@ -715,6 +715,15 @@ impl<T: Into<SSARef>> From<T> for Dst {
     }
 }
 
+impl From<Option<SSAValue>> for Dst {
+    fn from(ssa: Option<SSAValue>) -> Dst {
+        match ssa {
+            Some(ssa) => Dst::SSA(ssa.into()),
+            None => Dst::None,
+        }
+    }
+}
+
 impl fmt::Display for Dst {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -1827,9 +1827,9 @@ impl<'a> ShaderFromNir<'a> {
         }
 
         let fault = if flags.is_sparse() {
-            b.alloc_ssa(RegFile::Pred).into()
+            Some(b.alloc_ssa(RegFile::Pred))
         } else {
-            Dst::None
+            None
         };
 
         if tex.op == nir_texop_hdr_dim_nv {
@@ -1886,7 +1886,7 @@ impl<'a> ShaderFromNir<'a> {
                 assert!(!flags.has_z_cmpr());
                 b.push_op(OpTxd {
                     dsts: dsts,
-                    fault,
+                    fault: fault.into(),
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
@@ -1909,7 +1909,7 @@ impl<'a> ShaderFromNir<'a> {
                 assert!(offset_mode != Tld4OffsetMode::PerPx);
                 b.push_op(OpTld {
                     dsts: dsts,
-                    fault,
+                    fault: fault.into(),
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
@@ -1923,7 +1923,7 @@ impl<'a> ShaderFromNir<'a> {
             } else if tex.op == nir_texop_tg4 {
                 b.push_op(OpTld4 {
                     dsts: dsts,
-                    fault,
+                    fault: fault.into(),
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
@@ -1938,7 +1938,7 @@ impl<'a> ShaderFromNir<'a> {
                 assert!(offset_mode != Tld4OffsetMode::PerPx);
                 b.push_op(OpTex {
                     dsts: dsts,
-                    fault,
+                    fault: fault.into(),
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
@@ -1956,7 +1956,7 @@ impl<'a> ShaderFromNir<'a> {
         let mut nir_dst = Vec::new();
         for i in 0..tex.def.num_components() {
             if flags.is_sparse() && i == tex.def.num_components - 1 {
-                let Dst::SSA(fault) = fault else {
+                let Some(fault) = fault else {
                     panic!("No fault value for sparse op");
                 };
                 nir_dst.push(b.sel(fault.into(), 0.into(), 1.into()));
