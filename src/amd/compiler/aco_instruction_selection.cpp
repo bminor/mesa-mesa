@@ -8020,20 +8020,24 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
    bitarray8 neg_lo = nir_intrinsic_neg_lo_amd(instr);
    bitarray8 neg_hi = nir_intrinsic_neg_hi_amd(instr);
 
-   switch (instr->src[0].ssa->bit_size) {
-   case 16:
+   enum glsl_base_type type_a = nir_intrinsic_src_base_type(instr);
+   enum glsl_base_type type_b = nir_intrinsic_src_base_type2(instr);
+
+   switch (type_a) {
+   case GLSL_TYPE_FLOAT16:
       switch (instr->def.bit_size) {
       case 32: opcode = aco_opcode::v_wmma_f32_16x16x16_f16; break;
       case 16: opcode = aco_opcode::v_wmma_f16_16x16x16_f16; break;
       }
       break;
-   case 8: {
+   case GLSL_TYPE_UINT8:
+   case GLSL_TYPE_INT8: {
       opcode = aco_opcode::v_wmma_i32_16x16x16_iu8;
-      unsigned signed_mask = nir_intrinsic_cmat_signed_mask(instr);
-      neg_lo[0] = signed_mask & NIR_CMAT_A_SIGNED;
-      neg_lo[1] = signed_mask & NIR_CMAT_B_SIGNED;
+      neg_lo[0] = type_a == GLSL_TYPE_INT8;
+      neg_lo[1] = type_b == GLSL_TYPE_INT8;
       break;
    }
+   default: unreachable("invalid cmat_muladd_amd type");
    }
 
    if (opcode == aco_opcode::num_opcodes)

@@ -417,11 +417,22 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                nir_def *B = radv_nir_load_cmat(&b, &params, intr->src[2].ssa);
                nir_def *C = radv_nir_load_cmat(&b, &params, intr->src[3].ssa);
 
-               nir_deref_instr *dst_deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+               nir_deref_instr *a_deref = nir_src_as_deref(intr->src[1]);
+               nir_deref_instr *b_deref = nir_src_as_deref(intr->src[2]);
+               struct glsl_cmat_description a_desc = *glsl_get_cmat_description(a_deref->type);
+               struct glsl_cmat_description b_desc = *glsl_get_cmat_description(b_deref->type);
+
+               const nir_cmat_signed cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intr);
+
+               enum glsl_base_type a_element_type =
+                  glsl_apply_signedness_to_base_type(a_desc.element_type, cmat_signed_mask & NIR_CMAT_A_SIGNED);
+               enum glsl_base_type b_element_type =
+                  glsl_apply_signedness_to_base_type(b_desc.element_type, cmat_signed_mask & NIR_CMAT_B_SIGNED);
 
                nir_def *ret = nir_cmat_muladd_amd(&b, A, B, C, .saturate = nir_intrinsic_saturate(intr),
-                                                  .cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intr));
+                                                  .src_base_type = a_element_type, .src_base_type2 = b_element_type);
 
+               nir_deref_instr *dst_deref = nir_src_as_deref(intr->src[0]);
                nir_store_deref(&b, dst_deref, ret, nir_component_mask(ret->num_components));
                nir_instr_remove(instr);
                progress = true;

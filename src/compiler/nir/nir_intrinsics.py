@@ -226,6 +226,7 @@ index("nir_alu_type", "dest_type")
 # Source and destination data types for dpas_intel.  Needed here to
 # represent types that won't have a nir_alu_type.
 index("enum glsl_base_type", "src_base_type")
+index("enum glsl_base_type", "src_base_type2")
 index("enum glsl_base_type", "dest_base_type")
 
 # The swizzle mask for quad_swizzle_amd & masked_swizzle_amd
@@ -1982,7 +1983,7 @@ intrinsic("strict_wqm_coord_amd", src_comp=[0], dest_comp=0, bit_sizes=[32], ind
           flags=[CAN_ELIMINATE])
 
 intrinsic("cmat_muladd_amd", src_comp=[-1, -1, 0], dest_comp=0, bit_sizes=src2,
-          indices=[SATURATE, NEG_LO_AMD, NEG_HI_AMD, CMAT_SIGNED_MASK], flags=[CAN_ELIMINATE])
+          indices=[SATURATE, NEG_LO_AMD, NEG_HI_AMD, SRC_BASE_TYPE, SRC_BASE_TYPE2], flags=[CAN_ELIMINATE])
 
 # Get the debug log buffer descriptor.
 intrinsic("load_debug_log_desc_amd", bit_sizes=[32], dest_comp=4, flags=[CAN_ELIMINATE, CAN_REORDER])
