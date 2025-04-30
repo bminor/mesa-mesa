@@ -2481,12 +2481,9 @@ brw_nir_move_interpolation_to_top(nir_shader *nir)
                instr
             };
 
-            for (unsigned i = 0; i < ARRAY_SIZE(move); i++) {
-               if (move[i]->block != top) {
-                  nir_instr_move(cursor, move[i]);
-                  impl_progress = true;
-               }
-            }
+            for (unsigned i = 0; i < ARRAY_SIZE(move); i++)
+               nir_instr_move(cursor, move[i]);
+            impl_progress = true;
          }
       }
 
