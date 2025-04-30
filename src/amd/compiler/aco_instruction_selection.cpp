@@ -4230,7 +4230,7 @@ struct EmitLoadParameters {
                              Temp dst_hint);
 
    Callback callback;
-   uint64_t max_const_offset_plus_one;
+   uint32_t max_const_offset;
 };
 
 void
@@ -4262,10 +4262,10 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
       /* reduce constant offset */
       Operand offset = info.offset;
       unsigned reduced_const_offset = const_offset;
-      if (const_offset && (const_offset >= params.max_const_offset_plus_one)) {
-         unsigned to_add =
-            const_offset / params.max_const_offset_plus_one * params.max_const_offset_plus_one;
-         reduced_const_offset %= params.max_const_offset_plus_one;
+      if (const_offset && const_offset > params.max_const_offset) {
+         uint32_t max_const_offset_plus_one = params.max_const_offset + 1;
+         unsigned to_add = const_offset / max_const_offset_plus_one * max_const_offset_plus_one;
+         reduced_const_offset %= max_const_offset_plus_one;
          Temp offset_tmp = offset.isTemp() ? offset.getTemp() : Temp();
          if (offset.isConstant()) {
             offset = Operand::c32(offset.constantValue() + to_add);
@@ -4563,7 +4563,7 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
    return val;
 }
 
-const EmitLoadParameters smem_load_params{smem_load_callback, 1024};
+const EmitLoadParameters smem_load_params{smem_load_callback, 1023};
 
 Temp
 mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
@@ -4629,7 +4629,7 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    return val;
 }
 
-const EmitLoadParameters mubuf_load_params{mubuf_load_callback, 4096};
+const EmitLoadParameters mubuf_load_params{mubuf_load_callback, 4095};
 
 Temp
 mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, Temp offset,
@@ -4693,7 +4693,7 @@ mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, Temp offset,
    return val;
 }
 
-const EmitLoadParameters mubuf_load_format_params{mubuf_load_format_callback, 4096};
+const EmitLoadParameters mubuf_load_format_params{mubuf_load_format_callback, 4095};
 
 Temp
 scratch_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
@@ -4733,8 +4733,8 @@ scratch_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsig
    return val;
 }
 
-const EmitLoadParameters scratch_mubuf_load_params{mubuf_load_callback, 4096};
-const EmitLoadParameters scratch_flat_load_params{scratch_load_callback, 2048};
+const EmitLoadParameters scratch_mubuf_load_params{mubuf_load_callback, 4095};
+const EmitLoadParameters scratch_flat_load_params{scratch_load_callback, 2047};
 
 Temp
 get_gfx6_global_rsrc(Builder& bld, Temp addr)
@@ -5655,7 +5655,7 @@ mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    return val;
 }
 
-const EmitLoadParameters mtbuf_load_params{mtbuf_load_callback, 4096};
+const EmitLoadParameters mtbuf_load_params{mtbuf_load_callback, 4095};
 
 void
 visit_load_fs_input(isel_context* ctx, nir_intrinsic_instr* instr)
@@ -6675,7 +6675,7 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
       info.offset = Operand(bld.as_uniform(info.offset));
       info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_SMEM);
       EmitLoadParameters params = smem_load_params;
-      params.max_const_offset_plus_one = ctx->program->dev.smem_offset_max + UINT64_C(1);
+      params.max_const_offset = ctx->program->dev.smem_offset_max;
       emit_load(ctx, bld, info, params);
    } else {
       EmitLoadParameters params = global_load_params;
@@ -6992,7 +6992,7 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
       info.split_by_component_stride = false;
 
       EmitLoadParameters params = mtbuf_load_params;
-      params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+      params.max_const_offset = ctx->program->dev.buf_offset_max;
       emit_load(ctx, bld, info, params);
    } else {
       assert(intrin->intrinsic == nir_intrinsic_load_buffer_amd);
@@ -7001,7 +7001,7 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
          assert(!swizzled);
 
          EmitLoadParameters params = mubuf_load_format_params;
-         params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+         params.max_const_offset = ctx->program->dev.buf_offset_max;
          emit_load(ctx, bld, info, params);
       } else {
          const unsigned swizzle_element_size =
@@ -7013,7 +7013,7 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
          info.align_offset = align_offset;
 
          EmitLoadParameters params = mubuf_load_params;
-         params.max_const_offset_plus_one = ctx->program->dev.buf_offset_max + 1;
+         params.max_const_offset = ctx->program->dev.buf_offset_max;
          emit_load(ctx, bld, info, params);
       }
    }
@@ -7518,7 +7518,7 @@ visit_load_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
          info.offset = Operand(get_ssa_temp(ctx, instr->src[0].ssa));
       }
       EmitLoadParameters params = scratch_flat_load_params;
-      params.max_const_offset_plus_one = ctx->program->dev.scratch_global_offset_max + 1;
+      params.max_const_offset = ctx->program->dev.scratch_global_offset_max;
       emit_load(ctx, bld, info, params);
    } else {
       info.resource = get_scratch_resource(ctx);
