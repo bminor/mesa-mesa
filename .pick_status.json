@@ -1,5 +1,565 @@
 [
     {
+        "sha": "eeffb4e674d10db9aefebeca91c2d87c1676b81e",
+        "description": "intel/dev: update mesa_defs.json from internal database",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97dc196d427fc67cb1878df62913b82413b924ea",
+        "description": "tu: Add total renderpasses,dispatches to cmdbuf tracepoint",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99b23235a66e33051140472c2eabd46de1e2af64",
+        "description": "tu: Don't enable secondary command buffer tracepoint by default",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9dfd4a091c83d7a393f3ceac0607cc71e5df0ae8",
+        "description": "tu: Fix segfault in fail_submit KGSL path",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ec268fa5b666a49adafc431dbc05b73bfd74526e",
+        "notes": null
+    },
+    {
+        "sha": "103a16e4fa36d52bb0dc6325848fbdd7b5c1372f",
+        "description": "frontend/dri: don't call set_damage_region with a null resource",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29d7b90cfcb67ecc2ff3e422dd7b38898abb1bbe",
+        "description": "brw: make HALT instruction act as barrier in new CSE pass",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9690bd369d5a6739142eeb23f92d34429b75855d",
+        "notes": null
+    },
+    {
+        "sha": "b9275b54a1c906d2180aee0a12895bd617597b50",
+        "description": "nak/sm70_encode: Remove unused has_mod parameter",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28d077838f5ba7ae706d7d967163b84b8ca1e41b",
+        "description": "nak/sm70_encode: Encode fneg/fabs for hfma2 src 2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ff7135691d9fd3e0135ef5a13f6c95ad259094c",
+        "description": "nak: Remove hfma2 src 1 modifiers",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "567cae69c3efd0070e3b9b8444dc8a24f0f83838",
+        "notes": null
+    },
+    {
+        "sha": "d48b3a232c4989c4dcf4cbc2644fc5fd985af083",
+        "description": "docs: Remove the docs for setting up bare-metal devices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a587a0a38903e02fbdcb9b23caeed1ce9e8e4320",
+        "description": "docs: Move the docs about caching downloads to LAVA from bare-metal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6338ed44c519c67b7eb9b6731af1cede52da9438",
+        "description": "aco/gfx12: increase maximum vbuffer offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d987d5e341a43dd1704cd04a6b90a1317b9fa074",
+        "description": "aco/gfx12: increase maximum global/scratch offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02d193f05826e5f93b3b1d335eef4f74e577b0d4",
+        "description": "aco/gfx12: increase maximum smem offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c26851b80b9d8daea4a98da05910e530cd6d80a7",
+        "description": "aco: increase max_const_offset_plus_one for SMEM load_global",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f390893a64e57c34ee959b17a7b301909627236b",
+        "description": "aco/gfx12: use s_sub_u64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b4813c4f0c931952f49eb0909c20f119c39c107",
+        "description": "aco/gfx12: use s_add_u64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "821c1bfa7e1776177b0323b1d8d4b44f32361f91",
+        "description": "intel/compiler: Fix stackIDs on Xe2+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9fe5aad37d20dd767b44528da251e0ed322d3de",
+        "description": "anv: enable VK_KHR_shader_bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07fa3b37855bff1ddd3d157a5a5ffd0f148d9530",
+        "description": "intel: Add support for BFloat16 as cooperative matrix source",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bbe042e879175703ae63479f9754f4f087a3fd2",
+        "description": "spirv: Enable bfloat16 capabilities",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0b195cadbb85b33e4d3055f6e1beb8d45722843",
+        "description": "spirv: Use bfdot for SpvOpDot with BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28070976904a087ce304e32deed7bb08619df626",
+        "description": "spirv: Implement Conversions to/from bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90e1b128903cabfe4fcfb5ae52cf46d5ddbf1189",
+        "description": "spirv: Add bfloat16 support to SpecConstantOp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc8074683d78db7cd71120e9ef5fa1c61fb5c72d",
+        "description": "spirv: construct a bfloat16 from the given SPIR-V bitsize and encoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb6ae2eac1fd883d69cca3cdb26c50a7272496dc",
+        "description": "spirv: Refactor to use glsl_type to pick ALU ops",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bba607ac2b6fd14ce33bbff44fc1684e41541a7a",
+        "description": "spirv: Move Convert opcodes handling to its own function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4381c0908a3c2be93ef32300c35b904d4a92ee5",
+        "description": "brw/cmat: Implement conversion from/to BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de88184ab650a140b0c459b386a2755377b8d785",
+        "description": "brw/cmat: Support different src/dst packing factors in emit_packed_alu1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fa7be970d5a230a445d3211752b2131d5892989",
+        "description": "brw/cmat: Extract emit_packed_alu1() function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b4500ad35dc01d834d235b12c9c3d9514d7ea31",
+        "description": "brw/cmat: Store more information about cmat slices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7ff177a88efca7aa3ec8b4a4d0cc724d43d516b",
+        "description": "brw: Consider bfloat16 in lower simd width pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c31516b3ea7067a39b836be17615bb8f28bdabd",
+        "description": "brw: Consider bfloat16 in lower regioning pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5936768ce0b862b39322a6917da2f59477e3bdbe",
+        "description": "brw: Consider bfloat16 in copy propagation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "129c0748112fbe7b43a214f293c82e5db2f0bf69",
+        "description": "brw: Implement support for BFloat16 ALU opcodes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a38960e8f37e667442255aba73cf7dd4cff2e215",
+        "description": "brw, nir: Use glsl_base_type instead of nir_alu_type for @dpas_intel",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf4021f93c3774f690ec5327c000b2742f8a7428",
+        "description": "nir: Add opcodes for BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e5d7eb88d7046fc6dd5c6ef85f9ae7e898702cd",
+        "description": "compiler/types: add a bfloat16 type",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ecd2d2cf46dfc3305a6dc1497815b7b54eef513e",
+        "description": "util: Add functions to convert float to/from bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e0418ba02d40eb209519bc8d847481f516fc6d6",
+        "description": "intel/executor: Fix bfloat example for converting F to packed BF",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fafdd242850657d58ae66836ee5d154f1187fe8b",
+        "notes": null
+    },
+    {
+        "sha": "6ab4ae1a19f5bd8227376449655a48036b7d13c9",
+        "description": "pan/bi: Properly lower add/sub with saturation on v11+",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "d79a31bf81a3527897f7c6f5178abd47d80fbaee",
+        "notes": null
+    },
+    {
+        "sha": "20279c28c827a1d5f3ba8ef35a3f21bcbf0fb96c",
+        "description": "aco/tests: add pseudo-scalar transcendental and fallback path RA tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96e49b7904322282e91fd239e2e8d5da61b279b6",
+        "description": "aco/ra: add ra_test_policy::use_compact_relocate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c1dbc1d9bcd00ba1e928965eb2b73067850a5c8",
+        "description": "aco/ra: cleanup compact_relocate_vars fallback path",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a780345e014196231e6d9e15c328c0aadeaa02f3",
+        "description": "aco: fix compact_relocate_vars fallback with scc/exec/m0 precolored regs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6581b41c4cb5b284f5550c7494d67ca37b391e6",
+        "description": "aco/ra: don't require alignment for NPOT SGPR temporaries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "623230a6efa25677173d59e648b84b7fc47bffe5",
+        "description": "aco/ra: change sorting in compact_relocate_vars",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f9b8edb1ce9ed00319c0efa3af3f2533921668c",
+        "description": "ci: Re enable fd-farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87e143b05359c4a66c2d0ce3875b0ebfa81bb8b2",
+        "description": "docs/features: mark off missing panvk extensions",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5ed79c2d2ba7fa2589d19a382e59ae22c6c14f40",
+        "notes": null
+    },
+    {
+        "sha": "f23f8c2826ff116eb5a31d68e04a99351742a5a9",
+        "description": "panvk: Advertise VK_EXT_depth_bias_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "970bdecb509bb8bbc9c9ddafb4bb0a6ab8821b22",
+        "description": "panvk: Advertise VK_EXT_shader_replicated_composites",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4998f7ff3f500598abb47223f2118c6b43a802a",
+        "description": "panvk: Advertise VK_EXT_shader_demote_to_helper_invocation support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83cbac00d330efd1486d57ce25dce9751031e4d5",
+        "description": "pan/{bi,va}: Lower terminate to demote",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cd4400e27b097fb52d0f634a9673c28c143f662f",
+        "description": "pan/bi: Lower is_helper_invocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59c307a3f33c5d3883658dfe2a1ab6d4e950a699",
+        "description": "pan/bi: Fix and improve the !abs && !coarse case in bi_emit_derivative()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ed79c2d2ba7fa2589d19a382e59ae22c6c14f40",
+        "description": "panvk: Advertise support for VK_KHR_shader_terminate_invocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "5a55133ce7d5bb2419f2aa99c5296037afb7ba6a",
         "description": "hk: advertise VK_KHR_shader_quad_control",
         "nominated": false,
