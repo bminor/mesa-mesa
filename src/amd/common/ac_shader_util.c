@@ -996,10 +996,13 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
     * use LDS for the inputs and outputs.
     */
    if (lds_per_patch) {
-      const unsigned max_lds_size = (info->gfx_level >= GFX9 ? 64 * 1024 : 32 * 1024); /* hw limit */
-      /* Target at least 2 workgroups per CU. */
-      const unsigned target_lds_size = max_lds_size / 2 - AC_TESS_LEVEL_VOTE_LDS_BYTES;
-      num_patches = MIN2(num_patches, target_lds_size / lds_per_patch);
+      /* LS/HS can only access up to 32K on GFX6-8 and 64K on GFX9+.
+       *
+       * 32K performs the best. We could use 64K on GFX9+, but it doesn't perform well because
+       * 64K prevents GS and PS from running on the same CU.
+       */
+      const unsigned max_lds_size = 32 * 1024 - AC_TESS_LEVEL_VOTE_LDS_BYTES;
+      num_patches = MIN2(num_patches, max_lds_size / lds_per_patch);
       assert(num_patches * lds_per_patch <= max_lds_size);
    }
    num_patches = MAX2(num_patches, 1);
