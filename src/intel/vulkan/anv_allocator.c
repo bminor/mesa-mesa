@@ -1646,9 +1646,11 @@ anv_device_alloc_bo(struct anv_device *device,
                     uint64_t explicit_address,
                     struct anv_bo **bo_out)
 {
-   /* bo that needs CPU access needs to be HOST_CACHED, HOST_COHERENT or both */
-   assert((alloc_flags & ANV_BO_ALLOC_MAPPED) == 0 ||
-          (alloc_flags & (ANV_BO_ALLOC_HOST_CACHED | ANV_BO_ALLOC_HOST_COHERENT)));
+   /* ANV_BO_ALLOC_MAPPED are internal allocated bos that need mmap() but as
+    * internally we don't do any cflush() we need to make sure those are also
+    * ANV_BO_ALLOC_HOST_COHERENT.
+    */
+   assert((alloc_flags & ANV_BO_ALLOC_MAPPED) == 0 || (alloc_flags & ANV_BO_ALLOC_HOST_COHERENT));
 
    /* In platforms with LLC we can promote all bos to cached+coherent for free */
    const enum anv_bo_alloc_flags not_allowed_promotion = ANV_BO_ALLOC_SCANOUT |
