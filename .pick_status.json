@@ -6034,7 +6034,7 @@
         "description": "intel/dev: update mesa_defs.json from internal database",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
