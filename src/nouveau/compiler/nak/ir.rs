@@ -686,6 +686,14 @@ impl Dst {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn to_ssa(self) -> SSARef {
+        match self {
+            Dst::SSA(r) => r,
+            _ => panic!("Expected ssa"),
+        }
+    }
+
     pub fn iter_ssa(&self) -> slice::Iter<'_, SSAValue> {
         match self {
             Dst::None | Dst::Reg(_) => &[],
@@ -846,6 +854,13 @@ impl SrcRef {
         match self {
             SrcRef::SSA(r) => Some(r),
             _ => None,
+        }
+    }
+
+    pub fn to_ssa(self) -> SSARef {
+        match self {
+            SrcRef::SSA(r) => r,
+            _ => panic!(),
         }
     }
 
@@ -1216,6 +1231,14 @@ impl Src {
             self.src_ref.as_ssa()
         } else {
             None
+        }
+    }
+
+    pub fn to_ssa(&self) -> SSARef {
+        if self.src_mod.is_none() {
+            self.src_ref.to_ssa()
+        } else {
+            panic!("Did not expect src_mod");
         }
     }
 
