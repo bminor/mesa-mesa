@@ -14,6 +14,7 @@ use compiler::as_slice::*;
 use compiler::cfg::CFG;
 use compiler::smallvec::SmallVec;
 use nak_ir_proc::*;
+use std::array;
 use std::cmp::{max, min};
 use std::fmt;
 use std::fmt::Write;
@@ -447,6 +448,14 @@ impl SSARef {
         r
     }
 
+    fn from_iter(mut it: impl ExactSizeIterator<Item = SSAValue>) -> Self {
+        let len = it.len();
+        assert!(len > 0 && len <= 4);
+        let v: [SSAValue; 4] =
+            array::from_fn(|_| it.next().unwrap_or(SSAValue::NONE));
+        Self::new(&v[..len])
+    }
+
     /// Returns the number of components in this SSA reference
     pub fn comps(&self) -> u8 {
         if self.v[3].packed >= u32::MAX - 2 {
@@ -592,12 +601,7 @@ impl SSAValueAllocator {
     }
 
     pub fn alloc_vec(&mut self, file: RegFile, comps: u8) -> SSARef {
-        assert!(comps >= 1 && comps <= 4);
-        let mut vec = [SSAValue::NONE; 4];
-        for c in 0..comps {
-            vec[usize::from(c)] = self.alloc(file);
-        }
-        vec[0..usize::from(comps)].try_into().unwrap()
+        SSARef::from_iter((0..comps).map(|_| self.alloc(file)))
     }
 }
 
