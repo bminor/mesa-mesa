@@ -141,14 +141,41 @@ will_lower_ffma(nir_shader *shader, unsigned bit_size)
 }
 
 static nir_def *
-lower_fdot(nir_alu_instr *alu, nir_builder *builder)
+lower_bfdot_to_bfdot2_bfadd(nir_builder *b, nir_alu_instr *alu)
 {
-   const bool is_bfloat16 = alu->op == nir_op_bfdot2 ||
-                            alu->op == nir_op_bfdot3 ||
-                            alu->op == nir_op_bfdot4 ||
-                            alu->op == nir_op_bfdot8 ||
-                            alu->op == nir_op_bfdot16;
+   unsigned num_components = nir_op_infos[alu->op].input_sizes[0];
 
+   nir_def *acc = nir_imm_intN_t(b, 0x8000, 16); /* -0.0 BF16`*/
+   for (int i = 0; i < num_components; i += 2) {
+      nir_alu_instr *instr = nir_alu_instr_create(b->shader, nir_op_bfdot2_bfadd);
+      nir_alu_ssa_dest_init(instr, 1, 16);
+
+      for (unsigned j = 0; j < 2; j++) {
+         if (num_components - i == 1) {
+            /* Pad with mix of -1.0 and +0.0 to get -0.0 for the mul. */
+            nir_def *zero = nir_imm_intN_t(b, j ? 0xbf80 : 0, 16);
+            nir_def *src = nir_channel(b, alu->src[j].src.ssa, alu->src[j].swizzle[i]);
+            instr->src[j].src = nir_src_for_ssa(nir_vec2(b, src, zero));
+         } else {
+            nir_alu_src_copy(&instr->src[j], &alu->src[j]);
+            instr->src[j].swizzle[0] = alu->src[j].swizzle[i];
+            instr->src[j].swizzle[1] = alu->src[j].swizzle[i + 1];
+         }
+      }
+      instr->src[2].src = nir_src_for_ssa(acc);
+      instr->exact = b->exact;
+      instr->fp_fast_math = b->fp_fast_math;
+
+      nir_builder_instr_insert(b, &instr->instr);
+      acc = &instr->def;
+   }
+
+   return acc;
+}
+
+static nir_def *
+lower_fdot(nir_alu_instr *alu, nir_builder *builder, bool is_bfloat16)
+{
    /* Reversed order can result in lower instruction count because it
     * creates more MAD/FMA in the case of fdot(a, vec4(b, 1.0)).
     * Some games expect xyzw order, so only reverse the order for imprecise fdot.
@@ -353,12 +380,15 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
    case nir_op_fdot4:
    case nir_op_fdot8:
    case nir_op_fdot16:
+      return lower_fdot(alu, b, false);
    case nir_op_bfdot2:
    case nir_op_bfdot3:
    case nir_op_bfdot4:
    case nir_op_bfdot8:
    case nir_op_bfdot16:
-      return lower_fdot(alu, b);
+      if (b->shader->options->has_bfdot2_bfadd)
+         return lower_bfdot_to_bfdot2_bfadd(b, alu);
+      return lower_fdot(alu, b, true);
 
       LOWER_REDUCTION(nir_op_ball_fequal, nir_op_feq, nir_op_iand);
       LOWER_REDUCTION(nir_op_ball_iequal, nir_op_ieq, nir_op_iand);

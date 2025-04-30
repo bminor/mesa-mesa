@@ -1750,3 +1750,18 @@ binop_reduce("bfdot", 1, tuint16, tuint16,
              "_mesa_bfloat16_bits_to_float({src0}) * _mesa_bfloat16_bits_to_float({src1})",
              "_mesa_bfloat16_bits_to_float({src0}) + _mesa_bfloat16_bits_to_float({src1})",
              "_mesa_float_to_bfloat16_bits_rte({src})")
+
+# Like bfdot2 but with accumulator
+opcode("bfdot2_bfadd", 1, tint16, [2, 2, 1], [tint16, tint16, tint16],
+       False, _2src_commutative, """
+   const float a0 = _mesa_bfloat16_bits_to_float(src0.x);
+   const float a1 = _mesa_bfloat16_bits_to_float(src0.y);
+   const float b0 = _mesa_bfloat16_bits_to_float(src1.x);
+   const float b1 = _mesa_bfloat16_bits_to_float(src1.y);
+
+   float acc = _mesa_bfloat16_bits_to_float(src2.x);
+   acc = fmaf(a0, b0, acc);
+   acc = fmaf(a1, b1, acc);
+
+   dst.x = _mesa_float_to_bfloat16_bits_rte(acc);
+""")

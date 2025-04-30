@@ -583,6 +583,9 @@ typedef struct nir_shader_compiler_options {
    /** Backend supports sdot_2x16 and udot_2x16 opcodes. */
    bool has_dot_2x16;
 
+   /** Backend supports bfdot2_bfadd opcode. */
+   bool has_bfdot2_bfadd;
+
    /** Backend supports fmulz (and ffmaz if lower_ffma32=false) */
    bool has_fmulz;
 
