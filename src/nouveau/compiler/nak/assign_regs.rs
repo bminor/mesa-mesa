@@ -262,7 +262,7 @@ struct RegAllocator {
     num_regs: u32,
     used: BitSet,
     pinned: BitSet,
-    reg_ssa: Vec<SSAValue>,
+    reg_ssa: Vec<Option<SSAValue>>,
     ssa_reg: HashMap<SSAValue, u32>,
 }
 
@@ -300,7 +300,7 @@ impl RegAllocator {
 
     pub fn try_get_ssa(&self, reg: u32) -> Option<SSAValue> {
         if self.reg_is_used(reg) {
-            Some(self.reg_ssa[usize::try_from(reg).unwrap()])
+            Some(self.reg_ssa[usize::try_from(reg).unwrap()].unwrap())
         } else {
             None
         }
@@ -330,7 +330,7 @@ impl RegAllocator {
         let reg = self.ssa_reg.remove(&ssa).unwrap();
         assert!(self.reg_is_used(reg));
         let reg_usize = usize::try_from(reg).unwrap();
-        assert!(self.reg_ssa[reg_usize] == ssa);
+        assert!(self.reg_ssa[reg_usize] == Some(ssa));
         self.used.remove(reg_usize);
         self.pinned.remove(reg_usize);
         reg
@@ -343,9 +343,9 @@ impl RegAllocator {
 
         let reg_usize = usize::try_from(reg).unwrap();
         if reg_usize >= self.reg_ssa.len() {
-            self.reg_ssa.resize(reg_usize + 1, SSAValue::NONE);
+            self.reg_ssa.resize(reg_usize + 1, None);
         }
-        self.reg_ssa[reg_usize] = ssa;
+        self.reg_ssa[reg_usize] = Some(ssa);
         let old = self.ssa_reg.insert(ssa, reg);
         assert!(old.is_none());
         self.used.insert(reg_usize);

@@ -19,6 +19,7 @@ use std::cmp::{max, min};
 use std::fmt;
 use std::fmt::Write;
 use std::iter::Zip;
+use std::num::NonZeroU32;
 use std::ops::{BitAnd, BitOr, Deref, DerefMut, Index, IndexMut, Not, Range};
 use std::slice;
 
@@ -367,30 +368,24 @@ impl<T> IndexMut<RegFile> for PerRegFile<T> {
 /// each register file.
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct SSAValue {
-    packed: u32,
+    packed: NonZeroU32,
 }
 
 impl SSAValue {
-    /// A special SSA value which is always invalid
-    pub const NONE: Self = SSAValue { packed: 0 };
-
     /// Returns an SSA value with the given register file and index
     pub fn new(file: RegFile, idx: u32) -> SSAValue {
         assert!(idx > 0 && idx < (1 << 29) - 2);
         let mut packed = idx;
         assert!(u8::from(file) < 8);
         packed |= u32::from(u8::from(file)) << 29;
-        SSAValue { packed: packed }
+        SSAValue {
+            packed: packed.try_into().unwrap(),
+        }
     }
 
     /// Returns the index of this SSA value
     pub fn idx(&self) -> u32 {
-        self.packed & 0x1fffffff
-    }
-
-    /// Returns true if this SSA value is equal to SSAValue::NONE
-    pub fn is_none(&self) -> bool {
-        self.packed == 0
+        self.packed.get() & 0x1fffffff
     }
 
     fn fmt_plain(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -401,7 +396,7 @@ impl SSAValue {
 impl HasRegFile for SSAValue {
     /// Returns the register file of this SSA value
     fn file(&self) -> RegFile {
-        RegFile::try_from(self.packed >> 29).unwrap()
+        RegFile::try_from(self.packed.get() >> 29).unwrap()
     }
 }
 
@@ -437,13 +432,16 @@ impl SSARef {
     fn new(comps: &[SSAValue]) -> SSARef {
         assert!(comps.len() > 0 && comps.len() <= 4);
         let mut r = SSARef {
-            v: [SSAValue::NONE; 4],
+            v: [SSAValue {
+                packed: NonZeroU32::MAX,
+            }; 4],
         };
         for i in 0..comps.len() {
             r.v[i] = comps[i];
         }
         if comps.len() < 4 {
-            r.v[3].packed = (comps.len() as u32).wrapping_neg();
+            r.v[3].packed =
+                (comps.len() as u32).wrapping_neg().try_into().unwrap();
         }
         r
     }
@@ -451,15 +449,18 @@ impl SSARef {
     fn from_iter(mut it: impl ExactSizeIterator<Item = SSAValue>) -> Self {
         let len = it.len();
         assert!(len > 0 && len <= 4);
-        let v: [SSAValue; 4] =
-            array::from_fn(|_| it.next().unwrap_or(SSAValue::NONE));
+        let v: [SSAValue; 4] = array::from_fn(|_| {
+            it.next().unwrap_or(SSAValue {
+                packed: NonZeroU32::MAX,
+            })
+        });
         Self::new(&v[..len])
     }
 
     /// Returns the number of components in this SSA reference
     pub fn comps(&self) -> u8 {
-        if self.v[3].packed >= u32::MAX - 2 {
-            self.v[3].packed.wrapping_neg() as u8
+        if self.v[3].packed.get() >= u32::MAX - 2 {
+            self.v[3].packed.get().wrapping_neg() as u8
         } else {
             4
         }

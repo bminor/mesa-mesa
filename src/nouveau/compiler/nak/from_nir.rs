@@ -325,7 +325,7 @@ struct ShaderFromNir<'a> {
     bar_label: HashMap<u32, Label>,
     sync_blocks: HashSet<u32>,
     crs: Vec<(u32, SyncType)>,
-    fs_out_regs: [SSAValue; 34],
+    fs_out_regs: [Option<SSAValue>; 34],
     end_block_id: u32,
     ssa_map: HashMap<u32, Vec<SSAValue>>,
     saturated: HashSet<*const nir_def>,
@@ -349,7 +349,7 @@ impl<'a> ShaderFromNir<'a> {
             bar_label: HashMap::new(),
             sync_blocks: HashSet::new(),
             crs: Vec::new(),
-            fs_out_regs: [SSAValue::NONE; 34],
+            fs_out_regs: [None; 34],
             end_block_id: 0,
             ssa_map: HashMap::new(),
             saturated: HashSet::new(),
@@ -2650,11 +2650,9 @@ impl<'a> ShaderFromNir<'a> {
                     // space is per-output vec4s.
                     if info.writes_color & (0xf << (i * 4)) != 0 {
                         for c in 0..4 {
-                            let reg = self.fs_out_regs[i * 4 + c];
-                            if reg.is_none() {
-                                srcs.push(b.undef().into());
-                            } else {
-                                srcs.push(reg.into());
+                            match self.fs_out_regs[i * 4 + c] {
+                                None => srcs.push(b.undef().into()),
+                                Some(reg) => srcs.push(reg.into()),
                             }
                         }
                     }
@@ -2663,12 +2661,12 @@ impl<'a> ShaderFromNir<'a> {
                 // These always come together for some reason
                 if info.writes_sample_mask || info.writes_depth {
                     if info.writes_sample_mask {
-                        srcs.push(self.fs_out_regs[mask_idx].into());
+                        srcs.push(self.fs_out_regs[mask_idx].unwrap().into());
                     } else {
                         srcs.push(b.undef().into());
                     }
                     if info.writes_depth {
-                        srcs.push(self.fs_out_regs[depth_idx].into());
+                        srcs.push(self.fs_out_regs[depth_idx].unwrap().into());
                     }
                 }
 
@@ -3287,7 +3285,7 @@ impl<'a> ShaderFromNir<'a> {
                 let addr = u16::try_from(intrin.base()).unwrap();
                 assert!(addr % 4 == 0);
 
-                self.fs_out_regs[usize::from(addr / 4)] = data;
+                self.fs_out_regs[usize::from(addr / 4)] = Some(data);
             }
             nir_intrinsic_store_scratch => {
                 let data = self.get_src(&srcs[0]);
