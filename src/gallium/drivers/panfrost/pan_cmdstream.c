@@ -1801,7 +1801,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       util_format_description(format);
 
    if ((device->debug & PAN_DBG_YUV) && panfrost_format_is_yuv(format) &&
-       !(is_shadow && panfrost_format_supports_mtk_tiled(format)) ) {
+       !(is_shadow && pan_format_supports_mtk_tiled(format)) ) {
       if (desc->layout == UTIL_FORMAT_LAYOUT_SUBSAMPLED) {
          iview.swizzle[1] = PIPE_SWIZZLE_0;
          iview.swizzle[2] = PIPE_SWIZZLE_1;

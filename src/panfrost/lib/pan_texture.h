@@ -431,8 +431,6 @@ unsigned panfrost_texture_offset(const struct pan_image_layout *layout,
                                  unsigned level, unsigned array_idx,
                                  unsigned surface_idx);
 
-bool panfrost_format_supports_mtk_tiled(enum pipe_format format);
-
 struct pan_image_explicit_layout {
    unsigned offset;
    unsigned row_stride;

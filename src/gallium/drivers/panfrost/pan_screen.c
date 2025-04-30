@@ -276,7 +276,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          continue;
 
       if (drm_is_mtk_tiled(supported_mods[i]) &&
-          !panfrost_format_supports_mtk_tiled(format))
+          !pan_format_supports_mtk_tiled(format))
          continue;
 
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&

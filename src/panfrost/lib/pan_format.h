@@ -98,6 +98,22 @@
 #define drm_is_mtk_tiled(mod)                                                  \
    ((mod >> 52) == (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))
 
+/* check for whether a format can be used with MTK_16L32S format */
+
+static inline bool
+pan_format_supports_mtk_tiled(enum pipe_format format)
+{
+   switch (format) {
+   case PIPE_FORMAT_NV12:
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_UNORM:
+   case PIPE_FORMAT_R8G8_UNORM:
+      return true;
+   default:
+      return false;
+   }
+}
+
 /* Formats */
 
 typedef uint32_t mali_pixel_format;
