@@ -343,11 +343,11 @@ yaml-toml-shell-py-test:
 .baremetal-arm64-ubsan-test-gl:
   extends:
     - .baremetal-test
-    - .use-debian/baremetal_arm64_test-vk
+    - .use-debian/baremetal_arm64_test-gl
   variables:
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
   needs:
-    - debian/baremetal_arm64_test-vk
+    - debian/baremetal_arm64_test-gl
     - job: debian-arm64-ubsan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
