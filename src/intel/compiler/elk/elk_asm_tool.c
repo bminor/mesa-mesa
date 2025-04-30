@@ -208,7 +208,7 @@ i965_postprocess_labels()
 int main(int argc, char **argv)
 {
    char *output_file = NULL;
-   char c;
+   int c;
    FILE *output = stdout;
    bool help = false, compact = false;
    void *store;
