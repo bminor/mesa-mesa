@@ -633,11 +633,15 @@ anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
           (dst_image && is_image_emulated(dst_image)))
          return false;
 
-      /* HSD 14021541470: The compression pairing bit on blitter engine is not
+      /* Wa_22019225126: The compression pairing bit on blitter engine is not
        * programmed correctly for depth/stencil resources. Fallback to RCS
        * engine for performing a copy to workaround the issue.
+       *
+       * Unfortunately that workaround hasn't propagate back to DG2 products,
+       * but they're for sure affected as well, hence the version check.
        */
-      if (devinfo->verx10 == 125 &&
+      if ((intel_needs_workaround(devinfo, 22019225126) ||
+           devinfo->verx10 == 125) &&
           ((src_image && (is_image_stc_ccs_compressed(src_image) ||
                           is_image_hiz_compressed(src_image))) ||
            (dst_image && (is_image_stc_ccs_compressed(dst_image) ||
