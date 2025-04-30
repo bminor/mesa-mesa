@@ -387,7 +387,7 @@ yaml-toml-shell-py-test:
   variables:
     GIT_STRATEGY: none
     # boot2container initrd configuration parameters.
-    B2C_VERSION: v0.9.14
+    B2C_VERSION: v0.9.15.1
 
     SCRIPTS_DIR: install
 
