@@ -1670,7 +1670,7 @@
     <field name="Collocated MV Temporal Buffer - Memory Address Attributes" start="2624" end="2655" type="MEMORYADDRESSATTRIBUTES" />
     <field name="VP9 Probability Buffer - Address" start="2656" end="2719" type="address" />
     <field name="VP9 Probability Buffer - Memory Address Attributes" start="2720" end="2751" type="MEMORYADDRESSATTRIBUTES" />
-    <field name="VP9 Segment ID Buffer - Address" start="2752" end="2815" type="uint" />
+    <field name="VP9 Segment ID Buffer - Address" start="2752" end="2815" type="address" />
     <field name="VP9 Segment ID Buffer - Memory Address Attributes" start="2816" end="2847" type="MEMORYADDRESSATTRIBUTES" />
     <field name="VP9 HVD Line Row Store Buffer - Address" start="2848" end="2911" type="address" />
     <field name="VP9 HVD Line Row Store Buffer - Memory Address Attributes" start="2912" end="2943" type="MEMORYADDRESSATTRIBUTES" />
@@ -1893,8 +1893,8 @@
       <field name="Row position" start="0" end="31" type="HCP_TILE_POSITION_IN_CTB" />
     </group>
   </instruction>
-  <instruction name="HCP_VP9_PIC_STATE" bias="2" length="2" engine="video">
-    <field name="DWord Length" start="0" end="11" type="uint" />
+  <instruction name="HCP_VP9_PIC_STATE" bias="2" length="12" engine="video">
+    <field name="DWord Length" start="0" end="11" type="uint" default="10" />
     <field name="SubOpcode" start="16" end="22" type="uint" default="48" />
     <field name="Media Command Opcode" start="23" end="26" type="uint" default="7" />
     <field name="Pipeline" start="27" end="28" type="uint" default="2" />
@@ -1950,6 +1950,8 @@
     </field>
     <field name="Chroma Sampling Format" start="118" end="119" type="uint">
       <value name="Format_420" value="0" />
+      <value name="Format_422" value="1" />
+      <value name="Format_444" value="2" />
     </field>
     <field name="Bit Depth" start="120" end="123" type="uint">
       <value name="8-bit" value="0" />
@@ -1960,12 +1962,12 @@
       <value name="Profile_0" value="0" />
       <value name="Profile_2" value="2" />
     </field>
-    <field name="Vertical Scale Factor for LAST" start="128" end="143" type="u2.14" />
-    <field name="Horizontal Scale Factor for LAST" start="144" end="159" type="u2.14" />
-    <field name="Vertical Scale Factor for GOLDEN" start="160" end="175" type="u2.14" />
-    <field name="Horizontal Scale Factor for GOLDEN" start="176" end="191" type="u2.14" />
-    <field name="Vertical Scale Factor for ALTREF" start="192" end="207" type="u2.14" />
-    <field name="Horizontal Scale Factor for ALTREF" start="208" end="223" type="u2.14" />
+    <field name="Vertical Scale Factor for LAST" start="128" end="143" type="uint" />
+    <field name="Horizontal Scale Factor for LAST" start="144" end="159" type="uint" />
+    <field name="Vertical Scale Factor for GOLDEN" start="160" end="175" type="uint" />
+    <field name="Horizontal Scale Factor for GOLDEN" start="176" end="191" type="uint" />
+    <field name="Vertical Scale Factor for ALTREF" start="192" end="207" type="uint" />
+    <field name="Horizontal Scale Factor for ALTREF" start="208" end="223" type="uint" />
     <field name="Last Frame Width" start="224" end="237" type="uint" />
     <field name="Last Frame Height" start="240" end="253" type="uint" />
     <field name="Golden Frame Width" start="256" end="269" type="uint" />
@@ -1991,8 +1993,8 @@
     <field name="Bit Offset for Q index" start="576" end="591" type="uint" />
     <field name="Bit Offset for LF Level" start="592" end="607" type="uint" />
   </instruction>
-  <instruction name="HCP_VP9_SEGMENT_STATE" bias="2" length="8" engine="video">
-    <field name="DWord Length" start="0" end="11" type="uint" />
+  <instruction name="HCP_VP9_SEGMENT_STATE" bias="2" length="7" engine="video">
+    <field name="DWord Length" start="0" end="11" type="uint" default="5" />
     <field name="SubOpcode" start="16" end="22" type="uint" default="50" />
     <field name="Media Command Opcode" start="23" end="26" type="uint" default="7" />
     <field name="Pipeline" start="27" end="28" type="uint" default="2" />
