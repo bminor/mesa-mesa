@@ -100,7 +100,7 @@ struct panfrost_bo {
    struct panfrost_device *dev;
 
    /* Mapping for the entire object (all levels) */
-   struct panfrost_ptr ptr;
+   struct pan_ptr ptr;
 
    uint32_t flags;
 

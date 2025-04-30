@@ -50,7 +50,7 @@
 
 /* Table of supported Mali GPUs */
 /* clang-format off */
-const struct panfrost_model panfrost_model_list[] = {
+const struct pan_model pan_model_list[] = {
         MODEL(0x600, 0, "T600",    "T60x", NO_ANISO,           8192,  8192, {}),
         MODEL(0x620, 0, "T620",    "T62x", NO_ANISO,           8192,  8192, {}),
         MODEL(0x720, 0, "T720",    "T72x", NO_ANISO,           8192,  8192, { .no_hierarchical_tiling = true }),
@@ -91,41 +91,41 @@ const struct panfrost_model panfrost_model_list[] = {
  * Look up a supported model by its GPU ID, or return NULL if the model is not
  * supported at this time.
  */
-const struct panfrost_model *
-panfrost_get_model(uint32_t gpu_id, uint32_t gpu_variant)
+const struct pan_model *
+pan_get_model(uint32_t gpu_id, uint32_t gpu_variant)
 {
-   for (unsigned i = 0; i < ARRAY_SIZE(panfrost_model_list); ++i) {
-      if (panfrost_model_list[i].gpu_id == gpu_id &&
-          panfrost_model_list[i].gpu_variant == gpu_variant)
-         return &panfrost_model_list[i];
+   for (unsigned i = 0; i < ARRAY_SIZE(pan_model_list); ++i) {
+      if (pan_model_list[i].gpu_id == gpu_id &&
+          pan_model_list[i].gpu_variant == gpu_variant)
+         return &pan_model_list[i];
    }
 
    return NULL;
 }
 
 unsigned
-panfrost_query_l2_slices(const struct pan_kmod_dev_props *props)
+pan_query_l2_slices(const struct pan_kmod_dev_props *props)
 {
    /* L2_SLICES is MEM_FEATURES[11:8] minus(1) */
    return ((props->mem_features >> 8) & 0xF) + 1;
 }
 
-struct panfrost_tiler_features
-panfrost_query_tiler_features(const struct pan_kmod_dev_props *props)
+struct pan_tiler_features
+pan_query_tiler_features(const struct pan_kmod_dev_props *props)
 {
    /* Default value (2^9 bytes and 8 levels) to match old behaviour */
    uint32_t raw = props->tiler_features;
 
    /* Bin size is log2 in the first byte, max levels in the second byte */
-   return (struct panfrost_tiler_features){
+   return (struct pan_tiler_features){
       .bin_size = (1 << (raw & BITFIELD_MASK(5))),
       .max_levels = (raw >> 8) & BITFIELD_MASK(4),
    };
 }
 
 unsigned
-panfrost_query_core_count(const struct pan_kmod_dev_props *props,
-                          unsigned *core_id_range)
+pan_query_core_count(const struct pan_kmod_dev_props *props,
+                     unsigned *core_id_range)
 {
    /* On older kernels, worst-case to 16 cores */
 
@@ -142,14 +142,14 @@ panfrost_query_core_count(const struct pan_kmod_dev_props *props,
 }
 
 unsigned
-panfrost_query_thread_tls_alloc(const struct pan_kmod_dev_props *props)
+pan_query_thread_tls_alloc(const struct pan_kmod_dev_props *props)
 {
    return props->max_tls_instance_per_core ?: props->max_threads_per_core;
 }
 
 unsigned
-panfrost_compute_max_thread_count(const struct pan_kmod_dev_props *props,
-                                  unsigned work_reg_count)
+pan_compute_max_thread_count(const struct pan_kmod_dev_props *props,
+                             unsigned work_reg_count)
 {
    unsigned aligned_reg_count;
 
@@ -168,7 +168,7 @@ panfrost_compute_max_thread_count(const struct pan_kmod_dev_props *props,
 }
 
 uint32_t
-panfrost_query_compressed_formats(const struct pan_kmod_dev_props *props)
+pan_query_compressed_formats(const struct pan_kmod_dev_props *props)
 {
    return props->texture_features[0];
 }
@@ -177,7 +177,7 @@ panfrost_query_compressed_formats(const struct pan_kmod_dev_props *props)
  * may omit it, signaled as a nonzero value in the AFBC_FEATURES property. */
 
 bool
-panfrost_query_afbc(const struct pan_kmod_dev_props *props)
+pan_query_afbc(const struct pan_kmod_dev_props *props)
 {
    unsigned reg = props->afbc_features;
 
@@ -188,7 +188,7 @@ panfrost_query_afbc(const struct pan_kmod_dev_props *props)
  * may omit it, signaled in bit 25 of TEXTURE_FEATURES_0 property. */
 
 bool
-panfrost_query_afrc(const struct pan_kmod_dev_props *props)
+pan_query_afrc(const struct pan_kmod_dev_props *props)
 {
    return (pan_arch(props->gpu_prod_id) >= 10) &&
           (props->texture_features[0] & (1 << 25));
@@ -202,7 +202,7 @@ panfrost_query_afrc(const struct pan_kmod_dev_props *props)
  * size for the particular variant. The CORE_FEATURES register might help.
  */
 unsigned
-panfrost_query_optimal_tib_size(const struct panfrost_model *model)
+pan_query_optimal_tib_size(const struct pan_model *model)
 {
    /* Preconditions ensure the returned value is a multiple of 1 KiB, the
     * granularity of the colour buffer allocation field.
@@ -214,7 +214,7 @@ panfrost_query_optimal_tib_size(const struct panfrost_model *model)
 }
 
 unsigned
-panfrost_query_optimal_z_tib_size(const struct panfrost_model *model)
+pan_query_optimal_z_tib_size(const struct pan_model *model)
 {
    /* Preconditions ensure the returned value is a multiple of 1 KiB, the
     * granularity of the colour buffer allocation field.
@@ -226,7 +226,7 @@ panfrost_query_optimal_z_tib_size(const struct panfrost_model *model)
 }
 
 uint64_t
-panfrost_clamp_to_usable_va_range(const struct pan_kmod_dev *dev, uint64_t va)
+pan_clamp_to_usable_va_range(const struct pan_kmod_dev *dev, uint64_t va)
 {
    struct pan_kmod_va_range user_va_range =
       pan_kmod_dev_query_user_va_range(dev);

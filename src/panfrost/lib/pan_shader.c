@@ -23,7 +23,7 @@
  */
 
 #include "pan_shader.h"
-#include "panfrost/clc/panfrost_compile.h"
+#include "panfrost/clc/pan_compile.h"
 #include "pan_blend.h"
 #include "pan_format.h"
 
@@ -54,7 +54,7 @@ pan_shader_get_compiler_options(unsigned arch)
 }
 
 void
-pan_shader_compile(nir_shader *s, struct panfrost_compile_inputs *inputs,
+pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
                    struct util_dynarray *binary, struct pan_shader_info *info)
 {
    unsigned arch = pan_arch(inputs->gpu_id);
@@ -101,7 +101,7 @@ pan_shader_compile(nir_shader *s, struct panfrost_compile_inputs *inputs,
          /* Store the mask of special varyings, in case we need to emit ADs
           * later. */
          info->varyings.fixed_varyings =
-            panfrost_get_fixed_varying_mask(s->info.outputs_written);
+            pan_get_fixed_varying_mask(s->info.outputs_written);
       }
       break;
    case MESA_SHADER_FRAGMENT:
@@ -155,7 +155,7 @@ pan_shader_compile(nir_shader *s, struct panfrost_compile_inputs *inputs,
          /* Store the mask of special varyings, in case we need to emit ADs
           * later. */
          info->varyings.fixed_varyings =
-            panfrost_get_fixed_varying_mask(s->info.inputs_read);
+            pan_get_fixed_varying_mask(s->info.inputs_read);
       }
       break;
    default:

@@ -109,7 +109,7 @@ mir_analyze_ranges(compiler_context *ctx)
  * sophisticated. Select from the last UBO first to prioritize sysvals. */
 
 static void
-mir_pick_ubo(struct panfrost_ubo_push *push, struct mir_ubo_analysis *analysis,
+mir_pick_ubo(struct pan_ubo_push *push, struct mir_ubo_analysis *analysis,
              unsigned max_qwords)
 {
    unsigned max_words = MIN2(PAN_MAX_PUSH, max_qwords * 4);
@@ -124,7 +124,7 @@ mir_pick_ubo(struct panfrost_ubo_push *push, struct mir_ubo_analysis *analysis,
             return;
 
          for (unsigned offs = 0; offs < 4; ++offs) {
-            struct panfrost_ubo_word word = {
+            struct pan_ubo_word word = {
                .ubo = ubo,
                .offset = (vec4 * 16) + (offs * 4),
             };

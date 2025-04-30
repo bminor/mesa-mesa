@@ -36,7 +36,7 @@ struct pan_kmod_dev;
 struct pan_kmod_dev_props;
 
 /** Implementation-defined tiler features */
-struct panfrost_tiler_features {
+struct pan_tiler_features {
    /** Number of bytes per tiler bin */
    unsigned bin_size;
 
@@ -45,7 +45,7 @@ struct panfrost_tiler_features {
    unsigned max_levels;
 };
 
-struct panfrost_model {
+struct pan_model {
    /* GPU ID */
    uint32_t gpu_id;
 
@@ -80,37 +80,33 @@ struct panfrost_model {
    } quirks;
 };
 
-const struct panfrost_model *panfrost_get_model(uint32_t gpu_id,
-                                                uint32_t gpu_variant);
+const struct pan_model *pan_get_model(uint32_t gpu_id, uint32_t gpu_variant);
 
-unsigned panfrost_query_l2_slices(const struct pan_kmod_dev_props *props);
+unsigned pan_query_l2_slices(const struct pan_kmod_dev_props *props);
 
-struct panfrost_tiler_features
-panfrost_query_tiler_features(const struct pan_kmod_dev_props *props);
+struct pan_tiler_features
+pan_query_tiler_features(const struct pan_kmod_dev_props *props);
 
-unsigned
-panfrost_query_thread_tls_alloc(const struct pan_kmod_dev_props *props);
+unsigned pan_query_thread_tls_alloc(const struct pan_kmod_dev_props *props);
 
-uint32_t
-panfrost_query_compressed_formats(const struct pan_kmod_dev_props *props);
+uint32_t pan_query_compressed_formats(const struct pan_kmod_dev_props *props);
 
-unsigned panfrost_query_core_count(const struct pan_kmod_dev_props *props,
-                                   unsigned *core_id_range);
+unsigned pan_query_core_count(const struct pan_kmod_dev_props *props,
+                              unsigned *core_id_range);
 
-bool panfrost_query_afbc(const struct pan_kmod_dev_props *props);
+bool pan_query_afbc(const struct pan_kmod_dev_props *props);
 
-bool panfrost_query_afrc(const struct pan_kmod_dev_props *props);
+bool pan_query_afrc(const struct pan_kmod_dev_props *props);
 
-unsigned panfrost_query_optimal_tib_size(const struct panfrost_model *model);
+unsigned pan_query_optimal_tib_size(const struct pan_model *model);
 
-unsigned panfrost_query_optimal_z_tib_size(const struct panfrost_model *model);
+unsigned pan_query_optimal_z_tib_size(const struct pan_model *model);
 
-uint64_t panfrost_clamp_to_usable_va_range(const struct pan_kmod_dev *dev,
-                                           uint64_t va);
+uint64_t pan_clamp_to_usable_va_range(const struct pan_kmod_dev *dev,
+                                      uint64_t va);
 
-unsigned
-panfrost_compute_max_thread_count(const struct pan_kmod_dev_props *props,
-                                  unsigned work_reg_count);
+unsigned pan_compute_max_thread_count(const struct pan_kmod_dev_props *props,
+                                      unsigned work_reg_count);
 
 /* Returns the architecture version given a GPU ID, either from a table for
  * old-style Midgard versions or directly for new-style Bifrost/Valhall
@@ -136,7 +132,7 @@ pan_arch(unsigned gpu_id)
 }
 
 static inline unsigned
-panfrost_max_effective_tile_size(unsigned arch)
+pan_max_effective_tile_size(unsigned arch)
 {
    if (arch >= 12)
       return 64 * 64;
@@ -148,7 +144,7 @@ panfrost_max_effective_tile_size(unsigned arch)
 }
 
 static inline unsigned
-panfrost_meta_tile_size(unsigned arch)
+pan_meta_tile_size(unsigned arch)
 {
    if (arch >= 12)
       return 64;
@@ -160,9 +156,9 @@ panfrost_meta_tile_size(unsigned arch)
  * the optimal tilebuffer-size, but not always.
  */
 static inline unsigned
-pan_get_max_tib_size(unsigned arch, const struct panfrost_model *model)
+pan_get_max_tib_size(unsigned arch, const struct pan_model *model)
 {
-   unsigned tib_size = panfrost_query_optimal_tib_size(model);
+   unsigned tib_size = pan_query_optimal_tib_size(model);
 
    /* On V5, as well as V6 and later, we can disable pipelining to gain some
     * extra tib memory.

@@ -47,7 +47,7 @@
  * otherwise create a key that encodes the start, count, and index size
  */
 static uint64_t
-panfrost_calc_cache_key(struct panfrost_minmax_cache *cache, unsigned index_size,
+pan_calc_cache_key(struct pan_minmax_cache *cache, unsigned index_size,
                    unsigned start, unsigned count)
 {
    uint64_t ht_key;
@@ -83,11 +83,11 @@ panfrost_calc_cache_key(struct panfrost_minmax_cache *cache, unsigned index_size
 }
 
 bool
-panfrost_minmax_cache_get(struct panfrost_minmax_cache *cache, unsigned index_size,
-                          unsigned start, unsigned count,
-                          unsigned *min_index, unsigned *max_index)
+pan_minmax_cache_get(struct pan_minmax_cache *cache, unsigned index_size,
+                     unsigned start, unsigned count, unsigned *min_index,
+                     unsigned *max_index)
 {
-   uint64_t ht_key = panfrost_calc_cache_key(cache, index_size, start, count);
+   uint64_t ht_key = pan_calc_cache_key(cache, index_size, start, count);
    bool found = false;
 
    if (!ht_key)
@@ -109,11 +109,11 @@ panfrost_minmax_cache_get(struct panfrost_minmax_cache *cache, unsigned index_si
 }
 
 void
-panfrost_minmax_cache_add(struct panfrost_minmax_cache *cache, unsigned index_size,
-                          unsigned start, unsigned count,
-                          unsigned min_index, unsigned max_index)
+pan_minmax_cache_add(struct pan_minmax_cache *cache, unsigned index_size,
+                     unsigned start, unsigned count, unsigned min_index,
+                     unsigned max_index)
 {
-   uint64_t ht_key = panfrost_calc_cache_key(cache, index_size, start, count);
+   uint64_t ht_key = pan_calc_cache_key(cache, index_size, start, count);
    uint64_t value = min_index | (((uint64_t)max_index) << 32);
    unsigned index = 0;
 
@@ -136,9 +136,8 @@ panfrost_minmax_cache_add(struct panfrost_minmax_cache *cache, unsigned index_si
  * what we've written, and throw out invalid entries. */
 
 void
-panfrost_minmax_cache_invalidate(struct panfrost_minmax_cache *cache,
-                                 unsigned index_size,
-                                 size_t offset, size_t size)
+pan_minmax_cache_invalidate(struct pan_minmax_cache *cache, unsigned index_size,
+                            size_t offset, size_t size)
 {
    /* Ensure there is a cache to invalidate and a write */
    if (!cache)

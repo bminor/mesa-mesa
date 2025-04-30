@@ -176,8 +176,8 @@ main(int argc, const char **argv)
    for (unsigned i = 0; i < ARRAY_SIZE(clear_tests); ++i) {
       struct test T = clear_tests[i];
       uint32_t packed[4];
-      pan_pack_color(panfrost_blendable_formats_v7, &packed[0], &T.colour,
-                     T.format, T.dithered);
+      pan_pack_color(pan_blendable_formats_v7, &packed[0], &T.colour, T.format,
+                     T.dithered);
 
       ASSERT_EQ(T.packed, packed);
    }

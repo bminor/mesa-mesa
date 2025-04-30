@@ -125,7 +125,7 @@ typedef uint32_t mali_pixel_format;
 #define PAN_BIND_VERTEX_BUFFER BITFIELD_BIT(3)
 #define PAN_BIND_STORAGE_IMAGE BITFIELD_BIT(4)
 
-struct panfrost_format {
+struct pan_format {
    uint32_t hw : 22;
    uint32_t texfeat_bit : 5;
    uint32_t bind        : 5;
@@ -139,29 +139,29 @@ struct pan_blendable_format {
    mali_pixel_format bifrost[2];
 };
 
-#define panfrost_blendable_formats_v4 panfrost_blendable_formats_v5
+#define pan_blendable_formats_v4 pan_blendable_formats_v5
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v5[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v5[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v6[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v6[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v7[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v7[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v9[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v9[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v10[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v10[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v12[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v12[PIPE_FORMAT_COUNT];
 extern const struct pan_blendable_format
-   panfrost_blendable_formats_v13[PIPE_FORMAT_COUNT];
+   pan_blendable_formats_v13[PIPE_FORMAT_COUNT];
 
 uint8_t pan_raw_format_mask_midgard(enum pipe_format *formats);
 
 static inline const struct pan_blendable_format *
-panfrost_blendable_format_table(unsigned arch)
+pan_blendable_format_table(unsigned arch)
 {
    switch (arch) {
-#define FMT_TABLE(x) case x: return panfrost_blendable_formats_v ## x
+#define FMT_TABLE(x) case x: return pan_blendable_formats_v ## x
    FMT_TABLE(4);
    FMT_TABLE(5);
    FMT_TABLE(6);
@@ -177,20 +177,20 @@ panfrost_blendable_format_table(unsigned arch)
    }
 }
 
-#define panfrost_pipe_format_v4 panfrost_pipe_format_v5
-extern const struct panfrost_format panfrost_pipe_format_v5[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v6[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v7[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v9[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v10[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v12[PIPE_FORMAT_COUNT];
-extern const struct panfrost_format panfrost_pipe_format_v13[PIPE_FORMAT_COUNT];
+#define pan_pipe_format_v4 pan_pipe_format_v5
+extern const struct pan_format pan_pipe_format_v5[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v6[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v7[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v9[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v10[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v12[PIPE_FORMAT_COUNT];
+extern const struct pan_format pan_pipe_format_v13[PIPE_FORMAT_COUNT];
 
-static inline const struct panfrost_format *
-panfrost_format_table(unsigned arch)
+static inline const struct pan_format *
+pan_format_table(unsigned arch)
 {
    switch (arch) {
-#define FMT_TABLE(x) case x: return panfrost_pipe_format_v ## x
+#define FMT_TABLE(x) case x: return pan_pipe_format_v ## x
    FMT_TABLE(4);
    FMT_TABLE(5);
    FMT_TABLE(6);
@@ -213,7 +213,7 @@ panfrost_format_table(unsigned arch)
     ((MALI_CHANNEL_##B) << 6) | ((MALI_CHANNEL_##A) << 9))
 
 static inline unsigned
-panfrost_get_default_swizzle(unsigned components)
+pan_get_default_swizzle(unsigned components)
 {
    switch (components) {
    case 1:
@@ -289,7 +289,8 @@ struct pan_decomposed_swizzle
 
 #define MALI_EXTRACT_INDEX(pixfmt) (((pixfmt) >> 12) & 0xFF)
 
-static inline bool panfrost_format_is_yuv(enum pipe_format f)
+static inline bool
+pan_format_is_yuv(enum pipe_format f)
 {
    enum util_format_layout layout = util_format_description(f)->layout;
 
@@ -300,29 +301,28 @@ static inline bool panfrost_format_is_yuv(enum pipe_format f)
 }
 
 #ifdef PAN_ARCH
-static inline const struct panfrost_format *
-GENX(panfrost_format_from_pipe_format)(enum pipe_format f)
+static inline const struct pan_format *
+GENX(pan_format_from_pipe_format)(enum pipe_format f)
 {
-   return &GENX(panfrost_pipe_format)[f];
+   return &GENX(pan_pipe_format)[f];
 }
 
 static inline const struct pan_blendable_format *
-GENX(panfrost_blendable_format_from_pipe_format)(enum pipe_format f)
+GENX(pan_blendable_format_from_pipe_format)(enum pipe_format f)
 {
-   return &GENX(panfrost_blendable_formats)[f];
+   return &GENX(pan_blendable_formats)[f];
 }
 
 #if PAN_ARCH >= 6
 static inline unsigned
-GENX(panfrost_dithered_format_from_pipe_format)(enum pipe_format f, bool dithered)
+GENX(pan_dithered_format_from_pipe_format)(enum pipe_format f, bool dithered)
 {
-   mali_pixel_format pixfmt =
-      GENX(panfrost_blendable_formats)[f].bifrost[dithered];
+   mali_pixel_format pixfmt = GENX(pan_blendable_formats)[f].bifrost[dithered];
 
    /* Formats requiring blend shaders are stored raw in the tilebuffer and will
     * have 0 as their pixel format. Assumes dithering is set, I don't know of a
     * case when it makes sense to turn off dithering. */
-   return pixfmt ?: GENX(panfrost_format_from_pipe_format)(f)->hw;
+   return pixfmt ?: GENX(pan_format_from_pipe_format)(f)->hw;
 }
 #endif
 #endif

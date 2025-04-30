@@ -736,7 +736,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 const struct vk_pipeline_robustness_state *rs,
                 uint32_t *noperspective_varyings,
                 const struct vk_graphics_pipeline_state *state,
-                const struct panfrost_compile_inputs *compile_input,
+                const struct pan_compile_inputs *compile_input,
                 struct panvk_shader *shader)
 {
    struct panvk_instance *instance =
@@ -884,7 +884,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 static VkResult
 panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
                   VkShaderCreateFlagsEXT shader_flags,
-                  struct panfrost_compile_inputs *compile_input,
+                  struct pan_compile_inputs *compile_input,
                   struct panvk_shader *shader)
 {
    const bool dump_asm =
@@ -1226,7 +1226,7 @@ panvk_compile_shader(struct panvk_device *dev,
       return panvk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    shader->own_bin = true;
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
    };
@@ -1608,10 +1608,10 @@ panvk_shader_get_executable_statistics(
                           statistic_count);
 
    assert(executable_index == 0 || executable_index == 1);
-   struct panfrost_stats *stats =
+   struct pan_stats *stats =
       executable_index ? &shader->info.stats_idvs_varying : &shader->info.stats;
 
-   vk_add_panfrost_stats(out, stats);
+   vk_add_pan_stats(out, stats);
    return vk_outarray_status(&out);
 }
 
@@ -1684,19 +1684,19 @@ get_varying_format(gl_shader_stage stage, gl_varying_slot loc,
    case VARYING_SLOT_PNTC:
    case VARYING_SLOT_PSIZ:
 #if PAN_ARCH <= 6
-      return (MALI_R16F << 12) | panfrost_get_default_swizzle(1);
+      return (MALI_R16F << 12) | pan_get_default_swizzle(1);
 #else
       return (MALI_R16F << 12) | MALI_RGB_COMPONENT_ORDER_R000;
 #endif
    case VARYING_SLOT_POS:
 #if PAN_ARCH <= 6
-      return (MALI_SNAP_4 << 12) | panfrost_get_default_swizzle(4);
+      return (MALI_SNAP_4 << 12) | pan_get_default_swizzle(4);
 #else
       return (MALI_SNAP_4 << 12) | MALI_RGB_COMPONENT_ORDER_RGBA;
 #endif
    default:
       assert(pfmt != PIPE_FORMAT_NONE);
-      return GENX(panfrost_format_from_pipe_format)(pfmt)->hw;
+      return GENX(pan_format_from_pipe_format)(pfmt)->hw;
    }
 }
 
@@ -1740,18 +1740,18 @@ varying_format(gl_varying_slot loc, enum pipe_format pfmt)
    case VARYING_SLOT_PNTC:
    case VARYING_SLOT_PSIZ:
 #if PAN_ARCH <= 6
-      return (MALI_R16F << 12) | panfrost_get_default_swizzle(1);
+      return (MALI_R16F << 12) | pan_get_default_swizzle(1);
 #else
       return (MALI_R16F << 12) | MALI_RGB_COMPONENT_ORDER_R000;
 #endif
    case VARYING_SLOT_POS:
 #if PAN_ARCH <= 6
-      return (MALI_SNAP_4 << 12) | panfrost_get_default_swizzle(4);
+      return (MALI_SNAP_4 << 12) | pan_get_default_swizzle(4);
 #else
       return (MALI_SNAP_4 << 12) | MALI_RGB_COMPONENT_ORDER_RGBA;
 #endif
    default:
-      return GENX(panfrost_format_from_pipe_format)(pfmt)->hw;
+      return GENX(pan_format_from_pipe_format)(pfmt)->hw;
    }
 }
 
@@ -1984,7 +1984,7 @@ static const struct vk_shader_ops panvk_internal_shader_ops = {
 VkResult
 panvk_per_arch(create_internal_shader)(
    struct panvk_device *dev, nir_shader *nir,
-   struct panfrost_compile_inputs *compiler_inputs,
+   struct pan_compile_inputs *compiler_inputs,
    struct panvk_internal_shader **shader_out)
 {
    struct panvk_internal_shader *shader =

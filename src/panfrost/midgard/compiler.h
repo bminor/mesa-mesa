@@ -257,7 +257,7 @@ enum midgard_rt_id {
 #define MIDGARD_MAX_SAMPLE_ITER 16
 
 typedef struct compiler_context {
-   const struct panfrost_compile_inputs *inputs;
+   const struct pan_compile_inputs *inputs;
    nir_shader *nir;
    struct pan_shader_info *info;
    gl_shader_stage stage;

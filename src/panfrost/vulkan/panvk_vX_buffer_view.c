@@ -97,7 +97,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
 #if PAN_ARCH == 7
       /* v7 requires AFBC reswizzle. */
       if (!util_format_is_depth_or_stencil(pfmt) &&
-          !panfrost_format_is_yuv(pfmt) &&
+          !pan_format_is_yuv(pfmt) &&
           pan_format_supports_afbc(PAN_ARCH, pfmt))
          GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
@@ -111,7 +111,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
 
       view->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
 
-      struct panfrost_ptr ptr = {
+      struct pan_ptr ptr = {
          .gpu = panvk_priv_mem_dev_addr(view->mem),
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
@@ -130,7 +130,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
           * the 22-bit format with the texel stride, which is expected to be
           * fit in remaining 10 bits.
           */
-         uint32_t hw_fmt = GENX(panfrost_format_from_pipe_format)(pfmt)->hw;
+         uint32_t hw_fmt = GENX(pan_format_from_pipe_format)(pfmt)->hw;
 
          assert(blksz < BITFIELD_MASK(10));
          assert(hw_fmt < BITFIELD_MASK(22));

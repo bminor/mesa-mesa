@@ -113,7 +113,7 @@ struct pan_tls_info {
 
 struct pan_fb_bifrost_info {
    struct {
-      struct panfrost_ptr dcds;
+      struct pan_ptr dcds;
       unsigned modes[3];
    } pre_post;
 };

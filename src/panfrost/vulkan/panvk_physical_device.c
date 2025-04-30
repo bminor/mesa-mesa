@@ -333,7 +333,7 @@ has_compressed_formats(const struct panvk_physical_device *physical_device,
                        const uint32_t required_formats)
 {
    uint32_t supported_compr_fmts =
-      panfrost_query_compressed_formats(&physical_device->kmod.props);
+      pan_query_compressed_formats(&physical_device->kmod.props);
 
    return (supported_compr_fmts & required_formats) == required_formats;
 }
@@ -1129,8 +1129,8 @@ panvk_physical_device_init(struct panvk_physical_device *device,
 
    pan_kmod_dev_query_props(device->kmod.dev, &device->kmod.props);
 
-   device->model = panfrost_get_model(device->kmod.props.gpu_prod_id,
-                                      device->kmod.props.gpu_variant);
+   device->model = pan_get_model(device->kmod.props.gpu_prod_id,
+                                 device->kmod.props.gpu_variant);
 
    unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
 
@@ -1169,8 +1169,8 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    if (result != VK_SUCCESS)
       goto fail;
 
-   device->formats.all = panfrost_format_table(arch);
-   device->formats.blendable = panfrost_blendable_format_table(arch);
+   device->formats.all = pan_format_table(arch);
+   device->formats.blendable = pan_blendable_format_table(arch);
 
    memset(device->name, 0, sizeof(device->name));
    sprintf(device->name, "%s", device->model->name);
@@ -1386,8 +1386,7 @@ unsupported_yuv_format(enum pipe_format pfmt)
 
 static bool
 format_is_supported(struct panvk_physical_device *physical_device,
-                    const struct panfrost_format fmt,
-                    enum pipe_format pfmt)
+                    const struct pan_format fmt, enum pipe_format pfmt)
 {
    if (pfmt == PIPE_FORMAT_NONE)
       return false;
@@ -1403,7 +1402,7 @@ format_is_supported(struct panvk_physical_device *physical_device,
     * the supported formats reported by the GPU. */
    if (util_format_is_compressed(pfmt)) {
       uint32_t supported_compr_fmts =
-         panfrost_query_compressed_formats(&physical_device->kmod.props);
+         pan_query_compressed_formats(&physical_device->kmod.props);
 
       if (!(BITFIELD_BIT(fmt.texfeat_bit) & supported_compr_fmts))
          return false;
@@ -1418,7 +1417,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
 {
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
-   const struct panfrost_format fmt = physical_device->formats.all[pfmt];
+   const struct pan_format fmt = physical_device->formats.all[pfmt];
    unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
 
    if (!format_is_supported(physical_device, fmt, pfmt))
@@ -1560,7 +1559,7 @@ get_buffer_format_features(struct panvk_physical_device *physical_device,
 {
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
-   const struct panfrost_format fmt = physical_device->formats.all[pfmt];
+   const struct pan_format fmt = physical_device->formats.all[pfmt];
 
    if (!format_is_supported(physical_device, fmt, pfmt))
       return 0;

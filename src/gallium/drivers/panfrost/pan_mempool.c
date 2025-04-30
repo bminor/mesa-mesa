@@ -129,7 +129,7 @@ panfrost_pool_get_bo_handles(struct panfrost_pool *pool, uint32_t *handles)
 
 #define PAN_GUARD_SIZE 4096
 
-static struct panfrost_ptr
+static struct pan_ptr
 panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
                             unsigned alignment)
 {
@@ -149,7 +149,7 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
 
       bo = panfrost_pool_alloc_backing(pool, bo_size);
       if (!bo)
-         return (struct panfrost_ptr){0};
+         return (struct pan_ptr){0};
 
       memset(bo->ptr.cpu, 0xbb, bo_size);
 
@@ -169,14 +169,14 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
       bo = panfrost_pool_alloc_backing(
          pool, ALIGN_POT(MAX2(pool->base.slab_size, sz), 4096));
       if (!bo)
-         return (struct panfrost_ptr){0};
+         return (struct pan_ptr){0};
 
       offset = 0;
    }
 
    pool->transient_offset = offset + sz;
 
-   struct panfrost_ptr ret = {
+   struct pan_ptr ret = {
       .cpu = bo->ptr.cpu + offset,
       .gpu = bo->ptr.gpu + offset,
    };

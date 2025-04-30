@@ -93,7 +93,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
                               nir_metadata_control_flow, NULL);
 
    /* Compile the NIR shader */
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = cache->gpu_id,
       .is_blend = true,
       .blend.nr_samples = key.nr_samples,
@@ -123,7 +123,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
    util_dynarray_init(&binary, NULL);
    pan_shader_compile(nir, &inputs, &binary, &info);
 
-   struct panfrost_ptr bin =
+   struct pan_ptr bin =
       pan_pool_alloc_aligned(cache->bin_pool, binary.size, 64);
    memcpy(bin.cpu, binary.data, binary.size);
    util_dynarray_fini(&binary);

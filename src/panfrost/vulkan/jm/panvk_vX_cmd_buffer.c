@@ -55,7 +55,7 @@ panvk_cmd_prepare_fragment_job(struct panvk_cmd_buffer *cmdbuf, uint64_t fbd)
 {
    const struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct panvk_batch *batch = cmdbuf->cur_batch;
-   struct panfrost_ptr job_ptr = panvk_cmd_alloc_desc(cmdbuf, FRAGMENT_JOB);
+   struct pan_ptr job_ptr = panvk_cmd_alloc_desc(cmdbuf, FRAGMENT_JOB);
 
    if (!job_ptr.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -94,7 +94,7 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
          /* Batch has no jobs but is needed for synchronization, let's add a
           * NULL job so the SUBMIT ioctl doesn't choke on it.
           */
-         struct panfrost_ptr ptr = panvk_cmd_alloc_desc(cmdbuf, JOB_HEADER);
+         struct pan_ptr ptr = panvk_cmd_alloc_desc(cmdbuf, JOB_HEADER);
 
          if (ptr.gpu) {
             util_dynarray_append(&batch->jobs, void *, ptr.cpu);
@@ -116,13 +116,13 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
 
    if (batch->tlsinfo.tls.size) {
       unsigned thread_tls_alloc =
-         panfrost_query_thread_tls_alloc(&phys_dev->kmod.props);
+         pan_query_thread_tls_alloc(&phys_dev->kmod.props);
       unsigned core_id_range;
 
-      panfrost_query_core_count(&phys_dev->kmod.props, &core_id_range);
+      pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
 
-      unsigned size = panfrost_get_total_stack_size(
-         batch->tlsinfo.tls.size, thread_tls_alloc, core_id_range);
+      unsigned size = pan_get_total_stack_size(batch->tlsinfo.tls.size,
+                                               thread_tls_alloc, core_id_range);
       batch->tlsinfo.tls.ptr =
          panvk_cmd_alloc_dev_mem(cmdbuf, tls, size, 4096).gpu;
    }
@@ -143,9 +143,9 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
        * been calculated */
       assert(fbinfo->nr_samples > 0 && fbinfo->tile_size > 0);
 
-      fbinfo->sample_positions = dev->sample_positions->addr.dev +
-                                 panfrost_sample_positions_offset(
-                                    pan_sample_pattern(fbinfo->nr_samples));
+      fbinfo->sample_positions =
+         dev->sample_positions->addr.dev +
+         pan_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
 
       if (batch->vtc_jc.first_tiler) {
          VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf, fbinfo);

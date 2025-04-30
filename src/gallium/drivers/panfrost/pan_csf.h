@@ -46,7 +46,7 @@ struct pan_csf_tiler_oom_ctx {
    uint32_t counter;
 
    /* Alternative framebuffer descriptors for incremental rendering */
-   struct panfrost_ptr fbds[PAN_INCREMENTAL_RENDERING_PASS_COUNT];
+   struct pan_ptr fbds[PAN_INCREMENTAL_RENDERING_PASS_COUNT];
 
    /* Bounding Box (Register 42 and 43) */
    uint32_t bbox_min;
@@ -67,13 +67,13 @@ struct panfrost_csf_batch {
 
       /* CS state, written through the CS, and checked when PAN_MESA_DEBUG=sync.
        */
-      struct panfrost_ptr state;
+      struct pan_ptr state;
    } cs;
 
    /* Pool used to allocate CS chunks. */
    struct panfrost_pool cs_chunk_pool;
 
-   struct panfrost_ptr tiler_oom_ctx;
+   struct pan_ptr tiler_oom_ctx;
 
    struct mali_tiler_context_packed *pending_tiler_desc;
 };

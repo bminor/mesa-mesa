@@ -119,7 +119,7 @@ bi_pick_blend_constants(bi_context *ctx, struct bi_ubo_analysis *analysis)
    assert(ctx->info.push->count == 0);
 
    for (unsigned channel = 0; channel < 4; channel++) {
-      struct panfrost_ubo_word word = {
+      struct pan_ubo_word word = {
          .ubo = sysval_ubo,
          .offset = offset + channel * 4,
       };
@@ -138,7 +138,7 @@ bi_pick_blend_constants(bi_context *ctx, struct bi_ubo_analysis *analysis)
  * sophisticated. Select from the last UBO first to prioritize sysvals. */
 
 static void
-bi_pick_ubo(struct panfrost_ubo_push *push, struct bi_ubo_analysis *analysis)
+bi_pick_ubo(struct pan_ubo_push *push, struct bi_ubo_analysis *analysis)
 {
    for (signed ubo = analysis->nr_blocks - 1; ubo >= 0; --ubo) {
       struct bi_ubo_block *block = &analysis->blocks[ubo];
@@ -155,7 +155,7 @@ bi_pick_ubo(struct panfrost_ubo_push *push, struct bi_ubo_analysis *analysis)
             return;
 
          for (unsigned offs = 0; offs < range; ++offs) {
-            struct panfrost_ubo_word word = {
+            struct pan_ubo_word word = {
                .ubo = ubo,
                .offset = (r + offs) * 4,
             };
@@ -319,7 +319,7 @@ bi_create_fau_interference_graph(bi_context *ctx, adjacency_row *adjacency)
  * together arbitrarily.
  *
  * After a new ordering is selected, pushed uniforms in the program and the
- * panfrost_ubo_push data structure must be remapped to use the new ordering.
+ * pan_ubo_push data structure must be remapped to use the new ordering.
  */
 void
 bi_opt_reorder_push(bi_context *ctx)
@@ -331,7 +331,7 @@ bi_opt_reorder_push(bi_context *ctx)
    unsigned unpaired[PAN_MAX_PUSH] = {0};
    unsigned pushed = 0, unpaired_count = 0;
 
-   struct panfrost_ubo_push *push = ctx->info.push;
+   struct pan_ubo_push *push = ctx->info.push;
    unsigned push_offset = ctx->info.push_offset;
 
    bi_create_fau_interference_graph(ctx, adjacency);
@@ -387,7 +387,7 @@ bi_opt_reorder_push(bi_context *ctx)
    }
 
    /* Use new ordering for push */
-   struct panfrost_ubo_push old = *push;
+   struct pan_ubo_push old = *push;
    for (unsigned i = 0; i < pushed; ++i)
       push->words[push_offset + i] = old.words[ordering[i]];
 

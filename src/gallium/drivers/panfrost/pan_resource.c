@@ -872,7 +872,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
    panfrost_resource_set_damage_region(screen, &so->base, 0, NULL);
 
    if (template->bind & PIPE_BIND_INDEX_BUFFER)
-      so->index_cache = CALLOC_STRUCT(panfrost_minmax_cache);
+      so->index_cache = CALLOC_STRUCT(pan_minmax_cache);
 
    return (struct pipe_resource *)so;
 }
@@ -1037,11 +1037,11 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
       uint8_t *map = bo->ptr.cpu + rsrc->image.layout.slices[level].offset +
                      (z + ptrans->box.z) * stride;
 
-      panfrost_load_tiled_image(dst, map, ptrans->box.x, ptrans->box.y,
-                                ptrans->box.width, ptrans->box.height,
-                                ptrans->stride,
-                                rsrc->image.layout.slices[level].row_stride,
-                                rsrc->image.layout.format);
+      pan_load_tiled_image(dst, map, ptrans->box.x, ptrans->box.y,
+                           ptrans->box.width, ptrans->box.height,
+                           ptrans->stride,
+                           rsrc->image.layout.slices[level].row_stride,
+                           rsrc->image.layout.format);
    }
 }
 
@@ -1190,10 +1190,10 @@ panfrost_store_tiled_images(struct panfrost_transfer *transfer,
       uint8_t *map = bo->ptr.cpu + rsrc->image.layout.slices[level].offset +
                      (z + ptrans->box.z) * stride;
 
-      panfrost_store_tiled_image(map, src, ptrans->box.x, ptrans->box.y,
-                                 ptrans->box.width, ptrans->box.height,
-                                 rsrc->image.layout.slices[level].row_stride,
-                                 ptrans->stride, rsrc->image.layout.format);
+      pan_store_tiled_image(map, src, ptrans->box.x, ptrans->box.y,
+                            ptrans->box.width, ptrans->box.height,
+                            rsrc->image.layout.slices[level].row_stride,
+                            ptrans->stride, rsrc->image.layout.format);
    }
 }
 
@@ -1446,9 +1446,8 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
 
       if (usage & PIPE_MAP_WRITE) {
          BITSET_SET(rsrc->valid.data, level);
-         panfrost_minmax_cache_invalidate(
-            rsrc->index_cache,
-            util_format_get_blocksize(rsrc->base.format),
+         pan_minmax_cache_invalidate(
+            rsrc->index_cache, util_format_get_blocksize(rsrc->base.format),
             transfer->base.box.x, transfer->base.box.width);
       }
 
@@ -1935,10 +1934,9 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
                   transfer->box.x + transfer->box.width);
 
    if (transfer->usage & PIPE_MAP_WRITE) {
-      panfrost_minmax_cache_invalidate(prsrc->index_cache,
-                                       util_format_get_blocksize(prsrc->base.format),
-                                       transfer->box.x,
-                                       transfer->box.width);
+      pan_minmax_cache_invalidate(prsrc->index_cache,
+                                  util_format_get_blocksize(prsrc->base.format),
+                                  transfer->box.x, transfer->box.width);
    }
 
    /* Derefence the resource */

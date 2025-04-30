@@ -912,7 +912,7 @@ bi_emit_blend_op(bi_builder *b, bi_index rgba, nir_alu_type T, bi_index rgba2,
    unsigned size_2 = nir_alu_type_get_type_size(T2);
    unsigned sr_count = (size <= 16) ? 2 : 4;
    unsigned sr_count_2 = (size_2 <= 16) ? 2 : 4;
-   const struct panfrost_compile_inputs *inputs = b->shader->inputs;
+   const struct pan_compile_inputs *inputs = b->shader->inputs;
    uint64_t blend_desc = inputs->blend.bifrost_blend_desc;
    enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
 
@@ -5923,9 +5923,9 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 
 static bi_context *
 bi_compile_variant_nir(nir_shader *nir,
-                       const struct panfrost_compile_inputs *inputs,
+                       const struct pan_compile_inputs *inputs,
                        struct util_dynarray *binary, struct bi_shader_info info,
-                       struct panfrost_stats *stats, enum bi_idvs_mode idvs)
+                       struct pan_stats *stats, enum bi_idvs_mode idvs)
 {
    bi_context *ctx = rzalloc(NULL, bi_context);
 
@@ -6173,16 +6173,16 @@ bi_compile_variant_nir(nir_shader *nir,
    }
 
    if (ctx->arch >= 9) {
-      stats->isa = PANFROST_STAT_VALHALL;
+      stats->isa = PAN_STAT_VALHALL;
       va_gather_stats(ctx, binary->size - offset, &stats->valhall);
    } else {
-      stats->isa = PANFROST_STAT_BIFROST;
+      stats->isa = PAN_STAT_BIFROST;
       bi_gather_stats(ctx, binary->size - offset, &stats->bifrost);
    }
 
    if ((bifrost_debug & BIFROST_DBG_SHADERDB) && !skip_internal) {
       const char *prefix = bi_shader_stage_name(ctx);
-      panfrost_stats_fprintf(stderr, prefix, stats);
+      pan_stats_fprintf(stderr, prefix, stats);
    }
 
    return ctx;
@@ -6190,7 +6190,7 @@ bi_compile_variant_nir(nir_shader *nir,
 
 static void
 bi_compile_variant(nir_shader *nir,
-                   const struct panfrost_compile_inputs *inputs,
+                   const struct pan_compile_inputs *inputs,
                    struct util_dynarray *binary, struct pan_shader_info *info,
                    enum bi_idvs_mode idvs)
 {
@@ -6215,7 +6215,7 @@ bi_compile_variant(nir_shader *nir,
     * offset, to keep the ABI simple. */
    assert((offset == 0) ^ (idvs == BI_IDVS_VARYING));
 
-   struct panfrost_stats *stats =
+   struct pan_stats *stats =
       idvs == BI_IDVS_VARYING ? &info->stats_idvs_varying : &info->stats;
 
    bi_context *ctx =
@@ -6295,7 +6295,7 @@ bi_compile_variant(nir_shader *nir,
 
 /* Decide if Index-Driven Vertex Shading should be used for a given shader */
 static bool
-bi_should_idvs(nir_shader *nir, const struct panfrost_compile_inputs *inputs)
+bi_should_idvs(nir_shader *nir, const struct pan_compile_inputs *inputs)
 {
    /* Opt-out */
    if (inputs->no_idvs || bifrost_debug & BIFROST_DBG_NOIDVS)
@@ -6316,7 +6316,7 @@ bi_should_idvs(nir_shader *nir, const struct panfrost_compile_inputs *inputs)
 
 void
 bifrost_compile_shader_nir(nir_shader *nir,
-                           const struct panfrost_compile_inputs *inputs,
+                           const struct pan_compile_inputs *inputs,
                            struct util_dynarray *binary,
                            struct pan_shader_info *info)
 {

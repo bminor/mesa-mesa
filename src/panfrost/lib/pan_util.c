@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
 #include "pan_util.h"
+#include <stdio.h>
 
 /* Translate a PIPE swizzle quad to a 12-bit Mali swizzle code. PIPE
  * swizzles line up with Mali swizzles for the XYZW01, but PIPE swizzles have
@@ -30,7 +30,7 @@
  * PIPE swizzles are sparse but Mali swizzles are packed */
 
 unsigned
-panfrost_translate_swizzle_4(const unsigned char swizzle[4])
+pan_translate_swizzle_4(const unsigned char swizzle[4])
 {
    unsigned out = 0;
 
@@ -43,7 +43,7 @@ panfrost_translate_swizzle_4(const unsigned char swizzle[4])
 }
 
 void
-panfrost_invert_swizzle(const unsigned char *in, unsigned char *out)
+pan_invert_swizzle(const unsigned char *in, unsigned char *out)
 {
    /* First, default to all zeroes, both to prevent uninitialized junk
       and to provide a known baseline so we can tell when components

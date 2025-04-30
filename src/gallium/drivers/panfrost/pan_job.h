@@ -102,10 +102,10 @@ struct panfrost_batch {
    struct panfrost_bo *shared_memory;
 
    /* Framebuffer descriptor. */
-   struct panfrost_ptr framebuffer;
+   struct pan_ptr framebuffer;
 
    /* Thread local storage descriptor. */
-   struct panfrost_ptr tls;
+   struct pan_ptr tls;
 
    /* Vertex count */
    uint32_t vertex_count;

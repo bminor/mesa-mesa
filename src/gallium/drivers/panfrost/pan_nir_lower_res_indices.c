@@ -75,7 +75,7 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin)
 
 static bool
 lower_input_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
-                   const struct panfrost_compile_inputs *inputs)
+                   const struct pan_compile_inputs *inputs)
 {
    /* All vertex attributes come from the attribute table.
     * Fragment inputs come from the attribute table too, unless they've
@@ -120,7 +120,7 @@ lower_ssbo_intrin(nir_builder *b, nir_intrinsic_instr *intrin)
 
 static bool
 lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
-                const struct panfrost_compile_inputs *inputs)
+                const struct pan_compile_inputs *inputs)
 {
    switch (intrin->intrinsic) {
    case nir_intrinsic_image_load:
@@ -143,7 +143,7 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
 static bool
 lower_instr(nir_builder *b, nir_instr *instr, void *data)
 {
-   const struct panfrost_compile_inputs *inputs = data;
+   const struct pan_compile_inputs *inputs = data;
 
    switch (instr->type) {
    case nir_instr_type_tex:
@@ -157,7 +157,7 @@ lower_instr(nir_builder *b, nir_instr *instr, void *data)
 
 bool
 panfrost_nir_lower_res_indices(nir_shader *shader,
-                               struct panfrost_compile_inputs *inputs)
+                               struct pan_compile_inputs *inputs)
 {
    /**
     * Starting with Valhall, we are required to encode table indices by the

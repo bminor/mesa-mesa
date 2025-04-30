@@ -36,7 +36,7 @@
       <stat name="Fills">Number of fill (stack load) instructions</stat>
     </isa>
 
-   <family name="Panfrost">
+   <family name="Pan">
      <isa name="Midgard">
         <stat name="Instructions" display="Inst">Instruction count</stat>
         <stat name="Bundles">Instruction bundles</stat>

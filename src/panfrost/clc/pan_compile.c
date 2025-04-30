@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "panfrost_compile.h"
+#include "pan_compile.h"
 #include "compiler/glsl_types.h"
 #include "compiler/spirv/nir_spirv.h"
 #include "panfrost/compiler/bifrost_compile.h"
@@ -28,7 +28,6 @@
 #include "util/macros.h"
 #include "util/u_dynarray.h"
 #include <sys/mman.h>
-#include "panfrost_compile.h"
 
 static const struct spirv_to_nir_options spirv_options = {
    .environment = NIR_SPIRV_OPENCL,
@@ -283,7 +282,7 @@ remap_variant(nir_function *func, unsigned variant, const char *target)
    return "default";
 }
 
-void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
+void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
                         struct util_dynarray *binary,
                         struct pan_shader_info *info);
 
@@ -381,7 +380,7 @@ main(int argc, const char **argv)
           * to readjust it here. */
          s->scratch_size = MAX2(s->scratch_size, nir->scratch_size);
 
-         struct panfrost_compile_inputs inputs = {
+         struct pan_compile_inputs inputs = {
             .gpu_id = target_arch << 12,
          };
 

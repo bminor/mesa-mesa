@@ -63,8 +63,8 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
    pan_kmod_dev_query_props(dev->kmod.dev, &dev->kmod.props);
 
    dev->arch = pan_arch(dev->kmod.props.gpu_prod_id);
-   dev->model = panfrost_get_model(dev->kmod.props.gpu_prod_id,
-                                   dev->kmod.props.gpu_variant);
+   dev->model =
+      pan_get_model(dev->kmod.props.gpu_prod_id, dev->kmod.props.gpu_variant);
 
    /* If we don't recognize the model, bail early */
    if (!dev->model)
@@ -74,9 +74,9 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
     * things so it matches kmod VA range limitations.
     */
    uint64_t user_va_start =
-      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_START);
+      pan_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_START);
    uint64_t user_va_end =
-      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_END);
+      pan_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_END);
 
    dev->kmod.vm = pan_kmod_vm_create(
       dev->kmod.dev, PAN_KMOD_VM_FLAG_AUTO_VA | PAN_KMOD_VM_FLAG_TRACK_ACTIVITY,
@@ -85,17 +85,16 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
       goto err_free_kmod_dev;
 
    dev->core_count =
-      panfrost_query_core_count(&dev->kmod.props, &dev->core_id_range);
-   dev->thread_tls_alloc = panfrost_query_thread_tls_alloc(&dev->kmod.props);
-   dev->optimal_tib_size = panfrost_query_optimal_tib_size(dev->model);
-   dev->optimal_z_tib_size = panfrost_query_optimal_z_tib_size(dev->model);
-   dev->compressed_formats =
-      panfrost_query_compressed_formats(&dev->kmod.props);
-   dev->tiler_features = panfrost_query_tiler_features(&dev->kmod.props);
-   dev->has_afbc = panfrost_query_afbc(&dev->kmod.props);
-   dev->has_afrc = panfrost_query_afrc(&dev->kmod.props);
-   dev->formats = panfrost_format_table(dev->arch);
-   dev->blendable_formats = panfrost_blendable_format_table(dev->arch);
+      pan_query_core_count(&dev->kmod.props, &dev->core_id_range);
+   dev->thread_tls_alloc = pan_query_thread_tls_alloc(&dev->kmod.props);
+   dev->optimal_tib_size = pan_query_optimal_tib_size(dev->model);
+   dev->optimal_z_tib_size = pan_query_optimal_z_tib_size(dev->model);
+   dev->compressed_formats = pan_query_compressed_formats(&dev->kmod.props);
+   dev->tiler_features = pan_query_tiler_features(&dev->kmod.props);
+   dev->has_afbc = pan_query_afbc(&dev->kmod.props);
+   dev->has_afrc = pan_query_afrc(&dev->kmod.props);
+   dev->formats = pan_format_table(dev->arch);
+   dev->blendable_formats = pan_blendable_format_table(dev->arch);
 
    util_sparse_array_init(&dev->bo_map, sizeof(struct panfrost_bo), 512);
 
@@ -128,11 +127,11 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
 
    /* Done once on init */
    dev->sample_positions = panfrost_bo_create(
-      dev, panfrost_sample_positions_buffer_size(), 0, "Sample positions");
+      dev, pan_sample_positions_buffer_size(), 0, "Sample positions");
    if (!dev->sample_positions)
       goto err_free_kmod_dev;
 
-   panfrost_upload_sample_positions(dev->sample_positions->ptr.cpu);
+   pan_upload_sample_positions(dev->sample_positions->ptr.cpu);
    return 0;
 
 err_free_kmod_dev:

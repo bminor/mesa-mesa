@@ -44,7 +44,7 @@ prepare_driver_set(struct panvk_cmd_buffer *cmdbuf)
       &cmdbuf->state.compute.desc_state;
    const struct panvk_shader *cs = cmdbuf->state.compute.shader;
    uint32_t desc_count = cs->desc_info.dyn_bufs.count + 1;
-   struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
 
@@ -95,7 +95,7 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
 
-   struct panfrost_ptr tsd = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
+   struct pan_ptr tsd = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
    if (!tsd.gpu)
       return tsd.gpu;
 
@@ -105,7 +105,7 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
    };
    unsigned core_id_range;
    unsigned core_count =
-      panfrost_query_core_count(&phys_dev->kmod.props, &core_id_range);
+      pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
 
    /* Only used for indirect dispatch */
    unsigned wg_per_task = 0;

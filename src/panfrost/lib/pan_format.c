@@ -78,7 +78,7 @@
       BFMT2(pipe##_SRGB, R8G8B8A8, writeback, 1)
 
 const struct pan_blendable_format
-   GENX(panfrost_blendable_formats)[PIPE_FORMAT_COUNT] = {
+   GENX(pan_blendable_formats)[PIPE_FORMAT_COUNT] = {
       BFMT_SRGB(L8, R8),
       BFMT_SRGB(L8A8, R8G8),
       BFMT_SRGB(R8, R8),
@@ -174,7 +174,7 @@ const struct pan_blendable_format
 #endif
 
 /* clang-format off */
-const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
+const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(NONE,                    CONSTANT,        0000, L, VTR_I),
 
 #if PAN_ARCH >= 7
@@ -578,7 +578,7 @@ pan_raw_format_mask_midgard(enum pipe_format *formats)
 
    for (unsigned i = 0; i < 8; i++) {
       enum pipe_format fmt = formats[i];
-      unsigned wb_fmt = panfrost_blendable_formats_v6[fmt].writeback;
+      unsigned wb_fmt = pan_blendable_formats_v6[fmt].writeback;
 
       if (wb_fmt < MALI_COLOR_FORMAT_R8)
          out |= BITFIELD_BIT(i);

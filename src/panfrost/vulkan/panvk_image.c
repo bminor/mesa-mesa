@@ -80,7 +80,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
           ((image->vk.usage | image->vk.stencil_usage) &
            VK_IMAGE_USAGE_STORAGE_BIT) ||
           image->vk.samples > 1 ||
-          !panfrost_query_afbc(&phys_dev->kmod.props) ||
+          !pan_query_afbc(&phys_dev->kmod.props) ||
           !pan_format_supports_afbc(arch, pfmt) ||
           image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
           image->vk.image_type == VK_IMAGE_TYPE_1D ||

@@ -157,7 +157,7 @@ job_uses_tiling(enum mali_job_type type)
 static inline unsigned
 pan_jc_add_job(struct pan_jc *jc, enum mali_job_type type, bool barrier,
                bool suppress_prefetch, unsigned local_dep, unsigned global_dep,
-               const struct panfrost_ptr *job, bool inject)
+               const struct pan_ptr *job, bool inject)
 {
    if (job_uses_tiling(type)) {
       /* Tiler jobs must be chained, and on Midgard, the first tiler
@@ -233,12 +233,11 @@ pan_jc_add_job(struct pan_jc *jc, enum mali_job_type type, bool barrier,
 /* Generates a write value job, used to initialize the tiler structures. Note
  * this is called right before frame submission. */
 
-static inline struct panfrost_ptr
-pan_jc_initialize_tiler(struct pan_pool *pool,
-                        struct pan_jc *jc,
+static inline struct pan_ptr
+pan_jc_initialize_tiler(struct pan_pool *pool, struct pan_jc *jc,
                         uint64_t polygon_list)
 {
-   struct panfrost_ptr transfer = {0};
+   struct pan_ptr transfer = {0};
 
    /* Check if we even need tiling */
    if (PAN_ARCH >= 6 || !jc->first_tiler)

@@ -66,7 +66,7 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
       if (per_instance)
          cfg.offset += cmdbuf->state.gfx.sysvals.vs.base_instance * stride;
 
-      cfg.format = GENX(panfrost_format_from_pipe_format)(f)->hw;
+      cfg.format = GENX(pan_format_from_pipe_format)(f)->hw;
       cfg.table = 0;
       cfg.buffer_index = buf_idx;
       cfg.stride = stride;
@@ -93,7 +93,7 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
          /* Per-instance, NPOT divisor */
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_INSTANCE;
-         cfg.divisor_d = panfrost_compute_magic_divisor(
+         cfg.divisor_d = pan_compute_magic_divisor(
             buf_info->divisor, &cfg.divisor_r, &cfg.divisor_e);
       }
    }
@@ -148,7 +148,7 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf,
 
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
-   struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, repeat_count * desc_count * PANVK_DESCRIPTOR_SIZE,
       PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
@@ -234,7 +234,7 @@ emit_varying_descs(const struct panvk_cmd_buffer *cmdbuf,
       pan_pack(&descs[i], ATTRIBUTE, cfg) {
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_VERTEX_PACKET;
          cfg.offset_enable = false;
-         cfg.format = GENX(panfrost_format_from_pipe_format)(var->format)->hw;
+         cfg.format = GENX(pan_format_from_pipe_format)(var->format)->hw;
          cfg.table = 61;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
          cfg.offset = 1024 + (loc * 16);
@@ -259,7 +259,7 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
       panvk_use_ld_var_buf(fs) ? 0 : fs->desc_info.max_varying_loads;
    uint32_t desc_count =
       fs->desc_info.dyn_bufs.count + num_varying_attr_descs + 1;
-   struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
 
@@ -492,8 +492,7 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
    uint32_t bd_count = MAX2(cmdbuf->state.gfx.render.fb.info.rt_count, 1);
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   struct panfrost_ptr ptr =
-      panvk_cmd_alloc_desc_array(cmdbuf, bd_count, BLEND);
+   struct pan_ptr ptr = panvk_cmd_alloc_desc_array(cmdbuf, bd_count, BLEND);
    struct mali_blend_packed *bds = ptr.cpu;
 
    if (bd_count && !ptr.gpu)
@@ -830,11 +829,11 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    struct panvk_instance *instance =
       to_panvk_instance(phys_dev->vk.instance);
    bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
-   struct panfrost_tiler_features tiler_features =
-      panfrost_query_tiler_features(&phys_dev->kmod.props);
+   struct pan_tiler_features tiler_features =
+      pan_query_tiler_features(&phys_dev->kmod.props);
    bool simul_use =
       cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-   struct panfrost_ptr tiler_desc = {0};
+   struct pan_ptr tiler_desc = {0};
    struct mali_tiler_context_packed tiler_tmpl;
    uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                                     MAX_LAYERS_PER_TILER_DESC);
@@ -1161,13 +1160,13 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
     * "
     */
    bool copy_fbds = simul_use && cmdbuf->state.gfx.render.tiler;
-   struct panfrost_ptr fbds = cmdbuf->state.gfx.render.fbds;
+   struct pan_ptr fbds = cmdbuf->state.gfx.render.fbds;
    uint32_t fbd_flags = 0;
    uint32_t fbd_ir_pass_offset = fbd_sz * calc_enabled_layer_count(cmdbuf);
 
    fbinfo->sample_positions =
       dev->sample_positions->addr.dev +
-      panfrost_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
+      pan_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
 
    VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf, fbinfo);
    if (result != VK_SUCCESS)
@@ -1498,7 +1497,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf, struct pan_earlyzs_state earlyzs)
    bool test_z = has_depth_att(cmdbuf) && ds->depth.test_enable;
    const struct panvk_shader *fs = get_fs(cmdbuf);
 
-   struct panfrost_ptr zsd = panvk_cmd_alloc_desc(cmdbuf, DEPTH_STENCIL);
+   struct pan_ptr zsd = panvk_cmd_alloc_desc(cmdbuf, DEPTH_STENCIL);
    if (!zsd.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -1565,7 +1564,7 @@ wrap_prev_oq(struct panvk_cmd_buffer *cmdbuf)
       return VK_SUCCESS;
 
    uint64_t prev_oq_node = cmdbuf->state.gfx.render.oq.chain;
-   struct panfrost_ptr new_oq_node = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr new_oq_node = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, sizeof(struct panvk_cs_occlusion_query), 8);
 
    if (!new_oq_node.gpu)
@@ -2526,8 +2525,8 @@ panvk_per_arch(cmd_inherit_render_state)(
    /* If a draw was performed, the inherited sample count should match our current sample count */
    assert(fbinfo->nr_samples == 0 || inheritance_info->rasterizationSamples == fbinfo->nr_samples);
    *fbinfo = (struct pan_fb_info){
-      .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
-      .z_tile_buf_budget = panfrost_query_optimal_z_tib_size(phys_dev->model),
+      .tile_buf_budget = pan_query_optimal_tib_size(phys_dev->model),
+      .z_tile_buf_budget = pan_query_optimal_z_tib_size(phys_dev->model),
       .tile_size = fbinfo->tile_size,
       .cbuf_allocation = fbinfo->cbuf_allocation,
       .nr_samples = inheritance_info->rasterizationSamples,

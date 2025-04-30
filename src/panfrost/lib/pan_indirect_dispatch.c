@@ -106,7 +106,7 @@ pan_indirect_dispatch_init(struct pan_indirect_dispatch_meta *meta)
 
    nir_pop_if(&b, NULL);
 
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = meta->gpu_id,
    };
    struct pan_shader_info shader_info;
@@ -124,16 +124,13 @@ pan_indirect_dispatch_init(struct pan_indirect_dispatch_meta *meta)
    shader_info.push.count =
       DIV_ROUND_UP(sizeof(struct pan_indirect_dispatch_info), 4);
 
-   struct panfrost_ptr bin =
-      pan_pool_alloc_aligned(meta->bin_pool, binary.size, 64);
+   struct pan_ptr bin = pan_pool_alloc_aligned(meta->bin_pool, binary.size, 64);
 
    memcpy(bin.cpu, binary.data, binary.size);
    util_dynarray_fini(&binary);
 
-   struct panfrost_ptr rsd =
-      pan_pool_alloc_desc(meta->desc_pool, RENDERER_STATE);
-   struct panfrost_ptr tsd =
-      pan_pool_alloc_desc(meta->desc_pool, LOCAL_STORAGE);
+   struct pan_ptr rsd = pan_pool_alloc_desc(meta->desc_pool, RENDERER_STATE);
+   struct pan_ptr tsd = pan_pool_alloc_desc(meta->desc_pool, LOCAL_STORAGE);
 
    pan_cast_and_pack(rsd.cpu, RENDERER_STATE, cfg) {
       pan_shader_prepare_rsd(&shader_info, bin.gpu, &cfg);
@@ -152,15 +149,14 @@ GENX(pan_indirect_dispatch_emit)(struct pan_indirect_dispatch_meta *meta,
                                  struct pan_pool *pool, struct pan_jc *jc,
                                  const struct pan_indirect_dispatch_info *inputs)
 {
-   struct panfrost_ptr job = pan_pool_alloc_desc(pool, COMPUTE_JOB);
+   struct pan_ptr job = pan_pool_alloc_desc(pool, COMPUTE_JOB);
    void *invocation = pan_section_ptr(job.cpu, COMPUTE_JOB, INVOCATION);
 
    /* If we haven't compiled the indirect dispatch shader yet, do it now */
    if (!meta->rsd)
       pan_indirect_dispatch_init(meta);
 
-   panfrost_pack_work_groups_compute(invocation, 1, 1, 1, 1, 1, 1, false,
-                                     false);
+   pan_pack_work_groups_compute(invocation, 1, 1, 1, 1, 1, 1, false, false);
 
    pan_section_pack(job.cpu, COMPUTE_JOB, PARAMETERS, cfg) {
       cfg.job_task_split = 2;

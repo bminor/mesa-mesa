@@ -230,7 +230,7 @@ GENX(pandecode_blend)(struct pandecode_context *ctx,
 
 #if PAN_ARCH <= 7
 static bool
-panfrost_is_yuv_format(uint32_t packed)
+pan_is_yuv_format(uint32_t packed)
 {
 #if PAN_ARCH == 7
    enum mali_format mali_fmt = packed >> 12;
@@ -301,7 +301,7 @@ pandecode_texture_payload(struct pandecode_context *ctx, uint64_t payload,
    PANDECODE_EMIT_TEX_PAYLOAD_DESC(SURFACE_WITH_STRIDE, "Surface With Stride");
 #else
    STATIC_ASSERT(PAN_ARCH == 7);
-   if (panfrost_is_yuv_format(tex->format)) {
+   if (pan_is_yuv_format(tex->format)) {
       PANDECODE_EMIT_TEX_PAYLOAD_DESC(MULTIPLANAR_SURFACE, "Surface YUV");
    } else {
       PANDECODE_EMIT_TEX_PAYLOAD_DESC(SURFACE_WITH_STRIDE,

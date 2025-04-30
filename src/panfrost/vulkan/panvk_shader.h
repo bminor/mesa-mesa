@@ -403,7 +403,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_internal_shader, vk.base, VkShaderEXT,
 
 VkResult panvk_per_arch(create_internal_shader)(
    struct panvk_device *dev, nir_shader *nir,
-   struct panfrost_compile_inputs *compiler_inputs,
+   struct pan_compile_inputs *compiler_inputs,
    struct panvk_internal_shader **shader_out);
 
 VkResult panvk_per_arch(create_shader_from_binary)(

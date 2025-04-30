@@ -136,8 +136,7 @@ alloc_clone_buffer(void *cookie)
    const uint32_t size = 4 * 1024;
    const uint32_t alignment = 64;
 
-   struct panfrost_ptr ptr =
-      pan_pool_alloc_aligned(&pool->base, size, alignment);
+   struct pan_ptr ptr = pan_pool_alloc_aligned(&pool->base, size, alignment);
 
    return (struct cs_buffer){
       .cpu = ptr.cpu,

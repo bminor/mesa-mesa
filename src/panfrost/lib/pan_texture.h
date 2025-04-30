@@ -34,7 +34,7 @@
 
 #include "pan_image.h"
 
-struct panfrost_ptr;
+struct pan_ptr;
 struct mali_texture_packed;
 
 #if PAN_ARCH >= 7
@@ -50,12 +50,12 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview);
 
 void GENX(pan_texture_emit)(const struct pan_image_view *iview,
                             struct mali_texture_packed *out,
-                            const struct panfrost_ptr *payload);
+                            const struct pan_ptr *payload);
 
 #if PAN_ARCH >= 9
 void GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
                                     struct mali_texture_packed *out,
-                                    const struct panfrost_ptr *payload);
+                                    const struct pan_ptr *payload);
 #endif
 
 #endif

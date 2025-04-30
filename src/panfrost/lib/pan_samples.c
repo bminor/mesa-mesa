@@ -136,13 +136,14 @@ const struct mali_sample_positions sample_position_lut[] = {
 };
 /* clang-format on */
 
-unsigned panfrost_sample_positions_buffer_size(void)
+unsigned
+pan_sample_positions_buffer_size(void)
 {
    return sizeof(sample_position_lut);
 }
 
 unsigned
-panfrost_sample_positions_offset(enum mali_sample_pattern pattern)
+pan_sample_positions_offset(enum mali_sample_pattern pattern)
 {
    assert(pattern < ARRAY_SIZE(sample_position_lut));
    unsigned offset = (pattern * sizeof(sample_position_lut[0]));
@@ -150,7 +151,7 @@ panfrost_sample_positions_offset(enum mali_sample_pattern pattern)
 }
 
 void
-panfrost_upload_sample_positions(void *buffer)
+pan_upload_sample_positions(void *buffer)
 {
    memcpy(buffer, sample_position_lut, sizeof(sample_position_lut));
 }

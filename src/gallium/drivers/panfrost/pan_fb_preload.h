@@ -61,7 +61,7 @@ void GENX(pan_fb_preload_cache_cleanup)(struct pan_fb_preload_cache *cache);
 unsigned GENX(pan_preload_fb)(struct pan_fb_preload_cache *cache,
                               struct pan_pool *desc_pool,
                               struct pan_fb_info *fb, uint64_t tsd,
-                              struct panfrost_ptr *jobs);
+                              struct pan_ptr *jobs);
 #endif
 
 #endif

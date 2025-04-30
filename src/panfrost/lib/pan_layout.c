@@ -122,7 +122,7 @@ static void
 init_slice_crc_info(unsigned arch, struct pan_image_slice_layout *slice,
                     unsigned width, unsigned height, unsigned offset)
 {
-   unsigned checksum_region_size = panfrost_meta_tile_size(arch);
+   unsigned checksum_region_size = pan_meta_tile_size(arch);
    unsigned checksum_x_tile_per_region =
       (checksum_region_size / CHECKSUM_TILE_WIDTH);
    unsigned checksum_y_tile_per_region =

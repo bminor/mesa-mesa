@@ -85,7 +85,7 @@ struct panfrost_vtable {
       struct pan_blend_shader_cache *cache, const struct pan_blend_state *,
       nir_alu_type, nir_alu_type, unsigned rt);
 
-   void (*compile_shader)(nir_shader *s, struct panfrost_compile_inputs *inputs,
+   void (*compile_shader)(nir_shader *s, struct pan_compile_inputs *inputs,
                           struct util_dynarray *binary,
                           struct pan_shader_info *info);
 

@@ -58,9 +58,9 @@ PanfrostDriver::create_available_counters(const PanfrostPerf &perf)
 
          counter.set_getter([=](const Counter &c, const Driver &d) {
             auto &pan_driver = PanfrostDriver::into(d);
-            struct panfrost_perf *perf = pan_driver.perf->perf;
+            struct pan_perf *perf = pan_driver.perf->perf;
             const auto counter = &perf->cfg->categories[gid].counters[id];
-            return int64_t(panfrost_perf_counter_read(counter, perf));
+            return int64_t(pan_perf_counter_read(counter, perf));
          });
 
          group.counters.push_back(cid++);

@@ -2991,7 +2991,7 @@ mir_add_writeout_loops(compiler_context *ctx)
 
 void
 midgard_compile_shader_nir(nir_shader *nir,
-                           const struct panfrost_compile_inputs *inputs,
+                           const struct pan_compile_inputs *inputs,
                            struct util_dynarray *binary,
                            struct pan_shader_info *info)
 {
@@ -3183,7 +3183,7 @@ midgard_compile_shader_nir(nir_shader *nir,
     * register count for thread count */
    stats.threads = (stats.registers <= 4) ? 4 : (stats.registers <= 8) ? 2 : 1;
 
-   info->stats.isa = PANFROST_STAT_MIDGARD;
+   info->stats.isa = PAN_STAT_MIDGARD;
    info->stats.midgard = stats;
 
    if ((midgard_debug & MIDGARD_DBG_SHADERDB) && !nir->info.internal) {

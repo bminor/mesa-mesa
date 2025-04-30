@@ -46,7 +46,7 @@ csf_alloc_cs_buffer(void *cookie)
    struct panfrost_batch *batch = cookie;
    unsigned capacity = 4096;
 
-   struct panfrost_ptr ptr =
+   struct pan_ptr ptr =
       pan_pool_alloc_aligned(&batch->csf.cs_chunk_pool.base, capacity * 8, 64);
 
    return (struct cs_buffer){
@@ -89,8 +89,8 @@ csf_update_tiler_oom_ctx(struct cs_builder *b, uint64_t addr)
 
 #define FBD_OFFSET(_pass)                                                      \
    (FIELD_OFFSET(fbds) +                                                       \
-    (PAN_INCREMENTAL_RENDERING_##_pass##_PASS * sizeof(struct panfrost_ptr)) + \
-    offsetof(struct panfrost_ptr, gpu))
+    (PAN_INCREMENTAL_RENDERING_##_pass##_PASS * sizeof(struct pan_ptr)) +      \
+    offsetof(struct pan_ptr, gpu))
 
 static int
 csf_oom_handler_init(struct panfrost_context *ctx)
@@ -229,7 +229,7 @@ GENX(csf_cleanup_batch)(struct panfrost_batch *batch)
    panfrost_pool_cleanup(&batch->csf.cs_chunk_pool);
 }
 
-static inline struct panfrost_ptr
+static inline struct pan_ptr
 alloc_fbd(struct panfrost_batch *batch)
 {
    return pan_pool_alloc_desc_aggregate(
@@ -665,8 +665,7 @@ csf_get_tiler_desc(struct panfrost_batch *batch)
    if (batch->tiler_ctx.valhall.desc)
       return batch->tiler_ctx.valhall.desc;
 
-   struct panfrost_ptr t =
-      pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
+   struct pan_ptr t = pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
 
    batch->csf.pending_tiler_desc = t.cpu;
    batch->tiler_ctx.valhall.desc = t.gpu;
@@ -928,8 +927,8 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
    cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z), 0);
 
    unsigned threads_per_wg = info->block[0] * info->block[1] * info->block[2];
-   unsigned max_thread_cnt = panfrost_compute_max_thread_count(
-      &dev->kmod.props, cs->info.work_reg_count);
+   unsigned max_thread_cnt =
+      pan_compute_max_thread_count(&dev->kmod.props, cs->info.work_reg_count);
 
    if (info->indirect) {
       /* Load size in workgroups per dimension from memory */

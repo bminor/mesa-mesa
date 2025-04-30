@@ -79,23 +79,23 @@ enum { PAN_VERTEX_ID = 16, PAN_INSTANCE_ID = 17, PAN_MAX_ATTRIBUTE };
 /* Architectural invariants (Midgard and Bifrost): UBO must be <= 2^16 bytes so
  * an offset to a word must be < 2^16. There are less than 2^8 UBOs */
 
-struct panfrost_ubo_word {
+struct pan_ubo_word {
    uint16_t ubo;
    uint16_t offset;
 };
 
-struct panfrost_ubo_push {
+struct pan_ubo_push {
    unsigned count;
-   struct panfrost_ubo_word words[PAN_MAX_PUSH];
+   struct pan_ubo_word words[PAN_MAX_PUSH];
 };
 
 /* Helper for searching the above. Note this is O(N) to the number of pushed
  * constants, do not run in the draw call hot path */
 
-unsigned pan_lookup_pushed_ubo(struct panfrost_ubo_push *push, unsigned ubo,
+unsigned pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo,
                                unsigned offs);
 
-struct panfrost_compile_inputs {
+struct pan_compile_inputs {
    unsigned gpu_id;
    bool is_blend, is_blit;
    struct {
@@ -197,7 +197,7 @@ struct pan_shader_info {
    unsigned tls_size;
    unsigned wls_size;
 
-   struct panfrost_stats stats, stats_idvs_varying;
+   struct pan_stats stats, stats_idvs_varying;
 
    /* Bit mask of preloaded registers */
    uint64_t preload;
@@ -303,7 +303,7 @@ struct pan_shader_info {
 
    /* UBOs to push to Register Mapped Uniforms (Midgard) or Fast Access
     * Uniforms (Bifrost) */
-   struct panfrost_ubo_push push;
+   struct pan_ubo_push push;
 
    uint32_t ubo_mask;
 

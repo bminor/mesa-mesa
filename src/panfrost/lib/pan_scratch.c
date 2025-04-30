@@ -64,7 +64,7 @@
 /* Computes log_stack_size = log2(ceil(s / 16)) */
 
 unsigned
-panfrost_get_stack_shift(unsigned stack_size)
+pan_get_stack_shift(unsigned stack_size)
 {
    if (stack_size)
       return util_logbase2_ceil(DIV_ROUND_UP(stack_size, 16));
@@ -75,8 +75,8 @@ panfrost_get_stack_shift(unsigned stack_size)
 /* Computes the aligned stack size given the shift and thread count. */
 
 unsigned
-panfrost_get_total_stack_size(unsigned thread_size, unsigned threads_per_core,
-                              unsigned core_id_range)
+pan_get_total_stack_size(unsigned thread_size, unsigned threads_per_core,
+                         unsigned core_id_range)
 {
    unsigned size_per_thread =
       (thread_size == 0) ? 0

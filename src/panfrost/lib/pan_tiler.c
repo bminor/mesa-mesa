@@ -219,8 +219,8 @@
 #define FULL_BYTES_PER_TILE 0x200
 
 static unsigned
-panfrost_hierarchy_size(unsigned width, unsigned height, unsigned mask,
-                        unsigned bytes_per_tile)
+pan_hierarchy_size(unsigned width, unsigned height, unsigned mask,
+                   unsigned bytes_per_tile)
 {
    unsigned size = PROLOGUE_SIZE;
 
@@ -250,8 +250,8 @@ panfrost_hierarchy_size(unsigned width, unsigned height, unsigned mask,
  */
 
 static unsigned
-panfrost_flat_size(unsigned width, unsigned height, unsigned dim,
-                   unsigned bytes_per_tile)
+pan_flat_size(unsigned width, unsigned height, unsigned dim,
+              unsigned bytes_per_tile)
 {
    /* First, extract the tile dimensions */
    unsigned tw = (1 << (dim & 0b111)) * 8;
@@ -268,14 +268,13 @@ panfrost_flat_size(unsigned width, unsigned height, unsigned dim,
 /* Given a hierarchy mask and a framebuffer size, compute the header size */
 
 unsigned
-panfrost_tiler_header_size(unsigned width, unsigned height, unsigned mask,
-                           bool hierarchy)
+pan_tiler_header_size(unsigned width, unsigned height, unsigned mask,
+                      bool hierarchy)
 {
    if (hierarchy)
-      return panfrost_hierarchy_size(width, height, mask,
-                                     HEADER_BYTES_PER_TILE);
+      return pan_hierarchy_size(width, height, mask, HEADER_BYTES_PER_TILE);
    else
-      return panfrost_flat_size(width, height, mask, HEADER_BYTES_PER_TILE);
+      return pan_flat_size(width, height, mask, HEADER_BYTES_PER_TILE);
 }
 
 /* The combined header/body is sized similarly (but it is significantly
@@ -284,21 +283,20 @@ panfrost_tiler_header_size(unsigned width, unsigned height, unsigned mask,
  */
 
 unsigned
-panfrost_tiler_full_size(unsigned width, unsigned height, unsigned mask,
-                         bool hierarchy)
+pan_tiler_full_size(unsigned width, unsigned height, unsigned mask,
+                    bool hierarchy)
 {
    if (hierarchy)
-      return panfrost_hierarchy_size(width, height, mask, FULL_BYTES_PER_TILE);
+      return pan_hierarchy_size(width, height, mask, FULL_BYTES_PER_TILE);
    else
-      return panfrost_flat_size(width, height, mask, FULL_BYTES_PER_TILE);
+      return pan_flat_size(width, height, mask, FULL_BYTES_PER_TILE);
 }
 
 /* On GPUs without hierarchical tiling, we choose a tile size directly and
  * stuff it into the field otherwise known as hierarchy mask (not a mask). */
 
 static unsigned
-panfrost_choose_tile_size(unsigned width, unsigned height,
-                          unsigned vertex_count)
+pan_choose_tile_size(unsigned width, unsigned height, unsigned vertex_count)
 {
    /* Figure out the ideal tile size. Eventually a heuristic should be
     * used for this */
@@ -320,8 +318,8 @@ panfrost_choose_tile_size(unsigned width, unsigned height,
 }
 
 unsigned
-panfrost_choose_hierarchy_mask(unsigned width, unsigned height,
-                               unsigned vertex_count, bool hierarchy)
+pan_choose_hierarchy_mask(unsigned width, unsigned height,
+                          unsigned vertex_count, bool hierarchy)
 {
    /* If there is no geometry, we don't bother enabling anything */
 
@@ -329,7 +327,7 @@ panfrost_choose_hierarchy_mask(unsigned width, unsigned height,
       return 0x00;
 
    if (!hierarchy)
-      return panfrost_choose_tile_size(width, height, vertex_count);
+      return pan_choose_tile_size(width, height, vertex_count);
 
    /* Heuristic: choose the largest minimum bin size such that there are an
     * average of k vertices per bin at the lowest level. This is modeled as:

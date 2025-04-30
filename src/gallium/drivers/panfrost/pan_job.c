@@ -432,8 +432,8 @@ panfrost_batch_get_scratchpad(struct panfrost_batch *batch,
                               unsigned size_per_thread,
                               unsigned thread_tls_alloc, unsigned core_id_range)
 {
-   unsigned size = panfrost_get_total_stack_size(
-      size_per_thread, thread_tls_alloc, core_id_range);
+   unsigned size = pan_get_total_stack_size(size_per_thread, thread_tls_alloc,
+                                            core_id_range);
 
    if (batch->scratchpad) {
       assert(panfrost_bo_size(batch->scratchpad) >= size);

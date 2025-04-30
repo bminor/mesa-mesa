@@ -162,7 +162,7 @@ panvk_pool_alloc_mem(struct panvk_pool *pool, struct panvk_pool_alloc_info info)
    return ret;
 }
 
-static struct panfrost_ptr
+static struct pan_ptr
 panvk_pool_alloc_aligned(struct panvk_pool *pool, size_t sz, unsigned alignment)
 {
    /* We just return the host/dev address, so callers can't
@@ -175,7 +175,7 @@ panvk_pool_alloc_aligned(struct panvk_pool *pool, size_t sz, unsigned alignment)
    };
    struct panvk_priv_mem mem = panvk_pool_alloc_mem(pool, info);
 
-   return (struct panfrost_ptr){
+   return (struct pan_ptr){
       .cpu = panvk_priv_mem_host_addr(mem),
       .gpu = panvk_priv_mem_dev_addr(mem),
    };

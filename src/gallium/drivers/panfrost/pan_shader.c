@@ -139,19 +139,19 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    if (gl_shader_stage_is_compute(s->info.stage))
       pan_shader_preprocess(s, panfrost_device_gpu_id(dev));
 
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = panfrost_device_gpu_id(dev),
    };
 
    /* Lower this early so the backends don't have to worry about it */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
       inputs.fixed_varying_mask =
-         panfrost_get_fixed_varying_mask(s->info.inputs_read);
+         pan_get_fixed_varying_mask(s->info.inputs_read);
    } else if (s->info.stage == MESA_SHADER_VERTEX) {
       /* No IDVS for internal XFB shaders */
       inputs.no_idvs = s->info.has_transform_feedback_varyings;
       inputs.fixed_varying_mask =
-         panfrost_get_fixed_varying_mask(s->info.outputs_written);
+         pan_get_fixed_varying_mask(s->info.outputs_written);
 
       if (s->info.has_transform_feedback_varyings) {
          NIR_PASS(_, s, nir_io_add_const_offset_to_base,
@@ -179,7 +179,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
          NIR_PASS(_, s, nir_lower_clip_fs, key->fs.clip_plane_enable,
                   false, true);
          inputs.fixed_varying_mask =
-            panfrost_get_fixed_varying_mask(s->info.inputs_read);
+            pan_get_fixed_varying_mask(s->info.inputs_read);
       }
 
       if (key->fs.line_smooth) {
@@ -225,12 +225,12 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
 
-   panfrost_stats_util_debug(dbg, gl_shader_stage_name(s->info.stage),
-                             &out->info.stats);
+   pan_stats_util_debug(dbg, gl_shader_stage_name(s->info.stage),
+                        &out->info.stats);
 
    if (s->info.stage == MESA_SHADER_VERTEX && out->info.vs.idvs) {
-      panfrost_stats_util_debug(dbg, "MESA_SHADER_POSITION",
-                                &out->info.stats_idvs_varying);
+      pan_stats_util_debug(dbg, "MESA_SHADER_POSITION",
+                           &out->info.stats_idvs_varying);
    }
 
    assert(req_local_mem >= out->info.wls_size);
@@ -338,7 +338,7 @@ panfrost_build_fs_key(struct panfrost_context *ctx,
          if ((fb->nr_cbufs > i) && fb->cbufs[i])
             fmt = fb->cbufs[i]->format;
 
-         if (panfrost_blendable_formats_v6[fmt].internal)
+         if (pan_blendable_formats_v6[fmt].internal)
             fmt = PIPE_FORMAT_NONE;
 
          key->rt_formats[i] = fmt;
@@ -625,8 +625,8 @@ panfrost_get_compute_state_info(struct pipe_context *pipe, void *cso,
    struct panfrost_compiled_shader *cs =
       util_dynarray_begin(&uncompiled->variants);
 
-   info->max_threads = panfrost_compute_max_thread_count(
-      &dev->kmod.props, cs->info.work_reg_count);
+   info->max_threads =
+      pan_compute_max_thread_count(&dev->kmod.props, cs->info.work_reg_count);
    info->private_memory = cs->info.tls_size;
    info->simd_sizes = pan_subgroup_size(dev->arch);
    info->preferred_simd_size = info->simd_sizes;

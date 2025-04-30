@@ -61,13 +61,13 @@ emit_tls(struct panvk_cmd_buffer *cmdbuf)
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
    unsigned core_id_range;
-   panfrost_query_core_count(&phys_dev->kmod.props, &core_id_range);
+   pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
 
    if (cmdbuf->state.tls.info.tls.size) {
       unsigned thread_tls_alloc =
-         panfrost_query_thread_tls_alloc(&phys_dev->kmod.props);
-      unsigned size = panfrost_get_total_stack_size(
-         cmdbuf->state.tls.info.tls.size, thread_tls_alloc, core_id_range);
+         pan_query_thread_tls_alloc(&phys_dev->kmod.props);
+      unsigned size = pan_get_total_stack_size(cmdbuf->state.tls.info.tls.size,
+                                               thread_tls_alloc, core_id_range);
 
       cmdbuf->state.tls.info.tls.ptr =
          panvk_cmd_alloc_dev_mem(cmdbuf, tls, size, 4096).gpu;
@@ -648,8 +648,7 @@ alloc_cs_buffer(void *cookie)
    struct panvk_cmd_buffer *cmdbuf = cookie;
    const unsigned capacity = 64 * 1024 / sizeof(uint64_t);
 
-   struct panfrost_ptr ptr =
-      panvk_cmd_alloc_dev_mem(cmdbuf, cs, capacity * 8, 64);
+   struct pan_ptr ptr = panvk_cmd_alloc_dev_mem(cmdbuf, cs, capacity * 8, 64);
 
    return (struct cs_buffer){
       .cpu = ptr.cpu,

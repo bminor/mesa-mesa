@@ -37,7 +37,7 @@
 #define ODD(odd) ((odd - 1) >> 1)
 
 static unsigned
-panfrost_small_padded_vertex_count(unsigned idx)
+pan_small_padded_vertex_count(unsigned idx)
 {
    if (idx < 10)
       return idx;
@@ -46,7 +46,7 @@ panfrost_small_padded_vertex_count(unsigned idx)
 }
 
 static unsigned
-panfrost_large_padded_vertex_count(uint32_t vertex_count)
+pan_large_padded_vertex_count(uint32_t vertex_count)
 {
    /* First, we have to find the highest set one */
    unsigned highest = 32 - __builtin_clz(vertex_count);
@@ -79,20 +79,20 @@ panfrost_large_padded_vertex_count(uint32_t vertex_count)
 }
 
 unsigned
-panfrost_padded_vertex_count(unsigned vertex_count)
+pan_padded_vertex_count(unsigned vertex_count)
 {
    if (vertex_count < 20)
-      return panfrost_small_padded_vertex_count(vertex_count);
+      return pan_small_padded_vertex_count(vertex_count);
    else
-      return panfrost_large_padded_vertex_count(vertex_count);
+      return pan_large_padded_vertex_count(vertex_count);
 }
 
 /* The much, much more irritating case -- instancing is enabled. See
- * panfrost_job.h for notes on how this works */
+ * pan_job.h for notes on how this works */
 
 unsigned
-panfrost_compute_magic_divisor(unsigned hw_divisor, unsigned *o_shift,
-                               unsigned *extra_flags)
+pan_compute_magic_divisor(unsigned hw_divisor, unsigned *o_shift,
+                          unsigned *extra_flags)
 {
    /* We have a NPOT divisor. Here's the fun one (multipling by
     * the inverse and shifting) */

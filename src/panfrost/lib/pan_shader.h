@@ -38,7 +38,7 @@ void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 
 static unsigned
-panfrost_get_fixed_varying_mask(unsigned varyings_used)
+pan_get_fixed_varying_mask(unsigned varyings_used)
 {
    return (varyings_used & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
       ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
@@ -65,7 +65,7 @@ pan_shader_disassemble(FILE *fp, const void *code, size_t size, unsigned gpu_id,
       disassemble_midgard(fp, code, size, gpu_id, verbose);
 }
 
-void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
+void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
                         struct util_dynarray *binary,
                         struct pan_shader_info *info);
 

@@ -164,10 +164,10 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview)
    element_size = pan_size(PLANE);
 
    /* 2-plane and 3-plane YUV use two plane descriptors. */
-   if (panfrost_format_is_yuv(iview->format) && iview->planes[1] != NULL)
+   if (pan_format_is_yuv(iview->format) && iview->planes[1] != NULL)
       element_size *= 2;
 #elif PAN_ARCH == 7
-   if (panfrost_format_is_yuv(iview->format))
+   if (pan_format_is_yuv(iview->format))
       element_size = pan_size(MULTIPLANAR_SURFACE);
    else
       element_size = pan_size(SURFACE_WITH_STRIDE);
@@ -288,20 +288,20 @@ pan_emit_multiplanar_surface(const struct pan_image_section_info *sections,
 }
 #endif
 
-struct panfrost_tex_extent {
+struct pan_tex_extent {
    unsigned width;
    unsigned height;
    unsigned depth;
 };
 
 /* Special case for iview->buf.size as the passed layout->width is incorrect */
-static struct panfrost_tex_extent
-panfrost_texture_buf_get_extent(const struct pan_image_view *iview,
-                                const struct pan_image_layout *layout)
+static struct pan_tex_extent
+pan_texture_buf_get_extent(const struct pan_image_view *iview,
+                           const struct pan_image_layout *layout)
 {
    assert(iview->buf.size);
 
-   struct panfrost_tex_extent extent;
+   struct pan_tex_extent extent;
 
    assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
    assert(!iview->first_level && !iview->last_level);
@@ -376,7 +376,7 @@ pan_clump_format(enum pipe_format format)
    assert(!util_format_is_compressed(format));
 
    /* YUV-sampling has special cases */
-   if (panfrost_format_is_yuv(format)) {
+   if (pan_format_is_yuv(format)) {
       switch (format) {
       case PIPE_FORMAT_R8G8_R8B8_UNORM:
       case PIPE_FORMAT_G8R8_B8R8_UNORM:
@@ -466,9 +466,9 @@ pan_emit_plane(const struct pan_image_view *iview,
       cfg.row_stride = row_stride;
       cfg.size = layout->slices[level].size;
 #if PAN_ARCH >= 10
-      struct panfrost_tex_extent extent;
+      struct pan_tex_extent extent;
       if (iview->buf.size)
-         extent = panfrost_texture_buf_get_extent(iview, layout);
+         extent = pan_texture_buf_get_extent(iview, layout);
       else {
          extent.width = u_minify(layout->width, level);
          extent.height = u_minify(layout->height, level);
@@ -486,7 +486,7 @@ pan_emit_plane(const struct pan_image_view *iview,
       if (is_chroma_2p) {
          cfg.two_plane_yuv_chroma.secondary_pointer =
             sections[plane_index + 1].pointer;
-      } else if (!panfrost_format_is_yuv(layout->format)) {
+      } else if (!pan_format_is_yuv(layout->format)) {
          cfg.slice_stride = layout->nr_samples > 1
                                ? surface_stride
                                : pan_image_surface_stride(layout, level);
@@ -560,7 +560,7 @@ pan_emit_surface(const struct pan_image_view *iview, unsigned level,
                  unsigned index, unsigned sample, void **payload)
 {
 #if PAN_ARCH == 7 || PAN_ARCH >= 9
-   if (panfrost_format_is_yuv(iview->format)) {
+   if (pan_format_is_yuv(iview->format)) {
       struct pan_image_section_info sections[MAX_IMAGE_PLANES] = {0};
       unsigned plane_count = 0;
 
@@ -715,11 +715,10 @@ GENX(pan_texture_afbc_reswizzle)(struct pan_image_view *iview)
     * This allows us to support AFBC(BGR) as well as AFBC(RGB).
     */
    assert(!util_format_is_depth_or_stencil(iview->format));
-   assert(!panfrost_format_is_yuv(iview->format));
+   assert(!pan_format_is_yuv(iview->format));
    assert(pan_format_supports_afbc(PAN_ARCH, iview->format));
 
-   uint32_t mali_format =
-      GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
+   uint32_t mali_format = GENX(pan_format_from_pipe_format)(iview->format)->hw;
 
    enum mali_rgb_component_order orig = mali_format & BITFIELD_MASK(12);
    struct pan_decomposed_swizzle decomposed = GENX(pan_decompose_swizzle)(orig);
@@ -730,7 +729,7 @@ GENX(pan_texture_afbc_reswizzle)(struct pan_image_view *iview)
    /* Only RGB<->BGR should be allowed for AFBC */
    assert(iview->format != PIPE_FORMAT_NONE);
    assert(decomposed.pre ==
-          (GENX(panfrost_format_from_pipe_format)(iview->format)->hw &
+          (GENX(pan_format_from_pipe_format)(iview->format)->hw &
            BITFIELD_MASK(12)));
 
    /* Compose the new swizzle */
@@ -740,7 +739,7 @@ GENX(pan_texture_afbc_reswizzle)(struct pan_image_view *iview)
 #endif
 
 static unsigned
-panfrost_texture_get_array_size(const struct pan_image_view *iview)
+pan_texture_get_array_size(const struct pan_image_view *iview)
 {
    unsigned array_size = iview->last_layer - iview->first_layer + 1;
 
@@ -753,21 +752,21 @@ panfrost_texture_get_array_size(const struct pan_image_view *iview)
    }
 
    /* Multiplanar YUV textures require 2 surface descriptors. */
-   if (panfrost_format_is_yuv(iview->format) && PAN_ARCH >= 9 &&
+   if (pan_format_is_yuv(iview->format) && PAN_ARCH >= 9 &&
        pan_image_view_get_plane(iview, 1) != NULL)
       array_size *= 2;
 
    return array_size;
 }
 
-static struct panfrost_tex_extent
-panfrost_texture_get_extent(const struct pan_image_view *iview,
+static struct pan_tex_extent
+pan_texture_get_extent(const struct pan_image_view *iview,
                             const struct pan_image_layout *layout)
 {
    if (iview->buf.size)
-      return panfrost_texture_buf_get_extent(iview, layout);
+      return pan_texture_buf_get_extent(iview, layout);
 
-   struct panfrost_tex_extent extent;
+   struct pan_tex_extent extent;
    extent.width = u_minify(layout->width, iview->first_level);
    extent.height = u_minify(layout->height, iview->first_level);
    extent.depth = u_minify(layout->depth, iview->first_level);
@@ -800,15 +799,14 @@ panfrost_texture_get_extent(const struct pan_image_view *iview,
 void
 GENX(pan_texture_emit)(const struct pan_image_view *iview,
                        struct mali_texture_packed *out,
-                       const struct panfrost_ptr *payload)
+                       const struct pan_ptr *payload)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
    const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
    const struct pan_image_layout *layout = &first_plane->layout;
+   uint32_t mali_format = GENX(pan_format_from_pipe_format)(iview->format)->hw;
 
-   uint32_t mali_format =
-      GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
        desc->colorspace != UTIL_FORMAT_COLORSPACE_SRGB) {
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
@@ -816,10 +814,10 @@ GENX(pan_texture_emit)(const struct pan_image_view *iview,
 
    pan_emit_texture_payload(iview, payload->cpu);
 
-   unsigned array_size = panfrost_texture_get_array_size(iview);
+   unsigned array_size = pan_texture_get_array_size(iview);
 
-   struct panfrost_tex_extent extent =
-      panfrost_texture_get_extent(iview, layout);
+   struct pan_tex_extent extent =
+      pan_texture_get_extent(iview, layout);
 
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = iview->dim;
@@ -830,7 +828,7 @@ GENX(pan_texture_emit)(const struct pan_image_view *iview,
          cfg.depth = extent.depth;
       else
          cfg.sample_count = layout->nr_samples;
-      cfg.swizzle = panfrost_translate_swizzle_4(iview->swizzle);
+      cfg.swizzle = pan_translate_swizzle_4(iview->swizzle);
 #if PAN_ARCH >= 9
       cfg.texel_interleave = (layout->modifier != DRM_FORMAT_MOD_LINEAR) ||
                              util_format_is_compressed(iview->format);
@@ -856,7 +854,7 @@ GENX(pan_texture_emit)(const struct pan_image_view *iview,
 void
 GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
                                struct mali_texture_packed *out,
-                               const struct panfrost_ptr *payload)
+                               const struct pan_ptr *payload)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
@@ -868,7 +866,7 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
    assert(!drm_is_afrc(layout->modifier));
 
    uint32_t mali_format =
-      GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
+      GENX(pan_format_from_pipe_format)(iview->format)->hw;
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
        desc->colorspace != UTIL_FORMAT_COLORSPACE_SRGB) {
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
@@ -876,10 +874,10 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
 
    pan_emit_texture_payload(iview, payload->cpu);
 
-   unsigned array_size = panfrost_texture_get_array_size(iview);
+   unsigned array_size = pan_texture_get_array_size(iview);
 
-   struct panfrost_tex_extent extent =
-      panfrost_texture_get_extent(iview, layout);
+   struct pan_tex_extent extent =
+      pan_texture_get_extent(iview, layout);
 
    static const unsigned char rgba_swizzle[4] = {
       PIPE_SWIZZLE_X,
@@ -908,7 +906,7 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
       cfg.minimum_lod = 0;
       cfg.maximum_lod = 0;
       cfg.minimum_level = 0;
-      cfg.swizzle = panfrost_translate_swizzle_4(rgba_swizzle);
+      cfg.swizzle = pan_translate_swizzle_4(rgba_swizzle);
    }
 }
 #endif

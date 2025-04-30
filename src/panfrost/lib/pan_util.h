@@ -58,9 +58,9 @@
 
 struct pan_blendable_format;
 
-unsigned panfrost_translate_swizzle_4(const unsigned char swizzle[4]);
+unsigned pan_translate_swizzle_4(const unsigned char swizzle[4]);
 
-void panfrost_invert_swizzle(const unsigned char *in, unsigned char *out);
+void pan_invert_swizzle(const unsigned char *in, unsigned char *out);
 
 void pan_pack_color(const struct pan_blendable_format *blendable_formats,
                     uint32_t *packed, const union pipe_color_union *color,
@@ -69,7 +69,7 @@ void pan_pack_color(const struct pan_blendable_format *blendable_formats,
 /* Get the last blend shader, for an erratum workaround on v5 */
 
 static inline uint64_t
-panfrost_last_nonnull(uint64_t *ptrs, unsigned count)
+pan_last_nonnull(uint64_t *ptrs, unsigned count)
 {
    for (signed i = ((signed)count - 1); i >= 0; --i) {
       if (ptrs[i])

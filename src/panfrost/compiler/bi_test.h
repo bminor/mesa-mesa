@@ -51,7 +51,7 @@ bit_builder(void *memctx)
 {
    bi_context *ctx = rzalloc(memctx, bi_context);
    list_inithead(&ctx->blocks);
-   ctx->inputs = rzalloc(memctx, struct panfrost_compile_inputs);
+   ctx->inputs = rzalloc(memctx, struct pan_compile_inputs);
 
    bi_block *blk = bit_block(ctx);
 

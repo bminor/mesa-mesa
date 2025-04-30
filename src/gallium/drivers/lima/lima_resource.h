@@ -32,7 +32,7 @@
 #define LAYOUT_CONVERT_THRESHOLD 8
 
 struct lima_screen;
-struct panfrost_minmax_cache;
+struct pan_minmax_cache;
 
 struct lima_resource_level {
    uint32_t stride;
@@ -53,7 +53,7 @@ struct lima_resource {
    struct lima_damage_region damage;
    struct renderonly_scanout *scanout;
    struct lima_bo *bo;
-   struct panfrost_minmax_cache *index_cache;
+   struct pan_minmax_cache *index_cache;
    uint32_t mrt_pitch;
    bool tiled;
    bool modifier_constant;

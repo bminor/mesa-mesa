@@ -105,7 +105,7 @@ prepare_tex_descs(struct panvk_image_view *view)
    }
 #if PAN_ARCH == 7
    /* v7 requires AFBC reswizzle. */
-   else if (!panfrost_format_is_yuv(view->pview.format) &&
+   else if (!pan_format_is_yuv(view->pview.format) &&
             pan_format_supports_afbc(PAN_ARCH, view->pview.format))
       GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
@@ -146,13 +146,13 @@ prepare_tex_descs(struct panvk_image_view *view)
    if (!panvk_priv_mem_host_addr(view->mem))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-   struct panfrost_ptr ptr = {
+   struct pan_ptr ptr = {
       .gpu = panvk_priv_mem_dev_addr(view->mem),
       .cpu = panvk_priv_mem_host_addr(view->mem),
    };
 
 #if PAN_ARCH >= 9
-   struct panfrost_ptr storage_ptr = ptr;
+   struct pan_ptr storage_ptr = ptr;
    if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
       uint32_t storage_payload_offset = alloc_info.size - storage_payload_size;
       storage_ptr.gpu += storage_payload_offset;
@@ -256,7 +256,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
        */
       uint32_t fmt_blksize = util_format_get_blocksize(view->pview.format);
       uint32_t hw_fmt =
-         GENX(panfrost_format_from_pipe_format)(view->pview.format)->hw;
+         GENX(pan_format_from_pipe_format)(view->pview.format)->hw;
 
       assert(fmt_blksize < BITFIELD_MASK(10));
       assert(hw_fmt < BITFIELD_MASK(22));

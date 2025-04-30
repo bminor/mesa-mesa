@@ -170,7 +170,7 @@ typedef struct {
  */
 
 #define TILED_ACCESS_TYPE(pixel_t, shift)                                      \
-   static ALWAYS_INLINE void panfrost_access_tiled_image_##pixel_t(            \
+   static ALWAYS_INLINE void pan_access_tiled_image_##pixel_t(                 \
       void *dst, void *src, uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,  \
       uint32_t dst_stride, uint32_t src_stride, bool is_store)                 \
    {                                                                           \
@@ -248,11 +248,11 @@ TILED_ACCESS_TYPE(pan_uint128_t, 4);
  * so we divide here. Alignment is assumed.
  */
 static void
-panfrost_access_tiled_image_generic(void *dst, void *src, unsigned sx,
-                                    unsigned sy, unsigned w, unsigned h,
-                                    uint32_t dst_stride, uint32_t src_stride,
-                                    const struct util_format_description *desc,
-                                    bool _is_store)
+pan_access_tiled_image_generic(void *dst, void *src, unsigned sx, unsigned sy,
+                               unsigned w, unsigned h, uint32_t dst_stride,
+                               uint32_t src_stride,
+                               const struct util_format_description *desc,
+                               bool _is_store)
 {
    unsigned bpp = desc->block.bits;
 
@@ -280,10 +280,9 @@ panfrost_access_tiled_image_generic(void *dst, void *src, unsigned sx,
             (((_x)-orig_x) * (bpp / 8)))
 
 static ALWAYS_INLINE void
-panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
-                            unsigned w, unsigned h, uint32_t dst_stride,
-                            uint32_t src_stride, enum pipe_format format,
-                            bool is_store)
+pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
+                       unsigned h, uint32_t dst_stride, uint32_t src_stride,
+                       enum pipe_format format, bool is_store)
 {
    const struct util_format_description *desc = util_format_description(format);
    unsigned bpp = desc->block.bits;
@@ -298,8 +297,8 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
 
    if (desc->block.width > 1 ||
        !util_is_power_of_two_nonzero(desc->block.bits)) {
-      panfrost_access_tiled_image_generic(
-         dst, (void *)src, x, y, w, h, dst_stride, src_stride, desc, is_store);
+      pan_access_tiled_image_generic(dst, (void *)src, x, y, w, h, dst_stride,
+                                     src_stride, desc, is_store);
 
       return;
    }
@@ -316,9 +315,8 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
    if (first_full_tile_y != y) {
       unsigned dist = MIN2(first_full_tile_y - y, h);
 
-      panfrost_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, w, dist,
-                                          dst_stride, src_stride, desc,
-                                          is_store);
+      pan_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, w, dist,
+                                     dst_stride, src_stride, desc, is_store);
 
       if (dist == h)
          return;
@@ -331,9 +329,9 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
    if (last_full_tile_y != (y + h)) {
       unsigned dist = (y + h) - last_full_tile_y;
 
-      panfrost_access_tiled_image_generic(
-         dst, OFFSET(src, x, last_full_tile_y), x, last_full_tile_y, w, dist,
-         dst_stride, src_stride, desc, is_store);
+      pan_access_tiled_image_generic(dst, OFFSET(src, x, last_full_tile_y), x,
+                                     last_full_tile_y, w, dist, dst_stride,
+                                     src_stride, desc, is_store);
 
       h -= dist;
    }
@@ -342,9 +340,8 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
    if (first_full_tile_x != x) {
       unsigned dist = MIN2(first_full_tile_x - x, w);
 
-      panfrost_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, dist, h,
-                                          dst_stride, src_stride, desc,
-                                          is_store);
+      pan_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, dist, h,
+                                     dst_stride, src_stride, desc, is_store);
 
       if (dist == w)
          return;
@@ -357,28 +354,28 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
    if (last_full_tile_x != (x + w)) {
       unsigned dist = (x + w) - last_full_tile_x;
 
-      panfrost_access_tiled_image_generic(
-         dst, OFFSET(src, last_full_tile_x, y), last_full_tile_x, y, dist, h,
-         dst_stride, src_stride, desc, is_store);
+      pan_access_tiled_image_generic(dst, OFFSET(src, last_full_tile_x, y),
+                                     last_full_tile_x, y, dist, h, dst_stride,
+                                     src_stride, desc, is_store);
 
       w -= dist;
    }
 
    if (bpp == 8)
-      panfrost_access_tiled_image_uint8_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                          dst_stride, src_stride, is_store);
+      pan_access_tiled_image_uint8_t(dst, OFFSET(src, x, y), x, y, w, h,
+                                     dst_stride, src_stride, is_store);
    else if (bpp == 16)
-      panfrost_access_tiled_image_uint16_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                           dst_stride, src_stride, is_store);
+      pan_access_tiled_image_uint16_t(dst, OFFSET(src, x, y), x, y, w, h,
+                                      dst_stride, src_stride, is_store);
    else if (bpp == 32)
-      panfrost_access_tiled_image_uint32_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                           dst_stride, src_stride, is_store);
+      pan_access_tiled_image_uint32_t(dst, OFFSET(src, x, y), x, y, w, h,
+                                      dst_stride, src_stride, is_store);
    else if (bpp == 64)
-      panfrost_access_tiled_image_uint64_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                           dst_stride, src_stride, is_store);
+      pan_access_tiled_image_uint64_t(dst, OFFSET(src, x, y), x, y, w, h,
+                                      dst_stride, src_stride, is_store);
    else if (bpp == 128)
-      panfrost_access_tiled_image_pan_uint128_t(
-         dst, OFFSET(src, x, y), x, y, w, h, dst_stride, src_stride, is_store);
+      pan_access_tiled_image_pan_uint128_t(dst, OFFSET(src, x, y), x, y, w, h,
+                                           dst_stride, src_stride, is_store);
 }
 
 /**
@@ -387,19 +384,19 @@ panfrost_access_tiled_image(void *dst, void *src, unsigned x, unsigned y,
  * are aligned to the block size.
  */
 void
-panfrost_store_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
-                           unsigned w, unsigned h, uint32_t dst_stride,
-                           uint32_t src_stride, enum pipe_format format)
+pan_store_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
+                      unsigned w, unsigned h, uint32_t dst_stride,
+                      uint32_t src_stride, enum pipe_format format)
 {
-   panfrost_access_tiled_image(dst, (void *)src, x, y, w, h, dst_stride,
-                               src_stride, format, true);
+   pan_access_tiled_image(dst, (void *)src, x, y, w, h, dst_stride, src_stride,
+                          format, true);
 }
 
 void
-panfrost_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
-                          unsigned w, unsigned h, uint32_t dst_stride,
-                          uint32_t src_stride, enum pipe_format format)
+pan_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
+                     unsigned w, unsigned h, uint32_t dst_stride,
+                     uint32_t src_stride, enum pipe_format format)
 {
-   panfrost_access_tiled_image((void *)src, dst, x, y, w, h, src_stride,
-                               dst_stride, format, false);
+   pan_access_tiled_image((void *)src, dst, x, y, w, h, src_stride, dst_stride,
+                          format, false);
 }

@@ -342,7 +342,7 @@ static unsigned
 pan_bytes_per_pixel_tib(enum pipe_format format)
 {
    const struct pan_blendable_format *bf =
-     GENX(panfrost_blendable_format_from_pipe_format)(format);
+      GENX(pan_blendable_format_from_pipe_format)(format);
 
    if (bf->internal) {
       /* Blendable formats are always 32-bits in the tile buffer,
@@ -444,8 +444,7 @@ GENX(pan_select_tile_size)(struct pan_fb_info *fb)
 #endif
 
    /* Clamp tile size to hardware limits */
-   fb->tile_size =
-      MIN2(fb->tile_size, panfrost_max_effective_tile_size(PAN_ARCH));
+   fb->tile_size = MIN2(fb->tile_size, pan_max_effective_tile_size(PAN_ARCH));
    assert(fb->tile_size >= 4 * 4);
 
    /* Colour buffer allocations must be 1K aligned. */
@@ -507,13 +506,13 @@ pan_rt_init_format(const struct pan_image_view *rt,
       cfg->srgb = true;
 
    struct pan_blendable_format fmt =
-      *GENX(panfrost_blendable_format_from_pipe_format)(rt->format);
+      *GENX(pan_blendable_format_from_pipe_format)(rt->format);
    enum mali_color_format writeback_format;
 
    if (fmt.internal) {
       cfg->internal_format = fmt.internal;
       writeback_format = fmt.writeback;
-      panfrost_invert_swizzle(desc->swizzle, swizzle);
+      pan_invert_swizzle(desc->swizzle, swizzle);
    } else {
       /* Construct RAW internal/writeback, where internal is
        * specified logarithmically (round to next power-of-two).
@@ -539,7 +538,7 @@ pan_rt_init_format(const struct pan_image_view *rt,
    cfg->writeback_format = writeback_format;
 #endif
 
-   cfg->swizzle = panfrost_translate_swizzle_4(swizzle);
+   cfg->swizzle = pan_translate_swizzle_4(swizzle);
 }
 
 /* forward declaration */
@@ -679,7 +678,7 @@ GENX(pan_emit_tls)(const struct pan_tls_info *info,
 {
    pan_pack(out, LOCAL_STORAGE, cfg) {
       if (info->tls.size) {
-         unsigned shift = panfrost_get_stack_shift(info->tls.size);
+         unsigned shift = pan_get_stack_shift(info->tls.size);
 
          cfg.tls_size = shift;
 #if PAN_ARCH >= 9
@@ -732,11 +731,11 @@ pan_emit_midgard_tiler(const struct pan_fb_info *fb,
          cfg.heap_start = tiler_ctx->midgard.polygon_list;
          cfg.heap_end = tiler_ctx->midgard.polygon_list;
       } else {
-         cfg.hierarchy_mask = panfrost_choose_hierarchy_mask(
+         cfg.hierarchy_mask = pan_choose_hierarchy_mask(
             fb->width, fb->height, tiler_ctx->midgard.vertex_count, hierarchy);
-         header_size = panfrost_tiler_header_size(
-            fb->width, fb->height, cfg.hierarchy_mask, hierarchy);
-         cfg.polygon_list_size = panfrost_tiler_full_size(
+         header_size = pan_tiler_header_size(fb->width, fb->height,
+                                             cfg.hierarchy_mask, hierarchy);
+         cfg.polygon_list_size = pan_tiler_full_size(
             fb->width, fb->height, cfg.hierarchy_mask, hierarchy);
          cfg.heap_start = tiler_ctx->midgard.heap.start;
          cfg.heap_end = cfg.heap_start + tiler_ctx->midgard.heap.size;
@@ -794,7 +793,7 @@ pan_force_clean_write_on(const struct pan_image *image, unsigned tile_size)
       pan_afbc_renderblock_size(image->layout.modifier);
 
    assert(renderblk_sz.width >= 16 && renderblk_sz.height >= 16);
-   assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
+   assert(tile_size <= pan_max_effective_tile_size(PAN_ARCH));
 
    return tile_size != renderblk_sz.width * renderblk_sz.height;
 }
@@ -803,7 +802,7 @@ static bool
 pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
 {
    /* Maximum tile size */
-   assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
+   assert(tile_size <= pan_max_effective_tile_size(PAN_ARCH));
 
    for (unsigned i = 0; i < fb->rt_count; ++i) {
       if (!fb->rts[i].view || fb->rts[i].discard)
@@ -882,7 +881,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
       /* Default to 24 bit depth if there's no surface. */
       cfg.z_internal_format =
-         fb->zs.view.zs ? panfrost_get_z_internal_format(fb->zs.view.zs->format)
+         fb->zs.view.zs ? pan_get_z_internal_format(fb->zs.view.zs->format)
                         : MALI_Z_INTERNAL_FORMAT_D24;
 
       cfg.z_clear = fb->zs.clear_value.depth;
@@ -987,7 +986,8 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          continue;
 
       cbuf_offset += pan_bytes_per_pixel_tib(fb->rts[i].view->format) *
-                     fb->tile_size * pan_image_view_get_nr_samples(fb->rts[i].view);
+                     fb->tile_size *
+                     pan_image_view_get_nr_samples(fb->rts[i].view);
 
       if (i != crc_rt)
          *(fb->rts[i].crc_valid) = false;
@@ -1060,11 +1060,11 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
          /* The swizzle for rendering is inverted from texturing */
          unsigned char swizzle[4];
-         panfrost_invert_swizzle(desc->swizzle, swizzle);
-         cfg.swizzle = panfrost_translate_swizzle_4(swizzle);
+         pan_invert_swizzle(desc->swizzle, swizzle);
+         cfg.swizzle = pan_translate_swizzle_4(swizzle);
 
          struct pan_blendable_format fmt =
-            *GENX(panfrost_blendable_format_from_pipe_format)(rt->format);
+            *GENX(pan_blendable_format_from_pipe_format)(rt->format);
 
          if (fmt.internal) {
             cfg.internal_format = fmt.internal;

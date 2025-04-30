@@ -37,55 +37,53 @@
 
 /* Tiler structure size computation */
 
-unsigned panfrost_tiler_header_size(unsigned width, unsigned height,
-                                    unsigned mask, bool hierarchy);
+unsigned pan_tiler_header_size(unsigned width, unsigned height, unsigned mask,
+                               bool hierarchy);
 
-unsigned panfrost_tiler_full_size(unsigned width, unsigned height,
-                                  unsigned mask, bool hierarchy);
+unsigned pan_tiler_full_size(unsigned width, unsigned height, unsigned mask,
+                             bool hierarchy);
 
-unsigned panfrost_choose_hierarchy_mask(unsigned width, unsigned height,
-                                        unsigned vertex_count, bool hierarchy);
+unsigned pan_choose_hierarchy_mask(unsigned width, unsigned height,
+                                   unsigned vertex_count, bool hierarchy);
 
 #if defined(PAN_ARCH) && PAN_ARCH <= 5
 static inline unsigned
-panfrost_tiler_get_polygon_list_size(unsigned fb_width, unsigned fb_height,
-                                     unsigned vertex_count, bool hierarchy)
+pan_tiler_get_polygon_list_size(unsigned fb_width, unsigned fb_height,
+                                unsigned vertex_count, bool hierarchy)
 {
    if (!vertex_count)
       return MALI_MIDGARD_TILER_MINIMUM_HEADER_SIZE + 4;
 
-   unsigned hierarchy_mask = panfrost_choose_hierarchy_mask(
-      fb_width, fb_height, vertex_count, hierarchy);
+   unsigned hierarchy_mask =
+      pan_choose_hierarchy_mask(fb_width, fb_height, vertex_count, hierarchy);
 
-   return panfrost_tiler_full_size(fb_width, fb_height, hierarchy_mask,
-                                   hierarchy) +
-          panfrost_tiler_header_size(fb_width, fb_height, hierarchy_mask,
-                                     hierarchy);
+   return pan_tiler_full_size(fb_width, fb_height, hierarchy_mask, hierarchy) +
+          pan_tiler_header_size(fb_width, fb_height, hierarchy_mask, hierarchy);
 }
 #endif
 
 /* Stack sizes */
 
-unsigned panfrost_get_stack_shift(unsigned stack_size);
+unsigned pan_get_stack_shift(unsigned stack_size);
 
-unsigned panfrost_get_total_stack_size(unsigned thread_size,
-                                       unsigned threads_per_core,
-                                       unsigned core_id_range);
+unsigned pan_get_total_stack_size(unsigned thread_size,
+                                  unsigned threads_per_core,
+                                  unsigned core_id_range);
 
 /* Attributes / instancing */
 
-unsigned panfrost_padded_vertex_count(unsigned vertex_count);
+unsigned pan_padded_vertex_count(unsigned vertex_count);
 
-unsigned panfrost_compute_magic_divisor(unsigned hw_divisor, unsigned *o_shift,
-                                        unsigned *extra_flags);
+unsigned pan_compute_magic_divisor(unsigned hw_divisor, unsigned *o_shift,
+                                   unsigned *extra_flags);
 
 #ifdef PAN_ARCH
 /* Records for gl_VertexID and gl_InstanceID use special encodings on Midgard */
 
 #if PAN_ARCH <= 5
 static inline void
-panfrost_vertex_id(unsigned padded_count,
-                   struct mali_attribute_vertex_id_packed *attr, bool instanced)
+pan_vertex_id(unsigned padded_count,
+              struct mali_attribute_vertex_id_packed *attr, bool instanced)
 {
    pan_pack(attr, ATTRIBUTE_VERTEX_ID, cfg) {
       if (instanced) {
@@ -100,9 +98,8 @@ panfrost_vertex_id(unsigned padded_count,
 }
 
 static inline void
-panfrost_instance_id(unsigned padded_count,
-                     struct mali_attribute_instance_id_packed *attr,
-                     bool instanced)
+pan_instance_id(unsigned padded_count,
+                struct mali_attribute_instance_id_packed *attr, bool instanced)
 {
    pan_pack(attr, ATTRIBUTE_INSTANCE_ID, cfg) {
       if (!instanced || padded_count <= 1) {
@@ -114,8 +111,8 @@ panfrost_instance_id(unsigned padded_count,
          /* Can't underflow since padded_count >= 2 */
          cfg.divisor_r = __builtin_ctz(padded_count) - 1;
       } else {
-         cfg.divisor_p = panfrost_compute_magic_divisor(
-            padded_count, &cfg.divisor_r, &cfg.divisor_e);
+         cfg.divisor_p = pan_compute_magic_divisor(padded_count, &cfg.divisor_r,
+                                                   &cfg.divisor_e);
       }
    }
 }
@@ -125,7 +122,7 @@ panfrost_instance_id(unsigned padded_count,
  * need to be able to flip accordingly */
 
 static inline enum mali_func
-panfrost_flip_compare_func(enum mali_func f)
+pan_flip_compare_func(enum mali_func f)
 {
    switch (f) {
    case MALI_FUNC_LESS:
@@ -148,11 +145,10 @@ panfrost_flip_compare_func(enum mali_func f)
  * together in a dynamic bitfield, packed by this routine. */
 
 static inline void
-panfrost_pack_work_groups_compute(struct mali_invocation_packed *out,
-                                  unsigned num_x, unsigned num_y,
-                                  unsigned num_z, unsigned size_x,
-                                  unsigned size_y, unsigned size_z,
-                                  bool quirk_graphics, bool indirect_dispatch)
+pan_pack_work_groups_compute(struct mali_invocation_packed *out, unsigned num_x,
+                             unsigned num_y, unsigned num_z, unsigned size_x,
+                             unsigned size_y, unsigned size_z,
+                             bool quirk_graphics, bool indirect_dispatch)
 {
    /* The values needing packing, in order, and the corresponding shifts.
     * Indicies into shift are off-by-one to make the logic easier */
@@ -207,7 +203,7 @@ panfrost_pack_work_groups_compute(struct mali_invocation_packed *out,
 #if PAN_ARCH >= 5
 /* Format conversion */
 static inline enum mali_z_internal_format
-panfrost_get_z_internal_format(enum pipe_format fmt)
+pan_get_z_internal_format(enum pipe_format fmt)
 {
    switch (fmt) {
    case PIPE_FORMAT_Z16_UNORM:
@@ -229,8 +225,8 @@ panfrost_get_z_internal_format(enum pipe_format fmt)
 
 #if PAN_ARCH >= 9
 static inline void
-panfrost_make_resource_table(struct panfrost_ptr base, unsigned index,
-                             uint64_t address, unsigned resource_count)
+pan_make_resource_table(struct pan_ptr base, unsigned index, uint64_t address,
+                        unsigned resource_count)
 {
    if (resource_count == 0)
       return;

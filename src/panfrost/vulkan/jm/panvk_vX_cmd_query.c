@@ -45,7 +45,7 @@ panvk_emit_write_job(struct panvk_cmd_buffer *cmd, struct panvk_batch *batch,
                      enum mali_write_value_type type, uint64_t addr,
                      uint64_t value)
 {
-   struct panfrost_ptr job =
+   struct pan_ptr job =
       pan_pool_alloc_desc(&cmd->desc_pool.base, WRITE_VALUE_JOB);
 
    pan_section_pack(job.cpu, WRITE_VALUE_JOB, PAYLOAD, payload) {

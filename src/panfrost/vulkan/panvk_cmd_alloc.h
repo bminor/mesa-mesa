@@ -10,15 +10,15 @@
 #include "panvk_macros.h"
 #include "panvk_mempool.h"
 
-static inline struct panfrost_ptr
+static inline struct pan_ptr
 panvk_cmd_alloc_from_pool(struct panvk_cmd_buffer *cmdbuf,
                           struct panvk_pool *pool,
                           struct panvk_pool_alloc_info info)
 {
    if (!info.size)
-      return (struct panfrost_ptr){0};
+      return (struct pan_ptr){0};
 
-   struct panfrost_ptr ptr =
+   struct pan_ptr ptr =
       pan_pool_alloc_aligned(&pool->base, info.size, info.alignment);
 
    if (!ptr.gpu) {

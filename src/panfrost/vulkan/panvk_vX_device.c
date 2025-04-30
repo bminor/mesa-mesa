@@ -30,7 +30,7 @@
 #include "genxml/decode.h"
 #include "genxml/gen_macros.h"
 
-#include "clc/panfrost_compile.h"
+#include "clc/pan_compile.h"
 #include "kmod/pan_kmod.h"
 #include "util/os_file.h"
 #include "util/u_printf.h"
@@ -116,7 +116,7 @@ panvk_meta_cmd_bind_map_buffer(struct vk_command_buffer *cmd,
    VK_FROM_HANDLE(panvk_buffer, buffer, buf);
    struct panvk_cmd_buffer *cmdbuf =
       container_of(cmd, struct panvk_cmd_buffer, vk);
-   struct panfrost_ptr mem =
+   struct pan_ptr mem =
       panvk_cmd_alloc_dev_mem(cmdbuf, desc, buffer->vk.size, 64);
 
    if (!mem.gpu)
@@ -300,10 +300,10 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    /* 32bit address space, with the lower 32MB reserved. We clamp
     * things so it matches kmod VA range limitations.
     */
-   uint64_t user_va_start = panfrost_clamp_to_usable_va_range(
+   uint64_t user_va_start = pan_clamp_to_usable_va_range(
       device->kmod.dev, PANVK_VA_RESERVE_BOTTOM);
    uint64_t user_va_end =
-      panfrost_clamp_to_usable_va_range(device->kmod.dev, 1ull << 32);
+      pan_clamp_to_usable_va_range(device->kmod.dev, 1ull << 32);
    uint32_t vm_flags = PAN_ARCH <= 7 ? PAN_KMOD_VM_FLAG_AUTO_VA : 0;
 
    device->kmod.vm =
@@ -331,12 +331,12 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 #endif
 
    result = panvk_priv_bo_create(
-      device, panfrost_sample_positions_buffer_size(), 0,
+      device, pan_sample_positions_buffer_size(), 0,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->sample_positions);
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
 
-   panfrost_upload_sample_positions(device->sample_positions->addr.host);
+   pan_upload_sample_positions(device->sample_positions->addr.host);
 
 #if PAN_ARCH >= 10
    result = panvk_per_arch(init_tiler_oom)(device);

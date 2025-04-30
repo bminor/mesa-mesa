@@ -294,7 +294,7 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
       nir_channel(&b, nir_load_global_invocation_id(&b, 32), 0);
    single_desc_copy(&b, desc_copy_id);
 
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
    };
 
@@ -337,11 +337,11 @@ panvk_per_arch(meta_get_copy_desc_job)(
    struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader *shader,
    const struct panvk_descriptor_state *desc_state,
    const struct panvk_shader_desc_state *shader_desc_state,
-   uint32_t attrib_buf_idx_offset, struct panfrost_ptr *job_desc)
+   uint32_t attrib_buf_idx_offset, struct pan_ptr *job_desc)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
-   *job_desc = (struct panfrost_ptr){0};
+   *job_desc = (struct pan_ptr){0};
 
    if (!shader)
       return VK_SUCCESS;
@@ -387,7 +387,7 @@ panvk_per_arch(meta_get_copy_desc_job)(
    if (!desc_copy_rsd)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   struct panfrost_ptr push_uniforms =
+   struct pan_ptr push_uniforms =
       panvk_cmd_alloc_dev_mem(cmdbuf, desc, sizeof(copy_info), 16);
 
    if (!push_uniforms.gpu)
@@ -406,7 +406,7 @@ panvk_per_arch(meta_get_copy_desc_job)(
 
    assert(copy_count - 1 < BITFIELD_MASK(10));
 
-   panfrost_pack_work_groups_compute(
+   pan_pack_work_groups_compute(
       pan_section_ptr(job_desc->cpu, COMPUTE_JOB, INVOCATION), 1, 1, 1,
       copy_count, 1, 1, false, false);
 
@@ -417,7 +417,7 @@ panvk_per_arch(meta_get_copy_desc_job)(
    }
 
    struct pan_tls_info tlsinfo = {0};
-   struct panfrost_ptr tls = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
+   struct pan_ptr tls = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
    if (!tls.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 

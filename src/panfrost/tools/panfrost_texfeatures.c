@@ -75,7 +75,7 @@ main(void)
 
    pan_kmod_dev_query_props(dev, &props);
 
-   uint32_t supported = panfrost_query_compressed_formats(&props);
+   uint32_t supported = pan_query_compressed_formats(&props);
    bool all_ok = true;
 
    printf("System-on-chip compressed texture support:"

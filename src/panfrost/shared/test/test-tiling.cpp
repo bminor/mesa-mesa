@@ -150,15 +150,15 @@ test(unsigned width, unsigned height, unsigned rx, unsigned ry, unsigned rw,
          ((uint8_t *)linear)[i] = (i & 0xFF);
       }
 
-      panfrost_store_tiled_image(tiled, linear, rx, ry, rw, rh, dst_stride,
-                                 src_stride, format);
+      pan_store_tiled_image(tiled, linear, rx, ry, rw, rh, dst_stride,
+                            src_stride, format);
    } else {
       for (unsigned i = 0; i < bpp * tiled_width * tiled_height; ++i) {
          ((uint8_t *)tiled)[i] = (i & 0xFF);
       }
 
-      panfrost_load_tiled_image(linear, tiled, rx, ry, rw, rh, dst_stride,
-                                src_stride, format);
+      pan_load_tiled_image(linear, tiled, rx, ry, rw, rh, dst_stride,
+                           src_stride, format);
    }
 
    ref_access_tiled(ref, store ? linear : tiled, rx, ry, rw, rh, dst_stride,

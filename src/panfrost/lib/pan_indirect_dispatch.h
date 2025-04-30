@@ -33,7 +33,7 @@ struct pan_jc;
 struct pan_pool;
 
 struct pan_indirect_dispatch_meta {
-   struct panfrost_ubo_push push;
+   struct pan_ubo_push push;
 
    unsigned gpu_id;
 

@@ -347,7 +347,7 @@ panvk_cs_reg_whitelist(cmdbuf_regs, {PANVK_CS_REG_RUN_IDVS_SR_START,
 #define cs_update_cmdbuf_regs(__b) panvk_cs_reg_upd_ctx(__b, cmdbuf_regs)
 
 struct panvk_tls_state {
-   struct panfrost_ptr desc;
+   struct pan_ptr desc;
    struct pan_tls_info info;
    unsigned max_wg_count;
 };
@@ -434,7 +434,7 @@ panvk_per_arch(calculate_task_axis_and_increment)(
     * utilization. */
    unsigned threads_per_wg = shader->cs.local_size.x * shader->cs.local_size.y *
                              shader->cs.local_size.z;
-   unsigned max_thread_cnt = panfrost_compute_max_thread_count(
+   unsigned max_thread_cnt = pan_compute_max_thread_count(
       &phys_dev->kmod.props, shader->info.work_reg_count);
    unsigned threads_per_task = threads_per_wg;
    unsigned local_size[3] = {

@@ -166,8 +166,8 @@ def main():
       c.write("}\n")
 
 
-      current_struct_name = "panfrost_perf_config_%s" % prod.id
-      c.write("\nconst struct panfrost_perf_config %s = {" % current_struct_name)
+      current_struct_name = "pan_perf_config_%s" % prod.id
+      c.write("\nconst struct pan_perf_config %s = {" % current_struct_name)
       c.indent(tab_size)
 
       c.write(".name = \"%s\"," % prod.name)
@@ -219,12 +219,12 @@ def main():
       c.outdent(tab_size)
       c.write("}; // %s\n" % current_struct_name)
 
-   h.write("extern const struct panfrost_perf_config * panfrost_perf_configs[%u];\n" % len(prods))
+   h.write("extern const struct pan_perf_config * pan_perf_configs[%u];\n" % len(prods))
 
-   c.write("\nconst struct panfrost_perf_config * panfrost_perf_configs[] = {")
+   c.write("\nconst struct pan_perf_config * pan_perf_configs[] = {")
    c.indent(tab_size)
    for prod in prods:
-       c.write("&panfrost_perf_config_%s," % prod.id)
+       c.write("&pan_perf_config_%s," % prod.id)
    c.outdent(tab_size)
    c.write("};")
 

@@ -49,7 +49,7 @@
 #include "util/u_vbuf.h"
 #include "util/perf/cpu_trace.h"
 
-#include "clc/panfrost_compile.h"
+#include "clc/pan_compile.h"
 #include "compiler/nir/nir_serialize.h"
 #include "util/pan_lower_framebuffer.h"
 #include "decode.h"

@@ -40,7 +40,7 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
       return VK_SUCCESS;
    }
 
-   struct panfrost_ptr push_uniforms = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr push_uniforms = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, shader->fau.total_count * sizeof(uint64_t) * repeat_count,
       sizeof(uint64_t));
 

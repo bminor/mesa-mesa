@@ -85,7 +85,7 @@ struct panfrost_resource {
    uint8_t stencil_value;
 
    /* Cached min/max values for index buffers */
-   struct panfrost_minmax_cache *index_cache;
+   struct pan_minmax_cache *index_cache;
 };
 
 static inline struct panfrost_resource *

@@ -908,7 +908,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
 
          pan_pack(&stencil_conv, INTERNAL_CONVERSION, cfg) {
             cfg.register_format = MALI_REGISTER_FILE_FORMAT_U32;
-            cfg.memory_format = GENX(panfrost_dithered_format_from_pipe_format)(
+            cfg.memory_format = GENX(pan_dithered_format_from_pipe_format)(
                PIPE_FORMAT_S8_UINT, false);
          }
 

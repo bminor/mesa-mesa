@@ -74,7 +74,7 @@ struct panvk_rendering_state {
    } fb;
 
 #if PAN_ARCH >= 10
-   struct panfrost_ptr fbds;
+   struct pan_ptr fbds;
    uint64_t tiler;
 
    /* When a secondary command buffer has to flush draws, it disturbs the
@@ -215,8 +215,8 @@ panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
                                   const struct panvk_cmd_graphics_state *state,
                                   unsigned bin_ptr_mem_budget)
 {
-   struct panfrost_tiler_features tiler_features =
-      panfrost_query_tiler_features(&phys_dev->kmod.props);
+   struct pan_tiler_features tiler_features =
+      pan_query_tiler_features(&phys_dev->kmod.props);
 
    uint32_t hierarchy_mask = GENX(pan_select_tiler_hierarchy_mask)(
       state->render.fb.info.width, state->render.fb.info.height,

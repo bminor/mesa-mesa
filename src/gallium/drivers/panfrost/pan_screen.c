@@ -187,7 +187,7 @@ panfrost_is_format_supported(struct pipe_screen *screen,
    /* Check we support the format with the given bind */
 
    unsigned pan_bind_flags = pipe_to_pan_bind_flags(bind);
-   struct panfrost_format fmt = dev->formats[format];
+   struct pan_format fmt = dev->formats[format];
    unsigned fmt_bind_flags = fmt.bind;
 
    /* Also check that compressed texture formats are supported on this
@@ -458,9 +458,9 @@ panfrost_init_compute_caps(struct panfrost_screen *screen)
     * things so it matches kmod VA range limitations.
     */
    uint64_t user_va_start =
-      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_START);
+      pan_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_START);
    uint64_t user_va_end =
-      panfrost_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_END);
+      pan_clamp_to_usable_va_range(dev->kmod.dev, PAN_VA_USER_END);
 
    /* We cannot support more than the VA limit */
    caps->max_global_size =

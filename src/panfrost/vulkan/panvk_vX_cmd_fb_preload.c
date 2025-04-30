@@ -169,7 +169,7 @@ get_preload_shader(struct panvk_device *dev,
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
       .is_blit = true,
    };
@@ -312,8 +312,8 @@ fill_bds(struct pan_fb_info *fbinfo,
          cfg.equation.color_mask = 0xf;
 
          cfg.internal.fixed_function.num_comps = 4;
-         cfg.internal.fixed_function.conversion.memory_format = GENX(
-            panfrost_dithered_format_from_pipe_format)(pview->format, false);
+         cfg.internal.fixed_function.conversion.memory_format =
+            GENX(pan_dithered_format_from_pipe_format)(pview->format, false);
          cfg.internal.fixed_function.rt = i;
 #if PAN_ARCH <= 7
          cfg.internal.fixed_function.conversion.register_format =
@@ -340,7 +340,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
                            : util_bitcount(key->aspects);
    uint32_t bd_count = MAX2(fbinfo->rt_count, 1);
 
-   struct panfrost_ptr rsd = panvk_cmd_alloc_desc_aggregate(
+   struct pan_ptr rsd = panvk_cmd_alloc_desc_aggregate(
       cmdbuf, PAN_DESC(RENDERER_STATE),
       PAN_DESC_ARRAY(bd_count, BLEND));
    if (!rsd.cpu)
@@ -405,7 +405,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
    maxx = MIN2(ALIGN_POT(fbinfo->extent.maxx + 1, 32), fbinfo->width) - 1;
    maxy = MIN2(ALIGN_POT(fbinfo->extent.maxy + 1, 32), fbinfo->height) - 1;
 
-   struct panfrost_ptr vpd = panvk_cmd_alloc_desc(cmdbuf, VIEWPORT);
+   struct pan_ptr vpd = panvk_cmd_alloc_desc(cmdbuf, VIEWPORT);
    if (!vpd.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -416,7 +416,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       cfg.scissor_maximum_y = maxy;
    }
 
-   struct panfrost_ptr sampler = panvk_cmd_alloc_desc(cmdbuf, SAMPLER);
+   struct pan_ptr sampler = panvk_cmd_alloc_desc(cmdbuf, SAMPLER);
    if (!sampler.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -428,7 +428,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       cfg.magnify_nearest = true;
    }
 
-   struct panfrost_ptr textures =
+   struct pan_ptr textures =
       panvk_cmd_alloc_desc_array(cmdbuf, tex_count, TEXTURE);
    if (!textures.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -461,7 +461,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
    uint32_t dcd_idx = key->aspects == VK_IMAGE_ASPECT_COLOR_BIT ? 0 : 1;
 
    if (key->needs_layer_id) {
-      struct panfrost_ptr layer_ids = panvk_cmd_alloc_dev_mem(
+      struct pan_ptr layer_ids = panvk_cmd_alloc_dev_mem(
          cmdbuf, desc,
          cmdbuf->state.gfx.render.layer_count * sizeof(uint64_t),
          sizeof(uint64_t));
@@ -534,8 +534,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
 
    uint32_t bd_count =
       key->aspects == VK_IMAGE_ASPECT_COLOR_BIT ? fbinfo->rt_count : 0;
-   struct panfrost_ptr bds =
-      panvk_cmd_alloc_desc_array(cmdbuf, bd_count, BLEND);
+   struct pan_ptr bds = panvk_cmd_alloc_desc_array(cmdbuf, bd_count, BLEND);
    if (bd_count > 0 && !bds.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -544,7 +543,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
                            : util_bitcount(key->aspects);
    uint32_t desc_count = tex_count + 1;
 
-   struct panfrost_ptr descs = panvk_cmd_alloc_dev_mem(
+   struct pan_ptr descs = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    if (!descs.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -572,7 +571,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT)
       fill_bds(fbinfo, key, bds.cpu);
 
-   struct panfrost_ptr res_table = panvk_cmd_alloc_desc(cmdbuf, RESOURCE);
+   struct pan_ptr res_table = panvk_cmd_alloc_desc(cmdbuf, RESOURCE);
    if (!res_table.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -581,7 +580,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       cfg.size = desc_count * PANVK_DESCRIPTOR_SIZE;
    }
 
-   struct panfrost_ptr zsd = panvk_cmd_alloc_desc(cmdbuf, DEPTH_STENCIL);
+   struct pan_ptr zsd = panvk_cmd_alloc_desc(cmdbuf, DEPTH_STENCIL);
    if (!zsd.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 

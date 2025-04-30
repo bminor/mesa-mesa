@@ -85,7 +85,7 @@ get_blend_shader(struct panvk_device *dev,
             nir_metadata_control_flow, NULL);
 
    /* Compile the NIR shader */
-   struct panfrost_compile_inputs inputs = {
+   struct pan_compile_inputs inputs = {
       .gpu_id = pdev->kmod.props.gpu_prod_id,
       .is_blend = true,
       .blend = {
@@ -176,7 +176,7 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
           */
          cfg.internal.fixed_function.num_comps = 4;
          cfg.internal.fixed_function.conversion.memory_format =
-            GENX(panfrost_dithered_format_from_pipe_format)(rt->format, false);
+            GENX(pan_dithered_format_from_pipe_format)(rt->format, false);
 
 #if PAN_ARCH >= 7
          if (cfg.internal.mode == MALI_BLEND_MODE_FIXED_FUNCTION &&
@@ -257,7 +257,7 @@ blend_needs_shader(const struct pan_blend_state *state, unsigned rt_idx,
       return false;
 
    /* Not all formats can be blended by fixed-function hardware */
-   if (!GENX(panfrost_blendable_format_from_pipe_format)(rt->format)->internal)
+   if (!GENX(pan_blendable_format_from_pipe_format)(rt->format)->internal)
       return true;
 
    unsigned constant_mask = pan_blend_constant_mask(rt->equation);

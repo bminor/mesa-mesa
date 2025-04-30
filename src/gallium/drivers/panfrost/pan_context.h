@@ -469,7 +469,7 @@ bool panfrost_nir_lower_sysvals(nir_shader *s, unsigned arch,
                                 struct panfrost_sysvals *sysvals);
 
 bool panfrost_nir_lower_res_indices(nir_shader *shader,
-                                    struct panfrost_compile_inputs *inputs);
+                                    struct pan_compile_inputs *inputs);
 
 /** (Vertex buffer index, divisor) tuple that will become an Attribute Buffer
  * Descriptor at draw-time on Midgard
@@ -505,8 +505,8 @@ struct pipe_context *panfrost_create_context(struct pipe_screen *screen,
 
 bool panfrost_writes_point_size(struct panfrost_context *ctx);
 
-struct panfrost_ptr panfrost_vertex_tiler_job(struct panfrost_context *ctx,
-                                              bool is_tiler);
+struct pan_ptr panfrost_vertex_tiler_job(struct panfrost_context *ctx,
+                                         bool is_tiler);
 
 void panfrost_flush(struct pipe_context *pipe, struct pipe_fence_handle **fence,
                     unsigned flags);

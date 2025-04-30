@@ -48,7 +48,7 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
    if (batch->tlsinfo.wls.size) {
       unsigned core_id_range;
 
-      panfrost_query_core_count(&phys_dev->kmod.props, &core_id_range);
+      pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
       batch->tlsinfo.wls.instances = pan_wls_instances(dim);
       batch->wls_total_size = pan_wls_adjust_size(batch->tlsinfo.wls.size) *
                               batch->tlsinfo.wls.instances * core_id_range;
@@ -88,8 +88,8 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    struct panvk_shader_desc_state *cs_desc_state =
       &cmdbuf->state.compute.cs.desc;
 
-   uint64_t tsd = panvk_per_arch(cmd_dispatch_prepare_tls)(
-      cmdbuf, shader, &wg_count, false);
+   uint64_t tsd = panvk_per_arch(cmd_dispatch_prepare_tls)(cmdbuf, shader,
+                                                           &wg_count, false);
 
    result = panvk_per_arch(cmd_prepare_push_descs)(
       cmdbuf, desc_state, shader->desc_info.used_set_mask);
@@ -111,7 +111,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    if (result != VK_SUCCESS)
       return;
 
-   struct panfrost_ptr copy_desc_job = {0};
+   struct pan_ptr copy_desc_job = {0};
 
    if (compute_state_dirty(cmdbuf, CS) ||
        compute_state_dirty(cmdbuf, DESC_STATE)) {
@@ -128,13 +128,13 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
          util_dynarray_append(&batch->jobs, void *, copy_desc_job.cpu);
    }
 
-   struct panfrost_ptr job = panvk_cmd_alloc_desc(cmdbuf, COMPUTE_JOB);
+   struct pan_ptr job = panvk_cmd_alloc_desc(cmdbuf, COMPUTE_JOB);
    if (!job.gpu)
       return;
 
    util_dynarray_append(&batch->jobs, void *, job.cpu);
 
-   panfrost_pack_work_groups_compute(
+   pan_pack_work_groups_compute(
       pan_section_ptr(job.cpu, COMPUTE_JOB, INVOCATION), wg_count.x, wg_count.y,
       wg_count.z, shader->cs.local_size.x, shader->cs.local_size.y,
       shader->cs.local_size.z, false, false);
