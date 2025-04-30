@@ -120,7 +120,7 @@ pub trait SSABuilder: Builder {
     fn alloc_ssa(&mut self, file: RegFile) -> SSAValue;
     fn alloc_ssa_vec(&mut self, file: RegFile, comps: u8) -> SSARef;
 
-    fn shl(&mut self, x: Src, shift: Src) -> SSARef {
+    fn shl(&mut self, x: Src, shift: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpShf {
@@ -141,7 +141,7 @@ pub trait SSABuilder: Builder {
                 wrap: true,
             });
         }
-        dst.into()
+        dst
     }
 
     fn shl64(&mut self, x: Src, shift: Src) -> SSARef {
@@ -188,7 +188,7 @@ pub trait SSABuilder: Builder {
         dst
     }
 
-    fn shr(&mut self, x: Src, shift: Src, signed: bool) -> SSARef {
+    fn shr(&mut self, x: Src, shift: Src, signed: bool) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpShf {
@@ -210,7 +210,7 @@ pub trait SSABuilder: Builder {
                 signed,
             });
         }
-        dst.into()
+        dst
     }
 
     fn shr64(&mut self, x: Src, shift: Src, signed: bool) -> SSARef {
@@ -241,7 +241,7 @@ pub trait SSABuilder: Builder {
         dst
     }
 
-    fn fadd(&mut self, x: Src, y: Src) -> SSARef {
+    fn fadd(&mut self, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpFAdd {
             dst: dst.into(),
@@ -250,10 +250,10 @@ pub trait SSABuilder: Builder {
             rnd_mode: FRndMode::NearestEven,
             ftz: false,
         });
-        dst.into()
+        dst
     }
 
-    fn fmul(&mut self, x: Src, y: Src) -> SSARef {
+    fn fmul(&mut self, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpFMul {
             dst: dst.into(),
@@ -263,10 +263,10 @@ pub trait SSABuilder: Builder {
             ftz: false,
             dnz: false,
         });
-        dst.into()
+        dst
     }
 
-    fn fset(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSARef {
+    fn fset(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpFSet {
             dst: dst.into(),
@@ -274,10 +274,10 @@ pub trait SSABuilder: Builder {
             srcs: [x, y],
             ftz: false,
         });
-        dst.into()
+        dst
     }
 
-    fn fsetp(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSARef {
+    fn fsetp(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::Pred);
         self.push_op(OpFSetP {
             dst: dst.into(),
@@ -287,10 +287,10 @@ pub trait SSABuilder: Builder {
             accum: SrcRef::True.into(),
             ftz: false,
         });
-        dst.into()
+        dst
     }
 
-    fn hadd2(&mut self, x: Src, y: Src) -> SSARef {
+    fn hadd2(&mut self, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpHAdd2 {
             dst: dst.into(),
@@ -299,7 +299,7 @@ pub trait SSABuilder: Builder {
             ftz: false,
             f32: false,
         });
-        dst.into()
+        dst
     }
 
     fn hset2(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSARef {
@@ -315,7 +315,7 @@ pub trait SSABuilder: Builder {
         dst.into()
     }
 
-    fn dsetp(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSARef {
+    fn dsetp(&mut self, cmp_op: FloatCmpOp, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::Pred);
         self.push_op(OpDSetP {
             dst: dst.into(),
@@ -324,10 +324,10 @@ pub trait SSABuilder: Builder {
             srcs: [x, y],
             accum: SrcRef::True.into(),
         });
-        dst.into()
+        dst
     }
 
-    fn iabs(&mut self, i: Src) -> SSARef {
+    fn iabs(&mut self, i: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpIAbs {
@@ -345,10 +345,10 @@ pub trait SSABuilder: Builder {
                 neg: false,
             });
         }
-        dst.into()
+        dst
     }
 
-    fn iadd(&mut self, x: Src, y: Src, z: Src) -> SSARef {
+    fn iadd(&mut self, x: Src, y: Src, z: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
@@ -364,7 +364,7 @@ pub trait SSABuilder: Builder {
                 carry_out: Dst::None,
             });
         }
-        dst.into()
+        dst
     }
 
     fn iadd64(&mut self, x: Src, y: Src, z: Src) -> SSARef {
@@ -428,7 +428,7 @@ pub trait SSABuilder: Builder {
         dst
     }
 
-    fn imnmx(&mut self, tp: IntCmpType, x: Src, y: Src, min: Src) -> SSARef {
+    fn imnmx(&mut self, tp: IntCmpType, x: Src, y: Src, min: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpIMnMx {
             dst: dst.into(),
@@ -436,10 +436,10 @@ pub trait SSABuilder: Builder {
             srcs: [x, y],
             min: min,
         });
-        dst.into()
+        dst
     }
 
-    fn imul(&mut self, x: Src, y: Src) -> SSARef {
+    fn imul(&mut self, x: Src, y: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpIMad {
@@ -455,7 +455,7 @@ pub trait SSABuilder: Builder {
                 high: false,
             });
         }
-        dst.into()
+        dst
     }
 
     fn imul_2x32_64(&mut self, x: Src, y: Src, signed: bool) -> SSARef {
@@ -483,7 +483,7 @@ pub trait SSABuilder: Builder {
         dst
     }
 
-    fn ineg(&mut self, i: Src) -> SSARef {
+    fn ineg(&mut self, i: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
@@ -498,7 +498,7 @@ pub trait SSABuilder: Builder {
                 carry_out: Dst::None,
             });
         }
-        dst.into()
+        dst
     }
 
     fn ineg64(&mut self, x: Src) -> SSARef {
@@ -511,7 +511,7 @@ pub trait SSABuilder: Builder {
         cmp_op: IntCmpOp,
         x: Src,
         y: Src,
-    ) -> SSARef {
+    ) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::Pred);
         self.push_op(OpISetP {
             dst: dst.into(),
@@ -523,7 +523,7 @@ pub trait SSABuilder: Builder {
             accum: true.into(),
             low_cmp: true.into(),
         });
-        dst.into()
+        dst
     }
 
     fn isetp64(
@@ -611,7 +611,7 @@ pub trait SSABuilder: Builder {
         dst.into()
     }
 
-    fn lea(&mut self, a: Src, b: Src, shift: u8) -> SSARef {
+    fn lea(&mut self, a: Src, b: Src, shift: u8) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         assert!(self.sm() >= 70);
 
@@ -626,7 +626,7 @@ pub trait SSABuilder: Builder {
             intermediate_mod: SrcMod::None,
         });
 
-        dst.into()
+        dst
     }
 
     fn lea64(&mut self, a: Src, b: Src, shift: u8) -> SSARef {
@@ -677,17 +677,17 @@ pub trait SSABuilder: Builder {
         dst
     }
 
-    fn lop2(&mut self, op: LogicOp2, x: Src, y: Src) -> SSARef {
+    fn lop2(&mut self, op: LogicOp2, x: Src, y: Src) -> SSAValue {
         let dst = if x.is_predicate() {
             self.alloc_ssa(RegFile::Pred)
         } else {
             self.alloc_ssa(RegFile::GPR)
         };
         self.lop2_to(dst.into(), op, x, y);
-        dst.into()
+        dst
     }
 
-    fn brev(&mut self, x: Src) -> SSARef {
+    fn brev(&mut self, x: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         if self.sm() >= 70 {
             self.push_op(OpBRev {
@@ -704,20 +704,20 @@ pub trait SSABuilder: Builder {
                 reverse: true,
             });
         }
-        dst.into()
+        dst
     }
 
-    fn mufu(&mut self, op: MuFuOp, src: Src) -> SSARef {
+    fn mufu(&mut self, op: MuFuOp, src: Src) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpMuFu {
             dst: dst.into(),
             op: op,
             src: src,
         });
-        dst.into()
+        dst
     }
 
-    fn fsin(&mut self, src: Src) -> SSARef {
+    fn fsin(&mut self, src: Src) -> SSAValue {
         let tmp = if self.sm() >= 70 {
             let frac_1_2pi = 1.0 / (2.0 * std::f32::consts::PI);
             self.fmul(src, frac_1_2pi.into())
@@ -733,7 +733,7 @@ pub trait SSABuilder: Builder {
         self.mufu(MuFuOp::Sin, tmp.into())
     }
 
-    fn fcos(&mut self, src: Src) -> SSARef {
+    fn fcos(&mut self, src: Src) -> SSAValue {
         let tmp = if self.sm() >= 70 {
             let frac_1_2pi = 1.0 / (2.0 * std::f32::consts::PI);
             self.fmul(src, frac_1_2pi.into())
@@ -749,7 +749,7 @@ pub trait SSABuilder: Builder {
         self.mufu(MuFuOp::Cos, tmp.into())
     }
 
-    fn fexp2(&mut self, src: Src) -> SSARef {
+    fn fexp2(&mut self, src: Src) -> SSAValue {
         let tmp = if self.sm() >= 70 {
             src
         } else {
@@ -764,13 +764,13 @@ pub trait SSABuilder: Builder {
         self.mufu(MuFuOp::Exp2, tmp)
     }
 
-    fn prmt(&mut self, x: Src, y: Src, sel: [u8; 4]) -> SSARef {
+    fn prmt(&mut self, x: Src, y: Src, sel: [u8; 4]) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.prmt_to(dst.into(), x, y, sel);
-        dst.into()
+        dst
     }
 
-    fn prmt4(&mut self, src: [Src; 4], sel: [u8; 4]) -> SSARef {
+    fn prmt4(&mut self, src: [Src; 4], sel: [u8; 4]) -> SSAValue {
         let max_sel = *sel.iter().max().unwrap();
         if max_sel < 8 {
             self.prmt(src[0], src[1], sel)
@@ -808,7 +808,7 @@ pub trait SSABuilder: Builder {
         }
     }
 
-    fn sel(&mut self, cond: Src, x: Src, y: Src) -> SSARef {
+    fn sel(&mut self, cond: Src, x: Src, y: Src) -> SSAValue {
         assert!(cond.src_ref.is_predicate());
         assert!(x.is_predicate() == y.is_predicate());
         if x.is_predicate() {
@@ -835,7 +835,7 @@ pub trait SSABuilder: Builder {
                     srcs: [cond.bnot(), y, tmp.into()],
                 });
             }
-            dst.into()
+            dst
         } else {
             let dst = self.alloc_ssa(RegFile::GPR);
             self.push_op(OpSel {
@@ -843,17 +843,17 @@ pub trait SSABuilder: Builder {
                 cond: cond,
                 srcs: [x, y],
             });
-            dst.into()
+            dst
         }
     }
 
-    fn undef(&mut self) -> SSARef {
+    fn undef(&mut self) -> SSAValue {
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpUndef { dst: dst.into() });
-        dst.into()
+        dst
     }
 
-    fn copy(&mut self, src: Src) -> SSARef {
+    fn copy(&mut self, src: Src) -> SSAValue {
         let dst = if src.is_predicate() {
             self.alloc_ssa(RegFile::Pred)
         } else {
@@ -863,7 +863,7 @@ pub trait SSABuilder: Builder {
         dst.into()
     }
 
-    fn bmov_to_bar(&mut self, src: Src) -> SSARef {
+    fn bmov_to_bar(&mut self, src: Src) -> SSAValue {
         assert!(src.src_ref.as_ssa().unwrap().file() == Some(RegFile::GPR));
         let dst = self.alloc_ssa(RegFile::Bar);
         self.push_op(OpBMov {
@@ -871,10 +871,10 @@ pub trait SSABuilder: Builder {
             src: src,
             clear: false,
         });
-        dst.into()
+        dst
     }
 
-    fn bmov_to_gpr(&mut self, src: Src) -> SSARef {
+    fn bmov_to_gpr(&mut self, src: Src) -> SSAValue {
         assert!(src.src_ref.as_ssa().unwrap().file() == Some(RegFile::Bar));
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpBMov {
@@ -882,7 +882,7 @@ pub trait SSABuilder: Builder {
             src: src,
             clear: false,
         });
-        dst.into()
+        dst
     }
 }
 

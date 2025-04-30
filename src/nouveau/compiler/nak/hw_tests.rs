@@ -109,8 +109,8 @@ impl<'a> TestShaderBuilder<'a> {
         };
 
         let data_offset = SSARef::from([
-            b.imul(invoc_id.into(), data_stride.into())[0],
-            b.copy(0.into())[0],
+            b.imul(invoc_id.into(), data_stride.into()),
+            b.copy(0.into()),
         ]);
         let data_addr =
             b.iadd64(data_addr.into(), data_offset.into(), 0.into());
@@ -122,7 +122,7 @@ impl<'a> TestShaderBuilder<'a> {
             invoc_id.into(),
             invocations.into(),
         );
-        b.predicate(oob[0].into()).push_op(OpExit {});
+        b.predicate(oob.into()).push_op(OpExit {});
 
         let start_block = BasicBlock {
             label: label_alloc.alloc(),
@@ -411,7 +411,7 @@ pub fn test_foldable_op_with(
                 }
                 file => panic!("Can't auto-test {file:?} data"),
             };
-            b.st_test_data(comps * 4, MemType::B32, u);
+            b.st_test_data(comps * 4, MemType::B32, u.into());
             comps += 1;
         }
     }

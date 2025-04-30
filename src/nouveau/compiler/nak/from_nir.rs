@@ -563,7 +563,7 @@ impl<'a> ShaderFromNir<'a> {
                             // we'll need a copy in that case.  If the copy
                             // isn't needed, copy-prop should clean it up for
                             // us.
-                            comps.push(b.copy(ssa.into())[0]);
+                            comps.push(b.copy(ssa.into()));
                         }
                     }
                     8 => {
@@ -603,7 +603,7 @@ impl<'a> ShaderFromNir<'a> {
                                 res
                             };
 
-                            comps.push(b.prmt4(psrc, psel)[0]);
+                            comps.push(b.prmt4(psrc, psel));
                         }
                     }
                     16 => {
@@ -620,7 +620,7 @@ impl<'a> ShaderFromNir<'a> {
                                     psel[w * 2 + 1] = (w as u8 * 4) + byte + 1;
                                 }
                             }
-                            comps.push(b.prmt(psrc[0], psrc[1], psel)[0]);
+                            comps.push(b.prmt(psrc[0], psrc[1], psel));
                         }
                     }
                     _ => panic!("Unknown bit size: {src_bit_size}"),
@@ -706,25 +706,28 @@ impl<'a> ShaderFromNir<'a> {
             nir_op_b2b1 => {
                 assert!(alu.get_src(0).bit_size() == 32);
                 b.isetp(IntCmpType::I32, IntCmpOp::Ne, srcs[0], 0.into())
+                    .into()
             }
             nir_op_b2b32 | nir_op_b2i8 | nir_op_b2i16 | nir_op_b2i32 => {
-                b.sel(srcs[0].bnot(), 0.into(), 1.into())
+                b.sel(srcs[0].bnot(), 0.into(), 1.into()).into()
             }
             nir_op_b2i64 => {
                 let lo = b.sel(srcs[0].bnot(), 0.into(), 1.into());
                 let hi = b.copy(0.into());
-                [lo[0], hi[0]].into()
+                [lo, hi].into()
             }
-            nir_op_b2f16 => b.sel(srcs[0].bnot(), 0.into(), 0x3c00.into()),
+            nir_op_b2f16 => {
+                b.sel(srcs[0].bnot(), 0.into(), 0x3c00.into()).into()
+            }
             nir_op_b2f32 => {
-                b.sel(srcs[0].bnot(), 0.0_f32.into(), 1.0_f32.into())
+                b.sel(srcs[0].bnot(), 0.0_f32.into(), 1.0_f32.into()).into()
             }
             nir_op_b2f64 => {
                 let lo = b.copy(0.into());
                 let hi = b.sel(srcs[0].bnot(), 0.into(), 0x3ff00000.into());
-                [lo[0], hi[0]].into()
+                [lo, hi].into()
             }
-            nir_op_bcsel => b.sel(srcs[0], srcs[1], srcs[2]),
+            nir_op_bcsel => b.sel(srcs[0], srcs[1], srcs[2]).into(),
             nir_op_bfm => {
                 let dst = b.alloc_ssa(RegFile::GPR);
                 b.push_op(OpBMsk {
@@ -743,7 +746,7 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 dst.into()
             }
-            nir_op_bitfield_reverse => b.brev(srcs[0]),
+            nir_op_bitfield_reverse => b.brev(srcs[0]).into(),
             nir_op_ibitfield_extract | nir_op_ubitfield_extract => {
                 let range = b.alloc_ssa(RegFile::GPR);
                 b.push_op(OpPrmt {
@@ -796,6 +799,7 @@ impl<'a> ShaderFromNir<'a> {
                     }
                     _ => panic!("Unknown extract op: {}", alu.op),
                 }
+                .into()
             }
             nir_op_f2f16 | nir_op_f2f16_rtne | nir_op_f2f16_rtz
             | nir_op_f2f32 | nir_op_f2f64 => {
@@ -960,7 +964,7 @@ impl<'a> ShaderFromNir<'a> {
                 }
                 dst.into()
             }
-            nir_op_fcos => b.fcos(srcs[0]),
+            nir_op_fcos => b.fcos(srcs[0]).into(),
             nir_op_feq | nir_op_fge | nir_op_flt | nir_op_fneu => {
                 let src_type =
                     FloatType::from_bits(alu.get_src(0).bit_size().into());
@@ -1025,7 +1029,7 @@ impl<'a> ShaderFromNir<'a> {
                 }
                 dst
             }
-            nir_op_fexp2 => b.fexp2(srcs[0]),
+            nir_op_fexp2 => b.fexp2(srcs[0]).into(),
             nir_op_ffma => {
                 let ftype = FloatType::from_bits(alu.def.bit_size().into());
                 let dst;
@@ -1091,7 +1095,7 @@ impl<'a> ShaderFromNir<'a> {
             }
             nir_op_flog2 => {
                 assert!(alu.def.bit_size() == 32);
-                b.mufu(MuFuOp::Log2, srcs[0])
+                b.mufu(MuFuOp::Log2, srcs[0]).into()
             }
             nir_op_fmax | nir_op_fmin => {
                 let dst;
@@ -1222,22 +1226,23 @@ impl<'a> ShaderFromNir<'a> {
                         b.lop2(LogicOp2::And, srcs[0], 0x80000000.into());
                     b.sel(denorm.into(), zero.into(), dst.into())
                 } else {
-                    dst.into()
+                    dst
                 }
+                .into()
             }
             nir_op_frcp => {
                 assert!(alu.def.bit_size() == 32);
-                b.mufu(MuFuOp::Rcp, srcs[0])
+                b.mufu(MuFuOp::Rcp, srcs[0]).into()
             }
             nir_op_frsq => {
                 assert!(alu.def.bit_size() == 32);
-                b.mufu(MuFuOp::Rsq, srcs[0])
+                b.mufu(MuFuOp::Rsq, srcs[0]).into()
             }
             nir_op_fsat => {
                 let ftype = FloatType::from_bits(alu.def.bit_size().into());
 
                 if self.alu_src_is_saturated(&alu.srcs_as_slice()[0]) {
-                    b.copy(srcs[0])
+                    b.copy(srcs[0]).into()
                 } else if alu.def.bit_size() == 32 {
                     let dst = b.alloc_ssa(RegFile::GPR);
                     b.push_op(OpFAdd {
@@ -1273,11 +1278,11 @@ impl<'a> ShaderFromNir<'a> {
                     let hi = b.sel(lz.into(), 0xbff00000.into(), 0.into());
                     let hi = b.sel(gz.into(), 0x3ff00000.into(), hi.into());
                     let lo = b.copy(0.into());
-                    [lo[0], hi[0]].into()
+                    [lo, hi].into()
                 } else if alu.def.bit_size() == 32 {
                     let lz = b.fset(FloatCmpOp::OrdLt, srcs[0], 0.into());
                     let gz = b.fset(FloatCmpOp::OrdGt, srcs[0], 0.into());
-                    b.fadd(gz.into(), Src::from(lz).fneg())
+                    b.fadd(gz.into(), Src::from(lz).fneg()).into()
                 } else if alu.def.bit_size() == 16 {
                     let x = restrict_f16v2_src(srcs[0]);
 
@@ -1288,13 +1293,13 @@ impl<'a> ShaderFromNir<'a> {
                         b.hset2(FloatCmpOp::OrdGt, x, 0.into()).into(),
                     );
 
-                    b.hadd2(gz, lz.fneg())
+                    b.hadd2(gz, lz.fneg()).into()
                 } else {
                     panic!("Unsupported float type: f{}", alu.def.bit_size());
                 }
             }
-            nir_op_fsin => b.fsin(srcs[0]),
-            nir_op_fsqrt => b.mufu(MuFuOp::Sqrt, srcs[0]),
+            nir_op_fsin => b.fsin(srcs[0]).into(),
+            nir_op_fsqrt => b.mufu(MuFuOp::Sqrt, srcs[0]).into(),
             nir_op_i2f16 | nir_op_i2f32 | nir_op_i2f64 => {
                 let src_bits = alu.get_src(0).src.bit_size();
                 let dst_bits = alu.def.bit_size();
@@ -1347,38 +1352,39 @@ impl<'a> ShaderFromNir<'a> {
                     if dst_bits == 64 {
                         *src
                     } else {
-                        b.prmt(src[0].into(), src[1].into(), prmt_lo)
+                        b.prmt(src[0].into(), src[1].into(), prmt_lo).into()
                     }
                 } else {
                     if dst_bits == 64 {
                         let lo = b.prmt(src[0].into(), 0.into(), prmt_lo);
                         let hi = b.prmt(src[0].into(), 0.into(), prmt_hi);
-                        [lo[0], hi[0]].into()
+                        [lo, hi].into()
                     } else {
-                        b.prmt(src[0].into(), 0.into(), prmt_lo)
+                        b.prmt(src[0].into(), 0.into(), prmt_lo).into()
                     }
                 }
             }
-            nir_op_iabs => b.iabs(srcs[0]),
+            nir_op_iabs => b.iabs(srcs[0]).into(),
             nir_op_iadd => match alu.def.bit_size {
-                32 => b.iadd(srcs[0], srcs[1], 0.into()),
+                32 => b.iadd(srcs[0], srcs[1], 0.into()).into(),
                 64 => b.iadd64(srcs[0], srcs[1], 0.into()),
                 x => panic!("unsupported bit size for nir_op_iadd: {x}"),
             },
             nir_op_iadd3 => match alu.def.bit_size {
-                32 => b.iadd(srcs[0], srcs[1], srcs[2]),
+                32 => b.iadd(srcs[0], srcs[1], srcs[2]).into(),
                 64 => b.iadd64(srcs[0], srcs[1], srcs[2]),
                 x => panic!("unsupported bit size for nir_op_iadd3: {x}"),
             },
-            nir_op_iand => b.lop2(LogicOp2::And, srcs[0], srcs[1]),
+            nir_op_iand => b.lop2(LogicOp2::And, srcs[0], srcs[1]).into(),
             nir_op_ieq => {
                 if alu.get_src(0).bit_size() == 1 {
-                    b.lop2(LogicOp2::Xor, srcs[0], srcs[1].bnot())
+                    b.lop2(LogicOp2::Xor, srcs[0], srcs[1].bnot()).into()
                 } else if alu.get_src(0).bit_size() == 64 {
                     b.isetp64(IntCmpType::I32, IntCmpOp::Eq, srcs[0], srcs[1])
                 } else {
                     assert!(alu.get_src(0).bit_size() == 32);
                     b.isetp(IntCmpType::I32, IntCmpOp::Eq, srcs[0], srcs[1])
+                        .into()
                 }
             }
             nir_op_ifind_msb | nir_op_ifind_msb_rev | nir_op_ufind_msb
@@ -1414,7 +1420,7 @@ impl<'a> ShaderFromNir<'a> {
                     b.isetp64(cmp_type, cmp_op, x.into(), y.into())
                 } else {
                     assert!(alu.get_src(0).bit_size() == 32);
-                    b.isetp(cmp_type, cmp_op, x.into(), y.into())
+                    b.isetp(cmp_type, cmp_op, x.into(), y.into()).into()
                 }
             }
             nir_op_imad => {
@@ -1436,11 +1442,11 @@ impl<'a> ShaderFromNir<'a> {
                     _ => panic!("Not an integer min/max"),
                 };
                 assert!(alu.def.bit_size() == 32);
-                b.imnmx(tp, srcs[0], srcs[1], min.into())
+                b.imnmx(tp, srcs[0], srcs[1], min.into()).into()
             }
             nir_op_imul => {
                 assert!(alu.def.bit_size() == 32);
-                b.imul(srcs[0], srcs[1])
+                b.imul(srcs[0], srcs[1]).into()
             }
             nir_op_imul_2x32_64 | nir_op_umul_2x32_64 => {
                 let signed = alu.op == nir_op_imul_2x32_64;
@@ -1453,12 +1459,13 @@ impl<'a> ShaderFromNir<'a> {
             }
             nir_op_ine => {
                 if alu.get_src(0).bit_size() == 1 {
-                    b.lop2(LogicOp2::Xor, srcs[0], srcs[1])
+                    b.lop2(LogicOp2::Xor, srcs[0], srcs[1]).into()
                 } else if alu.get_src(0).bit_size() == 64 {
                     b.isetp64(IntCmpType::I32, IntCmpOp::Ne, srcs[0], srcs[1])
                 } else {
                     assert!(alu.get_src(0).bit_size() == 32);
                     b.isetp(IntCmpType::I32, IntCmpOp::Ne, srcs[0], srcs[1])
+                        .into()
                 }
             }
             nir_op_ineg => {
@@ -1466,18 +1473,18 @@ impl<'a> ShaderFromNir<'a> {
                     b.ineg64(srcs[0])
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.ineg(srcs[0])
+                    b.ineg(srcs[0]).into()
                 }
             }
             nir_op_inot => {
                 if alu.def.bit_size() == 1 {
-                    b.lop2(LogicOp2::PassB, true.into(), srcs[0].bnot())
+                    b.lop2(LogicOp2::PassB, true.into(), srcs[0].bnot()).into()
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.lop2(LogicOp2::PassB, 0.into(), srcs[0].bnot())
+                    b.lop2(LogicOp2::PassB, 0.into(), srcs[0].bnot()).into()
                 }
             }
-            nir_op_ior => b.lop2(LogicOp2::Or, srcs[0], srcs[1]),
+            nir_op_ior => b.lop2(LogicOp2::Or, srcs[0], srcs[1]).into(),
             nir_op_ishl => {
                 if alu.def.bit_size() == 64 {
                     let shift = if let Some(s) = nir_srcs[1].comp_as_uint(0) {
@@ -1488,7 +1495,7 @@ impl<'a> ShaderFromNir<'a> {
                     b.shl64(srcs[0], shift)
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.shl(srcs[0], srcs[1])
+                    b.shl(srcs[0], srcs[1]).into()
                 }
             }
             nir_op_ishr => {
@@ -1501,7 +1508,7 @@ impl<'a> ShaderFromNir<'a> {
                     b.shr64(srcs[0], shift, true)
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.shr(srcs[0], srcs[1], true)
+                    b.shr(srcs[0], srcs[1], true).into()
                 }
             }
             nir_op_lea_nv => {
@@ -1509,17 +1516,17 @@ impl<'a> ShaderFromNir<'a> {
                 let src_b = srcs[0];
                 let shift = nir_srcs[2].comp_as_uint(0).unwrap() as u8;
                 match alu.def.bit_size {
-                    32 => b.lea(src_a, src_b, shift),
+                    32 => b.lea(src_a, src_b, shift).into(),
                     64 => b.lea64(src_a, src_b, shift),
                     x => panic!("unsupported bit size for nir_op_lea_nv: {x}"),
                 }
             }
             nir_op_isub => match alu.def.bit_size {
-                32 => b.iadd(srcs[0], srcs[1].ineg(), 0.into()),
+                32 => b.iadd(srcs[0], srcs[1].ineg(), 0.into()).into(),
                 64 => b.iadd64(srcs[0], srcs[1].ineg(), 0.into()),
                 x => panic!("unsupported bit size for nir_op_iadd: {x}"),
             },
-            nir_op_ixor => b.lop2(LogicOp2::Xor, srcs[0], srcs[1]),
+            nir_op_ixor => b.lop2(LogicOp2::Xor, srcs[0], srcs[1]).into(),
             nir_op_pack_half_2x16_split | nir_op_pack_half_2x16_rtz_split => {
                 assert!(alu.get_src(0).bit_size() == 32);
 
@@ -1567,7 +1574,7 @@ impl<'a> ShaderFromNir<'a> {
                         integer_rnd: false,
                     });
 
-                    b.prmt(low.into(), high.into(), [0, 1, 4, 5])
+                    b.prmt(low.into(), high.into(), [0, 1, 4, 5]).into()
                 }
             }
             nir_op_prmt_nv => {
@@ -1644,10 +1651,10 @@ impl<'a> ShaderFromNir<'a> {
                         b.sel(ovf_hi.into(), u32::MAX.into(), sum_lo.into());
                     let hi =
                         b.sel(ovf_hi.into(), u32::MAX.into(), sum_hi.into());
-                    [lo[0], hi[0]].into()
+                    [lo, hi].into()
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.sel(ovf_lo.into(), u32::MAX.into(), sum_lo.into())
+                    b.sel(ovf_lo.into(), u32::MAX.into(), sum_lo.into()).into()
                 }
             }
             nir_op_usub_sat => {
@@ -1677,25 +1684,25 @@ impl<'a> ShaderFromNir<'a> {
                     });
                     let lo = b.sel(ovf_hi.into(), sum_lo.into(), 0.into());
                     let hi = b.sel(ovf_hi.into(), sum_hi.into(), 0.into());
-                    [lo[0], hi[0]].into()
+                    [lo, hi].into()
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.sel(ovf_lo.into(), sum_lo.into(), 0.into())
+                    b.sel(ovf_lo.into(), sum_lo.into(), 0.into()).into()
                 }
             }
             nir_op_unpack_32_2x16_split_x => {
-                b.prmt(srcs[0], 0.into(), [0, 1, 4, 4])
+                b.prmt(srcs[0], 0.into(), [0, 1, 4, 4]).into()
             }
             nir_op_unpack_32_2x16_split_y => {
-                b.prmt(srcs[0], 0.into(), [2, 3, 4, 4])
+                b.prmt(srcs[0], 0.into(), [2, 3, 4, 4]).into()
             }
             nir_op_unpack_64_2x32_split_x => {
                 let src0_x = srcs[0].as_ssa().unwrap()[0];
-                b.copy(src0_x.into())
+                b.copy(src0_x.into()).into()
             }
             nir_op_unpack_64_2x32_split_y => {
                 let src0_y = srcs[0].as_ssa().unwrap()[1];
-                b.copy(src0_y.into())
+                b.copy(src0_y.into()).into()
             }
             nir_op_unpack_half_2x16_split_x
             | nir_op_unpack_half_2x16_split_y => {
@@ -1725,7 +1732,7 @@ impl<'a> ShaderFromNir<'a> {
                     b.shr64(srcs[0], shift, false)
                 } else {
                     assert!(alu.def.bit_size() == 32);
-                    b.shr(srcs[0], srcs[1], false)
+                    b.shr(srcs[0], srcs[1], false).into()
                 }
             }
             _ => panic!("Unsupported ALU instruction: {}", alu.info().name()),
@@ -1952,9 +1959,9 @@ impl<'a> ShaderFromNir<'a> {
                 let Dst::SSA(fault) = fault else {
                     panic!("No fault value for sparse op");
                 };
-                nir_dst.push(b.sel(fault.into(), 0.into(), 1.into())[0]);
+                nir_dst.push(b.sel(fault.into(), 0.into(), 1.into()));
             } else if mask & (1 << i) == 0 {
-                nir_dst.push(b.copy(0.into())[0]);
+                nir_dst.push(b.copy(0.into()));
             } else {
                 nir_dst.push(dst[di]);
                 di += 1;
@@ -2417,7 +2424,7 @@ impl<'a> ShaderFromNir<'a> {
                     cond: cond.into(),
                 });
 
-                self.set_dst(&intrin.def, b.bmov_to_gpr(bar_out.into()));
+                self.set_dst(&intrin.def, b.bmov_to_gpr(bar_out.into()).into());
             }
             nir_intrinsic_bar_set_nv => {
                 let label = self.label_alloc.alloc();
@@ -2437,7 +2444,7 @@ impl<'a> ShaderFromNir<'a> {
                     target: label,
                 });
 
-                self.set_dst(&intrin.def, b.bmov_to_gpr(bar_out.into()));
+                self.set_dst(&intrin.def, b.bmov_to_gpr(bar_out.into()).into());
             }
             nir_intrinsic_bar_sync_nv => {
                 let src = self.get_src(&srcs[0]);
@@ -2601,7 +2608,7 @@ impl<'a> ShaderFromNir<'a> {
                 for i in 0..usize::from(comps) - 1 {
                     final_dst.push(dst[i]);
                 }
-                final_dst.push(b.sel(fault.into(), 0.into(), 1.into())[0]);
+                final_dst.push(b.sel(fault.into(), 0.into(), 1.into()));
 
                 self.set_ssa(&intrin.def, final_dst);
             }
@@ -3408,7 +3415,7 @@ impl<'a> ShaderFromNir<'a> {
             1 => {
                 for c in 0..load_const.def.num_components {
                     let imm_b1 = unsafe { values[usize::from(c)].b };
-                    dst.push(b.copy(imm_b1.into())[0]);
+                    dst.push(b.copy(imm_b1.into()));
                 }
             }
             8 => {
@@ -3421,7 +3428,7 @@ impl<'a> ShaderFromNir<'a> {
                             imm_u32 |= u32::from(imm_u8) << b * 8;
                         }
                     }
-                    dst.push(b.copy(imm_u32.into())[0]);
+                    dst.push(b.copy(imm_u32.into()));
                 }
             }
             16 => {
@@ -3435,20 +3442,20 @@ impl<'a> ShaderFromNir<'a> {
                             imm_u32 |= u32::from(imm_u16) << w * 16;
                         }
                     }
-                    dst.push(b.copy(imm_u32.into())[0]);
+                    dst.push(b.copy(imm_u32.into()));
                 }
             }
             32 => {
                 for c in 0..load_const.def.num_components {
                     let imm_u32 = unsafe { values[usize::from(c)].u32_ };
-                    dst.push(b.copy(imm_u32.into())[0]);
+                    dst.push(b.copy(imm_u32.into()));
                 }
             }
             64 => {
                 for c in 0..load_const.def.num_components {
                     let imm_u64 = unsafe { values[c as usize].u64_ };
-                    dst.push(b.copy((imm_u64 as u32).into())[0]);
-                    dst.push(b.copy(((imm_u64 >> 32) as u32).into())[0]);
+                    dst.push(b.copy((imm_u64 as u32).into()));
+                    dst.push(b.copy(((imm_u64 >> 32) as u32).into()));
                 }
             }
             _ => panic!("Unknown bit size: {}", load_const.def.bit_size),
