@@ -42,6 +42,7 @@
 
 #include "genxml/gen_macros.h"
 
+#include "pan_afbc.h"
 #include "pan_mod_conv_cso.h"
 #include "pan_blend.h"
 #include "pan_bo.h"
@@ -177,7 +178,7 @@ static void
 pan_afbc_reswizzle_border_color(const struct pipe_sampler_state *cso,
                                 struct panfrost_sampler_state *so)
 {
-   if (!panfrost_format_supports_afbc(PAN_ARCH, cso->border_color_format))
+   if (!pan_format_supports_afbc(PAN_ARCH, cso->border_color_format))
       return;
 
    /* On v7, pan_texture.c composes the API swizzle with a bijective
@@ -1771,7 +1772,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
    /* v7 requires AFBC reswizzle */
    if (!util_format_is_depth_or_stencil(format) &&
        !panfrost_format_is_yuv(format) &&
-       panfrost_format_supports_afbc(PAN_ARCH, format))
+       pan_format_supports_afbc(PAN_ARCH, format))
       GENX(panfrost_texture_afbc_reswizzle)(&iview);
 #endif
 

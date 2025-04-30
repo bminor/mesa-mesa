@@ -24,6 +24,7 @@
 #include "pan_mod_conv_cso.h"
 #include "nir/pipe_nir.h"
 #include "nir_builder.h"
+#include "pan_afbc.h"
 #include "pan_context.h"
 #include "pan_resource.h"
 #include "pan_screen.h"

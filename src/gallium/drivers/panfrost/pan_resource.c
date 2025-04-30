@@ -49,6 +49,7 @@
 #include "util/streaming-load-memcpy.h"
 
 #include "decode.h"
+#include "pan_afbc.h"
 #include "pan_bo.h"
 #include "pan_context.h"
 #include "pan_resource.h"
@@ -324,7 +325,7 @@ panfrost_should_afbc(struct panfrost_device *dev,
       return false;
 
    /* Only a small selection of formats are AFBC'able */
-   if (!panfrost_format_supports_afbc(dev->arch, fmt))
+   if (!pan_format_supports_afbc(dev->arch, fmt))
       return false;
 
    /* AFBC does not support layered (GLES3 style) multisampling. Use
@@ -370,7 +371,7 @@ static bool
 panfrost_should_tile_afbc(const struct panfrost_device *dev,
                           const struct panfrost_resource *pres)
 {
-   return panfrost_afbc_can_tile(dev->arch) && pres->base.width0 >= 128 &&
+   return pan_afbc_can_tile(dev->arch) && pres->base.width0 >= 128 &&
           pres->base.height0 >= 128 && !(dev->debug & PAN_DBG_FORCE_PACK);
 }
 
@@ -382,7 +383,7 @@ panfrost_should_pack_afbc(struct panfrost_device *dev,
                                   PIPE_BIND_RENDER_TARGET |
                                   PIPE_BIND_SAMPLER_VIEW;
 
-   return panfrost_afbc_can_pack(prsrc->base.format) && panfrost_is_2d(prsrc) &&
+   return pan_afbc_can_pack(prsrc->base.format) && panfrost_is_2d(prsrc) &&
           drm_is_afbc(prsrc->image.layout.modifier) &&
           (prsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPARSE) &&
           !(prsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPLIT) &&
@@ -503,7 +504,7 @@ panfrost_best_modifier(struct pipe_screen *pscreen,
    if (panfrost_should_afbc(dev, pres, fmt)) {
       uint64_t afbc = AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 | AFBC_FORMAT_MOD_SPARSE;
 
-      if (panfrost_afbc_can_ytr(pres->base.format))
+      if (pan_afbc_can_ytr(pres->base.format))
          afbc |= AFBC_FORMAT_MOD_YTR;
 
       if (panfrost_should_tile_afbc(dev, pres))
@@ -1083,7 +1084,7 @@ dump_block(struct panfrost_resource *rsrc, uint32_t idx)
    uint32_t body_base_ptr = header[0];
    uint32_t *body = (uint32_t *)(ptr + body_base_ptr);
    struct pan_block_size block_sz =
-      panfrost_afbc_subblock_size(rsrc->image.layout.modifier);
+      pan_afbc_subblock_size(rsrc->image.layout.modifier);
    unsigned pixel_sz = util_format_get_blocksize(rsrc->base.format);
    unsigned uncompressed_size = pixel_sz * block_sz.width * block_sz.height;
    unsigned size = get_superblock_size(header, uncompressed_size);
@@ -1587,8 +1588,8 @@ pan_legalize_format(struct panfrost_context *ctx,
       return;
 
    if (drm_is_afbc(rsrc->image.layout.modifier)) {
-      compatible = (panfrost_afbc_format(dev->arch, old_format) ==
-                    panfrost_afbc_format(dev->arch, new_format));
+      compatible = (pan_afbc_format(dev->arch, old_format) ==
+                    pan_afbc_format(dev->arch, new_format));
    } else if (drm_is_afrc(rsrc->image.layout.modifier)) {
       struct pan_afrc_format_info old_info =
          panfrost_afrc_get_format_info(old_format);
@@ -1734,6 +1735,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
       unsigned src_stride =
          pan_afbc_stride_blocks(src_modifier, src_slice->row_stride);
+
       uint32_t offset = 0;
       struct pan_afbc_block_info *meta =
          metadata_bo->ptr.cpu + metadata_offsets[level];
@@ -1772,9 +1774,9 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          unsigned width = u_minify(prsrc->base.width0, level);
          unsigned height = u_minify(prsrc->base.height0, level);
          unsigned dst_stride =
-            DIV_ROUND_UP(width, panfrost_afbc_superblock_width(dst_modifier));
+            DIV_ROUND_UP(width, pan_afbc_superblock_width(dst_modifier));
          unsigned dst_height =
-            DIV_ROUND_UP(height, panfrost_afbc_superblock_height(dst_modifier));
+            DIV_ROUND_UP(height, pan_afbc_superblock_height(dst_modifier));
 
          dst_slice->afbc.stride = dst_stride;
          dst_slice->afbc.nr_blocks = dst_stride * dst_height;

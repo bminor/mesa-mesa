@@ -26,6 +26,7 @@
  *
  */
 
+#include "pan_afbc.h"
 #include "pan_texture.h"
 #include "util/macros.h"
 #include "util/u_math.h"
@@ -93,7 +94,7 @@ panfrost_compression_tag(const struct util_format_description *desc,
       /* Prefetch enable */
       flags |= MALI_AFBC_SURFACE_FLAG_PREFETCH;
 
-      if (panfrost_afbc_is_wide(modifier))
+      if (pan_afbc_is_wide(modifier))
          flags |= MALI_AFBC_SURFACE_FLAG_WIDE_BLOCK;
 
       if (modifier & AFBC_FORMAT_MOD_SPLIT)
@@ -520,8 +521,7 @@ panfrost_emit_plane(const struct pan_image_view *iview,
          cfg.afbc.split_block = (layout->modifier & AFBC_FORMAT_MOD_SPLIT);
          cfg.afbc.tiled_header = (layout->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
-         cfg.afbc.compression_mode =
-            GENX(pan_afbc_compression_mode)(iview->format);
+         cfg.afbc.compression_mode = pan_afbc_compression_mode(iview->format);
          cfg.afbc.header_stride = layout->slices[level].afbc.header_size;
       } else if (afrc) {
 #if PAN_ARCH >= 10
@@ -710,7 +710,7 @@ GENX(panfrost_texture_afbc_reswizzle)(struct pan_image_view *iview)
     */
    assert(!util_format_is_depth_or_stencil(iview->format));
    assert(!panfrost_format_is_yuv(iview->format));
-   assert(panfrost_format_supports_afbc(PAN_ARCH, iview->format));
+   assert(pan_format_supports_afbc(PAN_ARCH, iview->format));
 
    uint32_t mali_format =
       GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
@@ -904,40 +904,6 @@ GENX(panfrost_new_storage_texture)(const struct pan_image_view *iview,
       cfg.minimum_level = 0;
       cfg.swizzle = panfrost_translate_swizzle_4(rgba_swizzle);
    }
-}
-#endif
-
-#if PAN_ARCH >= 9
-enum mali_afbc_compression_mode
-GENX(pan_afbc_compression_mode)(enum pipe_format format)
-{
-   /* There's a special case for texturing the stencil part from a combined
-    * depth/stencil texture, handle it separately.
-    */
-   if (format == PIPE_FORMAT_X24S8_UINT)
-      return MALI_AFBC_COMPRESSION_MODE_X24S8;
-
-   /* Otherwise, map canonical formats to the hardware enum. This only
-    * needs to handle the subset of formats returned by
-    * panfrost_afbc_format.
-    */
-   /* clang-format off */
-   switch (panfrost_afbc_format(PAN_ARCH, format)) {
-   case PAN_AFBC_MODE_R8:          return MALI_AFBC_COMPRESSION_MODE_R8;
-   case PAN_AFBC_MODE_R8G8:        return MALI_AFBC_COMPRESSION_MODE_R8G8;
-   case PAN_AFBC_MODE_R5G6B5:      return MALI_AFBC_COMPRESSION_MODE_R5G6B5;
-   case PAN_AFBC_MODE_R4G4B4A4:    return MALI_AFBC_COMPRESSION_MODE_R4G4B4A4;
-   case PAN_AFBC_MODE_R5G5B5A1:    return MALI_AFBC_COMPRESSION_MODE_R5G5B5A1;
-   case PAN_AFBC_MODE_R8G8B8:      return MALI_AFBC_COMPRESSION_MODE_R8G8B8;
-   case PAN_AFBC_MODE_R8G8B8A8:    return MALI_AFBC_COMPRESSION_MODE_R8G8B8A8;
-   case PAN_AFBC_MODE_R10G10B10A2: return MALI_AFBC_COMPRESSION_MODE_R10G10B10A2;
-   case PAN_AFBC_MODE_R11G11B10:   return MALI_AFBC_COMPRESSION_MODE_R11G11B10;
-   case PAN_AFBC_MODE_S8:          return MALI_AFBC_COMPRESSION_MODE_S8;
-   case PAN_AFBC_MODE_INVALID:     unreachable("Invalid AFBC format");
-   }
-   /* clang-format on */
-
-   unreachable("all AFBC formats handled");
 }
 #endif
 

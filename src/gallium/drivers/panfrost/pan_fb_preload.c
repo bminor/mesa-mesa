@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "compiler/nir/nir_builder.h"
 #include "util/u_math.h"
+#include "pan_afbc.h"
 #include "pan_blend_cso.h"
 #include "pan_desc.h"
 #include "pan_encoder.h"
@@ -920,7 +921,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
 #if PAN_ARCH == 7
             /* v7 requires AFBC reswizzle. */
             if (!panfrost_format_is_yuv(view->format) &&
-                panfrost_format_supports_afbc(PAN_ARCH, view->format)) {
+                pan_format_supports_afbc(PAN_ARCH, view->format)) {
                struct pan_image_view *pview = &patched_views[patched_count++];
                *pview = *view;
                GENX(panfrost_texture_afbc_reswizzle)(pview);

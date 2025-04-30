@@ -29,6 +29,7 @@
 
 #include "genxml/gen_macros.h"
 
+#include "pan_afbc.h"
 #include "pan_desc.h"
 #include "pan_encoder.h"
 #include "pan_props.h"
@@ -97,7 +98,7 @@ renderblock_fits_in_single_pass(const struct pan_image_view *view,
    if (!drm_is_afbc(mod))
       return tile_size >= 16 * 16;
 
-   struct pan_block_size renderblk_sz = panfrost_afbc_renderblock_size(mod);
+   struct pan_block_size renderblk_sz = pan_afbc_renderblock_size(mod);
    return tile_size >= renderblk_sz.width * renderblk_sz.height;
 }
 
@@ -615,14 +616,14 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       if (image->layout.modifier & AFBC_FORMAT_MOD_YTR)
          cfg->afbc.yuv_transform = true;
 
-      cfg->afbc.wide_block = panfrost_afbc_is_wide(image->layout.modifier);
+      cfg->afbc.wide_block = pan_afbc_is_wide(image->layout.modifier);
       cfg->afbc.split_block =
          (image->layout.modifier & AFBC_FORMAT_MOD_SPLIT);
       cfg->afbc.header = surf.afbc.header;
       cfg->afbc.body_offset = surf.afbc.body - surf.afbc.header;
       assert(surf.afbc.body >= surf.afbc.header);
 
-      cfg->afbc.compression_mode = GENX(pan_afbc_compression_mode)(rt->format);
+      cfg->afbc.compression_mode = pan_afbc_compression_mode(rt->format);
       cfg->afbc.row_stride = row_stride;
 #else
       const struct pan_image_slice_layout *slice = &image->layout.slices[level];
@@ -631,7 +632,7 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       cfg->afbc.row_stride =
          pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride);
       cfg->afbc.afbc_wide_block_enable =
-         panfrost_afbc_is_wide(image->layout.modifier);
+         pan_afbc_is_wide(image->layout.modifier);
       cfg->afbc.afbc_split_block_enable =
          (image->layout.modifier & AFBC_FORMAT_MOD_SPLIT);
 #else
@@ -790,7 +791,7 @@ pan_force_clean_write_on(const struct pan_image *image, unsigned tile_size)
       return false;
 
    struct pan_block_size renderblk_sz =
-      panfrost_afbc_renderblock_size(image->layout.modifier);
+      pan_afbc_renderblock_size(image->layout.modifier);
 
    assert(renderblk_sz.width >= 16 && renderblk_sz.height >= 16);
    assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));

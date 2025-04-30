@@ -253,55 +253,6 @@ unsigned panfrost_compute_checksum_size(unsigned arch,
                                         struct pan_image_slice_layout *slice,
                                         unsigned width, unsigned height);
 
-/* AFBC format mode. The ordering is intended to match the Valhall hardware enum
- * ("AFBC Compression Mode"), but this enum is required in software on older
- * hardware for correct handling of texture views. Defining the enum lets us
- * unify these code paths.
- */
-enum pan_afbc_mode {
-   PAN_AFBC_MODE_R8,
-   PAN_AFBC_MODE_R8G8,
-   PAN_AFBC_MODE_R5G6B5,
-   PAN_AFBC_MODE_R4G4B4A4,
-   PAN_AFBC_MODE_R5G5B5A1,
-   PAN_AFBC_MODE_R8G8B8,
-   PAN_AFBC_MODE_R8G8B8A8,
-   PAN_AFBC_MODE_R10G10B10A2,
-   PAN_AFBC_MODE_R11G11B10,
-   PAN_AFBC_MODE_S8,
-
-   /* Sentintel signalling a format that cannot be compressed */
-   PAN_AFBC_MODE_INVALID
-};
-
-enum pan_afbc_mode panfrost_afbc_format(unsigned arch, enum pipe_format format);
-
-/* A format may be compressed as AFBC if it has an AFBC internal format */
-
-static inline bool
-panfrost_format_supports_afbc(unsigned arch, enum pipe_format format)
-{
-   return panfrost_afbc_format(arch, format) != PAN_AFBC_MODE_INVALID;
-}
-
-#define AFBC_HEADER_BYTES_PER_TILE 16
-
-bool panfrost_afbc_can_ytr(enum pipe_format format);
-
-bool panfrost_afbc_can_split(unsigned arch, enum pipe_format format,
-                             uint64_t modifier);
-
-bool panfrost_afbc_can_pack(enum pipe_format format);
-
-/*
- * Check if a gen supports AFBC with tiled headers (and hence also solid
- * colour blocks).
- */
-static inline bool panfrost_afbc_can_tile(unsigned arch)
-{
-   return arch >= 7;
-}
-
 /*
  * Represents the block size of a single plane. For AFBC, this represents the
  * superblock size. For u-interleaving, this represents the tile size.
@@ -314,25 +265,7 @@ struct pan_block_size {
    unsigned height;
 };
 
-struct pan_block_size panfrost_afbc_superblock_size(uint64_t modifier);
-
-unsigned panfrost_afbc_superblock_width(uint64_t modifier);
-
-unsigned panfrost_afbc_superblock_height(uint64_t modifier);
-
-struct pan_block_size panfrost_afbc_renderblock_size(uint64_t modifier);
-
-bool panfrost_afbc_is_wide(uint64_t modifier);
-
-struct pan_block_size panfrost_afbc_subblock_size(uint64_t modifier);
-
-uint32_t pan_afbc_row_stride(uint64_t modifier, uint32_t width);
-
-uint32_t pan_afbc_stride_blocks(uint64_t modifier, uint32_t row_stride_bytes);
-
 uint32_t pan_slice_align(uint64_t modifier);
-
-uint32_t pan_afbc_body_align(unsigned arch, uint64_t modifier);
 
 /* AFRC */
 
@@ -460,11 +393,6 @@ struct pan_surface {
 void pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
                            unsigned layer, unsigned sample,
                            struct pan_surface *surf);
-
-#if PAN_ARCH >= 9
-enum mali_afbc_compression_mode
-GENX(pan_afbc_compression_mode)(enum pipe_format format);
-#endif
 
 #if PAN_ARCH >= 10
 enum mali_afrc_format

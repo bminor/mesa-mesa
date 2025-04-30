@@ -17,6 +17,8 @@
 #include "panvk_entrypoints.h"
 #include "panvk_priv_bo.h"
 
+#include "pan_afbc.h"
+
 #include "vk_format.h"
 #include "vk_log.h"
 
@@ -94,7 +96,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       /* v7 requires AFBC reswizzle. */
       if (!util_format_is_depth_or_stencil(pfmt) &&
           !panfrost_format_is_yuv(pfmt) &&
-          panfrost_format_supports_afbc(PAN_ARCH, pfmt))
+          pan_format_supports_afbc(PAN_ARCH, pfmt))
          GENX(panfrost_texture_afbc_reswizzle)(&pview);
 #endif
 

@@ -26,6 +26,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "pan_afbc.h"
 #include "pan_props.h"
 
 #include "panvk_device.h"
@@ -80,7 +81,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
            VK_IMAGE_USAGE_STORAGE_BIT) ||
           image->vk.samples > 1 ||
           !panfrost_query_afbc(&phys_dev->kmod.props) ||
-          !panfrost_format_supports_afbc(arch, pfmt) ||
+          !pan_format_supports_afbc(arch, pfmt) ||
           image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
           image->vk.image_type == VK_IMAGE_TYPE_1D ||
           (image->vk.image_type == VK_IMAGE_TYPE_3D && arch < 7) ||

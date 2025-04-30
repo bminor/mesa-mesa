@@ -46,6 +46,7 @@
 #include "drm-uapi/panfrost_drm.h"
 
 #include "decode.h"
+#include "pan_afbc.h"
 #include "pan_bo.h"
 #include "pan_fence.h"
 #include "pan_public.h"
@@ -248,9 +249,9 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
    /* Query AFBC status */
    struct panfrost_device *dev = pan_device(screen);
    bool afbc =
-      dev->has_afbc && panfrost_format_supports_afbc(dev->arch, format);
-   bool ytr = panfrost_afbc_can_ytr(format);
-   bool tiled_afbc = panfrost_afbc_can_tile(dev->arch);
+      dev->has_afbc && pan_format_supports_afbc(dev->arch, format);
+   bool ytr = pan_afbc_can_ytr(format);
+   bool tiled_afbc = pan_afbc_can_tile(dev->arch);
    bool afrc = allow_afrc && dev->has_afrc && panfrost_format_supports_afrc(format);
    PAN_SUPPORTED_MODIFIERS(supported_mods);
 
@@ -262,7 +263,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
             continue;
 
          if ((supported_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
-             !panfrost_afbc_can_split(dev->arch, format, supported_mods[i]))
+             !pan_afbc_can_split(dev->arch, format, supported_mods[i]))
             continue;
 
          if ((supported_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)

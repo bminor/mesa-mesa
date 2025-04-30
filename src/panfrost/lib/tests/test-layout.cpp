@@ -21,6 +21,7 @@
  * SOFTWARE.
  */
 
+#include "pan_afbc.h"
 #include "pan_texture.h"
 
 #include <gtest/gtest.h>
@@ -111,13 +112,13 @@ TEST(BlockSize, AFBCSuperblock16x16)
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
                               AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).width, 16);
-   EXPECT_EQ(panfrost_afbc_superblock_width(modifier), 16);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).width, 16);
+   EXPECT_EQ(pan_afbc_superblock_width(modifier), 16);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).height, 16);
-   EXPECT_EQ(panfrost_afbc_superblock_height(modifier), 16);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).height, 16);
+   EXPECT_EQ(pan_afbc_superblock_height(modifier), 16);
 
-   EXPECT_FALSE(panfrost_afbc_is_wide(modifier));
+   EXPECT_FALSE(pan_afbc_is_wide(modifier));
 }
 
 TEST(BlockSize, AFBCSuperblock32x8)
@@ -125,13 +126,13 @@ TEST(BlockSize, AFBCSuperblock32x8)
    uint64_t modifier = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
                                                AFBC_FORMAT_MOD_SPARSE);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).width, 32);
-   EXPECT_EQ(panfrost_afbc_superblock_width(modifier), 32);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).width, 32);
+   EXPECT_EQ(pan_afbc_superblock_width(modifier), 32);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).height, 8);
-   EXPECT_EQ(panfrost_afbc_superblock_height(modifier), 8);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).height, 8);
+   EXPECT_EQ(pan_afbc_superblock_height(modifier), 8);
 
-   EXPECT_TRUE(panfrost_afbc_is_wide(modifier));
+   EXPECT_TRUE(pan_afbc_is_wide(modifier));
 }
 
 TEST(BlockSize, AFBCSuperblock64x4)
@@ -139,13 +140,13 @@ TEST(BlockSize, AFBCSuperblock64x4)
    uint64_t modifier = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_64x4 |
                                                AFBC_FORMAT_MOD_SPARSE);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).width, 64);
-   EXPECT_EQ(panfrost_afbc_superblock_width(modifier), 64);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).width, 64);
+   EXPECT_EQ(pan_afbc_superblock_width(modifier), 64);
 
-   EXPECT_EQ(panfrost_afbc_superblock_size(modifier).height, 4);
-   EXPECT_EQ(panfrost_afbc_superblock_height(modifier), 4);
+   EXPECT_EQ(pan_afbc_superblock_size(modifier).height, 4);
+   EXPECT_EQ(pan_afbc_superblock_height(modifier), 4);
 
-   EXPECT_TRUE(panfrost_afbc_is_wide(modifier));
+   EXPECT_TRUE(pan_afbc_is_wide(modifier));
 }
 
 /* Calculate Bifrost line stride, since we have reference formulas for Bifrost
@@ -176,7 +177,7 @@ TEST(AFBCStride, Linear)
    for (unsigned m = 0; m < ARRAY_SIZE(modifiers); ++m) {
       uint64_t modifier = modifiers[m];
 
-      uint32_t sw = panfrost_afbc_superblock_width(modifier);
+      uint32_t sw = pan_afbc_superblock_width(modifier);
       uint32_t cases[] = {1, 4, 17, 39};
 
       for (unsigned i = 0; i < ARRAY_SIZE(cases); ++i) {
@@ -205,7 +206,7 @@ TEST(AFBCStride, Tiled)
    for (unsigned m = 0; m < ARRAY_SIZE(modifiers); ++m) {
       uint64_t modifier = modifiers[m];
 
-      uint32_t sw = panfrost_afbc_superblock_width(modifier);
+      uint32_t sw = pan_afbc_superblock_width(modifier);
       uint32_t cases[] = {1, 4, 17, 39};
 
       for (unsigned i = 0; i < ARRAY_SIZE(cases); ++i) {

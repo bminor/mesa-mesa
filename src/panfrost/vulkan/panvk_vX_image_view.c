@@ -18,6 +18,8 @@
 #include "panvk_image_view.h"
 #include "panvk_priv_bo.h"
 
+#include "pan_afbc.h"
+
 #include "genxml/gen_macros.h"
 
 static enum mali_texture_dimension
@@ -103,7 +105,7 @@ prepare_tex_descs(struct panvk_image_view *view)
 #if PAN_ARCH == 7
    /* v7 requires AFBC reswizzle. */
    else if (!panfrost_format_is_yuv(view->pview.format) &&
-            panfrost_format_supports_afbc(PAN_ARCH, view->pview.format))
+            pan_format_supports_afbc(PAN_ARCH, view->pview.format))
       GENX(panfrost_texture_afbc_reswizzle)(&pview);
 #endif
 

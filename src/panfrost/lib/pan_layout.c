@@ -26,93 +26,9 @@
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/u_math.h"
+#include "pan_afbc.h"
 #include "pan_props.h"
 #include "pan_texture.h"
-
-/* Table of AFBC superblock sizes */
-static const struct pan_block_size afbc_superblock_sizes[] = {
-   [AFBC_FORMAT_MOD_BLOCK_SIZE_16x16] = {16, 16},
-   [AFBC_FORMAT_MOD_BLOCK_SIZE_32x8] = {32, 8},
-   [AFBC_FORMAT_MOD_BLOCK_SIZE_64x4] = {64, 4},
-};
-
-/*
- * Given an AFBC modifier, return the superblock size.
- *
- * We do not yet have any use cases for multiplanar YCBCr formats with different
- * superblock sizes on the luma and chroma planes. These formats are unsupported
- * for now.
- */
-struct pan_block_size
-panfrost_afbc_superblock_size(uint64_t modifier)
-{
-   unsigned index = (modifier & AFBC_FORMAT_MOD_BLOCK_SIZE_MASK);
-
-   assert(drm_is_afbc(modifier));
-   assert(index < ARRAY_SIZE(afbc_superblock_sizes));
-
-   return afbc_superblock_sizes[index];
-}
-
-/*
- * Given an AFBC modifier, return the render size.
- */
-struct pan_block_size
-panfrost_afbc_renderblock_size(uint64_t modifier)
-{
-   unsigned index = (modifier & AFBC_FORMAT_MOD_BLOCK_SIZE_MASK);
-
-   assert(drm_is_afbc(modifier));
-   assert(index < ARRAY_SIZE(afbc_superblock_sizes));
-
-   struct pan_block_size blk_size = afbc_superblock_sizes[index];
-
-  /* The GPU needs to render 16x16 tiles. For wide tiles, that means we
-   * have to extend the render region to have a height of 16 pixels.
-   */
-   blk_size.height = ALIGN_POT(blk_size.height, 16);
-   return blk_size;
-}
-
-/*
- * Given an AFBC modifier, return the width of the superblock.
- */
-unsigned
-panfrost_afbc_superblock_width(uint64_t modifier)
-{
-   return panfrost_afbc_superblock_size(modifier).width;
-}
-
-/*
- * Given an AFBC modifier, return the height of the superblock.
- */
-unsigned
-panfrost_afbc_superblock_height(uint64_t modifier)
-{
-   return panfrost_afbc_superblock_size(modifier).height;
-}
-
-/*
- * Given an AFBC modifier, return if "wide blocks" are used. Wide blocks are
- * defined as superblocks wider than 16 pixels, the minimum (and default) super
- * block width.
- */
-bool
-panfrost_afbc_is_wide(uint64_t modifier)
-{
-   return panfrost_afbc_superblock_width(modifier) > 16;
-}
-
-/*
- * Given an AFBC modifier, return the subblock size (subdivision of a
- * superblock). This is always 4x4 for now as we only support one AFBC
- * superblock layout.
- */
-struct pan_block_size
-panfrost_afbc_subblock_size(uint64_t modifier)
-{
-   return (struct pan_block_size){4, 4};
-}
 
 /*
  * Given an AFRC modifier, return whether the layout is optimized for scan
@@ -231,7 +147,7 @@ panfrost_block_size(uint64_t modifier, enum pipe_format format)
    if (modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED)
       return panfrost_u_interleaved_tile_size(format);
    else if (drm_is_afbc(modifier))
-      return panfrost_afbc_superblock_size(modifier);
+      return pan_afbc_superblock_size(modifier);
    else if (drm_is_afrc(modifier))
       return panfrost_afrc_tile_size(format, modifier);
    else
@@ -248,46 +164,7 @@ panfrost_renderblock_size(uint64_t modifier, enum pipe_format format)
    if (!drm_is_afbc(modifier))
       return panfrost_block_size(modifier, format);
 
-   return panfrost_afbc_renderblock_size(modifier);
-}
-
-/*
- * Determine the tile size used by AFBC. This tiles superblocks themselves.
- * Current GPUs support either 8x8 tiling or no tiling (1x1)
- */
-static inline unsigned
-pan_afbc_tile_size(uint64_t modifier)
-{
-   return (modifier & AFBC_FORMAT_MOD_TILED) ? 8 : 1;
-}
-
-/*
- * Determine the number of bytes between header rows for an AFBC image. For an
- * image with linear headers, this is simply the number of header blocks
- * (=superblocks) per row times the numbers of bytes per header block. For an
- * image with tiled headers, this is multipled by the number of rows of
- * header blocks are in a tile together.
- */
-uint32_t
-pan_afbc_row_stride(uint64_t modifier, uint32_t width)
-{
-   unsigned block_width = panfrost_afbc_superblock_width(modifier);
-
-   return (width / block_width) * pan_afbc_tile_size(modifier) *
-          AFBC_HEADER_BYTES_PER_TILE;
-}
-
-/*
- * Determine the number of header blocks between header rows. This is equal to
- * the number of bytes between header rows divided by the bytes per blocks of a
- * header tile. This is also divided by the tile size to give a "line stride" in
- * blocks, rather than a real row stride. This is required by Bifrost.
- */
-uint32_t
-pan_afbc_stride_blocks(uint64_t modifier, uint32_t row_stride_bytes)
-{
-   return row_stride_bytes /
-          (AFBC_HEADER_BYTES_PER_TILE * pan_afbc_tile_size(modifier));
+   return pan_afbc_renderblock_size(modifier);
 }
 
 /*
@@ -296,23 +173,6 @@ pan_afbc_stride_blocks(uint64_t modifier, uint32_t row_stride_bytes)
 uint32_t
 pan_slice_align(uint64_t modifier)
 {
-   return 64;
-}
-
-/*
- * Determine the required alignment for the body offset of an AFBC image. For
- * now, this depends only on whether tiling is in use. These minimum alignments
- * are required on all current GPUs.
- */
-uint32_t
-pan_afbc_body_align(unsigned arch, uint64_t modifier)
-{
-   if (modifier & AFBC_FORMAT_MOD_TILED)
-      return 4096;
-
-   if (arch >= 6)
-      return 128;
-
    return 64;
 }
 
