@@ -26,6 +26,7 @@
  * @file         vpe_types.h
  * @brief        This is the file containing the API structures for the VPE library.
  */
+
 #pragma once
 
 #include <stdbool.h>
@@ -182,16 +183,16 @@ struct vpe_rom_curve_caps {
  *  @brief Color management caps for dpp layer
  */
 struct dpp_color_caps {
-    uint32_t                  pre_csc    : 1;
-    uint32_t                  luma_key   : 1;
-    uint32_t                  color_key  : 1;
-    uint32_t                  dgam_ram   : 1;
+    uint32_t                  pre_csc    : 1; /**< pre CSC */
+    uint32_t                  luma_key   : 1; /**< luma key */
+    uint32_t                  color_key  : 1; /**< color key */
+    uint32_t                  dgam_ram   : 1; /**< Dgam */
     uint32_t                  post_csc   : 1; /**< before gamut remap */
-    uint32_t                  gamma_corr : 1;
-    uint32_t                  hw_3dlut   : 1;
-    uint32_t                  ogam_ram   : 1;
-    uint32_t                  ocsc       : 1;
-    struct vpe_rom_curve_caps dgam_rom_caps;
+    uint32_t                  gamma_corr : 1; /**< Gamut correction */
+    uint32_t                  hw_3dlut   : 1; /**< HW 3D LUT */
+    uint32_t                  ogam_ram   : 1; /**< Ogam */
+    uint32_t                  ocsc       : 1; /**< OCSC */
+    struct vpe_rom_curve_caps dgam_rom_caps;  /**< Dgam Rom Caps */
 };
 
 /** @struct mpc_color_caps
@@ -214,23 +215,21 @@ struct vpe_color_caps {
     struct mpc_color_caps mpc; /**< MPC color caps */
 };
 
-/**************************************************
- * @struct vpe_caps
- * @brief VPE Capabilities.
- *
- * Those depend on the condition like input format
- * shall be queried by @ref vpe_cap_funcs
- **************************************************/
+/** @struct vpe_caps
+ *  @brief VPE Capabilities
+ *  Those depend on the condition like input format
+ *  shall be queried by @ref vpe_cap_funcs
+ */
 struct vpe_caps {
     uint32_t max_downscale_ratio; /**< max downscaling ratio (src/dest) x 100.
                                      E.g. 4k -> 1080p is 400 */
     uint64_t lut_size;            /**< 3dlut size */
 
-    uint32_t rotation_support       : 1;
-    uint32_t h_mirror_support       : 1;
-    uint32_t v_mirror_support       : 1;
-    uint32_t is_apu                 : 1;
-    uint32_t bg_color_check_support : 1;
+    uint32_t rotation_support       : 1; /**< rotation support */
+    uint32_t h_mirror_support       : 1; /**< horizontal mirror support */
+    uint32_t v_mirror_support       : 1; /**< vertical mirror support */
+    uint32_t is_apu                 : 1; /**< is APU */
+    uint32_t bg_color_check_support : 1; /**< background color check support */
     struct {
         uint32_t num_dpp;
         uint32_t num_opp;
@@ -238,10 +237,10 @@ struct vpe_caps {
         uint32_t num_cdc_be;
 
         uint32_t num_queue; /**< num of hw queue */
-    } resource_caps;
+    } resource_caps;        /**< resource caps */
 
-    struct vpe_color_caps color_caps;
-    struct vpe_plane_caps plane_caps;
+    struct vpe_color_caps color_caps; /**< color management caps */
+    struct vpe_plane_caps plane_caps; /**< plane caps */
 
 };
 
@@ -252,27 +251,27 @@ struct vpe_caps {
  *  @brief DCC surface parameters
  */
 struct vpe_dcc_surface_param {
-    struct vpe_size               surface_size;
-    enum vpe_surface_pixel_format format;
-    enum vpe_swizzle_mode_values  swizzle_mode;
-    enum vpe_scan_direction       scan;
-    enum vpe_mirror               mirror;
+    struct vpe_size               surface_size; /**< surface size */
+    enum vpe_surface_pixel_format format;       /**< surface format */
+    enum vpe_swizzle_mode_values  swizzle_mode; /**< swizzle mode */
+    enum vpe_scan_direction       scan;         /**< scan direction */
+    enum vpe_mirror               mirror;       /**< mirror */
 };
 
 /** @struct vpe_dcc_setting
  *  @brief DCC Settings
  */
 struct vpe_dcc_setting {
-    unsigned int max_compressed_blk_size;
-    unsigned int max_uncompressed_blk_size;
-    bool         independent_64b_blks;
+    unsigned int max_compressed_blk_size;   /**< max compressed block size */
+    unsigned int max_uncompressed_blk_size; /**< max uncompressed block size */
+    bool         independent_64b_blks;      /**< independent 64b blocks */
 
     struct {
         uint32_t dcc_256_64_64             : 1;
         uint32_t dcc_128_128_uncontrained  : 1;
         uint32_t dcc_256_128_128           : 1;
         uint32_t dcc_256_256_unconstrained : 1;
-    } dcc_controls;
+    } dcc_controls; /**< DCC controls */
 };
 
 /** @struct vpe_surface_dcc_cap
@@ -290,8 +289,8 @@ struct vpe_surface_dcc_cap {
         } video;
     };
 
-    bool capable;
-    bool const_color_support;
+    bool capable;             /**< DCC capable */
+    bool const_color_support; /**< DCC const color support */
 
 };
 
@@ -370,18 +369,17 @@ struct vpe_callback_funcs {
  *  @brief Component activation on low power mode. Only used for debugging.
  */
 struct vpe_mem_low_power_enable_options {
-    // override flags
     struct {
         uint32_t dscl : 1;
         uint32_t cm   : 1;
         uint32_t mpc  : 1;
-    } flags;
+    } flags; /**< override flags */
 
     struct {
         uint32_t dscl : 1;
         uint32_t cm   : 1;
         uint32_t mpc  : 1;
-    } bits;
+    } bits; /**< enable bits */
 };
 
 /** @enum vpe_expansion_mode
@@ -408,7 +406,7 @@ enum vpe_clamping_range {
  *  @brief Upper and lower bound of each color channel for clamping.
  */
 struct vpe_clamping_params {
-    enum vpe_clamping_range clamping_range;
+    enum vpe_clamping_range clamping_range;          /**< Clamping range */
     uint32_t                r_clamp_component_upper; /**< Red channel upper bound */
     uint32_t                b_clamp_component_upper; /**< Blue channel upper bound */
     uint32_t                g_clamp_component_upper; /**< Green channel upper bound */
@@ -671,12 +669,15 @@ struct vpe_surface_info {
     enum vpe_swizzle_mode_values swizzle;     /**< Swizzle mode */
 
     struct vpe_plane_size         plane_size; /**< Pitch */
-    struct vpe_plane_dcc_param    dcc;
+    struct vpe_plane_dcc_param    dcc;        /**< DCC parameters */
     enum vpe_surface_pixel_format format;     /**< Surface pixel format */
 
     struct vpe_color_space cs;                /**< Surface color space */
 };
 
+/** @struct vpe_blend_info
+ *  @brief Blending parameters
+ */
 struct vpe_blend_info {
     bool  blending;             /**< Enable blending */
     bool  pre_multiplied_alpha; /**< Is the pixel value pre-multiplied with alpha */
@@ -734,9 +735,12 @@ struct vpe_hdr_metadata {
     uint32_t avg_content;   /**< Frame's average light level */
 };
 
+/** @struct vpe_reserved_param
+ *  @brief Reserved parameter
+ */
 struct vpe_reserved_param {
-    void    *param;
-    uint32_t size;
+    void    *param; /**< Reserved parameter */
+    uint32_t size;  /**< Size of the reserved parameter */
 };
 
 /** @struct vpe_tonemap_params
@@ -759,7 +763,7 @@ struct vpe_tonemap_params {
     union {
         uint16_t *lut_data;                          /**< Accessible to CPU */
     };
-    bool is_dma_lut;
+    bool is_dma_lut;   /**< DMA LUT */
     bool enable_3dlut; /**< Enable/Disable 3D-LUT */
 };
 
@@ -773,7 +777,7 @@ enum vpe_keyer_mode {
     VPE_KEYER_MODE_FORCE_FF,     /**< ignore range setting, force generating alpha = FF */
 };
 
-/** @enum vpe_color_keyer
+/** @struct vpe_color_keyer
  *  @brief Input Parameters for Color keyer.
  *  bounds should be programmed to 0.0 <= 1.0, with lower < upper
  *  if format does not have alpha (RGBx) when using the color keyer, alpha should be programmed to
@@ -823,7 +827,7 @@ struct vpe_stream {
     enum vpe_keyer_mode    keyer_mode;  /**< Set Keyer Behavior.
                                          * Used for both Luma & Color Keying.
                                          */
-    struct vpe_reserved_param        reserved_param;
+    struct vpe_reserved_param reserved_param;     /**< Reserved parameter for input surface */
 
     struct {
         uint32_t hdr_metadata : 1;
@@ -834,7 +838,7 @@ struct vpe_stream {
                                          * Destination rect must equal to target rect.
                                          */
         uint32_t reserved : 30;
-    } flags;
+    } flags; /**< Data flags */
 };
 
 enum predication_polarity {
@@ -854,22 +858,22 @@ struct vpe_predication_info {
  */
 struct vpe_build_param {
 
-    uint32_t                num_streams;    /**< Number of source streams */
-    struct vpe_stream      *streams;        /**< List of input streams */
-    struct vpe_surface_info dst_surface;    /**< Destination/Output surface */
-    struct vpe_rect         target_rect;    /**< rectangle in target surface to be blt'd.
-                                               Ranges out of target_rect won't be touched */
-    struct vpe_color    bg_color;           /**< Background Color */
-    enum vpe_alpha_mode alpha_mode;         /**< Alpha Mode. Output alpha in the output
-                                               surface */
-    struct vpe_hdr_metadata   hdr_metadata; /**< HDR Metadata */
-    struct vpe_reserved_param dst_reserved_param;
-    struct vpe_predication_info predication_info;
-    // data flags
+    uint32_t                num_streams;          /**< Number of source streams */
+    struct vpe_stream      *streams;              /**< List of input streams */
+    struct vpe_surface_info dst_surface;          /**< Destination/Output surface */
+    struct vpe_rect         target_rect;          /**< rectangle in target surface to be blt'd.
+                                                       Ranges out of target_rect won't be touched */
+    struct vpe_color    bg_color;                 /**< Background Color */
+    enum vpe_alpha_mode alpha_mode;               /**< Alpha Mode. Output alpha in the output
+                                                       surface */
+    struct vpe_hdr_metadata   hdr_metadata;       /**< HDR Metadata */
+    struct vpe_reserved_param dst_reserved_param; /**< Reserved parameter for destination surface */
+    struct vpe_predication_info predication_info; /**< Predication info */
+
     struct {
         uint32_t hdr_metadata : 1;
         uint32_t reserved     : 31;
-    } flags;
+    } flags; /**< Data flags */
 
     uint16_t num_instances;      /**< Number of instances for the collaboration mode */
     bool     collaboration_mode; /**< Collaboration mode. If set, multiple instances of VPE being

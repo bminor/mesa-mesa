@@ -26,6 +26,7 @@
  * @file         vpe_version.h
  * @brief        This is the file containing the information and definitions for VPE versioning.
  */
+/** @cond */
 #pragma once
 
 #ifdef __cplusplus
@@ -57,3 +58,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+/** @endcond */
