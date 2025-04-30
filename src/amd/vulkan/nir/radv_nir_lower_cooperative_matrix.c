@@ -181,6 +181,26 @@ radv_get_base_row(nir_builder *b, struct glsl_cmat_description desc, const lower
    return base_row;
 }
 
+static nir_def *
+convert_base_type(nir_builder *b, nir_def *src, enum glsl_base_type src_type, enum glsl_base_type dst_type)
+{
+   if (dst_type == src_type)
+      return src;
+
+   if (src_type == GLSL_TYPE_BFLOAT16) {
+      src = nir_bf2f(b, src);
+      return convert_base_type(b, src, GLSL_TYPE_FLOAT, dst_type);
+   } else if (dst_type == GLSL_TYPE_BFLOAT16) {
+      src = convert_base_type(b, src, src_type, GLSL_TYPE_FLOAT);
+      return nir_f2bf(b, src);
+   }
+
+   nir_op op = nir_type_conversion_op(nir_get_nir_type_for_glsl_base_type(src_type),
+                                      nir_get_nir_type_for_glsl_base_type(dst_type), nir_rounding_mode_undef);
+
+   return nir_build_alu1(b, op, src);
+}
+
 bool
 radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_level, unsigned wave_size)
 {
@@ -452,10 +472,6 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                enum glsl_base_type src_element_type = glsl_apply_signedness_to_base_type(
                   src_desc.element_type, cmat_signed_mask & NIR_CMAT_A_SIGNED);
 
-               nir_op op = nir_type_conversion_op(nir_get_nir_type_for_glsl_base_type(src_element_type),
-                                                  nir_get_nir_type_for_glsl_base_type(dst_element_type),
-                                                  nir_rounding_mode_undef);
-
                unsigned dst_mul = radv_nir_cmat_length_mul(dst_desc, &params);
                unsigned src_mul = radv_nir_cmat_length_mul(src_desc, &params);
 
@@ -468,7 +484,7 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   src = nir_vec(&b, components, src->num_components / scale);
                }
 
-               nir_def *ret = nir_build_alu1(&b, op, src);
+               nir_def *ret = convert_base_type(&b, src, src_element_type, dst_element_type);
 
                if (dst_mul > src_mul) {
                   nir_def *components[NIR_MAX_VEC_COMPONENTS];
