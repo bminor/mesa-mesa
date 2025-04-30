@@ -304,7 +304,7 @@
         "description": "intel/tools: Fix batch buffer decoder",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec2d20a70d018736c6ef7cb5bbbe48d82e8c6b4c",
         "notes": null
