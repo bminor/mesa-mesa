@@ -54,7 +54,6 @@
 #include "pan_resource.h"
 #include "pan_screen.h"
 #include "pan_shader.h"
-#include "pan_texture.h"
 #include "pan_util.h"
 
 #include "pan_context.h"

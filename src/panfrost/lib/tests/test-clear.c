@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include "pan_texture.h"
+#include "pan_image.h"
 #include "pan_util.h"
 
 /* A test consists of a render target format, clear colour, dither state, and

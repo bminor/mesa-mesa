@@ -1766,20 +1766,20 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 #if PAN_ARCH >= 7
    /* v7+ doesn't have an _RRRR component order. */
    if (util_format_is_depth_or_stencil(format))
-      GENX(panfrost_texture_swizzle_replicate_x)(&iview);
+      GENX(pan_texture_swizzle_replicate_x)(&iview);
 #endif
 #if PAN_ARCH == 7
    /* v7 requires AFBC reswizzle */
    if (!util_format_is_depth_or_stencil(format) &&
        !panfrost_format_is_yuv(format) &&
        pan_format_supports_afbc(PAN_ARCH, format))
-      GENX(panfrost_texture_afbc_reswizzle)(&iview);
+      GENX(pan_texture_afbc_reswizzle)(&iview);
 #endif
 
    panfrost_set_image_view_planes(&iview, texture);
 
    unsigned size = (PAN_ARCH <= 5 ? pan_size(TEXTURE) : 0) +
-                   GENX(panfrost_estimate_texture_payload_size)(&iview);
+                   GENX(pan_texture_estimate_payload_size)(&iview);
 
    struct panfrost_pool *pool = so->pool ?: &ctx->descs;
    struct panfrost_ptr payload = pan_pool_alloc_aligned(&pool->base, size, 64);
@@ -1817,7 +1817,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       iview.astc.narrow = true;
    }
 
-   GENX(panfrost_new_texture)(&iview, tex, &payload);
+   GENX(pan_texture_emit)(&iview, tex, &payload);
 }
 
 static void
@@ -2025,11 +2025,12 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
       bool is_3d = rsrc->base.target == PIPE_TEXTURE_3D;
       bool is_buffer = rsrc->base.target == PIPE_BUFFER;
 
-      unsigned offset = is_buffer ? image->u.buf.offset
-                                  : panfrost_texture_offset(
-                                       &rsrc->image.layout, image->u.tex.level,
-                                       (is_3d || is_msaa) ? 0 : image->u.tex.first_layer,
-                                       (is_3d || is_msaa) ? image->u.tex.first_layer : 0);
+      unsigned offset =
+         is_buffer ? image->u.buf.offset
+                   : pan_image_surface_offset(
+                        &rsrc->image.layout, image->u.tex.level,
+                        (is_3d || is_msaa) ? 0 : image->u.tex.first_layer,
+                        (is_3d || is_msaa) ? image->u.tex.first_layer : 0);
 
       panfrost_track_image_access(batch, shader, image);
 
@@ -2064,7 +2065,7 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
          cfg.row_stride = rsrc->image.layout.slices[level].row_stride;
          if (cfg.r_dimension > 1) {
             cfg.slice_stride =
-               panfrost_get_layer_stride(&rsrc->image.layout, level);
+               pan_image_surface_stride(&rsrc->image.layout, level);
          }
 
          if (is_msaa) {
@@ -2073,7 +2074,8 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
                   the R dimension */
                cfg.r_dimension = samples;
                cfg.slice_stride =
-                  panfrost_get_layer_stride(&rsrc->image.layout, level) / samples;
+                  pan_image_surface_stride(&rsrc->image.layout, level) /
+                  samples;
             } else {
                /* multisampled image arrays are emulated by making the
                   image "samples" times higher than the original image,

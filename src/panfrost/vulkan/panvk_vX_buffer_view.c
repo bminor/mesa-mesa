@@ -18,6 +18,8 @@
 #include "panvk_priv_bo.h"
 
 #include "pan_afbc.h"
+#include "pan_props.h"
+#include "pan_texture.h"
 
 #include "vk_format.h"
 #include "vk_log.h"
@@ -97,14 +99,14 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       if (!util_format_is_depth_or_stencil(pfmt) &&
           !panfrost_format_is_yuv(pfmt) &&
           pan_format_supports_afbc(PAN_ARCH, pfmt))
-         GENX(panfrost_texture_afbc_reswizzle)(&pview);
+         GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
 
       pan_image_layout_init(arch, &plane.layout, NULL);
 
       struct panvk_pool_alloc_info alloc_info = {
          .alignment = pan_alignment(TEXTURE),
-         .size = GENX(panfrost_estimate_texture_payload_size)(&pview),
+         .size = GENX(pan_texture_estimate_payload_size)(&pview),
       };
 
       view->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
@@ -114,7 +116,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
 
-      GENX(panfrost_new_texture)(&pview, &view->descs.tex, &ptr);
+      GENX(pan_texture_emit)(&pview, &view->descs.tex, &ptr);
    }
 
 #if PAN_ARCH <= 7

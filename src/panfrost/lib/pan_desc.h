@@ -30,7 +30,8 @@
 
 #include "genxml/gen_macros.h"
 
-#include "pan_texture.h"
+#include "pan_image.h"
+#include "pan_pool.h"
 
 struct pan_compute_dim {
    uint32_t x, y, z;

@@ -35,6 +35,7 @@
 #include "pan_encoder.h"
 #include "pan_props.h"
 #include "pan_texture.h"
+#include "pan_util.h"
 
 #define PAN_BIN_LEVEL_COUNT 12
 
@@ -99,7 +100,7 @@ renderblock_fits_in_single_pass(const struct pan_image_view *view,
    if (!drm_is_afbc(mod))
       return tile_size >= 16 * 16;
 
-   struct pan_block_size renderblk_sz = pan_afbc_renderblock_size(mod);
+   struct pan_image_block_size renderblk_sz = pan_afbc_renderblock_size(mod);
    return tile_size >= renderblk_sz.width * renderblk_sz.height;
 }
 
@@ -216,7 +217,7 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
 
    ext->s_msaa = mali_sampling_mode(s);
 
-   struct pan_surface surf;
+   struct pan_image_surface surf;
    pan_iview_get_surface(s, 0, layer_idx, 0, &surf);
 
    assert(image->layout.modifier ==
@@ -246,7 +247,7 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
 
    ext->zs_msaa = mali_sampling_mode(zs);
 
-   struct pan_surface surf;
+   struct pan_image_surface surf;
    pan_iview_get_surface(zs, 0, layer_idx, 0, &surf);
    UNUSED const struct pan_image_slice_layout *slice =
       &image->layout.slices[level];
@@ -609,7 +610,7 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 
    cfg->writeback_block_format = mod_to_block_fmt(image->layout.modifier);
 
-   struct pan_surface surf;
+   struct pan_image_surface surf;
    pan_iview_get_surface(rt, 0, layer_idx, 0, &surf);
 
    if (drm_is_afbc(image->layout.modifier)) {
@@ -789,7 +790,7 @@ pan_force_clean_write_on(const struct pan_image *image, unsigned tile_size)
    if (!drm_is_afbc(image->layout.modifier))
       return false;
 
-   struct pan_block_size renderblk_sz =
+   struct pan_image_block_size renderblk_sz =
       pan_afbc_renderblock_size(image->layout.modifier);
 
    assert(renderblk_sz.width >= 16 && renderblk_sz.height >= 16);
@@ -1077,7 +1078,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          }
 
          unsigned level = rt->first_level;
-         struct pan_surface surf;
+         struct pan_image_surface surf;
 
          pan_iview_get_surface(rt, 0, 0, 0, &surf);
 
@@ -1105,7 +1106,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          const struct pan_image_view *zs = fb->zs.view.zs;
          const struct pan_image *image = pan_image_view_get_zs_plane(zs);
          unsigned level = zs->first_level;
-         struct pan_surface surf;
+         struct pan_image_surface surf;
 
          pan_iview_get_surface(zs, 0, 0, 0, &surf);
 

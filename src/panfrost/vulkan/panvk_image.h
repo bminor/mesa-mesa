@@ -8,7 +8,7 @@
 
 #include "vk_image.h"
 
-#include "pan_texture.h"
+#include "pan_image.h"
 
 #define PANVK_MAX_PLANES 3
 

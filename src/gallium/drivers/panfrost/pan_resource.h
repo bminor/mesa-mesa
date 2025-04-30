@@ -29,7 +29,6 @@
 #include "util/u_range.h"
 #include "pan_minmax_cache.h"
 #include "pan_screen.h"
-#include "pan_texture.h"
 
 #define LAYOUT_CONVERT_THRESHOLD 8
 #define PAN_MAX_BATCHES          32

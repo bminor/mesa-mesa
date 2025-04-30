@@ -27,7 +27,6 @@
 #include "util/hash_table.h"
 
 #include "panfrost/util/pan_ir.h"
-#include "pan_texture.h"
 
 struct panfrost_context;
 struct panfrost_resource;

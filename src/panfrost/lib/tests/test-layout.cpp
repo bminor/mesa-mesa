@@ -22,7 +22,7 @@
  */
 
 #include "pan_afbc.h"
-#include "pan_texture.h"
+#include "pan_image.h"
 
 #include <gtest/gtest.h>
 
@@ -33,8 +33,8 @@ TEST(BlockSize, Linear)
                                 PIPE_FORMAT_ASTC_5x5};
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_block_size blk =
-         panfrost_block_size(DRM_FORMAT_MOD_LINEAR, format[i]);
+      struct pan_image_block_size blk =
+         pan_image_block_size(DRM_FORMAT_MOD_LINEAR, format[i]);
 
       EXPECT_EQ(blk.width, 1);
       EXPECT_EQ(blk.height, 1);
@@ -49,7 +49,7 @@ TEST(BlockSize, UInterleavedRegular)
    };
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_block_size blk = panfrost_block_size(
+      struct pan_image_block_size blk = pan_image_block_size(
          DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, format[i]);
 
       EXPECT_EQ(blk.width, 16);
@@ -62,7 +62,7 @@ TEST(BlockSize, UInterleavedBlockCompressed)
    enum pipe_format format[] = {PIPE_FORMAT_ETC2_RGB8, PIPE_FORMAT_ASTC_5x5};
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_block_size blk = panfrost_block_size(
+      struct pan_image_block_size blk = pan_image_block_size(
          DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, format[i]);
 
       EXPECT_EQ(blk.width, 4);
@@ -81,7 +81,8 @@ TEST(BlockSize, AFBCFormatInvariant16x16)
                               AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR);
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_block_size blk = panfrost_block_size(modifier, format[i]);
+      struct pan_image_block_size blk =
+         pan_image_block_size(modifier, format[i]);
 
       EXPECT_EQ(blk.width, 16);
       EXPECT_EQ(blk.height, 16);
@@ -99,7 +100,8 @@ TEST(BlockSize, AFBCFormatInvariant32x8)
                               AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR);
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_block_size blk = panfrost_block_size(modifier, format[i]);
+      struct pan_image_block_size blk =
+         pan_image_block_size(modifier, format[i]);
 
       EXPECT_EQ(blk.width, 32);
       EXPECT_EQ(blk.height, 8);

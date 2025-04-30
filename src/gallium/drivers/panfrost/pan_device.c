@@ -35,7 +35,6 @@
 #include "pan_device.h"
 #include "pan_encoder.h"
 #include "pan_samples.h"
-#include "pan_texture.h"
 #include "pan_util.h"
 #include "wrap.h"
 

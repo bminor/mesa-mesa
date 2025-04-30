@@ -34,7 +34,6 @@
 #include "pan_encoder.h"
 #include "pan_job.h"
 #include "pan_resource.h"
-#include "pan_texture.h"
 
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"

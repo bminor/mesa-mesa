@@ -11,6 +11,7 @@
 #include "panvk_entrypoints.h"
 
 #include "pan_desc.h"
+#include "pan_util.h"
 
 static void
 render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,

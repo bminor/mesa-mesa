@@ -28,7 +28,6 @@
 #include "util/format/u_format.h"
 #include "pan_desc.h"
 #include "pan_pool.h"
-#include "pan_texture.h"
 #include "pan_util.h"
 
 struct pan_blend_shader_cache;

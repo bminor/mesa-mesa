@@ -19,6 +19,7 @@
 #include "panvk_priv_bo.h"
 
 #include "pan_afbc.h"
+#include "pan_texture.h"
 
 #include "genxml/gen_macros.h"
 
@@ -106,7 +107,7 @@ prepare_tex_descs(struct panvk_image_view *view)
    /* v7 requires AFBC reswizzle. */
    else if (!panfrost_format_is_yuv(view->pview.format) &&
             pan_format_supports_afbc(PAN_ARCH, view->pview.format))
-      GENX(panfrost_texture_afbc_reswizzle)(&pview);
+      GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
 
    /* If the view contains both stencil and depth, we need to keep only the
@@ -116,8 +117,7 @@ prepare_tex_descs(struct panvk_image_view *view)
       pview.format = PIPE_FORMAT_Z32_FLOAT;
 
    uint32_t plane_count = vk_format_get_plane_count(view->vk.format);
-   uint32_t tex_payload_size =
-      GENX(panfrost_estimate_texture_payload_size)(&pview);
+   uint32_t tex_payload_size = GENX(pan_texture_estimate_payload_size)(&pview);
 
    struct panvk_pool_alloc_info alloc_info = {
 #if PAN_ARCH == 6
@@ -171,10 +171,10 @@ prepare_tex_descs(struct panvk_image_view *view)
          pview.planes[0] = view->pview.planes[plane];
          pview.format = vk_format_to_pipe_format(plane_format);
 
-         GENX(panfrost_new_texture)(&pview, &view->descs.tex[plane], &ptr);
+         GENX(pan_texture_emit)(&pview, &view->descs.tex[plane], &ptr);
 #if PAN_ARCH >= 9
          if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
-            GENX(panfrost_new_storage_texture)(
+            GENX(pan_storage_texture_emit)(
                &pview, &view->descs.storage_tex[plane], &storage_ptr);
             storage_ptr.cpu += tex_payload_size;
             storage_ptr.gpu += tex_payload_size;
@@ -185,11 +185,11 @@ prepare_tex_descs(struct panvk_image_view *view)
          ptr.gpu += tex_payload_size;
       }
    } else {
-      GENX(panfrost_new_texture)(&pview, &view->descs.tex[0], &ptr);
+      GENX(pan_texture_emit)(&pview, &view->descs.tex[0], &ptr);
 #if PAN_ARCH >= 9
       if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
-         GENX(panfrost_new_storage_texture)(&pview, &view->descs.storage_tex[0],
-                                            &storage_ptr);
+         GENX(pan_storage_texture_emit)(&pview, &view->descs.storage_tex[0],
+                                        &storage_ptr);
 #endif
    }
 
@@ -217,7 +217,7 @@ prepare_tex_descs(struct panvk_image_view *view)
    ptr.cpu += tex_payload_size;
    ptr.gpu += tex_payload_size;
 
-   GENX(panfrost_new_texture)(&pview, &view->descs.zs.other_aspect_tex, &ptr);
+   GENX(pan_texture_emit)(&pview, &view->descs.zs.other_aspect_tex, &ptr);
    return VK_SUCCESS;
 }
 
@@ -243,7 +243,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
    bool is_3d =
       image->planes[plane_idx].layout.dim == MALI_TEXTURE_DIMENSION_3D;
    unsigned offset = image->planes[plane_idx].data.offset;
-   offset += panfrost_texture_offset(
+   offset += pan_image_surface_offset(
       &image->planes[plane_idx].layout, view->pview.first_level,
       is_3d ? 0 : view->pview.first_layer, is_3d ? view->pview.first_layer : 0);
 
@@ -283,7 +283,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
       cfg.row_stride = image->planes[plane_idx].layout.slices[level].row_stride;
       if (cfg.r_dimension > 1) {
          cfg.slice_stride =
-            panfrost_get_layer_stride(&image->planes[plane_idx].layout, level);
+            pan_image_surface_stride(&image->planes[plane_idx].layout, level);
       }
    }
 }

@@ -14,7 +14,7 @@
 #define __PAN_AFBC_H
 
 #include "pan_format.h"
-#include "pan_texture.h"
+#include "pan_layout.h"
 
 #include "drm-uapi/drm_fourcc.h"
 
@@ -92,7 +92,7 @@ enum pan_afbc_mode {
  * superblock sizes on the luma and chroma planes. These formats are unsupported
  * for now.
  */
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afbc_superblock_size(uint64_t modifier)
 {
    unsigned index = (modifier & AFBC_FORMAT_MOD_BLOCK_SIZE_MASK);
@@ -101,24 +101,24 @@ pan_afbc_superblock_size(uint64_t modifier)
 
    switch (index) {
    case AFBC_FORMAT_MOD_BLOCK_SIZE_16x16:
-      return (struct pan_block_size){16, 16};
+      return (struct pan_image_block_size){16, 16};
    case AFBC_FORMAT_MOD_BLOCK_SIZE_32x8:
-      return (struct pan_block_size){32, 8};
+      return (struct pan_image_block_size){32, 8};
    case AFBC_FORMAT_MOD_BLOCK_SIZE_64x4:
-      return (struct pan_block_size){64, 4};
+      return (struct pan_image_block_size){64, 4};
    default:
       assert(!"Unsupported AFBC block size");
-      return (struct pan_block_size){0, 0};
+      return (struct pan_image_block_size){0, 0};
    }
 }
 
 /*
  * Given an AFBC modifier, return the render size.
  */
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afbc_renderblock_size(uint64_t modifier)
 {
-   struct pan_block_size blk_size = pan_afbc_superblock_size(modifier);
+   struct pan_image_block_size blk_size = pan_afbc_superblock_size(modifier);
 
    /* The GPU needs to render 16x16 tiles. For wide tiles, that means we
     * have to extend the render region to have a height of 16 pixels.
@@ -161,10 +161,10 @@ pan_afbc_is_wide(uint64_t modifier)
  * superblock). This is always 4x4 for now as we only support one AFBC
  * superblock layout.
  */
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afbc_subblock_size(uint64_t modifier)
 {
-   return (struct pan_block_size){4, 4};
+   return (struct pan_image_block_size){4, 4};
 }
 
 /*

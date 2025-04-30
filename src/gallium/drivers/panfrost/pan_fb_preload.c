@@ -875,7 +875,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
          struct pan_image_view *pview = &patched_views[patched_count++];
          *pview = *view;
          /* v7+ doesn't have an _RRRR component order. */
-         GENX(panfrost_texture_swizzle_replicate_x)(pview);
+         GENX(pan_texture_swizzle_replicate_x)(pview);
          view = pview;
 #endif
          views[tex_count++] = view;
@@ -902,7 +902,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
          *pview = *view;
          pview->format = fmt;
          /* v7+ doesn't have an _RRRR component order. */
-         GENX(panfrost_texture_swizzle_replicate_x)(pview);
+         GENX(pan_texture_swizzle_replicate_x)(pview);
          view = pview;
 #else
          if (fmt != view->format) {
@@ -924,7 +924,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
                 pan_format_supports_afbc(PAN_ARCH, view->format)) {
                struct pan_image_view *pview = &patched_views[patched_count++];
                *pview = *view;
-               GENX(panfrost_texture_afbc_reswizzle)(pview);
+               GENX(pan_texture_afbc_reswizzle)(pview);
                view = pview;
             }
 #endif
@@ -945,11 +945,11 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
    for (unsigned i = 0; i < tex_count; i++) {
       void *texture = textures.cpu + (pan_size(TEXTURE) * i);
       size_t payload_size =
-         GENX(panfrost_estimate_texture_payload_size)(views[i]);
+         GENX(pan_texture_estimate_payload_size)(views[i]);
       struct panfrost_ptr surfaces =
          pan_pool_alloc_aligned(pool, payload_size, 64);
 
-      GENX(panfrost_new_texture)(views[i], texture, &surfaces);
+      GENX(pan_texture_emit)(views[i], texture, &surfaces);
    }
 
    return textures.gpu;
@@ -958,7 +958,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
 
    for (unsigned i = 0; i < tex_count; i++) {
       size_t sz = pan_size(TEXTURE) +
-                  GENX(panfrost_estimate_texture_payload_size)(views[i]);
+                  GENX(pan_texture_estimate_payload_size)(views[i]);
       struct panfrost_ptr texture =
          pan_pool_alloc_aligned(pool, sz, pan_alignment(TEXTURE));
       struct panfrost_ptr surfaces = {
@@ -966,7 +966,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
          .gpu = texture.gpu + pan_size(TEXTURE),
       };
 
-      GENX(panfrost_new_texture)(views[i], texture.cpu, &surfaces);
+      GENX(pan_texture_emit)(views[i], texture.cpu, &surfaces);
       textures[i] = texture.gpu;
    }
 

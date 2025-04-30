@@ -8,6 +8,8 @@
 #include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
 
+#include "pan_props.h"
+
 #include "vk_log.h"
 
 #define PANVK_MAX_BUFFER_SIZE (1 << 30)

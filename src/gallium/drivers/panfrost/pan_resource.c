@@ -782,8 +782,8 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
 
    if (dev->ro && (template->bind & PIPE_BIND_SCANOUT)) {
       struct winsys_handle handle;
-      struct pan_block_size blocksize =
-         panfrost_renderblock_size(modifier, template->format);
+      struct pan_image_block_size blocksize =
+         pan_image_renderblock_size(modifier, template->format);
 
       /* Block-based texture formats are only used for texture
        * compression (not framebuffer compression!), which doesn't
@@ -1027,7 +1027,7 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
       return;
 
    struct panfrost_bo *bo = rsrc->bo;
-   unsigned stride = panfrost_get_layer_stride(&rsrc->image.layout, level);
+   unsigned stride = pan_image_surface_stride(&rsrc->image.layout, level);
 
    /* Otherwise, load each layer separately, required to load from 3D and
     * array textures.
@@ -1088,7 +1088,7 @@ dump_block(struct panfrost_resource *rsrc, uint32_t idx)
    uint32_t *header = (uint32_t *)(ptr + (idx * AFBC_HEADER_BYTES_PER_TILE));
    uint32_t body_base_ptr = header[0];
    uint32_t *body = (uint32_t *)(ptr + body_base_ptr);
-   struct pan_block_size block_sz =
+   struct pan_image_block_size block_sz =
       pan_afbc_subblock_size(rsrc->image.layout.modifier);
    unsigned pixel_sz = util_format_get_blocksize(rsrc->base.format);
    unsigned uncompressed_size = pixel_sz * block_sz.width * block_sz.height;
@@ -1180,7 +1180,7 @@ panfrost_store_tiled_images(struct panfrost_transfer *transfer,
    struct panfrost_bo *bo = rsrc->bo;
    struct pipe_transfer *ptrans = &transfer->base;
    unsigned level = ptrans->level;
-   unsigned stride = panfrost_get_layer_stride(&rsrc->image.layout, level);
+   unsigned stride = pan_image_surface_stride(&rsrc->image.layout, level);
 
    /* Otherwise, store each layer separately, required to store to 3D and
     * array textures.
@@ -1263,7 +1263,7 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
        */
       transfer->base.stride = staging->image.layout.slices[0].row_stride;
       transfer->base.layer_stride =
-         panfrost_get_layer_stride(&staging->image.layout, 0);
+         pan_image_surface_stride(&staging->image.layout, 0);
 
       transfer->staging.rsrc = &staging->base;
 
@@ -1439,7 +1439,7 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
 
       transfer->base.stride = rsrc->image.layout.slices[level].row_stride;
       transfer->base.layer_stride =
-         panfrost_get_layer_stride(&rsrc->image.layout, level);
+         pan_image_surface_stride(&rsrc->image.layout, level);
 
       /* By mapping direct-write, we're implicitly already
        * initialized (maybe), so be conservative */
@@ -1774,7 +1774,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          }
       }
 
-      total_size = ALIGN_POT(total_size, pan_slice_align(dst_modifier));
+      total_size = ALIGN_POT(total_size, pan_image_slice_align(dst_modifier));
       {
          unsigned width = u_minify(prsrc->base.width0, level);
          unsigned height = u_minify(prsrc->base.height0, level);

@@ -11,7 +11,7 @@
 #define __PAN_AFRC_H
 
 #include "pan_format.h"
-#include "pan_texture.h"
+#include "pan_layout.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,23 +135,23 @@ struct pan_afrc_block_size {
       BLOCK_SIZE(32, 2048),                                                    \
    }
 
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afrc_clump_size(enum pipe_format format, bool scan)
 {
    struct pan_afrc_format_info finfo = pan_afrc_get_format_info(format);
 
    switch (finfo.num_comps) {
    case 1:
-      return scan ? (struct pan_block_size){16, 4}
-                  : (struct pan_block_size){8, 8};
+      return scan ? (struct pan_image_block_size){16, 4}
+                  : (struct pan_image_block_size){8, 8};
    case 2:
-      return (struct pan_block_size){8, 4};
+      return (struct pan_image_block_size){8, 4};
    case 3:
    case 4:
-      return (struct pan_block_size){4, 4};
+      return (struct pan_image_block_size){4, 4};
    default:
       assert(0);
-      return (struct pan_block_size){0, 0};
+      return (struct pan_image_block_size){0, 0};
    }
 }
 
@@ -160,7 +160,7 @@ static inline unsigned
 pan_afrc_clump_get_nr_components(enum pipe_format format, bool scan)
 {
    const struct util_format_description *desc = util_format_description(format);
-   struct pan_block_size clump_sz = pan_afrc_clump_size(format, scan);
+   struct pan_image_block_size clump_sz = pan_afrc_clump_size(format, scan);
    return clump_sz.width * clump_sz.height * desc->nr_channels;
 }
 
@@ -288,24 +288,24 @@ pan_afrc_get_rate(enum pipe_format format, uint64_t modifier)
    return block_sz / block_comps;
 }
 
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afrc_layout_size(uint64_t modifier)
 {
    if (pan_afrc_is_scan(modifier))
-      return (struct pan_block_size){16, 4};
+      return (struct pan_image_block_size){16, 4};
    else
-      return (struct pan_block_size){8, 8};
+      return (struct pan_image_block_size){8, 8};
 }
 
-static inline struct pan_block_size
+static inline struct pan_image_block_size
 pan_afrc_tile_size(enum pipe_format format, uint64_t modifier)
 {
    bool scan = pan_afrc_is_scan(modifier);
-   struct pan_block_size clump_sz = pan_afrc_clump_size(format, scan);
-   struct pan_block_size layout_sz = pan_afrc_layout_size(modifier);
+   struct pan_image_block_size clump_sz = pan_afrc_clump_size(format, scan);
+   struct pan_image_block_size layout_sz = pan_afrc_layout_size(modifier);
 
-   return (struct pan_block_size){clump_sz.width * layout_sz.width,
-                                  clump_sz.height * layout_sz.height};
+   return (struct pan_image_block_size){clump_sz.width * layout_sz.width,
+                                        clump_sz.height * layout_sz.height};
 }
 
 static inline unsigned
@@ -329,7 +329,7 @@ pan_afrc_buffer_alignment_from_modifier(uint64_t modifier)
 static inline uint32_t
 pan_afrc_row_stride(enum pipe_format format, uint64_t modifier, uint32_t width)
 {
-   struct pan_block_size tile_size = pan_afrc_tile_size(format, modifier);
+   struct pan_image_block_size tile_size = pan_afrc_tile_size(format, modifier);
    unsigned block_size = pan_afrc_block_size_from_modifier(modifier);
 
    return (width / tile_size.width) * block_size * AFRC_CLUMPS_PER_TILE;
