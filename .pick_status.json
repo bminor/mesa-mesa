@@ -584,7 +584,7 @@
         "description": "pan/bi: Stop writing pan_shader_info::vs::idvs on non VS stages",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1d21de788d3f4f7fbdcf5b57884bc149a2e219e3",
         "notes": null
