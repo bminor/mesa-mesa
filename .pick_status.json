@@ -2404,7 +2404,7 @@
         "description": "llvmpipe: Fix dmabuf import paths for DRM_FORMAT_YUYV variants",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
