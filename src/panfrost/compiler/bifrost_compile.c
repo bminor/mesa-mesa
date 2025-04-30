@@ -1152,6 +1152,77 @@ bifrost_nir_lower_shader_output(nir_shader *shader)
                                      nir_metadata_none, NULL);
 }
 
+/* Atomics and memory write on the vertex stage have implementation-defined
+ * behaviors on how many invocations will happen. However for some reasons,
+ * atomic counters on GL/GLES specs are quite ambigous here and even have tests
+ * counting how many invocations have been made on VS.... This pass detects
+ * atomics that result in a direct store output of one specific IDVS stage
+ * and ensure it's only executed for said stage.
+ *
+ * This allows
+ * "dEQP-GLES31.functional.shaders.opaque_type_indexing.atomic_counter.*" to
+ * pass under ANGLE.
+ */
+
+static bool
+bifrost_nir_lower_vs_atomics_impl(nir_builder *b, nir_intrinsic_instr *intr,
+                                  UNUSED void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_global_atomic)
+      return false;
+
+   unsigned output_mask = 0;
+   nir_foreach_use(use, &intr->def) {
+      nir_instr *parent = nir_src_parent_instr(use);
+      if (parent->type != nir_instr_type_intrinsic)
+         continue;
+
+      nir_intrinsic_instr *parent_intr = nir_instr_as_intrinsic(parent);
+      if (parent_intr->intrinsic != nir_intrinsic_store_output &&
+          parent_intr->intrinsic != nir_intrinsic_store_per_view_output)
+         continue;
+
+      nir_io_semantics sem = nir_intrinsic_io_semantics(parent_intr);
+      output_mask |= va_shader_output_from_semantics(&sem);
+   }
+
+   /* In case they are not written to any outputs, we default to only output in
+    * the position stage */
+   if (output_mask == 0)
+      output_mask |= VA_SHADER_OUTPUT_POSITION;
+
+   /* In case they are not written to both IDVS stages, we just do not try
+    * lowering it */
+   if (((output_mask & VA_SHADER_OUTPUT_VARY) &&
+        (output_mask & (VA_SHADER_OUTPUT_POSITION | VA_SHADER_OUTPUT_ATTRIB))))
+      return false;
+
+   /* In case we know we have only outputs to a certain type, we can make the
+    * atomic exclusive to this */
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def *res = nir_undef(b, intr->def.num_components, intr->def.bit_size);
+
+   nir_def *shader_output = nir_load_shader_output_pan(b);
+   nir_push_if(b, nir_i2b(b, nir_iand_imm(b, shader_output, output_mask)));
+   nir_instr *new_instr = nir_instr_clone(b->shader, &intr->instr);
+   nir_intrinsic_instr *new_intr = nir_instr_as_intrinsic(new_instr);
+   nir_builder_instr_insert(b, new_instr);
+   nir_pop_if(b, NULL);
+
+   res = nir_if_phi(b, &new_intr->def, res);
+   nir_def_replace(&intr->def, res);
+
+   return true;
+}
+
+static bool
+bifrost_nir_lower_vs_atomics(nir_shader *shader)
+{
+   assert(shader->info.stage == MESA_SHADER_VERTEX);
+   return nir_shader_intrinsics_pass(shader, bifrost_nir_lower_vs_atomics_impl,
+                                     nir_metadata_none, NULL);
+}
+
 static bool
 bifrost_nir_specialize_idvs_impl(nir_builder *b, nir_intrinsic_instr *intr,
                                  void *data)
@@ -6345,6 +6416,9 @@ bifrost_compile_shader_nir(nir_shader *nir,
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       info->vs.idvs = bi_should_idvs(nir, inputs);
+
+      if (info->vs.idvs && nir->info.writes_memory)
+         NIR_PASS(_, nir, bifrost_nir_lower_vs_atomics);
 
       if (info->vs.idvs)
          NIR_PASS(_, nir, bifrost_nir_lower_shader_output);
