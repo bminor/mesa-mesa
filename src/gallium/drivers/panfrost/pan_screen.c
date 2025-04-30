@@ -47,6 +47,7 @@
 
 #include "decode.h"
 #include "pan_afbc.h"
+#include "pan_afrc.h"
 #include "pan_bo.h"
 #include "pan_fence.h"
 #include "pan_public.h"
@@ -233,7 +234,7 @@ panfrost_query_compression_rates(struct pipe_screen *screen,
       return;
    }
 
-   *count = panfrost_afrc_query_rates(format, max, rates);
+   *count = pan_afrc_query_rates(format, max, rates);
 }
 
 /* We always support linear and tiled operations, both external and internal.
@@ -252,7 +253,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       dev->has_afbc && pan_format_supports_afbc(dev->arch, format);
    bool ytr = pan_afbc_can_ytr(format);
    bool tiled_afbc = pan_afbc_can_tile(dev->arch);
-   bool afrc = allow_afrc && dev->has_afrc && panfrost_format_supports_afrc(format);
+   bool afrc = allow_afrc && dev->has_afrc && pan_format_supports_afrc(format);
    PAN_SUPPORTED_MODIFIERS(supported_mods);
 
    unsigned count = 0;
@@ -321,7 +322,7 @@ panfrost_query_compression_modifiers(struct pipe_screen *screen,
                                      DRM_FORMAT_MOD_INVALID,
                                      false /* disallow afrc */);
    else if (dev->has_afrc)
-      *count = panfrost_afrc_get_modifiers(format, rate, max, modifiers);
+      *count = pan_afrc_get_modifiers(format, rate, max, modifiers);
    else
       *count = 0;  /* compression requested but not supported */
 }

@@ -30,6 +30,7 @@
 #include "genxml/gen_macros.h"
 
 #include "pan_afbc.h"
+#include "pan_afrc.h"
 #include "pan_desc.h"
 #include "pan_encoder.h"
 #include "pan_props.h"
@@ -650,13 +651,11 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 #if PAN_ARCH >= 10
    } else if (drm_is_afrc(image->layout.modifier)) {
       struct pan_afrc_format_info finfo =
-         panfrost_afrc_get_format_info(image->layout.format);
+         pan_afrc_get_format_info(image->layout.format);
 
       cfg->writeback_mode = MALI_WRITEBACK_MODE_AFRC_RGB;
-      cfg->afrc.block_size =
-         GENX(pan_afrc_block_size)(image->layout.modifier, 0);
-      cfg->afrc.format =
-         GENX(pan_afrc_format)(finfo, image->layout.modifier, 0);
+      cfg->afrc.block_size = pan_afrc_block_size(image->layout.modifier, 0);
+      cfg->afrc.format = pan_afrc_format(finfo, image->layout.modifier, 0);
 
       cfg->rgb.base = surf.data;
       cfg->rgb.row_stride = row_stride;

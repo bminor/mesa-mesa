@@ -27,100 +27,9 @@
 #include "util/macros.h"
 #include "util/u_math.h"
 #include "pan_afbc.h"
+#include "pan_afrc.h"
 #include "pan_props.h"
 #include "pan_texture.h"
-
-/*
- * Given an AFRC modifier, return whether the layout is optimized for scan
- * order (vs rotation order).
- */
-bool
-panfrost_afrc_is_scan(uint64_t modifier)
-{
-   return modifier & AFRC_FORMAT_MOD_LAYOUT_SCAN;
-}
-
-struct pan_block_size
-panfrost_afrc_clump_size(enum pipe_format format, bool scan)
-{
-   struct pan_afrc_format_info finfo = panfrost_afrc_get_format_info(format);
-
-   switch (finfo.num_comps) {
-   case 1:
-      return scan ? (struct pan_block_size){16, 4}
-                  : (struct pan_block_size){8, 8};
-   case 2:
-      return (struct pan_block_size){8, 4};
-   case 3:
-   case 4:
-      return (struct pan_block_size){4, 4};
-   default:
-      assert(0);
-      return (struct pan_block_size){0, 0};
-   }
-}
-
-static struct pan_block_size
-panfrost_afrc_layout_size(uint64_t modifier)
-{
-   if (panfrost_afrc_is_scan(modifier))
-      return (struct pan_block_size){16, 4};
-   else
-      return (struct pan_block_size){8, 8};
-}
-
-struct pan_block_size
-panfrost_afrc_tile_size(enum pipe_format format, uint64_t modifier)
-{
-   bool scan = panfrost_afrc_is_scan(modifier);
-   struct pan_block_size clump_sz = panfrost_afrc_clump_size(format, scan);
-   struct pan_block_size layout_sz = panfrost_afrc_layout_size(modifier);
-
-   return (struct pan_block_size){clump_sz.width * layout_sz.width,
-                                  clump_sz.height * layout_sz.height};
-}
-
-unsigned
-panfrost_afrc_block_size_from_modifier(uint64_t modifier)
-{
-   switch (modifier & AFRC_FORMAT_MOD_CU_SIZE_MASK) {
-   case AFRC_FORMAT_MOD_CU_SIZE_16:
-      return 16;
-   case AFRC_FORMAT_MOD_CU_SIZE_24:
-      return 24;
-   case AFRC_FORMAT_MOD_CU_SIZE_32:
-      return 32;
-   default:
-      unreachable("invalid coding unit size flag in modifier");
-   };
-}
-
-static unsigned
-panfrost_afrc_buffer_alignment_from_modifier(uint64_t modifier)
-{
-   switch (modifier & AFRC_FORMAT_MOD_CU_SIZE_MASK) {
-   case AFRC_FORMAT_MOD_CU_SIZE_16:
-      return 1024;
-   case AFRC_FORMAT_MOD_CU_SIZE_24:
-      return 512;
-   case AFRC_FORMAT_MOD_CU_SIZE_32:
-      return 2048;
-   default:
-      unreachable("invalid coding unit size flag in modifier");
-   };
-}
-
-/*
- * Determine the number of bytes between rows of paging tiles in an AFRC image
- */
-uint32_t
-pan_afrc_row_stride(enum pipe_format format, uint64_t modifier, uint32_t width)
-{
-   struct pan_block_size tile_size = panfrost_afrc_tile_size(format, modifier);
-   unsigned block_size = panfrost_afrc_block_size_from_modifier(modifier);
-
-   return (width / tile_size.width) * block_size * AFRC_CLUMPS_PER_TILE;
-}
 
 /*
  * Given a format, determine the tile size used for u-interleaving. For formats
@@ -149,7 +58,7 @@ panfrost_block_size(uint64_t modifier, enum pipe_format format)
    else if (drm_is_afbc(modifier))
       return pan_afbc_superblock_size(modifier);
    else if (drm_is_afrc(modifier))
-      return panfrost_afrc_tile_size(format, modifier);
+      return pan_afrc_tile_size(format, modifier);
    else
       return (struct pan_block_size){1, 1};
 }
@@ -183,7 +92,7 @@ format_minimum_alignment(unsigned arch, enum pipe_format format, uint64_t mod)
       return 16;
 
    if (drm_is_afrc(mod))
-      return panfrost_afrc_buffer_alignment_from_modifier(mod);
+      return pan_afrc_buffer_alignment_from_modifier(mod);
 
    if (arch < 7)
       return 64;
@@ -267,7 +176,7 @@ panfrost_get_legacy_stride(const struct pan_image_layout *layout,
       return width * util_format_get_blocksize(layout->format);
    } else if (drm_is_afrc(layout->modifier)) {
       struct pan_block_size tile_size =
-         panfrost_afrc_tile_size(layout->format, layout->modifier);
+         pan_afrc_tile_size(layout->format, layout->modifier);
 
       return row_stride / tile_size.height;
    } else {
@@ -288,7 +197,7 @@ panfrost_from_legacy_stride(unsigned legacy_stride, enum pipe_format format,
       return pan_afbc_row_stride(modifier, width);
    } else if (drm_is_afrc(modifier)) {
       struct pan_block_size tile_size =
-         panfrost_afrc_tile_size(format, modifier);
+         pan_afrc_tile_size(format, modifier);
 
       return legacy_stride * tile_size.height;
    } else {

@@ -50,6 +50,7 @@
 
 #include "decode.h"
 #include "pan_afbc.h"
+#include "pan_afrc.h"
 #include "pan_bo.h"
 #include "pan_context.h"
 #include "pan_resource.h"
@@ -435,7 +436,7 @@ panfrost_should_afrc(struct panfrost_device *dev,
       return false;
 
    /* Only a small selection of formats are AFRC'able */
-   if (!panfrost_format_supports_afrc(fmt))
+   if (!pan_format_supports_afrc(fmt))
       return false;
 
    /* AFRC does not support layered (GLES3 style) multisampling. Use
@@ -482,7 +483,7 @@ panfrost_best_modifier(struct pipe_screen *pscreen,
        * for the next valid one.
        */
       for (int i = afrc_rate; i < 12; ++i) {
-         if (panfrost_afrc_get_modifiers(fmt, i, 0, NULL)) {
+         if (pan_afrc_get_modifiers(fmt, i, 0, NULL)) {
             afrc_rate = i;
             break;
          }
@@ -495,7 +496,7 @@ panfrost_best_modifier(struct pipe_screen *pscreen,
       unsigned num_mods = 0;
 
       STATIC_ASSERT(PIPE_COMPRESSION_FIXED_RATE_DEFAULT == PAN_AFRC_RATE_DEFAULT);
-      num_mods = panfrost_afrc_get_modifiers(fmt, afrc_rate, 1, &mod);
+      num_mods = pan_afrc_get_modifiers(fmt, afrc_rate, 1, &mod);
       if (num_mods > 0) {
          return mod;
       }
@@ -573,7 +574,7 @@ panfrost_resource_setup(struct pipe_screen *screen,
 
    /* Update the compression rate with the correct value as we
     * want the real bitrate and not DEFAULT */
-   pres->base.compression_rate = panfrost_afrc_get_rate(fmt, chosen_mod);
+   pres->base.compression_rate = pan_afrc_get_rate(fmt, chosen_mod);
 
    ASSERTED bool valid =
       pan_image_layout_init(dev->arch, &pres->image.layout, NULL);
@@ -1592,9 +1593,9 @@ pan_legalize_format(struct panfrost_context *ctx,
                     pan_afbc_format(dev->arch, new_format));
    } else if (drm_is_afrc(rsrc->image.layout.modifier)) {
       struct pan_afrc_format_info old_info =
-         panfrost_afrc_get_format_info(old_format);
+         pan_afrc_get_format_info(old_format);
       struct pan_afrc_format_info new_info =
-         panfrost_afrc_get_format_info(new_format);
+         pan_afrc_get_format_info(new_format);
       compatible = !memcmp(&old_info, &new_info, sizeof(old_info));
    } else if (drm_is_mtk_tiled(rsrc->image.layout.modifier)) {
       compatible = false;
