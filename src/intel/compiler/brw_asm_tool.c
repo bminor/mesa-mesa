@@ -200,7 +200,7 @@ int main(int argc, char **argv)
       goto end;
    }
 
-   if (!argv[optind]) {
+   if (optind == argc) {
       fprintf(stderr, "Please specify input file\n");
       goto end;
    }
