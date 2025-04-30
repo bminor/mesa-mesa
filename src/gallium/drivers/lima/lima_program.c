@@ -78,7 +78,6 @@ static const nir_shader_compiler_options fs_nir_options = {
    .lower_flrp32 = true,
    .lower_flrp64 = true,
    .lower_fsign = true,
-   .lower_fdot = true,
    .lower_fdph = true,
    .lower_insert_byte = true,
    .lower_insert_word = true,
@@ -260,6 +259,7 @@ lima_program_optimize_fs_nir(struct nir_shader *s,
       };
       NIR_PASS(progress, s, nir_opt_peephole_select, &peephole_select_options);
       NIR_PASS(progress, s, nir_opt_algebraic);
+      NIR_PASS(progress, s, lima_nir_lower_fdot);
       NIR_PASS(progress, s, nir_opt_constant_folding);
       NIR_PASS(progress, s, nir_opt_undef);
       NIR_PASS(progress, s, nir_opt_loop_unroll);

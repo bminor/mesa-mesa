@@ -37,6 +37,14 @@ lower_ftrunc = [
         (('ftrunc', 'a'), ('fmul', ('fsign', 'a'), ('ffloor', ('fmax', 'a', ('fneg', 'a')))))
 ]
 
+lower_fdot = [
+   # Lower fdot to fsum
+   (('fdot2', 'a', 'b'), ('fsum2', ('fmul', 'a', 'b'))),
+   (('fdot3', 'a', 'b'), ('fsum3', ('fmul', 'a', 'b'))),
+   (('fdot4', 'a', 'b'), ('fsum4', ('fmul', 'a', 'b'))),
+   (('fsum2', 'a'), ('fadd', 'a.x', 'a.y')),
+]
+
 # PP fuse clamp_positive. Shared with Midgard/Bifrost
 ppir_algebraic_late = [
     (('fmax', 'a', 0.0), ('fclamp_pos', 'a')),
@@ -59,6 +67,8 @@ def run():
                                       scale_trig).render())
     print(nir_algebraic.AlgebraicPass("lima_nir_lower_ftrunc",
                                       lower_ftrunc).render())
+    print(nir_algebraic.AlgebraicPass("lima_nir_lower_fdot",
+                                      lower_fdot).render())
     print(nir_algebraic.AlgebraicPass("lima_nir_ppir_algebraic_late",
                                       ppir_algebraic_late).render())
 

@@ -3590,7 +3590,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
    op.lower_isign = (chipset >= NVISA_GV100_CHIPSET);
    op.lower_fsign = (chipset >= NVISA_GV100_CHIPSET);
    op.lower_fdph = false;
-   op.lower_fdot = false;
    op.fdot_replicates = false; // TODO
    op.lower_ffloor = false; // TODO
    op.lower_ffract = true;
