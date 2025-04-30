@@ -1,5 +1,1255 @@
 [
     {
+        "sha": "eeffb4e674d10db9aefebeca91c2d87c1676b81e",
+        "description": "intel/dev: update mesa_defs.json from internal database",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97dc196d427fc67cb1878df62913b82413b924ea",
+        "description": "tu: Add total renderpasses,dispatches to cmdbuf tracepoint",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99b23235a66e33051140472c2eabd46de1e2af64",
+        "description": "tu: Don't enable secondary command buffer tracepoint by default",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9dfd4a091c83d7a393f3ceac0607cc71e5df0ae8",
+        "description": "tu: Fix segfault in fail_submit KGSL path",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ec268fa5b666a49adafc431dbc05b73bfd74526e",
+        "notes": null
+    },
+    {
+        "sha": "103a16e4fa36d52bb0dc6325848fbdd7b5c1372f",
+        "description": "frontend/dri: don't call set_damage_region with a null resource",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29d7b90cfcb67ecc2ff3e422dd7b38898abb1bbe",
+        "description": "brw: make HALT instruction act as barrier in new CSE pass",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9690bd369d5a6739142eeb23f92d34429b75855d",
+        "notes": null
+    },
+    {
+        "sha": "b9275b54a1c906d2180aee0a12895bd617597b50",
+        "description": "nak/sm70_encode: Remove unused has_mod parameter",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28d077838f5ba7ae706d7d967163b84b8ca1e41b",
+        "description": "nak/sm70_encode: Encode fneg/fabs for hfma2 src 2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ff7135691d9fd3e0135ef5a13f6c95ad259094c",
+        "description": "nak: Remove hfma2 src 1 modifiers",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "567cae69c3efd0070e3b9b8444dc8a24f0f83838",
+        "notes": null
+    },
+    {
+        "sha": "d48b3a232c4989c4dcf4cbc2644fc5fd985af083",
+        "description": "docs: Remove the docs for setting up bare-metal devices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a587a0a38903e02fbdcb9b23caeed1ce9e8e4320",
+        "description": "docs: Move the docs about caching downloads to LAVA from bare-metal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6338ed44c519c67b7eb9b6731af1cede52da9438",
+        "description": "aco/gfx12: increase maximum vbuffer offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d987d5e341a43dd1704cd04a6b90a1317b9fa074",
+        "description": "aco/gfx12: increase maximum global/scratch offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02d193f05826e5f93b3b1d335eef4f74e577b0d4",
+        "description": "aco/gfx12: increase maximum smem offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c26851b80b9d8daea4a98da05910e530cd6d80a7",
+        "description": "aco: increase max_const_offset_plus_one for SMEM load_global",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f390893a64e57c34ee959b17a7b301909627236b",
+        "description": "aco/gfx12: use s_sub_u64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b4813c4f0c931952f49eb0909c20f119c39c107",
+        "description": "aco/gfx12: use s_add_u64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "821c1bfa7e1776177b0323b1d8d4b44f32361f91",
+        "description": "intel/compiler: Fix stackIDs on Xe2+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9fe5aad37d20dd767b44528da251e0ed322d3de",
+        "description": "anv: enable VK_KHR_shader_bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07fa3b37855bff1ddd3d157a5a5ffd0f148d9530",
+        "description": "intel: Add support for BFloat16 as cooperative matrix source",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bbe042e879175703ae63479f9754f4f087a3fd2",
+        "description": "spirv: Enable bfloat16 capabilities",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0b195cadbb85b33e4d3055f6e1beb8d45722843",
+        "description": "spirv: Use bfdot for SpvOpDot with BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28070976904a087ce304e32deed7bb08619df626",
+        "description": "spirv: Implement Conversions to/from bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90e1b128903cabfe4fcfb5ae52cf46d5ddbf1189",
+        "description": "spirv: Add bfloat16 support to SpecConstantOp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc8074683d78db7cd71120e9ef5fa1c61fb5c72d",
+        "description": "spirv: construct a bfloat16 from the given SPIR-V bitsize and encoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb6ae2eac1fd883d69cca3cdb26c50a7272496dc",
+        "description": "spirv: Refactor to use glsl_type to pick ALU ops",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bba607ac2b6fd14ce33bbff44fc1684e41541a7a",
+        "description": "spirv: Move Convert opcodes handling to its own function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4381c0908a3c2be93ef32300c35b904d4a92ee5",
+        "description": "brw/cmat: Implement conversion from/to BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de88184ab650a140b0c459b386a2755377b8d785",
+        "description": "brw/cmat: Support different src/dst packing factors in emit_packed_alu1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fa7be970d5a230a445d3211752b2131d5892989",
+        "description": "brw/cmat: Extract emit_packed_alu1() function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b4500ad35dc01d834d235b12c9c3d9514d7ea31",
+        "description": "brw/cmat: Store more information about cmat slices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7ff177a88efca7aa3ec8b4a4d0cc724d43d516b",
+        "description": "brw: Consider bfloat16 in lower simd width pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c31516b3ea7067a39b836be17615bb8f28bdabd",
+        "description": "brw: Consider bfloat16 in lower regioning pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5936768ce0b862b39322a6917da2f59477e3bdbe",
+        "description": "brw: Consider bfloat16 in copy propagation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "129c0748112fbe7b43a214f293c82e5db2f0bf69",
+        "description": "brw: Implement support for BFloat16 ALU opcodes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a38960e8f37e667442255aba73cf7dd4cff2e215",
+        "description": "brw, nir: Use glsl_base_type instead of nir_alu_type for @dpas_intel",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf4021f93c3774f690ec5327c000b2742f8a7428",
+        "description": "nir: Add opcodes for BFloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e5d7eb88d7046fc6dd5c6ef85f9ae7e898702cd",
+        "description": "compiler/types: add a bfloat16 type",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ecd2d2cf46dfc3305a6dc1497815b7b54eef513e",
+        "description": "util: Add functions to convert float to/from bfloat16",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e0418ba02d40eb209519bc8d847481f516fc6d6",
+        "description": "intel/executor: Fix bfloat example for converting F to packed BF",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fafdd242850657d58ae66836ee5d154f1187fe8b",
+        "notes": null
+    },
+    {
+        "sha": "6ab4ae1a19f5bd8227376449655a48036b7d13c9",
+        "description": "pan/bi: Properly lower add/sub with saturation on v11+",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d79a31bf81a3527897f7c6f5178abd47d80fbaee",
+        "notes": null
+    },
+    {
+        "sha": "20279c28c827a1d5f3ba8ef35a3f21bcbf0fb96c",
+        "description": "aco/tests: add pseudo-scalar transcendental and fallback path RA tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96e49b7904322282e91fd239e2e8d5da61b279b6",
+        "description": "aco/ra: add ra_test_policy::use_compact_relocate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c1dbc1d9bcd00ba1e928965eb2b73067850a5c8",
+        "description": "aco/ra: cleanup compact_relocate_vars fallback path",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a780345e014196231e6d9e15c328c0aadeaa02f3",
+        "description": "aco: fix compact_relocate_vars fallback with scc/exec/m0 precolored regs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6581b41c4cb5b284f5550c7494d67ca37b391e6",
+        "description": "aco/ra: don't require alignment for NPOT SGPR temporaries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "623230a6efa25677173d59e648b84b7fc47bffe5",
+        "description": "aco/ra: change sorting in compact_relocate_vars",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f9b8edb1ce9ed00319c0efa3af3f2533921668c",
+        "description": "ci: Re enable fd-farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87e143b05359c4a66c2d0ce3875b0ebfa81bb8b2",
+        "description": "docs/features: mark off missing panvk extensions",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5ed79c2d2ba7fa2589d19a382e59ae22c6c14f40",
+        "notes": null
+    },
+    {
+        "sha": "f23f8c2826ff116eb5a31d68e04a99351742a5a9",
+        "description": "panvk: Advertise VK_EXT_depth_bias_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "970bdecb509bb8bbc9c9ddafb4bb0a6ab8821b22",
+        "description": "panvk: Advertise VK_EXT_shader_replicated_composites",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4998f7ff3f500598abb47223f2118c6b43a802a",
+        "description": "panvk: Advertise VK_EXT_shader_demote_to_helper_invocation support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83cbac00d330efd1486d57ce25dce9751031e4d5",
+        "description": "pan/{bi,va}: Lower terminate to demote",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cd4400e27b097fb52d0f634a9673c28c143f662f",
+        "description": "pan/bi: Lower is_helper_invocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59c307a3f33c5d3883658dfe2a1ab6d4e950a699",
+        "description": "pan/bi: Fix and improve the !abs && !coarse case in bi_emit_derivative()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ed79c2d2ba7fa2589d19a382e59ae22c6c14f40",
+        "description": "panvk: Advertise support for VK_KHR_shader_terminate_invocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a55133ce7d5bb2419f2aa99c5296037afb7ba6a",
+        "description": "hk: advertise VK_KHR_shader_quad_control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef1792bea86b63bf04db413f6e81299366f4919a",
+        "description": "amd/ci: document regression in e612e840...e210b79c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80b1aea7059fc5bdb282526725848d948df94dca",
+        "description": "amd/ci: disable retry on nightly radeonsi-vangogh-glcts-full job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc44d029df8be4f076b621b65762953ebc9cabcc",
+        "description": "radv: Ignore image barrier queue families if equal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1fccc09abe472704982fd01c01c0b35b42096130",
+        "description": "radv: fix re-emitting VRS state when rendering begins",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42279823269ea8391a336475f1070f2cb7e998e8",
+        "description": "ci: rename misleading *-postmerge stages to *-nightly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "26bc35c8f9e9fb474dc6ee6ad5b2eff0d74da5df",
+        "description": "ci: Delete the kernel+rootfs jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13db56320bbe2312b0f902bf677d9ab19e5893c0",
+        "description": "ci/baremetal: Use container rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e16d422da52c2e1990c43ee858a4e06c8dd01346",
+        "description": "ci/baremetal: Split baremetal_arm64_test to -gl and -vk",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2150a0f567893facda4ec844ed2acd08c7886e3",
+        "description": "ci/baremetal: Remove legacy support for unused devices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8296c19817182d84dac2baf4243155cd9a838c5c",
+        "description": "ci: Add a workaround for finding deqp-runner on Broadcom",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55e78ef6789eaaab48734c72e92fca4cd2ed0670",
+        "description": "ci/lava: Remove job definitions using kernel+rootfs jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10ea0002a6f725c4c66e665c82620dda1ba1d681",
+        "description": "ci/intel: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "961498a098917969e2ce6ddf379ed05f7cc1b435",
+        "description": "ci/svga: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be79a2d2d3bdff2dea6b9fa16dff39fc698d7fff",
+        "description": "ci/lima: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da27eea9e09500637fed75920f256ad50cc5c182",
+        "description": "ci/etnaviv: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f7c40d5d457d988f8cf33f4ed44443fb5e54eb8",
+        "description": "ci/panfrost: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d2e5f577a34db900654b4a77048093b2034d3e3",
+        "description": "ci/freedreno: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8e87fbf50a437a4178ec47d23c2a4352633d91e",
+        "description": "ci/amd: Convert to using the new container based rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9870512787b9ee9c82ddb2237f6426fa74a4c4c4",
+        "description": "ci/lava: Use the new test-video-based rootfs for VA-API jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3fb667b1d4bda3ca10d4fa20924f61d6c28af4d",
+        "description": "ci: Include Fluster vectors in the rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "414e1a22c83b18d8e36c9ffd6b708628c2c2ff60",
+        "description": "ci/container: Add new container for libva and fluster testing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "751ff1a41e4d38450d01b17f199ec6f72ec1f1f7",
+        "description": "ci/va: Add /va/bin to PATH for test-video container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82a25daf9d8c2dac5c6adc9123655e56e1cad11d",
+        "description": "ci/va: Collapse build section for va-tools",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8448fbae8c0e49454c5436b37023ca3ce2bc892b",
+        "description": "ci/lava: Move rootfs handling for Fluster out of build script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e80045d23e0388058179da36105971f06730c98c",
+        "description": "ci/lava: Use the new container based rootfs for piglit traces",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e8adb9e98c621493173f9d35e93766aa64e0361",
+        "description": "ci/lava: Use rootfs exported from test-* containers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1009613aec104723825ffb27a1c443fb4057985b",
+        "description": "ci/lava: Add job definitions using the test-* containers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "225ac7f2b2cf7aaf746daf8a9bce7e2d543f00f6",
+        "description": "ci/container: Include SkQP in the test-gl containers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33d5204ec1998bd509c9f9e2b05865395e330efe",
+        "description": "ci/container: Include ANGLE in the x86_64 test-gl container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16db8b22ccbecbdeab35947cb137e1bfbf67d12a",
+        "description": "ci: Export the rootfs from the test-* containers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53c7a04d12152f28da44f8ebd1c809a2794a7349",
+        "description": "ci/lava: Ensure firmware directory exists before downloading a660_zap.mbn",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9b98b0cc918ad1ccb697f52de1326e9db91bfa2",
+        "description": "ci: Add rootfs export script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4bf1fecb79318d60af6444ea3a4e37794ca8b76",
+        "description": "ci: Keep important packages for rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "816b0212a82c378aa765a1f0e47ea4f4000ee9fc",
+        "description": "ci: Update setup-rootfs.sh for test-* containers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3609dbc06147311f77b45e47ebb705a1534a1113",
+        "description": "ci: Add ci-kdl to test-base container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a5159ff108f0769cee3075ff77592bc155ed1f8c",
+        "description": "ci: Add packages for hardware CI testing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73993c2e74a745d111b482b82de6ae657cbc2b7d",
+        "description": "ci: Add firmware to test-base container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "580a151642d29039acf75754a58ba06f8052c794",
+        "description": "ci: use https:// to install ci-fairy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d5f0eebc64ae90c29a4309ed5b20862e96ffde1",
+        "description": "ci: Uprev ci-templates to get FDO_DISTRIBUTION_POST_EXEC and S3 fixes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "118a4c58725bf3b462bc8190df97620029156e10",
+        "description": "ci/android: Remove redundant android-tools folder",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3eb61729e3162b3ab9505652a55ecae7705a2118",
+        "description": "ci/deqp-runner: Collapse build section",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1242c15af30085006c3103821dfef4a8baf977b",
+        "description": "ci/rust: Collapse build section",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bfe6f50ab43f9433d858be7fc5973221d526d6d1",
+        "description": "ci/deqp: Collapse build section",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7686edcb73e57fe94b8b40c4a87aceffd5719b38",
+        "description": "ci/angle: Collapse build section",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d1e34204f20509e9fbe1a59f542f4ddf9226cca",
+        "description": "ci/android: Collapse more build sections",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3c07fe722d6dcf399d4101f9f39fe298fe3e292",
+        "description": "ci/android: Use aapt from Debian packages",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2ac7fa77bf9d045840890fe6cbf06fad37f4242",
+        "description": "brw/cmod: Allow integer CMP to ADD propagation only for Z and NZ",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e26270249b1c093c8b2443492dc940d3e41418b9",
+        "description": "brw/cmod: Don't propagate from CMP to possible Inf + (-Inf)",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "020b0055e7a085a6a8c961ad12ce94e58606a1ae",
+        "notes": null
+    },
+    {
+        "sha": "0dab520a19e323237e415210a70cb21b30512386",
+        "description": "brw/cmod: Fix some errors when propagating from CMP to ADD.SAT",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "020b0055e7a085a6a8c961ad12ce94e58606a1ae",
+        "notes": null
+    },
+    {
+        "sha": "8f0fd0e66e65c897ea85101171f4e35ee2a34ae4",
+        "description": "brw/cmod: Remove special handling of NOT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08fe7988d7fcc4182bc04cdbe6a01a72bbd8a04c",
+        "description": "brw/algebraic: Convert some NOT to MOV",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ce869aef571f30bb5dab0e35c57900bcf6fab56",
+        "description": "brw/cmod: Delete some stale comment text",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12a022cf45fcd502606a478d3fd09578f9e61f40",
+        "description": "brw/algebraic: Greatly simplify brw_opt_constant_fold_instruction",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a946f8125e25dbf8d2c28d8c280809e92533b17",
+        "description": "lavapipe: Fix ray tracing position fetch with multiple geometries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dea4bb3757a5dea0d5117453b9a3990ae933857e",
+        "description": "ir3: VARYING_SLOT_LAYER output is used for binning",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9775b33d0f14f91622f5a26a3c499a84da227c3d",
+        "notes": null
+    },
+    {
+        "sha": "42aae5c3fad672f13be0a7ff99414ea6a7e321cb",
+        "description": "etnaviv: nir: Legalize txd derivatives src's",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5841d44f91bb6d8387e36d6497100e0aea98735e",
+        "description": "radv: set radv_disable_dcc=true for WWE 2k23",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1eb3a40615e64cd145d1e66c301075b6b8478c5b",
+        "description": "ci: disable Igalia's farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7112c606ef1b24cde2b743c3fad2adf97405b20d",
+        "description": "panvk: Advertise support for VK_KHR_shader_integer_dot_product",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a16422fab77cf447206e01507f4865cd88abfb6",
+        "description": "panvk: Advertise KHR_draw_indirect_count for v10+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cebd908bf36c080d9a8c96eb45f064ef6addbc8d",
+        "description": "panvk: Implement CmdDraw[Indexed]IndirectCount for v10+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de896234d86d8e36c19e0687f4c94b3298dcb290",
+        "description": "aco: improve spilling of clobbered operands",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fe84024cb0985c2ab676d3e83520e5213db05df",
+        "description": "aco: fix get_temp_reg_changes with clobbered operands",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d6cb45dbb03941edd65c948a243e73774184eeee",
+        "notes": null
+    },
+    {
+        "sha": "656d7a0f881486634f83cdb7e03af94706f13119",
+        "description": "ir3: don't use VS input regs for binning variant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a5a0dd3ccc08a0df318663d0c0912b1c99f17d5b",
+        "description": "panvk: Implement multiDrawIndirect for v10+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bbfcaf01f1d7b2962e37dd522fe72ba972e8bff",
+        "description": "panvk: Prepare cmd_prepare_shader_res_table() for multiDrawIndirect",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "690675748bf1e2532cd041199fc0d00fd8eaf2b9",
+        "description": "panvk: Prepare cmd_prepare_push_uniforms() for multiDrawIndirect",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed9f1359368be185f632e2a5b1f6edf16ef89b62",
+        "description": "anv: put parenthesis to the set_sampler_size equation",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "76096d04bbafddb523ffc360f6d738d16d94816b",
+        "notes": null
+    },
+    {
         "sha": "3493500abb78a4dc22aba14840bba5c777fde745",
         "description": "ci: Update build-apitrace.sh header with the right tag",
         "nominated": false,
