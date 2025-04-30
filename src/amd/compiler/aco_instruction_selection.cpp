@@ -2435,6 +2435,14 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       emit_idot_instruction(ctx, instr, aco_opcode::v_dot2_u32_u16, dst, true);
       break;
    }
+   case nir_op_bfdot2_bfadd: {
+      Temp src0 = as_vgpr(ctx, get_alu_src(ctx, instr->src[0], 2));
+      Temp src1 = as_vgpr(ctx, get_alu_src(ctx, instr->src[1], 2));
+      Temp src2 = get_alu_src(ctx, instr->src[2], 1);
+
+      bld.vop3(aco_opcode::v_dot2_bf16_bf16, Definition(dst), src0, src1, src2);
+      break;
+   }
    case nir_op_cube_amd: {
       Temp in = get_alu_src(ctx, instr->src[0], 3);
       Temp src[3] = {emit_extract_vector(ctx, in, 0, v1), emit_extract_vector(ctx, in, 1, v1),

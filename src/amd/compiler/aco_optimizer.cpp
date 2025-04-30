@@ -648,6 +648,7 @@ alu_can_accept_constant(const aco_ptr<Instruction>& instr, unsigned operand)
    case aco_opcode::v_interp_p2_f16_f32_inreg:
    case aco_opcode::v_interp_p10_rtz_f16_f32_inreg:
    case aco_opcode::v_interp_p2_rtz_f16_f32_inreg:
+   case aco_opcode::v_dot2_bf16_bf16: /* TODO */
    case aco_opcode::v_wmma_f32_16x16x16_f16:
    case aco_opcode::v_wmma_f32_16x16x16_bf16:
    case aco_opcode::v_wmma_f16_16x16x16_f16:
