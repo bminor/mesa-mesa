@@ -607,6 +607,10 @@
    DRI_CONF_OPT_U64(pan_fragment_core_mask, def, 0, UINT64_MAX, \
                     "Bitmask of shader cores that may be used for fragment jobs. If unset, defaults to scheduling across all available cores.")
 
+#define DRI_CONF_PAN_ENABLE_VERTEX_PIPELINE_STORES_ATOMICS(def) \
+   DRI_CONF_OPT_B(pan_enable_vertex_pipeline_stores_atomics, def, \
+                  "Enable vertexPipelineStoresAndAtomics on v13+ (This cannot work on older generation because of speculative behaviors around vertices)")
+
 /**
  * \brief Turnip specific configuration options
  */

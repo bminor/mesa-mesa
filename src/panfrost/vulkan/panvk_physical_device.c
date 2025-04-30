@@ -371,7 +371,8 @@ has_texture_compression_bc(const struct panvk_physical_device *physical_device)
 }
 
 static void
-get_features(const struct panvk_physical_device *device,
+get_features(const struct panvk_instance *instance,
+             const struct panvk_physical_device *device,
              struct vk_features *features)
 {
    unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
@@ -407,6 +408,11 @@ get_features(const struct panvk_physical_device *device,
       .shaderInt16 = true,
       .shaderInt64 = true,
       .drawIndirectFirstInstance = true,
+
+      /* On v13+, the hardware isn't speculatively referencing to invalid
+         indices anymore. */
+      .vertexPipelineStoresAndAtomics =
+         arch >= 13 && instance->enable_vertex_pipeline_stores_atomics,
 
       /* Vulkan 1.1 */
       .storageBuffer16BitAccess = true,
@@ -1214,7 +1220,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    get_device_extensions(device, &supported_extensions);
 
    struct vk_features supported_features;
-   get_features(device, &supported_features);
+   get_features(instance, device, &supported_features);
 
    struct vk_properties properties;
    get_device_properties(instance, device, &properties);

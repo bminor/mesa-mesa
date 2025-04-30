@@ -48,6 +48,8 @@ struct panvk_instance {
    uint8_t driver_build_sha[20];
    uint32_t force_vk_vendor;
 
+   bool enable_vertex_pipeline_stores_atomics;
+
    struct {
       struct pan_kmod_allocator allocator;
    } kmod;
