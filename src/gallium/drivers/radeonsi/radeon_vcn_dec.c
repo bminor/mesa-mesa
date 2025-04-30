@@ -261,10 +261,6 @@ static rvcn_dec_message_hevc_t get_h265_msg(struct radeon_decoder *dec,
    result.sps_info_flags |= pic->pps->sps->separate_colour_plane_flag << 8;
    if (((struct si_screen *)dec->screen)->info.family == CHIP_CARRIZO)
       result.sps_info_flags |= 1 << 9;
-   if (pic->UseRefPicList == true) {
-      result.sps_info_flags |= 1 << 10;
-      result.sps_info_flags |= 1 << 12;
-   }
    if (pic->UseStRpsBits == true && pic->pps->st_rps_bits != 0) {
       result.sps_info_flags |= 1 << 11;
       result.st_rps_bits = pic->pps->st_rps_bits;
@@ -398,11 +394,6 @@ static rvcn_dec_message_hevc_t get_h265_msg(struct radeon_decoder *dec,
    memcpy(dec->it + 96, pic->pps->sps->ScalingList8x8, 6 * 64);
    memcpy(dec->it + 480, pic->pps->sps->ScalingList16x16, 6 * 64);
    memcpy(dec->it + 864, pic->pps->sps->ScalingList32x32, 2 * 64);
-
-   for (i = 0; i < 2; i++) {
-      for (j = 0; j < 15; j++)
-         result.direct_reflist[i][j] = pic->RefPicList[0][i][j];
-   }
 
    if (pic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10) {
       if (target->buffer_format == PIPE_FORMAT_P010 || target->buffer_format == PIPE_FORMAT_P016) {
@@ -641,18 +632,6 @@ static rvcn_dec_message_vp9_t get_vp9_msg(struct radeon_decoder *dec,
    dec->last_height = dec->base.height;
 
    return result;
-}
-
-static void get_h265_reflist(rvcn_dec_message_hevc_direct_ref_list_t *hevc_reflist,
-                             struct pipe_h265_picture_desc *pic)
-{
-   hevc_reflist->num_direct_reflist = pic->slice_parameter.slice_count;
-   for (int i = 0; i <hevc_reflist->num_direct_reflist; i++) {
-      for (int j = 0; j < 2; j++) {
-         for (int k = 0; k < 15; k++)
-            hevc_reflist->multi_direct_reflist[i][j][k] = pic->RefPicList[i][j][k];
-      }
-   }
 }
 
 static void set_drm_keyblob(rvcn_dec_message_drm_keyblob_t *drm_keyblob, amd_secure_buffer_format *secure_buf)
@@ -1533,16 +1512,14 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    rvcn_dec_message_index_t *index_drm = NULL;
    rvcn_dec_message_index_t *index_drm_keyblob = NULL;
    rvcn_dec_message_index_t *index_dynamic_dpb = NULL;
-   rvcn_dec_message_index_t *index_hevc_direct_reflist = NULL;
    rvcn_dec_message_decode_t *decode;
    unsigned sizes = 0, offset_decode, offset_codec;
-   unsigned offset_drm = 0, offset_drm_keyblob = 0, offset_dynamic_dpb = 0, offset_hevc_direct_reflist = 0;
+   unsigned offset_drm = 0, offset_drm_keyblob = 0, offset_dynamic_dpb = 0;
    void *codec;
    rvcn_dec_message_drm_t *drm = NULL;
    rvcn_dec_message_drm_keyblob_t *drm_keyblob = NULL;
    rvcn_dec_message_dynamic_dpb_t *dynamic_dpb = NULL;
    rvcn_dec_message_dynamic_dpb_t2_t *dynamic_dpb_t2 = NULL;
-   rvcn_dec_message_hevc_direct_ref_list_t *hevc_reflist = NULL;
    bool dpb_resize = false;
 
    if (dec->stream_type == RDECODE_CODEC_AV1)
@@ -1575,11 +1552,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
       sizes += sizeof(rvcn_dec_message_index_t);
    }
 
-   if (u_reduce_video_profile(picture->profile) == PIPE_VIDEO_FORMAT_HEVC) {
-      index_hevc_direct_reflist = (void*)header + sizes;
-      sizes += sizeof(rvcn_dec_message_index_t);
-   }
-
    offset_decode = sizes;
    decode = (void*)header + sizes;
    sizes += sizeof(rvcn_dec_message_decode_t);
@@ -1606,12 +1578,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          dynamic_dpb_t2 = (void*)header + sizes;
          sizes += sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
       }
-   }
-
-   if (u_reduce_video_profile(picture->profile) == PIPE_VIDEO_FORMAT_HEVC) {
-      offset_hevc_direct_reflist = sizes;
-      hevc_reflist = (void*)header + sizes;
-      sizes += align((4 + 2 * 15 * ((struct pipe_h265_picture_desc *)picture)->slice_parameter.slice_count), 4);
    }
 
    offset_codec = sizes;
@@ -1660,14 +1626,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          index_dynamic_dpb->size = sizeof(rvcn_dec_message_dynamic_dpb_t);
       else if (dec->dpb_type == DPB_DYNAMIC_TIER_2)
          index_dynamic_dpb->size = sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
-   }
-
-   if (u_reduce_video_profile(picture->profile) == PIPE_VIDEO_FORMAT_HEVC) {
-      index_hevc_direct_reflist->message_id = RDECODE_MESSAGE_HEVC_DIRECT_REF_LIST;
-      index_hevc_direct_reflist->offset = offset_hevc_direct_reflist;
-      index_hevc_direct_reflist->size = align((4 + 2 * 15 * ((struct pipe_h265_picture_desc *)picture)->slice_parameter.slice_count), 4);
-      index_hevc_direct_reflist->filled = 0;
-      ++header->num_buffers;
    }
 
    decode->stream_type = dec->stream_type;
@@ -1901,9 +1859,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          dynamic_dpb->dpbChromaAlignedSize = dynamic_dpb->dpbChromaAlignedSize * 3 / 2;
       }
    }
-
-   if (u_reduce_video_profile(picture->profile) == PIPE_VIDEO_FORMAT_HEVC)
-      get_h265_reflist(hevc_reflist, (struct pipe_h265_picture_desc *)picture);
 
    switch (u_reduce_video_profile(picture->profile)) {
    case PIPE_VIDEO_FORMAT_MPEG4_AVC: {
