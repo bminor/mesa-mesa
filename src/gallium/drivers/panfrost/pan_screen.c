@@ -252,38 +252,39 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
    bool ytr = panfrost_afbc_can_ytr(format);
    bool tiled_afbc = panfrost_afbc_can_tile(dev->arch);
    bool afrc = allow_afrc && dev->has_afrc && panfrost_format_supports_afrc(format);
+   PAN_SUPPORTED_MODIFIERS(supported_mods);
 
    unsigned count = 0;
 
-   for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
-      if (drm_is_afbc(pan_best_modifiers[i])) {
+   for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
+      if (drm_is_afbc(supported_mods[i])) {
          if (!afbc)
             continue;
 
-         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_SPLIT) &&
-             !panfrost_afbc_can_split(dev->arch, format, pan_best_modifiers[i]))
+         if ((supported_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
+             !panfrost_afbc_can_split(dev->arch, format, supported_mods[i]))
             continue;
 
-         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
+         if ((supported_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
             continue;
 
-         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
+         if ((supported_mods[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
             continue;
       }
 
-      if (drm_is_afrc(pan_best_modifiers[i]) && !afrc)
+      if (drm_is_afrc(supported_mods[i]) && !afrc)
          continue;
 
-      if (drm_is_mtk_tiled(pan_best_modifiers[i]) &&
+      if (drm_is_mtk_tiled(supported_mods[i]) &&
           !panfrost_format_supports_mtk_tiled(format))
          continue;
 
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&
-          test_modifier != pan_best_modifiers[i])
+          test_modifier != supported_mods[i])
          continue;
 
       if (max > (int)count) {
-         modifiers[count] = pan_best_modifiers[i];
+         modifiers[count] = supported_mods[i];
 
          if (external_only)
             external_only[count] = drm_is_mtk_tiled(modifiers[count]);

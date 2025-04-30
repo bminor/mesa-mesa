@@ -47,9 +47,6 @@ extern "C" {
 #define MAX_MIP_LEVELS   17
 #define MAX_IMAGE_PLANES 3
 
-#define PAN_MODIFIER_COUNT 15
-extern uint64_t pan_best_modifiers[PAN_MODIFIER_COUNT];
-
 struct pan_image_slice_layout {
    unsigned offset;
 
@@ -435,19 +432,6 @@ unsigned panfrost_texture_offset(const struct pan_image_layout *layout,
                                  unsigned surface_idx);
 
 bool panfrost_format_supports_mtk_tiled(enum pipe_format format);
-
-/* DRM modifier helper */
-
-#define drm_is_afbc(mod)                                                       \
-   ((mod >> 52) ==                                                             \
-    (DRM_FORMAT_MOD_ARM_TYPE_AFBC | (DRM_FORMAT_MOD_VENDOR_ARM << 4)))
-
-#define drm_is_afrc(mod)                                                       \
-   ((mod >> 52) ==                                                             \
-    (DRM_FORMAT_MOD_ARM_TYPE_AFRC | (DRM_FORMAT_MOD_VENDOR_ARM << 4)))
-
-#define drm_is_mtk_tiled(mod)                                                  \
-   ((mod >> 52) == (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))
 
 struct pan_image_explicit_layout {
    unsigned offset;

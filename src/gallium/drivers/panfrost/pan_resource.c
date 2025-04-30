@@ -889,10 +889,12 @@ panfrost_resource_create_with_modifiers(struct pipe_screen *screen,
                                         const struct pipe_resource *template,
                                         const uint64_t *modifiers, int count)
 {
-   for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
-      if (drm_find_modifier(pan_best_modifiers[i], modifiers, count)) {
+   PAN_SUPPORTED_MODIFIERS(supported_mods);
+
+   for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
+      if (drm_find_modifier(supported_mods[i], modifiers, count)) {
          return panfrost_resource_create_with_modifier(screen, template,
-                                                       pan_best_modifiers[i]);
+                                                       supported_mods[i]);
       }
    }
 

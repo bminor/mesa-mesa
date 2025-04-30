@@ -29,56 +29,6 @@
 #include "pan_props.h"
 #include "pan_texture.h"
 
-/*
- * List of supported modifiers, in descending order of preference. AFBC is
- * faster than u-interleaved tiling which is faster than linear. Within AFBC,
- * enabling the YUV-like transform is typically a win where possible.
- * AFRC is only used if explicitly asked for (only for RGB formats).
- * Similarly MTK 16L32 is only used if explicitly asked for.
- */
-uint64_t pan_best_modifiers[PAN_MODIFIER_COUNT] = {
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
-                           AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_SPLIT),
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
-                           AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_SPLIT |
-                           AFBC_FORMAT_MOD_YTR),
-
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
-                           AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SC |
-                           AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR),
-
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
-                           AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SC |
-                           AFBC_FORMAT_MOD_SPARSE),
-
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
-                           AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR),
-
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
-                           AFBC_FORMAT_MOD_SPARSE),
-
-   DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED,
-   DRM_FORMAT_MOD_LINEAR,
-
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_16)),
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_24)),
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_32)),
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_16) |
-      AFRC_FORMAT_MOD_LAYOUT_SCAN),
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_24) |
-      AFRC_FORMAT_MOD_LAYOUT_SCAN),
-   DRM_FORMAT_MOD_ARM_AFRC(
-      AFRC_FORMAT_MOD_CU_SIZE_P0(AFRC_FORMAT_MOD_CU_SIZE_32) |
-      AFRC_FORMAT_MOD_LAYOUT_SCAN),
-
-   DRM_FORMAT_MOD_MTK_16L_32S_TILE,
-};
-
 /* Table of AFBC superblock sizes */
 static const struct pan_block_size afbc_superblock_sizes[] = {
    [AFBC_FORMAT_MOD_BLOCK_SIZE_16x16] = {16, 16},

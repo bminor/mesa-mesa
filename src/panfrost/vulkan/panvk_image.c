@@ -148,13 +148,15 @@ static uint64_t
 panvk_image_get_mod_from_list(struct panvk_image *image,
                               const uint64_t *mods, uint32_t mod_count)
 {
-   for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
-      if (!panvk_image_can_use_mod(image, pan_best_modifiers[i]))
+   PAN_SUPPORTED_MODIFIERS(supported_mods);
+
+   for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
+      if (!panvk_image_can_use_mod(image, supported_mods[i]))
          continue;
 
       if (!mod_count ||
-          drm_find_modifier(pan_best_modifiers[i], mods, mod_count))
-         return pan_best_modifiers[i];
+          drm_find_modifier(supported_mods[i], mods, mod_count))
+         return supported_mods[i];
    }
 
    /* If we reached that point without finding a proper modifier, there's
