@@ -1358,7 +1358,7 @@ impl SM70Op for OpIAdd3X {
         swap_srcs_if_not_reg(src0, src1, gpr);
         swap_srcs_if_not_reg(src2, src1, gpr);
         if !src0.src_mod.is_none() && !src1.src_mod.is_none() {
-            let val = b.alloc_ssa(gpr, 1);
+            let val = b.alloc_ssa(gpr);
             b.push_op(OpIAdd3X {
                 srcs: [Src::new_zero(), *src0, Src::new_zero()],
                 overflow: [Dst::None; 2],

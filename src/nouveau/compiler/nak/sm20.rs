@@ -2140,11 +2140,11 @@ fn atom_src_as_ssa(
 
     let tmp;
     if atom_type.bits() == 32 {
-        tmp = b.alloc_ssa(RegFile::GPR, 1);
+        tmp = b.alloc_ssa_vec(RegFile::GPR, 1);
         b.copy_to(tmp.into(), 0.into());
     } else {
         debug_assert!(atom_type.bits() == 64);
-        tmp = b.alloc_ssa(RegFile::GPR, 2);
+        tmp = b.alloc_ssa_vec(RegFile::GPR, 2);
         b.copy_to(tmp[0].into(), 0.into());
         b.copy_to(tmp[1].into(), 0.into());
     }

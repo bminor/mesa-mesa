@@ -68,19 +68,19 @@ impl<'a> TestShaderBuilder<'a> {
         let mut b = SSAInstrBuilder::new(sm, &mut alloc);
 
         // Fill out the start block
-        let lane = b.alloc_ssa(RegFile::GPR, 1);
+        let lane = b.alloc_ssa(RegFile::GPR);
         b.push_op(OpS2R {
             dst: lane.into(),
             idx: NAK_SV_LANE_ID,
         });
 
-        let cta = b.alloc_ssa(RegFile::GPR, 1);
+        let cta = b.alloc_ssa(RegFile::GPR);
         b.push_op(OpS2R {
             dst: cta.into(),
             idx: NAK_SV_CTAID,
         });
 
-        let invoc_id = b.alloc_ssa(RegFile::GPR, 1);
+        let invoc_id = b.alloc_ssa(RegFile::GPR);
         b.push_op(OpIMad {
             dst: invoc_id.into(),
             srcs: [cta.into(), u32::from(LOCAL_SIZE_X).into(), lane.into()],
@@ -95,7 +95,7 @@ impl<'a> TestShaderBuilder<'a> {
             buf: CBuf::Binding(0),
             offset: offset_of!(CB0, data_addr_hi).try_into().unwrap(),
         };
-        let data_addr = b.alloc_ssa(RegFile::GPR, 2);
+        let data_addr = b.alloc_ssa_vec(RegFile::GPR, 2);
         b.copy_to(data_addr[0].into(), data_addr_lo.into());
         b.copy_to(data_addr[1].into(), data_addr_hi.into());
 
@@ -148,7 +148,7 @@ impl<'a> TestShaderBuilder<'a> {
             eviction_priority: MemEvictionPriority::Normal,
         };
         let comps: u8 = mem_type.bits().div_ceil(32).try_into().unwrap();
-        let dst = self.alloc_ssa(RegFile::GPR, comps);
+        let dst = self.alloc_ssa_vec(RegFile::GPR, comps);
         self.push_op(OpLd {
             dst: dst.into(),
             addr: self.data_addr.into(),
@@ -260,7 +260,11 @@ impl Builder for TestShaderBuilder<'_> {
 }
 
 impl SSABuilder for TestShaderBuilder<'_> {
-    fn alloc_ssa(&mut self, file: RegFile, comps: u8) -> SSARef {
+    fn alloc_ssa(&mut self, file: RegFile) -> SSAValue {
+        self.alloc.alloc(file)
+    }
+
+    fn alloc_ssa_vec(&mut self, file: RegFile, comps: u8) -> SSARef {
         self.alloc.alloc_vec(file, comps)
     }
 }
@@ -344,8 +348,8 @@ pub fn test_foldable_op_with(
                 let data = b.ld_test_data(comps * 4, MemType::B32);
                 comps += 1;
 
-                let dst = b.alloc_ssa(RegFile::GPR, 1);
-                let carry = b.alloc_ssa(RegFile::Carry, 1);
+                let dst = b.alloc_ssa(RegFile::GPR);
+                let carry = b.alloc_ssa(RegFile::Carry);
                 b.push_op(OpIAdd2 {
                     dst: dst.into(),
                     carry_out: carry.into(),
@@ -364,19 +368,19 @@ pub fn test_foldable_op_with(
     for (i, dst) in op.dsts_as_mut_slice().iter_mut().enumerate() {
         match dst_types[i] {
             DstType::Pred => {
-                *dst = b.alloc_ssa(RegFile::Pred, 1).into();
+                *dst = b.alloc_ssa(RegFile::Pred).into();
                 fold_dst.push(FoldData::Pred(false));
             }
             DstType::GPR | DstType::F32 => {
-                *dst = b.alloc_ssa(RegFile::GPR, 1).into();
+                *dst = b.alloc_ssa(RegFile::GPR).into();
                 fold_dst.push(FoldData::U32(0));
             }
             DstType::F64 => {
-                *dst = b.alloc_ssa(RegFile::GPR, 2).into();
+                *dst = b.alloc_ssa_vec(RegFile::GPR, 2).into();
                 fold_dst.push(FoldData::Vec2([0, 0]));
             }
             DstType::Carry => {
-                *dst = b.alloc_ssa(RegFile::Carry, 1).into();
+                *dst = b.alloc_ssa(RegFile::Carry).into();
                 fold_dst.push(FoldData::Carry(false));
             }
             typ => panic!("Can't auto-test {typ:?} data"),
@@ -396,7 +400,7 @@ pub fn test_foldable_op_with(
                 RegFile::Pred => b.sel((*ssa).into(), 1.into(), 0.into()),
                 RegFile::GPR => (*ssa).into(),
                 RegFile::Carry => {
-                    let gpr = b.alloc_ssa(RegFile::GPR, 1);
+                    let gpr = b.alloc_ssa(RegFile::GPR);
                     b.push_op(OpIAdd2X {
                         dst: gpr.into(),
                         carry_out: Dst::None,
@@ -1347,21 +1351,21 @@ fn test_f2fp_pack_ab() {
         b.ld_test_data(4, MemType::B32)[0],
     ]);
 
-    let dst = b.alloc_ssa(RegFile::GPR, 1);
+    let dst = b.alloc_ssa(RegFile::GPR);
     b.push_op(OpF2FP {
         dst: dst.into(),
         srcs: [srcs[0].into(), srcs[1].into()],
         rnd_mode: FRndMode::NearestEven,
     });
-    b.st_test_data(8, MemType::B32, dst[0].into());
+    b.st_test_data(8, MemType::B32, dst.into());
 
-    let dst = b.alloc_ssa(RegFile::GPR, 1);
+    let dst = b.alloc_ssa(RegFile::GPR);
     b.push_op(OpF2FP {
         dst: dst.into(),
         srcs: [srcs[0].into(), 2.0.into()],
         rnd_mode: FRndMode::Zero,
     });
-    b.st_test_data(12, MemType::B32, dst[0].into());
+    b.st_test_data(12, MemType::B32, dst.into());
 
     let bin = b.compile();
 

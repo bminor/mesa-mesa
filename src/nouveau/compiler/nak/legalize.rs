@@ -53,7 +53,7 @@ fn src_is_imm(src: &Src) -> bool {
 
 pub trait LegalizeBuildHelpers: SSABuilder {
     fn copy_ssa(&mut self, ssa: &mut SSAValue, reg_file: RegFile) {
-        let tmp = self.alloc_ssa(reg_file, 1)[0];
+        let tmp = self.alloc_ssa(reg_file);
         self.copy_to(tmp.into(), (*ssa).into());
         *ssa = tmp;
     }
@@ -131,9 +131,9 @@ pub trait LegalizeBuildHelpers: SSABuilder {
             | SrcType::F16
             | SrcType::F16v2
             | SrcType::I32
-            | SrcType::B32 => self.alloc_ssa(reg_file, 1),
-            SrcType::F64 => self.alloc_ssa(reg_file, 2),
-            SrcType::Pred => self.alloc_ssa(reg_file, 1),
+            | SrcType::B32 => self.alloc_ssa_vec(reg_file, 1),
+            SrcType::F64 => self.alloc_ssa_vec(reg_file, 2),
+            SrcType::Pred => self.alloc_ssa_vec(reg_file, 1),
             _ => panic!("Unknown source type"),
         };
 
@@ -236,7 +236,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
     ) {
         match src_type {
             SrcType::F16 | SrcType::F16v2 => {
-                let val = self.alloc_ssa(reg_file, 1);
+                let val = self.alloc_ssa(reg_file);
                 self.push_op(OpHAdd2 {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -247,7 +247,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 *src = val.into();
             }
             SrcType::F32 => {
-                let val = self.alloc_ssa(reg_file, 1);
+                let val = self.alloc_ssa(reg_file);
                 self.push_op(OpFAdd {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -258,7 +258,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 *src = val.into();
             }
             SrcType::F64 => {
-                let val = self.alloc_ssa(reg_file, 2);
+                let val = self.alloc_ssa_vec(reg_file, 2);
                 self.push_op(OpDAdd {
                     dst: val.into(),
                     srcs: [Src::new_zero().fneg(), *src],
@@ -277,7 +277,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         src_type: SrcType,
     ) {
         assert!(src_type == SrcType::I32);
-        let val = self.alloc_ssa(reg_file, 1);
+        let val = self.alloc_ssa(reg_file);
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
                 srcs: [Src::new_zero(), *src, Src::new_zero()],
@@ -330,7 +330,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
     fn copy_ssa_ref_if_uniform(&mut self, ssa_ref: &mut SSARef) {
         for ssa in &mut ssa_ref[..] {
             if ssa.is_uniform() {
-                let warp = self.alloc_ssa(ssa.file().to_warp(), 1)[0];
+                let warp = self.alloc_ssa(ssa.file().to_warp());
                 self.copy_to(warp.into(), (*ssa).into());
                 *ssa = warp;
             }
@@ -463,7 +463,7 @@ fn legalize_instr(
                 // source, we need to make a copy so it can get assigned to
                 // multiple different registers.
                 if vec_comps.get(&ssa).is_some() {
-                    let copy = b.alloc_ssa(ssa.file(), 1)[0];
+                    let copy = b.alloc_ssa(ssa.file());
                     b.copy_to(copy.into(), ssa.into());
                     new_vec[usize::from(c)] = copy;
                 } else {
