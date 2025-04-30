@@ -275,6 +275,9 @@
 #define DRI_CONF_FORCE_GL_MAP_BUFFER_SYNCHRONIZED(def) \
    DRI_CONF_OPT_B(force_gl_map_buffer_synchronized, def, "Override GL_MAP_UNSYNCHRONIZED_BIT.")
 
+#define DRI_CONF_FORCE_GL_DEPTH_COMPONENT_TYPE_INT(def) \
+   DRI_CONF_OPT_B(force_gl_depth_component_type_int, def, "Override GL_DEPTH_COMPONENT type from unsigned short to unsigned int")
+
 #define DRI_CONF_TRANSCODE_ETC(def) \
    DRI_CONF_OPT_B(transcode_etc, def, "Transcode ETC formats to DXTC if unsupported")
 
