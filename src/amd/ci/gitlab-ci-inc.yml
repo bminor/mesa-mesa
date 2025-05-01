@@ -328,7 +328,7 @@
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:KABINI
-    CI_TRON__B2C_SWAP_SIZE: '8g'
+    CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .polaris10-test-valve:
   variables:
