@@ -942,15 +942,12 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
    if (has_primid_instancing_bug && tess_uses_primid)
       return 1;
 
-   /* 256 threads per workgroup is the hw limit. */
+   /* 256 threads per workgroup is the hw limit, but 192 performs better. */
    const unsigned num_threads_per_patch = MAX2(num_tcs_input_cp, num_tcs_output_cp);
-   unsigned num_patches = 256 / num_threads_per_patch;
+   unsigned num_patches = 192 / num_threads_per_patch;
 
-   /* Not necessary for correctness, but higher numbers are slower.
-    * The hardware can do more, but we prefer fully occupied waves.
-    * eg. 64 triangle patches means 3 fully occupied Wave64 waves.
-    */
-   num_patches = MIN2(num_patches, 64);
+   /* 127 is the maximum value that fits in tcs_offchip_layout. */
+   num_patches = MIN2(num_patches, 127);
 
    /* When distributed tessellation is unsupported, switch between SEs
     * at a higher frequency to manually balance the workload between SEs.
