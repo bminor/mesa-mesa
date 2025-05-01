@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2086 # we want word splitting
+# shellcheck disable=SC1091 # paths only become valid at runtime
+
+. "${SCRIPTS_DIR}/setup-test-env.sh"
+
+section_start test_setup "fluster: preparing test setup"
 
 set -uex -o pipefail
 
@@ -52,6 +57,8 @@ touch ${FLUSTER_FAILS}
 FLUSTER_SKIPS=$INSTALL/$GPU_VERSION-fluster-skips.txt
 touch ${FLUSTER_SKIPS}
 
+uncollapsed_section_switch fluster "fluster: fluster-runner"
+
 set +e
 
 fluster-runner \
@@ -69,6 +76,8 @@ fluster-runner \
 FLUSTER_EXITCODE=$?
 
 set -e
+
+section_switch test_post_process "fluster: post-processing test results"
 
 # Report the flakes to the IRC channel for monitoring (if configured):
 if [ -n "${FLAKES_CHANNEL:-}" ]; then
@@ -94,5 +103,7 @@ deqp-runner junit \
 # Compress results.csv to save on bandwidth during the upload of artifacts to
 # GitLab.
 zstd --rm -T0 -8qc $RESULTS/results.csv -o $RESULTS/results.csv.zst
+
+section_end test_post_process
 
 exit $FLUSTER_EXITCODE
