@@ -3955,7 +3955,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
 
    if (!cmd->state.pipeline_disable_fs &&
        (EMIT_STATE(disable_fs) ||
-        (cmd->state.dirty & TU_CMD_DIRTY_SUBPASS))) {
+        (cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS | TU_CMD_DIRTY_FS)))) {
       bool disable_fs = tu_calc_disable_fs(
          &cmd->vk.dynamic_graphics_state.cb, &cmd->state.vk_rp,
          cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable,
