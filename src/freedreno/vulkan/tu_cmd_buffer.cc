@@ -1543,10 +1543,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_regs(cs,
                    A6XX_SP_TP_BORDER_COLOR_BASE_ADDR(.bo = dev->global_bo,
-                                                     .bo_offset = gb_offset(bcolor_builtin)));
+                                                     .bo_offset = gb_offset(bcolor)));
    tu_cs_emit_regs(cs,
                    A6XX_SP_PS_TP_BORDER_COLOR_BASE_ADDR(.bo = dev->global_bo,
-                                                        .bo_offset = gb_offset(bcolor_builtin)));
+                                                        .bo_offset = gb_offset(bcolor)));
 
    if (CHIP == A7XX) {
       tu_cs_emit_regs(cs, TPL1_BICUBIC_WEIGHTS_TABLE_0(CHIP, 0),

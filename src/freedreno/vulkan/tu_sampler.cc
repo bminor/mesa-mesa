@@ -33,10 +33,6 @@ tu_CreateSampler(VkDevice _device,
 
    const struct VkSamplerYcbcrConversionInfo *ycbcr_conversion =
       vk_find_struct_const(pCreateInfo->pNext,  SAMPLER_YCBCR_CONVERSION_INFO);
-   /* for non-custom border colors, the VK enum is translated directly to an offset in
-    * the border color buffer. custom border colors are located immediately after the
-    * builtin colors, and thus an offset of TU_BORDER_COLOR_BUILTIN is added.
-    */
    uint32_t border_color = (unsigned) pCreateInfo->borderColor;
    if (vk_border_color_is_custom(pCreateInfo->borderColor)) {
       mtx_lock(&device->mutex);
@@ -61,7 +57,6 @@ tu_CreateSampler(VkDevice _device,
       tu6_pack_border_color(
          &device->global_bo_map->bcolor[border_color], &color,
          pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT);
-      border_color += TU_BORDER_COLOR_BUILTIN;
    } else {
       fast_border_color_enable = true;
       switch (pCreateInfo->borderColor) {
@@ -145,9 +140,10 @@ tu_DestroySampler(VkDevice _device,
    if (!sampler)
       return;
 
-   border_color = (sampler->descriptor[2] & A6XX_TEX_SAMP_2_BCOLOR__MASK) >> A6XX_TEX_SAMP_2_BCOLOR__SHIFT;
-   if (border_color >= TU_BORDER_COLOR_BUILTIN) {
-      border_color -= TU_BORDER_COLOR_BUILTIN;
+   bool fast_border_color =
+      (sampler->descriptor[2] & A6XX_TEX_SAMP_2_FASTBORDERCOLOREN) != 0;
+   if (!fast_border_color) {
+      border_color = (sampler->descriptor[2] & A6XX_TEX_SAMP_2_BCOLOR__MASK) >> A6XX_TEX_SAMP_2_BCOLOR__SHIFT;
       /* if the sampler had a custom border color, free it. TODO: no lock */
       mtx_lock(&device->mutex);
       assert(!BITSET_TEST(device->custom_border_color, border_color));
