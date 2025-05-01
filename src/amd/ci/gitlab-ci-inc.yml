@@ -470,7 +470,6 @@
   rules:
     - !reference [.radeonsi-vaapi-rules, rules]
     - changes:
-        - .gitlab-ci/fluster/*
         - src/amd/ci/$GPU_VERSION-fluster-fails.txt
         - src/amd/ci/$GPU_VERSION-fluster-flakes.txt
         - src/amd/ci/$GPU_VERSION-fluster-skips.txt

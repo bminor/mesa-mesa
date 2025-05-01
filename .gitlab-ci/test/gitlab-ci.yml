@@ -186,7 +186,7 @@ yaml-toml-shell-py-test:
 .test-fluster:
   variables:
     FLUSTER_RESULTS: "${GPU_VERSION}-${FLUSTER_CODEC}"
-    HWCI_TEST_SCRIPT: "/install/fluster/fluster-runner.sh"
+    HWCI_TEST_SCRIPT: install/fluster-runner.sh
 
 .test-piglit:
   variables:
