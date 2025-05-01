@@ -877,9 +877,9 @@ static enum amd_ip_type amdgpu_cs_get_ip_type(struct radeon_cmdbuf *rcs)
 static bool ip_uses_alt_fence(enum amd_ip_type ip_type)
 {
    /* The alt_fence path can be tested thoroughly by enabling it for GFX here. */
-   return ip_type == AMD_IP_VCN_DEC ||
-          ip_type == AMD_IP_VCN_ENC ||
-          ip_type == AMD_IP_VCN_JPEG;
+   return ip_type != AMD_IP_GFX &&
+          ip_type != AMD_IP_COMPUTE &&
+          ip_type != AMD_IP_SDMA;
 }
 
 static void amdgpu_cs_destroy(struct radeon_cmdbuf *rcs)
