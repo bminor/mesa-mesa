@@ -674,8 +674,11 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
                                 0, &va, &va_handle,
                                 (flags & RADEON_FLAG_32BIT ? AMDGPU_VA_RANGE_32_BIT : 0) |
                                 AMDGPU_VA_RANGE_HIGH);
-      if (r)
+      if (r) {
+         fprintf(stderr, "amdgpu: failed to allocate %"PRIu64" bytes from the %u-bit address space\n",
+                 size + va_gap_size, flags & RADEON_FLAG_32BIT ? 32 : 64);
          goto error_va_alloc;
+      }
 
       unsigned vm_flags = AMDGPU_VM_PAGE_READABLE |
                           AMDGPU_VM_PAGE_WRITEABLE |
