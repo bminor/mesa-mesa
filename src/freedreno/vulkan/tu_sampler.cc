@@ -28,6 +28,9 @@ tu_CreateSampler(VkDevice _device,
    if (!sampler)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
+   bool fast_border_color_enable = false;
+   enum a6xx_fast_border_color fast_border_color = A6XX_BORDER_COLOR_0_0_0_0;
+
    const struct VkSamplerYcbcrConversionInfo *ycbcr_conversion =
       vk_find_struct_const(pCreateInfo->pNext,  SAMPLER_YCBCR_CONVERSION_INFO);
    /* for non-custom border colors, the VK enum is translated directly to an offset in
@@ -59,6 +62,24 @@ tu_CreateSampler(VkDevice _device,
          &device->global_bo_map->bcolor[border_color], &color,
          pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT);
       border_color += TU_BORDER_COLOR_BUILTIN;
+   } else {
+      fast_border_color_enable = true;
+      switch (pCreateInfo->borderColor) {
+         case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+         case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
+            fast_border_color = A6XX_BORDER_COLOR_0_0_0_0;
+            break;
+         case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+         case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
+            fast_border_color = A6XX_BORDER_COLOR_0_0_0_1;
+            break;
+         case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+         case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
+            fast_border_color = A6XX_BORDER_COLOR_1_1_1_1;
+            break;
+         default:
+            unreachable("unknown border color");
+      }
    }
 
    unsigned aniso = pCreateInfo->anisotropyEnable ?
@@ -84,7 +105,10 @@ tu_CreateSampler(VkDevice _device,
       A6XX_TEX_SAMP_1_MAX_LOD(max_lod) |
       COND(pCreateInfo->compareEnable,
            A6XX_TEX_SAMP_1_COMPARE_FUNC(tu6_compare_func(pCreateInfo->compareOp)));
-   sampler->descriptor[2] = A6XX_TEX_SAMP_2_BCOLOR(border_color);
+   sampler->descriptor[2] =
+      A6XX_TEX_SAMP_2_BCOLOR(border_color) |
+      A6XX_TEX_SAMP_2_FASTBORDERCOLOR(fast_border_color) |
+      COND(fast_border_color_enable, A6XX_TEX_SAMP_2_FASTBORDERCOLOREN);
    sampler->descriptor[3] = 0;
 
    if (sampler->vk.reduction_mode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
