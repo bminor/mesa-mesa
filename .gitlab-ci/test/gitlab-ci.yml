@@ -183,6 +183,11 @@ yaml-toml-shell-py-test:
   variables:
     ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}
 
+.test-fluster:
+  variables:
+    FLUSTER_RESULTS: "${GPU_VERSION}-${FLUSTER_CODEC}"
+    HWCI_TEST_SCRIPT: "/install/fluster/fluster-runner.sh"
+
 .test-piglit:
   variables:
     PIGLIT_TAG: ${CONDITIONAL_BUILD_PIGLIT_TAG}

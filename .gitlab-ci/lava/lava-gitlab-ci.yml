@@ -195,13 +195,3 @@ variables:
   extends:
     - .lava-arm64-test-gl
     - .lava-piglit-traces
-
-.lava-fluster:
-  variables:
-    FLUSTER_RESULTS: "${GPU_VERSION}-${FLUSTER_CODEC}"
-    HWCI_TEST_SCRIPT: "/install/fluster/fluster-runner.sh"
-
-.lava-fluster:x86_64:
-  extends:
-    - .lava-fluster
-

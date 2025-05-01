@@ -466,7 +466,7 @@
 ############### Fluster tests ###############
 .radeonsi-raven-vaapi-fluster:
   extends:
-    - .lava-fluster:x86_64
+    - .test-fluster
   rules:
     - !reference [.radeonsi-vaapi-rules, rules]
     - changes:
