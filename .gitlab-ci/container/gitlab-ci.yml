@@ -78,9 +78,19 @@
     # should make CI_BUILD_COMPONENTS="angle piglit"
     CI_BUILD_COMPONENTS: "angle"
 
+.container-builds-fluster:
+  variables:
+    FLUSTER_TAG: "${CONDITIONAL_BUILD_FLUSTER_TAG}"
+
 .container-builds-piglit:
   variables:
     PIGLIT_TAG: "${CONDITIONAL_BUILD_PIGLIT_TAG}"
+
+.container-builds-video:
+  extends:
+    - .container-builds-fluster
+  variables:
+    CI_BUILD_COMPONENTS: "fluster"
 
 .container-builds-x86_64:
   extends:
@@ -492,6 +502,7 @@ debian/x86_64_test-android:
 debian/x86_64_test-video:
   extends:
     - .use-debian/x86_64_test-base
+    - .container-builds-video
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-video ${DEBIAN_TEST_VIDEO_TAG}

@@ -18,6 +18,14 @@ if [ -z "$FLUSTER_CODECS" ]; then
    exit 1
 fi
 
+if [ -z "$FLUSTER_TAG" ]; then
+    echo "FLUSTER_TAG must be set to the conditional build tag"
+    exit 1
+fi
+
+# Are we using the right fluster version?
+ci_tag_test_time_check "FLUSTER_TAG"
+
 INSTALL="$PWD/install"
 
 # Set up the driver environment.
