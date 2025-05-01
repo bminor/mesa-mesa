@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "u_endian.h"
+#include "macros.h"
 #include "sha1.h"
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
@@ -131,8 +132,10 @@ SHA1Update(SHA1_CTX *context, const uint8_t *data, size_t len)
 	if ((j + len) > 63) {
 		(void)memcpy(&context->buffer[j], data, (i = 64-j));
 		SHA1Transform(context->state, context->buffer);
-		for ( ; i + 63 < len; i += 64)
+		for ( ; i + 63 < len; i += 64) {
+			assume(len >= 64);
 			SHA1Transform(context->state, (uint8_t *)&data[i]);
+		}
 		j = 0;
 	} else {
 		i = 0;
