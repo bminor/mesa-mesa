@@ -14,6 +14,7 @@ section_start angle "Building ANGLE"
 ci_tag_build_time_check "ANGLE_TAG"
 
 ANGLE_REV="f355e2b37ed43939e2753fc7dacccf75abb4c1a3"
+DEPOT_REV="5982a1aeb33dc36382ed8c62eddf52a6135e7dd3"
 
 # Set ANGLE_ARCH based on DEBIAN_ARCH if it hasn't been explicitly defined
 if [[ -z "${ANGLE_ARCH:-}" ]]; then
@@ -24,9 +25,15 @@ if [[ -z "${ANGLE_ARCH:-}" ]]; then
 fi
 
 # DEPOT tools
-git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git /depot-tools
+mkdir /depot-tools
+pushd /depot-tools
+git init
+git remote add origin https://chromium.googlesource.com/chromium/tools/depot_tools.git
+git fetch --depth 1 origin "$DEPOT_REV"
+git checkout FETCH_HEAD
 export PATH=/depot-tools:$PATH
 export DEPOT_TOOLS_UPDATE=0
+popd
 
 mkdir /angle-build
 mkdir /angle
