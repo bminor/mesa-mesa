@@ -646,7 +646,6 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                  * swizzle.
                  */
                 if (key->logicop_func != PIPE_LOGICOP_COPY ||
-                    s->info.fs.uses_fbfetch_output ||
                     key->software_blend) {
 
                         key->color_fmt[i].format = cbuf->format;

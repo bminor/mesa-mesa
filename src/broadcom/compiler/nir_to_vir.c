@@ -2595,9 +2595,8 @@ vir_emit_tlb_color_read(struct v3d_compile *c, nir_intrinsic_instr *instr)
                 &c->color_reads[(rt * V3D_MAX_SAMPLES + sample_index) * 4];
 
         if (color_reads_for_sample[component].file == QFILE_NULL) {
-                enum pipe_format rt_format = c->fs_key->color_fmt[rt].format;
-                int num_components =
-                        util_format_get_nr_components(rt_format);
+                nir_variable *var = c->output_color_var[rt];
+                int num_components = glsl_get_vector_elements(var->type);
 
                 const bool swap_rb = c->fs_key->swap_color_rb & (1 << rt);
                 if (swap_rb)

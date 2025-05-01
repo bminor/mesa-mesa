@@ -1107,7 +1107,6 @@ v3d_fs_key_set_color_attachment(struct v3d_fs_key *key,
     * need to know the color buffer format and swizzle for that
     */
    if (key->logicop_func != PIPE_LOGICOP_COPY ||
-       p_stage->nir->info.fs.uses_fbfetch_output ||
        key->software_blend) {
       /* Framebuffer formats should be single plane */
       assert(vk_format_get_plane_count(fb_format) == 1);

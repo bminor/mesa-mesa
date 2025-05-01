@@ -6,18 +6,15 @@
 nir_def *
 v3d_nir_get_tlb_color(nir_builder *b, struct v3d_compile *c, int rt, int sample)
 {
-        uint32_t num_components =
-                util_format_get_nr_components(c->fs_key->color_fmt[rt].format);
-
         nir_def *color[4];
-        for (int i = 0; i < num_components; i++) {
+        for (int i = 0; i < 4; i++) {
                 color[i] =
                         nir_load_tlb_color_brcm(b, 1, 32,
                                                 nir_imm_int(b, rt),
                                                 .base = sample,
                                                 .component = i);
         }
-        return nir_pad_vec4(b, nir_vec(b, color, num_components));
+        return nir_vec(b, color, 4);
 }
 
 static bool
