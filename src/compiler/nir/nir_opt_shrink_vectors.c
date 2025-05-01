@@ -114,6 +114,7 @@ shrink_dest_to_read_mask(nir_def *def, bool shrink_start)
 
       if (first_bit) {
          assert(shrink_start);
+         assume(comps < NIR_MAX_VEC_COMPONENTS);
 
          if (nir_intrinsic_has_component(intr)) {
             unsigned new_component = nir_intrinsic_component(intr) + first_bit;
