@@ -86,7 +86,7 @@ struct wait_entry {
    bool join(const wait_entry& other)
    {
       bool changed = (other.events & ~events) || (other.counters & ~counters) ||
-                     (other.wait_on_read && !wait_on_read) || (other.vmem_types & !vmem_types) ||
+                     (other.wait_on_read && !wait_on_read) || (other.vmem_types & ~vmem_types) ||
                      (!other.logical && logical);
       events |= other.events;
       counters |= other.counters;
