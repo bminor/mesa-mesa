@@ -2914,7 +2914,7 @@
         "description": "winsys/amdgpu: fix running out of 32bit address space with high FPS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4d486888ee895ee510fd0d0e77518c7c020482b9",
         "notes": null
