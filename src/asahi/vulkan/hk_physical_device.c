@@ -163,7 +163,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .EXT_inline_uniform_block = true,
       .EXT_line_rasterization = true,
       .EXT_load_store_op_none = true,
-      .EXT_map_memory_placed = false,
+      .EXT_map_memory_placed = true,
       .EXT_memory_budget = false,
       .EXT_multi_draw = true,
       .EXT_mutable_descriptor_type = true,
@@ -535,9 +535,9 @@ hk_get_device_features(
       .minLod = true,
 
       /* VK_EXT_map_memory_placed */
-      .memoryMapPlaced = false,
+      .memoryMapPlaced = true,
       .memoryMapRangePlaced = false,
-      .memoryUnmapReserve = false,
+      .memoryUnmapReserve = true,
 
       /* VK_EXT_multi_draw */
       .multiDraw = true,
