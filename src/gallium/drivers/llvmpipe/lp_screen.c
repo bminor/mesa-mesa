@@ -678,17 +678,21 @@ llvmpipe_is_format_supported(struct pipe_screen *_screen,
        target == PIPE_BUFFER)
       return false;
 
-   if (format_desc->colorspace == UTIL_FORMAT_COLORSPACE_YUV) {
-      if (format == PIPE_FORMAT_NV12)
-         return true;
+   if (format_desc->colorspace == UTIL_FORMAT_COLORSPACE_YUV)
       return false;
-   }
 
-   /* Prevent PIPE_FORMAT_YUYV and variants from using incomplete fast paths */
+   /* Prevent YUV formats from taking incomplete fast paths in
+    * st_get_sampler_view_format.
+    */
    if (format == PIPE_FORMAT_R8G8_R8B8_UNORM ||
        format == PIPE_FORMAT_R8B8_R8G8_UNORM ||
        format == PIPE_FORMAT_G8R8_B8R8_UNORM ||
-       format == PIPE_FORMAT_B8R8_G8R8_UNORM)
+       format == PIPE_FORMAT_B8R8_G8R8_UNORM ||
+       format == PIPE_FORMAT_R8_G8B8_420_UNORM ||
+       format == PIPE_FORMAT_R8_B8G8_420_UNORM ||
+       format == PIPE_FORMAT_R8_G8B8_422_UNORM ||
+       format == PIPE_FORMAT_R8_G8_B8_420_UNORM ||
+       format == PIPE_FORMAT_R8_B8_G8_420_UNORM)
       return false;
 
    /*

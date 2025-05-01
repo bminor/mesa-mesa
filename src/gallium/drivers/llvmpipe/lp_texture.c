@@ -715,10 +715,6 @@ llvmpipe_resource_from_handle(struct pipe_screen *_screen,
    /* no miplevels */
    assert(template->last_level == 0);
 
-   /* Multiplanar surfaces are not supported */
-   if (whandle->plane > 0)
-      return NULL;
-
    lpr = CALLOC_STRUCT(llvmpipe_resource);
    if (!lpr) {
       goto no_lpr;
