@@ -63,7 +63,7 @@ set +e
 
 fluster-runner \
         run \
-        --fluster /usr/local/fluster/fluster.py \
+        --fluster /fluster/fluster.py \
         --output ${RESULTS} \
         --jobs ${FDO_CI_CONCURRENT:-4} \
         --skips ${FLUSTER_SKIPS} \

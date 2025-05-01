@@ -8,11 +8,11 @@
 # .gitlab-ci/image-tags.yml tags:
 # DEBIAN_TEST_VIDEO_TAG
 
-# Install fluster in /usr/local.
+# Install fluster in /fluster.
 
 set -uex
 
-section_start fluster "Install fluster"
+section_start fluster "Installing fluster"
 
 FLUSTER_REVISION="e997402978f62428fffc8e5a4a709690d9ca9bc5"
 
@@ -54,11 +54,11 @@ if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
       "https://${S3_PATH_FLUSTER}/vectors.tar.zst"
 fi
 
-mv fluster/ /usr/local/
+mv fluster/ /
 
 if $SKIP_UPDATE_FLUSTER_VECTORS; then
     curl -L --retry 4 -f --retry-connrefused --retry-delay 30 \
-      "${FDO_HTTP_CACHE_URI:-}https://${S3_PATH_FLUSTER}" | tar --zstd -x -C /usr/local/
+      "${FDO_HTTP_CACHE_URI:-}https://${S3_PATH_FLUSTER}" | tar --zstd -x -C /
 fi
 
 section_end fluster
