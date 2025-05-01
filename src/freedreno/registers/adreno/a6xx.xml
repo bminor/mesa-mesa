@@ -5963,6 +5963,13 @@ to upconvert to 32b float internally?
 		<value name="A6XX_REDUCTION_MODE_MIN" value="1"/>
 		<value name="A6XX_REDUCTION_MODE_MAX" value="2"/>
 	</enum>
+	<enum name="a6xx_fast_border_color">
+		<!--                           R B G A -->
+		<value name="A6XX_BORDER_COLOR_0_0_0_0" value="0"/>
+		<value name="A6XX_BORDER_COLOR_0_0_0_1" value="1"/>
+		<value name="A6XX_BORDER_COLOR_1_1_1_0" value="2"/>
+		<value name="A6XX_BORDER_COLOR_1_1_1_1" value="3"/>
+	</enum>
 
 	<reg32 offset="0" name="0">
 		<bitfield name="MIPFILTER_LINEAR_NEAR" pos="0" type="boolean"/>
@@ -5991,6 +5998,8 @@ to upconvert to 32b float internally?
 	</reg32>
 	<reg32 offset="2" name="2">
 		<bitfield name="REDUCTION_MODE" low="0" high="1" type="a6xx_reduction_mode"/>
+		<bitfield name="FASTBORDERCOLOR" low="2" high="3" type="a6xx_fast_border_color"/>
+		<bitfield name="FASTBORDERCOLOREN" pos="4" type="boolean"/>
 		<bitfield name="CHROMA_LINEAR" pos="5" type="boolean"/>
 		<bitfield name="BCOLOR" low="7" high="31"/>
 	</reg32>
