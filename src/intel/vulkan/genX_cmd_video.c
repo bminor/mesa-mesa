@@ -723,8 +723,10 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
          slice.SliceCrQPOffset = slice_params[s].slice_cr_qp_offset;
          slice.SliceHeaderDisableDeblockingFilter = pps->flags.deblocking_filter_override_enabled_flag ?
                slice_params[s].disable_deblocking_filter_idc : pps->flags.pps_deblocking_filter_disabled_flag;
-         slice.SliceTCOffsetDiv2 = slice_params[s].tc_offset_div2;
-         slice.SliceBetaOffsetDiv2 = slice_params[s].beta_offset_div2;
+         slice.SliceTCOffsetDiv2 = pps->flags.deblocking_filter_override_enabled_flag ?
+               slice_params[s].tc_offset_div2 : pps->pps_tc_offset_div2;
+         slice.SliceBetaOffsetDiv2 = pps->flags.deblocking_filter_override_enabled_flag ?
+               slice_params[s].beta_offset_div2 : pps->pps_beta_offset_div2;
          slice.SliceLoopFilterEnable = slice_params[s].loop_filter_across_slices_enable;
          slice.SliceSAOChroma = slice_params[s].sao_chroma_flag;
          slice.SliceSAOLuma = slice_params[s].sao_luma_flag;
