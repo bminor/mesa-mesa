@@ -148,7 +148,7 @@ radeonsi-raven-va:
 radeonsi-raven-vaapi-fluster:
   extends:
     - radeonsi-raven-va
-    - .radeonsi-raven-vaapi-fluster
+    - .radeonsi-vaapi-fluster-rules
   timeout: 30m
   parallel: 2
   variables:

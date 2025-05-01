@@ -464,7 +464,7 @@
     DEQP_SUITE: radv-valve
 
 ############### Fluster tests ###############
-.radeonsi-raven-vaapi-fluster:
+.radeonsi-vaapi-fluster-rules:
   extends:
     - .test-fluster
   rules:
