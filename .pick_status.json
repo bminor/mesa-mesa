@@ -1,5 +1,505 @@
 [
     {
+        "sha": "615d0c9669595adf114a705f5b8ee88277aa99f2",
+        "description": "anv: Remove ANV_BO_ALLOC_HOST_CACHED from ANV_BO_ALLOC_MAPPED assert() on anv_device_alloc_bo()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57bf6466852894a753c5a36a858c0ae5712dbc9b",
+        "description": "anv: Fix assert failure in discrete GPUs when allocating a LMEM+SMEM slab parent",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "dabb012423dc27e2b03f13f7144406edacc89069",
+        "notes": null
+    },
+    {
+        "sha": "8a339cdebccdea0610bdd7a1ecc9a5ec63951940",
+        "description": "egl: fix sw fallback rejection in non-sw EGL_PLATFORM=device",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d8146befb3502b6f77df7d6e152d25d01201e9e",
+        "description": "egl: rename dri2_load_driver -> dri2_detect_swrast",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "453ecaddb56028e784f0923fca8308fecd10f655",
+        "description": "freedreno: Remove compute_constlen_quirk",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea9d694a7b363d66dd9e57bc0f55c5fd903632b2",
+        "description": "ir3: Take LB restriction on constlen into account on a7xx",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5879eaac185ed1c167fd01aff9b91c7cbe43ab0a",
+        "notes": null
+    },
+    {
+        "sha": "80bcbc0e924f7e021bcca155fa12501a2d6fb467",
+        "description": "freedreno/a6xx, turnip: Set CONSTANTRAMMODE correctly",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5879eaac185ed1c167fd01aff9b91c7cbe43ab0a",
+        "notes": null
+    },
+    {
+        "sha": "57986ae5ec57820e4e06d7674f1496de58f4fd0e",
+        "description": "freedreno/a6xx: Define CONSTANTRAMMODE",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5879eaac185ed1c167fd01aff9b91c7cbe43ab0a",
+        "notes": null
+    },
+    {
+        "sha": "156ab5839d045ea291a47789014ce61ddbad0804",
+        "description": "freedreno: Add compute_lb_size device info",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5879eaac185ed1c167fd01aff9b91c7cbe43ab0a",
+        "notes": null
+    },
+    {
+        "sha": "6445fd47d8a2a7b2ea1d8a0a306f64e1d25392e5",
+        "description": "docs: add sha sum for 25.0.5",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36a98e226c547c92f4ecfbdc9a424a93a3eb6000",
+        "description": "docs: add release notes for 25.0.5",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e9c89e7873724ba3426c44a09b089924b6698c1",
+        "description": "docs: update calendar for 25.0.5",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f17d350001a195c89633f083866c5afb7563f78c",
+        "description": "lima: Move fdot lowering from NIR to lima",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f747d09900c1507e683a6ff3918691d3d880008",
+        "description": "docs: update calendar for 25.1.0-rc3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a97a5d57750906a881144b13ab6e089c203d163",
+        "description": "nak: fix handling of delays > 15",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2b569ecdb6531228a1c2eac38da310b8cd0f3cfc",
+        "notes": null
+    },
+    {
+        "sha": "c8b57594e0faa5851af44d85cebf4a8036df1106",
+        "description": "ci/baremetal: fix ubsan gl target",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "e16d422da52c2e1990c43ee858a4e06c8dd01346",
+        "notes": null
+    },
+    {
+        "sha": "9d01b318a337507e0b8f2646208d7f21a8038416",
+        "description": "anv,tu: Bypass RMV pcie_family_id check",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2781df4d10a97c08fdc2650233e7842a8655156c",
+        "description": "Revert \"ci: disable Igalia's farm\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1eb3a40615e64cd145d1e66c301075b6b8478c5b",
+        "notes": null
+    },
+    {
+        "sha": "9082715ab014270fb8bdf555526d7e55a4890538",
+        "description": "vk/cmd_queue: generate copies for string struct members",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "26cdd7ebd6254376b0250962db1fe6a679391a93",
+        "description": "vk/cmd_queue: generate copies for struct-ptr members",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7edaaacce7607cb26c86ba1f5bd2347a27ee797",
+        "description": "vk/cmd_queue: stop generating weird casts for free functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c3b6122cdf65b73c4c235bd178b8e20e507b47a0",
+        "description": "vk/cmd_queue: try to fix some indentation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6c5f0c19dae04e27d34f7387c0df1f492af8c01",
+        "description": "ci: Switch cross-builds to '-D tools=panfrost'",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "674c96ad0a4a9b57342c90135fbceb696d7aae46",
+        "description": "panfrost: build panfrost_compile for -Dtools=panfrost",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a228d715b6b3fad7a98dab8807ba5b8d9411c5b3",
+        "description": "asahi: Drop unnecessary idep_mesaclc dependency",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "007d7418f8fb41c1ea789f5049be023312802048",
+        "description": "asahi: build asahi_clc for -Dtools=asahi",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c4cce5bfd4bb940c4a2cb994b074d3b77b92a56",
+        "description": "etnaviv: compiler: Enable more pack/unpack lowerings",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2193ae0253e5ce72dd1b353ab4e9b5e574a8dd9c",
+        "description": "etnaviv: compiler: Call nir_lower_alu_width(..)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68a89bb08563113b99367714b5c9a9dfd6cc9fdf",
+        "description": "etnaviv: compiler: Handle f2f16 and f2f32",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7bc22e0d726d60a911270ea08fad36d8a52605c",
+        "description": "anv: force fragment shader execution when occlusion queries are active",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a2ee9b5347da67001b64a835e99fd881f748124",
+        "description": "iris: Remove iris_slab_free cast",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f0aa96d2625f0fe10deed2cada215eba860d651",
+        "description": "anv: Do conservative oversubscription of pages to 2MB",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c05488be169a4bb0f8c73744ed7d07237d085e5",
+        "description": "anv: Align size of bos larger than 1MB to 64k to enable 64k pages",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dde91cf9cbd5c346f2add8662801c4ef1f0b45a1",
+        "description": "anv: Always grow fixed address pools by 2MB in platforms that there is a performance gain",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7361b3287fb2c776d09110d522f91611063b611d",
+        "description": "anv: Remove useless if block",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f7a32ec928a47a13c408f34b931bb8c634636e9",
+        "description": "anv: Add support for batch buffers in anv_slab_bo in i915",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39bb51ab274a37e3647641e48073b85f0f92577c",
+        "description": "anv: Add support for batch buffers in anv_slab_bo in Xe KMD",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0a600ca5fab4dee6df3f36910b138f7656467e4",
+        "description": "anv: Skip anv_bo_pool if memory pool is enabled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b561f691bd29f2c6eeb87498ba7fe6d8d2e576e",
+        "description": "anv: Add support for ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL in anv_slab_bo",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8fd4423d99fa6f46428510733ed5e4ac401ed353",
+        "description": "anv: Add support for ANV_BO_ALLOC_DESCRIPTOR_POOL in anv_slab_bo",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea18572ff287f9a024e4dbcffc7d833e777e4c7b",
+        "description": "anv: Add support for ANV_BO_ALLOC_AUX_CCS in anv_slab_bo",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dabb012423dc27e2b03f13f7144406edacc89069",
+        "description": "anv: Implement anv_slab_bo and enable memory pool",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bf6d42fda02f54e6235d2c0fc6a855b2bd75a66",
+        "description": "anv: Add the base infrastructure to support memory pool",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d8ec0ce5c6564935d1565d105fa7bd646333e90",
+        "description": "anv: Move VMA alignment requirements to its own function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e7ba17413b0869cb5874ecf979ac8ed6adda0c8",
+        "description": "anv: Export anv_bo_is_small_heap()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce4d48107c0dd727e1cf05ba70cb4a053937cfba",
+        "description": "util: Move pb_slab from gallium to util",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0642708fe8c14a81827a92a4f05b669f3c1f0726",
+        "description": "gallium: Remove pb_buffer.h include from pb_slab.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0a9ec34e7d6f0d4a5b77078f373e0e17d5c0b28",
+        "description": "intel: Add has_partial_mmap_offset to intel_device_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "374ef9228bd4bd711463b790611cba16326f3a79",
+        "description": "anv: add ability to mmap at offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d46a663aecd061d50c26a4950fabbb9ed7970f2",
+        "description": "anv: update Wa_22019225126 check",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "eeffb4e674d10db9aefebeca91c2d87c1676b81e",
         "description": "intel/dev: update mesa_defs.json from internal database",
         "nominated": true,
