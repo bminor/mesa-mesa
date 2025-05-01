@@ -421,7 +421,7 @@ impl fmt::Display for SSAValue {
 /// designed so that is always 16B, regardless of how many SSA values are
 /// referenced so it's easy and fairly cheap to copy around and embed in other
 /// structures.
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct SSARef {
     v: [SSAValue; 4],
 }
@@ -743,7 +743,7 @@ impl fmt::Display for Dst {
     }
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub enum CBuf {
     Binding(u8),
 
@@ -764,7 +764,7 @@ impl fmt::Display for CBuf {
     }
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct CBufRef {
     pub buf: CBuf,
     pub offset: u16,
@@ -1245,7 +1245,7 @@ impl Src {
     }
 
     pub fn as_bool(&self) -> Option<bool> {
-        match self.src_ref {
+        match &self.src_ref {
             SrcRef::True => Some(!self.src_mod.is_bnot()),
             SrcRef::False => Some(self.src_mod.is_bnot()),
             SrcRef::SSA(vec) => {
@@ -1298,7 +1298,7 @@ impl Src {
     }
 
     pub fn is_uniform(&self) -> bool {
-        match self.src_ref {
+        match &self.src_ref {
             SrcRef::Zero
             | SrcRef::True
             | SrcRef::False
@@ -5376,7 +5376,7 @@ pub struct OpLdc {
 
 impl DisplayOp for OpLdc {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let SrcRef::CBuf(cb) = self.cb.src_ref else {
+        let SrcRef::CBuf(cb) = &self.cb.src_ref else {
             panic!("Not a cbuf");
         };
         write!(f, "ldc{}{} {}[", self.mode, self.mem_type, cb.buf)?;

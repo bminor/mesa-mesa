@@ -219,7 +219,7 @@ impl BarPropPass {
                     let mut bmovs = Vec::new();
                     for (idx, dst) in op.dsts.iter_mut() {
                         if self.phi_is_bar.get((*idx).try_into().unwrap()) {
-                            let ssa = *dst.as_ssa().unwrap();
+                            let ssa = dst.as_ssa().unwrap().clone();
                             let bar = *self.ssa_map.get(&ssa[0]).unwrap();
                             *dst = bar.into();
 

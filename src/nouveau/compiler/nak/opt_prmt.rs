@@ -17,7 +17,7 @@ struct PrmtSrcs {
 impl PrmtSrcs {
     fn new() -> PrmtSrcs {
         PrmtSrcs {
-            srcs: [const { SrcRef::Zero }; 2],
+            srcs: [SrcRef::Zero, SrcRef::Zero],
             num_srcs: 0,
             imm_src: usize::MAX,
             num_imm_bytes: 0,
@@ -93,7 +93,7 @@ impl PrmtPass {
     }
 
     fn add_prmt(&mut self, op: &OpPrmt) {
-        let Dst::SSA(dst_ssa) = op.dst else {
+        let Dst::SSA(dst_ssa) = &op.dst else {
             return;
         };
         debug_assert!(dst_ssa.comps() == 1);

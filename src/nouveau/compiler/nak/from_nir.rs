@@ -813,7 +813,7 @@ impl<'a> ShaderFromNir<'a> {
 
                 let dst = b.alloc_ssa_vec(RegFile::GPR, dst_bits.div_ceil(32));
                 b.push_op(OpF2F {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     src: srcs(0),
                     src_type: FloatType::from_bits(src_bits.into()),
                     dst_type: dst_type,
@@ -865,7 +865,7 @@ impl<'a> ShaderFromNir<'a> {
                         ftz: self.float_ctl[src_type].ftz,
                     });
                     b.push_op(OpI2I {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         src: tmp.into(),
                         src_type: tmp_type,
                         dst_type,
@@ -875,7 +875,7 @@ impl<'a> ShaderFromNir<'a> {
                     });
                 } else {
                     b.push_op(OpF2I {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         src: srcs(0),
                         src_type,
                         dst_type,
@@ -897,14 +897,14 @@ impl<'a> ShaderFromNir<'a> {
                 if alu.def.bit_size() == 64 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 2);
                     b.push_op(OpDAdd {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [x, y],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                     });
                 } else if alu.def.bit_size() == 32 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpFAdd {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [x, y],
                         saturate: self.try_saturate_alu_dst(&alu.def),
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
@@ -917,7 +917,7 @@ impl<'a> ShaderFromNir<'a> {
 
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpHAdd2 {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [restrict_f16v2_src(x), restrict_f16v2_src(y)],
                         saturate: self.try_saturate_alu_dst(&alu.def),
                         ftz: self.float_ctl[ftype].ftz,
@@ -984,7 +984,7 @@ impl<'a> ShaderFromNir<'a> {
                 if alu.get_src(0).bit_size() == 64 {
                     assert!(alu.def.num_components == 1);
                     b.push_op(OpDSetP {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         set_op: PredSetOp::And,
                         cmp_op: cmp_op,
                         srcs: [srcs(0), srcs(1)],
@@ -993,7 +993,7 @@ impl<'a> ShaderFromNir<'a> {
                 } else if alu.get_src(0).bit_size() == 32 {
                     assert!(alu.def.num_components == 1);
                     b.push_op(OpFSetP {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         set_op: PredSetOp::And,
                         cmp_op: cmp_op,
                         srcs: [srcs(0), srcs(1)],
@@ -1040,14 +1040,14 @@ impl<'a> ShaderFromNir<'a> {
                     debug_assert!(!self.float_ctl[ftype].ftz);
                     dst = b.alloc_ssa_vec(RegFile::GPR, 2);
                     b.push_op(OpDFma {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1), srcs(2)],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                     });
                 } else if alu.def.bit_size() == 32 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpFFma {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1), srcs(2)],
                         saturate: self.try_saturate_alu_dst(&alu.def),
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
@@ -1063,7 +1063,7 @@ impl<'a> ShaderFromNir<'a> {
 
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpHFma2 {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [
                             restrict_f16v2_src(srcs(0)),
                             restrict_f16v2_src(srcs(1)),
@@ -1105,14 +1105,14 @@ impl<'a> ShaderFromNir<'a> {
                 if alu.def.bit_size() == 64 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 2);
                     b.push_op(OpDMnMx {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1)],
                         min: (alu.op == nir_op_fmin).into(),
                     });
                 } else if alu.def.bit_size() == 32 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpFMnMx {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1)],
                         min: (alu.op == nir_op_fmin).into(),
                         ftz: self.float_ctl.fp32.ftz,
@@ -1120,7 +1120,7 @@ impl<'a> ShaderFromNir<'a> {
                 } else if alu.def.bit_size() == 16 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpHMnMx2 {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [
                             restrict_f16v2_src(srcs(0)),
                             restrict_f16v2_src(srcs(1)),
@@ -1140,14 +1140,14 @@ impl<'a> ShaderFromNir<'a> {
                     debug_assert!(!self.float_ctl[ftype].ftz);
                     dst = b.alloc_ssa_vec(RegFile::GPR, 2);
                     b.push_op(OpDMul {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1)],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                     });
                 } else if alu.def.bit_size() == 32 {
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpFMul {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [srcs(0), srcs(1)],
                         saturate: self.try_saturate_alu_dst(&alu.def),
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
@@ -1161,7 +1161,7 @@ impl<'a> ShaderFromNir<'a> {
 
                     dst = b.alloc_ssa_vec(RegFile::GPR, 1);
                     b.push_op(OpHMul2 {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         srcs: [
                             restrict_f16v2_src(srcs(0)),
                             restrict_f16v2_src(srcs(1)),
@@ -1310,7 +1310,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst_type = FloatType::from_bits(dst_bits.into());
                 let dst = b.alloc_ssa_vec(RegFile::GPR, dst_bits.div_ceil(32));
                 b.push_op(OpI2F {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     src: srcs(0),
                     dst_type: dst_type,
                     src_type: IntType::from_bits(src_bits.into(), true),
@@ -1411,8 +1411,8 @@ impl<'a> ShaderFromNir<'a> {
                 dst.into()
             }
             nir_op_ige | nir_op_ilt | nir_op_uge | nir_op_ult => {
-                let x = *srcs(0).as_ssa().unwrap();
-                let y = *srcs(1).as_ssa().unwrap();
+                let x = srcs(0).to_ssa();
+                let y = srcs(1).to_ssa();
                 let (cmp_type, cmp_op) = match alu.op {
                     nir_op_ige => (IntCmpType::I32, IntCmpOp::Ge),
                     nir_op_ilt => (IntCmpType::I32, IntCmpOp::Lt),
@@ -1624,7 +1624,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst_type = FloatType::from_bits(dst_bits.into());
                 let dst = b.alloc_ssa_vec(RegFile::GPR, dst_bits.div_ceil(32));
                 b.push_op(OpI2F {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     src: srcs(0),
                     dst_type: dst_type,
                     src_type: IntType::from_bits(src_bits.into(), false),
@@ -1827,7 +1827,7 @@ impl<'a> ShaderFromNir<'a> {
             dsts[0] = SSARef::try_from(&dst[0..2]).unwrap().into();
             dsts[1] = SSARef::try_from(&dst[2..]).unwrap().into();
         } else {
-            dsts[0] = dst.into();
+            dsts[0] = dst.clone().into();
         }
 
         let fault = if flags.is_sparse() {
@@ -2164,7 +2164,7 @@ impl<'a> ShaderFromNir<'a> {
                     assert!(intrin.def.bit_size() == 32);
                     let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
                     b.push_op(OpALd {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         vtx,
                         addr,
                         offset,
@@ -2233,7 +2233,7 @@ impl<'a> ShaderFromNir<'a> {
                                     src_base_type == ALUType::INT,
                                 );
                                 b.push_op(OpI2I {
-                                    dst: dst.into(),
+                                    dst: dst.clone().into(),
                                     src: self.get_src(&srcs[0]),
                                     src_type,
                                     dst_type,
@@ -2249,7 +2249,7 @@ impl<'a> ShaderFromNir<'a> {
                                 // pre-Volta
                                 assert!(b.sm() >= 70 || dst_bit_size > 8);
                                 b.push_op(OpF2I {
-                                    dst: dst.into(),
+                                    dst: dst.clone().into(),
                                     src: self.get_src(&srcs[0]),
                                     src_type,
                                     dst_type,
@@ -2270,7 +2270,7 @@ impl<'a> ShaderFromNir<'a> {
                                     src_base_type == ALUType::INT,
                                 );
                                 b.push_op(OpI2F {
-                                    dst: dst.into(),
+                                    dst: dst.clone().into(),
                                     src: self.get_src(&srcs[0]),
                                     src_type,
                                     dst_type,
@@ -2281,7 +2281,7 @@ impl<'a> ShaderFromNir<'a> {
                                 let src_type =
                                     FloatType::from_bits(src_bit_size.into());
                                 b.push_op(OpF2F {
-                                    dst: dst.into(),
+                                    dst: dst.clone().into(),
                                     src: self.get_src(&srcs[0]),
                                     src_type,
                                     dst_type,
@@ -2511,7 +2511,7 @@ impl<'a> ShaderFromNir<'a> {
                     dst: if self.sm.sm() >= 70 && is_reduction {
                         Dst::None
                     } else {
-                        dst.into()
+                        dst.clone().into()
                     },
                     fault: Dst::None,
                     handle: handle,
@@ -2559,7 +2559,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
 
                 b.push_op(OpSuLd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     fault: Dst::None,
                     image_access,
                     image_dim: dim,
@@ -2594,10 +2594,10 @@ impl<'a> ShaderFromNir<'a> {
                     ImageAccess::Formatted(ChannelMask::for_comps(comps - 1));
 
                 let dst = b.alloc_ssa_vec(RegFile::GPR, comps - 1);
-                let fault = b.alloc_ssa_vec(RegFile::Pred, 1);
+                let fault = b.alloc_ssa(RegFile::Pred);
 
                 b.push_op(OpSuLd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     fault: fault.into(),
                     image_access,
                     image_dim: dim,
@@ -2716,7 +2716,11 @@ impl<'a> ShaderFromNir<'a> {
                     atom_op.is_reduction() && intrin.def.components_read() == 0;
 
                 b.push_op(OpAtom {
-                    dst: if is_reduction { Dst::None } else { dst.into() },
+                    dst: if is_reduction {
+                        Dst::None
+                    } else {
+                        dst.clone().into()
+                    },
                     addr: addr,
                     cmpr: 0.into(),
                     data: data,
@@ -2741,7 +2745,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, bit_size.div_ceil(32));
 
                 b.push_op(OpAtom {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     cmpr: cmpr,
                     data: data,
@@ -2847,7 +2851,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, size_B.div_ceil(4));
 
                 b.push_op(OpLd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     offset: offset,
                     access: access,
@@ -2873,7 +2877,7 @@ impl<'a> ShaderFromNir<'a> {
 
                 let dst = b.alloc_ssa_vec(RegFile::GPR, 2);
                 b.push_op(OpLdTram {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr,
                     use_c,
                 });
@@ -2931,7 +2935,7 @@ impl<'a> ShaderFromNir<'a> {
                 let comps = 2;
                 let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
                 b.push_op(OpALd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     vtx: vtx.into(),
                     addr: NAK_ATTR_TESS_COORD,
                     offset: 0.into(),
@@ -2956,7 +2960,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, size_B.div_ceil(4));
 
                 b.push_op(OpLd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     offset: offset,
                     access: access,
@@ -2978,7 +2982,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, size_B.div_ceil(4));
 
                 b.push_op(OpLd {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     offset: offset,
                     access: access,
@@ -2998,13 +3002,13 @@ impl<'a> ShaderFromNir<'a> {
                 {
                     debug_assert!(idx + comps <= NAK_SV_CLOCK + 2);
                     b.push_op(OpCS2R {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         idx: idx,
                     });
                 } else {
                     debug_assert!(intrin.def.bit_size == 32);
                     b.push_op(OpS2R {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         idx: idx,
                     });
                 }
@@ -3028,11 +3032,14 @@ impl<'a> ShaderFromNir<'a> {
                     if off.is_zero() {
                         for (i, comp) in dst.iter().enumerate() {
                             let i = u16::try_from(i).unwrap();
-                            b.copy_to((*comp).into(), cb.offset(i * 4).into());
+                            b.copy_to(
+                                (*comp).into(),
+                                cb.clone().offset(i * 4).into(),
+                            );
                         }
                     } else {
                         b.push_op(OpLdc {
-                            dst: dst.into(),
+                            dst: dst.clone().into(),
                             cb: cb.into(),
                             offset: off,
                             mode: LdcMode::Indexed,
@@ -3055,7 +3062,7 @@ impl<'a> ShaderFromNir<'a> {
                         offset: off_imm,
                     };
                     b.push_op(OpLdc {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         cb: cb.into(),
                         offset: off_idx.into(),
                         mode: LdcMode::IndexedSegmented,
@@ -3080,11 +3087,14 @@ impl<'a> ShaderFromNir<'a> {
                 if off.is_zero() {
                     for (i, comp) in dst.iter().enumerate() {
                         let i = u16::try_from(i).unwrap();
-                        b.copy_to((*comp).into(), cb.offset(i * 4).into());
+                        b.copy_to(
+                            (*comp).into(),
+                            cb.clone().offset(i * 4).into(),
+                        );
                     }
                 } else {
                     b.push_op(OpLdc {
-                        dst: dst.into(),
+                        dst: dst.clone().into(),
                         cb: cb.into(),
                         offset: off,
                         mode: LdcMode::Indexed,
@@ -3096,14 +3106,14 @@ impl<'a> ShaderFromNir<'a> {
             nir_intrinsic_pin_cx_handle_nv => {
                 let handle = self.get_ssa_ref(&srcs[0]);
                 b.push_op(OpPin {
-                    src: handle.into(),
+                    src: handle.clone().into(),
                     dst: handle.into(),
                 });
             }
             nir_intrinsic_unpin_cx_handle_nv => {
                 let handle = self.get_ssa_ref(&srcs[0]);
                 b.push_op(OpUnpin {
-                    src: handle.into(),
+                    src: handle.clone().into(),
                     dst: handle.into(),
                 });
             }
@@ -3227,7 +3237,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, bit_size.div_ceil(32));
 
                 b.push_op(OpAtom {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     cmpr: 0.into(),
                     data: data,
@@ -3252,7 +3262,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa_vec(RegFile::GPR, bit_size.div_ceil(32));
 
                 b.push_op(OpAtom {
-                    dst: dst.into(),
+                    dst: dst.clone().into(),
                     addr: addr,
                     cmpr: cmpr,
                     data: data,
@@ -3723,7 +3733,8 @@ impl<'a> ShaderFromNir<'a> {
 
                 for ps in np.iter_srcs() {
                     if ps.pred().index == nb.index {
-                        let src = *self.get_src(&ps.src).as_ssa().unwrap();
+                        let src = self.get_src(&ps.src);
+                        let src = src.as_ssa().unwrap();
                         for (i, src) in src.iter().enumerate() {
                             let phi_id =
                                 phi_map.get_phi_id(np, i.try_into().unwrap());

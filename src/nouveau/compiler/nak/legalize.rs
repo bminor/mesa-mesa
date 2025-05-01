@@ -26,7 +26,7 @@ pub fn src_is_upred_reg(src: &Src) -> bool {
 }
 
 pub fn src_is_reg(src: &Src, reg_file: RegFile) -> bool {
-    match src.src_ref {
+    match &src.src_ref {
         SrcRef::Zero | SrcRef::True | SrcRef::False => true,
         SrcRef::SSA(ssa) => ssa.file() == Some(reg_file),
         SrcRef::Imm32(_) | SrcRef::CBuf(_) => false,
@@ -143,10 +143,12 @@ pub trait LegalizeBuildHelpers: SSABuilder {
             }));
         }
 
+        let old_src_ref =
+            std::mem::replace(&mut src.src_ref, val.clone().into());
         if val.comps() == 1 {
-            self.copy_to(val.into(), src.src_ref.clone().into());
+            self.copy_to(val[0].into(), old_src_ref.into());
         } else {
-            match src.src_ref {
+            match old_src_ref {
                 SrcRef::Imm32(u) => {
                     // Immediates go in the top bits
                     self.copy_to(val[0].into(), 0.into());
@@ -154,7 +156,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 }
                 SrcRef::CBuf(cb) => {
                     // CBufs load 8B
-                    self.copy_to(val[0].into(), cb.into());
+                    self.copy_to(val[0].into(), cb.clone().into());
                     self.copy_to(val[1].into(), cb.offset(4).into());
                 }
                 SrcRef::SSA(vec) => {
@@ -165,8 +167,6 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 _ => panic!("Invalid 64-bit SrcRef"),
             }
         }
-
-        src.src_ref = val.into();
     }
 
     fn copy_alu_src_if_not_reg(
@@ -259,7 +259,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
             }
             SrcType::F64 => {
                 let val = self.alloc_ssa_vec(reg_file, 2);
-                let old_src = std::mem::replace(src, val.into());
+                let old_src = std::mem::replace(src, val.clone().into());
                 self.push_op(OpDAdd {
                     dst: val.into(),
                     srcs: [Src::ZERO.fneg(), old_src],
@@ -451,11 +451,11 @@ fn legalize_instr(
             // okay. Just make it look the same as the previous source we
             // fixed up.
             if let Some(new_vec) = vec_src_map.get(vec) {
-                src.src_ref = (*new_vec).into();
+                src.src_ref = new_vec.clone().into();
                 continue;
             }
 
-            let mut new_vec = *vec;
+            let mut new_vec = vec.clone();
             for c in 0..vec.comps() {
                 let ssa = vec[usize::from(c)];
                 // If the same SSA value shows up in multiple non-identical
@@ -471,7 +471,7 @@ fn legalize_instr(
                 }
             }
 
-            vec_src_map.insert(*vec, new_vec);
+            vec_src_map.insert(vec.clone(), new_vec.clone());
             src.src_ref = new_vec.into();
         }
     }
@@ -492,7 +492,7 @@ impl Shader<'_> {
                 for (ip, mut instr) in b.instrs.drain(..).enumerate() {
                     if let Op::Pin(pin) = &instr.op {
                         if let Dst::SSA(ssa) = &pin.dst {
-                            pinned.insert(*ssa);
+                            pinned.insert(ssa.clone());
                         }
                     }
 

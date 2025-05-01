@@ -282,7 +282,7 @@ impl ALUSrc {
             return ALUSrc::None;
         };
 
-        match src.src_ref {
+        match &src.src_ref {
             SrcRef::Zero | SrcRef::Reg(_) => {
                 let reg = match src.src_ref {
                     SrcRef::Zero => {
@@ -317,11 +317,11 @@ impl ALUSrc {
             SrcRef::Imm32(i) => {
                 assert!(src.src_mod.is_none());
                 assert!(src.src_swizzle.is_none());
-                ALUSrc::Imm32(i)
+                ALUSrc::Imm32(*i)
             }
             SrcRef::CBuf(cb) => {
                 let alu_ref = ALUCBufRef {
-                    cb: cb,
+                    cb: cb.clone(),
                     abs: src_mod_has_abs(src.src_mod),
                     neg: src_mod_has_neg(src.src_mod),
                     swizzle: src.src_swizzle,

@@ -36,7 +36,7 @@ impl LopPass {
                 }
 
                 for src in instr.srcs() {
-                    if let SrcRef::SSA(vec) = src.src_ref {
+                    if let SrcRef::SSA(vec) = &src.src_ref {
                         for ssa in vec.iter() {
                             use_counts
                                 .entry(*ssa)
@@ -105,7 +105,7 @@ impl LopPass {
     ) {
         loop {
             assert!(srcs[src_idx].src_mod.is_none());
-            let ssa = match srcs[src_idx].src_ref {
+            let ssa = match &srcs[src_idx].src_ref {
                 SrcRef::SSA(vec) => {
                     assert!(vec.comps() == 1);
                     vec[0]
@@ -213,7 +213,7 @@ impl LopPass {
             self.try_prop_to_src(slice::from_mut(&mut op.op), &mut op.srcs, i);
         }
 
-        if let Dst::SSA(ssa) = op.dst {
+        if let Dst::SSA(ssa) = &op.dst {
             assert!(ssa.comps() == 1);
             self.add_lop(ssa[0], op.op, op.srcs.clone());
         }
@@ -246,7 +246,7 @@ impl LopPass {
         }
 
         for i in 0..2 {
-            if let Dst::SSA(ssa) = op.dsts[i] {
+            if let Dst::SSA(ssa) = &op.dsts[i] {
                 assert!(ssa.comps() == 1);
                 self.add_lop(ssa[0], op.ops[i], op.srcs.clone());
             }

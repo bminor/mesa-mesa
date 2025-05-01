@@ -150,8 +150,8 @@ impl<'a> TestShaderBuilder<'a> {
         let comps: u8 = mem_type.bits().div_ceil(32).try_into().unwrap();
         let dst = self.alloc_ssa_vec(RegFile::GPR, comps);
         self.push_op(OpLd {
-            dst: dst.into(),
-            addr: self.data_addr.into(),
+            dst: dst.clone().into(),
+            addr: self.data_addr.clone().into(),
             offset: offset.into(),
             access: access,
         });
@@ -173,7 +173,7 @@ impl<'a> TestShaderBuilder<'a> {
         let comps: u8 = mem_type.bits().div_ceil(32).try_into().unwrap();
         assert!(data.comps() == comps);
         self.push_op(OpSt {
-            addr: self.data_addr.into(),
+            addr: self.data_addr.clone().into(),
             data: data.into(),
             offset: offset.into(),
             access: access,

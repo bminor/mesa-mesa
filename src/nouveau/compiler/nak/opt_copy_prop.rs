@@ -121,7 +121,7 @@ impl CopyPropPass {
                 self.add_copy(bi, dst[1], SrcType::F64, src);
             }
             SrcRef::CBuf(cb) => {
-                let lo32 = Src::from(SrcRef::CBuf(cb));
+                let lo32 = Src::from(SrcRef::CBuf(cb.clone()));
                 let hi32 = Src {
                     src_ref: SrcRef::CBuf(cb.offset(4)),
                     src_mod: src.src_mod,
@@ -161,7 +161,7 @@ impl CopyPropPass {
                 return;
             };
 
-            match entry.src.src_ref {
+            match &entry.src.src_ref {
                 SrcRef::True => {
                     pred.pred_ref = PredRef::None;
                 }
@@ -196,7 +196,7 @@ impl CopyPropPass {
             };
 
             if entry.src.src_mod.is_none() {
-                if let SrcRef::SSA(entry_ssa) = entry.src.src_ref {
+                if let SrcRef::SSA(entry_ssa) = &entry.src.src_ref {
                     assert!(entry_ssa.comps() == 1);
                     *c_ssa = entry_ssa[0];
                     progress = true;
@@ -395,7 +395,7 @@ impl CopyPropPass {
             let lo_entry_or_none = self.get_copy(&src_ssa[0]);
             if let Some(CopyPropEntry::Copy(lo_entry)) = lo_entry_or_none {
                 if lo_entry.src.src_mod.is_none() {
-                    if let SrcRef::SSA(lo_entry_ssa) = lo_entry.src.src_ref {
+                    if let SrcRef::SSA(lo_entry_ssa) = &lo_entry.src.src_ref {
                         src_ssa[0] = lo_entry_ssa[0];
                         continue;
                     }
@@ -407,7 +407,7 @@ impl CopyPropPass {
                 if hi_entry.src.src_mod.is_none()
                     || hi_entry.src_type == SrcType::F64
                 {
-                    if let SrcRef::SSA(hi_entry_ssa) = hi_entry.src.src_ref {
+                    if let SrcRef::SSA(hi_entry_ssa) = &hi_entry.src.src_ref {
                         src_ssa[1] = hi_entry_ssa[0];
                         src.src_mod = hi_entry.src.src_mod.modify(src.src_mod);
                         continue;
@@ -439,8 +439,8 @@ impl CopyPropPass {
                 return;
             }
 
-            let new_src_ref = match hi_entry.src.src_ref {
-                SrcRef::Zero => match lo_entry.src.src_ref {
+            let new_src_ref = match &hi_entry.src.src_ref {
+                SrcRef::Zero => match &lo_entry.src.src_ref {
                     SrcRef::Zero | SrcRef::Imm32(0) => SrcRef::Zero,
                     _ => return,
                 },
@@ -448,11 +448,11 @@ impl CopyPropPass {
                     // 32-bit immediates for f64 srouces are the top 32 bits
                     // with zero in the lower 32.
                     match lo_entry.src.src_ref {
-                        SrcRef::Zero | SrcRef::Imm32(0) => SrcRef::Imm32(i),
+                        SrcRef::Zero | SrcRef::Imm32(0) => SrcRef::Imm32(*i),
                         _ => return,
                     }
                 }
-                SrcRef::CBuf(hi_cb) => match lo_entry.src.src_ref {
+                SrcRef::CBuf(hi_cb) => match &lo_entry.src.src_ref {
                     SrcRef::CBuf(lo_cb) => {
                         if hi_cb.buf != lo_cb.buf {
                             return;
@@ -463,7 +463,7 @@ impl CopyPropPass {
                         if hi_cb.offset != lo_cb.offset + 4 {
                             return;
                         }
-                        SrcRef::CBuf(lo_cb)
+                        SrcRef::CBuf(lo_cb.clone())
                     }
                     _ => return,
                 },
@@ -591,7 +591,7 @@ impl CopyPropPass {
             }
             Op::PLop3(lop) => {
                 for i in 0..2 {
-                    let dst = match lop.dsts[i] {
+                    let dst = match &lop.dsts[i] {
                         Dst::SSA(vec) => {
                             assert!(vec.comps() == 1);
                             vec[0]

@@ -92,14 +92,14 @@ impl SSAUseMap {
         v.push((ip, SSAUse::FixedReg(reg)));
     }
 
-    fn add_vec_use(&mut self, ip: usize, vec: SSARef) {
+    fn add_vec_use(&mut self, ip: usize, vec: &SSARef) {
         if vec.comps() == 1 {
             return;
         }
 
         for ssa in vec.iter() {
             let v = self.ssa_map.entry(*ssa).or_default();
-            v.push((ip, SSAUse::Vec(vec)));
+            v.push((ip, SSAUse::Vec(vec.clone())));
         }
     }
 
@@ -133,7 +133,7 @@ impl SSAUseMap {
                     // We don't care about predicates because they're scalar
                     for src in instr.srcs() {
                         if let Some(ssa) = src_ssa_ref(src) {
-                            self.add_vec_use(ip, *ssa);
+                            self.add_vec_use(ip, ssa);
                         }
                     }
                 }
@@ -530,7 +530,7 @@ impl<'a> VecRegAllocator<'a> {
         RegRef::new(self.file(), reg, 1)
     }
 
-    pub fn assign_pin_vec_reg(&mut self, vec: SSARef, reg: u32) -> RegRef {
+    pub fn assign_pin_vec_reg(&mut self, vec: &SSARef, reg: u32) -> RegRef {
         for c in 0..vec.comps() {
             let ssa = vec[usize::from(c)];
             self.assign_pin_reg(ssa, reg + u32::from(c));
@@ -675,12 +675,12 @@ impl<'a> VecRegAllocator<'a> {
         RegRef::new(self.file(), reg, comps)
     }
 
-    pub fn alloc_vector(&mut self, vec: SSARef) -> RegRef {
+    pub fn alloc_vector(&mut self, vec: &SSARef) -> RegRef {
         let comps = vec.comps();
         let align = u32::from(comps).next_power_of_two();
 
         if let Some(reg) = self.ra.try_find_unused_reg_range(0, align, comps) {
-            return self.assign_pin_vec_reg(vec, reg);
+            return self.assign_pin_vec_reg(&vec, reg);
         }
 
         let reg = self
@@ -690,7 +690,7 @@ impl<'a> VecRegAllocator<'a> {
         for c in 0..comps {
             self.evict_reg_if_used(reg + u32::from(c));
         }
-        self.assign_pin_vec_reg(vec, reg)
+        self.assign_pin_vec_reg(&vec, reg)
     }
 
     pub fn free_killed(&mut self, killed: &KillSet) {
@@ -817,7 +817,7 @@ fn instr_assign_regs_file(
                     for ssa in vec.iter() {
                         avail.remove(ssa);
                     }
-                    killed_vecs.push(*vec);
+                    killed_vecs.push(vec.clone());
                 }
             }
         }
@@ -865,7 +865,7 @@ fn instr_assign_regs_file(
         for vec_dst in vec_dsts {
             let dst = &mut instr.dsts_mut()[vec_dst.dst_idx];
             *dst = vra
-                .assign_pin_vec_reg(*dst.as_ssa().unwrap(), vec_dst.reg)
+                .assign_pin_vec_reg(dst.as_ssa().unwrap(), vec_dst.reg)
                 .into();
         }
 
@@ -877,7 +877,7 @@ fn instr_assign_regs_file(
         for vec_dst in vec_dsts {
             let dst = &mut instr.dsts_mut()[vec_dst.dst_idx];
             *dst = vra
-                .assign_pin_vec_reg(*dst.as_ssa().unwrap(), vec_dst.reg)
+                .assign_pin_vec_reg(dst.as_ssa().unwrap(), vec_dst.reg)
                 .into();
         }
 
@@ -894,7 +894,7 @@ fn instr_assign_regs_file(
         for dst in instr.dsts_mut() {
             if let Dst::SSA(ssa) = dst {
                 if ssa.file().unwrap() == vra.file() && ssa.comps() > 1 {
-                    *dst = vra.alloc_vector(*ssa).into();
+                    *dst = vra.alloc_vector(ssa).into();
                 }
             }
         }
@@ -1008,7 +1008,7 @@ impl AssignRegsBlock {
     ) -> Option<Box<Instr>> {
         match &mut instr.op {
             Op::Undef(undef) => {
-                if let Dst::SSA(ssa) = undef.dst {
+                if let Dst::SSA(ssa) = &undef.dst {
                     assert!(ssa.comps() == 1);
                     self.alloc_scalar(ip, sum, phi_webs, ssa[0]);
                 }
@@ -1164,7 +1164,7 @@ impl AssignRegsBlock {
 
                     let dst_ra = &mut self.ra[dst_vec.file().unwrap()];
                     let mut vra = VecRegAllocator::new(dst_ra);
-                    let dst_reg = vra.alloc_vector(*dst_vec);
+                    let dst_reg = vra.alloc_vector(dst_vec);
                     vra.finish(pcopy);
 
                     let mut pin_copy = OpParCopy::new();

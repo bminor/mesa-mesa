@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 pub fn instr_latency(_sm: u8, op: &Op, dst_idx: usize) -> u32 {
-    let file = match op.dsts_as_slice()[dst_idx] {
+    let file = match &op.dsts_as_slice()[dst_idx] {
         Dst::None => return 0,
         Dst::SSA(vec) => vec.file().unwrap(),
         Dst::Reg(reg) => reg.file(),
@@ -2651,20 +2651,20 @@ fn atom_src_as_ssa(
     atom_type: AtomType,
 ) -> SSARef {
     if let Some(ssa) = src.as_ssa() {
-        return *ssa;
+        return ssa.clone();
     }
 
-    let tmp;
     if atom_type.bits() == 32 {
-        tmp = b.alloc_ssa_vec(RegFile::GPR, 1);
+        let tmp = b.alloc_ssa(RegFile::GPR);
         b.copy_to(tmp.into(), 0.into());
+        tmp.into()
     } else {
         debug_assert!(atom_type.bits() == 64);
-        tmp = b.alloc_ssa_vec(RegFile::GPR, 2);
+        let tmp = b.alloc_ssa_vec(RegFile::GPR, 2);
         b.copy_to(tmp[0].into(), 0.into());
         b.copy_to(tmp[1].into(), 0.into());
+        tmp
     }
-    tmp
 }
 
 impl SM50Op for OpAtom {

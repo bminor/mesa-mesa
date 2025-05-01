@@ -301,7 +301,7 @@ impl Function {
 
             if let Some(phi) = b.phi_srcs() {
                 for (idx, src) in phi.srcs.iter() {
-                    if let SrcRef::SSA(vec) = src.src_ref {
+                    if let SrcRef::SSA(vec) = &src.src_ref {
                         debug_assert!(vec.comps() == 1);
                         cg.add_ssa(vec[0]);
                     }

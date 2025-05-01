@@ -23,7 +23,7 @@ pub trait Builder {
     }
 
     fn lop2_to(&mut self, dst: Dst, op: LogicOp2, mut x: Src, mut y: Src) {
-        let is_predicate = match dst {
+        let is_predicate = match &dst {
             Dst::None => panic!("No LOP destination"),
             Dst::SSA(ssa) => ssa.is_predicate(),
             Dst::Reg(reg) => reg.is_predicate(),
@@ -462,7 +462,7 @@ pub trait SSABuilder: Builder {
         let dst = self.alloc_ssa_vec(RegFile::GPR, 2);
         if self.sm() >= 70 {
             self.push_op(OpIMad64 {
-                dst: dst.into(),
+                dst: dst.clone().into(),
                 srcs: [x, y, 0.into()],
                 signed,
             });

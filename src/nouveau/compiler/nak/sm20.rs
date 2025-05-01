@@ -142,11 +142,11 @@ impl AluSrc {
             assert!(src.src_swizzle.is_none());
             // do not assert src_mod, can be encoded by opcode.
 
-            match src.src_ref {
+            match &src.src_ref {
                 SrcRef::Zero => AluSrc::Reg(zero_reg()),
-                SrcRef::Reg(r) => AluSrc::Reg(r),
-                SrcRef::Imm32(x) => AluSrc::Imm(x),
-                SrcRef::CBuf(x) => AluSrc::CBuf(x),
+                SrcRef::Reg(r) => AluSrc::Reg(*r),
+                SrcRef::Imm32(x) => AluSrc::Imm(*x),
+                SrcRef::CBuf(x) => AluSrc::CBuf(x.clone()),
                 _ => panic!("Unhandled ALU src type"),
             }
         } else {
@@ -2135,20 +2135,20 @@ fn atom_src_as_ssa(
     atom_type: AtomType,
 ) -> SSARef {
     if let Some(ssa) = src.as_ssa() {
-        return *ssa;
+        return ssa.clone();
     }
 
-    let tmp;
     if atom_type.bits() == 32 {
-        tmp = b.alloc_ssa_vec(RegFile::GPR, 1);
+        let tmp = b.alloc_ssa(RegFile::GPR);
         b.copy_to(tmp.into(), 0.into());
+        tmp.into()
     } else {
         debug_assert!(atom_type.bits() == 64);
-        tmp = b.alloc_ssa_vec(RegFile::GPR, 2);
+        let tmp = b.alloc_ssa_vec(RegFile::GPR, 2);
         b.copy_to(tmp[0].into(), 0.into());
         b.copy_to(tmp[1].into(), 0.into());
+        tmp
     }
-    tmp
 }
 
 impl SM20Op for OpAtom {
