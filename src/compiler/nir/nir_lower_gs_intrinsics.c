@@ -462,6 +462,7 @@ nir_lower_gs_intrinsics(nir_shader *shader, nir_lower_gs_intrinsics_flags option
    }
 
    struct state state;
+   memset(&state, 0, sizeof(state));
    state.progress = false;
    state.count_prims = count_primitives;
    state.count_vtx_per_prim = count_vtx_per_prim;
