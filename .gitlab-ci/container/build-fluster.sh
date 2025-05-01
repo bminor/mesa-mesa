@@ -26,7 +26,7 @@ export SKIP_UPDATE_FLUSTER_VECTORS=false
 
 check_fluster()
 {
-    S3_PATH_FLUSTER="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_VECTORS_VERSION}/vectors.tar.zst"
+    S3_PATH_FLUSTER="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_TAG}/vectors.tar.zst"
     if curl -L --retry 4 -f --retry-connrefused --retry-delay 30 -s --head \
       "https://${S3_PATH_FLUSTER}"; then
         echo "Fluster vectors are up-to-date, skip rebuilding them."
