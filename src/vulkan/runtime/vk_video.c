@@ -1435,7 +1435,7 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
 
    if (sps->flags.sample_adaptive_offset_enabled_flag) {
       params->sao_luma_flag = vl_rbsp_u(&rbsp, 1);
-      if (sps->chroma_format_idc)
+      if (!sps->flags.separate_colour_plane_flag && sps->chroma_format_idc)
          params->sao_chroma_flag = vl_rbsp_u(&rbsp, 1);
    }
 
@@ -1510,28 +1510,37 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
    params->slice_qp_delta = vl_rbsp_se(&rbsp);
 
    if (pps->flags.pps_slice_chroma_qp_offsets_present_flag) {
-      params->slice_cb_qp_offset = vl_rbsp_se(&rbsp);
-      params->slice_cr_qp_offset = vl_rbsp_se(&rbsp);
+      params->slice_cb_qp_offset = CLAMP(vl_rbsp_se(&rbsp), -12, 12);
+      params->slice_cr_qp_offset = CLAMP(vl_rbsp_se(&rbsp), -12, 12);
+   }
+
+   if (pps->flags.pps_slice_act_qp_offsets_present_flag) {
+      /* act_y_qp_offset */
+      vl_rbsp_se(&rbsp);
+      /* act_cb_qp_offset */
+      vl_rbsp_se(&rbsp);
+      /* act_cr_qp_offset */
+      vl_rbsp_se(&rbsp);
    }
 
    if (pps->flags.chroma_qp_offset_list_enabled_flag)
       /* cu_chroma_qp_offset_enabled_flag */
       vl_rbsp_u(&rbsp, 1);
 
-   if (pps->flags.deblocking_filter_control_present_flag) {
-      if (pps->flags.deblocking_filter_override_enabled_flag) {
-         /* deblocking_filter_override_flag */
-         if (vl_rbsp_u(&rbsp, 1)) {
-            params->disable_deblocking_filter_idc = vl_rbsp_u(&rbsp, 1);
+   bool deblocking_filter_override_flag = false;
+   if (pps->flags.deblocking_filter_override_enabled_flag) {
+      /* deblocking_filter_override_flag */
+      deblocking_filter_override_flag = vl_rbsp_u(&rbsp, 1);
+   }
 
-            if (!params->disable_deblocking_filter_idc) {
-               params->beta_offset_div2 = vl_rbsp_se(&rbsp);
-               params->tc_offset_div2 = vl_rbsp_se(&rbsp);
-            }
-         } else {
-            params->disable_deblocking_filter_idc =
-               pps->flags.pps_deblocking_filter_disabled_flag;
-         }
+   if (deblocking_filter_override_flag) {
+      bool deblocking_filter_disabled_flag = false;
+
+      deblocking_filter_disabled_flag = vl_rbsp_u(&rbsp, 1);
+
+      if (!deblocking_filter_disabled_flag) {
+         params->beta_offset_div2 = CLAMP(vl_rbsp_se(&rbsp), -6, 6);
+         params->tc_offset_div2 = CLAMP(vl_rbsp_se(&rbsp), -6, 6);
       }
    }
 
