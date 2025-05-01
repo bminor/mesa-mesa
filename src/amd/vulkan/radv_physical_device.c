@@ -2071,19 +2071,23 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 
 #ifdef _WIN32
    pdev->ws = radv_null_winsys_create();
+   if (!pdev->ws)
+      result = VK_ERROR_OUT_OF_HOST_MEMORY;
 #else
    if (drm_device) {
       bool reserve_vmid = instance->vk.trace_mode & RADV_TRACE_MODE_RGP;
 
-      pdev->ws =
-         radv_amdgpu_winsys_create(fd, instance->debug_flags, instance->perftest_flags, reserve_vmid, is_virtio);
+      result = radv_amdgpu_winsys_create(fd, instance->debug_flags, instance->perftest_flags, reserve_vmid, is_virtio,
+                                         &pdev->ws);
    } else {
       pdev->ws = radv_null_winsys_create();
+      if (!pdev->ws)
+         result = VK_ERROR_OUT_OF_HOST_MEMORY;
    }
 #endif
 
-   if (!pdev->ws) {
-      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED, "failed to initialize winsys");
+   if (result != VK_SUCCESS) {
+      result = vk_errorf(instance, result, "failed to initialize winsys");
       goto fail_base;
    }
 
