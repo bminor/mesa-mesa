@@ -7200,7 +7200,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
     * Testing shows that all the 3DSTATE_CONSTANT_XS need to be emitted if
     * any stage has a dirty binding table.
     */
-   const bool emit_const_wa = GFX_VER >= 11 &&
+   const bool emit_const_wa = INTEL_NEEDS_WA_1604061319 &&
       ((dirty & IRIS_DIRTY_RENDER_BUFFER) ||
        (stage_dirty & IRIS_ALL_STAGE_DIRTY_BINDINGS_FOR_RENDER));
 
