@@ -594,7 +594,7 @@
         "description": "tu: Fix disable_fs state update condition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be481e66159316b7147d82be3d87b0b63c9e624d",
         "notes": null
