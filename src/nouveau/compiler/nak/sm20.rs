@@ -314,7 +314,7 @@ impl SM20Encoder<'_> {
     }
 
     fn set_carry_in(&mut self, bit: usize, src: &Src) {
-        assert!(src.src_mod.is_none());
+        assert!(src.is_unmodified());
         match src.src_ref {
             SrcRef::Zero => self.set_bit(bit, false),
             SrcRef::Reg(reg) => {
@@ -552,7 +552,7 @@ impl SM20Op for OpFAdd {
         if let Some(imm32) = self.srcs[1].as_imm_not_f20() {
             // Technically the modifier bits for these do work but legalization
             // should fold any modifiers on immediates for us.
-            assert!(self.srcs[1].src_mod.is_none());
+            assert!(self.srcs[1].is_unmodified());
             e.encode_form_a_imm32(
                 0xa,
                 Some(&self.dst),
@@ -617,7 +617,7 @@ impl SM20Op for OpFFma {
 
             // Technically the modifier bits for these do work but legalization
             // should fold any modifiers on immediates for us.
-            assert!(self.srcs[1].src_mod.is_none());
+            assert!(self.srcs[1].is_unmodified());
 
             e.encode_form_a_imm32(
                 0x8,
@@ -698,7 +698,7 @@ impl SM20Op for OpFMul {
         if let Some(mut imm32) = self.srcs[1].as_imm_not_f20() {
             // Technically the modifier bits for these do work but legalization
             // should fold any modifiers on immediates for us.
-            assert!(self.srcs[1].src_mod.is_none());
+            assert!(self.srcs[1].is_unmodified());
 
             // We don't, however, have a modifier for src0.  Just flip the
             // immediate in that case.
@@ -1095,9 +1095,7 @@ impl SM20Op for OpIAdd2 {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(
-            self.srcs[0].src_mod.is_none() || self.srcs[1].src_mod.is_none()
-        );
+        assert!(self.srcs[0].is_unmodified() || self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.encode_form_a_imm32(
@@ -1134,9 +1132,7 @@ impl SM20Op for OpIAdd2X {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(
-            self.srcs[0].src_mod.is_none() || self.srcs[1].src_mod.is_none()
-        );
+        assert!(self.srcs[0].is_unmodified() || self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.encode_form_a_imm32(
@@ -1220,8 +1216,8 @@ impl SM20Op for OpIMul {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.srcs[0].src_mod.is_none());
-        assert!(self.srcs[1].src_mod.is_none());
+        assert!(self.srcs[0].is_unmodified());
+        assert!(self.srcs[1].is_unmodified());
 
         if let Some(imm32) = self.srcs[1].as_imm_not_i20() {
             e.encode_form_a_imm32(
@@ -1288,8 +1284,8 @@ impl SM20Op for OpIMnMx {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.srcs[1].src_mod.is_none());
-        assert!(self.srcs[0].src_mod.is_none());
+        assert!(self.srcs[1].is_unmodified());
+        assert!(self.srcs[0].is_unmodified());
 
         e.encode_form_a(
             SM20Unit::Int,
@@ -1322,8 +1318,8 @@ impl SM20Op for OpISetP {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.srcs[1].src_mod.is_none());
-        assert!(self.srcs[0].src_mod.is_none());
+        assert!(self.srcs[1].is_unmodified());
+        assert!(self.srcs[0].is_unmodified());
 
         e.encode_form_a(
             SM20Unit::Int,
@@ -1515,7 +1511,7 @@ impl SM20Op for OpI2F {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.src.src_mod.is_none());
+        assert!(self.src.is_unmodified());
         e.encode_form_b(SM20Unit::Move, 0x6, &self.dst, &self.src);
         e.set_bit(6, false); // .abs
         e.set_bit(8, false); // .neg
@@ -1534,7 +1530,7 @@ impl SM20Op for OpI2I {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.src.src_mod.is_none());
+        assert!(self.src.is_unmodified());
         e.encode_form_b(SM20Unit::Move, 0x7, &self.dst, &self.src);
         e.set_bit(5, self.saturate);
         e.set_bit(6, self.abs);
@@ -2072,7 +2068,7 @@ impl SM20Op for OpLdc {
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
-        assert!(self.cb.src_mod.is_none());
+        assert!(self.cb.is_unmodified());
         let SrcRef::CBuf(cb) = &self.cb.src_ref else {
             panic!("Not a CBuf source");
         };
