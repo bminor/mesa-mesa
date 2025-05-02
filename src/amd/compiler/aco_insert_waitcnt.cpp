@@ -208,10 +208,12 @@ struct wait_ctx {
          }
       }
 
-      for (unsigned i = 0; i < storage_count; i++) {
-         changed |= barrier_imm[i].combine(other->barrier_imm[i]);
-         changed |= (other->barrier_events[i] & ~barrier_events[i]) != 0;
-         barrier_events[i] |= other->barrier_events[i];
+      if (logical) {
+         for (unsigned i = 0; i < storage_count; i++) {
+            changed |= barrier_imm[i].combine(other->barrier_imm[i]);
+            changed |= (other->barrier_events[i] & ~barrier_events[i]) != 0;
+            barrier_events[i] |= other->barrier_events[i];
+         }
       }
 
       return changed;
