@@ -8,8 +8,10 @@ include:
   variables:
     FDO_CI_CONCURRENT: 2
     RUNNER_FARM_LOCATION: ondracka
-    # 6.6.8 kernel with radeon driver.
-    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/ondracka/boot2container/-/wikis/uploads/1733cfc7cc114d08ec785044b24314f3/linux-x86_64'
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
+    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/radeon)/.*)"
+    CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=radeon'
 
 .ondracka-rv530:
   extends:
