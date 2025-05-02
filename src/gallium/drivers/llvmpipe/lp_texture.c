@@ -42,6 +42,7 @@
 #include "util/format/u_format.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"
+#include "util/u_resource.h"
 #include "util/u_transfer.h"
 
 #if DETECT_OS_POSIX
@@ -1697,12 +1698,13 @@ llvmpipe_resource_get_param(struct pipe_screen *screen,
                             unsigned handle_usage,
                             uint64_t *value)
 {
-   struct llvmpipe_resource *lpr = llvmpipe_resource(resource);
+   struct pipe_resource *plane_res = util_resource_at_index(resource, plane);
+   struct llvmpipe_resource *lpr = llvmpipe_resource(plane_res);
    struct winsys_handle whandle;
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_NPLANES:
-      *value = lpr->dmabuf ? util_format_get_num_planes(lpr->dt_format) : 1;
+      *value = util_format_get_num_planes(resource->format);
       return true;
    case PIPE_RESOURCE_PARAM_STRIDE:
       *value = lpr->row_stride[level];
@@ -1752,8 +1754,12 @@ llvmpipe_query_dmabuf_modifiers(struct pipe_screen *pscreen, enum pipe_format fo
 {
    *count = 1;
 
-   if (max)
-      *modifiers = DRM_FORMAT_MOD_LINEAR;
+   if (max < 1)
+      return;
+
+   *modifiers = DRM_FORMAT_MOD_LINEAR;
+   if (external_only)
+      *external_only = util_format_is_yuv(format);
 }
 
 static bool
@@ -1765,7 +1771,7 @@ llvmpipe_is_dmabuf_modifier_supported(struct pipe_screen *pscreen, uint64_t modi
 static unsigned
 llvmpipe_get_dmabuf_modifier_planes(struct pipe_screen *pscreen, uint64_t modifier, enum pipe_format format)
 {
-   return modifier == DRM_FORMAT_MOD_LINEAR;
+   return modifier == DRM_FORMAT_MOD_LINEAR ? util_format_get_num_planes(format) : 0;
 }
 #endif
 
