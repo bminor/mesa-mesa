@@ -72,6 +72,7 @@ enum counter_type : uint8_t {
 struct wait_entry {
    wait_imm imm;
    uint32_t events;  /* use wait_event notion */
+   uint32_t logical_events; /* use wait_event notion */
    uint8_t counters; /* use counter_type notion */
    bool wait_on_read : 1;
    bool logical : 1;
@@ -80,16 +81,20 @@ struct wait_entry {
 
    wait_entry(wait_event event_, wait_imm imm_, uint8_t counters_, bool logical_,
               bool wait_on_read_)
-       : imm(imm_), events(event_), counters(counters_), wait_on_read(wait_on_read_),
-         logical(logical_), vmem_types(0), vm_mask(0)
+       : imm(imm_), events(event_), logical_events(event_), counters(counters_),
+         wait_on_read(wait_on_read_), logical(logical_), vmem_types(0), vm_mask(0)
    {}
 
-   bool join(const wait_entry& other)
+   bool join(const wait_entry& other, bool logical_edge)
    {
       bool changed = (other.events & ~events) || (other.counters & ~counters) ||
                      (other.wait_on_read && !wait_on_read) || (other.vmem_types & ~vmem_types) ||
                      (other.vm_mask & ~vm_mask) || (!other.logical && logical);
       events |= other.events;
+      if (logical_edge) {
+         changed |= other.logical_events & ~logical_events;
+         logical_events |= other.logical_events;
+      }
       counters |= other.counters;
       changed |= imm.combine(other.imm);
       wait_on_read |= other.wait_on_read;
@@ -108,6 +113,7 @@ struct wait_entry {
       if (!(counters & counter_lgkm) && !(counters & counter_vm))
          events &= ~(type_events & event_flat);
 
+      logical_events &= events;
       if (type == wait_type_vm)
          vmem_types = 0;
       if (type_events & event_vmem)
@@ -120,6 +126,8 @@ struct wait_entry {
       imm.print(output);
       if (events)
          fprintf(output, "events: %u\n", events);
+      if (logical_events)
+         fprintf(output, "logical_events: %u\n", logical_events);
       if (counters)
          fprintf(output, "counters: %u\n", counters);
       if (!wait_on_read)
@@ -201,16 +209,27 @@ struct wait_ctx {
       pending_flat_vm |= other->pending_flat_vm;
       pending_s_buffer_store |= other->pending_s_buffer_store;
 
-      for (const auto& entry : other->gpr_map) {
-         if (entry.second.logical != logical)
-            continue;
+      using iterator = std::map<PhysReg, wait_entry>::iterator;
 
-         using iterator = std::map<PhysReg, wait_entry>::iterator;
+      for (const auto& entry : other->gpr_map) {
+         if (entry.second.logical != logical) {
+            if (logical) {
+               iterator it = gpr_map.find(entry.first);
+               if (it != gpr_map.end()) {
+                  changed |= entry.second.logical_events & ~it->second.logical_events;
+                  it->second.logical_events |= entry.second.logical_events;
+               }
+            }
+            continue;
+         }
+
          const std::pair<iterator, bool> insert_pair = gpr_map.insert(entry);
          if (insert_pair.second) {
+            if (!logical)
+               insert_pair.first->second.logical_events = 0;
             changed = true;
          } else {
-            changed |= insert_pair.first->second.join(entry.second);
+            changed |= insert_pair.first->second.join(entry.second, logical);
          }
       }
 
@@ -598,7 +617,7 @@ insert_wait_entry(wait_ctx& ctx, PhysReg reg, RegClass rc, wait_event event, boo
       new_entry.vm_mask = vm_mask & 0x3;
       auto it = ctx.gpr_map.emplace(PhysReg{reg.reg() + i}, new_entry);
       if (!it.second)
-         it.first->second.join(new_entry);
+         it.first->second.join(new_entry, true);
    }
 }
 
