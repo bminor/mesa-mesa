@@ -36,13 +36,13 @@ traces:
     gl-intel-glk:
       checksum: b25b9dfce05def046f6277d05b3cba98
     gl-intel-amly:
-      checksum: e67b7a93bac02e41de0326419ee17a3e
+      checksum: b25b9dfce05def046f6277d05b3cba98
     gl-intel-kbl:
       checksum: b25b9dfce05def046f6277d05b3cba98
     gl-intel-whl:
       checksum: e67b7a93bac02e41de0326419ee17a3e
     gl-intel-cml:
-      checksum: e67b7a93bac02e41de0326419ee17a3e
+      checksum: b25b9dfce05def046f6277d05b3cba98
   pathfinder/demo-v2.trace:
     gl-intel-apl:
       checksum: d9b33f0a2efe17c21b7933242afd9ec7
@@ -139,26 +139,26 @@ traces:
     gl-intel-glk:
       checksum: 9d0245893820b58fafb56e6d50b1e84b
     gl-intel-amly:
-      checksum: a5ec72a5da355dfcd689411f89164f0c
+      checksum: 9d0245893820b58fafb56e6d50b1e84b
     gl-intel-kbl:
       checksum: 9d0245893820b58fafb56e6d50b1e84b
     gl-intel-whl:
       checksum: a5ec72a5da355dfcd689411f89164f0c
     gl-intel-cml:
-      checksum: a5ec72a5da355dfcd689411f89164f0c
+      checksum: 9d0245893820b58fafb56e6d50b1e84b
   gputest/pixmark-julia-fp64-v2.trace:
     gl-intel-apl:
       checksum: f56761af17be6231bce480115cde3cec
     gl-intel-glk:
       checksum: f56761af17be6231bce480115cde3cec
     gl-intel-amly:
-      checksum: 95235e084d88bc41f8a1a05b79e88e33
+      checksum: f56761af17be6231bce480115cde3cec
     gl-intel-kbl:
       checksum: f56761af17be6231bce480115cde3cec
     gl-intel-whl:
       checksum: 95235e084d88bc41f8a1a05b79e88e33
     gl-intel-cml:
-      checksum: 95235e084d88bc41f8a1a05b79e88e33
+      checksum: f56761af17be6231bce480115cde3cec
   gputest/pixmark-volplosion-v2.trace:
     gl-intel-apl:
       checksum: 9c891fd21b0cdc79f7071001d95d549c
@@ -334,13 +334,13 @@ traces:
     gl-intel-glk:
       checksum: 6517788d0f65166239e4f3000ebf5d95
     gl-intel-amly:
-      checksum: 0199b30fe719261436d6d48fe51353c8
+      checksum: 6517788d0f65166239e4f3000ebf5d95
     gl-intel-kbl:
       checksum: 6517788d0f65166239e4f3000ebf5d95
     gl-intel-whl:
       checksum: 0199b30fe719261436d6d48fe51353c8
     gl-intel-cml:
-      checksum: 0199b30fe719261436d6d48fe51353c8
+      checksum: 6517788d0f65166239e4f3000ebf5d95
   supertuxkart/supertuxkart-antediluvian-abyss.rdc:
     gl-intel-apl:
       checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
@@ -412,26 +412,26 @@ traces:
     gl-intel-glk:
       checksum: 7d736f5ab20cf3cd29d97a40c2144229
     gl-intel-amly:
-      checksum: 838ed7482efd5e9d7bde2b67e62314c4
+      checksum: 7d736f5ab20cf3cd29d97a40c2144229
     gl-intel-kbl:
       checksum: 7d736f5ab20cf3cd29d97a40c2144229
     gl-intel-whl:
       checksum: 838ed7482efd5e9d7bde2b67e62314c4
     gl-intel-cml:
-      checksum: 838ed7482efd5e9d7bde2b67e62314c4
+      checksum: 7d736f5ab20cf3cd29d97a40c2144229
   valve/half-life-2-v2.trace:
     gl-intel-apl:
       checksum: 21fb5eeb7215f6856d9af6827788ad77
     gl-intel-glk:
       checksum: 21fb5eeb7215f6856d9af6827788ad77
     gl-intel-amly:
-      checksum: c4ba4cdc96396b354b0040278b374b15
+      checksum: 21fb5eeb7215f6856d9af6827788ad77
     gl-intel-kbl:
       checksum: 21fb5eeb7215f6856d9af6827788ad77
     gl-intel-whl:
       checksum: c4ba4cdc96396b354b0040278b374b15
     gl-intel-cml:
-      checksum: c4ba4cdc96396b354b0040278b374b15
+      checksum: 21fb5eeb7215f6856d9af6827788ad77
   valve/portal-2-v2.trace:
     gl-intel-apl:
       checksum: b3c0a68ab6dbcfde8fe72c8d0c44f528
@@ -468,7 +468,7 @@ traces:
       checksum: 6a0e17d98eca33e80810b6158e998aa1
     gl-intel-amly:
       label: [no-perf]
-      checksum: 6a0e17d98eca33e80810b6158e998aa1
+      checksum: 85b4f3279fde206dace85ffd727057ea
     gl-intel-kbl:
       label: [no-perf]
       checksum: 85b4f3279fde206dace85ffd727057ea
@@ -477,7 +477,7 @@ traces:
       checksum: 6a0e17d98eca33e80810b6158e998aa1
     gl-intel-cml:
       label: [no-perf]
-      checksum: 6a0e17d98eca33e80810b6158e998aa1
+      checksum: 85b4f3279fde206dace85ffd727057ea
   blender/blender-demo-ellie_pose.trace:
     gl-intel-apl:
       checksum: 7d0da76cdf72ff785a1ecc6d4e404e0c
