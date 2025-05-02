@@ -50,7 +50,6 @@ KHR-Single-GL43.arrays_of_arrays_gl.SubroutineFunctionCalls2,Fail
 
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
-glx@glx-multithread-clearbuffer,Crash
 glx@glx-multithread-texture,Crash
 glx@glx-swap-pixmap-bad,Fail
 glx@glx-tfp,Crash
