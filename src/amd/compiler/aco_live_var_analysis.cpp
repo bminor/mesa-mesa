@@ -244,18 +244,6 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          insn->operands[1].setLateKill(true);
       }
 
-      /* Check if a definition clobbers some operand */
-      auto tied_defs = get_tied_defs(insn);
-      for (auto op_idx : tied_defs) {
-         assert(std::none_of(tied_defs.begin(), tied_defs.end(),
-                             [&](uint32_t i)
-                             {
-                                return i != op_idx && insn->operands[i].getTemp() ==
-                                                         insn->operands[op_idx].getTemp();
-                             }));
-         insn->operands[op_idx].setClobbered(true);
-      }
-
       /* we need to do this in a separate loop because the next one can
        * setKill() for several operands at once and we don't want to
        * overwrite that in a later iteration */
@@ -270,8 +258,21 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
             op.setLateKill(true);
       }
 
-      /* GEN */
       RegisterDemand operand_demand;
+
+      /* Check if a definition clobbers some operand */
+      auto tied_defs = get_tied_defs(insn);
+      for (auto op_idx : tied_defs) {
+         Temp tmp = insn->operands[op_idx].getTemp();
+         if (std::any_of(tied_defs.begin(), tied_defs.end(), [&](uint32_t i)
+                         { return i < op_idx && insn->operands[i].getTemp() == tmp; })) {
+            operand_demand += tmp;
+            insn->operands[op_idx].setCopyKill(true);
+         }
+         insn->operands[op_idx].setClobbered(true);
+      }
+
+      /* GEN */
       for (unsigned i = 0; i < insn->operands.size(); ++i) {
          Operand& operand = insn->operands[i];
          if (!operand.isTemp())
