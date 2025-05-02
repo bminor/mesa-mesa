@@ -456,7 +456,7 @@ yaml-toml-shell-py-test:
     - .ci-tron-test
   variables:
     CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_amd64.cpio.xz'
-    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/package_files/519/download'  # Linux 6.1
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64'
 
     # Set the following variables if you need AMD, Intel, or NVIDIA support
     # CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
