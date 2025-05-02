@@ -82,7 +82,7 @@ vk_acceleration_structure_get_va(const struct vk_acceleration_structure *accel_s
 VK_DEFINE_NONDISP_HANDLE_CASTS(vk_acceleration_structure, base, VkAccelerationStructureKHR,
                                VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR)
 
-#define MAX_ENCODE_PASSES 2
+#define MAX_ENCODE_PASSES 4
 #define MAX_UPDATE_PASSES 2
 
 enum vk_internal_build_type {
