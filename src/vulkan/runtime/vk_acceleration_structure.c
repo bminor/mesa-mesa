@@ -224,8 +224,19 @@ get_scratch_layout(struct vk_device *device,
    else
       lbvh_node_space = sizeof(struct lbvh_node_info) * internal_count;
 
+   uint32_t encode_scratch_size = 0;
+   if (device->as_build_ops->get_encode_scratch_size) {
+      for (uint32_t i = 0; i < MAX_ENCODE_PASSES; i++) {
+         uint32_t tmp_size = device->as_build_ops->get_encode_scratch_size(device, config.encode_key[i], leaf_count);
+         encode_scratch_size = MAX2(encode_scratch_size, tmp_size);
+      }
+   }
+
    scratch->header_offset = offset;
    offset += sizeof(struct vk_ir_header);
+
+   /* The encode passes should not need node sorting state. Reuse the space reserved for node sorting. */
+   uint32_t encode_scratch_end = offset + encode_scratch_size;
 
    scratch->sort_buffer_offset[0] = offset;
    offset += requirements.keyvals_size;
@@ -239,6 +250,9 @@ get_scratch_layout(struct vk_device *device,
    scratch->ploc_prefix_sum_partition_offset = offset;
    scratch->lbvh_node_offset = offset;
    offset += MAX3(requirements.internal_size, ploc_scratch_space, lbvh_node_space);
+
+   /* Make sure encode scratch space does not overlap the BVH. */
+   offset = MAX2(offset, encode_scratch_end);
 
    scratch->ir_offset = offset;
    offset += ir_leaf_size * leaf_count;

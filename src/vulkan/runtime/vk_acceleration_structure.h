@@ -76,6 +76,7 @@ struct vk_acceleration_structure_build_ops {
    VkDeviceSize (*get_as_size)(VkDevice device,
                                const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
                                uint32_t leaf_count);
+   VkDeviceSize (*get_encode_scratch_size)(struct vk_device *device, uint32_t key, uint32_t leaf_count);
    VkDeviceSize (*get_update_scratch_size)(struct vk_device *device,
                                            const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
                                            uint32_t leaf_count);
