@@ -79,6 +79,7 @@ enum intel_debug_flag {
    DEBUG_ISL,
    DEBUG_SPARSE,
    DEBUG_DRAW_BKP,
+   DEBUG_DISPATCH_BKP,
    DEBUG_BATCH_STATS,
    DEBUG_REG_PRESSURE,
    DEBUG_SHADER_PRINT,
@@ -134,6 +135,8 @@ extern BITSET_WORD intel_debug[BITSET_WORDS(INTEL_DEBUG_MAX)];
 extern uint64_t intel_simd;
 extern uint32_t intel_debug_bkp_before_draw_count;
 extern uint32_t intel_debug_bkp_after_draw_count;
+extern uint32_t intel_debug_bkp_before_dispatch_count;
+extern uint32_t intel_debug_bkp_after_dispatch_count;
 extern uint64_t intel_debug_batch_frame_start;
 extern uint64_t intel_debug_batch_frame_stop;
 extern uint32_t intel_shader_dump_filter;
