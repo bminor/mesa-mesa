@@ -378,24 +378,22 @@ debian-android:
       -D precomp-compiler=enabled
       -D install-precomp-compiler=true
       -D tools=panfrost
-    S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
     # x86_64 build:
     - export CROSS=x86_64-linux-android
     - export GALLIUM_DRIVERS=iris,radeonsi,softpipe,virgl,zink
     - export VULKAN_DRIVERS=amd,intel,nouveau,swrast,virtio
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
+    - export S3_ARTIFACT_NAME=mesa-x86_64-android-${BUILDTYPE}
     - !reference [.meson-build-for-tests, script]
     # remove all the files created by the previous build before the next build
     - git clean -dxf .
     # aarch64 build:
-    # build-only, to catch compilation regressions
-    # without calling .gitlab-ci/prepare-artifacts.sh so that the
-    # artifacts are not shipped in mesa-x86_64-android-${BUILDTYPE}
     - export CROSS=aarch64-linux-android
     - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
     - export VULKAN_DRIVERS=freedreno,broadcom,panfrost,virtio
-    - !reference [.meson-build-only, script]
+    - export S3_ARTIFACT_NAME=mesa-arm64-android-${BUILDTYPE}
+    - !reference [.meson-build-for-tests, script]
 
 .meson-cross:
   extends:
