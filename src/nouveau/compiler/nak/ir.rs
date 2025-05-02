@@ -1202,6 +1202,10 @@ impl Src {
         b.into()
     }
 
+    pub fn is_unmodified(&self) -> bool {
+        self.src_mod.is_none() && self.src_swizzle.is_none()
+    }
+
     pub fn fabs(self) -> Src {
         Src {
             src_ref: self.src_ref,
@@ -1241,7 +1245,7 @@ impl Src {
             _ => return None,
         };
 
-        if self.src_mod.is_none() && self.src_swizzle.is_none() {
+        if self.is_unmodified() {
             return Some(u);
         }
 
