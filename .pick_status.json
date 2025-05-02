@@ -94,7 +94,7 @@
         "description": "nak: Check that swizzles are none",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bad23ddb4849908a648d503a615a5a9b15e9768a",
         "notes": null

@@ -1193,7 +1193,7 @@ impl Src {
                 _ => panic!("Not a bitwise source modifier"),
             },
             _ => {
-                assert!(self.src_mod.is_none());
+                assert!(self.is_unmodified());
                 u
             }
         };
@@ -1206,7 +1206,7 @@ impl Src {
     }
 
     pub fn as_ssa(&self) -> Option<&SSARef> {
-        if self.src_mod.is_none() {
+        if self.is_unmodified() {
             self.src_ref.as_ssa()
         } else {
             None
@@ -1230,7 +1230,7 @@ impl Src {
     }
 
     pub fn as_u32(&self) -> Option<u32> {
-        if self.src_mod.is_none() {
+        if self.is_unmodified() {
             self.src_ref.as_u32()
         } else {
             None
@@ -1240,7 +1240,7 @@ impl Src {
     pub fn as_imm_not_i20(&self) -> Option<u32> {
         match self.src_ref {
             SrcRef::Imm32(i) => {
-                assert!(self.src_mod.is_none());
+                assert!(self.is_unmodified());
                 let top = i & 0xfff80000;
                 if top == 0 || top == 0xfff80000 {
                     None
@@ -1255,7 +1255,7 @@ impl Src {
     pub fn as_imm_not_f20(&self) -> Option<u32> {
         match self.src_ref {
             SrcRef::Imm32(i) => {
-                assert!(self.src_mod.is_none());
+                assert!(self.is_unmodified());
                 if (i & 0xfff) == 0 {
                     None
                 } else {
@@ -1324,14 +1324,14 @@ impl Src {
     pub fn supports_type(&self, src_type: &SrcType) -> bool {
         match src_type {
             SrcType::SSA => {
-                if !self.src_mod.is_none() {
+                if !self.is_unmodified() {
                     return false;
                 }
 
                 matches!(self.src_ref, SrcRef::SSA(_) | SrcRef::Reg(_))
             }
             SrcType::GPR => {
-                if !self.src_mod.is_none() {
+                if !self.is_unmodified() {
                     return false;
                 }
 
@@ -1340,7 +1340,7 @@ impl Src {
                     SrcRef::Zero | SrcRef::SSA(_) | SrcRef::Reg(_)
                 )
             }
-            SrcType::ALU => self.src_mod.is_none() && self.src_ref.is_alu(),
+            SrcType::ALU => self.is_unmodified() && self.src_ref.is_alu(),
             SrcType::F16 | SrcType::F32 | SrcType::F64 | SrcType::F16v2 => {
                 match self.src_mod {
                     SrcMod::None
@@ -1376,8 +1376,8 @@ impl Src {
 
                 self.src_ref.is_predicate()
             }
-            SrcType::Carry => self.src_mod.is_none() && self.src_ref.is_carry(),
-            SrcType::Bar => self.src_mod.is_none() && self.src_ref.is_barrier(),
+            SrcType::Carry => self.is_unmodified() && self.src_ref.is_carry(),
+            SrcType::Bar => self.is_unmodified() && self.src_ref.is_barrier(),
         }
     }
 }

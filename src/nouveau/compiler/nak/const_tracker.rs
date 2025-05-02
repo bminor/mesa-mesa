@@ -33,7 +33,7 @@ impl ConstTracker {
         debug_assert!(dst.comps() == 1);
         let dst = dst[0];
 
-        debug_assert!(op.src.src_mod.is_none());
+        debug_assert!(op.src.is_unmodified());
         let is_const = match &op.src.src_ref {
             SrcRef::Zero | SrcRef::True | SrcRef::False | SrcRef::Imm32(_) => {
                 true
