@@ -394,7 +394,7 @@ class IOStream;
 #include "goldfish_vk_private_defs.h"
 
 #include "%s.h"
-#include "aemu/base/files/StreamSerializing.h"
+#include "gfxstream/host/stream_utils.h"
 """ % VULKAN_STREAM_TYPE
 
         poolInclude = f"""

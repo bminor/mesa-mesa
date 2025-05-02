@@ -821,7 +821,7 @@ class CodeGen(object):
         if variant == "guest":
             streamNamespace = "gfxstream::aemu"
         else:
-            streamNamespace = "android::base"
+            streamNamespace = "gfxstream"
 
         if direction == "read":
             self.stmt("memcpy((%s*)&%s, %s, %s)" %

@@ -17,10 +17,14 @@ from dataclasses import dataclass
 decoder_snapshot_decl_preamble = """
 
 namespace gfxstream {
+class Stream;
+} // namespace gfxstream
+
+namespace gfxstream {
 namespace base {
 class BumpPool;
-} // namespace base {
-} // namespace gfxstream {
+} // namespace base
+} // namespace gfxstream
 
 namespace gfxstream {
 namespace vk {
@@ -32,8 +36,8 @@ class VkDecoderSnapshot {
 
     void clear();
 
-    void saveReplayBuffers(android::base::Stream* stream);
-    static void loadReplayBuffers(android::base::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer);
+    void saveReplayBuffers(gfxstream::Stream* stream);
+    static void loadReplayBuffers(gfxstream::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer);
 
     VkSnapshotApiCallInfo* createApiCallInfo();
     void destroyApiCallInfoIfUnused(VkSnapshotApiCallInfo* info);
@@ -66,12 +70,12 @@ class VkDecoderSnapshot::Impl {
         mReconstruction.clear();
     }
 
-    void saveReplayBuffers(android::base::Stream* stream) {
+    void saveReplayBuffers(gfxstream::Stream* stream) {
         std::lock_guard<std::mutex> lock(mReconstructionMutex);
         mReconstruction.saveReplayBuffers(stream);
     }
 
-    static void loadReplayBuffers(android::base::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer) {
+    static void loadReplayBuffers(gfxstream::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer) {
         VkReconstruction::loadReplayBuffers(stream, outHandleBuffer, outDecoderBuffer);
     }
 
@@ -99,12 +103,12 @@ void VkDecoderSnapshot::clear() {
     mImpl->clear();
 }
 
-void VkDecoderSnapshot::saveReplayBuffers(android::base::Stream* stream) {
+void VkDecoderSnapshot::saveReplayBuffers(gfxstream::Stream* stream) {
     mImpl->saveReplayBuffers(stream);
 }
 
 /*static*/
-void VkDecoderSnapshot::loadReplayBuffers(android::base::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer) {
+void VkDecoderSnapshot::loadReplayBuffers(gfxstream::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer) {
     VkDecoderSnapshot::Impl::loadReplayBuffers(stream, outHandleBuffer, outDecoderBuffer);
 }
 
