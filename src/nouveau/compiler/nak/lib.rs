@@ -45,4 +45,7 @@ mod hw_tests;
 mod hw_runner;
 
 #[cfg(test)]
+mod ir_tests;
+
+#[cfg(test)]
 mod nvdisasm_tests;
