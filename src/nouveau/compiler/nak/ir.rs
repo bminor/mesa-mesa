@@ -499,6 +499,7 @@ impl SSARef {
     pub fn new(comps: &[SSAValue]) -> SSARef {
         SSARef {
             v: if comps.len() > Self::SMALL_SIZE {
+                Self::cold();
                 SSARefInner::Large(Box::new(SSAValueArray::new(comps)))
             } else {
                 SSARefInner::Small(SSAValueArray::new(comps))
@@ -521,7 +522,10 @@ impl SSARef {
     pub fn comps(&self) -> u8 {
         match &self.v {
             SSARefInner::Small(x) => x.comps(),
-            SSARefInner::Large(x) => x.comps(),
+            SSARefInner::Large(x) => {
+                Self::cold();
+                x.comps()
+            }
         }
     }
 
@@ -564,6 +568,10 @@ impl SSARef {
             false
         }
     }
+
+    #[cold]
+    #[inline]
+    fn cold() {}
 }
 
 impl Deref for SSARef {
@@ -572,7 +580,10 @@ impl Deref for SSARef {
     fn deref(&self) -> &[SSAValue] {
         match &self.v {
             SSARefInner::Small(x) => x.deref(),
-            SSARefInner::Large(x) => x.deref(),
+            SSARefInner::Large(x) => {
+                Self::cold();
+                x.deref()
+            }
         }
     }
 }
@@ -581,7 +592,10 @@ impl DerefMut for SSARef {
     fn deref_mut(&mut self) -> &mut [SSAValue] {
         match &mut self.v {
             SSARefInner::Small(x) => x.deref_mut(),
-            SSARefInner::Large(x) => x.deref_mut(),
+            SSARefInner::Large(x) => {
+                Self::cold();
+                x.deref_mut()
+            }
         }
     }
 }
