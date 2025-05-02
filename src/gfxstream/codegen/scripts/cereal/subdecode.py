@@ -344,7 +344,7 @@ class VulkanSubDecoder(VulkanWrapperGenerator):
         self.cgen.stmt("auto& metricsLogger = *context.metricsLogger")
         self.cgen.stmt("uint32_t count = 0")
         self.cgen.stmt("unsigned char *buf = (unsigned char *)pSubDecodeData")
-        self.cgen.stmt("android::base::BumpPool* pool = readStream->pool()")
+        self.cgen.stmt("gfxstream::base::BumpPool* pool = readStream->pool()")
         self.cgen.stmt("unsigned char *ptr = (unsigned char *)pSubDecodeData")
         self.cgen.stmt(
             "const unsigned char* const end = (const unsigned char*)buf + subDecodeDataSize")

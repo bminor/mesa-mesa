@@ -281,7 +281,6 @@ class CerealGenerator(OutputGenerator):
         self.featureSupported = False
         self.supportedModules = None
 
-        self.baseLibDirPrefix = "aemu/base"
         self.utilsHeaderDirPrefix = "utils"
 
         # The cereal variant should be an environmental variable of one of
@@ -395,15 +394,15 @@ class IOStream;
 #include "goldfish_vk_private_defs.h"
 
 #include "%s.h"
-#include "{self.baseLibDirPrefix}/files/StreamSerializing.h"
+#include "aemu/base/files/StreamSerializing.h"
 """ % VULKAN_STREAM_TYPE
 
         poolInclude = f"""
 {self.hostCommonExtraVulkanHeaders}
 #include "goldfish_vk_private_defs.h"
-#include "{self.baseLibDirPrefix}/BumpPool.h"
-using android::base::Allocator;
-using android::base::BumpPool;
+#include "gfxstream/BumpPool.h"
+using gfxstream::base::Allocator;
+using gfxstream::base::BumpPool;
 """
         transformIncludeGuest = """
 #include "goldfish_vk_private_defs.h"
@@ -495,7 +494,8 @@ using DlSymFunc = void* (void*, const char*);
 
 #include "VkSnapshotApiCall.h"
 #include "{self.utilsHeaderDirPrefix}/GfxApiLogger.h"
-#include "{self.baseLibDirPrefix}/HealthMonitor.h"
+#include "aemu/base/files/Stream.h"
+#include "gfxstream/HealthMonitor.h"
 #include "goldfish_vk_private_defs.h"
 """
         decoderSnapshotImplIncludes = f"""
@@ -505,7 +505,7 @@ using DlSymFunc = void* (void*, const char*);
 #include "VulkanHandleMapping.h"
 #include "VkDecoderGlobalState.h"
 #include "VkReconstruction.h"
-#include "{self.baseLibDirPrefix}/ThreadAnnotations.h"
+#include "gfxstream/ThreadAnnotations.h"
 """
 
         decoderHeaderIncludes = f"""
@@ -514,11 +514,11 @@ using DlSymFunc = void* (void*, const char*);
 
 #include <memory>
 
-namespace android {{
+namespace gfxstream {{
 namespace base {{
 class BumpPool;
-}} // namespace android
 }} // namespace base
+}} // namespace gfxstream
 
 """
 
@@ -528,9 +528,9 @@ class BumpPool;
 #include "goldfish_vk_private_defs.h"
 #include "common/goldfish_vk_transform.h"
 
-#include "{self.baseLibDirPrefix}/BumpPool.h"
-#include "{self.baseLibDirPrefix}/system/System.h"
-#include "{self.baseLibDirPrefix}/Metrics.h"
+#include "gfxstream/BumpPool.h"
+#include "gfxstream/system/System.h"
+#include "gfxstream/Metrics.h"
 #include "FrameBuffer.h"
 #include "gfxstream/host/Tracing.h"
 #include "gfxstream/host/iostream.h"
