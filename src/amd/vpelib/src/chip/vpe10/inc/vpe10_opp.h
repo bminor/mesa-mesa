@@ -81,7 +81,6 @@ extern "C" {
         SFRB(VPFMT_CLAMP_COLOR_FORMAT, VPFMT_CLAMP_CNTL, post_fix),                                \
         SFRB(VPOPP_PIPE_CLOCK_ON, VPOPP_PIPE_CONTROL, post_fix),                                   \
         SFRB(VPOPP_PIPE_DIGITAL_BYPASS_EN, VPOPP_PIPE_CONTROL, post_fix),                          \
-        SFRB(VPOPP_PIPE_ALPHA, VPOPP_PIPE_CONTROL, post_fix),                                      \
         SFRB(VPOPP_VPECLK_R_GATE_DIS, VPOPP_TOP_CLK_CONTROL, post_fix),                            \
         SFRB(VPOPP_VPECLK_G_GATE_DIS, VPOPP_TOP_CLK_CONTROL, post_fix)
 
@@ -89,7 +88,8 @@ extern "C" {
     OPP_FIELD_LIST_VPE10_COMMON(post_fix),                                                         \
         SFRB(VPOPP_PIPE_CRC_EN, VPOPP_PIPE_CRC_CONTROL, post_fix),                                 \
         SFRB(VPOPP_PIPE_CRC_CONT_EN, VPOPP_PIPE_CRC_CONTROL, post_fix),                            \
-        SFRB(VPOPP_PIPE_CRC_PIXEL_SELECT, VPOPP_PIPE_CRC_CONTROL, post_fix)
+        SFRB(VPOPP_PIPE_CRC_PIXEL_SELECT, VPOPP_PIPE_CRC_CONTROL, post_fix),                       \
+        SFRB(VPOPP_PIPE_ALPHA, VPOPP_PIPE_CONTROL, post_fix)
 
 #define OPP_REG_VARIABLE_LIST_VPE10_COMMON                                                         \
     reg_id_val VPFMT_CLAMP_COMPONENT_R;                                                            \
@@ -142,7 +142,6 @@ extern "C" {
     type VPFMT_CLAMP_COLOR_FORMAT;                                                                 \
     type VPOPP_PIPE_CLOCK_ON;                                                                      \
     type VPOPP_PIPE_DIGITAL_BYPASS_EN;                                                             \
-    type VPOPP_PIPE_ALPHA;                                                                         \
     type VPOPP_VPECLK_R_GATE_DIS;                                                                  \
     type VPOPP_VPECLK_G_GATE_DIS;
 
@@ -150,7 +149,8 @@ extern "C" {
     OPP_FIELD_VARIABLE_LIST_VPE10_COMMON(type)                                                     \
     type VPOPP_PIPE_CRC_EN;                                                                        \
     type VPOPP_PIPE_CRC_CONT_EN;                                                                   \
-    type VPOPP_PIPE_CRC_PIXEL_SELECT;
+    type VPOPP_PIPE_CRC_PIXEL_SELECT;                                                              \
+    type VPOPP_PIPE_ALPHA;
 
 struct vpe10_opp_registers {
     OPP_REG_VARIABLE_LIST_VPE10
