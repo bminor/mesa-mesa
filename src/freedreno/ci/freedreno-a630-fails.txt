@@ -221,6 +221,10 @@ spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-inverse-dmat4,Fail
 spec@arb_gpu_shader_fp64@uniform_buffers@fs-ubo-load.indirect.3,Fail
 spec@glsl-4.00@execution@built-in-functions@fs-op-div-double-dmat4,Fail
 
+# Regression from https://gitlab.freedesktop.org/mesa/mesa/-/compare/fc7badeac09f88ba4fe204cba79cde5bee64c986...384bf8e58ed5e149e157c91bc934482fbb0151c8
+spec@arb_shader_clock@execution@clock,Fail
+spec@arb_shader_clock@execution@clock2x32,Fail
+
 # uprev Piglit in Mesa
 spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int16,Fail
 spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int8,Fail
@@ -236,6 +240,10 @@ KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
 
 # a630-gles-asan
+asan-dEQP-GLES31.functional.debug.negative_coverage.callbacks.tessellation.invalid_primitive_mode,Crash
+asan-dEQP-GLES31.functional.debug.negative_coverage.get_error.tessellation.invalid_primitive_mode,Crash
+asan-dEQP-GLES31.functional.debug.negative_coverage.log.tessellation.invalid_primitive_mode,Crash
+asan-dEQP-GLES31.functional.state_query.program.tesselation_shader_state_get_programiv,Crash
 asan-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
 
 # GL tests above, Vulkan tests below
