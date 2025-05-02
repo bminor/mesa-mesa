@@ -116,19 +116,27 @@ rra_validate_node_gfx12(struct hash_table_u64 *accel_struct_vas, uint8_t *data, 
 }
 
 static uint32_t
-get_geometry_id(const void *node, uint32_t node_type)
+get_geometry_id(const void *node, uint32_t triangle_index)
 {
-   if (node_type == radv_bvh_node_instance)
-      return 0;
+   uint32_t geometry_index_base_bits = BITSET_EXTRACT(node, 20, 4) * 2;
+   uint32_t geometry_index_bits = BITSET_EXTRACT(node, 24, 4) * 2;
 
    uint32_t indices_midpoint = BITSET_EXTRACT(node, 42, 10);
-   return BITSET_EXTRACT(node, indices_midpoint - 28, 28);
+   uint32_t geometry_id_base =
+      BITSET_EXTRACT(node, indices_midpoint - geometry_index_base_bits, geometry_index_base_bits);
+
+   if (triangle_index == 0)
+      return geometry_id_base;
+
+   return (geometry_id_base & ~BITFIELD64_MASK(geometry_index_bits)) |
+          BITSET_EXTRACT(node, indices_midpoint - geometry_index_base_bits - geometry_index_bits * triangle_index,
+                         geometry_index_bits);
 }
 
 void
 rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_info *dst)
 {
-   uint32_t node_type = node_id & 7;
+   uint32_t node_type = node_id & 0xf;
 
    switch (node_type) {
    case radv_bvh_node_box32:
@@ -142,11 +150,12 @@ rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_i
       dst->leaf_nodes_size += sizeof(struct radv_gfx12_primitive_node);
       break;
    default:
-      UNREACHABLE("Invalid node type");
+      if (node_type >= radv_bvh_node_triangle + 4 && !(node_type & 0x8))
+         UNREACHABLE("Invalid node type");
       break;
    }
 
-   const void *node = bvh + ((node_id & (~7u)) << 3);
+   const void *node = bvh + ((node_id & (~0xf)) << 3);
    if (node_type == radv_bvh_node_box32) {
       const struct radv_gfx12_box_node *src = node;
 
@@ -171,8 +180,16 @@ rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_i
             rra_gather_bvh_info_gfx12(bvh, child_id, dst);
          }
       }
+   } else if (node_type == radv_bvh_node_instance) {
+      dst->geometry_infos[0].primitive_count++;
    } else {
-      dst->geometry_infos[get_geometry_id(node, node_type)].primitive_count++;
+      uint32_t pair_index = (node_type & 0x3) | ((node_type & 0x8) >> 1);
+
+      if (BITSET_EXTRACT(node, 1024 - 29 * (pair_index + 1) + 17, 12))
+         dst->geometry_infos[get_geometry_id(node, pair_index * 2 + 0)].primitive_count++;
+
+      if (BITSET_EXTRACT(node, 1024 - 29 * (pair_index + 1) + 3, 12))
+         dst->geometry_infos[get_geometry_id(node, pair_index * 2 + 1)].primitive_count++;
    }
 }
 
@@ -197,7 +214,7 @@ rra_transcode_box8_node(struct rra_transcoding_context *ctx, const struct radv_g
       uint32_t child_type = (src->children[i].dword2 >> 24) & 0xf;
       if (child_type == radv_bvh_node_box32)
          internal_child_count++;
-      else
+      else if (child_type == radv_bvh_node_triangle || child_type == radv_bvh_node_instance)
          leaf_child_count++;
    }
 
@@ -224,20 +241,24 @@ rra_transcode_box8_node(struct rra_transcoding_context *ctx, const struct radv_g
          child_id = primitive_id | child_type;
          primitive_id += (child_size * RADV_GFX12_BVH_NODE_SIZE) >> 3;
          child_dst_offset = dst_leaf_offset;
-         dst_leaf_offset += RADV_GFX12_BVH_NODE_SIZE;
+         if (child_type == radv_bvh_node_triangle || child_type == radv_bvh_node_instance)
+            dst_leaf_offset += RADV_GFX12_BVH_NODE_SIZE;
       }
 
-      rra_transcode_node_gfx12(ctx, radv_bvh_node_box32 | (dst_offset >> 3), child_id, child_dst_offset);
+      if (child_type == radv_bvh_node_triangle || child_type == radv_bvh_node_instance ||
+          child_type == radv_bvh_node_box32)
+         rra_transcode_node_gfx12(ctx, radv_bvh_node_box32 | (dst_offset >> 3), child_id, child_dst_offset);
 
-      dst->children[i].dword2 = (dst->children[i].dword2 & 0x0fffffff) | (1 << 28);
+      if (child_type == radv_bvh_node_instance)
+         dst->children[i].dword2 = (dst->children[i].dword2 & 0x0fffffff) | (1 << 28);
    }
 }
 
 void
 rra_transcode_node_gfx12(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id, uint32_t dst_offset)
 {
-   uint32_t node_type = src_id & 7;
-   uint32_t src_offset = (src_id & (~7u)) << 3;
+   uint32_t node_type = src_id & 0xf;
+   uint32_t src_offset = (src_id & (~0xfu)) << 3;
 
    const void *src_child_node = ctx->src + src_offset;
    if (node_type == radv_bvh_node_box32) {
