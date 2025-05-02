@@ -108,6 +108,7 @@ DEPS=(
     "libllvm${LLVM_VERSION}"
     liblz4-1
     libpng16-16
+    libproc2-0
     libpython3.11
     libubsan1
     libvulkan1
