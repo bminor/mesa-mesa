@@ -153,8 +153,6 @@ radeonsi-raven-vaapi-fluster:
   parallel: 2
   variables:
     FLUSTER_CODECS: VP9 H.264 H.265
-    # FIXME: Downloading the vectors can take about 4-5 minutes
-    DEVICE_HANGING_TIMEOUT_SEC: 1200
 
 
 ############### VKCTS tests ###############
