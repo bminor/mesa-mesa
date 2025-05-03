@@ -250,6 +250,7 @@
 .radv-zink-test-valve:
   timeout: 30m
   extends:
+    - .ci-tron-test-amdgpu
     - .ci-tron-x86_64-test-gl
     - .zink-test
     - .test-piglit

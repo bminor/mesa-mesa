@@ -280,6 +280,7 @@ radv-vangogh-vkcts:
 radeonsi-vangogh-glcts-full:
   extends:
     - .ci-tron-x86_64-test-gl
+    - .ci-tron-test-amdgpu
     - .test-piglit
     - .vangogh-test-valve
     - .radeonsi-valve-manual-rules

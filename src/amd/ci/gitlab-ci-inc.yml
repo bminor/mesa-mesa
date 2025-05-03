@@ -286,7 +286,12 @@
     VK_DRIVER: radeon
 
 ############### CI-tron
+.ci-tron-test-amdgpu:
+  variables:
+    CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
+
 .ci-tron-test-radv:
+  extends: .ci-tron-test-amdgpu
   variables:
     VK_DRIVER: radeon
     DRIVER_NAME: radv
@@ -299,7 +304,6 @@
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     # Enable ETC2 emulation on non-native platforms (RENOIR,RDNA+, GFX6-8 dGPUs)
     vk_require_etc2: 'true'
-    CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
     CI_TRON__B2C_SWAP_SIZE: '16g'
 
 .ci-tron-test-radv-vk:
