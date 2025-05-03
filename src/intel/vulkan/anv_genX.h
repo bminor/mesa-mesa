@@ -374,10 +374,10 @@ void genX(batch_emit_breakpoint)(struct anv_batch *batch,
 static inline void
 genX(emit_breakpoint)(struct anv_batch *batch,
                       struct anv_device *device,
-                      bool emit_before_draw)
+                      bool emit_before_draw_or_dispatch)
 {
-   if (INTEL_DEBUG(DEBUG_DRAW_BKP))
-      genX(batch_emit_breakpoint)(batch, device, emit_before_draw);
+   if (INTEL_DEBUG(DEBUG_DRAW_BKP) || INTEL_DEBUG(DEBUG_DISPATCH_BKP))
+      genX(batch_emit_breakpoint)(batch, device, emit_before_draw_or_dispatch);
 }
 
 void

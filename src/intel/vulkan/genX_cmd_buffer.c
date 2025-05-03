@@ -4707,27 +4707,42 @@ void genX(CmdPipelineBarrier2)(
 void
 genX(batch_emit_breakpoint)(struct anv_batch *batch,
                             struct anv_device *device,
-                            bool emit_before_draw)
+                            bool emit_before_draw_or_dispatch)
 {
-   /* Update draw call count once */
-   uint32_t draw_count = emit_before_draw ?
-                         p_atomic_inc_return(&device->draw_call_count) :
-                         p_atomic_read(&device->draw_call_count);
+   uint32_t before_count = 0, after_count = 0;
+   uint32_t *counter = NULL;
 
-   if (((draw_count == intel_debug_bkp_before_draw_count &&
-        emit_before_draw) ||
-       (draw_count == intel_debug_bkp_after_draw_count &&
-        !emit_before_draw))) {
-      struct anv_address wait_addr =
-         anv_state_pool_state_address(&device->dynamic_state_pool,
-                                      device->breakpoint);
+   if (INTEL_DEBUG(DEBUG_DRAW_BKP)) {
+      counter = &device->draw_call_count;
+      before_count = intel_debug_bkp_before_draw_count;
+      after_count = intel_debug_bkp_after_draw_count;
+   } else if (INTEL_DEBUG(DEBUG_DISPATCH_BKP)) {
+      counter = &device->dispatch_call_count;
+      before_count = intel_debug_bkp_before_dispatch_count;
+      after_count = intel_debug_bkp_after_dispatch_count;
+   }
 
-      anv_batch_emit(batch, GENX(MI_SEMAPHORE_WAIT), sem) {
-         sem.WaitMode            = PollingMode;
-         sem.CompareOperation    = COMPARE_SAD_EQUAL_SDD;
-         sem.SemaphoreDataDword  = 0x1;
-         sem.SemaphoreAddress    = wait_addr;
-      };
+   if (counter) {
+      uint32_t count = emit_before_draw_or_dispatch ?
+         p_atomic_inc_return(counter) :
+         p_atomic_read(counter);
+
+      bool should_emit =
+         (emit_before_draw_or_dispatch && count == before_count) ||
+         (!emit_before_draw_or_dispatch && count == after_count);
+
+      if (should_emit) {
+         struct anv_address wait_addr =
+            anv_state_pool_state_address(&device->dynamic_state_pool,
+                                         device->breakpoint);
+
+         anv_batch_emit(batch, GENX(MI_SEMAPHORE_WAIT), sem) {
+            sem.WaitMode            = PollingMode;
+            sem.CompareOperation    = COMPARE_SAD_EQUAL_SDD;
+            sem.SemaphoreDataDword  = 0x1;
+            sem.SemaphoreAddress    = wait_addr;
+         }
+      }
    }
 }
 

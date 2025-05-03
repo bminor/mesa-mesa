@@ -698,10 +698,14 @@ void genX(CmdDispatchBase)(
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
 
+   genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, true);
+
    emit_cs_walker(cmd_buffer, pipeline, prog_data, dispatch,
                   ANV_NULL_ADDRESS /* no indirect data */,
                   groupCountX, groupCountY, groupCountZ,
                   false);
+
+   genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, false);
 
    trace_intel_end_compute(&cmd_buffer->trace,
                            groupCountX, groupCountY, groupCountZ,
@@ -861,8 +865,12 @@ genX(cmd_buffer_dispatch_indirect)(struct anv_cmd_buffer *cmd_buffer,
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
 
+   genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, true);
+
    emit_cs_walker(cmd_buffer, pipeline, prog_data, dispatch, indirect_addr, 0,
                   0, 0, is_unaligned_size_x);
+
+   genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, false);
 
    trace_intel_end_compute_indirect(&cmd_buffer->trace,
                                     anv_address_utrace(indirect_addr),

@@ -916,6 +916,7 @@ VkResult anv_CreateDevice(
    device->breakpoint = anv_state_pool_alloc(&device->dynamic_state_pool, 4,
                                              4);
    p_atomic_set(&device->draw_call_count, 0);
+   p_atomic_set(&device->dispatch_call_count, 0);
 
    /* Create a separate command pool for companion RCS command buffer. */
    if (device->info->verx10 >= 125) {

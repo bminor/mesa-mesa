@@ -2136,6 +2136,7 @@ struct anv_device {
     nir_shader                                  *fp64_nir;
 
     uint32_t                                    draw_call_count;
+    uint32_t                                    dispatch_call_count;
     struct anv_state                            breakpoint;
 
     /** Precompute all dirty graphics bits
