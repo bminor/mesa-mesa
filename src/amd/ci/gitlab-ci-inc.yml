@@ -286,7 +286,7 @@
     VK_DRIVER: radeon
 
 ############### CI-tron
-.test-radv:
+.ci-tron-test-radv:
   variables:
     VK_DRIVER: radeon
     DRIVER_NAME: radv
@@ -306,7 +306,7 @@
   extends:
     - .ci-tron-x86_64-test-vk
     - .radv-valve-rules
-    - .test-radv
+    - .ci-tron-test-radv
   variables:
     CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
 

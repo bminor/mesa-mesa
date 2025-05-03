@@ -333,7 +333,7 @@ radv-fossils:
   extends:
     - .radv-valve-rules
     - .test-vk
-    - .test-radv
+    - .ci-tron-test-radv
     - .fossilize-test
   rules:
     - when: never # disabled due to broken job (no git in container)
