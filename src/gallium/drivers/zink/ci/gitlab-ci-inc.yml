@@ -239,8 +239,8 @@
 
 .tu-zink-test-valve:
   extends:
-    - .zink-test
     - .b2c-arm64-test-gl
+    - .zink-test
   variables:
     VK_DRIVER: freedreno
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
