@@ -31,15 +31,20 @@
         *etnaviv_file_list
       when: manual
 
-.austriancoder-imx6q-cubox-i:arm32:
+.austriancoder-ci-tron:
   variables:
     RUNNER_FARM_LOCATION: austriancoder
     B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
     B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
+    B2C_MARS_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
+
+.austriancoder-imx6q-cubox-i:arm32:
+  extends:
+    - .austriancoder-ci-tron
+  variables:
     B2C_IMAGESTORE_PLATFORM: linux/arm/v7
     VIVANTE_MODEL_TAG: "vivante:model:2000"
     VIVANTE_REVISION_TAG: "vivante:revision:5108"
-    B2C_MARS_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
     GPU_VERSION: "etnaviv-gc2000-r5108"
 
 # 1 device (2025-01-30)
@@ -68,15 +73,13 @@
 
 # 2 devices (2025-02-28)
 .austriancoder-imx6qp-nitrogen6_max:arm32:
+  extends:
+    - .austriancoder-ci-tron
   variables:
     FDO_CI_CONCURRENT: 4
-    RUNNER_FARM_LOCATION: austriancoder
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
     B2C_IMAGESTORE_PLATFORM: linux/arm/v7
     VIVANTE_MODEL_TAG: "vivante:model:3000"
     VIVANTE_REVISION_TAG: "vivante:revision:5450"
-    B2C_MARS_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
     GPU_VERSION: "etnaviv-gc3000-r5450"
   tags:
     - farm:$RUNNER_FARM_LOCATION
@@ -85,15 +88,13 @@
 
 # 1 devices (2025-02-26)
 .austriancoder-imx8mq-nitrogen:arm64:
+  extends:
+    - .austriancoder-ci-tron
   variables:
     FDO_CI_CONCURRENT: 4
-    RUNNER_FARM_LOCATION: austriancoder
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_SECONDS: 30
-    B2C_TIMEOUT_FIRST_CONSOLE_ACTIVITY_RETRIES: 3
     B2C_IMAGESTORE_PLATFORM: linux/arm64/v8
     VIVANTE_MODEL_TAG: "vivante:model:7000"
     VIVANTE_REVISION_TAG: "vivante:revision:6214"
-    B2C_MARS_SETUP_TAGS: "$VIVANTE_MODEL_TAG,$VIVANTE_REVISION_TAG"
     GPU_VERSION: "etnaviv-gc7000-r6214"
   tags:
     - farm:$RUNNER_FARM_LOCATION
