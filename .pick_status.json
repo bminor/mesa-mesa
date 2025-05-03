@@ -1,5 +1,355 @@
 [
     {
+        "sha": "7f0de1a51212881c9a7614327bf3e1fbc9784ddb",
+        "description": "ac: remove gfx11_emulate_clear_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e487dbc49e5be57a1da255ae31fe642bd42f815",
+        "description": "amd: stop using CLEAR_STATE on gfx11",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf9b0dd5896676b831f9e842555dcdd534f109ba",
+        "description": "anv, hasvk: ignore QFOT if both src and dst queue families are equal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1dbfa0e0ff56467d3581690f6db4b78e817729a",
+        "description": "freedreno/a6xx: Implement fast border colors in sampler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3691694933c3d3c6a9f6b7f6dda4452ac141af9a",
+        "description": "tu: Remove builtin border color logic",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a1cf7054d9ca3854724df0a3a9c31cae79b5cf98",
+        "description": "tu: Implement fast border colors in sampler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4690637acd5d62170006cc33946f57672144708c",
+        "description": "freedreno/regs: Document fast border color in sampler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02337aec715c25dae7ff2479d986f831c77fe536",
+        "description": "virgl/ci: update flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8949e4a7ec7a3503386271697cc45d1c68a7fe54",
+        "description": "ci: add libproc2-0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27020be893518492a621fb7283f6947da7bedf63",
+        "description": "ci: angle: fix depot-tools dependency release",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6427e57e3393f0a4ba3df25f4ee965078c7fa6a1",
+        "description": "freedreno/percntr: Expose LRZ derived counters",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cb358f1c2707494b09ae590cf11e3165fb0166d",
+        "description": "radv: Remove offset parameter from radv_make_texel_buffer_descriptor.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96765935e83d6014e2d5f49b4b859afdfd5cb236",
+        "description": "radv/amdgpu: Fix hash key in radv_amdgpu_winsys_destroy().",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec3011ed0470d90987a35cb3be751cd20c64f0ca",
+        "description": "gallium: remove pipe_grid_info::input",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6730b8b228ac47f1bb7803189fd14444422bd135",
+        "description": "gallium: remove pipe_grid_info::pc and PIPE_SHADER_IR_NATIVE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a990ada276d4cbecaa462135e72d94549316f166",
+        "description": "gallium: remove pipe_context::set_compute_resources and PIPE_BIND_COMPUTE_RESOURCE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "502b821ea3898d5bd8c5cfb25664a2982cfa2f6a",
+        "description": "gallium: remove pipe_compute_state::req_input_mem",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97b17e7b42932808324f1ceee51ce71ac964d0c6",
+        "description": "gallium: remove pipe_compute_caps::max_input_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76d82f9b2a3e0fac90fe7b2a6f961742507065dd",
+        "description": "gallium: remove pipe_compute_caps::max_private_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "44051e6fbdfebcce6607012f7001cf6b52a6804f",
+        "description": "gallium: remove pipe_compute_caps::images_supported",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d73da915593ea4ee06553008a92b99d1f399eaf",
+        "description": "gallium: remove pipe_compute_caps::ir_target",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e5775ac0e084273d8ed8205879d85d3cc6cc95ff",
+        "description": "gallium: remove pipe_compute_caps::max_threads_per_block_clover",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2deea42ebaac9cd43007d2a881e9f5ac5512799d",
+        "description": "gallium: remove pipe_compute_caps::max_block_size_clover",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2443ce2db61599e58808d846fff098e6b2229588",
+        "description": "gallium: remove pipe_binary_program_header",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c93d80ba9816e36cc35b851ef8be97dba1da1de9",
+        "description": "nvc0: remove support for pipe_grid_info::input",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7b3ab3bc2fa6adff32e0e130b4d6266673ce4b1",
+        "description": "nv50: move pipe_grid_info::input into the driver",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6416c49247af7586104a86931b175a7b1cc553e9",
+        "description": "radeonsi: remove more clover related code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67b9be91be1d83e8c5be135b7caeff5342606738",
+        "description": "r600: remove all clover related code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6e3c967d9a1f1c680613d53306a415afb977247",
+        "description": "r600: fix r600_buffer_from_user_memory for rusticl",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7addf551f38b1e8cafae2bb3c4563481971a9947",
+        "description": "ci: drop tracking of removed folder",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "185a3f9105669502b509f06179795a3b45d656f6",
+        "notes": null
+    },
+    {
+        "sha": "3e5a735d01700163d25b1c00ee05b97644da9cf2",
+        "description": "intel/tools: Fix batch buffer decoder",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ec2d20a70d018736c6ef7cb5bbbe48d82e8c6b4c",
+        "notes": null
+    },
+    {
+        "sha": "63f633557ff53726b7bc8e2292f330ace8624be0",
+        "description": "intel: fix null render target setup logic",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "98cdb9349a7fa181c3895655d217589f909a7beb",
+        "notes": null
+    },
+    {
+        "sha": "1d7a988ec2442feab1f2e3b3bc88ddf72456d311",
+        "description": "vtn: use nir_const_value_for_raw_uint for bfloat SpecConstantOp/FConvert",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "90e1b128903cabfe4fcfb5ae52cf46d5ddbf1189",
+        "notes": null
+    },
+    {
+        "sha": "752f5f317ef72275a4616f1da51a75d7a8405642",
+        "description": "aco: replace max_const_offset_plus_one with max_const_offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a85ebe16b37fef0eeeff396bab03df735e2b6620",
+        "description": "aco: fix max_const_offset_plus_one overflow",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c26851b80b9d8daea4a98da05910e530cd6d80a7",
+        "notes": null
+    },
+    {
         "sha": "615d0c9669595adf114a705f5b8ee88277aa99f2",
         "description": "anv: Remove ANV_BO_ALLOC_HOST_CACHED from ANV_BO_ALLOC_MAPPED assert() on anv_device_alloc_bo()",
         "nominated": false,
