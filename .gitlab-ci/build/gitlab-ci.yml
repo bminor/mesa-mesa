@@ -120,8 +120,6 @@ debian-testing-asan:
   variables:
     VULKAN_DRIVERS: "swrast"
     GALLIUM_DRIVERS: "llvmpipe,softpipe"
-    C_ARGS: >
-      -Wno-error=stringop-truncation
     EXTRA_OPTION: >
       -D b_sanitize=address
       -D gallium-va=false
@@ -156,6 +154,11 @@ debian-testing-msan:
     - .meson-build-only
     - .build-run-long
   variables:
+    CPP_ARGS: >
+      -Wno-error=c99-designator
+      -Wno-error=overloaded-virtual
+      -Wno-error=tautological-constant-out-of-range-compare
+      -Wno-error=unused-private-field
     # l_undef is incompatible with msan
     EXTRA_OPTION:
       -D b_sanitize=memory
@@ -340,9 +343,6 @@ fedora-release:
       -Wno-error=stringop-overread
       -Wno-error=array-bounds
       -Wno-error=maybe-uninitialized
-    CPP_ARGS: >
-      -Wno-error=dangling-reference
-      -Wno-error=overloaded-virtual
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -386,12 +386,9 @@ debian-android:
       -Wno-error=constant-conversion
       -Wno-error=enum-conversion
       -Wno-error=initializer-overrides
-      -Wno-error=sometimes-uninitialized
     CPP_ARGS: >
       -Wno-error=c99-designator
       -Wno-error=unused-variable
-      -Wno-error=unused-but-set-variable
-      -Wno-error=self-assign
     DRI_LOADERS: >
       -D glx=disabled
       -D gbm=disabled
@@ -539,7 +536,6 @@ debian-arm64:
   variables:
     C_ARGS: >
       -Wno-error=array-bounds
-      -Wno-error=stringop-truncation
     GALLIUM_DRIVERS: "etnaviv,freedreno,lima,panfrost,v3d,vc4,zink"
     VULKAN_DRIVERS: "broadcom,freedreno,panfrost"
     DRI_LOADERS:
@@ -562,6 +558,7 @@ debian-arm64-asan:
   variables:
     VULKAN_DRIVERS: "broadcom,freedreno"
     GALLIUM_DRIVERS: "freedreno,vc4,v3d"
+    C_ARGS: ""
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -619,7 +616,6 @@ debian-arm64-release:
     S3_ARTIFACT_NAME: mesa-arm64-default-${BUILDTYPE}
     C_ARGS: >
       -Wno-error=array-bounds
-      -Wno-error=stringop-truncation
       -Wno-error=stringop-overread
   script:
     - *meson-build
@@ -634,8 +630,6 @@ debian-no-libdrm:
     GALLIUM_DRIVERS: "zink,llvmpipe"
     BUILDTYPE: release
     C_ARGS: >
-      -Wno-error=array-bounds
-      -Wno-error=stringop-truncation
       -Wno-error=stringop-overread
     EXTRA_OPTION: >
       -D freedreno-kmds=kgsl
@@ -655,8 +649,6 @@ debian-clang:
       -Wno-error=constant-conversion
       -Wno-error=enum-conversion
       -Wno-error=initializer-overrides
-      -Wno-error=sometimes-uninitialized
-      -Werror=misleading-indentation
     CPP_ARGS: >
       -Wno-error=c99-designator
       -Wno-error=overloaded-virtual
@@ -704,6 +696,11 @@ debian-clang-release:
     - .build-run-long
   variables:
     BUILDTYPE: "release"
+    C_ARGS: >
+      -Wno-error=constant-conversion
+      -Wno-error=enum-conversion
+      -Wno-error=initializer-overrides
+      -Wno-error=sometimes-uninitialized
     DRI_LOADERS: >
       -D glx=xlib
       -D platforms=x11,wayland
