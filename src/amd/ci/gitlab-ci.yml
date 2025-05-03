@@ -269,28 +269,24 @@ radv-vangogh-vkcts:
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
 
-.radeonsi-vangogh-glcts-common:
+radeonsi-vangogh-glcts-full:
   extends:
     - .b2c-x86_64-test-gl
     - .test-piglit
     - .vangogh-test-valve
+    - .radeonsi-valve-manual-rules
+  timeout: 90m
   variables:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
 
 radeonsi-vangogh-glcts:
   extends:
-    - .radeonsi-vangogh-glcts-common
+    - radeonsi-vangogh-glcts-full
     - .radeonsi-valve-rules
   timeout: 30m
   variables:
     DEQP_FRACTION: 4
-
-radeonsi-vangogh-glcts-full:
-  extends:
-    - .radeonsi-vangogh-glcts-common
-    - .radeonsi-valve-manual-rules
-  timeout: 90m
 
 radv-raphael-vkcts:
   extends:
