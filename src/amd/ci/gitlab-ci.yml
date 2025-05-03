@@ -161,11 +161,12 @@ radeonsi-raven-vaapi-fluster:
 # Hence, disable it for now.
 .radv-kabini-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .kabini-test-valve
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 12h
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-kabini
     B2C_TIMEOUT_BOOT_MINUTES: 710
     B2C_TIMEOUT_OVERALL_MINUTES: 710
@@ -173,11 +174,12 @@ radeonsi-raven-vaapi-fluster:
 
 radv-tahiti-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .tahiti-test-valve
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 1h
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-tahiti
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
@@ -186,11 +188,12 @@ radv-tahiti-vkcts:
 
 radv-hawaii-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .hawaii-test-valve
     - .radv-valve-manual-rules
   timeout: 1h
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-hawaii
     B2C_TIMEOUT_BOOT_MINUTES: 50
     B2C_TIMEOUT_OVERALL_MINUTES: 50
@@ -199,11 +202,12 @@ radv-hawaii-vkcts:
 
 radv-polaris10-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
   timeout: 1h 15m
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-polaris10
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
@@ -212,11 +216,12 @@ radv-polaris10-vkcts:
 
 radv-vega10-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .vega10-test-valve
     - .radv-valve-manual-rules
   timeout: 1h 15m
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vega10
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
@@ -224,11 +229,12 @@ radv-vega10-vkcts:
 
 radv-renoir-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .renoir-test-valve
     - .radv-valve-manual-rules
   timeout: 2h 15m
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-renoir
     B2C_TIMEOUT_BOOT_MINUTES: 130
     B2C_TIMEOUT_OVERALL_MINUTES: 130
@@ -238,10 +244,11 @@ radv-renoir-vkcts:
 radv-navi10-vkcts:
   parallel: 2
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .navi10-test-valve-kws
     - .radv-valve-manual-rules
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi10
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
@@ -249,10 +256,11 @@ radv-navi21-vkcts:
   timeout: 35m
   parallel: 3
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .navi21-test-valve
     - .radv-valve-rules
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi21
     B2C_TIMEOUT_BOOT_MINUTES: 30
     B2C_TIMEOUT_OVERALL_MINUTES: 30
@@ -261,11 +269,12 @@ radv-navi21-vkcts:
 radv-vangogh-vkcts:
   parallel: 2
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .vangogh-test-valve
     - .radv-valve-manual-rules
   timeout: 2h 10m
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
 
@@ -290,11 +299,12 @@ radeonsi-vangogh-glcts:
 
 radv-raphael-vkcts:
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .raphael-test-valve
     - .radv-valve-manual-rules
   timeout: 45m
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-raphael
     B2C_TIMEOUT_BOOT_MINUTES: 35
     B2C_TIMEOUT_OVERALL_MINUTES: 40
@@ -304,10 +314,11 @@ radv-navi31-vkcts:
   timeout: 25m
   parallel: 2
   extends:
-    - .vkcts-test-valve
+    - .b2c-test-radv-vk
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
+    DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,video_decode,video_encode

@@ -421,18 +421,6 @@
     FDO_CI_CONCURRENT: 32
     B2C_KERNEL_CMDLINE_EXTRAS: 'b2c.swap=16g'
 
-############### VKCTS tests ###############
-
-# A note on the variables to control fractional VKCTS runs
-#  parallel: N means to split the test list into chunks of 1/N lines, and
-#  DEQP_FRACTION: M means to run every Mth test from the resulting lines.
-#  So parallel: 2 and DEQP_FRACTION: 5 would imply running 1/10th of the suite.
-.vkcts-test-valve:
-  extends:
-    - .b2c-test-radv-vk
-  variables:
-    DEQP_SUITE: radv-valve
-
 ############### Fluster tests ###############
 .radeonsi-vaapi-fluster-rules:
   extends:
