@@ -68,6 +68,19 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(vk_acceleration_structure, base, VkAccelerationSt
 #define MAX_ENCODE_PASSES 2
 #define MAX_UPDATE_PASSES 2
 
+enum vk_internal_build_type {
+   VK_INTERNAL_BUILD_TYPE_LBVH,
+   VK_INTERNAL_BUILD_TYPE_PLOC,
+   VK_INTERNAL_BUILD_TYPE_UPDATE,
+};
+
+struct vk_build_config {
+   enum vk_internal_build_type internal_type;
+   bool updateable;
+   uint32_t encode_key[MAX_ENCODE_PASSES];
+   uint32_t update_key[MAX_ENCODE_PASSES];
+};
+
 struct vk_acceleration_structure_build_ops {
    void (*begin_debug_marker)(VkCommandBuffer commandBuffer,
                               enum vk_acceleration_structure_build_step step,

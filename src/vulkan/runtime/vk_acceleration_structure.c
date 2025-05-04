@@ -112,19 +112,6 @@ vk_common_GetAccelerationStructureDeviceAddressKHR(
 #define KEY_ID_PAIR_SIZE 8
 #define MORTON_BIT_SIZE  24
 
-enum internal_build_type {
-   INTERNAL_BUILD_TYPE_LBVH,
-   INTERNAL_BUILD_TYPE_PLOC,
-   INTERNAL_BUILD_TYPE_UPDATE,
-};
-
-struct build_config {
-   enum internal_build_type internal_type;
-   bool updateable;
-   uint32_t encode_key[MAX_ENCODE_PASSES];
-   uint32_t update_key[MAX_ENCODE_PASSES];
-};
-
 struct scratch_layout {
    uint32_t size;
    uint32_t update_size;
@@ -143,27 +130,27 @@ struct scratch_layout {
    uint32_t internal_node_offset;
 };
 
-static struct build_config
+static struct vk_build_config
 build_config(struct vk_device *device, uint32_t leaf_count,
              const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
              const struct vk_acceleration_structure_build_ops *ops)
 {
-   struct build_config config = {0};
+   struct vk_build_config config = {0};
 
    if (leaf_count <= 4)
-      config.internal_type = INTERNAL_BUILD_TYPE_LBVH;
+      config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
    else if (build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
-      config.internal_type = INTERNAL_BUILD_TYPE_PLOC;
+      config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
    else if (!(build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR) &&
             !(build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR))
-      config.internal_type = INTERNAL_BUILD_TYPE_PLOC;
+      config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
    else
-      config.internal_type = INTERNAL_BUILD_TYPE_LBVH;
+      config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
 
    if (build_info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
        build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
        ops->update_as[0])
-      config.internal_type = INTERNAL_BUILD_TYPE_UPDATE;
+      config.internal_type = VK_INTERNAL_BUILD_TYPE_UPDATE;
 
    if ((build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR) &&
        build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
@@ -216,10 +203,10 @@ get_scratch_layout(struct vk_device *device,
    uint32_t ploc_scratch_space = 0;
    uint32_t lbvh_node_space = 0;
 
-   struct build_config config = build_config(device, leaf_count, build_info,
-                                             device->as_build_ops);
+   struct vk_build_config config = build_config(device, leaf_count, build_info,
+                                                device->as_build_ops);
 
-   if (config.internal_type == INTERNAL_BUILD_TYPE_PLOC)
+   if (config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC)
       ploc_scratch_space = DIV_ROUND_UP(leaf_count, PLOC_WORKGROUP_SIZE) * sizeof(struct ploc_prefix_scan_partition);
    else
       lbvh_node_space = sizeof(struct lbvh_node_info) * internal_count;
@@ -279,7 +266,7 @@ struct bvh_state {
    uint32_t leaf_node_size;
 
    struct scratch_layout scratch;
-   struct build_config config;
+   struct vk_build_config config;
 
    /* Radix sort state */
    uint32_t scatter_blocks;
@@ -566,7 +553,7 @@ build_leaves(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
       if (bvh_states[i].config.updateable != updateable)
          continue;
@@ -635,7 +622,7 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
       const struct morton_args consts = {
          .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
@@ -730,7 +717,7 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    for (uint32_t i = 0; i < infoCount; ++i) {
       if (!bvh_states[i].leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
       uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0];
@@ -784,7 +771,7 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    for (uint32_t i = 0; i < infoCount; ++i) {
       if (!bvh_states[i].leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
       uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0];
@@ -816,7 +803,7 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    for (uint32_t i = 0; i < infoCount; ++i) {
       if (!bvh_states[i].leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
       uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_internal_offset;
@@ -866,7 +853,7 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
       for (uint32_t i = 0; i < infoCount; i++) {
          if (!bvh_states[i].leaf_node_count)
             continue;
-         if (bvh_states[i].config.internal_type == INTERNAL_BUILD_TYPE_UPDATE)
+         if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
             continue;
 
          bvh_states[i].push_scatter.pass_offset = (pass_idx & 3) * RS_RADIX_LOG2;
@@ -924,7 +911,7 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != INTERNAL_BUILD_TYPE_LBVH)
+      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
          continue;
 
       uint32_t src_scratch_offset = bvh_states[i].scratch_offset;
@@ -961,7 +948,7 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != INTERNAL_BUILD_TYPE_LBVH)
+      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
          continue;
 
       const struct lbvh_generate_ir_args consts = {
@@ -1013,7 +1000,7 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != INTERNAL_BUILD_TYPE_PLOC)
+      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_PLOC)
          continue;
 
       uint32_t src_scratch_offset = bvh_states[i].scratch_offset;
@@ -1087,8 +1074,8 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
       get_scratch_layout(device, leaf_node_count, pInfos + i, args, &bvh_states[i].scratch);
 
-      struct build_config config = build_config(cmd_buffer->base.device, leaf_node_count, pInfos + i,
-                                                device->as_build_ops);
+      struct vk_build_config config = build_config(cmd_buffer->base.device, leaf_node_count, pInfos + i,
+                                                   device->as_build_ops);
       bvh_states[i].config = config;
 
       if (config.updateable)
@@ -1096,11 +1083,11 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       else
          batch_state.any_non_updateable = true;
 
-      if (config.internal_type == INTERNAL_BUILD_TYPE_PLOC) {
+      if (config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC) {
          batch_state.any_ploc = true;
-      } else if (config.internal_type == INTERNAL_BUILD_TYPE_LBVH) {
+      } else if (config.internal_type == VK_INTERNAL_BUILD_TYPE_LBVH) {
          batch_state.any_lbvh = true;
-      } else if (config.internal_type == INTERNAL_BUILD_TYPE_UPDATE) {
+      } else if (config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE) {
          batch_state.any_update = true;
          /* For updates, the leaf node pass never runs, so set leaf_node_count here. */
          bvh_states[i].leaf_node_count = leaf_node_count;
@@ -1108,7 +1095,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          unreachable("Unknown internal_build_type");
       }
 
-      if (bvh_states[i].config.internal_type != INTERNAL_BUILD_TYPE_UPDATE) {
+      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_UPDATE) {
          /* The internal node count is updated in lbvh_build_internal for LBVH
           * and from the PLOC shader for PLOC. */
          struct vk_ir_header header = {
@@ -1247,7 +1234,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
             if (!progress) {
                update = (bvh_states[i].config.internal_type ==
-                         INTERNAL_BUILD_TYPE_UPDATE);
+                         VK_INTERNAL_BUILD_TYPE_UPDATE);
                if (update && !ops->update_as[pass])
                   continue;
                if (!update && !ops->encode_as[pass])
@@ -1261,7 +1248,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                   ops->encode_bind_pipeline[pass](commandBuffer, encode_key);
             } else {
                if (update != (bvh_states[i].config.internal_type ==
-                              INTERNAL_BUILD_TYPE_UPDATE) ||
+                              VK_INTERNAL_BUILD_TYPE_UPDATE) ||
                    encode_key != bvh_states[i].config.encode_key[pass] ||
                    update_key != bvh_states[i].config.update_key[pass])
                   continue;
