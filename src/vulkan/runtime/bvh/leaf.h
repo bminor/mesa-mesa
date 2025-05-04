@@ -73,7 +73,6 @@ build_triangle(inout vk_aabb bounds, VOID_REF dst_ptr, vk_bvh_geometry_data geom
    DEREF(node).base.aabb = bounds;
    DEREF(node).triangle_id = global_id;
    DEREF(node).geometry_id_and_flags = geom_data.geometry_id;
-   DEREF(node).id = 9;
 
    return is_valid;
 }

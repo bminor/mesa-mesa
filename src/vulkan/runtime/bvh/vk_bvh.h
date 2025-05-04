@@ -135,7 +135,6 @@ struct vk_ir_triangle_node {
    vk_ir_node base;
    float coords[3][3];
    uint32_t triangle_id;
-   uint32_t id;
    uint32_t geometry_id_and_flags;
 };
 
