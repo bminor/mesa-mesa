@@ -93,10 +93,9 @@ struct vk_acceleration_structure_build_ops {
    VkDeviceSize (*get_update_scratch_size)(struct vk_device *device,
                                            const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
                                            uint32_t leaf_count);
-   uint32_t (*get_encode_key[MAX_ENCODE_PASSES])(struct vk_device *device,
-                                                 VkAccelerationStructureTypeKHR type,
-                                                 VkBuildAccelerationStructureFlagBitsKHR flags);
-   uint32_t (*get_update_key[MAX_ENCODE_PASSES])(struct vk_device *device, bool in_place);
+   void (*get_build_config)(struct vk_device *device,
+                            struct vk_build_config *config,
+                            const VkAccelerationStructureBuildGeometryInfoKHR *build_info);
    VkResult (*encode_bind_pipeline[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer,
                                                        uint32_t key);
    void (*encode_as[MAX_ENCODE_PASSES])(VkCommandBuffer cmd_buffer,

@@ -153,13 +153,26 @@ VkDeviceSize get_bvh_size(VkDevice device,
    return layout.size;
 }
 
-static uint32_t
-encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
-           VkBuildAccelerationStructureFlagBitsKHR flags)
-{
-   return 0;
-}
+/* Don't bother copying over the compacted size using a compute shader if
+ * compaction is never going to happen.
+ */
+enum tu_header_key {
+   HEADER_NO_DISPATCH,
+   HEADER_USE_DISPATCH,
+};
 
+static void
+tu_get_build_config(
+   struct vk_device *device,
+   struct vk_build_config *config,
+   const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
+{
+   config->encode_key[1] =
+      (build_info->flags &
+       VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
+         ? HEADER_USE_DISPATCH
+         : HEADER_NO_DISPATCH;
+}
 
 static VkResult
 encode_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
@@ -222,22 +235,6 @@ encode(VkCommandBuffer commandBuffer,
       util_sparse_array_get(&device->accel_struct_ranges,
                             vk_acceleration_structure_get_va(dst)) = dst->size;
 
-}
-
-/* Don't bother copying over the compacted size using a compute shader if
- * compaction is never going to happen.
- */
-enum tu_header_key {
-   HEADER_NO_DISPATCH,
-   HEADER_USE_DISPATCH
-};
-
-static uint32_t
-header_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
-           VkBuildAccelerationStructureFlagBitsKHR flags)
-{
-   return (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ?
-      HEADER_USE_DISPATCH : HEADER_NO_DISPATCH;
 }
 
 static VkResult
@@ -348,8 +345,8 @@ header(VkCommandBuffer commandBuffer,
 }
 
 const struct vk_acceleration_structure_build_ops tu_as_build_ops = {
+   .get_build_config = tu_get_build_config,
    .get_as_size = get_bvh_size,
-   .get_encode_key = { encode_key, header_key },
    .encode_bind_pipeline = { encode_bind_pipeline, header_bind_pipeline },
    .encode_as = { encode, header },
 };

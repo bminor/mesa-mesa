@@ -645,13 +645,6 @@ lvp_get_as_size(VkDevice device,
    return sizeof(struct lvp_bvh_header) + nodes_size;
 }
 
-static uint32_t
-lvp_get_encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
-                   VkBuildAccelerationStructureFlagBitsKHR flags)
-{
-   return 0;
-}
-
 static VkResult
 lvp_encode_bind_pipeline(VkCommandBuffer cmd_buffer,
                          uint32_t key)
@@ -661,7 +654,6 @@ lvp_encode_bind_pipeline(VkCommandBuffer cmd_buffer,
 
 const struct vk_acceleration_structure_build_ops accel_struct_ops = {
    .get_as_size = lvp_get_as_size,
-   .get_encode_key[0] = lvp_get_encode_key,
    .encode_bind_pipeline[0] = lvp_encode_bind_pipeline,
    .encode_as[0] = lvp_enqueue_encode_as,
 };

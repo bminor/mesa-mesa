@@ -399,8 +399,7 @@ radv_get_update_scratch_size(struct vk_device *vk_device, const VkAccelerationSt
 }
 
 static uint32_t
-radv_get_encode_key(struct vk_device *vk_device, VkAccelerationStructureTypeKHR type,
-                    VkBuildAccelerationStructureFlagBitsKHR flags)
+radv_get_encode_key(struct vk_device *vk_device, const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
 {
    struct radv_device *device = container_of(vk_device, struct radv_device, vk);
    struct radv_physical_device *pdev = radv_device_physical(device);
@@ -408,7 +407,7 @@ radv_get_encode_key(struct vk_device *vk_device, VkAccelerationStructureTypeKHR 
    if (radv_use_bvh8(pdev))
       return RADV_ENCODE_KEY_COMPACT;
 
-   if (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
+   if (build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
       return RADV_ENCODE_KEY_COMPACT;
 
    return 0;
@@ -418,6 +417,19 @@ static uint32_t
 radv_get_update_key(struct vk_device *vk_device, bool in_place)
 {
    return in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
+}
+
+static void
+radv_get_build_config(struct vk_device *vk_device, struct vk_build_config *config,
+                      const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
+{
+   uint32_t encode_key = radv_get_encode_key(vk_device, build_info);
+   config->encode_key[0] = encode_key;
+   config->encode_key[1] = encode_key;
+
+   uint32_t update_key =
+      radv_get_update_key(vk_device, build_info->srcAccelerationStructure == build_info->dstAccelerationStructure);
+   config->update_key[0] = update_key;
 }
 
 static void
@@ -947,14 +959,12 @@ radv_device_init_accel_struct_build_state(struct radv_device *device)
    device->meta_state.accel_struct_build.build_ops = (struct vk_acceleration_structure_build_ops){
       .begin_debug_marker = vk_accel_struct_cmd_begin_debug_marker,
       .end_debug_marker = vk_accel_struct_cmd_end_debug_marker,
+      .get_build_config = radv_get_build_config,
       .get_as_size = radv_get_as_size,
       .get_update_scratch_size = radv_get_update_scratch_size,
-      .get_encode_key[0] = radv_get_encode_key,
-      .get_encode_key[1] = radv_get_encode_key,
       .encode_bind_pipeline[1] = radv_init_header_bind_pipeline,
       .encode_as[1] = radv_init_header,
       .init_update_scratch = radv_init_update_scratch,
-      .get_update_key[0] = radv_get_update_key,
       .update_bind_pipeline[0] = radv_update_bind_pipeline,
    };
 

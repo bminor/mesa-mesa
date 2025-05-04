@@ -157,12 +157,8 @@ build_config(struct vk_device *device, uint32_t leaf_count,
        ops->update_as[0])
       config.updateable = true;
 
-   for (unsigned i = 0; i < MAX_ENCODE_PASSES; i++) {
-      if (ops->get_encode_key[i])
-         config.encode_key[i] = ops->get_encode_key[i](device, leaf_count, build_info->flags);
-      if (ops->get_update_key[i])
-         config.update_key[i] = ops->get_update_key[i](device, build_info->srcAccelerationStructure == build_info->dstAccelerationStructure);
-   }
+   if (ops->get_build_config)
+      ops->get_build_config(device, &config, build_info);
 
    return config;
 }

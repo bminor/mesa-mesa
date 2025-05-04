@@ -356,11 +356,11 @@ anv_get_as_size(VkDevice device,
    return layout.size;
 }
 
-static uint32_t
-anv_get_encode_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
-                   VkBuildAccelerationStructureFlagBitsKHR flags)
+static void
+anv_get_build_config(struct vk_device *device, struct vk_build_config *config,
+                     const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
 {
-   return 0;
+   config->encode_key[1] = (build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ? 1 : 0;
 }
 
 static VkResult
@@ -441,14 +441,6 @@ anv_encode_as(VkCommandBuffer commandBuffer,
                             offsetof(struct vk_ir_header, ir_internal_node_count));
    anv_genX(cmd_buffer->device->info, cmd_buffer_dispatch_indirect)
       (cmd_buffer, indirect_addr, true /* is_unaligned_size_x */);
-}
-
-static uint32_t
-anv_get_header_key(struct vk_device *device, VkAccelerationStructureTypeKHR type,
-                   VkBuildAccelerationStructureFlagBitsKHR flags)
-{
-   return (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ?
-           1 : 0;
 }
 
 static VkResult
@@ -590,7 +582,7 @@ static const struct vk_acceleration_structure_build_ops anv_build_ops = {
    .begin_debug_marker = begin_debug_marker,
    .end_debug_marker = end_debug_marker,
    .get_as_size = anv_get_as_size,
-   .get_encode_key = { anv_get_encode_key, anv_get_header_key },
+   .get_build_config = anv_get_build_config,
    .encode_bind_pipeline = { anv_encode_bind_pipeline,
                              anv_init_header_bind_pipeline },
    .encode_as = { anv_encode_as, anv_init_header },
