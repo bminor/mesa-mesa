@@ -30,7 +30,6 @@
 #include "zink_fence.h"
 #include "vk_format.h"
 #include "zink_format.h"
-#include "zink_framebuffer.h"
 #include "zink_program.h"
 #include "zink_public.h"
 #include "zink_query.h"
@@ -723,9 +722,9 @@ zink_init_screen_caps(struct zink_screen *screen)
 #if defined(MVK_VERSION)
    caps->fbfetch = 0;
 #else
-   caps->fbfetch = 1;
+   caps->fbfetch = screen->info.have_KHR_dynamic_rendering_local_read;
 #endif
-   caps->fbfetch_coherent = screen->info.have_EXT_rasterization_order_attachment_access;
+   caps->fbfetch_coherent = caps->fbfetch && screen->info.have_EXT_rasterization_order_attachment_access;
 
    caps->memobj =
       screen->instance_info->have_KHR_external_memory_capabilities &&
@@ -2818,7 +2817,6 @@ init_driver_workarounds(struct zink_screen *screen)
                                                         ((zink_debug & ZINK_DEBUG_GPL) ||
                                                          screen->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints) &&
                                                         screen->info.have_EXT_extended_dynamic_state3 &&
-                                                        screen->info.have_KHR_dynamic_rendering &&
                                                         screen->info.have_EXT_non_seamless_cube_map &&
                                                         (!(zink_debug & ZINK_DEBUG_GPL) ||
                                                          screen->info.gpl_props.graphicsPipelineLibraryFastLinking ||

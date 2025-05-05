@@ -22,7 +22,6 @@
  */
 
 #include "zink_context.h"
-#include "zink_framebuffer.h"
 #include "zink_format.h"
 #include "zink_resource.h"
 #include "zink_screen.h"

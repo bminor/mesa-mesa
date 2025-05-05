@@ -34,12 +34,7 @@ zink_clear(struct pipe_context *pctx,
            const struct pipe_scissor_state *scissor_state,
            const union pipe_color_union *pcolor,
            double depth, unsigned stencil);
-void
-zink_clear_texture(struct pipe_context *ctx,
-                   struct pipe_resource *p_res,
-                   unsigned level,
-                   const struct pipe_box *box,
-                   const void *data);
+
 void
 zink_clear_texture_dynamic(struct pipe_context *ctx,
                            struct pipe_resource *p_res,

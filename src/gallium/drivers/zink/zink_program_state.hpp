@@ -112,7 +112,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    const unsigned idx = screen->info.dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted ?
                         0 :
                         get_pipeline_idx<DYNAMIC_STATE >= ZINK_DYNAMIC_STATE>(mode, vkmode);
-   assert(idx <= ARRAY_SIZE(prog->pipelines[0]));
+   assert(idx <= ARRAY_SIZE(prog->pipelines));
    if (!state->dirty && !state->modules_changed &&
        ((DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT || DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT2) && !ctx->vertex_state_changed) &&
        idx == state->idx)
@@ -167,18 +167,17 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    state->uses_dynamic_stride = uses_dynamic_stride;
    state->idx = idx;
 
-   const int rp_idx = state->render_pass ? 1 : 0;
    /* shortcut for reusing previous pipeline across program changes */
    if (DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT || DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT2) {
-      if (prog->last_finalized_hash[rp_idx][idx] == state->final_hash &&
-          !prog->inline_variants && likely(prog->last_pipeline[rp_idx][idx]) &&
+      if (prog->last_finalized_hash[idx] == state->final_hash &&
+          !prog->inline_variants && likely(prog->last_pipeline[idx]) &&
           /* this data is too big to compare in the fast-path */
           likely(!prog->shaders[MESA_SHADER_FRAGMENT]->fs.legacy_shadow_mask)) {
-         state->pipeline = prog->last_pipeline[rp_idx][idx]->pipeline;
+         state->pipeline = prog->last_pipeline[idx]->pipeline;
          return state->pipeline;
       }
    }
-   entry = _mesa_hash_table_search_pre_hashed(&prog->pipelines[rp_idx][idx], state->final_hash, state);
+   entry = _mesa_hash_table_search_pre_hashed(&prog->pipelines[idx], state->final_hash, state);
 
    if (!entry) {
       /* always wait on async precompile/cache fence */
@@ -194,7 +193,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
       pc_entry->prog = prog;
       /* init the optimized background compile fence */
       util_queue_fence_init(&pc_entry->fence);
-      entry = _mesa_hash_table_insert_pre_hashed(&prog->pipelines[rp_idx][idx], state->final_hash, pc_entry, pc_entry);
+      entry = _mesa_hash_table_insert_pre_hashed(&prog->pipelines[idx], state->final_hash, pc_entry, pc_entry);
       if (prog->base.uses_shobj && !prog->is_separable) {
          memcpy(pc_entry->shobjs, prog->objs, sizeof(prog->objs));
          zink_gfx_program_compile_queue(ctx, pc_entry);
@@ -250,8 +249,8 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    state->pipeline = cache_entry->pipeline;
    /* update states for fastpath */
    if (DYNAMIC_STATE >= ZINK_DYNAMIC_VERTEX_INPUT) {
-      prog->last_finalized_hash[rp_idx][idx] = state->final_hash;
-      prog->last_pipeline[rp_idx][idx] = cache_entry;
+      prog->last_finalized_hash[idx] = state->final_hash;
+      prog->last_pipeline[idx] = cache_entry;
    }
    return state->pipeline;
 }

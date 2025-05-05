@@ -16,7 +16,6 @@ files_libzink = files(
   'zink_draw.cpp',
   'zink_fence.c',
   'zink_format.c',
-  'zink_framebuffer.c',
   'zink_pipeline.c',
   'zink_program.c',
   'zink_query.c',

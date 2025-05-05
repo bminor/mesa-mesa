@@ -26,21 +26,6 @@
 
 #include "zink_types.h"
 
-struct zink_render_pass *
-zink_create_render_pass(struct zink_screen *screen,
-                        struct zink_render_pass_state *state,
-                        struct zink_render_pass_pipeline_state *pstate);
-
-void
-zink_destroy_render_pass(struct zink_screen *screen,
-                         struct zink_render_pass *rp);
-
-
-unsigned
-zink_begin_render_pass(struct zink_context *ctx);
-void
-zink_end_render_pass(struct zink_context *ctx);
-
 VkImageLayout
 zink_render_pass_attachment_get_barrier_info(const struct zink_rt_attrib *rt, bool color, VkPipelineStageFlags *pipeline, VkAccessFlags *access);
 VkImageLayout

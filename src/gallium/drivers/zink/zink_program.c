@@ -853,12 +853,10 @@ zink_program_finish(struct zink_context *ctx, struct zink_program *pg)
    if (pg->is_compute)
       return;
    struct zink_gfx_program *prog = (struct zink_gfx_program*)pg;
-   for (int r = 0; r < ARRAY_SIZE(prog->pipelines); ++r) {
-      for (int i = 0; i < ARRAY_SIZE(prog->pipelines[0]); ++i) {
-         hash_table_foreach(&prog->pipelines[r][i], entry) {
-            struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
-            util_queue_fence_wait(&pc_entry->fence);
-         }
+   for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
+      hash_table_foreach(&prog->pipelines[i], entry) {
+         struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
+         util_queue_fence_wait(&pc_entry->fence);
       }
    }
 }
@@ -1146,14 +1144,12 @@ gfx_program_create(struct zink_context *ctx,
    else
       prog->last_vertex_stage = stages[MESA_SHADER_VERTEX];
 
-   for (int r = 0; r < ARRAY_SIZE(prog->pipelines); ++r) {
-      for (int i = 0; i < ARRAY_SIZE(prog->pipelines[0]); ++i) {
-         _mesa_hash_table_init(&prog->pipelines[r][i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
-         /* only need first 3/4 for point/line/tri/patch */
-         if (screen->info.have_EXT_extended_dynamic_state &&
-             i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
-            break;
-      }
+   for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
+      _mesa_hash_table_init(&prog->pipelines[i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
+      /* only need first 3/4 for point/line/tri/patch */
+      if (screen->info.have_EXT_extended_dynamic_state &&
+            i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
+         break;
    }
    return prog;
 
@@ -1310,14 +1306,12 @@ create_gfx_program_separable(struct zink_context *ctx, struct zink_shader **stag
    */
    p_atomic_add(&prog->base.reference.count, refs - 1);
 
-   for (int r = 0; r < ARRAY_SIZE(prog->pipelines); ++r) {
-      for (int i = 0; i < ARRAY_SIZE(prog->pipelines[0]); ++i) {
-         _mesa_hash_table_init(&prog->pipelines[r][i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
-         /* only need first 3/4 for point/line/tri/patch */
-         if (screen->info.have_EXT_extended_dynamic_state &&
-             i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
-            break;
-      }
+   for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
+      _mesa_hash_table_init(&prog->pipelines[i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
+      /* only need first 3/4 for point/line/tri/patch */
+      if (screen->info.have_EXT_extended_dynamic_state &&
+            i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
+         break;
    }
 
    for (int i = 0; i < ZINK_GFX_SHADER_COUNT; ++i) {
@@ -1644,7 +1638,7 @@ void
 zink_destroy_gfx_program(struct zink_screen *screen,
                          struct zink_gfx_program *prog)
 {
-   unsigned max_idx = ARRAY_SIZE(prog->pipelines[0]);
+   unsigned max_idx = ARRAY_SIZE(prog->pipelines);
    if (screen->info.have_EXT_extended_dynamic_state) {
       /* only need first 3/4 for point/line/tri/patch */
       if ((prog->stages_present &
@@ -1658,16 +1652,14 @@ zink_destroy_gfx_program(struct zink_screen *screen,
 
    if (prog->is_separable)
       zink_gfx_program_reference(screen, &prog->full_prog, NULL);
-   for (unsigned r = 0; r < ARRAY_SIZE(prog->pipelines); r++) {
-      for (int i = 0; i < max_idx; ++i) {
-         hash_table_foreach(&prog->pipelines[r][i], entry) {
-            struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
+   for (int i = 0; i < max_idx; ++i) {
+      hash_table_foreach(&prog->pipelines[i], entry) {
+         struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
 
-            util_queue_fence_wait(&pc_entry->fence);
-            VKSCR(DestroyPipeline)(screen->dev, pc_entry->pipeline, NULL);
-            VKSCR(DestroyPipeline)(screen->dev, pc_entry->gpl.unoptimized_pipeline, NULL);
-            free(pc_entry);
-         }
+         util_queue_fence_wait(&pc_entry->fence);
+         VKSCR(DestroyPipeline)(screen->dev, pc_entry->pipeline, NULL);
+         VKSCR(DestroyPipeline)(screen->dev, pc_entry->gpl.unoptimized_pipeline, NULL);
+         free(pc_entry);
       }
    }
 

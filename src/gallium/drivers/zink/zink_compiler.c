@@ -6461,13 +6461,11 @@ gfx_shader_prune(struct zink_screen *screen, struct zink_shader *shader)
       prog->base.removed = true;
       simple_mtx_unlock(&prog->base.ctx->program_lock[idx]);
 
-      for (unsigned r = 0; r < ARRAY_SIZE(prog->pipelines); r++) {
-         for (int i = 0; i < ARRAY_SIZE(prog->pipelines[0]); ++i) {
-            hash_table_foreach(&prog->pipelines[r][i], table_entry) {
-               struct zink_gfx_pipeline_cache_entry *pc_entry = table_entry->data;
+      for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
+         hash_table_foreach(&prog->pipelines[i], table_entry) {
+            struct zink_gfx_pipeline_cache_entry *pc_entry = table_entry->data;
 
-               util_queue_fence_wait(&pc_entry->fence);
-            }
+            util_queue_fence_wait(&pc_entry->fence);
          }
       }
    }

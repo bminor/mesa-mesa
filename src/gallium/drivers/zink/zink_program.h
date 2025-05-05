@@ -405,7 +405,6 @@ ALWAYS_INLINE static bool
 zink_can_use_pipeline_libs(const struct zink_context *ctx)
 {
    return
-          !ctx->gfx_pipeline_state.render_pass &&
           /* this is just terrible */
           !zink_get_fs_base_key(ctx)->shadow_needs_shader_swizzle &&
           /* TODO: is sample shading even possible to handle with GPL? */
@@ -422,7 +421,6 @@ ALWAYS_INLINE static bool
 zink_can_use_shader_objects(const struct zink_context *ctx)
 {
    return
-          !ctx->gfx_pipeline_state.render_pass &&
           ZINK_SHADER_KEY_OPTIMAL_IS_DEFAULT(ctx->gfx_pipeline_state.optimal_key) &&
           /* TODO: is sample shading even possible to handle with GPL? */
           !ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.fs.uses_sample_shading &&
