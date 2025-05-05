@@ -163,6 +163,16 @@ brw_compile_gs(const struct brw_compiler *compiler,
                        &input_vue_map, inputs_read,
                        key->base.vue_layout, 1);
 
+   const uint32_t pos_slots =
+      (nir->info.per_view_outputs & VARYING_BIT_POS) ?
+      MAX2(1, util_bitcount(key->base.view_mask)) : 1;
+
+   brw_compute_vue_map(compiler->devinfo,
+                       &prog_data->base.vue_map,
+                       nir->info.outputs_written,
+                       key->base.vue_layout,
+                       pos_slots);
+
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
    brw_nir_lower_vue_inputs(nir, &input_vue_map);
    brw_nir_lower_vue_outputs(nir);

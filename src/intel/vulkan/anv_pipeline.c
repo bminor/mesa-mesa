@@ -1244,21 +1244,10 @@ anv_pipeline_compile_vs(const struct brw_compiler *compiler,
                         uint32_t view_mask,
                         char **error_str)
 {
-   /* When using Primitive Replication for multiview, each view gets its own
-    * position slot.
-    */
-   uint32_t pos_slots =
-      (vs_stage->nir->info.per_view_outputs & VARYING_BIT_POS) ?
-      MAX2(1, util_bitcount(view_mask)) : 1;
-
    /* Only position is allowed to be per-view */
    assert(!(vs_stage->nir->info.per_view_outputs & ~VARYING_BIT_POS));
 
-   brw_compute_vue_map(compiler->devinfo,
-                       &vs_stage->prog_data.vs.base.vue_map,
-                       vs_stage->nir->info.outputs_written,
-                       vs_stage->key.base.vue_layout,
-                       pos_slots);
+   vs_stage->key.vs.base.view_mask = view_mask;
 
    vs_stage->num_stats = 1;
 

@@ -82,9 +82,13 @@ brw_compile_tes(const struct brw_compiler *compiler,
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);
 
+   const uint32_t pos_slots =
+      (nir->info.per_view_outputs & VARYING_BIT_POS) ?
+      MAX2(1, util_bitcount(key->base.view_mask)) : 1;
+
    brw_compute_vue_map(devinfo, &prog_data->base.vue_map,
                        nir->info.outputs_written,
-                       key->base.vue_layout, 1);
+                       key->base.vue_layout, pos_slots);
 
    unsigned output_size_bytes = prog_data->base.vue_map.num_slots * 4 * 4;
 

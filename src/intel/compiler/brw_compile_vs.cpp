@@ -248,6 +248,20 @@ brw_compile_vs(const struct brw_compiler *compiler,
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 
+   /* When using Primitive Replication for multiview, each view gets its own
+    * position slot.
+    */
+   const uint32_t pos_slots =
+      (nir->info.per_view_outputs & VARYING_BIT_POS) ?
+      MAX2(1, util_bitcount(key->base.view_mask)) : 1;
+
+   /* Only position is allowed to be per-view */
+   assert(!(nir->info.per_view_outputs & ~VARYING_BIT_POS));
+
+   brw_compute_vue_map(compiler->devinfo,
+                       &prog_data->base.vue_map, nir->info.outputs_written,
+                       key->base.vue_layout, pos_slots);
+
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
 
    prog_data->inputs_read = nir->info.inputs_read;
