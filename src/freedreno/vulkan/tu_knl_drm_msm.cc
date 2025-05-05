@@ -16,6 +16,7 @@
 
 #include "drm-uapi/msm_drm.h"
 #include "util/u_debug.h"
+#include "util/u_process.h"
 #include "util/hash_table.h"
 
 #include "tu_cmd_buffer.h"
@@ -126,6 +127,36 @@ tu_drm_has_preemption(const struct tu_physical_device *dev)
    return true;
 }
 
+static int
+tu_drm_set_param(int fd, uint32_t param, uint64_t value, uint32_t len)
+{
+   struct drm_msm_param param_req = {
+      .pipe = MSM_PIPE_3D0,
+      .param = param,
+      .value = value,
+      .len = len,
+   };
+
+   int ret = drmCommandWriteRead(fd, DRM_MSM_SET_PARAM, &param_req,
+                                 sizeof(param_req));
+   return ret;
+}
+
+static void
+tu_drm_set_debuginfo(int fd)
+{
+   if (!TU_DEBUG(COMM))
+      return;
+
+   const char *comm = util_get_process_name();
+   if (comm)
+      tu_drm_set_param(fd, MSM_PARAM_COMM, (uintptr_t)comm, strlen(comm));
+
+   static char cmdline[0x1000];
+   if (util_get_command_line(cmdline, sizeof(cmdline)))
+      tu_drm_set_param(fd, MSM_PARAM_CMDLINE, (uintptr_t)cmdline, strlen(cmdline));
+}
+
 static uint32_t
 tu_drm_get_priorities(const struct tu_physical_device *dev)
 {
@@ -208,6 +239,8 @@ msm_device_init(struct tu_device *dev)
             dev->physical_device->instance, VK_ERROR_INITIALIZATION_FAILED,
             "failed to open device %s", dev->physical_device->fd_path);
    }
+
+   tu_drm_set_debuginfo(fd);
 
    int ret = tu_drm_get_param(fd, MSM_PARAM_FAULTS, &dev->fault_count);
    if (ret != 0) {
@@ -1069,6 +1102,8 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->has_cached_coherent_memory =
       (device->msm_minor_version >= 8) &&
       tu_drm_is_memory_type_supported(fd, MSM_BO_CACHED_COHERENT);
+
+   tu_drm_set_debuginfo(fd);
 
    device->submitqueue_priority_count = tu_drm_get_priorities(device);
 
