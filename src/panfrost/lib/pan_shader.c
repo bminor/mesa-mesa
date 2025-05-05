@@ -23,6 +23,7 @@
  */
 
 #include "pan_shader.h"
+#include "panfrost/clc/panfrost_compile.h"
 #include "pan_format.h"
 
 #if PAN_ARCH <= 5
@@ -111,6 +112,8 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
                          struct pan_shader_info *info)
 {
    memset(info, 0, sizeof(*info));
+
+   NIR_PASS(_, s, nir_lower_printf_buffer, 0, LIBPAN_PRINTF_BUFFER_SIZE - 8);
 
 #if PAN_ARCH >= 6
    bifrost_compile_shader_nir(s, inputs, binary, info);
