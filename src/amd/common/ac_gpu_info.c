@@ -572,7 +572,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       return AC_QUERY_GPU_INFO_FAIL;
    }
 
-   info->userq_ip_mask = device_info.userq_ip_mask;
+   info->userq_ip_mask = debug_get_bool_option("AMD_USERQ", false) ? device_info.userq_ip_mask : 0;
 
    for (unsigned ip_type = 0; ip_type < AMD_NUM_IP_TYPES; ip_type++) {
       struct drm_amdgpu_info_hw_ip ip_info = {0};
@@ -581,15 +581,13 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       if (r)
          continue;
 
-      if (ip_info.available_rings) {
-         info->ip[ip_type].num_queues = util_bitcount(ip_info.available_rings);
-         /* Kernel can set both available_rings and userq_ip_mask. Clear userq_ip_mask. */
-         info->userq_ip_mask &= ~BITFIELD_BIT(ip_type);
-      } else if (info->userq_ip_mask & BITFIELD_BIT(ip_type)) {
+      if (info->userq_ip_mask & BITFIELD_BIT(ip_type)) {
          /* info[ip_type].num_queues variable is also used to describe if that ip_type is
           * supported or not. Setting this variable to 1 for userqueues.
           */
          info->ip[ip_type].num_queues = 1;
+      } else if (ip_info.available_rings) {
+         info->ip[ip_type].num_queues = util_bitcount(ip_info.available_rings);
       } else {
          continue;
       }
