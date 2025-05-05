@@ -94,7 +94,7 @@
         "description": "virtio/vpipe: Correct vdrm_vpipe_connect() definition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bf0e3d6274bac0190a6d4d90afbd2a9a6bec249d",
         "notes": null
