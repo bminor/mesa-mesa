@@ -183,6 +183,10 @@ yaml-toml-shell-py-test:
   variables:
     ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}
 
+.test-crosvm:
+  variables:
+    CROSVM_TAG: ${CONDITIONAL_BUILD_CROSVM_TAG}
+
 .test-fluster:
   variables:
     FLUSTER_TAG: ${CONDITIONAL_BUILD_FLUSTER_TAG}

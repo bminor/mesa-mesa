@@ -3,6 +3,14 @@
 
 set -ue
 
+if [ -z "$CROSVM_TAG" ]; then
+    echo "CROSVM_TAG must be set to the conditional build tag"
+    exit 1
+fi
+
+# Are we using the right crosvm version?
+ci_tag_test_time_check "CROSVM_TAG"
+
 # Instead of starting one dEQP instance per available CPU core, pour our
 # concurrency at llvmpipe threads instead. This is mostly useful for VirGL and
 # Venus, which serialise quite a bit at the host level. So instead of smashing

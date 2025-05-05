@@ -68,6 +68,18 @@
   variables:
     ANGLE_TAG: "${CONDITIONAL_BUILD_ANGLE_TAG}"
 
+.container-builds-crosvm:
+  variables:
+    CROSVM_TAG: "${CONDITIONAL_BUILD_CROSVM_TAG}"
+
+.container-builds-fluster:
+  variables:
+    FLUSTER_TAG: "${CONDITIONAL_BUILD_FLUSTER_TAG}"
+
+.container-builds-piglit:
+  variables:
+    PIGLIT_TAG: "${CONDITIONAL_BUILD_PIGLIT_TAG}"
+
 .container-builds-android:
   extends:
     - .container-builds-angle
@@ -78,13 +90,11 @@
     # should make CI_BUILD_COMPONENTS="angle piglit"
     CI_BUILD_COMPONENTS: "angle"
 
-.container-builds-fluster:
+.container-builds-base:
+  extends:
+    - .container-builds-crosvm
   variables:
-    FLUSTER_TAG: "${CONDITIONAL_BUILD_FLUSTER_TAG}"
-
-.container-builds-piglit:
-  variables:
-    PIGLIT_TAG: "${CONDITIONAL_BUILD_PIGLIT_TAG}"
+    CI_BUILD_COMPONENTS: "crosvm"
 
 .container-builds-video:
   extends:
@@ -362,6 +372,7 @@ debian/x86_64_test-base:
   extends:
     - .debian-container
     - .firmware_x86_64
+    - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}"
     LLVM_VERSION: *debian-x86_64-llvm
@@ -387,6 +398,7 @@ debian/arm32_test-base:
   extends:
     - .debian-container
     - .firmware_arm32
+    - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
     LLVM_VERSION: *debian-arm64-llvm
@@ -414,6 +426,7 @@ debian/arm64_test-base:
   extends:
     - .debian-container
     - .firmware_arm64
+    - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
     LLVM_VERSION: *debian-arm64-llvm

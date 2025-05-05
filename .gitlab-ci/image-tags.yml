@@ -19,7 +19,7 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250502-igt"
+  DEBIAN_BASE_TAG: "20250505-crosvm"
 
   DEBIAN_BUILD_TAG: "20250422-ci-fairy"
 

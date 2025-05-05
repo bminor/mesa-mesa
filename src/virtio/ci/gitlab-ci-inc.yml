@@ -20,6 +20,7 @@
 .venus-lavapipe-test:
   extends:
     - .test-vk
+    - .test-crosvm
     - .venus-rules
   timeout: 15m
   variables:

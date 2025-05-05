@@ -28,6 +28,7 @@ zink-venus-lvp:
     - .test-gl
     - .deqp-test
     - .zink-venus-lvp-test
+    - .test-crosvm
     - .test-piglit
   timeout: 15min  # base run time = 8min, but it's on the shared runners so it can go up
   variables:
