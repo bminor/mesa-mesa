@@ -224,10 +224,6 @@ if with_dri
   subdir('frontends/dri')
   subdir('targets/dri')
 endif
-if with_gallium_xa
-  subdir('frontends/xa')
-  subdir('targets/xa')
-endif
 if with_platform_haiku
   subdir('frontends/hgl')
 endif

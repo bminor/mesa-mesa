@@ -139,14 +139,6 @@ option(
 )
 
 option(
-  'gallium-xa',
-  type : 'feature',
-  value : 'disabled',
-  description : 'enable gallium xa frontend.',
-  deprecated: true,
-)
-
-option(
   'gallium-nine',
   type : 'boolean',
   value : false,

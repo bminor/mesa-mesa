@@ -711,12 +711,6 @@ if with_gallium_mediafoundation_test
   endif
 endif
 
-with_gallium_xa = get_option('gallium-xa') \
-  .require(system_has_kms_drm, error_message : 'XA state tracker can only be built on unix-like OSes.') \
-  .require(with_gallium_nouveau or with_gallium_freedreno or with_gallium_i915 or with_gallium_svga,
-           error_message : 'XA state tracker requires at least one of the following gallium drivers: nouveau, freedreno, i915, svga.') \
-  .allowed()
-
 d3d_drivers_path = get_option('d3d-drivers-path')
 if d3d_drivers_path == ''
   d3d_drivers_path = join_paths(get_option('prefix'), get_option('libdir'), 'd3d')
@@ -2159,7 +2153,7 @@ if with_platform_x11
   if (with_egl or
       with_dri or
       with_any_vk or
-      with_gallium_vdpau or with_gallium_xa)
+      with_gallium_vdpau)
     dep_xcb_xfixes = dependency('xcb-xfixes')
   endif
   if with_any_vk
@@ -2401,10 +2395,6 @@ endif
 if with_any_vk
   video_apis += 'vulkan'
 endif
-if with_gallium_xa
-  warning('XA will be removed in Mesa 25.2')
-  video_apis += 'xa'
-endif
 video_summary += {'APIs': video_apis.length() != 0 ? video_apis : false}
 summary(video_summary, section: 'Video', bool_yn: true, list_sep: ' ')
 
@@ -2420,9 +2410,6 @@ if with_gallium
   gallium_summary += {'Platforms': _platforms}
 
   gallium_frontends = ['mesa']
-  if with_gallium_xa
-    gallium_frontends += 'xa'
-  endif
   if with_gallium_vdpau
     gallium_frontends += 'vdpau'
   endif

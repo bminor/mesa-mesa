@@ -265,7 +265,6 @@ debian-build-testing:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-xa=enabled
       -D gallium-nine=true
       -D gallium-rusticl=false
     GALLIUM_DRIVERS: "i915,iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
@@ -299,7 +298,6 @@ debian-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-xa=enabled
       -D gallium-nine=false
       -D gallium-rusticl=false
       -D llvm=enabled
@@ -341,7 +339,6 @@ alpine-build-testing:
       -D gallium-extra-hud=true
       -D gallium-vdpau=disabled
       -D gallium-va=enabled
-      -D gallium-xa=disabled
       -D gallium-nine=true
       -D gallium-rusticl=false
       -D gles1=disabled
@@ -393,7 +390,6 @@ fedora-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-xa=enabled
       -D gallium-nine=false
       -D gallium-rusticl=true
       -D gles1=disabled
@@ -445,7 +441,6 @@ debian-android:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-xa=disabled
       -D gallium-nine=false
       -D gallium-rusticl=false
     PKG_CONFIG_LIBDIR: "/disable/non/android/system/pc/files"
@@ -498,7 +493,6 @@ debian-android:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-xa=disabled
       -D gallium-nine=false
 
 .meson-arm:
@@ -713,7 +707,6 @@ debian-clang:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-xa=enabled
       -D gallium-nine=true
       -D gles1=enabled
       -D gles2=enabled
@@ -764,7 +757,6 @@ debian-clang-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-xa=enabled
       -D gallium-nine=true
       -D gles1=disabled
       -D gles2=disabled
@@ -804,7 +796,6 @@ debian-vulkan:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-xa=disabled
       -D gallium-nine=false
       -D gallium-rusticl=false
       -D b_sanitize=undefined
