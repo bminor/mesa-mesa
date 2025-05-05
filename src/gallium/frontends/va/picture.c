@@ -390,6 +390,7 @@ bufHasStartcode(vlVaBuffer *buf, unsigned int code, unsigned int bits)
 static VAStatus
 handleVAProtectedSliceDataBufferType(vlVaContext *context, vlVaBuffer *buf)
 {
+   char cookie[] = {'w', 'v', 'c', 'e', 'n', 'c', 's', 'b'};
    uint8_t *encrypted_data = (uint8_t*)buf->data;
    uint8_t *drm_key;
    unsigned int drm_key_size = buf->size;
@@ -404,6 +405,12 @@ handleVAProtectedSliceDataBufferType(vlVaContext *context, vlVaBuffer *buf)
    context->desc.base.decrypt_key = drm_key;
    memcpy(context->desc.base.decrypt_key, encrypted_data, drm_key_size);
    context->desc.base.key_size = drm_key_size;
+   /* context->desc.base.cenc defines the type of secure decode being used.
+    * true: Native CENC Secure Decode
+    * false: Legacy Secure Decode
+    */
+   if (memcmp(encrypted_data, cookie, sizeof(cookie)) == 0)
+      context->desc.base.cenc = true;
 
    return VA_STATUS_SUCCESS;
 }
