@@ -434,7 +434,7 @@
         "description": "radv: fix GPU hangs with image copies for ASTC/ETC2 formats on transfer queue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
