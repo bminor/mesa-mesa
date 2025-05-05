@@ -66,7 +66,6 @@ struct jpeg_registers {
 struct radeon_decoder {
    struct pipe_video_codec base;
 
-   unsigned stream_handle;
    unsigned stream_type;
    unsigned frame_number;
    unsigned db_alignment;
