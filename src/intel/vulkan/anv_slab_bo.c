@@ -123,6 +123,15 @@ anv_slab_bo_alloc(struct anv_device *device, const char *name, uint64_t requeste
    if (slab_heap == ANV_BO_SLAB_NOT_SUPPORTED)
       return NULL;
 
+   /* Don't always use slab if AUX_TT_ALIGNED is required and AUX alignment is
+    * >= 1MB, enabling this causes a high memory consumption that causes out
+    * of memory when running several parallel GPU applications.
+    */
+   if ((alloc_flags & ANV_BO_ALLOC_AUX_TT_ALIGNED) &&
+       (intel_aux_map_get_alignment(device->aux_map_ctx) >= 1024 * 1024) &&
+       (requested_size < (1024 * 1024 / 2)))
+       return NULL;
+
    const unsigned num_slab_allocator = ARRAY_SIZE(device->bo_slabs);
    struct pb_slabs *last_slab = &device->bo_slabs[num_slab_allocator - 1];
    const uint64_t max_slab_entry_size = 1 << (last_slab->min_order + last_slab->num_orders - 1);
