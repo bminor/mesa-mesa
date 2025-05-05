@@ -1304,7 +1304,8 @@ impl Src {
     }
 
     pub fn is_nonzero(&self) -> bool {
-        matches!(self.as_u32(), Some(x) if x != 0)
+        assert!(self.src_mod.is_none());
+        matches!(self.src_ref, SrcRef::Imm32(x) if x != 0)
     }
 
     pub fn is_fneg_zero(&self, src_type: SrcType) -> bool {
