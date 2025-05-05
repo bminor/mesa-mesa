@@ -317,6 +317,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_shader_demote_to_helper_invocation = true,
       .EXT_shader_replicated_composites = true,
       .EXT_subgroup_size_control = has_vk1_1,
+      .EXT_texel_buffer_alignment = true,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = true,
@@ -583,6 +584,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_shader_replicated_composites */
       .shaderReplicatedComposites = true,
+
+      /* VK_EXT_texel_buffer_alignment */
+      .texelBufferAlignment = true,
 
       /* VK_EXT_ycbcr_2plane_444_formats */
       .ycbcr2plane444Formats = arch >= 10,
@@ -1024,8 +1028,8 @@ get_device_properties(const struct panvk_instance *instance,
       /* XXX: VK_EXT_texel_buffer_alignment */
       .storageTexelBufferOffsetAlignmentBytes = 64,
       .storageTexelBufferOffsetSingleTexelAlignment = false,
-      .uniformTexelBufferOffsetAlignmentBytes = 4,
-      .uniformTexelBufferOffsetSingleTexelAlignment = true,
+      .uniformTexelBufferOffsetAlignmentBytes = 64,
+      .uniformTexelBufferOffsetSingleTexelAlignment = false,
 
       /* VK_KHR_maintenance4 */
       .maxBufferSize = 1 << 30,
