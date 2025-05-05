@@ -1126,13 +1126,15 @@ impl Src {
         }
     }
 
-    pub fn fold_imm(&self, src_type: SrcType) -> Src {
-        let SrcRef::Imm32(mut u) = self.src_ref else {
-            return *self;
+    pub fn as_u32(&self, src_type: SrcType) -> Option<u32> {
+        let u = match &self.src_ref {
+            SrcRef::Zero => 0,
+            SrcRef::Imm32(u) => *u,
+            _ => return None,
         };
 
         if self.src_mod.is_none() && self.src_swizzle.is_none() {
-            return *self;
+            return Some(u);
         }
 
         assert!(src_type == SrcType::F16v2 || self.src_swizzle.is_none());
@@ -1141,10 +1143,10 @@ impl Src {
         // trivially folded.  In fact, -imm may not be representable as a 32-bit
         // immediate at all.
         if src_type == SrcType::I32 {
-            return *self;
+            return None;
         }
 
-        u = match src_type {
+        Some(match src_type {
             SrcType::F16 => {
                 let low = u & 0xFFFF;
 
@@ -1192,12 +1194,19 @@ impl Src {
                 assert!(self.src_mod.is_none());
                 u
             }
-        };
+        })
+    }
 
-        Src {
-            src_mod: SrcMod::None,
-            src_ref: u.into(),
-            src_swizzle: SrcSwizzle::None,
+    pub fn fold_imm(&self, src_type: SrcType) -> Src {
+        // Don't fold Zero
+        if !matches!(self.src_ref, SrcRef::Imm32(_)) {
+            return *self;
+        }
+
+        if let Some(u) = self.as_u32(src_type) {
+            u.into()
+        } else {
+            *self
         }
     }
 
@@ -1222,15 +1231,6 @@ impl Src {
                 None
             }
             _ => panic!("Not a boolean source"),
-        }
-    }
-
-    pub fn as_u32(&self, src_type: SrcType) -> Option<u32> {
-        debug_assert!(self.supports_type(&src_type));
-        if self.src_mod.is_none() {
-            self.src_ref.as_u32()
-        } else {
-            None
         }
     }
 
