@@ -223,7 +223,7 @@ static void virgl_vtest_resource_reference(struct virgl_winsys *vws,
    *dres = sres;
 }
 
-static int
+static uint32_t
 virgl_vtest_winsys_resource_create_blob(struct virgl_winsys *vws,
                                         enum pipe_texture_target target,
                                         uint32_t format,
@@ -277,7 +277,8 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
 {
    struct virgl_vtest_winsys *vtws = virgl_vtest_winsys(vws);
    struct virgl_hw_res *res;
-   static int handle = 1;
+   static uint32_t handle = 1;
+   uint32_t new_handle = handle;
    int fd = -1;
    struct virgl_resource_params params = { .size = size,
                                            .bind = bind,
@@ -312,22 +313,22 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
                  VIRGL_RESOURCE_FLAG_MAP_COHERENT))) {
       width = ALIGN(width, getpagesize());
       size = ALIGN(size, getpagesize());
-      handle = virgl_vtest_winsys_resource_create_blob(vws, target, format, bind,
-                                                       width, height, depth,
-                                                       array_size, last_level, nr_samples,
-                                                       flags, size, &fd);
-
-      if (handle) {
-         pipe_reference_init(&res->reference, 1);
-         p_atomic_set(&res->num_cs_references, 0);
-      }
+      new_handle = virgl_vtest_winsys_resource_create_blob(vws, target, format, bind,
+                                                           width, height, depth,
+                                                           array_size, last_level, nr_samples,
+                                                           flags, size, &fd);
    } else {
-
-      handle = virgl_vtest_send_resource_create(vtws, handle, target, pipe_to_virgl_format(format), bind,
-                                                width, height, depth, array_size,
-                                                last_level, nr_samples, size, &fd);
+      new_handle = virgl_vtest_send_resource_create(vtws, new_handle, target, pipe_to_virgl_format(format), bind,
+                                                    width, height, depth, array_size,
+                                                    last_level, nr_samples, size, &fd);
    }
 
+   if (new_handle == 0) {
+      FREE(res);
+      return NULL;
+   }
+
+   handle = new_handle;
    res->bind = bind;
    res->format = format;
    res->height = height;
@@ -337,7 +338,7 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
    if (vtws->protocol_version >= 2) {
       if (res->size == 0) {
          res->ptr = NULL;
-         res->res_handle = handle;
+         res->res_handle = new_handle;
          goto out;
       }
 
@@ -360,7 +361,7 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
       close(fd);
    }
 
-   res->res_handle = handle;
+   res->res_handle = new_handle;
    if (map_front_private && res->ptr && res->dt) {
       void *dt_map = vtws->sws->displaytarget_map(vtws->sws, res->dt, PIPE_MAP_READ_WRITE);
       uint32_t shm_stride = util_format_get_stride(res->format, res->width);

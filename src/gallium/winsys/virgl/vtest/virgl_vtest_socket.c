@@ -285,19 +285,19 @@ int virgl_vtest_send_get_caps(struct virgl_vtest_winsys *vws,
    return 0;
 }
 
-static int virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
-                                             uint32_t handle,
-                                             enum pipe_texture_target target,
-                                             uint32_t format,
-                                             uint32_t bind,
-                                             uint32_t width,
-                                             uint32_t height,
-                                             uint32_t depth,
-                                             uint32_t array_size,
-                                             uint32_t last_level,
-                                             uint32_t nr_samples,
-                                             uint32_t size,
-                                             int *out_fd)
+static uint32_t virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
+                                                  uint32_t handle,
+                                                  enum pipe_texture_target target,
+                                                  uint32_t format,
+                                                  uint32_t bind,
+                                                  uint32_t width,
+                                                  uint32_t height,
+                                                  uint32_t depth,
+                                                  uint32_t array_size,
+                                                  uint32_t last_level,
+                                                  uint32_t nr_samples,
+                                                  uint32_t size,
+                                                  int *out_fd)
 {
    uint32_t res_create_buf[VCMD_RES_CREATE2_SIZE], vtest_hdr[VTEST_HDR_SIZE];
 
@@ -333,25 +333,25 @@ static int virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
    *out_fd = virgl_vtest_receive_fd(vws->sock_fd);
    if (*out_fd < 0) {
       fprintf(stderr, "failed to get fd\n");
-      return -1;
+      return 0;
    }
 
    return handle;
 }
 
-int virgl_vtest_send_resource_create(struct virgl_vtest_winsys *vws,
-                                     uint32_t handle,
-                                     enum pipe_texture_target target,
-                                     uint32_t format,
-                                     uint32_t bind,
-                                     uint32_t width,
-                                     uint32_t height,
-                                     uint32_t depth,
-                                     uint32_t array_size,
-                                     uint32_t last_level,
-                                     uint32_t nr_samples,
-                                     uint32_t size,
-                                     int *out_fd)
+uint32_t virgl_vtest_send_resource_create(struct virgl_vtest_winsys *vws,
+                                          uint32_t handle,
+                                          enum pipe_texture_target target,
+                                          uint32_t format,
+                                          uint32_t bind,
+                                          uint32_t width,
+                                          uint32_t height,
+                                          uint32_t depth,
+                                          uint32_t array_size,
+                                          uint32_t last_level,
+                                          uint32_t nr_samples,
+                                          uint32_t size,
+                                          int *out_fd)
 {
    uint32_t res_create_buf[VCMD_RES_CREATE_SIZE], vtest_hdr[VTEST_HDR_SIZE];
 
@@ -561,10 +561,10 @@ int virgl_vtest_busy_wait(struct virgl_vtest_winsys *vws, int handle,
    return result[0];
 }
 
-int
+uint32_t
 virgl_vtest_send_create_blob(struct virgl_vtest_winsys *vws,
-                                 uint32_t size, uint32_t blob_id,
-                                 int *out_fd)
+                             uint32_t size, uint32_t blob_id,
+                             int *out_fd)
 {
    uint32_t vtest_hdr[VTEST_HDR_SIZE];
    vtest_hdr[VTEST_CMD_LEN] = VCMD_RES_CREATE_BLOB_SIZE;
