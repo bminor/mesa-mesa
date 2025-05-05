@@ -3494,7 +3494,7 @@
         "description": "panfrost: do not try to use 4x4 tiles on v4 gpus",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "329568b5ebdca3ed98b5197073e3cd1018939927",
         "notes": null
