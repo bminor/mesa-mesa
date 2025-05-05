@@ -184,16 +184,6 @@ radv_vcn_sq_start(struct radv_cmd_buffer *cmd_buffer)
    memset(cmd_buffer->video.decode_buffer, 0, sizeof(struct rvcn_decode_buffer_s));
 }
 
-/* generate an stream handle */
-static unsigned
-radv_vid_alloc_stream_handle(struct radv_physical_device *pdev)
-{
-   unsigned stream_handle = pdev->stream_handle_base;
-
-   stream_handle ^= ++pdev->stream_handle_counter;
-   return stream_handle;
-}
-
 static void
 init_uvd_decoder(struct radv_physical_device *pdev)
 {
@@ -273,10 +263,7 @@ radv_init_physical_device_decoder(struct radv_physical_device *pdev)
       pdev->vid_decode_ip = AMD_IP_VCN_DEC;
    pdev->av1_version = RDECODE_AV1_VER_0;
 
-   pdev->stream_handle_counter = 0;
-   pdev->stream_handle_base = 0;
-
-   pdev->stream_handle_base = util_bitreverse(getpid());
+   ac_uvd_init_stream_handle(&pdev->stream_handle);
 
    pdev->vid_addr_gfx_mode = RDECODE_ARRAY_MODE_LINEAR;
 
@@ -520,7 +507,7 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
       return VK_ERROR_FEATURE_NOT_PRESENT;
    }
 
-   vid->stream_handle = radv_vid_alloc_stream_handle(pdev);
+   vid->stream_handle = ac_uvd_alloc_stream_handle(&pdev->stream_handle);
    vid->dbg_frame_cnt = 0;
    vid->db_alignment = radv_video_get_db_alignment(
       pdev, vid->vk.max_coded.width,
