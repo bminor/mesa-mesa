@@ -239,7 +239,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 let val = self.alloc_ssa(reg_file);
                 self.push_op(OpHAdd2 {
                     dst: val.into(),
-                    srcs: [Src::new_zero().fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), *src],
                     saturate: false,
                     ftz: false,
                     f32: false,
@@ -250,7 +250,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 let val = self.alloc_ssa(reg_file);
                 self.push_op(OpFAdd {
                     dst: val.into(),
-                    srcs: [Src::new_zero().fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), *src],
                     saturate: false,
                     rnd_mode: FRndMode::NearestEven,
                     ftz: false,
@@ -261,7 +261,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
                 let val = self.alloc_ssa_vec(reg_file, 2);
                 self.push_op(OpDAdd {
                     dst: val.into(),
-                    srcs: [Src::new_zero().fneg(), *src],
+                    srcs: [Src::ZERO.fneg(), *src],
                     rnd_mode: FRndMode::NearestEven,
                 });
                 *src = val.into();
@@ -280,7 +280,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         let val = self.alloc_ssa(reg_file);
         if self.sm() >= 70 {
             self.push_op(OpIAdd3 {
-                srcs: [Src::new_zero(), *src, Src::new_zero()],
+                srcs: [Src::ZERO, *src, Src::ZERO],
                 overflow: [Dst::None, Dst::None],
                 dst: val.into(),
             });
@@ -288,7 +288,7 @@ pub trait LegalizeBuildHelpers: SSABuilder {
             self.push_op(OpIAdd2 {
                 dst: val.into(),
                 carry_out: Dst::None,
-                srcs: [Src::new_zero(), *src],
+                srcs: [Src::ZERO, *src],
             });
         }
         *src = val.into();

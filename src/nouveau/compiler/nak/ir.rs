@@ -1111,9 +1111,11 @@ pub struct Src {
 }
 
 impl Src {
-    pub fn new_zero() -> Src {
-        SrcRef::Zero.into()
-    }
+    pub const ZERO: Src = Src {
+        src_ref: SrcRef::Zero,
+        src_mod: SrcMod::None,
+        src_swizzle: SrcSwizzle::None,
+    };
 
     pub fn new_imm_u32(u: u32) -> Src {
         u.into()

@@ -117,7 +117,7 @@ impl CopyPropPass {
         assert!(dst.comps() == 2);
         match src.src_ref {
             SrcRef::Zero | SrcRef::Imm32(_) => {
-                self.add_copy(bi, dst[0], SrcType::ALU, Src::new_zero());
+                self.add_copy(bi, dst[0], SrcType::ALU, Src::ZERO);
                 self.add_copy(bi, dst[1], SrcType::F64, src);
             }
             SrcRef::CBuf(cb) => {

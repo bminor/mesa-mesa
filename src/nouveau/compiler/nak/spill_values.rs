@@ -142,11 +142,7 @@ impl Spill for SpillPred<'_> {
         assert!(matches!(dst.file(), RegFile::GPR | RegFile::UGPR));
         self.info.num_spills_to_reg += 1;
         if let Some(b) = src.as_bool() {
-            let u32_src = if b {
-                Src::new_imm_u32(!0)
-            } else {
-                Src::new_zero()
-            };
+            let u32_src = Src::from(if b { !0 } else { 0 });
             Instr::new_boxed(OpCopy {
                 dst: dst.into(),
                 src: u32_src,
@@ -155,7 +151,7 @@ impl Spill for SpillPred<'_> {
             Instr::new_boxed(OpSel {
                 dst: dst.into(),
                 cond: src.bnot(),
-                srcs: [Src::new_zero(), Src::new_imm_u32(!0)],
+                srcs: [0.into(), (!0).into()],
             })
         }
     }
@@ -169,7 +165,7 @@ impl Spill for SpillPred<'_> {
             cmp_op: IntCmpOp::Ne,
             cmp_type: IntCmpType::U32,
             ex: false,
-            srcs: [Src::new_zero(), src.into()],
+            srcs: [0.into(), src.into()],
             accum: true.into(),
             low_cmp: true.into(),
         })

@@ -84,7 +84,7 @@ impl LowerCopySwap {
                         self.slm_size = max(self.slm_size, addr + 4);
                         b.push_op(OpLd {
                             dst: copy.dst,
-                            addr: Src::new_zero(),
+                            addr: Src::ZERO,
                             offset: addr.try_into().unwrap(),
                             access: access,
                         });
@@ -162,7 +162,7 @@ impl LowerCopySwap {
                         let addr = self.slm_start + dst_reg.base_idx() * 4;
                         self.slm_size = max(self.slm_size, addr + 4);
                         b.push_op(OpSt {
-                            addr: Src::new_zero(),
+                            addr: Src::ZERO,
                             data: copy.src,
                             offset: addr.try_into().unwrap(),
                             access: access,

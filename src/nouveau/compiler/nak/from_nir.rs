@@ -592,7 +592,7 @@ impl<'a> ShaderFromNir<'a> {
                             }
 
                             let psrc = {
-                                let mut res = [Src::new_zero(); 4];
+                                let mut res = [Src::ZERO; 4];
 
                                 for (idx, src) in psrc.iter().enumerate() {
                                     if let Some(src) = src {
@@ -608,7 +608,7 @@ impl<'a> ShaderFromNir<'a> {
                     }
                     16 => {
                         for dc in 0..bits.div_ceil(32) {
-                            let mut psrc = [Src::new_zero(); 2];
+                            let mut psrc = [Src::ZERO; 2];
                             let mut psel = [0_u8; 4];
 
                             for w in 0..2 {
@@ -660,7 +660,7 @@ impl<'a> ShaderFromNir<'a> {
                         }
                     }
 
-                    let mut prmt_srcs = [Src::new_zero(); 4];
+                    let mut prmt_srcs = [Src::ZERO; 4];
                     let mut prmt = [0_u8; 4];
                     for b in 0..num_bytes {
                         for (ds, s) in prmt_srcs.iter_mut().enumerate() {
@@ -886,9 +886,9 @@ impl<'a> ShaderFromNir<'a> {
             }
             nir_op_fabs | nir_op_fadd | nir_op_fneg => {
                 let (x, y) = match alu.op {
-                    nir_op_fabs => (Src::new_zero().fneg(), srcs(0).fabs()),
+                    nir_op_fabs => (Src::ZERO.fneg(), srcs(0).fabs()),
                     nir_op_fadd => (srcs(0), srcs(1)),
-                    nir_op_fneg => (Src::new_zero().fneg(), srcs(0).fneg()),
+                    nir_op_fneg => (Src::ZERO.fneg(), srcs(0).fneg()),
                     _ => panic!("Unhandled case"),
                 };
                 let ftype = FloatType::from_bits(alu.def.bit_size().into());

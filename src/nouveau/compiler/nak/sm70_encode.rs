@@ -674,7 +674,7 @@ impl SM70Op for OpFAdd {
                 0x021,
                 Some(&self.dst),
                 Some(&self.srcs[0]),
-                Some(&Src::new_zero()),
+                Some(&Src::ZERO),
                 Some(&self.srcs[1]),
             )
         };
@@ -722,7 +722,7 @@ impl SM70Op for OpFMnMx {
             Some(&self.dst),
             Some(&self.srcs[0]),
             Some(&self.srcs[1]),
-            Some(&Src::new_zero()),
+            Some(&Src::ZERO),
         );
         e.set_pred_src(87..90, 90, self.min);
         e.set_bit(80, self.ftz);
@@ -743,7 +743,7 @@ impl SM70Op for OpFMul {
             Some(&self.dst),
             Some(&self.srcs[0]),
             Some(&self.srcs[1]),
-            Some(&Src::new_zero()),
+            Some(&Src::ZERO),
         );
         e.set_bit(76, self.dnz);
         e.set_bit(77, self.saturate);
@@ -1360,7 +1360,7 @@ impl SM70Op for OpIAdd3X {
         if !src0.src_mod.is_none() && !src1.src_mod.is_none() {
             let val = b.alloc_ssa(gpr);
             b.push_op(OpIAdd3X {
-                srcs: [Src::new_zero(), *src0, Src::new_zero()],
+                srcs: [Src::ZERO, *src0, Src::ZERO],
                 overflow: [Dst::None, Dst::None],
                 dst: val.into(),
                 carry: [false.into(); 2],
@@ -1900,7 +1900,7 @@ impl SM70Op for OpF2FP {
             Some(&self.dst),
             Some(&self.srcs[0]),
             Some(&self.srcs[1]),
-            Some(&Src::new_zero()),
+            Some(&Src::ZERO),
         );
 
         // .MERGE_C behavior
@@ -3549,7 +3549,7 @@ impl SM70Op for OpOutFinal {
             0x124,
             Some(&Dst::None),
             Some(&self.handle),
-            Some(&Src::new_zero()),
+            Some(&Src::ZERO),
             None,
         );
     }
