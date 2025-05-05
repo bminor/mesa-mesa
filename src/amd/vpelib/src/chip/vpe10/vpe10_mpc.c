@@ -1141,7 +1141,7 @@ void vpe10_mpc_program_1dlut(struct mpc *mpc, const struct pwl_params *params, e
 {
     PROGRAM_ENTRY();
 
-    if ((params == NULL) || (vpe_priv == NULL) ||
+    if ((params == NULL) ||
         (vpe_priv->init.debug.bypass_blndgam == true)) { // the bypass flag is used in debug mode to skip this block entirely
         REG_SET(VPMPCC_MCM_1DLUT_CONTROL, REG_DEFAULT(VPMPCC_MCM_1DLUT_CONTROL),
             VPMPCC_MCM_1DLUT_MODE, 0);
