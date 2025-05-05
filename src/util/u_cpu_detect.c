@@ -67,6 +67,7 @@
 #endif
 
 #if DETECT_OS_LINUX
+#include <sys/auxv.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <elf.h>
@@ -169,26 +170,11 @@ check_os_altivec_support(void)
       }
    }
 #elif DETECT_OS_LINUX /* !DETECT_OS_APPLE && !DETECT_OS_NETBSD && !DETECT_OS_OPENBSD */
-#if DETECT_ARCH_PPC_64
-    Elf64_auxv_t aux;
-#else
-    Elf32_auxv_t aux;
-#endif
-    int fd = open("/proc/self/auxv", O_RDONLY | O_CLOEXEC);
-    if (fd >= 0) {
-       while (read(fd, &aux, sizeof(aux)) == sizeof(aux)) {
-          if (aux.a_type == AT_HWCAP) {
-             char *env_vsx = getenv("GALLIVM_VSX");
-             uint64_t hwcap = aux.a_un.a_val;
-             util_cpu_caps.has_altivec = (hwcap >> 28) & 1;
-             if (!env_vsx || env_vsx[0] != '0') {
-                util_cpu_caps.has_vsx  = (hwcap >>  7) & 1;
-             }
-             break;
-          }
-       }
-       close(fd);
-    }
+   char *env_vsx = getenv("GALLIVM_VSX");
+   uint64_t hwcap = getauxval(AT_HWCAP);
+   util_cpu_caps.has_altivec = (hwcap >> 28) & 1;
+   if (!env_vsx || env_vsx[0] != '0') {
+      util_cpu_caps.has_vsx  = (hwcap >>  7) & 1;
 #else /* !DETECT_OS_APPLE && !DETECT_OS_BSD && !DETECT_OS_LINUX */
    /* not on Apple/Darwin or Linux, do it the brute-force way */
    /* this is borrowed from the libmpeg2 library */
@@ -421,21 +407,7 @@ check_os_arm_support(void)
          util_cpu_caps.has_neon = 1;
    }
 #elif DETECT_OS_LINUX
-    Elf32_auxv_t aux;
-    int fd;
-
-    fd = open("/proc/self/auxv", O_RDONLY | O_CLOEXEC);
-    if (fd >= 0) {
-       while (read(fd, &aux, sizeof(Elf32_auxv_t)) == sizeof(Elf32_auxv_t)) {
-          if (aux.a_type == AT_HWCAP) {
-             uint32_t hwcap = aux.a_un.a_val;
-
-             util_cpu_caps.has_neon = (hwcap >> 12) & 1;
-             break;
-          }
-       }
-       close (fd);
-    }
+   util_cpu_caps.has_neon = (getauxval(AT_HWCAP) >> 12) & 1;
 #endif /* DETECT_OS_LINUX */
 }
 
@@ -452,21 +424,7 @@ static void
 check_os_mips64_support(void)
 {
 #if DETECT_OS_LINUX
-    Elf64_auxv_t aux;
-    int fd;
-
-    fd = open("/proc/self/auxv", O_RDONLY | O_CLOEXEC);
-    if (fd >= 0) {
-       while (read(fd, &aux, sizeof(Elf64_auxv_t)) == sizeof(Elf64_auxv_t)) {
-          if (aux.a_type == AT_HWCAP) {
-             uint64_t hwcap = aux.a_un.a_val;
-
-             util_cpu_caps.has_msa = (hwcap >> 1) & 1;
-             break;
-          }
-       }
-       close (fd);
-    }
+   util_cpu_caps.has_msa = (getauxval(AT_HWCAP) >> 1) & 1;
 #endif /* DETECT_OS_LINUX */
 }
 #endif /* DETECT_ARCH_MIPS64 */
@@ -476,22 +434,9 @@ static void
 check_os_loongarch64_support(void)
 {
 #if DETECT_OS_LINUX
-    Elf64_auxv_t aux;
-    int fd;
-
-    fd = open("/proc/self/auxv", O_RDONLY | O_CLOEXEC);
-    if (fd >= 0) {
-       while (read(fd, &aux, sizeof(Elf64_auxv_t)) == sizeof(Elf64_auxv_t)) {
-          if (aux.a_type == AT_HWCAP) {
-             uint64_t hwcap = aux.a_un.a_val;
-
-             util_cpu_caps.has_lsx = (hwcap >> 4) & 1;
-             util_cpu_caps.has_lasx = (hwcap >> 5) & 1;
-             break;
-          }
-       }
-       close (fd);
-    }
+   uint64_t hwcap = getauxval(AT_HWCAP);
+   util_cpu_caps.has_lsx = (hwcap >> 4) & 1;
+   util_cpu_caps.has_lasx = (hwcap >> 5) & 1;
 #endif /* DETECT_OS_LINUX */
 }
 #endif /* DETECT_ARCH_LOONGARCH64 */
