@@ -3761,7 +3761,9 @@ impl<'a> ShaderFromNir<'a> {
                             srcs: [cmat_a.into(), cmat_b.into(), cmat_c.into()],
                         });
                     }
-                    NAK_CMAT_TYPE_M8N8K16_INT | NAK_CMAT_TYPE_M16N8K32_INT => {
+                    NAK_CMAT_TYPE_M8N8K16_INT
+                    | NAK_CMAT_TYPE_M16N8K16_INT
+                    | NAK_CMAT_TYPE_M16N8K32_INT => {
                         let a_type = match flags.a_type() {
                             GLSL_TYPE_UINT8 => IntType::U8,
                             GLSL_TYPE_INT8 => IntType::I8,
@@ -3775,6 +3777,7 @@ impl<'a> ShaderFromNir<'a> {
 
                         let mat_size = match flags.cmat_type() {
                             NAK_CMAT_TYPE_M8N8K16_INT => ImmaSize::M8N8K16,
+                            NAK_CMAT_TYPE_M16N8K16_INT => ImmaSize::M16N8K16,
                             NAK_CMAT_TYPE_M16N8K32_INT => ImmaSize::M16N8K32,
                             val => unreachable!("unsupported IMMA type: {val}"),
                         };

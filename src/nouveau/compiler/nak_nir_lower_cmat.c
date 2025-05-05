@@ -32,6 +32,11 @@ get_nak_cmat_type_for_muladd(struct glsl_cmat_description a_desc,
 
    if (m == 16 && a_is_int8 &&
        n ==  8 && b_is_int8 &&
+       k == 16 && c_is_int32)
+      return NAK_CMAT_TYPE_M16N8K16_INT;
+
+   if (m == 16 && a_is_int8 &&
+       n ==  8 && b_is_int8 &&
        k == 32 && c_is_int32)
       return NAK_CMAT_TYPE_M16N8K32_INT;
 
@@ -89,6 +94,7 @@ determine_matrix_type(struct glsl_cmat_description desc)
       assert(
          (desc.rows ==  8 && desc.cols == 16 && is_int8_a) ||
          (desc.rows == 16 && desc.cols ==  8 && is_int8_b) ||
+         (desc.rows == 16 && desc.cols == 16 && is_int8_a) ||
          (desc.rows == 16 && desc.cols == 32 && is_int8_a) ||
          (desc.rows == 32 && desc.cols ==  8 && is_int8_b)
       );
@@ -308,6 +314,9 @@ get_hw_nak_cmat_type(enum nak_cmat_type cmat_type, uint8_t sm)
    switch (cmat_type) {
    case NAK_CMAT_TYPE_M8N8K16_INT:
       return NAK_CMAT_TYPE_M8N8K16_INT;
+   case NAK_CMAT_TYPE_M16N8K16_INT:
+      return sm >= 80 ? NAK_CMAT_TYPE_M16N8K16_INT
+                      : NAK_CMAT_TYPE_M8N8K16_INT; /* no lowering code yet */
    case NAK_CMAT_TYPE_M16N8K32_INT:
    case NAK_CMAT_TYPE_M16N16K32_INT_SW:
       /* On Turing we only have 8x8x16 */
@@ -466,14 +475,9 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intr, nir_def *cmat,
     * to fix the layout, so we shuffle values around to achieve that.
     */
    if (a_layout != d_layout) {
-      assert(cmat->num_components == 4);
-
       nir_def *lane_id = nir_load_subgroup_invocation(b);
       unsigned mask    = a_layout == NAK_MAT_16X16 ? 0x1 : 0x2;
       unsigned compare = a_layout == NAK_MAT_16X16 ? 0x2 : 0x1;
-
-      nir_def *xy = nir_channels(b, cmat, 0x3);
-      nir_def *zw = nir_channels(b, cmat, 0xc);
 
       nir_def *adj;
       if (a_layout == NAK_MAT_16X16) {
@@ -488,20 +492,73 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intr, nir_def *cmat,
       /* lane_id & 0x1c + (lane_id & mask << 1) + mask */
       /* lane_id & 0x1c + (lane_id & mask >> 1) + mask */
       nir_def *lane1 = nir_iadd_imm(b, lane0, mask);
-      nir_def *xy0 = nir_shuffle(b, xy, lane0);
-      nir_def *zw0 = nir_shuffle(b, xy, lane1);
-      nir_def *xy1 = nir_shuffle(b, zw, lane0);
-      nir_def *zw1 = nir_shuffle(b, zw, lane1);
-
       nir_def *cond = nir_ieq_imm(b, nir_iand_imm(b, lane_id, compare), 0);
-      xy = nir_bcsel(b, cond, xy0, xy1);
-      zw = nir_bcsel(b, cond, zw0, zw1);
 
-      cmat = nir_vec4(b,
-         nir_channel(b, xy, 0),
-         nir_channel(b, xy, 1),
-         nir_channel(b, zw, 0),
-         nir_channel(b, zw, 1));
+      if (cmat->num_components == 4) {
+         nir_def *xy = nir_channels(b, cmat, 0x3);
+         nir_def *zw = nir_channels(b, cmat, 0xc);
+
+         nir_def *xy0 = nir_shuffle(b, xy, lane0);
+         nir_def *zw0 = nir_shuffle(b, xy, lane1);
+         nir_def *xy1 = nir_shuffle(b, zw, lane0);
+         nir_def *zw1 = nir_shuffle(b, zw, lane1);
+
+         xy = nir_bcsel(b, cond, xy0, xy1);
+         zw = nir_bcsel(b, cond, zw0, zw1);
+
+         cmat = nir_vec4(b,
+            nir_channel(b, xy, 0),
+            nir_channel(b, xy, 1),
+            nir_channel(b, zw, 0),
+            nir_channel(b, zw, 1)
+         );
+      } else if (cmat->num_components == 8 && a_layout == NAK_MAT_16X16) {
+         nir_def *abcd = nir_channels(b, cmat, 0x0f);
+         nir_def *efgh = nir_channels(b, cmat, 0xf0);
+
+         nir_def *abef0 = nir_shuffle(b, abcd, lane0);
+         nir_def *cdgh0 = nir_shuffle(b, abcd, lane1);
+         nir_def *abef1 = nir_shuffle(b, efgh, lane0);
+         nir_def *cdgh1 = nir_shuffle(b, efgh, lane1);
+
+         nir_def *abef = nir_bcsel(b, cond, abef0, abef1);
+         nir_def *cdgh = nir_bcsel(b, cond, cdgh0, cdgh1);
+
+         cmat = nir_vec8(b,
+            nir_channel(b, abef, 0),
+            nir_channel(b, abef, 1),
+            nir_channel(b, cdgh, 0),
+            nir_channel(b, cdgh, 1),
+            nir_channel(b, abef, 2),
+            nir_channel(b, abef, 3),
+            nir_channel(b, cdgh, 2),
+            nir_channel(b, cdgh, 3)
+         );
+      } else if (cmat->num_components == 8 && a_layout == NAK_MAT_16x32_INT8) {
+         nir_def *abef = nir_channels(b, cmat, 0x33);
+         nir_def *cdgh = nir_channels(b, cmat, 0xcc);
+
+         nir_def *abcd0 = nir_shuffle(b, abef, lane0);
+         nir_def *efgh0 = nir_shuffle(b, abef, lane1);
+         nir_def *abcd1 = nir_shuffle(b, cdgh, lane0);
+         nir_def *efgh1 = nir_shuffle(b, cdgh, lane1);
+
+         nir_def *abcd = nir_bcsel(b, cond, abcd0, abcd1);
+         nir_def *efgh = nir_bcsel(b, cond, efgh0, efgh1);
+
+         cmat = nir_vec8(b,
+            nir_channel(b, abcd, 0),
+            nir_channel(b, abcd, 1),
+            nir_channel(b, abcd, 2),
+            nir_channel(b, abcd, 3),
+            nir_channel(b, efgh, 0),
+            nir_channel(b, efgh, 1),
+            nir_channel(b, efgh, 2),
+            nir_channel(b, efgh, 3)
+         );
+      } else {
+         unreachable("unsupported component counts for Matrix layout conversion");
+      }
    }
 
    /* If the result type is not smaller, we convert after shuffling */

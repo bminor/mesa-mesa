@@ -292,6 +292,7 @@ struct nak_nir_ipa_flags {
 
 enum nak_cmat_type {
    NAK_CMAT_TYPE_M8N8K16_INT,
+   NAK_CMAT_TYPE_M16N8K16_INT,
    NAK_CMAT_TYPE_M16N8K32_INT,
 
    NAK_CMAT_TYPE_M16N8K8_FLOAT,

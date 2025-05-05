@@ -54,6 +54,7 @@
 #include "clc597.h"
 #include "clc5c0.h"
 #include "clc797.h"
+#include "clc6c0.h"
 #include "clc997.h"
 
 static uint32_t
@@ -1810,6 +1811,24 @@ nvk_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDev
                   .saturatingAccumulation = sat,
                   .scope = VK_SCOPE_SUBGROUP_KHR
                };
+            }
+
+            if (pdev->info.cls_compute >= AMPERE_COMPUTE_A) {
+               vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+               {
+                  *p = (struct VkCooperativeMatrixPropertiesKHR){
+                     .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                     .MSize = 16,
+                     .NSize = 8,
+                     .KSize = 16,
+                     .AType = input_type_ab,
+                     .BType = input_type_ab,
+                     .CType = result_type,
+                     .ResultType = result_type,
+                     .saturatingAccumulation = sat,
+                     .scope = VK_SCOPE_SUBGROUP_KHR
+                  };
+               }
             }
 
             vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
