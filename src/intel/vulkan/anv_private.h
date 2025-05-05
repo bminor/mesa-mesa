@@ -6107,6 +6107,15 @@ anv_can_hiz_clear_ds_view(struct anv_device *device,
                           const VkQueueFlagBits queue_flags);
 
 bool
+anv_can_hiz_clear_image(struct anv_cmd_buffer *cmd_buffer,
+                        const struct anv_image *image,
+                        VkImageLayout layout,
+                        VkImageAspectFlags clear_aspects,
+                        float depth_clear_value,
+                        VkRect2D render_area,
+                        const unsigned level);
+
+bool
 anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                          const struct anv_image *image,
                          unsigned level,

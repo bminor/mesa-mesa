@@ -3560,6 +3560,81 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
    return true;
 }
 
+bool
+anv_can_hiz_clear_image(struct anv_cmd_buffer *cmd_buffer,
+                        const struct anv_image *image,
+                        VkImageLayout layout,
+                        VkImageAspectFlags clear_aspects,
+                        float depth_clear_value,
+                        VkRect2D render_area,
+                        const unsigned level)
+{
+   const struct anv_device *device = cmd_buffer->device;
+   const VkQueueFlagBits queue_flags = cmd_buffer->queue_family->queueFlags;
+
+   if (INTEL_DEBUG(DEBUG_NO_FAST_CLEAR))
+      return false;
+
+   /* If we're just clearing stencil, we can always HiZ clear */
+   if (!(clear_aspects & VK_IMAGE_ASPECT_DEPTH_BIT))
+      return true;
+
+   const enum isl_aux_usage clear_aux_usage =
+      anv_layout_to_aux_usage(device->info, image,
+                              VK_IMAGE_ASPECT_DEPTH_BIT, 0,
+                              layout, queue_flags);
+
+   const uint32_t plane =
+      anv_image_aspect_to_plane(image, VK_IMAGE_ASPECT_DEPTH_BIT);
+   const struct isl_surf *surf = &image->planes[plane].primary_surface.isl;
+
+   if (!isl_aux_usage_has_fast_clears(clear_aux_usage))
+      return false;
+
+   if (isl_aux_usage_has_ccs(clear_aux_usage)) {
+      /* From the TGL PRM, Vol 9, "Compressed Depth Buffers" (under the
+       * "Texture performant" and "ZCS" columns):
+       *
+       *    Update with clear at either 16x8 or 8x4 granularity, based on
+       *    fs_clr or otherwise.
+       *
+       * Although alignment requirements are only listed for the texture
+       * performant mode, test results indicate that requirements exist for
+       * the non-texture performant mode as well. Disable partial clears.
+       */
+      if (render_area.offset.x > 0 ||
+          render_area.offset.y > 0 ||
+          render_area.extent.width !=
+          u_minify(image->vk.extent.width, level) ||
+          render_area.extent.height !=
+          u_minify(image->vk.extent.height, level)) {
+         return false;
+      }
+
+      /* When fast-clearing, hardware behaves in unexpected ways if the clear
+       * rectangle, aligned to 16x8, could cover neighboring LODs.
+       * Fortunately, ISL guarantees that LOD0 will be 8-row aligned and
+       * LOD0's height seems to not matter. Also, few applications ever clear
+       * LOD1+. Only allow fast-clearing upper LODs if no overlap can occur.
+       */
+      assert(surf->dim_layout == ISL_DIM_LAYOUT_GFX4_2D);
+      assert(surf->array_pitch_el_rows % 8 == 0);
+      if (clear_aux_usage == ISL_AUX_USAGE_HIZ_CCS_WT &&
+          level >= 1 &&
+          (image->vk.extent.width % 32 != 0 ||
+           surf->image_alignment_el.h % 8 != 0)) {
+         return false;
+      }
+   }
+
+   if (device->info->ver <= 12 &&
+       depth_clear_value != anv_image_hiz_clear_value(image).f32[0])
+     return false;
+
+   /* If we got here, then we can fast clear */
+   return true;
+}
+
 /**
  * This function determines if the layout & usage of an image can have
  * untracked aux writes. When we see a transition that matches this criteria,

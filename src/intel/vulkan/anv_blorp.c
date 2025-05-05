@@ -1666,6 +1666,7 @@ void anv_CmdClearDepthStencilImage(
 
       bool clear_depth = pRanges[r].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT;
       bool clear_stencil = pRanges[r].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT;
+      assert(clear_depth || clear_stencil);
 
       unsigned base_layer = pRanges[r].baseArrayLayer;
       uint32_t layer_count =
@@ -1680,6 +1681,22 @@ void anv_CmdClearDepthStencilImage(
 
          if (image->vk.image_type == VK_IMAGE_TYPE_3D)
             layer_count = u_minify(image->vk.extent.depth, level);
+
+         const VkRect2D area = {
+            .offset.x = 0,
+            .offset.y = 0,
+            .extent.width = level_width,
+            .extent.height = level_height,
+         };
+
+         if (anv_can_hiz_clear_image(cmd_buffer, image, imageLayout,
+                                     pRanges[r].aspectMask,
+                                     pDepthStencil->depth, area, level)) {
+            anv_image_hiz_clear(cmd_buffer, image, pRanges[r].aspectMask,
+                                level, base_layer, layer_count, area,
+                                pDepthStencil);
+            continue;
+         }
 
          blorp_clear_depth_stencil(&batch, &depth, &stencil,
                                    level, base_layer, layer_count,
