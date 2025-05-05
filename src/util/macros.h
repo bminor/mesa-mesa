@@ -275,24 +275,15 @@ do {                       \
 #endif
 
 /**
- * PUBLIC/USED macros
- *
- * If we build the library with gcc's -fvisibility=hidden flag, we'll
- * use the PUBLIC macro to mark functions that are to be exported.
- *
- * We also need to define a USED attribute, so the optimizer doesn't
- * inline a static function that we later use in an alias. - ajax
+ * This marks symbols that should be visible to dynamic library consumers.
  */
 #ifndef PUBLIC
 #  if defined(_WIN32)
 #    define PUBLIC __declspec(dllexport)
-#    define USED
 #  elif defined(__GNUC__)
 #    define PUBLIC __attribute__((visibility("default")))
-#    define USED __attribute__((used))
 #  else
 #    define PUBLIC
-#    define USED
 #  endif
 #endif
 
