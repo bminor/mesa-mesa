@@ -62,5 +62,3 @@
     B2C_KERNEL_URL: 'https://static.engestrom.ch/linux-6.8-nvk-ga106'
     # GSP is not loaded by default
     B2C_KERNEL_CMDLINE_EXTRAS: 'nouveau.config=NvGspRm=1'
-  tags:
-    - $B2C_MARS_SETUP_TAGS

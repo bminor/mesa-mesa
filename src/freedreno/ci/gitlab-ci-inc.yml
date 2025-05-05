@@ -371,6 +371,3 @@
     B2C_BOOT_WD_STOP_REGEX: 'CPU features: detected:'                     # A line repeated during Linux boot
     GPU_VERSION: freedreno-a750
     VK_DRIVER: freedreno
-  tags:
-    - farm:$RUNNER_FARM_LOCATION
-    - $B2C_MARS_SETUP_TAGS

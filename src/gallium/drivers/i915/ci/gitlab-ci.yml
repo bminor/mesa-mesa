@@ -9,10 +9,9 @@ include:
   variables:
     FDO_CI_CONCURRENT: 2
     GPU_VERSION: i915-g33
+    RUNNER_FARM_LOCATION: ondracka
     B2C_KERNEL_URL: https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/v0.9.12.3/downloads/linux-x86_64
     B2C_MARS_SETUP_TAGS: intelgpu:codename:G33
-  tags:
-    - $B2C_MARS_SETUP_TAGS
 
 i915-g33:
   extends:

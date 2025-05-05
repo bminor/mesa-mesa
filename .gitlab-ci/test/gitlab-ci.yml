@@ -437,6 +437,9 @@ yaml-toml-shell-py-test:
     - job: python-artifacts
       artifacts: true
     - !reference [.required-for-hardware-jobs, needs]
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - $B2C_MARS_SETUP_TAGS
 
   before_script:
     # We don't want the tarball unpacking of .test, but will take the JWT bits.
