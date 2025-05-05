@@ -1364,6 +1364,8 @@ virgl_drm_screen_create(int fd, const struct pipe_screen_config *config)
    } else {
       struct virgl_winsys *vws;
       int dup_fd = os_dupfd_cloexec(fd);
+      if (dup_fd < 0)
+         goto unlock;
 
       vws = virgl_drm_winsys_create(dup_fd);
       if (!vws) {
