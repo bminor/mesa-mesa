@@ -1725,8 +1725,8 @@ update_viewports(struct anv_gfx_dynamic_state *hw_state,
          const bool depth_range_unrestricted =
             device->vk.enabled_extensions.EXT_depth_range_unrestricted;
 
-         float min_depth_limit = depth_range_unrestricted ? -FLT_MAX : 0.0;
-         float max_depth_limit = depth_range_unrestricted ? FLT_MAX : 1.0;
+         float min_depth_limit = depth_range_unrestricted ? -FLT_MAX : 0.0f;
+         float max_depth_limit = depth_range_unrestricted ? FLT_MAX : 1.0f;
 
          float min_depth = dyn->rs.depth_clamp_enable ?
                            MIN2(vp->minDepth, vp->maxDepth) : min_depth_limit;

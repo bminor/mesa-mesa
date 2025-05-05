@@ -624,9 +624,9 @@ blorp_emit_cc_viewport(struct blorp_batch *batch)
    } else {
       blorp_emit_dynamic(batch, GENX(CC_VIEWPORT), vp, 32, &cc_vp_offset) {
          vp.MinimumDepth = batch->blorp->config.use_unrestricted_depth_range ?
-                           -FLT_MAX : 0.0;
+                           -FLT_MAX : 0.0f;
          vp.MaximumDepth = batch->blorp->config.use_unrestricted_depth_range ?
-                           FLT_MAX : 1.0;
+                           FLT_MAX : 1.0f;
       }
    }
 
@@ -2283,9 +2283,9 @@ blorp_init_dynamic_states(struct blorp_context *context)
    blorp_context_upload_dynamic(context, GENX(CC_VIEWPORT), vp, 32,
                                 BLORP_DYNAMIC_STATE_CC_VIEWPORT) {
       vp.MinimumDepth = context->config.use_unrestricted_depth_range ?
-                        -FLT_MAX : 0.0;
+                        -FLT_MAX : 0.0f;
       vp.MaximumDepth = context->config.use_unrestricted_depth_range ?
-                        FLT_MAX : 1.0;
+                        FLT_MAX : 1.0f;
    }
 
    blorp_context_upload_dynamic(context, GENX(COLOR_CALC_STATE), cc, 64,
