@@ -435,6 +435,11 @@ yaml-toml-shell-py-test:
       # Open a section that will be closed by b2c
       echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36m[$(cut -d ' ' -f1 /proc/uptime)]: Submitting the CI-tron job and booting the DUT\e[0m\n"
 
+      # Print all the variables, for debugging and for easier reproducibility.
+      # Note: a better solution will be implemented soon, but this is enough
+      # for now.
+      printenv
+
   # Anything our job places in results/ will be collected by the
   # Gitlab coordinator for status presentation. results/junit.xml
   # will be parsed by the UI for more detailed explanations of
