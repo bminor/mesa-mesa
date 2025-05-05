@@ -10,6 +10,7 @@
 #include "tu_cmd_buffer.h"
 
 #include "vk_common_entrypoints.h"
+#include "vk_log.h"
 #include "vk_render_pass.h"
 #include "vk_util.h"
 
@@ -18,10 +19,78 @@
 #include "tu_cs.h"
 #include "tu_event.h"
 #include "tu_image.h"
+#include "tu_knl.h"
 #include "tu_tracepoints.h"
 
 #include "common/freedreno_gpu_event.h"
 #include "common/freedreno_lrz.h"
+
+enum tu_cmd_buffer_status {
+   TU_CMD_BUFFER_STATUS_IDLE = 0,
+   TU_CMD_BUFFER_STATUS_ACTIVE = 1,
+};
+
+static struct tu_bo *
+tu_cmd_buffer_setup_status_tracking(struct tu_device *device)
+{
+   struct tu_bo *status_bo;
+   VkResult result;
+
+   result = tu_bo_init_new_explicit_iova(
+      device, NULL, &status_bo, sizeof(enum tu_cmd_buffer_status), 0,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+      TU_BO_ALLOC_INTERNAL_RESOURCE, "cmd_buffer_status");
+   if (result != VK_SUCCESS)
+      return NULL;
+
+   result = tu_bo_map(device, status_bo, NULL);
+   if (result != VK_SUCCESS)
+      return NULL;
+
+   return status_bo;
+}
+
+static VkResult
+tu_cmd_buffer_status_check_idle(struct tu_cmd_buffer *cmd_buffer)
+{
+   if (cmd_buffer->status_bo == NULL)
+      return VK_SUCCESS;
+
+   const enum tu_cmd_buffer_status status =
+      *(enum tu_cmd_buffer_status *)cmd_buffer->status_bo->map;
+
+   switch (status) {
+   case TU_CMD_BUFFER_STATUS_IDLE:
+      return VK_SUCCESS;
+
+   case TU_CMD_BUFFER_STATUS_ACTIVE:
+      mesa_loge("Trying to reset or destroy cmd_buffer %p while in use",
+                cmd_buffer);
+      return vk_errorf(cmd_buffer, VK_ERROR_UNKNOWN,
+                       "Trying to reset or destroy while being used");
+   default:
+      mesa_loge("Something went wrong with cmd_buffer status tracking");
+      return vk_error(cmd_buffer, VK_ERROR_UNKNOWN);
+   }
+}
+
+static inline void
+tu_cmd_buffer_status_gpu_write(struct tu_cmd_buffer *cmd_buffer,
+                               enum tu_cmd_buffer_status status)
+{
+   struct tu_cs *cs = &cmd_buffer->cs;
+
+   if (cmd_buffer->status_bo == NULL)
+      return;
+
+   static_assert(sizeof(uint32_t) == sizeof(status),
+                 "Code below needs adjusting");
+   tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
+   tu_cs_emit_qw(cs, cmd_buffer->status_bo->iova);
+   tu_cs_emit(cs, (uint32_t)status);
+}
 
 static void
 tu_clone_trace_range(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
@@ -3000,6 +3069,14 @@ tu_create_cmd_buffer(struct vk_command_pool *pool,
    u_trace_init(&cmd_buffer->trace, &device->trace_context);
    list_inithead(&cmd_buffer->renderpass_autotune_results);
 
+   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS)) {
+      cmd_buffer->status_bo = tu_cmd_buffer_setup_status_tracking(device);
+      if (cmd_buffer->status_bo == NULL) {
+         mesa_logw("Failed creating cmd_buffer status_bo. "
+                   "Won't track status for this cmd_buffer.");
+      }
+   }
+
    tu_cs_init(&cmd_buffer->cs, device, TU_CS_MODE_GROW, 4096, "cmd cs");
    tu_cs_init(&cmd_buffer->draw_cs, device, TU_CS_MODE_GROW, 4096, "draw cs");
    tu_cs_init(&cmd_buffer->tile_store_cs, device, TU_CS_MODE_GROW, 2048, "tile store cs");
@@ -3030,6 +3107,12 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    tu_cs_finish(&cmd_buffer->pre_chain.draw_cs);
    tu_cs_finish(&cmd_buffer->pre_chain.draw_epilogue_cs);
 
+   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS)) {
+      tu_cmd_buffer_status_check_idle(cmd_buffer);
+      tu_bo_unmap(cmd_buffer->device, cmd_buffer->status_bo, false);
+      tu_bo_finish(cmd_buffer->device, cmd_buffer->status_bo);
+   }
+
    u_trace_fini(&cmd_buffer->trace);
 
    tu_autotune_free_results(cmd_buffer->device, &cmd_buffer->renderpass_autotune_results);
@@ -3059,7 +3142,16 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    struct tu_cmd_buffer *cmd_buffer =
       container_of(vk_cmd_buffer, struct tu_cmd_buffer, vk);
 
-   vk_command_buffer_reset(&cmd_buffer->vk);
+   VkResult status_check_result = VK_SUCCESS;
+   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS))
+      status_check_result = tu_cmd_buffer_status_check_idle(cmd_buffer);
+
+    vk_command_buffer_reset(&cmd_buffer->vk);
+
+    if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS) &&
+        status_check_result != VK_SUCCESS) {
+       cmd_buffer->vk.record_result = status_check_result;
+    }
 
    tu_cs_reset(&cmd_buffer->cs);
    tu_cs_reset(&cmd_buffer->draw_cs);
@@ -3140,6 +3232,8 @@ tu_cmd_buffer_begin(struct tu_cmd_buffer *cmd_buffer,
    tu_cs_begin(&cmd_buffer->cs);
    tu_cs_begin(&cmd_buffer->draw_cs);
    tu_cs_begin(&cmd_buffer->draw_epilogue_cs);
+
+   tu_cmd_buffer_status_gpu_write(cmd_buffer, TU_CMD_BUFFER_STATUS_ACTIVE);
 
    return VK_SUCCESS;
 }
@@ -4079,6 +4173,9 @@ tu_EndCommandBuffer(VkCommandBuffer commandBuffer)
          &cmd_buffer->trace,
          cmd_buffer->state.pass ? &cmd_buffer->draw_cs : &cmd_buffer->cs);
    }
+
+   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS))
+      tu_cmd_buffer_status_gpu_write(cmd_buffer, TU_CMD_BUFFER_STATUS_IDLE);
 
    tu_cs_end(&cmd_buffer->cs);
    tu_cs_end(&cmd_buffer->draw_cs);

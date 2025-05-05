@@ -50,6 +50,7 @@ static const struct debug_control tu_debug_options[] = {
    { "nobinmerging", TU_DEBUG_NO_BIN_MERGING },
    { "perfcraw", TU_DEBUG_PERFCRAW },
    { "fdmoffset", TU_DEBUG_FDM_OFFSET },
+   { "check_cmd_buffer_status", TU_DEBUG_CHECK_CMD_BUFFER_STATUS },
    { NULL, 0 }
 };
 
