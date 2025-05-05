@@ -1384,10 +1384,15 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_userq *userq,
 
    if (userq->ip_type == AMD_IP_GFX || userq->ip_type == AMD_IP_COMPUTE) {
       if (num_fences) {
+         unsigned max_num_fences_fwm;
          unsigned num_fences_in_iter;
-         /* FENCE_WAIT_MULTI packet supports max 32 fenes */
-         for (unsigned i = 0; i < num_fences; i = i + 32) {
-            num_fences_in_iter = (i + 32 > num_fences) ? num_fences - i : 32;
+         if (csc->aws->info.has_dedicated_vram || csc->aws->info.gfx_level >= GFX12)
+            max_num_fences_fwm = 32;
+         else
+            max_num_fences_fwm = 4;
+         for (unsigned i = 0; i < num_fences; i = i + max_num_fences_fwm) {
+            num_fences_in_iter = (i + max_num_fences_fwm > num_fences) ?
+                                    num_fences - i : max_num_fences_fwm;
             amdgpu_pkt_add_dw(PKT3(PKT3_FENCE_WAIT_MULTI, num_fences_in_iter * 4, 0));
             amdgpu_pkt_add_dw(S_D10_ENGINE_SEL(1) | S_D10_POLL_INTERVAL(4) | S_D10_PREEMPTABLE(1));
             for (unsigned j = 0; j < num_fences_in_iter; j++) {
