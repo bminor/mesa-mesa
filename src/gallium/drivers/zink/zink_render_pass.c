@@ -152,7 +152,7 @@ zink_init_color_attachment(struct zink_context *ctx, unsigned i, struct zink_rt_
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
       struct zink_surface *transient = zink_transient_surface(psurf);
-      rt->format = surf->info.format[0];
+      rt->format = surf->ivci.format;
       rt->samples = MAX3(transient ? transient->base.nr_samples : 0, psurf->texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
       rt->invalid = !zink_resource(psurf->texture)->valid;
@@ -173,7 +173,7 @@ zink_tc_init_color_attachment(struct zink_context *ctx, const struct tc_renderpa
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
       struct zink_surface *transient = zink_transient_surface(psurf);
-      rt->format = surf->info.format[0];
+      rt->format = surf->ivci.format;
       rt->samples = MAX3(transient ? transient->base.nr_samples : 0, psurf->texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
       rt->invalid = !zink_resource(psurf->texture)->valid;

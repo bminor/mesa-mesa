@@ -2894,7 +2894,7 @@ zink_update_rendering_info(struct zink_context *ctx)
 {
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
       struct zink_surface *surf = zink_csurface(ctx->fb_cbufs[i]);
-      ctx->gfx_pipeline_state.rendering_formats[i] = surf ? surf->info.format[0] : VK_FORMAT_UNDEFINED;
+      ctx->gfx_pipeline_state.rendering_formats[i] = surf ? surf->ivci.format : VK_FORMAT_UNDEFINED;
    }
    ctx->gfx_pipeline_state.rendering_info.viewMask = ctx->fb_state.viewmask;
    ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
@@ -2905,9 +2905,9 @@ zink_update_rendering_info(struct zink_context *ctx)
       bool has_stencil = util_format_has_stencil(util_format_description(ctx->fb_state.zsbuf.format));
 
       if (has_depth)
-         ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = surf->info.format[0];
+         ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = surf->ivci.format;
       if (has_stencil)
-         ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat = surf->info.format[0];
+         ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat = surf->ivci.format;
    }
    return find_rp_state(ctx);
 }
@@ -3938,7 +3938,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
             samples = MAX3(transient ? transient->base.nr_samples : 1, psurf->texture->nr_samples, psurf->nr_samples ? psurf->nr_samples : 1);
          struct zink_resource *res = zink_resource(psurf->texture);
          check_framebuffer_surface_mutable(pctx, psurf);
-         if (zink_csurface(psurf)->info.layerCount > layers)
+         if (zink_csurface(psurf)->ivci.subresourceRange.layerCount > layers)
             ctx->fb_layer_mismatch |= BITFIELD_BIT(i);
          if (res->obj->dt) {
             /* #6274 */
@@ -3968,7 +3968,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
       if (!samples)
          samples = MAX3(transient ? transient->base.nr_samples : 1, psurf->texture->nr_samples, psurf->nr_samples ? psurf->nr_samples : 1);
-      if (zink_csurface(psurf)->info.layerCount > layers)
+      if (zink_csurface(psurf)->ivci.subresourceRange.layerCount > layers)
          ctx->fb_layer_mismatch |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
       zink_resource(psurf->texture)->fb_bind_count++;
       zink_resource(psurf->texture)->fb_binds |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);

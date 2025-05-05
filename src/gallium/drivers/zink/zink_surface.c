@@ -107,34 +107,6 @@ create_ivci(struct zink_screen *screen,
    return ivci;
 }
 
-/* this is used for framebuffer attachments to set up imageless framebuffers */
-static void
-init_surface_info(struct zink_screen *screen, struct zink_surface *surface, struct zink_resource *res, VkImageViewCreateInfo *ivci)
-{
-   VkImageViewUsageCreateInfo *usage_info = (VkImageViewUsageCreateInfo *)ivci->pNext;
-   surface->info.flags = res->obj->vkflags;
-   surface->info.usage = usage_info ? usage_info->usage : res->obj->vkusage;
-
-   surface->info.width = pipe_surface_width(&surface->base);
-   surface->info.height = pipe_surface_height(&surface->base);
-   surface->info.layerCount = ivci->subresourceRange.layerCount;
-   surface->info.format[0] = ivci->format;
-   if (res->obj->dt) {
-      struct kopper_displaytarget *cdt = res->obj->dt;
-      if (zink_kopper_has_srgb(cdt))
-         surface->info.format[1] = ivci->format == cdt->formats[0] ? cdt->formats[1] : cdt->formats[0];
-   } else {
-      enum pipe_format srgb = util_format_is_srgb(surface->base.format) ? util_format_linear(surface->base.format) : util_format_srgb(surface->base.format);
-      if (srgb == surface->base.format)
-         srgb = PIPE_FORMAT_NONE;
-      if (srgb) {
-         VkFormat format = zink_get_format(screen, srgb);
-         if (format)
-            surface->info.format[1] = format;
-      }
-   }
-}
-
 static void
 init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, const struct pipe_surface *templ, const struct pipe_resource *pres)
 {
@@ -192,8 +164,6 @@ create_surface(struct pipe_context *pctx,
    pipe_reference_init(&surface->base.reference, 1);
    init_pipe_surface_info(pctx, &surface->base, templ, pres);
    surface->obj = zink_resource(pres)->obj;
-
-   init_surface_info(screen, surface, res, ivci);
 
    if (!actually)
       return surface;
@@ -477,9 +447,6 @@ zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface)
    simple_mtx_unlock(&res->obj->view_lock);
    surface->image_view = image_view;
    surface->obj = zink_resource(surface->base.texture)->obj;
-   /* update for imageless fb */
-   surface->info.flags = res->obj->vkflags;
-   surface->info.usage = res->obj->vkusage;
    simple_mtx_unlock(&res->surface_mtx);
    return true;
 }
@@ -544,7 +511,6 @@ zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *sur
          mesa_loge("ZINK: failed to allocate surface->swapchain!");
          return;
       }
-      init_surface_info(screen, surface, res, &surface->ivci);
       surface->dt_swapchain = cdt->swapchain;
    }
    if (!surface->swapchain[res->obj->dt_idx]) {

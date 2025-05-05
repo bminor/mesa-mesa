@@ -1532,16 +1532,6 @@ zink_screen(struct pipe_screen *pipe)
 
 /** surface types */
 
-/* info for validating/creating imageless framebuffers */
-struct zink_surface_info {
-   VkImageCreateFlags flags;
-   VkImageUsageFlags usage;
-   uint32_t width;
-   uint32_t height;
-   uint32_t layerCount;
-   VkFormat format[2]; //base format, srgb format (for srgb framebuffer)
-};
-
 /* an imageview for a zink_resource:
    - may be a fb attachment, samplerview, or shader image
    - cached on the parent zink_resource_object
@@ -1552,8 +1542,6 @@ struct zink_surface {
    /* all the info for creating a new imageview */
    VkImageViewCreateInfo ivci;
    VkImageViewUsageCreateInfo usage_info;
-   /* for framebuffer use */
-   struct zink_surface_info info;
    bool is_swapchain;
    /* the current imageview */
    VkImageView image_view;
