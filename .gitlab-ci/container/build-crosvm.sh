@@ -7,7 +7,7 @@
 
 set -uex
 
-uncollapsed_section_start crosvm "Building crosvm"
+section_start crosvm "Building crosvm"
 
 git config --global user.email "mesa@example.com"
 git config --global user.name "Mesa CI"
