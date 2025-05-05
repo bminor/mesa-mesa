@@ -183,18 +183,18 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview)
 
 static void
 pan_get_surface_strides(const struct pan_image_layout *layout, unsigned l,
-                        int32_t *row_stride, int32_t *surf_stride)
+                        int32_t *row_stride_B, int32_t *surf_stride_B)
 {
    const struct pan_image_slice_layout *slice = &layout->slices[l];
 
    if (drm_is_afbc(layout->modifier)) {
       /* Pre v7 don't have a row stride field. This field is
        * repurposed as a Y offset which we don't use */
-      *row_stride = PAN_ARCH < 7 ? 0 : slice->row_stride;
-      *surf_stride = slice->afbc.surface_stride;
+      *row_stride_B = PAN_ARCH < 7 ? 0 : slice->row_stride_B;
+      *surf_stride_B = slice->afbc.surface_stride_B;
    } else {
-      *row_stride = slice->row_stride;
-      *surf_stride = slice->surface_stride;
+      *row_stride_B = slice->row_stride_B;
+      *surf_stride_B = slice->surface_stride_B;
    }
 }
 
@@ -208,7 +208,7 @@ pan_get_surface_pointer(const struct pan_image_layout *layout,
    if (layout->dim == MALI_TEXTURE_DIMENSION_3D) {
       assert(!s);
       offset =
-         layout->slices[l].offset + i * pan_image_surface_stride(layout, l);
+         layout->slices[l].offset_B + i * pan_image_surface_stride(layout, l);
    } else {
       offset = pan_image_surface_offset(layout, l, i, s);
    }
@@ -288,32 +288,26 @@ pan_emit_multiplanar_surface(const struct pan_image_section_info *sections,
 }
 #endif
 
-struct pan_tex_extent {
-   unsigned width;
-   unsigned height;
-   unsigned depth;
-};
-
 /* Special case for iview->buf.size as the passed layout->width is incorrect */
-static struct pan_tex_extent
+static struct pan_image_extent
 pan_texture_buf_get_extent(const struct pan_image_view *iview,
                            const struct pan_image_layout *layout)
 {
    assert(iview->buf.size);
 
-   struct pan_tex_extent extent;
+   struct pan_image_extent extent_px;
 
    assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
    assert(!iview->first_level && !iview->last_level);
    assert(!iview->first_layer && !iview->last_layer);
    assert(layout->nr_samples == 1);
-   assert(layout->height == 1 && layout->depth == 1);
-   assert(iview->buf.offset + iview->buf.size <= layout->width);
-   extent.width = iview->buf.size;
-   extent.height = 1;
-   extent.depth = 1;
+   assert(layout->extent_px.height == 1 && layout->extent_px.depth == 1);
+   assert(iview->buf.offset + iview->buf.size <= layout->extent_px.width);
+   extent_px.width = iview->buf.size;
+   extent_px.height = 1;
+   extent_px.depth = 1;
 
-   return extent;
+   return extent_px;
 }
 
 #if PAN_ARCH >= 9
@@ -464,14 +458,14 @@ pan_emit_plane(const struct pan_image_view *iview,
    pan_cast_and_pack(*payload, PLANE, cfg) {
       cfg.pointer = pointer;
       cfg.row_stride = row_stride;
-      cfg.size = layout->slices[level].size;
+      cfg.size = layout->slices[level].size_B;
 #if PAN_ARCH >= 10
-      struct pan_tex_extent extent;
+      struct pan_image_extent extent;
       if (iview->buf.size)
          extent = pan_texture_buf_get_extent(iview, layout);
       else {
-         extent.width = u_minify(layout->width, level);
-         extent.height = u_minify(layout->height, level);
+         extent.width = u_minify(layout->extent_px.width, level);
+         extent.height = u_minify(layout->extent_px.height, level);
       }
 
       if (is_chroma_2p) {
@@ -526,7 +520,7 @@ pan_emit_plane(const struct pan_image_view *iview,
          cfg.afbc.tiled_header = (layout->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
          cfg.afbc.compression_mode = pan_afbc_compression_mode(iview->format);
-         cfg.afbc.header_stride = layout->slices[level].afbc.header_size;
+         cfg.afbc.header_stride = layout->slices[level].afbc.header_size_B;
       } else if (afrc) {
 #if PAN_ARCH >= 10
          struct pan_afrc_format_info finfo =
@@ -759,32 +753,34 @@ pan_texture_get_array_size(const struct pan_image_view *iview)
    return array_size;
 }
 
-static struct pan_tex_extent
+static struct pan_image_extent
 pan_texture_get_extent(const struct pan_image_view *iview,
                             const struct pan_image_layout *layout)
 {
    if (iview->buf.size)
       return pan_texture_buf_get_extent(iview, layout);
 
-   struct pan_tex_extent extent;
-   extent.width = u_minify(layout->width, iview->first_level);
-   extent.height = u_minify(layout->height, iview->first_level);
-   extent.depth = u_minify(layout->depth, iview->first_level);
+   struct pan_image_extent extent_px = {
+      .width = u_minify(layout->extent_px.width, iview->first_level),
+      .height = u_minify(layout->extent_px.height, iview->first_level),
+      .depth = u_minify(layout->extent_px.depth, iview->first_level),
+   };
+
    if (util_format_is_compressed(layout->format) &&
        !util_format_is_compressed(iview->format)) {
-      extent.width =
-         DIV_ROUND_UP(extent.width, util_format_get_blockwidth(layout->format));
-      extent.height = DIV_ROUND_UP(extent.height,
-                                   util_format_get_blockheight(layout->format));
-      extent.depth =
-         DIV_ROUND_UP(extent.depth, util_format_get_blockdepth(layout->format));
+      extent_px.width = DIV_ROUND_UP(
+         extent_px.width, util_format_get_blockwidth(layout->format));
+      extent_px.height = DIV_ROUND_UP(
+         extent_px.height, util_format_get_blockheight(layout->format));
+      extent_px.depth = DIV_ROUND_UP(
+         extent_px.depth, util_format_get_blockdepth(layout->format));
       assert(util_format_get_blockwidth(iview->format) == 1);
       assert(util_format_get_blockheight(iview->format) == 1);
       assert(util_format_get_blockheight(iview->format) == 1);
       assert(iview->last_level == iview->first_level);
    }
 
-   return extent;
+   return extent_px;
 }
 
 /*
@@ -816,16 +812,16 @@ GENX(pan_texture_emit)(const struct pan_image_view *iview,
 
    unsigned array_size = pan_texture_get_array_size(iview);
 
-   struct pan_tex_extent extent =
+   struct pan_image_extent extent_px =
       pan_texture_get_extent(iview, layout);
 
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = iview->dim;
       cfg.format = mali_format;
-      cfg.width = extent.width;
-      cfg.height = extent.height;
+      cfg.width = extent_px.width;
+      cfg.height = extent_px.height;
       if (iview->dim == MALI_TEXTURE_DIMENSION_3D)
-         cfg.depth = extent.depth;
+         cfg.depth = extent_px.depth;
       else
          cfg.sample_count = layout->nr_samples;
       cfg.swizzle = pan_translate_swizzle_4(iview->swizzle);
@@ -876,7 +872,7 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
 
    unsigned array_size = pan_texture_get_array_size(iview);
 
-   struct pan_tex_extent extent =
+   struct pan_image_extent extent_px =
       pan_texture_get_extent(iview, layout);
 
    static const unsigned char rgba_swizzle[4] = {
@@ -889,10 +885,10 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = iview->dim;
       cfg.format = mali_format;
-      cfg.width = extent.width;
-      cfg.height = extent.height;
+      cfg.width = extent_px.width;
+      cfg.height = extent_px.height;
       if (iview->dim == MALI_TEXTURE_DIMENSION_3D)
-         cfg.depth = extent.depth;
+         cfg.depth = extent_px.depth;
       else
          cfg.sample_count = layout->nr_samples;
       cfg.texel_interleave = (layout->modifier != DRM_FORMAT_MOD_LINEAR) ||

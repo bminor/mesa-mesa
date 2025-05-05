@@ -1714,7 +1714,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
    }
 
    so->texture_bo = prsrc->image.data.base;
-   so->texture_size = prsrc->image.layout.data_size;
+   so->texture_size = prsrc->image.layout.data_size_B;
    so->modifier = prsrc->image.layout.modifier;
 
    /* MSAA only supported for 2D textures */
@@ -1737,8 +1737,8 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
    buf_size = MIN2(buf_size, PAN_MAX_TEXEL_BUFFER_ELEMENTS);
 
    if (so->base.target == PIPE_TEXTURE_3D) {
-      first_layer /= prsrc->image.layout.depth;
-      last_layer /= prsrc->image.layout.depth;
+      first_layer /= prsrc->image.layout.extent_px.depth;
+      last_layer /= prsrc->image.layout.extent_px.depth;
       assert(!first_layer && !last_layer);
    }
 
@@ -1823,7 +1823,7 @@ panfrost_update_sampler_view(struct panfrost_sampler_view *view,
 {
    struct panfrost_resource *rsrc = pan_resource(view->base.texture);
    if (view->texture_bo != rsrc->image.data.base ||
-       view->texture_size != rsrc->image.layout.data_size ||
+       view->texture_size != rsrc->image.layout.data_size_B ||
        view->modifier != rsrc->image.layout.modifier) {
       panfrost_bo_unreference(view->state.bo);
       panfrost_create_sampler_view_bo(view, pctx, &rsrc->base);
@@ -2057,10 +2057,11 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
 
          cfg.s_dimension = u_minify(rsrc->base.width0, level);
          cfg.t_dimension = u_minify(rsrc->base.height0, level);
-         cfg.r_dimension = is_3d ? u_minify(rsrc->image.layout.depth, level)
-            : (image->u.tex.last_layer - image->u.tex.first_layer + 1);
+         cfg.r_dimension =
+            is_3d ? u_minify(rsrc->image.layout.extent_px.depth, level)
+                  : (image->u.tex.last_layer - image->u.tex.first_layer + 1);
 
-         cfg.row_stride = rsrc->image.layout.slices[level].row_stride;
+         cfg.row_stride = rsrc->image.layout.slices[level].row_stride_B;
          if (cfg.r_dimension > 1) {
             cfg.slice_stride =
                pan_image_surface_stride(&rsrc->image.layout, level);
@@ -3575,40 +3576,41 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
 
    struct pan_image_slice_layout *slice = &src->image.layout.slices[level];
    struct panfrost_afbc_size_info consts = {
-      .src = src->image.data.base + slice->offset,
+      .src = src->image.data.base + slice->offset_B,
       .metadata = metadata->ptr.gpu + offset,
    };
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_CONVERT_SHADER(afbc_size, batch, src, consts, slice->afbc.nr_blocks);
+   LAUNCH_CONVERT_SHADER(afbc_size, batch, src, consts, slice->afbc.nr_sblocks);
 }
 
 static void
 panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
                    struct panfrost_bo *dst,
                    struct pan_image_slice_layout *dst_slice,
-                   struct panfrost_bo *metadata, unsigned metadata_offset,
+                   struct panfrost_bo *metadata, unsigned metadata_offset_B,
                    unsigned level)
 {
    MESA_TRACE_FUNC();
 
    struct pan_image_slice_layout *src_slice = &src->image.layout.slices[level];
    struct panfrost_afbc_pack_info consts = {
-      .src = src->image.data.base + src_slice->offset,
-      .dst = dst->ptr.gpu + dst_slice->offset,
-      .metadata = metadata->ptr.gpu + metadata_offset,
-      .header_size = dst_slice->afbc.header_size,
-      .src_stride = src_slice->afbc.stride,
-      .dst_stride = dst_slice->afbc.stride,
+      .src = src->image.data.base + src_slice->offset_B,
+      .dst = dst->ptr.gpu + dst_slice->offset_B,
+      .metadata = metadata->ptr.gpu + metadata_offset_B,
+      .header_size = dst_slice->afbc.header_size_B,
+      .src_stride = src_slice->afbc.stride_sb,
+      .dst_stride = dst_slice->afbc.stride_sb,
    };
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
    panfrost_batch_add_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_CONVERT_SHADER(afbc_pack, batch, src, consts, dst_slice->afbc.nr_blocks);
+   LAUNCH_CONVERT_SHADER(afbc_pack, batch, src, consts,
+                         dst_slice->afbc.nr_sblocks);
 }
 
 static void
@@ -3624,8 +3626,10 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
 
    unsigned width = info->src.box.width;
    unsigned height = info->src.box.height;
-   unsigned src_stride = pan_resource(y_src)->image.layout.slices[0].row_stride;
-   unsigned dst_stride = pan_resource(y_dst)->image.layout.slices[0].row_stride;
+   unsigned src_stride =
+      pan_resource(y_src)->image.layout.slices[0].row_stride_B;
+   unsigned dst_stride =
+      pan_resource(y_dst)->image.layout.slices[0].row_stride_B;
 
    /* 4 images: y_src, uv_src, y_dst, uv_dst */
    struct pipe_image_view image[4] = { 0 };

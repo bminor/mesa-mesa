@@ -22,7 +22,7 @@ extern "C" {
 #define MAX_IMAGE_PLANES 3
 
 struct pan_image_slice_layout {
-   unsigned offset;
+   unsigned offset_B;
 
    /* For AFBC images, the number of bytes between two rows of AFBC
     * headers.
@@ -32,22 +32,22 @@ struct pan_image_slice_layout {
     * images that are compressed or interleaved, this will be greater than
     * the logical stride.
     */
-   unsigned row_stride;
+   unsigned row_stride_B;
 
-   unsigned surface_stride;
+   unsigned surface_stride_B;
 
    struct {
       /* Stride in number of superblocks */
-      unsigned stride;
+      unsigned stride_sb;
 
       /* Number of superblocks */
-      unsigned nr_blocks;
+      unsigned nr_sblocks;
 
       /* Size of the AFBC header preceding each slice */
-      unsigned header_size;
+      unsigned header_size_B;
 
       /* Size of the AFBC body */
-      unsigned body_size;
+      unsigned body_size_B;
 
       /* Stride between AFBC headers of two consecutive surfaces.
        * For 3D textures, this must be set to header size since
@@ -55,24 +55,30 @@ struct pan_image_slice_layout {
        * should be set to size0, since AFBC headers are placed at
        * the beginning of each layer
        */
-      unsigned surface_stride;
+      unsigned surface_stride_B;
    } afbc;
 
    /* If checksumming is enabled following the slice, what
     * is its offset/stride? */
    struct {
-      unsigned offset;
-      unsigned stride;
-      unsigned size;
+      unsigned offset_B;
+      unsigned stride_B;
+      unsigned size_B;
    } crc;
 
-   unsigned size;
+   unsigned size_B;
+};
+
+struct pan_image_extent {
+   unsigned width;
+   unsigned height;
+   unsigned depth;
 };
 
 struct pan_image_layout {
    uint64_t modifier;
    enum pipe_format format;
-   unsigned width, height, depth;
+   struct pan_image_extent extent_px;
    unsigned nr_samples;
    enum mali_texture_dimension dim;
    unsigned nr_slices;
@@ -85,8 +91,8 @@ struct pan_image_layout {
 
    struct pan_image_slice_layout slices[MAX_MIP_LEVELS];
 
-   uint64_t data_size;
-   uint64_t array_stride;
+   uint64_t data_size_B;
+   uint64_t array_stride_B;
 };
 
 struct pan_image_wsi_layout {
@@ -115,11 +121,11 @@ pan_image_slice_align(uint64_t modifier)
    return 64;
 }
 
-struct pan_image_block_size pan_image_block_size(uint64_t modifier,
-                                                 enum pipe_format format);
+struct pan_image_block_size pan_image_block_size_el(uint64_t modifier,
+                                                    enum pipe_format format);
 
-struct pan_image_block_size pan_image_renderblock_size(uint64_t modifier,
-                                                       enum pipe_format format);
+struct pan_image_block_size
+pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format);
 
 unsigned pan_image_surface_stride(const struct pan_image_layout *layout,
                                   unsigned level);
@@ -132,11 +138,11 @@ static inline uint64_t
 pan_image_mip_level_size(const struct pan_image_layout *layout, unsigned level)
 {
    assert(level < layout->nr_slices);
-   uint64_t size = layout->slices[level].size;
+   uint64_t size = layout->slices[level].size_B;
 
    /* If this is an array, we need to cover the whole array. */
    if (layout->array_size > 1)
-      size += (uint64_t)layout->array_stride * (layout->array_size - 1);
+      size += layout->array_stride_B * (layout->array_size - 1);
 
    return size;
 }

@@ -75,7 +75,7 @@ mali_sampling_mode(const struct pan_image_view *view)
          pan_image_view_get_first_plane(view);
 
       assert(view->nr_samples == nr_samples);
-      assert(first_plane->layout.slices[0].surface_stride != 0);
+      assert(first_plane->layout.slices[0].surface_stride_B != 0);
       return MALI_MSAA_LAYERED;
    }
 
@@ -224,10 +224,10 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
              DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
           image->layout.modifier == DRM_FORMAT_MOD_LINEAR);
    ext->s_writeback_base = surf.data;
-   ext->s_writeback_row_stride = image->layout.slices[level].row_stride;
+   ext->s_writeback_row_stride = image->layout.slices[level].row_stride_B;
    ext->s_writeback_surface_stride =
       (pan_image_view_get_nr_samples(s) > 1)
-         ? image->layout.slices[level].surface_stride
+         ? image->layout.slices[level].surface_stride_B
          : 0;
    ext->s_block_format = mod_to_block_fmt(image->layout.modifier);
    ext->s_write_format = translate_s_format(s->format);
@@ -255,7 +255,7 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
    if (drm_is_afbc(image->layout.modifier)) {
 #if PAN_ARCH >= 9
       ext->zs_writeback_base = surf.afbc.header;
-      ext->zs_writeback_row_stride = slice->row_stride;
+      ext->zs_writeback_row_stride = slice->row_stride_B;
       /* TODO: surface stride? */
       ext->zs_afbc_body_offset = surf.afbc.body - surf.afbc.header;
 
@@ -263,7 +263,7 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
 #else
 #if PAN_ARCH >= 6
       ext->zs_afbc_row_stride =
-         pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride);
+         pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride_B);
 #else
       ext->zs_block_format = MALI_BLOCK_FORMAT_AFBC;
       ext->zs_afbc_body_size = 0x1000;
@@ -282,10 +282,10 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
       /* TODO: Z32F(S8) support, which is always linear */
 
       ext->zs_writeback_base = surf.data;
-      ext->zs_writeback_row_stride = image->layout.slices[level].row_stride;
+      ext->zs_writeback_row_stride = image->layout.slices[level].row_stride_B;
       ext->zs_writeback_surface_stride =
          (pan_image_view_get_nr_samples(zs) > 1)
-            ? image->layout.slices[level].surface_stride
+            ? image->layout.slices[level].surface_stride_B
             : 0;
    }
 
@@ -309,8 +309,8 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
    const struct pan_image_slice_layout *slice =
       &image->layout.slices[rt->first_level];
 
-   ext->crc_base = image->data.base + slice->crc.offset;
-   ext->crc_row_stride = slice->crc.stride;
+   ext->crc_base = image->data.base + slice->crc.offset_B;
+   ext->crc_row_stride = slice->crc.stride_B;
 
 #if PAN_ARCH >= 7
    ext->crc_render_target = rt_crc;
@@ -588,19 +588,19 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
    const struct pan_image *first_plane = pan_image_view_get_first_plane(rt);
    unsigned level = rt->first_level;
    ASSERTED unsigned layer_count = rt->dim == MALI_TEXTURE_DIMENSION_3D
-                                      ? first_plane->layout.depth
+                                      ? first_plane->layout.extent_px.depth
                                       : rt->last_layer - rt->first_layer + 1;
 
    assert(rt->last_level == rt->first_level);
    assert(layer_idx < layer_count);
 
-   int row_stride = image->layout.slices[level].row_stride;
+   int row_stride_B = image->layout.slices[level].row_stride_B;
 
    /* Only set layer_stride for layered MSAA rendering  */
 
-   unsigned layer_stride = (pan_image_view_get_nr_samples(rt) > 1)
-                              ? image->layout.slices[level].surface_stride
-                              : 0;
+   unsigned layer_stride_B = (pan_image_view_get_nr_samples(rt) > 1)
+                                ? image->layout.slices[level].surface_stride_B
+                                : 0;
 
    cfg->writeback_msaa = mali_sampling_mode(rt);
 
@@ -624,13 +624,13 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       assert(surf.afbc.body >= surf.afbc.header);
 
       cfg->afbc.compression_mode = pan_afbc_compression_mode(rt->format);
-      cfg->afbc.row_stride = row_stride;
+      cfg->afbc.row_stride = row_stride_B;
 #else
       const struct pan_image_slice_layout *slice = &image->layout.slices[level];
 
 #if PAN_ARCH >= 6
       cfg->afbc.row_stride =
-         pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride);
+         pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride_B);
       cfg->afbc.afbc_wide_block_enable =
          pan_afbc_is_wide(image->layout.modifier);
       cfg->afbc.afbc_split_block_enable =
@@ -638,7 +638,7 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 #else
       cfg->afbc.chunk_size = 9;
       cfg->afbc.sparse = true;
-      cfg->afbc.body_size = slice->afbc.body_size;
+      cfg->afbc.body_size = slice->afbc.body_size_B;
 #endif
 
       cfg->afbc.header = surf.afbc.header;
@@ -657,16 +657,16 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       cfg->afrc.format = pan_afrc_format(finfo, image->layout.modifier, 0);
 
       cfg->rgb.base = surf.data;
-      cfg->rgb.row_stride = row_stride;
-      cfg->rgb.surface_stride = layer_stride;
+      cfg->rgb.row_stride = row_stride_B;
+      cfg->rgb.surface_stride = layer_stride_B;
 #endif
    } else {
       assert(image->layout.modifier == DRM_FORMAT_MOD_LINEAR ||
              image->layout.modifier ==
                 DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
       cfg->rgb.base = surf.data;
-      cfg->rgb.row_stride = row_stride;
-      cfg->rgb.surface_stride = layer_stride;
+      cfg->rgb.row_stride = row_stride_B;
+      cfg->rgb.surface_stride = layer_stride_B;
    }
 }
 #endif
@@ -1084,7 +1084,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          cfg.color_write_enable = !fb->rts[0].discard;
          cfg.color_writeback.base = surf.data;
          cfg.color_writeback.row_stride =
-            image->layout.slices[level].row_stride;
+            image->layout.slices[level].row_stride_B;
 
          cfg.color_block_format = mod_to_block_fmt(image->layout.modifier);
          assert(cfg.color_block_format == MALI_BLOCK_FORMAT_LINEAR ||
@@ -1095,8 +1095,8 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
             const struct pan_image_slice_layout *slice =
                &image->layout.slices[level];
 
-            cfg.crc_buffer.row_stride = slice->crc.stride;
-            cfg.crc_buffer.base = image->data.base + slice->crc.offset;
+            cfg.crc_buffer.row_stride = slice->crc.stride_B;
+            cfg.crc_buffer.base = image->data.base + slice->crc.offset_B;
          }
       }
 
@@ -1110,7 +1110,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
          cfg.zs_write_enable = !fb->zs.discard.z;
          cfg.zs_writeback.base = surf.data;
-         cfg.zs_writeback.row_stride = image->layout.slices[level].row_stride;
+         cfg.zs_writeback.row_stride = image->layout.slices[level].row_stride_B;
          cfg.zs_block_format = mod_to_block_fmt(image->layout.modifier);
          assert(cfg.zs_block_format == MALI_BLOCK_FORMAT_LINEAR ||
                 cfg.zs_block_format == MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED);

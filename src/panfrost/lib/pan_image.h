@@ -195,17 +195,18 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
       assert(!sample);
 
       if (is_3d) {
-         ASSERTED unsigned depth = u_minify(image->layout.depth, level);
+         ASSERTED unsigned depth =
+            u_minify(image->layout.extent_px.depth, level);
          assert(layer < depth);
          surf->afbc.header =
-            base + slice->offset + (layer * slice->afbc.surface_stride);
-         surf->afbc.body = base + slice->offset + slice->afbc.header_size +
-                           (slice->surface_stride * layer);
+            base + slice->offset_B + (layer * slice->afbc.surface_stride_B);
+         surf->afbc.body = base + slice->offset_B + slice->afbc.header_size_B +
+                           (slice->surface_stride_B * layer);
       } else {
          assert(layer < image->layout.array_size);
          surf->afbc.header =
             base + pan_image_surface_offset(&image->layout, level, layer, 0);
-         surf->afbc.body = surf->afbc.header + slice->afbc.header_size;
+         surf->afbc.body = surf->afbc.header + slice->afbc.header_size_B;
       }
    } else {
       unsigned array_idx = is_3d ? 0 : layer;

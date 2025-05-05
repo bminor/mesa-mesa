@@ -281,7 +281,8 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          view->pview.dim == MALI_TEXTURE_DIMENSION_3D
             ? extent.depth
             : (view->pview.last_layer - view->pview.first_layer + 1);
-      cfg.row_stride = image->planes[plane_idx].layout.slices[level].row_stride;
+      cfg.row_stride =
+         image->planes[plane_idx].layout.slices[level].row_stride_B;
       if (cfg.r_dimension > 1) {
          cfg.slice_stride =
             pan_image_surface_stride(&image->planes[plane_idx].layout, level);
