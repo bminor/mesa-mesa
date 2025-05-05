@@ -30,6 +30,7 @@ dEQP-GLES31.functional.draw_base_vertex.draw_elements_base_vertex.triangle_fan.s
 dEQP-GLES31.functional.synchronization.inter_call.without_memory_barrier.ssbo_atomic_counter_mixed_dispatch_100_calls_128_invocations
 dEQP-GLES31.functional.texture.filtering.cube_array.combinations.nearest_nearest_repeat_repeat
 dEQP-GLES31.functional.texture.filtering.cube_array.formats.srgb8_alpha8_linear_mipmap_linear
+dEQP-GLES31.functional.texture.gather.basic.cube.rgba8ui.texture_swizzle.zero_one_red_green
 
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
