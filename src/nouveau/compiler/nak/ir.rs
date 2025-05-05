@@ -1313,7 +1313,9 @@ impl Src {
         match self.fold_imm(src_type).src_ref {
             SrcRef::Zero => self.src_mod == SrcMod::FNeg,
             SrcRef::Imm32(0x00008000) => src_type == SrcType::F16,
-            SrcRef::Imm32(0x80000000) => src_type == SrcType::F32,
+            SrcRef::Imm32(0x80000000) => {
+                src_type == SrcType::F32 || src_type == SrcType::F64
+            }
             SrcRef::Imm32(0x80008000) => src_type == SrcType::F16v2,
             _ => false,
         }
