@@ -78,4 +78,5 @@ dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_tess_control
 dEQP-VK.tessellation.invariance.outer_edge_symmetry.triangles_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.misc_draw.fill_overlap_quads_equal_spacing_draw_indirect
 dEQP-VK.tessellation.tesscoord.triangles_equal_spacing_execution_mode_in_tesc
+dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_linear_clamp
 nir-stress=dEQP-VK.ray_query.builtin.instanceid.tese.triangles
