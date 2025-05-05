@@ -491,7 +491,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       const struct pan_image *plane =
          fbinfo->zs.view.zs ? pan_image_view_get_zs_plane(fbinfo->zs.view.zs)
                             : pan_image_view_get_s_plane(fbinfo->zs.view.s);
-      enum pipe_format fmt = plane->layout.format;
+      enum pipe_format fmt = plane->props.format;
       bool always = false;
 
       /* If we're dealing with a combined ZS resource and only one

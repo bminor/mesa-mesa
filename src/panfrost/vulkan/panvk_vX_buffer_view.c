@@ -62,7 +62,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          .data = {
             .base = address,
 	 },
-         .layout = {
+         .props = {
             .modifier = DRM_FORMAT_MOD_LINEAR,
             .format = pfmt,
             .dim = MALI_TEXTURE_DIMENSION_1D,
@@ -103,7 +103,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
 
-      pan_image_layout_init(arch, &plane.layout, NULL);
+      pan_image_layout_init(arch, &plane.props, NULL, &plane.layout);
 
       struct panvk_pool_alloc_info alloc_info = {
          .alignment = pan_alignment(TEXTURE),

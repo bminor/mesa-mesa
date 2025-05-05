@@ -27,6 +27,7 @@ struct pan_image_mem {
 
 struct pan_image {
    struct pan_image_mem data;
+   struct pan_image_props props;
    struct pan_image_layout layout;
 };
 
@@ -114,7 +115,7 @@ pan_image_view_get_nr_samples(const struct pan_image_view *iview)
    if (!image)
       return 0;
 
-   return image->layout.nr_samples;
+   return image->props.nr_samples;
 }
 
 static inline const struct pan_image *
@@ -133,7 +134,7 @@ pan_image_view_has_crc(const struct pan_image_view *iview)
    if (!image)
       return false;
 
-   return image->layout.crc;
+   return image->props.crc;
 }
 
 static inline const struct pan_image *
@@ -150,7 +151,7 @@ pan_image_view_get_s_plane(const struct pan_image_view *iview)
    const struct pan_image *plane = iview->planes[1] ?: iview->planes[0];
 
    assert(plane);
-   fdesc = util_format_description(plane->layout.format);
+   fdesc = util_format_description(plane->props.format);
    assert(util_format_has_stencil(fdesc));
    return plane;
 }
@@ -181,29 +182,29 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
                                       : pan_image_view_get_plane(iview, 0);
 
    level += iview->first_level;
-   assert(level < image->layout.nr_slices);
+   assert(level < image->props.nr_slices);
 
    layer += iview->first_layer;
 
-   bool is_3d = image->layout.dim == MALI_TEXTURE_DIMENSION_3D;
+   bool is_3d = image->props.dim == MALI_TEXTURE_DIMENSION_3D;
    const struct pan_image_slice_layout *slice = &image->layout.slices[level];
    uint64_t base = image->data.base;
 
    memset(surf, 0, sizeof(*surf));
 
-   if (drm_is_afbc(image->layout.modifier)) {
+   if (drm_is_afbc(image->props.modifier)) {
       assert(!sample);
 
       if (is_3d) {
          ASSERTED unsigned depth =
-            u_minify(image->layout.extent_px.depth, level);
+            u_minify(image->props.extent_px.depth, level);
          assert(layer < depth);
          surf->afbc.header =
             base + slice->offset_B + (layer * slice->afbc.surface_stride_B);
          surf->afbc.body = base + slice->offset_B + slice->afbc.header_size_B +
                            (slice->surface_stride_B * layer);
       } else {
-         assert(layer < image->layout.array_size);
+         assert(layer < image->props.array_size);
          surf->afbc.header =
             base + pan_image_surface_offset(&image->layout, level, layer, 0);
          surf->afbc.body = surf->afbc.header + slice->afbc.header_size_B;

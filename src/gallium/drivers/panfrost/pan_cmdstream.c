@@ -1715,7 +1715,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
    so->texture_bo = prsrc->image.data.base;
    so->texture_size = prsrc->image.layout.data_size_B;
-   so->modifier = prsrc->image.layout.modifier;
+   so->modifier = prsrc->image.props.modifier;
 
    /* MSAA only supported for 2D textures */
 
@@ -1737,8 +1737,8 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
    buf_size = MIN2(buf_size, PAN_MAX_TEXEL_BUFFER_ELEMENTS);
 
    if (so->base.target == PIPE_TEXTURE_3D) {
-      first_layer /= prsrc->image.layout.extent_px.depth;
-      last_layer /= prsrc->image.layout.extent_px.depth;
+      first_layer /= prsrc->image.props.extent_px.depth;
+      last_layer /= prsrc->image.props.extent_px.depth;
       assert(!first_layer && !last_layer);
    }
 
@@ -1824,7 +1824,7 @@ panfrost_update_sampler_view(struct panfrost_sampler_view *view,
    struct panfrost_resource *rsrc = pan_resource(view->base.texture);
    if (view->texture_bo != rsrc->image.data.base ||
        view->texture_size != rsrc->image.layout.data_size_B ||
-       view->modifier != rsrc->image.layout.modifier) {
+       view->modifier != rsrc->image.props.modifier) {
       panfrost_bo_unreference(view->state.bo);
       panfrost_create_sampler_view_bo(view, pctx, &rsrc->base);
    }
@@ -2032,11 +2032,12 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
       panfrost_track_image_access(batch, shader, image);
 
       pan_pack(bufs + (i * 2), ATTRIBUTE_BUFFER, cfg) {
-         cfg.type = pan_modifier_to_attr_type(rsrc->image.layout.modifier);
+         cfg.type = pan_modifier_to_attr_type(rsrc->image.props.modifier);
          cfg.pointer = rsrc->image.data.base + offset;
          cfg.stride = util_format_get_blocksize(image->format);
-         cfg.size = pan_image_mip_level_size(
-            &rsrc->image.layout, is_buffer ? 0 : image->u.tex.level);
+         cfg.size =
+            pan_image_mip_level_size(&rsrc->image.props, &rsrc->image.layout,
+                                     is_buffer ? 0 : image->u.tex.level);
       }
 
       if (is_buffer) {
@@ -2053,24 +2054,24 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
       pan_cast_and_pack(&bufs[(i * 2) + 1], ATTRIBUTE_BUFFER_CONTINUATION_3D,
                         cfg) {
          unsigned level = image->u.tex.level;
-         unsigned samples = rsrc->image.layout.nr_samples;
+         unsigned samples = rsrc->image.props.nr_samples;
 
          cfg.s_dimension = u_minify(rsrc->base.width0, level);
          cfg.t_dimension = u_minify(rsrc->base.height0, level);
          cfg.r_dimension =
-            is_3d ? u_minify(rsrc->image.layout.extent_px.depth, level)
+            is_3d ? u_minify(rsrc->image.props.extent_px.depth, level)
                   : (image->u.tex.last_layer - image->u.tex.first_layer + 1);
 
          cfg.row_stride = rsrc->image.layout.slices[level].row_stride_B;
          if (cfg.r_dimension > 1) {
-            cfg.slice_stride =
-               pan_image_surface_stride(&rsrc->image.layout, level);
+            cfg.slice_stride = pan_image_surface_stride(
+               &rsrc->image.props, &rsrc->image.layout, level);
          }
 
          if (is_msaa) {
             if (cfg.r_dimension == 1) {
-               unsigned slice_stride =
-                  pan_image_surface_stride(&rsrc->image.layout, level);
+               unsigned slice_stride = pan_image_surface_stride(
+                  &rsrc->image.props, &rsrc->image.layout, level);
 
                /* regular multisampled images get the sample index in
                   the R dimension */

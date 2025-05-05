@@ -245,7 +245,8 @@ panvk_image_init_layouts(struct panvk_image *image,
          };
       }
 
-      image->planes[plane].layout = (struct pan_image_layout){
+      image->planes[plane].props = (struct pan_image_props){
+         .modifier = image->vk.drm_format_mod,
          .format = vk_format_to_pipe_format(format),
          .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
          .extent_px = {
@@ -260,9 +261,9 @@ panvk_image_init_layouts(struct panvk_image *image,
          .nr_slices = image->vk.mip_levels,
       };
 
-      image->planes[plane].layout.modifier = image->vk.drm_format_mod;
-      pan_image_layout_init(arch, &image->planes[plane].layout,
-                            explicit_info ? &plane_layout : NULL);
+      pan_image_layout_init(arch, &image->planes[plane].props,
+                            explicit_info ? &plane_layout : NULL,
+                            &image->planes[plane].layout);
    }
 }
 
@@ -545,16 +546,16 @@ panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
 {
    plane->data.base = base + offset;
    /* Reset the AFBC headers */
-   if (drm_is_afbc(plane->layout.modifier)) {
+   if (drm_is_afbc(plane->props.modifier)) {
       /* Transient CPU mapping */
       void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
                                        PROT_WRITE, MAP_SHARED, NULL);
 
       assert(bo_base != MAP_FAILED);
 
-      for (unsigned layer = 0; layer < plane->layout.array_size;
+      for (unsigned layer = 0; layer < plane->props.array_size;
            layer++) {
-         for (unsigned level = 0; level < plane->layout.nr_slices;
+         for (unsigned level = 0; level < plane->props.nr_slices;
               level++) {
             void *header = bo_base + offset +
                            (layer * plane->layout.array_stride_B) +

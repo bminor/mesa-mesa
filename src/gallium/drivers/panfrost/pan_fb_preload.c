@@ -1226,8 +1226,8 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
                         always_write);
    if (zs) {
       enum pipe_format fmt = fb->zs.view.zs
-                                ? fb->zs.view.zs->planes[0]->layout.format
-                                : fb->zs.view.s->planes[0]->layout.format;
+                                ? fb->zs.view.zs->planes[0]->props.format
+                                : fb->zs.view.s->planes[0]->props.format;
       UNUSED bool always = false;
 
       /* If we're dealing with a combined ZS resource and only one

@@ -75,7 +75,7 @@ struct pan_image_extent {
    unsigned depth;
 };
 
-struct pan_image_layout {
+struct pan_image_props {
    uint64_t modifier;
    enum pipe_format format;
    struct pan_image_extent extent_px;
@@ -84,11 +84,9 @@ struct pan_image_layout {
    unsigned nr_slices;
    unsigned array_size;
    bool crc;
+};
 
-   /* The remaining fields may be derived from the above by calling
-    * pan_image_layout_init
-    */
-
+struct pan_image_layout {
    struct pan_image_slice_layout slices[MAX_MIP_LEVELS];
 
    uint64_t data_size_B;
@@ -127,7 +125,8 @@ struct pan_image_block_size pan_image_block_size_el(uint64_t modifier,
 struct pan_image_block_size
 pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format);
 
-unsigned pan_image_surface_stride(const struct pan_image_layout *layout,
+unsigned pan_image_surface_stride(const struct pan_image_props *props,
+                                  const struct pan_image_layout *layout,
                                   unsigned level);
 
 unsigned pan_image_surface_offset(const struct pan_image_layout *layout,
@@ -135,24 +134,26 @@ unsigned pan_image_surface_offset(const struct pan_image_layout *layout,
                                   unsigned surface_idx);
 
 static inline uint64_t
-pan_image_mip_level_size(const struct pan_image_layout *layout, unsigned level)
+pan_image_mip_level_size(const struct pan_image_props *props,
+                         const struct pan_image_layout *layout, unsigned level)
 {
-   assert(level < layout->nr_slices);
+   assert(level < props->nr_slices);
    uint64_t size = layout->slices[level].size_B;
 
    /* If this is an array, we need to cover the whole array. */
-   if (layout->array_size > 1)
-      size += layout->array_stride_B * (layout->array_size - 1);
+   if (props->array_size > 1)
+      size += layout->array_stride_B * (props->array_size - 1);
 
    return size;
 }
 
-bool
-pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
-                      const struct pan_image_wsi_layout *wsi_layout);
+bool pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
+                           const struct pan_image_wsi_layout *wsi_layout,
+                           struct pan_image_layout *layout);
 
 struct pan_image_wsi_layout
-pan_image_layout_get_wsi_layout(const struct pan_image_layout *layout,
+pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
+                                const struct pan_image_layout *layout,
                                 unsigned level);
 
 #ifdef __cplusplus

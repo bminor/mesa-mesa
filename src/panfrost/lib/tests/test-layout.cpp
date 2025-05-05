@@ -230,7 +230,7 @@ row_stride_from_wsi_pitch(unsigned row_pitch_B, unsigned width_px,
    const struct pan_image_wsi_layout wsi_l = {
       .row_pitch_B = row_pitch_B,
    };
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = mod,
       .format = fmt,
       .extent_px = {
@@ -243,8 +243,9 @@ row_stride_from_wsi_pitch(unsigned row_pitch_B, unsigned width_px,
       .nr_slices = 1,
       .array_size = 1,
    };
+   struct pan_image_layout l = {};
 
-   pan_image_layout_init(0, &l, &wsi_l);
+   pan_image_layout_init(0, &p, &wsi_l, &l);
 
    return l.slices[0].row_stride_B;
 }
@@ -297,7 +298,7 @@ TEST(WSI, FromWSIAFBC)
 /* dEQP-GLES3.functional.texture.format.compressed.etc1_2d_pot */
 TEST(Layout, ImplicitLayoutInterleavedETC2)
 {
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED,
       .format = PIPE_FORMAT_ETC2_RGB8,
       .extent_px = {
@@ -309,11 +310,12 @@ TEST(Layout, ImplicitLayoutInterleavedETC2)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 8,
    };
+   struct pan_image_layout l = {};
 
    unsigned offsets[9] = {0,     8192,  10240, 10752, 10880,
                           11008, 11136, 11264, 11392};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    for (unsigned i = 0; i < 8; ++i) {
       unsigned size = (offsets[i + 1] - offsets[i]);
@@ -328,7 +330,7 @@ TEST(Layout, ImplicitLayoutInterleavedETC2)
 
 TEST(Layout, ImplicitLayoutInterleavedASTC5x5)
 {
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED,
       .format = PIPE_FORMAT_ASTC_5x5,
       .extent_px = {
@@ -340,8 +342,9 @@ TEST(Layout, ImplicitLayoutInterleavedASTC5x5)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* The image is 50x50 pixels, with 5x5 blocks. So it is a 10x10 grid of ASTC
     * blocks. 4x4 tiles of ASTC blocks are u-interleaved, so we have to round up
@@ -357,7 +360,7 @@ TEST(Layout, ImplicitLayoutInterleavedASTC5x5)
 
 TEST(Layout, ImplicitLayoutLinearASTC5x5)
 {
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = DRM_FORMAT_MOD_LINEAR,
       .format = PIPE_FORMAT_ASTC_5x5,
       .extent_px = {
@@ -369,8 +372,9 @@ TEST(Layout, ImplicitLayoutLinearASTC5x5)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* The image is 50x50 pixels, with 5x5 blocks. So it is a 10x10 grid of ASTC
     * blocks. Each ASTC block is 16 bytes, so the row stride is 160 bytes,
@@ -389,7 +393,7 @@ TEST(AFBCLayout, Linear3D)
    uint64_t modifier = DRM_FORMAT_MOD_ARM_AFBC(
       AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 | AFBC_FORMAT_MOD_SPARSE);
 
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = modifier,
       .format = PIPE_FORMAT_R8G8B8A8_UNORM,
       .extent_px = {
@@ -401,8 +405,9 @@ TEST(AFBCLayout, Linear3D)
       .dim = MALI_TEXTURE_DIMENSION_3D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* AFBC Surface stride is bytes between consecutive surface headers, which is
     * the header size since this is a 3D texture. At superblock size 16x16, the
@@ -432,7 +437,7 @@ TEST(AFBCLayout, Tiled16x16)
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
                               AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SPARSE);
 
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = modifier,
       .format = PIPE_FORMAT_R8G8B8A8_UNORM,
       .extent_px = {
@@ -444,8 +449,9 @@ TEST(AFBCLayout, Tiled16x16)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* The image is 917x417. Superblocks are 16x16, so there are 58x27
     * superblocks. Superblocks are grouped into 8x8 tiles, so there are 8x4
@@ -472,7 +478,7 @@ TEST(AFBCLayout, Linear16x16Minimal)
    uint64_t modifier = DRM_FORMAT_MOD_ARM_AFBC(
       AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 | AFBC_FORMAT_MOD_SPARSE);
 
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = modifier,
       .format = PIPE_FORMAT_R8_UNORM,
       .extent_px = {
@@ -484,8 +490,9 @@ TEST(AFBCLayout, Linear16x16Minimal)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
@@ -501,7 +508,7 @@ TEST(AFBCLayout, Linear16x16Minimalv6)
    uint64_t modifier = DRM_FORMAT_MOD_ARM_AFBC(
       AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 | AFBC_FORMAT_MOD_SPARSE);
 
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = modifier,
       .format = PIPE_FORMAT_R8_UNORM,
       .extent_px = {
@@ -513,8 +520,9 @@ TEST(AFBCLayout, Linear16x16Minimalv6)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(6, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(6, &p, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
@@ -531,7 +539,7 @@ TEST(AFBCLayout, Tiled16x16Minimal)
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
                               AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SPARSE);
 
-   struct pan_image_layout l = {
+   struct pan_image_props p = {
       .modifier = modifier,
       .format = PIPE_FORMAT_R8_UNORM,
       .extent_px = {
@@ -543,8 +551,9 @@ TEST(AFBCLayout, Tiled16x16Minimal)
       .dim = MALI_TEXTURE_DIMENSION_2D,
       .nr_slices = 1,
    };
+   struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &l, NULL));
+   ASSERT_TRUE(pan_image_layout_init(0, &p, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);

@@ -240,9 +240,10 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          vk_format_get_blocksize(view->vk.view_format) == 1)))
       plane_idx = 1;
 
+   const struct pan_image_props *plane_props = &image->planes[plane_idx].props;
    const struct pan_image_layout *plane_layout =
       &image->planes[plane_idx].layout;
-   bool is_3d = plane_layout->dim == MALI_TEXTURE_DIMENSION_3D;
+   bool is_3d = plane_props->dim == MALI_TEXTURE_DIMENSION_3D;
    unsigned offset = pan_image_surface_offset(
       plane_layout, view->pview.first_level,
       is_3d ? 0 : view->pview.first_layer, is_3d ? view->pview.first_layer : 0);
@@ -266,8 +267,8 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
                     : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
       cfg.pointer = image->planes[plane_idx].data.base + offset;
       cfg.stride = fmt_blksize | (hw_fmt << 10);
-      cfg.size =
-         pan_image_mip_level_size(plane_layout, view->pview.first_level);
+      cfg.size = pan_image_mip_level_size(plane_props, plane_layout,
+                                          view->pview.first_level);
    }
 
    struct mali_attribute_buffer_packed *buf = &view->descs.img_attrib_buf[1];
@@ -285,7 +286,8 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          image->planes[plane_idx].layout.slices[level].row_stride_B;
       if (cfg.r_dimension > 1) {
          cfg.slice_stride =
-            pan_image_surface_stride(&image->planes[plane_idx].layout, level);
+            pan_image_surface_stride(&image->planes[plane_idx].props,
+                                     &image->planes[plane_idx].layout, level);
       }
    }
 }
