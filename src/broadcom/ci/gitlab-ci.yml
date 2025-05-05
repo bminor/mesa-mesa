@@ -7,6 +7,7 @@ vc4-rpi3-gl:arm64:
     - .broadcom-test:arm64-gl
     - .test-piglit
     - .vc4-rules
+  timeout: 25m
   parallel: 3
   variables:
     DEQP_SUITE: broadcom-rpi3-gl
@@ -16,6 +17,7 @@ vc4-rpi3-gl-piglit-full:arm64:
   extends:
     - vc4-rpi3-gl:arm64
     - .vc4-manual-rules
+  timeout: 25m
   tags:
     - igalia-rpi3
     - igalia-fullrun
@@ -27,6 +29,7 @@ vc4-rpi3-gl:arm32:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-test:arm32-gl
     - .vc4-manual-rules
+  timeout: 25m
   tags:
     - igalia-rpi3
     - igalia-fullrun
@@ -38,6 +41,7 @@ vc4-rpi3-gl-asan:arm64:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-asan-test:arm64-gl
     - .vc4-manual-rules
+  timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
@@ -49,6 +53,7 @@ vc4-rpi3-gl-ubsan:arm64:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-ubsan-test:arm64-gl
     - .vc4-manual-rules
+  timeout: 25m
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
@@ -62,6 +67,7 @@ v3d-rpi4-gl:arm64:
     - .broadcom-test:arm64-gl
     - .test-piglit
     - .v3d-rules
+  timeout: 25m
   parallel: 8
   variables:
     HWCI_START_WESTON: 1
@@ -96,6 +102,7 @@ v3d-rpi4-traces:arm64:
     - .piglit-traces-test
     - .broadcom-test:arm64-gl
     - .v3d-rules
+  timeout: 25m
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     PIGLIT_TRACES_FILE: traces-broadcom.yml
@@ -119,6 +126,7 @@ v3d-rpi4-gl-asan:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-asan-test:arm64-gl
     - .v3d-manual-rules
+  timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
@@ -131,6 +139,7 @@ v3d-rpi4-gl-ubsan:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-ubsan-test:arm64-gl
     - .v3d-manual-rules
+  timeout: 25m
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
@@ -143,6 +152,7 @@ v3dv-rpi4-vk:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64-vk
     - .v3dv-rules
+  timeout: 25m
   parallel: 8
   variables:
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
@@ -171,6 +181,7 @@ v3dv-rpi4-vk-asan:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-asan-test:arm64-vk
     - .v3dv-manual-rules
+  timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
@@ -182,6 +193,7 @@ v3dv-rpi4-vk-ubsan:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-ubsan-test:arm64-vk
     - .v3dv-manual-rules
+  timeout: 25m
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
@@ -195,6 +207,7 @@ v3d-rpi5-gl:arm64:
     - .broadcom-test:arm64-gl
     - .test-piglit
     - .v3d-rules
+  timeout: 25m
   variables:
     HWCI_START_WESTON: 1
     DEQP_SUITE: broadcom-rpi5-gl
@@ -233,6 +246,7 @@ v3d-rpi5-traces:arm64:
     - .piglit-traces-test
     - .broadcom-test:arm64-gl
     - .v3d-rules
+  timeout: 25m
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     PIGLIT_TRACES_FILE: traces-broadcom.yml
@@ -244,6 +258,7 @@ v3dv-rpi5-vk:arm64:
     - .igalia-bcm2712-rpi-5
     - .broadcom-test:arm64-vk
     - .v3dv-rules
+  timeout: 25m
   parallel: 2
   variables:
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
@@ -272,6 +287,7 @@ rpi3-skqp:arm64:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-test:arm64-gl
     - .vc4-manual-rules
+  timeout: 25m
   variables:
     DEQP_SUITE: broadcom-rpi-skqp
     HWCI_START_WESTON: 1
@@ -282,6 +298,7 @@ rpi4-skqp:arm64:
     - .broadcom-test:arm64-gl
     # SKQP tests both the GL and VK drivers
     - .v3d-v3dv-manual-rules
+  timeout: 25m
   variables:
     DEQP_SUITE: broadcom-rpi-skqp
     HWCI_START_WESTON: 1
@@ -293,6 +310,7 @@ rpi5-skqp:arm64:
     - .broadcom-test:arm64-gl
     # SKQP tests both the GL and VK drivers
     - .v3d-v3dv-manual-rules
+  timeout: 25m
   variables:
     DEQP_SUITE: broadcom-rpi-skqp
     HWCI_START_WESTON: 1
