@@ -1594,12 +1594,10 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
 
    enc->need_feedback = false;
 
-   if (!enc->stream_handle) {
+   if (!enc->si) {
       struct rvid_buffer fb;
-      enc->stream_handle = si_vid_alloc_stream_handle();
       enc->si = CALLOC_STRUCT(rvid_buffer);
       if (!enc->si ||
-          !enc->stream_handle ||
           !si_vid_create_buffer(enc->screen, enc->si, 128 * 1024, PIPE_USAGE_DEFAULT)) {
          RADEON_ENC_ERR("Can't create session buffer.\n");
          goto error;
@@ -1803,7 +1801,7 @@ static void radeon_enc_destroy(struct pipe_video_codec *encoder)
 {
    struct radeon_encoder *enc = (struct radeon_encoder *)encoder;
 
-   if (enc->stream_handle) {
+   if (enc->si) {
       struct rvid_buffer fb;
       enc->need_feedback = false;
       si_vid_create_buffer(enc->screen, &fb, 512, PIPE_USAGE_STAGING);
