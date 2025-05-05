@@ -195,17 +195,8 @@ section_end debian_setup
 
 . .gitlab-ci/container/build-kdl.sh
 
-############### Download prebuilt kernel and firmware
+############### Download firmware
 
-if [ "$DEBIAN_ARCH" = amd64 ]; then
-  uncollapsed_section_start kernel "Downloading kernel and firmware"
-  export KERNEL_IMAGE_NAME=bzImage
-  mkdir -p /kernel
-  # shellcheck disable=SC2153 # KERNEL_IMAGE_BASE is set in the root .gitlab-ci.yml file
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      -o "/kernel/${KERNEL_IMAGE_NAME}" "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${KERNEL_IMAGE_NAME}"
-  section_end kernel
-fi
 . .gitlab-ci/container/get-firmware-from-source.sh / "$FIRMWARE_FILES"
 
 ############### Build mold

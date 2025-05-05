@@ -120,6 +120,13 @@ then
   set -x
 fi
 
+if [ ! -f "/kernel/${KERNEL_IMAGE_NAME:-bzImage}" ]; then
+  mkdir -p /kernel
+  # shellcheck disable=SC2153 # KERNEL_IMAGE_BASE is set in the default before_script
+  curl -L --retry 4 -f --retry-connrefused --retry-delay 30 \
+    -o "/kernel/${KERNEL_IMAGE_NAME:-bzImage}" "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH:-amd64}/${KERNEL_IMAGE_NAME:-bzImage}"
+fi
+
 # We aren't testing the host driver here, so we don't need to validate NIR on the host
 NIR_DEBUG="novalidate" \
 LIBGL_ALWAYS_SOFTWARE=${CROSVM_LIBGL_ALWAYS_SOFTWARE:-} \

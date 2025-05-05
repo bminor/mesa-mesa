@@ -374,7 +374,7 @@ debian/x86_64_test-base:
     - .firmware_x86_64
     - .container-builds-base
   variables:
-    MESA_IMAGE_TAG: &debian-x86_64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}"
+    MESA_IMAGE_TAG: &debian-x86_64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
     LLVM_VERSION: *debian-x86_64-llvm
 
 .use-debian/x86_64_test-base:
@@ -453,7 +453,7 @@ debian/x86_64_test-gl:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-gl ${DEBIAN_TEST_GL_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}--${MESA_TEMPLATES_COMMIT}"
+    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-gl:
   tags:
@@ -475,7 +475,7 @@ debian/x86_64_test-vk:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-vk ${DEBIAN_TEST_VK_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}--${MESA_TEMPLATES_COMMIT}"
+    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-vk:
   tags:
@@ -519,7 +519,7 @@ debian/x86_64_test-video:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-video ${DEBIAN_TEST_VIDEO_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-video:${DEBIAN_TEST_VIDEO_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${KERNEL_TAG}--${MESA_TEMPLATES_COMMIT}"
+    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-video:${DEBIAN_TEST_VIDEO_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-video:
   tags:
