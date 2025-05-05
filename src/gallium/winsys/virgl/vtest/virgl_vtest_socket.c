@@ -45,6 +45,7 @@ static int virgl_block_write(int fd, void *buf, int size)
       ret = write(fd, ptr, left);
       if (ret < 0)
          return -errno;
+      assert(ret <= left);
       left -= ret;
       ptr += ret;
    } while (left);
@@ -66,6 +67,7 @@ static int virgl_block_read(int fd, void *buf, int size)
          abort();
          return ret < 0 ? -errno : 0;
       }
+      assert(ret <= left);
       left -= ret;
       ptr += ret;
    } while (left);
