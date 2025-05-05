@@ -942,7 +942,7 @@ panfrost_emit_vertex_buffers(struct panfrost_batch *batch)
       panfrost_batch_read_rsrc(batch, rsrc, PIPE_SHADER_VERTEX);
 
       pan_pack(buffers + i, BUFFER, cfg) {
-         cfg.address = rsrc->image.data.base + vb.buffer_offset;
+         cfg.address = rsrc->plane.base + vb.buffer_offset;
 
          cfg.size = prsrc->width0 - vb.buffer_offset;
       }
@@ -1019,7 +1019,7 @@ panfrost_map_constant_buffer_gpu(struct panfrost_batch *batch,
 
       /* Alignment gauranteed by
        * pipe_caps.constant_buffer_offset_alignment */
-      return rsrc->image.data.base + cb->buffer_offset;
+      return rsrc->plane.base + cb->buffer_offset;
    } else if (cb->user_buffer) {
       return pan_pool_upload_aligned(&batch->pool.base,
                                      cb->user_buffer + cb->buffer_offset,
@@ -1325,7 +1325,7 @@ panfrost_upload_sysvals(struct panfrost_batch *batch, void *ptr_cpu,
 
          panfrost_batch_write_rsrc(batch, rsrc, PIPE_SHADER_VERTEX);
 
-         uniforms[i].du[0] = rsrc->image.data.base + offset;
+         uniforms[i].du[0] = rsrc->plane.base + offset;
          break;
       }
 
@@ -1695,8 +1695,8 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       is_shadow = true;
    }
 
-   so->texture_bo = prsrc->image.data.base;
-   so->texture_size = prsrc->image.layout.data_size_B;
+   so->texture_bo = prsrc->plane.base;
+   so->texture_size = prsrc->plane.layout.data_size_B;
    so->modifier = prsrc->modifier;
 
    /* MSAA only supported for 2D textures */
@@ -1715,7 +1715,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
          .width_el =
             MIN2(so->base.u.buf.size / util_format_get_blocksize(format),
                  PAN_MAX_TEXEL_BUFFER_ELEMENTS),
-         .base = prsrc->image.data.base + so->base.u.buf.offset,
+         .base = prsrc->plane.base + so->base.u.buf.offset,
       };
 
       if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
@@ -1779,7 +1779,6 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
             so->base.swizzle_b,
             so->base.swizzle_a,
          },
-      .planes = {NULL},
    };
 
 #if PAN_ARCH >= 7
@@ -1844,8 +1843,8 @@ panfrost_update_sampler_view(struct panfrost_sampler_view *view,
                              struct pipe_context *pctx)
 {
    struct panfrost_resource *rsrc = pan_resource(view->base.texture);
-   if (view->texture_bo != rsrc->image.data.base ||
-       view->texture_size != rsrc->image.layout.data_size_B ||
+   if (view->texture_bo != rsrc->plane.base ||
+       view->texture_size != rsrc->plane.layout.data_size_B ||
        view->modifier != rsrc->modifier) {
       panfrost_bo_unreference(view->state.bo);
       panfrost_create_sampler_view_bo(view, pctx, &rsrc->base);
@@ -2047,7 +2046,7 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
       unsigned offset =
          is_buffer ? image->u.buf.offset
                    : pan_image_surface_offset(
-                        &rsrc->image.layout, image->u.tex.level,
+                        &rsrc->plane.layout, image->u.tex.level,
                         (is_3d || is_msaa) ? 0 : image->u.tex.first_layer,
                         (is_3d || is_msaa) ? image->u.tex.first_layer : 0);
 
@@ -2055,10 +2054,10 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
 
       pan_pack(bufs + (i * 2), ATTRIBUTE_BUFFER, cfg) {
          cfg.type = pan_modifier_to_attr_type(rsrc->image.props.modifier);
-         cfg.pointer = rsrc->image.data.base + offset;
+         cfg.pointer = rsrc->plane.base + offset;
          cfg.stride = util_format_get_blocksize(image->format);
          cfg.size =
-            pan_image_mip_level_size(&rsrc->image.props, &rsrc->image.layout,
+            pan_image_mip_level_size(&rsrc->image.props, &rsrc->plane.layout,
                                      is_buffer ? 0 : image->u.tex.level);
       }
 
@@ -2084,16 +2083,16 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
             is_3d ? u_minify(rsrc->image.props.extent_px.depth, level)
                   : (image->u.tex.last_layer - image->u.tex.first_layer + 1);
 
-         cfg.row_stride = rsrc->image.layout.slices[level].row_stride_B;
+         cfg.row_stride = rsrc->plane.layout.slices[level].row_stride_B;
          if (cfg.r_dimension > 1) {
             cfg.slice_stride = pan_image_surface_stride(
-               &rsrc->image.props, &rsrc->image.layout, level);
+               &rsrc->image.props, &rsrc->plane.layout, level);
          }
 
          if (is_msaa) {
             if (cfg.r_dimension == 1) {
                unsigned slice_stride = pan_image_surface_stride(
-                  &rsrc->image.props, &rsrc->image.layout, level);
+                  &rsrc->image.props, &rsrc->plane.layout, level);
 
                /* regular multisampled images get the sample index in
                   the R dimension */
@@ -2218,7 +2217,7 @@ panfrost_emit_vertex_data(struct panfrost_batch *batch, uint64_t *buffers)
       panfrost_batch_read_rsrc(batch, rsrc, PIPE_SHADER_VERTEX);
 
       /* Mask off lower bits, see offset fixup below */
-      uint64_t raw_addr = rsrc->image.data.base + buf->buffer_offset;
+      uint64_t raw_addr = rsrc->plane.base + buf->buffer_offset;
       uint64_t addr = raw_addr & ~63;
 
       /* Since we advanced the base pointer, we shrink the buffer
@@ -3399,7 +3398,7 @@ panfrost_draw_indirect(struct pipe_context *pipe,
       struct panfrost_resource *index_buffer =
          pan_resource(info->index.resource);
       panfrost_batch_read_rsrc(batch, index_buffer, PIPE_SHADER_VERTEX);
-      batch->indices = index_buffer->image.data.base;
+      batch->indices = index_buffer->plane.base;
    }
 
    panfrost_update_state_3d(batch);
@@ -3598,9 +3597,9 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
 {
    MESA_TRACE_FUNC();
 
-   struct pan_image_slice_layout *slice = &src->image.layout.slices[level];
+   struct pan_image_slice_layout *slice = &src->plane.layout.slices[level];
    struct panfrost_afbc_size_info consts = {
-      .src = src->image.data.base + slice->offset_B,
+      .src = src->plane.base + slice->offset_B,
       .metadata = metadata->ptr.gpu + offset,
    };
 
@@ -3619,9 +3618,9 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 {
    MESA_TRACE_FUNC();
 
-   struct pan_image_slice_layout *src_slice = &src->image.layout.slices[level];
+   struct pan_image_slice_layout *src_slice = &src->plane.layout.slices[level];
    struct panfrost_afbc_pack_info consts = {
-      .src = src->image.data.base + src_slice->offset_B,
+      .src = src->plane.base + src_slice->offset_B,
       .dst = dst->ptr.gpu + dst_slice->offset_B,
       .metadata = metadata->ptr.gpu + metadata_offset_B,
       .header_size = dst_slice->afbc.header_size_B,
@@ -3651,9 +3650,9 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
    unsigned width = info->src.box.width;
    unsigned height = info->src.box.height;
    unsigned src_stride =
-      pan_resource(y_src)->image.layout.slices[0].row_stride_B;
+      pan_resource(y_src)->plane.layout.slices[0].row_stride_B;
    unsigned dst_stride =
-      pan_resource(y_dst)->image.layout.slices[0].row_stride_B;
+      pan_resource(y_dst)->plane.layout.slices[0].row_stride_B;
 
    /* 4 images: y_src, uv_src, y_dst, uv_dst */
    struct pipe_image_view image[4] = { 0 };

@@ -39,10 +39,16 @@
 static inline struct pan_image_block_size
 pan_u_interleaved_tile_size_el(enum pipe_format format)
 {
-   if (util_format_is_compressed(format))
+   if (util_format_is_compressed(format)) {
       return (struct pan_image_block_size){4, 4};
-   else
-      return (struct pan_image_block_size){16, 16};
+   } else {
+      assert(16 % util_format_get_blockwidth(format) == 0);
+      assert(16 % util_format_get_blockheight(format) == 0);
+      return (struct pan_image_block_size){
+         .width = 16 / util_format_get_blockwidth(format),
+         .height = 16 / util_format_get_blockheight(format),
+      };
+   }
 }
 
 /*
@@ -51,16 +57,31 @@ pan_u_interleaved_tile_size_el(enum pipe_format format)
  * paging tile size. For linear textures, this is trivially 1x1.
  */
 struct pan_image_block_size
-pan_image_block_size_el(uint64_t modifier, enum pipe_format format)
+pan_image_block_size_el(uint64_t modifier, enum pipe_format format,
+                        unsigned plane_idx)
 {
-   if (modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED)
+   if (modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
       return pan_u_interleaved_tile_size_el(format);
-   else if (drm_is_afbc(modifier))
-      return pan_afbc_superblock_size(modifier);
-   else if (drm_is_afrc(modifier))
+   } else if (drm_is_afbc(modifier)) {
+      struct pan_image_block_size sb_size_px =
+         pan_afbc_superblock_size(modifier);
+
+      assert(sb_size_px.width % util_format_get_blockwidth(format) == 0);
+      assert(sb_size_px.height % util_format_get_blockheight(format) == 0);
+
+      return (struct pan_image_block_size){
+         .width = sb_size_px.width / util_format_get_blockwidth(format),
+         .height = sb_size_px.height / util_format_get_blockheight(format),
+      };
+   } else if (drm_is_afrc(modifier)) {
+      assert(util_format_get_blockwidth(format) == 1 &&
+             util_format_get_blockheight(format) == 1);
       return pan_afrc_tile_size(format, modifier);
-   else
+   } else {
+      assert(util_format_is_compressed(format) ||
+             util_format_get_blockheight(format) == 1);
       return (struct pan_image_block_size){1, 1};
+   }
 }
 
 /* For non-AFBC and non-wide AFBC, the render block size matches
@@ -68,12 +89,21 @@ pan_image_block_size_el(uint64_t modifier, enum pipe_format format)
  * to be 16 pixels high.
  */
 struct pan_image_block_size
-pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format)
+pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
+                              unsigned plane_idx)
 {
    if (!drm_is_afbc(modifier))
-      return pan_image_block_size_el(modifier, format);
+      return pan_image_block_size_el(modifier, format, plane_idx);
 
-   return pan_afbc_renderblock_size(modifier);
+   struct pan_image_block_size rb_size_px = pan_afbc_renderblock_size(modifier);
+
+   assert(rb_size_px.width % util_format_get_blockwidth(format) == 0);
+   assert(rb_size_px.height % util_format_get_blockheight(format) == 0);
+
+   return (struct pan_image_block_size){
+      .width = rb_size_px.width / util_format_get_blockwidth(format),
+      .height = rb_size_px.height / util_format_get_blockheight(format),
+   };
 }
 
 static unsigned
@@ -150,28 +180,55 @@ pan_image_surface_stride(const struct pan_image_props *props,
       return layout->slices[level].surface_stride_B;
 }
 
+static unsigned
+get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
+{
+   switch (format) {
+   case PIPE_FORMAT_R8G8_R8B8_UNORM:
+   case PIPE_FORMAT_G8R8_B8R8_UNORM:
+   case PIPE_FORMAT_R8B8_R8G8_UNORM:
+   case PIPE_FORMAT_B8R8_G8R8_UNORM:
+      return 2;
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
+      return plane_idx ? 2 : 1;
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return plane_idx ? 10 : 5;
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+      return 1;
+   default:
+      assert(util_format_get_num_planes(format) == 1);
+      return util_format_get_blocksize(format);
+   }
+}
+
 struct pan_image_wsi_layout
 pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
+                                unsigned plane_idx,
                                 const struct pan_image_layout *layout,
                                 unsigned level)
 {
    unsigned row_stride_B = layout->slices[level].row_stride_B;
    struct pan_image_block_size block_size_el =
-      pan_image_renderblock_size_el(props->modifier, props->format);
+      pan_image_renderblock_size_el(props->modifier, props->format, plane_idx);
 
    if (drm_is_afbc(props->modifier)) {
-      struct pan_image_block_size afbc_tile_extent_px =
-         pan_afbc_superblock_size(props->modifier);
+      struct pan_image_block_size afbc_tile_extent_el =
+         pan_image_block_size_el(props->modifier, props->format, plane_idx);
       unsigned afbc_tile_payload_size_B =
-         afbc_tile_extent_px.width * afbc_tile_extent_px.height *
-         util_format_get_blocksize(props->format);
+         afbc_tile_extent_el.width * afbc_tile_extent_el.height *
+         get_plane_blocksize(props->format, plane_idx);
       unsigned afbc_tile_row_payload_size_B =
          pan_afbc_stride_blocks(props->modifier, row_stride_B) *
          afbc_tile_payload_size_B;
       return (struct pan_image_wsi_layout){
          .offset_B = layout->slices[level].offset_B,
          .row_pitch_B = afbc_tile_row_payload_size_B /
-                        afbc_tile_extent_px.height,
+                        pan_afbc_superblock_height(props->modifier),
       };
    } else if (drm_is_afrc(props->modifier)) {
       struct pan_image_block_size tile_size_px =
@@ -191,6 +248,7 @@ pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
 
 static bool
 wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
+                            unsigned plane_idx,
                             const struct pan_image_wsi_layout *wsi_layout,
                             unsigned *row_stride_B)
 {
@@ -200,15 +258,20 @@ wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
    uint64_t modifier = props->modifier;
 
    if (drm_is_afbc(modifier)) {
-      /* We assume single pixel blocks in AFBC. */
-      assert(util_format_get_blockwidth(format) == 1 &&
-             util_format_get_blockheight(format) == 1);
-
       struct pan_image_block_size afbc_tile_extent_px =
-         pan_afbc_renderblock_size(modifier);
-      unsigned afbc_tile_payload_size_B = afbc_tile_extent_px.width *
-                                          afbc_tile_extent_px.height *
-                                          util_format_get_blocksize(format);
+         pan_afbc_superblock_size(modifier);
+      /* YUV packed formats can have a block extent bigger than one pixel,
+       * but the block extent must be a multiple of the tile extent. */
+      assert(
+         !(afbc_tile_extent_px.width % util_format_get_blockwidth(format)) &&
+         !(afbc_tile_extent_px.height % util_format_get_blockheight(format)));
+      unsigned pixels_per_blk = util_format_get_blockwidth(format) *
+                                util_format_get_blockheight(format);
+      unsigned pixels_per_tile = afbc_tile_extent_px.width *
+                                 afbc_tile_extent_px.height;
+      unsigned blks_per_tile = pixels_per_tile / pixels_per_blk;
+      unsigned afbc_tile_payload_size_B =
+         blks_per_tile * get_plane_blocksize(format, plane_idx);
       unsigned afbc_tile_payload_row_stride_B =
          wsi_row_pitch_B * afbc_tile_extent_px.height;
 
@@ -244,16 +307,26 @@ wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
       width_px = (*row_stride_B / afrc_blk_size_B) * tile_size_px.width;
    } else {
       struct pan_image_block_size block_size_el =
-         pan_image_renderblock_size_el(modifier, format);
-      unsigned tile_size_B = block_size_el.width * block_size_el.height *
-                             util_format_get_blocksize(format);
+         pan_image_renderblock_size_el(modifier, format, plane_idx);
 
-      /* The row_stride_B -> width_px conversion is assuming a 1x1 pixel
-       * block size for non-compressed formats. Revisit when adding support
-       * for block-based YUV. */
-      assert(util_format_is_compressed(format) ||
-             (util_format_get_blockwidth(format) == 1 &&
-              util_format_get_blockheight(format) == 1));
+      if (!util_format_is_compressed(format)) {
+         /* Block-based YUV needs special care, because the U-tile extent
+          * is in pixels, not blocks in that case. */
+         if (block_size_el.width * block_size_el.height > 1) {
+            assert(block_size_el.width % util_format_get_blockwidth(format) ==
+                   0);
+            block_size_el.width /= util_format_get_blockwidth(format);
+            assert(block_size_el.height % util_format_get_blockheight(format) ==
+                   0);
+            block_size_el.height /= util_format_get_blockheight(format);
+         } else {
+            block_size_el.width = util_format_get_blockwidth(format);
+            assert(util_format_get_blockheight(format) == 1);
+         }
+      }
+
+      unsigned tile_size_B = block_size_el.width * block_size_el.height *
+                             get_plane_blocksize(format, plane_idx);
 
       row_align_mask =
          linear_or_tiled_row_align_req(arch, format, modifier) - 1;
@@ -273,7 +346,9 @@ wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
       return false;
    }
 
-   if (width_px < props->extent_px.width) {
+   unsigned min_width_px =
+      util_format_get_plane_width(format, plane_idx, props->extent_px.width);
+   if (width_px < min_width_px) {
       mesa_loge("WSI pitch too small");
       return false;
    }
@@ -295,6 +370,7 @@ pan_image_surface_offset(const struct pan_image_layout *layout, unsigned level,
 
 bool
 pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
+                      unsigned plane_idx,
                       const struct pan_image_wsi_layout *wsi_layout,
                       struct pan_image_layout *layout)
 {
@@ -305,6 +381,9 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
        (props->extent_px.depth > 1 || props->nr_samples > 1 ||
         props->array_size > 1 || props->dim != MALI_TEXTURE_DIMENSION_2D ||
         props->nr_slices > 1 || props->crc))
+      return false;
+
+   if (plane_idx >= util_format_get_num_planes(props->format))
       return false;
 
    bool afbc = drm_is_afbc(props->modifier);
@@ -320,14 +399,15 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
 
    /* Mandate alignment */
    if (wsi_layout) {
-      if (!wsi_row_pitch_to_row_stride(arch, props, wsi_layout,
+      if (!wsi_row_pitch_to_row_stride(arch, props, plane_idx, wsi_layout,
                                        &wsi_row_stride_B))
          return false;
 
       offset_B = wsi_layout->offset_B;
    }
 
-   unsigned fmt_blocksize_B = util_format_get_blocksize(props->format);
+   unsigned fmt_blocksize_B =
+      get_plane_blocksize(props->format, plane_idx);
 
    /* MSAA is implemented as a 3D texture with z corresponding to the
     * sample #, horrifyingly enough */
@@ -338,12 +418,16 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
    bool is_3d = props->dim == MALI_TEXTURE_DIMENSION_3D;
 
    struct pan_image_block_size renderblk_size_el =
-      pan_image_renderblock_size_el(props->modifier, props->format);
+      pan_image_renderblock_size_el(props->modifier, props->format, plane_idx);
    struct pan_image_block_size block_size_el =
-      pan_image_block_size_el(props->modifier, props->format);
+      pan_image_block_size_el(props->modifier, props->format, plane_idx);
 
-   unsigned width_px = props->extent_px.width;
-   unsigned height_px = props->extent_px.height;
+   unsigned width_px = util_format_get_plane_width(props->format, plane_idx,
+                                                   props->extent_px.width);
+   unsigned height_px = util_format_get_plane_height(props->format, plane_idx,
+                                                     props->extent_px.height);
+   unsigned blk_width_px = util_format_get_blockwidth(props->format);
+   unsigned blk_height_px = util_format_get_blockheight(props->format);
    unsigned depth_px = props->extent_px.depth;
 
    unsigned align_w_el = renderblk_size_el.width;
@@ -358,10 +442,12 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
    for (unsigned l = 0; l < props->nr_slices; ++l) {
       struct pan_image_slice_layout *slice = &layout->slices[l];
 
-      unsigned effective_width_el = ALIGN_POT(
-         util_format_get_nblocksx(props->format, width_px), align_w_el);
-      unsigned effective_height_el = ALIGN_POT(
-         util_format_get_nblocksy(props->format, height_px), align_h_el);
+      unsigned effective_width_el =
+         ALIGN_POT(DIV_ROUND_UP(width_px, blk_width_px), align_w_el);
+      unsigned effective_height_el =
+         ALIGN_POT(DIV_ROUND_UP(height_px, blk_height_px), align_h_el);
+      unsigned effective_width_px = effective_width_el * blk_width_px;
+      unsigned effective_height_px = effective_height_el * blk_height_px;
       unsigned row_stride_B;
 
       /* Align levels to cache-line as a performance improvement for
@@ -374,7 +460,7 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
 
       if (afrc) {
          row_stride_B = pan_afrc_row_stride(props->format, props->modifier,
-                                            effective_width_el);
+                                            effective_width_px);
       } else {
          row_stride_B =
             fmt_blocksize_B * effective_width_el * block_size_el.height;
@@ -403,7 +489,7 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
       /* Compute AFBC sizes if necessary */
       if (afbc) {
          slice->row_stride_B =
-            pan_afbc_row_stride(props->modifier, effective_width_el);
+            pan_afbc_row_stride(props->modifier, effective_width_px);
 
          /* Explicit stride should be rejected by wsi_row_pitch_to_row_stride()
           * if it's too small. */
@@ -417,7 +503,7 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
          slice->afbc.stride_sb =
             pan_afbc_stride_blocks(props->modifier, slice->row_stride_B);
          slice->afbc.nr_sblocks = slice->afbc.stride_sb *
-                                  (effective_height_el / block_size_el.height);
+                                  (effective_height_px / block_size_el.height);
          slice->afbc.header_size_B =
             ALIGN_POT(slice->afbc.nr_sblocks * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(arch, props->modifier));

@@ -71,11 +71,13 @@ mali_sampling_mode(const struct pan_image_view *view)
    unsigned nr_samples = pan_image_view_get_nr_samples(view);
 
    if (nr_samples > 1) {
-      ASSERTED const struct pan_image *first_plane =
+      ASSERTED const struct pan_image_plane_ref pref =
          pan_image_view_get_first_plane(view);
+      ASSERTED const struct pan_image_plane *plane =
+         pref.image->planes[pref.plane_idx];
 
-      assert(view->nr_samples == nr_samples);
-      assert(first_plane->layout.slices[0].surface_stride_B != 0);
+      assert(view->nr_samples == pref.image->props.nr_samples);
+      assert(plane->layout.slices[0].surface_stride_B != 0);
       return MALI_MSAA_LAYERED;
    }
 
@@ -94,8 +96,8 @@ static bool
 renderblock_fits_in_single_pass(const struct pan_image_view *view,
                                 unsigned tile_size)
 {
-   const struct pan_image *first_plane = pan_image_view_get_first_plane(view);
-   uint64_t mod = first_plane->props.modifier;
+   const struct pan_image_plane_ref pref = pan_image_view_get_first_plane(view);
+   uint64_t mod = pref.image->props.modifier;
 
    if (!drm_is_afbc(mod))
       return tile_size >= 16 * 16;
@@ -212,7 +214,9 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
    if (!s)
       return;
 
-   const struct pan_image *image = pan_image_view_get_s_plane(s);
+   const struct pan_image_plane_ref pref = pan_image_view_get_s_plane(s);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
    unsigned level = s->first_level;
 
    ext->s_msaa = mali_sampling_mode(s);
@@ -224,10 +228,10 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
              DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
           image->props.modifier == DRM_FORMAT_MOD_LINEAR);
    ext->s_writeback_base = surf.data;
-   ext->s_writeback_row_stride = image->layout.slices[level].row_stride_B;
+   ext->s_writeback_row_stride = plane->layout.slices[level].row_stride_B;
    ext->s_writeback_surface_stride =
       (pan_image_view_get_nr_samples(s) > 1)
-         ? image->layout.slices[level].surface_stride_B
+         ? plane->layout.slices[level].surface_stride_B
          : 0;
    ext->s_block_format = mod_to_block_fmt(image->props.modifier);
    ext->s_write_format = translate_s_format(s->format);
@@ -242,15 +246,16 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
    if (!zs)
       return;
 
-   const struct pan_image *image = pan_image_view_get_zs_plane(zs);
+   const struct pan_image_plane_ref pref = pan_image_view_get_zs_plane(zs);
+   const struct pan_image *image = pref.image;
    unsigned level = zs->first_level;
 
    ext->zs_msaa = mali_sampling_mode(zs);
 
    struct pan_image_surface surf;
    pan_iview_get_surface(zs, 0, layer_idx, 0, &surf);
-   UNUSED const struct pan_image_slice_layout *slice =
-      &image->layout.slices[level];
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slice = &plane->layout.slices[level];
 
    if (drm_is_afbc(image->props.modifier)) {
 #if PAN_ARCH >= 9
@@ -282,11 +287,9 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
       /* TODO: Z32F(S8) support, which is always linear */
 
       ext->zs_writeback_base = surf.data;
-      ext->zs_writeback_row_stride = image->layout.slices[level].row_stride_B;
+      ext->zs_writeback_row_stride = slice->row_stride_B;
       ext->zs_writeback_surface_stride =
-         (pan_image_view_get_nr_samples(zs) > 1)
-            ? image->layout.slices[level].surface_stride_B
-            : 0;
+         (pan_image_view_get_nr_samples(zs) > 1) ? slice->surface_stride_B : 0;
    }
 
    ext->zs_block_format = mod_to_block_fmt(image->props.modifier);
@@ -305,11 +308,13 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
    assert(rt_crc < fb->rt_count);
 
    const struct pan_image_view *rt = fb->rts[rt_crc].view;
-   const struct pan_image *image = pan_image_view_get_color_plane(rt);
+   const struct pan_image_plane_ref pref = pan_image_view_get_color_plane(rt);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
    const struct pan_image_slice_layout *slice =
-      &image->layout.slices[rt->first_level];
+      &plane->layout.slices[rt->first_level];
 
-   ext->crc_base = image->data.base + slice->crc.offset_B;
+   ext->crc_base = plane->base + slice->crc.offset_B;
    ext->crc_row_stride = slice->crc.stride_B;
 
 #if PAN_ARCH >= 7
@@ -527,7 +532,8 @@ pan_rt_init_format(const struct pan_image_view *rt,
    }
 
 #if PAN_ARCH >= 10
-   const struct pan_image *image = pan_image_view_get_color_plane(rt);
+   const struct pan_image_plane_ref pref = pan_image_view_get_color_plane(rt);
+   const struct pan_image *image = pref.image;
 
    if (drm_is_afrc(image->props.modifier))
       cfg->afrc.writeback_format = writeback_format;
@@ -551,8 +557,9 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 #if PAN_ARCH >= 6
    bool force_clean_writes = fb->rts[rt_idx].clear;
    if (fb->rts[rt_idx].view) {
-      const struct pan_image *img =
+      const struct pan_image_plane_ref pref =
          pan_image_view_get_color_plane(fb->rts[rt_idx].view);
+      const struct pan_image *img = pref.image;
       force_clean_writes |= pan_force_clean_write_on(img, fb->tile_size);
    }
    cfg->clean_pixel_write_enable = force_clean_writes;
@@ -578,28 +585,29 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       return;
    }
 
-   const struct pan_image *image = pan_image_view_get_color_plane(rt);
+   struct pan_image_plane_ref pref = pan_image_view_get_color_plane(rt);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
 
    if (!drm_is_afrc(image->props.modifier))
       cfg->write_enable = true;
 
    cfg->dithering_enable = true;
 
-   const struct pan_image *first_plane = pan_image_view_get_first_plane(rt);
    unsigned level = rt->first_level;
    ASSERTED unsigned layer_count = rt->dim == MALI_TEXTURE_DIMENSION_3D
-                                      ? first_plane->props.extent_px.depth
+                                      ? image->props.extent_px.depth
                                       : rt->last_layer - rt->first_layer + 1;
 
    assert(rt->last_level == rt->first_level);
    assert(layer_idx < layer_count);
 
-   int row_stride_B = image->layout.slices[level].row_stride_B;
+   int row_stride_B = plane->layout.slices[level].row_stride_B;
 
    /* Only set layer_stride for layered MSAA rendering  */
 
    unsigned layer_stride_B = (pan_image_view_get_nr_samples(rt) > 1)
-                                ? image->layout.slices[level].surface_stride_B
+                                ? plane->layout.slices[level].surface_stride_B
                                 : 0;
 
    cfg->writeback_msaa = mali_sampling_mode(rt);
@@ -622,10 +630,10 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       cfg->afbc.body_offset = surf.afbc.body - surf.afbc.header;
       assert(surf.afbc.body >= surf.afbc.header);
 
-      cfg->afbc.compression_mode = pan_afbc_compression_mode(rt->format);
+      cfg->afbc.compression_mode = pan_afbc_compression_mode(rt->format, 0);
       cfg->afbc.row_stride = row_stride_B;
 #else
-      const struct pan_image_slice_layout *slice = &image->layout.slices[level];
+      const struct pan_image_slice_layout *slice = &plane->layout.slices[level];
 
 #if PAN_ARCH >= 6
       cfg->afbc.row_stride =
@@ -806,20 +814,21 @@ pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
       if (!fb->rts[i].view || fb->rts[i].discard)
          continue;
 
-      const struct pan_image *img =
+      const struct pan_image_plane_ref pref =
          pan_image_view_get_color_plane(fb->rts[i].view);
+      const struct pan_image *img = pref.image;
 
       if (pan_force_clean_write_on(img, tile_size))
          return true;
    }
 
    if (fb->zs.view.zs && !fb->zs.discard.z &&
-       pan_force_clean_write_on(pan_image_view_get_zs_plane(fb->zs.view.zs),
-                                tile_size))
+       pan_force_clean_write_on(
+          pan_image_view_get_zs_plane(fb->zs.view.zs).image, tile_size))
       return true;
 
    if (fb->zs.view.s && !fb->zs.discard.s &&
-       pan_force_clean_write_on(pan_image_view_get_s_plane(fb->zs.view.s),
+       pan_force_clean_write_on(pan_image_view_get_s_plane(fb->zs.view.s).image,
                                 tile_size))
       return true;
 
@@ -923,7 +932,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
 #if PAN_ARCH >= 6
          clean_tile_write |= pan_force_clean_write_on(
-            pan_image_view_get_color_plane(fb->rts[crc_rt].view),
+            pan_image_view_get_color_plane(fb->rts[crc_rt].view).image,
             fb->tile_size);
 #endif
 
@@ -1054,7 +1063,10 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
       if (fb->rt_count && fb->rts[0].view) {
          const struct pan_image_view *rt = fb->rts[0].view;
-         const struct pan_image *image = pan_image_view_get_color_plane(rt);
+         const struct pan_image_plane_ref pref =
+            pan_image_view_get_color_plane(rt);
+         const struct pan_image *image = pref.image;
+         const struct pan_image_plane *plane = image->planes[pref.plane_idx];
 
          const struct util_format_description *desc =
             util_format_description(rt->format);
@@ -1086,7 +1098,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          cfg.color_write_enable = !fb->rts[0].discard;
          cfg.color_writeback.base = surf.data;
          cfg.color_writeback.row_stride =
-            image->layout.slices[level].row_stride_B;
+            plane->layout.slices[level].row_stride_B;
 
          cfg.color_block_format = mod_to_block_fmt(image->props.modifier);
          assert(cfg.color_block_format == MALI_BLOCK_FORMAT_LINEAR ||
@@ -1095,16 +1107,19 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
          if (pan_image_view_has_crc(rt)) {
             const struct pan_image_slice_layout *slice =
-               &image->layout.slices[level];
+               &plane->layout.slices[level];
 
             cfg.crc_buffer.row_stride = slice->crc.stride_B;
-            cfg.crc_buffer.base = image->data.base + slice->crc.offset_B;
+            cfg.crc_buffer.base = plane->base + slice->crc.offset_B;
          }
       }
 
       if (fb->zs.view.zs) {
          const struct pan_image_view *zs = fb->zs.view.zs;
-         const struct pan_image *image = pan_image_view_get_zs_plane(zs);
+         const struct pan_image_plane_ref pref =
+            pan_image_view_get_zs_plane(zs);
+         const struct pan_image *image = pref.image;
+         const struct pan_image_plane *plane = image->planes[pref.plane_idx];
          unsigned level = zs->first_level;
          struct pan_image_surface surf;
 
@@ -1112,7 +1127,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
          cfg.zs_write_enable = !fb->zs.discard.z;
          cfg.zs_writeback.base = surf.data;
-         cfg.zs_writeback.row_stride = image->layout.slices[level].row_stride_B;
+         cfg.zs_writeback.row_stride = plane->layout.slices[level].row_stride_B;
          cfg.zs_block_format = mod_to_block_fmt(image->props.modifier);
          assert(cfg.zs_block_format == MALI_BLOCK_FORMAT_LINEAR ||
                 cfg.zs_block_format == MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED);

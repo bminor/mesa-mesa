@@ -1226,8 +1226,8 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
                         always_write);
    if (zs) {
       enum pipe_format fmt = fb->zs.view.zs
-                                ? fb->zs.view.zs->planes[0]->props.format
-                                : fb->zs.view.s->planes[0]->props.format;
+                                ? fb->zs.view.zs->planes[0].image->props.format
+                                : fb->zs.view.s->planes[0].image->props.format;
       /* On some GPUs (e.g. G31), we must use SHADER_MODE_ALWAYS rather than
        * SHADER_MODE_INTERSECT for full screen operations. Since the full
        * screen rectangle will always intersect, this won't affect

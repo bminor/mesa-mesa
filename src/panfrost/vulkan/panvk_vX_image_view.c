@@ -241,9 +241,10 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          vk_format_get_blocksize(view->vk.view_format) == 1)))
       plane_idx = 1;
 
-   const struct pan_image_props *plane_props = &image->planes[plane_idx].props;
+   const struct pan_image_props *plane_props =
+      &image->planes[plane_idx].image.props;
    const struct pan_image_layout *plane_layout =
-      &image->planes[plane_idx].layout;
+      &image->planes[plane_idx].plane.layout;
    bool is_3d = plane_props->dim == MALI_TEXTURE_DIMENSION_3D;
    unsigned offset = pan_image_surface_offset(
       plane_layout, view->pview.first_level,
@@ -266,7 +267,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
       cfg.type = image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR
                     ? MALI_ATTRIBUTE_TYPE_3D_LINEAR
                     : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
-      cfg.pointer = image->planes[plane_idx].data.base + offset;
+      cfg.pointer = image->planes[plane_idx].plane.base + offset;
       cfg.stride = fmt_blksize | (hw_fmt << 10);
       cfg.size = pan_image_mip_level_size(plane_props, plane_layout,
                                           view->pview.first_level);
@@ -284,11 +285,11 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
             ? extent.depth
             : (view->pview.last_layer - view->pview.first_layer + 1);
       cfg.row_stride =
-         image->planes[plane_idx].layout.slices[level].row_stride_B;
+         image->planes[plane_idx].plane.layout.slices[level].row_stride_B;
       if (cfg.r_dimension > 1) {
-         cfg.slice_stride =
-            pan_image_surface_stride(&image->planes[plane_idx].props,
-                                     &image->planes[plane_idx].layout, level);
+         cfg.slice_stride = pan_image_surface_stride(
+            &image->planes[plane_idx].image.props,
+            &image->planes[plane_idx].plane.layout, level);
       }
    }
 }
@@ -337,14 +338,20 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       uint8_t view_plane = (view->vk.aspects == VK_IMAGE_ASPECT_PLANE_1_BIT ||
                             view->vk.aspects == VK_IMAGE_ASPECT_PLANE_2_BIT) ?
                            0 : image_plane;
-      view->pview.planes[view_plane] = &image->planes[image_plane];
+      view->pview.planes[view_plane] = (struct pan_image_plane_ref) {
+         .image = &image->planes[image_plane].image,
+         .plane_idx = 0,
+      };
    }
 
    /* Depth/stencil are viewed as color for copies. */
    if (view->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT &&
        image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
        vk_format_get_blocksize(view->vk.view_format) == 1) {
-      view->pview.planes[0] = &image->planes[1];
+      view->pview.planes[0] = (struct pan_image_plane_ref) {
+         .image = &image->planes[1].image,
+         .plane_idx = 0,
+      };
    }
 
    /* We need to patch the view format when the image contains both

@@ -121,10 +121,12 @@ pan_image_slice_align(uint64_t modifier)
 }
 
 struct pan_image_block_size pan_image_block_size_el(uint64_t modifier,
-                                                    enum pipe_format format);
+                                                    enum pipe_format format,
+                                                    unsigned plane_idx);
 
 struct pan_image_block_size
-pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format);
+pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
+                              unsigned plane_idx);
 
 unsigned pan_image_surface_stride(const struct pan_image_props *props,
                                   const struct pan_image_layout *layout,
@@ -149,11 +151,13 @@ pan_image_mip_level_size(const struct pan_image_props *props,
 }
 
 bool pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
+                           unsigned plane_idx,
                            const struct pan_image_wsi_layout *wsi_layout,
                            struct pan_image_layout *layout);
 
 struct pan_image_wsi_layout
 pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
+                                unsigned plane_idx,
                                 const struct pan_image_layout *layout,
                                 unsigned level);
 

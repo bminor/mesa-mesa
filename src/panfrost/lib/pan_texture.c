@@ -165,7 +165,7 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview)
    element_size = pan_size(PLANE);
 
    /* 2-plane and 3-plane YUV use two plane descriptors. */
-   if (pan_format_is_yuv(iview->format) && iview->planes[1] != NULL)
+   if (pan_format_is_yuv(iview->format) && iview->planes[1].image != NULL)
       element_size *= 2;
 #elif PAN_ARCH == 7
    if (pan_format_is_yuv(iview->format))
@@ -227,28 +227,30 @@ struct pan_image_section_info {
 
 static struct pan_image_section_info
 get_image_section_info(const struct pan_image_view *iview,
-                       const struct pan_image *plane, unsigned level,
+                       const struct pan_image_plane_ref pref, unsigned level,
                        unsigned index, unsigned sample)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   uint64_t base = plane->data.base;
+   const struct pan_image *image = pref.image;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
+   uint64_t base = plane->base;
    struct pan_image_section_info info = {0};
 
    /* v4 does not support compression */
-   assert(PAN_ARCH >= 5 || !drm_is_afbc(plane->props.modifier));
+   assert(PAN_ARCH >= 5 || !drm_is_afbc(image->props.modifier));
    assert(PAN_ARCH >= 5 || desc->layout != UTIL_FORMAT_LAYOUT_ASTC);
 
    /* pan_compression_tag() wants the dimension of the resource, not the
     * one of the image view (those might differ).
     */
    unsigned tag =
-      pan_compression_tag(desc, plane->props.dim, plane->props.modifier);
+      pan_compression_tag(desc, image->props.dim, image->props.modifier);
 
    info.pointer =
-      pan_get_surface_pointer(&plane->props, &plane->layout, iview->dim,
+      pan_get_surface_pointer(&image->props, &plane->layout, iview->dim,
                               base | tag, level, index, sample);
-   pan_get_surface_strides(&plane->props, &plane->layout, level,
+   pan_get_surface_strides(&image->props, &plane->layout, level,
                            &info.row_stride, &info.surface_stride);
 
    return info;
@@ -475,12 +477,14 @@ pan_emit_iview_plane(const struct pan_image_view *iview,
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   const struct pan_image *plane =
+   const struct pan_image_plane_ref pref =
       util_format_has_stencil(desc)
          ? pan_image_view_get_s_plane(iview)
          : pan_image_view_get_plane(iview, plane_index);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
    const struct pan_image_layout *layout = &plane->layout;
-   const struct pan_image_props *props = &plane->props;
+   const struct pan_image_props *props = &image->props;
    int32_t row_stride = sections[plane_index].row_stride;
    int32_t surface_stride = sections[plane_index].surface_stride;
    uint64_t pointer = sections[plane_index].pointer;
@@ -553,7 +557,8 @@ pan_emit_iview_plane(const struct pan_image_view *iview,
          cfg.afbc.split_block = (props->modifier & AFBC_FORMAT_MOD_SPLIT);
          cfg.afbc.tiled_header = (props->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
-         cfg.afbc.compression_mode = pan_afbc_compression_mode(iview->format);
+         cfg.afbc.compression_mode =
+            pan_afbc_compression_mode(iview->format, 0);
          cfg.afbc.header_stride = layout->slices[level].afbc.header_size_B;
       } else if (afrc) {
 #if PAN_ARCH >= 10
@@ -593,13 +598,14 @@ pan_emit_iview_surface(const struct pan_image_view *iview, unsigned level,
       unsigned plane_count = 0;
 
       for (int i = 0; i < MAX_IMAGE_PLANES; i++) {
-         const struct pan_image *plane = pan_image_view_get_plane(iview, i);
+         const struct pan_image_plane_ref pref =
+            pan_image_view_get_plane(iview, i);
 
-         if (!plane)
+         if (!pref.image)
             break;
 
          sections[i] =
-            get_image_section_info(iview, plane, level, index, sample);
+            get_image_section_info(iview, pref, level, index, sample);
          plane_count++;
       }
 
@@ -631,13 +637,13 @@ pan_emit_iview_surface(const struct pan_image_view *iview, unsigned level,
     * plane 1. Combined depth/stencil only has one plane, so depth
     * will be on plane 0 in either case.
     */
-   const struct pan_image *plane = util_format_has_stencil(fdesc)
-                                      ? pan_image_view_get_s_plane(iview)
-                                      : pan_image_view_get_plane(iview, 0);
-   assert(plane != NULL);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(fdesc) ? pan_image_view_get_s_plane(iview)
+                                     : pan_image_view_get_plane(iview, 0);
+   assert(pref.image != NULL);
 
    struct pan_image_section_info section[1] = {
-      get_image_section_info(iview, plane, level, index, sample),
+      get_image_section_info(iview, pref, level, index, sample),
    };
 
 #if PAN_ARCH >= 9
@@ -782,7 +788,7 @@ pan_texture_get_array_size(const struct pan_image_view *iview)
 
    /* Multiplanar YUV textures require 2 surface descriptors. */
    if (pan_format_is_yuv(iview->format) && PAN_ARCH >= 9 &&
-       pan_image_view_get_plane(iview, 1) != NULL)
+       pan_image_view_get_plane(iview, 1).image != NULL)
       array_size *= 2;
 
    return array_size;
@@ -831,8 +837,8 @@ GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
-   const struct pan_image_props *props = &first_plane->props;
+   const struct pan_image_plane_ref first_plane = pan_image_view_get_first_plane(iview);
+   const struct pan_image_props *props = &first_plane.image->props;
    uint32_t mali_format = GENX(pan_format_from_pipe_format)(iview->format)->hw;
 
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
@@ -886,8 +892,9 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
-   const struct pan_image_props *props = &first_plane->props;
+   const struct pan_image_plane_ref first_plane =
+      pan_image_view_get_first_plane(iview);
+   const struct pan_image_props *props = &first_plane.image->props;
 
    /* AFBC and AFRC cannot be used in storage operations. */
    assert(!drm_is_afbc(props->modifier));

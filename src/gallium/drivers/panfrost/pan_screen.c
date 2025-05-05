@@ -286,7 +286,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
             continue;
 
          if ((native_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
-             !pan_afbc_can_split(dev->arch, format, native_mods[i]))
+             !pan_afbc_can_split(dev->arch, format, native_mods[i], 0))
             continue;
 
          if ((native_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)

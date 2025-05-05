@@ -380,7 +380,7 @@ GENX(jm_launch_grid)(struct panfrost_batch *batch,
       struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
       struct pan_indirect_dispatch_info indirect = {
          .job = t.gpu,
-         .indirect_dim = pan_resource(info->indirect)->image.data.base +
+         .indirect_dim = pan_resource(info->indirect)->plane.base +
                          info->indirect_offset,
          .num_wg_sysval =
             {
@@ -545,7 +545,7 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
 
          struct panfrost_resource *rsrc =
             pan_resource(ctx->occlusion_query->rsrc);
-         cfg.occlusion = rsrc->image.data.base;
+         cfg.occlusion = rsrc->plane.base;
          panfrost_batch_write_rsrc(ctx->batch, rsrc, PIPE_SHADER_FRAGMENT);
       }
 
@@ -1027,7 +1027,7 @@ GENX(jm_emit_write_timestamp)(struct panfrost_batch *batch,
    struct pan_ptr job = pan_pool_alloc_desc(&batch->pool.base, WRITE_VALUE_JOB);
 
    pan_section_pack(job.cpu, WRITE_VALUE_JOB, PAYLOAD, cfg) {
-      cfg.address = dst->image.data.base + offset;
+      cfg.address = dst->plane.base + offset;
       cfg.type = MALI_WRITE_VALUE_TYPE_SYSTEM_TIMESTAMP;
    }
 

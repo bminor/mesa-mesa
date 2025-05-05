@@ -104,6 +104,34 @@ panfrost_clear_render_target(struct pipe_context *pipe,
                                     height);
 }
 
+static void
+panfrost_resource_init_image(struct panfrost_resource *rsc,
+                             const struct pan_image_props *iprops,
+                             unsigned plane_idx)
+{
+   if (util_format_get_num_planes(iprops->format) == 1) {
+      rsc->image.props = *iprops;
+      rsc->image.planes[0] = &rsc->plane;
+      return;
+   }
+
+   /* The resource props will be initialized when we hit the first plane. */
+   if (plane_idx > 0)
+      return;
+
+   rsc->image.props = *iprops;
+   for (struct panfrost_resource *plane = rsc;
+        plane && plane_idx < ARRAY_SIZE(rsc->image.planes);
+        plane = pan_resource(plane->base.next))
+      rsc->image.planes[plane_idx++] = &plane->plane;
+
+   assert(plane_idx == util_format_get_num_planes(iprops->format));
+
+   for (struct panfrost_resource *plane = pan_resource(rsc->base.next);
+        plane; plane = pan_resource(plane->base.next))
+      plane->image = rsc->image;
+}
+
 static struct pipe_resource *
 panfrost_resource_from_handle(struct pipe_screen *pscreen,
                               const struct pipe_resource *templat,
@@ -138,29 +166,42 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    };
 
    rsc->modifier = mod;
-   rsc->image.props = (struct pan_image_props){
+
+   bool h_subsamp =
+      util_format_get_plane_width(templat->format, whandle->plane, 2) == 1;
+   bool v_subsamp =
+      util_format_get_plane_height(templat->format, whandle->plane, 2) == 1;
+   struct pan_image_props iprops = {
       /* pan_layout doesn't know about MTK modifiers, so make it
        * linear before calling pan_image_layout_init(). */
       .modifier = panfrost_is_emulated_mod(mod) ? DRM_FORMAT_MOD_LINEAR : mod,
       .format = templat->format,
       .dim = dim,
       .extent_px = {
-         .width = prsc->width0,
-         .height = prsc->height0,
+         /* pan_layout_init() wants the property of the full image, not the
+          * plane, but pipe_resource encodes the properties of the plane.
+          * We need to adjust the width/height according to the subsampling
+          * properties. */
+         .width = prsc->width0 * (h_subsamp ? 2 : 1),
+         .height = prsc->height0 * (v_subsamp ? 2 : 1),
          .depth = prsc->depth0,
       },
       .array_size = prsc->array_size,
       .nr_samples = MAX2(prsc->nr_samples, 1),
       .nr_slices = 1,
    };
+   unsigned format_plane =
+      util_format_get_num_planes(iprops.format) > 1 ? whandle->plane : 0;
 
-   bool valid = pan_image_layout_init(dev->arch, &rsc->image.props,
-                                      &explicit_layout, &rsc->image.layout);
+   bool valid = pan_image_layout_init(dev->arch, &iprops, format_plane,
+                                      &explicit_layout, &rsc->plane.layout);
 
    if (!valid) {
       FREE(rsc);
       return NULL;
    }
+
+   panfrost_resource_init_image(rsc, &iprops, whandle->plane);
 
    rsc->bo = panfrost_bo_import(dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
@@ -171,7 +212,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
       return NULL;
    }
 
-   rsc->image.data.base = rsc->bo->ptr.gpu;
+   rsc->plane.base = rsc->bo->ptr.gpu;
    rsc->modifier_constant = true;
 
    BITSET_SET(rsc->valid.data, 0);
@@ -192,15 +233,13 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
                              struct winsys_handle *handle, unsigned usage)
 {
    struct panfrost_device *dev = pan_device(pscreen);
-   struct panfrost_resource *rsrc;
+   struct panfrost_resource *rsrc = pan_resource(pt);
    struct renderonly_scanout *scanout;
-   struct pipe_resource *plane_res =
-      util_resource_at_index(pt, handle->plane);
 
-   if (!plane_res)
+   if (handle->plane >= ARRAY_SIZE(rsrc->image.planes) ||
+       !rsrc->image.planes[handle->plane])
       return false;
 
-   rsrc = pan_resource(plane_res);
    scanout = rsrc->scanout;
 
    handle->modifier = rsrc->modifier;
@@ -223,7 +262,8 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
    }
 
    struct pan_image_wsi_layout wsi_layout = pan_image_layout_get_wsi_layout(
-      &rsrc->image.props, &rsrc->image.layout, 0);
+      &rsrc->image.props, handle->plane,
+      &rsrc->image.planes[handle->plane]->layout, 0);
 
    handle->stride = wsi_layout.row_pitch_B;
    handle->offset = wsi_layout.offset_B;
@@ -238,18 +278,17 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
                             enum pipe_resource_param param, unsigned usage,
                             uint64_t *value)
 {
-   struct pipe_resource *plane_res = util_resource_at_index(prsc, plane);
-   struct panfrost_resource *rsrc = pan_resource(plane_res);
+   struct panfrost_resource *rsrc = pan_resource(prsc);
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
-      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props,
-                                               &rsrc->image.layout, level)
+      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props, plane,
+                                               &rsrc->plane.layout, level)
                   .row_pitch_B;
       return true;
    case PIPE_RESOURCE_PARAM_OFFSET:
-      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props,
-                                               &rsrc->image.layout, level)
+      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props, plane,
+                                               &rsrc->plane.layout, level)
                   .offset_B;
       return true;
    case PIPE_RESOURCE_PARAM_MODIFIER:
@@ -555,7 +594,7 @@ panfrost_should_checksum(const struct panfrost_device *dev,
 static void
 panfrost_resource_setup(struct pipe_screen *screen,
                         struct panfrost_resource *pres, uint64_t modifier,
-                        enum pipe_format fmt)
+                        enum pipe_format fmt, unsigned plane_idx)
 {
    struct panfrost_device *dev = pan_device(screen);
    uint64_t chosen_mod = modifier != DRM_FORMAT_MOD_INVALID
@@ -576,14 +615,21 @@ panfrost_resource_setup(struct pipe_screen *screen,
       fmt = PIPE_FORMAT_Z32_FLOAT;
 
    pres->modifier = chosen_mod;
-   pres->image.props = (struct pan_image_props){
+
+   bool h_subsamp = util_format_get_plane_width(fmt, plane_idx, 2) == 1;
+   bool v_subsamp = util_format_get_plane_height(fmt, plane_idx, 2) == 1;
+   struct pan_image_props iprops = {
       .modifier = panfrost_is_emulated_mod(chosen_mod) ? DRM_FORMAT_MOD_LINEAR
                                                        : chosen_mod,
       .format = fmt,
       .dim = dim,
       .extent_px = {
-         .width = pres->base.width0,
-         .height = pres->base.height0,
+         /* pan_layout_init() wants the property of the full image, not the
+          * plane, but pipe_resource encodes the properties of the plane.
+          * We need to adjust the width/height according to the subsampling
+          * properties. */
+         .width = pres->base.width0 * (h_subsamp ? 2 : 1),
+         .height = pres->base.height0 * (v_subsamp ? 2 : 1),
          .depth = pres->base.depth0,
       },
       .array_size = pres->base.array_size,
@@ -596,9 +642,11 @@ panfrost_resource_setup(struct pipe_screen *screen,
     * want the real bitrate and not DEFAULT */
    pres->base.compression_rate = pan_afrc_get_rate(fmt, chosen_mod);
 
-   ASSERTED bool valid = pan_image_layout_init(dev->arch, &pres->image.props,
-                                               NULL, &pres->image.layout);
+   ASSERTED bool valid = pan_image_layout_init(dev->arch, &iprops, plane_idx,
+                                               NULL, &pres->plane.layout);
    assert(valid);
+
+   panfrost_resource_init_image(pres, &iprops, plane_idx);
 }
 
 static int
@@ -611,11 +659,11 @@ panfrost_resource_init_afbc_headers(struct panfrost_resource *pres)
 
    for (unsigned i = 0; i < pres->base.array_size; ++i) {
       for (unsigned l = 0; l <= pres->base.last_level; ++l) {
-         struct pan_image_slice_layout *slice = &pres->image.layout.slices[l];
+         struct pan_image_slice_layout *slice = &pres->plane.layout.slices[l];
 
          for (unsigned s = 0; s < nr_samples; ++s) {
             void *ptr = pres->bo->ptr.cpu +
-                        (i * pres->image.layout.array_stride_B) +
+                        (i * pres->plane.layout.array_stride_B) +
                         slice->offset_B + (s * slice->afbc.surface_stride_B);
 
             /* Zero-ed AFBC headers seem to encode a plain
@@ -729,7 +777,8 @@ panfrost_can_create_resource(struct pipe_screen *screen,
    struct panfrost_resource tmp;
    tmp.base = *template;
 
-   panfrost_resource_setup(screen, &tmp, DRM_FORMAT_MOD_INVALID, template->format);
+   panfrost_resource_setup(screen, &tmp, DRM_FORMAT_MOD_INVALID,
+                           template->format, 0);
 
    uint64_t system_memory;
    if (!os_get_total_physical_memory(&system_memory))
@@ -738,13 +787,13 @@ panfrost_can_create_resource(struct pipe_screen *screen,
    /* Limit maximum texture size to a quarter of the system memory, to avoid
     * allocating huge textures on systems with little memory.
     */
-   return tmp.image.layout.data_size_B <= system_memory / 4;
+   return tmp.plane.layout.data_size_B <= system_memory / 4;
 }
 
-struct pipe_resource *
+static struct pipe_resource *
 panfrost_resource_create_with_modifier(struct pipe_screen *screen,
                                        const struct pipe_resource *template,
-                                       uint64_t modifier)
+                                       uint64_t modifier, unsigned plane_idx)
 {
    MESA_TRACE_FUNC();
 
@@ -777,7 +826,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
       so->modifier_constant = true;
    }
 
-   panfrost_resource_setup(screen, so, modifier, template->format);
+   panfrost_resource_setup(screen, so, modifier, template->format, plane_idx);
 
    /* Guess a label based on the bind */
    unsigned bind = template->bind;
@@ -799,7 +848,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
    if (dev->ro && (template->bind & PIPE_BIND_SCANOUT)) {
       struct winsys_handle handle;
       struct pan_image_block_size blocksize =
-         pan_image_renderblock_size_el(modifier, template->format);
+         pan_image_renderblock_size_el(modifier, template->format, plane_idx);
 
       /* Block-based texture formats are only used for texture
        * compression (not framebuffer compression!), which doesn't
@@ -826,7 +875,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
       unsigned width = ALIGN_POT(template->width0, blocksize.width);
       unsigned stride = ALIGN_POT(template->width0, blocksize.width) *
                         util_format_get_blocksize(template->format);
-      unsigned size = so->image.layout.data_size_B;
+      unsigned size = so->plane.layout.data_size_B;
       unsigned effective_rows = DIV_ROUND_UP(size, stride);
 
       struct pipe_resource scanout_tmpl = {
@@ -855,7 +904,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          return NULL;
       }
 
-      so->image.data.base = so->bo->ptr.gpu;
+      so->plane.base = so->bo->ptr.gpu;
    } else {
       /* We create a BO immediately but don't bother mapping, since we don't
        * care to map e.g. FBOs which the CPU probably won't touch */
@@ -866,14 +915,14 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          flags |= PAN_BO_SHAREABLE;
 
       so->bo =
-         panfrost_bo_create(dev, so->image.layout.data_size_B, flags, label);
+         panfrost_bo_create(dev, so->plane.layout.data_size_B, flags, label);
 
       if (!so->bo) {
          FREE(so);
          return NULL;
       }
 
-      so->image.data.base = so->bo->ptr.gpu;
+      so->plane.base = so->bo->ptr.gpu;
 
       so->constant_stencil = true;
    }
@@ -900,7 +949,7 @@ panfrost_resource_create(struct pipe_screen *screen,
                          const struct pipe_resource *template)
 {
    return panfrost_resource_create_with_modifier(screen, template,
-                                                 DRM_FORMAT_MOD_INVALID);
+                                                 DRM_FORMAT_MOD_INVALID, 0);
 }
 
 /* If no modifier is specified, we'll choose. Otherwise, the order of
@@ -917,14 +966,14 @@ panfrost_resource_create_with_modifiers(struct pipe_screen *screen,
    for (unsigned i = 0; i < ARRAY_SIZE(native_mods); ++i) {
       if (drm_find_modifier(native_mods[i], modifiers, count)) {
          return panfrost_resource_create_with_modifier(screen, template,
-                                                       native_mods[i]);
+                                                       native_mods[i], 0);
       }
    }
 
    for (unsigned i = 0; i < ARRAY_SIZE(emulated_mods); ++i) {
       if (drm_find_modifier(emulated_mods[i], modifiers, count)) {
          return panfrost_resource_create_with_modifier(screen, template,
-                                                       emulated_mods[i]);
+                                                       emulated_mods[i], 0);
       }
    }
 
@@ -1052,20 +1101,20 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
 
    struct panfrost_bo *bo = rsrc->bo;
    unsigned stride =
-      pan_image_surface_stride(&rsrc->image.props, &rsrc->image.layout, level);
+      pan_image_surface_stride(&rsrc->image.props, &rsrc->plane.layout, level);
 
    /* Otherwise, load each layer separately, required to load from 3D and
     * array textures.
     */
    for (unsigned z = 0; z < ptrans->box.depth; ++z) {
       void *dst = transfer->map + (ptrans->layer_stride * z);
-      uint8_t *map = bo->ptr.cpu + rsrc->image.layout.slices[level].offset_B +
+      uint8_t *map = bo->ptr.cpu + rsrc->plane.layout.slices[level].offset_B +
                      (z + ptrans->box.z) * stride;
 
       pan_load_tiled_image(dst, map, ptrans->box.x, ptrans->box.y,
                            ptrans->box.width, ptrans->box.height,
                            ptrans->stride,
-                           rsrc->image.layout.slices[level].row_stride_B,
+                           rsrc->plane.layout.slices[level].row_stride_B,
                            rsrc->image.props.format);
    }
 }
@@ -1176,7 +1225,7 @@ pan_dump_resource(struct panfrost_context *ctx, struct panfrost_resource *rsc)
 
       debug_dump_image(buffer, rsc->base.format, 0 /* UNUSED */, rsc->base.width0,
                      rsc->base.height0,
-                     linear->image.layout.slices[0].row_stride_B,
+                     linear->plane.layout.slices[0].row_stride_B,
                      linear->bo->ptr.cpu);
    } else {
       mesa_loge("failed to mmap, not dumping resource");
@@ -1206,19 +1255,19 @@ panfrost_store_tiled_images(struct panfrost_transfer *transfer,
    struct pipe_transfer *ptrans = &transfer->base;
    unsigned level = ptrans->level;
    unsigned stride =
-      pan_image_surface_stride(&rsrc->image.props, &rsrc->image.layout, level);
+      pan_image_surface_stride(&rsrc->image.props, &rsrc->plane.layout, level);
 
    /* Otherwise, store each layer separately, required to store to 3D and
     * array textures.
     */
    for (unsigned z = 0; z < ptrans->box.depth; ++z) {
       void *src = transfer->map + (ptrans->layer_stride * z);
-      uint8_t *map = bo->ptr.cpu + rsrc->image.layout.slices[level].offset_B +
+      uint8_t *map = bo->ptr.cpu + rsrc->plane.layout.slices[level].offset_B +
                      (z + ptrans->box.z) * stride;
 
       pan_store_tiled_image(map, src, ptrans->box.x, ptrans->box.y,
                             ptrans->box.width, ptrans->box.height,
-                            rsrc->image.layout.slices[level].row_stride_B,
+                            rsrc->plane.layout.slices[level].row_stride_B,
                             ptrans->stride, rsrc->image.props.format);
    }
 }
@@ -1287,9 +1336,9 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
       /* Staging resources have one LOD: level 0. Query the strides
        * on this LOD.
        */
-      transfer->base.stride = staging->image.layout.slices[0].row_stride_B;
+      transfer->base.stride = staging->plane.layout.slices[0].row_stride_B;
       transfer->base.layer_stride = pan_image_surface_stride(
-         &staging->image.props, &staging->image.layout, 0);
+         &staging->image.props, &staging->plane.layout, 0);
 
       transfer->staging.rsrc = &staging->base;
 
@@ -1404,7 +1453,7 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
              */
             panfrost_bo_unreference(rsrc->bo);
             rsrc->bo = newbo;
-            rsrc->image.data.base = newbo->ptr.gpu;
+            rsrc->plane.base = newbo->ptr.gpu;
 
             if (!copy_resource && drm_is_afbc(rsrc->modifier)) {
                if (panfrost_resource_init_afbc_headers(rsrc))
@@ -1463,9 +1512,9 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
       if ((usage & dpw) == dpw && rsrc->index_cache)
          return NULL;
 
-      transfer->base.stride = rsrc->image.layout.slices[level].row_stride_B;
+      transfer->base.stride = rsrc->plane.layout.slices[level].row_stride_B;
       transfer->base.layer_stride = pan_image_surface_stride(
-         &rsrc->image.props, &rsrc->image.layout, level);
+         &rsrc->image.props, &rsrc->plane.layout, level);
 
       /* By mapping direct-write, we're implicitly already
        * initialized (maybe), so be conservative */
@@ -1477,9 +1526,9 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
             transfer->base.box.x, transfer->base.box.width);
       }
 
-      return bo->ptr.cpu + rsrc->image.layout.slices[level].offset_B +
+      return bo->ptr.cpu + rsrc->plane.layout.slices[level].offset_B +
              box->z * transfer->base.layer_stride +
-             box_blocks.y * rsrc->image.layout.slices[level].row_stride_B +
+             box_blocks.y * rsrc->plane.layout.slices[level].row_stride_B +
              box_blocks.x * bytes_per_block;
    }
 }
@@ -1495,43 +1544,26 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
 
    assert(!rsrc->modifier_constant || copy_resource);
 
-   struct pipe_resource template = rsrc->base;
-   struct pipe_resource *tmp_prsrc;
-   struct pipe_resource *next_tmp_prsrc = NULL;
-   struct panfrost_resource *next_tmp_rsrc = NULL;
-   if (template.next) {
-      struct pipe_resource second_template = *template.next;
-      bool fix_stride;
-      assert(drm_is_mtk_tiled(rsrc->modifier));
-      /* fix up the stride */
-      switch (rsrc->base.format) {
-      case PIPE_FORMAT_R8_G8B8_420_UNORM:
-      case PIPE_FORMAT_R8_G8B8_422_UNORM:
-      case PIPE_FORMAT_R10_G10B10_420_UNORM:
-      case PIPE_FORMAT_R10_G10B10_422_UNORM:
-         fix_stride = true;
-         break;
-      default:
-         fix_stride = false;
-         break;
-      }
-      template.next = NULL;
-      if (fix_stride) {
-         second_template.width0 *= 2; /* temporarily adjust size for subsampling */
-      }
-      next_tmp_prsrc = panfrost_resource_create_with_modifier(
-         ctx->base.screen, &second_template, modifier);
-      next_tmp_rsrc = pan_resource(next_tmp_prsrc);
-      if (fix_stride) {
-         next_tmp_rsrc->base.width0 /= 2;
-         next_tmp_rsrc->image.props.extent_px.width /= 2;
-      }
-   }
-   tmp_prsrc = panfrost_resource_create_with_modifier(
-      ctx->base.screen, &template, modifier);
-   struct panfrost_resource *tmp_rsrc = pan_resource(tmp_prsrc);
-   if (next_tmp_prsrc) {
-      tmp_prsrc->next = next_tmp_prsrc;
+   struct pipe_resource templates[MAX_IMAGE_PLANES] = {0};
+   unsigned plane_count;
+
+   templates[0] = rsrc->base;
+   for (plane_count = 1;
+        templates[plane_count - 1].next && plane_count < ARRAY_SIZE(templates);
+        plane_count++)
+      templates[plane_count] = *(templates[plane_count - 1].next);
+
+   struct panfrost_resource *tmp_rsrc = NULL;
+
+   for (int i = plane_count - 1; i >= 0; i--) {
+      if (tmp_rsrc)
+         templates[i].next = &tmp_rsrc->base;
+
+      struct pipe_resource *new_prsrc =
+         panfrost_resource_create_with_modifier(ctx->base.screen, &templates[i],
+                                                modifier, i);
+
+      tmp_rsrc = pan_resource(new_prsrc);
    }
 
    if (need_shadow && rsrc->shadow_image) {
@@ -1577,21 +1609,24 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
 
    if (need_shadow) {
       panfrost_resource_setup(ctx->base.screen, tmp_rsrc,
-                              modifier, tmp_rsrc->base.format);
+                              modifier, tmp_rsrc->base.format, 0);
       rsrc->shadow_image = tmp_rsrc;
    } else {
       panfrost_bo_unreference(rsrc->bo);
 
       rsrc->bo = tmp_rsrc->bo;
-      rsrc->image.data.base = rsrc->bo->ptr.gpu;
+      rsrc->plane.base = rsrc->bo->ptr.gpu;
       panfrost_bo_reference(rsrc->bo);
 
       panfrost_resource_setup(ctx->base.screen, rsrc, modifier,
-                              tmp_rsrc->base.format);
+                              tmp_rsrc->base.format, 0);
       /* panfrost_resource_setup will force the modifier to stay constant when
        * called with a specific modifier. We don't want that here, we want to
        * be able to convert back to another modifier if needed */
       rsrc->modifier_constant = false;
+
+      struct pipe_resource *tmp_prsrc = &tmp_rsrc->base;
+
       pipe_resource_reference(&tmp_prsrc, NULL);
       perf_debug(ctx, "resource_modifier_convert required due to: %s", reason);
    }
@@ -1618,8 +1653,8 @@ pan_legalize_format(struct panfrost_context *ctx,
       return;
 
    if (drm_is_afbc(rsrc->modifier)) {
-      compatible = (pan_afbc_format(dev->arch, old_format) ==
-                    pan_afbc_format(dev->arch, new_format));
+      compatible = (pan_afbc_format(dev->arch, old_format, 0) ==
+                    pan_afbc_format(dev->arch, new_format, 0));
    } else if (drm_is_afrc(rsrc->modifier)) {
       struct pan_afrc_format_info old_info =
          pan_afrc_get_format_info(old_format);
@@ -1698,7 +1733,7 @@ panfrost_get_afbc_superblock_sizes(struct panfrost_context *ctx,
    unsigned metadata_size = 0;
 
    for (int level = first_level; level <= last_level; ++level) {
-      struct pan_image_slice_layout *slice = &rsrc->image.layout.slices[level];
+      struct pan_image_slice_layout *slice = &rsrc->plane.layout.slices[level];
       unsigned sz = slice->afbc.nr_sblocks * sizeof(struct pan_afbc_block_info);
       out_offsets[level - first_level] = metadata_size;
       metadata_size += sz;
@@ -1761,7 +1796,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    for (unsigned level = 0; level <= last_level; ++level) {
       struct pan_image_slice_layout *src_slice =
-         &prsrc->image.layout.slices[level];
+         &prsrc->plane.layout.slices[level];
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
       unsigned src_stride =
          pan_afbc_stride_blocks(src_modifier, src_slice->row_stride_B);
@@ -1857,10 +1892,10 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       struct pan_image_slice_layout *slice = &slice_infos[level];
       screen->vtbl.afbc_pack(batch, prsrc, dst, slice, metadata_bo,
                              metadata_offsets[level], level);
-      prsrc->image.layout.slices[level] = *slice;
+      prsrc->plane.layout.slices[level] = *slice;
    }
-   prsrc->image.layout.array_stride_B = new_size;
-   prsrc->image.layout.data_size_B = new_size;
+   prsrc->plane.layout.array_stride_B = new_size;
+   prsrc->plane.layout.data_size_B = new_size;
 
    panfrost_flush_batches_accessing_rsrc(ctx, prsrc, "AFBC compaction flush");
 
@@ -1869,7 +1904,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    prsrc->modifier = dst_modifier;
    panfrost_bo_unreference(prsrc->bo);
    prsrc->bo = dst;
-   prsrc->image.data.base = dst->ptr.gpu;
+   prsrc->plane.base = dst->ptr.gpu;
    prsrc->image.props.crc = false;
    prsrc->valid.crc = false;
    panfrost_bo_unreference(metadata_bo);
@@ -1904,10 +1939,10 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
             panfrost_bo_unreference(prsrc->bo);
 
             panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
-                                    prsrc->image.props.format);
+                                    prsrc->image.props.format, 0);
 
             prsrc->bo = pan_resource(trans->staging.rsrc)->bo;
-            prsrc->image.data.base = prsrc->bo->ptr.gpu;
+            prsrc->plane.base = prsrc->bo->ptr.gpu;
             panfrost_bo_reference(prsrc->bo);
          } else {
             bool discard = panfrost_can_discard(&prsrc->base, &transfer->box,
@@ -1940,17 +1975,17 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
              DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
             if (panfrost_should_linear_convert(ctx, prsrc, transfer)) {
                panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
-                                       prsrc->image.props.format);
+                                       prsrc->image.props.format, 0);
 
                /* converting the resource from tiled to linear and back
                 * shouldn't increase memory usage...
                 */
-               assert(prsrc->image.layout.data_size_B <= panfrost_bo_size(bo));
+               assert(prsrc->plane.layout.data_size_B <= panfrost_bo_size(bo));
 
                util_copy_rect(
-                  bo->ptr.cpu + prsrc->image.layout.slices[0].offset_B,
+                  bo->ptr.cpu + prsrc->plane.layout.slices[0].offset_B,
                   prsrc->base.format,
-                  prsrc->image.layout.slices[0].row_stride_B, 0, 0,
+                  prsrc->plane.layout.slices[0].row_stride_B, 0, 0,
                   transfer->box.width, transfer->box.height, trans->map,
                   transfer->stride, 0, 0);
             } else {
@@ -2031,10 +2066,24 @@ panfrost_set_image_view_planes(struct pan_image_view *iview,
                                struct pipe_resource *texture)
 {
    struct panfrost_resource *prsrc_plane = (struct panfrost_resource *)texture;
+   unsigned view_nplanes = util_format_get_num_planes(iview->format);
+   struct pan_image_plane_ref pref = {
+      .image = &prsrc_plane->image,
+      .plane_idx = pan_resource_plane_index(prsrc_plane),
+   };
 
-   for (int i = 0; i < MAX_IMAGE_PLANES && prsrc_plane; i++) {
-      iview->planes[i] = &prsrc_plane->image;
-      prsrc_plane = (struct panfrost_resource *)prsrc_plane->base.next;
+   if (view_nplanes > 1) {
+      assert(pref.plane_idx == 0);
+      assert(view_nplanes == util_format_get_num_planes(prsrc_plane->image.props.format));
+      for (int i = 0; i < view_nplanes; i++) {
+         iview->planes[i] = pref;
+         pref.plane_idx++;
+         prsrc_plane = (struct panfrost_resource *)prsrc_plane->base.next;
+      }
+   } else {
+      assert(pref.plane_idx <
+             util_format_get_num_planes(prsrc_plane->image.props.format));
+      iview->planes[0] = pref;
    }
 }
 

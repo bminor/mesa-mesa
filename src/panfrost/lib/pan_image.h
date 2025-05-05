@@ -21,14 +21,19 @@
 extern "C" {
 #endif
 
-struct pan_image_mem {
+struct pan_image_plane {
+   struct pan_image_layout layout;
    uint64_t base;
 };
 
 struct pan_image {
-   struct pan_image_mem data;
    struct pan_image_props props;
-   struct pan_image_layout layout;
+   struct pan_image_plane *planes[MAX_IMAGE_PLANES];
+};
+
+struct pan_image_plane_ref {
+   struct pan_image *image;
+   uint32_t plane_idx;
 };
 
 struct pan_image_surface {
@@ -52,7 +57,7 @@ struct pan_image_view {
    unsigned char swizzle[4];
 
    /* planes 1 and 2 are NULL for single plane formats */
-   const struct pan_image *planes[MAX_IMAGE_PLANES];
+   struct pan_image_plane_ref planes[MAX_IMAGE_PLANES];
 
    /* If EXT_multisampled_render_to_texture is used, this may be
     * greater than image->layout.nr_samples. */
@@ -64,11 +69,11 @@ struct pan_image_view {
    } astc;
 };
 
-static inline const struct pan_image *
+static inline struct pan_image_plane_ref
 pan_image_view_get_plane(const struct pan_image_view *iview, uint32_t idx)
 {
    if (idx >= ARRAY_SIZE(iview->planes))
-      return NULL;
+      return (struct pan_image_plane_ref){0};
 
    return iview->planes[idx];
 }
@@ -79,7 +84,7 @@ pan_image_view_get_plane_mask(const struct pan_image_view *iview)
    unsigned mask = 0;
 
    for (unsigned i = 0; i < ARRAY_SIZE(iview->planes); i++) {
-      if (iview->planes[i])
+      if (iview->planes[i].image)
          mask |= BITFIELD_BIT(i);
    }
 
@@ -95,7 +100,7 @@ pan_image_view_get_first_plane_idx(const struct pan_image_view *iview)
    return ffs(mask) - 1;
 }
 
-static inline const struct pan_image *
+static inline struct pan_image_plane_ref
 pan_image_view_get_first_plane(const struct pan_image_view *iview)
 {
    unsigned first_plane_idx = pan_image_view_get_first_plane_idx(iview);
@@ -105,34 +110,34 @@ pan_image_view_get_first_plane(const struct pan_image_view *iview)
 static inline uint32_t
 pan_image_view_get_nr_samples(const struct pan_image_view *iview)
 {
-   const struct pan_image *image = pan_image_view_get_first_plane(iview);
+   const struct pan_image_plane_ref pref = pan_image_view_get_first_plane(iview);
 
-   if (!image)
+   if (!pref.image)
       return 0;
 
-   return image->props.nr_samples;
+   return pref.image->props.nr_samples;
 }
 
-static inline const struct pan_image *
+static inline const struct pan_image_plane_ref
 pan_image_view_get_color_plane(const struct pan_image_view *iview)
 {
    /* We only support rendering to plane 0 */
-   assert(pan_image_view_get_plane(iview, 1) == NULL);
+   assert(pan_image_view_get_plane(iview, 1).image == NULL);
    return pan_image_view_get_plane(iview, 0);
 }
 
 static inline bool
 pan_image_view_has_crc(const struct pan_image_view *iview)
 {
-   const struct pan_image *image = pan_image_view_get_color_plane(iview);
+   const struct pan_image_plane_ref p = pan_image_view_get_color_plane(iview);
 
-   if (!image)
+   if (!p.image)
       return false;
 
-   return image->props.crc;
+   return p.image->props.crc;
 }
 
-static inline const struct pan_image *
+static inline struct pan_image_plane_ref
 pan_image_view_get_s_plane(const struct pan_image_view *iview)
 {
    ASSERTED const struct util_format_description *fdesc =
@@ -143,15 +148,16 @@ pan_image_view_get_s_plane(const struct pan_image_view *iview)
     * plane 1. Combined depth/stencil only has one plane, so depth
     * will be on plane 0 in either case.
     */
-   const struct pan_image *plane = iview->planes[1] ?: iview->planes[0];
+   const struct pan_image_plane_ref pref =
+      iview->planes[1].image ? iview->planes[1] : iview->planes[0];
 
-   assert(plane);
-   fdesc = util_format_description(plane->props.format);
+   assert(pref.image);
+   fdesc = util_format_description(pref.image->props.format);
    assert(util_format_has_stencil(fdesc));
-   return plane;
+   return pref;
 }
 
-static inline const struct pan_image *
+static inline struct pan_image_plane_ref
 pan_image_view_get_zs_plane(const struct pan_image_view *iview)
 {
    assert(util_format_is_depth_or_stencil(iview->format));
@@ -172,9 +178,10 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
     * plane 1. Combined depth/stencil only has one plane, so depth
     * will be on plane 0 in either case.
     */
-   const struct pan_image *image = util_format_has_stencil(fdesc)
-                                      ? pan_image_view_get_s_plane(iview)
-                                      : pan_image_view_get_plane(iview, 0);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(fdesc) ? pan_image_view_get_s_plane(iview)
+                                     : pan_image_view_get_plane(iview, 0);
+   const struct pan_image *image = pref.image;
 
    level += iview->first_level;
    assert(level < image->props.nr_slices);
@@ -182,8 +189,9 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
    layer += iview->first_layer;
 
    bool is_3d = image->props.dim == MALI_TEXTURE_DIMENSION_3D;
-   const struct pan_image_slice_layout *slice = &image->layout.slices[level];
-   uint64_t base = image->data.base;
+   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slice = &plane->layout.slices[level];
+   uint64_t base = plane->base;
 
    memset(surf, 0, sizeof(*surf));
 
@@ -201,14 +209,14 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
       } else {
          assert(layer < image->props.array_size);
          surf->afbc.header =
-            base + pan_image_surface_offset(&image->layout, level, layer, 0);
+            base + pan_image_surface_offset(&plane->layout, level, layer, 0);
          surf->afbc.body = surf->afbc.header + slice->afbc.header_size_B;
       }
    } else {
       unsigned array_idx = is_3d ? 0 : layer;
       unsigned surface_idx = is_3d ? layer : sample;
 
-      surf->data = base + pan_image_surface_offset(&image->layout, level,
+      surf->data = base + pan_image_surface_offset(&plane->layout, level,
                                                    array_idx, surface_idx);
    }
 }

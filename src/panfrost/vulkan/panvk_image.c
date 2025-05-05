@@ -245,25 +245,28 @@ panvk_image_init_layouts(struct panvk_image *image,
          };
       }
 
-      image->planes[plane].props = (struct pan_image_props){
-         .modifier = image->vk.drm_format_mod,
-         .format = vk_format_to_pipe_format(format),
-         .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
-         .extent_px = {
-            .width = vk_format_get_plane_width(image->vk.format, plane,
-                                               image->vk.extent.width),
-            .height = vk_format_get_plane_height(image->vk.format, plane,
-                                                 image->vk.extent.height),
-            .depth = image->vk.extent.depth,
+      image->planes[plane].image = (struct pan_image){
+         .props = {
+            .modifier = image->vk.drm_format_mod,
+            .format = vk_format_to_pipe_format(format),
+            .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
+            .extent_px = {
+               .width = vk_format_get_plane_width(image->vk.format, plane,
+                                                  image->vk.extent.width),
+               .height = vk_format_get_plane_height(image->vk.format, plane,
+                                                    image->vk.extent.height),
+               .depth = image->vk.extent.depth,
+            },
+            .array_size = image->vk.array_layers,
+            .nr_samples = image->vk.samples,
+            .nr_slices = image->vk.mip_levels,
          },
-         .array_size = image->vk.array_layers,
-         .nr_samples = image->vk.samples,
-         .nr_slices = image->vk.mip_levels,
+         .planes = {&image->planes[plane].plane},
       };
 
-      pan_image_layout_init(arch, &image->planes[plane].props,
+      pan_image_layout_init(arch, &image->planes[plane].image.props, 0,
                             explicit_info ? &plane_layout : NULL,
-                            &image->planes[plane].layout);
+                            &image->planes[plane].plane.layout);
    }
 }
 
@@ -328,7 +331,7 @@ panvk_image_get_total_size(const struct panvk_image *image)
 {
    uint64_t size = 0;
    for (uint8_t plane = 0; plane < image->plane_count; plane++)
-      size += image->planes[plane].layout.data_size_B;
+      size += image->planes[plane].plane.layout.data_size_B;
    return size;
 }
 
@@ -420,20 +423,20 @@ get_image_subresource_layout(const struct panvk_image *image,
    assert(plane < PANVK_MAX_PLANES);
 
    const struct pan_image_slice_layout *slice_layout =
-      &image->planes[plane].layout.slices[subres->mipLevel];
+      &image->planes[plane].plane.layout.slices[subres->mipLevel];
 
    uint64_t base_offset = 0;
    if (!is_disjoint(image)) {
       for (uint8_t plane_idx = 0; plane_idx < plane; plane_idx++)
-         base_offset += image->planes[plane_idx].layout.data_size_B;
+         base_offset += image->planes[plane_idx].plane.layout.data_size_B;
    }
 
    layout->offset =
       base_offset + slice_layout->offset_B +
-      (subres->arrayLayer * image->planes[plane].layout.array_stride_B);
+      (subres->arrayLayer * image->planes[plane].plane.layout.array_stride_B);
    layout->size = slice_layout->size_B;
    layout->rowPitch = slice_layout->row_stride_B;
-   layout->arrayPitch = image->planes[plane].layout.array_stride_B;
+   layout->arrayPitch = image->planes[plane].plane.layout.array_stride_B;
    layout->depthPitch = slice_layout->surface_stride_B;
 }
 
@@ -476,7 +479,7 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
       plane_info ? plane_info->planeAspect : image->vk.aspects;
    uint8_t plane = panvk_plane_index(image->vk.format, aspects);
    const uint64_t size =
-      disjoint ? image->planes[plane].layout.data_size_B :
+      disjoint ? image->planes[plane].plane.layout.data_size_B :
       panvk_image_get_total_size(image);
 
    pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
@@ -538,27 +541,27 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
 }
 
 static void
-panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
+panvk_image_plane_bind(struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
                        uint64_t base, uint64_t offset)
 {
-   plane->data.base = base + offset;
+   plane->plane.base = base + offset;
    /* Reset the AFBC headers */
-   if (drm_is_afbc(plane->props.modifier)) {
+   if (drm_is_afbc(plane->image.props.modifier)) {
       /* Transient CPU mapping */
       void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
                                        PROT_WRITE, MAP_SHARED, NULL);
 
       assert(bo_base != MAP_FAILED);
 
-      for (unsigned layer = 0; layer < plane->props.array_size;
+      for (unsigned layer = 0; layer < plane->image.props.array_size;
            layer++) {
-         for (unsigned level = 0; level < plane->props.nr_slices;
+         for (unsigned level = 0; level < plane->image.props.nr_slices;
               level++) {
             void *header = bo_base + offset +
-                           (layer * plane->layout.array_stride_B) +
-                           plane->layout.slices[level].offset_B;
+                           (layer * plane->plane.layout.array_stride_B) +
+                           plane->plane.layout.slices[level].offset_B;
             memset(header, 0,
-                   plane->layout.slices[level].afbc.header_size_B);
+                   plane->plane.layout.slices[level].afbc.header_size_B);
          }
       }
 
@@ -587,7 +590,7 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
 
          image->bo = wsi_image->bo;
          panvk_image_plane_bind(&image->planes[0], image->bo,
-                                wsi_image->planes[0].data.base, 0);
+                                wsi_image->planes[0].plane.base, 0);
       } else {
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);
@@ -605,7 +608,7 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
             for (unsigned plane = 0; plane < image->plane_count; plane++) {
                panvk_image_plane_bind(&image->planes[plane], image->bo,
                                       mem->addr.dev, offset);
-               offset += image->planes[plane].layout.data_size_B;
+               offset += image->planes[plane].plane.layout.data_size_B;
             }
          }
       }

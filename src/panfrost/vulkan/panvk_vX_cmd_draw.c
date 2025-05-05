@@ -122,8 +122,11 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
    if (iview->pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
       state->render.zs_pview.format = PIPE_FORMAT_Z32_FLOAT;
 
-   state->render.zs_pview.planes[0] = &img->planes[0];
-   state->render.zs_pview.planes[1] = NULL;
+   state->render.zs_pview.planes[0] = (struct pan_image_plane_ref){
+      .image = &img->planes[0].image,
+      .plane_idx = 0,
+   };
+   state->render.zs_pview.planes[1] = (struct pan_image_plane_ref){0};
    state->render.fb.nr_samples =
       MAX2(state->render.fb.nr_samples,
            pan_image_view_get_nr_samples(&iview->pview));
@@ -184,11 +187,17 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
                                      ? PIPE_FORMAT_Z24_UNORM_S8_UINT
                                      : PIPE_FORMAT_S8_UINT;
    if (img->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
-      state->render.s_pview.planes[0] = NULL;
-      state->render.s_pview.planes[1] = &img->planes[1];
+      state->render.s_pview.planes[0] = (struct pan_image_plane_ref){0};
+      state->render.s_pview.planes[1] = (struct pan_image_plane_ref){
+         .image = &img->planes[1].image,
+         .plane_idx = 0,
+      };
    } else {
-      state->render.s_pview.planes[0] = &img->planes[0];
-      state->render.s_pview.planes[1] = NULL;
+      state->render.s_pview.planes[0] = (struct pan_image_plane_ref){
+         .image = &img->planes[0].image,
+         .plane_idx = 0,
+      };
+      state->render.s_pview.planes[1] = (struct pan_image_plane_ref){0};
    }
 
    state->render.fb.nr_samples =

@@ -935,7 +935,7 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
       struct cs_index address = cs_reg64(b, 64);
       cs_move64_to(
          b, address,
-         pan_resource(info->indirect)->image.data.base + info->indirect_offset);
+         pan_resource(info->indirect)->plane.base + info->indirect_offset);
 
       struct cs_index grid_xyz = cs_sr_reg_tuple(b, COMPUTE, JOB_SIZE_X, 3);
       cs_load_to(b, grid_xyz, address, BITFIELD_MASK(3), 0);
@@ -1138,7 +1138,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
 
    if (ctx->occlusion_query && ctx->active_queries) {
       struct panfrost_resource *rsrc = pan_resource(ctx->occlusion_query->rsrc);
-      cs_move64_to(b, cs_sr_reg64(b, IDVS, OQ), rsrc->image.data.base);
+      cs_move64_to(b, cs_sr_reg64(b, IDVS, OQ), rsrc->plane.base);
       panfrost_batch_write_rsrc(ctx->batch, rsrc, PIPE_SHADER_FRAGMENT);
    }
 
@@ -1378,7 +1378,7 @@ GENX(csf_launch_draw_indirect)(struct panfrost_batch *batch,
    struct cs_index counter = cs_reg32(b, 66);
    cs_move64_to(
       b, address,
-      pan_resource(indirect->buffer)->image.data.base + indirect->offset);
+      pan_resource(indirect->buffer)->plane.base + indirect->offset);
    cs_move32_to(b, counter, indirect->draw_count);
 
    cs_while(b, MALI_CS_CONDITION_GREATER, counter) {
@@ -1638,7 +1638,7 @@ GENX(csf_emit_write_timestamp)(struct panfrost_batch *batch,
    struct cs_builder *b = batch->csf.cs.builder;
 
    struct cs_index address = cs_reg64(b, 40);
-   cs_move64_to(b, address, dst->image.data.base + offset);
+   cs_move64_to(b, address, dst->plane.base + offset);
    cs_store_state(b, address, 0, MALI_CS_STATE_TIMESTAMP, cs_now());
 
    panfrost_batch_write_rsrc(batch, dst, PIPE_SHADER_VERTEX);

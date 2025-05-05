@@ -564,7 +564,10 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
       zs->last_level = zs->first_level = surf->level;
       zs->first_layer = surf->first_layer;
       zs->last_layer = surf->last_layer;
-      zs->planes[0] = &z_rsrc->image;
+      zs->planes[0] = (struct pan_image_plane_ref){
+         .image = &z_rsrc->image,
+         .plane_idx = 0,
+      };
       zs->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
       memcpy(zs->swizzle, id_swz, sizeof(zs->swizzle));
       fb->zs.view.zs = zs;
@@ -581,7 +584,10 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
          s->last_level = s->first_level = surf->level;
          s->first_layer = surf->first_layer;
          s->last_layer = surf->last_layer;
-         s->planes[0] = &s_rsrc->image;
+         s->planes[0] = (struct pan_image_plane_ref){
+            .image = &s_rsrc->image,
+            .plane_idx = 0,
+         };
          s->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
          memcpy(s->swizzle, id_swz, sizeof(s->swizzle));
          fb->zs.view.s = s;

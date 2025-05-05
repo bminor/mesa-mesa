@@ -299,8 +299,11 @@ pan_afbc_unswizzled_format(unsigned arch, enum pipe_format format)
  * cannot be compressed. */
 
 static inline enum pan_afbc_mode
-pan_afbc_format(unsigned arch, enum pipe_format format)
+pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
 {
+   /* Revisit when adding YUV support. */
+   assert(plane_idx == 0);
+
    /* sRGB does not change the pixel format itself, only the
     * interpretation. The interpretation is handled by conversion hardware
     * independent to the compression hardware, so we can compress sRGB
@@ -351,7 +354,14 @@ pan_afbc_format(unsigned arch, enum pipe_format format)
 static inline bool
 pan_format_supports_afbc(unsigned arch, enum pipe_format format)
 {
-   return pan_afbc_format(arch, format) != PAN_AFBC_MODE_INVALID;
+   unsigned plane_count = util_format_get_num_planes(format);
+
+   for (unsigned i = 0; i < plane_count; i++) {
+      if (pan_afbc_format(arch, format, i) == PAN_AFBC_MODE_INVALID)
+         return false;
+   }
+
+   return true;
 }
 
 /* The lossless colour transform (AFBC_FORMAT_MOD_YTR) requires RGB. */
@@ -370,7 +380,8 @@ pan_afbc_can_ytr(enum pipe_format format)
 }
 
 static inline bool
-pan_afbc_can_split(unsigned arch, enum pipe_format format, uint64_t modifier)
+pan_afbc_can_split(unsigned arch, enum pipe_format format, uint64_t modifier,
+                   unsigned plane_idx)
 {
    unsigned block_width = pan_afbc_superblock_width(modifier);
 
@@ -380,7 +391,7 @@ pan_afbc_can_split(unsigned arch, enum pipe_format format, uint64_t modifier)
    if (block_width == 16) {
       return true;
    } else if (block_width == 32) {
-      enum pan_afbc_mode mode = pan_afbc_format(arch, format);
+      enum pan_afbc_mode mode = pan_afbc_format(arch, format, plane_idx);
       return (mode == PAN_AFBC_MODE_R8G8B8A8 ||
               mode == PAN_AFBC_MODE_R10G10B10A2);
    }
@@ -410,7 +421,7 @@ pan_afbc_can_tile(unsigned arch)
 
 #if PAN_ARCH >= 9
 static inline enum mali_afbc_compression_mode
-pan_afbc_compression_mode(enum pipe_format format)
+pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
 {
    /* There's a special case for texturing the stencil part from a combined
     * depth/stencil texture, handle it separately.
@@ -422,7 +433,7 @@ pan_afbc_compression_mode(enum pipe_format format)
     * needs to handle the subset of formats returned by
     * pan_afbc_format.
     */
-   switch (pan_afbc_format(PAN_ARCH, format)) {
+   switch (pan_afbc_format(PAN_ARCH, format, plane_idx)) {
    case PAN_AFBC_MODE_R8:
       return MALI_AFBC_COMPRESSION_MODE_R8;
    case PAN_AFBC_MODE_R8G8:

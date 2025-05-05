@@ -488,10 +488,10 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       fbinfo->bifrost.pre_post.modes[dcd_idx] =
          MALI_PRE_POST_FRAME_SHADER_MODE_INTERSECT;
    } else {
-      const struct pan_image *plane =
+      const struct pan_image_plane_ref pref =
          fbinfo->zs.view.zs ? pan_image_view_get_zs_plane(fbinfo->zs.view.zs)
                             : pan_image_view_get_s_plane(fbinfo->zs.view.s);
-      enum pipe_format fmt = plane->props.format;
+      enum pipe_format fmt = pref.image->props.format;
       /* On some GPUs (e.g. G31), we must use SHADER_MODE_ALWAYS rather than
        * SHADER_MODE_INTERSECT for full screen operations. Since the full
        * screen rectangle will always intersect, this won't affect
