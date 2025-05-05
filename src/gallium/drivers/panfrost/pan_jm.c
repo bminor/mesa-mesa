@@ -1027,7 +1027,7 @@ GENX(jm_emit_write_timestamp)(struct panfrost_batch *batch,
    struct pan_ptr job = pan_pool_alloc_desc(&batch->pool.base, WRITE_VALUE_JOB);
 
    pan_section_pack(job.cpu, WRITE_VALUE_JOB, PAYLOAD, cfg) {
-      cfg.address = dst->image.data.base + dst->image.data.offset + offset;
+      cfg.address = dst->image.data.base + offset;
       cfg.type = MALI_WRITE_VALUE_TYPE_SYSTEM_TIMESTAMP;
    }
 

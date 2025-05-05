@@ -309,8 +309,7 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
    const struct pan_image_slice_layout *slice =
       &image->layout.slices[rt->first_level];
 
-   ext->crc_base =
-      image->data.base + image->data.offset + slice->crc.offset;
+   ext->crc_base = image->data.base + slice->crc.offset;
    ext->crc_row_stride = slice->crc.stride;
 
 #if PAN_ARCH >= 7
@@ -1097,8 +1096,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
                &image->layout.slices[level];
 
             cfg.crc_buffer.row_stride = slice->crc.stride;
-            cfg.crc_buffer.base =
-               image->data.base + image->data.offset + slice->crc.offset;
+            cfg.crc_buffer.base = image->data.base + slice->crc.offset;
          }
       }
 

@@ -23,7 +23,6 @@ extern "C" {
 
 struct pan_image_mem {
    uint64_t base;
-   unsigned offset;
 };
 
 struct pan_image {
@@ -188,7 +187,7 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
 
    bool is_3d = image->layout.dim == MALI_TEXTURE_DIMENSION_3D;
    const struct pan_image_slice_layout *slice = &image->layout.slices[level];
-   uint64_t base = image->data.base + image->data.offset;
+   uint64_t base = image->data.base;
 
    memset(surf, 0, sizeof(*surf));
 

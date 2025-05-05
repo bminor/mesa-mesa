@@ -3575,8 +3575,7 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
 
    struct pan_image_slice_layout *slice = &src->image.layout.slices[level];
    struct panfrost_afbc_size_info consts = {
-      .src =
-         src->image.data.base + src->image.data.offset + slice->offset,
+      .src = src->image.data.base + slice->offset,
       .metadata = metadata->ptr.gpu + offset,
    };
 
@@ -3597,8 +3596,7 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 
    struct pan_image_slice_layout *src_slice = &src->image.layout.slices[level];
    struct panfrost_afbc_pack_info consts = {
-      .src = src->image.data.base + src->image.data.offset +
-             src_slice->offset,
+      .src = src->image.data.base + src_slice->offset,
       .dst = dst->ptr.gpu + dst_slice->offset,
       .metadata = metadata->ptr.gpu + metadata_offset,
       .header_size = dst_slice->afbc.header_size,

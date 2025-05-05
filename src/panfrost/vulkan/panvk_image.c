@@ -541,8 +541,7 @@ static void
 panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
                        uint64_t base, uint64_t offset)
 {
-   plane->data.base = base;
-   plane->data.offset = offset;
+   plane->data.base = base + offset;
    /* Reset the AFBC headers */
    if (drm_is_afbc(plane->layout.modifier)) {
       /* Transient CPU mapping */
@@ -555,7 +554,7 @@ panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
            layer++) {
          for (unsigned level = 0; level < plane->layout.nr_slices;
               level++) {
-            void *header = bo_base + plane->data.offset +
+            void *header = bo_base + offset +
                            (layer * plane->layout.array_stride) +
                            plane->layout.slices[level].offset;
             memset(header, 0,
@@ -589,8 +588,7 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
 
          image->bo = pan_kmod_bo_get(wsi_image->bo);
          panvk_image_plane_bind(&image->planes[0], image->bo,
-                                wsi_image->planes[0].data.base,
-                                wsi_image->planes[0].data.offset);
+                                wsi_image->planes[0].data.base, 0);
       } else {
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);

@@ -229,7 +229,7 @@ get_image_section_info(const struct pan_image_view *iview,
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
-   uint64_t base = plane->data.base + plane->data.offset;
+   uint64_t base = plane->data.base;
    struct pan_image_section_info info = {0};
 
    if (iview->buf.size) {

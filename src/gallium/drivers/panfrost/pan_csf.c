@@ -1638,8 +1638,7 @@ GENX(csf_emit_write_timestamp)(struct panfrost_batch *batch,
    struct cs_builder *b = batch->csf.cs.builder;
 
    struct cs_index address = cs_reg64(b, 40);
-   cs_move64_to(b, address,
-                dst->image.data.base + dst->image.data.offset + offset);
+   cs_move64_to(b, address, dst->image.data.base + offset);
    cs_store_state(b, address, 0, MALI_CS_STATE_TIMESTAMP, cs_now());
 
    panfrost_batch_write_rsrc(batch, dst, PIPE_SHADER_VERTEX);

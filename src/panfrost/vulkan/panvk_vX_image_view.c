@@ -243,10 +243,9 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
    const struct pan_image_layout *plane_layout =
       &image->planes[plane_idx].layout;
    bool is_3d = plane_layout->dim == MALI_TEXTURE_DIMENSION_3D;
-   unsigned offset = image->planes[plane_idx].data.offset;
-   offset += pan_image_surface_offset(plane_layout, view->pview.first_level,
-                                      is_3d ? 0 : view->pview.first_layer,
-                                      is_3d ? view->pview.first_layer : 0);
+   unsigned offset = pan_image_surface_offset(
+      plane_layout, view->pview.first_level,
+      is_3d ? 0 : view->pview.first_layer, is_3d ? view->pview.first_layer : 0);
 
    pan_pack(&view->descs.img_attrib_buf[0], ATTRIBUTE_BUFFER, cfg) {
       /* The format is the only thing we lack to emit attribute descriptors

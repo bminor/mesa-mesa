@@ -61,7 +61,6 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       struct pan_image plane = {
          .data = {
             .base = address,
-            .offset = 0,
 	 },
          .layout = {
             .modifier = DRM_FORMAT_MOD_LINEAR,
