@@ -1639,7 +1639,8 @@ impl SM20Op for OpShfl {
         e.set_dst(14..20, self.dst);
         e.set_reg_src(20..26, self.src);
 
-        if let Some(u) = self.lane.as_u32() {
+        assert!(self.lane.src_mod.is_none());
+        if let Some(u) = self.lane.src_ref.as_u32() {
             e.set_field(26..32, u & 0x1f);
             e.set_bit(5, true);
         } else {
@@ -1647,7 +1648,8 @@ impl SM20Op for OpShfl {
             e.set_bit(5, false);
         }
 
-        if let Some(u) = self.c.as_u32() {
+        assert!(self.c.src_mod.is_none());
+        if let Some(u) = self.c.src_ref.as_u32() {
             e.set_field(42..55, u & 0x1fff);
             e.set_bit(6, true);
         } else {
