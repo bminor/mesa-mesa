@@ -338,8 +338,6 @@ struct radeon_uvd_enc_pic {
 struct radeon_uvd_encoder {
    struct pipe_video_codec base;
 
-   unsigned stream_handle;
-
    struct pipe_screen *screen;
    struct radeon_winsys *ws;
    struct radeon_cmdbuf cs;
