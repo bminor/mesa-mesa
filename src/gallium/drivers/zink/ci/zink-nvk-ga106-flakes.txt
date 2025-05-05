@@ -134,6 +134,7 @@ spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qua
 spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/256x256
 spec@arb_shader_image_load_store@semantics@imageLoad/Tessellation control shader/r8/image2D test
 spec@arb_shader_precision@fs-fma-float-float-float
+spec@arb_shader_precision@fs-op-assign-mult-float-float
 spec@arb_shader_precision@gs-radians-float
 spec@arb_shader_precision@vs-op-assign-add-vec4-float
 spec@arb_shader_precision@vs-op-sub-float-vec2
