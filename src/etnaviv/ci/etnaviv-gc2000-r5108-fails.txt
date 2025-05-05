@@ -193,7 +193,6 @@ spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 2d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 2drect,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 2drectshadow,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 2dshadow,Fail
-spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 3d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb cube,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *lod 1d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *lod 1dshadow,Fail
@@ -210,7 +209,6 @@ spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 2drect
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 2drect_projvec4,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 2drectshadow,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 2dshadow,Fail
-spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 3d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projlod 1d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projlod 1d_projvec4,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projlod 1dshadow,Fail
