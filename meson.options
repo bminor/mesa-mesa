@@ -118,6 +118,20 @@ option(
 )
 
 option(
+  'gallium-mediafoundation',
+  type : 'feature',
+  deprecated: {'true': 'enabled', 'false': 'disabled'},
+  description : 'enable gallium mediafoundation frontend.',
+)
+
+option(
+  'gallium-mediafoundation-test',
+  type : 'boolean',
+  value : false,
+  description : 'enable gallium mediafoundation frontend tests.',
+)
+
+option(
   'va-libs-path',
   type : 'string',
   value : '',
@@ -176,6 +190,20 @@ option(
   value : 'libgallium_d3d10',
   description : 'name of gallium d3d10 target DLL built for Windows. ' +
                 'defaults to libgallium_d3d10.dll to match DRI',
+)
+
+option(
+  'mediafoundation-windows-dll-name',
+  type : 'string',
+  value : 'mediafoundation_hmft',
+  description : 'name of gallium mediafoundation DLL built for Windows. ',
+)
+
+option(
+  'mediafoundation-store-dll',
+  type : 'boolean',
+  value : 'false',
+  description : 'Selects whether the gallium mediafoundation DLL is built for the store. ',
 )
 
 option(

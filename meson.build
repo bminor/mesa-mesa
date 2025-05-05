@@ -694,6 +694,23 @@ if va_drivers_path == ''
   va_drivers_path = join_paths(get_option('libdir'), 'dri')
 endif
 
+_mediafoundation_drivers = [
+  with_gallium_d3d12_video,
+]
+
+with_gallium_mediafoundation = get_option('gallium-mediafoundation') \
+  .require(host_machine.system() == 'windows', error_message : 'mediafoundation only supported on Windows') \
+  .require(_mediafoundation_drivers.contains(true),
+           error_message : 'Media foundation state tracker requires at least one of the following gallium drivers: d3d12 (with option gallium-d3d12-video).') \
+  .enabled()
+
+with_gallium_mediafoundation_test = get_option('gallium-mediafoundation-test')
+if with_gallium_mediafoundation_test
+  if not with_gallium_mediafoundation
+    error('The mediafoundation test requires mediafoundation.')
+  endif
+endif
+
 with_gallium_xa = get_option('gallium-xa') \
   .require(system_has_kms_drm, error_message : 'XA state tracker can only be built on unix-like OSes.') \
   .require(with_gallium_nouveau or with_gallium_freedreno or with_gallium_i915 or with_gallium_svga,
@@ -2378,6 +2395,9 @@ endif
 if with_gallium_va
   video_apis += 'va'
 endif
+if with_gallium_mediafoundation
+  video_apis += 'mediafoundation'
+endif
 if with_any_vk
   video_apis += 'vulkan'
 endif
@@ -2408,6 +2428,9 @@ if with_gallium
   endif
   if with_gallium_va
     gallium_frontends += 'va'
+  endif
+  if with_gallium_mediafoundation
+    gallium_frontends += 'mediafoundation'
   endif
   if with_gallium_st_nine
     gallium_frontends += 'nine'

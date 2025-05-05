@@ -216,6 +216,10 @@ if with_gallium_vdpau
     subdir('targets/vdpau')
   endif
 endif
+if with_gallium_mediafoundation
+  subdir('frontends/mediafoundation')
+  subdir('targets/mediafoundation')
+endif
 if with_dri
   subdir('frontends/dri')
   subdir('targets/dri')

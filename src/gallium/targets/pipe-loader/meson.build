@@ -10,7 +10,7 @@ pipe_loader_incs = [
   inc_gallium_winsys, inc_gallium_aux,
 ]
 
-if (with_gallium_va or with_gallium_vdpau)
+if (with_gallium_mediafoundation or with_gallium_va or with_gallium_vdpau)
   pipe_loader_link_with += libgalliumvlwinsys
 endif
 
