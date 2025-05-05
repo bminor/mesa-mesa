@@ -35,7 +35,7 @@
 #   austriancoder    | ci-tron                          | @austriancoder
 #   collabora        | lava                             | @daniels, @sergi
 #   google-freedreno | none (moving to LAVA)            | @daniels, @sergi
-#   igalia           | baremetal/poe-powered            | @jasuarez, @chema
+#   igalia           | baremetal/poe-powered, ci-tron   | @jasuarez, @chema
 #   lima             | lava                             | @enunes
 #   microsoft        | custom                           | @jenatali, @alatiera
 #   ondracka         | ci-tron                          | @ondracka
