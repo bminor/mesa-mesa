@@ -37,7 +37,7 @@
 #define HAS_ANISO (0)
 
 #define MODEL(gpu_id_, gpu_variant_, shortname, counters_,                     \
-              min_rev_anisotropic_, tib_size_, tib_z_size_, quirks_)           \
+              min_rev_anisotropic_, tib_size_, tib_z_size_, ...)               \
    {                                                                           \
       .gpu_id = gpu_id_, .gpu_variant = gpu_variant_,                          \
       .name = "Mali-" shortname,                                               \
@@ -45,41 +45,41 @@
       .min_rev_anisotropic = min_rev_anisotropic_,                             \
       .tilebuffer_size = tib_size_,                                            \
       .tilebuffer_z_size = tib_z_size_,                                        \
-      .quirks = quirks_,                                                       \
+      .quirks = { __VA_ARGS__ },                                               \
    }
 
 /* Table of supported Mali GPUs */
 /* clang-format off */
 const struct pan_model pan_model_list[] = {
-        MODEL(0x600, 0, "T600",    "T60x", NO_ANISO,           8192,  8192, {}),
-        MODEL(0x620, 0, "T620",    "T62x", NO_ANISO,           8192,  8192, {}),
-        MODEL(0x720, 0, "T720",    "T72x", NO_ANISO,           8192,  8192, { .no_hierarchical_tiling = true }),
-        MODEL(0x750, 0, "T760",    "T76x", NO_ANISO,           8192,  8192, {}),
-        MODEL(0x820, 0, "T820",    "T82x", NO_ANISO,           8192,  8192, { .no_hierarchical_tiling = true }),
-        MODEL(0x830, 0, "T830",    "T83x", NO_ANISO,           8192,  8192, { .no_hierarchical_tiling = true }),
-        MODEL(0x860, 0, "T860",    "T86x", NO_ANISO,           8192,  8192, {}),
-        MODEL(0x880, 0, "T880",    "T88x", NO_ANISO,           8192,  8192, {}),
+        MODEL(0x600, 0, "T600",    "T60x", NO_ANISO,           8192,  8192),
+        MODEL(0x620, 0, "T620",    "T62x", NO_ANISO,           8192,  8192),
+        MODEL(0x720, 0, "T720",    "T72x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
+        MODEL(0x750, 0, "T760",    "T76x", NO_ANISO,           8192,  8192),
+        MODEL(0x820, 0, "T820",    "T82x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
+        MODEL(0x830, 0, "T830",    "T83x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
+        MODEL(0x860, 0, "T860",    "T86x", NO_ANISO,           8192,  8192),
+        MODEL(0x880, 0, "T880",    "T88x", NO_ANISO,           8192,  8192),
 
-        MODEL(0x6000, 0, "G71",    "TMIx", NO_ANISO,           8192,  8192, {}),
-        MODEL(0x6221, 0, "G72",    "THEx", 0x0030 /* r0p3 */, 16384,  8192, {}),
-        MODEL(0x7090, 0, "G51",    "TSIx", 0x1010 /* r1p1 */,  8192,  8192, {}),
-        MODEL(0x7093, 0, "G31",    "TDVx", HAS_ANISO,          8192,  8192, {}),
-        MODEL(0x7211, 0, "G76",    "TNOx", HAS_ANISO,         16384,  8192, {}),
-        MODEL(0x7212, 0, "G52",    "TGOx", HAS_ANISO,         16384,  8192, {}),
-        MODEL(0x7402, 0, "G52 r1", "TGOx", HAS_ANISO,          8192,  8192, {}),
-        MODEL(0x9091, 0, "G57",    "TNAx", HAS_ANISO,         16384,  8192, {}),
-        MODEL(0x9093, 0, "G57",    "TNAx", HAS_ANISO,         16384,  8192, {}),
+        MODEL(0x6000, 0, "G71",    "TMIx", NO_ANISO,           8192,  8192),
+        MODEL(0x6221, 0, "G72",    "THEx", 0x0030 /* r0p3 */, 16384,  8192),
+        MODEL(0x7090, 0, "G51",    "TSIx", 0x1010 /* r1p1 */,  8192,  8192),
+        MODEL(0x7093, 0, "G31",    "TDVx", HAS_ANISO,          8192,  8192),
+        MODEL(0x7211, 0, "G76",    "TNOx", HAS_ANISO,         16384,  8192),
+        MODEL(0x7212, 0, "G52",    "TGOx", HAS_ANISO,         16384,  8192),
+        MODEL(0x7402, 0, "G52 r1", "TGOx", HAS_ANISO,          8192,  8192),
+        MODEL(0x9091, 0, "G57",    "TNAx", HAS_ANISO,         16384,  8192),
+        MODEL(0x9093, 0, "G57",    "TNAx", HAS_ANISO,         16384,  8192),
 
-        MODEL(0xa867, 0, "G610",   "TVIx", HAS_ANISO,         32768, 16384, {}),
-        MODEL(0xac74, 0, "G310",   "TVAx", HAS_ANISO,         16384,  8192,  {}),
-        MODEL(0xac74, 1, "G310",   "TVAx", HAS_ANISO,         16384,  8192,  {}),
-        MODEL(0xac74, 2, "G310",   "TVAx", HAS_ANISO,         16384,  8192,  {}),
-        MODEL(0xac74, 3, "G310",   "TVAx", HAS_ANISO,         32768, 16384, {}),
-        MODEL(0xac74, 4, "G310",   "TVAx", HAS_ANISO,         32768, 16384, {}),
+        MODEL(0xa867, 0, "G610",   "TVIx", HAS_ANISO,         32768, 16384),
+        MODEL(0xac74, 0, "G310",   "TVAx", HAS_ANISO,         16384,  8192),
+        MODEL(0xac74, 1, "G310",   "TVAx", HAS_ANISO,         16384,  8192),
+        MODEL(0xac74, 2, "G310",   "TVAx", HAS_ANISO,         16384,  8192),
+        MODEL(0xac74, 3, "G310",   "TVAx", HAS_ANISO,         32768, 16384),
+        MODEL(0xac74, 4, "G310",   "TVAx", HAS_ANISO,         32768, 16384),
 
-        MODEL(0xc870, 4, "G720",   "TTIx", HAS_ANISO,         65536, 32768, {}),
+        MODEL(0xc870, 4, "G720",   "TTIx", HAS_ANISO,         65536, 32768),
 
-        MODEL(0xd830, 4, "G725",   "TKRx", HAS_ANISO,         65536, 65536, {}),
+        MODEL(0xd830, 4, "G725",   "TKRx", HAS_ANISO,         65536, 65536),
 };
 /* clang-format on */
 
