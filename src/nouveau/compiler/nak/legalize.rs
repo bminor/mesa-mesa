@@ -387,7 +387,15 @@ fn legalize_instr(
 
     let src_types = instr.src_types();
     for (i, src) in instr.srcs_mut().iter_mut().enumerate() {
-        *src = src.fold_imm(src_types[i]);
+        if matches!(src.src_ref, SrcRef::Imm32(_)) {
+            // Fold modifiers on Imm32 sources whenever possible.  Not all
+            // instructions suppport modifiers and immediates at the same time.
+            // But leave Zero sources alone as we don't want to make things
+            // immediates that could just be rZ.
+            if let Some(u) = src.as_u32(src_types[i]) {
+                *src = u.into();
+            }
+        }
         b.copy_src_if_not_same_file(src);
 
         if !block_uniform {

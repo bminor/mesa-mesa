@@ -1197,19 +1197,6 @@ impl Src {
         })
     }
 
-    pub fn fold_imm(&self, src_type: SrcType) -> Src {
-        // Don't fold Zero
-        if !matches!(self.src_ref, SrcRef::Imm32(_)) {
-            return *self;
-        }
-
-        if let Some(u) = self.as_u32(src_type) {
-            u.into()
-        } else {
-            *self
-        }
-    }
-
     pub fn as_ssa(&self) -> Option<&SSARef> {
         if self.src_mod.is_none() {
             self.src_ref.as_ssa()
