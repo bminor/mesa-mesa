@@ -210,7 +210,7 @@ impl PrmtPass {
                         op_sel_byte.msb() | src_sel_byte.msb(),
                     );
                 }
-            } else if let Some(u) = src.as_u32() {
+            } else if let Some(u) = src.as_u32(SrcType::ALU) {
                 let imm_u8 = op_sel_byte.fold_u32(u);
                 let Some(byte_idx) = srcs.try_add_imm_u8(imm_u8) else {
                     return false;

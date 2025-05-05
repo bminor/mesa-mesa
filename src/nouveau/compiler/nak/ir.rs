@@ -1225,7 +1225,8 @@ impl Src {
         }
     }
 
-    pub fn as_u32(&self) -> Option<u32> {
+    pub fn as_u32(&self, src_type: SrcType) -> Option<u32> {
+        debug_assert!(self.supports_type(&src_type));
         if self.src_mod.is_none() {
             self.src_ref.as_u32()
         } else {
@@ -4731,7 +4732,7 @@ impl OpPrmt {
             return None;
         }
 
-        if let Some(sel) = self.sel.as_u32() {
+        if let Some(sel) = self.sel.as_u32(SrcType::ALU) {
             // The top 16 bits are ignored
             Some(PrmtSel(sel as u16))
         } else {
@@ -4747,7 +4748,8 @@ impl OpPrmt {
         let mut imm = 0_u32;
         for b in 0..4 {
             let sel_byte = sel.get(b);
-            let Some(src_u32) = self.srcs[sel_byte.src()].as_u32() else {
+            let sel_src = &self.srcs[sel_byte.src()];
+            let Some(src_u32) = sel_src.as_u32(SrcType::ALU) else {
                 return None;
             };
 
