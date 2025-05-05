@@ -1178,8 +1178,7 @@ vn_physical_device_get_native_extensions(
    }
 
 #ifdef VN_USE_WSI_PLATFORM
-   if (can_external_mem &&
-       physical_dev->renderer_sync_fd.semaphore_importable) {
+   if (physical_dev->renderer_sync_fd.semaphore_importable) {
       exts->KHR_incremental_present = true;
       exts->KHR_swapchain = true;
       exts->KHR_swapchain_mutable_format = true;

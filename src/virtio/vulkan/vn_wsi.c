@@ -81,7 +81,8 @@ vn_wsi_init(struct vn_physical_device *physical_dev)
       &physical_dev->wsi_device, vn_physical_device_to_handle(physical_dev),
       vn_wsi_proc_addr, alloc, -1, &physical_dev->instance->dri_options,
       &(struct wsi_device_options){
-         .sw_device = false,
+         .sw_device = !physical_dev->base.vk.supported_extensions
+                          .EXT_external_memory_dma_buf,
          .extra_xwayland_image = true,
       });
    if (result != VK_SUCCESS)
