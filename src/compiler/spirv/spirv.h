@@ -176,6 +176,8 @@ typedef enum SpvExecutionMode_ {
     SpvExecutionModeSignedZeroInfNanPreserve = 4461,
     SpvExecutionModeRoundingModeRTE = 4462,
     SpvExecutionModeRoundingModeRTZ = 4463,
+    SpvExecutionModeNonCoherentTileAttachmentReadQCOM = 4489,
+    SpvExecutionModeTileShadingRateQCOM = 4490,
     SpvExecutionModeEarlyAndLateFragmentTestsAMD = 5017,
     SpvExecutionModeStencilRefReplacingEXT = 5027,
     SpvExecutionModeCoalescingAMDX = 5069,
@@ -245,6 +247,7 @@ typedef enum SpvStorageClass_ {
     SpvStorageClassImage = 11,
     SpvStorageClassStorageBuffer = 12,
     SpvStorageClassTileImageEXT = 4172,
+    SpvStorageClassTileAttachmentQCOM = 4491,
     SpvStorageClassNodePayloadAMDX = 5068,
     SpvStorageClassCallableDataKHR = 5328,
     SpvStorageClassCallableDataNV = 5328,
@@ -383,9 +386,15 @@ typedef enum SpvImageChannelDataType_ {
     SpvImageChannelDataTypeFloat = 14,
     SpvImageChannelDataTypeUnormInt24 = 15,
     SpvImageChannelDataTypeUnormInt101010_2 = 16,
+    SpvImageChannelDataTypeUnormInt10X6EXT = 17,
     SpvImageChannelDataTypeUnsignedIntRaw10EXT = 19,
     SpvImageChannelDataTypeUnsignedIntRaw12EXT = 20,
     SpvImageChannelDataTypeUnormInt2_101010EXT = 21,
+    SpvImageChannelDataTypeUnsignedInt10X6EXT = 22,
+    SpvImageChannelDataTypeUnsignedInt12X4EXT = 23,
+    SpvImageChannelDataTypeUnsignedInt14X2EXT = 24,
+    SpvImageChannelDataTypeUnormInt12X4EXT = 25,
+    SpvImageChannelDataTypeUnormInt14X2EXT = 26,
     SpvImageChannelDataTypeMax = 0x7fffffff,
 } SpvImageChannelDataType;
 
@@ -717,6 +726,9 @@ typedef enum SpvBuiltIn_ {
     SpvBuiltInDeviceIndex = 4438,
     SpvBuiltInViewIndex = 4440,
     SpvBuiltInShadingRateKHR = 4444,
+    SpvBuiltInTileOffsetQCOM = 4492,
+    SpvBuiltInTileDimensionQCOM = 4493,
+    SpvBuiltInTileApronSizeQCOM = 4494,
     SpvBuiltInBaryCoordNoPerspAMD = 4992,
     SpvBuiltInBaryCoordNoPerspCentroidAMD = 4993,
     SpvBuiltInBaryCoordNoPerspSampleAMD = 4994,
@@ -1103,6 +1115,7 @@ typedef enum SpvCapability_ {
     SpvCapabilityTextureSampleWeightedQCOM = 4484,
     SpvCapabilityTextureBoxFilterQCOM = 4485,
     SpvCapabilityTextureBlockMatchQCOM = 4486,
+    SpvCapabilityTileShadingQCOM = 4495,
     SpvCapabilityTextureBlockMatch2QCOM = 4498,
     SpvCapabilityFloat16ImageAMD = 5008,
     SpvCapabilityImageGatherBiasLodAMD = 5009,
@@ -1275,6 +1288,7 @@ typedef enum SpvCapability_ {
     SpvCapabilitySubgroup2DBlockTransformINTEL = 6229,
     SpvCapabilitySubgroup2DBlockTransposeINTEL = 6230,
     SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL = 6236,
+    SpvCapabilityTernaryBitwiseFunctionINTEL = 6241,
     SpvCapabilityGroupUniformArithmeticKHR = 6400,
     SpvCapabilityTensorFloat32RoundingINTEL = 6425,
     SpvCapabilityMaskedGatherScatterINTEL = 6427,
@@ -2366,6 +2380,7 @@ typedef enum SpvOp_ {
     SpvOpSubgroup2DBlockPrefetchINTEL = 6234,
     SpvOpSubgroup2DBlockStoreINTEL = 6235,
     SpvOpSubgroupMatrixMultiplyAccumulateINTEL = 6237,
+    SpvOpBitwiseFunctionINTEL = 6242,
     SpvOpGroupIMulKHR = 6401,
     SpvOpGroupFMulKHR = 6402,
     SpvOpGroupBitwiseAndKHR = 6403,
@@ -3170,6 +3185,7 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpSubgroup2DBlockPrefetchINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpSubgroup2DBlockStoreINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpSubgroupMatrixMultiplyAccumulateINTEL: *hasResult = true; *hasResultType = true; break;
+    case SpvOpBitwiseFunctionINTEL: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupIMulKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupFMulKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupBitwiseAndKHR: *hasResult = true; *hasResultType = true; break;
@@ -3296,6 +3312,8 @@ inline const char* SpvExecutionModeToString(SpvExecutionMode value) {
     case SpvExecutionModeSignedZeroInfNanPreserve: return "SignedZeroInfNanPreserve";
     case SpvExecutionModeRoundingModeRTE: return "RoundingModeRTE";
     case SpvExecutionModeRoundingModeRTZ: return "RoundingModeRTZ";
+    case SpvExecutionModeNonCoherentTileAttachmentReadQCOM: return "NonCoherentTileAttachmentReadQCOM";
+    case SpvExecutionModeTileShadingRateQCOM: return "TileShadingRateQCOM";
     case SpvExecutionModeEarlyAndLateFragmentTestsAMD: return "EarlyAndLateFragmentTestsAMD";
     case SpvExecutionModeStencilRefReplacingEXT: return "StencilRefReplacingEXT";
     case SpvExecutionModeCoalescingAMDX: return "CoalescingAMDX";
@@ -3362,6 +3380,7 @@ inline const char* SpvStorageClassToString(SpvStorageClass value) {
     case SpvStorageClassImage: return "Image";
     case SpvStorageClassStorageBuffer: return "StorageBuffer";
     case SpvStorageClassTileImageEXT: return "TileImageEXT";
+    case SpvStorageClassTileAttachmentQCOM: return "TileAttachmentQCOM";
     case SpvStorageClassNodePayloadAMDX: return "NodePayloadAMDX";
     case SpvStorageClassCallableDataKHR: return "CallableDataKHR";
     case SpvStorageClassIncomingCallableDataKHR: return "IncomingCallableDataKHR";
@@ -3505,9 +3524,15 @@ inline const char* SpvImageChannelDataTypeToString(SpvImageChannelDataType value
     case SpvImageChannelDataTypeFloat: return "Float";
     case SpvImageChannelDataTypeUnormInt24: return "UnormInt24";
     case SpvImageChannelDataTypeUnormInt101010_2: return "UnormInt101010_2";
+    case SpvImageChannelDataTypeUnormInt10X6EXT: return "UnormInt10X6EXT";
     case SpvImageChannelDataTypeUnsignedIntRaw10EXT: return "UnsignedIntRaw10EXT";
     case SpvImageChannelDataTypeUnsignedIntRaw12EXT: return "UnsignedIntRaw12EXT";
     case SpvImageChannelDataTypeUnormInt2_101010EXT: return "UnormInt2_101010EXT";
+    case SpvImageChannelDataTypeUnsignedInt10X6EXT: return "UnsignedInt10X6EXT";
+    case SpvImageChannelDataTypeUnsignedInt12X4EXT: return "UnsignedInt12X4EXT";
+    case SpvImageChannelDataTypeUnsignedInt14X2EXT: return "UnsignedInt14X2EXT";
+    case SpvImageChannelDataTypeUnormInt12X4EXT: return "UnormInt12X4EXT";
+    case SpvImageChannelDataTypeUnormInt14X2EXT: return "UnormInt14X2EXT";
     default: return "Unknown";
     }
 }
@@ -3763,6 +3788,9 @@ inline const char* SpvBuiltInToString(SpvBuiltIn value) {
     case SpvBuiltInDeviceIndex: return "DeviceIndex";
     case SpvBuiltInViewIndex: return "ViewIndex";
     case SpvBuiltInShadingRateKHR: return "ShadingRateKHR";
+    case SpvBuiltInTileOffsetQCOM: return "TileOffsetQCOM";
+    case SpvBuiltInTileDimensionQCOM: return "TileDimensionQCOM";
+    case SpvBuiltInTileApronSizeQCOM: return "TileApronSizeQCOM";
     case SpvBuiltInBaryCoordNoPerspAMD: return "BaryCoordNoPerspAMD";
     case SpvBuiltInBaryCoordNoPerspCentroidAMD: return "BaryCoordNoPerspCentroidAMD";
     case SpvBuiltInBaryCoordNoPerspSampleAMD: return "BaryCoordNoPerspSampleAMD";
@@ -3977,6 +4005,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilityTextureSampleWeightedQCOM: return "TextureSampleWeightedQCOM";
     case SpvCapabilityTextureBoxFilterQCOM: return "TextureBoxFilterQCOM";
     case SpvCapabilityTextureBlockMatchQCOM: return "TextureBlockMatchQCOM";
+    case SpvCapabilityTileShadingQCOM: return "TileShadingQCOM";
     case SpvCapabilityTextureBlockMatch2QCOM: return "TextureBlockMatch2QCOM";
     case SpvCapabilityFloat16ImageAMD: return "Float16ImageAMD";
     case SpvCapabilityImageGatherBiasLodAMD: return "ImageGatherBiasLodAMD";
@@ -4123,6 +4152,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilitySubgroup2DBlockTransformINTEL: return "Subgroup2DBlockTransformINTEL";
     case SpvCapabilitySubgroup2DBlockTransposeINTEL: return "Subgroup2DBlockTransposeINTEL";
     case SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL: return "SubgroupMatrixMultiplyAccumulateINTEL";
+    case SpvCapabilityTernaryBitwiseFunctionINTEL: return "TernaryBitwiseFunctionINTEL";
     case SpvCapabilityGroupUniformArithmeticKHR: return "GroupUniformArithmeticKHR";
     case SpvCapabilityTensorFloat32RoundingINTEL: return "TensorFloat32RoundingINTEL";
     case SpvCapabilityMaskedGatherScatterINTEL: return "MaskedGatherScatterINTEL";
@@ -5102,6 +5132,7 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpSubgroup2DBlockPrefetchINTEL: return "OpSubgroup2DBlockPrefetchINTEL";
     case SpvOpSubgroup2DBlockStoreINTEL: return "OpSubgroup2DBlockStoreINTEL";
     case SpvOpSubgroupMatrixMultiplyAccumulateINTEL: return "OpSubgroupMatrixMultiplyAccumulateINTEL";
+    case SpvOpBitwiseFunctionINTEL: return "OpBitwiseFunctionINTEL";
     case SpvOpGroupIMulKHR: return "OpGroupIMulKHR";
     case SpvOpGroupFMulKHR: return "OpGroupFMulKHR";
     case SpvOpGroupBitwiseAndKHR: return "OpGroupBitwiseAndKHR";
