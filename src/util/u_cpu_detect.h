@@ -49,18 +49,6 @@
 extern "C" {
 #endif
 
-enum cpu_family {
-   CPU_UNKNOWN,
-
-   CPU_AMD_ZEN1_ZEN2,
-   CPU_AMD_ZEN_HYGON,
-   CPU_AMD_ZEN3,
-   CPU_AMD_ZEN_NEXT,
-   CPU_AMD_LAST,
-
-   CPU_S390X,
-};
-
 typedef uint32_t util_affinity_mask[UTIL_MAX_CPUS / 32];
 
 struct util_cpu_caps_t {
@@ -80,8 +68,6 @@ struct util_cpu_caps_t {
     * offline.
     */
    int16_t max_cpus;
-
-   enum cpu_family family;
 
    /* Feature flags */
    int x86_cpu_type;
