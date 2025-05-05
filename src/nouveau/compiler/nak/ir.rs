@@ -6706,7 +6706,7 @@ impl fmt::Display for PredRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             PredRef::None => write!(f, "pT"),
-            PredRef::SSA(ssa) => ssa.fmt_plain(f),
+            PredRef::SSA(ssa) => ssa.fmt(f),
             PredRef::Reg(reg) => reg.fmt(f),
         }
     }

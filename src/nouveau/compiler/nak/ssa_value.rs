@@ -44,10 +44,6 @@ impl SSAValue {
     pub fn idx(&self) -> u32 {
         self.packed.get() & 0x1fffffff
     }
-
-    pub fn fmt_plain(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.file().fmt_prefix(), self.idx())
-    }
 }
 
 impl HasRegFile for SSAValue {
@@ -59,8 +55,7 @@ impl HasRegFile for SSAValue {
 
 impl fmt::Display for SSAValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "%")?;
-        self.fmt_plain(f)
+        write!(f, "%{}{}", self.file().fmt_prefix(), self.idx())
     }
 }
 
