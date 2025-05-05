@@ -1669,7 +1669,7 @@ GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, uint64_t queue,
 
    /* v10 has 96 registers. v12+ have 128. */
    struct queue_ctx qctx = {
-      .nr_regs = PAN_ARCH >= 12 ? 96 : 128,
+      .nr_regs = PAN_ARCH >= 12 ? 128 : 96,
       .regs = regs,
       .ip = cs,
       .end = cs + (size / 8),
@@ -2484,7 +2484,7 @@ GENX(pandecode_cs_trace)(struct pandecode_context *ctx, uint64_t trace,
 
       /* v10 has 96 registers. v12+ have 128. */
       struct queue_ctx qctx = {
-         .nr_regs = PAN_ARCH >= 12 ? 96 : 128,
+         .nr_regs = PAN_ARCH >= 12 ? 128 : 96,
          .regs = regs,
          .ip = instr,
          .end = instr + 1,

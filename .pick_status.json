@@ -384,7 +384,7 @@
         "description": "pan/genxml: Fix inverted logic on nr_regs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "811525b543b5a0581af9bb4b17bb92edbde6fe0a",
         "notes": null
