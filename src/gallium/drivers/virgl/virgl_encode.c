@@ -1736,9 +1736,9 @@ void virgl_encode_emit_string_marker(struct virgl_context *ctx,
    if (len <= 0)
       return;
 
-   if (len > 4 * 0xffff) {
+   if (len > 4 * 0xffff - 4) {
       debug_printf("VIRGL: host debug flag string too long, will be truncated\n");
-      len = 4 * 0xffff;
+      len = 4 * 0xffff - 4;
    }
 
    uint32_t buf_len = (uint32_t )(len + 3) / 4 + 1;
