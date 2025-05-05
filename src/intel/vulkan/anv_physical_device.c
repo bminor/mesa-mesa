@@ -223,6 +223,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_ray_tracing_pipeline              = rt_enabled,
       .KHR_ray_tracing_position_fetch        = rt_enabled,
       .KHR_relaxed_block_layout              = true,
+      .KHR_robustness2                       = true,
       .KHR_sampler_mirror_clamp_to_edge      = true,
       .KHR_sampler_ycbcr_conversion          = true,
       .KHR_separate_depth_stencil_layouts    = true,
@@ -703,7 +704,7 @@ get_features(const struct anv_physical_device *pdevice,
       .rayTracingPipelineTraceRaysIndirect = rt_enabled,
       .rayTraversalPrimitiveCulling = rt_enabled,
 
-      /* VK_EXT_robustness2 */
+      /* VK_KHR_robustness2 */
       .robustBufferAccess2 = true,
       .robustImageAccess2 = true,
       .nullDescriptor = true,
@@ -1537,6 +1538,14 @@ get_properties(const struct anv_physical_device *pdevice,
       props->maxRayHitAttributeSize = BRW_RT_SIZEOF_HIT_ATTRIB_DATA;
    }
 
+   /* VK_KHR_robustness2 */
+   {
+      props->robustStorageBufferAccessSizeAlignment =
+         ANV_SSBO_BOUNDS_CHECK_ALIGNMENT;
+      props->robustUniformBufferAccessSizeAlignment =
+         ANV_UBO_ALIGNMENT;
+   }
+
    /* VK_KHR_vertex_attribute_divisor */
    {
       props->maxVertexAttribDivisor = UINT32_MAX / 16;
@@ -1921,14 +1930,6 @@ get_properties(const struct anv_physical_device *pdevice,
    {
       props->provokingVertexModePerPipeline = true;
       props->transformFeedbackPreservesTriangleFanProvokingVertex = false;
-   }
-
-   /* VK_EXT_robustness2 */
-   {
-      props->robustStorageBufferAccessSizeAlignment =
-         ANV_SSBO_BOUNDS_CHECK_ALIGNMENT;
-      props->robustUniformBufferAccessSizeAlignment =
-         ANV_UBO_ALIGNMENT;
    }
 
    /* VK_EXT_sample_locations */
