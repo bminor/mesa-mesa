@@ -1517,6 +1517,11 @@ intrinsic("load_frag_size_ir3", src_comp=[1], dest_comp=2, indices=[RANGE],
         flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
 intrinsic("load_frag_offset_ir3", src_comp=[1], dest_comp=2, indices=[RANGE],
         flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+# Per-view GMEM FragCoord scale and offset.
+intrinsic("load_gmem_frag_scale_ir3", src_comp=[1], dest_comp=2, indices=[RANGE],
+        flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+intrinsic("load_gmem_frag_offset_ir3", src_comp=[1], dest_comp=2, indices=[RANGE],
+        flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
 
 # IR3-specific load/store intrinsics. These access a buffer used to pass data
 # between geometry stages - perhaps it's explicit access to the vertex cache.

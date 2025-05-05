@@ -858,7 +858,8 @@ typedef void (*tu_fdm_bin_apply_t)(struct tu_cmd_buffer *cmd,
                                    const VkOffset2D *hw_viewport_offsets,
                                    unsigned views,
                                    const VkExtent2D *frag_areas,
-                                   const VkRect2D *bins);
+                                   const VkRect2D *bins,
+                                   bool binning);
 
 enum tu_fdm_flags {
    TU_FDM_NONE = 0,
@@ -926,7 +927,7 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
       };
       hw_viewport_offsets[i] = (VkOffset2D) { 0, 0 };
    }
-   apply(cmd, cs, state, (VkOffset2D) {0, 0}, hw_viewport_offsets, num_views, unscaled_frag_areas, bins);
+   apply(cmd, cs, state, (VkOffset2D) {0, 0}, hw_viewport_offsets, num_views, unscaled_frag_areas, bins, false);
    assert(tu_cs_get_cur_iova(cs) == patch.iova + patch.size * sizeof(uint32_t));
 
    util_dynarray_append(&cmd->fdm_bin_patchpoints, patch);

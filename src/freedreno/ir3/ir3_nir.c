@@ -1434,11 +1434,19 @@ ir3_get_driver_param_info(const nir_shader *shader, nir_intrinsic_instr *intr,
       break;
    case nir_intrinsic_load_frag_size_ir3:
       param_info->offset = IR3_DP_FS(frag_size);
-      param_info->extra_size = 4 * (nir_intrinsic_range(intr) - 1);
+      param_info->extra_size = 8 * (nir_intrinsic_range(intr) - 1);
       break;
    case nir_intrinsic_load_frag_offset_ir3:
       param_info->offset = IR3_DP_FS(frag_offset);
-      param_info->extra_size = 4 * (nir_intrinsic_range(intr) - 1);
+      param_info->extra_size = 8 * (nir_intrinsic_range(intr) - 1);
+      break;
+   case nir_intrinsic_load_gmem_frag_scale_ir3:
+      param_info->offset = IR3_DP_FS(gmem_frag_scale);
+      param_info->extra_size = 8 * (nir_intrinsic_range(intr) - 1);
+      break;
+   case nir_intrinsic_load_gmem_frag_offset_ir3:
+      param_info->offset = IR3_DP_FS(gmem_frag_offset);
+      param_info->extra_size = 8 * (nir_intrinsic_range(intr) - 1);
       break;
    case nir_intrinsic_load_frag_invocation_count:
       param_info->offset = IR3_DP_FS(frag_invocation_count);

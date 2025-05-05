@@ -969,7 +969,8 @@ tu_subpass_use_attachment(struct tu_render_pass *pass, int i, uint32_t a, const 
    struct tu_subpass *subpass = &pass->subpasses[i];
    struct tu_render_pass_attachment *att = &pass->attachments[a];
 
-   att->gmem = true;
+   if (!subpass->custom_resolve)
+      att->gmem = true;
    update_samples(subpass, att->samples);
    att->used_views |= subpass->multiview_mask;
 
@@ -1182,6 +1183,8 @@ tu_CreateRenderPass2(VkDevice _device,
       subpass->srgb_cntl = 0;
       subpass->legacy_dithering_enabled = desc->flags &
          VK_SUBPASS_DESCRIPTION_ENABLE_LEGACY_DITHERING_BIT_EXT;
+      subpass->custom_resolve = desc->flags &
+         VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM;
 
       const BITMASK_ENUM(VkSubpassDescriptionFlagBits) raster_order_access_bits =
          VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT |

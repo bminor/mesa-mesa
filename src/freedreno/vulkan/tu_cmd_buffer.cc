@@ -1414,12 +1414,69 @@ tu_fdm_num_layers(const struct tu_cmd_buffer *cmd)
 
 template <chip CHIP>
 static void
+tu6_emit_bin_size_gmem(struct tu_cmd_buffer *cmd,
+                       struct tu_cs *cs,
+                       enum a6xx_buffers_location buffers_location,
+                       bool disable_lrz)
+{
+   struct tu_physical_device *phys_dev = cmd->device->physical_device;
+   const struct tu_tiling_config *tiling = cmd->state.tiling;
+   bool hw_binning = use_hw_binning(cmd);
+
+   tu6_emit_bin_size<CHIP>(
+      cs, buffers_location == BUFFERS_IN_GMEM ? tiling->tile0.width : 0,
+      buffers_location == BUFFERS_IN_GMEM ? tiling->tile0.height : 0,
+      {
+         .render_mode = RENDERING_PASS,
+         .force_lrz_write_dis = !phys_dev->info->props.has_lrz_feedback,
+         .buffers_location = buffers_location,
+         .lrz_feedback_zmode_mask =
+            phys_dev->info->props.has_lrz_feedback
+               ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z :
+                  LRZ_FEEDBACK_EARLY_Z_LATE_Z)
+               : LRZ_FEEDBACK_NONE,
+         .force_lrz_dis = CHIP >= A7XX && disable_lrz,
+      });
+
+}
+
+/* Set always-identical registers used specifically for GMEM */
+template <chip CHIP>
+static void
+tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
+{
+   tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP, 0x0));
+   tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
+}
+
+/* Set always-identical registers used specifically for sysmem */
+template <chip CHIP>
+static void
+tu7_emit_sysmem_render_begin_regs(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+{
+   tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP,
+      .z_sysmem = true,
+      .s_sysmem = true,
+      .rt0_sysmem = true,
+      .rt1_sysmem = true,
+      .rt2_sysmem = true,
+      .rt3_sysmem = true,
+      .rt4_sysmem = true,
+      .rt5_sysmem = true,
+      .rt6_sysmem = true,
+      .rt7_sysmem = true,
+   ));
+
+   tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_SYSMEM));
+}
+
+template <chip CHIP>
+static void
 tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
                      struct tu_cs *cs,
                      const struct tu_tile_config *tile,
                      bool fdm, const VkOffset2D *fdm_offsets)
 {
-   struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, tiling);
@@ -1470,19 +1527,15 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    if (fdm_offsets && (tile->pos.x == 0 || tile->pos.y == 0))
       disable_lrz = true;
 
-   tu6_emit_bin_size<CHIP>(
-      cs, tiling->tile0.width, tiling->tile0.height,
-      {
-         .render_mode = RENDERING_PASS,
-         .force_lrz_write_dis = !phys_dev->info->props.has_lrz_feedback,
-         .buffers_location = BUFFERS_IN_GMEM,
-         .lrz_feedback_zmode_mask =
-            phys_dev->info->props.has_lrz_feedback && !bin_is_scaled
-               ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z :
-                  LRZ_FEEDBACK_EARLY_Z_LATE_Z)
-               : LRZ_FEEDBACK_NONE,
-         .force_lrz_dis = CHIP >= A7XX && disable_lrz,
-      });
+   /* When using custom resolve we need to re-emit these regs as they are
+    * overwritten when switching to sysmem.
+    */
+   if (CHIP >= A7XX &&
+       cmd->state.pass->subpasses[cmd->state.pass->subpass_count - 1].custom_resolve) {
+      tu7_emit_tile_render_begin_regs<CHIP>(cs);
+   }
+
+   tu6_emit_bin_size_gmem<CHIP>(cmd, cs, BUFFERS_IN_GMEM, disable_lrz);
 
    tu_cs_emit_regs(cs,
                    A6XX_VFD_RENDER_MODE(RENDERING_PASS));
@@ -1634,7 +1687,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + patch->size);
          tu_cs_emit_qw(cs, patch->iova);
          patch->apply(cmd, cs, patch->data, (VkOffset2D) { x1, y1 },
-                      frag_offsets, views, tile->frag_areas, bins);
+                      frag_offsets, views, tile->frag_areas, bins, false);
       }
 
       /* Make the CP wait until the CP_MEM_WRITE's to the command buffers
@@ -2111,15 +2164,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit(cs, A6XX_SP_VS_CONST_CONFIG_CONSTLEN(8) | A6XX_SP_VS_CONST_CONFIG_ENABLED);
 }
 
-/* Set always-identical registers used specifically for GMEM */
-template <chip CHIP>
-static void
-tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
-{
-   tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP, 0x0));
-   tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
-}
-
 /* Emit the bin restore preamble, which runs in between bins when L1
  * preemption with skipsaverestore happens and we switch back to this context.
  * We need to restore static registers normally programmed at cmdbuf start
@@ -2435,7 +2479,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + patch->size);
          tu_cs_emit_qw(cs, patch->iova);
          patch->apply(cmd, cs, patch->data, (VkOffset2D) {0, 0}, frag_offsets,
-                      num_views, unscaled_frag_areas, bins);
+                      num_views, unscaled_frag_areas, bins, true);
       }
 
       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
@@ -2532,6 +2576,8 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
                           bool gmem)
 {
    const struct tu_tiling_config *tiling = cmd->state.tiling;
+   uint32_t layers = MAX2(cmd->state.framebuffer->layers,
+                          cmd->state.pass->num_views);
 
    /* note: we can probably emit input attachments just once for the whole
     * renderpass, this would avoid emitting both sysmem/gmem versions
@@ -2621,7 +2667,11 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
          gmem_offset = att->gmem_offset_stencil[cmd->state.gmem_layout];
       }
 
-      if (!gmem || !subpass->input_attachments[i / 2].patch_input_gmem) {
+      if (!gmem || !subpass->input_attachments[i / 2].patch_input_gmem ||
+          /* Skip GMEM patching when tiling is impossible as we may get
+           * assertion failures from register packing below.
+           */
+          !tiling->possible) {
          memcpy(&texture.map[i * A6XX_TEX_CONST_DWORDS], dst, sizeof(dst));
          continue;
       }
@@ -2647,10 +2697,17 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
       dst[2] =
          A6XX_TEX_CONST_2_TYPE(A6XX_TEX_2D) |
          A6XX_TEX_CONST_2_PITCH(tiling->tile0.width * cpp);
-      /* Note: it seems the HW implicitly calculates the array pitch with the
-       * GMEM tiling, so we don't need to specify the pitch ourselves.
+      /* Note: it seems the HW implicitly calculates the array pitch, except
+       * when rendering to sysmem (i.e. in a custom resolve subpass). We only
+       * guarantee the pitch is valid when there is more than 1 layer, so skip
+       * emitting it otherwise to avoid asserts.
        */
-      dst[3] = 0;
+      if (layers > 1) {
+         dst[3] = A6XX_TEX_CONST_3_ARRAY_PITCH(tiling->tile0.width *
+                                               tiling->tile0.height * cpp);
+      } else {
+         dst[3] = 0;
+      }
       dst[4] = cmd->device->physical_device->gmem_base + gmem_offset;
       dst[5] &= A6XX_TEX_CONST_5_DEPTH__MASK;
       for (unsigned i = 6; i < A6XX_TEX_CONST_DWORDS; i++)
@@ -2985,20 +3042,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    });
 
    if (CHIP == A7XX) {
-      tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP,
-         .z_sysmem = true,
-         .s_sysmem = true,
-         .rt0_sysmem = true,
-         .rt1_sysmem = true,
-         .rt2_sysmem = true,
-         .rt3_sysmem = true,
-         .rt4_sysmem = true,
-         .rt5_sysmem = true,
-         .rt6_sysmem = true,
-         .rt7_sysmem = true,
-      ));
-
-      tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_SYSMEM));
+      tu7_emit_sysmem_render_begin_regs<CHIP>(cmd, cs);
    }
 
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
@@ -6400,8 +6444,13 @@ static void
 tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resolve_group)
 {
    struct tu_cs *cs = &cmd->draw_cs;
-   uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
+   const struct tu_subpass *subpass = cmd->state.subpass;
+   uint32_t subpass_idx = subpass - cmd->state.pass->subpasses;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, cmd->state.tiling);
+
+   /* Shader resolve subpasses don't use GMEM */
+   if (subpass->custom_resolve)
+      return;
 
    /* If we might choose to bin, then put the loads under a check for geometry
     * having been binned to this tile.  If we don't choose to bin in the end,
@@ -6496,9 +6545,11 @@ tu_emit_subpass_begin_sysmem(struct tu_cmd_buffer *cmd)
       return;
 
    struct tu_cs *cs = &cmd->draw_cs;
-   uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
+   const struct tu_subpass *subpass = cmd->state.subpass;
+   uint32_t subpass_idx = subpass - cmd->state.pass->subpasses;
 
-   tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_SYSMEM);
+   if (!subpass->custom_resolve)
+      tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_SYSMEM);
 
    tu6_emit_sysmem_unresolves<CHIP>(cmd, cs, cmd->state.subpass);
 
@@ -6508,7 +6559,8 @@ tu_emit_subpass_begin_sysmem(struct tu_cmd_buffer *cmd)
          tu_clear_sysmem_attachment<CHIP>(cmd, cs, i);
    }
 
-   tu_cond_exec_end(cs); /* sysmem */
+   if (!subpass->custom_resolve)
+      tu_cond_exec_end(cs); /* sysmem */
 }
 
 static void
@@ -6584,6 +6636,84 @@ tu7_emit_subpass_shading_rate(struct tu_cmd_buffer *cmd,
    cmd->prev_fsr_is_null = false;
 }
 
+/* If this is a shader resolve subpass, switch to writing to sysmem.
+ */
+template <chip CHIP>
+static void
+tu_emit_subpass_custom_resolve(struct tu_cmd_buffer *cmd)
+{
+   struct tu_cs *cs = &cmd->draw_cs;
+   const struct tu_subpass *subpass = cmd->state.subpass;
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+   const struct tu_tiling_config *tiling = cmd->state.tiling;
+
+   if (!subpass->custom_resolve)
+      return;
+
+   /* Since a7xx, buffer location can be controlled per-buffer. We also have
+    * to update the steering register so that generic clears use sysmem.
+    */
+   if (CHIP >= A7XX) {
+      tu7_emit_sysmem_render_begin_regs<CHIP>(cmd, cs);
+
+      /* Disable foveation offset here. It's not necessary for custom resolve.
+       */
+      tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP));
+      tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP));
+   } else {
+      tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_GMEM);
+
+      /* On a6xx the location is set in *_BIN_CONTROL */
+      tu6_emit_bin_size_gmem<CHIP>(cmd, cs, BUFFERS_IN_SYSMEM, false);
+
+      tu_cond_exec_end(cs);
+   }
+
+   /* With FDM and non-subsampled images, we switch from rendering space to
+    * framebuffer space in the custom resolve subpass when not in the binning
+    * pass because we are writing directly to the user-visible attachment. We
+    * already aren't relying on the window scissor whenever FDM is enabled,
+    * but it can get in the way if FDM offset is being used because it is
+    * specified in rendering space, so the origin is shifted to the right and
+    * down compared to the framebuffer-space bin coordinates and part of the
+    * bin gets incorrectly clipped. Just disable it here by setting it to the
+    * entire framebuffer. Add an extra tile size for when we are in the
+    * binning pass and still using rendering space.
+    */
+   if (tu_enable_fdm_offset(cmd)) {
+      tu6_emit_window_scissor<CHIP>(cs, 0, 0,
+                                    fb->width + tiling->tile0.width - 1,
+                                    fb->height + tiling->tile0.height - 1);
+   }
+
+   /* If FDM is enabled, we need to re-emit all FDM-related state. */
+   if (cmd->state.pass->fragment_density_map.attachment !=
+       VK_ATTACHMENT_UNUSED) {
+      cmd->state.dirty |= TU_CMD_DIRTY_FDM;
+   }
+}
+
+/* If the last subpass is a shader resolve pass, emit flushes after switching
+ * to sysmem, similar to fixed-function 3D resolves. Our flushing code assumes
+ * that when in GMEM mode CCU isn't in use so we have to flush it ourselves.
+ */
+template<chip CHIP>
+static void
+tu_emit_custom_resolve_end(struct tu_cmd_buffer *cmd)
+{
+   struct tu_cs *cs = &cmd->draw_cs;
+
+   const struct tu_subpass *subpass = cmd->state.subpass;
+
+   if (!subpass->custom_resolve)
+      return;
+
+   if (subpass->color_count)
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_COLOR);
+   if (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED)
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_DEPTH);
+}
+
 /* emit loads, clears, and mrt/zs/msaa/ubwc state for the subpass that is
  * starting (either at vkCmdBeginRenderPass2() or vkCmdNextSubpass2())
  *
@@ -6599,6 +6729,7 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
 
    struct tu_resolve_group resolve_group = {};
 
+   tu_emit_subpass_custom_resolve<CHIP>(cmd);
    tu_emit_subpass_begin_gmem<CHIP>(cmd, &resolve_group);
    tu_emit_subpass_begin_sysmem<CHIP>(cmd);
    if (cmd->device->physical_device->info->props.has_generic_clear) {
@@ -7582,6 +7713,7 @@ fs_params_size(struct tu_cmd_buffer *cmd)
 
 struct apply_fs_params_state {
    unsigned num_consts;
+   bool custom_resolve;
 };
 
 static void
@@ -7592,13 +7724,14 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
                     const VkOffset2D *hw_viewport_offsets,
                     unsigned views,
                     const VkExtent2D *frag_areas,
-                    const VkRect2D *bins)
+                    const VkRect2D *bins,
+                    bool binning)
 {
    const struct apply_fs_params_state *state =
       (const struct apply_fs_params_state *)data;
    unsigned num_consts = state->num_consts;
 
-   for (unsigned i = 0; i < num_consts; i++) {
+   for (unsigned i = 0; i < DIV_ROUND_UP(num_consts, 2); i++) {
       /* FDM per layer may be enabled in the shader but not in the renderpass,
        * in which case views will be 1 and we have to replicate the one view
        * to all of the layers.
@@ -7607,10 +7740,38 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
       VkRect2D bin = bins[MIN2(i, views - 1)];
       VkOffset2D offset = tu_fdm_per_bin_offset(area, bin, common_bin_offset);
 
-      tu_cs_emit(cs, area.width);
-      tu_cs_emit(cs, area.height);
-      tu_cs_emit(cs, fui(offset.x));
-      tu_cs_emit(cs, fui(offset.y));
+      /* For custom resolve, we switch to rendering directly to sysmem and so
+       * the fragment size becomes 1x1. This means we have to scale down
+       * FragCoord when accessing GMEM input attachments.
+       *
+       * TODO: When we support subsampled images, this should also only happen
+       * for non-subsampled images.
+       */
+      if (state->custom_resolve) {
+         tu_cs_emit(cs, 1 /* width */);
+         tu_cs_emit(cs, 1 /* height */);
+         tu_cs_emit(cs, fui(0.0));
+         tu_cs_emit(cs, fui(0.0));
+      } else {
+         tu_cs_emit(cs, area.width);
+         tu_cs_emit(cs, area.height);
+         tu_cs_emit(cs, fui(offset.x));
+         tu_cs_emit(cs, fui(offset.y));
+      }
+
+      if (i * 2 + 1 < num_consts) {
+         if (state->custom_resolve) {
+            tu_cs_emit(cs, fui(1. / area.width));
+            tu_cs_emit(cs, fui(1. / area.height));
+            tu_cs_emit(cs, fui(offset.x));
+            tu_cs_emit(cs, fui(offset.y));
+         } else {
+            tu_cs_emit(cs, fui(1.0));
+            tu_cs_emit(cs, fui(1.0));
+            tu_cs_emit(cs, fui(0.0));
+            tu_cs_emit(cs, fui(0.0));
+         }
+      }
    }
 }
 
@@ -7632,16 +7793,23 @@ tu_emit_fdm_params(struct tu_cmd_buffer *cmd,
       if (fs->fs.has_fdm) {
          struct apply_fs_params_state state = {
             .num_consts = num_units - 1,
+            .custom_resolve = cmd->state.subpass->custom_resolve,
          };
          tu_create_fdm_bin_patchpoint(cmd, cs, 4 * (num_units - 1),
                                       TU_FDM_SKIP_BINNING,
                                       fdm_apply_fs_params, state);
       } else {
-         for (unsigned i = 1; i < num_units; i++) {
+         for (unsigned i = 0; i < DIV_ROUND_UP((num_units - 1), 2); i++) {
             tu_cs_emit(cs, 1);
             tu_cs_emit(cs, 1);
             tu_cs_emit(cs, fui(0.0f));
             tu_cs_emit(cs, fui(0.0f));
+            if (i * 2 + 1 < num_units - 1) {
+               tu_cs_emit(cs, fui(1.0));
+               tu_cs_emit(cs, fui(1.0));
+               tu_cs_emit(cs, fui(0.0));
+               tu_cs_emit(cs, fui(0.0));
+            }
          }
       }
    }
@@ -9174,6 +9342,8 @@ tu_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
       fdm_offsets = test_offsets;
    }
 
+   TU_CALLX(cmd_buffer->device, tu_emit_custom_resolve_end)(cmd_buffer);
+
    tu_cs_end(&cmd_buffer->draw_cs);
    tu_cs_end(&cmd_buffer->draw_epilogue_cs);
    TU_CALLX(cmd_buffer->device, tu_cmd_render)(cmd_buffer, fdm_offsets);
@@ -9202,6 +9372,8 @@ tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
        */
       TU_CALLX(cmd_buffer->device, tu_lrz_flush_valid_during_renderpass)
          (cmd_buffer, &cmd_buffer->draw_cs);
+   } else {
+      TU_CALLX(cmd_buffer->device, tu_emit_custom_resolve_end)(cmd_buffer);
    }
 
    const VkRenderPassFragmentDensityMapOffsetEndInfoEXT *fdm_offset_info =
