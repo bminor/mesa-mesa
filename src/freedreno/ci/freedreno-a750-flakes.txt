@@ -31,6 +31,7 @@ dEQP-GLES31.functional.image_load_store.2d_array.load_store.rgba32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.format_reinterpret.rgba8_snorm_r32ui
 dEQP-GLES31.functional.image_load_store.cube.load_store.r32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.load_store.rgba16f
+dEQP-GLES31.functional.image_load_store.early_fragment_tests.early_fragment_tests_depth_fbo
 dEQP-GLES31.functional.shaders.builtin_var.compute.local_invocation_id
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat2x4
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat4
