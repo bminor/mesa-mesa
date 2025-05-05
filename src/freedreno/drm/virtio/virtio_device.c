@@ -54,23 +54,10 @@ static void
 set_debuginfo(struct fd_device *dev)
 {
    const char *comm = util_get_process_name();
-   static char cmdline[0x1000+1];
-   int fd = open("/proc/self/cmdline", O_RDONLY);
-   if (fd < 0)
+   static char cmdline[0x1000];
+
+   if (!comm || !util_get_command_line(cmdline, sizeof(cmdline)))
       return;
-
-   int n = read(fd, cmdline, sizeof(cmdline) - 1);
-   if (n < 0)
-      return;
-
-   /* arguments are separated by NULL, convert to spaces: */
-   for (int i = 0; i < n; i++) {
-      if (cmdline[i] == '\0') {
-         cmdline[i] = ' ';
-      }
-   }
-
-   cmdline[n] = '\0';
 
    unsigned comm_len = strlen(comm) + 1;
    unsigned cmdline_len = strlen(cmdline) + 1;
