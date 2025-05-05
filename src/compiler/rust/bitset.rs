@@ -170,6 +170,55 @@ impl BitSet<usize> {
         }
         self.words.len() * 32
     }
+
+    /// Search for a set of `count` consecutive elements that are not present in
+    /// the set. The found set must obey the alignment requirements specified by
+    /// align_offset and align_mul. All elements in the found set will be >=
+    /// start_point. Returns the least element of the found set.
+    ///
+    /// align_mul must be a power of two <= 16
+    pub fn find_aligned_unset_range(
+        &self,
+        start_point: usize,
+        count: usize,
+        align_mul: usize,
+        align_offset: usize,
+    ) -> usize {
+        assert!(align_mul <= 16);
+        assert!(align_offset + count <= align_mul);
+        assert!(count > 0);
+        let every_n = every_nth_bit(align_mul) << align_offset;
+
+        let mut word_idx = start_point / 32;
+        let mut mask = !(u32::MAX << (start_point % 32));
+        loop {
+            let word = mask | self.words.get(word_idx).unwrap_or(&0);
+
+            let unset_word = u64::from(!word);
+            let every_n_64 = u64::from(every_n);
+            // If every bit in a sequence is set, then adding one to the bottom
+            // bit will cause it to carry past the top bit. Carry-in for a bit
+            // is true if the bit in the addition result does not match the same
+            // bit in a ^ b. We do this in u64 to handle the case where we carry
+            // past the top bit.
+            let carry = (unset_word + every_n_64) ^ (unset_word ^ every_n_64);
+            let found = u32::try_from(carry >> count).unwrap() & every_n;
+
+            if found != 0 {
+                return word_idx * 32
+                    + usize::try_from(found.trailing_zeros()).unwrap();
+            }
+
+            word_idx += 1;
+            mask = 0;
+        }
+    }
+}
+
+fn every_nth_bit(n: usize) -> u32 {
+    assert!(0 < n && n < 32);
+    assert!(n.is_power_of_two());
+    u32::MAX / ((1 << n) - 1)
 }
 
 impl<K> BitSet<K> {
@@ -605,5 +654,50 @@ mod tests {
 
         c &= a.s(..) | b.s(..);
         assert!(c.is_empty());
+    }
+
+    fn every_nth_bit_naive(n: usize) -> u32 {
+        assert!(n <= 32);
+        assert!(n.is_power_of_two());
+        let mut x = 0;
+        for i in 0..32 {
+            if i % n == 0 {
+                x |= 1 << i;
+            }
+        }
+        x
+    }
+
+    #[test]
+    fn test_every_nth_bit() {
+        for i in 1_usize..=16 {
+            if i.is_power_of_two() {
+                assert_eq!(every_nth_bit(i), every_nth_bit_naive(i));
+            }
+        }
+    }
+
+    #[test]
+    fn test_find_aligned_unset_range() {
+        let a: BitSet =
+            [0, 4, 5, 6, 7, 61, 128, 129, 130].into_iter().collect();
+
+        /* (start, count, align_mul, align_offset) */
+        assert_eq!(a.find_aligned_unset_range(0, 1, 1, 0), 1);
+        assert_eq!(a.find_aligned_unset_range(4, 1, 1, 0), 8);
+        assert_eq!(a.find_aligned_unset_range(128, 1, 1, 0), 131);
+        assert_eq!(a.find_aligned_unset_range(0, 4, 4, 0), 8);
+        assert_eq!(a.find_aligned_unset_range(128, 4, 4, 0), 132);
+        assert_eq!(a.find_aligned_unset_range(0, 3, 4, 1), 1);
+        assert_eq!(a.find_aligned_unset_range(0, 3, 8, 1), 1);
+        assert_eq!(a.find_aligned_unset_range(0, 4, 8, 1), 9);
+        assert_eq!(a.find_aligned_unset_range(0, 2, 2, 0), 2);
+        assert_eq!(a.find_aligned_unset_range(2, 2, 2, 0), 2);
+        assert_eq!(a.find_aligned_unset_range(3, 2, 2, 0), 8);
+        assert_eq!(a.find_aligned_unset_range(0, 2, 4, 2), 2);
+        assert_eq!(a.find_aligned_unset_range(3, 2, 4, 2), 10);
+        assert_eq!(a.find_aligned_unset_range(40, 16, 16, 0), 64);
+        assert_eq!(a.find_aligned_unset_range(1337, 1, 1, 0), 1337);
+        assert_eq!(a.find_aligned_unset_range(161, 1, 2, 0), 162);
     }
 }

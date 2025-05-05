@@ -370,29 +370,17 @@ impl RegAllocator {
         align: u32,
         comps: u8,
     ) -> Option<u32> {
-        assert!(comps > 0 && u32::from(comps) <= self.num_regs);
-
-        let mut next_reg = start_reg;
-        loop {
-            let reg: u32 = set
-                .next_unset(usize::try_from(next_reg).unwrap())
-                .try_into()
-                .unwrap();
-
-            // Ensure we're properly aligned
-            let reg = reg.next_multiple_of(align);
-
-            // Ensure we're in-bounds. This also serves as a check to ensure
-            // that u8::try_from(reg + i) will succeed.
-            if reg > self.num_regs - u32::from(comps) {
-                return None;
-            }
-
-            if Self::reg_range_is_unset(set, reg, comps) {
-                return Some(reg);
-            }
-
-            next_reg = reg + align;
+        let res = set.find_aligned_unset_range(
+            start_reg.try_into().unwrap(),
+            comps.into(),
+            align.try_into().unwrap(),
+            0,
+        );
+        let res = u32::try_from(res).unwrap();
+        if res + u32::from(comps) <= self.num_regs {
+            Some(res)
+        } else {
+            None
         }
     }
 
