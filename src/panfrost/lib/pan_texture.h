@@ -303,21 +303,18 @@ unsigned panfrost_texture_offset(const struct pan_image_layout *layout,
                                  unsigned level, unsigned array_idx,
                                  unsigned surface_idx);
 
-struct pan_image_explicit_layout {
-   unsigned offset;
-   unsigned row_stride;
+struct pan_image_wsi_layout {
+   unsigned offset_B;
+   unsigned row_pitch_B;
 };
 
 bool
 pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
-                      const struct pan_image_explicit_layout *explicit_layout);
+                      const struct pan_image_wsi_layout *wsi_layout);
 
-unsigned panfrost_get_legacy_stride(const struct pan_image_layout *layout,
-                                    unsigned level);
-
-unsigned panfrost_from_legacy_stride(unsigned legacy_stride,
-                                     enum pipe_format format,
-                                     uint64_t modifier);
+struct pan_image_wsi_layout
+pan_image_layout_get_wsi_layout(const struct pan_image_layout *layout,
+                                unsigned level);
 
 struct pan_surface {
    union {

@@ -237,12 +237,13 @@ panvk_image_init_layouts(struct panvk_image *image,
       else
          format = vk_format_get_plane_format(image->vk.format, plane);
 
-      struct pan_image_explicit_layout plane_layout;
-      if (explicit_info)
-         plane_layout = (struct pan_image_explicit_layout){
-            .offset = explicit_info->pPlaneLayouts[plane].offset,
-            .row_stride = explicit_info->pPlaneLayouts[plane].rowPitch,
+      struct pan_image_wsi_layout plane_layout;
+      if (explicit_info) {
+         plane_layout = (struct pan_image_wsi_layout){
+            .offset_B = explicit_info->pPlaneLayouts[plane].offset,
+            .row_pitch_B = explicit_info->pPlaneLayouts[plane].rowPitch,
          };
+      }
 
       image->planes[plane].layout = (struct pan_image_layout){
          .format = vk_format_to_pipe_format(format),

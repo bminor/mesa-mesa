@@ -221,47 +221,72 @@ TEST(AFBCStride, Tiled)
    }
 }
 
-TEST(LegacyStride, FromLegacyLinear)
+static unsigned
+row_stride_from_wsi_pitch(unsigned row_pitch_B, unsigned width_px,
+                          enum pipe_format fmt, uint64_t mod)
 {
-   EXPECT_EQ(panfrost_from_legacy_stride(1920 * 4, PIPE_FORMAT_R8G8B8A8_UINT,
-                                         DRM_FORMAT_MOD_LINEAR),
-             1920 * 4);
-   EXPECT_EQ(panfrost_from_legacy_stride(53, PIPE_FORMAT_R8_SNORM,
-                                         DRM_FORMAT_MOD_LINEAR),
-             53);
-   EXPECT_EQ(panfrost_from_legacy_stride(60, PIPE_FORMAT_ETC2_RGB8,
-                                         DRM_FORMAT_MOD_LINEAR),
-             60);
+   const struct pan_image_wsi_layout wsi_l = {
+      .row_pitch_B = row_pitch_B,
+   };
+   struct pan_image_layout l = {
+      .modifier = mod,
+      .format = fmt,
+      .width = width_px,
+      .height = 1,
+      .depth = 1,
+      .nr_samples = 1,
+      .dim = MALI_TEXTURE_DIMENSION_2D,
+      .nr_slices = 1,
+      .array_size = 1,
+   };
+
+   pan_image_layout_init(0, &l, &wsi_l);
+
+   return l.slices[0].row_stride;
 }
 
-TEST(LegacyStride, FromLegacyInterleaved)
+TEST(WSI, FromWSILinear)
 {
    EXPECT_EQ(
-      panfrost_from_legacy_stride(1920 * 4, PIPE_FORMAT_R8G8B8A8_UINT,
-                                  DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
+      row_stride_from_wsi_pitch(1920 * 4, 1920, PIPE_FORMAT_R8G8B8A8_UINT,
+                                DRM_FORMAT_MOD_LINEAR),
+      1920 * 4);
+   EXPECT_EQ(row_stride_from_wsi_pitch(64, 53, PIPE_FORMAT_R8_SNORM,
+                                       DRM_FORMAT_MOD_LINEAR),
+             64);
+   EXPECT_EQ(row_stride_from_wsi_pitch(64, 32, PIPE_FORMAT_ETC2_RGB8,
+                                       DRM_FORMAT_MOD_LINEAR),
+             64);
+}
+
+TEST(WSI, FromWSIInterleaved)
+{
+   EXPECT_EQ(
+      row_stride_from_wsi_pitch(1920 * 4, 1920, PIPE_FORMAT_R8G8B8A8_UINT,
+                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
       1920 * 4 * 16);
 
    EXPECT_EQ(
-      panfrost_from_legacy_stride(53, PIPE_FORMAT_R8_SNORM,
-                                  DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
-      53 * 16);
+      row_stride_from_wsi_pitch(64, 53, PIPE_FORMAT_R8_SNORM,
+                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
+      64 * 16);
 
    EXPECT_EQ(
-      panfrost_from_legacy_stride(60, PIPE_FORMAT_ETC2_RGB8,
-                                  DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
-      60 * 4);
+      row_stride_from_wsi_pitch(64, 32, PIPE_FORMAT_ETC2_RGB8,
+                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
+      64 * 4);
 }
 
-TEST(LegacyStride, FromLegacyAFBC)
+TEST(WSI, FromWSIAFBC)
 {
    uint64_t modifier =
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
                               AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR);
 
-   EXPECT_EQ(panfrost_from_legacy_stride(1920 * 4, PIPE_FORMAT_R8G8B8A8_UINT,
-                                         modifier),
+   EXPECT_EQ(row_stride_from_wsi_pitch(1920 * 4, 1920,
+                                       PIPE_FORMAT_R8G8B8A8_UINT, modifier),
              60 * 16);
-   EXPECT_EQ(panfrost_from_legacy_stride(64, PIPE_FORMAT_R8_SNORM, modifier),
+   EXPECT_EQ(row_stride_from_wsi_pitch(64, 64, PIPE_FORMAT_R8_SNORM, modifier),
              2 * 16);
 }
 

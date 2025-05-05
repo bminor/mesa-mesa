@@ -159,9 +159,9 @@ panfrost_get_layer_stride(const struct pan_image_layout *layout, unsigned level)
       return layout->slices[level].surface_stride;
 }
 
-unsigned
-panfrost_get_legacy_stride(const struct pan_image_layout *layout,
-                           unsigned level)
+struct pan_image_wsi_layout
+pan_image_layout_get_wsi_layout(const struct pan_image_layout *layout,
+                                unsigned level)
 {
    unsigned row_stride = layout->slices[level].row_stride;
    struct pan_block_size block_size =
@@ -173,35 +173,44 @@ panfrost_get_legacy_stride(const struct pan_image_layout *layout,
          block_size.width * pan_afbc_tile_size(layout->modifier);
 
       width = ALIGN_POT(width, alignment);
-      return width * util_format_get_blocksize(layout->format);
+      return (struct pan_image_wsi_layout){
+         .offset_B = layout->slices[level].offset,
+         .row_pitch_B = width * util_format_get_blocksize(layout->format),
+      };
    } else if (drm_is_afrc(layout->modifier)) {
       struct pan_block_size tile_size =
          pan_afrc_tile_size(layout->format, layout->modifier);
 
-      return row_stride / tile_size.height;
+      return (struct pan_image_wsi_layout){
+         .offset_B = layout->slices[level].offset,
+         .row_pitch_B = row_stride / tile_size.height,
+      };
    } else {
-      return row_stride / block_size.height;
+      return (struct pan_image_wsi_layout){
+         .offset_B = layout->slices[level].offset,
+         .row_pitch_B = row_stride / block_size.height,
+      };
    }
 }
 
-unsigned
-panfrost_from_legacy_stride(unsigned legacy_stride, enum pipe_format format,
+static unsigned
+wsi_row_pitch_to_row_stride(unsigned wsi_row_pitch, enum pipe_format format,
                             uint64_t modifier)
 {
    struct pan_block_size block_size =
       panfrost_renderblock_size(modifier, format);
 
    if (drm_is_afbc(modifier)) {
-      unsigned width = legacy_stride / util_format_get_blocksize(format);
+      unsigned width = wsi_row_pitch / util_format_get_blocksize(format);
 
       return pan_afbc_row_stride(modifier, width);
    } else if (drm_is_afrc(modifier)) {
       struct pan_block_size tile_size =
          pan_afrc_tile_size(format, modifier);
 
-      return legacy_stride * tile_size.height;
+      return wsi_row_pitch * tile_size.height;
    } else {
-      return legacy_stride * block_size.height;
+      return wsi_row_pitch * block_size.height;
    }
 }
 
@@ -218,12 +227,12 @@ panfrost_texture_offset(const struct pan_image_layout *layout, unsigned level,
 
 bool
 pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
-                      const struct pan_image_explicit_layout *explicit_layout)
+                      const struct pan_image_wsi_layout *wsi_layout)
 {
    /* Explicit stride only work with non-mipmap, non-array, single-sample
     * 2D image without CRC.
     */
-   if (explicit_layout &&
+   if (wsi_layout &&
        (layout->depth > 1 || layout->nr_samples > 1 || layout->array_size > 1 ||
         layout->dim != MALI_TEXTURE_DIMENSION_2D || layout->nr_slices > 1 ||
         layout->crc))
@@ -233,18 +242,23 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
    bool afrc = drm_is_afrc(layout->modifier);
    int align_req =
       format_minimum_alignment(arch, layout->format, layout->modifier);
+   uint64_t offset = 0, wsi_row_stride = 0;
 
    /* Mandate alignment */
-   if (explicit_layout) {
+   if (wsi_layout) {
       bool rejected = false;
 
       int align_mask = align_req - 1;
 
+      offset = wsi_layout->offset_B;
+      wsi_row_stride = wsi_row_pitch_to_row_stride(
+         wsi_layout->row_pitch_B, layout->format, layout->modifier);
+
       if (arch >= 7) {
-         rejected = ((explicit_layout->offset & align_mask) ||
-                     (explicit_layout->row_stride & align_mask));
+         rejected = ((offset & align_mask) ||
+                     (wsi_row_stride & align_mask));
       } else {
-         rejected = (explicit_layout->offset & align_mask);
+         rejected = (offset & align_mask);
       }
 
       if (rejected) {
@@ -265,7 +279,6 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
    bool linear = layout->modifier == DRM_FORMAT_MOD_LINEAR;
    bool is_3d = layout->dim == MALI_TEXTURE_DIMENSION_3D;
 
-   uint64_t offset = explicit_layout ? explicit_layout->offset : 0;
    struct pan_block_size renderblk_size =
       panfrost_renderblock_size(layout->modifier, layout->format);
    struct pan_block_size block_size =
@@ -312,14 +325,14 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
          row_stride = ALIGN_POT(row_stride, align_req);
       }
 
-      if (explicit_layout && !afbc && !afrc) {
+      if (wsi_layout && !afbc && !afrc) {
          /* Make sure the explicit stride is valid */
-         if (explicit_layout->row_stride < row_stride) {
+         if (wsi_row_stride < row_stride) {
             mesa_loge("panfrost: rejecting image due to invalid row stride.\n");
             return false;
          }
 
-         row_stride = explicit_layout->row_stride;
+         row_stride = wsi_row_stride;
       } else if (linear) {
          /* Keep lines alignment on 64 byte for performance */
          row_stride = ALIGN_POT(row_stride, 64);
@@ -339,8 +352,7 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
             ALIGN_POT(slice->afbc.nr_blocks * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(arch, layout->modifier));
 
-         if (explicit_layout &&
-             explicit_layout->row_stride < slice->row_stride) {
+         if (wsi_layout && wsi_row_stride < slice->row_stride) {
             mesa_loge("panfrost: rejecting image due to invalid row stride.\n");
             return false;
          }
@@ -391,7 +403,7 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
 
    /* Arrays and cubemaps have the entire miptree duplicated */
    layout->array_stride = ALIGN_POT(offset, 64);
-   if (explicit_layout)
+   if (wsi_layout)
       layout->data_size = offset;
    else
       layout->data_size = ALIGN_POT(

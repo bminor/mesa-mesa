@@ -121,10 +121,9 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
                      : whandle->modifier;
    enum mali_texture_dimension dim =
       panfrost_translate_texture_dimension(templat->target);
-   struct pan_image_explicit_layout explicit_layout = {
-      .offset = whandle->offset,
-      .row_stride =
-         panfrost_from_legacy_stride(whandle->stride, templat->format, mod),
+   struct pan_image_wsi_layout explicit_layout = {
+      .offset_B = whandle->offset,
+      .row_pitch_B = whandle->stride,
    };
 
    rsc->image.layout = (struct pan_image_layout){
@@ -207,8 +206,11 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
       return false;
    }
 
-   handle->stride = panfrost_get_legacy_stride(&rsrc->image.layout, 0);
-   handle->offset = rsrc->image.layout.slices[0].offset;
+   struct pan_image_wsi_layout wsi_layout =
+      pan_image_layout_get_wsi_layout(&rsrc->image.layout, 0);
+
+   handle->stride = wsi_layout.row_pitch_B;
+   handle->offset = wsi_layout.offset_B;
    return true;
 }
 
@@ -225,10 +227,12 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
-      *value = panfrost_get_legacy_stride(&rsrc->image.layout, level);
+      *value =
+         pan_image_layout_get_wsi_layout(&rsrc->image.layout, level).row_pitch_B;
       return true;
    case PIPE_RESOURCE_PARAM_OFFSET:
-      *value = rsrc->image.layout.slices[level].offset;
+      *value =
+         pan_image_layout_get_wsi_layout(&rsrc->image.layout, level).offset_B;
       return true;
    case PIPE_RESOURCE_PARAM_MODIFIER:
       *value = rsrc->image.layout.modifier;
