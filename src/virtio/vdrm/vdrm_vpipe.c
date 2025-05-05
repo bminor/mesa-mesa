@@ -774,10 +774,10 @@ init_shmem(struct vpipe_device *vtdev)
    return 0;
 }
 
-struct vdrm_device * vdrm_vpipe_connect(int fd, uint32_t context_type);
+struct vdrm_device * vdrm_vpipe_connect(uint32_t context_type);
 
 struct vdrm_device *
-vdrm_vpipe_connect(int fd, uint32_t context_type)
+vdrm_vpipe_connect(uint32_t context_type)
 {
    struct vpipe_device *vtdev;
    struct vdrm_device *vdev = NULL;
