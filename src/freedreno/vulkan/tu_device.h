@@ -208,6 +208,9 @@ struct tu_instance
 
    /* D3D emulation requires texture coordinates to be rounded to nearest even value. */
    bool use_tex_coord_round_nearest_even_mode;
+
+   /* Apps may be accidentally incorrect  */
+   bool ignore_frag_depth_direction;
 };
 VK_DEFINE_HANDLE_CASTS(tu_instance, vk.base, VkInstance,
                        VK_OBJECT_TYPE_INSTANCE)

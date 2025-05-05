@@ -676,6 +676,10 @@
    DRI_CONF_OPT_B(tu_use_tex_coord_round_nearest_even_mode, def, \
                   "Use D3D-compliant round-to-nearest-even mode for texture coordinates")
 
+#define DRI_CONF_TU_IGNORE_FRAG_DEPTH_DIRECTION(def) \
+   DRI_CONF_OPT_B(tu_ignore_frag_depth_direction, def, \
+                  "Ignore direction specified for gl_FragDepth output")
+
 /**
  * \brief Honeykrisp specific configuration options
  */

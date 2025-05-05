@@ -815,7 +815,8 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * enable late Z test.
     */
    if (!disable_lrz_due_to_fs && fs->variant->writes_pos &&
-       !fs->variant->fs.early_fragment_tests) {
+       !fs->variant->fs.early_fragment_tests &&
+       !cmd->device->instance->ignore_frag_depth_direction) {
       if (fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_NONE ||
           fs->variant->fs.depth_layout == FRAG_DEPTH_LAYOUT_ANY) {
          disable_lrz_due_to_fs = true;
