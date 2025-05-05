@@ -322,6 +322,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_shader_subgroup_vote = true,
       .EXT_subgroup_size_control = has_vk1_1,
       .EXT_texel_buffer_alignment = true,
+      .EXT_texture_compression_astc_hdr = true,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = true,
@@ -358,6 +359,12 @@ static bool
 has_texture_compression_astc_ldr(const struct panvk_physical_device *physical_device)
 {
    return has_compressed_formats(physical_device, BITFIELD_BIT(MALI_ASTC_2D_LDR));
+}
+
+static bool
+has_texture_compression_astc_hdr(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device, BITFIELD_BIT(MALI_ASTC_2D_HDR));
 }
 
 static bool
@@ -495,7 +502,7 @@ get_features(const struct panvk_instance *instance,
       .subgroupSizeControl = true,
       .computeFullSubgroups = true,
       .synchronization2 = true,
-      .textureCompressionASTC_HDR = false,
+      .textureCompressionASTC_HDR = has_texture_compression_astc_hdr(device),
       .shaderZeroInitializeWorkgroupMemory = true,
       .dynamicRendering = true,
       .dynamicRenderingLocalRead = true,

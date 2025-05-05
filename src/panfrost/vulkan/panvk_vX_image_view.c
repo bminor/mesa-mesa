@@ -315,6 +315,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
    view->pview = (struct pan_image_view){
       .format = vk_format_to_pipe_format(view->vk.view_format),
+      .astc.hdr = util_format_is_astc_hdr(view->vk.view_format),
       .dim = panvk_view_type_to_mali_tex_dim(view->vk.view_type),
       .nr_samples = image->vk.samples,
       .first_level = view->vk.base_mip_level,

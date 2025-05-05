@@ -57,6 +57,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
    if (buffer->vk.usage & tex_usage_mask) {
       struct pan_buffer_view bview = {
          .format = pfmt,
+         .astc.hdr = util_format_is_astc_hdr(pfmt),
          .width_el = view->vk.elements,
          .base = address,
       };
