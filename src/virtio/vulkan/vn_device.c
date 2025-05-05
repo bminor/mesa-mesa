@@ -225,6 +225,8 @@ vn_device_fix_create_info(const struct vn_device *dev,
    const struct vn_physical_device *physical_dev = dev->physical_device;
    const struct vk_device_extension_table *app_exts =
       &dev->base.vk.enabled_extensions;
+   const struct vk_device_extension_table *renderer_exts =
+      &physical_dev->renderer_extensions;
    /* extra_exts and block_exts must not overlap */
    const char *extra_exts[16];
    const char *block_exts[16];
@@ -236,7 +238,8 @@ vn_device_fix_create_info(const struct vn_device *dev,
       app_exts->KHR_swapchain || app_exts->ANDROID_native_buffer ||
       app_exts->ANDROID_external_memory_android_hardware_buffer;
    if (has_wsi) {
-      if (!app_exts->EXT_image_drm_format_modifier) {
+      if (renderer_exts->EXT_image_drm_format_modifier &&
+          !app_exts->EXT_image_drm_format_modifier) {
          extra_exts[extra_count++] =
             VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME;
 
@@ -247,7 +250,8 @@ vn_device_fix_create_info(const struct vn_device *dev,
          }
       }
 
-      if (!app_exts->EXT_queue_family_foreign) {
+      if (renderer_exts->EXT_queue_family_foreign &&
+          !app_exts->EXT_queue_family_foreign) {
          extra_exts[extra_count++] =
             VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME;
       }
@@ -307,8 +311,7 @@ vn_device_fix_create_info(const struct vn_device *dev,
 
    /* see vn_cmd_set_external_acquire_unmodified */
    if (VN_PRESENT_SRC_INTERNAL_LAYOUT != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR &&
-       physical_dev->renderer_extensions
-          .EXT_external_memory_acquire_unmodified &&
+       renderer_exts->EXT_external_memory_acquire_unmodified &&
        !app_exts->EXT_external_memory_acquire_unmodified && has_wsi) {
       extra_exts[extra_count++] =
          VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME;
