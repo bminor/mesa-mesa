@@ -4,8 +4,14 @@ dEQP-VK.api.copy_and_blit.copy_commands2.image_to_image_transfer_queue.all_forma
 
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_last.dynamic.triangle_list.array2.dvec2
 
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s0_l23
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s3_l232_aabbs
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s3_l2_l3_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s2_l23_aabbs_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s3_l22_l22_aabbs
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.*
 
 # Nightly run expectations update
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.1d_array.format.r8_uint.count_1.size.3x1_array_of_6
+dEQP-VK.pipeline.shader_object_linked_binary.render_to_image.dedicated_allocation.cube.mipmap.r8g8b8a8_unorm_d16_unorm
 dEQP-VK.pipeline.shader_object_unlinked_spirv.render_to_image.core.1d_array.mipmap.a2b10g10r10_unorm_pack32_d32_sfloat_s8_uint

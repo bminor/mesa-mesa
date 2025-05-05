@@ -5,6 +5,7 @@ dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.scissor.dynamic_scisso
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_20
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_12.1_instance.with_tess.multiview.offset_6
 
+dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.line_list_with_adjacency.no_clip.struct.vec4.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.line_strip_with_adjacency.no_clip.type.ivec2.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_list_with_adjacency.no_clip.type.float.per_vertex_flat.vertex_shader
 
@@ -14,15 +15,25 @@ dEQP-VK.memory.allocation.basic.size_4KiB.forward.count_4000
 dEQP-VK.memory.allocation.basic.size_8KiB.forward.count_4000
 dEQP-VK.memory.allocation.basic.size_8KiB.reverse.count_4000
 
+dEQP-VK.pipeline.fast_linked_library.attachment_feedback_loop_layout.sampler.combined_image_sampler.image_type.2d_unnormalized.format.s8_uint_stencil_read_write_different_areas
 dEQP-VK.pipeline.fast_linked_library.image_view.view_type.1d_array.format.a1b5g5r5_unorm_pack16_khr.subresource_range.lod_mip_levels
+dEQP-VK.pipeline.monolithic.depth.nocolor.format.d16_unorm_s8_uint_separate_layouts.compare_ops.line_list_equal_never_less_or_equal_greater_or_equal
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.3d.format.b10g11r11_ufloat_pack32.count_1.size.32x16x8
 dEQP-VK.pipeline.monolithic.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.nearest.lod.equal_min_3_max_3
 dEQP-VK.pipeline.shader_object_linked_binary.image.suballocation.sampling_type.separate.view_type.1d_array.format.r8_srgb.count_1.size.443x1_array_of_3
+dEQP-VK.pipeline.shader_object_linked_binary.vertex_input.multiple_attributes.layout_skip.binding_one_to_many.attributes_sequential.int.ivec3.mat2
 dEQP-VK.pipeline.shader_object_unlinked_binary.image.suballocation.sampling_type.combined.view_type.1d.format.r8_unorm.count_8.size.443x1
 dEQP-VK.pipeline.shader_object_unlinked_binary.image.suballocation.sampling_type.separate.view_type.1d_array.format.a1b5g5r5_unorm_pack16_khr.count_8.size.443x1_array_of_6
 
 dEQP-VK.query_pool.statistics_query.host_query_reset.geometry_shader_(invocations|primitives).secondary.(32|64)bits_.*
 
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s0_l11_aabbs_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s2_l23_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l2_l3_aabbs_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l2_l3_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s1_l1_l1_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s0_l1_aabbs_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s1_l1
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.*
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.gpu.boxes.stride_3.offset_7.use_libs.isect_or_miss
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.gpu.boxes.stride_5.offset_7.use_libs.any_or_miss
