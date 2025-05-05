@@ -82,6 +82,11 @@ static void virgl_hw_res_destroy(struct virgl_drm_winsys *qdws,
          return;
       }
 
+      if (!--res->needed_references) {
+         mtx_unlock(&qdws->bo_handles_mutex);
+         return;
+      }
+
       _mesa_hash_table_remove_key(qdws->bo_handles,
                              (void *)(uintptr_t)res->bo_handle);
       if (res->flink_name)
@@ -238,6 +243,7 @@ virgl_drm_winsys_resource_create_blob(struct virgl_winsys *qws,
    pipe_reference_init(&res->reference, 1);
    p_atomic_set(&res->external, false);
    p_atomic_set(&res->num_cs_references, 0);
+   res->needed_references = 1;
    virgl_resource_cache_entry_init(&res->cache_entry, params);
    return res;
 }
@@ -306,6 +312,7 @@ virgl_drm_winsys_resource_create(struct virgl_winsys *qws,
    pipe_reference_init(&res->reference, 1);
    p_atomic_set(&res->external, false);
    p_atomic_set(&res->num_cs_references, 0);
+   res->needed_references = 1;
 
    /* A newly created resource is considered busy by the kernel until the
     * command is retired.  But for our purposes, we can consider it idle
@@ -530,8 +537,15 @@ virgl_drm_winsys_resource_create_handle(struct virgl_winsys *qws,
        * until it enters virgl_hw_res_destroy, there is a small window that
        * the refcount can drop to zero. Call p_atomic_inc directly instead of
        * virgl_drm_resource_reference to avoid hitting assert failures.
+       *
+       * If the refcount was 0, that means that the resource is currently
+       * waiting to be freed in another thread, increase the needed_references
+       * as a workaround to make sure that it won't be double freed for now.
        */
-      p_atomic_inc(&res->reference.count);
+      int32_t ref = p_atomic_inc_return(&res->reference.count);
+      if (ref == 1)
+         res->needed_references++;
+
       goto done;
    }
 
@@ -574,6 +588,7 @@ virgl_drm_winsys_resource_create_handle(struct virgl_winsys *qws,
    pipe_reference_init(&res->reference, 1);
    p_atomic_set(&res->external, true);
    res->num_cs_references = 0;
+   res->needed_references = 1;
 
    if (res->flink_name)
       _mesa_hash_table_insert(qdws->bo_names, (void *)(uintptr_t)res->flink_name, res);
