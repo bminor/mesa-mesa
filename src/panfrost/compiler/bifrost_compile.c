@@ -3515,6 +3515,20 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       bi_isub_u32_to(b, dst, bi_imm_u32(src_sz - 1), clz, false);
       break;
    }
+   case nir_op_udot_4x8_uadd_sat:
+   case nir_op_udot_4x8_uadd: {
+      assert(b->shader->arch >= 9);
+      bi_idpadd_v4u8_to(b, dst, s0, s1, s2,
+                        instr->op == nir_op_udot_4x8_uadd_sat);
+      break;
+   }
+   case nir_op_sdot_4x8_iadd_sat:
+   case nir_op_sdot_4x8_iadd: {
+      assert(b->shader->arch >= 9);
+      bi_idpadd_v4s8_to(b, dst, s0, s1, s2,
+                        instr->op == nir_op_sdot_4x8_iadd_sat);
+      break;
+   }
 
    default:
       fprintf(stderr, "Unhandled ALU op %s\n", nir_op_infos[instr->op].name);

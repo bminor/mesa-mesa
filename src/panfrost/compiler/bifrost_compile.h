@@ -148,6 +148,10 @@ void bifrost_compile_shader_nir(nir_shader *nir,
       .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),    \
       .lower_hadd = arch >= 11,                                                \
       .discard_is_demote = true,                                               \
+      .has_udot_4x8 = arch >= 9,                                               \
+      .has_udot_4x8_sat = arch >= 9,                                           \
+      .has_sdot_4x8 = arch >= 9,                                               \
+      .has_sdot_4x8_sat = arch >= 9,                                           \
    };
 
 DEFINE_OPTIONS(6);

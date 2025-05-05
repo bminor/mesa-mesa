@@ -2235,21 +2235,20 @@
     <src absneg="true">Z coordinate as 32-bit floating point</src>
   </ins>
 
-  <group name="IDP" title="8-bit dot product" dests="1" opcode="0xC2" unused="true" unit="FMA">
+  <group name="IDPADD" title="8-bit dot product and accumulate" dests="1" opcode="0xC2" unit="FMA">
     <desc>
       8-bit integer dot product between 4 channel vectors, intended for machine
       learning. Available in both unsigned and signed variants, controlling
       sign-extension/zero-extension behaviour to the final 32-bit destination.
       Saturation is available. Corresponds to the `cl_arm_integer_dot_product_*`
-      family of OpenCL extensions. Not for actual use, just for completeness.
-      Instead, use your platform's neural accelerator.
+      family of OpenCL extensions.
 
       For $A, B \in \{ 0, \ldots, 255 \}^4$ and $\text{Accumulator} \in
       \mathbb{Z}$, calculates $(A \cdot B) + \text{Accumulator}$ and optionally
       saturates.
     </desc>
-    <ins name="IDP.v4s8" opcode2="0"/>
-    <ins name="IDP.v4u8" opcode2="1"/>
+    <ins name="IDPADD.v4s8" opcode2="0"/>
+    <ins name="IDPADD.v4u8" opcode2="1"/>
     <src>A</src>
     <src>B</src>
     <src>Accumulator</src>

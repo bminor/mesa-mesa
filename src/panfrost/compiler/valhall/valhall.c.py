@@ -88,8 +88,6 @@ SKIP = set([
         "NOT_OLD.i64",
 
         # TODO
-        "IDP.v4s8",
-        "IDP.v4u8",
         "FATAN_ASSIST.f32",
         "SEG_ADD.u64",
         "TEX_DUAL",
