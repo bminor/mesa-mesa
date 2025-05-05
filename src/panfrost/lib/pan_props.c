@@ -51,12 +51,12 @@
 /* Table of supported Mali GPUs */
 /* clang-format off */
 const struct pan_model pan_model_list[] = {
-        MODEL(0x600, 0, "T600",    "T60x", NO_ANISO,           8192,  8192),
+        MODEL(0x600, 0, "T600",    "T60x", NO_ANISO,           8192,  8192, .max_4x_msaa = true),
         MODEL(0x620, 0, "T620",    "T62x", NO_ANISO,           8192,  8192),
-        MODEL(0x720, 0, "T720",    "T72x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
+        MODEL(0x720, 0, "T720",    "T72x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true, .max_4x_msaa = true),
         MODEL(0x750, 0, "T760",    "T76x", NO_ANISO,           8192,  8192),
-        MODEL(0x820, 0, "T820",    "T82x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
-        MODEL(0x830, 0, "T830",    "T83x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true),
+        MODEL(0x820, 0, "T820",    "T82x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true, .max_4x_msaa = true),
+        MODEL(0x830, 0, "T830",    "T83x", NO_ANISO,           8192,  8192, .no_hierarchical_tiling = true, .max_4x_msaa = true),
         MODEL(0x860, 0, "T860",    "T86x", NO_ANISO,           8192,  8192),
         MODEL(0x880, 0, "T880",    "T88x", NO_ANISO,           8192,  8192),
 

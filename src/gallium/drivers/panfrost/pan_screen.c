@@ -151,6 +151,9 @@ get_max_msaa(struct panfrost_device *dev, enum pipe_format format)
                                         max_cbuf_atts, format_size);
    assert(format_size > 16 || max_msaa >= 4);
 
+   if (dev->model->quirks.max_4x_msaa)
+      max_msaa = 4;
+
    return max_msaa;
 }
 

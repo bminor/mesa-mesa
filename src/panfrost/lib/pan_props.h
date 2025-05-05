@@ -77,6 +77,7 @@ struct pan_model {
        * size for the entire framebuffer be selected by the driver
        */
       bool no_hierarchical_tiling;
+      bool max_4x_msaa;
    } quirks;
 };
 
