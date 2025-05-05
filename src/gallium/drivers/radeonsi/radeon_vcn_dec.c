@@ -655,6 +655,14 @@ static void get_h265_reflist(rvcn_dec_message_hevc_direct_ref_list_t *hevc_refli
    }
 }
 
+static void set_drm_keyblob(rvcn_dec_message_drm_keyblob_t *drm_keyblob, amd_secure_buffer_format *secure_buf)
+{
+   memcpy(drm_keyblob->contentKey, secure_buf->key_blob.local_policy.wrapped_key, 16);
+   memcpy(drm_keyblob->signature, secure_buf->key_blob.local_policy.signature, 16);
+   memcpy(&drm_keyblob->policyIndex, secure_buf->key_blob.local_policy.native_policy.enabled_policy_index, 4);
+   memcpy(drm_keyblob->policyArray, secure_buf->key_blob.local_policy.native_policy.policy_array, 32);
+}
+
 static void set_drm_keys_cenc(rvcn_dec_message_drm_t *drm, amd_secure_buffer_format *secure_buf)
 {
    drm->drm_offset = 0;
@@ -1523,13 +1531,15 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    rvcn_dec_message_header_t *header;
    rvcn_dec_message_index_t *index_codec;
    rvcn_dec_message_index_t *index_drm = NULL;
+   rvcn_dec_message_index_t *index_drm_keyblob = NULL;
    rvcn_dec_message_index_t *index_dynamic_dpb = NULL;
    rvcn_dec_message_index_t *index_hevc_direct_reflist = NULL;
    rvcn_dec_message_decode_t *decode;
    unsigned sizes = 0, offset_decode, offset_codec;
-   unsigned offset_drm = 0, offset_dynamic_dpb = 0, offset_hevc_direct_reflist = 0;
+   unsigned offset_drm = 0, offset_drm_keyblob = 0, offset_dynamic_dpb = 0, offset_hevc_direct_reflist = 0;
    void *codec;
    rvcn_dec_message_drm_t *drm = NULL;
+   rvcn_dec_message_drm_keyblob_t *drm_keyblob = NULL;
    rvcn_dec_message_dynamic_dpb_t *dynamic_dpb = NULL;
    rvcn_dec_message_dynamic_dpb_t2_t *dynamic_dpb_t2 = NULL;
    rvcn_dec_message_hevc_direct_ref_list_t *hevc_reflist = NULL;
@@ -1555,6 +1565,11 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
       sizes += sizeof(rvcn_dec_message_index_t);
    }
 
+   if (picture->cenc) {
+      index_drm_keyblob = (void*)header + sizes;
+      sizes += sizeof(rvcn_dec_message_index_t);
+   }
+
    if (dec->dpb_type == DPB_DYNAMIC_TIER_1 || dec->dpb_type == DPB_DYNAMIC_TIER_2) {
       index_dynamic_dpb = (void*)header + sizes;
       sizes += sizeof(rvcn_dec_message_index_t);
@@ -1573,6 +1588,12 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
       offset_drm = sizes;
       drm = (void*)header + sizes;
       sizes += sizeof(rvcn_dec_message_drm_t);
+   }
+
+   if (picture->cenc) {
+      offset_drm_keyblob = sizes;
+      drm_keyblob = (void*)header + sizes;
+      sizes += sizeof(rvcn_dec_message_drm_keyblob_t);
    }
 
    if (dec->dpb_type == DPB_DYNAMIC_TIER_1 || dec->dpb_type == DPB_DYNAMIC_TIER_2) {
@@ -1619,6 +1640,14 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
       index_drm->offset = offset_drm;
       index_drm->size = sizeof(rvcn_dec_message_drm_t);
       index_drm->filled = 0;
+      ++header->num_buffers;
+   }
+
+   if (picture->cenc) {
+      index_drm_keyblob->message_id = RDECODE_MESSAGE_DRM_KEYBLOB;
+      index_drm_keyblob->offset = offset_drm_keyblob;
+      index_drm_keyblob->size = sizeof(rvcn_dec_message_drm_keyblob_t);
+      index_drm_keyblob->filled = 0;
       ++header->num_buffers;
    }
 
@@ -1763,6 +1792,10 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    }
    if (encrypted != dec->ws->cs_is_secure(&dec->cs)) {
       dec->ws->cs_flush(&dec->cs, RADEON_FLUSH_TOGGLE_SECURE_SUBMISSION, NULL);
+   }
+
+   if (picture->cenc) {
+      set_drm_keyblob(drm_keyblob, secure_buf);
    }
 
    decode->dpb_size = (dec->dpb_type < DPB_DYNAMIC_TIER_2) ? dec->dpb.res->buf->size : 0;

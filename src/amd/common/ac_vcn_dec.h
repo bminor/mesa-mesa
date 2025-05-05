@@ -566,6 +566,13 @@ typedef struct rvcn_dec_message_drm_s {
    unsigned int	drm_subsample_size;
 } rvcn_dec_message_drm_t;
 
+typedef struct rvcn_dec_message_drm_keyblob_s {
+   unsigned int contentKey[4];
+   unsigned int policyIndex;
+   unsigned int policyArray[32];
+   unsigned int signature[4];
+} rvcn_dec_message_drm_keyblob_t;
+
 typedef struct rvcn_dec_message_dynamic_dpb_s {
    unsigned int dpbConfigFlags;
    unsigned int dpbLumaPitch;
