@@ -157,9 +157,12 @@ can_fast_clear_color(struct iris_context *ice,
       return false;
    }
 
-   /* Wa_16021232440: Disable fast clear when height is 16k */
+   /* Wa_16021232440, HSD_16023071695: Disable fast clear when height
+    * or width is 16k.
+    */
    if (intel_needs_workaround(devinfo, 16021232440) &&
-       res->surf.logical_level0_px.h == 16 * 1024) {
+       (res->surf.logical_level0_px.h == 16 * 1024 ||
+        res->surf.logical_level0_px.w == 16 * 1024)) {
       return false;
    }
 
