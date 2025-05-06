@@ -214,6 +214,7 @@ void vlVaHandlePictureParameterBufferHEVC(vlVaDriver *drv, vlVaContext *context,
    context->desc.h265.LtCurrDone = context->desc.h265.NumPocLtCurr < 2;
 
    context->desc.h265.pps->st_rps_bits = hevc->st_rps_bits;
+   context->desc.h265.NumShortTermPictureSliceHeaderBits = hevc->st_rps_bits;
    context->desc.h265.UseStRpsBits = true;
 
    context->desc.h265.slice_parameter.slice_count = 0;
