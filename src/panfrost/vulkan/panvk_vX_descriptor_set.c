@@ -95,14 +95,18 @@ write_image_view_desc(struct panvk_descriptor_set *set,
       uint8_t plane_count = vk_format_get_plane_count(view->vk.format);
       for (uint8_t plane = 0; plane < plane_count; plane++) {
          struct panvk_subdesc_info subdesc = get_tex_subdesc_info(type, plane);
-#if PAN_ARCH <= 7
+#if PAN_ARCH >= 9
+         if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+            write_desc(set, binding, elem, &view->descs.storage_tex[plane],
+                       subdesc);
+         else
+            write_desc(set, binding, elem, &view->descs.tex[plane], subdesc);
+#else
          if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
             write_desc(set, binding, elem, &view->descs.img_attrib_buf,
                        NO_SUBDESC);
          else
             write_desc(set, binding, elem, &view->descs.tex[plane], subdesc);
-#else
-         write_desc(set, binding, elem, &view->descs.tex[plane], subdesc);
 #endif
       }
    }
