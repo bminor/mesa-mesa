@@ -288,6 +288,11 @@ pvr_process_graphics_cmd_for_view(struct pvr_device *device,
        */
       assert(sub_cmd->terminate_ctrl_stream);
       job->ctrl_stream_addr = sub_cmd->terminate_ctrl_stream->vma->dev_addr;
+   } else if (sub_cmd->multiview_enabled) {
+      original_ctrl_stream_addr = job->ctrl_stream_addr;
+      job->ctrl_stream_addr.addr =
+         sub_cmd->multiview_ctrl_stream->vma->dev_addr.addr +
+         (view_index * PVR_DW_TO_BYTES(sub_cmd->multiview_ctrl_stream_stride));
    }
 
    result = pvr_render_job_submit(queue->gfx_ctx,

@@ -98,6 +98,7 @@ static void pvr_cmd_buffer_free_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
          util_dynarray_fini(&sub_cmd->gfx.sec_query_indices);
          pvr_csb_finish(&sub_cmd->gfx.control_stream);
          pvr_bo_free(cmd_buffer->device, sub_cmd->gfx.terminate_ctrl_stream);
+         pvr_bo_free(cmd_buffer->device, sub_cmd->gfx.multiview_ctrl_stream);
          pvr_bo_suballoc_free(sub_cmd->gfx.depth_bias_bo);
          pvr_bo_suballoc_free(sub_cmd->gfx.scissor_bo);
          break;
@@ -2242,6 +2243,76 @@ pvr_cmd_buffer_process_deferred_clears(struct pvr_cmd_buffer *cmd_buffer)
    return VK_SUCCESS;
 }
 
+static VkResult
+pvr_csb_gfx_build_view_index_ctrl_stream(struct pvr_device *const device,
+                                         pvr_dev_addr_t addr,
+                                         struct pvr_bo **bo,
+                                         uint32_t *stride)
+{
+   struct list_head bo_list;
+   struct pvr_csb csb;
+   VkResult result;
+
+   pvr_csb_init(device, PVR_CMD_STREAM_TYPE_GRAPHICS, &csb);
+
+   for (uint32_t i = 0; i < PVR_MAX_MULTIVIEW; ++i) {
+      struct pvr_pds_view_index_init_program *program =
+         &device->view_index_init_info[i];
+
+      pvr_csb_set_relocation_mark(&csb);
+
+      pvr_csb_emit (&csb, VDMCTRL_PDS_STATE0, state_update0) {
+         state_update0.block_type = ROGUE_VDMCTRL_BLOCK_TYPE_PDS_STATE_UPDATE;
+         state_update0.dm_target = ROGUE_VDMCTRL_DM_TARGET_VDM;
+         state_update0.usc_target = ROGUE_VDMCTRL_USC_TARGET_ALL;
+         state_update0.usc_common_size = 0;
+         state_update0.usc_unified_size = 0;
+         state_update0.pds_temp_size = program->temps_used;
+         state_update0.pds_data_size = DIV_ROUND_UP(
+            PVR_DW_TO_BYTES(device->view_index_init_programs[i].data_size),
+            ROGUE_VDMCTRL_PDS_STATE0_PDS_DATA_SIZE_UNIT_SIZE);
+      }
+
+      pvr_csb_emit (&csb, VDMCTRL_PDS_STATE1, state_update1) {
+         state_update1.pds_data_addr =
+            device->view_index_init_programs[i].pvr_bo->dev_addr;
+         state_update1.sd_type = ROGUE_VDMCTRL_SD_TYPE_PDS;
+         state_update1.sd_next_type = ROGUE_VDMCTRL_SD_TYPE_USC;
+      }
+
+      pvr_csb_emit (&csb, VDMCTRL_PDS_STATE2, state_update2) {
+         state_update2.pds_code_addr.addr =
+            device->view_index_init_programs[i].pvr_bo->dev_addr.addr +
+            PVR_DW_TO_BYTES(device->view_index_init_programs[i].data_size);
+      }
+
+      pvr_csb_clear_relocation_mark(&csb);
+
+      pvr_csb_emit_link(&csb, addr, false);
+   }
+
+   result = pvr_csb_bake(&csb, &bo_list);
+   if (result != VK_SUCCESS)
+      goto err_csb_finish;
+
+   assert(list_is_singular(&bo_list));
+   *bo = list_first_entry(&bo_list, struct pvr_bo, link);
+
+   /* This needs to be kept in sync with the instructions emitted above. */
+   *stride = pvr_cmd_length(VDMCTRL_PDS_STATE0) +
+             pvr_cmd_length(VDMCTRL_PDS_STATE1) +
+             pvr_cmd_length(VDMCTRL_PDS_STATE2) +
+             pvr_cmd_length(VDMCTRL_STREAM_LINK0) +
+             pvr_cmd_length(VDMCTRL_STREAM_LINK1);
+
+   return VK_SUCCESS;
+
+err_csb_finish:
+   pvr_csb_finish(&csb);
+
+   return result;
+}
+
 VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
@@ -2328,6 +2399,16 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
       result = pvr_csb_emit_terminate(&gfx_sub_cmd->control_stream);
       if (result != VK_SUCCESS)
          return pvr_cmd_buffer_set_error_unwarned(cmd_buffer, result);
+
+      if (gfx_sub_cmd->multiview_enabled) {
+         result = pvr_csb_gfx_build_view_index_ctrl_stream(
+            device,
+            pvr_csb_get_start_address(&gfx_sub_cmd->control_stream),
+            &gfx_sub_cmd->multiview_ctrl_stream,
+            &gfx_sub_cmd->multiview_ctrl_stream_stride);
+         if (result != VK_SUCCESS)
+            return pvr_cmd_buffer_set_error_unwarned(cmd_buffer, result);
+      }
 
       result = pvr_sub_cmd_gfx_job_init(&device->pdevice->dev_info,
                                         cmd_buffer,
@@ -2571,6 +2652,8 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       sub_cmd->gfx.empty_cmd = true;
       sub_cmd->gfx.view_mask =
          pvr_render_pass_info_get_view_mask(&state->render_pass_info);
+      sub_cmd->gfx.multiview_enabled =
+         state->render_pass_info.pass->multiview_enabled;
 
       if (state->vis_test_enabled)
          sub_cmd->gfx.query_pool = state->query_pool;

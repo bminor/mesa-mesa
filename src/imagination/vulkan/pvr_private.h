@@ -214,6 +214,10 @@ struct pvr_device {
       struct pvr_suballoc_bo *usc;
    } nop_program;
 
+   struct pvr_pds_view_index_init_program
+      view_index_init_info[PVR_MAX_MULTIVIEW];
+   struct pvr_pds_upload view_index_init_programs[PVR_MAX_MULTIVIEW];
+
    /* Issue Data Fence, Wait for Data Fence state. */
    struct {
       uint32_t usc_shareds;
@@ -482,6 +486,9 @@ struct pvr_sub_cmd_gfx {
    /* Control stream builder object */
    struct pvr_csb control_stream;
 
+   struct pvr_bo *multiview_ctrl_stream;
+   uint32_t multiview_ctrl_stream_stride;
+
    /* Required iff pvr_sub_cmd_gfx_requires_split_submit() returns true. */
    struct pvr_bo *terminate_ctrl_stream;
 
@@ -520,6 +527,7 @@ struct pvr_sub_cmd_gfx {
    bool has_depth_feedback;
 
    uint32_t view_mask;
+   bool multiview_enabled;
 };
 
 struct pvr_sub_cmd_compute {

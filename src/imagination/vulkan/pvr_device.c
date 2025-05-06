@@ -1896,6 +1896,68 @@ err_free_nop_usc_bo:
    return result;
 }
 
+static VkResult
+pvr_device_init_view_index_init_programs(struct pvr_device *device)
+{
+   uint32_t *staging_buffer = NULL;
+   VkResult result;
+
+   for (unsigned i = 0; i < PVR_MAX_MULTIVIEW; ++i) {
+      uint32_t staging_buffer_size;
+      struct pvr_pds_view_index_init_program *program =
+         &device->view_index_init_info[i];
+
+      program->view_index = i;
+
+      pvr_pds_generate_view_index_init_program(program,
+                                               NULL,
+                                               PDS_GENERATE_SIZES);
+
+      staging_buffer_size = program->data_size + program->code_size;
+
+      staging_buffer = vk_realloc(&device->vk.alloc,
+                                  staging_buffer,
+                                  staging_buffer_size,
+                                  8U,
+                                  VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+
+      if (!staging_buffer) {
+         result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         break;
+      }
+
+      pvr_pds_generate_view_index_init_program(program,
+                                               staging_buffer,
+                                               PDS_GENERATE_DATA_SEGMENT);
+      pvr_pds_generate_view_index_init_program(
+         program,
+         &staging_buffer[program->data_size],
+         PDS_GENERATE_CODE_SEGMENT);
+
+      result =
+         pvr_gpu_upload_pds(device,
+                            (program->data_size == 0 ? NULL : staging_buffer),
+                            program->data_size / sizeof(uint32_t),
+                            16U,
+                            &staging_buffer[program->data_size],
+                            program->code_size / sizeof(uint32_t),
+                            16U,
+                            16U,
+                            &device->view_index_init_programs[i]);
+
+      if (result != VK_SUCCESS)
+         break;
+   }
+
+   vk_free(&device->vk.alloc, staging_buffer);
+
+   if (result != VK_SUCCESS)
+      for (uint32_t u = 0; u < PVR_MAX_MULTIVIEW; ++u)
+         pvr_bo_suballoc_free(device->view_index_init_programs[u].pvr_bo);
+
+   return result;
+}
+
 static void pvr_device_init_tile_buffer_state(struct pvr_device *device)
 {
    simple_mtx_init(&device->tile_buffer_state.mtx, mtx_plain);
@@ -2104,9 +2166,13 @@ VkResult pvr_CreateDevice(VkPhysicalDevice physicalDevice,
    if (result != VK_SUCCESS)
       goto err_pvr_free_compute_fence;
 
-   result = pvr_device_create_compute_query_programs(device);
+   result = pvr_device_init_view_index_init_programs(device);
    if (result != VK_SUCCESS)
       goto err_pvr_free_compute_empty;
+
+   result = pvr_device_create_compute_query_programs(device);
+   if (result != VK_SUCCESS)
+      goto err_pvr_free_view_index;
 
    result = pvr_device_init_compute_idfwdf_state(device);
    if (result != VK_SUCCESS)
@@ -2177,6 +2243,10 @@ err_pvr_destroy_compute_query_programs:
 err_pvr_free_compute_empty:
    pvr_bo_suballoc_free(device->pds_compute_empty_program.pvr_bo);
 
+err_pvr_free_view_index:
+   for (uint32_t u = 0; u < PVR_MAX_MULTIVIEW; ++u)
+      pvr_bo_suballoc_free(device->view_index_init_programs[u].pvr_bo);
+
 err_pvr_free_compute_fence:
    pvr_bo_suballoc_free(device->pds_compute_fence_program.pvr_bo);
 
@@ -2229,6 +2299,10 @@ void pvr_DestroyDevice(VkDevice _device,
    pvr_device_finish_compute_idfwdf_state(device);
    pvr_device_destroy_compute_query_programs(device);
    pvr_bo_suballoc_free(device->pds_compute_empty_program.pvr_bo);
+
+   for (uint32_t u = 0; u < PVR_MAX_MULTIVIEW; ++u)
+      pvr_bo_suballoc_free(device->view_index_init_programs[u].pvr_bo);
+
    pvr_bo_suballoc_free(device->pds_compute_fence_program.pvr_bo);
    pvr_bo_suballoc_free(device->nop_program.pds.pvr_bo);
    pvr_bo_suballoc_free(device->nop_program.usc);

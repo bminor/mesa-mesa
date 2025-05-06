@@ -517,6 +517,14 @@ struct pvr_pds_stream_out_terminate_program {
    uint32_t stream_out_terminate_pds_code_size;
 };
 
+struct pvr_pds_view_index_init_program {
+   uint16_t view_index;
+
+   uint32_t data_size;
+   uint32_t code_size;
+   uint32_t temps_used;
+};
+
 /*  Structure representing the PDS compute shader program.
  *	This structure describes the USC code and compute buffers required
  *	by the PDS compute task loading program
@@ -815,6 +823,13 @@ uint32_t *pvr_pds_generate_stream_out_terminate_program(
    enum pvr_pds_generate_mode gen_mode,
    const struct pvr_device_info *dev_info);
 
+#define PVR_PTEMP_VIEW_INDEX 4U
+
+uint32_t *pvr_pds_generate_view_index_init_program(
+   struct pvr_pds_view_index_init_program *restrict program,
+   uint32_t *restrict buffer,
+   enum pvr_pds_generate_mode gen_mode);
+
 /* Structure representing DrawIndirect PDS programs. */
 struct pvr_pds_drawindirect_program {
    /* --- Input to pvr_pds_drawindirect_program --- */
@@ -965,6 +980,7 @@ struct pvr_pds_descriptor_program_input {
 #define PVR_PDS_VERTEX_FLAGS_BASE_VERTEX_REQUIRED BITFIELD_BIT(5U)
 
 #define PVR_PDS_VERTEX_FLAGS_DRAW_INDEX_REQUIRED BITFIELD_BIT(6U)
+#define PVR_PDS_VERTEX_FLAGS_VIEW_INDEX_REQUIRED BITFIELD_BIT(7U)
 
 #define PVR_PDS_VERTEX_DMA_FLAGS_INSTANCE_RATE BITFIELD_BIT(0U)
 
@@ -1002,6 +1018,7 @@ struct pvr_pds_vertex_primary_program_input {
    uint16_t base_instance_register;
    uint16_t base_vertex_register;
    uint16_t draw_index_register;
+   uint16_t view_index_register;
 };
 
 #define PVR_PDS_CONST_MAP_ENTRY_TYPE_NULL (0)

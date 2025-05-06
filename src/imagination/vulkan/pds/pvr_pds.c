@@ -4569,6 +4569,60 @@ uint32_t *pvr_pds_generate_stream_out_terminate_program(
    return NULL;
 }
 
+uint32_t *pvr_pds_generate_view_index_init_program(
+   struct pvr_pds_view_index_init_program *restrict program,
+   uint32_t *restrict buffer,
+   enum pvr_pds_generate_mode gen_mode)
+{
+   uint32_t next_temp = PVR_PDS_TEMPS_BLOCK_BASE;
+   uint32_t temps_used = 0;
+   uint32_t data_size = 0;
+   uint32_t code_size = 0;
+
+   if (gen_mode == PDS_GENERATE_CODE_SEGMENT ||
+       gen_mode == PDS_GENERATE_SIZES) {
+      const bool encode = (gen_mode == PDS_GENERATE_CODE_SEGMENT);
+#define APPEND(X)                    \
+   if (encode) {                     \
+      *buffer = X;                   \
+      buffer++;                      \
+   } else {                          \
+      code_size += sizeof(uint32_t); \
+   }
+
+      uint32_t view_index_temp = pvr_pds_get_temps(&next_temp, 1, &temps_used);
+      uint32_t zero_temp = pvr_pds_get_temps(&next_temp, 1, &temps_used);
+
+      /* Load the view index into a view_index_temp. */
+      APPEND(
+         pvr_pds_inst_encode_limm(0, view_index_temp, program->view_index, 0));
+
+      /* Load the zero into a zero_temp. */
+      APPEND(pvr_pds_inst_encode_limm(0, zero_temp, 0, 0));
+
+      /* Copy the temp into ptemp. */
+      APPEND(pvr_pds_inst_encode_add32(
+         0,
+         0,
+         0,
+         view_index_temp,
+         zero_temp,
+         PVR_ROGUE_PDSINST_REGS32TP_PTEMP32_LOWER + PVR_PTEMP_VIEW_INDEX));
+
+      APPEND(pvr_pds_inst_encode_halt(0));
+#undef APPEND
+
+      program->temps_used = temps_used;
+   }
+
+   if (gen_mode == PDS_GENERATE_SIZES) {
+      program->code_size = code_size;
+      program->data_size = data_size;
+   }
+
+   return buffer;
+}
+
 /* DrawArrays works in several steps:
  *
  * 1) load data from draw_indirect buffer

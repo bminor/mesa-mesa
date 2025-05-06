@@ -459,6 +459,7 @@ void pvr_pds_generate_vertex_primary_program(
    uint32_t write_base_instance_control = ~0;
    uint32_t write_base_vertex_control = ~0;
    uint32_t pvr_write_draw_index_control = ~0;
+   uint32_t write_view_index_control = ~0;
 
    uint32_t ddmad_count = 0;
    uint32_t doutw_count = 0;
@@ -497,6 +498,8 @@ void pvr_pds_generate_vertex_primary_program(
                       PVR_PDS_VERTEX_FLAGS_BASE_VERTEX_REQUIRED);
    pvr_debug_pds_flag(input_program->flags,
                       PVR_PDS_VERTEX_FLAGS_DRAW_INDEX_REQUIRED);
+   pvr_debug_pds_flag(input_program->flags,
+                      PVR_PDS_VERTEX_FLAGS_VIEW_INDEX_REQUIRED);
    pvr_debug(" ");
 
    pvr_init_pds_const_map_entry_write_state(info, &entry_write_state);
@@ -605,6 +608,12 @@ void pvr_pds_generate_vertex_primary_program(
          literal_entry->const_offset = draw_index;
          literal_entry->literal_value = 0;
       }
+   }
+
+   if (input_program->flags & PVR_PDS_VERTEX_FLAGS_VIEW_INDEX_REQUIRED) {
+      doutw_count++;
+      write_view_index_control =
+         pvr_find_constant(const_usage, RESERVE_32BIT, "View index DOUTW Ctrl");
    }
 
    if (input_program->flags & PVR_PDS_VERTEX_FLAGS_DRAW_INDIRECT_VARIANT) {
@@ -1449,6 +1458,25 @@ void pvr_pds_generate_vertex_primary_program(
                PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_DEST_UNIFIED_STORE,
                dev_info));
       }
+   }
+
+   if (input_program->flags & PVR_PDS_VERTEX_FLAGS_VIEW_INDEX_REQUIRED) {
+      bool last_dma = (++running_dma_count == total_dma_count);
+      uint32_t data_mask = (PVR_PTEMP_VIEW_INDEX & 1) ? 0x2 : 0x1;
+
+      PVR_PDS_MODE_TOGGLE(
+         code,
+         instruction,
+         pvr_encode_direct_write(
+            &entry_write_state,
+            last_dma,
+            false,
+            R64_C(write_view_index_control),
+            R64_P(PVR_PTEMP_VIEW_INDEX >> 1),
+            data_mask,
+            input_program->view_index_register,
+            PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_DEST_UNIFIED_STORE,
+            dev_info));
    }
 
    doutu_address_entry =
