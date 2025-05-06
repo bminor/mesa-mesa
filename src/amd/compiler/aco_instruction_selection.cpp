@@ -12218,7 +12218,7 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
 {
    uint32_t offset = 0;
 
-   assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX11);
+   assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX12);
 
    init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
                 config);
