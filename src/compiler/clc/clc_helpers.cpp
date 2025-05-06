@@ -864,7 +864,11 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
                            &c->getDiagnosticOpts()));
 
    c->setTarget(clang::TargetInfo::CreateTargetInfo(
+#if LLVM_VERSION_MAJOR >= 21
+                   c->getDiagnostics(), c->getInvocation().getTargetOpts()));
+#else
                    c->getDiagnostics(), c->getInvocation().TargetOpts));
+#endif
 
    c->getFrontendOpts().ProgramAction = clang::frontend::EmitLLVMOnly;
 
