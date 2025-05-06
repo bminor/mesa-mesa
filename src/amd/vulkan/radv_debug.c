@@ -1296,6 +1296,7 @@ radv_check_trap_handler(struct radv_queue *queue)
    fprintf(stderr, "radv: Trap handler reached...\n");
 
 #ifndef _WIN32
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    char *dump_dir = NULL;
    char dump_path[512];
    FILE *f;
@@ -1323,20 +1324,34 @@ radv_check_trap_handler(struct radv_queue *queue)
 
    uint32_t ttmp0 = layout->ttmp0;
    uint32_t ttmp1 = layout->ttmp1;
+   uint64_t pc;
 
-   /* According to the ISA docs, 3.10 Trap and Exception Registers:
-    *
-    * "{ttmp1, ttmp0} = {3'h0, pc_rewind[3:0], HT[0], trapID[7:0], PC[47:0]}"
-    *
-    * "When the trap handler is entered, the PC of the faulting
-    *  instruction is: (PC - PC_rewind * 4)."
-    * */
-   uint8_t trap_id = (ttmp1 >> 16) & 0xff;
-   uint8_t ht = (ttmp1 >> 24) & 0x1;
-   uint8_t pc_rewind = (ttmp1 >> 25) & 0xf;
-   uint64_t pc = (ttmp0 | ((ttmp1 & 0x0000ffffull) << 32)) - (pc_rewind * 4);
+   if (pdev->info.gfx_level >= GFX12) {
+      /* According to the ISA docs, 3.4.10 Trap and Exception Registers:
+       *
+       * "{ttmp1, ttmp0} = {trapID[3:0], zeros, PC[47:0]}"
+       */
+      uint8_t trap_id = (ttmp1 >> 28) & 0xf;
 
-   fprintf(f, "PC=0x%" PRIx64 ", trapID=%d, HT=%d, PC_rewind=%d\n", pc, trap_id, ht, pc_rewind);
+      pc = (ttmp0 | (ttmp1 & 0x0000ffffull) << 32);
+
+      fprintf(f, "PC=0x%" PRIx64 ", trapID=%d\n", pc, trap_id);
+   } else {
+      /* According to the ISA docs, 3.10 Trap and Exception Registers:
+       *
+       * "{ttmp1, ttmp0} = {3'h0, pc_rewind[3:0], HT[0], trapID[7:0], PC[47:0]}"
+       *
+       * "When the trap handler is entered, the PC of the faulting
+       *  instruction is: (PC - PC_rewind * 4)."
+       */
+      uint8_t trap_id = (ttmp1 >> 16) & 0xff;
+      uint8_t ht = (ttmp1 >> 24) & 0x1;
+      uint8_t pc_rewind = (ttmp1 >> 25) & 0xf;
+
+      pc = (ttmp0 | ((ttmp1 & 0x0000ffffull) << 32)) - (pc_rewind * 4);
+
+      fprintf(f, "PC=0x%" PRIx64 ", trapID=%d, HT=%d, PC_rewind=%d\n", pc, trap_id, ht, pc_rewind);
+   }
 
    struct radv_shader *shader = radv_find_shader(device, pc);
    if (shader) {
