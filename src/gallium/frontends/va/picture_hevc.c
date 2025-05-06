@@ -213,9 +213,7 @@ void vlVaHandlePictureParameterBufferHEVC(vlVaDriver *drv, vlVaContext *context,
    vlVaSortRefPicSet(context, context->desc.h265.RefPicSetStCurrAfter, context->desc.h265.NumPocStCurrAfter, true);
    context->desc.h265.LtCurrDone = context->desc.h265.NumPocLtCurr < 2;
 
-   context->desc.h265.pps->st_rps_bits = hevc->st_rps_bits;
    context->desc.h265.NumShortTermPictureSliceHeaderBits = hevc->st_rps_bits;
-   context->desc.h265.UseStRpsBits = true;
 
    context->desc.h265.slice_parameter.slice_count = 0;
    context->desc.h265.slice_parameter.slice_info_present = false;
@@ -374,7 +372,7 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
    if (nal_unit_type != PIPE_H265_NAL_IDR_W_RADL && nal_unit_type != PIPE_H265_NAL_IDR_N_LP) {
       vl_rbsp_u(&rbsp, sps->log2_max_pic_order_cnt_lsb_minus4 + 4); /* slice_pic_order_cnt_lsb */
       if (!vl_rbsp_u(&rbsp, 1)) { /* short_term_ref_pic_set_sps_flag */
-         for (uint8_t i = 0; i < pps->st_rps_bits; i++)
+         for (unsigned i = 0; i < pic->NumShortTermPictureSliceHeaderBits; i++)
             vl_rbsp_u(&rbsp, 1);
       } else if (sps->num_short_term_ref_pic_sets > 1) {
           vl_rbsp_u(&rbsp, util_logbase2_ceil(sps->num_short_term_ref_pic_sets)); /* short_term_ref_pic_set_idx */

@@ -377,7 +377,6 @@ static int fill_h265_picture_desc(const struct pipe_picture_desc *desc,
     ITEM_SET(&vh265->pps, h265->pps, lists_modification_present_flag);
     ITEM_SET(&vh265->pps, h265->pps, log2_parallel_merge_level_minus2);
     ITEM_SET(&vh265->pps, h265->pps, slice_segment_header_extension_present_flag);
-    ITEM_SET(&vh265->pps, h265->pps, st_rps_bits);
 
     ITEM_SET(vh265, h265, IDRPicFlag);
     ITEM_SET(vh265, h265, RAPPicFlag);
@@ -401,7 +400,6 @@ static int fill_h265_picture_desc(const struct pipe_picture_desc *desc,
     ITEM_CPY(vh265, h265, RefPicSetStCurrAfter);
     ITEM_CPY(vh265, h265, RefPicSetLtCurr);
     ITEM_CPY(vh265, h265, RefPicList);
-    ITEM_SET(vh265, h265, UseStRpsBits);
 
     return 0;
 }

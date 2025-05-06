@@ -261,9 +261,9 @@ static rvcn_dec_message_hevc_t get_h265_msg(struct radeon_decoder *dec,
    result.sps_info_flags |= pic->pps->sps->separate_colour_plane_flag << 8;
    if (((struct si_screen *)dec->screen)->info.family == CHIP_CARRIZO)
       result.sps_info_flags |= 1 << 9;
-   if (pic->UseStRpsBits == true && pic->pps->st_rps_bits != 0) {
+   if (pic->NumShortTermPictureSliceHeaderBits != 0) {
       result.sps_info_flags |= 1 << 11;
-      result.st_rps_bits = pic->pps->st_rps_bits;
+      result.st_rps_bits = pic->NumShortTermPictureSliceHeaderBits;
    }
 
    result.chroma_format = pic->pps->sps->chroma_format_idc;

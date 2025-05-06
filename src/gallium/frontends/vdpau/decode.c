@@ -527,7 +527,6 @@ vlVdpDecoderRenderH265(struct pipe_h265_picture_desc *picture,
    memcpy(picture->RefPicSetStCurrBefore, picture_info->RefPicSetStCurrBefore, 8);
    memcpy(picture->RefPicSetStCurrAfter, picture_info->RefPicSetStCurrAfter, 8);
    memcpy(picture->RefPicSetLtCurr, picture_info->RefPicSetLtCurr, 8);
-   picture->UseStRpsBits = false;
 
    return VDP_STATUS_OK;
 }

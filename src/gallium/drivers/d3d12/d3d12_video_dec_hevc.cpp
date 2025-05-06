@@ -416,7 +416,7 @@ d3d12_video_decoder_dxva_picparams_from_pipe_picparams_hevc(
    // NumDeltaPocsOfRefRpsIdx is not passed from VA to pipe, and VA doesn't have it defined in their va_dec_hevc header.
    // DXVA drivers should use wNumBitsForShortTermRPSInSlice (st_rps_bits in VA) to derive the slice header info instead
    dxvaStructure.ucNumDeltaPocsOfRefRpsIdx            = static_cast<uint8_t>(pPipeDesc->NumDeltaPocsOfRefRpsIdx);
-   dxvaStructure.wNumBitsForShortTermRPSInSlice = pps->st_rps_bits;
+   dxvaStructure.wNumBitsForShortTermRPSInSlice       = static_cast<uint16_t>(pPipeDesc->NumShortTermPictureSliceHeaderBits);
 
    dxvaStructure.scaling_list_enabled_flag = sps->scaling_list_enabled_flag;
    dxvaStructure.amp_enabled_flag = sps->amp_enabled_flag;
