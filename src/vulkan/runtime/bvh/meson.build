@@ -45,6 +45,7 @@ bvh_shaders = [
 vk_bvh_include_dir = dir_source_root + '/src/vulkan/runtime/bvh'
 
 vk_bvh_includes = files(
+  'leaf.h',
   'vk_build_helpers.h',
   'vk_build_interface.h',
   'vk_bvh.h',
