@@ -435,7 +435,7 @@ panfrost_emit_plane(const struct pan_image_view *iview,
          cfg.two_plane_yuv_chroma.secondary_pointer =
             sections[plane_index + 1].pointer;
       } else if (!panfrost_format_is_yuv(layout->format)) {
-         cfg.slice_stride = layout->nr_samples
+         cfg.slice_stride = layout->nr_samples > 1
                                ? surface_stride
                                : panfrost_get_layer_stride(layout, level);
       }
