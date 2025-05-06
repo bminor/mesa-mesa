@@ -500,22 +500,19 @@ brw_emit_interpolation_setup(brw_shader &s)
 
    if (wm_prog_data->uses_depth_w_coefficients ||
        wm_prog_data->uses_src_depth) {
-      brw_reg sample_z = s.pixel_z;
-
       switch (wm_prog_data->coarse_pixel_dispatch) {
       case INTEL_NEVER:
          break;
 
       case INTEL_SOMETIMES:
-         assert(wm_prog_data->uses_src_depth);
-         assert(wm_prog_data->uses_depth_w_coefficients);
-         s.pixel_z = abld.vgrf(BRW_TYPE_F);
+         /* We cannot enable 3DSTATE_PS_EXTRA::PixelShaderUsesSourceDepth when
+          * coarse is enabled. Here we don't know if it's going to be, but
+          * setting brw_wm_prog_data::uses_src_depth dynamically would disturb
+          * the payload. So instead rely on the computed coarse_z which will
+          * produce a correct value even when coarse is disabled.
+          */
 
-         /* We re-use the check_dynamic_msaa_flag() call from above */
-         set_predicate(BRW_PREDICATE_NORMAL,
-                       abld.SEL(s.pixel_z, coarse_z, sample_z));
-         break;
-
+         /* Fallthrough */
       case INTEL_ALWAYS:
          assert(!wm_prog_data->uses_src_depth);
          assert(wm_prog_data->uses_depth_w_coefficients);
@@ -1085,7 +1082,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD);
    prog_data->uses_src_depth =
       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
-      prog_data->coarse_pixel_dispatch != INTEL_ALWAYS;
+      prog_data->coarse_pixel_dispatch == INTEL_NEVER;
    prog_data->uses_depth_w_coefficients = prog_data->uses_pc_bary_coefficients ||
       (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
        prog_data->coarse_pixel_dispatch != INTEL_NEVER);
