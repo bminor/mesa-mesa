@@ -348,30 +348,46 @@ def enable_job(
 
 def cancel_job(
     project: gitlab.v4.objects.Project,
-    job: gitlab.v4.objects.ProjectPipelineJob
-) -> None:
-    """Cancel GitLab job"""
-    if job.status not in RUNNING_STATUSES:
+    pipeline_job: gitlab.v4.objects.ProjectPipelineJob
+) -> Optional[gitlab.v4.objects.ProjectPipelineJob]:
+    """
+    Cancel GitLab job
+    :param project: project from the pipeline job comes from
+    :param pipeline_job: job made from the pipeline list
+    :return the job object when cancel was called
+    """
+    if pipeline_job.status not in RUNNING_STATUSES:
         return
-    pjob = project.jobs.get(job.id, lazy=True)
-    pjob.cancel()
-    print(f"🗙 {job.name}", end=" ")  # U+1F5D9 Cancellation X
+    try:
+        project_job = project.jobs.get(pipeline_job.id, lazy=True)
+        project_job.cancel()
+    except (gitlab.GitlabCancelError, gitlab.GitlabGetError):
+        # If the job failed to cancel, it will be retried in the monitor_pipeline() next iteration
+        return
+    return pipeline_job
 
 
 def cancel_jobs(
     project: gitlab.v4.objects.Project,
-    to_cancel: list
+    to_cancel: list[gitlab.v4.objects.ProjectPipelineJob]
 ) -> None:
-    """Cancel unwanted GitLab jobs"""
+    """
+    Cancel unwanted GitLab jobs
+    :param project: project from where the pipeline comes
+    :param to_cancel: list of jobs to be cancelled
+    """
     if not to_cancel:
         return
 
     with ThreadPoolExecutor(max_workers=6) as exe:
         part = partial(cancel_job, project)
-        exe.map(part, to_cancel)
+        maybe_cancelled_job = exe.map(part, to_cancel)
+        cancelled_jobs = [f"🗙 {job.name}" for job in maybe_cancelled_job if job]  # U+1F5D9 Cancellation X
 
     # The cancelled jobs are printed without a newline
-    print_once()
+    if len(cancelled_jobs):
+        print(f"Cancelled {len(cancelled_jobs)} jobs:")
+        print_formatted_list(cancelled_jobs, indentation=8)
 
 
 def print_log(
