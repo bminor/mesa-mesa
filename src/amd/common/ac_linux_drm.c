@@ -996,7 +996,7 @@ int ac_drm_va_range_free(amdgpu_va_handle va_range_handle)
 
 int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t doorbell_handle,
                             uint32_t doorbell_offset, uint64_t queue_va, uint64_t queue_size,
-                            uint64_t wptr_va, uint64_t rptr_va, void *mqd_in, uint32_t *queue_id)
+                            uint64_t wptr_va, uint64_t rptr_va, void *mqd_in, uint32_t flags, uint32_t *queue_id)
 {
    int ret;
    union drm_amdgpu_userq userq;
@@ -1037,6 +1037,7 @@ int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t doorb
 
    userq.in.mqd = (uintptr_t)mqd_in;
    userq.in.mqd_size = mqd_size;
+   userq.in.flags = flags;
 
    ret = drm_ioctl_write_read(dev->fd, DRM_AMDGPU_USERQ,
                               &userq, sizeof(userq));

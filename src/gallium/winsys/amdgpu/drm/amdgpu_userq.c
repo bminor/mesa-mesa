@@ -81,7 +81,7 @@ bool
 amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum amd_ip_type ip_type)
 {
    int r = -1;
-   uint32_t hw_ip_type;
+   uint32_t hw_ip_type, flags;
    struct drm_amdgpu_userq_mqd_gfx11 gfx_mqd;
    struct drm_amdgpu_userq_mqd_compute_gfx11 compute_mqd;
    struct drm_amdgpu_userq_mqd_sdma_gfx11 sdma_mqd;
@@ -97,6 +97,9 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
    userq->ip_type = ip_type;
    if (!amdgpu_userq_ring_init(aws, userq))
       goto fail;
+
+    /* Set normal priority for the user queue. */
+   flags = AMDGPU_USERQ_CREATE_FLAGS_QUEUE_PRIORITY_NORMAL_LOW;
 
    switch (userq->ip_type) {
    case AMD_IP_GFX:
@@ -179,7 +182,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
                                get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))->kms_handle,
                                AMDGPU_USERQ_DOORBELL_INDEX, ring_va, AMDGPU_USERQ_RING_SIZE,
                                amdgpu_bo_get_va(userq->wptr_bo), amdgpu_bo_get_va(userq->rptr_bo),
-                               mqd, &userq->userq_handle);
+                               mqd, flags, &userq->userq_handle);
    if (r) {
       fprintf(stderr, "amdgpu: failed to create userq\n");
       goto fail;
