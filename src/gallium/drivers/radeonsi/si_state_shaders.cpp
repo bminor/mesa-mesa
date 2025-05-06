@@ -3753,20 +3753,14 @@ static void si_update_clip_regs(struct si_context *sctx, struct si_shader_select
 
 static void si_update_rasterized_prim(struct si_context *sctx)
 {
-   struct si_shader *hw_vs = si_get_vs(sctx)->current;
+   struct si_shader_ctx_state *hw_vs = si_get_vs(sctx);
 
-   if (sctx->shader.gs.cso) {
-      /* Only possibilities: POINTS, LINE_STRIP, TRIANGLES */
-      si_set_rasterized_prim(sctx, sctx->shader.gs.cso->rast_prim, hw_vs, sctx->ngg);
-   } else if (sctx->shader.tes.cso) {
-      /* Only possibilities: POINTS, LINE_STRIP, TRIANGLES */
-      si_set_rasterized_prim(sctx, sctx->shader.tes.cso->rast_prim, hw_vs, sctx->ngg);
-   } else {
-      /* The rasterized prim is determined by draw calls. */
-   }
+   /* Vertex shader rasterized prim is determined by draw calls. */
+   if (hw_vs->cso && hw_vs->cso->stage != MESA_SHADER_VERTEX)
+      si_set_rasterized_prim(sctx, hw_vs->cso->rast_prim, hw_vs->current, sctx->ngg);
 
    /* This must be done unconditionally because it also depends on si_shader fields. */
-   si_update_ngg_sgpr_state_out_prim(sctx, hw_vs, sctx->ngg);
+   si_update_ngg_sgpr_state_out_prim(sctx, hw_vs->current, sctx->ngg);
 }
 
 void si_update_common_shader_state(struct si_context *sctx, struct si_shader_selector *sel,
