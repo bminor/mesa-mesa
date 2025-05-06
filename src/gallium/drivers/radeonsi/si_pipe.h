@@ -1882,8 +1882,14 @@ si_get_api_vs_inline(struct si_context *sctx, enum amd_gfx_level gfx_level,
 
 static inline struct si_shader_ctx_state *si_get_vs(struct si_context *sctx)
 {
-   return si_get_vs_inline(sctx, sctx->shader.tes.cso ? TESS_ON : TESS_OFF,
-                           sctx->shader.gs.cso ? GS_ON : GS_OFF);
+   if (sctx->shader.gs.cso)
+      return &sctx->shader.gs;
+   else if (sctx->shader.tes.cso)
+      return &sctx->shader.tes;
+   else if (sctx->shader.vs.cso)
+      return &sctx->shader.vs;
+   else
+      return &sctx->ms_shader_state;
 }
 
 static inline bool si_get_strmout_en(struct si_context *sctx)
