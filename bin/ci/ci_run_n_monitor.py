@@ -241,11 +241,9 @@ def monitor_pipeline(
                 continue
 
         if jobs_waiting:
-            print_once(
-                f"{Fore.YELLOW}Waiting for jobs to update status:",
-                ", ".join(jobs_waiting),
-                Fore.RESET,
-            )
+            print(f"{Fore.YELLOW}Waiting for jobs to update status:")
+            print_formatted_list(jobs_waiting, indentation=8)
+            print(Style.RESET_ALL, end='')
             pretty_wait(REFRESH_WAIT_JOBS)
             continue
 
