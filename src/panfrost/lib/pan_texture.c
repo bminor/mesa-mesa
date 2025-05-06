@@ -282,6 +282,34 @@ panfrost_emit_multiplanar_surface(const struct pan_image_section_info *sections,
 }
 #endif
 
+struct panfrost_tex_extent {
+   unsigned width;
+   unsigned height;
+   unsigned depth;
+};
+
+/* Special case for iview->buf.size as the passed layout->width is incorrect */
+static struct panfrost_tex_extent
+panfrost_texture_buf_get_extent(const struct pan_image_view *iview,
+                                const struct pan_image_layout *layout)
+{
+   assert(iview->buf.size);
+
+   struct panfrost_tex_extent extent;
+
+   assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
+   assert(!iview->first_level && !iview->last_level);
+   assert(!iview->first_layer && !iview->last_layer);
+   assert(layout->nr_samples == 1);
+   assert(layout->height == 1 && layout->depth == 1);
+   assert(iview->buf.offset + iview->buf.size <= layout->width);
+   extent.width = iview->buf.size;
+   extent.height = 1;
+   extent.depth = 1;
+
+   return extent;
+}
+
 #if PAN_ARCH >= 9
 
 /* clang-format off */
@@ -430,6 +458,23 @@ panfrost_emit_plane(const struct pan_image_view *iview,
       cfg.pointer = pointer;
       cfg.row_stride = row_stride;
       cfg.size = layout->slices[level].size;
+#if PAN_ARCH >= 10
+      struct panfrost_tex_extent extent;
+      if (iview->buf.size)
+         extent = panfrost_texture_buf_get_extent(iview, layout);
+      else {
+         extent.width = u_minify(layout->width, level);
+         extent.height = u_minify(layout->height, level);
+      }
+
+      if (is_chroma_2p) {
+         cfg.two_plane_yuv_chroma.width = extent.width;
+         cfg.two_plane_yuv_chroma.height = extent.height;
+      } else {
+         cfg.width = extent.width;
+         cfg.height = extent.height;
+      }
+#endif
 
       if (is_chroma_2p) {
          cfg.two_plane_yuv_chroma.secondary_pointer =
@@ -731,30 +776,22 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview,
        pan_image_view_get_plane(iview, 1) != NULL)
       array_size *= 2;
 
-   unsigned width, height, depth;
+   struct panfrost_tex_extent extent;
 
    if (iview->buf.size) {
-      assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
-      assert(!iview->first_level && !iview->last_level);
-      assert(!iview->first_layer && !iview->last_layer);
-      assert(layout->nr_samples == 1);
-      assert(layout->height == 1 && layout->depth == 1);
-      assert(iview->buf.offset + iview->buf.size <= layout->width);
-      width = iview->buf.size;
-      height = 1;
-      depth = 1;
+      extent = panfrost_texture_buf_get_extent(iview, layout);
    } else {
-      width = u_minify(layout->width, iview->first_level);
-      height = u_minify(layout->height, iview->first_level);
-      depth = u_minify(layout->depth, iview->first_level);
+      extent.width = u_minify(layout->width, iview->first_level);
+      extent.height = u_minify(layout->height, iview->first_level);
+      extent.depth = u_minify(layout->depth, iview->first_level);
       if (util_format_is_compressed(layout->format) &&
           !util_format_is_compressed(iview->format)) {
-         width =
-            DIV_ROUND_UP(width, util_format_get_blockwidth(layout->format));
-         height =
-            DIV_ROUND_UP(height, util_format_get_blockheight(layout->format));
-         depth =
-            DIV_ROUND_UP(depth, util_format_get_blockdepth(layout->format));
+         extent.width = DIV_ROUND_UP(
+            extent.width, util_format_get_blockwidth(layout->format));
+         extent.height = DIV_ROUND_UP(
+            extent.height, util_format_get_blockheight(layout->format));
+         extent.depth = DIV_ROUND_UP(
+            extent.depth, util_format_get_blockdepth(layout->format));
          assert(util_format_get_blockwidth(iview->format) == 1);
          assert(util_format_get_blockheight(iview->format) == 1);
          assert(util_format_get_blockheight(iview->format) == 1);
@@ -765,10 +802,10 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview,
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = iview->dim;
       cfg.format = mali_format;
-      cfg.width = width;
-      cfg.height = height;
+      cfg.width = extent.width;
+      cfg.height = extent.height;
       if (iview->dim == MALI_TEXTURE_DIMENSION_3D)
-         cfg.depth = depth;
+         cfg.depth = extent.depth;
       else
          cfg.sample_count = layout->nr_samples;
       cfg.swizzle = panfrost_translate_swizzle_4(iview->swizzle);
