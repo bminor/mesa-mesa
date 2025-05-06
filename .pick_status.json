@@ -4284,7 +4284,7 @@
         "description": "aco: swap the correct v_mov_b32 if there are two of them",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "408fa33c092810155baac342de90fd712231aa89",
         "notes": null
