@@ -1,5 +1,805 @@
 [
     {
+        "sha": "c434050a0088ec3f07d63fd1019aea541632faed",
+        "description": "brw: add pre ray trace intrinsic moves",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37608c075f279cfe57c66d907e92e0cd4b9ef67c",
+        "description": "anv: promote VK_EXT_robustness2 to VK_KHR_robustness2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f03be478a9cb81a800c719fc116c2b1b769170f5",
+        "description": "tu/lrz: Add tu_ignore_frag_depth_direction driconf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "847ad80e03e3cf90d005c8393829588005716917",
+        "description": "tu/lrz: Consider FS depth layout when gl_FragDepth is written",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d05b92d72003e6f2331dc05fc5e97afad3472e02",
+        "description": "tu: Add \"check_cmd_buffer_status\" debug option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86d21fd2cfec075797acac05552e3bd10b2ee59e",
+        "description": "anv: Set tc/beta offset according to the flag from PPS.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79981063552ce879ca64ce58eb70754b28d6d1ae",
+        "description": "vulkan/video: Fix wrong parsing for H265 decoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "20543981b56f4032daf0f3543eae53e6771e1c8e",
+        "description": "nak: Print the % for SSA predicates",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56bdf9043b5e223eeaca007d0cd0f3f0d789b257",
+        "description": "nak: Move SSAValue and friends to a new ssa_value.rs file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d1c38ddf11202805ac8e281ddd34940f8ad68a6",
+        "description": "nak: Check that swizzles are none",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bad23ddb4849908a648d503a615a5a9b15e9768a",
+        "notes": null
+    },
+    {
+        "sha": "6e72f0f81b05a02341fb68c9d6de96c33ec5ca96",
+        "description": "nak: Add Src::is_unmodified() helper",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bad23ddb4849908a648d503a615a5a9b15e9768a",
+        "notes": null
+    },
+    {
+        "sha": "d91ba8f36d04137d33d0c621ec77efcef5420c11",
+        "description": "nak: Mark Large SSARef paths as cold",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f44970b683530ae0e172b2aea984d08df991453",
+        "description": "nak: Support large SSARef",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dee3a0aa58f288bbd0069be8e1c83dab9c2e2391",
+        "description": "nak: CBuf and SSARef are no longer Copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68069fb8105e52c8bcef9616a0826e7a7c0ae653",
+        "description": "nak: SrcRef is no longer Copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9d27892372f9ed67ba86bc16018733249abd813",
+        "description": "nak: Src is no longer Copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30f6ca6391411d39a65665d8e43dcb9f977691bc",
+        "description": "nak: Replace Src::new_zero() with a ZERO constant",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f21557154be06f76b9f92d79eb84e8c6ebe2d216",
+        "description": "nak/from_nir: Turn srcs into a closure",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "854b2d5882c0f95a509c5e9ef41eda4f2e1452b2",
+        "description": "nak: Dst is no longer Copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ac3296f28f5c4402eec438e4e708cfbd4e6c20e",
+        "description": "nak/from_nir: Make fault an Option<SSAValue>",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ddcf0029cdabda7b8879a1da9aa010995fdab7c7",
+        "description": "nak: Use references to src/dst more places",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffe438c77d173fc639d84081a1b3e64e134de337",
+        "description": "nak: Return SSAValue from builder where possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9e9a811b84c6033af60792656647183f4c7b501",
+        "description": "nak: Split scalar/vec in SSABuilder::alloc_ssa",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ff9848d25bd68eeb927ff92add2703cc2aa5f6e",
+        "description": "nak: Use NonZeroU32 for SSAValue and remove NONE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "121b2b889bc09cd035b954d2312bad0584d57c8f",
+        "description": "nak: Add an SSARef::from_iter() helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f07092bdba3d6eaedd572050d98571a632d02e3",
+        "description": "venus: fix to passively enable wsi required extensions",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "06f5d1a1052a1f7fb2c530ea22b1fc6e261d1821",
+        "notes": null
+    },
+    {
+        "sha": "149bad63ea3eb6376bfd737b06a21182f930655c",
+        "description": "Uprev Piglit to 1498c397ea35119692b579dd6f523de4651c663f",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f8b27713d1f0b54ae2d5fe7cce9218b17c0ffd6",
+        "description": "nak: Fold Src::fold_imm() into the legalization pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c3417c3c8248b6f2b021cf8f1a3aa1bf5a6cd358",
+        "description": "nak: Use as_u32() directly in Src::is_fneg_zero()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "274be4291e0d1b6000eec4c3c6d80d6e03366ec3",
+        "description": "nak: Handle SrcType::F64 in Src::is_fneg_zero()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a4ffe3c7ef477f21e9fb0f77ba15a48293cdbb2",
+        "description": "nak: Fold source modifiers in Src::as_u32()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4648a1547674bbfe37bf2b9a2ec19c3d1dc22967",
+        "description": "nak: Take a SrcType in Src::as_u32()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b5eec6c2a80d18994724046cf365b43b08cb520",
+        "description": "nak/sm20: Use SrcRef::as_u32()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb156a468ec05ec0f082b98b7692f01ea13ec479",
+        "description": "nak: Match on the SrcRef directly in Src::is_nonzero()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a82b5696498e333a2e9ab957bceb6d1d269e9cdc",
+        "description": "anv: Reduce memory pool usage in MTL and ARL",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ea18572ff287f9a024e4dbcffc7d833e777e4c7b",
+        "notes": null
+    },
+    {
+        "sha": "7c78c76181db01790163a1b720fbf1137b2b3499",
+        "description": "iris/xe: take the grids variable_shared_mem into account",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fee9230bb518e9a688e65e6125d9cbe4f8ad8cff",
+        "description": "iris/xe: fix compute shader start address",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57ccfd0502953124df1d245d1a4e529c0fe8661c",
+        "description": "iris: parse global bindings for every gen",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8447f7aaae41ce88587aedb77acafb571a6763b8",
+        "description": "pan/genxml: Fix inverted logic on nr_regs",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "811525b543b5a0581af9bb4b17bb92edbde6fe0a",
+        "notes": null
+    },
+    {
+        "sha": "1aa5fd5da2b17706290e76bb377c2f6a4d93d299",
+        "description": "radv: promote VK_EXT_robustness2 to VK_KHR_robustness2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e09a5c9927ff63525cbc5204af324a4c389b809",
+        "description": "vulkan: Update XML and headers to 1.4.314",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02d7c8f9d3787209d7227c440e5663745eb27f8c",
+        "description": "spirv: Update the JSON and headers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e0f157b8a335eb04d05471fc4280fd11fb573c5",
+        "description": "ci: pass vk_require_etc2 from radv jobs through to the duts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0684dc5fa89287504cb086450a55df3ca946dba5",
+        "description": "radv: fix GPU hangs with image copies for ASTC/ETC2 formats on transfer queue",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8c47c55357cb4b6f933249efa41406733a2c39b",
+        "description": "turnip/ci: Update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b835a4abb0240d412c3190210800bdc38dac155",
+        "description": "freedreno/ci: Document regressions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f5ab7af3d0b38111f72fbf7db13b6a404f1d36a",
+        "description": "anv/ci: Update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ac2b73cf42168b9658761e14fa5dc62bbb79a77",
+        "description": "iris/ci: Update trace checksums",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31c2fae476f1eb6d048737369942c021b6cdb500",
+        "description": "llvmpipe/ci: document regression in a02b6e6b...676e26ae",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "51c5b7e3f93f3a894eabba69d62520d8f5ca6727",
+        "description": "etnaviv/ci: document two fixed tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b14b1d350d1703043d314052e4c9d4cd3500a0d",
+        "description": "lavapipe/ci: document flakes (including a flaky timeout) seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5cf33e67043721db8c961b6fd3332cbb42907d37",
+        "description": "zink+nvk/ci: document flakes seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b958bd18f70ae831e2fa0309440029c2f00b77f",
+        "description": "zink+radv/ci: document flakes seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32fe00280a45f0fe2ffc78579f17eda268736a79",
+        "description": "turnip/ci: document flakes seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c145f7f2dc26ac36c86752772fd03b49923b83a1",
+        "description": "radeonsi/ci: document flakes seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a601d688988a91339a0b78bb3a88f985c1025b68",
+        "description": "radv/ci: document flakes seen recently",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75880655f836e173a09c75955fe7a85f84037b06",
+        "description": "nir/lower_gs_intrinsics: silence warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc49045294a3dd899cd2ebbbc1adebef22021d09",
+        "description": "nir/opt_shrink_vectors: add assume to silence warning",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5629332dcf9e3a7219af384b2b469289b3e4a325",
+        "description": "util: silence -Wstringop-overread in SHA1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2797f42451ced49cdca1836350bf058c121e97ef",
+        "description": "tu: Fix disable_fs state update condition",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "be481e66159316b7147d82be3d87b0b63c9e624d",
+        "notes": null
+    },
+    {
+        "sha": "969820e7fe95a2465d14ebd719f16abbf8729e76",
+        "description": "tu/lrz: Disable LRZ if RP writes depth but doesn't set on GPU dir",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f903397874cfaa364b4a9a2d0f8f7d2597925915",
+        "description": "tu/lrz: Call tu_lrz_write_disable_reason once per RP",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d84dac8276246ba267772358d24c5a8bb3df565",
+        "description": "tu/lrz: Fix NOLRZ dbg option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d20241a03108e60f0ddc6a331a8032b2bff22bb",
+        "description": "tu/lrz: Fix DONT_CARE not resulting in disabled LRZ",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06f5d1a1052a1f7fb2c530ea22b1fc6e261d1821",
+        "description": "venus: expose WSI on renderer without dma-buf support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f177b787b83ce80221a2070740b0544078e8693f",
+        "description": "ci: Drop obsolete -Wno-error= stanzas",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1356d2004287354fdd959f495097ad6be4a34dcb",
+        "description": "radv: disable SINGLE clear codes to workaround a hw bug with DCC on GFX11",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55ad0fd35c600538150f4c94ca2f03024cb0076b",
+        "description": "radv: do not clear unwritten color attachments with dual-source blending",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e1483d022b28218bd53aea1c4917739cf0398b3e",
+        "notes": null
+    },
+    {
+        "sha": "32d9afdf734ee776012c1565d9683ab1a4142877",
+        "description": "nir/printf: add new helper to printf at a specific pixel.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "43f22110e7a99b5f5b67f05a273741feb595cc8e",
+        "description": "nir/printf: break out va_list handling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0a111540f0f54c7ff0f0d0b046f184f033008f7",
+        "description": "util/driconf: add force_gl_depth_component_type_int workaround",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e7ce35f3c503e547b48499c3a5b2391382c579a7",
+        "description": "ci/fluster: Fix and rename S3_PATH_FLUSTER to S3_FLUSTER_TAR",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a3fb667b1d4bda3ca10d4fa20924f61d6c28af4d",
+        "notes": null
+    },
+    {
+        "sha": "4a614cfbfb245f239b9173ab7303a95f99f9945c",
+        "description": "amd/ci: Remove increased timeout for radeonsi-raven-vaapi-fluster job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6f7f9e7a2f4561eba8f4ac7a89a87d92f6cbe6b",
+        "description": "ci/fluster: Use the structured tag as the Fluster vector version",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b01a091856e19c6cea3b183b5ce60516111a4247",
+        "description": "ci/fluster: Use structured tagging for Fluster",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ca7897ba90740485c7420b844769ba79232fd6f",
+        "description": "ci/fluster: Move Fluster to its own subfolder in the test-video container",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1bc853f2a00cb8bf4cdf111c74a5733f5bb88e59",
+        "description": "ci/fluster: Add sections to job logs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "46abb7bd2eb543380c64cca7f9ca97263c86f553",
+        "description": "ci/fluster: Move the fluster-runner.sh script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9cf5c01d0c37f6c9ace05e1ded96eaf5cbbb8fd7",
+        "description": "amd/ci: Rename .radeonsi-raven-vaapi-fluster to .radeonsi-vaapi-fluster-rules",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c90e1ba5cc3c06b32d85795871302f99c9ca963a",
+        "description": "ci/test: Move and rename .lava-fluster to .test-fluster",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "7f0de1a51212881c9a7614327bf3e1fbc9784ddb",
         "description": "ac: remove gfx11_emulate_clear_state",
         "nominated": false,
