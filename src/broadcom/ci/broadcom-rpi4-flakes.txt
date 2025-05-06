@@ -108,7 +108,8 @@ dEQP-GLES3.functional.buffer.write.recreate_store.random_4
 dEQP-VK.clipping.clip_volume.inside.triangle_strip
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_packed.max_draws.stride_extra_4.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4_samples
-dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap		dEQP-VK.rasterization.provoking_vertex.draw.first.triangle_fan
+dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap
+dEQP-VK.rasterization.provoking_vertex.draw.first.triangle_fan
 dEQP-VK.rasterization.culling.front_triangle_strip
 dEQP-VK.rasterization.primitives.no_stipple.rectangular_line_strip_with_adjacency_wide
 dEQP-VK.rasterization.primitives.no_stipple.rectangular_lines_with_adjacency_factor_large
