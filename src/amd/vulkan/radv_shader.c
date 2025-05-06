@@ -1953,7 +1953,10 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    const struct radv_shader_info *info = &binary->info;
    gl_shader_stage stage = binary->info.stage;
    bool scratch_enabled = config->scratch_bytes_per_wave > 0;
-   bool trap_enabled = !!device->trap_handler_shader;
+   const bool trap_enabled = !!device->trap_handler_shader;
+   /* On GFX12, TRAP_PRESENT doesn't exist for compute shaders and it's enabled by default. */
+   const enum ac_hw_stage hw_stage = radv_select_hw_stage(info, pdev->info.gfx_level);
+   const bool trap_present = trap_enabled && (pdev->info.gfx_level < GFX12 || hw_stage != AC_HW_COMPUTE_SHADER);
    unsigned vgpr_comp_cnt = 0;
    unsigned num_input_vgprs = args->ac.num_vgprs_used;
 
@@ -1977,7 +1980,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    config->num_shared_vgprs = num_shared_vgprs;
 
    config->rsrc2 = S_00B12C_USER_SGPR(args->num_user_sgprs) | S_00B12C_SCRATCH_EN(scratch_enabled) |
-                   S_00B12C_TRAP_PRESENT(trap_enabled);
+                   S_00B12C_TRAP_PRESENT(trap_present);
 
    if (trap_enabled) {
       /* Configure the shader exceptions like memory violation, etc. */
