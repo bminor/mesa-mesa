@@ -1134,7 +1134,7 @@
         "description": "pan/texture: Set plane size to slice size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db20152c8a85a425dd54b27cc00961d2b5a4650f",
         "notes": null
