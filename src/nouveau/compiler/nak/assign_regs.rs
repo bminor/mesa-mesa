@@ -367,14 +367,15 @@ impl RegAllocator {
         &self,
         set: &BitSet,
         start_reg: u32,
-        align: u32,
         comps: u8,
+        align_mul: u8,
+        align_offset: u8,
     ) -> Option<u32> {
         let res = set.find_aligned_unset_range(
             start_reg.try_into().unwrap(),
             comps.into(),
-            align.try_into().unwrap(),
-            0,
+            align_mul.into(),
+            align_offset.into(),
         );
         let res = u32::try_from(res).unwrap();
         if res + u32::from(comps) <= self.num_regs {
@@ -387,10 +388,17 @@ impl RegAllocator {
     pub fn try_find_unused_reg_range(
         &self,
         start_reg: u32,
-        align: u32,
         comps: u8,
+        align_mul: u8,
+        align_offset: u8,
     ) -> Option<u32> {
-        self.try_find_unset_reg_range(&self.used, start_reg, align, comps)
+        self.try_find_unset_reg_range(
+            &self.used,
+            start_reg,
+            comps,
+            align_mul,
+            align_offset,
+        )
     }
 
     pub fn alloc_scalar(
@@ -427,7 +435,7 @@ impl RegAllocator {
                     }
                     assert!(comp < vec.comps());
 
-                    let align = u32::from(vec.comps()).next_power_of_two();
+                    let align = vec.comps().next_power_of_two();
                     for c in 0..vec.comps() {
                         if c == comp {
                             continue;
@@ -438,7 +446,7 @@ impl RegAllocator {
                             continue;
                         };
 
-                        let vec_reg = other_reg & !(align - 1);
+                        let vec_reg = other_reg & !u32::from(align - 1);
                         if other_reg != vec_reg + u32::from(c) {
                             continue;
                         }
@@ -453,7 +461,7 @@ impl RegAllocator {
                     // We weren't able to pair it with an already allocated
                     // register but maybe we can at least find an aligned one.
                     if let Some(reg) =
-                        self.try_find_unused_reg_range(0, align, 1)
+                        self.try_find_unused_reg_range(0, 1, align, 0)
                     {
                         self.assign_reg(ssa, reg);
                         return reg;
@@ -463,7 +471,7 @@ impl RegAllocator {
         }
 
         let reg = self
-            .try_find_unused_reg_range(0, 1, 1)
+            .try_find_unused_reg_range(0, 1, 1, 0)
             .expect("Failed to find free register");
         self.assign_reg(ssa, reg);
         reg
@@ -527,11 +535,17 @@ impl<'a> VecRegAllocator<'a> {
     fn try_find_unpinned_reg_range(
         &self,
         start_reg: u32,
-        align: u32,
         comps: u8,
+        align_mul: u8,
+        align_offset: u8,
     ) -> Option<u32> {
-        self.ra
-            .try_find_unset_reg_range(&self.pinned, start_reg, align, comps)
+        self.ra.try_find_unset_reg_range(
+            &self.pinned,
+            start_reg,
+            comps,
+            align_mul,
+            align_offset,
+        )
     }
 
     pub fn evict_ssa(&mut self, ssa: SSAValue, old_reg: u32) {
@@ -595,7 +609,7 @@ impl<'a> VecRegAllocator<'a> {
                 let new_reg = loop {
                     let reg = self
                         .ra
-                        .try_find_unused_reg_range(next_reg, 1, 1)
+                        .try_find_unused_reg_range(next_reg, 1, 1, 0)
                         .expect("Failed to find free register");
                     if !self.reg_is_pinned(reg) {
                         break reg;
@@ -623,11 +637,11 @@ impl<'a> VecRegAllocator<'a> {
         }
 
         let comps = vec.comps();
-        let align = u32::from(comps).next_power_of_two();
+        let align = comps.next_power_of_two();
 
         let reg = self
             .ra
-            .try_find_unused_reg_range(0, align, comps)
+            .try_find_unused_reg_range(0, comps, align, 0)
             .or_else(|| {
                 for c in 0..comps {
                     let ssa = vec[usize::from(c)];
@@ -635,7 +649,7 @@ impl<'a> VecRegAllocator<'a> {
                         continue;
                     };
 
-                    let vec_reg = comp_reg & !(align - 1);
+                    let vec_reg = comp_reg & !u32::from(align - 1);
                     if comp_reg != vec_reg + u32::from(c) {
                         continue;
                     }
@@ -650,7 +664,7 @@ impl<'a> VecRegAllocator<'a> {
                 }
                 None
             })
-            .or_else(|| self.try_find_unpinned_reg_range(0, align, comps))
+            .or_else(|| self.try_find_unpinned_reg_range(0, comps, align, 0))
             .expect("Failed to find an unpinned register range");
 
         for c in 0..comps {
@@ -663,14 +677,15 @@ impl<'a> VecRegAllocator<'a> {
 
     pub fn alloc_vector(&mut self, vec: &SSARef) -> RegRef {
         let comps = vec.comps();
-        let align = u32::from(comps).next_power_of_two();
+        let align = comps.next_power_of_two();
 
-        if let Some(reg) = self.ra.try_find_unused_reg_range(0, align, comps) {
+        if let Some(reg) = self.ra.try_find_unused_reg_range(0, comps, align, 0)
+        {
             return self.assign_pin_vec_reg(&vec, reg);
         }
 
         let reg = self
-            .try_find_unpinned_reg_range(0, align, comps)
+            .try_find_unpinned_reg_range(0, comps, align, 0)
             .expect("Failed to find an unpinned register range");
 
         for c in 0..comps {
@@ -826,10 +841,13 @@ fn instr_assign_regs_file(
             vec_dsts_map_to_killed_srcs = false;
         }
 
-        let align = u32::from(vec_dst.comps).next_power_of_two();
-        if let Some(reg) =
-            ra.try_find_unused_reg_range(next_dst_reg, align, vec_dst.comps)
-        {
+        let align = vec_dst.comps.next_power_of_two();
+        if let Some(reg) = ra.try_find_unused_reg_range(
+            next_dst_reg,
+            vec_dst.comps.try_into().unwrap(),
+            align,
+            0,
+        ) {
             vec_dst.reg = reg;
             next_dst_reg = reg + u32::from(vec_dst.comps);
         } else {
