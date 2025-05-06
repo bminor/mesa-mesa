@@ -1,7 +1,11 @@
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random.programs.link.7
+
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
+dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
 
 fast_color_clear@fcc-front-buffer-distraction
+glx@glx-multi-context-front
 glx@glx-visuals-depth
 glx@glx-visuals-stencil
 glx@glx_arb_sync_control@waitformsc
@@ -14,6 +18,7 @@ spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=4
 spec@!opengl 1.1@masked-clear
 spec@!opengl 3.0@gl30basic
+spec@!opengl es 3.0@gles-3.0-transform-feedback-uniform-buffer-object
 spec@amd_performance_monitor@api
 spec@amd_performance_monitor@vc4
 spec@amd_performance_monitor@vc4@test_counter_string_normal_buffer
@@ -30,6 +35,7 @@ spec@arb_texture_multisample@large-float-texture
 spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
 spec@ext_framebuffer_blit@fbo-blit-check-limits
+spec@ext_packed_depth_stencil@depthstencil-render-miplevels 585 d=s=z24_s8
 spec@ext_packed_depth_stencil@depthstencil-render-miplevels 585 ds=z24_s8
 
 # Seen this one flake a few times already
