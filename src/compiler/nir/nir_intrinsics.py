@@ -1012,6 +1012,9 @@ system_value("xfb_size", 1, bit_sizes=[32], indices=[BASE])
 # from the index buffer.
 system_value("xfb_index_buffer", 1, bit_sizes=[32,64])
 
+# Currently active rasterization stream [0..3]
+system_value("rasterization_stream", 1)
+
 system_value("frag_size", 2)
 system_value("frag_invocation_count", 1)
 # Whether smooth lines or polygon smoothing is enabled
