@@ -808,13 +808,17 @@ create_vopd_instruction(const SchedILPContext& ctx, unsigned idx, unsigned compa
    if (compat & vopd_need_swap) {
       assert(x_info.is_commutative || y_info.is_commutative);
       /* Avoid swapping v_mov_b32 because it will become an OPY-only opcode. */
-      if (x_info.op == aco_opcode::v_dual_mov_b32 && !y_info.is_commutative) {
+      if (x_info.op == aco_opcode::v_dual_mov_b32 && y_info.op == aco_opcode::v_dual_mov_b32) {
+         swap_x = !x_info.can_be_opx;
+         swap_y = !swap_x;
+      } else if (x_info.op == aco_opcode::v_dual_mov_b32 && !y_info.is_commutative) {
          swap_x = true;
          x_info.can_be_opx = false;
       } else {
          swap_x = x_info.is_commutative && x_info.op != aco_opcode::v_dual_mov_b32;
          swap_y = y_info.is_commutative && !swap_x;
       }
+      y_info.can_be_opx &= !swap_y || y_info.op != aco_opcode::v_dual_mov_b32;
    }
 
    if (!x_info.can_be_opx) {
