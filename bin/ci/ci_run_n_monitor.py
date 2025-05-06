@@ -13,6 +13,7 @@ and show the job(s) logs.
 """
 
 import argparse
+import os
 import re
 import sys
 import time
@@ -37,7 +38,7 @@ from gitlab_common import (
     read_token,
     wait_for_pipeline,
 )
-from gitlab_gql import GitlabGQL, create_job_needs_dag, filter_dag, print_dag
+from gitlab_gql import GitlabGQL, create_job_needs_dag, filter_dag, print_dag, print_formatted_list
 
 if TYPE_CHECKING:
     from gitlab_gql import Dag
@@ -494,16 +495,14 @@ def print_detected_jobs(
     target_jobs: Iterable[str],
 ) -> None:
     def print_job_set(color: str, kind: str, job_set: Iterable[str]):
-        print(
-            color + f"Running {len(job_set)} {kind} jobs: ",
-            "\n\t",
-            ", ".join(sorted(job_set)),
-            Fore.RESET,
-            "\n",
-        )
+        job_list = list(job_set)
+        print(color + f"Running {len(job_list)} {kind} jobs:")
+        print_formatted_list(job_list, indentation=8)
+        print(Style.RESET_ALL)
 
-    print(Fore.YELLOW + "Detected target job and its dependencies:", "\n")
-    print_dag(target_dep_dag)
+    print(Fore.YELLOW + "Detected target job and its dependencies:")
+    print_dag(target_dep_dag, indentation=8)
+    print(Style.RESET_ALL)
     print_job_set(Fore.MAGENTA, "dependency", dependency_jobs)
     print_job_set(Fore.BLUE, "target", target_jobs)
 

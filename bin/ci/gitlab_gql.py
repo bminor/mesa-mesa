@@ -3,12 +3,14 @@
 
 import logging
 import re
+import sys
 import traceback
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import accumulate
+from os import get_terminal_size
 from pathlib import Path
 from subprocess import check_output
 from textwrap import dedent
@@ -20,6 +22,8 @@ from gitlab_common import get_token_from_default_dir
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 from graphql import DocumentNode
+
+DEFAULT_TERMINAL_SIZE: int = 80  # columns
 
 
 class DagNode(TypedDict):
@@ -340,9 +344,40 @@ def filter_dag(
     return filtered_jobs
 
 
-def print_dag(dag: Dag) -> None:
+def print_dag(dag: Dag, indentation: int = 0) -> None:
     for job, data in sorted(dag.items()):
-        print(f"{job}:\n\t{' '.join(data['needs'])}\n")
+        print(f"{' '*indentation}{job}:")
+        print_formatted_list(list(data['needs']), indentation=indentation+8)
+
+
+def print_formatted_list(elements: list[str], indentation: int = 0) -> None:
+    """
+    When a list of elements is going to be printed, if it is longer than one line, reformat it to be multiple
+    lines with a 'ls' command style.
+    :param elements: list of elements to be printed
+    :param indentation: number of spaces to be injected in front of each line
+    """
+    if len(elements) == 0:
+        return
+    elements.sort()
+    try:
+        h_size = get_terminal_size().columns if sys.stdin.isatty() else DEFAULT_TERMINAL_SIZE
+    except OSError:
+        h_size = DEFAULT_TERMINAL_SIZE
+    if indentation + sum(len(element) for element in elements) + (len(elements)*2) < h_size:  # fits in one line
+        print(f"{' '*indentation}{', '.join([element for element in elements])}")
+        return
+    column_separator_size = 2
+    column_width: int = len(max(elements, key=len)) + column_separator_size
+    n_columns: int = (h_size - indentation) // column_width
+    step = (len(elements) // n_columns) + 1
+    rows = [elements[i::step] for i in range(step)]
+    for line in rows:
+        print(' '*indentation, end='')
+        for column in range(len(line)):
+            if line[column] is not None:
+                print(f"{line[column]:<{column_width}}", end='')
+        print()
 
 
 def fetch_merged_yaml(gl_gql: GitlabGQL, params) -> dict[str, Any]:
