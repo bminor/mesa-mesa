@@ -171,7 +171,6 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
       OPT(nir, nir_opt_remove_phis);
       OPT(nir, nir_opt_gcm, false);
       OPT(nir, nir_opt_undef);
-      OPT(nir, nir_lower_pack);
    } while (progress);
 
    OPT(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);

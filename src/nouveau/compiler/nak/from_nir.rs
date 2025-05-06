@@ -514,9 +514,13 @@ impl<'a> ShaderFromNir<'a> {
         // scattered across multiple dwords
         match alu.op {
             nir_op_mov
+            | nir_op_pack_32_4x8
             | nir_op_pack_32_4x8_split
+            | nir_op_pack_32_2x16
             | nir_op_pack_32_2x16_split
+            | nir_op_pack_64_2x32
             | nir_op_pack_64_2x32_split
+            | nir_op_pack_64_4x16
             | nir_op_vec2
             | nir_op_vec3
             | nir_op_vec4
@@ -531,9 +535,9 @@ impl<'a> ShaderFromNir<'a> {
                 // value in the vec.  This implicitly makes 64-bit sources look
                 // like two 32-bit values
                 let mut srcs = Vec::new();
-                if alu.op == nir_op_mov {
+                if alu.info().num_inputs == 1 {
                     let src = alu.get_src(0);
-                    for c in 0..alu.def.num_components {
+                    for c in 0..alu.src_components(0) {
                         let s = src.swizzle[usize::from(c)];
                         let (src, byte) =
                             self.get_ssa_comp(src.src.as_def(), s);
@@ -1694,11 +1698,18 @@ impl<'a> ShaderFromNir<'a> {
                     b.sel(ovf_lo.into(), sum_lo.into(), 0.into()).into()
                 }
             }
+            nir_op_unpack_32_2x16 | nir_op_unpack_32_4x8 => {
+                b.copy(srcs(0)).into()
+            }
             nir_op_unpack_32_2x16_split_x => {
                 b.prmt(srcs(0), 0.into(), [0, 1, 4, 4]).into()
             }
             nir_op_unpack_32_2x16_split_y => {
                 b.prmt(srcs(0), 0.into(), [2, 3, 4, 4]).into()
+            }
+            nir_op_unpack_64_2x32 | nir_op_unpack_64_4x16 => {
+                let src0 = srcs(0).to_ssa();
+                [b.copy(src0[0].into()), b.copy(src0[1].into())].into()
             }
             nir_op_unpack_64_2x32_split_x => {
                 let src0_x = srcs(0).as_ssa().unwrap()[0];
