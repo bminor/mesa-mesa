@@ -22,6 +22,11 @@ dep_paste = dependency('paste',
   required : true,
 )
 
+dep_rustc_hash = dependency('rustc-hash',
+  fallback: ['rustc-hash', 'dep_rustc_hash'],
+  required: true,
+)
+
 libnak_c_files = files(
   'nak.h',
   'nak_nir.c',
@@ -123,6 +128,7 @@ _libnak_rs = static_library(
   ],
   dependencies : [
     dep_paste,
+    dep_rustc_hash,
     idep_compiler_rs,
     idep_nvidia_headers_rs,
   ],

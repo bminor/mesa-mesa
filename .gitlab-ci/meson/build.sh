@@ -151,6 +151,7 @@ meson_subprojects=(
   pest_generator
   pest_meta
   roxmltree
+  rustc-hash
   indexmap
   ${FORCE_FALLBACK_FOR:-}
 )
