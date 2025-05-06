@@ -12326,28 +12326,60 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    }
 
    /* Store some hardware registers. */
-   const uint32_t hw_regs_idx[] = {
-      1, /* HW_REG_MODE */
-      3, /* HW_REG_TRAP_STS */
-      4, /* HW_REG_HW_ID */
-      5, /* WH_REG_GPR_ALLOC */
-      6, /* WH_REG_LDS_ALLOC */
-      7, /* HW_REG_IB_STS */
-   };
+   if (options->gfx_level >= GFX12) {
+      const uint32_t hw_regs_idx[] = {
+         1,  /* HW_REG_MODE */
+         2,  /* HW_REG_STATUS */
+         5,  /* WH_REG_GPR_ALLOC */
+         6,  /* WH_REG_LDS_ALLOC */
+         7,  /* HW_REG_IB_STS */
+         17, /* HW_REG_EXCP_FLAG_PRIV */
+         18, /* HW_REG_EXCP_FLAG_USER */
+         19, /* HW_REG_TRAP_CTRL */
+         23, /* HW_REG_HW_ID */
+      };
 
-   offset = offsetof(struct aco_trap_handler_layout, sq_wave_regs.status);
+      offset = offsetof(struct aco_trap_handler_layout, sq_wave_regs.gfx12.state_priv);
 
-   /* Store saved SQ_WAVE_STATUS which can change inside the trap. */
-   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_wave_status, s1), offset);
-   offset += 4;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
-      /* "((size - 1) << 11) | register" */
-      bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
-               ((32 - 1) << 11) | hw_regs_idx[i]);
-
-      dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(ttmp0_reg, s1), offset);
+      /* Store saved SQ_WAVE_STATE_PRIV which can change inside the trap. */
+      dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_wave_state_priv, s1), offset);
       offset += 4;
+
+      for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
+         /* "((size - 1) << 11) | register" */
+         bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
+                  ((32 - 1) << 11) | hw_regs_idx[i]);
+
+         dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(ttmp0_reg, s1), offset);
+         offset += 4;
+      }
+   } else {
+      const uint32_t hw_regs_idx[] = {
+         1, /* HW_REG_MODE */
+         3, /* HW_REG_TRAP_STS */
+         4, /* HW_REG_HW_ID */
+         5, /* WH_REG_GPR_ALLOC */
+         6, /* WH_REG_LDS_ALLOC */
+         7, /* HW_REG_IB_STS */
+      };
+
+      offset = offsetof(struct aco_trap_handler_layout, sq_wave_regs.gfx8.status);
+
+      /* Store saved SQ_WAVE_STATUS which can change inside the trap. */
+      dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_wave_status, s1), offset);
+      offset += 4;
+
+      for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
+         /* "((size - 1) << 11) | register" */
+         bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
+                  ((32 - 1) << 11) | hw_regs_idx[i]);
+
+         dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(ttmp0_reg, s1), offset);
+         offset += 4;
+      }
+
+      /* Skip space "reserved regs". */
+      offset += 12;
    }
 
    assert(offset == offsetof(struct aco_trap_handler_layout, m0));

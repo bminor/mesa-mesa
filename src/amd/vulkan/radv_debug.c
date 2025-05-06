@@ -1174,22 +1174,33 @@ radv_dump_sq_hw_regs(struct radv_device *device, const struct aco_trap_handler_l
    enum radeon_family family = pdev->info.family;
 
    fprintf(f, "\nHardware registers:\n");
-   if (pdev->info.gfx_level >= GFX10) {
-      ac_dump_reg(f, gfx_level, family, R_000404_SQ_WAVE_MODE, layout->sq_wave_regs.mode, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000408_SQ_WAVE_STATUS, layout->sq_wave_regs.status, ~0);
-      ac_dump_reg(f, gfx_level, family, R_00040C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.trap_sts, ~0);
-      ac_dump_reg(f, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, layout->sq_wave_regs.hw_id1, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gpr_alloc, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000418_SQ_WAVE_LDS_ALLOC, layout->sq_wave_regs.lds_alloc, ~0);
-      ac_dump_reg(f, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, layout->sq_wave_regs.ib_sts, ~0);
+   if (pdev->info.gfx_level >= GFX12) {
+      ac_dump_reg(f, gfx_level, family, R_000410_SQ_WAVE_STATE_PRIV, layout->sq_wave_regs.gfx12.state_priv, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000404_SQ_WAVE_MODE, layout->sq_wave_regs.gfx12.mode, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000408_SQ_WAVE_STATUS, layout->sq_wave_regs.gfx12.status, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gfx12.gpr_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000418_SQ_WAVE_LDS_ALLOC, layout->sq_wave_regs.gfx12.lds_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, layout->sq_wave_regs.gfx12.ib_sts, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000444_SQ_WAVE_EXCP_FLAG_PRIV, layout->sq_wave_regs.gfx12.excp_flag_priv, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000448_SQ_WAVE_EXCP_FLAG_USER, layout->sq_wave_regs.gfx12.excp_flag_user, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00044C_SQ_WAVE_TRAP_CTRL, layout->sq_wave_regs.gfx12.trap_ctrl, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, layout->sq_wave_regs.gfx12.hw_id1, ~0);
+   } else if (pdev->info.gfx_level >= GFX10) {
+      ac_dump_reg(f, gfx_level, family, R_000404_SQ_WAVE_MODE, layout->sq_wave_regs.gfx8.mode, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000408_SQ_WAVE_STATUS, layout->sq_wave_regs.gfx8.status, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00040C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.gfx8.trap_sts, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, layout->sq_wave_regs.gfx8.hw_id1, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gfx8.gpr_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000418_SQ_WAVE_LDS_ALLOC, layout->sq_wave_regs.gfx8.lds_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, layout->sq_wave_regs.gfx8.ib_sts, ~0);
    } else {
-      ac_dump_reg(f, gfx_level, family, R_000044_SQ_WAVE_MODE, layout->sq_wave_regs.mode, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000048_SQ_WAVE_STATUS, layout->sq_wave_regs.status, ~0);
-      ac_dump_reg(f, gfx_level, family, R_00004C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.trap_sts, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000050_SQ_WAVE_HW_ID, layout->sq_wave_regs.hw_id1, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gpr_alloc, ~0);
-      ac_dump_reg(f, gfx_level, family, R_000058_SQ_WAVE_LDS_ALLOC, layout->sq_wave_regs.lds_alloc, ~0);
-      ac_dump_reg(f, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, layout->sq_wave_regs.ib_sts, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000044_SQ_WAVE_MODE, layout->sq_wave_regs.gfx8.mode, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000048_SQ_WAVE_STATUS, layout->sq_wave_regs.gfx8.status, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00004C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.gfx8.trap_sts, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000050_SQ_WAVE_HW_ID, layout->sq_wave_regs.gfx8.hw_id1, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gfx8.gpr_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_000058_SQ_WAVE_LDS_ALLOC, layout->sq_wave_regs.gfx8.lds_alloc, ~0);
+      ac_dump_reg(f, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, layout->sq_wave_regs.gfx8.ib_sts, ~0);
    }
    fprintf(f, "\n\n");
 }
@@ -1198,14 +1209,16 @@ static uint32_t
 radv_get_vgpr_size(const struct radv_device *device, const struct aco_trap_handler_layout *layout)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const uint32_t gpr_alloc =
+      pdev->info.gfx_level >= GFX12 ? layout->sq_wave_regs.gfx12.gpr_alloc : layout->sq_wave_regs.gfx8.gpr_alloc;
    uint32_t vgpr_size;
 
    if (pdev->info.gfx_level >= GFX11) {
-      vgpr_size = G_000414_VGPR_SIZE_GFX11(layout->sq_wave_regs.gpr_alloc);
+      vgpr_size = G_000414_VGPR_SIZE_GFX11(gpr_alloc);
    } else if (pdev->info.gfx_level >= GFX10) {
-      vgpr_size = G_000414_VGPR_SIZE_GFX10(layout->sq_wave_regs.gpr_alloc);
+      vgpr_size = G_000414_VGPR_SIZE_GFX10(gpr_alloc);
    } else {
-      vgpr_size = G_000054_VGPR_SIZE_GFX6(layout->sq_wave_regs.gpr_alloc);
+      vgpr_size = G_000054_VGPR_SIZE_GFX6(gpr_alloc);
    }
 
    return vgpr_size;
@@ -1256,7 +1269,10 @@ radv_dump_shader_regs(const struct radv_device *device, const struct aco_trap_ha
 static void
 radv_dump_lds(const struct radv_device *device, const struct aco_trap_handler_layout *layout, FILE *f)
 {
-   uint32_t lds_size = G_000058_LDS_SIZE(layout->sq_wave_regs.lds_alloc);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const uint32_t lds_alloc =
+      pdev->info.gfx_level >= GFX12 ? layout->sq_wave_regs.gfx12.lds_alloc : layout->sq_wave_regs.gfx8.lds_alloc;
+   uint32_t lds_size = G_000058_LDS_SIZE(lds_alloc);
 
    if (!lds_size)
       return;
