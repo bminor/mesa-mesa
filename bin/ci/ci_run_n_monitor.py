@@ -69,7 +69,6 @@ RUNNING_STATUSES = frozenset({"created", "pending", "running"})
 def print_job_status(
     job: gitlab.v4.objects.ProjectPipelineJob,
     new_status: bool = False,
-    job_name_field_pad: int = 0,
 ) -> None:
     """It prints a nice, colored job status with a link to the job."""
     if job.status in {"canceled", "canceling"}:
@@ -78,15 +77,20 @@ def print_job_status(
     if new_status and job.status == "created":
         return
 
-    job_name_field_pad = len(job.name) if job_name_field_pad < 1 else job_name_field_pad
+    global type_field_pad
+    global name_field_pad
+    jtype = "🞋 job"
+    job_name = job.name
+    type_field_pad = len(jtype) if len(jtype) > type_field_pad else type_field_pad
+    name_field_pad = len(job_name) if len(job_name) > name_field_pad else name_field_pad
 
     duration = job_duration(job)
 
     print_once(
         STATUS_COLORS[job.status]
-        + "🞋 job "  # U+1F78B Round target
-        + link2print(job.web_url, job.name, job_name_field_pad)
-        + (f"has new status: {job.status}" if new_status else f"{job.status}")
+        + f"{jtype:{type_field_pad}} "  # U+1F78B Round target
+        + link2print(job.web_url, job.name, name_field_pad)
+        + (f" has new status: {job.status}" if new_status else f" {job.status}")
         + (f" ({pretty_duration(duration)})" if job.started_at else "")
         + Style.RESET_ALL
     )
@@ -121,7 +125,6 @@ def run_target_job(
     stress: int,
     execution_times: dict,
     target_statuses: dict,
-    name_field_pad: int,
 ) -> None:
     execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
     if stress and job.status in COMPLETED_STATUSES:
@@ -135,7 +138,7 @@ def run_target_job(
     else:
         enable_job_fn(job=job, action_type="target")
 
-    print_job_status(job, job.status not in target_statuses[job.name], name_field_pad)
+    print_job_status(job, job.status not in target_statuses[job.name])
     target_statuses[job.name] = job.status
 
 
@@ -153,7 +156,10 @@ def monitor_pipeline(
     target_statuses: dict[str, str] = defaultdict(str)
     execution_times: dict[str, dict[str, tuple[float, str, str]]] = defaultdict(lambda: defaultdict(tuple))
     target_id: int = -1
-    name_field_pad: int = len(max(dependencies, key=len))+2
+    global type_field_pad
+    type_field_pad = 0
+    global name_field_pad
+    name_field_pad = len(max(dependencies, key=len))+2
     # In a running pipeline, we can skip following job traces that are in these statuses.
     skip_follow_statuses: frozenset[str] = (COMPLETED_STATUSES)
 
@@ -177,7 +183,6 @@ def monitor_pipeline(
         enable_job,
         project=project,
         enable_attempts=enable_attempts,
-        job_name_field_pad=name_field_pad,
         jobs_waiting=jobs_waiting,
     )
     while True:
@@ -194,14 +199,13 @@ def monitor_pipeline(
                     enable_job_fn,
                     stress,
                     execution_times,
-                    target_statuses,
-                    name_field_pad,
+                    target_statuses
                 )
                 target_id = job.id
                 continue
             # all other non-target jobs
             if job.status != statuses[job.name]:
-                print_job_status(job, True, name_field_pad)
+                print_job_status(job, True)
                 statuses[job.name] = job.status
 
             # run dependencies and cancel the rest
@@ -228,7 +232,7 @@ def monitor_pipeline(
                 n_total_completed = n_succeed + n_failed
                 n_total_seen = len(execution_times[job_name])
                 print(
-                    f"* {job_name:{name_field_pad}}succ: {n_succeed}; "
+                    f"* {job_name:{name_field_pad}} succ: {n_succeed}; "
                     f"fail: {n_failed}; "
                     f"total: {n_total_seen} of {stress}",
                     flush=False,
@@ -283,8 +287,7 @@ def enable_job(
     job: gitlab.v4.objects.ProjectPipelineJob,
     enable_attempts: dict[int, int],
     action_type: Literal["target", "dep", "retry"],
-    job_name_field_pad: int = 0,
-    jobs_waiting: list[str] = [],
+    jobs_waiting: list[str] = list,
 ) -> bool:
     """
     Enable a job to run.
@@ -292,6 +295,7 @@ def enable_job(
     :param job: The job to enable.
     :param enable_attempts: A dictionary to track the number of attempts made for each job.
     :param action_type: The type of action to perform.
+    :param jobs_waiting:
     :return: True if the job was enabled, False otherwise.
     """
     # We want to run this job, but it is not ready to run yet, so let's try again in the next
@@ -338,8 +342,16 @@ def enable_job(
     else:
         jtype = "↪ dependency"  # U+21AA Left Arrow Curving Right
 
-    job_name_field_pad = len(job.name) if job_name_field_pad < 1 else job_name_field_pad
-    print(Fore.MAGENTA + f"{jtype} job {job.name:{job_name_field_pad}}manually enabled" + Style.RESET_ALL)
+    global type_field_pad
+    global name_field_pad
+    job_name = job.name
+    type_field_pad = len(jtype) if len(jtype) > type_field_pad else type_field_pad
+    name_field_pad = len(job_name) if len(job_name) > name_field_pad else name_field_pad
+    print(
+        Fore.MAGENTA +
+        f"{jtype:{type_field_pad}} {job.name:{name_field_pad}} manually enabled" +
+        Style.RESET_ALL
+    )
 
     return True
 
