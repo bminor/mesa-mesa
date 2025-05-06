@@ -150,6 +150,7 @@ dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.astc_10x6_unorm_
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.astc_12x12_srgb_block.mipmap.linear.lod.select_bias_3_7
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.astc_6x6_srgb_block.mipmap.nearest.lod.select_bias_2_1
 dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.x8_d24_unorm_pack32.mipmap.nearest.lod.select_min_1
+dEQP-VK.rasterization.primitive_size.points.point_size_2048
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.r8g8b8a8_sint.samples_4_resolve_level_3
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_6.r8g8_unorm.samples_4_resolve_level_3
 dEQP-VK.robustness.image_robustness.bind.notemplate.r32i.dontunroll.volatile.storage_image.fmt_qual.img.samples_1.cube.frag
