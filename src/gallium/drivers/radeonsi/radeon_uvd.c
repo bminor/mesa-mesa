@@ -583,8 +583,6 @@ static struct ruvd_h265 get_h265_msg(struct ruvd_decoder *dec, struct pipe_video
    result.sps_info_flags |= pic->pps->sps->separate_colour_plane_flag << 8;
    if (((struct si_screen *)dec->screen)->info.family == CHIP_CARRIZO)
       result.sps_info_flags |= 1 << 9;
-   if (pic->UseRefPicList == true)
-      result.sps_info_flags |= 1 << 10;
 
    result.chroma_format = pic->pps->sps->chroma_format_idc;
    result.bit_depth_luma_minus8 = pic->pps->sps->bit_depth_luma_minus8;
@@ -714,11 +712,6 @@ static struct ruvd_h265 get_h265_msg(struct ruvd_decoder *dec, struct pipe_video
    memcpy(dec->it + 96, pic->pps->sps->ScalingList8x8, 6 * 64);
    memcpy(dec->it + 480, pic->pps->sps->ScalingList16x16, 6 * 64);
    memcpy(dec->it + 864, pic->pps->sps->ScalingList32x32, 2 * 64);
-
-   for (i = 0; i < 2; i++) {
-      for (j = 0; j < 15; j++)
-         result.direct_reflist[i][j] = pic->RefPicList[0][i][j];
-   }
 
    if (pic->base.profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10) {
       if (target->buffer_format == PIPE_FORMAT_P010 || target->buffer_format == PIPE_FORMAT_P016) {
