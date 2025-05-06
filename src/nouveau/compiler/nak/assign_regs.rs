@@ -459,10 +459,12 @@ impl RegAllocator {
                     }
 
                     // We weren't able to pair it with an already allocated
-                    // register but maybe we can at least find an aligned one.
-                    if let Some(reg) =
-                        self.try_find_unused_reg_range(0, 1, align, 0)
+                    // register but maybe we can at least find a place the vec
+                    // would fit
+                    if let Some(base_reg) =
+                        self.try_find_unused_reg_range(0, vec.comps(), align, 0)
                     {
+                        let reg = base_reg + u32::from(comp);
                         self.assign_reg(ssa, reg);
                         return reg;
                     }
