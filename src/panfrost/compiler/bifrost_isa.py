@@ -207,6 +207,10 @@ def parse_instruction(ins, include_pseudo):
         start = int(imm.attrib['start']) if 'start' in imm.attrib else None
         common['immediates'].append([name, start, int(imm.attrib['size'])])
 
+    # FIXME valhall ISA.xml uses <saturate/> instead of <mod name="saturate"/>
+    for sat in ins.findall('saturate'):
+       extra_modifiers.append([['saturate', None, 1], 'none', ['none', 'sat']])
+
     staging_read = False
     staging_write = False
     for sr in ins.findall('sr'):
