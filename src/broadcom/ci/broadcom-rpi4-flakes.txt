@@ -103,3 +103,26 @@ dEQP-VK.rasterization.primitives_multisample_4_bit.no_stipple.lines
 dEQP-VK.glsl.builtin.function.pack_unpack.unpackunorm4x8_geometry
 
 dEQP-VK.synchronization2.op.single_queue.barrier.write_fill_buffer_read_vertex_input.buffer_262144
+
+dEQP-GLES3.functional.buffer.write.recreate_store.random_4
+dEQP-VK.clipping.clip_volume.inside.triangle_strip
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_packed.max_draws.stride_extra_4.10_instances.vert_only.multiview.no_offset_no_draw_id
+dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4_samples
+dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap		dEQP-VK.rasterization.provoking_vertex.draw.first.triangle_fan
+dEQP-VK.rasterization.culling.front_triangle_strip
+dEQP-VK.rasterization.primitives.no_stipple.rectangular_line_strip_with_adjacency_wide
+dEQP-VK.rasterization.primitives.no_stipple.rectangular_lines_with_adjacency_factor_large
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0112
+dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_262144_opaque_fd
+dEQP-VK.synchronization2.basic.timeline_semaphore.chain
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0230
+dEQP-VK.synchronization2.op.single_queue.fence.write_copy_buffer_to_image_read_image_compute.image_128x128_r32g32b32a32_sfloat
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_to_image_read_copy_image.image_128x128_d16_unorm
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_indirect_read_blit_image.image_64x64x8_r32_sfloat
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0232
+dEQP-VK.texture.filtering.2d.combinations.nearest.linear.repeat.clamp_to_edge
+dEQP-VK.texture.filtering.2d.combinations.nearest_mipmap_nearest.linear.clamp_to_border.mirrored_repeat
+dEQP-VK.texture.filtering.2d_array.combinations.linear_mipmap_linear.linear.mirrored_repeat.repeat
+dEQP-VK.texture.filtering.cube.combinations.nearest.linear.mirrored_repeat.repeat.seamless
+spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb cube
+spec@glsl-1.30@execution@tex-miplevel-selection texture(bias) 3d

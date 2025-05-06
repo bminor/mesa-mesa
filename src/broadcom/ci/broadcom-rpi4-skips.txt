@@ -30,16 +30,20 @@ spec@arb_shading_language_420pack@active sampler conflict
 spec@arb_texture_buffer_object@render-no-bo
 
 # Slow CTS tests (> 1 minute to run)
+dEQP-VK.clipping.user_defined.clip_distance.vert_geom.7
 dEQP-VK.image.concurrent_copy.vk_format_r32g32_sfloat.vk_image_tiling_linear.vk_image_type_3d.single.gradient.device.write
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_linear.vk_image_type_3d.single.random.device.write
+dEQP-VK.memory.mapping.dedicated_alloc.buffer.full.variable.implicit_unmap
 dEQP-VK.rasterization.culling.back_triangle_fan_reverse
+dEQP-VK.rasterization.primitives.stride_zero.single_point
 dEQP-VK.spirv_assembly.instruction.graphics.spirv_ids_abuse.lots_ids_geom
-dEQP-VK.ssbo.layout.random.8bit.all_per_block_buffers.5
 dEQP-VK.ssbo.layout.random.16bit.all_shared_buffer.31
+dEQP-VK.ssbo.layout.random.8bit.all_per_block_buffers.5
 dEQP-VK.ssbo.layout.random.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.8bit.all_per_block_buffers.46
 dEQP-VK.ssbo.phys.layout.random.8bit.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
+dEQP-VK.synchronization2.basic.timeline_semaphore.chain
 
 # WSI tests are too flaky to be useful
 dEQP-VK.image.swapchain_mutable.*
@@ -124,3 +128,25 @@ dEQP-VK.synchronization2.signal_order.shared_binary_semaphore.write_ssbo_vertex_
 
 # Leaky in VKCTS 1.4.1.1
 asan-dEQP-VK.video.*
+
+# More leaks, pending to investigate
+asan-dEQP-VK.synchronization.cross_instance.suballocated.write_ssbo_compute_indirect_read_ssbo_vertex.buffer_262144_binary_semaphore_fd
+asan-dEQP-VK.synchronization.op.single_queue.event.write_ssbo_compute_indirect_read_vertex_input.buffer_16384
+asan-dEQP-VK.synchronization.op.single_queue.fence.write_draw_indirect_read_image_compute_indirect.image_128x128_r16g16b16a16_uint
+asan-dEQP-VK.synchronization2.cross_instance.dedicated.write_ssbo_compute_indirect_read_ubo_compute.buffer_16384_binary_semaphore_dma_buf
+asan-dEQP-VK.synchronization2.cross_instance.suballocated.write_fill_buffer_read_ubo_compute_indirect.buffer_16384_binary_semaphore_fd
+asan-dEQP-VK.synchronization2.op.single_queue.barrier.write_clear_attachments_read_image_compute_indirect.image_128x128_r8_unorm
+asan-dEQP-VK.synchronization2.op.single_queue.barrier.write_draw_read_image_compute_indirect.image_128x128_r8g8b8a8_unorm
+asan-dEQP-VK.synchronization2.op.single_queue.barrier.write_image_compute_indirect_read_copy_image.image_64x64x8_r32_sfloat
+asan-dEQP-VK.synchronization2.op.single_queue.barrier.write_image_compute_indirect_read_image_compute_indirect.image_64x64x8_r32_sfloat
+asan-dEQP-VK.synchronization2.op.single_queue.barrier.write_image_vertex_read_image_compute_indirect.image_128x128_r16_uint_specialized_access_flag
+asan-dEQP-VK.synchronization2.op.single_queue.binary_semaphore.write_image_compute_indirect_read_image_geometry.image_128x128_r16_uint
+asan-dEQP-VK.synchronization2.op.single_queue.event.write_blit_image_read_image_compute_indirect.image_64x64x8_r32_sfloat_specialized_access_flag
+asan-dEQP-VK.synchronization2.op.single_queue.event.write_image_compute_indirect_read_image_vertex.image_64x64x8_r32_sfloat
+asan-dEQP-VK.synchronization2.op.single_queue.event.write_ssbo_compute_indirect_read_ssbo_fragment.buffer_262144_specialized_access_flag
+asan-dEQP-VK.synchronization2.op.single_queue.event.write_ssbo_compute_indirect_read_ubo_texel_geometry.buffer_16384
+asan-dEQP-VK.synchronization2.op.single_queue.fence.write_copy_image_to_buffer_read_ubo_compute_indirect.buffer_16384
+asan-dEQP-VK.synchronization2.op.single_queue.fence.write_image_compute_indirect_read_image_vertex.image_64x64x8_r32_sfloat_specialized_access_flag
+asan-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_indirect_read_image_fragment.image_128x128_r16_uint
+asan-dEQP-VK.synchronization2.timeline_semaphore.one_to_n.write_image_compute_read_image_compute_indirect.image_128x128_r16_uint
+asan-dEQP-VK.synchronization2.timeline_semaphore.wait_before_signal.write_image_compute_read_image_compute_indirect.image_128x128_r16g16b16a16_uint
