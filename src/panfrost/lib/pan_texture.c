@@ -429,7 +429,7 @@ panfrost_emit_plane(const struct pan_image_view *iview,
    pan_cast_and_pack(*payload, PLANE, cfg) {
       cfg.pointer = pointer;
       cfg.row_stride = row_stride;
-      cfg.size = layout->data_size - layout->slices[level].offset;
+      cfg.size = layout->slices[level].size;
 
       if (is_chroma_2p) {
          cfg.two_plane_yuv_chroma.secondary_pointer =
