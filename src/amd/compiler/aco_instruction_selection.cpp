@@ -12248,12 +12248,19 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    PhysReg ttmp2_reg{ttmp0_idx + 2};
    PhysReg ttmp3_reg{ttmp0_idx + 3};
    PhysReg tma_rsrc{ttmp0_idx + 4}; /* s4 */
-   PhysReg save_wave_status{ttmp0_idx + 8};
+   PhysReg save_wave_status{ttmp0_idx + 8};     /* GFX8-GFX11.5 */
+   PhysReg save_wave_state_priv{ttmp0_idx + 8}; /* GFX12+ */
    PhysReg save_m0{ttmp0_idx + 9};
    PhysReg save_exec{ttmp0_idx + 10}; /* s2 */
 
-   /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
-   bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
+   if (options->gfx_level >= GFX12) {
+      /* Save SQ_WAVE_STATE_PRIV because SCC needs to be restored. */
+      bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_state_priv, s1),
+               ((32 - 1) << 11) | 4);
+   } else {
+      /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
+      bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
+   }
 
    /* Save m0. */
    bld.copy(Definition(save_m0, s1), Operand(m0, s1));
@@ -12371,9 +12378,15 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    bld.copy(Definition(m0, s1), Operand(save_m0, s1));
    bld.copy(Definition(exec, bld.lm), Operand(save_exec, bld.lm));
 
-   /* Restore SCC which is the first bit of SQ_WAVE_STATUS. */
-   bld.sopc(aco_opcode::s_bitcmp1_b32, bld.def(s1, scc), Operand(save_wave_status, s1),
-            Operand::c32(0u));
+   if (options->gfx_level >= GFX12) {
+      /* Restore SCC which is the bit 9 of SQ_WAVE_STATE_PRIV. */
+      bld.sopc(aco_opcode::s_bitcmp1_b32, bld.def(s1, scc), Operand(save_wave_state_priv, s1),
+               Operand::c32(9u));
+   } else {
+      /* Restore SCC which is the first bit of SQ_WAVE_STATUS. */
+      bld.sopc(aco_opcode::s_bitcmp1_b32, bld.def(s1, scc), Operand(save_wave_status, s1),
+               Operand::c32(0u));
+   }
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
 
