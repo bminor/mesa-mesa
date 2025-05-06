@@ -3684,7 +3684,7 @@
         "description": "pan/genxml/v13: Add minus1 mod for plane width/height",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ece01443e18d3451088122a3a46a5a1549606a4f",
         "notes": null
