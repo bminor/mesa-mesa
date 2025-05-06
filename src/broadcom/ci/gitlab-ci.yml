@@ -197,6 +197,14 @@ v3d-rpi4-traces:arm64:
   variables:
     PIGLIT_TRACES_FILE: traces-broadcom.yml
 
+.ci-tron-v3d-rpi4-traces:arm64:
+  extends:
+    - .ci-tron-v3d-traces:arm64
+    - .ci-tron-broadcom-rpi4:arm64
+  timeout: 10m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 5
+
 v3d-rpi4-gl:arm32:
   extends:
     - .igalia-bcm2711-rpi-4
@@ -451,6 +459,14 @@ v3d-rpi5-traces:arm64:
   timeout: 25m
   variables:
     PIGLIT_TRACES_FILE: traces-broadcom.yml
+
+.ci-tron-v3d-rpi5-traces:arm64:
+  extends:
+    - .ci-tron-v3d-traces:arm64
+    - .ci-tron-broadcom-rpi5:arm64
+  timeout: 10m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 5
 
 v3dv-rpi5-vk:arm64:
   extends:

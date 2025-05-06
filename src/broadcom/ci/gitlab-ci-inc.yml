@@ -286,6 +286,14 @@
     RPI_KERNEL: 'kernel_2712'
     RPI_MODULES: 'v8-16k'
 
+.ci-tron-v3d-traces:arm64:
+  extends:
+    - .ci-tron-arm64-test-gl
+    - .piglit-traces-test
+    - .v3d-rules
+  variables:
+    PIGLIT_TRACES_FILE: traces-broadcom.yml
+
 
 .broadcom-test:
   script:
