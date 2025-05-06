@@ -277,11 +277,11 @@ void vlVaHandleSliceParameterBufferHEVC(vlVaContext *context, vlVaBuffer *buf)
       /* Depending on slice_type, only update relevant reference */
       case 0: /* HEVC_SLICE_B */
          for (int j = 0 ; j < 15 ; j++)
-            context->desc.h265.RefPicList[slice_index][1][j] = h265->RefPicList[1][j];
+            context->desc.h265.RefPicList[1][j] = h265->RefPicList[1][j];
          FALLTHROUGH;
       case 1: /* HEVC_SLICE_P */
          for (int j = 0 ; j < 15 ; j++)
-            context->desc.h265.RefPicList[slice_index][0][j] = h265->RefPicList[0][j];
+            context->desc.h265.RefPicList[0][j] = h265->RefPicList[0][j];
          FALLTHROUGH;
       default:
          break;
@@ -443,7 +443,6 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
           vl_rbsp_u(&rbsp, 1); /* slice_sao_chroma_flag */
    }
 
-   unsigned cur_slice = pic->slice_parameter.slice_count - 1;
    unsigned ltr_start = pic->NumPocStCurrBefore + pic->NumPocStCurrAfter;
    unsigned ref_pic_list_modification_flag_l0 = 0, ref_pic_list_modification_flag_l1 = 0;
 
@@ -464,7 +463,7 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
             for (unsigned i = 0; i <= num_ref_l0_minus1; i++) {
                unsigned idx = vl_rbsp_u(&rbsp, num_bits);
                if (idx >= ltr_start && idx < ltr_start + num_long_term_sps)
-                  pic->RefPicSetLtCurr[idx - ltr_start] = pic->RefPicList[cur_slice][0][i];
+                  pic->RefPicSetLtCurr[idx - ltr_start] = pic->RefPicList[0][i];
             }
          }
          if (slice_type == PIPE_H265_SLICE_TYPE_B) {
@@ -475,7 +474,7 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
                for (unsigned i = 0; i <= num_ref_l1_minus1; i++) {
                   unsigned idx = vl_rbsp_u(&rbsp, num_bits);
                   if (idx >= ltr_start && idx < ltr_start + num_long_term_sps)
-                     pic->RefPicSetLtCurr[idx - ltr_start] = pic->RefPicList[cur_slice][1][i];
+                     pic->RefPicSetLtCurr[idx - ltr_start] = pic->RefPicList[1][i];
                }
             }
          }
@@ -483,7 +482,7 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
       /* If no modification is used, we can use the RefPicList directly. */
       if (!ref_pic_list_modification_flag_l0) {
          for (unsigned i = 0; i < pic->NumPocLtCurr; i++) {
-            uint8_t idx = pic->RefPicList[cur_slice][0][i + ltr_start];
+            uint8_t idx = pic->RefPicList[0][i + ltr_start];
             if (i < num_long_term_sps) {
                assert(idx != 0xff);
                pic->RefPicSetLtCurr[i] = idx;
@@ -494,7 +493,7 @@ void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
          pic->LtCurrDone = true;
       } else if (slice_type == PIPE_H265_SLICE_TYPE_B && !ref_pic_list_modification_flag_l1) {
          for (unsigned i = 0; i < pic->NumPocLtCurr; i++) {
-            uint8_t idx = pic->RefPicList[cur_slice][1][i + ltr_start];
+            uint8_t idx = pic->RefPicList[1][i + ltr_start];
             if (i < num_long_term_sps) {
                assert(idx != 0xff);
                pic->RefPicSetLtCurr[i] = idx;
