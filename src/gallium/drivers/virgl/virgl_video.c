@@ -401,7 +401,6 @@ static int fill_h265_picture_desc(const struct pipe_picture_desc *desc,
     ITEM_CPY(vh265, h265, RefPicSetStCurrAfter);
     ITEM_CPY(vh265, h265, RefPicSetLtCurr);
     ITEM_CPY(vh265, h265, RefPicList);
-    ITEM_SET(vh265, h265, UseRefPicList);
     ITEM_SET(vh265, h265, UseStRpsBits);
 
     return 0;

@@ -1707,7 +1707,6 @@ struct pipe_h265_picture_desc
    uint8_t RefPicSetStCurrAfter[8];
    uint8_t RefPicSetLtCurr[8];
    uint8_t RefPicList[2][15];
-   bool UseRefPicList;
    bool UseStRpsBits;
    bool LtCurrDone;
 
