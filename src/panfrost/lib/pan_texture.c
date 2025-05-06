@@ -732,6 +732,55 @@ GENX(panfrost_texture_afbc_reswizzle)(struct pan_image_view *iview)
 }
 #endif
 
+static unsigned
+panfrost_texture_get_array_size(const struct pan_image_view *iview)
+{
+   unsigned array_size = iview->last_layer - iview->first_layer + 1;
+
+   /* If this is a cubemap, we expect the number of layers to be a multiple
+    * of 6.
+    */
+   if (iview->dim == MALI_TEXTURE_DIMENSION_CUBE) {
+      assert(array_size % 6 == 0);
+      array_size /= 6;
+   }
+
+   /* Multiplanar YUV textures require 2 surface descriptors. */
+   if (panfrost_format_is_yuv(iview->format) && PAN_ARCH >= 9 &&
+       pan_image_view_get_plane(iview, 1) != NULL)
+      array_size *= 2;
+
+   return array_size;
+}
+
+static struct panfrost_tex_extent
+panfrost_texture_get_extent(const struct pan_image_view *iview,
+                            const struct pan_image_layout *layout)
+{
+   if (iview->buf.size)
+      return panfrost_texture_buf_get_extent(iview, layout);
+
+   struct panfrost_tex_extent extent;
+   extent.width = u_minify(layout->width, iview->first_level);
+   extent.height = u_minify(layout->height, iview->first_level);
+   extent.depth = u_minify(layout->depth, iview->first_level);
+   if (util_format_is_compressed(layout->format) &&
+       !util_format_is_compressed(iview->format)) {
+      extent.width =
+         DIV_ROUND_UP(extent.width, util_format_get_blockwidth(layout->format));
+      extent.height = DIV_ROUND_UP(extent.height,
+                                   util_format_get_blockheight(layout->format));
+      extent.depth =
+         DIV_ROUND_UP(extent.depth, util_format_get_blockdepth(layout->format));
+      assert(util_format_get_blockwidth(iview->format) == 1);
+      assert(util_format_get_blockheight(iview->format) == 1);
+      assert(util_format_get_blockheight(iview->format) == 1);
+      assert(iview->last_level == iview->first_level);
+   }
+
+   return extent;
+}
+
 /*
  * Generates a texture descriptor. Ideally, descriptors are immutable after the
  * texture is created, so we can keep these hanging around in GPU memory in a
@@ -750,9 +799,9 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview,
       util_format_description(iview->format);
    const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
    const struct pan_image_layout *layout = &first_plane->layout;
+
    uint32_t mali_format =
       GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
-
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
        desc->colorspace != UTIL_FORMAT_COLORSPACE_SRGB) {
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
@@ -760,43 +809,10 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview,
 
    panfrost_emit_texture_payload(iview, payload->cpu);
 
-   unsigned array_size = iview->last_layer - iview->first_layer + 1;
+   unsigned array_size = panfrost_texture_get_array_size(iview);
 
-   /* If this is a cubemap, we expect the number of layers to be a multiple
-    * of 6.
-    */
-   if (iview->dim == MALI_TEXTURE_DIMENSION_CUBE) {
-      assert(array_size % 6 == 0);
-      array_size /= 6;
-   }
-
-   /* Multiplanar YUV textures require 2 surface descriptors. */
-   if (panfrost_format_is_yuv(iview->format) && PAN_ARCH >= 9 &&
-       pan_image_view_get_plane(iview, 1) != NULL)
-      array_size *= 2;
-
-   struct panfrost_tex_extent extent;
-
-   if (iview->buf.size) {
-      extent = panfrost_texture_buf_get_extent(iview, layout);
-   } else {
-      extent.width = u_minify(layout->width, iview->first_level);
-      extent.height = u_minify(layout->height, iview->first_level);
-      extent.depth = u_minify(layout->depth, iview->first_level);
-      if (util_format_is_compressed(layout->format) &&
-          !util_format_is_compressed(iview->format)) {
-         extent.width = DIV_ROUND_UP(
-            extent.width, util_format_get_blockwidth(layout->format));
-         extent.height = DIV_ROUND_UP(
-            extent.height, util_format_get_blockheight(layout->format));
-         extent.depth = DIV_ROUND_UP(
-            extent.depth, util_format_get_blockdepth(layout->format));
-         assert(util_format_get_blockwidth(iview->format) == 1);
-         assert(util_format_get_blockheight(iview->format) == 1);
-         assert(util_format_get_blockheight(iview->format) == 1);
-         assert(iview->last_level == iview->first_level);
-      }
-   }
+   struct panfrost_tex_extent extent =
+      panfrost_texture_get_extent(iview, layout);
 
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = iview->dim;
@@ -828,6 +844,67 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview,
 #endif
    }
 }
+
+#if PAN_ARCH >= 9
+void
+GENX(panfrost_new_storage_texture)(const struct pan_image_view *iview,
+                                   struct mali_texture_packed *out,
+                                   const struct panfrost_ptr *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
+   const struct pan_image_layout *layout = &first_plane->layout;
+
+   /* AFBC and AFRC cannot be used in storage operations. */
+   assert(!drm_is_afbc(layout->modifier));
+   assert(!drm_is_afrc(layout->modifier));
+
+   uint32_t mali_format =
+      GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
+   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
+       desc->colorspace != UTIL_FORMAT_COLORSPACE_SRGB) {
+      mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
+   }
+
+   panfrost_emit_texture_payload(iview, payload->cpu);
+
+   unsigned array_size = panfrost_texture_get_array_size(iview);
+
+   struct panfrost_tex_extent extent =
+      panfrost_texture_get_extent(iview, layout);
+
+   static const unsigned char rgba_swizzle[4] = {
+      PIPE_SWIZZLE_X,
+      PIPE_SWIZZLE_Y,
+      PIPE_SWIZZLE_Z,
+      PIPE_SWIZZLE_W,
+   };
+
+   pan_pack(out, TEXTURE, cfg) {
+      cfg.dimension = iview->dim;
+      cfg.format = mali_format;
+      cfg.width = extent.width;
+      cfg.height = extent.height;
+      if (iview->dim == MALI_TEXTURE_DIMENSION_3D)
+         cfg.depth = extent.depth;
+      else
+         cfg.sample_count = layout->nr_samples;
+      cfg.texel_interleave = (layout->modifier != DRM_FORMAT_MOD_LINEAR) ||
+                             util_format_is_compressed(iview->format);
+      cfg.levels = iview->last_level - iview->first_level + 1;
+      cfg.array_size = array_size;
+
+      cfg.surfaces = payload->gpu;
+
+      /* Requirements for storage image use. */
+      cfg.minimum_lod = 0;
+      cfg.maximum_lod = 0;
+      cfg.minimum_level = 0;
+      cfg.swizzle = panfrost_translate_swizzle_4(rgba_swizzle);
+   }
+}
+#endif
 
 #if PAN_ARCH >= 9
 enum mali_afbc_compression_mode
