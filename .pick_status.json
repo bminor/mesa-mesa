@@ -1,5 +1,205 @@
 [
     {
+        "sha": "84b9c281fe82dd66f2552687cecb61a8e22809d0",
+        "description": "radv: Return VK_ERROR_INCOMPATIBLE_DRIVER for unsupported devices",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d72ebf3e7bb392126ce68dcecbdaaa5d05db343",
+        "description": "nvk: Stop printing errors for invalid dma-buf image queries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63557a03dfd4e9b41c4bef55dac6899d41350872",
+        "description": "mailmap: update my name and email",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3e7dad82db882859fc5044d92f9fad6bdba86b4",
+        "description": "nak: Stop relying on nir_lower_pack",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efd1cddbe90f4af26716adfb6a6cc12eca1d71b3",
+        "description": "nak: Set lower_pack_64_4x16",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "140cd7c4f4f0bcd27b627d1122cd76b033728381",
+        "description": "v3dv/ci: document flakes seen over the last 7 days",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a18569aa51cdb802c64fd08373df40555c0579c",
+        "description": "v3d/ci: document flakes seen over the last 7 days",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bf643bbcf68ac950cf0101d4ce90d728db7dabca",
+        "description": "vc4/ci: document flakes seen over the last 7 days",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "df3618edc214e6ff6b873f939dcc590a6edab003",
+        "description": "v3dv/ci: fix malformatted flakes line",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "daad392d5c3c4f8887b6792c45ad183164e501b5",
+        "description": "virtio/vpipe: Correct vdrm_vpipe_connect() definition",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bf0e3d6274bac0190a6d4d90afbd2a9a6bec249d",
+        "notes": null
+    },
+    {
+        "sha": "9ca71b52aa5bc2eda1f08149f7780e59858ee27b",
+        "description": "aco: swap the correct v_mov_b32 if there are two of them",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "408fa33c092810155baac342de90fd712231aa89",
+        "notes": null
+    },
+    {
+        "sha": "2f4f9f0b98b488a621051f9a68da33ce25782e66",
+        "description": "hk: Implement VK_EXT_map_memory_placed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0acb34b065b7db4df20c2a38bd2a0dfdfc2c48bd",
+        "description": "hk: use nir_lower_default_point_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a49403f4aca7a0537fe8bc036e730ad1dee789e4",
+        "description": "agx/nir_lower_tess: use nir_lower_default_point_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d53a3a081b598461794d0eab7a11e5c03f193360",
+        "description": "agx/nir_lower_gs: use nir_lower_default_point_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5788770d91cbd7328afd521ba0e4b284264c5d36",
+        "description": "nir: add nir_lower_default_point_size pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ce14a5787fb52809afeb5d5fd1b918b20e71aec",
+        "description": "nak: Remove #![allow(unstable_name_collisions)]",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7edb08668590e5040faf669e1c700a2b51475a8a",
+        "description": "nak: Call nir_opt_phi_to_bool",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0dfdc907ba3acefe2a7a1382123e788ad508b16",
+        "description": "tu: allow bigger block sizes when copying between buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae51c59663db80bd39e2e84c3ac8c3aee4512ab6",
+        "description": "broadcom/ci: update expected results",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "c434050a0088ec3f07d63fd1019aea541632faed",
         "description": "brw: add pre ray trace intrinsic moves",
         "nominated": true,
