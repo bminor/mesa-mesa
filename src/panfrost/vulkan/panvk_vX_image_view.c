@@ -131,6 +131,15 @@ prepare_tex_descs(struct panvk_image_view *view)
       .size = tex_payload_size * (can_preload_other_aspect ? 2 : plane_count),
    };
 
+#if PAN_ARCH >= 9
+   uint32_t storage_payload_size = 0;
+   if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+      /* We'll need a second set of Texture Descriptors for storage use. */
+      storage_payload_size = tex_payload_size * plane_count;
+      alloc_info.size += storage_payload_size;
+   }
+#endif
+
    view->mem = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
    if (!panvk_priv_mem_host_addr(view->mem))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
@@ -139,6 +148,15 @@ prepare_tex_descs(struct panvk_image_view *view)
       .gpu = panvk_priv_mem_dev_addr(view->mem),
       .cpu = panvk_priv_mem_host_addr(view->mem),
    };
+
+#if PAN_ARCH >= 9
+   struct panfrost_ptr storage_ptr = ptr;
+   if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+      uint32_t storage_payload_offset = alloc_info.size - storage_payload_size;
+      storage_ptr.gpu += storage_payload_offset;
+      storage_ptr.cpu += storage_payload_offset;
+   }
+#endif
 
    if (plane_count > 1) {
       memset(pview.planes, 0, sizeof(pview.planes));
@@ -152,12 +170,25 @@ prepare_tex_descs(struct panvk_image_view *view)
          pview.format = vk_format_to_pipe_format(plane_format);
 
          GENX(panfrost_new_texture)(&pview, &view->descs.tex[plane], &ptr);
+#if PAN_ARCH >= 9
+         if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+            GENX(panfrost_new_storage_texture)(
+               &pview, &view->descs.storage_tex[plane], &storage_ptr);
+            storage_ptr.cpu += tex_payload_size;
+            storage_ptr.gpu += tex_payload_size;
+         }
+#endif
 
          ptr.cpu += tex_payload_size;
          ptr.gpu += tex_payload_size;
       }
    } else {
       GENX(panfrost_new_texture)(&pview, &view->descs.tex[0], &ptr);
+#if PAN_ARCH >= 9
+      if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
+         GENX(panfrost_new_storage_texture)(&pview, &view->descs.storage_tex[0],
+                                            &storage_ptr);
+#endif
    }
 
    if (!can_preload_other_aspect)
