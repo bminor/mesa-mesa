@@ -1837,14 +1837,9 @@ validate_image_type_for_sampled_image(struct vtn_builder *b,
                dim == GLSL_SAMPLER_DIM_SUBPASS_MS,
                "%s must not have a Dim of SubpassData.", operand);
 
-   if (dim == GLSL_SAMPLER_DIM_BUF) {
-      if (b->version >= 0x10600) {
-         vtn_fail("Starting with SPIR-V 1.6, %s "
-                  "must not have a Dim of Buffer.", operand);
-      } else {
-         vtn_warn("%s should not have a Dim of Buffer.", operand);
-      }
-   }
+   vtn_fail_if(dim == GLSL_SAMPLER_DIM_BUF && b->version >= 0x10600,
+               "Starting with SPIR-V 1.6, %s must not have a Dim of Buffer.",
+               operand);
 }
 
 static void
