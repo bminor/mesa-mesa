@@ -3548,9 +3548,12 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
       return false;
    }
 
-   /* Wa_16021232440: Disable fast clear when height is 16k */
+   /* Wa_16021232440, HSD_16023071695: Disable fast clear when height
+    * or width is 16k
+    * */
    if (intel_needs_workaround(cmd_buffer->device->info, 16021232440) &&
-       image->vk.extent.height == 16 * 1024) {
+       (image->vk.extent.height == 16 * 1024 ||
+        image->vk.extent.width == 16 * 1024)) {
       return false;
    }
 
