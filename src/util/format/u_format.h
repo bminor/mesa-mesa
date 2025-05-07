@@ -1399,6 +1399,13 @@ util_format_is_unorm8(const struct util_format_description *desc)
    return desc->is_unorm && desc->is_array && desc->channel[c].size == 8;
 }
 
+static inline bool
+util_format_is_int64(const struct util_format_description *desc)
+{
+   int c = util_format_get_first_non_void_channel(desc->format);
+   return c >= 0 && desc->channel[c].pure_integer && desc->channel[c].size == 64;
+}
+
 static inline void
 util_format_unpack_z_float(enum pipe_format format, float *dst,
                            const void *src, unsigned w)
