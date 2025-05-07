@@ -8,7 +8,7 @@ use crate::tiling::Tiling;
 use crate::Minify;
 
 use nil_rs_bindings::*;
-use nvidia_headers::classes::{cl9097, cla097, clb197, clc597};
+use nvidia_headers::classes::{cl9097, cla097, clb197, clc597, clcd97};
 
 use std::panic;
 
@@ -742,13 +742,20 @@ impl Image {
         samples: u32,
         compressed: bool,
     ) -> u8 {
-        if dev.cls_eng3d >= clc597::TURING_A {
+        if dev.cls_eng3d >= clcd97::BLACKWELL_A {
+            Self::gb202_choose_pte_kind(format, compressed)
+        } else if dev.cls_eng3d >= clc597::TURING_A {
             Self::tu102_choose_pte_kind(format, compressed)
         } else if dev.cls_eng3d >= cl9097::FERMI_A {
             Self::nvc0_choose_pte_kind(format, samples, compressed)
         } else {
             panic!("Unsupported 3d engine class")
         }
+    }
+
+    fn gb202_choose_pte_kind(_format: Format, _compressed: bool) -> u8 {
+        use nvidia_headers::hwref::tu102::mmu::*;
+        return NV_MMU_PTE_KIND_GENERIC_MEMORY.try_into().unwrap();
     }
 
     fn tu102_choose_pte_kind(format: Format, compressed: bool) -> u8 {
