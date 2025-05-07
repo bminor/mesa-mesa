@@ -705,9 +705,6 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          .ThreadPreemptionDisable               = true,
 #endif
          .NumberofThreadsinGPGPUThreadGroup     = dispatch.threads,
-#if GFX_VER >= 30
-         .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used),
-#endif
       };
       GENX(INTERFACE_DESCRIPTOR_DATA_pack)(batch, iface_desc_state.map, &iface_desc);
       anv_batch_emit(batch, GENX(MEDIA_INTERFACE_DESCRIPTOR_LOAD), mid) {
