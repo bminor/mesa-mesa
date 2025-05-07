@@ -705,7 +705,7 @@
 
 #define DRI_CONF_RADV_DISABLE_DCC_STORES(def) \
    DRI_CONF_OPT_B(radv_disable_dcc_stores, def, \
-                  "Disable DCC for color storage images")
+                  "Disable DCC for color storage images on GFX10-GFX11.5")
 
 #define DRI_CONF_RADV_LOWER_TERMINATE_TO_DISCARD(def) \
    DRI_CONF_OPT_B(radv_lower_terminate_to_discard, def, \
