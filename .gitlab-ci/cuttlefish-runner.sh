@@ -53,7 +53,7 @@ function my_atexit()
 trap 'my_atexit' EXIT
 trap 'exit 2' HUP INT PIPE TERM
 
-ulimit -S -n 32768
+ulimit -n 32768
 
 VSOCK_BASE=10000 # greater than all the default vsock ports
 VSOCK_CID=$((VSOCK_BASE + (CI_JOB_ID & 0xfff)))
