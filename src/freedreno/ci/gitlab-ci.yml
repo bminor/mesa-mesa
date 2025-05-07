@@ -298,7 +298,7 @@ a660-vk-full:
     DEQP_FRACTION: 1
 
 # X11 takes over the screen, wayland is run headless.
-a630-gl:
+.a630-gl:
   extends:
     - .baremetal-deqp-test
     - .google-freedreno-test-gl
@@ -309,7 +309,7 @@ a630-gl:
     HWCI_START_XORG: 1
     HWCI_START_WESTON: 1
 
-a630-gles-asan:
+.a630-gles-asan:
   extends:
     - .baremetal-deqp-test
     - .google-freedreno-test-gl
@@ -325,7 +325,7 @@ a630-gles-asan-full:
   # together with the other a630 jobs, uses 4 of the 6 devices available.
   timeout: 1h
   extends:
-    - a630-gles-asan
+    - .a630-gles-asan
     - .a630-full
     - .google-freedreno-manual-rules
   variables:
@@ -356,7 +356,7 @@ a630-vk-full:
     DEQP_SUITE: freedreno-a630-vk-full
     TEST_PHASE_TIMEOUT_MINUTES: 115
 
-a630-vk-asan:
+.a630-vk-asan:
   extends:
     - .google-freedreno-test-vk
     - .a630-test
@@ -367,7 +367,7 @@ a630-vk-asan:
     DEQP_SUITE: freedreno-a630-vk-asan
     FDO_CI_CONCURRENT: 2 # We get OOMkills if we go too wide with asan enabled
 
-a630-piglit:
+.a630-piglit:
   extends:
     - .google-freedreno-test-gl
     - .baremetal-deqp-test
