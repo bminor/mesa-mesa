@@ -3884,7 +3884,7 @@
         "description": "anv: Fix untyped data port cache pipe control dump output",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "845ab3d627995803219c5fbdfe6734a966218ce0",
         "notes": null
