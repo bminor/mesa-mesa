@@ -301,6 +301,8 @@ and cancel the rest to avoid wasting resources.
 
 See ``bin/ci/ci_run_n_monitor.py --help`` for all the options.
 
+**Target jobs**
+
 The ``--target`` argument takes a regex that you can use to select the
 jobs names you want to run, e.g. ``--target 'zink.*'`` will run all the
 Zink jobs, leaving the other drivers' jobs free for others to use.
@@ -310,6 +312,22 @@ changed **since the last push**, so you might not get the jobs you expect.
 You can work around that by adding a dummy change in a file core to what you're
 working on and then making a new push with that change, and removing that change
 before you create the MR.
+
+**GitLab token**
+
+The ``--token`` argument is used to provide a GitLab token with rights to
+interact with the pipeline. Using the argument, one can provide the value or
+the name of the file having the value. If the argument is not provided, then
+it checks if the value of ``$XDG_CONFIG_HOME`` has a valid directory (if not,
+then uses ``$HOME/.config``), and there is a file called ``gitlab-token`` that
+contains a token. The token required to work with this tool needs ``api``
+scope permissions.
+
+.. note::
+    To create that token, refer to
+    `create-a-personal-access-token <https://docs.gitlab.com/user/profile/personal_access_tokens/#create-a-personal-access-token>`_
+    and select the ``api`` scope. The token will only be shown once after creation,
+    so make sure you store it securely.
 
 Conformance Tests
 -----------------
