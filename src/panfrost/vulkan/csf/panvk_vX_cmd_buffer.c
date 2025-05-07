@@ -536,24 +536,10 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
-VKAPI_ATTR void VKAPI_CALL
-panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
-                                    const VkDependencyInfo *pDependencyInfo)
+void
+panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
+                             struct panvk_cs_deps deps)
 {
-   VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   struct panvk_cs_deps deps;
-
-   /* Intra render pass barriers can be skipped iff we're inside a render
-    * pass. */
-   if ((cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) &&
-       (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT))
-      return;
-
-   panvk_per_arch(get_cs_deps)(cmdbuf, pDependencyInfo, &deps);
-
-   if (deps.needs_draw_flush)
-      panvk_per_arch(cmd_flush_draws)(cmdbuf);
-
    uint32_t wait_subqueue_mask = 0;
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       /* no need to perform both types of waits on the same subqueue */
@@ -618,6 +604,27 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
                         sync_addr);
       }
    }
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
+                                    const VkDependencyInfo *pDependencyInfo)
+{
+   VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   struct panvk_cs_deps deps;
+
+   /* Intra render pass barriers can be skipped iff we're inside a render
+    * pass. */
+   if ((cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) &&
+       (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT))
+      return;
+
+   panvk_per_arch(get_cs_deps)(cmdbuf, pDependencyInfo, &deps);
+
+   if (deps.needs_draw_flush)
+      panvk_per_arch(cmd_flush_draws)(cmdbuf);
+
+   panvk_per_arch(emit_barrier)(cmdbuf, deps);
 }
 
 #if PAN_ARCH >= 11

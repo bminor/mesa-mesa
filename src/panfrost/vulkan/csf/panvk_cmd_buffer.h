@@ -481,4 +481,6 @@ panvk_per_arch(calculate_task_axis_and_increment)(
    assert(*task_increment > 0);
 }
 
+void panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
+                                  struct panvk_cs_deps deps);
 #endif /* PANVK_CMD_BUFFER_H */
