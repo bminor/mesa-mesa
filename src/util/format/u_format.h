@@ -1353,6 +1353,19 @@ util_format_get_plane_width(enum pipe_format format, unsigned plane,
    case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
    case PIPE_FORMAT_Y16_U16_V16_422_UNORM:
    case PIPE_FORMAT_Y16_U16V16_422_UNORM:
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+   case PIPE_FORMAT_G8_B8R8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
+   case PIPE_FORMAT_G8_B8R8_422_UNORM:
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+   case PIPE_FORMAT_G8_B8_R8_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+   case PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM:
+   case PIPE_FORMAT_X4G12_X4B12X4R12_420_UNORM:
       return !plane ? width : (width + 1) / 2;
    default:
       return width;
@@ -1374,6 +1387,15 @@ util_format_get_plane_height(enum pipe_format format, unsigned plane,
    case PIPE_FORMAT_P030:
    case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
    case PIPE_FORMAT_Y8_U8_V8_440_UNORM:
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+   case PIPE_FORMAT_G8_B8R8_420_UNORM:
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+   case PIPE_FORMAT_G8_B8_R8_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM:
+   case PIPE_FORMAT_X4G12_X4B12X4R12_420_UNORM:
       return !plane ? height : (height + 1) / 2;
    case PIPE_FORMAT_YV16:
    default:
