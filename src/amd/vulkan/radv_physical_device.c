@@ -622,6 +622,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_shader_subgroup_rotate = true,
       .KHR_shader_subgroup_uniform_control_flow = true,
       .KHR_shader_terminate_invocation = true,
+      .KHR_shader_untyped_pointers = true,
       .KHR_spirv_1_4 = true,
       .KHR_storage_buffer_storage_class = true,
 #ifdef RADV_USE_WSI_PLATFORM
@@ -1389,6 +1390,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_video_encode_quantization_map */
       .videoEncodeQuantizationMap = true,
+
+      /* VK_KHR_shader_untyped_pointers */
+      .shaderUntypedPointers = true,
    };
 }
 
