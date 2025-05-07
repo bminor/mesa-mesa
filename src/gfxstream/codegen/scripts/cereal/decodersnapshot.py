@@ -300,6 +300,11 @@ def api_special_implementation_vkCmdBindVertexBuffers(api, cgen):
     cgen.endFor()
 
 
+def api_special_implementation_vkResetCommandPool(api, cgen):
+    cgen.line("// Note: special implementation");
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("mReconstruction.removeGrandChildren((uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkCommandPool(commandPool))")
+
 def api_special_implementation_vkResetCommandBuffer(api, cgen):
     cgen.line("// Note: special implementation");
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
@@ -339,6 +344,7 @@ apiSpecialImplementation = {
     "vkGetBlobGOOGLE": api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE,
     "vkQueueFlushCommandsGOOGLE": api_special_implementation_vkQueueFlushCommandsGOOGLE,
     "vkResetCommandBuffer": api_special_implementation_vkResetCommandBuffer,
+    "vkResetCommandPool": api_special_implementation_vkResetCommandPool,
     "vkCmdBindVertexBuffers": api_special_implementation_vkCmdBindVertexBuffers,
     "vkCmdCopyBufferToImage": api_special_implementation_vkCmdCopyBufferToImage,
     "vkCmdPipelineBarrier": api_special_implementation_vkCmdPipelineBarrier,
