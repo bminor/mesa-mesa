@@ -1435,7 +1435,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
          GENX(COMPUTE_WALKER_length),
          GENX(COMPUTE_WALKER),
          .IndirectParameterEnable  = params->is_launch_size_indirect,
-         .PredicateEnable          = cmd_buffer->state.conditional_render_enabled,
+         .PredicateEnable          = false,
          .body                     = body,
       );
 
