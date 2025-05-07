@@ -263,6 +263,7 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
 
       ASSERTED nir_def *def = va_arg(ap, nir_def *);
       assert(def->bit_size / 8 == arg_size);
+      arg_size *= def->num_components;
 
       info.num_args++;
       info.arg_sizes = reralloc(b->shader, info.arg_sizes, unsigned,
@@ -300,7 +301,7 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
          nir_def *def = va_arg(ap, nir_def *);
 
          nir_store_global(b, nir_iadd_imm(b, store_addr, store_offset),
-                          4, def, 0x1);
+                          4, def, nir_component_mask(def->num_components));
 
          store_offset += info.arg_sizes[a];
       }
