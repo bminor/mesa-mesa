@@ -527,10 +527,9 @@ union packed_instr {
       unsigned exact : 1;
       unsigned no_signed_wrap : 1;
       unsigned no_unsigned_wrap : 1;
-      unsigned padding : 1;
       /* Swizzles for 2 srcs */
       unsigned two_swizzles : 4;
-      unsigned op : 9;
+      unsigned op : 10;
       unsigned packed_src_ssa_16bit : 1;
       /* Scalarized ALUs always have the same header. */
       unsigned num_followup_alu_sharing_header : 2;
@@ -709,8 +708,8 @@ write_alu(write_ctx *ctx, const nir_alu_instr *alu)
 {
    unsigned num_srcs = nir_op_infos[alu->op].num_inputs;
 
-   /* 9 bits for nir_op */
-   STATIC_ASSERT(nir_num_opcodes <= 512);
+   /* 10 bits for nir_op */
+   STATIC_ASSERT(nir_num_opcodes <= 1024);
    union packed_instr header;
    header.u32 = 0;
 
