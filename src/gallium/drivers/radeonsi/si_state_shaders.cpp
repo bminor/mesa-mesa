@@ -3803,6 +3803,7 @@ static void si_update_last_vgt_stage_state(struct si_context *sctx,
    sctx->shader.vs.key.ge.opt.kill_pointsize = 0;
    sctx->shader.tes.key.ge.opt.kill_pointsize = 0;
    sctx->shader.gs.key.ge.opt.kill_pointsize = 0;
+   sctx->ms_shader_state.key.ge.opt.kill_pointsize = 0;
    si_vs_ps_key_update_rast_prim_smooth_stipple(sctx);
 }
 
@@ -4004,6 +4005,37 @@ static void si_bind_tes_shader(struct pipe_context *ctx, void *state)
       si_shader_change_notify(sctx);
    if (enable_changed)
       sctx->last_tes_sh_base = -1; /* invalidate derived tess state */
+   si_update_last_vgt_stage_state(sctx, old_hw_vs, old_hw_vs_variant);
+}
+
+static void si_bind_ms_state(struct pipe_context *ctx, void *state)
+{
+   struct si_context *sctx = (struct si_context *)ctx;
+   struct si_shader_selector *old_hw_vs = si_get_vs(sctx)->cso;
+   struct si_shader *old_hw_vs_variant = si_get_vs(sctx)->current;
+   struct si_shader_selector *sel = (struct si_shader_selector*)state;
+   bool enable_changed = !!sctx->ms_shader_state.cso != !!sel;
+
+   if (sctx->ms_shader_state.cso == sel)
+      return;
+
+   sctx->ms_shader_state.cso = sel;
+   sctx->ms_shader_state.current =
+      (sel && sel->variants_count) ? sel->variants[0] : NULL;
+
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_MESH);
+
+   si_update_ngg(sctx);
+
+   if (enable_changed) {
+      si_set_user_data_base(sctx, MESA_SHADER_MESH,
+                            state ? R_00B230_SPI_SHADER_USER_DATA_GS_0 : 0);
+
+      /* mesh shader attribute ring address is in different user sgpr */
+      if (sctx->gfx_level >= GFX11)
+         sctx->gs_attribute_ring_pointer_dirty = true;
+   }
+
    si_update_last_vgt_stage_state(sctx, old_hw_vs, old_hw_vs_variant);
 }
 
@@ -5131,18 +5163,21 @@ void si_init_shader_functions(struct si_context *sctx)
    sctx->b.create_tcs_state = si_create_shader;
    sctx->b.create_tes_state = si_create_shader;
    sctx->b.create_gs_state = si_create_shader;
+   sctx->b.create_ms_state = si_create_shader;
    sctx->b.create_fs_state = si_create_shader;
 
    sctx->b.bind_vs_state = si_bind_vs_shader;
    sctx->b.bind_tcs_state = si_bind_tcs_shader;
    sctx->b.bind_tes_state = si_bind_tes_shader;
    sctx->b.bind_gs_state = si_bind_gs_shader;
+   sctx->b.bind_ms_state = si_bind_ms_state;
    sctx->b.bind_fs_state = si_bind_ps_shader;
 
    sctx->b.delete_vs_state = si_delete_shader_selector;
    sctx->b.delete_tcs_state = si_delete_shader_selector;
    sctx->b.delete_tes_state = si_delete_shader_selector;
    sctx->b.delete_gs_state = si_delete_shader_selector;
+   sctx->b.delete_ms_state = si_delete_shader_selector;
    sctx->b.delete_fs_state = si_delete_shader_selector;
 
    sctx->b.set_patch_vertices = si_set_patch_vertices;
