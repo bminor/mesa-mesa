@@ -386,8 +386,7 @@ yaml-toml-shell-py-test:
   timeout: 1h 40m
   variables:
     GIT_STRATEGY: none
-    # boot2container initrd configuration parameters.
-    B2C_VERSION: v0.9.15.1
+    B2C_VERSION: v0.9.15.1  # Linux 6.13.7
 
     SCRIPTS_DIR: install
 
