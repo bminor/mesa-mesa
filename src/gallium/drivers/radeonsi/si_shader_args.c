@@ -579,6 +579,57 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
          ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_id_z);
       }
       break;
+   case MESA_SHADER_MESH:
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); /* unused */
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); /* unused */
+
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs_tg_info);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.merged_wave_info);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
+
+      if (sel->screen->info.gfx_level >= GFX11)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs_attr_offset);
+      else
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
+
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); /* unused */
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); /* unused */
+
+      /* User SGPRs */
+      declare_global_desc_pointers(args);
+      declare_per_stage_desc_pointers(args, shader, info, true);
+
+      if (sel->screen->info.gfx_level >= GFX11)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->gs_attr_address);
+
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.task_ring_entry);
+
+      if (info->task_payload_size)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->task_ring_addr);
+
+      if (shader->info.uses_draw_id)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
+
+      if (sel->info.uses_grid_size)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
+      else if (sel->screen->info.gfx_level < GFX11)
+         /* GFX10 always write grid size to SGPR, reserve space for it */
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, NULL);
+
+      /* We don't know at this point whether this arg is needed until ac_lower_ngg_mesh,
+       * so add this arg at last to not affect other args.
+       */
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->mesh_scratch_ring_addr);
+
+      /* VGPRs */
+      if (sel->screen->info.mesh_fast_launch_2) {
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_ids_packed);
+      } else {
+         unsigned unused_args = sel->screen->info.gfx_level >= GFX12 ? 3 : 5;
+         ac_add_arg(&args->ac, AC_ARG_VGPR, unused_args, AC_ARG_VALUE, NULL);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vertex_id);
+      }
+      break;
    default:
       assert(0 && "unimplemented shader");
       return;

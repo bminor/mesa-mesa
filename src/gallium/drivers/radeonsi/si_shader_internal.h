@@ -57,6 +57,9 @@ struct si_shader_args {
    struct ac_arg cs_user_data[2];
    struct ac_arg cs_shaderbuf[3];
    struct ac_arg cs_image[3];
+   /* TS and MS */
+   struct ac_arg task_ring_addr;
+   struct ac_arg mesh_scratch_ring_addr;
 };
 
 struct si_nir_shader_ctx {

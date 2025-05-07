@@ -190,6 +190,9 @@ enum
    SI_SGPR_ALPHA_REF,
    SI_PS_NUM_USER_SGPR,
 
+   /* MS only */
+   GFX11_SGPR_MS_ATTRIBUTE_RING_ADDR = SI_NUM_RESOURCE_SGPRS,
+
    /* The value has to be 12, because the hw requires that descriptors
     * are aligned to 4 SGPRs.
     */
