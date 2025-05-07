@@ -43,7 +43,8 @@ struct nil_tic_format {
 
 struct nil_format_info {
    unsigned czt:8;
-   unsigned support:24;
+   unsigned support:20;
+   unsigned tic_v2_data_type:4;
    struct nil_tic_format tic;
 };
 
@@ -67,12 +68,15 @@ TEMPLATE_C = template.Template(text="""\
 #include "clb097tex.h"
 #include "clb197.h"
 #include "clb197tex.h"
+#include "clcb97.h"
+#include "clcb97tex.h"
 
 const struct nil_format_info nil_format_table[PIPE_FORMAT_COUNT] = {
 % for f in formats:
     [PIPE_FORMAT_${f.pipe}] = {
         .czt = ${f.czt()},
         .support = ${f.support()},
+        .tic_v2_data_type = ${f.v2_data_type()},
         .tic = {
             .comp_sizes = ${f.tcs()},
             .type_r = ${f.type(0)},
@@ -107,6 +111,7 @@ TCS_PREFIX = {
     'maxwella'  : 'NVB097_TEXHEAD_BL_COMPONENTS_SIZES_',
     'maxwellb'  : 'NVB197_TEXHEAD_BL_COMPONENTS_SIZES_',
     'tk1'       : 'NVB097_TEXHEAD_BL_COMPONENTS_SIZES_',
+    'hopper'    : 'NVCB97_TEXHEAD_V2_BL_COMPONENTS_SIZES_',
 }
 
 DATA_TYPES = {
@@ -115,6 +120,19 @@ DATA_TYPES = {
     'I' : 'NV9097_TEXHEADV2_0_R_DATA_TYPE_NUM_SINT',
     'U' : 'NV9097_TEXHEADV2_0_R_DATA_TYPE_NUM_UINT',
     'F' : 'NV9097_TEXHEADV2_0_R_DATA_TYPE_NUM_FLOAT',
+}
+
+V2_DATA_TYPES = {
+    'N' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_UNORM',
+    'S' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_SNORM',
+    'F' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_FLOAT',
+    'SGNRGB' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_SGNRGB',
+    'SGNA' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_SGNA',
+    'U' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_UINT',
+    'I' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_SINT',
+    'ZS' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_ZS',
+    'SZ' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_SZ',
+    'ZFS' : 'NVCB97_TEXHEAD_V2_BL_DATA_TYPE_TEX_DATA_TYPE_ZFS',
 }
 
 SOURCES = {
@@ -142,10 +160,11 @@ class Format(object):
         self._czt = line[1].strip()
         self._tcs = line[2].strip()
         self._types = list(line[3].strip())
-        self._srcs = list(line[4].strip())
-        self._support = list(line[5].strip())
-        if len(line) > 6:
-            self.hw = line[6].strip().lower()
+        self._data_type = line[4].strip()
+        self._srcs = list(line[5].strip())
+        self._support = list(line[6].strip())
+        if len(line) > 7:
+            self.hw = line[7].strip().lower()
         else:
             self.hw = None
 
@@ -168,6 +187,9 @@ class Format(object):
             return DATA_TYPES[self._types[comp]]
         else:
             return DATA_TYPES[self._types[0]]
+
+    def v2_data_type(self):
+        return V2_DATA_TYPES[self._data_type]
 
     def src(self, comp):
         if self._srcs[comp] == '1':

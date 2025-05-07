@@ -15,6 +15,8 @@ use nvidia_headers::classes::clb097::MAXWELL_A;
 use nvidia_headers::classes::clc097::tex as clc097;
 use nvidia_headers::classes::clc097::PASCAL_A;
 use nvidia_headers::classes::clc397::VOLTA_A;
+use nvidia_headers::classes::clcb97::tex as clcb97;
+use nvidia_headers::classes::clcb97::HOPPER_A;
 use paste::paste;
 use std::ops::Range;
 
@@ -144,6 +146,31 @@ fn nvb097_set_th_bl_0(
     th.set_field(clb097::TEXHEAD_BL_Y_SOURCE, source[1]);
     th.set_field(clb097::TEXHEAD_BL_Z_SOURCE, source[2]);
     th.set_field(clb097::TEXHEAD_BL_W_SOURCE, source[3]);
+}
+
+fn nvcb97_set_th_bl_0<'a>(
+    th: &mut THBitView<'a>,
+    format: &Format,
+    swizzle: [nil_rs_bindings::pipe_swizzle; 4],
+) {
+    let fmt = &format.info().tic;
+    let is_int = format.is_integer();
+    let source = [
+        nvb097_th_bl_source(fmt, swizzle[0], is_int),
+        nvb097_th_bl_source(fmt, swizzle[1], is_int),
+        nvb097_th_bl_source(fmt, swizzle[2], is_int),
+        nvb097_th_bl_source(fmt, swizzle[3], is_int),
+    ];
+
+    th.set_field(clcb97::TEXHEAD_V2_BL_COMPONENTS, fmt.comp_sizes());
+    th.set_field(
+        clcb97::TEXHEAD_V2_BL_DATA_TYPE,
+        format.info().tic_v2_data_type(),
+    );
+    th.set_field(clcb97::TEXHEAD_V2_BL_X_SOURCE, source[0]);
+    th.set_field(clcb97::TEXHEAD_V2_BL_Y_SOURCE, source[1]);
+    th.set_field(clcb97::TEXHEAD_V2_BL_Z_SOURCE, source[2]);
+    th.set_field(clcb97::TEXHEAD_V2_BL_W_SOURCE, source[3]);
 }
 
 fn pipe_to_nv_texture_type(ty: ViewType) -> u32 {
@@ -518,6 +545,191 @@ fn nvb097_fill_image_view_desc(
     th.set_ufixed(clb097::TEXHEAD_BL_MIN_LOD_CLAMP, min_lod_clamp);
 }
 
+fn nvcb97_fill_image_view_desc(
+    _dev: &nil_rs_bindings::nv_device_info,
+    image: &Image,
+    view: &View,
+    base_address: u64,
+    desc_out: &mut [u32; 8],
+) {
+    assert!(image.format.el_size_B() == view.format.el_size_B());
+    assert!(view.base_level + view.num_levels <= image.num_levels);
+
+    *desc_out = [0u32; 8];
+    let mut th = BitMutView::new(desc_out);
+
+    nvcb97_set_th_bl_0(&mut th, &view.format, view.swizzle);
+    let tiling = &image.levels[0].tiling;
+
+    // There's no base layer field in the texture header
+    let mut layer_address = base_address;
+    if view.view_type == ViewType::_3DSliced {
+        assert!(view.num_levels == 1);
+        assert!(
+            view.base_array_layer + view.array_len <= image.extent_px.depth
+        );
+
+        layer_address +=
+            image.level_z_offset_B(view.base_level, view.base_array_layer);
+    } else {
+        assert!(
+            view.base_array_layer + view.array_len <= image.extent_px.array_len
+        );
+        layer_address +=
+            u64::from(view.base_array_layer) * u64::from(image.array_stride_B);
+    }
+
+    if tiling.is_tiled() {
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_BL_HEADER_VERSION,
+            SELECT_BLOCKLINEAR_V2
+        );
+
+        let addr = BitView::new(&layer_address);
+        assert!(addr.get_bit_range_u64(0..9) == 0);
+        th.set_field(
+            clcb97::TEXHEAD_V2_BL_ADDRESS_BITS31TO9,
+            addr.get_bit_range_u64(9..32),
+        );
+        th.set_field(
+            clcb97::TEXHEAD_V2_BL_ADDRESS_BITS56TO32,
+            addr.get_bit_range_u64(32..57),
+        );
+        assert!(addr.get_bit_range_u64(57..64) == 0);
+
+        set_enum!(th, clcb97, TEXHEAD_V2_BL_GOBS_PER_BLOCK_WIDTH, ONE_GOB);
+        th.set_field(
+            clcb97::TEXHEAD_V2_BL_GOBS_PER_BLOCK_HEIGHT,
+            tiling.y_log2,
+        );
+        th.set_field(clcb97::TEXHEAD_V2_BL_GOBS_PER_BLOCK_DEPTH, tiling.z_log2);
+        th.set_field(clcb97::TEXHEAD_V2_BL_TILE_WIDTH_IN_GOBS, tiling.x_log2);
+
+        let nv_text_type = pipe_to_nv_texture_type(view.view_type);
+        th.set_field(clcb97::TEXHEAD_V2_BL_TEXTURE_TYPE, nv_text_type);
+
+        th.set_field(clcb97::TEXHEAD_V2_BL_LOD_ANISO_QUALITY2, true);
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_BL_LOD_ANISO_QUALITY,
+            LOD_QUALITY_HIGH
+        );
+        set_enum!(th, clcb97, TEXHEAD_V2_BL_LOD_ISO_QUALITY, LOD_QUALITY_HIGH);
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_BL_ANISO_COARSE_SPREAD_MODIFIER,
+            SPREAD_MODIFIER_NONE
+        );
+    } else {
+        set_enum!(th, clcb97, TEXHEAD_V2_BL_HEADER_VERSION, SELECT_PITCH_V2);
+
+        let addr = BitView::new(&layer_address);
+        assert!(addr.get_bit_range_u64(0..5) == 0);
+        th.set_field(
+            clcb97::TEXHEAD_V2_PITCH_ADDRESS_BITS31TO5,
+            addr.get_bit_range_u64(5..32),
+        );
+        th.set_field(
+            clcb97::TEXHEAD_V2_PITCH_ADDRESS_BITS56TO32,
+            addr.get_bit_range_u64(32..57),
+        );
+        assert!(addr.get_bit_range_u64(57..64) == 0);
+
+        let pitch = image.levels[0].row_stride_B;
+        let pitch = BitView::new(&pitch);
+        assert!(pitch.get_bit_range_u64(0..5) == 0);
+        assert!(pitch.get_bit_range_u64(22..32) == 0);
+        th.set_field(
+            clcb97::TEXHEAD_V2_PITCH_PITCH_BITS21TO5,
+            pitch.get_bit_range_u64(5..22),
+        );
+
+        assert!(
+            view.view_type == ViewType::_2D
+                || view.view_type == ViewType::_2DArray
+        );
+        assert!(image.sample_layout == SampleLayout::_1x1);
+        assert!(view.num_levels == 1);
+        set_enum!(th, clcb97, TEXHEAD_V2_PITCH_TEXTURE_TYPE, TWO_D_NO_MIPMAP);
+
+        th.set_field(clcb97::TEXHEAD_V2_PITCH_LOD_ANISO_QUALITY2, true);
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_PITCH_LOD_ANISO_QUALITY,
+            LOD_QUALITY_HIGH
+        );
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_PITCH_LOD_ISO_QUALITY,
+            LOD_QUALITY_HIGH
+        );
+        set_enum!(
+            th,
+            clcb97,
+            TEXHEAD_V2_PITCH_ANISO_COARSE_SPREAD_MODIFIER,
+            SPREAD_MODIFIER_NONE
+        );
+    }
+
+    let extent = normalize_extent(image, view);
+    th.set_field(clcb97::TEXHEAD_V2_BL_WIDTH_MINUS_ONE, extent.width - 1);
+    th.set_field(clcb97::TEXHEAD_V2_BL_HEIGHT_MINUS_ONE, extent.height - 1);
+    th.set_field(clcb97::TEXHEAD_V2_BL_DEPTH_MINUS_ONE, extent.depth - 1);
+
+    let max_mip_level = nil_rs_max_mip_level(image, view);
+    th.set_field(clcb97::TEXHEAD_V2_BL_MAX_MIP_LEVEL, max_mip_level);
+
+    th.set_field(
+        clcb97::TEXHEAD_V2_BL_S_R_G_B_CONVERSION,
+        view.format.is_srgb(),
+    );
+
+    set_enum!(th, clcb97, TEXHEAD_V2_BL_SECTOR_PROMOTION, PROMOTE_TO_2_V);
+    set_enum!(th, clcb97, TEXHEAD_V2_BL_BORDER_SOURCE, BORDER_COLOR);
+
+    // In the sampler, the two options for FLOAT_COORD_NORMALIZATION are:
+    //
+    // - FORCE_UNNORMALIZED_COORDS
+    // - USE_HEADER_SETTING
+    //
+    // So we set it to normalized in the header and let the sampler select that
+    // or force non-normalized.
+
+    th.set_field(clcb97::TEXHEAD_V2_BL_NORMALIZED_COORDS, true);
+    set_enum!(
+        th,
+        clcb97,
+        TEXHEAD_V2_BL_ANISO_FINE_SPREAD_FUNC,
+        SPREAD_FUNC_TWO
+    );
+    set_enum!(
+        th,
+        clcb97,
+        TEXHEAD_V2_BL_ANISO_COARSE_SPREAD_FUNC,
+        SPREAD_FUNC_ONE
+    );
+
+    th.set_field(
+        clcb97::TEXHEAD_V2_BL_RES_VIEW_MIN_MIP_LEVEL,
+        view.base_level,
+    );
+
+    let max_mip_level = view.num_levels + view.base_level - 1;
+    th.set_field(clcb97::TEXHEAD_V2_BL_RES_VIEW_MAX_MIP_LEVEL, max_mip_level);
+
+    let msc = nil_rs_to_nvb097_multi_sample_count(image.sample_layout);
+    th.set_field(clcb97::TEXHEAD_V2_BL_MULTI_SAMPLE_COUNT, msc);
+
+    let min_lod_clamp = view.min_lod_clamp - (view.base_level as f32);
+    th.set_ufixed(clcb97::TEXHEAD_V2_BL_MIN_LOD_CLAMP, min_lod_clamp);
+}
+
 pub const IDENTITY_SWIZZLE: [nil_rs_bindings::pipe_swizzle; 4] = [
     nil_rs_bindings::PIPE_SWIZZLE_X,
     nil_rs_bindings::PIPE_SWIZZLE_Y,
@@ -578,6 +790,40 @@ fn nvb097_nil_fill_buffer_desc(
 
     // TODO: Do we need this?
     set_enum!(th, clb097, TEXHEAD_1D_SECTOR_PROMOTION, PROMOTE_TO_2_V);
+}
+
+fn nvcb97_nil_fill_buffer_desc(
+    base_address: u64,
+    format: Format,
+    num_elements: u32,
+    desc_out: &mut [u32; 8],
+) {
+    *desc_out = [0u32; 8];
+    let mut th = BitMutView::new(desc_out);
+
+    assert!(format.supports_buffer());
+    nvcb97_set_th_bl_0(&mut th, &format, IDENTITY_SWIZZLE);
+
+    th.set_field(
+        clcb97::TEXHEAD_V2_1DRT_ADDRESS_BITS31TO0,
+        base_address as u32,
+    );
+    th.set_field(
+        clcb97::TEXHEAD_V2_1DRT_ADDRESS_BITS63TO32,
+        base_address >> 32,
+    );
+
+    set_enum!(
+        th,
+        clcb97,
+        TEXHEAD_V2_1DRT_HEADER_VERSION,
+        SELECT_ONE_D_RAW_TYPED
+    );
+
+    th.set_field(clcb97::TEXHEAD_V2_1DRT_WIDTH_MINUS_ONE, num_elements - 1);
+
+    // TODO: Do we need this?
+    set_enum!(th, clcb97, TEXHEAD_1D_SECTOR_PROMOTION, PROMOTE_TO_2_V);
 }
 
 pub const ZERO_SWIZZLE: [nil_rs_bindings::pipe_swizzle; 4] = [
@@ -658,7 +904,15 @@ impl Descriptor {
     ) -> Self {
         let mut desc = Descriptor { bits: [0_u32; 8] };
 
-        if dev.cls_eng3d >= MAXWELL_A {
+        if dev.cls_eng3d >= HOPPER_A {
+            nvcb97_fill_image_view_desc(
+                dev,
+                image,
+                view,
+                base_address,
+                &mut desc.bits,
+            );
+        } else if dev.cls_eng3d >= MAXWELL_A {
             nvb097_fill_image_view_desc(
                 dev,
                 image,
@@ -688,7 +942,14 @@ impl Descriptor {
     ) -> Self {
         let mut desc = Descriptor { bits: [0_u32; 8] };
 
-        if dev.cls_eng3d >= MAXWELL_A {
+        if dev.cls_eng3d >= HOPPER_A {
+            nvcb97_nil_fill_buffer_desc(
+                base_address,
+                format,
+                num_elements,
+                &mut desc.bits,
+            )
+        } else if dev.cls_eng3d >= MAXWELL_A {
             nvb097_nil_fill_buffer_desc(
                 base_address,
                 format,
