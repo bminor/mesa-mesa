@@ -767,10 +767,14 @@ util_clear_texture_sw(struct pipe_context *pipe,
                                        level, box->x, box->y, box->z,
                                        box->width, box->height, box->depth);
    } else {
-      union pipe_color_union color;
-      util_format_unpack_rgba(tex->format, color.ui, data, 1);
+      enum pipe_format format = tex->format;
+      if (util_format_is_int64(desc))
+         format = util_format_get_array(desc->channel[0].type, 32, desc->nr_channels * 2, false, true);
 
-      util_clear_color_texture(pipe, tex, tex->format, &color, level,
+      union pipe_color_union color;
+      util_format_unpack_rgba(format, color.ui, data, 1);
+
+      util_clear_color_texture(pipe, tex, format, &color, level,
                                box->x, box->y, box->z,
                                box->width, box->height, box->depth);
    }
