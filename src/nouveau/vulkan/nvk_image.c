@@ -543,12 +543,12 @@ nvk_GetPhysicalDeviceImageFormatProperties2(
          break;
 
       case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT:
-         if (!tiling_has_explicit_layout) {
-            return vk_errorf(pdev, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT "
-                             "requires VK_IMAGE_TILING_LINEAR or "
-                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
-         }
+         /* VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT requires
+          * VK_IMAGE_TILING_LINEAR or VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
+          */
+         if (!tiling_has_explicit_layout)
+            return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
          ext_mem_props = &nvk_dma_buf_mem_props;
          break;
 
