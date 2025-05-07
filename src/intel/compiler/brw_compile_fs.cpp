@@ -1263,6 +1263,12 @@ brw_assign_urb_setup(brw_shader &s)
              * to the above, except the parameters are packed in 12B
              * and ordered like "a0, a1-a0, a2-a0" instead of the
              * above vec4 representation with a missing component.
+             *
+             * First documented in the TGL PRMs, Volume 9: Render Engine, PS
+             * Thread Payload for Normal Dispatch.
+             *
+             * Pre Xe2 : BSpec 47024
+             * Xe2+    : BSpec 56480
              */
             const unsigned param_width = (s.max_polygons > 1 ? s.dispatch_width : 1);
 
