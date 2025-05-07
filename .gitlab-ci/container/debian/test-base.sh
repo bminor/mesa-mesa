@@ -21,8 +21,6 @@ sed -i -e 's/http:\/\/deb/https:\/\/deb/g' /etc/apt/sources.list.d/*
 
 echo "deb [trusted=yes] https://gitlab.freedesktop.org/gfx-ci/ci-deb-repo/-/raw/${PKG_REPO_REV}/ ${FDO_DISTRIBUTION_VERSION%-*} main" | tee /etc/apt/sources.list.d/gfx-ci_.list
 
-echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian ${FDO_DISTRIBUTION_VERSION%-*} non-free-firmware" | tee /etc/apt/sources.list.d/non-free-firmware.list
-
 : "${LLVM_VERSION:?llvm version not set!}"
 
 . .gitlab-ci/container/debian/maybe-add-llvm-repo.sh
@@ -150,7 +148,6 @@ DEPS=(
 )
 
 HW_DEPS=(
-    firmware-realtek
     netcat-openbsd
     mount
     python3-distutils
@@ -159,25 +156,13 @@ HW_DEPS=(
     zstd
 )
 
-[ "$DEBIAN_ARCH" = "arm64" ] && ARCH_DEPS=(
-    firmware-linux-nonfree
-    firmware-qcom-media
-)
-[ "$DEBIAN_ARCH" = "armhf" ] && ARCH_DEPS=(
-    firmware-misc-nonfree
-)
-[ "$DEBIAN_ARCH" = "amd64" ] && ARCH_DEPS=(
-    firmware-amd-graphics
-    firmware-misc-nonfree
-)
-
 apt-get update
 apt-get dist-upgrade -y
 
 apt-get install --purge -y \
       sysvinit-core libelogind0
 
-apt-get install -y --no-remove "${DEPS[@]}" "${HW_DEPS[@]}" "${ARCH_DEPS[@]}"
+apt-get install -y --no-remove "${DEPS[@]}" "${HW_DEPS[@]}"
 
 apt-get install -y --no-install-recommends "${EPHEMERAL[@]}"
 
@@ -194,10 +179,6 @@ section_end debian_setup
 ############### Build ci-kdl
 
 . .gitlab-ci/container/build-kdl.sh
-
-############### Download firmware
-
-. .gitlab-ci/container/get-firmware-from-source.sh / "$FIRMWARE_FILES"
 
 ############### Build mold
 

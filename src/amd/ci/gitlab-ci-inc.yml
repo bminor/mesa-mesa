@@ -245,6 +245,7 @@
 .stoney-test:x86_64:
   variables:
     FLAKES_CHANNEL: "#amd-ci"
+    LAVA_FIRMWARE: amdgpu-lava
 
 .radeonsi-stoney-test:x86_64:
   extends:
@@ -271,6 +272,7 @@
   variables:
     GPU_VERSION: radeonsi-raven
     DRIVER_NAME: radeonsi
+    LAVA_FIRMWARE: amdgpu-lava
 
 .radv-raven-test:x86_64:
   extends:
@@ -279,6 +281,7 @@
     DRIVER_NAME: radv
     GPU_VERSION: radv-raven
     VK_DRIVER: radeon
+    LAVA_FIRMWARE: amdgpu-lava
 
 .amd-raven-test:x86_64:
   extends:
@@ -287,6 +290,7 @@
     DRIVER_NAME: radeonsi
     GPU_VERSION: amd-raven
     VK_DRIVER: radeon
+    LAVA_FIRMWARE: amdgpu-lava
 
 ############### CI-tron
 .ci-tron-test-amdgpu:

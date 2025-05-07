@@ -19,7 +19,7 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250505-crosvm"
+  DEBIAN_BASE_TAG: "20250515-firmware"
 
   DEBIAN_BUILD_TAG: "20250515-aarch64"
 
@@ -37,6 +37,8 @@ variables:
   KERNEL_TAG: "v6.14-mesa-dea4"
   KERNEL_REPO: "gfx-ci/linux"
   PKG_REPO_REV: "95bf62c"
+  FIRMWARE_TAG: "36f9bbfa"
+  FIRMWARE_REPO: "gfx-ci/firmware"
 
   WINDOWS_X64_MSVC_TAG: "20250129-llvm19"
 

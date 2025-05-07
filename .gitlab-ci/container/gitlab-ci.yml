@@ -365,7 +365,6 @@ fedora/x86_64_build:
 debian/x86_64_test-base:
   extends:
     - .debian-container
-    - .firmware_x86_64
     - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
@@ -391,7 +390,6 @@ debian/arm32_test-base:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .debian-container
-    - .firmware_arm32
     - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
@@ -419,7 +417,6 @@ debian/arm64_test-base:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .debian-container
-    - .firmware_arm64
     - .container-builds-base
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
@@ -642,24 +639,6 @@ debian/arm64_test-vk:
     MESA_IMAGE_TAG: *debian-arm64_test-vk
   needs:
     - debian/arm64_test-vk
-
-# Get firmware directly rather than using package versions.
-# Change DEBIAN_BASE_TAG to add firmware changes.
-# FIRMWARE_FILES is a list of json files arranged by vendor in .gitlab-ci/firmware/*
-.firmware_x86_64:
-  variables:
-    FIRMWARE_FILES: |
-      .gitlab-ci/firmware/i915/adl-fw.json
-      .gitlab-ci/firmware/i915/mtl-fw.json
-
-.firmware_arm64:
-  variables:
-    FIRMWARE_FILES: |
-      .gitlab-ci/firmware/arm/mali/arch10.8/mali-fw.json
-
-.firmware_arm32:
-  variables:
-    FIRMWARE_FILES: |
 
 # x86_64 image with ARM64 & ARM32 kernel & rootfs for baremetal testing
 .debian/baremetal_arm_test:

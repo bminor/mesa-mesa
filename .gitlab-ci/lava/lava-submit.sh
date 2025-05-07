@@ -64,6 +64,21 @@ tail -f results/lava.log &
 # Ensure that we are printing the commands that are being executed,
 # making it easier to debug the job in case it fails.
 set -x
+
+# List of optional overlays
+LAVA_EXTRA_OVERLAYS=()
+if [ -n "${LAVA_FIRMWARE:-}" ]; then
+    for fw in $LAVA_FIRMWARE; do
+        LAVA_EXTRA_OVERLAYS+=(
+            - append-overlay
+              --name=linux-firmware
+              --url="https://${BASE_SYSTEM_HOST_PREFIX}/${FIRMWARE_REPO}/${fw}-${FIRMWARE_TAG}.tar"
+              --path="/"
+              --format=tar
+        )
+    done
+fi
+
 PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--farm "${FARM}" \
 	--device-type "${DEVICE_TYPE}" \
@@ -104,5 +119,6 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 		--compression=zstd \
 		--path="/" \
 		--format=tar \
+	"${LAVA_EXTRA_OVERLAYS[@]}" \
 	- submit \
 	>> results/lava.log
