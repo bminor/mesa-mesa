@@ -1967,6 +1967,249 @@ fn legalize_tex_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
     }
 }
 
+impl SM32Op for OpTex {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x600, 1);
+                e.set_field(47..60, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x7d8, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(10..18, &self.srcs[0]);
+        e.set_reg_src(23..31, &self.srcs[1]);
+        e.set_bit(31, self.nodep);
+        // phase?: 32..34
+        // 0 => none
+        // 1 => .t
+        // 2 => .p
+        e.set_field(32..34, 0x2_u8);
+
+        e.set_field(34..38, self.channel_mask.to_bits());
+        e.set_tex_dim(38..41, self.dim);
+        e.set_bit(41, false); // ToDo: NDV
+        e.set_bit(42, self.z_cmpr);
+        e.set_bit(43, self.offset);
+        e.set_tex_lod_mode(44..47, self.lod_mode);
+    }
+}
+
+impl SM32Op for OpTld {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x700, 2);
+                e.set_field(47..60, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x780, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(10..18, &self.srcs[0]);
+        e.set_reg_src(23..31, &self.srcs[1]);
+        e.set_bit(31, self.nodep);
+        // phase?: 32..34
+        // 0 => none
+        // 1 => .t
+        // 2 => .p
+        e.set_field(32..34, 0x2_u8);
+
+        e.set_field(34..38, self.channel_mask.to_bits());
+        e.set_tex_dim(38..41, self.dim);
+        e.set_bit(41, self.offset);
+        e.set_bit(42, false); // z_cmpr
+        e.set_bit(43, self.is_ms);
+
+        assert!(matches!(self.lod_mode, TexLodMode::Lod | TexLodMode::Zero));
+        e.set_bit(44, self.lod_mode == TexLodMode::Lod);
+    }
+}
+
+impl SM32Op for OpTld4 {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x700, 1);
+                e.set_field(47..60, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x7dc, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(10..18, &self.srcs[0]);
+        e.set_reg_src(23..31, &self.srcs[1]);
+        e.set_bit(31, self.nodep);
+        // phase?: 32..34
+        // 0 => none
+        // 1 => .t
+        // 2 => .p
+        e.set_field(32..34, 0x2_u8);
+
+        e.set_field(34..38, self.channel_mask.to_bits());
+        e.set_tex_dim(38..41, self.dim);
+        e.set_bit(42, self.z_cmpr);
+        e.set_field(
+            43..45,
+            match self.offset_mode {
+                Tld4OffsetMode::None => 0_u8,
+                Tld4OffsetMode::AddOffI => 1_u8,
+                Tld4OffsetMode::PerPx => 2_u8,
+            },
+        );
+        e.set_field(45..47, self.comp);
+    }
+}
+
+impl SM32Op for OpTmml {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x768, 1);
+                e.set_field(47..60, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x7e8, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        e.set_reg_src(10..18, &self.srcs[0]);
+        e.set_reg_src(23..31, &self.srcs[1]);
+        e.set_bit(31, self.nodep);
+        // phase?: 32..34
+        // 0 => none
+        // 1 => .t
+        // 2 => .p
+        e.set_field(32..34, 0x2_u8);
+
+        e.set_field(34..38, self.channel_mask.to_bits());
+        e.set_tex_dim(38..41, self.dim);
+    }
+}
+
+impl SM32Op for OpTxd {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x760, 1);
+                e.set_field(47..60, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x7e0, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        assert!(self.fault.is_none());
+        e.set_reg_src(10..18, &self.srcs[0]);
+        e.set_reg_src(23..31, &self.srcs[1]);
+        e.set_bit(31, self.nodep);
+        // phase?: 32..34
+        // 0 => none
+        // 1 => .t
+        // 2 => .p
+        e.set_field(32..34, 0x2_u8);
+
+        e.set_field(34..38, self.channel_mask.to_bits());
+        e.set_tex_dim(38..41, self.dim);
+        e.set_bit(41, false); // ToDo: NDV
+        e.set_bit(54, self.offset);
+    }
+}
+
+impl SM32Op for OpTxq {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_tex_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match self.tex {
+            TexRef::Bound(idx) => {
+                e.set_opcode(0x754, 2);
+                e.set_field(41..54, idx);
+            }
+            TexRef::CBuf { .. } => {
+                panic!("SM32 doesn't have CBuf textures");
+            }
+            TexRef::Bindless => {
+                e.set_opcode(0x7d4, 2);
+            }
+        }
+
+        e.set_dst(&self.dsts[0]);
+        assert!(self.dsts[1].is_none());
+        e.set_reg_src(10..18, &self.src);
+
+        e.set_field(
+            25..31,
+            match self.query {
+                TexQuery::Dimension => 1_u8,
+                TexQuery::TextureType => 2_u8,
+                TexQuery::SamplerPos => 5_u8,
+                // TexQuery::Filter => 0x10_u8,
+                // TexQuery::Lod => 0x12_u8,
+                // TexQuery::Wrap => 0x14_u8,
+                // TexQuery::BorderColour => 0x16,
+            },
+        );
+        e.set_bit(31, self.nodep);
+        // phase: (default|.t|.p|inv)
+        e.set_field(32..34, 0x2_u8);
+        e.set_field(34..38, self.channel_mask.to_bits());
+    }
+}
+
 /// Helper to legalize extended or external instructions
 ///
 /// These are instructions which reach out external units such as load/store
@@ -2779,6 +3022,12 @@ macro_rules! as_sm50_op_match {
             Op::Sel(op) => op,
             Op::Shfl(op) => op,
             Op::PSetP(op) => op,
+            Op::Tex(op) => op,
+            Op::Tld(op) => op,
+            Op::Tld4(op) => op,
+            Op::Tmml(op) => op,
+            Op::Txd(op) => op,
+            Op::Txq(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::St(op) => op,
