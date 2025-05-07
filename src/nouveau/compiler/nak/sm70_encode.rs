@@ -2246,7 +2246,11 @@ impl SM70Op for OpR2UR {
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        e.set_opcode(0x3c2);
+        if e.sm >= 100 {
+            e.set_opcode(0x2ca);
+        } else {
+            e.set_opcode(0x3c2);
+        }
         e.set_udst(&self.dst);
         e.set_reg_src(24..32, &self.src);
         e.set_pred_dst(81..84, &Dst::None);
