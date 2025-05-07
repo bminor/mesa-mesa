@@ -5741,6 +5741,41 @@ impl DisplayOp for OpIsberd {
 }
 impl_display_for_op!(OpIsberd);
 
+/// Vertex Index Load
+/// (Only available in Kepler)
+///
+/// Takes as input the vertex index and loads the vertex address in
+/// attribute space.
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpViLd {
+    #[dst_type(GPR)]
+    pub dst: Dst,
+
+    #[src_type(SSA)]
+    pub idx: Src,
+
+    pub off: i8,
+}
+
+impl DisplayOp for OpViLd {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "vild v[")?;
+
+        if !self.idx.is_zero() {
+            write!(f, "{}", self.idx)?;
+            if self.off != 0 {
+                write!(f, "{:+}", self.off)?;
+            }
+        } else {
+            write!(f, "{}", self.off)?;
+        }
+
+        write!(f, "]")
+    }
+}
+impl_display_for_op!(OpViLd);
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpKill {}
@@ -6433,6 +6468,7 @@ pub enum Op {
     TexDepBar(OpTexDepBar),
     CS2R(OpCS2R),
     Isberd(OpIsberd),
+    ViLd(OpViLd),
     Kill(OpKill),
     Nop(OpNop),
     PixLd(OpPixLd),
@@ -6602,6 +6638,7 @@ impl Op {
             | Op::TexDepBar(_)
             | Op::CS2R(_)
             | Op::Isberd(_)
+            | Op::ViLd(_)
             | Op::Kill(_)
             | Op::PixLd(_)
             | Op::S2R(_) => false,

@@ -2459,6 +2459,8 @@ intrinsic("load_sysval_nv", dest_comp=1, src_comp=[], bit_sizes=[32, 64],
           indices=[ACCESS, BASE], flags=[CAN_ELIMINATE])
 intrinsic("isberd_nv", dest_comp=1, src_comp=[1], bit_sizes=[32],
           flags=[CAN_ELIMINATE, CAN_REORDER])
+intrinsic("vild_nv", dest_comp=1, src_comp=[1], bit_sizes=[32],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
 intrinsic("al2p_nv", dest_comp=1, src_comp=[1], bit_sizes=[32],
           indices=[BASE, FLAGS], flags=[CAN_ELIMINATE, CAN_REORDER])
 # src[] = { vtx, offset }.

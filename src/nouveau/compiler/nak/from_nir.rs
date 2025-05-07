@@ -2835,6 +2835,17 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst.into());
             }
+            nir_intrinsic_vild_nv => {
+                let dst = b.alloc_ssa(RegFile::GPR);
+
+                let (idx, off) = self.get_io_addr_offset(&srcs[0], 8);
+                b.push_op(OpViLd {
+                    dst: dst.into(),
+                    idx,
+                    off: off.try_into().unwrap(),
+                });
+                self.set_dst(&intrin.def, dst.into());
+            }
             nir_intrinsic_load_barycentric_at_offset_nv => (),
             nir_intrinsic_load_barycentric_centroid => (),
             nir_intrinsic_load_barycentric_pixel => (),

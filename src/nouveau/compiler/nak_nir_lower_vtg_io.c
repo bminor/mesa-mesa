@@ -138,13 +138,17 @@ lower_vtg_io_intrin(nir_builder *b,
       mask = nir_component_mask(intrin->num_components);
 
    if (vtx != NULL && !is_output) {
-      nir_def *info = nir_load_sysval_nv(b, 32,
-                                         .base = NAK_SV_INVOCATION_INFO,
-                                         .access = ACCESS_CAN_REORDER);
-      nir_def *lo = nir_extract_u8_imm(b, info, 0);
-      nir_def *hi = nir_extract_u8_imm(b, info, 2);
-      nir_def *idx = nir_iadd(b, nir_imul(b, lo, hi), vtx);
-      vtx = nir_isberd_nv(b, idx);
+      if (nak->sm >= 50) {
+         nir_def *info = nir_load_sysval_nv(b, 32,
+                                            .base = NAK_SV_INVOCATION_INFO,
+                                            .access = ACCESS_CAN_REORDER);
+         nir_def *lo = nir_extract_u8_imm(b, info, 0);
+         nir_def *hi = nir_extract_u8_imm(b, info, 2);
+         nir_def *idx = nir_iadd(b, nir_imul(b, lo, hi), vtx);
+         vtx = nir_isberd_nv(b, idx);
+      } else {
+         vtx = nir_vild_nv(b, vtx);
+      }
    }
 
    if (vtx == NULL)

@@ -198,6 +198,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::TexDepBar(_)
         | Op::CS2R(_)
         | Op::Isberd(_)
+        | Op::ViLd(_)
         | Op::Kill(_)
         | Op::S2R(_) => SideEffect::Barrier,
         Op::PixLd(_) | Op::Nop(_) | Op::Vote(_) => SideEffect::None,
@@ -289,6 +290,7 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         | Op::TexDepBar(_)
         | Op::CS2R(_)
         | Op::Isberd(_)
+        | Op::ViLd(_)
         | Op::Kill(_)
         | Op::PixLd(_)
         | Op::S2R(_) => 16,
