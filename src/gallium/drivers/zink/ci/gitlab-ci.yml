@@ -40,10 +40,11 @@ zink-venus-lvp:
     LP_NUM_THREADS: 2
     CROSVM_MEMORY: 12288
     CROSVM_CPU: $FDO_CI_CONCURRENT
+    XVFB_SCRIPT: "./install/crosvm-runner.sh ./install/deqp-runner.sh"
   script: |
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
-    xvfb-run --server-args='-noreset' bash -c "./install/crosvm-runner.sh ./install/deqp-runner.sh"
+    xvfb-run --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
 
 zink-venus-lvp-full:
   extends:
