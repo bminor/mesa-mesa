@@ -8,3 +8,15 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.images.
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_sync.images.texture_source.copyteximage2d_render
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.textures.copyteximage2d_texsubimage2d_render
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.textures.teximage2d_copytexsubimage2d_render
+
+# panfrost ff9a0000.gpu: js fault, js=0, status=INSTR_INVALID_PC
+dEQP-GLES3.functional.fragment_out.array.float.rg32f_mediump_float
+dEQP-GLES3.functional.fragment_out.array.int.r32i_mediump_ivec3
+dEQP-GLES3.functional.fragment_out.array.int.rg16i_highp_ivec2
+dEQP-GLES3.functional.fragment_out.array.int.rg16i_lowp_ivec4
+dEQP-GLES3.functional.fragment_out.array.int.rg32i_lowp_int
+dEQP-GLES3.functional.fragment_out.array.int.rgba8i_highp_ivec2
+dEQP-GLES3.functional.fragment_out.array.uint.rg32ui_mediump_uvec2
+dEQP-GLES3.functional.fragment_out.array.uint.rg32ui_mediump_uvec4
+dEQP-GLES3.functional.fragment_out.array.uint.r16ui_highp_uvec4
+dEQP-GLES3.functional.fragment_out.random.29
