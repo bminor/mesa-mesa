@@ -5,21 +5,22 @@ use crate::ir::*;
 use crate::union_find::UnionFind;
 
 use compiler::bitset::BitSet;
+use rustc_hash::FxHashMap;
 use std::cell::RefCell;
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 
 struct Phi {
     idx: u32,
     orig: SSAValue,
     dst: SSAValue,
-    srcs: HashMap<usize, SSAValue>,
+    srcs: FxHashMap<usize, SSAValue>,
 }
 
 struct DefTrackerBlock {
     pred: Vec<usize>,
     succ: Vec<usize>,
-    defs: RefCell<HashMap<SSAValue, SSAValue>>,
+    defs: RefCell<FxHashMap<SSAValue, SSAValue>>,
     phis: RefCell<Vec<Phi>>,
 }
 
@@ -161,7 +162,7 @@ impl Function {
         // us to skip any SSA values which only have a single definition in
         // later passes.
         let mut has_mult_defs = false;
-        let mut num_defs = HashMap::new();
+        let mut num_defs = FxHashMap::default();
         for b in &self.blocks {
             for instr in &b.instrs {
                 instr.for_each_ssa_def(|ssa| {

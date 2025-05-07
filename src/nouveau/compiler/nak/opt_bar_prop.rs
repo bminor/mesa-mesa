@@ -5,11 +5,11 @@ use crate::api::{GetDebugFlags, DEBUG};
 use crate::ir::*;
 
 use compiler::bitset::BitSet;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 struct PhiMap {
-    phi_ssa: HashMap<u32, Vec<SSAValue>>,
-    ssa_phi: HashMap<SSAValue, u32>,
+    phi_ssa: FxHashMap<u32, Vec<SSAValue>>,
+    ssa_phi: FxHashMap<SSAValue, u32>,
 }
 
 impl PhiMap {
@@ -49,7 +49,7 @@ impl PhiMap {
 }
 
 struct BarPropPass {
-    ssa_map: HashMap<SSAValue, SSAValue>,
+    ssa_map: FxHashMap<SSAValue, SSAValue>,
     phi_is_bar: BitSet,
     phi_is_not_bar: BitSet,
 }

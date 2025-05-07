@@ -5,8 +5,8 @@ use crate::api::{GetDebugFlags, DEBUG};
 use crate::ir::*;
 use crate::reg_tracker::RegTracker;
 
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::max;
-use std::collections::{HashMap, HashSet};
 use std::slice;
 
 #[derive(Clone)]
@@ -65,9 +65,9 @@ struct DepNode {
 
 struct DepGraph {
     deps: Vec<DepNode>,
-    instr_deps: HashMap<(usize, usize), (usize, usize)>,
-    instr_waits: HashMap<(usize, usize), Vec<usize>>,
-    active: HashSet<usize>,
+    instr_deps: FxHashMap<(usize, usize), (usize, usize)>,
+    instr_waits: FxHashMap<(usize, usize), Vec<usize>>,
+    active: FxHashSet<usize>,
 }
 
 impl DepGraph {

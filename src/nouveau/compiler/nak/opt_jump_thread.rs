@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ir::*;
+
 use compiler::cfg::CFGBuilder;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 fn clone_branch(op: &Op) -> Op {
     match op {
@@ -31,7 +32,7 @@ fn jump_thread(func: &mut Function) -> bool {
     let mut progress = false;
 
     // A branch to label can be replaced with Op
-    let mut replacements: HashMap<Label, Op> = Default::default();
+    let mut replacements: FxHashMap<Label, Op> = Default::default();
 
     // Invariant 1: At the end of each loop iteration,
     //              every trivial block with an index in [i, blocks.len())

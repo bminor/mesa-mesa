@@ -9,12 +9,13 @@ use crate::liveness::{
 };
 
 use compiler::bitset::BitSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
 use std::cmp::{max, Ordering, Reverse};
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::BinaryHeap;
 
 struct PhiDstMap {
-    ssa_phi: HashMap<SSAValue, u32>,
+    ssa_phi: FxHashMap<SSAValue, u32>,
 }
 
 impl PhiDstMap {
@@ -46,7 +47,7 @@ impl PhiDstMap {
 }
 
 struct PhiSrcMap {
-    phi_src: HashMap<u32, SSAValue>,
+    phi_src: FxHashMap<u32, SSAValue>,
 }
 
 impl PhiSrcMap {
@@ -283,7 +284,7 @@ struct SpillCache<'a, S: Spill> {
     alloc: &'a mut SSAValueAllocator,
     spill: S,
     const_tracker: ConstTracker,
-    val_spill: HashMap<SSAValue, SSAValue>,
+    val_spill: FxHashMap<SSAValue, SSAValue>,
 }
 
 impl<'a, S: Spill> SpillCache<'a, S> {
@@ -346,7 +347,7 @@ impl<'a, S: Spill> SpillCache<'a, S> {
 
 struct SpillChooser<'a> {
     bl: &'a NextUseBlockLiveness,
-    pinned: &'a HashSet<SSAValue>,
+    pinned: &'a FxHashSet<SSAValue>,
     ip: usize,
     count: usize,
     spills: BinaryHeap<Reverse<SSANextUse>>,
@@ -360,7 +361,7 @@ struct SpillChoiceIter {
 impl<'a> SpillChooser<'a> {
     pub fn new(
         bl: &'a NextUseBlockLiveness,
-        pinned: &'a HashSet<SSAValue>,
+        pinned: &'a FxHashSet<SSAValue>,
         ip: usize,
         count: usize,
     ) -> Self {
@@ -429,9 +430,9 @@ struct SSAState {
     w: LiveSet,
     // The set of variables which have already been spilled.  These don't need
     // to be spilled again.
-    s: HashSet<SSAValue>,
+    s: FxHashSet<SSAValue>,
     // The set of pinned variables
-    p: HashSet<SSAValue>,
+    p: FxHashSet<SSAValue>,
 }
 
 fn spill_values<S: Spill>(
@@ -447,7 +448,7 @@ fn spill_values<S: Spill>(
     // Record the set of SSA values used within each loop
     let mut phi_dst_maps = Vec::new();
     let mut phi_src_maps = Vec::new();
-    let mut loop_uses = HashMap::new();
+    let mut loop_uses = FxHashMap::default();
     for b_idx in 0..blocks.len() {
         phi_dst_maps.push(PhiDstMap::from_block(&blocks[b_idx]));
         phi_src_maps.push(PhiSrcMap::from_block(&blocks[b_idx]));
@@ -455,8 +456,8 @@ fn spill_values<S: Spill>(
         if let Some(lh_idx) = blocks.loop_header_index(b_idx) {
             let uses = loop_uses
                 .entry(lh_idx)
-                .or_insert_with(|| RefCell::new(HashSet::new()));
-            let uses = uses.get_mut();
+                .or_insert_with(|| RefCell::new(Default::default()));
+            let uses: &mut FxHashSet<_> = uses.get_mut();
 
             for instr in &blocks[b_idx].instrs {
                 instr.for_each_ssa_use(|ssa| {
@@ -533,8 +534,8 @@ fn spill_values<S: Spill>(
             debug_assert!(w.count(file) <= limit);
             w
         } else if blocks.is_loop_header(b_idx) {
-            let mut i_b: HashSet<SSAValue> =
-                HashSet::from_iter(bl.iter_live_in().cloned());
+            let mut i_b: FxHashSet<SSAValue> =
+                FxHashSet::from_iter(bl.iter_live_in().cloned());
 
             if let Some(phi) = blocks[b_idx].phi_dsts() {
                 for (_, dst) in phi.dsts.iter() {
@@ -592,7 +593,7 @@ fn spill_values<S: Spill>(
                 num_preds: usize,
                 next_use: usize,
             }
-            let mut live: HashMap<SSAValue, SSAPredInfo> = Default::default();
+            let mut live: FxHashMap<SSAValue, SSAPredInfo> = Default::default();
 
             for p_idx in &preds {
                 let phi_src_map = &phi_src_maps[*p_idx];
@@ -637,14 +638,14 @@ fn spill_values<S: Spill>(
         };
 
         let s = if preds.is_empty() {
-            HashSet::new()
+            Default::default()
         } else if preds.len() == 1 {
             let p_s = &ssa_state_out[preds[0]].s;
-            HashSet::from_iter(
+            FxHashSet::from_iter(
                 p_s.iter().filter(|ssa| bl.is_live_in(ssa)).cloned(),
             )
         } else {
-            let mut s = HashSet::new();
+            let mut s: FxHashSet<_> = Default::default();
             for p_idx in &preds {
                 if *p_idx >= b_idx {
                     continue;
@@ -676,7 +677,7 @@ fn spill_values<S: Spill>(
             s
         };
 
-        let mut p = HashSet::new();
+        let mut p: FxHashSet<_> = Default::default();
         for p_idx in &preds {
             if *p_idx < b_idx {
                 let p_p = &ssa_state_out[*p_idx].p;
@@ -786,8 +787,8 @@ fn spill_values<S: Spill>(
                             }
                         }
 
-                        let spills: HashSet<SSAValue> =
-                            HashSet::from_iter(spills);
+                        let spills: FxHashSet<SSAValue> =
+                            FxHashSet::from_iter(spills);
 
                         for (dst, src) in pcopy.dsts_srcs.iter_mut() {
                             let dst_ssa = &dst.as_ssa().unwrap()[0];

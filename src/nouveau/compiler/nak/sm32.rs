@@ -10,7 +10,8 @@ use bitview::{
     SetFieldU64,
 };
 
-use std::{collections::HashMap, ops::Range};
+use rustc_hash::FxHashMap;
+use std::ops::Range;
 
 pub struct ShaderModel32 {
     sm: u8,
@@ -154,7 +155,7 @@ fn true_reg() -> RegRef {
 struct SM32Encoder<'a> {
     sm: &'a ShaderModel32,
     ip: usize,
-    labels: &'a HashMap<Label, usize>,
+    labels: &'a FxHashMap<Label, usize>,
     inst: [u32; 2],
     sched: u8,
 }
@@ -3056,7 +3057,7 @@ fn as_sm32_op_mut(op: &mut Op) -> &mut dyn SM32Op {
 fn encode_instr(
     instr: Option<&Box<Instr>>,
     sm: &ShaderModel32,
-    labels: &HashMap<Label, usize>,
+    labels: &FxHashMap<Label, usize>,
     encoded: &mut Vec<u32>,
 ) -> u8 {
     let mut e = SM32Encoder {
@@ -3088,7 +3089,7 @@ fn encode_sm32_shader(sm: &ShaderModel32, s: &Shader<'_>) -> Vec<u32> {
     let func = &s.functions[0];
 
     let mut ip = 0_usize;
-    let mut labels = HashMap::new();
+    let mut labels = FxHashMap::default();
     for b in &func.blocks {
         // We ensure blocks will have groups of 7 instructions with a
         // schedule instruction before each groups.  As we should never jump

@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ir::*;
-use std::collections::HashMap;
+
+use rustc_hash::FxHashMap;
 
 fn should_lower_to_warp(
     sm: &dyn ShaderModel,
     instr: &Instr,
-    r2ur: &HashMap<SSAValue, SSAValue>,
+    r2ur: &FxHashMap<SSAValue, SSAValue>,
 ) -> bool {
     if !sm.op_can_be_uniform(&instr.op) {
         return true;
@@ -25,7 +26,7 @@ fn should_lower_to_warp(
 
 fn propagate_r2ur(
     instr: &mut Instr,
-    r2ur: &HashMap<SSAValue, SSAValue>,
+    r2ur: &FxHashMap<SSAValue, SSAValue>,
 ) -> bool {
     let mut progress = false;
 

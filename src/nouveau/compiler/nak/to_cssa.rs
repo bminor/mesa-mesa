@@ -6,7 +6,7 @@ use crate::ir::*;
 use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 
 use compiler::cfg::CFG;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::iter::Peekable;
 
 struct MergedIter<I: Iterator> {
@@ -72,8 +72,8 @@ struct CoalesceGraph<'a> {
     live: &'a SimpleLiveness,
     nodes: Vec<CoalesceNode>,
     sets: Vec<CoalesceSet>,
-    ssa_node: HashMap<SSAValue, usize>,
-    phi_node_file: HashMap<u32, (usize, RegFile)>,
+    ssa_node: FxHashMap<SSAValue, usize>,
+    phi_node_file: FxHashMap<u32, (usize, RegFile)>,
 }
 
 impl<'a> CoalesceGraph<'a> {

@@ -3,7 +3,7 @@
 
 use crate::ir::*;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 enum CBufRule {
     Yes,
@@ -61,7 +61,7 @@ enum CopyPropEntry {
 
 struct CopyPropPass<'a> {
     sm: &'a dyn ShaderModel,
-    ssa_map: HashMap<SSAValue, CopyPropEntry>,
+    ssa_map: FxHashMap<SSAValue, CopyPropEntry>,
 }
 
 impl<'a> CopyPropPass<'a> {

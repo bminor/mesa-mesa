@@ -7,11 +7,11 @@ use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 use crate::union_find::UnionFind;
 
 use compiler::bitset::BitSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::{max, min, Ordering};
-use std::collections::{HashMap, HashSet};
 
 struct KillSet {
-    set: HashSet<SSAValue>,
+    set: FxHashSet<SSAValue>,
     vec: Vec<SSAValue>,
 }
 
@@ -83,7 +83,7 @@ enum SSAUse {
 }
 
 struct SSAUseMap {
-    ssa_map: HashMap<SSAValue, Vec<(usize, SSAUse)>>,
+    ssa_map: FxHashMap<SSAValue, Vec<(usize, SSAUse)>>,
 }
 
 impl SSAUseMap {
@@ -165,7 +165,7 @@ impl SSAUseMap {
 ///     Taiwan, 2011, pp. 45-54, doi: 10.1145/2038698.2038708.
 struct PhiWebs {
     uf: UnionFind<SSAValue>,
-    assignments: HashMap<SSAValue, u32>,
+    assignments: FxHashMap<SSAValue, u32>,
 }
 
 impl PhiWebs {
@@ -181,7 +181,7 @@ impl PhiWebs {
             let Some(phi_dsts) = f.blocks[b_idx].phi_dsts() else {
                 continue;
             };
-            let dsts: HashMap<u32, &SSARef> = phi_dsts
+            let dsts: FxHashMap<u32, &SSARef> = phi_dsts
                 .dsts
                 .iter()
                 .map(|(idx, dst)| {
@@ -263,7 +263,7 @@ struct RegAllocator {
     used: BitSet,
     pinned: BitSet,
     reg_ssa: Vec<Option<SSAValue>>,
-    ssa_reg: HashMap<SSAValue, u32>,
+    ssa_reg: FxHashMap<SSAValue, u32>,
 }
 
 impl RegAllocator {
@@ -486,7 +486,7 @@ struct VecRegAllocator<'a> {
     ra: &'a mut RegAllocator,
     pcopy: OpParCopy,
     pinned: BitSet,
-    evicted: HashMap<SSAValue, u32>,
+    evicted: FxHashMap<SSAValue, u32>,
 }
 
 impl<'a> VecRegAllocator<'a> {
@@ -922,7 +922,7 @@ struct AssignRegsBlock {
     ra: PerRegFile<RegAllocator>,
     pcopy_tmp_gprs: u8,
     live_in: Vec<LiveValue>,
-    phi_out: HashMap<u32, SrcRef>,
+    phi_out: FxHashMap<u32, SrcRef>,
 }
 
 impl AssignRegsBlock {

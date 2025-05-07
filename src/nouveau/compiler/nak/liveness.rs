@@ -4,14 +4,14 @@
 use crate::ir::*;
 
 use compiler::bitset::BitSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
 use std::cmp::{max, Ord, Ordering};
-use std::collections::{hash_set, HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct LiveSet {
     live: PerRegFile<u32>,
-    set: HashSet<SSAValue>,
+    set: FxHashSet<SSAValue>,
 }
 
 impl LiveSet {
@@ -39,7 +39,7 @@ impl LiveSet {
         }
     }
 
-    pub fn iter(&self) -> hash_set::Iter<SSAValue> {
+    pub fn iter(&self) -> impl Iterator<Item = &SSAValue> {
         self.set.iter()
     }
 
@@ -151,7 +151,7 @@ pub trait BlockLiveness {
         let vec_dst_live = live;
 
         // Use a hash set because sources may occur more than once
-        let mut killed = HashSet::new();
+        let mut killed: FxHashSet<_> = Default::default();
         instr.for_each_ssa_use(|ssa| {
             if !self.is_live_after_ip(ssa, ip) {
                 killed.insert(*ssa);
@@ -230,7 +230,7 @@ pub trait Liveness {
 pub struct SimpleBlockLiveness {
     defs: BitSet,
     uses: BitSet,
-    last_use: HashMap<u32, usize>,
+    last_use: FxHashMap<u32, usize>,
     live_in: BitSet,
     live_out: BitSet,
 }
@@ -277,7 +277,7 @@ impl BlockLiveness for SimpleBlockLiveness {
 }
 
 pub struct SimpleLiveness {
-    ssa_block_ip: HashMap<SSAValue, (usize, usize)>,
+    ssa_block_ip: FxHashMap<SSAValue, (usize, usize)>,
     blocks: Vec<SimpleBlockLiveness>,
 }
 
@@ -399,7 +399,7 @@ impl SSAUseDef {
 
 pub struct NextUseBlockLiveness {
     num_instrs: usize,
-    ssa_map: HashMap<SSAValue, SSAUseDef>,
+    ssa_map: FxHashMap<SSAValue, SSAUseDef>,
 }
 
 impl NextUseBlockLiveness {

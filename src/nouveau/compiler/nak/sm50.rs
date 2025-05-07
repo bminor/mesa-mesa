@@ -7,7 +7,7 @@ use crate::legalize::{
 };
 use bitview::*;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::ops::Range;
 
 pub fn instr_latency(_sm: u8, op: &Op, dst_idx: usize) -> u32 {
@@ -179,7 +179,7 @@ trait SM50Op {
 struct SM50Encoder<'a> {
     sm: &'a ShaderModel50,
     ip: usize,
-    labels: &'a HashMap<Label, usize>,
+    labels: &'a FxHashMap<Label, usize>,
     inst: [u32; 2],
     sched: u32,
 }
@@ -3349,7 +3349,7 @@ fn encode_instr(
     instr_index: usize,
     instr: Option<&Box<Instr>>,
     sm: &ShaderModel50,
-    labels: &HashMap<Label, usize>,
+    labels: &FxHashMap<Label, usize>,
     ip: &mut usize,
     sched_instr: &mut [u32; 2],
 ) -> [u32; 2] {
@@ -3385,7 +3385,7 @@ fn encode_sm50_shader(sm: &ShaderModel50, s: &Shader<'_>) -> Vec<u32> {
     let func = &s.functions[0];
 
     let mut num_instrs = 0_usize;
-    let mut labels = HashMap::new();
+    let mut labels = FxHashMap::default();
     for b in &func.blocks {
         // We ensure blocks will have groups of 3 instructions with a
         // schedule instruction before each groups.  As we should never jump

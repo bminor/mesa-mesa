@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use std::collections::HashMap;
-
 use crate::ir::*;
+
+use rustc_hash::FxHashMap;
 
 struct PrmtSrcs {
     srcs: [SrcRef; 2],
@@ -82,7 +82,7 @@ struct PrmtEntry {
 }
 
 struct PrmtPass {
-    ssa_prmt: HashMap<SSAValue, PrmtEntry>,
+    ssa_prmt: FxHashMap<SSAValue, PrmtEntry>,
 }
 
 impl PrmtPass {

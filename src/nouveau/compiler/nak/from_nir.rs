@@ -15,8 +15,8 @@ use compiler::bindings::*;
 use compiler::cfg::CFGBuilder;
 use compiler::nir::*;
 use compiler::nir_instr_printer::NirInstrPrinter;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::max;
-use std::collections::{HashMap, HashSet};
 use std::ops::Index;
 
 fn init_info_from_nir(nak: &nak_compiler, nir: &nir_shader) -> ShaderInfo {
@@ -192,7 +192,7 @@ fn alloc_ssa_for_nir(b: &mut impl SSABuilder, ssa: &nir_def) -> Vec<SSAValue> {
 
 struct PhiAllocMap<'a> {
     alloc: &'a mut PhiAllocator,
-    map: HashMap<(u32, u8), u32>,
+    map: FxHashMap<(u32, u8), u32>,
 }
 
 impl<'a> PhiAllocMap<'a> {
@@ -321,14 +321,14 @@ struct ShaderFromNir<'a> {
     float_ctl: ShaderFloatControls,
     cfg: CFGBuilder<u32, BasicBlock>,
     label_alloc: LabelAllocator,
-    block_label: HashMap<u32, Label>,
-    bar_label: HashMap<u32, Label>,
-    sync_blocks: HashSet<u32>,
+    block_label: FxHashMap<u32, Label>,
+    bar_label: FxHashMap<u32, Label>,
+    sync_blocks: FxHashSet<u32>,
     crs: Vec<(u32, SyncType)>,
     fs_out_regs: [Option<SSAValue>; 34],
     end_block_id: u32,
-    ssa_map: HashMap<u32, Vec<SSAValue>>,
-    saturated: HashSet<*const nir_def>,
+    ssa_map: FxHashMap<u32, Vec<SSAValue>>,
+    saturated: FxHashSet<*const nir_def>,
     nir_instr_printer: NirInstrPrinter,
 }
 

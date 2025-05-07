@@ -3,7 +3,7 @@
 
 use crate::ir::*;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::slice;
 
 struct LopEntry {
@@ -13,8 +13,8 @@ struct LopEntry {
 }
 
 struct LopPass {
-    use_counts: HashMap<SSAValue, u32>,
-    ssa_lop: HashMap<SSAValue, LopEntry>,
+    use_counts: FxHashMap<SSAValue, u32>,
+    ssa_lop: FxHashMap<SSAValue, LopEntry>,
 }
 
 fn src_as_bool(src: &Src) -> Option<bool> {
@@ -28,7 +28,7 @@ fn src_as_bool(src: &Src) -> Option<bool> {
 
 impl LopPass {
     fn new(f: &Function) -> LopPass {
-        let mut use_counts = HashMap::new();
+        let mut use_counts = FxHashMap::default();
         for b in &f.blocks {
             for instr in &b.instrs {
                 if let PredRef::SSA(ssa) = instr.pred.pred_ref {

@@ -6,7 +6,7 @@ use crate::{
     ir::*,
 };
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 struct CopyNode {
     num_reads: usize,
@@ -93,7 +93,7 @@ fn cycle_use_swap(pc: &OpParCopy, file: RegFile) -> bool {
 fn lower_par_copy(pc: OpParCopy, sm: &dyn ShaderModel) -> MappedInstrs {
     let mut graph = CopyGraph::new();
     let mut vals = Vec::new();
-    let mut reg_to_idx = HashMap::new();
+    let mut reg_to_idx = FxHashMap::default();
 
     for (i, (dst, _)) in pc.dsts_srcs.iter().enumerate() {
         // Destinations must be pairwise unique

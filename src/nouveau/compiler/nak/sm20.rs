@@ -10,8 +10,9 @@ use bitview::{
     SetFieldU64,
 };
 
+use rustc_hash::FxHashMap;
 use std::fmt;
-use std::{collections::HashMap, ops::Range};
+use std::ops::Range;
 
 pub struct ShaderModel20 {
     sm: u8,
@@ -191,7 +192,7 @@ trait SM20Op {
 struct SM20Encoder<'a> {
     sm: &'a ShaderModel20,
     ip: usize,
-    labels: &'a HashMap<Label, usize>,
+    labels: &'a FxHashMap<Label, usize>,
     inst: [u32; 2],
 }
 
@@ -2691,7 +2692,7 @@ fn encode_sm20_shader(sm: &ShaderModel20, s: &Shader<'_>) -> Vec<u32> {
     let func = &s.functions[0];
 
     let mut ip = 0_usize;
-    let mut labels = HashMap::new();
+    let mut labels = FxHashMap::default();
     for b in &func.blocks {
         // We ensure blocks will have groups of 7 instructions with a
         // schedule instruction before each groups.  As we should never jump

@@ -8,7 +8,7 @@ use crate::legalize::{
 };
 use bitview::*;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::ops::Range;
 
 /// A per-op trait that implements Volta+ opcode semantics
@@ -20,7 +20,7 @@ trait SM70Op {
 struct SM70Encoder<'a> {
     sm: u8,
     ip: usize,
-    labels: &'a HashMap<Label, usize>,
+    labels: &'a FxHashMap<Label, usize>,
     inst: [u32; 4],
 }
 
@@ -3778,7 +3778,7 @@ pub fn encode_sm70_shader(sm: &dyn ShaderModel, s: &Shader<'_>) -> Vec<u32> {
     let func = &s.functions[0];
 
     let mut ip = 0_usize;
-    let mut labels = HashMap::new();
+    let mut labels = FxHashMap::default();
     for b in &func.blocks {
         labels.insert(b.label, ip);
         for instr in &b.instrs {

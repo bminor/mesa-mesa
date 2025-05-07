@@ -5,7 +5,7 @@ use crate::api::{GetDebugFlags, DEBUG};
 use crate::ir::*;
 use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub type LegalizeBuilder<'a> = SSAInstrBuilder<'a>;
 
@@ -345,7 +345,7 @@ fn legalize_instr(
     b: &mut LegalizeBuilder,
     bl: &impl BlockLiveness,
     block_uniform: bool,
-    pinned: &HashSet<SSARef>,
+    pinned: &FxHashSet<SSARef>,
     ip: usize,
     instr: &mut Instr,
 ) {
@@ -439,8 +439,8 @@ fn legalize_instr(
 
     sm.legalize_op(b, &mut instr.op);
 
-    let mut vec_src_map: HashMap<SSARef, SSARef> = Default::default();
-    let mut vec_comps = HashSet::new();
+    let mut vec_src_map: FxHashMap<SSARef, SSARef> = Default::default();
+    let mut vec_comps: FxHashSet<_> = Default::default();
     for src in instr.srcs_mut() {
         if let SrcRef::SSA(vec) = &src.src_ref {
             if vec.comps() == 1 {
@@ -482,7 +482,7 @@ impl Shader<'_> {
         let sm = self.sm;
         for f in &mut self.functions {
             let live = SimpleLiveness::for_function(f);
-            let mut pinned = HashSet::new();
+            let mut pinned: FxHashSet<_> = Default::default();
 
             for (bi, b) in f.blocks.iter_mut().enumerate() {
                 let bl = live.block_live(bi);
