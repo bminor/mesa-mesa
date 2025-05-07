@@ -125,13 +125,18 @@ from_kmod_group_allow_priority_flags(
 static uint32_t
 pipe_to_pan_bind_flags(uint32_t pipe_bind_flags)
 {
-   static_assert(PIPE_BIND_DEPTH_STENCIL == PAN_BIND_DEPTH_STENCIL, "");
-   static_assert(PIPE_BIND_RENDER_TARGET == PAN_BIND_RENDER_TARGET, "");
-   static_assert(PIPE_BIND_SAMPLER_VIEW == PAN_BIND_SAMPLER_VIEW, "");
-   static_assert(PIPE_BIND_VERTEX_BUFFER == PAN_BIND_VERTEX_BUFFER, "");
+   uint32_t pan_bind_flags = 0;
 
-   return pipe_bind_flags & (PAN_BIND_DEPTH_STENCIL | PAN_BIND_RENDER_TARGET |
-                             PAN_BIND_VERTEX_BUFFER | PAN_BIND_SAMPLER_VIEW);
+   if (pipe_bind_flags & PIPE_BIND_DEPTH_STENCIL)
+      pan_bind_flags |= PAN_BIND_DEPTH_STENCIL;
+   if (pipe_bind_flags & PIPE_BIND_RENDER_TARGET)
+      pan_bind_flags |= PAN_BIND_RENDER_TARGET;
+   if (pipe_bind_flags & PIPE_BIND_VERTEX_BUFFER)
+      pan_bind_flags |= PAN_BIND_VERTEX_BUFFER;
+   if (pipe_bind_flags & PIPE_BIND_SAMPLER_VIEW)
+      pan_bind_flags |= PAN_BIND_SAMPLER_VIEW;
+
+   return pan_bind_flags;
 }
 
 /**

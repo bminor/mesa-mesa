@@ -37,16 +37,16 @@
 typedef uint32_t mali_pixel_format;
 
 /* pan bind flags */
-#define PAN_BIND_DEPTH_STENCIL (1 << 0)
-#define PAN_BIND_RENDER_TARGET (1 << 1)
-#define PAN_BIND_SAMPLER_VIEW  (1 << 3)
-#define PAN_BIND_VERTEX_BUFFER (1 << 4)
-#define PAN_BIND_STORAGE_IMAGE (1 << 15) /* == PIPE_BIND_SHADER_IMAGE */
+#define PAN_BIND_DEPTH_STENCIL BITFIELD_BIT(0)
+#define PAN_BIND_RENDER_TARGET BITFIELD_BIT(1)
+#define PAN_BIND_SAMPLER_VIEW  BITFIELD_BIT(2)
+#define PAN_BIND_VERTEX_BUFFER BITFIELD_BIT(3)
+#define PAN_BIND_STORAGE_IMAGE BITFIELD_BIT(4)
 
 struct panfrost_format {
    uint32_t hw : 22;
    uint32_t texfeat_bit : 5;
-   unsigned bind;
+   uint32_t bind        : 5;
 };
 
 struct pan_blendable_format {
