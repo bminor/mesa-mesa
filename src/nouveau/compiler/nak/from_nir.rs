@@ -1881,9 +1881,9 @@ impl<'a> ShaderFromNir<'a> {
             };
 
             let offset_mode = match flags.offset_mode() {
-                NAK_NIR_OFFSET_MODE_NONE => Tld4OffsetMode::None,
-                NAK_NIR_OFFSET_MODE_AOFFI => Tld4OffsetMode::AddOffI,
-                NAK_NIR_OFFSET_MODE_PER_PX => Tld4OffsetMode::PerPx,
+                NAK_NIR_OFFSET_MODE_NONE => TexOffsetMode::None,
+                NAK_NIR_OFFSET_MODE_AOFFI => TexOffsetMode::AddOffI,
+                NAK_NIR_OFFSET_MODE_PER_PX => TexOffsetMode::PerPx,
                 _ => panic!("Invalid offset mode"),
             };
 
@@ -1897,7 +1897,7 @@ impl<'a> ShaderFromNir<'a> {
 
             if tex.op == nir_texop_txd {
                 assert!(lod_mode == TexLodMode::Auto);
-                assert!(offset_mode != Tld4OffsetMode::PerPx);
+                assert!(offset_mode != TexOffsetMode::PerPx);
                 assert!(!flags.has_z_cmpr());
                 b.push_op(OpTxd {
                     dsts: dsts,
@@ -1905,13 +1905,13 @@ impl<'a> ShaderFromNir<'a> {
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
-                    offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    offset_mode,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
                     channel_mask,
                 });
             } else if tex.op == nir_texop_lod {
-                assert!(offset_mode == Tld4OffsetMode::None);
+                assert!(offset_mode == TexOffsetMode::None);
                 b.push_op(OpTmml {
                     dsts: dsts,
                     tex: tex_ref,
@@ -1921,7 +1921,7 @@ impl<'a> ShaderFromNir<'a> {
                     channel_mask,
                 });
             } else if tex.op == nir_texop_txf || tex.op == nir_texop_txf_ms {
-                assert!(offset_mode != Tld4OffsetMode::PerPx);
+                assert!(offset_mode != TexOffsetMode::PerPx);
                 b.push_op(OpTld {
                     dsts: dsts,
                     fault: fault.into(),
@@ -1930,7 +1930,7 @@ impl<'a> ShaderFromNir<'a> {
                     dim: dim,
                     lod_mode: lod_mode,
                     is_ms: tex.op == nir_texop_txf_ms,
-                    offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    offset_mode,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
                     channel_mask,
@@ -1950,7 +1950,7 @@ impl<'a> ShaderFromNir<'a> {
                     channel_mask,
                 });
             } else {
-                assert!(offset_mode != Tld4OffsetMode::PerPx);
+                assert!(offset_mode != TexOffsetMode::PerPx);
                 b.push_op(OpTex {
                     dsts: dsts,
                     fault: fault.into(),
@@ -1959,7 +1959,7 @@ impl<'a> ShaderFromNir<'a> {
                     dim: dim,
                     lod_mode: lod_mode,
                     z_cmpr: flags.has_z_cmpr(),
-                    offset: offset_mode == Tld4OffsetMode::AddOffI,
+                    offset_mode,
                     mem_eviction_priority: MemEvictionPriority::Normal,
                     nodep: flags.nodep(),
                     channel_mask,

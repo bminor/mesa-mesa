@@ -419,9 +419,9 @@ pub fn test_texture() {
     ];
 
     let tld4_offset_modes = [
-        Tld4OffsetMode::None,
-        Tld4OffsetMode::AddOffI,
-        Tld4OffsetMode::PerPx,
+        TexOffsetMode::None,
+        TexOffsetMode::AddOffI,
+        TexOffsetMode::PerPx,
     ];
 
     let tex_queries = [
@@ -453,7 +453,7 @@ pub fn test_texture() {
                 dim: TexDim::_2D,
                 lod_mode,
                 z_cmpr: false,
-                offset: false,
+                offset_mode: TexOffsetMode::None,
                 mem_eviction_priority: MemEvictionPriority::First,
                 nodep: true,
                 channel_mask: ChannelMask::for_comps(3),
@@ -477,7 +477,7 @@ pub fn test_texture() {
                     dim: TexDim::_2D,
                     is_ms: false,
                     lod_mode,
-                    offset: false,
+                    offset_mode: TexOffsetMode::None,
                     mem_eviction_priority: MemEvictionPriority::First,
                     nodep: true,
                     channel_mask: ChannelMask::for_comps(3),
@@ -490,10 +490,10 @@ pub fn test_texture() {
         }
 
         for offset_mode in tld4_offset_modes {
-            let offset_mode_str = if offset_mode == Tld4OffsetMode::None {
+            let offset_mode_str = if offset_mode == TexOffsetMode::None {
                 String::new()
             } else {
-                format!(".{offset_mode}")
+                format!("{offset_mode}")
             };
 
             let instr = OpTld4 {
@@ -540,7 +540,7 @@ pub fn test_texture() {
             srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
 
             dim: TexDim::_2D,
-            offset: false,
+            offset_mode: TexOffsetMode::None,
             mem_eviction_priority: MemEvictionPriority::First,
             nodep: true,
             channel_mask: ChannelMask::for_comps(3),

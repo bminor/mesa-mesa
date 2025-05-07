@@ -1766,7 +1766,7 @@ impl SM20Op for OpTex {
         e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
-        e.set_bit(54, self.offset);
+        e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(56, self.z_cmpr);
         e.set_tex_lod_mode(57..59, self.lod_mode);
     }
@@ -1804,7 +1804,7 @@ impl SM20Op for OpTld {
         e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
-        e.set_bit(54, self.offset);
+        e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(55, self.is_ms);
         e.set_bit(56, false); // z_cmpr
         e.set_field(
@@ -1855,9 +1855,9 @@ impl SM20Op for OpTld4 {
         e.set_field(
             54..56,
             match self.offset_mode {
-                Tld4OffsetMode::None => 0_u8,
-                Tld4OffsetMode::AddOffI => 1_u8,
-                Tld4OffsetMode::PerPx => 2_u8,
+                TexOffsetMode::None => 0_u8,
+                TexOffsetMode::AddOffI => 1_u8,
+                TexOffsetMode::PerPx => 2_u8,
             },
         );
         e.set_bit(56, self.z_cmpr);
@@ -1929,7 +1929,7 @@ impl SM20Op for OpTxd {
         e.set_reg_src(26..32, &self.srcs[1]);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
-        e.set_bit(54, self.offset);
+        e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
     }
 }
 

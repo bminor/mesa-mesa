@@ -1968,18 +1968,18 @@ impl fmt::Display for ChannelMask {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub enum Tld4OffsetMode {
+pub enum TexOffsetMode {
     None,
     AddOffI,
-    PerPx,
+    PerPx, // tld4 only
 }
 
-impl fmt::Display for Tld4OffsetMode {
+impl fmt::Display for TexOffsetMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Tld4OffsetMode::None => write!(f, "no_off"),
-            Tld4OffsetMode::AddOffI => write!(f, "aoffi"),
-            Tld4OffsetMode::PerPx => write!(f, "ptp"),
+            TexOffsetMode::None => write!(f, ""),
+            TexOffsetMode::AddOffI => write!(f, ".aoffi"),
+            TexOffsetMode::PerPx => write!(f, ".ptp"),
         }
     }
 }
@@ -4771,7 +4771,7 @@ pub struct OpTex {
     pub dim: TexDim,
     pub lod_mode: TexLodMode,
     pub z_cmpr: bool,
-    pub offset: bool,
+    pub offset_mode: TexOffsetMode,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
     pub channel_mask: ChannelMask,
@@ -4783,9 +4783,7 @@ impl DisplayOp for OpTex {
         if self.lod_mode != TexLodMode::Auto {
             write!(f, ".{}", self.lod_mode)?;
         }
-        if self.offset {
-            write!(f, ".aoffi")?;
-        }
+        write!(f, "{}", self.offset_mode)?;
         if self.z_cmpr {
             write!(f, ".dc")?;
         }
@@ -4813,7 +4811,7 @@ pub struct OpTld {
     pub dim: TexDim,
     pub is_ms: bool,
     pub lod_mode: TexLodMode,
-    pub offset: bool,
+    pub offset_mode: TexOffsetMode,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
     pub channel_mask: ChannelMask,
@@ -4825,9 +4823,7 @@ impl DisplayOp for OpTld {
         if self.lod_mode != TexLodMode::Auto {
             write!(f, ".{}", self.lod_mode)?;
         }
-        if self.offset {
-            write!(f, ".aoffi")?;
-        }
+        write!(f, "{}", self.offset_mode)?;
         if self.is_ms {
             write!(f, ".ms")?;
         }
@@ -4854,7 +4850,7 @@ pub struct OpTld4 {
 
     pub dim: TexDim,
     pub comp: u8,
-    pub offset_mode: Tld4OffsetMode,
+    pub offset_mode: TexOffsetMode,
     pub z_cmpr: bool,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
@@ -4863,10 +4859,7 @@ pub struct OpTld4 {
 
 impl DisplayOp for OpTld4 {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "tld4.g{}", self.dim)?;
-        if self.offset_mode != Tld4OffsetMode::None {
-            write!(f, ".{}", self.offset_mode)?;
-        }
+        write!(f, "tld4.g{}{}", self.dim, self.offset_mode)?;
         if self.z_cmpr {
             write!(f, ".dc")?;
         }
@@ -4919,7 +4912,7 @@ pub struct OpTxd {
     pub srcs: [Src; 2],
 
     pub dim: TexDim,
-    pub offset: bool,
+    pub offset_mode: TexOffsetMode,
     pub mem_eviction_priority: MemEvictionPriority,
     pub nodep: bool,
     pub channel_mask: ChannelMask,
@@ -4927,11 +4920,11 @@ pub struct OpTxd {
 
 impl DisplayOp for OpTxd {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "txd{}", self.dim)?;
-        if self.offset {
-            write!(f, ".aoffi")?;
-        }
-        write!(f, "{}", self.mem_eviction_priority)?;
+        write!(
+            f,
+            "txd{}{}{}",
+            self.dim, self.offset_mode, self.mem_eviction_priority
+        )?;
         if self.nodep {
             write!(f, ".nodep")?;
         }

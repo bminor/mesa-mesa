@@ -2002,7 +2002,7 @@ impl SM32Op for OpTex {
         e.set_tex_dim(38..41, self.dim);
         e.set_bit(41, false); // ToDo: NDV
         e.set_bit(42, self.z_cmpr);
-        e.set_bit(43, self.offset);
+        e.set_bit(43, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_tex_lod_mode(44..47, self.lod_mode);
     }
 }
@@ -2040,7 +2040,7 @@ impl SM32Op for OpTld {
 
         e.set_field(34..38, self.channel_mask.to_bits());
         e.set_tex_dim(38..41, self.dim);
-        e.set_bit(41, self.offset);
+        e.set_bit(41, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(42, false); // z_cmpr
         e.set_bit(43, self.is_ms);
 
@@ -2086,9 +2086,9 @@ impl SM32Op for OpTld4 {
         e.set_field(
             43..45,
             match self.offset_mode {
-                Tld4OffsetMode::None => 0_u8,
-                Tld4OffsetMode::AddOffI => 1_u8,
-                Tld4OffsetMode::PerPx => 2_u8,
+                TexOffsetMode::None => 0_u8,
+                TexOffsetMode::AddOffI => 1_u8,
+                TexOffsetMode::PerPx => 2_u8,
             },
         );
         e.set_field(45..47, self.comp);
@@ -2164,7 +2164,7 @@ impl SM32Op for OpTxd {
         e.set_field(34..38, self.channel_mask.to_bits());
         e.set_tex_dim(38..41, self.dim);
         e.set_bit(41, false); // ToDo: NDV
-        e.set_bit(54, self.offset);
+        e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
     }
 }
 

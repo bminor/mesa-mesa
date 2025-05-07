@@ -2162,7 +2162,7 @@ impl SM50Op for OpTex {
             TexRef::Bound(idx) => {
                 e.set_opcode(0x0380);
                 e.set_field(36..49, idx);
-                e.set_bit(54, self.offset);
+                e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
                 e.set_tex_lod_mode(55..57, self.lod_mode);
             }
             TexRef::CBuf { .. } => {
@@ -2170,7 +2170,7 @@ impl SM50Op for OpTex {
             }
             TexRef::Bindless => {
                 e.set_opcode(0xdeb8);
-                e.set_bit(36, self.offset);
+                e.set_bit(36, self.offset_mode == TexOffsetMode::AddOffI);
                 e.set_tex_lod_mode(37..39, self.lod_mode);
             }
         }
@@ -2216,7 +2216,7 @@ impl SM50Op for OpTld {
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
-        e.set_bit(35, self.offset);
+        e.set_bit(35, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(49, self.nodep);
         e.set_bit(50, self.is_ms);
 
@@ -2235,9 +2235,9 @@ impl SM50Op for OpTld4 {
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
         let offset_mode = match self.offset_mode {
-            Tld4OffsetMode::None => 0_u8,
-            Tld4OffsetMode::AddOffI => 1_u8,
-            Tld4OffsetMode::PerPx => 2_u8,
+            TexOffsetMode::None => 0_u8,
+            TexOffsetMode::AddOffI => 1_u8,
+            TexOffsetMode::PerPx => 2_u8,
         };
         match self.tex {
             TexRef::Bound(idx) => {
@@ -2328,7 +2328,7 @@ impl SM50Op for OpTxd {
 
         e.set_tex_dim(28..31, self.dim);
         e.set_tex_channel_mask(31..35, self.channel_mask);
-        e.set_bit(35, self.offset);
+        e.set_bit(35, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(49, self.nodep);
     }
 }

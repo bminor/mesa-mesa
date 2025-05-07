@@ -2415,7 +2415,7 @@ impl SM70Op for OpTex {
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset);
+        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(77, false); // ToDo: NDV
         e.set_bit(78, self.z_cmpr);
         e.set_eviction_priority(&self.mem_eviction_priority);
@@ -2467,7 +2467,8 @@ impl SM70Op for OpTld {
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset);
+        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
+
         // bit 77: .CL
         e.set_bit(78, self.is_ms);
         // bits 79..81: .F16
@@ -2524,9 +2525,9 @@ impl SM70Op for OpTld4 {
         e.set_field(
             76..78,
             match self.offset_mode {
-                Tld4OffsetMode::None => 0_u8,
-                Tld4OffsetMode::AddOffI => 1_u8,
-                Tld4OffsetMode::PerPx => 2_u8,
+                TexOffsetMode::None => 0_u8,
+                TexOffsetMode::AddOffI => 1_u8,
+                TexOffsetMode::PerPx => 2_u8,
             },
         );
         // bit 77: .CL
@@ -2618,7 +2619,7 @@ impl SM70Op for OpTxd {
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset);
+        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_bit(77, false); // ToDo: NDV
         e.set_eviction_priority(&self.mem_eviction_priority);
         e.set_bit(90, self.nodep);
