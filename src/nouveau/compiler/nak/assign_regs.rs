@@ -143,7 +143,7 @@ impl SSAUseMap {
 
     pub fn for_block(b: &BasicBlock) -> SSAUseMap {
         let mut am = SSAUseMap {
-            ssa_map: HashMap::new(),
+            ssa_map: Default::default(),
         };
         am.add_block(b);
         am
@@ -207,7 +207,7 @@ impl PhiWebs {
 
         PhiWebs {
             uf,
-            assignments: HashMap::new(),
+            assignments: Default::default(),
         }
     }
 
@@ -274,7 +274,7 @@ impl RegAllocator {
             used: BitSet::new(),
             pinned: BitSet::new(),
             reg_ssa: Vec::new(),
-            ssa_reg: HashMap::new(),
+            ssa_reg: Default::default(),
         }
     }
 
@@ -496,7 +496,7 @@ impl<'a> VecRegAllocator<'a> {
             ra,
             pcopy: OpParCopy::new(),
             pinned,
-            evicted: HashMap::new(),
+            evicted: Default::default(),
         }
     }
 
@@ -933,7 +933,7 @@ impl AssignRegsBlock {
             }),
             pcopy_tmp_gprs: pcopy_tmp_gprs,
             live_in: Vec::new(),
-            phi_out: HashMap::new(),
+            phi_out: Default::default(),
         }
     }
 

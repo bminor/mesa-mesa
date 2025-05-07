@@ -35,7 +35,7 @@ impl<X: Copy + Hash + Eq> UnionFind<X> {
     /// At initialization, each possible value is in its own set
     pub fn new() -> Self {
         UnionFind {
-            idx_map: HashMap::new(),
+            idx_map: Default::default(),
             nodes: Vec::new(),
         }
     }

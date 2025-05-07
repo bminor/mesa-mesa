@@ -15,8 +15,8 @@ struct PhiMap {
 impl PhiMap {
     pub fn new() -> PhiMap {
         PhiMap {
-            ssa_phi: HashMap::new(),
-            phi_ssa: HashMap::new(),
+            ssa_phi: Default::default(),
+            phi_ssa: Default::default(),
         }
     }
 
@@ -57,7 +57,7 @@ struct BarPropPass {
 impl BarPropPass {
     pub fn new() -> BarPropPass {
         BarPropPass {
-            ssa_map: HashMap::new(),
+            ssa_map: Default::default(),
             phi_is_bar: BitSet::new(),
             phi_is_not_bar: BitSet::new(),
         }

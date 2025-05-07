@@ -439,7 +439,7 @@ fn legalize_instr(
 
     sm.legalize_op(b, &mut instr.op);
 
-    let mut vec_src_map: HashMap<SSARef, SSARef> = HashMap::new();
+    let mut vec_src_map: HashMap<SSARef, SSARef> = Default::default();
     let mut vec_comps = HashSet::new();
     for src in instr.srcs_mut() {
         if let SrcRef::SSA(vec) = &src.src_ref {

@@ -18,7 +18,7 @@ pub struct ConstTracker {
 impl ConstTracker {
     pub fn new() -> Self {
         ConstTracker {
-            map: HashMap::new(),
+            map: Default::default(),
         }
     }
 

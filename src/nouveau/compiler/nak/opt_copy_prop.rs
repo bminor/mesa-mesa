@@ -68,7 +68,7 @@ impl<'a> CopyPropPass<'a> {
     pub fn new(sm: &'a dyn ShaderModel) -> Self {
         CopyPropPass {
             sm: sm,
-            ssa_map: HashMap::new(),
+            ssa_map: Default::default(),
         }
     }
 

@@ -87,7 +87,7 @@ fn get_ssa_or_phi(
                 idx: phi_idx,
                 orig: ssa,
                 dst: phi_ssa,
-                srcs: HashMap::new(),
+                srcs: Default::default(),
             };
             for &p_idx in &b.pred {
                 if p_idx >= b_idx {
@@ -192,7 +192,7 @@ impl Function {
             blocks.push(DefTrackerBlock {
                 pred: cfg.pred_indices(b_idx).to_vec(),
                 succ: cfg.succ_indices(b_idx).to_vec(),
-                defs: RefCell::new(HashMap::new()),
+                defs: RefCell::new(Default::default()),
                 phis: RefCell::new(Vec::new()),
             });
 

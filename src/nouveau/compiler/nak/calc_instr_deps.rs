@@ -74,8 +74,8 @@ impl DepGraph {
     pub fn new() -> Self {
         Self {
             deps: Vec::new(),
-            instr_deps: HashMap::new(),
-            instr_waits: HashMap::new(),
+            instr_deps: Default::default(),
+            instr_waits: Default::default(),
             active: HashSet::new(),
         }
     }

@@ -88,7 +88,7 @@ struct PrmtPass {
 impl PrmtPass {
     fn new() -> PrmtPass {
         PrmtPass {
-            ssa_prmt: HashMap::new(),
+            ssa_prmt: Default::default(),
         }
     }
 

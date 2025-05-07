@@ -82,8 +82,8 @@ impl<'a> CoalesceGraph<'a> {
             live: live,
             nodes: Vec::new(),
             sets: Vec::new(),
-            ssa_node: HashMap::new(),
-            phi_node_file: HashMap::new(),
+            ssa_node: Default::default(),
+            phi_node_file: Default::default(),
         }
     }
 

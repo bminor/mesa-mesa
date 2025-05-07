@@ -48,7 +48,7 @@ fn propagate_r2ur(
 impl Shader<'_> {
     pub fn opt_uniform_instrs(&mut self) {
         let sm = self.sm;
-        let mut r2ur = HashMap::new();
+        let mut r2ur = Default::default();
         let mut propagated_r2ur = false;
         self.map_instrs(|mut instr, alloc| {
             if matches!(

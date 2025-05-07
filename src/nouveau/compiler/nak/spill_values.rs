@@ -20,7 +20,7 @@ struct PhiDstMap {
 impl PhiDstMap {
     fn new() -> PhiDstMap {
         PhiDstMap {
-            ssa_phi: HashMap::new(),
+            ssa_phi: Default::default(),
         }
     }
 
@@ -52,7 +52,7 @@ struct PhiSrcMap {
 impl PhiSrcMap {
     fn new() -> PhiSrcMap {
         PhiSrcMap {
-            phi_src: HashMap::new(),
+            phi_src: Default::default(),
         }
     }
 
@@ -292,7 +292,7 @@ impl<'a, S: Spill> SpillCache<'a, S> {
             alloc: alloc,
             spill: spill,
             const_tracker: ConstTracker::new(),
-            val_spill: HashMap::new(),
+            val_spill: Default::default(),
         }
     }
 
@@ -592,7 +592,7 @@ fn spill_values<S: Spill>(
                 num_preds: usize,
                 next_use: usize,
             }
-            let mut live: HashMap<SSAValue, SSAPredInfo> = HashMap::new();
+            let mut live: HashMap<SSAValue, SSAPredInfo> = Default::default();
 
             for p_idx in &preds {
                 let phi_src_map = &phi_src_maps[*p_idx];

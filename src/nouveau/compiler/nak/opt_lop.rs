@@ -49,7 +49,7 @@ impl LopPass {
         }
         LopPass {
             use_counts: use_counts,
-            ssa_lop: HashMap::new(),
+            ssa_lop: Default::default(),
         }
     }
 

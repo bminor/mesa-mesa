@@ -240,7 +240,7 @@ impl SimpleBlockLiveness {
         Self {
             defs: BitSet::new(),
             uses: BitSet::new(),
-            last_use: HashMap::new(),
+            last_use: Default::default(),
             live_in: BitSet::new(),
             live_out: BitSet::new(),
         }
@@ -284,7 +284,7 @@ pub struct SimpleLiveness {
 impl SimpleLiveness {
     pub fn for_function(func: &Function) -> SimpleLiveness {
         let mut l = SimpleLiveness {
-            ssa_block_ip: HashMap::new(),
+            ssa_block_ip: Default::default(),
             blocks: Vec::new(),
         };
         let mut live_in = Vec::new();
@@ -406,7 +406,7 @@ impl NextUseBlockLiveness {
     fn new(num_instrs: usize) -> Self {
         Self {
             num_instrs: num_instrs,
-            ssa_map: HashMap::new(),
+            ssa_map: Default::default(),
         }
     }
 

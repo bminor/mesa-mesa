@@ -199,7 +199,7 @@ impl<'a> PhiAllocMap<'a> {
     fn new(alloc: &'a mut PhiAllocator) -> PhiAllocMap<'a> {
         PhiAllocMap {
             alloc: alloc,
-            map: HashMap::new(),
+            map: Default::default(),
         }
     }
 
@@ -345,13 +345,13 @@ impl<'a> ShaderFromNir<'a> {
             float_ctl: ShaderFloatControls::from_nir(nir),
             cfg: CFGBuilder::new(),
             label_alloc: LabelAllocator::new(),
-            block_label: HashMap::new(),
-            bar_label: HashMap::new(),
+            block_label: Default::default(),
+            bar_label: Default::default(),
             sync_blocks: HashSet::new(),
             crs: Vec::new(),
             fs_out_regs: [None; 34],
             end_block_id: 0,
-            ssa_map: HashMap::new(),
+            ssa_map: Default::default(),
             saturated: HashSet::new(),
             nir_instr_printer: NirInstrPrinter::new().unwrap(),
         }

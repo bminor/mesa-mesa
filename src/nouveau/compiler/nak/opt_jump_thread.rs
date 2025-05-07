@@ -31,7 +31,7 @@ fn jump_thread(func: &mut Function) -> bool {
     let mut progress = false;
 
     // A branch to label can be replaced with Op
-    let mut replacements: HashMap<Label, Op> = HashMap::new();
+    let mut replacements: HashMap<Label, Op> = Default::default();
 
     // Invariant 1: At the end of each loop iteration,
     //              every trivial block with an index in [i, blocks.len())
