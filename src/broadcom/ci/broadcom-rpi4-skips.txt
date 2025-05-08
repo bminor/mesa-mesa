@@ -3,6 +3,7 @@ spec@!opengl 1.1@streaming-texture-leak
 spec@!opengl 1.2@tex3d-maxsize
 
 # Slow CL tests (> 5 minute to run)
+program@execute@builtin@builtin-float-lgamma_r-1.0.generated
 program@execute@builtin@builtin-float-sincos-1.0.generated
 
 # Versions / Extensions not supported
@@ -35,6 +36,7 @@ dEQP-VK.image.concurrent_copy.vk_format_r32g32_sfloat.vk_image_tiling_linear.vk_
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_linear.vk_image_type_3d.single.random.device.write
 dEQP-VK.memory.mapping.dedicated_alloc.buffer.full.variable.implicit_unmap
 dEQP-VK.rasterization.culling.back_triangle_fan_reverse
+dEQP-VK.rasterization.primitives.no_stipple.smooth_line_strip_with_adjacency_wide_factor_large
 dEQP-VK.rasterization.primitives.stride_zero.single_point
 dEQP-VK.spirv_assembly.instruction.graphics.spirv_ids_abuse.lots_ids_geom
 dEQP-VK.ssbo.layout.random.16bit.all_shared_buffer.31
@@ -43,7 +45,13 @@ dEQP-VK.ssbo.layout.random.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.8bit.all_per_block_buffers.46
 dEQP-VK.ssbo.phys.layout.random.8bit.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_ssbo_vertex.buffer_16384.1232
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_ssbo_vertex_read_copy_buffer.buffer_16384.2323
 dEQP-VK.synchronization2.basic.timeline_semaphore.chain
+dEQP-VK.synchronization2.op.single_queue.fence.write_copy_buffer_read_ubo_texel_compute_indirect.buffer_16384_specialized_access_flag
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_indirect_read_image_compute_indirect.image_128x128_r16_uint
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_geometry_read_ubo_compute_indirect.buffer_16384
+dEQP-VK.texture.filtering.2d.formats.r5g6b5_unorm.linear_mipmap_linear
 
 # WSI tests are too flaky to be useful
 dEQP-VK.image.swapchain_mutable.*

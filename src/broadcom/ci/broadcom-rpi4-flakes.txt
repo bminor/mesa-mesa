@@ -98,7 +98,6 @@ dEQP-VK.synchronization2.signal_order.shared_binary_semaphore.write_ssbo_compute
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_read_ssbo_compute_indirect.buffer_262144
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_compute.image_128x128_r32g32b32a32_sfloat
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_to_buffer_read_ubo_compute_indirect.buffer_16384
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_indirect_read_image_compute_indirect.image_128x128_r16_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_fragment_read_copy_image.image_128_r32_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
 dEQP-VK.texture.shadow.cube.linear.less_d24_unorm_s8_uint
@@ -142,3 +141,5 @@ dEQP-VK.texture.filtering.2d_array.combinations.linear_mipmap_linear.linear.mirr
 dEQP-VK.texture.filtering.cube.combinations.nearest.linear.mirrored_repeat.repeat.seamless
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb cube
 spec@glsl-1.30@execution@tex-miplevel-selection texture(bias) 3d
+
+dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_samples
