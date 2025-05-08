@@ -10,6 +10,7 @@
 #include <cerrno>
 #include <cstring>
 
+#include "GfxStreamVulkanMapper.h"
 #include "VirtGpuKumquat.h"
 #include "util/log.h"
 
@@ -37,19 +38,57 @@ uint64_t VirtGpuKumquatResource::getSize() const { return mSize; }
 
 VirtGpuResourceMappingPtr VirtGpuKumquatResource::createMapping() {
     int ret;
+    struct drm_kumquat_resource_info info = {};
+
     struct drm_kumquat_map map {
         .bo_handle = mBlobHandle, .ptr = NULL, .size = mSize,
     };
 
-    ret = virtgpu_kumquat_resource_map(mVirtGpu, &map);
-    if (ret < 0) {
-        mesa_loge("Mapping failed with %s for resource %u blob %u", strerror(errno),
-                  mResourceHandle, mBlobHandle);
-        return nullptr;
-    }
+    info.bo_handle = mBlobHandle;
+    ret = virtgpu_kumquat_resource_info(mVirtGpu, &info);
 
-    return std::make_shared<VirtGpuKumquatResourceMapping>(shared_from_this(), mVirtGpu,
-                                                           (uint8_t*)map.ptr, mSize);
+    if (info.vulkan_info.device_id.device_uuid[0]) {
+        struct drm_kumquat_resource_export resource_export = {};
+        struct DeviceId deviceId = {};
+
+        resource_export.bo_handle = mBlobHandle;
+
+        ret = virtgpu_kumquat_resource_export(mVirtGpu, &resource_export);
+        if (ret) {
+            mesa_loge("External memory export from kumquat failed: %s", strerror(errno));
+            return nullptr;
+        }
+
+        memcpy(&deviceId, &info.vulkan_info.device_id, sizeof(struct DeviceId));
+        std::optional<DeviceId> deviceIdOpt{deviceId};
+        auto mapper = GfxStreamVulkanMapper::getInstance(deviceIdOpt);
+        struct VulkanMapperData mapData = {0};
+
+        mapData.handle = resource_export.os_handle;
+        mapData.handleType = resource_export.handle_type;
+        mapData.memoryIdx = info.vulkan_info.memory_idx;
+        mapData.size = mSize;
+
+        ret = mapper->map(&mapData);
+        if (ret < 0) {
+            mesa_loge("Mapping failed with %s for resource %u blob %u", strerror(errno),
+                      mResourceHandle, mBlobHandle);
+            return nullptr;
+        }
+
+        return std::make_shared<VirtGpuKumquatResourceMapping>(shared_from_this(), mVirtGpu,
+                                                               mapData, mSize);
+    } else {
+        ret = virtgpu_kumquat_resource_map(mVirtGpu, &map);
+        if (ret < 0) {
+            mesa_loge("Mapping failed with %s for resource %u blob %u", strerror(errno),
+                      mResourceHandle, mBlobHandle);
+            return nullptr;
+        }
+
+        return std::make_shared<VirtGpuKumquatResourceMapping>(shared_from_this(), mVirtGpu,
+                                                               (uint8_t*)map.ptr, mSize);
+    }
 }
 
 int VirtGpuKumquatResource::exportBlob(struct VirtGpuExternalHandle& handle) {

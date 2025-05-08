@@ -12,6 +12,7 @@
 #include <fstream>
 #include <string>
 
+#include "GfxStreamVulkanMapper.h"
 #include "VirtGpuKumquat.h"
 #include "util/log.h"
 
