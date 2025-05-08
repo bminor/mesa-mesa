@@ -60,6 +60,7 @@ pub struct TestShaderBuilder<'a> {
     start_block: BasicBlock,
     label: Label,
     data_addr: SSARef,
+    shared_size: u16,
 }
 
 impl<'a> TestShaderBuilder<'a> {
@@ -140,7 +141,12 @@ impl<'a> TestShaderBuilder<'a> {
             start_block,
             label: label_alloc.alloc(),
             data_addr,
+            shared_size: 0,
         }
+    }
+
+    pub fn set_shared_size(&mut self, shared_size: u16) {
+        self.shared_size = shared_size;
     }
 
     pub fn ld_test_data(&mut self, offset: u16, mem_type: MemType) -> SSARef {
@@ -204,7 +210,7 @@ impl<'a> TestShaderBuilder<'a> {
 
         let cs_info = ComputeShaderInfo {
             local_size: [32, 1, 1],
-            smem_size: 0,
+            smem_size: self.shared_size,
         };
         let info = ShaderInfo {
             max_warps_per_sm: 0,

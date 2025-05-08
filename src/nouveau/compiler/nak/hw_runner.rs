@@ -496,7 +496,7 @@ impl<'a> Runner {
             } else {
                 shader_addr
             },
-            smem_size: 0,
+            smem_size: unsafe { shader.info.__bindgen_anon_1.cs }.smem_size,
             smem_max: 48 * 1024,
             global_size: [invocations.div_ceil(local_size.into()), 1, 1],
             num_cbufs: 1,
