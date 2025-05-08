@@ -112,17 +112,17 @@
  * to work.
  */
 #define _MESA_TRACE_SCOPE(format, ...)                                       \
-   int _MESA_TRACE_SCOPE_VAR(__LINE__)                                       \
+   void *_MESA_TRACE_SCOPE_VAR(__LINE__)                                     \
       __attribute__((cleanup(_mesa_trace_scope_end), unused)) =              \
          _mesa_trace_scope_begin(format, ##__VA_ARGS__)
 
 #define _MESA_TRACE_SCOPE_FLOW(name, id)                                     \
-   int _MESA_TRACE_SCOPE_VAR(__LINE__)                                       \
+   void *_MESA_TRACE_SCOPE_VAR(__LINE__)                                     \
       __attribute__((cleanup(_mesa_trace_scope_end), unused)) =              \
          _mesa_trace_scope_flow_begin(name, id)
 
 __attribute__((format(printf, 1, 2)))
-static inline int
+static inline void *
 _mesa_trace_scope_begin(const char *format, ...)
 {
    char name[_MESA_TRACE_SCOPE_MAX_NAME_LENGTH];
@@ -136,21 +136,21 @@ _mesa_trace_scope_begin(const char *format, ...)
 
    _MESA_TRACE_BEGIN(name);
    _MESA_GPUVIS_TRACE_BEGIN(name);
-   return 0;
+   return NULL;
 }
 
-static inline int
+static inline void *
 _mesa_trace_scope_flow_begin(const char *name, uint64_t *id)
 {
    if (*id == 0)
       *id = util_perfetto_next_id();
    _MESA_TRACE_FLOW_BEGIN(name, *id);
    _MESA_GPUVIS_TRACE_BEGIN(name);
-   return 0;
+   return NULL;
 }
 
 static inline void
-_mesa_trace_scope_end(UNUSED int *scope)
+_mesa_trace_scope_end(UNUSED void **scope)
 {
    _MESA_GPUVIS_TRACE_END();
    _MESA_TRACE_END();
