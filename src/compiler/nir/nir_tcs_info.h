@@ -85,8 +85,8 @@ typedef struct nir_tcs_info {
     */
    bool always_executes_barrier : 1;
 
-   /* Whether outer tess levels <= 0 are written anywhere in the shader. */
-   bool discards_patches : 1;
+   /* Whether outer tess levels <= 0 can be written by the shader. */
+   bool can_discard_patches : 1;
 } nir_tcs_info;
 
 void

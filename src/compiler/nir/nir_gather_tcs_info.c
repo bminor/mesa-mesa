@@ -7,6 +7,7 @@
 #include <math.h>
 #include "nir.h"
 #include "nir_tcs_info.h"
+#include "nir_search_helpers.h"
 
 static unsigned
 get_tess_level_component(nir_intrinsic_instr *intr)
@@ -408,7 +409,9 @@ nir_gather_tcs_info(const nir_shader *nir, nir_tcs_info *info,
    unsigned tess_level_writes_le_zero = 0;
    unsigned tess_level_writes_le_one = 0;
    unsigned tess_level_writes_le_two = 0;
-   unsigned tess_level_writes_other = 0;
+   unsigned tess_level_writes_gt_two = 0;
+
+   struct hash_table *range_ht = _mesa_pointer_hash_table_create(NULL);
 
    /* Gather barriers and which values are written to tess level outputs. */
    nir_foreach_function_impl(impl, nir) {
@@ -451,15 +454,53 @@ nir_gather_tcs_info(const nir_shader *nir, nir_tcs_info *info,
                   else if (f <= 2)
                      tess_level_writes_le_two |= BITFIELD_BIT(shift);
                   else
-                     tess_level_writes_other |= BITFIELD_BIT(shift);
-               } else {
-                  /* TODO: This could use range analysis. */
-                  tess_level_writes_other |= BITFIELD_BIT(shift);
+                     tess_level_writes_gt_two |= BITFIELD_BIT(shift);
+                  continue;
                }
+
+               /* nir_analyze_range only accepts an ALU src, so we have to
+                * create a dummy ALU instruction. It's not inserted into
+                * the shader.
+                */
+               nir_alu_instr *dummy_alu =
+                  nir_alu_instr_create((nir_shader*)nir, nir_op_mov);
+               dummy_alu->def.num_components = 1;
+               dummy_alu->def.bit_size = scalar.def->bit_size;
+               dummy_alu->src[0].src.ssa = scalar.def;
+               dummy_alu->src[0].swizzle[0] = scalar.comp;
+
+               const struct ssa_result_range r =
+                  nir_analyze_range(range_ht, dummy_alu, 0);
+
+               switch (r.range) {
+               case unknown:
+               case ge_zero:
+               case ne_zero:
+               default:
+                  tess_level_writes_le_zero |= BITFIELD_BIT(shift);
+                  tess_level_writes_le_one |= BITFIELD_BIT(shift);
+                  tess_level_writes_le_two |= BITFIELD_BIT(shift);
+                  tess_level_writes_gt_two |= BITFIELD_BIT(shift);
+                  break;
+               case lt_zero:
+               case le_zero:
+               case eq_zero:
+                  tess_level_writes_le_zero |= BITFIELD_BIT(shift);
+                  break;
+               case gt_zero:
+                  tess_level_writes_le_one |= BITFIELD_BIT(shift);
+                  tess_level_writes_le_two |= BITFIELD_BIT(shift);
+                  tess_level_writes_gt_two |= BITFIELD_BIT(shift);
+                  break;
+               }
+
+               nir_instr_free(&dummy_alu->instr);
             }
          }
       }
    }
+
+   ralloc_free(range_ht);
 
    /* Determine which outer tess level components can discard patches.
     * If the primitive type is unspecified, we have to assume the worst case.
@@ -478,23 +519,23 @@ nir_gather_tcs_info(const nir_shader *nir, nir_tcs_info *info,
     */
    info->all_tess_levels_are_effectively_zero =
       tess_level_writes_le_zero & ~tess_level_writes_le_one &
-      ~tess_level_writes_le_two & ~tess_level_writes_other &
+      ~tess_level_writes_le_two & ~tess_level_writes_gt_two &
       min_valid_outer_comp_mask;
 
    const unsigned tess_level_writes_any =
       tess_level_writes_le_zero | tess_level_writes_le_one |
-      tess_level_writes_le_two | tess_level_writes_other;
+      tess_level_writes_le_two | tess_level_writes_gt_two;
 
    const bool outer_is_gt_zero_le_one =
       (tess_level_writes_le_one & ~tess_level_writes_le_zero &
-       ~tess_level_writes_le_two & ~tess_level_writes_other &
+       ~tess_level_writes_le_two & ~tess_level_writes_gt_two &
        max_valid_outer_comp_mask) ==
       (tess_level_writes_any & max_valid_outer_comp_mask);
 
    /* Whether the inner tess levels are in the [-inf, 1] range. */
    const bool inner_is_le_one =
       ((tess_level_writes_le_zero | tess_level_writes_le_one) &
-       ~tess_level_writes_le_two & ~tess_level_writes_other &
+       ~tess_level_writes_le_two & ~tess_level_writes_gt_two &
        max_valid_inner_comp_mask) ==
       (tess_level_writes_any & max_valid_inner_comp_mask);
 
@@ -524,23 +565,22 @@ nir_gather_tcs_info(const nir_shader *nir, nir_tcs_info *info,
       bool isolines_are_eff_one =
          /* The (0, 1] range of outer[0]. */
          (tess_level_writes_le_one & ~tess_level_writes_le_zero &
-          ~tess_level_writes_le_two & ~tess_level_writes_other & 0x1) ==
+          ~tess_level_writes_le_two & ~tess_level_writes_gt_two & 0x1) ==
             (tess_level_writes_any & 0x1) &&
          /* The (0, 2] range of outer[1]. */
          ((tess_level_writes_le_one | tess_level_writes_le_two) &
-          ~tess_level_writes_le_zero & ~tess_level_writes_other & 0x2) ==
+          ~tess_level_writes_le_zero & ~tess_level_writes_gt_two & 0x2) ==
             (tess_level_writes_any & 0x2);
 
       bool triquads_are_eff_one =
          /* The (0, 2] outer range. */
          ((tess_level_writes_le_one | tess_level_writes_le_two) &
-          ~tess_level_writes_le_zero & ~tess_level_writes_other &
+          ~tess_level_writes_le_zero & ~tess_level_writes_gt_two &
           max_valid_outer_comp_mask) ==
             (tess_level_writes_any & max_valid_outer_comp_mask) &&
          /* The [-inf, 2] inner range. */
          ((tess_level_writes_le_zero | tess_level_writes_le_one |
-           tess_level_writes_le_two) &
-          ~tess_level_writes_other &
+           tess_level_writes_le_two) & ~tess_level_writes_gt_two &
           max_valid_inner_comp_mask) ==
             (tess_level_writes_any & max_valid_inner_comp_mask);
 
@@ -559,6 +599,6 @@ nir_gather_tcs_info(const nir_shader *nir, nir_tcs_info *info,
    assert(!info->all_tess_levels_are_effectively_zero ||
           !info->all_tess_levels_are_effectively_one);
 
-   info->discards_patches =
+   info->can_discard_patches =
       (tess_level_writes_le_zero & min_valid_outer_comp_mask) != 0;
 }
