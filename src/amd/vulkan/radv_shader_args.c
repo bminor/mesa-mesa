@@ -402,7 +402,7 @@ declare_unmerged_vs_tcs_args(const enum amd_gfx_level gfx_level, const struct ra
    declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
    add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
    add_ud_arg(args, 1, AC_ARG_INT, &args->epilog_pc, AC_UD_EPILOG_PC);
    add_ud_arg(args, 1, AC_ARG_INT, &args->next_stage_pc, AC_UD_NEXT_STAGE_PC);
 
@@ -427,7 +427,7 @@ declare_unmerged_vs_tcs_args(const enum amd_gfx_level gfx_level, const struct ra
    ac_add_preserved(&args->ac, &args->descriptor_sets[0]);
    ac_add_preserved(&args->ac, &args->ac.push_constants);
    ac_add_preserved(&args->ac, &args->ac.view_index);
-   ac_add_preserved(&args->ac, &args->tcs_offchip_layout);
+   ac_add_preserved(&args->ac, &args->ac.tcs_offchip_layout);
    ac_add_preserved(&args->ac, &args->epilog_pc);
 
    /* Preserved VGPRs */
@@ -449,7 +449,7 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
    declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
    add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
    if (info->is_ngg) {
       add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_state, AC_UD_NGG_STATE);
@@ -495,7 +495,7 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
    if (gfx_level >= GFX12)
       ac_add_preserved(&args->ac, &args->streamout_state);
    ac_add_preserved(&args->ac, &args->ac.view_index);
-   ac_add_preserved(&args->ac, &args->tcs_offchip_layout);
+   ac_add_preserved(&args->ac, &args->ac.tcs_offchip_layout);
    if (info->is_ngg) {
       ac_add_preserved(&args->ac, &args->ngg_state);
       if (gfx_level >= GFX11)
@@ -686,7 +686,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
             }
 
             if (radv_tcs_needs_state_sgpr(info, gfx_state)) {
-               add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
             }
 
             ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_patch_id);
@@ -702,7 +702,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          }
 
          if (radv_tcs_needs_state_sgpr(info, gfx_state)) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+            add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
          }
 
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
@@ -724,7 +724,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
 
       if (radv_tes_needs_state_sgpr(info))
-         add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
       if (info->tes.as_es) {
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
@@ -776,7 +776,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
             }
 
             if (previous_stage == MESA_SHADER_TESS_EVAL && radv_tes_needs_state_sgpr(info))
-               add_ud_arg(args, 1, AC_ARG_INT, &args->tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
             /* Legacy GS force vrs is handled by GS copy shader. */
             if (info->force_vrs_per_vertex && info->is_ngg) {

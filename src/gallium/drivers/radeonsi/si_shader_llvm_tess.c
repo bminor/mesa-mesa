@@ -62,7 +62,7 @@ void si_llvm_ls_build_end(struct si_shader_context *ctx)
 
    ret = si_insert_input_ret(ctx, ret, ctx->args->vs_state_bits, 8 + SI_SGPR_VS_STATE_BITS);
 
-   ret = si_insert_input_ret(ctx, ret, ctx->args->tcs_offchip_layout, 8 + GFX9_SGPR_TCS_OFFCHIP_LAYOUT);
+   ret = si_insert_input_ret(ctx, ret, ctx->args->ac.tcs_offchip_layout, 8 + GFX9_SGPR_TCS_OFFCHIP_LAYOUT);
    ret = si_insert_input_ret(ctx, ret, ctx->args->tes_offchip_addr, 8 + GFX9_SGPR_TCS_OFFCHIP_ADDR);
 
    unsigned vgpr = 8 + GFX9_TCS_NUM_USER_SGPR;
