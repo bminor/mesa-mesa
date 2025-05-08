@@ -54,6 +54,7 @@ static const nir_shader_compiler_options nir_options = {
    .lower_uadd_carry = true,
    .lower_uadd_sat = true,
    .lower_usub_borrow = true,
+   .lower_mul_2x32_64 = true,
    .compact_arrays = true,
    .scalarize_ddx = true,
 
