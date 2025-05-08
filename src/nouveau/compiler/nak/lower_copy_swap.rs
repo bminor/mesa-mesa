@@ -38,11 +38,21 @@ impl LowerCopySwap {
                 }
                 SrcRef::CBuf(_) => match dst_reg.file() {
                     RegFile::GPR => {
-                        b.push_op(OpMov {
-                            dst: copy.dst,
-                            src: copy.src,
-                            quad_lanes: 0xf,
-                        });
+                        if b.sm() >= 100 {
+                            b.push_op(OpLdc {
+                                dst: copy.dst,
+                                cb: copy.src,
+                                offset: 0.into(),
+                                mode: LdcMode::Indexed,
+                                mem_type: MemType::B32,
+                            });
+                        } else {
+                            b.push_op(OpMov {
+                                dst: copy.dst,
+                                src: copy.src,
+                                quad_lanes: 0xf,
+                            });
+                        }
                     }
                     RegFile::UGPR => {
                         b.push_op(OpLdc {
