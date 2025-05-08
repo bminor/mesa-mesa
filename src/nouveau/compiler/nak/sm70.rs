@@ -76,10 +76,12 @@ impl ShaderModel for ShaderModel70 {
         match file {
             RegFile::GPR => 255 - self.hw_reserved_gprs(),
             RegFile::UGPR => {
-                if self.has_uniform_alu() {
-                    63
-                } else {
+                if !self.has_uniform_alu() {
                     0
+                } else if self.sm >= 100 {
+                    80
+                } else {
+                    63
                 }
             }
             RegFile::Pred => 7,

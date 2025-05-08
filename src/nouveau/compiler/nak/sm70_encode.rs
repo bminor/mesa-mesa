@@ -47,10 +47,21 @@ impl SetFieldU64 for SM70Encoder<'_> {
 }
 
 impl SM70Encoder<'_> {
+    /// Maximum encodable UGPR
+    ///
+    /// This may be different from the actual maximum supported by hardware.
+    fn ugpr_max(&self) -> u32 {
+        if self.sm >= 100 {
+            255
+        } else {
+            63
+        }
+    }
+
     fn zero_reg(&self, file: RegFile) -> RegRef {
         let nr = match file {
             RegFile::GPR => 255,
-            RegFile::UGPR => 63,
+            RegFile::UGPR => self.ugpr_max(),
             _ => panic!("Not a GPR"),
         };
         RegRef::new(file, nr, 1)
@@ -74,7 +85,7 @@ impl SM70Encoder<'_> {
         assert!(self.sm >= 73);
         assert!(range.len() == 8);
         assert!(reg.file() == RegFile::UGPR);
-        assert!(reg.base_idx() <= 63);
+        assert!(reg.base_idx() <= self.ugpr_max());
         self.set_field(range, reg.base_idx());
     }
 
