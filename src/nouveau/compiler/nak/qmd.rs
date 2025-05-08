@@ -113,22 +113,28 @@ macro_rules! qmd_impl_set_crs_size {
     };
 }
 
-const CBUF_NONE_SHIFT: u8 = 0;
-const CBUF_SHIFTED4_SHIFT: u8 = 4;
-const CBUF_SHIFTED6_SHIFT: u8 = 6;
+const NONE_SHIFT: u8 = 0;
+const SHIFTED4_SHIFT: u8 = 4;
+const SHIFTED6_SHIFT: u8 = 6;
 
-macro_rules! cbuf_suffix_shift {
+macro_rules! suffix_shift {
     ($suffix:ident) => {
-        paste! { [<CBUF_ $suffix _SHIFT>] }
+        paste! { [<$suffix _SHIFT>] }
+    };
+}
+
+macro_rules! suffix_field2 {
+    ($c:ident, $s:ident, $field:ident, $subfield:ident, NONE) => {
+        paste! { $c::[<$s _ $field _ $subfield>] }
+    };
+    ($c:ident, $s:ident, $field:ident, $subfield:ident, $suffix:ident) => {
+        paste! { $c::[<$s _ $field _ $subfield _ $suffix>] }
     };
 }
 
 macro_rules! cbuf_suffix_field {
-    ($c:ident, $s:ident, $field:ident, NONE) => {
-        paste! { $c::[<$s _CONSTANT_BUFFER_ $field>] }
-    };
-    ($c:ident, $s:ident, $field:ident, $suffix:ident) => {
-        paste! { $c::[<$s _CONSTANT_BUFFER_ $field _ $suffix>] }
+    ($c:ident, $s:ident, $subfield:ident, $suffix:ident) => {
+        suffix_field2!($c, $s, CONSTANT_BUFFER, $subfield, $suffix)
     };
 }
 
@@ -138,7 +144,7 @@ macro_rules! qmd_impl_set_cbuf {
             let mut bv = QMDBitView::new(&mut self.qmd);
             let idx = idx.into();
 
-            let addr_shift = cbuf_suffix_shift!($addr_suffix);
+            let addr_shift = suffix_shift!($addr_suffix);
             let addr_shifted = addr >> addr_shift;
             assert!((addr_shifted << addr_shift) == addr);
             bv.set_field(
@@ -150,7 +156,7 @@ macro_rules! qmd_impl_set_cbuf {
                 (addr_shifted >> 32) as u32,
             );
 
-            let size_shift = cbuf_suffix_shift!($size_suffix);
+            let size_shift = suffix_shift!($size_suffix);
             assert!(((size >> size_shift) << size_shift) == size);
             bv.set_field(
                 cbuf_suffix_field!($c, $s, SIZE, $size_suffix)(idx),
@@ -168,7 +174,7 @@ macro_rules! qmd_impl_set_cbuf {
                 idx.into(),
             );
             nak_qmd_cbuf_desc_layout {
-                addr_shift: cbuf_suffix_shift!($addr_suffix).into(),
+                addr_shift: suffix_shift!($addr_suffix).into(),
                 addr_lo_start: lo.start as u16,
                 addr_lo_end: lo.end as u16,
                 addr_hi_start: hi.start as u16,
@@ -187,15 +193,29 @@ macro_rules! qmd_impl_set_prog_addr_32 {
     };
 }
 
+macro_rules! prog_addr_suffix_field {
+    ($c:ident, $s:ident, $subfield:ident, $suffix:ident) => {
+        suffix_field2!($c, $s, PROGRAM_ADDRESS, $subfield, $suffix)
+    };
+}
+
 macro_rules! qmd_impl_set_prog_addr_64 {
-    ($c:ident, $s:ident) => {
+    ($c:ident, $s:ident, $addr_suffix:ident) => {
         fn set_prog_addr(&mut self, addr: u64) {
             let mut bv = QMDBitView::new(&mut self.qmd);
 
-            let addr_lo = addr as u32;
-            let addr_hi = (addr >> 32) as u32;
-            set_field!(bv, $c, $s, PROGRAM_ADDRESS_LOWER, addr_lo);
-            set_field!(bv, $c, $s, PROGRAM_ADDRESS_UPPER, addr_hi);
+            let addr_shift = suffix_shift!($addr_suffix);
+            let addr_shifted = addr >> addr_shift;
+            assert!((addr_shifted << addr_shift) == addr);
+
+            bv.set_field(
+                prog_addr_suffix_field!($c, $s, LOWER, $addr_suffix),
+                addr_shifted as u32,
+            );
+            bv.set_field(
+                prog_addr_suffix_field!($c, $s, UPPER, $addr_suffix),
+                (addr_shifted >> 32) as u32,
+            );
         }
     };
 }
@@ -343,7 +363,7 @@ mod qmd_2_2 {
         qmd_impl_common!(clc3c0, QMDV02_02);
         qmd_impl_set_crs_size!(clc3c0, QMDV02_02);
         qmd_impl_set_cbuf!(clc3c0, QMDV02_02, NONE, SHIFTED4);
-        qmd_impl_set_prog_addr_64!(clc3c0, QMDV02_02);
+        qmd_impl_set_prog_addr_64!(clc3c0, QMDV02_02, NONE);
         qmd_impl_set_register_count!(clc3c0, QMDV02_02, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc3c0, QMDV02_02);
     }
@@ -375,7 +395,7 @@ mod qmd_3_0 {
         }
 
         qmd_impl_set_cbuf!(clc6c0, QMDV03_00, NONE, SHIFTED4);
-        qmd_impl_set_prog_addr_64!(clc6c0, QMDV03_00);
+        qmd_impl_set_prog_addr_64!(clc6c0, QMDV03_00, NONE);
         qmd_impl_set_register_count!(clc6c0, QMDV03_00, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc6c0, QMDV03_00);
     }
@@ -414,7 +434,7 @@ mod qmd_4_0 {
         }
 
         qmd_impl_set_cbuf!(clcbc0, QMDV04_00, SHIFTED6, SHIFTED4);
-        qmd_impl_set_prog_addr_64!(clcbc0, QMDV04_00);
+        qmd_impl_set_prog_addr_64!(clcbc0, QMDV04_00, NONE);
         qmd_impl_set_register_count!(clcbc0, QMDV04_00, REGISTER_COUNT);
         qmd_impl_set_smem_size_bounded!(clcbc0, QMDV04_00);
     }
