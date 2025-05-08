@@ -1885,7 +1885,6 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_max_i16:
    case aco_opcode::v_max_u16_e64:
    case aco_opcode::v_max_i16_e64:
-   case aco_opcode::v_cvt_f32_f16:
    case aco_opcode::v_mov_b32:
    case aco_opcode::v_mul_lo_u16:
    case aco_opcode::v_mul_lo_u16_e64:
@@ -3695,8 +3694,6 @@ combine_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (!instr->operands[i].isTemp())
          continue;
       Temp tmp = instr->operands[i].getTemp();
-      if (!ctx.info[tmp.id()].is_usedef())
-         continue;
 
       Instruction* conv = ctx.info[tmp.id()].parent_instr;
       if (conv->opcode != aco_opcode::v_cvt_f32_f16 || !conv->operands[0].isTemp() ||
