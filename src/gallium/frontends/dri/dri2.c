@@ -171,22 +171,22 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
       case PIPE_FORMAT_R10G10B10A2_UNORM:
       case PIPE_FORMAT_BGRA8888_UNORM:
       case PIPE_FORMAT_RGBA8888_UNORM:
-	 depth = 32;
-	 break;
+         depth = 32;
+         break;
       case PIPE_FORMAT_R10G10B10X2_UNORM:
       case PIPE_FORMAT_B10G10R10X2_UNORM:
          depth = 30;
          break;
       case PIPE_FORMAT_BGRX8888_UNORM:
       case PIPE_FORMAT_RGBX8888_UNORM:
-	 depth = 24;
-	 break;
+         depth = 24;
+         break;
       case PIPE_FORMAT_B5G6R5_UNORM:
-	 depth = 16;
-	 break;
+         depth = 16;
+         break;
       default:
-	 depth = util_format_get_blocksizebits(format);
-	 assert(!"Unexpected format in dri2_drawable_get_buffers()");
+         depth = util_format_get_blocksizebits(format);
+         assert(!"Unexpected format in dri2_drawable_get_buffers()");
       }
 
       attachments[num_attachments++] = att;
