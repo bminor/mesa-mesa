@@ -103,8 +103,10 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
       }
 
       res.num_components = DIV_ROUND_UP(bytes, 4);
+      res.num_components = nir_round_down_components(res.num_components);
    } else {
       res.num_components = DIV_ROUND_UP(bytes + max_pad, 4);
+      res.num_components = nir_round_up_components(res.num_components);
    }
    res.num_components = MIN2(res.num_components, max_components);
    res.bit_size = 32;

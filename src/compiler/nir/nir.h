@@ -126,6 +126,12 @@ nir_round_up_components(unsigned n)
    return (n > 5) ? util_next_power_of_two(n) : n;
 }
 
+static inline unsigned
+nir_round_down_components(unsigned n)
+{
+   return (n > 5) ? MAX2(1 << util_logbase2(n), 5) : n;
+}
+
 static inline nir_component_mask_t
 nir_component_mask(unsigned num_components)
 {
