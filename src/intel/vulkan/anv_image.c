@@ -913,6 +913,12 @@ add_video_buffers(struct anv_device *device,
                                     ANV_OFFSET_IMPLICIT, av1_cdf_max_num_bytes, 4096, &image->av1_cdf_table);
          }
       }
+   } else {
+      /* Nothing to check if it's AV1 decoding, so we need to allocate av1
+       * tables all the time.
+       */
+      ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
+                              ANV_OFFSET_IMPLICIT, av1_cdf_max_num_bytes, 4096, &image->av1_cdf_table);
    }
 
    return ok;
