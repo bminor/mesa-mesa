@@ -411,6 +411,7 @@ O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 O_CBS = hw_op('cbs', OM_ALU, 1, 1)
 O_FTB = hw_op('ftb', OM_ALU, 1, 1)
 O_REV = hw_op('rev', OM_ALU, 1, 1)
+O_SHUFFLE = hw_op('shuffle', OM_ALU, 1, 2)
 O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 4)
 O_SHIFT = hw_op('shift', OM_ALU + [OM_SHIFTOP], 1, 3)
 

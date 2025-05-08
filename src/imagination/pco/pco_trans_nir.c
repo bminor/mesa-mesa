@@ -1165,6 +1165,35 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
    UNREACHABLE("");
 }
 
+static pco_instr *trans_global_atomic_buffer(trans_ctx *tctx,
+                                             nir_intrinsic_instr *intr,
+                                             pco_ref dest,
+                                             pco_ref addr_data)
+{
+   enum pco_atom_op atom_op = to_atom_op(nir_intrinsic_atomic_op(intr));
+   /* Should have been lowered. */
+   assert(atom_op != PCO_ATOM_OP_CMPXCHG);
+
+   ASSERTED unsigned chans = pco_ref_get_chans(dest);
+   unsigned bits = pco_ref_get_bits(dest);
+
+   assert(chans == 1);
+
+   switch (bits) {
+   case 32:
+      return pco_atomic(&tctx->b,
+                        dest,
+                        pco_ref_drc(PCO_DRC_0),
+                        addr_data,
+                        .atom_op = atom_op);
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 static inline enum pco_reg_class sys_val_to_reg_class(gl_system_value sys_val,
                                                       mesa_shader_stage stage)
 {
@@ -1591,6 +1620,10 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_ssbo_atomic:
       instr = trans_atomic_buffer(tctx, intr, dest, src[1], src[2]);
+      break;
+
+   case nir_intrinsic_global_atomic_pco:
+      instr = trans_global_atomic_buffer(tctx, intr, dest, src[0]);
       break;
 
    /* Vertex sysvals. */
@@ -2571,6 +2604,10 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_rev(&tctx->b, dest, src[0]);
       break;
 
+   case nir_op_interleave:
+      instr = pco_shuffle(&tctx->b, dest, src[0], src[1]);
+      break;
+
    case nir_op_f2i32:
       instr = pco_pck(&tctx->b,
                       dest,
@@ -2597,6 +2634,11 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                         pco_ref_elem(pco_ref_bits(src[0], 32), 0),
                         .rpt = 1,
                         .pck_fmt = PCO_PCK_FMT_F16F16);
+      break;
+
+   /* Just consume/treat as 32-bit for now. */
+   case nir_op_i2i16:
+      instr = pco_mov(&tctx->b, pco_ref_bits(dest, 32), src[0]);
       break;
 
    case nir_op_f2i32_rtne:

@@ -205,7 +205,9 @@ lower_image_derefs(nir_builder *b, nir_intrinsic_instr *intr, pco_data *data)
 
       /* Sampler not needed for on-chip input attachments. */
       data->common.uses.ia_sampler = true;
-   } else {
+   } else if (intr->intrinsic == nir_intrinsic_image_deref_load ||
+              intr->intrinsic == nir_intrinsic_image_deref_store) {
+      /* Sampler not needed for other types of image accesses. */
       data->common.uses.point_sampler = true;
    }
 
@@ -240,6 +242,8 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
 
       case nir_intrinsic_image_deref_load:
       case nir_intrinsic_image_deref_store:
+      case nir_intrinsic_image_deref_atomic:
+      case nir_intrinsic_image_deref_atomic_swap:
       case nir_intrinsic_image_deref_size:
          return lower_image_derefs(b, intr, data);
 
@@ -279,6 +283,8 @@ static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
       case nir_intrinsic_load_vulkan_descriptor:
       case nir_intrinsic_image_deref_load:
       case nir_intrinsic_image_deref_store:
+      case nir_intrinsic_image_deref_atomic:
+      case nir_intrinsic_image_deref_atomic_swap:
       case nir_intrinsic_image_deref_size:
          return true;
 

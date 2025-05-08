@@ -1595,6 +1595,18 @@ encode_map(O_REV,
    op_ref_maps=[('0', ['ft2'], ['s2'])]
 )
 
+encode_map(O_SHUFFLE,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 'ft2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'shfl')
+      ])
+   ],
+   op_ref_maps=[('0', ['ft2'], ['s2', 's1'])]
+)
+
 encode_map(O_LOGICAL,
    encodings=[
       (I_PHASE1, [
@@ -3280,6 +3292,25 @@ group_map(O_REV,
    ]),
    enc_ops=[('0', O_REV)],
    srcs=[('s[2]', ('0', SRC(0)), 's2')],
+   dests=[('w[1]', ('0', DEST(0)), 'ft2')]
+)
+
+group_map(O_SHUFFLE,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_SHUFFLE)],
+   srcs=[
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(0)), 's2')
+   ],
    dests=[('w[1]', ('0', DEST(0)), 'ft2')]
 )
 

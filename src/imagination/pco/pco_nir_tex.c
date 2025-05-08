@@ -797,7 +797,7 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
    bool is_cube_array = image_dim == GLSL_SAMPLER_DIM_CUBE && is_array;
 
-   nir_def *lod;
+   nir_def *lod = NULL;
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_load:
       lod = intr->src[3].ssa;
@@ -809,6 +809,10 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
    case nir_intrinsic_image_deref_size:
       lod = intr->src[1].ssa;
+      break;
+
+   case nir_intrinsic_image_deref_atomic:
+   case nir_intrinsic_image_deref_atomic_swap:
       break;
 
    default:
@@ -862,9 +866,11 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       return nir_vec(b, size_comps, intr->def.num_components);
    }
 
-   nir_alu_type type = intr->intrinsic == nir_intrinsic_image_deref_load
-                          ? nir_intrinsic_dest_type(intr)
-                          : nir_intrinsic_src_type(intr);
+   nir_alu_type type = nir_type_invalid;
+   if (intr->intrinsic == nir_intrinsic_image_deref_load)
+      type = nir_intrinsic_dest_type(intr);
+   else if (intr->intrinsic == nir_intrinsic_image_deref_store)
+      type = nir_intrinsic_src_type(intr);
 
    bool msaa = image_dim == GLSL_SAMPLER_DIM_MS ||
                image_dim == GLSL_SAMPLER_DIM_SUBPASS_MS;
@@ -1050,23 +1056,69 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       }
    }
 
-   unsigned smp_desc = ia ? PCO_IA_SAMPLER : PCO_POINT_SAMPLER;
-
    nir_def *tex_state = nir_load_tex_state_pco(b,
                                                ROGUE_NUM_TEXSTATE_DWORDS,
                                                elem,
                                                .desc_set = desc_set,
                                                .binding = binding);
 
+   unsigned num_coord_comps = nir_image_intrinsic_coord_components(intr);
+   if (coords)
+      coords = nir_trim_vector(b, coords, num_coord_comps);
+
+   if (intr->intrinsic == nir_intrinsic_image_deref_atomic ||
+       intr->intrinsic == nir_intrinsic_image_deref_atomic_swap) {
+      assert(image_dim == GLSL_SAMPLER_DIM_2D);
+      assert(!is_array);
+
+      assert(util_format_is_plain(format));
+      assert(util_format_is_pure_integer(format));
+
+      assert(util_format_get_nr_components(format) == 1);
+      assert(util_format_get_blockwidth(format) == 1);
+      assert(util_format_get_blockheight(format) == 1);
+      assert(util_format_get_blockdepth(format) == 1);
+      assert(util_format_get_blocksize(format) == sizeof(uint32_t));
+
+      nir_def *tex_state_word[] = {
+         [0] = nir_channel(b, tex_state, 0),
+         [1] = nir_channel(b, tex_state, 1),
+         [2] = nir_channel(b, tex_state, 2),
+         [3] = nir_channel(b, tex_state, 3),
+      };
+
+      nir_def *base_addr_lo;
+      nir_def *base_addr_hi;
+      unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
+
+      /* Calculate untwiddled offset. */
+      nir_def *x = nir_i2i16(b, nir_channel(b, coords, 0));
+      nir_def *y = nir_i2i16(b, nir_channel(b, coords, 1));
+      nir_def *twiddled_offset = nir_interleave(b, y, x);
+      twiddled_offset =
+         nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
+
+      /* Offset the address by the co-ordinates. */
+      nir_def *addr =
+         nir_uadd64_32(b, base_addr_lo, base_addr_hi, twiddled_offset);
+
+      nir_def *addr_lo = nir_channel(b, addr, 0);
+      nir_def *addr_hi = nir_channel(b, addr, 1);
+      nir_def *data = intr->src[3].ssa;
+
+      nir_def *addr_data = nir_vec3(b, addr_lo, addr_hi, data);
+
+      return nir_global_atomic_pco(b,
+                                   addr_data,
+                                   .atomic_op = nir_intrinsic_atomic_op(intr));
+   }
+
+   unsigned smp_desc = ia ? PCO_IA_SAMPLER : PCO_POINT_SAMPLER;
    nir_def *smp_state = nir_load_smp_state_pco(b,
                                                ROGUE_NUM_TEXSTATE_DWORDS,
                                                nir_imm_int(b, 0),
                                                .desc_set = smp_desc,
                                                .binding = smp_desc);
-
-   unsigned num_coord_comps = nir_image_intrinsic_coord_components(intr);
-   if (coords)
-      coords = nir_trim_vector(b, coords, num_coord_comps);
 
    /* Special case, override buffers to be 2D. */
    if (image_dim == GLSL_SAMPLER_DIM_BUF) {
@@ -1200,6 +1252,7 @@ static bool is_image(const nir_instr *instr, UNUSED const void *cb_data)
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_store:
+   case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_deref_size:
       return true;
 
