@@ -614,6 +614,27 @@ static const uint8_t av1_buffer_size_ext[ANV_VID_MEM_AV1_MAX][4] = {
    { 1 ,    1    ,    1    ,    1 },  /* lrTileColVBuf, */
 };
 
+const uint32_t av1_mi_size_log2         = 2;
+const uint32_t av1_max_mib_size_log2    = 5;
+
+static void
+get_av1_sb_size(uint32_t *w_in_sb, uint32_t *h_in_sb)
+{
+   const uint32_t width = 4096;
+   const uint32_t height = 4096;
+
+   uint32_t mi_cols = width  >> av1_mi_size_log2;
+   uint32_t mi_rows = height >> av1_mi_size_log2;
+
+   uint32_t width_in_sb = align(mi_cols, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
+   uint32_t height_in_sb = align(mi_rows, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
+
+   *w_in_sb = width_in_sb;
+   *h_in_sb = height_in_sb;
+
+   return;
+}
+
 static void
 get_av1_video_session_mem_reqs(struct anv_video_session *vid,
                                VkVideoSessionMemoryRequirementsKHR *mem_reqs,
@@ -624,14 +645,10 @@ get_av1_video_session_mem_reqs(struct anv_video_session *vid,
                           out,
                           mem_reqs,
                           pVideoSessionMemoryRequirementsCount);
-   const uint32_t av1_mi_size_log2         = 2;
-   const uint32_t av1_max_mib_size_log2    = 5;
-   uint32_t width = vid->vk.max_coded.width;
-   uint32_t height = vid->vk.max_coded.height;
-   uint32_t mi_cols = width  >> av1_mi_size_log2;
-   uint32_t mi_rows = height >> av1_mi_size_log2;
-   uint32_t width_in_sb = align(mi_cols, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
-   uint32_t height_in_sb = align(mi_rows, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
+
+   uint32_t width_in_sb, height_in_sb;
+   get_av1_sb_size(&width_in_sb, &height_in_sb);
+
    uint32_t max_tile_width_sb = DIV_ROUND_UP(4096, 1 << (av1_max_mib_size_log2 + av1_mi_size_log2));
    uint32_t max_tile_cols = 16; /* TODO. get the profile to work this out */
 
@@ -1003,13 +1020,8 @@ anv_video_get_image_mv_size(struct anv_device *device,
          unsigned h_mb = DIV_ROUND_UP(image->vk.extent.height, 32);
          size = ALIGN(w_mb * h_mb, 2) << 6;
       } else if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR) {
-         const uint32_t av1_mi_size_log2 = 2;
-         uint32_t width = image->vk.extent.width;
-         uint32_t height = image->vk.extent.height;
-         uint32_t mi_cols = width  >> av1_mi_size_log2;
-         uint32_t mi_rows = height >> av1_mi_size_log2;
-         uint32_t width_in_sb = align(mi_cols, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
-         uint32_t height_in_sb = align(mi_rows, (1 << av1_mi_size_log2)) >> av1_mi_size_log2;
+         uint32_t width_in_sb, height_in_sb;
+         get_av1_sb_size(&width_in_sb, &height_in_sb);
          uint32_t sb_total = width_in_sb * height_in_sb;
 
          size = sb_total * 16;
