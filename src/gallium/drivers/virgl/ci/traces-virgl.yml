@@ -24,10 +24,10 @@ traces:
       label: [crash]
   gputest/pixmark-julia-fp32-v2.trace:
     gl-virgl:
-      checksum: a6b4ead13ef5f1d64c132a1467e0045f
+      checksum: 58c9b75b1f0d8717280d6ec0706113e2
   gputest/pixmark-julia-fp64-v2.trace:
     gl-virgl:
-      checksum: 291a08ab346339538916e7816a57fcaf
+      checksum: abee28eabd0220030aa220185f75aee2
   gputest/pixmark-volplosion-v2.trace:
     gl-virgl:
       checksum: aef0b32ce99a3b25d35304ca08032833
