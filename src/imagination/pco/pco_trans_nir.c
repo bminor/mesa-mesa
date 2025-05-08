@@ -753,6 +753,46 @@ static pco_instr *trans_store_common_store(trans_ctx *tctx,
                          .rpt = chans);
 }
 
+static inline enum pco_atom_op to_atom_op(nir_atomic_op op)
+{
+   switch (op) {
+   case nir_atomic_op_iadd:
+      return PCO_ATOM_OP_ADD;
+
+   case nir_atomic_op_xchg:
+      return PCO_ATOM_OP_XCHG;
+
+   case nir_atomic_op_cmpxchg:
+      return PCO_ATOM_OP_CMPXCHG;
+
+   case nir_atomic_op_umin:
+      return PCO_ATOM_OP_UMIN;
+
+   case nir_atomic_op_imin:
+      return PCO_ATOM_OP_IMIN;
+
+   case nir_atomic_op_umax:
+      return PCO_ATOM_OP_UMAX;
+
+   case nir_atomic_op_imax:
+      return PCO_ATOM_OP_IMAX;
+
+   case nir_atomic_op_iand:
+      return PCO_ATOM_OP_AND;
+
+   case nir_atomic_op_ior:
+      return PCO_ATOM_OP_OR;
+
+   case nir_atomic_op_ixor:
+      return PCO_ATOM_OP_XOR;
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 static pco_instr *trans_atomic_shared(trans_ctx *tctx,
                                       nir_intrinsic_instr *intr,
                                       pco_ref dest,
@@ -770,55 +810,115 @@ static pco_instr *trans_atomic_shared(trans_ctx *tctx,
 
    assert(tctx->shader->data.cs.shmem.count > 0);
 
-   pco_ref shmem_ref;
+   pco_ref shmem_ref = pco_ref_hwreg_vec(tctx->shader->data.cs.shmem.start,
+                                         PCO_REG_CLASS_COEFF,
+                                         chans);
+
    bool const_offset = nir_src_is_const(*noffset_src);
    if (const_offset) {
       unsigned offset = nir_src_as_uint(*noffset_src);
       assert(offset < tctx->shader->data.cs.shmem.count);
-
-      shmem_ref = pco_ref_hwreg_vec(tctx->shader->data.cs.shmem.start + offset,
-                                    PCO_REG_CLASS_COEFF,
-                                    chans);
+      shmem_ref = pco_ref_offset(shmem_ref, offset);
    } else {
-      shmem_ref = pco_ref_hwreg_vec(tctx->shader->data.cs.shmem.start,
-                                    PCO_REG_CLASS_COEFF,
-                                    chans);
+      enum pco_atom_op atom_op = to_atom_op(nir_intrinsic_atomic_op(intr));
+      return pco_op_atomic_offset(&tctx->b,
+                                  dest,
+                                  shmem_ref,
+                                  shmem_ref,
+                                  value,
+                                  value_swap,
+                                  offset_src,
+                                  .atom_op = atom_op,
+                                  .rpt = chans);
    }
 
    pco_instr *instr;
    switch (nir_intrinsic_atomic_op(intr)) {
    case nir_atomic_op_iadd:
-      if (const_offset) {
-         instr = pco_iadd32_atomic(&tctx->b,
-                                   dest,
-                                   shmem_ref,
-                                   shmem_ref,
-                                   value,
-                                   pco_ref_null(),
-                                   .s = true);
-      } else {
-         instr = pco_iadd32_atomic_offset(&tctx->b,
-                                          dest,
-                                          shmem_ref,
-                                          shmem_ref,
-                                          value,
-                                          pco_ref_null(),
-                                          offset_src,
-                                          .s = true);
-      }
+      instr = pco_iadd32_atomic(&tctx->b,
+                                dest,
+                                shmem_ref,
+                                shmem_ref,
+                                value,
+                                pco_ref_null(),
+                                .s = true);
       break;
 
    case nir_atomic_op_xchg:
-      if (const_offset) {
-         instr = pco_xchg_atomic(&tctx->b, dest, shmem_ref, shmem_ref, value);
-      } else {
-         instr = pco_xchg_atomic_offset(&tctx->b,
-                                        dest,
-                                        shmem_ref,
-                                        shmem_ref,
-                                        value,
-                                        offset_src);
-      }
+      instr = pco_xchg_atomic(&tctx->b, dest, shmem_ref, shmem_ref, value);
+      break;
+
+   case nir_atomic_op_umin:
+      instr = pco_min_atomic(&tctx->b,
+                             dest,
+                             shmem_ref,
+                             shmem_ref,
+                             value,
+                             .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+      break;
+
+   case nir_atomic_op_imin:
+      instr = pco_min_atomic(&tctx->b,
+                             dest,
+                             shmem_ref,
+                             shmem_ref,
+                             value,
+                             .tst_type_main = PCO_TST_TYPE_MAIN_S32);
+      break;
+
+   case nir_atomic_op_umax:
+      instr = pco_max_atomic(&tctx->b,
+                             dest,
+                             shmem_ref,
+                             shmem_ref,
+                             value,
+                             .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+      break;
+
+   case nir_atomic_op_imax:
+      instr = pco_max_atomic(&tctx->b,
+                             dest,
+                             shmem_ref,
+                             shmem_ref,
+                             value,
+                             .tst_type_main = PCO_TST_TYPE_MAIN_S32);
+      break;
+
+   case nir_atomic_op_iand:
+      instr = pco_logical_atomic(&tctx->b,
+                                 dest,
+                                 shmem_ref,
+                                 shmem_ref,
+                                 value,
+                                 .logiop = PCO_LOGIOP_AND);
+      break;
+
+   case nir_atomic_op_ior:
+      instr = pco_logical_atomic(&tctx->b,
+                                 dest,
+                                 shmem_ref,
+                                 shmem_ref,
+                                 value,
+                                 .logiop = PCO_LOGIOP_OR);
+      break;
+
+   case nir_atomic_op_ixor:
+      instr = pco_logical_atomic(&tctx->b,
+                                 dest,
+                                 shmem_ref,
+                                 shmem_ref,
+                                 value,
+                                 .logiop = PCO_LOGIOP_XOR);
+      break;
+
+   case nir_atomic_op_cmpxchg:
+      instr = pco_cmpxchg_atomic(&tctx->b,
+                                 dest,
+                                 shmem_ref,
+                                 shmem_ref,
+                                 value,
+                                 value_swap,
+                                 .tst_type_main = PCO_TST_TYPE_MAIN_U32);
       break;
 
    default:
@@ -982,43 +1082,6 @@ static pco_instr *trans_store_buffer(trans_ctx *tctx,
    UNREACHABLE("");
 }
 
-static inline enum pco_atom_op to_atom_op(nir_atomic_op op)
-{
-   switch (op) {
-   case nir_atomic_op_iadd:
-      return PCO_ATOM_OP_ADD;
-
-   case nir_atomic_op_xchg:
-      return PCO_ATOM_OP_XCHG;
-
-   case nir_atomic_op_umin:
-      return PCO_ATOM_OP_UMIN;
-
-   case nir_atomic_op_imin:
-      return PCO_ATOM_OP_IMIN;
-
-   case nir_atomic_op_umax:
-      return PCO_ATOM_OP_UMAX;
-
-   case nir_atomic_op_imax:
-      return PCO_ATOM_OP_IMAX;
-
-   case nir_atomic_op_iand:
-      return PCO_ATOM_OP_AND;
-
-   case nir_atomic_op_ior:
-      return PCO_ATOM_OP_OR;
-
-   case nir_atomic_op_ixor:
-      return PCO_ATOM_OP_XOR;
-
-   default:
-      break;
-   }
-
-   UNREACHABLE("");
-}
-
 static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
                                       nir_intrinsic_instr *intr,
                                       pco_ref dest,
@@ -1028,6 +1091,8 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
    const pco_common_data *common = &tctx->shader->data.common;
 
    enum pco_atom_op atom_op = to_atom_op(nir_intrinsic_atomic_op(intr));
+   /* Should have been lowered. */
+   assert(atom_op != PCO_ATOM_OP_CMPXCHG);
 
    unsigned chans = pco_ref_get_chans(dest);
    unsigned bits = pco_ref_get_bits(dest);

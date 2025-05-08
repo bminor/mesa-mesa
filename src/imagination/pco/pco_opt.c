@@ -566,6 +566,13 @@ static inline bool instr_has_side_effects(pco_instr *instr)
 
    case PCO_OP_IADD32_ATOMIC:
    case PCO_OP_XCHG_ATOMIC:
+   case PCO_OP_CMPXCHG_ATOMIC:
+   case PCO_OP_MIN_ATOMIC:
+   case PCO_OP_MAX_ATOMIC:
+   case PCO_OP_LOGICAL_ATOMIC:
+
+   case PCO_OP_OP_ATOMIC_OFFSET:
+
       return true;
 
    default:

@@ -186,15 +186,16 @@ static bool legalize_pseudo(pco_instr *instr)
       return true;
    }
 
-   case PCO_OP_IADD32_ATOMIC_OFFSET: {
+   case PCO_OP_OP_ATOMIC_OFFSET: {
       pco_builder b =
          pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
 
       pco_ref dest = instr->dest[0];
       pco_ref shmem_dest = instr->dest[1];
+
       pco_ref shmem_src = instr->src[0];
       pco_ref value = instr->src[1];
-      pco_ref pred = instr->src[2];
+      pco_ref value_swap = instr->src[2];
       pco_ref offset = instr->src[3];
 
       unsigned idx_reg_num = 0;
@@ -206,36 +207,109 @@ static bool legalize_pseudo(pco_instr *instr)
       shmem_dest = pco_ref_hwreg_idx_from(idx_reg_num, shmem_dest);
       shmem_src = pco_ref_hwreg_idx_from(idx_reg_num, shmem_src);
 
-      pco_instr *repl =
-         pco_iadd32_atomic(&b, dest, shmem_dest, shmem_src, value, pred);
+      pco_instr *repl;
+      enum pco_atom_op atom_op = pco_instr_get_atom_op(instr);
+      switch (atom_op) {
+      case PCO_ATOM_OP_ADD:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_iadd32_atomic(&b,
+                                  dest,
+                                  shmem_dest,
+                                  shmem_src,
+                                  value,
+                                  pco_ref_null(),
+                                  .s = true);
+         break;
 
-      xfer_op_mods(repl, instr);
+      case PCO_ATOM_OP_XCHG:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_xchg_atomic(&b, dest, shmem_dest, shmem_src, value);
+         break;
 
-      pco_instr_delete(instr);
+      case PCO_ATOM_OP_CMPXCHG:
+         assert(!pco_ref_is_null(value_swap));
+         repl = pco_cmpxchg_atomic(&b,
+                                   dest,
+                                   shmem_dest,
+                                   shmem_src,
+                                   value,
+                                   value_swap,
+                                   .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+         break;
 
-      return true;
-   }
+      case PCO_ATOM_OP_UMIN:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_min_atomic(&b,
+                               dest,
+                               shmem_dest,
+                               shmem_src,
+                               value,
+                               .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+         break;
 
-   case PCO_OP_XCHG_ATOMIC_OFFSET: {
-      pco_builder b =
-         pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
+      case PCO_ATOM_OP_IMIN:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_min_atomic(&b,
+                               dest,
+                               shmem_dest,
+                               shmem_src,
+                               value,
+                               .tst_type_main = PCO_TST_TYPE_MAIN_S32);
+         break;
 
-      pco_ref dest = instr->dest[0];
-      pco_ref shmem_dest = instr->dest[1];
-      pco_ref shmem_src = instr->src[0];
-      pco_ref value = instr->src[1];
-      pco_ref offset = instr->src[2];
+      case PCO_ATOM_OP_UMAX:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_max_atomic(&b,
+                               dest,
+                               shmem_dest,
+                               shmem_src,
+                               value,
+                               .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+         break;
 
-      unsigned idx_reg_num = 0;
-      pco_ref idx_reg =
-         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+      case PCO_ATOM_OP_IMAX:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_max_atomic(&b,
+                               dest,
+                               shmem_dest,
+                               shmem_src,
+                               value,
+                               .tst_type_main = PCO_TST_TYPE_MAIN_S32);
+         break;
 
-      pco_mbyp(&b, idx_reg, offset, .exec_cnd = pco_instr_get_exec_cnd(instr));
+      case PCO_ATOM_OP_AND:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_logical_atomic(&b,
+                                   dest,
+                                   shmem_dest,
+                                   shmem_src,
+                                   value,
+                                   .logiop = PCO_LOGIOP_AND);
+         break;
 
-      shmem_dest = pco_ref_hwreg_idx_from(idx_reg_num, shmem_dest);
-      shmem_src = pco_ref_hwreg_idx_from(idx_reg_num, shmem_src);
+      case PCO_ATOM_OP_OR:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_logical_atomic(&b,
+                                   dest,
+                                   shmem_dest,
+                                   shmem_src,
+                                   value,
+                                   .logiop = PCO_LOGIOP_OR);
+         break;
 
-      pco_instr *repl = pco_xchg_atomic(&b, dest, shmem_dest, shmem_src, value);
+      case PCO_ATOM_OP_XOR:
+         assert(pco_ref_is_null(value_swap));
+         repl = pco_logical_atomic(&b,
+                                   dest,
+                                   shmem_dest,
+                                   shmem_src,
+                                   value,
+                                   .logiop = PCO_LOGIOP_XOR);
+         break;
+
+      default:
+         UNREACHABLE("");
+      }
 
       xfer_op_mods(repl, instr);
 

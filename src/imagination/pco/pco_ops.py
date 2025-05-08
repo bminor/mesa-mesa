@@ -217,6 +217,7 @@ OM_ATOM_OP = op_mod_enum('atom_op', [
    'add',
    'sub',
    'xchg',
+   'cmpxchg',
    'umin',
    'imin',
    'umax',
@@ -420,7 +421,7 @@ O_BFI = hw_op('bfi', OM_ALU, 1, 4)
 
 O_BBYP0BM = hw_direct_op('bbyp0bm', [], 2, 2)
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm_imm32', [], 2, 2)
-O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
+O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 2, 1)
 O_MSK_BBYP0S1 = hw_direct_op('msk_bbyp0s1', [], 3, 3)
 O_MSK_LSL = hw_direct_op('msk_lsl', [], 3, 3)
 
@@ -467,6 +468,10 @@ O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
 O_IADD32_ATOMIC = hw_op('iadd32.atomic', OM_ALU_ATOMEXT + [OM_S], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_XCHG_ATOMIC = hw_op('xchg.atomic', OM_ALU_ATOMEXT, 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_CMPXCHG_ATOMIC = hw_op('cmpxchg.atomic', OM_ALU_ATOMEXT + [OM_TST_TYPE_MAIN], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_MIN_ATOMIC = hw_op('min.atomic', OM_ALU_ATOMEXT + [OM_TST_TYPE_MAIN], 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_MAX_ATOMIC = hw_op('max.atomic', OM_ALU_ATOMEXT + [OM_TST_TYPE_MAIN], 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_LOGICAL_ATOMIC = hw_op('logical.atomic', OM_ALU_ATOMEXT + [OM_LOGIOP], 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 O_FLUSH_P0 = hw_op('flush.p0', [OM_EXEC_CND, OM_END])
 
@@ -481,8 +486,7 @@ O_MOV_OFFSET = pseudo_op('mov.offset', OM_ALU + [OM_OFFSET_SD], 1, 2)
 O_VEC = pseudo_op('vec', [OM_EXEC_CND], 1, VARIABLE)
 O_COMP = pseudo_op('comp', [], 1, 2)
 
-O_IADD32_ATOMIC_OFFSET = pseudo_op('iadd32.atomic.offset', OM_ALU_ATOMEXT + [OM_S], 2, 4, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
-O_XCHG_ATOMIC_OFFSET = pseudo_op('xchg.atomic.offset', OM_ALU_ATOMEXT, 2, 3, [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_OP_ATOMIC_OFFSET = pseudo_op('op.atomic.offset', OM_ALU_ATOMEXT + [OM_ATOM_OP], 2, 4, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 O_BREAK = pseudo_op('break', [OM_EXEC_CND])
 O_CONTINUE = pseudo_op('continue', [OM_EXEC_CND])
