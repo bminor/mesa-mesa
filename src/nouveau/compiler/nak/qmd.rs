@@ -5,7 +5,7 @@ extern crate nvidia_headers;
 
 use compiler::bindings::*;
 use nak_bindings::*;
-use nvidia_headers::classes::{cla0c0, clc0c0, clc3c0, clc6c0, clcbc0};
+use nvidia_headers::classes::{cla0c0, clc0c0, clc3c0, clc6c0, clcbc0, clcdc0};
 
 use bitview::*;
 use paste::paste;
@@ -369,6 +369,43 @@ macro_rules! qmd_impl_set_smem_size_bounded {
     };
 }
 
+fn gb100_sm_config_smem_size(size: u32) -> u32 {
+    let size = if size > 64 * 1024 {
+        96 * 1024
+    } else if size > 32 * 1024 {
+        64 * 1024
+    } else if size > 16 * 1024 {
+        32 * 1024
+    } else if size > 8 * 1024 {
+        16 * 1024
+    } else {
+        8 * 1024
+    };
+
+    size / 4096 + 7
+}
+
+macro_rules! qmd_impl_set_smem_size_bounded_gb {
+    ($c:ident, $s:ident) => {
+        fn set_smem_size(&mut self, smem_size: u32, smem_max: u32) {
+            let mut bv = QMDBitView::new(&mut self.qmd);
+
+            let smem_size = smem_size.next_multiple_of(0x100);
+            let size_shift = 7;
+            let smem_size_shifted = smem_size >> size_shift;
+            assert!((smem_size_shifted << size_shift) == smem_size);
+            set_field!(bv, $c, $s, SHARED_MEMORY_SIZE_SHIFTED7, smem_size);
+
+            let max = gb100_sm_config_smem_size(smem_max);
+            let min = gb100_sm_config_smem_size(smem_size.into());
+            let target = gb100_sm_config_smem_size(smem_size.into());
+            set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, min);
+            set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, max);
+            set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, target);
+        }
+    };
+}
+
 mod qmd_2_2 {
     use crate::qmd::*;
     use nvidia_headers::classes::clc3c0::qmd as clc3c0;
@@ -471,6 +508,50 @@ mod qmd_4_0 {
 }
 use qmd_4_0::Qmd4_0;
 
+mod qmd_5_0 {
+    use crate::qmd::*;
+    // Blackwell_A is CD97, Blackwell_B is CE97, however if Hopper is v4 and
+    // Blackwell_B is v5, then Blackwell_A also has to be v5 hence we'll use
+    // clcdc0qmd here
+    mod clcdc0 {
+        pub use nvidia_headers::classes::clcdc0::qmd::*;
+
+        // Some renames we may have to carry for Blackwell
+        pub use QMDV05_00_GRID_DEPTH as QMDV05_00_CTA_RASTER_DEPTH;
+        pub use QMDV05_00_GRID_HEIGHT as QMDV05_00_CTA_RASTER_HEIGHT;
+        pub use QMDV05_00_GRID_WIDTH as QMDV05_00_CTA_RASTER_WIDTH;
+        pub use QMDV05_00_QMD_MINOR_VERSION as QMDV05_00_QMD_VERSION;
+    }
+
+    pub struct Qmd5_0 {
+        qmd: [u32; 64],
+    }
+
+    impl QMD for Qmd5_0 {
+        fn new() -> Self {
+            let mut qmd = [0; 64];
+            let mut bv = QMDBitView::new(&mut qmd);
+            qmd_init!(bv, clcdc0, QMDV05_00, 5, 0);
+            set_field!(bv, clcdc0, QMDV05_00, QMD_TYPE, 0x2);
+            set_field!(bv, clcdc0, QMDV05_00, QMD_GROUP_ID, 0x1f);
+            Self { qmd }
+        }
+
+        qmd_impl_common!(clcdc0, QMDV05_00);
+
+        fn set_crs_size(&mut self, crs_size: u32) {
+            assert!(crs_size == 0);
+        }
+
+        qmd_impl_set_cbuf!(clcdc0, QMDV05_00, SHIFTED6, SHIFTED4);
+        qmd_impl_set_prog_addr_64!(clcdc0, QMDV05_00, SHIFTED4);
+        qmd_impl_set_register_count!(clcdc0, QMDV05_00, REGISTER_COUNT);
+        qmd_impl_set_smem_size_bounded_gb!(clcdc0, QMDV05_00);
+        qmd_impl_set_slm_size!(clcdc0, QMDV05_00, SHIFTED4);
+    }
+}
+use qmd_5_0::Qmd5_0;
+
 fn fill_qmd<Q: QMD>(info: &nak_shader_info, qmd_info: &nak_qmd_info) -> Q {
     let cs_info = unsafe {
         assert!(info.stage == MESA_SHADER_COMPUTE);
@@ -527,7 +608,11 @@ pub extern "C" fn nak_fill_qmd(
     let qmd_info = unsafe { &*qmd_info };
 
     unsafe {
-        if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+        if dev.cls_compute >= clcdc0::BLACKWELL_COMPUTE_A {
+            let qmd_out = qmd_out as *mut Qmd5_0;
+            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            qmd_out.write(fill_qmd(info, qmd_info));
+        } else if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd4_0;
             assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
@@ -557,7 +642,9 @@ pub extern "C" fn nak_fill_qmd(
 pub extern "C" fn nak_get_qmd_dispatch_size_layout(
     dev: &nv_device_info,
 ) -> nak_qmd_dispatch_size_layout {
-    if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+    if dev.cls_compute >= clcdc0::BLACKWELL_COMPUTE_A {
+        Qmd5_0::GLOBAL_SIZE_LAYOUT
+    } else if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
         Qmd4_0::GLOBAL_SIZE_LAYOUT
     } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
         Qmd3_0::GLOBAL_SIZE_LAYOUT
@@ -577,7 +664,9 @@ pub extern "C" fn nak_get_qmd_cbuf_desc_layout(
     dev: &nv_device_info,
     idx: u8,
 ) -> nak_qmd_cbuf_desc_layout {
-    if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+    if dev.cls_compute >= clcdc0::BLACKWELL_COMPUTE_A {
+        Qmd5_0::cbuf_desc_layout(idx)
+    } else if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
         Qmd4_0::cbuf_desc_layout(idx)
     } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
         Qmd3_0::cbuf_desc_layout(idx)
