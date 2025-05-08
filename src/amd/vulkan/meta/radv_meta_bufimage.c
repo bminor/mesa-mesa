@@ -584,24 +584,6 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
                         });
 }
 
-static VkFormat
-get_r32g32b32_format(VkFormat format)
-{
-   switch (format) {
-   case VK_FORMAT_R32G32B32_UINT:
-      return VK_FORMAT_R32_UINT;
-      break;
-   case VK_FORMAT_R32G32B32_SINT:
-      return VK_FORMAT_R32_SINT;
-      break;
-   case VK_FORMAT_R32G32B32_SFLOAT:
-      return VK_FORMAT_R32_SFLOAT;
-      break;
-   default:
-      unreachable("invalid R32G32B32 format");
-   }
-}
-
 /* GFX9+ has an issue where the HW does not calculate mipmap degradations
  * for block-compressed images correctly (see the comment in
  * radv_image_view_init). Some texels are unaddressable and cannot be copied
@@ -791,7 +773,7 @@ radv_meta_buffer_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struc
                                           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
                                           .address = dst->image->bindings[0].addr,
                                           .range = dst->image->size,
-                                          .format = get_r32g32b32_format(dst->format),
+                                          .format = radv_meta_get_96bit_channel_format(dst->format),
                                        },
                                  }});
 
@@ -904,7 +886,7 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
                                           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
                                           .address = src->image->bindings[0].addr,
                                           .range = src->image->size,
-                                          .format = get_r32g32b32_format(src->format),
+                                          .format = radv_meta_get_96bit_channel_format(src->format),
                                        },
                                  },
                                  {
@@ -915,7 +897,7 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
                                           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
                                           .address = dst->image->bindings[0].addr,
                                           .range = dst->image->size,
-                                          .format = get_r32g32b32_format(dst->format),
+                                          .format = radv_meta_get_96bit_channel_format(dst->format),
                                        },
                                  }});
 
@@ -1057,7 +1039,7 @@ radv_meta_clear_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct ra
                                        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
                                        .address = dst->image->bindings[0].addr,
                                        .range = dst->image->size,
-                                       .format = get_r32g32b32_format(dst->format),
+                                       .format = radv_meta_get_96bit_channel_format(dst->format),
                                     },
                               }});
 

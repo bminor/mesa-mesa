@@ -135,6 +135,24 @@ void radv_meta_restore(const struct radv_meta_saved_state *state, struct radv_cm
 
 VkImageViewType radv_meta_get_view_type(const struct radv_image *image);
 
+static inline VkFormat
+radv_meta_get_96bit_channel_format(VkFormat format)
+{
+   switch (format) {
+   case VK_FORMAT_R32G32B32_UINT:
+      return VK_FORMAT_R32_UINT;
+      break;
+   case VK_FORMAT_R32G32B32_SINT:
+      return VK_FORMAT_R32_SINT;
+      break;
+   case VK_FORMAT_R32G32B32_SFLOAT:
+      return VK_FORMAT_R32_SFLOAT;
+      break;
+   default:
+      unreachable("invalid R32G32B32 format");
+   }
+}
+
 struct radv_meta_blit2d_surf {
    /** The size of an element in bytes. */
    uint8_t bs;
