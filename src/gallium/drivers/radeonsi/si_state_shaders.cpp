@@ -3810,6 +3810,7 @@ static void si_bind_vs_shader(struct pipe_context *ctx, void *state)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_shader_selector *sel = (struct si_shader_selector*)state;
+   bool enable_changed = !!sctx->shader.vs.cso != !!sel;
 
    if (sctx->shader.vs.cso == sel)
       return;
@@ -3831,7 +3832,8 @@ static void si_bind_vs_shader(struct pipe_context *ctx, void *state)
       sctx->vertex_buffers_dirty = new_uses_vbos;
    }
 
-   if (si_update_ngg(sctx))
+   bool ngg_changed = si_update_ngg(sctx);
+   if (ngg_changed || enable_changed)
       si_shader_change_notify(sctx);
 
    si_update_common_shader_state(sctx, sel, MESA_SHADER_VERTEX);

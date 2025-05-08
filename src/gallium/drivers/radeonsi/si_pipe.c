@@ -653,7 +653,6 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
 #endif
 
    sctx->ngg = sscreen->use_ngg;
-   si_shader_change_notify(sctx);
 
    sctx->b.emit_string_marker = si_emit_string_marker;
    sctx->b.set_debug_callback = si_set_debug_callback;

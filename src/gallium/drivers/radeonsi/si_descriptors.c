@@ -2051,9 +2051,15 @@ static void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint
  * - geometry shader
  * - tessellation evaluation shader
  * - NGG
+ * - vertex shader
  */
 void si_shader_change_notify(struct si_context *sctx)
 {
+   if (!sctx->shader.vs.cso) {
+      si_set_user_data_base(sctx, MESA_SHADER_VERTEX, 0);
+      return;
+   }
+
    si_set_user_data_base(sctx, MESA_SHADER_VERTEX,
                          si_get_user_data_base(sctx->gfx_level,
                                                sctx->shader.tes.cso ? TESS_ON : TESS_OFF,
@@ -2954,10 +2960,7 @@ void si_init_all_descriptors(struct si_context *sctx)
    sctx->atoms.s.gfx_add_all_to_bo_list.emit = si_emit_gfx_resources_add_all_to_bo_list;
    sctx->atoms.s.gfx_shader_pointers.emit = si_emit_graphics_shader_pointers;
 
-   /* Set default and immutable mappings. */
-   si_set_user_data_base(sctx, MESA_SHADER_VERTEX,
-                         si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
-                                               sctx->ngg, MESA_SHADER_VERTEX));
+   /* Set immutable mappings. */
    si_set_user_data_base(sctx, MESA_SHADER_TESS_CTRL,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                NGG_OFF, MESA_SHADER_TESS_CTRL));
