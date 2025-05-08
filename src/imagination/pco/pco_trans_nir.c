@@ -2569,6 +2569,26 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                       .roundzero = true);
       break;
 
+   case nir_op_f2f16_rtne:
+      assert(pco_ref_get_bits(src[0]) == 32);
+
+      instr = pco_pck(&tctx->b,
+                      pco_ref_bits(dest, 32),
+                      src[0],
+                      .rpt = 1,
+                      .pck_fmt = PCO_PCK_FMT_F16F16);
+      break;
+
+   case nir_op_f2f32:
+      assert(pco_ref_get_bits(src[0]) == 16);
+
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(pco_ref_bits(src[0], 32), 0),
+                        .rpt = 1,
+                        .pck_fmt = PCO_PCK_FMT_F16F16);
+      break;
+
    case nir_op_f2i32_rtne:
       instr = pco_pck(&tctx->b, dest, src[0], .pck_fmt = PCO_PCK_FMT_S32);
       break;
