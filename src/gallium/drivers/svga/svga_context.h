@@ -167,7 +167,8 @@ struct svga_depth_stencil_state {
 #define SVGA_PIPELINE_FLAG_LINES    (1<<MESA_PRIM_LINES)
 #define SVGA_PIPELINE_FLAG_TRIS     (1<<MESA_PRIM_TRIANGLES)
 
-#define SVGA_MAX_FRAMEBUFFER_DEFAULT_SAMPLES 4
+// We support non-attachment/UAV rendering with up to 16 samples.
+#define SVGA_MAX_FRAMEBUFFER_DEFAULT_SAMPLES 16
 
 struct svga_rasterizer_state {
    struct pipe_rasterizer_state templ; /* needed for draw module */
