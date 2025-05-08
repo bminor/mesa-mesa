@@ -11,6 +11,8 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.textures.teximage2d_cop
 
 # panfrost ff9a0000.gpu: js fault, js=0, status=INSTR_INVALID_PC
 dEQP-GLES3.functional.fragment_out.array.float.rg32f_mediump_float
+dEQP-GLES3.functional.fragment_out.array.float.r11f_g11f_b10f_highp_float
+dEQP-GLES3.functional.fragment_out.array.int.r16i_lowp_int
 dEQP-GLES3.functional.fragment_out.array.int.r32i_mediump_ivec3
 dEQP-GLES3.functional.fragment_out.array.int.rg16i_highp_ivec2
 dEQP-GLES3.functional.fragment_out.array.int.rg16i_lowp_ivec4
