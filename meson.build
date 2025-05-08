@@ -2210,6 +2210,12 @@ if with_gpuvis
   pre_args += '-DHAVE_GPUVIS'
 endif
 
+with_sysprof = get_option('sysprof')
+if with_sysprof
+  dep_sysprof = dependency('sysprof-capture-4', version: '>= 3.38.0')
+  pre_args += '-DHAVE_SYSPROF'
+endif
+
 add_project_arguments(pre_args, language : ['c', 'cpp'])
 add_project_arguments(c_cpp_args, language : ['c', 'cpp'])
 

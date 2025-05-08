@@ -277,6 +277,14 @@ if with_gpuvis
   )
 endif
 
+if with_sysprof
+  files_mesa_util += files(
+    'perf/u_sysprof.c',
+    'perf/u_sysprof.h',
+  )
+  deps_for_libmesa_util += dep_sysprof
+endif
+
 u_trace_py = files('perf/u_trace.py')
 
 libmesa_util_simd = static_library(

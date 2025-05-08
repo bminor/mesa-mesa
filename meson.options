@@ -639,6 +639,13 @@ option(
 )
 
 option(
+  'sysprof',
+  type : 'boolean',
+  value : false,
+  description : 'Enable tracing markers for sysprof. Default: false'
+)
+
+option(
   'custom-shader-replacement',
   type : 'string',
   value : '',
