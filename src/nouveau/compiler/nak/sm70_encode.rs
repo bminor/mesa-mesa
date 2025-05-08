@@ -1643,10 +1643,13 @@ impl SM70Op for OpLea {
                 || self.b.src_mod == SrcMod::None
         );
 
+        let zero = 0.into();
         let c = if self.dst_high {
             Some(&self.a_high)
         } else {
-            None
+            // TODO: On Ada and earlier, src2 is ignored if !dst_high. On
+            // Blackwell+, it seems to do something.
+            Some(&zero)
         };
 
         if self.is_uniform() {
@@ -1699,7 +1702,9 @@ impl SM70Op for OpLeaX {
         let c = if self.dst_high {
             Some(&self.a_high)
         } else {
-            None
+            // TODO: On Ada and earlier, src2 is ignored if !dst_high. On
+            // Blackwell+, it seems to do something.
+            Some(&Src::ZERO)
         };
 
         if self.is_uniform() {
