@@ -103,10 +103,12 @@ impl<'a> TestShaderBuilder<'a> {
             buf: CBuf::Binding(0),
             offset: offset_of!(CB0, data_stride).try_into().unwrap(),
         };
+        let data_stride = b.copy(data_stride.into());
         let invocations = CBufRef {
             buf: CBuf::Binding(0),
             offset: offset_of!(CB0, invocations).try_into().unwrap(),
         };
+        let invocations = b.copy(invocations.into());
 
         let data_offset = SSARef::from([
             b.imul(invoc_id.into(), data_stride.into()),
