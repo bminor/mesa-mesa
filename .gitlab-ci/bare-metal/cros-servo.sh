@@ -89,14 +89,7 @@ mkdir -p /nfs/results
 rm -rf /tftp/*
 if echo "$BM_KERNEL" | grep -q http; then
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      $BM_KERNEL -o /tftp/vmlinuz
-elif [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-    "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_KERNEL}" -o /tftp/vmlinuz
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-    "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar.zst" -o modules.tar.zst
-  tar --keep-directory-symlink --zstd -xf modules.tar.zst -C "/nfs/"
-  rm modules.tar.zst &
+      "$BM_KERNEL" -o /tftp/vmlinuz
 else
   cp /baremetal-files/"$BM_KERNEL" /tftp/vmlinuz
 fi

@@ -29,8 +29,6 @@
 .vc4-rules:
   stage: broadcom
   rules:
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.test, rules]
     - !reference [.igalia-farm-rules, rules]
     - !reference [.gl-rules, rules]
@@ -56,8 +54,6 @@
 .v3d-rules:
   stage: broadcom
   rules:
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.test, rules]
     - !reference [.igalia-farm-rules, rules]
     - !reference [.gl-rules, rules]
@@ -97,8 +93,6 @@
 .v3dv-rules:
   stage: broadcom
   rules:
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.test, rules]
     - !reference [.igalia-farm-rules, rules]
     - !reference [.vulkan-rules, rules]

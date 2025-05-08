@@ -2,8 +2,6 @@
   stage: layered-backends
   rules:
     - !reference [.test, rules]
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.gl-rules, rules]
     - !reference [.llvmpipe-rules, rules]
     - changes: &virgl_file_list

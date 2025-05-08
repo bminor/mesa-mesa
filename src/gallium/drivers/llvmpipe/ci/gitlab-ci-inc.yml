@@ -3,8 +3,6 @@
   timeout: 12m
   rules:
     - !reference [.test, rules]
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.gl-rules, rules]
     - changes: &llvmpipe_file_list
         - src/gallium/drivers/llvmpipe/*

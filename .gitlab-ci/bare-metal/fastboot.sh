@@ -102,22 +102,6 @@ if echo "$BM_KERNEL $BM_DTB" | grep -q http; then
       "$BM_DTB" -o dtb
 
   cat kernel dtb > Image.gz-dtb
-
-elif [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_KERNEL}" -o kernel
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar.zst" -o modules.tar.zst
-
-  if [ -n "$BM_DTB" ]; then
-    curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-	"${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_DTB}.dtb" -o dtb
-  fi
-
-  cat kernel dtb > Image.gz-dtb || echo "No DTB available, using pure kernel."
-  rm kernel
-  tar --keep-directory-symlink --zstd -xf modules.tar.zst -C "$BM_ROOTFS/"
-  rm modules.tar.zst &
 else
   cat /baremetal-files/"$BM_KERNEL" /baremetal-files/"$BM_DTB".dtb > Image.gz-dtb
   cp /baremetal-files/"$BM_DTB".dtb dtb

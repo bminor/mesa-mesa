@@ -103,29 +103,11 @@ if [ -f "${BM_BOOTFS}" ]; then
   BM_BOOTFS=/tmp/bootfs
 fi
 
-# If BM_KERNEL and BM_DTS is present
-if [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
-  if [ -z "${BM_KERNEL}" ] || [ -z "${BM_DTB}" ]; then
-    echo "This machine cannot be tested with external kernel since BM_KERNEL or BM_DTB missing!"
-    exit 1
-  fi
-
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_KERNEL}" -o "${BM_KERNEL}"
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_DTB}.dtb" -o "${BM_DTB}.dtb"
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-      "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar.zst" -o modules.tar.zst
-fi
-
 date +'%F %T'
 
 # Install kernel modules (it could be either in /lib/modules or
 # /usr/lib/modules, but we want to install in the latter)
-if [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
-  tar --keep-directory-symlink --zstd -xf modules.tar.zst -C /nfs/
-  rm modules.tar.zst &
-elif [ -n "${BM_BOOTFS}" ]; then
+if [ -n "${BM_BOOTFS}" ]; then
   [ -d $BM_BOOTFS/usr/lib/modules ] && rsync -a $BM_BOOTFS/usr/lib/modules/ /nfs/usr/lib/modules/
   [ -d $BM_BOOTFS/lib/modules ] && rsync -a $BM_BOOTFS/lib/modules/ /nfs/lib/modules/
 else
@@ -136,7 +118,7 @@ fi
 date +'%F %T'
 
 # Install kernel image + bootloader files
-if [ -n "${EXTERNAL_KERNEL_TAG}" ] || [ -z "$BM_BOOTFS" ]; then
+if [ -z "$BM_BOOTFS" ]; then
   mv "${BM_KERNEL}" "${BM_DTB}.dtb" /tftp/
 else  # BM_BOOTFS
   rsync -aL --delete $BM_BOOTFS/boot/ /tftp/

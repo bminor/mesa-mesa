@@ -3,8 +3,6 @@
   timeout: 15m
   rules:
     - !reference [.test, rules]
-    - if: $EXTERNAL_KERNEL_TAG != null
-      when: never
     - !reference [.vulkan-rules, rules]
     - !reference [.gallium-core-rules, rules]
     - changes: &lavapipe_file_list

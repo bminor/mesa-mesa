@@ -125,6 +125,7 @@ variables:
   CI_TRON_JOB_PRIORITY_TAG: ci-tron:priority:low
   JOB_PRIORITY: 50
   DATA_STORAGE_PATH: data_storage
+  KERNEL_IMAGE_BASE: "https://$S3_HOST/$S3_KERNEL_BUCKET/$KERNEL_REPO/$KERNEL_TAG"
 
   CI_TRON_JOB_TEMPLATE_PROJECT: &ci-tron-template-project gfx-ci/ci-tron
   CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit e4ab9c5ecc941c7893d991cf723cde877b5dca8d
@@ -137,10 +138,6 @@ default:
     S3_JWT:
       aud: https://s3.freedesktop.org
   before_script:
-    - |
-      if [ -z "${KERNEL_IMAGE_BASE:-}" ]; then
-        export KERNEL_IMAGE_BASE="https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${EXTERNAL_KERNEL_TAG:-$KERNEL_TAG}"
-      fi
     - >
       export SCRIPTS_DIR=$(mktemp -d) &&
       curl -L -s --retry 4 -f --retry-all-errors --retry-delay 60 -O --output-dir "${SCRIPTS_DIR}" "${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/setup-test-env.sh" &&
