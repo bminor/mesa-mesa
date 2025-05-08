@@ -122,7 +122,7 @@ export -f _uncollapsed_section_switch
 export -f _error_msg
 
 # Freedesktop requirement (needed for Wayland)
-[ -n "${XDG_RUNTIME_DIR:-}" ] || export XDG_RUNTIME_DIR="$(mktemp -p "$PWD" -d xdg-runtime-XXXXXX)"
+[ -n "${XDG_RUNTIME_DIR:-}" ] || export XDG_RUNTIME_DIR="$(mktemp --tmpdir -d xdg-runtime-XXXXXX)"
 
 if [ -z "${RESULTS_DIR:-}" ]; then
 	export RESULTS_DIR="${PWD%/}/results"
