@@ -261,7 +261,7 @@ static const struct format_mapping format_map[] = {
    },
    {
       { 3, GL_RGB, GL_RGB8, 0 },
-      { PIPE_FORMAT_R8G8B8X8_UNORM, DEFAULT_RGB_FORMATS }
+      { DEFAULT_RGB_FORMATS }
    },
    {
       { GL_RGB12, GL_RGB16, 0 },
