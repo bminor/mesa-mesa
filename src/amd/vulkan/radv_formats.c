@@ -399,9 +399,8 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
             tiled |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
          }
 
-         /* Don't support blitting/minmax for R32G32B32 formats. */
-         if (format == VK_FORMAT_R32G32B32_SFLOAT || format == VK_FORMAT_R32G32B32_UINT ||
-             format == VK_FORMAT_R32G32B32_SINT) {
+         /* Don't support blitting/minmax for 96-bit formats. */
+         if (vk_format_is_96bit(format)) {
             linear &= ~VK_FORMAT_FEATURE_2_BLIT_SRC_BIT;
             linear &= ~VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
          }
@@ -939,8 +938,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
       sampleCounts |= VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT;
    }
 
-   if (tiling == VK_IMAGE_TILING_LINEAR && (format == VK_FORMAT_R32G32B32_SFLOAT ||
-                                            format == VK_FORMAT_R32G32B32_SINT || format == VK_FORMAT_R32G32B32_UINT)) {
+   if (tiling == VK_IMAGE_TILING_LINEAR && vk_format_is_96bit(format)) {
       /* R32G32B32 is a weird format and the driver currently only
        * supports the barely minimum.
        * TODO: Implement more if we really need to.

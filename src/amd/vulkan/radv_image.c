@@ -1679,8 +1679,7 @@ radv_image_is_renderable(const struct radv_device *device, const struct radv_ima
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (image->vk.format == VK_FORMAT_R32G32B32_UINT || image->vk.format == VK_FORMAT_R32G32B32_SINT ||
-       image->vk.format == VK_FORMAT_R32G32B32_SFLOAT)
+   if (vk_format_is_96bit(image->vk.format))
       return false;
 
    if (pdev->info.gfx_level >= GFX9 && image->vk.image_type == VK_IMAGE_TYPE_3D &&
@@ -1862,8 +1861,7 @@ radv_GetImageSubresourceLayout2(VkDevice _device, VkImage _image, const VkImageS
 
       pLayout->subresourceLayout.offset =
          ac_surface_get_plane_offset(pdev->info.gfx_level, &plane->surface, 0, layer) + level_offset;
-      if (image->vk.format == VK_FORMAT_R32G32B32_UINT || image->vk.format == VK_FORMAT_R32G32B32_SINT ||
-          image->vk.format == VK_FORMAT_R32G32B32_SFLOAT) {
+      if (vk_format_is_96bit(image->vk.format)) {
          /* Adjust the number of bytes between each row because
           * the pitch is actually the number of components per
           * row.

@@ -7,6 +7,7 @@
 
 #include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
+#include "radv_formats.h"
 #include "radv_meta.h"
 #include "vk_common_entrypoints.h"
 #include "vk_shader_module.h"
@@ -821,8 +822,7 @@ radv_meta_buffer_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_met
    VkPipeline pipeline;
    VkResult result;
 
-   if (dst->image->vk.format == VK_FORMAT_R32G32B32_UINT || dst->image->vk.format == VK_FORMAT_R32G32B32_SINT ||
-       dst->image->vk.format == VK_FORMAT_R32G32B32_SFLOAT) {
+   if (vk_format_is_96bit(dst->image->vk.format)) {
       radv_meta_buffer_to_image_cs_r32g32b32(cmd_buffer, src, dst, rect);
       return;
    }
@@ -892,8 +892,7 @@ radv_meta_image_to_image_cs_r32g32b32(struct radv_cmd_buffer *cmd_buffer, struct
    }
 
    /* 96-bit formats are only compatible to themselves. */
-   assert(dst->format == VK_FORMAT_R32G32B32_UINT || dst->format == VK_FORMAT_R32G32B32_SINT ||
-          dst->format == VK_FORMAT_R32G32B32_SFLOAT);
+   assert(vk_format_is_96bit(dst->format));
 
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
@@ -945,8 +944,7 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
    VkPipeline pipeline;
    VkResult result;
 
-   if (src->format == VK_FORMAT_R32G32B32_UINT || src->format == VK_FORMAT_R32G32B32_SINT ||
-       src->format == VK_FORMAT_R32G32B32_SFLOAT) {
+   if (vk_format_is_96bit(src->format)) {
       radv_meta_image_to_image_cs_r32g32b32(cmd_buffer, src, dst, rect);
       return;
    }
@@ -1090,8 +1088,7 @@ radv_meta_clear_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_bl
    VkPipeline pipeline;
    VkResult result;
 
-   if (dst->format == VK_FORMAT_R32G32B32_UINT || dst->format == VK_FORMAT_R32G32B32_SINT ||
-       dst->format == VK_FORMAT_R32G32B32_SFLOAT) {
+   if (vk_format_is_96bit(dst->format)) {
       radv_meta_clear_image_cs_r32g32b32(cmd_buffer, dst, clear_color);
       return;
    }

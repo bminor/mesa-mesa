@@ -162,8 +162,7 @@ radv_sdma_get_bpe(const struct radv_image *const image, VkImageAspectFlags aspec
 
    if (is_stencil_only) {
       return 1;
-   } else if (image->vk.format == VK_FORMAT_R32G32B32_UINT || image->vk.format == VK_FORMAT_R32G32B32_SINT ||
-              image->vk.format == VK_FORMAT_R32G32B32_SFLOAT) {
+   } else if (vk_format_is_96bit(image->vk.format)) {
       /* Adjust the bpp for 96-bits formats because SDMA expects a power of two. */
       return 4;
    } else {
@@ -174,8 +173,7 @@ radv_sdma_get_bpe(const struct radv_image *const image, VkImageAspectFlags aspec
 static uint32_t
 radv_sdma_get_texel_scale(const struct radv_image *const image)
 {
-   if (image->vk.format == VK_FORMAT_R32G32B32_UINT || image->vk.format == VK_FORMAT_R32G32B32_SINT ||
-       image->vk.format == VK_FORMAT_R32G32B32_SFLOAT) {
+   if (vk_format_is_96bit(image->vk.format)) {
       return 3;
    } else {
       return 1;

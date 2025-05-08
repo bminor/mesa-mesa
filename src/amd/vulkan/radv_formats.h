@@ -85,6 +85,13 @@ vk_format_is_subsampled(VkFormat format)
    return util_format_is_subsampled_422(radv_format_to_pipe_format(format));
 }
 
+static inline bool
+vk_format_is_96bit(VkFormat format)
+{
+   return format == VK_FORMAT_R32G32B32_UINT || format == VK_FORMAT_R32G32B32_SINT ||
+          format == VK_FORMAT_R32G32B32_SFLOAT;
+}
+
 static inline VkFormat
 vk_format_no_srgb(VkFormat format)
 {
