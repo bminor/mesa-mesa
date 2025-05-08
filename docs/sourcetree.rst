@@ -137,7 +137,6 @@ each directory.
          -  **glx** - Meta frontend for GLX
          -  **hgl** - Haiku OpenGL
          -  **lavapipe** - Vulkan frontend, software Vulkan rasterizer using LLVMpipe.
-         -  **nine** - D3D9 frontend, see targets/d3dadapter9
          -  **va** - VA-API frontend
          -  **vdpau** - VDPAU frontend
          -  **wgl** - Windows WGL frontend

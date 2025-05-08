@@ -97,7 +97,6 @@ debian-testing:
       -D glx=dri
       -D platforms=x11,wayland
     GALLIUM_ST: >
-      -D gallium-nine=false
       -D gallium-rusticl=true
       -D gallium-va=enabled
     GALLIUM_DRIVERS: "llvmpipe,softpipe,virgl,radeonsi,zink,iris,svga"
@@ -128,7 +127,6 @@ debian-testing-asan:
     EXTRA_OPTION: >
       -D b_sanitize=address
       -D gallium-va=false
-      -D gallium-nine=false
       -D gallium-rusticl=false
       -D mesa-clc=system
       -D tools=dlclose-skip
@@ -142,7 +140,6 @@ debian-testing-asan:
       -D build-tests=false
       -D enable-glcpp-tests=false
       -D gallium-rusticl=false
-      -D gallium-nine=false
       -D gallium-drivers=
       -D glx=disabled
       -D install-mesa-clc=true
@@ -228,7 +225,6 @@ debian-testing-ubsan:
       -D mesa-clc=system
       -D gallium-rusticl=false
       -D gallium-va=false
-      -D gallium-nine=false
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
     RUN_MESON_TESTS: "false" # just too slow
@@ -265,7 +261,6 @@ debian-build-testing:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-nine=true
       -D gallium-rusticl=false
     GALLIUM_DRIVERS: "i915,iris,nouveau,r300,r600,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
     VULKAN_DRIVERS: "intel_hasvk,imagination-experimental,microsoft-experimental,nouveau,swrast"
@@ -298,7 +293,6 @@ debian-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-nine=false
       -D gallium-rusticl=false
       -D llvm=enabled
     GALLIUM_DRIVERS: "i915,iris,nouveau,r300,freedreno,llvmpipe,softpipe,svga,v3d,vc4,virgl,etnaviv,panfrost,lima,zink,d3d12,asahi,crocus"
@@ -339,7 +333,6 @@ alpine-build-testing:
       -D gallium-extra-hud=true
       -D gallium-vdpau=disabled
       -D gallium-va=enabled
-      -D gallium-nine=true
       -D gallium-rusticl=false
       -D gles1=disabled
       -D gles2=enabled
@@ -390,7 +383,6 @@ fedora-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-nine=false
       -D gallium-rusticl=true
       -D gles1=disabled
       -D gles2=enabled
@@ -441,7 +433,6 @@ debian-android:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-nine=false
       -D gallium-rusticl=false
     PKG_CONFIG_LIBDIR: "/disable/non/android/system/pc/files"
     HOST_BUILD_OPTIONS: >
@@ -493,7 +484,6 @@ debian-android:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-nine=false
 
 .meson-arm:
   extends:
@@ -707,7 +697,6 @@ debian-clang:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-nine=true
       -D gles1=enabled
       -D gles2=enabled
       -D llvm=enabled
@@ -757,7 +746,6 @@ debian-clang-release:
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled
       -D gallium-va=enabled
-      -D gallium-nine=true
       -D gles1=disabled
       -D gles2=disabled
       -D llvm=enabled
@@ -796,7 +784,6 @@ debian-vulkan:
     GALLIUM_ST: >
       -D gallium-vdpau=disabled
       -D gallium-va=disabled
-      -D gallium-nine=false
       -D gallium-rusticl=false
       -D b_sanitize=undefined
       -D c_args=-fno-sanitize-recover=all

@@ -716,27 +716,6 @@ if d3d_drivers_path == ''
   d3d_drivers_path = join_paths(get_option('prefix'), get_option('libdir'), 'd3d')
 endif
 
-with_gallium_st_nine =  get_option('gallium-nine')
-if with_gallium_st_nine
-  warning('The nine state tracker will be removed in Mesa 25.2')
-  if not with_gallium_swrast
-    error('The nine state tracker requires gallium softpipe/llvmpipe.')
-  elif not [
-             with_gallium_crocus,
-             with_gallium_freedreno,
-             with_gallium_i915,
-             with_gallium_iris,
-             with_gallium_nouveau,
-             with_gallium_panfrost,
-             with_gallium_r300,
-             with_gallium_r600,
-             with_gallium_radeonsi,
-             with_gallium_svga,
-             with_gallium_zink,
-           ].contains(true)
-    error('The nine state tracker requires at least one non-swrast gallium driver.')
-  endif
-endif
 with_gallium_st_d3d10umd =  get_option('gallium-d3d10umd')
 if with_gallium_st_d3d10umd
   if not with_gallium_swrast
@@ -2418,9 +2397,6 @@ if with_gallium
   endif
   if with_gallium_mediafoundation
     gallium_frontends += 'mediafoundation'
-  endif
-  if with_gallium_st_nine
-    gallium_frontends += 'nine'
   endif
   if with_gallium_rusticl
     gallium_frontends += 'rusticl'

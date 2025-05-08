@@ -31,7 +31,6 @@ EPHEMERAL=(
     libgl-dev
     libgles2-mesa-dev
     libglu1-mesa-dev
-    libgtest-dev
     libglx-dev
     libpciaccess-dev
     libpng-dev
@@ -40,9 +39,6 @@ EPHEMERAL=(
     libwayland-dev
     libx11-xcb-dev
     libxcb-dri2-0-dev
-    libxcb-dri3-dev
-    libxcb-present-dev
-    libxfixes-dev
     libxkbcommon-dev
     libxrandr-dev
     libxrender-dev
@@ -125,10 +121,6 @@ rm -rf /VK-GL-CTS
 if [ "$DEBIAN_ARCH" != "armhf" ]; then
   . .gitlab-ci/container/build-skqp.sh
 fi
-
-############### Build nine tests
-
-. .gitlab-ci/container/build-ninetests.sh
 
 ############### Uninstall the build software
 

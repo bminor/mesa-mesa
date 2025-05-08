@@ -546,56 +546,6 @@
 #define DRI_CONF_DRI_DRIVER() \
    DRI_CONF_OPT_S_NODEF(dri_driver, "Override the DRI driver to load")
 
-/**
- * \brief Gallium-Nine specific configuration options
- */
-
-#define DRI_CONF_SECTION_NINE DRI_CONF_SECTION("Gallium Nine")
-
-#define DRI_CONF_NINE_THROTTLE(def) \
-   DRI_CONF_OPT_I(throttle_value, def, 0, 0, \
-                  "Define the throttling value. -1 for no throttling, -2 for default (usually 2), 0 for glfinish behaviour")
-
-#define DRI_CONF_NINE_THREADSUBMIT(def) \
-   DRI_CONF_OPT_B(thread_submit, def, \
-                  "Use an additional thread to submit buffers.")
-
-#define DRI_CONF_NINE_OVERRIDEVENDOR(def) \
-   DRI_CONF_OPT_I(override_vendorid, def, 0, 0, \
-                  "Define the vendor_id to report. This allows faking another hardware vendor.")
-
-#define DRI_CONF_NINE_ALLOWDISCARDDELAYEDRELEASE(def) \
-   DRI_CONF_OPT_B(discard_delayed_release, def, \
-                  "Whether to allow the display server to release buffers with a delay when using d3d's presentation mode DISCARD. Default to true. Set to false if suffering from lag (thread_submit=true can also help in this situation).")
-
-#define DRI_CONF_NINE_TEARFREEDISCARD(def) \
-   DRI_CONF_OPT_B(tearfree_discard, def, \
-                  "Whether to make d3d's presentation mode DISCARD (games usually use that mode) Tear Free. If rendering above screen refresh, some frames will get skipped. true by default.")
-
-#define DRI_CONF_NINE_CSMT(def) \
-   DRI_CONF_OPT_I(csmt_force, def, 0, 0, \
-                  "If set to 1, force gallium nine CSMT. If set to 0, disable it. By default (-1) CSMT is enabled on known thread-safe drivers.")
-
-#define DRI_CONF_NINE_DYNAMICTEXTUREWORKAROUND(def) \
-   DRI_CONF_OPT_B(dynamic_texture_workaround, def, \
-                  "If set to true, use a ram intermediate buffer for dynamic textures. Increases ram usage, which can cause out of memory issues, but can fix glitches for some games.")
-
-#define DRI_CONF_NINE_SHADERINLINECONSTANTS(def) \
-   DRI_CONF_OPT_B(shader_inline_constants, def, \
-                  "If set to true, recompile shaders with integer or boolean constants when the values are known. Can cause stutter, but can increase slightly performance.")
-
-#define DRI_CONF_NINE_SHMEM_LIMIT() \
-   DRI_CONF_OPT_I(texture_memory_limit, 128, 0, 0, \
-                  "In MB the limit of virtual memory used for textures until shmem files are unmapped (default 128MB, 32bits only). If negative disables shmem. Set to a low amount to reduce virtual memory usage, but can incur a small perf hit if too low.")
-
-#define DRI_CONF_NINE_FORCESWRENDERINGONCPU(def) \
-   DRI_CONF_OPT_B(force_sw_rendering_on_cpu, def, \
-                  "If set to false, emulates software rendering on the requested device, else uses a software renderer.")
-
-#define DRI_CONF_NINE_FORCEFEATURESEMULATION(def) \
-   DRI_CONF_OPT_B(force_features_emulation, def, \
-                  "If set to true, force emulation of d3d9 features when possible instead of using native hw support.")
-
 #define DRI_CONF_V3D_NONMSAA_TEXTURE_SIZE_LIMIT(def) \
    DRI_CONF_OPT_B(v3d_nonmsaa_texture_size_limit, def, \
                   "Report the non-MSAA-only texture size limit")

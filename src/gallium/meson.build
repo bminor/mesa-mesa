@@ -227,10 +227,6 @@ endif
 if with_platform_haiku
   subdir('frontends/hgl')
 endif
-if with_gallium_st_nine
-  subdir('frontends/nine')
-  subdir('targets/d3dadapter9')
-endif
 if with_gallium_st_d3d10umd
   subdir('frontends/d3d10umd')
   subdir('targets/d3d10umd')

@@ -83,13 +83,6 @@ if with_dri
   install_headers('GL/internal/dri_interface.h', subdir : 'GL/internal')
 endif
 
-if with_gallium_st_nine
-  install_headers(
-    'd3dadapter/d3dadapter9.h', 'd3dadapter/drm.h', 'd3dadapter/present.h',
-    subdir : 'd3dadapter',
-  )
-endif
- 
 opencl_headers = files(
   'CL/cl.h',
   'CL/cl.hpp',
