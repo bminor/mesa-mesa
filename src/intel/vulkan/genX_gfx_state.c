@@ -2435,20 +2435,23 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    }
 #endif
 
-   /* If the pipeline uses a dynamic value of patch_control_points and either
-    * the pipeline change or the dynamic value change, check the value and
-    * reemit if needed.
+   /* If the pipeline uses a dynamic value of patch_control_points or the
+    * tessellation domain is dynamic and either the pipeline change or the
+    * dynamic value change, check the value and reemit if needed.
     */
    const struct brw_tcs_prog_data *tcs_prog_data = get_gfx_tcs_prog_data(gfx);
+   const struct brw_tes_prog_data *tes_prog_data = get_gfx_tes_prog_data(gfx);
    const bool tcs_dynamic =
       tcs_prog_data && tcs_prog_data->input_vertices == 0;
-   if (tcs_dynamic &&
-       ((gfx->dirty & ANV_CMD_DIRTY_HS) ||
+   const bool tes_dynamic =
+      tes_prog_data && tes_prog_data->base.vue_map.layout != INTEL_VUE_LAYOUT_FIXED;
+   if ((tcs_dynamic || tes_dynamic) &&
+       ((gfx->dirty & (ANV_CMD_DIRTY_HS | ANV_CMD_DIRTY_DS)) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS))) {
       SET(TESS_CONFIG, tess_config,
           intel_tess_config(dyn->ts.patch_control_points,
                             tcs_prog_data->instances,
-                            0,
+                            tes_prog_data->domain,
                             tcs_prog_data->base.vue_map.num_per_patch_slots,
                             tcs_prog_data->base.vue_map.num_per_vertex_slots,
                             tcs_prog_data->base.vue_map.builtins_slot_offset));
@@ -3474,7 +3477,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
    if (IS_DIRTY(TESS_CONFIG)) {
       push_consts->gfx.tess_config = hw_state->tess_config;
-      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                                VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
       gfx->base.push_constants_data_dirty = true;
    }
 

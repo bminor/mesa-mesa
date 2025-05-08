@@ -115,6 +115,7 @@ bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    void *push_map_mem_ctx);
 
 struct anv_nir_push_layout_info {
+   bool separate_tessellation;
    bool fragment_dynamic;
    bool mesh_dynamic;
 };

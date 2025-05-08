@@ -2281,6 +2281,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
       if (!anv_pipeline_base_has_stage(pipeline, s))
          continue;
 
+      stages[s].prog_data.base.stage = s;
       stages[s].cache_key.stage = s;
       memcpy(stages[s].cache_key.sha1, sha1, sizeof(sha1));
    }
