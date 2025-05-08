@@ -29,7 +29,7 @@ _mesa_float_to_bfloat16_bits_rtz(float f)
    x.f = f;
 
    if (isnan(f))
-      _mesa_float_nan_to_bfloat_bits(x);
+      return _mesa_float_nan_to_bfloat_bits(x);
 
    return x.ui >> 16;
 }
@@ -42,7 +42,7 @@ _mesa_float_to_bfloat16_bits_rte(float f)
    x.f = f;
 
    if (isnan(f))
-      _mesa_float_nan_to_bfloat_bits(x);
+      return _mesa_float_nan_to_bfloat_bits(x);
 
    /* Use the tail part that is discarded to decide rounding,
     * break the tie with the nearest even.
