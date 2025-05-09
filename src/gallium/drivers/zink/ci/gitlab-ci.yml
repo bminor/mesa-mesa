@@ -257,6 +257,5 @@ zink-radv-navi31-valve:
   timeout: 1h 20m
   variables:
     GPU_VERSION: zink-radv-navi31
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 75
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
     ZINK_DEBUG: vvl

@@ -168,7 +168,6 @@ radeonsi-raven-vaapi-fluster:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-kabini
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 710
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 710
 
 radv-tahiti-vkcts:
@@ -180,7 +179,6 @@ radv-tahiti-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-tahiti
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
@@ -193,7 +191,6 @@ radv-hawaii-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-hawaii
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
@@ -221,7 +218,6 @@ radv-vega10-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vega10
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
@@ -234,7 +230,6 @@ radv-renoir-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-renoir
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 130
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 130
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
@@ -260,7 +255,6 @@ radv-navi21-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi21
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 30
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     RADV_PERFTEST: transfer_queue
 
@@ -275,7 +269,6 @@ radv-vangogh-vkcts:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 85
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
 radeonsi-vangogh-glcts-full:
@@ -289,7 +282,6 @@ radeonsi-vangogh-glcts-full:
   variables:
     GPU_VERSION: radeonsi-vangogh
     DEQP_SUITE: radeonsi-vangogh
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 85
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
 radeonsi-vangogh-glcts:
@@ -299,7 +291,6 @@ radeonsi-vangogh-glcts:
   timeout: 30m
   variables:
     DEQP_FRACTION: 4
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 28
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 29
 
 radv-raphael-vkcts:
@@ -311,7 +302,6 @@ radv-raphael-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-raphael
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 35
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
@@ -327,7 +317,6 @@ radv-navi31-vkcts:
     GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 20
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
 ############### Fossilize
