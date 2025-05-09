@@ -1898,10 +1898,17 @@ static LLVMValueRef visit_load_global(struct ac_nir_context *ctx,
 
    val = LLVMBuildLoad2(ctx->ac.builder, result_type, addr, "");
 
-   if (nir_intrinsic_access(instr) & (ACCESS_COHERENT | ACCESS_VOLATILE)) {
+   /* From the LLVM 21.0.0 language reference:
+    * > An alignment value higher than the size of the loaded type implies memory up to the
+    * > alignment value bytes can be safely loaded without trapping in the default address space.
+    * So limit the alignment to the access size, since this isn't true in NIR.
+    */
+   uint32_t align = nir_intrinsic_align(instr);
+   uint32_t size = ac_get_type_size(result_type);
+   LLVMSetAlignment(val, MIN2(align, 1 << (ffs(size) - 1)));
+
+   if (nir_intrinsic_access(instr) & (ACCESS_COHERENT | ACCESS_VOLATILE))
       LLVMSetOrdering(val, LLVMAtomicOrderingMonotonic);
-      LLVMSetAlignment(val, ac_get_type_size(result_type));
-   }
 
    return val;
 }
@@ -1920,10 +1927,12 @@ static void visit_store_global(struct ac_nir_context *ctx,
 
    val = LLVMBuildStore(ctx->ac.builder, data, addr);
 
-   if (nir_intrinsic_access(instr) & (ACCESS_COHERENT | ACCESS_VOLATILE)) {
+   uint32_t align = nir_intrinsic_align(instr);
+   uint32_t size = ac_get_type_size(type);
+   LLVMSetAlignment(val, MIN2(align, 1 << (ffs(size) - 1)));
+
+   if (nir_intrinsic_access(instr) & (ACCESS_COHERENT | ACCESS_VOLATILE))
       LLVMSetOrdering(val, LLVMAtomicOrderingMonotonic);
-      LLVMSetAlignment(val, ac_get_type_size(type));
-   }
 }
 
 static LLVMValueRef visit_global_atomic(struct ac_nir_context *ctx,
