@@ -4645,8 +4645,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             continue;
          ssa_info info = ctx.info[instr->operands[i].tempId()];
 
-         if (!info.is_usedef() || !info.parent_instr->isDPP() ||
-             info.parent_instr->opcode != aco_opcode::v_mov_b32 ||
+         if (!info.parent_instr->isDPP() || info.parent_instr->opcode != aco_opcode::v_mov_b32 ||
              info.parent_instr->pass_flags != instr->pass_flags)
             continue;
 
