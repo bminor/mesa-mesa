@@ -127,6 +127,10 @@ static const struct fd6_format formats[PIPE_FORMAT_COUNT] = {
    VT_(R8G8B8_SINT,    8_8_8_SINT,              WZYX),
    V__(R8G8B8_USCALED, 8_8_8_UINT,              WZYX),
    V__(R8G8B8_SSCALED, 8_8_8_SINT,              WZYX),
+   VT_(B8G8R8_UNORM,   8_8_8_UNORM,             WXYZ),
+   VT_(B8G8R8_SNORM,   8_8_8_SNORM,             WXYZ),
+   VT_(B8G8R8_UINT,    8_8_8_UINT,              WXYZ),
+   VT_(B8G8R8_SINT,    8_8_8_SINT,              WXYZ),
 
    /* 32-bit */
    V__(R32_UNORM,   32_UNORM,                   WZYX),
