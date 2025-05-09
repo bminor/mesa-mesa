@@ -281,8 +281,25 @@ ir3_collect_info(struct ir3_shader_variant *v)
    /* Full and half aliases do not overlap so treat them as !mergedregs. */
    regmask_init(&aliases, false);
 
+   struct block_data {
+      unsigned sfu_delay;
+      unsigned mem_delay;
+   };
+
+   void *mem_ctx = ralloc_context(NULL);
+
    foreach_block (block, &shader->block_list) {
-      int sfu_delay = 0, mem_delay = 0;
+      block->data = rzalloc(mem_ctx, struct block_data);
+   }
+
+   foreach_block (block, &shader->block_list) {
+      struct block_data *bd = block->data;
+
+      for (unsigned i = 0; i < block->predecessors_count; i++) {
+         struct block_data *pbd = block->predecessors[i]->data;
+         bd->sfu_delay = MAX2(bd->sfu_delay, pbd->sfu_delay);
+         bd->mem_delay = MAX2(bd->mem_delay, pbd->mem_delay);
+      }
 
       foreach_instr (instr, &block->instr_list) {
 
@@ -367,28 +384,28 @@ ir3_collect_info(struct ir3_shader_variant *v)
 
             if (instr->flags & IR3_INSTR_SS) {
                info->ss++;
-               info->sstall += sfu_delay;
-               sfu_delay = 0;
+               info->sstall += bd->sfu_delay;
+               bd->sfu_delay = 0;
             }
 
             if (instr->flags & IR3_INSTR_SY) {
                info->sy++;
-               info->systall += mem_delay;
-               mem_delay = 0;
+               info->systall += bd->mem_delay;
+               bd->mem_delay = 0;
             }
 
             if (is_ss_producer(instr)) {
-               sfu_delay = soft_ss_delay(instr);
+               bd->sfu_delay = soft_ss_delay(instr);
             } else {
-               int n = MIN2(sfu_delay, 1 + instr->repeat + instr->nop);
-               sfu_delay -= n;
+               int n = MIN2(bd->sfu_delay, 1 + instr->repeat + instr->nop);
+               bd->sfu_delay -= n;
             }
 
             if (is_sy_producer(instr)) {
-               mem_delay = soft_sy_delay(instr, shader);
+               bd->mem_delay = soft_sy_delay(instr, shader);
             } else {
-               int n = MIN2(mem_delay, 1 + instr->repeat + instr->nop);
-               mem_delay -= n;
+               int n = MIN2(bd->mem_delay, 1 + instr->repeat + instr->nop);
+               bd->mem_delay -= n;
             }
          } else {
             unsigned instrs_count = 1 + instr->repeat + instr->nop;
@@ -471,6 +488,8 @@ ir3_collect_info(struct ir3_shader_variant *v)
       compiler, regs_count, info->double_threadsize);
    info->max_waves = MIN2(reg_independent_max_waves, reg_dependent_max_waves);
    assert(info->max_waves <= v->compiler->max_waves);
+
+   ralloc_free(mem_ctx);
 }
 
 static struct ir3_register *
