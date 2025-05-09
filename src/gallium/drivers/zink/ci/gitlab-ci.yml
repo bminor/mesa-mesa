@@ -200,15 +200,15 @@ zink-tu-a750:
 
 ############### Combined testing (GL, GLES, Piglit) on NVK / RADV
 zink-nvk-ga106-valve:
-  timeout: 60m
+  timeout: 45m
   extends:
     - .zink-nvk-test-valve
     - .zink-nvk-manual-rules
     - .nvk-ga106-valve
   variables:
     GPU_VERSION: zink-nvk-ga106
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 50
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 55  # usual run time: 35min
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 40
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 40  # usual run time: 32min
 
 zink-radv-polaris10-valve:
   extends:
