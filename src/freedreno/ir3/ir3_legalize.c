@@ -232,6 +232,105 @@ apply_sy(struct ir3_instruction *instr,
    state->needs_sy_for_const = false;
 }
 
+static void
+sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
+            struct ir3_instruction *n)
+{
+   bool n_is_scalar_alu = is_scalar_alu(n, compiler);
+
+   if (is_sfu(n) || n->opc == OPC_SHFL)
+      regmask_set(&state->needs_ss, n->dsts[0]);
+
+   foreach_dst (dst, n) {
+      if (dst->flags & IR3_REG_SHARED) {
+         if (n_is_scalar_alu) {
+            if (dst->flags & IR3_REG_HALF)
+               regmask_set(&state->needs_ss_scalar_full, dst);
+            else
+               regmask_set(&state->needs_ss_scalar_half, dst);
+         } else {
+            regmask_set(&state->needs_ss, dst);
+         }
+      } else if (reg_is_addr1(dst) && n->block->in_early_preamble) {
+         regmask_set(&state->needs_ss, dst);
+      }
+   }
+
+   if (is_tex_or_prefetch(n) && n->dsts_count > 0) {
+      regmask_set(&state->needs_sy, n->dsts[0]);
+   } else if (n->opc == OPC_RESINFO && n->dsts_count > 0) {
+      regmask_set(&state->needs_ss, n->dsts[0]);
+   } else if (is_load(n)) {
+      if (is_local_mem_load(n))
+         regmask_set(&state->needs_ss, n->dsts[0]);
+      else
+         regmask_set(&state->needs_sy, n->dsts[0]);
+   } else if (is_atomic(n->opc)) {
+      if (is_bindless_atomic(n->opc)) {
+         regmask_set(&state->needs_sy, n->srcs[2]);
+      } else if (is_global_a3xx_atomic(n->opc) ||
+                 is_global_a6xx_atomic(n->opc)) {
+         regmask_set(&state->needs_sy, n->dsts[0]);
+      } else {
+         regmask_set(&state->needs_ss, n->dsts[0]);
+      }
+   } else if (n->opc == OPC_PUSH_CONSTS_LOAD_MACRO || n->opc == OPC_STC) {
+      state->needs_ss_for_const = true;
+   } else if (n->opc == OPC_LDC_K) {
+      state->needs_sy_for_const = true;
+   }
+
+   /* both tex/sfu appear to not always immediately consume
+    * their src register(s):
+    */
+   if (is_war_hazard_producer(n)) {
+      /* These WAR hazards can always be resolved with (ss). However, when
+       * the reader is a sy-producer, they can also be resolved using (sy)
+       * because once we have synced the reader's results using (sy), its
+       * sources have definitely been consumed. We track the two cases
+       * separately so that we don't add an unnecessary (ss) if a (sy) sync
+       * already happened.
+       * For example, this prevents adding the unnecessary (ss) in the
+       * following sequence:
+       * sam rd, rs, ...
+       * (sy)... ; sam synced so consumed its sources
+       * (ss)write rs ; (ss) unnecessary since rs has been consumed already
+       */
+      bool needs_ss = is_ss_producer(n) || is_store(n) || n->opc == OPC_STC;
+
+      /* It seems like ray_intersection WAR hazards cannot be resolved using
+       * (ss) and need a (sy) sync instead.
+       */
+      bool needs_sy = n->opc == OPC_RAY_INTERSECTION;
+
+      if (n_is_scalar_alu) {
+         /* Scalar ALU also does not immediately read its source because it
+          * is not executed right away, but scalar ALU instructions are
+          * executed in-order so subsequent scalar ALU instructions don't
+          * need to wait for previous ones.
+          */
+         regmask_t *mask = needs_ss ? &state->needs_ss_scalar_war
+                                    : &state->needs_ss_or_sy_scalar_war;
+
+         foreach_src (reg, n) {
+            if ((reg->flags & IR3_REG_SHARED) || is_reg_a0(reg)) {
+               regmask_set(mask, reg);
+            }
+         }
+      } else {
+         regmask_t *mask = needs_sy   ? &state->needs_sy_war
+                           : needs_ss ? &state->needs_ss_war
+                                      : &state->needs_ss_or_sy_war;
+
+         foreach_src (reg, n) {
+            if (!(reg->flags & (IR3_REG_IMMED | IR3_REG_CONST))) {
+               regmask_set(mask, reg);
+            }
+         }
+      }
+   }
+}
+
 static bool
 count_instruction(struct ir3_instruction *n, struct ir3_compiler *compiler)
 {
@@ -646,105 +745,21 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          list_addtail(&n->node, &block->instr_list);
       }
 
-      if (is_sfu(n) || n->opc == OPC_SHFL)
-         regmask_set(&state->needs_ss, n->dsts[0]);
+      sync_update(state, ctx->compiler, n);
 
-      foreach_dst (dst, n) {
-         if (dst->flags & IR3_REG_SHARED) {
-            if (n_is_scalar_alu) {
-               if (dst->flags & IR3_REG_HALF)
-                  regmask_set(&state->needs_ss_scalar_full, dst);
-               else
-                  regmask_set(&state->needs_ss_scalar_half, dst);
-            } else {
-               regmask_set(&state->needs_ss, dst);
-            }
-         } else if (reg_is_addr1(dst) && block->in_early_preamble) {
-            regmask_set(&state->needs_ss, dst);
-         }
+      if (n->opc == OPC_META_TEX_PREFETCH) {
+         assert(n->dsts_count > 0);
+         ctx->has_tex_prefetch = true;
       }
 
-      if (is_tex_or_prefetch(n) && n->dsts_count > 0) {
-         regmask_set(&state->needs_sy, n->dsts[0]);
-         if (n->opc == OPC_META_TEX_PREFETCH)
-            ctx->has_tex_prefetch = true;
-      } else if (n->opc == OPC_RESINFO && n->dsts_count > 0) {
-         regmask_set(&state->needs_ss, n->dsts[0]);
+      if (n->opc == OPC_RESINFO && n->dsts_count > 0) {
          ir3_NOP(&build)->flags |= IR3_INSTR_SS;
          last_input_needs_ss = false;
-      } else if (is_load(n)) {
-         if (is_local_mem_load(n))
-            regmask_set(&state->needs_ss, n->dsts[0]);
-         else
-            regmask_set(&state->needs_sy, n->dsts[0]);
-      } else if (is_atomic(n->opc)) {
-         if (is_bindless_atomic(n->opc)) {
-            regmask_set(&state->needs_sy, n->srcs[2]);
-         } else if (is_global_a3xx_atomic(n->opc) ||
-                    is_global_a6xx_atomic(n->opc)) {
-            regmask_set(&state->needs_sy, n->dsts[0]);
-         } else {
-            regmask_set(&state->needs_ss, n->dsts[0]);
-         }
-      } else if (n->opc == OPC_PUSH_CONSTS_LOAD_MACRO || n->opc == OPC_STC) {
-         state->needs_ss_for_const = true;
-      } else if (n->opc == OPC_LDC_K) {
-         state->needs_sy_for_const = true;
       }
 
       if (is_ssbo(n->opc) || is_global_a3xx_atomic(n->opc) ||
           is_bindless_atomic(n->opc))
          ctx->so->has_ssbo = true;
-
-      /* both tex/sfu appear to not always immediately consume
-       * their src register(s):
-       */
-      if (is_war_hazard_producer(n)) {
-         /* These WAR hazards can always be resolved with (ss). However, when
-          * the reader is a sy-producer, they can also be resolved using (sy)
-          * because once we have synced the reader's results using (sy), its
-          * sources have definitely been consumed. We track the two cases
-          * separately so that we don't add an unnecessary (ss) if a (sy) sync
-          * already happened.
-          * For example, this prevents adding the unnecessary (ss) in the
-          * following sequence:
-          * sam rd, rs, ...
-          * (sy)... ; sam synced so consumed its sources
-          * (ss)write rs ; (ss) unnecessary since rs has been consumed already
-          */
-         bool needs_ss = is_ss_producer(n) || is_store(n) || n->opc == OPC_STC;
-
-         /* It seems like ray_intersection WAR hazards cannot be resolved using
-          * (ss) and need a (sy) sync instead.
-          */
-         bool needs_sy = n->opc == OPC_RAY_INTERSECTION;
-
-         if (n_is_scalar_alu) {
-            /* Scalar ALU also does not immediately read its source because it
-             * is not executed right away, but scalar ALU instructions are
-             * executed in-order so subsequent scalar ALU instructions don't
-             * need to wait for previous ones.
-             */
-            regmask_t *mask = needs_ss ? &state->needs_ss_scalar_war
-                                       : &state->needs_ss_or_sy_scalar_war;
-
-            foreach_src (reg, n) {
-               if ((reg->flags & IR3_REG_SHARED) || is_reg_a0(reg)) {
-                  regmask_set(mask, reg);
-               }
-            }
-         } else {
-            regmask_t *mask = needs_sy   ? &state->needs_sy_war
-                              : needs_ss ? &state->needs_ss_war
-                                         : &state->needs_ss_or_sy_war;
-
-            foreach_src (reg, n) {
-               if (!(reg->flags & (IR3_REG_IMMED | IR3_REG_CONST))) {
-                  regmask_set(mask, reg);
-               }
-            }
-         }
-      }
 
       bool count = count_instruction(n, ctx->compiler);
       if (count)
