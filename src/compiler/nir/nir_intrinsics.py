@@ -1622,6 +1622,10 @@ intrinsic("load_local_shared_r600", src_comp=[0], dest_comp=0, indices = [], fla
 store("local_shared_r600", [1], [WRITE_MASK])
 store("tf_r600", [])
 
+# these two definitions are aimed at r600 indirect per_vertex_input accesses
+intrinsic("r600_indirect_vertex_at_index", dest_comp=1, src_comp=[1], flags=[CAN_ELIMINATE, CAN_REORDER])
+load("r600_indirect_per_vertex_input", [1, 1], [BASE, RANGE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE, CAN_REORDER])
+
 # AMD GCN/RDNA specific intrinsics
 
 # This barrier is a hint that prevents moving the instruction that computes

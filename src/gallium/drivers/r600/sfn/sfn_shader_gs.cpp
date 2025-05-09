@@ -29,7 +29,10 @@ GeometryShader::do_scan_instruction(nir_instr *instr)
    case nir_intrinsic_store_output:
       return process_store_output(ii);
    case nir_intrinsic_load_per_vertex_input:
+   case nir_intrinsic_load_r600_indirect_per_vertex_input:
       return process_load_input(ii);
+   case nir_intrinsic_r600_indirect_vertex_at_index:
+      return true;
    default:
       return false;
    }
@@ -165,7 +168,11 @@ GeometryShader::process_stage_intrinsic(nir_intrinsic_instr *intr)
    case nir_intrinsic_load_invocation_id:
       return emit_simple_mov(intr->def, 0, m_invocation_id);
    case nir_intrinsic_load_per_vertex_input:
-      return emit_load_per_vertex_input(intr);
+      return emit_load_per_vertex_input_direct(intr);
+   case nir_intrinsic_load_r600_indirect_per_vertex_input:
+      return emit_load_per_vertex_input_indirect(intr);
+   case nir_intrinsic_r600_indirect_vertex_at_index:
+      return emit_indirect_vertex_at_index(intr);
    default:;
    }
    return false;
@@ -294,7 +301,43 @@ GeometryShader::store_output(nir_intrinsic_instr *instr)
 }
 
 bool
-GeometryShader::emit_load_per_vertex_input(nir_intrinsic_instr *instr)
+GeometryShader::emit_indirect_vertex_at_index(nir_intrinsic_instr *instr)
+{
+   auto dest = value_factory().dest(instr->def, 0, pin_free);
+   auto literal_index = nir_src_as_const_value(instr->src[0]);
+
+   assert(literal_index);
+   assert(literal_index->u32 < R600_GS_VERTEX_INDIRECT_TOTAL);
+
+   auto addr = m_per_vertex_offsets[literal_index->u32];
+
+   auto ir = new AluInstr(op1_mov, dest, addr, AluInstr::write);
+   emit_instruction(ir);
+
+   return true;
+}
+
+bool
+GeometryShader::emit_load_per_vertex_input_direct(nir_intrinsic_instr *instr)
+{
+   auto literal_index = nir_src_as_const_value(instr->src[0]);
+   assert(literal_index);
+   assert(literal_index->u32 < R600_GS_VERTEX_INDIRECT_TOTAL);
+   assert(nir_intrinsic_io_semantics(instr).num_slots == 1);
+
+   return load_per_vertex_input_at_addr(instr, m_per_vertex_offsets[literal_index->u32]);
+}
+
+bool
+GeometryShader::emit_load_per_vertex_input_indirect(nir_intrinsic_instr *instr)
+{
+   return load_per_vertex_input_at_addr(
+      instr,
+      value_factory().src(instr->src[0], 0)->as_register());
+}
+
+bool
+GeometryShader::load_per_vertex_input_at_addr(nir_intrinsic_instr *instr, PRegister addr)
 {
    auto dest = value_factory().dest_vec4(instr->def, pin_group);
 
@@ -303,19 +346,9 @@ GeometryShader::emit_load_per_vertex_input(nir_intrinsic_instr *instr)
       dest_swz[i] = i + nir_intrinsic_component(instr);
    }
 
-   auto literal_index = nir_src_as_const_value(instr->src[0]);
-
-   if (!literal_index) {
-      sfn_log << SfnLog::err << "GS: Indirect input addressing not (yet) supported\n";
-      return false;
-   }
-   assert(literal_index->u32 < R600_GS_VERTEX_INDIRECT_TOTAL);
-   assert(nir_intrinsic_io_semantics(instr).num_slots == 1);
-
    EVTXDataFormat fmt =
       chip_class() >= ISA_CC_EVERGREEN ? fmt_invalid : fmt_32_32_32_32_float;
 
-   auto addr = m_per_vertex_offsets[literal_index->u32];
    auto fetch = new LoadFromBuffer(dest,
                                    dest_swz,
                                    addr,
