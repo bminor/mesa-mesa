@@ -510,7 +510,6 @@ static void rate_control(struct rvce_encoder *enc)
 
 static void config(struct rvce_encoder *enc)
 {
-   enc->task_info(enc, 0x00000002, 0xffffffff);
    enc->rate_control(enc);
    enc->config_extension(enc);
    enc->motion_estimation(enc);
