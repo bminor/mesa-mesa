@@ -3318,7 +3318,7 @@ impl SM70Op for OpMemBar {
 }
 
 impl SM70Encoder<'_> {
-    fn set_rel_offset(&mut self, range: Range<usize>, label: &Label) {
+    fn get_rel_offset(&mut self, label: &Label) -> i64 {
         let ip = u64::try_from(self.ip).unwrap();
         let ip = i64::try_from(ip).unwrap();
 
@@ -3326,9 +3326,25 @@ impl SM70Encoder<'_> {
         let target_ip = u64::try_from(target_ip).unwrap();
         let target_ip = i64::try_from(target_ip).unwrap();
 
-        let rel_offset = target_ip - ip - 4;
+        target_ip - ip - 4
+    }
+
+    fn set_rel_offset(&mut self, range: Range<usize>, label: &Label) {
+        let rel_offset = self.get_rel_offset(label);
 
         self.set_field(range, rel_offset);
+    }
+
+    fn set_rel_offset2(
+        &mut self,
+        range1: Range<usize>,
+        range2: Range<usize>,
+        label: &Label,
+    ) {
+        let rel_offset = self.get_rel_offset(label);
+        let shift = range1.len();
+        self.set_field(range1, (rel_offset as u64) & ((1 << shift) - 1));
+        self.set_field(range2, rel_offset >> shift);
     }
 }
 
@@ -3417,7 +3433,11 @@ impl SM70Op for OpBra {
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
         e.set_opcode(0x947);
-        e.set_rel_offset(34..82, &self.target);
+        if e.sm >= 100 {
+            e.set_rel_offset2(16..24, 34..82, &self.target);
+        } else {
+            e.set_rel_offset(34..82, &self.target);
+        }
         e.set_field(87..90, 0x7_u8); // TODO: Pred?
     }
 }
