@@ -2210,10 +2210,21 @@ static void gfx12_push_global_shader_pointers(struct si_context *sctx, struct si
 
 static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned index)
 {
+   bool is_mesh_pipeline = !!sctx->ms_shader_state.cso;
    uint32_t *sh_base = sctx->shader_pointers.sh_base;
-   unsigned all_gfx_desc_mask = BITFIELD_RANGE(0, SI_DESCS_FIRST_COMPUTE);
-   unsigned descriptors_dirty = sctx->descriptors_dirty & all_gfx_desc_mask;
-   unsigned shader_pointers_dirty = sctx->shader_pointers_dirty | descriptors_dirty;
+   unsigned emit_desc_mask = is_mesh_pipeline ?
+      BITFIELD_BIT(SI_DESCS_INTERNAL) |
+      SI_DESCS_SHADER_MASK(FRAGMENT) |
+      SI_DESCS_SHADER_MASK(TASK) |
+      SI_DESCS_SHADER_MASK(MESH) :
+      BITFIELD_RANGE(0, SI_DESCS_FIRST_COMPUTE);
+
+   unsigned descriptors_dirty = sctx->descriptors_dirty & emit_desc_mask;
+   unsigned shader_pointers_dirty = sctx->shader_pointers_dirty & emit_desc_mask;
+   shader_pointers_dirty |= descriptors_dirty;
+
+   unsigned attribute_ring_addr_sgpr = is_mesh_pipeline ?
+      GFX11_SGPR_MS_ATTRIBUTE_RING_ADDR : GFX9_SGPR_ATTRIBUTE_RING_ADDR;
 
    if (descriptors_dirty & BITFIELD_BIT(SI_DESCS_INTERNAL)) {
       sctx->graphics_internal_bindings_pointer_dirty = true;
@@ -2247,10 +2258,12 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                              sh_base[MESA_SHADER_GEOMETRY], gfx);
+      gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(MESH),
+                                             sh_base[MESA_SHADER_MESH], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx12_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
-                               GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
+                               attribute_ring_addr_sgpr * 4,
                                sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
                                  sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
                                  sctx->screen->attribute_pos_prim_ring->gpu_address);
@@ -2277,10 +2290,12 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                              sh_base[MESA_SHADER_GEOMETRY], gfx);
+      gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(MESH),
+                                             sh_base[MESA_SHADER_MESH], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx11_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
-                               GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
+                               attribute_ring_addr_sgpr * 4,
                                sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
                                  sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
                                  sctx->screen->attribute_pos_prim_ring->gpu_address);
@@ -2308,11 +2323,13 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
                                           sh_base[MESA_SHADER_TESS_CTRL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                           sh_base[MESA_SHADER_GEOMETRY], gfx);
+      si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(MESH),
+                                          sh_base[MESA_SHADER_MESH], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          assert(sctx->gfx_level >= GFX11);
          radeon_set_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
-                           GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
+                           attribute_ring_addr_sgpr * 4,
                            sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
                               sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
                               sctx->screen->attribute_pos_prim_ring->gpu_address);
@@ -2331,7 +2348,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       }
    }
 
-   sctx->shader_pointers_dirty &= ~all_gfx_desc_mask;
+   sctx->shader_pointers_dirty &= ~emit_desc_mask;
 }
 
 void si_emit_compute_shader_pointers(struct si_context *sctx)
