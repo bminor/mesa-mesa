@@ -192,7 +192,6 @@ zink-tu-a750:
     - .test-piglit
   timeout: 25m  # base runtime 11min total, 9min of testing
   variables:
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 18
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: zink-tu-a750
     GPU_VERSION: zink-tu-a750
