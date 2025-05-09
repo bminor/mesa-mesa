@@ -45,6 +45,7 @@ KHR-GLES31.core.draw_indirect.advanced-twoPass-transformFeedback-elements,Fail
 # msm 900000.mdss: [drm:a5xx_irq] *ERROR* gpu fault ring 0 fence 2c54ef status E40801C1 rb 0162/0162 ib1 000000000104B000/0000 ib2 000000000104C000/0000
 KHR-GLES31.core.texture_buffer.texture_buffer_atomic_functions,Fail
 
+KHR-GLES31.core.shader_image_load_store.basic-allTargets-loadStoreCS,Fail
 
 # Many failures, across formats
 KHR-GLES3.copy_tex_image_conversions.required.cubemap_posx_cubemap_posx,Fail
