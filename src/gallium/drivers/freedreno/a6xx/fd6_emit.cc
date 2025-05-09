@@ -928,7 +928,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
          .shared_consts_enable = false,
       )
    );
-   WRITE(REG_A6XX_VFD_ADD_OFFSET, A6XX_VFD_ADD_OFFSET_VERTEX);
+   OUT_REG(ring, A6XX_VFD_ADD_OFFSET(.vertex = true, .instance = true));
    WRITE(REG_A6XX_VPC_UNKNOWN_9107, 0);
    WRITE(REG_A6XX_RB_UNKNOWN_8811, 0x00000010);
    WRITE(REG_A6XX_PC_MODE_CNTL, screen->info->a6xx.magic.PC_MODE_CNTL);

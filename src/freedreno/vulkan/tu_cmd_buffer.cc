@@ -1558,8 +1558,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                                             .isammode = ISAMMODE_GL,
                                             .shared_consts_enable = false));
 
-   /* TODO: set A6XX_VFD_ADD_OFFSET_INSTANCE and fix ir3 to avoid adding base instance */
-   tu_cs_emit_write_reg(cs, REG_A6XX_VFD_ADD_OFFSET, A6XX_VFD_ADD_OFFSET_VERTEX);
+   tu_cs_emit_regs(cs, A6XX_VFD_ADD_OFFSET(.vertex = true, .instance = true));
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_8811, 0x00000010);
    tu_cs_emit_write_reg(cs, REG_A6XX_PC_MODE_CNTL,
                         phys_dev->info->a6xx.magic.PC_MODE_CNTL);

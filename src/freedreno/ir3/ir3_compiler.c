@@ -328,6 +328,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
    if (compiler->gen >= 6) {
       compiler->nir_options.force_indirect_unrolling = nir_var_all,
       compiler->nir_options.lower_device_index_to_zero = true;
+      compiler->nir_options.instance_id_includes_base_index = true;
 
       if (dev_info->a6xx.has_dp2acc || dev_info->a6xx.has_dp4acc) {
          compiler->nir_options.has_udot_4x8 =
