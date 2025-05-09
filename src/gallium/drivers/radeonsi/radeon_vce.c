@@ -373,7 +373,7 @@ static void encode(struct rvce_encoder *enc)
 
    RVCE_BEGIN(0x05000004);                                   // video bitstream buffer
    RVCE_WRITE(enc->bs_handle, RADEON_DOMAIN_GTT, enc->bs_offset); // videoBitstreamRingAddressHi/Lo
-   RVCE_CS(enc->bs_size);                                    // videoBitstreamRingSize
+   RVCE_CS(enc->bs_size - enc->bs_offset);                   // videoBitstreamRingSize
    RVCE_END();
 
    if (enc->dual_pipe) {
