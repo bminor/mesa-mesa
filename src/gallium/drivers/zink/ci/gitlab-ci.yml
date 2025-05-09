@@ -207,7 +207,6 @@ zink-nvk-ga106-valve:
     - .nvk-ga106-valve
   variables:
     GPU_VERSION: zink-nvk-ga106
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 40
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40  # usual run time: 32min
 
 zink-radv-polaris10-valve:
