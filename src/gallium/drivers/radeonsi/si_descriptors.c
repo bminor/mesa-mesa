@@ -2028,7 +2028,7 @@ void si_shader_pointers_mark_dirty(struct si_context *sctx)
 /* Set a base register address for user data constants in the given shader.
  * This assigns a mapping from PIPE_SHADER_* to SPI_SHADER_USER_DATA_*.
  */
-static void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint32_t new_base)
+void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint32_t new_base)
 {
    uint32_t *base = &sctx->shader_pointers.sh_base[shader];
 

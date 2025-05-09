@@ -611,6 +611,7 @@ bool si_compute_resources_check_encrypted(struct si_context *sctx);
 void si_shader_pointers_mark_dirty(struct si_context *sctx);
 void si_add_all_descriptors_to_bo_list(struct si_context *sctx);
 void si_update_all_texture_descriptors(struct si_context *sctx);
+void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint32_t new_base);
 void si_shader_change_notify(struct si_context *sctx);
 void si_update_needs_color_decompress_masks(struct si_context *sctx);
 void si_emit_compute_shader_pointers(struct si_context *sctx);
