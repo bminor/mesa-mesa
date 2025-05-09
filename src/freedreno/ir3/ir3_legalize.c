@@ -618,6 +618,23 @@ delay_update(struct ir3_compiler *compiler,
    }
 }
 
+static void
+ir3_update_legalize_state(struct ir3_legalize_state *state,
+                          struct ir3_compiler *compiler,
+                          struct ir3_instruction *n)
+{
+   sync_update(state, compiler, n);
+
+   bool count = count_instruction(n, compiler);
+   if (count)
+      state->cycle += 1;
+
+   delay_update(compiler, state, n);
+
+   if (count)
+      state->cycle += n->repeat + n->nop;
+}
+
 /* We want to evaluate each block from the position of any other
  * predecessor block, in order that the flags set are the union of
  * all possible program paths.
@@ -791,8 +808,6 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          list_addtail(&n->node, &block->instr_list);
       }
 
-      sync_update(state, ctx->compiler, n);
-
       if (n->opc == OPC_META_TEX_PREFETCH) {
          assert(n->dsts_count > 0);
          ctx->has_tex_prefetch = true;
@@ -807,14 +822,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
           is_bindless_atomic(n->opc))
          ctx->so->has_ssbo = true;
 
-      bool count = count_instruction(n, ctx->compiler);
-      if (count)
-         state->cycle += 1;
-
-      delay_update(ctx->compiler, state, n);
-
-      if (count)
-         state->cycle += n->repeat + n->nop;
+      ir3_update_legalize_state(state, ctx->compiler, n);
 
       if (ctx->early_input_release && is_input(n)) {
          last_input_needs_ss |= (n->opc == OPC_LDLV);
