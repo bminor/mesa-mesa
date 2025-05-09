@@ -1591,11 +1591,14 @@ static void visit_store_ssbo(struct ac_nir_context *ctx, nir_intrinsic_instr *in
          num_bytes = 16;
       }
 
-      /* check alignment of 16 Bit stores */
-      if (elem_size_bytes == 2 && num_bytes > 2 && (start % 2) == 1) {
-         writemask |= ((1u << (count - 1)) - 1u) << (start + 1);
+      /* check alignment of 8/16 Bit stores */
+      uint32_t align_mul = nir_intrinsic_align_mul(instr);
+      uint32_t align_offset = nir_intrinsic_align_offset(instr) + start * elem_size_bytes;
+      uint32_t align = nir_combined_align(align_mul, align_offset & (align_mul - 1));
+      if (align < MIN2(num_bytes, 4) || (ctx->ac.gfx_level == GFX6 && elem_size_bytes < 4)) {
+         writemask |= BITFIELD_RANGE(start + 1, count - 1);
          count = 1;
-         num_bytes = 2;
+         num_bytes = elem_size_bytes;
       }
 
       /* Due to alignment issues, split stores of 8-bit/16-bit
