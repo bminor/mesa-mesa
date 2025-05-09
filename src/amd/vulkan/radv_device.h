@@ -379,4 +379,6 @@ bool radv_device_acquire_performance_counters(struct radv_device *device);
 
 void radv_device_release_performance_counters(struct radv_device *device);
 
+bool radv_device_should_clear_vram(const struct radv_device *device);
+
 #endif /* RADV_DEVICE_H */

@@ -84,6 +84,16 @@ radv_trap_handler_enabled()
    return !!getenv("RADV_TRAP_HANDLER");
 }
 
+bool
+radv_device_should_clear_vram(const struct radv_device *device)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   /* Ignore drirc radv_zero_vram=true if the feature is enabled to let applications take control. */
+   return instance->drirc.zero_vram && !device->vk.enabled_features.zeroInitializeDeviceMemory;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_GetMemoryHostPointerPropertiesEXT(VkDevice _device, VkExternalMemoryHandleTypeFlagBits handleType,
                                        const void *pHostPointer,
