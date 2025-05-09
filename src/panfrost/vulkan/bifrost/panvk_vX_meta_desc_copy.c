@@ -279,8 +279,10 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
       goto out;
 
    nir_builder b = nir_builder_init_simple_shader(
-      MESA_SHADER_COMPUTE, GENX(pan_shader_get_compiler_options)(), "%s",
-      "desc_copy");
+      MESA_SHADER_COMPUTE,
+      pan_shader_get_compiler_options(
+         pan_arch(phys_dev->kmod.props.gpu_prod_id)),
+      "%s", "desc_copy");
 
    /* We actually customize that at execution time to issue the
     * exact number of jobs. */

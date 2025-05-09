@@ -610,7 +610,7 @@ GENX(pan_blend_create_shader)(const struct pan_blend_state *state,
    get_equation_str(rt_state, equation_str, sizeof(equation_str));
 
    nir_builder b = nir_builder_init_simple_shader(
-      MESA_SHADER_FRAGMENT, GENX(pan_shader_get_compiler_options)(),
+      MESA_SHADER_FRAGMENT, pan_shader_get_compiler_options(PAN_ARCH),
       "pan_blend(rt=%d,fmt=%s,nr_samples=%d,%s=%s)", rt,
       util_format_name(rt_state->format), rt_state->nr_samples,
       state->logicop_enable ? "logicop" : "equation",

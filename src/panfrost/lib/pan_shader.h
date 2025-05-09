@@ -71,8 +71,9 @@ void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
                         struct util_dynarray *binary,
                         struct pan_shader_info *info);
 
+const nir_shader_compiler_options *pan_shader_get_compiler_options(unsigned arch);
+
 #ifdef PAN_ARCH
-const nir_shader_compiler_options *GENX(pan_shader_get_compiler_options)(void);
 
 #if PAN_ARCH >= 9
 static inline enum mali_shader_stage

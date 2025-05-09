@@ -42,7 +42,7 @@ static void
 pan_indirect_dispatch_init(struct pan_indirect_dispatch_meta *meta)
 {
    nir_builder b = nir_builder_init_simple_shader(
-      MESA_SHADER_COMPUTE, GENX(pan_shader_get_compiler_options)(), "%s",
+      MESA_SHADER_COMPUTE, pan_shader_get_compiler_options(PAN_ARCH), "%s",
       "indirect_dispatch");
    nir_def *zero = nir_imm_int(&b, 0);
    nir_def *one = nir_imm_int(&b, 1);

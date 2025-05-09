@@ -340,7 +340,8 @@ panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
                       UNUSED gl_shader_stage stage,
                       UNUSED const struct vk_pipeline_robustness_state *rs)
 {
-   return GENX(pan_shader_get_compiler_options)();
+   struct panvk_physical_device *phys_dev = to_panvk_physical_device(vk_pdev);
+   return pan_shader_get_compiler_options(pan_arch(phys_dev->kmod.props.gpu_prod_id));
 }
 
 static struct spirv_to_nir_options

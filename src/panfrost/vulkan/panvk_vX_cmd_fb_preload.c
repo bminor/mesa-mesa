@@ -93,7 +93,7 @@ static nir_shader *
 get_preload_nir_shader(const struct panvk_fb_preload_shader_key *key)
 {
    nir_builder builder = nir_builder_init_simple_shader(
-      MESA_SHADER_FRAGMENT, GENX(pan_shader_get_compiler_options)(),
+      MESA_SHADER_FRAGMENT, pan_shader_get_compiler_options(PAN_ARCH),
       "panvk-meta-preload");
    nir_builder *b = &builder;
    nir_def *sample_id =
