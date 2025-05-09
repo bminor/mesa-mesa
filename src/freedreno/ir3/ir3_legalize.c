@@ -75,6 +75,8 @@ struct ir3_legalize_state {
    /* When p0.x-w, a0.x, and a1.x are ready. */
    unsigned pred_ready[4];
    unsigned addr_ready[2];
+
+   unsigned cycle;
 };
 
 struct ir3_legalize_block_data {
@@ -188,8 +190,7 @@ get_ready_slot(struct ir3_legalize_state *state,
 static unsigned
 delay_calc(struct ir3_legalize_ctx *ctx,
            struct ir3_legalize_state *state,
-           struct ir3_instruction *instr,
-           unsigned cycle)
+           struct ir3_instruction *instr)
 {
    /* As far as we know, shader outputs don't need any delay. */
    if (instr->opc == OPC_END || instr->opc == OPC_CHMASK)
@@ -202,7 +203,8 @@ delay_calc(struct ir3_legalize_ctx *ctx,
 
       unsigned elems = post_ra_reg_elems(src);
       unsigned num = post_ra_reg_num(src);
-      unsigned src_cycle = cycle + ir3_src_read_delay(ctx->compiler, instr, n);
+      unsigned src_cycle =
+         state->cycle + ir3_src_read_delay(ctx->compiler, instr, n);
 
       for (unsigned elem = 0; elem < elems; elem++, num++) {
          unsigned ready_cycle =
@@ -224,7 +226,6 @@ static void
 delay_update(struct ir3_legalize_ctx *ctx,
              struct ir3_legalize_state *state,
              struct ir3_instruction *instr,
-             unsigned cycle,
              bool mergedregs)
 {
    if (writes_addr1(instr) && instr->block->in_early_preamble)
@@ -236,7 +237,7 @@ delay_update(struct ir3_legalize_ctx *ctx,
 
       unsigned elems = post_ra_reg_elems(dst);
       unsigned num = post_ra_reg_num(dst);
-      unsigned dst_cycle = cycle;
+      unsigned dst_cycle = state->cycle;
 
       /* sct and swz have scalar destinations and each destination is written in
        * a subsequent cycle.
@@ -432,7 +433,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
    list_replace(&block->instr_list, &instr_list);
    list_inithead(&block->instr_list);
 
-   unsigned cycle = 0;
+   state->cycle = 0;
 
    foreach_instr_safe (n, &instr_list) {
       unsigned i;
@@ -566,10 +567,10 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          nop->flags |= IR3_INSTR_SS;
          n->flags &= ~IR3_INSTR_SS;
          last_n = nop;
-         cycle++;
+         state->cycle++;
       }
 
-      unsigned delay = delay_calc(ctx, state, n, cycle);
+      unsigned delay = delay_calc(ctx, state, n);
 
       /* NOTE: I think the nopN encoding works for a5xx and
        * probably a4xx, but not a3xx.  So far only tested on
@@ -584,7 +585,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          unsigned transfer = MIN2(delay, 3 - last_n->nop);
          last_n->nop += transfer;
          delay -= transfer;
-         cycle += transfer;
+         state->cycle += transfer;
       }
 
       if ((delay > 0) && last_n && (last_n->opc == OPC_NOP)) {
@@ -592,13 +593,13 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          unsigned transfer = MIN2(delay, 5 - last_n->repeat);
          last_n->repeat += transfer;
          delay -= transfer;
-         cycle += transfer;
+         state->cycle += transfer;
       }
 
       if (delay > 0) {
          assert(delay <= 6);
          ir3_NOP(&build)->repeat = delay - 1;
-         cycle += delay;
+         state->cycle += delay;
       }
 
       if (ctx->compiler->samgq_workaround &&
@@ -721,12 +722,12 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
 
       bool count = count_instruction(n, ctx->compiler);
       if (count)
-         cycle += 1;
+         state->cycle += 1;
 
-      delay_update(ctx, state, n, cycle, mergedregs);
+      delay_update(ctx, state, n, mergedregs);
 
       if (count)
-         cycle += n->repeat + n->nop;
+         state->cycle += n->repeat + n->nop;
 
       if (ctx->early_input_release && is_input(n)) {
          last_input_needs_ss |= (n->opc == OPC_LDLV);
@@ -791,16 +792,16 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
     * cycle offset.
     */
    for (unsigned i = 0; i < ARRAY_SIZE(state->pred_ready); i++)
-      state->pred_ready[i] = MAX2(state->pred_ready[i], cycle) - cycle;
+      state->pred_ready[i] = MAX2(state->pred_ready[i], state->cycle) - state->cycle;
    for (unsigned i = 0; i < ARRAY_SIZE(state->alu_nop.full_ready); i++) {
       state->alu_nop.full_ready[i] =
-         MAX2(state->alu_nop.full_ready[i], cycle) - cycle;
+         MAX2(state->alu_nop.full_ready[i], state->cycle) - state->cycle;
       state->alu_nop.half_ready[i] =
-         MAX2(state->alu_nop.half_ready[i], cycle) - cycle;
+         MAX2(state->alu_nop.half_ready[i], state->cycle) - state->cycle;
       state->non_alu_nop.full_ready[i] =
-         MAX2(state->non_alu_nop.full_ready[i], cycle) - cycle;
+         MAX2(state->non_alu_nop.full_ready[i], state->cycle) - state->cycle;
       state->non_alu_nop.half_ready[i] =
-         MAX2(state->non_alu_nop.half_ready[i], cycle) - cycle;
+         MAX2(state->non_alu_nop.half_ready[i], state->cycle) - state->cycle;
    }
 
    bd->valid = true;
