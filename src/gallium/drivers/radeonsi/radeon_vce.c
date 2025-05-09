@@ -662,7 +662,6 @@ static void rdo(struct rvce_encoder *enc)
 
 static void config(struct rvce_encoder *enc)
 {
-   task_info(enc, 0x00000002, 0xffffffff);
    rate_control(enc);
    config_extension(enc);
    motion_estimation(enc);
@@ -928,6 +927,7 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
 
    if (need_rate_control) {
       session(enc);
+      task_info(enc, 0x00000002, 0xffffffff);
       config(enc);
       flush(enc, PIPE_FLUSH_ASYNC, NULL);
    }
