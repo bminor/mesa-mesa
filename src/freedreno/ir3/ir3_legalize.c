@@ -533,8 +533,7 @@ delay_calc(struct ir3_compiler *compiler,
 static void
 delay_update(struct ir3_compiler *compiler,
              struct ir3_legalize_state *state,
-             struct ir3_instruction *instr,
-             bool mergedregs)
+             struct ir3_instruction *instr)
 {
    if (writes_addr1(instr) && instr->block->in_early_preamble)
       return;
@@ -812,7 +811,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       if (count)
          state->cycle += 1;
 
-      delay_update(ctx->compiler, state, n, mergedregs);
+      delay_update(ctx->compiler, state, n);
 
       if (count)
          state->cycle += n->repeat + n->nop;
