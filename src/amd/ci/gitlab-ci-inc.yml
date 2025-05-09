@@ -289,6 +289,7 @@
 .ci-tron-test-amdgpu:
   variables:
     CI_TRON_PATTERN__JOB_WARN__REGEX: '\*ERROR\* ring .* timeout'
+    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
 
 .ci-tron-test-radv:
   extends: .ci-tron-test-amdgpu
@@ -311,8 +312,6 @@
     - .ci-tron-x86_64-test-vk
     - .radv-valve-rules
     - .ci-tron-test-radv
-  variables:
-    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
 
 
 .tahiti-test-valve:

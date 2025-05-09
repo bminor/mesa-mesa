@@ -258,7 +258,6 @@
   variables:
     DEQP_SUITE: zink-radv
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
-    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci # 6.6
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
     # Disable reporting, since DUTs don't have internet access
