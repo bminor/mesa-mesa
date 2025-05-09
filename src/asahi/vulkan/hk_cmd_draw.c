@@ -1199,6 +1199,9 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       if (gsi->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED) {
          cmd->geom_index_buffer = dev->heap->va->addr;
          cmd->geom_index_count = dev->heap->size;
+      } else {
+         cmd->geom_index_count =
+            agx_gs_rast_vertices(gsi->shape, gsi->max_indices, 1, 0);
       }
    } else {
       uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
