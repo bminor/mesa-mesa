@@ -30,29 +30,6 @@
 #include "panfrost/compiler/bifrost_compile.h"
 #include "panfrost/midgard/midgard_compile.h"
 
-#ifdef PAN_ARCH
-/* This is only needed on Midgard. It's the same on both v4 and v5, so only
- * compile once to avoid the GenXML dependency for calls.
- */
-#if PAN_ARCH == 5
-uint8_t
-pan_raw_format_mask_midgard(enum pipe_format *formats)
-{
-   uint8_t out = 0;
-
-   for (unsigned i = 0; i < 8; i++) {
-      enum pipe_format fmt = formats[i];
-      unsigned wb_fmt = panfrost_blendable_formats_v6[fmt].writeback;
-
-      if (wb_fmt < MALI_COLOR_FORMAT_R8)
-         out |= BITFIELD_BIT(i);
-   }
-
-   return out;
-}
-#endif
-
-#else
 const nir_shader_compiler_options *
 pan_shader_get_compiler_options(unsigned arch)
 {
@@ -218,5 +195,3 @@ pan_shader_compile(nir_shader *s, struct panfrost_compile_inputs *inputs,
       }
    }
 }
-
-#endif

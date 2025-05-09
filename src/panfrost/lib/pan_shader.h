@@ -65,8 +65,6 @@ pan_shader_disassemble(FILE *fp, const void *code, size_t size, unsigned gpu_id,
       disassemble_midgard(fp, code, size, gpu_id, verbose);
 }
 
-uint8_t pan_raw_format_mask_midgard(enum pipe_format *formats);
-
 void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
                         struct util_dynarray *binary,
                         struct pan_shader_info *info);

@@ -567,6 +567,27 @@ const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
 };
 /* clang-format on */
 
+/* This is only needed on Midgard. It's the same on both v4 and v5, so only
+ * compile once to avoid the GenXML dependency for calls.
+ */
+#if PAN_ARCH == 5
+uint8_t
+pan_raw_format_mask_midgard(enum pipe_format *formats)
+{
+   uint8_t out = 0;
+
+   for (unsigned i = 0; i < 8; i++) {
+      enum pipe_format fmt = formats[i];
+      unsigned wb_fmt = panfrost_blendable_formats_v6[fmt].writeback;
+
+      if (wb_fmt < MALI_COLOR_FORMAT_R8)
+         out |= BITFIELD_BIT(i);
+   }
+
+   return out;
+}
+#endif
+
 #if PAN_ARCH == 7 || PAN_ARCH >= 10
 /*
  * Decompose a component ordering swizzle into a component ordering (applied

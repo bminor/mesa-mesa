@@ -73,6 +73,8 @@ extern const struct pan_blendable_format
 extern const struct pan_blendable_format
    panfrost_blendable_formats_v13[PIPE_FORMAT_COUNT];
 
+uint8_t pan_raw_format_mask_midgard(enum pipe_format *formats);
+
 static inline const struct pan_blendable_format *
 panfrost_blendable_format_table(unsigned arch)
 {
