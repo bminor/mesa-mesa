@@ -331,6 +331,21 @@ sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
    }
 }
 
+static void
+ir3_init_legalize_state(struct ir3_legalize_state *state,
+                        struct ir3_compiler *compiler)
+{
+   regmask_init(&state->needs_ss_war, compiler->mergedregs);
+   regmask_init(&state->needs_sy_war, compiler->mergedregs);
+   regmask_init(&state->needs_ss_or_sy_war, compiler->mergedregs);
+   regmask_init(&state->needs_ss_scalar_war, compiler->mergedregs);
+   regmask_init(&state->needs_ss_or_sy_scalar_war, compiler->mergedregs);
+   regmask_init(&state->needs_ss_scalar_full, compiler->mergedregs);
+   regmask_init(&state->needs_ss_scalar_half, compiler->mergedregs);
+   regmask_init(&state->needs_ss, compiler->mergedregs);
+   regmask_init(&state->needs_sy, compiler->mergedregs);
+}
+
 static bool
 count_instruction(struct ir3_instruction *n, struct ir3_compiler *compiler)
 {
@@ -1831,7 +1846,6 @@ bool
 ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
 {
    struct ir3_legalize_ctx *ctx = rzalloc(ir, struct ir3_legalize_ctx);
-   bool mergedregs = so->mergedregs;
    bool progress;
 
    ctx->so = so;
@@ -1844,24 +1858,8 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
       struct ir3_legalize_block_data *bd =
          rzalloc(ctx, struct ir3_legalize_block_data);
 
-      regmask_init(&bd->state.needs_ss_war, mergedregs);
-      regmask_init(&bd->state.needs_sy_war, mergedregs);
-      regmask_init(&bd->state.needs_ss_or_sy_war, mergedregs);
-      regmask_init(&bd->state.needs_ss_scalar_war, mergedregs);
-      regmask_init(&bd->state.needs_ss_or_sy_scalar_war, mergedregs);
-      regmask_init(&bd->state.needs_ss_scalar_full, mergedregs);
-      regmask_init(&bd->state.needs_ss_scalar_half, mergedregs);
-      regmask_init(&bd->state.needs_ss, mergedregs);
-      regmask_init(&bd->state.needs_sy, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_war, mergedregs);
-      regmask_init(&bd->begin_state.needs_sy_war, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_or_sy_war, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_scalar_war, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_or_sy_scalar_war, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_scalar_full, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss_scalar_half, mergedregs);
-      regmask_init(&bd->begin_state.needs_ss, mergedregs);
-      regmask_init(&bd->begin_state.needs_sy, mergedregs);
+      ir3_init_legalize_state(&bd->state, so->compiler);
+      ir3_init_legalize_state(&bd->begin_state, so->compiler);
 
       block->data = bd;
    }
