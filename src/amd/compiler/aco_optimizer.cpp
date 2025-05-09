@@ -3942,7 +3942,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       bool emit_fma = false;
       /* find the 'best' mul instruction to combine with the add */
       for (unsigned i = is_add_mix ? 1 : 0; i < instr->operands.size(); i++) {
-         if (!instr->operands[i].isTemp() || !ctx.info[instr->operands[i].tempId()].is_usedef())
+         if (!instr->operands[i].isTemp())
             continue;
          ssa_info& info = ctx.info[instr->operands[i].tempId()];
          if (!is_mul(info.parent_instr))
