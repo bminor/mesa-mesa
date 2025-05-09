@@ -370,19 +370,24 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       state->needs_ss_for_const |= pstate->needs_ss_for_const;
       state->needs_sy_for_const |= pstate->needs_sy_for_const;
 
-      /* Our nop state is the max of the predecessor blocks */
+      /* Our nop state is the max of the predecessor blocks. The predecessor nop
+       * state contains the cycle offset from the start of its block when each
+       * register becomes ready. But successor blocks need the cycle offset from
+       * their start, which is the predecessor's block's end. Translate the
+       * cycle offset.
+       */
       for (unsigned i = 0; i < ARRAY_SIZE(state->pred_ready); i++)
          state->pred_ready[i] = MAX2(state->pred_ready[i],
-                                     pstate->pred_ready[i]);
+                                     MAX2(pstate->pred_ready[i], pstate->cycle) - pstate->cycle);
       for (unsigned i = 0; i < ARRAY_SIZE(state->alu_nop.full_ready); i++) {
          state->alu_nop.full_ready[i] = MAX2(state->alu_nop.full_ready[i],
-                                             pstate->alu_nop.full_ready[i]);
+                                             MAX2(pstate->alu_nop.full_ready[i], pstate->cycle) - pstate->cycle);
          state->alu_nop.half_ready[i] = MAX2(state->alu_nop.half_ready[i],
-                                             pstate->alu_nop.half_ready[i]);
+                                             MAX2(pstate->alu_nop.half_ready[i], pstate->cycle) - pstate->cycle);
          state->non_alu_nop.full_ready[i] = MAX2(state->non_alu_nop.full_ready[i],
-                                                 pstate->non_alu_nop.full_ready[i]);
+                                                 MAX2(pstate->non_alu_nop.full_ready[i], pstate->cycle) - pstate->cycle);
          state->non_alu_nop.half_ready[i] = MAX2(state->non_alu_nop.half_ready[i],
-                                                 pstate->non_alu_nop.half_ready[i]);
+                                                 MAX2(pstate->non_alu_nop.half_ready[i], pstate->cycle) - pstate->cycle);
       }
    }
 
@@ -784,24 +789,6 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       /* insert the dummy bary.f at head: */
       list_delinit(&baryf->node);
       list_add(&baryf->node, &block->instr_list);
-   }
-
-   /* Currently our nop state contains the cycle offset from the start of this
-    * block when each register becomes ready. But successor blocks need the
-    * cycle offset from their start, which is this block's end. Translate the
-    * cycle offset.
-    */
-   for (unsigned i = 0; i < ARRAY_SIZE(state->pred_ready); i++)
-      state->pred_ready[i] = MAX2(state->pred_ready[i], state->cycle) - state->cycle;
-   for (unsigned i = 0; i < ARRAY_SIZE(state->alu_nop.full_ready); i++) {
-      state->alu_nop.full_ready[i] =
-         MAX2(state->alu_nop.full_ready[i], state->cycle) - state->cycle;
-      state->alu_nop.half_ready[i] =
-         MAX2(state->alu_nop.half_ready[i], state->cycle) - state->cycle;
-      state->non_alu_nop.full_ready[i] =
-         MAX2(state->non_alu_nop.full_ready[i], state->cycle) - state->cycle;
-      state->non_alu_nop.half_ready[i] =
-         MAX2(state->non_alu_nop.half_ready[i], state->cycle) - state->cycle;
    }
 
    bd->valid = true;
