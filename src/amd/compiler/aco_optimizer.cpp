@@ -2007,6 +2007,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::p_extract: {
       if (instr->operands[0].isTemp()) {
          ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
          if (instr->definitions[0].bytes() == 4 && instr->operands[0].regClass() == v1 &&
              parse_insert(instr.get()))
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
