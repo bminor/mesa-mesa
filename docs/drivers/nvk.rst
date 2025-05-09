@@ -17,6 +17,14 @@ Conformance status:
 NVK is a conformant Vulkan 1.4 implementation for all officially supported
 GPUs.
 
+OpenGL support through Zink:
+----------------------------
+
+Starting with Mesa 25.1, all Turing (RTX 2000 series and GTX 16xx) and
+later GPUs will get NVK+Zink as their OpenGL implementation by default
+instead of the old Nouveau GL driver.  NVK+Zink is a conformant OpenGL 4.6
+implementation.
+
 Kernel requirements
 -------------------
 
