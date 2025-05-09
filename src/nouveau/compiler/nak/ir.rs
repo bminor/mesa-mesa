@@ -5138,7 +5138,7 @@ impl fmt::Display for LdcMode {
 }
 
 #[repr(C)]
-#[derive(SrcsAsSlice, DstsAsSlice)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpLdc {
     pub dst: Dst,
 

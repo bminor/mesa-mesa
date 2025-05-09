@@ -105,6 +105,15 @@ impl SM70Encoder<'_> {
         }
     }
 
+    fn set_ureg_src(&mut self, range: Range<usize>, src: &Src) {
+        assert!(src.src_mod.is_none());
+        match src.src_ref {
+            SrcRef::Zero => self.set_ureg(range, self.zero_reg(RegFile::UGPR)),
+            SrcRef::Reg(reg) => self.set_ureg(range, reg),
+            _ => panic!("Not a register"),
+        }
+    }
+
     fn set_pred_dst(&mut self, range: Range<usize>, dst: &Dst) {
         match dst {
             Dst::None => self.set_pred_reg(range, self.true_reg(RegFile::Pred)),
@@ -2875,10 +2884,16 @@ impl SM70Op for OpLdc {
         match cb.buf {
             CBuf::Binding(idx) => {
                 if self.is_uniform() {
-                    e.set_opcode(0xab9);
+                    if e.sm >= 100 {
+                        e.set_opcode(0x7ac);
+                        e.set_bit(91, true);
+                        e.set_ureg_src(24..32, &self.offset);
+                    } else {
+                        e.set_opcode(0xab9);
+                        e.set_bit(91, false);
+                        assert!(self.offset.is_zero());
+                    }
                     e.set_udst(&self.dst);
-
-                    assert!(self.offset.is_zero());
                     assert!(self.mode == LdcMode::Indexed);
                 } else {
                     e.set_opcode(0xb82);
@@ -2894,16 +2909,28 @@ impl SM70Op for OpLdc {
                             LdcMode::IndexedSegmentedLinear => 3_u8,
                         },
                     );
+                    e.set_bit(91, false); // Bound
                 }
                 e.set_field(54..59, idx);
-                e.set_bit(91, false); // Bound
             }
             CBuf::BindlessUGPR(handle) => {
                 if self.is_uniform() {
-                    e.set_opcode(0xab9);
+                    if e.sm >= 100 {
+                        e.set_opcode(0xbac);
+                    } else {
+                        e.set_opcode(0xab9);
+                    }
                     e.set_udst(&self.dst);
 
-                    assert!(self.offset.is_zero());
+                    if e.sm >= 120 {
+                        e.set_ureg_src(64..72, &self.offset);
+                    } else if e.sm >= 100 {
+                        // Blackwell A adds the source but it has to be zero
+                        assert!(self.offset.is_zero());
+                        e.set_ureg_src(64..72, &self.offset);
+                    } else {
+                        assert!(self.offset.is_zero());
+                    }
                 } else {
                     e.set_opcode(0x582);
                     e.set_dst(&self.dst);
@@ -2912,15 +2939,24 @@ impl SM70Op for OpLdc {
                 }
 
                 e.set_ureg(24..32, handle);
-                e.set_reg_src(64..72, &self.offset);
                 assert!(self.mode == LdcMode::Indexed);
                 e.set_bit(91, true); // Bindless
             }
             CBuf::BindlessSSA(_) => panic!("SSA values must be lowered"),
         }
 
-        e.set_field(38..54, cb.offset);
+        if e.sm >= 100 && self.is_uniform() {
+            e.set_field(37..54, cb.offset);
+        } else {
+            e.set_field(38..54, cb.offset);
+        }
         e.set_mem_type(73..76, self.mem_type);
+
+        if e.sm >= 120 {
+            e.set_field(80..82, 0_u8); // tex/hdr_unpack
+        } else if e.sm >= 100 {
+            e.set_bit(80, false); // tex_unpack
+        }
     }
 }
 

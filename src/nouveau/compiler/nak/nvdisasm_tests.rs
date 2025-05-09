@@ -170,6 +170,101 @@ pub fn test_nop() {
 }
 
 #[test]
+pub fn test_ldc() {
+    let reg_files = [RegFile::GPR, RegFile::UGPR];
+
+    let ur2_4 = RegRef::new(RegFile::UGPR, 2, 2);
+    let cbufs = [
+        (CBuf::Binding(5), "c[0x5]"),
+        (CBuf::BindlessUGPR(ur2_4), "cx[ur2]"),
+    ];
+
+    let mem_types = [
+        (MemType::U8, ".u8"),
+        (MemType::I8, ".s8"),
+        (MemType::U16, ".u16"),
+        (MemType::I16, ".s16"),
+        (MemType::B32, ""),
+        (MemType::B64, ".64"),
+        (MemType::B128, ".128"),
+    ];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+        for reg_file in reg_files {
+            if reg_file == RegFile::UGPR && sm < 73 {
+                continue;
+            }
+
+            let ldc_op_str = match reg_file {
+                RegFile::GPR => "ldc",
+                RegFile::UGPR => {
+                    if sm >= 100 {
+                        "ldcu"
+                    } else {
+                        "uldc"
+                    }
+                }
+                _ => panic!("Unsupported register file"),
+            };
+
+            for (cbuf, cbuf_str) in &cbufs {
+                if matches!(cbuf, CBuf::BindlessUGPR(_)) && sm < 73 {
+                    continue;
+                }
+
+                for (mem_type, mem_type_str) in mem_types {
+                    if mem_type == MemType::B128
+                        && (reg_file == RegFile::GPR || sm < 100)
+                    {
+                        continue;
+                    }
+
+                    let dst_regs = mem_type.bits().div_ceil(32);
+                    let r4 = RegRef::new(reg_file, 4, dst_regs as u8);
+                    let r4_str = format!("{}4", reg_file.fmt_prefix());
+
+                    let cb = CBufRef {
+                        buf: cbuf.clone(),
+                        offset: 0x248,
+                    };
+                    let mut instr = OpLdc {
+                        dst: r4.into(),
+                        cb: cb.into(),
+                        offset: 0.into(),
+                        mode: LdcMode::Indexed,
+                        mem_type,
+                    };
+
+                    c.push(
+                        instr.clone(),
+                        format!(
+                            "{ldc_op_str}{mem_type_str} {r4_str}, {cbuf_str}[0x248];"
+                        ),
+                    );
+
+                    if reg_file == RegFile::GPR
+                        || (sm >= 100 && matches!(cbuf, CBuf::Binding(_)))
+                        || sm >= 120
+                    {
+                        let r6 = RegRef::new(reg_file, 6, 1);
+                        instr.offset = r6.into();
+
+                        c.push(
+                            instr.clone(),
+                            format!(
+                                "{ldc_op_str}{mem_type_str} {r4_str}, {cbuf_str}[{r6}+0x248];"
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+        c.check(sm);
+    }
+}
+
+#[test]
 pub fn test_ld_st_atom() {
     let r0 = RegRef::new(RegFile::GPR, 0, 1);
     let r1 = RegRef::new(RegFile::GPR, 1, 1);
