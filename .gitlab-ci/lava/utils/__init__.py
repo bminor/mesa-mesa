@@ -15,4 +15,8 @@ from .log_section import (
     FALLBACK_GITLAB_SECTION_TIMEOUT,
     LogSection,
     LogSectionType,
+    CI_JOB_TIMEOUT_MIN,
+    LAVA_TEST_OVERHEAD_MIN,
+    LAVA_TEST_CASE_TIMEOUT,
+    LAVA_TEST_SUITE_TIMEOUT,
 )

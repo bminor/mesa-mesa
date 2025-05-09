@@ -26,7 +26,7 @@ from lava.lava_job_submitter import (
     retriable_follow_job,
     wait_for_job_get_started,
 )
-from lava.utils import LogSectionType
+from lava.utils import LogSectionType, LAVA_TEST_CASE_TIMEOUT
 
 from .lava.helpers import (
     generate_n_logs,
@@ -38,6 +38,10 @@ from .lava.helpers import (
 )
 
 NUMBER_OF_MAX_ATTEMPTS = NUMBER_OF_RETRIES_TIMEOUT_DETECTION + 1
+
+
+def max_sec_before_timeout():
+    return min(1000, LAVA_TEST_CASE_TIMEOUT * 60 - 1)
 
 
 @pytest.fixture
@@ -104,7 +108,7 @@ PROXY_SCENARIOS = {
                 LogSectionType.TEST_CASE: [
                     section_timeout(LogSectionType.TEST_CASE) + 1
                 ]
-                * 1000
+                * max_sec_before_timeout()
             },
             result="fail",
             exit_code=1,
@@ -166,7 +170,7 @@ PROXY_SCENARIOS = {
     ),
     "long log case, no silence": (
         mock_logs(
-            messages={LogSectionType.TEST_CASE: [1] * (1000)},
+            messages={LogSectionType.TEST_CASE: [1] * (max_sec_before_timeout())},
             result="pass",
             exit_code=0,
         ),
