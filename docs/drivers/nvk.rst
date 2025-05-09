@@ -7,22 +7,20 @@ Hardware support
 ----------------
 
 NVK currently supports Maxwell (some GTX 700 and 800 series, most 900
-series) and later GPUs.  Kepler (GeForce 600 and 700 series) work is
-currently in-progress but incomplete.  Support for new GPU generations may
-take up to a year after the launch of the hardware because it takes time
-for Nouveau developers to get access to hardware and documentation from
-NVIDIA.
+series) and later GPUs up to and including Ada (RTX 4000 series).  Support
+for Kepler (GeForce 600 and 700 series) and Blackwell (RTX 5000 series) is
+currently in-progress but incomplete.
+
+Conformance status:
+-------------------
+
+NVK is a conformant Vulkan 1.4 implementation for all officially supported
+GPUs.
 
 Kernel requirements
 -------------------
 
 NVK requires at least a Linux 6.6 kernel
-
-Conformance status:
--------------------
-
-NVK is a conformant Vulkan 1.4 implementation for all Maxwell (some GTX 700
-and 800 series, most 900 series) and later GPUs.
 
 Debugging
 ---------
