@@ -111,4 +111,14 @@
     <value name="RAW64" value="35"/>
     <value name="RAW128" value="36"/>
   </enum>
+
+  <!-- v6+ -->
+  <enum name="Register File Format">
+    <value name="F16" value="0"/>
+    <value name="F32" value="1"/>
+    <value name="I32" value="2"/>
+    <value name="U32" value="3"/>
+    <value name="I16" value="4"/>
+    <value name="U16" value="5"/>
+  </enum>
 </panxml>
