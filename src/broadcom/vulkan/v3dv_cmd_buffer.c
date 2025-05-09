@@ -260,6 +260,9 @@ cmd_buffer_free_resources(struct v3dv_cmd_buffer *cmd_buffer)
 {
    list_for_each_entry_safe(struct v3dv_job, job,
                             &cmd_buffer->jobs, list_link) {
+      if (job->type == V3DV_JOB_TYPE_CPU_CSD_INDIRECT &&
+          cmd_buffer->device->pdevice->caps.cpu_queue)
+         v3dv_job_destroy(job->cpu.csd_indirect.csd_job);
       v3dv_job_destroy(job);
    }
 
