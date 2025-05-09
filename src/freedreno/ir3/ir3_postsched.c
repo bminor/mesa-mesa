@@ -51,11 +51,6 @@ struct ir3_postsched_ctx {
    struct dag *dag;
 
    struct list_head unscheduled_list; /* unscheduled instructions */
-
-   unsigned ip;
-
-   int ss_delay;
-   int sy_delay;
 };
 
 struct ir3_postsched_node {
@@ -63,11 +58,21 @@ struct ir3_postsched_node {
    struct ir3_instruction *instr;
    bool partially_evaluated_path;
 
-   unsigned earliest_ip;
+   /* The number of nops that need to be inserted if this instruction were
+    * scheduled now. This is recalculated for all DAG heads whenever a new
+    * instruction needs to be selected based on the current legalize state.
+    */
+   unsigned delay;
 
    bool has_sy_src, has_ss_src;
 
    unsigned max_delay;
+};
+
+struct ir3_postsched_block_data {
+   struct ir3_legalize_state legalize_state;
+   unsigned sy_delay;
+   unsigned ss_delay;
 };
 
 #define foreach_sched_node(__n, __list)                                        \
@@ -77,14 +82,14 @@ static bool
 has_sy_src(struct ir3_instruction *instr)
 {
    struct ir3_postsched_node *node = instr->data;
-   return node->has_sy_src;
+   return !!(node->instr->flags & IR3_INSTR_SY);
 }
 
 static bool
 has_ss_src(struct ir3_instruction *instr)
 {
    struct ir3_postsched_node *node = instr->data;
-   return node->has_ss_src;
+   return !!(node->instr->flags & IR3_INSTR_SS);
 }
 
 #ifndef NDEBUG
@@ -108,66 +113,55 @@ schedule(struct ir3_postsched_ctx *ctx, struct ir3_instruction *instr)
 
    di(instr, "schedule");
 
-   bool counts_for_delay = is_alu(instr) || is_flow(instr);
-
-   unsigned delay_cycles = counts_for_delay ? 1 + instr->repeat : 0;
-
    struct ir3_postsched_node *n = instr->data;
-
-   /* We insert any nop's needed to get to earliest_ip, then advance
-    * delay_cycles by scheduling the instruction.
-    */
-   ctx->ip = MAX2(ctx->ip, n->earliest_ip) + delay_cycles;
-
-   util_dynarray_foreach (&n->dag.edges, struct dag_edge, edge) {
-      unsigned delay = (unsigned)(uintptr_t)edge->data;
-      struct ir3_postsched_node *child =
-         container_of(edge->child, struct ir3_postsched_node, dag);
-      child->earliest_ip = MAX2(child->earliest_ip, ctx->ip + delay);
-   }
 
    list_addtail(&instr->node, &instr->block->instr_list);
 
    dag_prune_head(ctx->dag, &n->dag);
 
+   struct ir3_postsched_block_data *bd = ctx->block->data;
+   bd->legalize_state.cycle += n->delay;
+   ir3_update_legalize_state(&bd->legalize_state, ctx->v->compiler, instr);
+
    if (is_meta(instr) && (instr->opc != OPC_META_TEX_PREFETCH))
       return;
 
    if (is_ss_producer(instr)) {
-      ctx->ss_delay = soft_ss_delay(instr);
+      bd->ss_delay = soft_ss_delay(instr);
    } else if (has_ss_src(instr)) {
-      ctx->ss_delay = 0;
-   } else if (ctx->ss_delay > 0) {
-      ctx->ss_delay--;
+      bd->ss_delay = 0;
+   } else if (bd->ss_delay > 0) {
+      bd->ss_delay--;
    }
 
    if (is_sy_producer(instr)) {
-      ctx->sy_delay = soft_sy_delay(instr, ctx->block->shader);
+      bd->sy_delay = soft_sy_delay(instr, ctx->block->shader);
    } else if (has_sy_src(instr)) {
-      ctx->sy_delay = 0;
-   } else if (ctx->sy_delay > 0) {
-      ctx->sy_delay--;
+      bd->sy_delay = 0;
+   } else if (bd->sy_delay > 0) {
+      bd->sy_delay--;
    }
 }
 
 static unsigned
 node_delay(struct ir3_postsched_ctx *ctx, struct ir3_postsched_node *n)
 {
-   return MAX2(n->earliest_ip, ctx->ip) - ctx->ip;
+   return n->delay;
 }
 
 static unsigned
 node_delay_soft(struct ir3_postsched_ctx *ctx, struct ir3_postsched_node *n)
 {
    unsigned delay = node_delay(ctx, n);
+   struct ir3_postsched_block_data *bd = n->instr->block->data;
 
    /* This takes into account that as when we schedule multiple tex or sfu, the
     * first user has to wait for all of them to complete.
     */
-   if (n->has_ss_src)
-      delay = MAX2(delay, ctx->ss_delay);
-   if (n->has_sy_src)
-      delay = MAX2(delay, ctx->sy_delay);
+   if (has_ss_src(n->instr))
+      delay = MAX2(delay, bd->ss_delay);
+   if (has_sy_src(n->instr))
+      delay = MAX2(delay, bd->sy_delay);
 
    return delay;
 }
@@ -207,6 +201,20 @@ static struct ir3_instruction *
 choose_instr(struct ir3_postsched_ctx *ctx)
 {
    struct ir3_postsched_node *chosen = NULL;
+
+   struct ir3_postsched_block_data *bd = ctx->block->data;
+
+   /* Needed sync flags and nop delays potentially change after scheduling an
+    * instruction. Update them for all schedulable instructions.
+    */
+   foreach_sched_node (n, &ctx->dag->heads) {
+      enum ir3_instruction_flags sync_flags = ir3_required_sync_flags(
+         &bd->legalize_state, ctx->v->compiler, n->instr);
+      n->instr->flags &= ~(IR3_INSTR_SS | IR3_INSTR_SY);
+      n->instr->flags |= sync_flags;
+      n->delay =
+         ir3_required_delay(&bd->legalize_state, ctx->v->compiler, n->instr);
+   }
 
    dump_state(ctx);
 
@@ -576,8 +584,6 @@ sched_dag_max_delay_cb(struct dag_node *node, void *state)
 static void
 sched_dag_init(struct ir3_postsched_ctx *ctx)
 {
-   ctx->mem_ctx = ralloc_context(NULL);
-
    ctx->dag = dag_create(ctx->mem_ctx);
 
    foreach_instr (instr, &ctx->unscheduled_list)
@@ -656,17 +662,44 @@ sched_dag_init(struct ir3_postsched_ctx *ctx)
 static void
 sched_dag_destroy(struct ir3_postsched_ctx *ctx)
 {
-   ralloc_free(ctx->mem_ctx);
-   ctx->mem_ctx = NULL;
    ctx->dag = NULL;
+}
+
+static struct ir3_legalize_state *
+get_block_legalize_state(struct ir3_block *block)
+{
+   struct ir3_postsched_block_data *bd = block->data;
+   return bd ? &bd->legalize_state : NULL;
 }
 
 static void
 sched_block(struct ir3_postsched_ctx *ctx, struct ir3_block *block)
 {
    ctx->block = block;
-   ctx->sy_delay = 0;
-   ctx->ss_delay = 0;
+   struct ir3_postsched_block_data *bd =
+      rzalloc(ctx->mem_ctx, struct ir3_postsched_block_data);
+   block->data = bd;
+
+   ir3_init_legalize_state(&bd->legalize_state, ctx->v->compiler);
+   ir3_merge_pred_legalize_states(&bd->legalize_state, block,
+                                  get_block_legalize_state);
+
+   /* Initialize the ss/sy_delay by taking the maximum from the predecessors.
+    * TODO: disable carrying over tex prefetch delays from the preamble for now
+    * as this seems to negatively affect nop count and stalls. This should be
+    * revisited in the future.
+    */
+   if (block != ir3_after_preamble(ctx->ir)) {
+      for (unsigned i = 0; i < block->predecessors_count; i++) {
+         struct ir3_block *pred = block->predecessors[i];
+         struct ir3_postsched_block_data *pred_bd = pred->data;
+
+         if (pred_bd) {
+            bd->sy_delay = MAX2(bd->sy_delay, pred_bd->sy_delay);
+            bd->ss_delay = MAX2(bd->ss_delay, pred_bd->ss_delay);
+         }
+      }
+   }
 
    /* The terminator has to stay at the end. Instead of trying to set up
     * dependencies to achieve this, it's easier to just remove it now and add it
@@ -786,13 +819,19 @@ ir3_postsched(struct ir3 *ir, struct ir3_shader_variant *v)
    struct ir3_postsched_ctx ctx = {
       .ir = ir,
       .v = v,
+      .mem_ctx = ralloc_context(NULL),
    };
 
    cleanup_self_movs(ir);
 
    foreach_block (block, &ir->block_list) {
+      block->data = NULL;
+   }
+
+   foreach_block (block, &ir->block_list) {
       sched_block(&ctx, block);
    }
 
+   ralloc_free(ctx.mem_ctx);
    return true;
 }
