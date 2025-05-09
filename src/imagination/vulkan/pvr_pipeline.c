@@ -2392,8 +2392,6 @@ static void pvr_setup_descriptors(pco_data *data,
 
       data->common.shareds += ROGUE_NUM_TEXSTATE_DWORDS;
    }
-
-   assert(data->common.shareds < 256);
 }
 
 static void
@@ -2506,9 +2504,6 @@ static void pvr_postprocess_shader_data(pco_data *data,
    pvr_setup_descriptors(data, nir, layout);
 
    /* TODO: common things, like large constants being put into shareds. */
-
-   assert(data->common.shareds < 256);
-   assert(data->common.coeffs < 256);
 }
 
 /* Compiles and uploads shaders and PDS programs. */

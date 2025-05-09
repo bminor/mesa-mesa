@@ -699,6 +699,10 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    pco_foreach_instr_dest (pdest, instr)              \
       if (pco_ref_is_vreg(*pdest) || pco_ref_is_ssa(*pdest))
 
+#define pco_foreach_instr_dest_hwreg(pdest, instr) \
+   pco_foreach_instr_dest (pdest, instr)           \
+      if (pco_ref_is_hwreg(*pdest))
+
 #define pco_foreach_instr_src(psrc, instr)                                   \
    for (pco_ref *psrc = &instr->src[0]; psrc < &instr->src[instr->num_srcs]; \
         ++psrc)
@@ -722,6 +726,10 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 #define pco_foreach_instr_src_vreg_ssa(psrc, instr) \
    pco_foreach_instr_src (psrc, instr)              \
       if (pco_ref_is_vreg(*psrc) || pco_ref_is_ssa(*psrc))
+
+#define pco_foreach_instr_src_hwreg(psrc, instr) \
+   pco_foreach_instr_src (psrc, instr)           \
+      if (pco_ref_is_hwreg(*psrc))
 
 #define pco_cf_node_head(list) exec_node_data_head(pco_cf_node, list, node)
 #define pco_cf_node_tail(list) exec_node_data_tail(pco_cf_node, list, node)
@@ -1778,6 +1786,17 @@ static inline bool pco_ref_is_reg(pco_ref ref)
 }
 
 /**
+ * \brief Returns whether a reference is a hardware register.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a hardware register.
+ */
+static inline bool pco_ref_is_hwreg(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_REG && ref.reg_class != PCO_REG_CLASS_VIRT;
+}
+
+/**
  * \brief Returns whether a reference is an index register.
  *
  * \param[in] ref PCO reference.
@@ -1979,7 +1998,6 @@ static inline unsigned pco_ref_get_reg_index(pco_ref ref)
    assert(pco_ref_is_reg(ref) || pco_ref_is_idx_reg(ref));
 
    unsigned index = pco_ref_is_idx_reg(ref) ? ref.idx_reg.offset : ref.val;
-   assert(index < 256);
 
    return index;
 }
@@ -2289,7 +2307,6 @@ pco_ref_ssa_vreg(ASSERTED pco_func *func, pco_ref ref, unsigned bits)
 static inline pco_ref
 pco_ref_hwreg_vec(unsigned index, enum pco_reg_class reg_class, unsigned chans)
 {
-   assert(index < 256);
    assert(reg_class != PCO_REG_CLASS_VIRT);
 
    return (pco_ref){
@@ -2363,7 +2380,6 @@ static inline pco_ref pco_ref_hwreg_idx_vec(unsigned num,
                                             enum pco_reg_class reg_class,
                                             unsigned chans)
 {
-   assert(offset < 256);
    assert(reg_class != PCO_REG_CLASS_VIRT);
 
    return (pco_ref){

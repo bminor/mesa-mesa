@@ -333,6 +333,69 @@ static bool legalize_pseudo(pco_instr *instr)
    return false;
 }
 
+static bool try_legalize_large_hwreg_offsets(pco_instr *instr,
+                                             const struct pco_op_info *info)
+{
+   unsigned large_hwreg_count = 0;
+   pco_ref *large_hwregs[_PCO_OP_MAX_SRCS + _PCO_OP_MAX_DESTS] = { 0 };
+
+   enum pco_reg_class hwreg_class = ~0;
+   unsigned min_large_offset = ~0;
+   ASSERTED unsigned max_large_offset = 0;
+
+   /* Check dests. */
+   pco_foreach_instr_dest_hwreg (pdest, instr) {
+      if (pco_ref_get_reg_index(*pdest) < 256)
+         continue;
+
+      large_hwregs[large_hwreg_count++] = pdest;
+      assert(hwreg_class == ~0 || hwreg_class == pco_ref_get_reg_class(*pdest));
+      hwreg_class = pco_ref_get_reg_class(*pdest);
+
+      min_large_offset = MIN2(min_large_offset, pco_ref_get_reg_index(*pdest));
+      max_large_offset = MAX2(max_large_offset, pco_ref_get_reg_index(*pdest));
+   }
+
+   /* Check srcs. */
+   pco_foreach_instr_src_hwreg (psrc, instr) {
+      if (pco_ref_get_reg_index(*psrc) < 256)
+         continue;
+
+      large_hwregs[large_hwreg_count++] = psrc;
+      assert(hwreg_class == ~0 || hwreg_class == pco_ref_get_reg_class(*psrc));
+      hwreg_class = pco_ref_get_reg_class(*psrc);
+
+      min_large_offset = MIN2(min_large_offset, pco_ref_get_reg_index(*psrc));
+      max_large_offset = MAX2(max_large_offset, pco_ref_get_reg_index(*psrc));
+   }
+
+   if (!large_hwreg_count)
+      return false;
+
+   /* We'd need more than one indexed register to support this. */
+   assert((max_large_offset - min_large_offset) < 256);
+
+   pco_builder b =
+      pco_builder_create(instr->parent_func, pco_cursor_before_instr(instr));
+
+   unsigned idx_reg_num = 0;
+   pco_ref idx_reg =
+      pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+   pco_ref imm = pco_ref_imm32(min_large_offset);
+   pco_movi32(&b, idx_reg, imm, .exec_cnd = pco_instr_get_exec_cnd(instr));
+
+   /* Remap the offset for each large hwreg and replace it with the indexed
+    * register.
+    */
+   for (unsigned u = 0; u < large_hwreg_count; ++u) {
+      *large_hwregs[u] = pco_ref_offset(*large_hwregs[u], -min_large_offset);
+      *large_hwregs[u] = pco_ref_hwreg_idx_from(idx_reg_num, *large_hwregs[u]);
+   }
+
+   return true;
+}
+
 /**
  * \brief Try to legalizes an instruction.
  *
@@ -344,11 +407,14 @@ static bool try_legalize(pco_instr *instr)
    const struct pco_op_info *info = &pco_op_info[instr->op];
    bool progress = false;
 
-   /* Skip pseudo instructions. */
-   if (info->type == PCO_OP_TYPE_PSEUDO)
-      return legalize_pseudo(instr);
+   progress |= try_legalize_large_hwreg_offsets(instr, info);
 
-   progress |= try_legalize_src_mappings(instr, info);
+   /* Skip pseudo instructions. */
+   if (info->type == PCO_OP_TYPE_PSEUDO) {
+      progress |= legalize_pseudo(instr);
+   } else {
+      progress |= try_legalize_src_mappings(instr, info);
+   }
 
    return progress;
 }
