@@ -346,6 +346,107 @@ ir3_init_legalize_state(struct ir3_legalize_state *state,
    regmask_init(&state->needs_sy, compiler->mergedregs);
 }
 
+static struct ir3_legalize_state *
+get_block_legalize_state(struct ir3_block *block)
+{
+   struct ir3_legalize_block_data *bd = block->data;
+   return &bd->state;
+}
+
+typedef struct ir3_legalize_state *(*ir3_get_block_legalize_state_cb)(
+   struct ir3_block *);
+
+static void
+ir3_merge_pred_legalize_states(struct ir3_legalize_state *state,
+                               struct ir3_block *block,
+                               ir3_get_block_legalize_state_cb get_state)
+{
+   /* Our input state is the OR of all predecessor blocks' state.
+    *
+    * Why don't we just zero the state at the beginning before merging in the
+    * predecessors? Because otherwise updates may not be a "lattice refinement",
+    * i.e. needs_ss may go from true to false for some register due to a (ss) we
+    * inserted the second time around (and the same for (sy)). This means that
+    * there's no solid guarantee the algorithm will converge, and in theory
+    * there may be infinite loops where we fight over the placment of an (ss).
+    */
+   for (unsigned i = 0; i < block->predecessors_count; i++) {
+      struct ir3_block *predecessor = block->predecessors[i];
+      struct ir3_legalize_state *pstate = get_state(predecessor);
+
+      if (!pstate) {
+         continue;
+      }
+
+      /* Our input (ss)/(sy) state is based on OR'ing the output
+       * state of all our predecessor blocks
+       */
+      regmask_or(&state->needs_ss, &state->needs_ss, &pstate->needs_ss);
+      regmask_or(&state->needs_ss_war, &state->needs_ss_war,
+                 &pstate->needs_ss_war);
+      regmask_or(&state->needs_sy_war, &state->needs_sy_war,
+                 &pstate->needs_sy_war);
+      regmask_or(&state->needs_ss_or_sy_war, &state->needs_ss_or_sy_war,
+                 &pstate->needs_ss_or_sy_war);
+      regmask_or(&state->needs_sy, &state->needs_sy, &pstate->needs_sy);
+      state->needs_ss_for_const |= pstate->needs_ss_for_const;
+      state->needs_sy_for_const |= pstate->needs_sy_for_const;
+
+      /* Our nop state is the max of the predecessor blocks. The predecessor nop
+       * state contains the cycle offset from the start of its block when each
+       * register becomes ready. But successor blocks need the cycle offset from
+       * their start, which is the predecessor's block's end. Translate the
+       * cycle offset.
+       */
+      for (unsigned i = 0; i < ARRAY_SIZE(state->pred_ready); i++)
+         state->pred_ready[i] =
+            MAX2(state->pred_ready[i],
+                 MAX2(pstate->pred_ready[i], pstate->cycle) - pstate->cycle);
+      for (unsigned i = 0; i < ARRAY_SIZE(state->alu_nop.full_ready); i++) {
+         state->alu_nop.full_ready[i] = MAX2(
+            state->alu_nop.full_ready[i],
+            MAX2(pstate->alu_nop.full_ready[i], pstate->cycle) - pstate->cycle);
+         state->alu_nop.half_ready[i] = MAX2(
+            state->alu_nop.half_ready[i],
+            MAX2(pstate->alu_nop.half_ready[i], pstate->cycle) - pstate->cycle);
+         state->non_alu_nop.full_ready[i] =
+            MAX2(state->non_alu_nop.full_ready[i],
+                 MAX2(pstate->non_alu_nop.full_ready[i], pstate->cycle) -
+                    pstate->cycle);
+         state->non_alu_nop.half_ready[i] =
+            MAX2(state->non_alu_nop.half_ready[i],
+                 MAX2(pstate->non_alu_nop.half_ready[i], pstate->cycle) -
+                    pstate->cycle);
+      }
+   }
+
+   /* We need to take phsyical-only edges into account when tracking shared
+    * registers.
+    */
+   for (unsigned i = 0; i < block->physical_predecessors_count; i++) {
+      struct ir3_block *predecessor = block->physical_predecessors[i];
+      struct ir3_legalize_state *pstate = get_state(predecessor);
+
+      if (!pstate) {
+         continue;
+      }
+
+      regmask_or_shared(&state->needs_ss, &state->needs_ss, &pstate->needs_ss);
+      regmask_or_shared(&state->needs_ss_scalar_full,
+                        &state->needs_ss_scalar_full,
+                        &pstate->needs_ss_scalar_full);
+      regmask_or_shared(&state->needs_ss_scalar_half,
+                        &state->needs_ss_scalar_half,
+                        &pstate->needs_ss_scalar_half);
+      regmask_or_shared(&state->needs_ss_scalar_war,
+                        &state->needs_ss_scalar_war,
+                        &pstate->needs_ss_scalar_war);
+      regmask_or_shared(&state->needs_ss_or_sy_scalar_war,
+                        &state->needs_ss_or_sy_scalar_war,
+                        &pstate->needs_ss_or_sy_scalar_war);
+   }
+}
+
 static bool
 count_instruction(struct ir3_instruction *n, struct ir3_compiler *compiler)
 {
@@ -549,76 +650,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
    bool mergedregs = ctx->so->mergedregs;
    struct ir3_builder build = ir3_builder_at(ir3_after_block(block));
 
-   /* Our input state is the OR of all predecessor blocks' state.
-    *
-    * Why don't we just zero the state at the beginning before merging in the
-    * predecessors? Because otherwise updates may not be a "lattice refinement",
-    * i.e. needs_ss may go from true to false for some register due to a (ss) we
-    * inserted the second time around (and the same for (sy)). This means that
-    * there's no solid guarantee the algorithm will converge, and in theory
-    * there may be infinite loops where we fight over the placment of an (ss).
-    */
-   for (unsigned i = 0; i < block->predecessors_count; i++) {
-      struct ir3_block *predecessor = block->predecessors[i];
-      struct ir3_legalize_block_data *pbd = predecessor->data;
-      struct ir3_legalize_state *pstate = &pbd->state;
-
-      /* Our input (ss)/(sy) state is based on OR'ing the output
-       * state of all our predecessor blocks
-       */
-      regmask_or(&state->needs_ss, &state->needs_ss, &pstate->needs_ss);
-      regmask_or(&state->needs_ss_war, &state->needs_ss_war,
-                 &pstate->needs_ss_war);
-      regmask_or(&state->needs_sy_war, &state->needs_sy_war,
-                 &pstate->needs_sy_war);
-      regmask_or(&state->needs_ss_or_sy_war, &state->needs_ss_or_sy_war,
-                 &pstate->needs_ss_or_sy_war);
-      regmask_or(&state->needs_sy, &state->needs_sy, &pstate->needs_sy);
-      state->needs_ss_for_const |= pstate->needs_ss_for_const;
-      state->needs_sy_for_const |= pstate->needs_sy_for_const;
-
-      /* Our nop state is the max of the predecessor blocks. The predecessor nop
-       * state contains the cycle offset from the start of its block when each
-       * register becomes ready. But successor blocks need the cycle offset from
-       * their start, which is the predecessor's block's end. Translate the
-       * cycle offset.
-       */
-      for (unsigned i = 0; i < ARRAY_SIZE(state->pred_ready); i++)
-         state->pred_ready[i] = MAX2(state->pred_ready[i],
-                                     MAX2(pstate->pred_ready[i], pstate->cycle) - pstate->cycle);
-      for (unsigned i = 0; i < ARRAY_SIZE(state->alu_nop.full_ready); i++) {
-         state->alu_nop.full_ready[i] = MAX2(state->alu_nop.full_ready[i],
-                                             MAX2(pstate->alu_nop.full_ready[i], pstate->cycle) - pstate->cycle);
-         state->alu_nop.half_ready[i] = MAX2(state->alu_nop.half_ready[i],
-                                             MAX2(pstate->alu_nop.half_ready[i], pstate->cycle) - pstate->cycle);
-         state->non_alu_nop.full_ready[i] = MAX2(state->non_alu_nop.full_ready[i],
-                                                 MAX2(pstate->non_alu_nop.full_ready[i], pstate->cycle) - pstate->cycle);
-         state->non_alu_nop.half_ready[i] = MAX2(state->non_alu_nop.half_ready[i],
-                                                 MAX2(pstate->non_alu_nop.half_ready[i], pstate->cycle) - pstate->cycle);
-      }
-   }
-
-   /* We need to take phsyical-only edges into account when tracking shared
-    * registers.
-    */
-   for (unsigned i = 0; i < block->physical_predecessors_count; i++) {
-      struct ir3_block *predecessor = block->physical_predecessors[i];
-      struct ir3_legalize_block_data *pbd = predecessor->data;
-      struct ir3_legalize_state *pstate = &pbd->state;
-
-      regmask_or_shared(&state->needs_ss, &state->needs_ss, &pstate->needs_ss);
-      regmask_or_shared(&state->needs_ss_scalar_full,
-                        &state->needs_ss_scalar_full,
-                        &pstate->needs_ss_scalar_full);
-      regmask_or_shared(&state->needs_ss_scalar_half,
-                        &state->needs_ss_scalar_half,
-                        &pstate->needs_ss_scalar_half);
-      regmask_or_shared(&state->needs_ss_scalar_war, &state->needs_ss_scalar_war,
-                        &pstate->needs_ss_scalar_war);
-      regmask_or_shared(&state->needs_ss_or_sy_scalar_war,
-                        &state->needs_ss_or_sy_scalar_war,
-                        &pstate->needs_ss_or_sy_scalar_war);
-   }
+   ir3_merge_pred_legalize_states(state, block, get_block_legalize_state);
 
    memcpy(&bd->state, state, sizeof(*state));
    state = &bd->state;
