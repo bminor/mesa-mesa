@@ -220,11 +220,8 @@ ir3_required_sync_flags(struct ir3_legalize_state *state,
 }
 
 static inline void
-apply_ss(struct ir3_instruction *instr,
-         struct ir3_legalize_state *state,
-         bool mergedregs)
+apply_ss(struct ir3_legalize_state *state, bool mergedregs)
 {
-   instr->flags |= IR3_INSTR_SS;
    regmask_init(&state->needs_ss_war, mergedregs);
    regmask_init(&state->needs_ss_or_sy_war, mergedregs);
    regmask_init(&state->needs_ss, mergedregs);
@@ -237,11 +234,8 @@ apply_ss(struct ir3_instruction *instr,
 }
 
 static inline void
-apply_sy(struct ir3_instruction *instr,
-         struct ir3_legalize_state *state,
-         bool mergedregs)
+apply_sy(struct ir3_legalize_state *state, bool mergedregs)
 {
-   instr->flags |= IR3_INSTR_SY;
    regmask_init(&state->needs_sy, mergedregs);
    regmask_init(&state->needs_sy_war, mergedregs);
    regmask_init(&state->needs_ss_or_sy_war, mergedregs);
@@ -254,6 +248,11 @@ static void
 sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
             struct ir3_instruction *n)
 {
+   if (n->flags & IR3_INSTR_SS)
+      apply_ss(state, compiler->mergedregs);
+   if (n->flags & IR3_INSTR_SY)
+      apply_sy(state, compiler->mergedregs);
+
    if (is_barrier(n)) {
       state->force_ss = true;
       state->force_sy = true;
@@ -691,7 +690,6 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
    struct ir3_legalize_state prev_state = bd->state;
    struct ir3_legalize_state *state = &bd->begin_state;
    bool last_input_needs_ss = false;
-   bool mergedregs = ctx->so->mergedregs;
    struct ir3_builder build = ir3_builder_at(ir3_after_block(block));
 
    ir3_merge_pred_legalize_states(state, block, get_block_legalize_state);
@@ -747,13 +745,10 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
 
       enum ir3_instruction_flags sync_flags =
          ir3_required_sync_flags(state, ctx->compiler, n);
+      n->flags |= sync_flags;
 
       if (sync_flags & IR3_INSTR_SS) {
-         apply_ss(n, state, mergedregs);
          last_input_needs_ss = false;
-      }
-      if (sync_flags & IR3_INSTR_SY) {
-         apply_sy(n, state, mergedregs);
       }
 
       /* I'm not exactly what this is for, but it seems we need this on every
@@ -773,7 +768,7 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          nop->flags |= IR3_INSTR_SS;
          n->flags &= ~IR3_INSTR_SS;
          last_n = nop;
-         state->cycle++;
+         ir3_update_legalize_state(state, ctx->compiler, nop);
       }
 
       unsigned delay = delay_calc(ctx->compiler, state, n);
@@ -832,15 +827,16 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       }
 
       if (n->opc == OPC_RESINFO && n->dsts_count > 0) {
-         ir3_NOP(&build)->flags |= IR3_INSTR_SS;
+         ir3_update_legalize_state(state, ctx->compiler, n);
+
+         n = ir3_NOP(&build);
+         n->flags |= IR3_INSTR_SS;
          last_input_needs_ss = false;
       }
 
       if (is_ssbo(n->opc) || is_global_a3xx_atomic(n->opc) ||
           is_bindless_atomic(n->opc))
          ctx->so->has_ssbo = true;
-
-      ir3_update_legalize_state(state, ctx->compiler, n);
 
       if (ctx->early_input_release && is_input(n)) {
          last_input_needs_ss |= (n->opc == OPC_LDLV);
@@ -870,11 +866,12 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
 
             last_input->dsts[0]->flags |= IR3_REG_EI;
             if (last_input_needs_ss) {
-               apply_ss(last_input, state, mergedregs);
+               last_input->flags |= IR3_INSTR_SS;
             }
          }
       }
 
+      ir3_update_legalize_state(state, ctx->compiler, n);
       last_n = n;
    }
 
