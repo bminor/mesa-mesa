@@ -18,6 +18,7 @@ class LogSectionType(Enum):
     TEST_CASE = auto()
     LAVA_POST_PROCESSING = auto()
 
+
 # How long to wait whilst we try to submit a job; make it fairly short,
 # since the job will be retried.
 LAVA_SUBMIT_TIMEOUT = int(getenv("LAVA_SUBMIT_TIMEOUT", 5))
@@ -41,16 +42,23 @@ LAVA_BOOT_TIMEOUT = int(getenv("LAVA_BOOT_TIMEOUT", 5))
 
 # Estimated overhead in minutes for a job from GitLab to reach the test phase,
 # including LAVA scheduling and boot duration
-LAVA_TEST_OVERHEAD_MIN = 5
+LAVA_TEST_OVERHEAD_MIN = int(getenv("LAVA_TEST_OVERHEAD_MIN", 5))
+
+# CI_JOB_TIMEOUT in full minutes, no reason to use seconds here
+CI_JOB_TIMEOUT_MIN = int(getenv("CI_JOB_TIMEOUT")) // 60
+# Sanity check: we need more job time than the LAVA estimated overhead
+assert CI_JOB_TIMEOUT_MIN > LAVA_TEST_OVERHEAD_MIN, (
+    f"CI_JOB_TIMEOUT in full minutes ({CI_JOB_TIMEOUT_MIN}) must be greater than LAVA_TEST_OVERHEAD ({LAVA_TEST_OVERHEAD_MIN})"
+)
 
 # Test suite phase is where initialization occurs on both the DUT and the Docker container.
 # The device will be listening to the SSH session until the end of the job.
-LAVA_TEST_SUITE_TIMEOUT = int(getenv("CI_JOB_TIMEOUT")) // 60 - LAVA_TEST_OVERHEAD_MIN
+LAVA_TEST_SUITE_TIMEOUT = CI_JOB_TIMEOUT_MIN - LAVA_TEST_OVERHEAD_MIN
 
 # Test cases may take a long time, this script has no right to interrupt
 # them. But if the test case takes almost 1h, it will never succeed due to
 # Gitlab job timeout.
-LAVA_TEST_CASE_TIMEOUT = int(getenv("CI_JOB_TIMEOUT")) // 60 - LAVA_TEST_OVERHEAD_MIN
+LAVA_TEST_CASE_TIMEOUT = CI_JOB_TIMEOUT_MIN - LAVA_TEST_OVERHEAD_MIN
 
 # LAVA post processing may refer to a test suite teardown, or the
 # adjustments to start the next test_case
