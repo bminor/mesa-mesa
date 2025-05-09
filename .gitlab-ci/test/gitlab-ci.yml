@@ -383,7 +383,6 @@ yaml-toml-shell-py-test:
 .ci-tron-test:
   extends:
     - .ci-tron-b2c-job-v1
-  timeout: 1h 40m
   variables:
     GIT_STRATEGY: none
     B2C_VERSION: v0.9.15.1  # Linux 6.13.7
@@ -393,11 +392,9 @@ yaml-toml-shell-py-test:
     CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: pass, exit_code: 0\r$'
     CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'
 
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 45
     CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 2
     CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__RETRIES: 3
     CI_TRON_TIMEOUT__CONSOLE_ACTIVITY__MINUTES: 5
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 90
 
     CI_TRON__B2C_ARTIFACT_EXCLUSION: "*.shader_cache,install/*,*/install/*,*/vkd3d-proton.cache*,vkd3d-proton.cache*,*.qpa"
     CI_TRON_HTTP_ARTIFACT__INSTALL__PATH: "/install.tar.zst"
