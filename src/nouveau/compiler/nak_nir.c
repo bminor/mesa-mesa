@@ -998,7 +998,7 @@ nak_postprocess_nir(nir_shader *nir,
    nir_divergence_analysis(nir);
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       OPT(nir, nir_opt_tex_skip_helpers, true);
-   OPT(nir, nak_nir_lower_scan_reduce);
+   OPT(nir, nak_nir_lower_scan_reduce, nak);
 
    nak_optimize_nir(nir, nak);
 

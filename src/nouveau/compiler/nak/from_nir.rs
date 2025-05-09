@@ -3449,6 +3449,31 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst.into());
             }
+            nir_intrinsic_reduce => {
+                assert!(srcs[0].bit_size() == 32);
+                assert!(srcs[0].num_components() == 1);
+                let src = self.get_src(&srcs[0]);
+                let dst = b.alloc_ssa(RegFile::UGPR);
+
+                let op = match intrin.reduction_op() {
+                    nir_op_iand => ReduxOp::And,
+                    nir_op_ior => ReduxOp::Or,
+                    nir_op_ixor => ReduxOp::Xor,
+                    nir_op_iadd => ReduxOp::Sum,
+                    nir_op_imin => ReduxOp::Min(IntCmpType::I32),
+                    nir_op_imax => ReduxOp::Max(IntCmpType::I32),
+                    nir_op_umin => ReduxOp::Min(IntCmpType::U32),
+                    nir_op_umax => ReduxOp::Max(IntCmpType::U32),
+                    _ => panic!("Unknown reduction op"),
+                };
+
+                b.push_op(OpRedux {
+                    dst: dst.into(),
+                    src: src,
+                    op,
+                });
+                self.set_dst(&intrin.def, dst.into());
+            }
             nir_intrinsic_shared_atomic => {
                 let bit_size = intrin.def.bit_size();
                 let (addr, offset) = self.get_io_addr_offset(&srcs[0], 24);
