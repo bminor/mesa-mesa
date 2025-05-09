@@ -24,6 +24,7 @@
 
 #include "pan_shader.h"
 #include "panfrost/clc/panfrost_compile.h"
+#include "pan_blend.h"
 #include "pan_format.h"
 
 #if PAN_ARCH <= 5
@@ -45,45 +46,6 @@ GENX(pan_shader_get_compiler_options)(void)
    return &midgard_nir_options;
 #endif
 }
-
-#if PAN_ARCH >= 6
-static enum mali_register_file_format
-bifrost_blend_type_from_nir(nir_alu_type nir_type)
-{
-   switch (nir_type) {
-   case 0: /* Render target not in use */
-      return 0;
-   case nir_type_float16:
-      return MALI_REGISTER_FILE_FORMAT_F16;
-   case nir_type_float32:
-      return MALI_REGISTER_FILE_FORMAT_F32;
-   case nir_type_int32:
-      return MALI_REGISTER_FILE_FORMAT_I32;
-   case nir_type_uint32:
-      return MALI_REGISTER_FILE_FORMAT_U32;
-   case nir_type_int16:
-      return MALI_REGISTER_FILE_FORMAT_I16;
-   case nir_type_uint16:
-      return MALI_REGISTER_FILE_FORMAT_U16;
-   default:
-      unreachable("Unsupported blend shader type for NIR alu type");
-      return 0;
-   }
-}
-
-#if PAN_ARCH <= 7
-enum mali_register_file_format
-GENX(pan_fixup_blend_type)(nir_alu_type T_size, enum pipe_format format)
-{
-   const struct util_format_description *desc = util_format_description(format);
-   unsigned size = nir_alu_type_get_type_size(T_size);
-   nir_alu_type T_format = pan_unpacked_type_for_format(desc);
-   nir_alu_type T = nir_alu_type_get_base_type(T_format) | size;
-
-   return bifrost_blend_type_from_nir(T);
-}
-#endif
-#endif
 
 /* This is only needed on Midgard. It's the same on both v4 and v5, so only
  * compile once to avoid the GenXML dependency for calls.
@@ -241,7 +203,7 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
    /* This is "redundant" information, but is needed in a draw-time hot path */
    for (unsigned i = 0; i < ARRAY_SIZE(info->bifrost.blend); ++i) {
       info->bifrost.blend[i].format =
-         bifrost_blend_type_from_nir(info->bifrost.blend[i].type);
+         pan_blend_type_from_nir(info->bifrost.blend[i].type);
    }
 #endif
 }

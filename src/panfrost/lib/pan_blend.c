@@ -466,6 +466,30 @@ pan_pack_blend(const struct pan_blend_equation equation)
    return out.opaque[0];
 }
 
+enum mali_register_file_format
+pan_blend_type_from_nir(nir_alu_type nir_type)
+{
+   switch (nir_type) {
+   case 0: /* Render target not in use */
+      return 0;
+   case nir_type_float16:
+      return MALI_REGISTER_FILE_FORMAT_F16;
+   case nir_type_float32:
+      return MALI_REGISTER_FILE_FORMAT_F32;
+   case nir_type_int32:
+      return MALI_REGISTER_FILE_FORMAT_I32;
+   case nir_type_uint32:
+      return MALI_REGISTER_FILE_FORMAT_U32;
+   case nir_type_int16:
+      return MALI_REGISTER_FILE_FORMAT_I16;
+   case nir_type_uint16:
+      return MALI_REGISTER_FILE_FORMAT_U16;
+   default:
+      unreachable("Unsupported blend shader type for NIR alu type");
+      return 0;
+   }
+}
+
 #else /* ifndef PAN_ARCH */
 
 static const char *
@@ -757,6 +781,20 @@ GENX(pan_inline_rt_conversion)(nir_shader *s, enum pipe_format *formats)
    return nir_shader_intrinsics_pass(s, inline_rt_conversion,
                                      nir_metadata_control_flow, formats);
 }
+
+#if PAN_ARCH <= 7
+enum mali_register_file_format
+GENX(pan_fixup_blend_type)(nir_alu_type T_size, enum pipe_format format)
+{
+   const struct util_format_description *desc = util_format_description(format);
+   unsigned size = nir_alu_type_get_type_size(T_size);
+   nir_alu_type T_format = pan_unpacked_type_for_format(desc);
+   nir_alu_type T = nir_alu_type_get_base_type(T_format) | size;
+
+   return pan_blend_type_from_nir(T);
+}
+#endif
+
 #endif
 
 #endif /* ifndef PAN_ARCH */

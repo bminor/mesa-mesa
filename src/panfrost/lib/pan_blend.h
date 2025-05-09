@@ -124,6 +124,7 @@ bool pan_blend_is_homogenous_constant(unsigned mask, const float *constants);
 void pan_blend_to_fixed_function_equation(const struct pan_blend_equation eq,
                                           struct MALI_BLEND_EQUATION *equation);
 
+enum mali_register_file_format pan_blend_type_from_nir(nir_alu_type nir_type);
 uint32_t pan_pack_blend(const struct pan_blend_equation equation);
 
 #ifdef PAN_ARCH
@@ -137,6 +138,11 @@ uint64_t GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
                                            unsigned force_size, bool dithered);
 
 bool GENX(pan_inline_rt_conversion)(nir_shader *s, enum pipe_format *formats);
+
+#if PAN_ARCH <= 7
+enum mali_register_file_format
+   GENX(pan_fixup_blend_type)(nir_alu_type T_size, enum pipe_format format);
+#endif
 #endif
 
 #endif
