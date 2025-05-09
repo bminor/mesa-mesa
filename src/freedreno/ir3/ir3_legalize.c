@@ -55,6 +55,10 @@ struct ir3_legalize_state {
    bool needs_ss_for_const;
    bool needs_sy_for_const;
 
+   /* Next instruction needs (ss)/(sy), no matter its dsts/srcs. */
+   bool force_ss;
+   bool force_sy;
+
    /* Each of these arrays contains the cycle when the corresponding register
     * becomes "ready" i.e. does not require any more nops. There is a special
     * mechanism to let ALU instructions read compatible (i.e. same halfness)
@@ -119,8 +123,20 @@ ir3_required_sync_flags(struct ir3_legalize_state *state,
                         struct ir3_compiler *compiler,
                         struct ir3_instruction *n)
 {
+   if (n->opc == OPC_SHPE) {
+      return IR3_INSTR_SS | IR3_INSTR_SY;
+   }
+
    enum ir3_instruction_flags flags = 0;
    bool n_is_scalar_alu = is_scalar_alu(n, compiler);
+
+   if (state->force_ss) {
+      flags |= IR3_INSTR_SS;
+   }
+
+   if (state->force_sy) {
+      flags |= IR3_INSTR_SY;
+   }
 
    /* NOTE: consider dst register too.. it could happen that
     * texture sample instruction (for example) writes some
@@ -217,6 +233,7 @@ apply_ss(struct ir3_instruction *instr,
    regmask_init(&state->needs_ss_scalar_full, mergedregs);
    regmask_init(&state->needs_ss_scalar_half, mergedregs);
    state->needs_ss_for_const = false;
+   state->force_ss = false;
 }
 
 static inline void
@@ -230,12 +247,23 @@ apply_sy(struct ir3_instruction *instr,
    regmask_init(&state->needs_ss_or_sy_war, mergedregs);
    regmask_init(&state->needs_ss_or_sy_scalar_war, mergedregs);
    state->needs_sy_for_const = false;
+   state->force_sy = false;
 }
 
 static void
 sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
             struct ir3_instruction *n)
 {
+   if (is_barrier(n)) {
+      state->force_ss = true;
+      state->force_sy = true;
+   } else if (n->opc == OPC_PREDT) {
+      state->force_ss = true;
+   } else {
+      state->force_ss = false;
+      state->force_sy = false;
+   }
+
    bool n_is_scalar_alu = is_scalar_alu(n, compiler);
 
    if (is_sfu(n) || n->opc == OPC_SHFL)
@@ -713,16 +741,6 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
          int last_inloc =
             inloc->iim_val + ((inloc->flags & IR3_REG_R) ? n->repeat : 0);
          ctx->max_bary = MAX2(ctx->max_bary, last_inloc);
-      }
-
-      if ((last_n && is_barrier(last_n)) || n->opc == OPC_SHPE) {
-         apply_ss(n, state, mergedregs);
-         apply_sy(n, state, mergedregs);
-         last_input_needs_ss = false;
-      }
-
-      if (last_n && (last_n->opc == OPC_PREDT)) {
-         apply_ss(n, state, mergedregs);
       }
 
       bool n_is_scalar_alu = is_scalar_alu(n, ctx->compiler);
