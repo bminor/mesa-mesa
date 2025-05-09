@@ -77,7 +77,9 @@ enum radv_dynamic_state_bits {
    RADV_DYNAMIC_COLOR_ATTACHMENT_MAP = 1ull << 51,
    RADV_DYNAMIC_INPUT_ATTACHMENT_MAP = 1ull << 52,
    RADV_DYNAMIC_DEPTH_CLAMP_RANGE = 1ull << 53,
-   RADV_DYNAMIC_ALL = (1ull << 54) - 1,
+   RADV_DYNAMIC_VIEWPORT_WITH_COUNT = 1ull << 54,
+   RADV_DYNAMIC_SCISSOR_WITH_COUNT = 1ull << 55,
+   RADV_DYNAMIC_ALL = (1ull << 56) - 1,
 };
 
 enum radv_cmd_dirty_bits {
