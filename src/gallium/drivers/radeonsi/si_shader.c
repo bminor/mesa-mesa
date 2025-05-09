@@ -750,7 +750,7 @@ bool si_can_dump_shader(struct si_screen *sscreen, mesa_shader_stage stage,
       [SI_DUMP_ACO_IR] = DBG(ACO),
       [SI_DUMP_ASM] = DBG(ASM),
       [SI_DUMP_STATS] = DBG(STATS),
-      [SI_DUMP_ALWAYS] = DBG(VS) | DBG(TCS) | DBG(TES) | DBG(GS) | DBG(PS) | DBG(CS),
+      [SI_DUMP_ALWAYS] = DBG(VS) | DBG(TCS) | DBG(TES) | DBG(GS) | DBG(PS) | DBG(CS) | DBG(TS) | DBG(MS),
    };
    assert(dump_type < ARRAY_SIZE(filter));
 

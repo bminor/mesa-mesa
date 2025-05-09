@@ -97,6 +97,8 @@ static const struct debug_named_value radeonsi_shader_debug_options[] = {
    {"tcs", DBG(TCS), "Print tessellation control shaders"},
    {"tes", DBG(TES), "Print tessellation evaluation shaders"},
    {"cs", DBG(CS), "Print compute shaders"},
+   {"ts", DBG(TS), "Print task shaders"},
+   {"ms", DBG(MS), "Print mesh shaders"},
 
    {"initnir", DBG(INIT_NIR), "Print initial input NIR when shaders are created"},
    {"nir", DBG(NIR), "Print final NIR after lowering when shader variants are created"},

@@ -232,6 +232,8 @@ enum
    DBG_GS = MESA_SHADER_GEOMETRY,
    DBG_PS = MESA_SHADER_FRAGMENT,
    DBG_CS = MESA_SHADER_COMPUTE,
+   DBG_TS = MESA_SHADER_TASK,
+   DBG_MS = MESA_SHADER_MESH,
    DBG_INIT_NIR,
    DBG_NIR,
    DBG_INIT_LLVM,
@@ -285,7 +287,7 @@ enum
    DBG_TEST_BLIT_PERF,
 };
 
-#define DBG_ALL_SHADERS (((1 << (DBG_CS + 1)) - 1))
+#define DBG_ALL_SHADERS (((1 << (DBG_MS + 1)) - 1))
 #define DBG(name)       (1ull << DBG_##name)
 
 #define SI_BIND_CONSTANT_BUFFER_SHIFT     0
