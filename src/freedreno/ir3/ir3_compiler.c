@@ -239,6 +239,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
       compiler->reading_shading_rate_requires_smask_quirk =
          dev_info->a7xx.reading_shading_rate_requires_smask_quirk;
       compiler->has_alias_rt = dev_info->a7xx.has_alias_rt;
+      compiler->mergedregs = true;
 
       if (compiler->gen >= 7) {
          compiler->has_alias_tex = true;

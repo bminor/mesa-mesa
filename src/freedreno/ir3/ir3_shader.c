@@ -511,7 +511,7 @@ alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
    v->key = *key;
    v->type = shader->type;
    v->compiler = shader->compiler;
-   v->mergedregs = shader->compiler->gen >= 6;
+   v->mergedregs = shader->compiler->mergedregs;
    v->stream_output = shader->stream_output;
 
    v->name = ralloc_strdup(v, shader->nir->info.name);
