@@ -20,6 +20,8 @@
 #include <stack>
 #include <vector>
 
+#define R600_GS_VERTEX_INDIRECT_TOTAL 6
+
 struct nir_shader;
 struct nir_cf_node;
 struct nir_if;

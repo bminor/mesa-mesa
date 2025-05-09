@@ -116,12 +116,12 @@ GeometryShader::process_load_input(nir_intrinsic_instr *instr)
 int
 GeometryShader::do_allocate_reserved_registers()
 {
-   const int sel[6] = {0, 0, 0, 1, 1, 1};
-   const int chan[6] = {0, 1, 3, 0, 1, 2};
+   const int sel[R600_GS_VERTEX_INDIRECT_TOTAL] = {0, 0, 0, 1, 1, 1};
+   const int chan[R600_GS_VERTEX_INDIRECT_TOTAL] = {0, 1, 3, 0, 1, 2};
 
    /* Reserve registers used by the shaders (should check how many
     * components are actually used */
-   for (int i = 0; i < 6; ++i) {
+   for (int i = 0; i < R600_GS_VERTEX_INDIRECT_TOTAL; ++i) {
       m_per_vertex_offsets[i] = value_factory().allocate_pinned_register(sel[i], chan[i]);
    }
 
@@ -309,7 +309,7 @@ GeometryShader::emit_load_per_vertex_input(nir_intrinsic_instr *instr)
       sfn_log << SfnLog::err << "GS: Indirect input addressing not (yet) supported\n";
       return false;
    }
-   assert(literal_index->u32 < 6);
+   assert(literal_index->u32 < R600_GS_VERTEX_INDIRECT_TOTAL);
    assert(nir_intrinsic_io_semantics(instr).num_slots == 1);
 
    EVTXDataFormat fmt =
@@ -372,16 +372,16 @@ GeometryShader::emit_adj_fix()
                                  value_factory().one_i(),
                                  AluInstr::last_write));
 
-   int reg_indices[6];
-   int rotate_indices[6] = {4, 5, 0, 1, 2, 3};
+   int reg_indices[R600_GS_VERTEX_INDIRECT_TOTAL];
+   int rotate_indices[R600_GS_VERTEX_INDIRECT_TOTAL] = {4, 5, 0, 1, 2, 3};
 
    reg_indices[0] = reg_indices[1] = reg_indices[2] = m_export_base[1]->sel();
    reg_indices[3] = reg_indices[4] = reg_indices[5] = m_export_base[2]->sel();
 
-   std::array<PRegister, 6> adjhelp;
+   std::array<PRegister, R600_GS_VERTEX_INDIRECT_TOTAL> adjhelp;
 
    AluInstr *ir = nullptr;
-   for (int i = 0; i < 6; i++) {
+   for (int i = 0; i < R600_GS_VERTEX_INDIRECT_TOTAL; i++) {
       adjhelp[i] = value_factory().temp_register();
       ir = new AluInstr(op3_cnde_int,
                         adjhelp[i],
@@ -394,7 +394,7 @@ GeometryShader::emit_adj_fix()
    }
    ir->set_alu_flag(alu_last_instr);
 
-   for (int i = 0; i < 6; i++)
+   for (int i = 0; i < R600_GS_VERTEX_INDIRECT_TOTAL; i++)
       m_per_vertex_offsets[i] = adjhelp[i];
 }
 

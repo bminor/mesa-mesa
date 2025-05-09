@@ -43,7 +43,7 @@ private:
    bool store_output(nir_intrinsic_instr *instr) override;
    bool emit_vertex(nir_intrinsic_instr *instr, bool cut);
 
-   std::array<PRegister, 6> m_per_vertex_offsets{nullptr};
+   std::array<PRegister, R600_GS_VERTEX_INDIRECT_TOTAL> m_per_vertex_offsets{nullptr};
    PRegister m_primitive_id{nullptr};
    PRegister m_invocation_id{nullptr};
    std::array<PRegister, 4> m_export_base{nullptr};
