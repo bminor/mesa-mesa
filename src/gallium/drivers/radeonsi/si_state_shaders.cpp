@@ -57,12 +57,12 @@ unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *sha
       return 32;
 
    /* AMD_DEBUG wave flags override everything else. */
-   if (sscreen->debug_flags &
+   if (sscreen->shader_debug_flags &
        (stage == MESA_SHADER_COMPUTE ? DBG(W32_CS) :
         stage == MESA_SHADER_FRAGMENT ? DBG(W32_PS) : DBG(W32_GE)))
       return 32;
 
-   if (sscreen->debug_flags &
+   if (sscreen->shader_debug_flags &
        (stage == MESA_SHADER_COMPUTE ? DBG(W64_CS) :
         stage == MESA_SHADER_FRAGMENT ? DBG(W64_PS) : DBG(W64_GE)))
       return 64;
@@ -2994,7 +2994,7 @@ static int si_shader_select_with_key(struct si_context *sctx, struct si_shader_c
     */
    SHADER_KEY_TYPE local_key;
 
-   if (unlikely(sscreen->debug_flags & DBG(NO_OPT_VARIANT))) {
+   if (unlikely(sscreen->shader_debug_flags & DBG(NO_OPT_VARIANT))) {
       /* Disable shader variant optimizations. */
       key = use_local_key_copy<SHADER_KEY_TYPE>(key, &local_key, key_size);
       memset(&local_key.opt, 0, key_opt_size);

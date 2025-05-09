@@ -167,35 +167,6 @@ enum si_occlusion_query_mode {
 /* Debug flags. */
 enum
 {
-   /* Shader logging options: */
-   DBG_VS = MESA_SHADER_VERTEX,
-   DBG_TCS = MESA_SHADER_TESS_CTRL,
-   DBG_TES = MESA_SHADER_TESS_EVAL,
-   DBG_GS = MESA_SHADER_GEOMETRY,
-   DBG_PS = MESA_SHADER_FRAGMENT,
-   DBG_CS = MESA_SHADER_COMPUTE,
-   DBG_INIT_NIR,
-   DBG_NIR,
-   DBG_INIT_LLVM,
-   DBG_LLVM,
-   DBG_INIT_ACO,
-   DBG_ACO,
-   DBG_ASM,
-   DBG_STATS,
-
-   /* Shader compiler options the shader cache should be aware of: */
-   DBG_W32_GE,
-   DBG_W32_PS,
-   DBG_W32_CS,
-   DBG_W64_GE,
-   DBG_W64_PS,
-   DBG_W64_CS,
-
-   /* Shader compiler options (with no effect on the shader cache): */
-   DBG_CHECK_IR,
-   DBG_MONOLITHIC_SHADERS,
-   DBG_NO_OPT_VARIANT,
-
    /* Information logging options: */
    DBG_INFO,
    DBG_TEX,
@@ -248,6 +219,39 @@ enum
    DBG_USE_LLVM,
 
    DBG_COUNT
+};
+
+/* Debug options for shaders. */
+enum
+{
+   /* Shader logging options: */
+   DBG_VS = MESA_SHADER_VERTEX,
+   DBG_TCS = MESA_SHADER_TESS_CTRL,
+   DBG_TES = MESA_SHADER_TESS_EVAL,
+   DBG_GS = MESA_SHADER_GEOMETRY,
+   DBG_PS = MESA_SHADER_FRAGMENT,
+   DBG_CS = MESA_SHADER_COMPUTE,
+   DBG_INIT_NIR,
+   DBG_NIR,
+   DBG_INIT_LLVM,
+   DBG_LLVM,
+   DBG_INIT_ACO,
+   DBG_ACO,
+   DBG_ASM,
+   DBG_STATS,
+
+   /* Shader compiler options the shader cache should be aware of: */
+   DBG_W32_GE,
+   DBG_W32_PS,
+   DBG_W32_CS,
+   DBG_W64_GE,
+   DBG_W64_PS,
+   DBG_W64_CS,
+
+   /* Shader compiler options (with no effect on the shader cache): */
+   DBG_CHECK_IR,
+   DBG_MONOLITHIC_SHADERS,
+   DBG_NO_OPT_VARIANT,
 };
 
 enum
@@ -519,6 +523,7 @@ struct si_screen {
    struct radeon_info info;
    struct nir_shader_compiler_options *nir_options;
    uint64_t debug_flags;
+   uint64_t shader_debug_flags;
    char renderer_string[183];
 
    unsigned pa_sc_raster_config;

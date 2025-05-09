@@ -16,7 +16,7 @@
 
 #define COMPUTE_DBG(sscreen, fmt, args...)                                                         \
    do {                                                                                            \
-      if ((sscreen->debug_flags & DBG(COMPUTE)))                                                   \
+      if ((sscreen->shader_debug_flags & DBG(COMPUTE)))                                            \
          fprintf(stderr, fmt, ##args);                                                             \
    } while (0);
 

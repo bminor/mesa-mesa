@@ -762,8 +762,8 @@ bool si_can_dump_shader(struct si_screen *sscreen, gl_shader_stage stage,
    };
    assert(dump_type < ARRAY_SIZE(filter));
 
-   return sscreen->debug_flags & (1 << stage) &&
-          sscreen->debug_flags & filter[dump_type];
+   return sscreen->shader_debug_flags & (1 << stage) &&
+          sscreen->shader_debug_flags & filter[dump_type];
 }
 
 static void si_shader_dump_stats(struct si_screen *sscreen, struct si_shader *shader, FILE *file,

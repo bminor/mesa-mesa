@@ -1012,12 +1012,12 @@ void si_init_compute_caps(struct si_screen *sscreen)
 
    unsigned threads = 1024;
    unsigned subgroup_size =
-      sscreen->debug_flags & DBG(W64_CS) || sscreen->info.gfx_level < GFX10 ? 64 : 32;
+      sscreen->shader_debug_flags & DBG(W64_CS) || sscreen->info.gfx_level < GFX10 ? 64 : 32;
    caps->max_subgroups = threads / subgroup_size;
 
-   if (sscreen->debug_flags & DBG(W32_CS))
+   if (sscreen->shader_debug_flags & DBG(W32_CS))
       caps->subgroup_sizes = 32;
-   else if (sscreen->debug_flags & DBG(W64_CS))
+   else if (sscreen->shader_debug_flags & DBG(W64_CS))
       caps->subgroup_sizes = 64;
    else
       caps->subgroup_sizes = sscreen->info.gfx_level < GFX10 ? 64 : 64 | 32;

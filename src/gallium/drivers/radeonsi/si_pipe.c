@@ -39,38 +39,6 @@
 static struct pipe_context *si_create_context(struct pipe_screen *screen, unsigned flags);
 
 static const struct debug_named_value radeonsi_debug_options[] = {
-   /* Shader logging options: */
-   {"vs", DBG(VS), "Print vertex shaders"},
-   {"ps", DBG(PS), "Print pixel shaders"},
-   {"gs", DBG(GS), "Print geometry shaders"},
-   {"tcs", DBG(TCS), "Print tessellation control shaders"},
-   {"tes", DBG(TES), "Print tessellation evaluation shaders"},
-   {"cs", DBG(CS), "Print compute shaders"},
-
-   {"initnir", DBG(INIT_NIR), "Print initial input NIR when shaders are created"},
-   {"nir", DBG(NIR), "Print final NIR after lowering when shader variants are created"},
-   {"initllvm", DBG(INIT_LLVM), "Print initial LLVM IR before optimizations"},
-   {"llvm", DBG(LLVM), "Print final LLVM IR"},
-   {"initaco", DBG(INIT_ACO), "Print initial ACO IR before optimizations"},
-   {"aco", DBG(ACO), "Print final ACO IR"},
-   {"asm", DBG(ASM), "Print final shaders in asm"},
-   {"stats", DBG(STATS), "Print shader-db stats to stderr"},
-
-   /* Shader compiler options the shader cache should be aware of: */
-   {"w32ge", DBG(W32_GE), "Use Wave32 for vertex, tessellation, and geometry shaders."},
-   {"w32ps", DBG(W32_PS), "Use Wave32 for pixel shaders."},
-   {"w32cs", DBG(W32_CS), "Use Wave32 for computes shaders."},
-   {"w64ge", DBG(W64_GE), "Use Wave64 for vertex, tessellation, and geometry shaders."},
-   {"w64ps", DBG(W64_PS), "Use Wave64 for pixel shaders."},
-   {"w64cs", DBG(W64_CS), "Use Wave64 for computes shaders."},
-
-   /* Shader compiler options (with no effect on the shader cache): */
-   {"checkir", DBG(CHECK_IR), "Enable additional sanity checks on shader IR"},
-   {"mono", DBG(MONOLITHIC_SHADERS), "Use old-style monolithic shaders compiled on demand"},
-   {"nooptvariant", DBG(NO_OPT_VARIANT), "Disable compiling optimized shader variants."},
-   {"useaco", DBG(USE_ACO), "Use ACO as shader compiler when possible"},
-   {"usellvm", DBG(USE_LLVM), "Use LLVM as shader compiler when possible"},
-
    /* Information logging options: */
    {"info", DBG(INFO), "Print driver information"},
    {"tex", DBG(TEX), "Print texture info"},
@@ -123,6 +91,40 @@ static const struct debug_named_value radeonsi_debug_options[] = {
    DEBUG_NAMED_VALUE_END /* must be last */
 };
 
+static const struct debug_named_value radeonsi_shader_debug_options[] = {
+   /* Shader logging options: */
+   {"vs", DBG(VS), "Print vertex shaders"},
+   {"ps", DBG(PS), "Print pixel shaders"},
+   {"gs", DBG(GS), "Print geometry shaders"},
+   {"tcs", DBG(TCS), "Print tessellation control shaders"},
+   {"tes", DBG(TES), "Print tessellation evaluation shaders"},
+   {"cs", DBG(CS), "Print compute shaders"},
+
+   {"initnir", DBG(INIT_NIR), "Print initial input NIR when shaders are created"},
+   {"nir", DBG(NIR), "Print final NIR after lowering when shader variants are created"},
+   {"initllvm", DBG(INIT_LLVM), "Print initial LLVM IR before optimizations"},
+   {"llvm", DBG(LLVM), "Print final LLVM IR"},
+   {"initaco", DBG(INIT_ACO), "Print initial ACO IR before optimizations"},
+   {"aco", DBG(ACO), "Print final ACO IR"},
+   {"asm", DBG(ASM), "Print final shaders in asm"},
+   {"stats", DBG(STATS), "Print shader-db stats to stderr"},
+
+   /* Shader compiler options the shader cache should be aware of: */
+   {"w32ge", DBG(W32_GE), "Use Wave32 for vertex, tessellation, and geometry shaders."},
+   {"w32ps", DBG(W32_PS), "Use Wave32 for pixel shaders."},
+   {"w32cs", DBG(W32_CS), "Use Wave32 for computes shaders."},
+   {"w64ge", DBG(W64_GE), "Use Wave64 for vertex, tessellation, and geometry shaders."},
+   {"w64ps", DBG(W64_PS), "Use Wave64 for pixel shaders."},
+   {"w64cs", DBG(W64_CS), "Use Wave64 for computes shaders."},
+
+   /* Shader compiler options (with no effect on the shader cache): */
+   {"checkir", DBG(CHECK_IR), "Enable additional sanity checks on shader IR"},
+   {"mono", DBG(MONOLITHIC_SHADERS), "Use old-style monolithic shaders compiled on demand"},
+   {"nooptvariant", DBG(NO_OPT_VARIANT), "Disable compiling optimized shader variants."},
+   {"useaco", DBG(USE_ACO), "Use ACO as shader compiler when possible"},
+   {"usellvm", DBG(USE_LLVM), "Use LLVM as shader compiler when possible"},
+};
+
 static const struct debug_named_value test_options[] = {
    /* Tests: */
    {"clearbuffer", DBG(TEST_CLEAR_BUFFER), "Test correctness of the clear_buffer compute shader"},
@@ -147,7 +149,7 @@ struct ac_llvm_compiler *si_create_llvm_compiler(struct si_screen *sscreen)
       return NULL;
 
    if (!ac_init_llvm_compiler(compiler, sscreen->info.family,
-                              sscreen->debug_flags & DBG(CHECK_IR) ? AC_TM_CHECK_IR : 0))
+                              sscreen->shader_debug_flags & DBG(CHECK_IR) ? AC_TM_CHECK_IR : 0))
       return NULL;
 
    compiler->beo = ac_create_backend_optimizer(compiler->tm);
@@ -957,7 +959,7 @@ static struct pipe_context *si_pipe_create_context(struct pipe_screen *screen, v
 
    /* When shaders are logged to stderr, asynchronous compilation is
     * disabled too. */
-   if (sscreen->debug_flags & DBG_ALL_SHADERS)
+   if (sscreen->shader_debug_flags & DBG_ALL_SHADERS)
       return ctx;
 
    /* Use asynchronous flushes only on amdgpu, since the radeon
@@ -1124,7 +1126,7 @@ parse_hex(char *out, const char *in, unsigned length)
 static void si_disk_cache_create(struct si_screen *sscreen)
 {
    /* Don't use the cache if shader dumping is enabled. */
-   if (sscreen->debug_flags & DBG_ALL_SHADERS)
+   if (sscreen->shader_debug_flags & DBG_ALL_SHADERS)
       return;
 
    struct mesa_sha1 ctx;
@@ -1285,6 +1287,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    sscreen->context_roll_log_filename = debug_get_option("AMD_ROLLS", NULL);
    sscreen->debug_flags = debug_get_flags_option("R600_DEBUG", radeonsi_debug_options, 0);
    sscreen->debug_flags |= debug_get_flags_option("AMD_DEBUG", radeonsi_debug_options, 0);
+   sscreen->shader_debug_flags = debug_get_flags_option("AMD_DEBUG", radeonsi_shader_debug_options, 0);
    test_flags = debug_get_flags_option("AMD_TEST", test_options, 0);
 
    if (sscreen->debug_flags & DBG(NO_DISPLAY_DCC)) {
@@ -1306,10 +1309,10 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
        (sscreen->info.gfx_level == GFX11_5 && LLVM_VERSION_MAJOR < 19))
       sscreen->use_aco = true;
    else if (sscreen->info.gfx_level >= GFX10)
-      sscreen->use_aco = (sscreen->debug_flags & DBG(USE_ACO));
+      sscreen->use_aco = (sscreen->shader_debug_flags & DBG(USE_ACO));
    else
       sscreen->use_aco = support_aco && sscreen->info.has_image_opcodes &&
-                         !(sscreen->debug_flags & DBG(USE_LLVM));
+                         !(sscreen->shader_debug_flags & DBG(USE_LLVM));
 #else
    sscreen->use_aco = true;
 #endif
@@ -1547,10 +1550,11 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    }
 
    (void)simple_mtx_init(&sscreen->shader_parts_mutex, mtx_plain);
-   sscreen->use_monolithic_shaders = (sscreen->debug_flags & DBG(MONOLITHIC_SHADERS)) != 0;
+   sscreen->use_monolithic_shaders =
+      (sscreen->shader_debug_flags & DBG(MONOLITHIC_SHADERS)) != 0;
 
    if (debug_get_bool_option("RADEON_DUMP_SHADERS", false))
-      sscreen->debug_flags |= DBG_ALL_SHADERS;
+      sscreen->shader_debug_flags |= DBG_ALL_SHADERS;
 
    /* Syntax:
     *     EQAA=s,z,c
