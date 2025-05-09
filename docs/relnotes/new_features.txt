@@ -21,3 +21,4 @@ VK_EXT_shader_replicated_composites on panvk
 VK_EXT_depth_bias_control on panvk
 VK_KHR_shader_bfloat16 on anv/gfx125+ and radv/gfx12+
 VK_KHR_robustness2 on RADV
+VK_EXT_zero_initialize_device_memory on RADV
