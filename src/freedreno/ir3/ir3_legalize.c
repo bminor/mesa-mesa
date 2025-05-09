@@ -87,18 +87,22 @@ struct ir3_legalize_block_data {
 
 static inline bool
 needs_ss_war(struct ir3_legalize_state *state, struct ir3_register *dst,
-             bool is_scalar_alu)
+             bool is_scalar_alu, enum ir3_instruction_flags cur_flags)
 {
    if (regmask_get(&state->needs_ss_war, dst))
       return true;
-   if (regmask_get(&state->needs_ss_or_sy_war, dst))
+   if (!(cur_flags & IR3_INSTR_SY) &&
+       regmask_get(&state->needs_ss_or_sy_war, dst)) {
       return true;
+   }
 
    if (!is_scalar_alu) {
       if (regmask_get(&state->needs_ss_scalar_war, dst))
          return true;
-      if (regmask_get(&state->needs_ss_or_sy_scalar_war, dst))
+      if (!(cur_flags & IR3_INSTR_SY) &&
+          regmask_get(&state->needs_ss_or_sy_scalar_war, dst)) {
          return true;
+      }
    }
 
    return false;
@@ -108,6 +112,95 @@ static inline bool
 needs_sy_war(struct ir3_legalize_state *state, struct ir3_register *dst)
 {
    return regmask_get(&state->needs_sy_war, dst);
+}
+
+static enum ir3_instruction_flags
+ir3_required_sync_flags(struct ir3_legalize_state *state,
+                        struct ir3_compiler *compiler,
+                        struct ir3_instruction *n)
+{
+   enum ir3_instruction_flags flags = 0;
+   bool n_is_scalar_alu = is_scalar_alu(n, compiler);
+
+   /* NOTE: consider dst register too.. it could happen that
+    * texture sample instruction (for example) writes some
+    * components which are unused.  A subsequent instruction
+    * that writes the same register can race w/ the sam instr
+    * resulting in undefined results:
+    */
+   for (unsigned i = 0; i < n->dsts_count + n->srcs_count; i++) {
+      struct ir3_register *reg;
+      if (i < n->dsts_count)
+         reg = n->dsts[i];
+      else
+         reg = n->srcs[i - n->dsts_count];
+
+      if (is_reg_gpr(reg)) {
+
+         /* TODO: we probably only need (ss) for alu
+          * instr consuming sfu result.. need to make
+          * some tests for both this and (sy)..
+          */
+         if (regmask_get(&state->needs_ss, reg)) {
+            flags |= IR3_INSTR_SS;
+         }
+
+         /* There is a fast feedback path for scalar ALU instructions which
+          * only takes 1 cycle of latency, similar to the normal 3 cycle
+          * latency path for ALU instructions. For this fast path the
+          * producer and consumer must use the same register size (i.e. no
+          * writing a full register and then reading half of it or vice
+          * versa). If we don't hit this path, either because of a mismatched
+          * size or a read via the regular ALU, then the write latency is
+          * variable and we must use (ss) to wait for the scalar ALU. This is
+          * different from the fixed 6 cycle latency for mismatched vector
+          * ALU accesses.
+          */
+         if (n_is_scalar_alu) {
+            /* Check if we have a mismatched size RaW dependency */
+            if (regmask_get((reg->flags & IR3_REG_HALF)
+                               ? &state->needs_ss_scalar_half
+                               : &state->needs_ss_scalar_full,
+                            reg)) {
+               flags |= IR3_INSTR_SS;
+            }
+         } else {
+            /* check if we have a scalar -> vector RaW dependency */
+            if (regmask_get(&state->needs_ss_scalar_half, reg) ||
+                regmask_get(&state->needs_ss_scalar_full, reg)) {
+               flags |= IR3_INSTR_SS;
+            }
+         }
+
+         if (regmask_get(&state->needs_sy, reg)) {
+            flags |= IR3_INSTR_SY;
+         }
+      } else if ((reg->flags & IR3_REG_CONST)) {
+         if (state->needs_ss_for_const) {
+            flags |= IR3_INSTR_SS;
+         }
+         if (state->needs_sy_for_const) {
+            flags |= IR3_INSTR_SY;
+         }
+      } else if (reg_is_addr1(reg) && n->block->in_early_preamble) {
+         if (regmask_get(&state->needs_ss, reg)) {
+            flags |= IR3_INSTR_SS;
+         }
+      }
+   }
+
+   foreach_dst (reg, n) {
+      if (reg->flags & IR3_REG_RT)
+         continue;
+      if (needs_sy_war(state, reg)) {
+         flags |= IR3_INSTR_SY;
+      }
+      if (needs_ss_war(state, reg, n_is_scalar_alu, flags)) {
+         flags |= IR3_INSTR_SS;
+      }
+   }
+
+   return flags;
 }
 
 static inline void
@@ -472,87 +565,15 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
 
       bool n_is_scalar_alu = is_scalar_alu(n, ctx->compiler);
 
-      /* NOTE: consider dst register too.. it could happen that
-       * texture sample instruction (for example) writes some
-       * components which are unused.  A subsequent instruction
-       * that writes the same register can race w/ the sam instr
-       * resulting in undefined results:
-       */
-      for (i = 0; i < n->dsts_count + n->srcs_count; i++) {
-         struct ir3_register *reg;
-         if (i < n->dsts_count)
-            reg = n->dsts[i];
-         else
-            reg = n->srcs[i - n->dsts_count];
+      enum ir3_instruction_flags sync_flags =
+         ir3_required_sync_flags(state, ctx->compiler, n);
 
-         if (is_reg_gpr(reg)) {
-
-            /* TODO: we probably only need (ss) for alu
-             * instr consuming sfu result.. need to make
-             * some tests for both this and (sy)..
-             */
-            if (regmask_get(&state->needs_ss, reg)) {
-               apply_ss(n, state, mergedregs);
-               last_input_needs_ss = false;
-            }
-
-            /* There is a fast feedback path for scalar ALU instructions which
-             * only takes 1 cycle of latency, similar to the normal 3 cycle
-             * latency path for ALU instructions. For this fast path the
-             * producer and consumer must use the same register size (i.e. no
-             * writing a full register and then reading half of it or vice
-             * versa). If we don't hit this path, either because of a mismatched
-             * size or a read via the regular ALU, then the write latency is
-             * variable and we must use (ss) to wait for the scalar ALU. This is
-             * different from the fixed 6 cycle latency for mismatched vector
-             * ALU accesses.
-             */
-            if (n_is_scalar_alu) {
-               /* Check if we have a mismatched size RaW dependency */
-               if (regmask_get((reg->flags & IR3_REG_HALF) ?
-                               &state->needs_ss_scalar_half :
-                               &state->needs_ss_scalar_full, reg)) {
-                  apply_ss(n, state, mergedregs);
-                  last_input_needs_ss = false;
-               }
-            } else {
-               /* check if we have a scalar -> vector RaW dependency */
-               if (regmask_get(&state->needs_ss_scalar_half, reg) ||
-                   regmask_get(&state->needs_ss_scalar_full, reg)) {
-                  apply_ss(n, state, mergedregs);
-                  last_input_needs_ss = false;
-               }
-            }
-
-            if (regmask_get(&state->needs_sy, reg)) {
-               apply_sy(n, state, mergedregs);
-            }
-         } else if ((reg->flags & IR3_REG_CONST)) {
-            if (state->needs_ss_for_const) {
-               apply_ss(n, state, mergedregs);
-               last_input_needs_ss = false;
-            }
-            if (state->needs_sy_for_const) {
-               apply_sy(n, state, mergedregs);
-            }
-         } else if (reg_is_addr1(reg) && block->in_early_preamble) {
-            if (regmask_get(&state->needs_ss, reg)) {
-               apply_ss(n, state, mergedregs);
-               last_input_needs_ss = false;
-            }
-         }
+      if (sync_flags & IR3_INSTR_SS) {
+         apply_ss(n, state, mergedregs);
+         last_input_needs_ss = false;
       }
-
-      foreach_dst (reg, n) {
-         if (reg->flags & IR3_REG_RT)
-            continue;
-         if (needs_sy_war(state, reg)) {
-            apply_sy(n, state, mergedregs);
-         }
-         if (needs_ss_war(state, reg, n_is_scalar_alu)) {
-            apply_ss(n, state, mergedregs);
-            last_input_needs_ss = false;
-         }
+      if (sync_flags & IR3_INSTR_SY) {
+         apply_sy(n, state, mergedregs);
       }
 
       /* I'm not exactly what this is for, but it seems we need this on every
