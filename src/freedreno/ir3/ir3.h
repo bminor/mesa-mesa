@@ -3317,4 +3317,69 @@ regmask_get(regmask_t *regmask, struct ir3_register *reg)
 }
 /* ************************************************************************* */
 
+struct ir3_nop_state {
+   unsigned full_ready[GPR_REG_SIZE];
+   unsigned half_ready[GPR_REG_SIZE];
+};
+
+struct ir3_legalize_state {
+   regmask_t needs_ss;
+   regmask_t needs_ss_scalar_full; /* half scalar ALU producer -> full scalar ALU consumer */
+   regmask_t needs_ss_scalar_half; /* full scalar ALU producer -> half scalar ALU consumer */
+   regmask_t needs_ss_war; /* write after read */
+   regmask_t needs_sy_war; /* WAR that can only be resolved using (sy) */
+   regmask_t needs_ss_or_sy_war;  /* WAR for sy-producer sources */
+   regmask_t needs_ss_scalar_war; /* scalar ALU write -> ALU write */
+   regmask_t needs_ss_or_sy_scalar_war;
+   regmask_t needs_sy;
+   bool needs_ss_for_const;
+   bool needs_sy_for_const;
+
+   /* Next instruction needs (ss)/(sy), no matter its dsts/srcs. */
+   bool force_ss;
+   bool force_sy;
+
+   /* Each of these arrays contains the cycle when the corresponding register
+    * becomes "ready" i.e. does not require any more nops. There is a special
+    * mechanism to let ALU instructions read compatible (i.e. same halfness)
+    * destinations of another ALU instruction with less delay, so this can
+    * depend on what type the consuming instruction is, which is why there are
+    * multiple arrays. The cycle is counted relative to the start of the block.
+    */
+
+   /* When ALU instructions reading the given full/half register will be ready.
+    */
+   struct ir3_nop_state alu_nop;
+
+   /* When non-ALU (e.g. cat5) instructions reading the given full/half register
+    * will be ready.
+    */
+   struct ir3_nop_state non_alu_nop;
+
+   /* When p0.x-w, a0.x, and a1.x are ready. */
+   unsigned pred_ready[4];
+   unsigned addr_ready[2];
+
+   unsigned cycle;
+};
+
+typedef struct ir3_legalize_state *(*ir3_get_block_legalize_state_cb)(
+   struct ir3_block *);
+
+void ir3_init_legalize_state(struct ir3_legalize_state *state,
+                             struct ir3_compiler *compiler);
+void ir3_merge_pred_legalize_states(struct ir3_legalize_state *state,
+                                    struct ir3_block *block,
+                                    ir3_get_block_legalize_state_cb get_state);
+void ir3_update_legalize_state(struct ir3_legalize_state *state,
+                               struct ir3_compiler *compiler,
+                               struct ir3_instruction *n);
+enum ir3_instruction_flags
+ir3_required_sync_flags(struct ir3_legalize_state *state,
+                        struct ir3_compiler *compiler,
+                        struct ir3_instruction *n);
+unsigned ir3_required_delay(struct ir3_legalize_state *state,
+                            struct ir3_compiler *compiler,
+                            struct ir3_instruction *instr);
+
 #endif /* IR3_H_ */
