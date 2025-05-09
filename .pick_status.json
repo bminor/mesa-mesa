@@ -1054,7 +1054,7 @@
         "description": "radeonsi/vce: Only send one task per IB",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ca1cda2bece5e834c7e53007aabe04ed1118554",
         "notes": null
