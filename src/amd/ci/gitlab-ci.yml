@@ -206,6 +206,7 @@ radv-polaris10-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-polaris10
+    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
     CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     RADV_PERFTEST: video_decode,video_encode

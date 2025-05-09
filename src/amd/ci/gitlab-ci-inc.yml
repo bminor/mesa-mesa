@@ -334,7 +334,6 @@
 .polaris10-test-valve:
   variables:
     FDO_CI_CONCURRENT: 16
-    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:POLARIS10
     # (2022-01) tsc=unstable was added in response to this message in kmsg,
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
