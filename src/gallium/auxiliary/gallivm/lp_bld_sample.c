@@ -1001,8 +1001,14 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
          lod = lp_build_max(lodf_bld, lod, desc_min_lod);
       }
 
-      if (min_lod)
+      if (min_lod) {
+         if (bld->num_lods != bld->coord_type.length) {
+            min_lod = lp_build_pack_aos_scalars(bld->gallivm, bld->coord_bld.type,
+                                                lodf_bld->type, min_lod, 0);
+         }
+
          lod = lp_build_max(lodf_bld, lod, min_lod);
+      }
 
       if (is_lodq) {
          *out_lod_fpart = lod;
