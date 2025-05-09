@@ -54,16 +54,9 @@ static const struct pvr_device_info *device_infos[] = {
  */
 int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc)
 {
-#define CASE_PACKED_BVNC_DEVICE_INFO(_b, _v, _n, _c)                          \
-   case PVR_BVNC_PACK(_b, _v, _n, _c):                                        \
-      info->ident = pvr_device_ident_##_b##_V_##_n##_##_c;                    \
-      info->ident.b = _b;                                                     \
-      info->ident.v = _v;                                                     \
-      info->ident.n = _n;                                                     \
-      info->ident.c = _c;                                                     \
-      info->features = pvr_device_features_##_b##_V_##_n##_##_c;              \
-      info->enhancements = pvr_device_enhancements_##_b##_##_v##_##_n##_##_c; \
-      info->quirks = pvr_device_quirks_##_b##_##_v##_##_n##_##_c;             \
+#define CASE_PACKED_BVNC_DEVICE_INFO(_b, _v, _n, _c)     \
+   case PVR_BVNC_PACK(_b, _v, _n, _c):                   \
+      *info = pvr_device_info_##_b##_##_v##_##_n##_##_c; \
       return 0
 
    switch (bvnc) {

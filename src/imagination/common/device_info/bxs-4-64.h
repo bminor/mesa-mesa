@@ -28,11 +28,8 @@
 
 #include "pvr_device_info.h"
 
-static const struct pvr_device_ident pvr_device_ident_36_V_104_796 = {
-   .device_id = 0x36104796,
-   .series_name = "B-Series",
-   .public_name = "BXS-4-64",
-};
+#define PVR_DEVICE_IDENT_36_V_104_796 \
+   .device_id = 0x36104796, .series_name = "B-Series", .public_name = "BXS-4-64"
 
 static const struct pvr_device_features pvr_device_features_36_V_104_796 = {
    .has_astc = true,
@@ -126,11 +123,13 @@ static const struct pvr_device_quirks pvr_device_quirks_36_53_104_796 = {
 };
 
 static const struct pvr_device_info pvr_device_info_36_53_104_796 = {
-   .ident = pvr_device_ident_36_V_104_796,
-   .ident.b = 36,
-   .ident.v = 53,
-   .ident.n = 104,
-   .ident.c = 796,
+   .ident = {
+      PVR_DEVICE_IDENT_36_V_104_796,
+      .b = 36,
+      .v = 53,
+      .n = 104,
+      .c = 796,
+   },
    .features = pvr_device_features_36_V_104_796,
    .enhancements = pvr_device_enhancements_36_53_104_796,
    .quirks = pvr_device_quirks_36_53_104_796,

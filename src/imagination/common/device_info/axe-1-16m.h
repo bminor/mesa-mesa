@@ -28,11 +28,9 @@
 
 #include "pvr_device_info.h"
 
-static const struct pvr_device_ident pvr_device_ident_33_V_11_3 = {
-   .device_id = 0x33011003,
-   .series_name = "A-Series",
-   .public_name = "AXE-1-16M",
-};
+#define PVR_DEVICE_IDENT_33_V_11_3                     \
+   .device_id = 0x33011003, .series_name = "A-Series", \
+   .public_name = "AXE-1-16M"
 
 static const struct pvr_device_features pvr_device_features_33_V_11_3 = {
    .has_common_store_size_in_dwords = true,
@@ -111,11 +109,13 @@ static const struct pvr_device_quirks pvr_device_quirks_33_15_11_3 = {
 };
 
 static const struct pvr_device_info pvr_device_info_33_15_11_3 = {
-   .ident = pvr_device_ident_33_V_11_3,
-   .ident.b = 33,
-   .ident.v = 15,
-   .ident.n = 11,
-   .ident.c = 3,
+   .ident = {
+      PVR_DEVICE_IDENT_33_V_11_3,
+      .b = 33,
+      .v = 15,
+      .n = 11,
+      .c = 3,
+   },
    .features = pvr_device_features_33_V_11_3,
    .enhancements = pvr_device_enhancements_33_15_11_3,
    .quirks = pvr_device_quirks_33_15_11_3,
