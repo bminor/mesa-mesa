@@ -59,13 +59,15 @@ enum CopyPropEntry {
     ConvIntToBool(ConvIntToBool),
 }
 
-struct CopyPropPass {
+struct CopyPropPass<'a> {
+    sm: &'a dyn ShaderModel,
     ssa_map: HashMap<SSAValue, CopyPropEntry>,
 }
 
-impl CopyPropPass {
-    pub fn new() -> CopyPropPass {
+impl<'a> CopyPropPass<'a> {
+    pub fn new(sm: &'a dyn ShaderModel) -> Self {
         CopyPropPass {
+            sm: sm,
             ssa_map: HashMap::new(),
         }
     }
@@ -766,7 +768,12 @@ impl CopyPropPass {
 
                 self.prop_to_pred(&mut instr.pred);
 
-                let cbuf_rule = if instr.is_uniform() {
+                let cbuf_rule = if self.sm.sm() >= 100 {
+                    // Blackwell+ doesn't allow cbufs directly in instruction
+                    // sources anymore and instead have to be explicitly loaded
+                    // with OpLdc.
+                    CBufRule::No
+                } else if instr.is_uniform() {
                     CBufRule::No
                 } else if !b_uniform {
                     CBufRule::BindlessRequiresBlock(bi)
@@ -813,7 +820,7 @@ impl CopyPropPass {
 impl Shader<'_> {
     pub fn opt_copy_prop(&mut self) {
         for f in &mut self.functions {
-            CopyPropPass::new().run(f);
+            CopyPropPass::new(self.sm).run(f);
         }
     }
 }
