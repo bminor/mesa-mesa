@@ -137,6 +137,7 @@ function_parameter_decoration_cb(struct vtn_builder *b, struct vtn_value *val,
    case SpvDecorationUniform:
    case SpvDecorationUniformId:
    case SpvDecorationVolatile:
+   case SpvDecorationFPFastMathMode:
       break;
 
    default:
