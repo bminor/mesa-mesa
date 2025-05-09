@@ -71,11 +71,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    dest->sample_location.count = src->sample_location.count;
 
    if (copy_mask & RADV_DYNAMIC_VIEWPORT) {
-      if (dest->vk.vp.viewport_count != src->vk.vp.viewport_count) {
-         dest->vk.vp.viewport_count = src->vk.vp.viewport_count;
-         dest_mask |= RADV_DYNAMIC_VIEWPORT;
-      }
-
       if (memcmp(&dest->vk.vp.viewports, &src->vk.vp.viewports, src->vk.vp.viewport_count * sizeof(VkViewport))) {
          typed_memcpy(dest->vk.vp.viewports, src->vk.vp.viewports, src->vk.vp.viewport_count);
          typed_memcpy(dest->hw_vp.xform, src->hw_vp.xform, src->vk.vp.viewport_count);
@@ -83,14 +78,23 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   if (copy_mask & RADV_DYNAMIC_SCISSOR) {
-      if (dest->vk.vp.scissor_count != src->vk.vp.scissor_count) {
-         dest->vk.vp.scissor_count = src->vk.vp.scissor_count;
-         dest_mask |= RADV_DYNAMIC_SCISSOR;
+   if (copy_mask & RADV_DYNAMIC_VIEWPORT_WITH_COUNT) {
+      if (dest->vk.vp.viewport_count != src->vk.vp.viewport_count) {
+         dest->vk.vp.viewport_count = src->vk.vp.viewport_count;
+         dest_mask |= RADV_DYNAMIC_VIEWPORT;
       }
+   }
 
+   if (copy_mask & RADV_DYNAMIC_SCISSOR) {
       if (memcmp(&dest->vk.vp.scissors, &src->vk.vp.scissors, src->vk.vp.scissor_count * sizeof(VkRect2D))) {
          typed_memcpy(dest->vk.vp.scissors, src->vk.vp.scissors, src->vk.vp.scissor_count);
+         dest_mask |= RADV_DYNAMIC_SCISSOR;
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_SCISSOR_WITH_COUNT) {
+      if (dest->vk.vp.scissor_count != src->vk.vp.scissor_count) {
+         dest->vk.vp.scissor_count = src->vk.vp.scissor_count;
          dest_mask |= RADV_DYNAMIC_SCISSOR;
       }
    }
@@ -8034,9 +8038,6 @@ radv_CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint3
    assert(firstViewport < MAX_VIEWPORTS);
    assert(total_count >= 1 && total_count <= MAX_VIEWPORTS);
 
-   if (state->dynamic.vk.vp.viewport_count < total_count)
-      state->dynamic.vk.vp.viewport_count = total_count;
-
    memcpy(state->dynamic.vk.vp.viewports + firstViewport, pViewports, viewportCount * sizeof(*pViewports));
    for (unsigned i = 0; i < viewportCount; i++) {
       radv_get_viewport_xform(&pViewports[i], state->dynamic.hw_vp.xform[i + firstViewport].scale,
@@ -8057,9 +8058,6 @@ radv_CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_
 
    assert(firstScissor < MAX_SCISSORS);
    assert(total_count >= 1 && total_count <= MAX_SCISSORS);
-
-   if (state->dynamic.vk.vp.scissor_count < total_count)
-      state->dynamic.vk.vp.scissor_count = total_count;
 
    memcpy(state->dynamic.vk.vp.scissors + firstScissor, pScissors, scissorCount * sizeof(*pScissors));
 
@@ -8233,12 +8231,22 @@ radv_CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport *pViewports)
 {
+   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.vp.viewport_count = viewportCount;
+
    radv_CmdSetViewport(commandBuffer, 0, viewportCount, pViewports);
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D *pScissors)
 {
+   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.vp.scissor_count = scissorCount;
+
    radv_CmdSetScissor(commandBuffer, 0, scissorCount, pScissors);
 }
 
