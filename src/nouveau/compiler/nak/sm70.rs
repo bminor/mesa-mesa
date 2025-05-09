@@ -117,6 +117,7 @@ impl ShaderModel for ShaderModel70 {
 
         match op {
             Op::R2UR(_)
+            | Op::Redux(_)
             | Op::S2R(_)
             | Op::BMsk(_)
             | Op::BRev(_)

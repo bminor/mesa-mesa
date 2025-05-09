@@ -4921,6 +4921,48 @@ impl DisplayOp for OpR2UR {
 }
 impl_display_for_op!(OpR2UR);
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum ReduxOp {
+    And,
+    Or,
+    Xor,
+    Sum,
+    Min(IntCmpType),
+    Max(IntCmpType),
+}
+
+impl fmt::Display for ReduxOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ReduxOp::And => write!(f, ".and"),
+            ReduxOp::Or => write!(f, ".or"),
+            ReduxOp::Xor => write!(f, ".xor"),
+            ReduxOp::Sum => write!(f, ".sum"),
+            ReduxOp::Min(cmp) => write!(f, ".min{cmp}"),
+            ReduxOp::Max(cmp) => write!(f, ".max{cmp}"),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpRedux {
+    #[dst_type(GPR)]
+    pub dst: Dst,
+
+    #[src_type(GPR)]
+    pub src: Src,
+
+    pub op: ReduxOp,
+}
+
+impl DisplayOp for OpRedux {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "redux{} {}", self.op, self.src)
+    }
+}
+impl_display_for_op!(OpRedux);
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpTex {
@@ -7401,6 +7443,7 @@ pub enum Op {
     PLop3(OpPLop3),
     PSetP(OpPSetP),
     R2UR(OpR2UR),
+    Redux(OpRedux),
     Tex(OpTex),
     Tld(OpTld),
     Tld4(OpTld4),
@@ -7567,7 +7610,7 @@ impl Op {
             Op::PLop3(_) | Op::PSetP(_) => true,
 
             // Uniform ops
-            Op::R2UR(_) => false,
+            Op::R2UR(_) | Op::Redux(_) => false,
 
             // Texture ops
             Op::Tex(_)

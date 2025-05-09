@@ -151,7 +151,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         Op::PLop3(_) | Op::PSetP(_) => SideEffect::None,
 
         // Uniform ops
-        Op::R2UR(_) => SideEffect::None,
+        Op::R2UR(_) | Op::Redux(_) => SideEffect::None,
 
         // Texture ops
         Op::Tex(_)
@@ -266,7 +266,7 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         Op::Shfl(_) => 15,
 
         // Uniform ops
-        Op::R2UR(_) => 15,
+        Op::Redux(_) | Op::R2UR(_) => 15,
 
         // Texture ops
         Op::Tex(_)

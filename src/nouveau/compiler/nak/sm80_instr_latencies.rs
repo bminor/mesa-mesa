@@ -175,7 +175,7 @@ impl RegLatencySM80 {
             Op::Vote(_) => CoupledAlu,
             Op::S2R(_) => Decoupled,
             // S2UR  => Decoupled,
-            Op::R2UR(_) => {
+            Op::R2UR(_) | Op::Redux(_) => {
                 if reader {
                     Decoupled
                 } else {
@@ -1058,7 +1058,7 @@ impl URegLatencySM80 {
             Op::I2F(_) => vdecoupled,
             Op::F2I(_) => vdecoupled,
             Op::F2F(_) => vdecoupled,
-            Op::R2UR(_) => {
+            Op::R2UR(_) | Op::Redux(_) => {
                 if !reader {
                     ToUr
                 } else {

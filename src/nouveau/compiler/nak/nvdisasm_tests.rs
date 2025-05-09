@@ -688,3 +688,36 @@ pub fn test_hfma2() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_redux() {
+    let ur0 = RegRef::new(RegFile::UGPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+
+    for sm in SM_LIST {
+        if sm < 80 {
+            continue;
+        }
+
+        let mut c = DisasmCheck::new();
+        for (op, op_str) in [
+            (ReduxOp::And, ""),
+            (ReduxOp::Or, ".or"),
+            (ReduxOp::Xor, ".xor"),
+            (ReduxOp::Sum, ".sum"),
+            (ReduxOp::Min(IntCmpType::U32), ".min"),
+            (ReduxOp::Max(IntCmpType::U32), ".max"),
+            (ReduxOp::Min(IntCmpType::I32), ".min.s32"),
+            (ReduxOp::Max(IntCmpType::I32), ".max.s32"),
+        ] {
+            let instr = OpRedux {
+                dst: Dst::Reg(ur0),
+                src: SrcRef::Reg(r1).into(),
+                op,
+            };
+            let disasm = format!("redux{op_str} ur0, r1;");
+            c.push(instr, disasm);
+        }
+        c.check(sm);
+    }
+}

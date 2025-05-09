@@ -54,7 +54,8 @@ impl Shader<'_> {
         self.map_instrs(|mut instr, alloc| {
             if matches!(
                 &instr.op,
-                Op::PhiDsts(_)
+                Op::Redux(_)
+                    | Op::PhiDsts(_)
                     | Op::PhiSrcs(_)
                     | Op::Pin(_)
                     | Op::Unpin(_)

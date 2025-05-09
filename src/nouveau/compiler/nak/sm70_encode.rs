@@ -2255,6 +2255,39 @@ impl SM70Op for OpR2UR {
     }
 }
 
+impl SM70Op for OpRedux {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        b.copy_alu_src_if_not_reg(&mut self.src, RegFile::GPR, SrcType::GPR);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        e.set_opcode(0x3c4);
+        e.set_udst(&self.dst);
+        e.set_reg_src(24..32, &self.src);
+
+        e.set_bit(
+            73,
+            match self.op {
+                ReduxOp::Min(cmp_type) | ReduxOp::Max(cmp_type) => {
+                    cmp_type == IntCmpType::I32
+                }
+                _ => false,
+            },
+        );
+        e.set_field(
+            78..81,
+            match self.op {
+                ReduxOp::And => 0_u8,
+                ReduxOp::Or => 1,
+                ReduxOp::Xor => 2,
+                ReduxOp::Sum => 3,
+                ReduxOp::Min(_) => 4,
+                ReduxOp::Max(_) => 5,
+            },
+        );
+    }
+}
+
 impl SM70Encoder<'_> {
     fn set_tex_cb_ref(&mut self, range: Range<usize>, cb: TexCBufRef) {
         assert!(range.len() == 19);
@@ -3714,6 +3747,7 @@ macro_rules! as_sm70_op_match {
             Op::Shfl(op) => op,
             Op::PLop3(op) => op,
             Op::R2UR(op) => op,
+            Op::Redux(op) => op,
             Op::Tex(op) => op,
             Op::Tld(op) => op,
             Op::Tld4(op) => op,
