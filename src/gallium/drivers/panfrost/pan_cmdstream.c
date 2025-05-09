@@ -4388,7 +4388,7 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.submit_batch = submit_batch;
    screen->vtbl.get_blend_shader = GENX(pan_blend_get_shader_locked);
    screen->vtbl.get_compiler_options = GENX(pan_shader_get_compiler_options);
-   screen->vtbl.compile_shader = GENX(pan_shader_compile);
+   screen->vtbl.compile_shader = pan_shader_compile;
    screen->vtbl.afbc_size = panfrost_afbc_size;
    screen->vtbl.afbc_pack = panfrost_afbc_pack;
    screen->vtbl.mtk_detile = panfrost_mtk_detile_compute;

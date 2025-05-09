@@ -27,12 +27,10 @@
 #include "pan_blend.h"
 #include "pan_format.h"
 
-#if PAN_ARCH <= 5
-#include "panfrost/midgard/midgard_compile.h"
-#else
 #include "panfrost/compiler/bifrost_compile.h"
-#endif
+#include "panfrost/midgard/midgard_compile.h"
 
+#ifdef PAN_ARCH
 const nir_shader_compiler_options *
 GENX(pan_shader_get_compiler_options)(void)
 {
@@ -68,20 +66,21 @@ pan_raw_format_mask_midgard(enum pipe_format *formats)
 }
 #endif
 
+#else
 void
-GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
-                         struct util_dynarray *binary,
-                         struct pan_shader_info *info)
+pan_shader_compile(nir_shader *s, struct panfrost_compile_inputs *inputs,
+                   struct util_dynarray *binary, struct pan_shader_info *info)
 {
+   unsigned arch = pan_arch(inputs->gpu_id);
+
    memset(info, 0, sizeof(*info));
 
    NIR_PASS(_, s, nir_lower_printf_buffer, 0, LIBPAN_PRINTF_BUFFER_SIZE - 8);
 
-#if PAN_ARCH >= 6
-   bifrost_compile_shader_nir(s, inputs, binary, info);
-#else
-   midgard_compile_shader_nir(s, inputs, binary, info);
-#endif
+   if (arch >= 6)
+      bifrost_compile_shader_nir(s, inputs, binary, info);
+   else
+      midgard_compile_shader_nir(s, inputs, binary, info);
 
    info->stage = s->info.stage;
    info->contains_barrier =
@@ -94,28 +93,30 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
       info->attributes_read_count = util_bitcount64(info->attributes_read);
       info->attribute_count = info->attributes_read_count;
 
-#if PAN_ARCH <= 5
-      if (info->midgard.vs.reads_raw_vertex_id)
-         info->attribute_count = MAX2(info->attribute_count, PAN_VERTEX_ID + 1);
+      if (arch <= 5) {
+         if (info->midgard.vs.reads_raw_vertex_id)
+            info->attribute_count =
+               MAX2(info->attribute_count, PAN_VERTEX_ID + 1);
 
-      bool instance_id =
-         BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_INSTANCE_ID);
-      if (instance_id)
-         info->attribute_count =
-            MAX2(info->attribute_count, PAN_INSTANCE_ID + 1);
-#endif
+         bool instance_id =
+            BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_INSTANCE_ID);
+         if (instance_id)
+            info->attribute_count =
+               MAX2(info->attribute_count, PAN_INSTANCE_ID + 1);
+      }
 
       info->vs.writes_point_size =
          s->info.outputs_written & (1 << VARYING_SLOT_PSIZ);
 
-#if PAN_ARCH >= 9
-      info->varyings.output_count =
-         util_last_bit(s->info.outputs_written >> VARYING_SLOT_VAR0);
+      if (arch >= 9) {
+         info->varyings.output_count =
+            util_last_bit(s->info.outputs_written >> VARYING_SLOT_VAR0);
 
-      /* Store the mask of special varyings, in case we need to emit ADs later. */
-      info->varyings.fixed_varyings =
-         panfrost_get_fixed_varying_mask(s->info.outputs_written);
-#endif
+         /* Store the mask of special varyings, in case we need to emit ADs
+          * later. */
+         info->varyings.fixed_varyings =
+            panfrost_get_fixed_varying_mask(s->info.outputs_written);
+      }
       break;
    case MESA_SHADER_FRAGMENT:
       if (s->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_DEPTH))
@@ -161,14 +162,15 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
       info->fs.reads_face =
          (s->info.inputs_read & (1 << VARYING_SLOT_FACE)) ||
          BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_FRONT_FACE);
-#if PAN_ARCH >= 9
-      info->varyings.input_count =
-         util_last_bit(s->info.inputs_read >> VARYING_SLOT_VAR0);
+      if (arch >= 9) {
+         info->varyings.input_count =
+            util_last_bit(s->info.inputs_read >> VARYING_SLOT_VAR0);
 
-      /* Store the mask of special varyings, in case we need to emit ADs later. */
-      info->varyings.fixed_varyings =
-         panfrost_get_fixed_varying_mask(s->info.inputs_read);
-#endif
+         /* Store the mask of special varyings, in case we need to emit ADs
+          * later. */
+         info->varyings.fixed_varyings =
+            panfrost_get_fixed_varying_mask(s->info.inputs_read);
+      }
       break;
    default:
       /* Everything else treated as compute */
@@ -188,22 +190,24 @@ GENX(pan_shader_compile)(nir_shader *s, struct panfrost_compile_inputs *inputs,
    info->ftz_fp16 = nir_is_denorm_flush_to_zero(execution_mode, 16);
    info->ftz_fp32 = nir_is_denorm_flush_to_zero(execution_mode, 32);
 
-#if PAN_ARCH >= 9
-   /* Valhall hardware doesn't have a "flush FP16, preserve FP32" mode, and we
-    * don't advertise independent FP16/FP32 denorm modes in panvk, but it's
-    * still possible to have shaders that don't specify any denorm mode for
-    * FP32. In that case, default to flush FP32. */
-   if (info->ftz_fp16 && !info->ftz_fp32) {
-      assert(!nir_is_denorm_preserve(execution_mode, 32));
-      info->ftz_fp32 = true;
+   if (arch >= 9) {
+      /* Valhall hardware doesn't have a "flush FP16, preserve FP32" mode, and
+       * we don't advertise independent FP16/FP32 denorm modes in panvk, but
+       * it's still possible to have shaders that don't specify any denorm mode
+       * for FP32. In that case, default to flush FP32. */
+      if (info->ftz_fp16 && !info->ftz_fp32) {
+         assert(!nir_is_denorm_preserve(execution_mode, 32));
+         info->ftz_fp32 = true;
+      }
    }
-#endif
 
-#if PAN_ARCH >= 6
-   /* This is "redundant" information, but is needed in a draw-time hot path */
-   for (unsigned i = 0; i < ARRAY_SIZE(info->bifrost.blend); ++i) {
-      info->bifrost.blend[i].format =
-         pan_blend_type_from_nir(info->bifrost.blend[i].type);
+   if (arch >= 6) {
+      /* This is "redundant" information, but is needed in a draw-time hot path */
+      for (unsigned i = 0; i < ARRAY_SIZE(info->bifrost.blend); ++i) {
+         info->bifrost.blend[i].format =
+            pan_blend_type_from_nir(info->bifrost.blend[i].type);
+      }
    }
-#endif
 }
+
+#endif

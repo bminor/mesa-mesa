@@ -884,7 +884,7 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
 
    struct util_dynarray binary;
    util_dynarray_init(&binary, NULL);
-   GENX(pan_shader_compile)(nir, compile_input, &binary, &shader->info);
+   pan_shader_compile(nir, compile_input, &binary, &shader->info);
 
    void *bin_ptr = util_dynarray_element(&binary, uint8_t, 0);
    unsigned bin_size = util_dynarray_num_elements(&binary, uint8_t);
@@ -1989,7 +1989,7 @@ panvk_per_arch(create_internal_shader)(
    struct util_dynarray binary;
 
    util_dynarray_init(&binary, nir);
-   GENX(pan_shader_compile)(nir, compiler_inputs, &binary, &shader->info);
+   pan_shader_compile(nir, compiler_inputs, &binary, &shader->info);
 
    unsigned bin_size = util_dynarray_num_elements(&binary, uint8_t);
    if (bin_size) {

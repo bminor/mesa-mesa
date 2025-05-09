@@ -26,13 +26,13 @@
 #define __PAN_SHADER_H__
 
 #include "compiler/nir/nir.h"
+#include "genxml/gen_macros.h"
 #include "panfrost/compiler/bifrost/disassemble.h"
 #include "panfrost/compiler/valhall/disassemble.h"
+#include "panfrost/lib/pan_props.h"
 #include "panfrost/midgard/disassemble.h"
 #include "panfrost/util/pan_ir.h"
 #include "panfrost/util/pan_lower_framebuffer.h"
-#include "panfrost/lib/pan_props.h"
-#include "genxml/gen_macros.h"
 
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id);
@@ -67,13 +67,12 @@ pan_shader_disassemble(FILE *fp, const void *code, size_t size, unsigned gpu_id,
 
 uint8_t pan_raw_format_mask_midgard(enum pipe_format *formats);
 
+void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
+                        struct util_dynarray *binary,
+                        struct pan_shader_info *info);
+
 #ifdef PAN_ARCH
 const nir_shader_compiler_options *GENX(pan_shader_get_compiler_options)(void);
-
-void GENX(pan_shader_compile)(nir_shader *nir,
-                              struct panfrost_compile_inputs *inputs,
-                              struct util_dynarray *binary,
-                              struct pan_shader_info *info);
 
 #if PAN_ARCH >= 9
 static inline enum mali_shader_stage

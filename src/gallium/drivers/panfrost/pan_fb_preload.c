@@ -566,7 +566,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
                lower_sampler_parameters, nir_metadata_control_flow, NULL);
    }
 
-   GENX(pan_shader_compile)(b.shader, &inputs, &binary, &shader->info);
+   pan_shader_compile(b.shader, &inputs, &binary, &shader->info);
 
    shader->key = *key;
    shader->address =

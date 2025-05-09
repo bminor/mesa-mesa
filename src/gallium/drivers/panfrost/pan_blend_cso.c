@@ -121,7 +121,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
 
    struct util_dynarray binary;
    util_dynarray_init(&binary, NULL);
-   GENX(pan_shader_compile)(nir, &inputs, &binary, &info);
+   pan_shader_compile(nir, &inputs, &binary, &info);
 
    struct panfrost_ptr bin =
       pan_pool_alloc_aligned(cache->bin_pool, binary.size, 64);

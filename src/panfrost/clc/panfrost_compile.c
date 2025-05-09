@@ -283,64 +283,9 @@ remap_variant(nir_function *func, unsigned variant, const char *target)
    return "default";
 }
 
-void pan_shader_compile_v6(nir_shader *nir,
-                           struct panfrost_compile_inputs *inputs,
-                           struct util_dynarray *binary,
-                           struct pan_shader_info *info);
-
-void pan_shader_compile_v7(nir_shader *nir,
-                           struct panfrost_compile_inputs *inputs,
-                           struct util_dynarray *binary,
-                           struct pan_shader_info *info);
-
-void pan_shader_compile_v9(nir_shader *nir,
-                           struct panfrost_compile_inputs *inputs,
-                           struct util_dynarray *binary,
-                           struct pan_shader_info *info);
-
-void pan_shader_compile_v10(nir_shader *nir,
-                            struct panfrost_compile_inputs *inputs,
-                            struct util_dynarray *binary,
-                            struct pan_shader_info *info);
-
-void pan_shader_compile_v12(nir_shader *nir,
-                            struct panfrost_compile_inputs *inputs,
-                            struct util_dynarray *binary,
-                            struct pan_shader_info *info);
-
-void pan_shader_compile_v13(nir_shader *nir,
-                            struct panfrost_compile_inputs *inputs,
-                            struct util_dynarray *binary,
-                            struct pan_shader_info *info);
-
-static void
-shader_compile(int arch, nir_shader *nir,
-               struct panfrost_compile_inputs *inputs,
-               struct util_dynarray *binary, struct pan_shader_info *info)
-{
-   switch (arch) {
-   case 6:
-      pan_shader_compile_v6(nir, inputs, binary, info);
-      break;
-   case 7:
-      pan_shader_compile_v7(nir, inputs, binary, info);
-      break;
-   case 9:
-      pan_shader_compile_v9(nir, inputs, binary, info);
-      break;
-   case 10:
-      pan_shader_compile_v10(nir, inputs, binary, info);
-      break;
-   case 12:
-      pan_shader_compile_v12(nir, inputs, binary, info);
-      break;
-   case 13:
-      pan_shader_compile_v13(nir, inputs, binary, info);
-      break;
-   default:
-      unreachable("Unknown arch!");
-   }
-}
+void pan_shader_compile(nir_shader *nir, struct panfrost_compile_inputs *inputs,
+                        struct util_dynarray *binary,
+                        struct pan_shader_info *info);
 
 int
 main(int argc, const char **argv)
@@ -479,8 +424,8 @@ main(int argc, const char **argv)
          struct util_dynarray shader_binary;
          struct pan_shader_info shader_info = {0};
          util_dynarray_init(&shader_binary, NULL);
-         shader_compile(target_arch, clone, &inputs, &shader_binary,
-                        &shader_info);
+         pan_shader_compile(clone, &inputs, &shader_binary,
+                            &shader_info);
 
          assert(shader_info.push.count * 4 <=
                    BIFROST_PRECOMPILED_KERNEL_ARGS_SIZE &&
