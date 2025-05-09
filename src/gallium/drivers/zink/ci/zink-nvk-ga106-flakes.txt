@@ -20,10 +20,13 @@ KHR-GL46.packed_pixels.rectangle.r8
 KHR-GL46.packed_pixels.rectangle.rgba32ui
 KHR-GL46.packed_pixels.rectangle.rgba8_snorm
 KHR-GL46.packed_pixels.varied_rectangle.*
+KHR-GL46.packed_pixels.varied_rectangle.r16
+KHR-GL46.packed_pixels.varied_rectangle.rgb9_e5
 KHR-GL46.pixelstoragemodes.teximage2d.rg8ui.0_0
 KHR-GL46.shader_viewport_layer_array.ShaderLayerFramebufferNonLayeredTestCase
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_array_r8i
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_array_rg8_snorm
+KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_rgba32f
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_3d_r32f
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_3d_r8ui
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_3d_rgba32i
@@ -35,7 +38,13 @@ KHR-GL46.texture_swizzle.functional_format_idx_17_target_idx_7
 KHR-GL46.texture_swizzle.functional_format_idx_1_target_idx_1
 KHR-GL46.texture_swizzle.functional_format_idx_1_target_idx_2
 KHR-GL46.texture_swizzle.functional_format_idx_1_target_idx_3
+KHR-GL46.texture_swizzle.functional_format_idx_35_target_idx_3
+KHR-GL46.texture_swizzle.functional_format_idx_37_target_idx_3
+KHR-GL46.texture_swizzle.functional_format_idx_43_target_idx_7
+KHR-GL46.texture_swizzle.functional_format_idx_48_target_idx_3
 KHR-GL46.texture_swizzle.functional_format_idx_4_target_idx_7
+KHR-GL46.texture_swizzle.functional_format_idx_53_target_idx_4
+KHR-GL46.texture_swizzle.functional_format_idx_53_target_idx_7
 KHR-GL46.texture_swizzle.functional_format_idx_63_target_idx_3
 KHR-GL46.texture_swizzle.functional_format_idx_63_target_idx_4
 KHR-GL46.texture_swizzle.functional_format_idx_66_target_idx_1
@@ -83,6 +92,7 @@ dEQP-GLES31.functional.image_load_store.3d.atomic.or_r32ui_return_value
 dEQP-GLES31.functional.image_load_store.3d.store.rgba16ui
 dEQP-GLES31.functional.program_uniform.by_pointer.render.basic.mat4x3_row_major_fragment
 dEQP-GLES31.functional.texture.format.sized.cube_array.depth_component32f_npot
+dEQP-GLES31.functional.compute.basic.image_barrier_multiple
 
 # All the double tests in this group seem to be flaky
 spec@.*@execution@built-in-functions@.*(double|dvec|dmat).*
@@ -116,6 +126,7 @@ spec@arb_copy_image@arb_copy_image-targets gl_texture_2d_array 32 32 15 gl_textu
 spec@arb_copy_image@arb_copy_image-targets gl_texture_3d 32 32 17 gl_texture_3d 32 16 18 11 5 2 5 9 7 14 7 11
 spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map 32 32 6 gl_texture_2d 32 16 1 11 12 3 5 7 0 14 9 1
 spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map 32 32 6 gl_texture_2d_array 32 16 15 11 12 1 5 3 2 14 11 4
+spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map 32 32 6 gl_texture_cube_map_array 32 32 18 11 5 1 5 9 9 14 7 5
 spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map_array 32 32 18 gl_texture_cube_map_array 16 16 18 11 5 2 5 9 7 5 7 11
 spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map_array 32 32 18 gl_texture_rectangle 32 16 1 11 12 13 5 7 0 14 6 1
 spec@arb_fragment_program_shadow@tex-shadow2dnotdepth
@@ -192,6 +203,7 @@ spec@glsl-1.10@execution@built-in-functions@fs-op-assign-add-float-float
 spec@glsl-1.10@execution@derivatives@glsl-derivs-abs
 spec@glsl-1.10@execution@glsl-1.10-linear-fog
 spec@glsl-1.10@execution@interpolation@interpolation-none-gl_frontsecondarycolor-smooth-none
+spec@glsl-1.10@execution@samplers@glsl-fs-shadow2d-06
 spec@glsl-1.10@execution@varying-packing@simple uvec3 separate
 spec@glsl-1.20@execution@clipping@vs-clip-vertex-homogeneity
 spec@glsl-1.30@execution@built-in-functions@vs-op-bitxor-abs-not-ivec3-int
