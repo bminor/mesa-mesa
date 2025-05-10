@@ -58,10 +58,10 @@ struct acceleration_structure_layout {
    uint32_t size;
 };
 
-struct scratch_layout {
-   uint32_t update_size;
-   uint32_t header_offset;
+struct update_scratch_layout {
+   uint32_t bounds_offsets;
    uint32_t internal_ready_count_offset;
+   uint32_t size;
 };
 
 enum radv_encode_key_bits {
@@ -159,22 +159,19 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
 }
 
 static void
-radv_get_scratch_layout(struct radv_device *device, uint32_t leaf_count, struct scratch_layout *scratch)
+radv_get_update_scratch_layout(struct radv_device *device, uint32_t leaf_count, struct update_scratch_layout *scratch)
 {
    uint32_t internal_count = MAX2(leaf_count, 2) - 1;
 
    uint32_t offset = 0;
 
-   scratch->header_offset = offset;
-   offset += sizeof(struct vk_ir_header);
+   scratch->bounds_offsets = offset;
+   offset += sizeof(vk_aabb) * (leaf_count + internal_count);
 
-   uint32_t update_offset = 0;
+   scratch->internal_ready_count_offset = offset;
+   offset += sizeof(uint32_t) * internal_count;
 
-   update_offset += sizeof(vk_aabb) * (leaf_count + internal_count);
-   scratch->internal_ready_count_offset = update_offset;
-
-   update_offset += sizeof(uint32_t) * internal_count;
-   scratch->update_size = update_offset;
+   scratch->size = offset;
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -369,9 +366,9 @@ radv_get_update_scratch_size(struct vk_device *vk_device, uint32_t leaf_count)
 {
    struct radv_device *device = container_of(vk_device, struct radv_device, vk);
 
-   struct scratch_layout scratch;
-   radv_get_scratch_layout(device, leaf_count, &scratch);
-   return scratch.update_size;
+   struct update_scratch_layout scratch;
+   radv_get_update_scratch_layout(device, leaf_count, &scratch);
+   return scratch.size;
 }
 
 static uint32_t
@@ -680,12 +677,12 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   struct scratch_layout layout;
-   radv_get_scratch_layout(device, leaf_count, &layout);
+   struct update_scratch_layout layout;
+   radv_get_update_scratch_layout(device, leaf_count, &layout);
 
    /* Prepare ready counts for internal nodes */
    radv_fill_memory(cmd_buffer, scratch + layout.internal_ready_count_offset,
-                    layout.update_size - layout.internal_ready_count_offset, 0x0, RADV_COPY_FLAGS_DEVICE_LOCAL);
+                    layout.size - layout.internal_ready_count_offset, 0x0, RADV_COPY_FLAGS_DEVICE_LOCAL);
 }
 
 static void
@@ -744,8 +741,8 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
                        RADV_COPY_FLAGS_DEVICE_LOCAL);
    }
 
-   struct scratch_layout layout;
-   radv_get_scratch_layout(device, leaf_count, &layout);
+   struct update_scratch_layout layout;
+   radv_get_update_scratch_layout(device, leaf_count, &layout);
 
    struct update_args update_consts = {
       .src = vk_acceleration_structure_get_va(src),
