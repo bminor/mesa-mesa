@@ -69,6 +69,8 @@ cmake -S . -B . `
 -DPIGLIT_USE_WAFFLE=ON `
 -DWaffle_INCLUDE_DIRS="$waffle_install\include\waffle-1" `
 -DWaffle_LDFLAGS="$waffle_install\lib\libwaffle-1.a" `
+-DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
+-DCMAKE_C_FLAGS="-D_UCRT_NOISY_NAN=1" `
 -DGLEXT_INCLUDE_DIR="$source_dir\glext" && `
 ninja -j32
 if (!$?) {

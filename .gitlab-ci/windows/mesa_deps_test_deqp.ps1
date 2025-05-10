@@ -38,6 +38,8 @@ cmake -S $($deqp_source) `
 -B . `
 -GNinja `
 -DCMAKE_BUILD_TYPE=Release `
+-DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
+-DCMAKE_SYSTEM_VERSION="10.0.20348.0" `
 -DDEQP_TARGET=default && `
 ninja -j32
 if (!$?) {

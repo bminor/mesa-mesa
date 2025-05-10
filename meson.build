@@ -1017,6 +1017,7 @@ elif host_machine.system() == 'windows'
       '-D_ALLOW_KEYWORD_MACROS',
       '-D_HAS_EXCEPTIONS=0', # Tell C++ STL to not use exceptions
       '-DNOMINMAX',
+      '-D_UCRT_NOISY_NAN', # https://developercommunity.visualstudio.com/t/NAN-is-no-longer-compile-time-constant-i/10688907?viewtype=all
     ]
   else
     # When the target is not mingw/ucrt
