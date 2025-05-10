@@ -117,7 +117,7 @@ brw_compute_per_primitive_map(int *out_per_primitive_map,
    /* Lay out generics */
    const uint64_t generics =
       per_primitive_outputs_written & ~BITFIELD64_MASK(VARYING_SLOT_VAR0);
-   const int first_generic_output = ffsl(generics) - 1;
+   const int first_generic_output = ffsll(generics) - 1;
    u_foreach_bit64(location, generics) {
       assert(out_per_primitive_map[location] == -1);
       if (!separate_shader) {
