@@ -995,12 +995,13 @@ nak_postprocess_nir(nir_shader *nir,
 
    OPT(nir, nir_opt_combine_barriers, NULL, NULL);
 
+   OPT(nir, nir_convert_to_lcssa, true, true);
+   nir_divergence_analysis(nir);
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      OPT(nir, nir_opt_tex_skip_helpers, true);
+
    nak_optimize_nir(nir, nak);
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      nir_divergence_analysis(nir);
-      OPT(nir, nir_opt_tex_skip_helpers, true);
-   }
    OPT(nir, nak_nir_lower_tex, nak);
    OPT(nir, nir_lower_idiv, NULL);
 
