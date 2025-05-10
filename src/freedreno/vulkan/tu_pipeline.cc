@@ -3351,6 +3351,18 @@ tu6_emit_ds(struct tu_cs *cs,
 {
    bool stencil_test_enable =
       ds->stencil.test_enable && rp->attachments & MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
+
+   /* While the .stencil_read field can be used to avoid having to read stencil
+    * when the func/ops cause it to be unused, there was no change in perf on
+    * the 1/42 games tested that was affected (Transport Fever, 0.0 +/- 0.0%
+    * change).  Besides, in some cases where we could clear stencil_read here,
+    * the packed z/s is going to be read anyway due to depth testing, though
+    * that doesn't apply to this game.
+    *
+    * Given that the condition for avoiding stencil_read is fairly complicated,
+    * we won't bother with the CPU overhead until we can see some win from it.
+    */
+
    tu_cs_emit_regs(cs, A6XX_RB_STENCIL_CONTROL(
       .stencil_enable = stencil_test_enable,
       .stencil_enable_bf = stencil_test_enable,
@@ -3430,8 +3442,9 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
          .zfunc = zfunc,
          /* To support VK_EXT_depth_clamp_zero_one on a7xx+ */
          .z_clamp_enable = rs->depth_clamp_enable || CHIP >= A7XX,
-         /* TODO don't set for ALWAYS/NEVER */
-         .z_read_enable = ds->depth.test_enable || ds->depth.bounds_test.enable,
+         .z_read_enable =
+            (ds->depth.test_enable && (zfunc != FUNC_NEVER && zfunc != FUNC_ALWAYS)) ||
+            ds->depth.bounds_test.enable,
          .z_bounds_enable = ds->depth.bounds_test.enable));
       tu_cs_emit_regs(cs, A6XX_GRAS_SU_DEPTH_CNTL(depth_test));
    } else {
