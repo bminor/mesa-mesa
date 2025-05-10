@@ -3098,6 +3098,7 @@ impl SM70Op for OpAtom {
                     assert!(cmp_src == AtomCmpSrc::Separate);
                     e.set_reg_src(32..40, &self.cmpr);
                     e.set_reg_src(64..72, &self.data);
+                    e.set_pred_dst(81..84, &Dst::None);
                 } else {
                     if e.sm >= 90 && self.atom_type.is_float() {
                         e.set_opcode(0x3a3);
@@ -3106,10 +3107,9 @@ impl SM70Op for OpAtom {
                     }
 
                     e.set_reg_src(32..40, &self.data);
+                    e.set_pred_dst(81..84, &Dst::None);
                     e.set_atom_op(87..91, self.atom_op);
                 }
-
-                e.set_pred_dst(81..84, &Dst::None);
 
                 e.set_field(
                     72..73,
