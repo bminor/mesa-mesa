@@ -84,3 +84,28 @@ TEST_F(RegisterCoalesceTest, InterfereButContainEachOther)
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
+
+TEST_F(RegisterCoalesceTest, ChangingTemporaryCompoundRegisterNotChangesOriginal)
+{
+   brw_builder bld = make_shader();
+
+   brw_reg src = vgrf(bld, BRW_TYPE_F, 2);
+   brw_reg tmp = vgrf(bld, BRW_TYPE_F, 2);
+   brw_reg dst = vgrf(bld, BRW_TYPE_F, 2);
+
+   brw_reg one = brw_imm_f(1.0);
+   brw_reg two = brw_imm_f(2.0);
+
+   bld.MOV(src, one);
+   bld.MOV(offset(src, bld, 1), two);
+
+   bld.MOV(offset(tmp, bld, 1), offset(src, bld, 1));
+
+   bld.MOV(tmp, src);
+   bld.ADD(offset(tmp, bld, 1), offset(tmp, bld, 1), one);
+
+   bld.ADD(dst, src, one);
+   bld.ADD(offset(dst, bld, 1), offset(src, bld, 1), two);
+
+   EXPECT_NO_PROGRESS(brw_opt_register_coalesce, bld);
+}
