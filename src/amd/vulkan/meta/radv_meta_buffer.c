@@ -358,7 +358,7 @@ radv_update_memory_cp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, const voi
       radv_cmd_buffer_trace_emit(cmd_buffer);
 }
 
-static void
+void
 radv_update_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t size, const void *data,
                    enum radv_copy_flags dst_copy_flags)
 {
