@@ -250,6 +250,8 @@ TYPE(vk_ir_instance_node, 8);
 
 TYPE(vk_global_sync_data, 4);
 
+TYPE(vk_bvh_geometry_data, 8);
+
 uint32_t
 ir_id_to_offset(uint32_t id)
 {
