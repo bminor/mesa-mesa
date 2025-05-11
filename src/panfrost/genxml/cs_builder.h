@@ -33,6 +33,10 @@
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Before Avalon, RUN_IDVS could use a selector but as we only hardcode the same
  * configuration, we match v12+ naming here */
 
@@ -217,14 +221,13 @@ static inline void
 cs_builder_init(struct cs_builder *b, const struct cs_builder_conf *conf,
                 struct cs_buffer root_buffer)
 {
-   *b = (struct cs_builder){
-      .conf = *conf,
-      .root_chunk.buffer = root_buffer,
-      .cur_chunk.buffer = root_buffer,
-      .cur_ls_tracker = &b->root_ls_tracker,
-   };
+   memset(b, 0, sizeof(*b));
+   b->conf = *conf;
+   b->root_chunk.buffer = root_buffer;
+   b->cur_chunk.buffer = root_buffer;
+   b->cur_ls_tracker = &b->root_ls_tracker,
 
-   *b->cur_ls_tracker = (struct cs_load_store_tracker){0};
+   memset(b->cur_ls_tracker, 0, sizeof(*b->cur_ls_tracker));
 
    /* We need at least 3 registers for CS chunk linking. Assume the kernel needs
     * at least that too.
@@ -257,7 +260,9 @@ static inline uint32_t
 cs_root_chunk_size(struct cs_builder *b)
 {
    /* Make sure cs_finish() was called. */
-   assert(!memcmp(&b->cur_chunk, &(struct cs_chunk){0}, sizeof(b->cur_chunk)));
+   struct cs_chunk empty_chunk;
+   memset(&empty_chunk, 0, sizeof(empty_chunk));
+   assert(!memcmp(&b->cur_chunk, &empty_chunk, sizeof(b->cur_chunk)));
 
    return b->root_chunk.size * sizeof(uint64_t);
 }
@@ -402,7 +407,7 @@ cs_dst64(struct cs_builder *b, struct cs_index dst)
 }
 
 static inline struct cs_index
-cs_reg_tuple(ASSERTED struct cs_builder *b, unsigned reg, unsigned size)
+cs_reg_tuple(ASSERTED struct cs_builder *b, uint8_t reg, uint8_t size)
 {
    assert(reg + size <= b->conf.nr_registers - b->conf.nr_kernel_registers &&
           "overflowed register file");
@@ -713,7 +718,7 @@ struct cs_async_op {
 };
 
 static inline struct cs_async_op
-cs_defer(unsigned wait_mask, unsigned signal_slot)
+cs_defer(uint16_t wait_mask, uint8_t signal_slot)
 {
    /* The scoreboard slot to signal is incremented before the wait operation,
     * waiting on it would cause an infinite wait.
@@ -731,7 +736,7 @@ cs_now(void)
 {
    return (struct cs_async_op){
       .wait_mask = 0,
-      .signal_slot = ~0,
+      .signal_slot = 0xff,
    };
 }
 
@@ -778,13 +783,14 @@ cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
    }
 }
 
+/* TODO: was the signal_slot comparison bugged? */
 #define cs_apply_async(I, async)                                               \
    do {                                                                        \
       I.wait_mask = async.wait_mask;                                           \
       I.signal_slot = cs_instr_is_asynchronous(I.opcode, I.wait_mask)          \
                          ? async.signal_slot                                   \
                          : 0;                                                  \
-      assert(I.signal_slot != ~0 ||                                            \
+      assert(I.signal_slot != 0xff ||                                          \
              !"Can't use cs_now() on pure async instructions");                \
    } while (0)
 
@@ -1176,7 +1182,7 @@ struct cs_shader_res_sel {
 };
 
 static inline struct cs_shader_res_sel
-cs_shader_res_sel(unsigned srt, unsigned fau, unsigned spd, unsigned tsd)
+cs_shader_res_sel(uint8_t srt, uint8_t fau, uint8_t spd, uint8_t tsd)
 {
    return (struct cs_shader_res_sel){
       .srt = srt,
@@ -1875,7 +1881,7 @@ cs_exception_handler_end(struct cs_builder *b,
    struct cs_index addr_reg = {
       .type = CS_INDEX_REGISTER,
       .size = 2,
-      .reg = b->conf.nr_registers - 2,
+      .reg = (uint8_t) (b->conf.nr_registers - 2),
    };
 
    /* Manual cs_block_end() without an instruction flush. We do that to insert
@@ -2079,7 +2085,7 @@ cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
 
    for (unsigned i = 0; i < 64; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
-               cs_trace_field_offset(run_idvs2, sr[i]));
+               cs_trace_field_offset(run_idvs2, sr[0]) + i + sizeof(uint32_t));
    cs_store(b, cs_reg_tuple(b, 64, 2), tracebuf_addr, BITFIELD_MASK(2),
             cs_trace_field_offset(run_idvs2, sr[64]));
    cs_flush_stores(b);
@@ -2122,7 +2128,7 @@ cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
 
    for (unsigned i = 0; i < 48; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
-               cs_trace_field_offset(run_idvs, sr[i]));
+               cs_trace_field_offset(run_idvs, sr[0]) + i * sizeof(uint32_t));
    cs_store(b, cs_reg_tuple(b, 48, 13), tracebuf_addr, BITFIELD_MASK(13),
             cs_trace_field_offset(run_idvs, sr[48]));
    cs_flush_stores(b);
@@ -2158,7 +2164,7 @@ cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
 
    for (unsigned i = 0; i < 32; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
-               cs_trace_field_offset(run_compute, sr[i]));
+               cs_trace_field_offset(run_compute, sr[0]) + i * sizeof(uint32_t));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
    cs_flush_stores(b);
@@ -2189,8 +2195,12 @@ cs_trace_run_compute_indirect(struct cs_builder *b,
 
    for (unsigned i = 0; i < 32; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
-               cs_trace_field_offset(run_compute, sr[i]));
+               cs_trace_field_offset(run_compute, sr[0]) + i * sizeof(uint32_t));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
    cs_flush_stores(b);
 }
+
+#ifdef __cplusplus
+}
+#endif
