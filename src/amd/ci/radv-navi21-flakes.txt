@@ -7,6 +7,7 @@ dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_12
 
 dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.line_list_with_adjacency.no_clip.struct.vec4.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.line_strip_with_adjacency.no_clip.type.ivec2.per_vertex_flat.vertex_shader
+dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_first.static.triangle_list.no_clip.array2.uint.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_list_with_adjacency.no_clip.type.float.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_strip.no_clip.array2.vec2.per_vertex_interp.vertex_shader
 
@@ -30,6 +31,7 @@ dEQP-VK.query_pool.statistics_query.host_query_reset.geometry_shader_(invocation
 
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s0_l11_aabbs_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation.s2_l23_check_group_handles
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l11_aabbs_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l1_l1_aabbs_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l2_l3_aabbs_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s0_l2_l3_check_group_handles
@@ -51,6 +53,7 @@ dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rg3
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba32i.512_256_6
 
 dEQP-VK.subgroups.arithmetic.framebuffer.subgroupinclusivexor_u8vec3_tess_eval
+dEQP-VK.subgroups.ballot_broadcast.framebuffer.subgroupbroadcast_nonconst_u16vec3tess_eval
 dEQP-VK.subgroups.clustered.framebuffer.subgroupclusteredmin_int8_t_tess_control
 
 dEQP-VK.synchronization.global_priority_transition.low.semaphore.no_modifiers.from_compute_to_graphics
