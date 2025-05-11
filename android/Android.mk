@@ -56,7 +56,7 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 35; echo $$?), 0)
 LOCAL_STATIC_LIBRARIES += libc++fs
 endif
 
-ifneq ($(filter swrast,$(BOARD_MESA3D_GALLIUM_DRIVERS) $(BOARD_MESA3D_VULKAN_DRIVERS)),)
+ifneq ($(filter llvmpipe swrast,$(BOARD_MESA3D_GALLIUM_DRIVERS) $(BOARD_MESA3D_VULKAN_DRIVERS)),)
 ifeq ($(BOARD_MESA3D_FORCE_SOFTPIPE),)
 MESON_GEN_LLVM_STUB := true
 endif
