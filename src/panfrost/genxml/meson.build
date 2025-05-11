@@ -45,3 +45,19 @@ libpanfrost_decode = static_library(
   build_by_default : false,
   link_with: [libpanfrost_decode_per_arch],
 )
+
+if with_tests
+  test('cs_builder_tests',
+    executable(
+      'cs_builder_tests',
+      ['test/cs_builder.cpp'],
+      # Nothing arch-specific is tested currently, only compile v10.
+      cpp_args : [cpp_msvc_compat_args, no_override_init_args, '-DPAN_ARCH=10'],
+      gnu_symbol_visibility : 'hidden',
+      include_directories: [inc_include, inc_src, inc_panfrost],
+      dependencies: [idep_gtest, idep_pan_packers, idep_mesautil],
+    ),
+    suite: ['panfrost'],
+    protocol: 'gtest',
+  )
+endif
