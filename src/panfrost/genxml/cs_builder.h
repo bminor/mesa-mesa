@@ -176,6 +176,19 @@ struct cs_if_else {
    struct cs_label end_label;
 };
 
+struct cs_maybe {
+   /* Link to the next pending cs_maybe for the block stack */
+   struct cs_maybe *next_pending;
+   /* Position of patch block relative to blocks.instrs */
+   uint32_t patch_pos;
+
+   /* CPU address of patch block in the chunk */
+   uint64_t *patch_addr;
+   /* Original contents of the patch block, before replacing with NOPs */
+   uint32_t num_instrs;
+   uint64_t instrs[];
+};
+
 struct cs_builder {
    /* CS builder configuration */
    struct cs_builder_conf conf;
@@ -194,6 +207,9 @@ struct cs_builder {
 
    struct cs_load_store_tracker root_ls_tracker;
 
+   /* ralloc context used for cs_maybe allocations */
+   void *maybe_ctx;
+
    /* Temporary storage for inner blocks that need to be built
     * and copied in one monolithic sequence of instructions with no
     * jump in the middle.
@@ -202,6 +218,8 @@ struct cs_builder {
       struct cs_block *stack;
       struct util_dynarray instrs;
       struct cs_if_else pending_if;
+      /* Linked list of cs_maybe that were emitted inside the current stack */
+      struct cs_maybe *pending_maybes;
       unsigned last_load_ip_target;
    } blocks;
 
@@ -589,6 +607,14 @@ cs_flush_block_instrs(struct cs_builder *b)
    void *buffer = cs_alloc_ins_block(b, num_instrs);
 
    if (likely(buffer != NULL)) {
+      /* We wait until block instrs are copied to the chunk buffer to calculate
+       * patch_addr, in case we end up allocating a new chunk */
+      while (b->blocks.pending_maybes) {
+         b->blocks.pending_maybes->patch_addr =
+            (uint64_t *) buffer + b->blocks.pending_maybes->patch_pos;
+         b->blocks.pending_maybes = b->blocks.pending_maybes->next_pending;
+      }
+
       /* If we have a LOAD_IP chain, we need to patch each LOAD_IP
        * instruction before we copy the block to the final memory
        * region. */
@@ -697,6 +723,7 @@ cs_finish(struct cs_builder *b)
    memset(&b->cur_chunk, 0, sizeof(b->cur_chunk));
 
    util_dynarray_fini(&b->blocks.instrs);
+   ralloc_free(b->maybe_ctx);
 }
 
 /*
@@ -1097,6 +1124,79 @@ cs_while_end(struct cs_builder *b, struct cs_loop *loop)
 
 #define cs_break(__b)                                                          \
    cs_loop_conditional_break(__b, __loop, MALI_CS_CONDITION_ALWAYS, cs_undef())
+
+/* cs_maybe is an abstraction for retroactively patching cs contents. When the
+ * block is closed, its original contents are recorded and then replaced with
+ * NOP instructions. The caller can then use the cs_patch_maybe to restore the
+ * original contents at a later point. This can be useful in situations where
+ * not enough information is available during recording to determine what
+ * instructions should be emitted at the time, but it will be known at some
+ * point before submission. */
+
+struct cs_maybe_state {
+   struct cs_block block;
+   uint32_t patch_pos;
+};
+
+static inline struct cs_maybe_state *
+cs_maybe_start(struct cs_builder *b, struct cs_maybe_state *state)
+{
+   cs_block_start(b, &state->block);
+   state->patch_pos = cs_block_next_pos(b);
+   return state;
+}
+
+static inline void
+cs_maybe_end(struct cs_builder *b, struct cs_maybe_state *state,
+             struct cs_maybe **maybe)
+{
+   assert(cs_cur_block(b) == &state->block);
+
+   uint32_t num_instrs = cs_block_next_pos(b) - state->patch_pos;
+   size_t size = num_instrs * sizeof(uint64_t);
+   uint64_t *instrs = (uint64_t *) b->blocks.instrs.data + state->patch_pos;
+
+   if (!b->maybe_ctx)
+      b->maybe_ctx = ralloc_context(NULL);
+
+   *maybe = (struct cs_maybe *)
+      ralloc_size(b->maybe_ctx, sizeof(struct cs_maybe) + size);
+   (*maybe)->next_pending = b->blocks.pending_maybes;
+   b->blocks.pending_maybes = *maybe;
+   (*maybe)->patch_pos = state->patch_pos;
+   (*maybe)->num_instrs = num_instrs;
+   /* patch_addr will be computed later in cs_flush_block_instrs, when the
+    * outermost block is closed */
+   (*maybe)->patch_addr = NULL;
+
+   /* Save the emitted instructions in the patch block */
+   memcpy((*maybe)->instrs, instrs, size);
+   /* Replace instructions in the patch block with NOPs */
+   memset(instrs, 0, size);
+
+   cs_block_end(b, &state->block);
+}
+
+#define cs_maybe(__b, __maybe)                                                 \
+   for (struct cs_maybe_state __storage,                                       \
+        *__state = cs_maybe_start(__b, &__storage);                            \
+        __state != NULL; cs_maybe_end(__b, __state, __maybe),                  \
+        __state = NULL)
+
+/* Must be called before cs_finish */
+static inline void
+cs_patch_maybe(struct cs_builder *b, struct cs_maybe *maybe)
+{
+   if (maybe->patch_addr) {
+      /* Called after outer block was closed */
+      memcpy(maybe->patch_addr, maybe->instrs,
+             maybe->num_instrs * sizeof(uint64_t));
+   } else {
+      /* Called before outer block was closed */
+      memcpy((uint64_t *)b->blocks.instrs.data + maybe->patch_pos,
+             maybe->instrs, maybe->num_instrs * sizeof(uint64_t));
+   }
+}
 
 /* Pseudoinstructions follow */
 
