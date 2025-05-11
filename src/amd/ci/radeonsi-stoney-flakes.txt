@@ -44,5 +44,6 @@ spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_external_objects@vk-ping-pong-single-sem
 spec@ext_external_objects@vk-semaphores
 spec@ext_framebuffer_multisample@accuracy 4 depth_draw small depthstencil
+spec@glsl-1.30@execution@tex-miplevel-selection texturegradoffset 2d
 spec@glsl-1.30@execution@tex-miplevel-selection texturelodoffset 1d
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint
