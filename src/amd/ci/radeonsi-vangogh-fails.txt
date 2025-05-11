@@ -14,6 +14,7 @@ spec@!opengl 1.0@rasterpos,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 spec@!opengl 1.1@line-smooth-stipple,Fail
+spec@arb_copy_buffer@overlap,Fail
 spec@arb_fragment_layer_viewport@layer-gs-writes-out-of-range,Fail
 spec@arb_pipeline_statistics_query@arb_pipeline_statistics_query-frag,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
@@ -25,6 +26,8 @@ spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -s
 spec@arb_viewport_array@display-list,Fail
 spec@egl 1.4@eglterminate then unbind context,Fail
 spec@egl_khr_surfaceless_context@viewport,Fail
+spec@ext_direct_state_access@named-buffers 30,Fail
+spec@ext_direct_state_access@named-buffers 30@NamedCopyBufferSubDataEXT,Fail
 spec@glsl-es-1.00@linker@glsl-mismatched-uniform-precision-unused,Fail
 spec@glsl-es-3.00@execution@built-in-functions@fs-packhalf2x16,Fail
 spec@glsl-es-3.00@execution@built-in-functions@vs-packhalf2x16,Fail
