@@ -4934,7 +4934,7 @@
         "description": "android: fix llvmpipe build rules",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a39090921e3efad84e4eb16bc82f2d4519391a82",
         "notes": null
