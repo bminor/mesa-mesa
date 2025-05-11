@@ -1196,9 +1196,29 @@ radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b, const
          nir_push_if(b, overflow_cond);
          {
             nir_def *prev = nir_load_deref(b, args->vars.previous_node);
-            nir_def *bvh_addr = build_node_to_addr(device, b, nir_load_deref(b, args->vars.bvh_base), true);
 
-            nir_def *parent = fetch_parent_node(device, b, bvh_addr, prev);
+            nir_def *loaded_parent_id;
+            nir_def *primitive_parent_id;
+            nir_push_if(b, nir_test_mask(b, prev, BITFIELD64_BIT(ffs(radv_bvh_node_box16) - 1)));
+            {
+               nir_def *is_instance = nir_test_mask(b, prev, BITFIELD64_BIT(ffs(radv_bvh_node_instance) - 1));
+               nir_def *field_offset = nir_bcsel(
+                  b, is_instance,
+                  nir_imm_int(
+                     b, (int32_t)offsetof(struct radv_gfx12_instance_node, parent_id) - (radv_bvh_node_instance << 3)),
+                  nir_imm_int(b,
+                              (int32_t)offsetof(struct radv_gfx12_box_node, parent_id) - (radv_bvh_node_box32 << 3)));
+               nir_def *offset = nir_iadd(b, nir_ishl_imm(b, prev, 3), field_offset);
+               nir_def *bvh_addr = build_node_to_addr(device, b, nir_load_deref(b, args->vars.bvh_base), true);
+               loaded_parent_id = nir_build_load_global(b, 1, 32, nir_iadd(b, bvh_addr, nir_u2u64(b, offset)));
+            }
+            nir_push_else(b, NULL);
+            {
+               primitive_parent_id = nir_load_deref(b, args->vars.parent_node);
+            }
+            nir_pop_if(b, NULL);
+            nir_def *parent = nir_if_phi(b, loaded_parent_id, primitive_parent_id);
+
             nir_push_if(b, nir_ieq_imm(b, parent, RADV_BVH_INVALID_NODE));
             {
                nir_store_var(b, incomplete, nir_imm_false(b), 0x1);
@@ -1299,6 +1319,8 @@ radv_build_ray_traversal_gfx12(struct radv_device *device, nir_builder *b, const
          }
          nir_push_else(b, NULL);
          {
+            nir_store_deref(b, args->vars.parent_node, bvh_node, 0x1);
+
             /* box */
             if (args->use_bvh_stack_rtn) {
                nir_store_var(b, last_visited_node, prev_node, 0x1);

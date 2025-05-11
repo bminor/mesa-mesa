@@ -84,7 +84,6 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
    VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
 
    uint32_t bvh_leaf_size;
-   uint32_t bvh_node_size_gcd;
    if (radv_use_bvh8(pdev)) {
       switch (geometry_type) {
       case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -99,7 +98,6 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
       default:
          UNREACHABLE("Unknown VkGeometryTypeKHR");
       }
-      bvh_node_size_gcd = RADV_GFX12_BVH_NODE_SIZE;
    } else {
       switch (geometry_type) {
       case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -114,7 +112,6 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
       default:
          UNREACHABLE("Unknown VkGeometryTypeKHR");
       }
-      bvh_node_size_gcd = 64;
    }
 
    uint32_t internal_node_size =
@@ -140,7 +137,8 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
 
    /* Parent links, which have to go directly before bvh_offset as we index them using negative
     * offsets from there. */
-   offset += bvh_size / bvh_node_size_gcd * 4;
+   if (!radv_use_bvh8(pdev))
+      offset += bvh_size / 64 * 4;
 
    /* The BVH and hence bvh_offset needs 64 byte alignment for RT nodes. */
    offset = ALIGN(offset, 64);

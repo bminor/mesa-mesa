@@ -202,7 +202,7 @@ rra_transcode_box8_node(struct rra_transcoding_context *ctx, const struct radv_g
    memcpy(dst, src, sizeof(struct radv_gfx12_box_node));
    dst->internal_base_id = ctx->dst_internal_offset >> 3;
    dst->primitive_base_id = ctx->dst_leaf_offset >> 3;
-   dst->unused = parent_id;
+   dst->parent_id = parent_id;
 
    uint32_t valid_child_count_minus_one = dst->child_count_exponents >> 28;
    if (valid_child_count_minus_one == 0xf)
@@ -279,7 +279,7 @@ rra_transcode_node_gfx12(struct rra_transcoding_context *ctx, uint32_t parent_id
 
          dst->pointer_flags_bvh_addr = dst->pointer_flags_bvh_addr - (user_data->bvh_offset >> 3) +
                                        (sizeof(struct rra_accel_struct_metadata) >> 3);
-         dst->unused = parent_id;
+         dst->parent_id = parent_id;
 
          sideband_data->instance_index = user_data->instance_index;
          sideband_data->custom_instance_and_flags = user_data->custom_instance;

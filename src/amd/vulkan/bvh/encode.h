@@ -300,7 +300,7 @@ radv_encode_aabb_gfx12(VOID_REF dst, vk_ir_aabb_node src)
 
 /* Writes both the HW node and user data. */
 void
-radv_encode_instance_gfx12(VOID_REF dst, vk_ir_instance_node src)
+radv_encode_instance_gfx12(VOID_REF dst, vk_ir_instance_node src, uint32_t parent_id)
 {
    bit_writer child_writer;
    bit_writer_init(child_writer, dst);
@@ -330,7 +330,7 @@ radv_encode_instance_gfx12(VOID_REF dst, vk_ir_instance_node src)
    bvh_addr |= radv_encode_blas_pointer_flags(flags, blas_header.geometry_type);
    bit_writer_write(child_writer, uint32_t(bvh_addr & 0xffffffff), 32);
    bit_writer_write(child_writer, uint32_t(bvh_addr >> 32), 32);
-   bit_writer_write(child_writer, src.custom_instance_and_mask & 0xffffff, 32);
+   bit_writer_write(child_writer, parent_id, 32);
    bit_writer_write(child_writer, src.sbt_offset_and_flags & 0xffffff, 24);
    bit_writer_write(child_writer, src.custom_instance_and_mask >> 24, 8);
 

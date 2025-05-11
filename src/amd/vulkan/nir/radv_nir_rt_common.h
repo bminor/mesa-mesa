@@ -104,6 +104,8 @@ struct radv_ray_traversal_vars {
     */
    nir_deref_instr *previous_node;
 
+   nir_deref_instr *parent_node;
+
    /* When entering an instance these are the instance node and the root node of the BLAS */
    nir_deref_instr *instance_top_node;
    nir_deref_instr *instance_bottom_node;

@@ -1224,6 +1224,7 @@ struct rt_traversal_vars {
    nir_variable *stack_low_watermark;
    nir_variable *current_node;
    nir_variable *previous_node;
+   nir_variable *parent_node;
    nir_variable *instance_top_node;
    nir_variable *instance_bottom_node;
    nir_variable *second_iteration;
@@ -1249,6 +1250,7 @@ init_traversal_vars(nir_builder *b)
       nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "traversal_stack_low_watermark");
    ret.current_node = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "current_node;");
    ret.previous_node = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "previous_node");
+   ret.parent_node = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "parent_node");
    ret.instance_top_node = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "instance_top_node");
    ret.instance_bottom_node =
       nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "instance_bottom_node");
@@ -1578,6 +1580,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
    nir_store_var(b, trav_vars.stack, stack_idx, 1);
    nir_store_var(b, trav_vars.stack_low_watermark, nir_load_var(b, trav_vars.stack), 1);
    nir_store_var(b, trav_vars.previous_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
+   nir_store_var(b, trav_vars.parent_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_top_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 0x1);
    nir_store_var(b, trav_vars.second_iteration, nir_imm_false(b), 0x1);
@@ -1595,6 +1598,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       .stack_low_watermark = nir_build_deref_var(b, trav_vars.stack_low_watermark),
       .current_node = nir_build_deref_var(b, trav_vars.current_node),
       .previous_node = nir_build_deref_var(b, trav_vars.previous_node),
+      .parent_node = nir_build_deref_var(b, trav_vars.parent_node),
       .instance_top_node = nir_build_deref_var(b, trav_vars.instance_top_node),
       .instance_bottom_node = nir_build_deref_var(b, trav_vars.instance_bottom_node),
       .second_iteration = nir_build_deref_var(b, trav_vars.second_iteration),

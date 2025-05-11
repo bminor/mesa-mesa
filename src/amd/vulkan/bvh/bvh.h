@@ -159,7 +159,7 @@ typedef struct radv_gfx12_box_child radv_gfx12_box_child;
 struct radv_gfx12_box_node {
    uint32_t internal_base_id;
    uint32_t primitive_base_id;
-   uint32_t unused;
+   uint32_t parent_id;
    vec3 origin;
    uint32_t child_count_exponents;
    uint32_t obb_matrix_index;
@@ -169,7 +169,7 @@ struct radv_gfx12_box_node {
 struct radv_gfx12_instance_node {
    mat3x4 wto_matrix;
    uint64_t pointer_flags_bvh_addr;
-   uint32_t unused;
+   uint32_t parent_id;
    uint32_t cull_mask_user_data;
    vec3 origin;
    uint32_t child_count_exponents;
