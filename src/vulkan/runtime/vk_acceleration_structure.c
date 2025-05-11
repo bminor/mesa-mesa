@@ -251,7 +251,7 @@ get_scratch_layout(struct vk_device *device,
    if (build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
        device->as_build_ops->update_as[0]) {
       scratch->update_size =
-         device->as_build_ops->get_update_scratch_size(device, leaf_count);
+         device->as_build_ops->get_update_scratch_size(device, build_info, leaf_count);
    } else {
       scratch->update_size = offset;
    }
@@ -1117,7 +1117,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          VK_FROM_HANDLE(vk_acceleration_structure, dst_as, pInfos[i].dstAccelerationStructure);
 
          ops->init_update_scratch(commandBuffer, pInfos[i].scratchData.deviceAddress,
-                                  leaf_node_count, src_as, dst_as);
+                                  &pInfos[i], ppBuildRangeInfos[i], leaf_node_count, src_as, dst_as);
       }
    }
 
