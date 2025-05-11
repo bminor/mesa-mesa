@@ -157,6 +157,7 @@ linkcheck_allowed_redirects = {
     # Pages that requires authentication
     'https://gitlab.freedesktop.org/admin/runners': 'https://gitlab.freedesktop.org/users/sign_in',
     'https://gitlab.freedesktop.org/profile/personal_access_tokens': 'https://gitlab.freedesktop.org/users/sign_in',
+    'https://support.broadcom.com/group/ecx/free-downloads': 'https://support.broadcom.com/c/portal/login',
 }
 
 
