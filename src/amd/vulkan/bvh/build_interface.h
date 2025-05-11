@@ -55,6 +55,7 @@ struct header_args {
    REF(vk_ir_header) src;
    REF(radv_accel_struct_header) dst;
    uint32_t bvh_offset;
+   uint32_t internal_nodes_offset;
    uint32_t instance_count;
 };
 
@@ -66,6 +67,15 @@ struct update_args {
    uint32_t leaf_node_count;
 
    vk_bvh_geometry_data geom_data;
+};
+
+struct update_gfx12_args {
+   REF(radv_accel_struct_header) src;
+   REF(radv_accel_struct_header) dst;
+   REF(vk_bvh_geometry_data) geom_data;
+   REF(vk_aabb) bounds;
+   REF(uint32_t) internal_ready_count;
+   uint32_t leaf_node_count;
 };
 
 #endif /* BUILD_INTERFACE_H */

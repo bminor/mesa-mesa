@@ -29,6 +29,11 @@ layout(push_constant) uniform CONSTS
 void
 main(void)
 {
+   DEREF(args.dst).update_dispatch_size[0] =
+      ((DEREF(args.src).dst_node_offset - args.internal_nodes_offset) / SIZEOF(radv_gfx12_box_node) + 1) * 8;
+   DEREF(args.dst).update_dispatch_size[1] = 1;
+   DEREF(args.dst).update_dispatch_size[2] = 1;
+
    uint32_t compacted_size = args.bvh_offset + DEREF(args.src).dst_node_offset;
 
    uint32_t serialization_size =

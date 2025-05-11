@@ -17,22 +17,32 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_KHR_memory_scope_semantics : require
+#extension GL_KHR_shader_subgroup_basic : require
+#extension GL_KHR_shader_subgroup_shuffle : require
+#extension GL_KHR_shader_subgroup_ballot : require
+#extension GL_KHR_shader_subgroup_clustered : require
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 #include "build_interface.h"
+#include "invocation_cluster.h"
 #include "update.h"
 
 layout(push_constant) uniform CONSTS
 {
-   update_args args;
+   update_gfx12_args args;
 };
 
 uint32_t
-fetch_parent_node(VOID_REF bvh, uint32_t node)
+read_bits(VOID_REF data, uint32_t start, uint32_t count)
 {
-   uint64_t addr = bvh - node / 16 * 4 - 4;
-   return DEREF(REF(uint32_t)(addr));
+   uint32_t shift = start % 32;
+   uint32_t lower = DEREF(INDEX(uint32_t, data, start / 32)) >> shift;
+   uint32_t upper = 0;
+   if (shift != 0 && shift + count > 32)
+      upper = DEREF(INDEX(uint32_t, data, start / 32 + 1)) << (32 - shift);
+   uint32_t total = lower | upper;
+   return count != 32 ? total & ((1u << count) - 1u) : total;
 }
 
 void
@@ -45,110 +55,92 @@ main()
 
    VOID_REF leaf_node_offsets = OFFSET(args.src, DEREF(args.src).leaf_node_offsets_offset);
 
-   uint32_t leaf_node_size;
-   if (args.geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
-      leaf_node_size = SIZEOF(radv_gfx12_primitive_node);
-   else if (args.geom_data.geometry_type == VK_GEOMETRY_TYPE_AABBS_KHR)
-      leaf_node_size = SIZEOF(radv_gfx12_primitive_node);
-   else
-      leaf_node_size = SIZEOF(radv_gfx12_instance_node) + SIZEOF(radv_gfx12_instance_node_user_data);
-
-   uint32_t leaf_node_id = args.geom_data.first_id + gl_GlobalInvocationID.x;
+   uint32_t leaf_node_size = SIZEOF(radv_gfx12_primitive_node);
    uint32_t first_leaf_offset = id_to_offset(RADV_BVH_ROOT_NODE) + SIZEOF(radv_gfx12_box_node);
+   uint32_t internal_nodes_offset = first_leaf_offset + args.leaf_node_count * leaf_node_size;
 
-   uint32_t dst_offset = DEREF(INDEX(uint32_t, leaf_node_offsets, leaf_node_id));
-   VOID_REF dst_ptr = OFFSET(dst_bvh, dst_offset);
-   uint32_t src_offset = gl_GlobalInvocationID.x * args.geom_data.stride;
+   uint32_t node_count = DEREF(args.src).update_dispatch_size[0] / 8;
+   uint32_t node_index = node_count - 1 - gl_GlobalInvocationID.x / 8;
 
-   vk_aabb bounds;
-   bool is_active;
-   if (args.geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-      is_active = radv_build_triangle(bounds, dst_ptr, args.geom_data, gl_GlobalInvocationID.x, true);
+   bool is_root_node = node_index == 0;
+
+   /* Each invocation cluster updates one internal node. */
+   radv_invocation_cluster cluster;
+   radv_invocation_cluster_init(cluster, 8);
+
+   uint32_t compacted_size = uint32_t(DEREF(args.src).compacted_size);
+
+   uint32_t node_offset = internal_nodes_offset + SIZEOF(radv_gfx12_box_node) * (node_index - 1);
+   if (is_root_node)
+      node_offset = id_to_offset(RADV_BVH_ROOT_NODE);
+
+   radv_gfx12_box_node src_node = DEREF(REF(radv_gfx12_box_node) OFFSET(src_bvh, node_offset));
+   REF(radv_gfx12_box_node) dst_node = REF(radv_gfx12_box_node) OFFSET(dst_bvh, node_offset);
+
+   uint32_t valid_child_count_minus_one = src_node.child_count_exponents >> 28;
+
+   radv_gfx12_box_child child = src_node.children[cluster.invocation_index];
+   uint32_t child_type = (child.dword2 >> 24) & 0xf;
+
+   bool is_leaf_or_invalid = child_type == radv_bvh_node_triangle;
+   bool is_valid = cluster.invocation_index <= valid_child_count_minus_one;
+   bool is_leaf = is_leaf_or_invalid && is_valid;
+
+   uint32_t child_offset;
+   if (is_leaf_or_invalid) {
+      child_offset = id_to_offset(src_node.primitive_base_id);
+      uint32_t child_index = bitCount(radv_ballot(cluster, true) & ((1u << cluster.invocation_index) - 1));
+      child_offset += leaf_node_size * child_index;
    } else {
-      VOID_REF src_ptr = OFFSET(args.geom_data.data, src_offset);
-      is_active = radv_build_aabb(bounds, src_ptr, dst_ptr, args.geom_data.geometry_id, gl_GlobalInvocationID.x, true);
+      child_offset = id_to_offset(src_node.internal_base_id);
+      uint32_t child_index = bitCount(radv_ballot(cluster, true) & ((1u << cluster.invocation_index) - 1));
+      child_offset += SIZEOF(radv_gfx12_box_node) * child_index;
    }
 
-   if (!is_active)
-      return;
+   uint32_t child_index = (child_offset - internal_nodes_offset) / SIZEOF(radv_gfx12_box_node);
 
-   DEREF(INDEX(vk_aabb, args.leaf_bounds, (dst_offset - first_leaf_offset) / leaf_node_size)) = bounds;
-   memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
-                 gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+   bool is_ready = is_leaf_or_invalid;
+   while (true) {
+      if (!is_ready)
+         is_ready = DEREF(INDEX(uint32_t, args.internal_ready_count, child_index)) != 0;
 
-   uint32_t node_id = pack_node_id(dst_offset, 0);
-   uint32_t parent_id = fetch_parent_node(src_bvh, node_id);
-   uint32_t internal_nodes_offset = first_leaf_offset + args.leaf_node_count * leaf_node_size;
-   while (parent_id != RADV_BVH_INVALID_NODE) {
-      uint32_t offset = id_to_offset(parent_id);
+      if (radv_ballot(cluster, is_ready) != 0xff)
+         continue;
 
-      uint32_t parent_index = (offset - internal_nodes_offset) / SIZEOF(radv_gfx12_box_node) + 1;
-      if (parent_id == RADV_BVH_ROOT_NODE)
-         parent_index = 0;
+      vk_aabb bounds;
+      bounds.min = vec3(INFINITY);
+      bounds.max = vec3(-INFINITY);
 
-      /* Make accesses to internal nodes in dst_bvh available and visible */
-      memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
-                    gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+      if (is_leaf) {
+         VOID_REF src_leaf_node = OFFSET(src_bvh, child_offset);
+         uint32_t indices_midpoint = read_bits(src_leaf_node, 42, 10);
+         uint32_t geometry_index = read_bits(src_leaf_node, indices_midpoint - 28, 28);
+         uint32_t primitive_index = read_bits(src_leaf_node, indices_midpoint, 28);
 
-      REF(radv_gfx12_box_node) src_node = REF(radv_gfx12_box_node) OFFSET(src_bvh, offset);
-      REF(radv_gfx12_box_node) dst_node = REF(radv_gfx12_box_node) OFFSET(dst_bvh, offset);
+         vk_bvh_geometry_data geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
 
-      uint32_t valid_child_count_minus_one = DEREF(src_node).child_count_exponents >> 28;
-
-      /* Check if all children have been processed. As this is an atomic the last path coming from
-       * a child will pass here, while earlier paths break.
-       */
-      uint32_t ready_child_count = atomicAdd(
-         DEREF(INDEX(uint32_t, args.internal_ready_count, parent_index)), 1, gl_ScopeDevice, gl_StorageSemanticsBuffer,
-         gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
-
-      if (ready_child_count != valid_child_count_minus_one)
-         break;
-
-      uint32_t child_internal_id = DEREF(src_node).internal_base_id;
-      uint32_t child_primitive_id = DEREF(src_node).primitive_base_id;
-
-      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
-         DEREF(dst_node).internal_base_id = child_internal_id;
-         DEREF(dst_node).primitive_base_id = child_primitive_id;
+         VOID_REF dst_leaf_node = OFFSET(dst_bvh, child_offset);
+         if (geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+            radv_build_triangle(bounds, dst_leaf_node, geom_data, primitive_index, true);
+         } else {
+            VOID_REF src_ptr = OFFSET(geom_data.data, primitive_index * geom_data.stride);
+            radv_build_aabb(bounds, src_ptr, dst_leaf_node, geometry_index, primitive_index, true);
+         }
+      } else if (is_valid) {
+         bounds = DEREF(INDEX(vk_aabb, args.bounds, child_index));
       }
 
-      uint32_t child_offsets[8];
-      vk_aabb total_bounds = vk_aabb(vec3(INFINITY), vec3(-INFINITY));
-      for (uint32_t i = 0; i <= valid_child_count_minus_one; i++) {
-         radv_gfx12_box_child child = DEREF(src_node).children[i];
-         uint32_t child_type = (child.dword2 >> 24) & 0xf;
-         uint32_t child_size_id = (child.dword2 >> 28) * RADV_GFX12_BVH_NODE_SIZE / 8;
+      vk_aabb total_bounds;
+      total_bounds.min.x = subgroupClusteredMin(bounds.min.x, 8);
+      total_bounds.min.y = subgroupClusteredMin(bounds.min.y, 8);
+      total_bounds.min.z = subgroupClusteredMin(bounds.min.z, 8);
+      total_bounds.max.x = subgroupClusteredMax(bounds.max.x, 8);
+      total_bounds.max.y = subgroupClusteredMax(bounds.max.y, 8);
+      total_bounds.max.z = subgroupClusteredMax(bounds.max.z, 8);
 
-         uint32_t child_id;
-         if (child_type == radv_bvh_node_box32) {
-            child_id = child_internal_id;
-            child_internal_id += child_size_id;
-         } else {
-            child_id = child_primitive_id;
-            child_primitive_id += child_size_id;
-         }
-
-         child_offsets[i] = id_to_offset(child_id);
-
-         uint32_t child_offset = child_offsets[i];
-         vk_aabb child_aabb;
-         if (child_offset == dst_offset) {
-            child_aabb = bounds;
-         } else {
-            uint32_t child_index;
-            if (child_offset >= internal_nodes_offset) {
-               child_index =
-                  (child_offset - internal_nodes_offset) / SIZEOF(radv_gfx12_box_node) + 1 + args.leaf_node_count;
-            } else {
-               child_index = (child_offset - first_leaf_offset) / leaf_node_size;
-            }
-
-            child_aabb = DEREF(INDEX(vk_aabb, args.leaf_bounds, child_index));
-         }
-
-         total_bounds.min = min(total_bounds.min, child_aabb.min);
-         total_bounds.max = max(total_bounds.max, child_aabb.max);
+      if (!is_root_node) {
+         DEREF(INDEX(vk_aabb, args.bounds, node_index - 1)) = total_bounds;
+         DEREF(INDEX(uint32_t, args.internal_ready_count, node_index - 1)) = 1;
       }
 
       vec3 origin = total_bounds.min;
@@ -157,62 +149,44 @@ main()
       extent = uintBitsToFloat((floatBitsToUint(extent) + uvec3(0x7fffff)) & 0x7f800000);
       uvec3 extent_exponents = floatBitsToUint(extent) >> 23;
 
-      DEREF(dst_node).origin = origin;
-      DEREF(dst_node).child_count_exponents = extent_exponents.x | (extent_exponents.y << 8) |
-                                              (extent_exponents.z << 16) | (valid_child_count_minus_one << 28);
-      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE))
-         DEREF(dst_node).obb_matrix_index = 0x7f;
+      if (cluster.invocation_index == 0) {
+         DEREF(dst_node).origin = origin;
+         DEREF(dst_node).child_count_exponents = extent_exponents.x | (extent_exponents.y << 8) |
+                                                 (extent_exponents.z << 16) | (valid_child_count_minus_one << 28);
+         if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE))
+            DEREF(dst_node).obb_matrix_index = 0x7f;
+      }
 
-      for (uint32_t i = 0; i <= valid_child_count_minus_one; i++) {
-         uint32_t child_offset = child_offsets[i];
-         vk_aabb child_aabb;
-         if (child_offset == dst_offset) {
-            child_aabb = bounds;
-         } else {
-            uint32_t child_index;
-            if (child_offset >= internal_nodes_offset) {
-               child_index =
-                  (child_offset - internal_nodes_offset) / SIZEOF(radv_gfx12_box_node) + 1 + args.leaf_node_count;
-            } else {
-               child_index = (child_offset - first_leaf_offset) / leaf_node_size;
-            }
-
-            child_aabb = DEREF(INDEX(vk_aabb, args.leaf_bounds, child_index));
-         }
-
-         radv_gfx12_box_child child = DEREF(src_node).children[i];
-
+      if (is_valid) {
          radv_gfx12_box_child box_child;
-         box_child.dword0 =
-            (child.dword0 & 0xFF000000) |
-            min(uint32_t(floor((child_aabb.min.x - origin.x) / extent.x * float(0x1000))), 0xfff) |
-            (min(uint32_t(floor((child_aabb.min.y - origin.y) / extent.y * float(0x1000))), 0xfff) << 12);
+         box_child.dword0 = (child.dword0 & 0xFF000000) |
+                            min(uint32_t(floor((bounds.min.x - origin.x) / extent.x * float(0x1000))), 0xfff) |
+                            (min(uint32_t(floor((bounds.min.y - origin.y) / extent.y * float(0x1000))), 0xfff) << 12);
          box_child.dword1 =
             (child.dword1 & 0xFF000000) |
-            min(uint32_t(floor((child_aabb.min.z - origin.z) / extent.z * float(0x1000))), 0xfff) |
-            (min(uint32_t(ceil((child_aabb.max.x - origin.x) / extent.x * float(0x1000))) - 1, 0xfff) << 12);
+            min(uint32_t(floor((bounds.min.z - origin.z) / extent.z * float(0x1000))), 0xfff) |
+            (min(uint32_t(ceil((bounds.max.x - origin.x) / extent.x * float(0x1000))) - 1, 0xfff) << 12);
          box_child.dword2 =
             (child.dword2 & 0xFF000000) |
-            min(uint32_t(ceil((child_aabb.max.y - origin.y) / extent.y * float(0x1000))) - 1, 0xfff) |
-            (min(uint32_t(ceil((child_aabb.max.z - origin.z) / extent.z * float(0x1000))) - 1, 0xfff) << 12);
-         DEREF(dst_node).children[i] = box_child;
+            min(uint32_t(ceil((bounds.max.y - origin.y) / extent.y * float(0x1000))) - 1, 0xfff) |
+            (min(uint32_t(ceil((bounds.max.z - origin.z) / extent.z * float(0x1000))) - 1, 0xfff) << 12);
+         DEREF(dst_node).children[cluster.invocation_index] = box_child;
       }
 
-      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
-         for (uint32_t i = valid_child_count_minus_one + 1; i < 8; i++) {
-            radv_gfx12_box_child null_child;
-            null_child.dword0 = 0xffffffff;
-            null_child.dword1 = 0xfff;
-            null_child.dword2 = 0;
-            DEREF(dst_node).children[i] = null_child;
-         }
+      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE) && !is_valid) {
+         radv_gfx12_box_child null_child;
+         null_child.dword0 = 0xffffffff;
+         null_child.dword1 = 0xfff;
+         null_child.dword2 = 0;
+         DEREF(dst_node).children[cluster.invocation_index] = null_child;
       }
 
-      if (parent_id == RADV_BVH_ROOT_NODE)
+      if (is_root_node)
          DEREF(args.dst).aabb = total_bounds;
 
-      DEREF(INDEX(vk_aabb, args.leaf_bounds, parent_index + args.leaf_node_count)) = total_bounds;
-
-      parent_id = fetch_parent_node(src_bvh, parent_id);
+      /* Make changes to the children's BVH offset value available to the other invocations. */
+      memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
+                    gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+      break;
    }
 }

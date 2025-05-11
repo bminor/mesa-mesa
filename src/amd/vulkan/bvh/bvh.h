@@ -51,6 +51,9 @@ struct radv_accel_struct_header {
    uint32_t reserved;
    vk_aabb aabb;
 
+   /* GFX12 */
+   uint32_t update_dispatch_size[3];
+
    /* Everything after this gets either updated/copied from the CPU or written by header.comp. */
    uint64_t compacted_size;
    uint64_t serialization_size;
