@@ -21,7 +21,7 @@ export PREFIX_DIR="src/gfxstream"
 
 # We should use just use one vk.xml eventually..
 export VK_MESA_XML="$MESA_DIR/src/vulkan/registry/vk.xml"
-export VK_XML="$GFXSTREAM_DIR/codegen/vulkan/vulkan-docs-next/xml/vk.xml"
+export VK_XML="$GFXSTREAM_DIR/third_party/vulkan_docs/xml/vk.xml"
 
 export GFXSTREAM_GUEST_ENCODER_DIR="/tmp/"
 export GFXSTREAM_HOST_DECODER_DIR="$GFXSTREAM_DIR/host/vulkan"
