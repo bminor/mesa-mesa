@@ -276,6 +276,8 @@ public:
       spill_vgrf_ip = NULL;
       spill_vgrf_ip_alloc = 0;
       spill_node_count = 0;
+
+      eot_reg = -1;
    }
 
    ~brw_reg_alloc()
@@ -318,6 +320,8 @@ private:
    int live_instr_count;
 
    set *spill_insts;
+
+   int eot_reg;
 
    ra_graph *g;
    bool have_spill_costs;
@@ -634,26 +638,43 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
     */
    if (inst->eot && devinfo->ver < 30) {
       assert(inst->opcode == SHADER_OPCODE_SEND);
-      const int vgrf = inst->src[SEND_SRC_PAYLOAD1].nr;
-      const int size = DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
-      int reg = BRW_MAX_GRF - size;
+      const brw_reg srcs[2] = {
+         inst->src[SEND_SRC_PAYLOAD1],
+         inst->ex_mlen > 0 ? inst->src[SEND_SRC_PAYLOAD2] : brw_reg(),
+      };
+      const unsigned sizes[2] = {
+         DIV_ROUND_UP(fs->alloc.sizes[srcs[0].nr], reg_unit(devinfo)),
+         DIV_ROUND_UP(srcs[1].file != BAD_FILE ?
+                      fs->alloc.sizes[srcs[1].nr] : 0, reg_unit(devinfo)),
+      };
+      int regs[2] = { BRW_MAX_GRF, BRW_MAX_GRF };
 
+      /* If we haven´t yet allocated a register for the EOT sources, allocate
+       * one large enough. Otherwise the assumption is that the backend
+       * generates EOT messages that consummes the same amount of source
+       * register so we can reuse the existing allocation.
+       */
+      regs[0] = BRW_MAX_GRF - sizes[0];
       if (grf127_send_hack_node >= 0) {
          /* Avoid r127 which might be unusable if the node was previously
           * written by a SIMD8 SEND message with source/destination overlap.
           */
-         reg--;
+         regs[0]--;
+      }
+      assert(regs[0] >= 112);
+
+      ra_set_node_reg(g, first_vgrf_node + srcs[0].nr, regs[0]);
+      if (sizes[1] > 0) {
+         regs[1] = regs[0] - sizes[1];
+         assert(regs[1] >= 112);
+         ra_set_node_reg(g, first_vgrf_node + srcs[1].nr, regs[1]);
       }
 
-      assert(reg >= 112);
-      ra_set_node_reg(g, first_vgrf_node + vgrf, reg);
-
-      if (inst->ex_mlen > 0) {
-         const int vgrf = inst->src[SEND_SRC_PAYLOAD2].nr;
-         reg -= DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
-         assert(reg >= 112);
-         ra_set_node_reg(g, first_vgrf_node + vgrf, reg);
-      }
+      /* All the EOT messages should have the same amount of payload as we
+       * only use this for last render target write on Gfx11.
+       */
+      assert(eot_reg == -1 || eot_reg == MIN2(regs[0], regs[1]));
+      eot_reg = MIN2(regs[0], regs[1]);
    }
 }
 
