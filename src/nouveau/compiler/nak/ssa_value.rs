@@ -65,7 +65,12 @@ struct SSAValueArray<const SIZE: usize> {
 }
 
 impl<const SIZE: usize> SSAValueArray<SIZE> {
-    /// Returns a new SSA reference
+    /// Returns a new SSA reference.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the number of `SSAValue`s in the slice is
+    /// greater than `SIZE`.
     #[inline]
     fn new(comps: &[SSAValue]) -> Self {
         assert!(comps.len() > 0 && comps.len() <= SIZE);
@@ -84,6 +89,7 @@ impl<const SIZE: usize> SSAValueArray<SIZE> {
         r
     }
 
+    /// Returns the number of components in this SSA reference.
     fn comps(&self) -> u8 {
         let size: u8 = SIZE.try_into().unwrap();
         if self.v[SIZE - 1].packed.get() >= u32::MAX - (u32::from(size) - 1) {
@@ -110,6 +116,12 @@ impl<const SIZE: usize> DerefMut for SSAValueArray<SIZE> {
     }
 }
 
+#[derive(Clone, Eq, Hash, PartialEq)]
+enum SSARefInner {
+    Small(SSAValueArray<{ SSARef::SMALL_SIZE }>),
+    Large(Box<SSAValueArray<{ SSARef::LARGE_SIZE }>>),
+}
+
 /// A reference to one or more SSA values
 ///
 /// Because each SSA value represents a single 1 or 32-bit scalar, we need a way
@@ -125,11 +137,6 @@ impl<const SIZE: usize> DerefMut for SSAValueArray<SIZE> {
 /// referenced so it's easy and fairly cheap to clone and embed in other
 /// structures.
 #[derive(Clone, Eq, Hash, PartialEq)]
-enum SSARefInner {
-    Small(SSAValueArray<{ SSARef::SMALL_SIZE }>),
-    Large(Box<SSAValueArray<{ SSARef::LARGE_SIZE }>>),
-}
-#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct SSARef {
     v: SSARefInner,
 }
@@ -143,7 +150,12 @@ impl SSARef {
     const SMALL_SIZE: usize = 4;
     const LARGE_SIZE: usize = 16;
 
-    /// Returns a new SSA reference
+    /// Returns a new SSA reference.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the number of SSA values in the slice do not
+    /// fit in an SSARef.
     #[inline]
     pub fn new(comps: &[SSAValue]) -> SSARef {
         SSARef {
@@ -156,6 +168,12 @@ impl SSARef {
         }
     }
 
+    /// Constructs an SSA reference from an iterator of SSA values.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the number of SSA values in the slice do not
+    /// fit in an SSARef.
     fn from_iter(mut it: impl ExactSizeIterator<Item = SSAValue>) -> Self {
         let len = it.len();
         assert!(len > 0 && len <= Self::LARGE_SIZE);
@@ -167,7 +185,7 @@ impl SSARef {
         Self::new(&v[..len])
     }
 
-    /// Returns the number of components in this SSA reference
+    /// Returns the number of components in this SSA reference.
     pub fn comps(&self) -> u8 {
         match &self.v {
             SSARefInner::Small(x) => x.comps(),
@@ -178,6 +196,8 @@ impl SSARef {
         }
     }
 
+    /// Returns the register file for this SSA reference, if all SSA values have
+    /// the same register file.
     pub fn file(&self) -> Option<RegFile> {
         let comps = usize::from(self.comps());
         let file = self[0].file();
@@ -189,6 +209,7 @@ impl SSARef {
         Some(file)
     }
 
+    /// Returns true if this SSA reference is known to be uniform.
     pub fn is_uniform(&self) -> bool {
         for ssa in &self[..] {
             if !ssa.is_uniform() {
@@ -324,7 +345,13 @@ pub struct SSAValueAllocator {
     count: u32,
 }
 
+/// An allocator for SSA values.
+///
+/// This is the only valid way to create SSAValues.  At most one SSA value
+/// allocator may exist per shader to ensure the invariant that SSA value
+/// indices are unique.
 impl SSAValueAllocator {
+    /// Creates a new SSA value allocator.
     pub fn new() -> SSAValueAllocator {
         SSAValueAllocator { count: 0 }
     }
@@ -334,11 +361,13 @@ impl SSAValueAllocator {
         self.count
     }
 
+    /// Allocates an SSA value.
     pub fn alloc(&mut self, file: RegFile) -> SSAValue {
         self.count += 1;
         SSAValue::new(file, self.count)
     }
 
+    /// Allocates multiple SSA values and returns them as an SSA reference.
     pub fn alloc_vec(&mut self, file: RegFile, comps: u8) -> SSARef {
         SSARef::from_iter((0..comps).map(|_| self.alloc(file)))
     }
