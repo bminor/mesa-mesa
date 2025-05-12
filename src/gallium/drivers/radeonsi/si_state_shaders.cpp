@@ -1358,6 +1358,9 @@ unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
    if (sel->stage == MESA_SHADER_VERTEX && sel->info.base.vs.blit_sgprs_amd)
       return SI_PRIM_RECTANGLE_LIST;
 
+   if (sel->stage == MESA_SHADER_MESH)
+      return sel->rast_prim;
+
    /* It's the same as the input primitive type for VS and TES. */
    return si_get_input_prim(sel, key, true);
 }
