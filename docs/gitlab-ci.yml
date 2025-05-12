@@ -65,6 +65,10 @@ linkcheck-docs:
   rules:
     - !reference [.common-rules, rules]
     - !reference [.scheduled_pipeline-rules, rules]
+    # pre-merge pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $GITLAB_USER_LOGIN != "marge-bot"'
+      changes: *docs-or-ci
+      when: manual
   allow_failure: true
   script:
     - |
