@@ -97,7 +97,7 @@ pub enum RegFile {
 const NUM_REG_FILES: usize = 7;
 
 impl RegFile {
-    /// Returns true if the register file is uniform across a wave
+    /// Returns true if the register file is uniform across a wave.
     pub fn is_uniform(&self) -> bool {
         match self {
             RegFile::GPR
@@ -109,6 +109,9 @@ impl RegFile {
         }
     }
 
+    /// Returns the uniform form of this register file, if any.  For `GPR` and
+    /// `UGPR, this returns `UGPR` and for `Pred` and `UPred`, this returns
+    /// `UPred`.
     pub fn to_uniform(&self) -> Option<RegFile> {
         match self {
             RegFile::GPR | RegFile::UGPR => Some(RegFile::UGPR),
@@ -117,6 +120,7 @@ impl RegFile {
         }
     }
 
+    /// Returns warp-wide version of this register file.
     pub fn to_warp(&self) -> RegFile {
         match self {
             RegFile::GPR | RegFile::UGPR => RegFile::GPR,
@@ -125,7 +129,7 @@ impl RegFile {
         }
     }
 
-    /// Returns true if the register file is general-purpose
+    /// Returns true if the register file is GPR or UGPR.
     pub fn is_gpr(&self) -> bool {
         match self {
             RegFile::GPR | RegFile::UGPR => true,
@@ -137,7 +141,7 @@ impl RegFile {
         }
     }
 
-    /// Returns true if the register file is a predicate register file
+    /// Returns true if the register file is a predicate register file.
     pub fn is_predicate(&self) -> bool {
         match self {
             RegFile::GPR
