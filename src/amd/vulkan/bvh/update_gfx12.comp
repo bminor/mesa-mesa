@@ -53,8 +53,6 @@ main()
    VOID_REF src_bvh = OFFSET(args.src, bvh_offset);
    VOID_REF dst_bvh = OFFSET(args.dst, bvh_offset);
 
-   VOID_REF leaf_node_offsets = OFFSET(args.src, DEREF(args.src).leaf_node_offsets_offset);
-
    uint32_t leaf_node_size = SIZEOF(radv_gfx12_primitive_node);
    uint32_t first_leaf_offset = id_to_offset(RADV_BVH_ROOT_NODE) + SIZEOF(radv_gfx12_box_node);
    uint32_t internal_nodes_offset = first_leaf_offset + args.leaf_node_count * leaf_node_size;
@@ -67,8 +65,6 @@ main()
    /* Each invocation cluster updates one internal node. */
    radv_invocation_cluster cluster;
    radv_invocation_cluster_init(cluster, 8);
-
-   uint32_t compacted_size = uint32_t(DEREF(args.src).compacted_size);
 
    uint32_t node_offset = internal_nodes_offset + SIZEOF(radv_gfx12_box_node) * (node_index - 1);
    if (is_root_node)
