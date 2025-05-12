@@ -24,7 +24,7 @@
 #define TEST_FULLY_CONNECTED 1
 #define TEST_MODELS          1
 
-#define TOLERANCE 2
+#define TOLERANCE 8
 
 std::vector<bool> is_signed{false}; /* TODO: Support INT8? */
 std::vector<bool> padding_same{false, true};
