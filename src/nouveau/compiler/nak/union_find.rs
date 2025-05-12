@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use std::collections::HashMap;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 
 #[derive(Copy, Clone)]
 struct Root<X: Copy> {
@@ -24,12 +24,12 @@ enum Node<X: Copy> {
 /// Robert E. Tarjan and Jan van Leeuwen. 1984. Worst-case Analysis of Set
 ///     Union Algorithms. J. ACM 31, 2 (April 1984), 245–281.
 ///     <https://doi.org/10.1145/62.2160>
-pub struct UnionFind<X: Copy + Hash + Eq> {
-    idx_map: HashMap<X, usize>,
+pub struct UnionFind<X: Copy + Hash + Eq, H: BuildHasher + Default> {
+    idx_map: HashMap<X, usize, H>,
     nodes: Vec<Node<X>>,
 }
 
-impl<X: Copy + Hash + Eq> UnionFind<X> {
+impl<X: Copy + Hash + Eq, H: BuildHasher + Default> UnionFind<X, H> {
     /// Create a new union-find structure
     ///
     /// At initialization, each possible value is in its own set
@@ -128,7 +128,9 @@ mod tests {
     use crate::union_find::Node;
     use crate::union_find::UnionFind;
     use std::cmp::max;
+    use std::hash::BuildHasher;
     use std::hash::Hash;
+    use std::hash::RandomState;
 
     fn ceil_log2(x: usize) -> u32 {
         assert!(x > 0);
@@ -140,13 +142,13 @@ mod tests {
         size: usize,
     }
 
-    pub struct HeightCalc<'a, X: Copy + Hash + Eq> {
-        uf: &'a UnionFind<X>,
+    pub struct HeightCalc<'a, X: Copy + Hash + Eq, H: BuildHasher + Default> {
+        uf: &'a UnionFind<X, H>,
         downward_edges: Vec<Vec<usize>>,
     }
 
-    impl<'a, X: Copy + Hash + Eq> HeightCalc<'a, X> {
-        fn new(uf: &'a UnionFind<X>) -> Self {
+    impl<'a, X: Copy + Hash + Eq, H: BuildHasher + Default> HeightCalc<'a, X, H> {
+        fn new(uf: &'a UnionFind<X, H>) -> Self {
             let mut downward_edges: Vec<Vec<usize>> =
                 uf.nodes.iter().map(|_| Vec::new()).collect();
             for (i, node) in uf.nodes.iter().enumerate() {
@@ -194,14 +196,14 @@ mod tests {
             return max_height;
         }
 
-        pub fn check(uf: &'a UnionFind<X>) -> u32 {
+        pub fn check(uf: &'a UnionFind<X, H>) -> u32 {
             HeightCalc::new(uf).check_roots()
         }
     }
 
     #[test]
     fn test_basic() {
-        let mut f = UnionFind::new();
+        let mut f = UnionFind::<u32, RandomState>::new();
         assert_eq!(f.find(10), 10);
         assert_eq!(f.find(12), 12);
 
@@ -241,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_chain_a_height() {
-        let mut f = UnionFind::new();
+        let mut f = UnionFind::<u32, RandomState>::new();
         for i in 0..1000 {
             f.union(i, i + 1);
             HeightCalc::check(&f);
@@ -251,7 +253,7 @@ mod tests {
 
     #[test]
     fn test_chain_b_height() {
-        let mut f = UnionFind::new();
+        let mut f = UnionFind::<u32, RandomState>::new();
         for i in 0..1000 {
             f.union(i + 1, i);
             HeightCalc::check(&f);
@@ -264,7 +266,7 @@ mod tests {
         let height = 8;
         let count = 1 << height;
 
-        let mut f = UnionFind::new();
+        let mut f = UnionFind::<usize, RandomState>::new();
         for current_height in 0..height {
             let stride = 1 << current_height;
             for i in (0..count).step_by(2 * stride) {

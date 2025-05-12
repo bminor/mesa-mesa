@@ -5,7 +5,7 @@ use crate::ir::*;
 use crate::union_find::UnionFind;
 
 use compiler::bitset::BitSet;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use std::cell::RefCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -257,7 +257,7 @@ impl Function {
 
         // For loop back-edges, we inserted a phi whether we need one or not.
         // We want to eliminate any redundant phis.
-        let mut ssa_map = UnionFind::new();
+        let mut ssa_map = UnionFind::<SSAValue, FxBuildHasher>::new();
         if cfg.has_loop() {
             let mut to_do = true;
             while to_do {

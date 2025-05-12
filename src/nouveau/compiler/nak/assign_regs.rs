@@ -7,7 +7,7 @@ use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 use crate::union_find::UnionFind;
 
 use compiler::bitset::BitSet;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::cmp::{max, min, Ordering};
 
 struct KillSet {
@@ -164,7 +164,7 @@ impl SSAUseMap {
 ///     Architectures and Synthesis for Embedded Systems (CASES), Taipei,
 ///     Taiwan, 2011, pp. 45-54, doi: 10.1145/2038698.2038708.
 struct PhiWebs {
-    uf: UnionFind<SSAValue>,
+    uf: UnionFind<SSAValue, FxBuildHasher>,
     assignments: FxHashMap<SSAValue, u32>,
 }
 
