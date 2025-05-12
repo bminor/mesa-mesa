@@ -4214,7 +4214,7 @@
         "description": "radeonsi/vce: Fix output quality and performance in speed preset",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "544a180320d0291560409c3af3f20e9878eb7f3f",
         "notes": null
