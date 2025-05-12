@@ -59,7 +59,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
 
-   bool progress = false;
+   nir_metadata metadata = nir_metadata_all;
 
    unsigned num_shader_call_vars = 0;
    nir_foreach_variable_with_modes(var, shader, nir_var_shader_call_data)
@@ -85,7 +85,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
       call_data_addr =
          brw_nir_rt_load_scratch(&b, BRW_BTD_STACK_CALL_DATA_PTR_OFFSET, 8,
                                  1, 64);
-      progress = true;
+      metadata &= nir_metadata_control_flow;
    }
 
    gl_shader_stage stage = shader->info.stage;
@@ -112,7 +112,8 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
          nir_store_global(&b, hit_attrib_addr, 4, tri_bary, 0x3);
       }
       nir_pop_if(&b, NULL);
-      progress = true;
+
+      metadata &= nir_metadata_none;
    }
 
    nir_foreach_block(block, impl) {
@@ -130,7 +131,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
                                        nir_var_function_temp,
                                        deref->var->type, 0);
                nir_def_replace(&deref->def, &cast->def);
-               progress = true;
+               metadata &= nir_metadata_control_flow;
             }
          } else if (nir_deref_mode_is(deref, nir_var_ray_hit_attrib)) {
             deref->modes = nir_var_function_temp;
@@ -141,7 +142,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
                                        nir_var_function_temp,
                                        deref->type, 0);
                nir_def_replace(&deref->def, &cast->def);
-               progress = true;
+               metadata &= nir_metadata_control_flow;
             }
          }
 
@@ -151,11 +152,11 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
           */
          if (nir_deref_mode_is(deref, nir_var_function_temp) &&
              resize_deref(&b, deref, 1, 64))
-            progress = true;
+            metadata &= nir_metadata_control_flow;
       }
    }
 
-   return nir_progress(progress, impl, nir_metadata_control_flow);
+   return nir_progress(metadata != nir_metadata_all, impl, metadata);
 }
 
 /** Lowers ray-tracing shader I/O and scratch access
