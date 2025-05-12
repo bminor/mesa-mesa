@@ -103,6 +103,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .GroupNonUniformShuffleRelative = true,
    .GroupNonUniformVote = true,
    .Groups = true,
+   .GroupUniformArithmeticKHR = true,
    .Image1D = true,
    .ImageBasic = true,
    .ImageBuffer = true,
@@ -6629,6 +6630,14 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpGroupFMax:
    case SpvOpGroupUMax:
    case SpvOpGroupSMax:
+   case SpvOpGroupIMulKHR:
+   case SpvOpGroupFMulKHR:
+   case SpvOpGroupBitwiseAndKHR:
+   case SpvOpGroupBitwiseOrKHR:
+   case SpvOpGroupBitwiseXorKHR:
+   case SpvOpGroupLogicalAndKHR:
+   case SpvOpGroupLogicalOrKHR:
+   case SpvOpGroupLogicalXorKHR:
    case SpvOpSubgroupBallotKHR:
    case SpvOpSubgroupFirstInvocationKHR:
    case SpvOpSubgroupReadInvocationKHR:

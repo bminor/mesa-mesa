@@ -414,6 +414,14 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
    case SpvOpGroupFMax:
    case SpvOpGroupUMax:
    case SpvOpGroupSMax:
+   case SpvOpGroupIMulKHR:
+   case SpvOpGroupFMulKHR:
+   case SpvOpGroupBitwiseAndKHR:
+   case SpvOpGroupBitwiseOrKHR:
+   case SpvOpGroupBitwiseXorKHR:
+   case SpvOpGroupLogicalAndKHR:
+   case SpvOpGroupLogicalOrKHR:
+   case SpvOpGroupLogicalXorKHR:
    case SpvOpGroupIAddNonUniformAMD:
    case SpvOpGroupFAddNonUniformAMD:
    case SpvOpGroupFMinNonUniformAMD:
@@ -434,9 +442,11 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
       case SpvOpGroupFAddNonUniformAMD:
          reduction_op = nir_op_fadd;
          break;
+      case SpvOpGroupIMulKHR:
       case SpvOpGroupNonUniformIMul:
          reduction_op = nir_op_imul;
          break;
+      case SpvOpGroupFMulKHR:
       case SpvOpGroupNonUniformFMul:
          reduction_op = nir_op_fmul;
          break;
@@ -470,14 +480,20 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
       case SpvOpGroupFMaxNonUniformAMD:
          reduction_op = nir_op_fmax;
          break;
+      case SpvOpGroupBitwiseAndKHR:
+      case SpvOpGroupLogicalAndKHR:
       case SpvOpGroupNonUniformBitwiseAnd:
       case SpvOpGroupNonUniformLogicalAnd:
          reduction_op = nir_op_iand;
          break;
+      case SpvOpGroupBitwiseOrKHR:
+      case SpvOpGroupLogicalOrKHR:
       case SpvOpGroupNonUniformBitwiseOr:
       case SpvOpGroupNonUniformLogicalOr:
          reduction_op = nir_op_ior;
          break;
+      case SpvOpGroupBitwiseXorKHR:
+      case SpvOpGroupLogicalXorKHR:
       case SpvOpGroupNonUniformBitwiseXor:
       case SpvOpGroupNonUniformLogicalXor:
          reduction_op = nir_op_ixor;
