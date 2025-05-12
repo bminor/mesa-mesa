@@ -140,6 +140,10 @@ main()
 
       if (!is_root_node) {
          DEREF(INDEX(vk_aabb, args.bounds, node_index - 1)) = total_bounds;
+
+         memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
+                       gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+
          DEREF(INDEX(uint32_t, args.internal_ready_count, node_index - 1)) = 1;
       }
 
