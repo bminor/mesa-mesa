@@ -743,6 +743,9 @@ radv_update_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
                                    radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                                                          VK_ACCESS_2_SHADER_READ_BIT, 0, NULL, NULL);
 
+   if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+
    bool in_place = key & RADV_BUILD_FLAG_UPDATE_IN_PLACE;
    uint32_t flags = in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
 
