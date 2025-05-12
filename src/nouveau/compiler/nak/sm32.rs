@@ -1778,11 +1778,7 @@ impl SM32Op for OpPrmt {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.srcs[0], GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg(&mut self.srcs[1], GPR, SrcType::GPR);
-
-        if let SrcRef::Imm32(imm32) = &mut self.sel.src_ref {
-            // Only the bottom 16 bits matter anyway
-            *imm32 = *imm32 & 0xffff;
-        }
+        self.reduce_sel_imm();
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {

@@ -1531,10 +1531,7 @@ impl SM20Op for OpPrmt {
         let [src0, src1] = &mut self.srcs;
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
         b.copy_alu_src_if_not_reg(src1, GPR, SrcType::ALU);
-        if let SrcRef::Imm32(imm32) = &mut self.sel.src_ref {
-            // Only the bottom 16 bits matter anyway
-            *imm32 = *imm32 & 0xffff;
-        }
+        self.reduce_sel_imm();
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {

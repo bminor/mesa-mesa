@@ -1959,6 +1959,7 @@ impl SM50Op for OpPrmt {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.srcs[0], GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg(&mut self.srcs[1], GPR, SrcType::GPR);
+        self.reduce_sel_imm();
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -1970,7 +1971,7 @@ impl SM50Op for OpPrmt {
             SrcRef::Imm32(imm32) => {
                 e.set_opcode(0x36c0);
                 // Only the bottom 16 bits matter
-                e.set_src_imm_i20(20..39, 56, *imm32 & 0xffff);
+                e.set_src_imm_i20(20..39, 56, *imm32);
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x4bc0);

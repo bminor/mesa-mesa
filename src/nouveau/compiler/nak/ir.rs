@@ -4617,6 +4617,15 @@ impl OpPrmt {
         }
     }
 
+    /// Reduces the sel immediate, if any.
+    pub fn reduce_sel_imm(&mut self) {
+        assert!(self.sel.src_mod.is_none());
+        if let SrcRef::Imm32(sel) = &mut self.sel.src_ref {
+            // Only the bottom 16 bits matter anyway
+            *sel &= 0xffff;
+        }
+    }
+
     pub fn as_u32(&self) -> Option<u32> {
         let Some(sel) = self.get_sel() else {
             return None;

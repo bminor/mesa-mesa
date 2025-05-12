@@ -2043,6 +2043,7 @@ impl SM70Op for OpPrmt {
         let [src0, src1] = &mut self.srcs;
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::ALU);
         b.copy_alu_src_if_not_reg(src1, gpr, SrcType::ALU);
+        self.reduce_sel_imm();
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
