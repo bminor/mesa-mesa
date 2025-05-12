@@ -410,6 +410,9 @@ yaml-toml-shell-py-test:
 
     # Assume by default this is running deqp, as that's almost always true
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
+
+    # Keep the job script in the artifacts
+    CI_TRON_JOB_SCRIPT_PATH: results/job_script.sh
   needs:
     - !reference [.required-for-hardware-jobs, needs]
   tags:
@@ -431,14 +434,8 @@ yaml-toml-shell-py-test:
         fi
       done
 
-
       # Open a section that will be closed by b2c
       echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36m[$(cut -d ' ' -f1 /proc/uptime)]: Submitting the CI-tron job and booting the DUT\e[0m\n"
-
-      # Print all the variables, for debugging and for easier reproducibility.
-      # Note: a better solution will be implemented soon, but this is enough
-      # for now.
-      printenv
 
   # Anything our job places in results/ will be collected by the
   # Gitlab coordinator for status presentation. results/junit.xml

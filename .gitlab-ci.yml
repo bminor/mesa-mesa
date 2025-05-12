@@ -128,12 +128,12 @@ variables:
   KERNEL_IMAGE_BASE: "https://$S3_HOST/$S3_KERNEL_BUCKET/$KERNEL_REPO/$KERNEL_TAG"
 
   CI_TRON_JOB_TEMPLATE_PROJECT: &ci-tron-template-project gfx-ci/ci-tron
-  CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit e4ab9c5ecc941c7893d991cf723cde877b5dca8d
+  CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit ddadab0006e43f1365cd30779f565b444a6538ee
   CI_TRON_JOB_TEMPLATE_PROJECT_URL: "https://gitlab.freedesktop.org/$CI_TRON_JOB_TEMPLATE_PROJECT"
 
 
 default:
-  timeout: 1m # catch any jobs which don't specify a timeout
+  timeout: 1m  # catch any jobs which don't specify a timeout
   id_tokens:
     S3_JWT:
       aud: https://s3.freedesktop.org
