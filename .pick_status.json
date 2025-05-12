@@ -4414,7 +4414,7 @@
         "description": "panvk: fix case where vk_meta is used after PROVOKING_VERTEX_MODE_LAST",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7a9f14d3c2b1470703fb68216c40fc0572f94815",
         "notes": null
