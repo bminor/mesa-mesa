@@ -7,6 +7,7 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice;
 
+/// A [CFG] node
 pub struct CFGNode<N> {
     node: N,
     dom: usize,
@@ -223,12 +224,17 @@ fn detect_loops<N>(nodes: &mut Vec<CFGNode<N>>) -> bool {
     has_loop
 }
 
+/// A container structure which represents a control-flow graph.  Nodes are
+/// automatically sorted and stored in reverse post-DFS order.  This means that
+/// iterating over the nodes guarantees that dominators are visited before the
+/// nodes they dominate.
 pub struct CFG<N> {
     has_loop: bool,
     nodes: Vec<CFGNode<N>>,
 }
 
 impl<N> CFG<N> {
+    /// Creates a new CFG from nodes and edges.
     pub fn from_blocks_edges(
         nodes: impl IntoIterator<Item = N>,
         edges: impl IntoIterator<Item = (usize, usize)>,
@@ -258,34 +264,43 @@ impl<N> CFG<N> {
         }
     }
 
+    /// Returns a reference to the node at the given index.
     pub fn get(&self, idx: usize) -> Option<&N> {
         self.nodes.get(idx).map(|n| &n.node)
     }
 
+    /// Returns a mutable reference to the node at the given index.
     pub fn get_mut(&mut self, idx: usize) -> Option<&mut N> {
         self.nodes.get_mut(idx).map(|n| &mut n.node)
     }
 
+    /// Returns an iterator over the nodes.
     pub fn iter(&self) -> slice::Iter<CFGNode<N>> {
         self.nodes.iter()
     }
 
+    /// Returns a mutable iterator over the nodes.
     pub fn iter_mut(&mut self) -> slice::IterMut<CFGNode<N>> {
         self.nodes.iter_mut()
     }
 
+    /// Returns the number of nodes.
     pub fn len(&self) -> usize {
         self.nodes.len()
     }
 
+    /// Returns the pre-index of the given node in a DFS of the dominance tree.
     pub fn dom_dfs_pre_index(&self, idx: usize) -> usize {
         self.nodes[idx].dom_pre_idx
     }
 
+    /// Returns the post-index of the given node in a DFS of the dominance tree.
     pub fn dom_dfs_post_index(&self, idx: usize) -> usize {
         self.nodes[idx].dom_post_idx
     }
 
+    /// Returns the index to the dominator parent of this node, if any.  If
+    /// this is the entry node, `None` is returned.
     pub fn dom_parent_index(&self, idx: usize) -> Option<usize> {
         if idx == 0 {
             None
@@ -294,6 +309,7 @@ impl<N> CFG<N> {
         }
     }
 
+    /// Returns true if `parent` dominates `child`.
     pub fn dominates(&self, parent: usize, child: usize) -> bool {
         // If a block is unreachable, then dom_pre_idx == usize::MAX and
         // dom_post_idx == 0.  This allows us to trivially handle unreachable
@@ -302,14 +318,19 @@ impl<N> CFG<N> {
             && self.dom_dfs_post_index(child) <= self.dom_dfs_post_index(parent)
     }
 
+    /// Returns true if this CFG contains a loop.
     pub fn has_loop(&self) -> bool {
         self.has_loop
     }
 
+    /// Returns true if the given node is a loop header.
     pub fn is_loop_header(&self, idx: usize) -> bool {
         self.nodes[idx].lph == idx
     }
 
+    /// Returns the index of the loop header of the innermost loop containing
+    /// this node, if any.  If this node is not contained in any loops, `None`
+    /// is returned.
     pub fn loop_header_index(&self, idx: usize) -> Option<usize> {
         let lph = self.nodes[idx].lph;
         if lph == usize::MAX {
@@ -320,14 +341,17 @@ impl<N> CFG<N> {
         }
     }
 
+    /// Returns the indices of the successors of this node in the CFG.
     pub fn succ_indices(&self, idx: usize) -> &[usize] {
         &self.nodes[idx].succ[..]
     }
 
+    /// Returns the indices of the predecessors of this node in the CFG.
     pub fn pred_indices(&self, idx: usize) -> &[usize] {
         &self.nodes[idx].pred[..]
     }
 
+    /// Drains the CFG and returns an iterator over the node data.
     pub fn drain(&mut self) -> impl Iterator<Item = N> + '_ {
         self.has_loop = false;
         self.nodes.drain(..).map(|n| n.node)
@@ -366,6 +390,13 @@ impl<'a, N> IntoIterator for &'a mut CFG<N> {
     }
 }
 
+/// A structure for building a [CFG].
+///
+/// Building a control-flow graph often involves mapping some preexisting data
+/// structure (such as block indices another CFG) onto nodes in the new CFG.
+/// `CFGBuilder` makes all that automatic by letting you add nodes and edges
+/// using any key type desired.  You then call `as_cfg()` to get the final
+/// control-flow graph.
 pub struct CFGBuilder<K, N> {
     nodes: Vec<N>,
     edges: Vec<(K, K)>,
@@ -373,6 +404,7 @@ pub struct CFGBuilder<K, N> {
 }
 
 impl<K, N> CFGBuilder<K, N> {
+    /// Creates a new CFG builder.
     pub fn new() -> CFGBuilder<K, N> {
         CFGBuilder {
             nodes: Vec::new(),
@@ -383,15 +415,18 @@ impl<K, N> CFGBuilder<K, N> {
 }
 
 impl<K: Eq + Hash, N> CFGBuilder<K, N> {
+    /// Adds a node to the CFG.
     pub fn add_node(&mut self, k: K, n: N) {
         self.key_map.insert(k, self.nodes.len());
         self.nodes.push(n);
     }
 
+    /// Adds an edge to the CFG.
     pub fn add_edge(&mut self, s: K, p: K) {
         self.edges.push((s, p));
     }
 
+    /// Destroys this builder and returns a CFG.
     pub fn as_cfg(mut self) -> CFG<N> {
         let edges = self.edges.drain(..).map(|(s, p)| {
             let s = *self.key_map.get(&s).unwrap();
