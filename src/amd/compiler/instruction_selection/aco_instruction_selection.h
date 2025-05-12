@@ -88,6 +88,12 @@ struct if_context {
    Block BB_endif;
 };
 
+struct loop_context {
+   Block loop_exit;
+
+   cf_context cf_info_old;
+};
+
 struct isel_context {
    const struct aco_compiler_options* options;
    const struct ac_shader_args* args;
@@ -181,6 +187,22 @@ isel_context setup_isel_context(Program* program, unsigned shader_count,
                                 const struct aco_shader_info* info,
                                 const struct ac_shader_args* args,
                                 SWStage sw_stage = SWStage::None);
+
+/* aco_isel_cfg.cpp */
+void emit_loop_break(isel_context* ctx);
+void emit_loop_continue(isel_context* ctx);
+void begin_loop(isel_context* ctx, loop_context* lc);
+void end_loop(isel_context* ctx, loop_context* lc);
+void begin_uniform_if_then(isel_context* ctx, if_context* ic, Temp cond);
+void begin_uniform_if_else(isel_context* ctx, if_context* ic, bool logical_else = true);
+void end_uniform_if(isel_context* ctx, if_context* ic, bool logical_else = true);
+void begin_divergent_if_then(isel_context* ctx, if_context* ic, Temp cond,
+                             nir_selection_control sel_ctrl = nir_selection_control_none);
+void begin_divergent_if_else(isel_context* ctx, if_context* ic,
+                             nir_selection_control sel_ctrl = nir_selection_control_none);
+void end_divergent_if(isel_context* ctx, if_context* ic);
+void begin_empty_exec_skip(isel_context* ctx, nir_instr* after_instr, nir_block* block);
+void end_empty_exec_skip(isel_context* ctx);
 
 /* aco_isel_helpers.cpp */
 void append_logical_start(Block* b);
