@@ -222,6 +222,9 @@ public:
           * Whether the parameters of the SEND instructions are build with
           * NoMask (for A32 messages this covers only the surface handle, for
           * A64 messages this covers the load address).
+          *
+          * Also used to signal a dummy render target SEND message that is
+          * never executed.
           */
          bool has_no_mask_send_params:1;
       };

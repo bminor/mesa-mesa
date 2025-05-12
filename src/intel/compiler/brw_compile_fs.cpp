@@ -58,9 +58,13 @@ brw_emit_single_fb_write(brw_shader &s, const brw_builder &bld,
 static void
 brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
 {
+   struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
    const brw_builder bld = brw_builder(&s);
-   brw_inst *inst = NULL;
 
+   const bool double_rt_writes = s.devinfo->ver == 11 &&
+      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
+
+   brw_inst *inst = NULL;
    for (int target = 0; target < nr_color_regions; target++) {
       /* Skip over outputs that weren't written. */
       if (s.outputs[target].file == BAD_FILE)
@@ -74,13 +78,18 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
          src0_alpha = offset(s.outputs[0], bld, 3);
 
       inst = brw_emit_single_fb_write(s, abld, s.outputs[target],
-                                      s.dual_src_output, src0_alpha, target, 4,
-                                      false);
+                                      s.dual_src_output, src0_alpha,
+                                      target, 4, false);
+   }
+
+   bool flag_dummy_message = inst && double_rt_writes;
+   if (inst) {
+      inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
+      inst->eot = true;
    }
 
    if (inst == NULL) {
       struct brw_wm_prog_key *key = (brw_wm_prog_key*) s.key;
-      struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
       /* Disable null_rt if any non color output is written or if
        * alpha_to_coverage can be enabled. Since the alpha_to_coverage bit is
        * coming from the BLEND_STATE structure and the HW will avoid reading
@@ -90,24 +99,24 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
          key->alpha_to_coverage == INTEL_NEVER &&
          !prog_data->uses_omask;
 
-      /* Even if there's no color buffers enabled, we still need to send
-       * alpha out the pipeline to our null renderbuffer to support
-       * alpha-testing, alpha-to-coverage, and so on.
+      /* Even if there's no color buffers enabled, we still need to send alpha
+       * out the pipeline to our null renderbuffer to support alpha-testing,
+       * alpha-to-coverage, and so on.
        */
       /* FINISHME: Factor out this frequently recurring pattern into a
        * helper function.
        */
       const brw_reg srcs[] = { reg_undef, reg_undef,
-                              reg_undef, offset(s.outputs[0], bld, 3) };
+                               reg_undef, offset(s.outputs[0], bld, 3) };
       const brw_reg tmp = bld.vgrf(BRW_TYPE_UD, 4);
       bld.LOAD_PAYLOAD(tmp, srcs, 4, 0);
 
       inst = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef,
                                       0, 4, use_null_rt);
+      inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
+      inst->has_no_mask_send_params = flag_dummy_message;
+      inst->eot = true;
    }
-
-   inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
-   inst->eot = true;
 }
 
 static void

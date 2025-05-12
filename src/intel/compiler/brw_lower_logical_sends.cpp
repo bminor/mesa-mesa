@@ -469,15 +469,19 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
                         0 /* coarse_rt_write */);
 
    brw_reg desc = brw_imm_ud(0);
-   if (prog_data->coarse_pixel_dispatch == INTEL_ALWAYS) {
-      inst->desc |= (1 << 18);
-   } else if (prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES) {
-      STATIC_ASSERT(INTEL_MSAA_FLAG_COARSE_RT_WRITES == (1 << 18));
-      const brw_builder &ubld = bld.exec_all().group(8, 0);
-      desc = ubld.vgrf(BRW_TYPE_UD);
-      ubld.AND(desc, brw_dynamic_msaa_flags(prog_data),
-               brw_imm_ud(INTEL_MSAA_FLAG_COARSE_RT_WRITES));
-      desc = component(desc, 0);
+   if (prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES &&
+       !inst->has_no_mask_send_params) {
+      assert(devinfo->ver >= 11);
+      if (devinfo->ver != 11) {
+         const brw_builder &ubld =
+            bld.scalar_group().annotate("Coarse bit");
+         brw_reg coarse_bit =
+            ubld.AND(brw_dynamic_msaa_flags(prog_data),
+                     brw_imm_ud(INTEL_MSAA_FLAG_COARSE_RT_WRITES));
+         desc = component(coarse_bit, 0);
+      }
+   } else {
+      inst->desc |= prog_data->coarse_pixel_dispatch == INTEL_ALWAYS ? (1 << 18) : 0;
    }
 
    uint32_t ex_desc = 0;
@@ -510,6 +514,25 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    inst->header_size = header_size;
    inst->check_tdr = true;
    inst->send_has_side_effects = true;
+
+   const bool double_rt_writes = devinfo->ver == 11 &&
+      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
+   if (double_rt_writes) {
+      brw_check_dynamic_msaa_flag(bld, prog_data,
+                                  INTEL_MSAA_FLAG_COARSE_RT_WRITES);
+      bld.IF(BRW_PREDICATE_NORMAL);
+      {
+         brw_inst *coarse_inst = bld.emit(*inst);
+         coarse_inst->desc |= brw_fb_write_desc(devinfo, target, msg_ctl, last_rt,
+                                                true);
+      }
+      bld.ELSE();
+      {
+         bld.emit(*inst);
+      }
+      bld.ENDIF();
+      inst->remove();
+   }
 }
 
 static void
