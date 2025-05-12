@@ -101,7 +101,7 @@ static void get_motion_estimation_param(struct rvce_encoder *enc,
       enc->enc_pic.me.enc_search1_range_x = 16;
       enc->enc_pic.me.enc_search1_range_y = 16;
       enc->enc_pic.me.enable_amd = 0;
-      enc->enc_pic.me.enc_disable_sub_mode = 126;
+      enc->enc_pic.me.enc_disable_sub_mode = 254;
       enc->enc_pic.me.enc_en_ime_overw_dis_subm = 0;
       enc->enc_pic.me.enc_ime_overw_dis_subm_no = 0;
       break;
