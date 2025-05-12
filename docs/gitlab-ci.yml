@@ -67,4 +67,10 @@ linkcheck-docs:
     - !reference [.scheduled_pipeline-rules, rules]
   allow_failure: true
   script:
-    - sphinx-build -W -b linkcheck docs public
+    - |
+      if ! sphinx-build -W -b linkcheck docs public
+      then
+        echo "Summary:"
+        cat public/output.txt
+        exit 1
+      fi
