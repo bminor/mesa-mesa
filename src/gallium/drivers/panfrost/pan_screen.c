@@ -259,6 +259,66 @@ panfrost_query_compression_rates(struct pipe_screen *screen,
    *count = pan_afrc_query_rates(format, max, rates);
 }
 
+struct panfrost_yuv_format_lowering {
+   unsigned nres;
+   enum pipe_format res_formats[3];
+};
+
+static struct panfrost_yuv_format_lowering
+panfrost_lower_yuv_format(struct panfrost_device *dev,
+                          enum pipe_format format)
+{
+   assert(util_format_is_yuv(format));
+
+   switch (format) {
+#define SINGLE_RES(__in, __out)                                                \
+   case PIPE_FORMAT_##__in:                                                    \
+      if (dev->formats[PIPE_FORMAT_##__out].bind & PAN_BIND_SAMPLER_VIEW) {    \
+         return (struct panfrost_yuv_format_lowering){                         \
+            .nres = 1,                                                         \
+            .res_formats[0] = PIPE_FORMAT_##__out,                             \
+         };                                                                    \
+      }                                                                        \
+      break;
+
+   SINGLE_RES(AYUV, RGBA8888_UNORM)
+   SINGLE_RES(XYUV, RGBX8888_UNORM)
+   SINGLE_RES(YUYV, R8G8_R8B8_UNORM)
+   SINGLE_RES(UYVY, G8R8_B8R8_UNORM)
+   SINGLE_RES(YVYU, R8B8_R8G8_UNORM)
+   SINGLE_RES(VYUY, B8R8_G8R8_UNORM)
+   SINGLE_RES(NV12, R8_G8B8_420_UNORM)
+   SINGLE_RES(NV21, R8_B8G8_420_UNORM)
+   SINGLE_RES(NV16, R8_G8B8_422_UNORM)
+   SINGLE_RES(NV15, R10_G10B10_420_UNORM)
+   SINGLE_RES(NV20, R10_G10B10_422_UNORM)
+   SINGLE_RES(IYUV, R8_G8_B8_420_UNORM)
+   SINGLE_RES(YV12, R8_B8_G8_420_UNORM)
+
+#undef SINGLE_RES
+
+   default:
+      break;
+   }
+
+   struct panfrost_yuv_format_lowering lowering = {0};
+   unsigned nplanes =  util_format_get_num_planes(format);
+   for (unsigned i = 0; i < nplanes; i++) {
+      lowering.res_formats[lowering.nres++] =
+         util_format_get_plane_format(format, i);
+
+      /* If there's no YUV-as-RGB lowering available, the original YUV format
+       * will be returned, and only LINEAR will be allowed. */
+      if (i == 0 && lowering.res_formats[i] == format)
+         return lowering;
+
+      /* If plane0 got lowered, so should planeX. */
+      assert(lowering.res_formats[i] != format);
+   }
+
+   return lowering;
+}
+
 /* We always support linear and tiled operations, both external and internal.
  * We support AFBC for a subset of formats, and colourspace transform for a
  * subset of those. */
@@ -269,13 +329,36 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
                                uint64_t *modifiers, unsigned int *external_only,
                                int *out_count, uint64_t test_modifier, bool allow_afrc)
 {
-   /* Query AFBC status */
    struct panfrost_device *dev = pan_device(screen);
-   bool afbc =
-      dev->has_afbc && pan_format_supports_afbc(dev->arch, format);
-   bool ytr = pan_afbc_can_ytr(format);
+   bool is_yuv = util_format_is_yuv(format);
+   struct panfrost_yuv_format_lowering yuv_lowering = {0};
+
+   if (is_yuv) {
+      yuv_lowering =
+         panfrost_lower_yuv_format(dev, format);
+
+      if (yuv_lowering.nres == 1)
+         format = yuv_lowering.res_formats[0];
+   }
+
+   /* Query AFBC status */
+   bool afbc = dev->has_afbc;
+   bool ytr = afbc && !is_yuv;
    bool tiled_afbc = pan_afbc_can_tile(dev->arch);
-   bool afrc = allow_afrc && dev->has_afrc && pan_format_supports_afrc(format);
+   bool afrc = allow_afrc && dev->has_afrc;
+
+   if (is_yuv && yuv_lowering.nres > 1) {
+      for (unsigned i = 0; i < yuv_lowering.nres; i++) {
+         enum pipe_format plane_format = yuv_lowering.res_formats[i];
+
+         afbc &= pan_format_supports_afbc(dev->arch, plane_format);
+      }
+   } else {
+      afbc &= pan_format_supports_afbc(dev->arch, format);
+      ytr &= pan_afbc_can_ytr(format);
+      afrc &= !is_yuv && pan_format_supports_afrc(format);
+   }
+
    PANFROST_EMULATED_MODIFIERS(emulated_mods);
    PAN_SUPPORTED_MODIFIERS(native_mods);
    unsigned count = 0;
@@ -285,9 +368,23 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          if (!afbc)
             continue;
 
-         if ((native_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
-             !pan_afbc_can_split(dev->arch, format, native_mods[i], 0))
-            continue;
+         if ((native_mods[i] & AFBC_FORMAT_MOD_SPLIT)) {
+            unsigned nplanes = util_format_get_num_planes(format);
+            bool can_split = true;
+
+            for (unsigned p = 0; p < nplanes; p++) {
+               if (is_yuv && yuv_lowering.nres > 1) {
+                  can_split &= pan_afbc_can_split(
+                     dev->arch, yuv_lowering.res_formats[p], native_mods[i], 0);
+               } else {
+                  can_split &=
+                     pan_afbc_can_split(dev->arch, format, native_mods[i], p);
+               }
+            }
+
+            if (!can_split)
+               continue;
+         }
 
          if ((native_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
             continue;
@@ -303,6 +400,12 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
           !panfrost_format_supports_mtk_tiled(format))
          continue;
 
+      /* If the format is still YUV after lowering, the SW emulation might
+       * involve plane aliasing which we can't do with U_TILED. */
+      if (util_format_is_yuv(format) &&
+          native_mods[i] == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED)
+         continue;
+
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&
           test_modifier != native_mods[i])
          continue;
@@ -311,7 +414,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          modifiers[count] = native_mods[i];
 
          if (external_only)
-            external_only[count] = false;
+            external_only[count] = is_yuv;
       }
       count++;
    }
