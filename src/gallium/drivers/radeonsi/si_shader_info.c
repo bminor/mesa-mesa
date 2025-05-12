@@ -701,8 +701,11 @@ si_select_hw_stage(const mesa_shader_stage stage, const union si_shader_key *con
          return AC_HW_NEXT_GEN_GEOMETRY_SHADER;
       else
          return AC_HW_LEGACY_GEOMETRY_SHADER;
+   case MESA_SHADER_MESH:
+      return AC_HW_NEXT_GEN_GEOMETRY_SHADER;
    case MESA_SHADER_FRAGMENT:
       return AC_HW_PIXEL_SHADER;
+   case MESA_SHADER_TASK:
    case MESA_SHADER_COMPUTE:
    case MESA_SHADER_KERNEL:
       return AC_HW_COMPUTE_SHADER;
