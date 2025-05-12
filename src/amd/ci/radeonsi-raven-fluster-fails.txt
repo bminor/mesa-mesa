@@ -388,7 +388,6 @@ GStreamer-H.265-VAAPI-Gst1.0@REPFMT_B_VIDYO_2,Crash
 GStreamer-H.265-VAAPI-Gst1.0@REPFMT_C_VIDYO_2,Crash
 GStreamer-H.265-VAAPI-Gst1.0@RESCHANGE_A_VIDYO_1,Crash
 GStreamer-H.265-VAAPI-Gst1.0@RESPHASE_A_SAMSUNG_2,Crash
-GStreamer-H.265-VAAPI-Gst1.0@RPLM_B_qualcomm_4,Fail
 GStreamer-H.265-VAAPI-Gst1.0@SAO_A_RExt_MediaTek_1,Crash
 GStreamer-H.265-VAAPI-Gst1.0@SCREFOFF_A_QCOM_1,Crash
 GStreamer-H.265-VAAPI-Gst1.0@SIM_A_IDCC_1,Crash
