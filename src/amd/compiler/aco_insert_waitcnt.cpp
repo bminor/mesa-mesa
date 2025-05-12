@@ -346,9 +346,9 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
 
          /* Vector Memory reads and writes decrease the counter in the order they were issued.
           * Before GFX12, they also write VGPRs in order if they're of the same type.
-          * TODO: We can do this for GFX12 and different types for GFX11 if we know that the two
-          * VMEM loads do not write the same lanes. Since GFX11, we track VMEM operations on the
-          * linear CFG, so this is difficult */
+          * We can do this for GFX12 and different types for GFX11 if we know that the two
+          * VMEM loads do not write the same register half or the same lanes.
+          */
          uint8_t vmem_type = get_vmem_type(ctx.gfx_level, instr);
          if (vmem_type) {
             wait_event event = get_vmem_event(ctx, instr, vmem_type);
@@ -365,7 +365,10 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
                different_halves = !(mask & it->second.vm_mask);
             }
 
-            if ((event_matches && type_matches && ctx.gfx_level < GFX12) || different_halves)
+            bool different_lanes = (it->second.logical_events & ctx.info->events[type]) == 0;
+
+            if ((event_matches && type_matches && ctx.gfx_level < GFX12) || different_halves ||
+                different_lanes)
                reg_imm[type] = wait_imm::unset_counter;
          }
 

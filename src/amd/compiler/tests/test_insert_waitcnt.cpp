@@ -691,3 +691,68 @@ BEGIN_TEST(insert_waitcnt.waw.vmem_different_halves)
 
    finish_waitcnt_test();
 END_TEST
+
+BEGIN_TEST(insert_waitcnt.waw.vmem_different_lanes)
+   for (amd_gfx_level gfx : {GFX10_3, GFX11, GFX12}) {
+      if (!setup_cs(NULL, gfx))
+         continue;
+
+      Definition def_v4(PhysReg(260), v1);
+      Operand op_v0(PhysReg(256), v1);
+      Operand desc_s4(PhysReg(0), s4);
+      Operand desc_s8(PhysReg(8), s8);
+
+      emit_divergent_if_else(
+         program.get(), bld, Operand::c64(1),
+         [&]()
+         {
+            //>> p_unit_test 1
+            //! v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         },
+         [&]()
+         {
+            //>> p_unit_test 2
+            //! v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         });
+      //>> p_unit_test 3
+      //~gfx(10_3|11)! s_waitcnt vmcnt(0)
+      //~gfx12! s_wait_loadcnt imm:0
+      //! p_unit_test %0:v[4]
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      emit_divergent_if_else(
+         program.get(), bld, Operand::c64(1),
+         [&]()
+         {
+            //>> p_unit_test 4
+            //! v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(4));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         },
+         [&]()
+         {
+            //>> p_unit_test 5
+            //~gfx12! s_wait_loadcnt imm:0
+            //! v1: %0:v[4] = image_sample %0:s[8-15], %0:s[0-3],  v1: undef, %0:v[0] 1d
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(5));
+            bld.mimg(aco_opcode::image_sample, def_v4, desc_s8, desc_s4, Operand(v1), op_v0);
+         });
+      //>> p_unit_test 6
+      //~gfx(10_3|11)! s_waitcnt vmcnt(0)
+      //~gfx12! s_wait_loadcnt imm:0
+      //~gfx12! s_wait_samplecnt imm:0
+      //! p_unit_test %0:v[4]
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(6));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      finish_waitcnt_test();
+   }
+END_TEST
