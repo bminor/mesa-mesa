@@ -88,6 +88,7 @@ issues:
         'virgl': 'virgl'
         'vmwgfx': 'vmwgfx'
         'zink': 'zink'
+        'mediafoundation': 'mediafoundation'
 
     titles: &titles
         'android': 'android'
@@ -219,6 +220,7 @@ merge_requests:
         '^src/gallium/frontends/va/': ['VA-API']
         '^src/gallium/frontends/vdpau/': ['VDPAU']
         '^src/gallium/frontends/wgl/': ['wgl']
+        '^src/gallium/frontends/mediafoundation/': ['mediafoundation']
         # '^src/gallium/frontends/xa/': ['']
         '^src/gallium/include/': ['gallium']
         '^src/gallium/targets/': ['gallium']
@@ -226,6 +228,7 @@ merge_requests:
         '^src/gallium/targets/opencl/': ['clover']
         '^src/gallium/targets/osmesa/': ['osmesa']
         '^src/gallium/targets/rusticl/': ['Rusticl']
+        '^src/gallium/targets/mediafoundation/': ['mediafoundation']
         '^src/gallium/tests/': ['gallium']
         '^src/gallium/tools/': ['gallium']
         # '^src/gallium/winsys/amdgpu/': ['']
