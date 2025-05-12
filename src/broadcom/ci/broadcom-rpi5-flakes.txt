@@ -231,10 +231,15 @@ dEQP-VK.texture.shadow.cube.nearest_mipmap_nearest.not_equal_x8_d24_unorm_pack32
 # Flaky when running them in parallel, reliable otherwise
 dEQP-VK.synchronization2?.implicit.timeline_semaphore.write_(copy_buffer|ssbo_vertex)_read_(copy_buffer|ssbo_vertex).buffer_16384.*
 
+dEQP-VK.memory.pipeline_barrier.transfer_dst_uniform_texel_buffer.65536
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0233
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0312
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0001
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0211
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_ssbo_vertex_read_copy_buffer.buffer_16384.2220
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_geometry.image_64x64x8_r32_sfloat
+dEQP-VK.tessellation.misc_draw.fill_cover_triangles_equal_spacing_draw_indirect
+dEQP-VK.tessellation.primitive_discard.quads_equal_spacing_cw_point_mode
 dEQP-VK.tessellation.shader_input_output.primitive_id_tcs
 dEQP-VK.texture.filtering.2d.combinations.nearest_mipmap_nearest.linear.clamp_to_border.clamp_to_border
 spec@arb_texture_multisample@texelfetch fs sampler2dms 4 1x130-501x130

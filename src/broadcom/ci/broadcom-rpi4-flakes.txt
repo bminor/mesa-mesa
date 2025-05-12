@@ -123,9 +123,7 @@ dEQP-VK.clipping.clip_volume.inside.triangle_strip
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_packed.max_draws.stride_extra_4.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4_samples
 dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap
-dEQP-VK.rasterization.provoking_vertex.draw.first.triangle_fan
 dEQP-VK.rasterization.culling.front_triangle_strip
-dEQP-VK.rasterization.primitives.no_stipple.rectangular_line_strip_with_adjacency_wide
 dEQP-VK.rasterization.primitives.no_stipple.rectangular_lines_with_adjacency_factor_large
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0112
 dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_262144_opaque_fd
@@ -139,7 +137,18 @@ dEQP-VK.texture.filtering.2d.combinations.nearest.linear.repeat.clamp_to_edge
 dEQP-VK.texture.filtering.2d.combinations.nearest_mipmap_nearest.linear.clamp_to_border.mirrored_repeat
 dEQP-VK.texture.filtering.2d_array.combinations.linear_mipmap_linear.linear.mirrored_repeat.repeat
 dEQP-VK.texture.filtering.cube.combinations.nearest.linear.mirrored_repeat.repeat.seamless
-spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb cube
-spec@glsl-1.30@execution@tex-miplevel-selection texture(bias) 3d
+spec@arb_shader_texture_lod@execution@tex-miplevel-selection \*gradarb cube
+spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 3d
 
+KHR-GLES31.core.shader_atomic_counters.basic-usage-no-offset
+api@clgetdeviceinfo
+dEQP-VK.binding_model.descriptorset_random.sets4.constant.ubolimitlow.sbolimitlow.sampledimglow.outimgtexlow.noiub.nouab.vert.noia.6
+dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.max_draws.standard_stride.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_samples
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0021
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0200
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0211
+dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_odd_spacing_ccw
+dEQP-VK.tessellation.invariance.tess_coord_component_range.isolines_fractional_even_spacing_cw
+dEQP-VK.tessellation.user_defined_io.per_patch_block_array.vertex_io_array_size_implicit.triangles
