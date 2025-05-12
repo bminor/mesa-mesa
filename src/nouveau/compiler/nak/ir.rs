@@ -4712,6 +4712,24 @@ pub struct OpShfl {
     pub op: ShflOp,
 }
 
+impl OpShfl {
+    /// Reduces the lane and c immediates, if any.  The hardware only uses
+    /// some of the bits of `lane` and `c` and ignores the rest.  This method
+    /// masks off the unused bits and ensures that any immediate values fit
+    /// in the limited encoding space in the instruction.
+    pub fn reduce_lane_c_imm(&mut self) {
+        debug_assert!(self.lane.src_mod.is_none());
+        if let SrcRef::Imm32(lane) = &mut self.lane.src_ref {
+            *lane &= 0x1f;
+        }
+
+        debug_assert!(self.c.src_mod.is_none());
+        if let SrcRef::Imm32(c) = &mut self.c.src_ref {
+            *c &= 0x1f1f;
+        }
+    }
+}
+
 impl DisplayOp for OpShfl {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "shfl.{} {} {} {}", self.op, self.src, self.lane, self.c)

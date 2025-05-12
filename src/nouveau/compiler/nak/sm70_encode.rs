@@ -2123,6 +2123,7 @@ impl SM70Op for OpShfl {
         b.copy_alu_src_if_not_reg(&mut self.src, gpr, SrcType::GPR);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.lane, gpr, SrcType::ALU);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.c, gpr, SrcType::ALU);
+        self.reduce_lane_c_imm();
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
@@ -2139,20 +2140,20 @@ impl SM70Op for OpShfl {
                 SrcRef::Imm32(imm_c) => {
                     e.set_opcode(0x589);
                     e.set_reg_src(32..40, &self.lane);
-                    e.set_field(40..53, *imm_c & 0x1f1f);
+                    e.set_field(40..53, *imm_c);
                 }
                 _ => panic!("Invalid instruction form"),
             },
             SrcRef::Imm32(imm_lane) => match &self.c.src_ref {
                 SrcRef::Zero | SrcRef::Reg(_) => {
                     e.set_opcode(0x989);
-                    e.set_field(53..58, *imm_lane & 0x1f);
+                    e.set_field(53..58, *imm_lane);
                     e.set_reg_src(64..72, &self.c);
                 }
                 SrcRef::Imm32(imm_c) => {
                     e.set_opcode(0xf89);
-                    e.set_field(40..53, *imm_c & 0x1f1f);
-                    e.set_field(53..58, *imm_lane & 0x1f);
+                    e.set_field(40..53, *imm_c);
+                    e.set_field(53..58, *imm_lane);
                 }
                 _ => panic!("Invalid instruction form"),
             },

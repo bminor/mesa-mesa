@@ -1843,6 +1843,7 @@ impl SM32Op for OpShfl {
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.lane, GPR, SrcType::ALU);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.c, GPR, SrcType::ALU);
+        self.reduce_lane_c_imm();
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
@@ -1868,7 +1869,7 @@ impl SM32Op for OpShfl {
                 e.set_bit(31, false);
             }
             SrcRef::Imm32(imm32) => {
-                e.set_field(23..28, *imm32 & 0x1f);
+                e.set_field(23..28, *imm32);
                 e.set_bit(31, true);
             }
             src => panic!("Invalid shfl lane: {src}"),
@@ -1880,7 +1881,7 @@ impl SM32Op for OpShfl {
             }
             SrcRef::Imm32(imm32) => {
                 e.set_bit(32, true);
-                e.set_field(37..50, *imm32 & 0x1f1f);
+                e.set_field(37..50, *imm32);
             }
             src => panic!("Invalid shfl c: {src}"),
         }

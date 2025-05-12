@@ -1594,6 +1594,7 @@ impl SM20Op for OpShfl {
         if matches!(self.c.src_ref, SrcRef::CBuf(_)) {
             b.copy_alu_src(&mut self.c, GPR, SrcType::ALU);
         }
+        self.reduce_lane_c_imm();
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
@@ -1604,7 +1605,7 @@ impl SM20Op for OpShfl {
 
         assert!(self.lane.src_mod.is_none());
         if let Some(u) = self.lane.src_ref.as_u32() {
-            e.set_field(26..32, u & 0x1f);
+            e.set_field(26..32, u);
             e.set_bit(5, true);
         } else {
             e.set_reg_src(26..32, &self.lane);
@@ -1613,7 +1614,7 @@ impl SM20Op for OpShfl {
 
         assert!(self.c.src_mod.is_none());
         if let Some(u) = self.c.src_ref.as_u32() {
-            e.set_field(42..55, u & 0x1fff);
+            e.set_field(42..55, u);
             e.set_bit(6, true);
         } else {
             e.set_reg_src(49..55, &self.c);
