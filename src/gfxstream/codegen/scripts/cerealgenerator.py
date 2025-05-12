@@ -494,7 +494,6 @@ using DlSymFunc = void* (void*, const char*);
 
 #include "VkSnapshotApiCall.h"
 #include "{self.utilsHeaderDirPrefix}/GfxApiLogger.h"
-#include "aemu/base/files/Stream.h"
 #include "gfxstream/HealthMonitor.h"
 #include "goldfish_vk_private_defs.h"
 """
