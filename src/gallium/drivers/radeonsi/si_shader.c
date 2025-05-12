@@ -1226,7 +1226,8 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
             continue;
 
          nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-         if (intr->intrinsic != nir_intrinsic_store_output)
+         if (intr->intrinsic != nir_intrinsic_store_output &&
+             intr->intrinsic != nir_intrinsic_store_per_vertex_output)
             continue;
 
          /* No indirect indexing allowed. */

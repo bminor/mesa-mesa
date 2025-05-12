@@ -324,7 +324,8 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    /* si_nir_kill_outputs and ac_nir_optimize_outputs require outputs to be scalar. */
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       nir->info.stage == MESA_SHADER_GEOMETRY)
+       nir->info.stage == MESA_SHADER_GEOMETRY ||
+       nir->info.stage == MESA_SHADER_MESH)
       NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
