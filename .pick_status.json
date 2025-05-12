@@ -3454,7 +3454,7 @@
         "description": "gallivm: Use `llvm.roundeven` in lp_build_round()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0d3b2853600cf6934a3a09deaf435944d18d833a",
         "notes": null
