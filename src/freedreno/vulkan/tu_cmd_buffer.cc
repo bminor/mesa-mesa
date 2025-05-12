@@ -6117,6 +6117,31 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
    return tu_cs_end_draw_state(&cmd->sub_cs, &cs);
 }
 
+/* Returns true if stencil may be written when depth test fails.
+ * This could be either from stencil written on depth test fail itself,
+ * or stencil written on the stencil test failure where subsequent depth
+ * test may also fail.
+ */
+static bool
+tu6_stencil_written_on_depth_fail(
+   const struct vk_stencil_test_face_state *face)
+{
+   switch (face->op.compare) {
+   case VK_COMPARE_OP_ALWAYS:
+      /* The stencil op always passes, no need to worry about failOp. */
+      return face->op.depth_fail != VK_STENCIL_OP_KEEP;
+   case VK_COMPARE_OP_NEVER:
+      /* The stencil op always fails, so failOp will always be used. */
+      return face->op.fail != VK_STENCIL_OP_KEEP;
+   default:
+      /* If the stencil test fails, depth may fail as well, so we can write
+       * stencil when the depth fails if failOp is not VK_STENCIL_OP_KEEP.
+       */
+      return face->op.fail != VK_STENCIL_OP_KEEP ||
+             face->op.depth_fail != VK_STENCIL_OP_KEEP;
+   }
+}
+
 /* Various frontends (ANGLE, zink at least) will enable stencil testing with
  * what works out to be no-op writes.  Simplify what they give us into flags
  * that LRZ can use.
@@ -6131,6 +6156,7 @@ tu6_update_simplified_stencil_state(struct tu_cmd_buffer *cmd)
    if (!stencil_test_enable) {
       cmd->state.stencil_front_write = false;
       cmd->state.stencil_back_write = false;
+      cmd->state.stencil_written_on_depth_fail = false;
       return;
    }
 
@@ -6158,6 +6184,11 @@ tu6_update_simplified_stencil_state(struct tu_cmd_buffer *cmd)
       stencil_front_op_writes && stencil_front_writemask;
    cmd->state.stencil_back_write =
       stencil_back_op_writes && stencil_back_writemask;
+   cmd->state.stencil_written_on_depth_fail =
+      (cmd->state.stencil_front_write &&
+       tu6_stencil_written_on_depth_fail(&ds->stencil.front)) ||
+      (cmd->state.stencil_back_write &&
+       tu6_stencil_written_on_depth_fail(&ds->stencil.back));
 }
 
 static bool
@@ -6204,6 +6235,10 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    const struct tu_render_pass *pass = cmd->state.pass;
    const struct tu_subpass *subpass = cmd->state.subpass;
 
+   VkFormat depth_format = VK_FORMAT_UNDEFINED;
+   if (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED)
+      depth_format = pass->attachments[subpass->depth_stencil_attachment.attachment].format;
+
    if ((fs->variant->has_kill ||
         (cmd->state.pipeline_feedback_loops & VK_IMAGE_ASPECT_DEPTH_BIT) ||
         (cmd->vk.dynamic_graphics_state.feedback_loops &
@@ -6214,16 +6249,12 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
         fs->variant->writes_smask ||
         tu_fs_reads_dynamic_ds_input_attachment(cmd, fs)) &&
        (depth_write || stencil_write)) {
-      zmode = (cmd->state.lrz.valid && cmd->state.lrz.enabled)
-                 ? A6XX_EARLY_Z_LATE_Z
-                 : A6XX_LATE_Z;
+      zmode = A6XX_EARLY_Z_LATE_Z;
    }
 
    bool ds_test_enable = depth_test_enable || stencil_test_enable;
    bool force_late_z = 
-      (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED &&
-       pass->attachments[subpass->depth_stencil_attachment.attachment].format
-       == VK_FORMAT_S8_UINT) ||
+      (depth_format == VK_FORMAT_S8_UINT) ||
       fs->fs.lrz.force_late_z ||
       cmd->state.lrz.force_late_z ||
       /* alpha-to-coverage can behave like a discard. */
@@ -6232,9 +6263,15 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    /* If there is explicit depth direction in FS writing gl_FragDepth
     * may be compatible with LRZ test.
     */
-   if (!force_late_z && cmd->state.lrz.enabled && fs->variant->writes_pos &&
-       zmode != A6XX_LATE_Z) {
+   if (cmd->state.lrz.enabled && fs->variant->writes_pos &&
+       zmode == A6XX_EARLY_Z) {
       zmode = A6XX_EARLY_Z_LATE_Z;
+   }
+
+   if (zmode == A6XX_EARLY_Z_LATE_Z &&
+       (cmd->state.stencil_written_on_depth_fail || fs->fs.per_samp ||
+        !vk_format_has_depth(depth_format) || !ds_test_enable)) {
+      zmode = A6XX_LATE_Z;
    }
 
    if ((force_late_z && !fs->variant->fs.early_fragment_tests) ||

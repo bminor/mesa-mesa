@@ -721,30 +721,6 @@ tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
 }
 TU_GENX(tu_lrz_flush_valid_during_renderpass);
 
-/* Returns true if stencil may be written when depth test fails.
- * This could be either from stencil written on depth test fail itself,
- * or stencil written on the stencil test failure where subsequent depth
- * test may also fail.
- */
-static bool
-tu6_stencil_written_on_depth_fail(struct vk_stencil_test_face_state *face)
-{
-   switch (face->op.compare) {
-   case VK_COMPARE_OP_ALWAYS:
-      /* The stencil op always passes, no need to worry about failOp. */
-      return face->op.depth_fail != VK_STENCIL_OP_KEEP;
-   case VK_COMPARE_OP_NEVER:
-      /* The stencil op always fails, so failOp will always be used. */
-      return face->op.fail != VK_STENCIL_OP_KEEP;
-   default:
-      /* If the stencil test fails, depth may fail as well, so we can write
-       * stencil when the depth fails if failOp is not VK_STENCIL_OP_KEEP.
-       */
-      return face->op.fail != VK_STENCIL_OP_KEEP ||
-             face->op.depth_fail != VK_STENCIL_OP_KEEP;
-   }
-}
-
 template <chip CHIP>
 static struct A6XX_GRAS_LRZ_CNTL
 tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
@@ -935,21 +911,6 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
       cmd->state.lrz.prev_direction = lrz_direction;
 
    if (cmd->vk.dynamic_graphics_state.ds.stencil.test_enable) {
-      /* Because the LRZ test runs first, failing the LRZ test may result in
-       * skipping the stencil test and subsequent stencil write. This is ok if
-       * stencil is only written when the depth test passes, because then the
-       * LRZ test will also pass, but if it may be written when the depth or
-       * stencil test fails then we need to disable the LRZ test for the draw.
-       */
-      bool writes_stencil_on_ds_fail =
-         cmd->state.stencil_front_write &&
-         tu6_stencil_written_on_depth_fail(
-            &cmd->vk.dynamic_graphics_state.ds.stencil.front);
-      writes_stencil_on_ds_fail |=
-         cmd->state.stencil_back_write &&
-         tu6_stencil_written_on_depth_fail(
-            &cmd->vk.dynamic_graphics_state.ds.stencil.back);
-
       bool frag_may_be_killed_by_stencil =
          !(cmd->vk.dynamic_graphics_state.ds.stencil.front.op.compare ==
               VK_COMPARE_OP_ALWAYS &&
@@ -965,7 +926,13 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
          cmd->state.lrz.disable_write_for_rp = true;
       }
 
-      if (writes_stencil_on_ds_fail)
+      /* Because the LRZ test runs first, failing the LRZ test may result in
+       * skipping the stencil test and subsequent stencil write. This is ok if
+       * stencil is only written when the depth test passes, because then the
+       * LRZ test will also pass, but if it may be written when the depth or
+       * stencil test fails then we need to disable the LRZ test for the draw.
+       */
+      if (cmd->state.stencil_written_on_depth_fail)
          temporary_disable_lrz = true;
    }
 
