@@ -86,6 +86,7 @@ brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
        * destination may have multiple dynamic assignments.
        */
       if (inst->opcode != SHADER_OPCODE_LOAD_REG &&
+          inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD &&
           !def_insts[nr] && inst->dst.file == VGRF)
          mark_invalid(inst->dst.nr);
    }
