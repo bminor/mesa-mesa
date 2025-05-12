@@ -484,7 +484,7 @@
         "description": "radv: fix SDMA copies for linear 96-bits formats",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
