@@ -1475,7 +1475,7 @@ impl SM32Op for OpShf {
         b.copy_alu_src_if_not_reg(&mut self.high, GPR, SrcType::ALU);
         b.copy_alu_src_if_not_reg(&mut self.low, GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.shift, GPR, SrcType::GPR);
-        b.copy_alu_src_if_i20_overflow(&mut self.shift, GPR, SrcType::GPR);
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
@@ -1531,13 +1531,7 @@ impl SM32Op for OpShl {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
-            if self.wrap {
-                *imm32 = *imm32 & 0x1f;
-            } else {
-                *imm32 = (*imm32).min(32);
-            }
-        }
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
@@ -1560,13 +1554,7 @@ impl SM32Op for OpShr {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
-            if self.wrap {
-                *imm32 = *imm32 & 0x1f;
-            } else {
-                *imm32 = (*imm32).min(32);
-            }
-        }
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {

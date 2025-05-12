@@ -1395,13 +1395,7 @@ impl SM20Op for OpShl {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
-            if self.wrap {
-                *imm32 = *imm32 & 0x1f;
-            } else {
-                *imm32 = (*imm32).min(32);
-            }
-        }
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
@@ -1421,13 +1415,7 @@ impl SM20Op for OpShr {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        if let SrcRef::Imm32(imm32) = &mut self.shift.src_ref {
-            if self.wrap {
-                *imm32 = *imm32 & 0x1f;
-            } else {
-                *imm32 = (*imm32).min(32);
-            }
-        }
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {

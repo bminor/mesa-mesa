@@ -1856,6 +1856,7 @@ impl SM70Op for OpShf {
             gpr,
             SrcType::ALU,
         );
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {

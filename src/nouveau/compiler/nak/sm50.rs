@@ -1652,7 +1652,7 @@ impl SM50Op for OpShf {
         b.copy_alu_src_if_not_reg(&mut self.high, GPR, SrcType::ALU);
         b.copy_alu_src_if_not_reg(&mut self.low, GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.shift, GPR, SrcType::GPR);
-        b.copy_alu_src_if_i20_overflow(&mut self.shift, GPR, SrcType::GPR);
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -1701,7 +1701,7 @@ impl SM50Op for OpShl {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        b.copy_alu_src_if_i20_overflow(&mut self.shift, GPR, SrcType::ALU);
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {
@@ -1731,7 +1731,7 @@ impl SM50Op for OpShr {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
-        b.copy_alu_src_if_i20_overflow(&mut self.shift, GPR, SrcType::ALU);
+        self.reduce_shift_imm();
     }
 
     fn encode(&self, e: &mut SM50Encoder<'_>) {

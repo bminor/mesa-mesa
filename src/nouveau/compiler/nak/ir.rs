@@ -3988,6 +3988,26 @@ pub struct OpShf {
     pub dst_high: bool,
 }
 
+fn reduce_shift_imm(shift: &mut Src, wrap: bool, bits: u32) {
+    debug_assert!(shift.src_mod.is_none());
+    if let SrcRef::Imm32(shift) = &mut shift.src_ref {
+        if wrap {
+            *shift = *shift & (bits - 1);
+        } else {
+            *shift = std::cmp::min(*shift, bits)
+        }
+    }
+}
+
+impl OpShf {
+    /// Reduces the shift immediate, if any.  Out-of-range shifts are either
+    /// clamped to the maximum or wrapped as needed.
+    pub fn reduce_shift_imm(&mut self) {
+        let bits = self.data_type.bits().try_into().unwrap();
+        reduce_shift_imm(&mut self.shift, self.wrap, bits);
+    }
+}
+
 impl Foldable for OpShf {
     fn fold(&self, sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
         let low = f.get_u32_src(self, &self.low);
@@ -4072,6 +4092,14 @@ pub struct OpShl {
     pub wrap: bool,
 }
 
+impl OpShl {
+    /// Reduces the shift immediate, if any.  Out-of-range shifts are either
+    /// clamped to the maximum or wrapped as needed.
+    pub fn reduce_shift_imm(&mut self) {
+        reduce_shift_imm(&mut self.shift, self.wrap, 32);
+    }
+}
+
 impl DisplayOp for OpShl {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "shl")?;
@@ -4124,6 +4152,14 @@ impl DisplayOp for OpShr {
             write!(f, ".u32")?;
         }
         write!(f, " {} {}", self.src, self.shift)
+    }
+}
+
+impl OpShr {
+    /// Reduces the shift immediate, if any.  Out-of-range shifts are either
+    /// clamped to the maximum or wrapped as needed.
+    pub fn reduce_shift_imm(&mut self) {
+        reduce_shift_imm(&mut self.shift, self.wrap, 32);
     }
 }
 
