@@ -6221,7 +6221,7 @@ VkResult ResourceTracker::on_vkQueueSubmit(void* context, VkResult input_result,
         }
     }
 
-    return on_vkQueueSubmitTemplate<VkSubmitInfo>(context, input_result, queue, submitCount,
+    return on_vkQueueSubmitTemplate<VkSubmitInfo, VkSemaphore>(context, input_result, queue, submitCount,
                                                   pSubmits, fence);
 }
 
@@ -6229,7 +6229,7 @@ VkResult ResourceTracker::on_vkQueueSubmit2(void* context, VkResult input_result
                                             uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                             VkFence fence) {
     MESA_TRACE_SCOPE("on_vkQueueSubmit2");
-    return on_vkQueueSubmitTemplate<VkSubmitInfo2>(context, input_result, queue, submitCount,
+    return on_vkQueueSubmitTemplate<VkSubmitInfo2, VkSemaphoreSubmitInfo>(context, input_result, queue, submitCount,
                                                    pSubmits, fence);
 }
 
@@ -6253,24 +6253,144 @@ VkResult ResourceTracker::vkQueueSubmitEnc(VkEncoder* enc, VkQueue queue, uint32
     }
 }
 
-template <typename VkSubmitInfoType>
+static void pruneWaitSemaphores(const std::vector<VkSemaphore> toRemove,
+    VkSubmitInfo& submitInfo,
+    const VkTimelineSemaphoreSubmitInfo* currTssi,
+    std::vector<VkSemaphore>& newSemList,
+    std::vector<VkPipelineStageFlags>& newWaitDstStageMaskList,
+    VkTimelineSemaphoreSubmitInfo& newTssi,
+    std::vector<uint64_t>& newSemValueList)
+{
+    newSemList.clear();
+    newSemValueList.clear();
+    for (uint32_t i = 0; i < submitInfo.waitSemaphoreCount; i++) {
+        auto it = std::find(toRemove.begin(), toRemove.end(), submitInfo.pWaitSemaphores[i]);
+        if (it == toRemove.end()) {
+            newSemList.push_back(submitInfo.pWaitSemaphores[i]);
+            newWaitDstStageMaskList.push_back(submitInfo.pWaitDstStageMask[i]);
+            if (currTssi) {
+                newSemValueList.push_back(currTssi->pWaitSemaphoreValues[i]);
+            }
+        }
+    }
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(newSemList.size());
+    submitInfo.pWaitSemaphores = newSemList.data();
+    submitInfo.pWaitDstStageMask = newWaitDstStageMaskList.data();
+    if (newSemValueList.size() > 0) {
+        newTssi.waitSemaphoreValueCount = static_cast<uint32_t>(newSemValueList.size());
+        newTssi.pWaitSemaphoreValues = newSemValueList.data();
+        submitInfo.pNext = &newTssi;
+    }
+}
+
+static void pruneWaitSemaphores(const std::vector<VkSemaphore> toRemove,
+    VkSubmitInfo2& submitInfo,
+    const VkTimelineSemaphoreSubmitInfo* currTssi,
+    std::vector<VkSemaphoreSubmitInfo>& newSemList,
+    std::vector<VkPipelineStageFlags>& newWaitDstStageMaskList,
+    VkTimelineSemaphoreSubmitInfo& newTssi,
+    std::vector<uint64_t>& newSemValueList)
+{
+    // All of this info is contained in VkSubmitInfo2, so goes unused in this implementation
+    // of pruneWaitSemaphores
+    (void)newWaitDstStageMaskList;
+    (void)newTssi;
+    (void)newSemValueList;
+    newSemList.clear();
+    for (uint32_t i = 0; i < submitInfo.waitSemaphoreInfoCount; i++) {
+        auto it = std::find(toRemove.begin(), toRemove.end(), submitInfo.pWaitSemaphoreInfos[i].semaphore);
+        if (it == toRemove.end()) {
+            newSemList.push_back(submitInfo.pWaitSemaphoreInfos[i]);
+        }
+    }
+    submitInfo.waitSemaphoreInfoCount = static_cast<uint32_t>(newSemList.size());
+    submitInfo.pWaitSemaphoreInfos = newSemList.data();
+}
+
+static void pruneSignalSemaphores(const std::vector<VkSemaphore> toRemove,
+    VkSubmitInfo& submitInfo,
+    const VkTimelineSemaphoreSubmitInfo* currTssi,
+    std::vector<VkSemaphore>& newSemList,
+    VkTimelineSemaphoreSubmitInfo& newTssi,
+    std::vector<uint64_t>& newSemValueList)
+{
+    newSemList.clear();
+    newSemValueList.clear();
+    for (uint32_t i = 0; i < submitInfo.signalSemaphoreCount; i++) {
+        auto it = std::find(toRemove.begin(), toRemove.end(), submitInfo.pSignalSemaphores[i]);
+        if (it == toRemove.end()) {
+            newSemList.push_back(submitInfo.pSignalSemaphores[i]);
+            if (currTssi) {
+                newSemValueList.push_back(currTssi->pSignalSemaphoreValues[i]);
+            }
+        }
+    }
+    submitInfo.signalSemaphoreCount = static_cast<uint32_t>(newSemList.size());
+    submitInfo.pSignalSemaphores = newSemList.data();
+    if (newSemValueList.size() > 0) {
+        newTssi.signalSemaphoreValueCount = static_cast<uint32_t>(newSemValueList.size());
+        newTssi.pSignalSemaphoreValues = newSemValueList.data();
+        submitInfo.pNext = &newTssi;
+    }
+}
+
+static void pruneSignalSemaphores(const std::vector<VkSemaphore> toRemove,
+    VkSubmitInfo2& submitInfo,
+    const VkTimelineSemaphoreSubmitInfo* currTssi,
+    std::vector<VkSemaphoreSubmitInfo>& newSemList,
+    VkTimelineSemaphoreSubmitInfo& newTssi,
+    std::vector<uint64_t>& newSemValueList)
+{
+    // All of this info is contained in VkSubmitInfo2, so goes unused in this implementation
+    // of pruneSignalSemaphores
+    (void)newTssi;
+    (void)newSemValueList;
+    newSemList.clear();
+    for (uint32_t i = 0; i < submitInfo.signalSemaphoreInfoCount; i++) {
+        auto it = std::find(toRemove.begin(), toRemove.end(), submitInfo.pSignalSemaphoreInfos[i].semaphore);
+        if (it == toRemove.end()) {
+            newSemList.push_back(submitInfo.pSignalSemaphoreInfos[i]);
+        }
+    }
+    submitInfo.signalSemaphoreInfoCount = static_cast<uint32_t>(newSemList.size());
+    submitInfo.pSignalSemaphoreInfos = newSemList.data();
+}
+
+template <typename VkSubmitInfoType, typename VkSemaphoreInfoType>
 VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input_result,
                                                    VkQueue queue, uint32_t submitCount,
                                                    const VkSubmitInfoType* pSubmits,
                                                    VkFence fence) {
     flushStagingStreams(context, queue, submitCount, pSubmits);
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
     std::vector<VkSemaphore> pre_signal_semaphores;
     std::vector<zx_handle_t> pre_signal_events;
-    std::vector<int> pre_signal_sync_fds;
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
+    std::vector<int> preSignalSyncFds;
+#endif
+
     std::vector<std::pair<zx_handle_t, zx_koid_t>> post_wait_events;
     std::vector<int> post_wait_sync_fds;
 
     VkEncoder* enc = (VkEncoder*)context;
 
+    // The scope of all these "pruned" submitInfos, semLists, etc.. must be at the level that
+    // the encoder queue submission will be called, otherwise the vector storage will go out of scope
+    std::vector<VkSubmitInfoType> prunedSubmitInfos(submitCount);
+    std::vector<std::vector<VkSemaphoreInfoType>> prunedWaitSemaphoreLists(submitCount);
+    std::vector<std::vector<VkPipelineStageFlags>> prunedWaitDstStageMaskFlagLists(submitCount);
+    std::vector<std::vector<VkSemaphoreInfoType>> prunedSignalSemaphoreLists(submitCount);
+    std::vector<VkTimelineSemaphoreSubmitInfo> prunedTssis(submitCount);
+    std::vector<std::vector<uint64_t>> prunedWaitSemaphoreValueLists(submitCount);
+    std::vector<std::vector<uint64_t>> prunedSignalSemaphoreValueLists(submitCount);
+
     std::unique_lock<std::recursive_mutex> lock(mLock);
 
     for (uint32_t i = 0; i < submitCount; ++i) {
+        std::vector<VkSemaphore> waitSemsToRemove;
+        std::vector<VkSemaphore> signalSemsToRemove;
         for (uint32_t j = 0; j < getWaitSemaphoreCount(pSubmits[i]); ++j) {
             VkSemaphore semaphore = getWaitSemaphore(pSubmits[i], j);
             auto it = info_VkSemaphore.find(semaphore);
@@ -6284,14 +6404,15 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
 #endif
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
                 if (semInfo.syncFd.has_value()) {
-                    pre_signal_sync_fds.push_back(semInfo.syncFd.value());
-                    pre_signal_semaphores.push_back(semaphore);
+                    preSignalSyncFds.push_back(semInfo.syncFd.value());
+                    waitSemsToRemove.push_back(semaphore);
                 }
 #endif
             }
         }
         for (uint32_t j = 0; j < getSignalSemaphoreCount(pSubmits[i]); ++j) {
-            auto it = info_VkSemaphore.find(getSignalSemaphore(pSubmits[i], j));
+            VkSemaphore semaphore = getSignalSemaphore(pSubmits[i], j);
+            auto it = info_VkSemaphore.find(semaphore);
             if (it != info_VkSemaphore.end()) {
                 auto& semInfo = it->second;
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -6311,39 +6432,37 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
                 if (semInfo.syncFd.value_or(-1) >= 0) {
                     post_wait_sync_fds.push_back(semInfo.syncFd.value());
+                    signalSemsToRemove.push_back(semaphore);
                 }
 #endif
             }
         }
+
+        // Get the current TSSI from the unorphaned submitInfo, the prune functions may need this.
+        const VkTimelineSemaphoreSubmitInfo* currTssi = vk_find_struct_const(&pSubmits[i], TIMELINE_SEMAPHORE_SUBMIT_INFO);
+        // Start with an orphan copy of the current submitInfo
+        prunedSubmitInfos[i] = vk_make_orphan_copy(pSubmits[i]);
+        // Do initial setup for the new tssi struct; prune functions may or may not actually add to submitInfo.
+        prunedTssis[i] = {
+            .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = NULL
+        };
+        // Finally, prune the wait/signal semaphores accordingly!
+        pruneWaitSemaphores(waitSemsToRemove, prunedSubmitInfos[i], currTssi, prunedWaitSemaphoreLists[i], prunedWaitDstStageMaskFlagLists[i], prunedTssis[i], prunedWaitSemaphoreValueLists[i]);
+        pruneSignalSemaphores(signalSemsToRemove, prunedSubmitInfos[i], currTssi, prunedSignalSemaphoreLists[i], prunedTssis[i], prunedSignalSemaphoreValueLists[i]);
     }
     lock.unlock();
 
-    if (pre_signal_semaphores.empty()) {
-        input_result = vkQueueSubmitEnc(enc, queue, submitCount, pSubmits, fence);
-        if (input_result != VK_SUCCESS) return input_result;
-    } else {
-        // Schedule waits on the OS external objects and
-        // signal the wait semaphores
-        // in a separate thread.
+    // Schedule waits on the OS external objects and
+    // signal the wait semaphores
+    // in a separate thread.
 #ifdef VK_USE_PLATFORM_FUCHSIA
+    if (!pre_signal_semaphores.empty()) {
         for (auto event : pre_signal_events) {
             preSignalTasks.push_back([event] {
                 zx_object_wait_one(event, ZX_EVENT_SIGNALED, ZX_TIME_INFINITE, nullptr);
             });
         }
-#endif
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
-        for (auto fd : pre_signal_sync_fds) {
-            // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImportSemaphoreFdInfoKHR.html
-            // fd == -1 is treated as already signaled
-            if (fd != -1) {
-                mSyncHelper->wait(fd, 3000);
-#if GFXSTREAM_SYNC_DEBUG
-                mSyncHelper->debugPrint(fd);
-#endif
-            }
-        }
-#endif
         // Use the old version of VkSubmitInfo
         VkSubmitInfo submit_info = {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -6353,9 +6472,25 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
             .signalSemaphoreCount = static_cast<uint32_t>(pre_signal_semaphores.size()),
             .pSignalSemaphores = pre_signal_semaphores.data()};
         vkQueueSubmitEnc(enc, queue, 1, &submit_info, VK_NULL_HANDLE);
-        input_result = vkQueueSubmitEnc(enc, queue, submitCount, pSubmits, fence);
-        if (input_result != VK_SUCCESS) return input_result;
     }
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
+    for (auto fd : preSignalSyncFds) {
+        // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImportSemaphoreFdInfoKHR.html
+        // fd == -1 is treated as already signaled
+        if (fd != -1) {
+            mSyncHelper->wait(fd, 3000);
+#if GFXSTREAM_SYNC_DEBUG
+            mSyncHelper->debugPrint(fd);
+#endif
+        }
+    }
+#endif
+
+    // The main queue submission
+    input_result = vkQueueSubmitEnc(enc, queue, submitCount, prunedSubmitInfos.data(), fence);
+    if (input_result != VK_SUCCESS) return input_result;
+
     lock.lock();
     int externalFenceFdToSignal = -1;
 

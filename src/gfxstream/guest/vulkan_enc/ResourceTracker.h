@@ -670,7 +670,7 @@ class ResourceTracker {
         const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
         VkExternalBufferProperties* pExternalBufferProperties);
 
-    template <typename VkSubmitInfoType>
+    template <typename VkSubmitInfoType, typename VkSemaphoreInfoType>
     VkResult on_vkQueueSubmitTemplate(void* context, VkResult input_result, VkQueue queue,
                                       uint32_t submitCount, const VkSubmitInfoType* pSubmits,
                                       VkFence fence);
