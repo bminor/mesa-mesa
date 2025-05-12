@@ -600,6 +600,14 @@ if with_gallium_d3d12 or with_microsoft_clc or with_microsoft_vk or with_gfxstre
   endif
 endif
 
+if dep_dxheaders.found()
+  if (dep_dxheaders.version().version_compare('>= 1.700.0'))
+    pre_args += '-DUSE_D3D12_PREVIEW_HEADERS=1'
+  else
+    pre_args += '-DUSE_D3D12_PREVIEW_HEADERS=0'
+  endif
+endif
+
 _with_gallium_d3d12_video = get_option('gallium-d3d12-video')
 with_gallium_d3d12_video = false
 if with_gallium_d3d12 and not _with_gallium_d3d12_video.disabled()
