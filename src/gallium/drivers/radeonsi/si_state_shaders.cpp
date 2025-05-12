@@ -2557,9 +2557,10 @@ static void si_get_vs_key_outputs(struct si_context *sctx, struct si_shader_sele
    key->ge.opt.kill_layer = vs->info.writes_layer &&
                             sctx->framebuffer.state.layers <= 1;
    key->ge.opt.kill_outputs = ~linked & outputs_written;
-   key->ge.opt.ngg_culling = sctx->ngg_culling;
-   key->ge.mono.u.vs_export_prim_id = vs->stage != MESA_SHADER_GEOMETRY &&
-                                      sctx->shader.ps.cso && sctx->shader.ps.cso->info.uses_primid;
+   key->ge.opt.ngg_culling = vs->stage != MESA_SHADER_MESH ? sctx->ngg_culling : 0;
+   key->ge.mono.u.vs_export_prim_id =
+      vs->stage != MESA_SHADER_GEOMETRY && vs->stage != MESA_SHADER_MESH &&
+      sctx->shader.ps.cso && sctx->shader.ps.cso->info.uses_primid;
 
    if (vs->info.enabled_streamout_buffer_mask) {
       if (sctx->streamout.enabled_mask) {
@@ -2959,6 +2960,9 @@ static inline void si_shader_selector_key(struct pipe_context *ctx, struct si_sh
          else
             si_clear_vs_key_outputs(sctx, sel, key);
       }
+      break;
+   case MESA_SHADER_MESH:
+      si_get_vs_key_outputs(sctx, sel, key);
       break;
    case MESA_SHADER_FRAGMENT:
       break;
