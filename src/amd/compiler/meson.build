@@ -38,6 +38,7 @@ libaco_files = files(
   'instruction_selection/aco_isel_setup.cpp',
   'instruction_selection/aco_select_rt_prolog.cpp',
   'instruction_selection/aco_select_trap_handler.cpp',
+  'instruction_selection/aco_select_vs_prolog.cpp',
   'aco_dead_code_analysis.cpp',
   'aco_dominance.cpp',
   'aco_interface.cpp',
