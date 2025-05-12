@@ -305,12 +305,23 @@ impl Iterator for RegFileSet {
     }
 }
 
+/// A container mapping register files to items.
+///
+/// This is used by several passes which need to replicate a data structure
+/// per-register-file.
 #[derive(Clone, Copy)]
 pub struct PerRegFile<T> {
     per_file: [T; NUM_REG_FILES],
 }
 
 impl<T> PerRegFile<T> {
+    /// Creates a new per-register-file container.
+    ///
+    /// Because this container assumes it always has an item for each register
+    /// file, it takes a callback which maps register files to initial values
+    /// to avoid adding a bunch of `Option<T>` or requiring `T` to implement
+    /// `Default`.  If `T` does implement `Default`, then so does
+    /// `PerRefFile<T>`.
     pub fn new_with<F: Fn(RegFile) -> T>(f: F) -> Self {
         PerRegFile {
             per_file: [
@@ -325,10 +336,12 @@ impl<T> PerRegFile<T> {
         }
     }
 
+    /// Iterates over the values in this container.
     pub fn values(&self) -> slice::Iter<T> {
         self.per_file.iter()
     }
 
+    /// Iterates over the mutable values in this container.
     pub fn values_mut(&mut self) -> slice::IterMut<T> {
         self.per_file.iter_mut()
     }
