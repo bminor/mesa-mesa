@@ -107,7 +107,7 @@ v3d_memory_barrier(struct pipe_context *pctx, unsigned int flags)
 		return;
 
         /* We only need to flush jobs writing to SSBOs/images. */
-        perf_debug("Flushing all jobs for glMemoryBarrier(), could do better");
+        perf_debug("Flushing all jobs for glMemoryBarrier(), could do better\n");
         v3d_flush(pctx);
 }
 
