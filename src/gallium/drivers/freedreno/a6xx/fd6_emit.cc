@@ -98,7 +98,7 @@ compute_ztest_mode(struct fd6_emit *emit, bool lrz_valid) assert_dt
        * that could discard samples that would otherwise only be
        * hidden by a later draw.
        */
-      return lrz_valid ? A6XX_EARLY_LRZ_LATE_Z : A6XX_LATE_Z;
+      return lrz_valid ? A6XX_EARLY_Z_LATE_Z : A6XX_LATE_Z;
    } else {
       return A6XX_EARLY_Z;
    }

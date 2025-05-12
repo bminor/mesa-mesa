@@ -1166,36 +1166,20 @@ to upconvert to 32b float internally?
 	<doc>Disable early z-test and early-lrz test (if applicable)</doc>
 	<value value="0x1" name="A6XX_LATE_Z"/>
 	<doc>
-		A special mode that allows early-lrz test but disables
-		early-z test.  Which might sound a bit funny, since
-		lrz-test happens before z-test.  But as long as a couple
-		conditions are maintained this allows using lrz-test in
-		cases where fragment shader has kill/discard:
+		A special mode that allows early-lrz (if applicable) or early-z
+		tests, but also does late-z tests at which point it writes depth.
 
-		1) Disable lrz-write in cases where it is uncertain during
-		   binning pass that a fragment will pass.  Ie.  if frag
-		   shader has-kill, writes-z, or alpha/stencil test is
-		   enabled.  (For correctness, lrz-write must be disabled
-		   when blend is enabled.)  This is analogous to how a
-		   z-prepass works.
+		This mode is used when fragment can be killed (via discard or
+		sample mask) after early-z tests and it writes depth. In such case
+		depth can be written only at late-z stage, but it's ok to use
+		early-z to discard fragments.
 
-		2) Disable lrz-write and test if a depth-test direction
-		   reversal is detected.  Due to condition (1), the contents
-		   of the lrz buffer are a conservative estimation of the
-		   depth buffer during the draw pass.  Meaning that geometry
-		   that we know for certain will not be visible will not pass
-		   lrz-test.  But geometry which may be (or contributes to
-		   blend) will pass the lrz-test.
-
-		This allows us to keep early-lrz-test in cases where the frag
-		shader does not write-z (ie. we know the z-value before FS)
-		and does not have side-effects (image/ssbo writes, etc), but
-		does have kill/discard.  Which turns out to be a common
-		enough case that it is useful to keep early-lrz test against
-		the conservative lrz buffer to discard fragments that we
-		know will definitely not be visible.
+		However this mode is not compatible with:
+		- Lack of D/S attachment
+		- Stencil writes on stencil or depth test failures
+		- Per-sample shading
 	</doc>
-	<value value="0x2" name="A6XX_EARLY_LRZ_LATE_Z"/>
+	<value value="0x2" name="A6XX_EARLY_Z_LATE_Z"/>
 	<doc>Not a real hw value, used internally by mesa</doc>
 	<value value="0x3" name="A6XX_INVALID_ZTEST"/>
 </enum>
@@ -3233,9 +3217,9 @@ to upconvert to 32b float internally?
 	<enum name="a6xx_lrz_feedback_mask">
 		<value value="0x0" name="LRZ_FEEDBACK_NONE"/>
 		<value value="0x1" name="LRZ_FEEDBACK_EARLY_Z"/>
-		<value value="0x2" name="LRZ_FEEDBACK_EARLY_LRZ_LATE_Z"/>
+		<value value="0x2" name="LRZ_FEEDBACK_EARLY_Z_LATE_Z"/>
 		<!-- We don't have a flag type and this flags combination is often used -->
-		<value value="0x3" name="LRZ_FEEDBACK_EARLY_Z_OR_EARLY_LRZ_LATE_Z"/>
+		<value value="0x3" name="LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z"/>
 		<value value="0x4" name="LRZ_FEEDBACK_LATE_Z"/>
 	</enum>
 

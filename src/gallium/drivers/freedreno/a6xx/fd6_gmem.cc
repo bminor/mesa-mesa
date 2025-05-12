@@ -1177,7 +1177,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
             .force_lrz_write_dis = !screen->info->a6xx.has_lrz_feedback,
             .buffers_location = BUFFERS_IN_GMEM,
             .lrz_feedback_zmode_mask = screen->info->a6xx.has_lrz_feedback
-                                          ? LRZ_FEEDBACK_EARLY_LRZ_LATE_Z
+                                          ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
                                           : LRZ_FEEDBACK_NONE,
       });
 
@@ -1208,7 +1208,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
             .buffers_location = BUFFERS_IN_GMEM,
             .lrz_feedback_zmode_mask =
                screen->info->a6xx.has_lrz_feedback
-                  ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_LRZ_LATE_Z
+                  ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z
                   : LRZ_FEEDBACK_NONE,
       });
    }
@@ -1305,7 +1305,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
             .force_lrz_write_dis = !screen->info->a6xx.has_lrz_feedback,
             .buffers_location = BUFFERS_IN_GMEM,
             .lrz_feedback_zmode_mask = screen->info->a6xx.has_lrz_feedback
-                                          ? LRZ_FEEDBACK_EARLY_LRZ_LATE_Z
+                                          ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
                                           : LRZ_FEEDBACK_NONE,
       });
 
@@ -1332,7 +1332,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
             .buffers_location = BUFFERS_IN_GMEM,
             .lrz_feedback_zmode_mask =
                screen->info->a6xx.has_lrz_feedback
-                  ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_LRZ_LATE_Z
+                  ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z
                   : LRZ_FEEDBACK_NONE,
       });
    }
@@ -1344,7 +1344,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
          .force_lrz_write_dis = !ctx->screen->info->a6xx.has_lrz_feedback,
          .buffers_location = BUFFERS_IN_GMEM,
          .lrz_feedback_zmode_mask = ctx->screen->info->a6xx.has_lrz_feedback
-                                       ? LRZ_FEEDBACK_EARLY_LRZ_LATE_Z
+                                       ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
                                        : LRZ_FEEDBACK_NONE,
    });
 

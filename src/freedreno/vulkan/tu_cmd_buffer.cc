@@ -1251,8 +1251,8 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          .buffers_location = BUFFERS_IN_GMEM,
          .lrz_feedback_zmode_mask =
             phys_dev->info->a6xx.has_lrz_feedback
-               ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_LRZ_LATE_Z :
-                  LRZ_FEEDBACK_EARLY_LRZ_LATE_Z)
+               ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z :
+                  LRZ_FEEDBACK_EARLY_Z_LATE_Z)
                : LRZ_FEEDBACK_NONE,
       });
 
@@ -2346,7 +2346,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       .buffers_location = BUFFERS_IN_SYSMEM,
       .lrz_feedback_zmode_mask =
          cmd->device->physical_device->info->a6xx.has_lrz_feedback
-            ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_LRZ_LATE_Z
+            ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z
             : LRZ_FEEDBACK_NONE,
    });
 
@@ -2452,7 +2452,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                                  .buffers_location = BUFFERS_IN_GMEM,
                                  .lrz_feedback_zmode_mask =
                                     phys_dev->info->a6xx.has_lrz_feedback
-                                       ? LRZ_FEEDBACK_EARLY_LRZ_LATE_Z
+                                       ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
                                        : LRZ_FEEDBACK_NONE
                               });
 
@@ -6215,7 +6215,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
         tu_fs_reads_dynamic_ds_input_attachment(cmd, fs)) &&
        (depth_write || stencil_write)) {
       zmode = (cmd->state.lrz.valid && cmd->state.lrz.enabled)
-                 ? A6XX_EARLY_LRZ_LATE_Z
+                 ? A6XX_EARLY_Z_LATE_Z
                  : A6XX_LATE_Z;
    }
 
@@ -6234,7 +6234,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
     */
    if (!force_late_z && cmd->state.lrz.enabled && fs->variant->writes_pos &&
        zmode != A6XX_LATE_Z) {
-      zmode = A6XX_EARLY_LRZ_LATE_Z;
+      zmode = A6XX_EARLY_Z_LATE_Z;
    }
 
    if ((force_late_z && !fs->variant->fs.early_fragment_tests) ||
