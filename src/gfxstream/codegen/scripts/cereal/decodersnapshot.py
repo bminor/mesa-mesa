@@ -56,8 +56,6 @@ decoder_snapshot_decl_postamble = """
 
 decoder_snapshot_impl_preamble ="""
 
-using emugl::GfxApiLogger;
-
 namespace gfxstream {
 namespace vk {
 
