@@ -3343,13 +3343,7 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
       result = lp_build_rcp(float_bld, src[0]);
       break;
    case nir_op_fround_even:
-      if (src_bit_size[0] == 16) {
-         char intrinsic[64];
-         lp_format_intrinsic(intrinsic, 64, "llvm.roundeven", float_bld->vec_type);
-         result = lp_build_intrinsic_unary(builder, intrinsic, float_bld->vec_type, src[0]);
-      } else {
-         result = lp_build_round(float_bld, src[0]);
-      }
+      result = lp_build_round(float_bld, src[0]);
       break;
    case nir_op_frsq:
       result = lp_build_rsqrt(float_bld, src[0]);
