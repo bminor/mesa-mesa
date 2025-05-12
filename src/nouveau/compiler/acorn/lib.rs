@@ -13,7 +13,7 @@ const INIT_DATA: [u16; 64] = [
 
 /// An implementation of the ACORN random number generator
 ///
-/// See also http://acorn.wikramaratna.org/concept.html
+/// See also <http://acorn.wikramaratna.org/concept.html>
 ///
 /// This isn't cryptographically secure but it's easy and fast and good enough
 /// for generating test data.  More importantly, we own the implementation so it

@@ -23,7 +23,7 @@ enum Node<X: Copy> {
 ///
 /// Robert E. Tarjan and Jan van Leeuwen. 1984. Worst-case Analysis of Set
 ///     Union Algorithms. J. ACM 31, 2 (April 1984), 245–281.
-///     https://doi.org/10.1145/62.2160
+///     <https://doi.org/10.1145/62.2160>
 pub struct UnionFind<X: Copy + Hash + Eq> {
     idx_map: HashMap<X, usize>,
     nodes: Vec<Node<X>>,

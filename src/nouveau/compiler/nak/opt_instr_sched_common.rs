@@ -221,8 +221,8 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
 
 /// Try to guess how many cycles a variable latency instruction will take
 ///
-/// These values are based on the cycle estimates from "Dissecting the NVidia
-/// Turing T4 GPU via Microbenchmarking" https://arxiv.org/pdf/1903.07486
+/// These values are based on the cycle estimates from ["Dissecting the NVidia
+/// Turing T4 GPU via Microbenchmarking"](https://arxiv.org/pdf/1903.07486).
 /// Memory instructions were copied from L1 data cache latencies.
 /// For instructions not mentioned in the paper, I made up numbers.
 /// This could probably be improved.

@@ -1056,7 +1056,7 @@ impl Function {
     ///
     ///  - S, the set of variables which have been spilled
     ///
-    /// These sets are tracked as we walk instructions and [un]spill values to
+    /// These sets are tracked as we walk instructions and \[un\]spill values to
     /// satisfy the given limit.  When spills are required we spill the value
     /// with the nighest next-use IP.  At block boundaries, Braun and Hack
     /// describe a heuristic for determining the starting W and S sets based on
