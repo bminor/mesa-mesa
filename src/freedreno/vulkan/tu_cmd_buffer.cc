@@ -6239,14 +6239,19 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    if (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED)
       depth_format = pass->attachments[subpass->depth_stencil_attachment.attachment].format;
 
-   if ((fs->variant->has_kill ||
+   bool fs_kill_fragments =
+      fs->variant->has_kill ||
+      /* EARLY_Z causes D/S to be written before FS but gl_SampleMask can
+       * kill fragments, we cannot have EARLY_Z + gl_SampleMask + D/S writes.
+       */
+      fs->variant->writes_smask ||
+      /* Alpha-to-coverage behaves like a discard. */
+      cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable;
+
+   if ((fs_kill_fragments ||
         (cmd->state.pipeline_feedback_loops & VK_IMAGE_ASPECT_DEPTH_BIT) ||
         (cmd->vk.dynamic_graphics_state.feedback_loops &
          VK_IMAGE_ASPECT_DEPTH_BIT) ||
-        /* EARLY_Z causes D/S to be written before FS but gl_SampleMask can
-         * kill fragments, we cannot have EARLY_Z + gl_SampleMask + D/S writes.
-         */
-        fs->variant->writes_smask ||
         tu_fs_reads_dynamic_ds_input_attachment(cmd, fs)) &&
        (depth_write || stencil_write)) {
       zmode = A6XX_EARLY_Z_LATE_Z;
@@ -6256,9 +6261,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    bool force_late_z = 
       (depth_format == VK_FORMAT_S8_UINT) ||
       fs->fs.lrz.force_late_z ||
-      cmd->state.lrz.force_late_z ||
-      /* alpha-to-coverage can behave like a discard. */
-      cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable;
+      cmd->state.lrz.force_late_z;
 
    /* If there is explicit depth direction in FS writing gl_FragDepth
     * may be compatible with LRZ test.
