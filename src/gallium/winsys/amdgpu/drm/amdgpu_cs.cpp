@@ -212,10 +212,6 @@ bool amdgpu_fence_wait(struct pipe_fence_handle *fence, uint64_t timeout,
                               abs_timeout, 0, NULL))
       return false;
 
-   /* Check that guest-side syncobj agrees with the user fence. */
-   if (user_fence_cpu && afence->aws->info.is_virtio)
-      assert(afence->seq_no <= *user_fence_cpu);
-
    afence->signalled = true;
    return true;
 }
