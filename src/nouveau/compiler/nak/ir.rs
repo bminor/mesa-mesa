@@ -369,6 +369,8 @@ impl<T> IndexMut<RegFile> for PerRegFile<T> {
     }
 }
 
+/// A reference to a contiguous range of registers in a particular register
+/// file.
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct RegRef {
     packed: u32,
@@ -377,6 +379,11 @@ pub struct RegRef {
 impl RegRef {
     pub const MAX_IDX: u32 = (1 << 26) - 1;
 
+    /// Creates a new register reference.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if `base_idx > RegRef::MAX_IDX` or if `comps > 8`.
     pub fn new(file: RegFile, base_idx: u32, comps: u8) -> RegRef {
         assert!(base_idx <= Self::MAX_IDX);
         let mut packed = base_idx;
@@ -387,20 +394,24 @@ impl RegRef {
         RegRef { packed: packed }
     }
 
+    /// Returns the index of the first register referenced.
     pub fn base_idx(&self) -> u32 {
         self.packed & 0x03ffffff
     }
 
+    /// Returns the range of register indices referenced.
     pub fn idx_range(&self) -> Range<u32> {
         let start = self.base_idx();
         let end = start + u32::from(self.comps());
         start..end
     }
 
+    /// Returns the number of registers referenced.
     pub fn comps(&self) -> u8 {
         (((self.packed >> 26) & 0x7) + 1).try_into().unwrap()
     }
 
+    /// Returns a reference to the single register at `base_idx() + c`.
     pub fn comp(&self, c: u8) -> RegRef {
         assert!(c < self.comps());
         RegRef::new(self.file(), self.base_idx() + u32::from(c), 1)
