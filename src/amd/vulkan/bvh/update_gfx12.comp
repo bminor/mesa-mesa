@@ -184,7 +184,7 @@ main()
       if (is_root_node)
          DEREF(args.dst).aabb = total_bounds;
 
-      /* Make changes to the children's BVH offset value available to the other invocations. */
+      /* Make changes to internal_ready_count available to the other invocations. */
       memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
                     gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
       break;
