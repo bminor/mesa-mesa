@@ -76,23 +76,25 @@ struct wait_entry {
    bool wait_on_read : 1;
    bool logical : 1;
    uint8_t vmem_types : 4; /* use vmem_type notion. for counter_vm. */
+   uint8_t vm_mask : 2;    /* which halves of the VGPR event_vmem uses */
 
    wait_entry(wait_event event_, wait_imm imm_, uint8_t counters_, bool logical_,
               bool wait_on_read_)
        : imm(imm_), events(event_), counters(counters_), wait_on_read(wait_on_read_),
-         logical(logical_), vmem_types(0)
+         logical(logical_), vmem_types(0), vm_mask(0)
    {}
 
    bool join(const wait_entry& other)
    {
       bool changed = (other.events & ~events) || (other.counters & ~counters) ||
                      (other.wait_on_read && !wait_on_read) || (other.vmem_types & ~vmem_types) ||
-                     (!other.logical && logical);
+                     (other.vm_mask & ~vm_mask) || (!other.logical && logical);
       events |= other.events;
       counters |= other.counters;
       changed |= imm.combine(other.imm);
       wait_on_read |= other.wait_on_read;
       vmem_types |= other.vmem_types;
+      vm_mask |= other.vm_mask;
       logical &= other.logical;
       return changed;
    }
@@ -108,6 +110,8 @@ struct wait_entry {
 
       if (type == wait_type_vm)
          vmem_types = 0;
+      if (type_events & event_vmem)
+         vm_mask = 0;
    }
 
    UNUSED void print(FILE* output) const
@@ -124,6 +128,8 @@ struct wait_entry {
          fprintf(output, "logical: %u\n", logical);
       if (vmem_types)
          fprintf(output, "vmem_types: %u\n", vmem_types);
+      if (vm_mask)
+         fprintf(output, "vm_mask: %u\n", vm_mask);
    }
 };
 
@@ -252,6 +258,45 @@ get_vmem_event(wait_ctx& ctx, Instruction* instr, uint8_t type)
    if (ctx.gfx_level >= GFX12 && type != vmem_nosampler)
       ev = type == vmem_bvh ? event_vmem_bvh : event_vmem_sample;
    return ev;
+}
+
+uint32_t
+get_vmem_mask(wait_ctx& ctx, Instruction* instr)
+{
+   if (ctx.program->dev.sram_ecc_enabled)
+      return 0xffffffff;
+   switch (instr->opcode) {
+   case aco_opcode::buffer_load_format_d16_x:
+   case aco_opcode::buffer_load_ubyte_d16:
+   case aco_opcode::buffer_load_sbyte_d16:
+   case aco_opcode::buffer_load_short_d16:
+   case aco_opcode::tbuffer_load_format_d16_x:
+   case aco_opcode::flat_load_ubyte_d16:
+   case aco_opcode::flat_load_sbyte_d16:
+   case aco_opcode::flat_load_short_d16:
+   case aco_opcode::global_load_ubyte_d16:
+   case aco_opcode::global_load_sbyte_d16:
+   case aco_opcode::global_load_short_d16:
+   case aco_opcode::scratch_load_ubyte_d16:
+   case aco_opcode::scratch_load_sbyte_d16:
+   case aco_opcode::scratch_load_short_d16: return 0x1;
+   case aco_opcode::buffer_load_ubyte_d16_hi:
+   case aco_opcode::buffer_load_sbyte_d16_hi:
+   case aco_opcode::buffer_load_short_d16_hi:
+   case aco_opcode::buffer_load_format_d16_hi_x:
+   case aco_opcode::flat_load_ubyte_d16_hi:
+   case aco_opcode::flat_load_sbyte_d16_hi:
+   case aco_opcode::flat_load_short_d16_hi:
+   case aco_opcode::global_load_ubyte_d16_hi:
+   case aco_opcode::global_load_sbyte_d16_hi:
+   case aco_opcode::global_load_short_d16_hi:
+   case aco_opcode::scratch_load_ubyte_d16_hi:
+   case aco_opcode::scratch_load_sbyte_d16_hi:
+   case aco_opcode::scratch_load_short_d16_hi: return 0x2;
+   case aco_opcode::buffer_load_format_d16_xyz:
+   case aco_opcode::tbuffer_load_format_d16_xyz: return 0x7;
+   default: return 0xffffffff;
+   }
 }
 
 void
@@ -538,7 +583,7 @@ update_counters_for_flat_load(wait_ctx& ctx, memory_sync_info sync = memory_sync
 
 void
 insert_wait_entry(wait_ctx& ctx, PhysReg reg, RegClass rc, wait_event event, bool wait_on_read,
-                  uint8_t vmem_types = 0, bool force_linear = false)
+                  uint8_t vmem_types = 0, uint32_t vm_mask = 0, bool force_linear = false)
 {
    uint16_t counters = ctx.info->get_counters_for_event(event);
    wait_imm imm;
@@ -549,7 +594,8 @@ insert_wait_entry(wait_ctx& ctx, PhysReg reg, RegClass rc, wait_event event, boo
    if (counters & counter_vm)
       new_entry.vmem_types |= vmem_types;
 
-   for (unsigned i = 0; i < rc.size(); i++) {
+   for (unsigned i = 0; i < rc.size(); i++, vm_mask >>= 2) {
+      new_entry.vm_mask = vm_mask & 0x3;
       auto it = ctx.gpr_map.emplace(PhysReg{reg.reg() + i}, new_entry);
       if (!it.second)
          it.first->second.join(new_entry);
@@ -557,14 +603,16 @@ insert_wait_entry(wait_ctx& ctx, PhysReg reg, RegClass rc, wait_event event, boo
 }
 
 void
-insert_wait_entry(wait_ctx& ctx, Operand op, wait_event event, uint8_t vmem_types = 0)
+insert_wait_entry(wait_ctx& ctx, Operand op, wait_event event, uint8_t vmem_types = 0,
+                  uint32_t vm_mask = 0)
 {
    if (!op.isConstant() && !op.isUndefined())
-      insert_wait_entry(ctx, op.physReg(), op.regClass(), event, false, vmem_types);
+      insert_wait_entry(ctx, op.physReg(), op.regClass(), event, false, vmem_types, vm_mask);
 }
 
 void
-insert_wait_entry(wait_ctx& ctx, Definition def, wait_event event, uint8_t vmem_types = 0)
+insert_wait_entry(wait_ctx& ctx, Definition def, wait_event event, uint8_t vmem_types = 0,
+                  uint32_t vm_mask = 0)
 {
    /* We can't safely write to unwritten destination VGPR lanes with DS/VMEM on GFX11 without
     * waiting for the load to finish.
@@ -573,7 +621,8 @@ insert_wait_entry(wait_ctx& ctx, Definition def, wait_event event, uint8_t vmem_
       event_lds | event_gds | event_vmem | event_vmem_sample | event_vmem_bvh | event_flat;
    bool force_linear = ctx.gfx_level >= GFX11 && (event & ds_vmem_events);
 
-   insert_wait_entry(ctx, def.physReg(), def.regClass(), event, true, vmem_types, force_linear);
+   insert_wait_entry(ctx, def.physReg(), def.regClass(), event, true, vmem_types, vm_mask,
+                     force_linear);
 }
 
 void
@@ -654,11 +703,12 @@ gen(Instruction* instr, wait_ctx& ctx)
    case Format::SCRATCH: {
       uint8_t type = get_vmem_type(ctx.gfx_level, instr);
       wait_event ev = get_vmem_event(ctx, instr, type);
+      uint32_t mask = ev == event_vmem ? get_vmem_mask(ctx, instr) : 0;
 
       update_counters(ctx, ev, get_sync_info(instr));
 
       for (auto& definition : instr->definitions)
-         insert_wait_entry(ctx, definition, ev, type);
+         insert_wait_entry(ctx, definition, ev, type, mask);
 
       if (ctx.gfx_level == GFX6 && instr->format != Format::MIMG && instr->operands.size() == 4) {
          update_counters(ctx, event_vmem_gpr_lock);
@@ -809,7 +859,7 @@ insert_waitcnt(Program* program)
 
    for (Definition def : program->args_pending_vmem) {
       update_counters(in_ctx[0], event_vmem);
-      insert_wait_entry(in_ctx[0], def, event_vmem, vmem_nosampler);
+      insert_wait_entry(in_ctx[0], def, event_vmem, vmem_nosampler, 0xffffffff);
    }
 
    for (unsigned i = 0; i < program->blocks.size();) {
