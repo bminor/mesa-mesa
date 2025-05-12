@@ -20,6 +20,7 @@
 
 #include "vk_command_buffer.h"
 #include "vk_format.h"
+#include "util/u_tristate.h"
 
 #include "pan_props.h"
 
@@ -42,6 +43,7 @@ struct panvk_rendering_state {
    VkRenderingFlags flags;
    uint32_t layer_count;
    uint32_t view_mask;
+   enum u_tristate first_provoking_vertex;
 
    enum vk_rp_attachment_flags bound_attachments;
    struct {
