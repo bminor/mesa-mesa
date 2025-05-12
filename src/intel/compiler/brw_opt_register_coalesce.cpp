@@ -197,28 +197,54 @@ would_violate_eot_restriction(brw_shader &s,
                               unsigned dst_reg, unsigned src_reg)
 {
    if (s.alloc.sizes[dst_reg] > s.alloc.sizes[src_reg]) {
-      foreach_inst_in_block_reverse(brw_inst, send, cfg->last_block()) {
-         if (send->opcode != SHADER_OPCODE_SEND || !send->eot)
-            continue;
+      foreach_block_reverse(block, cfg) {
+         bool done = false;
 
-         if ((send->src[SEND_SRC_PAYLOAD1].file == VGRF &&
-              send->src[SEND_SRC_PAYLOAD1].nr == src_reg) ||
-             (send->src[SEND_SRC_PAYLOAD2].file == VGRF &&
-              send->src[SEND_SRC_PAYLOAD2].nr == src_reg)) {
-            const unsigned p1 =
-               send->src[SEND_SRC_PAYLOAD1].file == VGRF ?
-               s.alloc.sizes[send->src[SEND_SRC_PAYLOAD1].nr] : 0;
-            const unsigned p2 =
-               send->src[SEND_SRC_PAYLOAD2].file == VGRF ?
-               s.alloc.sizes[send->src[SEND_SRC_PAYLOAD2].nr] : 0;
+         foreach_inst_in_block_reverse(brw_inst, send, block) {
+            if (send->is_control_flow())
+               continue;
 
-            const unsigned increase =
-               s.alloc.sizes[dst_reg] - s.alloc.sizes[src_reg];
+            if (send->opcode != SHADER_OPCODE_SEND || !send->eot) {
+               /* We're done on the first block who's last instruction isn't a
+                * SEND EOT because the only reason we generate more than one
+                * EOT is lower_fb_write_logical_send() for Gfx11's broken
+                * indirect descriptor. The only pattern where we can have 2
+                * EOTs is like this :
+                *
+                * ...
+                * if ...
+                *    send eot
+                * else
+                *    send eot
+                * endif
+                * <--- end of shader
+                */
+               done = true;
+               break;
+            }
 
-            if (p1 + p2 + increase > 15)
-               return true;
+            if ((send->src[SEND_SRC_PAYLOAD1].file == VGRF &&
+                 send->src[SEND_SRC_PAYLOAD1].nr == src_reg) ||
+                (send->src[SEND_SRC_PAYLOAD2].file == VGRF &&
+                 send->src[SEND_SRC_PAYLOAD2].nr == src_reg)) {
+               const unsigned p1 =
+                  send->src[SEND_SRC_PAYLOAD1].file == VGRF ?
+                  s.alloc.sizes[send->src[SEND_SRC_PAYLOAD1].nr] : 0;
+               const unsigned p2 = send->sources >= 4 &&
+                  send->src[SEND_SRC_PAYLOAD2].file == VGRF ?
+                  s.alloc.sizes[send->src[SEND_SRC_PAYLOAD2].nr] : 0;
+
+               const unsigned increase =
+                  s.alloc.sizes[dst_reg] - s.alloc.sizes[src_reg];
+
+               if (p1 + p2 + increase > 15)
+                  return true;
+            }
+            break;
          }
-         break;
+
+         if (done)
+            break;
       }
    }
 
