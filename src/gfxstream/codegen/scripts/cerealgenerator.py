@@ -168,7 +168,7 @@ SUPPORTED_MODULES = {
     "VK_EXT_swapchain_maintenance1" : HOST_MODULES,
     "VK_KHR_swapchain" : HOST_MODULES,
     "VK_NV_device_diagnostic_checkpoints": ["goldfish_vk_dispatch"],
-    "VK_KHR_ray_tracing_pipeline": HOST_MODULES,
+    "VK_KHR_ray_tracing_pipeline": ["goldfish_vk_dispatch"],
     "VK_KHR_pipeline_library": HOST_MODULES,
 }
 
