@@ -1435,15 +1435,6 @@ cs_select_sb_entries_for_async_ops(struct cs_builder *b, unsigned ep)
 }
 
 static inline void
-cs_progress_wait(struct cs_builder *b, unsigned queue, struct cs_index ref)
-{
-   cs_emit(b, PROGRESS_WAIT, I) {
-      I.source = cs_src64(b, ref);
-      I.queue = queue;
-   }
-}
-
-static inline void
 cs_set_exception_handler(struct cs_builder *b,
                          enum mali_cs_exception_type exception_type,
                          struct cs_index address, struct cs_index length)
@@ -1570,20 +1561,6 @@ cs_prot_region(struct cs_builder *b, unsigned size)
    cs_emit(b, PROT_REGION, I) {
       I.size = size;
    }
-}
-
-static inline void
-cs_progress_store(struct cs_builder *b, struct cs_index src)
-{
-   cs_emit(b, PROGRESS_STORE, I)
-      I.source = cs_src64(b, src);
-}
-
-static inline void
-cs_progress_load(struct cs_builder *b, struct cs_index dst)
-{
-   cs_emit(b, PROGRESS_LOAD, I)
-      I.destination = cs_dst64(b, dst);
 }
 
 static inline void
