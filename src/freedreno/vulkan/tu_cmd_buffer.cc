@@ -6232,6 +6232,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    enum a6xx_ztest_mode zmode = A6XX_EARLY_Z;
    bool depth_test_enable = cmd->vk.dynamic_graphics_state.ds.depth.test_enable;
    bool stencil_test_enable = cmd->vk.dynamic_graphics_state.ds.stencil.test_enable;
+   bool ds_test_enable = depth_test_enable || stencil_test_enable;
    bool depth_write = tu6_writes_depth(cmd, depth_test_enable);
    bool stencil_write = tu6_writes_stencil(cmd);
    const struct tu_shader *fs = cmd->state.shaders[MESA_SHADER_FRAGMENT];
@@ -6260,12 +6261,6 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       zmode = A6XX_EARLY_Z_LATE_Z;
    }
 
-   bool ds_test_enable = depth_test_enable || stencil_test_enable;
-   bool force_late_z = 
-      (depth_format == VK_FORMAT_S8_UINT) ||
-      fs->fs.lrz.force_late_z ||
-      cmd->state.lrz.force_late_z;
-
    /* If there is explicit depth direction in FS writing gl_FragDepth
     * may be compatible with LRZ test.
     */
@@ -6287,8 +6282,9 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       zmode = A6XX_LATE_Z;
    }
 
-   if ((force_late_z && !fs->variant->fs.early_fragment_tests) ||
-       !ds_test_enable)
+   if ((stencil_test_enable && depth_format == VK_FORMAT_S8_UINT) ||
+       (ds_test_enable &&
+        (fs->fs.lrz.force_late_z || cmd->state.lrz.force_late_z)))
       zmode = A6XX_LATE_Z;
 
    /* User defined early tests take precedence above all else */
