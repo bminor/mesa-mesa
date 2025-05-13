@@ -785,6 +785,10 @@
 #define DRI_CONF_RADV_DISABLE_NGG_GS(def) \
    DRI_CONF_OPT_B(radv_disable_ngg_gs, def, "Disable NGG GS on GFX10/GFX10.3.")
 
+#define DRI_CONF_RADV_FORCE_64K_SPARSE_ALIGNMENT(def) \
+   DRI_CONF_OPT_B(radv_force_64k_sparse_alignment, def, \
+                  "Force the alignment of sparse buffers to 64KiB")
+
 /**
  * \brief ANV specific configuration options
  */
