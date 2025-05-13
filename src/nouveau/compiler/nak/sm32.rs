@@ -1059,7 +1059,7 @@ impl SM32Op for OpDSetP {
             &self.srcs[0],
             &self.srcs[1],
             None,
-            false,
+            true,
         );
         e.set_pred_dst(2..5, &Dst::None); // dst1
         e.set_pred_dst(5..8, &self.dst); // dst0
