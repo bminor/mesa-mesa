@@ -119,6 +119,7 @@ struct amdgpu_screen_winsys {
 /* Queues using the fence ring. */
 enum amdgpu_queue_index {
    AMDGPU_QUEUE_GFX,
+   AMDGPU_QUEUE_GFX_HIGH_PRIO,
    AMDGPU_QUEUE_COMPUTE,
    AMDGPU_QUEUE_SDMA,
    AMDGPU_MAX_QUEUES,

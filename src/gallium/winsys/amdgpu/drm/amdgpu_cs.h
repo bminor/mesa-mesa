@@ -38,6 +38,7 @@ struct amdgpu_ctx {
 
    /* Lost context status due to ioctl and allocation failures. */
    enum pipe_reset_status sw_status;
+   enum radeon_ctx_priority priority;
 };
 
 struct amdgpu_cs_buffer {

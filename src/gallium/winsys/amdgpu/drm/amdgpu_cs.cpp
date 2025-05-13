@@ -281,6 +281,7 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
    ctx->aws = amdgpu_winsys(rws);
    ctx->reference.count = 1;
    ctx->allow_context_lost = allow_context_lost;
+   ctx->priority = priority;
 
    dev = ctx->aws->dev;
 
@@ -938,7 +939,10 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    } else {
       switch (ip_type) {
       case AMD_IP_GFX:
-         acs->queue_index = AMDGPU_QUEUE_GFX;
+         if (ctx->priority >= RADEON_CTX_PRIORITY_HIGH)
+            acs->queue_index = AMDGPU_QUEUE_GFX_HIGH_PRIO;
+         else
+            acs->queue_index = AMDGPU_QUEUE_GFX;
          break;
       case AMD_IP_COMPUTE:
          acs->queue_index = AMDGPU_QUEUE_COMPUTE;
