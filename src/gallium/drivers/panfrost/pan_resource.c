@@ -1392,62 +1392,31 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
 
 #if MESA_DEBUG
 
-static unsigned
-get_superblock_size(uint32_t *hdr, unsigned uncompressed_size)
-{
-   /* AFBC superblock layout 0 */
-   unsigned body_base_ptr_len = 32;
-   unsigned nr_subblocks = 16;
-   unsigned sz_len = 6; /* bits */
-   unsigned mask = (1 << sz_len) - 1;
-   unsigned size = 0;
-
-   /* Sum up all of the subblock sizes */
-   for (int i = 0; i < nr_subblocks; i++) {
-      unsigned bitoffset = body_base_ptr_len + (i * sz_len);
-      unsigned start = bitoffset / 32;
-      unsigned end = (bitoffset + (sz_len - 1)) / 32;
-      unsigned offset = bitoffset % 32;
-      unsigned subblock_size;
-
-      if (start != end)
-         subblock_size = (hdr[start] >> offset) | (hdr[end] << (32 - offset));
-      else
-         subblock_size = hdr[start] >> offset;
-      subblock_size = (subblock_size == 1) ? uncompressed_size : subblock_size;
-      size += subblock_size & mask;
-
-      if (i == 0 && size == 0)
-         return 0;
-   }
-
-   return size;
-}
-
 static void
-dump_block(struct panfrost_resource *rsrc, uint32_t idx)
+dump_headerblock(struct panfrost_resource *rsrc, uint32_t idx)
 {
    panfrost_bo_wait(rsrc->bo, INT64_MAX, false);
 
    uint8_t *ptr = rsrc->bo->ptr.cpu;
-   uint32_t *header = (uint32_t *)(ptr + (idx * AFBC_HEADER_BYTES_PER_TILE));
-   uint32_t body_base_ptr = header[0];
-   uint32_t *body = (uint32_t *)(ptr + body_base_ptr);
+   struct pan_afbc_headerblock *header = (struct pan_afbc_headerblock *)
+      (ptr + (idx * AFBC_HEADER_BYTES_PER_TILE));
+   uint32_t *header_u32 = (uint32_t *)header;
+   uint32_t *body = (uint32_t *)(ptr + header->payload.offset);
    struct pan_image_block_size block_sz =
       pan_afbc_subblock_size(rsrc->modifier);
    unsigned pixel_sz = util_format_get_blocksize(rsrc->base.format);
    unsigned uncompressed_size = pixel_sz * block_sz.width * block_sz.height;
-   unsigned size = get_superblock_size(header, uncompressed_size);
+   uint32_t size = pan_afbc_payload_size(7, *header, uncompressed_size);
 
    fprintf(stderr, "  Header: %08x %08x %08x %08x (size: %u bytes)\n",
-           header[0], header[1], header[2], header[3], size);
+           header_u32[0], header_u32[1], header_u32[2], header_u32[3], size);
    if (size > 0) {
       fprintf(stderr, "  Body:   %08x %08x %08x %08x\n", body[0], body[1],
               body[2], body[3]);
    } else {
-      uint8_t *comp = (uint8_t *)(header + 2);
-      fprintf(stderr, "  Color:  0x%02x%02x%02x%02x\n", comp[0], comp[1],
-              comp[2], comp[3]);
+      fprintf(stderr, "  Color:  0x%02x%02x%02x%02x\n",
+              header->color.rgba8888.r, header->color.rgba8888.g,
+              header->color.rgba8888.b, header->color.rgba8888.a);
    }
    fprintf(stderr, "\n");
 }

@@ -101,6 +101,42 @@ enum pan_afbc_mode {
 };
 
 /*
+ * An AFBC header block provides access to an associated superblock payload of
+ * 4x4 subblocks or to an embedded solid color.
+ */
+struct pan_afbc_headerblock {
+   union {
+      /* Superblock payload. */
+      struct {
+         /* Offset in bytes from the start of the AFBC buffer (1st header
+          * block) to the start of the superblock payload data. */
+         uint32_t offset;
+
+         /* Sizes in bytes of the 4x4 6-bit subblocks. */
+         uint8_t subblock_sizes[12];
+      } payload;
+
+      /* Solid color. */
+      struct {
+         uint64_t reserved;
+
+         /* RGBA 8-8-8-8 color format. */
+         /* XXX: Add other formats. */
+         struct {
+            uint8_t r, g, b, a;
+            uint32_t reserved;
+         } rgba8888;
+      } color;
+
+      /* Random access. */
+      uint8_t u8[16];
+      uint16_t u16[8];
+      uint32_t u32[4];
+      uint64_t u64[2];
+   };
+};
+
+/*
  * Given an AFBC modifier, return the superblock size.
  *
  * We do not yet have any use cases for multiplanar YCBCr formats with different
@@ -213,6 +249,77 @@ static inline struct pan_image_block_size
 pan_afbc_subblock_size(uint64_t modifier)
 {
    return (struct pan_image_block_size){4, 4};
+}
+
+/*
+ * Given an AFBC header block, return the size of the subblock at the given
+ * index in the range [0, 15].
+ */
+static inline unsigned
+pan_afbc_header_subblock_size(struct pan_afbc_headerblock header,
+                              uint32_t index)
+{
+   uint64_t mask = BITFIELD_MASK(6);
+
+   switch (index) {
+   case  0: return  (header.u64[0] >> 32)  & mask; break;
+   case  1: return  (header.u64[0] >> 38)  & mask; break;
+   case  2: return  (header.u64[0] >> 44)  & mask; break;
+   case  3: return  (header.u64[0] >> 50)  & mask; break;
+   case  4: return  (header.u64[0] >> 56)  & mask; break;
+   case  5: return ((header.u64[0] >> 62) |
+                    (header.u64[1] <<  2)) & mask; break;
+   case  6: return  (header.u64[1] >>  4)  & mask; break;
+   case  7: return  (header.u64[1] >> 10)  & mask; break;
+   case  8: return  (header.u64[1] >> 16)  & mask; break;
+   case  9: return  (header.u64[1] >> 22)  & mask; break;
+   case 10: return  (header.u64[1] >> 28)  & mask; break;
+   case 11: return  (header.u64[1] >> 34)  & mask; break;
+   case 12: return  (header.u64[1] >> 40)  & mask; break;
+   case 13: return  (header.u64[1] >> 46)  & mask; break;
+   case 14: return  (header.u64[1] >> 52)  & mask; break;
+   case 15: return  (header.u64[1] >> 58)  & mask; break;
+   default: unreachable("invalid index"); return 0;
+   }
+}
+
+/*
+ * Given an AFBC header block, return the size in bytes of the associated
+ * superblock payload data (for the superblock layouts 0, 3, 4 and 7).
+ */
+static inline uint32_t
+pan_afbc_payload_size(unsigned arch,
+                      struct pan_afbc_headerblock header,
+                      uint32_t uncompressed_size)
+{
+   /* Skip sum if the 1st subblock is 0 (solid color encoding). */
+   if (arch >= 7 && pan_afbc_header_subblock_size(header, 0) == 0)
+      return 0;
+
+   uint64_t size = 0;
+
+   for (unsigned i = 0; i < 16; i++) {
+      unsigned sub_size = pan_afbc_header_subblock_size(header, i);
+      size += sub_size != 1 ? sub_size : uncompressed_size;
+   }
+
+   return ALIGN_POT(size, 16);
+}
+
+/*
+ * Given a format and a modifier, return the size in bytes of an uncompressed
+ * superblock payload.
+ */
+static inline uint32_t
+pan_afbc_payload_uncompressed_size(enum pipe_format format, uint64_t modifier)
+{
+   struct pan_image_block_size size_px = pan_afbc_subblock_size(modifier);
+   uint32_t size_B = util_format_get_blocksizebits(format) / 8;
+   size_B *= size_px.width * size_px.height;
+
+   assert(size_B == ALIGN_POT(size_B, 16));
+
+   return size_B;
 }
 
 static inline uint32_t
