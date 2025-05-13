@@ -769,7 +769,6 @@ cs_render_desc_ringbuf_reserve(struct cs_builder *b, uint32_t size)
    cs_load64_to(
       b, ringbuf_sync, cs_subqueue_ctx_reg(b),
       offsetof(struct panvk_cs_subqueue_context, render.desc_ringbuf.syncobj));
-   cs_wait_slot(b, SB_ID(LS));
 
    /* Wait for the other end to release memory. */
    cs_move32_to(b, sz_reg, size - 1);
@@ -793,7 +792,6 @@ cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size,
       b, cs_scratch_reg_tuple(b, 2, 3), cs_subqueue_ctx_reg(b),
       BITFIELD_MASK(3),
       offsetof(struct panvk_cs_subqueue_context, render.desc_ringbuf.ptr));
-   cs_wait_slot(b, SB_ID(LS));
 
    /* Update the relative position and absolute address. */
    cs_add32(b, ptr_lo, ptr_lo, size);
@@ -813,7 +811,7 @@ cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size,
       b, cs_scratch_reg_tuple(b, 2, 3), cs_subqueue_ctx_reg(b),
       BITFIELD_MASK(3),
       offsetof(struct panvk_cs_subqueue_context, render.desc_ringbuf.ptr));
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 }
 
 static VkResult
@@ -927,8 +925,6 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    cs_move64_to(b, cs_scratch_reg64(b, 12), 0);
    cs_move64_to(b, cs_scratch_reg64(b, 14), 0);
 
-   cs_wait_slot(b, SB_ID(LS));
-
    /* Take care of the tiler desc with layer_offset=0 outside of the loop. */
    cs_move32_to(b, cs_scratch_reg32(b, 4),
                 MIN2(cmdbuf->state.gfx.render.layer_count - 1,
@@ -941,8 +937,6 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
             BITFIELD_RANGE(0, 2) | BITFIELD_RANGE(10, 6), 64);
    cs_store(b, cs_scratch_reg_tuple(b, 0, 16), tiler_ctx_addr,
             BITFIELD_RANGE(0, 2) | BITFIELD_RANGE(10, 6), 96);
-
-   cs_wait_slot(b, SB_ID(LS));
 
    uint32_t remaining_layers =
       td_count > 1
@@ -970,7 +964,6 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
                BITFIELD_RANGE(0, 2) | BITFIELD_RANGE(10, 6), 64);
       cs_store(b, cs_scratch_reg_tuple(b, 0, 16), tiler_ctx_addr,
                BITFIELD_RANGE(0, 2) | BITFIELD_RANGE(10, 6), 96);
-      cs_wait_slot(b, SB_ID(LS));
 
       cs_update_vt_ctx(b)
          cs_add64(b, tiler_ctx_addr, tiler_ctx_addr,
@@ -1006,8 +999,6 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
          cs_store(b, cs_scratch_reg_tuple(b, 0, 16), tiler_ctx_addr,
                   BITFIELD_RANGE(0, 2) | BITFIELD_RANGE(10, 6), 96);
 
-         cs_wait_slot(b, SB_ID(LS));
-
          cs_add32(b, cs_scratch_reg32(b, 4), cs_scratch_reg32(b, 4),
                   MAX_LAYERS_PER_TILER_DESC << 8);
 
@@ -1017,6 +1008,9 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
                      -pan_size(TILER_CONTEXT));
       }
    }
+
+   /* Flush all stores to tiler_ctx_addr. */
+   cs_flush_stores(b);
 
    /* Then we change the scoreboard slot used for iterators. */
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1230,7 +1224,6 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
          cs_load64_to(b, cur_tiler, cs_subqueue_ctx_reg(b),
                       offsetof(struct panvk_cs_subqueue_context,
                                render.desc_ringbuf.ptr));
-         cs_wait_slot(b, SB_ID(LS));
          cs_add64(b, dst_fbd_ptr, cur_tiler,
                   pan_size(TILER_CONTEXT) * td_count);
       }
@@ -1258,15 +1251,16 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
                   cs_load_to(b, cs_scratch_reg_tuple(b, 0, 16),
                              pass_src_fbd_ptr, BITFIELD_MASK(16), fbd_off);
                }
-               cs_wait_slot(b, SB_ID(LS));
                cs_store(b, cs_scratch_reg_tuple(b, 0, 16), pass_dst_fbd_ptr,
                         BITFIELD_MASK(16), fbd_off);
-               cs_wait_slot(b, SB_ID(LS));
             }
             cs_add64(b, pass_src_fbd_ptr, pass_src_fbd_ptr, fbd_ir_pass_offset);
             cs_add64(b, pass_dst_fbd_ptr, pass_dst_fbd_ptr, fbd_ir_pass_offset);
             cs_add32(b, pass_count, pass_count, -1);
          }
+
+         /* Finish stores to pass_dst_fbd_ptr. */
+         cs_flush_stores(b);
 
          cs_add64(b, src_fbd_ptr, src_fbd_ptr, fbd_sz);
          cs_update_frag_ctx(b)
@@ -1608,15 +1602,13 @@ wrap_prev_oq(struct panvk_cmd_buffer *cmdbuf)
       cs_load64_to(
          b, prev_oq_node_reg, cs_subqueue_ctx_reg(b),
          offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
-      cs_wait_slot(b, SB_ID(LS));
       cs_store64(b, prev_oq_node_reg, oq_node_reg,
                  offsetof(struct panvk_cs_occlusion_query, next));
-      cs_wait_slot(b, SB_ID(LS));
    }
 
    cs_store64(b, oq_node_reg, cs_subqueue_ctx_reg(b),
               offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
    return VK_SUCCESS;
 }
 
@@ -2260,9 +2252,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       cs_move32_to(b, max_draw_count, draw->indirect.draw_count);
       cs_move64_to(b, draw_params_addr, draw->indirect.count_buffer_dev_addr);
       cs_load32_to(b, draw_count, draw_params_addr, 0);
-
-      /* wait for draw_count to load from buffer */
-      cs_wait_slot(b, SB_ID(LS));
       cs_umin32(b, draw_count, draw_count, max_draw_count);
    } else {
       cs_move32_to(b, draw_count, draw->indirect.draw_count);
@@ -2283,9 +2272,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                     draw_params_addr, reg_mask, 0);
       }
 
-      /* Wait for the SR33-37 indirect buffer load. */
-      cs_wait_slot(b, SB_ID(LS));
-
       if (patch_faus) {
          if (shader_uses_sysval(vs, graphics, vs.first_vertex)) {
             cs_store32(b, cs_sr_reg32(b, IDVS, VERTEX_OFFSET), vs_fau_addr,
@@ -2298,10 +2284,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                        shader_remapped_sysval_offset(
                           vs, sysval_offset(graphics, vs.base_instance)));
          }
-
-         /* Wait for the store using SR-37 as src to finish, so we can
-          * overwrite it. */
-         cs_wait_slot(b, SB_ID(LS));
       }
 
       if (patch_attribs != 0) {
@@ -2318,7 +2300,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
 
                cs_load32_to(b, attrib_offset, vs_drv_set,
                             pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
-               cs_wait_slot(b, SB_ID(LS));
 
                /* Emulated immediate multiply: we walk the bits in
                 * base_instance, and accumulate (stride << bit_pos) if the bit
@@ -2349,7 +2330,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
 
                cs_store32(b, attrib_offset, vs_drv_set,
                           pan_size(ATTRIBUTE) * i + (2 * sizeof(uint32_t)));
-               cs_wait_slot(b, SB_ID(LS));
+               cs_flush_stores(b);
             }
          }
       }
@@ -2629,7 +2610,6 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
       cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
                  BITFIELD_MASK(3),
                  offsetof(struct panvk_cs_subqueue_context, syncobjs));
-      cs_wait_slot(b, SB_ID(LS));
 
       /* We're relying on PANVK_SUBQUEUE_VERTEX_TILER being the first queue to
        * skip an ADD operation on the syncobjs pointer. */
@@ -2660,14 +2640,13 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
 
       cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
                  offsetof(struct panvk_cs_subqueue_context, iter_sb));
-      cs_wait_slot(b, SB_ID(LS));
+      cs_flush_stores(b);
 
       /* Update the vertex seqno. */
       ++cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].relative_sync_point;
    } else {
       cs_load64_to(b, render_ctx, cs_subqueue_ctx_reg(b),
                    offsetof(struct panvk_cs_subqueue_context, render));
-      cs_wait_slot(b, SB_ID(LS));
    }
 }
 
@@ -2682,7 +2661,6 @@ wait_finish_tiling(struct panvk_cmd_buffer *cmdbuf)
 
    cs_load64_to(b, vt_sync_addr, cs_subqueue_ctx_reg(b),
                 offsetof(struct panvk_cs_subqueue_context, syncobjs));
-   cs_wait_slot(b, SB_ID(LS));
 
    cs_add64(b, vt_sync_point,
             cs_progress_seqno_reg(b, PANVK_SUBQUEUE_VERTEX_TILER),
@@ -2741,7 +2719,7 @@ setup_tiler_oom_ctx(struct panvk_cmd_buffer *cmdbuf)
    cs_store32(b, layer_count, cs_subqueue_ctx_reg(b),
               TILER_OOM_CTX_FIELD_OFFSET(layer_count));
 
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 }
 
 static VkResult
@@ -2828,7 +2806,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_load32_to(
       b, counter, cs_subqueue_ctx_reg(b),
       offsetof(struct panvk_cs_subqueue_context, tiler_oom_ctx.counter));
-   cs_wait_slot(b, SB_ID(LS));
    cs_if(b, MALI_CS_CONDITION_GREATER, counter)
       cs_update_frag_ctx(b)
          cs_add64(b, cs_sr_reg64(b, FRAGMENT, FBD_POINTER),
@@ -2896,8 +2873,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
                             render.desc_ringbuf.syncobj));
    }
 
-   cs_wait_slot(b, SB_ID(LS));
-
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
    cs_move32_to(b, tiler_count, td_count);
@@ -2909,12 +2884,10 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
          cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC));                      \
       if (td_count == 1) {                                                     \
          cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);            \
-         cs_wait_slot(b, SB_ID(LS));                                           \
          cs_finish_fragment(b, true, completed_top, completed_bottom, async);  \
       } else if (td_count > 1) {                                               \
          cs_while(b, MALI_CS_CONDITION_GREATER, tiler_count) {                 \
             cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);         \
-            cs_wait_slot(b, SB_ID(LS));                                        \
             cs_finish_fragment(b, false, completed_top, completed_bottom,      \
                                async);                                         \
             cs_update_frag_ctx(b)                                              \
@@ -2937,20 +2910,18 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
          cs_load64_to(                                                         \
             b, oq_chain, cs_subqueue_ctx_reg(b),                               \
             offsetof(struct panvk_cs_subqueue_context, render.oq_chain));      \
-         cs_wait_slot(b, SB_ID(LS));                                           \
+         /* For WAR dependency on subqueue_context.render.oq_chain. */         \
+         cs_flush_loads(b);                                                    \
          /* We use oq_syncobj as a placeholder to reset the oq_chain. */       \
          cs_move64_to(b, oq_syncobj, 0);                                       \
          cs_store64(                                                           \
             b, oq_syncobj, cs_subqueue_ctx_reg(b),                             \
             offsetof(struct panvk_cs_subqueue_context, render.oq_chain));      \
-         cs_wait_slot(b, SB_ID(LS));                                           \
          cs_while(b, MALI_CS_CONDITION_ALWAYS, cs_undef()) {                   \
             cs_load64_to(b, oq_syncobj, oq_chain,                              \
                          offsetof(struct panvk_cs_occlusion_query, syncobj));  \
-            cs_wait_slot(b, SB_ID(LS));                                        \
             cs_load64_to(b, oq_chain, oq_chain,                                \
                          offsetof(struct panvk_cs_occlusion_query, next));     \
-            cs_wait_slot(b, SB_ID(LS));                                        \
             cs_sync32_set(                                                     \
                b, true, MALI_CS_SYNC_SCOPE_CSG, add_val_lo, oq_syncobj,        \
                cs_defer(SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC)));       \
@@ -2976,7 +2947,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 
    cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
               offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 
    /* Update the ring buffer position. */
    if (free_render_descs) {

@@ -77,7 +77,6 @@ generate_tiler_oom_handler(struct panvk_device *dev,
        * rendering has already been triggered */
       cs_load32_to(&b, counter, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(counter));
-      cs_wait_slot(&b, SB_ID(LS));
 
       cs_if(&b, MALI_CS_CONDITION_GREATER, counter)
          cs_load64_to(&b, fbd_ptr, subqueue_ctx,
@@ -88,7 +87,6 @@ generate_tiler_oom_handler(struct panvk_device *dev,
 
       cs_load32_to(&b, layer_count, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(layer_count));
-      cs_wait_slot(&b, SB_ID(LS));
 
       cs_while(&b, MALI_CS_CONDITION_GREATER, layer_count) {
          cs_trace_run_fragment(&b, &tracing_ctx, cs_scratch_reg_tuple(&b, 8, 4),
@@ -109,12 +107,10 @@ generate_tiler_oom_handler(struct panvk_device *dev,
       cs_load32_to(&b, td_count, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(td_count));
       cs_move64_to(&b, zero, 0);
-      cs_wait_slot(&b, SB_ID(LS));
 
       cs_while(&b, MALI_CS_CONDITION_GREATER, td_count) {
          /* Load completed chunks */
          cs_load_to(&b, completed_chunks, tiler_ptr, BITFIELD_MASK(4), 10 * 4);
-         cs_wait_slot(&b, SB_ID(LS));
 
          cs_finish_fragment(&b, false, completed_top, completed_bottom,
                             cs_now());

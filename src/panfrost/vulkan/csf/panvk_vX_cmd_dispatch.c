@@ -227,10 +227,9 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    if (shader->info.tls_size) {
       cs_move64_to(b, cs_scratch_reg64(b, 0), cmdbuf->state.tls.desc.gpu);
       cs_load64_to(b, cs_scratch_reg64(b, 2), cs_scratch_reg64(b, 0), 8);
-      cs_wait_slot(b, SB_ID(LS));
       cs_move64_to(b, cs_scratch_reg64(b, 0), tsd);
       cs_store64(b, cs_scratch_reg64(b, 2), cs_scratch_reg64(b, 0), 8);
-      cs_wait_slot(b, SB_ID(LS));
+      cs_flush_stores(b);
    }
 
    cs_update_compute_ctx(b) {
@@ -279,7 +278,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
                     cs_scratch_reg64(b, 0), BITFIELD_MASK(3), 0);
          cs_move64_to(b, cs_scratch_reg64(b, 0),
                       cmdbuf->state.compute.push_uniforms);
-         cs_wait_slot(b, SB_ID(LS));
 
          if (shader_uses_sysval(shader, compute, num_work_groups.x)) {
             cs_store32(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_X),
@@ -302,7 +300,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
                           shader, sysval_offset(compute, num_work_groups.z)));
          }
 
-         cs_wait_slot(b, SB_ID(LS));
+         cs_flush_stores(b);
       } else {
          cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_X),
                       info->direct.wg_count.x);
@@ -345,7 +343,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
               BITFIELD_MASK(3),
               offsetof(struct panvk_cs_subqueue_context, syncobjs));
-   cs_wait_slot(b, SB_ID(LS));
 
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_COMPUTE * sizeof(struct panvk_cs_sync64));
@@ -369,7 +366,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 
    cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
               offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].relative_sync_point;
    clear_dirty_after_dispatch(cmdbuf);

@@ -113,7 +113,7 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
 
    /* reset_oq_batch() only does the stores, we need to flush those explicitly
     * here. */
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 
    /* We flush the caches to make the new value visible to the CPU. */
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
@@ -152,7 +152,7 @@ panvk_cmd_begin_occlusion_query(struct panvk_cmd_buffer *cmd,
    cs_move64_to(b, report_addr_gpu, report_addr);
    cs_move64_to(b, clear_value, 0);
    cs_store64(b, clear_value, report_addr_gpu, 0);
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 }
 
 static void
@@ -218,9 +218,6 @@ copy_oq_result_batch(struct cs_builder *b,
          cs_load32_to(b, avail, avail_addr, i * sizeof(struct panvk_cs_sync32));
    }
 
-   /* Flush the loads. */
-   cs_wait_slot(b, SB_ID(LS));
-
    for (uint32_t i = 0; i < query_count; i++) {
       struct cs_index store_src =
          cs_reg_tuple(b, scratch_regs.reg + (i * regs_per_copy), regs_per_copy);
@@ -230,7 +227,7 @@ copy_oq_result_batch(struct cs_builder *b,
    }
 
    /* Flush the stores. */
-   cs_wait_slot(b, SB_ID(LS));
+   cs_flush_stores(b);
 }
 
 static void

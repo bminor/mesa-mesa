@@ -144,7 +144,6 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       cs_move32_to(b, one, 1);
       cs_load64_to(b, debug_sync_addr, cs_subqueue_ctx_reg(b),
                    offsetof(struct panvk_cs_subqueue_context, debug.syncobjs));
-      cs_wait_slot(b, SB_ID(LS));
       cs_add64(b, debug_sync_addr, debug_sync_addr,
                sizeof(struct panvk_cs_sync32) * subqueue);
       cs_load32_to(b, error, debug_sync_addr,
@@ -162,7 +161,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
             /* Overwrite the sync error with the first error we encountered. */
             cs_store32(b, error, debug_sync_addr,
                        offsetof(struct panvk_cs_sync32, error));
-            cs_wait_slot(b, SB_ID(LS));
+            cs_flush_stores(b);
          }
       }
    }
@@ -589,7 +588,6 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 
          cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
                       offsetof(struct panvk_cs_subqueue_context, syncobjs));
-         cs_wait_slot(b, SB_ID(LS));
          cs_add64(b, sync_addr, sync_addr, sizeof(struct panvk_cs_sync64) * i);
          cs_move64_to(b, add_val, 1);
          cs_sync64_add(b, false, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
@@ -607,7 +605,6 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 
          cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
                       offsetof(struct panvk_cs_subqueue_context, syncobjs));
-         cs_wait_slot(b, SB_ID(LS));
          cs_add64(b, sync_addr, sync_addr, sizeof(struct panvk_cs_sync64) * j);
 
          cs_add64(b, wait_val, cs_progress_seqno_reg(b, j),
@@ -628,7 +625,6 @@ panvk_per_arch(cs_pick_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
 
    cs_load32_to(b, iter_sb, cs_subqueue_ctx_reg(b),
                 offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_wait_slot(b, SB_ID(LS));
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \

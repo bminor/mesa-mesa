@@ -1937,7 +1937,6 @@ cs_exception_handler_end(struct cs_builder *b,
 
       cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
                    handler->ctx.dump_addr_offset);
-      cs_wait_slot(b, handler->ctx.ls_sb_slot);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1946,7 +1945,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.ls_sb_slot);
+      cs_flush_stores(b);
    }
 
    /* Now that the preamble is emitted, we can flush the instructions we have in
@@ -1959,7 +1958,6 @@ cs_exception_handler_end(struct cs_builder *b,
 
       cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
                    handler->ctx.dump_addr_offset);
-      cs_wait_slot(b, handler->ctx.ls_sb_slot);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1968,7 +1966,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.ls_sb_slot);
+      cs_flush_loads(b);
    }
 
    /* Fill the rest of the buffer with NOPs. */
@@ -2005,10 +2003,9 @@ cs_trace_preamble(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
     * access. Use cs_trace_field_offset() to get an offset taking this
     * pre-increment into account. */
    cs_load64_to(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
-   cs_wait_slot(b, ctx->ls_sb_slot);
    cs_add64(b, tracebuf_addr, tracebuf_addr, trace_size);
    cs_store64(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
 
 #define cs_trace_field_offset(__type, __field)                                 \
@@ -2044,7 +2041,7 @@ cs_trace_run_fragment(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
 
    cs_store(b, cs_reg_tuple(b, 40, 7), tracebuf_addr, BITFIELD_MASK(7),
             cs_trace_field_offset(run_fragment, sr));
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
 
 #if PAN_ARCH >= 12
@@ -2087,7 +2084,7 @@ cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_idvs2, sr[i]));
    cs_store(b, cs_reg_tuple(b, 64, 2), tracebuf_addr, BITFIELD_MASK(2),
             cs_trace_field_offset(run_idvs2, sr[64]));
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
 #else
 struct cs_run_idvs_trace {
@@ -2130,7 +2127,7 @@ cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_idvs, sr[i]));
    cs_store(b, cs_reg_tuple(b, 48, 13), tracebuf_addr, BITFIELD_MASK(13),
             cs_trace_field_offset(run_idvs, sr[48]));
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
 #endif
 
@@ -2166,7 +2163,7 @@ cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
 
 static inline void
@@ -2197,5 +2194,5 @@ cs_trace_run_compute_indirect(struct cs_builder *b,
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
-   cs_wait_slot(b, ctx->ls_sb_slot);
+   cs_flush_stores(b);
 }
