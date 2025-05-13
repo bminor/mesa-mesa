@@ -9492,7 +9492,7 @@ radv_cs_emit_compute_predication(const struct radv_device *device, struct radv_c
    if (!state->predicating)
       return;
 
-   uint64_t va = state->predication_va;
+   uint64_t va = state->user_predication_va;
 
    if (!state->predication_type) {
       /* Invert the condition the first time it is needed. */
@@ -13583,12 +13583,15 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    unsigned pred_op = PREDICATION_OP_BOOL32;
+   uint64_t emulated_va = 0;
 
    radv_emit_cache_flush(cmd_buffer);
 
    if (cmd_buffer->qf == RADV_QUEUE_GENERAL) {
-      if (!pdev->info.has_32bit_predication) {
-         uint64_t pred_value = 0, pred_va;
+      if (pdev->info.has_32bit_predication) {
+         radv_emit_set_predication_state(cmd_buffer, draw_visible, pred_op, va);
+      } else {
+         uint64_t pred_value = 0;
          unsigned pred_offset;
 
          /* From the Vulkan spec 1.1.107:
@@ -13619,7 +13622,7 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
           */
          radv_cmd_buffer_upload_data(cmd_buffer, 8, &pred_value, &pred_offset);
 
-         pred_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + pred_offset;
+         emulated_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + pred_offset;
 
          radeon_check_space(device->ws, cmd_buffer->cs, 8);
          radeon_begin(cs);
@@ -13629,18 +13632,17 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
                      COPY_DATA_WR_CONFIRM);
          radeon_emit(va);
          radeon_emit(va >> 32);
-         radeon_emit(pred_va);
-         radeon_emit(pred_va >> 32);
+         radeon_emit(emulated_va);
+         radeon_emit(emulated_va >> 32);
 
          radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
          radeon_emit(0);
          radeon_end();
 
-         va = pred_va;
          pred_op = PREDICATION_OP_BOOL64;
-      }
 
-      radv_emit_set_predication_state(cmd_buffer, draw_visible, pred_op, va);
+         radv_emit_set_predication_state(cmd_buffer, draw_visible, pred_op, emulated_va);
+      }
    } else {
       /* Compute queue doesn't support predication and it's emulated elsewhere. */
    }
@@ -13649,7 +13651,8 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
    cmd_buffer->state.predicating = true;
    cmd_buffer->state.predication_type = draw_visible;
    cmd_buffer->state.predication_op = pred_op;
-   cmd_buffer->state.predication_va = va;
+   cmd_buffer->state.user_predication_va = va;
+   cmd_buffer->state.emulated_predication_va = emulated_va;
    cmd_buffer->state.mec_inv_pred_emitted = false;
 }
 
@@ -13666,7 +13669,8 @@ radv_end_conditional_rendering(struct radv_cmd_buffer *cmd_buffer)
    cmd_buffer->state.predicating = false;
    cmd_buffer->state.predication_type = -1;
    cmd_buffer->state.predication_op = 0;
-   cmd_buffer->state.predication_va = 0;
+   cmd_buffer->state.user_predication_va = 0;
+   cmd_buffer->state.emulated_predication_va = 0;
    cmd_buffer->state.mec_inv_pred_emitted = false;
 }
 
