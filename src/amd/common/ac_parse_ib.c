@@ -699,6 +699,55 @@ static void ac_parse_packet3(FILE *f, uint32_t header, struct ac_ib_parser *ib,
                   ac_ib_get(ib), ~0);
       print_named_value(f, "RING_ENTRY_REG", ac_ib_get(ib), 16);
       break;
+   case PKT3_DISPATCH_MESH_DIRECT:
+      print_named_value(f, "X_DIM", ac_ib_get(ib), ~0);
+      print_named_value(f, "Y_DIM", ac_ib_get(ib), ~0);
+      print_named_value(f, "Z_DIM", ac_ib_get(ib), ~0);
+      ac_dump_reg(f, ib->gfx_level, ib->family, R_0287F0_VGT_DRAW_INITIATOR,
+                  ac_ib_get(ib), ~0);
+      break;
+   case PKT3_DISPATCH_MESH_INDIRECT_MULTI:
+      print_named_value(f, "DATA_OFFSET", ac_ib_get(ib), 32);
+      tmp = ac_ib_get(ib);
+      print_named_value(f, "DRAW_INDEX_LOC", (tmp >> 16) & 0xffff, 16);
+      print_named_value(f, "XYZ_DIM_LOC", tmp & 0xffff, 16);
+      tmp = ac_ib_get(ib);
+      print_named_value(f, "DRAW_INDEX_ENABLE", tmp >> 31, 1);
+      print_named_value(f, "COUNT_INDIRECT_ENABLE", (tmp >> 30) & 1, 1);
+      print_named_value(f, "THREAD_TRACE_MARKER_ENABLE", (tmp >> 29) & 1, 1);
+      if (ib->gfx_level >= GFX11) {
+         print_named_value(f, "XYZ_DIM_ENABLE", (tmp >> 28) & 1, 1);
+         print_named_value(f, "MODE1_ENABLE", (tmp >> 27) & 1, 1);
+      } else {
+         print_named_value(f, "USE_VGPRS", (tmp >> 28) & 1, 1);
+      }
+      print_named_value(f, "COUNT", ac_ib_get(ib), 32);
+      print_addr(ib, "COUNT_ADDR", ac_ib_get64(ib), 0);
+      print_named_value(f, "STRIDE", ac_ib_get(ib), 32);
+      ac_dump_reg(f, ib->gfx_level, ib->family, R_0287F0_VGT_DRAW_INITIATOR,
+                  ac_ib_get(ib), ~0);
+      break;
+   case PKT3_DISPATCH_TASK_STATE_INIT:
+      print_addr(ib, "CONTROL_BUF_ADDR", ac_ib_get64(ib), 0);
+      break;
+   case PKT3_DISPATCH_TASKMESH_INDIRECT_MULTI_ACE:
+      print_addr(ib, "DATA_ADDR", ac_ib_get64(ib), 0);
+      tmp = ac_ib_get(ib);
+      print_named_value(f, "RING_ENTRY_LOC", tmp & 0xffff, 16);
+      tmp = ac_ib_get(ib);
+      print_named_value(f, "DRAW_INDEX_LOC", (tmp >> 16) & 0xffff, 16);
+      print_named_value(f, "XYZ_DIM_ENABLE", (tmp >> 3) & 1, 1);
+      print_named_value(f, "DRAW_INDEX_ENABLE", (tmp >> 2), 1);
+      print_named_value(f, "COUNT_INDIRECT_ENABLE", (tmp >> 1) & 1, 1);
+      print_named_value(f, "THREAD_TRACE_MARKER_ENABLE", tmp & 1, 1);
+      tmp = ac_ib_get(ib);
+      print_named_value(f, "XYZ_DIM_LOC", tmp & 0xffff, 16);
+      print_named_value(f, "COUNT", ac_ib_get(ib), 32);
+      print_addr(ib, "COUNT_ADDR", ac_ib_get64(ib), 0);
+      print_named_value(f, "STRIDE", ac_ib_get(ib), 32);
+      ac_dump_reg(f, ib->gfx_level, ib->family, R_0287F0_VGT_DRAW_INITIATOR,
+                  ac_ib_get(ib), ~0);
+      break;
    }
 
    /* print additional dwords */
