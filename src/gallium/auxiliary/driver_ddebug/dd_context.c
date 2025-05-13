@@ -312,6 +312,8 @@ DD_SHADER(VERTEX, vs)
 DD_SHADER(GEOMETRY, gs)
 DD_SHADER(TESS_CTRL, tcs)
 DD_SHADER(TESS_EVAL, tes)
+DD_SHADER(TASK, ts)
+DD_SHADER(MESH, ms)
 
 static void * \
 dd_context_create_compute_state(struct pipe_context *_pipe,
@@ -884,6 +886,12 @@ dd_context_create(struct dd_screen *dscreen, struct pipe_context *pipe)
    CTX_INIT(create_compute_state);
    CTX_INIT(bind_compute_state);
    CTX_INIT(delete_compute_state);
+   CTX_INIT(create_ts_state);
+   CTX_INIT(bind_ts_state);
+   CTX_INIT(delete_ts_state);
+   CTX_INIT(create_ms_state);
+   CTX_INIT(bind_ms_state);
+   CTX_INIT(delete_ms_state);
    CTX_INIT(create_vertex_elements_state);
    CTX_INIT(bind_vertex_elements_state);
    CTX_INIT(delete_vertex_elements_state);

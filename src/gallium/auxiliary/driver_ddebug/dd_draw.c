@@ -405,10 +405,7 @@ dd_dump_draw_vbo(struct dd_draw_state *dstate, struct pipe_draw_info *info,
       }
 
    fprintf(f, "\n");
-   for (sh = 0; sh < MESA_SHADER_MESH_STAGES; sh++) {
-      if (sh == MESA_SHADER_COMPUTE)
-         continue;
-
+   for (sh = 0; sh < MESA_SHADER_COMPUTE; sh++) {
       dd_dump_shader(dstate, sh, f);
    }
 
@@ -651,6 +648,20 @@ dd_dump_driver_state(struct dd_context *dctx, FILE *f, unsigned flags)
 }
 
 static void
+dd_dump_draw_mesh_tasks(struct dd_draw_state *dstate, struct pipe_grid_info *info,
+                        FILE *f)
+{
+   fprintf(f, "%s:\n", __func__+8);
+   DUMP(grid_info, info);
+   fprintf(f, "\n");
+
+   dd_dump_shader(dstate, MESA_SHADER_TASK, f);
+   dd_dump_shader(dstate, MESA_SHADER_MESH, f);
+   dd_dump_shader(dstate, MESA_SHADER_FRAGMENT, f);
+   fprintf(f, "\n");
+}
+
+static void
 dd_dump_call(FILE *f, struct dd_draw_state *state, struct dd_call *call)
 {
    switch (call->type) {
@@ -715,6 +726,9 @@ dd_dump_call(FILE *f, struct dd_draw_state *state, struct dd_call *call)
       break;
    case CALL_TEXTURE_SUBDATA:
       dd_dump_texture_subdata(&call->info.texture_subdata, f);
+      break;
+   case CALL_DRAW_MESH_TASKS:
+      dd_dump_draw_mesh_tasks(state, &call->info.launch_grid, f);
       break;
    }
 }
@@ -796,6 +810,10 @@ dd_unreference_copy_of_call(struct dd_call *dst)
       break;
    case CALL_TEXTURE_SUBDATA:
       pipe_resource_reference(&dst->info.texture_subdata.resource, NULL);
+      break;
+   case CALL_DRAW_MESH_TASKS:
+      pipe_resource_reference(&dst->info.launch_grid.indirect, NULL);
+      pipe_resource_reference(&dst->info.launch_grid.indirect_draw_count, NULL);
       break;
    }
 }
@@ -1892,6 +1910,27 @@ dd_context_texture_subdata(struct pipe_context *_pipe,
       dd_after_draw(dctx, record);
 }
 
+static void
+dd_context_draw_mesh_tasks(struct pipe_context *_pipe,
+                           const struct pipe_grid_info *info)
+{
+   struct dd_context *dctx = dd_context(_pipe);
+   struct pipe_context *pipe = dctx->pipe;
+   struct dd_draw_record *record = dd_create_record(dctx);
+
+   record->call.type = CALL_DRAW_MESH_TASKS;
+   record->call.info.launch_grid = *info;
+   record->call.info.launch_grid.indirect = NULL;
+   pipe_resource_reference(&record->call.info.launch_grid.indirect, info->indirect);
+   record->call.info.launch_grid.indirect_draw_count = NULL;
+   pipe_resource_reference(&record->call.info.launch_grid.indirect_draw_count,
+                           info->indirect_draw_count);
+
+   dd_before_draw(dctx, record);
+   pipe->draw_mesh_tasks(pipe, info);
+   dd_after_draw(dctx, record);
+}
+
 void
 dd_init_draw_functions(struct dd_context *dctx)
 {
@@ -1917,4 +1956,5 @@ dd_init_draw_functions(struct dd_context *dctx)
    CTX_INIT(buffer_subdata);
    CTX_INIT(texture_subdata);
    CTX_INIT(draw_vertex_state);
+   CTX_INIT(draw_mesh_tasks);
 }

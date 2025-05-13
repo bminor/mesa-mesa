@@ -79,6 +79,7 @@ enum call_type
    CALL_TRANSFER_UNMAP,
    CALL_BUFFER_SUBDATA,
    CALL_TEXTURE_SUBDATA,
+   CALL_DRAW_MESH_TASKS,
 };
 
 struct call_resource_copy_region
