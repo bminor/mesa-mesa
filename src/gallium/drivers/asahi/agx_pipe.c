@@ -1898,6 +1898,7 @@ agx_init_shader_caps(struct pipe_screen *pscreen)
       /* This cap is broken, see 9a38dab2d18 ("zink: disable
        * pipe_shader_caps.fp16_const_buffers") */
       caps->fp16_const_buffers = false;
+      caps->glsl_16bit_load_dst = true;
 
       /* TODO: Enable when fully baked */
       if (strcmp(util_get_process_name(), "blender") == 0)

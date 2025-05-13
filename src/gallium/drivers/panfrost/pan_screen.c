@@ -414,6 +414,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
       caps->glsl_16bit_consts = !is_nofp16;
       caps->fp16_derivatives =
       caps->fp16_const_buffers = dev->arch >= 6 && !is_nofp16;
+      caps->glsl_16bit_load_dst = true;
       /* Blocked on https://gitlab.freedesktop.org/mesa/mesa/-/issues/6075 */
       caps->int16 = false;
       STATIC_ASSERT(PIPE_MAX_SAMPLERS < 0x10000);

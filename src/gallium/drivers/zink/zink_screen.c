@@ -599,6 +599,7 @@ zink_init_shader_caps(struct zink_screen *screen)
          screen->info.feats12.shaderFloat16 ||
          (screen->info.have_KHR_shader_float16_int8 &&
           screen->info.shader_float16_int8_feats.shaderFloat16);
+      caps->glsl_16bit_load_dst = true;
 
       caps->int16 = screen->info.feats.features.shaderInt16;
 

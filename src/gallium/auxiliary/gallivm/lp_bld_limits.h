@@ -113,6 +113,7 @@ gallivm_init_shader_caps(struct pipe_shader_caps *caps)
    caps->fp16_const_buffers = false;
    caps->int16 = true;
    caps->glsl_16bit_consts = true;
+   caps->glsl_16bit_load_dst = true;
    caps->max_texture_samplers = PIPE_MAX_SAMPLERS;
    caps->max_sampler_views = PIPE_MAX_SHADER_SAMPLER_VIEWS;
    caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);

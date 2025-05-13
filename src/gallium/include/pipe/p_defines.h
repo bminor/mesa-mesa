@@ -784,6 +784,7 @@ struct pipe_shader_caps {
    bool fp16_const_buffers;
    bool int16;
    bool glsl_16bit_consts;
+   bool glsl_16bit_load_dst; /* fp16 or int16 is AND'ed with this */
    bool tgsi_sqrt_supported;
    bool tgsi_any_inout_decl_range;
 };

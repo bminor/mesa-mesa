@@ -483,6 +483,7 @@ static void r300_init_shader_caps(struct r300_screen* r300screen)
       caps->fp16 = false;
       caps->fp16_derivatives = false;
       caps->fp16_const_buffers = false;
+      caps->glsl_16bit_load_dst = false;
       /* While draw could normally handle this for the VS, the NIR lowering
        * to regs can't handle our non-native-integers, so we have to lower to
        * if ladders.

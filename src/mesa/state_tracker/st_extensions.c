@@ -366,6 +366,8 @@ void st_init_limits(struct pipe_screen *screen,
          screen->shader_caps[sh].glsl_16bit_consts;
       options->LowerPrecisionFloat16Uniforms =
          screen->shader_caps[sh].fp16_const_buffers;
+      options->LowerPrecision16BitLoadDst =
+         screen->shader_caps[sh].glsl_16bit_load_dst;
    }
 
    c->MaxUserAssignableUniformLocations =

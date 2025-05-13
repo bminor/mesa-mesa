@@ -965,6 +965,7 @@ void si_init_shader_caps(struct si_screen *sscreen)
       caps->fp16_const_buffers = has_16bit_alu;
       caps->int16 = has_16bit_alu;
       caps->glsl_16bit_consts = has_16bit_alu;
+      caps->glsl_16bit_load_dst = sscreen->info.gfx_level >= GFX9;
    }
 }
 
