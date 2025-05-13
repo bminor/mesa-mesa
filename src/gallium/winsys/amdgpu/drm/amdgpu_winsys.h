@@ -116,8 +116,15 @@ struct amdgpu_screen_winsys {
  */
 #define AMDGPU_FENCE_RING_SIZE 32
 
-/* The maximum number of queues that can be present. */
-#define AMDGPU_MAX_QUEUES 3
+/* Queues using the fence ring. */
+enum amdgpu_queue_index {
+   AMDGPU_QUEUE_GFX,
+   AMDGPU_QUEUE_COMPUTE,
+   AMDGPU_QUEUE_SDMA,
+   AMDGPU_MAX_QUEUES,
+
+   AMDGPU_QUEUE_USES_ALT_FENCE = INT_MAX,
+};
 
 /* This can use any integer type because the logic handles integer wraparounds robustly, but
  * uint8_t wraps around so quickly that some BOs might never become idle because we don't
