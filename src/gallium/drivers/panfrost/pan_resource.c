@@ -2003,7 +2003,7 @@ panfrost_get_afbc_payload_sizes(struct panfrost_context *ctx,
    return bo;
 }
 
-void
+static void
 panfrost_pack_afbc(struct panfrost_context *ctx,
                    struct panfrost_resource *prsrc)
 {

@@ -212,9 +212,6 @@ panfrost_resource_restore_format(struct panfrost_resource *rsrc,
 bool panfrost_should_pack_afbc(struct panfrost_device *dev,
                                const struct panfrost_resource *rsrc);
 
-void panfrost_pack_afbc(struct panfrost_context *ctx,
-                        struct panfrost_resource *prsrc);
-
 void pan_resource_modifier_convert(struct panfrost_context *ctx,
                                    struct panfrost_resource *rsrc,
                                    uint64_t modifier, bool copy_resource,
