@@ -756,3 +756,46 @@ BEGIN_TEST(insert_waitcnt.waw.vmem_different_lanes)
       finish_waitcnt_test();
    }
 END_TEST
+
+BEGIN_TEST(insert_waitcnt.divergent_branch.inc_counter)
+   for (amd_gfx_level gfx : {GFX10_3, GFX11, GFX12}) {
+      if (!setup_cs(NULL, gfx))
+         continue;
+
+      Definition def_v4(PhysReg(260), v1);
+      Definition def_v5(PhysReg(261), v1);
+      Operand op_v0(PhysReg(256), v1);
+      Operand desc_s4(PhysReg(0), s4);
+      Operand desc_s8(PhysReg(8), s8);
+
+      //>> v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+      bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0, false);
+
+      emit_divergent_if_else(
+         program.get(), bld, Operand::c64(1),
+         [&]()
+         {
+            //>> p_unit_test 1
+            //! v1: %0:v[5] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v5, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         },
+         [&]()
+         {
+            //>> p_unit_test 2
+            //! v1: %0:v[5] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v5, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         });
+      //>> p_unit_test 3
+      //~gfx(10_3|11)! s_waitcnt vmcnt(1)
+      //~gfx12! s_wait_loadcnt imm:1
+      //! p_unit_test %0:v[4]
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      finish_waitcnt_test();
+   }
+END_TEST

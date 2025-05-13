@@ -199,7 +199,7 @@ struct wait_ctx {
        : program(program_), gfx_level(program_->gfx_level), info(info_)
    {}
 
-   bool join(const wait_ctx* other, bool logical)
+   bool join(const wait_ctx* other, bool logical, bool logical_merge)
    {
       bool changed = (other->pending_flat_lgkm && !pending_flat_lgkm) ||
                      (other->pending_flat_vm && !pending_flat_vm) || (~nonzero & other->nonzero);
@@ -212,7 +212,7 @@ struct wait_ctx {
       using iterator = std::map<PhysReg, wait_entry>::iterator;
 
       for (const auto& entry : other->gpr_map) {
-         if (entry.second.logical != logical) {
+         if (logical_merge ? !logical : (entry.second.logical != logical)) {
             if (logical) {
                iterator it = gpr_map.find(entry.first);
                if (it != gpr_map.end()) {
@@ -917,11 +917,24 @@ insert_waitcnt(Program* program)
             continue;
       }
 
+      /* Sometimes the counter for an entry is incremented or removed on all logical predecessors,
+       * so it might be better to join entries using the logical predecessors instead of the linear
+       * ones.
+       */
+      bool logical_merge =
+         current.logical_preds.size() > 1 &&
+         std::any_of(current.linear_preds.begin(), current.linear_preds.end(),
+                     [&](unsigned pred)
+                     {
+                        return std::find(current.logical_preds.begin(), current.logical_preds.end(),
+                                         pred) == current.logical_preds.end();
+                     });
+
       bool changed = false;
       for (unsigned b : current.linear_preds)
-         changed |= ctx.join(&out_ctx[b], false);
+         changed |= ctx.join(&out_ctx[b], false, logical_merge);
       for (unsigned b : current.logical_preds)
-         changed |= ctx.join(&out_ctx[b], true);
+         changed |= ctx.join(&out_ctx[b], true, logical_merge);
 
       if (done[current.index] && !changed) {
          in_ctx[current.index] = std::move(ctx);
