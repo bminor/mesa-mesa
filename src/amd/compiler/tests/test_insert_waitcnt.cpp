@@ -613,6 +613,70 @@ BEGIN_TEST(insert_waitcnt.vmem_ds)
    finish_waitcnt_test();
 END_TEST
 
+BEGIN_TEST(insert_waitcnt.waw.vmem_ds_valu)
+   for (amd_gfx_level gfx : {GFX10_3, GFX11, GFX12}) {
+      if (!setup_cs(NULL, gfx))
+         continue;
+
+      Definition def_v4(PhysReg(260), v1);
+      Operand op_v0(PhysReg(256), v1);
+      Operand desc_s4(PhysReg(0), s4);
+
+      emit_divergent_if_else(
+         program.get(), bld, Operand::c64(1),
+         [&]()
+         {
+            //>> p_unit_test 1
+            //! v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+            bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0,
+                      false);
+         },
+         [&]()
+         {
+            //>> p_unit_test 2
+            //~gfx11! s_waitcnt vmcnt(0)
+            //~gfx12! s_wait_loadcnt imm:0
+            //! v1: %0:v[4] = v_mov_b32 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
+            bld.vop1(aco_opcode::v_mov_b32, def_v4, Operand::zero());
+         });
+      //>> p_unit_test 3
+      //~gfx(10_3|11)! s_waitcnt vmcnt(0)
+      //~gfx12! s_wait_loadcnt imm:0
+      //! p_unit_test %0:v[4]
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      emit_divergent_if_else(
+         program.get(), bld, Operand::c64(1),
+         [&]()
+         {
+            //>> p_unit_test 4
+            //! v1: %0:v[4] = ds_read_b32 %0:v[0]
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(4));
+            bld.ds(aco_opcode::ds_read_b32, def_v4, op_v0);
+         },
+         [&]()
+         {
+            //>> p_unit_test 5
+            //~gfx11! s_waitcnt lgkmcnt(0)
+            //~gfx12! s_wait_dscnt imm:0
+            //! v1: %0:v[4] = v_mov_b32 0
+            bld.pseudo(aco_opcode::p_unit_test, Operand::c32(5));
+            bld.vop1(aco_opcode::v_mov_b32, def_v4, Operand::zero());
+         });
+      //>> p_unit_test 6
+      //~gfx(10_3|11)! s_waitcnt lgkmcnt(0)
+      //~gfx12! s_wait_dscnt imm:0
+      //! p_unit_test %0:v[4]
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(6));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      finish_waitcnt_test();
+   }
+END_TEST
+
 BEGIN_TEST(insert_waitcnt.waw.vmem_different_halves)
    if (!setup_cs(NULL, GFX12))
       return;
@@ -794,6 +858,42 @@ BEGIN_TEST(insert_waitcnt.divergent_branch.inc_counter)
       //~gfx12! s_wait_loadcnt imm:1
       //! p_unit_test %0:v[4]
       bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      finish_waitcnt_test();
+   }
+END_TEST
+
+BEGIN_TEST(insert_waitcnt.divergent_branch.no_skip)
+   for (amd_gfx_level gfx : {GFX10_3, GFX11, GFX12}) {
+      if (!setup_cs(NULL, gfx))
+         continue;
+
+      Definition def_v4(PhysReg(260), v1);
+      Operand op_v0(PhysReg(256), v1);
+      Operand desc_s4(PhysReg(0), s4);
+      Operand desc_s8(PhysReg(8), s8);
+
+      //>> v1: %0:v[4] = buffer_load_dword %0:s[0-3], %0:v[0], 0
+      bld.mubuf(aco_opcode::buffer_load_dword, def_v4, desc_s4, op_v0, Operand::zero(), 0, false);
+
+      //>> p_unit_test 1
+      //~gfx(10_3|11)! s_waitcnt vmcnt(0)
+      //~gfx12! s_wait_loadcnt imm:0
+      //! p_unit_test %0:v[4]
+      bld.reset(program->create_and_insert_block());
+      program->blocks[1].linear_preds.push_back(0);
+      program->blocks[1].logical_preds.push_back(0);
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+      bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
+
+      //>> p_unit_test 2
+      //! p_unit_test %0:v[4]
+      bld.reset(program->create_and_insert_block());
+      program->blocks[2].linear_preds.push_back(1);
+      program->blocks[2].logical_preds.push_back(1);
+      program->blocks[2].logical_preds.push_back(0);
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
       bld.pseudo(aco_opcode::p_unit_test, Operand(PhysReg(260), v1));
 
       finish_waitcnt_test();
