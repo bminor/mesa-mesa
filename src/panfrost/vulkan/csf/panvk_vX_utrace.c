@@ -31,7 +31,7 @@ cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
    assert((dst_addr | src_addr | size) % sizeof(uint32_t) == 0);
 
    /* wait for timestamp writes */
-   cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
+   cs_wait_slot(b, SB_ID(DEFERRED_SYNC));
 
    /* Depending on where this is called from, we could potentially use SR
     * registers or copy with a compute job.
@@ -52,7 +52,7 @@ cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
          const struct cs_index reg = cs_scratch_reg_tuple(b, 4, count);
 
          cs_load_to(b, reg, src_addr_reg, BITFIELD_MASK(count), offset);
-         cs_wait_slot(b, SB_ID(LS), false);
+         cs_wait_slot(b, SB_ID(LS));
          cs_store(b, reg, dst_addr_reg, BITFIELD_MASK(count), offset);
 
          copy_count -= count;
@@ -64,7 +64,7 @@ cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
       size -= offset;
    }
 
-   cs_wait_slot(b, SB_ID(LS), false);
+   cs_wait_slot(b, SB_ID(LS));
 }
 
 static struct cs_builder *
@@ -170,7 +170,7 @@ panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b)
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_NONE,
                    MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
-   cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
+   cs_wait_slot(b, SB_ID(IMM_FLUSH));
 
    cs_finish(b);
 }

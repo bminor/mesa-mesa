@@ -598,7 +598,7 @@ cs_flush_block_instrs(struct cs_builder *b)
              sizeof(uint64_t));
 
          /* Drop the prev_load_ip_target value and replace it by the final
-	  * IP. */
+          * IP. */
          *instr &= ~BITFIELD64_MASK(32);
          *instr |= ip;
 
@@ -1110,13 +1110,12 @@ cs_move64_to(struct cs_builder *b, struct cs_index dest, uint64_t imm)
 }
 
 static inline void
-cs_wait_slots(struct cs_builder *b, unsigned wait_mask, bool progress_inc)
+cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
 {
    struct cs_load_store_tracker *ls_tracker = b->conf.ls_tracker;
 
    cs_emit(b, WAIT, I) {
       I.wait_mask = wait_mask;
-      I.progress_increment = progress_inc;
    }
 
    /* We don't do advanced tracking of cs_defer(), and assume that
@@ -1130,11 +1129,11 @@ cs_wait_slots(struct cs_builder *b, unsigned wait_mask, bool progress_inc)
 }
 
 static inline void
-cs_wait_slot(struct cs_builder *b, unsigned slot, bool progress_inc)
+cs_wait_slot(struct cs_builder *b, unsigned slot)
 {
    assert(slot < 8 && "invalid slot");
 
-   cs_wait_slots(b, BITFIELD_BIT(slot), progress_inc);
+   cs_wait_slots(b, BITFIELD_BIT(slot));
 }
 
 struct cs_shader_res_sel {
@@ -1154,13 +1153,11 @@ cs_shader_res_sel(unsigned srt, unsigned fau, unsigned spd, unsigned tsd)
 
 static inline void
 cs_run_compute(struct cs_builder *b, unsigned task_increment,
-               enum mali_task_axis task_axis, bool progress_inc,
-               struct cs_shader_res_sel res_sel)
+               enum mali_task_axis task_axis, struct cs_shader_res_sel res_sel)
 {
    cs_emit(b, RUN_COMPUTE, I) {
       I.task_increment = task_increment;
       I.task_axis = task_axis;
-      I.progress_increment = progress_inc;
       I.srt_select = res_sel.srt;
       I.spd_select = res_sel.spd;
       I.tsd_select = res_sel.tsd;
@@ -1170,12 +1167,11 @@ cs_run_compute(struct cs_builder *b, unsigned task_increment,
 
 #if PAN_ARCH == 10
 static inline void
-cs_run_tiling(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
+cs_run_tiling(struct cs_builder *b, uint32_t flags_override,
               struct cs_shader_res_sel res_sel)
 {
    cs_emit(b, RUN_TILING, I) {
       I.flags_override = flags_override;
-      I.progress_increment = progress_inc;
       I.srt_select = res_sel.srt;
       I.spd_select = res_sel.spd;
       I.tsd_select = res_sel.tsd;
@@ -1186,13 +1182,12 @@ cs_run_tiling(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
 
 #if PAN_ARCH >= 12
 static inline void
-cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
-             bool malloc_enable, struct cs_index draw_id,
+cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
+             struct cs_index draw_id,
              enum mali_idvs_shading_mode vertex_shading_mode)
 {
    cs_emit(b, RUN_IDVS2, I) {
       I.flags_override = flags_override;
-      I.progress_increment = progress_inc;
       I.malloc_enable = malloc_enable;
       I.vertex_shading_mode = vertex_shading_mode;
 
@@ -1206,13 +1201,12 @@ cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
 }
 #else
 static inline void
-cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
-            bool malloc_enable, struct cs_shader_res_sel varying_sel,
+cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
+            struct cs_shader_res_sel varying_sel,
             struct cs_shader_res_sel frag_sel, struct cs_index draw_id)
 {
    cs_emit(b, RUN_IDVS, I) {
       I.flags_override = flags_override;
-      I.progress_increment = progress_inc;
       I.malloc_enable = malloc_enable;
 
       if (draw_id.type == CS_INDEX_UNDEF) {
@@ -1242,31 +1236,29 @@ cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool progress_inc,
 
 static inline void
 cs_run_fragment(struct cs_builder *b, bool enable_tem,
-                enum mali_tile_render_order tile_order, bool progress_inc)
+                enum mali_tile_render_order tile_order)
 {
    cs_emit(b, RUN_FRAGMENT, I) {
       I.enable_tem = enable_tem;
       I.tile_order = tile_order;
-      I.progress_increment = progress_inc;
    }
 }
 
 static inline void
 cs_run_fullscreen(struct cs_builder *b, uint32_t flags_override,
-                  bool progress_inc, struct cs_index dcd)
+                  struct cs_index dcd)
 {
    cs_emit(b, RUN_FULLSCREEN, I) {
       I.flags_override = flags_override;
-      I.progress_increment = progress_inc;
       I.dcd = cs_src64(b, dcd);
    }
 }
 
 static inline void
-cs_finish_tiling(struct cs_builder *b, bool progress_inc)
+cs_finish_tiling(struct cs_builder *b)
 {
    cs_emit(b, FINISH_TILING, I)
-      I.progress_increment = progress_inc;
+      ;
 }
 
 static inline void
@@ -1596,11 +1588,10 @@ cs_progress_load(struct cs_builder *b, struct cs_index dst)
 
 static inline void
 cs_run_compute_indirect(struct cs_builder *b, unsigned wg_per_task,
-                        bool progress_inc, struct cs_shader_res_sel res_sel)
+                        struct cs_shader_res_sel res_sel)
 {
    cs_emit(b, RUN_COMPUTE_INDIRECT, I) {
       I.workgroups_per_task = wg_per_task;
-      I.progress_increment = progress_inc;
       I.srt_select = res_sel.srt;
       I.spd_select = res_sel.spd;
       I.tsd_select = res_sel.tsd;
@@ -1924,7 +1915,7 @@ cs_exception_handler_end(struct cs_builder *b,
 
       cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
                    handler->ctx.dump_addr_offset);
-      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1933,7 +1924,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot);
    }
 
    /* Now that the preamble is emitted, we can flush the instructions we have in
@@ -1946,7 +1937,7 @@ cs_exception_handler_end(struct cs_builder *b,
 
       cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
                    handler->ctx.dump_addr_offset);
-      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1955,7 +1946,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot);
    }
 
    /* Fill the rest of the buffer with NOPs. */
@@ -1992,10 +1983,10 @@ cs_trace_preamble(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
     * access. Use cs_trace_field_offset() to get an offset taking this
     * pre-increment into account. */
    cs_load64_to(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
    cs_add64(b, tracebuf_addr, tracebuf_addr, trace_size);
    cs_store64(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }
 
 #define cs_trace_field_offset(__type, __field)                                 \
@@ -2010,10 +2001,10 @@ struct cs_run_fragment_trace {
 static inline void
 cs_trace_run_fragment(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                       struct cs_index scratch_regs, bool enable_tem,
-                      enum mali_tile_render_order tile_order, bool progress_inc)
+                      enum mali_tile_render_order tile_order)
 {
    if (likely(!ctx->enabled)) {
-      cs_run_fragment(b, enable_tem, tile_order, progress_inc);
+      cs_run_fragment(b, enable_tem, tile_order);
       return;
    }
 
@@ -2026,12 +2017,12 @@ cs_trace_run_fragment(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
    /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
     * won't point to the right instruction. */
    cs_load_ip_to(b, data);
-   cs_run_fragment(b, enable_tem, tile_order, progress_inc);
+   cs_run_fragment(b, enable_tem, tile_order);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_fragment, ip));
 
    cs_store(b, cs_reg_tuple(b, 40, 7), tracebuf_addr, BITFIELD_MASK(7),
             cs_trace_field_offset(run_fragment, sr));
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }
 
 #if PAN_ARCH >= 12
@@ -2045,12 +2036,11 @@ struct cs_run_idvs2_trace {
 static inline void
 cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                    struct cs_index scratch_regs, uint32_t flags_override,
-                   bool progress_inc, bool malloc_enable,
-                   struct cs_index draw_id,
+                   bool malloc_enable, struct cs_index draw_id,
                    enum mali_idvs_shading_mode vertex_shading_mode)
 {
    if (likely(!ctx->enabled)) {
-      cs_run_idvs2(b, flags_override, progress_inc, malloc_enable, draw_id,
+      cs_run_idvs2(b, flags_override, malloc_enable, draw_id,
                    vertex_shading_mode);
       return;
    }
@@ -2063,8 +2053,7 @@ cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
    /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
     * won't point to the right instruction. */
    cs_load_ip_to(b, data);
-   cs_run_idvs2(b, flags_override, progress_inc, malloc_enable, draw_id,
-                vertex_shading_mode);
+   cs_run_idvs2(b, flags_override, malloc_enable, draw_id, vertex_shading_mode);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_idvs2, ip));
 
    if (draw_id.type != CS_INDEX_UNDEF)
@@ -2076,7 +2065,7 @@ cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_idvs2, sr[i]));
    cs_store(b, cs_reg_tuple(b, 64, 2), tracebuf_addr, BITFIELD_MASK(2),
             cs_trace_field_offset(run_idvs2, sr[64]));
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }
 #else
 struct cs_run_idvs_trace {
@@ -2089,27 +2078,25 @@ struct cs_run_idvs_trace {
 static inline void
 cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                   struct cs_index scratch_regs, uint32_t flags_override,
-                  bool progress_inc, bool malloc_enable,
-                  struct cs_shader_res_sel varying_sel,
+                  bool malloc_enable, struct cs_shader_res_sel varying_sel,
                   struct cs_shader_res_sel frag_sel, struct cs_index draw_id)
 {
    if (likely(!ctx->enabled)) {
-      cs_run_idvs(b, flags_override, progress_inc, malloc_enable, varying_sel,
-                  frag_sel, draw_id);
+      cs_run_idvs(b, flags_override, malloc_enable, varying_sel, frag_sel,
+                  draw_id);
       return;
    }
 
    struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
    struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
 
-   cs_trace_preamble(b, ctx, scratch_regs,
-                     sizeof(struct cs_run_idvs_trace));
+   cs_trace_preamble(b, ctx, scratch_regs, sizeof(struct cs_run_idvs_trace));
 
    /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
     * won't point to the right instruction. */
    cs_load_ip_to(b, data);
-   cs_run_idvs(b, flags_override, progress_inc, malloc_enable, varying_sel,
-               frag_sel, draw_id);
+   cs_run_idvs(b, flags_override, malloc_enable, varying_sel, frag_sel,
+               draw_id);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_idvs, ip));
 
    if (draw_id.type != CS_INDEX_UNDEF)
@@ -2121,7 +2108,7 @@ cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_idvs, sr[i]));
    cs_store(b, cs_reg_tuple(b, 48, 13), tracebuf_addr, BITFIELD_MASK(13),
             cs_trace_field_offset(run_idvs, sr[48]));
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }
 #endif
 
@@ -2133,24 +2120,23 @@ struct cs_run_compute_trace {
 static inline void
 cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                      struct cs_index scratch_regs, unsigned task_increment,
-                     enum mali_task_axis task_axis, bool progress_inc,
+                     enum mali_task_axis task_axis,
                      struct cs_shader_res_sel res_sel)
 {
    if (likely(!ctx->enabled)) {
-      cs_run_compute(b, task_increment, task_axis, progress_inc, res_sel);
+      cs_run_compute(b, task_increment, task_axis, res_sel);
       return;
    }
 
    struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
    struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
 
-   cs_trace_preamble(b, ctx, scratch_regs,
-                     sizeof(struct cs_run_compute_trace));
+   cs_trace_preamble(b, ctx, scratch_regs, sizeof(struct cs_run_compute_trace));
 
    /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
     * won't point to the right instruction. */
    cs_load_ip_to(b, data);
-   cs_run_compute(b, task_increment, task_axis, progress_inc, res_sel);
+   cs_run_compute(b, task_increment, task_axis, res_sel);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
 
    for (unsigned i = 0; i < 32; i += 16)
@@ -2158,31 +2144,30 @@ cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }
 
 static inline void
 cs_trace_run_compute_indirect(struct cs_builder *b,
                               const struct cs_tracing_ctx *ctx,
                               struct cs_index scratch_regs,
-                              unsigned wg_per_task, bool progress_inc,
+                              unsigned wg_per_task,
                               struct cs_shader_res_sel res_sel)
 {
    if (likely(!ctx->enabled)) {
-      cs_run_compute_indirect(b, wg_per_task, progress_inc, res_sel);
+      cs_run_compute_indirect(b, wg_per_task, res_sel);
       return;
    }
 
    struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
    struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
 
-   cs_trace_preamble(b, ctx, scratch_regs,
-                     sizeof(struct cs_run_compute_trace));
+   cs_trace_preamble(b, ctx, scratch_regs, sizeof(struct cs_run_compute_trace));
 
    /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
     * won't point to the right instruction. */
    cs_load_ip_to(b, data);
-   cs_run_compute_indirect(b, wg_per_task, progress_inc, res_sel);
+   cs_run_compute_indirect(b, wg_per_task, res_sel);
    cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
 
    for (unsigned i = 0; i < 32; i += 16)
@@ -2190,5 +2175,5 @@ cs_trace_run_compute_indirect(struct cs_builder *b,
                cs_trace_field_offset(run_compute, sr[i]));
    cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
             cs_trace_field_offset(run_compute, sr[32]));
-   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_wait_slot(b, ctx->ls_sb_slot);
 }

@@ -386,7 +386,6 @@ GENX(panfrost_launch_precomp)(struct panfrost_batch *batch,
 
    assert(task_axis <= MALI_TASK_AXIS_Z);
    assert(task_increment > 0);
-   cs_run_compute(b, task_increment, task_axis, false,
-                  cs_shader_res_sel(0, 0, 0, 0));
+   cs_run_compute(b, task_increment, task_axis, cs_shader_res_sel(0, 0, 0, 0));
 #endif
 }

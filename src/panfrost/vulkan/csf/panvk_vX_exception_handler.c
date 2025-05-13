@@ -76,7 +76,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
        * rendering has already been triggered */
       cs_load32_to(&b, counter, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(counter));
-      cs_wait_slot(&b, SB_ID(LS), false);
+      cs_wait_slot(&b, SB_ID(LS));
 
       cs_if(&b, MALI_CS_CONDITION_GREATER, counter)
          cs_load64_to(&b, fbd_ptr, subqueue_ctx,
@@ -87,19 +87,18 @@ generate_tiler_oom_handler(struct panvk_device *dev,
 
       cs_load32_to(&b, layer_count, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(layer_count));
-      cs_wait_slot(&b, SB_ID(LS), false);
+      cs_wait_slot(&b, SB_ID(LS));
 
       cs_req_res(&b, CS_FRAG_RES);
       cs_while(&b, MALI_CS_CONDITION_GREATER, layer_count) {
-         cs_trace_run_fragment(&b, &tracing_ctx,
-                               cs_scratch_reg_tuple(&b, 8, 4), false,
-                               MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         cs_trace_run_fragment(&b, &tracing_ctx, cs_scratch_reg_tuple(&b, 8, 4),
+                               false, MALI_TILE_RENDER_ORDER_Z_ORDER);
          cs_add32(&b, layer_count, layer_count, -1);
          cs_add64(&b, fbd_ptr, fbd_ptr, fbd_size);
       }
       cs_req_res(&b, 0);
       /* Wait for all iter scoreboards for simplicity. */
-      cs_wait_slots(&b, SB_ALL_ITERS_MASK, false);
+      cs_wait_slots(&b, SB_ALL_ITERS_MASK);
 
       /* Increment counter */
       cs_add32(&b, counter, counter, 1);
@@ -111,12 +110,12 @@ generate_tiler_oom_handler(struct panvk_device *dev,
       cs_load32_to(&b, td_count, subqueue_ctx,
                    TILER_OOM_CTX_FIELD_OFFSET(td_count));
       cs_move64_to(&b, zero, 0);
-      cs_wait_slot(&b, SB_ID(LS), false);
+      cs_wait_slot(&b, SB_ID(LS));
 
       cs_while(&b, MALI_CS_CONDITION_GREATER, td_count) {
          /* Load completed chunks */
          cs_load_to(&b, completed_chunks, tiler_ptr, BITFIELD_MASK(4), 10 * 4);
-         cs_wait_slot(&b, SB_ID(LS), false);
+         cs_wait_slot(&b, SB_ID(LS));
 
          cs_finish_fragment(&b, false, completed_top, completed_bottom,
                             cs_now());
@@ -136,7 +135,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
                       MALI_CS_OTHER_FLUSH_MODE_INVALIDATE, flush_id,
                       cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
 
-      cs_wait_slot(&b, SB_ID(IMM_FLUSH), false);
+      cs_wait_slot(&b, SB_ID(IMM_FLUSH));
    }
 
    assert(cs_is_valid(&b));

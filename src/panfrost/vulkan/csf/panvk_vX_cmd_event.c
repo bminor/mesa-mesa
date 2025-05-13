@@ -41,7 +41,7 @@ panvk_per_arch(CmdResetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
                       (i * sizeof(struct panvk_cs_sync32)));
       cs_load32_to(b, seqno, sync_addr,
                    offsetof(struct panvk_cs_sync32, seqno));
-      cs_wait_slot(b, SB_ID(LS), false);
+      cs_wait_slot(b, SB_ID(LS));
 
       cs_match(b, seqno, cmp_scratch) {
          cs_case(b, 0) {
@@ -83,7 +83,7 @@ panvk_per_arch(CmdSetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
                       (i * sizeof(struct panvk_cs_sync32)));
       cs_load32_to(b, seqno, sync_addr,
                    offsetof(struct panvk_cs_sync32, seqno));
-      cs_wait_slot(b, SB_ID(LS), false);
+      cs_wait_slot(b, SB_ID(LS));
 
       cs_match(b, seqno, cmp_scratch) {
          cs_case(b, 0) {

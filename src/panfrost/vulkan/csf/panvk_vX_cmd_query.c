@@ -93,7 +93,7 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
    /* Wait on deferred sync to ensure all prior query operations have
     * completed
     */
-   cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
+   cs_wait_slot(b, SB_ID(DEFERRED_SYNC));
 
    struct cs_index addr = cs_scratch_reg64(b, 16);
    struct cs_index zero_regs = cs_scratch_reg_tuple(b, 0, 16);
@@ -113,7 +113,7 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
 
    /* reset_oq_batch() only does the stores, we need to flush those explicitly
     * here. */
-   cs_wait_slot(b, SB_ID(LS), false);
+   cs_wait_slot(b, SB_ID(LS));
 
    /* We flush the caches to make the new value visible to the CPU. */
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
@@ -121,7 +121,7 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
                    MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
-   cs_wait_slot(b, SB_ID(IMM_FLUSH), false);
+   cs_wait_slot(b, SB_ID(IMM_FLUSH));
 }
 
 static void
@@ -152,7 +152,7 @@ panvk_cmd_begin_occlusion_query(struct panvk_cmd_buffer *cmd,
    cs_move64_to(b, report_addr_gpu, report_addr);
    cs_move64_to(b, clear_value, 0);
    cs_store64(b, clear_value, report_addr_gpu, 0);
-   cs_wait_slot(b, SB_ID(LS), false);
+   cs_wait_slot(b, SB_ID(LS));
 }
 
 static void
@@ -219,7 +219,7 @@ copy_oq_result_batch(struct cs_builder *b,
    }
 
    /* Flush the loads. */
-   cs_wait_slot(b, SB_ID(LS), false);
+   cs_wait_slot(b, SB_ID(LS));
 
    for (uint32_t i = 0; i < query_count; i++) {
       struct cs_index store_src =
@@ -230,7 +230,7 @@ copy_oq_result_batch(struct cs_builder *b,
    }
 
    /* Flush the stores. */
-   cs_wait_slot(b, SB_ID(LS), false);
+   cs_wait_slot(b, SB_ID(LS));
 }
 
 static void
@@ -245,7 +245,7 @@ panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
 
    /* Wait for occlusion query syncobjs to be signalled. */
    if (flags & VK_QUERY_RESULT_WAIT_BIT)
-      cs_wait_slot(b, SB_ID(DEFERRED_SYNC), false);
+      cs_wait_slot(b, SB_ID(DEFERRED_SYNC));
 
    uint32_t res_size = (flags & VK_QUERY_RESULT_64_BIT) ? 2 : 1;
    uint32_t regs_per_copy =
