@@ -248,6 +248,9 @@ void finish_program(isel_context* ctx);
 void _isel_err(isel_context* ctx, const char* file, unsigned line, const nir_instr* instr,
                const char* msg);
 
+/* aco_select_nir_alu.cpp */
+void visit_alu_instr(isel_context* ctx, nir_alu_instr* instr);
+
 } // namespace aco
 
 #endif /* ACO_INSTRUCTION_SELECTION_H */
