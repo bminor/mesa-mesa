@@ -1255,6 +1255,15 @@ struct pipe_context {
                                                      unsigned usage );
 
    /**
+    * Checks whether an operation can be accelerated by this context.
+    *
+    * \param ctx         pipe context
+    * \param operation   pipe_ml_operation to be checked
+    * \return            whether the context can accelerate this operation
+    */
+    bool (*ml_operation_supported)(struct pipe_context *context, const struct pipe_ml_operation *operation);
+
+   /**
     * Compiles a ML subgraph, to be executed later. The returned pipe_ml_subgraph
     * should contain all information needed to execute the subgraph with as
     * little effort as strictly needed.

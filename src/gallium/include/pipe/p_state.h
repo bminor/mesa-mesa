@@ -1113,6 +1113,9 @@ struct pipe_ml_operation
           * Whether this convolution has fused ReLU activation.
           */
          bool relu;
+
+         unsigned dilation_width_factor;
+         unsigned dilation_height_factor;
       } conv;
       struct {
          /**
@@ -1187,6 +1190,20 @@ struct pipe_ml_operation
           */
          bool relu;
       } fcon;
+
+      struct {
+         /**
+          * Dimension along which the tensors are concatenated.
+          */
+         int axis;
+      } conc;
+
+      struct {
+         /**
+          * Dimension along which the tensors are split.
+          */
+         int axis;
+      } split;
    };
 };
 
