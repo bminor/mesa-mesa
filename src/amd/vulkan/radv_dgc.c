@@ -2791,6 +2791,7 @@ radv_CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(radv_cmd_buffer, state_cmd_buffer, stateCommandBuffer);
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_indirect_command_layout, layout, pGeneratedCommandsInfo->indirectCommandsLayout);
+   const bool execution_is_predicating = state_cmd_buffer->state.predicating;
 
    assert(layout->vk.usage & VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT);
 
@@ -2800,7 +2801,7 @@ radv_CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
    const bool old_predicating = cmd_buffer->state.predicating;
    cmd_buffer->state.predicating = false;
 
-   radv_prepare_dgc(cmd_buffer, pGeneratedCommandsInfo, state_cmd_buffer, old_predicating);
+   radv_prepare_dgc(cmd_buffer, pGeneratedCommandsInfo, state_cmd_buffer, execution_is_predicating);
 
    /* Restore conditional rendering. */
    cmd_buffer->state.predicating = old_predicating;
@@ -2825,8 +2826,8 @@ radv_prepare_dgc_compute(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCo
 
    if (cond_render_enabled) {
       params->predicating = true;
-      params->predication_va = cmd_buffer->state.predication_va;
-      params->predication_type = cmd_buffer->state.predication_type;
+      params->predication_va = state_cmd_buffer->state.predication_va;
+      params->predication_type = state_cmd_buffer->state.predication_type;
    }
 
    if (ies) {
