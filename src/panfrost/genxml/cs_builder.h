@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2022 Collabora Ltd.
+ * Copyright (C) 2025 Arm Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -321,6 +322,9 @@ cs_to_reg_tuple(struct cs_index idx, ASSERTED unsigned expected_size)
    return idx.reg;
 }
 
+static inline void cs_flush_load_to(struct cs_builder *b, struct cs_index to,
+                                    uint16_t mask);
+
 static inline unsigned
 cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count,
              uint16_t mask)
@@ -336,13 +340,7 @@ cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count,
       }
    }
 
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-
-   for (unsigned i = reg; i < reg + count; i++) {
-      if ((mask & BITFIELD_BIT(i - reg)) &&
-          BITSET_TEST(ls_tracker->pending_loads, i))
-         assert(!"register used as a source before flushing loads\n");
-   }
+   cs_flush_load_to(b, src, mask);
 
    return reg;
 }
@@ -364,6 +362,13 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count,
              uint16_t mask)
 {
    unsigned reg = cs_to_reg_tuple(dst, count);
+
+   /* A load followed by another op with the same dst register can overwrite
+    * the result of that following op if there is no wait. For example:
+    * load(dst, addr)
+    * move(dst, v)
+    */
+   cs_flush_load_to(b, dst, mask);
 
    if (unlikely(b->conf.reg_perm)) {
       for (unsigned i = reg; i < reg + count; i++) {
@@ -861,6 +866,11 @@ cs_branch_label(struct cs_builder *b, struct cs_label *label,
 {
    assert(cs_cur_block(b) != NULL);
 
+   /* Call cs_src before cs_block_next_pos because cs_src can emit an extra
+    * WAIT instruction if there is a pending load.
+    */
+   uint32_t val_reg = cond != MALI_CS_CONDITION_ALWAYS ? cs_src32(b, val) : 0;
+
    if (label->target == CS_LABEL_INVALID_POS) {
       uint32_t branch_ins_pos = cs_block_next_pos(b);
 
@@ -880,7 +890,7 @@ cs_branch_label(struct cs_builder *b, struct cs_label *label,
       cs_emit(b, BRANCH, I) {
          I.offset = offset;
          I.condition = cond;
-         I.value = cond != MALI_CS_CONDITION_ALWAYS ? cs_src32(b, val) : 0;
+         I.value = val_reg;
       }
 
       label->last_forward_ref = branch_ins_pos;
@@ -896,7 +906,7 @@ cs_branch_label(struct cs_builder *b, struct cs_label *label,
       cs_emit(b, BRANCH, I) {
          I.offset = offset;
          I.condition = cond;
-         I.value = cond != MALI_CS_CONDITION_ALWAYS ? cs_src32(b, val) : 0;
+         I.value = val_reg;
       }
    }
 }
@@ -1123,6 +1133,44 @@ cs_wait_slot(struct cs_builder *b, unsigned slot)
    cs_wait_slots(b, BITFIELD_BIT(slot));
 }
 
+static inline void
+cs_flush_load_to(struct cs_builder *b, struct cs_index to, uint16_t mask)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   unsigned count = util_last_bit(mask);
+   unsigned reg = cs_to_reg_tuple(to, count);
+
+   for (unsigned i = reg; i < reg + count; i++) {
+      if ((mask & BITFIELD_BIT(i - reg)) &&
+          BITSET_TEST(ls_tracker->pending_loads, i)) {
+         cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+         break;
+      }
+   }
+}
+
+static inline void
+cs_flush_loads(struct cs_builder *b)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   if (!BITSET_IS_EMPTY(ls_tracker->pending_loads))
+      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+}
+
+static inline void
+cs_flush_stores(struct cs_builder *b)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   if (ls_tracker->pending_stores)
+      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+}
+
 struct cs_shader_res_sel {
    uint8_t srt, fau, spd, tsd;
 };
@@ -1142,6 +1190,9 @@ static inline void
 cs_run_compute(struct cs_builder *b, unsigned task_increment,
                enum mali_task_axis task_axis, struct cs_shader_res_sel res_sel)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_COMPUTE, I) {
       I.task_increment = task_increment;
       I.task_axis = task_axis;
@@ -1157,6 +1208,9 @@ static inline void
 cs_run_tiling(struct cs_builder *b, uint32_t flags_override,
               struct cs_shader_res_sel res_sel)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_TILING, I) {
       I.flags_override = flags_override;
       I.srt_select = res_sel.srt;
@@ -1173,6 +1227,9 @@ cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
              struct cs_index draw_id,
              enum mali_idvs_shading_mode vertex_shading_mode)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_IDVS2, I) {
       I.flags_override = flags_override;
       I.malloc_enable = malloc_enable;
@@ -1192,6 +1249,9 @@ cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
             struct cs_shader_res_sel varying_sel,
             struct cs_shader_res_sel frag_sel, struct cs_index draw_id)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_IDVS, I) {
       I.flags_override = flags_override;
       I.malloc_enable = malloc_enable;
@@ -1225,6 +1285,9 @@ static inline void
 cs_run_fragment(struct cs_builder *b, bool enable_tem,
                 enum mali_tile_render_order tile_order)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_FRAGMENT, I) {
       I.enable_tem = enable_tem;
       I.tile_order = tile_order;
@@ -1235,6 +1298,9 @@ static inline void
 cs_run_fullscreen(struct cs_builder *b, uint32_t flags_override,
                   struct cs_index dcd)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_FULLSCREEN, I) {
       I.flags_override = flags_override;
       I.dcd = cs_src64(b, dcd);
@@ -1547,6 +1613,9 @@ static inline void
 cs_run_compute_indirect(struct cs_builder *b, unsigned wg_per_task,
                         struct cs_shader_res_sel res_sel)
 {
+   /* Staging regs */
+   cs_flush_loads(b);
+
    cs_emit(b, RUN_COMPUTE_INDIRECT, I) {
       I.workgroups_per_task = wg_per_task;
       I.srt_select = res_sel.srt;
