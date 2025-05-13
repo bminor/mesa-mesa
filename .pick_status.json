@@ -2854,7 +2854,7 @@
         "description": "glsl: fix sampler and image type checking in lower_precision",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "733bee57eb80c92736f3ef1e1267e68ee6cfade6",
         "notes": null
