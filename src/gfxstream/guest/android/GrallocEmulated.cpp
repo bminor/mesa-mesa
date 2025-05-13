@@ -443,7 +443,7 @@ int EmulatedGralloc::allocate(uint32_t width, uint32_t height, uint32_t ahbForma
 }
 
 AHardwareBuffer* EmulatedGralloc::allocate(uint32_t width, uint32_t height, uint32_t drmFormat) {
-    mesa_loge("Allocating AHB w:%u, h:%u, format %u", width, height, drmFormat);
+    mesa_logd("Allocating AHB w:%u, h:%u, format %u", width, height, drmFormat);
 
     const auto& formatInfosMap = GetDrmFormatInfoMap();
     auto formatInfoIt = formatInfosMap.find(drmFormat);
