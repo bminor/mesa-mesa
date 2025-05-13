@@ -6640,10 +6640,11 @@ radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
     * in the L2 cache in CB/DB mode then they are already usable from all the other L2 clients. */
    image_is_coherent |= can_skip_buffer_l2_flushes(device) && !cmd_buffer->state.rb_noncoherent_dirty;
 
-   if (dst_flags & VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT) {
+   if (dst_flags & (VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT)) {
       /* SMEM loads are used to read compute dispatch size in shaders */
-      if (!device->load_grid_size_from_user_sgpr)
+      if ((dst_flags & VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT) && !device->load_grid_size_from_user_sgpr) {
          flush_bits |= RADV_CMD_FLAG_INV_SCACHE;
+      }
 
       /* Ensure the DGC meta shader can read the commands. */
       if (device->vk.enabled_features.deviceGeneratedCommands) {
