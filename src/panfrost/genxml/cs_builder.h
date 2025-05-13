@@ -76,7 +76,7 @@ struct cs_buffer {
  */
 struct cs_load_store_tracker {
    BITSET_DECLARE(pending_loads, 256);
-   BITSET_DECLARE(pending_stores, 256);
+   bool pending_stores;
 };
 
 /**
@@ -372,14 +372,6 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count,
                    !"Trying to write a restricted register");
          }
       }
-   }
-
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-
-   for (unsigned i = reg; i < reg + count; i++) {
-      if ((mask & BITFIELD_BIT(i - reg)) &&
-          BITSET_TEST(ls_tracker->pending_stores, i))
-         assert(!"register reused as a destination before flushing stores\n");
    }
 
    if (unlikely(b->conf.dirty_tracker)) {
@@ -1005,9 +997,7 @@ cs_loop_diverge_ls_update(struct cs_builder *b, struct cs_loop *loop)
       BITSET_OR(loop->orig_ls_state->pending_loads,
                 loop->orig_ls_state->pending_loads,
                 loop->ls_state.pending_loads);
-      BITSET_OR(loop->orig_ls_state->pending_stores,
-                loop->orig_ls_state->pending_stores,
-                loop->ls_state.pending_stores);
+      loop->orig_ls_state->pending_stores |= loop->ls_state.pending_stores;
    }
 }
 
@@ -1075,9 +1065,7 @@ cs_while_end(struct cs_builder *b, struct cs_loop *loop)
       BITSET_OR(loop->orig_ls_state->pending_loads,
                 loop->orig_ls_state->pending_loads,
                 loop->ls_state.pending_loads);
-      BITSET_OR(loop->orig_ls_state->pending_stores,
-                loop->orig_ls_state->pending_stores,
-                loop->ls_state.pending_stores);
+      loop->orig_ls_state->pending_stores |= loop->ls_state.pending_stores;
       b->cur_ls_tracker = loop->orig_ls_state;
    }
 }
@@ -1123,7 +1111,7 @@ cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
     * scoreboard. */
    if (wait_mask & BITFIELD_BIT(b->conf.ls_sb_slot)) {
       BITSET_CLEAR_RANGE(ls_tracker->pending_loads, 0, 255);
-      BITSET_CLEAR_RANGE(ls_tracker->pending_stores, 0, 255);
+      ls_tracker->pending_stores = false;
    }
 }
 
@@ -1356,8 +1344,7 @@ cs_store(struct cs_builder *b, struct cs_index data, struct cs_index address,
    }
 
    for (unsigned i = 0; i < count; i++) {
-      if (mask & BITFIELD_BIT(i))
-         BITSET_SET(b->cur_ls_tracker->pending_stores, base_reg + i);
+      b->cur_ls_tracker->pending_stores |= mask & BITFIELD_BIT(i);
    }
 }
 
@@ -1670,9 +1657,7 @@ cs_match_case_ls_get(struct cs_match *match)
       BITSET_OR(match->ls_state.pending_loads,
                 match->case_ls_state.pending_loads,
                 match->ls_state.pending_loads);
-      BITSET_OR(match->ls_state.pending_stores,
-                match->case_ls_state.pending_stores,
-                match->ls_state.pending_stores);
+      match->ls_state.pending_stores |= match->case_ls_state.pending_stores;
    }
 }
 
@@ -1735,9 +1720,7 @@ cs_match_end(struct cs_builder *b, struct cs_match *match)
          BITSET_OR(match->orig_ls_state->pending_loads,
                    match->ls_state.pending_loads,
                    match->orig_ls_state->pending_loads);
-         BITSET_OR(match->orig_ls_state->pending_stores,
-                   match->ls_state.pending_stores,
-                   match->orig_ls_state->pending_stores);
+         match->orig_ls_state->pending_stores |= match->ls_state.pending_stores;
       } else {
          *match->orig_ls_state = match->ls_state;
       }
