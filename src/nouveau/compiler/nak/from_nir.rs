@@ -1197,10 +1197,11 @@ impl<'a> ShaderFromNir<'a> {
                 dst.into()
             }
             nir_op_fquantize2f16 => {
+                let src0 = srcs(0);
                 let tmp = b.alloc_ssa(RegFile::GPR);
                 b.push_op(OpF2F {
                     dst: tmp.into(),
-                    src: srcs(0),
+                    src: src0.clone(),
                     src_type: FloatType::F32,
                     dst_type: FloatType::F16,
                     rnd_mode: FRndMode::NearestEven,
@@ -1225,12 +1226,11 @@ impl<'a> ShaderFromNir<'a> {
                     // that manually
                     let denorm = b.fsetp(
                         FloatCmpOp::OrdLt,
-                        srcs(0).fabs(),
+                        src0.clone().fabs(),
                         0x38800000.into(),
                     );
                     // Get the correctly signed zero
-                    let zero =
-                        b.lop2(LogicOp2::And, srcs(0), 0x80000000.into());
+                    let zero = b.lop2(LogicOp2::And, src0, 0x80000000.into());
                     b.sel(denorm.into(), zero.into(), dst.into())
                 } else {
                     dst
