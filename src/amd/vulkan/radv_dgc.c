@@ -2826,7 +2826,7 @@ radv_prepare_dgc_compute(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCo
 
    if (cond_render_enabled) {
       params->predicating = true;
-      params->predication_va = state_cmd_buffer->state.predication_va;
+      params->predication_va = state_cmd_buffer->state.user_predication_va;
       params->predication_type = state_cmd_buffer->state.predication_type;
    }
 
