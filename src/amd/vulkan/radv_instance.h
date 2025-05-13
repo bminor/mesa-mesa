@@ -74,6 +74,7 @@ struct radv_instance {
       bool lower_terminate_to_discard;
       bool emulate_rt;
       bool expose_float16_gfx8;
+      bool force_64k_sparse_alignment;
       char *app_layer;
       uint8_t override_graphics_shader_version;
       uint8_t override_compute_shader_version;
