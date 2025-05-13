@@ -511,6 +511,7 @@ debian/x86_64_test-android:
     - .android-variables
     - .use-debian/x86_64_test-base
     - .container-builds-android
+    - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-android ${DEBIAN_TEST_ANDROID_TAG}
 
