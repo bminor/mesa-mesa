@@ -200,8 +200,12 @@ lower_system_value_instr(nir_builder *b, nir_instr *instr, void *_state)
 
       switch (var->data.location) {
       case SYSTEM_VALUE_INSTANCE_INDEX:
-         return nir_iadd(b, nir_load_instance_id(b),
-                         nir_load_base_instance(b));
+         if (b->shader->options->instance_id_includes_base_index) {
+            return nir_load_instance_id(b);
+         } else {
+            return nir_iadd(b, nir_load_instance_id(b),
+                            nir_load_base_instance(b));
+         }
 
       case SYSTEM_VALUE_GLOBAL_INVOCATION_ID: {
          return nir_iadd(b, nir_load_global_invocation_id(b, bit_size),
