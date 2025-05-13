@@ -494,7 +494,7 @@
         "description": "nir: fix gathering color interp modes in nir_lower_color_inputs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "709ebd8293a678db614c5b48dac2fc1da0b2306d",
         "notes": null
