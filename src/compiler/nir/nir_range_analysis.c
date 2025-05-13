@@ -2271,6 +2271,17 @@ ssa_def_bits_used(const nir_def *def, int recur)
             bits_used |= all_bits & 0xffffff;
             break;
 
+         case nir_op_mov:
+            bits_used |= ssa_def_bits_used(&use_alu->def, recur);
+            break;
+
+         case nir_op_bcsel:
+            if (src_idx == 0)
+               bits_used |= 0x1;
+            else
+               bits_used |= ssa_def_bits_used(&use_alu->def, recur);
+            break;
+
          default:
             /* We don't know what this op does */
             return all_bits;

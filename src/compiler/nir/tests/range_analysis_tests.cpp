@@ -438,3 +438,25 @@ TEST_F(ssa_def_bits_used_test, iand_ior_ishl)
    EXPECT_EQ(nir_def_bits_used(load[0]), 0x345678);
    EXPECT_EQ(nir_def_bits_used(load[1]), ~0xff345678);
 }
+
+TEST_F(ssa_def_bits_used_test, mov_iand)
+{
+   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *alu = nir_iand_imm(b, nir_mov(b, load), 0x8);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load), BITFIELD_BIT(3));
+}
+
+TEST_F(ssa_def_bits_used_test, bcsel_iand)
+{
+   nir_def *load1 = nir_i2b(b, nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32));
+   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load3 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *alu = nir_iand_imm(b, nir_bcsel(b, load1, load2, load3), 0x8);
+   nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
+
+   EXPECT_EQ(nir_def_bits_used(load1), BITFIELD_BIT(0));
+   EXPECT_EQ(nir_def_bits_used(load2), BITFIELD_BIT(3));
+   EXPECT_EQ(nir_def_bits_used(load3), BITFIELD_BIT(3));
+}
