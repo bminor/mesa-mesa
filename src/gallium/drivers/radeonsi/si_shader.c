@@ -818,6 +818,10 @@ const char *si_get_shader_name(const struct si_shader *shader)
       return "Pixel Shader";
    case MESA_SHADER_COMPUTE:
       return "Compute Shader";
+   case MESA_SHADER_TASK:
+      return "Task Shader";
+   case MESA_SHADER_MESH:
+      return "Mesh Shader";
    default:
       return "Unknown Shader";
    }
@@ -977,12 +981,16 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
       fprintf(f, "  mono.fbfetch_layered = %u\n", key->ps.mono.fbfetch_layered);
       break;
 
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH:
+      break;
+
    default:
       assert(0);
    }
 
    if ((stage == MESA_SHADER_GEOMETRY || stage == MESA_SHADER_TESS_EVAL ||
-        stage == MESA_SHADER_VERTEX) &&
+        stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_MESH) &&
        !key->ge.as_es && !key->ge.as_ls) {
       fprintf(f, "  mono.remove_streamout = 0x%x\n", key->ge.mono.remove_streamout);
       fprintf(f, "  mono.write_pos_to_clipvertex = %u\n", key->ge.mono.write_pos_to_clipvertex);
@@ -996,12 +1004,12 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
               key->ge.opt.ngg_vs_streamout_num_verts_per_prim);
    }
 
-   if (stage <= MESA_SHADER_GEOMETRY)
+   if (stage <= MESA_SHADER_GEOMETRY || stage == MESA_SHADER_MESH)
       fprintf(f, "  opt.prefer_mono = %u\n", key->ge.opt.prefer_mono);
    else
       fprintf(f, "  opt.prefer_mono = %u\n", key->ps.opt.prefer_mono);
 
-   if (stage <= MESA_SHADER_GEOMETRY) {
+   if (stage <= MESA_SHADER_GEOMETRY || stage == MESA_SHADER_MESH) {
       if (key->ge.opt.inline_uniforms) {
          fprintf(f, "  opt.inline_uniforms = %u (0x%x, 0x%x, 0x%x, 0x%x)\n",
                  key->ge.opt.inline_uniforms,
