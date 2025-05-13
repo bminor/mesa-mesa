@@ -134,7 +134,7 @@
         "description": "mesa: relax EXT_texture_integer validation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "705978e2831eb8b8bb23bd11ee08ce51d9b2915c",
         "notes": null
