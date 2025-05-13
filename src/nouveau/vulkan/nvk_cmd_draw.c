@@ -28,6 +28,7 @@
 #include "nv_push_clc197.h"
 #include "nv_push_clc397.h"
 #include "nv_push_clc597.h"
+#include "nv_push_clcb97.h"
 #include "clcb97.h"
 #include "clcd97.h"
 #include "drf.h"
@@ -594,6 +595,9 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
 
    if (pdev->info.cls_eng3d == MAXWELL_A)
       P_IMMD(p, NVB097, SET_SELECT_MAXWELL_TEXTURE_HEADERS, V_TRUE);
+
+   if (pdev->info.cls_eng3d >= HOPPER_A)
+       P_IMMD(p, NVCB97, SET_TEXTURE_HEADER_VERSION, 1);
 
    /* Store the address to CB0 in a pair of state registers */
    uint64_t cb0_addr = queue->draw_cb0->va->addr;
