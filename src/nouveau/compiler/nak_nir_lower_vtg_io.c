@@ -186,10 +186,6 @@ lower_vtg_io_intrin(nir_builder *b,
       .phys = !offset_is_const && !is_patch,
    };
 
-   uint32_t flags_u32;
-   STATIC_ASSERT(sizeof(flags_u32) == sizeof(flags));
-   memcpy(&flags_u32, &flags, sizeof(flags_u32));
-
    nir_def *dst_comps[NIR_MAX_VEC_COMPONENTS];
    while (mask) {
       const unsigned c = ffs(mask) - 1;
@@ -217,7 +213,7 @@ lower_vtg_io_intrin(nir_builder *b,
 
          /* Use al2p to compute a physical address */
          c_offset = nir_al2p_nv(b, offset, .base = c_addr,
-                                .flags = flags_u32);
+                                .flags = NAK_AS_U32(flags));
          c_addr = 0;
       }
 
@@ -225,14 +221,14 @@ lower_vtg_io_intrin(nir_builder *b,
          nir_def *c_data = nir_channels(b, data, BITFIELD_RANGE(c, comps));
          nir_ast_nv(b, c_data, vtx, c_offset,
                     .base = c_addr,
-                    .flags = flags_u32,
+                    .flags = NAK_AS_U32(flags),
                     .range_base = base_addr,
                     .range = range);
       } else {
          uint32_t access = flags.output ? 0 : ACCESS_CAN_REORDER;
          nir_def *c_data = nir_ald_nv(b, comps, vtx, c_offset,
                                       .base = c_addr,
-                                      .flags = flags_u32,
+                                      .flags = NAK_AS_U32(flags),
                                       .range_base = base_addr,
                                       .range = range,
                                       .access = access);

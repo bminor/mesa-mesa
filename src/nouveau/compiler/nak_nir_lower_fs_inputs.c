@@ -16,13 +16,11 @@ load_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
       .interp_freq = NAK_INTERP_FREQ_CONSTANT,
       .interp_loc = NAK_INTERP_LOC_DEFAULT,
    };
-   uint32_t flags_u32;
-   memcpy(&flags_u32, &flags, sizeof(flags_u32));
 
    nir_def *comps[NIR_MAX_VEC_COMPONENTS];
    for (unsigned c = 0; c < num_components; c++) {
       comps[c] = nir_ipa_nv(b, nir_imm_float(b, 0), nir_imm_int(b, 0),
-                            .base = addr + c * 4, .flags = flags_u32);
+                            .base = addr + c * 4, .flags = NAK_AS_U32(flags));
    }
    return nir_vec(b, comps, num_components);
 }
@@ -42,11 +40,9 @@ load_frag_w(nir_builder *b, enum nak_interp_loc interp_loc, nir_def *offset,
       .interp_freq = NAK_INTERP_FREQ_PASS,
       .interp_loc = interp_loc,
    };
-   uint32_t flags_u32;
-   memcpy(&flags_u32, &flags, sizeof(flags_u32));
 
    return nir_ipa_nv(b, nir_imm_float(b, 0), offset,
-                     .base = w_addr, .flags = flags_u32);
+                     .base = w_addr, .flags = NAK_AS_U32(flags));
 }
 
 static nir_def *
@@ -65,14 +61,12 @@ interp_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
          .interp_freq = NAK_INTERP_FREQ_PASS,
          .interp_loc = interp_loc,
       };
-      uint32_t flags_u32;
-      memcpy(&flags_u32, &flags, sizeof(flags_u32));
 
       nir_def *comps[NIR_MAX_VEC_COMPONENTS];
       for (unsigned c = 0; c < num_components; c++) {
          comps[c] = nir_ipa_nv(b, nir_imm_float(b, 0), offset,
                                .base = addr + c * 4,
-                               .flags = flags_u32);
+                               .flags = NAK_AS_U32(flags));
          if (interp_mode == NAK_INTERP_MODE_PERSPECTIVE)
             comps[c] = nir_fmul(b, comps[c], inv_w);
       }
@@ -89,14 +83,11 @@ interp_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
       else
          inv_w = nir_imm_float(b, 0);
 
-      uint32_t flags_u32;
-      memcpy(&flags_u32, &flags, sizeof(flags_u32));
-
       nir_def *comps[NIR_MAX_VEC_COMPONENTS];
       for (unsigned c = 0; c < num_components; c++) {
          comps[c] = nir_ipa_nv(b, inv_w, offset,
                                .base = addr + c * 4,
-                               .flags = flags_u32);
+                               .flags = NAK_AS_U32(flags));
       }
       return nir_vec(b, comps, num_components);
    } else {

@@ -191,6 +191,13 @@ PRAGMA_DIAGNOSTIC_POP
 static_assert(sizeof(struct nak_nir_tex_flags) == 4,
               "nak_nir_tex_flags has no holes");
 
+#define NAK_AS_U32(x) ({\
+   static_assert(sizeof(x) == 4, "x must be 4 bytes"); \
+   uint32_t _u; \
+   memcpy(&_u, &(x), 4); \
+   _u; \
+})
+
 bool nak_nir_lower_scan_reduce(nir_shader *shader);
 bool nak_nir_lower_tex(nir_shader *nir, const struct nak_compiler *nak);
 bool nak_nir_lower_gs_intrinsics(nir_shader *shader);
