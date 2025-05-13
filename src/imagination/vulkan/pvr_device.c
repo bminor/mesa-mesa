@@ -289,6 +289,57 @@ static void pvr_physical_device_get_supported_features(
       .variableMultisampleRate = false,
       .inheritedQueries = false,
 
+      /* Vulkan 1.1 */
+      .storageBuffer16BitAccess = false,
+      .uniformAndStorageBuffer16BitAccess = false,
+      .storagePushConstant16 = false,
+      .storageInputOutput16 = false,
+      .variablePointers = false,
+      .protectedMemory = false,
+      .samplerYcbcrConversion = false,
+
+      /* Vulkan 1.2 */
+      .samplerMirrorClampToEdge = false,
+      .drawIndirectCount = false,
+      .storageBuffer8BitAccess = false,
+      .uniformAndStorageBuffer8BitAccess = false,
+      .storagePushConstant8 = false,
+      .shaderBufferInt64Atomics = false,
+      .shaderSharedInt64Atomics = false,
+      .shaderFloat16 = false,
+      .shaderInt8 = false,
+      .descriptorIndexing = false,
+      .shaderInputAttachmentArrayDynamicIndexing = false,
+      .shaderUniformTexelBufferArrayDynamicIndexing = false,
+      .shaderStorageTexelBufferArrayDynamicIndexing = false,
+      .shaderUniformBufferArrayNonUniformIndexing = false,
+      .shaderSampledImageArrayNonUniformIndexing = false,
+      .shaderStorageBufferArrayNonUniformIndexing = false,
+      .shaderStorageImageArrayNonUniformIndexing = false,
+      .shaderInputAttachmentArrayNonUniformIndexing = false,
+      .shaderUniformTexelBufferArrayNonUniformIndexing = false,
+      .shaderStorageTexelBufferArrayNonUniformIndexing = false,
+      .descriptorBindingUniformBufferUpdateAfterBind = false,
+      .descriptorBindingSampledImageUpdateAfterBind = false,
+      .descriptorBindingStorageImageUpdateAfterBind = false,
+      .descriptorBindingStorageBufferUpdateAfterBind = false,
+      .descriptorBindingUniformTexelBufferUpdateAfterBind = false,
+      .descriptorBindingStorageTexelBufferUpdateAfterBind = false,
+      .descriptorBindingUpdateUnusedWhilePending = false,
+      .descriptorBindingPartiallyBound = false,
+      .descriptorBindingVariableDescriptorCount = false,
+      .runtimeDescriptorArray = false,
+      .samplerFilterMinmax = false,
+      .bufferDeviceAddress = false,
+      .bufferDeviceAddressCaptureReplay = false,
+      .bufferDeviceAddressMultiDevice = false,
+      .vulkanMemoryModel = false,
+      .vulkanMemoryModelDeviceScope = false,
+      .vulkanMemoryModelAvailabilityVisibilityChains = false,
+      .shaderOutputViewportIndex = false,
+      .shaderOutputLayer = false,
+      .subgroupBroadcastDynamicId = true,
+
       /* VK_EXT_depth_clamp_zero_one */
       .depthClampZeroOne = true,
 
@@ -380,7 +431,7 @@ get_api_version(void)
    if (version_override)
       return version_override;
 
-   return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
+   return VK_MAKE_API_VERSION(0, 1, 2, VK_HEADER_VERSION);
 }
 
 static bool pvr_physical_device_get_properties(
@@ -599,6 +650,40 @@ static bool pvr_physical_device_get_properties(
       .subgroupSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
       .subgroupSupportedOperations = VK_SUBGROUP_FEATURE_BASIC_BIT,
       .subgroupQuadOperationsInAllStages = false,
+      .protectedNoFault = false,
+
+      /* Vulkan 1.2 */
+      .maxUpdateAfterBindDescriptorsInAllPools = 0,
+      .shaderUniformBufferArrayNonUniformIndexingNative = false,
+      .shaderSampledImageArrayNonUniformIndexingNative = false,
+      .shaderStorageBufferArrayNonUniformIndexingNative = false,
+      .shaderStorageImageArrayNonUniformIndexingNative = false,
+      .shaderInputAttachmentArrayNonUniformIndexingNative = false,
+      .robustBufferAccessUpdateAfterBind = false,
+      .quadDivergentImplicitLod = false,
+      .maxPerStageDescriptorUpdateAfterBindSamplers = 0,
+      .maxPerStageDescriptorUpdateAfterBindUniformBuffers = 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageBuffers = 0,
+      .maxPerStageDescriptorUpdateAfterBindSampledImages = 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageImages = 0,
+      .maxPerStageDescriptorUpdateAfterBindInputAttachments = 0,
+      .maxPerStageUpdateAfterBindResources = 0,
+      .maxDescriptorSetUpdateAfterBindSamplers = 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffers = 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffersDynamic = 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffers = 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffersDynamic = 0,
+      .maxDescriptorSetUpdateAfterBindSampledImages = 0,
+      .maxDescriptorSetUpdateAfterBindStorageImages = 0,
+      .maxDescriptorSetUpdateAfterBindInputAttachments = 0,
+      .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .independentResolveNone = true,
+      .independentResolve = true,
+      .filterMinmaxSingleComponentFormats = false,
+      .filterMinmaxImageComponentMapping = false,
+      .framebufferIntegerColorSampleCounts =
+         VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
 
       /* Vulkan 1.0 / VK_KHR_maintenance2 */
       .pointClippingBehavior =
