@@ -2034,6 +2034,81 @@ impl SM20Op for OpSuEau {
     }
 }
 
+impl SM20Op for OpIMadSp {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+        let [src0, src1, src2] = &mut self.srcs;
+
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);
+        if src_is_reg(src1, GPR) {
+            b.copy_alu_src_if_imm(src2, GPR, SrcType::ALU);
+        } else {
+            b.copy_alu_src_if_not_reg(src2, GPR, SrcType::ALU);
+        }
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.encode_form_a(
+            SM20Unit::Int,
+            0x0,
+            &self.dst,
+            &self.srcs[0],
+            &self.srcs[1],
+            Some(&self.srcs[2]),
+        );
+
+        match self.mode {
+            IMadSpMode::Explicit([src0, src1, src2]) => {
+                use IMadSpSrcType::*;
+                assert!(
+                    src2.sign() == (src1.sign() || src0.sign()),
+                    "Cannot encode imadsp signed combination"
+                );
+
+                e.set_bit(5, src1.sign());
+                // Don't trust nvdisasm on this, this is inverted
+                e.set_field(
+                    6..7,
+                    match src1.unsigned() {
+                        U24 => 1_u8,
+                        U16Lo => 0,
+                        _ => panic!("imadsp src[1] can only be 16 or 24 bits"),
+                    },
+                );
+
+                e.set_bit(7, src0.sign());
+                e.set_field(
+                    8..10,
+                    match src0.unsigned() {
+                        U32 => 0_u8,
+                        U24 => 1,
+                        U16Lo => 2,
+                        U16Hi => 3,
+                        _ => unreachable!(),
+                    },
+                );
+
+                e.set_field(
+                    55..57,
+                    match src2.unsigned() {
+                        U32 => 0_u8,
+                        U24 => 1,
+                        U16Lo => 2,
+                        U16Hi => {
+                            panic!("src2 u16h1 not encodable")
+                        }
+                        _ => unreachable!(),
+                    },
+                );
+            }
+            IMadSpMode::FromSrc1 => {
+                e.set_field(55..57, 3_u8);
+            }
+        }
+    }
+}
+
 impl SM20Encoder<'_> {
     fn set_mem_type(&mut self, range: Range<usize>, mem_type: MemType) {
         assert!(range.len() == 3);
@@ -2797,6 +2872,7 @@ macro_rules! as_sm20_op_match {
             Op::SuClamp(op) => op,
             Op::SuBfm(op) => op,
             Op::SuEau(op) => op,
+            Op::IMadSp(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::LdSharedLock(op) => op,
