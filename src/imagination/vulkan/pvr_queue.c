@@ -227,7 +227,7 @@ pvr_process_graphics_cmd_for_view(struct pvr_device *device,
    VkResult result;
 
    job->ds.addr =
-      PVR_DEV_ADDR_OFFSET(job->ds.addr, job->ds.stride * view_index);
+      PVR_DEV_ADDR_OFFSET(job->ds.addr, job->ds.layer_size * view_index);
    job->view_state.view_index = view_index;
 
    result = vk_sync_create(&device->vk,
@@ -336,11 +336,11 @@ static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
                                                  cmd_buffer,
                                                  sub_cmd,
                                                  view_idx);
+      sub_cmd->job.ds.addr = ds_addr;
+
       if (result != VK_SUCCESS)
          return result;
    }
-
-   sub_cmd->job.ds.addr = ds_addr;
 
    return VK_SUCCESS;
 }

@@ -7692,12 +7692,23 @@ void pvr_CmdNextSubpass2(VkCommandBuffer commandBuffer,
       if (next_hw_render->color_init_count > 0) {
          rp_info->enable_bg_tag = true;
 
-         for (uint32_t i = 0; i < next_hw_render->color_init_count; i++) {
-            /* Empty tiles need to be cleared too. */
-            if (next_hw_render->color_init[i].op ==
-                VK_ATTACHMENT_LOAD_OP_CLEAR) {
-               rp_info->process_empty_tiles = true;
-               break;
+         if (pass->multiview_enabled) {
+            /* TODO: A more optimized fix would be to selectively enable empty
+             * tile processing for renders depending on whether the render is
+             * the first use of a particular view in a renderpass. This would be
+             * a much larger and more invasive change but could be considered if
+             * empty tile processing in multiview workloads becomes a
+             * performance issue.
+             */
+            rp_info->process_empty_tiles = true;
+         } else {
+            for (uint32_t i = 0; i < next_hw_render->color_init_count; i++) {
+               /* Empty tiles need to be cleared too. */
+               if (next_hw_render->color_init[i].op ==
+                   VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                  rp_info->process_empty_tiles = true;
+                  break;
+               }
             }
          }
       }
