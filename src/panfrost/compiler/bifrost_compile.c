@@ -5041,6 +5041,7 @@ bi_lower_bit_size(const nir_instr *instr, void *data)
       case nir_op_fround_even:
       case nir_op_fceil:
       case nir_op_ffloor:
+      case nir_op_ffract:
       case nir_op_ftrunc:
       case nir_op_frexp_sig:
       case nir_op_frexp_exp:

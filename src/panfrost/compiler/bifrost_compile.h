@@ -94,7 +94,7 @@ void bifrost_compile_shader_nir(nir_shader *nir,
       .lower_flrp16 = true,                                                    \
       .lower_flrp32 = true,                                                    \
       .lower_flrp64 = true,                                                    \
-      .lower_ffract = true,                                                    \
+      .lower_ffract = arch < 11,                                               \
       .lower_fmod = true,                                                      \
       .lower_fdiv = true,                                                      \
       .lower_isign = true,                                                     \

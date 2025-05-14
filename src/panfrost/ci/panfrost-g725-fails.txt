@@ -1,6 +1,2 @@
 # uprev Piglit in Mesa
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
-
-# Seems to be a precision issues because of floor fp16 being dropped since v11 (and the conversion done as a result)
-dEQP-GLES3.functional.shaders.builtin_functions.common.fract.vec2_lowp_vertex,Fail
-dEQP-GLES31.functional.shaders.builtin_functions.common.fract.vec2_lowp_compute,Fail
