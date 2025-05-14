@@ -1452,7 +1452,7 @@ get_tied_defs(Instruction* instr)
 }
 
 uint8_t
-get_vmem_type(enum amd_gfx_level gfx_level, Instruction* instr)
+get_vmem_type(amd_gfx_level gfx_level, radeon_family family, Instruction* instr)
 {
    if (instr->opcode == aco_opcode::image_bvh_intersect_ray ||
        instr->opcode == aco_opcode::image_bvh64_intersect_ray ||
@@ -1463,10 +1463,10 @@ get_vmem_type(enum amd_gfx_level gfx_level, Instruction* instr)
       return vmem_sampler;
    } else if (instr->isMIMG() && !instr->operands[1].isUndefined() &&
               instr->operands[1].regClass() == s4) {
-      bool point_sample_accel =
-         gfx_level == GFX11_5 && (instr->opcode == aco_opcode::image_sample ||
-                                  instr->opcode == aco_opcode::image_sample_l ||
-                                  instr->opcode == aco_opcode::image_sample_lz);
+      bool point_sample_accel = gfx_level == GFX11_5 && family != CHIP_GFX1153 &&
+                                (instr->opcode == aco_opcode::image_sample ||
+                                 instr->opcode == aco_opcode::image_sample_l ||
+                                 instr->opcode == aco_opcode::image_sample_lz);
       return vmem_sampler | (point_sample_accel ? vmem_nosampler : 0);
    } else if (instr->isVMEM() || instr->isScratch() || instr->isGlobal()) {
       return vmem_nosampler;

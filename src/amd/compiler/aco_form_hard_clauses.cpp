@@ -51,7 +51,7 @@ get_type(Program* program, aco_ptr<Instruction>& instr)
 
    if (program->gfx_level >= GFX11) {
       if (instr->isMIMG()) {
-         uint8_t vmem_type = get_vmem_type(program->gfx_level, instr.get());
+         uint8_t vmem_type = get_vmem_type(program->gfx_level, program->family, instr.get());
          switch (vmem_type) {
          case vmem_bvh: return clause_bvh;
          case vmem_sampler: return clause_mimg_sample;

@@ -1628,9 +1628,10 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
          for (Operand& op : instr->operands)
             fill_vgpr_bitset(ctx.vgpr_used_by_vmem_store, op.physReg(), op.bytes());
       } else {
-         uint8_t vmem_type = state.program->gfx_level >= GFX12
-                                ? get_vmem_type(state.program->gfx_level, instr.get())
-                                : vmem_nosampler;
+         uint8_t vmem_type =
+            state.program->gfx_level >= GFX12
+               ? get_vmem_type(state.program->gfx_level, state.program->family, instr.get())
+               : vmem_nosampler;
          std::bitset<256>* vgprs = &ctx.vgpr_used_by_vmem_load;
          if (vmem_type == vmem_sampler)
             vgprs = &ctx.vgpr_used_by_vmem_sample;
