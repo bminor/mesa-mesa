@@ -141,6 +141,10 @@ struct pipe_resource *etna_ml_create_resource(struct pipe_context *pctx, size_t 
 
 struct etna_core_npu_info *etna_ml_get_core_info(struct etna_context *context);
 
+bool
+etna_ml_operation_supported(struct pipe_context *pcontext,
+                            const struct pipe_ml_operation *operation);
+
 struct pipe_ml_subgraph *
 etna_ml_subgraph_create(struct pipe_context *context,
                         const struct pipe_ml_operation *operations,

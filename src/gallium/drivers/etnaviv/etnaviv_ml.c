@@ -557,6 +557,88 @@ count_tensors(const struct pipe_ml_operation *poperations,
    return tensor_count + 1;
 }
 
+static bool
+tensor_quantization_supported(struct pipe_tensor *tensor)
+{
+   /*
+    * Per-axis quantization not supported, for details see:
+    * https://ai.google.dev/edge/litert/models/quantization_spec#per-axis_vs_per-tensor
+    */
+   return tensor->scales == NULL && tensor->zero_points == NULL;
+}
+
+bool
+etna_ml_operation_supported(struct pipe_context *pcontext,
+                            const struct pipe_ml_operation *operation)
+{
+   bool supported = false;
+
+   switch (operation->type) {
+      case PIPE_ML_OPERATION_TYPE_CONVOLUTION: {
+         struct pipe_tensor *input_tensor = operation->input_tensors[0];
+         struct pipe_tensor *weight_tensor = operation->conv.weight_tensor;
+         struct pipe_tensor *bias_tensor = operation->conv.bias_tensor;
+         struct pipe_tensor *output_tensor = operation->output_tensors[0];
+
+         // Dilation and per-axis quantization not yet implemented
+         if (tensor_quantization_supported(input_tensor) &&
+             tensor_quantization_supported(weight_tensor) &&
+             tensor_quantization_supported(bias_tensor) &&
+             tensor_quantization_supported(output_tensor) &&
+             operation->conv.dilation_width_factor == 1 &&
+             operation->conv.dilation_height_factor == 1) {
+            supported = true;
+         }
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_ADD: {
+         supported = operation->input_tensors[0]->resource == NULL &&
+                     operation->input_tensors[1]->resource == NULL;
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_CONCATENATION: {
+         supported = true;
+
+         if (operation->conc.axis != 3 &&
+             operation->conc.axis != -1)
+            supported = false;
+
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_SPLIT: {
+         supported = true;
+
+         if (operation->conc.axis != 3 &&
+             operation->conc.axis != -1)
+            supported = false;
+
+         unsigned output_channels = operation->output_tensors[0]->dims[3];
+         for (unsigned i = 1; i < operation->output_count; i++)
+            if (output_channels != operation->output_tensors[i]->dims[3])
+               supported = false;
+
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_PAD: {
+         supported = operation->pad.before_x <= 2 &&
+                     operation->pad.after_x <= 2 &&
+                     operation->pad.before_y <= 2 &&
+                     operation->pad.after_y <= 2 &&
+                     operation->pad.before_z <= 2 &&
+                     operation->pad.after_z <= 2;
+         break;
+      }
+      case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED: {
+         supported = operation->input_tensors[0]->dims[3] < 1280;
+         break;
+      }
+      default:
+         return false;
+   }
+
+   return supported;
+}
+
 struct pipe_ml_subgraph *
 etna_ml_subgraph_create(struct pipe_context *pcontext,
                         const struct pipe_ml_operation *poperations,
