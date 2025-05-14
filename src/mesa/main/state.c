@@ -302,7 +302,7 @@ update_program(struct gl_context *ctx)
     * _mesa_get_fixed_func_vertex_program() needs to know active
     * fragprog inputs.
     */
-   if (vsProg) {
+   if (vsProg || msProg) {
       /* Use GLSL vertex shader */
       assert(VP_MODE_SHADER == ctx->VertexProgram._VPMode);
       _mesa_reference_program(ctx, &ctx->VertexProgram._Current, vsProg);
@@ -770,12 +770,13 @@ set_vertex_processing_mode(struct gl_context *ctx, gl_vertex_processing_mode m)
 void
 _mesa_update_vertex_processing_mode(struct gl_context *ctx)
 {
-   if (ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX])
-      set_vertex_processing_mode(ctx, VP_MODE_SHADER);
-   else if (_mesa_arb_vertex_program_enabled(ctx))
-      set_vertex_processing_mode(ctx, VP_MODE_SHADER);
-   else
-      set_vertex_processing_mode(ctx, VP_MODE_FF);
+   gl_vertex_processing_mode mode =
+      ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX] ||
+      ctx->_Shader->CurrentProgram[MESA_SHADER_MESH] ||
+      _mesa_arb_vertex_program_enabled(ctx) ?
+      VP_MODE_SHADER : VP_MODE_FF;
+
+   set_vertex_processing_mode(ctx, mode);
 }
 
 

@@ -200,14 +200,16 @@ st_update_fp( struct st_context *st )
 void
 st_update_vp( struct st_context *st )
 {
-   struct gl_program *vp;
-
    /* find active shader and params -- Should be covered by
     * ST_NEW_VERTEX_PROGRAM
     */
-   assert(st->ctx->VertexProgram._Current);
-   vp = st->ctx->VertexProgram._Current;
-   assert(vp->info.stage == MESA_SHADER_VERTEX);
+   struct gl_program *vp = st->ctx->VertexProgram._Current;
+
+   if (!vp) {
+      _mesa_reference_program(st->ctx, &st->vp, NULL);
+      cso_set_vertex_shader_handle(st->cso_context, NULL);
+      return;
+   }
 
    if (st->shader_has_one_variant[MESA_SHADER_VERTEX] &&
        !st->ctx->Array._PerVertexEdgeFlagsEnabled) {
