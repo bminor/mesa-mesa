@@ -1083,3 +1083,185 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.live_through.move_ops)
 
    finish_ra_test(ra_test_policy());
 END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.vec_overlaps_with_operand.first)
+   if (!setup_cs("", GFX11))
+      return;
+
+   /* The registers chosen for the first vector overlaps with the first operand for the second
+    * vector. We shouldn't skip handle_vector_operands() for the second vector in this case.
+    */
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[2] = p_unit_test
+   //! v1: %tmp2:v[1] = p_unit_test
+   //! v1: %tmp3:v[4] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp tmp3 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp2);
+   Operand op3(tmp3);
+   op0.setVectorAligned(true);
+   op2.setVectorAligned(true);
+   //! v1: %tmp1_copy:v[1], v1: %tmp2_copy:v[3] = p_parallelcopy %tmp1:v[2], %tmp2:v[1]
+   //! p_unit_test (%tmp0:v[0], %tmp1_copy:v[1]), (%tmp2_copy:v[3], %tmp3:v[4])
+   bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2, op3);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.vec_overlaps_with_operand.second)
+   if (!setup_cs("", GFX11))
+      return;
+
+   /* The registers chosen for the first vector overlaps with the second operand for the second
+    * vector. Ensure that a sensible parallel copy is created in this case.
+    */
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[2] = p_unit_test
+   //! v1: %tmp2:v[4] = p_unit_test
+   //! v1: %tmp3:v[1] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Temp tmp3 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp2);
+   Operand op3(tmp3);
+   op0.setVectorAligned(true);
+   op2.setVectorAligned(true);
+   //! v1: %tmp1_copy:v[1], v1: %tmp3_copy:v[5] = p_parallelcopy %tmp1:v[2], %tmp3:v[1]
+   //! p_unit_test (%tmp0:v[0], %tmp1_copy:v[1]), (%tmp2:v[4], %tmp3_copy:v[5])
+   bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2, op3);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.temp_in_multiple_vecs)
+   if (!setup_cs("", GFX11))
+      return;
+
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[1] = p_unit_test
+   //! v1: %tmp2:v[2] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp2);
+   Operand op3(tmp1);
+   op0.setVectorAligned(true);
+   op2.setVectorAligned(true);
+   //! v1: %tmp1_copy:v[3] = p_parallelcopy %tmp1:v[1]
+   //! p_unit_test (%tmp0:v[0], %tmp1:v[1]), (%tmp2:v[2], %tmp1_copy:v[3])
+   bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2, op3);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.scalar_operand)
+   if (!setup_cs("", GFX11))
+      return;
+
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[1] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Operand op0(tmp1);
+   Operand op1(tmp0);
+   Operand op2(tmp1);
+   op1.setVectorAligned(true);
+   //! p_unit_test %tmp1:v[1], (%tmp0:v[0], %tmp1:v[1])
+   bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.moved_scalar_operand)
+   if (!setup_cs("", GFX11))
+      return;
+
+   /* Use tmp1 in both a vector operand and scalar operand. Then re-use the old register of tmp1
+    * in another vector operand: resolve_vector_operands() should rename the scalar operands.
+    */
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[2] = p_unit_test
+   //! v1: %tmp2:v[3] = p_unit_test
+   //! v1: %tmp3:v[5] = p_unit_test
+   //! v1: %tmp4:v[4] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Temp tmp3 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 5)));
+   Temp tmp4 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 4)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp1);
+   Operand op3(tmp3);
+   Operand op4(tmp2);
+   Operand op5(tmp4);
+   op0.setVectorAligned(true);
+   op3.setVectorAligned(true);
+   op4.setVectorAligned(true);
+   //>> v1: %tmp1_copy:v[1], v1: %tmp3_copy:v[2] = p_parallelcopy %tmp1:v[2], %tmp3:v[5]
+   //! p_unit_test %tmp1_copy:v[1], (%tmp0:v[0], %tmp1_copy:v[1]), (%tmp3_copy:v[2], %tmp2:v[3], %tmp4:v[4])
+   bld.pseudo(aco_opcode::p_unit_test, op2, op0, op1, op3, op4, op5);
+   //! p_unit_test %tmp1_copy:v[1]
+   bld.pseudo(aco_opcode::p_unit_test, tmp1);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.reuse_temporaries)
+   if (!setup_cs("", GFX11))
+      return;
+
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[2] = p_unit_test
+   //! v1: %tmp2:v[1] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 1)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp2);
+   op0.setVectorAligned(true);
+   op1.setVectorAligned(true);
+   Operand op3(tmp0);
+   Operand op4(tmp2);
+   Operand op5(tmp1);
+   op3.setVectorAligned(true);
+   op4.setVectorAligned(true);
+   //! v1: %tmp1_copy1:v[1], v1: %tmp2_copy1:v[2], v1: %tmp0_copy:v[3], v1: %tmp2_copy0:v[4], v1: %tmp1_copy0:v[5] = p_parallelcopy %tmp1:v[2], %tmp2:v[1], %tmp0:v[0], %tmp2:v[1], %tmp1:v[2]
+   //! p_unit_test (%tmp0:v[0], %tmp1_copy1:v[1], %tmp2_copy1:v[2]), (%tmp0_copy:v[3], %tmp2_copy0:v[4], %tmp1_copy0:v[5])
+   bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2, op3, op4, op5);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
+
+BEGIN_TEST(regalloc.vector_aligned.reuse_operand_as_def)
+   if (!setup_cs("", GFX11))
+      return;
+
+   //>> v1: %tmp0:v[0] = p_unit_test
+   //! v1: %tmp1:v[2] = p_unit_test
+   //! v1: %tmp2:v[3] = p_unit_test
+   Temp tmp0 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 0)));
+   Temp tmp1 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 2)));
+   Temp tmp2 = bld.pseudo(aco_opcode::p_unit_test, bld.def(v1, PhysReg(256 + 3)));
+   Operand op0(tmp0);
+   Operand op1(tmp1);
+   Operand op2(tmp2);
+   op0.setVectorAligned(true);
+   op1.setVectorAligned(true);
+   /* tmp0 is moved from v0 in resolve_vector_operands(), while the definition uses v0. */
+   //! v1: %tmp0_copy:v[1] = p_parallelcopy %tmp0:v[0]
+   //! v1: %res:v[0] = p_unit_test (%tmp0_copy:v[1], %tmp1:v[2], %tmp2:v[3])
+   bld.pseudo(aco_opcode::p_unit_test, bld.def(v1), op0, op1, op2);
+
+   finish_ra_test(ra_test_policy());
+END_TEST
