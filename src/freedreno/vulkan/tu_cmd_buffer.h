@@ -572,6 +572,7 @@ struct tu_cmd_buffer
    struct tu_device *device;
 
    struct u_trace trace;
+   struct u_trace_iterator trace_rp_start;
    struct u_trace_iterator trace_rp_drawcalls_start;
    struct u_trace_iterator trace_rp_drawcalls_end;
 

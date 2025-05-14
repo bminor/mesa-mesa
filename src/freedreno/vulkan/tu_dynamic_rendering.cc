@@ -144,6 +144,7 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
 
       case SR_AFTER_PRE_CHAIN:
       case SR_IN_CHAIN_AFTER_PRE_CHAIN:
+         cmd_buffer->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd_buffer->trace);
          tu_append_pre_chain(cmd_buffer, old_cmds[i]);
 
          if (!(old_cmds[i]->usage_flags &
