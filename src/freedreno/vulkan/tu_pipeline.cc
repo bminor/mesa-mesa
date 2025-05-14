@@ -3102,8 +3102,13 @@ tu6_emit_blend(struct tu_cs *cs,
                                              dual_src_blend,
                                           .alpha_to_coverage =
                                              alpha_to_coverage_enable));
-   /* set A6XX_RB_BLEND_CNTL_INDEPENDENT_BLEND only when enabled? */
-   tu_cs_emit_regs(cs, A6XX_RB_BLEND_CNTL(.enable_blend = blend_enable_mask,
+   /* TODO: set A6XX_RB_BLEND_CNTL_INDEPENDENT_BLEND only when enabled?
+    *
+    * We could also set blend_reads_dest more conservatively, but it didn't show
+    * performance wins in anholt's testing:
+    * https://gitlab.freedesktop.org/anholt/mesa/-/commits/tu-color-reads
+    */
+   tu_cs_emit_regs(cs, A6XX_RB_BLEND_CNTL(.blend_reads_dest = blend_enable_mask,
                                           .independent_blend = true,
                                           .dual_color_in_enable =
                                              dual_src_blend,

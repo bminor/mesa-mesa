@@ -128,7 +128,7 @@ __fd6_setup_blend_variant(struct fd6_blend_stateobj *blend,
 
    OUT_REG(ring,
            A6XX_RB_BLEND_CNTL(
-                 .enable_blend = mrt_blend,
+                 .blend_reads_dest = mrt_blend,
                  .independent_blend = cso->independent_blend_enable,
                  .dual_color_in_enable = blend->use_dual_src_blend,
                  .alpha_to_coverage = cso->alpha_to_coverage,
