@@ -57,6 +57,7 @@ def makeGenOpts(args):
     # The SPDX formatting below works around constraints of the 'reuse' tool
     prefixStrings = [
         '/*',
+        '** Copyright 2025 The Android Open Source Project',
         '** Copyright 2015-2023 The Khronos Group Inc.',
         '**',
         '** SPDX-License-Identifier' + ': Apache-2.0',
