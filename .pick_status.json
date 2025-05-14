@@ -2634,7 +2634,7 @@
         "description": "entaviv/isa: Silence warnings about non snake case names",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "15a784689e648e3ca68f58c5faf20ec936e56e72",
         "notes": null
