@@ -774,7 +774,7 @@
         "description": "vulkan/pipeline: Hash null descriptor robustness info",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6ae401aa868066eecbe6307c6e8173525f566580",
         "notes": null
