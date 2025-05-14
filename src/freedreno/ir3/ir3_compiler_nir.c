@@ -5887,9 +5887,11 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
     */
    if (so->type == MESA_SHADER_TESS_CTRL || so->type == MESA_SHADER_GEOMETRY) {
       struct ir3_block *first_block = ir3_start_block(ir);
-      struct ir3_instruction *first_instr = list_first_entry(
-         &first_block->instr_list, struct ir3_instruction, node);
-      first_instr->flags |= IR3_INSTR_SS | IR3_INSTR_SY;
+      if (!list_is_empty(&first_block->instr_list)) {
+         struct ir3_instruction *first_instr = list_first_entry(
+            &first_block->instr_list, struct ir3_instruction, node);
+         first_instr->flags |= IR3_INSTR_SS | IR3_INSTR_SY;
+      }
    }
 
    if (ctx->compiler->gen >= 7 && so->type == MESA_SHADER_COMPUTE) {

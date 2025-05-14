@@ -240,10 +240,6 @@ KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
 
 # a630-gles-asan
-asan-dEQP-GLES31.functional.debug.negative_coverage.callbacks.tessellation.invalid_primitive_mode,Crash
-asan-dEQP-GLES31.functional.debug.negative_coverage.get_error.tessellation.invalid_primitive_mode,Crash
-asan-dEQP-GLES31.functional.debug.negative_coverage.log.tessellation.invalid_primitive_mode,Crash
-asan-dEQP-GLES31.functional.state_query.program.tesselation_shader_state_get_programiv,Crash
 asan-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
 
 # GL tests above, Vulkan tests below
