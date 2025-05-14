@@ -133,5 +133,6 @@ spec@arb_viewport_array@display-list,Fail
 KHR-GL46.texture_view.coherency,Fail
 
 # uprev Piglit in Mesa
+spec@arb_sparse_buffer@buffer-data,Crash
 spec@arb_sparse_buffer@commit,Crash
 

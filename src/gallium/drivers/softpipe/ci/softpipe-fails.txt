@@ -1248,8 +1248,15 @@ spec@arb_texture_buffer_object@texture-buffer-size-clamp@rgba8ui_texture_buffer_
 # uprev Piglit in Mesa
 spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2@gs-out and fs,Fail
+spec@!opengl 2.0@vertex-program-two-side enabled front back front2,Fail
+spec@!opengl 2.0@vertex-program-two-side enabled front back front2@gs-out and fs,Fail
+spec@!opengl 2.0@vertex-program-two-side enabled front back,Fail
+spec@!opengl 2.0@vertex-program-two-side enabled front back@gs-out and fs,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front2 back2,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front2 back2@gs-out and fs,Fail
+spec@!opengl 3.0@clearbuffer-depth-cs-probe,Fail
+spec@arb_internalformat_query2@image_format_compatibility_type pname checks,Fail
+spec@arb_internalformat_query2@image_format_compatibility_type pname checks@GL_IMAGE_FORMAT_COMPATIBILITY_TYPE,Fail
 spec@arb_internalformat_query2@max dimensions related pname checks,Fail
 spec@arb_internalformat_query2@max dimensions related pname checks@GL_MAX_COMBINED_DIMENSIONS,Fail
 spec@arb_internalformat_query2@max dimensions related pname checks@GL_MAX_DEPTH,Fail

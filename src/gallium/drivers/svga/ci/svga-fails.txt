@@ -1083,5 +1083,4 @@ spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-
 spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
 spec@gl-3.1@attributeless-vertexid,Fail
-spec@glsl-1.50@execution@primitive-id-no-gs-first-vertex,Fail
 

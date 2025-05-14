@@ -657,3 +657,7 @@ spec@glsl-1.10@execution@variable-indexing@fs-input-array-float-index-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec2-index-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec3-index-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec4-index-rd,Fail
+
+# uprev Piglit in Mesa
+spec@!opengl 1.1@push-pop-color-material,Fail
+

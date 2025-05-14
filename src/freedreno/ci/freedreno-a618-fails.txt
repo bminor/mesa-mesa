@@ -443,3 +443,10 @@ angle-KHR-GLES3.texture_lod_basic.lod_selection,Fail
 angle-dEQP-GLES2.functional.shaders.algorithm.rgb_to_hsl_vertex,Fail
 angle-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 angle-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
+
+# uprev Piglit in Mesa
+spec@arb_base_instance@arb_base_instance-baseinstance-doesnt-affect-gl-instance-id,Fail
+spec@arb_base_instance@arb_base_instance-drawarrays,Fail
+spec@ext_base_instance@arb_base_instance-baseinstance-doesnt-affect-gl-instance-id_gles3,Fail
+spec@ext_base_instance@arb_base_instance-drawarrays_gles3,Fail
+
