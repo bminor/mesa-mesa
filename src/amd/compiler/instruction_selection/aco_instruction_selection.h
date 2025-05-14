@@ -131,10 +131,45 @@ struct isel_context {
 };
 
 inline Temp
+get_ssa_temp(struct isel_context* ctx, nir_def* def)
+{
+   uint32_t id = ctx->first_temp_id + def->index;
+   return Temp(id, ctx->program->temp_rc[id]);
+}
+
+inline Temp
 get_arg(isel_context* ctx, struct ac_arg arg)
 {
    assert(arg.used);
    return ctx->arg_temps[arg.arg_index];
+}
+
+inline PhysReg
+get_arg_reg(const struct ac_shader_args* args, struct ac_arg arg)
+{
+   assert(arg.used);
+   enum ac_arg_regfile file = args->args[arg.arg_index].file;
+   unsigned reg = args->args[arg.arg_index].offset;
+   return PhysReg(file == AC_ARG_SGPR ? reg : reg + 256);
+}
+
+inline void
+set_wqm(isel_context* ctx, bool enable_helpers = false)
+{
+   if (ctx->program->stage == fragment_fs) {
+      ctx->wqm_block_idx = ctx->block->index;
+      ctx->wqm_instruction_idx = ctx->block->instructions.size();
+      if (ctx->shader)
+         enable_helpers |= ctx->shader->info.fs.require_full_quads;
+      ctx->program->needs_wqm |= enable_helpers;
+   }
+}
+
+inline bool
+should_declare_array(ac_image_dim dim)
+{
+   return dim == ac_image_cube || dim == ac_image_1darray || dim == ac_image_2darray ||
+          dim == ac_image_2darraymsaa;
 }
 
 /* aco_isel_setup.cpp */
@@ -146,6 +181,50 @@ isel_context setup_isel_context(Program* program, unsigned shader_count,
                                 const struct aco_shader_info* info,
                                 const struct ac_shader_args* args,
                                 SWStage sw_stage = SWStage::None);
+
+/* aco_isel_helpers.cpp */
+void append_logical_start(Block* b);
+void append_logical_end(Block* b);
+Temp get_ssa_temp_tex(struct isel_context* ctx, nir_def* def, bool is_16bit);
+Temp bool_to_vector_condition(isel_context* ctx, Temp val, Temp dst = Temp(0, s2));
+Temp bool_to_scalar_condition(isel_context* ctx, Temp val, Temp dst = Temp(0, s1));
+Temp as_vgpr(isel_context* ctx, Temp val);
+Temp emit_extract_vector(isel_context* ctx, Temp src, uint32_t idx, RegClass dst_rc);
+void emit_split_vector(isel_context* ctx, Temp vec_src, unsigned num_components);
+void expand_vector(isel_context* ctx, Temp vec_src, Temp dst, unsigned num_components,
+                   unsigned mask, bool zero_padding = false);
+Temp convert_int(isel_context* ctx, Builder& bld, Temp src, unsigned src_bits, unsigned dst_bits,
+                 bool sign_extend, Temp dst = Temp());
+Temp convert_pointer_to_64_bit(isel_context* ctx, Temp ptr, bool non_uniform = false);
+void select_vec2(isel_context* ctx, Temp dst, Temp cond, Temp then, Temp els);
+Operand load_lds_size_m0(Builder& bld);
+Temp create_vec_from_array(isel_context* ctx, Temp arr[], unsigned cnt, RegType reg_type,
+                           unsigned elem_size_bytes, unsigned split_cnt = 0u, Temp dst = Temp());
+void emit_interp_instr(isel_context* ctx, unsigned idx, unsigned component, Temp src, Temp dst,
+                       Temp prim_mask, bool high_16bits);
+void emit_interp_mov_instr(isel_context* ctx, unsigned idx, unsigned component, unsigned vertex_id,
+                           Temp dst, Temp prim_mask, bool high_16bits);
+std::vector<Temp> emit_pack_v1(isel_context* ctx, const std::vector<Temp>& unpacked);
+MIMG_instruction* emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc,
+                            Operand samp, std::vector<Temp> coords, Operand vdata = Operand(v1));
+Operand emit_tfe_init(Builder& bld, Temp dst);
+struct aco_export_mrt {
+   Operand out[4];
+   unsigned enabled_channels;
+   unsigned target;
+   bool compr;
+};
+void create_fs_dual_src_export_gfx11(isel_context* ctx, const struct aco_export_mrt* mrt0,
+                                     const struct aco_export_mrt* mrt1);
+Temp lanecount_to_mask(isel_context* ctx, Temp count, unsigned bit_offset);
+void build_end_with_regs(isel_context* ctx, std::vector<Operand>& regs);
+Instruction* add_startpgm(struct isel_context* ctx);
+void finish_program(isel_context* ctx);
+
+#define isel_err(...) _isel_err(ctx, __FILE__, __LINE__, __VA_ARGS__)
+
+void _isel_err(isel_context* ctx, const char* file, unsigned line, const nir_instr* instr,
+               const char* msg);
 
 } // namespace aco
 
