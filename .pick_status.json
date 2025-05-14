@@ -2374,7 +2374,7 @@
         "description": "tc: rework resource usage tracking to be lighter",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9cc06f817cffa71b4bbbe7b705dadf15605b611f",
         "notes": null
