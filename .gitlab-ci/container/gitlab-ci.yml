@@ -528,26 +528,6 @@ debian/x86_64_test-video:
   needs:
     - debian/x86_64_test-video
 
-# Debian-based x86_64 image to run Python utilities
-debian/x86_64_pyutils:
-  extends:
-    - .debian-container
-  variables:
-    MESA_IMAGE_TAG: &debian-x86_64_pyutils "${DEBIAN_PYUTILS_TAG}"
-
-.use-debian/x86_64_pyutils:
-  tags:
-    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
-  extends:
-    - .fdo.container-build@debian
-    - .debian-container-version
-    - .set-image
-  variables:
-    MESA_IMAGE_PATH: "debian/x86_64_pyutils"
-    MESA_IMAGE_TAG: *debian-x86_64_pyutils
-  needs:
-    - debian/x86_64_pyutils
-
 # Debian based ARMv7/armhf test image for GL
 debian/arm32_test-gl:
   tags:

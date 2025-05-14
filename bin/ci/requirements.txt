@@ -1,6 +1,3 @@
-# If you change these requirements, and you need these packages
-# to be available in the debian/x86_64_pyutils container
-# then bump the DEBIAN_PYUTILS_TAG
 -r requirements-lava.txt
 PyYAML==6.*
 colorama==0.4.*
