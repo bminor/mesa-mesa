@@ -6,12 +6,10 @@
 
 #include "aco_instruction_selection.h"
 
-#include "common/nir/ac_nir.h"
-#include "common/sid.h"
-
-#include "nir_control_flow.h"
 #include "nir_builder.h"
+#include "nir_control_flow.h"
 
+#include "ac_nir.h"
 #include <vector>
 
 namespace aco {
@@ -126,14 +124,15 @@ sanitize_cf_list(nir_function_impl* impl, struct exec_list* cf_list)
          assert(!nir_loop_has_continue_construct(loop));
          progress |= sanitize_cf_list(impl, &loop->body);
 
-         /* NIR seems to allow this, and even though the loop exit has no predecessors, SSA defs from the
-          * loop header are live. Handle this without complicating the ACO IR by creating a dummy break.
+         /* NIR seems to allow this, and even though the loop exit has no predecessors, SSA defs
+          * from the loop header are live. Handle this without complicating the ACO IR by creating a
+          * dummy break.
           */
          if (nir_cf_node_cf_tree_next(&loop->cf_node)->predecessors->entries == 0) {
             nir_builder b = nir_builder_create(impl);
             b.cursor = nir_after_block_before_jump(nir_loop_last_block(loop));
 
-            nir_def *cond = nir_imm_false(&b);
+            nir_def* cond = nir_imm_false(&b);
             /* We don't use block divergence information, so just this is enough. */
             cond->divergent = false;
 

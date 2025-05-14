@@ -137,9 +137,9 @@ get_arg(isel_context* ctx, struct ac_arg arg)
    return ctx->arg_temps[arg.arg_index];
 }
 
+/* aco_isel_setup.cpp */
 void init_context(isel_context* ctx, nir_shader* shader);
 void cleanup_context(isel_context* ctx);
-
 isel_context setup_isel_context(Program* program, unsigned shader_count,
                                 struct nir_shader* const* shaders, ac_shader_config* config,
                                 const struct aco_compiler_options* options,
