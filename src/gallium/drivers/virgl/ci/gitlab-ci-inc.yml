@@ -37,7 +37,6 @@
   variables:
     JOB_PRIORITY: 40
     LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
-    S3_ARTIFACT_NAME: mesa-python-ci-artifacts
   needs:
     - debian/x86_64_test-gl
     - debian-release

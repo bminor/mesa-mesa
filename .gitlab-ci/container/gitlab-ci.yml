@@ -339,6 +339,13 @@ alpine/x86_64_lava_ssh_client:
   variables:
     MESA_IMAGE_TAG: &alpine-x86_64_lava_ssh_client ${ALPINE_X86_64_LAVA_SSH_TAG}
 
+# Alpine based x86_64 image to run LAVA jobs
+alpine/x86_64_lava-trigger:
+  extends:
+    - .alpine/x86_64_build-base
+  variables:
+    MESA_IMAGE_TAG: &alpine-x86_64_lava_trigger ${ALPINE_X86_64_LAVA_TRIGGER_TAG}
+
 # Fedora based x86_64 build image
 fedora/x86_64_build:
   extends:

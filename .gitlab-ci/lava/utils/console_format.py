@@ -1,3 +1,7 @@
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# ALPINE_X86_64_LAVA_TRIGGER_TAG
+
 CONSOLE_LOG = {
     "FG_GREEN": "\x1b[0;32m",
     "FG_BOLD_GREEN": "\x1b[0;1;32m",

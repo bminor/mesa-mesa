@@ -5,6 +5,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# ALPINE_X86_64_LAVA_TRIGGER_TAG
+
 """
 Some utilities to analyse logs, create gitlab sections and other quality of life
 improvements

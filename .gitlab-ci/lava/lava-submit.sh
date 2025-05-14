@@ -2,6 +2,10 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# ALPINE_X86_64_LAVA_TRIGGER_TAG
+
 # If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
 _check_artifact_path() {
 	_url="https://${1}/${2}"
@@ -76,7 +80,7 @@ if [ -n "${LAVA_FIRMWARE:-}" ]; then
     done
 fi
 
-PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
+PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--farm "${FARM}" \
 	--device-type "${DEVICE_TYPE}" \
 	--boot-method "${BOOT_METHOD}" \
@@ -86,7 +90,7 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--rootfs-url "${ROOTFS_URL}" \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
 	--dtb-filename "${DTB}" \
-	--first-stage-init artifacts/ci-common/init-stage1.sh \
+	--first-stage-init /lava/init-stage1.sh \
 	--env-file dut-env-vars.sh \
 	--jwt-file "${S3_JWT_FILE}" \
 	--kernel-image-name "${KERNEL_IMAGE_NAME}" \

@@ -3,6 +3,10 @@
 # Very early init, used to make sure devices and network are set up and
 # reachable.
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# ALPINE_X86_64_LAVA_TRIGGER_TAG
+
 set -ex
 
 cd /

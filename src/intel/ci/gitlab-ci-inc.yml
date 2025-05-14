@@ -129,7 +129,6 @@
   variables:
     JOB_PRIORITY: 40
     LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
-    S3_ARTIFACT_NAME: mesa-python-ci-artifacts
   needs:
     - debian/x86_64_test-gl
     - debian-release
@@ -451,7 +450,6 @@
     LAVA_TAGS: "cbg-0"
     # Ensure that we are using the release build artifact
     LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
-    S3_ARTIFACT_NAME: mesa-python-ci-artifacts
 
 .iris-whl-traces-performance:
   extends:
