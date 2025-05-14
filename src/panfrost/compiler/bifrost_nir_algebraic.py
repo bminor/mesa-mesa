@@ -100,6 +100,10 @@ algebraic_late = [
     # On v11+, F16_TO_S32/F16_TO_U32 is gone but we still have F32_TO_S32/F32_TO_U32
     (('f2i32', 'a@16'), ('f2i32', ('f2f32', a)), 'gpu_arch >= 11'),
     (('f2u32', 'a@16'), ('f2u32', ('f2f32', a)), 'gpu_arch >= 11'),
+
+    # On v11+, because FROUND.v2f16 is gone we end up with precision issues.
+    # We lower ffract here instead to ensure lower_bit_size has been performed.
+    (('ffract', a), ('fadd', a, ('fneg', ('ffloor', a))), 'gpu_arch >= 11'),
 ]
 
 # On v11+, ICMP_OR.v4u8 was removed
