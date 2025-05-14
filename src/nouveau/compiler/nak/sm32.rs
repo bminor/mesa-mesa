@@ -2196,6 +2196,285 @@ impl SM32Op for OpTxq {
     }
 }
 
+impl SM32Op for OpSuClamp {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+
+        b.copy_alu_src_if_not_reg(&mut self.coords, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.params, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.encode_form_immreg(
+            0xb00,
+            0x180,
+            Some(&self.dst),
+            &self.coords,
+            &self.params,
+            None,
+            false,
+        );
+
+        e.set_field(42..48, self.imm);
+        e.set_pred_dst(48..51, &self.out_of_bounds);
+
+        e.set_bit(51, self.is_s32);
+        let round = match self.round {
+            SuClampRound::R1 => 0,
+            SuClampRound::R2 => 1,
+            SuClampRound::R4 => 2,
+            SuClampRound::R8 => 3,
+            SuClampRound::R16 => 4,
+        };
+        let mode = match self.mode {
+            SuClampMode::StoredInDescriptor => 0_u8,
+            SuClampMode::PitchLinear => 5,
+            SuClampMode::BlockLinear => 10,
+        };
+        e.set_field(52..56, mode + round);
+        e.set_bit(56, self.is_2d); // .1d
+    }
+}
+
+impl SM32Op for OpSuBfm {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+
+        b.copy_alu_src_if_not_reg(&mut self.srcs[0], GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.srcs[1], GPR, SrcType::ALU);
+        b.copy_alu_src_if_not_reg(&mut self.srcs[2], GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.encode_form_immreg(
+            0xb68,
+            0x1e8,
+            Some(&self.dst),
+            &self.srcs[0],
+            &self.srcs[1],
+            Some(&self.srcs[2]),
+            false,
+        );
+
+        e.set_bit(50, self.is_3d);
+        e.set_pred_dst(51..54, &self.pdst);
+    }
+}
+
+impl SM32Op for OpSuEau {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+
+        b.copy_alu_src_if_not_reg(&mut self.off, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(&mut self.bit_field, GPR, SrcType::ALU);
+        b.copy_alu_src_if_not_reg(&mut self.addr, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.encode_form_immreg(
+            0xb6c,
+            0x1ec,
+            Some(&self.dst),
+            &self.off,
+            &self.bit_field,
+            Some(&self.addr),
+            false,
+        );
+    }
+}
+
+impl SM32Op for OpIMadSp {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        use RegFile::GPR;
+
+        let [src0, src1, src2] = &mut self.srcs;
+
+        b.copy_alu_src_if_not_reg(src0, GPR, SrcType::ALU);
+        b.copy_alu_src_if_i20_overflow(src1, GPR, SrcType::ALU);
+        b.copy_alu_src_if_not_reg(src2, GPR, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.encode_form_immreg(
+            0xa40,
+            0x140,
+            Some(&self.dst),
+            &self.srcs[0],
+            &self.srcs[1],
+            Some(&self.srcs[2]),
+            false,
+        );
+
+        match self.mode {
+            IMadSpMode::Explicit([src0, src1, src2]) => {
+                use IMadSpSrcType::*;
+                assert!(
+                    src2.sign() == (src1.sign() || src0.sign()),
+                    "Cannot encode imadsp signed combination"
+                );
+
+                e.set_bit(51, src0.sign());
+                e.set_field(
+                    52..54,
+                    match src0.unsigned() {
+                        U32 => 0_u8,
+                        U24 => 1,
+                        U16Lo => 2,
+                        U16Hi => 3,
+                        _ => unreachable!(),
+                    },
+                );
+
+                e.set_field(
+                    54..56,
+                    match src2.unsigned() {
+                        U32 => 0_u8,
+                        U24 => 1,
+                        U16Lo => 2,
+                        U16Hi => {
+                            panic!("src2 u16h1 not encodable")
+                        }
+                        _ => unreachable!(),
+                    },
+                );
+                e.set_bit(56, src1.sign());
+
+                // Don't trust nvdisasm on this, this is inverted
+                e.set_field(
+                    57..58,
+                    match src1.unsigned() {
+                        U24 => 1_u8,
+                        U16Lo => 0,
+                        _ => panic!("imadsp src[1] can only be 16 or 24 bits"),
+                    },
+                );
+            }
+            IMadSpMode::FromSrc1 => {
+                e.set_field(54..56, 3_u8);
+            }
+        }
+    }
+}
+
+impl SM32Encoder<'_> {
+    fn set_su_ga_offset_mode(
+        &mut self,
+        range: Range<usize>,
+        off_type: SuGaOffsetMode,
+    ) {
+        assert!(range.len() == 2);
+        self.set_field(
+            range,
+            match off_type {
+                SuGaOffsetMode::U32 => 0_u8,
+                SuGaOffsetMode::S32 => 1_u8,
+                SuGaOffsetMode::U8 => 2_u8,
+                SuGaOffsetMode::S8 => 3_u8,
+            },
+        );
+    }
+}
+
+impl SM32Op for OpSuLdGa {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {}
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match &self.format.src_ref {
+            SrcRef::CBuf(cb) => {
+                e.set_opcode(0x300, 2);
+                e.set_mem_type(56..59, self.mem_type);
+
+                // 54..56 cache hints (.ca, .cg, .cs, .cv)
+                e.set_src_cbuf(23..42, &cb);
+            }
+            SrcRef::Zero | SrcRef::Reg(_) => {
+                e.set_opcode(0x798, 2);
+                e.set_mem_type(33..36, self.mem_type);
+
+                // 31..33 cache hints (.ca, .cg, .cs, .cv)
+                e.set_reg_src(23..31, &self.format);
+            }
+            _ => panic!("Unhandled format src type"),
+        }
+
+        // surface pred: 42..46
+        e.set_pred_src(42..46, &self.out_of_bounds);
+
+        // Surface clamp:
+        // 0: zero
+        // 1: trap
+        // 3: sdcl
+        e.set_field(46..48, 0_u8);
+
+        e.set_su_ga_offset_mode(52..54, self.offset_mode);
+
+        e.set_dst(&self.dst);
+
+        // address
+        e.set_reg_src(10..18, &self.addr);
+    }
+}
+
+impl SM32Op for OpSuStGa {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {}
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        match &self.format.src_ref {
+            SrcRef::CBuf(cb) => {
+                e.set_opcode(0x380, 2);
+
+                // Surface clamp: [ignore, trap, invalid, sdcl]
+                e.set_field(2..4, 0_u8);
+
+                match self.image_access {
+                    ImageAccess::Binary(mem_type) => {
+                        e.set_field(4..8, 0); // channel mask
+                        e.set_mem_type(56..59, mem_type); // mem_type
+                    }
+                    ImageAccess::Formatted(mask) => {
+                        e.set_field(4..8, mask.to_bits()); // channel mask
+                        e.set_field(56..59, 0_u8); // mem_type
+                    }
+                };
+
+                e.set_su_ga_offset_mode(8..10, self.offset_mode);
+                e.set_src_cbuf(23..42, &cb);
+                // 54..56 cache hints (.wb, .cg, .cs, .wt)
+            }
+            SrcRef::Zero | SrcRef::Reg(_) => {
+                e.set_opcode(0x79c, 2);
+
+                e.set_reg_src(2..10, &self.format);
+
+                // Surface clamp: [ignore, trap, invalid, sdcl]
+                e.set_field(23..25, 0_u8);
+
+                match self.image_access {
+                    ImageAccess::Binary(mem_type) => {
+                        e.set_field(25..29, 0); // channel mask
+                        e.set_mem_type(33..36, mem_type); // mem_type
+                    }
+                    ImageAccess::Formatted(mask) => {
+                        e.set_field(25..29, mask.to_bits()); // channel mask
+                        e.set_field(33..36, 0_u8); // mem_type
+                    }
+                };
+
+                e.set_su_ga_offset_mode(29..31, self.offset_mode);
+                // 31..33 cache hints (.wb, ??, .cs, .wt)
+            }
+            _ => panic!("Unhandled format src type"),
+        }
+
+        // out_of_bounds pred
+        e.set_pred_src(50..54, &self.out_of_bounds);
+
+        // address
+        e.set_reg_src(10..18, &self.addr);
+        e.set_reg_src(42..50, &self.data);
+    }
+}
+
 /// Helper to legalize extended or external instructions
 ///
 /// These are instructions which reach out external units such as load/store
@@ -2995,7 +3274,7 @@ impl SM32Op for OpOut {
     }
 }
 
-// TODO: instructions left behind from codegen rewrite,
+// Instructions left behind from codegen rewrite,
 // we might use them in the future:
 // - 0x138 pret.noinc
 // - 0x1b8 quadon (enable all threads in quad)
@@ -3046,6 +3325,12 @@ macro_rules! as_sm50_op_match {
             Op::Tmml(op) => op,
             Op::Txd(op) => op,
             Op::Txq(op) => op,
+            Op::SuClamp(op) => op,
+            Op::SuBfm(op) => op,
+            Op::SuEau(op) => op,
+            Op::IMadSp(op) => op,
+            Op::SuLdGa(op) => op,
+            Op::SuStGa(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::LdSharedLock(op) => op,
