@@ -917,6 +917,7 @@ typedef struct {
    /* Floating point rounding mode controls */
    bool rtz_fp16;
    bool rtz_fp32;
+   bool ftz_fp32;
 
    /* In any graphics shader, whether the "IDVS with memory
     * allocation" flow is used. This affects how varyings are loaded and
