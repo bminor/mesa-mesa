@@ -102,6 +102,12 @@ nvk_GetMemoryFdPropertiesKHR(VkDevice device,
    return VK_SUCCESS;
 }
 
+enum nvk_memory_init {
+   NVK_MEMORY_INIT_NONE,
+   NVK_MEMORY_INIT_ZERO,
+   NVK_MEMORY_INIT_TRASH,
+};
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_AllocateMemory(VkDevice device,
                    const VkMemoryAllocateInfo *pAllocateInfo,
@@ -189,9 +195,30 @@ nvk_AllocateMemory(VkDevice device,
          goto fail_alloc;
    }
 
-   if (!is_import && (pdev->debug_flags & (NVK_DEBUG_ZERO_MEMORY |
-                                           NVK_DEBUG_TRASH_MEMORY))) {
-      bool use_zero = (pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY) != 0;
+   enum nvk_memory_init init;
+   if (is_import) {
+      /* From the Vulkan 1.4.315 spec:
+       *
+       *    VUID-VkMemoryAllocateFlagsInfo-flags-10760
+       *
+       *    "If the allocation is performing a memory import operation, then
+       *    flags must not contain VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT"
+       */
+      assert(!(mem->vk.alloc_flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT));
+      init = NVK_MEMORY_INIT_NONE;
+   } else {
+      if (mem->vk.alloc_flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT)
+         init = NVK_MEMORY_INIT_ZERO;
+      else if (pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY)
+         init = NVK_MEMORY_INIT_ZERO;
+      else if (pdev->debug_flags & NVK_DEBUG_TRASH_MEMORY)
+         init = NVK_MEMORY_INIT_TRASH;
+      else
+         init = NVK_MEMORY_INIT_NONE;
+   }
+
+   if (init != NVK_MEMORY_INIT_NONE) {
+      bool use_zero = init == NVK_MEMORY_INIT_ZERO;
       if (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
          void *map;
          result = nvkmd_mem_map(mem->mem, &dev->vk.base,

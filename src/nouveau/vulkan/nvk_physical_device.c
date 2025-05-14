@@ -288,6 +288,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_vertex_input_dynamic_state = true,
       .EXT_ycbcr_2plane_444_formats = true,
       .EXT_ycbcr_image_arrays = true,
+      .EXT_zero_initialize_device_memory = true,
 #if DETECT_OS_ANDROID
       .ANDROID_native_buffer = vk_android_get_ugralloc() != NULL,
 #endif
@@ -706,6 +707,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_EXT_ycbcr_image_arrays */
       .ycbcrImageArrays = true,
+
+      /* VK_EXT_zero_initialize_device_memory */
+      .zeroInitializeDeviceMemory = true,
 
       /* VK_MESA_image_alignment_control */
       .imageAlignmentControl = true,
