@@ -9,7 +9,7 @@ extern crate syn;
 
 use compiler_proc::as_slice::*;
 use proc_macro::TokenStream;
-use proc_macro2::{TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use syn::*;
 
 #[proc_macro_derive(SrcsAsSlice, attributes(src_type))]
