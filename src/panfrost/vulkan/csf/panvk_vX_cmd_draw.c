@@ -2596,58 +2596,51 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
 
-   struct cs_index render_ctx = cs_scratch_reg64(b, 2);
+   if (!cmdbuf->state.gfx.render.tiler && !inherits_render_ctx(cmdbuf))
+      return;
 
-   if (cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) {
-      /* Flush the tiling operations and signal the internal sync object. */
-      cs_finish_tiling(b);
+   /* Flush the tiling operations and signal the internal sync object. */
+   cs_finish_tiling(b);
 
-      struct cs_index sync_addr = cs_scratch_reg64(b, 0);
-      struct cs_index iter_sb = cs_scratch_reg32(b, 2);
-      struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
-      struct cs_index add_val = cs_scratch_reg64(b, 4);
+   struct cs_index sync_addr = cs_scratch_reg64(b, 0);
+   struct cs_index iter_sb = cs_scratch_reg32(b, 2);
+   struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
+   struct cs_index add_val = cs_scratch_reg64(b, 4);
 
-      cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
-                 BITFIELD_MASK(3),
-                 offsetof(struct panvk_cs_subqueue_context, syncobjs));
+   cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
+              BITFIELD_MASK(3),
+              offsetof(struct panvk_cs_subqueue_context, syncobjs));
 
-      /* We're relying on PANVK_SUBQUEUE_VERTEX_TILER being the first queue to
-       * skip an ADD operation on the syncobjs pointer. */
-      STATIC_ASSERT(PANVK_SUBQUEUE_VERTEX_TILER == 0);
+   /* We're relying on PANVK_SUBQUEUE_VERTEX_TILER being the first queue to
+    * skip an ADD operation on the syncobjs pointer. */
+   STATIC_ASSERT(PANVK_SUBQUEUE_VERTEX_TILER == 0);
 
-      cs_move64_to(b, add_val, 1);
+   cs_move64_to(b, add_val, 1);
 
-      cs_match(b, iter_sb, cmp_scratch) {
+   cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
-         cs_case(b, x) {                                                       \
-            cs_heap_operation(b,                                               \
-                              MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,   \
-                              cs_defer(SB_WAIT_ITER(x),                        \
-                                       SB_ID(DEFERRED_SYNC)));                 \
-            cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG,                     \
-                          add_val, sync_addr,                                  \
-                          cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));    \
-            cs_move32_to(b, iter_sb, next_iter_sb(x));                         \
-         }
-
-         CASE(0)
-         CASE(1)
-         CASE(2)
-         CASE(3)
-         CASE(4)
-#undef CASE
-      }
-
-      cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-                 offsetof(struct panvk_cs_subqueue_context, iter_sb));
-      cs_flush_stores(b);
-
-      /* Update the vertex seqno. */
-      ++cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].relative_sync_point;
-   } else {
-      cs_load64_to(b, render_ctx, cs_subqueue_ctx_reg(b),
-                   offsetof(struct panvk_cs_subqueue_context, render));
+   cs_case(b, x) {                                                             \
+      cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,      \
+                        cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));      \
+      cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
+                    cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
+      cs_move32_to(b, iter_sb, next_iter_sb(x));                               \
    }
+
+      CASE(0)
+      CASE(1)
+      CASE(2)
+      CASE(3)
+      CASE(4)
+#undef CASE
+   }
+
+   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
+              offsetof(struct panvk_cs_subqueue_context, iter_sb));
+   cs_flush_stores(b);
+
+   /* Update the vertex seqno. */
+   ++cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].relative_sync_point;
 }
 
 static void
