@@ -297,6 +297,9 @@ def api_special_implementation_vkCmdBindVertexBuffers(api, cgen):
     cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(pBuffers[i]))")
     cgen.endFor()
 
+def api_special_implementation_vkCmdBindPipeline(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkPipeline(pipeline))")
 
 def api_special_implementation_vkResetCommandPool(api, cgen):
     cgen.line("// Note: special implementation");
@@ -344,6 +347,7 @@ apiSpecialImplementation = {
     "vkResetCommandBuffer": api_special_implementation_vkResetCommandBuffer,
     "vkResetCommandPool": api_special_implementation_vkResetCommandPool,
     "vkCmdBindVertexBuffers": api_special_implementation_vkCmdBindVertexBuffers,
+    "vkCmdBindPipeline": api_special_implementation_vkCmdBindPipeline,
     "vkCmdCopyBufferToImage": api_special_implementation_vkCmdCopyBufferToImage,
     "vkCmdPipelineBarrier": api_special_implementation_vkCmdPipelineBarrier,
     "vkCmdBeginRenderPass": api_special_implementation_vkCmdBeginRenderPass,
