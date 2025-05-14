@@ -796,6 +796,17 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv')
           'If your distribution does not ship a recent enough version, ' +
           'you can install the latest version for your user with `cargo install bindgen-cli`.')
   endif
+
+  bindgen_output_args = [
+    # can't do anything about it anyway
+    '--raw-line', '#![allow(clippy::all)]',
+    '--raw-line', '#![allow(improper_ctypes)]',
+    # Some bindgen versions assume `unsafe_op_in_unsafe_fn`
+    '--raw-line', '#![allow(unused_unsafe)]',
+    '--raw-line', '#![allow(non_camel_case_types)]',
+    '--raw-line', '#![allow(non_snake_case)]',
+    '--raw-line', '#![allow(non_upper_case_globals)]',
+  ]
 endif
 
 if get_option('precomp-compiler') != 'system'
