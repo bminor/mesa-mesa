@@ -4,6 +4,7 @@
 use crate::ir::*;
 use crate::sm70::ShaderModel70;
 use compiler::cfg::CFGBuilder;
+use rustc_hash::FxBuildHasher;
 
 use std::io::Write;
 use std::mem;
@@ -55,7 +56,7 @@ fn disassemble_instrs(instrs: Vec<Box<Instr>>, sm: u8) -> Vec<String> {
         instrs,
     };
 
-    let mut cfg = CFGBuilder::new();
+    let mut cfg = CFGBuilder::<_, _, FxBuildHasher>::new();
     cfg.add_node(0, block);
 
     let f = Function {

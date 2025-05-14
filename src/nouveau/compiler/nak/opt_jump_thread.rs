@@ -4,7 +4,7 @@
 use crate::ir::*;
 
 use compiler::cfg::CFGBuilder;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 fn clone_branch(op: &Op) -> Op {
     match op {
@@ -93,7 +93,7 @@ fn jump_thread(func: &mut Function) -> bool {
 fn rewrite_cfg(func: &mut Function) {
     // CFGBuilder takes care of removing dead blocks for us
     // We use the basic block's label to identify it
-    let mut builder = CFGBuilder::new();
+    let mut builder = CFGBuilder::<_, _, FxBuildHasher>::new();
 
     for i in 0..func.blocks.len() {
         let block = &func.blocks[i];

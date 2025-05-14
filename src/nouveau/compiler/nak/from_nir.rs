@@ -15,7 +15,7 @@ use compiler::bindings::*;
 use compiler::cfg::CFGBuilder;
 use compiler::nir::*;
 use compiler::nir_instr_printer::NirInstrPrinter;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::cmp::max;
 use std::ops::Index;
 
@@ -319,7 +319,7 @@ struct ShaderFromNir<'a> {
     sm: &'a dyn ShaderModel,
     info: ShaderInfo,
     float_ctl: ShaderFloatControls,
-    cfg: CFGBuilder<u32, BasicBlock>,
+    cfg: CFGBuilder<u32, BasicBlock, FxBuildHasher>,
     label_alloc: LabelAllocator,
     block_label: FxHashMap<u32, Label>,
     bar_label: FxHashMap<u32, Label>,

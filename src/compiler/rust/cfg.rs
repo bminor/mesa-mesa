@@ -3,7 +3,7 @@
 
 use crate::bitset::BitSet;
 use std::collections::HashMap;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice;
 
@@ -397,24 +397,24 @@ impl<'a, N> IntoIterator for &'a mut CFG<N> {
 /// `CFGBuilder` makes all that automatic by letting you add nodes and edges
 /// using any key type desired.  You then call `as_cfg()` to get the final
 /// control-flow graph.
-pub struct CFGBuilder<K, N> {
+pub struct CFGBuilder<K, N, H: BuildHasher + Default> {
     nodes: Vec<N>,
     edges: Vec<(K, K)>,
-    key_map: HashMap<K, usize>,
+    key_map: HashMap<K, usize, H>,
 }
 
-impl<K, N> CFGBuilder<K, N> {
+impl<K, N, H: BuildHasher + Default> CFGBuilder<K, N, H> {
     /// Creates a new CFG builder.
-    pub fn new() -> CFGBuilder<K, N> {
+    pub fn new() -> Self {
         CFGBuilder {
             nodes: Vec::new(),
             edges: Vec::new(),
-            key_map: HashMap::new(),
+            key_map: Default::default(),
         }
     }
 }
 
-impl<K: Eq + Hash, N> CFGBuilder<K, N> {
+impl<K: Eq + Hash, N, H: BuildHasher + Default> CFGBuilder<K, N, H> {
     /// Adds a node to the CFG.
     pub fn add_node(&mut self, k: K, n: N) {
         self.key_map.insert(k, self.nodes.len());
@@ -437,7 +437,7 @@ impl<K: Eq + Hash, N> CFGBuilder<K, N> {
     }
 }
 
-impl<K, N> Default for CFGBuilder<K, N> {
+impl<K, N, H: BuildHasher + Default> Default for CFGBuilder<K, N, H> {
     fn default() -> Self {
         CFGBuilder::new()
     }

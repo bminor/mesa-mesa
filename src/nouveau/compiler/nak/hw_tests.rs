@@ -13,6 +13,7 @@ use acorn::Acorn;
 use compiler::bindings::MESA_SHADER_COMPUTE;
 use compiler::cfg::CFGBuilder;
 use nak_bindings::*;
+use rustc_hash::FxBuildHasher;
 use std::mem::offset_of;
 use std::str::FromStr;
 use std::sync::OnceLock;
@@ -190,7 +191,7 @@ impl<'a> TestShaderBuilder<'a> {
             instrs: self.b.into_vec(),
         };
 
-        let mut cfg = CFGBuilder::new();
+        let mut cfg = CFGBuilder::<_, _, FxBuildHasher>::new();
         cfg.add_node(0, self.start_block);
         cfg.add_node(1, block);
         cfg.add_edge(0, 1);
