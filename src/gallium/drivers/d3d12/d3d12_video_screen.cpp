@@ -829,9 +829,18 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
                                                    ID3D12VideoDevice3 *pD3D12VideoDevice,
                                                    D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC1 &supportedCaps)
 {
-   constexpr unsigned c_hevcConfigurationSets = 5u;
+   constexpr unsigned c_hevcConfigurationSets = 6u;
    const D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC1 hevcConfigurationSets[c_hevcConfigurationSets] =
    {
+      {
+         D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_NONE,
+         D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_CUSIZE_16x16,
+         D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_CUSIZE_32x32,
+         D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_TUSIZE_4x4,
+         D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_TUSIZE_32x32,
+         3u,
+         3u,
+      },
       {
          D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_NONE,
          D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_CUSIZE_8x8,
