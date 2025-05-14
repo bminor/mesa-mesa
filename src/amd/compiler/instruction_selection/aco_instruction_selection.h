@@ -251,6 +251,9 @@ void _isel_err(isel_context* ctx, const char* file, unsigned line, const nir_ins
 /* aco_select_nir_alu.cpp */
 void visit_alu_instr(isel_context* ctx, nir_alu_instr* instr);
 
+/* aco_select_nir_intrinsics.cpp */
+void visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr);
+
 } // namespace aco
 
 #endif /* ACO_INSTRUCTION_SELECTION_H */
