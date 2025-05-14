@@ -2127,10 +2127,10 @@ tu_cmd_begin_iterator(struct tu_cmd_buffer *cmdbuf)
 {
    switch (cmdbuf->state.suspend_resume) {
    case SR_IN_PRE_CHAIN:
-      return cmdbuf->trace_renderpass_end;
+      return cmdbuf->trace_rp_drawcalls_end;
    case SR_AFTER_PRE_CHAIN:
    case SR_IN_CHAIN_AFTER_PRE_CHAIN:
-      return cmdbuf->pre_chain.trace_renderpass_end;
+      return cmdbuf->pre_chain.trace_rp_drawcalls_end;
    default:
       return u_trace_begin_iterator(&cmdbuf->trace);
    }
@@ -2141,10 +2141,10 @@ tu_cmd_end_iterator(struct tu_cmd_buffer *cmdbuf)
 {
    switch (cmdbuf->state.suspend_resume) {
    case SR_IN_PRE_CHAIN:
-      return cmdbuf->trace_renderpass_end;
+      return cmdbuf->trace_rp_drawcalls_end;
    case SR_IN_CHAIN:
    case SR_IN_CHAIN_AFTER_PRE_CHAIN:
-      return cmdbuf->trace_renderpass_start;
+      return cmdbuf->trace_rp_drawcalls_start;
    default:
       return u_trace_end_iterator(&cmdbuf->trace);
    }

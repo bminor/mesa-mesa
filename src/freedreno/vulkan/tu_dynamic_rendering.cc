@@ -148,8 +148,8 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
 
          if (!(old_cmds[i]->usage_flags &
                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
-            u_trace_disable_event_range(old_cmds[i]->pre_chain.trace_renderpass_start,
-                                        old_cmds[i]->pre_chain.trace_renderpass_end);
+            u_trace_disable_event_range(old_cmds[i]->pre_chain.trace_rp_drawcalls_start,
+                                        old_cmds[i]->pre_chain.trace_rp_drawcalls_end);
          }
 
          const struct VkOffset2D *fdm_offsets =
@@ -201,8 +201,8 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
 
          if (old_cmds[i]->usage_flags &
              VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) {
-            u_trace_disable_event_range(old_cmds[i]->trace_renderpass_start,
-                                        old_cmds[i]->trace_renderpass_end);
+            u_trace_disable_event_range(old_cmds[i]->trace_rp_drawcalls_start,
+                                        old_cmds[i]->trace_rp_drawcalls_end);
          }
 
          /* When the command buffer is finally recorded, we need its state
