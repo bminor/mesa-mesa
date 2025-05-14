@@ -1714,7 +1714,7 @@
         "description": "freedreno/ir3: Fix tess/geom asan error",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee0ee2a3174775531dd6cc7663940e2acf48b7b8",
         "notes": null
