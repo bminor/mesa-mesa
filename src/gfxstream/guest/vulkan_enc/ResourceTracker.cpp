@@ -1059,6 +1059,13 @@ void ResourceTracker::unregister_VkSampler(VkSampler sampler) {
     info_VkSampler.erase(sampler);
 }
 
+void ResourceTracker::unregister_VkPrivateDataSlot(VkPrivateDataSlot privateSlot) {
+    if (!privateSlot) return;
+
+    std::lock_guard<std::recursive_mutex> lock(mLock);
+    info_VkPrivateDataSlot.erase(privateSlot);
+}
+
 void ResourceTracker::unregister_VkCommandBuffer(VkCommandBuffer commandBuffer) {
     resetCommandBufferStagingInfo(commandBuffer, true /* also reset primaries */,
                                   true /* also clear pending descriptor sets */);
@@ -1566,9 +1573,15 @@ void ResourceTracker::deviceMemoryTransform_tohost(VkDeviceMemory* memory, uint3
 
         for (uint32_t i = 0; i < memoryCount; ++i) {
             VkDeviceMemory mem = memory[i];
+            if (!mem) {
+                return;
+            }
 
             auto it = info_VkDeviceMemory.find(mem);
-            if (it == info_VkDeviceMemory.end()) return;
+            if (it == info_VkDeviceMemory.end()) {
+                mesa_logw("%s cannot find memory %p!", __func__, mem);
+                return;
+            }
 
             const auto& info = it->second;
 
@@ -1583,11 +1596,6 @@ void ResourceTracker::deviceMemoryTransform_tohost(VkDeviceMemory* memory, uint3
             if (size && size[i] == VK_WHOLE_SIZE) {
                 size[i] = info.allocationSize;
             }
-
-            // TODO
-            (void)memory;
-            (void)offset;
-            (void)size;
         }
     }
 }
@@ -4996,6 +5004,91 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
     VkEncoder* enc = (VkEncoder*)context;
     return enc->vkWaitForFences(device, fenceCount, pFences, waitAll, timeout, true /* do lock */);
 #endif
+}
+
+VkResult ResourceTracker::on_vkSetPrivateData(void* context, VkResult input_result, VkDevice device,
+                                              VkObjectType objectType, uint64_t objectHandle,
+                                              VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    if (input_result != VK_SUCCESS) return input_result;
+
+    VkPrivateDataSlot_Info::PrivateDataKey key = std::make_pair(objectHandle, objectType);
+
+    std::lock_guard<std::recursive_mutex> lock(mLock);
+    auto it = info_VkPrivateDataSlot.find(privateDataSlot);
+
+    // Do not forward calls with invalid handles to host.
+    if (it == info_VkPrivateDataSlot.end()) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    auto& slotInfoTable = it->second.privateDataTable;
+    slotInfoTable[key] = data;
+    return VK_SUCCESS;
+}
+
+VkResult ResourceTracker::on_vkSetPrivateDataEXT(void* context, VkResult input_result,
+                                                 VkDevice device, VkObjectType objectType,
+                                                 uint64_t objectHandle,
+                                                 VkPrivateDataSlot privateDataSlot, uint64_t data) {
+    return on_vkSetPrivateData(context, input_result, device, objectType, objectHandle,
+                               privateDataSlot, data);
+}
+
+void ResourceTracker::on_vkGetPrivateData(void* context, VkDevice device, VkObjectType objectType,
+                                          uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
+                                          uint64_t* pData) {
+    VkPrivateDataSlot_Info::PrivateDataKey key = std::make_pair(objectHandle, objectType);
+
+    std::lock_guard<std::recursive_mutex> lock(mLock);
+    auto it = info_VkPrivateDataSlot.find(privateDataSlot);
+
+    // Do not forward calls with invalid handles to host.
+    if (it == info_VkPrivateDataSlot.end()) {
+        return;
+    }
+
+    auto& slotInfoTable = it->second.privateDataTable;
+    *pData = slotInfoTable[key];
+}
+
+void ResourceTracker::on_vkGetPrivateDataEXT(void* context, VkDevice device,
+                                             VkObjectType objectType, uint64_t objectHandle,
+                                             VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
+    return on_vkGetPrivateData(context, device, objectType, objectHandle, privateDataSlot, pData);
+}
+
+VkResult ResourceTracker::on_vkCreatePrivateDataSlot(void* context, VkResult input_result,
+                                                     VkDevice device,
+                                                     const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkPrivateDataSlot* pPrivateDataSlot) {
+    if (input_result != VK_SUCCESS) {
+        return input_result;
+    }
+    VkEncoder* enc = (VkEncoder*)context;
+    return enc->vkCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot,
+                                        true /* do lock */);
+}
+VkResult ResourceTracker::on_vkCreatePrivateDataSlotEXT(
+    void* context, VkResult input_result, VkDevice device,
+    const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+    VkPrivateDataSlot* pPrivateDataSlot) {
+    return on_vkCreatePrivateDataSlot(context, input_result, device, pCreateInfo, pAllocator,
+                                      pPrivateDataSlot);
+}
+
+void ResourceTracker::on_vkDestroyPrivateDataSlot(void* context, VkDevice device,
+                                                  VkPrivateDataSlot privateDataSlot,
+                                                  const VkAllocationCallbacks* pAllocator) {
+    if (!privateDataSlot) return;
+
+    VkEncoder* enc = (VkEncoder*)context;
+    enc->vkDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, true /* do lock */);
+}
+void ResourceTracker::on_vkDestroyPrivateDataSlotEXT(void* context, VkDevice device,
+                                                     VkPrivateDataSlot privateDataSlot,
+                                                     const VkAllocationCallbacks* pAllocator) {
+    return on_vkDestroyPrivateDataSlot(context, device, privateDataSlot, pAllocator);
 }
 
 VkResult ResourceTracker::on_vkCreateDescriptorPool(void* context, VkResult, VkDevice device,

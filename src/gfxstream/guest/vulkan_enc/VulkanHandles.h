@@ -104,7 +104,6 @@ namespace vk {
     f(VkValidationCacheEXT)                                                           \
     f(VkDebugReportCallbackEXT)                                                       \
     f(VkDebugUtilsMessengerEXT)                                                       \
-    f(VkPrivateDataSlot)                                                              \
     f(VkMicromapEXT)                                                                  \
     __GOLDFISH_VK_LIST_NON_DISPATCHABLE_HANDLE_TYPES_NVX_BINARY_IMPORT(f)             \
     __GOLDFISH_VK_LIST_NON_DISPATCHABLE_HANDLE_TYPES_NVX_DEVICE_GENERATED_COMMANDS(f) \
@@ -124,6 +123,7 @@ namespace vk {
     f(VkDescriptorSetLayout)                                    \
     f(VkCommandPool)                                            \
     f(VkSampler)                                                \
+    f(VkPrivateDataSlot)                                        \
     __GOLDFISH_VK_LIST_NON_DISPATCHABLE_HANDLE_TYPES_FUCHSIA(f) \
     GOLDFISH_VK_LIST_TRIVIAL_NON_DISPATCHABLE_HANDLE_TYPES(f)
 
@@ -150,6 +150,7 @@ namespace vk {
     f(VkDescriptorUpdateTemplate)                                            \
     f(VkCommandPool)                                                         \
     f(VkSampler)                                                             \
+    f(VkPrivateDataSlot)                                                     \
     __GOLDFISH_VK_LIST_NON_DISPATCHABLE_HANDLE_TYPES_FUCHSIA(f)              \
     GOLDFISH_VK_LIST_TRIVIAL_NON_DISPATCHABLE_HANDLE_TYPES(f)
 
