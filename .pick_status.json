@@ -1834,7 +1834,7 @@
         "description": "panfrost, panvk: fix G31 use of SHADER_MODE_EARLY_ZS_ALWAYS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
