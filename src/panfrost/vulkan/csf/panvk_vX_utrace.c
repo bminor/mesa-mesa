@@ -157,6 +157,7 @@ panvk_per_arch(utrace_clone_init_builder)(struct cs_builder *b,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .alloc_buffer = alloc_clone_buffer,
       .cookie = pool,
+      .ls_sb_slot = SB_ID(LS),
    };
    cs_builder_init(b, &builder_conf, (struct cs_buffer){0});
 }

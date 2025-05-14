@@ -40,6 +40,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .reg_perm = tiler_oom_reg_perm_cb,
+      .ls_sb_slot = SB_ID(LS),
    };
    cs_builder_init(&b, &conf, handler_mem);
 

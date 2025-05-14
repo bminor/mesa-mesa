@@ -68,9 +68,6 @@ struct panfrost_csf_batch {
       /* CS state, written through the CS, and checked when PAN_MESA_DEBUG=sync.
        */
       struct panfrost_ptr state;
-
-      /* CS load/store tracker if extra checks are enabled. */
-      struct cs_load_store_tracker *ls_tracker;
    } cs;
 
    /* Pool used to allocate CS chunks. */

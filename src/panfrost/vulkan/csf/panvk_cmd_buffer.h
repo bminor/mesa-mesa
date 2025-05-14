@@ -232,8 +232,6 @@ struct panvk_cs_reg_upd_context {
 struct panvk_cs_state {
    struct cs_builder builder;
 
-   struct cs_load_store_tracker ls_tracker;
-
    /* Used to debug register writes in invalid contexts. */
    struct {
       struct panvk_cs_reg_upd_context *upd_ctx_stack;

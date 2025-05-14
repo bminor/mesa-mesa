@@ -77,7 +77,6 @@ struct cs_buffer {
 struct cs_load_store_tracker {
    BITSET_DECLARE(pending_loads, 256);
    BITSET_DECLARE(pending_stores, 256);
-   uint8_t sb_slot;
 };
 
 /**
@@ -109,9 +108,6 @@ struct cs_builder_conf {
    /* CS buffer allocator */
    struct cs_buffer (*alloc_buffer)(void *cookie);
 
-   /* Optional load/store tracker. */
-   struct cs_load_store_tracker *ls_tracker;
-
    /* Optional dirty registers tracker. */
    struct cs_dirty_tracker *dirty_tracker;
 
@@ -120,6 +116,9 @@ struct cs_builder_conf {
 
    /* Cookie passed back to alloc_buffer() */
    void *cookie;
+
+   /* SB slot used for load/store instructions. */
+   uint8_t ls_sb_slot;
 };
 
 /* The CS is formed of one or more CS chunks linked with JUMP instructions.
@@ -185,6 +184,11 @@ struct cs_builder {
    /* Current CS chunk. */
    struct cs_chunk cur_chunk;
 
+   /* Current load/store tracker. */
+   struct cs_load_store_tracker *cur_ls_tracker;
+
+   struct cs_load_store_tracker root_ls_tracker;
+
    /* Temporary storage for inner blocks that need to be built
     * and copied in one monolithic sequence of instructions with no
     * jump in the middle.
@@ -216,7 +220,10 @@ cs_builder_init(struct cs_builder *b, const struct cs_builder_conf *conf,
       .conf = *conf,
       .root_chunk.buffer = root_buffer,
       .cur_chunk.buffer = root_buffer,
+      .cur_ls_tracker = &b->root_ls_tracker,
    };
+
+   *b->cur_ls_tracker = (struct cs_load_store_tracker){0};
 
    /* We need at least 3 registers for CS chunk linking. Assume the kernel needs
     * at least that too.
@@ -329,14 +336,12 @@ cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count,
       }
    }
 
-   struct cs_load_store_tracker *ls_tracker = b->conf.ls_tracker;
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
 
-   if (unlikely(ls_tracker)) {
-      for (unsigned i = reg; i < reg + count; i++) {
-         if ((mask & BITFIELD_BIT(i - reg)) &&
-             BITSET_TEST(ls_tracker->pending_loads, i))
-            assert(!"register used as a source before flushing loads\n");
-      }
+   for (unsigned i = reg; i < reg + count; i++) {
+      if ((mask & BITFIELD_BIT(i - reg)) &&
+          BITSET_TEST(ls_tracker->pending_loads, i))
+         assert(!"register used as a source before flushing loads\n");
    }
 
    return reg;
@@ -369,15 +374,12 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count,
       }
    }
 
-   struct cs_load_store_tracker *ls_tracker = b->conf.ls_tracker;
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
 
-   if (unlikely(ls_tracker)) {
-      for (unsigned i = reg; i < reg + count; i++) {
-         if ((mask & BITFIELD_BIT(i - reg)) &&
-             BITSET_TEST(ls_tracker->pending_stores, i))
-            assert(
-               !"register reused as a destination before flushing stores\n");
-      }
+   for (unsigned i = reg; i < reg + count; i++) {
+      if ((mask & BITFIELD_BIT(i - reg)) &&
+          BITSET_TEST(ls_tracker->pending_stores, i))
+         assert(!"register reused as a destination before flushing stores\n");
    }
 
    if (unlikely(b->conf.dirty_tracker)) {
@@ -995,13 +997,10 @@ struct cs_loop {
 static inline void
 cs_loop_diverge_ls_update(struct cs_builder *b, struct cs_loop *loop)
 {
-   if (likely(!b->conf.ls_tracker))
-      return;
-
    if (!loop->orig_ls_state) {
-      loop->orig_ls_state = b->conf.ls_tracker;
+      loop->orig_ls_state = b->cur_ls_tracker;
       loop->ls_state = *loop->orig_ls_state;
-      b->conf.ls_tracker = &loop->ls_state;
+      b->cur_ls_tracker = &loop->ls_state;
    } else {
       BITSET_OR(loop->orig_ls_state->pending_loads,
                 loop->orig_ls_state->pending_loads,
@@ -1079,7 +1078,7 @@ cs_while_end(struct cs_builder *b, struct cs_loop *loop)
       BITSET_OR(loop->orig_ls_state->pending_stores,
                 loop->orig_ls_state->pending_stores,
                 loop->ls_state.pending_stores);
-      b->conf.ls_tracker = loop->orig_ls_state;
+      b->cur_ls_tracker = loop->orig_ls_state;
    }
 }
 
@@ -1112,7 +1111,8 @@ cs_move64_to(struct cs_builder *b, struct cs_index dest, uint64_t imm)
 static inline void
 cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
 {
-   struct cs_load_store_tracker *ls_tracker = b->conf.ls_tracker;
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
 
    cs_emit(b, WAIT, I) {
       I.wait_mask = wait_mask;
@@ -1121,8 +1121,7 @@ cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
    /* We don't do advanced tracking of cs_defer(), and assume that
     * load/store will be flushed with an explicit wait on the load/store
     * scoreboard. */
-   if (unlikely(ls_tracker) &&
-       (wait_mask & BITFIELD_BIT(ls_tracker->sb_slot))) {
+   if (wait_mask & BITFIELD_BIT(b->conf.ls_sb_slot)) {
       BITSET_CLEAR_RANGE(ls_tracker->pending_loads, 0, 255);
       BITSET_CLEAR_RANGE(ls_tracker->pending_stores, 0, 255);
    }
@@ -1322,11 +1321,9 @@ cs_load_to(struct cs_builder *b, struct cs_index dest, struct cs_index address,
       I.offset = offset;
    }
 
-   if (unlikely(b->conf.ls_tracker)) {
-      for (unsigned i = 0; i < count; i++) {
-         if (mask & BITFIELD_BIT(i))
-            BITSET_SET(b->conf.ls_tracker->pending_loads, base_reg + i);
-      }
+   for (unsigned i = 0; i < count; i++) {
+      if (mask & BITFIELD_BIT(i))
+         BITSET_SET(b->cur_ls_tracker->pending_loads, base_reg + i);
    }
 }
 
@@ -1358,11 +1355,9 @@ cs_store(struct cs_builder *b, struct cs_index data, struct cs_index address,
       I.offset = offset;
    }
 
-   if (unlikely(b->conf.ls_tracker)) {
-      for (unsigned i = 0; i < count; i++) {
-         if (mask & BITFIELD_BIT(i))
-            BITSET_SET(b->conf.ls_tracker->pending_stores, base_reg + i);
-      }
+   for (unsigned i = 0; i < count; i++) {
+      if (mask & BITFIELD_BIT(i))
+         BITSET_SET(b->cur_ls_tracker->pending_stores, base_reg + i);
    }
 }
 
@@ -1398,8 +1393,7 @@ cs_set_scoreboard_entry(struct cs_builder *b, unsigned ep, unsigned other)
 
    /* We assume the load/store scoreboard entry is static to keep things
     * simple. */
-   if (unlikely(b->conf.ls_tracker))
-      assert(b->conf.ls_tracker->sb_slot == other);
+   assert(b->conf.ls_sb_slot == other);
 }
 #else
 static inline void
@@ -1413,9 +1407,8 @@ cs_set_state_imm32(struct cs_builder *b, enum mali_cs_set_state_type state,
 
    /* We assume the load/store scoreboard entry is static to keep things
     * simple. */
-   if (state == MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER &&
-       unlikely(b->conf.ls_tracker))
-      assert(b->conf.ls_tracker->sb_slot == value);
+   if (state == MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER)
+      assert(b->conf.ls_sb_slot == value);
 }
 #endif
 
@@ -1651,7 +1644,7 @@ cs_match_start(struct cs_builder *b, struct cs_match *match,
    *match = (struct cs_match){
       .val = val,
       .scratch_reg = scratch_reg,
-      .orig_ls_state = b->conf.ls_tracker,
+      .orig_ls_state = b->cur_ls_tracker,
    };
 
    cs_block_start(b, &match->block);
@@ -1666,7 +1659,7 @@ cs_match_case_ls_set(struct cs_builder *b, struct cs_match *match)
 {
    if (unlikely(match->orig_ls_state)) {
       match->case_ls_state = *match->orig_ls_state;
-      b->conf.ls_tracker = &match->case_ls_state;
+      b->cur_ls_tracker = &match->case_ls_state;
    }
 }
 
@@ -1749,7 +1742,7 @@ cs_match_end(struct cs_builder *b, struct cs_match *match)
          *match->orig_ls_state = match->ls_state;
       }
 
-      b->conf.ls_tracker = match->orig_ls_state;
+      b->cur_ls_tracker = match->orig_ls_state;
    }
 
    cs_set_label(b, &match->next_case_label);

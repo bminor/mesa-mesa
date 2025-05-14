@@ -400,6 +400,7 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
    const struct cs_builder_conf conf = {
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
+      .ls_sb_slot = SB_ID(LS),
    };
    struct cs_builder b;
 

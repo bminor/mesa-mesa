@@ -703,15 +703,10 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
          .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
          .alloc_buffer = alloc_cs_buffer,
          .cookie = cmdbuf,
+         .ls_sb_slot = SB_ID(LS),
       };
 
       if (instance->debug_flags & PANVK_DEBUG_CS) {
-         cmdbuf->state.cs[i].ls_tracker = (struct cs_load_store_tracker){
-            .sb_slot = SB_ID(LS),
-         };
-
-         conf.ls_tracker = &cmdbuf->state.cs[i].ls_tracker;
-
          cmdbuf->state.cs[i].reg_access.upd_ctx_stack = NULL;
          cmdbuf->state.cs[i].reg_access.base_perm = base_reg_perms[i];
          conf.reg_perm = cs_reg_perm;

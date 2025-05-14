@@ -118,6 +118,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .reg_perm = (dev->debug & PAN_DBG_CS) ? csf_reg_perm_cb : NULL,
+      .ls_sb_slot = 0,
    };
    cs_builder_init(&b, &conf, queue);
 
@@ -225,7 +226,6 @@ void
 GENX(csf_cleanup_batch)(struct panfrost_batch *batch)
 {
    free(batch->csf.cs.builder);
-   free(batch->csf.cs.ls_tracker);
 
    panfrost_pool_cleanup(&batch->csf.cs_chunk_pool);
 }
@@ -248,13 +248,6 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
                           "CS chunk pool", false, true))
       return -1;
 
-   if (dev->debug & PAN_DBG_CS) {
-      /* Load/store tracker if extra checks are enabled. */
-      batch->csf.cs.ls_tracker =
-         calloc(1, sizeof(struct cs_load_store_tracker));
-      batch->csf.cs.ls_tracker->sb_slot = 0;
-   }
-
    /* Allocate and bind the command queue */
    struct cs_buffer queue = csf_alloc_cs_buffer(batch);
    if (!queue.gpu)
@@ -268,8 +261,8 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .alloc_buffer = csf_alloc_cs_buffer,
       .cookie = batch,
-      .ls_tracker = batch->csf.cs.ls_tracker,
       .reg_perm = (dev->debug & PAN_DBG_CS) ? csf_reg_perm_cb : NULL,
+      .ls_sb_slot = 0,
    };
 
    /* Setup the queue builder */
@@ -1535,6 +1528,7 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    const struct cs_builder_conf bconf = {
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
+      .ls_sb_slot = 0,
    };
    struct cs_builder b;
    cs_builder_init(&b, &bconf, init_buffer);
