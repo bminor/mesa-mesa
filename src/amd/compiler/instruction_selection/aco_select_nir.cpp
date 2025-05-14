@@ -5,34 +5,27 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "aco_instruction_selection.h"
-
 #include "aco_builder.h"
-#include "aco_interface.h"
+#include "aco_instruction_selection.h"
 #include "aco_ir.h"
 
 #include "common/ac_descriptors.h"
-#include "common/ac_gpu_info.h"
 #include "common/nir/ac_nir.h"
-#include "common/sid.h"
 
-#include "util/fast_idiv_by_const.h"
-#include "util/memstream.h"
-
+#include "amdgfxregs.h"
 #include <array>
 #include <functional>
 #include <map>
 #include <numeric>
-#include <stack>
 #include <utility>
 #include <vector>
 
 namespace aco {
 namespace {
 
-static void visit_cf_list(struct isel_context* ctx, struct exec_list* list);
+void visit_cf_list(struct isel_context* ctx, struct exec_list* list);
 
-static Builder
+Builder
 create_alu_builder(isel_context* ctx, nir_alu_instr* instr)
 {
    Builder bld(ctx->program, ctx->block);
@@ -77,7 +70,7 @@ emit_mbcnt(isel_context* ctx, Temp dst, Operand mask = Operand(), Operand base =
       return bld.vop3(aco_opcode::v_mbcnt_hi_u32_b32_e64, Definition(dst), mask_hi, mbcnt_lo);
 }
 
-static Temp
+Temp
 emit_bpermute(isel_context* ctx, Builder& bld, Temp index, Temp data)
 {
    if (index.regClass() == s1)
@@ -130,7 +123,7 @@ emit_bpermute(isel_context* ctx, Builder& bld, Temp index, Temp data)
    }
 }
 
-static Temp
+Temp
 emit_masked_swizzle(isel_context* ctx, Builder& bld, Temp src, unsigned mask, bool allow_fi)
 {
    if (ctx->options->gfx_level >= GFX8) {
@@ -190,7 +183,7 @@ emit_masked_swizzle(isel_context* ctx, Builder& bld, Temp src, unsigned mask, bo
    return bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), src, mask, 0, false);
 }
 
-static Temp
+Temp
 as_vgpr(Builder& bld, Temp val)
 {
    if (val.type() == RegType::sgpr)
@@ -5355,7 +5348,7 @@ visit_load_constant(isel_context* ctx, nir_intrinsic_instr* instr)
                nir_intrinsic_align_offset(instr), nir_intrinsic_access(instr) | ACCESS_CAN_REORDER);
 }
 
-static int
+int
 image_type_to_components_count(enum glsl_sampler_dim dim, bool array)
 {
    switch (dim) {
@@ -5445,7 +5438,7 @@ visit_bvh8_intersect_ray_amd(isel_context* ctx, nir_intrinsic_instr* instr)
               Operand(new_dir));
 }
 
-static std::vector<Temp>
+std::vector<Temp>
 get_image_coords(isel_context* ctx, const nir_intrinsic_instr* instr)
 {
 
@@ -6789,7 +6782,7 @@ visit_shared_append(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 
    Temp tmp = bld.tmp(v1);
-   Instruction *ds;
+   Instruction* ds;
    Operand m = load_lds_size_m0(bld);
    if (m.isUndefined())
       ds = bld.ds(op, Definition(tmp), address);
@@ -7355,7 +7348,7 @@ ds_ordered_count_offsets(isel_context* ctx, unsigned index_operand, unsigned wav
       *offset1 |= 3 /* GS shader type */ << 2;
 }
 
-static bool
+bool
 get_replicated_constant(nir_def* def, unsigned stride, uint32_t* constant)
 {
    nir_scalar comp = nir_scalar_resolved(def, 0);
@@ -7372,7 +7365,7 @@ get_replicated_constant(nir_def* def, unsigned stride, uint32_t* constant)
    return true;
 }
 
-static void
+void
 visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    aco_opcode opcode = aco_opcode::num_opcodes;
@@ -7552,8 +7545,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
          }
       } else {
          dpp_ctrl1 = dpp_quad_perm(0, 0, 0, 0);
-         if (instr->intrinsic == nir_intrinsic_ddx ||
-             instr->intrinsic == nir_intrinsic_ddx_coarse)
+         if (instr->intrinsic == nir_intrinsic_ddx || instr->intrinsic == nir_intrinsic_ddx_coarse)
             dpp_ctrl2 = dpp_quad_perm(1, 1, 1, 1);
          else
             dpp_ctrl2 = dpp_quad_perm(2, 2, 2, 2);
@@ -8207,17 +8199,17 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    }
    case nir_intrinsic_shader_clock: {
       Temp dst = get_ssa_temp(ctx, &instr->def);
-      if (nir_intrinsic_memory_scope(instr) == SCOPE_SUBGROUP &&
-          ctx->options->gfx_level >= GFX12) {
+      if (nir_intrinsic_memory_scope(instr) == SCOPE_SUBGROUP && ctx->options->gfx_level >= GFX12) {
          Temp hi0 = bld.tmp(s1);
          Temp hi1 = bld.tmp(s1);
          Temp lo = bld.tmp(s1);
-         bld.pseudo(aco_opcode::p_shader_cycles_hi_lo_hi, Definition(hi0), Definition(lo), Definition(hi1));
+         bld.pseudo(aco_opcode::p_shader_cycles_hi_lo_hi, Definition(hi0), Definition(lo),
+                    Definition(hi1));
          Temp hi_eq = bld.sopc(aco_opcode::s_cmp_eq_u32, bld.def(s1, scc), hi0, hi1);
          lo = bld.sop2(aco_opcode::s_cselect_b32, bld.def(s1), lo, Operand::zero(), bld.scc(hi_eq));
          bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lo, hi1);
       } else if (nir_intrinsic_memory_scope(instr) == SCOPE_SUBGROUP &&
-          ctx->options->gfx_level >= GFX10_3) {
+                 ctx->options->gfx_level >= GFX10_3) {
          /* "((size - 1) << 11) | register" (SHADER_CYCLES is encoded as register 29) */
          Temp clock = bld.sopk(aco_opcode::s_getreg_b32, bld.def(s1), ((20 - 1) << 11) | 29);
          bld.pseudo(aco_opcode::p_create_vector, Definition(dst), clock, Operand::zero());
@@ -9271,7 +9263,7 @@ visit_block(isel_context* ctx, nir_block* block)
    }
 }
 
-static void
+void
 visit_loop(isel_context* ctx, nir_loop* loop)
 {
    assert(!nir_loop_has_continue_construct(loop));
@@ -9286,7 +9278,7 @@ visit_loop(isel_context* ctx, nir_loop* loop)
    end_loop(ctx, &lc);
 }
 
-static void
+void
 visit_if(isel_context* ctx, nir_if* if_stmt)
 {
    Temp cond = get_ssa_temp(ctx, if_stmt->condition.ssa);
@@ -9357,7 +9349,7 @@ visit_if(isel_context* ctx, nir_if* if_stmt)
    }
 }
 
-static void
+void
 visit_cf_list(isel_context* ctx, struct exec_list* list)
 {
    if (nir_cf_list_is_empty_block(list))
@@ -9381,7 +9373,7 @@ visit_cf_list(isel_context* ctx, struct exec_list* list)
    ctx->empty_exec_skip = std::move(empty_exec_skip_old);
 }
 
-static void
+void
 create_fs_jump_to_epilog(isel_context* ctx)
 {
    Builder bld(ctx->program, ctx->block);
@@ -9443,13 +9435,13 @@ create_fs_jump_to_epilog(isel_context* ctx)
    ctx->block->instructions.emplace_back(std::move(jump));
 }
 
-static Operand
+Operand
 get_arg_for_end(isel_context* ctx, struct ac_arg arg)
 {
    return Operand(get_arg(ctx, arg), get_arg_reg(ctx->args, arg));
 }
 
-static void
+void
 create_fs_end_for_epilog(isel_context* ctx)
 {
    Builder bld(ctx->program, ctx->block);
@@ -9578,7 +9570,7 @@ merged_wave_info_to_mask(isel_context* ctx, unsigned i)
    return lanecount_to_mask(ctx, count, i * 8u);
 }
 
-static void
+void
 insert_rt_jump_next(isel_context& ctx, const struct ac_shader_args* args)
 {
    unsigned src_count = 0;
@@ -9758,7 +9750,7 @@ pops_await_overlapped_waves(isel_context* ctx)
    bld.reset(ctx->block);
 }
 
-static void
+void
 create_merged_jump_to_epilog(isel_context* ctx)
 {
    Builder bld(ctx->program, ctx->block);
@@ -9788,7 +9780,7 @@ create_merged_jump_to_epilog(isel_context* ctx)
    ctx->block->instructions.emplace_back(std::move(jump));
 }
 
-static void
+void
 create_end_for_merged_shader(isel_context* ctx)
 {
    std::vector<Operand> regs;

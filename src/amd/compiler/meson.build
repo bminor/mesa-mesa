@@ -31,11 +31,11 @@ aco_builder_h = custom_target(
 )
 
 libaco_files = files(
-  'instruction_selection/aco_instruction_selection.cpp',
   'instruction_selection/aco_instruction_selection.h',
   'instruction_selection/aco_isel_cfg.cpp',
   'instruction_selection/aco_isel_helpers.cpp',
   'instruction_selection/aco_isel_setup.cpp',
+  'instruction_selection/aco_select_nir.cpp',
   'instruction_selection/aco_select_ps_epilog.cpp',
   'instruction_selection/aco_select_ps_prolog.cpp',
   'instruction_selection/aco_select_rt_prolog.cpp',
