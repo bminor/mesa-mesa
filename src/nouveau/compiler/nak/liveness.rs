@@ -18,7 +18,7 @@ impl LiveSet {
     pub fn new() -> LiveSet {
         LiveSet {
             live: Default::default(),
-            set: HashSet::new(),
+            set: Default::default(),
         }
     }
 

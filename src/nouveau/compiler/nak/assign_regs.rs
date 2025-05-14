@@ -18,7 +18,7 @@ struct KillSet {
 impl KillSet {
     pub fn new() -> KillSet {
         KillSet {
-            set: HashSet::new(),
+            set: Default::default(),
             vec: Vec::new(),
         }
     }

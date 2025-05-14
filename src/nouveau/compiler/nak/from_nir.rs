@@ -347,12 +347,12 @@ impl<'a> ShaderFromNir<'a> {
             label_alloc: LabelAllocator::new(),
             block_label: Default::default(),
             bar_label: Default::default(),
-            sync_blocks: HashSet::new(),
+            sync_blocks: Default::default(),
             crs: Vec::new(),
             fs_out_regs: [None; 34],
             end_block_id: 0,
             ssa_map: Default::default(),
-            saturated: HashSet::new(),
+            saturated: Default::default(),
             nir_instr_printer: NirInstrPrinter::new().unwrap(),
         }
     }

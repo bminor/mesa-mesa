@@ -20,8 +20,8 @@ impl DeadCodePass {
         DeadCodePass {
             any_dead: false,
             new_live: false,
-            live_ssa: HashSet::new(),
-            live_phi: HashSet::new(),
+            live_ssa: Default::default(),
+            live_phi: Default::default(),
         }
     }
 

@@ -76,7 +76,7 @@ impl DepGraph {
             deps: Vec::new(),
             instr_deps: Default::default(),
             instr_waits: Default::default(),
-            active: HashSet::new(),
+            active: Default::default(),
         }
     }
 
