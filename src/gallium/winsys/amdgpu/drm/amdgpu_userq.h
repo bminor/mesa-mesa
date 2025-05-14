@@ -86,7 +86,8 @@ struct amdgpu_userq {
 };
 
 bool
-amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum amd_ip_type ip_type);
+amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum amd_ip_type ip_type,
+                  unsigned queue_index);
 void
 amdgpu_userq_deinit(struct amdgpu_winsys *aws, struct amdgpu_userq *userq);
 

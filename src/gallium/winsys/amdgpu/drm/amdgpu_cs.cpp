@@ -982,7 +982,8 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
       goto fail;
 
    if (acs->aws->info.userq_ip_mask & BITFIELD_BIT(acs->ip_type)) {
-      if (!amdgpu_userq_init(acs->aws, &acs->aws->queues[acs->queue_index].userq, ip_type))
+      if (!amdgpu_userq_init(acs->aws, &acs->aws->queues[acs->queue_index].userq, ip_type,
+                             acs->queue_index))
          goto fail;
    }
 
