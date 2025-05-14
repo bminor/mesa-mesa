@@ -261,6 +261,9 @@ panvk_DestroyInstance(VkInstance _instance,
    if (!instance)
       return;
 
+   driDestroyOptionCache(&instance->dri_options);
+   driDestroyOptionInfo(&instance->available_dri_options);
+
    vk_instance_finish(&instance->vk);
    vk_free(&instance->vk.alloc, instance);
 }
