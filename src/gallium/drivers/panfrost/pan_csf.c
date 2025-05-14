@@ -125,7 +125,6 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    struct cs_exception_handler_ctx handler_ctx = {
       .ctx_reg = cs_reg64(&b, TILER_OOM_CTX_REG),
       .dump_addr_offset = offsetof(struct pan_csf_tiler_oom_ctx, dump_addr),
-      .ls_sb_slot = 0,
    };
    struct cs_exception_handler handler;
 

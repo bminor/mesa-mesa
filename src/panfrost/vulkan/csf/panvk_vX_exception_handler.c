@@ -48,14 +48,12 @@ generate_tiler_oom_handler(struct panvk_device *dev,
    struct cs_exception_handler_ctx handler_ctx = {
       .ctx_reg = cs_subqueue_ctx_reg(&b),
       .dump_addr_offset = TILER_OOM_CTX_FIELD_OFFSET(reg_dump_addr),
-      .ls_sb_slot = SB_ID(LS),
    };
    struct cs_tracing_ctx tracing_ctx = {
       .enabled = tracing_enabled,
       .ctx_reg = cs_subqueue_ctx_reg(&b),
       .tracebuf_addr_offset =
          offsetof(struct panvk_cs_subqueue_context, debug.tracebuf.cs),
-      .ls_sb_slot = SB_ID(LS),
    };
 
    cs_exception_handler_def(&b, &handler, handler_ctx) {

@@ -1831,7 +1831,6 @@ cs_nop(struct cs_builder *b)
 struct cs_exception_handler_ctx {
    struct cs_index ctx_reg;
    unsigned dump_addr_offset;
-   uint8_t ls_sb_slot;
 };
 
 struct cs_exception_handler {
@@ -1986,7 +1985,6 @@ struct cs_tracing_ctx {
    bool enabled;
    struct cs_index ctx_reg;
    unsigned tracebuf_addr_offset;
-   uint8_t ls_sb_slot;
 };
 
 static inline void

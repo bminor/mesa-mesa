@@ -716,7 +716,6 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
             .ctx_reg = cs_subqueue_ctx_reg(b),
             .tracebuf_addr_offset =
                offsetof(struct panvk_cs_subqueue_context, debug.tracebuf.cs),
-            .ls_sb_slot = SB_ID(LS),
          };
       }
    }
