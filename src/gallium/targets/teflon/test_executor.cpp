@@ -391,7 +391,7 @@ read_buf(const char *path, size_t *buf_size)
 
    fclose(f);
 
-   if(buf_size != NULL)
+   if (buf_size != NULL)
       *buf_size = fsize;
 
    return buf;
@@ -420,7 +420,7 @@ run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num
 
    *num_inputs = TfLiteInterpreterGetInputTensorCount(interpreter);
    if (*input == NULL)
-      *input = (void**)calloc(*num_inputs, sizeof(*input));
+      *input = (void **)calloc(*num_inputs, sizeof(*input));
    for (unsigned i = 0; i < *num_inputs; i++) {
       TfLiteTensor *input_tensor = TfLiteInterpreterGetInputTensor(interpreter, i);
       std::ostringstream input_cache;
@@ -439,16 +439,16 @@ run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num
                shape[j] = input_tensor->dims->data[j];
 
             switch (input_tensor->type) {
-               case kTfLiteFloat32: {
-                  xt::xarray<float_t> a = xt::random::rand<float_t>(shape);
-                  memcpy((*input)[i], a.data(), input_tensor->bytes);
-                  break;
-               }
-               default: {
-                  xt::xarray<uint8_t> a = xt::random::randint<uint8_t>(shape, 0, 255);
-                  memcpy((*input)[i], a.data(), input_tensor->bytes);
-                  break;
-               }
+            case kTfLiteFloat32: {
+               xt::xarray<float_t> a = xt::random::rand<float_t>(shape);
+               memcpy((*input)[i], a.data(), input_tensor->bytes);
+               break;
+            }
+            default: {
+               xt::xarray<uint8_t> a = xt::random::randint<uint8_t>(shape, 0, 255);
+               memcpy((*input)[i], a.data(), input_tensor->bytes);
+               break;
+            }
             }
 
             if (cache_is_enabled()) {
@@ -473,9 +473,9 @@ run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num
    }
 
    *num_outputs = TfLiteInterpreterGetOutputTensorCount(interpreter);
-   *output = (void**)malloc(sizeof(*output) * *num_outputs);
-   *output_sizes = (size_t*)malloc(sizeof(*output_sizes) * *num_outputs);
-   *output_types = (TfLiteType*)malloc(sizeof(*output_types) * *num_outputs);
+   *output = (void **)malloc(sizeof(*output) * *num_outputs);
+   *output_sizes = (size_t *)malloc(sizeof(*output_sizes) * *num_outputs);
+   *output_types = (TfLiteType *)malloc(sizeof(*output_types) * *num_outputs);
    for (unsigned i = 0; i < *num_outputs; i++) {
       const TfLiteTensor *output_tensor = TfLiteInterpreterGetOutputTensor(interpreter, i);
       output_cache.str("");
@@ -496,14 +496,14 @@ run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num
       }
 
       switch (output_tensor->type) {
-         case kTfLiteFloat32: {
-            (*output_sizes)[i] = output_tensor->bytes / 4;
-            break;
-         }
-         default: {
-            (*output_sizes)[i] = output_tensor->bytes;
-            break;
-         }
+      case kTfLiteFloat32: {
+         (*output_sizes)[i] = output_tensor->bytes / 4;
+         break;
+      }
+      default: {
+         (*output_sizes)[i] = output_tensor->bytes;
+         break;
+      }
       }
    }
 

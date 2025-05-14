@@ -5,10 +5,10 @@
 
 #include <cstdio>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <sys/mman.h>
 #include <xtensor/xrandom.hpp>
 
 #include <iostream>
@@ -18,13 +18,13 @@
 #include "tensorflow/lite/c/c_api.h"
 #include "test_executor.h"
 
-#define TEST_CONV2D           1
-#define TEST_DEPTHWISE        1
-#define TEST_ADD              1
-#define TEST_FULLY_CONNECTED  1
-#define TEST_MODELS           1
+#define TEST_CONV2D          1
+#define TEST_DEPTHWISE       1
+#define TEST_ADD             1
+#define TEST_FULLY_CONNECTED 1
+#define TEST_MODELS          1
 
-#define TOLERANCE       2
+#define TOLERANCE 2
 
 std::vector<bool> is_signed{false}; /* TODO: Support INT8? */
 std::vector<bool> padding_same{false, true};
@@ -87,59 +87,59 @@ test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance
    for (size_t i = 0; i < num_outputs; i++) {
       for (size_t j = 0; j < output_sizes[i]; j++) {
          switch (output_types[i]) {
-            case kTfLiteFloat32: {
-               float *cpu = ((float**)cpu_output)[i];
-               float *npu = ((float**)npu_output)[i];
-               if (abs(cpu[j] - npu[j]) > tolerance / 33.0) {
-                  std::cout << "CPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(6) << cpu[k] << " ";
-                  std::cout << "\n";
-                  std::cout << "NPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(6) << npu[k] << " ";
-                  std::cout << "\n";
+         case kTfLiteFloat32: {
+            float *cpu = ((float **)cpu_output)[i];
+            float *npu = ((float **)npu_output)[i];
+            if (abs(cpu[j] - npu[j]) > tolerance / 33.0) {
+               std::cout << "CPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(6) << cpu[k] << " ";
+               std::cout << "\n";
+               std::cout << "NPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(6) << npu[k] << " ";
+               std::cout << "\n";
 
-                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << npu[j] << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << cpu[j] << ").";
-               }
-               break;
+               FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << npu[j] << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << cpu[j] << ").";
             }
-            case kTfLiteInt8: {
-               int8_t *cpu = ((int8_t**)cpu_output)[i];
-               int8_t *npu = ((int8_t**)npu_output)[i];
-               if (abs(cpu[j] - npu[j]) > tolerance) {
-                  std::cout << "CPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k] & 0xff) << " ";
-                  std::cout << "\n";
-                  std::cout << "NPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k] & 0xff) << " ";
-                  std::cout << "\n";
+            break;
+         }
+         case kTfLiteInt8: {
+            int8_t *cpu = ((int8_t **)cpu_output)[i];
+            int8_t *npu = ((int8_t **)npu_output)[i];
+            if (abs(cpu[j] - npu[j]) > tolerance) {
+               std::cout << "CPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k] & 0xff) << " ";
+               std::cout << "\n";
+               std::cout << "NPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k] & 0xff) << " ";
+               std::cout << "\n";
 
-                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j] & 0xff) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j] & 0xff) << ").";
-               }
-               break;
+               FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j] & 0xff) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j] & 0xff) << ").";
             }
-            case kTfLiteUInt8: {
-               uint8_t *cpu = ((uint8_t**)cpu_output)[i];
-               uint8_t *npu = ((uint8_t**)npu_output)[i];
-               if (abs(cpu[j] - npu[j]) > tolerance) {
-                  std::cout << "CPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k]) << " ";
-                  std::cout << "\n";
-                  std::cout << "NPU: ";
-                  for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
-                     std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k]) << " ";
-                  std::cout << "\n";
+            break;
+         }
+         case kTfLiteUInt8: {
+            uint8_t *cpu = ((uint8_t **)cpu_output)[i];
+            uint8_t *npu = ((uint8_t **)npu_output)[i];
+            if (abs(cpu[j] - npu[j]) > tolerance) {
+               std::cout << "CPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(2) << std::hex << int(cpu[k]) << " ";
+               std::cout << "\n";
+               std::cout << "NPU: ";
+               for (int k = 0; k < std::min(int(output_sizes[i]), 24); k++)
+                  std::cout << std::setfill('0') << std::setw(2) << std::hex << int(npu[k]) << " ";
+               std::cout << "\n";
 
-                  FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j]) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j]) << ").";
-               }
-               break;
+               FAIL() << "Output at " << j << " from the NPU (" << std::setfill('0') << std::setw(2) << std::hex << int(npu[j]) << ") doesn't match that from the CPU (" << std::setfill('0') << std::setw(2) << std::hex << int(cpu[j]) << ").";
             }
-            default:
-               assert(!"Unsupported data type for output tensor");
+            break;
+         }
+         default:
+            assert(!"Unsupported data type for output tensor");
          }
       }
    }
@@ -476,10 +476,10 @@ class FullyConnected : public testing::TestWithParam<std::tuple<bool, int, int>>
 TEST_P(FullyConnected, Op)
 {
    test_fully_connected(
-             std::get<2>(GetParam()),
-             std::get<1>(GetParam()),
-             std::get<0>(GetParam()),
-             4);
+      std::get<2>(GetParam()),
+      std::get<1>(GetParam()),
+      std::get<0>(GetParam()),
+      4);
 }
 
 static inline std::string
@@ -528,7 +528,7 @@ get_model_files(void)
 
    std::vector<std::string> paths;
    std::filesystem::recursive_directory_iterator b(dir.str());
-   for (auto const& f : b) {
+   for (auto const &f : b) {
       if (f.path().extension() != ".tflite")
          continue;
 
