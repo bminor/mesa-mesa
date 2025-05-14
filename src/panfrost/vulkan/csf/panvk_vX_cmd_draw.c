@@ -2322,6 +2322,9 @@ panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
       return VK_SUCCESS;
 
    if (!inherits_render_ctx(primary)) {
+      enum u_tristate first_provoking_vertex =
+         secondary->state.gfx.render.first_provoking_vertex;
+      set_provoking_vertex_mode(primary, first_provoking_vertex);
       VkResult result  = get_render_ctx(primary);
       if (result != VK_SUCCESS)
          return result;
