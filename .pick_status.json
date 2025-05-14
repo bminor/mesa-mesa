@@ -844,7 +844,7 @@
         "description": "util/u_printf: fix memory leak in u_printf_singleton_add_serialized",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "007f60c8b8d5cab24ee71b9842fc112bd45e2806",
         "notes": null
