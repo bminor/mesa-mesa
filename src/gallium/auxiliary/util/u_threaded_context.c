@@ -312,8 +312,7 @@ tc_set_resource_batch_usage(struct threaded_context *tc, struct pipe_resource *p
 {
    /* ignore batch usage when persistent */
    if (threaded_resource(pres)->last_batch_usage != INT8_MAX)
-      threaded_resource(pres)->last_batch_usage = tc->next;
-   threaded_resource(pres)->batch_generation = tc->batch_generation;
+      threaded_resource(pres)->last_batch_usage = tc->batch_generation;
 }
 
 ALWAYS_INLINE static void
@@ -322,8 +321,7 @@ tc_set_resource_batch_usage_persistent(struct threaded_context *tc, struct pipe_
    if (!pres)
       return;
    /* mark with special value to block any unsynchronized access */
-   threaded_resource(pres)->last_batch_usage = enable ? INT8_MAX : tc->next;
-   threaded_resource(pres)->batch_generation = tc->batch_generation;
+   threaded_resource(pres)->last_batch_usage = enable ? INT8_MAX : tc->batch_generation;
 }
 
 /* this can ONLY be used to check against the currently recording batch */
@@ -347,31 +345,15 @@ tc_resource_batch_usage_test_busy(const struct threaded_context *tc, const struc
    if (tc->last_completed == -1)
       return true;
 
-   /* begin comparisons checking number of times batches have cycled */
-   unsigned diff = tc->batch_generation - tbuf->batch_generation;
-   /* resource has been seen, batches have fully cycled at least once */
-   if (diff > 1)
-      return false;
+   int diff;
+   if (tbuf->last_batch_usage < tc->last_completed)
+      /* account for wrapping */
+      diff = (tbuf->last_batch_usage + (INT8_MAX - 1)) - tc->last_completed;
+   else
+      diff = tbuf->last_batch_usage - tc->last_completed;
 
-   /* resource has been seen in current batch cycle: return whether batch has definitely completed */
-   if (diff == 0)
-      return tc->last_completed >= tbuf->last_batch_usage;
-
-   /* resource has been seen within one batch cycle: check for batch wrapping */
-   if (tc->last_completed >= tbuf->last_batch_usage)
-      /* this or a subsequent pre-wrap batch was the last to definitely complete: resource is idle */
-      return false;
-
-   /* batch execution has not definitely wrapped: resource is definitely not idle */
-   if (tc->last_completed > tc->next)
-      return true;
-
-   /* resource was seen pre-wrap, batch execution has definitely wrapped: idle */
-   if (tbuf->last_batch_usage > tc->last_completed)
-      return false;
-
-   /* tc->last_completed is not an exact measurement, so anything else is considered busy */
-   return true;
+   /* if diff is positive, then batch usage has completed: resource is not busy */
+   return diff > 0;
 }
 
 /* Assign src to dst while dst is uninitialized. */
@@ -480,6 +462,15 @@ tc_add_call_end(struct tc_batch *next)
 }
 
 static void
+tc_update_batch_generation(struct threaded_context *tc, struct tc_batch *next)
+{
+   /* -1 and INT8_MAX are special values */
+   next->batch_idx = tc->batch_generation;
+   tc->batch_generation = (tc->batch_generation + 1) % INT8_MAX;
+   assert(next->batch_idx >= 0 && next->batch_idx < INT8_MAX);
+}
+
+static void
 tc_batch_flush(struct threaded_context *tc, bool full_copy)
 {
    struct tc_batch *next = &tc->batch_slots[tc->next];
@@ -509,12 +500,11 @@ tc_batch_flush(struct threaded_context *tc, bool full_copy)
       tc_batch_increment_renderpass_info(tc, next_id, full_copy);
    }
 
+   tc_update_batch_generation(tc, next);
    util_queue_add_job(&tc->queue, next, &next->fence, tc_batch_execute,
                       NULL, 0);
    tc->last = tc->next;
    tc->next = next_id;
-   if (next_id == 0)
-      tc->batch_generation++;
    tc_begin_next_buffer_list(tc);
 
 }
@@ -673,6 +663,7 @@ _tc_sync(struct threaded_context *tc, UNUSED const char *info, UNUSED const char
       tc->bytes_mapped_estimate = 0;
       tc->bytes_replaced_estimate = 0;
       tc_add_call_end(next);
+      tc_update_batch_generation(tc, next);
       tc_batch_execute(next, NULL, 0);
       tc_begin_next_buffer_list(tc);
       synced = true;
@@ -5339,7 +5330,6 @@ threaded_context_create(struct pipe_context *pipe,
       tc->batch_slots[i].sentinel = TC_SENTINEL;
 #endif
       tc->batch_slots[i].tc = tc;
-      tc->batch_slots[i].batch_idx = i;
       util_queue_fence_init(&tc->batch_slots[i].fence);
       tc->batch_slots[i].renderpass_info_idx = -1;
       if (tc->options.parse_renderpass_info) {

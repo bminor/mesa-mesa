@@ -354,8 +354,6 @@ struct threaded_resource {
 
    /* internal tag for tc indicating which batch last touched this resource */
    int8_t last_batch_usage;
-   /* for disambiguating last_batch_usage across batch cycles */
-   uint32_t batch_generation;
 
    /* Unique buffer ID. Drivers must set it to non-zero for buffers and it must
     * be unique. Textures must set 0. Low bits are used as a hash of the ID.
@@ -517,7 +515,7 @@ struct tc_batch {
    struct util_queue_fence fence;
    /* whether the first set_framebuffer_state call has been seen by this batch */
    bool first_set_fb;
-   uint8_t batch_idx;
+   int8_t batch_idx;
    struct tc_unflushed_batch_token *token;
    uint64_t slots[TC_SLOTS_PER_BATCH];
    struct util_dynarray renderpass_infos;
@@ -632,6 +630,7 @@ struct threaded_context {
    bool seen_sampler_buffers[PIPE_SHADER_TYPES];
 
    int8_t last_completed;
+   int8_t batch_generation;
 
    uint8_t num_vertex_buffers;
    unsigned max_const_buffers;
@@ -640,7 +639,7 @@ struct threaded_context {
    unsigned max_samplers;
    unsigned nr_cbufs;
 
-   unsigned last, next, next_buf_list, batch_generation;
+   unsigned last, next, next_buf_list;
 
    /* The list fences that the driver should signal after the next flush.
     * If this is empty, all driver command buffers have been flushed.
