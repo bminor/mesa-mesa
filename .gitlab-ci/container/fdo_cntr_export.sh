@@ -65,8 +65,7 @@ buildah umount "$container"
 buildah rm "$container"
 
 # Upload the rootfs tarball to S3.
-# The URL format matches the registry format, and LAVA_DISTRIBUTION_TAG is
-# used later to match this URL.
+# The URL format matches the registry format, making it easier to match this URL later.
 curl --fail --retry-connrefused --retry 4 --retry-delay 30 \
   --header "Authorization: Bearer $(cat "${S3_JWT_FILE}")" \
   -X PUT --form file=@"$ROOTFSTAR" \

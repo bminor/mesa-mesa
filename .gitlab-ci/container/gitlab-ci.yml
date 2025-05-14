@@ -451,7 +451,6 @@ debian/x86_64_test-gl:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-gl ${DEBIAN_TEST_GL_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-gl:
   tags:
@@ -473,7 +472,6 @@ debian/x86_64_test-vk:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-vk ${DEBIAN_TEST_VK_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-vk:
   tags:
@@ -517,7 +515,6 @@ debian/x86_64_test-video:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_test-video ${DEBIAN_TEST_VIDEO_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/x86_64_test-video:${DEBIAN_TEST_VIDEO_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/x86_64_test-video:
   tags:
@@ -561,7 +558,6 @@ debian/arm32_test-gl:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-gl ${DEBIAN_TEST_GL_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/arm32_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm32_test-gl:
   tags:
@@ -609,7 +605,6 @@ debian/arm64_test-gl:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-gl ${DEBIAN_TEST_GL_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/arm64_test-gl:${DEBIAN_TEST_GL_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm64_test-gl:
   tags:
@@ -633,7 +628,6 @@ debian/arm64_test-vk:
     - .export-container
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-vk ${DEBIAN_TEST_VK_TAG}
-    LAVA_DISTRIBUTION_TAG: "debian/arm64_test-vk:${DEBIAN_TEST_VK_TAG}--${DEBIAN_BASE_TAG}--${PKG_REPO_REV}--${MESA_TEMPLATES_COMMIT}"
 
 .use-debian/arm64_test-vk:
   tags:
