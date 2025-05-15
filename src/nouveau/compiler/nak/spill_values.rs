@@ -33,8 +33,8 @@ impl PhiDstMap {
 
     pub fn from_block(block: &BasicBlock) -> PhiDstMap {
         let mut map = PhiDstMap::new();
-        if let Some(phi) = block.phi_dsts() {
-            for (idx, dst) in phi.dsts.iter() {
+        if let Some(op) = block.phi_dsts() {
+            for (idx, dst) in op.dsts.iter() {
                 map.add_phi_dst(*idx, dst);
             }
         }
@@ -66,8 +66,8 @@ impl PhiSrcMap {
 
     pub fn from_block(block: &BasicBlock) -> PhiSrcMap {
         let mut map = PhiSrcMap::new();
-        if let Some(phi) = block.phi_srcs() {
-            for (idx, src) in phi.srcs.iter() {
+        if let Some(op) = block.phi_srcs() {
+            for (idx, src) in op.srcs.iter() {
                 map.add_phi_src(*idx, src);
             }
         }
@@ -705,10 +705,10 @@ fn spill_values<S: Spill>(
             }
 
             match &mut instr.op {
-                Op::PhiDsts(phi) => {
+                Op::PhiDsts(op) => {
                     // For phis, anything that is not in W needs to be spilled
                     // by setting the destination to some spill value.
-                    for (idx, dst) in phi.dsts.iter_mut() {
+                    for (idx, dst) in op.dsts.iter_mut() {
                         let vec = dst.as_ssa().unwrap();
                         debug_assert!(vec.comps() == 1);
                         let ssa = &vec[0];
@@ -973,8 +973,8 @@ fn spill_values<S: Spill>(
         let mut spills = Vec::new();
         let mut fills = Vec::new();
 
-        if let Some(phi) = pb.phi_srcs_mut() {
-            for (idx, src) in phi.srcs.iter_mut() {
+        if let Some(op) = pb.phi_srcs_mut() {
+            for (idx, src) in op.srcs.iter_mut() {
                 debug_assert!(src.is_unmodified());
                 let vec = src.src_ref.as_ssa().unwrap();
                 debug_assert!(vec.comps() == 1);

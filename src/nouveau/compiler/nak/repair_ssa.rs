@@ -119,7 +119,7 @@ fn get_or_insert_phi_dsts(bb: &mut BasicBlock) -> &mut OpPhiDsts {
         0
     };
     match &mut bb.instrs[ip].op {
-        Op::PhiDsts(phi) => phi,
+        Op::PhiDsts(op) => op,
         _ => panic!("Expected to find the phi we just inserted"),
     }
 }
@@ -135,7 +135,7 @@ fn get_or_insert_phi_srcs(bb: &mut BasicBlock) -> &mut OpPhiSrcs {
         bb.instrs.len() - 1
     };
     match &mut bb.instrs[ip].op {
-        Op::PhiSrcs(phi) => phi,
+        Op::PhiSrcs(op) => op,
         _ => panic!("Expected to find the phi we just inserted"),
     }
 }

@@ -1014,8 +1014,8 @@ impl AssignRegsBlock {
                 self.ra.free_killed(dsts_killed);
                 None
             }
-            Op::PhiSrcs(phi) => {
-                for (id, src) in phi.srcs.iter() {
+            Op::PhiSrcs(op) => {
+                for (id, src) in op.srcs.iter() {
                     assert!(src.is_unmodified());
                     if let Some(ssa) = src_ssa_ref(src) {
                         assert!(ssa.comps() == 1);
@@ -1028,10 +1028,10 @@ impl AssignRegsBlock {
                 assert!(dsts_killed.is_empty());
                 None
             }
-            Op::PhiDsts(phi) => {
+            Op::PhiDsts(op) => {
                 assert!(instr.pred.is_true());
 
-                for (id, dst) in phi.dsts.iter() {
+                for (id, dst) in op.dsts.iter() {
                     if let Dst::SSA(ssa) = dst {
                         assert!(ssa.comps() == 1);
                         let reg = self.alloc_scalar(ip, sum, phi_webs, ssa[0]);
