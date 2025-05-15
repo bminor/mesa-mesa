@@ -391,6 +391,10 @@ struct radv_cmd_state {
    uint64_t index_va;
    int32_t last_index_type;
 
+   /* Primitive restart */
+   int32_t last_primitive_restart_en;
+   uint32_t last_primitive_reset_index;
+
    enum radv_cmd_flush_bits flush_bits;
    unsigned active_occlusion_queries;
    bool perfect_occlusion_queries_enabled;
