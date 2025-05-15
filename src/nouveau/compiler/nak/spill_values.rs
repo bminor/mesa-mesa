@@ -984,7 +984,7 @@ fn spill_values<S: Spill>(
                     continue;
                 }
 
-                if spilled_phis.get((*idx).try_into().unwrap()) {
+                if spilled_phis.contains((*idx).try_into().unwrap()) {
                     if !p_out.s.contains(ssa) {
                         spills.push(*ssa);
                     }

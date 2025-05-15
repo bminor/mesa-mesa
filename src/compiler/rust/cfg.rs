@@ -39,7 +39,7 @@ fn graph_post_dfs<N>(
     post_idx: &mut Vec<usize>,
     count: &mut usize,
 ) {
-    if seen.get(id) {
+    if seen.contains(id) {
         return;
     }
     seen.insert(id);
@@ -184,8 +184,8 @@ fn loop_detect_dfs<N>(
     post: &mut BitSet,
     loops: &mut BitSet,
 ) {
-    if pre.get(id) {
-        if !post.get(id) {
+    if pre.contains(id) {
+        if !post.contains(id) {
             loops.insert(id);
         }
         return;
@@ -209,7 +209,7 @@ fn detect_loops<N>(nodes: &mut Vec<CFGNode<N>>) -> bool {
     let mut has_loop = false;
     nodes[0].lph = usize::MAX;
     for i in 1..nodes.len() {
-        if loops.get(i) {
+        if loops.contains(i) {
             // This is a loop header
             nodes[i].lph = i;
             has_loop = true;

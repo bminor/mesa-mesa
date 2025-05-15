@@ -92,11 +92,11 @@ impl BarPropPass {
         seen: &mut BitSet,
         phi: u32,
     ) -> bool {
-        if self.phi_is_not_bar.get(phi.try_into().unwrap()) {
+        if self.phi_is_not_bar.contains(phi.try_into().unwrap()) {
             return false;
         }
 
-        if seen.get(phi.try_into().unwrap()) {
+        if seen.contains(phi.try_into().unwrap()) {
             // If we've hit a cycle, that's not a fail
             return true;
         }
@@ -129,7 +129,7 @@ impl BarPropPass {
         phi: u32,
         ssa: SSAValue,
     ) {
-        if !needs_bar.get(phi.try_into().unwrap()) {
+        if !needs_bar.contains(phi.try_into().unwrap()) {
             return;
         }
 
@@ -154,7 +154,7 @@ impl BarPropPass {
         phi: u32,
         ssa: SSAValue,
     ) {
-        if self.phi_is_bar.get(phi.try_into().unwrap()) {
+        if self.phi_is_bar.contains(phi.try_into().unwrap()) {
             return;
         }
 
@@ -203,7 +203,8 @@ impl BarPropPass {
             match &mut instr.op {
                 Op::PhiSrcs(op) => {
                     for (idx, src) in op.srcs.iter_mut() {
-                        if self.phi_is_bar.get((*idx).try_into().unwrap()) {
+                        if self.phi_is_bar.contains((*idx).try_into().unwrap())
+                        {
                             // Barrier immediates don't exist
                             let ssa = src.as_ssa().unwrap();
                             let bar = *self.map_bar(&ssa[0]).unwrap();
@@ -215,7 +216,8 @@ impl BarPropPass {
                 Op::PhiDsts(op) => {
                     let mut bmovs = Vec::new();
                     for (idx, dst) in op.dsts.iter_mut() {
-                        if self.phi_is_bar.get((*idx).try_into().unwrap()) {
+                        if self.phi_is_bar.contains((*idx).try_into().unwrap())
+                        {
                             let ssa = dst.as_ssa().unwrap().clone();
                             let bar = *self.ssa_map.get(&ssa[0]).unwrap();
                             *dst = bar.into();

@@ -287,11 +287,11 @@ impl RegAllocator {
     }
 
     pub fn reg_is_used(&self, reg: u32) -> bool {
-        self.used.get(reg.try_into().unwrap())
+        self.used.contains(reg.try_into().unwrap())
     }
 
     pub fn reg_is_pinned(&self, reg: u32) -> bool {
-        self.pinned.get(reg.try_into().unwrap())
+        self.pinned.contains(reg.try_into().unwrap())
     }
 
     pub fn try_get_reg(&self, ssa: SSAValue) -> Option<u32> {
@@ -356,7 +356,7 @@ impl RegAllocator {
 
     fn reg_range_is_unset(set: &BitSet, reg: u32, comps: u8) -> bool {
         for c in 0..u32::from(comps) {
-            if set.get((reg + c).try_into().unwrap()) {
+            if set.contains((reg + c).try_into().unwrap()) {
                 return false;
             }
         }
@@ -515,7 +515,7 @@ impl<'a> VecRegAllocator<'a> {
     }
 
     fn reg_is_pinned(&self, reg: u32) -> bool {
-        self.pinned.get(reg.try_into().unwrap())
+        self.pinned.contains(reg.try_into().unwrap())
     }
 
     fn reg_range_is_unpinned(&self, reg: u32, comps: u8) -> bool {

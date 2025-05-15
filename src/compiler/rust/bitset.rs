@@ -52,7 +52,7 @@ impl BitSet {
         }
     }
 
-    pub fn get(&self, idx: usize) -> bool {
+    pub fn contains(&self, idx: usize) -> bool {
         let w = idx / 32;
         let b = idx % 32;
         if w < self.words.len() {
@@ -406,8 +406,8 @@ mod tests {
         assert_eq!(to_vec(&set), &[0, 1, 73]);
         assert!(!set.is_empty());
 
-        assert!(set.get(73));
-        assert!(!set.get(197));
+        assert!(set.contains(73));
+        assert!(!set.contains(197));
 
         assert!(set.remove(1));
         assert!(!set.remove(7));
