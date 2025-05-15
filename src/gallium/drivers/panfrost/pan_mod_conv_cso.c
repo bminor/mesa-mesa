@@ -472,6 +472,9 @@ panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
       nir_shader *nir =                                                        \
          panfrost_create_##name##_shader(screen, __VA_ARGS__);            \
       nir->info.num_ubos = 1;                                                  \
+      /* "default" UBO is maybe not correct here, but in panfrost we're */     \
+      /* using this as an indicator for whether UBO0 is a user UBO */          \
+      nir->info.first_ubo_is_default_ubo = true;                               \
       shader->name##_cso = pipe_shader_from_nir(pctx, nir);                    \
    }
 
