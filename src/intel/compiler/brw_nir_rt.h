@@ -80,6 +80,9 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
 nir_shader *
 brw_nir_create_trivial_return_shader(const struct brw_compiler *compiler,
                                      void *mem_ctx);
+nir_shader *
+brw_nir_create_null_ahs_shader(const struct brw_compiler *compiler,
+                               void *mem_ctx);
 
 #ifdef __cplusplus
 }

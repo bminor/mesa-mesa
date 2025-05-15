@@ -335,3 +335,53 @@ brw_nir_create_trivial_return_shader(const struct brw_compiler *compiler,
 
    return nir;
 }
+
+/** Creates a null any-hit shader
+ *
+ * By default, our HW has the ability to handle the fact that a shader is not
+ * available and will execute the next following shader in the tracing call.
+ * For instance, a RAYGEN shader traces a ray, the tracing generates a hit,
+ * but there is no ANYHIT shader available. The HW should follow up by
+ * execution the CLOSESTHIT shader.
+ *
+ * This default behavior can be changed through the RT_CTRL register
+ * (privileged access) and when NULL shader checks are disabled, we assign
+ * this null ahs shader as any hit shader in case app did not provide one.
+ *
+ * In order to ensure the call to the CLOSESTHIT shader, this shader needs to
+ * commit the ray and will not proceed with the BTD return.
+ *
+ * "SW must ensure that callstack handler sends a TraceRay message with
+ *  TraceRay_COMMIT for any hit shader invocation so that it matches with HW
+ *  behavior of trivially accepting that hit."
+ *
+ */
+nir_shader *
+brw_nir_create_null_ahs_shader(const struct brw_compiler *compiler,
+                               void *mem_ctx)
+{
+   const nir_shader_compiler_options *nir_options =
+      compiler->nir_options[MESA_SHADER_CALLABLE];
+
+   nir_builder _b = nir_builder_init_simple_shader(MESA_SHADER_CALLABLE,
+                                                   nir_options,
+                                                   "RT Null any-hit shader");
+   nir_builder *b = &_b;
+
+   ralloc_steal(mem_ctx, b->shader);
+   nir_shader *nir = b->shader;
+
+   nir->scratch_size = BRW_BTD_STACK_CALLEE_DATA_SIZE;
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+
+   b->cursor = nir_before_block(nir_start_block(impl));
+
+   struct brw_nir_rt_mem_hit_defs hit_in = {};
+   brw_nir_rt_load_mem_hit(b, &hit_in, false, compiler->devinfo);
+   nir_def *ray_level = hit_in.bvh_level;
+   nir_def *ray_op = nir_imm_int(b, GEN_RT_TRACE_RAY_COMMIT);
+   nir_trace_ray_intel(b,
+                       nir_load_btd_global_arg_addr_intel(b),
+                       ray_level, ray_op);
+   return nir;
+}
