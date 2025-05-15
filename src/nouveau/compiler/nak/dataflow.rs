@@ -10,7 +10,33 @@
 //! this terminology.
 //! https://en.wikipedia.org/wiki/Data-flow_analysis#Basic_principles
 
+use compiler::bitset::BitSet;
 use compiler::cfg::CFG;
+use std::collections::VecDeque;
+
+/// A FIFO where each item is unique
+#[derive(Default)]
+struct FIFOSet {
+    vec_deque: VecDeque<usize>,
+    bit_set: BitSet,
+}
+
+impl FIFOSet {
+    fn push_back(&mut self, x: usize) {
+        if self.bit_set.insert(x) {
+            self.vec_deque.push_back(x);
+        }
+    }
+
+    fn pop_front(&mut self) -> Option<usize> {
+        let out = self.vec_deque.pop_front();
+        if let Some(x) = out {
+            let exists = self.bit_set.remove(x);
+            debug_assert!(exists);
+        }
+        out
+    }
+}
 
 pub struct BackwardDataflow<'a, Block, BlockIn, BlockOut, Transfer, Join>
 where
@@ -36,31 +62,50 @@ where
     Transfer: FnMut(usize, &Block, &mut BlockIn, &BlockOut) -> bool,
     Join: FnMut(&mut BlockOut, &BlockIn),
 {
+    fn transfer(&mut self, block_idx: usize) -> bool {
+        (self.transfer)(
+            block_idx,
+            &self.cfg[block_idx],
+            &mut self.block_in[block_idx],
+            &self.block_out[block_idx],
+        )
+    }
+
+    fn join(&mut self, pred_idx: usize, block_idx: usize) {
+        (self.join)(&mut self.block_out[pred_idx], &self.block_in[block_idx]);
+    }
+
     /// Solve the dataflow problem and generate output for each block
     pub fn solve(mut self) {
-        assert_eq!(self.cfg.len(), self.block_in.len());
-        assert_eq!(self.cfg.len(), self.block_out.len());
+        let num_blocks = self.cfg.len();
+        assert_eq!(num_blocks, self.block_in.len());
+        assert_eq!(num_blocks, self.block_out.len());
 
-        let mut to_do = true;
-        while to_do {
-            to_do = false;
-            for (block_idx, (block_out, block)) in self
-                .block_out
-                .iter_mut()
-                .zip(self.cfg.iter())
-                .enumerate()
-                .rev()
-            {
-                for succ_idx in self.cfg.succ_indices(block_idx) {
-                    (self.join)(block_out, &self.block_in[*succ_idx])
+        let mut worklist = FIFOSet::default();
+
+        // Perform an initial pass over the data
+        for block_idx in (0..num_blocks).rev() {
+            self.transfer(block_idx);
+
+            for &pred_idx in self.cfg.pred_indices(block_idx) {
+                // On the first iteration, we unconditionally join so that the
+                // join operator is called at lease once for each edge
+                self.join(pred_idx, block_idx);
+                if pred_idx >= block_idx {
+                    // Otherwise we're about to process it in the first pass
+                    worklist.push_back(pred_idx);
                 }
+            }
+        }
 
-                to_do |= (self.transfer)(
-                    block_idx,
-                    block,
-                    &mut self.block_in[block_idx],
-                    block_out,
-                );
+        // Process the worklist
+        while let Some(block_idx) = worklist.pop_front() {
+            let changed = self.transfer(block_idx);
+            if changed {
+                for &pred_idx in self.cfg.pred_indices(block_idx) {
+                    self.join(pred_idx, block_idx);
+                    worklist.push_back(pred_idx);
+                }
             }
         }
     }
