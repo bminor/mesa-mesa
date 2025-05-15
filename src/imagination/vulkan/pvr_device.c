@@ -194,6 +194,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_expect_assume = false,
+      .KHR_shader_float_controls = true,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_swapchain_mutable_format = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
@@ -377,6 +378,9 @@ static bool pvr_physical_device_get_properties(
 
    UNUSED const uint32_t max_user_vertex_components =
       pvr_get_max_user_vertex_output_components(dev_info);
+
+   const bool usc_alu_roundingmode_rne =
+      PVR_HAS_FEATURE(dev_info, usc_alu_roundingmode_rne);
 
    /* The workgroup invocations are limited by the case where we have a compute
     * barrier - each slot has a fixed number of invocations, the whole workgroup
@@ -586,6 +590,26 @@ static bool pvr_physical_device_get_properties(
       /* VK_EXT_provoking_vertex */
       .provokingVertexModePerPipeline = true,
       .transformFeedbackPreservesTriangleFanProvokingVertex = false,
+
+      /* Vulkan 1.2 / VK_KHR_shader_float_controls */
+      .denormBehaviorIndependence =
+         VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY,
+      .roundingModeIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE,
+      .shaderSignedZeroInfNanPreserveFloat16 = true,
+      .shaderSignedZeroInfNanPreserveFloat32 = true,
+      .shaderSignedZeroInfNanPreserveFloat64 = true,
+      .shaderDenormPreserveFloat16 = true,
+      .shaderDenormPreserveFloat32 = false,
+      .shaderDenormPreserveFloat64 = true,
+      .shaderDenormFlushToZeroFloat16 = false,
+      .shaderDenormFlushToZeroFloat32 = false,
+      .shaderDenormFlushToZeroFloat64 = false,
+      .shaderRoundingModeRTEFloat16 = usc_alu_roundingmode_rne,
+      .shaderRoundingModeRTEFloat32 = usc_alu_roundingmode_rne,
+      .shaderRoundingModeRTEFloat64 = usc_alu_roundingmode_rne,
+      .shaderRoundingModeRTZFloat16 = !usc_alu_roundingmode_rne,
+      .shaderRoundingModeRTZFloat32 = !usc_alu_roundingmode_rne,
+      .shaderRoundingModeRTZFloat64 = !usc_alu_roundingmode_rne,
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,
