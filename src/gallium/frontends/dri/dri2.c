@@ -791,6 +791,24 @@ static const struct dri2_format_mapping r10_g10b10_mapping_422 = {
      { 1, 1, 0, __DRI_IMAGE_FORMAT_NONE } }
 };
 
+static const struct dri2_format_mapping r8g8b8_420_mapping = {
+   DRM_FORMAT_YUV420_8BIT,
+   __DRI_IMAGE_FORMAT_NONE,
+   __DRI_IMAGE_COMPONENTS_XYUV,
+   PIPE_FORMAT_R8G8B8_420_UNORM_PACKED,
+   1,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } },
+};
+
+static const struct dri2_format_mapping r10g10b10_420_mapping = {
+   DRM_FORMAT_YUV420_10BIT,
+   __DRI_IMAGE_FORMAT_NONE,
+   __DRI_IMAGE_COMPONENTS_XYUV,
+   PIPE_FORMAT_R10G10B10_420_UNORM_PACKED,
+   1,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } },
+};
+
 static enum __DRIFixedRateCompression
 to_dri_compression_rate(uint32_t rate)
 {
@@ -899,6 +917,20 @@ dri_create_image_from_winsys(struct dri_screen *screen,
        pscreen->is_format_supported(pscreen, PIPE_FORMAT_R10_G10B10_422_UNORM,
                                     screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
       map = &r10_g10b10_mapping_422;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+
+   /* For YUV420_8BIT, see if we have support for sampling r8b8g8_420 */
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_R8G8B8_420_UNORM_PACKED,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r8g8b8_420_mapping;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_R10G10B10_420_UNORM_PACKED,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r10g10b10_420_mapping;
       tex_usage |= PIPE_BIND_SAMPLER_VIEW;
    }
 

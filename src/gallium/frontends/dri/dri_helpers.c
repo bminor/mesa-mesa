@@ -658,6 +658,18 @@ static const struct dri2_format_mapping dri2_format_table[] = {
         __DRI_IMAGE_COMPONENTS_Y_XUXV,    PIPE_FORMAT_Y216, 2,
         { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR1616 },
           { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR16161616 } } },
+
+      /* YUV420_8BIT is a single plane with all components, but in an
+         unspecified order */
+      { DRM_FORMAT_YUV420_8BIT,          __DRI_IMAGE_FORMAT_NONE,
+        __DRI_IMAGE_COMPONENTS_XYUV,    PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED, 1,
+        { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } } },
+
+      /* YUV420_10BIT is a single plane with all components, but in an
+         unspecified order */
+      { DRM_FORMAT_YUV420_10BIT,          __DRI_IMAGE_FORMAT_NONE,
+        __DRI_IMAGE_COMPONENTS_XYUV,    PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED, 1,
+        { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } } },
 };
 
 const struct dri2_format_mapping *
@@ -710,6 +722,10 @@ alt_pipe_format(enum pipe_format yuv_fmt)
       return PIPE_FORMAT_R10_G10B10_420_UNORM;
    case PIPE_FORMAT_NV20:
       return PIPE_FORMAT_R10_G10B10_422_UNORM;
+   case PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED:
+      return PIPE_FORMAT_R8G8B8_420_UNORM_PACKED;
+   case PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED:
+      return PIPE_FORMAT_R10G10B10_420_UNORM_PACKED;
    default:
       return yuv_fmt;
    }
