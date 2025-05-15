@@ -3451,48 +3451,6 @@ radv_get_primitive_reset_index(const struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_primitive_restart_enable(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-   const struct radv_dynamic_state *const d = &cmd_buffer->state.dynamic;
-   struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   const bool en = d->vk.ia.primitive_restart_enable;
-
-   radeon_begin(cs);
-
-   if (pdev->info.has_prim_restart_sync_bug) {
-      radeon_event_write(V_028A90_SQ_NON_EVENT);
-   }
-
-   if (gfx_level >= GFX11) {
-      radeon_set_uconfig_reg(R_03092C_GE_MULTI_PRIM_IB_RESET_EN, S_03092C_RESET_EN(en) |
-                                                                    /* This disables primitive restart for non-indexed
-                                                                     * draws. By keeping this set, we don't have to
-                                                                     * unset RESET_EN for non-indexed draws. */
-                                                                    S_03092C_DISABLE_FOR_AUTO_INDEX(1));
-   } else if (gfx_level >= GFX9) {
-      radeon_set_uconfig_reg(R_03092C_VGT_MULTI_PRIM_IB_RESET_EN, en);
-   } else {
-      radeon_set_context_reg(R_028A94_VGT_MULTI_PRIM_IB_RESET_EN, en);
-
-      /* GFX6-7: All 32 bits are compared.
-       * GFX8: Only index type bits are compared.
-       * GFX9+: Default is same as GFX8, MATCH_ALL_BITS=1 selects GFX6-7 behavior
-       */
-      if (en && gfx_level <= GFX7) {
-         const uint32_t primitive_reset_index = radv_get_primitive_reset_index(cmd_buffer);
-
-         radeon_opt_set_context_reg(cmd_buffer, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
-                                    RADV_TRACKED_VGT_MULTI_PRIM_IB_RESET_INDX, primitive_reset_index);
-      }
-   }
-
-   radeon_end();
-}
-
-static void
 radv_emit_logic_op(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -5535,9 +5493,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if (states & RADV_DYNAMIC_FRAGMENT_SHADING_RATE)
       radv_emit_fragment_shading_rate(cmd_buffer);
 
-   if (states & RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE)
-      radv_emit_primitive_restart_enable(cmd_buffer);
-
    if (states & (RADV_DYNAMIC_LOGIC_OP | RADV_DYNAMIC_LOGIC_OP_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK |
                  RADV_DYNAMIC_COLOR_BLEND_EQUATION))
       radv_emit_logic_op(cmd_buffer);
@@ -6430,10 +6385,54 @@ gfx10_emit_ge_cntl(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_emit_primitive_restart(struct radv_cmd_buffer *cmd_buffer, bool enable)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   radeon_begin(cs);
+
+   if (pdev->info.has_prim_restart_sync_bug) {
+      radeon_event_write(V_028A90_SQ_NON_EVENT);
+   }
+
+   if (gfx_level >= GFX11) {
+      radeon_set_uconfig_reg(R_03092C_GE_MULTI_PRIM_IB_RESET_EN, S_03092C_RESET_EN(enable) |
+                                                                    /* This disables primitive restart for non-indexed
+                                                                     * draws. By keeping this set, we don't have to
+                                                                     * unset RESET_EN for non-indexed draws. */
+                                                                    S_03092C_DISABLE_FOR_AUTO_INDEX(1));
+   } else if (gfx_level >= GFX9) {
+      radeon_set_uconfig_reg(R_03092C_VGT_MULTI_PRIM_IB_RESET_EN, enable);
+   } else {
+      radeon_set_context_reg(R_028A94_VGT_MULTI_PRIM_IB_RESET_EN, enable);
+
+      /* GFX6-7: All 32 bits are compared.
+       * GFX8: Only index type bits are compared.
+       * GFX9+: Default is same as GFX8, MATCH_ALL_BITS=1 selects GFX6-7 behavior
+       */
+      if (enable && gfx_level <= GFX7) {
+         const uint32_t primitive_reset_index = radv_get_primitive_reset_index(cmd_buffer);
+
+         radeon_opt_set_context_reg(cmd_buffer, R_02840C_VGT_MULTI_PRIM_IB_RESET_INDX,
+                                    RADV_TRACKED_VGT_MULTI_PRIM_IB_RESET_INDX, primitive_reset_index);
+      }
+   }
+
+   radeon_end();
+}
+
+static void
 radv_emit_draw_registers(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+   const bool primitive_restart_en =
+      (draw_info->indexed || pdev->info.gfx_level >= GFX11) && d->vk.ia.primitive_restart_enable;
+   const uint32_t primitive_reset_index = radv_get_primitive_reset_index(cmd_buffer);
    const struct radeon_info *gpu_info = &pdev->info;
    struct radv_cmd_state *state = &cmd_buffer->state;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
@@ -6477,6 +6476,13 @@ radv_emit_draw_registers(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
       radeon_end();
 
       state->last_index_type = index_type;
+   }
+
+   if (primitive_restart_en != state->last_primitive_restart_en ||
+       (pdev->info.gfx_level <= GFX7 && primitive_reset_index != state->last_primitive_reset_index)) {
+      radv_emit_primitive_restart(cmd_buffer, primitive_restart_en);
+      state->last_primitive_restart_en = primitive_restart_en;
+      state->last_primitive_reset_index = primitive_reset_index;
    }
 }
 
@@ -6854,6 +6860,7 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
 
    memset(&cmd_buffer->state, 0, sizeof(cmd_buffer->state));
    cmd_buffer->state.last_index_type = -1;
+   cmd_buffer->state.last_primitive_restart_en = pdev->info.gfx_level >= GFX11 ? false : -1;
    cmd_buffer->state.last_num_instances = -1;
    cmd_buffer->state.last_vertex_offset_valid = false;
    cmd_buffer->state.last_first_instance = -1;
@@ -7088,10 +7095,6 @@ radv_CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDevic
    }
 
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_INDEX_BUFFER;
-
-   /* Primitive restart state depends on the index type. */
-   if (cmd_buffer->state.dynamic.vk.ia.primitive_restart_enable)
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE;
 }
 
 static void
@@ -9076,6 +9079,14 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
          primary->state.last_index_type = secondary->state.last_index_type;
       }
 
+      if (secondary->state.last_primitive_restart_en != -1) {
+         primary->state.last_primitive_restart_en = secondary->state.last_primitive_restart_en;
+      }
+
+      if (secondary->state.last_primitive_reset_index) {
+         primary->state.last_primitive_reset_index = secondary->state.last_primitive_reset_index;
+      }
+
       primary->state.last_vrs_rates = secondary->state.last_vrs_rates;
       primary->state.last_force_vrs_rates_offset = secondary->state.last_force_vrs_rates_offset;
 
@@ -10284,24 +10295,28 @@ radv_get_needed_dynamic_states(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint64_t dynamic_states = RADV_DYNAMIC_ALL;
+   uint64_t dynamic_states;
 
-   if (cmd_buffer->state.graphics_pipeline)
-      return cmd_buffer->state.graphics_pipeline->needed_dynamic_state;
-
-   /* Clear unnecessary dynamic states for shader objects. */
-   if (!cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL])
-      dynamic_states &= ~(RADV_DYNAMIC_PATCH_CONTROL_POINTS | RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
-
-   if (pdev->info.gfx_level >= GFX10_3) {
-      if (cmd_buffer->state.shaders[MESA_SHADER_MESH])
-         dynamic_states &= ~(RADV_DYNAMIC_VERTEX_INPUT | RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE |
-                             RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY);
+   if (cmd_buffer->state.graphics_pipeline) {
+      dynamic_states = cmd_buffer->state.graphics_pipeline->needed_dynamic_state;
    } else {
-      dynamic_states &= ~RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+      dynamic_states = RADV_DYNAMIC_ALL;
+
+      /* Clear unnecessary dynamic states for shader objects. */
+      if (!cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL])
+         dynamic_states &= ~(RADV_DYNAMIC_PATCH_CONTROL_POINTS | RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
+
+      if (pdev->info.gfx_level >= GFX10_3) {
+         if (cmd_buffer->state.shaders[MESA_SHADER_MESH])
+            dynamic_states &= ~(RADV_DYNAMIC_VERTEX_INPUT | RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE |
+                                RADV_DYNAMIC_PRIMITIVE_TOPOLOGY);
+      } else {
+         dynamic_states &= ~RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+      }
    }
 
-   return dynamic_states;
+   /* Primitive restart enable is emitted as part of the draw registers. */
+   return dynamic_states & ~RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE;
 }
 
 /*
