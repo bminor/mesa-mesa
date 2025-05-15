@@ -549,7 +549,6 @@ spec@arb_texture_buffer_object@formats (vs- arb)@GL_INTENSITY8,Fail
 spec@arb_texture_buffer_object@formats (vs- arb)@GL_INTENSITY8I_EXT,Fail
 spec@arb_texture_buffer_object@formats (vs- arb)@GL_INTENSITY8UI_EXT,Fail
 
-spec@arb_viewport_array@display-list,Fail
 spec@egl 1.4@eglterminate then unbind context,Fail
 spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail

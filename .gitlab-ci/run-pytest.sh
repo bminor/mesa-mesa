@@ -9,7 +9,7 @@
 
 set -eu
 
-PYTHON_BIN="python3.11"
+PYTHON_BIN="python3.13"
 
 if [ -z "${SCRIPTS_DIR:-}" ]; then
     SCRIPTS_DIR="$(dirname "${0}")"

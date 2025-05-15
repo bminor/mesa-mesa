@@ -29,7 +29,7 @@ fi
 
 # Set the time so we can validate certificates before we fetch anything;
 # however as not all DUTs have network, make this non-fatal.
-for _ in 1 2 3; do sntp -sS pool.ntp.org && break || sleep 2; done || true
+for _ in 1 2 3; do ntpdig -sS pool.ntp.org && break || sleep 2; done || true
 
 # Create a symlink from /dev/fd to /proc/self/fd if /dev/fd is missing.
 if [ ! -e /dev/fd ]; then

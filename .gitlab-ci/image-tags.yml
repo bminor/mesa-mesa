@@ -19,10 +19,10 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BUILD_BASE_TAG: "20250818-s3url"
+  DEBIAN_BUILD_BASE_TAG: "20250901-trixie"
   DEBIAN_BUILD_TAG: "20250825-finds3"
 
-  DEBIAN_TEST_BASE_TAG: "20250818-s3url"
+  DEBIAN_TEST_BASE_TAG: "20250901-trixie2"
   DEBIAN_TEST_ANDROID_TAG: "20250911-angle"
   DEBIAN_TEST_GL_TAG: "20250911-piglit"
   DEBIAN_TEST_VIDEO_TAG: "20250813-vector"
@@ -36,7 +36,7 @@ variables:
 
   KERNEL_TAG: "v6.16-mesa-9d85"
   KERNEL_REPO: "gfx-ci/linux"
-  PKG_REPO_REV: "95bf62c"
+  PKG_REPO_REV: "b3d1017b"
   FIRMWARE_TAG: "36f9bbfa"
   FIRMWARE_REPO: "gfx-ci/firmware"
 

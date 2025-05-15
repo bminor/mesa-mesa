@@ -17,7 +17,6 @@ DEPS=(
     netcat-openbsd
     openssh-server
     procps
-    python3-distutils
     python3-filelock
     python3-fire
     python3-minimal

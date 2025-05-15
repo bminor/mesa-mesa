@@ -35,7 +35,9 @@ DEPS=(
     cmake
     curl
     "clang-${LLVM_VERSION}"
+    dpkg-dev
     fastboot
+    file
     flatbuffers-compiler
     flex
     g++

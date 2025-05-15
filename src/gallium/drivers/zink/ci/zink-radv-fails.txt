@@ -10,9 +10,6 @@ spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_ust_test,Fai
 # #6322
 spec@arb_framebuffer_object@fbo-blit-scaled-linear,Fail
 
-# Regression noticed in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/891104
-spec@arb_viewport_array@display-list,Fail
-
 spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 spec@!opengl 1.1@line-smooth-stipple,Fail
 spec@!opengl 1.1@polygon-mode,Fail

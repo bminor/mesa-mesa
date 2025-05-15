@@ -658,7 +658,6 @@ spec@arb_texture_view@rendering-layers-image@layers rendering of image1DArray,Fa
 spec@arb_texture_view@rendering-layers-image@layers rendering of image2DArray,Fail
 spec@arb_texture_view@rendering-layers-image@layers rendering of imageCubeArray,Fail
 spec@arb_uniform_buffer_object@maxblocks,Fail
-spec@arb_viewport_array@display-list,Fail
 spec@arb_viewport_array@render-depthrange,Fail
 spec@egl 1.4@eglterminate then unbind context,Fail
 spec@egl_ext_device_base@conformance,Fail

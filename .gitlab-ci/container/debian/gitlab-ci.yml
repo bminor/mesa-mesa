@@ -17,7 +17,7 @@
 
 .debian-container-version:
   variables:
-    FDO_DISTRIBUTION_VERSION: bookworm-slim
+    FDO_DISTRIBUTION_VERSION: trixie-slim
 
 .debian-container:
   extends:
@@ -103,7 +103,7 @@ debian/ppc64el_build:
     - .use-debian/x86_64_build-base
   variables:
     MESA_IMAGE_TAG: &debian-ppc64el_build ${DEBIAN_BUILD_TAG}
-    LLVM_VERSION: &debian-ppc64el-llvm 15  # no LLVM packages for PPC
+    LLVM_VERSION: &debian-ppc64el-llvm 19
 
 .use-debian/ppc64el_build:
   tags:

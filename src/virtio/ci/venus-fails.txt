@@ -11,3 +11,13 @@ dEQP-VK.pipeline.fast_linked_library.multisample.sample_rate_a2c.static_a2c,Fail
 
 # From venus-lavapipe-full
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
+dEQP-VK.memory.mapping.suballocation.sub.4087.offset_129.size_255.subflush_map2,Crash
+
+# New crashes with to Debian 13
+dEQP-VK.glsl.builtin.precision_fp16_storage32b.tan.compute.vec3,Crash
+dEQP-VK.spirv_assembly.instruction.compute.float16.arithmetic_3.exp2,Crash
+dEQP-VK.spirv_assembly.instruction.compute.float_controls2.fp16.input_args.cos_testedWithout_NotNaN_OR_NotInf_arg1_minusInf_arg2_unused_res_nan_deco,Crash
+dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_3.acosh_vert,Crash
+dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_4.sin_frag,Crash
+dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp16.input_args.sin_testedWithout_NotNaN_arg1_nan_arg2_one_res_nan_exec_vert,Crash
+dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp16.input_args.sinh_testedWithout_NotInf_arg1_minusInf_arg2_unused_res_minusInf_deco_frag,Crash
