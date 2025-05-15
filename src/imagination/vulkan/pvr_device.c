@@ -196,6 +196,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_expect_assume = false,
       .KHR_shader_float_controls = true,
+      .KHR_shader_subgroup_extended_types = true,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_swapchain_mutable_format = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
@@ -305,6 +306,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.2 / VK_KHR_separate_depth_stencil_layouts */
       .separateDepthStencilLayouts = true,
+
+      /* Vulkan 1.2 / VK_KHR_shader_subgroup_extended_types */
+      .shaderSubgroupExtendedTypes = true,
 
       /* Vulkan 1.2 / VK_KHR_uniform_buffer_standard_layout */
       .uniformBufferStandardLayout = true,
