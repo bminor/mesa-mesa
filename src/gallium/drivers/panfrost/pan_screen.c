@@ -72,6 +72,7 @@ static const struct debug_named_value panfrost_debug_options[] = {
    {"nocrc",      PAN_DBG_NO_CRC,     "Disable transaction elimination"},
    {"msaa16",     PAN_DBG_MSAA16,     "Enable MSAA 8x and 16x support"},
    {"linear",     PAN_DBG_LINEAR,     "Force linear textures"},
+   {"strict_import", PAN_DBG_STRICT_IMPORT, "Use the explicit WSI stride and fail if it's not properly aligned"},
    {"nocache",    PAN_DBG_NO_CACHE,   "Disable BO cache"},
    {"dump",       PAN_DBG_DUMP,       "Dump all graphics memory"},
 #ifdef PAN_DBG_OVERFLOW

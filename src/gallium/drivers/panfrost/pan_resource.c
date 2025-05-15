@@ -134,6 +134,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    struct pan_image_wsi_layout explicit_layout = {
       .offset_B = whandle->offset,
       .row_pitch_B = whandle->stride,
+      .strict = dev->debug & PAN_DBG_STRICT_IMPORT,
    };
 
    rsc->modifier = mod;
