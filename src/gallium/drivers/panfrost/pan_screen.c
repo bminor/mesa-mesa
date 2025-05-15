@@ -156,6 +156,11 @@ panfrost_is_format_supported(struct pipe_screen *screen,
    case 1:
    case 4:
       break;
+   case 2:
+      if (dev->arch >= 12)
+         break;
+      else
+         return false;
    case 8:
    case 16:
       if (dev->debug & PAN_DBG_MSAA16)
