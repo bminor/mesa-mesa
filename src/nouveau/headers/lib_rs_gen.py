@@ -121,7 +121,7 @@ def main():
 
     try:
         subprocess.run(['rustfmt', args.out_rs], check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         pass
 
 if __name__ == '__main__':
