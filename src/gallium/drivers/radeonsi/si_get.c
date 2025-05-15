@@ -295,8 +295,9 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             attrib.bits.support_superres = PIPE_ENC_FEATURE_NOT_SUPPORTED;
             attrib.bits.support_restoration = PIPE_ENC_FEATURE_NOT_SUPPORTED;
             attrib.bits.support_allow_intrabc = PIPE_ENC_FEATURE_NOT_SUPPORTED;
-            attrib.bits.support_cdef_channel_strength = PIPE_ENC_FEATURE_SUPPORTED;
-
+            attrib.bits.support_cdef_channel_strength = PIPE_ENC_FEATURE_NOT_SUPPORTED;
+            if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
+               attrib.bits.support_cdef_channel_strength = PIPE_ENC_FEATURE_SUPPORTED;
             return attrib.value;
          } else
             return 0;
