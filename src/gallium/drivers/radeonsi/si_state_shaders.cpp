@@ -2483,9 +2483,9 @@ void si_update_ps_inputs_read_or_disabled(struct si_context *sctx)
 
    if (sctx->ps_inputs_read_or_disabled != ps_inputs_read_or_disabled) {
       sctx->ps_inputs_read_or_disabled = ps_inputs_read_or_disabled;
-      sctx->dirty_shaders_mask |=
-         (sctx->shader.gs.cso ? BITFIELD_BIT(MESA_SHADER_GEOMETRY) :
-            (sctx->shader.tes.cso ? BITFIELD_BIT(MESA_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
+      struct si_shader_selector *cso = si_get_vs(sctx)->cso;
+      if (cso)
+         sctx->dirty_shaders_mask |= BITFIELD_BIT(cso->stage);
    }
 }
 
@@ -2537,7 +2537,8 @@ void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx)
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-         BITFIELD_BIT(MESA_SHADER_GEOMETRY);
+         BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
+         BITFIELD_BIT(MESA_SHADER_MESH);
    }
 
    if (ps_key->ps.part.prolog.color_two_side != old_color_two_side ||

@@ -110,7 +110,7 @@ struct ac_llvm_compiler;
 #define SI_RESOURCE_FLAG_32BIT             (PIPE_RESOURCE_FLAG_DRV_PRIV << 6)
 #define SI_RESOURCE_FLAG_CLEAR             (PIPE_RESOURCE_FLAG_DRV_PRIV << 7)
 
-#define SI_SQTT_STATE_DIRTY_BIT            BITFIELD_BIT(MESA_SHADER_COMPUTE + 1)
+#define SI_SQTT_STATE_DIRTY_BIT            BITFIELD_BIT(MESA_SHADER_MESH + 1)
 
 enum si_has_gs {
    GS_OFF,
@@ -1120,10 +1120,10 @@ struct si_context {
    unsigned num_vertex_elements;  /* 0 if the VS uses blit SGPRs to compute VS inputs */
    unsigned cs_max_waves_per_sh;
    uint32_t compute_tmpring_size;
+   uint16_t dirty_shaders_mask; /* 0: vs, 1: tcs, 2: tes, 3: gs, 4: ps, 5: cs, 6: ts, 7: ms, 8: misc (e.g. sqtt) */
    bool vertex_elements_but_no_buffers;
    bool uses_nontrivial_vs_inputs;
    bool force_trivial_vs_inputs;
-   uint8_t dirty_shaders_mask; /* 0: vs, 1: tcs, 2: tes, 3: gs, 4: ps, 5: cs, 6: misc (e.g. sqtt) */
    bool compute_shaderbuf_sgprs_dirty;
    bool compute_image_sgprs_dirty;
    bool vs_uses_base_instance;

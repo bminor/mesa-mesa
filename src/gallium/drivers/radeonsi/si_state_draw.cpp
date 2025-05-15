@@ -39,6 +39,9 @@
 #error "Unknown gfx level"
 #endif
 
+#define SI_VERTEX_PIPELINE_STATE_DIRTY_MASK \
+   (BITFIELD_MASK(MESA_SHADER_FRAGMENT + 1) | SI_SQTT_STATE_DIRTY_BIT)
+
 template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG>
 static bool si_update_shaders(struct si_context *sctx)
 {
@@ -515,7 +518,7 @@ static bool si_update_shaders(struct si_context *sctx)
    if (GFX_VERSION >= GFX10 && NGG)
       sctx->ngg_culling = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current->key.ge.opt.ngg_culling;
 
-   sctx->dirty_shaders_mask = 0u;
+   sctx->dirty_shaders_mask &= ~SI_VERTEX_PIPELINE_STATE_DIRTY_MASK;
    return true;
 }
 
@@ -2344,7 +2347,7 @@ static void si_draw(struct pipe_context *ctx,
     */
    assert(!sctx->ms_shader_state.cso);
 
-   if (unlikely(sctx->dirty_shaders_mask)) {
+   if (unlikely(sctx->dirty_shaders_mask & SI_VERTEX_PIPELINE_STATE_DIRTY_MASK)) {
       if (unlikely(!(si_update_shaders<GFX_VERSION, HAS_TESS, HAS_GS, NGG>(sctx)))) {
          DRAW_CLEANUP;
          return;
