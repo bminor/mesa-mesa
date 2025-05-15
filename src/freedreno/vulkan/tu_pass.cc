@@ -514,7 +514,7 @@ tu_render_pass_calc_views(struct tu_render_pass *pass)
  * sense. Just disable fragment_density_map in this case.
  */
 static bool
-tu_render_pass_disable_fdm(struct tu_render_pass *pass)
+tu_render_pass_disable_fdm(struct tu_device *dev, struct tu_render_pass *pass)
 {
    for (uint32_t i = 0; i < pass->attachment_count; i++) {
       struct tu_render_pass_attachment *att = &pass->attachments[i];
@@ -522,6 +522,8 @@ tu_render_pass_disable_fdm(struct tu_render_pass *pass)
       if (att->samples > 1 &&
           (att->load || att->load_stencil ||
            att->store || att->store_stencil)) {
+         perf_debug(dev, "Disabling fragment density map due to %s of multisample attachment",
+                    (att->load || att->load_stencil) ? "load" : "store");
          return true;
       }
    }
@@ -910,7 +912,7 @@ tu_CreateRenderPass2(VkDevice _device,
    const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_info =
       vk_find_struct_const(pCreateInfo->pNext,
                            RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT);
-   if (fdm_info && !tu_render_pass_disable_fdm(pass)) {
+   if (fdm_info && !tu_render_pass_disable_fdm(device, pass)) {
       pass->fragment_density_map.attachment =
          fdm_info->fragmentDensityMapAttachment.attachment;
       pass->has_fdm = true;
@@ -918,7 +920,7 @@ tu_CreateRenderPass2(VkDevice _device,
       pass->fragment_density_map.attachment = VK_ATTACHMENT_UNUSED;
    }
 
-   if (TU_DEBUG(FDM) && !tu_render_pass_disable_fdm(pass))
+   if (TU_DEBUG(FDM) && !tu_render_pass_disable_fdm(device, pass))
       pass->has_fdm = true;
 
    p = pass->subpass_attachments;
@@ -1246,7 +1248,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
       vk_find_struct_const(info->pNext,
                            RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT);
    if (fdm_info && fdm_info->imageView != VK_NULL_HANDLE &&
-       !tu_render_pass_disable_fdm(pass)) {
+       !tu_render_pass_disable_fdm(device, pass)) {
       VK_FROM_HANDLE(tu_image_view, view, fdm_info->imageView);
 
       struct tu_render_pass_attachment *att = &pass->attachments[a];
@@ -1282,7 +1284,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
       subpass->fsr_attachment = VK_ATTACHMENT_UNUSED;
    }
 
-   if (TU_DEBUG(FDM) && !tu_render_pass_disable_fdm(pass))
+   if (TU_DEBUG(FDM) && !tu_render_pass_disable_fdm(device, pass))
       pass->has_fdm = true;
 
    pass->attachment_count = a;
