@@ -192,7 +192,7 @@ fn alloc_ssa_for_nir(b: &mut impl SSABuilder, ssa: &nir_def) -> Vec<SSAValue> {
 
 struct PhiAllocMap<'a> {
     alloc: &'a mut PhiAllocator,
-    map: FxHashMap<(u32, u8), u32>,
+    map: FxHashMap<(u32, u8), Phi>,
 }
 
 impl<'a> PhiAllocMap<'a> {
@@ -203,10 +203,10 @@ impl<'a> PhiAllocMap<'a> {
         }
     }
 
-    fn get_phi_id(&mut self, phi: &nir_phi_instr, comp: u8) -> u32 {
+    fn get_phi(&mut self, nphi: &nir_phi_instr, comp: u8) -> Phi {
         *self
             .map
-            .entry((phi.def.index, comp))
+            .entry((nphi.def.index, comp))
             .or_insert_with(|| self.alloc.alloc())
     }
 }
@@ -3638,7 +3638,7 @@ impl<'a> ShaderFromNir<'a> {
             let mut b = UniformBuilder::new(&mut b, uniform);
             let dst = alloc_ssa_for_nir(&mut b, np.def.as_def());
             for i in 0..dst.len() {
-                let phi_id = phi_map.get_phi_id(np, i.try_into().unwrap());
+                let phi_id = phi_map.get_phi(np, i.try_into().unwrap());
                 phi.dsts.push(phi_id, dst[i].into());
             }
             self.set_ssa(np.def.as_def(), dst);
@@ -3757,7 +3757,7 @@ impl<'a> ShaderFromNir<'a> {
                         let src = src.as_ssa().unwrap();
                         for (i, src) in src.iter().enumerate() {
                             let phi_id =
-                                phi_map.get_phi_id(np, i.try_into().unwrap());
+                                phi_map.get_phi(np, i.try_into().unwrap());
                             phi.srcs.push(phi_id, (*src).into());
                         }
                         break;

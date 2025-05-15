@@ -54,7 +54,7 @@ where
 
 enum CoalesceItem {
     SSA(SSAValue),
-    Phi(u32),
+    Phi(Phi),
 }
 
 struct CoalesceNode {
@@ -73,7 +73,7 @@ struct CoalesceGraph<'a> {
     nodes: Vec<CoalesceNode>,
     sets: Vec<CoalesceSet>,
     ssa_node: FxHashMap<SSAValue, usize>,
-    phi_node_file: FxHashMap<u32, (usize, RegFile)>,
+    phi_node_file: FxHashMap<Phi, (usize, RegFile)>,
 }
 
 impl<'a> CoalesceGraph<'a> {
@@ -102,7 +102,7 @@ impl<'a> CoalesceGraph<'a> {
         }
     }
 
-    fn add_phi_dst(&mut self, phi: u32, file: RegFile, block: usize) {
+    fn add_phi_dst(&mut self, phi: Phi, file: RegFile, block: usize) {
         debug_assert!(self.sets.is_empty());
 
         // Record the register file now.  We'll set the node later
@@ -117,7 +117,7 @@ impl<'a> CoalesceGraph<'a> {
         });
     }
 
-    fn add_phi_src(&mut self, phi: u32, block: usize) {
+    fn add_phi_src(&mut self, phi: Phi, block: usize) {
         debug_assert!(self.sets.is_empty());
 
         self.nodes.push(CoalesceNode {
@@ -250,7 +250,7 @@ impl<'a> CoalesceGraph<'a> {
         self.nodes[*self.ssa_node.get(ssa).unwrap()].set
     }
 
-    pub fn phi_set_file(&self, phi: &u32) -> (usize, RegFile) {
+    pub fn phi_set_file(&self, phi: &Phi) -> (usize, RegFile) {
         let (n, file) = self.phi_node_file.get(phi).unwrap();
         (self.nodes[*n].set, *file)
     }

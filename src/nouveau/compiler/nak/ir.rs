@@ -6130,26 +6130,88 @@ impl<A: Clone, B: Clone> VecPair<A, B> {
     }
 }
 
-pub struct PhiAllocator {
-    count: u32,
-}
+mod phi {
+    #[allow(unused_imports)]
+    use crate::ir::{OpPhiDsts, OpPhiSrcs};
+    use compiler::bitset::IntoBitIndex;
+    use std::fmt;
 
-impl PhiAllocator {
-    pub fn new() -> PhiAllocator {
-        PhiAllocator { count: 0 }
+    /// A phi node
+    ///
+    /// Phis in NAK are implemented differently from NIR and similar IRs.
+    /// Instead of having a single phi instruction which lives in the successor
+    /// block, each `Phi` represents a single merged 32-bit (or 1-bit for
+    /// predicates) value and we have separate [`OpPhiSrcs`] and [`OpPhiDsts`]
+    /// instructions which map phis to sources and destinations.
+    ///
+    /// One of the problems fundamental to phis is that they really live on the
+    /// edges between blocks.  Regardless of where the phi instruction lives in
+    /// the IR data structures, its sources are consumed at the end of the
+    /// predecessor block and its destinations are defined at the start of the
+    /// successor block and all phi sources and destinations get consumed and go
+    /// live simultaneously for any given CFG edge.  For a phi that participates
+    /// in a back-edge, this means that the source of the phi may be consumed
+    /// after (in block order) the destination goes live.
+    ///
+    /// In NIR, this has caused no end of headaches.  Most passes which need to
+    /// process phis ignore phis when first processing a block and then have a
+    /// special case at the end of each block which walks the successors and
+    /// processes the successor's phis, looking only at the phi sources whose
+    /// predecessor matches the block.  This is clunky and often forgotten by
+    /// optimization and lowering pass authors.  It's also easy to get missed by
+    /// testing since it only really breaks if you have a phi which participates
+    /// in a back-edge so it often gets found later when something breaks in the
+    /// wild.
+    ///
+    /// To work around this (and also make things a little more Rust-friendly),
+    /// NAK places the instruction which consumes phi sources at the end of the
+    /// predecessor block and the instruction which defines phi destinations at
+    /// the start of the successor block.  This structurally eliminates the
+    /// problem that has plagued NIR for years.  The cost to this solution is
+    /// that we have to create maps from phis to/from SSA values whenever we
+    /// want to optimize the phis themselves.  However, this affects few enough
+    /// passes that the benefits to the rest of the IR are worth the trade-off,
+    /// at least for a back-end compiler.
+    #[derive(Clone, Copy, Eq, Hash, PartialEq)]
+    pub struct Phi {
+        idx: u32,
     }
 
-    pub fn alloc(&mut self) -> u32 {
-        let idx = self.count;
-        self.count = idx + 1;
-        idx
+    impl IntoBitIndex for Phi {
+        fn into_bit_index(self) -> usize {
+            self.idx.try_into().unwrap()
+        }
+    }
+
+    impl fmt::Display for Phi {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "φ{}", self.idx)
+        }
+    }
+
+    pub struct PhiAllocator {
+        count: u32,
+    }
+
+    impl PhiAllocator {
+        pub fn new() -> PhiAllocator {
+            PhiAllocator { count: 0 }
+        }
+
+        pub fn alloc(&mut self) -> Phi {
+            let idx = self.count;
+            self.count = idx + 1;
+            Phi { idx }
+        }
     }
 }
+pub use phi::{Phi, PhiAllocator};
 
+/// An instruction which maps [Phi]s to sources in the predecessor block
 #[repr(C)]
 #[derive(DstsAsSlice)]
 pub struct OpPhiSrcs {
-    pub srcs: VecPair<u32, Src>,
+    pub srcs: VecPair<Phi, Src>,
 }
 
 impl OpPhiSrcs {
@@ -6183,21 +6245,22 @@ impl DisplayOp for OpPhiSrcs {
 
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "phi_src ")?;
-        for (i, (id, src)) in self.srcs.iter().enumerate() {
+        for (i, (phi, src)) in self.srcs.iter().enumerate() {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "φ{} = {}", id, src)?;
+            write!(f, "{phi} = {src}")?;
         }
         Ok(())
     }
 }
 impl_display_for_op!(OpPhiSrcs);
 
+/// An instruction which maps [Phi]s to destinations in the succeessor block
 #[repr(C)]
 #[derive(SrcsAsSlice)]
 pub struct OpPhiDsts {
-    pub dsts: VecPair<u32, Dst>,
+    pub dsts: VecPair<Phi, Dst>,
 }
 
 impl OpPhiDsts {
@@ -6231,11 +6294,11 @@ impl DisplayOp for OpPhiDsts {
 
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "phi_dst ")?;
-        for (i, (id, dst)) in self.dsts.iter().enumerate() {
+        for (i, (phi, dst)) in self.dsts.iter().enumerate() {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{} = φ{}", dst, id)?;
+            write!(f, "{dst} = {phi}")?;
         }
         Ok(())
     }

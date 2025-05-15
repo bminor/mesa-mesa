@@ -15,7 +15,7 @@ use std::cmp::{max, Ordering, Reverse};
 use std::collections::BinaryHeap;
 
 struct PhiDstMap {
-    ssa_phi: FxHashMap<SSAValue, u32>,
+    ssa_phi: FxHashMap<SSAValue, Phi>,
 }
 
 impl PhiDstMap {
@@ -25,10 +25,10 @@ impl PhiDstMap {
         }
     }
 
-    fn add_phi_dst(&mut self, phi_idx: u32, dst: &Dst) {
+    fn add_phi_dst(&mut self, phi: Phi, dst: &Dst) {
         let vec = dst.as_ssa().expect("Not an SSA destination");
         debug_assert!(vec.comps() == 1);
-        self.ssa_phi.insert(vec[0], phi_idx);
+        self.ssa_phi.insert(vec[0], phi);
     }
 
     pub fn from_block(block: &BasicBlock) -> PhiDstMap {
@@ -41,13 +41,13 @@ impl PhiDstMap {
         map
     }
 
-    fn get_phi_idx(&self, ssa: &SSAValue) -> Option<&u32> {
+    fn get_phi(&self, ssa: &SSAValue) -> Option<&Phi> {
         self.ssa_phi.get(ssa)
     }
 }
 
 struct PhiSrcMap {
-    phi_src: FxHashMap<u32, SSAValue>,
+    phi_src: FxHashMap<Phi, SSAValue>,
 }
 
 impl PhiSrcMap {
@@ -57,25 +57,25 @@ impl PhiSrcMap {
         }
     }
 
-    fn add_phi_src(&mut self, phi_idx: u32, src: &Src) {
+    fn add_phi_src(&mut self, phi: Phi, src: &Src) {
         debug_assert!(src.is_unmodified());
         let vec = src.src_ref.as_ssa().expect("Not an SSA source");
         debug_assert!(vec.comps() == 1);
-        self.phi_src.insert(phi_idx, vec[0]);
+        self.phi_src.insert(phi, vec[0]);
     }
 
     pub fn from_block(block: &BasicBlock) -> PhiSrcMap {
         let mut map = PhiSrcMap::new();
         if let Some(op) = block.phi_srcs() {
-            for (idx, src) in op.srcs.iter() {
-                map.add_phi_src(*idx, src);
+            for (phi, src) in op.srcs.iter() {
+                map.add_phi_src(*phi, src);
             }
         }
         map
     }
 
-    pub fn get_src_ssa(&self, phi_idx: &u32) -> &SSAValue {
-        self.phi_src.get(phi_idx).expect("Phi source missing")
+    pub fn get_src_ssa(&self, phi: &Phi) -> &SSAValue {
+        self.phi_src.get(phi).expect("Phi source missing")
     }
 }
 
@@ -495,7 +495,7 @@ fn spill_values<S: Spill>(
     }
 
     let mut spill = SpillCache::new(&mut func.ssa_alloc, spill);
-    let mut spilled_phis: BitSet<usize> = BitSet::new();
+    let mut spilled_phis: BitSet<Phi> = BitSet::new();
 
     let mut ssa_state_in: Vec<SSAState> = Vec::new();
     let mut ssa_state_out: Vec<SSAState> = Vec::new();
@@ -599,7 +599,7 @@ fn spill_values<S: Spill>(
                 let phi_src_map = &phi_src_maps[*p_idx];
 
                 for mut ssa in ssa_state_out[*p_idx].w.iter().cloned() {
-                    if let Some(phi) = phi_dst_map.get_phi_idx(&ssa) {
+                    if let Some(phi) = phi_dst_map.get_phi(&ssa) {
                         ssa = *phi_src_map.get_src_ssa(phi);
                     }
 
@@ -708,13 +708,13 @@ fn spill_values<S: Spill>(
                 Op::PhiDsts(op) => {
                     // For phis, anything that is not in W needs to be spilled
                     // by setting the destination to some spill value.
-                    for (idx, dst) in op.dsts.iter_mut() {
+                    for (phi, dst) in op.dsts.iter_mut() {
                         let vec = dst.as_ssa().unwrap();
                         debug_assert!(vec.comps() == 1);
                         let ssa = &vec[0];
 
                         if ssa.file() == file && !b.w.contains(ssa) {
-                            spilled_phis.insert((*idx).try_into().unwrap());
+                            spilled_phis.insert(*phi);
                             b.s.insert(*ssa);
                             *dst = spill.get_spill(*ssa).into();
                         }
@@ -974,7 +974,7 @@ fn spill_values<S: Spill>(
         let mut fills = Vec::new();
 
         if let Some(op) = pb.phi_srcs_mut() {
-            for (idx, src) in op.srcs.iter_mut() {
+            for (phi, src) in op.srcs.iter_mut() {
                 debug_assert!(src.is_unmodified());
                 let vec = src.src_ref.as_ssa().unwrap();
                 debug_assert!(vec.comps() == 1);
@@ -984,7 +984,7 @@ fn spill_values<S: Spill>(
                     continue;
                 }
 
-                if spilled_phis.contains((*idx).try_into().unwrap()) {
+                if spilled_phis.contains(*phi) {
                     if !p_out.s.contains(ssa) {
                         spills.push(*ssa);
                     }
@@ -1005,7 +1005,7 @@ fn spill_values<S: Spill>(
         }
 
         for ssa in s_in.w.iter() {
-            if phi_dst_map.get_phi_idx(ssa).is_some() {
+            if phi_dst_map.get_phi(ssa).is_some() {
                 continue;
             }
 

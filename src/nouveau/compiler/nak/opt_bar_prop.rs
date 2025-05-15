@@ -8,8 +8,8 @@ use compiler::bitset::BitSet;
 use rustc_hash::FxHashMap;
 
 struct PhiMap {
-    phi_ssa: FxHashMap<u32, Vec<SSAValue>>,
-    ssa_phi: FxHashMap<SSAValue, u32>,
+    phi_ssa: FxHashMap<Phi, Vec<SSAValue>>,
+    ssa_phi: FxHashMap<SSAValue, Phi>,
 }
 
 impl PhiMap {
@@ -21,29 +21,29 @@ impl PhiMap {
     }
 
     fn add_phi_srcs(&mut self, op: &OpPhiSrcs) {
-        for (idx, src) in op.srcs.iter() {
+        for (phi, src) in op.srcs.iter() {
             if let SrcRef::SSA(ssa) = &src.src_ref {
                 assert!(ssa.comps() == 1);
-                let phi_srcs = self.phi_ssa.entry(*idx).or_default();
+                let phi_srcs = self.phi_ssa.entry(*phi).or_default();
                 phi_srcs.push(ssa[0]);
             }
         }
     }
 
     fn add_phi_dsts(&mut self, op: &OpPhiDsts) {
-        for (idx, dst) in op.dsts.iter() {
+        for (phi, dst) in op.dsts.iter() {
             if let Dst::SSA(ssa) = dst {
                 assert!(ssa.comps() == 1);
-                self.ssa_phi.insert(ssa[0], *idx);
+                self.ssa_phi.insert(ssa[0], *phi);
             }
         }
     }
 
-    fn get_phi(&self, ssa: &SSAValue) -> Option<&u32> {
+    fn get_phi(&self, ssa: &SSAValue) -> Option<&Phi> {
         self.ssa_phi.get(ssa)
     }
 
-    fn phi_srcs(&self, idx: &u32) -> &[SSAValue] {
+    fn phi_srcs(&self, idx: &Phi) -> &[SSAValue] {
         self.phi_ssa.get(idx).unwrap()
     }
 }
@@ -51,8 +51,8 @@ impl PhiMap {
 #[derive(Default)]
 struct BarPropPass {
     ssa_map: FxHashMap<SSAValue, SSAValue>,
-    phi_is_bar: BitSet,
-    phi_is_not_bar: BitSet,
+    phi_is_bar: BitSet<Phi>,
+    phi_is_not_bar: BitSet<Phi>,
 }
 
 impl BarPropPass {
@@ -89,19 +89,19 @@ impl BarPropPass {
     fn phi_can_be_bar_recur(
         &mut self,
         phi_map: &PhiMap,
-        seen: &mut BitSet,
-        phi: u32,
+        seen: &mut BitSet<Phi>,
+        phi: Phi,
     ) -> bool {
-        if self.phi_is_not_bar.contains(phi.try_into().unwrap()) {
+        if self.phi_is_not_bar.contains(phi) {
             return false;
         }
 
-        if seen.contains(phi.try_into().unwrap()) {
+        if seen.contains(phi) {
             // If we've hit a cycle, that's not a fail
             return true;
         }
 
-        seen.insert(phi.try_into().unwrap());
+        seen.insert(phi);
 
         for src_ssa in phi_map.phi_srcs(&phi) {
             if self.is_bar(src_ssa) {
@@ -114,7 +114,7 @@ impl BarPropPass {
                 }
             }
 
-            self.phi_is_not_bar.insert(phi.try_into().unwrap());
+            self.phi_is_not_bar.insert(phi);
             return false;
         }
 
@@ -125,18 +125,18 @@ impl BarPropPass {
         &mut self,
         ssa_alloc: &mut SSAValueAllocator,
         phi_map: &PhiMap,
-        needs_bar: &mut BitSet,
-        phi: u32,
+        needs_bar: &mut BitSet<Phi>,
+        phi: Phi,
         ssa: SSAValue,
     ) {
-        if !needs_bar.contains(phi.try_into().unwrap()) {
+        if !needs_bar.contains(phi) {
             return;
         }
 
         let bar = ssa_alloc.alloc(RegFile::Bar);
         self.ssa_map.insert(ssa, bar);
-        self.phi_is_bar.insert(phi.try_into().unwrap());
-        needs_bar.remove(phi.try_into().unwrap());
+        self.phi_is_bar.insert(phi);
+        needs_bar.remove(phi);
 
         for src_ssa in phi_map.phi_srcs(&phi) {
             if let Some(src_phi) = phi_map.get_phi(src_ssa) {
@@ -151,10 +151,10 @@ impl BarPropPass {
         &mut self,
         ssa_alloc: &mut SSAValueAllocator,
         phi_map: &PhiMap,
-        phi: u32,
+        phi: Phi,
         ssa: SSAValue,
     ) {
-        if self.phi_is_bar.contains(phi.try_into().unwrap()) {
+        if self.phi_is_bar.contains(phi) {
             return;
         }
 
@@ -203,8 +203,7 @@ impl BarPropPass {
             match &mut instr.op {
                 Op::PhiSrcs(op) => {
                     for (idx, src) in op.srcs.iter_mut() {
-                        if self.phi_is_bar.contains((*idx).try_into().unwrap())
-                        {
+                        if self.phi_is_bar.contains(*idx) {
                             // Barrier immediates don't exist
                             let ssa = src.as_ssa().unwrap();
                             let bar = *self.map_bar(&ssa[0]).unwrap();
@@ -216,8 +215,7 @@ impl BarPropPass {
                 Op::PhiDsts(op) => {
                     let mut bmovs = Vec::new();
                     for (idx, dst) in op.dsts.iter_mut() {
-                        if self.phi_is_bar.contains((*idx).try_into().unwrap())
-                        {
+                        if self.phi_is_bar.contains(*idx) {
                             let ssa = dst.as_ssa().unwrap().clone();
                             let bar = *self.ssa_map.get(&ssa[0]).unwrap();
                             *dst = bar.into();

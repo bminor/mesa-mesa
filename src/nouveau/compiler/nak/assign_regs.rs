@@ -181,7 +181,7 @@ impl PhiWebs {
             let Some(phi_dsts) = f.blocks[b_idx].phi_dsts() else {
                 continue;
             };
-            let dsts: FxHashMap<u32, &SSARef> = phi_dsts
+            let dsts: FxHashMap<Phi, &SSARef> = phi_dsts
                 .dsts
                 .iter()
                 .map(|(idx, dst)| {
@@ -225,7 +225,7 @@ impl PhiWebs {
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 enum LiveRef {
     SSA(SSAValue),
-    Phi(u32),
+    Phi(Phi),
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
@@ -922,7 +922,7 @@ struct AssignRegsBlock {
     ra: PerRegFile<RegAllocator>,
     pcopy_tmp_gprs: u8,
     live_in: Vec<LiveValue>,
-    phi_out: FxHashMap<u32, SrcRef>,
+    phi_out: FxHashMap<Phi, SrcRef>,
 }
 
 impl AssignRegsBlock {
@@ -1031,12 +1031,12 @@ impl AssignRegsBlock {
             Op::PhiDsts(op) => {
                 assert!(instr.pred.is_true());
 
-                for (id, dst) in op.dsts.iter() {
+                for (phi, dst) in op.dsts.iter() {
                     if let Dst::SSA(ssa) = dst {
                         assert!(ssa.comps() == 1);
                         let reg = self.alloc_scalar(ip, sum, phi_webs, ssa[0]);
                         self.live_in.push(LiveValue {
-                            live_ref: LiveRef::Phi(*id),
+                            live_ref: LiveRef::Phi(*phi),
                             reg_ref: reg,
                         });
                     }

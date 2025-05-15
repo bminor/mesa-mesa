@@ -11,7 +11,7 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
 struct PhiTracker {
-    idx: u32,
+    phi: Phi,
     orig: SSAValue,
     dst: SSAValue,
     srcs: FxHashMap<usize, SSAValue>,
@@ -82,10 +82,10 @@ fn get_ssa_or_phi(
         let b_ssa = if all_same {
             pred_ssa.expect("Undefined value")
         } else {
-            let phi_idx = phi_alloc.alloc();
+            let phi = phi_alloc.alloc();
             let phi_ssa = ssa_alloc.alloc(ssa.file());
             let mut pt = PhiTracker {
-                idx: phi_idx,
+                phi,
                 orig: ssa,
                 dst: phi_ssa,
                 srcs: Default::default(),
@@ -317,7 +317,7 @@ impl Function {
             if !b_phis.is_empty() {
                 let phi_dst = get_or_insert_phi_dsts(bb);
                 for pt in b_phis.iter() {
-                    phi_dst.dsts.push(pt.idx, pt.dst.into());
+                    phi_dst.dsts.push(pt.phi, pt.dst.into());
                 }
             }
 
@@ -337,7 +337,7 @@ impl Function {
                     for pt in s_phis.iter() {
                         let mut ssa = *pt.srcs.get(&b_idx).unwrap();
                         ssa = ssa_map.find(ssa);
-                        phi_src.srcs.push(pt.idx, ssa.into());
+                        phi_src.srcs.push(pt.phi, ssa.into());
                     }
                 }
             }
