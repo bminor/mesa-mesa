@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-struct Phi {
+struct PhiTracker {
     idx: u32,
     orig: SSAValue,
     dst: SSAValue,
@@ -21,7 +21,7 @@ struct DefTrackerBlock {
     pred: Vec<usize>,
     succ: Vec<usize>,
     defs: RefCell<FxHashMap<SSAValue, SSAValue>>,
-    phis: RefCell<Vec<Phi>>,
+    phis: RefCell<Vec<PhiTracker>>,
 }
 
 fn get_ssa_or_phi(
@@ -84,7 +84,7 @@ fn get_ssa_or_phi(
         } else {
             let phi_idx = phi_alloc.alloc();
             let phi_ssa = ssa_alloc.alloc(ssa.file());
-            let mut phi = Phi {
+            let mut pt = PhiTracker {
                 idx: phi_idx,
                 orig: ssa,
                 dst: phi_ssa,
@@ -97,9 +97,9 @@ fn get_ssa_or_phi(
                 }
                 // Earlier iterations of the loop ensured this exists
                 let p_ssa = *blocks[p_idx].defs.borrow().get(&ssa).unwrap();
-                phi.srcs.insert(p_idx, p_ssa);
+                pt.srcs.insert(p_idx, p_ssa);
             }
-            blocks[b_idx].phis.borrow_mut().push(phi);
+            blocks[b_idx].phis.borrow_mut().push(pt);
             phi_ssa
         };
 
@@ -316,8 +316,8 @@ impl Function {
             let b_phis = blocks[b_idx].phis.borrow();
             if !b_phis.is_empty() {
                 let phi_dst = get_or_insert_phi_dsts(bb);
-                for phi in b_phis.iter() {
-                    phi_dst.dsts.push(phi.idx, phi.dst.into());
+                for pt in b_phis.iter() {
+                    phi_dst.dsts.push(pt.idx, pt.dst.into());
                 }
             }
 
@@ -334,10 +334,10 @@ impl Function {
                 let s_phis = blocks[s_idx].phis.borrow();
                 if !s_phis.is_empty() {
                     let phi_src = get_or_insert_phi_srcs(bb);
-                    for phi in s_phis.iter() {
-                        let mut ssa = *phi.srcs.get(&b_idx).unwrap();
+                    for pt in s_phis.iter() {
+                        let mut ssa = *pt.srcs.get(&b_idx).unwrap();
                         ssa = ssa_map.find(ssa);
-                        phi_src.srcs.push(phi.idx, ssa.into());
+                        phi_src.srcs.push(pt.idx, ssa.into());
                     }
                 }
             }
