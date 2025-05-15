@@ -250,10 +250,6 @@ spec@ext_texture_snorm@texwrap formats bordercolor@GL_R16_SNORM- border color on
 spec@ext_texture_snorm@texwrap formats bordercolor@GL_RG16_SNORM- border color only,Fail
 spec@ext_texture_snorm@texwrap formats bordercolor@GL_RGB16_SNORM- border color only,Fail
 spec@ext_texture_snorm@texwrap formats bordercolor@GL_RGBA16_SNORM- border color only,Fail
-spec@ext_transform_feedback@tessellation line_loop flat_first,Fail
-spec@ext_transform_feedback@tessellation line_loop flat_last,Fail
-spec@ext_transform_feedback@tessellation line_loop monochrome,Fail
-spec@ext_transform_feedback@tessellation line_loop smooth,Fail
 spec@ext_transform_feedback@tessellation triangle_fan flat_first,Fail
 spec@ext_transform_feedback@tessellation triangle_strip flat_first,Fail
 spec@glsl-1.10@execution@glsl-fs-inline-explosion,Crash

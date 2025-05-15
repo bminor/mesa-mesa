@@ -219,10 +219,6 @@ spec@ext_texture_snorm@texwrap formats bordercolor,Fail
 spec@ext_texture_snorm@texwrap formats bordercolor-swizzled,Fail
 spec@ext_texture_snorm@texwrap formats bordercolor-swizzled@GL_LUMINANCE16_ALPHA16_SNORM- swizzled- border color only,Fail
 spec@ext_texture_snorm@texwrap formats bordercolor@GL_LUMINANCE16_ALPHA16_SNORM- border color only,Fail
-spec@ext_transform_feedback@tessellation line_loop flat_first,Fail
-spec@ext_transform_feedback@tessellation line_loop flat_last,Fail
-spec@ext_transform_feedback@tessellation line_loop monochrome,Fail
-spec@ext_transform_feedback@tessellation line_loop smooth,Fail
 spec@ext_transform_feedback@tessellation triangle_fan flat_first,Fail
 spec@ext_transform_feedback@tessellation triangle_strip flat_first,Fail
 spec@glsl-1.10@execution@glsl-fs-inline-explosion,Crash
