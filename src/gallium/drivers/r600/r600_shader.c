@@ -182,20 +182,8 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 
 		glsl_type_singleton_decref();
 
-		if (r) {
-			fprintf(stderr, "--Failed shader--------------------------------------------------\n");
-			
-			if (sel->ir_type == PIPE_SHADER_IR_TGSI) {
-				fprintf(stderr, "--TGSI--------------------------------------------------------\n");
-				tgsi_dump(sel->tokens, 0);
-			}
-			
-			fprintf(stderr, "--NIR --------------------------------------------------------\n");
-			nir_print_shader(sel->nir, stderr);
-			
-			R600_ERR("translation from NIR failed !\n");
+		if (r)
 			goto error;
-		}
 	}
 	
 	if (dump) {

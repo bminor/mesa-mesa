@@ -15,6 +15,7 @@
 #include "sfn/sfn_shader.h"
 #include "r600_asm.h"
 #include "r600_pipe.h"
+#include "tgsi/tgsi_dump.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 
@@ -90,9 +91,19 @@ r600_shader_from_nir(struct r600_context *rctx,
       r600::Shader::translate_from_nir(sh, &sel->so, gs_shader, *key,
                                        rctx->isa->hw_class, rscreen->b.family);
 
-   assert(shader);
-   if (!shader)
+   if (!shader) {
+      R600_ERR("translation from NIR failed !\n");
+      fprintf(stderr, "--Failed shader--------------------------------------------------\n");
+      if (sel->ir_type == PIPE_SHADER_IR_TGSI) {
+         fprintf(stderr, "--TGSI--------------------------------------------------------\n");
+         tgsi_dump(sel->tokens, 0);
+      }
+      fprintf(stderr, "--NIR --------------------------------------------------------\n");
+      nir_print_shader(sh, stderr);
+      // Crash in Debug mode
+      assert(0);
       return -2;
+   }
 
    pipeshader->enabled_stream_buffers_mask = shader->enabled_stream_buffers_mask();
    pipeshader->selector->info.file_count[TGSI_FILE_HW_ATOMIC] +=
