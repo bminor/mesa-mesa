@@ -2204,10 +2204,13 @@ genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline)
 
       case VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR: {
          struct GENX(RT_TRIANGLES_SBT_HANDLE) sh = {};
+         struct anv_device *device = pipeline->base.device;
          if (group->closest_hit)
             sh.ClosestHit = anv_shader_bin_get_bsr(group->closest_hit, 32);
          if (group->any_hit)
             sh.AnyHit = anv_shader_bin_get_bsr(group->any_hit, 24);
+         else
+            sh.AnyHit = anv_shader_bin_get_bsr(device->rt_null_ahs, 24);
          GENX(RT_TRIANGLES_SBT_HANDLE_pack)(NULL, group->handle, &sh);
          break;
       }

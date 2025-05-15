@@ -2088,6 +2088,7 @@ struct anv_device {
 
     struct anv_shader_bin                      *rt_trampoline;
     struct anv_shader_bin                      *rt_trivial_return;
+    struct anv_shader_bin                      *rt_null_ahs;
 
     enum anv_rt_bvh_build_method                bvh_build_method;
 
