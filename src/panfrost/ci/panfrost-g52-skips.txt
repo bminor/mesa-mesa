@@ -80,6 +80,9 @@ dEQP-VK.draw.renderpass.*.draw_indexed_indirect*
 dEQP-VK.draw.dynamic_rendering.*.draw_indirect*
 dEQP-VK.draw.dynamic_rendering.*.draw_indexed_indirect*
 dEQP-VK.draw.dynamic_rendering.*.indirect_draw*
+dEQP-VK.multiview.draw_indirect*
+dEQP-VK.multiview.dynamic_rendering.draw_indirect*
+dEQP-VK.multiview.renderpass2.draw_indirect*
 
 # VKCTS bug?
 # Jump to 0x0 (XXX: need more research)
