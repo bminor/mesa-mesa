@@ -5164,7 +5164,7 @@
         "description": "panvk/v10+: Remove unnecessary alloc in dispatch_precomp",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cc02c5deb42f1f89b227ac3e4816a32a573b6bcf",
         "notes": null
