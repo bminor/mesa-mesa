@@ -619,6 +619,9 @@ get_sample_counts(unsigned arch, unsigned max_tib_size,
 
    assert(max_msaa >= 4);
 
+   if (arch >= 12)
+      sample_counts |= VK_SAMPLE_COUNT_2_BIT;
+
    if (max_msaa >= 8)
       sample_counts |= VK_SAMPLE_COUNT_8_BIT;
 
