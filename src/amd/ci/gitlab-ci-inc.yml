@@ -314,6 +314,7 @@
     # the code generator.
     ACO_DEBUG: validateir,validatera
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
+    radv_cooperative_matrix2_nv: 'true'
     # Enable ETC2 emulation on non-native platforms (RENOIR,RDNA+, GFX6-8 dGPUs)
     vk_require_etc2: 'true'
     CI_TRON__B2C_SWAP_SIZE: '16g'
