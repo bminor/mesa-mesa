@@ -116,6 +116,13 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
       val = load_sysval(b, graphics, bit_size, layer_id);
       break;
+   case nir_intrinsic_load_view_index:
+      assert(b->shader->info.stage != MESA_SHADER_COMPUTE);
+      if (ctx->state->rp->view_mask == 0)
+         val = nir_imm_zero(b, 1, 32);
+      else
+         val = load_sysval(b, graphics, bit_size, layer_id);
+      break;
 #endif
 
    case nir_intrinsic_load_draw_id:

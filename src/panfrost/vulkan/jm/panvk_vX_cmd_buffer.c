@@ -153,19 +153,26 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
             return;
       }
 
-      for (uint32_t i = 0; i < batch->fb.layer_count; i++) {
+      uint32_t view_mask = cmdbuf->state.gfx.render.view_mask;
+      assert(view_mask == 0 || util_bitcount(view_mask) <= batch->fb.layer_count);
+      uint32_t enabled_layer_count = view_mask ?
+         util_bitcount(view_mask) :
+         batch->fb.layer_count;
+
+      for (uint32_t i = 0; i < enabled_layer_count; i++) {
+         uint32_t layer_id = (view_mask != 0) ? u_bit_scan(&view_mask) : i;
          VkResult result;
 
-         uint64_t fbd = batch->fb.desc.gpu + (batch->fb.desc_stride * i);
+         uint64_t fbd = batch->fb.desc.gpu + (batch->fb.desc_stride * layer_id);
 
-         result = panvk_per_arch(cmd_prepare_tiler_context)(cmdbuf, i);
+         result = panvk_per_arch(cmd_prepare_tiler_context)(cmdbuf, layer_id);
          if (result != VK_SUCCESS)
             break;
 
          fbd |= GENX(pan_emit_fbd)(
-            &cmdbuf->state.gfx.render.fb.info, i, &batch->tlsinfo,
+            &cmdbuf->state.gfx.render.fb.info, layer_id, &batch->tlsinfo,
             &batch->tiler.ctx,
-            batch->fb.desc.cpu + (batch->fb.desc_stride * i));
+            batch->fb.desc.cpu + (batch->fb.desc_stride * layer_id));
 
          result = panvk_cmd_prepare_fragment_job(cmdbuf, fbd);
          if (result != VK_SUCCESS)

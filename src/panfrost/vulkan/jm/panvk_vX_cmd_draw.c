@@ -1308,14 +1308,21 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    if (result != VK_SUCCESS)
       return;
 
-   for (uint32_t i = 0; i < layer_count; i++) {
-      draw->info.layer_id = i;
+
+   uint32_t view_mask = cmdbuf->state.gfx.render.view_mask;
+   assert(view_mask == 0 || util_bitcount(view_mask) <= batch->fb.layer_count);
+   uint32_t enabled_layer_count = view_mask ?
+     util_bitcount(view_mask) :
+     cmdbuf->state.gfx.render.layer_count;
+
+   for (uint32_t i = 0; i < enabled_layer_count; i++) {
       result = panvk_draw_prepare_varyings(cmdbuf, draw);
       if (result != VK_SUCCESS)
          return;
 
-      if (i > 0) {
-         cmdbuf->state.gfx.sysvals.layer_id = i;
+      draw->info.layer_id = (view_mask != 0) ? u_bit_scan(&view_mask) : i;
+      if (draw->info.layer_id > 0) {
+         cmdbuf->state.gfx.sysvals.layer_id = draw->info.layer_id;
          gfx_state_set_dirty(cmdbuf, FS_PUSH_UNIFORMS);
       }
 
