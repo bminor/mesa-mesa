@@ -19,11 +19,20 @@ spec@!opengl 1.1@depthstencil-default_fb-blit
 spec@glsl-1.30@execution@texturesize@vs-texturesize-isamplercube
 namespace pollution@renderbuffer with glgetteximage-compressed
 
+afbcp-glx@glx-multithread-texture
+afbcp-spec@arb_texture_gather@texturegather@fs-r-none-float-cube
+afbcp-spec@arb_texture_gather@texturegather@fs-r-none-float-cubearray
+afbcp-spec@arb_texture_gather@texturegatheroffset@vs-rgba-zero-unorm-2darray
+afbcp-spec@egl_nok_texture_from_pixmap@basic
+afbcp-spec@glsl-1.30@execution@texturesize@vs-texturesize-isamplercube
+
 # first seen 2023-05-13
 spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
+afbcp-spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
 
 # uprev Piglit in Mesa
 glx@glx-multithread-clearbuffer
+afbcp-glx@glx-multithread-clearbuffer
 
 # Cause a "gpu sched timeout" (fixed by sched increase to 10s)
 dEQP-VK.memory.pipeline_barrier.host_write_vertex_buffer.1048576_vertex_buffer_stride_2
