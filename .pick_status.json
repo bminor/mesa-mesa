@@ -2084,7 +2084,7 @@
         "description": "panfrost: fix assertion failure compiling image conversion shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "59a3e12039cde5df1451193557512b38cea0039e",
         "notes": null
