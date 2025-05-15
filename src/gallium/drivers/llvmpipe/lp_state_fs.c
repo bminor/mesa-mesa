@@ -1473,7 +1473,7 @@ generate_fs_twiddle(struct gallivm_state *gallivm,
                     LLVMValueRef* dst,
                     bool pad_inline)
 {
-   LLVMValueRef src[16];
+   LLVMValueRef src[16] = { 0 };
    unsigned pixels = type.length / 4;
    unsigned src_channels = dst_channels < 3 ? dst_channels : 4;
    unsigned src_count = num_fs * src_channels;
