@@ -33,6 +33,7 @@ struct si_shader_info {
       uint32_t msaa_images;
 
       unsigned shared_size;
+      unsigned task_payload_size;
       uint16_t workgroup_size[3];
       bool workgroup_size_variable:1;
       enum gl_derivative_group derivative_group:2;
@@ -75,6 +76,15 @@ struct si_shader_info {
          struct {
             uint8_t user_data_components_amd:4;
          } cs;
+
+         struct {
+            uint16_t max_vertices_out;
+            uint16_t max_primitives_out;
+         } mesh;
+
+         struct {
+            bool linear_taskmesh_dispatch : 1;
+         } task;
       };
    } base;
 

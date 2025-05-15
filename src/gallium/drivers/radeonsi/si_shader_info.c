@@ -412,6 +412,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.msaa_images = nir->info.msaa_images[0];
 
    info->base.shared_size = nir->info.shared_size;
+   info->base.task_payload_size = nir->info.task_payload_size;
    memcpy(info->base.workgroup_size, nir->info.workgroup_size, sizeof(nir->info.workgroup_size));
    info->base.workgroup_size_variable = nir->info.workgroup_size_variable;
    info->base.derivative_group = nir->info.derivative_group;
@@ -455,6 +456,17 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    case MESA_SHADER_COMPUTE:
    case MESA_SHADER_KERNEL:
       info->base.cs.user_data_components_amd = nir->info.cs.user_data_components_amd;
+      break;
+
+   case MESA_SHADER_MESH:
+      info->base.mesh.max_vertices_out = nir->info.mesh.max_vertices_out;
+      info->base.mesh.max_primitives_out = nir->info.mesh.max_primitives_out;
+      break;
+
+   case MESA_SHADER_TASK:
+      info->base.task.linear_taskmesh_dispatch =
+         nir->info.mesh.ts_mesh_dispatch_dimensions[1] == 1 &&
+         nir->info.mesh.ts_mesh_dispatch_dimensions[2] == 1;
       break;
 
    default:
