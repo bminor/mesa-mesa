@@ -21,7 +21,7 @@ include:
 variables:
   DEBIAN_BASE_TAG: "20250505-crosvm"
 
-  DEBIAN_BUILD_TAG: "20250422-ci-fairy"
+  DEBIAN_BUILD_TAG: "20250515-aarch64"
 
   DEBIAN_TEST_ANDROID_TAG: "20250511-angle-db"
   DEBIAN_TEST_GL_TAG: "20250511-angle-db"

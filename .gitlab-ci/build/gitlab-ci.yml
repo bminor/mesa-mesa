@@ -830,7 +830,7 @@ debian-ppc64el:
 python-artifacts:
   stage: build-for-tests
   extends:
-    - .use-debian/x86_64_pyutils
+    - .use-debian/arm64_build
     - .build-common
     - .meson-build-for-tests
   variables:
@@ -841,3 +841,5 @@ python-artifacts:
     - .gitlab-ci/prepare-artifacts-python.sh
   # Nothing uses the gitlab artifacts from this job anymore, stop uploading it
   artifacts: null
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
