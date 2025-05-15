@@ -918,8 +918,11 @@ fd_screen_create(int fd,
    if (fd_device_version(dev) >= FD_VERSION_ROBUSTNESS)
       screen->has_robustness = true;
 
-   if (fd_pipe_get_param(screen->pipe, FD_UCHE_TRAP_BASE, &val))
+   if (fd_pipe_get_param(screen->pipe, FD_UCHE_TRAP_BASE, &val)) {
       screen->uche_trap_base = screen->gen >= 6 ? 0x1fffffffff000ull : 0ull;
+   } else {
+      screen->uche_trap_base = val;
+   }
 
    screen->has_syncobj = fd_has_syncobj(screen->dev);
 
