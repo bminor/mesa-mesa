@@ -1514,7 +1514,7 @@
         "description": "freedreno: Fix shader-clock when kernel exposes UCHE_TRAP_BASE",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b1b4ee10c0768a5a43dee508601e4e2b39520eb",
         "notes": null
