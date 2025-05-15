@@ -3653,6 +3653,7 @@ static VkResult pvr_setup_descriptor_mappings(
 {
    const struct pvr_pds_info *const pds_info = &descriptor_state->pds_info;
    const struct pvr_descriptor_state *desc_state;
+   const pco_data *data;
    struct pvr_suballoc_bo *pvr_bo;
    const uint8_t *entries;
    uint32_t *dword_buffer;
@@ -3677,12 +3678,18 @@ static VkResult pvr_setup_descriptor_mappings(
 
    switch (stage) {
    case PVR_STAGE_ALLOCATION_VERTEX_GEOMETRY:
+      desc_state = &cmd_buffer->state.gfx_desc_state;
+      data = &cmd_buffer->state.gfx_pipeline->vs_data;
+      break;
+
    case PVR_STAGE_ALLOCATION_FRAGMENT:
       desc_state = &cmd_buffer->state.gfx_desc_state;
+      data = &cmd_buffer->state.gfx_pipeline->fs_data;
       break;
 
    case PVR_STAGE_ALLOCATION_COMPUTE:
       desc_state = &cmd_buffer->state.compute_desc_state;
+      data = &cmd_buffer->state.compute_pipeline->cs_data;
       break;
 
    default:
@@ -3971,6 +3978,43 @@ static VkResult pvr_setup_descriptor_mappings(
 
             PVR_WRITE(qword_buffer,
                       tile_buffer_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
+         case PVR_BUFFER_TYPE_SPILL_INFO: {
+            unsigned spill_block_size =
+               data->common.spilled_temps * sizeof(uint32_t);
+            spill_block_size = spill_block_size ? spill_block_size
+                                                : sizeof(uint32_t);
+
+            struct pvr_suballoc_bo *spill_buffer_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   NULL,
+                                                   spill_block_size * 2048,
+                                                   &spill_buffer_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            uint32_t spill_info[3] = {
+               [0] = spill_buffer_bo->dev_addr.addr & 0xffffffff,
+               [1] = spill_buffer_bo->dev_addr.addr >> 32,
+               [2] = spill_block_size,
+            };
+
+            struct pvr_suballoc_bo *spill_info_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   spill_info,
+                                                   sizeof(spill_info),
+                                                   &spill_info_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      spill_info_bo->dev_addr.addr,
                       special_buff_entry->const_offset,
                       pds_info->data_size_in_dwords);
             break;

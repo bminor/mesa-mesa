@@ -41,6 +41,24 @@ struct vec_override {
    unsigned offset;
 };
 
+typedef struct _pco_ra_ctx {
+   unsigned allocable_temps;
+   unsigned allocable_vtxins;
+   unsigned allocable_interns;
+
+   unsigned temp_alloc_offset;
+
+   bool spilling_setup;
+   pco_ref spill_inst_addr_comps[2];
+   pco_ref spill_addr_comps[2];
+   pco_ref spill_data;
+   pco_ref spill_addr;
+   pco_ref spill_addr_data;
+   unsigned spilled_temps;
+
+   bool done;
+} pco_ra_ctx;
+
 /**
  * \brief Checks if a vec has ssa sources that are referenced more than once.
  *
@@ -313,6 +331,114 @@ static void emit_copies(pco_builder *b,
    ralloc_free(temp_use_counts);
 }
 
+static void setup_spill_base(pco_shader *shader,
+                             pco_ref spill_inst_addr_comps[2])
+{
+   pco_func *entry = pco_entrypoint(shader);
+   pco_block *first_block = pco_func_first_block(entry);
+   pco_builder b =
+      pco_builder_create(entry, pco_cursor_before_block(first_block));
+
+   assert(shader->data.common.spill_info.count > 0);
+   unsigned base_addr_lo_idx = shader->data.common.spill_info.start;
+   unsigned base_addr_hi_idx = shader->data.common.spill_info.start + 1;
+   unsigned block_size_idx = shader->data.common.spill_info.start + 2;
+
+   pco_ref base_addr_lo = pco_ref_hwreg(base_addr_lo_idx, PCO_REG_CLASS_SHARED);
+   pco_ref base_addr_hi = pco_ref_hwreg(base_addr_hi_idx, PCO_REG_CLASS_SHARED);
+   pco_ref block_size = pco_ref_hwreg(block_size_idx, PCO_REG_CLASS_SHARED);
+   pco_ref local_addr_inst_num =
+      pco_ref_hwreg(PCO_SR_LOCAL_ADDR_INST_NUM, PCO_REG_CLASS_SPEC);
+
+   pco_imadd64(&b,
+               spill_inst_addr_comps[0],
+               spill_inst_addr_comps[1],
+               block_size,
+               local_addr_inst_num,
+               base_addr_lo,
+               base_addr_hi,
+               pco_ref_null());
+}
+
+static void spill(unsigned spill_index, pco_func *func, pco_ra_ctx *ctx)
+{
+   unsigned spill_offset = ctx->spilled_temps++;
+
+   pco_foreach_instr_in_func (instr, func) {
+      pco_builder b = pco_builder_create(func, pco_cursor_before_instr(instr));
+      pco_foreach_instr_dest_ssa (pdest, instr) {
+         if (pdest->val != spill_index)
+            continue;
+
+         pco_ref imm_off = pco_ref_imm32(spill_offset);
+         pco_movi32(&b, ctx->spill_data, imm_off);
+         pco_imadd64(&b,
+                     ctx->spill_addr_comps[0],
+                     ctx->spill_addr_comps[1],
+                     ctx->spill_data,
+                     pco_4,
+                     ctx->spill_inst_addr_comps[0],
+                     ctx->spill_inst_addr_comps[1],
+                     pco_ref_null());
+
+         /**/
+
+         *pdest = ctx->spill_data;
+
+         pco_instr *next_instr = pco_next_instr(instr);
+         if (next_instr && next_instr->op == PCO_OP_WDF)
+            b.cursor = pco_cursor_after_instr(next_instr);
+         else
+            b.cursor = pco_cursor_after_instr(instr);
+
+         pco_st32(&b,
+                  ctx->spill_data,
+                  pco_ref_drc(PCO_DRC_0),
+                  pco_ref_imm8(1),
+                  ctx->spill_addr_data,
+                  pco_ref_null());
+
+         pco_wdf(&b, pco_ref_drc(PCO_DRC_0));
+
+         break;
+      }
+
+      b.cursor = pco_cursor_before_instr(instr);
+      bool load_done = false;
+      pco_foreach_instr_src_ssa (pdest, instr) {
+         if (pdest->val != spill_index)
+            continue;
+
+         if (!load_done) {
+            pco_ref imm_off = pco_ref_imm32(spill_offset);
+            pco_movi32(&b, ctx->spill_data, imm_off);
+            pco_imadd64(&b,
+                        ctx->spill_addr_comps[0],
+                        ctx->spill_addr_comps[1],
+                        ctx->spill_data,
+                        pco_4,
+                        ctx->spill_inst_addr_comps[0],
+                        ctx->spill_inst_addr_comps[1],
+                        pco_ref_null());
+
+            pco_ld(&b,
+                   ctx->spill_data,
+                   pco_ref_drc(PCO_DRC_0),
+                   pco_ref_imm8(1),
+                   ctx->spill_addr);
+
+            pco_wdf(&b, pco_ref_drc(PCO_DRC_0));
+
+            load_done = true;
+         }
+
+         *pdest = ctx->spill_data;
+      }
+   }
+
+   pco_index(func->parent_shader, false);
+}
+
 /**
  * \brief Performs register allocation on a function.
  *
@@ -322,10 +448,7 @@ static void emit_copies(pco_builder *b,
  * \param[in] allocable_interns Number of allocatable internal registers.
  * \return True if registers were allocated.
  */
-static bool pco_ra_func(pco_func *func,
-                        unsigned allocable_temps,
-                        unsigned allocable_vtxins,
-                        unsigned allocable_interns)
+static bool pco_ra_func(pco_func *func, pco_ra_ctx *ctx)
 {
    /* TODO: support multiple functions and calls. */
    assert(func->type == PCO_FUNC_TYPE_ENTRYPOINT);
@@ -354,8 +477,10 @@ static bool pco_ra_func(pco_func *func,
    }
 
    /* No registers to allocate. */
-   if (!used_bits)
+   if (!used_bits) {
+      ctx->done = true;
       return false;
+   }
 
    /* 64-bit vars should've been lowered by now. */
    assert(!(used_bits & (1 << PCO_BITS_64)));
@@ -365,7 +490,7 @@ static bool pco_ra_func(pco_func *func,
    assert(only_32bit);
 
    struct ra_regs *ra_regs =
-      ra_alloc_reg_set(func, allocable_temps, !only_32bit);
+      ra_alloc_reg_set(func, ctx->allocable_temps, !only_32bit);
 
    BITSET_WORD *comps =
       rzalloc_array_size(ra_regs, sizeof(*comps), BITSET_WORDS(num_ssas));
@@ -480,7 +605,7 @@ static bool pco_ra_func(pco_func *func,
       const unsigned stride = entry.key;
       struct ra_class *ra_class = entry.data;
 
-      for (unsigned t = 0; t < allocable_temps - (stride - 1); ++t)
+      for (unsigned t = 0; t < ctx->allocable_temps - (stride - 1); ++t)
          ra_class_add_reg(ra_class, t);
    }
 
@@ -643,8 +768,48 @@ static bool pco_ra_func(pco_func *func,
    }
 
    bool allocated = ra_allocate(ra_graph);
-   assert(allocated);
-   /* TODO: spilling. */
+   bool force_spill = false;
+   if (!allocated || force_spill) {
+      if (!ctx->spilling_setup) {
+         ctx->spill_inst_addr_comps[0] = pco_ref_hwreg(0, PCO_REG_CLASS_TEMP);
+         ctx->spill_inst_addr_comps[1] = pco_ref_hwreg(1, PCO_REG_CLASS_TEMP);
+
+         ctx->spill_addr_comps[0] = pco_ref_hwreg(2, PCO_REG_CLASS_TEMP);
+         ctx->spill_addr_comps[1] = pco_ref_hwreg(3, PCO_REG_CLASS_TEMP);
+
+         ctx->spill_data = pco_ref_hwreg(4, PCO_REG_CLASS_TEMP);
+
+         ctx->spill_addr = pco_ref_hwreg_vec(2, PCO_REG_CLASS_TEMP, 2);
+         ctx->spill_addr_data = pco_ref_hwreg_vec(2, PCO_REG_CLASS_TEMP, 3);
+
+         ctx->allocable_temps -= 5;
+         ctx->temp_alloc_offset = 5;
+
+         setup_spill_base(func->parent_shader, ctx->spill_inst_addr_comps);
+         ctx->spilling_setup = true;
+      }
+
+      unsigned *uses = rzalloc_array_size(ra_regs, sizeof(*uses), num_ssas);
+      pco_foreach_instr_in_func (instr, func) {
+         pco_foreach_instr_src_ssa (psrc, instr) {
+            if (pco_ref_get_chans(*psrc) > 1)
+               continue;
+
+            ++uses[psrc->val];
+         }
+      }
+
+      for (unsigned u = 0; u < num_ssas; ++u)
+         ra_set_node_spill_cost(ra_graph, u, (float)uses[u]);
+
+      unsigned spill_index = ra_get_best_spill_node(ra_graph);
+      assert(spill_index != ~0 && "Failed to get best spill node.");
+
+      spill(spill_index, func, ctx);
+
+      ralloc_free(ra_regs);
+      return false;
+   }
 
    if (pco_should_print_shader(func->parent_shader) && PCO_DEBUG_PRINT(RA)) {
       printf("RA live ranges:\n");
@@ -724,6 +889,7 @@ static bool pco_ra_func(pco_func *func,
                   pco_ref dest =
                      pco_ref_hwreg(temp_dest_base + offset, PCO_REG_CLASS_TEMP);
                   dest = pco_ref_offset(dest, u);
+                  dest = pco_ref_offset(dest, ctx->temp_alloc_offset);
 
                   pco_ref src;
                   if (pco_ref_is_ssa(*psrc) || pco_ref_is_vreg(*psrc))
@@ -732,6 +898,7 @@ static bool pco_ra_func(pco_func *func,
                      src = pco_ref_chans(*psrc, 1);
 
                   src = pco_ref_offset(src, u);
+                  src = pco_ref_offset(src, ctx->temp_alloc_offset);
 
                   pco_ref_xfer_mods(&src, psrc, false);
 
@@ -801,8 +968,8 @@ static bool pco_ra_func(pco_func *func,
 
          pdest->type = PCO_REF_TYPE_REG;
          pdest->reg_class = PCO_REG_CLASS_TEMP;
-         pdest->val = val;
-         temps = MAX2(temps, dest_temps);
+         pdest->val = val + ctx->temp_alloc_offset;
+         temps = MAX2(temps, dest_temps + ctx->temp_alloc_offset);
       }
 
       pco_foreach_instr_src_ssa (psrc, instr) {
@@ -816,7 +983,7 @@ static bool pco_ra_func(pco_func *func,
 
          psrc->type = PCO_REF_TYPE_REG;
          psrc->reg_class = PCO_REG_CLASS_TEMP;
-         psrc->val = val;
+         psrc->val = val + ctx->temp_alloc_offset;
       }
 
       pco_foreach_instr_dest_vreg (pdest, instr) {
@@ -825,7 +992,7 @@ static bool pco_ra_func(pco_func *func,
 
          pdest->type = PCO_REF_TYPE_REG;
          pdest->reg_class = PCO_REG_CLASS_TEMP;
-         pdest->val = val;
+         pdest->val = val + ctx->temp_alloc_offset;
          temps = MAX2(temps, dest_temps);
       }
 
@@ -834,7 +1001,7 @@ static bool pco_ra_func(pco_func *func,
 
          psrc->type = PCO_REF_TYPE_REG;
          psrc->reg_class = PCO_REG_CLASS_TEMP;
-         psrc->val = val;
+         psrc->val = val + ctx->temp_alloc_offset;
       }
 
       /* Drop no-ops. */
@@ -859,6 +1026,7 @@ static bool pco_ra_func(pco_func *func,
          num_vregs);
    }
 
+   ctx->done = true;
    return true;
 }
 
@@ -883,20 +1051,33 @@ bool pco_ra(pco_shader *shader)
    /* TODO: different number of temps available if preamble/phase change. */
    /* TODO: different number of temps available if barriers are in use. */
    /* TODO: support for internal and vtxin registers. */
-   unsigned allocable_temps = hw_temps;
-   unsigned allocable_vtxins = 0;
-   unsigned allocable_interns = 0;
+   pco_ra_ctx ctx = {
+      .allocable_temps = hw_temps,
+      .allocable_vtxins = 0,
+      .allocable_interns = 0,
+   };
+
+   if (shader->stage == MESA_SHADER_COMPUTE) {
+      unsigned wg_size = shader->data.cs.workgroup_size[0] *
+                         shader->data.cs.workgroup_size[1] *
+                         shader->data.cs.workgroup_size[2];
+      ctx.allocable_temps =
+         rogue_max_wg_temps(shader->ctx->dev_info,
+                            ctx.allocable_temps,
+                            wg_size,
+                            shader->data.common.uses.barriers);
+   }
 
    /* Perform register allocation for each function. */
    bool progress = false;
    pco_foreach_func_in_shader (func, shader) {
-      progress |= pco_ra_func(func,
-                              allocable_temps,
-                              allocable_vtxins,
-                              allocable_interns);
+      ctx.done = false;
+      while (!ctx.done)
+         progress |= pco_ra_func(func, &ctx);
 
       shader->data.common.temps = MAX2(shader->data.common.temps, func->temps);
    }
 
+   shader->data.common.spilled_temps = ctx.spilled_temps;
    return progress;
 }

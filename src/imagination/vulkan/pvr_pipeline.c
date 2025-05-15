@@ -615,6 +615,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (data->common.spill_info.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_SPILL_INFO,
+         .size_in_dwords = data->common.spill_info.count,
+         .destination = data->common.spill_info.start,
+      };
+   }
+
    if (stage == MESA_SHADER_FRAGMENT &&
        data->common.sys_vals[SYSTEM_VALUE_FRONT_FACE].count > 0) {
       program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
@@ -2406,6 +2414,15 @@ static void pvr_setup_descriptors(pco_data *data,
       };
 
       data->common.shareds += ROGUE_NUM_TEXSTATE_DWORDS;
+   }
+
+   if (true || data->common.spilled_temps) {
+      data->common.spill_info = (pco_range){
+         .start = data->common.shareds,
+         .count = 3,
+      };
+
+      data->common.shareds += 3;
    }
 }
 

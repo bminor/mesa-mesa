@@ -906,6 +906,7 @@ struct pvr_pds_descriptor_set {
 #define PVR_BUFFER_TYPE_FRONT_FACE_OP (9)
 #define PVR_BUFFER_TYPE_FS_META (10)
 #define PVR_BUFFER_TYPE_TILE_BUFFERS (11)
+#define PVR_BUFFER_TYPE_SPILL_INFO (12)
 #define PVR_BUFFER_TYPE_INVALID (~0)
 
 struct pvr_pds_buffer {

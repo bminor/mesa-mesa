@@ -468,6 +468,12 @@ O_IMUL32 = hw_op('imul32', OM_ALU + [OM_S], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS
 O_TSTZ = hw_op('tstz', OM_ALU + [OM_TST_TYPE_MAIN], 2, 1, [], [[RM_ELEM]])
 O_ST32 = hw_op('st32', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_ST], 0, 5)
 
+# [vec3 for store], [data, offset, base_addr_lo, base_addr_hi]
+O_SPILL = hw_op('spill', OM_ALU_RPT1, 1, 4)
+
+# [result], [offset, base_addr_lo, base_addr_hi]
+O_UNSPILL = hw_op('unspill', OM_ALU_RPT1, 1, 3)
+
 O_IADD32_ATOMIC = hw_op('iadd32.atomic', OM_ALU_ATOMEXT + [OM_S], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_XCHG_ATOMIC = hw_op('xchg.atomic', OM_ALU_ATOMEXT, 2, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 O_CMPXCHG_ATOMIC = hw_op('cmpxchg.atomic', OM_ALU_ATOMEXT + [OM_TST_TYPE_MAIN], 2, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
