@@ -93,6 +93,19 @@
    ((mod >> 52) ==                                                             \
     (DRM_FORMAT_MOD_ARM_TYPE_AFRC | (DRM_FORMAT_MOD_VENDOR_ARM << 4)))
 
+static inline bool
+pan_u_tiled_or_linear_supports_format(enum pipe_format format)
+{
+   switch (format) {
+   case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
+   case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+      return false;
+
+   default:
+      return true;
+   }
+}
+
 /* Formats */
 
 static inline unsigned

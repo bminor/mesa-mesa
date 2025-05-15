@@ -603,7 +603,15 @@ format_can_do_mod(unsigned arch, enum pipe_format format, unsigned plane_idx,
       assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
              modifier == DRM_FORMAT_MOD_LINEAR);
 
-      return true;
+      switch (format) {
+      case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
+      case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+         /* Those are only supported with AFBC. */
+         return false;
+
+      default:
+         return true;
+      }
    }
 }
 

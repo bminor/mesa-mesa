@@ -278,6 +278,8 @@ panfrost_lower_yuv_format(struct panfrost_device *dev,
    SINGLE_RES(NV20, R10_G10B10_422_UNORM)
    SINGLE_RES(IYUV, R8_G8_B8_420_UNORM)
    SINGLE_RES(YV12, R8_B8_G8_420_UNORM)
+   SINGLE_RES(Y8U8V8_420_UNORM_PACKED, R8G8B8_420_UNORM_PACKED)
+   SINGLE_RES(Y10U10V10_420_UNORM_PACKED, R10G10B10_420_UNORM_PACKED)
 
 #undef SINGLE_RES
 
@@ -388,6 +390,12 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
        * involve plane aliasing which we can't do with U_TILED. */
       if (util_format_is_yuv(format) &&
           native_mods[i] == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED)
+         continue;
+
+      /* Some formats only work with AFBC. */
+      if ((native_mods[i] == DRM_FORMAT_MOD_LINEAR ||
+           native_mods[i] == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) &&
+          !pan_u_tiled_or_linear_supports_format(format))
          continue;
 
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&

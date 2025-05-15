@@ -310,7 +310,7 @@ pan_mod_u_tiled_match(uint64_t mod)
 static bool
 pan_mod_u_tiled_supports_format(uint64_t mod, enum pipe_format format)
 {
-   return true;
+   return pan_u_tiled_or_linear_supports_format(format);
 }
 
 static uint32_t
@@ -431,7 +431,7 @@ pan_mod_linear_match(uint64_t mod)
 static bool
 pan_mod_linear_supports_format(uint64_t mod, enum pipe_format format)
 {
-   return true;
+   return pan_u_tiled_or_linear_supports_format(format);
 }
 
 static uint32_t

@@ -110,6 +110,10 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
       return true;
    }
 
+   /* Some formats can only be used with AFBC. */
+   if (!pan_u_tiled_or_linear_supports_format(pfmt))
+      return false;
+
    if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
       /* Multiplanar YUV with U-interleaving isn't supported by the HW. We
        * also need to make sure images that can be aliased to planes of

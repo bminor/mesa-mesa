@@ -376,6 +376,10 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
    case PIPE_FORMAT_R10_G10B10_422_UNORM:
       return plane_idx == 0 ? PAN_AFBC_MODE_YUV422_1C10
                             : PAN_AFBC_MODE_YUV422_2C10;
+   case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
+      return PAN_AFBC_MODE_YUV420_6C8;
+   case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+      return PAN_AFBC_MODE_YUV420_6C10;
    default:
       break;
    }

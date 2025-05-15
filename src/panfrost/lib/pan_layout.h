@@ -210,6 +210,7 @@ pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
 
    switch (format) {
    /* For v7+, NV12/NV21/I420 have a looser alignment requirement of 16 bytes */
+   case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
    case PIPE_FORMAT_R8_G8B8_420_UNORM:
    case PIPE_FORMAT_G8_B8R8_420_UNORM:
    case PIPE_FORMAT_R8_G8_B8_420_UNORM:
@@ -218,6 +219,7 @@ pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
    case PIPE_FORMAT_R8_B8G8_422_UNORM:
       return 16;
    /* the 10 bit formats have even looser alignment */
+   case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
    case PIPE_FORMAT_R10_G10B10_420_UNORM:
    case PIPE_FORMAT_R10_G10B10_422_UNORM:
       return 1;
