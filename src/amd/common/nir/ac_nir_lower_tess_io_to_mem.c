@@ -570,8 +570,7 @@ hs_per_vertex_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsign
 
 static nir_def *
 hs_per_patch_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsigned location,
-                                unsigned component, nir_def *io_offset, unsigned const_base_offset,
-                                nir_def *patch_offset)
+                                unsigned component, nir_def *io_offset, nir_def *patch_offset)
 {
    nir_def *tcs_num_patches = nir_load_tcs_num_patches_amd(b);
    nir_def *per_patch_data_offset = nir_load_hs_out_patch_data_offset_amd(b);
@@ -579,13 +578,8 @@ hs_per_patch_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsigne
    nir_def *attr_stride = nir_align_imm(b, nir_imul_imm(b, tcs_num_patches, 16u), 256);
 
    nir_def *off =
-      io_offset
-      ? ac_nir_calc_io_off(b, component, io_offset, attr_stride, 4u,
-                           hs_output_vram_map_io_location(b->shader, false, location, st))
-      : nir_imm_int(b, 0);
-
-   if (const_base_offset)
-      off = nir_iadd_nuw(b, off, nir_imul_imm(b, tcs_num_patches, const_base_offset));
+      ac_nir_calc_io_off(b, component, io_offset, attr_stride, 4u,
+                         hs_output_vram_map_io_location(b->shader, false, location, st));
 
    if (!patch_offset)
       patch_offset = nir_imul_imm(b, nir_load_tess_rel_patch_id_amd(b), 16u);
@@ -1184,7 +1178,7 @@ hs_store_tess_factors_for_tes(nir_builder *b, tess_levels tessfactors, lower_tes
       if (!output_value || !(st->io_info.vram_output_mask & (VARYING_BIT_TESS_LEVEL_OUTER << i)))
          continue;
 
-      nir_def *vmem_off = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER + i, 0, zero, 0, NULL);
+      nir_def *vmem_off = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_TESS_LEVEL_OUTER + i, 0, zero, NULL);
 
       /* Always store whole vec4s to get cached bandwidth. Non-vec4 stores cause implicit memory loads
        * to fill the rest of cache lines with this layout.
@@ -1447,7 +1441,7 @@ hs_finale(nir_shader *shader, lower_tess_io_state *st)
          if (!patch_outputs[slot])
             continue;
 
-         nir_def *vmem_off = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_PATCH0 + slot, 0, zero, 0,
+         nir_def *vmem_off = hs_per_patch_output_vmem_offset(b, st, VARYING_SLOT_PATCH0 + slot, 0, zero,
                                                              patch_outputs_use_vertex_threads ?
                                                                 nir_imul_imm(b, local_invocation_index, 16u) :
                                                                 NULL);
@@ -1498,7 +1492,7 @@ lower_tes_input_load(nir_builder *b,
                                                        nir_get_io_offset_src(intrin)->ssa, NULL)
                     : hs_per_patch_output_vmem_offset(b, st, io_sem.location,
                                                       nir_intrinsic_component(intrin),
-                                                      nir_get_io_offset_src(intrin)->ssa, 0, NULL);
+                                                      nir_get_io_offset_src(intrin)->ssa, NULL);
 
    nir_def *zero = nir_imm_int(b, 0);
    nir_def *load = NULL;
