@@ -3965,6 +3965,64 @@ anv_device_init_rt_shaders(struct anv_device *device)
     */
    anv_shader_bin_unref(device, device->rt_trivial_return);
 
+   struct brw_rt_null_ahs {
+      char name[16];
+      struct brw_bs_prog_key key;
+   } null_return_key = {
+      .name = "rt-null-ahs",
+   };
+   device->rt_null_ahs =
+      anv_device_search_for_kernel(device, device->internal_cache,
+                                   &null_return_key, sizeof(null_return_key),
+                                   &cache_hit);
+   if (device->rt_null_ahs == NULL) {
+      void *tmp_ctx = ralloc_context(NULL);
+      nir_shader *null_ahs_nir =
+         brw_nir_create_null_ahs_shader(device->physical->compiler, tmp_ctx);
+
+      NIR_PASS_V(null_ahs_nir, brw_nir_lower_rt_intrinsics,
+                 &null_return_key.key.base, device->info);
+
+      struct brw_bs_prog_data return_prog_data = { 0, };
+      struct brw_compile_bs_params params = {
+         .base = {
+            .nir = null_ahs_nir,
+            .log_data = device,
+            .mem_ctx = tmp_ctx,
+         },
+         .key = &null_return_key.key,
+         .prog_data = &return_prog_data,
+      };
+      const unsigned *return_data =
+         brw_compile_bs(device->physical->compiler, &params);
+
+      struct anv_shader_upload_params upload_params = {
+         .stage               = MESA_SHADER_CALLABLE,
+         .key_data            = &null_return_key,
+         .key_size            = sizeof(null_return_key),
+         .kernel_data         = return_data,
+         .kernel_size         = return_prog_data.base.program_size,
+         .prog_data           = &return_prog_data.base,
+         .prog_data_size      = sizeof(return_prog_data),
+         .bind_map            = &empty_bind_map,
+         .push_desc_info      = &empty_push_desc_info,
+      };
+
+      device->rt_null_ahs =
+         anv_device_upload_kernel(device, device->internal_cache,
+                                  &upload_params);
+
+      ralloc_free(tmp_ctx);
+
+      if (device->rt_null_ahs == NULL)
+         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   /* The cache already has a reference and it's not going anywhere so there
+    * is no need to hold a second reference.
+    */
+   anv_shader_bin_unref(device, device->rt_null_ahs);
+
    return VK_SUCCESS;
 }
 
