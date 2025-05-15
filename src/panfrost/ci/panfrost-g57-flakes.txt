@@ -19,10 +19,21 @@ spec@!opengl 1.1@depthstencil-default_fb-blit
 spec@glsl-1.30@execution@texturesize@vs-texturesize-isamplercube
 namespace pollution@renderbuffer with glgetteximage-compressed
 
+afbcp-glx@glx-multithread-texture
+afbcp-spec@arb_texture_gather@texturegather@fs-r-none-float-cube
+afbcp-spec@arb_texture_gather@texturegather@fs-r-none-float-cubearray
+afbcp-spec@arb_texture_gather@texturegatheroffset@vs-rgba-zero-unorm-2darray
+afbcp-spec@egl_nok_texture_from_pixmap@basic
+afbcp-spec@glsl-1.30@execution@texturesize@vs-texturesize-isamplercube
+
 # first seen 2023-05-13
 spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
+afbcp-spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
 
 # Initial flakes on mt8195-cherry-tomato-r2
 glx@glx-visuals-stencil
 spec@arb_texture_float@texwrap formats bordercolor
 spec@arb_texture_float@texwrap formats bordercolor@GL_INTENSITY16F_ARB- border color only
+afbcp-glx@glx-visuals-stencil
+afbcp-spec@arb_texture_float@texwrap formats bordercolor
+afbcp-spec@arb_texture_float@texwrap formats bordercolor@GL_INTENSITY16F_ARB- border color only

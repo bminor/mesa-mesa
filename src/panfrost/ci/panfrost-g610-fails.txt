@@ -1,4 +1,5 @@
 # uprev Piglit in Mesa
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
+afbcp-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 
 dEQP-VK.glsl.loops.special.do_while_dynamic_iterations.dowhile_trap_vertex,Crash

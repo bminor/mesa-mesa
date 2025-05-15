@@ -110,6 +110,7 @@ panfrost-g52-vk-full:arm64:
     DEQP_FRACTION: 1
 
 panfrost-g52-piglit:arm64:
+  parallel: 2
   extends:
     - .lava-arm64-test-gl
     - .panfrost-bifrost-gl-manual-rules
