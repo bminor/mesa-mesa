@@ -842,6 +842,11 @@ custom_decodes = {
     "vkGetPhysicalDeviceSparseImageFormatProperties" : emit_global_state_wrapped_decoding,
     "vkGetPhysicalDeviceSparseImageFormatProperties2" : emit_global_state_wrapped_decoding,
     "vkGetPhysicalDeviceSparseImageFormatProperties2KHR" : emit_global_state_wrapped_decoding,
+
+    # Image requirements need to be adjusted for compressed textures
+    "vkGetDeviceImageMemoryRequirements" : emit_global_state_wrapped_decoding,
+    "vkGetDeviceImageMemoryRequirementsKHR" : emit_global_state_wrapped_decoding,
+
 }
 
 class VulkanDecoder(VulkanWrapperGenerator):
