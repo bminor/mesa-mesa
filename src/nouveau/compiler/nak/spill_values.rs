@@ -495,7 +495,7 @@ fn spill_values<S: Spill>(
     }
 
     let mut spill = SpillCache::new(&mut func.ssa_alloc, spill);
-    let mut spilled_phis = BitSet::new();
+    let mut spilled_phis: BitSet<usize> = BitSet::new();
 
     let mut ssa_state_in: Vec<SSAState> = Vec::new();
     let mut ssa_state_out: Vec<SSAState> = Vec::new();

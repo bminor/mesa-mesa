@@ -21,19 +21,70 @@
 //! patterns like `a & !b`, instead use set subtraction `a - b`.
 
 use std::cmp::{max, min};
+use std::marker::PhantomData;
 use std::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, RangeFull,
     Sub, SubAssign,
 };
 
-#[derive(Clone)]
-pub struct BitSet {
-    words: Vec<u32>,
+/// Converts a value into a bit index
+///
+/// Unlike a hashing algorithm that attempts to scatter the data through
+/// the integer range, implementations of IntoBitIndex should attempt to
+/// compact the resulting range as much as possible because it will be used
+/// to index into an array of bits.  The better the compaction, the better
+/// the memory efficiency of [BitSet] will be.
+///
+/// Because the index is used blindly to index bits, implementations must
+/// ensure that `a == b` if and only if
+/// `a.into_bit_index() == b.into_bit_index()`.
+pub trait IntoBitIndex {
+    /// Converts a self to a bit index
+    fn into_bit_index(self) -> usize;
 }
 
-impl BitSet {
-    pub fn new() -> BitSet {
-        BitSet { words: Vec::new() }
+impl IntoBitIndex for usize {
+    fn into_bit_index(self) -> usize {
+        self
+    }
+}
+
+/// Converts a bit index back into a value
+///
+/// The implementation must ensure that
+/// `x.into_bit_index().from_bit_index() == x` and
+/// `X::from_bit_index(i).into_bit_index() == i`.
+pub trait FromBitIndex: IntoBitIndex {
+    fn from_bit_index(i: usize) -> Self;
+}
+
+impl FromBitIndex for usize {
+    fn from_bit_index(i: usize) -> Self {
+        i
+    }
+}
+
+/// A set implemented as an array of bits
+///
+/// Unlike `HashSet` and similar containers which actually store the provided
+/// data, `BitSet` only stores an array of bits with one bit per potential set
+/// item.  By default, a `BitSet` is a set of `usize`.  However, it can be used
+/// to store any type which implementss [`IntoBitIndex`].
+///
+/// Because `BitSet` only stores one bit per item, you can only iterate over a
+/// `BitSet<K>` if `K` implements [`FromBitIndex`].
+#[derive(Clone)]
+pub struct BitSet<K = usize> {
+    words: Vec<u32>,
+    phantom: PhantomData<K>,
+}
+
+impl<K> BitSet<K> {
+    pub fn new() -> BitSet<K> {
+        BitSet {
+            words: Vec::new(),
+            phantom: PhantomData,
+        }
     }
 
     fn reserve_words(&mut self, words: usize) {
@@ -52,7 +103,19 @@ impl BitSet {
         }
     }
 
-    pub fn contains(&self, idx: usize) -> bool {
+    pub fn is_empty(&self) -> bool {
+        for w in self.words.iter() {
+            if *w != 0 {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl<K: IntoBitIndex> BitSet<K> {
+    pub fn contains(&self, key: K) -> bool {
+        let idx = key.into_bit_index();
         let w = idx / 32;
         let b = idx % 32;
         if w < self.words.len() {
@@ -62,19 +125,34 @@ impl BitSet {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        for w in self.words.iter() {
-            if *w != 0 {
-                return false;
-            }
-        }
-        true
+    pub fn insert(&mut self, key: K) -> bool {
+        let idx = key.into_bit_index();
+        let w = idx / 32;
+        let b = idx % 32;
+        self.reserve_words(w + 1);
+        let exists = self.words[w] & (1_u32 << b) != 0;
+        self.words[w] |= 1_u32 << b;
+        !exists
     }
 
-    pub fn iter(&self) -> impl '_ + Iterator<Item = usize> {
+    pub fn remove(&mut self, key: K) -> bool {
+        let idx = key.into_bit_index();
+        let w = idx / 32;
+        let b = idx % 32;
+        self.reserve_words(w + 1);
+        let exists = self.words[w] & (1_u32 << b) != 0;
+        self.words[w] &= !(1_u32 << b);
+        exists
+    }
+}
+
+impl<K: FromBitIndex> BitSet<K> {
+    pub fn iter(&self) -> impl '_ + Iterator<Item = K> {
         BitSetIter::new(self)
     }
+}
 
+impl BitSet<usize> {
     pub fn next_unset(&self, start: usize) -> usize {
         if start >= self.words.len() * 32 {
             return start;
@@ -92,25 +170,9 @@ impl BitSet {
         }
         self.words.len() * 32
     }
+}
 
-    pub fn insert(&mut self, idx: usize) -> bool {
-        let w = idx / 32;
-        let b = idx % 32;
-        self.reserve_words(w + 1);
-        let exists = self.words[w] & (1_u32 << b) != 0;
-        self.words[w] |= 1_u32 << b;
-        !exists
-    }
-
-    pub fn remove(&mut self, idx: usize) -> bool {
-        let w = idx / 32;
-        let b = idx % 32;
-        self.reserve_words(w + 1);
-        let exists = self.words[w] & (1_u32 << b) != 0;
-        self.words[w] &= !(1_u32 << b);
-        exists
-    }
-
+impl<K> BitSet<K> {
     /// Evaluate an expression and store its value in self
     pub fn assign<B>(&mut self, value: BitSetStream<B>)
     where
@@ -159,8 +221,8 @@ impl BitSet {
     }
 }
 
-impl Default for BitSet {
-    fn default() -> BitSet {
+impl<K> Default for BitSet<K> {
+    fn default() -> BitSet<K> {
         BitSet::new()
     }
 }
@@ -348,14 +410,14 @@ binop!(
     |a, _b| a,
 );
 
-struct BitSetIter<'a> {
-    set: &'a BitSet,
+struct BitSetIter<'a, K> {
+    set: &'a BitSet<K>,
     w: usize,
     mask: u32,
 }
 
-impl<'a> BitSetIter<'a> {
-    fn new(set: &'a BitSet) -> Self {
+impl<'a, K> BitSetIter<'a, K> {
+    fn new(set: &'a BitSet<K>) -> Self {
         Self {
             set,
             w: 0,
@@ -364,15 +426,16 @@ impl<'a> BitSetIter<'a> {
     }
 }
 
-impl<'a> Iterator for BitSetIter<'a> {
-    type Item = usize;
+impl<'a, K: FromBitIndex> Iterator for BitSetIter<'a, K> {
+    type Item = K;
 
-    fn next(&mut self) -> Option<usize> {
+    fn next(&mut self) -> Option<K> {
         while self.w < self.set.words.len() {
             let b = (self.set.words[self.w] & self.mask).trailing_zeros();
             if b < 32 {
                 self.mask &= !(1 << b);
-                return Some(self.w * 32 + usize::try_from(b).unwrap());
+                let idx = self.w * 32 + usize::try_from(b).unwrap();
+                return Some(K::from_bit_index(idx));
             }
             self.mask = u32::MAX;
             self.w += 1;
