@@ -84,6 +84,19 @@ st_get_external_sampler_key(struct st_context *st, struct gl_program *prog)
          continue;
 
       switch (format) {
+      case PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED:
+         /* This format is HW-defined, so we can't lower it to anything but its
+          * YUV-as-RGB variant. */
+         assert(stObj->pt->format == PIPE_FORMAT_R8G8B8_420_UNORM_PACKED);
+         key.lower_yuv |= (1 << unit);
+         break;
+      case PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED:
+         /* This format is HW-defined, so we can't lower it to anything but its
+          * YUV-as-RGB variant. */
+         assert(stObj->pt->format == PIPE_FORMAT_R10G10B10_420_UNORM_PACKED);
+         key.lower_yuv |= (1 << unit);
+         break;
+
       case PIPE_FORMAT_NV16:
          if (stObj->pt->format == PIPE_FORMAT_R8_G8B8_422_UNORM) {
             key.lower_yuv |= (1 << unit);

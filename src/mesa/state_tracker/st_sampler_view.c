@@ -352,6 +352,19 @@ st_get_sampler_view_format(const struct st_context *st,
 
    /* Use R8_UNORM for video formats */
    switch (format) {
+   case PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED:
+      /* This format is HW-defined, so we can't lower it to anything but its
+       * YUV-as-RGB variant. */
+      assert(texObj->pt->format == PIPE_FORMAT_R8G8B8_420_UNORM_PACKED);
+      format = PIPE_FORMAT_R8G8B8_420_UNORM_PACKED;
+      break;
+   case PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED:
+      /* This format is HW-defined, so we can't lower it to anything but its
+       * YUV-as-RGB variant. */
+      assert(texObj->pt->format == PIPE_FORMAT_R10G10B10_420_UNORM_PACKED);
+      format = PIPE_FORMAT_R10G10B10_420_UNORM_PACKED;
+      break;
+
    case PIPE_FORMAT_NV12:
       if (texObj->pt->format == PIPE_FORMAT_R8_G8B8_420_UNORM) {
          format = PIPE_FORMAT_R8_G8B8_420_UNORM;
