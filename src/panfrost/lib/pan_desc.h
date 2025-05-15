@@ -174,6 +174,10 @@ pan_sample_pattern(unsigned samples)
    switch (samples) {
    case 1:
       return MALI_SAMPLE_PATTERN_SINGLE_SAMPLED;
+#if PAN_ARCH >= 12
+   case 2:
+      return MALI_SAMPLE_PATTERN_ROTATED_2X_GRID;
+#endif
    case 4:
       return MALI_SAMPLE_PATTERN_ROTATED_4X_GRID;
    case 8:

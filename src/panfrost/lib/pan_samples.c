@@ -124,6 +124,14 @@ const struct mali_sample_positions sample_position_lut[] = {
          SAMPLE16(-7, -8),
       },
       .origin = SAMPLE16(0, 0)
+   },
+
+   [MALI_SAMPLE_PATTERN_ROTATED_2X_GRID] = {
+      .positions = {
+         SAMPLE4( 1,  1),
+         SAMPLE4(-1, -1),
+      },
+      .origin = SAMPLE4(0, 0)
    }
 };
 /* clang-format on */
