@@ -4654,7 +4654,7 @@
         "description": "nouveau/headers: Run rustfmt after file is closed",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "591b5da49bf5dff5c92d2465de9e0fccab2e9d89",
         "notes": null
