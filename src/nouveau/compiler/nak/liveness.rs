@@ -229,11 +229,11 @@ pub trait Liveness {
 
 #[derive(Default)]
 pub struct SimpleBlockLiveness {
-    defs: BitSet,
-    uses: BitSet,
+    defs: BitSet<SSAValue>,
+    uses: BitSet<SSAValue>,
     last_use: FxHashMap<SSAValue, usize>,
-    live_in: BitSet,
-    live_out: BitSet,
+    live_in: BitSet<SSAValue>,
+    live_out: BitSet<SSAValue>,
 }
 
 impl SimpleBlockLiveness {
@@ -242,18 +242,18 @@ impl SimpleBlockLiveness {
     }
 
     fn add_def(&mut self, ssa: SSAValue) {
-        self.defs.insert(ssa.idx().try_into().unwrap());
+        self.defs.insert(ssa);
     }
 
     fn add_use(&mut self, ssa: SSAValue, ip: usize) {
-        self.uses.insert(ssa.idx().try_into().unwrap());
+        self.uses.insert(ssa);
         self.last_use.insert(ssa, ip);
     }
 }
 
 impl BlockLiveness for SimpleBlockLiveness {
     fn is_live_after_ip(&self, val: &SSAValue, ip: usize) -> bool {
-        if self.live_out.contains(val.idx().try_into().unwrap()) {
+        if self.live_out.contains(*val) {
             true
         } else if let Some(last_use_ip) = self.last_use.get(val) {
             *last_use_ip > ip
@@ -263,11 +263,11 @@ impl BlockLiveness for SimpleBlockLiveness {
     }
 
     fn is_live_in(&self, val: &SSAValue) -> bool {
-        self.live_in.contains(val.idx().try_into().unwrap())
+        self.live_in.contains(*val)
     }
 
     fn is_live_out(&self, val: &SSAValue) -> bool {
-        self.live_out.contains(val.idx().try_into().unwrap())
+        self.live_out.contains(*val)
     }
 }
 

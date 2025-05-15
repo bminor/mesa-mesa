@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ir::{HasRegFile, RegFile};
+use compiler::bitset::IntoBitIndex;
 use std::array;
 use std::fmt;
 use std::num::NonZeroU32;
@@ -50,6 +51,13 @@ impl HasRegFile for SSAValue {
     /// Returns the register file of this SSA value
     fn file(&self) -> RegFile {
         RegFile::try_from(self.packed.get() >> 29).unwrap()
+    }
+}
+
+impl IntoBitIndex for SSAValue {
+    fn into_bit_index(self) -> usize {
+        // Indices are guaranteed unique by the allocator
+        self.idx().try_into().unwrap()
     }
 }
 
