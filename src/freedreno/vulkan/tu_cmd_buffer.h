@@ -544,6 +544,8 @@ struct tu_cmd_state
 
    bool prim_generated_query_running_before_rp;
 
+   bool occlusion_query_may_be_running;
+
    enum tu_suspend_resume_state suspend_resume;
 
    bool suspending, resuming;

@@ -3277,6 +3277,9 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
       cmd_buffer->inherited_pipeline_statistics =
          pBeginInfo->pInheritanceInfo->pipelineStatistics;
 
+      cmd_buffer->state.occlusion_query_may_be_running =
+         pBeginInfo->pInheritanceInfo->occlusionQueryEnable;
+
       vk_foreach_struct_const(ext, pBeginInfo->pInheritanceInfo) {
          switch (ext->sType) {
          case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT: {
@@ -6270,6 +6273,13 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
        zmode == A6XX_EARLY_Z) {
       zmode = A6XX_EARLY_Z_LATE_Z;
    }
+
+   /* "EARLY_Z + discard" would yield incorrect occlusion query result,
+    * since Vulkan expects occlusion query to happen after fragment shader.
+    */
+   if (zmode == A6XX_EARLY_Z && fs_kill_fragments &&
+       cmd->state.occlusion_query_may_be_running)
+      zmode = A6XX_EARLY_Z_LATE_Z;
 
    if (zmode == A6XX_EARLY_Z_LATE_Z &&
        (cmd->state.stencil_written_on_depth_fail || fs->fs.per_samp ||

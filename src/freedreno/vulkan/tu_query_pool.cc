@@ -1040,6 +1040,7 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
     * sample counts in slot->result to compute the query result.
     */
    struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+   cmdbuf->state.occlusion_query_may_be_running = true;
 
    uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
 
@@ -1507,6 +1508,8 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_pkt7(epilogue_cs, CP_MEM_WRITE, 4);
    tu_cs_emit_qw(epilogue_cs, available_iova);
    tu_cs_emit_qw(epilogue_cs, 0x1);
+
+   cmdbuf->state.occlusion_query_may_be_running = false;
 }
 
 /* PRIMITIVE_CTRS is used for two distinct queries:
