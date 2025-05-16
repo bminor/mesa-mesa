@@ -2153,13 +2153,116 @@ fn legalize_ext_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
                 panic!("ALU srcs must be legalized explicitly");
             }
             SrcType::Pred => {
-                panic!("Predicates must be legalized explicitly");
+                assert!(src_is_reg(src, RegFile::Pred));
             }
             SrcType::Carry => {
                 panic!("Carry values must be legalized explicitly");
             }
             SrcType::Bar => panic!("Barrier regs are Volta+"),
         }
+    }
+}
+
+impl SM20Encoder<'_> {
+    fn set_su_ga_offset_mode(
+        &mut self,
+        range: Range<usize>,
+        off_type: SuGaOffsetMode,
+    ) {
+        assert!(range.len() == 2);
+        self.set_field(
+            range,
+            match off_type {
+                SuGaOffsetMode::U32 => 0_u8,
+                SuGaOffsetMode::S32 => 1_u8,
+                SuGaOffsetMode::U8 => 2_u8,
+                SuGaOffsetMode::S8 => 3_u8,
+            },
+        );
+    }
+}
+
+impl SM20Op for OpSuLdGa {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(e.sm.sm() >= 30);
+
+        e.set_opcode(SM20Unit::Mem, 0x35);
+        e.set_mem_type(5..8, self.mem_type);
+        e.set_field(8..10, 0_u8); // 0: .ca, 1: none, 2: .cs, 3: .cv
+        e.set_dst(14..20, &self.dst);
+        e.set_reg_src(20..26, &self.addr);
+
+        assert!(self.format.src_mod.is_none());
+        match &self.format.src_ref {
+            SrcRef::Zero | SrcRef::Reg(_) => {
+                e.set_reg_src(26..32, &self.format);
+                e.set_bit(53, false); // reg form
+            }
+            SrcRef::CBuf(cb) => {
+                let CBuf::Binding(idx) = cb.buf else {
+                    panic!("Must be a bound constant buffer");
+                };
+                assert!(cb.offset & 0x3 == 0);
+                e.set_field(26..40, cb.offset >> 2);
+                e.set_field(40..45, idx);
+                e.set_bit(53, true); // cbuf form
+            }
+            _ => panic!("Invalid format source"),
+        }
+
+        e.set_su_ga_offset_mode(45..47, self.offset_mode);
+        e.set_field(47..49, 0_u8); // 0: .z, 2: .trap, 3: .sdcl
+        e.set_pred_src(49..53, &self.out_of_bounds);
+    }
+}
+
+impl SM20Op for OpSuStGa {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        assert!(e.sm.sm() >= 30);
+
+        e.set_opcode(SM20Unit::Mem, 0x37);
+        match self.image_access {
+            ImageAccess::Binary(mem_type) => {
+                e.set_mem_type(5..8, mem_type);
+                e.set_field(54..58, 0_u8); // .b
+            }
+            ImageAccess::Formatted(channel_mask) => {
+                e.set_field(54..58, channel_mask.to_bits());
+            }
+        }
+        e.set_field(8..10, 0_u8); // 0: .wb, 1: none, 2: .cs, 3: .wt
+        e.set_reg_src(14..20, &self.data);
+        e.set_reg_src(20..26, &self.addr);
+
+        assert!(self.format.src_mod.is_none());
+        match &self.format.src_ref {
+            SrcRef::Zero | SrcRef::Reg(_) => {
+                e.set_reg_src(26..32, &self.format);
+                e.set_bit(53, false); // reg form
+            }
+            SrcRef::CBuf(cb) => {
+                let CBuf::Binding(idx) = cb.buf else {
+                    panic!("Must be a bound constant buffer");
+                };
+                assert!(cb.offset & 0x3 == 0);
+                e.set_field(26..40, cb.offset >> 2);
+                e.set_field(40..45, idx);
+                e.set_bit(53, true); // cbuf form
+            }
+            _ => panic!("Invalid format source"),
+        }
+
+        e.set_su_ga_offset_mode(45..47, self.offset_mode);
+        e.set_field(47..49, 0_u8); // 0: .ign, 1: .trap, 3: .sdc1
+        e.set_pred_src(49..53, &self.out_of_bounds);
     }
 }
 
@@ -2873,6 +2976,8 @@ macro_rules! as_sm20_op_match {
             Op::SuBfm(op) => op,
             Op::SuEau(op) => op,
             Op::IMadSp(op) => op,
+            Op::SuLdGa(op) => op,
+            Op::SuStGa(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
             Op::LdSharedLock(op) => op,
