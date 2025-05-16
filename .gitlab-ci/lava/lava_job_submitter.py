@@ -415,6 +415,7 @@ class LAVAJobSubmitter(PathResolver):
     visibility_group: str = None  # Only affects LAVA farm maintainers
     structured_log_file: pathlib.Path = None  # Log file path with structured LAVA log
     ssh_client_image: str = None  # x86_64 SSH client image to follow the job's output
+    project_dir: str = None  # Project directory to be used to find Mesa artifacts
     project_name: str = None  # Project name to be used in the job name
     starting_section: str = None # GitLab section used to start
     job_submitted_at: [str | datetime] = None

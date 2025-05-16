@@ -47,8 +47,8 @@ rm -rf results
 mkdir -p results/job-rootfs-overlay/
 
 filter_env_vars > results/job-rootfs-overlay/set-job-env-vars.sh
-cp artifacts/ci-common/init-*.sh results/job-rootfs-overlay/
-cp "$SCRIPTS_DIR"/setup-test-env.sh results/job-rootfs-overlay/
+# Set SCRIPTS_DIR to point to the Mesa install we download for the DUT
+echo "export SCRIPTS_DIR='$CI_PROJECT_DIR/install'" >> results/job-rootfs-overlay/set-job-env-vars.sh
 
 tar zcf job-rootfs-overlay.tar.gz -C results/job-rootfs-overlay/ .
 ci-fairy s3cp --token-file "${S3_JWT_FILE}" job-rootfs-overlay.tar.gz "https://${JOB_ROOTFS_OVERLAY_PATH}"
@@ -98,6 +98,7 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--mesa-job-name "$CI_JOB_NAME" \
 	--structured-log-file "results/lava_job_detail.json" \
 	--ssh-client-image "${LAVA_SSH_CLIENT_IMAGE}" \
+	--project-dir "${CI_PROJECT_DIR}" \
 	--project-name "${CI_PROJECT_NAME}" \
 	--starting-section "${CURRENT_SECTION}" \
 	--job-submitted-at "${CI_JOB_STARTED_AT}" \

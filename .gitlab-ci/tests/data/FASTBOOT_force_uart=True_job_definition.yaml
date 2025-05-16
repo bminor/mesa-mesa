@@ -90,4 +90,4 @@ actions:
           - echo Could not find jwt file, disabling S3 requests...
           - sed -i '/S3_RESULTS_UPLOAD/d' /set-job-env-vars.sh
           - sleep 1
-          - lava-test-case 'test-project_dut' --shell /init-stage2.sh
+          - lava-test-case 'test-project_dut' --shell /test_dir/install/common/init-stage2.sh

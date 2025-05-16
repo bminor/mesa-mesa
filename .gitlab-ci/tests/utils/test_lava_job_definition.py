@@ -62,6 +62,7 @@ def job_submitter_factory(mode: Literal["UBOOT", "FASTBOOT"], shell_file):
         mesa_job_name=mesa_job_name,
         pipeline_info=pipeline_info,
         visibility_group=visibility_group,
+        project_dir="/test_dir",
         project_name=project_name,
     )
 

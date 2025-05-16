@@ -138,6 +138,6 @@ actions:
             sed -i '/S3_RESULTS_UPLOAD/d' /set-job-env-vars.sh
             EOF
           - export SSH_PTY_ARGS=-tt
-          - lava_ssh_test_case 'test-project_dut' 'cd / && /init-stage2.sh'
+          - lava_ssh_test_case 'test-project_dut' 'cd / && /test_dir/install/common/init-stage2.sh'
     docker:
       image:
