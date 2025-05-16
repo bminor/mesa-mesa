@@ -334,11 +334,9 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
    const struct ac_shader_config *config = &shader->config;
    unsigned rsrc2;
-   unsigned stage = shader->selector->stage;
 
    *prefetch = false;
 
-   assert(variable_shared_size == 0 || stage == MESA_SHADER_KERNEL);
    if (sctx->cs_shader_state.emitted_program == program &&
        sctx->cs_shader_state.variable_shared_size == variable_shared_size)
       return true;
@@ -347,7 +345,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    rsrc2 = config->rsrc2;
 
    /* only do this for OpenCL */
-   if (stage == MESA_SHADER_KERNEL) {
+   if (variable_shared_size) {
       unsigned shared_size = program->sel.info.base.shared_size + variable_shared_size;
       unsigned lds_blocks = 0;
 
