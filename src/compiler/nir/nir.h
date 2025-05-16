@@ -4716,7 +4716,7 @@ void nir_validate_shader(nir_shader *shader, const char *when);
 void nir_validate_ssa_dominance(nir_shader *shader, const char *when);
 void nir_metadata_set_validation_flag(nir_shader *shader);
 void nir_metadata_check_validation_flag(nir_shader *shader);
-void nir_metadata_require_all(nir_shader *shader);
+void nir_metadata_require_most(nir_shader *shader);
 
 static inline bool
 should_skip_nir(const char *name)
@@ -4769,7 +4769,7 @@ nir_metadata_check_validation_flag(nir_shader *shader)
    (void)shader;
 }
 static inline void
-nir_metadata_require_all(nir_shader *shader)
+nir_metadata_require_most(nir_shader *shader)
 {
    (void)shader;
 }
@@ -4794,7 +4794,7 @@ should_print_nir(UNUSED nir_shader *shader)
       if (NIR_DEBUG(INVALIDATE_METADATA))                               \
          nir_metadata_invalidate(nir);                                  \
       else if (NIR_DEBUG(EXTENDED_VALIDATION))                          \
-         nir_metadata_require_all(nir);                                 \
+         nir_metadata_require_most(nir);                                \
       do_pass if (NIR_DEBUG(CLONE))                                     \
       {                                                                 \
          nir_shader *_clone = nir_shader_clone(ralloc_parent(nir), nir);\
