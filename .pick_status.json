@@ -3754,7 +3754,7 @@
         "description": "mesa/st: fix _BlendForceAlphaToOneDraw bitfield use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4f28e2827c9ccc26dc608a870209b4deab7b5882",
         "notes": null

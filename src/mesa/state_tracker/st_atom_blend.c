@@ -182,7 +182,7 @@ blend_per_rt(const struct st_context *st, unsigned num_cb)
       return GL_TRUE;
    }
 
-   if (ctx->DrawBuffer->_BlendForceAlphaToOne) {
+   if (ctx->DrawBuffer->_BlendForceAlphaToOneDraw) {
       /* Overriding requires independent blend functions (not just enables),
        * requiring drivers to expose pipe_caps.indep_blend_func.
        */
@@ -320,10 +320,7 @@ st_update_blend( struct st_context *st )
                translate_blend(ctx->Color.Blend[j].DstA);
          }
 
-         const struct gl_renderbuffer *rb =
-            ctx->DrawBuffer->_ColorDrawBuffers[i];
-
-         if (rb && (ctx->DrawBuffer->_BlendForceAlphaToOne & (1 << i))) {
+         if (ctx->DrawBuffer->_BlendForceAlphaToOneDraw & (1 << i)) {
             struct pipe_rt_blend_state *rt = &blend->rt[i];
             rt->rgb_src_factor = fix_xrgb_alpha(rt->rgb_src_factor);
             rt->rgb_dst_factor = fix_xrgb_alpha(rt->rgb_dst_factor);
