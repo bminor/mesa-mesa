@@ -908,6 +908,38 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    }
 }
 
+static bool is_phi_with_undefs(const nir_instr *instr,
+                               UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_phi)
+      return false;
+
+   nir_phi_instr *phi = nir_instr_as_phi(instr);
+
+   nir_foreach_phi_src (phi_src, phi) {
+      if (nir_src_is_undef(phi_src->src))
+         return true;
+   }
+
+   return false;
+}
+
+static nir_def *
+lower_phi_with_undefs(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   nir_phi_instr *phi = nir_instr_as_phi(instr);
+
+   nir_foreach_phi_src (phi_src, phi) {
+      if (nir_src_is_undef(phi_src->src)) {
+         b->cursor = nir_after_block(phi_src->pred);
+         nir_src_rewrite(&phi_src->src,
+                         nir_imm_intN_t(b, 0, phi_src->src.ssa->bit_size));
+      }
+   }
+
+   return NIR_LOWER_INSTR_PROGRESS;
+}
+
 /**
  * \brief Runs post-processing passes on a NIR shader.
  *
@@ -923,6 +955,14 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_opt_move, move_options);
 
    NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
+
+   /* Temporary: lower phi undefs to zero because at this stage we don't want to
+    * lower *all* undefs to zero, but still want to avoid undefined behaviour...
+    */
+   nir_shader_lower_instructions(nir,
+                                 is_phi_with_undefs,
+                                 lower_phi_with_undefs,
+                                 NULL);
 
    NIR_PASS(_, nir, nir_convert_from_ssa, true, false);
    NIR_PASS(_, nir, nir_copy_prop);
