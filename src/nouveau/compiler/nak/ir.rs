@@ -934,6 +934,11 @@ impl Src {
         }
     }
 
+    pub fn modify(mut self, src_mod: SrcMod) -> Src {
+        self.src_mod = self.src_mod.modify(src_mod);
+        self
+    }
+
     pub fn as_u32(&self, src_type: SrcType) -> Option<u32> {
         let u = match &self.src_ref {
             SrcRef::Zero => 0,
