@@ -2214,7 +2214,7 @@
         "description": "intel/isl: don't clamp num_elements to (1 << 27)",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3c7e14f091a21aebb9449f32e3483c28d39fa9c",
         "notes": null
