@@ -1418,27 +1418,30 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
    }
 
    if (unlikely(debug_flag)) {
-      fprintf(stderr, "Native code for %s (src_hash 0x%08x) (sha1 %s)\n"
-              "SIMD%d shader: %d instructions. %d loops. %u cycles. "
-              "%d:%d spills:fills, %u sends, "
-              "scheduled with mode %s. "
-              "Promoted %u constants. "
-              "Non-SSA regs (after NIR): %u. "
-              "Compacted %d to %d bytes (%.0f%%)\n",
-              shader_name, params->source_hash, sha1buf,
-              dispatch_width,
-              before_size / 16 - nop_count - sync_nop_count,
-              loop_count, perf.latency,
-              shader_stats.spill_count,
-              shader_stats.fill_count,
-              send_count,
-              shader_stats.scheduler_mode,
-              shader_stats.promoted_constants,
-              shader_stats.non_ssa_registers_after_nir,
-              before_size, after_size,
-              100.0f * (before_size - after_size) / before_size);
-      dump_assembly(p->store, start_offset, p->next_insn_offset,
-                    disasm_info, perf.block_latency);
+      if (!intel_shader_dump_filter ||
+          (intel_shader_dump_filter && intel_shader_dump_filter == params->source_hash)) {
+         fprintf(stderr, "Native code for %s (src_hash 0x%08x) (sha1 %s)\n"
+                 "SIMD%d shader: %d instructions. %d loops. %u cycles. "
+                 "%d:%d spills:fills, %u sends, "
+                 "scheduled with mode %s. "
+                 "Promoted %u constants. "
+                 "Non-SSA regs (after NIR): %u. "
+                 "Compacted %d to %d bytes (%.0f%%)\n",
+                 shader_name, params->source_hash, sha1buf,
+                 dispatch_width,
+                 before_size / 16 - nop_count - sync_nop_count,
+                 loop_count, perf.latency,
+                 shader_stats.spill_count,
+                 shader_stats.fill_count,
+                 send_count,
+                 shader_stats.scheduler_mode,
+                 shader_stats.promoted_constants,
+                 shader_stats.non_ssa_registers_after_nir,
+                 before_size, after_size,
+                 100.0f * (before_size - after_size) / before_size);
+         dump_assembly(p->store, start_offset, p->next_insn_offset,
+                       disasm_info, perf.block_latency);
+      }
    }
    ralloc_free(disasm_info);
 #ifndef NDEBUG

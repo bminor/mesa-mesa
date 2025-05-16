@@ -73,7 +73,7 @@ compile_single_bs(const struct brw_compiler *compiler,
                   int *prog_offset,
                   uint64_t *bsr)
 {
-   const bool debug_enabled = brw_should_print_shader(shader, DEBUG_RT);
+   const bool debug_enabled = brw_should_print_shader(shader, DEBUG_RT, params->base.source_hash);
 
    prog_data->max_stack_size = MAX2(prog_data->max_stack_size,
                                     shader->scratch_size);
@@ -166,7 +166,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
    struct brw_bs_prog_data *prog_data = params->prog_data;
    unsigned num_resume_shaders = params->num_resume_shaders;
    nir_shader **resume_shaders = params->resume_shaders;
-   const bool debug_enabled = brw_should_print_shader(shader, DEBUG_RT);
+   const bool debug_enabled = brw_should_print_shader(shader, DEBUG_RT, params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base, &params->base);
 

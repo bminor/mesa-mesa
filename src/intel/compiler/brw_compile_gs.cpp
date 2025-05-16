@@ -146,7 +146,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
    unsigned control_data_bits_per_vertex = 0;
    unsigned control_data_header_size_bits = 0;
 
-   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_GS);
+   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_GS, params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 

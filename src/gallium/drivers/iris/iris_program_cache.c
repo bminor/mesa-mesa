@@ -220,15 +220,18 @@ iris_upload_shader(struct iris_screen *screen,
    }
 
    if (INTEL_DEBUG(DEBUG_SHADERS_LINENO) && screen->brw) {
-      int start = 0;
-      /* dump each simd variant of shader */
-      while (start < shader->brw_prog_data->program_size) {
-         brw_disassemble_with_lineno(&screen->brw->isa, shader->stage, -1,
-                                    ish ? ish->source_hash : 0, assembly, start,
-                                    res->bo->address + shader->assembly.offset,
-                                    stderr);
-         start += align64(brw_disassemble_find_end(&screen->brw->isa,
-                                                   assembly, start), 64);
+      if (!intel_shader_dump_filter ||
+          (intel_shader_dump_filter && ish && intel_shader_dump_filter == ish->source_hash)) {
+         int start = 0;
+         /* dump each simd variant of shader */
+         while (start < shader->brw_prog_data->program_size) {
+            brw_disassemble_with_lineno(&screen->brw->isa, shader->stage, -1,
+                                        ish ? ish->source_hash : 0, assembly, start,
+                                        res->bo->address + shader->assembly.offset,
+                                        stderr);
+            start += align64(brw_disassemble_find_end(&screen->brw->isa,
+                                                      assembly, start), 64);
+         }
       }
    }
 }

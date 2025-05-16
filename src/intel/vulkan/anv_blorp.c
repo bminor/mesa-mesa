@@ -87,9 +87,12 @@ upload_blorp_shader(struct blorp_batch *batch, uint32_t stage,
    anv_shader_bin_unref(device, bin);
 
    if (INTEL_DEBUG(DEBUG_SHADERS_LINENO)) {
-      brw_disassemble_with_lineno(&device->physical->compiler->isa,
-                                  stage, -1, 0, kernel, 0,
-                                  bin->kernel.offset, stderr);
+      /* shader hash is zero in this context */
+      if (!intel_shader_dump_filter) {
+         brw_disassemble_with_lineno(&device->physical->compiler->isa,
+                                     stage, -1, 0, kernel, 0,
+                                     bin->kernel.offset, stderr);
+      }
    }
 
    *kernel_out = bin->kernel.offset;

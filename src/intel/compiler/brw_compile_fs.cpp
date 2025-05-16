@@ -1449,7 +1449,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
    bool allow_spilling = params->allow_spilling;
    const bool debug_enabled =
       brw_should_print_shader(nir, params->base.debug_flag ?
-                                   params->base.debug_flag : DEBUG_WM);
+                                   params->base.debug_flag : DEBUG_WM,
+                                   params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base, &params->base);
 

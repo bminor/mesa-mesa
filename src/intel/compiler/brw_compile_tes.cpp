@@ -69,7 +69,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
    struct brw_tes_prog_data *prog_data = params->prog_data;
    const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
-   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TES);
+   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TES, params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 

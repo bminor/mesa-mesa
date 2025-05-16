@@ -208,6 +208,7 @@ uint64_t intel_debug_batch_frame_stop = -1;
 
 uint32_t intel_debug_bkp_before_draw_count = 0;
 uint32_t intel_debug_bkp_after_draw_count = 0;
+uint32_t intel_shader_dump_filter = 0;
 
 static void
 parse_debug_bitset(const char *env, const struct debug_control_bitset *tbl)
@@ -259,6 +260,9 @@ process_intel_debug_variable_once(void)
       debug_get_num_option("INTEL_DEBUG_BKP_BEFORE_DRAW_COUNT", 0);
    intel_debug_bkp_after_draw_count =
       debug_get_num_option("INTEL_DEBUG_BKP_AFTER_DRAW_COUNT", 0);
+
+   intel_shader_dump_filter =
+      debug_get_num_option("INTEL_SHADER_DUMP_FILTER", 0);
 
    if (!(intel_simd & DEBUG_FS_SIMD))
       intel_simd |=   DEBUG_FS_SIMD;

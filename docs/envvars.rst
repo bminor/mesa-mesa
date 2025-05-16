@@ -831,6 +831,11 @@ Intel driver environment variables
       are always dumped if :envvar:`INTEL_SHADER_BIN_DUMP_PATH` variable is
       set.
 
+.. envvar:: INTEL_SHADER_DUMP_FILTER
+
+   Only dump information about shaders that match the specified hexadecimal
+   source hash.
+
 .. envvar:: INTEL_SIMD_DEBUG
 
    a comma-separated list of named flags, which control simd dispatch widths:

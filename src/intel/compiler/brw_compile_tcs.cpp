@@ -191,7 +191,7 @@ brw_compile_tcs(const struct brw_compiler *compiler,
    struct brw_vue_prog_data *vue_prog_data = &prog_data->base;
    const unsigned dispatch_width = brw_geometry_stage_dispatch_width(compiler->devinfo);
 
-   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TCS);
+   const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TCS, params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 

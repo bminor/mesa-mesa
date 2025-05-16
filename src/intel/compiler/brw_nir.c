@@ -25,6 +25,7 @@
 #include "brw_nir.h"
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
+#include "dev/intel_debug.h"
 
 /*
  * Returns the minimum number of vec4 (as_vec4 == true) or dvec4 (as_vec4 ==

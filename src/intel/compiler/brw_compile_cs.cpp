@@ -131,7 +131,8 @@ brw_compile_cs(const struct brw_compiler *compiler,
 
    const bool debug_enabled =
       brw_should_print_shader(nir, params->base.debug_flag ?
-                                   params->base.debug_flag : DEBUG_CS);
+                                   params->base.debug_flag : DEBUG_CS,
+                                   params->base.source_hash);
 
    brw_prog_data_init(&prog_data->base, &params->base);
    prog_data->uses_inline_data = brw_nir_uses_inline_data(nir) ||

@@ -87,9 +87,12 @@ anv_shader_stage_to_nir(struct anv_device *device,
       return NULL;
 
    if (INTEL_DEBUG(intel_debug_flag_for_shader_stage(stage))) {
-      fprintf(stderr, "NIR (from SPIR-V) for %s shader:\n",
-              gl_shader_stage_name(stage));
-      nir_print_shader(nir, stderr);
+      /* src_hash is unknown at the point */
+      if (!intel_shader_dump_filter) {
+         fprintf(stderr, "NIR (from SPIR-V) for %s shader:\n",
+                 gl_shader_stage_name(stage));
+         nir_print_shader(nir, stderr);
+      }
    }
 
    NIR_PASS_V(nir, nir_lower_io_to_temporaries,
@@ -1685,10 +1688,13 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
    }
 
    if (INTEL_DEBUG(DEBUG_SHADERS_LINENO) && stage->code) {
-      brw_disassemble_with_lineno(&pipeline->device->physical->compiler->isa,
-                                  stage->stage, (int)stats->dispatch_width,
-                                  stage->source_hash, stage->code, code_offset,
-                                  stage->bin->kernel.offset, stderr);
+      if (!intel_shader_dump_filter ||
+          (intel_shader_dump_filter && intel_shader_dump_filter == stage->source_hash)) {
+         brw_disassemble_with_lineno(&pipeline->device->physical->compiler->isa,
+                                     stage->stage, (int)stats->dispatch_width,
+                                     stage->source_hash, stage->code, code_offset,
+                                     stage->bin->kernel.offset, stderr);
+      }
    }
 
    const struct anv_pipeline_executable exe = {
