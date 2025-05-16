@@ -760,6 +760,9 @@ _mesa_update_drawbuffer_masks(struct gl_context *ctx,
 {
    update_drawbuffer_mask(ctx, fb, &ctx->DrawBuffer->_IntegerBuffers,
                           &ctx->DrawBuffer->_IntegerDrawBuffers);
+   update_drawbuffer_mask(ctx, fb, &ctx->DrawBuffer->_BlendForceAlphaToOne,
+                          &ctx->DrawBuffer->_BlendForceAlphaToOneDraw);
+
 }
 
 /**
