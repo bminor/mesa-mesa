@@ -44,6 +44,7 @@ ForEachMacros: [
   'cs_exception_handler_def',
   'cs_if',
   'cs_match',
+  'cs_single_link_list_for_each_from',
   'cs_update_compute_ctx',
   'cs_update_frag_ctx',
   'cs_update_progress_seqno',
