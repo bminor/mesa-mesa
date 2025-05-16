@@ -2074,7 +2074,7 @@
         "description": "panfrost: legalize afbc before zs and rt clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17a62ff9934c9c3f8721e05ea1485b7e1e078a9f",
         "notes": null
