@@ -197,7 +197,8 @@ emit_tls(struct panfrost_batch *batch,
    struct pan_tls_info info = {
       .tls.size = shader->info.tls_size,
       .wls.size = shader->info.wls_size,
-      .wls.instances = pan_wls_instances(dim),
+      .wls.instances =
+         pan_calc_wls_instances(&shader->local_size, &dev->kmod.props, dim),
    };
 
    if (info.tls.size) {
@@ -207,8 +208,8 @@ emit_tls(struct panfrost_batch *batch,
    }
 
    if (info.wls.size) {
-      unsigned size = pan_wls_adjust_size(info.wls.size) * info.wls.instances *
-                      dev->core_id_range;
+      unsigned size = pan_calc_total_wls_size(info.wls.size, info.wls.instances,
+                                              dev->core_id_range);
 
       struct panfrost_bo *bo = panfrost_batch_get_shared_memory(batch, size, 1);
 
