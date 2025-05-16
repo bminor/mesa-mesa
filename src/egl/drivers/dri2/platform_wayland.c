@@ -2262,9 +2262,14 @@ dri2_wl_add_configs_for_visuals(_EGLDisplay *disp)
          conversion = true;
       }
 
+      EGLint attr_list[] = {
+         EGL_NATIVE_VISUAL_ID, dri2_wl_visuals[idx].wl_drm_format,
+         EGL_NONE,
+      };
+
       /* The format is supported one way or another; add the EGLConfig */
       dri2_conf = dri2_add_config(disp, dri2_dpy->driver_configs[i],
-                                  EGL_WINDOW_BIT, NULL);
+                                  EGL_WINDOW_BIT, attr_list);
       if (!dri2_conf)
          continue;
 
