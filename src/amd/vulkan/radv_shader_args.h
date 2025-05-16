@@ -87,7 +87,7 @@ struct radv_shader_args {
    /* NGG */
    struct ac_arg ngg_state;
    struct ac_arg ngg_lds_layout;
-   struct ac_arg ngg_query_buf_va; /* GFX12+ */
+   struct ac_arg ngg_query_buf_va; /* GFX11+ */
 
    /* NGG GS */
    struct ac_arg ngg_culling_settings;
