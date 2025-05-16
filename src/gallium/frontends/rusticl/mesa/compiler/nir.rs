@@ -66,19 +66,22 @@ macro_rules! nir_pass_impl {
                 if $nir.should_print() {
                     println!("{}", func_str);
                 }
-                if $nir.$pass($func $(,$arg)*) {
-                    $nir.validate(&format!("after {} in {}:{}", func_str, file!(), line!()));
+                let when = format!("after {} in {}:{}", func_str, file!(), line!());
+                let blob_before = $nir.validate_progress_setup();
+                let progress = $nir.$pass($func $(,$arg)*);
+                if progress {
+                    $nir.validate(&when);
                     if $nir.should_print() {
                         $nir.print();
                     }
                     $nir.metadata_check_validation_flag();
-                    true
                 } else {
                     if debug_opts & NIR_DEBUG_EXTENDED_VALIDATION != 0 {
-                        $nir.validate(&format!("after {} in {}:{}", func_str, file!(), line!()));
+                        $nir.validate(&when);
                     }
-                    false
                 }
+                $nir.validate_progress_finish(blob_before, progress, &when);
+                progress
             };
 
             if debug_opts & NIR_DEBUG_CLONE != 0 {
@@ -253,6 +256,24 @@ impl NirShader {
     pub fn validate(&self, when: &str) {
         let cstr = std::ffi::CString::new(when).unwrap();
         unsafe { nir_validate_shader(self.nir.as_ptr(), cstr.as_ptr()) }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn validate_progress_setup(&self) -> blob {
+        unsafe { nir_validate_progress_setup(self.nir.as_ptr()) }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn validate_progress_finish(&self, mut setup_blob: blob, progress: bool, when: &str) {
+        let cstr = std::ffi::CString::new(when).unwrap();
+        unsafe {
+            nir_validate_progress_finish(
+                self.nir.as_ptr(),
+                &mut setup_blob,
+                progress,
+                cstr.as_ptr(),
+            )
+        };
     }
 
     pub fn should_print(&self) -> bool {
