@@ -177,6 +177,39 @@ cpu_write_occlusion_query_result(void *dst, uint32_t idx,
    cpu_write_query_result(dst, idx, flags, result);
 }
 
+#if PAN_ARCH >= 10
+static void
+cpu_write_timestamp_query_result(void *dst, uint32_t idx,
+                                 VkQueryResultFlags flags,
+                                 const struct panvk_query_report *src,
+                                 unsigned input_value_count)
+{
+   enum panvk_query_ts_op op =
+      panvk_timestamp_info_get_op(src[input_value_count - 1].value);
+   uint32_t sq_mask =
+      panvk_timestamp_info_get_sq_mask(src[input_value_count - 1].value);
+
+   uint64_t result = op == PANVK_QUERY_TS_OP_MIN ? UINT64_MAX : 0;
+
+   for (uint32_t idx = 0; idx < input_value_count - 1; ++idx) {
+      if ((sq_mask & BITFIELD_BIT(idx)) == 0)
+         continue;
+      if (src[idx].value == 0)
+         continue;
+
+      if (op == PANVK_QUERY_TS_OP_MIN)
+         result = MIN2(result, src[idx].value);
+      else
+         result = MAX2(result, src[idx].value);
+   }
+
+   if (op == PANVK_QUERY_TS_OP_MIN && result == UINT64_MAX)
+      result = 0;
+
+   cpu_write_query_result(dst, idx, flags, result);
+}
+#endif
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_per_arch(GetQueryPoolResults)(VkDevice _device, VkQueryPool queryPool,
                                     uint32_t firstQuery, uint32_t queryCount,
@@ -218,6 +251,14 @@ panvk_per_arch(GetQueryPoolResults)(VkDevice _device, VkQueryPool queryPool,
                                              pool->reports_per_query);
          break;
       }
+#if PAN_ARCH >= 10
+      case VK_QUERY_TYPE_TIMESTAMP: {
+         if (write_results)
+            cpu_write_timestamp_query_result(dst, 0, flags, src,
+                                             pool->reports_per_query);
+         break;
+      }
+#endif
       default:
          unreachable("Unsupported query type");
       }

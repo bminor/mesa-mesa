@@ -18,6 +18,7 @@
 #include "panvk_cmd_alloc.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_cmd_meta.h"
+#include "panvk_cmd_precomp.h"
 #include "panvk_cmd_ts.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
@@ -530,6 +531,88 @@ panvk_cmd_write_timestamp_query(struct panvk_cmd_buffer *cmd,
    cmd->state.contains_timestamp_queries = true;
 }
 
+static void
+panvk_copy_timestamp_query_results(struct panvk_cmd_buffer *cmd,
+                                   struct panvk_query_pool *pool,
+                                   uint32_t first_query, uint32_t query_count,
+                                   uint64_t dst_buffer_addr,
+                                   VkDeviceSize stride,
+                                   VkQueryResultFlags flags)
+{
+   /*
+    * Step 1:
+    * The point of this is to have each subqueue "save" its own value
+    * into a buffer, such that any following query operations like reset
+    * don't have to worry about destroying the result before other
+    * subqueues are done with it.
+    */
+
+   uint32_t query_stride = pool->query_stride;
+   size_t buf_sz = query_count * query_stride;
+   struct pan_ptr intermediate_buf =
+      panvk_cmd_alloc_dev_mem(cmd, desc, buf_sz, 16);
+
+   for (uint32_t sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq) {
+      struct cs_builder *b = panvk_get_cs_builder(cmd, sq);
+      uint32_t sq_offset = sq * sizeof(uint64_t);
+
+      struct cs_index src = cs_scratch_reg64(b, 0);
+      struct cs_index dst = cs_scratch_reg64(b, 2);
+      struct cs_index tmp = cs_scratch_reg64(b, 4);
+      struct cs_index tmp2 = cs_scratch_reg64(b, 6);
+
+      /* Wait for STORE_STATEs to finish. */
+      cs_wait_slot(b, SB_ID(LS));
+
+      cs_move64_to(b, src, panvk_query_report_dev_addr(pool, first_query));
+      cs_move64_to(b, dst, intermediate_buf.gpu);
+
+      struct cs_index count = cs_scratch_reg32(b, 8);
+      cs_move32_to(b, count, query_count);
+      cs_while(b, MALI_CS_CONDITION_GREATER, count) {
+         cs_load64_to(b, tmp, src, sq_offset);
+         if (sq == PANVK_QUERY_TS_INFO_SUBQUEUE) {
+            assert(PANVK_QUERY_TS_INFO_SUBQUEUE == PANVK_SUBQUEUE_COUNT - 1);
+            cs_load64_to(b, tmp2, src, sq_offset + 8);
+         }
+         cs_store64(b, tmp, dst, sq_offset);
+         if (sq == PANVK_QUERY_TS_INFO_SUBQUEUE)
+            cs_store64(b, tmp2, dst, sq_offset + 8);
+
+         cs_add64(b, src, src, query_stride);
+         cs_add64(b, dst, dst, query_stride);
+         cs_add32(b, count, count, -1);
+      }
+   }
+
+   /* Make sure C waits for all copies to be done. */
+   struct panvk_cs_deps deps = {0};
+   deps.dst[PANVK_SUBQUEUE_COMPUTE].wait_subqueue_mask =
+      BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) & ~BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+   u_foreach_bit(i, deps.dst[PANVK_SUBQUEUE_COMPUTE].wait_subqueue_mask)
+      deps.src[i].wait_sb_mask = SB_MASK(LS);
+   panvk_per_arch(emit_barrier)(cmd, deps);
+
+   /* Step 2: Copy from the intermediate into the application buffer. */
+
+   const struct panlib_copy_ts_query_result_args push = {
+      .pool_addr = intermediate_buf.gpu,
+      .available_addr = panvk_query_available_dev_addr(pool, first_query),
+      .query_stride = pool->query_stride,
+      /* The intermediate buffer starts at first_query. */
+      .first_query = 0,
+      .query_count = query_count,
+      .report_count = pool->reports_per_query,
+      .dst_addr = dst_buffer_addr,
+      .dst_stride = stride,
+      .flags = flags,
+   };
+
+   struct panvk_precomp_ctx precomp_ctx = panvk_per_arch(precomp_cs)(cmd);
+   panlib_copy_ts_query_result_struct(&precomp_ctx, panlib_1d(query_count),
+                                      PANLIB_BARRIER_NONE, push);
+}
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdResetQueryPool)(VkCommandBuffer commandBuffer,
                                   VkQueryPool queryPool, uint32_t firstQuery,
@@ -627,6 +710,13 @@ panvk_per_arch(CmdCopyQueryPoolResults)(
                                          dst_buffer_addr, stride, flags);
       break;
    }
+#if PAN_ARCH >= 10
+   case VK_QUERY_TYPE_TIMESTAMP: {
+      panvk_copy_timestamp_query_results(cmd, pool, firstQuery, queryCount,
+                                         dst_buffer_addr, stride, flags);
+      break;
+   }
+#endif
    default:
       unreachable("Unsupported query type");
    }
