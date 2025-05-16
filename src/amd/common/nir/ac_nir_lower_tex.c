@@ -499,7 +499,7 @@ ac_nir_lower_tex(nir_shader *nir, const ac_nir_lower_tex_options *options)
                                                          &impl->body,
                                                          &divergent_discard,
                                                          false);
-      nir_progress(impl_progress, impl, nir_metadata_control_flow);
+      progress |= nir_progress(impl_progress, impl, nir_metadata_control_flow);
    }
 
    progress |= nir_shader_instructions_pass(
