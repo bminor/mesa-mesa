@@ -759,8 +759,8 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
 
    struct A6XX_GRAS_LRZ_CNTL gras_lrz_cntl = { 0 };
 
-   if (fs->variant->writes_pos && !fs->variant->fs.early_fragment_tests)
-      cmd->state.lrz.force_late_z = true;
+   cmd->state.lrz.force_late_z =
+      fs->variant->writes_pos && !fs->variant->fs.early_fragment_tests;
 
    if (!cmd->state.lrz.valid) {
       return gras_lrz_cntl;
