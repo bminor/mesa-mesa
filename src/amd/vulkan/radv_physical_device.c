@@ -719,7 +719,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = !pdev->use_llvm,
       .EXT_ycbcr_image_arrays = true,
-      .EXT_zero_initialize_device_memory = pdev->info.has_zerovram_support,
+      .EXT_zero_initialize_device_memory = true,
       .AMD_buffer_marker = true,
       .AMD_device_coherent_memory = true,
       .AMD_draw_indirect_count = true,
