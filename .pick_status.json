@@ -5134,7 +5134,7 @@
         "description": "panfrost: Apply direct dispatch WLS instance limit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1304f4578d2ee206be20bab8f9aa9a55ae4563b5",
         "notes": null
