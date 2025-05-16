@@ -45,7 +45,7 @@
  */
 
 static void
-reset_oq_batch(struct cs_builder *b, struct cs_index addr,
+reset_queries_batch(struct cs_builder *b, struct cs_index addr,
                struct cs_index zero_regs, uint32_t query_count)
 {
    const uint32_t regs_per_query = 2;
@@ -106,12 +106,12 @@ panvk_cmd_reset_occlusion_queries(struct panvk_cmd_buffer *cmd,
     * cs_sync32_wait(). The only reason we use a syncobj is so we can
     * defer the signalling in the issue_fragmnent_jobs() path. */
    cs_move64_to(b, addr, panvk_query_available_dev_addr(pool, first_query));
-   reset_oq_batch(b, addr, zero_regs, query_count);
+   reset_queries_batch(b, addr, zero_regs, query_count);
 
    cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, first_query));
-   reset_oq_batch(b, addr, zero_regs, query_count);
+   reset_queries_batch(b, addr, zero_regs, query_count);
 
-   /* reset_oq_batch() only does the stores, we need to flush those explicitly
+   /* reset_queries_batch() only does the stores, we need to flush those explicitly
     * here. */
    cs_flush_stores(b);
 
