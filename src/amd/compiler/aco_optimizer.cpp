@@ -1277,11 +1277,19 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          }
       }
 
-      /* SALU / PSEUDO: propagate inline constants */
-      if (instr->isSALU() || instr->isPseudo()) {
+      /* PSEUDO: propagate constants */
+      if (instr->isPseudo()) {
+         unsigned bits = instr->operands[i].bytes() * 8u;
+         if (info.is_constant_or_literal(bits) && alu_can_accept_constant(instr, i)) {
+            instr->operands[i] = get_constant_op(ctx, info, bits);
+            continue;
+         }
+      }
+
+      /* SALU: propagate inline constants */
+      else if (instr->isSALU()) {
          unsigned bits = get_operand_size(instr, i);
-         if ((info.is_constant(bits) || (info.is_literal(bits) && instr->isPseudo())) &&
-             alu_can_accept_constant(instr, i)) {
+         if (info.is_constant(bits) && alu_can_accept_constant(instr, i)) {
             instr->operands[i] = get_constant_op(ctx, info, bits);
             continue;
          }
