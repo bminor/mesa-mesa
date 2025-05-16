@@ -28,6 +28,7 @@
 #include "vk_common_entrypoints.h"
 #include "vk_device.h"
 #include "vk_queue.h"
+#include "vk_semaphore.h"
 #include "vk_util.h"
 #include "../wsi/wsi_common.h"
 
@@ -398,38 +399,32 @@ vk_common_QueueSubmit(
       const uint64_t *wait_values = NULL;
       const uint64_t *signal_values = NULL;
 
-      if (timeline_info && timeline_info->waitSemaphoreValueCount) {
-         /* From the Vulkan 1.3.204 spec:
-          *
-          *    VUID-VkSubmitInfo-pNext-03240
-          *
-          *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
-          *    and any element of pSignalSemaphores was created with a VkSemaphoreType of
-          *    VK_SEMAPHORE_TYPE_TIMELINE, then its signalSemaphoreValueCount member must equal
-          *    signalSemaphoreCount"
-          */
-         assert(timeline_info->waitSemaphoreValueCount == pSubmits[s].waitSemaphoreCount);
+      if (timeline_info && timeline_info->waitSemaphoreValueCount)
          wait_values = timeline_info->pWaitSemaphoreValues;
-      }
 
-      if (timeline_info && timeline_info->signalSemaphoreValueCount) {
-         /* From the Vulkan 1.3.204 spec:
-          *
-          *    VUID-VkSubmitInfo-pNext-03241
-          *
-          *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
-          *    and any element of pWaitSemaphores was created with a VkSemaphoreType of
-          *    VK_SEMAPHORE_TYPE_TIMELINE, then its waitSemaphoreValueCount member must equal
-          *    waitSemaphoreCount"
-          */
-         assert(timeline_info->signalSemaphoreValueCount == pSubmits[s].signalSemaphoreCount);
+      if (timeline_info && timeline_info->signalSemaphoreValueCount)
          signal_values = timeline_info->pSignalSemaphoreValues;
-      }
 
       const VkDeviceGroupSubmitInfo *group_info =
          vk_find_struct_const(pSubmits[s].pNext, DEVICE_GROUP_SUBMIT_INFO);
 
       for (uint32_t i = 0; i < pSubmits[s].waitSemaphoreCount; i++) {
+         VK_FROM_HANDLE(vk_semaphore, semaphore, pSubmits[s].pWaitSemaphores[i]);
+
+         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE &&
+             timeline_info && timeline_info->waitSemaphoreValueCount) {
+            /* From the Vulkan 1.3.204 spec:
+             *
+             *    VUID-VkSubmitInfo-pNext-03241
+             *
+             *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
+             *    and any element of pWaitSemaphores was created with a VkSemaphoreType of
+             *    VK_SEMAPHORE_TYPE_TIMELINE, then its waitSemaphoreValueCount member must equal
+             *    waitSemaphoreCount"
+             */
+            assert(timeline_info->waitSemaphoreValueCount == pSubmits[s].waitSemaphoreCount);
+         }
+
          wait_semaphores[n_wait_semaphores + i] = (VkSemaphoreSubmitInfo) {
             .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore   = pSubmits[s].pWaitSemaphores[i],
@@ -446,6 +441,22 @@ vk_common_QueueSubmit(
          };
       }
       for (uint32_t i = 0; i < pSubmits[s].signalSemaphoreCount; i++) {
+         VK_FROM_HANDLE(vk_semaphore, semaphore, pSubmits[s].pSignalSemaphores[i]);
+
+         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE &&
+             timeline_info && timeline_info->signalSemaphoreValueCount) {
+            /* From the Vulkan 1.3.204 spec:
+             *
+             *    VUID-VkSubmitInfo-pNext-03240
+             *
+             *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
+             *    and any element of pSignalSemaphores was created with a VkSemaphoreType of
+             *    VK_SEMAPHORE_TYPE_TIMELINE, then its signalSemaphoreValueCount member must equal
+             *    signalSemaphoreCount"
+             */
+            assert(timeline_info->signalSemaphoreValueCount == pSubmits[s].signalSemaphoreCount);
+         }
+
          signal_semaphores[n_signal_semaphores + i] = (VkSemaphoreSubmitInfo) {
             .sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = pSubmits[s].pSignalSemaphores[i],
