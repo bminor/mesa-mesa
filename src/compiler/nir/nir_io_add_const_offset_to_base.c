@@ -107,10 +107,12 @@ add_const_offset_to_base_block(nir_block *block, nir_builder *b,
                sem.location += off;
                b->cursor = nir_before_instr(&intrin->instr);
                nir_src_rewrite(offset, nir_imm_int(b, 0));
-               progress = true;
             }
             /* non-indirect indexing should reduce num_slots */
             sem.num_slots = is_dual_slot(intrin) ? 2 : 1;
+
+            nir_io_semantics original = nir_intrinsic_io_semantics(intrin);
+            progress |= memcmp(&original, &sem, sizeof(sem));
             nir_intrinsic_set_io_semantics(intrin, sem);
          }
       }
