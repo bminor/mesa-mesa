@@ -3744,7 +3744,7 @@
         "description": "mesa/st: fix _IsRGBDraw bitfield use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b51d754d00dfd7d8f4069aca4619f3b056c4eac",
         "notes": null
