@@ -2088,6 +2088,14 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 				payload *and* skipsaverestore is set. This is
 				expected to restore static register values not
 				saved when skipsaverestore is set.
+
+				On BV, a skipsaverestore preemption is triggered
+				and this preamble type is executed whenever a
+				CP_THREAD_CONTROL that synchronizes threads
+				happens. This can be explicitly via
+				SYNC_THREADS, or implicitly when the value of
+				CONCURRENT_BIN_DISABLE changes from the previous
+				thread control.
 			</doc>
 		</value>
 		<value name="POSTAMBLE_AMBLE_TYPE" value="2">
