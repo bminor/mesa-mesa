@@ -1126,31 +1126,14 @@ vn_physical_device_init_external_semaphore_handles(
    }
 }
 
-static inline bool
-vn_physical_device_get_external_memory_support(
-   const struct vn_physical_device *physical_dev)
-{
-   if (!physical_dev->external_memory.renderer_handle_type)
-      return false;
-
-   /* see vn_physical_device_init_external_memory */
-   if (physical_dev->external_memory.renderer_handle_type ==
-       VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT) {
-      const struct vk_device_extension_table *renderer_exts =
-         &physical_dev->renderer_extensions;
-      return renderer_exts->EXT_image_drm_format_modifier &&
-             renderer_exts->EXT_queue_family_foreign;
-   }
-
-   /* expand support once the renderer can run on non-Linux platforms */
-   return false;
-}
-
 static void
 vn_physical_device_get_native_extensions(
    const struct vn_physical_device *physical_dev,
    struct vk_device_extension_table *exts)
 {
+   const struct vk_device_extension_table *renderer_exts =
+      &physical_dev->renderer_extensions;
+
    memset(exts, 0, sizeof(*exts));
 
    if (physical_dev->instance->renderer->info.has_external_sync &&
@@ -1162,10 +1145,10 @@ vn_physical_device_get_native_extensions(
        physical_dev->renderer_sync_fd.semaphore_exportable)
       exts->KHR_external_semaphore_fd = true;
 
-   const bool can_external_mem =
-      vn_physical_device_get_external_memory_support(physical_dev);
-   if (can_external_mem) {
 #if DETECT_OS_ANDROID
+   if (physical_dev->external_memory.renderer_handle_type &&
+       renderer_exts->EXT_image_drm_format_modifier &&
+       renderer_exts->EXT_queue_family_foreign) {
       exts->ANDROID_external_memory_android_hardware_buffer = true;
 
       /* For wsi, we require renderer:
@@ -1181,11 +1164,13 @@ vn_physical_device_get_native_extensions(
       if (physical_dev->renderer_sync_fd.semaphore_importable &&
           physical_dev->renderer_sync_fd.fence_exportable)
          exts->ANDROID_native_buffer = true;
+   }
 #else  /* DETECT_OS_ANDROID */
+   if (physical_dev->external_memory.renderer_handle_type) {
       exts->KHR_external_memory_fd = true;
       exts->EXT_external_memory_dma_buf = true;
-#endif /* DETECT_OS_ANDROID */
    }
+#endif /* DETECT_OS_ANDROID */
 
 #ifdef VN_USE_WSI_PLATFORM
    if (physical_dev->renderer_sync_fd.semaphore_importable) {
@@ -1205,7 +1190,7 @@ vn_physical_device_get_native_extensions(
     */
    exts->EXT_pci_bus_info =
       physical_dev->instance->renderer->info.pci.has_bus_info ||
-      physical_dev->renderer_extensions.EXT_pci_bus_info;
+      renderer_exts->EXT_pci_bus_info;
 #endif
 
    /* Use common implementation but enable only when the renderer supports
@@ -1213,8 +1198,7 @@ vn_physical_device_get_native_extensions(
     * not passthrough from the renderer side.
     */
    exts->KHR_deferred_host_operations =
-      physical_dev->ray_tracing &&
-      physical_dev->renderer_extensions.KHR_acceleration_structure;
+      physical_dev->ray_tracing && renderer_exts->KHR_acceleration_structure;
    exts->KHR_map_memory2 = true;
    exts->EXT_physical_device_drm = true;
    /* use common implementation */
