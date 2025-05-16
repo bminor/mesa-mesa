@@ -594,7 +594,7 @@
         "description": "st/mesa: fix _IntegerBuffers bitfield use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8fb966688bc1053a48e8ee7f7394ce030bcfd345",
         "notes": null
