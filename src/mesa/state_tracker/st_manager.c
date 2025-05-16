@@ -368,6 +368,7 @@ st_new_renderbuffer_fb(enum pipe_format format, unsigned samples, bool sw)
    case PIPE_FORMAT_B8G8R8X8_UNORM:
    case PIPE_FORMAT_X8R8G8B8_UNORM:
    case PIPE_FORMAT_R8G8B8_UNORM:
+   case PIPE_FORMAT_B8G8R8_UNORM:
       rb->InternalFormat = GL_RGB8;
       break;
    case PIPE_FORMAT_R8G8B8A8_SRGB:
@@ -378,6 +379,8 @@ st_new_renderbuffer_fb(enum pipe_format format, unsigned samples, bool sw)
    case PIPE_FORMAT_R8G8B8X8_SRGB:
    case PIPE_FORMAT_B8G8R8X8_SRGB:
    case PIPE_FORMAT_X8R8G8B8_SRGB:
+   case PIPE_FORMAT_R8G8B8_SRGB:
+   case PIPE_FORMAT_B8G8R8_SRGB:
       rb->InternalFormat = GL_SRGB8;
       break;
    case PIPE_FORMAT_B5G5R5A1_UNORM:

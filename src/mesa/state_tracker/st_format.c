@@ -190,7 +190,7 @@ st_pipe_format_to_mesa_format(enum pipe_format format)
 struct format_mapping
 {
    GLenum glFormats[18];       /**< list of GLenum formats, 0-terminated */
-   enum pipe_format pipeFormats[14]; /**< list of pipe formats, 0-terminated */
+   enum pipe_format pipeFormats[16]; /**< list of pipe formats, 0-terminated */
 };
 
 
@@ -204,7 +204,9 @@ struct format_mapping
 #define DEFAULT_RGB_FORMATS \
       PIPE_FORMAT_R8G8B8X8_UNORM, \
       PIPE_FORMAT_B8G8R8X8_UNORM, \
+      PIPE_FORMAT_R8G8B8_UNORM, \
       PIPE_FORMAT_X8R8G8B8_UNORM, \
+      PIPE_FORMAT_B8G8R8_UNORM, \
       PIPE_FORMAT_X8B8G8R8_UNORM, \
       PIPE_FORMAT_B5G6R5_UNORM, \
       DEFAULT_RGBA_FORMATS
