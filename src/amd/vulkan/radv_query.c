@@ -964,7 +964,7 @@ radv_alloc_shader_query_buf(struct radv_cmd_buffer *cmd_buffer)
    unsigned offset;
    void *ptr;
 
-   assert(pdev->info.gfx_level >= GFX12);
+   assert(pdev->info.gfx_level >= GFX11);
 
    if (cmd_buffer->state.shader_query_buf_va)
       return;
@@ -986,18 +986,13 @@ radv_begin_tfb_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint32_t i
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    if (pdev->use_ngg_streamout) {
-      const bool uses_gds = pdev->info.gfx_level < GFX12;
-
       /* generated prim counter */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va);
       radv_cs_write_data_imm(cs, V_370_ME, va + 4, 0x80000000);
 
       /* written prim counter */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_XFB_OFFSET(index), va + 8);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_XFB_OFFSET(index), va + 8);
       radv_cs_write_data_imm(cs, V_370_ME, va + 12, 0x80000000);
-
-      /* Record that the command buffer needs GDS. */
-      cmd_buffer->gds_needed |= uses_gds;
 
       if (!cmd_buffer->state.active_emulated_prims_xfb_queries)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
@@ -1020,14 +1015,12 @@ radv_end_tfb_query(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint32_t ind
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    if (pdev->use_ngg_streamout) {
-      const bool uses_gds = pdev->info.gfx_level < GFX12;
-
       /* generated prim counter */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va + 16);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va + 16);
       radv_cs_write_data_imm(cs, V_370_ME, va + 20, 0x80000000);
 
       /* written prim counter */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_XFB_OFFSET(index), va + 24);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_XFB_OFFSET(index), va + 24);
       radv_cs_write_data_imm(cs, V_370_ME, va + 28, 0x80000000);
 
       cmd_buffer->state.active_emulated_prims_xfb_queries--;
@@ -1365,14 +1358,9 @@ radv_begin_pg_query(struct radv_cmd_buffer *cmd_buffer, struct radv_query_pool *
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    if (pdev->info.gfx_level >= GFX11) {
-      const bool uses_gds = pdev->info.gfx_level < GFX12;
-
       /* On GFX11+, primitives generated query are always emulated. */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va);
       radv_cs_write_data_imm(cs, V_370_ME, va + 4, 0x80000000);
-
-      /* Record that the command buffer needs GDS. */
-      cmd_buffer->gds_needed |= uses_gds;
 
       if (!cmd_buffer->state.active_emulated_prims_gen_queries)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SHADER_QUERY;
@@ -1419,10 +1407,8 @@ radv_end_pg_query(struct radv_cmd_buffer *cmd_buffer, struct radv_query_pool *po
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    if (pdev->info.gfx_level >= GFX11) {
-      const bool uses_gds = pdev->info.gfx_level < GFX12;
-
       /* On GFX11+, primitives generated query are always emulated. */
-      gfx10_copy_shader_query_gfx(cmd_buffer, uses_gds, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va + 16);
+      gfx10_copy_shader_query_gfx(cmd_buffer, false, RADV_SHADER_QUERY_PRIM_GEN_OFFSET(index), va + 16);
       radv_cs_write_data_imm(cs, V_370_ME, va + 20, 0x80000000);
 
       cmd_buffer->state.active_emulated_prims_gen_queries--;
@@ -1918,7 +1904,7 @@ radv_create_query_pool(struct radv_device *device, const VkQueryPoolCreateInfo *
    pool->uses_ace = (pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT);
 
    pool->uses_shader_query_buf =
-      pdev->info.gfx_level >= GFX12 && (pool->vk.query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT ||
+      pdev->info.gfx_level >= GFX11 && (pool->vk.query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT ||
                                         pool->vk.query_type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT);
 
    switch (pCreateInfo->queryType) {

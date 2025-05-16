@@ -1054,7 +1054,7 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
    }
 
    if (!queue->ring_info.gds && needs->gds) {
-      assert(pdev->info.gfx_level >= GFX10 && pdev->info.gfx_level < GFX12);
+      assert(pdev->info.gfx_level == GFX10 || pdev->info.gfx_level == GFX10_3);
 
       /* 4 streamout GDS counters.
        * We need 256B (64 dw) of GDS, otherwise streamout hangs.

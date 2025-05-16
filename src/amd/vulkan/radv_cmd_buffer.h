@@ -570,7 +570,7 @@ struct radv_cmd_buffer {
    bool tess_rings_needed;
    bool task_rings_needed;
    bool mesh_scratch_ring_needed;
-   bool gds_needed;    /* Emulated queries on GFX10-GFX11.5 */
+   bool gds_needed;    /* Emulated queries on GFX10-GFX10.3 */
    bool gds_oa_needed; /* NGG streamout on GFX11-GFX11.5 */
    bool sample_positions_needed;
 

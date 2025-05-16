@@ -150,7 +150,7 @@
 #define RADV_SHADER_QUERY_MS_PRIM_GEN_OFFSET      44
 #define RADV_SHADER_QUERY_TS_INVOCATION_OFFSET    48
 
-/* Size of the buffer for emulated queries using SSBO atomics on GFX12. */
+/* Size of the buffer for emulated queries using SSBO atomics on GFX11+. */
 #define RADV_SHADER_QUERY_BUF_SIZE (RADV_SHADER_QUERY_TS_INVOCATION_OFFSET + 4)
 
 /* Number of samples for line smooth lowering (hw requirement). */
