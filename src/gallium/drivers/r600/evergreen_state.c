@@ -506,6 +506,7 @@ static void *evergreen_create_rs_state(struct pipe_context *ctx,
 		S_028810_DX_LINEAR_ATTR_CLIP_ENA(1) |
 		S_028810_DX_RASTERIZATION_KILL(state->rasterizer_discard);
 	rs->multisample_enable = state->multisample;
+	rs->line_width = state->line_width;
 
 	/* offset */
 	rs->offset_units = state->offset_units;
@@ -521,6 +522,7 @@ static void *evergreen_create_rs_state(struct pipe_context *ctx,
 		psize_min = state->point_size;
 		psize_max = state->point_size;
 	}
+	rs->max_point_size = psize_max;
 
 	spi_interp = S_0286D4_FLAT_SHADE_ENA(1);
 	spi_interp |= S_0286D4_PNT_SPRITE_ENA(1) |
