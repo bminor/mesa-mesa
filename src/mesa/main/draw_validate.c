@@ -234,7 +234,7 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
        * However GL_EXT_float_blend removes this text.
        */
       if (!ctx->Extensions.EXT_float_blend &&
-          (ctx->DrawBuffer->_FP32Buffers & ctx->Color.BlendEnabled))
+          (ctx->DrawBuffer->_FP32DrawBuffers & ctx->Color.BlendEnabled))
          return;
       break;
 
