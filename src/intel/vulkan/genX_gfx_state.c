@@ -193,10 +193,6 @@ genX(streamout_prologue)(struct anv_cmd_buffer *cmd_buffer)
 #if INTEL_WA_16013994831_GFX_VER
    /* Wa_16013994831 - Disable preemption during streamout, enable back
     * again if XFB not used by the current pipeline.
-    *
-    * Although this workaround applies to Gfx12+, we already disable object
-    * level preemption for another reason in genX_state.c so we can skip this
-    * for Gfx12.
     */
    if (!intel_needs_workaround(cmd_buffer->device->info, 16013994831))
       return;
