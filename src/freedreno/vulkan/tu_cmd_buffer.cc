@@ -205,14 +205,17 @@ tu6_lazy_init_vsc(struct tu_cmd_buffer *cmd)
    uint32_t prim_strm_size = cmd->vsc_prim_strm_pitch * num_vsc_pipes;
    uint32_t draw_strm_size = cmd->vsc_draw_strm_pitch * num_vsc_pipes;
    uint32_t draw_strm_size_size = 4 * num_vsc_pipes;
+   uint32_t state_size = 4 * num_vsc_pipes;
 
    tu_get_scratch_bo(dev,
-                     prim_strm_size + draw_strm_size + draw_strm_size_size,
+                     prim_strm_size + draw_strm_size + draw_strm_size_size +
+                     state_size,
                      &vsc_bo);
 
    cmd->vsc_prim_strm_va = vsc_bo->iova;
    cmd->vsc_draw_strm_va = vsc_bo->iova + prim_strm_size;
    cmd->vsc_draw_strm_size_va = cmd->vsc_draw_strm_va + draw_strm_size;
+   cmd->vsc_state_va = cmd->vsc_draw_strm_size_va + draw_strm_size_size;
 }
 
 template <chip CHIP>
@@ -1170,6 +1173,7 @@ use_sysmem_rendering(struct tu_cmd_buffer *cmd,
  * but the actual skip happens in tu_load_gmem_attachment() and tile_store_cs,
  * for each blit separately.
  */
+template <chip CHIP>
 static void
 tu6_emit_cond_for_load_stores(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                               uint32_t pipe, uint32_t slot, bool skip_wfm)
@@ -1178,10 +1182,18 @@ tu6_emit_cond_for_load_stores(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    if (vsc->binning_possible &&
        cmd->state.pass->has_cond_load_store) {
-      tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
-      tu_cs_emit(cs, A6XX_CP_REG_TEST_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(pipe)) |
-                     A6XX_CP_REG_TEST_0_BIT(slot) |
-                     COND(skip_wfm, A6XX_CP_REG_TEST_0_SKIP_WAIT_FOR_ME));
+      if (CHIP >= A7XX) {
+         tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
+         tu_cs_emit(cs, A6XX_CP_REG_TEST_0_SCRATCH_MEM_OFFSET(pipe) |
+                        A6XX_CP_REG_TEST_0_SOURCE(SOURCE_SCRATCH_MEM) |
+                        A6XX_CP_REG_TEST_0_BIT(slot) |
+                        A6XX_CP_REG_TEST_0_SKIP_WAIT_FOR_ME);
+      } else {
+         tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
+         tu_cs_emit(cs, A6XX_CP_REG_TEST_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(pipe)) |
+                        A6XX_CP_REG_TEST_0_BIT(slot) |
+                        COND(skip_wfm, A6XX_CP_REG_TEST_0_SKIP_WAIT_FOR_ME));
+      }
    } else {
       /* COND_REG_EXECs are not emitted in non-binning case */
    }
@@ -1348,7 +1360,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    }
 
    if (util_is_power_of_two_nonzero(tile->slot_mask))
-      tu6_emit_cond_for_load_stores(cmd, cs, tile->pipe, slot, hw_binning);
+      tu6_emit_cond_for_load_stores<CHIP>(cmd, cs, tile->pipe, slot, hw_binning);
 
    tu_cs_emit_pkt7(cs, CP_SET_VISIBILITY_OVERRIDE, 1);
    tu_cs_emit(cs, !hw_binning);
@@ -1970,14 +1982,12 @@ tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs)
       tu7_emit_tile_render_begin_regs(cs);
    }
 
-   /* TODO use CP_MEM_TO_SCRATCH_MEM on a7xx. The VSC scratch mem should be
-    * automatically saved, unlike GPU registers, so we wouldn't have to
-    * manually restore this state.
-    */
-   tu_cs_emit_pkt7(cs, CP_MEM_TO_REG, 3);
-   tu_cs_emit(cs, CP_MEM_TO_REG_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(0)) |
-                  CP_MEM_TO_REG_0_CNT(32));
-   tu_cs_emit_qw(cs, dev->global_bo->iova + gb_offset(vsc_state));
+   if (CHIP == A6XX) {
+      tu_cs_emit_pkt7(cs, CP_MEM_TO_REG, 3);
+      tu_cs_emit(cs, CP_MEM_TO_REG_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(0)) |
+                     CP_MEM_TO_REG_0_CNT(32));
+      tu_cs_emit_qw(cs, dev->global_bo->iova + gb_offset(vsc_state));
+   }
 }
 
 VkResult
@@ -2777,13 +2787,35 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    }
 
    if (vsc->binning_possible) {
+      /* On a7xx we always need VSC allocated because the VSC state has to go
+       * together with other stream data. We could allocate just the VSC state
+       * if binning is disabled but it doesn't seem worth it.
+       */
+      if (CHIP >= A7XX && !cmd->vsc_initialized)
+         tu6_lazy_init_vsc(cmd);
+
       /* Upload state regs to memory to be restored on skipsaverestore
        * preemption.
        */
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(0)) |
                      CP_REG_TO_MEM_0_CNT(32));
-      tu_cs_emit_qw(cs, global_iova(cmd, vsc_state));
+      if (CHIP >= A7XX)
+         tu_cs_emit_qw(cs, cmd->vsc_state_va);
+      else
+         tu_cs_emit_qw(cs, global_iova(cmd, vsc_state));
+
+      if (CHIP >= A7XX) {
+         uint32_t num_vsc_pipes = phys_dev->info->num_vsc_pipes;
+
+         tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
+         tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
+
+         tu_cs_emit_pkt7(cs, CP_MEM_TO_SCRATCH_MEM, 4);
+         tu_cs_emit(cs, num_vsc_pipes); /* count */
+         tu_cs_emit(cs, 0); /* offset */
+         tu_cs_emit_qw(cs, cmd->vsc_state_va);
+      }
    }
 
    tu_autotune_begin_renderpass<CHIP>(cmd, cs, autotune_result);
@@ -2823,7 +2855,7 @@ tu6_render_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    if (cmd->state.rp.draw_cs_writes_to_cond_pred &&
        util_is_power_of_two_nonzero(tile->slot_mask)) {
       uint32_t slot = ffs(tile->slot_mask) - 1;
-      tu6_emit_cond_for_load_stores(cmd, cs, tile->pipe, slot, false);
+      tu6_emit_cond_for_load_stores<CHIP>(cmd, cs, tile->pipe, slot, false);
    }
 
    if (cmd->state.pass->allow_ib2_skipping) {

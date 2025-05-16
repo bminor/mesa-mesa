@@ -687,6 +687,7 @@ struct tu_cmd_buffer
    uint32_t vsc_draw_strm_pitch;
    uint32_t vsc_prim_strm_pitch;
    uint64_t vsc_draw_strm_va, vsc_draw_strm_size_va, vsc_prim_strm_va;
+   uint64_t vsc_state_va;
    bool vsc_initialized;
 
    bool prev_fsr_is_null;
