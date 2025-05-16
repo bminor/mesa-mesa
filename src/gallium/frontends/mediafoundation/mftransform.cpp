@@ -1116,10 +1116,12 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   {
                      // Wait for completion
                      hr = d3d12_encoder_fence->SetEventOnCompletion( encoder_fence_value, NULL );
+                     HMFT_ETW_EVENT_INFO( "FenceCompletion", pThis );
                   }
 
                   CloseHandle( encoder_fence_shared_handle );
                }
+
                assert( SUCCEEDED( hr ) );
                if( SUCCEEDED( hr ) )
                {
@@ -1279,6 +1281,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                spOutputSample->SetUINT32( MF_NALU_LENGTH_SET, 1 );
                {
                   auto lock = pThis->m_OutputQueueLock.lock();
+                  HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
                   if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
                   {
                      pThis->m_OutputQueue.push( spOutputSample.Detach() );
@@ -1816,6 +1819,7 @@ done:
 HRESULT
 CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD dwFlags )
 {
+   HMFT_ETW_EVENT_START( "ProcessInput", this );
    HRESULT hr = S_OK;
    wil::unique_cotaskmem_array_ptr<BYTE> pMBData = nullptr;
    UINT32 unChromaOnly = 0;
@@ -1879,6 +1883,8 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    {
       auto lock = m_encoderLock.lock();
 
+      HMFT_ETW_EVENT_START( "PipeSubmitFrame", this );
+
       m_pPipeVideoCodec->begin_frame( m_pPipeVideoCodec,
                                       pDX12EncodeContext->pPipeVideoBuffer,
                                       &pDX12EncodeContext->encoderPicInfo.base );
@@ -1902,17 +1908,26 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                               &pDX12EncodeContext->pAsyncCookie );
       }
 
+      HMFT_ETW_EVENT_STOP( "PipeSubmitFrame", this );
+
       pDX12EncodeContext->encoderPicInfo.base.fence =
          &pDX12EncodeContext->pAsyncFence;   // end_frame will fill in the fence as output param
+
+      HMFT_ETW_EVENT_START( "PipeEndFrame", this );
       int status = m_pPipeVideoCodec->end_frame( m_pPipeVideoCodec,
                                                  pDX12EncodeContext->pPipeVideoBuffer,
                                                  &pDX12EncodeContext->encoderPicInfo.base );
+      HMFT_ETW_EVENT_STOP( "PipeEndFrame", this );
+
       CHECKBOOL_GOTO( ( m_spDevice->GetDeviceRemovedReason() == S_OK ), DXGI_ERROR_DEVICE_REMOVED, done );
       // NULL returned fence indicates encode error
       CHECKNULL_GOTO( pDX12EncodeContext->pAsyncFence, MF_E_UNEXPECTED, done );
       // non zero status indicates encode error
       CHECKBOOL_GOTO( ( status == 0 ), MF_E_UNEXPECTED, done );
+
+      HMFT_ETW_EVENT_START( "PipeFlush", this );
       m_pPipeVideoCodec->flush( m_pPipeVideoCodec );
+      HMFT_ETW_EVENT_STOP( "PipeFlush", this );
    }
    m_EncodingQueue.push( pDX12EncodeContext );
    // Moves the GOP tracker state to the next frame for having next
@@ -1949,6 +1964,8 @@ done:
    {
       MFE_ERROR( "[dx12 hmft 0x%p] ProcessInput - hr=0x%x", this, hr );
    }
+
+   HMFT_ETW_EVENT_STOP( "ProcessInput", this );
    return hr;
 }
 
@@ -1957,6 +1974,8 @@ done:
 HRESULT
 CDX12EncHMFT::ProcessOutput( DWORD dwFlags, DWORD cOutputBufferCount, MFT_OUTPUT_DATA_BUFFER *pOutputSamples, OUT DWORD *pdwStatus )
 {
+   HMFT_ETW_EVENT_START( "ProcessOutput", this );
+
    HRESULT hr = S_OK;
    auto lock = m_lock.lock();
    IMFSample *pSample = nullptr;
@@ -2009,6 +2028,8 @@ done:
    {
       MFE_ERROR( "[dx12 hmft 0x%p] ProcessOutput - hr=0x%x", this, hr );
    }
+
+   HMFT_ETW_EVENT_STOP( "ProcessOutput", this );
    return hr;
 }
 

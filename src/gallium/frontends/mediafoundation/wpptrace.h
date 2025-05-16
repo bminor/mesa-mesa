@@ -23,6 +23,10 @@
 
 #pragma once
 
+#include <windows.h>
+
+#include <TraceLoggingProvider.h>
+
 #if VIDEO_CODEC_H264ENC
 #define DEFINE_MFE_WPP_GUID ( 264, 0dc9, 401d, b9b8, 05e4eca4977e )
 #elif VIDEO_CODEC_H265ENC
@@ -43,6 +47,7 @@
 
 #define WPP_LEVEL_FLAGS_ENABLED( lvl, flags ) ( WPP_LEVEL_ENABLED( flags ) && WPP_CONTROL( WPP_BIT_##flags ).Level >= lvl )
 
+
 // begin_wpp config
 //
 // FUNC MFE_INFO{FLAG=MFE_ALL,LEVEL=TRACE_LEVEL_INFORMATION}(MSG, ...);
@@ -51,3 +56,53 @@
 // FUNC MFE_VERBOSE{FLAG=MFE_ALL,LEVEL=TRACE_LEVEL_VERBOSE}(MSG, ...);
 //
 // end_wpp
+
+//
+// TraceLogging ETW
+//
+
+TRACELOGGING_DECLARE_PROVIDER( g_hEtwProvider );
+
+
+#if VIDEO_CODEC_H264ENC
+
+#define ETW_MODULE_STR "H264Enc"
+
+#elif VIDEO_CODEC_H265ENC
+
+#define ETW_MODULE_STR "H265Enc"
+
+#elif VIDEO_CODEC_AV1ENC
+
+#define ETW_MODULE_STR "AV1Enc"
+
+#else
+#error VIDEO_CODEC_xxx must be defined
+#endif
+
+#define HMFT_ETW_EVENT_START( EventId, this )                                                                                      \
+   if( g_hEtwProvider )                                                                                                            \
+   {                                                                                                                               \
+      TraceLoggingWrite( g_hEtwProvider,                                                                                           \
+                         EventId,                                                                                                  \
+                         TraceLoggingOpcode( EVENT_TRACE_TYPE_START ),                                                             \
+                         TraceLoggingPointer( this, ETW_MODULE_STR ) );                                                            \
+   }
+
+#define HMFT_ETW_EVENT_STOP( EventId, this )                                                                                       \
+   if( g_hEtwProvider )                                                                                                            \
+   {                                                                                                                               \
+      TraceLoggingWrite( g_hEtwProvider,                                                                                           \
+                         EventId,                                                                                                  \
+                         TraceLoggingOpcode( EVENT_TRACE_TYPE_STOP ),                                                              \
+                         TraceLoggingPointer( this, ETW_MODULE_STR ) );                                                            \
+   }
+
+#define HMFT_ETW_EVENT_INFO( EventId, this )                                                                                       \
+   if( g_hEtwProvider )                                                                                                            \
+   {                                                                                                                               \
+      TraceLoggingWrite( g_hEtwProvider,                                                                                           \
+                         EventId,                                                                                                  \
+                         TraceLoggingOpcode( EVENT_TRACE_TYPE_INFO ),                                                              \
+                         TraceLoggingPointer( this, ETW_MODULE_STR ) );                                                            \
+   }
