@@ -1338,8 +1338,10 @@ tu6_emit_xs(struct tu_cs *cs,
                .threadsize = thrsz,
                .varying = xs->total_in != 0,
                .lodpixmask = xs->need_full_quad,
-               /* unknown bit, seems unnecessary */
-               .unk24 = true,
+               /* inoutregoverlap had no effect on perf in anholt's testing:
+                * https://gitlab.freedesktop.org/anholt/mesa/-/commits/tu-inout-reg
+                */
+               .inoutregoverlap = true,
                .pixlodenable = xs->need_pixlod,
                .earlypreamble = xs->early_preamble,
                .mergedregs = xs->mergedregs,

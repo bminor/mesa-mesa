@@ -4964,8 +4964,7 @@ to upconvert to 32b float internally?
 				fine derivatives and quad subgroup ops.
 			</doc>
 		</bitfield>
-		<!-- note: vk blob uses bit24 -->
-		<bitfield name="UNK24" pos="24" type="boolean"/>
+		<bitfield name="INOUTREGOVERLAP" pos="24" type="boolean"/>
 		<bitfield name="UNK25" pos="25" type="boolean"/>
 		<bitfield name="PIXLODENABLE" pos="26" type="boolean">
 			<doc>
