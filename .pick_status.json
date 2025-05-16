@@ -564,7 +564,7 @@
         "description": "mesa: fix _FP32Buffers bitfield use",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "070a5e5d9248a77aa84375f74fe48c5067362ea8",
         "notes": null
