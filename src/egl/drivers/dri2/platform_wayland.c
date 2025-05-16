@@ -128,6 +128,12 @@ static const struct dri2_wl_visual {
       WL_DRM_FORMAT_XRGB8888,
    },
    {
+      WL_DRM_FORMAT_RGB888,
+      PIPE_FORMAT_B8G8R8_UNORM,
+      PIPE_FORMAT_NONE,
+      WL_DRM_FORMAT_RGB888,
+   },
+   {
       WL_DRM_FORMAT_ABGR8888,
       PIPE_FORMAT_RGBA8888_UNORM,
       PIPE_FORMAT_NONE,
@@ -138,6 +144,12 @@ static const struct dri2_wl_visual {
       PIPE_FORMAT_RGBX8888_UNORM,
       PIPE_FORMAT_NONE,
       WL_DRM_FORMAT_XBGR8888,
+   },
+   {
+      WL_DRM_FORMAT_BGR888,
+      PIPE_FORMAT_R8G8B8_UNORM,
+      PIPE_FORMAT_NONE,
+      WL_DRM_FORMAT_BGR888,
    },
    {
       WL_DRM_FORMAT_RGB565,
