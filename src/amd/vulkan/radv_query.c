@@ -75,13 +75,13 @@ gfx10_copy_shader_query_gfx(struct radv_cmd_buffer *cmd_buffer, bool use_gds, ui
 }
 
 static void
-gfx10_copy_shader_query_ace(struct radv_cmd_buffer *cmd_buffer, uint32_t src_offset, uint64_t src_va)
+gfx10_copy_shader_query_ace(struct radv_cmd_buffer *cmd_buffer, uint32_t src_offset, uint64_t dst_va)
 {
    /* Make sure GDS is idle before copying the value. */
    cmd_buffer->gang.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_L2;
    radv_gang_cache_flush(cmd_buffer);
 
-   gfx10_copy_shader_query(cmd_buffer->gang.cs, COPY_DATA_GDS, src_offset, src_va);
+   gfx10_copy_shader_query(cmd_buffer->gang.cs, COPY_DATA_GDS, src_offset, dst_va);
 }
 
 enum radv_event_write {
