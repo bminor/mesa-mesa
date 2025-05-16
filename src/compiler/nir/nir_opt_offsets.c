@@ -32,6 +32,7 @@ typedef struct
 {
    struct hash_table *range_ht;
    const nir_opt_offsets_options *options;
+   bool progress;
 } opt_offsets_state;
 
 static nir_scalar
@@ -73,6 +74,7 @@ try_extract_const_addition(nir_builder *b, nir_scalar val, opt_offsets_state *st
 
       /* We proved that unsigned wrap won't be possible, so we can set the flag too. */
       alu->no_unsigned_wrap = true;
+      state->progress = true;
    }
 
    for (unsigned i = 0; i < 2; ++i) {
@@ -254,6 +256,7 @@ nir_opt_offsets(nir_shader *shader, const nir_opt_offsets_options *options)
    opt_offsets_state state;
    state.range_ht = NULL;
    state.options = options;
+   state.progress = false;
 
    bool p = nir_shader_instructions_pass(shader, process_instr,
                                          nir_metadata_control_flow,
@@ -262,5 +265,5 @@ nir_opt_offsets(nir_shader *shader, const nir_opt_offsets_options *options)
    if (state.range_ht)
       _mesa_hash_table_destroy(state.range_ht, NULL);
 
-   return p;
+   return p || state.progress;
 }
