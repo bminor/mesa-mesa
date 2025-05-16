@@ -48,12 +48,20 @@ impl<'a, T: 'a> Iterator for ExecListIter<'a, T> {
 macro_rules! nir_pass_impl {
     ($nir:ident, $pass:ident, $func:ident $(,$arg:expr)* $(,)?) => {
         {
+            // SAFETY: mutable static can't be read safely, but this value isn't going to change
+            let debug_opts = unsafe { nir_debug };
+
             let func_str = ::std::stringify!($func);
             let func_cstr = ::std::ffi::CString::new(func_str).unwrap();
             let res = if unsafe { should_skip_nir(func_cstr.as_ptr()) } {
                 println!("skipping {}", func_str);
                 false
             } else {
+                if debug_opts & NIR_DEBUG_INVALIDATE_METADATA != 0 {
+                    $nir.metadata_invalidate();
+                } else if debug_opts & NIR_DEBUG_EXTENDED_VALIDATION != 0 {
+                    $nir.metadata_require_most();
+                }
                 $nir.metadata_set_validation_flag();
                 if $nir.should_print() {
                     println!("{}", func_str);
@@ -66,17 +74,18 @@ macro_rules! nir_pass_impl {
                     $nir.metadata_check_validation_flag();
                     true
                 } else {
+                    if debug_opts & NIR_DEBUG_EXTENDED_VALIDATION != 0 {
+                        $nir.validate(&format!("after {} in {}:{}", func_str, file!(), line!()));
+                    }
                     false
                 }
             };
 
-            // SAFETY: mutable static can't be read safely, but this value isn't going to change
-            let ndebug = unsafe { nir_debug };
-            if ndebug & NIR_DEBUG_CLONE != 0 {
+            if debug_opts & NIR_DEBUG_CLONE != 0 {
                 $nir.validate_clone();
             }
 
-            if ndebug & NIR_DEBUG_SERIALIZE != 0 {
+            if debug_opts & NIR_DEBUG_SERIALIZE != 0 {
                 $nir.validate_serialize_deserialize();
             }
 
@@ -228,6 +237,16 @@ impl NirShader {
     #[cfg(debug_assertions)]
     pub fn metadata_set_validation_flag(&mut self) {
         unsafe { nir_metadata_set_validation_flag(self.nir.as_ptr()) }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn metadata_invalidate(&self) {
+        unsafe { nir_metadata_invalidate(self.nir.as_ptr()) }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn metadata_require_most(&self) {
+        unsafe { nir_metadata_require_most(self.nir.as_ptr()) }
     }
 
     #[cfg(debug_assertions)]
