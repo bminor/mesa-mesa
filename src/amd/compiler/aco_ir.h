@@ -2152,6 +2152,7 @@ public:
    /* Private segment buffers and scratch offsets. One entry per start/resume block */
    aco::small_vec<Temp, 2> private_segment_buffers;
    aco::small_vec<Temp, 2> scratch_offsets;
+   Temp static_scratch_rsrc;
    Temp stack_ptr;
 
    uint16_t num_waves = 0;

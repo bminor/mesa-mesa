@@ -78,6 +78,8 @@ reindex_program(idx_ctx& ctx, Program* program)
          Temp(ctx.renames[scratch_offset.id()], scratch_offset.regClass());
    }
    program->stack_ptr = Temp(ctx.renames[program->stack_ptr.id()], program->stack_ptr.regClass());
+   program->static_scratch_rsrc =
+      Temp(ctx.renames[program->static_scratch_rsrc.id()], program->static_scratch_rsrc.regClass());
    program->temp_rc = ctx.temp_rc;
 }
 
