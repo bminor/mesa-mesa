@@ -246,6 +246,7 @@ get_max_vbs(const struct intel_device_info *devinfo) {
  */
 #define ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET (0)
 #define ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET (8)
+#define ANV_INLINE_PARAM_MESH_PROVOKING_VERTEX (8)
 
 /* RENDER_SURFACE_STATE is a bit smaller (48b) but since it is aligned to 64
  * and we can't put anything else there we use 64b.
@@ -1569,6 +1570,7 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_FS_MSAA_FLAGS,
    ANV_GFX_STATE_TCS_INPUT_VERTICES,
    ANV_GFX_STATE_COARSE_STATE,
+   ANV_GFX_STATE_MESH_PROVOKING_VERTEX,
 
    ANV_GFX_STATE_MAX,
 };
@@ -1893,6 +1895,11 @@ struct anv_gfx_dynamic_state {
     * dynamically checking the value.
     */
    uint32_t tcs_input_vertices;
+
+   /**
+    * Provoking vertex index, sent to the mesh shader for Wa_18019110168.
+    */
+   uint32_t mesh_provoking_vertex;
 
    bool pma_fix;
 
@@ -6595,11 +6602,6 @@ void anv_perf_write_pass_results(struct intel_perf_config *perf,
                                  struct anv_query_pool *pool, uint32_t pass,
                                  const struct intel_perf_query_result *accumulated_results,
                                  union VkPerformanceCounterResultKHR *results);
-
-void anv_apply_per_prim_attr_wa(struct nir_shader *ms_nir,
-                                struct nir_shader *fs_nir,
-                                struct anv_device *device,
-                                const VkGraphicsPipelineCreateInfo *info);
 
 /* Use to emit a series of memcpy operations */
 struct anv_memcpy_state {

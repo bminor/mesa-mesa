@@ -144,6 +144,10 @@ uint32_t anv_nir_push_desc_ubo_fully_promoted(nir_shader *nir,
                                               const struct anv_pipeline_sets_layout *layout,
                                               const struct anv_pipeline_bind_map *bind_map);
 
+void anv_apply_per_prim_attr_wa(struct nir_shader *ms_nir,
+                                struct nir_shader *fs_nir,
+                                struct anv_device *device);
+
 #ifdef __cplusplus
 }
 #endif

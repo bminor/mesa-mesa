@@ -1865,6 +1865,35 @@ update_tbimr_info(struct anv_gfx_dynamic_state *hw_state,
 }
 #endif
 
+#if INTEL_WA_18019110168_GFX_VER
+static inline unsigned
+compute_mesh_provoking_vertex(const struct brw_mesh_prog_data *mesh_prog_data,
+                              const struct vk_dynamic_graphics_state *dyn)
+{
+   switch (mesh_prog_data->primitive_type) {
+   case MESA_PRIM_POINTS:
+      return 0;
+   case MESA_PRIM_LINES:
+   case MESA_PRIM_LINE_LOOP:
+   case MESA_PRIM_LINE_STRIP:
+   case MESA_PRIM_LINES_ADJACENCY:
+   case MESA_PRIM_LINE_STRIP_ADJACENCY:
+      return dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT ? 1 : 0;
+   case MESA_PRIM_TRIANGLES:
+   case MESA_PRIM_TRIANGLE_STRIP:
+   case MESA_PRIM_TRIANGLE_FAN:
+   case MESA_PRIM_TRIANGLES_ADJACENCY:
+   case MESA_PRIM_TRIANGLE_STRIP_ADJACENCY:
+      return dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT ? 2 : 0;
+   case MESA_PRIM_QUADS:
+   case MESA_PRIM_QUAD_STRIP:
+      return dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT ? 3 : 0;
+   default:
+      unreachable("invalid mesh primitive type");
+   }
+}
+#endif
+
 /**
  * This function takes the vulkan runtime values & dirty states and updates
  * the values in anv_gfx_dynamic_state, flagging HW instructions for
@@ -2075,6 +2104,22 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
       SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
+
+#if INTEL_WA_18019110168_GFX_VER
+   const struct brw_mesh_prog_data *mesh_prog_data = get_mesh_prog_data(pipeline);
+   const bool mesh_provoking_vertex_update =
+      intel_needs_workaround(device->info, 18019110168) &&
+      mesh_prog_data &&
+      (mesh_prog_data->map.vue_map.slots_valid & (VARYING_BIT_CLIP_DIST0 |
+                                                  VARYING_BIT_CLIP_DIST1)) &&
+      ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX));
+   if (mesh_provoking_vertex_update) {
+      SET(MESH_PROVOKING_VERTEX, mesh_provoking_vertex,
+                                 compute_mesh_provoking_vertex(
+                                    mesh_prog_data, dyn));
+   }
+#endif
 }
 
 #undef GET
@@ -2254,6 +2299,11 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
       gfx->base.push_constants_data_dirty = true;
    }
+
+#if INTEL_WA_18019110168_GFX_VER
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MESH_PROVOKING_VERTEX))
+      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_MESH_BIT_EXT;
+#endif
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
       push_consts->gfx.fs_msaa_flags = hw_state->fs_msaa_flags;

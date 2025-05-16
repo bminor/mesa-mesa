@@ -22,6 +22,7 @@
  */
 
 #include "anv_private.h"
+#include "anv_nir.h"
 #include "nir_builder.h"
 
 /*
@@ -96,7 +97,6 @@ static bool
 anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
                                     gl_varying_slot *wa_mapping,
                                     uint64_t fs_inputs,
-                                    const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                     void *mem_ctx,
                                     const bool dup_vertices,
                                     const bool force_conversion)
@@ -172,14 +172,6 @@ anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
       if (!force_conversion)
          return false;
 
-   unsigned provoking_vertex = 0;
-
-   const VkPipelineRasterizationStateCreateInfo *rs_info = pCreateInfo->pRasterizationState;
-   const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *rs_pv_info =
-      vk_find_struct_const(rs_info, PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT);
-   if (rs_pv_info && rs_pv_info->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT)
-      provoking_vertex = 2;
-
    unsigned vertices_per_primitive =
          mesa_vertices_per_prim(nir->info.mesh.primitive_type);
 
@@ -193,6 +185,10 @@ anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
 
    nir_def *zero = nir_imm_int(&b, 0);
 
+   nir_def *provoking_vertex =
+      nir_load_inline_data_intel(
+         &b, 1, 32,
+         .base = ANV_INLINE_PARAM_MESH_PROVOKING_VERTEX);
    nir_def *local_invocation_index = nir_load_local_invocation_index(&b);
 
    nir_def *cmp = nir_ieq(&b, local_invocation_index, zero);
@@ -379,7 +375,7 @@ anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
          /* array of vectors, we have to extract index out of array deref */
          indexed_primitive_indices_deref = nir_build_deref_array(&b, primitive_indices_deref, primitive);
          prim_indices = nir_load_deref(&b, indexed_primitive_indices_deref);
-         src_vertex = nir_channel(&b, prim_indices, provoking_vertex);
+         src_vertex = nir_vector_extract(&b, prim_indices, provoking_vertex);
 
          nir_def *dst_vertex = nir_load_deref(&b, vertex_deref);
 
@@ -401,7 +397,7 @@ anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
 
             /* replace one component of primitive indices vector */
             nir_def *new_val =
-                  nir_vector_insert_imm(&b, prim_indices, dst_vertex, provoking_vertex);
+               nir_vector_insert(&b, prim_indices, dst_vertex, provoking_vertex);
 
             /* and store complete vector */
             nir_store_deref(&b, indexed_primitive_indices_deref, new_val,
@@ -531,8 +527,7 @@ anv_frag_convert_attrs_prim_to_vert(struct nir_shader *nir,
 void
 anv_apply_per_prim_attr_wa(struct nir_shader *ms_nir,
                            struct nir_shader *fs_nir,
-                           struct anv_device *device,
-                           const VkGraphicsPipelineCreateInfo *info)
+                           struct anv_device *device)
 {
    const struct intel_device_info *devinfo = device->info;
 
@@ -555,7 +550,7 @@ anv_apply_per_prim_attr_wa(struct nir_shader *ms_nir,
       const bool force_conversion = mesh_conv_prim_attrs_to_vert_attrs > 0;
 
       if (anv_mesh_convert_attrs_prim_to_vert(ms_nir, wa_mapping,
-                                              fs_inputs, info, stage_ctx,
+                                              fs_inputs, stage_ctx,
                                               dup_vertices, force_conversion))
          anv_frag_convert_attrs_prim_to_vert(fs_nir, wa_mapping);
 
