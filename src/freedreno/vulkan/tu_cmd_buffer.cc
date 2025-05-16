@@ -202,14 +202,17 @@ tu6_lazy_init_vsc(struct tu_cmd_buffer *cmd)
    mtx_unlock(&dev->mutex);
 
    struct tu_bo *vsc_bo;
-   uint32_t size0 = cmd->vsc_prim_strm_pitch * num_vsc_pipes +
-                    cmd->vsc_draw_strm_pitch * num_vsc_pipes;
+   uint32_t prim_strm_size = cmd->vsc_prim_strm_pitch * num_vsc_pipes;
+   uint32_t draw_strm_size = cmd->vsc_draw_strm_pitch * num_vsc_pipes;
+   uint32_t draw_strm_size_size = 4 * num_vsc_pipes;
 
-   tu_get_scratch_bo(dev, size0 + num_vsc_pipes * 4, &vsc_bo);
+   tu_get_scratch_bo(dev,
+                     prim_strm_size + draw_strm_size + draw_strm_size_size,
+                     &vsc_bo);
 
-   cmd->vsc_draw_strm_va = vsc_bo->iova + cmd->vsc_prim_strm_pitch * num_vsc_pipes;
-   cmd->vsc_draw_strm_size_va = vsc_bo->iova + size0;
    cmd->vsc_prim_strm_va = vsc_bo->iova;
+   cmd->vsc_draw_strm_va = vsc_bo->iova + prim_strm_size;
+   cmd->vsc_draw_strm_size_va = cmd->vsc_draw_strm_va + draw_strm_size;
 }
 
 template <chip CHIP>
