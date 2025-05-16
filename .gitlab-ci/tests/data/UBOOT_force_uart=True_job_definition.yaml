@@ -58,6 +58,7 @@ actions:
         run:
           steps:
           - echo test UBOOT
+          - echo "eval \"$(echo ZWNobyB0ZXN0IFVCT09U | base64 -d)\"" >> /set-job-env-vars.sh
           - export CURRENT_SECTION=dut_boot
           - set -e
           - echo Could not find jwt file, disabling S3 requests...

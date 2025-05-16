@@ -58,6 +58,7 @@ def job_submitter_factory(mode: Literal["UBOOT", "FASTBOOT"], shell_file):
         farm="test_farm",
         dtb_filename="my_dtb_filename",
         first_stage_init=shell_file,
+        env_file=shell_file,
         job_timeout_min=job_timeout_min,
         mesa_job_name=mesa_job_name,
         pipeline_info=pipeline_info,

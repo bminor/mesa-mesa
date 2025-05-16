@@ -1,5 +1,7 @@
 from io import StringIO
 from typing import TYPE_CHECKING, Any
+import base64
+import shlex
 
 from ruamel.yaml import YAML
 
@@ -255,6 +257,15 @@ class LAVAJobDefinition:
                 + "https://github.com/allahjasif1990/hdk888-firmware/raw/main/a660_zap.mbn "
                 + '-o "/lib/firmware/qcom/sm8350/a660_zap.mbn"'
             )
+
+        # Forward environmental variables to the DUT
+        # base64-encoded to avoid YAML quoting issues
+        with open(self.job_submitter.env_file, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+            safe_encoded = shlex.quote(encoded)
+            run_steps += [
+                f'echo "eval \\\"$(echo {safe_encoded} | base64 -d)\\\"" >> /set-job-env-vars.sh',
+            ]
 
         run_steps.append("export CURRENT_SECTION=dut_boot")
 

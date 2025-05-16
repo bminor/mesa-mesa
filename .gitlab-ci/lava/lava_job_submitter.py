@@ -403,6 +403,7 @@ class LAVAJobSubmitter(PathResolver):
     dtb_filename: str = None
     dump_yaml: bool = False  # Whether to dump the YAML payload to stdout
     first_stage_init: str = None
+    env_file: pathlib.Path = None
     jwt_file: pathlib.Path = None
     kernel_image_name: str = None
     kernel_image_type: str = ""

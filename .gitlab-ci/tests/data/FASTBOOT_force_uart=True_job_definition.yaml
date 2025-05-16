@@ -85,6 +85,7 @@ actions:
         run:
           steps:
           - echo test FASTBOOT
+          - echo "eval \"$(echo ZWNobyB0ZXN0IEZBU1RCT09U | base64 -d)\"" >> /set-job-env-vars.sh
           - export CURRENT_SECTION=dut_boot
           - set -e
           - echo Could not find jwt file, disabling S3 requests...

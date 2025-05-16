@@ -44,18 +44,15 @@ ROOTFS_URL="$(get_path_to_artifact lava-rootfs.tar.zst)"
 [ $? != 1 ] || exit 1
 
 rm -rf results
-mkdir -p results/job-rootfs-overlay/
+mkdir results
 
-filter_env_vars > results/job-rootfs-overlay/set-job-env-vars.sh
+filter_env_vars > dut-env-vars.sh
 # Set SCRIPTS_DIR to point to the Mesa install we download for the DUT
-echo "export SCRIPTS_DIR='$CI_PROJECT_DIR/install'" >> results/job-rootfs-overlay/set-job-env-vars.sh
-
-tar zcf job-rootfs-overlay.tar.gz -C results/job-rootfs-overlay/ .
-ci-fairy s3cp --token-file "${S3_JWT_FILE}" job-rootfs-overlay.tar.gz "https://${JOB_ROOTFS_OVERLAY_PATH}"
+echo "export SCRIPTS_DIR='$CI_PROJECT_DIR/install'" >> dut-env-vars.sh
 
 # Prepare env vars for upload.
 section_switch variables "Environment variables passed through to device:"
-cat results/job-rootfs-overlay/set-job-env-vars.sh
+cat dut-env-vars.sh
 
 section_switch lava_submit "Submitting job for scheduling"
 
@@ -88,8 +85,9 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--pipeline-info "$CI_JOB_NAME: $CI_PIPELINE_URL on $CI_COMMIT_REF_NAME ${CI_NODE_INDEX}/${CI_NODE_TOTAL}" \
 	--rootfs-url "${ROOTFS_URL}" \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
-	--first-stage-init artifacts/ci-common/init-stage1.sh \
 	--dtb-filename "${DTB}" \
+	--first-stage-init artifacts/ci-common/init-stage1.sh \
+	--env-file dut-env-vars.sh \
 	--jwt-file "${S3_JWT_FILE}" \
 	--kernel-image-name "${KERNEL_IMAGE_NAME}" \
 	--kernel-image-type "${KERNEL_IMAGE_TYPE}" \
@@ -107,12 +105,6 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 		--url="https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst" \
 		--compression=zstd \
 		--path="${CI_PROJECT_DIR}" \
-		--format=tar \
-	- append-overlay \
-		--name=job-overlay \
-		--url="https://${JOB_ROOTFS_OVERLAY_PATH}" \
-		--compression=gz \
-		--path="/" \
 		--format=tar \
 	- append-overlay \
 		--name=kernel-modules \
