@@ -431,7 +431,7 @@ struct tu_device
 
    struct tu_cs_entry cmdbuf_start_a725_quirk_entry;
 
-   struct tu_cs_entry bin_preamble_entry;
+   struct tu_cs_entry bin_preamble_entry, bin_preamble_bv_entry;
 
    struct util_dynarray dynamic_rendering_pending;
    VkCommandPool dynamic_rendering_pool;

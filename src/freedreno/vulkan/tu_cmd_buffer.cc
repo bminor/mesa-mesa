@@ -356,6 +356,26 @@ TU_GENX(tu_emit_cache_flush_renderpass);
 
 template <chip CHIP>
 static void
+emit_vpc_attr_buf(struct tu_cs *cs, struct tu_device *dev, bool gmem)
+{
+   if (!dev->physical_device->info->a7xx.has_gmem_vpc_attr_buf)
+      return;
+
+   tu_cs_emit_regs(cs,
+      VPC_ATTR_BUF_GMEM_SIZE(CHIP,
+               gmem ? dev->physical_device->vpc_attr_buf_size_gmem
+                    : dev->physical_device->vpc_attr_buf_size_bypass),
+      VPC_ATTR_BUF_GMEM_BASE(CHIP,
+               gmem ? dev->physical_device->vpc_attr_buf_offset_gmem
+                    : dev->physical_device->vpc_attr_buf_offset_bypass), );
+   tu_cs_emit_regs(cs,
+      PC_ATTR_BUF_GMEM_SIZE(CHIP,
+               gmem ? dev->physical_device->vpc_attr_buf_size_gmem
+                    : dev->physical_device->vpc_attr_buf_size_bypass), );
+}
+
+template <chip CHIP>
+static void
 emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
 {
    /* The CCUs are a cache that allocates memory from GMEM while facilitating
@@ -403,20 +423,6 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
          .color_cache_size = color_cache_size,
          .color_offset = color_offset
       ));
-
-      if (dev->physical_device->info->a7xx.has_gmem_vpc_attr_buf) {
-         tu_cs_emit_regs(cs,
-            VPC_ATTR_BUF_GMEM_SIZE(CHIP,
-                     gmem ? dev->physical_device->vpc_attr_buf_size_gmem
-                          : dev->physical_device->vpc_attr_buf_size_bypass),
-            VPC_ATTR_BUF_GMEM_BASE(CHIP,
-                     gmem ? dev->physical_device->vpc_attr_buf_offset_gmem
-                          : dev->physical_device->vpc_attr_buf_offset_bypass), );
-         tu_cs_emit_regs(cs,
-            A7XX_PC_ATTR_BUF_GMEM_SIZE(
-                     gmem ? dev->physical_device->vpc_attr_buf_size_gmem
-                          : dev->physical_device->vpc_attr_buf_size_bypass), );
-      }
    } else {
       tu_cs_emit_regs(cs, RB_CCU_CNTL(CHIP,
          .gmem_fast_clear_disable =
@@ -479,6 +485,14 @@ tu_emit_cache_flush_ccu(struct tu_cmd_buffer *cmd_buffer,
    if (ccu_state != cmd_buffer->state.ccu_state) {
       emit_rb_ccu_cntl<CHIP>(cs, cmd_buffer->device,
                              ccu_state == TU_CMD_CCU_GMEM);
+      if (cmd_buffer->device->physical_device->info->a7xx.has_gmem_vpc_attr_buf) {
+         tu7_thread_control(cs, CP_SET_THREAD_BOTH);
+
+         emit_vpc_attr_buf<CHIP>(cs, cmd_buffer->device,
+                                 ccu_state == TU_CMD_CCU_GMEM);
+
+         tu7_thread_control(cs, CP_SET_THREAD_BR);
+      }
       cmd_buffer->state.ccu_state = ccu_state;
    }
 }
@@ -1793,8 +1807,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                            fd_gras_shading_rate_lut(1));
    }
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_RB_DBG_ECO_CNTL,
-                        phys_dev->info->a6xx.magic.RB_DBG_ECO_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_NC_MODE_CNTL_2, 0);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_DBG_ECO_CNTL,
                         phys_dev->info->a6xx.magic.SP_DBG_ECO_CNTL);
@@ -1826,8 +1838,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                         phys_dev->info->a6xx.magic.UCHE_UNKNOWN_0E12);
    tu_cs_emit_write_reg(cs, REG_A6XX_UCHE_CLIENT_PF,
                         phys_dev->info->a6xx.magic.UCHE_CLIENT_PF);
-   tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
-                        phys_dev->info->a6xx.magic.RB_RBP_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_A9A8, 0);
    tu_cs_emit_regs(cs, A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
                                             .isammode = ISAMMODE_GL,
@@ -1890,6 +1900,17 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_regs(cs,
                    A6XX_TPL1_CS_BORDER_COLOR_BASE(.bo = dev->global_bo,
                                                         .bo_offset = gb_offset(bcolor)));
+
+   /* BR-only registers */
+   if (CHIP >= A7XX)
+      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
+                             CP_COND_REG_EXEC_0_BR);
+   tu_cs_emit_write_reg(cs, REG_A6XX_RB_DBG_ECO_CNTL,
+                        phys_dev->info->a6xx.magic.RB_DBG_ECO_CNTL);
+   tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
+                        phys_dev->info->a6xx.magic.RB_RBP_CNTL);
+   if (CHIP >= A7XX)
+      tu_cond_exec_end(cs);
 
    if (CHIP == A7XX) {
       tu_cs_emit_regs(cs, TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 0, 0),
@@ -1963,12 +1984,15 @@ tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
  */
 template <chip CHIP>
 static void
-tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs)
+tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs, bool bv)
 {
    struct tu_physical_device *phys_dev = dev->physical_device;
 
    tu6_init_static_regs<CHIP>(dev, cs);
-   emit_rb_ccu_cntl<CHIP>(cs, dev, true);
+
+   if (!bv)
+      emit_rb_ccu_cntl<CHIP>(cs, dev, true);
+   emit_vpc_attr_buf<CHIP>(cs, dev, true);
 
    if (CHIP == A6XX) {
       tu_cs_emit_regs(cs,
@@ -1978,7 +2002,7 @@ tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs)
                      A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
    }
 
-   if (CHIP == A7XX) {
+   if (CHIP == A7XX && !bv) {
       tu7_emit_tile_render_begin_regs(cs);
    }
 
@@ -1998,9 +2022,19 @@ tu_init_bin_preamble(struct tu_device *device)
    if (result != VK_SUCCESS)
       return vk_startup_errorf(device->instance, result, "bin restore");
 
-   TU_CALLX(device, tu_emit_bin_preamble)(device, &preamble_cs);
+   TU_CALLX(device, tu_emit_bin_preamble)(device, &preamble_cs, false);
 
    device->bin_preamble_entry = tu_cs_end_sub_stream(&device->sub_cs, &preamble_cs);
+
+   if (device->physical_device->info->chip >= 7) {
+      result = tu_cs_begin_sub_stream(&device->sub_cs, 256, &preamble_cs);
+      if (result != VK_SUCCESS)
+         return vk_startup_errorf(device->instance, result, "bin restore");
+
+      TU_CALLX(device, tu_emit_bin_preamble)(device, &preamble_cs, true);
+
+      device->bin_preamble_bv_entry = tu_cs_end_sub_stream(&device->sub_cs, &preamble_cs);
+   }
 
    return VK_SUCCESS;
 }
@@ -2015,9 +2049,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    if (CHIP == A6XX) {
       tu_emit_event_write<CHIP>(cmd, cs, FD_CACHE_INVALIDATE);
    } else {
-      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
-                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+      tu7_thread_control(cs, CP_SET_THREAD_BOTH);
 
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_COLOR);
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_DEPTH);
@@ -2052,6 +2084,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    tu6_init_static_regs<CHIP>(cmd->device, cs);
 
    emit_rb_ccu_cntl<CHIP>(cs, cmd->device, false);
+   emit_vpc_attr_buf<CHIP>(cs, cmd->device, false);
    cmd->state.ccu_state = TU_CMD_CCU_SYSMEM;
 
    tu_disable_draw_states(cmd, cs);
@@ -2065,12 +2098,29 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       tu_cs_emit_ib(cs, &dev->cmdbuf_start_a725_quirk_entry);
    }
 
+   if (CHIP >= A7XX) {
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+   }
+
    tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
    tu_cs_emit_qw(cs, cmd->device->bin_preamble_entry.bo->iova +
                      cmd->device->bin_preamble_entry.offset);
    tu_cs_emit(cs, CP_SET_AMBLE_2_DWORDS(cmd->device->bin_preamble_entry.size /
                                         sizeof(uint32_t)) |
                   CP_SET_AMBLE_2_TYPE(BIN_PREAMBLE_AMBLE_TYPE));
+
+   if (CHIP >= A7XX) {
+      tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+      tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
+      tu_cs_emit_qw(cs, cmd->device->bin_preamble_bv_entry.bo->iova +
+                        cmd->device->bin_preamble_bv_entry.offset);
+      tu_cs_emit(cs, CP_SET_AMBLE_2_DWORDS(cmd->device->bin_preamble_bv_entry.size /
+                                           sizeof(uint32_t)) |
+                     CP_SET_AMBLE_2_TYPE(BIN_PREAMBLE_AMBLE_TYPE));
+
+      tu7_thread_control(cs, CP_SET_THREAD_BOTH);
+   }
 
    tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
    tu_cs_emit_qw(cs, 0);
@@ -2079,6 +2129,10 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
    tu_cs_emit_qw(cs, 0);
    tu_cs_emit(cs, CP_SET_AMBLE_2_TYPE(POSTAMBLE_AMBLE_TYPE));
+
+   if (CHIP >= A7XX) {
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+   }
 
    tu_cs_sanity_check(cs);
 }
@@ -2720,6 +2774,12 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_GMEM);
 
+   if (CHIP >= A7XX) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+   }
+
    if (use_hw_binning(cmd)) {
       if (!cmd->vsc_initialized) {
          tu6_lazy_init_vsc(cmd);
@@ -2893,6 +2953,10 @@ tu6_tile_render_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_lrz_tiling_end<CHIP>(cmd, cs);
 
    tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
+
+   if (CHIP >= A7XX) {
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+   }
 
    tu_cs_sanity_check(cs);
 }
