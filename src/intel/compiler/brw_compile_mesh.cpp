@@ -666,7 +666,8 @@ remap_io_to_dwords(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
       return false;
 
    nir_intrinsic_set_base(intrin, nir_intrinsic_base(intrin) * 4);
-   nir_intrinsic_set_range(intrin, nir_intrinsic_range(intrin) * 4);
+   if (nir_intrinsic_has_range(intrin))
+      nir_intrinsic_set_range(intrin, nir_intrinsic_range(intrin) * 4);
 
    b->cursor = nir_before_instr(&intrin->instr);
 
