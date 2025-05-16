@@ -934,8 +934,8 @@ cs_branch(struct cs_builder *b, int offset, enum mali_cs_condition cond,
 }
 
 static inline void
-cs_branch_label(struct cs_builder *b, struct cs_label *label,
-                enum mali_cs_condition cond, struct cs_index val)
+cs_branch_label_cond32(struct cs_builder *b, struct cs_label *label,
+                       enum mali_cs_condition cond, struct cs_index val)
 {
    assert(cs_cur_block(b) != NULL);
 
@@ -1004,6 +1004,63 @@ cs_invert_cond(enum mali_cs_condition cond)
       unreachable("cannot invert ALWAYS");
    default:
       unreachable("invalid cond");
+   }
+}
+
+static inline void
+cs_branch_label_cond64(struct cs_builder *b, struct cs_label *label,
+                       enum mali_cs_condition cond, struct cs_index val)
+{
+   struct cs_label false_label;
+   cs_label_init(&false_label);
+
+   struct cs_index val_lo = cs_extract32(b, val, 0);
+   struct cs_index val_hi = cs_extract32(b, val, 1);
+
+   switch (cond) {
+   case MALI_CS_CONDITION_ALWAYS:
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_ALWAYS, cs_undef());
+      break;
+   case MALI_CS_CONDITION_LEQUAL:
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_LESS, val_hi);
+      cs_branch_label_cond32(b, &false_label, MALI_CS_CONDITION_NEQUAL, val_hi);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_EQUAL, val_lo);
+      break;
+   case MALI_CS_CONDITION_GREATER:
+      cs_branch_label_cond32(b, &false_label, MALI_CS_CONDITION_LESS, val_hi);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_NEQUAL, val_hi);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_NEQUAL, val_lo);
+      break;
+   case MALI_CS_CONDITION_GEQUAL:
+      cs_branch_label_cond32(b, &false_label, MALI_CS_CONDITION_LESS, val_hi);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_ALWAYS, cs_undef());
+      break;
+   case MALI_CS_CONDITION_LESS:
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_LESS, val_hi);
+      break;
+   case MALI_CS_CONDITION_NEQUAL:
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_NEQUAL, val_lo);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_NEQUAL, val_hi);
+      break;
+   case MALI_CS_CONDITION_EQUAL:
+      cs_branch_label_cond32(b, &false_label, MALI_CS_CONDITION_NEQUAL, val_lo);
+      cs_branch_label_cond32(b, label, MALI_CS_CONDITION_EQUAL, val_hi);
+      break;
+   default:
+      unreachable("unsupported 64bit condition");
+   }
+
+   cs_set_label(b, &false_label);
+}
+
+static inline void
+cs_branch_label(struct cs_builder *b, struct cs_label *label,
+                enum mali_cs_condition cond, struct cs_index val)
+{
+   if (val.size == 2) {
+      cs_branch_label_cond64(b, label, cond, val);
+   } else {
+      cs_branch_label_cond32(b, label, cond, val);
    }
 }
 
