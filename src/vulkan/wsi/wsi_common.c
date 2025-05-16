@@ -1919,6 +1919,169 @@ wsi_label_cmd_buffer(const struct wsi_device *wsi, VkDevice device, VkCommandBuf
    wsi->SetDebugUtilsObjectNameEXT(device, &name_info);
 }
 
+static void
+wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
+                             const struct wsi_device *wsi,
+                             const struct wsi_image_info *info,
+                             struct wsi_image *image)
+{
+   assert(info->image_type == WSI_IMAGE_TYPE_CPU ||
+          info->image_type == WSI_IMAGE_TYPE_DRM);
+
+   VkImageMemoryBarrier img_mem_barrier = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = NULL,
+      .srcAccessMask = 0,
+      .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+      .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = image->image,
+      .subresourceRange = {
+         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+         .baseMipLevel = 0,
+         .levelCount = 1,
+         .baseArrayLayer = 0,
+         .layerCount = 1,
+      },
+   };
+   wsi->CmdPipelineBarrier(cmd_buffer,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0, NULL,
+                           0, NULL,
+                           1, &img_mem_barrier);
+
+   struct VkBufferImageCopy buffer_image_copy = {
+      .bufferOffset = 0,
+      .bufferRowLength = info->linear_stride /
+                         vk_format_get_blocksize(info->create.format),
+      .bufferImageHeight = 0,
+      .imageSubresource = {
+         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+         .mipLevel = 0,
+         .baseArrayLayer = 0,
+         .layerCount = 1,
+      },
+      .imageOffset = { .x = 0, .y = 0, .z = 0 },
+      .imageExtent = info->create.extent,
+   };
+   wsi->CmdCopyImageToBuffer(cmd_buffer,
+                             image->image,
+                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             image->blit.buffer,
+                             1, &buffer_image_copy);
+
+   img_mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+   img_mem_barrier.dstAccessMask = 0;
+   img_mem_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+   img_mem_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+   wsi->CmdPipelineBarrier(cmd_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                           0,
+                           0, NULL,
+                           0, NULL,
+                           1, &img_mem_barrier);
+}
+
+static void
+wsi_cmd_blit_image_to_image(VkCommandBuffer cmd_buffer,
+                            const struct wsi_device *wsi,
+                            const struct wsi_image_info *info,
+                            struct wsi_image *image)
+{
+   assert(info->image_type == WSI_IMAGE_TYPE_DXGI);
+
+   VkImageMemoryBarrier img_mem_barriers[2] = {
+      {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         .pNext = NULL,
+         .srcAccessMask = 0,
+         .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+         .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+         .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+         .image = image->image,
+         .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+         },
+      },
+      {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         .pNext = NULL,
+         .srcAccessMask = 0,
+         .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+         .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+         .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+         .image = image->blit.image,
+         .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+         },
+      },
+   };
+   wsi->CmdPipelineBarrier(cmd_buffer,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0, NULL,
+                           0, NULL,
+                           2, img_mem_barriers);
+
+   const struct VkImageCopy image_copy = {
+      .srcSubresource = {
+         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+         .mipLevel = 0,
+         .baseArrayLayer = 0,
+         .layerCount = 1,
+      },
+      .srcOffset = { .x = 0, .y = 0, .z = 0 },
+      .dstSubresource = {
+         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+         .mipLevel = 0,
+         .baseArrayLayer = 0,
+         .layerCount = 1,
+      },
+      .dstOffset = { .x = 0, .y = 0, .z = 0 },
+      .extent = info->create.extent,
+   };
+   wsi->CmdCopyImage(cmd_buffer,
+                     image->image,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     image->blit.image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1, &image_copy);
+
+   img_mem_barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+   img_mem_barriers[0].dstAccessMask = 0;
+   img_mem_barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+   img_mem_barriers[0].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+   img_mem_barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+   img_mem_barriers[1].dstAccessMask = 0;
+   img_mem_barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+   img_mem_barriers[1].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+   wsi->CmdPipelineBarrier(cmd_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                           0,
+                           0, NULL,
+                           0, NULL,
+                           2, img_mem_barriers);
+}
+
 VkResult
 wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
                                const struct wsi_image_info *info,
@@ -1947,130 +2110,33 @@ wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
          .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
          .commandBufferCount = 1,
       };
+      VkCommandBuffer cmd_buffer;
       result = wsi->AllocateCommandBuffers(chain->device, &cmd_buffer_info,
-                                           &image->blit.cmd_buffers[i]);
+                                           &cmd_buffer);
       if (result != VK_SUCCESS)
          return result;
 
-      wsi_label_cmd_buffer(wsi, chain->device, image->blit.cmd_buffers[i], "wsi blit");
+      image->blit.cmd_buffers[i] = cmd_buffer;
+
+      wsi_label_cmd_buffer(wsi, chain->device, cmd_buffer, "wsi blit");
 
       const VkCommandBufferBeginInfo begin_info = {
          .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
       };
-      wsi->BeginCommandBuffer(image->blit.cmd_buffers[i], &begin_info);
+      wsi->BeginCommandBuffer(cmd_buffer, &begin_info);
 
-      VkImageMemoryBarrier img_mem_barriers[] = {
-         {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = NULL,
-            .srcAccessMask = 0,
-            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = image->image,
-            .subresourceRange = {
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .baseMipLevel = 0,
-               .levelCount = 1,
-               .baseArrayLayer = 0,
-               .layerCount = 1,
-            },
-         },
-         {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .pNext = NULL,
-            .srcAccessMask = 0,
-            .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = image->blit.image,
-            .subresourceRange = {
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .baseMipLevel = 0,
-               .levelCount = 1,
-               .baseArrayLayer = 0,
-               .layerCount = 1,
-            },
-         },
-      };
-      uint32_t img_mem_barrier_count =
-         chain->blit.type == WSI_SWAPCHAIN_BUFFER_BLIT ? 1 : 2;
-      wsi->CmdPipelineBarrier(image->blit.cmd_buffers[i],
-                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                              VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              0,
-                              0, NULL,
-                              0, NULL,
-                              img_mem_barrier_count, img_mem_barriers);
-
-      if (chain->blit.type == WSI_SWAPCHAIN_BUFFER_BLIT) {
-         struct VkBufferImageCopy buffer_image_copy = {
-            .bufferOffset = 0,
-            .bufferRowLength = info->linear_stride /
-                               vk_format_get_blocksize(info->create.format),
-            .bufferImageHeight = 0,
-            .imageSubresource = {
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .mipLevel = 0,
-               .baseArrayLayer = 0,
-               .layerCount = 1,
-            },
-            .imageOffset = { .x = 0, .y = 0, .z = 0 },
-            .imageExtent = info->create.extent,
-         };
-         wsi->CmdCopyImageToBuffer(image->blit.cmd_buffers[i],
-                                   image->image,
-                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                   image->blit.buffer,
-                                   1, &buffer_image_copy);
-      } else {
-         struct VkImageCopy image_copy = {
-            .srcSubresource = {
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .mipLevel = 0,
-               .baseArrayLayer = 0,
-               .layerCount = 1,
-            },
-            .srcOffset = { .x = 0, .y = 0, .z = 0 },
-            .dstSubresource = {
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .mipLevel = 0,
-               .baseArrayLayer = 0,
-               .layerCount = 1,
-            },
-            .dstOffset = { .x = 0, .y = 0, .z = 0 },
-            .extent = info->create.extent,
-         };
-
-         wsi->CmdCopyImage(image->blit.cmd_buffers[i],
-                           image->image,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           image->blit.image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1, &image_copy);
+      switch (chain->blit.type) {
+      case WSI_SWAPCHAIN_BUFFER_BLIT:
+         wsi_cmd_blit_image_to_buffer(cmd_buffer, wsi, info, image);
+         break;
+      case WSI_SWAPCHAIN_IMAGE_BLIT:
+         wsi_cmd_blit_image_to_image(cmd_buffer, wsi, info, image);
+         break;
+      default:
+         unreachable("Invalid wsi_swapchain_blit_type");
       }
 
-      img_mem_barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-      img_mem_barriers[0].dstAccessMask = 0;
-      img_mem_barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-      img_mem_barriers[0].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-      img_mem_barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-      img_mem_barriers[1].dstAccessMask = 0;
-      img_mem_barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-      img_mem_barriers[1].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-      wsi->CmdPipelineBarrier(image->blit.cmd_buffers[i],
-                              VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                              0,
-                              0, NULL,
-                              0, NULL,
-                              img_mem_barrier_count, img_mem_barriers);
-
-      result = wsi->EndCommandBuffer(image->blit.cmd_buffers[i]);
+      result = wsi->EndCommandBuffer(cmd_buffer);
       if (result != VK_SUCCESS)
          return result;
    }
