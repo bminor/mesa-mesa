@@ -156,7 +156,7 @@ static const struct zwp_linux_dmabuf_feedback_v1_listener dmabuf_feedback_listen
 
 static void
 device_select_registry_global(void *data, struct wl_registry *registry, uint32_t name,
-			      const char *interface, uint32_t version)
+                              const char *interface, uint32_t version)
 {
    struct device_select_wayland_info *info = data;
    if (strcmp(interface, wl_drm_interface.name) == 0) {
@@ -176,7 +176,7 @@ device_select_registry_global(void *data, struct wl_registry *registry, uint32_t
 
 static void
 device_select_registry_global_remove_cb(void *data, struct wl_registry *registry,
-					uint32_t name)
+                                        uint32_t name)
 {
 
 }
@@ -216,19 +216,19 @@ int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint
 
    for (unsigned i = 0; i < device_count; i++) {
       if (devices[i].has_bus_info) {
-	 if (target->businfo.pci->domain == devices[i].bus_info.domain &&
-	     target->businfo.pci->bus == devices[i].bus_info.bus &&
-	     target->businfo.pci->dev == devices[i].bus_info.dev &&
-	     target->businfo.pci->func == devices[i].bus_info.func) {
-	    default_idx = i;
-	    break;
-	 }
+         if (target->businfo.pci->domain == devices[i].bus_info.domain &&
+             target->businfo.pci->bus == devices[i].bus_info.bus &&
+             target->businfo.pci->dev == devices[i].bus_info.dev &&
+             target->businfo.pci->func == devices[i].bus_info.func) {
+            default_idx = i;
+            break;
+         }
       } else {
-	 if (target->deviceinfo.pci->vendor_id == devices[i].dev_info.vendor_id &&
-	     target->deviceinfo.pci->device_id == devices[i].dev_info.device_id) {
-	    default_idx = i;
-	    break;
-	 }
+         if (target->deviceinfo.pci->vendor_id == devices[i].dev_info.vendor_id &&
+             target->deviceinfo.pci->device_id == devices[i].dev_info.device_id) {
+            default_idx = i;
+            break;
+         }
       }
    }
 

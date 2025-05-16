@@ -455,24 +455,24 @@ vk_time_max_deviation(uint64_t begin, uint64_t end, uint64_t max_clock_period)
      * period and that the application is sampling GPU and monotonic:
      *
      *                               s                 e
-     *			 w x y z 0 1 2 3 4 5 6 7 8 9 a b c d e f
-     *	Raw              -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+     *                  w x y z 0 1 2 3 4 5 6 7 8 9 a b c d e f
+     * Raw              -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
      *
      *                               g
-     *		  0         1         2         3
-     *	GPU       -----_____-----_____-----_____-----_____
+     *           0         1         2         3
+     * GPU       -----_____-----_____-----_____-----_____
      *
      *                                                m
-     *					    x y z 0 1 2 3 4 5 6 7 8 9 a b c
-     *	Monotonic                           -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+     *                                     x y z 0 1 2 3 4 5 6 7 8 9 a b c
+     * Monotonic                           -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
      *
-     *	Interval                     <----------------->
-     *	Deviation           <-------------------------->
+     * Interval                     <----------------->
+     * Deviation           <-------------------------->
      *
-     *		s  = read(raw)       2
-     *		g  = read(GPU)       1
-     *		m  = read(monotonic) 2
-     *		e  = read(raw)       b
+     *         s  = read(raw)       2
+     *         g  = read(GPU)       1
+     *         m  = read(monotonic) 2
+     *         e  = read(raw)       b
      *
      * We round the sample interval up by one tick to cover sampling error
      * in the interval clock

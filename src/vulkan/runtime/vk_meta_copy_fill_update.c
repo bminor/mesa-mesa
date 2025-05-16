@@ -2035,14 +2035,14 @@ copy_image_prepare_gfx_push_const(struct vk_command_buffer *cmd,
    struct vk_meta_copy_image_fs_info info = {
       .dst_to_src_offs = {
          /* The subtraction may lead to negative values, but that's fine
-	  * because the shader does the mirror operation thus guaranteeing
-	  * a src_coords >= 0. */
+          * because the shader does the mirror operation thus guaranteeing
+          * a src_coords >= 0. */
          .x = src_img_offs.x - region->dstOffset.x,
          .y = src_img_offs.y - region->dstOffset.y,
          /* Render image view only contains the layers needed for rendering,
           * so we consider the coordinate containing the layer to always be
           * zero.
-	  */
+          */
          .z = src_img_offs.z,
       },
    };

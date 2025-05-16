@@ -66,7 +66,7 @@ device_select_init_instances(void)
    simple_mtx_lock(&device_select_mutex);
    if (!device_select_instance_ht)
       device_select_instance_ht = _mesa_hash_table_create(NULL, _mesa_hash_pointer,
-							  _mesa_key_pointer_equal);
+                                                          _mesa_key_pointer_equal);
    simple_mtx_unlock(&device_select_mutex);
 }
 
@@ -76,8 +76,8 @@ device_select_try_free_ht(void)
    simple_mtx_lock(&device_select_mutex);
    if (device_select_instance_ht) {
       if (_mesa_hash_table_num_entries(device_select_instance_ht) == 0) {
-	 _mesa_hash_table_destroy(device_select_instance_ht, NULL);
-	 device_select_instance_ht = NULL;
+         _mesa_hash_table_destroy(device_select_instance_ht, NULL);
+         device_select_instance_ht = NULL;
       }
    }
    simple_mtx_unlock(&device_select_mutex);
@@ -115,8 +115,8 @@ device_select_layer_remove_instance(VkInstance instance)
 }
 
 static VkResult device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-					     const VkAllocationCallbacks *pAllocator,
-					     VkInstance *pInstance)
+                                             const VkAllocationCallbacks *pAllocator,
+                                             VkInstance *pInstance)
 {
    VkLayerInstanceCreateInfo *chain_info;
    for(chain_info = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext; chain_info; chain_info = (VkLayerInstanceCreateInfo*)chain_info->pNext)
@@ -550,8 +550,8 @@ static uint32_t get_default_device(const struct instance_info *info,
 }
 
 static VkResult device_select_EnumeratePhysicalDevices(VkInstance instance,
-						       uint32_t* pPhysicalDeviceCount,
-						       VkPhysicalDevice *pPhysicalDevices)
+                                                       uint32_t* pPhysicalDeviceCount,
+                                                       VkPhysicalDevice *pPhysicalDevices)
 {
    struct instance_info *info = device_select_layer_get_instance(instance);
    uint32_t physical_device_count = 0;
@@ -582,14 +582,14 @@ static VkResult device_select_EnumeratePhysicalDevices(VkInstance instance,
       uint32_t count;
       info->EnumerateDeviceExtensionProperties(physical_devices[i], NULL, &count, NULL);
       if (count > 0) {
-	 VkExtensionProperties *extensions = calloc(count, sizeof(VkExtensionProperties));
+         VkExtensionProperties *extensions = calloc(count, sizeof(VkExtensionProperties));
          if (info->EnumerateDeviceExtensionProperties(physical_devices[i], NULL, &count, extensions) == VK_SUCCESS) {
-	    for (unsigned j = 0; j < count; j++) {
+            for (unsigned j = 0; j < count; j++) {
                if (!strcmp(extensions[j].extensionName, VK_EXT_PCI_BUS_INFO_EXTENSION_NAME))
                   info->has_pci_bus = true;
             }
          }
-	 free(extensions);
+         free(extensions);
       }
    }
    if (should_debug_device_selection() || (selection && strcmp(selection, "list") == 0)) {

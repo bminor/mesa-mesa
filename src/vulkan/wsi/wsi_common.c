@@ -1565,8 +1565,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       }
 
       if (wsi->sw)
-	      wsi->WaitForFences(device, 1, &swapchain->fences[image_index],
-				 true, ~0ull);
+         wsi->WaitForFences(device, 1, &swapchain->fences[image_index], true, ~0ull);
 
       const VkPresentRegionKHR *region = NULL;
       if (regions && regions->pRegions)

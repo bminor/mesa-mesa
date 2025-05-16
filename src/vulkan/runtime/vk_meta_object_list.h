@@ -40,6 +40,6 @@ vk_meta_object_list_add_handle(struct vk_meta_object_list *mol,
 }
 
 void vk_meta_destroy_object(struct vk_device *device,
-		            struct vk_object_base *obj);
+                            struct vk_object_base *obj);
 
 #endif

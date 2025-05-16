@@ -519,6 +519,11 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
    }
    memcpy(props->deviceName, device_name, device_name_len + 1);
 
+   /* force prime blit on NV proprietary driver */
+   if (props->driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+      physical_dev->base.vk.supported_extensions.EXT_image_drm_format_modifier = false;
+   }
+
    /* store renderer VkDriverId for implementation specific workarounds */
    physical_dev->renderer_driver_id = props->driverID;
    props->driverID = VK_DRIVER_ID_MESA_VENUS;

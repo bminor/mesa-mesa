@@ -1856,7 +1856,7 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
 
 static VkResult
 wsi_wl_surface_get_formats(VkIcdSurfaceBase *icd_surface,
-			   struct wsi_device *wsi_device,
+                           struct wsi_device *wsi_device,
                            uint32_t* pSurfaceFormatCount,
                            VkSurfaceFormatKHR* pSurfaceFormats)
 {
@@ -1900,7 +1900,7 @@ wsi_wl_surface_get_formats(VkIcdSurfaceBase *icd_surface,
 
 static VkResult
 wsi_wl_surface_get_formats2(VkIcdSurfaceBase *icd_surface,
-			    struct wsi_device *wsi_device,
+                            struct wsi_device *wsi_device,
                             const void *info_next,
                             uint32_t* pSurfaceFormatCount,
                             VkSurfaceFormat2KHR* pSurfaceFormats)

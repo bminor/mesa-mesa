@@ -33,8 +33,8 @@
 #include "device_select.h"
 static int
 ds_dri3_open(xcb_connection_t *conn,
-	     xcb_window_t root,
-	     uint32_t provider)
+             xcb_window_t root,
+             uint32_t provider)
 {
    xcb_dri3_open_cookie_t       cookie;
    xcb_dri3_open_reply_t        *reply;
@@ -104,15 +104,15 @@ int device_select_find_xcb_pci_default(struct device_pci_info *devices, uint32_t
   for (unsigned i = 0; i < device_count; i++) {
     if (devices[i].has_bus_info) {
       if (xdev->businfo.pci->domain == devices[i].bus_info.domain &&
-	  xdev->businfo.pci->bus == devices[i].bus_info.bus &&
-	  xdev->businfo.pci->dev == devices[i].bus_info.dev &&
-	  xdev->businfo.pci->func == devices[i].bus_info.func) {
-	default_idx = i;
+          xdev->businfo.pci->bus == devices[i].bus_info.bus &&
+          xdev->businfo.pci->dev == devices[i].bus_info.dev &&
+          xdev->businfo.pci->func == devices[i].bus_info.func) {
+        default_idx = i;
       }
     } else {
       if (xdev->deviceinfo.pci->vendor_id == devices[i].dev_info.vendor_id &&
-	  xdev->deviceinfo.pci->device_id == devices[i].dev_info.device_id)
-	default_idx = i;
+          xdev->deviceinfo.pci->device_id == devices[i].dev_info.device_id)
+        default_idx = i;
     }
     if (default_idx != -1)
       break;

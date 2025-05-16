@@ -110,8 +110,8 @@ struct wsi_x11_vk_surface {
  */
 static int
 wsi_dri3_open(xcb_connection_t *conn,
-	      xcb_window_t root,
-	      uint32_t provider)
+              xcb_window_t root,
+              uint32_t provider)
 {
    xcb_dri3_open_cookie_t       cookie;
    xcb_dri3_open_reply_t        *reply;
@@ -2324,7 +2324,7 @@ wsi_x11_get_dri3_modifiers(struct wsi_x11_connection *wsi_conn,
                               counts[n] * sizeof(uint64_t),
                               8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!modifiers[n]) {
-	 if (n > 0)
+         if (n > 0)
             vk_free(pAllocator, modifiers[0]);
          free(mod_reply);
          goto out;
