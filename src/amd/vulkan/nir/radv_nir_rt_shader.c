@@ -132,9 +132,8 @@ lower_rt_derefs(nir_shader *shader)
 
    bool progress = false;
 
-   nir_builder b = nir_builder_at(nir_before_impl(impl));
-
-   nir_def *arg_offset = nir_load_rt_arg_scratch_offset_amd(&b);
+   nir_builder b;
+   nir_def *arg_offset = NULL;
 
    nir_foreach_block (block, impl) {
       nir_foreach_instr_safe (instr, block) {
@@ -149,6 +148,11 @@ lower_rt_derefs(nir_shader *shader)
          progress = true;
 
          if (deref->deref_type == nir_deref_type_var) {
+            if (!arg_offset) {
+               b = nir_builder_at(nir_before_impl(impl));
+               arg_offset = nir_load_rt_arg_scratch_offset_amd(&b);
+            }
+
             b.cursor = nir_before_instr(&deref->instr);
             nir_deref_instr *replacement =
                nir_build_deref_cast(&b, arg_offset, nir_var_function_temp, deref->var->type, 0);
