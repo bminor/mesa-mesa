@@ -213,6 +213,22 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          }
       }
 
+      /* we need to do this in a separate loop because the next one can
+       * setKill() for several operands at once and we don't want to
+       * overwrite that in a later iteration */
+      for (Operand& op : insn->operands) {
+         op.setKill(false);
+         /* Linear vgprs must be late kill: this is to ensure linear VGPR operands and
+          * normal VGPR definitions don't try to use the same register, which is problematic
+          * because of assignment restrictions.
+          */
+         if (op.hasRegClass() && op.regClass().is_linear_vgpr() && !op.isUndefined() &&
+             has_vgpr_def)
+            op.setLateKill(true);
+         else
+            op.setLateKill(false);
+      }
+
       if (ctx.program->gfx_level >= GFX10 && insn->isVALU() &&
           insn->definitions.back().regClass() == s2) {
          /* RDNA2 ISA doc, 6.2.4. Wave64 Destination Restrictions:
@@ -244,23 +260,8 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          insn->operands[1].setLateKill(true);
       }
 
-      /* we need to do this in a separate loop because the next one can
-       * setKill() for several operands at once and we don't want to
-       * overwrite that in a later iteration */
-      for (Operand& op : insn->operands) {
-         op.setKill(false);
-         /* Linear vgprs must be late kill: this is to ensure linear VGPR operands and
-          * normal VGPR definitions don't try to use the same register, which is problematic
-          * because of assignment restrictions.
-          */
-         if (op.hasRegClass() && op.regClass().is_linear_vgpr() && !op.isUndefined() &&
-             has_vgpr_def)
-            op.setLateKill(true);
-      }
-
-      RegisterDemand operand_demand;
-
       /* Check if a definition clobbers some operand */
+      RegisterDemand operand_demand;
       auto tied_defs = get_tied_defs(insn);
       for (auto op_idx : tied_defs) {
          Temp tmp = insn->operands[op_idx].getTemp();
@@ -302,6 +303,14 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
                   operand_demand += temp;
                   insn->operands[j].setCopyKill(true);
                }
+            }
+         }
+
+         if (operand.isLateKill()) {
+            /* Make sure that same temporaries have same lateKill flags. */
+            for (Operand& other : insn->operands) {
+               if (other.isTemp() && other.getTemp() == operand.getTemp())
+                  other.setLateKill(true);
             }
          }
 
