@@ -322,6 +322,27 @@ nir_variable *
 brw_nir_find_complete_variable_with_location(nir_shader *shader,
                                              nir_variable_mode mode,
                                              int location);
+
+static inline bool
+brw_nir_mesh_shader_needs_wa_18019110168(const struct intel_device_info *devinfo,
+                                         nir_shader *shader)
+{
+   return intel_needs_workaround(devinfo, 18019110168) &&
+      (shader->info.outputs_written & (VARYING_BIT_CLIP_DIST0 |
+                                       VARYING_BIT_CLIP_DIST1)) &&
+      (shader->info.per_primitive_outputs & ~(VARYING_BIT_PRIMITIVE_INDICES |
+                                              VARYING_BIT_PRIMITIVE_COUNT));
+}
+
+void
+brw_nir_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
+                                        struct brw_compile_mesh_params *params,
+                                        int *wa_mapping);
+
+bool
+brw_nir_frag_convert_attrs_prim_to_vert(struct nir_shader *nir,
+                                        const int *wa_mapping);
+
 #ifdef __cplusplus
 }
 #endif

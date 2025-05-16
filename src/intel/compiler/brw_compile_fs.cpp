@@ -693,19 +693,22 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
 
    if (mue_map != NULL) {
       memcpy(&vue_map, &mue_map->vue_map, sizeof(vue_map));
-
       memcpy(per_primitive_offsets,
              mue_map->per_primitive_offsets,
              sizeof(mue_map->per_primitive_offsets));
 
-      u_foreach_bit64(location, per_primitive_inputs) {
-         assert(per_primitive_offsets[location] != -1);
+      if (!mue_map->wa_18019110168_active) {
+         u_foreach_bit64(location, per_primitive_inputs) {
+            assert(per_primitive_offsets[location] != -1);
 
-         first_read_offset = MIN2(first_read_offset,
-                                  (uint32_t)per_primitive_offsets[location]);
-         per_primitive_stride =
-            MAX2((uint32_t)per_primitive_offsets[location] + 16,
-                 per_primitive_stride);
+            first_read_offset = MIN2(first_read_offset,
+                                     (uint32_t)per_primitive_offsets[location]);
+            per_primitive_stride =
+               MAX2((uint32_t)per_primitive_offsets[location] + 16,
+                    per_primitive_stride);
+         }
+      } else {
+         first_read_offset = per_primitive_stride = 0;
       }
    } else {
       brw_compute_vue_map(devinfo, &vue_map, inputs_read,
@@ -1465,6 +1468,12 @@ brw_compile_fs(const struct brw_compiler *compiler,
    const unsigned max_subgroup_size = 32;
 
    brw_nir_apply_key(nir, compiler, &key->base, max_subgroup_size);
+
+   if (params->mue_map && params->mue_map->wa_18019110168_active) {
+      brw_nir_frag_convert_attrs_prim_to_vert(
+         nir, params->mue_map->per_primitive_offsets);
+   }
+
    brw_nir_lower_fs_inputs(nir, devinfo, key);
    brw_nir_lower_fs_outputs(nir);
 

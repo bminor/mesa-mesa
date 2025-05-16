@@ -1455,6 +1455,14 @@ anv_pipeline_link_mesh(const struct brw_compiler *compiler,
    }
 }
 
+static nir_def *
+mesh_load_provoking_vertex(nir_builder *b, void *data)
+{
+   return nir_load_inline_data_intel(
+      b, 1, 32,
+      .base = ANV_INLINE_PARAM_MESH_PROVOKING_VERTEX);
+}
+
 static void
 anv_pipeline_compile_mesh(const struct brw_compiler *compiler,
                           void *mem_ctx,
@@ -1475,6 +1483,7 @@ anv_pipeline_compile_mesh(const struct brw_compiler *compiler,
       },
       .key = &mesh_stage->key.mesh,
       .prog_data = &mesh_stage->prog_data.mesh,
+      .load_provoking_vertex = mesh_load_provoking_vertex,
    };
 
    if (prev_stage) {
@@ -2321,12 +2330,6 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
       anv_stage_allocate_bind_map_tables(&pipeline->base, &stages[s], tmp_ctx);
 
       anv_pipeline_nir_preprocess(&pipeline->base, &stages[s]);
-   }
-
-   if (stages[MESA_SHADER_MESH].info && stages[MESA_SHADER_FRAGMENT].info) {
-      anv_apply_per_prim_attr_wa(stages[MESA_SHADER_MESH].nir,
-                                 stages[MESA_SHADER_FRAGMENT].nir,
-                                 device);
    }
 
    /* Walk backwards to link */

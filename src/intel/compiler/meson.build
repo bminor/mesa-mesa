@@ -83,6 +83,7 @@ libintel_compiler_brw_files = files(
   'brw_nir_lower_storage_image.c',
   'brw_nir_lower_texel_address.c',
   'brw_nir_lower_texture.c',
+  'brw_nir_wa_18019110168.c',
   'brw_nir_opt_fsat.c',
   'brw_nir_rt.h',
   'brw_nir_rt.c',

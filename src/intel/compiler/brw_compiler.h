@@ -41,10 +41,14 @@ extern "C" {
 #endif
 
 struct ra_regs;
+struct nir_builder;
+struct nir_def;
 struct nir_shader;
 struct shader_info;
 
 struct nir_shader_compiler_options;
+typedef struct nir_builder nir_builder;
+typedef struct nir_def nir_def;
 typedef struct nir_shader nir_shader;
 
 #define REG_CLASS_COUNT 20
@@ -1271,6 +1275,8 @@ struct brw_mue_map {
    /* VUE map for the per vertex attributes */
    struct intel_vue_map vue_map;
 
+   bool wa_18019110168_active;
+
    /* Offset in bytes of each per primitive relative to
     * per_primitive_offset (-1 if unused)
     */
@@ -1520,6 +1526,13 @@ struct brw_compile_mesh_params {
    const struct brw_mesh_prog_key *key;
    struct brw_mesh_prog_data *prog_data;
    const struct brw_tue_map *tue_map;
+
+   /** Load provoking vertex
+    *
+    * The callback returns a 32bit integer representing the provoking vertex.
+    */
+   void *load_provoking_vertex_data;
+   nir_def *(*load_provoking_vertex)(nir_builder *b, void *data);
 };
 
 const unsigned *

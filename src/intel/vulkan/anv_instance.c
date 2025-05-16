@@ -55,7 +55,6 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_VK_WSI_FORCE_SWAPCHAIN_TO_CURRENT_EXTENT(false)
       DRI_CONF_VK_X11_IGNORE_SUBOPTIMAL(false)
       DRI_CONF_LIMIT_TRIG_INPUT_RANGE(false)
-      DRI_CONF_ANV_MESH_CONV_PRIM_ATTRS_TO_VERT_ATTRS(-2)
       DRI_CONF_ANV_EMULATE_READ_WITHOUT_FORMAT(false)
       DRI_CONF_FORCE_VK_VENDOR()
       DRI_CONF_FAKE_SPARSE(false)
@@ -174,8 +173,6 @@ anv_init_dri_options(struct anv_instance *instance)
        driQueryOptionb(&instance->dri_options, "no_16bit");
     instance->intel_enable_wa_14018912822 =
        driQueryOptionb(&instance->dri_options, "intel_enable_wa_14018912822");
-    instance->mesh_conv_prim_attrs_to_vert_attrs =
-       driQueryOptioni(&instance->dri_options, "anv_mesh_conv_prim_attrs_to_vert_attrs");
     instance->emulate_read_without_format =
        driQueryOptionb(&instance->dri_options, "anv_emulate_read_without_format");
     instance->fp64_workaround_enabled =
