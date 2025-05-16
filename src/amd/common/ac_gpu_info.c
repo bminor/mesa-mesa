@@ -1714,7 +1714,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          return AC_QUERY_GPU_INFO_FAIL;
       }
 
-      info->has_fw_based_shadowing = true;
       info->fw_based_mcbp.shadow_size = fw_info.gfx.shadow_size;
       info->fw_based_mcbp.shadow_alignment = fw_info.gfx.shadow_alignment;
       info->fw_based_mcbp.csa_size = fw_info.gfx.csa_size;
