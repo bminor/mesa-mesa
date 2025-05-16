@@ -155,16 +155,8 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
          /* If drawing to integer-valued color buffers, there must be an
           * active fragment shader (GL_EXT_texture_integer).
           */
-         if (ctx->DrawBuffer->_IntegerBuffers) {
-            for (int i = 0; i < ctx->DrawBuffer->_NumColorDrawBuffers; i++) {
-               gl_buffer_index buf = ctx->DrawBuffer->_ColorDrawBufferIndexes[i];
-               if (buf < BUFFER_COLOR0)
-                  continue;
-
-               if (ctx->DrawBuffer->_IntegerBuffers & (1 << (buf - BUFFER_COLOR0)))
-                  return;
-            }
-         }
+         if (ctx->DrawBuffer->_IntegerDrawBuffers)
+            return;
       }
    }
 

@@ -175,8 +175,8 @@ blend_per_rt(const struct st_context *st, unsigned num_cb)
       /* this can only happen if GL_ARB_draw_buffers_blend is enabled */
       return GL_TRUE;
    }
-   if (ctx->DrawBuffer->_IntegerBuffers &&
-       (ctx->DrawBuffer->_IntegerBuffers != cb_mask)) {
+   if (ctx->DrawBuffer->_IntegerDrawBuffers &&
+       (ctx->DrawBuffer->_IntegerDrawBuffers != cb_mask)) {
       /* If there is a mix of integer/non-integer buffers then blending
        * must be handled on a per buffer basis. */
       return GL_TRUE;
@@ -280,7 +280,7 @@ st_update_blend( struct st_context *st )
       /* blending enabled */
       for (i = 0, j = 0; i < num_state; i++) {
          if (!(ctx->Color.BlendEnabled & (1 << i)) ||
-             (ctx->DrawBuffer->_IntegerBuffers & (1 << i)) ||
+             (ctx->DrawBuffer->_IntegerDrawBuffers & (1 << i)) ||
              !blend->rt[i].colormask)
             continue;
 
@@ -340,7 +340,7 @@ st_update_blend( struct st_context *st )
       blend->dither = ctx->Color.DitherFlag;
 
    if (_mesa_is_multisample_enabled(ctx) &&
-       !(ctx->DrawBuffer->_IntegerBuffers & 0x1)) {
+       !(ctx->DrawBuffer->_IntegerDrawBuffers & 0x1)) {
       /* Unlike in gallium/d3d10 these operations are only performed
        * if both msaa is enabled and we have a multisample buffer.
        */
