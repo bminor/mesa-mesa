@@ -5144,7 +5144,7 @@
         "description": "panvk/jm: Apply direct dispatch WLS instance limit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "005703e5b5f1b20903185d2f3f958e3f0aa4cbc4",
         "notes": null
