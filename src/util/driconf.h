@@ -784,10 +784,6 @@
    DRI_CONF_OPT_B(radv_enable_float16_gfx8, def, \
                   "Expose float16 on GFX8, where it's supported but usually not beneficial.")
 
-#define DRI_CONF_RADV_FORCE_64K_SPARSE_ALIGNMENT(def) \
-   DRI_CONF_OPT_B(radv_force_64k_sparse_alignment, def, \
-                  "Force the alignment of sparse buffers to 64KiB")
-
 #define DRI_CONF_RADV_DISABLE_HIZ_HIS_GFX12(def) \
    DRI_CONF_OPT_B(radv_disable_hiz_his_gfx12, def, \
                   "Disable HiZ/HiS on GFX12 (RDNA4) to workaround a hw bug that causes random GPU hangs")
