@@ -5,14 +5,13 @@ use crate::{
     api::{GetDebugFlags, DEBUG},
     ir::*,
 };
-
-use std::collections::HashSet;
+use compiler::bitset::BitSet;
 
 struct DeadCodePass {
     any_dead: bool,
     new_live: bool,
-    live_ssa: HashSet<SSAValue>,
-    live_phi: HashSet<Phi>,
+    live_ssa: BitSet<SSAValue>,
+    live_phi: BitSet<Phi>,
 }
 
 impl DeadCodePass {
@@ -43,7 +42,7 @@ impl DeadCodePass {
         match dst {
             Dst::SSA(ssa) => {
                 for val in ssa.iter() {
-                    if self.live_ssa.contains(val) {
+                    if self.live_ssa.contains(*val) {
                         return true;
                     }
                 }
@@ -55,7 +54,7 @@ impl DeadCodePass {
     }
 
     fn is_phi_live(&self, phi: Phi) -> bool {
-        self.live_phi.contains(&phi)
+        self.live_phi.contains(phi)
     }
 
     fn is_instr_live(&self, instr: &Instr) -> bool {
