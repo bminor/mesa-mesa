@@ -3603,7 +3603,7 @@ combine_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          continue;
       }
 
-      if (get_operand_type(instr, i).constant_bits() != 32)
+      if (get_operand_type(instr, i).bit_size != 32)
          continue;
 
       /* Conversion to VOP3P will add inline constant operands, but that shouldn't affect
@@ -3853,8 +3853,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (is_add_mix && info.parent_instr->definitions[0].bytes() == 2)
             continue;
 
-         if (get_operand_type(instr, i).constant_bits() !=
-             info.parent_instr->definitions[0].bytes() * 8)
+         if (get_operand_type(instr, i).bytes() != info.parent_instr->definitions[0].bytes())
             continue;
 
          bool legacy = info.parent_instr->opcode == aco_opcode::v_mul_legacy_f32;
@@ -4560,7 +4559,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             continue;
 
          bool input_mods = can_use_input_modifiers(ctx.program->gfx_level, instr->opcode, 0) &&
-                           get_operand_type(instr, 0).constant_bits() == 32;
+                           get_operand_type(instr, 0).bit_size == 32;
          bool mov_uses_mods = info.parent_instr->valu().neg[0] || info.parent_instr->valu().abs[0];
          if (((dpp8 && ctx.program->gfx_level < GFX11) || !input_mods) && mov_uses_mods)
             continue;
