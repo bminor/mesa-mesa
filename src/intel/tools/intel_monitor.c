@@ -93,7 +93,7 @@ print_help(const char *progname, FILE *file)
       "   0. Run `sudo sysctl dev.xe.observation_paranoid=0`\n"
       "   1. Launch gfx app with INTEL_DEBUG=shaders-lineno. Redirect stderr to asm.txt.\n"
       "   2. When gfx app ready to monitor, begin capturing eustall data by launching\n"
-      "      `intel_monitor -e > eustall.csv` in separate console.\n"
+      "      `intel_monitor -e -f eustall.csv` in separate console.\n"
       "   3. When enough data has been collected, close intel_monitor by pressing any key.\n"
       "   4. Correlate eustall data in eustall.csv with shader instructions in asm.txt by\n"
       "      matching instruction offsets. Use data to determine which instructions are\n"
