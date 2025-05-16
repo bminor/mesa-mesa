@@ -1899,8 +1899,6 @@ unsigned get_mimg_nsa_dwords(const Instruction* instr);
 
 unsigned get_vopd_opy_start(const Instruction* instr);
 
-unsigned get_operand_size(aco_ptr<Instruction>& instr, unsigned index);
-
 bool should_form_clause(const Instruction* a, const Instruction* b);
 
 enum vmem_type : uint8_t {
@@ -2401,6 +2399,8 @@ struct aco_type {
       return 0;
    }
 };
+
+aco_type get_operand_type(aco_ptr<Instruction>& alu, unsigned index);
 
 struct aco_alu_opcode_info {
    uint8_t num_operands : 3;

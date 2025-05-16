@@ -774,7 +774,7 @@ propagate_constants_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr, ssa_info& i
       return;
 
    assert(instr->operands[i].isTemp());
-   unsigned bits = get_operand_size(instr, i);
+   unsigned bits = get_operand_type(instr, i).constant_bits();
    if (info.is_constant(bits)) {
       instr->operands[i] = get_constant_op(ctx, info, bits);
       return;
@@ -1288,7 +1288,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
       /* SALU: propagate inline constants */
       else if (instr->isSALU()) {
-         unsigned bits = get_operand_size(instr, i);
+         unsigned bits = get_operand_type(instr, i).constant_bits();
          if (info.is_constant(bits) && alu_can_accept_constant(instr, i)) {
             instr->operands[i] = get_constant_op(ctx, info, bits);
             continue;
@@ -1329,7 +1329,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          else
             can_use_mod &= instr->isDPP16() || can_use_VOP3(ctx, instr);
 
-         unsigned bits = get_operand_size(instr, i);
+         unsigned bits = get_operand_type(instr, i).constant_bits();
          can_use_mod &= instr->operands[i].bytes() * 8 == bits;
 
          if (info.is_neg() && can_use_mod &&
@@ -3603,7 +3603,7 @@ combine_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          continue;
       }
 
-      if (get_operand_size(instr, i) != 32)
+      if (get_operand_type(instr, i).constant_bits() != 32)
          continue;
 
       /* Conversion to VOP3P will add inline constant operands, but that shouldn't affect
@@ -3853,7 +3853,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (is_add_mix && info.parent_instr->definitions[0].bytes() == 2)
             continue;
 
-         if (get_operand_size(instr, i) != info.parent_instr->definitions[0].bytes() * 8)
+         if (get_operand_type(instr, i).constant_bits() !=
+             info.parent_instr->definitions[0].bytes() * 8)
             continue;
 
          bool legacy = info.parent_instr->opcode == aco_opcode::v_mul_legacy_f32;
@@ -4409,7 +4410,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             Operand& op = instr->operands[i];
             if (!op.isTemp())
                continue;
-            if (ctx.info[op.tempId()].is_literal(get_operand_size(instr, i))) {
+            if (ctx.info[op.tempId()].is_literal(get_operand_type(instr, i).constant_bits())) {
                uint32_t new_literal = ctx.info[op.tempId()].val;
                float value = uif(new_literal);
                uint16_t fp16_val = _mesa_float_to_half(value);
@@ -4559,7 +4560,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             continue;
 
          bool input_mods = can_use_input_modifiers(ctx.program->gfx_level, instr->opcode, 0) &&
-                           get_operand_size(instr, 0) == 32;
+                           get_operand_type(instr, 0).constant_bits() == 32;
          bool mov_uses_mods = info.parent_instr->valu().neg[0] || info.parent_instr->valu().abs[0];
          if (((dpp8 && ctx.program->gfx_level < GFX11) || !input_mods) && mov_uses_mods)
             continue;
@@ -4643,7 +4644,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    /* choose a literal to apply */
    for (unsigned i = 0; i < num_operands; i++) {
       Operand op = instr->operands[i];
-      unsigned bits = get_operand_size(instr, i);
+      unsigned bits = get_operand_type(instr, i).constant_bits();
 
       if (instr->isVALU() && op.isTemp() && op.getTemp().type() == RegType::sgpr &&
           op.tempId() != sgpr_ids[0])
@@ -4929,7 +4930,7 @@ apply_literals(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (instr->isSALU() || instr->isVALU()) {
       for (unsigned i = 0; i < instr->operands.size(); i++) {
          Operand op = instr->operands[i];
-         unsigned bits = get_operand_size(instr, i);
+         unsigned bits = get_operand_type(instr, i).constant_bits();
          if (op.isTemp() && ctx.info[op.tempId()].is_literal(bits) && ctx.uses[op.tempId()] == 0) {
             Operand literal = Operand::literal32(ctx.info[op.tempId()].val);
             instr->format = withoutDPP(instr->format);

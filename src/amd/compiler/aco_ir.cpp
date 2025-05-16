@@ -833,19 +833,17 @@ get_reduction_identity(ReduceOp op, unsigned idx)
    return 0;
 }
 
-unsigned
-get_operand_size(aco_ptr<Instruction>& instr, unsigned index)
+aco_type
+get_operand_type(aco_ptr<Instruction>& alu, unsigned index)
 {
-   if (instr->isPseudo())
-      return instr->operands[index].bytes() * 8u;
-   else if (instr->opcode == aco_opcode::v_fma_mix_f32 ||
-            instr->opcode == aco_opcode::v_fma_mixlo_f16 ||
-            instr->opcode == aco_opcode::v_fma_mixhi_f16)
-      return instr->valu().opsel_hi[index] ? 16 : 32;
-   else if (instr->isVALU() || instr->isSALU())
-      return instr_info.alu_opcode_infos[(int)instr->opcode].op_types[index].constant_bits();
-   else
-      return 0;
+   assert(alu->isVALU() || alu->isSALU());
+   aco_type type = instr_info.alu_opcode_infos[(int)alu->opcode].op_types[index];
+
+   if (alu->opcode == aco_opcode::v_fma_mix_f32 || alu->opcode == aco_opcode::v_fma_mixlo_f16 ||
+       alu->opcode == aco_opcode::v_fma_mixhi_f16)
+      type.bit_size = alu->valu().opsel_hi[index] ? 16 : 32;
+
+   return type;
 }
 
 bool
