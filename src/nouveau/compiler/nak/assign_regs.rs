@@ -271,8 +271,8 @@ impl RegAllocator {
         Self {
             file: file,
             num_regs: num_regs,
-            used: BitSet::new(),
-            pinned: BitSet::new(),
+            used: Default::default(),
+            pinned: Default::default(),
             reg_ssa: Vec::new(),
             ssa_reg: Default::default(),
         }

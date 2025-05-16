@@ -48,6 +48,7 @@ impl PhiMap {
     }
 }
 
+#[derive(Default)]
 struct BarPropPass {
     ssa_map: FxHashMap<SSAValue, SSAValue>,
     phi_is_bar: BitSet,
@@ -56,11 +57,7 @@ struct BarPropPass {
 
 impl BarPropPass {
     pub fn new() -> BarPropPass {
-        BarPropPass {
-            ssa_map: Default::default(),
-            phi_is_bar: BitSet::new(),
-            phi_is_not_bar: BitSet::new(),
-        }
+        Default::default()
     }
 
     fn add_copy(&mut self, dst: SSAValue, src: SSAValue) {

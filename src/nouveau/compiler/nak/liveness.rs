@@ -227,6 +227,7 @@ pub trait Liveness {
     }
 }
 
+#[derive(Default)]
 pub struct SimpleBlockLiveness {
     defs: BitSet,
     uses: BitSet,
@@ -237,13 +238,7 @@ pub struct SimpleBlockLiveness {
 
 impl SimpleBlockLiveness {
     fn new() -> Self {
-        Self {
-            defs: BitSet::new(),
-            uses: BitSet::new(),
-            last_use: Default::default(),
-            live_in: BitSet::new(),
-            live_out: BitSet::new(),
-        }
+        Default::default()
     }
 
     fn add_def(&mut self, ssa: SSAValue) {
