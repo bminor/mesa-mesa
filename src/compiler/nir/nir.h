@@ -93,6 +93,7 @@ extern bool nir_debug_print_shader[MESA_SHADER_KERNEL + 1];
 #define NIR_DEBUG_PRINT_PASS_FLAGS       (1u << 22)
 #define NIR_DEBUG_INVALIDATE_METADATA    (1u << 23)
 #define NIR_DEBUG_PRINT_STRUCT_DECLS     (1u << 24)
+#define NIR_DEBUG_PROGRESS_VALIDATION    (1u << 25)
 
 #define NIR_DEBUG_PRINT (NIR_DEBUG_PRINT_VS |  \
                          NIR_DEBUG_PRINT_TCS | \
@@ -4717,6 +4718,8 @@ void nir_validate_ssa_dominance(nir_shader *shader, const char *when);
 void nir_metadata_set_validation_flag(nir_shader *shader);
 void nir_metadata_check_validation_flag(nir_shader *shader);
 void nir_metadata_require_most(nir_shader *shader);
+struct blob nir_validate_progress_setup(nir_shader *shader);
+void nir_validate_progress_finish(nir_shader *shader, struct blob *setup_blob, bool progress, const char *when);
 
 static inline bool
 should_skip_nir(const char *name)
@@ -4773,6 +4776,19 @@ nir_metadata_require_most(nir_shader *shader)
 {
    (void)shader;
 }
+static inline struct blob
+nir_validate_progress_setup(nir_shader *shader)
+{
+   return (struct blob){};
+}
+static inline void
+nir_validate_progress_finish(nir_shader *shader, struct blob *setup_blob, bool progress, const char *when)
+{
+   (void)shader;
+   (void)setup_blob;
+   (void)progress;
+   (void)when;
+}
 static inline bool
 should_skip_nir(UNUSED const char *pass_name)
 {
@@ -4808,20 +4824,25 @@ should_print_nir(UNUSED nir_shader *shader)
 #define NIR_STRINGIZE_INNER(x) #x
 #define NIR_STRINGIZE(x)       NIR_STRINGIZE_INNER(x)
 
-#define NIR_PASS(progress, nir, pass, ...) _PASS(pass, nir, {                               \
-   nir_metadata_set_validation_flag(nir);                                                   \
-   if (should_print_nir(nir))                                                               \
-      printf("%s\n", #pass);                                                                \
-   if (pass(nir, ##__VA_ARGS__)) {                                                          \
-      nir_validate_shader(nir, "after " #pass " in " __FILE__ ":" NIR_STRINGIZE(__LINE__)); \
-      UNUSED bool _;                                                                        \
-      progress = true;                                                                      \
-      if (should_print_nir(nir))                                                            \
-         nir_print_shader(nir, stdout);                                                     \
-      nir_metadata_check_validation_flag(nir);                                              \
-   } else if (NIR_DEBUG(EXTENDED_VALIDATION)) {                                             \
-      nir_validate_shader(nir, "after " #pass " in " __FILE__ ":" NIR_STRINGIZE(__LINE__)); \
-   }                                                                                        \
+#define NIR_PASS(progress, nir, pass, ...) _PASS(pass, nir, {                            \
+   nir_metadata_set_validation_flag(nir);                                                \
+   if (should_print_nir(nir))                                                            \
+      printf("%s\n", #pass);                                                             \
+   static const char *when = "after " #pass " in " __FILE__ ":" NIR_STRINGIZE(__LINE__); \
+   struct blob blob_before = nir_validate_progress_setup(nir);                           \
+   if (pass(nir, ##__VA_ARGS__)) {                                                       \
+      nir_validate_shader(nir, when);                                                    \
+      UNUSED bool _;                                                                     \
+      progress = true;                                                                   \
+      if (should_print_nir(nir))                                                         \
+         nir_print_shader(nir, stdout);                                                  \
+      nir_metadata_check_validation_flag(nir);                                           \
+      nir_validate_progress_finish(nir, &blob_before, true, when);                       \
+   } else {                                                                              \
+      if (NIR_DEBUG(EXTENDED_VALIDATION))                                                \
+         nir_validate_shader(nir, when);                                                 \
+      nir_validate_progress_finish(nir, &blob_before, false, when);                      \
+   }                                                                                     \
 })
 
 #define _NIR_LOOP_PASS(progress, idempotent, skip, nir, pass, ...)   \
