@@ -27,7 +27,9 @@ traces:
         apitrace: warning: caught signal 6
         47127: error: caught an unhandled exception
     gl-zink-anv-tgl:
+      label: [skip, flakes]
       checksum: 5bfd510c1298c71ccd3c24c0662b857e
+      text: "Very flaky trace"
 
   blender/blender-demo-ellie_pose.trace:
     gl-zink-anv-adl:
