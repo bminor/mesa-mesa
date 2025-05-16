@@ -220,6 +220,17 @@ get_device_sync_types(struct panvk_physical_device *device,
    return VK_SUCCESS;
 }
 
+float
+panvk_get_gpu_system_timestamp_period(const struct panvk_physical_device *device)
+{
+   if (!device->kmod.props.gpu_can_query_timestamp ||
+       !device->kmod.props.timestamp_frequency)
+      return 0;
+
+   const float ns_per_s = 1000000000.0;
+   return ns_per_s / (float)device->kmod.props.timestamp_frequency;
+}
+
 void
 panvk_physical_device_finish(struct panvk_physical_device *device)
 {
@@ -396,7 +407,10 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
          /* On v10+ we can support up to 127 queues but this causes timeout on
             some CTS tests */
          .queueCount = arch >= 10 ? 2 : 1,
-         .timestampValidBits = 0,
+         .timestampValidBits =
+            arch >= 10 && physical_device->kmod.props.gpu_can_query_timestamp
+               ? 64
+               : 0,
          .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
       };
 
