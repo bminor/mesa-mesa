@@ -445,7 +445,8 @@ vn_DestroyInstance(VkInstance _instance,
       vn_renderer_shmem_pool_fini(instance->renderer,
                                   &instance->reply_shmem_pool);
 
-      vn_renderer_shmem_pool_fini(instance->renderer, &instance->cs_shmem_pool);
+      vn_renderer_shmem_pool_fini(instance->renderer,
+                                  &instance->cs_shmem_pool);
 
       vn_renderer_destroy(instance->renderer, alloc);
    }

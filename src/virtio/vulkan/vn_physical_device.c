@@ -187,18 +187,21 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR
          ray_tracing_position_fetch;
       VkPhysicalDeviceShaderClockFeaturesKHR shader_clock;
-      VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR shader_maximal_reconvergence;
+      VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
+         shader_maximal_reconvergence;
       VkPhysicalDeviceShaderQuadControlFeaturesKHR shader_quad_control;
       VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR
          shader_relaxed_extended_instruction;
-      VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR shader_subgroup_uniform_control_flow;
+      VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR
+         shader_subgroup_uniform_control_flow;
       VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR
          workgroup_memory_explicit_layout;
 
       /* EXT */
       VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT
          attachment_feedback_loop_dynamic_state;
-      VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT attachment_feedback_loop_layout;
+      VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT
+         attachment_feedback_loop_layout;
       VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT
          blend_operation_advanced;
       VkPhysicalDeviceBorderColorSwizzleFeaturesEXT border_color_swizzle;
@@ -230,7 +233,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type;
       VkPhysicalDeviceNestedCommandBufferFeaturesEXT nested_command_buffer;
       VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT non_seamless_cube_map;
-      VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles;
+      VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT
+         pipeline_library_group_handles;
       VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
          primitive_topology_list_restart;
       VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT
@@ -521,7 +525,8 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
 
    /* force prime blit on NV proprietary driver */
    if (props->driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
-      physical_dev->base.vk.supported_extensions.EXT_image_drm_format_modifier = false;
+      physical_dev->base.vk.supported_extensions
+         .EXT_image_drm_format_modifier = false;
    }
 
    /* store renderer VkDriverId for implementation specific workarounds */
@@ -1816,8 +1821,8 @@ enumerate_physical_devices(struct vn_instance *instance,
    VkResult result;
 
    if (!instance->renderer) {
-       *out_count = 0;
-       return VK_SUCCESS;
+      *out_count = 0;
+      return VK_SUCCESS;
    }
    uint32_t count = 0;
    result = vn_call_vkEnumeratePhysicalDevices(
@@ -2104,8 +2109,9 @@ vn_GetPhysicalDeviceQueueFamilyProperties2(
             physical_dev->queue_family_properties[i].queueFamilyProperties;
 
          if (physical_dev->base.vk.supported_features.globalPriorityQuery) {
-            VkQueueFamilyGlobalPriorityProperties *prio_props = vk_find_struct(
-               props->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES);
+            VkQueueFamilyGlobalPriorityProperties *prio_props =
+               vk_find_struct(props->pNext,
+                              QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES);
             if (prio_props) {
                void *pnext = prio_props->pNext;
                *prio_props = physical_dev->global_priority_properties[i];

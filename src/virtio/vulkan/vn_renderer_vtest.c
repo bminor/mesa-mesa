@@ -6,6 +6,7 @@
  * Copyright 2014, 2015 Red Hat.
  */
 
+#include "virtio/virtio-gpu/venus_hw.h"
 #include <errno.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -15,15 +16,14 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "drm-uapi/virtgpu_drm.h"
 #include "util/os_file.h"
 #include "util/os_misc.h"
 #include "util/sparse_array.h"
 #include "util/u_process.h"
-#include "drm-uapi/virtgpu_drm.h"
 #include "vtest/vtest_protocol.h"
 
 #include "vn_renderer_internal.h"
-#include "virtio/virtio-gpu/venus_hw.h"
 
 #define VTEST_PCI_VENDOR_ID 0x1af4
 #define VTEST_PCI_DEVICE_ID 0x1050
@@ -299,8 +299,7 @@ vtest_vcmd_get_capset(struct vtest *vtest,
 }
 
 static void
-vtest_vcmd_context_init(struct vtest *vtest,
-                        uint32_t capset_id)
+vtest_vcmd_context_init(struct vtest *vtest, uint32_t capset_id)
 {
    uint32_t vtest_hdr[VTEST_HDR_SIZE];
    uint32_t vcmd_context_init[VCMD_CONTEXT_INIT_SIZE];

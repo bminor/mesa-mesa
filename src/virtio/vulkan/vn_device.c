@@ -265,10 +265,8 @@ vn_device_fix_create_info(const struct vn_device *dev,
             VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME;
          block_exts[block_count++] =
             VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
-         block_exts[block_count++] =
-            VK_EXT_HDR_METADATA_EXTENSION_NAME;
-         block_exts[block_count++] =
-            VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME;
+         block_exts[block_count++] = VK_EXT_HDR_METADATA_EXTENSION_NAME;
+         block_exts[block_count++] = VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME;
       }
 
       if (app_exts->ANDROID_native_buffer) {
