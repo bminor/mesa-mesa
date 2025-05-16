@@ -2104,7 +2104,7 @@
         "description": "vulkan/wsi: include missing barrier for transferring to blit dst image",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2975a7f453a03907827bbb8b38ea1394f052d045",
         "notes": null
