@@ -143,7 +143,7 @@ allow_rgb_colormask_promotion(const struct st_context *st,
     * without needing independent blending.  (If none should be promoted,
     * we can just skip this optimization as it doesn't do anything.)
     */
-   bool same = ctx->DrawBuffer->_IsRGB == u_bit_consecutive(0, num_cb) &&
+   bool same = ctx->DrawBuffer->_IsRGBDraw == u_bit_consecutive(0, num_cb) &&
                (ctx->Color.ColorMask & full_mask) == rgb_mask;
 
    /* We can support different per-RT promotion decisions if we driver
@@ -256,7 +256,7 @@ st_update_blend( struct st_context *st )
        * partial writes may require preserving/combining new and old data.
        */
       if (promote_rgb_colormasks &&
-          colormask == 0x7 && (ctx->DrawBuffer->_IsRGB & (1 << i)))
+          colormask == 0x7 && (ctx->DrawBuffer->_IsRGBDraw & (1 << i)))
          colormask = 0xf;
 
       blend->rt[i].colormask = colormask;

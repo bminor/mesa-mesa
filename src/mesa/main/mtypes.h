@@ -2695,7 +2695,8 @@ struct gl_framebuffer
    GLbitfield _IntegerDrawBuffers;  /**< Which color draw buffers are integer valued */
    GLbitfield _BlendForceAlphaToOne;  /**< Which color attachments need blend factor adjustment */
    GLbitfield _BlendForceAlphaToOneDraw;  /**< Which color buffers need blend factor adjustment */
-   GLbitfield _IsRGB;  /**< Which color buffers have an RGB base format? */
+   GLbitfield _IsRGB;  /**< Which color attachments have an RGB base format? */
+   GLbitfield _IsRGBDraw;  /**< Which color buffers have an RGB base format? */
    GLbitfield _FP32Buffers; /**< Which color buffers are FP32 */
 
    /* ARB_color_buffer_float */
