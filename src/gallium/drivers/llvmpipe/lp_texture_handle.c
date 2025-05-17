@@ -1025,7 +1025,7 @@ compile_sample_functions(struct llvmpipe_context *ctx, struct lp_static_texture_
             functions[sample_key] = matrix->jit_sample_functions[sample_key];
          else if (op_type == LP_SAMPLER_OP_FETCH)
             functions[sample_key] = matrix->jit_fetch_functions[sample_key];
-         else
+         else if (texture->format == PIPE_FORMAT_NONE)
             functions[sample_key] = compile_sample_function(ctx, texture, sampler, sample_key);
       }
    }
