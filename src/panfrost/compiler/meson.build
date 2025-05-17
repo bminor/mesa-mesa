@@ -170,7 +170,7 @@ if with_tests
         'valhall/test/test-merge-flow.cpp',
         'valhall/test/test-packing.cpp',
       ),
-      c_args : [c_msvc_compat_args, no_override_init_args],
+      cpp_args : [cpp_msvc_compat_args, no_override_init_args],
       gnu_symbol_visibility : 'hidden',
       include_directories : [inc_include, inc_src, inc_valhall],
       dependencies: [idep_gtest, idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h],
