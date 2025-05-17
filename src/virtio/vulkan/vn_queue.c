@@ -1427,17 +1427,6 @@ vn_fence_init_payloads(struct vn_device *dev,
    return VK_SUCCESS;
 }
 
-void
-vn_fence_signal_wsi(struct vn_device *dev, struct vn_fence *fence)
-{
-   struct vn_sync_payload *temp = &fence->temporary;
-
-   vn_sync_payload_release(dev, temp);
-   temp->type = VN_SYNC_TYPE_IMPORTED_SYNC_FD;
-   temp->fd = -1;
-   fence->payload = temp;
-}
-
 static VkResult
 vn_fence_feedback_init(struct vn_device *dev,
                        struct vn_fence *fence,
@@ -1906,17 +1895,6 @@ vn_semaphore_wait_external(struct vn_device *dev, struct vn_semaphore *sem)
    sem->payload = &sem->permanent;
 
    return true;
-}
-
-void
-vn_semaphore_signal_wsi(struct vn_device *dev, struct vn_semaphore *sem)
-{
-   struct vn_sync_payload *temp = &sem->temporary;
-
-   vn_sync_payload_release(dev, temp);
-   temp->type = VN_SYNC_TYPE_IMPORTED_SYNC_FD;
-   temp->fd = -1;
-   sem->payload = temp;
 }
 
 struct vn_semaphore_feedback_cmd *
