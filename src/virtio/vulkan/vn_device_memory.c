@@ -363,13 +363,17 @@ vn_AllocateMemory(VkDevice device,
 
    const VkImportMemoryFdInfoKHR *import_fd_info = NULL;
    const VkMemoryDedicatedAllocateInfo *dedicated_info = NULL;
+   const struct wsi_memory_allocate_info *wsi_info = NULL;
    vk_foreach_struct_const(pnext, pAllocateInfo->pNext) {
-      switch (pnext->sType) {
+      switch ((uint32_t)pnext->sType) {
       case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
          import_fd_info = (const void *)pnext;
          break;
       case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
          dedicated_info = (const void *)pnext;
+         break;
+      case VK_STRUCTURE_TYPE_WSI_MEMORY_ALLOCATE_INFO_MESA:
+         wsi_info = (const void *)pnext;
          break;
       default:
          break;
@@ -391,6 +395,16 @@ vn_AllocateMemory(VkDevice device,
                                                import_fd_info->fd);
    } else {
       result = vn_device_memory_alloc(dev, mem, pAllocateInfo);
+
+      /* track prime blit dst buffer memory */
+      if (wsi_info && result == VK_SUCCESS) {
+         assert(dedicated_info);
+         if (dedicated_info->buffer != VK_NULL_HANDLE) {
+            struct vn_buffer *buf =
+               vn_buffer_from_handle(dedicated_info->buffer);
+            buf->wsi.mem = mem;
+         }
+      }
    }
 
    vn_device_memory_emit_report(dev, mem, /* is_alloc */ true, result);

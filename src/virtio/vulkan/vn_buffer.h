@@ -48,6 +48,11 @@ struct vn_buffer {
    struct vn_object_base base;
 
    struct vn_buffer_memory_requirements requirements;
+
+   struct {
+      /* buffer is prime blit dst */
+      struct vn_device_memory *mem;
+   } wsi;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_buffer,
                                base.vk,
