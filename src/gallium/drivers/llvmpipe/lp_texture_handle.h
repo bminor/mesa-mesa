@@ -32,6 +32,17 @@
 #include "gallivm/lp_bld_sample.h"
 #include "gallivm/lp_bld_jit_sample.h"
 
+struct lp_function_cache {
+   p_atomic_uint64_t latest_cache;
+   struct util_dynarray trash_caches;
+};
+
+enum lp_function_cache_type {
+   LP_FUNCTION_CACHE_SAMPLE,
+   LP_FUNCTION_CACHE_FETCH,
+   LP_FUNCTION_CACHE_COUNT,
+};
+
 struct lp_sampler_matrix {
    struct lp_texture_functions **textures;
    struct lp_static_sampler_state *samplers;
@@ -42,11 +53,13 @@ struct lp_sampler_matrix {
    BITSET_DECLARE(sample_keys, LP_SAMPLE_KEY_COUNT);
    BITSET_DECLARE(image_ops, LP_TOTAL_IMAGE_OP_COUNT);
 
-   /* Per sample key functions which compile and cache sample functions on demand. */
+   /* Per sample key functions which compile and cache sample and fetch functions on demand. */
    void *jit_sample_functions[LP_SAMPLE_KEY_COUNT];
-   void *compile_function;
-   p_atomic_uint64_t latest_cache;
-   struct util_dynarray trash_caches;
+   void *compile_sample_function;
+   void *jit_fetch_functions[LP_SAMPLE_KEY_COUNT];
+   void *compile_fetch_function;
+   struct lp_function_cache caches[LP_FUNCTION_CACHE_COUNT];
+
    simple_mtx_t lock;
 
    struct llvmpipe_context *ctx;
