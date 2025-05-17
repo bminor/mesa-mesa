@@ -40,6 +40,7 @@ struct lp_function_cache {
 enum lp_function_cache_type {
    LP_FUNCTION_CACHE_SAMPLE,
    LP_FUNCTION_CACHE_FETCH,
+   LP_FUNCTION_CACHE_SIZE,
    LP_FUNCTION_CACHE_COUNT,
 };
 
@@ -58,6 +59,8 @@ struct lp_sampler_matrix {
    void *compile_sample_function;
    void *jit_fetch_functions[LP_SAMPLE_KEY_COUNT];
    void *compile_fetch_function;
+   void *jit_size_functions[2];
+   void *compile_size_function;
    struct lp_function_cache caches[LP_FUNCTION_CACHE_COUNT];
 
    simple_mtx_t lock;
