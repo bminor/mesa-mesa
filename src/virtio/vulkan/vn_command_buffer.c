@@ -168,23 +168,18 @@ vn_cached_get_acquire_unmodified(struct vn_cmd_cached_storage *storage)
  *    created; however, taking ownership in this way has the effect that the
  *    contents of the image subresource or buffer range are undefined.
  *
- * It is unclear if that is applicable to external resources, which supposedly
- * have the same semantics
+ * Now it has been made clear the same is applicable to external resources
  *
  *    Binding a resource to a memory object shared between multiple Vulkan
  *    instances or other APIs does not change the ownership of the underlying
  *    memory. The first entity to access the resource implicitly acquires
- *    ownership. Accessing a resource backed by memory that is owned by a
- *    particular instance or API has the same semantics as accessing a
- *    VK_SHARING_MODE_EXCLUSIVE resource[...]
+ *    ownership. An entity can also implicitly take ownership from another
+ *    entity in the same way without an explicit ownership transfer. However,
+ *    taking ownership in this way has the effect that the contents of the
+ *    underlying memory are undefined.
  *
- * We should get the spec clarified, or get rid of this completely broken code
- * (TODO).
- *
- * Assuming a queue family can acquire the ownership implicitly when the
- * contents are not needed, we do not need to worry about
- * VK_IMAGE_LAYOUT_UNDEFINED.  We can use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR as
- * the sole signal to trigger queue family ownership transfers.
+ * So we can use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR as the sole signal to trigger
+ * queue family ownership transfers.
  *
  * When the image has VK_SHARING_MODE_CONCURRENT, we can, and are required to,
  * use VK_QUEUE_FAMILY_IGNORED as the other queue family whether we are
@@ -202,10 +197,6 @@ vn_cached_get_acquire_unmodified(struct vn_cmd_cached_storage *storage)
  * whether the barrier transitions to or from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
  * we are only interested in the ownership release or acquire respectively and
  * should be careful to avoid double releases/acquires.
- *
- * I haven't followed all transition paths mentally to verify the correctness.
- * I likely also violate some VUs or miss some cases below.  They are
- * hopefully fixable and are left as TODOs.
  */
 static struct vn_cmd_fix_image_memory_barrier_result
 vn_cmd_fix_image_memory_barrier_common(const struct vn_image *img,
@@ -1482,37 +1473,6 @@ vn_CmdCopyBufferToImage2(
                   pCopyBufferToImageInfo);
 }
 
-static bool
-vn_needs_prime_blit(VkImage src_image, VkImageLayout src_image_layout)
-{
-   if (src_image_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR &&
-       VN_PRESENT_SRC_INTERNAL_LAYOUT != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-
-      /* sanity check */
-      ASSERTED const struct vn_image *img = vn_image_from_handle(src_image);
-      assert(img->wsi.is_wsi && img->wsi.is_prime_blit_src);
-      return true;
-   }
-
-   return false;
-}
-
-static void
-vn_transition_prime_layout(struct vn_command_buffer *cmd, VkBuffer dst_buffer)
-{
-   const VkBufferMemoryBarrier buf_barrier = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-      .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-      .srcQueueFamilyIndex = cmd->base.vk.pool->queue_family_index,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT,
-      .buffer = dst_buffer,
-      .size = VK_WHOLE_SIZE,
-   };
-   vn_cmd_encode_memory_barriers(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 1,
-                                 &buf_barrier, 0, NULL);
-}
-
 void
 vn_CmdCopyImageToBuffer(VkCommandBuffer commandBuffer,
                         VkImage srcImage,
@@ -1521,18 +1481,8 @@ vn_CmdCopyImageToBuffer(VkCommandBuffer commandBuffer,
                         uint32_t regionCount,
                         const VkBufferImageCopy *pRegions)
 {
-   struct vn_command_buffer *cmd =
-      vn_command_buffer_from_handle(commandBuffer);
-
-   bool prime_blit = vn_needs_prime_blit(srcImage, srcImageLayout);
-   if (prime_blit)
-      srcImageLayout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-
    VN_CMD_ENQUEUE(vkCmdCopyImageToBuffer, commandBuffer, srcImage,
                   srcImageLayout, dstBuffer, regionCount, pRegions);
-
-   if (prime_blit)
-      vn_transition_prime_layout(cmd, dstBuffer);
 }
 
 void
@@ -1540,19 +1490,8 @@ vn_CmdCopyImageToBuffer2(
    VkCommandBuffer commandBuffer,
    const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo)
 {
-   struct vn_command_buffer *cmd =
-      vn_command_buffer_from_handle(commandBuffer);
-   struct VkCopyImageToBufferInfo2 copy_info = *pCopyImageToBufferInfo;
-
-   bool prime_blit =
-      vn_needs_prime_blit(copy_info.srcImage, copy_info.srcImageLayout);
-   if (prime_blit)
-      copy_info.srcImageLayout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-
-   VN_CMD_ENQUEUE(vkCmdCopyImageToBuffer2, commandBuffer, &copy_info);
-
-   if (prime_blit)
-      vn_transition_prime_layout(cmd, copy_info.dstBuffer);
+   VN_CMD_ENQUEUE(vkCmdCopyImageToBuffer2, commandBuffer,
+                  pCopyImageToBufferInfo);
 }
 
 void
