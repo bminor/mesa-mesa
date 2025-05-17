@@ -15,7 +15,6 @@ lib = static_library(
   rust_args : rust_args,
   override_options : ['rust_std=2021', 'build.rust_std=2021'],
   rust_abi : 'rust',
-  native : true,
 )
 
 dep_rustc_hash = declare_dependency(
