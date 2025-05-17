@@ -5394,7 +5394,7 @@
         "description": "kopper: Revert \"kopper: Explicitly choose zink\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "854bc2ee05f90e426f318352682144050e402d4b",
         "notes": null
