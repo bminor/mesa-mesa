@@ -34,6 +34,7 @@
 #include "pipe/p_defines.h"
 #include "pipe/p_state.h"
 #include "pipe/p_context.h"
+#include "draw/draw_context.h"
 #include "frontend/drisw_api.h"
 
 #include "util/u_inlines.h"
@@ -1459,6 +1460,9 @@ static struct drisw_loader_funcs lvp_sw_lf = {
 static VkResult
 lvp_enumerate_physical_devices(struct vk_instance *vk_instance)
 {
+   if (!draw_get_option_use_llvm())
+      return VK_SUCCESS;
+
    struct lvp_instance *instance =
       container_of(vk_instance, struct lvp_instance, vk);
 
