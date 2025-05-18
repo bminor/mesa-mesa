@@ -635,6 +635,13 @@ struct v3d_context {
         unsigned sample_mask;
         struct pipe_framebuffer_state framebuffer;
 
+        /* Flags if we have submitted any jobs for the current framebuffer so
+         * we can make skip framebuffer invalidation for cases where we had to
+         * split the command list into multiple jobs for the same frame (i.e.
+         * queries, reaching CL size limits of any kind, etc.).
+         */
+        bool submitted_any_jobs_for_current_fbo;
+
         /* Per render target, whether we should swap the R and B fields in the
          * shader's color output and in blending.  If render targets disagree
          * on the R/B swap and use the constant color, then we would need to
