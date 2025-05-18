@@ -98,6 +98,8 @@ void v3d_job_add_bo(struct v3d_job *job, struct v3d_bo *bo);
 #define V3D_MAX_FS_INPUTS 64
 
 #define MAX_JOB_SCISSORS 16
+#define V3D_JOB_MAX_BO_HANDLE_COUNT 2048
+#define V3D_JOB_MAX_BO_REFERENCED_SIZE (768 * 1024 * 1024)
 
 enum v3d_sampler_state_variant {
         V3D_SAMPLER_STATE_BORDER_0000,
