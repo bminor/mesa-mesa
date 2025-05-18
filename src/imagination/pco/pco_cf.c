@@ -345,17 +345,17 @@ static inline void lower_break_continue(pco_instr *instr,
    enum pco_cnd cnd;
    switch (exec_cnd) {
    case PCO_CC_E1_ZX:
-      assert(!pif->pred_exec);
+      assert(!pif || !pif->pred_exec);
       cnd = PCO_CND_ALWAYS;
       break;
 
    case PCO_CC_E1_Z1:
-      assert(pif->pred_exec);
+      assert(!pif || pif->pred_exec);
       cnd = PCO_CND_P0_TRUE;
       break;
 
    case PCO_CC_E1_Z0:
-      assert(pif->pred_exec);
+      assert(!pif || pif->pred_exec);
       cnd = PCO_CND_P0_FALSE;
       break;
 
@@ -458,11 +458,15 @@ static inline bool pco_lower_cf(pco_func *func)
             /* This has to be the last instruction in the block. */
             assert(instr == pco_last_instr(block));
 
-            pco_if *current_pif = util_dynarray_top(&pif_stack, pco_if *);
-            pco_loop *current_loop = util_dynarray_top(&loop_stack, pco_loop *);
+            pco_if *current_pif = NULL;
+            if (instr->parent_block->cf_node.parent->type ==
+                PCO_CF_NODE_TYPE_IF) {
+               current_pif = util_dynarray_top(&pif_stack, pco_if *);
+               assert(current_pif ==
+                      pco_cf_node_as_if(instr->parent_block->cf_node.parent));
+            }
 
-            assert(current_pif ==
-                   pco_cf_node_as_if(instr->parent_block->cf_node.parent));
+            pco_loop *current_loop = util_dynarray_top(&loop_stack, pco_loop *);
 
             lower_break_continue(instr,
                                  func,
