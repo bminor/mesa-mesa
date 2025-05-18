@@ -47,6 +47,8 @@ extern "C" {
 #endif
 
 struct lp_cached_code;
+struct lp_jit_texture;
+
 struct gallivm_state
 {
    char *module_name;
@@ -82,6 +84,7 @@ struct gallivm_state
    LLVMValueRef get_time_hook;
 
    LLVMValueRef texture_descriptor;
+   struct lp_jit_texture *texture_dynamic_state;
    LLVMValueRef sampler_descriptor;
 };
 

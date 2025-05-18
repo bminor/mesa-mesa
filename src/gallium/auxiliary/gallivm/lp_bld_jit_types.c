@@ -28,6 +28,7 @@
 #include "gallivm/lp_bld_sample.h"
 #include "gallivm/lp_bld_const.h"
 #include "gallivm/lp_bld_debug.h"
+#include "gallivm/lp_bld_flow.h"
 #include "gallivm/lp_bld_ir_common.h"
 #include "draw/draw_vertex_header.h"
 #include "lp_bld_jit_types.h"
@@ -336,8 +337,61 @@ lp_build_llvm_texture_member(struct gallivm_state *gallivm,
 {
    LLVMBuilderRef builder = gallivm->builder;
 
+   LLVMTypeRef tex_type = LLVMStructGetTypeAtIndex(resources_type, LP_JIT_RES_TEXTURES);
+   LLVMTypeRef res_type = LLVMStructGetTypeAtIndex(LLVMGetElementType(tex_type), member_index);
+   if (out_type)
+      *out_type = res_type;
+
    LLVMValueRef ptr;
-   if (gallivm->texture_descriptor) {
+   if (gallivm->texture_dynamic_state && member_index != LP_JIT_TEXTURE_BASE) {
+      LLVMTypeRef int32 = LLVMInt32TypeInContext(gallivm->context);
+      LLVMTypeRef int16 = LLVMInt16TypeInContext(gallivm->context);
+      LLVMTypeRef int8 = LLVMInt8TypeInContext(gallivm->context);
+
+      ptr = lp_build_alloca_undef(gallivm, res_type, "");
+
+      switch (member_index) {
+      case LP_JIT_SAMPLER_INDEX_DUMMY:
+         LLVMBuildStore(builder, LLVMConstInt(int32, gallivm->texture_dynamic_state->sampler_index, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_WIDTH:
+         LLVMBuildStore(builder, LLVMConstInt(int32, gallivm->texture_dynamic_state->width, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_HEIGHT:
+         LLVMBuildStore(builder, LLVMConstInt(int16, gallivm->texture_dynamic_state->height, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_DEPTH:
+         LLVMBuildStore(builder, LLVMConstInt(int16, gallivm->texture_dynamic_state->depth, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_FIRST_LEVEL:
+         LLVMBuildStore(builder, LLVMConstInt(int8, gallivm->texture_dynamic_state->first_level, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_LAST_LEVEL:
+         LLVMBuildStore(builder, LLVMConstInt(int8, gallivm->texture_dynamic_state->last_level, false), ptr);
+         break;
+      case LP_JIT_TEXTURE_ROW_STRIDE: {
+         LLVMValueRef row_stride[PIPE_MAX_TEXTURE_LEVELS];
+         for (uint32_t i = 0; i < ARRAY_SIZE(row_stride); i++)
+            row_stride[i] = LLVMConstInt(int32, gallivm->texture_dynamic_state->row_stride[i], false);
+         LLVMBuildStore(builder, LLVMConstArray(int32, row_stride, ARRAY_SIZE(row_stride)), ptr);
+         break;
+      }
+      case LP_JIT_TEXTURE_IMG_STRIDE: {
+         LLVMValueRef img_stride[PIPE_MAX_TEXTURE_LEVELS];
+         for (uint32_t i = 0; i < ARRAY_SIZE(img_stride); i++)
+            img_stride[i] = LLVMConstInt(int32, gallivm->texture_dynamic_state->img_stride[i], false);
+         LLVMBuildStore(builder, LLVMConstArray(int32, img_stride, ARRAY_SIZE(img_stride)), ptr);
+         break;
+      }
+      case LP_JIT_TEXTURE_MIP_OFFSETS: {
+         LLVMValueRef mip_offsets[PIPE_MAX_TEXTURE_LEVELS];
+         for (uint32_t i = 0; i < ARRAY_SIZE(mip_offsets); i++)
+            mip_offsets[i] = LLVMConstInt(int32, gallivm->texture_dynamic_state->mip_offsets[i], false);
+         LLVMBuildStore(builder, LLVMConstArray(int32, mip_offsets, ARRAY_SIZE(mip_offsets)), ptr);
+         break;
+      }
+      }
+   } else if (gallivm->texture_descriptor) {
       static_assert(offsetof(struct lp_descriptor, texture) == 0, "Invalid texture offset!");
       LLVMValueRef texture_ptr = gallivm->texture_descriptor;
 
@@ -388,12 +442,6 @@ lp_build_llvm_texture_member(struct gallivm_state *gallivm,
       res = LLVMBuildLoad2(builder, res_type, ptr, "");
    } else
       res = ptr;
-
-   if (out_type) {
-      LLVMTypeRef tex_type = LLVMStructGetTypeAtIndex(resources_type, LP_JIT_RES_TEXTURES);
-      LLVMTypeRef res_type = LLVMStructGetTypeAtIndex(LLVMGetElementType(tex_type), member_index);
-      *out_type = res_type;
-   }
 
    lp_build_name(res, "resources.texture%u.%s", texture_unit, member_name);
 
