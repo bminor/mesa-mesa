@@ -457,27 +457,14 @@ lp_build_llvm_texture_residency(struct gallivm_state *gallivm,
 {
    LLVMBuilderRef builder = gallivm->builder;
 
-   static_assert(offsetof(struct lp_descriptor, texture) == 0, "Invalid texture offset");
-   LLVMValueRef texture_ptr = gallivm->texture_descriptor;
-
-   LLVMTypeRef texture_ptr_type = LLVMStructGetTypeAtIndex(resources_type, LP_JIT_RES_TEXTURES);
-   LLVMTypeRef texture_type = LLVMGetElementType(texture_ptr_type);
-   texture_ptr_type = LLVMPointerType(texture_type, 0);
-
-   texture_ptr = LLVMBuildIntToPtr(builder, texture_ptr, texture_ptr_type, "");
-
-   static_assert(offsetof(struct lp_jit_texture, row_stride) == offsetof(struct lp_jit_texture, residency),
-                 "Invalid texture descriptor layout");
-   LLVMValueRef indices[2] = {
-      lp_build_const_int32(gallivm, 0),
-      lp_build_const_int32(gallivm, LP_JIT_TEXTURE_ROW_STRIDE),
-   };
-   LLVMValueRef ptr = LLVMBuildGEP2(builder, texture_type, texture_ptr, indices, ARRAY_SIZE(indices), "");
+   LLVMValueRef residency_ptr_ptr = gallivm->texture_descriptor;
+   residency_ptr_ptr = LLVMBuildAdd(builder, residency_ptr_ptr,
+                                    lp_build_const_int64(gallivm, offsetof(struct lp_descriptor, texture.residency)), "");
 
    LLVMTypeRef residency_type = LLVMPointerType(LLVMInt8TypeInContext(gallivm->context), 0);
-   ptr = LLVMBuildBitCast(builder, ptr, LLVMPointerType(residency_type, 0), "");
+   residency_ptr_ptr = LLVMBuildIntToPtr(builder, residency_ptr_ptr, LLVMPointerType(residency_type, 0), "");
 
-   return LLVMBuildLoad2(builder, residency_type, ptr, "");
+   return LLVMBuildLoad2(builder, residency_type, residency_ptr_ptr, "");
 }
 
 

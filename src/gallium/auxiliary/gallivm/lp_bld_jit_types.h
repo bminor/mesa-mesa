@@ -235,10 +235,17 @@ struct lp_texture_handle {
    uint32_t sampler_index;
 };
 
+struct lp_jit_bindless_texture
+{
+   const void *base;
+   const void *residency;
+   uint32_t sampler_index;
+};
+
 struct lp_descriptor {
    union {
       struct {
-         struct lp_jit_texture texture;
+         struct lp_jit_bindless_texture texture;
          struct lp_jit_sampler sampler;
       };
       struct {
