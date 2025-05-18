@@ -2962,7 +2962,13 @@ static inline unsigned pco_igrp_offset(pco_igrp *igrp)
 static inline unsigned pco_cf_node_offset(pco_cf_node *cf_node)
 {
    pco_block *block = pco_cf_node_as_block(cf_node);
-   return pco_igrp_offset(pco_first_igrp(block));
+   pco_igrp *igrp = pco_first_igrp(block);
+   if (!igrp) {
+      block = pco_next_block_nonempty(block);
+      igrp = pco_first_igrp(block);
+   }
+
+   return pco_igrp_offset(igrp);
 }
 
 static inline unsigned pco_branch_rel_offset(pco_igrp *br, pco_cf_node *cf_node)
