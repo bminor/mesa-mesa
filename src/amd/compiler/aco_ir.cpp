@@ -155,7 +155,9 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    default: break;
    }
 
-   program->dev.sram_ecc_enabled = program->family == CHIP_MI100;
+   program->dev.sram_ecc_enabled = program->family == CHIP_VEGA20 ||
+                                   program->family == CHIP_MI100 || program->family == CHIP_MI200 ||
+                                   program->family == CHIP_GFX940;
    /* apparently gfx702 also has fast v_fma_f32 but I can't find a family for that */
    program->dev.has_fast_fma32 = program->gfx_level >= GFX9;
    if (program->family == CHIP_TAHITI || program->family == CHIP_CARRIZO ||
