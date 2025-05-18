@@ -5774,7 +5774,7 @@
         "description": "v3d: Only apply TLB load invalidation on first job after FB state update",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
