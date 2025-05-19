@@ -55,9 +55,6 @@ dEQP-VK.glsl.builtin.function.integer.findMSB.ivec2_highp_geometry
 # https://gitlab.freedesktop.org/eric/mesa/-/jobs/37596148
 dEQP-VK.renderpass2.suballocation.load_store_op_none.depthstencil_d24_unorm_s8_uint_load_op_depth_load_stencil_none_store_op_depth_store_stencil_none_stencil_write_off
 
-# Flaky when running them in parallel, reliable otherwise
-dEQP-VK.synchronization2?.implicit.timeline_semaphore.write_(copy_buffer|ssbo_vertex)_read_(copy_buffer|ssbo_vertex).buffer_16384.*
-
 # first encounter 01/04/2023
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
@@ -87,19 +84,6 @@ dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type
 dEQP-VK.rasterization.primitives.no_stipple.triangle_fan
 dEQP-VK.rasterization.provoking_vertex.draw.last.triangle_list_with_adjacency
 dEQP-VK.renderpass.suballocation.load_store_op_none.depthstencil_d24_unorm_s8_uint_load_op_depth_load_stencil_none_store_op_depth_store_stencil_none_stencil_write_off
-dEQP-VK.synchronization.basic.timeline_semaphore.one_queue
-dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_compute_read_vertex_input.buffer_262144_opaque_fd
-dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
-dEQP-VK.synchronization2.none_stage.color_attachment_to_generic_color_read
-dEQP-VK.synchronization2.op.single_queue.fence.write_copy_buffer_to_image_read_image_compute.image_128x128_r16_uint_specialized_access_flag
-dEQP-VK.synchronization2.op.single_queue.fence.write_copy_image_to_buffer_read_ubo_geometry.buffer_16384_specialized_access_flag
-dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_vertex_read_ubo_vertex.buffer_16384_specialized_access_flag
-dEQP-VK.synchronization2.signal_order.shared_binary_semaphore.write_ssbo_compute_indirect_read_ssbo_geometry.buffer_262144_opaque_fd
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_read_ssbo_compute_indirect.buffer_262144
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_read_image_compute.image_128x128_r32g32b32a32_sfloat
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_image_to_buffer_read_ubo_compute_indirect.buffer_16384
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_fragment_read_copy_image.image_128_r32_uint
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
 dEQP-VK.texture.shadow.cube.linear.less_d24_unorm_s8_uint
 
 # With linux kernel 6.13-rc4 uprev. Broadcom job uses 6.6.47 kernel, so likely this is caused with recent mesa
@@ -111,12 +95,9 @@ dEQP-VK.ssbo.layout.random.all_per_block_buffers.0
 # New flakes in 1.4.1.0
 dEQP-VK.draw.renderpass.multi_draw.mosaic.normal.max_draws.stride_extra_12.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.glsl.texture_functions.query.texturequerylevels.usampler1darray_fragment
-dEQP-VK.synchronization.cross_instance.dedicated.write_ssbo_vertex_read_vertex_input.buffer_262144_binary_semaphore_fd
 dEQP-VK.memory.pipeline_barrier.transfer_dst_uniform_texel_buffer.65536
 dEQP-VK.rasterization.primitives_multisample_4_bit.no_stipple.lines
 dEQP-VK.glsl.builtin.function.pack_unpack.unpackunorm4x8_geometry
-
-dEQP-VK.synchronization2.op.single_queue.barrier.write_fill_buffer_read_vertex_input.buffer_262144
 
 dEQP-GLES3.functional.buffer.write.recreate_store.random_4
 dEQP-VK.clipping.clip_volume.inside.triangle_strip
@@ -125,14 +106,6 @@ dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4
 dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap
 dEQP-VK.rasterization.culling.front_triangle_strip
 dEQP-VK.rasterization.primitives.no_stipple.rectangular_lines_with_adjacency_factor_large
-dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0112
-dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_262144_opaque_fd
-dEQP-VK.synchronization2.basic.timeline_semaphore.chain
-dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0230
-dEQP-VK.synchronization2.op.single_queue.fence.write_copy_buffer_to_image_read_image_compute.image_128x128_r32g32b32a32_sfloat
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_copy_buffer_to_image_read_copy_image.image_128x128_d16_unorm
-dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_indirect_read_blit_image.image_64x64x8_r32_sfloat
-dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0232
 dEQP-VK.texture.filtering.2d.combinations.nearest.linear.repeat.clamp_to_edge
 dEQP-VK.texture.filtering.2d.combinations.nearest_mipmap_nearest.linear.clamp_to_border.mirrored_repeat
 dEQP-VK.texture.filtering.2d_array.combinations.linear_mipmap_linear.linear.mirrored_repeat.repeat
@@ -145,10 +118,9 @@ api@clgetdeviceinfo
 dEQP-VK.binding_model.descriptorset_random.sets4.constant.ubolimitlow.sbolimitlow.sampledimglow.outimgtexlow.noiub.nouab.vert.noia.6
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.max_draws.standard_stride.10_instances.vert_only.multiview.offset_6_no_draw_id
+dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.max_draws.stride_extra_4.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_samples
-dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0021
-dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0200
-dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0211
+dEQP-VK.fragment_operations.occlusion_query.precise_test_scissors_depth_write_stencil_clear
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.invariance.tess_coord_component_range.isolines_fractional_even_spacing_cw
 dEQP-VK.tessellation.user_defined_io.per_patch_block_array.vertex_io_array_size_implicit.triangles
