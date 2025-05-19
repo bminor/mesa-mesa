@@ -4692,12 +4692,13 @@ iris_compute_first_urb_slot_required(struct iris_compiled_shader *fs_shader,
                                      const struct intel_vue_map *prev_stage_vue_map)
 {
 #if GFX_VER >= 9
-   uint32_t read_offset, read_length, num_varyings, primid_offset;
+   uint32_t read_offset, read_length, num_varyings, primid_offset, flat_inputs;
    brw_compute_sbe_per_vertex_urb_read(prev_stage_vue_map,
                                        false /* mesh*/,
+                                       false /* per_primitive_remapping */,
                                        brw_wm_prog_data(fs_shader->brw_prog_data),
                                        &read_offset, &read_length, &num_varyings,
-                                       &primid_offset);
+                                       &primid_offset, &flat_inputs);
    return 2 * read_offset;
 #else
    const struct iris_fs_data *fs_data = iris_fs_data(fs_shader);

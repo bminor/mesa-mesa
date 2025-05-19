@@ -30,6 +30,8 @@ intel_sometimes_invert(enum intel_sometimes x)
    return (enum intel_sometimes)((int)INTEL_ALWAYS - (int)x);
 }
 
+#define INTEL_MSAA_FLAG_FIRST_VUE_SLOT_OFFSET     (19)
+#define INTEL_MSAA_FLAG_FIRST_VUE_SLOT_SIZE       (6)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET (25)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE   (6)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH   (32)
@@ -57,6 +59,9 @@ enum intel_msaa_flags {
    /** True if provoking vertex is last */
    INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST = (1 << 5),
 
+   /** True if we need to apply Wa_18019110168 remapping */
+   INTEL_MSAA_FLAG_PER_PRIMITIVE_REMAPPING = (1 << 6),
+
    /** True if this shader has been dispatched coarse
     *
     * This is intentionally chose to be bit 15 to correspond to the coarse bit
@@ -71,10 +76,16 @@ enum intel_msaa_flags {
     */
    INTEL_MSAA_FLAG_COARSE_RT_WRITES = (1 << 18),
 
+   /** First slot read in the VUE
+    *
+    * This is not a flag but a value that cover 6bits.
+    */
+   INTEL_MSAA_FLAG_FIRST_VUE_SLOT = (1 << INTEL_MSAA_FLAG_FIRST_VUE_SLOT_OFFSET),
+
    /** Index of the PrimitiveID attribute relative to the first read
     * attribute.
     *
-    * This is not a flag but a value that cover bits 20:31. Value 32 means the
+    * This is not a flag but a value that cover 6bits. Value 32 means the
     * PrimitiveID is coming from the PerPrimitive block, written by the Mesh
     * shader.
     */
@@ -441,7 +452,9 @@ struct intel_fs_params {
    bool coarse_pixel;
    bool alpha_to_coverage;
    bool provoking_vertex_last;
+   uint32_t first_vue_slot;
    uint32_t primitive_id_index;
+   bool per_primitive_remapping;
 };
 
 static inline enum intel_msaa_flags
@@ -473,12 +486,19 @@ intel_fs_msaa_flags(struct intel_fs_params params)
    if (params.alpha_to_coverage)
       fs_msaa_flags |= INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE;
 
+   assert(params.first_vue_slot < (1 << INTEL_MSAA_FLAG_FIRST_VUE_SLOT_SIZE));
+   fs_msaa_flags |= (enum intel_msaa_flags)(
+      params.first_vue_slot << INTEL_MSAA_FLAG_FIRST_VUE_SLOT_OFFSET);
+
    assert(params.primitive_id_index < (1u << INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE));
    fs_msaa_flags |= (enum intel_msaa_flags)(
       params.primitive_id_index << INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET);
 
    if (params.provoking_vertex_last)
       fs_msaa_flags |= INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST;
+
+   if (params.per_primitive_remapping)
+      fs_msaa_flags |= INTEL_MSAA_FLAG_PER_PRIMITIVE_REMAPPING;
 
    return fs_msaa_flags;
 }

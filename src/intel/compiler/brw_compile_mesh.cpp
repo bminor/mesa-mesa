@@ -1316,19 +1316,24 @@ brw_compile_mesh(const struct brw_compiler *compiler,
    g.generate_code(selected->cfg, selected->dispatch_width, selected->shader_stats,
                    selected->performance_analysis.require(), params->base.stats);
    if (prog_data->map.wa_18019110168_active) {
+      int8_t remap_table[VARYING_SLOT_TESS_MAX];
+      memset(remap_table, -1, sizeof(remap_table));
+      for (uint32_t i = 0; i < ARRAY_SIZE(wa_18019110168_mapping); i++) {
+         if (wa_18019110168_mapping[i] != -1)
+            remap_table[i] = prog_data->map.vue_map.varying_to_slot[wa_18019110168_mapping[i]];
+      }
       uint8_t *const_data =
          (uint8_t *) rzalloc_size(params->base.mem_ctx,
-                                  nir->constant_data_size +
-                                  sizeof(prog_data->map.per_primitive_offsets));
+                                  nir->constant_data_size + sizeof(remap_table));
       memcpy(const_data, nir->constant_data, nir->constant_data_size);
-      memcpy(const_data + nir->constant_data_size,
-             prog_data->map.per_primitive_offsets,
-             sizeof(prog_data->map.per_primitive_offsets));
-      g.add_const_data(const_data,
-                       nir->constant_data_size +
-                       sizeof(prog_data->map.per_primitive_offset));
+      memcpy(const_data + nir->constant_data_size, remap_table, sizeof(remap_table));
+      g.add_const_data(const_data, nir->constant_data_size + sizeof(remap_table));
       prog_data->wa_18019110168_mapping_offset =
          prog_data->base.base.const_data_offset + nir->constant_data_size;
+      for (uint32_t i = 0; i < ARRAY_SIZE(remap_table); i++) {
+         if (remap_table[i] != -1)
+            fprintf(stderr, "%u -> %hhi\n", i, remap_table[i]);
+      }
    } else {
       g.add_const_data(nir->constant_data, nir->constant_data_size);
    }

@@ -675,16 +675,16 @@ emit_3dstate_sbe(struct anv_graphics_pipeline *pipeline)
    anv_pipeline_emit(pipeline, final.sbe, GENX(3DSTATE_SBE), sbe) {
    anv_pipeline_emit(pipeline, final.sbe_swiz, GENX(3DSTATE_SBE_SWIZ), swiz) {
       int max_source_attr = 0;
-      uint32_t vertex_read_offset, vertex_read_length, vertex_varyings;
+      uint32_t vertex_read_offset, vertex_read_length, vertex_varyings, flat_inputs;
       brw_compute_sbe_per_vertex_urb_read(
-         vue_map, anv_pipeline_is_mesh(pipeline), wm_prog_data,
+         vue_map, anv_pipeline_is_mesh(pipeline), false, wm_prog_data,
          &vertex_read_offset, &vertex_read_length, &vertex_varyings,
-         &pipeline->primitive_id_index);
+         &pipeline->primitive_id_index,
+         &flat_inputs);
 
       sbe.AttributeSwizzleEnable = anv_pipeline_is_primitive(pipeline);
       sbe.PointSpriteTextureCoordinateOrigin = UPPERLEFT;
-      sbe.ConstantInterpolationEnable = wm_prog_data->flat_inputs &
-                                        ((1u << vertex_varyings) - 1);
+      sbe.ConstantInterpolationEnable = flat_inputs;
       sbe.NumberofSFOutputAttributes = vertex_varyings;
 #if GFX_VERx10 >= 200
       sbe.VertexAttributesBypass = wm_prog_data->vertex_attributes_bypass;

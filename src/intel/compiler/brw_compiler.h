@@ -533,6 +533,7 @@ enum brw_shader_reloc_id {
    BRW_SHADER_RELOC_RESUME_SBT_ADDR_HIGH,
    BRW_SHADER_RELOC_DESCRIPTORS_ADDR_HIGH,
    BRW_SHADER_RELOC_DESCRIPTORS_BUFFER_ADDR_HIGH,
+   BRW_SHADER_RELOC_INSTRUCTION_BASE_ADDR_HIGH,
    BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE,
    BRW_SHADER_RELOC_LAST_EMBEDDED_SAMPLER_HANDLE =
    BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE + BRW_MAX_EMBEDDED_SAMPLERS - 1,
@@ -796,6 +797,12 @@ struct brw_wm_prog_data {
     * pixel shader).
     */
    unsigned msaa_flags_param;
+
+   /**
+    * Push constant location of the remapping offset in the instruction heap
+    * for Wa_18019110168.
+    */
+   unsigned per_primitive_remap_param;
 
    /**
     * Mask of which interpolation modes are required by the fragment shader.
@@ -1721,12 +1728,13 @@ brw_compute_first_fs_urb_slot_required(uint64_t inputs_read,
 
 void
 brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_map,
-                                    bool mesh,
+                                    bool mesh, bool per_primitive_remapping,
                                     const struct brw_wm_prog_data *wm_prog_data,
                                     uint32_t *out_first_slot,
                                     uint32_t *num_slots,
                                     uint32_t *out_num_varyings,
-                                    uint32_t *out_primitive_id_offset);
+                                    uint32_t *out_primitive_id_offset,
+                                    uint32_t *out_flat_inputs);
 
 /**
  * Computes the URB offset at which SBE should read the per primitive date

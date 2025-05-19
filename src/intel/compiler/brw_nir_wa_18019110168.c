@@ -535,3 +535,83 @@ brw_nir_frag_convert_attrs_prim_to_vert(struct nir_shader *nir,
 
    return true;
 }
+
+bool
+brw_nir_frag_convert_attrs_prim_to_vert_indirect(struct nir_shader *nir,
+                                                 const struct intel_device_info *devinfo,
+                                                 struct brw_compile_fs_params *params)
+{
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+   nir_builder _b = nir_builder_at(nir_before_impl(impl)), *b = &_b;
+
+   const uint64_t per_primitive_inputs = nir->info.inputs_read &
+      (nir->info.per_primitive_inputs | VARYING_BIT_PRIMITIVE_ID);
+
+   int per_primitive_offsets[VARYING_SLOT_MAX];
+   uint32_t first_read_offset = 0, per_primitive_stride = 0;
+   brw_compute_per_primitive_map(per_primitive_offsets,
+                                 &per_primitive_stride,
+                                 &first_read_offset,
+                                 0, nir, nir_var_shader_in,
+                                 nir->info.per_primitive_inputs,
+                                 true /* separate_shader */);
+
+   per_primitive_stride = align(per_primitive_stride, devinfo->grf_size);
+
+   nir_def *msaa_flags = nir_load_fs_msaa_intel(b);
+   nir_def *needs_remapping = nir_test_mask(
+      b, msaa_flags, INTEL_MSAA_FLAG_PER_PRIMITIVE_REMAPPING);
+   nir_push_if(b, needs_remapping);
+   {
+      nir_def *first_slot =
+         nir_ubitfield_extract_imm(
+            b, msaa_flags,
+            INTEL_MSAA_FLAG_FIRST_VUE_SLOT_OFFSET,
+            INTEL_MSAA_FLAG_FIRST_VUE_SLOT_SIZE);
+      nir_def *remap_table_addr =
+         nir_pack_64_2x32_split(
+            b,
+            nir_load_per_primitive_remap_intel(b),
+            nir_load_reloc_const_intel(
+               b, BRW_SHADER_RELOC_INSTRUCTION_BASE_ADDR_HIGH));
+      u_foreach_bit64(location, per_primitive_inputs) {
+         if (location < VARYING_SLOT_VAR0 &&
+             location != VARYING_SLOT_PRIMITIVE_ID)
+            continue;
+
+         /* Read the varying_to_slot[] array from the mesh shader constants
+          * space in the instruction heap.
+          */
+         nir_def *data =
+            nir_load_global_constant(
+               b, nir_iadd_imm(b, remap_table_addr, ROUND_DOWN_TO(location, 4)),
+               4, 1, 32);
+         const unsigned bit_offset = (8 * location) % 32;
+         nir_def *absolute_attr_idx =
+            nir_ubitfield_extract_imm(b, data, bit_offset, 4);
+         /* Now remove the first slot visible in the FS payload */
+         nir_def *payload_attr_idx =
+            nir_iadd(b, absolute_attr_idx, nir_ineg(b, first_slot));
+         for (unsigned c = 0; c < 4; c++) {
+            /* brw_nir_vertex_attribute_offset works in scalar */
+            nir_def *attr_idx =
+               nir_iadd_imm(
+                  b, nir_imul_imm(b, payload_attr_idx, 4), c);
+            /* Turn the scalar attribute index into register byte offset */
+            nir_def *per_vertex_offset =
+               nir_iadd_imm(
+                  b,
+                  brw_nir_vertex_attribute_offset(b, attr_idx, devinfo),
+                  per_primitive_stride);
+            nir_def *value =
+               nir_read_attribute_payload_intel(b, per_vertex_offset);
+            /* Write back the values into the per-primitive location */
+            nir_store_per_primitive_payload_intel(
+               b, value, .base = location, .component = c);
+         }
+      }
+   }
+   nir_pop_if(b, NULL);
+
+   return nir_progress(true, impl, nir_metadata_none);
+}

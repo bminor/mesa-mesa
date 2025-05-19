@@ -4428,6 +4428,20 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       break;
    }
 
+   case nir_intrinsic_store_per_primitive_payload_intel: {
+      const brw_builder ubld = bld.exec_all().group(1, 0);
+      brw_reg src = get_nir_src(ntb, instr->src[0], -1);
+      src = retype(bld.emit_uniformize(src), BRW_TYPE_UD);
+
+      ubld.MOV(retype(
+                  brw_per_primitive_reg(bld,
+                                        nir_intrinsic_base(instr),
+                                        nir_intrinsic_component(instr)),
+                  BRW_TYPE_UD),
+               component(src, 0));
+      break;
+   }
+
    case nir_intrinsic_load_fs_input_interp_deltas: {
       assert(s.stage == MESA_SHADER_FRAGMENT);
       assert(nir_src_as_uint(instr->src[0]) == 0);
@@ -4586,9 +4600,15 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       bld.MOV(retype(dest, BRW_TYPE_UD), brw_imm_ud(s.max_polygons));
       break;
 
+   case nir_intrinsic_load_per_primitive_remap_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD),
+              brw_dynamic_per_primitive_remap(brw_wm_prog_data(s.prog_data)));
+      break;
+
    case nir_intrinsic_read_attribute_payload_intel: {
-      const brw_reg offset = retype(get_nir_src(ntb, instr->src[0], 0),
-                                    BRW_TYPE_UD);
+      const brw_reg offset = retype(
+         bld.emit_uniformize(get_nir_src(ntb, instr->src[0], 0)),
+         BRW_TYPE_UD);
       bld.emit(FS_OPCODE_READ_ATTRIBUTE_PAYLOAD, retype(dest, BRW_TYPE_UD), offset);
       break;
    }

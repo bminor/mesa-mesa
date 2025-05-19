@@ -2336,6 +2336,10 @@ intrinsic("read_attribute_payload_intel", dest_comp=1, bit_sizes=[32],
           src_comp=[1],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# Populate the per-primitive payload at an offset
+# src[] = { value, offset }
+intrinsic("store_per_primitive_payload_intel", src_comp=[-1], indices=[BASE, COMPONENT])
+
 # Number of data items being operated on for a SIMD program.
 system_value("simd_width_intel", 1)
 
@@ -2416,6 +2420,9 @@ intrinsic("load_inline_data_intel", [], dest_comp=0,
 
 # Dynamic fragment shader parameters.
 system_value("fs_msaa_intel", 1)
+
+# Per primitive remapping table offset.
+system_value("per_primitive_remap_intel", 1)
 
 # Intrinsics for Intel bindless thread dispatch
 # BASE=brw_topoloy_id

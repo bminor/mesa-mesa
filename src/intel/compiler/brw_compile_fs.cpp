@@ -1303,6 +1303,12 @@ brw_assign_urb_setup(brw_shader &s)
          continue;
       }
 
+      if (inst->dst.file == ATTR) {
+         inst->dst = remap_attr_reg(s, prog_data, inst->dst,
+                                    urb_start, inst->exec_size);
+         continue;
+      }
+
       for (int i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == ATTR) {
             inst->src[i] = remap_attr_reg(s, prog_data, inst->src[i],
@@ -1468,12 +1474,22 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
    const struct intel_device_info *devinfo = compiler->devinfo;
    const unsigned max_subgroup_size = 32;
+   unsigned max_polygons = MAX2(1, params->max_polygons);
 
    brw_nir_apply_key(nir, compiler, &key->base, max_subgroup_size);
 
-   if (params->mue_map && params->mue_map->wa_18019110168_active) {
-      brw_nir_frag_convert_attrs_prim_to_vert(
-         nir, params->mue_map->per_primitive_offsets);
+   if (brw_nir_fragment_shader_needs_wa_18019110168(devinfo, key->mesh_input, nir)) {
+      if (params->mue_map && params->mue_map->wa_18019110168_active) {
+         brw_nir_frag_convert_attrs_prim_to_vert(
+            nir, params->mue_map->per_primitive_offsets);
+      } else {
+         NIR_PASS(_, nir, brw_nir_frag_convert_attrs_prim_to_vert_indirect,
+                  devinfo, params);
+      }
+      /* Remapping per-primitive inputs into unused per-vertex inputs cannot
+       * work with multipolygon.
+       */
+      max_polygons = 1;
    }
 
    brw_nir_lower_fs_inputs(nir, devinfo, key);
@@ -1559,8 +1575,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
       unsigned max_dispatch_width = reqd_dispatch_width ? reqd_dispatch_width : 32;
       brw_shader *vbase = NULL;
 
-      if (params->max_polygons >= 2 && !key->coarse_pixel) {
-         if (params->max_polygons >= 4 && max_dispatch_width >= 32 &&
+      if (max_polygons >= 2 && !key->coarse_pixel) {
+         if (max_polygons >= 4 && max_dispatch_width >= 32 &&
              4 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 4X8)) {
             /* Try a quad-SIMD8 compile */
@@ -1748,13 +1764,12 @@ brw_compile_fs(const struct brw_compiler *compiler,
       }
 
       if (devinfo->ver >= 12 && !has_spilled &&
-          params->max_polygons >= 2 && !key->coarse_pixel &&
+          max_polygons >= 2 && !key->coarse_pixel &&
           reqd_dispatch_width == SUBGROUP_SIZE_VARYING) {
          brw_shader *vbase = v8 ? v8.get() : v16 ? v16.get() : v32.get();
          assert(vbase);
 
-         if (devinfo->ver >= 20 &&
-             params->max_polygons >= 4 &&
+         if (devinfo->ver >= 20 && max_polygons >= 4 &&
              vbase->max_dispatch_width >= 32 &&
              4 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 4X8)) {
@@ -1889,11 +1904,13 @@ brw_compile_fs(const struct brw_compiler *compiler,
 extern "C" void
 brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_map,
                                     bool mesh,
+                                    bool per_primitive_remapping,
                                     const struct brw_wm_prog_data *wm_prog_data,
                                     uint32_t *out_read_offset,
                                     uint32_t *out_read_length,
                                     uint32_t *out_num_varyings,
-                                    uint32_t *out_primitive_id_offset)
+                                    uint32_t *out_primitive_id_offset,
+                                    uint32_t *out_flat_inputs)
 {
    int first_slot = INT32_MAX, last_slot = -1;
 
@@ -1931,6 +1948,7 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
           (first_slot >= 0 && last_slot >= 0 && last_slot >= first_slot));
 
    uint32_t num_varyings = wm_prog_data->num_varying_inputs;
+   uint32_t remapped_flat_inputs = 0;
 
    /* When using INTEL_VUE_LAYOUT_SEPARATE_MESH, the location of the
     * PrimitiveID is unknown at compile time, here we compute the offset
@@ -1939,7 +1957,19 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
     */
    *out_primitive_id_offset = 0;
    if (prev_stage_vue_map->layout == INTEL_VUE_LAYOUT_SEPARATE_MESH) {
-      if (mesh) {
+      if (per_primitive_remapping && wm_prog_data->per_primitive_inputs != 0) {
+         /* When the mesh shader remaps per-primitive slots to per-vertex
+          * ones, read the entire set of slots.
+          */
+         assert(mesh);
+         remapped_flat_inputs =
+            ((1u << prev_stage_vue_map->num_slots) - 1) &
+            ~((1u << last_slot) - 1);
+         *out_flat_inputs |= remapped_flat_inputs;
+         last_slot = prev_stage_vue_map->num_slots - 1;
+         *out_primitive_id_offset = INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH;
+         num_varyings = prev_stage_vue_map->num_slots - first_slot;
+      } else if (mesh) {
          /* When using Mesh, the PrimitiveID is in the per-primitive block. */
          if (wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID] >= 0)
             num_varyings--;
@@ -1976,6 +2006,8 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
          last_slot = MAX2(primitive_id_slot, last_slot);
 
          *out_primitive_id_offset = primitive_id_slot - first_slot;
+         /* Make sure to have constant interpolation on PrimitiveID */
+         remapped_flat_inputs |= BITFIELD_BIT(*out_primitive_id_offset);
       }
    }
 
@@ -1990,6 +2022,8 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
       *out_read_length = DIV_ROUND_UP(last_slot - first_slot + 1, 2);
       *out_num_varyings = num_varyings;
    }
+
+   *out_flat_inputs = wm_prog_data->flat_inputs | remapped_flat_inputs;
 }
 
 extern "C" void
@@ -2020,6 +2054,13 @@ brw_compute_sbe_per_primitive_urb_read(uint64_t inputs_read,
       break;
    }
 
-   *out_read_offset = DIV_ROUND_UP(first_read, 32);
-   *out_read_length = DIV_ROUND_UP(num_varyings, 2);
+   /* Not loading any per-primitive data in this case, the push constants
+    * should be adjusted though.
+    */
+   if (mue_map->wa_18019110168_active) {
+      *out_read_offset = *out_read_length = 0;
+   } else {
+      *out_read_offset = DIV_ROUND_UP(first_read, 32);
+      *out_read_length = DIV_ROUND_UP(num_varyings, 2);
+   }
 }

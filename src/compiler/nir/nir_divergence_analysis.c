@@ -361,6 +361,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_max_polygon_intel:
    case nir_intrinsic_load_ray_base_mem_addr_intel:
    case nir_intrinsic_load_ray_hw_stack_size_intel:
+   case nir_intrinsic_load_per_primitive_remap_intel:
       is_divergent = false;
       break;
 

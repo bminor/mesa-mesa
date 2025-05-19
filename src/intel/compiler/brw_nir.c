@@ -729,15 +729,59 @@ brw_nir_vertex_attribute_offset(nir_builder *b,
          12);
 }
 
+static nir_block *
+fragment_top_block_or_after_wa_18019110168(nir_function_impl *impl)
+{
+   nir_if *first_if =
+      nir_block_get_following_if(nir_start_block(impl));
+   nir_block *post_wa_18019110168_block = NULL;
+   if (first_if) {
+      nir_block *last_if_block = nir_if_last_then_block(first_if);
+      nir_foreach_block_in_cf_node(block, &first_if->cf_node) {
+         nir_foreach_instr(instr, block) {
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+
+            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+            if (intrin->intrinsic == nir_intrinsic_store_per_primitive_payload_intel) {
+               post_wa_18019110168_block = last_if_block->successors[0];
+               break;
+            }
+         }
+
+         if (post_wa_18019110168_block)
+            break;
+      }
+   }
+
+   return post_wa_18019110168_block ?
+      post_wa_18019110168_block : nir_start_block(impl);
+}
+
 void
 brw_nir_lower_fs_inputs(nir_shader *nir,
                         const struct intel_device_info *devinfo,
                         const struct brw_wm_prog_key *key)
 {
+   /* Always pull the PrimitiveID from the per-primitive block if mesh can be
+    * involved.
+    */
+   if (key->mesh_input != INTEL_NEVER) {
+      nir_foreach_shader_in_variable(var, nir) {
+         if (var->data.location == VARYING_SLOT_PRIMITIVE_ID) {
+            var->data.per_primitive = true;
+            nir->info.per_primitive_inputs |= VARYING_BIT_PRIMITIVE_ID;
+         }
+      }
+   }
+
    nir_def *indirect_primitive_id = NULL;
    if (key->base.vue_layout == INTEL_VUE_LAYOUT_SEPARATE_MESH &&
        (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID)) {
-      nir_builder _b = nir_builder_at(nir_before_impl(nir_shader_get_entrypoint(nir))), *b = &_b;
+      nir_builder _b = nir_builder_at(
+         nir_before_block(
+            fragment_top_block_or_after_wa_18019110168(
+               nir_shader_get_entrypoint(nir)))), *b = &_b;
       nir_def *index = nir_ubitfield_extract_imm(
          b,
          nir_load_fs_msaa_intel(b),
@@ -776,14 +820,6 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
 
          var->data.interpolation = flat ? INTERP_MODE_FLAT
                                         : INTERP_MODE_SMOOTH;
-      }
-
-      /* Always pull the PrimitiveID from the per-primitive block if mesh can be involved.
-       */
-      if (var->data.location == VARYING_SLOT_PRIMITIVE_ID &&
-         key->mesh_input != INTEL_NEVER) {
-         var->data.per_primitive = true;
-         nir->info.per_primitive_inputs |= VARYING_BIT_PRIMITIVE_ID;
       }
    }
 
@@ -2640,7 +2676,7 @@ brw_nir_move_interpolation_to_top(nir_shader *nir)
    bool progress = false;
 
    nir_foreach_function_impl(impl, nir) {
-      nir_block *top = nir_start_block(impl);
+      nir_block *top = fragment_top_block_or_after_wa_18019110168(impl);
       nir_cursor cursor = nir_before_instr(nir_block_first_instr(top));
       bool impl_progress = false;
 
