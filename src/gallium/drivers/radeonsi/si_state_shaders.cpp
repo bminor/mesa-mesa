@@ -1600,8 +1600,11 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       S_028A84_NGG_DISABLE_PROVOK_REUSE(shader->key.ge.mono.u.vs_export_prim_id ||
                                         gs_sel->info.writes_primid);
 
+   unsigned num_params = si_shader_num_alloc_param_exports(shader);
+   unsigned num_prim_params = shader->info.nr_prim_param_exports;
+   bool no_pc_export = num_params == 0 && num_prim_params == 0;
+
    if (sscreen->info.gfx_level >= GFX12) {
-      unsigned num_params = si_shader_num_alloc_param_exports(shader);
       unsigned wave_limit_per_se = 0x3ff;
 
       /* This tuning adds up to 50% streamout performance. */
@@ -1632,7 +1635,8 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
                                             S_00B220_WAVE_LIMIT(wave_limit_per_se) |
                                             S_00B220_INST_PREF_SIZE(si_get_shader_prefetch_size(shader));
       shader->ngg.spi_vs_out_config = S_00B0C4_VS_EXPORT_COUNT(MAX2(num_params, 1) - 1) |
-                                      S_00B0C4_NO_PC_EXPORT(num_params == 0);
+                                      S_00B0C4_PRIM_EXPORT_COUNT(num_prim_params) |
+                                      S_00B0C4_NO_PC_EXPORT(no_pc_export);
    } else {
       unsigned late_alloc_wave64, cu_mask;
 
@@ -1662,8 +1666,9 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
                         C_00B21C_CU_EN, 0, &sscreen->info);
       shader->ngg.spi_shader_pgm_rsrc4_gs = S_00B204_SPI_SHADER_LATE_ALLOC_GS_GFX10(late_alloc_wave64);
       shader->ngg.spi_vs_out_config =
-         S_0286C4_VS_EXPORT_COUNT(MAX2(shader->info.nr_param_exports, 1) - 1) |
-         S_0286C4_NO_PC_EXPORT(shader->info.nr_param_exports == 0);
+         S_0286C4_VS_EXPORT_COUNT(MAX2(num_params, 1) - 1) |
+         S_0286C4_PRIM_EXPORT_COUNT(num_prim_params) |
+         S_0286C4_NO_PC_EXPORT(no_pc_export);
 
       if (sscreen->info.gfx_level >= GFX11) {
          shader->ngg.spi_shader_pgm_rsrc4_gs |=

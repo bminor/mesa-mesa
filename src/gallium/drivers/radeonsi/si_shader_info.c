@@ -341,6 +341,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       case nir_intrinsic_load_per_vertex_output:
       case nir_intrinsic_store_output:
       case nir_intrinsic_store_per_vertex_output:
+      case nir_intrinsic_store_per_primitive_output:
          scan_io_usage(nir, info, intr, false, colors_lowered);
          break;
       case nir_intrinsic_load_deref:

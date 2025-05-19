@@ -1224,6 +1224,7 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
 
    uint64_t outputs_written = 0;
    uint32_t outputs_written_16bit = 0;
+   uint64_t per_primitive_outputs = 0;
 
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    assert(impl);
@@ -1235,7 +1236,8 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
 
          nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
          if (intr->intrinsic != nir_intrinsic_store_output &&
-             intr->intrinsic != nir_intrinsic_store_per_vertex_output)
+             intr->intrinsic != nir_intrinsic_store_per_vertex_output &&
+             intr->intrinsic != nir_intrinsic_store_per_primitive_output)
             continue;
 
          /* No indirect indexing allowed. */
@@ -1250,6 +1252,9 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
          else
             outputs_written |= BITFIELD64_BIT(sem.location);
 
+         if (intr->intrinsic == nir_intrinsic_store_per_primitive_output)
+            per_primitive_outputs |= BITFIELD64_BIT(sem.location);
+
          /* Assign the param index if it's unassigned. */
          if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) && !sem.no_varying &&
              (sem.gs_streams & 0x3) == 0 &&
@@ -1259,7 +1264,10 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
             /* It must not be remapped (duplicated). */
             assert(slot_remap[sem.location] == -1);
 
-            temp_info->vs_output_param_offset[sem.location] = info->nr_param_exports++;
+            temp_info->vs_output_param_offset[sem.location] =
+               intr->intrinsic == nir_intrinsic_store_per_primitive_output ?
+               info->nr_prim_param_exports++ :
+               info->nr_param_exports++;
          }
       }
    }
@@ -1274,9 +1282,19 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
       temp_info->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID] = info->nr_param_exports++;
    }
 
+   /* per primitive outputs come after per vertex outputs */
+   unsigned per_primitive_outputs_offset = info->nr_param_exports;
+   if (sel->screen->info.gfx_level >= GFX11)
+      per_primitive_outputs_offset = MAX2(per_primitive_outputs_offset, 1);
+   u_foreach_bit64 (i, per_primitive_outputs) {
+      if (temp_info->vs_output_param_offset[i] != AC_EXP_PARAM_DEFAULT_VAL_0000)
+         temp_info->vs_output_param_offset[i] += per_primitive_outputs_offset;
+   }
+
    /* Update outputs written info, we may remove some outputs before. */
    nir->info.outputs_written = outputs_written;
    nir->info.outputs_written_16bit = outputs_written_16bit;
+   nir->info.per_primitive_outputs = per_primitive_outputs;
 }
 
 static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
@@ -1284,6 +1302,7 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
 {
    /* Initialize this first. */
    shader->info.nr_param_exports = 0;
+   shader->info.nr_prim_param_exports = 0;
 
    STATIC_ASSERT(sizeof(temp_info->vs_output_param_offset[0]) == 1);
    memset(temp_info->vs_output_param_offset, AC_EXP_PARAM_UNDEFINED,
@@ -1296,7 +1315,7 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
    memset(slot_remap, -1, NUM_TOTAL_VARYING_SLOTS);
 
    /* This sets DEFAULT_VAL for constant outputs in vs_output_param_offset. */
-   /* TODO: This doesn't affect GS. */
+   /* TODO: This doesn't affect GS and MS. */
    NIR_PASS(_, nir, ac_nir_optimize_outputs, false, slot_remap,
             temp_info->vs_output_param_offset);
 
@@ -2038,6 +2057,10 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
             ps_input_cntl = S_028644_OFFSET(0x20) |
                             S_028644_DEFAULT_VAL(offset);
          }
+
+         if (sscreen->info.gfx_level >= GFX11 &&
+             (nir->info.per_primitive_outputs & BITFIELD64_BIT(semantic)))
+            ps_input_cntl |= S_028644_PRIM_ATTR(1);
 
          shader->info.vs_output_ps_input_cntl[semantic] = ps_input_cntl;
       }

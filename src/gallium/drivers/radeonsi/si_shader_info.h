@@ -224,6 +224,7 @@ struct si_shader_variant_info {
    bool uses_mesh_scratch_ring : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
+   uint8_t nr_prim_param_exports;
    uint8_t clipdist_mask;
    uint8_t culldist_mask;
    uint8_t num_streamout_vec4s;
