@@ -288,5 +288,58 @@ export -f get_tag_file
 export -f error
 export -f trap_err
 
+function filter_env_vars() {
+    x_off
+    if [[ -n "${S3_JWT:-}" ]]; then
+        echo >&2 "Fatal: S3_JWT is set. This should have been cleared at this point."
+        return 1
+    fi
+
+    local exclude_vars=(
+        # GitLab tokens/passwords
+        CI_JOB_TOKEN
+        CI_DEPLOY_USER
+        CI_DEPLOY_PASSWORD
+        CI_DEPENDENCY_PROXY_PASSWORD
+        CI_REGISTRY_PASSWORD
+        CI_REPOSITORY_URL
+
+        # Shell-managed variables
+        _
+        HOME
+        HOSTNAME
+        OLDPWD
+        PATH
+        PWD
+        TERM
+        XDG_RUNTIME_DIR
+    )
+
+    env -0 | sort -z | while IFS= read -r -d '' line; do
+        [[ "$line" == *=* ]] || continue
+        local varname="${line%%=*}"
+        local value="${line#*=}"
+
+        # Skip certain Mesa-specific variables
+        if echo "$varname" | grep -qxE "$CI_EXCLUDE_ENV_VAR_REGEX"; then
+            echo >&2 "${FUNCNAME[0]}: $varname is not passed to the DUT as it matches the pattern in CI_EXCLUDE_ENV_VAR_REGEX"
+            continue
+        fi
+        # Skip excluded or invalid names
+        if printf '%s\n' "${exclude_vars[@]}" | grep -qxF "$varname"; then
+            echo >&2 "${FUNCNAME[0]}: $varname is not passed to the DUT as it is a variable listed for exclusion in ${FUNCNAME[0]}"
+            continue
+        fi
+        # Skip shell function exports
+        if [[ "$varname" == BASH_FUNC_* ]] || [[ ! "$varname" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+            continue
+        fi
+
+        printf "export %s=%s\n" "$varname" "${value@Q}"
+    done
+    x_restore
+}
+export -f filter_env_vars
+
 set -E
 trap 'trap_err $?' ERR

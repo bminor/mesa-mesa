@@ -225,7 +225,7 @@ yaml-toml-shell-py-test:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
   script:
     - section_start variables "Variables passed through:"
-    - install/common/export-gitlab-job-env-for-dut.sh
+    - filter_env_vars
     - section_end variables
     - install/piglit/piglit-traces.sh
 
