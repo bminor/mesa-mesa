@@ -2276,7 +2276,6 @@ impl SM32Op for OpLd {
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
         // Missing:
-        // 0x774 for load locked
         // 0x7c8 for indirect const load
         match self.access.space {
             MemSpace::Global(_) => {
@@ -2338,14 +2337,28 @@ impl SM32Op for OpLdc {
     }
 }
 
+impl SM32Op for OpLdSharedLock {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.set_opcode(0x774, 2);
+        e.set_dst(&self.dst);
+        e.set_reg_src(10..18, &self.addr);
+        e.set_field(23..47, self.offset);
+
+        e.set_pred_dst(48..51, &self.locked);
+        e.set_mem_type(51..54, self.mem_type);
+    }
+}
+
 impl SM32Op for OpSt {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
-        // Missing:
-        // 0x784 for store locked
         match self.access.space {
             MemSpace::Global(_) => {
                 e.set_opcode(0xe00, 0);
@@ -2369,6 +2382,24 @@ impl SM32Op for OpSt {
         }
         e.set_reg_src(2..10, &self.data);
         e.set_reg_src(10..18, &self.addr);
+    }
+}
+
+impl SM32Op for OpStSCheckUnlock {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM32Encoder<'_>) {
+        e.set_opcode(0x784, 2);
+
+        e.set_reg_src(2..10, &self.data);
+        e.set_reg_src(10..18, &self.addr);
+
+        e.set_field(23..47, self.offset);
+        // 47..49: cache hints (.ca, .cg, .lu, .cv)
+        e.set_pred_dst(48..51, &self.locked);
+        e.set_mem_type(51..54, self.mem_type);
     }
 }
 
@@ -3024,7 +3055,9 @@ macro_rules! as_sm50_op_match {
             Op::Txq(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
+            Op::LdSharedLock(op) => op,
             Op::St(op) => op,
+            Op::StSCheckUnlock(op) => op,
             Op::Atom(op) => op,
             Op::AL2P(op) => op,
             Op::ALd(op) => op,
