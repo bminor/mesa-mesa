@@ -708,11 +708,6 @@ ntt_output_decl(struct ntt_compile *c, nir_intrinsic_instr *instr, uint32_t *fra
       /* No driver appears to use array_id of outputs. */
       unsigned array_id = 0;
 
-      /* This bit is lost in the i/o semantics, but it's unused in in-tree
-       * drivers.
-       */
-      bool invariant = semantics.invariant;
-
       unsigned num_slots = semantics.num_slots;
       if (semantics.location == VARYING_SLOT_TESS_LEVEL_INNER ||
           semantics.location == VARYING_SLOT_TESS_LEVEL_OUTER) {
@@ -729,7 +724,7 @@ ntt_output_decl(struct ntt_compile *c, nir_intrinsic_instr *instr, uint32_t *fra
                                     usage_mask,
                                     array_id,
                                     num_slots,
-                                    invariant);
+                                    false);
    }
 
    unsigned write_mask;

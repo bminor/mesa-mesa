@@ -287,13 +287,8 @@ ntr_output_decl(struct ntr_compile *c, nir_intrinsic_instr *instr, uint32_t *fra
       /* No driver appears to use array_id of outputs. */
       unsigned array_id = 0;
 
-      /* This bit is lost in the i/o semantics, but it's unused in in-tree
-       * drivers.
-       */
-      bool invariant = semantics.invariant;
-
       out = ureg_DECL_output_layout(c->ureg, semantic_name, semantic_index, gs_streams, base,
-                                    usage_mask, array_id, semantics.num_slots, invariant);
+                                    usage_mask, array_id, semantics.num_slots, false);
    }
 
    unsigned write_mask;

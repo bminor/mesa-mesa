@@ -261,8 +261,6 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
          sem.no_sysval_output = 0;
       if (!nir_intrinsic_io_semantics(chan[i]).no_varying)
          sem.no_varying = 0;
-      if (nir_intrinsic_io_semantics(chan[i]).invariant)
-         sem.invariant = 1;
    }
 
    if (merge_low_high_16_to_32) {
@@ -272,8 +270,6 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
             sem.no_sysval_output = 0;
          if (!nir_intrinsic_io_semantics(chan[4 + i]).no_varying)
             sem.no_varying = 0;
-         if (nir_intrinsic_io_semantics(chan[4 + i]).invariant)
-            sem.invariant = 1;
       }
 
       /* Update the type. */

@@ -564,7 +564,6 @@ emit_store(struct lower_io_state *state, nir_def *data,
    semantics.gs_streams = gs_streams;
    semantics.medium_precision = is_medium_precision(b->shader, var);
    semantics.per_view = var->data.per_view;
-   semantics.invariant = var->data.invariant;
 
    nir_intrinsic_set_io_semantics(store, semantics);
 

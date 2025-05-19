@@ -1940,7 +1940,6 @@ typedef struct nir_io_semantics {
    unsigned medium_precision : 1; /* GLSL mediump qualifier */
    unsigned per_view : 1;
    unsigned high_16bits : 1; /* whether accessing low or high half of the slot */
-   unsigned invariant : 1;   /* The variable has the invariant flag set */
    unsigned high_dvec2 : 1; /* whether accessing the high half of dvec3/dvec4 */
    /* CLIP_DISTn, LAYER, VIEWPORT, and TESS_LEVEL_* have up to 3 uses:
     * - an output consumed by the next stage
@@ -1953,6 +1952,7 @@ typedef struct nir_io_semantics {
    unsigned no_sysval_output : 1; /* whether this system value output has no
                                      effect due to current pipeline states */
    unsigned interp_explicit_strict : 1; /* preserve original vertex order */
+   unsigned _pad : 1;
 } nir_io_semantics;
 
 /* Transform feedback info for 2 outputs. nir_intrinsic_store_output contains

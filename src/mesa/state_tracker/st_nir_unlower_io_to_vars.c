@@ -472,7 +472,6 @@ create_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
    }
 
    /* Some semantics are dependent on the instruction or component. */
-   var->data.invariant |= desc.sem.invariant;
    var->data.stream |= (desc.sem.gs_streams << (desc.component * 2));
    if (var->data.stream)
       var->data.stream |= NIR_STREAM_PACKED;
