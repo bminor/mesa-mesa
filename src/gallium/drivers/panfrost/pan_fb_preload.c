@@ -947,7 +947,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
          GENX(pan_texture_estimate_payload_size)(views[i]);
       struct pan_ptr surfaces = pan_pool_alloc_aligned(pool, payload_size, 64);
 
-      GENX(pan_texture_emit)(views[i], texture, &surfaces);
+      GENX(pan_sampled_texture_emit)(views[i], texture, &surfaces);
    }
 
    return textures.gpu;
@@ -964,7 +964,7 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
          .gpu = texture.gpu + pan_size(TEXTURE),
       };
 
-      GENX(pan_texture_emit)(views[i], texture.cpu, &surfaces);
+      GENX(pan_sampled_texture_emit)(views[i], texture.cpu, &surfaces);
       textures[i] = texture.gpu;
    }
 

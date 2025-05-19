@@ -117,7 +117,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
 
-      GENX(pan_texture_emit)(&pview, &view->descs.tex, &ptr);
+      GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex, &ptr);
    }
 
 #if PAN_ARCH <= 7

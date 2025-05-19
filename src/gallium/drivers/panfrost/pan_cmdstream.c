@@ -1814,7 +1814,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       iview.astc.narrow = true;
    }
 
-   GENX(pan_texture_emit)(&iview, tex, &payload);
+   GENX(pan_sampled_texture_emit)(&iview, tex, &payload);
 }
 
 static void

@@ -48,9 +48,9 @@ void GENX(pan_texture_afbc_reswizzle)(struct pan_image_view *iview);
 unsigned
 GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview);
 
-void GENX(pan_texture_emit)(const struct pan_image_view *iview,
-                            struct mali_texture_packed *out,
-                            const struct pan_ptr *payload);
+void GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
+                                    struct mali_texture_packed *out,
+                                    const struct pan_ptr *payload);
 
 #if PAN_ARCH >= 9
 void GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,

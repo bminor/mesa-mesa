@@ -171,7 +171,7 @@ prepare_tex_descs(struct panvk_image_view *view)
          pview.planes[0] = view->pview.planes[plane];
          pview.format = vk_format_to_pipe_format(plane_format);
 
-         GENX(pan_texture_emit)(&pview, &view->descs.tex[plane], &ptr);
+         GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[plane], &ptr);
 #if PAN_ARCH >= 9
          if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
             GENX(pan_storage_texture_emit)(
@@ -185,7 +185,7 @@ prepare_tex_descs(struct panvk_image_view *view)
          ptr.gpu += tex_payload_size;
       }
    } else {
-      GENX(pan_texture_emit)(&pview, &view->descs.tex[0], &ptr);
+      GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[0], &ptr);
 #if PAN_ARCH >= 9
       if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
          GENX(pan_storage_texture_emit)(&pview, &view->descs.storage_tex[0],
@@ -217,7 +217,8 @@ prepare_tex_descs(struct panvk_image_view *view)
    ptr.cpu += tex_payload_size;
    ptr.gpu += tex_payload_size;
 
-   GENX(pan_texture_emit)(&pview, &view->descs.zs.other_aspect_tex, &ptr);
+   GENX(pan_sampled_texture_emit)(&pview, &view->descs.zs.other_aspect_tex,
+                                  &ptr);
    return VK_SUCCESS;
 }
 

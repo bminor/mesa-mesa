@@ -797,9 +797,9 @@ pan_texture_get_extent(const struct pan_image_view *iview,
  * consists of a 32-byte header followed by pointers.
  */
 void
-GENX(pan_texture_emit)(const struct pan_image_view *iview,
-                       struct mali_texture_packed *out,
-                       const struct pan_ptr *payload)
+GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
+                               struct mali_texture_packed *out,
+                               const struct pan_ptr *payload)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
