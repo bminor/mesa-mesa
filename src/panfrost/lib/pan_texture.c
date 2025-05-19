@@ -31,6 +31,7 @@
 #include "util/u_math.h"
 #include "pan_afbc.h"
 #include "pan_afrc.h"
+#include "pan_desc.h"
 #include "pan_format.h"
 #include "pan_image.h"
 #include "pan_pool.h"
@@ -234,11 +235,6 @@ get_image_section_info(const struct pan_image_view *iview,
    uint64_t base = plane->data.base;
    struct pan_image_section_info info = {0};
 
-   if (iview->buf.size) {
-      assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
-      base += iview->buf.offset;
-   }
-
    /* v4 does not support compression */
    assert(PAN_ARCH >= 5 || !drm_is_afbc(plane->props.modifier));
    assert(PAN_ARCH >= 5 || desc->layout != UTIL_FORMAT_LAYOUT_ASTC);
@@ -260,8 +256,24 @@ get_image_section_info(const struct pan_image_view *iview,
 
 #if PAN_ARCH <= 7
 static void
-pan_emit_surface_with_stride(const struct pan_image_section_info *section,
-                             void **payload)
+pan_emit_bview_surface_with_stride(const struct pan_buffer_view *bview,
+                                   void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(bview->format);
+   unsigned tag = pan_compression_tag(desc, MALI_TEXTURE_DIMENSION_1D,
+                                      DRM_FORMAT_MOD_LINEAR);
+
+   pan_cast_and_pack(payload, SURFACE_WITH_STRIDE, cfg) {
+      cfg.pointer = bview->base | tag;
+      cfg.row_stride = 0;
+      cfg.surface_stride = 0;
+   }
+}
+
+static void
+pan_emit_iview_surface_with_stride(const struct pan_image_section_info *section,
+                                   void **payload)
 {
    pan_cast_and_pack(*payload, SURFACE_WITH_STRIDE, cfg) {
       cfg.pointer = section->pointer;
@@ -274,8 +286,8 @@ pan_emit_surface_with_stride(const struct pan_image_section_info *section,
 
 #if PAN_ARCH == 7
 static void
-pan_emit_multiplanar_surface(const struct pan_image_section_info *sections,
-                             void **payload)
+pan_emit_iview_multiplanar_surface(
+   const struct pan_image_section_info *sections, void **payload)
 {
    assert(sections[2].row_stride == 0 ||
           sections[1].row_stride == sections[2].row_stride);
@@ -290,28 +302,6 @@ pan_emit_multiplanar_surface(const struct pan_image_section_info *sections,
    *payload += pan_size(MULTIPLANAR_SURFACE);
 }
 #endif
-
-/* Special case for iview->buf.size as the passed layout->width is incorrect */
-static struct pan_image_extent
-pan_texture_buf_get_extent(const struct pan_image_view *iview,
-                           const struct pan_image_props *iprops)
-{
-   assert(iview->buf.size);
-
-   struct pan_image_extent extent_px;
-
-   assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
-   assert(!iview->first_level && !iview->last_level);
-   assert(!iview->first_layer && !iview->last_layer);
-   assert(iprops->nr_samples == 1);
-   assert(iprops->extent_px.height == 1 && iprops->extent_px.depth == 1);
-   assert(iview->buf.offset + iview->buf.size <= iprops->extent_px.width);
-   extent_px.width = iview->buf.size;
-   extent_px.height = 1;
-   extent_px.depth = 1;
-
-   return extent_px;
-}
 
 #if PAN_ARCH >= 9
 
@@ -435,9 +425,54 @@ translate_superblock_size(uint64_t modifier)
 }
 
 static void
-pan_emit_plane(const struct pan_image_view *iview,
-               const struct pan_image_section_info *sections, int plane_index,
-               unsigned level, void **payload)
+pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(bview->format);
+
+   pan_cast_and_pack(payload, PLANE, cfg) {
+      cfg.pointer = bview->base;
+      cfg.size = util_format_get_blocksize(bview->format) * bview->width_el;
+      cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
+#if PAN_ARCH >= 10
+      cfg.width = bview->width_el;
+      cfg.height = 1;
+#endif
+
+      if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
+         if (desc->block.depth > 1) {
+            cfg.plane_type = MALI_PLANE_TYPE_ASTC_3D;
+            cfg.astc._3d.block_width = pan_astc_dim_3d(desc->block.width);
+            cfg.astc._3d.block_height = pan_astc_dim_3d(desc->block.height);
+            cfg.astc._3d.block_depth = pan_astc_dim_3d(desc->block.depth);
+         } else {
+            cfg.plane_type = MALI_PLANE_TYPE_ASTC_2D;
+            cfg.astc._2d.block_width = pan_astc_dim_2d(desc->block.width);
+            cfg.astc._2d.block_height = pan_astc_dim_2d(desc->block.height);
+         }
+
+         bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
+
+         /* Mesa does not advertise _HDR formats yet */
+         cfg.astc.decode_hdr = false;
+
+         /* sRGB formats decode to RGBA8 sRGB, which is narrow.
+          *
+          * Non-sRGB formats decode to RGBA16F which is wide except if decode
+          * precision is set to GL_RGBA8 for that texture.
+          */
+         cfg.astc.decode_wide = !srgb && !bview->astc.narrow;
+      } else {
+         cfg.plane_type = MALI_PLANE_TYPE_GENERIC;
+         cfg.clump_format = pan_clump_format(bview->format);
+      }
+   }
+}
+
+static void
+pan_emit_iview_plane(const struct pan_image_view *iview,
+                     const struct pan_image_section_info *sections,
+                     int plane_index, unsigned level, void **payload)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
@@ -464,13 +499,10 @@ pan_emit_plane(const struct pan_image_view *iview,
       cfg.row_stride = row_stride;
       cfg.size = layout->slices[level].size_B;
 #if PAN_ARCH >= 10
-      struct pan_image_extent extent;
-      if (iview->buf.size)
-         extent = pan_texture_buf_get_extent(iview, props);
-      else {
-         extent.width = u_minify(props->extent_px.width, level);
-         extent.height = u_minify(props->extent_px.height, level);
-      }
+      struct pan_image_extent extent = {
+         .width = u_minify(props->extent_px.width, level),
+         .height = u_minify(props->extent_px.height, level),
+      };
 
       if (is_chroma_2p) {
          cfg.two_plane_yuv_chroma.width = extent.width;
@@ -554,8 +586,8 @@ pan_emit_plane(const struct pan_image_view *iview,
 #endif
 
 static void
-pan_emit_surface(const struct pan_image_view *iview, unsigned level,
-                 unsigned index, unsigned sample, void **payload)
+pan_emit_iview_surface(const struct pan_image_view *iview, unsigned level,
+                       unsigned index, unsigned sample, void **payload)
 {
 #if PAN_ARCH == 7 || PAN_ARCH >= 9
    if (pan_format_is_yuv(iview->format)) {
@@ -576,19 +608,19 @@ pan_emit_surface(const struct pan_image_view *iview, unsigned level,
 #if PAN_ARCH >= 9
       /* 3-plane YUV is submitted using two PLANE descriptors, where the
        * second one is of type CHROMA_2P */
-      pan_emit_plane(iview, sections, 0, level, payload);
+      pan_emit_iview_plane(iview, sections, 0, level, payload);
 
       if (plane_count > 1) {
          /* 3-plane YUV requires equal stride for both chroma planes */
          assert(plane_count == 2 ||
                 sections[1].row_stride == sections[2].row_stride);
-         pan_emit_plane(iview, sections, 1, level, payload);
+         pan_emit_iview_plane(iview, sections, 1, level, payload);
       }
 #else
       if (plane_count > 1)
-         pan_emit_multiplanar_surface(sections, payload);
+         pan_emit_iview_multiplanar_surface(sections, payload);
       else
-         pan_emit_surface_with_stride(sections, payload);
+         pan_emit_iview_surface_with_stride(sections, payload);
 #endif
       return;
    }
@@ -611,14 +643,15 @@ pan_emit_surface(const struct pan_image_view *iview, unsigned level,
    };
 
 #if PAN_ARCH >= 9
-   pan_emit_plane(iview, section, 0, level, payload);
+   pan_emit_iview_plane(iview, section, 0, level, payload);
 #else
-   pan_emit_surface_with_stride(section, payload);
+   pan_emit_iview_surface_with_stride(section, payload);
 #endif
 }
 
 static void
-pan_emit_texture_payload(const struct pan_image_view *iview, void *payload)
+pan_emit_iview_texture_payload(const struct pan_image_view *iview,
+                               void *payload)
 {
    unsigned nr_samples =
       PAN_ARCH <= 7 ? pan_image_view_get_nr_samples(iview) : 1;
@@ -635,7 +668,7 @@ pan_emit_texture_payload(const struct pan_image_view *iview, void *payload)
       for (int sample = 0; sample < nr_samples; ++sample) {
          for (int level = iview->first_level; level <= iview->last_level;
               ++level) {
-            pan_emit_surface(iview, level, layer, sample, &payload);
+            pan_emit_iview_surface(iview, level, layer, sample, &payload);
          }
       }
    }
@@ -658,8 +691,8 @@ pan_emit_texture_payload(const struct pan_image_view *iview, void *payload)
           */
          for (int face = 0; face < face_count; ++face) {
             for (int sample = 0; sample < nr_samples; ++sample) {
-               pan_emit_surface(iview, level, (face_count * layer) + face,
-                                sample, &payload);
+               pan_emit_iview_surface(iview, level, (face_count * layer) + face,
+                                      sample, &payload);
             }
          }
       }
@@ -761,9 +794,6 @@ static struct pan_image_extent
 pan_texture_get_extent(const struct pan_image_view *iview,
                        const struct pan_image_props *iprops)
 {
-   if (iview->buf.size)
-      return pan_texture_buf_get_extent(iview, iprops);
-
    struct pan_image_extent extent_px = {
       .width = u_minify(iprops->extent_px.width, iview->first_level),
       .height = u_minify(iprops->extent_px.height, iview->first_level),
@@ -812,7 +842,7 @@ GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
    }
 
-   pan_emit_texture_payload(iview, payload->cpu);
+   pan_emit_iview_texture_payload(iview, payload->cpu);
 
    unsigned array_size = pan_texture_get_array_size(iview);
 
@@ -872,7 +902,7 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
    }
 
-   pan_emit_texture_payload(iview, payload->cpu);
+   pan_emit_iview_texture_payload(iview, payload->cpu);
 
    unsigned array_size = pan_texture_get_array_size(iview);
 
@@ -910,3 +940,45 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
    }
 }
 #endif
+
+void
+GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
+                              struct mali_texture_packed *out,
+                              const struct pan_ptr *payload)
+{
+   uint32_t mali_format = GENX(pan_format_from_pipe_format)(bview->format)->hw;
+   static const unsigned char rgba_swizzle[4] = {
+      PIPE_SWIZZLE_X,
+      PIPE_SWIZZLE_Y,
+      PIPE_SWIZZLE_Z,
+      PIPE_SWIZZLE_W,
+   };
+
+#if PAN_ARCH >= 9
+   pan_emit_bview_plane(bview, payload->cpu);
+#else
+   pan_emit_bview_surface_with_stride(bview, payload->cpu);
+#endif
+
+   pan_pack(out, TEXTURE, cfg) {
+      cfg.dimension = MALI_TEXTURE_DIMENSION_1D;
+      cfg.format = mali_format;
+      cfg.width = bview->width_el;
+      cfg.height = 1;
+      cfg.sample_count = 1;
+      cfg.swizzle = pan_translate_swizzle_4(rgba_swizzle);
+#if PAN_ARCH >= 9
+      cfg.texel_interleave = false;
+#else
+      cfg.texel_ordering = MALI_TEXTURE_LAYOUT_LINEAR;
+#endif
+      cfg.levels = 1;
+      cfg.array_size = 1;
+
+#if PAN_ARCH >= 6
+      cfg.surfaces = payload->gpu;
+      cfg.minimum_lod = 0;
+      cfg.maximum_lod = 0;
+#endif
+   }
+}

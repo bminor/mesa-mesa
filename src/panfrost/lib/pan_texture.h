@@ -36,6 +36,7 @@
 
 struct pan_ptr;
 struct mali_texture_packed;
+struct pan_buffer_view;
 
 #if PAN_ARCH >= 7
 void GENX(pan_texture_swizzle_replicate_x)(struct pan_image_view *iview);
@@ -57,5 +58,10 @@ void GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
                                     struct mali_texture_packed *out,
                                     const struct pan_ptr *payload);
 #endif
+
+void
+GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
+                              struct mali_texture_packed *out,
+                              const struct pan_ptr *payload);
 
 #endif

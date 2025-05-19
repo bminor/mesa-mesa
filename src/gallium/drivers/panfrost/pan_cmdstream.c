@@ -1725,16 +1725,53 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
    enum mali_texture_dimension type =
       panfrost_translate_texture_dimension(so->base.target);
 
-   bool is_buffer = (so->base.target == PIPE_BUFFER);
+   if (so->base.target == PIPE_BUFFER) {
+      const struct util_format_description *desc =
+         util_format_description(format);
+      struct pan_buffer_view bview = {
+         .format = format,
+         .astc.narrow =
+             desc->layout == UTIL_FORMAT_LAYOUT_ASTC &&
+             so->base.astc_decode_format == PIPE_ASTC_DECODE_FORMAT_UNORM8,
+         .width_el =
+            MIN2(so->base.u.buf.size / util_format_get_blocksize(format),
+                 PAN_MAX_TEXEL_BUFFER_ELEMENTS),
+         .base = prsrc->image.data.base + so->base.u.buf.offset,
+      };
+#if PAN_ARCH >= 9
+      unsigned payload_size = pan_size(PLANE);
+#elif PAN_ARCH >= 6
+      unsigned payload_size = pan_size(SURFACE_WITH_STRIDE);
+#else
+      unsigned payload_size = pan_size(TEXTURE) + pan_size(SURFACE_WITH_STRIDE);
+#endif
 
-   unsigned first_level = is_buffer ? 0 : so->base.u.tex.first_level;
-   unsigned last_level = is_buffer ? 0 : so->base.u.tex.last_level;
-   unsigned first_layer = is_buffer ? 0 : so->base.u.tex.first_layer;
-   unsigned last_layer = is_buffer ? 0 : so->base.u.tex.last_layer;
-   unsigned buf_offset = is_buffer ? so->base.u.buf.offset : 0;
-   unsigned buf_size =
-      (is_buffer ? so->base.u.buf.size : 0) / util_format_get_blocksize(format);
-   buf_size = MIN2(buf_size, PAN_MAX_TEXEL_BUFFER_ELEMENTS);
+      struct panfrost_pool *pool = so->pool ?: &ctx->descs;
+      struct pan_ptr payload =
+         pan_pool_alloc_aligned(&pool->base, payload_size, 64);
+
+      if (!payload.cpu) {
+         mesa_loge("panfrost_create_sampler_view_bo failed");
+         return;
+      }
+
+      so->state = panfrost_pool_take_ref(&ctx->descs, payload.gpu);
+
+      void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
+
+      if (PAN_ARCH <= 5) {
+         payload.cpu += pan_size(TEXTURE);
+         payload.gpu += pan_size(TEXTURE);
+      }
+
+      GENX(pan_buffer_texture_emit)(&bview, tex, &payload);
+      return;
+   }
+
+   unsigned first_level = so->base.u.tex.first_level;
+   unsigned last_level = so->base.u.tex.last_level;
+   unsigned first_layer = so->base.u.tex.first_layer;
+   unsigned last_layer = so->base.u.tex.last_layer;
 
    if (so->base.target == PIPE_TEXTURE_3D) {
       first_layer /= prsrc->image.props.extent_px.depth;
@@ -1757,8 +1794,6 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
             so->base.swizzle_a,
          },
       .planes = {NULL},
-      .buf.offset = buf_offset,
-      .buf.size = buf_size,
    };
 
 #if PAN_ARCH >= 7

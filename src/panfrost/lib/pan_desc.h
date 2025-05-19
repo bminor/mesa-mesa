@@ -33,6 +33,15 @@
 #include "pan_image.h"
 #include "pan_pool.h"
 
+struct pan_buffer_view {
+   enum pipe_format format;
+   struct {
+      unsigned narrow;
+   } astc;
+   unsigned width_el;
+   uint64_t base;
+};
+
 struct pan_compute_dim {
    uint32_t x, y, z;
 };

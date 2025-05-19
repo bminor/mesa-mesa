@@ -58,12 +58,6 @@ struct pan_image_view {
     * greater than image->layout.nr_samples. */
    unsigned nr_samples;
 
-   /* Only valid if dim == 1D, needed to implement buffer views */
-   struct {
-      unsigned offset;
-      unsigned size;
-   } buf;
-
    struct {
       unsigned narrow;
    } astc;

@@ -18,6 +18,7 @@
 #include "panvk_priv_bo.h"
 
 #include "pan_afbc.h"
+#include "pan_desc.h"
 #include "pan_props.h"
 #include "pan_texture.h"
 
@@ -54,70 +55,25 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
    assert(!(address & 63));
 
    if (buffer->vk.usage & tex_usage_mask) {
-      struct panvk_physical_device *physical_device =
-         to_panvk_physical_device(device->vk.physical);
-      unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
-
-      struct pan_image plane = {
-         .data = {
-            .base = address,
-	 },
-         .props = {
-            .modifier = DRM_FORMAT_MOD_LINEAR,
-            .format = pfmt,
-            .dim = MALI_TEXTURE_DIMENSION_1D,
-            .extent_px = {
-               .width = view->vk.elements,
-               .height = 1,
-               .depth = 1,
-            },
-            .array_size = 1,
-            .nr_samples = 1,
-            .nr_slices = 1,
-         },
-      };
-
-      struct pan_image_view pview = {
-         .planes[0] = &plane,
+      struct pan_buffer_view bview = {
          .format = pfmt,
-         .dim = MALI_TEXTURE_DIMENSION_1D,
-         .nr_samples = 1,
-         .first_level = 0,
-         .last_level = 0,
-         .first_layer = 0,
-         .last_layer = 0,
-         .swizzle =
-            {
-               PIPE_SWIZZLE_X,
-               PIPE_SWIZZLE_Y,
-               PIPE_SWIZZLE_Z,
-               PIPE_SWIZZLE_W,
-            },
+         .width_el = view->vk.elements,
+         .base = address,
       };
 
-#if PAN_ARCH == 7
-      /* v7 requires AFBC reswizzle. */
-      if (!util_format_is_depth_or_stencil(pfmt) &&
-          !pan_format_is_yuv(pfmt) &&
-          pan_format_supports_afbc(PAN_ARCH, pfmt))
-         GENX(pan_texture_afbc_reswizzle)(&pview);
+#if PAN_ARCH >= 9
+      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, PLANE);
+#else
+      view->mem =
+         panvk_pool_alloc_desc(&device->mempools.rw, SURFACE_WITH_STRIDE);
 #endif
-
-      pan_image_layout_init(arch, &plane.props, NULL, &plane.layout);
-
-      struct panvk_pool_alloc_info alloc_info = {
-         .alignment = pan_alignment(TEXTURE),
-         .size = GENX(pan_texture_estimate_payload_size)(&pview),
-      };
-
-      view->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
 
       struct pan_ptr ptr = {
          .gpu = panvk_priv_mem_dev_addr(view->mem),
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
 
-      GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex, &ptr);
+      GENX(pan_buffer_texture_emit)(&bview, &view->descs.tex, &ptr);
    }
 
 #if PAN_ARCH <= 7
