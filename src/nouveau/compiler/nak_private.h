@@ -202,6 +202,7 @@ bool nak_nir_lower_scan_reduce(nir_shader *shader);
 bool nak_nir_lower_tex(nir_shader *nir, const struct nak_compiler *nak);
 bool nak_nir_lower_gs_intrinsics(nir_shader *shader);
 bool nak_nir_lower_algebraic_late(nir_shader *nir, const struct nak_compiler *nak);
+bool nak_nir_lower_kepler_shared_atomics(nir_shader *shader);
 
 struct nak_nir_attr_io_flags {
    bool output : 1;

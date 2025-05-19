@@ -2485,6 +2485,10 @@ intrinsic("ldtram_nv", dest_comp=2, bit_sizes=[32],
 
 # NVIDIA-specific Image intrinsics
 image("load_raw_nv", src_comp=[4, 1, 1], extra_indices=[DEST_TYPE], dest_comp=0, flags=[CAN_ELIMINATE])
+# Nvidia Kepler specific load-lock store-unlock
+# used to lower shared atomics.
+intrinsic("load_shared_lock_nv", src_comp=[1], dest_comp=2)
+intrinsic("store_shared_unlock_nv", src_comp=[1, 1], dest_comp=1)
 
 # NVIDIA-specific Geometry Shader intrinsics.
 # These contain an additional integer source and destination with the primitive handle input/output.

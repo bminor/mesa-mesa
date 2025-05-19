@@ -35,6 +35,7 @@ libnak_c_files = files(
   'nak_nir_lower_gs_intrinsics.c',
   'nak_nir_lower_non_uniform_ldcx.c',
   'nak_nir_lower_scan_reduce.c',
+  'nak_nir_lower_kepler_shared_atomics.c',
   'nak_nir_lower_tex.c',
   'nak_nir_lower_vtg_io.c',
   'nak_nir_mark_lcssa_invariants.c',

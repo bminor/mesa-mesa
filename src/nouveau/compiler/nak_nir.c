@@ -958,7 +958,14 @@ nak_postprocess_nir(nir_shader *nir,
       .lower_rotate_to_shuffle = true
    };
    OPT(nir, nir_lower_subgroups, &subgroups_options);
-   OPT(nir, nir_lower_atomics, atomic_supported);
+   if (nak->sm >= 50) {
+      // On Maxwell+ we need to lower shared 64-bit atomics into
+      // compare-and-swap loops
+      OPT(nir, nir_lower_atomics, atomic_supported);
+   } else {
+      // On Kepler we need to lower shared atomics into locked ld-st
+      OPT(nir, nak_nir_lower_kepler_shared_atomics);
+   }
    OPT(nir, nak_nir_lower_scan_reduce);
 
    if (nir_shader_has_local_variables(nir)) {
