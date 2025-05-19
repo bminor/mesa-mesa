@@ -444,6 +444,7 @@ def emit_impl(typeInfo, api, cgen):
                 boxed_access = "&boxed_%s" % p.typeName
             if p.pointerIndirectionLevels > 0:
                 cgen.stmt("if (!%s) return" % access)
+                cgen.stmt("if (input_result != VK_SUCCESS) return")
 
             cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s create" % p.paramName)
