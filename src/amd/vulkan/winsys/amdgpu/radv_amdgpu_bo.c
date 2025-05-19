@@ -135,8 +135,8 @@ radv_amdgpu_winsys_bo_virtual_bind(struct radeon_winsys *_ws, struct radeon_wins
    VkResult result;
    int r;
 
-   assert(parent->is_virtual);
-   assert(!bo || !bo->is_virtual);
+   assert(parent->base.is_virtual);
+   assert(!bo || !bo->base.is_virtual);
 
    /* When the BO is NULL, AMDGPU will reset the PTE VA range to the initial state. Otherwise, it
     * will first unmap all existing VA that overlap the requested range and then map.
@@ -283,7 +283,7 @@ radv_amdgpu_log_bo(struct radv_amdgpu_winsys *ws, struct radv_amdgpu_winsys_bo *
    bo_log->va = bo->base.va;
    bo_log->size = bo->base.size;
    bo_log->timestamp = os_time_get_nano();
-   bo_log->is_virtual = bo->is_virtual;
+   bo_log->is_virtual = bo->base.is_virtual;
    bo_log->destroyed = destroyed;
 
    u_rwlock_wrlock(&ws->log_bo_list_lock);
@@ -336,7 +336,7 @@ radv_amdgpu_winsys_bo_destroy(struct radeon_winsys *_ws, struct radeon_winsys_bo
 
    radv_amdgpu_log_bo(ws, bo, true);
 
-   if (bo->is_virtual) {
+   if (bo->base.is_virtual) {
       int r;
 
       /* Clear mappings of this PRT VA region. */
@@ -415,7 +415,7 @@ radv_amdgpu_winsys_bo_create(struct radeon_winsys *_ws, uint64_t size, unsigned 
    bo->base.va = va;
    bo->base.size = size;
    bo->va_handle = va_handle;
-   bo->is_virtual = !!(flags & RADEON_FLAG_VIRTUAL);
+   bo->base.is_virtual = !!(flags & RADEON_FLAG_VIRTUAL);
 
    if (flags & RADEON_FLAG_VIRTUAL) {
       ranges = realloc(NULL, sizeof(struct radv_amdgpu_map_range));

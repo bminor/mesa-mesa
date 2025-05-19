@@ -67,6 +67,7 @@ struct radv_meta_saved_state {
 
 enum radv_copy_flags {
    RADV_COPY_FLAGS_DEVICE_LOCAL = 1 << 0,
+   RADV_COPY_FLAGS_SPARSE = 1 << 1,
 };
 
 extern const VkFormat radv_fs_key_format_exemplars[NUM_META_FS_KEYS];

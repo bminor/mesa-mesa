@@ -714,7 +714,7 @@ radv_amdgpu_cs_add_buffer(struct radeon_cmdbuf *_cs, struct radeon_winsys_bo *_b
    if (cs->status != VK_SUCCESS)
       return;
 
-   if (bo->is_virtual) {
+   if (bo->base.is_virtual) {
       radv_amdgpu_cs_add_virtual_buffer(_cs, _bo);
       return;
    }

@@ -173,6 +173,7 @@ struct radeon_winsys_bo {
    /* buffer is added to the BO list of all submissions */
    bool use_global_list;
    bool gfx12_allow_dcc;
+   bool is_virtual; /* sparse buffers */
    enum radeon_bo_domain initial_domain;
    uint64_t obj_id;
 };

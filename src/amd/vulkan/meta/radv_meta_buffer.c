@@ -16,17 +16,41 @@
 #include "radv_cs.h"
 #include "vk_common_entrypoints.h"
 
+static enum radv_copy_flags
+radv_get_copy_flags_from_bo(const struct radeon_winsys_bo *bo)
+{
+   enum radv_copy_flags copy_flags = 0;
+
+   if (bo->initial_domain & RADEON_DOMAIN_VRAM)
+      copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   if (bo->is_virtual)
+      copy_flags |= RADV_COPY_FLAGS_SPARSE;
+
+   return copy_flags;
+}
+
 struct fill_constants {
    uint64_t addr;
    uint32_t max_offset;
    uint32_t data;
 };
 
+struct radv_fill_memory_key {
+   enum radv_meta_object_key_type type;
+   bool use_16B_copy;
+};
+
 static VkResult
-get_fill_memory_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+get_fill_memory_pipeline(struct radv_device *device, uint64_t size, VkPipeline *pipeline_out,
+                         VkPipelineLayout *layout_out)
 {
-   enum radv_meta_object_key_type key = RADV_META_OBJECT_KEY_FILL_MEMORY;
+   const bool use_16B_copy = size >= 16;
+   struct radv_fill_memory_key key;
    VkResult result;
+
+   memset(&key, 0, sizeof(key));
+   key.type = RADV_META_OBJECT_KEY_FILL_MEMORY;
+   key.use_16B_copy = use_16B_copy;
 
    const VkPushConstantRange pc_range = {
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -44,7 +68,7 @@ get_fill_memory_pipeline(struct radv_device *device, VkPipeline *pipeline_out, V
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = radv_meta_nir_build_fill_memory_shader(device);
+   nir_shader *cs = radv_meta_nir_build_fill_memory_shader(device, use_16B_copy ? 16 : 4);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -74,11 +98,28 @@ struct copy_constants {
    uint32_t max_offset;
 };
 
-static VkResult
-get_copy_memory_pipeline(struct radv_device *device, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+struct radv_copy_memory_key {
+   enum radv_meta_object_key_type type;
+   bool use_16B_copy;
+};
+
+static bool
+radv_is_copy_memory_4B_aligned(uint64_t src_va, uint64_t dst_va, uint64_t size)
 {
-   enum radv_meta_object_key_type key = RADV_META_OBJECT_KEY_COPY_MEMORY;
+   return !(size & 3) && !(src_va & 3) && !(dst_va & 3);
+}
+
+static VkResult
+get_copy_memory_pipeline(struct radv_device *device, uint64_t src_va, uint64_t dst_va, uint64_t size,
+                         VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+{
+   const bool use_16B_copy = size >= 16 && radv_is_copy_memory_4B_aligned(src_va, dst_va, size);
+   struct radv_copy_memory_key key;
    VkResult result;
+
+   memset(&key, 0, sizeof(key));
+   key.type = RADV_META_OBJECT_KEY_COPY_MEMORY;
+   key.use_16B_copy = use_16B_copy;
 
    const VkPushConstantRange pc_range = {
       .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
@@ -96,7 +137,7 @@ get_copy_memory_pipeline(struct radv_device *device, VkPipeline *pipeline_out, V
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = radv_meta_nir_build_copy_memory_shader(device);
+   nir_shader *cs = radv_meta_nir_build_copy_memory_shader(device, use_16B_copy ? 16 : 1);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -129,7 +170,7 @@ radv_compute_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_fill_memory_pipeline(device, &pipeline, &layout);
+   result = get_fill_memory_pipeline(device, size, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -139,18 +180,26 @@ radv_compute_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   assert(size >= 16 && size <= UINT32_MAX);
+   assert(size <= UINT32_MAX);
 
    struct fill_constants fill_consts = {
       .addr = va,
-      .max_offset = size - 16,
       .data = data,
    };
+   uint32_t dim_x;
+
+   if (size >= 16) {
+      fill_consts.max_offset = size - 16;
+      dim_x = DIV_ROUND_UP(size, 16);
+   } else {
+      fill_consts.max_offset = size - 4;
+      dim_x = DIV_ROUND_UP(size, 4);
+   }
 
    vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                               sizeof(fill_consts), &fill_consts);
 
-   radv_unaligned_dispatch(cmd_buffer, DIV_ROUND_UP(size, 16), 1, 1);
+   radv_unaligned_dispatch(cmd_buffer, dim_x, 1, 1);
 
    radv_meta_restore(&saved_state, cmd_buffer);
 }
@@ -159,12 +208,13 @@ static void
 radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t dst_va, uint64_t size)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const bool use_16B_copy = size >= 16 && radv_is_copy_memory_4B_aligned(src_va, dst_va, size);
    struct radv_meta_saved_state saved_state;
    VkPipelineLayout layout;
    VkPipeline pipeline;
    VkResult result;
 
-   result = get_copy_memory_pipeline(device, &pipeline, &layout);
+   result = get_copy_memory_pipeline(device, src_va, dst_va, size, &pipeline, &layout);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
@@ -174,18 +224,26 @@ radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, ui
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   assert(size >= 16 && size <= UINT32_MAX);
+   assert(size <= UINT32_MAX);
 
    struct copy_constants copy_consts = {
       .src_addr = src_va,
       .dst_addr = dst_va,
-      .max_offset = size - 16,
    };
+   uint32_t dim_x;
+
+   if (use_16B_copy) {
+      copy_consts.max_offset = size - 16;
+      dim_x = DIV_ROUND_UP(size, 16);
+   } else {
+      copy_consts.max_offset = size;
+      dim_x = size;
+   }
 
    vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                               sizeof(copy_consts), &copy_consts);
 
-   radv_unaligned_dispatch(cmd_buffer, DIV_ROUND_UP(size, 16), 1, 1);
+   radv_unaligned_dispatch(cmd_buffer, dim_x, 1, 1);
 
    radv_meta_restore(&saved_state, cmd_buffer);
 }
@@ -207,12 +265,24 @@ radv_prefer_compute_or_cp_dma(const struct radv_device *device, uint64_t size, e
    return use_compute;
 }
 
+static bool
+radv_is_compute_required(const struct radv_device *device, enum radv_copy_flags src_copy_flags,
+                         enum radv_copy_flags dst_copy_flags)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   /* On GFX8-9, CP DMA is broken with NULL PRT pages and the workaround is to use compute. */
+   return pdev->info.has_cp_dma_with_null_prt_bug &&
+          ((src_copy_flags & RADV_COPY_FLAGS_SPARSE) || (dst_copy_flags & RADV_COPY_FLAGS_SPARSE));
+}
+
 static uint32_t
 radv_fill_memory_internal(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *image, uint64_t va,
                           uint64_t size, uint32_t value, enum radv_copy_flags copy_flags)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   bool use_compute = radv_prefer_compute_or_cp_dma(device, size, copy_flags, copy_flags);
+   const bool use_compute = radv_is_compute_required(device, copy_flags, copy_flags) ||
+                            radv_prefer_compute_or_cp_dma(device, size, copy_flags, copy_flags);
    uint32_t flush_bits = 0;
 
    assert(!(va & 3));
@@ -246,10 +316,7 @@ radv_fill_image(struct radv_cmd_buffer *cmd_buffer, const struct radv_image *ima
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const uint64_t va = image->bindings[0].addr + offset;
    struct radeon_winsys_bo *bo = image->bindings[0].bo;
-   enum radv_copy_flags copy_flags = 0;
-
-   if (bo->initial_domain & RADEON_DOMAIN_VRAM)
-      copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags copy_flags = radv_get_copy_flags_from_bo(bo);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
@@ -261,10 +328,7 @@ radv_fill_buffer(struct radv_cmd_buffer *cmd_buffer, struct radeon_winsys_bo *bo
                  uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   enum radv_copy_flags copy_flags = 0;
-
-   if (bo->initial_domain & RADEON_DOMAIN_VRAM)
-      copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags copy_flags = radv_get_copy_flags_from_bo(bo);
 
    radv_cs_add_buffer(device->ws, cmd_buffer->cs, bo);
 
@@ -292,8 +356,9 @@ radv_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uint64_t d
                  enum radv_copy_flags src_copy_flags, enum radv_copy_flags dst_copy_flags)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const bool use_compute = !(size & 3) && !(src_va & 3) && !(dst_va & 3) &&
-                            radv_prefer_compute_or_cp_dma(device, size, src_copy_flags, dst_copy_flags);
+   const bool use_compute = radv_is_compute_required(device, src_copy_flags, dst_copy_flags) ||
+                            (radv_is_copy_memory_4B_aligned(src_va, dst_va, size) &&
+                             radv_prefer_compute_or_cp_dma(device, size, src_copy_flags, dst_copy_flags));
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       radv_sdma_copy_memory(device, cmd_buffer->cs, src_va, dst_va, size);
@@ -311,12 +376,9 @@ radv_CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCop
    VK_FROM_HANDLE(radv_buffer, src_buffer, pCopyBufferInfo->srcBuffer);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyBufferInfo->dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   enum radv_copy_flags src_copy_flags = 0, dst_copy_flags = 0;
 
-   if (src_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
-      src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
-   if (dst_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
-      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags src_copy_flags = radv_get_copy_flags_from_bo(src_buffer->bo);
+   const enum radv_copy_flags dst_copy_flags = radv_get_copy_flags_from_bo(dst_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
@@ -371,14 +433,11 @@ radv_update_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_t siz
    if (size < RADV_BUFFER_UPDATE_THRESHOLD && cmd_buffer->qf != RADV_QUEUE_TRANSFER) {
       radv_update_memory_cp(cmd_buffer, va, data, size);
    } else {
-      enum radv_copy_flags src_copy_flags = 0;
       uint32_t buf_offset;
 
       radv_cmd_buffer_upload_data(cmd_buffer, size, data, &buf_offset);
 
-      if (cmd_buffer->upload.upload_bo->initial_domain & RADEON_DOMAIN_VRAM)
-         src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
-
+      const enum radv_copy_flags src_copy_flags = radv_get_copy_flags_from_bo(cmd_buffer->upload.upload_bo);
       const uint64_t src_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + buf_offset;
 
       radv_copy_memory(cmd_buffer, src_va, va, size, src_copy_flags, dst_copy_flags);
@@ -393,10 +452,8 @@ radv_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDevice
    VK_FROM_HANDLE(radv_buffer, dst_buffer, dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, dstOffset);
-   enum radv_copy_flags dst_copy_flags = 0;
 
-   if (dst_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
-      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags dst_copy_flags = radv_get_copy_flags_from_bo(dst_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 

@@ -123,21 +123,23 @@ radv_meta_nir_break_on_count(nir_builder *b, nir_variable *var, nir_def *count)
 }
 
 nir_shader *
-radv_meta_nir_build_fill_memory_shader(struct radv_device *dev)
+radv_meta_nir_build_fill_memory_shader(struct radv_device *dev, uint32_t bytes_per_invocation)
 {
-   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_fill");
+   assert(bytes_per_invocation == 4 || bytes_per_invocation == 16);
+
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_fill_memory_%dB", bytes_per_invocation);
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *pconst = nir_load_push_constant(&b, 4, 32, nir_imm_int(&b, 0), .range = 16);
    nir_def *buffer_addr = nir_pack_64_2x32(&b, nir_channels(&b, pconst, 0b0011));
    nir_def *max_offset = nir_channel(&b, pconst, 2);
-   nir_def *data = nir_swizzle(&b, nir_channel(&b, pconst, 3), (unsigned[]){0, 0, 0, 0}, 4);
+   nir_def *data = nir_swizzle(&b, nir_channel(&b, pconst, 3), (unsigned[]){0, 0, 0, 0}, bytes_per_invocation / 4);
 
    nir_def *global_id =
       nir_iadd(&b, nir_imul_imm(&b, nir_channel(&b, nir_load_workgroup_id(&b), 0), b.shader->info.workgroup_size[0]),
                nir_load_local_invocation_index(&b));
 
-   nir_def *offset = nir_imin(&b, nir_imul_imm(&b, global_id, 16), max_offset);
+   nir_def *offset = nir_imin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset);
    nir_def *dst_addr = nir_iadd(&b, buffer_addr, nir_u2u64(&b, offset));
    nir_build_store_global(&b, data, dst_addr, .align_mul = 4);
 
@@ -145,9 +147,14 @@ radv_meta_nir_build_fill_memory_shader(struct radv_device *dev)
 }
 
 nir_shader *
-radv_meta_nir_build_copy_memory_shader(struct radv_device *dev)
+radv_meta_nir_build_copy_memory_shader(struct radv_device *dev, uint32_t bytes_per_invocation)
 {
-   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_buffer_copy");
+   assert(bytes_per_invocation == 1 || bytes_per_invocation == 16);
+
+   const uint32_t num_components = bytes_per_invocation == 1 ? 1 : 4;
+   const uint32_t bit_size = bytes_per_invocation == 1 ? 8 : 32;
+
+   nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_copy_memory_%dB", bytes_per_invocation);
    b.shader->info.workgroup_size[0] = 64;
 
    nir_def *pconst = nir_load_push_constant(&b, 4, 32, nir_imm_int(&b, 0), .range = 16);
@@ -159,10 +166,11 @@ radv_meta_nir_build_copy_memory_shader(struct radv_device *dev)
       nir_iadd(&b, nir_imul_imm(&b, nir_channel(&b, nir_load_workgroup_id(&b), 0), b.shader->info.workgroup_size[0]),
                nir_load_local_invocation_index(&b));
 
-   nir_def *offset = nir_u2u64(&b, nir_imin(&b, nir_imul_imm(&b, global_id, 16), max_offset));
+   nir_def *offset = nir_u2u64(&b, nir_imin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset));
 
-   nir_def *data = nir_build_load_global(&b, 4, 32, nir_iadd(&b, src_addr, offset), .align_mul = 4);
-   nir_build_store_global(&b, data, nir_iadd(&b, dst_addr, offset), .align_mul = 4);
+   nir_def *data =
+      nir_build_load_global(&b, num_components, bit_size, nir_iadd(&b, src_addr, offset), .align_mul = bit_size / 8);
+   nir_build_store_global(&b, data, nir_iadd(&b, dst_addr, offset), .align_mul = bit_size / 8);
 
    return b.shader;
 }
