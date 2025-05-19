@@ -1929,7 +1929,14 @@ by a particular renderpass/blit.
 	<reg32 offset="0x8100" name="GRAS_LRZ_CNTL" type="a6xx_gras_lrz_cntl" usage="rp_blit" variants="A6XX-A7XX"/>
 	<reg32 offset="0x8212" name="GRAS_LRZ_CNTL" type="a6xx_gras_lrz_cntl" usage="rp_blit" variants="A8XX-"/>
 
-	<reg32 offset="0x8007" name="GRAS_LRZ_CB_CNTL" variants="A7XX" usage="rp_blit"/>
+	<reg32 offset="0x8007" name="GRAS_LRZ_CB_CNTL" variants="A7XX" usage="rp_blit">
+		<doc>
+			The total size of the LRZ image array (not including
+			fast clear buffer), used as a stride for double
+			buffering used with concurrent binning.
+		</doc>
+		<bitfield name="DOUBLE_BUFFER_STRIDE" low="8" high="31" shr="8"/>
+	</reg32>
 	<reg32 offset="0x8101" name="GRAS_LRZ_CB_CNTL" usage="rp_blit" variants="A8XX-">
 		<bitfield name="DOUBLE_BUFFER_PITCH" low="8" high="31" shr="8"/>
 	</reg32>
