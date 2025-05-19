@@ -2249,7 +2249,18 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
                        (sscreen->info.gfx_level == GFX11 && !shader->ps.num_interp &&
                         shader->config.lds_size);
 
-      shader->ps.spi_ps_in_control = S_0286D8_NUM_INTERP(shader->ps.num_interp) |
+      unsigned num_prim_interp = 0;
+      unsigned num_interp = shader->ps.num_interp;
+      if (sscreen->info.gfx_level == GFX10_3) {
+         /* NUM_INTERP / NUM_PRIM_INTERP separately contain
+          * the number of per-vertex and per-primitive PS input attributes.
+          */
+         num_prim_interp = shader->info.num_ps_per_primitive_inputs;
+         num_interp -= num_prim_interp;
+      }
+
+      shader->ps.spi_ps_in_control = S_0286D8_NUM_INTERP(num_interp) |
+                                     S_0286D8_NUM_PRIM_INTERP(num_prim_interp) |
                                      S_0286D8_PARAM_GEN(param_gen) |
                                      S_0286D8_PS_W32_EN(shader->wave_size == 32);
    }

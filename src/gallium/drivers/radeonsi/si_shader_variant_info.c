@@ -25,6 +25,9 @@ void si_get_shader_variant_info(struct si_shader *shader,
        */
       for (unsigned i = 0; i < ARRAY_SIZE(shader->info.ps_inputs); i++)
          shader->info.ps_inputs[i].interpolate = INTERP_MODE_FLAT;
+
+      shader->info.num_ps_per_primitive_inputs =
+         util_bitcount64(nir->info.per_primitive_inputs);
    }
 
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
@@ -50,6 +53,7 @@ void si_get_shader_variant_info(struct si_shader *shader,
             case nir_intrinsic_load_input:
             case nir_intrinsic_load_input_vertex:
             case nir_intrinsic_load_per_vertex_input:
+            case nir_intrinsic_load_per_primitive_input:
             case nir_intrinsic_load_interpolated_input: {
                if (nir->info.stage == MESA_SHADER_VERTEX) {
                   shader->info.uses_vmem_load_other = true;
@@ -78,6 +82,9 @@ void si_get_shader_variant_info(struct si_shader *shader,
                      shader->info.ps_inputs[index].interpolate = INTERP_MODE_SMOOTH;
                      if (intr->def.bit_size == 16)
                         shader->info.ps_inputs[index].fp16_lo_hi_valid |= 0x1 << sem.high_16bits;
+                  } else if (intr->intrinsic == nir_intrinsic_load_per_primitive_input) {
+                     /* per primitive input from mesh shader */
+                     shader->info.ps_inputs[index].interpolate = INTERP_MODE_NONE;
                   }
                }
                break;
