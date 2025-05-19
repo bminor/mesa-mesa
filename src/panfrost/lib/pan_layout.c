@@ -76,15 +76,15 @@ pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format)
    return pan_afbc_renderblock_size(modifier);
 }
 
-static inline unsigned
-format_minimum_alignment(unsigned arch, enum pipe_format format, uint64_t mod)
+static unsigned
+linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
+                              uint64_t modifier)
 {
-   if (drm_is_afbc(mod))
-      return 16;
+   assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
+          modifier == DRM_FORMAT_MOD_LINEAR);
 
-   if (drm_is_afrc(mod))
-      return pan_afrc_buffer_alignment_from_modifier(mod);
-
+   /* Prior to v7 we assume a cacheline alignment, though this could be relaxed
+    * on some formats if we have to, like we do on v7+. */
    if (arch < 7)
       return 64;
 
@@ -185,25 +185,84 @@ pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
    }
 }
 
-static unsigned
-wsi_row_pitch_to_row_stride(unsigned wsi_row_pitch_B, enum pipe_format format,
-                            uint64_t modifier)
+static bool
+wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
+                            const struct pan_image_wsi_layout *wsi_layout,
+                            unsigned *row_stride_B)
 {
-   if (drm_is_afbc(modifier)) {
-      unsigned width_px = wsi_row_pitch_B / util_format_get_blocksize(format);
+   unsigned row_align_mask, offset_align_mask, width_px;
+   unsigned wsi_row_pitch_B = wsi_layout->row_pitch_B;
+   enum pipe_format format = props->format;
+   uint64_t modifier = props->modifier;
 
-      return pan_afbc_row_stride(modifier, width_px);
+   if (drm_is_afbc(modifier)) {
+      /* We assume single pixel blocks in AFBC. */
+      assert(util_format_get_blockwidth(format) == 1 &&
+             util_format_get_blockheight(format) == 1);
+
+      struct pan_image_block_size afbc_tile_extent_px =
+         pan_afbc_renderblock_size(modifier);
+      unsigned afbc_tile_payload_size_B = afbc_tile_extent_px.width *
+                                          afbc_tile_extent_px.height *
+                                          util_format_get_blocksize(format);
+      unsigned afbc_tile_payload_row_stride_B =
+         wsi_row_pitch_B * afbc_tile_extent_px.height;
+
+      offset_align_mask = pan_afbc_header_align(arch, modifier) - 1;
+      row_align_mask =
+         pan_afbc_header_row_stride_align(arch, format, modifier) - 1;
+      width_px =
+         (afbc_tile_payload_row_stride_B / afbc_tile_payload_size_B) *
+         afbc_tile_extent_px.width;
+      *row_stride_B = pan_afbc_row_stride(modifier, width_px);
    } else if (drm_is_afrc(modifier)) {
       struct pan_image_block_size tile_size_px =
          pan_afrc_tile_size(format, modifier);
+      unsigned afrc_blk_size_B =
+         pan_afrc_block_size_from_modifier(props->modifier) *
+         AFRC_CLUMPS_PER_TILE;
 
-      return wsi_row_pitch_B * tile_size_px.height;
+      row_align_mask = pan_afrc_buffer_alignment_from_modifier(modifier) - 1;
+      offset_align_mask = row_align_mask;
+      *row_stride_B = wsi_row_pitch_B * tile_size_px.height;
+      width_px = (*row_stride_B / afrc_blk_size_B) * tile_size_px.width;
    } else {
       struct pan_image_block_size block_size_el =
          pan_image_renderblock_size_el(modifier, format);
+      unsigned tile_size_B = block_size_el.width * block_size_el.height *
+                             util_format_get_blocksize(format);
 
-      return wsi_row_pitch_B * block_size_el.height;
+      /* The row_stride_B -> width_px conversion is assuming a 1x1 pixel
+       * block size for non-compressed formats. Revisit when adding support
+       * for block-based YUV. */
+      assert(util_format_is_compressed(format) ||
+             (util_format_get_blockwidth(format) == 1 &&
+              util_format_get_blockheight(format) == 1));
+
+      row_align_mask =
+         linear_or_tiled_row_align_req(arch, format, modifier) - 1;
+      offset_align_mask = row_align_mask;
+      *row_stride_B = wsi_row_pitch_B * block_size_el.height;
+      width_px = (*row_stride_B / tile_size_B) *
+                 (block_size_el.width * util_format_get_blockwidth(format));
    }
+
+   if (*row_stride_B & row_align_mask) {
+      mesa_loge("WSI pitch not properly aligned");
+      return false;
+   }
+
+   if (wsi_layout->offset_B & offset_align_mask) {
+      mesa_loge("WSI offset not properly aligned");
+      return false;
+   }
+
+   if (width_px < props->extent_px.width) {
+      mesa_loge("WSI pitch too small");
+      return false;
+   }
+
+   return true;
 }
 
 /* Computes the offset of an image surface at a particular level/face. Add to
@@ -235,32 +294,21 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
    bool afbc = drm_is_afbc(props->modifier);
    bool afrc = drm_is_afrc(props->modifier);
    int align_req_B =
-      format_minimum_alignment(arch, props->format, props->modifier);
-   uint64_t offset_B = 0, wsi_row_stride_B = 0;
+      afbc ? pan_afbc_header_row_stride_align(arch, props->format,
+                                              props->modifier)
+      : afrc
+         ? pan_afrc_buffer_alignment_from_modifier(props->modifier)
+         : linear_or_tiled_row_align_req(arch, props->format, props->modifier);
+   unsigned wsi_row_stride_B = 0;
+   uint64_t offset_B = 0;
 
    /* Mandate alignment */
    if (wsi_layout) {
-      bool rejected = false;
-
-      int align_mask = align_req_B - 1;
+      if (!wsi_row_pitch_to_row_stride(arch, props, wsi_layout,
+                                       &wsi_row_stride_B))
+         return false;
 
       offset_B = wsi_layout->offset_B;
-      wsi_row_stride_B = wsi_row_pitch_to_row_stride(
-         wsi_layout->row_pitch_B, props->format, props->modifier);
-
-      if (arch >= 7) {
-         rejected =
-            ((offset_B & align_mask) || (wsi_row_stride_B & align_mask));
-      } else {
-         rejected = (offset_B & align_mask);
-      }
-
-      if (rejected) {
-         mesa_loge(
-            "panfrost: rejecting image due to unsupported offset or stride "
-            "alignment.\n");
-         return false;
-      }
    }
 
    unsigned fmt_blocksize_B = util_format_get_blocksize(props->format);
@@ -321,12 +369,9 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
       }
 
       if (wsi_layout && !afbc && !afrc) {
-         /* Make sure the explicit stride is valid */
-         if (wsi_row_stride_B < row_stride_B) {
-            mesa_loge("panfrost: rejecting image due to invalid row stride.\n");
-            return false;
-         }
-
+         /* Explicit stride should be rejected by wsi_row_pitch_to_row_stride()
+          * if it's too small. */
+         assert(wsi_row_stride_B >= row_stride_B);
          row_stride_B = wsi_row_stride_B;
       } else if (linear) {
          /* Keep lines alignment on 64 byte for performance */
@@ -340,17 +385,16 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
       if (afbc) {
          slice->row_stride_B =
             pan_afbc_row_stride(props->modifier, effective_width_el);
+
+         /* Explicit stride should be rejected by wsi_row_pitch_to_row_stride()
+          * if it's too small. */
+         assert(!wsi_layout || wsi_row_stride_B >= slice->row_stride_B);
          slice->afbc.stride_sb = effective_width_el / block_size_el.width;
          slice->afbc.nr_sblocks = slice->afbc.stride_sb *
                                   (effective_height_el / block_size_el.height);
          slice->afbc.header_size_B =
             ALIGN_POT(slice->afbc.nr_sblocks * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(arch, props->modifier));
-
-         if (wsi_layout && wsi_row_stride_B < slice->row_stride_B) {
-            mesa_loge("panfrost: rejecting image due to invalid row stride.\n");
-            return false;
-         }
 
          /* AFBC body size */
          slice->afbc.body_size_B = slice_one_size_B;
