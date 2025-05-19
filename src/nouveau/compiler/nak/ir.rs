@@ -5259,6 +5259,34 @@ impl DisplayOp for OpLdc {
 }
 impl_display_for_op!(OpLdc);
 
+/// Used for Kepler to implement shared atomics.
+/// In addition to the load, it tries to lock the address,
+/// Kepler hardware has (1024?) hardware mutex locks.
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpLdSharedLock {
+    pub dst: Dst,
+    #[dst_type(Pred)]
+    pub locked: Dst,
+
+    #[src_type(GPR)]
+    pub addr: Src,
+
+    pub offset: i32,
+    pub mem_type: MemType,
+}
+
+impl DisplayOp for OpLdSharedLock {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ldslk{} [{}", self.mem_type, self.addr)?;
+        if self.offset > 0 {
+            write!(f, "+{:#x}", self.offset)?;
+        }
+        write!(f, "]")
+    }
+}
+impl_display_for_op!(OpLdSharedLock);
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpSt {
@@ -5282,6 +5310,35 @@ impl DisplayOp for OpSt {
     }
 }
 impl_display_for_op!(OpSt);
+
+/// Used for Kepler to implement shared atomics.
+/// It checks that the address is still properly locked, performs the
+/// store operation and unlocks the previously unlocked address.
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpStSCheckUnlock {
+    #[dst_type(Pred)]
+    pub locked: Dst,
+
+    #[src_type(GPR)]
+    pub addr: Src,
+    #[src_type(SSA)]
+    pub data: Src,
+
+    pub offset: i32,
+    pub mem_type: MemType,
+}
+
+impl DisplayOp for OpStSCheckUnlock {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "stscul{} [{}", self.mem_type, self.addr)?;
+        if self.offset > 0 {
+            write!(f, "+{:#x}", self.offset)?;
+        }
+        write!(f, "] {}", self.data)
+    }
+}
+impl_display_for_op!(OpStSCheckUnlock);
 
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
@@ -6621,7 +6678,9 @@ pub enum Op {
     SuAtom(OpSuAtom),
     Ld(OpLd),
     Ldc(OpLdc),
+    LdSharedLock(OpLdSharedLock),
     St(OpSt),
+    StSCheckUnlock(OpStSCheckUnlock),
     Atom(OpAtom),
     AL2P(OpAL2P),
     ALd(OpALd),
@@ -6780,7 +6839,9 @@ impl Op {
             // Memory ops
             Op::Ld(_)
             | Op::Ldc(_)
+            | Op::LdSharedLock(_)
             | Op::St(_)
+            | Op::StSCheckUnlock(_)
             | Op::Atom(_)
             | Op::AL2P(_)
             | Op::ALd(_)
@@ -7190,7 +7251,9 @@ impl Instr {
             Op::ASt(_)
             | Op::SuSt(_)
             | Op::SuAtom(_)
+            | Op::LdSharedLock(_)
             | Op::St(_)
+            | Op::StSCheckUnlock(_)
             | Op::Atom(_)
             | Op::CCtl(_)
             | Op::MemBar(_)

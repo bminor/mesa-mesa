@@ -163,7 +163,9 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         // Memory ops
         Op::Ipa(_) | Op::Ldc(_) => SideEffect::None,
         Op::Ld(_)
+        | Op::LdSharedLock(_)
         | Op::St(_)
+        | Op::StSCheckUnlock(_)
         | Op::Atom(_)
         | Op::AL2P(_)
         | Op::ALd(_)
@@ -266,7 +268,9 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         Op::Ldc(_) => 4,
 
         Op::Ld(_)
+        | Op::LdSharedLock(_)
         | Op::St(_)
+        | Op::StSCheckUnlock(_)
         | Op::Atom(_)
         | Op::AL2P(_)
         | Op::ALd(_)

@@ -3008,6 +3008,31 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst);
             }
+            nir_intrinsic_load_shared_lock_nv => {
+                let size_B = intrin.def.bit_size() / 8;
+                let mem_type = MemType::from_size(size_B, false);
+
+                let (addr, offset) = self.get_io_addr_offset(&srcs[0], 24);
+                let dst = b.alloc_ssa_vec(RegFile::GPR, size_B.div_ceil(4));
+                let locked = b.alloc_ssa(RegFile::Pred);
+
+                b.push_op(OpLdSharedLock {
+                    dst: dst.clone().into(),
+                    locked: locked.clone().into(),
+                    addr,
+                    offset,
+                    mem_type,
+                });
+                let locked_gpr = b.sel(locked.into(), 1.into(), 0.into());
+
+                // for 32-bit we have 2x32 return type,
+                // for 64-bit we need 2x64, so is_locked must be a 64-bit val.
+                // we can fill the remaining SSAValue with a copy of is_locked
+                let locked_dst = std::iter::repeat(locked_gpr).take(dst.len());
+                let nir_dst: Vec<_> =
+                    dst.iter().copied().chain(locked_dst).collect();
+                self.set_ssa(intrin.def.as_def(), nir_dst);
+            }
             nir_intrinsic_load_sysval_nv => {
                 let idx = u8::try_from(intrin.base()).unwrap();
                 debug_assert!(intrin.def.num_components == 1);
@@ -3369,6 +3394,25 @@ impl<'a> ShaderFromNir<'a> {
                     offset: offset,
                     access: access,
                 });
+            }
+            nir_intrinsic_store_shared_unlock_nv => {
+                let data = self.get_src(&srcs[0]);
+                let size_B =
+                    (srcs[0].bit_size() / 8) * srcs[0].num_components();
+                let mem_type = MemType::from_size(size_B, false);
+
+                let (addr, offset) = self.get_io_addr_offset(&srcs[1], 24);
+                let locked = b.alloc_ssa(RegFile::Pred);
+
+                b.push_op(OpStSCheckUnlock {
+                    locked: locked.clone().into(),
+                    addr,
+                    data,
+                    offset,
+                    mem_type,
+                });
+                let locked_gpr = b.sel(locked.into(), 1.into(), 0.into());
+                self.set_dst(intrin.def.as_def(), locked_gpr.into());
             }
             nir_intrinsic_emit_vertex_nv | nir_intrinsic_end_primitive_nv => {
                 assert!(intrin.def.bit_size() == 32);
