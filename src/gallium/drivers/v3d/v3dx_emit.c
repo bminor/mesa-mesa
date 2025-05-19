@@ -270,7 +270,7 @@ v3dX(emit_state)(struct pipe_context *pctx)
                     job->scissor.disabled = true;
                 } else if (!job->scissor.disabled &&
                            (v3d->dirty & V3D_DIRTY_SCISSOR)) {
-                        if (job->scissor.count < MAX_JOB_SCISSORS) {
+                        if (job->scissor.count < V3D_JOB_MAX_SCISSORS) {
                                 job->scissor.rects[job->scissor.count].min_x =
                                         v3d->scissor.minx;
                                 job->scissor.rects[job->scissor.count].min_y =
