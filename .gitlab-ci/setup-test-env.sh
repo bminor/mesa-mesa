@@ -33,7 +33,13 @@ function _error_msg() (
     echo -e "${RED}$*${ENDCOLOR}"
 )
 
-export JOB_START_S=$(date -u +"%s" -d "${CI_JOB_STARTED_AT:?}")
+# Some date binaries (like the BusyBox one) use -D instead of -d for date parsing.
+# This fallback handles both cases: try GNU coreutils-style first, then fallback to BusyBox if it fails.
+# The BusyBox fallback needs '|| true' because it returns an error status even when it outputs the time.
+export JOB_START_S=$(
+  date -u +"%s" -d "$CI_JOB_STARTED_AT" 2>/dev/null ||
+  { date -u +"%s" -D "%Y-%m-%dT%H:%M:%SZ" "$CI_JOB_STARTED_AT" 2>/dev/null || true; }
+)
 
 function get_current_minsec {
     DATE_S=$(date -u +"%s")
