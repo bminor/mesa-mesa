@@ -166,7 +166,7 @@ a618-skqp:
     HWCI_START_XORG: 1
     DEQP_SUITE: freedreno-a618-skqp
 
-.a618-piglit:
+a618-piglit:
   extends:
     - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
