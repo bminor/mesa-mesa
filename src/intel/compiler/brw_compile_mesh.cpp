@@ -1315,6 +1315,23 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    g.generate_code(selected->cfg, selected->dispatch_width, selected->shader_stats,
                    selected->performance_analysis.require(), params->base.stats);
-   g.add_const_data(nir->constant_data, nir->constant_data_size);
+   if (prog_data->map.wa_18019110168_active) {
+      uint8_t *const_data =
+         (uint8_t *) rzalloc_size(params->base.mem_ctx,
+                                  nir->constant_data_size +
+                                  sizeof(prog_data->map.per_primitive_offsets));
+      memcpy(const_data, nir->constant_data, nir->constant_data_size);
+      memcpy(const_data + nir->constant_data_size,
+             prog_data->map.per_primitive_offsets,
+             sizeof(prog_data->map.per_primitive_offsets));
+      g.add_const_data(const_data,
+                       nir->constant_data_size +
+                       sizeof(prog_data->map.per_primitive_offset));
+      prog_data->wa_18019110168_mapping_offset =
+         prog_data->base.base.const_data_offset + nir->constant_data_size;
+   } else {
+      g.add_const_data(nir->constant_data, nir->constant_data_size);
+   }
+
    return g.get_assembly();
 }

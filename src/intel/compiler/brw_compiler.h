@@ -1306,6 +1306,15 @@ struct brw_mesh_prog_data {
 
    bool uses_drawid;
    bool autostrip_enable;
+
+   /**
+    * Offset in the program where the remapping table for Wa_18019110168 is
+    * located.
+    *
+    * The remapping table has the same format as
+    * intel_vue_map::varying_to_slot[]
+    */
+   uint32_t wa_18019110168_mapping_offset;
 };
 
 /* brw_any_prog_data is prog_data for any stage that maps to an API stage */
