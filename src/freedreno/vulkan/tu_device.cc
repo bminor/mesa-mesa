@@ -2725,6 +2725,8 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->radix_sort_mutex, mtx_plain);
    mtx_init(&device->fiber_pvtmem_bo.mtx, mtx_plain);
    mtx_init(&device->wave_pvtmem_bo.mtx, mtx_plain);
+   mtx_init(&device->vis_stream_mtx, mtx_plain);
+   mtx_init(&device->vis_stream_suballocator_mtx, mtx_plain);
    mtx_init(&device->mutex, mtx_plain);
    mtx_init(&device->copy_timestamp_cs_pool_mutex, mtx_plain);
 #ifdef HAVE_PERFETTO
@@ -2852,6 +2854,13 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    tu_bo_suballocator_init(&device->event_suballoc, device,
       getpagesize(), TU_BO_ALLOC_INTERNAL_RESOURCE,
       "event_suballoc");
+
+   tu_bo_suballocator_init(
+      &device->vis_stream_suballocator, device,
+      getpagesize(),
+      (enum tu_bo_alloc_flags)(TU_BO_ALLOC_INTERNAL_RESOURCE |
+                               TU_BO_ALLOC_ALLOW_DUMP),
+      "vis_stream_suballoc");
 
    result = tu_bo_init_new(
       device, NULL, &device->global_bo, global_size,
@@ -3146,11 +3155,15 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    tu_bo_suballocator_finish(&device->autotune_suballoc);
    tu_bo_suballocator_finish(&device->kgsl_profiling_suballoc);
    tu_bo_suballocator_finish(&device->event_suballoc);
+   tu_bo_suballocator_finish(&device->vis_stream_suballocator);
 
    tu_bo_finish(device, device->global_bo);
 
    if (device->vm_bind_fence_fd != -1)
       close(device->vm_bind_fence_fd);
+
+   if (device->vis_stream_bo)
+      tu_bo_finish(device, device->vis_stream_bo);
 
    if (device->null_accel_struct_bo)
       tu_bo_finish(device, device->null_accel_struct_bo);

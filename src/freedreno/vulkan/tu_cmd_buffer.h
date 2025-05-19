@@ -618,6 +618,10 @@ struct tu_cmd_buffer
    void *patchpoints_ctx;
    struct util_dynarray fdm_bin_patchpoints;
 
+   struct util_dynarray vis_stream_patchpoints;
+   struct util_dynarray vis_stream_bos;
+   struct util_dynarray vis_stream_cs_bos;
+
    VkCommandBufferUsageFlags usage_flags;
 
    VkQueryPipelineStatisticFlags inherited_pipeline_statistics;
@@ -686,8 +690,9 @@ struct tu_cmd_buffer
 
    uint32_t vsc_draw_strm_pitch;
    uint32_t vsc_prim_strm_pitch;
-   uint64_t vsc_draw_strm_va, vsc_draw_strm_size_va, vsc_prim_strm_va;
-   uint64_t vsc_state_va;
+   uint32_t vsc_draw_strm_offset, vsc_draw_strm_size_offset;
+   uint32_t vsc_prim_strm_offset, vsc_state_offset;
+   uint64_t vsc_size;
    bool vsc_initialized;
 
    bool prev_fsr_is_null;
@@ -833,6 +838,16 @@ struct tu_fdm_bin_patchpoint {
    tu_fdm_bin_apply_t apply;
 };
 
+struct tu_vis_stream_patchpoint {
+   uint32_t *data;
+   uint64_t iova;
+   uint32_t offset;
+};
+
+struct tu_vis_stream_patchpoint_cs {
+   struct tu_suballoc_bo cs_bo;
+   struct tu_suballoc_bo fence_bo;
+};
 
 void
 tu_barrier(struct tu_cmd_buffer *cmd,

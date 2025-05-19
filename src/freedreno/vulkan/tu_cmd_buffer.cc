@@ -201,21 +201,32 @@ tu6_lazy_init_vsc(struct tu_cmd_buffer *cmd)
 
    mtx_unlock(&dev->mutex);
 
-   struct tu_bo *vsc_bo;
    uint32_t prim_strm_size = cmd->vsc_prim_strm_pitch * num_vsc_pipes;
    uint32_t draw_strm_size = cmd->vsc_draw_strm_pitch * num_vsc_pipes;
    uint32_t draw_strm_size_size = 4 * num_vsc_pipes;
    uint32_t state_size = 4 * num_vsc_pipes;
 
-   tu_get_scratch_bo(dev,
-                     prim_strm_size + draw_strm_size + draw_strm_size_size +
-                     state_size,
-                     &vsc_bo);
+   cmd->vsc_size =
+      prim_strm_size + draw_strm_size + draw_strm_size_size + state_size;
 
-   cmd->vsc_prim_strm_va = vsc_bo->iova;
-   cmd->vsc_draw_strm_va = vsc_bo->iova + prim_strm_size;
-   cmd->vsc_draw_strm_size_va = cmd->vsc_draw_strm_va + draw_strm_size;
-   cmd->vsc_state_va = cmd->vsc_draw_strm_size_va + draw_strm_size_size;
+   cmd->vsc_prim_strm_offset = 0;
+   cmd->vsc_draw_strm_offset = prim_strm_size;
+   cmd->vsc_draw_strm_size_offset = cmd->vsc_draw_strm_offset + draw_strm_size;
+   cmd->vsc_state_offset = cmd->vsc_draw_strm_size_offset + draw_strm_size_size;
+}
+
+static void
+tu_emit_vis_stream_patchpoint(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
+                              uint32_t offset)
+{
+   struct tu_vis_stream_patchpoint patchpoint = {
+      .data = cs->cur,
+      .iova = tu_cs_get_cur_iova(cs),
+      .offset = offset,
+   };
+
+   util_dynarray_append(&cmd->vis_stream_patchpoints, patchpoint);
+   tu_cs_emit_qw(cs, offset);
 }
 
 template <chip CHIP>
@@ -223,20 +234,20 @@ static void
 tu_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    if (CHIP == A6XX) {
-      tu_cs_emit_regs(cs,
-                     A6XX_VSC_SIZE_BASE(.qword = cmd->vsc_draw_strm_size_va));
-      tu_cs_emit_regs(cs,
-                     A6XX_VSC_PIPE_DATA_PRIM_BASE(.qword = cmd->vsc_prim_strm_va));
-      tu_cs_emit_regs(
-         cs, A6XX_VSC_PIPE_DATA_DRAW_BASE(.qword = cmd->vsc_draw_strm_va));
+      tu_cs_emit_pkt4(cs, REG_A6XX_VSC_SIZE_BASE, 2);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_draw_strm_size_offset);
+      tu_cs_emit_pkt4(cs, REG_A6XX_VSC_PIPE_DATA_PRIM_BASE, 2);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_prim_strm_offset);
+      tu_cs_emit_pkt4(cs, REG_A6XX_VSC_PIPE_DATA_DRAW_BASE, 2);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_draw_strm_offset);
    } else {
       tu_cs_emit_pkt7(cs, CP_SET_PSEUDO_REG, 3 * 3);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(VSC_PIPE_DATA_DRAW_BASE));
-      tu_cs_emit_qw(cs, cmd->vsc_draw_strm_va);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_draw_strm_offset);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(VSC_SIZE_BASE));
-      tu_cs_emit_qw(cs, cmd->vsc_draw_strm_size_va);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_draw_strm_size_offset);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(VSC_PIPE_DATA_PRIM_BASE));
-      tu_cs_emit_qw(cs, cmd->vsc_prim_strm_va);
+      tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_prim_strm_offset);
    }
 
    cmd->vsc_initialized = true;
@@ -1278,7 +1289,13 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
                   A6XX_CP_SET_MARKER_0_USES_GMEM);
 
    if (CHIP == A6XX && cmd->device->physical_device->has_preemption) {
+      if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, true);
+
       tu_emit_vsc<CHIP>(cmd, &cmd->cs);
+
+      if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, false);
    }
 
    unsigned views = tu_fdm_num_layers(cmd);
@@ -2798,7 +2815,13 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
        * emits the preamble lazily. We chose the per-bin approach but blob's
        * should be a better one.
        */
+       if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, true);
+
       tu_emit_vsc<CHIP>(cmd, cs);
+
+       if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, false);
 
       tu6_emit_bin_size<CHIP>(cs, tiling->tile0.width, tiling->tile0.height,
                               {
@@ -2855,13 +2878,18 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          tu6_lazy_init_vsc(cmd);
 
       /* Upload state regs to memory to be restored on skipsaverestore
-       * preemption.
+       * preemption. On a7xx this is considered part of the vis stream that
+       * requires a patchpoint.
        */
+      if (CHIP >= A7XX &&
+          (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT))
+         tu_cs_set_writeable(cs, true);
+
       tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
       tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_VSC_CHANNEL_VISIBILITY(0)) |
                      CP_REG_TO_MEM_0_CNT(32));
       if (CHIP >= A7XX)
-         tu_cs_emit_qw(cs, cmd->vsc_state_va);
+         tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_state_offset);
       else
          tu_cs_emit_qw(cs, global_iova(cmd, vsc_state));
 
@@ -2874,8 +2902,12 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          tu_cs_emit_pkt7(cs, CP_MEM_TO_SCRATCH_MEM, 4);
          tu_cs_emit(cs, num_vsc_pipes); /* count */
          tu_cs_emit(cs, 0); /* offset */
-         tu_cs_emit_qw(cs, cmd->vsc_state_va);
+         tu_emit_vis_stream_patchpoint(cmd, cs, cmd->vsc_state_offset);
       }
+
+      if (CHIP >= A7XX &&
+          (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT))
+         tu_cs_set_writeable(cs, false);
    }
 
    tu_autotune_begin_renderpass<CHIP>(cmd, cs, autotune_result);
@@ -3573,6 +3605,26 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    ralloc_free(cmd_buffer->pre_chain.patchpoints_ctx);
    util_dynarray_fini(&cmd_buffer->fdm_bin_patchpoints);
    util_dynarray_fini(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
+   util_dynarray_fini(&cmd_buffer->vis_stream_patchpoints);
+
+   util_dynarray_foreach (&cmd_buffer->vis_stream_bos, struct tu_bo *,
+                          bo) {
+      tu_bo_finish(cmd_buffer->device, *bo);
+   }
+
+   mtx_lock(&cmd_buffer->device->vis_stream_suballocator_mtx);
+   util_dynarray_foreach (&cmd_buffer->vis_stream_cs_bos,
+                          struct tu_vis_stream_patchpoint_cs,
+                          bo) {
+      tu_suballoc_bo_free(&cmd_buffer->device->vis_stream_suballocator,
+                          &bo->cs_bo);
+      tu_suballoc_bo_free(&cmd_buffer->device->vis_stream_suballocator,
+                          &bo->fence_bo);
+   }
+   mtx_unlock(&cmd_buffer->device->vis_stream_suballocator_mtx);
+
+   util_dynarray_fini(&cmd_buffer->vis_stream_bos);
+   util_dynarray_fini(&cmd_buffer->vis_stream_cs_bos);
 
    vk_command_buffer_finish(&cmd_buffer->vk);
    vk_free2(&cmd_buffer->device->vk.alloc, &cmd_buffer->vk.pool->alloc,
@@ -3649,6 +3701,26 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd_buffer->pre_chain.patchpoints_ctx = NULL;
    util_dynarray_clear(&cmd_buffer->fdm_bin_patchpoints);
    util_dynarray_clear(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
+   util_dynarray_clear(&cmd_buffer->vis_stream_patchpoints);
+
+   util_dynarray_foreach (&cmd_buffer->vis_stream_bos, struct tu_bo *,
+                          bo) {
+      tu_bo_finish(cmd_buffer->device, *bo);
+   }
+
+   mtx_lock(&cmd_buffer->device->vis_stream_suballocator_mtx);
+   util_dynarray_foreach (&cmd_buffer->vis_stream_cs_bos,
+                          struct tu_vis_stream_patchpoint_cs,
+                          bo) {
+      tu_suballoc_bo_free(&cmd_buffer->device->vis_stream_suballocator,
+                          &bo->cs_bo);
+      tu_suballoc_bo_free(&cmd_buffer->device->vis_stream_suballocator,
+                          &bo->fence_bo);
+   }
+   mtx_unlock(&cmd_buffer->device->vis_stream_suballocator_mtx);
+
+   util_dynarray_clear(&cmd_buffer->vis_stream_bos);
+   util_dynarray_clear(&cmd_buffer->vis_stream_cs_bos);
 }
 
 const struct vk_command_buffer_ops tu_cmd_buffer_ops = {
@@ -5562,6 +5634,58 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
          util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
                                        &secondary->fdm_bin_patchpoints);
       } else {
+         struct tu_cs *cs = &cmd->cs;
+
+         /* If the secondary can be used multiple times, we have to set its
+          * patchpoints on the GPU. Set them here, and create a new
+          * patchpoint pointing to the CP_MEM_WRITE packet. Otherwise just
+          * copy them over adjusting the index.
+          */
+         bool simultaneous_use = secondary->usage_flags &
+             VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+         /* If this cmdbuf itself can be used multiple times in a submit then
+          * its patchpoint will also be updated on the GPU.
+          */
+         if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+            tu_cs_set_writeable(cs, true);
+
+         util_dynarray_foreach (&secondary->vis_stream_patchpoints,
+                                struct tu_vis_stream_patchpoint,
+                                secondary_patchpoint) {
+            struct tu_vis_stream_patchpoint patchpoint =
+               *secondary_patchpoint;
+
+            if (simultaneous_use) {
+               tu_cs_reserve_space(cs, 5);
+               tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
+               tu_cs_emit_qw(cs, patchpoint.iova);
+               patchpoint.iova = tu_cs_get_cur_iova(cs);
+               patchpoint.data = cs->cur;
+               tu_cs_emit_qw(cs, 0);
+            }
+
+            util_dynarray_append(&cmd->vis_stream_patchpoints,
+                                 patchpoint);
+         }
+
+         if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+            tu_cs_set_writeable(cs, false);
+
+         if (simultaneous_use) {
+            tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
+            tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
+
+            /* Make BV wait for updates on BR to land */
+            if (cmd->device->physical_device->info->chip >= 7) {
+               tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+               tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                              CP_THREAD_CONTROL_0_SYNC_THREADS);
+            }
+         }
+
+         cmd->vsc_size = MAX2(cmd->vsc_size, secondary->vsc_size);
+
          switch (secondary->state.suspend_resume) {
          case SR_NONE:
             assert(tu_cs_is_empty(&secondary->draw_cs));

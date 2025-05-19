@@ -363,6 +363,11 @@ struct tu_device
    struct tu_suballocator *trace_suballoc;
    mtx_t trace_mutex;
 
+   /* VSC patchpoint BO suballocator.
+    */
+   struct tu_suballocator vis_stream_suballocator;
+   mtx_t vis_stream_suballocator_mtx;
+
    /* the blob seems to always use 8K factor and 128K param sizes, copy them */
 #define TU_TESS_FACTOR_SIZE (8 * 1024)
 #define TU_TESS_PARAM_SIZE (128 * 1024)
@@ -432,6 +437,9 @@ struct tu_device
    struct tu_cs_entry cmdbuf_start_a725_quirk_entry;
 
    struct tu_cs_entry bin_preamble_entry, bin_preamble_bv_entry;
+
+   struct tu_bo *vis_stream_bo;
+   mtx_t vis_stream_mtx;
 
    struct util_dynarray dynamic_rendering_pending;
    VkCommandPool dynamic_rendering_pool;

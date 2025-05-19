@@ -85,6 +85,176 @@ submit_add_entries(struct tu_device *dev, void *submit,
    }
 }
 
+/* Normally, we can just resolve visibility stream patchpoints on the CPU by
+ * writing directly to the command stream with the final iova of the allocated
+ * BO. However this doesn't work with SIMULTANEOUS_USE command buffers, where
+ * the same buffer may be in flight more than once, including within a submit.
+ * To handle this we have to update the patchpoints on the GPU. The lifetime
+ * of the CS used to write the patchpoints on the GPU is tricky, since if we
+ * always allocate a new one for each submit the size could grow infinitely if
+ * the command buffer is never freed or reset. Instead this implements a pool
+ * of patchpoint CS's per command buffer that reuses finiehed CS's.
+ */
+static VkResult
+get_vis_stream_patchpoint_cs(struct tu_cmd_buffer *cmd,
+                             struct tu_cs *cs,
+                             struct tu_cs *sub_cs,
+                             uint64_t *fence_iova)
+{
+   /* See below for the commands emitted to the CS. */
+   uint32_t cs_size = 5 *
+      util_dynarray_num_elements(&cmd->vis_stream_patchpoints,
+                                 struct tu_vis_stream_patchpoint) + 6;
+
+   util_dynarray_foreach (&cmd->vis_stream_cs_bos,
+                          struct tu_vis_stream_patchpoint_cs,
+                          patchpoint_cs) {
+      uint32_t *fence = (uint32_t *)patchpoint_cs->fence_bo.bo->map;
+      if (*fence == 1) {
+         *fence = 0;
+         tu_cs_init_suballoc(cs, cmd->device, &patchpoint_cs->cs_bo);
+         tu_cs_begin_sub_stream(cs, cs_size, sub_cs);
+         *fence_iova = patchpoint_cs->fence_bo.iova;
+         return VK_SUCCESS;
+      }
+   }
+
+   struct tu_vis_stream_patchpoint_cs patchpoint_cs;
+
+   mtx_lock(&cmd->device->vis_stream_suballocator_mtx);
+   VkResult result =
+      tu_suballoc_bo_alloc(&patchpoint_cs.cs_bo,
+                           &cmd->device->vis_stream_suballocator,
+                           cs_size * 4, 4);
+
+   if (result != VK_SUCCESS) {
+      mtx_unlock(&cmd->device->vis_stream_suballocator_mtx);
+      return result;
+   }
+
+   result =
+      tu_suballoc_bo_alloc(&patchpoint_cs.fence_bo,
+                           &cmd->device->vis_stream_suballocator,
+                           4, 4);
+
+   if (result != VK_SUCCESS) {
+      tu_suballoc_bo_free(&cmd->device->vis_stream_suballocator,
+                          &patchpoint_cs.cs_bo);
+      mtx_unlock(&cmd->device->vis_stream_suballocator_mtx);
+      return result;
+   }
+
+   mtx_unlock(&cmd->device->vis_stream_suballocator_mtx);
+
+   util_dynarray_append(&cmd->vis_stream_cs_bos, patchpoint_cs);
+
+   tu_cs_init_suballoc(cs, cmd->device, &patchpoint_cs.cs_bo);
+   tu_cs_begin_sub_stream(cs, cs_size, sub_cs);
+   *fence_iova = patchpoint_cs.fence_bo.iova;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+resolve_vis_stream_patchpoints(struct tu_queue *queue,
+                               void *submit,
+                               struct util_dynarray *dump_cmds,
+                               struct tu_cmd_buffer **cmd_buffers,
+                               uint32_t cmdbuf_count)
+{
+   struct tu_device *dev = queue->device;
+
+   uint32_t max_size = 0;
+   for (unsigned i = 0; i < cmdbuf_count; i++)
+      max_size = MAX2(max_size, cmd_buffers[i]->vsc_size);
+
+   if (max_size == 0)
+      return VK_SUCCESS;
+
+   struct tu_bo *bo = NULL;
+   VkResult result = VK_SUCCESS;
+
+   mtx_lock(&dev->vis_stream_mtx);
+
+   if (!dev->vis_stream_bo || max_size > dev->vis_stream_bo->size) {
+      if (dev->vis_stream_bo)
+         tu_bo_finish(dev, dev->vis_stream_bo);
+      result = tu_bo_init_new(dev, &dev->vk.base, &dev->vis_stream_bo,
+                              max_size, TU_BO_ALLOC_INTERNAL_RESOURCE,
+                              "visibility stream");
+   }
+
+   bo = dev->vis_stream_bo;
+
+   mtx_unlock(&dev->vis_stream_mtx);
+
+   if (!bo)
+      return result;
+
+   /* Attach a reference to the BO to each command buffer involved in the
+    * submit.
+    */
+   for (unsigned i = 0; i < cmdbuf_count; i++) {
+      bool has_bo = false;
+      util_dynarray_foreach (&cmd_buffers[i]->vis_stream_bos,
+                             struct tu_bo *, cmd_bo) {
+         if (*cmd_bo == bo) {
+            has_bo = true;
+            break;
+         }
+      }
+
+      if (!has_bo) {
+         util_dynarray_append(&cmd_buffers[i]->vis_stream_bos,
+                              tu_bo_get_ref(bo));
+      }
+   }
+
+   for (unsigned i = 0; i < cmdbuf_count; i++) {
+      struct tu_cs cs, sub_cs;
+      uint64_t fence_iova = 0;
+      if (cmd_buffers[i]->usage_flags &
+          VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+         result = get_vis_stream_patchpoint_cs(cmd_buffers[i],
+                                               &cs, &sub_cs, &fence_iova);
+         if (result != VK_SUCCESS)
+            return result;
+      }
+
+      util_dynarray_foreach (&cmd_buffers[i]->vis_stream_patchpoints,
+                             struct tu_vis_stream_patchpoint,
+                             patchpoint) {
+         uint64_t final_iova = bo->iova + patchpoint->offset;
+
+         if (cmd_buffers[i]->usage_flags &
+             VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+            tu_cs_emit_pkt7(&sub_cs, CP_MEM_WRITE, 4);
+            tu_cs_emit_qw(&sub_cs, patchpoint->iova);
+            tu_cs_emit_qw(&sub_cs, final_iova);
+         } else {
+            patchpoint->data[0] = final_iova;
+            patchpoint->data[1] = final_iova >> 32;
+         }
+      }
+
+      if (cmd_buffers[i]->usage_flags &
+          VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+         tu_cs_emit_pkt7(&sub_cs, CP_WAIT_MEM_WRITES, 0);
+         tu_cs_emit_pkt7(&sub_cs, CP_WAIT_FOR_ME, 0);
+
+         /* Signal that this CS is done and can be reused. */
+         tu_cs_emit_pkt7(&sub_cs, CP_MEM_WRITE, 3);
+         tu_cs_emit_qw(&sub_cs, fence_iova);
+         tu_cs_emit(&sub_cs, 1);
+
+         struct tu_cs_entry entry = tu_cs_end_sub_stream(&cs, &sub_cs);
+         submit_add_entries(queue->device, submit, dump_cmds, &entry, 1);
+      }
+   }
+
+   return VK_SUCCESS;
+}
+
 static VkResult
 queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 {
@@ -205,6 +375,11 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
    void *submit = tu_submit_create(device);
    if (!submit)
       goto fail_create_submit;
+
+   result = resolve_vis_stream_patchpoints(queue, submit, &dump_cmds,
+                                           cmd_buffers, cmdbuf_count);
+   if (result != VK_SUCCESS)
+      goto out;
 
    if (has_trace_points) {
       tu_u_trace_submission_data_create(
