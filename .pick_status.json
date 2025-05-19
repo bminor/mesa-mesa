@@ -164,7 +164,7 @@
         "description": "radv: fix missing texel scale for unaligned linear SDMA copies",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b73d7e8174faf7cc9bfa351befc637ffe2e53c1",
         "notes": null
