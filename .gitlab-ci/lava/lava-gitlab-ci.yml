@@ -69,26 +69,24 @@ variables:
       artifacts: false
 
 .lava-x86_64-test:
+  extends:
+    - .lava-test
   variables:
     ARCH: x86_64
     DEBIAN_ARCH: amd64
     KERNEL_IMAGE_NAME: bzImage
     KERNEL_IMAGE_TYPE: "zimage"
     BOOT_METHOD: u-boot
-  extends:
-    - .lava-test
-  needs:
-    - !reference [.lava-test, needs]
-    - job: debian-testing
-      artifacts: false
 
 .lava-x86_64-test-gl:
   extends:
     - .use-debian/x86_64_test-gl
     - .lava-x86_64-test
   needs:
-    - !reference [.lava-x86_64-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/x86_64_test-gl
+      artifacts: false
+    - job: debian-testing
       artifacts: false
 
 .lava-x86_64-test-video:
@@ -96,8 +94,10 @@ variables:
     - .use-debian/x86_64_test-video
     - .lava-x86_64-test
   needs:
-    - !reference [.lava-x86_64-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/x86_64_test-video
+      artifacts: false
+    - job: debian-testing
       artifacts: false
 
 .lava-x86_64-test-vk:
@@ -105,54 +105,52 @@ variables:
     - .use-debian/x86_64_test-vk
     - .lava-x86_64-test
   needs:
-    - !reference [.lava-x86_64-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/x86_64_test-vk
+      artifacts: false
+    - job: debian-testing
       artifacts: false
 
 .lava-arm32-test:
+  extends:
+    - .lava-test
   variables:
     ARCH: arm32
     DEBIAN_ARCH: armhf
     KERNEL_IMAGE_NAME: zImage
     KERNEL_IMAGE_TYPE: "zimage"
     BOOT_METHOD: u-boot
-  extends:
-    - .lava-test
-  needs:
-    - !reference [.lava-test, needs]
-    - job: debian-arm32
-      artifacts: false
 
 .lava-arm32-test-gl:
   extends:
     - .use-debian/arm32_test-gl
     - .lava-arm32-test
   needs:
-    - !reference [.lava-arm32-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/arm32_test-gl
+      artifacts: false
+    - job: debian-arm32
       artifacts: false
 
 .lava-arm64-test:
+  extends:
+    - .lava-test
   variables:
     ARCH: arm64
     DEBIAN_ARCH: arm64
     KERNEL_IMAGE_NAME: Image
     KERNEL_IMAGE_TYPE: "image"
     BOOT_METHOD: u-boot
-  extends:
-    - .lava-test
-  needs:
-    - !reference [.lava-test, needs]
-    - job: debian-arm64
-      artifacts: false
 
 .lava-arm64-test-gl:
   extends:
     - .use-debian/arm64_test-gl
     - .lava-arm64-test
   needs:
-    - !reference [.lava-arm64-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/arm64_test-gl
+      artifacts: false
+    - job: debian-arm64
       artifacts: false
 
 .lava-arm64-test-vk:
@@ -160,8 +158,10 @@ variables:
     - .use-debian/arm64_test-vk
     - .lava-arm64-test
   needs:
-    - !reference [.lava-arm64-test, needs]
+    - !reference [.lava-test, needs]
     - job: debian/arm64_test-vk
+      artifacts: false
+    - job: debian-arm64
       artifacts: false
 
 .lava-piglit-traces:
