@@ -215,6 +215,18 @@ wsi_row_pitch_to_row_stride(unsigned arch, const struct pan_image_props *props,
          (afbc_tile_payload_row_stride_B / afbc_tile_payload_size_B) *
          afbc_tile_extent_px.width;
       *row_stride_B = pan_afbc_row_stride(modifier, width_px);
+
+      /* For quite some time, we've been accepting WSI row pitch that
+       * didn't match exactly the image size and have been assuming tightly
+       * packed tile rows instead of using the explicit stride in that case.
+       * This is something we can't change without risking breaking existing
+       * users, so we enforce this explicit tile alignment only if we were
+       * asked to. */
+      if (wsi_layout->strict &&
+          (afbc_tile_payload_row_stride_B % afbc_tile_payload_size_B)) {
+         mesa_loge("WSI pitch is not aligned on an AFBC tile");
+         return false;
+      }
    } else if (drm_is_afrc(modifier)) {
       struct pan_image_block_size tile_size_px =
          pan_afrc_tile_size(format, modifier);
@@ -369,11 +381,13 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
          row_stride_B = ALIGN_POT(row_stride_B, align_req_B);
       }
 
-      if (wsi_layout && !afbc && !afrc) {
+      if (wsi_layout && !afbc) {
          /* Explicit stride should be rejected by wsi_row_pitch_to_row_stride()
           * if it's too small. */
          assert(wsi_row_stride_B >= row_stride_B);
-         row_stride_B = wsi_row_stride_B;
+
+         if (!afrc || wsi_layout->strict)
+            row_stride_B = wsi_row_stride_B;
       } else if (linear) {
          /* Keep lines alignment on 64 byte for performance */
          row_stride_B = ALIGN_POT(row_stride_B, 64);
@@ -390,7 +404,14 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
          /* Explicit stride should be rejected by wsi_row_pitch_to_row_stride()
           * if it's too small. */
          assert(!wsi_layout || wsi_row_stride_B >= slice->row_stride_B);
-         slice->afbc.stride_sb = effective_width_el / block_size_el.width;
+
+         if (wsi_layout && wsi_layout->strict) {
+            slice->row_stride_B = wsi_row_stride_B;
+            slice_one_size_B = (uint64_t)wsi_layout->row_pitch_B * effective_height_el;
+         }
+
+         slice->afbc.stride_sb =
+            pan_afbc_stride_blocks(props->modifier, slice->row_stride_B);
          slice->afbc.nr_sblocks = slice->afbc.stride_sb *
                                   (effective_height_el / block_size_el.height);
          slice->afbc.header_size_B =

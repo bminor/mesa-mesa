@@ -227,6 +227,7 @@ row_stride_from_wsi_pitch(unsigned row_pitch_B, unsigned width_px,
 {
    const struct pan_image_wsi_layout wsi_l = {
       .row_pitch_B = row_pitch_B,
+      .strict = true,
    };
    struct pan_image_props p = {
       .modifier = mod,
@@ -254,9 +255,9 @@ TEST(WSI, FromWSILinear)
       row_stride_from_wsi_pitch(1920 * 4, 1920, PIPE_FORMAT_R8G8B8A8_UINT,
                                 DRM_FORMAT_MOD_LINEAR),
       1920 * 4);
-   EXPECT_EQ(row_stride_from_wsi_pitch(53, 53, PIPE_FORMAT_R8_SNORM,
+   EXPECT_EQ(row_stride_from_wsi_pitch(64, 53, PIPE_FORMAT_R8_SNORM,
                                        DRM_FORMAT_MOD_LINEAR),
-             53);
+             64);
    EXPECT_EQ(row_stride_from_wsi_pitch(64, 32, PIPE_FORMAT_ETC2_RGB8,
                                        DRM_FORMAT_MOD_LINEAR),
              64);

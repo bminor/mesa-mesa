@@ -96,6 +96,7 @@ struct pan_image_layout {
 struct pan_image_wsi_layout {
    unsigned offset_B;
    unsigned row_pitch_B;
+   bool strict;
 };
 
 /*
