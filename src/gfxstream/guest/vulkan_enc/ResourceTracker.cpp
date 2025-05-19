@@ -1740,11 +1740,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         "VK_KHR_get_memory_requirements2",
         "VK_KHR_sampler_ycbcr_conversion",
         "VK_KHR_shader_float16_int8",
-    // Timeline semaphores buggy in newer NVIDIA drivers
-    // (vkWaitSemaphoresKHR causes further vkCommandBuffer dispatches to deadlock)
-#ifndef VK_USE_PLATFORM_ANDROID_KHR
         "VK_KHR_timeline_semaphore",
-#endif
         "VK_AMD_gpu_shader_half_float",
         "VK_NV_shader_subgroup_partitioned",
         "VK_KHR_shader_subgroup_extended_types",
@@ -1775,7 +1771,6 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
         "VK_KHR_external_semaphore",
         "VK_KHR_external_semaphore_fd",
-        // "VK_KHR_external_semaphore_win32", not exposed because it's translated to fd
         "VK_KHR_external_memory",
         "VK_KHR_external_fence",
         "VK_KHR_external_fence_fd",
@@ -1787,10 +1782,12 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         // Passthrough if available on host. Will otherwise be emulated by guest
         "VK_EXT_image_drm_format_modifier",
 #endif
+        "VK_KHR_multiview",
+        "VK_EXT_color_write_enable",
         // Vulkan 1.3
         "VK_KHR_synchronization2",
         "VK_EXT_private_data",
-        "VK_EXT_color_write_enable",
+        "VK_KHR_dynamic_rendering",
     };
 
     VkEncoder* enc = (VkEncoder*)context;
