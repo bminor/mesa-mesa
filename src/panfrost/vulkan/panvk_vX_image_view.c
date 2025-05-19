@@ -240,12 +240,13 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          vk_format_get_blocksize(view->vk.view_format) == 1)))
       plane_idx = 1;
 
-   bool is_3d =
-      image->planes[plane_idx].layout.dim == MALI_TEXTURE_DIMENSION_3D;
+   const struct pan_image_layout *plane_layout =
+      &image->planes[plane_idx].layout;
+   bool is_3d = plane_layout->dim == MALI_TEXTURE_DIMENSION_3D;
    unsigned offset = image->planes[plane_idx].data.offset;
-   offset += pan_image_surface_offset(
-      &image->planes[plane_idx].layout, view->pview.first_level,
-      is_3d ? 0 : view->pview.first_layer, is_3d ? view->pview.first_layer : 0);
+   offset += pan_image_surface_offset(plane_layout, view->pview.first_level,
+                                      is_3d ? 0 : view->pview.first_layer,
+                                      is_3d ? view->pview.first_layer : 0);
 
    pan_pack(&view->descs.img_attrib_buf[0], ATTRIBUTE_BUFFER, cfg) {
       /* The format is the only thing we lack to emit attribute descriptors
@@ -266,7 +267,8 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
                     : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
       cfg.pointer = image->planes[plane_idx].data.base + offset;
       cfg.stride = fmt_blksize | (hw_fmt << 10);
-      cfg.size = pan_kmod_bo_size(image->bo) - offset;
+      cfg.size =
+         pan_image_mip_level_size(plane_layout, view->pview.first_level);
    }
 
    struct mali_attribute_buffer_packed *buf = &view->descs.img_attrib_buf[1];

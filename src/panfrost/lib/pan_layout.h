@@ -128,6 +128,19 @@ unsigned pan_image_surface_offset(const struct pan_image_layout *layout,
                                   unsigned level, unsigned array_idx,
                                   unsigned surface_idx);
 
+static inline uint64_t
+pan_image_mip_level_size(const struct pan_image_layout *layout, unsigned level)
+{
+   assert(level < layout->nr_slices);
+   uint64_t size = layout->slices[level].size;
+
+   /* If this is an array, we need to cover the whole array. */
+   if (layout->array_size > 1)
+      size += (uint64_t)layout->array_stride * (layout->array_size - 1);
+
+   return size;
+}
+
 bool
 pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
                       const struct pan_image_wsi_layout *wsi_layout);

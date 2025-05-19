@@ -2035,7 +2035,8 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
          cfg.type = pan_modifier_to_attr_type(rsrc->image.layout.modifier);
          cfg.pointer = rsrc->image.data.base + offset;
          cfg.stride = util_format_get_blocksize(image->format);
-         cfg.size = panfrost_bo_size(rsrc->bo) - offset;
+         cfg.size = pan_image_mip_level_size(
+            &rsrc->image.layout, is_buffer ? 0 : image->u.tex.level);
       }
 
       if (is_buffer) {
