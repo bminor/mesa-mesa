@@ -167,6 +167,28 @@ pan_afbc_subblock_size(uint64_t modifier)
    return (struct pan_image_block_size){4, 4};
 }
 
+static inline uint32_t
+pan_afbc_header_row_stride_align(unsigned arch, enum pipe_format format,
+                                 uint64_t modifier)
+{
+   if (arch <= 7 || !(modifier & AFBC_FORMAT_MOD_TILED))
+      return 16;
+
+   if (util_format_get_blocksizebits(format) <= 32)
+      return 1024;
+   else
+      return 256;
+}
+
+static inline uint32_t
+pan_afbc_header_align(unsigned arch, uint64_t modifier)
+{
+   if (modifier & AFBC_FORMAT_MOD_TILED)
+      return 4096;
+   else
+      return 128;
+}
+
 /*
  * Determine the required alignment for the body offset of an AFBC image. For
  * now, this depends only on whether tiling is in use. These minimum alignments
