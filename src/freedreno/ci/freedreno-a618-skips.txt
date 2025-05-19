@@ -11,3 +11,8 @@ KHR-GL46.copy_image.functional
 
 # Flaky when run in parallel due to DRM control node acquisition.
 dEQP-VK.wsi.*display.*
+
+# Exclude WSI related tests for a618-vk-asan
+# The ones that weren't being skipped were causing leaks
+asan-dEQP-VK.image.swapchain_mutable.*
+asan-dEQP-VK.wsi.*
