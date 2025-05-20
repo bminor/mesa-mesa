@@ -291,7 +291,7 @@ lp_create_fence_fd(struct pipe_context *pipe,
 
    struct lp_fence *f = CALLOC_STRUCT(lp_fence);
 
-   if (!fence)
+   if (!f)
       goto fail;
 
    pipe_reference_init(&f->reference, 1);
