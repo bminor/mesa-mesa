@@ -83,6 +83,10 @@ pan_afrc_get_format_info(enum pipe_format format)
    const struct util_format_description *desc = util_format_description(format);
    struct pan_afrc_format_info info = {0};
 
+   /* No AFRC(compressed) */
+   if (util_format_is_compressed(format))
+      return info;
+
    /* No AFRC(ZS). */
    if (desc->colorspace == UTIL_FORMAT_COLORSPACE_ZS)
       return info;
