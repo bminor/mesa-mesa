@@ -682,6 +682,7 @@ vn_CreateImage(VkDevice device,
     */
    if (wsi_info) {
       assert(wsi_info->blit_src ||
+             pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR ||
              external_info->handleTypes == renderer_handle_type);
       result = vn_wsi_create_image(dev, pCreateInfo, wsi_info, alloc, &img);
    } else if (anb_info) {
