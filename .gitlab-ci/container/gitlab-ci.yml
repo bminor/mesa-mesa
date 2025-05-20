@@ -196,7 +196,7 @@ debian/ppc64el_build:
     - .use-debian/x86_64_build-base
   variables:
     MESA_IMAGE_TAG: &debian-ppc64el_build ${DEBIAN_BUILD_TAG}
-    LLVM_VERSION: &debian-ppc64el-llvm 15 # no LLVM packages for PPC
+    LLVM_VERSION: &debian-ppc64el-llvm 15  # no LLVM packages for PPC
 
 .use-debian/ppc64el_build:
   tags:
@@ -574,7 +574,7 @@ debian/arm32_test-gl:
 # Debian based ARMv7/armhf test image for VK
 debian/arm32_test-vk:
   rules:
-    - when: never # There are currently no arm32 VK jobs
+    - when: never  # There are currently no arm32 VK jobs
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
@@ -755,7 +755,7 @@ debian/baremetal_arm64_test-vk:
     - !reference [.microsoft-farm-container-rules, rules]
     - !reference [.container+build-rules, rules]
   variables:
-    GIT_STRATEGY: fetch # we do actually need the full repository though
+    GIT_STRATEGY: fetch  # we do actually need the full repository though
     MESA_BASE_IMAGE: None
   before_script: null  # remove .container before_script as it's unix-only
   script:
@@ -787,7 +787,7 @@ windows_build_msvc:
     DOCKERFILE: Dockerfile_build
     MESA_BASE_IMAGE_PATH: *windows_msvc_image_path
     MESA_BASE_IMAGE: "$CI_REGISTRY_IMAGE/${MESA_BASE_IMAGE_PATH}:${WINDOWS_X64_MSVC_TAG}"
-  timeout: 2h 30m # LLVM takes ages
+  timeout: 2h 30m  # LLVM takes ages
   needs:
     - windows_msvc
 
