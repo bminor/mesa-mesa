@@ -1153,7 +1153,7 @@ spill_block(spill_ctx& ctx, unsigned block_idx)
 void
 setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
                         std::vector<aco_ptr<Instruction>>& instructions, uint32_t spill_slot,
-                        Operand& scratch_offset, unsigned* offset)
+                        unsigned temp_size, Operand* scratch_offset, unsigned* offset)
 {
    uint32_t scratch_size = ctx.program->config->scratch_bytes_per_wave / ctx.program->wave_size;
 
@@ -1199,7 +1199,8 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
 
       if (ctx.scratch_rsrc == Temp() || overflow) {
          int32_t saddr = scratch_size - ctx.program->dev.scratch_global_offset_min;
-         if ((int32_t)*offset > (int32_t)ctx.program->dev.scratch_global_offset_max) {
+         int32_t last_offset = (int32_t)*offset + (temp_size - 1) * 4;
+         if (last_offset > (int32_t)ctx.program->dev.scratch_global_offset_max) {
             saddr += (int32_t)*offset;
             *offset = 0;
          }
@@ -1221,10 +1222,10 @@ setup_vgpr_spill_reload(spill_ctx& ctx, Block& block,
             ctx.program->config->scratch_bytes_per_wave + *offset * ctx.program->wave_size;
          *offset = 0;
 
-         scratch_offset = offset_bld.copy(offset_bld.def(s1), Operand::c32(soffset));
+         *scratch_offset = offset_bld.copy(offset_bld.def(s1), Operand::c32(soffset));
       } else {
-         if (scratch_offset.isUndefined())
-            scratch_offset = Operand::zero();
+         if (scratch_offset->isUndefined())
+            *scratch_offset = Operand::zero();
          *offset += scratch_size;
       }
    }
@@ -1243,7 +1244,8 @@ spill_vgpr(spill_ctx& ctx, Block& block, std::vector<aco_ptr<Instruction>>& inst
    if (!ctx.program->scratch_offsets.empty())
       scratch_offset = Operand(ctx.program->scratch_offsets[ctx.resume_idx]);
    unsigned offset;
-   setup_vgpr_spill_reload(ctx, block, instructions, spill_slot, scratch_offset, &offset);
+   setup_vgpr_spill_reload(ctx, block, instructions, spill_slot, spill->operands[0].size(),
+                           &scratch_offset, &offset);
 
    assert(spill->operands[0].isTemp());
    Temp temp = spill->operands[0].getTemp();
@@ -1291,7 +1293,8 @@ reload_vgpr(spill_ctx& ctx, Block& block, std::vector<aco_ptr<Instruction>>& ins
    if (!ctx.program->scratch_offsets.empty())
       scratch_offset = Operand(ctx.program->scratch_offsets[ctx.resume_idx]);
    unsigned offset;
-   setup_vgpr_spill_reload(ctx, block, instructions, spill_slot, scratch_offset, &offset);
+   setup_vgpr_spill_reload(ctx, block, instructions, spill_slot, reload->definitions[0].size(),
+                           &scratch_offset, &offset);
 
    Definition def = reload->definitions[0];
 
