@@ -177,7 +177,7 @@ lp_setup_reset(struct lp_setup_context *setup)
    }
 
    setup->fs.stored = NULL;
-   setup->dirty = ~0;
+   setup->dirty = ~0U;
 
    /* no current bin */
    setup->scene = NULL;
@@ -485,8 +485,8 @@ lp_setup_try_clear_zs(struct lp_setup_context *setup,
 
    enum pipe_format format = setup->fb.zsbuf.format;
 
-   const uint32_t zmask32 = (flags & PIPE_CLEAR_DEPTH) ? ~0 : 0;
-   const uint8_t smask8 = (flags & PIPE_CLEAR_STENCIL) ? ~0 : 0;
+   const uint32_t zmask32 = (flags & PIPE_CLEAR_DEPTH) ? ~0U : 0U;
+   const uint8_t smask8 = (flags & PIPE_CLEAR_STENCIL) ? ~0U : 0U;
 
    uint64_t zsvalue = util_pack64_z_stencil(format, depth, stencil);
    uint64_t zsmask = util_pack64_mask_z_stencil(format, zmask32, smask8);
@@ -499,7 +499,7 @@ lp_setup_try_clear_zs(struct lp_setup_context *setup,
        * Make full mask if there's "X" bits so we can do full
        * clear (without rmw).
        */
-      uint32_t zsmask_full = util_pack_mask_z_stencil(format, ~0, ~0);
+      uint32_t zsmask_full = util_pack_mask_z_stencil(format, ~0U, (uint8_t) ~0U);
       zsmask |= ~zsmask_full;
    }
 
@@ -1367,7 +1367,7 @@ lp_setup_create(struct pipe_context *pipe,
    setup->line     = first_line;
    setup->point    = first_point;
 
-   setup->dirty = ~0;
+   setup->dirty = ~0U;
 
    /* Initialize empty default fb correctly, so the rect is empty */
    setup->framebuffer.x1 = -1;
