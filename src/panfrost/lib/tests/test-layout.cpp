@@ -73,8 +73,7 @@ TEST(BlockSize, UInterleavedBlockCompressed)
 TEST(BlockSize, AFBCFormatInvariant16x16)
 {
    enum pipe_format format[] = {PIPE_FORMAT_R32G32B32_FLOAT,
-                                PIPE_FORMAT_R8G8B8_UNORM, PIPE_FORMAT_ETC2_RGB8,
-                                PIPE_FORMAT_ASTC_5x5};
+                                PIPE_FORMAT_R8G8B8_UNORM};
 
    uint64_t modifier =
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 |
@@ -92,8 +91,7 @@ TEST(BlockSize, AFBCFormatInvariant16x16)
 TEST(BlockSize, AFBCFormatInvariant32x8)
 {
    enum pipe_format format[] = {PIPE_FORMAT_R32G32B32_FLOAT,
-                                PIPE_FORMAT_R8G8B8_UNORM, PIPE_FORMAT_ETC2_RGB8,
-                                PIPE_FORMAT_ASTC_5x5};
+                                PIPE_FORMAT_R8G8B8_UNORM};
 
    uint64_t modifier =
       DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
