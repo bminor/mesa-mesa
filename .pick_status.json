@@ -4964,7 +4964,7 @@
         "description": "anv/trtt: don't avoid the TR-TT submission when there is stuff to signal",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0802bbd486415026ce98bbba97e2be012637db97",
         "notes": null
