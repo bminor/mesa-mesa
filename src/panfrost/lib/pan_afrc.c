@@ -84,13 +84,9 @@ panfrost_afrc_get_format_info(enum pipe_format format)
 bool
 panfrost_format_supports_afrc(enum pipe_format format)
 {
-   const struct util_format_description *desc = util_format_description(format);
-   int c = util_format_get_first_non_void_channel(desc->format);
+   struct pan_afrc_format_info finfo = panfrost_afrc_get_format_info(format);
 
-   if (c == -1)
-      return false;
-
-   return desc->is_array && desc->channel[c].size == 8;
+   return finfo.num_comps != 0;
 }
 
 struct panfrost_afrc_block_size {

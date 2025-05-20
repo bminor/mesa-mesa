@@ -6524,7 +6524,7 @@
         "description": "pan/afrc: Fix pan_format_supports_afrc()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "894657a5ed2e22248f22388a0467aa24c272a5eb",
         "notes": null
