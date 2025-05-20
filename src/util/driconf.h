@@ -751,10 +751,6 @@
    DRI_CONF_OPT_B(radv_rt_wave64, def, \
                   "Force wave64 in RT shaders")
 
-#define DRI_CONF_RADV_DISABLE_DEDICATED_SPARSE_QUEUE(def) \
-   DRI_CONF_OPT_B(radv_disable_dedicated_sparse_queue, def, \
-                  "Disables the dedicated sparse queue. This replaces radv_legacy_sparse_binding as a compatible drirc workaround for games that might not expect a separate SPARSE queue")
-
 /**
  * Overrides for forcing re-compilation of pipelines when RADV_BUILD_ID_OVERRIDE is enabled.
  * These need to be bumped every time a compiler bugfix is backported (up to 8 shader

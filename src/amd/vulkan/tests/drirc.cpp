@@ -9,19 +9,6 @@
 
 class drirc : public radv_test {};
 
-TEST_F(drirc, disable_dedicated_sparse_queue)
-{
-   create_device();
-   EXPECT_TRUE(is_dedicated_sparse_queue_enabled());
-   destroy_device();
-
-   add_envvar("radv_disable_dedicated_sparse_queue", "true");
-
-   create_device();
-   EXPECT_FALSE(is_dedicated_sparse_queue_enabled());
-   destroy_device();
-}
-
 TEST_F(drirc, override_uniform_offset_alignment)
 {
    create_device();

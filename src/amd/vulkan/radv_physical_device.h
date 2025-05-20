@@ -205,11 +205,9 @@ radv_physical_device_instance(const struct radv_physical_device *pdev)
 static inline bool
 radv_dedicated_sparse_queue_enabled(const struct radv_physical_device *pdev)
 {
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
-
    /* Dedicated sparse queue requires VK_QUEUE_SUBMIT_MODE_THREADED, which is incompatible with
     * VK_DEVICE_TIMELINE_MODE_EMULATED. */
-   return pdev->info.has_timeline_syncobj && !instance->drirc.disable_dedicated_sparse_queue;
+   return pdev->info.has_timeline_syncobj;
 }
 
 static inline bool

@@ -63,7 +63,6 @@ struct radv_instance {
       bool tex_non_uniform;
       bool ssbo_non_uniform;
       bool flush_before_timestamp_write;
-      bool disable_dedicated_sparse_queue;
       bool clear_lds;
       bool enable_khr_present_wait;
       bool report_llvm9_version_string;
