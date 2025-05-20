@@ -87,6 +87,10 @@ pan_afrc_get_format_info(enum pipe_format format)
    if (desc->colorspace == UTIL_FORMAT_COLORSPACE_ZS)
       return info;
 
+   /* No AFRC(YUV) yet. */
+   if (pan_format_is_yuv(format))
+      return info;
+
    unsigned bpc = 0;
    for (unsigned c = 0; c < desc->nr_channels; c++) {
       if (bpc && bpc != desc->channel[c].size)
@@ -97,19 +101,9 @@ pan_afrc_get_format_info(enum pipe_format format)
 
    info.bpc = bpc;
 
-   if (desc->colorspace == UTIL_FORMAT_COLORSPACE_YUV) {
-      if (desc->layout != UTIL_FORMAT_LAYOUT_SUBSAMPLED)
-         info.ichange_fmt = PAN_AFRC_ICHANGE_FORMAT_YUV444;
-      else if (util_format_is_subsampled_422(format))
-         info.ichange_fmt = PAN_AFRC_ICHANGE_FORMAT_YUV422;
-      else
-         info.ichange_fmt = PAN_AFRC_ICHANGE_FORMAT_YUV420;
-   } else {
-      assert(desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB ||
-             desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
-      info.ichange_fmt = PAN_AFRC_ICHANGE_FORMAT_RAW;
-   }
-
+   assert(desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB ||
+          desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
+   info.ichange_fmt = PAN_AFRC_ICHANGE_FORMAT_RAW;
    info.num_planes = util_format_get_num_planes(format);
    info.num_comps = util_format_get_nr_components(format);
    return info;
