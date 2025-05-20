@@ -22,7 +22,10 @@
  */
 
 #include "pan_afbc.h"
+#include "pan_afrc.h"
+#include "pan_format.h"
 #include "pan_image.h"
+#include "pan_layout.h"
 
 #include <gtest/gtest.h>
 
@@ -219,79 +222,6 @@ TEST(AFBCStride, Tiled)
                    DIV_ROUND_UP(width, sw * 8) * 8);
       }
    }
-}
-
-static unsigned
-row_stride_from_wsi_pitch(unsigned row_pitch_B, unsigned width_px,
-                          enum pipe_format fmt, uint64_t mod)
-{
-   const struct pan_image_wsi_layout wsi_l = {
-      .row_pitch_B = row_pitch_B,
-      .strict = true,
-   };
-   struct pan_image_props p = {
-      .modifier = mod,
-      .format = fmt,
-      .extent_px = {
-         .width = width_px,
-         .height = 1,
-         .depth = 1,
-      },
-      .nr_samples = 1,
-      .dim = MALI_TEXTURE_DIMENSION_2D,
-      .nr_slices = 1,
-      .array_size = 1,
-   };
-   struct pan_image_layout l = {};
-
-   pan_image_layout_init(0, &p, &wsi_l, &l);
-
-   return l.slices[0].row_stride_B;
-}
-
-TEST(WSI, FromWSILinear)
-{
-   EXPECT_EQ(
-      row_stride_from_wsi_pitch(1920 * 4, 1920, PIPE_FORMAT_R8G8B8A8_UINT,
-                                DRM_FORMAT_MOD_LINEAR),
-      1920 * 4);
-   EXPECT_EQ(row_stride_from_wsi_pitch(64, 53, PIPE_FORMAT_R8_SNORM,
-                                       DRM_FORMAT_MOD_LINEAR),
-             64);
-   EXPECT_EQ(row_stride_from_wsi_pitch(64, 32, PIPE_FORMAT_ETC2_RGB8,
-                                       DRM_FORMAT_MOD_LINEAR),
-             64);
-}
-
-TEST(WSI, FromWSIInterleaved)
-{
-   EXPECT_EQ(
-      row_stride_from_wsi_pitch(1920 * 4, 1920, PIPE_FORMAT_R8G8B8A8_UINT,
-                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
-      1920 * 4 * 16);
-
-   EXPECT_EQ(
-      row_stride_from_wsi_pitch(64, 53, PIPE_FORMAT_R8_SNORM,
-                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
-      64 * 16);
-
-   EXPECT_EQ(
-      row_stride_from_wsi_pitch(64, 32, PIPE_FORMAT_ETC2_RGB8,
-                                DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED),
-      64 * 4);
-}
-
-TEST(WSI, FromWSIAFBC)
-{
-   uint64_t modifier =
-      DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
-                              AFBC_FORMAT_MOD_SPARSE | AFBC_FORMAT_MOD_YTR);
-
-   EXPECT_EQ(row_stride_from_wsi_pitch(1920 * 4, 1920,
-                                       PIPE_FORMAT_R8G8B8A8_UINT, modifier),
-             60 * 16);
-   EXPECT_EQ(row_stride_from_wsi_pitch(64, 64, PIPE_FORMAT_R8_SNORM, modifier),
-             2 * 16);
 }
 
 /* dEQP-GLES3.functional.texture.format.compressed.etc1_2d_pot */
@@ -561,4 +491,350 @@ TEST(AFBCLayout, Tiled16x16Minimal)
    EXPECT_EQ(l.slices[0].afbc.body_size_B, 32 * 8 * 8 * 8);
    EXPECT_EQ(l.slices[0].surface_stride_B, 4096 + (32 * 8 * 8 * 8));
    EXPECT_EQ(l.slices[0].size_B, 4096 + (32 * 8 * 8 * 8));
+}
+
+static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
+
+#define IMAGE_WIDTH  4096
+#define IMAGE_HEIGHT 512
+#define IMAGE_FORMAT                                                           \
+   (PAN_BIND_DEPTH_STENCIL | PAN_BIND_RENDER_TARGET | PAN_BIND_SAMPLER_VIEW |  \
+    PAN_BIND_STORAGE_IMAGE)
+
+#define EXPECT_IMPORT_SUCCESS(__arch, __iprops, __plane, __wsi_layout,         \
+                              __out_layout, __test_desc)                       \
+   do {                                                                        \
+      bool __result =                                                          \
+         pan_image_layout_init(__arch, __iprops, __wsi_layout, __out_layout);  \
+      EXPECT_TRUE(__result)                                                    \
+         << __test_desc                                                        \
+         << " for <format=" << util_format_name((__iprops)->format)            \
+         << ",plane=" << __plane << ",mod=" << std::hex                        \
+         << (__iprops)->modifier << std::dec << "> rejected (arch=" << __arch  \
+         << ")";                                                               \
+                                                                               \
+      if (!__result)                                                           \
+         break;                                                                \
+                                                                               \
+      struct pan_image_wsi_layout __export_wsi_layout =                        \
+         pan_image_layout_get_wsi_layout(&iprops, &layout, 0);                 \
+      EXPECT_TRUE(__export_wsi_layout.row_pitch_B ==                           \
+                     (__wsi_layout)->row_pitch_B &&                            \
+                  __export_wsi_layout.offset_B == (__wsi_layout)->offset_B)    \
+         << " mismatch between import and export for <format="                 \
+         << util_format_name(iprops.format) << ",plane=" << __plane            \
+         << ",mod=" << std::hex << (__iprops)->modifier << std::dec            \
+         << "> (arch=" << __arch << ")";                                       \
+   } while (0)
+
+#define EXPECT_IMPORT_FAIL(__arch, __iprops, __plane, __wsi_layout,            \
+                           __out_layout, __test_desc)                          \
+   EXPECT_FALSE(                                                               \
+      pan_image_layout_init(__arch, __iprops, __wsi_layout, __out_layout))     \
+      << __test_desc                                                           \
+      << " for <format=" << util_format_name((__iprops)->format)               \
+      << ",plane=" << __plane << ",mod=" << std::hex << (__iprops)->modifier   \
+      << std::dec << "> not rejected (arch=" << __arch << ")"
+
+static bool
+format_can_do_mod(unsigned arch, enum pipe_format format, unsigned plane_idx,
+                  uint64_t modifier)
+{
+   if (drm_is_afbc(modifier)) {
+      return pan_afbc_format(arch, format) != PAN_AFBC_MODE_INVALID;
+   } else if (drm_is_afrc(modifier)) {
+      return arch >= 10 && pan_format_supports_afrc(format);
+   } else {
+      assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
+             modifier == DRM_FORMAT_MOD_LINEAR);
+
+      return true;
+   }
+}
+
+static unsigned
+get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
+{
+   switch (format) {
+   case PIPE_FORMAT_R8G8_R8B8_UNORM:
+   case PIPE_FORMAT_G8R8_B8R8_UNORM:
+   case PIPE_FORMAT_R8B8_R8G8_UNORM:
+   case PIPE_FORMAT_B8R8_G8R8_UNORM:
+      return 2;
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
+      return plane_idx ? 2 : 1;
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return plane_idx ? 10 : 5;
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+      return 1;
+   default:
+      assert(util_format_get_num_planes(format) == 1);
+      return util_format_get_blocksize(format);
+   }
+}
+
+static unsigned
+offset_align_for_mod(unsigned arch, const struct pan_image_props *iprops,
+                     unsigned plane_idx)
+{
+   uint64_t modifier = iprops->modifier;
+   enum pipe_format format = iprops->format;
+
+   if (drm_is_afbc(modifier)) {
+      return pan_afbc_header_align(arch, modifier);
+   } else if (drm_is_afrc(modifier)) {
+      return pan_afrc_buffer_alignment_from_modifier(modifier);
+   } else {
+      assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
+             modifier == DRM_FORMAT_MOD_LINEAR);
+
+      if (arch < 7)
+         return 64;
+
+      switch (format) {
+      /* For v7+, NV12/NV21/I420 have a looser alignment requirement of 16 bytes
+       */
+      case PIPE_FORMAT_R8_G8B8_420_UNORM:
+      case PIPE_FORMAT_G8_B8R8_420_UNORM:
+      case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+      case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+      case PIPE_FORMAT_R8_G8B8_422_UNORM:
+      case PIPE_FORMAT_R8_B8G8_422_UNORM:
+         return 16;
+      /* the 10 bit formats have even looser alignment */
+      case PIPE_FORMAT_R10_G10B10_420_UNORM:
+      case PIPE_FORMAT_R10_G10B10_422_UNORM:
+         return 1;
+      default:
+         return 64;
+      }
+   }
+}
+
+static unsigned
+row_align_for_mod(unsigned arch, const struct pan_image_props *iprops,
+                  unsigned plane_idx)
+{
+   uint64_t modifier = iprops->modifier;
+   enum pipe_format format = iprops->format;
+
+   if (drm_is_afbc(modifier)) {
+      unsigned hdr_row_align =
+         pan_afbc_header_row_stride_align(arch, format, modifier);
+      unsigned ntiles = hdr_row_align / AFBC_HEADER_BYTES_PER_TILE;
+      unsigned sb_width_el = pan_afbc_superblock_width(modifier) /
+                             util_format_get_blockwidth(format);
+
+      assert(pan_afbc_superblock_width(modifier) %
+                util_format_get_blockwidth(format) ==
+             0);
+      return ntiles * sb_width_el * get_plane_blocksize(format, plane_idx);
+   } else if (drm_is_afrc(modifier)) {
+      unsigned row_align = pan_afrc_buffer_alignment_from_modifier(modifier);
+      struct pan_image_block_size tile_size_px =
+         pan_afrc_tile_size(format, modifier);
+
+      assert(row_align % tile_size_px.height == 0);
+      return row_align / tile_size_px.height;
+   } else {
+      assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
+             modifier == DRM_FORMAT_MOD_LINEAR);
+
+      unsigned tile_height_el = modifier == DRM_FORMAT_MOD_LINEAR   ? 1
+                                : util_format_is_compressed(format) ? 4
+                                                                    : 16;
+
+      return DIV_ROUND_UP(offset_align_for_mod(arch, iprops, plane_idx),
+                          tile_height_el);
+   }
+}
+
+static unsigned
+default_wsi_row_pitch(unsigned arch, const struct pan_image_props *iprops,
+                      unsigned plane_idx)
+{
+   uint64_t modifier = iprops->modifier;
+   enum pipe_format format = iprops->format;
+   unsigned fmt_blksz_B = get_plane_blocksize(format, plane_idx);
+   unsigned width_px =
+      util_format_get_plane_width(format, plane_idx, iprops->extent_px.width);
+
+   assert(width_px % util_format_get_blockwidth(format) == 0);
+
+   if (drm_is_afbc(modifier)) {
+      unsigned sb_width_el = pan_afbc_superblock_width(modifier) /
+                             util_format_get_blockwidth(format);
+      unsigned sb_height_el = pan_afbc_superblock_height(modifier) /
+                              util_format_get_blockheight(format);
+      unsigned ntiles =
+         DIV_ROUND_UP(width_px, pan_afbc_superblock_width(modifier));
+      unsigned tile_row_size_B =
+         sb_width_el * sb_height_el * fmt_blksz_B * ntiles;
+
+      assert(pan_afbc_superblock_width(modifier) %
+                util_format_get_blockwidth(format) ==
+             0);
+      assert(pan_afbc_superblock_height(modifier) %
+                util_format_get_blockheight(format) ==
+             0);
+      assert(tile_row_size_B % pan_afbc_superblock_height(modifier) == 0);
+      return tile_row_size_B / pan_afbc_superblock_height(modifier);
+   } else if (drm_is_afrc(modifier)) {
+      struct pan_image_block_size tile_size =
+         pan_afrc_tile_size(format, modifier);
+      unsigned afrc_row_stride_B =
+         pan_afrc_row_stride(format, modifier, width_px);
+
+      assert(afrc_row_stride_B % tile_size.height == 0);
+
+      return afrc_row_stride_B / tile_size.height;
+   } else {
+      assert(modifier == DRM_FORMAT_MOD_LINEAR ||
+             modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+
+      unsigned row_pitch_B =
+         (width_px / util_format_get_blockwidth(format)) * fmt_blksz_B;
+      struct pan_image_block_size tile_size_el = {1, 1};
+
+      if (modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
+         if (util_format_is_compressed(format)) {
+            tile_size_el.width = 4;
+            tile_size_el.height = 4;
+         } else {
+            tile_size_el.width = 16;
+            tile_size_el.height = 16;
+         }
+      }
+
+      assert(width_px %
+                (util_format_get_blockwidth(format) * tile_size_el.width) ==
+             0);
+
+      return row_pitch_B;
+   }
+}
+
+TEST(WSI, Import)
+{
+   /* We don't want to spam stderr with failure messages caused by our
+    * EXPECT_FALSE() cases. */
+   setenv("MESA_LOG", "null", 0);
+
+   struct pan_image_layout layout;
+   for (unsigned i = 0; i < ARRAY_SIZE(archs); i++) {
+      unsigned arch = archs[i];
+      const struct pan_format *ftable = pan_format_table(arch);
+      PAN_SUPPORTED_MODIFIERS(mods);
+
+      for (unsigned m = 0; m < ARRAY_SIZE(mods); m++) {
+         for (unsigned fmt = PIPE_FORMAT_NONE + 1; fmt < PIPE_FORMAT_COUNT;
+              fmt++) {
+            if (!(ftable[fmt].bind & IMAGE_FORMAT))
+               continue;
+
+
+            struct pan_image_props iprops = {
+               .modifier = mods[m],
+               .format = (enum pipe_format)fmt,
+               .extent_px = {
+                  .width = IMAGE_WIDTH,
+                  .height = IMAGE_HEIGHT,
+               },
+               .nr_samples = 1,
+               .dim = MALI_TEXTURE_DIMENSION_2D,
+               .nr_slices = 1,
+               .array_size = 1,
+               .crc = false,
+            };
+
+            /* YUV import is broken. Will be fixed once we make
+             * pan_image_layout a per-plane thing and pass the
+             * plane index to pan_image_layout_init(). */
+            if (pan_format_is_yuv(iprops.format))
+               continue;
+
+            bool supported = true;
+            for (unsigned p = 0; p < util_format_get_num_planes(iprops.format);
+                 p++) {
+               if (!format_can_do_mod(arch, iprops.format, p,
+                                      iprops.modifier)) {
+                  supported = false;
+                  break;
+               }
+            }
+
+            if (!supported)
+               continue;
+
+            if (util_format_is_compressed(iprops.format)) {
+               /* We multiply the image extent by the block extent to make sure
+                * things are always aligned on a block. */
+               iprops.extent_px.width *=
+                  util_format_get_blockwidth(iprops.format);
+               iprops.extent_px.height *=
+                  util_format_get_blockheight(iprops.format);
+            }
+
+            for (unsigned p = 0; p < util_format_get_num_planes(iprops.format);
+                 p++) {
+               unsigned row_align_req_B =
+                  row_align_for_mod(arch, &iprops, p);
+               unsigned offset_align_req_B =
+                  offset_align_for_mod(arch, &iprops, p);
+               unsigned default_row_pitch_B =
+                  default_wsi_row_pitch(arch, &iprops, p);
+
+               assert(default_row_pitch_B > row_align_req_B);
+
+               if (row_align_req_B > 1) {
+                  struct pan_image_wsi_layout wsi_layout = {
+                     .row_pitch_B = default_row_pitch_B + 1,
+                     .strict = true,
+                  };
+
+                  EXPECT_IMPORT_FAIL(arch, &iprops, p, &wsi_layout, &layout,
+                                     "unaligned WSI row pitch");
+               }
+
+               if (offset_align_req_B > 1) {
+                  struct pan_image_wsi_layout wsi_layout = {
+                     .offset_B = 1,
+                     .row_pitch_B = default_row_pitch_B,
+                     .strict = true,
+                  };
+
+                  EXPECT_IMPORT_FAIL(arch, &iprops, p, &wsi_layout, &layout,
+                                     "unaligned WSI offset");
+               }
+
+               /* Exact match. */
+               struct pan_image_wsi_layout wsi_layout = {
+                  .row_pitch_B = default_row_pitch_B,
+                  .strict = true,
+               };
+
+               EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
+                                     "tightly packed lines");
+
+               wsi_layout.row_pitch_B = default_row_pitch_B + row_align_req_B;
+               EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
+                                     "lines with padding");
+
+               wsi_layout.row_pitch_B = default_row_pitch_B - row_align_req_B;
+               EXPECT_IMPORT_FAIL(arch, &iprops, p, &wsi_layout, &layout,
+                                  "partially aliased lines");
+
+               wsi_layout.row_pitch_B = default_row_pitch_B;
+               wsi_layout.offset_B = offset_align_req_B;
+               EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
+                                     "properly aligned offset");
+            }
+         }
+      }
+   }
 }
