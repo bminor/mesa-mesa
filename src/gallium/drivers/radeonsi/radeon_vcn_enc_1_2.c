@@ -668,7 +668,7 @@ static void radeon_enc_slice_header(struct radeon_encoder *enc)
       }
    }
 
-   if (!enc->enc_pic.not_referenced) {
+   if (enc->enc_pic.h264_enc_params.is_reference) {
       if (enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR) {
          radeon_bs_code_fixed_bits(&bs, slice->no_output_of_prior_pics_flag, 1);
          radeon_bs_code_fixed_bits(&bs, slice->long_term_reference_flag, 1);

@@ -107,7 +107,6 @@ struct radeon_enc_pic {
    unsigned total_coloc_bytes;
    rvcn_enc_quality_modes_t quality_modes;
 
-   bool not_referenced;
    bool use_rc_per_pic_ex;
    bool av1_tile_splitting_legacy_flag;
 

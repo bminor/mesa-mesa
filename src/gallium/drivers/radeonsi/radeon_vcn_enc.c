@@ -509,7 +509,6 @@ static void radeon_vcn_enc_h264_get_param(struct radeon_encoder *enc,
    enc->enc_pic.enc_params.reconstructed_picture_index = pic->dpb_curr_pic;
    enc->enc_pic.h264_enc_params.is_reference = !pic->not_referenced;
    enc->enc_pic.h264_enc_params.is_long_term = pic->is_ltr;
-   enc->enc_pic.not_referenced = pic->not_referenced;
 
    if (pic->ref_list0[0] != PIPE_H2645_LIST_REF_INVALID_ENTRY) {
       uint8_t ref_l0 = pic->ref_list0[0];
