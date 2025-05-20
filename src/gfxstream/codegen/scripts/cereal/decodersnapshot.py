@@ -271,6 +271,24 @@ def api_special_implementation_vkCmdPipelineBarrier(api, cgen):
     cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage( pImageMemoryBarriers[i].image))")
     cgen.endFor()
 
+def api_special_implementation_vkUpdateDescriptorSetWithTemplateSizedGOOGLE(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
+    cgen.beginIf("m_state->batchedDescriptorSetUpdateEnabled()")
+    cgen.stmt("return")
+    cgen.endIf();
+    cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(Tag_VkUpdateDescriptorSets)")
+    cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
+    cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
+    cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+    cgen.stmt("mReconstruction.addHandleDependency( (const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)device)")
+    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, VkReconstruction::CREATED)")
+    cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
+
+def api_special_implementation_vkCmdBeginRenderPass(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
+
 def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
@@ -358,6 +376,8 @@ apiSpecialImplementation = {
     "vkCmdPipelineBarrier": api_special_implementation_vkCmdPipelineBarrier,
     "vkCmdBeginRenderPass": api_special_implementation_vkCmdBeginRenderPass,
     "vkCmdBeginRenderPass2": api_special_implementation_vkCmdBeginRenderPass,
+    "vkUpdateDescriptorSetWithTemplateSizedGOOGLE": api_special_implementation_vkUpdateDescriptorSetWithTemplateSizedGOOGLE,
+    "vkUpdateDescriptorSetWithTemplateSized2GOOGLE": api_special_implementation_vkUpdateDescriptorSetWithTemplateSizedGOOGLE,
 }
 
 apiModifies = {
