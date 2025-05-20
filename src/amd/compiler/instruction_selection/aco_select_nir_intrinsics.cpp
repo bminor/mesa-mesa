@@ -829,7 +829,7 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
    uint64_t max_const_offset_plus_one =
       1; /* GFX7/8/9: FLAT loads do not support constant offsets */
    if (bld.program->gfx_level >= GFX9)
-      max_const_offset_plus_one = bld.program->dev.scratch_global_offset_max;
+      max_const_offset_plus_one = bld.program->dev.scratch_global_offset_max + UINT64_C(1);
    else if (bld.program->gfx_level == GFX6)
       max_const_offset_plus_one = bld.program->dev.buf_offset_max + 1;
    uint64_t excess_offset = const_offset - (const_offset % max_const_offset_plus_one);
