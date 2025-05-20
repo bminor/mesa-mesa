@@ -4,6 +4,7 @@
 use crate::ir::*;
 use crate::legalize::{
     src_is_reg, swap_srcs_if_not_reg, LegalizeBuildHelpers, LegalizeBuilder,
+    PadValue,
 };
 use bitview::{
     BitMutView, BitMutViewable, BitView, BitViewable, SetBit, SetField,
@@ -1839,6 +1840,11 @@ impl SM32Op for OpShfl {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.src, GPR, SrcType::GPR);
         b.copy_alu_src_if_not_reg_or_imm(&mut self.lane, GPR, SrcType::ALU);
+        // shfl.up alone requires lane to be 4-aligned ¯\_(ツ)_/¯
+        if self.op == ShflOp::Up {
+            b.align_reg(&mut self.lane, 4, PadValue::Zero);
+        }
+
         b.copy_alu_src_if_not_reg_or_imm(&mut self.c, GPR, SrcType::ALU);
         self.reduce_lane_c_imm();
     }

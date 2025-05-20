@@ -51,6 +51,12 @@ fn src_is_imm(src: &Src) -> bool {
     matches!(src.src_ref, SrcRef::Imm32(_))
 }
 
+pub enum PadValue {
+    Zero,
+    #[allow(dead_code)]
+    Undefined,
+}
+
 pub trait LegalizeBuildHelpers: SSABuilder {
     fn copy_ssa(&mut self, ssa: &mut SSAValue, reg_file: RegFile) {
         let tmp = self.alloc_ssa(reg_file);
@@ -116,6 +122,39 @@ pub trait LegalizeBuildHelpers: SSABuilder {
         if !all_same {
             self.copy_ssa_ref(vec, file.to_warp());
         }
+    }
+
+    fn align_reg(
+        &mut self,
+        src: &mut Src,
+        n_comps: usize,
+        pad_value: PadValue,
+    ) {
+        debug_assert!(!matches!(src.src_ref, SrcRef::Reg(_)));
+        let SrcRef::SSA(ref old_val) = src.src_ref else {
+            return;
+        };
+        assert!(old_val.len() <= n_comps);
+        assert!(src.is_unmodified());
+
+        let pad_fn = || {
+            Some(match pad_value {
+                PadValue::Zero => self.copy(0.into()),
+                PadValue::Undefined => self.undef(),
+            })
+        };
+
+        // Pad the given ssa_ref with either undefined or zero
+        let ssa_vals: Vec<_> = old_val
+            .iter()
+            .copied()
+            .chain(std::iter::from_fn(pad_fn))
+            .take(n_comps)
+            .collect();
+
+        // Collect it in a new ssa_ref and replace it with the original.
+        let val = SSARef::try_from(ssa_vals).expect("Cannot create SSARef");
+        src.src_ref = val.into();
     }
 
     fn copy_alu_src(
