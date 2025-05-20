@@ -1984,7 +1984,7 @@ tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
    tu_cs_emit_regs(cs,
                 A7XX_RB_CCU_DBG_ECO_CNTL(0x0));
 
-   tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(0x0));
+   tu_cs_emit_regs(cs, GRAS_LRZ_CB_CNTL(A7XX, 0x0));
 
    tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
    tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
@@ -2706,8 +2706,6 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       ));
       tu_cs_emit_regs(cs,
          A7XX_RB_CCU_DBG_ECO_CNTL(cmd->device->physical_device->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
-
-      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(0x0));
 
       tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
       tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));

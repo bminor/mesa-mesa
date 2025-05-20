@@ -17,6 +17,7 @@ struct fdl_lrz_layout {
    uint32_t lrz_pitch;
    uint32_t lrz_height;
    uint32_t lrz_layer_size;
+   uint32_t lrz_buffer_size;
    uint32_t lrz_fc_offset;
    uint32_t lrz_fc_size;
    uint32_t lrz_total_size;
@@ -63,6 +64,7 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
    lrz_layout->lrz_height = lrz_height;
    lrz_layout->lrz_pitch = lrz_pitch;
    lrz_layout->lrz_layer_size = lrz_pitch * lrz_height * sizeof(uint16_t);
+   lrz_layout->lrz_buffer_size = lrz_layout->lrz_layer_size * array_layers;
 
    unsigned nblocksx = DIV_ROUND_UP(DIV_ROUND_UP(width, 8), 16);
    unsigned nblocksy = DIV_ROUND_UP(DIV_ROUND_UP(height, 8), 4);
@@ -78,7 +80,7 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
       lrz_layout->lrz_fc_size = 0;
    }
 
-   uint32_t lrz_size = lrz_layout->lrz_layer_size * array_layers;
+   uint32_t lrz_size = lrz_layout->lrz_buffer_size;
    if (dev_info->a6xx.enable_lrz_fast_clear ||
        dev_info->a6xx.has_lrz_dir_tracking) {
       lrz_layout->lrz_fc_offset =

@@ -115,8 +115,10 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
                       A6XX_GRAS_LRZ_BUFFER_PITCH(0),
                       A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(0));
 
-      if (CHIP >= A7XX)
+      if (CHIP >= A7XX) {
          tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO());
+         tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL());
+      }
 
       return;
    }
@@ -138,6 +140,8 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
       tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO(
          .depth_format = tu6_pipe2depth(depth_image->vk.format)
       ));
+      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(
+            .double_buffer_stride = depth_image->lrz_layout.lrz_buffer_size));
    }
 }
 
