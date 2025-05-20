@@ -351,7 +351,8 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
       /* Align levels to cache-line as a performance improvement for
        * linear/tiled and as a requirement for AFBC */
 
-      offset_B = ALIGN_POT(offset_B, pan_image_slice_align(props->modifier));
+      if (!wsi_layout)
+         offset_B = ALIGN_POT(offset_B, pan_image_slice_align(props->modifier));
 
       slice->offset_B = offset_B;
 
