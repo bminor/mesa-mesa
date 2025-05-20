@@ -50,8 +50,17 @@ xe_gem_create(struct anv_device *device,
           (alloc_flags & ANV_BO_ALLOC_HOST_CACHED_COHERENT) == ANV_BO_ALLOC_HOST_CACHED_COHERENT);
 
    uint32_t flags = 0;
-   if (alloc_flags & ANV_BO_ALLOC_SCANOUT)
+   if (alloc_flags & ANV_BO_ALLOC_SCANOUT) {
       flags |= DRM_XE_GEM_CREATE_FLAG_SCANOUT;
+      /* Xe2+ discrete platforms like BMG requires continuous physical memory
+       * allocation on CCS compressed images to display. Xe KMD will do so
+       * when the size of bo is aligned to 64kB and the scanout flag is
+       * present.
+       */
+      if (device->info->has_local_mem &&
+          (alloc_flags & ANV_BO_ALLOC_COMPRESSED))
+         size = align64(size, 64 * 1024);
+   }
    if ((alloc_flags & (ANV_BO_ALLOC_MAPPED | ANV_BO_ALLOC_LOCAL_MEM_CPU_VISIBLE)) &&
        !(alloc_flags & ANV_BO_ALLOC_NO_LOCAL_MEM) &&
        device->physical->vram_non_mappable.size > 0)
