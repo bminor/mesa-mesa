@@ -1689,7 +1689,6 @@ elk_disassemble_inst(FILE *file, const struct elk_isa_info *isa,
       pad(file, 16);
       space = 0;
 
-      fprintf(file, "            ");
       err |= control(file, "SFID", devinfo->ver >= 6 ? gfx6_sfid : gfx4_sfid,
                      sfid, &space);
       string(file, " MsgDesc:");

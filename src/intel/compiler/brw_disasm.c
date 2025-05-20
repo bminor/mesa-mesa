@@ -2186,7 +2186,6 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       pad(file, 16);
       space = 0;
 
-      fprintf(file, "            ");
       err |= control(file, "SFID", brw_sfid, sfid, &space);
       string(file, " MsgDesc:");
 
