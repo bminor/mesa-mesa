@@ -160,14 +160,18 @@ pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
       pan_image_renderblock_size_el(props->modifier, props->format);
 
    if (drm_is_afbc(props->modifier)) {
-      unsigned width_px = u_minify(props->extent_px.width, level);
-      unsigned alignment_B =
-         block_size_el.width * pan_afbc_tile_size(props->modifier);
-
-      width_px = ALIGN_POT(width_px, alignment_B);
+      struct pan_image_block_size afbc_tile_extent_px =
+         pan_afbc_superblock_size(props->modifier);
+      unsigned afbc_tile_payload_size_B =
+         afbc_tile_extent_px.width * afbc_tile_extent_px.height *
+         util_format_get_blocksize(props->format);
+      unsigned afbc_tile_row_payload_size_B =
+         pan_afbc_stride_blocks(props->modifier, row_stride_B) *
+         afbc_tile_payload_size_B;
       return (struct pan_image_wsi_layout){
          .offset_B = layout->slices[level].offset_B,
-         .row_pitch_B = width_px * util_format_get_blocksize(props->format),
+         .row_pitch_B = afbc_tile_row_payload_size_B /
+                        afbc_tile_extent_px.height,
       };
    } else if (drm_is_afrc(props->modifier)) {
       struct pan_image_block_size tile_size_px =
