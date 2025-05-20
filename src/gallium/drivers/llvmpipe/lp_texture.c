@@ -1388,7 +1388,7 @@ llvmpipe_resource_alloc_udmabuf(struct llvmpipe_screen *screen,
 
       size = align(size, alignment);
 
-      int mem_fd = memfd_create("lp_dma_buf", MFD_ALLOW_SEALING);
+      mem_fd = memfd_create("lp_dma_buf", MFD_ALLOW_SEALING);
       if (mem_fd == -1)
          goto fail;
 
@@ -1409,7 +1409,7 @@ llvmpipe_resource_alloc_udmabuf(struct llvmpipe_screen *screen,
          .size = size
       };
 
-      int dmabuf_fd = ioctl(screen->udmabuf_fd, UDMABUF_CREATE, &create);
+      dmabuf_fd = ioctl(screen->udmabuf_fd, UDMABUF_CREATE, &create);
       if (dmabuf_fd < 0)
          goto fail;
 
@@ -1426,10 +1426,10 @@ llvmpipe_resource_alloc_udmabuf(struct llvmpipe_screen *screen,
    }
 
 fail:
+   if (dmabuf_fd >= 0)
+      close(dmabuf_fd);
    if (mem_fd != -1)
       close(mem_fd);
-   if (dmabuf_fd != -1)
-      close(dmabuf_fd);
    /* If we don't have access to the udmabuf device
     * or something else fails we return NULL */
    return NULL;
