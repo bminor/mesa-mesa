@@ -2134,7 +2134,7 @@
         "description": "mesa: update validation when draw buffer changes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d04d9da98c9f70ec7db59750558f10dad215b2f4",
         "notes": null
