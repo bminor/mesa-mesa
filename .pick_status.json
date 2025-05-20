@@ -6514,7 +6514,7 @@
         "description": "pan/afrc: Let's not pretend we support AFRC(YUV)",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2dae926850ee7a0920e18d773afc55b0c68eb534",
         "notes": null
