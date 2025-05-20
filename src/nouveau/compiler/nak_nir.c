@@ -327,6 +327,9 @@ nak_preprocess_nir(nir_shader *nir, const struct nak_compiler *nak)
    /* Optimize but allow copies because we haven't lowered them yet */
    optimize_nir(nir, nak, true /* allow_copies */);
 
+   OPT(nir, nir_opt_barrier_modes);
+   OPT(nir, nir_opt_acquire_release_barriers, SCOPE_QUEUE_FAMILY);
+
    OPT(nir, nir_lower_load_const_to_scalar);
    OPT(nir, nir_lower_var_copies);
    OPT(nir, nir_lower_system_values);
