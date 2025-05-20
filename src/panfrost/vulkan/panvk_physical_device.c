@@ -901,7 +901,6 @@ get_device_properties(const struct panvk_instance *instance,
       .sparseResidencyStandard3DBlockShape = false,
 
       /* Vulkan 1.1 properties */
-      /* XXX: 1.1 support */
       .subgroupSize = pan_subgroup_size(arch),
       /* We only support VS, FS, and CS.
        *
@@ -933,7 +932,6 @@ get_device_properties(const struct panvk_instance *instance,
       .maxMemoryAllocationSize = UINT32_MAX,
 
       /* Vulkan 1.2 properties */
-      /* XXX: 1.2 support */
       .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
                                     VK_RESOLVE_MODE_AVERAGE_BIT |
                                     VK_RESOLVE_MODE_MIN_BIT |
@@ -996,12 +994,14 @@ get_device_properties(const struct panvk_instance *instance,
 
       /* Vulkan 1.3 properties */
       /* XXX: 1.3 support */
-      /* XXX: VK_EXT_subgroup_size_control */
+
+      /* VK_EXT_subgroup_size_control */
       .minSubgroupSize = pan_subgroup_size(arch),
       .maxSubgroupSize = pan_subgroup_size(arch),
       .maxComputeWorkgroupSubgroups =
          device->kmod.props.max_threads_per_wg / pan_subgroup_size(arch),
       .requiredSubgroupSizeStages = VK_SHADER_STAGE_COMPUTE_BIT,
+
       /* XXX: VK_EXT_inline_uniform_block */
       .maxInlineUniformBlockSize = MAX_INLINE_UNIFORM_BLOCK_SIZE,
       .maxPerStageDescriptorInlineUniformBlocks =
@@ -1014,17 +1014,20 @@ get_device_properties(const struct panvk_instance *instance,
          MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS,
       .maxInlineUniformTotalSize =
          MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS * MAX_INLINE_UNIFORM_BLOCK_SIZE,
-      /* XXX: VK_KHR_shader_integer_dot_product */
+
+      /* VK_KHR_shader_integer_dot_product */
       .integerDotProduct8BitUnsignedAccelerated = true,
       .integerDotProduct8BitSignedAccelerated = true,
       .integerDotProduct4x8BitPackedUnsignedAccelerated = true,
       .integerDotProduct4x8BitPackedSignedAccelerated = true,
+
       /* XXX: VK_EXT_texel_buffer_alignment */
       .storageTexelBufferOffsetAlignmentBytes = 64,
       .storageTexelBufferOffsetSingleTexelAlignment = false,
       .uniformTexelBufferOffsetAlignmentBytes = 4,
       .uniformTexelBufferOffsetSingleTexelAlignment = true,
-      /* XXX: VK_KHR_maintenance4 */
+
+      /* VK_KHR_maintenance4 */
       .maxBufferSize = 1 << 30,
 
       /* VK_KHR_line_rasterization */
