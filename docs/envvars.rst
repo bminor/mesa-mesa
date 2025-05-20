@@ -1422,6 +1422,8 @@ RADV driver environment variables
       disable dithering for alpha to coverage
    ``nobinning``
       disable primitive binning
+   ``nobolist``
+      disable the global BO list when no features require it
    ``nocache``
       disable shaders cache
    ``nocompute``
@@ -1536,8 +1538,6 @@ RADV driver environment variables
 
    a comma-separated list of named flags, which do various things:
 
-   ``bolist``
-      enable the global BO list
    ``cswave32``
       enable wave32 for compute shaders (GFX10+)
    ``dccmsaa``

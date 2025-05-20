@@ -90,6 +90,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"novideo", RADV_DEBUG_NO_VIDEO},
                                                           {"validatevas", RADV_DEBUG_VALIDATE_VAS},
                                                           {"bo_history", RADV_DEBUG_DUMP_BO_HISTORY},
+                                                          {"nobolist", RADV_DEBUG_NO_BO_LIST},
                                                           {NULL, 0}};
 
 const char *
@@ -105,7 +106,6 @@ radv_get_debug_option_name(int id)
 
 static const struct debug_control radv_perftest_options[] = {{"localbos", RADV_PERFTEST_LOCAL_BOS},
                                                              {"dccmsaa", RADV_PERFTEST_DCC_MSAA},
-                                                             {"bolist", RADV_PERFTEST_BO_LIST},
                                                              {"cswave32", RADV_PERFTEST_CS_WAVE_32},
                                                              {"pswave32", RADV_PERFTEST_PS_WAVE_32},
                                                              {"gewave32", RADV_PERFTEST_GE_WAVE_32},
