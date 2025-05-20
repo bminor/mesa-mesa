@@ -2034,10 +2034,14 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
          /* this limits tile splitting scheme to use legacy method */
          enc->enc_pic.av1_tile_splitting_legacy_flag = true;
       }
+      if (sscreen->info.vcn_enc_minor_version >= 8)
+         enc->enc_pic.has_dependent_slice_instructions = true;
    }
    else if (sscreen->info.vcn_ip_version >= VCN_4_0_0) {
       if (sscreen->info.vcn_enc_minor_version >= 1)
          enc->enc_pic.use_rc_per_pic_ex = true;
+      if (sscreen->info.vcn_enc_minor_version >= 23)
+         enc->enc_pic.has_dependent_slice_instructions = true;
       radeon_enc_4_0_init(enc);
    }
    else if (sscreen->info.vcn_ip_version >= VCN_3_0_0) {
