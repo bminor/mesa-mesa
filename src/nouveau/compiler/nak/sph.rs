@@ -473,12 +473,14 @@ pub fn encode_header(
     let mut sph =
         ShaderProgramHeader::new(ShaderType::from(&shader_info.stage), sm.sm());
 
+    let slm_size = shader_info.slm_size.next_multiple_of(16);
     sph.set_sass_version(1);
-    sph.set_does_load_or_store(shader_info.uses_global_mem);
+    sph.set_does_load_or_store(
+        shader_info.uses_global_mem || (sm.is_kepler() && slm_size > 0),
+    );
     sph.set_does_global_store(shader_info.writes_global_mem);
     sph.set_does_fp64(shader_info.uses_fp64);
 
-    let slm_size = shader_info.slm_size.next_multiple_of(16);
     sph.set_shader_local_memory_size(slm_size.into());
     let crs_size = sm.crs_size(shader_info.max_crs_depth);
     sph.set_shader_local_memory_crs_size(crs_size);

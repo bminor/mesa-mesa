@@ -7732,6 +7732,11 @@ pub trait ShaderModel {
         self.sm() >= 32 && self.sm() < 40
     }
 
+    #[allow(dead_code)]
+    fn is_kepler(&self) -> bool {
+        self.is_kepler_a() || self.is_kepler_b()
+    }
+
     // The following helpers are pulled from GetSpaVersion in the open-source
     // NVIDIA kernel driver sources
 
