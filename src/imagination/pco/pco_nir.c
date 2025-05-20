@@ -542,6 +542,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_function_temp,
             UINT32_MAX);
 
+   pco_nir_opt(ctx, nir);
    NIR_PASS(_, nir, nir_opt_idiv_const, 32);
    NIR_PASS(_,
             nir,
