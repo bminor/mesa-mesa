@@ -296,6 +296,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_graphics_pipeline_library = true,
       .EXT_hdr_metadata = true,
       .EXT_host_query_reset = true,
+      .EXT_image_2d_view_of_3d = true,
       /* EXT_image_drm_format_modifier depends on KHR_sampler_ycbcr_conversion */
       .EXT_image_drm_format_modifier = arch >= 10,
       .EXT_image_robustness = true,
@@ -533,6 +534,10 @@ get_features(const struct panvk_physical_device *device,
       /* VK_EXT_border_color_swizzle */
       .borderColorSwizzle = true,
       .borderColorSwizzleFromImage = true,
+
+      /* VK_EXT_image_2d_view_of_3d */
+      .image2DViewOf3D = true,
+      .sampler2DViewOf3D = true,
 
       /* VK_EXT_primitive_topology_list_restart */
       .primitiveTopologyListRestart = true,
