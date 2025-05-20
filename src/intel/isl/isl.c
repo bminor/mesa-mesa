@@ -4411,26 +4411,26 @@ isl_surf_image_has_unique_tiles(const struct isl_surf *surf,
             continue;
 
          uint64_t start_tile_B_i, end_tile_B_i;
-         isl_surf_get_image_range_B_tile(surf, level,
+         isl_surf_get_image_range_B_tile(surf, lod,
                                          dim_is_3d ? 0 : layer,
                                          dim_is_3d ? layer : 0,
                                          &start_tile_B_i, &end_tile_B_i);
 
          /* Check if the specified range is in this subresource. */
          if (*start_tile_B >= start_tile_B_i &&
-             *start_tile_B <= end_tile_B_i)
+             *start_tile_B <  end_tile_B_i)
             return false;
 
-         if (*end_tile_B >= start_tile_B_i &&
+         if (*end_tile_B >  start_tile_B_i &&
              *end_tile_B <= end_tile_B_i)
             return false;
 
          /* Check if this subresource is in the specified range. */
          if (start_tile_B_i >= *start_tile_B &&
-             start_tile_B_i <= *end_tile_B)
+             start_tile_B_i <  *end_tile_B)
             return false;
 
-         if (end_tile_B_i >= *start_tile_B &&
+         if (end_tile_B_i >  *start_tile_B &&
              end_tile_B_i <= *end_tile_B)
             return false;
       }
