@@ -306,6 +306,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_pipeline_creation_feedback = true,
       .EXT_pipeline_robustness = true,
       .EXT_private_data = true,
+      .EXT_primitive_topology_list_restart = true,
       .EXT_provoking_vertex = true,
       .EXT_queue_family_foreign = true,
       .EXT_sampler_filter_minmax = arch >= 10,
@@ -532,6 +533,10 @@ get_features(const struct panvk_physical_device *device,
       /* VK_EXT_border_color_swizzle */
       .borderColorSwizzle = true,
       .borderColorSwizzleFromImage = true,
+
+      /* VK_EXT_primitive_topology_list_restart */
+      .primitiveTopologyListRestart = true,
+      .primitiveTopologyPatchListRestart = false,
 
       /* VK_EXT_provoking_vertex */
       .provokingVertexLast = true,
