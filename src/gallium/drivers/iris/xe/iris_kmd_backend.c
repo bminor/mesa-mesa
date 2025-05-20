@@ -54,22 +54,31 @@ xe_gem_create(struct iris_bufmgr *bufmgr,
    /* TODO: we might need to consider scanout for shared buffers too as we
     * do not know what the process this is shared with will do with it
     */
-   if (alloc_flags & BO_ALLOC_SCANOUT)
+   const struct intel_device_info *devinfo = iris_bufmgr_get_device_info(bufmgr);
+   if (alloc_flags & BO_ALLOC_SCANOUT) {
       flags |= DRM_XE_GEM_CREATE_FLAG_SCANOUT;
-   if (!intel_vram_all_mappable(iris_bufmgr_get_device_info(bufmgr)) &&
+      /* Xe2+ discrete platforms (BMG) requires continuously allocated
+       * physical memory for CCS compressed images to display. Xe KMD will do
+       * this when it gets scanout flag and a size of multiplies of 64KB.
+       * The alignment of the size is not per-plane, so we do it in the
+       * drivers instead of ISL.
+       */
+      if (devinfo->has_local_mem && (alloc_flags & BO_ALLOC_COMPRESSED))
+         size = align64(size, 64 * 1024);
+   }
+   if (!intel_vram_all_mappable(devinfo) &&
        (heap_flags == IRIS_HEAP_DEVICE_LOCAL_PREFERRED ||
         heap_flags == IRIS_HEAP_DEVICE_LOCAL_CPU_VISIBLE_SMALL_BAR))
       flags |= DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM;
 
    struct drm_xe_gem_create gem_create = {
      .vm_id = vm_id,
-     .size = align64(size, iris_bufmgr_get_device_info(bufmgr)->mem_alignment),
+     .size = align64(size, devinfo->mem_alignment),
      .flags = flags,
    };
    for (uint16_t i = 0; i < regions_count; i++)
       gem_create.placement |= BITFIELD_BIT(regions[i]->instance);
 
-   const struct intel_device_info *devinfo = iris_bufmgr_get_device_info(bufmgr);
    const struct intel_device_info_pat_entry *pat_entry;
    pat_entry = iris_heap_to_pat_entry(devinfo, heap_flags, alloc_flags & BO_ALLOC_SCANOUT);
    switch (pat_entry->mmap) {
