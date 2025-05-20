@@ -688,11 +688,14 @@ generate_setup_variant(struct lp_setup_variant_key *key,
                        arg_types, ARRAY_SIZE(arg_types), 0);
 
    variant->function = LLVMAddFunction(gallivm->module, func_name, func_type);
-   variant->function_name = MALLOC(strlen(func_name)+1);
-   strcpy(variant->function_name, func_name);
    if (!variant->function)
       goto fail;
 
+   variant->function_name = MALLOC(strlen(func_name)+1);
+   if (!variant->function_name)
+      goto fail;
+
+   strcpy(variant->function_name, func_name);
    LLVMSetFunctionCallConv(variant->function, LLVMCCallConv);
 
    lp_function_add_debug_info(gallivm, variant->function, func_type);
@@ -755,6 +758,7 @@ generate_setup_variant(struct lp_setup_variant_key *key,
 
 fail:
    if (variant) {
+      FREE(variant->function_name);
       if (variant->gallivm) {
          gallivm_destroy(variant->gallivm);
       }
