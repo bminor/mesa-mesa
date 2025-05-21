@@ -742,12 +742,17 @@ cs_finish(struct cs_builder *b)
 /* Asynchronous operations take a mask of scoreboard slots to wait on
  * before executing the instruction, and signal a scoreboard slot when
  * the operation is complete.
+ * On v11 and later, asynchronous operations can also wait on a scoreboard
+ * mask and signal a scoreboard slot indirectly instead (set via SET_STATE)
  * A wait_mask of zero means the operation is synchronous, and signal_slot
  * is ignored in that case.
  */
 struct cs_async_op {
    uint16_t wait_mask;
    uint8_t signal_slot;
+#if PAN_ARCH >= 11
+   bool indirect;
+#endif
 };
 
 static inline struct cs_async_op
@@ -772,6 +777,18 @@ cs_now(void)
       .signal_slot = 0xff,
    };
 }
+
+#if PAN_ARCH >= 11
+static inline struct cs_async_op
+cs_defer_indirect(void)
+{
+   return (struct cs_async_op){
+      .wait_mask = 0xff,
+      .signal_slot = 0xff,
+      .indirect = true,
+   };
+}
+#endif
 
 static inline bool
 cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
@@ -817,6 +834,7 @@ cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
 }
 
 /* TODO: was the signal_slot comparison bugged? */
+#if PAN_ARCH == 10
 #define cs_apply_async(I, async)                                               \
    do {                                                                        \
       I.wait_mask = async.wait_mask;                                           \
@@ -826,6 +844,22 @@ cs_instr_is_asynchronous(enum mali_cs_opcode opcode, uint16_t wait_mask)
       assert(I.signal_slot != 0xff ||                                          \
              !"Can't use cs_now() on pure async instructions");                \
    } while (0)
+#else
+#define cs_apply_async(I, async)                                               \
+   do {                                                                        \
+      if (async.indirect) {                                                    \
+         I.defer_mode = MALI_CS_DEFER_MODE_DEFER_INDIRECT;                     \
+      } else {                                                                 \
+         I.defer_mode = MALI_CS_DEFER_MODE_DEFER_IMMEDIATE;                    \
+         I.wait_mask = async.wait_mask;                                        \
+         I.signal_slot = cs_instr_is_asynchronous(I.opcode, I.wait_mask)       \
+                            ? async.signal_slot                                \
+                            : 0;                                               \
+         assert(I.signal_slot != 0xff ||                                       \
+                !"Can't use cs_now() on pure async instructions");             \
+      }                                                                        \
+   } while (0)
+#endif
 
 static inline void
 cs_move32_to(struct cs_builder *b, struct cs_index dest, unsigned imm)
