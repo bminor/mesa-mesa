@@ -38,8 +38,6 @@ class encoder_capabilities
    void initialize( pipe_screen *pScreen, pipe_video_profile profile );
    // Cached underlying backend pipe caps (avoid querying on each frame)
 
-   std::string m_deviceVendor {};
-
    // PIPE_VIDEO_CAP_MAX_WIDTH
    UINT m_uiMaxWidth = 0;
 

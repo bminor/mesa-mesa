@@ -35,7 +35,7 @@
       all the entrypoints/stubs in this file would help organize the DLL public interface
 */
 
-CDX12EncHMFT::CDX12EncHMFT()
+CDX12EncHMFT::CDX12EncHMFT() : CMFD3DManager( this )
 { }
 
 CDX12EncHMFT::~CDX12EncHMFT()

@@ -544,7 +544,7 @@ CDX12EncHMFT::OnOutputTypeChanged()
    CHECKHR_GOTO( InitializeEncoder( m_outputPipeProfile, m_uiOutputWidth, m_uiOutputHeight ), done );
 
    // TODO: remove this code path when we clarify whether this is supported on AMD.
-   if( m_EncoderCapabilities.m_deviceVendor == "AMD" )
+   if( m_deviceVendor == "AMD" )
    {
       MFE_INFO( "[dx12 hmft 0x%p] Device vendor is AMD, turn off async mode until issue is worked out", this );
       m_bLowLatency = TRUE;

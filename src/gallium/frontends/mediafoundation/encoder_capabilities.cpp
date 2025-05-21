@@ -27,8 +27,6 @@
 void
 encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile videoProfile )
 {
-   m_deviceVendor = pScreen->get_device_vendor( pScreen );
-
    m_uiMaxWidth = pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_MAX_WIDTH );
 
    m_uiMaxHeight = pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_MAX_HEIGHT );
