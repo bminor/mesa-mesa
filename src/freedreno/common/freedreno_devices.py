@@ -407,6 +407,7 @@ a6xx_gen3 = A6XXProps(
         has_scalar_alu = True,
         has_early_preamble = True,
         prede_nop_quirk = True,
+        has_pred_bit = True,
     )
 
 a6xx_gen4 = A6XXProps(
@@ -443,6 +444,7 @@ a6xx_gen4 = A6XXProps(
         predtf_nop_quirk = True,
         has_sad = True,
         has_sel_b_fneg = True,
+        has_pred_bit = True,
     )
 
 add_gpus([
@@ -924,6 +926,7 @@ a7xx_base = A6XXProps(
         has_sad = True,
         has_bin_mask = True,
         has_sel_b_fneg = True,
+        has_pred_bit = True,
     )
 
 a7xx_gen1 = A7XXProps(

@@ -267,6 +267,11 @@ struct fd_dev_info {
 
       /* True if sel.b supports (neg) that behaves as fneg. */
       bool has_sel_b_fneg;
+
+      /* Whether CP_REG_TEST::PRED_BIT exists so that there are 32 predicates
+       * that can be written by CP_REG_TEST instead of just 1.
+       */
+      bool has_pred_bit;
    } a6xx;
 
    struct {
