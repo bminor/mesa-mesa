@@ -1766,6 +1766,7 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
    uint32_t code_size = 0;
    uint32_t temps_used = 0;
    uint32_t doutw = 0;
+   uint32_t doutd = 0;
 
    uint32_t barrier_ctrl_word = 0;
    uint32_t barrier_ctrl_word2 = 0;
@@ -1774,7 +1775,7 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
     * DOUTW for local, and two for global.
     */
    uint32_t work_group_id_ctrl_words[2] = { 0 };
-   uint32_t num_work_groups_ctrl_words[2] = { 0 };
+   uint32_t num_work_groups_ctrl_words[3] = { 0 };
    uint32_t local_id_ctrl_word = 0;
    uint32_t local_input_register;
 
@@ -1900,6 +1901,12 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
          pvr_pds_get_constants(&next_constant, 1, &data_size);
    }
 
+   if (has_num_work_groups_regs) {
+      num_work_groups_ctrl_words[2] =
+         pvr_pds_get_constants(&next_constant, 1, &data_size);
+      program->num_workgroups_indirect_src_dma = num_work_groups_ctrl_words[2];
+   }
+
    /* For DOUTW */
    if (has_local_input_regs) {
       local_id_ctrl_word = pvr_pds_get_constants(&next_constant, 1, &data_size);
@@ -1921,6 +1928,9 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
          program->num_workgroups_constant_offset_in_dwords[0];
       program->num_workgroups_constant_offset_in_dwords[2] =
          pvr_pds_get_constants(&next_constant, 1, &data_size);
+
+      program->num_workgroups_indirect_src =
+         pvr_pds_get_constants(&next_constant, 2, &data_size);
    }
 
    if (gen_mode == PDS_GENERATE_DATA_SEGMENT) {
@@ -2071,11 +2081,6 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
             true,
             dev_info);
 
-         /* If we don't want num work-groups Z then this is the last one.
-          */
-         if (!has_num_work_groups_reg[2])
-            doutw |= PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_LAST_EN;
-
          pvr_pds_write_constant32(buffer, num_work_groups_ctrl_words[0], doutw);
       }
       /* If we only want one of X or Y then handle them separately. */
@@ -2088,12 +2093,6 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
                true,
                dev_info);
 
-            /* If we don't want num work-groups Z then this is the last
-             * one.
-             */
-            if (has_num_work_groups_reg[2])
-               doutw |= PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_LAST_EN;
-
             pvr_pds_write_constant32(buffer,
                                      num_work_groups_ctrl_words[0],
                                      doutw);
@@ -2104,12 +2103,6 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
                PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_DEST_COMMON_STORE,
                true,
                dev_info);
-
-            /* If we don't want num work-groups Z then this is the last
-             * one.
-             */
-            if (!has_num_work_groups_reg[2])
-               doutw |= PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_LAST_EN;
 
             pvr_pds_write_constant32(buffer,
                                      num_work_groups_ctrl_words[0],
@@ -2122,12 +2115,27 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
          doutw = pvr_pds_encode_doutw_src1(
             program->num_work_groups_regs[2],
             PVR_PDS_DOUTW_LOWER32,
-            PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_DEST_COMMON_STORE |
-               PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_LAST_EN,
+            PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTW_SRC1_DEST_COMMON_STORE,
             true,
             dev_info);
 
          pvr_pds_write_constant32(buffer, num_work_groups_ctrl_words[1], doutw);
+      }
+
+      if (has_num_work_groups_regs) {
+         /* This is done in cmd_buffer instead. */
+         /* doutd = 3 << PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_BSIZE_SHIFT;
+          */
+         doutd = 0;
+         doutd |= program->num_work_groups_regs[0]
+                  << PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_AO_SHIFT;
+
+         doutd |= PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_CMODE_CACHED |
+                  PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_DEST_COMMON_STORE;
+
+         doutd |= PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_LAST_EN;
+
+         pvr_pds_write_constant32(buffer, num_work_groups_ctrl_words[2], doutd);
       }
 
       /* Handle the local IDs. */
@@ -2308,6 +2316,20 @@ pvr_pds_compute_shader(struct pvr_pds_compute_shader_program *restrict program,
             (PVR_PDS_CONSTANTS_BLOCK_BASE +
              program->num_workgroups_constant_offset_in_dwords[2]) >>
                1)); /* SRC0 */
+      }
+
+      /* TODO: this is hardcoded to assume that all three num workgroup
+       * elements are used...
+       */
+      if (has_num_work_groups_regs) {
+         APPEND(pvr_pds_encode_doutd(
+            /* cc */ 0,
+            /* END */ 0,
+            /* SRC1 */ num_work_groups_ctrl_words[2], /* DOUTD 32-bit Src1 */
+            /* SRC0 */ program->num_workgroups_indirect_src >> 1)); /* DOUTD
+                                                                     * 64-bit
+                                                                     * Src0.
+                                                                     */
       }
 
       /* Issue the task to the USC. */

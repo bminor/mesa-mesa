@@ -564,6 +564,8 @@ struct pvr_pds_compute_shader_program {
    uint32_t base_workgroup_constant_offset_in_dwords[3];
    uint32_t num_workgroups_constant_offset_in_dwords[3];
 
+   uint32_t num_workgroups_indirect_src;
+   uint32_t num_workgroups_indirect_src_dma;
    bool kick_usc;
 
    bool conditional_render;

@@ -4228,6 +4228,20 @@ static void pvr_compute_update_kernel(
       }
 
       if (uses_num_wgs) {
+         if (indirect_addr.addr) {
+            unsigned offset =
+               pipeline->num_workgroups_indirect_src_patching_offset;
+
+            uint64_t *pds_data64 =
+               pvr_bo_suballoc_get_map_addr(pds_data_upload.pvr_bo);
+            pds_data64[offset / 2] = indirect_addr.addr;
+
+            offset = pipeline->num_workgroups_indirect_src_dma_patching_offset;
+
+            pds_data[offset] |=
+               3 << PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_BSIZE_SHIFT;
+         }
+
          unsigned offset = pipeline->num_workgroups_data_patching_offset;
          for (unsigned u = 0; u < PVR_WORKGROUP_DIMENSIONS; ++u) {
             pds_data[offset + u] = global_workgroup_size[u];

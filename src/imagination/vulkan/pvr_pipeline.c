@@ -844,6 +844,10 @@ static VkResult pvr_pds_compute_program_create_and_upload(
       for (unsigned u = 0; u < PVR_WORKGROUP_DIMENSIONS; ++u) {
          data_buffer[offset + u] = 0;
       }
+
+      offset = program.num_workgroups_indirect_src;
+      data_buffer[offset] = 0;
+      data_buffer[offset + 1] = 0;
    }
 
    /* FIXME: Figure out the define for alignment of 16. */
@@ -874,9 +878,17 @@ static VkResult pvr_pds_compute_program_create_and_upload(
    }
 
    compute_pipeline->num_workgroups_data_patching_offset = ~0u;
+   compute_pipeline->num_workgroups_indirect_src_patching_offset = ~0u;
+   compute_pipeline->num_workgroups_indirect_src_dma_patching_offset = ~0u;
    if (uses_num_wgs) {
       compute_pipeline->num_workgroups_data_patching_offset =
          program.num_workgroups_constant_offset_in_dwords[0];
+
+      compute_pipeline->num_workgroups_indirect_src_patching_offset =
+         program.num_workgroups_indirect_src;
+
+      compute_pipeline->num_workgroups_indirect_src_dma_patching_offset =
+         program.num_workgroups_indirect_src_dma;
    }
 
    compute_pipeline->pds_cs_program_info = (struct pvr_pds_info){

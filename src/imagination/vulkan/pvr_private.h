@@ -917,6 +917,8 @@ struct pvr_compute_pipeline {
    uint32_t *pds_cs_data_section;
    uint32_t base_workgroup_data_patching_offset;
    uint32_t num_workgroups_data_patching_offset;
+   uint32_t num_workgroups_indirect_src_patching_offset;
+   uint32_t num_workgroups_indirect_src_dma_patching_offset;
 };
 
 struct pvr_graphics_pipeline {
