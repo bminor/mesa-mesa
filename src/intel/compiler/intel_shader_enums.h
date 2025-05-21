@@ -30,7 +30,7 @@ intel_sometimes_invert(enum intel_sometimes x)
    return (enum intel_sometimes)((int)INTEL_ALWAYS - (int)x);
 }
 
-#define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET (20)
+#define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET (25)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE   (6)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH   (32)
 
