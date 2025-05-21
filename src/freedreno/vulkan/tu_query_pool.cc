@@ -1137,14 +1137,18 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
 }
 
 static void
-emit_perfcntrs_pass_start(struct tu_cs *cs, uint32_t pass)
+emit_perfcntrs_pass_start(bool has_pred_bit, struct tu_cs *cs, uint32_t pass)
 {
    tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
    tu_cs_emit(cs, A6XX_CP_REG_TEST_0_REG(
                         REG_A6XX_CP_SCRATCH_REG(PERF_CNTRS_REG)) |
                   A6XX_CP_REG_TEST_0_BIT(pass) |
+                  (has_pred_bit ?
+                     A6XX_CP_REG_TEST_0_PRED_BIT(TU_PREDICATE_PERFCNTRS) : 0) |
                   A6XX_CP_REG_TEST_0_SKIP_WAIT_FOR_ME);
-   tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST));
+   tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST) |
+                      (has_pred_bit ?
+                       CP_COND_REG_EXEC_0_PRED_BIT(TU_PREDICATE_PERFCNTRS) : 0));
 }
 
 template <chip CHIP>
@@ -1156,8 +1160,10 @@ emit_begin_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
    struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
    struct tu_perf_query_raw *perf_query = &pool->perf_query.raw;
    uint32_t last_pass = ~0;
+   bool has_pred_bit =
+      cmdbuf->device->physical_device->info->a6xx.has_pred_bit;
 
-   if (cmdbuf->state.pass) {
+   if (cmdbuf->state.pass && !has_pred_bit) {
       cmdbuf->state.rp.draw_cs_writes_to_cond_pred = true;
    }
 
@@ -1198,7 +1204,7 @@ emit_begin_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
 
          if (data->pass != 0)
             tu_cond_exec_end(cs);
-         emit_perfcntrs_pass_start(cs, data->pass);
+         emit_perfcntrs_pass_start(has_pred_bit, cs, data->pass);
       }
 
       const struct fd_perfcntr_counter *counter =
@@ -1222,7 +1228,7 @@ emit_begin_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
 
          if (data->pass != 0)
             tu_cond_exec_end(cs);
-         emit_perfcntrs_pass_start(cs, data->pass);
+         emit_perfcntrs_pass_start(has_pred_bit, cs, data->pass);
       }
 
       const struct fd_perfcntr_counter *counter =
@@ -1637,6 +1643,8 @@ emit_end_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
    uint64_t begin_iova;
    uint64_t result_iova;
    uint32_t last_pass = ~0;
+   bool has_pred_bit =
+      cmdbuf->device->physical_device->info->a6xx.has_pred_bit;
 
    /* Wait for the profiled work to finish so that collected counter values
     * are as accurate as possible.
@@ -1651,7 +1659,7 @@ emit_end_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
 
          if (data->pass != 0)
             tu_cond_exec_end(cs);
-         emit_perfcntrs_pass_start(cs, data->pass);
+         emit_perfcntrs_pass_start(has_pred_bit, cs, data->pass);
       }
 
       const struct fd_perfcntr_counter *counter =
@@ -1678,7 +1686,7 @@ emit_end_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
 
          if (data->pass != 0)
             tu_cond_exec_end(cs);
-         emit_perfcntrs_pass_start(cs, data->pass);
+         emit_perfcntrs_pass_start(has_pred_bit, cs, data->pass);
       }
 
       result_iova = query_result_iova(pool, query, struct perfcntr_query_slot,

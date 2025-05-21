@@ -148,6 +148,11 @@
  */
 #define TU_FDM_OFFSET_GRANULARITY 8
 
+enum tu_predicate_bit {
+   TU_PREDICATE_LOAD_STORE = 0,
+   TU_PREDICATE_PERFCNTRS = 1,
+};
+
 #define TU_GENX(FUNC_NAME) FD_GENX(FUNC_NAME)
 
 #define TU_CALLX(device, thing) FD_CALLX((device)->physical_device->info, thing)
