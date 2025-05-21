@@ -1858,6 +1858,7 @@ wsi_create_buffer_blit_context(const struct wsi_swapchain *chain,
    VkExportMemoryAllocateInfo memory_export_info;
    VkImportMemoryHostPointerInfoEXT host_ptr_info;
    if (sw_host_ptr != NULL) {
+      image->blit.to_foreign_queue = true;
       host_ptr_info = (VkImportMemoryHostPointerInfoEXT) {
          .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
          .pHostPointer = sw_host_ptr,
@@ -1865,6 +1866,7 @@ wsi_create_buffer_blit_context(const struct wsi_swapchain *chain,
       };
       __vk_append_struct(&buf_mem_info, &host_ptr_info);
    } else if (handle_types != 0) {
+      image->blit.to_foreign_queue = true;
       memory_export_info = (VkExportMemoryAllocateInfo) {
          .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
          .handleTypes = handle_types,
@@ -1929,7 +1931,8 @@ static void
 wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
                              const struct wsi_device *wsi,
                              const struct wsi_image_info *info,
-                             struct wsi_image *image)
+                             struct wsi_image *image,
+                             uint32_t qfi)
 {
    assert(info->image_type == WSI_IMAGE_TYPE_CPU ||
           info->image_type == WSI_IMAGE_TYPE_DRM);
@@ -1990,8 +1993,11 @@ wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
       .pNext = NULL,
       .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
       .dstAccessMask = VK_ACCESS_HOST_READ_BIT,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .srcQueueFamilyIndex =
+         image->blit.to_foreign_queue ? qfi : VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = image->blit.to_foreign_queue
+                                ? VK_QUEUE_FAMILY_FOREIGN_EXT
+                                : VK_QUEUE_FAMILY_IGNORED,
       .buffer = image->blit.buffer,
       .offset = 0,
       .size = VK_WHOLE_SIZE,
@@ -2144,9 +2150,13 @@ wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
       wsi->BeginCommandBuffer(cmd_buffer, &begin_info);
 
       switch (chain->blit.type) {
-      case WSI_SWAPCHAIN_BUFFER_BLIT:
-         wsi_cmd_blit_image_to_buffer(cmd_buffer, wsi, info, image);
+      case WSI_SWAPCHAIN_BUFFER_BLIT: {
+         VK_FROM_HANDLE(vk_queue, blit_queue, chain->blit.queue);
+         wsi_cmd_blit_image_to_buffer(
+            cmd_buffer, wsi, info, image,
+            blit_queue ? blit_queue->queue_family_index : i);
          break;
+      }
       case WSI_SWAPCHAIN_IMAGE_BLIT:
          wsi_cmd_blit_image_to_image(cmd_buffer, wsi, info, image);
          break;

@@ -146,6 +146,10 @@ struct wsi_image {
       VkImage image;
       VkDeviceMemory memory;
       VkCommandBuffer *cmd_buffers;
+      /* Whether the backing memory of the blit dst buffer is shared directly
+       * with the compositor instead of being mapped via vkMapMemory locally.
+       */
+      bool to_foreign_queue;
    } blit;
    /* Whether or not the image has been acquired
     * on the CPU side via acquire_next_image.
