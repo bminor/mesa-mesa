@@ -1588,6 +1588,7 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
 
       /* Eliminate useless vec->mov copies resulting from scalarization. */
       NIR_PASS(_, producer, nir_copy_prop);
+      NIR_PASS(_, producer, nir_opt_constant_folding);
    }
 
    int highest_changed_producer = -1;
