@@ -1406,7 +1406,8 @@ llvmpipe_update_cs_variant(struct llvmpipe_context *lp,
                          "\t%u instrs,\t%u instrs/variant\n",
                          shader->variants_cached,
                          lp->nr_cs_variants, lp->nr_cs_instrs,
-                         lp->nr_cs_instrs / lp->nr_cs_variants);
+                         lp->nr_cs_variants
+                         ? lp->nr_cs_instrs / lp->nr_cs_variants : 0);
          }
 
          /*
