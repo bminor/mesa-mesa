@@ -154,6 +154,7 @@ static nir_function *mangle_and_find(struct vtn_builder *b,
          decl->params = ralloc_array(b->shader, nir_parameter, decl->num_params);
          for (unsigned i = 0; i < decl->num_params; i++) {
             decl->params[i] = found->params[i];
+            decl->params[i].name = ralloc_strdup(b->shader, found->params[i].name);
          }
          found = decl;
       }

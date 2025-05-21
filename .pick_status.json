@@ -4994,7 +4994,7 @@
         "description": "nir: fix use-after-free on function parameter names",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3da8444be563a150fff6dd686dd68febf4cf76c9",
         "notes": null
