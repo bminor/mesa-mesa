@@ -113,22 +113,22 @@ section_start cuttlefish "Downloading, building and installing Cuttlefish"
 
 CUTTLEFISH_PROJECT_PATH=ao2/aosp-manifest
 CUTTLEFISH_BUILD_VERSION_TAGS=mesa-venus
-CUTTLEFISH_BUILD_NUMBER=20250215.001
+CUTTLEFISH_BUILD_NUMBER=20250506.001
 
 mkdir /cuttlefish
 pushd /cuttlefish
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip"
+  -o aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst"
 
-unzip aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip
-rm aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip
+tar --zstd -xvf aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst
+rm aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst
 ls -lhS ./*
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o cvd-host_package.tar.gz "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package.tar.gz"
-tar -xzvf cvd-host_package.tar.gz
-rm cvd-host_package.tar.gz
+  -o cvd-host_package-x86_64.tar.zst "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package-x86_64.tar.zst"
+tar --zst -xvf cvd-host_package-x86_64.tar.zst
+rm cvd-host_package-x86_64.tar.zst
 
 AOSP_KERNEL_PROJECT_PATH=ao2/aosp-kernel-manifest
 AOSP_KERNEL_BUILD_VERSION_TAGS=common-android14-6.1-venus
