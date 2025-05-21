@@ -1473,6 +1473,114 @@ cs_umin32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
    }
 }
 
+#if PAN_ARCH >= 11
+static inline void
+cs_and32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
+         struct cs_index src2)
+{
+   cs_emit(b, AND32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source_1 = cs_src32(b, src1);
+      I.source_0 = cs_src32(b, src2);
+   }
+}
+
+static inline void
+cs_or32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
+        struct cs_index src2)
+{
+   cs_emit(b, OR32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source_1 = cs_src32(b, src1);
+      I.source_0 = cs_src32(b, src2);
+   }
+}
+
+static inline void
+cs_xor32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
+         struct cs_index src2)
+{
+   cs_emit(b, XOR32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source_1 = cs_src32(b, src1);
+      I.source_0 = cs_src32(b, src2);
+   }
+}
+
+static inline void
+cs_not32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
+{
+   cs_emit(b, NOT32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source = cs_src32(b, src);
+   }
+}
+
+static inline void
+cs_bit_set32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
+             struct cs_index src2)
+{
+   cs_emit(b, BIT_SET32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src1);
+      I.source_1 = cs_src32(b, src2);
+   }
+}
+
+static inline void
+cs_bit_clear32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
+               struct cs_index src2)
+{
+   cs_emit(b, BIT_CLEAR32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source_1 = cs_src32(b, src1);
+      I.source_0 = cs_src32(b, src2);
+   }
+}
+
+static inline void
+cs_move_reg32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
+{
+   cs_emit(b, MOVE_REG32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source = cs_src32(b, src);
+   }
+}
+
+static inline void
+cs_set_state(struct cs_builder *b, enum mali_cs_set_state_type state,
+             struct cs_index src)
+{
+   cs_emit(b, SET_STATE, I) {
+      I.state = state;
+      I.source = cs_src32(b, src);
+   }
+}
+
+static inline void
+cs_next_sb_entry(struct cs_builder *b, struct cs_index dest,
+                 enum mali_cs_scoreboard_type sb_type,
+                 enum mali_cs_next_sb_entry_format format)
+{
+   cs_emit(b, NEXT_SB_ENTRY, I) {
+      I.destination = cs_dst32(b, dest);
+      I.sb_type = sb_type;
+      I.format = format;
+   }
+}
+
+/*
+ * Wait indirectly on a scoreboard (set via SET_STATE.SB_MASK_WAIT)
+ */
+static inline void
+cs_wait_indirect(struct cs_builder *b)
+{
+   cs_emit(b, WAIT, I) {
+      I.wait_mode = MALI_CS_WAIT_MODE_INDIRECT;
+   }
+}
+#endif
+
 static inline void
 cs_load_to(struct cs_builder *b, struct cs_index dest, struct cs_index address,
            unsigned mask, int offset)
