@@ -739,7 +739,7 @@ static void
 radv_dump_dmesg(FILE *f)
 {
    fprintf(f, "\nLast 60 lines of dmesg:\n\n");
-   radv_dump_cmd("dmesg | tail -n60", f);
+   radv_dump_cmd("/bin/dmesg | /bin/tail -n60", f);
 }
 
 void
