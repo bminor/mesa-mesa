@@ -50,6 +50,12 @@ extern "C" {
 #define MALI_IDVS_SR_FRAGMENT_SPD    MALI_IDVS_SR_SPD_2
 #endif
 
+#if PAN_ARCH == 10
+#define CS_MAX_SB_COUNT 8
+#else
+#define CS_MAX_SB_COUNT 16
+#endif
+
 /*
  * cs_builder implements a builder for CSF command streams. It manages the
  * allocation and overflow behaviour of queues and provides helpers for emitting
@@ -1234,7 +1240,7 @@ cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
 static inline void
 cs_wait_slot(struct cs_builder *b, unsigned slot)
 {
-   assert(slot < 8 && "invalid slot");
+   assert(slot < CS_MAX_SB_COUNT && "invalid slot");
 
    cs_wait_slots(b, BITFIELD_BIT(slot));
 }
@@ -1542,8 +1548,8 @@ cs_store64(struct cs_builder *b, struct cs_index data, struct cs_index address,
 static inline void
 cs_set_scoreboard_entry(struct cs_builder *b, unsigned ep, unsigned other)
 {
-   assert(ep < 8 && "invalid slot");
-   assert(other < 8 && "invalid slot");
+   assert(ep < CS_MAX_SB_COUNT && "invalid slot");
+   assert(other < CS_MAX_SB_COUNT && "invalid slot");
 
    cs_emit(b, SET_SB_ENTRY, I) {
       I.endpoint_entry = ep;
