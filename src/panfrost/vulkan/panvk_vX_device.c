@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "drm-uapi/panthor_drm.h"
+
 #include "vk_cmd_enqueue_entrypoints.h"
 #include "vk_common_entrypoints.h"
 
@@ -315,6 +317,21 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       result = panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
       goto err_destroy_kdev;
    }
+
+#if PAN_ARCH >= 10
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(device->kmod.dev);
+
+   assert(csif_info->scoreboard_slot_count < UINT8_MAX);
+   device->csf.sb.count = csif_info->scoreboard_slot_count;
+   device->csf.sb.all_mask = BITFIELD_MASK(device->csf.sb.count);
+
+   assert(device->csf.sb.count > PANVK_SB_ITER_START);
+   device->csf.sb.iter_count =
+      MIN2(device->csf.sb.count - PANVK_SB_ITER_START, PANVK_SB_ITER_COUNT);
+   device->csf.sb.all_iters_mask =
+      BITFIELD_RANGE(PANVK_SB_ITER_START, device->csf.sb.iter_count);
+#endif
 
    simple_mtx_init(&device->as.lock, mtx_plain);
    util_vma_heap_init(&device->as.heap, user_va_start,

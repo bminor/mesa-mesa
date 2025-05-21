@@ -128,7 +128,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
    cs_move32_to(b, flush_id, 0);
-   cs_wait_slots(b, SB_ALL_MASK);
+   cs_wait_slots(b, dev->csf.sb.all_mask);
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
                    MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
@@ -148,7 +148,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
                sizeof(struct panvk_cs_sync32) * subqueue);
       cs_load32_to(b, error, debug_sync_addr,
                    offsetof(struct panvk_cs_sync32, error));
-      cs_wait_slots(b, SB_ALL_MASK);
+      cs_wait_slots(b, dev->csf.sb.all_mask);
       if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
          cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, one,
                        debug_sync_addr, cs_now());
@@ -399,6 +399,8 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
                 VkPipelineStageFlags2 dst_stages, VkAccessFlags2 src_access,
                 VkAccessFlags2 dst_access, struct panvk_cs_deps *deps)
 {
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+
    uint32_t wait_masks[PANVK_SUBQUEUE_COUNT] = {0};
    add_execution_dependency(wait_masks, src_stages, dst_stages);
 
@@ -427,7 +429,7 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
           * the iterator scoreboard is a moving target, we just wait for the
           * whole dynamic scoreboard range.
           */
-         deps->src[i].wait_sb_mask |= SB_ALL_ITERS_MASK;
+         deps->src[i].wait_sb_mask |= dev->csf.sb.all_iters_mask;
       }
 
       collect_cache_flush_info(i, &deps->src[i].cache_flush, src_access,

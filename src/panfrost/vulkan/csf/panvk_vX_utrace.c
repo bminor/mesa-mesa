@@ -13,12 +13,14 @@
 #include "panvk_priv_bo.h"
 
 static void
-cmd_write_timestamp(struct cs_builder *b, uint64_t addr)
+cmd_write_timestamp(const struct panvk_device *dev, struct cs_builder *b,
+                    uint64_t addr)
 {
    const struct cs_index addr_reg = cs_scratch_reg64(b, 0);
    /* abuse DEFERRED_SYNC */
-   const struct cs_async_op async = cs_defer(
-      SB_ALL_ITERS_MASK | SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC));
+   const struct cs_async_op async =
+      cs_defer(dev->csf.sb.all_iters_mask | SB_MASK(DEFERRED_FLUSH),
+               SB_ID(DEFERRED_SYNC));
 
    cs_move64_to(b, addr_reg, addr);
    cs_store_state(b, addr_reg, 0, MALI_CS_STATE_TIMESTAMP, async);
@@ -80,11 +82,13 @@ static void
 panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
                        uint64_t offset_B, uint32_t flags)
 {
-   struct cs_builder *b = get_builder(cs, ut);
+   struct panvk_cmd_buffer *cmdbuf = cs;
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct cs_builder *b = get_builder(cmdbuf, ut);
    const struct panvk_priv_bo *bo = timestamps;
    const uint64_t addr = bo->addr.dev + offset_B;
 
-   cmd_write_timestamp(b, addr);
+   cmd_write_timestamp(dev, b, addr);
 }
 
 void

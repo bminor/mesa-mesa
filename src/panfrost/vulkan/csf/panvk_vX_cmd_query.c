@@ -160,6 +160,7 @@ panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
                               struct panvk_query_pool *pool, uint32_t query)
 {
    uint64_t syncobj_addr = panvk_query_available_dev_addr(pool, query);
+   struct panvk_device *dev = to_panvk_device(cmd->vk.base.device);
 
    cmd->state.gfx.occlusion_query.ptr = 0;
    cmd->state.gfx.occlusion_query.syncobj = 0;
@@ -179,9 +180,10 @@ panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
     * Wait for the accumulation and flush the caches.
     */
    cs_move32_to(b, val, 0);
-   cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
-                   MALI_CS_OTHER_FLUSH_MODE_NONE, val,
-                   cs_defer(SB_ALL_ITERS_MASK, SB_ID(DEFERRED_FLUSH)));
+   cs_flush_caches(
+      b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
+      MALI_CS_OTHER_FLUSH_MODE_NONE, val,
+      cs_defer(dev->csf.sb.all_iters_mask, SB_ID(DEFERRED_FLUSH)));
 
    /* Signal the query syncobj after the flush is effective. */
    cs_move32_to(b, val, 1);

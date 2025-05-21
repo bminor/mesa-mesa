@@ -147,15 +147,6 @@ enum panvk_sb_ids {
 #define SB_ID(nm)       PANVK_SB_##nm
 #define SB_ITER(x)      (PANVK_SB_ITER_START + (x))
 #define SB_WAIT_ITER(x) BITFIELD_BIT(PANVK_SB_ITER_START + (x))
-#define SB_ALL_ITERS_MASK                                                      \
-   BITFIELD_RANGE(PANVK_SB_ITER_START, PANVK_SB_ITER_COUNT)
-#define SB_ALL_MASK     BITFIELD_MASK(8)
-
-static inline uint32_t
-next_iter_sb(uint32_t sb)
-{
-   return sb + 1 < PANVK_SB_ITER_COUNT ? sb + 1 : 0;
-}
 
 enum panvk_cs_regs {
    /* RUN_IDVS staging regs. */
@@ -375,6 +366,14 @@ struct panvk_cmd_buffer {
 
 VK_DEFINE_HANDLE_CASTS(panvk_cmd_buffer, vk.base, VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
+
+static inline uint32_t
+next_iter_sb(struct panvk_cmd_buffer *cmdbuf, uint32_t sb)
+{
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+
+   return sb + 1 < dev->csf.sb.iter_count ? sb + 1 : 0;
+}
 
 static bool
 inherits_render_ctx(struct panvk_cmd_buffer *cmdbuf)

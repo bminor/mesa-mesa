@@ -91,6 +91,17 @@ struct panvk_device {
       struct panvk_priv_bo *bo;
    } printf;
 
+   union {
+      struct {
+         struct {
+            uint8_t count;
+            uint8_t iter_count;
+            uint16_t all_mask;
+            uint16_t all_iters_mask;
+         } sb;
+      } csf;
+   };
+
    int drm_fd;
 };
 

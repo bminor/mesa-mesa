@@ -94,7 +94,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
          cs_add64(&b, fbd_ptr, fbd_ptr, fbd_size);
       }
       /* Wait for all iter scoreboards for simplicity. */
-      cs_wait_slots(&b, SB_ALL_ITERS_MASK);
+      cs_wait_slots(&b, dev->csf.sb.all_iters_mask);
 
       /* Increment counter */
       cs_add32(&b, counter, counter, 1);
