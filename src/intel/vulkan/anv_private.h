@@ -3836,6 +3836,8 @@ struct anv_push_constants {
 
          /** Robust access pushed registers. */
          uint64_t push_reg_mask[MESA_SHADER_STAGES];
+
+         uint32_t fs_per_prim_remap_offset;
       } gfx;
 
       struct {
@@ -5002,6 +5004,8 @@ struct anv_graphics_pipeline {
    uint32_t                                     view_mask;
    uint32_t                                     instance_multiplier;
 
+   /* First VUE slot read by SBE */
+   uint32_t                                     first_vue_slot;
    /* Attribute index of the PrimitiveID in the delivered attributes */
    uint32_t                                     primitive_id_index;
 

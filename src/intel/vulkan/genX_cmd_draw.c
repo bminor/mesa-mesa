@@ -497,6 +497,11 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
    if (gfx_state->base.push_constants_data_dirty || GFX_VER < 12)
       gfx_state->base.push_constants_state = ANV_STATE_NULL;
 
+#if GFX_VERx10 >= 125
+   const struct brw_mesh_prog_data *mesh_prog_data =
+      get_mesh_prog_data(pipeline);
+#endif
+
    anv_foreach_stage(stage, dirty_stages) {
       unsigned buffer_count = 0;
       flushed |= mesa_to_vk_shader_stage(stage);
@@ -519,9 +524,15 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
             if (range->length == 0)
                break;
 
+#if GFX_VERx10 >= 125
+            /* Padding for Mesh only matters where the platform supports Mesh
+             * shaders.
+             */
             if (range->set == ANV_DESCRIPTOR_SET_PER_PRIM_PADDING &&
-                anv_pipeline_has_stage(pipeline, MESA_SHADER_MESH))
+                mesh_prog_data && !mesh_prog_data->map.wa_18019110168_active) {
                break;
+            }
+#endif
 
             buffers[i] = get_push_range_address(cmd_buffer, shader, range);
             max_push_range = MAX2(max_push_range, range->length);

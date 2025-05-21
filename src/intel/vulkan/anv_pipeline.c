@@ -1619,6 +1619,15 @@ anv_pipeline_compile_fs(const struct brw_compiler *compiler,
                          (uint32_t)fs_stage->prog_data.wm.dispatch_16 +
                          (uint32_t)fs_stage->prog_data.wm.dispatch_32;
    assert(fs_stage->num_stats <= ARRAY_SIZE(fs_stage->stats));
+
+   for (unsigned i = 0; i < ARRAY_SIZE(fs_stage->bind_map.push_ranges); i++) {
+      if (fs_stage->bind_map.push_ranges[i].set == ANV_DESCRIPTOR_SET_PER_PRIM_PADDING) {
+         fs_stage->bind_map.push_ranges[i].length = MAX2(
+            fs_stage->prog_data.wm.num_per_primitive_inputs / 2,
+            fs_stage->bind_map.push_ranges[i].length);
+         break;
+      }
+   }
 }
 
 static void

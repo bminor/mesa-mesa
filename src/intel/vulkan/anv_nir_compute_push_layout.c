@@ -90,6 +90,11 @@ anv_nir_compute_push_layout(nir_shader *nir,
       has_const_ubo && nir->info.stage != MESA_SHADER_COMPUTE &&
       !brw_shader_stage_requires_bindless_resources(nir->info.stage);
 
+   const bool needs_wa_18019110168 =
+      nir->info.stage == MESA_SHADER_FRAGMENT &&
+      brw_nir_fragment_shader_needs_wa_18019110168(
+         devinfo, mesh_dynamic ? INTEL_SOMETIMES : INTEL_NEVER, nir);
+
    if (push_ubo_ranges && (robust_flags & BRW_ROBUSTNESS_UBO)) {
       /* We can't on-the-fly adjust our push ranges because doing so would
        * mess up the layout in the shader.  When robustBufferAccess is
@@ -106,13 +111,26 @@ anv_nir_compute_push_layout(nir_shader *nir,
       push_end = MAX2(push_end, push_reg_mask_end);
    }
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT && fragment_dynamic) {
-      const uint32_t fs_msaa_flags_start =
-         anv_drv_const_offset(gfx.fs_msaa_flags);
-      const uint32_t fs_msaa_flags_end = fs_msaa_flags_start +
-                                         anv_drv_const_size(gfx.fs_msaa_flags);
-      push_start = MIN2(push_start, fs_msaa_flags_start);
-      push_end = MAX2(push_end, fs_msaa_flags_end);
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      if (fragment_dynamic) {
+         const uint32_t fs_msaa_flags_start =
+            anv_drv_const_offset(gfx.fs_msaa_flags);
+         const uint32_t fs_msaa_flags_end =
+            fs_msaa_flags_start +
+            anv_drv_const_size(gfx.fs_msaa_flags);
+         push_start = MIN2(push_start, fs_msaa_flags_start);
+         push_end = MAX2(push_end, fs_msaa_flags_end);
+      }
+
+      if (needs_wa_18019110168) {
+         const uint32_t fs_per_prim_remap_start =
+            anv_drv_const_offset(gfx.fs_per_prim_remap_offset);
+         const uint32_t fs_per_prim_remap_end =
+            fs_per_prim_remap_start +
+            anv_drv_const_size(gfx.fs_per_prim_remap_offset);
+         push_start = MIN2(push_start, fs_per_prim_remap_start);
+         push_end = MAX2(push_end, fs_per_prim_remap_end);
+      }
    }
 
    if (nir->info.stage == MESA_SHADER_COMPUTE && devinfo->verx10 < 125) {
@@ -226,8 +244,9 @@ anv_nir_compute_push_layout(nir_shader *nir,
     * dynamic bit in fs_msaa_intel.
     */
    const bool needs_padding_per_primitive =
-      mesh_dynamic &&
-      (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID);
+      needs_wa_18019110168 ||
+      (mesh_dynamic &&
+       (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID));
 
    unsigned n_push_ranges = 0;
    if (push_ubo_ranges) {
@@ -330,15 +349,25 @@ anv_nir_compute_push_layout(nir_shader *nir,
 
    assert(n_push_ranges <= 4);
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT && fragment_dynamic) {
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct brw_wm_prog_data *wm_prog_data =
          container_of(prog_data, struct brw_wm_prog_data, base);
 
-      const uint32_t fs_msaa_flags_offset =
-         anv_drv_const_offset(gfx.fs_msaa_flags);
-      assert(fs_msaa_flags_offset >= push_start);
-      wm_prog_data->msaa_flags_param =
-         (fs_msaa_flags_offset - push_start) / 4;
+      if (fragment_dynamic) {
+         const uint32_t fs_msaa_flags_offset =
+            anv_drv_const_offset(gfx.fs_msaa_flags);
+         assert(fs_msaa_flags_offset >= push_start);
+         wm_prog_data->msaa_flags_param =
+            (fs_msaa_flags_offset - push_start) / 4;
+      }
+
+      if (needs_wa_18019110168) {
+         const uint32_t fs_per_prim_remap_offset =
+            anv_drv_const_offset(gfx.fs_per_prim_remap_offset);
+         assert(fs_per_prim_remap_offset >= push_start);
+         wm_prog_data->per_primitive_remap_param =
+            (fs_per_prim_remap_offset - push_start) / 4;
+      }
    }
 
 #if 0

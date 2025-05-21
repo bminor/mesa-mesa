@@ -553,7 +553,7 @@ brw_nir_frag_convert_attrs_prim_to_vert_indirect(struct nir_shader *nir,
                                  &per_primitive_stride,
                                  &first_read_offset,
                                  0, nir, nir_var_shader_in,
-                                 nir->info.per_primitive_inputs,
+                                 per_primitive_inputs,
                                  true /* separate_shader */);
 
    per_primitive_stride = align(per_primitive_stride, devinfo->grf_size);
