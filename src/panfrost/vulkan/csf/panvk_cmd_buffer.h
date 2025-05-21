@@ -176,6 +176,17 @@ enum panvk_cs_regs {
     * all queues. Note that some queues have extra space they can use
     * as scratch space.*/
    PANVK_CS_REG_SCRATCH_START = 66,
+
+   /* On v12+, we have 128 registers so that gives us way more space to work with */
+#if PAN_ARCH >= 12
+   PANVK_CS_REG_SCRATCH_END = 115,
+
+   /* Driver context. */
+   PANVK_CS_REG_PROGRESS_SEQNO_START = 116,
+   PANVK_CS_REG_PROGRESS_SEQNO_END = 121,
+   PANVK_CS_REG_SUBQUEUE_CTX_START = 122,
+   PANVK_CS_REG_SUBQUEUE_CTX_END = 123,
+#else
    PANVK_CS_REG_SCRATCH_END = 83,
 
    /* Driver context. */
@@ -183,6 +194,7 @@ enum panvk_cs_regs {
    PANVK_CS_REG_PROGRESS_SEQNO_END = 89,
    PANVK_CS_REG_SUBQUEUE_CTX_START = 90,
    PANVK_CS_REG_SUBQUEUE_CTX_END = 91,
+#endif
 };
 
 #define CS_REG_SCRATCH_COUNT                                                   \
