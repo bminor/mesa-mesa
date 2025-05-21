@@ -31,6 +31,7 @@ intel_sometimes_invert(enum intel_sometimes x)
 }
 
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET (20)
+#define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE   (6)
 #define INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH   (32)
 
 enum intel_msaa_flags {
@@ -472,6 +473,7 @@ intel_fs_msaa_flags(struct intel_fs_params params)
    if (params.alpha_to_coverage)
       fs_msaa_flags |= INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE;
 
+   assert(params.primitive_id_index < (1u << INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE));
    fs_msaa_flags |= (enum intel_msaa_flags)(
       params.primitive_id_index << INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET);
 

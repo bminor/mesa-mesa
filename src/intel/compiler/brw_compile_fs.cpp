@@ -1944,10 +1944,16 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
              * use that.
              */
             if (wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID] >= 0) {
-               if (first_slot == INT32_MAX)
-                  first_slot = 0;
-               primitive_id_slot =
-                  first_slot + wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
+               if (first_slot == INT32_MAX) {
+                  first_slot =
+                     wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
+               }
+               /* urb_setup[VARYING_SLOT_PRIMITIVE_ID] is relative to the
+                * first read slot, so bring primitive_id_slot back into the
+                * absolute indexing of the VUE.
+                */
+               primitive_id_slot = first_slot +
+                  wm_prog_data->urb_setup[VARYING_SLOT_PRIMITIVE_ID];
             } else {
                primitive_id_slot = ++last_slot;
             }
@@ -1955,9 +1961,10 @@ brw_compute_sbe_per_vertex_urb_read(const struct intel_vue_map *prev_stage_vue_m
             primitive_id_slot =
                prev_stage_vue_map->varying_to_slot[VARYING_SLOT_PRIMITIVE_ID];
          }
+         first_slot = MIN2(primitive_id_slot, first_slot);
          last_slot = MAX2(primitive_id_slot, last_slot);
 
-         *out_primitive_id_offset = 4 * (primitive_id_slot - first_slot);
+         *out_primitive_id_offset = primitive_id_slot - first_slot;
       }
    }
 

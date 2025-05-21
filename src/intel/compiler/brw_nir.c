@@ -706,9 +706,11 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
    if (key->base.vue_layout == INTEL_VUE_LAYOUT_SEPARATE_MESH &&
        (nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID)) {
       nir_builder _b = nir_builder_at(nir_before_impl(nir_shader_get_entrypoint(nir))), *b = &_b;
-      nir_def *index = nir_ushr_imm(b,
-                                    nir_load_fs_msaa_intel(b),
-                                    INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET);
+      nir_def *index = nir_ubitfield_extract_imm(
+         b,
+         nir_load_fs_msaa_intel(b),
+         INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET,
+         INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE);
       nir_def *max_poly = nir_load_max_polygon_intel(b);
       /* Build the per-vertex offset into the attribute section of the thread
        * payload. There is always one GRF of padding in front.
@@ -723,18 +725,21 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
        * Then an additional offset needs to added to handle how multiple
        * polygon data is interleaved.
        */
+      nir_def *scalar_index = nir_imul_imm(b, index, 4);
       nir_def *per_vertex_offset = nir_iadd_imm(
          b,
          devinfo->ver >= 20 ?
          nir_iadd(b,
-                  nir_imul(b, nir_udiv_imm(b, index, 5), nir_imul_imm(b, max_poly, 64)),
-                  nir_imul_imm(b, nir_umod_imm(b, index, 5), 12)) :
+                  nir_imul(b, nir_udiv_imm(b, scalar_index, 5),
+                              nir_imul_imm(b, max_poly, 64)),
+                  nir_imul_imm(b, nir_umod_imm(b, scalar_index, 5), 12)) :
          nir_iadd_imm(
             b,
             nir_iadd(
                b,
-               nir_imul(b, nir_udiv_imm(b, index, 2), nir_imul_imm(b, max_poly, 32)),
-               nir_imul_imm(b, nir_umod_imm(b, index, 2), 16)),
+               nir_imul(b, nir_udiv_imm(b, scalar_index, 2),
+                           nir_imul_imm(b, max_poly, 32)),
+               nir_imul_imm(b, nir_umod_imm(b, scalar_index, 2), 16)),
             12),
          devinfo->grf_size);
       /* When the attribute index is INTEL_MSAA_FLAG_PRIMITIVE_ID_MESH_INDEX,
