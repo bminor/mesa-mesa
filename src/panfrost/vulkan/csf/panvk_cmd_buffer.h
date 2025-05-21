@@ -151,7 +151,14 @@ enum panvk_sb_ids {
 enum panvk_cs_regs {
    /* RUN_IDVS staging regs. */
    PANVK_CS_REG_RUN_IDVS_SR_START = 0,
+
+#if PAN_ARCH >= 12
+   PANVK_CS_REG_RUN_IDVS_SR_END = 65,
+#elif PAN_ARCH == 11
+   PANVK_CS_REG_RUN_IDVS_SR_END = 63,
+#else
    PANVK_CS_REG_RUN_IDVS_SR_END = 60,
+#endif
 
    /* RUN_FRAGMENT staging regs.
     * SW ABI:
