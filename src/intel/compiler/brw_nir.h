@@ -323,6 +323,11 @@ brw_nir_find_complete_variable_with_location(nir_shader *shader,
                                              nir_variable_mode mode,
                                              int location);
 
+nir_def *
+brw_nir_vertex_attribute_offset(nir_builder *b,
+                                nir_def *attr_idx,
+                                const struct intel_device_info *devinfo);
+
 static inline bool
 brw_nir_mesh_shader_needs_wa_18019110168(const struct intel_device_info *devinfo,
                                          nir_shader *shader)

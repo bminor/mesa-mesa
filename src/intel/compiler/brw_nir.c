@@ -697,6 +697,38 @@ brw_needs_vertex_attributes_bypass(const nir_shader *shader)
    return false;
 }
 
+/* Build the per-vertex offset into the attribute section of the per-vertex
+ * thread payload. There is always one GRF of padding in front.
+ *
+ * The computation is fairly complicated due to the layout of the payload. You
+ * can find a description of the layout in brw_compile_fs.cpp
+ * brw_assign_urb_setup().
+ *
+ * Gfx < 20 packs 2 slots per GRF (hence the %/ 2 in the formula)
+ * Gfx >= 20 pack 5 slots per GRF (hence the %/ 5 in the formula)
+ *
+ * Then an additional offset needs to added to handle how multiple polygon
+ * data is interleaved.
+ */
+nir_def *
+brw_nir_vertex_attribute_offset(nir_builder *b,
+                                nir_def *attr_idx,
+                                const struct intel_device_info *devinfo)
+{
+   nir_def *max_poly = nir_load_max_polygon_intel(b);
+   return devinfo->ver >= 20 ?
+         nir_iadd(b,
+                  nir_imul(b, nir_udiv_imm(b, attr_idx, 5), nir_imul_imm(b, max_poly, 64)),
+                  nir_imul_imm(b, nir_umod_imm(b, attr_idx, 5), 12)) :
+      nir_iadd_imm(
+         b,
+         nir_iadd(
+            b,
+            nir_imul(b, nir_udiv_imm(b, attr_idx, 2), nir_imul_imm(b, max_poly, 32)),
+            nir_imul_imm(b, nir_umod_imm(b, attr_idx, 2), 16)),
+         12);
+}
+
 void
 brw_nir_lower_fs_inputs(nir_shader *nir,
                         const struct intel_device_info *devinfo,
@@ -711,37 +743,12 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
          nir_load_fs_msaa_intel(b),
          INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_OFFSET,
          INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_SIZE);
-      nir_def *max_poly = nir_load_max_polygon_intel(b);
-      /* Build the per-vertex offset into the attribute section of the thread
-       * payload. There is always one GRF of padding in front.
-       *
-       * The computation is fairly complicated due to the layout of the
-       * payload. You can find a description of the layout in
-       * brw_compile_fs.cpp brw_assign_urb_setup().
-       *
-       * Gfx < 20 packs 2 slots per GRF (hence the %/ 2 in the formula)
-       * Gfx >= 20 pack 5 slots per GRF (hence the %/ 5 in the formula)
-       *
-       * Then an additional offset needs to added to handle how multiple
-       * polygon data is interleaved.
-       */
-      nir_def *scalar_index = nir_imul_imm(b, index, 4);
-      nir_def *per_vertex_offset = nir_iadd_imm(
-         b,
-         devinfo->ver >= 20 ?
-         nir_iadd(b,
-                  nir_imul(b, nir_udiv_imm(b, scalar_index, 5),
-                              nir_imul_imm(b, max_poly, 64)),
-                  nir_imul_imm(b, nir_umod_imm(b, scalar_index, 5), 12)) :
+     nir_def *per_vertex_offset =
          nir_iadd_imm(
             b,
-            nir_iadd(
-               b,
-               nir_imul(b, nir_udiv_imm(b, scalar_index, 2),
-                           nir_imul_imm(b, max_poly, 32)),
-               nir_imul_imm(b, nir_umod_imm(b, scalar_index, 2), 16)),
-            12),
-         devinfo->grf_size);
+            brw_nir_vertex_attribute_offset(
+               b, nir_imul_imm(b, index, 4), devinfo),
+            devinfo->grf_size);
       /* When the attribute index is INTEL_MSAA_FLAG_PRIMITIVE_ID_MESH_INDEX,
        * it means the value is coming from the per-primitive block. We always
        * lay out PrimitiveID at offset 0 in the per-primitive block.
