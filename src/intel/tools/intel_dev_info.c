@@ -91,7 +91,10 @@ print_base_devinfo(const struct intel_device_info *devinfo)
 
    fprintf(stdout, "   slices: %u\n", n_s);
    fprintf(stdout, "   %s: %u\n", subslice_name, n_ss);
-   fprintf(stdout, "   EUs: %u\n", n_eus);
+
+   fprintf(stdout, "   EUs: %u (SIMD%u native)\n", n_eus,
+           devinfo->ver >= 20 ? 16 : devinfo->ver >= 12 ? 8 : 4);
+
    fprintf(stdout, "   EU threads: %u\n", n_eus * devinfo->num_thread_per_eu);
 
    fprintf(stdout, "   LLC: %u\n", devinfo->has_llc);
