@@ -451,8 +451,7 @@ tu_cond_exec_start(struct tu_cs *cs, uint32_t cond_flags)
    assert(cs->cond_stack_depth < TU_COND_EXEC_STACK_SIZE);
 
    ASSERTED enum compare_mode mode =
-      (enum compare_mode)((cond_flags & CP_COND_REG_EXEC_0_MODE__MASK) >>
-                          CP_COND_REG_EXEC_0_MODE__SHIFT);
+      (enum compare_mode) pkt_field_get(CP_COND_REG_EXEC_0_MODE, cond_flags);
    assert(mode == PRED_TEST || mode == RENDER_MODE || mode == THREAD_MODE);
 
    tu_cs_emit_pkt7(cs, CP_COND_REG_EXEC, 2);

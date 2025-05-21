@@ -135,7 +135,6 @@ tu_DestroySampler(VkDevice _device,
 {
    VK_FROM_HANDLE(tu_device, device, _device);
    VK_FROM_HANDLE(tu_sampler, sampler, _sampler);
-   uint32_t border_color;
 
    if (!sampler)
       return;
@@ -143,7 +142,8 @@ tu_DestroySampler(VkDevice _device,
    bool fast_border_color =
       (sampler->descriptor[2] & A6XX_TEX_SAMP_2_FASTBORDERCOLOREN) != 0;
    if (!fast_border_color) {
-      border_color = (sampler->descriptor[2] & A6XX_TEX_SAMP_2_BCOLOR__MASK) >> A6XX_TEX_SAMP_2_BCOLOR__SHIFT;
+      const uint32_t border_color =
+         pkt_field_get(A6XX_TEX_SAMP_2_BCOLOR, sampler->descriptor[2]);
       /* if the sampler had a custom border color, free it. TODO: no lock */
       mtx_lock(&device->mutex);
       assert(!BITSET_TEST(device->custom_border_color, border_color));

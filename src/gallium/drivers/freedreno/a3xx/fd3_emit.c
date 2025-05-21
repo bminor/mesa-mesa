@@ -763,8 +763,10 @@ fd3_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
             control |= A3XX_RB_MRT_CONTROL_ROP_CODE(ROP_COPY);
          }
 
-         if (format == PIPE_FORMAT_NONE)
-            control &= ~A3XX_RB_MRT_CONTROL_COMPONENT_ENABLE__MASK;
+         if (format == PIPE_FORMAT_NONE) {
+            control =
+               pkt_field_set(A3XX_RB_MRT_CONTROL_COMPONENT_ENABLE, control, 0);
+         }
 
          if (!has_alpha) {
             control &= ~A3XX_RB_MRT_CONTROL_BLEND2;

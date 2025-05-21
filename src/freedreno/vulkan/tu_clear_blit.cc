@@ -276,14 +276,13 @@ r2d_src(struct tu_cmd_buffer *cmd,
    if (filter != VK_FILTER_NEAREST)
       src_info |= A6XX_SP_PS_2D_SRC_INFO_FILTER;
 
-   enum a6xx_format fmt = (enum a6xx_format)(
-      src_info & A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT__MASK);
+   enum a6xx_format fmt = (enum a6xx_format) pkt_field_get(
+      A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT, src_info);
    enum pipe_format src_format = iview->format;
    fixup_src_format(&src_format, dst_format, &fmt);
 
    src_info =
-      (src_info & ~A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT__MASK) |
-      A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT(fmt);
+      pkt_field_set(A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT, src_info, fmt);
 
    tu_cs_emit_pkt4(cs, SP_PS_2D_SRC_INFO(CHIP,).reg, 5);
    tu_cs_emit(cs, src_info);
@@ -397,13 +396,12 @@ r2d_dst(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer,
         enum pipe_format src_format)
 {
    uint32_t dst_info = iview->RB_2D_DST_INFO;
-   enum a6xx_format fmt =
-      (enum a6xx_format)(dst_info & A6XX_RB_2D_DST_INFO_COLOR_FORMAT__MASK);
+   enum a6xx_format fmt = (enum a6xx_format) pkt_field_get(
+      A6XX_RB_2D_DST_INFO_COLOR_FORMAT, dst_info);
    enum pipe_format dst_format = iview->format;
    fixup_dst_format(src_format, &dst_format, &fmt);
 
-   dst_info =
-         (dst_info & ~A6XX_RB_2D_DST_INFO_COLOR_FORMAT__MASK) | fmt;
+   dst_info = pkt_field_set(A6XX_RB_2D_DST_INFO_COLOR_FORMAT, dst_info, fmt);
    tu_cs_emit_pkt4(cs, REG_A6XX_RB_2D_DST_INFO, 4);
    tu_cs_emit(cs, dst_info);
    tu_cs_image_ref_2d<CHIP>(cs, iview, layer, false);
@@ -1174,12 +1172,11 @@ r3d_src(struct tu_cmd_buffer *cmd,
    uint32_t desc[A6XX_TEX_CONST_DWORDS];
    memcpy(desc, iview->descriptor, sizeof(desc));
 
-   enum a6xx_format fmt = (enum a6xx_format)(
-      (desc[0] & A6XX_TEX_CONST_0_FMT__MASK) >> A6XX_TEX_CONST_0_FMT__SHIFT);
+   enum a6xx_format fmt =
+      (enum a6xx_format) pkt_field_get(A6XX_TEX_CONST_0_FMT, desc[0]);
    enum pipe_format src_format = iview->format;
    fixup_src_format(&src_format, dst_format, &fmt);
-   desc[0] = (desc[0] & ~A6XX_TEX_CONST_0_FMT__MASK) |
-      A6XX_TEX_CONST_0_FMT(fmt);
+   desc[0] = pkt_field_set(A6XX_TEX_CONST_0_FMT, desc[0], fmt);
 
    r3d_src_common(cmd, cs, desc,
                   iview->layer_size * layer,
@@ -1246,8 +1243,9 @@ r3d_src_depth(struct tu_cmd_buffer *cmd,
    desc[2] =
       A6XX_TEX_CONST_2_PITCH(iview->depth_pitch) |
       A6XX_TEX_CONST_2_TYPE(A6XX_TEX_2D);
-   desc[3] = A6XX_TEX_CONST_3_ARRAY_PITCH(iview->depth_layer_size) |
-      (iview->view.descriptor[3] & ~A6XX_TEX_CONST_3_ARRAY_PITCH__MASK);
+   desc[3] =
+      pkt_field_set(A6XX_TEX_CONST_3_ARRAY_PITCH, iview->view.descriptor[3],
+                    iview->depth_layer_size);
    desc[4] = va;
    desc[5] = va >> 32;
 
@@ -1305,11 +1303,13 @@ r3d_src_gmem_load(struct tu_cmd_buffer *cmd,
    if (format == PIPE_FORMAT_X24S8_UINT ||
        format == PIPE_FORMAT_Z24X8_UNORM ||
        format == PIPE_FORMAT_Z24_UNORM_S8_UINT) {
-      desc[0] &= ~A6XX_TEX_CONST_0_FMT__MASK;
+      enum a6xx_format tex_format;
       if (iview->view.ubwc_enabled)
-         desc[0] |= A6XX_TEX_CONST_0_FMT(FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8);
+         tex_format = FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8;
       else
-         desc[0] |= A6XX_TEX_CONST_0_FMT(FMT6_8_8_8_8_UNORM);
+         tex_format = FMT6_8_8_8_8_UNORM;
+
+      desc[0] = pkt_field_set(A6XX_TEX_CONST_0_FMT, desc[0], tex_format);
    }
 
    /* When loading/storing GMEM we always load the full image and don't do any
@@ -1359,24 +1359,21 @@ r3d_src_gmem(struct tu_cmd_buffer *cmd,
                A6XX_TEX_CONST_0_SWIZ_W(A6XX_TEX_W);
 
    /* patched for gmem */
-   desc[0] &= ~A6XX_TEX_CONST_0_TILE_MODE__MASK;
+   desc[0] = pkt_field_set(A6XX_TEX_CONST_0_TILE_MODE, desc[0], TILE6_2);
    if (!iview->view.is_mutable)
-      desc[0] &= ~A6XX_TEX_CONST_0_SWAP__MASK;
-   desc[0] |= A6XX_TEX_CONST_0_TILE_MODE(TILE6_2);
+      desc[0] = pkt_field_set(A6XX_TEX_CONST_0_SWAP, desc[0], WZYX);
 
    /* If FDM offset is used, the last row and column extend beyond the
     * framebuffer but are shifted over when storing. Expand the width and
     * height to account for that.
     */
    if (tu_enable_fdm_offset(cmd)) {
-      uint32_t width = desc[1] & A6XX_TEX_CONST_1_WIDTH__MASK;
-      uint32_t height = (desc[1] & A6XX_TEX_CONST_1_HEIGHT__MASK) >>
-         A6XX_TEX_CONST_1_HEIGHT__SHIFT;
+      uint32_t width = pkt_field_get(A6XX_TEX_CONST_1_WIDTH, desc[1]);
+      uint32_t height = pkt_field_get(A6XX_TEX_CONST_1_HEIGHT, desc[1]);
       width += cmd->state.tiling->tile0.width;
       height += cmd->state.tiling->tile0.height;
-      desc[1] = (desc[1] & ~(A6XX_TEX_CONST_1_WIDTH__MASK |
-                            A6XX_TEX_CONST_1_HEIGHT__MASK)) |
-         A6XX_TEX_CONST_1_WIDTH(width) | A6XX_TEX_CONST_1_HEIGHT(height);
+      desc[1] = pkt_field_set(A6XX_TEX_CONST_1_WIDTH, desc[1], width);
+      desc[1] = pkt_field_set(A6XX_TEX_CONST_1_HEIGHT, desc[1], height);
    }
 
    desc[2] =
@@ -1398,13 +1395,12 @@ r3d_dst(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer,
 {
    uint32_t mrt_buf_info = iview->RB_MRT_BUF_INFO;
 
-   enum a6xx_format fmt = (enum a6xx_format)(
-      mrt_buf_info & A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT__MASK);
+   enum a6xx_format fmt = (enum a6xx_format) pkt_field_get(
+      A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT, mrt_buf_info);
    enum pipe_format dst_format = iview->format;
    fixup_dst_format(src_format, &dst_format, &fmt);
    mrt_buf_info =
-      (mrt_buf_info & ~A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT__MASK) |
-      A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT(fmt);
+      pkt_field_set(A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT, mrt_buf_info, fmt);
 
    tu_cs_emit_regs(cs,
       RB_MRT_BUF_INFO(CHIP, 0, .dword = mrt_buf_info),
@@ -1512,8 +1508,8 @@ r3d_dst_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                    A6XX_RB_MRT_BASE(0, 0),
                    A6XX_RB_MRT_BASE_GMEM(0, gmem_offset));
 
-   enum a6xx_format color_format =
-      (enum a6xx_format)(RB_MRT_BUF_INFO & A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT__MASK);
+   enum a6xx_format color_format = (enum a6xx_format) pkt_field_get(
+      A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT, RB_MRT_BUF_INFO);
    tu_cs_emit_regs(cs,
                    A6XX_GRAS_LRZ_MRT_BUF_INFO_0(.color_format = color_format));
 

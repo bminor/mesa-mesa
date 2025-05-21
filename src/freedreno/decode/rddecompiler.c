@@ -323,11 +323,9 @@ decompile_domain(uint32_t pkt, uint32_t *dwords, uint32_t sizedwords,
 
    if (pkt == CP_LOAD_STATE6_FRAG || pkt == CP_LOAD_STATE6_GEOM) {
       enum a6xx_state_type state_type =
-         (dwords[0] & CP_LOAD_STATE6_0_STATE_TYPE__MASK) >>
-         CP_LOAD_STATE6_0_STATE_TYPE__SHIFT;
+         pkt_field_get(CP_LOAD_STATE6_0_STATE_TYPE, dwords[0]);
       enum a6xx_state_src state_src =
-         (dwords[0] & CP_LOAD_STATE6_0_STATE_SRC__MASK) >>
-         CP_LOAD_STATE6_0_STATE_SRC__SHIFT;
+         pkt_field_get(CP_LOAD_STATE6_0_STATE_SRC, dwords[0]);
 
       /* TODO: decompile all other state */
       if (state_type == ST6_SHADER && state_src == SS6_INDIRECT) {

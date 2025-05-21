@@ -2086,16 +2086,12 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
        * with how it is sampled in shader.
        */
       enum a6xx_tex_type tex_type =
-         (enum a6xx_tex_type)((dst[2] & A6XX_TEX_CONST_2_TYPE__MASK) >>
-                              A6XX_TEX_CONST_2_TYPE__SHIFT);
+         (enum a6xx_tex_type) pkt_field_get(A6XX_TEX_CONST_2_TYPE, dst[2]);
       if (tex_type == A6XX_TEX_CUBE) {
-         dst[2] &= ~A6XX_TEX_CONST_2_TYPE__MASK;
-         dst[2] |= A6XX_TEX_CONST_2_TYPE(A6XX_TEX_2D);
+         dst[2] = pkt_field_set(A6XX_TEX_CONST_2_TYPE, dst[2], A6XX_TEX_2D);
 
-         uint32_t depth = (dst[5] & A6XX_TEX_CONST_5_DEPTH__MASK) >>
-                          A6XX_TEX_CONST_5_DEPTH__SHIFT;
-         dst[5] &= ~A6XX_TEX_CONST_5_DEPTH__MASK;
-         dst[5] |= A6XX_TEX_CONST_5_DEPTH(depth * 6);
+         uint32_t depth = pkt_field_get(A6XX_TEX_CONST_5_DEPTH, dst[5]);
+         dst[5] = pkt_field_set(A6XX_TEX_CONST_5_DEPTH, dst[5], depth * 6);
       }
 
       if (i % 2 == 1 && att->format == VK_FORMAT_D24_UNORM_S8_UINT) {
@@ -2125,10 +2121,10 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
       }
 
       if (i % 2 == 1 && att->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
-         dst[0] &= ~A6XX_TEX_CONST_0_FMT__MASK;
-         dst[0] |= A6XX_TEX_CONST_0_FMT(FMT6_8_UINT);
-         dst[2] &= ~(A6XX_TEX_CONST_2_PITCHALIGN__MASK | A6XX_TEX_CONST_2_PITCH__MASK);
-         dst[2] |= A6XX_TEX_CONST_2_PITCH(iview->stencil_pitch);
+         dst[0] = pkt_field_set(A6XX_TEX_CONST_0_FMT, dst[0], FMT6_8_UINT);
+         dst[2] = pkt_field_set(A6XX_TEX_CONST_2_PITCHALIGN, dst[2], 0);
+         dst[2] = pkt_field_set(A6XX_TEX_CONST_2_PITCH, dst[2],
+                                iview->stencil_pitch);
          dst[3] = 0;
          dst[4] = iview->stencil_base_addr;
          dst[5] = (dst[5] & 0xffff) | iview->stencil_base_addr >> 32;
@@ -2141,24 +2137,21 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
          continue;
 
       /* patched for gmem */
-      dst[0] &= ~A6XX_TEX_CONST_0_TILE_MODE__MASK;
+      dst[0] = pkt_field_set(A6XX_TEX_CONST_0_TILE_MODE, dst[0], TILE6_2);
       if (!iview->view.is_mutable)
-         dst[0] &= ~A6XX_TEX_CONST_0_SWAP__MASK;
-      dst[0] |= A6XX_TEX_CONST_0_TILE_MODE(TILE6_2);
+         dst[0] = pkt_field_set(A6XX_TEX_CONST_0_SWAP, dst[0], WZYX);
 
       /* If FDM offset is used, the last row and column extend beyond the
        * framebuffer but are shifted over when storing. Expand the width and
        * height to account for that.
        */
       if (tu_enable_fdm_offset(cmd)) {
-         uint32_t width = dst[1] & A6XX_TEX_CONST_1_WIDTH__MASK;
-         uint32_t height = (dst[1] & A6XX_TEX_CONST_1_HEIGHT__MASK) >>
-            A6XX_TEX_CONST_1_HEIGHT__SHIFT;
+         uint32_t width = pkt_field_get(A6XX_TEX_CONST_1_WIDTH, dst[1]);
+         uint32_t height = pkt_field_get(A6XX_TEX_CONST_1_HEIGHT, dst[1]);
          width += cmd->state.tiling->tile0.width;
          height += cmd->state.tiling->tile0.height;
-         dst[1] = (dst[1] & ~(A6XX_TEX_CONST_1_WIDTH__MASK |
-                              A6XX_TEX_CONST_1_HEIGHT__MASK)) |
-            A6XX_TEX_CONST_1_WIDTH(width) | A6XX_TEX_CONST_1_HEIGHT(height);
+         dst[1] = pkt_field_set(A6XX_TEX_CONST_1_WIDTH, dst[1], width);
+         dst[1] = pkt_field_set(A6XX_TEX_CONST_1_HEIGHT, dst[1], height);
       }
 
       dst[2] =
@@ -3636,17 +3629,14 @@ tu_bind_descriptor_sets(struct tu_cmd_buffer *cmd,
                        i++, dst_desc += A6XX_TEX_CONST_DWORDS) {
                      /* Note: A6XX_TEX_CONST_5_DEPTH is always 0 */
                      uint64_t va = dst_desc[4] | ((uint64_t)dst_desc[5] << 32);
-                     uint32_t desc_offset =
-                        (dst_desc[2] &
-                         A6XX_TEX_CONST_2_STARTOFFSETTEXELS__MASK) >>
-                        A6XX_TEX_CONST_2_STARTOFFSETTEXELS__SHIFT;
+                     uint32_t desc_offset = pkt_field_get(
+                        A6XX_TEX_CONST_2_STARTOFFSETTEXELS, dst_desc[2]);
 
                      /* Use descriptor's format to determine the shift amount
                       * that's to be used on the offset value.
                       */
-                     uint32_t format = (dst_desc[0] &
-                                        A6XX_TEX_CONST_0_FMT__MASK) >>
-                                       A6XX_TEX_CONST_0_FMT__SHIFT;
+                     uint32_t format =
+                        pkt_field_get(A6XX_TEX_CONST_0_FMT, dst_desc[0]);
                      unsigned offset_shift;
                      switch (format) {
                      case FMT6_16_UINT:
@@ -3668,8 +3658,8 @@ tu_bind_descriptor_sets(struct tu_cmd_buffer *cmd,
                      dst_desc[4] = va;
                      dst_desc[5] = va >> 32;
                      dst_desc[2] =
-                        (dst_desc[2] & ~A6XX_TEX_CONST_2_STARTOFFSETTEXELS__MASK) |
-                        A6XX_TEX_CONST_2_STARTOFFSETTEXELS(new_offset);
+                        pkt_field_set(A6XX_TEX_CONST_2_STARTOFFSETTEXELS,
+                                      dst_desc[2], new_offset);
                   }
                }
 

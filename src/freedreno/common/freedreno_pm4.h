@@ -115,6 +115,11 @@ pm4_calc_odd_parity_bit(unsigned val)
 #define cp_type7_opcode(pkt) (((pkt) >> 16) & 0x7F)
 #define type7_pkt_size(pkt)  ((pkt)&0x3FFF)
 
+#define pkt_field_get(reg_field, pkt)                                          \
+   (((pkt)&CONCAT2(reg_field, __MASK)) >> CONCAT2(reg_field, __SHIFT))
+#define pkt_field_set(reg_field, pkt, new_val)                                 \
+   (((pkt) & ~CONCAT2(reg_field, __MASK)) | reg_field(new_val))
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif
