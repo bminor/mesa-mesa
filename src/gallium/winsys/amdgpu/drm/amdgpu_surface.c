@@ -91,7 +91,35 @@ static int amdgpu_surface_init(struct radeon_winsys *rws,
    return ac_compute_surface(aws->addrlib, info, &config, mode, surf);
 }
 
+static uint64_t
+amdgpu_surface_offset_from_coord(struct radeon_winsys *rws,
+                                 const struct radeon_info *info,
+                                 const struct radeon_surf *surf,
+                                 const struct pipe_resource *tex,
+                                 unsigned level, unsigned x,
+                                 unsigned y, unsigned layer)
+{
+   struct amdgpu_winsys *aws = amdgpu_winsys(rws);
+   unsigned samples = MAX2(1, tex->nr_samples);
+
+   const struct ac_surf_info surf_info = {
+      .width = tex->width0,
+      .height = tex->height0,
+      .depth = tex->depth0,
+      .samples = samples,
+      .storage_samples = samples,
+      .levels = tex->last_level + 1,
+      .num_channels = util_format_get_last_component(tex->format) + 1,
+      .array_size = tex->array_size,
+   };
+
+   return ac_surface_addr_from_coord(
+      aws->addrlib, info, surf, &surf_info,
+      level, x, y, layer, tex->target == PIPE_TEXTURE_3D);
+}
+
 void amdgpu_surface_init_functions(struct amdgpu_screen_winsys *sws)
 {
    sws->base.surface_init = amdgpu_surface_init;
+   sws->base.surface_offset_from_coord = amdgpu_surface_offset_from_coord;
 }
