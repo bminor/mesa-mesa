@@ -832,3 +832,13 @@ option(
   value : false,
   description : 'Install the drivers internal shader compilers (if needed for cross builds).'
 )
+
+option(
+  'allow-fallback-for',
+  type : 'array',
+  value : [],
+  choices : [
+    'libdrm',
+  ],
+  description : 'Allows the fallback mechanism if the dependency is not available on the system, or too old.'
+)

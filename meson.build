@@ -1670,12 +1670,18 @@ if _drm_blame != ''
   message('libdrm @0@ needed because @1@ has the highest requirement'.format(_drm_ver, _drm_blame))
 endif
 
+allow_fallback_for_libdrm = get_option('allow-fallback-for').contains('libdrm')
+
 # Then get each libdrm module
 foreach d : _libdrm_checks
   if d[1]
     set_variable(
       'dep_libdrm_' + d[0],
-      dependency('libdrm_' + d[0], version : '>=' + _drm_ver)
+      dependency(
+        'libdrm_' + d[0],
+        version : '>=' + _drm_ver,
+        allow_fallback: allow_fallback_for_libdrm,
+      )
     )
   endif
 endforeach
@@ -1684,7 +1690,8 @@ with_gallium_drisw_kms = false
 if system_has_kms_drm
   dep_libdrm = dependency(
     'libdrm', version : '>=' + _drm_ver,
-    required : with_dri2 or with_dri or with_gbm
+    required : with_dri2 or with_dri or with_gbm,
+    allow_fallback: allow_fallback_for_libdrm,
   )
 else
   # We should prevent libdrm from being available when the target doesn't have it to avoid transitive
