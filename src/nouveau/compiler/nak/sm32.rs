@@ -474,9 +474,9 @@ impl SM32Op for OpFAdd {
         b.copy_alu_src_if_not_reg(src0, GPR, SrcType::F32);
 
         if src1.as_imm_not_f20().is_some()
-            && self.rnd_mode != FRndMode::NearestEven
+            && (self.saturate || self.rnd_mode != FRndMode::NearestEven)
         {
-            // Hardware cannot encode long-immediate + rounding mode
+            // Hardware cannot encode long-immediate + rounding mode or saturation
             b.copy_alu_src(src1, GPR, SrcType::F32);
         }
     }
@@ -489,8 +489,8 @@ impl SM32Op for OpFAdd {
             e.set_field(23..55, imm32);
 
             assert!(self.rnd_mode == FRndMode::NearestEven);
+            assert!(!self.saturate);
 
-            e.set_bit(22, self.saturate);
             e.set_bit(56, self.srcs[1].src_mod.has_fneg());
             e.set_bit(58, self.ftz);
             e.set_bit(60, self.srcs[1].src_mod.has_fabs());
@@ -640,6 +640,7 @@ impl SM32Op for OpFMul {
             assert!(self.rnd_mode == FRndMode::NearestEven);
             e.set_bit(56, self.ftz);
             e.set_bit(57, self.dnz);
+            e.set_bit(58, self.saturate);
         } else {
             e.encode_form_immreg(
                 0xc34,
@@ -655,6 +656,7 @@ impl SM32Op for OpFMul {
             e.set_bit(47, self.ftz);
             e.set_bit(48, self.dnz);
             e.set_bit(51, fneg);
+            e.set_bit(53, self.saturate);
         }
     }
 }
@@ -805,6 +807,9 @@ impl SM32Op for OpFSet {
 
         // 48..50: and, or, xor?
         e.set_float_cmp_op(51..55, self.cmp_op);
+
+        // Without ".bf" it sets the register to -1 (int) if true
+        e.set_bit(55, true); // .bf
 
         e.set_bit(56, self.srcs[1].src_mod.has_fneg());
         e.set_bit(57, self.srcs[0].src_mod.has_fabs());
@@ -1248,7 +1253,6 @@ impl SM32Op for OpIMad {
     }
 
     fn encode(&self, e: &mut SM32Encoder<'_>) {
-        // TODO: long immediate, ex: 0xa1081800019c0801 (not handled by codegen)
         e.encode_form_immreg(
             0xa00,
             0x110,
@@ -1269,7 +1273,6 @@ impl SM32Op for OpIMad {
         // 52: .x
         e.set_bit(51, self.signed);
         // 50: cc
-        // 22: .s
     }
 }
 
@@ -1525,7 +1528,6 @@ impl SM32Op for OpShf {
                 _ => panic!("Invalid shift data type"),
             },
         );
-        e.set_bit(22, false); // .s
     }
 }
 
@@ -1908,7 +1910,6 @@ impl SM32Op for OpPSetP {
 
         e.set_pred_set_op(27..29, self.ops[0]);
         e.set_pred_set_op(48..50, self.ops[1]);
-        // 22: .s
     }
 }
 
@@ -2293,7 +2294,6 @@ impl SM32Op for OpLd {
                 };
                 e.set_opcode(opc, 2);
 
-                // 22..23 .s?
                 e.set_field(23..47, self.offset);
                 // 47..49: cache hints (.ca, .cg, .lu, .cv)
                 e.set_mem_access(50..54, &self.access);
@@ -2362,7 +2362,6 @@ impl SM32Op for OpSt {
                 };
                 e.set_opcode(opc, 2);
 
-                // 22..23 .s?
                 e.set_field(23..47, self.offset);
                 // 47..49: cache hints (.ca, .cg, .lu, .cv)
                 e.set_mem_access(50..54, &self.access);
@@ -2513,7 +2512,6 @@ impl SM32Op for OpAL2P {
 
         e.set_dst(&self.dst);
         e.set_reg_src(10..18, &self.offset);
-        // 22: .s
         e.set_field(23..34, self.addr);
         e.set_bit(35, self.output);
 
@@ -2532,7 +2530,6 @@ impl SM32Op for OpALd {
 
         e.set_dst(&self.dst);
         e.set_reg_src(10..18, &self.offset);
-        // 22: .s
         e.set_field(23..34, self.addr);
 
         if self.phys {
@@ -2559,7 +2556,6 @@ impl SM32Op for OpASt {
 
         e.set_reg_src(2..10, &self.data);
         e.set_reg_src(10..18, &self.offset);
-        // 22: .s
         e.set_field(23..34, self.addr);
 
         if self.phys {
@@ -2735,6 +2731,12 @@ impl SM32Op for OpSync {
         // emit nop.s
         e.set_opcode(0x858, 2);
         e.set_field(10..14, 0xf_u8); // flags
+
+        // sync bit (.s)
+        // Kepler doesn't really have a "sync" instruction, instead
+        // every instruction can become a sync if the bit 22 is enabled.
+        // TODO: instead of adding a nop.s add the .s modifier to the
+        //       next instruction (and handle addresses accordingly)
         e.set_bit(22, true); // .s
     }
 }
