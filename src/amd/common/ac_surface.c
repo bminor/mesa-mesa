@@ -1836,7 +1836,7 @@ static int gfx9_get_preferred_swizzle_mode(ADDR_HANDLE addrlib, const struct rad
    /* With PRT images we want to force 64 KiB block size so that the image
     * created is consistent with the format properties returned in Vulkan
     * independent of the image. */
-   if (sin.flags.prt) {
+   if (surf->flags & RADEON_SURF_PRT) {
       sin.forbiddenBlock.macroThin4KB = 1;
       sin.forbiddenBlock.macroThick4KB = 1;
       if (info->gfx_level >= GFX11) {
@@ -1844,6 +1844,9 @@ static int gfx9_get_preferred_swizzle_mode(ADDR_HANDLE addrlib, const struct rad
          sin.forbiddenBlock.gfx11.thick256KB = 1;
       }
       sin.forbiddenBlock.linear = 1;
+
+      if (in->numSamples > 1 && info->gfx_level >= GFX10)
+         assert(sin.flags.prt == 0);
    } else if (surf->flags & RADEON_SURF_PREFER_4K_ALIGNMENT) {
       sin.forbiddenBlock.macroThin64KB = 1;
       sin.forbiddenBlock.macroThick64KB = 1;
@@ -2569,7 +2572,9 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
    AddrSurfInfoIn.flags.texture = (is_color_surface && !(surf->flags & RADEON_SURF_NO_TEXTURE)) ||
                                   (surf->flags & RADEON_SURF_TC_COMPATIBLE_HTILE);
    AddrSurfInfoIn.flags.opt4space = 1;
-   AddrSurfInfoIn.flags.prt = (surf->flags & RADEON_SURF_PRT) != 0;
+   /* For GFX10+ MSAA PRT surface won't use the prt flag because it's not supported. */
+   AddrSurfInfoIn.flags.prt = (surf->flags & RADEON_SURF_PRT) != 0 &&
+                              (config->info.samples <= 1 || info->gfx_level < GFX10);
 
    AddrSurfInfoIn.numMipLevels = config->info.levels;
    AddrSurfInfoIn.numSamples = MAX2(1, config->info.samples);

@@ -1493,6 +1493,34 @@ bool si_texture_commit(struct si_context *ctx, struct si_resource *res, unsigned
 
    assert(ctx->gfx_level >= GFX9);
 
+   if (ctx->gfx_level >= GFX10 && samples > 1) {
+      uint64_t prev_offset = res->bo_size;
+
+      for (int i = 0; i < box->depth; i++) {
+         for (int j = 0; j < box->height; j++) {
+            for (int k = 0; k < box->width; k++) {
+
+               uint64_t offset = ctx->ws->surface_offset_from_coord(
+                  ctx->ws,
+                  &ctx->screen->info, surface, &res->b.b,
+                  level, box->x + k, box->y + j, i);
+
+               offset = ROUND_DOWN_TO(offset, RADEON_SPARSE_PAGE_SIZE);
+
+               if (offset != prev_offset) {
+                  if (!ctx->ws->buffer_commit(ctx->ws, res->buf, offset, RADEON_SPARSE_PAGE_SIZE,
+                                              commit)) {
+                     assert(false);
+                     return false;
+                  }
+                  prev_offset = offset;
+               }
+            }
+         }
+      }
+      return true;
+   }
+
    unsigned row_pitch = surface->u.gfx9.prt_level_pitch[level] *
       surface->prt_tile_height * surface->prt_tile_depth * blks * samples;
    uint64_t depth_pitch = surface->u.gfx9.surf_slice_size * surface->prt_tile_depth;
@@ -2445,11 +2473,10 @@ static int si_get_sparse_texture_virtual_page_size(struct pipe_screen *screen,
     * x/y/z for all sample count which means the virtual page size can not be fixed
     * to 64KB.
     *
-    * Only enabled for GFX9. GFX10+ removed MS texture support. By specification
-    * ARB_sparse_texture2 need MS texture support, but we relax it by just return
-    * no page size for GFX10+ to keep shader query capbility.
+    * Only enabled for GFX9+. GFX10+ removed MS texture support but
+    * surface_offset_from_coord can be used to determine the pages to commit.
     */
-   if (multi_sample && sscreen->info.gfx_level != GFX9)
+   if (multi_sample && sscreen->info.gfx_level < GFX9)
       return 0;
 
    /* Unsupported formats. */
