@@ -346,7 +346,7 @@ void
 d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video_encoder *pD3D12Enc,
                                                               struct pipe_video_buffer *srcTexture,
                                                               struct pipe_picture_desc *picture,
-                                                              D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA &picParams,
+                                                              D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_H264* pH264PicData,
                                                               bool &bUsedAsReference)
 {
    struct pipe_h264_enc_picture_desc *h264Pic = (struct pipe_h264_enc_picture_desc *) picture;
@@ -360,22 +360,22 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
    if (pD3D12Enc->m_currentEncodeCapabilities.m_encoderCodecSpecificConfigCaps.m_H264CodecCaps.SupportFlags &
        D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_H264_FLAG_NUM_REF_IDX_ACTIVE_OVERRIDE_FLAG_SLICE_SUPPORT)
    {
-      picParams.pH264PicData->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_H264_FLAG_REQUEST_NUM_REF_IDX_ACTIVE_OVERRIDE_FLAG_SLICE;
+      pH264PicData->Flags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_H264_FLAG_REQUEST_NUM_REF_IDX_ACTIVE_OVERRIDE_FLAG_SLICE;
    }
 
    //
    // These need to be set here so they're available for SPS/PPS header building (reference manager updates after that, for slice header params)
    //
-   picParams.pH264PicData->TemporalLayerIndex = h264Pic->pic_ctrl.temporal_id;
-   picParams.pH264PicData->pic_parameter_set_id = pH264BitstreamBuilder->get_active_pps().pic_parameter_set_id;
-   picParams.pH264PicData->List0ReferenceFramesCount = 0;
-   picParams.pH264PicData->List1ReferenceFramesCount = 0;
+   pH264PicData->TemporalLayerIndex = h264Pic->pic_ctrl.temporal_id;
+   pH264PicData->pic_parameter_set_id = pH264BitstreamBuilder->get_active_pps().pic_parameter_set_id;
+   pH264PicData->List0ReferenceFramesCount = 0;
+   pH264PicData->List1ReferenceFramesCount = 0;
    if ((h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P) ||
        (h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B))
-      picParams.pH264PicData->List0ReferenceFramesCount = h264Pic->num_ref_idx_l0_active_minus1 + 1;
+      pH264PicData->List0ReferenceFramesCount = h264Pic->num_ref_idx_l0_active_minus1 + 1;
 
    if (h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B)
-      picParams.pH264PicData->List1ReferenceFramesCount = h264Pic->num_ref_idx_l1_active_minus1 + 1;
+      pH264PicData->List1ReferenceFramesCount = h264Pic->num_ref_idx_l1_active_minus1 + 1;
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested)
@@ -389,11 +389,14 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
          h264_min_delta_qp,
          h264_max_delta_qp,
          pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit);
-      picParams.pH264PicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.data();
-      picParams.pH264PicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.size());
+      pH264PicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.data();
+      pH264PicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.size());
    }
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA picParams = {};
+   picParams.pH264PicData = pH264PicData;
+   picParams.DataSize = sizeof(*pH264PicData);
    pD3D12Enc->m_upDPBManager->begin_frame(picParams, bUsedAsReference, picture);
    pD3D12Enc->m_upDPBManager->get_current_frame_picture_control_data(picParams);
 

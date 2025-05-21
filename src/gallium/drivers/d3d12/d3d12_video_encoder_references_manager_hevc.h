@@ -34,6 +34,12 @@ class d3d12_video_encoder_references_manager_hevc : public d3d12_video_encoder_r
                     bool bUsedAsReference,
                     struct pipe_picture_desc *picture);
    bool get_current_frame_picture_control_data(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA &codecAllocation);
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   void begin_frame1(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 curFrameData,
+                     bool bUsedAsReference,
+                     struct pipe_picture_desc *picture);
+   bool get_current_frame_picture_control_data1(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 &codecAllocation);
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    D3D12_VIDEO_ENCODE_REFERENCE_FRAMES get_current_reference_frames();
 
    bool is_current_frame_used_as_reference()
@@ -58,6 +64,8 @@ class d3d12_video_encoder_references_manager_hevc : public d3d12_video_encoder_r
    void update_fifo_dpb_push_front_cur_recon_pic();
    void print_dpb();
    void print_l0_l1_lists();
+   void begin_frame_impl(bool bUsedAsReference,
+                         struct pipe_picture_desc *picture);
 
    // Class members
    struct d3d12_video_dpb
@@ -80,7 +88,11 @@ class d3d12_video_encoder_references_manager_hevc : public d3d12_video_encoder_r
    current_frame_references_data m_CurrentFrameReferencesData;
 
    bool m_isCurrentFrameUsedAsReference = false;
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 m_curFrameState = {};
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC2 m_curFrameState = {};
+#else
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC m_curFrameState = {};
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    bool m_fArrayOfTextures = false;
 };
 

@@ -538,8 +538,13 @@ d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12
                                               struct pipe_video_buffer *  srcTexture,
                                               struct pipe_picture_desc *  picture)
 {
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA currentPicParams =
-      d3d12_video_encoder_get_current_picture_param_settings(pD3D12Enc);
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 currentPicParams =
+         d3d12_video_encoder_get_current_picture_param_settings1(pD3D12Enc);
+#else
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA currentPicParams =
+         d3d12_video_encoder_get_current_picture_param_settings(pD3D12Enc);
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
    bool bUsedAsReference = false;
@@ -547,19 +552,19 @@ d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
-         d3d12_video_encoder_update_current_frame_pic_params_info_h264(pD3D12Enc, srcTexture, picture, currentPicParams, bUsedAsReference);
+         d3d12_video_encoder_update_current_frame_pic_params_info_h264(pD3D12Enc, srcTexture, picture, currentPicParams.pH264PicData, bUsedAsReference);
       } break;
 #endif
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
-         d3d12_video_encoder_update_current_frame_pic_params_info_hevc(pD3D12Enc, srcTexture, picture, currentPicParams, bUsedAsReference);
+         d3d12_video_encoder_update_current_frame_pic_params_info_hevc(pD3D12Enc, srcTexture, picture, currentPicParams.pHEVCPicData, bUsedAsReference);
       } break;
 #endif
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
-         d3d12_video_encoder_update_current_frame_pic_params_info_av1(pD3D12Enc, srcTexture, picture, currentPicParams, bUsedAsReference);
+         d3d12_video_encoder_update_current_frame_pic_params_info_av1(pD3D12Enc, srcTexture, picture, currentPicParams.pAV1PicData, bUsedAsReference);
       } break;
 #endif
       default:
@@ -775,44 +780,75 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
          reCreatedEncoderHeap = true;
       }
 
+      HRESULT hr = S_OK;
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-      D3D12_VIDEO_ENCODER_HEAP_FLAGS heapFlags = D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE;
-      if (pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.DirtyRegions.DirtyRegionsSupportFlags) {
-         heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_DIRTY_REGIONS;
-      }
-
-      //
-      // Prefer individual slice buffers when possible
-      //
-      if (pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags &
-         D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE)
+      ComPtr<ID3D12VideoDevice4> spVideoDevice4;
+      if (SUCCEEDED(pD3D12Enc->m_spD3D12VideoDevice->QueryInterface(
+          IID_PPV_ARGS(spVideoDevice4.GetAddressOf()))))
       {
-         heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS;
+         D3D12_VIDEO_ENCODER_HEAP_FLAGS heapFlags = D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE;
+         if (pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.DirtyRegions.DirtyRegionsSupportFlags) {
+            heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_DIRTY_REGIONS;
+         }
+
+         //
+         // Prefer individual slice buffers when possible
+         //
+         if (pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags &
+            D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE)
+         {
+            heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS;
+         }
+         else if (pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags &
+            D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE)
+         {
+            heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_SUBREGION_NOTIFICATION_SINGLE_BUFFER;
+         }
+
+         D3D12_VIDEO_ENCODER_HEAP_DESC1 heapDesc1 = {
+            pD3D12Enc->m_NodeMask,
+            heapFlags,
+            pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
+            d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
+            d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
+            // resolution list count
+            1,
+            // resolution list
+            &pD3D12Enc->m_currentEncodeConfig.m_currentResolution,
+            // UINT Pow2DownscaleFactor
+            0,
+         };
+
+         // Create encoder heap
+         pD3D12Enc->m_spVideoEncoderHeap.Reset();
+         ComPtr<ID3D12VideoEncoderHeap1> spVideoEncoderHeap1;
+         hr = spVideoDevice4->CreateVideoEncoderHeap1(&heapDesc1,
+                                                              IID_PPV_ARGS(spVideoEncoderHeap1.GetAddressOf()));
+         if (SUCCEEDED(hr))
+         {
+            hr = spVideoEncoderHeap1->QueryInterface(IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf())); 
+         }
       }
-      else if (pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags &
-         D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE)
+      else
+#else // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
       {
-         heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_SUBREGION_NOTIFICATION_SINGLE_BUFFER;
+         D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
+                                                   D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE,
+                                                   pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
+                                                   d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
+                                                   d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
+                                                   // resolution list count
+                                                   1,
+                                                   // resolution list
+                                                   &pD3D12Enc->m_currentEncodeConfig.m_currentResolution };
+
+         // Create encoder heap
+         pD3D12Enc->m_spVideoEncoderHeap.Reset();
+         hr = pD3D12Enc->m_spD3D12VideoDevice->CreateVideoEncoderHeap(&heapDesc,
+                                                                              IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf()));
       }
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
-      D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
-                                                 heapFlags,
-#else
-      D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
-                                                 D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE,
-#endif
-                                                 pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
-                                                 d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
-                                                 d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
-                                                 // resolution list count
-                                                 1,
-                                                 // resolution list
-                                                 &pD3D12Enc->m_currentEncodeConfig.m_currentResolution };
-
-      // Create encoder heap
-      pD3D12Enc->m_spVideoEncoderHeap.Reset();
-      HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CreateVideoEncoderHeap(&heapDesc,
-                                                                           IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf()));
       if (FAILED(hr)) {
          debug_printf("CreateVideoEncoderHeap failed with HR %x\n", hr);
          return false;
@@ -958,34 +994,32 @@ d3d12_video_encoder_get_current_slice_param_settings(struct d3d12_video_encoder 
    return subregionData;
 }
 
-D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA
-d3d12_video_encoder_get_current_picture_param_settings(struct d3d12_video_encoder *pD3D12Enc)
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1
+d3d12_video_encoder_get_current_picture_param_settings1(struct d3d12_video_encoder *pD3D12Enc)
 {
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 curPicParamsData = {};
    switch (codec) {
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
-         D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA curPicParamsData = {};
          curPicParamsData.pH264PicData = &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_H264PicData;
          curPicParamsData.DataSize     = sizeof(pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_H264PicData);
-         return curPicParamsData;
       } break;
 #endif
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
-         return ConvertHEVCPicParamsFromProfile(pD3D12Enc->m_currentEncodeConfig.m_encoderProfileDesc.m_HEVCProfile,
-                                                &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_HEVCPicData);
+         curPicParamsData.pHEVCPicData  = &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_HEVCPicData;
+         curPicParamsData.DataSize      = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC2);
       } break;
 #endif
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
-         D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA curPicParamsData = {};
          curPicParamsData.pAV1PicData = &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData;
          curPicParamsData.DataSize     = sizeof(pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData);
-         return curPicParamsData;
       } break;
 #endif
       default:
@@ -993,6 +1027,44 @@ d3d12_video_encoder_get_current_picture_param_settings(struct d3d12_video_encode
          unreachable("Unsupported pipe_video_format");
       } break;
    }
+   return curPicParamsData;
+}
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
+D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA
+d3d12_video_encoder_get_current_picture_param_settings(struct d3d12_video_encoder *pD3D12Enc)
+{
+   enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA curPicParamsData = {};
+   switch (codec) {
+#if VIDEO_CODEC_H264ENC
+      case PIPE_VIDEO_FORMAT_MPEG4_AVC:
+      {
+         curPicParamsData.pH264PicData = &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_H264PicData;
+         curPicParamsData.DataSize     = sizeof(pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_H264PicData);
+      } break;
+#endif
+#if VIDEO_CODEC_H265ENC
+      case PIPE_VIDEO_FORMAT_HEVC:
+      {
+         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC2 binary-compatible with D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC
+         curPicParamsData.pHEVCPicData  = reinterpret_cast<D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC*>(&pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_HEVCPicData);
+         curPicParamsData.DataSize      = sizeof(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC);
+      } break;
+#endif
+#if VIDEO_CODEC_AV1ENC
+      case PIPE_VIDEO_FORMAT_AV1:
+      {
+         curPicParamsData.pAV1PicData = &pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData;
+         curPicParamsData.DataSize     = sizeof(pD3D12Enc->m_currentEncodeConfig.m_encoderPicParamsDesc.m_AV1PicData);
+      } break;
+#endif
+      default:
+      {
+         unreachable("Unsupported pipe_video_format");
+      } break;
+   }
+   return curPicParamsData;
 }
 
 D3D12_VIDEO_ENCODER_RATE_CONTROL
@@ -3166,6 +3238,18 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
       IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf())))) {
 
+      // Update current frame pic params state after reconfiguring above.
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 currentPicParams1 =
+         d3d12_video_encoder_get_current_picture_param_settings1(pD3D12Enc);
+
+      if (!pD3D12Enc->m_upDPBManager->get_current_frame_picture_control_data1(currentPicParams1)) {
+         debug_printf("[d3d12_video_encoder_encode_bitstream] get_current_frame_picture_control_data1 failed!\n");
+         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+         pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+         assert(false);
+         return;
+      }
+
       std::vector<D3D12_RESOURCE_BARRIER> pResolveInputDataBarriers;
       D3D12_VIDEO_ENCODER_DIRTY_REGIONS dirtyRegions = { };
       dirtyRegions.MapSource = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapSource;
@@ -3307,7 +3391,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             ResolveInputData.MotionVectors.pMotionVectorMapsSubresources = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsSubresources;
             ResolveInputData.MotionVectors.pMotionVectorMapsMetadataSubresources = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataSubresources;
             ResolveInputData.MotionVectors.MotionUnitPrecision = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.MotionUnitPrecision;
-            ResolveInputData.MotionVectors.PictureControlConfiguration = currentPicParams;
+            ResolveInputData.MotionVectors.PictureControlConfiguration = currentPicParams1;
 
             D3D12_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT_INPUT_ARGUMENTS resolveInputParamLayoutInput =
             {
@@ -3377,13 +3461,13 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode,
          d3d12_video_encoder_get_current_slice_param_settings(pD3D12Enc),
          d3d12_video_encoder_get_current_gop_desc(pD3D12Enc) },
-         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC/D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
+         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
          { // uint32_t IntraRefreshFrameIndex;
          pD3D12Enc->m_currentEncodeConfig.m_IntraRefreshCurrentFrameIndex,
          // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAGS Flags;
          picCtrlFlags,
-         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA PictureControlCodecData;
-         currentPicParams,
+         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 PictureControlCodecData;
+         currentPicParams1,
          // D3D12_VIDEO_ENCODE_REFERENCE_FRAMES ReferenceFrames;
          referenceFramesDescriptor,
             // D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS MotionVectors;
@@ -3392,6 +3476,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             dirtyRegions,
             // D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap;
             QuantizationTextureMap,
+            // D3D12_VIDEO_ENCODER_FRAME_ANALYSIS FrameAnalysis;
+            { },
          },
          pInputVideoD3D12Res,
          inputVideoD3D12Subresource,
@@ -3576,7 +3662,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          // D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE
          reconPicOutputTextureDesc,
          // D3D12_VIDEO_ENCODER_ENCODE_OPERATION_METADATA_BUFFER
-         { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 }
+         { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 },
+         // D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE FrameAnalysisReconstructedPicture;
+         {},
       };
 
       debug_printf("DX12 EncodeFrame submission fenceValue %" PRIu64 " current_metadata_slot %" PRIu64 " - POC %d picture_type %s LayoutMode %d SlicesCount %d IRMode %d IRIndex %d\n",
@@ -3589,9 +3677,13 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                   static_cast<uint32_t>(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_IntraRefresh.Mode),
                   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_IntraRefreshCurrentFrameIndex);
 
+
+      ComPtr<ID3D12VideoEncoderHeap1> spVideoEncoderHeap1;
+      pD3D12Enc->m_spVideoEncoderHeap->QueryInterface(IID_PPV_ARGS(spVideoEncoderHeap1.GetAddressOf()));
+
       // Record EncodeFrame
       spEncodeCommandList4->EncodeFrame1(pD3D12Enc->m_spVideoEncoder.Get(),
-                                                   pD3D12Enc->m_spVideoEncoderHeap.Get(),
+                                                   spVideoEncoderHeap1.Get(),
                                                    &inputStreamArguments,
                                                    &outputStreamArguments);
 
@@ -3661,6 +3753,10 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          d12_gpu_stats_satd_map,
          // ID3D12Resource *pOutputBitAllocationMap;
          d12_gpu_stats_rc_bitallocation_map,
+         // D3D12_VIDEO_ENCODER_ENCODE_OPERATION_METADATA_BUFFER ResolvedFramePSNRData;
+         {},
+         // D3D12_VIDEO_ENCODER_ENCODE_OPERATION_METADATA_BUFFER ResolvedSubregionsPSNRData;
+         {},
       };
 
       spEncodeCommandList4->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
@@ -3728,7 +3824,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode,
             d3d12_video_encoder_get_current_slice_param_settings(pD3D12Enc),
             d3d12_video_encoder_get_current_gop_desc(pD3D12Enc) },
-         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC/D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
+         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC
          { // uint32_t IntraRefreshFrameIndex;
             pD3D12Enc->m_currentEncodeConfig.m_IntraRefreshCurrentFrameIndex,
             // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAGS Flags;

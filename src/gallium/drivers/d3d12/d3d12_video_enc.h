@@ -296,7 +296,11 @@ struct D3D12EncodeConfiguration
    union
    {
       D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_H264 m_H264PicData;
-      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC1 m_HEVCPicData;
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC2 m_HEVCPicData;
+#else
+      D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC m_HEVCPicData;
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
       D3D12_VIDEO_ENCODER_AV1_PICTURE_CONTROL_CODEC_DATA m_AV1PicData;
    } m_encoderPicParamsDesc = {};
 
@@ -364,7 +368,7 @@ struct D3D12EncodeConfiguration
             std::vector<ID3D12Resource*> ppMotionVectorMapsMetadata;
             UINT*            pMotionVectorMapsMetadataSubresources;
             D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION MotionUnitPrecision;
-            D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA PictureControlConfiguration;
+            D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 PictureControlConfiguration;
             D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutMotionVectors;
          } MapInfo;
       };
@@ -536,7 +540,7 @@ struct d3d12_video_encoder
       // we need to keep a reference alive to the ones that
       // are currently in-flight
       ComPtr<ID3D12VideoEncoder> m_spEncoder;
-      ComPtr<ID3D12VideoEncoderHeap> m_spEncoderHeap;
+      ComPtr<ID3D12VideoEncoderHeap>        m_spEncoderHeap;
       std::shared_ptr<d3d12_video_dpb_storage_manager_interface> m_References;
 
       ComPtr<ID3D12CommandAllocator> m_spCommandAllocator;
@@ -583,6 +587,10 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
                                                 struct pipe_picture_desc *  picture);
 D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA
 d3d12_video_encoder_get_current_picture_param_settings(struct d3d12_video_encoder *pD3D12Enc);
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1
+d3d12_video_encoder_get_current_picture_param_settings1(struct d3d12_video_encoder *pD3D12Enc);
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 D3D12_VIDEO_ENCODER_LEVEL_SETTING
 d3d12_video_encoder_get_current_level_desc(struct d3d12_video_encoder *pD3D12Enc);
 D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION

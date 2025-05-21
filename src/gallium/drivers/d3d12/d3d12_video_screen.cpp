@@ -1091,6 +1091,12 @@ get_gpu_output_stats_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionI
       {0u, 0u},
       // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC EncoderOutputMetadataBitAllocationMapTextureDimensions; // output
       {0u, 0u},
+      // UINT EncoderOutputMetadataFramePSNRComponentsNumber;                                                // output
+      0u,
+      // UINT EncoderOutputMetadataSubregionsPSNRComponentsNumber;                                           // output
+      0u,
+      // UINT EncoderOutputMetadataSubregionsPSNRResolvedMetadataBufferSize;                                 // output
+      0u,
    };
 
    if (SUCCEEDED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1, &capStatsResourceReqs, sizeof(capStatsResourceReqs))))
@@ -1395,6 +1401,21 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
       case PIPE_VIDEO_PROFILE_HEVC_MAIN_422:
       case PIPE_VIDEO_PROFILE_HEVC_MAIN10_422:
       {
+
+         bool bRuntimeSupportsProfile = true;
+         if ((profile != PIPE_VIDEO_PROFILE_HEVC_MAIN) &&
+             (profile != PIPE_VIDEO_PROFILE_HEVC_MAIN_10))
+         {
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+            // Video encode support in underlying d3d12 device needs ID3D12VideoDevice4
+            // for this HEVC 422/444 d3d12 gallium driver implementation
+            ComPtr<ID3D12VideoDevice4> spD3D12VideoDevice4;
+            bRuntimeSupportsProfile = SUCCEEDED(spD3D12VideoDevice->QueryInterface(IID_PPV_ARGS(spD3D12VideoDevice4.GetAddressOf())));
+#else
+            bRuntimeSupportsProfile = false;
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+         }
+
          D3D12_VIDEO_ENCODER_PROFILE_DESC profDesc = {};
          D3D12_VIDEO_ENCODER_PROFILE_HEVC profHEVC =
             d3d12_video_encoder_convert_profile_to_d3d12_enc_profile_hevc(profile);
@@ -1410,11 +1431,11 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
          maxLvl.pHEVCLevelSetting = &maxLvlSettingHEVC;
          maxLvl.DataSize = sizeof(maxLvlSettingHEVC);
 
-         if (d3d12_video_encode_max_supported_level_for_profile(codecDesc,
-                                                                profDesc,
-                                                                minLvl,
-                                                                maxLvl,
-                                                                spD3D12VideoDevice.Get())) {
+         if (bRuntimeSupportsProfile && d3d12_video_encode_max_supported_level_for_profile(codecDesc,
+                                                                                           profDesc,
+                                                                                           minLvl,
+                                                                                           maxLvl,
+                                                                                           spD3D12VideoDevice.Get())) {
             d3d12_video_encoder_convert_from_d3d12_level_hevc(maxLvlSettingHEVC.Level, maxLvlSpec);
 
             D3D12_VIDEO_ENCODER_PROFILE_DESC d3d12_profile;
