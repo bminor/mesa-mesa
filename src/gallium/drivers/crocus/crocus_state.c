@@ -3242,7 +3242,7 @@ crocus_set_sample_mask(struct pipe_context *ctx, unsigned sample_mask)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
 
-   /* We only support 16x MSAA, so we have 16 bits of sample maks.
+   /* We only support 8x MSAA, so we have 8 bits of sample maks.
     * st/mesa may pass us 0xffffffff though, meaning "enable all samples".
     */
    ice->state.sample_mask = sample_mask & 0xff;
