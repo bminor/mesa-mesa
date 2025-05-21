@@ -743,6 +743,13 @@ struct radeon_winsys {
                        const struct pipe_resource *tex, uint64_t flags,
                        unsigned bpe, enum radeon_surf_mode mode, struct radeon_surf *surf);
 
+   uint64_t (*surface_offset_from_coord)(struct radeon_winsys *rws,
+                                         const struct radeon_info *info,
+                                         const struct radeon_surf *surf,
+                                         const struct pipe_resource *tex,
+                                         unsigned level, unsigned x, unsigned y,
+                                         unsigned layer);
+
    uint64_t (*query_value)(struct radeon_winsys *ws, enum radeon_value_id value);
 
    bool (*read_registers)(struct radeon_winsys *ws, unsigned reg_offset, unsigned num_registers,
