@@ -1491,6 +1491,12 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    if (dmabuf) {
       off_t mmap_size = lseek(fd, 0, SEEK_END);
+      if (mmap_size < 0) {
+         free(alloc);
+         *ptr = NULL;
+         return false;
+      }
+
       lseek(fd, 0, SEEK_SET);
       void *cpu_addr = mmap(0, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
       if (cpu_addr == MAP_FAILED) {
