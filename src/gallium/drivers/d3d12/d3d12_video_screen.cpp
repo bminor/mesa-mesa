@@ -661,7 +661,7 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
          /* Only read from codecSupport.pHEVCSupport in this case (union of pointers definition) */
          assert(codecSupport.pHEVCSupport);
          cap_allocations.hevcConfig = {
-            D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_NONE,
+            D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_DISABLE_LOOP_FILTER_ACROSS_SLICES,
             codecSupport.pHEVCSupport->MinLumaCodingUnitSize,
             codecSupport.pHEVCSupport->MaxLumaCodingUnitSize,
             codecSupport.pHEVCSupport->MinLumaTransformUnitSize,
