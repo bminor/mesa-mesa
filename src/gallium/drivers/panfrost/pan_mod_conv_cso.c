@@ -449,7 +449,7 @@ panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
 {
    struct pipe_context *pctx = &ctx->base;
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
-   bool tiled = rsrc->image.props.modifier & AFBC_FORMAT_MOD_TILED;
+   bool tiled = rsrc->modifier & AFBC_FORMAT_MOD_TILED;
    struct pan_mod_convert_shader_key key = {
       .bpp = util_format_get_blocksizebits(rsrc->base.format),
       .align = align,

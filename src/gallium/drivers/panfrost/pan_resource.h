@@ -61,6 +61,10 @@ struct panfrost_resource {
    /* Description of the resource layout */
    struct pan_image image;
 
+   /* In case of emulated modifiers, the image.props.modifier won't match this
+    * modifier. */
+   uint64_t modifier;
+
    struct panfrost_bo *bo;
 
    struct {

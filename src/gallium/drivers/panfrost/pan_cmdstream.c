@@ -1697,7 +1697,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
    so->texture_bo = prsrc->image.data.base;
    so->texture_size = prsrc->image.layout.data_size_B;
-   so->modifier = prsrc->image.props.modifier;
+   so->modifier = prsrc->modifier;
 
    /* MSAA only supported for 2D textures */
 
@@ -1820,7 +1820,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       util_format_description(format);
 
    if ((device->debug & PAN_DBG_YUV) && pan_format_is_yuv(format) &&
-       !(is_shadow && pan_format_supports_mtk_tiled(format))) {
+       !(is_shadow && panfrost_format_supports_mtk_tiled(format))) {
       if (desc->layout == UTIL_FORMAT_LAYOUT_SUBSAMPLED) {
          iview.swizzle[1] = PIPE_SWIZZLE_0;
          iview.swizzle[2] = PIPE_SWIZZLE_1;
@@ -1846,7 +1846,7 @@ panfrost_update_sampler_view(struct panfrost_sampler_view *view,
    struct panfrost_resource *rsrc = pan_resource(view->base.texture);
    if (view->texture_bo != rsrc->image.data.base ||
        view->texture_size != rsrc->image.layout.data_size_B ||
-       view->modifier != rsrc->image.props.modifier) {
+       view->modifier != rsrc->modifier) {
       panfrost_bo_unreference(view->state.bo);
       panfrost_create_sampler_view_bo(view, pctx, &rsrc->base);
    }

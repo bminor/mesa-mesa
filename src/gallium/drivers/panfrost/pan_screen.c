@@ -275,42 +275,60 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
    bool ytr = pan_afbc_can_ytr(format);
    bool tiled_afbc = pan_afbc_can_tile(dev->arch);
    bool afrc = allow_afrc && dev->has_afrc && pan_format_supports_afrc(format);
-   PAN_SUPPORTED_MODIFIERS(supported_mods);
-
+   PANFROST_EMULATED_MODIFIERS(emulated_mods);
+   PAN_SUPPORTED_MODIFIERS(native_mods);
    unsigned count = 0;
 
-   for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
-      if (drm_is_afbc(supported_mods[i])) {
+   for (unsigned i = 0; i < ARRAY_SIZE(native_mods); ++i) {
+      if (drm_is_afbc(native_mods[i])) {
          if (!afbc)
             continue;
 
-         if ((supported_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
-             !pan_afbc_can_split(dev->arch, format, supported_mods[i]))
+         if ((native_mods[i] & AFBC_FORMAT_MOD_SPLIT) &&
+             !pan_afbc_can_split(dev->arch, format, native_mods[i]))
             continue;
 
-         if ((supported_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
+         if ((native_mods[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
             continue;
 
-         if ((supported_mods[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
+         if ((native_mods[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
             continue;
       }
 
-      if (drm_is_afrc(supported_mods[i]) && !afrc)
+      if (drm_is_afrc(native_mods[i]) && !afrc)
          continue;
 
-      if (drm_is_mtk_tiled(supported_mods[i]) &&
-          !pan_format_supports_mtk_tiled(format))
+      if (drm_is_mtk_tiled(native_mods[i]) &&
+          !panfrost_format_supports_mtk_tiled(format))
          continue;
 
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&
-          test_modifier != supported_mods[i])
+          test_modifier != native_mods[i])
          continue;
 
       if (max > (int)count) {
-         modifiers[count] = supported_mods[i];
+         modifiers[count] = native_mods[i];
 
          if (external_only)
-            external_only[count] = drm_is_mtk_tiled(modifiers[count]);
+            external_only[count] = false;
+      }
+      count++;
+   }
+
+   for (unsigned i = 0; i < ARRAY_SIZE(emulated_mods); ++i) {
+      if (drm_is_mtk_tiled(emulated_mods[i]) &&
+          !panfrost_format_supports_mtk_tiled(format))
+         continue;
+
+      if (test_modifier != DRM_FORMAT_MOD_INVALID &&
+          test_modifier != emulated_mods[i])
+         continue;
+
+      if (max > (int)count) {
+         modifiers[count] = emulated_mods[i];
+
+         if (external_only)
+            external_only[count] = true;
       }
       count++;
    }

@@ -28,6 +28,8 @@
 
 #include "panfrost/util/pan_ir.h"
 
+#include "drm-uapi/drm_fourcc.h"
+
 struct panfrost_context;
 struct panfrost_resource;
 struct panfrost_screen;
@@ -83,5 +85,41 @@ void panfrost_afbc_context_destroy(struct panfrost_context *ctx);
 struct pan_mod_convert_shader_data *
 panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
                                  struct panfrost_resource *rsrc, unsigned align);
+
+#define drm_is_mtk_tiled(mod)                                                  \
+   ((mod >> 52) == (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))
+
+/* check for whether a format can be used with MTK_16L32S format */
+
+static inline bool
+panfrost_format_supports_mtk_tiled(enum pipe_format format)
+{
+   switch (format) {
+   case PIPE_FORMAT_NV12:
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_UNORM:
+   case PIPE_FORMAT_R8G8_UNORM:
+      return true;
+   default:
+      return false;
+   }
+}
+
+#define PANFROST_EMULATED_MODIFIERS(__name)                                    \
+   static const uint64_t __name[] = {                                          \
+      DRM_FORMAT_MOD_MTK_16L_32S_TILE,                                         \
+   }
+
+static inline bool panfrost_is_emulated_mod(uint64_t mod)
+{
+   PANFROST_EMULATED_MODIFIERS(emulated_mods);
+
+   for (unsigned i = 0; i < ARRAY_SIZE(emulated_mods); i++) {
+      if (emulated_mods[i] == mod)
+         return true;
+   }
+
+   return false;
+}
 
 #endif
