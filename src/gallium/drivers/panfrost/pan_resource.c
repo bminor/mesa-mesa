@@ -1469,7 +1469,7 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
    if (template.next) {
       struct pipe_resource second_template = *template.next;
       bool fix_stride;
-      assert(drm_is_mtk_tiled(rsrc->base.format, rsrc->image.layout.modifier));
+      assert(drm_is_mtk_tiled(rsrc->image.layout.modifier));
       /* fix up the stride */
       switch (rsrc->base.format) {
       case PIPE_FORMAT_R8_G8B8_420_UNORM:
@@ -1529,8 +1529,7 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
                      util_num_layers(&rsrc->base, i), &blit.dst.box);
             blit.src.box = blit.dst.box;
 
-            if (drm_is_mtk_tiled(rsrc->base.format,
-                                 rsrc->image.layout.modifier))
+            if (drm_is_mtk_tiled(rsrc->image.layout.modifier))
                screen->vtbl.mtk_detile(ctx, &blit);
             else
                panfrost_blit_no_afbc_legalization(&ctx->base, &blit);
@@ -1582,7 +1581,7 @@ pan_legalize_format(struct panfrost_context *ctx,
 
    if (!drm_is_afbc(rsrc->image.layout.modifier) &&
        !drm_is_afrc(rsrc->image.layout.modifier) &&
-       !drm_is_mtk_tiled(old_format, rsrc->image.layout.modifier))
+       !drm_is_mtk_tiled(rsrc->image.layout.modifier))
       return;
 
    if (drm_is_afbc(rsrc->image.layout.modifier)) {
@@ -1594,7 +1593,7 @@ pan_legalize_format(struct panfrost_context *ctx,
       struct pan_afrc_format_info new_info =
          panfrost_afrc_get_format_info(new_format);
       compatible = !memcmp(&old_info, &new_info, sizeof(old_info));
-   } else if (drm_is_mtk_tiled(old_format, rsrc->image.layout.modifier)) {
+   } else if (drm_is_mtk_tiled(rsrc->image.layout.modifier)) {
       compatible = false;
       dest_modifier = DRM_FORMAT_MOD_LINEAR;
    }

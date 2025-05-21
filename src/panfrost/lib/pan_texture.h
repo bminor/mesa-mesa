@@ -446,9 +446,8 @@ bool panfrost_format_supports_mtk_tiled(enum pipe_format format);
    ((mod >> 52) ==                                                             \
     (DRM_FORMAT_MOD_ARM_TYPE_AFRC | (DRM_FORMAT_MOD_VENDOR_ARM << 4)))
 
-#define drm_is_mtk_tiled(format, mod)                                               \
-    ((mod >> 52) ==                                                             \
-     (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))
+#define drm_is_mtk_tiled(mod)                                                  \
+   ((mod >> 52) == (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))
 
 struct pan_image_explicit_layout {
    unsigned offset;

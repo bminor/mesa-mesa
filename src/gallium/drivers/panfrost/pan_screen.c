@@ -274,7 +274,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       if (drm_is_afrc(pan_best_modifiers[i]) && !afrc)
          continue;
 
-      if (drm_is_mtk_tiled(format, pan_best_modifiers[i]) &&
+      if (drm_is_mtk_tiled(pan_best_modifiers[i]) &&
           !panfrost_format_supports_mtk_tiled(format))
          continue;
 
@@ -286,7 +286,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          modifiers[count] = pan_best_modifiers[i];
 
          if (external_only)
-            external_only[count] = drm_is_mtk_tiled(format, modifiers[count]);
+            external_only[count] = drm_is_mtk_tiled(modifiers[count]);
       }
       count++;
    }
