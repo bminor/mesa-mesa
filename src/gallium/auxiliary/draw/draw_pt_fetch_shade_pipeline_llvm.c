@@ -815,6 +815,7 @@ llvm_middle_end_linear_run_elts(struct draw_pt_middle_end *middle,
                                 unsigned start,
                                 unsigned count,
                                 const uint16_t *draw_elts,
+                                unsigned draw_start,
                                 unsigned draw_count,
                                 unsigned prim_flags)
 {
@@ -828,7 +829,7 @@ llvm_middle_end_linear_run_elts(struct draw_pt_middle_end *middle,
    fetch_info.elts = NULL;
 
    prim_info.linear = false;
-   prim_info.start = start - fpme->draw->start_index;
+   prim_info.start = draw_start - fpme->draw->start_index;
    prim_info.count = draw_count;
    prim_info.elts = draw_elts;
    prim_info.prim = prim_type(fpme->input_prim, prim_flags);

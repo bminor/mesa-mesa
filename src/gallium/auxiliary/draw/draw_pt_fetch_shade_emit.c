@@ -297,6 +297,7 @@ fse_run_linear_elts(struct draw_pt_middle_end *middle,
                     unsigned start,
                     unsigned count,
                     const uint16_t *draw_elts,
+                    unsigned draw_start,
                     unsigned draw_count,
                     unsigned prim_flags)
 {
