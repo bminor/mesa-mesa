@@ -2079,7 +2079,8 @@ cs_match_end(struct cs_builder *b, struct cs_match *match)
 static inline void
 cs_nop(struct cs_builder *b)
 {
-   cs_emit(b, NOP, I) {};
+   cs_emit(b, NOP, I)
+      ;
 }
 
 struct cs_function_ctx {
