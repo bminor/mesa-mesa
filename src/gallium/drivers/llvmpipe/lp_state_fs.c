@@ -4730,7 +4730,7 @@ llvmpipe_update_fs(struct llvmpipe_context *lp)
                          "\t%u instrs,\t%u instrs/variant\n",
                          shader->variants_cached,
                          lp->nr_fs_variants, lp->nr_fs_instrs,
-                         lp->nr_fs_instrs / lp->nr_fs_variants);
+                         lp->nr_fs_variants ? lp->nr_fs_instrs / lp->nr_fs_variants : 0);
          }
 
          /*
