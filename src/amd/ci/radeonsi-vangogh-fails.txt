@@ -1,11 +1,3 @@
-KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup,Fail
-KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase,Fail
-KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency,Fail
-
 spec@!opengl 1.0@gl-1.0-user-clip-all-planes,Fail
 spec@!opengl 1.0@rasterpos,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail

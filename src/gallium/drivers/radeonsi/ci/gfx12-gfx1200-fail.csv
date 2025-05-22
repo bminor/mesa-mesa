@@ -31,10 +31,6 @@ KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment,Fail
 ## https://gitlab.freedesktop.org/mesa/mesa/-/issues/636
-KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase,Fail
-KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency,Fail
 KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-interleaved-attribs,Fail
 KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-separate-attribs,Fail
 KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-multiple-buffers-per-stream,Fail
