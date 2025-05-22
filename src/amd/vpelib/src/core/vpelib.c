@@ -201,7 +201,7 @@ static enum vpe_status vpe_build_set_predication(uint64_t buf_cpu_va,
     uint32_t high_condition_addr =
         (condition_address & VPE_PREDICATION_HIGH_ADDR_MASK) >> VPE_PREDICATION_ADDR_SHIFT;
 
-    uint32_t number_of_dwords = (execution_count + sizeof(uint32_t) - 1) / sizeof(uint32_t);
+    uint32_t number_of_dwords = int_divide_with_ceil(execution_count, sizeof(uint32_t));
 
     *buffer = header;
     buffer++;
