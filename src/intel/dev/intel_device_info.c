@@ -1994,7 +1994,16 @@ intel_device_info_wa_stepping(struct intel_device_info *devinfo)
     * 'compiler_field' in intel_device_info.py
     */
 
-   if (devinfo->platform == INTEL_PLATFORM_BMG) {
+   if (devinfo->platform == INTEL_PLATFORM_PTL) {
+      switch (devinfo->revision) {
+      case 0:
+         return INTEL_STEPPING_A0;
+      case 4:
+         return INTEL_STEPPING_B0;
+      default:
+         return INTEL_STEPPING_RELEASE;
+      }
+   } else if (devinfo->platform == INTEL_PLATFORM_BMG) {
       switch (devinfo->revision) {
       case 0:
          return INTEL_STEPPING_A0;
