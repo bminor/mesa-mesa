@@ -3494,9 +3494,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
       std::vector<D3D12_RESOURCE_BARRIER> pSlicedEncodingExtraBarriers;
 
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes.clear();
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets.clear();
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences.clear();
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences.clear();
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.clear();
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes.clear();
@@ -3543,15 +3540,15 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          //
          // Create sizes and offsets results buffers
          //
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes.resize(num_slice_objects, 0u);
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets.resize(num_slice_objects, 0u);
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes.resize(num_slice_objects, {});
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets.resize(num_slice_objects, {});
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences.resize(num_slice_objects, NULL);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences.resize(num_slice_objects, {});
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.resize(num_slice_objects, 1u);
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.resize(num_slice_objects, pD3D12Enc->m_fenceValue);
 
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes.resize(num_slice_objects, 0u);
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets.resize(num_slice_objects, 0u);
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFences.resize(num_slice_objects, 0u);
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes.resize(num_slice_objects, NULL);
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets.resize(num_slice_objects, NULL);
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFences.resize(num_slice_objects, NULL);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes.resize(num_slice_objects, 0u);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets.resize(num_slice_objects, 0u);
          D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
