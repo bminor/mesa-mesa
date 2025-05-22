@@ -26974,7 +26974,7 @@
         "description": "radeonsi: allow sparse depth textures",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
