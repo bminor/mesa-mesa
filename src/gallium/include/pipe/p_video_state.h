@@ -610,6 +610,64 @@ struct pipe_enc_move_info
    bool overlapping_rects;
 };
 
+struct pipe_enc_two_pass_encoder_config
+{
+   /*
+    * Enables two pass encoding for all supported
+      frames during the lifetime of the encoder
+   */
+   bool enable;
+
+   /*
+    * Indicates the downscaling factor for the first pass
+    *
+    * Please check pipe_cap_two_pass for the supported downscaling factors
+    *
+    * pow2_downscale_factor | 1st pass width   | 1st pass height
+    * 0                     | InputWidth       | InputHeight
+    * 1                     | InputWidth / 2   | InputHeight / 2
+    * 2                     | InputWidth / 4   | InputHeight / 4
+    * n                     | InputWidth / 2^n | InputHeight / 2^n
+   */
+   unsigned pow2_downscale_factor;
+
+   /*
+   * When set, the first pass (low resolution) dpb texture output
+   * will not be written by the driver. It is responsability of the
+   * app to downscale the 2nd pass (full resolution) dpb recon texture into
+   * a downscaled recon dpb texture to be used as a downscaled dpb
+   * reference in future encoded frames.
+   *
+   * When not set, the driver writes the 1st pass output recon dpb
+   * texture and that can be directly used as a downscaled dpb
+   * reference in future encoded frames.
+   *
+   * Please check pipe_cap_two_pass.supports_1pass_recon_writing_skip
+   */
+   bool skip_1st_dpb_texture;
+};
+
+/*
+ * Used when pipe_enc_two_pass_encoder_config
+ * is enabled in the encoder
+*/
+struct pipe_enc_two_pass_frame_config
+{
+   /*
+    * Downscaled version of the source buffer to be encoded
+    * input to the 1st encoder pass
+   */
+   struct pipe_video_buffer *downscaled_source;
+
+   /*
+    * Disabled two pass for this frame
+    *
+    * Requires pipe_cap_two_pass.supports_dynamic_1st_pass_skip
+    *
+   */
+   bool skip_1st_pass;
+};
+
 struct pipe_enc_raw_header
 {
    uint8_t type; /* nal_unit_type or obu_type */
@@ -849,6 +907,7 @@ struct pipe_h264_enc_dpb_entry
    uint32_t temporal_id;
    bool is_ltr;
    struct pipe_video_buffer *buffer;
+   struct pipe_video_buffer *downscaled_buffer; /* for two pass */
    bool evict;
    enum pipe_h2645_enc_picture_type picture_type;
 };
@@ -928,6 +987,8 @@ struct pipe_h264_enc_picture_desc
    uint8_t ref_list1[PIPE_H264_MAX_NUM_LIST_REF]; /* index in dpb, PIPE_H2645_LIST_REF_INVALID_ENTRY invalid */
 
    struct util_dynarray raw_headers; /* struct pipe_enc_raw_header */
+
+   struct pipe_enc_two_pass_frame_config twopass_frame_config;
 };
 
 struct pipe_h265_st_ref_pic_set
@@ -1264,6 +1325,7 @@ struct pipe_h265_enc_dpb_entry
    uint32_t temporal_id;
    bool is_ltr;
    struct pipe_video_buffer *buffer;
+   struct pipe_video_buffer *downscaled_buffer; /* for two pass */
    bool evict;
 };
 
@@ -1326,6 +1388,8 @@ struct pipe_h265_enc_picture_desc
    uint8_t ref_list1[PIPE_H265_MAX_NUM_LIST_REF]; /* index in dpb, PIPE_H2645_LIST_REF_INVALID_ENTRY invalid */
 
    struct util_dynarray raw_headers; /* struct pipe_enc_raw_header */
+
+   struct pipe_enc_two_pass_frame_config twopass_frame_config;
 };
 
 struct pipe_av1_enc_rate_control
@@ -2772,6 +2836,53 @@ union pipe_enc_cap_qpmap {
          by 2^log2_values_block_size
        */
       uint32_t log2_values_block_size: 4;
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_TWO_PASS */
+union pipe_enc_cap_two_pass {
+   struct {
+      /*
+       * Driver Output. Indicates support for setting pipe_enc_two_pass_encoder_config.enable
+       */
+      uint32_t supports_two_pass: 1;
+      /*
+       * Driver Output. Indicates minimum value supported for pipe_enc_two_pass_encoder_config.pow2_downscale_factor
+       */
+      uint32_t min_pow2_downscale_factor: 3;
+      /*
+       * Driver Output. Indicates maximum value supported for pipe_enc_two_pass_encoder_config.pow2_downscale_factor
+       */
+      uint32_t max_pow2_downscale_factor: 3;
+      /*
+       * Driver output. Indicates support for skipping the first pass
+       * dpb output generation by setting pipe_enc_two_pass_encoder_config.skip_1st_dpb_texture = true
+       * and instead having the caller externally
+       * downscaling the dpb textures from the 2nd pass recon dpb texture.
+       *
+       * Using external downscaling may provide better quality at a higher
+       * performance cost, apps can choose this as a trade-off.
+       *
+       * When this mode is enabled, the driver will only generate the 2nd pass recon
+       * if the frame is used as reference and the app will be responsible for
+       * generating the downscaled dpb texture from the 2nd pass recon dpb texture
+       * to pass to future frames that use the reference.
+       *
+       * If not supported, the 1st pass recon pic output will always
+       * be written by the driver
+       */
+      uint32_t supports_1pass_recon_writing_skip: 1;
+      /*
+       * Driver output. Indicates support for skipping the first pass
+       * on arbitrary frames by setting pipe_enc_two_pass_frame_config.skip_1st_pass = true
+       * in the picture params.
+       *
+       * If not supported, all supported frame types by the driver will have
+       * two pass enabled during the encoder lifetime, ignoring the value in
+       * pipe_enc_two_pass_frame_config.skip_1st_pass
+       */
+      uint32_t supports_dynamic_1st_pass_skip: 1;
    } bits;
   uint32_t value;
 };

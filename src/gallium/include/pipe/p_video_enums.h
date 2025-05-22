@@ -239,6 +239,10 @@ enum pipe_video_cap
     * Support for motion vector maps in encoder picture params pipe_enc_cap_motion_vector_map
     */
    PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS = 65,
+   /*
+    * Support for two pass encode in encoder picture params pipe_enc_cap_two_pass
+    */
+   PIPE_VIDEO_CAP_ENC_TWO_PASS = 66,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
