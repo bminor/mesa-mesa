@@ -371,6 +371,8 @@ pan_clump_format(enum pipe_format format)
       case PIPE_FORMAT_G8R8_B8R8_UNORM:
       case PIPE_FORMAT_R8B8_R8G8_UNORM:
       case PIPE_FORMAT_B8R8_G8R8_UNORM:
+      case PIPE_FORMAT_R8_G8B8_422_UNORM:
+      case PIPE_FORMAT_R8_B8G8_422_UNORM:
          return MALI_CLUMP_FORMAT_Y8_UV8_422;
       case PIPE_FORMAT_R8_G8B8_420_UNORM:
       case PIPE_FORMAT_R8_B8G8_420_UNORM:
@@ -558,7 +560,7 @@ pan_emit_iview_plane(const struct pan_image_view *iview,
          cfg.afbc.tiled_header = (props->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
          cfg.afbc.compression_mode =
-            pan_afbc_compression_mode(iview->format, 0);
+            pan_afbc_compression_mode(iview->format, plane_index);
          cfg.afbc.header_stride = layout->slices[level].afbc.header_size_B;
       } else if (afrc) {
 #if PAN_ARCH >= 10

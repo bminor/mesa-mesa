@@ -81,6 +81,21 @@ enum pan_afbc_mode {
    PAN_AFBC_MODE_R11G11B10,
    PAN_AFBC_MODE_S8,
 
+   /* YUV special modes */
+   PAN_AFBC_MODE_YUV420_6C8,
+   PAN_AFBC_MODE_YUV420_2C8,
+   PAN_AFBC_MODE_YUV420_1C8,
+   PAN_AFBC_MODE_YUV420_6C10,
+   PAN_AFBC_MODE_YUV420_2C10,
+   PAN_AFBC_MODE_YUV420_1C10,
+
+   PAN_AFBC_MODE_YUV422_4C8,
+   PAN_AFBC_MODE_YUV422_2C8,
+   PAN_AFBC_MODE_YUV422_1C8,
+   PAN_AFBC_MODE_YUV422_4C10,
+   PAN_AFBC_MODE_YUV422_2C10,
+   PAN_AFBC_MODE_YUV422_1C10,
+
    /* Sentintel signalling a format that cannot be compressed */
    PAN_AFBC_MODE_INVALID
 };
@@ -301,8 +316,28 @@ pan_afbc_unswizzled_format(unsigned arch, enum pipe_format format)
 static inline enum pan_afbc_mode
 pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
 {
-   /* Revisit when adding YUV support. */
-   assert(plane_idx == 0);
+   assert(plane_idx < util_format_get_num_planes(format));
+
+   switch (format) {
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+      return plane_idx == 0 ? PAN_AFBC_MODE_YUV420_1C8
+                            : PAN_AFBC_MODE_YUV420_2C8;
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+      return PAN_AFBC_MODE_YUV420_1C8;
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+      return plane_idx == 0 ? PAN_AFBC_MODE_YUV422_1C8
+                            : PAN_AFBC_MODE_YUV422_2C8;
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+      return plane_idx == 0 ? PAN_AFBC_MODE_YUV420_1C10
+                            : PAN_AFBC_MODE_YUV420_2C10;
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return plane_idx == 0 ? PAN_AFBC_MODE_YUV422_1C10
+                            : PAN_AFBC_MODE_YUV422_2C10;
+   default:
+      break;
+   }
 
    /* sRGB does not change the pixel format itself, only the
     * interpretation. The interpretation is handled by conversion hardware
@@ -454,6 +489,30 @@ pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
       return MALI_AFBC_COMPRESSION_MODE_R11G11B10;
    case PAN_AFBC_MODE_S8:
       return MALI_AFBC_COMPRESSION_MODE_S8;
+   case PAN_AFBC_MODE_YUV420_6C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_6C8;
+   case PAN_AFBC_MODE_YUV420_2C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_2C8;
+   case PAN_AFBC_MODE_YUV420_1C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_1C8;
+   case PAN_AFBC_MODE_YUV420_6C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_6C10;
+   case PAN_AFBC_MODE_YUV420_2C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_2C10;
+   case PAN_AFBC_MODE_YUV420_1C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV420_1C10;
+   case PAN_AFBC_MODE_YUV422_4C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_4C8;
+   case PAN_AFBC_MODE_YUV422_2C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_2C8;
+   case PAN_AFBC_MODE_YUV422_1C8:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_1C8;
+   case PAN_AFBC_MODE_YUV422_4C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_4C10;
+   case PAN_AFBC_MODE_YUV422_2C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_2C10;
+   case PAN_AFBC_MODE_YUV422_1C10:
+      return MALI_AFBC_COMPRESSION_MODE_YUV422_1C10;
    case PAN_AFBC_MODE_INVALID:
       unreachable("Invalid AFBC format");
    }
