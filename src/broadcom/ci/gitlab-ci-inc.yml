@@ -112,6 +112,14 @@
     - changes: *v3dv_file_list
       when: manual
 
+.v3d-v3dv-manual-rules:
+  stage: broadcom-nightly
+  extends: .no-auto-retry
+  rules:
+    - !reference [.test, rules]
+    - !reference [.v3d-manual-rules, rules]
+    - !reference [.v3dv-manual-rules, rules]
+
 # 8 devices (2023-12-18)
 .igalia-bcm2837-rpi-3-b:
   variables:

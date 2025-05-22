@@ -266,3 +266,34 @@ v3dv-rpi5-vk-full:arm64:
     # Keep 10 minutes for boot + setup + uploading the artifacts at the end
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
     DEQP_FRACTION: 1
+
+rpi3-skqp:arm64:
+  extends:
+    - .igalia-bcm2837-rpi-3-b
+    - .broadcom-test:arm64-gl
+    - .vc4-manual-rules
+  variables:
+    DEQP_SUITE: broadcom-rpi-skqp
+    HWCI_START_WESTON: 1
+
+rpi4-skqp:arm64:
+  extends:
+    - .igalia-bcm2711-rpi-4
+    - .broadcom-test:arm64-gl
+    # SKQP tests both the GL and VK drivers
+    - .v3d-v3dv-manual-rules
+  variables:
+    DEQP_SUITE: broadcom-rpi-skqp
+    HWCI_START_WESTON: 1
+    FLAKES_CHANNEL: "#videocore-ci"
+
+rpi5-skqp:arm64:
+  extends:
+    - .igalia-bcm2712-rpi-5
+    - .broadcom-test:arm64-gl
+    # SKQP tests both the GL and VK drivers
+    - .v3d-v3dv-manual-rules
+  variables:
+    DEQP_SUITE: broadcom-rpi-skqp
+    HWCI_START_WESTON: 1
+    FLAKES_CHANNEL: "#videocore-ci"
