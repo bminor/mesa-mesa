@@ -2186,7 +2186,10 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
          unreachable("Unexpected ES shader stage");
       }
 
-      if (pdev->info.gfx_level >= GFX12) {
+      if (stage == MESA_SHADER_MESH && pdev->info.mesh_fast_launch_2) {
+         /* Only VGPR0 is used for X/Y/Z local invocation ID */
+         gs_vgpr_comp_cnt = 0;
+      } else if (pdev->info.gfx_level >= GFX12) {
          if (info->gs.vertices_in >= 4) {
             gs_vgpr_comp_cnt = 2; /* VGPR2 contains offsets 3-5 */
          } else if (info->uses_prim_id ||
