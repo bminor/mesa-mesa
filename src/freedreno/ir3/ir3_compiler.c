@@ -99,6 +99,7 @@ static const nir_shader_compiler_options ir3_base_options = {
    .lower_unpack_unorm_4x8 = true,
    .lower_unpack_unorm_2x16 = true,
    .lower_pack_split = true,
+   .lower_pack_64_4x16 = true,
    .lower_to_scalar = true,
    .has_imul24 = true,
    .has_icsel_eqz32 = true,
