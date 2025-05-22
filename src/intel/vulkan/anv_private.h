@@ -1365,6 +1365,7 @@ struct anv_instance {
     bool                                        assume_full_subgroups_with_barrier;
     bool                                        assume_full_subgroups_with_shared_memory;
     bool                                        limit_trig_input_range;
+    bool                                        lower_terminate_to_discard;
     bool                                        sample_mask_out_opengl_behaviour;
     bool                                        force_filter_addr_rounding;
     bool                                        fp64_workaround_enabled;

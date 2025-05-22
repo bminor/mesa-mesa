@@ -50,6 +50,7 @@ static const driOptionDescription anv_dri_options[] = {
 
    DRI_CONF_SECTION_DEBUG
       DRI_CONF_ALWAYS_FLUSH_CACHE(false)
+      DRI_CONF_VK_LOWER_TERMINATE_TO_DISCARD(false)
       DRI_CONF_VK_WSI_FORCE_BGRA8_UNORM_FIRST(false)
       DRI_CONF_VK_WSI_FORCE_SWAPCHAIN_TO_CURRENT_EXTENT(false)
       DRI_CONF_VK_X11_IGNORE_SUBOPTIMAL(false)
@@ -211,6 +212,8 @@ anv_init_dri_options(struct anv_instance *instance)
                        "custom_border_colors_without_format");
     instance->vf_component_packing =
        driQueryOptionb(&instance->dri_options, "anv_vf_component_packing");
+    instance->lower_terminate_to_discard =
+       driQueryOptionb(&instance->dri_options, "vk_lower_terminate_to_discard");
 
     instance->stack_ids = driQueryOptioni(&instance->dri_options, "intel_stack_id");
     switch (instance->stack_ids) {

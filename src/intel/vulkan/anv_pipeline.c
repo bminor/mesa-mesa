@@ -76,6 +76,9 @@ anv_shader_stage_to_nir(struct anv_device *device,
 
       .min_ubo_alignment = ANV_UBO_ALIGNMENT,
       .min_ssbo_alignment = ANV_SSBO_ALIGNMENT,
+      .workarounds = {
+         .lower_terminate_to_discard = pdevice->instance->lower_terminate_to_discard,
+      },
    };
 
    nir_shader *nir;
@@ -642,6 +645,11 @@ anv_pipeline_hash_common(struct mesa_sha1 *ctx,
 
    const bool indirect_descriptors = device->physical->indirect_descriptors;
    _mesa_sha1_update(ctx, &indirect_descriptors, sizeof(indirect_descriptors));
+
+   const bool lower_terminate_to_discard =
+      device->physical->instance->lower_terminate_to_discard;
+   _mesa_sha1_update(ctx, &lower_terminate_to_discard,
+                     sizeof(lower_terminate_to_discard));
 
    const bool rba = device->robust_buffer_access;
    _mesa_sha1_update(ctx, &rba, sizeof(rba));
