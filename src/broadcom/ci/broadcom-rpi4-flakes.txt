@@ -139,3 +139,8 @@ dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r32g32b32a32_sfloa
 dEQP-VK.ssbo.layout.random.all_per_block_buffers.0
 
 api@clgetdeviceinfo
+
+arm32-KHR-GLES31.core.shader_image_load_store.advanced-copyImage-cs
+dEQP-VK.synchronization2.basic.timeline_semaphore.chain
+dEQP-VK.synchronization2.op.single_queue.binary_semaphore.write_ssbo_compute_read_vertex_input.buffer_262144_specialized_access_flag
+hiz@hiz-stencil-test-fbo-d24-s8

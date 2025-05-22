@@ -195,3 +195,7 @@ dEQP-VK.texture.shadow.cube.linear.less_d24_unorm_s8_uint
 dEQP-VK.texture.shadow.cube.nearest.less_d24_unorm_s8_uint
 dEQP-VK.texture.shadow.cube.nearest_mipmap_linear.not_equal_d24_unorm_s8_uint
 dEQP-VK.texture.shadow.cube.nearest_mipmap_nearest.not_equal_x8_d24_unorm_pack32
+
+dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
+spec@oes_texture_view@rendering-target
+spec@oes_texture_view@rendering-target@2D view rendering
