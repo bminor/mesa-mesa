@@ -345,9 +345,6 @@ bool brw_try_override_assembly(struct brw_codegen *p, int start_offset,
                                const char *identifier)
 {
    const char *read_path = getenv("INTEL_SHADER_ASM_READ_PATH");
-   if (!read_path) {
-      return false;
-   }
 
    char *name = ralloc_asprintf(NULL, "%s/%s.bin", read_path, identifier);
 

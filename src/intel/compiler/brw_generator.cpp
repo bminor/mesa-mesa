@@ -1403,6 +1403,20 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
       brw_dump_shader_bin(p->store, start_offset, p->next_insn_offset,
                           sha1buf);
 
+   const char *override_path = getenv("INTEL_SHADER_ASM_READ_PATH");
+   if (override_path && brw_try_override_assembly(p, start_offset, sha1buf)) {
+      fprintf(stderr, "Successfully overrode shader with sha1 %s\n", sha1buf);
+      /* disasm_info and stats are no longer valid as we gathered
+       * them based on the original shader.
+       */
+      if (debug_flag) {
+         fprintf(stderr, "Skipping disassembly and statistics "
+                 "output for this shader.\n\n");
+      }
+      ralloc_free(disasm_info);
+      return start_offset;
+   }
+
    if (unlikely(debug_flag)) {
       fprintf(stderr, "Native code for %s (src_hash 0x%08x) (sha1 %s)\n"
               "SIMD%d shader: %d instructions. %d loops. %u cycles. "
@@ -1423,14 +1437,8 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
               shader_stats.non_ssa_registers_after_nir,
               before_size, after_size,
               100.0f * (before_size - after_size) / before_size);
-
-      /* overriding the shader makes disasm_info invalid */
-      if (!brw_try_override_assembly(p, start_offset, sha1buf)) {
-         dump_assembly(p->store, start_offset, p->next_insn_offset,
-                       disasm_info, perf.block_latency);
-      } else {
-         fprintf(stderr, "Successfully overrode shader with sha1 %s\n\n", sha1buf);
-      }
+      dump_assembly(p->store, start_offset, p->next_insn_offset,
+                    disasm_info, perf.block_latency);
    }
    ralloc_free(disasm_info);
 #ifndef NDEBUG
