@@ -238,8 +238,6 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
                             nir_vec(b, src0, src0_comps));
 
       if (src1_comps > 0) {
-         while (src1_comps < 4)
-            PUSH(src1, nir_undef(b, 1, 32));
          nir_tex_instr_add_src(tex, nir_tex_src_backend2,
                                nir_vec(b, src1, src1_comps));
       }
