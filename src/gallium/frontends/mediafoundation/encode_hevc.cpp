@@ -304,6 +304,8 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    pDX12EncodeContext->longTermReferenceFrameInfo = cur_frame_desc->gop_info->long_term_reference_frame_info;
 
    pPicInfo->num_ref_idx_l0_active_minus1 = 0;
+   memset(&pPicInfo->ref_list0, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof(pPicInfo->ref_list0));
+   memset(&pPicInfo->ref_list1, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof(pPicInfo->ref_list1));
 
    if( ( pPicInfo->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P ) || ( pPicInfo->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B ) )
    {
