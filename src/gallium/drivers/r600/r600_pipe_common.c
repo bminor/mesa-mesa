@@ -622,7 +622,7 @@ bool r600_common_context_init(struct r600_common_context *rctx,
 	if (!rctx->b.const_uploader)
 		return false;
 
-	rctx->ctx = rctx->ws->ctx_create(rctx->ws, RADEON_CTX_PRIORITY_MEDIUM, false);
+	rctx->ctx = rctx->ws->ctx_create(rctx->ws, context_flags);
 	if (!rctx->ctx)
 		return false;
 

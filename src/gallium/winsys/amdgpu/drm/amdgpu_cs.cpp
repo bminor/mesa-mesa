@@ -247,31 +247,15 @@ amdgpu_cs_get_next_fence(struct radeon_cmdbuf *rcs)
 
 /* CONTEXTS */
 
-static uint32_t
-radeon_to_amdgpu_priority(enum radeon_ctx_priority radeon_priority)
-{
-   switch (radeon_priority) {
-   case RADEON_CTX_PRIORITY_REALTIME:
-      return AMDGPU_CTX_PRIORITY_VERY_HIGH;
-   case RADEON_CTX_PRIORITY_HIGH:
-      return AMDGPU_CTX_PRIORITY_HIGH;
-   case RADEON_CTX_PRIORITY_MEDIUM:
-      return AMDGPU_CTX_PRIORITY_NORMAL;
-   case RADEON_CTX_PRIORITY_LOW:
-      return AMDGPU_CTX_PRIORITY_LOW;
-   default:
-      unreachable("Invalid context priority");
-   }
-}
-
-static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
-                                                   enum radeon_ctx_priority priority,
-                                                   bool allow_context_lost)
+static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws, unsigned flags)
 {
    struct amdgpu_ctx *ctx = CALLOC_STRUCT(amdgpu_ctx);
    int r;
    struct amdgpu_bo_alloc_request alloc_buffer = {};
-   uint32_t amdgpu_priority = radeon_to_amdgpu_priority(priority);
+   assert(!(flags & PIPE_CONTEXT_REALTIME_PRIORITY)); /* not supported */
+   uint32_t amdgpu_priority = flags & PIPE_CONTEXT_HIGH_PRIORITY ? AMDGPU_CTX_PRIORITY_HIGH :
+                              flags & PIPE_CONTEXT_LOW_PRIORITY ? AMDGPU_CTX_PRIORITY_LOW :
+                                                                  AMDGPU_CTX_PRIORITY_NORMAL;
    ac_drm_device *dev;
    ac_drm_bo buf_handle;
 
@@ -280,8 +264,7 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
 
    ctx->aws = amdgpu_winsys(rws);
    ctx->reference.count = 1;
-   ctx->allow_context_lost = allow_context_lost;
-   ctx->priority = priority;
+   ctx->flags = flags;
 
    dev = ctx->aws->dev;
 
@@ -457,7 +440,7 @@ amdgpu_ctx_set_sw_reset_status(struct radeon_winsys_ctx *rwctx, enum pipe_reset_
 
    ctx->sw_status = status;
 
-   if (!ctx->allow_context_lost) {
+   if (!(ctx->flags & PIPE_CONTEXT_LOSE_CONTEXT_ON_RESET)) {
       va_list args;
 
       va_start(args, format);
@@ -939,7 +922,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    } else {
       switch (ip_type) {
       case AMD_IP_GFX:
-         if (ctx->priority >= RADEON_CTX_PRIORITY_HIGH)
+         if (ctx->flags & PIPE_CONTEXT_HIGH_PRIORITY)
             acs->queue_index = AMDGPU_QUEUE_GFX_HIGH_PRIO;
          else
             acs->queue_index = AMDGPU_QUEUE_GFX;

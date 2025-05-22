@@ -133,14 +133,6 @@ enum radeon_value_id
    RADEON_CS_THREAD_TIME,
 };
 
-enum radeon_ctx_priority
-{
-   RADEON_CTX_PRIORITY_LOW = 0,
-   RADEON_CTX_PRIORITY_MEDIUM,
-   RADEON_CTX_PRIORITY_HIGH,
-   RADEON_CTX_PRIORITY_REALTIME,
-};
-
 enum radeon_ctx_pstate
 {
    RADEON_CTX_PSTATE_NONE = 0,
@@ -528,13 +520,9 @@ struct radeon_winsys {
     * Create a command submission context.
     * Various command streams can be submitted to the same context.
     *
-    * \param allow_context_lost  If true, lost contexts skip command submission and report
-    *                            the reset status.
-    *                            If false, losing the context results in undefined behavior.
+    * \param flags  PIPE_CONTEXT_* flags (priority, allow losing the context)
     */
-   struct radeon_winsys_ctx *(*ctx_create)(struct radeon_winsys *ws,
-                                           enum radeon_ctx_priority priority,
-                                           bool allow_context_lost);
+   struct radeon_winsys_ctx *(*ctx_create)(struct radeon_winsys *ws, unsigned flags);
 
    /**
     * Destroy a context.

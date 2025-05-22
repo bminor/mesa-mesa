@@ -505,7 +505,6 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
    struct si_context *sctx = CALLOC_STRUCT(si_context);
    struct radeon_winsys *ws = sscreen->ws;
    int shader, i;
-   enum radeon_ctx_priority priority;
 
    if (!sctx) {
       fprintf(stderr, "radeonsi: can't allocate a context\n");
@@ -549,26 +548,16 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       }
    }
 
-   if (flags & PIPE_CONTEXT_HIGH_PRIORITY) {
-      priority = RADEON_CTX_PRIORITY_HIGH;
-   } else if (flags & PIPE_CONTEXT_LOW_PRIORITY) {
-      priority = RADEON_CTX_PRIORITY_LOW;
-   } else {
-      priority = RADEON_CTX_PRIORITY_MEDIUM;
-   }
-
-   bool allow_context_lost = flags & PIPE_CONTEXT_LOSE_CONTEXT_ON_RESET;
-
    /* Initialize the context handle and the command stream. */
-   sctx->ctx = sctx->ws->ctx_create(sctx->ws, priority, allow_context_lost);
-   if (!sctx->ctx && priority != RADEON_CTX_PRIORITY_MEDIUM) {
+   sctx->ctx = sctx->ws->ctx_create(sctx->ws, sctx->context_flags);
+   if (!sctx->ctx && sctx->context_flags & PIPE_CONTEXT_HIGH_PRIORITY) {
       /* Context priority should be treated as a hint. If context creation
        * fails with the requested priority, for example because the caller
        * lacks CAP_SYS_NICE capability or other system resource constraints,
        * fallback to normal priority.
        */
-      priority = RADEON_CTX_PRIORITY_MEDIUM;
-      sctx->ctx = sctx->ws->ctx_create(sctx->ws, priority, allow_context_lost);
+      sctx->context_flags &= ~PIPE_CONTEXT_HIGH_PRIORITY;
+      sctx->ctx = sctx->ws->ctx_create(sctx->ws, sctx->context_flags);
    }
    if (!sctx->ctx) {
       fprintf(stderr, "radeonsi: can't create radeon_winsys_ctx\n");

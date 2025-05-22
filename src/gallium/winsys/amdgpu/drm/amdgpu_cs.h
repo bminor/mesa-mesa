@@ -31,14 +31,9 @@ struct amdgpu_ctx {
    uint32_t user_fence_bo_kms_handle;
    uint64_t *user_fence_cpu_address_base;
 
-   /* If true, report lost contexts and skip command submission.
-    * If false, terminate the process.
-    */
-   bool allow_context_lost;
-
    /* Lost context status due to ioctl and allocation failures. */
    enum pipe_reset_status sw_status;
-   enum radeon_ctx_priority priority;
+   unsigned flags;
 };
 
 struct amdgpu_cs_buffer {
