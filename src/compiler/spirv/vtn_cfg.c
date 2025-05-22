@@ -113,6 +113,8 @@ function_parameter_decoration_cb(struct vtn_builder *b, struct vtn_value *val,
          case SpvFunctionParameterAttributeSext:
          case SpvFunctionParameterAttributeZext:
          case SpvFunctionParameterAttributeSret:
+         case SpvFunctionParameterAttributeNoCapture:
+         case SpvFunctionParameterAttributeNoWrite:
             break;
 
          case SpvFunctionParameterAttributeByVal:
