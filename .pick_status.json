@@ -2394,7 +2394,7 @@
         "description": "iris: Fix accidental writes to global dirty bit instead of local",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e9a26372bb4e6819b8d56b445564395e04c4217",
         "notes": null
