@@ -378,6 +378,50 @@ struct D3D12EncodeConfiguration
    struct d3d12_resource *m_GPUQPStatsResource = NULL;
    struct d3d12_resource *m_GPUSATDStatsResource = NULL;
    struct d3d12_resource *m_GPURCBitAllocationStatsResource = NULL;
+   struct
+   {
+      //
+      // Cached caps on encoder creation members
+      //
+      union pipe_enc_cap_two_pass two_pass_support;
+
+      //
+      // Encoder scope members
+      //
+
+         // Indicates if two pass enabled
+         bool AppRequested;
+
+         // Indicates, if enabled, the downscale factor for two pass
+         UINT Pow2DownscaleFactor;
+
+         // If enabled, disable 1st pass recon pic output
+         // as app will generate that by downscaling the
+         // 2nd pass dpn recon externally
+         bool bUseExternalDPBScaling;
+
+      //
+      // Per frame scope members
+      //
+
+         // If AppRequested is set, this
+         // indicates when a specific frame two pass
+         // will be disabled and its updated per frame
+         // from the pipe pic params
+         //
+         // Note: IHV drivers may not support two pass
+         // on all frame types, so the ones not supported
+         // will naturally be always "skipped" anyways
+         bool bSkipTwoPassInCurrentFrame;
+         ID3D12Resource* pDownscaledInputTexture;
+         struct
+         {
+            std::vector<ID3D12Resource *> pResources;
+            std::vector<uint32_t> pSubresources;
+         } DownscaledReferences;
+         D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE FrameAnalysisReconstructedPictureOutput;
+
+   } m_TwoPassEncodeDesc = {};
 #endif
 };
 
@@ -703,6 +747,13 @@ d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
                                        struct pipe_resource* qpmap,
                                        struct pipe_enc_roi roi,
                                        uint32_t temporal_id);
+void
+d3d12_video_encoder_initialize_two_pass(struct d3d12_video_encoder *pD3D12Enc,
+                                        const struct pipe_enc_two_pass_encoder_config& two_pass);
+void
+d3d12_video_encoder_update_two_pass_frame_settings(struct d3d12_video_encoder *pD3D12Enc,
+                                                   enum pipe_video_format codec,
+                                                   struct pipe_picture_desc* picture);
 ///
 /// d3d12_video_encoder functions ends
 ///

@@ -907,7 +907,234 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
 }
 #endif // VIDEO_CODEC_H265ENC
 
+static bool
+d3d12_has_video_process_support(struct pipe_screen *pscreen,
+                                D3D12_FEATURE_DATA_VIDEO_PROCESS_SUPPORT &supportCaps,
+                                D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC& outMinSupportedInput,
+                                D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC& outMaxSupportedInput)
+{
+   ComPtr<ID3D12VideoDevice> spD3D12VideoDevice;
+   struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
+   if (FAILED(pD3D12Screen->dev->QueryInterface(IID_PPV_ARGS(spD3D12VideoDevice.GetAddressOf())))) {
+      // No video process support in underlying d3d12 device (needs ID3D12VideoDevice)
+      return false;
+   }
+
+   D3D12_FEATURE_DATA_VIDEO_FEATURE_AREA_SUPPORT VideoFeatureAreaSupport = {};
+   if (FAILED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_FEATURE_AREA_SUPPORT,
+                                                      &VideoFeatureAreaSupport,
+                                                      sizeof(VideoFeatureAreaSupport)))) {
+      return false;
+   }
+
+   D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC resolutionsList[] = {
+      { 8192, 8192 },   // 8k
+      { 8192, 4320 },   // 8k - alternative
+      { 7680, 4800 },   // 8k - alternative
+      { 7680, 4320 },   // 8k - alternative
+      { 4096, 2304 },   // 2160p (4K)
+      { 4096, 2160 },   // 2160p (4K) - alternative
+      { 2560, 1440 },   // 1440p
+      { 1920, 1200 },   // 1200p
+      { 1920, 1080 },   // 1080p
+      { 1280, 720 },    // 720p
+      { 800, 600 },
+      { 352, 480 },
+      { 352, 240 },
+      { 176, 144 },
+      { 128, 128 },
+      { 96, 96 },
+      { 64, 64 },
+      { 32, 32 },
+      { 16, 16 },
+      { 8, 8 },
+      { 4, 4 },
+      { 2, 2 },
+      { 1, 1 },
+   };
+
+   outMinSupportedInput = {};
+   outMaxSupportedInput = {};
+   uint32_t idxResol = 0;
+   bool bSupportsAny = false;
+   while (idxResol < ARRAY_SIZE(resolutionsList)) {
+      supportCaps.InputSample.Width = resolutionsList[idxResol].Width;
+      supportCaps.InputSample.Height = resolutionsList[idxResol].Height;
+      if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_PROCESS_SUPPORT, &supportCaps, sizeof(supportCaps)))) {
+         if ((supportCaps.SupportFlags & D3D12_VIDEO_PROCESS_SUPPORT_FLAG_SUPPORTED) != 0)
+         {
+            // Save the first (maximum)
+            if(!bSupportsAny) {
+               outMaxSupportedInput = resolutionsList[idxResol];
+               bSupportsAny = true;
+            }
+
+            // Keep saving the other supported values to get the minimum
+            outMinSupportedInput = resolutionsList[idxResol];
+         }
+      }
+      idxResol++;
+   }
+
+   return VideoFeatureAreaSupport.VideoProcessSupport && bSupportsAny;
+}
+
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
+static
+union pipe_enc_cap_two_pass
+query_two_pass_support(struct pipe_screen *pscreen,
+                       D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo,
+                       ID3D12VideoDevice3* pD3D12VideoDevice,
+                       bool bDriverSupportsReadableDPBReconPic)
+{
+   union pipe_enc_cap_two_pass two_pass_support = {};
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS twoPassCapData =
+   {
+      // UINT NodeIndex;
+      0u,
+      //D3D12_VIDEO_ENCODER_CODEC Codec;
+      sessionInfo.Codec,
+      //D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
+      sessionInfo.Profile,
+      //D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
+      sessionInfo.Level,
+      //DXGI_FORMAT InputFormat;
+      sessionInfo.InputFormat,
+      //D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
+      sessionInfo.InputResolution,
+      //D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+      sessionInfo.CodecConfiguration,
+      //D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
+      sessionInfo.SubregionFrameEncoding,
+      //D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
+      sessionInfo.SubregionFrameEncodingData,
+      //D3D12_VIDEO_ENCODER_QPMAP_CONFIGURATION QPMap;
+      {
+         //BOOL Enabled;
+         FALSE,
+         //D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+      },
+      //D3D12_VIDEO_ENCODER_DIRTY_REGIONS_CONFIGURATION DirtyRegions;
+      {
+         //BOOL Enabled;
+         FALSE,
+         //D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+         //D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+         D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
+      },
+      //D3D12_VIDEO_ENCODER_MOTION_SEARCH_CONFIGURATION MotionSearch;
+      {
+         //BOOL Enabled;
+         FALSE,
+         //D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+         D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+         //D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE MotionSearchMode;
+         D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH,
+         //BOOL BidirectionalRefFrameEnabled;
+         FALSE,
+      },
+      //UINT Pow2DownscaleFactor;
+      0u,
+      //D3D12_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS_SUPPORT_FLAGS SupportFlags;
+      D3D12_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS_SUPPORT_FLAG_NONE,
+   };
+
+   //
+   // Find out if the driver supports D3D12_VIDEO_SCALE_SUPPORT_FLAG_DPB_ENCODER_RESOURCES
+   //
+
+   D3D12_FEATURE_DATA_VIDEO_PROCESS_SUPPORT vpblitCapsData =
+   {
+      0, // NodeIndex
+      {
+         sessionInfo.InputResolution.Width,
+         sessionInfo.InputResolution.Height,
+         {
+            sessionInfo.InputFormat,
+            DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709
+         }
+      },
+      D3D12_VIDEO_FIELD_TYPE_NONE,
+      D3D12_VIDEO_FRAME_STEREO_FORMAT_NONE,
+      {
+         30,
+         1
+      },
+      {
+         sessionInfo.InputFormat,
+         DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709
+      },
+      D3D12_VIDEO_FRAME_STEREO_FORMAT_NONE,
+      {
+         30,
+         1
+      },
+   };
+
+   bool bDriverSupportsOpaqueDPBReconScaling = false;
+   D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC minSupportedInput = {};
+   D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC maxSupportedInput = {};
+   if (d3d12_has_video_process_support(pscreen, vpblitCapsData, minSupportedInput, maxSupportedInput) &&
+       (sessionInfo.InputResolution.Width <= maxSupportedInput.Width) &&
+       (sessionInfo.InputResolution.Height <= maxSupportedInput.Height))
+   {
+      bDriverSupportsOpaqueDPBReconScaling = (vpblitCapsData.ScaleSupport.Flags & D3D12_VIDEO_SCALE_SUPPORT_FLAG_DPB_ENCODER_RESOURCES) != 0;
+   }
+
+   //
+   // Find the min/max supported Pow2DownscaleFactor values.
+   //
+
+   constexpr unsigned c_MaxPow2DownscaleToTry = 3u;
+   // set a value bigger than c_MaxPow2DownscaleToTry and find the min in the loop below using std::min
+   two_pass_support.bits.min_pow2_downscale_factor = c_MaxPow2DownscaleToTry + 1u;
+
+   for (unsigned CurPow2DownscaleFactor = 0; CurPow2DownscaleFactor <= c_MaxPow2DownscaleToTry; CurPow2DownscaleFactor++)
+   {
+      //
+      // Query the cap with CurPow2DownscaleFactor
+      //
+
+      twoPassCapData.Pow2DownscaleFactor = CurPow2DownscaleFactor;
+
+      if ((SUCCEEDED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS, &twoPassCapData, sizeof(twoPassCapData)))) &&
+          (twoPassCapData.SupportFlags & D3D12_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS_SUPPORT_FLAG_SUPPORTED))
+      {
+         two_pass_support.bits.supports_two_pass = 1u;
+         two_pass_support.bits.min_pow2_downscale_factor = std::min(two_pass_support.bits.min_pow2_downscale_factor, twoPassCapData.Pow2DownscaleFactor);
+         two_pass_support.bits.max_pow2_downscale_factor = std::max(two_pass_support.bits.min_pow2_downscale_factor, twoPassCapData.Pow2DownscaleFactor);
+         two_pass_support.bits.supports_dynamic_1st_pass_skip = (twoPassCapData.SupportFlags & D3D12_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS_SUPPORT_FLAG_DYNAMIC_1ST_PASS_SKIP) ? 1u : 0u;
+
+         if (twoPassCapData.SupportFlags & D3D12_VIDEO_ENCODER_RATE_CONTROL_FRAME_ANALYSIS_SUPPORT_FLAG_EXTERNAL_DPB_DOWNSCALING)
+         {
+            //
+            // For external DPB recon downscaling, one of these must be true:
+            // 1. The DPB pictures are non-opaque layout (e.g without the reference only resource flag)
+            // 2. The DPB pictures are opaque layout, but the driver also supports
+            // D3D12_VIDEO_SCALE_SUPPORT_FLAG_DPB_ENCODER_RESOURCES (in the VPblit caps)
+            //
+            if (bDriverSupportsReadableDPBReconPic)
+            {
+               two_pass_support.bits.supports_1pass_recon_writing_skip = 1u;
+            }
+            else
+            {
+               two_pass_support.bits.supports_1pass_recon_writing_skip = bDriverSupportsOpaqueDPBReconScaling ? 1u : 0u;
+            }
+         }
+      }
+   }
+
+   if (!two_pass_support.bits.supports_two_pass)
+   {
+      two_pass_support = {}; // Clean min_pow2_downscale_factor
+   }
+
+   return two_pass_support;
+}
 
 static
 union pipe_enc_cap_dirty_info
@@ -1251,7 +1478,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_sliced_notifications &sliced_encode_support,
                                union pipe_enc_cap_dirty_info &dirty_rects_support_gpu,
                                union pipe_enc_cap_qpmap &qpmap_support,
-                               union pipe_enc_cap_motion_vector_map &gpu_motion_input_support)
+                               union pipe_enc_cap_motion_vector_map &gpu_motion_input_support,
+                               union pipe_enc_cap_two_pass &two_pass_support)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1389,6 +1617,9 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
             sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
             qpmap_support = get_qpmap_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
             gpu_motion_input_support = get_motion_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
+            two_pass_support = query_two_pass_support(pscreen, sessionInfo, spD3D12VideoDevice.Get(),
+                                          ((capEncoderSupportData1.SupportFlags &
+                                             D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0));
 #endif
          }
       } break;
@@ -1715,6 +1946,9 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits);
                sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
                gpu_motion_input_support = get_motion_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
+               two_pass_support = query_two_pass_support(pscreen, sessionInfo, spD3D12VideoDevice.Get(),
+                                                         ((capEncoderSupportData1.SupportFlags &
+                                                            D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0));
 #endif
             }
          }
@@ -2080,79 +2314,6 @@ d3d12_screen_get_video_param_decode(struct pipe_screen *pscreen,
    }
 }
 
-
-static bool
-d3d12_has_video_process_support(struct pipe_screen *pscreen,
-                                D3D12_FEATURE_DATA_VIDEO_PROCESS_SUPPORT &supportCaps,
-                                D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC& outMinSupportedInput,
-                                D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC& outMaxSupportedInput)
-{
-   ComPtr<ID3D12VideoDevice> spD3D12VideoDevice;
-   struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
-   if (FAILED(pD3D12Screen->dev->QueryInterface(IID_PPV_ARGS(spD3D12VideoDevice.GetAddressOf())))) {
-      // No video process support in underlying d3d12 device (needs ID3D12VideoDevice)
-      return false;
-   }
-
-   D3D12_FEATURE_DATA_VIDEO_FEATURE_AREA_SUPPORT VideoFeatureAreaSupport = {};
-   if (FAILED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_FEATURE_AREA_SUPPORT,
-                                                      &VideoFeatureAreaSupport,
-                                                      sizeof(VideoFeatureAreaSupport)))) {
-      return false;
-   }
-
-   D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC resolutionsList[] = {
-      { 8192, 8192 },   // 8k
-      { 8192, 4320 },   // 8k - alternative
-      { 7680, 4800 },   // 8k - alternative
-      { 7680, 4320 },   // 8k - alternative
-      { 4096, 2304 },   // 2160p (4K)
-      { 4096, 2160 },   // 2160p (4K) - alternative
-      { 2560, 1440 },   // 1440p
-      { 1920, 1200 },   // 1200p
-      { 1920, 1080 },   // 1080p
-      { 1280, 720 },    // 720p
-      { 800, 600 },
-      { 352, 480 },
-      { 352, 240 },
-      { 176, 144 },
-      { 128, 128 },
-      { 96, 96 },
-      { 64, 64 },
-      { 32, 32 },
-      { 16, 16 },
-      { 8, 8 },
-      { 4, 4 },
-      { 2, 2 },
-      { 1, 1 },
-   };
-
-   outMinSupportedInput = {};
-   outMaxSupportedInput = {};
-   uint32_t idxResol = 0;
-   bool bSupportsAny = false;
-   while (idxResol < ARRAY_SIZE(resolutionsList)) {
-      supportCaps.InputSample.Width = resolutionsList[idxResol].Width;
-      supportCaps.InputSample.Height = resolutionsList[idxResol].Height;
-      if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_PROCESS_SUPPORT, &supportCaps, sizeof(supportCaps)))) {
-         if ((supportCaps.SupportFlags & D3D12_VIDEO_PROCESS_SUPPORT_FLAG_SUPPORTED) != 0)
-         {
-            // Save the first (maximum)
-            if(!bSupportsAny) {
-               outMaxSupportedInput = resolutionsList[idxResol];
-               bSupportsAny = true;
-            }
-
-            // Keep saving the other supported values to get the minimum
-            outMinSupportedInput = resolutionsList[idxResol];
-         }
-      }
-      idxResol++;
-   }
-
-   return VideoFeatureAreaSupport.VideoProcessSupport && bSupportsAny;
-}
-
 static int
 d3d12_screen_get_video_param_postproc(struct pipe_screen *pscreen,
                                     enum pipe_video_profile profile,
@@ -2305,6 +2466,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
    union pipe_enc_cap_qpmap gpu_qpmap_input = {};
    union pipe_enc_cap_motion_vector_map gpu_motion_input = {};
+   union pipe_enc_cap_two_pass two_pass_support = {};
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    switch (param) {
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
@@ -2376,6 +2538,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_DIRTY_MAPS:
       case PIPE_VIDEO_CAP_ENC_QP_MAPS:
       case PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS:
+      case PIPE_VIDEO_CAP_ENC_TWO_PASS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2404,7 +2567,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             sliced_encode_support,
                                             dirty_rects_support_gpu,
                                             gpu_qpmap_input,
-                                            gpu_motion_input)) {
+                                            gpu_motion_input,
+                                            two_pass_support)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2507,6 +2671,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return gpu_qpmap_input.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS) {
                   return gpu_motion_input.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_TWO_PASS ) {
+                  return two_pass_support.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2584,6 +2750,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
    union pipe_enc_cap_qpmap gpu_qpmap_input = {};
    union pipe_enc_cap_motion_vector_map gpu_motion_input = {};
+   union pipe_enc_cap_two_pass two_pass_support = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2611,7 +2778,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       sliced_encode_support,
                                       dirty_rects_support_gpu,
                                       gpu_qpmap_input,
-                                      gpu_motion_input))
+                                      gpu_motion_input,
+                                      two_pass_support))
    {
       return bVideoEncodeRequiresTextureArray;
    }
