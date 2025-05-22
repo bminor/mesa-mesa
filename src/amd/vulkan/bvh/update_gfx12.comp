@@ -79,7 +79,7 @@ main()
    uint32_t child_type = (child.dword2 >> 24) & 0xf;
 
    bool is_leaf_or_invalid = child_type == radv_bvh_node_triangle;
-   bool is_valid = cluster.invocation_index <= valid_child_count_minus_one;
+   bool is_valid = cluster.invocation_index <= valid_child_count_minus_one && valid_child_count_minus_one != 0xf;
    bool is_leaf = is_leaf_or_invalid && is_valid;
 
    uint32_t child_offset;
