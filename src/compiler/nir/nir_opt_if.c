@@ -1437,39 +1437,38 @@ opt_if_safe_cf_list(nir_builder *b, struct exec_list *cf_list, nir_opt_if_option
    return progress;
 }
 
+static bool
+nir_opt_if_impl(nir_function_impl *impl, nir_opt_if_options options)
+{
+   nir_builder b = nir_builder_create(impl);
+   nir_metadata_require(impl,
+                        nir_metadata_block_index | nir_metadata_dominance);
+
+   bool progress_safe = opt_if_safe_cf_list(&b, &impl->body, options);
+   nir_progress(progress_safe, impl, nir_metadata_control_flow);
+
+   bool progress = opt_if_cf_list(&b, &impl->body, options);
+   bool progress_regs = opt_if_regs_cf_list(&impl->body);
+   nir_progress(progress || progress_regs, impl, nir_metadata_none);
+
+   if (progress_regs) {
+      /* If that made progress, we're no longer really in SSA form.  We
+       * need to convert registers back into SSA defs and clean up SSA defs
+       * that don't dominate their uses.
+       */
+      nir_lower_reg_intrinsics_to_ssa_impl(impl);
+   }
+
+   return progress_safe || progress || progress_regs;
+}
+
 bool
 nir_opt_if(nir_shader *shader, nir_opt_if_options options)
 {
    bool progress = false;
 
-   nir_foreach_function_impl(impl, shader) {
-      nir_builder b = nir_builder_create(impl);
-
-      nir_metadata_require(impl,
-                           nir_metadata_block_index | nir_metadata_dominance);
-      progress |= opt_if_safe_cf_list(&b, &impl->body, options);
-      nir_progress(true, impl, nir_metadata_control_flow);
-
-      bool preserve = true;
-
-      if (opt_if_cf_list(&b, &impl->body, options)) {
-         preserve = false;
-         progress = true;
-      }
-
-      if (opt_if_regs_cf_list(&impl->body)) {
-         preserve = false;
-         progress = true;
-
-         /* If that made progress, we're no longer really in SSA form.  We
-          * need to convert registers back into SSA defs and clean up SSA defs
-          * that don't dominate their uses.
-          */
-         nir_lower_reg_intrinsics_to_ssa_impl(impl);
-      }
-
-      nir_progress(preserve, impl, nir_metadata_none);
-   }
+   nir_foreach_function_impl(impl, shader)
+      progress |= nir_opt_if_impl(impl, options);
 
    return progress;
 }
