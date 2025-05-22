@@ -346,20 +346,23 @@ def run_cmd(args, verbosity):
 
 
 def verify_results(results):
-    with open(results) as file:
-        lines = file.readlines()
-        if len(lines) == 0:
-            return True
-        print("{} new result{}:".format(len(lines), 's' if len(lines) > 1 else ''))
-        for i in range(min(10, len(lines))):
-            print("  * ", end='')
-            if "Pass" in lines[i]:
-                print_green(lines[i][:-1])
-            else:
-                print_red(lines[i][:-1])
-        if len(lines) > 10:
-            print_yellow("...")
-        print("Full results: {}".format(results))
+    try:
+        with open(results) as file:
+            lines = file.readlines()
+            if len(lines) == 0:
+                return True
+            print("{} new result{}:".format(len(lines), 's' if len(lines) > 1 else ''))
+            for i in range(min(10, len(lines))):
+                print("  * ", end='')
+                if "Pass" in lines[i]:
+                    print_green(lines[i][:-1])
+                else:
+                    print_red(lines[i][:-1])
+            if len(lines) > 10:
+                print_yellow("...")
+            print("Full results: {}".format(results))
+    except FileNotFoundError:
+        return True
 
     return False
 
