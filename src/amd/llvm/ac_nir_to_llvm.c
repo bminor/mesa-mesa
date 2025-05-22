@@ -3726,16 +3726,7 @@ static void visit_tex(struct ac_nir_context *ctx, nir_tex_instr *instr)
 
    result = build_tex_intrinsic(ctx, instr, &args);
 
-   LLVMValueRef code = NULL;
-   if (instr->is_sparse) {
-      unsigned num_color_components = num_components - 1;
-      code = ac_llvm_extract_elem(&ctx->ac, result, num_color_components);
-      result = ac_trim_vector(&ctx->ac, result, num_color_components);
-   }
-
-   if (is_new_style_shadow)
-      result = LLVMBuildExtractElement(ctx->ac.builder, result, ctx->ac.i32_0, "");
-   else if (instr->op == nir_texop_fragment_mask_fetch_amd) {
+   if (instr->op == nir_texop_fragment_mask_fetch_amd) {
       /* Use 0x76543210 if the image doesn't have FMASK. */
       LLVMValueRef tmp = LLVMBuildBitCast(ctx->ac.builder, args.resource, ctx->ac.v8i32, "");
       tmp = LLVMBuildExtractElement(ctx->ac.builder, tmp, ctx->ac.i32_1, "");
@@ -3744,12 +3735,19 @@ static void visit_tex(struct ac_nir_context *ctx, nir_tex_instr *instr)
                                LLVMBuildExtractElement(ctx->ac.builder, result, ctx->ac.i32_0, ""),
                                LLVMConstInt(ctx->ac.i32, 0x76543210, false), "");
    } else {
-      unsigned num_color_components = num_components - (instr->is_sparse ? 1 : 0);
-      result = ac_trim_vector(&ctx->ac, result, num_color_components);
-   }
+      /* ac_build_image_opcode always returns 4 components plus 1 optional value
+       * containing residency information. Adjust result to match the output expected by
+       * the NIR instruction.
+       */
+      LLVMValueRef code = NULL;
+      if (instr->is_sparse)
+         code = ac_llvm_extract_elem(&ctx->ac, result, 4);
 
-   if (instr->is_sparse)
-      result = ac_build_concat(&ctx->ac, result, code);
+      result = ac_trim_vector(&ctx->ac, result, num_components - (instr->is_sparse ? 1 : 0));
+
+      if (code)
+         result = ac_build_concat(&ctx->ac, result, code);
+   }
 
    if (result) {
       result = ac_to_integer(&ctx->ac, result);

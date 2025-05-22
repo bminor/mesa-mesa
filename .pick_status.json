@@ -3374,7 +3374,7 @@
         "description": "ac/llvm: rework component trimming in visit_tex",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c0ef2aa7f8b34f17ce1907b9a16eb0df46067206",
         "notes": null
