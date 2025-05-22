@@ -144,12 +144,18 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
          /* Call the translation functions to validate the semantic (call assertions in them). */
          if (nir->info.stage != MESA_SHADER_FRAGMENT &&
              semantic != VARYING_SLOT_EDGE) {
-            if (semantic == VARYING_SLOT_TESS_LEVEL_INNER ||
+            /* VARYING_SLOT_PRIMITIVE_INDICES = VARYING_SLOT_TESS_LEVEL_INNER */
+            if ((nir->info.stage != MESA_SHADER_MESH &&
+                 semantic == VARYING_SLOT_TESS_LEVEL_INNER) ||
                 semantic == VARYING_SLOT_TESS_LEVEL_OUTER ||
                 (semantic >= VARYING_SLOT_PATCH0 && semantic <= VARYING_SLOT_PATCH31)) {
                ac_shader_io_get_unique_index_patch(semantic);
                ac_shader_io_get_unique_index_patch(slot_semantic);
-            } else {
+            } else if (!(nir->info.stage == MESA_SHADER_MESH &&
+                         semantic == VARYING_SLOT_PRIMITIVE_INDICES)) {
+               /* We don't have unique index for primitive indices because it won't be
+                * passed to next shader stage.
+                */
                si_shader_io_get_unique_index(semantic);
                si_shader_io_get_unique_index(slot_semantic);
             }
@@ -216,6 +222,14 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                      if (index < nir->info.clip_distance_array_size)
                         info->clipdist_mask |= BITFIELD_BIT(index);
                   }
+               }
+            } else if (nir->info.stage == MESA_SHADER_MESH) {
+               if (slot_semantic != VARYING_SLOT_POS &&
+                   slot_semantic != VARYING_SLOT_PSIZ &&
+                   slot_semantic != VARYING_SLOT_LAYER &&
+                   slot_semantic != VARYING_SLOT_PRIMITIVE_INDICES) {
+                  info->outputs_written_before_ps |=
+                     BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
                }
             }
 
