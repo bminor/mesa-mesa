@@ -860,22 +860,3 @@ debian-ppc64el:
     VULKAN_DRIVERS: "swrast"
     DRI_LOADERS:
       -D glvnd=disabled
-
-# This job emits our scripts into artifacts so they can be reused for
-# job submission to hardware devices.
-python-artifacts:
-  stage: build-for-tests
-  extends:
-    - .use-debian/arm64_build
-    - .build-common
-    - .meson-build-for-tests
-  variables:
-    GIT_STRATEGY: fetch
-    S3_ARTIFACT_NAME: mesa-python-ci-artifacts
-  timeout: 10m
-  script:
-    - .gitlab-ci/prepare-artifacts-python.sh
-  # Nothing uses the gitlab artifacts from this job anymore, stop uploading it
-  artifacts: null
-  tags:
-    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
