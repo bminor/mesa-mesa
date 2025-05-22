@@ -3507,7 +3507,10 @@ nir_slot_is_varying(gl_varying_slot slot, gl_shader_stage next_shader)
           slot == VARYING_SLOT_LAYER ||
           slot == VARYING_SLOT_VIEWPORT ||
           slot == VARYING_SLOT_TESS_LEVEL_OUTER ||
-          slot == VARYING_SLOT_TESS_LEVEL_INNER ||
+          /* VARYING_SLOT_PRIMITIVE_INDICES = VARYING_SLOT_TESS_LEVEL_INNER,
+           * VARYING_SLOT_PRIMITIVE_INDICES is sysval in mesh shader.
+           */
+          (slot == VARYING_SLOT_TESS_LEVEL_INNER && at_most_before_gs) ||
           (slot == VARYING_SLOT_VIEW_INDEX && exactly_before_fs);
 }
 
