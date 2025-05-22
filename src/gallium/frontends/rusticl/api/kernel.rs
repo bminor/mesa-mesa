@@ -118,6 +118,7 @@ unsafe impl CLInfoObj<cl_kernel_work_group_info, cl_device_id> for cl_kernel {
                 v.write::<usize>(kernel.preferred_simd_size(dev))
             }
             CL_KERNEL_PRIVATE_MEM_SIZE => v.write::<cl_ulong>(kernel.priv_mem_size(dev)),
+            CL_KERNEL_SPILL_MEM_SIZE_INTEL => v.write::<cl_ulong>(kernel.priv_mem_size(dev)),
             CL_KERNEL_WORK_GROUP_SIZE => v.write::<usize>(kernel.max_threads_per_block(dev)),
             // CL_INVALID_VALUE if param_name is not one of the supported values
             _ => Err(CL_INVALID_VALUE),

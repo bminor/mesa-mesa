@@ -752,6 +752,7 @@ impl Device {
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle");
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle_relative");
             if self.intel_subgroups_supported() {
+                add_ext(1, 0, 0, "cl_intel_required_subgroup_size");
                 add_ext(1, 0, 0, "cl_intel_subgroups");
                 add_spirv(c"SPV_INTEL_subgroups");
             }
