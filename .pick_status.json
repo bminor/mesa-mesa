@@ -2604,7 +2604,7 @@
         "description": "pan/genxml: Fix typo for NEXT_SB_ENTRY",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "811525b543b5a0581af9bb4b17bb92edbde6fe0a",
         "notes": null
