@@ -27,6 +27,7 @@
 #include "d3d12_screen.h"
 #include "d3d12_resource.h"
 #include "d3d12_video_buffer.h"
+#include "d3d12_video_enc_hevc.h"
 
 using namespace std;
 
@@ -287,6 +288,12 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
    /// Copy DPB snapshot from pipe params
    ///
 
+   unsigned ref_list0_count = 0u;
+   unsigned ref_list1_count = 0u;
+   d3d12_video_encoder_count_valid_reflist_entries_hevc(hevcPic,
+                                                      ref_list0_count,
+                                                      ref_list1_count);
+
    m_curFrameState.ReferenceFramesReconPictureDescriptorsCount =
       static_cast<uint32_t>(m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.size());
    m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.resize(hevcPic->dpb_size);
@@ -310,11 +317,11 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
 
       // Check if this i-th dpb descriptor entry is referenced by any entry in L0 or L1 lists
       // and set IsRefUsedByCurrentPic accordingly
-      auto endItL0 = hevcPic->ref_list0 + (hevcPic->num_ref_idx_l0_active_minus1 + 1);
+      auto endItL0 = hevcPic->ref_list0 + ref_list0_count;
       bool bReferencesFromL0 = std::find(hevcPic->ref_list0, endItL0, i) != endItL0;
       bool bReferencesFromL1 = false;
       if (d3d12_video_encoder_convert_frame_type_hevc(hevcPic->picture_type) == D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC_B_FRAME) {
-         auto endItL1 = hevcPic->ref_list1 + (hevcPic->num_ref_idx_l1_active_minus1 + 1);
+         auto endItL1 = hevcPic->ref_list1 + ref_list1_count;
          bReferencesFromL1 = std::find(hevcPic->ref_list1, endItL1, i) != endItL1;
       }
       m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors[i].IsRefUsedByCurrentPic =
@@ -368,7 +375,7 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
          m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.data();
 
       // Deep Copy L0 list
-      m_curFrameState.List0ReferenceFramesCount = hevcPic->num_ref_idx_l0_active_minus1 + 1;
+      m_curFrameState.List0ReferenceFramesCount = ref_list0_count;
       m_CurrentFrameReferencesData.pList0ReferenceFrames.resize(m_curFrameState.List0ReferenceFramesCount);
       for (unsigned i = 0; i < m_curFrameState.List0ReferenceFramesCount; i++)
          m_CurrentFrameReferencesData.pList0ReferenceFrames[i] = hevcPic->ref_list0[i];
@@ -376,7 +383,7 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
 
       // Deep Copy L0 ref modification list
       if (hevcPic->slice.ref_pic_lists_modification.ref_pic_list_modification_flag_l0) {
-         m_curFrameState.List0RefPicModificationsCount = hevcPic->num_ref_idx_l0_active_minus1 + 1;
+         m_curFrameState.List0RefPicModificationsCount = ref_list0_count;
          m_CurrentFrameReferencesData.pList0RefPicModifications.resize(m_curFrameState.List0RefPicModificationsCount);
          for (unsigned i = 0; i < m_curFrameState.List0RefPicModificationsCount; i++)
             m_CurrentFrameReferencesData.pList0RefPicModifications[i] =
@@ -388,7 +395,7 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
    if (m_curFrameState.FrameType == D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC_B_FRAME) {
 
       // Deep Copy L1 list
-      m_curFrameState.List1ReferenceFramesCount = hevcPic->num_ref_idx_l1_active_minus1 + 1;
+      m_curFrameState.List1ReferenceFramesCount = ref_list1_count;
       m_CurrentFrameReferencesData.pList1ReferenceFrames.resize(m_curFrameState.List1ReferenceFramesCount);
       for (unsigned i = 0; i < m_curFrameState.List1ReferenceFramesCount; i++)
          m_CurrentFrameReferencesData.pList1ReferenceFrames[i] = hevcPic->ref_list1[i];
@@ -396,7 +403,7 @@ d3d12_video_encoder_references_manager_hevc::begin_frame_impl(bool bUsedAsRefere
 
       // Deep Copy L1 ref modification list
       if (hevcPic->slice.ref_pic_lists_modification.ref_pic_list_modification_flag_l1) {
-         m_curFrameState.List1RefPicModificationsCount = hevcPic->num_ref_idx_l1_active_minus1 + 1;
+         m_curFrameState.List1RefPicModificationsCount = ref_list1_count;
          m_CurrentFrameReferencesData.pList1RefPicModifications.resize(m_curFrameState.List1RefPicModificationsCount);
          for (unsigned i = 0; i < m_curFrameState.List1RefPicModificationsCount; i++)
             m_CurrentFrameReferencesData.pList1RefPicModifications[i] =

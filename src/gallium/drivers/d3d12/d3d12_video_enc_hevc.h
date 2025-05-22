@@ -68,4 +68,9 @@ d3d12_video_encoder_isequal_slice_config_hevc(
    D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE                   otherMode,
    D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES otherConfig);
 
+void
+d3d12_video_encoder_count_valid_reflist_entries_hevc(const pipe_h265_enc_picture_desc *picture,
+                                                     unsigned &ref_list0_count,
+                                                     unsigned &ref_list1_count);
+
 #endif

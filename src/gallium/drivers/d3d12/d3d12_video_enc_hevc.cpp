@@ -534,6 +534,12 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
 
    pHEVCPicData->slice_pic_parameter_set_id = pHEVCBitstreamBuilder->get_active_pps().pps_pic_parameter_set_id;
 
+   unsigned ref_list0_count = 0u;
+   unsigned ref_list1_count = 0u;
+   d3d12_video_encoder_count_valid_reflist_entries_hevc(hevcPic,
+                                                        ref_list0_count,
+                                                        ref_list1_count);
+
    //
    // These need to be set here so they're available for SPS/PPS header building (reference manager updates after that, for slice header params)
    //
@@ -547,21 +553,39 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
    if ((hevcPic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P) ||
        (hevcPic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B))
    {
+      // Assume legacy behavior for now and override below if new SDK/interfaces are used
+      pHEVCPicData->List0ReferenceFramesCount = hevcPic->num_ref_idx_l0_active_minus1 + 1;
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-      pHEVCPicData->num_ref_idx_l0_active_minus1 = hevcPic->num_ref_idx_l0_active_minus1;
-      pHEVCPicData->List0ReferenceFramesCount = hevcPic->num_ref_idx_l0_active_minus1 + 1;
-#else // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-      pHEVCPicData->List0ReferenceFramesCount = hevcPic->num_ref_idx_l0_active_minus1 + 1;
+      // Only set pHEVCPicData->num_ref_idx_l0_active_minus1/List0ReferenceFramesCount
+      // differently on the newer interfaces that support it
+      // Otherwise fallback to the legacy behavior using List0ReferenceFramesCount
+      // equal to num_ref_idx_l0_active_minus1 + 1
+      ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
+      if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
+          IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf()))))
+      {
+         pHEVCPicData->num_ref_idx_l0_active_minus1 = hevcPic->num_ref_idx_l0_active_minus1;
+         pHEVCPicData->List0ReferenceFramesCount = ref_list0_count;
+      }
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    }
 
    if (hevcPic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B)
    {
+      // Assume legacy behavior for now and override below if new SDK/interfaces are used
+      pHEVCPicData->List1ReferenceFramesCount = hevcPic->num_ref_idx_l1_active_minus1 + 1;
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-      pHEVCPicData->num_ref_idx_l1_active_minus1 = hevcPic->num_ref_idx_l1_active_minus1;
-      pHEVCPicData->List1ReferenceFramesCount = hevcPic->num_ref_idx_l1_active_minus1 + 1;
-#else // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-      pHEVCPicData->List1ReferenceFramesCount = hevcPic->num_ref_idx_l1_active_minus1 + 1;
+      // Only set pHEVCPicData->num_ref_idx_l1_active_minus1/List1ReferenceFramesCount
+      // differently on the newer interfaces that support it
+      // Otherwise fallback to the legacy behavior using List1ReferenceFramesCount
+      // equal to num_ref_idx_l1_active_minus1 + 1
+      ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
+      if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
+                  IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf()))))
+      {
+         pHEVCPicData->num_ref_idx_l1_active_minus1 = hevcPic->num_ref_idx_l1_active_minus1;
+         pHEVCPicData->List1ReferenceFramesCount = ref_list1_count;
+      }
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    }
 
@@ -1617,4 +1641,26 @@ d3d12_video_encoder_build_codec_headers_hevc(struct d3d12_video_encoder *pD3D12E
    assert(std::accumulate(pWrittenCodecUnitsSizes.begin(), pWrittenCodecUnitsSizes.end(), 0ull) ==
       pD3D12Enc->m_BitstreamHeadersBuffer.size());
    return static_cast<uint32_t>(pD3D12Enc->m_BitstreamHeadersBuffer.size());
+}
+
+void
+d3d12_video_encoder_count_valid_reflist_entries_hevc(const pipe_h265_enc_picture_desc *picture,
+                                                     unsigned &ref_list0_count,
+                                                     unsigned &ref_list1_count)
+{
+   for (ref_list0_count = 0; ref_list0_count < _countof(picture->ref_list0); ref_list0_count++)
+   {
+      if (picture->ref_list0[ref_list0_count] == PIPE_H2645_LIST_REF_INVALID_ENTRY)
+      {
+         break;
+      }
+   }
+
+   for (ref_list1_count = 0; ref_list1_count < _countof(picture->ref_list0); ref_list1_count++)
+   {
+      if (picture->ref_list1[ref_list1_count] == PIPE_H2645_LIST_REF_INVALID_ENTRY)
+      {
+         break;
+      }
+   }
 }
