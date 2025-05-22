@@ -117,10 +117,10 @@ typedef struct shader_info {
    uint64_t outputs_read_indirectly;
    uint64_t outputs_written_indirectly;
    /* Which patch inputs are read indirectly (subset of patch_inputs_read) */
-   uint64_t patch_inputs_read_indirectly;
+   uint32_t patch_inputs_read_indirectly;
    /* Which patch outputs are read or written indirectly */
-   uint64_t patch_outputs_read_indirectly;
-   uint64_t patch_outputs_written_indirectly;
+   uint32_t patch_outputs_read_indirectly;
+   uint32_t patch_outputs_written_indirectly;
 
    /** Bitfield of which textures are used */
    BITSET_DECLARE(textures_used, 128);
