@@ -42,7 +42,7 @@ variables:
     BASE_SYSTEM_FORK_HOST_PATH: "${BASE_SYSTEM_HOST_PREFIX}/${CI_PROJECT_PATH}/${MESA_IMAGE_PATH}:${FDO_DISTRIBUTION_TAG}"
     # per-job build artifacts
     JOB_RESULTS_PATH: "${JOB_ARTIFACTS_BASE}/results.tar.zst"
-    LAVA_S3_ARTIFACT_NAME: "mesa-${ARCH}-default-debugoptimized"
+    S3_ARTIFACT_NAME: "mesa-${ARCH}-default-debugoptimized"
     S3_RESULTS_UPLOAD: "${JOB_ARTIFACTS_BASE}"
     PIGLIT_NO_WINDOW: 1
     VISIBILITY_GROUP: "Collabora+fdo"

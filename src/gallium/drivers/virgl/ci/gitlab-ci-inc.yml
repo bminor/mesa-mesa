@@ -36,7 +36,7 @@
   allow_failure: true # see comment in .performance-rules, which we don't inherit this line from.
   variables:
     JOB_PRIORITY: 40
-    LAVA_S3_ARTIFACT_NAME: mesa-x86_64-default-release
+    S3_ARTIFACT_NAME: mesa-x86_64-default-release
   needs:
     - debian/x86_64_test-gl
     - debian-release

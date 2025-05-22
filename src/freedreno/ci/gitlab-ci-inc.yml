@@ -214,7 +214,7 @@
   variables:
     JOB_PRIORITY: 40
     # Ensure that we are using the release build artifact
-    LAVA_S3_ARTIFACT_NAME: mesa-arm64-default-release
+    S3_ARTIFACT_NAME: mesa-arm64-default-release
   needs:
     - debian/x86_64_build
     - debian-arm64-release

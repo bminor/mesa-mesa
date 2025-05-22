@@ -106,7 +106,7 @@ PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--job-submitted-at "${CI_JOB_STARTED_AT}" \
 	- append-overlay \
 		--name=mesa-build \
-		--url="https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst" \
+		--url="https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME:?}.tar.zst" \
 		--compression=zstd \
 		--path="${CI_PROJECT_DIR}" \
 		--format=tar \
