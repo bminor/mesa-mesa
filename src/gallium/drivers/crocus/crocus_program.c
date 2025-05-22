@@ -307,12 +307,12 @@ crocus_lower_storage_image_derefs_instr(nir_builder *b,
    }
 }
 
-static void
+static bool
 crocus_lower_storage_image_derefs(nir_shader *nir)
 {
-   nir_shader_intrinsics_pass(nir, crocus_lower_storage_image_derefs_instr,
-                              nir_metadata_control_flow,
-                              NULL);
+   return nir_shader_intrinsics_pass(nir, crocus_lower_storage_image_derefs_instr,
+                                     nir_metadata_control_flow,
+                                     NULL);
 }
 
 // XXX: need unify_interfaces() at link time...
