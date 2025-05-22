@@ -134,7 +134,7 @@ anv_slab_bo_alloc(struct anv_device *device, const char *name, uint64_t requeste
 
    const unsigned num_slab_allocator = ARRAY_SIZE(device->bo_slabs);
    struct pb_slabs *last_slab = &device->bo_slabs[num_slab_allocator - 1];
-   const uint64_t max_slab_entry_size = 1 << (last_slab->min_order + last_slab->num_orders - 1);
+   const uint64_t max_slab_entry_size = BITFIELD64_BIT(last_slab->min_order + last_slab->num_orders - 1);
 
    if (requested_size > max_slab_entry_size)
       return NULL;
