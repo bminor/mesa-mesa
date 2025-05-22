@@ -837,6 +837,8 @@ GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
                                struct mali_texture_packed *out,
                                const struct pan_ptr *payload)
 {
+   pan_image_view_check(iview);
+
    const struct util_format_description *desc =
       util_format_description(iview->format);
    const struct pan_image_plane_ref first_plane = pan_image_view_get_first_plane(iview);
@@ -892,6 +894,8 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
                                struct mali_texture_packed *out,
                                const struct pan_ptr *payload)
 {
+   pan_image_view_check(iview);
+
    const struct util_format_description *desc =
       util_format_description(iview->format);
    const struct pan_image_plane_ref first_plane =

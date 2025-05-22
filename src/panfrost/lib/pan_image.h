@@ -17,6 +17,8 @@
 #include "pan_format.h"
 #include "pan_layout.h"
 
+#include "util/log.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -219,6 +221,44 @@ pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
       surf->data = base + pan_image_surface_offset(&plane->layout, level,
                                                    array_idx, surface_idx);
    }
+}
+
+static inline void
+pan_image_view_check(const struct pan_image_view *iview)
+{
+#ifndef NDEBUG
+   unsigned nplanes = util_format_get_num_planes(iview->format);
+   struct pan_image_plane_ref pref;
+
+   for (unsigned i = 0; i < nplanes; i++) {
+      if (util_format_is_depth_or_stencil(iview->format)) {
+         const struct util_format_description *fdesc =
+            util_format_description(iview->format);
+
+         if (util_format_has_stencil(fdesc))
+            pref = pan_image_view_get_s_plane(iview);
+         else
+            pref = pan_image_view_get_zs_plane(iview);
+      } else {
+         pref = iview->planes[i];
+      }
+
+      /* Make sure we have an image and the plane we point to exists. */
+      assert(pref.image);
+      assert(pref.plane_idx <
+             util_format_get_num_planes(pref.image->props.format));
+
+      enum pipe_format view_format =
+         util_format_get_plane_format(iview->format, i);
+      enum pipe_format img_format =
+         util_format_get_plane_format(pref.image->props.format, pref.plane_idx);
+
+      /* View-based pixel re-interpretation only allowed if the formats
+       * blocksize match. */
+      assert(util_format_get_blocksize(view_format) ==
+             util_format_get_blocksize(img_format));
+   }
+#endif
 }
 
 #ifdef __cplusplus

@@ -837,11 +837,30 @@ pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
 
 #endif
 
+static void
+check_fb_attachments(const struct pan_fb_info *fb)
+{
+#ifndef NDEBUG
+   for (unsigned i = 0; i < fb->rt_count; i++) {
+      if (fb->rts[i].view)
+         pan_image_view_check(fb->rts[i].view);
+   }
+
+   if (fb->zs.view.zs)
+      pan_image_view_check(fb->zs.view.zs);
+
+   if (fb->zs.view.s)
+      pan_image_view_check(fb->zs.view.s);
+#endif
+}
+
 unsigned
 GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
                    const struct pan_tls_info *tls,
                    const struct pan_tiler_context *tiler_ctx, void *out)
 {
+   check_fb_attachments(fb);
+
    void *fbd = out;
    void *rtd = out + pan_size(FRAMEBUFFER);
 
