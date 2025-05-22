@@ -2972,8 +2972,13 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
     * because of another one is changing.
     */
 
-   /* Reproduce the programming done on Windows drivers.
-    * Fixes flickering issues with multiple workloads.
+   /* Reprogram SF_CLIP & CC_STATE together. This reproduces the programming
+    * done on Windows drivers. Fixes flickering issues with multiple
+    * workloads.
+    *
+    * Since blorp disables 3DSTATE_CLIP::ClipEnable and dirties CC_STATE, this
+    * also takes care of Wa_14016820455 which requires SF_CLIP to be
+    * reprogrammed whenever 3DSTATE_CLIP::ClipEnable is enabled.
     */
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VIEWPORT_SF_CLIP) ||
        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VIEWPORT_CC_PTR)) {
