@@ -63,7 +63,7 @@ bool ppir_compile_nir(struct lima_fs_compiled_shader *prog, struct nir_shader *n
                       struct util_debug_callback *debug);
 struct ra_regs *ppir_regalloc_init(void *mem_ctx);
 
-void lima_nir_lower_uniform_to_scalar(nir_shader *shader);
+bool lima_nir_lower_uniform_to_scalar(nir_shader *shader);
 bool lima_nir_scale_trig(nir_shader *shader);
 bool lima_nir_lower_ftrunc(nir_shader *shader);
 bool lima_nir_lower_fdot(nir_shader *shader);
