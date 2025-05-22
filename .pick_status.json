@@ -2284,7 +2284,7 @@
         "description": "iris: set dependency between SF_CL and CC states",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc42bbff4ce8bbfe45b0ae593cfeb218bc068200",
         "notes": null
