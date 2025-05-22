@@ -2551,7 +2551,8 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
    AddrSurfInfoIn.flags.opt4space = 1;
    /* For GFX10+ MSAA PRT surface won't use the prt flag because it's not supported. */
    AddrSurfInfoIn.flags.prt = (surf->flags & RADEON_SURF_PRT) != 0 &&
-                              (config->info.samples <= 1 || info->gfx_level < GFX10);
+                              (config->info.samples <= 1 || info->gfx_level < GFX10) &&
+                              is_color_surface;
 
    AddrSurfInfoIn.numMipLevels = config->info.levels;
    AddrSurfInfoIn.numSamples = MAX2(1, config->info.samples);

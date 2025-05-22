@@ -1493,7 +1493,7 @@ bool si_texture_commit(struct si_context *ctx, struct si_resource *res, unsigned
 
    assert(ctx->gfx_level >= GFX9);
 
-   if (ctx->gfx_level >= GFX10 && samples > 1) {
+   if ((ctx->gfx_level >= GFX10 && samples > 1) || (surface->flags & RADEON_SURF_Z_OR_SBUFFER)) {
       uint64_t prev_offset = res->bo_size;
 
       for (int i = 0; i < box->depth; i++) {
@@ -2482,9 +2482,7 @@ static int si_get_sparse_texture_virtual_page_size(struct pipe_screen *screen,
       return 0;
 
    /* Unsupported formats. */
-   /* TODO: support these formats. */
-   if (util_format_is_depth_or_stencil(format) ||
-       util_format_get_num_planes(format) > 1 ||
+   if (util_format_get_num_planes(format) > 1 ||
        util_format_is_compressed(format))
       return 0;
 
