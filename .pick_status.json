@@ -4644,7 +4644,7 @@
         "description": "nak: Fix a perf regression in tex lowering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d16e75e55f3d1c53a5441daf0931668bd3919fa9",
         "notes": null
