@@ -19,5 +19,5 @@ libplatform_virtgpu_kumquat = static_library(
    include_directories: [inc_platform_virtgpu, inc_src, inc_gfxstream_vulkan_mapper,
                          inc_vulkan_util, inc_include],
    link_with: [libgfxstream_vulkan_mapper],
-   dependencies: virtgpu_kumquat_dep,
+   dependencies: [idep_vulkan_util_headers, virtgpu_kumquat_dep],
 )
