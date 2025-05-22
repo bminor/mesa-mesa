@@ -1331,7 +1331,6 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
              uint32_t *height_in_samples,
              void *it_ptr)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    rvcn_dec_message_hevc_t result;
    int i, j;
    const struct VkVideoDecodeH265PictureInfoKHR *h265_pic_info =
@@ -1353,9 +1352,6 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    result.sps_info_flags |= sps->flags.sps_temporal_mvp_enabled_flag << 6;
    result.sps_info_flags |= sps->flags.strong_intra_smoothing_enabled_flag << 7;
    result.sps_info_flags |= sps->flags.separate_colour_plane_flag << 8;
-
-   if (pdev->info.family == CHIP_CARRIZO)
-      result.sps_info_flags |= 1 << 9;
 
    if (!h265_pic_info->pStdPictureInfo->flags.short_term_ref_pic_set_sps_flag) {
       result.sps_info_flags |= 1 << 11;
