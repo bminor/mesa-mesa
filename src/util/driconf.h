@@ -324,6 +324,10 @@
    DRI_CONF_OPT_B(vk_dont_care_as_load, def, \
                   "Treat VK_ATTACHMENT_LOAD_OP_DONT_CARE as LOAD_OP_LOAD, workaround on tiler GPUs for games that confuse these two load ops")
 
+#define DRI_CONF_VK_LOWER_TERMINATE_TO_DISCARD(def) \
+   DRI_CONF_OPT_B(vk_lower_terminate_to_discard, def, \
+                  "Lower terminate to discard (which is implicitly demote)")
+
 #define DRI_CONF_LIMIT_TRIG_INPUT_RANGE(def) \
    DRI_CONF_OPT_B(limit_trig_input_range, def, \
                   "Limit trig input range to [-2p : 2p] to improve sin/cos calculation precision on Intel")
@@ -705,10 +709,6 @@
 #define DRI_CONF_RADV_DISABLE_DCC_STORES(def) \
    DRI_CONF_OPT_B(radv_disable_dcc_stores, def, \
                   "Disable DCC for color storage images on GFX10-GFX11.5")
-
-#define DRI_CONF_RADV_LOWER_TERMINATE_TO_DISCARD(def) \
-   DRI_CONF_OPT_B(radv_lower_terminate_to_discard, def, \
-                  "Lower terminate to discard (which is implicitly demote)")
 
 #define DRI_CONF_RADV_DISABLE_ANISO_SINGLE_LEVEL(def) \
   DRI_CONF_OPT_B(radv_disable_aniso_single_level, def, \

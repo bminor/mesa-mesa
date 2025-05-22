@@ -27,8 +27,8 @@ TEST_F(misc, invariant_pipeline_cache_uuid)
 
    destroy_device();
 
+   add_envvar("vk_lower_terminate_to_discard", "true");
    add_envvar("radv_disable_shrink_image_store", "true");
-   add_envvar("radv_lower_terminate_to_discard", "true");
    add_envvar("RADV_DEBUG", "cswave32");
 
    create_device();

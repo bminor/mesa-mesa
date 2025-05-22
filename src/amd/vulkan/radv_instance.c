@@ -165,6 +165,7 @@ static const driOptionDescription radv_dri_options[] = {
 
    DRI_CONF_SECTION_DEBUG
       DRI_CONF_OVERRIDE_VRAM_SIZE()
+      DRI_CONF_VK_LOWER_TERMINATE_TO_DISCARD(false)
       DRI_CONF_VK_WSI_FORCE_BGRA8_UNORM_FIRST(false)
       DRI_CONF_VK_WSI_FORCE_SWAPCHAIN_TO_CURRENT_EXTENT(false)
       DRI_CONF_VK_X11_IGNORE_SUBOPTIMAL(false)
@@ -191,7 +192,6 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_OVERRIDE_COMPUTE_SHADER_VERSION(0)
       DRI_CONF_RADV_OVERRIDE_RAY_TRACING_SHADER_VERSION(0)
       DRI_CONF_RADV_SSBO_NON_UNIFORM(false)
-      DRI_CONF_RADV_LOWER_TERMINATE_TO_DISCARD(false)
       DRI_CONF_RADV_APP_LAYER()
       DRI_CONF_RADV_EMULATE_RT(false)
       DRI_CONF_RADV_ENABLE_FLOAT16_GFX8(false)
@@ -295,7 +295,7 @@ radv_init_dri_options(struct radv_instance *instance)
    instance->drirc.disable_dcc_stores = driQueryOptionb(&instance->drirc.options, "radv_disable_dcc_stores");
 
    instance->drirc.lower_terminate_to_discard =
-      driQueryOptionb(&instance->drirc.options, "radv_lower_terminate_to_discard");
+      driQueryOptionb(&instance->drirc.options, "vk_lower_terminate_to_discard");
 
    instance->drirc.emulate_rt = driQueryOptionb(&instance->drirc.options, "radv_emulate_rt");
 
