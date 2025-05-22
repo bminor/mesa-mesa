@@ -63,12 +63,6 @@ struct resource {
     struct vpe_priv *vpe_priv;
     struct vpec      vpec;
 
-    bool (*check_input_color_space)(struct vpe_priv *vpe_priv, enum vpe_surface_pixel_format format,
-        const struct vpe_color_space *vcs);
-
-    bool (*check_output_color_space)(struct vpe_priv *vpe_priv,
-        enum vpe_surface_pixel_format format, const struct vpe_color_space *vcs);
-
     bool (*check_h_mirror_support)(bool *input_mirror, bool *output_miror);
 
     enum vpe_status (*calculate_segments)(
@@ -181,6 +175,10 @@ void vpe_backend_config_callback(
     void *ctx, uint64_t cfg_base_gpu, uint64_t cfg_base_cpu, uint64_t size, uint32_t pipe_idx);
 
 bool vpe_rec_is_equal(struct vpe_rect rec1, struct vpe_rect rec2);
+
+const struct vpe_caps *vpe_get_capability(enum vpe_ip_level ip_level);
+
+void vpe_setup_check_funcs(struct vpe_check_support_funcs *funcs, enum vpe_ip_level ip_level);
 
 #ifdef __cplusplus
 }

@@ -269,23 +269,19 @@ enum vpe_status vpe10_set_num_segments(struct vpe_priv *vpe_priv, struct stream_
     return res;
 }
 
-bool vpe10_get_dcc_compression_output_cap(const struct vpe *vpe, const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap)
+bool vpe10_get_dcc_compression_output_cap(
+    const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap)
 {
     cap->capable = false;
     return cap->capable;
 }
 
-bool vpe10_get_dcc_compression_input_cap(const struct vpe *vpe, const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap)
+bool vpe10_get_dcc_compression_input_cap(
+    const struct vpe_dcc_surface_param *params, struct vpe_surface_dcc_cap *cap)
 {
     cap->capable = false;
     return cap->capable;
 }
-
-static struct vpe_cap_funcs cap_funcs =
-{
-    .get_dcc_compression_output_cap = vpe10_get_dcc_compression_output_cap,
-    .get_dcc_compression_input_cap  = vpe10_get_dcc_compression_input_cap
-};
 
 struct cdc_fe *vpe10_cdc_fe_create(struct vpe_priv *vpe_priv, int inst)
 {
@@ -372,7 +368,6 @@ enum vpe_status vpe10_construct_resource(struct vpe_priv *vpe_priv, struct resou
     struct vpe *vpe = &vpe_priv->pub;
 
     vpe->caps      = &caps;
-    vpe->cap_funcs = &cap_funcs;
 
     vpe10_construct_vpec(vpe_priv, &res->vpec);
 
@@ -405,8 +400,6 @@ enum vpe_status vpe10_construct_resource(struct vpe_priv *vpe_priv, struct resou
 
     res->internal_hdr_normalization = 1;
 
-    res->check_input_color_space           = vpe10_check_input_color_space;
-    res->check_output_color_space          = vpe10_check_output_color_space;
     res->check_h_mirror_support            = vpe10_check_h_mirror_support;
     res->calculate_segments                = vpe10_calculate_segments;
     res->set_num_segments                  = vpe10_set_num_segments;
@@ -459,8 +452,34 @@ void vpe10_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res)
     }
 }
 
-bool vpe10_check_input_color_space(struct vpe_priv *vpe_priv, enum vpe_surface_pixel_format format,
-    const struct vpe_color_space *vcs)
+bool vpe10_check_input_format(enum vpe_surface_pixel_format format)
+{
+    if (vpe_is_32bit_packed_rgb(format))
+        return true;
+
+    if (format == VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_YCbCr ||
+        format == VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_YCrCb)
+        return true;
+
+    if (format == VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_10bpc_YCbCr ||
+        format == VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_10bpc_YCrCb)
+        return true;
+
+    return false;
+}
+
+bool vpe10_check_output_format(enum vpe_surface_pixel_format format)
+{
+    if (vpe_is_32bit_packed_rgb(format))
+        return true;
+    if (vpe_is_fp16(format))
+        return true;
+
+    return false;
+}
+
+bool vpe10_check_input_color_space(
+    enum vpe_surface_pixel_format format, const struct vpe_color_space *vcs)
 {
     enum color_space         cs;
     enum color_transfer_func tf;
@@ -472,8 +491,8 @@ bool vpe10_check_input_color_space(struct vpe_priv *vpe_priv, enum vpe_surface_p
     return true;
 }
 
-bool vpe10_check_output_color_space(struct vpe_priv *vpe_priv, enum vpe_surface_pixel_format format,
-    const struct vpe_color_space *vcs)
+bool vpe10_check_output_color_space(
+    enum vpe_surface_pixel_format format, const struct vpe_color_space *vcs)
 {
     enum color_space         cs;
     enum color_transfer_func tf;
@@ -1415,4 +1434,19 @@ enum vpe_status vpe10_check_bg_color_support(struct vpe_priv *vpe_priv, struct v
         status = bg_color_outside_cs_gamut(vpe_priv, bg_color);
 
     return status;
+}
+
+const struct vpe_caps *vpe10_get_capability(void)
+{
+    return &caps;
+}
+
+void vpe10_setup_check_funcs(struct vpe_check_support_funcs *funcs)
+{
+    funcs->check_input_format             = vpe10_check_input_format;
+    funcs->check_output_format            = vpe10_check_output_format;
+    funcs->check_input_color_space        = vpe10_check_input_color_space;
+    funcs->check_output_color_space       = vpe10_check_output_color_space;
+    funcs->get_dcc_compression_input_cap  = vpe10_get_dcc_compression_input_cap;
+    funcs->get_dcc_compression_output_cap = vpe10_get_dcc_compression_output_cap;
 }

@@ -180,9 +180,11 @@ static void free_output_ctx(struct vpe_priv *vpe_priv)
 {
     if (vpe_priv->output_ctx.gamut_remap)
         vpe_free(vpe_priv->output_ctx.gamut_remap);
+    vpe_priv->output_ctx.gamut_remap = NULL;
 
     if (vpe_priv->output_ctx.output_tf)
         vpe_free(vpe_priv->output_ctx.output_tf);
+    vpe_priv->output_ctx.output_tf = NULL;
 
     destroy_output_config_vector(vpe_priv);
 }
@@ -218,28 +220,48 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
 {
     struct vpe_priv *vpe_priv;
     enum vpe_status  status;
+    struct vpe_engine_priv *engine_priv = NULL;
 
     if (!params || (params->funcs.zalloc == NULL) || (params->funcs.free == NULL) ||
         (params->funcs.log == NULL))
         return NULL;
 
-    vpe_priv =
-        (struct vpe_priv *)params->funcs.zalloc(params->funcs.mem_ctx, sizeof(struct vpe_priv));
+    if (!params->engine_handle) {
+        vpe_priv =
+            (struct vpe_priv *)params->funcs.zalloc(params->funcs.mem_ctx, sizeof(struct vpe_priv));
+    } else {
+        engine_priv = container_of(params->engine_handle, struct vpe_engine_priv, pub);
+        vpe_priv    = (struct vpe_priv *)engine_priv->init.funcs.zalloc(
+            engine_priv->init.funcs.mem_ctx, sizeof(struct vpe_priv));
+    }
+
     if (!vpe_priv)
         return NULL;
 
     vpe_priv->init = *params;
 
-    // Make sys event an optional feature but hooking up to dummy function if no callback is
+    if (!params->engine_handle) {
+        vpe_priv->engine_handle = NULL;
+        vpe_priv->pub.level =
+            vpe_resource_parse_ip_version(params->ver_major, params->ver_minor, params->ver_rev);
+
+        vpe_priv->pub.version = (VPELIB_API_VERSION_MAJOR << VPELIB_API_VERSION_MAJOR_SHIFT) |
+                                (VPELIB_API_VERSION_MINOR << VPELIB_API_VERSION_MINOR_SHIFT);
+        vpe_setup_check_funcs(&vpe_priv->pub.check_funcs, vpe_priv->pub.level);
+    } else if (engine_priv) {
+        /* use ip level, api version, check functions and init functions from vpe_engine */
+        vpe_priv->pub.level       = params->engine_handle->ip_level;
+        vpe_priv->pub.version     = params->engine_handle->api_version;
+        vpe_priv->pub.check_funcs = params->engine_handle->check_funcs;
+        vpe_priv->engine_handle   = params->engine_handle;
+        vpe_priv->init.funcs      = engine_priv->init.funcs;
+    }
+
+    // Make sys event an optional feature but hooking up to dummy function if no
+    // callback is
     // provided
     if (vpe_priv->init.funcs.sys_event == NULL)
         vpe_priv->init.funcs.sys_event = dummy_sys_event;
-
-    vpe_priv->pub.level =
-        vpe_resource_parse_ip_version(params->ver_major, params->ver_minor, params->ver_rev);
-
-    vpe_priv->pub.version = (VPELIB_API_VERSION_MAJOR << VPELIB_API_VERSION_MAJOR_SHIFT) |
-                            (VPELIB_API_VERSION_MINOR << VPELIB_API_VERSION_MINOR_SHIFT);
 
     status = vpe_construct_resource(vpe_priv, vpe_priv->pub.level, &vpe_priv->resource);
     if (status != VPE_STATUS_OK) {
@@ -288,14 +310,20 @@ void vpe_destroy(struct vpe **vpe)
 
     vpe_free_stream_ctx(vpe_priv);
 
-    if (vpe_priv->vpe_cmd_vector)
+    if (vpe_priv->vpe_cmd_vector) {
         vpe_vector_free(vpe_priv->vpe_cmd_vector);
+        vpe_priv->vpe_cmd_vector = NULL;
+    }
 
-    if (vpe_priv->dummy_input_param)
+    if (vpe_priv->dummy_input_param) {
         vpe_free(vpe_priv->dummy_input_param);
+        vpe_priv->dummy_input_param = NULL;
+    }
 
-    if (vpe_priv->dummy_stream)
+    if (vpe_priv->dummy_stream) {
         vpe_free(vpe_priv->dummy_stream);
+        vpe_priv->dummy_stream = NULL;
+    }
 
     vpe_free(vpe_priv);
 
@@ -958,4 +986,45 @@ enum vpe_status vpe_build_resolve_query(
     }
 
     return result;
+}
+
+const struct vpe_engine *vpe_create_engine(struct vpe_init_data *params)
+{
+    struct vpe_engine_priv *engine_priv;
+    struct vpe_engine      *engine_handle;
+    if (!params)
+        return NULL;
+    engine_priv = (struct vpe_engine_priv *)params->funcs.zalloc(
+        params->funcs.mem_ctx, sizeof(struct vpe_engine));
+    if (engine_priv == NULL)
+        return NULL;
+    /* setup public data */
+    engine_handle = &engine_priv->pub;
+    engine_handle->ip_level =
+        vpe_resource_parse_ip_version(params->ver_major, params->ver_minor, params->ver_rev);
+    engine_handle->api_version = (VPELIB_API_VERSION_MAJOR << VPELIB_API_VERSION_MAJOR_SHIFT) |
+                                 (VPELIB_API_VERSION_MINOR << VPELIB_API_VERSION_MINOR_SHIFT);
+    engine_handle->caps = vpe_get_capability(engine_handle->ip_level);
+
+    /* setup internal data */
+    engine_priv->init      = *params;
+    engine_priv->ver_major = params->ver_major;
+    engine_priv->ver_minor = params->ver_minor;
+    engine_priv->ver_rev   = params->ver_rev;
+    vpe_setup_check_funcs(&engine_handle->check_funcs, engine_handle->ip_level);
+    return engine_handle;
+}
+
+/**
+ * destroy the vpe engine instance.
+ * @param[in] engine  vpe engine instance created by vpe_create_engine()
+ */
+void vpe_destroy_engine(struct vpe_engine **engine)
+{
+    struct vpe_engine_priv *engine_priv;
+    if (!engine || ((*engine) == NULL))
+        return;
+    engine_priv = container_of(*engine, struct vpe_engine_priv, pub);
+    engine_priv->init.funcs.free(engine_priv->init.funcs.mem_ctx, engine_priv);
+    *engine = NULL;
 }

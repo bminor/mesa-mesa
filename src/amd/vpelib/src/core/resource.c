@@ -134,6 +134,7 @@ void vpe_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res)
     default:
         break;
     }
+    vpe_free(res);
 }
 
 enum vpe_status vpe_alloc_segment_ctx(
@@ -822,3 +823,34 @@ bool vpe_rec_is_equal(struct vpe_rect rec1, struct vpe_rect rec2)
             rec1.height == rec2.height);
 }
 
+const struct vpe_caps *vpe_get_capability(enum vpe_ip_level ip_level)
+{
+    const struct vpe_caps *caps;
+    switch (ip_level) {
+    case VPE_IP_LEVEL_1_0:
+        caps = vpe10_get_capability();
+        break;
+    case VPE_IP_LEVEL_1_1:
+        caps = vpe11_get_capability();
+        break;
+
+    default:
+        caps = NULL;
+    }
+    return caps;
+}
+
+void vpe_setup_check_funcs(struct vpe_check_support_funcs *funcs, enum vpe_ip_level ip_level)
+{
+    switch (ip_level) {
+    case VPE_IP_LEVEL_1_0:
+        vpe10_setup_check_funcs(funcs);
+        break;
+    case VPE_IP_LEVEL_1_1:
+        vpe11_setup_check_funcs(funcs);
+        break;
+    default:
+        break;
+    }
+    return;
+}
