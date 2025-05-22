@@ -187,10 +187,12 @@ i915_gem_mmap_offset(struct anv_device *device, struct anv_bo *bo,
    if (ptr == MAP_FAILED)
       return ptr;
 
+   void *ret = ptr + offset;
+
    if (offset != 0)
       munmap(ptr, offset);
 
-   return ptr + offset;
+   return ret;
 }
 
 static void *

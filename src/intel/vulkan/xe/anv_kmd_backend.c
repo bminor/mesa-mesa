@@ -131,10 +131,12 @@ xe_gem_mmap(struct anv_device *device, struct anv_bo *bo, uint64_t offset,
    if (ptr == MAP_FAILED)
       return ptr;
 
+   void *ret = ptr + offset;
+
    if (offset != 0)
       munmap(ptr, offset);
 
-   return ptr + offset;
+   return ret;
 }
 
 static inline uint32_t
