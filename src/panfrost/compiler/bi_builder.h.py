@@ -62,16 +62,9 @@ def nirtypes(opcode):
 
 def condition(opcode, typecheck, sizecheck):
     cond = ''
-    if typecheck == True:
-        cond += '('
-        types = nirtypes(opcode)
-        assert types != None
-        for T in types:
-            cond += "{}type == {}".format(' || ' if cond[-1] != '(' else '', T)
-        cond += ')'
 
     if sizecheck == True:
-        cond += "{}bitsize == {}".format(' && ' if cond != '' else '', typesize(opcode))
+        cond += "bitsize == {}".format(typesize(opcode))
 
     cmpf_mods = ops[opcode]["modifiers"]["cmpf"] if "cmpf" in ops[opcode]["modifiers"] else None
     if "cmpf" in ops[opcode]["modifiers"]:
@@ -80,6 +73,14 @@ def condition(opcode, typecheck, sizecheck):
             if cmpf != 'reserved':
                 cond += "{}cmpf == BI_CMPF_{}".format(' || ' if cond[-1] != '(' else '', cmpf.upper())
         cond += ')'
+
+    if typecheck == True:
+        types = nirtypes(opcode)
+        assert types != None
+        typecheck_cond = ' || '.join(map(lambda T: "type == {}".format(T), types))
+        if cond != '':
+            typecheck_cond = '(' + typecheck_cond + ') && '
+        cond = typecheck_cond + cond
 
     return 'true' if cond == '' else cond
 
