@@ -220,6 +220,7 @@ tu_emit_vis_stream_patchpoint(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                               uint32_t offset)
 {
    struct tu_vis_stream_patchpoint patchpoint = {
+      .render_pass_idx = cmd->state.tile_render_pass_count,
       .data = cs->cur,
       .iova = tu_cs_get_cur_iova(cs),
       .offset = offset,
@@ -339,12 +340,72 @@ tu6_emit_flushes(struct tu_cmd_buffer *cmd_buffer,
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
 }
 
+static void
+tu7_write_onchip_val(struct tu_cs *cs, enum tu_onchip_addr addr,
+                     uint32_t val)
+{
+   tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 4);
+   tu_cs_emit(cs, CP_EVENT_WRITE7_0_WRITE_DST(EV_DST_ONCHIP) |
+                  CP_EVENT_WRITE7_0_WRITE_SRC(EV_WRITE_USER_32B) |
+                  CP_EVENT_WRITE7_0_EVENT(DUMMY_EVENT) |
+                  CP_EVENT_WRITE7_0_WRITE_ENABLED);
+   tu_cs_emit_qw(cs, addr);
+   tu_cs_emit(cs, val);
+}
+
 /* "Normal" cache flushes outside the renderpass, that don't require any special handling */
 template <chip CHIP>
 void
 tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
 {
-   tu6_emit_flushes<CHIP>(cmd_buffer, &cmd_buffer->cs, &cmd_buffer->state.cache);
+   struct tu_cs *cs = &cmd_buffer->cs;
+   struct tu_cache_state *cache = &cmd_buffer->state.cache;
+   BITMASK_ENUM(tu_cmd_flush_bits) flushes = cache->flush_bits;
+
+   tu6_emit_flushes<CHIP>(cmd_buffer, cs, cache);
+
+   if ((flushes & TU_CMD_FLAG_WAIT_FOR_BR) && CHIP >= A7XX) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
+
+      tu_cs_emit_pkt7(cs, CP_MODIFY_TIMESTAMP, 1);
+      tu_cs_emit(cs, CP_MODIFY_TIMESTAMP_0_ADD(1) |
+                     CP_MODIFY_TIMESTAMP_0_OP(MODIFY_TIMESTAMP_ADD_LOCAL));
+
+      tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+      tu7_write_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
+
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+      /* Wait for the previous WAIT_FOR_BR to execute on BV and reset the wait
+       * value.
+       */
+      tu7_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
+
+      /* Signal the wait value. */
+      tu7_write_onchip_val(cs, TU_ONCHIP_BARRIER, 1);
+
+      tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+      /* Wait for the value. Note that we must use CP_WAIT_REG_MEM due to a
+       * firmware bug which makes CP_WAIT_TIMESTAMP on BV deadlock with
+       * preemption when BV waits for BR. Without this bug the whole thing
+       * would be much, much simpler.
+       */
+      tu7_wait_onchip_val(cs, TU_ONCHIP_BARRIER, 1);
+
+      /* Reset the wait value. */
+      tu7_write_onchip_val(cs, TU_ONCHIP_BARRIER, 0);
+
+      /* Resetting the wait value happens asynchronously (since it's an
+       * EVENT_WRITE), but waiting for it happens synchronously. We need to
+       * prevent BV from racing ahead to the next wait before it's reset.
+       */
+      tu7_wait_onchip_val(cs, TU_ONCHIP_BARRIER, 0);
+
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+   }
 }
 TU_GENX(tu_emit_cache_flush);
 
@@ -356,8 +417,11 @@ tu_emit_cache_flush_renderpass(struct tu_cmd_buffer *cmd_buffer)
    if (!cmd_buffer->state.renderpass_cache.flush_bits &&
        likely(!tu_env.debug))
       return;
-   tu6_emit_flushes<CHIP>(cmd_buffer, &cmd_buffer->draw_cs,
-                    &cmd_buffer->state.renderpass_cache);
+
+   struct tu_cs *cs = &cmd_buffer->draw_cs;
+   struct tu_cache_state *cache = &cmd_buffer->state.renderpass_cache;
+
+   tu6_emit_flushes<CHIP>(cmd_buffer, cs, cache);
    if (cmd_buffer->state.renderpass_cache.flush_bits &
        TU_CMD_FLAG_BLIT_CACHE_CLEAN) {
       cmd_buffer->state.blit_cache_cleaned = true;
@@ -491,7 +555,7 @@ tu_emit_cache_flush_ccu(struct tu_cmd_buffer *cmd_buffer,
          (CHIP == A6XX ? TU_CMD_FLAG_WAIT_FOR_IDLE : 0));
    }
 
-   tu6_emit_flushes<CHIP>(cmd_buffer, cs, &cmd_buffer->state.cache);
+   tu_emit_cache_flush<CHIP>(cmd_buffer);
 
    if (ccu_state != cmd_buffer->state.ccu_state) {
       emit_rb_ccu_cntl<CHIP>(cs, cmd_buffer->device,
@@ -2116,6 +2180,25 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    }
 
    if (CHIP >= A7XX) {
+      if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, true);
+
+      /* This sets the amount BV is allowed to be ahead of BR when we do
+       * BV_WAIT_FOR_BR. By setting it based on the vis stream count we
+       * prevent write-after-read races with the vis stream.
+       */
+      tu_cs_emit_pkt7(cs, CP_BV_BR_COUNT_OPS, 2);
+      tu_cs_emit(cs, CP_BV_BR_COUNT_OPS_0_OP(PIPE_SET_BR_OFFSET));
+
+      struct tu_vis_stream_patchpoint *patchpoint =
+         &cmd->vis_stream_count_patchpoint;
+      patchpoint->data = cs->cur;
+      patchpoint->iova = tu_cs_get_cur_iova(cs);
+      tu_cs_emit(cs, 1);
+
+      if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
+         tu_cs_set_writeable(cs, false);
+
       tu7_thread_control(cs, CP_SET_THREAD_BR);
    }
 
@@ -2137,6 +2220,10 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
                      CP_SET_AMBLE_2_TYPE(BIN_PREAMBLE_AMBLE_TYPE));
 
       tu7_thread_control(cs, CP_SET_THREAD_BOTH);
+
+      tu7_set_pred_mask(cs, (1u << TU_PREDICATE_VTX_STATS_RUNNING) |
+                            (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING),
+                            (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING));
    }
 
    tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
@@ -2238,7 +2325,7 @@ emit_vsc_overflow_test(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 template <chip CHIP>
 static void
 tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
-                      const VkOffset2D *fdm_offsets)
+                      const VkOffset2D *fdm_offsets, bool use_cb)
 {
    struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
@@ -2336,12 +2423,18 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit_regs(cs,
                    A6XX_TPL1_WINDOW_OFFSET(.x = 0, .y = 0));
 
-   trace_start_binning_ib(&cmd->trace, cs, cmd);
+   if (use_cb)
+      trace_start_concurrent_binning_ib(&cmd->trace, cs, cmd);
+   else
+      trace_start_binning_ib(&cmd->trace, cs, cmd);
 
    /* emit IB to binning drawcmds: */
    tu_cs_emit_call(cs, &cmd->draw_cs);
 
-   trace_end_binning_ib(&cmd->trace, cs);
+   if (use_cb)
+      trace_end_concurrent_binning_ib(&cmd->trace, cs);
+   else
+      trace_end_binning_ib(&cmd->trace, cs);
 
    /* switching from binning pass to GMEM pass will cause a switch from
     * PROGRAM_BINNING to PROGRAM, which invalidates const state (XS_CONST states)
@@ -2667,6 +2760,46 @@ tu_emit_renderpass_begin(struct tu_cmd_buffer *cmd)
    cmd->state.fdm_enabled = cmd->state.pass->has_fdm;
 }
 
+static bool
+tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
+                            bool disable_cb)
+{
+   if (disable_cb ||
+       /* LRZ can only be cleared via fast clear in BV. Disable CB if we can't
+        * use it.
+        */
+       !cmd->state.lrz.fast_clear || 
+       TU_DEBUG(NO_CONCURRENT_BINNING)) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+      tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+      return false;
+   }
+   tu7_thread_control(cs, CP_SET_THREAD_BOTH);
+
+   /* Increment timestamp to make it unique in subsequent commands */
+   tu_cs_emit_pkt7(cs, CP_MODIFY_TIMESTAMP, 1);
+   tu_cs_emit(cs, CP_MODIFY_TIMESTAMP_0_ADD(1) |
+                  CP_MODIFY_TIMESTAMP_0_OP(MODIFY_TIMESTAMP_ADD_LOCAL));
+
+   /* We initialize the "is concurrent binning enabled?" predicate to true and
+    * disable it later if necessary.
+    */
+   tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, true);
+
+   tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+   /* If there was an overflow in the BR resource table the register will be
+    * set to 1 by CP_RESOURCE_LIST. Wait for it to clear here.
+    */
+   tu7_wait_onchip_val(cs, TU_ONCHIP_CB_RESLIST_OVERFLOW, 0);
+
+   tu_lrz_cb_begin(cmd, cs);
+
+   return true;
+}
+
 template <chip CHIP>
 static void
 tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
@@ -2674,7 +2807,39 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 {
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
 
+   /* It seems that for sysmem render passes we have to use BV to clear LRZ
+    * before the renderpass. Otherwise the clear doesn't become visible to
+    * subsequent draws when LRZ has been flipped an odd number of times.
+    * Presumably this works if concurrent binning is disabled, because the
+    * blob relies on this, but that requires synchronizing BR and BV
+    * unnecessarily, and we want BV to skip ahead across sysmem renderpasses.
+    *
+    * In the future, we may also support writing LRZ in BV.
+    */
+   bool concurrent_binning = false;
+   if (CHIP >= A7XX) {
+      concurrent_binning = tu7_emit_concurrent_binning(cmd, cs, false);
+
+      tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+      tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_VISIBILITY));
+   }
+
    tu_lrz_sysmem_begin<CHIP>(cmd, cs);
+
+   if (concurrent_binning) {
+      tu_lrz_after_bv<CHIP>(cmd, cs);
+
+      tu7_write_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
+
+      tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+      tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM7_BIN_VISIBILITY_END));
+
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+      tu7_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
+
+      tu_lrz_before_sysmem_br<CHIP>(cmd, cs);
+   }
 
    assert(fb->width > 0 && fb->height > 0);
    tu6_emit_window_scissor(cs, 0, 0, fb->width - 1, fb->height - 1);
@@ -2758,7 +2923,153 @@ tu6_sysmem_render_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    tu_lrz_sysmem_end<CHIP>(cmd, cs);
 
+   /* Clear the resource list for any LRZ resources we emitted at the
+    * beginning.
+    */
+   if (CHIP >= A7XX) {
+      tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 4);
+      tu_cs_emit(cs, CP_EVENT_WRITE7_0_EVENT(DUMMY_EVENT) |
+                     CP_EVENT_WRITE7_0_CLEAR_RENDER_RESOURCE |
+                     CP_EVENT_WRITE7_0_WRITE_DST(EV_DST_ONCHIP) |
+                     CP_EVENT_WRITE7_0_WRITE_SRC(EV_WRITE_USER_32B) |
+                     CP_EVENT_WRITE7_0_WRITE_ENABLED);
+      tu_cs_emit_qw(cs, TU_ONCHIP_CB_RESLIST_OVERFLOW);
+      tu_cs_emit(cs, 0); /* value */
+   }
+
    tu_cs_sanity_check(cs);
+}
+
+static void
+tu7_write_and_wait_onchip_timestamp(struct tu_cs *cs, enum tu_onchip_addr onchip_addr)
+{
+   tu7_write_onchip_timestamp(cs, onchip_addr);
+   tu7_wait_onchip_timestamp(cs, onchip_addr);
+}
+
+static bool
+tu7_emit_concurrent_binning_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs, 
+                                 bool use_hw_binning)
+{
+   /* xfb queries use data from the binning pass. If they are running outside
+    * of a RP then we may have to deal with a mix of GMEM/sysmem renderpasses
+    * where the counters increase on different processors. Just disable CB so
+    * that everything happens on BR and we don't need difficult merging of BV
+    * and BR results. In addition, RBBM primitive counters seem to not work
+    * at all with concurrent binning, so disable if they are running before
+    * the RP.
+    */
+   bool disable_cb =
+      cmd->state.xfb_query_running_before_rp ||
+      cmd->state.rp.has_prim_generated_query_in_rp ||
+      cmd->state.rp.has_vtx_stats_query_in_rp ||
+      cmd->state.prim_counters_running > 0;
+
+
+   if (!tu7_emit_concurrent_binning(cmd, cs, disable_cb || !use_hw_binning))
+      return false;
+
+   /* We want to disable concurrent binning if BV isn't far enough ahead of
+    * BR. The core idea is to write a timestamp in BR and BV, and compare the
+    * BR and BV timestamps for equality. if BR is fast enough, it will write
+    * the timestamp ahead of BV and then when BV compares for equality it will
+    * find them equal. BR cannot race too far ahead of BV because it must wait
+    * for BV's determination to finish, which we do via another timestamp, so
+    * either BV is ahead of BR or the timestamps are equal.
+    *
+    * We need to communicate the determination from BV to BR so they both
+    * agree on whether concurrent binning is enabled or not. The easiest way
+    * to do it is via a "when was concurrent binning last disabled" timestamp,
+    * because we only have to set it when disabling concurrent binning.
+    */
+
+   if (!TU_DEBUG(FORCE_CONCURRENT_BINNING)) {
+      tu7_write_and_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
+      
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu7_write_and_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BR_TIMESTAMP);
+
+      tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+      /* If in a secondary, dynamically disable CB if a vtx stats query is
+       * running.
+       */
+      if (cmd->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+         tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST) |
+                                CP_COND_REG_EXEC_0_PRED_BIT(TU_PREDICATE_VTX_STATS_RUNNING));
+      }
+
+      const uint32_t bv_cond_dwords = 3 + 4 + 4;
+      tu_cs_reserve(cs, 4 + bv_cond_dwords);
+
+      tu_cs_emit_pkt7(cs, CP_COND_REG_EXEC, 3);
+      tu_cs_emit(cs, CP_COND_REG_EXEC_0_MODE(REG_COMPARE) |
+                     CP_COND_REG_EXEC_0_REG0(TU_ONCHIP_CB_BR_TIMESTAMP) |
+                     CP_COND_REG_EXEC_0_ONCHIP_MEM);
+      tu_cs_emit(cs, REG_COMPARE_CP_COND_REG_EXEC_1_REG1(TU_ONCHIP_CB_BV_TIMESTAMP) |
+                     REG_COMPARE_CP_COND_REG_EXEC_1_ONCHIP_MEM);
+      tu_cs_emit(cs, bv_cond_dwords);
+      if (cmd->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
+         tu_cond_exec_end(cs);
+      /* if (BR_TIMESTAMP == BV_TIMESTAMP) */ {
+         tu7_write_and_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_DISABLED_TIMESTAMP);
+         tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+      }
+      tu7_write_onchip_timestamp(cs,
+                                 TU_ONCHIP_CB_BV_DETERMINATION_FINISHED_TIMESTAMP);
+
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+      tu7_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_DETERMINATION_FINISHED_TIMESTAMP);
+
+      const uint32_t br_cond_dwords = 4;
+      tu_cs_reserve(cs, 4 + br_cond_dwords);
+
+      tu_cs_emit_pkt7(cs, CP_COND_REG_EXEC, 3);
+      tu_cs_emit(cs, CP_COND_REG_EXEC_0_MODE(REG_COMPARE) |
+                     CP_COND_REG_EXEC_0_REG0(TU_ONCHIP_CB_BR_TIMESTAMP) |
+                     CP_COND_REG_EXEC_0_ONCHIP_MEM);
+      tu_cs_emit(cs, REG_COMPARE_CP_COND_REG_EXEC_1_REG1(TU_ONCHIP_CB_BV_DISABLED_TIMESTAMP) |
+                     REG_COMPARE_CP_COND_REG_EXEC_1_ONCHIP_MEM);
+      tu_cs_emit(cs, br_cond_dwords);
+      /* if (BR_TIMESTAMP == BV_DISABLED_TIMESTAMP) */ {
+         tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+      }
+   }
+
+   /* At this point BV and BR are agreed on whether CB is enabled. If CB is
+    * enabled, set the thread to BV for the binning pass, otherwise set BR and
+    * disable concurrent binning.
+    */
+   tu7_thread_control(cs, CP_SET_THREAD_BOTH);
+
+   const uint32_t if_dwords = 5;
+   const uint32_t else_dwords = 2;
+   tu_cs_reserve(cs, 3 + if_dwords + else_dwords);
+
+   tu_cs_emit_pkt7(cs, CP_COND_REG_EXEC, 2);
+   tu_cs_emit(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST) |
+                  CP_COND_REG_EXEC_0_PRED_BIT(TU_PREDICATE_CB_ENABLED) |
+                  CP_COND_REG_EXEC_0_SKIP_WAIT_FOR_ME);
+   tu_cs_emit(cs, if_dwords);
+   /* if (CB is enabled) */ {
+      tu7_thread_control(cs, CP_SET_THREAD_BV);
+
+      /* Wait for BR vis stream reads to finish */
+      tu_cs_emit_pkt7(cs, CP_BV_BR_COUNT_OPS, 1);
+      tu_cs_emit(cs, CP_BV_BR_COUNT_OPS_0_OP(PIPE_BV_WAIT_FOR_BR));
+
+      /* This is the NOP-as-else trick. If CB is disabled, this CP_NOP is
+       * skipped and its body (the else) is executed.
+       */
+      tu_cs_emit_pkt7(cs, CP_NOP, else_dwords);
+   } /* else */ {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+   }
+
+   return true;
 }
 
 template <chip CHIP>
@@ -2771,15 +3082,30 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    const struct tu_tiling_config *tiling = cmd->state.tiling;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, tiling);
    const struct tu_render_pass *pass = cmd->state.pass;
+   bool use_binning = use_hw_binning(cmd);
 
-   tu_lrz_tiling_begin<CHIP>(cmd, cs);
+   /* User flushes should always be executed on BR. */
+   tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_GMEM);
 
-   tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
-   tu_cs_emit(cs, 0x0);
+   bool use_cb = false;
 
    if (CHIP >= A7XX) {
       tu7_emit_tile_render_begin_regs(cs);
+      use_cb = tu7_emit_concurrent_binning_gmem(cmd, cs, use_binning);
    }
+
+   if (!use_cb)
+      tu_trace_start_render_pass(cmd);
+
+   tu_lrz_tiling_begin<CHIP>(cmd, cs);
+
+   /* tu_lrz_tiling_begin() can accumulate additional flushes. If that happens
+    * CB should be disabled, so it's safe to just emit them here.
+    */
+   tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_GMEM);
+
+   tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
+   tu_cs_emit(cs, 0x0);
 
    /* Reset bin scaling. */
    if (phys_dev->info->a7xx.has_hw_bin_scaling) {
@@ -2787,15 +3113,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
 
-   tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_GMEM);
-
-   if (CHIP >= A7XX) {
-      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
-                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
-   }
-
-   if (use_hw_binning(cmd)) {
+   if (use_binning) {
       if (!cmd->vsc_initialized) {
          tu6_lazy_init_vsc(cmd);
       }
@@ -2833,7 +3151,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
       tu6_emit_render_cntl<CHIP>(cmd, cmd->state.subpass, cs, true);
 
-      tu6_emit_binning_pass<CHIP>(cmd, cs, fdm_offsets);
+      tu6_emit_binning_pass<CHIP>(cmd, cs, fdm_offsets, use_cb);
 
       if (CHIP == A6XX) {
          tu_cs_emit_regs(cs,
@@ -2897,6 +3215,40 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
          tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
 
+         if (use_binning) {
+            tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+            tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BV));
+
+            tu_lrz_after_bv<CHIP>(cmd, cs);
+
+            /* Signal that BV is done for this render pass. This always has to
+             * be executed, even when CB is dynamically disabled, because we
+             * need to keep BR and BV counts in sync with which visibility
+             * streams are in use.
+             */
+            tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 1);
+            tu_cs_emit(cs, CP_EVENT_WRITE7_0_EVENT(DUMMY_EVENT) |
+                           CP_EVENT_WRITE7_0_INC_BV_COUNT);
+
+            /* This mode seems to be only used by BV and signals that a
+             * simpler save/restore procedure can be used in between render
+             * passes.
+             */
+            tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+            tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM7_BIN_VISIBILITY_END));
+         }
+
+         tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+         if (use_binning) {
+            /* Wait for the BV to be done for this render pass. */
+            tu_cs_emit_pkt7(cs, CP_BV_BR_COUNT_OPS, 1);
+            tu_cs_emit(cs, CP_BV_BR_COUNT_OPS_0_OP(PIPE_BR_WAIT_FOR_BV));
+
+            /* Emit vis stream on BR */
+            tu_emit_vsc<CHIP>(cmd, cs);
+         }
+
          tu_cs_emit_pkt7(cs, CP_MEM_TO_SCRATCH_MEM, 4);
          tu_cs_emit(cs, num_vsc_pipes); /* count */
          tu_cs_emit(cs, 0); /* offset */
@@ -2906,7 +3258,17 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       if (CHIP >= A7XX &&
           (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT))
          tu_cs_set_writeable(cs, false);
+   } else if (CHIP >= A7XX) {
+      /* Earlier we disabled concurrent binning to make LRZ fast-clear work
+       * with no HW binning, now re-enable it while staying on BR.
+       */
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
    }
+
+   tu_lrz_before_tiles<CHIP>(cmd, cs, use_cb);
+
+   if (use_cb)
+      tu_trace_start_render_pass(cmd);
 
    tu_autotune_begin_renderpass<CHIP>(cmd, cs, autotune_result);
 
@@ -2982,11 +3344,29 @@ tu6_tile_render_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    tu_lrz_tiling_end<CHIP>(cmd, cs);
 
-   tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
-
-   if (CHIP >= A7XX) {
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+   bool hw_binning = use_hw_binning(cmd);
+   if (hw_binning) {
+      cmd->state.tile_render_pass_count++;
    }
+
+   /* If we are using HW binning, signal that we are done with reading the vis
+    * stream for this render pass by advancing the counter. Also clear render
+    * resources, currently only used for LRZ, and reset the overflow onchip
+    * register.
+    */
+   if (CHIP >= A7XX) {
+      tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 4);
+      tu_cs_emit(cs, CP_EVENT_WRITE7_0_EVENT(DUMMY_EVENT) |
+                     COND(hw_binning, CP_EVENT_WRITE7_0_INC_BR_COUNT) |
+                     CP_EVENT_WRITE7_0_CLEAR_RENDER_RESOURCE |
+                     CP_EVENT_WRITE7_0_WRITE_DST(EV_DST_ONCHIP) |
+                     CP_EVENT_WRITE7_0_WRITE_SRC(EV_WRITE_USER_32B) |
+                     CP_EVENT_WRITE7_0_WRITE_ENABLED);
+      tu_cs_emit_qw(cs, TU_ONCHIP_CB_RESLIST_OVERFLOW);
+      tu_cs_emit(cs, 0); /* value */
+   }
+
+   tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
 
    tu_cs_sanity_check(cs);
 }
@@ -3353,8 +3733,6 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
    tu_cs_begin(&cmd->tile_store_cs);
    tu6_emit_tile_store_cs<CHIP>(cmd, &cmd->tile_store_cs);
    tu_cs_end(&cmd->tile_store_cs);
-
-   tu_trace_start_render_pass(cmd);
 
    tu6_tile_render_begin<CHIP>(cmd, &cmd->cs, autotune_result, fdm_offsets);
 
@@ -5370,7 +5748,8 @@ sanitize_dst_stage(VkPipelineStageFlags2 stage_mask)
 }
 
 static enum tu_stage
-vk2tu_single_stage(VkPipelineStageFlags2 vk_stage, bool dst)
+vk2tu_single_stage(struct tu_device *dev,
+                   VkPipelineStageFlags2 vk_stage, bool dst)
 {
    /* If the destination stage is executed on the CP, then the CP also has to
     * wait for any WFI's to finish. This is already done for draw calls,
@@ -5394,24 +5773,40 @@ vk2tu_single_stage(VkPipelineStageFlags2 vk_stage, bool dst)
    if (vk_stage == VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT ||
        vk_stage == VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT ||
        vk_stage == VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT)
-      return TU_STAGE_CP;
+      return TU_STAGE_BV_CP;
 
    if (vk_stage == VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT ||
        vk_stage == VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-      return dst ? TU_STAGE_CP : TU_STAGE_GPU;
+      return dst ? TU_STAGE_BV_CP : TU_STAGE_BR;
 
    if (vk_stage == VK_PIPELINE_STAGE_2_HOST_BIT)
-      return dst ? TU_STAGE_BOTTOM : TU_STAGE_CP;
+      return dst ? TU_STAGE_BOTTOM : TU_STAGE_BV_CP;
 
-   return TU_STAGE_GPU;
+   if (dev->physical_device->info->chip >= 7) {
+      if (vk_stage == VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT ||
+          vk_stage == VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT ||
+          vk_stage == VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT) {
+         return dst ? TU_STAGE_BV : TU_STAGE_BR;
+      }
+   }
+
+   return TU_STAGE_BR;
 }
 
 static enum tu_stage
-vk2tu_src_stage(VkPipelineStageFlags2 vk_stages)
+vk2tu_src_stage(struct tu_device *dev,
+                VkPipelineStageFlags2 vk_stages)
 {
-   enum tu_stage stage = TU_STAGE_CP;
+   enum tu_stage stage = TU_STAGE_BV_CP;
    u_foreach_bit64 (bit, vk_stages) {
-      enum tu_stage new_stage = vk2tu_single_stage(1ull << bit, false);
+      enum tu_stage new_stage = vk2tu_single_stage(dev, 1ull << bit, false);
       stage = MAX2(stage, new_stage);
    }
 
@@ -5419,11 +5814,12 @@ vk2tu_src_stage(VkPipelineStageFlags2 vk_stages)
 }
 
 static enum tu_stage
-vk2tu_dst_stage(VkPipelineStageFlags2 vk_stages)
+vk2tu_dst_stage(struct tu_device *dev,
+                VkPipelineStageFlags2 vk_stages)
 {
    enum tu_stage stage = TU_STAGE_BOTTOM;
    u_foreach_bit64 (bit, vk_stages) {
-      enum tu_stage new_stage = vk2tu_single_stage(1ull << bit, true);
+      enum tu_stage new_stage = vk2tu_single_stage(dev, 1ull << bit, true);
       stage = MIN2(stage, new_stage);
    }
 
@@ -5437,14 +5833,17 @@ tu_flush_for_stage(struct tu_cache_state *cache,
    /* Even if the source is the host or CP, the destination access could
     * generate invalidates that we have to wait to complete.
     */
-   if (src_stage == TU_STAGE_CP &&
+   if (src_stage < TU_STAGE_BR &&
        (cache->flush_bits & TU_CMD_FLAG_ALL_INVALIDATE))
-      src_stage = TU_STAGE_GPU;
+      src_stage = TU_STAGE_BR;
 
    if (src_stage >= dst_stage) {
       cache->flush_bits |= TU_CMD_FLAG_WAIT_FOR_IDLE;
-      if (dst_stage == TU_STAGE_CP)
-         cache->pending_flush_bits |= TU_CMD_FLAG_WAIT_FOR_ME;
+      if (dst_stage <= TU_STAGE_BV) {
+         cache->flush_bits |= TU_CMD_FLAG_WAIT_FOR_BR;
+         if (dst_stage == TU_STAGE_BV_CP)
+            cache->pending_flush_bits |= TU_CMD_FLAG_WAIT_FOR_ME;
+      }
    }
 }
 
@@ -5455,6 +5854,7 @@ tu_render_pass_state_merge(struct tu_render_pass_state *dst,
    dst->xfb_used |= src->xfb_used;
    dst->has_tess |= src->has_tess;
    dst->has_prim_generated_query_in_rp |= src->has_prim_generated_query_in_rp;
+   dst->has_vtx_stats_query_in_rp |= src->has_vtx_stats_query_in_rp;
    dst->has_zpass_done_sample_count_write_in_rp |= src->has_zpass_done_sample_count_write_in_rp;
    dst->disable_gmem |= src->disable_gmem;
    dst->sysmem_single_prim_mode |= src->sysmem_single_prim_mode;
@@ -5653,6 +6053,7 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                                 secondary_patchpoint) {
             struct tu_vis_stream_patchpoint patchpoint =
                *secondary_patchpoint;
+            patchpoint.render_pass_idx += cmd->state.tile_render_pass_count;
 
             if (simultaneous_use) {
                tu_cs_reserve_space(cs, 5);
@@ -5682,6 +6083,8 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
             }
          }
 
+         cmd->state.tile_render_pass_count +=
+            secondary->state.tile_render_pass_count;
          cmd->vsc_size = MAX2(cmd->vsc_size, secondary->vsc_size);
 
          switch (secondary->state.suspend_resume) {
@@ -5844,8 +6247,8 @@ tu_subpass_barrier(struct tu_cmd_buffer *cmd_buffer,
 
    tu_flush_for_access(cache, src_flags, dst_flags);
 
-   enum tu_stage src_stage = vk2tu_src_stage(src_stage_vk);
-   enum tu_stage dst_stage = vk2tu_dst_stage(dst_stage_vk);
+   enum tu_stage src_stage = vk2tu_src_stage(cmd_buffer->device, src_stage_vk);
+   enum tu_stage dst_stage = vk2tu_dst_stage(cmd_buffer->device, dst_stage_vk);
    tu_flush_for_stage(cache, src_stage, dst_stage);
 }
 
@@ -5975,6 +6378,10 @@ tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resol
    struct tu_cs *cs = &cmd->draw_cs;
    uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
 
+   tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(RENDER_MODE) |
+                          CP_COND_REG_EXEC_0_GMEM |
+                          CP_COND_REG_EXEC_0_SYSMEM);
+
    bool emitted_scissor = false;
    for (uint32_t i = 0; i < cmd->state.pass->attachment_count; ++i) {
       struct tu_render_pass_attachment *att =
@@ -5987,6 +6394,8 @@ tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resol
          tu7_generic_clear_attachment(cmd, cs, resolve_group, i);
       }
    }
+
+   tu_cond_exec_end(cs);
 }
 
 static void
@@ -8906,8 +9315,8 @@ tu_barrier(struct tu_cmd_buffer *cmd,
 
    tu_flush_for_access(cache, src_flags, dst_flags);
 
-   enum tu_stage src_stage = vk2tu_src_stage(srcStage);
-   enum tu_stage dst_stage = vk2tu_dst_stage(dstStage);
+   enum tu_stage src_stage = vk2tu_src_stage(cmd->device, srcStage);
+   enum tu_stage dst_stage = vk2tu_dst_stage(cmd->device, dstStage);
    tu_flush_for_stage(cache, src_stage, dst_stage);
 }
 
@@ -8973,9 +9382,6 @@ tu_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
 
    struct tu_cs *cs = cmd->state.pass ? &cmd->draw_cs : &cmd->cs;
 
-   tu_cs_emit_pkt7(cs, CP_DRAW_PRED_ENABLE_GLOBAL, 1);
-   tu_cs_emit(cs, 1);
-
    /* Wait for any writes to the predicate to land */
    if (cmd->state.pass)
       tu_emit_cache_flush_renderpass<CHIP>(cmd);
@@ -8989,23 +9395,72 @@ tu_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
     * mandates 32-bit comparisons. Our workaround is to copy the the reference
     * value to the low 32-bits of a location where the high 32 bits are known
     * to be 0 and then compare that.
+    *
+    * BR and BV use separate predicate values so that setting the predicate
+    * doesn't have to be synchronized between them.
     */
+   if (CHIP >= A7XX) {
+      if (!cmd->state.pass) {
+         tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+         tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
+      }
+      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
+                             CP_COND_REG_EXEC_0_BR);
+   }
+
    tu_cs_emit_pkt7(cs, CP_MEM_TO_MEM, 5);
    tu_cs_emit(cs, 0);
    tu_cs_emit_qw(cs, global_iova(cmd, predicate));
    tu_cs_emit_qw(cs, iova);
 
+   if (CHIP >= A7XX) {
+      tu_cond_exec_end(cs);
+      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
+                             CP_COND_REG_EXEC_0_BV);
+      tu_cs_emit_pkt7(cs, CP_MEM_TO_MEM, 5);
+      tu_cs_emit(cs, 0);
+      tu_cs_emit_qw(cs, global_iova(cmd, bv_predicate));
+      tu_cs_emit_qw(cs, iova);
+      tu_cond_exec_end(cs);
+   }
+
    tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
    tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
 
+   tu_cs_emit_pkt7(cs, CP_DRAW_PRED_ENABLE_GLOBAL, 1);
+   tu_cs_emit(cs, 1);
+
    bool inv = pConditionalRenderingBegin->flags & VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT;
+
+   if (CHIP >= A7XX) {
+      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
+                             CP_COND_REG_EXEC_0_BR);
+   }
    tu_cs_emit_pkt7(cs, CP_DRAW_PRED_SET, 3);
    tu_cs_emit(cs, CP_DRAW_PRED_SET_0_SRC(PRED_SRC_MEM) |
                   CP_DRAW_PRED_SET_0_TEST(inv ? EQ_0_PASS : NE_0_PASS));
    tu_cs_emit_qw(cs, global_iova(cmd, predicate));
+
+   if (CHIP >= A7XX) {
+      tu_cond_exec_end(cs);
+      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
+                             CP_COND_REG_EXEC_0_BV);
+      tu_cs_emit_pkt7(cs, CP_DRAW_PRED_SET, 3);
+      tu_cs_emit(cs, CP_DRAW_PRED_SET_0_SRC(PRED_SRC_MEM) |
+                     CP_DRAW_PRED_SET_0_TEST(inv ? EQ_0_PASS : NE_0_PASS));
+      tu_cs_emit_qw(cs, global_iova(cmd, bv_predicate));
+      tu_cond_exec_end(cs);
+   }
+
+   /* Restore original BR thread after setting BOTH */
+   if (CHIP >= A7XX && !cmd->state.pass) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+   }
 }
 TU_GENX(tu_CmdBeginConditionalRenderingEXT);
 
+template <chip CHIP>
 VKAPI_ATTR void VKAPI_CALL
 tu_CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
@@ -9015,9 +9470,20 @@ tu_CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 
    struct tu_cs *cs = cmd->state.pass ? &cmd->draw_cs : &cmd->cs;
 
+   if (CHIP >= A7XX && !cmd->state.pass) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
+   }
+
    tu_cs_emit_pkt7(cs, CP_DRAW_PRED_ENABLE_GLOBAL, 1);
    tu_cs_emit(cs, 0);
+
+   if (CHIP >= A7XX && !cmd->state.pass) {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+   }
 }
+TU_GENX(tu_CmdEndConditionalRenderingEXT);
 
 template <chip CHIP>
 void

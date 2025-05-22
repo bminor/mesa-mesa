@@ -1099,6 +1099,9 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
       bool need_cond_exec = cmdbuf->state.pass && cmdbuf->state.prim_counters_running;
       cmdbuf->state.prim_counters_running++;
 
+      if (cmdbuf->state.pass)
+         cmdbuf->state.rp.has_vtx_stats_query_in_rp = true;
+
       /* Prevent starting primitive counters when it is supposed to be stopped
        * for outer VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query.
        */
@@ -1110,9 +1113,26 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
 
       tu_emit_event_write<CHIP>(cmdbuf, cs, FD_START_PRIMITIVE_CTRS);
 
-      tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
-      tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
-      tu_cs_emit(cs, 0);
+      if (CHIP >= A7XX) {
+         /* We need the predicate for determining whether to enable CB, so set
+          * it for both BR and BV.
+          */
+         if (!cmdbuf->state.pass) {
+            tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+            tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
+         }
+         tu7_set_pred_mask(cs, (1u << TU_PREDICATE_VTX_STATS_RUNNING) |
+                               (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING),
+                               (1u << TU_PREDICATE_VTX_STATS_RUNNING));
+         if (!cmdbuf->state.pass) {
+            tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+            tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+         }
+      } else {
+         tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
+         tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
+         tu_cs_emit(cs, 0);
+      }
 
       if (need_cond_exec) {
          tu_cond_exec_end(cs);
@@ -1312,6 +1332,9 @@ emit_begin_xfb_query(struct tu_cmd_buffer *cmdbuf,
 
    tu_cs_emit_regs(cs, A6XX_VPC_SO_QUERY_BASE(.qword = begin_iova));
    tu_emit_event_write<CHIP>(cmdbuf, cs, FD_WRITE_PRIMITIVE_COUNTS);
+
+   if (!cmdbuf->state.pass)
+      cmdbuf->state.xfb_query_running_before_rp = true;
 }
 
 template <chip CHIP>
@@ -1545,24 +1568,39 @@ emit_stop_primitive_ctrs(struct tu_cmd_buffer *cmdbuf,
       if (!need_cond_exec) {
          tu_emit_event_write<CHIP>(cmdbuf, cs, FD_STOP_PRIMITIVE_CTRS);
       } else {
-         tu_cs_reserve(cs, 7 + 2);
          /* Check that pipeline stats query is not running, only then
           * we count stop the counter.
           */
-         tu_cs_emit_pkt7(cs, CP_COND_EXEC, 6);
-         tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
-         tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
-         tu_cs_emit(cs, CP_COND_EXEC_4_REF(0x2));
-         tu_cs_emit(cs, 2); /* Cond execute the next 2 DWORDS */
+         if (CHIP >= A7XX) {
+            tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(PRED_TEST) |
+                                   CP_COND_REG_EXEC_0_PRED_BIT(TU_PREDICATE_VTX_STATS_NOT_RUNNING));
+            tu_emit_event_write<CHIP>(cmdbuf, cs, FD_STOP_PRIMITIVE_CTRS);
+            tu_cond_exec_end(cs);
+         } else {
+            tu_cs_reserve(cs, 7 + 2);
 
-         tu_emit_event_write<CHIP>(cmdbuf, cs, FD_STOP_PRIMITIVE_CTRS);
+            tu_cs_emit_pkt7(cs, CP_COND_EXEC, 6);
+            tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
+            tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
+            tu_cs_emit(cs, CP_COND_EXEC_4_REF(0x2));
+            tu_cs_emit(cs, 2); /* Cond execute the next 2 DWORDS */
+
+            tu_emit_event_write<CHIP>(cmdbuf, cs, FD_STOP_PRIMITIVE_CTRS);
+         }
+
       }
    }
 
    if (query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-      tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
-      tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
-      tu_cs_emit(cs, 1);
+      if (CHIP >= A7XX) {
+         tu7_set_pred_mask(cs, (1u << TU_PREDICATE_VTX_STATS_RUNNING) |
+                               (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING),
+                               (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING));
+      } else {
+         tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
+         tu_cs_emit_qw(cs, global_iova(cmdbuf, vtx_stats_query_not_running));
+         tu_cs_emit(cs, 1);
+      }
    }
 }
 
@@ -1821,6 +1859,9 @@ emit_end_xfb_query(struct tu_cmd_buffer *cmdbuf,
    uint64_t end_written_iova = primitive_query_iova(pool, query, end, stream_id, 0);
    uint64_t end_generated_iova = primitive_query_iova(pool, query, end, stream_id, 1);
    uint64_t available_iova = query_available_iova(pool, query);
+
+   if (!cmdbuf->state.pass)
+      cmdbuf->state.xfb_query_running_before_rp = false;
 
    tu_cs_emit_regs(cs, A6XX_VPC_SO_QUERY_BASE(.qword = end_iova));
    tu_emit_event_write<CHIP>(cmdbuf, cs, FD_WRITE_PRIMITIVE_COUNTS);

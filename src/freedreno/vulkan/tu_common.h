@@ -93,6 +93,8 @@
    (MAX_DYNAMIC_UNIFORM_BUFFERS + 2 * MAX_DYNAMIC_STORAGE_BUFFERS) *         \
    A6XX_TEX_CONST_DWORDS
 
+#define TU_MAX_VIS_STREAMS 4
+
 /* With dynamic rendering, input attachment indices are shifted by 1 and
  * attachment 0 is used for input attachments without an InputAttachmentIndex
  * (which can only be depth/stencil).
@@ -151,7 +153,30 @@
 enum tu_predicate_bit {
    TU_PREDICATE_LOAD_STORE = 0,
    TU_PREDICATE_PERFCNTRS = 1,
+   TU_PREDICATE_CB_ENABLED = 2,
+   TU_PREDICATE_VTX_STATS_RUNNING = 3,
+   TU_PREDICATE_VTX_STATS_NOT_RUNNING = 4,
+   TU_PREDICATE_FIRST_TILE = 5,
 };
+
+/* Onchip timestamp register layout. */
+enum tu_onchip_addr {
+   /* Registers 0-7 are defined by firmware to be shared between BR/BV.
+    */
+
+   /* See tu7_emit_concurrent_binning */
+   TU_ONCHIP_CB_BR_TIMESTAMP,
+   TU_ONCHIP_CB_BV_TIMESTAMP,
+   TU_ONCHIP_CB_BV_DETERMINATION_FINISHED_TIMESTAMP,
+   TU_ONCHIP_CB_BV_DISABLED_TIMESTAMP,
+   TU_ONCHIP_BARRIER,
+   TU_ONCHIP_CB_RESLIST_OVERFLOW,
+
+   /* Registers 8-15 are defined by firmware to be split between BR and BV.
+    * Each has their own copy.
+    */
+};
+
 
 #define TU_GENX(FUNC_NAME) FD_GENX(FUNC_NAME)
 

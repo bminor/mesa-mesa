@@ -80,7 +80,10 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
       lrz_layout->lrz_fc_size = 0;
    }
 
-   uint32_t lrz_size = lrz_layout->lrz_buffer_size;
+   /* Allocate 2 LRZ buffers for double-buffering on a7xx. */
+   uint32_t lrz_size = lrz_layout->lrz_buffer_size *
+      (dev_info->chip >= 7 ? 2 : 1);
+
    if (dev_info->a6xx.enable_lrz_fast_clear ||
        dev_info->a6xx.has_lrz_dir_tracking) {
       lrz_layout->lrz_fc_offset =

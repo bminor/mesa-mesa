@@ -38,8 +38,10 @@ tu_device_get_u_trace(struct tu_device *device);
 /**
  * Queue-id's
  */
-enum {
-   DEFAULT_HW_QUEUE_ID,
+enum tu_queue_id {
+   BR_HW_QUEUE_ID,
+   BV_HW_QUEUE_ID,
+
    /* Labels set via VK_EXT_debug_utils are in a separate track due to the
     * following part of the spec:
     *  "An application may open a debug label region in one command buffer and
@@ -67,6 +69,7 @@ enum tu_stage_id {
    SECONDARY_CMD_BUFFER_STAGE_ID,
    CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID,
    BINNING_STAGE_ID,
+   CONCURRENT_BINNING_STAGE_ID,
    GMEM_STAGE_ID,
    BYPASS_STAGE_ID,
    BLIT_STAGE_ID,
@@ -85,7 +88,8 @@ static const struct {
    const char *name;
    const char *desc;
 } queues[] = {
-   [DEFAULT_HW_QUEUE_ID] = {"GPU Queue 0", "Default Adreno Hardware Queue"},
+   [BR_HW_QUEUE_ID] = {"GPU Queue 0", "Default Adreno Hardware Queue"},
+   [BV_HW_QUEUE_ID] = {"GPU Queue 1", "Adreno Bin Visibility Queue"},
    [ANNOTATIONS_QUEUE_ID] = {"Annotations", "Annotations Queue"},
 };
 
@@ -99,6 +103,7 @@ static const struct {
    [SECONDARY_CMD_BUFFER_STAGE_ID] = { "Secondary Command Buffer" },
    [CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID]    = { "Annotation", "Render Pass Command Buffer Annotation" },
    [BINNING_STAGE_ID]        = { "Binning", "Perform Visibility pass and determine target bins" },
+   [CONCURRENT_BINNING_STAGE_ID] = { "Concurrent Binning", "Perform concurrent Visibility pass and determine target bins" },
    [GMEM_STAGE_ID]           = { "GMEM", "Rendering to GMEM" },
    [BYPASS_STAGE_ID]         = { "Bypass", "Rendering to system memory" },
    [BLIT_STAGE_ID]           = { "Blit", "Performing a Blit operation" },
@@ -323,12 +328,17 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
       emit_sync_timestamp(clocks);
    }
 
-   uint32_t queue_id = DEFAULT_HW_QUEUE_ID;
+   uint32_t queue_id = BR_HW_QUEUE_ID;
    switch (stage->stage_id) {
       case CMD_BUFFER_ANNOTATION_STAGE_ID:
       case CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID:
          queue_id = ANNOTATIONS_QUEUE_ID;
          break;
+      /* We only know dynamically whether concurrent binning was enabled. Just
+       * assume it is and always make binning appear on the BV timeline.
+       */
+      case CONCURRENT_BINNING_STAGE_ID:
+         queue_id = BV_HW_QUEUE_ID;
       default:
          break;
    }
@@ -577,6 +587,7 @@ CREATE_EVENT_CALLBACK(cmd_buffer, CMD_BUFFER_STAGE_ID)
 CREATE_EVENT_CALLBACK(secondary_cmd_buffer, SECONDARY_CMD_BUFFER_STAGE_ID)
 CREATE_EVENT_CALLBACK(render_pass, RENDER_PASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(binning_ib, BINNING_STAGE_ID)
+CREATE_EVENT_CALLBACK(concurrent_binning_ib, CONCURRENT_BINNING_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_gmem, GMEM_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_sysmem, BYPASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(blit, BLIT_STAGE_ID)

@@ -255,6 +255,8 @@ struct tu6_global
 
    uint32_t vsc_state[32];
 
+   uint64_t bv_predicate;
+
    volatile uint32_t vtx_stats_query_not_running;
 
    /* To know when renderpass stats for autotune are valid */
@@ -487,6 +489,9 @@ struct tu_device
 
    /* This is an internal queue for mapping/unmapping non-sparse BOs */
    uint32_t vm_bind_queue_id;
+
+   uint32_t vis_stream_count;
+   uint32_t vis_stream_size;
 };
 VK_DEFINE_HANDLE_CASTS(tu_device, vk.base, VkDevice, VK_OBJECT_TYPE_DEVICE)
 

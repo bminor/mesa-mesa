@@ -33,6 +33,8 @@ struct tu_queue
    uint32_t sparse_syncobj, gfx_syncobj;
    uint64_t sparse_timepoint, gfx_timepoint;
 
+   unsigned render_pass_idx;
+
    int fence;           /* timestamp/fence of the last queue submission */
 };
 VK_DEFINE_HANDLE_CASTS(tu_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)

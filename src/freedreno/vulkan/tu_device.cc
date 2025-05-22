@@ -3046,6 +3046,8 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    device->vk.flush_buffer_write_cp = tu_flush_buffer_write_cp;
    device->vk.cmd_fill_buffer_addr = tu_cmd_fill_buffer_addr;
 
+   device->vis_stream_count = 0;
+
    *pDevice = tu_device_to_handle(device);
    return VK_SUCCESS;
 

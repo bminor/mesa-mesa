@@ -51,6 +51,8 @@ struct tu_lrz_state
    bool color_written_with_z_test : 1;
    bool has_lrz_write_with_skipped_color_writes : 1;
 
+   bool store : 1;
+
    enum tu_lrz_direction prev_direction;
 };
 
@@ -86,13 +88,28 @@ tu_lrz_begin_resumed_renderpass(struct tu_cmd_buffer *cmd);
 void
 tu_lrz_begin_secondary_cmdbuf(struct tu_cmd_buffer *cmd);
 
+void
+tu_lrz_cb_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
+
 template <chip CHIP>
 void
 tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
 
 template <chip CHIP>
 void
+tu_lrz_after_bv(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
+
+template <chip CHIP>
+void
+tu_lrz_before_tiles(struct tu_cmd_buffer *cmd, struct tu_cs *cs, bool use_cb);
+
+template <chip CHIP>
+void
 tu_lrz_before_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
+
+template <chip CHIP>
+void
+tu_lrz_before_sysmem_br(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
 
 template <chip CHIP>
 void

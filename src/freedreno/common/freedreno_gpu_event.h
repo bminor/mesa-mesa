@@ -42,6 +42,7 @@ enum fd_gpu_event : uint32_t {
     FD_CCU_CLEAN_DEPTH,
     FD_CCU_CLEAN_COLOR,
     FD_LRZ_CLEAR,
+    FD_LRZ_FLIP,
     FD_LRZ_FLUSH,
     FD_LRZ_INVALIDATE,
     FD_VSC_BINNING_START,
@@ -84,6 +85,7 @@ constexpr inline struct fd_gpu_event_info fd_gpu_events<A6XX>[FD_GPU_EVENT_MAX] 
     {PC_CCU_FLUSH_DEPTH_TS, true},    /* FD_CCU_CLEAN_DEPTH */
     {PC_CCU_FLUSH_COLOR_TS, true},    /* FD_CCU_CLEAN_COLOR */
     {LRZ_CLEAR, false},               /* FD_LRZ_CLEAR */
+    {LRZ_FLUSH, false},               /* FD_LRZ_FLIP */
     {LRZ_FLUSH, false},               /* FD_LRZ_FLUSH */
     {LRZ_CACHE_INVALIDATE, false},    /* FD_LRZ_INVALIDATE */
     {VSC_BINNING_START, false},       /* FD_VSC_BINNING_START */
@@ -115,6 +117,7 @@ constexpr inline struct fd_gpu_event_info fd_gpu_events<A7XX>[FD_GPU_EVENT_MAX] 
     {CCU_CLEAN_DEPTH, false},         /* FD_CCU_CLEAN_DEPTH */
     {CCU_CLEAN_COLOR, false},         /* FD_CCU_CLEAN_COLOR */
     {LRZ_CLEAR, false},               /* FD_LRZ_CLEAR */
+    {LRZ_FLIP_BUFFER, false},         /* FD_LRZ_FLIP */
     {LRZ_FLUSH, false},               /* FD_LRZ_FLUSH */
     {LRZ_CACHE_INVALIDATE, false},    /* FD_LRZ_INVALIDATE */
     {VSC_BINNING_START, false},       /* FD_VSC_BINNING_START */

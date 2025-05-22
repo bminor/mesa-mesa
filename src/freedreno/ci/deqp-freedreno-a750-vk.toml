@@ -7,6 +7,7 @@ tests_per_group = 10000
 
 # force-gmem testing
 # Autotuner forces sysmem on most CTS tests
+# Also force-enable concurrent binning.
 [[deqp]]
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
@@ -14,7 +15,7 @@ prefix = "gmem-"
 fraction = 20
 tests_per_group = 10000
 [deqp.env]
-TU_DEBUG = "gmem,forcebin"
+TU_DEBUG = "gmem,forcebin,forcecb"
 
 # force-gmem with unaligned gmem store testing
 [[deqp]]

@@ -2133,18 +2133,22 @@ tu6_clear_lrz(struct tu_cmd_buffer *cmd,
     */
    tu_emit_event_write<CHIP>(cmd, &cmd->cs, FD_CACHE_CLEAN);
 
-   ops->setup(cmd, cs, PIPE_FORMAT_Z16_UNORM, PIPE_FORMAT_Z16_UNORM,
-              VK_IMAGE_ASPECT_DEPTH_BIT, 0, true, false,
-              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
-   ops->clear_value(cmd, cs, PIPE_FORMAT_Z16_UNORM, value);
-   ops->dst_buffer(cs, PIPE_FORMAT_Z16_UNORM,
-                   image->iova + image->lrz_layout.lrz_offset,
-                   image->lrz_layout.lrz_pitch * 2, PIPE_FORMAT_Z16_UNORM);
-   uint32_t lrz_height = image->lrz_layout.lrz_height * image->vk.array_layers;
-   ops->coords(cmd, cs, (VkOffset2D) {}, blt_no_coord,
-               (VkExtent2D) { image->lrz_layout.lrz_pitch, lrz_height });
-   ops->run(cmd, cs);
-   ops->teardown(cmd, cs);
+   const unsigned lrz_buffers = CHIP >= A7XX ? 2 : 1;
+   for (unsigned i = 0; i < lrz_buffers; i++) {
+      ops->setup(cmd, cs, PIPE_FORMAT_Z16_UNORM, PIPE_FORMAT_Z16_UNORM,
+                 VK_IMAGE_ASPECT_DEPTH_BIT, 0, true, false,
+                 VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
+      ops->clear_value(cmd, cs, PIPE_FORMAT_Z16_UNORM, value);
+      ops->dst_buffer(cs, PIPE_FORMAT_Z16_UNORM,
+                      image->iova + image->lrz_layout.lrz_offset +
+                      i * image->lrz_layout.lrz_buffer_size,
+                      image->lrz_layout.lrz_pitch * 2, PIPE_FORMAT_Z16_UNORM);
+      uint32_t lrz_height = image->lrz_layout.lrz_height * image->vk.array_layers;
+      ops->coords(cmd, cs, (VkOffset2D) {}, blt_no_coord,
+                  (VkExtent2D) { image->lrz_layout.lrz_pitch, lrz_height });
+      ops->run(cmd, cs);
+      ops->teardown(cmd, cs);
+   }
 
    /* Clearing writes via CCU color in the PS stage, and LRZ is read via
     * UCHE in the earlier GRAS stage.

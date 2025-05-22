@@ -135,6 +135,7 @@ begin_end_tp('draw',
               ], tp_default_enabled=False)
 
 begin_end_tp('binning_ib')
+begin_end_tp('concurrent_binning_ib')
 begin_end_tp('draw_ib_sysmem')
 begin_end_tp('draw_ib_gmem')
 

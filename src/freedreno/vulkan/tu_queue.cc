@@ -104,7 +104,7 @@ get_vis_stream_patchpoint_cs(struct tu_cmd_buffer *cmd,
    /* See below for the commands emitted to the CS. */
    uint32_t cs_size = 5 *
       util_dynarray_num_elements(&cmd->vis_stream_patchpoints,
-                                 struct tu_vis_stream_patchpoint) + 6;
+                                 struct tu_vis_stream_patchpoint) + 4 + 6;
 
    util_dynarray_foreach (&cmd->vis_stream_cs_bos,
                           struct tu_vis_stream_patchpoint_cs,
@@ -165,8 +165,11 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
    struct tu_device *dev = queue->device;
 
    uint32_t max_size = 0;
-   for (unsigned i = 0; i < cmdbuf_count; i++)
+   uint32_t rp_count = 0;
+   for (unsigned i = 0; i < cmdbuf_count; i++) {
       max_size = MAX2(max_size, cmd_buffers[i]->vsc_size);
+      rp_count += cmd_buffers[i]->state.tile_render_pass_count;
+   }
 
    if (max_size == 0)
       return VK_SUCCESS;
@@ -174,17 +177,32 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
    struct tu_bo *bo = NULL;
    VkResult result = VK_SUCCESS;
 
+   /* Note, we want to make the vis stream count at least 1 because an
+    * BV_BR_OFFSET of 0 can lead to hangs even if not using visibility
+    * streams and therefore should be avoided.
+    */
+   uint32_t min_vis_stream_count =
+      (TU_DEBUG(NO_CONCURRENT_BINNING) || dev->physical_device->info->chip < 7) ?
+      1 : MIN2(MAX2(rp_count, 1), TU_MAX_VIS_STREAMS);
+   uint32_t vis_stream_count;
+
    mtx_lock(&dev->vis_stream_mtx);
 
-   if (!dev->vis_stream_bo || max_size > dev->vis_stream_bo->size) {
+   if (!dev->vis_stream_bo || max_size > dev->vis_stream_size ||
+       min_vis_stream_count > dev->vis_stream_count) {
+      dev->vis_stream_count = MAX2(dev->vis_stream_count,
+                                   min_vis_stream_count);
+      dev->vis_stream_size = MAX2(dev->vis_stream_size, max_size);
       if (dev->vis_stream_bo)
          tu_bo_finish(dev, dev->vis_stream_bo);
       result = tu_bo_init_new(dev, &dev->vk.base, &dev->vis_stream_bo,
-                              max_size, TU_BO_ALLOC_INTERNAL_RESOURCE,
+                              dev->vis_stream_size * dev->vis_stream_count, 
+                              TU_BO_ALLOC_INTERNAL_RESOURCE,
                               "visibility stream");
    }
 
    bo = dev->vis_stream_bo;
+   vis_stream_count = dev->vis_stream_count;
 
    mtx_unlock(&dev->vis_stream_mtx);
 
@@ -210,6 +228,8 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
       }
    }
 
+   unsigned render_pass_idx = queue->render_pass_idx;
+
    for (unsigned i = 0; i < cmdbuf_count; i++) {
       struct tu_cs cs, sub_cs;
       uint64_t fence_iova = 0;
@@ -224,7 +244,11 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
       util_dynarray_foreach (&cmd_buffers[i]->vis_stream_patchpoints,
                              struct tu_vis_stream_patchpoint,
                              patchpoint) {
-         uint64_t final_iova = bo->iova + patchpoint->offset;
+         unsigned vis_stream_idx =
+            (render_pass_idx + patchpoint->render_pass_idx) %
+            vis_stream_count;
+         uint64_t final_iova =
+            bo->iova + vis_stream_idx * max_size + patchpoint->offset;
 
          if (cmd_buffers[i]->usage_flags &
              VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -234,6 +258,19 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
          } else {
             patchpoint->data[0] = final_iova;
             patchpoint->data[1] = final_iova >> 32;
+         }
+      }
+
+      struct tu_vis_stream_patchpoint *count_patchpoint =
+         &cmd_buffers[i]->vis_stream_count_patchpoint;
+      if (count_patchpoint->data) {
+         if (cmd_buffers[i]->usage_flags &
+             VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+            tu_cs_emit_pkt7(&sub_cs, CP_MEM_WRITE, 3);
+            tu_cs_emit_qw(&sub_cs, count_patchpoint->iova);
+            tu_cs_emit(&sub_cs, vis_stream_count);
+         } else {
+            count_patchpoint->data[0] = vis_stream_count;
          }
       }
 
@@ -250,7 +287,11 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
          struct tu_cs_entry entry = tu_cs_end_sub_stream(&cs, &sub_cs);
          submit_add_entries(queue->device, submit, dump_cmds, &entry, 1);
       }
+
+      render_pass_idx += cmd_buffers[i]->state.tile_render_pass_count;
    }
+
+   queue->render_pass_idx = render_pass_idx;
 
    return VK_SUCCESS;
 }
