@@ -535,7 +535,7 @@ blorp_fast_clear(struct blorp_batch *batch,
          const int phys_height0 = ALIGN(surf->surf->logical_level0_px.h,
                                         surf->surf->image_alignment_el.h);
          unaligned_height = phys_height0 % 32;
-         size_B = surf->surf->row_pitch_B * (phys_height0 - unaligned_height);
+         size_B = (int64_t)surf->surf->row_pitch_B * (phys_height0 - unaligned_height);
       }
    }
 
