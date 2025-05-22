@@ -2990,7 +2990,7 @@ void si_release_all_descriptors(struct si_context *sctx)
    si_release_bindless_descriptors(sctx);
 }
 
-bool si_gfx_resources_check_encrypted(struct si_context *sctx)
+int si_gfx_resources_check_encrypted(struct si_context *sctx)
 {
    bool use_encrypted_bo = false;
 
@@ -3038,12 +3038,14 @@ bool si_gfx_resources_check_encrypted(struct si_context *sctx)
          struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.cbufs[i].texture;
          if (!tex)
             continue;
-         assert(tex->buffer.flags & RADEON_FLAG_ENCRYPTED);
+         if (tex && !(tex->buffer.flags & RADEON_FLAG_ENCRYPTED))
+            return -1;
       }
       /* Verify that depth/stencil buffer is encrypted */
       if (sctx->framebuffer.state.zsbuf.texture) {
          struct si_texture *tex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
-         assert(tex->buffer.flags & RADEON_FLAG_ENCRYPTED);
+         if (tex && !(tex->buffer.flags & RADEON_FLAG_ENCRYPTED))
+            return -1;
       }
    }
 #endif

@@ -394,13 +394,14 @@ void si_install_draw_wrapper(struct si_context *sctx, pipe_draw_func wrapper,
    }
 }
 
-static void si_tmz_preamble(struct si_context *sctx)
+static int si_tmz_preamble(struct si_context *sctx)
 {
-   bool secure = si_gfx_resources_check_encrypted(sctx);
-   if (secure != sctx->ws->cs_is_secure(&sctx->gfx_cs)) {
+   int secure = si_gfx_resources_check_encrypted(sctx);
+   if ((secure == 1) != sctx->ws->cs_is_secure(&sctx->gfx_cs)) {
       si_flush_gfx_cs(sctx, RADEON_FLUSH_ASYNC_START_NEXT_GFX_IB_NOW |
                             RADEON_FLUSH_TOGGLE_SECURE_SUBMISSION, NULL);
    }
+   return secure;
 }
 
 static void si_draw_vbo_tmz_preamble(struct pipe_context *ctx,
@@ -411,8 +412,8 @@ static void si_draw_vbo_tmz_preamble(struct pipe_context *ctx,
                                      unsigned num_draws) {
    struct si_context *sctx = (struct si_context *)ctx;
 
-   si_tmz_preamble(sctx);
-   sctx->real_draw_vbo(ctx, info, drawid_offset, indirect, draws, num_draws);
+   if (si_tmz_preamble(sctx) >= 0)
+      sctx->real_draw_vbo(ctx, info, drawid_offset, indirect, draws, num_draws);
 }
 
 static void si_draw_vstate_tmz_preamble(struct pipe_context *ctx,
@@ -423,8 +424,8 @@ static void si_draw_vstate_tmz_preamble(struct pipe_context *ctx,
                                         unsigned num_draws) {
    struct si_context *sctx = (struct si_context *)ctx;
 
-   si_tmz_preamble(sctx);
-   sctx->real_draw_vertex_state(ctx, state, partial_velem_mask, info, draws, num_draws);
+   if (si_tmz_preamble(sctx) >= 0)
+      sctx->real_draw_vertex_state(ctx, state, partial_velem_mask, info, draws, num_draws);
 }
 
 void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
