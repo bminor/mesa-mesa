@@ -2513,7 +2513,7 @@ crocus_compile_cs(struct crocus_context *ice,
 
    nir_shader *nir = nir_shader_clone(mem_ctx, ish->nir);
 
-   NIR_PASS_V(nir, elk_nir_lower_cs_intrinsics, devinfo, cs_prog_data);
+   NIR_PASS(_, nir, elk_nir_lower_cs_intrinsics, devinfo, cs_prog_data);
 
    crocus_setup_uniforms(devinfo, mem_ctx, nir, prog_data, &system_values,
                          &num_system_values, &num_cbufs);
@@ -2674,7 +2674,7 @@ crocus_create_uncompiled_shader(struct pipe_context *ctx,
    struct elk_nir_compiler_opts opts = {};
    elk_preprocess_nir(screen->compiler, nir, &opts);
 
-   NIR_PASS_V(nir, elk_nir_lower_storage_image,
+   NIR_PASS(_, nir, elk_nir_lower_storage_image,
               &(struct elk_nir_lower_storage_image_opts) {
                  .devinfo = devinfo,
                  .lower_loads = true,
@@ -2682,7 +2682,7 @@ crocus_create_uncompiled_shader(struct pipe_context *ctx,
                  .lower_atomics = true,
                  .lower_get_size = true,
               });
-   NIR_PASS_V(nir, crocus_lower_storage_image_derefs);
+   NIR_PASS(_, nir, crocus_lower_storage_image_derefs);
 
    nir_sweep(nir);
 
