@@ -4984,7 +4984,7 @@
         "description": "vtn: fix use-after-free on function parameter names",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5d7a2303243a32f47d402e3335b16967b49a1362",
         "notes": null
