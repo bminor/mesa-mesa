@@ -80,6 +80,7 @@ class CMFD3DManager
  protected:
    HRESULT xReopenDeviceManager( bool bNewDevice );
    HRESULT GetDeviceInfo();
+   void UpdateGPUFeatureFlags();
 
    ComPtr<IMFDXGIDeviceManager> m_spDeviceManager;
    ComPtr<ID3D11Device5> m_spDevice11;
@@ -93,10 +94,18 @@ class CMFD3DManager
    struct sw_winsys *m_pWinsys = nullptr;
    struct pipe_context *m_pPipeContext = nullptr;
 
-   std::string m_deviceVendor {};
    uint32_t m_deviceVendorId {};
    uint32_t m_deviceDeviceId {};
    MFAdapterDriverVersion m_deviceDriverVersion {};
+
+   // MFT features that are dependent on GPU / version (ensure these are named to be false by default so we can easily reset this
+   // struct)
+   struct GPUFeatureFlags
+   {
+      bool m_bDisableAsync = false;
+      bool m_bH264SendUnwrappedPOC = false;
+   };
+   GPUFeatureFlags m_gpuFeatureFlags;
 
  private:
    D3D12_VIDEO_ENCODER_CODEC m_codec;

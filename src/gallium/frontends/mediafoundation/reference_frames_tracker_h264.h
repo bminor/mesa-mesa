@@ -37,8 +37,8 @@ typedef struct frame_descriptor_h264
    uint32_t ip_period;
    pipe_h2645_enc_picture_type frame_type;
    uint32_t frame_num;   // H264: frame_num % max_frame_num, reset on IDR
-   uint64_t frame_num_no_wrap;
-   uint64_t current_reference_frame_count;
+   uint32_t frame_num_no_wrap;
+   uint32_t current_reference_frame_count;
    uint32_t picture_order_count;
    frame_descriptor_reference_type reference_type;
    uint32_t ltr_index;
@@ -68,7 +68,7 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
    {
       uint32_t picture_order_count;
       uint32_t frame_num;
-      uint64_t frame_num_no_wrap;
+      uint32_t frame_num_no_wrap;
       bool is_ltr;
       uint32_t ltr_index;
       uint8_t temporal_id;
@@ -81,7 +81,7 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
    {
       uint8_t pos;   // index into location in the PrevFrameInfo array
       // below are from PrevFrameInfo
-      uint64_t frame_num_no_wrap;
+      uint32_t frame_num_no_wrap;
       bool is_ltr;
       uint32_t ltr_index;
       uint8_t temporal_id;
@@ -114,7 +114,8 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
                                   uint32_t MaxL0References,
                                   uint32_t MaxL1References,
                                   uint32_t MaxDPBCapacity,
-                                  uint32_t MaxLongTermReferences );
+                                  uint32_t MaxLongTermReferences,
+                                  bool bSendUnwrappedPOC );
 
  private:
    uint32_t PrepareFrameRefLists( bool useLTR, uint32_t useLTRBitmap );
@@ -135,6 +136,8 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
    uint32_t m_MaxL1References = 0;
    uint32_t m_MaxDPBCapacity = 0;
    uint32_t m_MaxLongTermReferences = 0;
+
+   bool m_bSendUnwrappedPOC = false;
 
    bool m_bSendMaxLongTermReferences = false;
 

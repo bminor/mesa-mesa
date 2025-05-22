@@ -924,10 +924,9 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
    }
    else if( *Api == CODECAPI_AVLowLatencyMode )
    {
-      // TODO: remove this code path when we clarify whether this is supported on AMD.
-      if( m_deviceVendor == "AMD" )
+      if( m_gpuFeatureFlags.m_bDisableAsync )
       {
-         debug_printf( "[dx12 hmft 0x%p] Device vendor is AMD, ignore LowLatency Settings\n", this );
+         debug_printf( "[dx12 hmft 0x%p] Async is disabled due to lack of GPU support \n", this );
          m_bLowLatency = TRUE;
       }
       else

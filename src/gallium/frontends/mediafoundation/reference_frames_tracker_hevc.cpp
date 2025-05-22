@@ -154,7 +154,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
             }
          }
 
-         m_ActiveLTRBitmap = useLTRBitmap & 0xFFFF; // synchronize active LTR bitmap with useLTRBitmap
+         m_ActiveLTRBitmap = useLTRBitmap & 0xFFFF;   // synchronize active LTR bitmap with useLTRBitmap
       }
 
       ltrUsedBitMask = PrepareFrameRefLists();

@@ -43,12 +43,14 @@ reference_frames_tracker_h264::reference_frames_tracker_h264( struct pipe_video_
                                                               uint32_t MaxL0References,
                                                               uint32_t MaxL1References,
                                                               uint32_t MaxDPBCapacity,
-                                                              uint32_t MaxLongTermReferences )
+                                                              uint32_t MaxLongTermReferences,
+                                                              bool bSendUnwrappedPOC )
    : m_codec( codec ),
      m_MaxL0References( MaxL0References ),
      m_MaxL1References( MaxL1References ),
      m_MaxDPBCapacity( MaxDPBCapacity ),
      m_MaxLongTermReferences( MaxLongTermReferences ),
+     m_bSendUnwrappedPOC( bSendUnwrappedPOC ),
      m_ALL_LTR_VALID_MASK( ( 1 << m_MaxLongTermReferences ) - 1 ),
      m_DPBManager(
         m_codec,
@@ -595,14 +597,28 @@ reference_frames_tracker_h264::GOPStateBeginFrame( bool forceKey )
       {
          m_gop_state.reference_type = frame_descriptor_reference_type_short_term;
          m_gop_state.temporal_id = 0;
-         m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num ) % ( 2 * m_max_frame_num );
+         if( m_bSendUnwrappedPOC )
+         {
+            m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num_no_wrap );
+         }
+         else
+         {
+            m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num ) % ( 2 * m_max_frame_num );
+         }
          m_gop_state.current_reference_frame_count++;
       }
       else
       {
          m_gop_state.reference_type = frame_descriptor_reference_type_none;
          m_gop_state.temporal_id = 1;
-         m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num - 1 ) % ( 2 * m_max_frame_num );
+         if( m_bSendUnwrappedPOC )
+         {
+            m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num_no_wrap - 1 );
+         }
+         else
+         {
+            m_gop_state.picture_order_count = ( 2 * m_gop_state.frame_num - 1 ) % ( 2 * m_max_frame_num );
+         }
       }
    }
 }

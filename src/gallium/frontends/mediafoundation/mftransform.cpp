@@ -543,10 +543,9 @@ CDX12EncHMFT::OnOutputTypeChanged()
    }
    CHECKHR_GOTO( InitializeEncoder( m_outputPipeProfile, m_uiOutputWidth, m_uiOutputHeight ), done );
 
-   // TODO: remove this code path when we clarify whether this is supported on AMD.
-   if( m_deviceVendor == "AMD" )
+   if( m_gpuFeatureFlags.m_bDisableAsync )
    {
-      MFE_INFO( "[dx12 hmft 0x%p] Device vendor is AMD, turn off async mode until issue is worked out", this );
+      MFE_INFO( "[dx12 hmft 0x%p] Async is disabled due to lack of GPU support.", this );
       m_bLowLatency = TRUE;
    }
    else

@@ -1174,7 +1174,8 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
                                                       MaxHWL0Ref,
                                                       MaxHWL1Ref,
                                                       m_pPipeVideoCodec->max_references,
-                                                      m_uiMaxLongTermReferences );
+                                                      m_uiMaxLongTermReferences,
+                                                      m_gpuFeatureFlags.m_bH264SendUnwrappedPOC );
 
    CHECKNULL_GOTO( m_pGOPTracker, MF_E_INVALIDMEDIATYPE, done );
 

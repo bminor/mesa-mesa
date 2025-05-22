@@ -93,10 +93,10 @@ CMFD3DManager::Shutdown( bool bReleaseDeviceManager )
    {
       m_pVlScreen->destroy( this->m_pVlScreen );
       m_pVlScreen = nullptr;
-      m_deviceVendor = {};
       m_deviceVendorId = {};
       m_deviceDeviceId = {};
       m_deviceDriverVersion = {};
+      m_gpuFeatureFlags = {};
    }
 
    if( m_pWinsys )
@@ -207,13 +207,12 @@ CMFD3DManager::GetDeviceInfo()
 
    m_deviceVendorId = desc.VendorId;
    m_deviceDeviceId = desc.DeviceId;
-   m_deviceVendor = VendorIDToString( m_deviceVendorId );
    m_deviceDriverVersion.part1 = ExtractDriverVersionComponent( 3, driverVersion );
    m_deviceDriverVersion.part2 = ExtractDriverVersionComponent( 2, driverVersion );
    m_deviceDriverVersion.part3 = ExtractDriverVersionComponent( 1, driverVersion );
    m_deviceDriverVersion.part4 = ExtractDriverVersionComponent( 0, driverVersion );
 
-   MFE_INFO( "[dx12 hmft 0x%p] D3DManager: device vendor = %s\n", m_logId, m_deviceVendor.c_str() );
+   MFE_INFO( "[dx12 hmft 0x%p] D3DManager: device vendor = %s\n", m_logId, VendorIDToString( m_deviceVendorId ) );
    MFE_INFO( "[dx12 hmft 0x%p] D3DManager: device vendor id = %x\n", m_logId, m_deviceVendorId );
    MFE_INFO( "[dx12 hmft 0x%p] D3DManager: device device id = %x\n", m_logId, m_deviceDeviceId );
    MFE_INFO( "[dx12 hmft 0x%p] D3DManager: %S", m_logId, desc.Description );
@@ -225,6 +224,28 @@ CMFD3DManager::GetDeviceInfo()
              m_deviceDriverVersion.part4 );
 done:
    return hr;
+}
+
+void
+CMFD3DManager::UpdateGPUFeatureFlags()
+{
+   if( m_deviceVendorId == MFT_HW_VENDOR_AMD )
+   {
+      m_gpuFeatureFlags.m_bDisableAsync = true;
+      MFE_INFO( "[dx12 hmft 0x%p] D3DManager: GPUFeature m_bDisableAsync is set to true\n", m_logId );
+   }
+
+   /*
+   if( m_deviceVendorId == MFT_HW_VENDOR_NVIDIA )
+   {
+      if( m_deviceDriverVersion.part1 >= 32 && m_deviceDriverVersion.part2 >= 0 && m_deviceDriverVersion.part3 >= 15 &&
+          m_deviceDriverVersion.part4 >= 9002 )
+      {
+         m_gpuFeatureFlags.m_bH264SendUnwrappedPOC = true;
+         MFE_INFO( "[dx12 hmft 0x%p] D3DManager: GPUFeature m_bH264SendUnwrappedPOC is set to true\n", m_logId );
+      }
+   }
+   */
 }
 
 HRESULT
@@ -255,6 +276,8 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
 
    CHECKHR_GOTO( GetDeviceInfo(), done );
+
+   UpdateGPUFeatureFlags();
 
 done:
    if( FAILED( hr ) )
