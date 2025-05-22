@@ -50,6 +50,7 @@ nir_get_io_intrinsic(nir_instr *instr, nir_variable_mode modes,
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
    case nir_intrinsic_store_per_view_output:
+   case nir_intrinsic_store_per_primitive_output:
       *out_mode = nir_var_shader_out;
       return modes & nir_var_shader_out ? intr : NULL;
    default:
@@ -149,7 +150,7 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
    nir_progress(changed, impl, nir_metadata_control_flow);
 
    if (modes & nir_var_shader_in)
-      nir->num_inputs = BITSET_COUNT(inputs);
+      nir->num_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(per_prim_inputs);
    if (modes & nir_var_shader_out)
       nir->num_outputs = BITSET_COUNT(outputs);
 
