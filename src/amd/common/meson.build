@@ -89,6 +89,7 @@ amd_common_files = files(
   'ac_pm4.c',
   'ac_pm4.h',
   'ac_vcn_av1_default.h',
+  'ac_vcn_vp9_default.h',
   'ac_vcn_dec.c',
   'ac_vcn_enc.c',
   'ac_uvd_dec.c',

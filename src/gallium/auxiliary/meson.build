@@ -423,7 +423,6 @@ files_libgalliumvl = files(
   'vl/vl_video_buffer.h',
   'vl/vl_zscan.c',
   'vl/vl_zscan.h',
-  'vl/vl_probs_table.h',
 )
 
 vlwinsys_deps = []
