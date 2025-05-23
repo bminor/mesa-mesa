@@ -642,6 +642,9 @@ brw_generator::generate_halt(brw_inst *)
    brw_HALT(p);
 }
 
+DEBUG_GET_ONCE_OPTION(shader_bin_override_path, "INTEL_SHADER_ASM_READ_PATH",
+                      NULL);
+
 /* The A32 messages take a buffer base address in header.5:[31:0] (See
  * MH1_A32_PSM for typed messages or MH_A32_GO for byte/dword scattered
  * and OWord block messages in the SKL PRM Vol. 2d for more details.)
@@ -1393,7 +1396,8 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
    unsigned char sha1[21];
    char sha1buf[41];
 
-   if (unlikely(debug_flag || dump_shader_bin)) {
+   auto override_path = debug_get_option_shader_bin_override_path();
+   if (unlikely(debug_flag || dump_shader_bin || override_path != NULL)) {
       _mesa_sha1_compute(p->store + start_offset / sizeof(brw_eu_inst),
                          after_size, sha1);
       _mesa_sha1_format(sha1buf, sha1);
@@ -1403,8 +1407,9 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
       brw_dump_shader_bin(p->store, start_offset, p->next_insn_offset,
                           sha1buf);
 
-   const char *override_path = getenv("INTEL_SHADER_ASM_READ_PATH");
-   if (override_path && brw_try_override_assembly(p, start_offset, sha1buf)) {
+   if (unlikely(override_path != NULL &&
+                brw_try_override_assembly(p, start_offset, override_path,
+                                          sha1buf))) {
       fprintf(stderr, "Successfully overrode shader with sha1 %s\n", sha1buf);
       /* disasm_info and stats are no longer valid as we gathered
        * them based on the original shader.

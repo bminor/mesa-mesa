@@ -165,7 +165,7 @@ void brw_dump_shader_bin(void *assembly, int start_offset, int end_offset,
                          const char *identifier);
 
 bool brw_try_override_assembly(struct brw_codegen *p, int start_offset,
-                               const char *identifier);
+                               const char *read_path, const char *identifier);
 
 void brw_realign(struct brw_codegen *p, unsigned alignment);
 int brw_append_data(struct brw_codegen *p, void *data,
