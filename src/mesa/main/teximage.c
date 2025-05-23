@@ -1487,7 +1487,7 @@ _mesa_target_can_be_compressed(const struct gl_context *ctx, GLenum target,
                                GLenum intFormat, GLenum *error)
 {
    GLboolean target_can_be_compresed = GL_FALSE;
-   mesa_format format = _mesa_glenum_to_compressed_format(intFormat);
+   mesa_format format = _mesa_glenum_to_compressed_format(ctx, intFormat);
    enum mesa_format_layout layout = _mesa_get_format_layout(format);
 
    switch (target) {
@@ -1775,10 +1775,10 @@ mutable_tex_object(struct gl_texture_object *texObj)
  * Return expected size of a compressed texture.
  */
 static GLuint
-compressed_tex_size(GLsizei width, GLsizei height, GLsizei depth,
-                    GLenum glformat)
+compressed_tex_size(const struct gl_context *ctx, GLsizei width, GLsizei height,
+                    GLsizei depth, GLenum glformat)
 {
-   mesa_format mesaFormat = _mesa_glenum_to_compressed_format(glformat);
+   mesa_format mesaFormat = _mesa_glenum_to_compressed_format(ctx, glformat);
    return _mesa_format_image_size(mesaFormat, width, height, depth);
 }
 
@@ -2209,7 +2209,7 @@ compressed_texture_error_check(struct gl_context *ctx, GLint dimensions,
       /* Figure out the expected texture size (in bytes).  This will be
        * checked against the actual size later.
        */
-      expectedSize = compressed_tex_size(width, height, depth, internalFormat);
+      expectedSize = compressed_tex_size(ctx, width, height, depth, internalFormat);
       break;
    }
 
@@ -3245,7 +3245,7 @@ teximage(struct gl_context *ctx, GLboolean compressed, GLuint dims,
        * texture format since we'll never transcode the user's compressed
        * image data.  The internalFormat was error checked earlier.
        */
-      texFormat = _mesa_glenum_to_compressed_format(internalFormat);
+      texFormat = _mesa_glenum_to_compressed_format(ctx, internalFormat);
    }
    else {
       /* In case of HALF_FLOAT_OES or FLOAT_OES, find corresponding sized
@@ -5662,7 +5662,7 @@ compressed_subtexture_target_check(struct gl_context *ctx, GLenum target,
           *
           *    "Modify the "3D Tex." column to be checked for all ASTC formats."
           */
-         format = _mesa_glenum_to_compressed_format(intFormat);
+         format = _mesa_glenum_to_compressed_format(ctx, intFormat);
          layout = _mesa_get_format_layout(format);
          switch (layout) {
          case MESA_FORMAT_LAYOUT_BPTC:
@@ -5764,7 +5764,7 @@ compressed_subtexture_error_check(struct gl_context *ctx, GLint dims,
       return GL_TRUE;
    }
 
-   expectedSize = compressed_tex_size(width, height, depth, format);
+   expectedSize = compressed_tex_size(ctx, width, height, depth, format);
    if (expectedSize != imageSize) {
       _mesa_error(ctx, GL_INVALID_VALUE, "%s(size=%d)", callerName, imageSize);
       return GL_TRUE;

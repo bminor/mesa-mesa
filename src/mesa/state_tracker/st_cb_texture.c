@@ -408,6 +408,21 @@ st_pbo_get_dst_format(struct gl_context *ctx, enum pipe_texture_target target,
       case PIPE_FORMAT_BPTC_RGB_UFLOAT:
          if (!ctx->Extensions.ARB_texture_float)
             return PIPE_FORMAT_NONE;
+         FALLTHROUGH;
+      case PIPE_FORMAT_ASTC_4x4_FLOAT:
+      case PIPE_FORMAT_ASTC_5x4_FLOAT:
+      case PIPE_FORMAT_ASTC_5x5_FLOAT:
+      case PIPE_FORMAT_ASTC_6x5_FLOAT:
+      case PIPE_FORMAT_ASTC_6x6_FLOAT:
+      case PIPE_FORMAT_ASTC_8x5_FLOAT:
+      case PIPE_FORMAT_ASTC_8x6_FLOAT:
+      case PIPE_FORMAT_ASTC_8x8_FLOAT:
+      case PIPE_FORMAT_ASTC_10x5_FLOAT:
+      case PIPE_FORMAT_ASTC_10x6_FLOAT:
+      case PIPE_FORMAT_ASTC_10x8_FLOAT:
+      case PIPE_FORMAT_ASTC_10x10_FLOAT:
+      case PIPE_FORMAT_ASTC_12x10_FLOAT:
+      case PIPE_FORMAT_ASTC_12x12_FLOAT:
          dst_glformat = GL_RGBA32F;
          break;
       case PIPE_FORMAT_ETC2_R11_UNORM:

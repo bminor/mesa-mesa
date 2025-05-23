@@ -37,7 +37,7 @@ extern GLuint
 _mesa_get_compressed_formats(struct gl_context *ctx, GLint *formats);
 
 extern mesa_format
-_mesa_glenum_to_compressed_format(GLenum format);
+_mesa_glenum_to_compressed_format(const struct gl_context *ctx, GLenum format);
 
 extern GLenum
 _mesa_compressed_format_to_glenum(struct gl_context *ctx, mesa_format mesaFormat);

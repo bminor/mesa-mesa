@@ -717,59 +717,59 @@ static const struct format_mapping format_map[] = {
    /* ASTC */
    {
       { GL_COMPRESSED_RGBA_ASTC_4x4_KHR, 0 },
-      { PIPE_FORMAT_ASTC_4x4, 0},
+      { PIPE_FORMAT_ASTC_4x4_FLOAT, PIPE_FORMAT_ASTC_4x4, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_5x4_KHR, 0 },
-      { PIPE_FORMAT_ASTC_5x4, 0},
+      { PIPE_FORMAT_ASTC_5x4_FLOAT, PIPE_FORMAT_ASTC_5x4, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_5x5_KHR, 0 },
-      { PIPE_FORMAT_ASTC_5x5, 0},
+      { PIPE_FORMAT_ASTC_5x5_FLOAT, PIPE_FORMAT_ASTC_5x5, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_6x5_KHR, 0 },
-      { PIPE_FORMAT_ASTC_6x5, 0},
+      { PIPE_FORMAT_ASTC_6x5_FLOAT, PIPE_FORMAT_ASTC_6x5, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_6x6_KHR, 0 },
-      { PIPE_FORMAT_ASTC_6x6, 0},
+      { PIPE_FORMAT_ASTC_6x6_FLOAT, PIPE_FORMAT_ASTC_6x6, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_8x5_KHR, 0 },
-      { PIPE_FORMAT_ASTC_8x5, 0},
+      { PIPE_FORMAT_ASTC_8x5_FLOAT, PIPE_FORMAT_ASTC_8x5, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_8x6_KHR, 0 },
-      { PIPE_FORMAT_ASTC_8x6, 0},
+      { PIPE_FORMAT_ASTC_8x6_FLOAT, PIPE_FORMAT_ASTC_8x6, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_8x8_KHR, 0 },
-      { PIPE_FORMAT_ASTC_8x8, 0},
+      { PIPE_FORMAT_ASTC_8x8_FLOAT, PIPE_FORMAT_ASTC_8x8, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_10x5_KHR, 0 },
-      { PIPE_FORMAT_ASTC_10x5, 0},
+      { PIPE_FORMAT_ASTC_10x5_FLOAT, PIPE_FORMAT_ASTC_10x5, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_10x6_KHR, 0 },
-      { PIPE_FORMAT_ASTC_10x6, 0},
+      { PIPE_FORMAT_ASTC_10x6_FLOAT, PIPE_FORMAT_ASTC_10x6, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_10x8_KHR, 0 },
-      { PIPE_FORMAT_ASTC_10x8, 0},
+      { PIPE_FORMAT_ASTC_10x8_FLOAT, PIPE_FORMAT_ASTC_10x8, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_10x10_KHR, 0 },
-      { PIPE_FORMAT_ASTC_10x10, 0},
+      { PIPE_FORMAT_ASTC_10x10_FLOAT, PIPE_FORMAT_ASTC_10x10, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_12x10_KHR, 0 },
-      { PIPE_FORMAT_ASTC_12x10, 0},
+      { PIPE_FORMAT_ASTC_12x10_FLOAT, PIPE_FORMAT_ASTC_12x10, 0},
    },
    {
       { GL_COMPRESSED_RGBA_ASTC_12x12_KHR, 0 },
-      { PIPE_FORMAT_ASTC_12x12, 0},
+      { PIPE_FORMAT_ASTC_12x12_FLOAT, PIPE_FORMAT_ASTC_12x12, 0},
    },
 
    {
@@ -1453,7 +1453,7 @@ st_ChooseTextureFormat(struct gl_context *ctx, GLenum target,
    }
 
    if (pFormat == PIPE_FORMAT_NONE) {
-      mFormat = _mesa_glenum_to_compressed_format(internalFormat);
+      mFormat = _mesa_glenum_to_compressed_format(ctx, internalFormat);
       if (st_compressed_format_fallback(st, mFormat))
           return mFormat;
 

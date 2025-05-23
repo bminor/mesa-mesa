@@ -1574,7 +1574,7 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
       mesa_format mesaformat;
       GLint block_size;
 
-      mesaformat = _mesa_glenum_to_compressed_format(internalformat);
+      mesaformat = _mesa_glenum_to_compressed_format(ctx, internalformat);
       if (mesaformat == MESA_FORMAT_NONE)
          goto end;
 

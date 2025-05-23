@@ -1333,7 +1333,7 @@ _mesa_is_generic_compressed_format(const struct gl_context *ctx,
 GLboolean
 _mesa_is_compressed_format(const struct gl_context *ctx, GLenum format)
 {
-   mesa_format m_format = _mesa_glenum_to_compressed_format(format);
+   mesa_format m_format = _mesa_glenum_to_compressed_format(ctx, format);
 
    /* Some formats in this switch have an equivalent mesa_format_layout
     * to the compressed formats in the layout switch below and thus

@@ -477,12 +477,43 @@ _mesa_get_compressed_formats(struct gl_context *ctx, GLint *formats)
    return n;
 }
 
+static mesa_format
+_mesa_astc_ldrhdr_glenum_to_format(const struct gl_context *ctx, GLenum format)
+{
+   bool has_hdr = _mesa_has_KHR_texture_compression_astc_hdr(ctx);
+   switch (format) {
+#define CASE(x) \
+   case GL_COMPRESSED_RGBA_ASTC_ ## x ## _KHR: \
+      return has_hdr ? MESA_FORMAT_RGBA_ASTC_ ## x ## _FLOAT : \
+                       MESA_FORMAT_RGBA_ASTC_ ## x;
+
+   CASE(4x4)
+   CASE(5x4)
+   CASE(5x5)
+   CASE(6x5)
+   CASE(6x6)
+   CASE(8x5)
+   CASE(8x6)
+   CASE(8x8)
+   CASE(10x5)
+   CASE(10x6)
+   CASE(10x8)
+   CASE(10x10)
+   CASE(12x10)
+   CASE(12x12)
+
+#undef CASE
+
+   default:
+      unreachable("unexpected format");
+   }
+}
 
 /**
  * Convert GLenum to a compressed MESA_FORMAT_x.
  */
 mesa_format
-_mesa_glenum_to_compressed_format(GLenum format)
+_mesa_glenum_to_compressed_format(const struct gl_context *ctx, GLenum format)
 {
    switch (format) {
    case GL_COMPRESSED_RGB_FXT1_3DFX:
@@ -564,33 +595,21 @@ _mesa_glenum_to_compressed_format(GLenum format)
       return MESA_FORMAT_BPTC_RGB_UNSIGNED_FLOAT;
 
    case GL_COMPRESSED_RGBA_ASTC_4x4_KHR:
-      return MESA_FORMAT_RGBA_ASTC_4x4;
    case GL_COMPRESSED_RGBA_ASTC_5x4_KHR:
-      return MESA_FORMAT_RGBA_ASTC_5x4;
    case GL_COMPRESSED_RGBA_ASTC_5x5_KHR:
-      return MESA_FORMAT_RGBA_ASTC_5x5;
    case GL_COMPRESSED_RGBA_ASTC_6x5_KHR:
-      return MESA_FORMAT_RGBA_ASTC_6x5;
    case GL_COMPRESSED_RGBA_ASTC_6x6_KHR:
-      return MESA_FORMAT_RGBA_ASTC_6x6;
    case GL_COMPRESSED_RGBA_ASTC_8x5_KHR:
-      return MESA_FORMAT_RGBA_ASTC_8x5;
    case GL_COMPRESSED_RGBA_ASTC_8x6_KHR:
-      return MESA_FORMAT_RGBA_ASTC_8x6;
    case GL_COMPRESSED_RGBA_ASTC_8x8_KHR:
-      return MESA_FORMAT_RGBA_ASTC_8x8;
    case GL_COMPRESSED_RGBA_ASTC_10x5_KHR:
-      return MESA_FORMAT_RGBA_ASTC_10x5;
    case GL_COMPRESSED_RGBA_ASTC_10x6_KHR:
-      return MESA_FORMAT_RGBA_ASTC_10x6;
    case GL_COMPRESSED_RGBA_ASTC_10x8_KHR:
-      return MESA_FORMAT_RGBA_ASTC_10x8;
    case GL_COMPRESSED_RGBA_ASTC_10x10_KHR:
-      return MESA_FORMAT_RGBA_ASTC_10x10;
    case GL_COMPRESSED_RGBA_ASTC_12x10_KHR:
-      return MESA_FORMAT_RGBA_ASTC_12x10;
    case GL_COMPRESSED_RGBA_ASTC_12x12_KHR:
-      return MESA_FORMAT_RGBA_ASTC_12x12;
+      return _mesa_astc_ldrhdr_glenum_to_format(ctx, format);
+
    case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR:
       return MESA_FORMAT_SRGB8_ALPHA8_ASTC_4x4;
    case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR:
