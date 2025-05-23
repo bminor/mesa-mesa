@@ -83,7 +83,6 @@ with_nir_headers_only = (
     with_gallium_vdpau,
     with_gallium_va,
     with_any_vk,
-    with_gallium_xa,
     with_gallium_st_d3d10umd,
     with_gallium_rusticl,
     with_microsoft_clc,
