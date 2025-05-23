@@ -3055,7 +3055,7 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
    NIR_PASS(_, nir, nir_lower_pack);
    NIR_PASS(_, nir, nir_opt_algebraic);
 
-   NIR_PASS_V(nir, nir_divergence_analysis);
+   nir_divergence_analysis(nir);
    bool progress = false;
 
    static const nir_lower_subgroups_options subgroups_options = {

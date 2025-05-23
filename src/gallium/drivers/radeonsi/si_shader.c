@@ -1662,7 +1662,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       NIR_PASS_V(nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
-   NIR_PASS_V(nir, nir_divergence_analysis); /* required by ac_nir_flag_smem_for_loads */
+   nir_divergence_analysis(nir); /* required by ac_nir_flag_smem_for_loads */
    /* This is required by ac_nir_scalarize_overfetching_loads_callback. */
    NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
             !sel->info.base.use_aco_amd, false);

@@ -2100,7 +2100,7 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
     * some assert on consistent divergence flags.
     */
    NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
-   NIR_PASS_V(nir, nir_divergence_analysis);
+   nir_divergence_analysis(nir);
 
    OPT(nir_convert_from_ssa, true, true);
 
