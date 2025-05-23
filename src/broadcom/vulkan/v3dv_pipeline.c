@@ -278,8 +278,8 @@ preprocess_nir(nir_shader *nir)
                        });
    }
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries,
-              nir_shader_get_entrypoint(nir), true, false);
+   NIR_PASS(_, nir, nir_lower_io_to_temporaries,
+            nir_shader_get_entrypoint(nir), true, false);
 
    NIR_PASS(_, nir, nir_lower_system_values);
 
@@ -895,7 +895,7 @@ static void
 lower_fs_io(nir_shader *nir)
 {
    /* Our backend doesn't handle array fragment shader outputs */
-   NIR_PASS_V(nir, nir_lower_io_arrays_to_elements_no_indirects, false);
+   NIR_PASS(_, nir, nir_lower_io_arrays_to_elements_no_indirects, false);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_out, NULL);
 
    nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
@@ -911,7 +911,7 @@ lower_fs_io(nir_shader *nir)
 static void
 lower_gs_io(struct nir_shader *nir)
 {
-   NIR_PASS_V(nir, nir_lower_io_arrays_to_elements_no_indirects, false);
+   NIR_PASS(_, nir, nir_lower_io_arrays_to_elements_no_indirects, false);
 
    nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
                                MESA_SHADER_GEOMETRY);
@@ -923,7 +923,7 @@ lower_gs_io(struct nir_shader *nir)
 static void
 lower_vs_io(struct nir_shader *nir)
 {
-   NIR_PASS_V(nir, nir_lower_io_arrays_to_elements_no_indirects, false);
+   NIR_PASS(_, nir, nir_lower_io_arrays_to_elements_no_indirects, false);
 
    nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
                                MESA_SHADER_VERTEX);
@@ -1748,8 +1748,8 @@ pipeline_lower_nir(struct v3dv_pipeline *pipeline,
    assert(pipeline->shared_data &&
           pipeline->shared_data->maps[p_stage->stage]);
 
-   NIR_PASS_V(p_stage->nir, nir_vk_lower_ycbcr_tex,
-              lookup_ycbcr_conversion, layout);
+   NIR_PASS(_, p_stage->nir, nir_vk_lower_ycbcr_tex,
+            lookup_ycbcr_conversion, layout);
 
    nir_shader_gather_info(p_stage->nir, nir_shader_get_entrypoint(p_stage->nir));
 
@@ -3135,7 +3135,7 @@ lower_compute(struct nir_shader *nir)
    struct nir_lower_compute_system_values_options sysval_options = {
       .has_base_workgroup_id = true,
    };
-   NIR_PASS_V(nir, nir_lower_compute_system_values, &sysval_options);
+   NIR_PASS(_, nir, nir_lower_compute_system_values, &sysval_options);
 }
 
 static VkResult
