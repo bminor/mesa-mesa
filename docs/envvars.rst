@@ -1188,6 +1188,7 @@ Rusticl environment variables
 
    - ``fp16`` enables OpenCL half support
    - ``fp64`` enables OpenCL double support
+   - ``intel`` enables various Intel OpenCL extensions
 
 .. envvar:: RUSTICL_DEBUG
 
