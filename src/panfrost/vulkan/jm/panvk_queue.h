@@ -23,17 +23,4 @@ struct panvk_queue {
 
 VK_DEFINE_HANDLE_CASTS(panvk_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
 
-static inline void
-panvk_per_arch(queue_finish)(struct panvk_queue *queue)
-{
-   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-
-   vk_queue_finish(&queue->vk);
-   drmSyncobjDestroy(dev->drm_fd, queue->sync);
-}
-
-VkResult panvk_per_arch(queue_init)(struct panvk_device *device,
-                                    struct panvk_queue *queue, int idx,
-                                    const VkDeviceQueueCreateInfo *create_info);
-
 #endif

@@ -1267,12 +1267,20 @@ get_panthor_group_priority(const VkDeviceQueueCreateInfo *create_info)
 }
 
 VkResult
-panvk_per_arch(queue_init)(struct panvk_device *dev, struct panvk_queue *queue,
-                           int idx, const VkDeviceQueueCreateInfo *create_info)
+panvk_per_arch(queue_create)(struct panvk_device *dev, uint32_t family_idx,
+                             uint32_t queue_idx,
+                             const VkDeviceQueueCreateInfo *create_info,
+                             struct vk_queue **out_queue)
 {
-   VkResult result = vk_queue_init(&queue->vk, &dev->vk, create_info, idx);
+   struct panvk_queue *queue = vk_zalloc(&dev->vk.alloc, sizeof(*queue), 8,
+                                         VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!queue)
+      return panvk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   VkResult result =
+      vk_queue_init(&queue->vk, &dev->vk, create_info, queue_idx);
    if (result != VK_SUCCESS)
-      return result;
+      goto err_free_queue;
 
    int ret = drmSyncobjCreate(dev->drm_fd, 0, &queue->syncobj_handle);
    if (ret) {
@@ -1294,6 +1302,7 @@ panvk_per_arch(queue_init)(struct panvk_device *dev, struct panvk_queue *queue,
       goto err_destroy_group;
 
    queue->vk.driver_submit = panvk_queue_submit;
+   *out_queue = &queue->vk;
    return VK_SUCCESS;
 
 err_destroy_group:
@@ -1307,12 +1316,16 @@ err_destroy_syncobj:
 
 err_finish_queue:
    vk_queue_finish(&queue->vk);
+
+err_free_queue:
+   vk_free(&dev->vk.alloc, queue);
    return result;
 }
 
 void
-panvk_per_arch(queue_finish)(struct panvk_queue *queue)
+panvk_per_arch(queue_destroy)(struct vk_queue *vk_queue)
 {
+   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
 
    cleanup_queue(queue);
@@ -1320,11 +1333,13 @@ panvk_per_arch(queue_finish)(struct panvk_queue *queue)
    cleanup_tiler(queue);
    drmSyncobjDestroy(dev->drm_fd, queue->syncobj_handle);
    vk_queue_finish(&queue->vk);
+   vk_free(&dev->vk.alloc, queue);
 }
 
 VkResult
-panvk_per_arch(queue_check_status)(struct panvk_queue *queue)
+panvk_per_arch(queue_check_status)(struct vk_queue *vk_queue)
 {
+   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    struct drm_panthor_group_get_state state = {
       .group_handle = queue->group_handle,

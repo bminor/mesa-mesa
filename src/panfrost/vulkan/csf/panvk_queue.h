@@ -85,12 +85,4 @@ struct panvk_queue {
 
 VK_DEFINE_HANDLE_CASTS(panvk_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
 
-void panvk_per_arch(queue_finish)(struct panvk_queue *queue);
-
-VkResult panvk_per_arch(queue_init)(struct panvk_device *device,
-                                    struct panvk_queue *queue, int idx,
-                                    const VkDeviceQueueCreateInfo *create_info);
-
-VkResult panvk_per_arch(queue_check_status)(struct panvk_queue *queue);
-
 #endif

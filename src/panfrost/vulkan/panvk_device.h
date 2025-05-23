@@ -32,6 +32,11 @@
 struct panvk_precomp_cache;
 struct panvk_device_draw_context;
 
+struct panvk_device_queue_family {
+   struct vk_queue **queues;
+   int queue_count;
+};
+
 struct panvk_device {
    struct vk_device vk;
 
@@ -68,8 +73,7 @@ struct panvk_device {
 
    struct vk_device_dispatch_table cmd_dispatch;
 
-   struct panvk_queue *queues[PANVK_MAX_QUEUE_FAMILIES];
-   int queue_count[PANVK_MAX_QUEUE_FAMILIES];
+   struct panvk_device_queue_family queue_families[PANVK_MAX_QUEUE_FAMILIES];
 
    struct panvk_precomp_cache *precomp_cache;
 
@@ -136,13 +140,14 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 void panvk_per_arch(destroy_device)(struct panvk_device *device,
                                     const VkAllocationCallbacks *pAllocator);
 
-static inline VkResult
-panvk_common_check_status(struct panvk_device *dev)
-{
-   return vk_check_printf_status(&dev->vk, &dev->printf.ctx);
-}
-
 VkResult panvk_per_arch(device_check_status)(struct vk_device *vk_dev);
+
+VkResult panvk_per_arch(queue_create)(struct panvk_device *device, uint32_t family_idx,
+                                      uint32_t queue_idx,
+                                      const VkDeviceQueueCreateInfo *create_info,
+                                      struct vk_queue **out_queue);
+void panvk_per_arch(queue_destroy)(struct vk_queue *queue);
+VkResult panvk_per_arch(queue_check_status)(struct vk_queue *queue);
 
 #if PAN_ARCH >= 10
 VkResult panvk_per_arch(init_tiler_oom)(struct panvk_device *device);

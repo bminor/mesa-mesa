@@ -307,9 +307,10 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 }
 
 VkResult
-panvk_per_arch(queue_init)(struct panvk_device *device,
-                           struct panvk_queue *queue, int idx,
-                           const VkDeviceQueueCreateInfo *create_info)
+panvk_per_arch(queue_create)(struct panvk_device *device, uint32_t family_idx,
+			     uint32_t queue_idx,
+                             const VkDeviceQueueCreateInfo *create_info,
+                             struct vk_queue **out_queue)
 {
    ASSERTED const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
@@ -321,18 +322,48 @@ panvk_per_arch(queue_init)(struct panvk_device *device,
    /* XXX: Panfrost kernel module doesn't support priorities so far */
    assert(priority == VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR);
 
-   VkResult result = vk_queue_init(&queue->vk, &device->vk, create_info, idx);
+   struct panvk_queue *queue = vk_zalloc(&device->vk.alloc, sizeof(*queue), 8,
+                                         VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!queue)
+      return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   VkResult result =
+      vk_queue_init(&queue->vk, &device->vk, create_info, queue_idx);
    if (result != VK_SUCCESS)
-      return result;
+      goto err_free_queue;
 
    int ret = drmSyncobjCreate(device->drm_fd, DRM_SYNCOBJ_CREATE_SIGNALED,
                               &queue->sync);
    if (ret) {
-      vk_queue_finish(&queue->vk);
-      return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+      result = panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+      goto err_finish_queue;
    }
 
    queue->vk.driver_submit = panvk_queue_submit;
+   *out_queue = &queue->vk;
+   return VK_SUCCESS;
+
+err_finish_queue:
+   vk_queue_finish(&queue->vk);
+
+err_free_queue:
+   vk_free(&device->vk.alloc, queue);
+   return result;
+}
+
+void panvk_per_arch(queue_destroy)(struct vk_queue *vk_queue)
+{
+   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
+   struct panvk_device *dev = to_panvk_device(vk_queue->base.device);
+
+   vk_queue_finish(&queue->vk);
+   drmSyncobjDestroy(dev->drm_fd, queue->sync);
+   vk_free(&dev->vk.alloc, queue);
+}
+
+VkResult
+panvk_per_arch(queue_check_status)(struct vk_queue *vk_queue)
+{
    return VK_SUCCESS;
 }
 
