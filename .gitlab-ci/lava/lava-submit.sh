@@ -112,8 +112,7 @@ PYTHONPATH=/ /lava/lava_job_submitter.py \
 		--format=tar \
 	- append-overlay \
 		--name=kernel-modules \
-		--url="${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar.zst" \
-		--compression=zstd \
+		--url="${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar" \
 		--path="/" \
 		--format=tar \
 	"${LAVA_EXTRA_OVERLAYS[@]}" \

@@ -203,7 +203,7 @@
     # Force fixed 6.6 kernel, amdgpu doesn't revcover from GPU resets on 6.13
     # https://gitlab.freedesktop.org/drm/amd/-/issues/3861
     # https://gitlab.freedesktop.org/mesa/mesa/-/issues/12676
-    KERNEL_TAG: "v6.6.21-mesa-83d9"
+    KERNEL_TAG: "v6.6.21-mesa-1978"
 
 # Status: https://lava.collabora.dev/scheduler/device_type/lenovo-TPad-C13-Yoga-zork
 .lava-lenovo-TPad-C13-Yoga-zork:x86_64:
@@ -220,7 +220,7 @@
     # Force fixed 6.6 kernel, amdgpu doesn't revcover from GPU resets on 6.13
     # https://gitlab.freedesktop.org/drm/amd/-/issues/3861
     # https://gitlab.freedesktop.org/mesa/mesa/-/issues/12676
-    KERNEL_TAG: "v6.6.21-mesa-83d9"
+    KERNEL_TAG: "v6.6.21-mesa-1978"
 
 # Status: https://lava.collabora.dev/scheduler/device_type/hp-x360-14a-cb0001xx-zork
 .lava-hp-x360-14a-cb0001xx-zork:x86_64:
@@ -237,7 +237,7 @@
     # Force fixed 6.6 kernel, amdgpu doesn't revcover from GPU resets on 6.13
     # https://gitlab.freedesktop.org/drm/amd/-/issues/3861
     # https://gitlab.freedesktop.org/mesa/mesa/-/issues/12676
-    KERNEL_TAG: "v6.6.21-mesa-83d9"
+    KERNEL_TAG: "v6.6.21-mesa-1978"
 
 
 ############### LAVA
