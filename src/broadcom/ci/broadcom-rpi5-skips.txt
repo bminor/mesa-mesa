@@ -45,6 +45,7 @@ dEQP-VK.ssbo.phys.layout.random.8bit.all_per_block_buffers.46
 dEQP-VK.ssbo.phys.layout.random.8bit.nested_structs_arrays.17
 dEQP-VK.ssbo.phys.layout.random.8bit.scalar.78
 dEQP-VK.ssbo.phys.layout.random.8bit.scalar.96
+dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
 dEQP-VK.ssbo.phys.layout.random.scalar.3
 dEQP-VK.ssbo.phys.layout.random.scalar.93
 dEQP-VK.ssbo.phys.layout.random.scalar.97
