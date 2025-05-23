@@ -50,6 +50,3 @@ KHR-GLES3.clip_distance.coverage,Fail
 # new with ANGLE 2024-10-17
 KHR-GLES31.core.texture_buffer.texture_buffer_max_size,Fail
 KHR-GLES31.core.shader_image_load_store.basic-allTargets-loadStoreCS,Fail
-
-# New failure with ANGLE 2025-02-12
-KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Crash
