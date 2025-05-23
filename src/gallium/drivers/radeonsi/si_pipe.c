@@ -550,15 +550,6 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
 
    /* Initialize the context handle and the command stream. */
    sctx->ctx = sctx->ws->ctx_create(sctx->ws, sctx->context_flags);
-   if (!sctx->ctx && sctx->context_flags & PIPE_CONTEXT_HIGH_PRIORITY) {
-      /* Context priority should be treated as a hint. If context creation
-       * fails with the requested priority, for example because the caller
-       * lacks CAP_SYS_NICE capability or other system resource constraints,
-       * fallback to normal priority.
-       */
-      sctx->context_flags &= ~PIPE_CONTEXT_HIGH_PRIORITY;
-      sctx->ctx = sctx->ws->ctx_create(sctx->ws, sctx->context_flags);
-   }
    if (!sctx->ctx) {
       fprintf(stderr, "radeonsi: can't create radeon_winsys_ctx\n");
       goto fail;

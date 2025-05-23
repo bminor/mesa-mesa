@@ -268,7 +268,15 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws, un
 
    dev = ctx->aws->dev;
 
-   r = ac_drm_cs_ctx_create2(dev, amdgpu_priority, &ctx->ctx_handle);
+   while (1) {
+      r = ac_drm_cs_ctx_create2(dev, amdgpu_priority, &ctx->ctx_handle);
+      if (r == -EACCES && amdgpu_priority == AMDGPU_CTX_PRIORITY_HIGH) {
+         /* Try again with a lower priority. */
+         amdgpu_priority = AMDGPU_CTX_PRIORITY_NORMAL;
+         continue;
+      }
+      break;
+   }
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_cs_ctx_create2 failed. (%i)\n", r);
       goto error_create;
