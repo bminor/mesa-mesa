@@ -75,6 +75,7 @@ dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.2d_arr
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.2d_array.rg8.11_137_3
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.2d_array.rgba8.1024_128_8
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.r8_snorm.512_256_6
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba16i.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba8_snorm.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube.rg32ui.137_137_1
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube.rgba16_snorm.128_128_1
