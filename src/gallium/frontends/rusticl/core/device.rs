@@ -724,6 +724,10 @@ impl Device {
             // we have lowering in `nir_lower_subgroups`, drivers can just use that
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle");
             add_ext(1, 0, 0, "cl_khr_subgroup_shuffle_relative");
+            if self.intel_subgroups_supported() {
+                add_ext(1, 0, 0, "cl_intel_subgroups");
+                add_spirv(c"SPV_INTEL_subgroups");
+            }
         }
 
         if self.svm_supported() {
@@ -866,6 +870,10 @@ impl Device {
         }
 
         self.screen.caps().doubles
+    }
+
+    pub fn intel_subgroups_supported(&self) -> bool {
+        Platform::features().intel && self.subgroups_supported()
     }
 
     pub fn is_gl_sharing_supported(&self) -> bool {
@@ -1178,6 +1186,7 @@ impl Device {
             images_read_write: self.caps.has_rw_images,
             images_write_3d: self.caps.has_3d_image_writes,
             integer_dot_product: true,
+            intel_subgroups: self.intel_subgroups_supported(),
             subgroups: subgroups_supported,
             subgroups_shuffle: subgroups_supported,
             subgroups_shuffle_relative: subgroups_supported,
