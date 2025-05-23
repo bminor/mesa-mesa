@@ -1494,7 +1494,7 @@ vc4_optimize_nir(struct nir_shader *s)
         do {
                 progress = false;
 
-                NIR_PASS_V(s, nir_lower_vars_to_ssa);
+                NIR_PASS(_, s, nir_lower_vars_to_ssa);
                 NIR_PASS(progress, s, nir_lower_alu_to_scalar, NULL, NULL);
                 NIR_PASS(progress, s, nir_lower_phis_to_scalar, false);
                 NIR_PASS(progress, s, nir_copy_prop);
@@ -2254,7 +2254,7 @@ vc4_shader_ntq(struct vc4_context *vc4, enum qstage stage,
         c->s = nir_shader_clone(c, key->shader_state->base.ir.nir);
 
         if (stage == QSTAGE_FRAG) {
-                NIR_PASS_V(c->s, vc4_nir_lower_blend, c);
+                NIR_PASS(_, c->s, vc4_nir_lower_blend, c);
         }
 
         struct nir_lower_tex_options tex_options = {
@@ -2292,17 +2292,17 @@ vc4_shader_ntq(struct vc4_context *vc4, enum qstage stage,
                         tex_options.lower_srgb |= (1 << i);
         }
 
-        NIR_PASS_V(c->s, nir_lower_tex, &tex_options);
+        NIR_PASS(_, c->s, nir_lower_tex, &tex_options);
 
         if (c->key->ucp_enables) {
                 if (stage == QSTAGE_FRAG) {
-                        NIR_PASS_V(c->s, nir_lower_clip_fs,
-                                   c->key->ucp_enables, false, false);
+                        NIR_PASS(_, c->s, nir_lower_clip_fs,
+                                 c->key->ucp_enables, false, false);
                 } else {
-                        NIR_PASS_V(c->s, nir_lower_clip_vs,
-                                   c->key->ucp_enables, false, false, NULL);
-                        NIR_PASS_V(c->s, nir_lower_io_to_scalar,
-                                   nir_var_shader_out, NULL, NULL);
+                        NIR_PASS(_, c->s, nir_lower_clip_vs,
+                                 c->key->ucp_enables, false, false, NULL);
+                        NIR_PASS(_, c->s, nir_lower_io_to_scalar,
+                                 nir_var_shader_out, NULL, NULL);
                 }
         }
 
@@ -2311,16 +2311,16 @@ vc4_shader_ntq(struct vc4_context *vc4, enum qstage stage,
          * scalarizing must happen after nir_lower_clip_vs.
          */
         if (c->stage == QSTAGE_FRAG)
-                NIR_PASS_V(c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
+                NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
         else
-                NIR_PASS_V(c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+                NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 
-        NIR_PASS_V(c->s, vc4_nir_lower_io, c);
-        NIR_PASS_V(c->s, vc4_nir_lower_txf_ms, c);
+        NIR_PASS(_, c->s, vc4_nir_lower_io, c);
+        NIR_PASS(_, c->s, vc4_nir_lower_txf_ms, c);
         nir_lower_idiv_options idiv_options = {
                 .allow_fp16 = true,
         };
-        NIR_PASS_V(c->s, nir_lower_idiv, &idiv_options);
+        NIR_PASS(_, c->s, nir_lower_idiv, &idiv_options);
         NIR_PASS(_, c->s, nir_lower_alu);
 
         vc4_optimize_nir(c->s);
@@ -2334,16 +2334,16 @@ vc4_shader_ntq(struct vc4_context *vc4, enum qstage stage,
         while (more_late_algebraic) {
                 more_late_algebraic = false;
                 NIR_PASS(more_late_algebraic, c->s, nir_opt_algebraic_late);
-                NIR_PASS_V(c->s, nir_opt_constant_folding);
-                NIR_PASS_V(c->s, nir_copy_prop);
-                NIR_PASS_V(c->s, nir_opt_dce);
-                NIR_PASS_V(c->s, nir_opt_cse);
+                NIR_PASS(_, c->s, nir_opt_constant_folding);
+                NIR_PASS(_, c->s, nir_copy_prop);
+                NIR_PASS(_, c->s, nir_opt_dce);
+                NIR_PASS(_, c->s, nir_opt_cse);
         }
 
-        NIR_PASS_V(c->s, nir_lower_bool_to_int32);
+        NIR_PASS(_, c->s, nir_lower_bool_to_int32);
 
-        NIR_PASS_V(c->s, nir_convert_from_ssa, true, false);
-        NIR_PASS_V(c->s, nir_trivialize_registers);
+        NIR_PASS(_, c->s, nir_convert_from_ssa, true, false);
+        NIR_PASS(_, c->s, nir_trivialize_registers);
 
         if (VC4_DBG(NIR)) {
                 fprintf(stderr, "%s prog %d/%d NIR:\n",
@@ -2539,19 +2539,19 @@ vc4_shader_state_create(struct pipe_context *pctx,
         }
 
         if (s->info.stage == MESA_SHADER_VERTEX)
-                NIR_PASS_V(s, nir_lower_point_size, 1.0f, 0.0f);
+                NIR_PASS(_, s, nir_lower_point_size, 1.0f, 0.0f);
 
-        NIR_PASS_V(s, nir_lower_io,
-                   nir_var_shader_in | nir_var_shader_out | nir_var_uniform,
-                   type_size, (nir_lower_io_options)0);
+        NIR_PASS(_, s, nir_lower_io,
+                 nir_var_shader_in | nir_var_shader_out | nir_var_uniform,
+                 type_size, (nir_lower_io_options)0);
 
-        NIR_PASS_V(s, nir_normalize_cubemap_coords);
+        NIR_PASS(_, s, nir_normalize_cubemap_coords);
 
-        NIR_PASS_V(s, nir_lower_load_const_to_scalar);
+        NIR_PASS(_, s, nir_lower_load_const_to_scalar);
 
         vc4_optimize_nir(s);
 
-        NIR_PASS_V(s, nir_remove_dead_variables, nir_var_function_temp, NULL);
+        NIR_PASS(_, s, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
         /* Garbage collect dead instructions */
         nir_sweep(s);
