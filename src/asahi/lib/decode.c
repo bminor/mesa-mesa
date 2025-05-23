@@ -1065,7 +1065,7 @@ libagxdecode_writer(void *cookie, const char *buffer, size_t size)
    return lib_config.stream_write(buffer, size);
 }
 
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) && !DETECT_OS_ANDROID
 static cookie_io_functions_t funcs = {.write = libagxdecode_writer};
 #endif
 
@@ -1074,7 +1074,7 @@ static decoder_params lib_params;
 void
 libagxdecode_init(struct libagxdecode_config *config)
 {
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) && !DETECT_OS_ANDROID
    lib_config = *config;
    agxdecode_dump_stream = fopencookie(NULL, "w", funcs);
 
