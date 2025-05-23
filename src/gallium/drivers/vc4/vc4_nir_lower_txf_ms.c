@@ -122,11 +122,11 @@ vc4_nir_lower_txf_ms_filter(const nir_instr *instr, const void *data)
                 nir_instr_as_tex(instr)->op == nir_texop_txf_ms);
 }
 
-void
+bool
 vc4_nir_lower_txf_ms(nir_shader *s, struct vc4_compile *c)
 {
-        nir_shader_lower_instructions(s,
-                                      vc4_nir_lower_txf_ms_filter,
-                                      vc4_nir_lower_txf_ms_instr,
-                                      c);
+       return  nir_shader_lower_instructions(s,
+                                             vc4_nir_lower_txf_ms_filter,
+                                             vc4_nir_lower_txf_ms_instr,
+                                             c);
 }

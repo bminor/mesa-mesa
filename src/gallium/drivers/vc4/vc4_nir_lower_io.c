@@ -338,9 +338,9 @@ vc4_nir_lower_io_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
         return true;
 }
 
-void
+bool
 vc4_nir_lower_io(nir_shader *s, struct vc4_compile *c)
 {
-        nir_shader_intrinsics_pass(s, vc4_nir_lower_io_impl,
-                                   nir_metadata_control_flow, c);
+        return nir_shader_intrinsics_pass(s, vc4_nir_lower_io_impl,
+                                          nir_metadata_control_flow, c);
 }

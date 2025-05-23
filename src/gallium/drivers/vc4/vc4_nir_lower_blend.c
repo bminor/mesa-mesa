@@ -586,11 +586,12 @@ vc4_nir_lower_blend_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
         return true;
 }
 
-void
+bool
 vc4_nir_lower_blend(nir_shader *s, struct vc4_compile *c)
 {
-        nir_shader_intrinsics_pass(s, vc4_nir_lower_blend_impl,
-                                   nir_metadata_control_flow, c);
+        bool progress =
+                nir_shader_intrinsics_pass(s, vc4_nir_lower_blend_impl,
+                                           nir_metadata_control_flow, c);
 
         /* If we didn't do alpha-to-coverage on the output color, we still
          * need to pass glSampleMask() through.
@@ -600,5 +601,8 @@ vc4_nir_lower_blend(nir_shader *s, struct vc4_compile *c)
                 nir_builder b = nir_builder_at(nir_after_impl(impl));
 
                 vc4_nir_store_sample_mask(c, &b, nir_load_sample_mask_in(&b));
+                progress = true;
         }
+
+        return progress;
 }
