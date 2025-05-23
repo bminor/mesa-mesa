@@ -49,6 +49,18 @@ __gen_unpack_unorm16(CONSTANT_ uint32_t *restrict cl, uint32_t start, uint32_t e
 }
 
 static inline uint64_t
+__gen_pack_unorm8(float f, uint32_t start, uint32_t end)
+{
+   return util_bitpack_uint(float_to_ubyte(f), start, end);
+}
+
+static inline float
+__gen_unpack_unorm8(CONSTANT_ uint32_t *restrict cl, uint32_t start, uint32_t end)
+{
+   return ubyte_to_float(__gen_unpack_uint(cl, start, end));
+}
+
+static inline uint64_t
 __gen_unpack_sint(CONSTANT_ uint32_t *restrict cl, uint32_t start, uint32_t end)
 {
    int size = end - start + 1;

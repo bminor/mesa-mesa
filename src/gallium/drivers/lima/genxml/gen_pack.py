@@ -138,7 +138,7 @@ class Field(object):
             type = 'uint64_t'
         elif self.type == 'bool':
             type = 'bool'
-        elif self.type in ['float', 'half', 'unorm16', 'ulod', 'slod']:
+        elif self.type in ['float', 'half', 'unorm16', 'unorm8', 'ulod', 'slod']:
             type = 'float'
         elif self.type in ['uint', 'hex'] and self.end - self.start > 32:
             type = 'uint64_t'
@@ -340,6 +340,9 @@ class Group(object):
                 elif field.type == "unorm16":
                     assert(end - start + 1 == 16)
                     s = "__gen_pack_unorm16(%s, %d, %d)" % (value, start, end)
+                elif field.type == "unorm8":
+                    assert(end - start + 1 == 8)
+                    s = "__gen_pack_unorm8(%s, %d, %d)" % (value, start, end)
                 elif field.type == "ulod":
                     s = "util_bitpack_ufixed_clamp({}, {}, {}, 4)".format(value,
                                                                           start,
@@ -420,6 +423,8 @@ class Group(object):
                 convert = "__gen_unpack_half"
             elif field.type == "unorm16":
                 convert = "__gen_unpack_unorm16"
+            elif field.type == "unorm8":
+                convert = "__gen_unpack_unorm8"
             elif field.type == "ulod":
                 convert = "__gen_unpack_ulod"
             elif field.type == "slod":
@@ -491,7 +496,7 @@ class Group(object):
                 print(f'   fprintf(fp, "%*s{name}: %d\\n", indent, "", {val});')
             elif field.type == "bool":
                 print(f'   fprintf(fp, "%*s{name}: %s\\n", indent, "", {val} ? "true" : "false");')
-            elif field.type in ["float", "unorm16", "ulod", "slod", "half"]:
+            elif field.type in ["float", "unorm16", "unorm8", "ulod", "slod", "half"]:
                 print(f'   fprintf(fp, "%*s{name}: %f\\n", indent, "", {val});')
             elif field.type in ["uint", "hex"] and (field.end - field.start) >= 32:
                 print(f'   fprintf(fp, "%*s{name}: 0x%" PRIx64 "\\n", indent, "", {val});')
