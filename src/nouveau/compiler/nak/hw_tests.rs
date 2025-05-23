@@ -1181,6 +1181,126 @@ fn test_iadd64() {
 }
 
 #[test]
+fn test_op_suclamp() {
+    if !RunSingleton::get().sm.is_kepler() {
+        return;
+    }
+
+    // We cannot test every single combination of options.
+    // Use a random generator for rounding and immediate
+    let mut a = Acorn::new();
+    for mode in [
+        SuClampMode::StoredInDescriptor,
+        SuClampMode::PitchLinear,
+        SuClampMode::BlockLinear,
+    ] {
+        for i in 0..4 {
+            let is_s32 = (i & (1 << 0)) != 0;
+            let is_2d = (i & (1 << 1)) != 0;
+            // immediate is an i6 value
+            let imm = (a.get_u32() % 64) as i8 - 32;
+            let round = match a.get_u32() % 5 {
+                0 => SuClampRound::R1,
+                1 => SuClampRound::R2,
+                2 => SuClampRound::R4,
+                3 => SuClampRound::R8,
+                _ => SuClampRound::R16,
+            };
+
+            let op = OpSuClamp {
+                dst: Dst::None,
+                out_of_bounds: Dst::None,
+                mode,
+                round,
+                is_s32,
+                is_2d,
+                coords: 0.into(),
+                params: 0.into(),
+                imm,
+            };
+
+            test_foldable_op(op);
+        }
+    }
+}
+
+#[test]
+fn test_op_subfm() {
+    if !RunSingleton::get().sm.is_kepler() {
+        return;
+    }
+
+    for is_3d in [false, true] {
+        let op = OpSuBfm {
+            dst: Dst::None,
+            pdst: Dst::None,
+            srcs: [0.into(), 0.into(), 0.into()],
+            is_3d,
+        };
+
+        test_foldable_op(op);
+    }
+}
+
+#[test]
+fn test_op_sueau() {
+    if !RunSingleton::get().sm.is_kepler() {
+        return;
+    }
+
+    let op = OpSuEau {
+        dst: Dst::None,
+        off: 0.into(),
+        bit_field: 0.into(),
+        addr: 0.into(),
+    };
+
+    test_foldable_op(op);
+}
+
+#[test]
+fn test_op_imadsp() {
+    if !RunSingleton::get().sm.is_kepler() {
+        return;
+    }
+
+    use IMadSpSrcType::*;
+    let src0_w = [U32, U24, U16Lo, U16Hi];
+    let src1_w = [U24, U16Lo];
+    let src2_w = [U32, U24, U16Lo];
+
+    let mut modes = vec![];
+
+    // Cartesian product
+    for w0 in src0_w {
+        for w1 in src1_w {
+            for w2 in src2_w {
+                for sign in 0..4 {
+                    let s0 = (sign & 0x1) != 0;
+                    let s1 = (sign & 0x2) != 0;
+                    let s2 = s0 || s1;
+                    modes.push(IMadSpMode::Explicit([
+                        w0.with_sign(s0),
+                        w1.with_sign(s1),
+                        w2.with_sign(s2),
+                    ]))
+                }
+            }
+        }
+    }
+    modes.push(IMadSpMode::FromSrc1);
+
+    for mode in modes {
+        let op = OpIMadSp {
+            dst: Dst::None,
+            srcs: [0.into(), 0.into(), 0.into()],
+            mode,
+        };
+        test_foldable_op(op);
+    }
+}
+
+#[test]
 fn test_ineg64() {
     let run = RunSingleton::get();
     let invocations = 100;

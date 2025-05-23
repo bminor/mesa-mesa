@@ -129,6 +129,10 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::LeaX(_)
         | Op::Lop2(_)
         | Op::Lop3(_)
+        | Op::SuClamp(_)
+        | Op::SuBfm(_)
+        | Op::SuEau(_)
+        | Op::IMadSp(_)
         | Op::Shf(_)
         | Op::Shl(_)
         | Op::Shr(_)
@@ -158,7 +162,11 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::Txq(_) => SideEffect::Memory,
 
         // Surface ops
-        Op::SuLd(_) | Op::SuSt(_) | Op::SuAtom(_) => SideEffect::Memory,
+        Op::SuLd(_)
+        | Op::SuSt(_)
+        | Op::SuAtom(_)
+        | Op::SuLdGa(_)
+        | Op::SuStGa(_) => SideEffect::Memory,
 
         // Memory ops
         Op::Ipa(_) | Op::Ldc(_) => SideEffect::None,
@@ -262,7 +270,11 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         | Op::Txq(_) => 32,
 
         // Surface ops
-        Op::SuLd(_) | Op::SuSt(_) | Op::SuAtom(_) => 32,
+        Op::SuLd(_)
+        | Op::SuSt(_)
+        | Op::SuAtom(_)
+        | Op::SuLdGa(_)
+        | Op::SuStGa(_) => 32,
 
         // Memory ops
         Op::Ldc(_) => 4,

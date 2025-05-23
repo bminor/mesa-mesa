@@ -2534,6 +2534,155 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst);
             }
+            nir_intrinsic_suclamp_nv => {
+                let coords = self.get_src(&srcs[0]);
+                let params = self.get_src(&srcs[1]);
+
+                let flags = intrin.flags();
+                let flags: nak_nir_suclamp_flags =
+                    unsafe { std::mem::transmute_copy(&flags) };
+
+                let mode = match flags.mode() {
+                    NAK_SUCLAMP_MODE_BLOCK_LINEAR => SuClampMode::BlockLinear,
+                    NAK_SUCLAMP_MODE_PITCH_LINEAR => SuClampMode::PitchLinear,
+                    NAK_SUCLAMP_MODE_STORED_DESCRIPTOR => {
+                        SuClampMode::StoredInDescriptor
+                    }
+                    _ => panic!("Invalid suclamp mode"),
+                };
+
+                let round = match flags.round() {
+                    NAK_SUCLAMP_ROUND_R1 => SuClampRound::R1,
+                    NAK_SUCLAMP_ROUND_R2 => SuClampRound::R2,
+                    NAK_SUCLAMP_ROUND_R4 => SuClampRound::R4,
+                    NAK_SUCLAMP_ROUND_R8 => SuClampRound::R8,
+                    NAK_SUCLAMP_ROUND_R16 => SuClampRound::R16,
+                    _ => panic!("Invalid suclamp round"),
+                };
+
+                let dst = b.alloc_ssa(RegFile::GPR);
+                let out_of_bounds = b.alloc_ssa(RegFile::Pred);
+                b.push_op(OpSuClamp {
+                    dst: dst.into(),
+                    out_of_bounds: out_of_bounds.into(),
+                    coords,
+                    params,
+                    mode,
+                    round,
+                    is_2d: flags.is_2d(),
+                    is_s32: flags.is_s32(),
+                    imm: 0,
+                });
+                let final_dst =
+                    vec![dst, b.sel(out_of_bounds.into(), 1.into(), 0.into())];
+
+                self.set_ssa(&intrin.def, final_dst);
+            }
+            nir_intrinsic_subfm_nv => {
+                let x = self.get_src(&srcs[0]);
+                let y = self.get_src(&srcs[1]);
+                let z = self.get_src(&srcs[2]);
+                let is_3d = intrin.flags() != 0;
+
+                let dst = b.alloc_ssa(RegFile::GPR);
+                let out_of_bounds = b.alloc_ssa(RegFile::Pred);
+                b.push_op(OpSuBfm {
+                    dst: dst.into(),
+                    pdst: out_of_bounds.into(),
+                    srcs: [x, y, z],
+                    is_3d,
+                });
+                let final_dst =
+                    vec![dst, b.sel(out_of_bounds.into(), 1.into(), 0.into())];
+
+                self.set_ssa(&intrin.def, final_dst);
+            }
+            nir_intrinsic_sueau_nv => {
+                let off = self.get_src(&srcs[0]);
+                let bit_field = self.get_src(&srcs[1]);
+                let addr = self.get_src(&srcs[2]);
+
+                let dst = b.alloc_ssa(RegFile::GPR);
+                b.push_op(OpSuEau {
+                    dst: dst.into(),
+                    off,
+                    bit_field,
+                    addr,
+                });
+                self.set_dst(&intrin.def, dst.into());
+            }
+            nir_intrinsic_imadsp_nv => {
+                let src0 = self.get_src(&srcs[0]);
+                let src1 = self.get_src(&srcs[1]);
+                let src2 = self.get_src(&srcs[2]);
+
+                let flags = intrin.flags();
+                let flags: nak_nir_imadsp_flags =
+                    unsafe { std::mem::transmute_copy(&flags) };
+
+                let translate_src_type = |s| {
+                    use IMadSpSrcType::*;
+                    match s {
+                        NAK_IMAD_TYPE_U32 => U32,
+                        NAK_IMAD_TYPE_U24 => U24,
+                        NAK_IMAD_TYPE_U16_LO => U16Lo,
+                        NAK_IMAD_TYPE_U16_HI => U16Hi,
+                        NAK_IMAD_TYPE_S32 => S32,
+                        NAK_IMAD_TYPE_S24 => S24,
+                        NAK_IMAD_TYPE_S16_LO => S16Lo,
+                        NAK_IMAD_TYPE_S16_HI => S16Hi,
+                        _ => panic!("Invalid imadsp mode"),
+                    }
+                };
+
+                let mode = if flags.params_from_src1() {
+                    IMadSpMode::FromSrc1
+                } else {
+                    IMadSpMode::Explicit([
+                        translate_src_type(flags.src0()),
+                        translate_src_type(flags.src1()),
+                        translate_src_type(flags.src2()),
+                    ])
+                };
+
+                let dst = b.alloc_ssa(RegFile::GPR);
+                b.push_op(OpIMadSp {
+                    srcs: [src0, src1, src2],
+                    dst: dst.into(),
+                    mode,
+                });
+                self.set_dst(&intrin.def, dst.into());
+            }
+            nir_intrinsic_suldga_nv => {
+                let addr = self.get_src(&srcs[0]);
+                let format = self.get_src(&srcs[1]);
+                let out_of_bounds = self.get_src(&srcs[2]);
+
+                let comps = intrin.num_components;
+
+                assert!(intrin.def.bit_size() == 32);
+                let mem_type = self.get_image_mem_type(intrin);
+
+                let flags = intrin.flags();
+                let offset_mode = match flags {
+                    NAK_SUGA_OFF_MODE_U32 => SuGaOffsetMode::U32,
+                    NAK_SUGA_OFF_MODE_S32 => SuGaOffsetMode::S32,
+                    NAK_SUGA_OFF_MODE_U8 => SuGaOffsetMode::U8,
+                    NAK_SUGA_OFF_MODE_S8 => SuGaOffsetMode::S8,
+                    _ => panic!("Invalid suldga flags"),
+                };
+
+                let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
+                b.push_op(OpSuLdGa {
+                    dst: dst.clone().into(),
+                    addr,
+                    format,
+                    out_of_bounds,
+                    mem_type,
+                    offset_mode,
+                });
+                self.set_dst(&intrin.def, dst);
+            }
             nir_intrinsic_bindless_image_load
             | nir_intrinsic_bindless_image_load_raw_nv => {
                 let handle = self.get_src(&srcs[0]);
@@ -2623,6 +2772,33 @@ impl<'a> ShaderFromNir<'a> {
                 final_dst.push(b.sel(fault.into(), 0.into(), 1.into()));
 
                 self.set_ssa(&intrin.def, final_dst);
+            }
+            nir_intrinsic_sustga_nv => {
+                let addr = self.get_src(&srcs[0]);
+                let format = self.get_src(&srcs[1]);
+                let out_of_bounds = self.get_src(&srcs[2]);
+
+                let data = self.get_src(&srcs[3]);
+                let image_access =
+                    ImageAccess::Formatted(ChannelMask::new(0xf));
+
+                let flags = intrin.flags();
+                let offset_mode = match flags {
+                    NAK_SUGA_OFF_MODE_U32 => SuGaOffsetMode::U32,
+                    NAK_SUGA_OFF_MODE_S32 => SuGaOffsetMode::S32,
+                    NAK_SUGA_OFF_MODE_U8 => SuGaOffsetMode::U8,
+                    NAK_SUGA_OFF_MODE_S8 => SuGaOffsetMode::S8,
+                    _ => panic!("Invalid sustga flags"),
+                };
+
+                b.push_op(OpSuStGa {
+                    addr,
+                    format,
+                    data,
+                    out_of_bounds,
+                    image_access,
+                    offset_mode,
+                });
             }
             nir_intrinsic_bindless_image_store => {
                 let handle = self.get_src(&srcs[0]);
