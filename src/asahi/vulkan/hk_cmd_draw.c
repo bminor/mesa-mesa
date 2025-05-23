@@ -2552,7 +2552,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    if (IS_DIRTY(CB_BLEND_CONSTANTS)) {
       static_assert(sizeof(desc->root.draw.blend_constant) ==
-                       sizeof(dyn->cb.blend_constants) &&
+                       sizeof(dyn->cb.blend_constants),
                     "common size");
 
       memcpy(desc->root.draw.blend_constant, dyn->cb.blend_constants,
