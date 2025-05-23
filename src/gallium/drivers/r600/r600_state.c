@@ -618,11 +618,14 @@ static struct pipe_sampler_view *
 texture_buffer_sampler_view(struct pipe_context *ctx,
 			    struct r600_pipe_sampler_view *view)
 {
+	struct r600_context *rctx = (struct r600_context *)ctx;
 	struct r600_texture *tmp = (struct r600_texture*)view->base.texture;
 	const unsigned stride = util_format_get_blocksize(view->base.format);
 	unsigned format, num_format, format_comp, endian;
 	uint64_t offset = view->base.u.buf.offset;
-	unsigned size = view->base.u.buf.size;
+	const unsigned size = MIN2(stride *
+				   rctx->screen->b.b.caps.max_texel_buffer_elements,
+				   view->base.u.buf.size);
 
 	r600_vertex_data_type(view->base.format,
 			      &format, &num_format, &format_comp,

@@ -473,7 +473,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->fake_sw_msaa = false;
 
 	caps->max_texel_buffer_elements =
-		MIN2(rscreen->b.info.max_heap_size_kb * 1024ull / 4, INT_MAX);
+		MIN2(rscreen->b.info.max_heap_size_kb * 1024ull / 4, UINT32_MAX / 16);
 
 	caps->min_map_buffer_alignment = R600_MAP_BUFFER_ALIGNMENT;
 

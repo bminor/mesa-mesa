@@ -702,7 +702,9 @@ texture_buffer_sampler_view(struct r600_context *rctx,
 
 	params.pipe_format = view->base.format;
 	params.offset = view->base.u.buf.offset;
-	params.size = view->base.u.buf.size;
+	params.size = MIN2(util_format_get_blocksize(view->base.format) *
+			   rctx->screen->b.b.caps.max_texel_buffer_elements,
+			   view->base.u.buf.size);
 	params.swizzle[0] = view->base.swizzle_r;
 	params.swizzle[1] = view->base.swizzle_g;
 	params.swizzle[2] = view->base.swizzle_b;
@@ -4482,6 +4484,9 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 			istate->compressed_colortex_mask |= 1 << i;
 		else
 			istate->compressed_colortex_mask &= ~(1 << i);
+
+		unsigned buffer_size = iview->u.buf.size;
+
 		if (!is_buffer) {
 
 			evergreen_set_color_surface_common(rctx, rtex,
@@ -4493,12 +4498,16 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 			color.dim = S_028C78_WIDTH_MAX(u_minify(image->width0, iview->u.tex.level) - 1) |
 			  S_028C78_HEIGHT_MAX(u_minify(image->height0, iview->u.tex.level) - 1);
 		} else {
+			buffer_size = MIN2(util_format_get_blocksize(iview->format) *
+					   rctx->screen->b.b.caps.max_texel_buffer_elements,
+					   buffer_size);
+
 			color.offset = 0;
 			color.view = 0;
 			evergreen_set_color_surface_buffer(rctx, resource,
 							   iview->format,
 							   iview->u.buf.offset,
-							   iview->u.buf.size,
+							   buffer_size,
 							   &color);
 		}
 
@@ -4564,7 +4573,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 		} else {
 			memset(&buf_params, 0, sizeof(buf_params));
 			buf_params.pipe_format = iview->format;
-			buf_params.size = iview->u.buf.size;
+			buf_params.size = buffer_size;
 			buf_params.offset = iview->u.buf.offset;
 			buf_params.swizzle[0] = PIPE_SWIZZLE_X;
 			buf_params.swizzle[1] = PIPE_SWIZZLE_Y;
