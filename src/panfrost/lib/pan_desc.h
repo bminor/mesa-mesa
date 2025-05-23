@@ -38,6 +38,7 @@ struct pan_buffer_view {
    enum pipe_format format;
    struct {
       unsigned narrow;
+      unsigned hdr;
    } astc;
    unsigned width_el;
    uint64_t base;

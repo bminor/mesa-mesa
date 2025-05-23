@@ -60,6 +60,7 @@ struct pan_image_view {
 
    struct {
       unsigned narrow;
+      unsigned hdr;
    } astc;
 };
 

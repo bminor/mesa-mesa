@@ -453,8 +453,7 @@ pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
 
          bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
 
-         /* Mesa does not advertise _HDR formats yet */
-         cfg.astc.decode_hdr = false;
+         cfg.astc.decode_hdr = bview->astc.hdr;
 
          /* sRGB formats decode to RGBA8 sRGB, which is narrow.
           *
@@ -539,8 +538,7 @@ pan_emit_iview_plane(const struct pan_image_view *iview,
 
          bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
 
-         /* Mesa does not advertise _HDR formats yet */
-         cfg.astc.decode_hdr = false;
+         cfg.astc.decode_hdr = iview->astc.hdr;
 
          /* sRGB formats decode to RGBA8 sRGB, which is narrow.
           *
