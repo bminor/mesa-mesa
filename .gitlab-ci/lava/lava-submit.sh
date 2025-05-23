@@ -79,6 +79,15 @@ if [ -n "${LAVA_FIRMWARE:-}" ]; then
         )
     done
 fi
+if [ -n "${HWCI_KERNEL_MODULES:-}" ]; then
+	LAVA_EXTRA_OVERLAYS+=(
+		- append-overlay
+		  --name=kernel-modules
+		  --url="${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar"
+		  --path="/"
+		  --format=tar
+	)
+fi
 
 PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--farm "${FARM}" \
@@ -109,11 +118,6 @@ PYTHONPATH=/ /lava/lava_job_submitter.py \
 		--url="https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME:?}.tar.zst" \
 		--compression=zstd \
 		--path="${CI_PROJECT_DIR}" \
-		--format=tar \
-	- append-overlay \
-		--name=kernel-modules \
-		--url="${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/modules.tar" \
-		--path="/" \
 		--format=tar \
 	"${LAVA_EXTRA_OVERLAYS[@]}" \
 	- submit \
