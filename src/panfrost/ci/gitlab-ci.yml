@@ -1,7 +1,7 @@
 include:
   - local: src/panfrost/ci/gitlab-ci-inc.yml
 
-panfrost-t720-gles2:arm64:
+.panfrost-t720-gles2:arm64:
   extends:
     - .lava-arm64-test-gl
     - .panfrost-midgard-rules
