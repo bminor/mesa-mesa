@@ -4,8 +4,11 @@ dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.multi_draw.mosaic.norm
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.scissor.dynamic_scissor_updates_between_draws
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_20
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_12.1_instance.with_tess.multiview.offset_6
+dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_packed.one_draw.stride_extra_12.1_instance.with_tess.single_view.offset_6_no_draw_id
+dEQP-VK.draw.renderpass.output_location.array.r32g32b32a32-sfloat-highp
 
 dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.line_list_with_adjacency.no_clip.struct.vec4.per_vertex_flat.vertex_shader
+dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.triangle_list.clip.type.uint.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.line_strip_with_adjacency.no_clip.type.ivec2.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_first.static.triangle_list.no_clip.array2.uint.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_list_with_adjacency.no_clip.type.float.per_vertex_flat.vertex_shader
@@ -38,6 +41,7 @@ dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compi
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.multithreaded_compilation_dho.s1_l1_l1_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s0_l1_aabbs_check_group_handles
 dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s1_l1
+dEQP-VK.ray_tracing_pipeline.pipeline_library.configurations.singlethreaded_compilation.s3_l232
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.*
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.gpu.boxes.stride_3.offset_7.use_libs.isect_or_miss
 dEQP-VK.ray_tracing_pipeline.pipeline_no_null_shaders_flag.gpu.boxes.stride_5.offset_7.use_libs.any_or_miss
@@ -61,3 +65,4 @@ dEQP-VK.synchronization.global_priority_transition.low.semaphore.no_modifiers.fr
 dEQP-VK.tessellation.misc_draw.triangles_instances
 
 dEQP-VK.texture.filtering.cube.sizes.64x64.nearest
+dEQP-VK.texture.mipmap.cubemap.projected.linear_nearest_nearest_mirror
