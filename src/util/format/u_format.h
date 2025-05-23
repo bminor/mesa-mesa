@@ -560,6 +560,30 @@ util_format_is_etc(enum pipe_format format)
 }
 
 static inline bool
+util_format_is_astc_hdr(enum pipe_format format)
+{
+   switch (format) {
+   case PIPE_FORMAT_ASTC_4x4_FLOAT:
+   case PIPE_FORMAT_ASTC_5x4_FLOAT:
+   case PIPE_FORMAT_ASTC_5x5_FLOAT:
+   case PIPE_FORMAT_ASTC_6x5_FLOAT:
+   case PIPE_FORMAT_ASTC_6x6_FLOAT:
+   case PIPE_FORMAT_ASTC_8x5_FLOAT:
+   case PIPE_FORMAT_ASTC_8x6_FLOAT:
+   case PIPE_FORMAT_ASTC_8x8_FLOAT:
+   case PIPE_FORMAT_ASTC_10x5_FLOAT:
+   case PIPE_FORMAT_ASTC_10x6_FLOAT:
+   case PIPE_FORMAT_ASTC_10x8_FLOAT:
+   case PIPE_FORMAT_ASTC_10x10_FLOAT:
+   case PIPE_FORMAT_ASTC_12x10_FLOAT:
+   case PIPE_FORMAT_ASTC_12x12_FLOAT:
+      return true;
+   default:
+      return false;;
+   }
+}
+
+static inline bool
 util_format_is_srgb(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
