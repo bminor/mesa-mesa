@@ -54,6 +54,11 @@
     <value name="Linear" value="0"/>
     <value name="Tiled" value="3"/>
   </enum>
+  <enum name="Polygon Tile Size">
+    <value name="1x1" value="0"/>
+    <value name="2x2" value="1"/>
+    <value name="4x4" value="2"/>
+  </enum>
   <struct name="Texture Descriptor" size="64">
     <field name="Texel Format" start="0:0" size="6" type="Texel Format"/>
     <field name="Reverse Component Order" start="0:6" size="1" type="bool"/>
@@ -100,5 +105,65 @@
     <field name="Mip 9" start="14:8" size="26" type="hex" modifier="shr(6)"/>
     <field name="Mip 10" start="15:2" size="26" type="hex" modifier="shr(6)"/>
     <field name="Unknown 6" start="15:28" size="4" type="hex"/>
+  </struct>
+  <struct name="Clear Value 8bpc Color" size="4">
+    <field name="Red" start="0" size="8" type="unorm8"/>
+    <field name="Green" start="8" size="8" type="unorm8"/>
+    <field name="Blue" start="16" size="8" type="unorm8"/>
+    <field name="Alpha" start="24" size="8" type="unorm8"/>
+  </struct>
+  <struct name="Clear Value 16bpc Color" size="8">
+    <field name="Red" start="0:0" size="16" type="unorm16"/>
+    <field name="Green" start="0:16" size="16" type="unorm16"/>
+    <field name="Blue" start="1:0" size="16" type="unorm16"/>
+    <field name="Alpha" start="1:16" size="16" type="unorm16"/>
+  </struct>
+  <struct name="Tilebuffer Channel Layout" size="2">
+    <field name="Red" start="0" size="4" type="uint"/>
+    <field name="Green" start="4" size="4" type="uint"/>
+    <field name="Blue" start="8" size="4" type="uint"/>
+    <field name="Alpha" start="12" size="4" type="uint"/>
+  </struct>
+  <struct name="PP Frame" size="92">
+    <field name="PLBU Array Address" start="0:3" size="29" type="uint" modifier="shr(3)"/>
+    <field name="Render Address" start="1:6" size="26" type="uint" modifier="shr(6)"/>
+    <field name="Vertex Address" start="2:6" size="26" type="uint" modifier="shr(6)"/>
+    <field name="FP16 Tilebuffer" start="3:0" size="1" type="bool"/>
+    <field name="Early Z" start="3:1" size="1" type="bool"/>
+    <field name="Early Z 1 Disable" start="3:3" size="1" type="bool"/>
+    <field name="Early Z 2 Disable" start="3:4" size="1" type="bool"/>
+    <field name="Origin Lower Left" start="3:5" size="1" type="bool"/>
+    <field name="Quad Cover Summation" start="3:6" size="1" type="bool"/>
+    <field name="Clear Value Depth" start="4:0" size="24" type="uint"/>
+    <field name="Clear Value Stencil" start="5:0" size="8" type="uint"/>
+    <field name="Clear Value 16bpc Color" start="6:0" size="64" type="Clear Value 16bpc Color"/>
+    <field name="Clear Value 8bpc Color 0" start="6:0" size="32" type="Clear Value 8bpc Color"/>
+    <field name="Clear Value 8bpc Color 1" start="7:0" size="32" type="Clear Value 8bpc Color"/>
+    <field name="Clear Value 8bpc Color 2" start="8:0" size="32" type="Clear Value 8bpc Color"/>
+    <field name="Clear Value 8bpc Color 3" start="9:0" size="32" type="Clear Value 8bpc Color"/>
+    <field name="Bounding Box Right" start="10:0" size="14" type="uint" modifier="minus(1)"/>
+    <field name="Bounding Box Left" start="10:16" size="4" type="uint"/>
+    <field name="Bounding Box Bottom" start="11:0" size="14" type="uint" modifier="minus(1)"/>
+    <field name="Fragment Stack Address" start="12:6" size="26" type="hex" modifier="shr(6)"/>
+    <field name="Fragment Stack Size" start="13:0" size="16" type="uint"/>
+    <field name="Fragment Stack Pointer Initial Value" start="13:16" size="16" type="hex"/>
+    <field name="Origin X" start="16:0" size="16" type="uint"/>
+    <field name="Origin Y" start="17:0" size="16" type="uint" modifier="minus(1)"/>
+    <field name="Subpixel Specifier" start="18:0" size="8" type="uint"/>
+    <field name="Tiebreak Mode" start="19:0" size="2" type="uint"/>
+    <field name="Polygon Tile Amount X" start="20:0" size="6" type="uint"/>
+    <field name="Polygon Tile Amount Y" start="20:16" size="6" type="uint"/>
+    <field name="Polygon Tile Size" start="20:28" size="2" type="Polygon Tile Size"/>
+    <field name="Scale Points and Lines" start="21:0" size="1" type="bool"/>
+    <field name="Scale Dithering Matrix" start="21:1" size="1" type="bool"/>
+    <field name="Scale Fragcoord" start="21:2" size="1" type="bool"/>
+    <field name="Scale Derivatives" start="21:3" size="1" type="bool"/>
+    <field name="Flip Sprites" start="21:8" size="1" type="bool"/>
+    <field name="Flip Dithering Matrix" start="21:9" size="1" type="bool"/>
+    <field name="Flip Fragcoord" start="21:10" size="1" type="bool"/>
+    <field name="Flip Derivatives" start="21:11" size="1" type="bool"/>
+    <field name="Scale Factor X" start="21:16" size="3" type="uint"/>
+    <field name="Scale Factor Y" start="21:20" size="3" type="uint"/>
+    <field name="Tilebuffer Channel Layout" start="22:0" size="16" type="Tilebuffer Channel Layout"/>
   </struct>
 </genxml>

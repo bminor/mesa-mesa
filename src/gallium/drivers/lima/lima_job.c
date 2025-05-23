@@ -47,6 +47,7 @@
 #include "lima_fence.h"
 #include "lima_gpu.h"
 #include "lima_blit.h"
+#include "lima_pack.h"
 
 #define VOID2U64(x) ((uint64_t)(unsigned long)(x))
 
@@ -763,8 +764,7 @@ lima_pack_wb_zsbuf_reg(struct lima_job *job, uint32_t *wb_reg, int wb_idx)
 }
 
 static void
-lima_pack_wb_cbuf_reg(struct lima_job *job, uint32_t *frame_reg,
-                      uint32_t *wb_reg, int wb_idx)
+lima_pack_wb_cbuf_reg(struct lima_job *job, uint32_t *wb_reg, int wb_idx)
 {
    struct lima_job_fb_info *fb = &job->fb;
    struct pipe_surface *cbuf = job->key.cbuf;
@@ -773,9 +773,6 @@ lima_pack_wb_cbuf_reg(struct lima_job *job, uint32_t *frame_reg,
    unsigned layer = cbuf->u.tex.first_layer;
    uint32_t format = lima_format_get_pixel(cbuf->format);
    bool swap_channels = lima_format_get_pixel_swap_rb(cbuf->format);
-
-   struct lima_pp_frame_reg *frame = (void *)frame_reg;
-   frame->channel_layout = lima_format_get_channel_layout(cbuf->format);
 
    struct lima_pp_wb_reg *wb = (void *)wb_reg;
    wb[wb_idx].type = 0x02; /* 2 for color buffer */
@@ -804,53 +801,61 @@ lima_pack_pp_frame_reg(struct lima_job *job, uint32_t *frame_reg,
    struct lima_context *ctx = job->ctx;
    struct lima_job_fb_info *fb = &job->fb;
    struct pipe_surface *cbuf = job->key.cbuf;
-   struct lima_pp_frame_reg *frame = (void *)frame_reg;
    struct lima_screen *screen = lima_screen(ctx->base.screen);
    int wb_idx = 0;
 
-   frame->render_address = screen->pp_buffer->va + pp_frame_rsw_offset;
-   frame->flags = 0x02;
-   if (cbuf && util_format_is_float(cbuf->format)) {
-      frame->flags |= 0x01; /* enable fp16 */
-      frame->clear_value_color   = (uint32_t)(job->clear.color_16pc & 0xffffffffUL);
-      frame->clear_value_color_1 = (uint32_t)(job->clear.color_16pc >> 32);
-      frame->clear_value_color_2 = 0;
-      frame->clear_value_color_3 = 0;
+   lima_pack(frame_reg, PP_FRAME, frame) {
+      frame.render_address = screen->pp_buffer->va + pp_frame_rsw_offset;
+      frame.early_z = true;
+      if (cbuf && util_format_is_float(cbuf->format)) {
+         frame.fp16_tilebuffer = true;
+         frame.clear_value_16bpc_color = job->clear.color_16bpc;
+      }
+      else {
+         frame.clear_value_8bpc_color_0 = job->clear.color_8bpc;
+         frame.clear_value_8bpc_color_1 = job->clear.color_8bpc;
+         frame.clear_value_8bpc_color_2 = job->clear.color_8bpc;
+         frame.clear_value_8bpc_color_3 = job->clear.color_8bpc;
+      }
+
+      frame.clear_value_depth = job->clear.depth;
+      frame.clear_value_stencil = job->clear.stencil;
+      frame.origin_x = 1;
+
+      frame.bounding_box_right = fb->width;
+      frame.bounding_box_bottom = fb->height;
+
+      /* frame.fragment_stack_address is overwritten per-pp in the kernel
+      * by the values of pp_frame.fragment_stack_address[i] */
+
+      /* "stack size" and "stack offset" are assumed to be always the same. */
+      frame.fragment_stack_size = job->pp_max_stack_size;
+      frame.fragment_stack_pointer_initial_value = job->pp_max_stack_size;
+
+      /* related with MSAA and different value when r4p0/r7p0 */
+      frame.origin_y = fb->height * 2;
+      frame.scale_fragcoord = true;
+      frame.scale_derivatives = true;
+      frame.flip_dithering_matrix = true;
+      frame.flip_fragcoord = true;
+      frame.flip_derivatives = true;
+
+      frame.subpixel_specifier = 0x77;
+      frame.tiebreak_mode = 1;
+      frame.polygon_tile_amount_x = fb->shift_w;
+      frame.polygon_tile_amount_y = fb->shift_h;
+      frame.polygon_tile_size = fb->shift_min;
+
+      frame.tilebuffer_channel_layout.red = 8;
+      frame.tilebuffer_channel_layout.green = 8;
+      frame.tilebuffer_channel_layout.blue = 8;
+      frame.tilebuffer_channel_layout.alpha = 8;
+
+      if (cbuf && (job->resolve & PIPE_CLEAR_COLOR0)) {
+         frame.tilebuffer_channel_layout = lima_format_get_channel_layout(cbuf->format);
+         lima_pack_wb_cbuf_reg(job, wb_reg, wb_idx++);
+      }
    }
-   else {
-      frame->clear_value_color   = job->clear.color_8pc;
-      frame->clear_value_color_1 = job->clear.color_8pc;
-      frame->clear_value_color_2 = job->clear.color_8pc;
-      frame->clear_value_color_3 = job->clear.color_8pc;
-   }
-
-   frame->clear_value_depth = job->clear.depth;
-   frame->clear_value_stencil = job->clear.stencil;
-   frame->one = 1;
-
-   frame->width = fb->width - 1;
-   frame->height = fb->height - 1;
-
-   /* frame->fragment_stack_address is overwritten per-pp in the kernel
-    * by the values of pp_frame.fragment_stack_address[i] */
-
-   /* These are "stack size" and "stack offset" shifted,
-    * here they are assumed to be always the same. */
-   frame->fragment_stack_size = job->pp_max_stack_size << 16 | job->pp_max_stack_size;
-
-   /* related with MSAA and different value when r4p0/r7p0 */
-   frame->supersampled_height = fb->height * 2 - 1;
-   frame->scale = 0xE0C;
-
-   frame->dubya = 0x77;
-   frame->onscreen = 1;
-   frame->blocking = (fb->shift_min << 28) | (fb->shift_h << 16) | fb->shift_w;
-
-   /* Set default layout to 8888 */
-   frame->channel_layout = 0x8888;
-
-   if (cbuf && (job->resolve & PIPE_CLEAR_COLOR0))
-      lima_pack_wb_cbuf_reg(job, frame_reg, wb_reg, wb_idx++);
 
    if (job->key.zsbuf &&
        (job->resolve & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL)))

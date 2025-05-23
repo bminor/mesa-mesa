@@ -30,6 +30,7 @@
 #include <util/u_dynarray.h>
 
 #include <pipe/p_state.h>
+#include "lima_pack.h"
 
 #define MAX_DRAWS_PER_JOB 2500
 
@@ -45,10 +46,13 @@ struct lima_job_key {
 
 struct lima_job_clear {
    unsigned buffers;
-   uint32_t color_8pc;
    uint32_t depth;
    uint32_t stencil;
-   uint64_t color_16pc;
+	union {
+      float color[4];
+      struct LIMA_CLEAR_VALUE_8BPC_COLOR color_8bpc;
+      struct LIMA_CLEAR_VALUE_16BPC_COLOR color_16bpc;
+   };
 };
 
 struct lima_job_fb_info {

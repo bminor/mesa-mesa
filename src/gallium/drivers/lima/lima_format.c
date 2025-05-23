@@ -49,7 +49,7 @@ struct lima_format {
    int format;
    bool swap_r_b;
    union {
-      uint32_t channel_layout;
+      struct LIMA_TILEBUFFER_CHANNEL_LAYOUT channel_layout;
       uint8_t swizzle[4];
    };
 };
@@ -59,6 +59,10 @@ struct lima_format {
         PIPE_SWIZZLE_##y,  \
         PIPE_SWIZZLE_##z,  \
         PIPE_SWIZZLE_##w   \
+}
+
+#define LAYOUT(a,b,g,r) { \
+        r, g, b, a        \
 }
 
 #define LIMA_TEXEL_FORMAT(pipe, tex, swap, swiz)            \
@@ -105,23 +109,23 @@ static const struct lima_format lima_texel_formats[] = {
 };
 
 static const struct lima_format lima_pixel_formats[] = {
-   LIMA_PIXEL_FORMAT(R8G8B8A8_UNORM,     B8G8R8A8, true,  0x8888),
-   LIMA_PIXEL_FORMAT(B8G8R8A8_UNORM,     B8G8R8A8, false, 0x8888),
-   LIMA_PIXEL_FORMAT(R8G8B8A8_SRGB,      B8G8R8A8, true,  0x8888),
-   LIMA_PIXEL_FORMAT(B8G8R8A8_SRGB,      B8G8R8A8, false, 0x8888),
-   LIMA_PIXEL_FORMAT(R8G8B8X8_UNORM,     B8G8R8A8, true,  0x8888),
-   LIMA_PIXEL_FORMAT(B8G8R8X8_UNORM,     B8G8R8A8, false, 0x8888),
-   LIMA_PIXEL_FORMAT(B5G6R5_UNORM,       B5G6R5,   false, 0x8565),
-   LIMA_PIXEL_FORMAT(B5G5R5A1_UNORM,     B5G5R5A1, false, 0x8565),
-   LIMA_PIXEL_FORMAT(B4G4R4A4_UNORM,     B4G4R4A4, false, 0x8444),
-   LIMA_PIXEL_FORMAT(R8_UNORM,           B8,       true,  0x8888),
-   LIMA_PIXEL_FORMAT(R8G8_UNORM,         G8B8,     true,  0x8888),
-   LIMA_PIXEL_FORMAT(Z16_UNORM,          Z16,      false, 0x0000),
-   LIMA_PIXEL_FORMAT(Z24_UNORM_S8_UINT,  Z24S8,    false, 0x0000),
-   LIMA_PIXEL_FORMAT(Z24X8_UNORM,        Z24S8,    false, 0x0000),
-   LIMA_PIXEL_FORMAT(R16G16B16A16_FLOAT, B16G16R16A16_FLOAT, true, 0x0000),
-   LIMA_PIXEL_FORMAT(R16_FLOAT,          B16_FLOAT, true, 0x0000),
-   LIMA_PIXEL_FORMAT(R16G16_FLOAT,       G16B16_FLOAT, true, 0x0000),
+   LIMA_PIXEL_FORMAT(R8G8B8A8_UNORM,     B8G8R8A8, true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(B8G8R8A8_UNORM,     B8G8R8A8, false, LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(R8G8B8A8_SRGB,      B8G8R8A8, true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(B8G8R8A8_SRGB,      B8G8R8A8, false, LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(R8G8B8X8_UNORM,     B8G8R8A8, true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(B8G8R8X8_UNORM,     B8G8R8A8, false, LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(B5G6R5_UNORM,       B5G6R5,   false, LAYOUT(8, 5, 6, 5)),
+   LIMA_PIXEL_FORMAT(B5G5R5A1_UNORM,     B5G5R5A1, false, LAYOUT(8, 5, 6, 5)),
+   LIMA_PIXEL_FORMAT(B4G4R4A4_UNORM,     B4G4R4A4, false, LAYOUT(8, 4, 4, 4)),
+   LIMA_PIXEL_FORMAT(R8_UNORM,           B8,       true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(R8G8_UNORM,         G8B8,     true,  LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(Z16_UNORM,          Z16,      false, LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(Z24_UNORM_S8_UINT,  Z24S8,    false, LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(Z24X8_UNORM,        Z24S8,    false, LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(R16G16B16A16_FLOAT, B16G16R16A16_FLOAT, true, LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(R16_FLOAT,          B16_FLOAT, true, LAYOUT(0, 0, 0, 0)),
+   LIMA_PIXEL_FORMAT(R16G16_FLOAT,       G16B16_FLOAT, true, LAYOUT(0, 0, 0, 0)),
 };
 
 static const struct lima_format *
@@ -208,7 +212,7 @@ lima_format_get_texel_swizzle(enum pipe_format f)
    return lima_texel_formats[f].swizzle;
 }
 
-uint32_t
+struct LIMA_TILEBUFFER_CHANNEL_LAYOUT
 lima_format_get_channel_layout(enum pipe_format f)
 {
    return lima_pixel_formats[f].channel_layout;

@@ -172,17 +172,10 @@ lima_clear(struct pipe_context *pctx, unsigned buffers, const struct pipe_scisso
    clear->buffers = buffers;
 
    if (buffers & PIPE_CLEAR_COLOR0) {
-      clear->color_8pc =
-         ((uint32_t)float_to_ubyte(color->f[3]) << 24) |
-         ((uint32_t)float_to_ubyte(color->f[2]) << 16) |
-         ((uint32_t)float_to_ubyte(color->f[1]) << 8) |
-         float_to_ubyte(color->f[0]);
-
-      clear->color_16pc =
-         ((uint64_t)float_to_ushort(color->f[3]) << 48) |
-         ((uint64_t)float_to_ushort(color->f[2]) << 32) |
-         ((uint64_t)float_to_ushort(color->f[1]) << 16) |
-         float_to_ushort(color->f[0]);
+      clear->color[0] = color->f[0];
+      clear->color[1] = color->f[1];
+      clear->color[2] = color->f[2];
+      clear->color[3] = color->f[3];
    }
 
    struct lima_surface *zsbuf = lima_surface(ctx->framebuffer.fb_zsbuf);
@@ -194,7 +187,8 @@ lima_clear(struct pipe_context *pctx, unsigned buffers, const struct pipe_scisso
    }
 
    if (buffers & PIPE_CLEAR_STENCIL) {
-      clear->stencil = stencil;
+      // the provided stencil value seems to be 16 bit, truncate
+      clear->stencil = stencil & 0xFF;
       if (zsbuf)
          zsbuf->reload &= ~PIPE_CLEAR_STENCIL;
    }
