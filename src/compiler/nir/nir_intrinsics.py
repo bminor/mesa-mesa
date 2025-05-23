@@ -2509,7 +2509,6 @@ intrinsic("suldga_nv", dest_comp=0, src_comp=[2, 1, 1], bit_sizes=[32],
 # FLAGS is enum nak_su_ga_offset_mode
 intrinsic("sustga_nv", src_comp=[2, 1, 1, 0],
           indices=[ACCESS, FLAGS], bit_sizes=[32])
-image("load_raw_nv", src_comp=[4, 1, 1], extra_indices=[DEST_TYPE], dest_comp=0, flags=[CAN_ELIMINATE])
 # Nvidia Kepler specific load-lock store-unlock
 # used to lower shared atomics.
 intrinsic("load_shared_lock_nv", src_comp=[1], dest_comp=2)

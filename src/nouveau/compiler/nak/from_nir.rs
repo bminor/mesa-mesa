@@ -2683,8 +2683,7 @@ impl<'a> ShaderFromNir<'a> {
                 });
                 self.set_dst(&intrin.def, dst);
             }
-            nir_intrinsic_bindless_image_load
-            | nir_intrinsic_bindless_image_load_raw_nv => {
+            nir_intrinsic_bindless_image_load => {
                 let handle = self.get_src(&srcs[0]);
                 let dim = self.get_image_dim(intrin);
                 let coord = self.get_image_coord(intrin, dim);
@@ -2702,16 +2701,9 @@ impl<'a> ShaderFromNir<'a> {
 
                 let comps = intrin.num_components;
                 assert!(intrin.def.bit_size() == 32);
-                let image_access = if intrin.intrinsic
-                    == nir_intrinsic_bindless_image_load_raw_nv
-                {
-                    let mem_type = self.get_image_mem_type(intrin);
-                    assert!(mem_type.bits().div_ceil(32) == comps.into());
-                    ImageAccess::Binary(mem_type)
-                } else {
-                    assert!(comps == 1 || comps == 2 || comps == 4);
-                    ImageAccess::Formatted(ChannelMask::for_comps(comps))
-                };
+                assert!(comps == 1 || comps == 2 || comps == 4);
+                let image_access =
+                    ImageAccess::Formatted(ChannelMask::for_comps(comps));
 
                 let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
 

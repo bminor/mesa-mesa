@@ -5057,6 +5057,7 @@ impl DisplayOp for OpTxq {
 }
 impl_display_for_op!(OpTxq);
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum ImageAccess {
     Binary(MemType),
