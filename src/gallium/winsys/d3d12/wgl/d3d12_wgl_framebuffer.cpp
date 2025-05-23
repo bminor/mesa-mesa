@@ -113,12 +113,22 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
    desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
    desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING | DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
    desc.Format = d3d12_get_format(templ->format);
+   if (desc.Format == DXGI_FORMAT_B8G8R8X8_UNORM)
+      desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
    desc.Width = templ->width0;
    desc.Height = templ->height0;
    desc.SampleDesc.Count = 1;
    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
    framebuffer->pformat = templ->format;
+   switch (templ->format) {
+   case PIPE_FORMAT_B8G8R8X8_UNORM:
+      framebuffer->pformat = PIPE_FORMAT_B8G8R8A8_UNORM;
+      break;
+   case PIPE_FORMAT_R8G8B8X8_UNORM:
+      framebuffer->pformat = PIPE_FORMAT_R8G8B8A8_UNORM;
+      break;
+   }
 
    if (!framebuffer->swapchain) {
       ComPtr<IDXGISwapChain1> swapchain1;
@@ -310,7 +320,9 @@ d3d12_wgl_create_framebuffer(struct pipe_screen *screen,
    if (pfi->stvis.color_format != PIPE_FORMAT_B8G8R8A8_UNORM &&
        pfi->stvis.color_format != PIPE_FORMAT_R8G8B8A8_UNORM &&
        pfi->stvis.color_format != PIPE_FORMAT_R10G10B10A2_UNORM &&
-       pfi->stvis.color_format != PIPE_FORMAT_R16G16B16A16_FLOAT)
+       pfi->stvis.color_format != PIPE_FORMAT_R16G16B16A16_FLOAT &&
+       pfi->stvis.color_format != PIPE_FORMAT_B8G8R8X8_UNORM &&
+       pfi->stvis.color_format != PIPE_FORMAT_R8G8B8X8_UNORM)
       return NULL;
 
    struct d3d12_wgl_framebuffer *fb = CALLOC_STRUCT(d3d12_wgl_framebuffer);
