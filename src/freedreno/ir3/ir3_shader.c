@@ -152,8 +152,6 @@ ir3_shader_assemble(struct ir3_shader_variant *v)
    if (v->constant_data_size)
       memcpy(&bin[info->constant_data_offset / 4], v->constant_data,
              v->constant_data_size);
-   ralloc_free(v->constant_data);
-   v->constant_data = NULL;
 
    /* NOTE: if relative addressing is used, we set constlen in
     * the compiler (to worst-case value) since we don't know in
