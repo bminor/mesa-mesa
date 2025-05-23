@@ -1125,7 +1125,7 @@ v3d_nir_lower_gs_late(struct v3d_compile *c)
         }
 
         /* Note: GS output scalarizing must happen after nir_lower_clip_gs. */
-        NIR_PASS_V(c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+        NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 }
 
 static void
@@ -1134,12 +1134,12 @@ v3d_nir_lower_vs_late(struct v3d_compile *c)
         if (c->key->ucp_enables) {
                 NIR_PASS(_, c->s, nir_lower_clip_vs, c->key->ucp_enables,
                          false, true, NULL);
-                NIR_PASS_V(c->s, nir_lower_io_to_scalar,
-                           nir_var_shader_out, NULL, NULL);
+                NIR_PASS(_, c->s, nir_lower_io_to_scalar,
+                         nir_var_shader_out, NULL, NULL);
         }
 
         /* Note: VS output scalarizing must happen after nir_lower_clip_vs. */
-        NIR_PASS_V(c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+        NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 }
 
 static void
@@ -1155,7 +1155,7 @@ v3d_nir_lower_fs_late(struct v3d_compile *c)
         if (c->key->ucp_enables)
                 NIR_PASS(_, c->s, nir_lower_clip_fs, c->key->ucp_enables, true, false);
 
-        NIR_PASS_V(c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
+        NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
 }
 
 static uint32_t
@@ -1830,7 +1830,7 @@ v3d_attempt_compile(struct v3d_compile *c)
                                         nir_move_const_undef |
                                         buffer_opts);
 
-        NIR_PASS_V(c->s, nir_trivialize_registers);
+        NIR_PASS(_, c->s, nir_trivialize_registers);
 
         v3d_nir_to_vir(c);
 }
