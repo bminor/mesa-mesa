@@ -879,9 +879,6 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
       if (is_def)
          continue;
 
-      /* The loop below might change this if is_copy_kill=true, but we will want the original */
-      Operand copy_op = it->op;
-
       /* Check if we moved another parallelcopy definition. We use a different path for copy-kill
        * copies, since they are able to exist alongside a normal copy with the same operand.
        */
@@ -919,7 +916,10 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
       ctx.assignments.emplace_back(copy.def.physReg(), copy.def.regClass());
       assert(ctx.assignments.size() == ctx.program->peekAllocationId());
 
-      /* check if we moved an operand */
+      /* Check if we moved an operand:
+       * For copy-kill operands, use the current Operand name so that kill flags stay correct.
+       */
+      Operand copy_op = is_copy_kill ? instr->operands[copy.copy_kill] : it->op;
       bool first[2] = {true, true};
       bool fill = !is_copy_kill;
       for (unsigned i = 0; i < instr->operands.size(); i++) {
