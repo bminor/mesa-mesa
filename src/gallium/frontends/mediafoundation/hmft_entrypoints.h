@@ -66,6 +66,10 @@ using namespace concurrency;
 using namespace Microsoft::WRL;
 using Microsoft::WRL::ComPtr;
 
+#define ENCODE_WITH_TWO_PASS 0
+#define ENCODE_WITH_TWO_PASS_LOWEST_RES 1
+#define ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE 1
+
 #define NUM_INPUT_TYPES 3
 
 extern MFT_REGISTER_TYPE_INFO rgOutputInfo;
@@ -473,6 +477,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    UINT32 m_uiVideoOutputBitsUsedMapBlockSize = 0;
 
    struct pipe_video_codec *m_pPipeVideoCodec = nullptr;
+   struct pipe_video_codec *m_pPipeVideoBlitter = nullptr;
    reference_frames_tracker *m_pGOPTracker = nullptr;
    enum pipe_format m_inputPipeFormat = PIPE_FORMAT_NV12;
 

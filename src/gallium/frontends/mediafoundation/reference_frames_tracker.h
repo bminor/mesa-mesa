@@ -40,6 +40,7 @@ class reference_frames_tracker_dpb_async_token
 {
  public:
    std::vector<pipe_video_buffer *> dpb_buffers_to_release;
+   std::vector<pipe_video_buffer *> dpb_downscaled_buffers_to_release;
 };
 
 class reference_frames_tracker

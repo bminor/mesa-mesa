@@ -127,4 +127,7 @@ class encoder_capabilities
 
    // Supported slice mode
    EnumMask<pipe_video_slice_mode> m_HWSupportedSliceModes {};
+
+   // Two pass encode
+   union pipe_enc_cap_two_pass m_TwoPassSupport = {};
 };

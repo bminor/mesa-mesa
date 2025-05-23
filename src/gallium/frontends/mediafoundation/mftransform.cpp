@@ -859,6 +859,34 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
 
+#if ENCODE_WITH_TWO_PASS
+      encoderSettings.two_pass.enable = 1;
+#if ENCODE_WITH_TWO_PASS_LOWEST_RES
+      encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.max_pow2_downscale_factor;
+#else
+      encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.min_pow2_downscale_factor;
+#endif // ENCODE_WITH_TWO_PASS_LOWEST_RES
+
+#if ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
+      encoderSettings.two_pass.skip_1st_dpb_texture = m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip;
+#else
+      encoderSettings.two_pass.skip_1st_dpb_texture = 0u;
+#endif // ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
+
+   if (encoderSettings.two_pass.enable &&
+      (encoderSettings.two_pass.pow2_downscale_factor > 0))
+   {
+      struct pipe_video_codec blitterSettings = {};
+      blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
+      blitterSettings.width = Width;
+      blitterSettings.height = Height;
+      CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
+                      MF_E_UNEXPECTED,
+                      done );
+   }
+
+#endif // ENCODE_WITH_TWO_PASS
+
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
                       done );
@@ -925,6 +953,12 @@ CDX12EncHMFT::CleanupEncoder( void )
    {
       m_pPipeVideoCodec->destroy( m_pPipeVideoCodec );
       m_pPipeVideoCodec = nullptr;
+   }
+
+   if( m_pPipeVideoBlitter )
+   {
+      m_pPipeVideoBlitter->destroy( m_pPipeVideoBlitter );
+      m_pPipeVideoBlitter = nullptr;
    }
 
    SAFE_DELETE( m_pGOPTracker );
@@ -1130,7 +1164,86 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                           pDX12EncodeContext->pAsyncCookie,
                                                           &encoded_bitstream_bytes,
                                                           &metadata );
+
+#if (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)
+                  if (pThis->m_pPipeVideoCodec->two_pass.enable &&
+                     (pThis->m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0) &&
+                     (pThis->m_pPipeVideoCodec->two_pass.skip_1st_dpb_texture))
+                  {
+                     // In this case, when two pass is enabled for a lower resolution 1st pass
+                     // AND we select skip_1st_dpb_texture, that means that
+                     // the driver will _NOT_ write the 1st pass recon pic output to
+                     // the downscaled_buffer object we send in the dpb_snapshot,
+                     // and instead we need to to a VPBlit scale from the dpb.buffer
+                     // into dpb.downscaled_buffer ourselves
+
+                     struct pipe_vpp_desc vpblit_params = {};
+                     struct pipe_fence_handle *dst_surface_fence = nullptr;
+
+                     vpblit_params.src_surface_fence = NULL; // No need, we _just_ waited for completion above before get_feedback
+                     vpblit_params.base.fence = &dst_surface_fence; // Output surface fence (driver output)
+
+#if VIDEO_CODEC_H264ENC
+                     auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h264enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
+#elif VIDEO_CODEC_H265ENC
+                     auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h265enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
+#endif
+
+                     vpblit_params.base.input_format = cur_pic_dpb_entry.buffer->buffer_format;
+                     vpblit_params.base.output_format = cur_pic_dpb_entry.downscaled_buffer->buffer_format;
+                     vpblit_params.src_region.x0 = 0u;
+                     vpblit_params.src_region.y0 = 0u;
+                     vpblit_params.src_region.x1 = cur_pic_dpb_entry.buffer->width;
+                     vpblit_params.src_region.y1 = cur_pic_dpb_entry.buffer->height;
+
+                     vpblit_params.dst_region.x0 = 0u;
+                     vpblit_params.dst_region.y0 = 0u;
+                     vpblit_params.dst_region.x1 = cur_pic_dpb_entry.downscaled_buffer->width;
+                     vpblit_params.dst_region.y1 = cur_pic_dpb_entry.downscaled_buffer->height;
+
+                     pThis->m_pPipeVideoBlitter->begin_frame(pThis->m_pPipeVideoBlitter,
+                                                             pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                                             &vpblit_params.base);
+
+                     if (pThis->m_pPipeVideoBlitter->process_frame(pThis->m_pPipeVideoBlitter, cur_pic_dpb_entry.buffer, &vpblit_params) != 0)
+                     {
+                        assert( false );
+                        pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
+                        bHasEncodingError = TRUE;
+                        delete pDX12EncodeContext;
+                        break;   // break out of while try_pop
+                     }
+
+                     if (pThis->m_pPipeVideoBlitter->end_frame(pThis->m_pPipeVideoBlitter, pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer, &vpblit_params.base) != 0)
+                     {
+                        assert( false );
+                        pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
+                        bHasEncodingError = TRUE;
+                        delete pDX12EncodeContext;
+                        break;   // break out of while try_pop
+                     }
+
+                     pThis->m_pPipeVideoBlitter->flush(pThis->m_pPipeVideoBlitter);
+
+                     assert(*vpblit_params.base.fence); // Driver must have returned the completion fence
+                     // Wait for downscaling completion before encode can proceed
+
+                     // TODO: This can probably be done better later as plumbing
+                     // the two pass pipe into the MFT frontend API properties
+                     // Instead of waiting on the CPU here for the fence, can probably
+                     // queue the fence wait into the next frame's encode GPU fence wait
+
+                     ASSERTED bool finished = pThis->m_pPipeVideoCodec->context->screen->fence_finish(pThis->m_pPipeVideoCodec->context->screen,
+                                                                                                      NULL, /*passing non NULL resets GRFX context*/
+                                                                                                      *vpblit_params.base.fence,
+                                                                                                       OS_TIMEOUT_INFINITE );
+                     assert(finished);
+                  }
+#endif // (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)
+
+                  // Only release the reconpic AFTER working on it for two pass if needed
                   pThis->m_pGOPTracker->release_reconpic( pDX12EncodeContext->pAsyncDPBToken );
+
                }
             }
          }

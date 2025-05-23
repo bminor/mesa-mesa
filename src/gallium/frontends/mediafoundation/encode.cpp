@@ -183,6 +183,60 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       debug_printf( "[dx12 hmft 0x%p] DX12 input sample\n", this );
    }
 
+#if ENCODE_WITH_TWO_PASS
+   if (m_pPipeVideoCodec->two_pass.enable &&
+      (m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0))
+   {
+      // TODO: In case the app sends the downscaled input remove this
+
+      //
+      // Use VPBlit to downscale the input texture to generate the 1st pass
+      // downscaled input texture
+      //
+
+      struct pipe_video_buffer templ = {};
+      templ.buffer_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
+      templ.width = static_cast<uint32_t>(std::ceil(pDX12EncodeContext->pPipeVideoBuffer->width / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor)));
+      templ.height = static_cast<uint32_t>(std::ceil(pDX12EncodeContext->pPipeVideoBuffer->height / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor)));
+      pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer = m_pPipeContext->create_video_buffer(m_pPipeContext, &templ);
+
+      struct pipe_vpp_desc vpblit_params = {};
+      struct pipe_fence_handle *dst_surface_fence = nullptr;
+
+      vpblit_params.src_surface_fence = m_pPipeFenceHandle; // input surface fence (driver input)
+      vpblit_params.base.fence = &dst_surface_fence; // Output surface fence (driver output)
+
+      vpblit_params.base.input_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
+      vpblit_params.base.output_format = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer->buffer_format;
+      vpblit_params.src_region.x0 = 0u;
+      vpblit_params.src_region.y0 = 0u;
+      vpblit_params.src_region.x1 = pDX12EncodeContext->pPipeVideoBuffer->width;
+      vpblit_params.src_region.y1 = pDX12EncodeContext->pPipeVideoBuffer->height;
+
+      vpblit_params.dst_region.x0 = 0u;
+      vpblit_params.dst_region.y0 = 0u;
+      vpblit_params.dst_region.x1 = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer->width;
+      vpblit_params.dst_region.y1 = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer->height;
+
+      m_pPipeVideoBlitter->begin_frame(m_pPipeVideoBlitter,
+                                       pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                       &vpblit_params.base);
+
+      CHECKBOOL_GOTO( (m_pPipeVideoBlitter->process_frame(m_pPipeVideoBlitter, pDX12EncodeContext->pPipeVideoBuffer, &vpblit_params) == 0), MF_E_UNEXPECTED, done );
+      CHECKBOOL_GOTO( (m_pPipeVideoBlitter->end_frame(m_pPipeVideoBlitter, pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer, &vpblit_params.base) == 0), MF_E_UNEXPECTED, done );
+      m_pPipeVideoBlitter->flush(m_pPipeVideoBlitter);
+      
+      assert(*vpblit_params.base.fence); // Driver must have returned the completion fence
+      // Wait for downscaling completion before encode can proceed
+
+      ASSERTED bool finished = m_pPipeVideoCodec->context->screen->fence_finish(m_pPipeVideoCodec->context->screen,
+                                                                                NULL, /*passing non NULL resets GRFX context*/
+                                                                                *vpblit_params.base.fence,
+                                                                                OS_TIMEOUT_INFINITE );
+      assert(finished);
+   }
+#endif // ENCODE_WITH_TWO_PASS
+
    // validate texture dimensions with surface alignment here for now, will add handling for non-aligned textures later
    if( textureWidth % surfaceWidthAlignment != 0 || textureHeight % surfaceHeightAlignment != 0 )
    {

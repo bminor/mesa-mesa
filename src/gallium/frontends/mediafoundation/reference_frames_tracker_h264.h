@@ -27,6 +27,7 @@
 
 #include <deque>
 #include <queue>
+#include <memory>
 
 #include "dpb_buffer_manager.h"
 #include "reference_frames_tracker.h"
@@ -74,6 +75,7 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
       uint8_t temporal_id;
       uint32_t dirty_rect_frame_num;
       struct pipe_video_buffer *buffer;
+      struct pipe_video_buffer *downscaled_buffer;
    } PrevFrameInfo;
 
    // used to sort PrevFrameInfo array
@@ -115,7 +117,8 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
                                   uint32_t MaxL1References,
                                   uint32_t MaxDPBCapacity,
                                   uint32_t MaxLongTermReferences,
-                                  bool bSendUnwrappedPOC );
+                                  bool bSendUnwrappedPOC,
+                                  std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager = nullptr );
 
  private:
    uint32_t PrepareFrameRefLists( bool useLTR, uint32_t useLTRBitmap );
@@ -151,6 +154,7 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
    std::deque<struct PrevFrameInfo> m_PrevFramesInfos;
    struct pipe_video_codec *m_codec;
    dpb_buffer_manager m_DPBManager;
+   std::unique_ptr<dpb_buffer_manager> m_upTwoPassDPBManager;
 
    bool m_pendingMarkLTR = false;
    uint32_t m_pendingMarkLTRIndex = 0;

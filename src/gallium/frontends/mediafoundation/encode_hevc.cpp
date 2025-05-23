@@ -299,6 +299,11 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       pPicInfo->dpb[i].pic_order_cnt = cur_frame_desc->dpb_snapshot[i].pic_order_cnt;
       pPicInfo->dpb[i].is_ltr = cur_frame_desc->dpb_snapshot[i].is_ltr;
       pPicInfo->dpb[i].buffer = cur_frame_desc->dpb_snapshot[i].buffer;
+      pPicInfo->dpb[i].downscaled_buffer = cur_frame_desc->dpb_snapshot[i].downscaled_buffer;
+      if (pPicInfo->dpb[i].pic_order_cnt == cur_frame_desc->gop_info->picture_order_count)
+      {
+         pPicInfo->dpb_curr_pic = static_cast<uint8_t>(i);
+      }
    }
 
    pDX12EncodeContext->longTermReferenceFrameInfo = cur_frame_desc->gop_info->long_term_reference_frame_info;
@@ -386,6 +391,13 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       1u,
       static_cast<uint32_t>( std::ceil( ( static_cast<float>( 100 - m_uiQualityVsSpeed ) / 100.0f ) *
                                         static_cast<double>( m_EncoderCapabilities.m_uiMaxHWSupportedQualityVsSpeedLevel ) ) ) );
+
+   if (m_pPipeVideoCodec->two_pass.enable &&
+      (m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0))
+   {
+      pPicInfo->twopass_frame_config.downscaled_source = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer;
+      pPicInfo->twopass_frame_config.skip_1st_pass = false;
+   }
 
    // Setup Level, not sure why this is represented twice on the codec?
    pPicInfo->seq.general_level_idc = static_cast<uint8_t>( m_pPipeVideoCodec->level );
@@ -910,6 +922,7 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    uint32_t MaxHWL1Ref = m_EncoderCapabilities.m_uiMaxHWSupportedL1References;
    MaxHWL0Ref = std::min( 1u, MaxHWL0Ref );   // we only support 1
    MaxHWL1Ref = 0;
+   std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager;
 
    SAFE_DELETE( m_pGOPTracker );
    // B Frame not supported by HW
@@ -937,6 +950,18 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    assert( MaxHWL0Ref <= m_uiMaxNumRefFrame );
    assert( MaxHWL1Ref <= m_uiMaxNumRefFrame );
 
+   if (m_pPipeVideoCodec->two_pass.enable &&
+      (m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0))
+   {
+      upTwoPassDPBManager = std::make_unique<dpb_buffer_manager>(
+        m_pPipeVideoCodec,
+        static_cast<unsigned>(std::ceil(textureWidth / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor))),
+        static_cast<unsigned>(std::ceil(textureHeight / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor))),
+        ConvertProfileToFormat( m_pPipeVideoCodec->profile ),
+        m_pPipeVideoCodec->max_references + 1 /*curr pic*/ +
+           ( m_bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ );
+   }
+
    m_pGOPTracker = new reference_frames_tracker_hevc( m_pPipeVideoCodec,
                                                       textureWidth,
                                                       textureHeight,
@@ -948,7 +973,8 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
                                                       MaxHWL0Ref,
                                                       MaxHWL1Ref,
                                                       m_pPipeVideoCodec->max_references,
-                                                      m_uiMaxLongTermReferences );
+                                                      m_uiMaxLongTermReferences,
+                                                      std::move(upTwoPassDPBManager) );
    CHECKNULL_GOTO( m_pGOPTracker, MF_E_INVALIDMEDIATYPE, done );
 
 done:

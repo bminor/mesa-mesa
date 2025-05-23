@@ -144,4 +144,8 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
    // TODO: We should get the supported slice mode from pipe, but currently, it doesn't support.
    //       Currently, dx12MFT only support mode_blocks, so we initialize it like this.
    m_HWSupportedSliceModes = EnumMask<pipe_video_slice_mode> { PIPE_VIDEO_SLICE_MODE_BLOCKS };
+
+
+   m_TwoPassSupport.value =
+      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_TWO_PASS );
 }
