@@ -36,9 +36,13 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_96_bits.rgb32f_rgb32i
 glx@glx-visuals-stencil
 spec@!opengl 1.0@gl-1.0-ortho-pos
 spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
+spec@arb_clear_texture@arb_clear_texture-depth
 spec@arb_copy_image@arb_copy_image-formats --samples=2
 spec@arb_gpu_shader5@texturegatheroffset@vs-rgba-0-unorm-2d
+spec@arb_sample_shading@arb_sample_shading-builtin-gl-sample-mask-mrt-alpha-to-coverage
+spec@arb_shader_texture_lod@execution@tex-miplevel-selection \*gradarb 3d
 spec@arb_tessellation_shader@execution@built-in-functions@tcs-op-assign-bitxor-uint-uint
+spec@arb_texture_gather@texturegatheroffset@vs-r-red-uint-2darray
 spec@arb_vertex_buffer_object@vbo-subdata-many drawelements
 spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_external_objects@vk-ping-pong-single-sem

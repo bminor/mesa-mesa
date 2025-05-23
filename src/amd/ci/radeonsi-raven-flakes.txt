@@ -32,6 +32,8 @@ spec@ext_framebuffer_multisample@accuracy 32 depth_draw small depthstencil
 spec@ext_gpu_shader4@tex-miplevel-selection gpu4textureprojgrad 2dshadow
 
 glx@glx-visuals-stencil
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0
+spec@!opengl 1.0@gl-1.0-front-invalidate-back
 spec@!opengl 2.0@vertex-program-two-side back front2
 spec@!opengl 2.0@vertex-program-two-side enabled front front2 back2
 spec@amd_shader_trinary_minmax@execution@built-in-functions@tcs-max3-int-int-int
