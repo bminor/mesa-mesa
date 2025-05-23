@@ -3402,6 +3402,7 @@ apply_explicit_location(const struct ast_type_qualifier *qual,
    case MESA_SHADER_TESS_CTRL:
    case MESA_SHADER_TESS_EVAL:
    case MESA_SHADER_GEOMETRY:
+   case MESA_SHADER_MESH:
       if (var->data.mode == ir_var_shader_in || var->data.mode == ir_var_shader_out) {
          if (!state->check_separate_shader_objects_allowed(loc, var))
             return;
@@ -3430,10 +3431,11 @@ apply_explicit_location(const struct ast_type_qualifier *qual,
       fail = true;
       break;
 
+   case MESA_SHADER_TASK:
    case MESA_SHADER_COMPUTE:
       _mesa_glsl_error(loc, state,
-                       "compute shader variables cannot be given "
-                       "explicit locations");
+                       "%s shader variables cannot be given explicit locations",
+                       _mesa_shader_stage_to_string(state->stage));
       return;
    default:
       fail = true;
@@ -3458,6 +3460,7 @@ apply_explicit_location(const struct ast_type_qualifier *qual,
       case MESA_SHADER_TESS_CTRL:
       case MESA_SHADER_TESS_EVAL:
       case MESA_SHADER_GEOMETRY:
+      case MESA_SHADER_MESH:
          if (var->data.patch)
             var->data.location = qual_location + VARYING_SLOT_PATCH0;
          else
