@@ -32,6 +32,8 @@ nak_nir_options(const struct nak_compiler *nak);
 
 void nak_preprocess_nir(nir_shader *nir, const struct nak_compiler *nak);
 
+bool nak_nir_lower_image_addrs(nir_shader *nir, const struct nak_compiler *nak);
+
 struct nak_sample_location {
    uint8_t x_u4 : 4;
    uint8_t y_u4 : 4;

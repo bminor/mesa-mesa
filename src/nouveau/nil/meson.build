@@ -96,6 +96,11 @@ _nil_h = custom_target(
   depfile : 'nil.h.d',
 )
 
+idep_nil_h = declare_dependency(
+  include_directories : include_directories('.'),
+  sources : [_nil_h],
+)
+
 idep_nil = declare_dependency(
   include_directories : include_directories('.'),
   link_with : _libnil,

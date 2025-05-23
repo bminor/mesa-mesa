@@ -6,6 +6,7 @@ subdir('headers')
 subdir('winsys')
 if with_nouveau_vk
   subdir('rust')
+  subdir('nil')
   subdir('compiler')
 endif
 if with_tools.contains('drm-shim')
@@ -14,7 +15,6 @@ endif
 
 subdir('codegen')
 if with_nouveau_vk
-  subdir('nil')
   subdir('mme')
   subdir('vulkan')
 endif

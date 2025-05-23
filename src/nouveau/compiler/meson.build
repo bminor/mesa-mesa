@@ -18,6 +18,7 @@ libnak_c_files = files(
   'nak_nir_lower_cf.c',
   'nak_nir_lower_fs_inputs.c',
   'nak_nir_lower_gs_intrinsics.c',
+  'nak_nir_lower_image_addrs.c',
   'nak_nir_lower_non_uniform_ldcx.c',
   'nak_nir_lower_scan_reduce.c',
   'nak_nir_lower_kepler_shared_atomics.c',
@@ -43,6 +44,7 @@ libnak_deps = [
   idep_mesautil,
   idep_nir_headers,
   idep_nvidia_headers,
+  idep_nil_h,
 ]
 
 _nak_bindings_rs = rust.bindgen(
