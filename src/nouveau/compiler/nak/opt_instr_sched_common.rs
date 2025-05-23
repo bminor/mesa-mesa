@@ -211,7 +211,14 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::ViLd(_)
         | Op::Kill(_)
         | Op::S2R(_) => SideEffect::Barrier,
-        Op::PixLd(_) | Op::Nop(_) | Op::Vote(_) => SideEffect::None,
+        Op::PixLd(_) | Op::Vote(_) => SideEffect::None,
+        Op::Nop(OpNop { label, .. }) => {
+            if label.is_none() {
+                SideEffect::None
+            } else {
+                SideEffect::Barrier
+            }
+        }
 
         // Virtual ops
         Op::Annotate(_)
