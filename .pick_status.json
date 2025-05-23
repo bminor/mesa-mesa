@@ -1554,7 +1554,7 @@
         "description": "nak: Forbid reordering labeled OpNop",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "79d0f8263da40bc4ecc75861e3f4ca1a4af2af39",
         "notes": null
