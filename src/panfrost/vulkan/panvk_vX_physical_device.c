@@ -175,6 +175,8 @@ panvk_per_arch(get_physical_device_extensions)(
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
+
+      .ARM_shader_core_properties = has_vk1_1,
    };
 }
 
@@ -935,6 +937,11 @@ panvk_per_arch(get_physical_device_properties)(
 
       /* VK_KHR_push_descriptor */
       .maxPushDescriptors = MAX_PUSH_DESCS,
+
+      /* VK_ARM_shader_core_properties */
+      .pixelRate = device->model->rates.pixel,
+      .texelRate = device->model->rates.texel,
+      .fmaRate = device->model->rates.fma,
    };
 
    snprintf(properties->deviceName, sizeof(properties->deviceName), "%s",
