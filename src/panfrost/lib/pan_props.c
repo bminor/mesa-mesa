@@ -75,6 +75,13 @@
       .z_size = z_tb_size,                                                     \
    }
 
+#define MODEL_RATES(pixel_rate, texel_rate, fma_rate)                          \
+   .rates = {                                                                  \
+      .pixel = pixel_rate,                                                     \
+      .texel = texel_rate,                                                     \
+      .fma = fma_rate,                                                         \
+   }
+
 #define MODEL_QUIRKS(...) .quirks = {__VA_ARGS__}
 
 /* Table of supported Mali GPUs */
@@ -101,17 +108,27 @@ const struct pan_model pan_model_list[] = {
    BIFROST_MODEL(0x7202,    "G52",    "TGOx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
    BIFROST_MODEL(0x7402,    "G52 r1", "TGOx", MODEL_ANISO(ALL),  MODEL_TB_SIZES( 8192,  8192)),
 
-   VALHALL_MODEL(0x9001, 0, "G57",    "TNAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
-   VALHALL_MODEL(0x9003, 0, "G57",    "TNAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
-   VALHALL_MODEL(0xa807, 0, "G610",   "TVIx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384)),
-   VALHALL_MODEL(0xac04, 0, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
-   VALHALL_MODEL(0xac04, 1, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
-   VALHALL_MODEL(0xac04, 2, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
-   VALHALL_MODEL(0xac04, 3, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384)),
-   VALHALL_MODEL(0xac04, 4, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384)),
+   VALHALL_MODEL(0x9001, 0, "G57",    "TNAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192),
+                                              MODEL_RATES(2, 4,  32)),
+   VALHALL_MODEL(0x9003, 0, "G57",    "TNAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192),
+                                              MODEL_RATES(2, 4,  32)),
+   VALHALL_MODEL(0xa807, 0, "G610",   "TVIx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384),
+                                              MODEL_RATES(4, 8,  64)),
+   VALHALL_MODEL(0xac04, 0, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192),
+                                              MODEL_RATES(2, 2,  16)),
+   VALHALL_MODEL(0xac04, 1, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192),
+                                              MODEL_RATES(2, 4,  32)),
+   VALHALL_MODEL(0xac04, 2, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192),
+                                              MODEL_RATES(4, 4,  48)),
+   VALHALL_MODEL(0xac04, 3, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384),
+                                              MODEL_RATES(4, 8,  48)),
+   VALHALL_MODEL(0xac04, 4, "G310",   "TVAx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(32768, 16384),
+                                              MODEL_RATES(4, 8,  64)),
 
-   AVALON_MODEL( 0xc800, 4, "G720",   "TTIx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(65536, 32768)),
-   AVALON_MODEL( 0xd800, 4, "G725",   "TKRx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(65536, 65536)),
+   AVALON_MODEL( 0xc800, 4, "G720",   "TTIx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(65536, 32768),
+                                              MODEL_RATES(4, 8, 128)),
+   AVALON_MODEL( 0xd800, 4, "G725",   "TKRx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(65536, 65536),
+                                              MODEL_RATES(4, 8, 128)),
 };
 /* clang-format on */
 
@@ -129,6 +146,7 @@ const struct pan_model pan_model_list[] = {
 
 #undef MODEL_ANISO
 #undef MODEL_TB_SIZES
+#undef MODEL_RATES
 #undef MODEL_QUIRKS
 
 /*

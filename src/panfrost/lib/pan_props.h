@@ -84,6 +84,14 @@ struct pan_model {
       uint32_t z_size;
    } tilebuffer;
 
+   /* Maximum number of pixels, texels, and FMA ops, per clock per shader
+    * core, or 0 if it can't be determined for the given GPU. */
+   struct {
+      uint32_t pixel;
+      uint32_t texel;
+      uint32_t fma;
+   } rates;
+
    struct {
       /* The GPU lacks the capability for hierarchical tiling, without
        * an "Advanced Tiling Unit", instead requiring a single bin
