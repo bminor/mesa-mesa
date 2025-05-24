@@ -135,4 +135,11 @@ KHR-GL46.texture_view.coherency,Fail
 # uprev Piglit in Mesa
 spec@arb_sparse_buffer@buffer-data,Crash
 spec@arb_sparse_buffer@commit,Crash
+spec@nv_copy_image@nv_copy_image-formats --samples=4,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RG32F/Destination: GL_RG32F,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RG32I/Destination: GL_RG32I,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RG32UI/Destination: GL_RG32UI,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RGBA16/Destination: GL_RGBA16,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RGBA16I/Destination: GL_RGBA16I,Fail
+spec@nv_copy_image@nv_copy_image-formats --samples=4@Source: GL_RGBA16_SNORM/Destination: GL_RGBA16_SNORM,Fail
 

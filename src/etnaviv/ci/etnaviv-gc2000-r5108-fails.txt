@@ -271,8 +271,6 @@ spec@ext_framebuffer_object@fbo-stencil-gl_stencil_index16-blit,Fail
 spec@ext_framebuffer_object@fbo-stencil-gl_stencil_index1-blit,Fail
 spec@ext_framebuffer_object@fbo-stencil-gl_stencil_index4-blit,Fail
 spec@ext_framebuffer_object@fbo-stencil-gl_stencil_index8-blit,Fail
-spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Crash
-spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Crash
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p012,Fail
@@ -297,7 +295,6 @@ spec@ext_texture_array@compressed texsubimage,Fail
 spec@ext_texture_array@compressed texsubimage pbo,Fail
 spec@ext_texture_array@copyteximage 1d_array,Fail
 spec@ext_texture_array@fbo-generatemipmap-array,Fail
-spec@ext_texture_array@fbo-generatemipmap-array s3tc_dxt1,Crash
 spec@ext_texture_array@glsl-fs-shadow1darray-07,Fail
 spec@ext_texture_array@glsl-fs-shadow2darray-07,Fail
 spec@ext_texture_array@maxlayers,Fail
@@ -660,4 +657,6 @@ spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec4-index-rd,Fail
 
 # uprev Piglit in Mesa
 spec@!opengl 1.1@push-pop-color-material,Fail
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 normal,Fail
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 normal,Fail
 
