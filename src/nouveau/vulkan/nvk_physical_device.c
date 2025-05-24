@@ -40,6 +40,7 @@
 #include "cl91c0.h"
 #include "cla097.h"
 #include "cla0c0.h"
+#include "cla197.h"
 #include "cla1c0.h"
 #include "clb097.h"
 #include "clb0c0.h"
@@ -171,7 +172,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = true,
       .KHR_separate_depth_stencil_layouts = true,
-      .KHR_shader_atomic_int64 = info->cls_eng3d >= MAXWELL_A &&
+      .KHR_shader_atomic_int64 = info->cls_eng3d >= KEPLER_B &&
                                  nvk_use_nak(info),
       .KHR_shader_clock = true,
       .KHR_shader_draw_parameters = true,
@@ -268,7 +269,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_sampler_filter_minmax = info->cls_eng3d >= MAXWELL_B,
       .EXT_scalar_block_layout = nvk_use_nak(info),
       .EXT_separate_stencil_usage = true,
-      .EXT_shader_image_atomic_int64 = info->cls_eng3d >= MAXWELL_A &&
+      .EXT_shader_image_atomic_int64 = info->cls_eng3d >= KEPLER_B &&
                                        nvk_use_nak(info),
       .EXT_shader_demote_to_helper_invocation = true,
       .EXT_shader_module_identifier = true,
@@ -383,9 +384,9 @@ nvk_get_device_features(const struct nv_device_info *info,
       .storageBuffer8BitAccess = true,
       .uniformAndStorageBuffer8BitAccess = true,
       .storagePushConstant8 = true,
-      .shaderBufferInt64Atomics = info->cls_eng3d >= MAXWELL_A &&
+      .shaderBufferInt64Atomics = info->cls_eng3d >= KEPLER_B &&
                                   nvk_use_nak(info),
-      .shaderSharedInt64Atomics = info->cls_eng3d >= MAXWELL_A &&
+      .shaderSharedInt64Atomics = info->cls_eng3d >= KEPLER_B &&
                                   nvk_use_nak(info),
       .shaderFloat16 = info->sm >= 70 && nvk_use_nak(info),
       .shaderInt8 = true,
@@ -678,7 +679,7 @@ nvk_get_device_features(const struct nv_device_info *info,
       .nullDescriptor = true,
 
       /* VK_EXT_shader_image_atomic_int64 */
-      .shaderImageInt64Atomics = info->cls_eng3d >= MAXWELL_A &&
+      .shaderImageInt64Atomics = info->cls_eng3d >= KEPLER_B &&
                                  nvk_use_nak(info),
       .sparseImageInt64Atomics = info->cls_eng3d >= MAXWELL_A &&
                                  nvk_use_nak(info),
