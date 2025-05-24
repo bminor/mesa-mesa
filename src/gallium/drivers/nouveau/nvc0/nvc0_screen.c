@@ -315,7 +315,6 @@ nvc0_init_screen_caps(struct nvc0_screen *screen)
    caps->cull_distance = true;
    caps->robust_buffer_access_behavior = true;
    caps->shader_group_vote = true;
-   caps->polygon_offset_units_unscaled = true;
    caps->shader_array_components = true;
    caps->legacy_math_rules = true;
    caps->doubles = true;

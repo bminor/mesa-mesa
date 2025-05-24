@@ -713,26 +713,6 @@ nvc0_validate_zsa_fb(struct nvc0_context *nvc0)
 }
 
 static void
-nvc0_validate_rast_fb(struct nvc0_context *nvc0)
-{
-   struct nouveau_pushbuf *push = nvc0->base.pushbuf;
-   struct pipe_framebuffer_state *fb = &nvc0->framebuffer;
-   struct pipe_rasterizer_state *rast = &nvc0->rast->pipe;
-
-   if (!rast)
-      return;
-
-   if (rast->offset_units_unscaled) {
-      BEGIN_NVC0(push, NVC0_3D(POLYGON_OFFSET_UNITS), 1);
-      if (fb->zsbuf.texture && fb->zsbuf.format == PIPE_FORMAT_Z16_UNORM)
-         PUSH_DATAf(push, rast->offset_units * (1 << 16));
-      else
-         PUSH_DATAf(push, rast->offset_units * (1 << 24));
-   }
-}
-
-
-static void
 nvc0_validate_tess_state(struct nvc0_context *nvc0)
 {
    struct nouveau_pushbuf *push = nvc0->base.pushbuf;
@@ -886,7 +866,6 @@ validate_list_3d[] = {
     { nvc0_validate_fp_zsa_rast,   NVC0_NEW_3D_FRAGPROG | NVC0_NEW_3D_ZSA |
                                    NVC0_NEW_3D_RASTERIZER },
     { nvc0_validate_zsa_fb,        NVC0_NEW_3D_ZSA | NVC0_NEW_3D_FRAMEBUFFER },
-    { nvc0_validate_rast_fb,       NVC0_NEW_3D_RASTERIZER | NVC0_NEW_3D_FRAMEBUFFER },
     { nvc0_validate_clip,          NVC0_NEW_3D_CLIP | NVC0_NEW_3D_RASTERIZER |
                                    NVC0_NEW_3D_VERTPROG |
                                    NVC0_NEW_3D_TEVLPROG |
