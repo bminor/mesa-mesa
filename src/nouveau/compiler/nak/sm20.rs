@@ -2164,14 +2164,24 @@ impl SM20Op for OpAtom {
             // AtomType::U16 => 0x2_u8,
             // AtomType::I16 => 0x3_u8,
             AtomType::U32 => 0x4_u8,
-            AtomType::U64 => 0x5_u8,
             //AtomType::U128 => 0x6_u8,
             AtomType::I32 => 0x7_u8,
-            AtomType::I64 => 0x8_u8,
             //AtomType::I128 => 0x9_u8,
             //AtomType::F16 => 0xa_u8,
-            AtomType::F64 => 0xc_u8,
             AtomType::F32 => 0xd_u8,
+
+            AtomType::U64 | AtomType::I64 | AtomType::F64 => {
+                // They encode fine:
+                //
+                //     AtomType::U64 => 0x5_u8,
+                //     AtomType::I64 => 0x8_u8,
+                //     AtomType::F64 => 0xc_u8,
+                //
+                // but the hardware throws an ILLEGAL_INSTRUCTION_ENCODING error
+                // if we ever actually execute one.  Also, the proprietary
+                // driver doesn't expose any 64-bit atomic features on Kepler A.
+                panic!("64-bit atomics are not supported");
+            }
         };
         e.set_field(9..10, typ & 0x1);
         e.set_field(59..62, typ >> 1);
