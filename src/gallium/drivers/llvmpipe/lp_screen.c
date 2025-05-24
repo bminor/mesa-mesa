@@ -304,7 +304,6 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
    caps->doubles = true;
    caps->int64 = true;
    caps->query_so_overflow = true;
-   caps->tgsi_div = true;
    caps->vendor_id = 0xFFFFFFFF;
    caps->device_id = 0xFFFFFFFF;
 

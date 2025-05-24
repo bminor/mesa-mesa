@@ -532,7 +532,6 @@ svga_init_screen_caps(struct svga_screen *svgascreen)
    caps->doubles = sws->have_sm5;
    caps->uma = false;
    caps->allow_mapped_buffers_during_execution = false;
-   caps->tgsi_div = true;
    caps->max_gs_invocations = 32;
    caps->max_shader_buffer_size = 1 << 27;
    /* Verify this once protocol is finalized. Setting it to minimum value. */

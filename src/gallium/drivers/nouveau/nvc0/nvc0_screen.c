@@ -324,7 +324,6 @@ nvc0_init_screen_caps(struct nvc0_screen *screen)
    caps->compute = true;
    caps->can_bind_const_buffer_as_vertex = true;
    caps->query_so_overflow = true;
-   caps->tgsi_div = true;
    caps->image_atomic_inc_wrap = true;
    caps->demote_to_helper_invocation = true;
    caps->device_reset_status_query = true;

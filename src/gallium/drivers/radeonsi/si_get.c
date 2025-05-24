@@ -1121,7 +1121,6 @@ void si_init_screen_caps(struct si_screen *sscreen)
    caps->compute_grid_info_last_block = true;
    caps->image_load_formatted = true;
    caps->prefer_compute_for_multimedia = true;
-   caps->tgsi_div = true;
    caps->packed_uniforms = true;
    caps->gl_spirv = true;
    caps->alpha_to_coverage_dither_control = true;

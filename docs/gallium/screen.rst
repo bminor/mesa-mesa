@@ -558,7 +558,6 @@ Capability about the features and limits of the driver/GPU.
   functionality is supported.
 * ``pipe_caps.atomic_float_minmax``: Atomic float point minimum,
   maximum, exchange and compare-and-swap support to buffer and shared variables.
-* ``pipe_caps.tgsi_div``: Whether opcode DIV is supported
 * ``pipe_caps.dithering``: Whether dithering is supported
 * ``pipe_caps.fragment_shader_texture_lod``: Whether texture lookups with
   explicit LOD is supported in the fragment shader.

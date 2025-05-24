@@ -318,7 +318,6 @@ softpipe_init_screen_caps(struct softpipe_screen *sp_screen)
    caps->vs_layer_viewport = true;
    caps->doubles = true;
    caps->int64 = true;
-   caps->tgsi_div = true;
    caps->constant_buffer_offset_alignment = 16;
    caps->min_map_buffer_alignment = 64;
    caps->query_timestamp = true;

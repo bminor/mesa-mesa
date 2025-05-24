@@ -273,7 +273,6 @@ nv50_init_screen_caps(struct nv50_screen *screen)
    caps->tgsi_tex_txf_lz = true;
    caps->shader_clock = true;
    caps->can_bind_const_buffer_as_vertex = true;
-   caps->tgsi_div = true;
    caps->clear_scissored = true;
    caps->framebuffer_no_attachment = true;
    caps->compute = true;

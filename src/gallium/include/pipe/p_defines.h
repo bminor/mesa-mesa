@@ -943,7 +943,6 @@ struct pipe_caps {
    bool fragment_shader_interlock;
    bool fbfetch_coherent;
    bool atomic_float_minmax;
-   bool tgsi_div;
    bool fragment_shader_texture_lod;
    bool fragment_shader_derivatives;
    bool texture_shadow_lod;
