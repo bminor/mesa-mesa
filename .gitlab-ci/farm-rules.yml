@@ -34,7 +34,7 @@
 #   anholt           | baremetal/poe-powered            | @anholt
 #   austriancoder    | ci-tron                          | @austriancoder
 #   collabora        | lava                             | @daniels, @sergi
-#   google-freedreno | baremetal/{fastboot,cros-servo}  | @robclark
+#   google-freedreno | none (moving to LAVA)            | @daniels, @sergi
 #   igalia           | baremetal/poe-powered            | @jasuarez, @chema
 #   lima             | lava                             | @enunes
 #   microsoft        | custom                           | @jenatali, @alatiera
@@ -211,7 +211,6 @@
       when: never
     - !reference [.valve-farm-rules, rules]
 
-
 .austriancoder-farm-rules:
   rules:
     - exists: [ .ci-farms-disabled/austriancoder ]
@@ -231,27 +230,6 @@
       if: '$CI_PIPELINE_SOURCE != "schedule"'
       when: never
     - !reference [.austriancoder-farm-rules, rules]
-
-
-.google-freedreno-farm-rules:
-  rules:
-    - exists: [ .ci-farms-disabled/google-freedreno ]
-      when: never
-    - changes: [ .ci-farms-disabled/google-freedreno ]
-      if: '$CI_PIPELINE_SOURCE != "schedule"'
-      when: on_success
-    - changes: [ .ci-farms-disabled/* ]
-      if: '$CI_PIPELINE_SOURCE != "schedule"'
-      when: never
-
-.google-freedreno-farm-manual-rules:
-  rules:
-    - exists: [ .ci-farms-disabled/google-freedreno ]
-      when: never
-    - changes: [ .ci-farms-disabled/google-freedreno ]
-      if: '$CI_PIPELINE_SOURCE != "schedule"'
-      when: never
-    - !reference [.google-freedreno-farm-rules, rules]
 
 .vmware-farm-rules:
   rules:
@@ -315,6 +293,15 @@
     - !reference [.pengutronix-farm-rules, rules]
 
 
+# Temporary placeholder as the devices move across to LAVA.
+.google-freedreno-farm-rules:
+  rules:
+    - when: never
+
+.google-freedreno-farm-manual-rules:
+  rules:
+    - when: never
+
 # Skip container & build jobs when disabling any farm, and run them if any
 # farm gets re-enabled.
 # Only apply these rules in MR context, because otherwise we get a false
@@ -358,10 +345,6 @@
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: [ .ci-farms-disabled/austriancoder ]
       exists: [ .ci-farms-disabled/austriancoder ]
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: [ .ci-farms-disabled/google-freedreno ]
-      exists: [ .ci-farms-disabled/google-freedreno ]
       when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: [ .ci-farms-disabled/ondracka ]

@@ -14,7 +14,6 @@ set -o xtrace
 DEPS=(
     cpio
     curl
-    fastboot
     netcat-openbsd
     openssh-server
     procps
