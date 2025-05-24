@@ -689,11 +689,7 @@ zink_draw(struct pipe_context *pctx,
    bool using_depth_bias = zink_prim_type(ctx, dinfo) == MESA_PRIM_TRIANGLES && rast_state->offset_fill;
    if (BATCH_CHANGED || using_depth_bias != ctx->was_using_depth_bias || ctx->depth_bias_changed) {
       if (using_depth_bias) {
-         if (rast_state->base.offset_units_unscaled) {
-            VKCTX(CmdSetDepthBias)(bs->cmdbuf, rast_state->offset_units * ctx->depth_bias_scale_factor, rast_state->offset_clamp, rast_state->offset_scale);
-         } else {
-            VKCTX(CmdSetDepthBias)(bs->cmdbuf, rast_state->offset_units, rast_state->offset_clamp, rast_state->offset_scale);
-         }
+         VKCTX(CmdSetDepthBias)(bs->cmdbuf, rast_state->offset_units, rast_state->offset_clamp, rast_state->offset_scale);
       } else {
          VKCTX(CmdSetDepthBias)(bs->cmdbuf, 0.0f, 0.0f, 0.0f);
       }

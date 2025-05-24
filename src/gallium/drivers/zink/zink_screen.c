@@ -790,8 +790,6 @@ zink_init_screen_caps(struct zink_screen *screen)
       screen->info.have_KHR_sampler_mirror_clamp_to_edge ||
       (screen->info.have_vulkan12 && screen->info.feats12.samplerMirrorClampToEdge);
 
-   caps->polygon_offset_units_unscaled = true;
-
    caps->polygon_offset_clamp = screen->info.feats.features.depthBiasClamp;
 
    caps->query_pipeline_statistics_single =
@@ -2859,17 +2857,6 @@ init_driver_workarounds(struct zink_screen *screen)
       break;
    }
 
-   if (zink_driverid(screen) == VK_DRIVER_ID_AMD_OPEN_SOURCE || 
-       zink_driverid(screen) == VK_DRIVER_ID_AMD_PROPRIETARY || 
-       zink_driverid(screen) == VK_DRIVER_ID_NVIDIA_PROPRIETARY || 
-       zink_driverid(screen) == VK_DRIVER_ID_MESA_RADV)
-      screen->driver_workarounds.z24_unscaled_bias = 1<<23;
-   else
-      screen->driver_workarounds.z24_unscaled_bias = 1<<24;
-   if (zink_driverid(screen) == VK_DRIVER_ID_NVIDIA_PROPRIETARY)
-      screen->driver_workarounds.z16_unscaled_bias = 1<<15;
-   else
-      screen->driver_workarounds.z16_unscaled_bias = 1<<16;
    /* these drivers don't use VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT, so it can always be set */
    switch (zink_driverid(screen)) {
    case VK_DRIVER_ID_MESA_RADV:

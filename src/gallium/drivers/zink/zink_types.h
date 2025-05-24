@@ -1519,8 +1519,6 @@ struct zink_screen {
       bool inconsistent_interpolation;
       bool can_2d_view_sparse;
       bool general_depth_layout;
-      unsigned z16_unscaled_bias;
-      unsigned z24_unscaled_bias;
    } driver_workarounds;
 };
 
@@ -1788,7 +1786,6 @@ struct zink_context {
       struct tc_renderpass_info tc_info;
    } dynamic_fb;
    uint32_t fb_layer_mismatch; //bitmask
-   unsigned depth_bias_scale_factor;
    struct set rendering_state_cache[6]; //[util_logbase2_ceil(msrtss samplecount)]
    struct zink_resource *swapchain;
    VkExtent2D swapchain_size;
