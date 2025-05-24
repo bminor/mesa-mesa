@@ -577,9 +577,9 @@ Capability about the features and limits of the driver/GPU.
 * ``pipe_caps.demote_to_helper_invocation``: True if driver supports demote keyword in GLSL programs.
 * ``pipe_caps.tgsi_tg4_component_in_swizzle``: True if driver wants the TG4 component encoded in sampler swizzle rather than as a separate source.
 * ``pipe_caps.flatshade``: Driver supports pipe_rasterizer_state::flatshade.  Must be 1
-    for non-NIR drivers or gallium nine.
+    for non-NIR drivers.
 * ``pipe_caps.alpha_test``: Driver supports alpha-testing.  Must be 1
-    for non-NIR drivers or gallium nine.  If set, frontend may set
+    for non-NIR drivers.  If set, frontend may set
     ``pipe_depth_stencil_alpha_state->alpha_enabled`` and ``alpha_func``.
     Otherwise, alpha test will be lowered to a comparison and discard_if in the
     fragment shader.
@@ -636,7 +636,7 @@ Capability about the features and limits of the driver/GPU.
 * ``pipe_caps.validate_all_dirty_states`` : Whether state validation must also validate the state changes for resources types used in the previous shader but not in the current shader.
 * ``pipe_caps.has_const_bw``: Whether the driver only supports non-data-dependent layouts (ie. not bandwidth compressed formats like AFBC, UBWC, etc), or supports ``PIPE_BIND_CONST_BW`` to disable data-dependent layouts on requested resources.
 * ``pipe_caps.performance_monitor``: Whether GL_AMD_performance_monitor should be exposed.
-* ``pipe_caps.texture_sampler_independent``: Whether sampler views and sampler states are independent objects, meaning both can be freely mixed and matched by the frontend. This isn't required for OpenGL where on the shader level those are the same object. However for proper gallium nine and OpenCL support this is required.
+* ``pipe_caps.texture_sampler_independent``: Whether sampler views and sampler states are independent objects, meaning both can be freely mixed and matched by the frontend. This isn't required for OpenGL where on the shader level those are the same object. However for proper OpenCL support this is required.
 * ``pipe_caps.astc_decode_mode``: Whether the driver supports ASTC decode precision. The :ext:`GL_EXT_texture_compression_astc_decode_mode` extension will only get exposed if :ext:`GL_KHR_texture_compression_astc_ldr<GL_KHR_texture_compression_astc_hdr>` is also supported.
 * ``pipe_caps.shader_subgroup_size``: A fixed subgroup size shader runs on GPU when GLSL GL_KHR_shader_subgroup_* extensions are enabled.
 * ``pipe_caps.shader_subgroup_supported_stages``: Bitmask of shader stages which support GL_KHR_shader_subgroup_* intrinsics.
