@@ -377,8 +377,6 @@ Capability about the features and limits of the driver/GPU.
   shaders.
 * ``pipe_caps.max_window_rectangles``: The maximum number of window rectangles
   supported in ``set_window_rectangles``.
-* ``pipe_caps.polygon_offset_units_unscaled``: If true, the driver implements support
-  for ``pipe_rasterizer_state::offset_units_unscaled``.
 * ``pipe_caps.viewport_subpixel_bits``: Number of bits of subpixel precision for
   floating point viewport bounds.
 * ``pipe_caps.rasterizer_subpixel_bits``: Number of bits of subpixel precision used

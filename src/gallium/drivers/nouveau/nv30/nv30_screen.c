@@ -227,7 +227,6 @@ nv30_init_screen_caps(struct nv30_screen *screen)
    caps->cull_distance = false;
    caps->shader_group_vote = false;
    caps->max_window_rectangles = 0;
-   caps->polygon_offset_units_unscaled = false;
    caps->viewport_subpixel_bits = 0;
    caps->mixed_color_depth_bits = 0;
    caps->shader_array_components = false;

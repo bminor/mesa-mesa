@@ -896,7 +896,6 @@ struct pipe_caps {
    bool robust_buffer_access_behavior;
    bool cull_distance;
    bool shader_group_vote;
-   bool polygon_offset_units_unscaled;
    bool shader_array_components;
    bool stream_output_interleave_buffers;
    bool native_fence_fd;
