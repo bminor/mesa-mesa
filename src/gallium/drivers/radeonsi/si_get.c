@@ -1097,7 +1097,6 @@ void si_init_screen_caps(struct si_screen *sscreen)
    caps->shader_pack_half_float = true;
    caps->framebuffer_no_attachment = true;
    caps->robust_buffer_access_behavior = true;
-   caps->polygon_offset_units_unscaled = true;
    caps->string_marker = true;
    caps->cull_distance = true;
    caps->shader_array_components = true;
