@@ -6117,6 +6117,8 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
 void
 lp_build_nir_soa_prepasses(struct nir_shader *nir)
 {
+   lp_build_opt_nir(nir);
+
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_derefs);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
