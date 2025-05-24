@@ -412,7 +412,6 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->surface_reinterpret_blocks = true;
 	caps->query_memory_info = true;
 	caps->framebuffer_no_attachment = true;
-	caps->polygon_offset_units_unscaled = true;
 	caps->legacy_math_rules = true;
 	caps->can_bind_const_buffer_as_vertex = true;
 	caps->allow_mapped_buffers_during_execution = true;
