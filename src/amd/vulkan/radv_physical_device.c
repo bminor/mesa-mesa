@@ -1772,7 +1772,10 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxPerStageDescriptorUpdateAfterBindAccelerationStructures = max_descriptor_set_size,
       .maxDescriptorSetAccelerationStructures = max_descriptor_set_size,
       .maxDescriptorSetUpdateAfterBindAccelerationStructures = max_descriptor_set_size,
-      .minAccelerationStructureScratchOffsetAlignment = 128,
+      /* Technically we can work with 128-byte alignment, but DOOM: The Dark Ages breaks if
+       * the alignment is lower than this.
+       */
+      .minAccelerationStructureScratchOffsetAlignment = 256,
 
       /* VK_EXT_multi_draw */
       .maxMultiDrawCount = 2048,
