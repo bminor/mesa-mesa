@@ -1422,7 +1422,8 @@ nvk_create_drm_physical_device(struct vk_instance *_instance,
       };
 
       if (pdev->info.bar_size_B > 0 &&
-          pdev->info.bar_size_B < pdev->info.vram_size_B) {
+          pdev->info.bar_size_B < pdev->info.vram_size_B &&
+          pdev->info.cls_eng3d >= MAXWELL_A) {
          bar_heap_idx = pdev->mem_heap_count++;
          pdev->mem_heaps[bar_heap_idx] = (struct nvk_memory_heap) {
             .size = pdev->info.bar_size_B,
