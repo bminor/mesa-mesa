@@ -28,14 +28,14 @@ nvk_get_buffer_format_features(const struct nvk_physical_device *pdev,
    if (nil_format_supports_buffer(&pdev->info, p_format)) {
       features |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
-      if (nil_format_supports_storage(&pdev->info, p_format)) {
+      if (nvk_format_supports_storage(pdev, p_format)) {
          features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
                      VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
          if (pdev->info.cls_eng3d >= MAXWELL_A)
             features |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
       }
 
-      if (nvk_format_supports_atomics(&pdev->info, p_format))
+      if (nvk_format_supports_atomics(pdev, p_format))
          features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
    }
 

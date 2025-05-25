@@ -20,7 +20,11 @@ struct nvk_va_format {
 };
 
 bool
-nvk_format_supports_atomics(const struct nv_device_info *dev,
+nvk_format_supports_atomics(const struct nvk_physical_device *pdev,
+                            enum pipe_format p_format);
+
+bool
+nvk_format_supports_storage(const struct nvk_physical_device *pdev,
                             enum pipe_format p_format);
 
 const struct nvk_va_format *

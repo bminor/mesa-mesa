@@ -18,18 +18,34 @@
 #include "cl90c0.h"
 
 bool
-nvk_format_supports_atomics(const struct nv_device_info *dev,
+nvk_format_supports_atomics(const struct nvk_physical_device *pdev,
                             enum pipe_format p_format)
 {
    switch (p_format) {
    case PIPE_FORMAT_R32_UINT:
    case PIPE_FORMAT_R32_SINT:
+      return true;
    case PIPE_FORMAT_R64_UINT:
    case PIPE_FORMAT_R64_SINT:
-      return true;
+      return pdev->vk.supported_features.shaderImageInt64Atomics;
    default:
       return false;
    }
+}
+
+bool
+nvk_format_supports_storage(const struct nvk_physical_device *pdev,
+                            enum pipe_format p_format)
+{
+   /* Unfortunately, the SPIR-V cap associated with 64-bit storage images (and
+    * formatted buffers) is gated by the atomics feature so if we have to
+    * disable the formats when the Vulkan feature isn't exposed.
+    */
+   if (!pdev->vk.supported_features.shaderImageInt64Atomics &&
+       util_format_get_max_channel_size(p_format) == 64)
+      return false;
+
+   return nil_format_supports_storage(&pdev->info, p_format);
 }
 
 #define VA_FMT(vk_fmt, widths, swap_rb, type) \
