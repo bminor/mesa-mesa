@@ -575,7 +575,7 @@ impl SM20Op for OpFAdd {
             // should fold any modifiers on immediates for us.
             assert!(self.srcs[1].src_mod.is_none());
             e.encode_form_a_imm32(0xa, &self.dst, &self.srcs[0], imm32);
-            assert!(self.saturate);
+            assert!(!self.saturate);
             assert!(self.rnd_mode == FRndMode::NearestEven);
         } else {
             e.encode_form_a(
