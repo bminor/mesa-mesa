@@ -97,12 +97,11 @@ nvk_DestroyBufferView(VkDevice _device,
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
    VK_FROM_HANDLE(nvk_buffer_view, view, bufferView);
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
 
    if (!view)
       return;
 
-   if (!nvk_use_edb_buffer_views(pdev))
+   if (view->desc.image_index)
       nvk_descriptor_table_remove(dev, &dev->images, view->desc.image_index);
 
    vk_buffer_view_destroy(&dev->vk, pAllocator, &view->vk);

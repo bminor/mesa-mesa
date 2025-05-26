@@ -20,11 +20,8 @@ nvk_get_buffer_format_features(const struct nvk_physical_device *pdev,
 struct nvk_buffer_view {
    struct vk_buffer_view vk;
 
-   /* Selected based on nvk_use_edb_buffer_views() */
-   union {
-      struct nvk_buffer_view_descriptor desc;
-      struct nvk_edb_buffer_view_descriptor edb_desc;
-   };
+   struct nvk_buffer_view_descriptor desc;
+   struct nvk_edb_buffer_view_descriptor edb_desc;
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_buffer_view, vk.base, VkBufferView,
