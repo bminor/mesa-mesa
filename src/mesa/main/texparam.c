@@ -1917,13 +1917,13 @@ get_tex_level_parameter_image(struct gl_context *ctx,
 
       /* GL_ARB_texture_multisample */
       case GL_TEXTURE_SAMPLES:
-         if (!ctx->Extensions.ARB_texture_multisample)
+         if (!_mesa_has_texture_multisample(ctx))
             goto invalid_pname;
          *params = img->NumSamples;
          break;
 
       case GL_TEXTURE_FIXED_SAMPLE_LOCATIONS:
-         if (!ctx->Extensions.ARB_texture_multisample)
+         if (!_mesa_has_texture_multisample(ctx))
             goto invalid_pname;
          *params = img->FixedSampleLocations;
          break;
@@ -2073,13 +2073,13 @@ get_tex_level_parameter_buffer(struct gl_context *ctx,
 
       /* GL_ARB_texture_multisample */
       case GL_TEXTURE_SAMPLES:
-         if (!ctx->Extensions.ARB_texture_multisample)
+         if (!_mesa_has_texture_multisample(ctx))
             goto invalid_pname;
          *params = 0;
          break;
 
       case GL_TEXTURE_FIXED_SAMPLE_LOCATIONS:
-         if (!ctx->Extensions.ARB_texture_multisample)
+         if (!_mesa_has_texture_multisample(ctx))
             goto invalid_pname;
          *params = GL_TRUE;
          break;
