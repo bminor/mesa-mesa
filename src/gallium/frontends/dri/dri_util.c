@@ -1049,3 +1049,9 @@ dri_get_pipe_screen(struct dri_screen *screen)
 {
    return screen->base.screen;
 }
+
+char *
+driGetDriInfoXML(const char* driverName)
+{
+   return pipe_loader_get_driinfo_xml(driverName);
+}

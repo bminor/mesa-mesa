@@ -343,4 +343,8 @@ dri_set_blob_cache_funcs(struct dri_screen *screen, __DRIblobCacheSet set,
 
 PUBLIC struct pipe_screen *
 dri_get_pipe_screen(struct dri_screen *driScreen);
+
+PUBLIC char*
+driGetDriInfoXML(const char* driverName);
+
 #endif /* _DRI_UTIL_H_ */
