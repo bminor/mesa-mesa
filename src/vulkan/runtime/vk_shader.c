@@ -30,6 +30,7 @@
 #include "vk_device.h"
 #include "vk_nir.h"
 #include "vk_physical_device.h"
+#include "vk_physical_device_features.h"
 #include "vk_pipeline.h"
 
 #include "util/mesa-sha1.h"
@@ -507,7 +508,7 @@ vk_common_CreateShadersEXT(VkDevice _device,
 
             struct vk_shader *shader;
             result = ops->compile(device, 1, &info, NULL /* state */,
-                                  pAllocator, &shader);
+                                  NULL /* features */, pAllocator, &shader);
             if (result != VK_SUCCESS)
                break;
 
@@ -554,7 +555,7 @@ vk_common_CreateShadersEXT(VkDevice _device,
          struct vk_shader *shaders[VK_MAX_LINKED_SHADER_STAGES];
 
          result = ops->compile(device, linked_count, infos, NULL /* state */,
-                               pAllocator, shaders);
+                               NULL /* features */, pAllocator, shaders);
          if (result == VK_SUCCESS) {
             for (uint32_t l = 0; l < linked_count; l++)
                pShaders[linked[l].idx] = vk_shader_to_handle(shaders[l]);

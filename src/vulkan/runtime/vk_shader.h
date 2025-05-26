@@ -41,6 +41,7 @@ struct vk_device;
 struct vk_descriptor_set_layout;
 struct vk_dynamic_graphics_state;
 struct vk_graphics_pipeline_state;
+struct vk_features;
 struct vk_physical_device;
 struct vk_pipeline;
 struct vk_pipeline_robustness_state;
@@ -213,15 +214,19 @@ struct vk_device_shader_ops {
     */
    bool link_geom_stages;
 
-   /** Hash a vk_graphics_state object
+   /** Hash a vk_graphics_state object and a vk_features object.
     *
     * This callback hashes whatever bits of vk_graphics_pipeline_state might
     * be used to compile a shader in one of the given stages.
+    *
+    * state may be null, indicating that all state is dynamic. enabled_features
+    * is always non-NULL.
     */
-   void (*hash_graphics_state)(struct vk_physical_device *device,
-                               const struct vk_graphics_pipeline_state *state,
-                               VkShaderStageFlags stages,
-                               blake3_hash blake3_out);
+   void (*hash_state)(struct vk_physical_device *device,
+                      const struct vk_graphics_pipeline_state *state,
+                      const struct vk_features *enabled_features,
+                      VkShaderStageFlags stages,
+                      blake3_hash blake3_out);
 
    /** Compile (and potentially link) a set of shaders
     *
@@ -230,6 +235,9 @@ struct vk_device_shader_ops {
     * them.  We also guarantee that the shaders occur in the call in Vulkan
     * pipeline stage order as dictated by vk_shader_cmp_graphics_stages().
     *
+    * If state/enabled_features is NULL, the driver must conservatively assume
+    * all state is dynamic / all features are enabled respectively.
+    *
     * This callback consumes all input NIR shaders, regardless of whether or
     * not it was successful.
     */
@@ -237,6 +245,7 @@ struct vk_device_shader_ops {
                        uint32_t shader_count,
                        struct vk_shader_compile_info *infos,
                        const struct vk_graphics_pipeline_state *state,
+                       const struct vk_features *enabled_features,
                        const VkAllocationCallbacks* pAllocator,
                        struct vk_shader **shaders_out);
 

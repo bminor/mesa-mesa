@@ -30,6 +30,7 @@
 #include "nir_xfb_info.h"
 #include "shader_enums.h"
 #include "vk_nir_convert_ycbcr.h"
+#include "vk_physical_device_features.h"
 #include "vk_pipeline.h"
 #include "vk_pipeline_layout.h"
 #include "vk_shader.h"
@@ -224,11 +225,12 @@ hk_populate_fs_key(struct hk_fs_key *key,
 static void
 hk_hash_graphics_state(struct vk_physical_device *device,
                        const struct vk_graphics_pipeline_state *state,
+                       const struct vk_features *features,
                        VkShaderStageFlags stages, blake3_hash blake3_out)
 {
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
-   if (stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
+   if (state && (stages & VK_SHADER_STAGE_FRAGMENT_BIT)) {
       struct hk_fs_key key;
       hk_populate_fs_key(&key, state);
       _mesa_blake3_update(&blake3_ctx, &key, sizeof(key));
@@ -1253,6 +1255,7 @@ static VkResult
 hk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                    struct vk_shader_compile_info *infos,
                    const struct vk_graphics_pipeline_state *state,
+                   const struct vk_features *features,
                    const VkAllocationCallbacks *pAllocator,
                    struct vk_shader **shaders_out)
 {
@@ -1494,7 +1497,7 @@ const struct vk_device_shader_ops hk_device_shader_ops = {
    .get_nir_options = hk_get_nir_options,
    .get_spirv_options = hk_get_spirv_options,
    .preprocess_nir = hk_preprocess_nir,
-   .hash_graphics_state = hk_hash_graphics_state,
+   .hash_state = hk_hash_graphics_state,
    .compile = hk_compile_shaders,
    .deserialize = hk_deserialize_api_shader,
    .cmd_set_dynamic_graphics_state = vk_cmd_set_dynamic_graphics_state,

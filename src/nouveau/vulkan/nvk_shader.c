@@ -247,14 +247,15 @@ nvk_populate_fs_key(struct nak_fs_key *key,
 }
 
 static void
-nvk_hash_graphics_state(struct vk_physical_device *device,
-                        const struct vk_graphics_pipeline_state *state,
-                        VkShaderStageFlags stages,
-                        blake3_hash blake3_out)
+nvk_hash_state(struct vk_physical_device *device,
+               const struct vk_graphics_pipeline_state *state,
+               const struct vk_features *enabled_features,
+               VkShaderStageFlags stages,
+               blake3_hash blake3_out)
 {
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
-   if (stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
+   if (state && (stages & VK_SHADER_STAGE_FRAGMENT_BIT)) {
       struct nak_fs_key key;
       nvk_populate_fs_key(&key, state);
       _mesa_blake3_update(&blake3_ctx, &key, sizeof(key));
@@ -1071,6 +1072,7 @@ nvk_compile_shaders(struct vk_device *vk_dev,
                     uint32_t shader_count,
                     struct vk_shader_compile_info *infos,
                     const struct vk_graphics_pipeline_state *state,
+                    const struct vk_features *enabled_features,
                     const VkAllocationCallbacks* pAllocator,
                     struct vk_shader **shaders_out)
 {
@@ -1386,7 +1388,7 @@ const struct vk_device_shader_ops nvk_device_shader_ops = {
    .get_nir_options = nvk_get_nir_options,
    .get_spirv_options = nvk_get_spirv_options,
    .preprocess_nir = nvk_preprocess_nir,
-   .hash_graphics_state = nvk_hash_graphics_state,
+   .hash_state = nvk_hash_state,
    .compile = nvk_compile_shaders,
    .deserialize = nvk_deserialize_shader,
    .cmd_set_dynamic_graphics_state = vk_cmd_set_dynamic_graphics_state,

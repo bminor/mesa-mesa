@@ -32,6 +32,7 @@
 #include "vk_log.h"
 #include "vk_nir.h"
 #include "vk_physical_device.h"
+#include "vk_physical_device_features.h"
 #include "vk_pipeline_layout.h"
 #include "vk_shader.h"
 #include "vk_shader_module.h"
@@ -1237,8 +1238,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
       }
 
       blake3_hash state_blake3;
-      ops->hash_graphics_state(device->physical, state,
-                               part_stages, state_blake3);
+      ops->hash_state(device->physical, state, &device->enabled_features,
+                      part_stages, state_blake3);
 
       _mesa_blake3_update(&blake3_ctx, state_blake3, sizeof(state_blake3));
       _mesa_blake3_update(&blake3_ctx, layout_blake3, sizeof(layout_blake3));
@@ -1420,7 +1421,7 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
       struct vk_shader *shaders[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
       result = ops->compile(device, partition[p + 1] - partition[p],
                             &infos[partition[p]],
-                            state,
+                            state, &device->enabled_features,
                             &device->alloc,
                             &shaders[partition[p]]);
       if (result != VK_SUCCESS)
@@ -1982,6 +1983,12 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
 
    _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
 
+   blake3_hash features_blake3;
+   ops->hash_state(device->physical, NULL /* state */,
+                   &device->enabled_features, VK_SHADER_STAGE_COMPUTE_BIT,
+                   features_blake3);
+   _mesa_blake3_update(&blake3_ctx, features_blake3, sizeof(features_blake3));
+
    for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
       if (pipeline_layout->set_layouts[i] != NULL) {
          _mesa_blake3_update(&blake3_ctx,
@@ -2040,7 +2047,7 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
 
    struct vk_shader *shader;
    result = ops->compile(device, 1, &compile_info, NULL,
-                         &device->alloc, &shader);
+                         &device->enabled_features, &device->alloc, &shader);
    if (result != VK_SUCCESS)
       return result;
 
