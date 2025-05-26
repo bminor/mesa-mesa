@@ -498,6 +498,13 @@ _mesa_has_texture_multisample(const struct gl_context *ctx)
 }
 
 static inline bool
+_mesa_has_texture_multisample_array(const struct gl_context *ctx)
+{
+   return _mesa_has_ARB_texture_multisample(ctx) ||
+          _mesa_has_OES_texture_storage_multisample_2d_array(ctx);
+}
+
+static inline bool
 _mesa_hw_select_enabled(const struct gl_context *ctx)
 {
    return ctx->RenderMode == GL_SELECT &&

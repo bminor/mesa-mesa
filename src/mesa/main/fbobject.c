@@ -3893,10 +3893,12 @@ check_textarget(struct gl_context *ctx, int dims, GLenum target,
             (_mesa_is_gles(ctx) && ctx->Version < 30);
       break;
    case GL_TEXTURE_2D_MULTISAMPLE:
+      err = dims != 2 ||
+            !_mesa_has_texture_multisample(ctx);
+      break;
    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
       err = dims != 2 ||
-            !ctx->Extensions.ARB_texture_multisample ||
-            (_mesa_is_gles(ctx) && ctx->Version < 31);
+            !_mesa_has_texture_multisample_array(ctx);
       break;
    case GL_TEXTURE_RECTANGLE:
       err = dims != 2 || _mesa_is_gles(ctx) ||

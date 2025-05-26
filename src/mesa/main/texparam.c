@@ -1694,8 +1694,9 @@ _mesa_legal_get_tex_level_parameter_target(struct gl_context *ctx, GLenum target
    case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
       return GL_TRUE;
    case GL_TEXTURE_2D_MULTISAMPLE:
+      return _mesa_has_texture_multisample(ctx);
    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
-      return ctx->Extensions.ARB_texture_multisample;
+      return _mesa_has_texture_multisample_array(ctx);
    case GL_TEXTURE_BUFFER:
       /* GetTexLevelParameter accepts GL_TEXTURE_BUFFER in GL 3.1+ contexts,
        * but not in earlier versions that expose ARB_texture_buffer_object.

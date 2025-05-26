@@ -484,9 +484,12 @@ _is_target_supported(struct gl_context *ctx, GLenum target)
       break;
 
    case GL_TEXTURE_2D_MULTISAMPLE:
+      if (!_mesa_has_texture_multisample(ctx))
+         return false;
+      break;
+
    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
-      if (!_mesa_has_ARB_texture_multisample(ctx) &&
-          !_mesa_is_gles31(ctx))
+      if (!_mesa_has_texture_multisample_array(ctx))
          return false;
       break;
 
