@@ -257,6 +257,12 @@ rra_transcode_instance_node(struct rra_transcoding_context *ctx, const struct ra
 
    memcpy(dst->wto_matrix, src->wto_matrix.values, sizeof(dst->wto_matrix));
    memcpy(dst->otw_matrix, src->otw_matrix.values, sizeof(dst->otw_matrix));
+
+   uint64_t *addr = ralloc(ctx->used_blas, uint64_t);
+   if (addr) {
+      *addr = blas_va;
+      _mesa_set_add(ctx->used_blas, addr);
+   }
 }
 
 static void

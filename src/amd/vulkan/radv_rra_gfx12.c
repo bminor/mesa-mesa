@@ -171,6 +171,8 @@ rra_transcode_node_gfx12(struct rra_transcoding_context *ctx, uint32_t parent_id
          const struct radv_gfx12_instance_node_user_data *user_data =
             (const void *)((const uint8_t *)src_child_node + sizeof(struct radv_gfx12_instance_node));
 
+         uint64_t blas_addr = radv_node_to_addr(dst->pointer_flags_bvh_addr) - user_data->bvh_offset;
+
          dst->pointer_flags_bvh_addr = dst->pointer_flags_bvh_addr - (user_data->bvh_offset >> 3) +
                                        (sizeof(struct rra_accel_struct_metadata) >> 3);
          dst->unused = parent_id;
@@ -179,6 +181,12 @@ rra_transcode_node_gfx12(struct rra_transcoding_context *ctx, uint32_t parent_id
          sideband_data->custom_instance_and_flags = user_data->custom_instance;
          sideband_data->blas_metadata_size = offsetof(struct rra_accel_struct_metadata, unused);
          sideband_data->otw_matrix = user_data->otw_matrix;
+
+         uint64_t *addr = ralloc(ctx->used_blas, uint64_t);
+         if (addr) {
+            *addr = blas_addr;
+            _mesa_set_add(ctx->used_blas, addr);
+         }
       }
    }
 }

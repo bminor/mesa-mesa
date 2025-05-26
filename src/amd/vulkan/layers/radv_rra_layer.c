@@ -183,7 +183,7 @@ exit:
 
 static void
 handle_accel_struct_write(VkCommandBuffer commandBuffer, VkAccelerationStructureKHR accelerationStructure,
-                          uint64_t size)
+                          uint64_t size, bool can_be_tlas)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, accelerationStructure);
@@ -244,6 +244,8 @@ handle_accel_struct_write(VkCommandBuffer commandBuffer, VkAccelerationStructure
       }
    }
 
+   data->can_be_tlas |= can_be_tlas;
+
    if (!data->buffer)
       return;
 
@@ -294,7 +296,8 @@ rra_CmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t in
                                                                        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                                                                        pInfos + i, primitive_counts, &size_info);
 
-      handle_accel_struct_write(commandBuffer, pInfos[i].dstAccelerationStructure, size_info.accelerationStructureSize);
+      handle_accel_struct_write(commandBuffer, pInfos[i].dstAccelerationStructure, size_info.accelerationStructureSize,
+                                pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
    }
 
    simple_mtx_unlock(&device->rra_trace.data_mtx);
@@ -315,7 +318,7 @@ rra_CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopyA
    struct hash_entry *entry = _mesa_hash_table_search(device->rra_trace.accel_structs, src);
    struct radv_rra_accel_struct_data *data = entry->data;
 
-   handle_accel_struct_write(commandBuffer, pInfo->dst, data->size);
+   handle_accel_struct_write(commandBuffer, pInfo->dst, data->size, data->can_be_tlas);
 
    simple_mtx_unlock(&device->rra_trace.data_mtx);
 }
@@ -332,7 +335,7 @@ rra_CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
    simple_mtx_lock(&device->rra_trace.data_mtx);
 
    VK_FROM_HANDLE(vk_acceleration_structure, dst, pInfo->dst);
-   handle_accel_struct_write(commandBuffer, pInfo->dst, dst->size);
+   handle_accel_struct_write(commandBuffer, pInfo->dst, dst->size, true);
 
    simple_mtx_unlock(&device->rra_trace.data_mtx);
 }

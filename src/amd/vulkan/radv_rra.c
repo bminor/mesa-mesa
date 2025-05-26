@@ -290,7 +290,8 @@ rra_validate_header(struct radv_rra_accel_struct_data *accel_struct, const struc
 static VkResult
 rra_dump_acceleration_structure(const struct radv_physical_device *pdev,
                                 struct radv_rra_accel_struct_data *accel_struct, uint8_t *data,
-                                struct hash_table_u64 *accel_struct_vas, bool should_validate, FILE *output)
+                                struct hash_table_u64 *accel_struct_vas, struct set *used_blas, bool should_validate,
+                                FILE *output)
 {
    struct radv_accel_struct_header *header = (struct radv_accel_struct_header *)data;
 
@@ -385,6 +386,7 @@ rra_dump_acceleration_structure(const struct radv_physical_device *pdev,
    }
 
    struct rra_transcoding_context ctx = {
+      .used_blas = used_blas,
       .src = data + header->bvh_offset,
       .dst = dst_structure_data,
       .dst_leaf_offset = RRA_ROOT_NODE_OFFSET + bvh_info.internal_nodes_size,
@@ -992,6 +994,7 @@ radv_rra_dump_trace(VkQueue vk_queue, char *filename)
    uint64_t *ray_history_sizes = NULL;
    struct hash_entry **hash_entries = NULL;
    FILE *file = NULL;
+   struct set *used_blas = NULL;
 
    uint32_t struct_count = _mesa_hash_table_num_entries(device->rra_trace.accel_structs);
    accel_struct_offsets = calloc(struct_count, sizeof(uint64_t));
@@ -1059,14 +1062,43 @@ radv_rra_dump_trace(VkQueue vk_queue, char *filename)
    if (result != VK_SUCCESS)
       goto cleanup;
 
+   used_blas = _mesa_set_create(NULL, _mesa_hash_u64, _mesa_key_u64_equal);
+   if (!used_blas)
+      goto cleanup;
+
    for (unsigned i = 0; i < struct_count; i++) {
       struct radv_rra_accel_struct_data *data = hash_entries[i]->data;
+      if (!data->can_be_tlas)
+         continue;
+
       void *mapped_data = rra_map_accel_struct_data(&copy_ctx, i);
       if (!mapped_data)
          continue;
 
       accel_struct_offsets[written_accel_struct_count] = (uint64_t)ftell(file);
-      result = rra_dump_acceleration_structure(pdev, data, mapped_data, device->rra_trace.accel_struct_vas,
+      result = rra_dump_acceleration_structure(pdev, data, mapped_data, device->rra_trace.accel_struct_vas, used_blas,
+                                               device->rra_trace.validate_as, file);
+
+      rra_unmap_accel_struct_data(&copy_ctx, i);
+
+      if (result == VK_SUCCESS)
+         written_accel_struct_count++;
+   }
+
+   for (unsigned i = 0; i < struct_count; i++) {
+      struct radv_rra_accel_struct_data *data = hash_entries[i]->data;
+      if (data->can_be_tlas)
+         continue;
+
+      if (!_mesa_set_search(used_blas, &data->va))
+         continue;
+
+      void *mapped_data = rra_map_accel_struct_data(&copy_ctx, i);
+      if (!mapped_data)
+         continue;
+
+      accel_struct_offsets[written_accel_struct_count] = (uint64_t)ftell(file);
+      result = rra_dump_acceleration_structure(pdev, data, mapped_data, device->rra_trace.accel_struct_vas, used_blas,
                                                device->rra_trace.validate_as, file);
 
       rra_unmap_accel_struct_data(&copy_ctx, i);
@@ -1259,6 +1291,7 @@ cleanup:
    if (file)
       fclose(file);
 
+   _mesa_set_destroy(used_blas, NULL);
    free(hash_entries);
    free(ray_history_sizes);
    free(ray_history_offsets);
