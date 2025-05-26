@@ -160,6 +160,14 @@ enum AHardwareBuffer_Format {
     AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420             = 0x23,
 
     /**
+     * YUV P010 format.
+     * Must have an even width and height. Can be accessed in OpenGL
+     * shaders through an external sampler. Does not support mip-maps
+     * cube-maps or multi-layered textures.
+     */
+    AHARDWAREBUFFER_FORMAT_YCbCr_P010               = 0x36,
+
+    /**
      * Corresponding formats:
      *   Vulkan: VK_FORMAT_R8_UNORM
      *   OpenGL ES: GR_GL_R8

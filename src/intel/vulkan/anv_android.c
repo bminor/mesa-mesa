@@ -119,6 +119,8 @@ vk_format_from_android(unsigned android_format, unsigned android_usage)
       return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    case AHARDWAREBUFFER_FORMAT_YV12:
       return VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+   case AHARDWAREBUFFER_FORMAT_YCbCr_P010:
+      return VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
    case AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED:
       if (android_usage & BUFFER_USAGE_CAMERA_MASK)
          return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
