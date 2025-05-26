@@ -73,22 +73,24 @@ rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_i
 
       uint32_t valid_child_count_minus_one = src->child_count_exponents >> 28;
 
-      uint32_t internal_id = src->internal_base_id;
-      uint32_t primitive_id = src->primitive_base_id;
-      for (uint32_t i = 0; i <= valid_child_count_minus_one; i++) {
-         uint32_t child_type = (src->children[i].dword2 >> 24) & 0xf;
-         uint32_t child_size = src->children[i].dword2 >> 28;
+      if (valid_child_count_minus_one != 0xf) {
+         uint32_t internal_id = src->internal_base_id;
+         uint32_t primitive_id = src->primitive_base_id;
+         for (uint32_t i = 0; i <= valid_child_count_minus_one; i++) {
+            uint32_t child_type = (src->children[i].dword2 >> 24) & 0xf;
+            uint32_t child_size = src->children[i].dword2 >> 28;
 
-         uint32_t child_id;
-         if (child_type == radv_bvh_node_box32) {
-            child_id = internal_id | child_type;
-            internal_id += (child_size * RADV_GFX12_BVH_NODE_SIZE) >> 3;
-         } else {
-            child_id = primitive_id | child_type;
-            primitive_id += (child_size * RADV_GFX12_BVH_NODE_SIZE) >> 3;
+            uint32_t child_id;
+            if (child_type == radv_bvh_node_box32) {
+               child_id = internal_id | child_type;
+               internal_id += (child_size * RADV_GFX12_BVH_NODE_SIZE) >> 3;
+            } else {
+               child_id = primitive_id | child_type;
+               primitive_id += (child_size * RADV_GFX12_BVH_NODE_SIZE) >> 3;
+            }
+
+            rra_gather_bvh_info_gfx12(bvh, child_id, dst);
          }
-
-         rra_gather_bvh_info_gfx12(bvh, child_id, dst);
       }
    } else {
       dst->geometry_infos[get_geometry_id(node, node_type)].primitive_count++;
@@ -107,6 +109,8 @@ rra_transcode_box8_node(struct rra_transcoding_context *ctx, const struct radv_g
    dst->unused = parent_id;
 
    uint32_t valid_child_count_minus_one = dst->child_count_exponents >> 28;
+   if (valid_child_count_minus_one == 0xf)
+      return;
 
    uint32_t internal_child_count = 0;
    uint32_t leaf_child_count = 0;
