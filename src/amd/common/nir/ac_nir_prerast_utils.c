@@ -238,19 +238,6 @@ ac_nir_export_position(nir_builder *b,
    unsigned exp_num = 0;
    unsigned exp_pos_offset = 0;
 
-   if (outputs_written & VARYING_BIT_POS) {
-      /* GFX10 (Navi1x) skip POS0 exports if EXEC=0 and DONE=0, causing a hang.
-      * Setting valid_mask=1 prevents it and has no other effect.
-      */
-      const unsigned pos_flags = gfx_level == GFX10 ? AC_EXP_FLAG_VALID_MASK : 0;
-      nir_def *pos = get_pos0_output(b, out->outputs[VARYING_SLOT_POS]);
-
-      exp[exp_num] = export(b, pos, row, V_008DFC_SQ_EXP_POS + exp_num, pos_flags, 0xf);
-      exp_num++;
-   } else {
-      exp_pos_offset++;
-   }
-
    uint64_t mask =
       VARYING_BIT_PSIZ |
       VARYING_BIT_EDGE |
@@ -269,6 +256,38 @@ ac_nir_export_position(nir_builder *b,
       outputs_written &= ~VARYING_BIT_LAYER;
    if (!out->outputs[VARYING_SLOT_VIEWPORT][0] || !out->infos[VARYING_SLOT_VIEWPORT].as_sysval_mask)
       outputs_written &= ~VARYING_BIT_VIEWPORT;
+
+   nir_def *clip_dist[8] = {0};
+
+   if (outputs_written & VARYING_BIT_CLIP_VERTEX) {
+      /* Convert CLIP_VERTEX to clip distances. */
+      assert(!(outputs_written & (VARYING_BIT_CLIP_DIST0 | VARYING_BIT_CLIP_DIST1)));
+      nir_def *vtx = get_export_output(b, out->outputs[VARYING_SLOT_CLIP_VERTEX]);
+
+      u_foreach_bit(i, clip_cull_mask) {
+         nir_def *ucp = nir_load_user_clip_plane(b, .ucp_id = i);
+         clip_dist[i] = nir_fdot4(b, vtx, ucp);
+      }
+   } else {
+      /* Gather clip/cull distances. */
+      u_foreach_bit(i, clip_cull_mask) {
+         assert(outputs_written & (VARYING_BIT_CLIP_DIST0 << (i / 4)));
+         clip_dist[i] = out->outputs[VARYING_SLOT_CLIP_DIST0 + i / 4][i % 4];
+      }
+   }
+
+   if (outputs_written & VARYING_BIT_POS) {
+      /* GFX10 (Navi1x) skip POS0 exports if EXEC=0 and DONE=0, causing a hang.
+      * Setting valid_mask=1 prevents it and has no other effect.
+      */
+      const unsigned pos_flags = gfx_level == GFX10 ? AC_EXP_FLAG_VALID_MASK : 0;
+      nir_def *pos = get_pos0_output(b, out->outputs[VARYING_SLOT_POS]);
+
+      exp[exp_num] = export(b, pos, row, V_008DFC_SQ_EXP_POS + exp_num, pos_flags, 0xf);
+      exp_num++;
+   } else {
+      exp_pos_offset++;
+   }
 
    if ((outputs_written & mask) || force_vrs) {
       nir_def *zero = nir_imm_float(b, 0);
@@ -325,34 +344,11 @@ ac_nir_export_position(nir_builder *b,
    }
 
    for (int i = 0; i < 2; i++) {
-      if ((outputs_written & (VARYING_BIT_CLIP_DIST0 << i)) &&
-          (clip_cull_mask & BITFIELD_RANGE(i * 4, 4))) {
-         exp[exp_num] = export(
-            b, get_export_output(b, out->outputs[VARYING_SLOT_CLIP_DIST0 + i]), row,
-            V_008DFC_SQ_EXP_POS + exp_num + exp_pos_offset, 0,
-            (clip_cull_mask >> (i * 4)) & 0xf);
+      if (clip_cull_mask & BITFIELD_RANGE(i * 4, 4)) {
+         exp[exp_num] = export(b, get_export_output(b, clip_dist + i * 4), row,
+                               V_008DFC_SQ_EXP_POS + exp_num + exp_pos_offset, 0,
+                               (clip_cull_mask >> (i * 4)) & 0xf);
          exp_num++;
-      }
-   }
-
-   if (outputs_written & VARYING_BIT_CLIP_VERTEX) {
-      nir_def *vtx = get_export_output(b, out->outputs[VARYING_SLOT_CLIP_VERTEX]);
-
-      /* Clip distance for clip vertex to each user clip plane. */
-      nir_def *clip_dist[8] = {0};
-      u_foreach_bit (i, clip_cull_mask) {
-         nir_def *ucp = nir_load_user_clip_plane(b, .ucp_id = i);
-         clip_dist[i] = nir_fdot4(b, vtx, ucp);
-      }
-
-      for (int i = 0; i < 2; i++) {
-         if (clip_cull_mask & BITFIELD_RANGE(i * 4, 4)) {
-            exp[exp_num] = export(
-               b, get_export_output(b, clip_dist + i * 4), row,
-               V_008DFC_SQ_EXP_POS + exp_num + exp_pos_offset, 0,
-               (clip_cull_mask >> (i * 4)) & 0xf);
-            exp_num++;
-         }
       }
    }
 
