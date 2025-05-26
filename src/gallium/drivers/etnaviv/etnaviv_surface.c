@@ -94,7 +94,6 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    pipe_resource_reference(&surf->prsc, prsc);
 
    surf->base.format = templat->format;
-   surf->base.writable = templat->writable; /* what is this for anyway */
    surf->base.u = templat->u;
    surf->level = lev;
 

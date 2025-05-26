@@ -410,7 +410,6 @@ struct pipe_surface
 {
    struct pipe_reference reference;
    enum pipe_format format:16;
-   unsigned writable:1;          /**< writable shader resource */
    struct pipe_resource *texture; /**< resource into which this is a view  */
    struct pipe_context *context; /**< context this surface belongs to */
 
