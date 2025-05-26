@@ -156,6 +156,128 @@ def write_format_table_header(file):
     print(CopyRight.strip(), file=file)
     print(file=file)
 
+def write_format_enum_section(formats, type_name=None, max_formats=None):
+    assert(max_formats == None or len(formats) <= max_formats)
+    for idx, f in enumerate(formats):
+        # Vertex formats must be first and must be <= 255.
+        if idx == 0 and type_name != None:
+            print('   PIPE_FORMAT_%s_START,' % (type_name), file=sys.stdout3)
+            print('   %s = PIPE_FORMAT_%s_START,' % (f, type_name), file=sys.stdout3)
+        elif idx == len(formats) - 1 and type_name != None:
+            print('   %s,' % (f), file=sys.stdout3)
+            print('   PIPE_FORMAT_%s_END = %s,' % (type_name, f), file=sys.stdout3)
+        else:
+            print('   %s,' % (f), file=sys.stdout3)
+
+def collect_vertex_formats(formats):
+    vertex_formats = []
+    all_comp_types = [
+        'UINT', 'SINT', 'FLOAT', 'UNORM', 'SNORM',
+        'USCALED', 'SSCALED', 'FIXED'
+    ]
+
+    # RxGxBxAx_<type> first, then we'll deal with custom formats
+    for bitsz in [64, 32, 16, 8]:
+        for comp_type in all_comp_types:
+            comp_suffix = ''
+            for comp_name in ['R', 'G', 'B', 'A']:
+                comp_suffix += comp_name + str(bitsz)
+                format_name = 'PIPE_FORMAT_' + comp_suffix + '_' + comp_type
+                f = formats.pop(format_name, None)
+                if f != None:
+                    vertex_formats.append(f.name)
+
+    other_comp_suffixes = {
+        # [A8]B8G8R8 variants
+        'B8G8R8': all_comp_types,
+        'B8G8R8A8': all_comp_types,
+        'A8B8G8R8': ['USCALED', 'SSCALED'],
+        # A8R8G8B8
+        'A8R8G8B8': ['UNORM'],
+        # R10G10B10A2/B10G10R10A2 variants
+        'R10G10B10A2': all_comp_types,
+        'B10G10R10A2': all_comp_types,
+        # R11G11B10 variants
+        'R11G11B10': ['FLOAT'],
+    }
+    for comp_suffix, comp_types in other_comp_suffixes.items():
+        for comp_type in comp_types:
+            format_name = 'PIPE_FORMAT_' + comp_suffix + '_' + comp_type
+            f = formats.pop(format_name, None)
+            if f != None:
+                    vertex_formats.append(f.name)
+
+    return vertex_formats
+
+def collect_yuv_formats(formats):
+    yuv_formats = []
+    for name, f in formats.items():
+        if f.colorspace == 'YUV':
+            yuv_formats.append(f.name)
+    for f in yuv_formats:
+        formats.pop(f)
+    return yuv_formats
+
+def collect_compr_formats(formats):
+    compr_formats = []
+    for compr_type in ['s3tc', 'rgtc', 'etc', 'bptc', 'astc', 'atc', 'fxt1']:
+        for cs in ['RGB', 'SRGB']:
+            for name, f in formats.items():
+                if f.layout == compr_type and f.colorspace == cs:
+                    compr_formats.append(f.name)
+    for f in compr_formats:
+        formats.pop(f)
+    return compr_formats
+
+def collect_zs_formats(formats):
+    zs_formats = []
+    for name, f in formats.items():
+        if f.colorspace == 'ZS':
+            zs_formats.append(f.name)
+    for f in zs_formats:
+        formats.pop(f)
+    return zs_formats
+
+def write_format_enum(formats):
+    remaining_formats = {}
+    for f in formats:
+        if f.name != 'PIPE_FORMAT_NONE':
+            remaining_formats[f.name] = f
+
+    vertex_formats = collect_vertex_formats(remaining_formats)
+    yuv_formats = collect_yuv_formats(remaining_formats)
+    compr_formats = collect_compr_formats(remaining_formats)
+    zs_formats = collect_zs_formats(remaining_formats)
+
+    print('/**', file=sys.stdout3)
+    print(' * Formats for textures, surfaces and vertex data', file=sys.stdout3)
+    print(' */', file=sys.stdout3)
+    print("enum pipe_format {", file=sys.stdout3)
+    print('   PIPE_FORMAT_NONE,', file=sys.stdout3)
+
+    print(file=sys.stdout3)
+    print('   /* Vertex formats must be first and must be <= 255 */', file=sys.stdout3)
+    write_format_enum_section(vertex_formats, "VERTEX", max_formats=255)
+
+    print(file=sys.stdout3)
+    print('   /* YUV formats. */', file=sys.stdout3)
+    write_format_enum_section(yuv_formats, "YUV")
+
+    print(file=sys.stdout3)
+    print('   /* Compressed formats. */', file=sys.stdout3)
+    write_format_enum_section(compr_formats, "COMPR")
+
+    print(file=sys.stdout3)
+    print('   /* Depth/stencil formats. */', file=sys.stdout3)
+    write_format_enum_section(zs_formats, "ZS")
+
+    print(file=sys.stdout3)
+    print('   /* Other formats. */', file=sys.stdout3)
+    write_format_enum_section(remaining_formats)
+
+    print('   PIPE_FORMAT_COUNT,', file=sys.stdout3)
+    print('};', file=sys.stdout3)
+
 def write_format_aliases(formats):
     print("#if UTIL_ARCH_LITTLE_ENDIAN", file=sys.stdout3)
     for f in formats:
@@ -201,6 +323,8 @@ def write_format_table(formats):
     print('#endif', file=sys.stdout3)
     print(file=sys.stdout3)
 
+    write_format_enum(formats)
+    print('', file=sys.stdout3)
     write_format_aliases(formats)
 
     print('#ifdef __cplusplus', file=sys.stdout3)
