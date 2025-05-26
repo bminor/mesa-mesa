@@ -1101,7 +1101,9 @@ radv_remove_color_exports(const struct radv_graphics_state_key *gfx_state, nir_s
          continue;
 
       const uint8_t cb_idx = color_remap[idx];
-      unsigned col_format = (gfx_state->ps.epilog.spi_shader_col_format >> (4 * cb_idx)) & 0xf;
+      unsigned col_format = cb_idx == MESA_VK_ATTACHMENT_UNUSED
+                               ? V_028714_SPI_SHADER_ZERO
+                               : (gfx_state->ps.epilog.spi_shader_col_format >> (4 * cb_idx)) & 0xf;
 
       if (col_format == V_028714_SPI_SHADER_ZERO) {
          /* Remove the color export if it's unused or in presence of holes. */
