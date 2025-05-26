@@ -45,7 +45,6 @@
 #include "util/log.h"
 #include "util/os_file.h"
 #include "util/u_memory.h"
-#include "util/u_dl.h"
 #include "util/u_debug.h"
 #include "util/xmlconfig.h"
 
@@ -60,9 +59,6 @@
 struct pipe_loader_drm_device {
    struct pipe_loader_device base;
    const struct drm_driver_descriptor *dd;
-#ifndef GALLIUM_STATIC_TARGETS
-   struct util_dl_library *lib;
-#endif
    int fd;
 };
 
@@ -70,7 +66,6 @@ struct pipe_loader_drm_device {
 
 static const struct pipe_loader_ops pipe_loader_drm_ops;
 
-#ifdef GALLIUM_STATIC_TARGETS
 static const struct drm_driver_descriptor *driver_descriptors[] = {
    &i915_driver_descriptor,
    &iris_driver_descriptor,
@@ -93,36 +88,15 @@ static const struct drm_driver_descriptor *driver_descriptors[] = {
    &lima_driver_descriptor,
    &zink_driver_descriptor,
 };
-#endif
 
 static const struct drm_driver_descriptor *
-get_driver_descriptor(const char *driver_name, struct util_dl_library **plib)
+get_driver_descriptor(const char *driver_name)
 {
-#ifdef GALLIUM_STATIC_TARGETS
    for (int i = 0; i < ARRAY_SIZE(driver_descriptors); i++) {
       if (strcmp(driver_descriptors[i]->driver_name, driver_name) == 0)
          return driver_descriptors[i];
    }
    return &kmsro_driver_descriptor;
-#else
-   const char *search_dir = os_get_option("GALLIUM_PIPE_SEARCH_DIR");
-   if (search_dir == NULL)
-      search_dir = PIPE_SEARCH_DIR;
-
-   *plib = pipe_loader_find_module(driver_name, search_dir);
-   if (!*plib)
-      return NULL;
-
-   const struct drm_driver_descriptor *dd =
-         (const struct drm_driver_descriptor *)
-         util_dl_get_proc_address(*plib, "driver_descriptor");
-
-   /* sanity check on the driver name */
-   if (dd && strcmp(dd->driver_name, driver_name) == 0)
-      return dd;
-#endif
-
-   return NULL;
 }
 
 static int
@@ -176,7 +150,6 @@ pipe_loader_drm_probe_fd_nodup(struct pipe_loader_device **dev, int fd, bool zin
    if (strcmp(ddev->base.driver_name, "virtio_gpu") == 0) {
       struct virgl_renderer_capset_drm caps;
       if (get_nctx_caps(fd, &caps) == 0) {
-#ifdef GALLIUM_STATIC_TARGETS
          for (int i = 0; i < ARRAY_SIZE(driver_descriptors); i++) {
             if (!driver_descriptors[i]->probe_nctx)
                continue;
@@ -187,17 +160,10 @@ pipe_loader_drm_probe_fd_nodup(struct pipe_loader_device **dev, int fd, bool zin
             ddev->base.driver_name = strdup(driver_descriptors[i]->driver_name);
             break;
          }
-#else
-	 mesa_logw("Dynamic pipe loader does not support virtgpu native context");
-#endif
       }
    }
 
-   struct util_dl_library **plib = NULL;
-#ifndef GALLIUM_STATIC_TARGETS
-   plib = &ddev->lib;
-#endif
-   ddev->dd = get_driver_descriptor(ddev->base.driver_name, plib);
+   ddev->dd = get_driver_descriptor(ddev->base.driver_name);
 
    /* vgem is a virtual device; don't try using it with kmsro */
    if (strcmp(ddev->base.driver_name, "vgem") == 0)
@@ -205,7 +171,7 @@ pipe_loader_drm_probe_fd_nodup(struct pipe_loader_device **dev, int fd, bool zin
 
    /* kmsro supports lots of drivers, try as a fallback */
    if (!ddev->dd && !zink)
-      ddev->dd = get_driver_descriptor("kmsro", plib);
+      ddev->dd = get_driver_descriptor("kmsro");
 
    if (!ddev->dd)
       goto fail;
@@ -214,10 +180,6 @@ pipe_loader_drm_probe_fd_nodup(struct pipe_loader_device **dev, int fd, bool zin
    return true;
 
   fail:
-#ifndef GALLIUM_STATIC_TARGETS
-   if (ddev->lib)
-      util_dl_close(ddev->lib);
-#endif
    FREE(ddev->base.driver_name);
    FREE(ddev);
    return false;
@@ -296,11 +258,6 @@ static void
 pipe_loader_drm_release(struct pipe_loader_device **dev)
 {
    struct pipe_loader_drm_device *ddev = pipe_loader_drm_device(*dev);
-
-#ifndef GALLIUM_STATIC_TARGETS
-   if (ddev->lib)
-      util_dl_close(ddev->lib);
-#endif
 
    close(ddev->fd);
    FREE(ddev->base.driver_name);
@@ -396,9 +353,8 @@ const struct driOptionDescription *
 pipe_loader_drm_get_driconf_by_name(const char *driver_name, unsigned *count)
 {
    driOptionDescription *driconf = NULL;
-   struct util_dl_library *lib = NULL;
    const struct drm_driver_descriptor *dd =
-      get_driver_descriptor(driver_name, &lib);
+      get_driver_descriptor(driver_name);
 
    if (!dd) {
       *count = 0;
@@ -442,8 +398,6 @@ pipe_loader_drm_get_driconf_by_name(const char *driver_name, unsigned *count)
          }
       }
    }
-   if (lib)
-      util_dl_close(lib);
 
    return driconf;
 }

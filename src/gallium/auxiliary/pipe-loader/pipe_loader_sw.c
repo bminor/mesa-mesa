@@ -34,7 +34,6 @@
 #include "util/detect_os.h"
 #include "util/os_file.h"
 #include "util/u_memory.h"
-#include "util/u_dl.h"
 #include "sw/dri/dri_sw_winsys.h"
 #include "sw/kms-dri/kms_dri_sw_winsys.h"
 #include "sw/null/null_sw_winsys.h"
@@ -49,9 +48,6 @@
 struct pipe_loader_sw_device {
    struct pipe_loader_device base;
    const struct sw_driver_descriptor *dd;
-#ifndef GALLIUM_STATIC_TARGETS
-   struct util_dl_library *lib;
-#endif
    struct sw_winsys *ws;
    int fd;
 };
@@ -63,7 +59,6 @@ static const struct pipe_loader_ops pipe_loader_sw_ops;
 static const struct pipe_loader_ops pipe_loader_vk_ops;
 #endif
 
-#ifdef GALLIUM_STATIC_TARGETS
 static const struct sw_driver_descriptor driver_descriptors = {
    .create_screen = sw_screen_create_vk,
    .winsys = {
@@ -92,9 +87,8 @@ static const struct sw_driver_descriptor driver_descriptors = {
       { 0 },
    }
 };
-#endif
 
-#if defined(GALLIUM_STATIC_TARGETS) && defined(HAVE_ZINK) && defined(HAVE_DRI)
+#if defined(HAVE_ZINK) && defined(HAVE_DRI)
 static const struct sw_driver_descriptor kopper_driver_descriptors = {
    .create_screen = sw_screen_create_zink,
    .winsys = {
@@ -131,29 +125,9 @@ pipe_loader_sw_probe_init_common(struct pipe_loader_sw_device *sdev)
    sdev->base.ops = &pipe_loader_sw_ops;
    sdev->fd = -1;
 
-#ifdef GALLIUM_STATIC_TARGETS
    sdev->dd = &driver_descriptors;
    if (!sdev->dd)
       return false;
-#else
-   const char *search_dir = os_get_option("GALLIUM_PIPE_SEARCH_DIR");
-   if (search_dir == NULL)
-      search_dir = PIPE_SEARCH_DIR;
-
-   sdev->lib = pipe_loader_find_module("swrast", search_dir);
-   if (!sdev->lib)
-      return false;
-
-   sdev->dd = (const struct sw_driver_descriptor *)
-      util_dl_get_proc_address(sdev->lib, "swrast_driver_descriptor");
-
-   if (!sdev->dd){
-      util_dl_close(sdev->lib);
-      sdev->lib = NULL;
-      return false;
-   }
-#endif
-
    return true;
 }
 
@@ -166,41 +140,12 @@ pipe_loader_vk_probe_init_common(struct pipe_loader_sw_device *sdev)
    sdev->base.ops = &pipe_loader_vk_ops;
    sdev->fd = -1;
 
-#ifdef GALLIUM_STATIC_TARGETS
    sdev->dd = &kopper_driver_descriptors;
    if (!sdev->dd)
       return false;
-#else
-   const char *search_dir = os_get_option("GALLIUM_PIPE_SEARCH_DIR");
-   if (search_dir == NULL)
-      search_dir = PIPE_SEARCH_DIR;
-
-   sdev->lib = pipe_loader_find_module("swrast", search_dir);
-   if (!sdev->lib)
-      return false;
-
-   sdev->dd = (const struct sw_driver_descriptor *)
-      util_dl_get_proc_address(sdev->lib, "swrast_driver_descriptor");
-
-   if (!sdev->dd){
-      util_dl_close(sdev->lib);
-      sdev->lib = NULL;
-      return false;
-   }
-#endif
-
    return true;
 }
 #endif
-
-static void
-pipe_loader_sw_probe_teardown_common(struct pipe_loader_sw_device *sdev)
-{
-#ifndef GALLIUM_STATIC_TARGETS
-   if (sdev->lib)
-      util_dl_close(sdev->lib);
-#endif
-}
 
 #ifdef HAVE_DRI
 bool
@@ -228,7 +173,6 @@ pipe_loader_sw_probe_dri(struct pipe_loader_device **devs, const struct drisw_lo
    return true;
 
 fail:
-   pipe_loader_sw_probe_teardown_common(sdev);
    FREE(sdev);
    return false;
 }
@@ -258,7 +202,6 @@ pipe_loader_vk_probe_dri(struct pipe_loader_device **devs)
    return true;
 
 fail:
-   pipe_loader_sw_probe_teardown_common(sdev);
    FREE(sdev);
    return false;
 }
@@ -294,7 +237,6 @@ pipe_loader_sw_probe_kms(struct pipe_loader_device **devs, int fd)
    return true;
 
 fail:
-   pipe_loader_sw_probe_teardown_common(sdev);
    if (sdev->fd != -1)
       close(sdev->fd);
    FREE(sdev);
@@ -327,7 +269,6 @@ pipe_loader_sw_probe_null(struct pipe_loader_device **devs)
    return true;
 
 fail:
-   pipe_loader_sw_probe_teardown_common(sdev);
    FREE(sdev);
    return false;
 }
@@ -372,7 +313,6 @@ pipe_loader_sw_probe_wrapped(struct pipe_loader_device **dev,
    return true;
 
 fail:
-   pipe_loader_sw_probe_teardown_common(sdev);
    FREE(sdev);
    return false;
 }
@@ -384,10 +324,6 @@ pipe_loader_sw_release(struct pipe_loader_device **dev)
       pipe_loader_sw_device(*dev);
 
    sdev->ws->destroy(sdev->ws);
-#ifndef GALLIUM_STATIC_TARGETS
-   if (sdev->lib)
-      util_dl_close(sdev->lib);
-#endif
 
 #ifdef HAVE_DRISW_KMS
    if (sdev->fd != -1)

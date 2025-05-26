@@ -56,13 +56,6 @@ struct pipe_loader_ops {
 };
 
 /**
- * Open the pipe driver module that contains the specified driver.
- */
-struct util_dl_library *
-pipe_loader_find_module(const char *driver_name,
-                        const char *library_paths);
-
-/**
  * Free the base device structure.
  *
  * Implementations of pipe_loader_ops::release must call this.

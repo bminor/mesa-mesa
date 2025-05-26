@@ -47,7 +47,7 @@ libpipe_loader_static = static_library(
     inc_util, inc_loader, inc_gallium, inc_include, inc_src, inc_gallium_aux,
     inc_gallium_winsys, inc_gallium_drivers,
   ],
-  c_args : [libpipe_loader_defines, '-DGALLIUM_STATIC_TARGETS=1', renderonly_drivers_c_args],
+  c_args : [libpipe_loader_defines, renderonly_drivers_c_args],
   gnu_symbol_visibility : 'hidden',
   link_with : [libpipe_loader_links],
   dependencies : [dep_libdrm, idep_xmlconfig, idep_mesautil],

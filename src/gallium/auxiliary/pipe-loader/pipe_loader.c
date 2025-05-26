@@ -30,8 +30,6 @@
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
 #include "util/u_string.h"
-#include "util/u_dl.h"
-#include "util/u_file.h"
 #include "util/xmlconfig.h"
 #include "util/driconf.h"
 
@@ -41,8 +39,6 @@
 #include <stdlib.h>
 #define PATH_MAX _MAX_PATH
 #endif
-
-#define MODULE_PREFIX "pipe_"
 
 static int (*backends[])(struct pipe_loader_device **, int) = {
 #ifdef HAVE_LIBDRM
@@ -185,38 +181,4 @@ struct pipe_screen *
 pipe_loader_create_screen(struct pipe_loader_device *dev, bool driver_name_is_inferred)
 {
    return pipe_loader_create_screen_vk(dev, false, driver_name_is_inferred);
-}
-
-struct util_dl_library *
-pipe_loader_find_module(const char *driver_name,
-                        const char *library_paths)
-{
-   struct util_dl_library *lib;
-   const char *next;
-   char path[PATH_MAX];
-   int len, ret;
-
-   for (next = library_paths; *next; library_paths = next + 1) {
-      next = strchrnul(library_paths, ':');
-      len = next - library_paths;
-
-      if (len)
-         ret = snprintf(path, sizeof(path), "%.*s/%s%s%s",
-                        len, library_paths,
-                        MODULE_PREFIX, driver_name, UTIL_DL_EXT);
-      else
-         ret = snprintf(path, sizeof(path), "%s%s%s",
-                        MODULE_PREFIX, driver_name, UTIL_DL_EXT);
-
-      if (ret > 0 && ret < sizeof(path) && u_file_access(path, 0) != -1) {
-         lib = util_dl_open(path);
-         if (lib) {
-            return lib;
-         }
-         fprintf(stderr, "ERROR: Failed to load pipe driver at `%s': %s\n",
-                         path, util_dl_error());
-      }
-   }
-
-   return NULL;
 }
