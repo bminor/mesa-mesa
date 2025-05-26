@@ -32,6 +32,7 @@
 #include "vk_debug_utils.h"
 #include "vk_device.h"
 #include "vk_pipeline_cache.h"
+#include "vk_shader.h"
 
 #include <fcntl.h>
 #include <xf86drm.h>
@@ -483,7 +484,7 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
       .robustness = &vk_robustness_disabled,
       .stage = MESA_SHADER_FRAGMENT,
    };
-   hk_compile_shader(dev, &info, NULL, pAllocator, &dev->null_fs);
+   hk_compile_shader(dev, &info, NULL, NULL, pAllocator, &dev->null_fs);
    if (!dev->null_fs) {
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
       goto fail_meta;

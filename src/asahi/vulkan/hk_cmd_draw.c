@@ -57,6 +57,7 @@
 #include "vk_graphics_state.h"
 #include "vk_pipeline.h"
 #include "vk_render_pass.h"
+#include "vk_shader.h"
 #include "vk_standard_sample_locations.h"
 #include "vk_util.h"
 
@@ -1313,7 +1314,7 @@ hk_build_meta_shader_locked(struct hk_device *dev, struct hk_internal_key *key,
    hk_preprocess_nir_internal(dev->vk.physical, b.shader);
 
    struct hk_api_shader *s;
-   if (hk_compile_shader(dev, &info, NULL, NULL, &s) != VK_SUCCESS)
+   if (hk_compile_shader(dev, &info, NULL, NULL, NULL, &s) != VK_SUCCESS)
       return NULL;
 
    /* ..and cache it before we return. The key is on the stack right now, so
