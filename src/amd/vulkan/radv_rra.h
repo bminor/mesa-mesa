@@ -271,7 +271,7 @@ static_assert(sizeof(struct rra_geometry_info) == 12, "rra_geometry_info does no
 
 struct rra_validation_context {
    bool failed;
-   char location[31];
+   char location[63];
 };
 
 void PRINTFLIKE(2, 3) rra_validation_fail(struct rra_validation_context *ctx, const char *message, ...);
