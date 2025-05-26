@@ -137,6 +137,27 @@ void si_get_shader_variant_info(struct si_shader *shader,
                      shader->info.writes_stencil = true;
                   else if (sem.location == FRAG_RESULT_SAMPLE_MASK)
                      shader->info.writes_sample_mask = true;
+               } else if (nir->info.stage <= MESA_SHADER_GEOMETRY &&
+                          !shader->key.ge.as_ls && !shader->key.ge.as_es) {
+                  nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+
+                  /* Clip/cull distances must be gathered manually because nir_opt_clip_cull_const
+                   * can reduce their number.
+                   */
+                  if ((sem.location == VARYING_SLOT_CLIP_DIST0 ||
+                       sem.location == VARYING_SLOT_CLIP_DIST1) && !sem.no_sysval_output) {
+                     assert(nir_src_as_uint(*nir_get_io_offset_src(intr)) == 0);
+                     unsigned index = (sem.location - VARYING_SLOT_CLIP_DIST0) * 4 +
+                                      nir_intrinsic_component(intr);
+
+                     if (index < nir->info.clip_distance_array_size) {
+                        assert(shader->selector->info.clipdist_mask & BITFIELD_BIT(index));
+                        shader->info.clipdist_mask |= BITFIELD_BIT(index);
+                     } else if (index < nir->info.clip_distance_array_size +
+                                        nir->info.cull_distance_array_size) {
+                        shader->info.culldist_mask |= BITFIELD_BIT(index);
+                     }
+                  }
                }
                break;
             case nir_intrinsic_demote:
@@ -259,12 +280,11 @@ void si_get_shader_variant_info(struct si_shader *shader,
             shader->info.num_streamout_vec4s = DIV_ROUND_UP(num_streamout_dwords, 4);
          }
 
-         shader->info.clipdist_mask =
-            (shader->key.ge.mono.write_pos_to_clipvertex ?
-               SI_USER_CLIP_PLANE_MASK : shader->selector->info.clipdist_mask) &
-            ~shader->key.ge.opt.kill_clip_distances;
-         shader->info.culldist_mask = BITFIELD_RANGE(nir->info.clip_distance_array_size,
-                                                     nir->info.cull_distance_array_size);
+         if (shader->key.ge.mono.write_pos_to_clipvertex ||
+             nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX)
+            shader->info.clipdist_mask = SI_USER_CLIP_PLANE_MASK;
+
+         shader->info.clipdist_mask &= ~shader->key.ge.opt.kill_clip_distances;
       }
    }
 }

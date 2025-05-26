@@ -109,6 +109,7 @@ struct si_shader_info {
    uint8_t num_tess_level_vram_outputs; /* max "get_unique_index_patch" + 1*/
 
    uint8_t clipdist_mask;
+   bool has_clip_outputs;
    bool gs_writes_stream0;
 
    uint16_t esgs_vertex_stride;

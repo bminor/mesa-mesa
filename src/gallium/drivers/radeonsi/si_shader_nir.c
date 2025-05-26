@@ -402,6 +402,10 @@ char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
 
    NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
 
+   /* IO must be scalar when this is called. */
+   if (nir->info.stage <= MESA_SHADER_GEOMETRY && nir->info.stage != MESA_SHADER_TESS_CTRL)
+      NIR_PASS(_, nir, nir_opt_clip_cull_const);
+
    /* Require divergence analysis to identify divergent loops. */
    nir_metadata_require(nir_shader_get_entrypoint(nir), nir_metadata_divergence);
 

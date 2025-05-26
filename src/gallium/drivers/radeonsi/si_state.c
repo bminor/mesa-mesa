@@ -897,7 +897,8 @@ static void si_emit_clip_regs(struct si_context *sctx, unsigned index)
                           vs->selector->info.base.vs.window_space_position : 0;
    unsigned ucp_mask = 0, clipdist_mask = 0, culldist_mask = 0;
 
-   if (!vs->info.clipdist_mask && !vs->info.culldist_mask) {
+   /* clipdist_mask can include lowered ClipVertex = Position, so check both fields. */
+   if (!vs->selector->info.has_clip_outputs && !vs->info.clipdist_mask) {
       assert(!vs->info.culldist_mask);
       ucp_mask = SI_USER_CLIP_PLANE_MASK & rs->clip_plane_enable;
    } else {
