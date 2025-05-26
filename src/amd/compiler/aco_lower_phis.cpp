@@ -184,7 +184,6 @@ build_const_else_merge_code(Program* program, Block& invert_block, aco_ptr<Instr
     * instructions to the invert block instead.
     * This allows us to actually delete the else block when it's empty.
     */
-   assert(invert_block.kind & block_kind_invert);
    Builder bld(program);
    Operand then = phi->operands[0];
    const Operand els = phi->operands[1];
@@ -215,6 +214,61 @@ build_const_else_merge_code(Program* program, Block& invert_block, aco_ptr<Instr
    /* We can't delete the original phi because that'd invalidate the iterator in lower_phis,
     * so just make it a trivial phi instead.
     */
+   phi->opcode = aco_opcode::p_linear_phi;
+   phi->operands[0] = Operand(tmp);
+   phi->operands[1] = Operand(tmp);
+}
+
+bool
+block_is_empty(Block& block)
+{
+   for (auto& instr : block.instructions) {
+      if (instr->opcode != aco_opcode::p_logical_start &&
+          instr->opcode != aco_opcode::p_logical_end && instr->opcode != aco_opcode::p_branch)
+         return false;
+   }
+   return true;
+}
+
+void
+build_empty_else_merge_code(Program* program, Block& merge_block, Block& invert_block,
+                            aco_ptr<Instruction>& phi)
+{
+   /* If the else block is empty, we know that the else phi operand dominates the
+    * then block, so we can handle the phi only in the then block.
+    */
+   Builder bld(program);
+   Block& then_block = program->blocks[merge_block.logical_preds[0]];
+   Operand then_op = phi->operands[0];
+   Operand else_op = phi->operands[1];
+
+   auto before_logical_end =
+      std::find_if(then_block.instructions.begin(), then_block.instructions.end(),
+                   [](const aco_ptr<Instruction>& instr) -> bool
+                   { return instr->opcode == aco_opcode::p_logical_end; });
+   bld.reset(&then_block.instructions, before_logical_end);
+
+   Operand new_op;
+
+   if (then_op.constantEquals(-1)) {
+      new_op =
+         bld.sop2(Builder::s_or, bld.def(bld.lm), bld.def(s1, scc), else_op, Operand(exec, bld.lm));
+   } else if (then_op.constantEquals(0)) {
+      new_op = bld.sop2(Builder::s_andn2, bld.def(bld.lm), bld.def(s1, scc), else_op,
+                        Operand(exec, bld.lm));
+   } else {
+      new_op = bld.sop2(Builder::s_andn2, bld.def(bld.lm), bld.def(s1, scc), else_op,
+                        Operand(exec, bld.lm));
+      then_op = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), then_op,
+                         Operand(exec, bld.lm));
+      new_op = bld.sop2(Builder::s_or, bld.def(bld.lm), bld.def(s1, scc), then_op, new_op);
+   }
+
+   /* Insert new linear phi in the invert block, make merge block phi trivial to not invalidate
+    * iterators. */
+   bld.reset(&invert_block.instructions, invert_block.instructions.begin());
+   Temp tmp = bld.pseudo(aco_opcode::p_linear_phi, bld.def(bld.lm), new_op, else_op);
+
    phi->opcode = aco_opcode::p_linear_phi;
    phi->operands[0] = Operand(tmp);
    phi->operands[1] = Operand(tmp);
@@ -337,9 +391,18 @@ lower_phi_to_linear(Program* program, ssa_state* state, Block* block, aco_ptr<In
    }
 
    if ((block->kind & block_kind_merge) && phi->opcode == aco_opcode::p_boolean_phi &&
-       phi->operands.size() == 2 && phi->operands[1].isConstant()) {
-      build_const_else_merge_code(program, program->blocks[block->linear_idom], phi);
-      return;
+       phi->operands.size() == 2) {
+      Block& invert_block = program->blocks[block->linear_idom];
+      Block& els_block = program->blocks[block->logical_preds[1]];
+      assert(invert_block.kind & block_kind_invert);
+      if (phi->operands[1].isConstant()) {
+         build_const_else_merge_code(program, invert_block, phi);
+         return;
+      } else if (phi->operands[1].isTemp() && block_is_empty(els_block) &&
+                 els_block.linear_preds[0] == invert_block.index) {
+         build_empty_else_merge_code(program, *block, invert_block, phi);
+         return;
+      }
    }
 
    init_state(program, block, state, phi);
