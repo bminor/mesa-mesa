@@ -892,22 +892,20 @@ static void si_emit_clip_state(struct si_context *sctx, unsigned index)
 static void si_emit_clip_regs(struct si_context *sctx, unsigned index)
 {
    struct si_shader *vs = si_get_vs(sctx)->current;
-   struct si_shader_selector *vs_sel = vs->selector;
-   struct si_shader_info *info = &vs_sel->info;
    struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
-   bool window_space = vs_sel->stage == MESA_SHADER_VERTEX ?
-                          info->base.vs.window_space_position : 0;
+   bool window_space = vs->selector->stage == MESA_SHADER_VERTEX ?
+                          vs->selector->info.base.vs.window_space_position : 0;
    unsigned ucp_mask = 0, clipdist_mask = 0, culldist_mask = 0;
 
-   if (!vs_sel->info.clipdist_mask && !vs_sel->info.culldist_mask) {
-      assert(!vs_sel->info.culldist_mask);
+   if (!vs->info.clipdist_mask && !vs->info.culldist_mask) {
+      assert(!vs->info.culldist_mask);
       ucp_mask = SI_USER_CLIP_PLANE_MASK & rs->clip_plane_enable;
    } else {
-      clipdist_mask = vs_sel->info.clipdist_mask & rs->clip_plane_enable;
+      clipdist_mask = vs->info.clipdist_mask & rs->clip_plane_enable;
       /* For points, we need to set the cull distance bits too because the clip distance bits have
        * no effect on them.
        */
-      culldist_mask = vs_sel->info.culldist_mask | clipdist_mask;
+      culldist_mask = vs->info.culldist_mask | clipdist_mask;
    }
 
    unsigned pa_cl_cntl = S_02881C_BYPASS_VTX_RATE_COMBINER(sctx->gfx_level >= GFX10_3 &&

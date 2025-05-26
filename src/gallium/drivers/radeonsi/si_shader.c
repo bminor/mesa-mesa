@@ -1112,10 +1112,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
    const union si_shader_key *key = &shader->key;
    assert(key->ge.as_ngg);
 
-   uint8_t clip_cull_dist_mask =
-      (sel->info.clipdist_mask & ~key->ge.opt.kill_clip_distances) |
-      sel->info.culldist_mask;
-
    ac_nir_lower_ngg_options options = {
       .hw_info = &sel->screen->info,
       .max_workgroup_size = si_get_max_workgroup_size(shader),
@@ -1124,7 +1120,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .disable_streamout = !shader->info.num_streamout_vec4s,
       .vs_output_param_offset = temp_info->vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,
-      .export_clipdist_mask = clip_cull_dist_mask,
+      .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
       .skip_viewport_state_culling = sel->info.writes_viewport_index,
@@ -1290,23 +1286,21 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
    }
 }
 
-static unsigned si_get_nr_pos_exports(const struct si_shader_selector *sel,
-                                      const union si_shader_key *key)
+static unsigned si_get_nr_pos_exports(const struct si_shader *shader)
 {
-   const struct si_shader_info *info = &sel->info;
+   const struct si_shader_info *info = &shader->selector->info;
 
    /* Must have a position export. */
    unsigned nr_pos_exports = 1;
 
-   if ((info->writes_psize && !key->ge.opt.kill_pointsize) ||
-       (info->writes_edgeflag && !key->ge.as_ngg) ||
-       (info->writes_layer && !key->ge.opt.kill_layer) ||
-       info->writes_viewport_index || sel->screen->options.vrs2x2) {
+   if ((info->writes_psize && !shader->key.ge.opt.kill_pointsize) ||
+       (info->writes_edgeflag && !shader->key.ge.as_ngg) ||
+       (info->writes_layer && !shader->key.ge.opt.kill_layer) ||
+       info->writes_viewport_index || shader->selector->screen->options.vrs2x2) {
       nr_pos_exports++;
    }
 
-   unsigned clipdist_mask =
-      (info->clipdist_mask & ~key->ge.opt.kill_clip_distances) | info->culldist_mask;
+   unsigned clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask;
 
    for (int i = 0; i < 2; i++) {
       if (clipdist_mask & BITFIELD_RANGE(i * 4, 4))
@@ -1556,7 +1550,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       si_assign_param_offsets(nir, shader, &ctx->temp_info);
 
       /* Assign num of position exports. */
-      shader->info.nr_pos_exports = si_get_nr_pos_exports(sel, key);
+      shader->info.nr_pos_exports = si_get_nr_pos_exports(shader);
 
       if (key->ge.as_ngg) {
          /* Lower last VGT NGG shader stage. */
@@ -1564,13 +1558,9 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       } else if (nir->info.stage == MESA_SHADER_VERTEX ||
                  nir->info.stage == MESA_SHADER_TESS_EVAL) {
          /* Lower last VGT none-NGG VS/TES shader stage. */
-         unsigned clip_cull_mask =
-            (sel->info.clipdist_mask & ~key->ge.opt.kill_clip_distances) |
-            sel->info.culldist_mask;
-
          NIR_PASS_V(nir, ac_nir_lower_legacy_vs,
                     sel->screen->info.gfx_level,
-                    clip_cull_mask,
+                    shader->info.clipdist_mask | shader->info.culldist_mask,
                     false, false,
                     ctx->temp_info.vs_output_param_offset,
                     shader->info.nr_param_exports,
@@ -1598,14 +1588,11 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          ctx->temp_info.vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
       }
 
-      unsigned clip_cull_mask =
-         (sel->info.clipdist_mask & ~shader->key.ge.opt.kill_clip_distances) | sel->info.culldist_mask;
-
       ac_nir_lower_legacy_gs_options options = {
          .has_gen_prim_query = false,
          .has_pipeline_stats_query = sel->screen->use_ngg,
          .gfx_level = sel->screen->info.gfx_level,
-         .export_clipdist_mask = clip_cull_mask,
+         .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
          .param_offsets = ctx->temp_info.vs_output_param_offset,
          .has_param_exports = shader->info.nr_param_exports,
          .disable_streamout = !shader->info.num_streamout_vec4s,
@@ -1888,8 +1875,10 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    shader->is_gs_copy_shader = true;
    shader->wave_size = si_determine_wave_size(sscreen, shader);
    shader->info.num_streamout_vec4s = gs_shader->info.num_streamout_vec4s;
-   shader->info.nr_pos_exports = si_get_nr_pos_exports(gs_selector, &gs_shader->key);
+   shader->info.nr_pos_exports = si_get_nr_pos_exports(gs_shader);
    shader->info.nr_param_exports = gs_shader->info.nr_param_exports;
+   shader->info.clipdist_mask = gs_shader->info.clipdist_mask;
+   shader->info.culldist_mask = gs_shader->info.culldist_mask;
 
    nir_shader *nir = gs_copy_shader;
    struct si_linked_shaders linked;

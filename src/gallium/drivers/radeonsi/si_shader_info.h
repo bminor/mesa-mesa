@@ -109,7 +109,6 @@ struct si_shader_info {
    uint8_t num_tess_level_vram_outputs; /* max "get_unique_index_patch" + 1*/
 
    uint8_t clipdist_mask;
-   uint8_t culldist_mask;
    bool gs_writes_stream0;
 
    uint16_t esgs_vertex_stride;
@@ -159,7 +158,6 @@ struct si_shader_info {
    bool uses_tg_size;
    bool uses_atomic_ordered_add;
    bool writes_psize;
-   bool writes_clipvertex;
    bool writes_primid;
    bool writes_viewport_index;
    bool writes_layer;
@@ -223,6 +221,8 @@ struct si_shader_variant_info {
    bool uses_discard : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
+   uint8_t clipdist_mask;
+   uint8_t culldist_mask;
    uint8_t num_streamout_vec4s;
    uint8_t ngg_lds_scratch_size;
    unsigned private_mem_vgprs;

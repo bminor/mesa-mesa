@@ -542,7 +542,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->writes_viewport_index = nir->info.outputs_written & VARYING_BIT_VIEWPORT;
       info->writes_layer = nir->info.outputs_written & VARYING_BIT_LAYER;
       info->writes_psize = nir->info.outputs_written & VARYING_BIT_PSIZ;
-      info->writes_clipvertex = nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX;
       info->writes_edgeflag = nir->info.outputs_written & VARYING_BIT_EDGE;
 
       if (nir->xfb_info) {
@@ -641,10 +640,9 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
          mesa_vertices_per_prim(nir->info.gs.input_primitive);
    }
 
-   info->clipdist_mask = info->writes_clipvertex ? SI_USER_CLIP_PLANE_MASK :
-                         u_bit_consecutive(0, nir->info.clip_distance_array_size);
-   info->culldist_mask = u_bit_consecutive(0, nir->info.cull_distance_array_size) <<
-                         nir->info.clip_distance_array_size;
+   info->clipdist_mask = nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX ?
+                            SI_USER_CLIP_PLANE_MASK :
+                            BITFIELD_MASK(nir->info.clip_distance_array_size);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < info->num_inputs; i++) {

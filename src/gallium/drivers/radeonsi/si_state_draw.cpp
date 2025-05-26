@@ -264,7 +264,10 @@ static bool si_update_shaders(struct si_context *sctx)
       sctx->dirty_atoms |= SI_STATE_BIT(rasterizer);
    }
 
-   if (old_pa_cl_vs_out_cntl != hw_vs->pa_cl_vs_out_cntl)
+   if (old_pa_cl_vs_out_cntl != hw_vs->pa_cl_vs_out_cntl ||
+       (!old_vs ||
+        old_vs->info.clipdist_mask != hw_vs->info.clipdist_mask ||
+        old_vs->info.culldist_mask != hw_vs->info.culldist_mask))
       si_mark_atom_dirty(sctx, &sctx->atoms.s.clip_regs);
 
    /* If we start to use any of these, we need to update the SGPR. */
