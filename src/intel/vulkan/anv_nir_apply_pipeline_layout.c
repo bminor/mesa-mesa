@@ -1751,41 +1751,41 @@ lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
          break;
       }
       case ISL_SURF_PARAM_TILE_MODE: {
-         // tile mode [13:12] is in the first dword
-         const unsigned tile_mode_bits =
-            RENDER_SURFACE_STATE_TileMode_bits(devinfo);
-         const unsigned tile_mode_start =
-            RENDER_SURFACE_STATE_TileMode_start(devinfo);
-
          nir_def *dword =
-            build_load_descriptor_mem(b, desc_addr, tile_mode_start / 32, 1, 32, state);
-
-         desc = nir_iand_imm(b,
-                             nir_ishr_imm(b, dword, tile_mode_start % 32),
-                             (1u << tile_mode_bits) - 1);
+            build_load_descriptor_mem(
+               b, desc_addr,
+               RENDER_SURFACE_STATE_TileMode_start(devinfo) / 32, 1, 32, state);
+         desc = nir_ubitfield_extract_imm(
+            b, dword,
+            RENDER_SURFACE_STATE_TileMode_start(devinfo) % 32,
+            RENDER_SURFACE_STATE_TileMode_bits(devinfo));
          break;
       }
       case ISL_SURF_PARAM_PITCH: {
          assert(RENDER_SURFACE_STATE_SurfacePitch_start(devinfo) % 32 == 0);
-         const unsigned surfPitch_bits =
-            RENDER_SURFACE_STATE_SurfacePitch_bits(devinfo);
          nir_def *pitch_dword = build_load_descriptor_mem(
             b, desc_addr,
             RENDER_SURFACE_STATE_SurfacePitch_start(devinfo) / 8,
             1, 32, state);
-         desc = nir_iand_imm(b, pitch_dword, (1u << surfPitch_bits) - 1);
+         desc = nir_ubitfield_extract_imm(
+            b, pitch_dword,
+            RENDER_SURFACE_STATE_SurfacePitch_start(devinfo) % 32,
+            RENDER_SURFACE_STATE_SurfacePitch_bits(devinfo));
+         /* Pitch is written with -1 in ISL (see isl_surface_state.c) */
          desc = nir_iadd_imm(b, desc, 1);
          break;
       }
       case ISL_SURF_PARAM_QPITCH: {
          assert(RENDER_SURFACE_STATE_SurfaceQPitch_start(devinfo) % 32 == 0);
-         const unsigned surfQPitch_bits =
-            RENDER_SURFACE_STATE_SurfaceQPitch_bits(devinfo);
          nir_def *pitch_dword = build_load_descriptor_mem(
             b, desc_addr,
             RENDER_SURFACE_STATE_SurfaceQPitch_start(devinfo) / 8,
             1, 32, state);
-         desc = nir_iand_imm(b, pitch_dword, (1u << surfQPitch_bits) - 1);
+         desc = nir_ubitfield_extract_imm(
+            b, pitch_dword,
+            RENDER_SURFACE_STATE_SurfaceQPitch_start(devinfo) % 32,
+            RENDER_SURFACE_STATE_SurfaceQPitch_bits(devinfo));
+         /* QPitch in written with >> 2 in ISL (see isl_surface_state.c) */
          desc = nir_ishl_imm(b, desc, 2);
          break;
       }
