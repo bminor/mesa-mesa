@@ -1286,30 +1286,6 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
    }
 }
 
-static unsigned si_get_nr_pos_exports(const struct si_shader *shader)
-{
-   const struct si_shader_info *info = &shader->selector->info;
-
-   /* Must have a position export. */
-   unsigned nr_pos_exports = 1;
-
-   if ((info->writes_psize && !shader->key.ge.opt.kill_pointsize) ||
-       (info->writes_edgeflag && !shader->key.ge.as_ngg) ||
-       (info->writes_layer && !shader->key.ge.opt.kill_layer) ||
-       info->writes_viewport_index || shader->selector->screen->options.vrs2x2) {
-      nr_pos_exports++;
-   }
-
-   unsigned clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask;
-
-   for (int i = 0; i < 2; i++) {
-      if (clipdist_mask & BITFIELD_RANGE(i * 4, 4))
-         nr_pos_exports++;
-   }
-
-   return nr_pos_exports;
-}
-
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)
 {
    return gl_shader_stage_is_compute(shader->info.stage) &&
@@ -1548,9 +1524,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    if (is_last_vgt_stage) {
       /* Assign param export indices. */
       si_assign_param_offsets(nir, shader, &ctx->temp_info);
-
-      /* Assign num of position exports. */
-      shader->info.nr_pos_exports = si_get_nr_pos_exports(shader);
 
       if (key->ge.as_ngg) {
          /* Lower last VGT NGG shader stage. */
@@ -1875,7 +1848,6 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    shader->is_gs_copy_shader = true;
    shader->wave_size = si_determine_wave_size(sscreen, shader);
    shader->info.num_streamout_vec4s = gs_shader->info.num_streamout_vec4s;
-   shader->info.nr_pos_exports = si_get_nr_pos_exports(gs_shader);
    shader->info.nr_param_exports = gs_shader->info.nr_param_exports;
    shader->info.clipdist_mask = gs_shader->info.clipdist_mask;
    shader->info.culldist_mask = gs_shader->info.culldist_mask;
@@ -1895,6 +1867,8 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    si_nir_opts(gs_selector->screen, nir, false);
 
    NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
+   /* This pass must be last. */
+   si_get_late_shader_variant_info(shader, &linked.consumer.args, nir);
 
    if (si_can_dump_shader(sscreen, MESA_SHADER_GEOMETRY, SI_DUMP_NIR)) {
       fprintf(stderr, "GS Copy Shader:\n");

@@ -271,16 +271,18 @@ void si_get_shader_variant_info(struct si_shader *shader,
 void si_get_late_shader_variant_info(struct si_shader *shader, struct si_shader_args *args,
                                      nir_shader *nir)
 {
-   if ((nir->info.stage != MESA_SHADER_VERTEX || nir->info.vs.blit_sgprs_amd) &&
-       nir->info.stage != MESA_SHADER_TESS_EVAL &&
-       (nir->info.stage != MESA_SHADER_GEOMETRY || !shader->key.ge.as_ngg))
-      return;
-
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
       nir_foreach_instr(instr, block) {
-         if (instr->type == nir_instr_type_intrinsic &&
-             nir_instr_as_intrinsic(instr)->intrinsic == nir_intrinsic_load_scalar_arg_amd &&
-             nir_intrinsic_base(nir_instr_as_intrinsic(instr)) == args->vs_state_bits.arg_index) {
+         if (instr->type != nir_instr_type_intrinsic)
+            continue;
+
+         nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+         switch (intr->intrinsic) {
+         case nir_intrinsic_load_scalar_arg_amd:
+            if (!args->vs_state_bits.used ||
+                nir_intrinsic_base(intr) != args->vs_state_bits.arg_index)
+               continue;
+
             assert(args->vs_state_bits.used);
 
             /* Gather which VS_STATE and GS_STATE user SGPR bits are used. */
@@ -297,6 +299,17 @@ void si_get_late_shader_variant_info(struct si_shader *shader, struct si_shader_
                if (bits_used & ENCODE_FIELD(GS_STATE_OUTPRIM, ~0))
                   shader->info.uses_gs_state_outprim = true;
             }
+            break;
+         case nir_intrinsic_export_amd: {
+            unsigned target = nir_intrinsic_base(intr);
+            if (target >= V_008DFC_SQ_EXP_POS && target <= V_008DFC_SQ_EXP_POS + 4) {
+               shader->info.nr_pos_exports = MAX2(shader->info.nr_pos_exports,
+                                                  target - V_008DFC_SQ_EXP_POS + 1);
+            }
+            break;
+         }
+         default:
+            break;
          }
       }
    }
