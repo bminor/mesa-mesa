@@ -107,7 +107,7 @@ _legal_parameters(struct gl_context *ctx, GLenum target, GLenum internalformat,
        * ARB_internalformat_query implementation like an error.
        */
       if (!query2 &&
-          !(_mesa_has_ARB_texture_multisample(ctx) || _mesa_is_gles31(ctx))) {
+          !_mesa_has_texture_multisample(ctx)) {
          _mesa_error(ctx, GL_INVALID_ENUM,
                      "glGetInternalformativ(target=%s)",
                      _mesa_enum_to_string(target));

@@ -491,6 +491,13 @@ _mesa_has_texture_view(const struct gl_context *ctx)
 }
 
 static inline bool
+_mesa_has_texture_multisample(const struct gl_context *ctx)
+{
+   return _mesa_has_ARB_texture_multisample(ctx) ||
+          _mesa_is_gles31(ctx);
+}
+
+static inline bool
 _mesa_hw_select_enabled(const struct gl_context *ctx)
 {
    return ctx->RenderMode == GL_SELECT &&
