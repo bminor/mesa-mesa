@@ -234,7 +234,7 @@ radv-renoir-vkcts:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-renoir
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 130
-    RADV_PERFTEST: transfer_queue,video_decode,video_encode
+    RADV_PERFTEST: transfer_queue
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
 
 radv-navi10-vkcts:
@@ -246,7 +246,7 @@ radv-navi10-vkcts:
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi10
-    RADV_PERFTEST: transfer_queue,video_decode,video_encode
+    RADV_PERFTEST: transfer_queue
 
 radv-navi21-vkcts:
   timeout: 35m
@@ -306,7 +306,7 @@ radv-raphael-vkcts:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-raphael
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
-    RADV_PERFTEST: transfer_queue,video_decode,video_encode
+    RADV_PERFTEST: transfer_queue
 
 radv-navi31-vkcts:
   timeout: 25m
@@ -319,6 +319,7 @@ radv-navi31-vkcts:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
+    # TODO: Remove video_encode,video_decode with next kernel.
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
