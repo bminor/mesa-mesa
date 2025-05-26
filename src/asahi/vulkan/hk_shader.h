@@ -358,10 +358,6 @@ hk_nir_lower_descriptors(nir_shader *nir,
                          const struct vk_pipeline_robustness_state *rs,
                          uint32_t set_layout_count,
                          struct vk_descriptor_set_layout *const *set_layouts);
-void hk_lower_nir(struct hk_device *dev, nir_shader *nir,
-                  const struct vk_pipeline_robustness_state *rs,
-                  bool is_multiview, uint32_t set_layout_count,
-                  struct vk_descriptor_set_layout *const *set_layouts);
 
 VkResult hk_compile_shader(struct hk_device *dev,
                            struct vk_shader_compile_info *info,

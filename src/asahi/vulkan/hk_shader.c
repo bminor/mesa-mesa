@@ -632,7 +632,7 @@ should_lower_robust(const nir_intrinsic_instr *intr, const void *_)
           intr->intrinsic == nir_intrinsic_image_deref_atomic_swap;
 }
 
-void
+static void
 hk_lower_nir(struct hk_device *dev, nir_shader *nir,
              const struct vk_pipeline_robustness_state *rs, bool is_multiview,
              uint32_t set_layout_count,
