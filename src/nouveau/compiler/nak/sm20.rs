@@ -2246,6 +2246,21 @@ impl SM20Op for OpAtom {
     }
 }
 
+impl SM20Op for OpAL2P {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Tex, 0x3);
+        e.set_field(5..7, self.comps.ilog2());
+        e.set_bit(9, self.output);
+        e.set_dst(14..20, &self.dst);
+        e.set_reg_src(20..26, &self.offset);
+        e.set_field(32..43, self.addr);
+    }
+}
+
 impl SM20Op for OpALd {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
@@ -2696,6 +2711,7 @@ macro_rules! as_sm20_op_match {
             Op::St(op) => op,
             Op::StSCheckUnlock(op) => op,
             Op::Atom(op) => op,
+            Op::AL2P(op) => op,
             Op::ALd(op) => op,
             Op::ASt(op) => op,
             Op::Ipa(op) => op,
