@@ -2272,7 +2272,7 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
    };
    nir_shader *nir = ac_nir_create_gs_copy_shader(
       gs_stage->nir, pdev->info.gfx_level, gs_info->outinfo.clip_dist_mask | gs_info->outinfo.cull_dist_mask, false,
-      gs_info->outinfo.vs_output_param_offset, gs_info->outinfo.param_exports, false, false, false,
+      false, gs_info->outinfo.vs_output_param_offset, gs_info->outinfo.param_exports, false, false, false,
       gs_info->force_vrs_per_vertex, &output_info);
 
    nir->info.internal = true;

@@ -167,6 +167,12 @@ typedef struct {
    unsigned wave_size;
    uint8_t clip_cull_dist_mask;
    bool write_pos_to_clipvertex;
+   /* Remove clip/cull distance components that are missing in clip_cull_dist_mask, improving
+    * throughput by up to 50% (3 pos exports -> 2 pos exports). The caller shouldn't set no-op
+    * components (>= 0) in clip_cull_dist_mask to remove those completely. No-op components
+    * should be determined by nir_opt_clip_cull_const before this.
+    */
+   bool pack_clip_cull_distances;
    const uint8_t *vs_output_param_offset; /* GFX11+ */
    bool has_param_exports;
    bool can_cull;
@@ -258,6 +264,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
                              enum amd_gfx_level gfx_level,
                              uint32_t clip_cull_mask,
                              bool write_pos_to_clipvertex,
+                             bool pack_clip_cull_distances,
                              const uint8_t *param_offsets,
                              bool has_param_exports,
                              bool disable_streamout,
@@ -271,6 +278,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
                        bool write_pos_to_clipvertex,
+                       bool pack_clip_cull_distances,
                        const uint8_t *param_offsets,
                        bool has_param_exports,
                        bool export_primitive_id,

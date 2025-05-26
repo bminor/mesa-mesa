@@ -229,6 +229,7 @@ ac_nir_export_position(nir_builder *b,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
                        bool write_pos_to_clipvertex,
+                       bool pack_clip_cull_distances,
                        bool no_param_export,
                        bool force_vrs,
                        uint64_t outputs_written,
@@ -278,6 +279,16 @@ ac_nir_export_position(nir_builder *b,
          assert(outputs_written & (VARYING_BIT_CLIP_DIST0 << (i / 4)));
          clip_dist[i] = out->outputs[VARYING_SLOT_CLIP_DIST0 + i / 4][i % 4];
       }
+   }
+
+   /* If clip/cull distances are sparsely populated or some components are >= 0, pack them. */
+   if (pack_clip_cull_distances) {
+      unsigned num = 0;
+
+      u_foreach_bit(i, clip_cull_mask) {
+         clip_dist[num++] = clip_dist[i];
+      }
+      clip_cull_mask = BITFIELD_MASK(num);
    }
 
    if (outputs_written & VARYING_BIT_POS) {
