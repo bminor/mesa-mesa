@@ -1349,16 +1349,15 @@ unsigned si_get_num_vertices_per_output_prim(struct si_shader *shader)
 static unsigned si_get_vs_out_cntl(const struct si_shader_selector *sel,
                                    const struct si_shader *shader, bool ngg)
 {
-   /* Clip distances can be killed, but cull distances can't. */
-   unsigned clipcull_mask = shader->info.clipdist_mask | shader->info.culldist_mask;
+   unsigned num_clip_distances = util_bitcount(shader->info.clipdist_mask | shader->info.culldist_mask);
    bool writes_psize = sel->info.writes_psize && !shader->key.ge.opt.kill_pointsize;
    bool writes_layer = sel->info.writes_layer && !shader->key.ge.opt.kill_layer;
    bool misc_vec_ena = writes_psize || (sel->info.writes_edgeflag && !ngg) ||
                        writes_layer || sel->info.writes_viewport_index ||
                        sel->screen->options.vrs2x2;
 
-   return S_02881C_VS_OUT_CCDIST0_VEC_ENA((clipcull_mask & 0x0F) != 0) |
-          S_02881C_VS_OUT_CCDIST1_VEC_ENA((clipcull_mask & 0xF0) != 0) |
+   return S_02881C_VS_OUT_CCDIST0_VEC_ENA(num_clip_distances > 0) |
+          S_02881C_VS_OUT_CCDIST1_VEC_ENA(num_clip_distances > 4) |
           S_02881C_USE_VTX_POINT_SIZE(writes_psize) |
           S_02881C_USE_VTX_EDGE_FLAG(sel->info.writes_edgeflag && !ngg) |
           S_02881C_USE_VTX_VRS_RATE(sel->screen->options.vrs2x2) |

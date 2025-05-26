@@ -902,11 +902,22 @@ static void si_emit_clip_regs(struct si_context *sctx, unsigned index)
       assert(!vs->info.culldist_mask);
       ucp_mask = SI_USER_CLIP_PLANE_MASK & rs->clip_plane_enable;
    } else {
-      clipdist_mask = vs->info.clipdist_mask & rs->clip_plane_enable;
+      unsigned num_bits = 0;
+
+      /* Pack clipdist_mask and culldist_mask (remove holes) because that's how exports are packed. */
+      u_foreach_bit(i, vs->info.clipdist_mask) {
+         if (rs->clip_plane_enable & BITFIELD_BIT(i))
+            clipdist_mask |= BITFIELD_BIT(num_bits);
+         num_bits++;
+      }
+
+      unsigned num_culldist_bits = util_bitcount(vs->info.culldist_mask);
+      culldist_mask = BITFIELD_RANGE(num_bits, num_culldist_bits);
+
       /* For points, we need to set the cull distance bits too because the clip distance bits have
        * no effect on them.
        */
-      culldist_mask = vs->info.culldist_mask | clipdist_mask;
+      culldist_mask |= clipdist_mask;
    }
 
    unsigned pa_cl_cntl = S_02881C_BYPASS_VTX_RATE_COMBINER(sctx->gfx_level >= GFX10_3 &&
