@@ -1729,6 +1729,12 @@ lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
             offsetof(struct anv_storage_image_descriptor, qpitch),
             1, 32, state);
          break;
+      case ISL_SURF_PARAM_FORMAT:
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            offsetof(struct anv_storage_image_descriptor, format),
+            1, 32, state);
+         break;
       default:
          unreachable("Invalid surface parameter");
       }
@@ -1781,6 +1787,17 @@ lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
             1, 32, state);
          desc = nir_iand_imm(b, pitch_dword, (1u << surfQPitch_bits) - 1);
          desc = nir_ishl_imm(b, desc, 2);
+         break;
+      }
+      case ISL_SURF_PARAM_FORMAT: {
+         nir_def *format_dword = build_load_descriptor_mem(
+            b, desc_addr,
+            RENDER_SURFACE_STATE_SurfaceFormat_start(devinfo) / 8,
+            1, 32, state);
+         desc = nir_ubitfield_extract_imm(
+            b, format_dword,
+            RENDER_SURFACE_STATE_SurfaceFormat_start(devinfo) % 32,
+            RENDER_SURFACE_STATE_SurfaceFormat_bits(devinfo));
          break;
       }
       default:

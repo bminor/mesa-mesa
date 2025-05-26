@@ -447,9 +447,10 @@ get_features(const struct anv_physical_device *pdevice,
       .shaderStorageImageExtendedFormats        = true,
       .shaderStorageImageMultisample            = false,
       /* Gfx12.5 has all the required format supported in HW for typed
-       * read/writes
+       * read/writes, on Gfx11 & Gfx12.0 we emulate for 3 formats.
        */
-      .shaderStorageImageReadWithoutFormat      = pdevice->info.verx10 >= 125,
+      .shaderStorageImageReadWithoutFormat      = pdevice->info.verx10 >= 125 ||
+                                                  pdevice->instance->emulate_read_without_format,
       .shaderStorageImageWriteWithoutFormat     = true,
       .shaderUniformBufferArrayDynamicIndexing  = true,
       .shaderSampledImageArrayDynamicIndexing   = true,

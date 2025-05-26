@@ -749,8 +749,14 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
 
    /* Load/store is determined based on base format.  This prevents RGB
     * formats from showing up as load/store capable.
+    *
+    * Typed writes match with storage write without format. For storage read
+    * without format, either HW can do it (isl_format_supports_typed_reads) or
+    * do in-shader conversion for isl_is_storage_image_format format.
     */
-   if (isl_format_supports_typed_reads(devinfo, base_isl_format))
+   if (isl_format_supports_typed_reads(devinfo, base_isl_format) ||
+       (physical_device->instance->emulate_read_without_format &&
+        isl_is_storage_image_format(devinfo, plane_format.isl_format)))
       flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
    if (isl_format_supports_typed_writes(devinfo, base_isl_format))
       flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;

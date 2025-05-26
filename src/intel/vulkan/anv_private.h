@@ -1357,6 +1357,7 @@ struct anv_instance {
     bool                                        enable_te_distribution;
     bool                                        external_memory_implicit_sync;
     bool                                        force_guc_low_latency;
+    bool                                        emulate_read_without_format;
 
     /**
      * Workarounds for game bugs.
@@ -2872,6 +2873,9 @@ struct anv_storage_image_descriptor {
 
    /** Image Q pitch (rows between array slices) */
    uint32_t qpitch;
+
+   /** Image Format (enum isl_format) */
+   uint32_t format;
 };
 
 /** Struct representing a address/range descriptor
@@ -3153,6 +3157,8 @@ struct anv_buffer_state {
 
 struct anv_buffer_view {
    struct vk_buffer_view vk;
+
+   enum isl_format format;
 
    struct anv_address address;
 
