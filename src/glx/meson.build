@@ -103,7 +103,7 @@ else
   )
 endif
 
-glx_gallium_link = [libpipe_loader_dynamic]
+glx_gallium_link = []
 if with_dri
   glx_gallium_link += libgallium_dri
 endif

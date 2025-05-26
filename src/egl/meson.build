@@ -7,7 +7,7 @@ c_args_for_egl = [asan_c_args]
 cpp_args_for_egl = []
 link_args_for_egl = []
 link_deps_for_egl = []
-link_for_egl = [libpipe_loader_dynamic]
+link_for_egl = []
 if with_dri
   link_for_egl += libgallium_dri
 endif
