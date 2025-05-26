@@ -242,8 +242,8 @@ agx_bo_mmap(struct agx_device *dev, struct agx_bo *bo, void *fixed_addr)
    }
 
    flags = MAP_SHARED | (fixed_addr ? MAP_FIXED : 0);
-   bo->_map = os_mmap(fixed_addr, bo->size, PROT_READ | PROT_WRITE,
-                      flags, dev->fd, gem_mmap_offset.offset);
+   bo->_map = os_mmap(fixed_addr, bo->size, PROT_READ | PROT_WRITE, flags,
+                      dev->fd, gem_mmap_offset.offset);
    if (bo->_map == MAP_FAILED) {
       bo->_map = NULL;
       fprintf(stderr,
