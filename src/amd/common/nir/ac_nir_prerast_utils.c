@@ -228,6 +228,7 @@ void
 ac_nir_export_position(nir_builder *b,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
+                       bool write_pos_to_clipvertex,
                        bool no_param_export,
                        bool force_vrs,
                        uint64_t outputs_written,
@@ -259,10 +260,13 @@ ac_nir_export_position(nir_builder *b,
 
    nir_def *clip_dist[8] = {0};
 
-   if (outputs_written & VARYING_BIT_CLIP_VERTEX) {
+   if (outputs_written & VARYING_BIT_CLIP_VERTEX || write_pos_to_clipvertex) {
+      /* Only one condition can be set. */
+      assert(!(outputs_written & VARYING_BIT_CLIP_VERTEX) || !write_pos_to_clipvertex);
       /* Convert CLIP_VERTEX to clip distances. */
       assert(!(outputs_written & (VARYING_BIT_CLIP_DIST0 | VARYING_BIT_CLIP_DIST1)));
-      nir_def *vtx = get_export_output(b, out->outputs[VARYING_SLOT_CLIP_VERTEX]);
+      gl_varying_slot slot = write_pos_to_clipvertex ? VARYING_SLOT_POS : VARYING_SLOT_CLIP_VERTEX;
+      nir_def *vtx = get_export_output(b, out->outputs[slot]);
 
       u_foreach_bit(i, clip_cull_mask) {
          nir_def *ucp = nir_load_user_clip_plane(b, .ucp_id = i);

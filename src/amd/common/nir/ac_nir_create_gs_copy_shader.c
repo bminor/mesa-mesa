@@ -14,6 +14,7 @@ nir_shader *
 ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
                              enum amd_gfx_level gfx_level,
                              uint32_t clip_cull_mask,
+                             bool write_pos_to_clipvertex,
                              const uint8_t *param_offsets,
                              bool has_param_exports,
                              bool disable_streamout,
@@ -118,8 +119,8 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
          if (kill_layer)
             export_outputs &= ~VARYING_BIT_LAYER;
 
-         ac_nir_export_position(&b, gfx_level, clip_cull_mask, !has_param_exports,
-                                force_vrs, export_outputs, &out, NULL);
+         ac_nir_export_position(&b, gfx_level, clip_cull_mask, write_pos_to_clipvertex,
+                                !has_param_exports, force_vrs, export_outputs, &out, NULL);
 
          if (has_param_exports) {
             ac_nir_export_parameters(&b, param_offsets,

@@ -166,6 +166,7 @@ typedef struct {
    unsigned max_workgroup_size;
    unsigned wave_size;
    uint8_t clip_cull_dist_mask;
+   bool write_pos_to_clipvertex;
    const uint8_t *vs_output_param_offset; /* GFX11+ */
    bool has_param_exports;
    bool can_cull;
@@ -256,6 +257,7 @@ nir_shader *
 ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
                              enum amd_gfx_level gfx_level,
                              uint32_t clip_cull_mask,
+                             bool write_pos_to_clipvertex,
                              const uint8_t *param_offsets,
                              bool has_param_exports,
                              bool disable_streamout,
@@ -268,6 +270,7 @@ bool
 ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
+                       bool write_pos_to_clipvertex,
                        const uint8_t *param_offsets,
                        bool has_param_exports,
                        bool export_primitive_id,

@@ -110,6 +110,7 @@ void
 ac_nir_export_position(nir_builder *b,
                        enum amd_gfx_level gfx_level,
                        uint32_t clip_cull_mask,
+                       bool write_pos_to_clipvertex,
                        bool no_param_export,
                        bool force_vrs,
                        uint64_t outputs_written,
