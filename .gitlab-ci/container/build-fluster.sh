@@ -22,28 +22,18 @@ FLUSTER_REVISION="e997402978f62428fffc8e5a4a709690d9ca9bc5"
 
 git clone https://github.com/fluendo/fluster.git --single-branch --no-checkout
 
-export SKIP_UPDATE_FLUSTER_VECTORS=false
-
-check_fluster()
-{
-    S3_FLUSTER_TAR="${S3_HOST}/${S3_KERNEL_BUCKET}/$1/${DATA_STORAGE_PATH}/fluster/${FLUSTER_TAG}/vectors.tar.zst"
-    if curl -L --retry 4 -f --retry-connrefused --retry-delay 30 -s --head \
-      "https://${S3_FLUSTER_TAR}"; then
-        echo "Fluster vectors are up-to-date, skip rebuilding them."
-        export SKIP_UPDATE_FLUSTER_VECTORS=true
-    fi
-}
-
-check_fluster "${FDO_UPSTREAM_REPO}"
-if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
-    check_fluster "${CI_PROJECT_PATH}"
-fi
-
 pushd fluster || exit
 git checkout "${FLUSTER_REVISION}"
 popd || exit
 
-if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
+ARTIFACT_PATH="${DATA_STORAGE_PATH}/fluster/${FLUSTER_TAG}/vectors.tar.zst"
+
+if FOUND_ARTIFACT_URL="$(find_s3_project_artifact "${ARTIFACT_PATH}")"; then
+    echo "Found fluster vectors at: ${FOUND_ARTIFACT_URL}"
+    mv fluster/ /
+    curl-with-retry "${FOUND_ARTIFACT_URL}" | tar --zstd -x -C /
+else
+    echo "No cached vectors found, rebuilding..."
     # Download the necessary vectors: H264, H265 and VP9
     # When updating FLUSTER_REVISION, make sure to update the vectors if necessary or
     # fluster-runner will report Missing results.
@@ -54,14 +44,9 @@ if ! $SKIP_UPDATE_FLUSTER_VECTORS; then
 
     # Build fluster vectors archive and upload it
     tar --zstd -cf "vectors.tar.zst" fluster/resources/
-    ci-fairy s3cp --token-file "${S3_JWT_FILE}" "vectors.tar.zst" "https://${S3_FLUSTER_TAR}"
-fi
-
-mv fluster/ /
-
-if $SKIP_UPDATE_FLUSTER_VECTORS; then
-    curl -L --retry 4 -f --retry-connrefused --retry-delay 30 \
-      "${FDO_HTTP_CACHE_URI:-}https://${S3_FLUSTER_TAR}" | tar --zstd -x -C /
+    ci-fairy s3cp --token-file "${S3_JWT_FILE}" "vectors.tar.zst" \
+        "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
+    mv fluster/ /
 fi
 
 section_end fluster

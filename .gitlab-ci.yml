@@ -102,6 +102,8 @@ variables:
   S3_TRACIE_RESULTS_BUCKET: mesa-tracie-results
   S3_TRACIE_PUBLIC_BUCKET: mesa-tracie-public
   S3_TRACIE_PRIVATE_BUCKET: mesa-tracie-private
+  # Base path used for various artifacts
+  S3_BASE_PATH: "${S3_HOST}/${S3_KERNEL_BUCKET}"
   # per-pipeline artifact storage on MinIO
   PIPELINE_ARTIFACTS_BASE: ${S3_HOST}/${S3_ARTIFACTS_BUCKET}/${CI_PROJECT_PATH}/${CI_PIPELINE_ID}
   # per-job artifact storage on MinIO

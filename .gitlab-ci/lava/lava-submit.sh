@@ -6,27 +6,17 @@
 # .gitlab-ci/image-tags.yml tags:
 # ALPINE_X86_64_LAVA_TRIGGER_TAG
 
-# If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
-_check_artifact_path() {
-	_url="https://${1}/${2}"
-	if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "${_url}"; then
-		echo -n "${_url}"
-	fi
-}
+. "${SCRIPTS_DIR}/setup-test-env.sh"
 
-get_path_to_artifact() {
-	_mainline_artifact="$(_check_artifact_path ${BASE_SYSTEM_MAINLINE_HOST_PATH} ${1})"
-	if [ -n "${_mainline_artifact}" ]; then
-		echo -n "${_mainline_artifact}"
-		return
-	fi
-	_fork_artifact="$(_check_artifact_path ${BASE_SYSTEM_FORK_HOST_PATH} ${1})"
-	if [ -n "${_fork_artifact}" ]; then
-		echo -n "${_fork_artifact}"
-		return
-	fi
+section_start prepare_rootfs "Preparing root filesystem"
+
+set -ex
+
+# If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
+ROOTFS_URL="$(find_s3_project_artifact "$LAVA_ROOTFS_PATH")" ||
+{
 	set +x
-	error "Sorry, I couldn't find a viable built path for ${1} in either mainline or a fork." >&2
+	error "Sorry, I couldn't find a viable built path for ${LAVA_ROOTFS_PATH} in either mainline or a fork." >&2
 	echo "" >&2
 	echo "If you're working on CI, this probably means that you're missing a dependency:" >&2
 	echo "this job ran ahead of the job which was supposed to upload that artifact." >&2
@@ -37,15 +27,6 @@ get_path_to_artifact() {
 	set -x
 	exit 1
 }
-
-. "${SCRIPTS_DIR}/setup-test-env.sh"
-
-section_start prepare_rootfs "Preparing root filesystem"
-
-set -ex
-
-ROOTFS_URL="$(get_path_to_artifact lava-rootfs.tar.zst)"
-[ $? != 1 ] || exit 1
 
 rm -rf results
 mkdir results
@@ -73,7 +54,7 @@ if [ -n "${LAVA_FIRMWARE:-}" ]; then
         LAVA_EXTRA_OVERLAYS+=(
             - append-overlay
               --name=linux-firmware
-              --url="https://${BASE_SYSTEM_HOST_PREFIX}/${FIRMWARE_REPO}/${fw}-${FIRMWARE_TAG}.tar"
+              --url="https://${S3_BASE_PATH}/${FIRMWARE_REPO}/${fw}-${FIRMWARE_TAG}.tar"
               --path="/"
               --format=tar
         )

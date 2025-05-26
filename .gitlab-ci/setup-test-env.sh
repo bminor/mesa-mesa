@@ -291,6 +291,29 @@ export -f get_tag_file
 
 # Structured tagging ------
 
+curl-with-retry() {
+    curl --fail --location --retry-connrefused --retry 4 --retry-delay 15 "$@"
+}
+export -f curl-with-retry
+
+function find_s3_project_artifact() {
+    x_off
+    local artifact_path="$1"
+
+    for project in "${FDO_UPSTREAM_REPO}" "${CI_PROJECT_PATH}"; do
+        local full_path="${FDO_HTTP_CACHE_URI:-}${S3_BASE_PATH}/${project}/${artifact_path}"
+        if curl-with-retry -s --head "https://${full_path}" >/dev/null; then
+            echo "https://${full_path}"
+            x_restore
+            return 0
+        fi
+    done
+
+    x_restore
+    return 1
+}
+export -f find_s3_project_artifact
+
 export -f error
 export -f trap_err
 
