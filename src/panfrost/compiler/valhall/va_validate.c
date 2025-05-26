@@ -137,6 +137,15 @@ valid_src(struct fau_state *fau, unsigned fau_page, bi_index src,
    if (src.type != BI_INDEX_FAU)
       return true;
 
+   if (src.value & BIR_FAU_IMMEDIATE) {
+      /* There are no small constant restrictions in message instructions */
+      if (can_use_two_fau_indices(op))
+         return true;
+      /* Otherwise we just need to ensure that we don't access more than a
+       * total of 64 bits of distinct FAU+small constant values */
+      return fau_state_buffer(fau, src);
+   }
+
    bool valid = (fau_page == va_fau_page(src.value));
    valid &= fau_state_buffer(fau, src);
 
