@@ -1788,7 +1788,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    ac_nir_export_position(b, options->hw_info->gfx_level,
                           options->clip_cull_dist_mask,
                           !options->has_param_exports,
-                          options->force_vrs, true,
+                          options->force_vrs,
                           export_outputs, &state.out, NULL);
 
    if (options->has_param_exports && !options->hw_info->has_attr_ring) {

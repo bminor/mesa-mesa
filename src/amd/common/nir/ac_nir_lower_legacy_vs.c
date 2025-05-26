@@ -77,7 +77,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
       export_outputs &= ~VARYING_BIT_LAYER;
 
    ac_nir_export_position(&b, gfx_level, clip_cull_mask, !has_param_exports,
-                          force_vrs, true, export_outputs, &out, NULL);
+                          force_vrs, export_outputs, &out, NULL);
 
    if (has_param_exports) {
       ac_nir_export_parameters(&b, param_offsets,

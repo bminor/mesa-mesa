@@ -500,7 +500,7 @@ ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_ou
       ac_nir_export_position(b, s->options->hw_info->gfx_level,
                              s->options->clip_cull_dist_mask,
                              !s->options->has_param_exports,
-                             s->options->force_vrs, true,
+                             s->options->force_vrs,
                              export_outputs, &s->out, NULL);
 
       if (s->options->has_param_exports && !s->options->hw_info->has_attr_ring)

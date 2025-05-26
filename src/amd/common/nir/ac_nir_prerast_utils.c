@@ -230,7 +230,6 @@ ac_nir_export_position(nir_builder *b,
                        uint32_t clip_cull_mask,
                        bool no_param_export,
                        bool force_vrs,
-                       bool done,
                        uint64_t outputs_written,
                        ac_nir_prerast_out *out,
                        nir_def *row)
@@ -362,11 +361,9 @@ ac_nir_export_position(nir_builder *b,
 
    nir_intrinsic_instr *final_exp = exp[exp_num - 1];
 
-   if (done) {
-      /* Specify that this is the last export */
-      const unsigned final_exp_flags = nir_intrinsic_flags(final_exp);
-      nir_intrinsic_set_flags(final_exp, final_exp_flags | AC_EXP_FLAG_DONE);
-   }
+   /* Specify that this is the last export */
+   const unsigned final_exp_flags = nir_intrinsic_flags(final_exp);
+   nir_intrinsic_set_flags(final_exp, final_exp_flags | AC_EXP_FLAG_DONE);
 
    /* If a shader has no param exports, rasterization can start before
     * the shader finishes and thus memory stores might not finish before

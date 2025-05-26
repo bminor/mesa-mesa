@@ -888,7 +888,7 @@ emit_ms_vertex(nir_builder *b, nir_def *index, nir_def *row, bool exports, bool 
 
    if (exports) {
       ac_nir_export_position(b, s->hw_info->gfx_level, s->clipdist_enable_mask,
-                             !s->has_param_exports, false, true,
+                             !s->has_param_exports, false,
                              s->per_vertex_outputs | VARYING_BIT_POS, &s->out, row);
    }
 

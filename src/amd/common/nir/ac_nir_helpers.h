@@ -112,7 +112,6 @@ ac_nir_export_position(nir_builder *b,
                        uint32_t clip_cull_mask,
                        bool no_param_export,
                        bool force_vrs,
-                       bool done,
                        uint64_t outputs_written,
                        ac_nir_prerast_out *out,
                        nir_def *row);
