@@ -75,11 +75,7 @@ bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
             break;
 
          case VARYING_SLOT_CLIP_VERTEX:
-            /* TODO: We should only kill specific clip planes as required by kill_clip_distance,
-             * not whole gl_ClipVertex. Lower ClipVertex in NIR.
-             */
-            if ((key->ge.opt.kill_clip_distances & SI_USER_CLIP_PLANE_MASK) ==
-                SI_USER_CLIP_PLANE_MASK)
+            if (key->ge.opt.kill_clip_distances == SI_USER_CLIP_PLANE_MASK)
                progress |= nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
             break;
 
