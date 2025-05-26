@@ -178,7 +178,6 @@ hk_CreateSampler(VkDevice device,
 {
    VK_FROM_HANDLE(hk_device, dev, device);
    struct hk_physical_device *pdev = hk_device_physical(dev);
-   struct hk_instance *instance = (struct hk_instance *)pdev->vk.instance;
    struct hk_sampler *sampler;
    VkResult result;
 
@@ -186,7 +185,7 @@ hk_CreateSampler(VkDevice device,
    if (!sampler)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   bool workaround_rgba4 = instance->workaround_rgba4;
+   bool workaround_rgba4 = dev->vk.enabled_features.customBorderColors;
    bool custom_border =
       uses_border(info) &&
       is_border_color_custom(info->borderColor, workaround_rgba4);

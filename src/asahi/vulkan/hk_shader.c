@@ -224,6 +224,7 @@ hk_populate_fs_key(struct hk_fs_key *key,
 
 enum hk_feature_key {
    HK_FEAT_MIN_LOD = BITFIELD_BIT(0),
+   HK_FEAT_CUSTOM_BORDER = BITFIELD_BIT(1),
 };
 
 static enum hk_feature_key
@@ -232,7 +233,8 @@ hk_make_feature_key(const struct vk_features *features)
    if (!features)
       return ~0U;
 
-   return (features->minLod ? HK_FEAT_MIN_LOD : 0);
+   return (features->minLod ? HK_FEAT_MIN_LOD : 0) |
+          (features->customBorderColors ? HK_FEAT_CUSTOM_BORDER : 0);
 }
 
 static void
@@ -716,7 +718,7 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
       NIR_PASS(_, nir, agx_nir_lower_image_view_min_lod);
    }
 
-   if (!HK_PERF(dev, NOBORDER)) {
+   if ((features & HK_FEAT_CUSTOM_BORDER) && !HK_PERF(dev, NOBORDER)) {
       NIR_PASS(_, nir, agx_nir_lower_custom_border);
    }
 
