@@ -42,7 +42,8 @@ draw_impl(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
    fd3_emit_state(ctx, ring, emit);
 
-   if (emit->dirty & (FD_DIRTY_VTXBUF | FD_DIRTY_VTXSTATE))
+   if ((ctx->dirty_shader[PIPE_SHADER_VERTEX] & FD_DIRTY_SHADER_PROG) ||
+       (emit->dirty & (FD_DIRTY_VTXBUF | FD_DIRTY_VTXSTATE)))
       fd3_emit_vertex_bufs(ring, emit);
 
    OUT_PKT0(ring, REG_A3XX_PC_VERTEX_REUSE_BLOCK_CNTL, 1);
