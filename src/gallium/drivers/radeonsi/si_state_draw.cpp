@@ -1290,6 +1290,12 @@ void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx)
 
 #endif
 
+#define radeon_emit_alt_hiz_logic() do { \
+   static_assert(GFX_VERSION == GFX12 || !ALT_HIZ_LOGIC, ""); \
+   if (GFX_VERSION == GFX12 && ALT_HIZ_LOGIC) \
+      radeon_emit_alt_hiz_packets(); \
+} while (0)
+
 template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG,
           si_is_draw_vertex_state IS_DRAW_VERTEX_STATE, si_has_sh_pairs_packed HAS_SH_PAIRS_PACKED,
           si_alt_hiz_logic ALT_HIZ_LOGIC> ALWAYS_INLINE

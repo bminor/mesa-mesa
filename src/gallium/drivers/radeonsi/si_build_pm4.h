@@ -498,18 +498,15 @@
 #define radeon_event_write(event_type) \
    ac_cmdbuf_event_write(event_type)
 
-#define radeon_emit_alt_hiz_logic() do { \
-   static_assert(GFX_VERSION == GFX12 || !ALT_HIZ_LOGIC, ""); \
-   if (GFX_VERSION == GFX12 && ALT_HIZ_LOGIC) { \
-      radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0)); \
-      radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5)); \
-      radeon_emit(0); /* DST_SEL, INT_SEL = no write confirm, DATA_SEL = no data */ \
-      radeon_emit(0); /* ADDRESS_LO */ \
-      radeon_emit(0); /* ADDRESS_HI */ \
-      radeon_emit(0); /* DATA_LO */ \
-      radeon_emit(0); /* DATA_HI */ \
-      radeon_emit(0); /* INT_CTXID */ \
-   } \
+#define radeon_emit_alt_hiz_packets() do { \
+   radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0)); \
+   radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5)); \
+   radeon_emit(0); /* DST_SEL, INT_SEL = no write confirm, DATA_SEL = no data */ \
+   radeon_emit(0); /* ADDRESS_LO */ \
+   radeon_emit(0); /* ADDRESS_HI */ \
+   radeon_emit(0); /* DATA_LO */ \
+   radeon_emit(0); /* DATA_HI */ \
+   radeon_emit(0); /* INT_CTXID */ \
 } while (0)
 
 /* This should be evaluated at compile time if all parameters are constants. */
