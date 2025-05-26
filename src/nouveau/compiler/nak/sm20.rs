@@ -2061,6 +2061,21 @@ impl SM20Op for OpLdc {
     }
 }
 
+impl SM20Op for OpLdSharedLock {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Mem, 0x2a);
+        e.set_mem_type(5..8, self.mem_type);
+        e.set_dst(14..20, &self.dst);
+        e.set_reg_src(20..26, &self.addr);
+        e.set_field(26..50, self.offset);
+        e.set_pred_dst2(8..10, 58..59, &self.locked);
+    }
+}
+
 impl SM20Op for OpSt {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
@@ -2088,6 +2103,21 @@ impl SM20Op for OpSt {
         // 8..9: cache hints (.ca, .cg, .lu, .cv)
         e.set_reg_src(14..20, &self.data);
         e.set_reg_src(20..26, &self.addr);
+    }
+}
+
+impl SM20Op for OpStSCheckUnlock {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM20Encoder<'_>) {
+        e.set_opcode(SM20Unit::Mem, 0x2e);
+        e.set_mem_type(5..8, self.mem_type);
+        e.set_reg_src(14..20, &self.data);
+        e.set_reg_src(20..26, &self.addr);
+        e.set_field(26..50, self.offset);
+        e.set_pred_dst2(8..10, 58..59, &self.locked);
     }
 }
 
@@ -2660,7 +2690,9 @@ macro_rules! as_sm20_op_match {
             Op::Txq(op) => op,
             Op::Ld(op) => op,
             Op::Ldc(op) => op,
+            Op::LdSharedLock(op) => op,
             Op::St(op) => op,
+            Op::StSCheckUnlock(op) => op,
             Op::Atom(op) => op,
             Op::ALd(op) => op,
             Op::ASt(op) => op,
