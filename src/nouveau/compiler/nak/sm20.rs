@@ -730,7 +730,7 @@ impl SM20Op for OpFMul {
             e.set_rnd_mode(55..57, self.rnd_mode);
             let neg0 = self.srcs[0].src_mod.has_fneg();
             let neg1 = self.srcs[1].src_mod.has_fneg();
-            e.set_bit(25, neg0 ^ neg1);
+            e.set_bit(57, neg0 ^ neg1);
         }
 
         e.set_bit(5, self.saturate);
@@ -1195,7 +1195,7 @@ impl SM20Op for OpIMad {
         e.set_bit(8, neg_c);
         e.set_bit(9, neg_ab);
 
-        e.set_bit(24, false); // saturate
+        e.set_bit(56, false); // saturate
     }
 }
 
