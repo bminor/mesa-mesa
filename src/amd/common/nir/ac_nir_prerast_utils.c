@@ -1058,10 +1058,8 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
     * num-vert-per-prim for writing correct amount of data to buffer.
     */
    nir_def *num_vert_per_prim = nir_load_num_vertices_per_primitive_amd(b);
-   for (unsigned buffer = 0; buffer < 4; buffer++) {
-      if (!(info->buffers_written & BITFIELD_BIT(buffer)))
-         continue;
 
+   u_foreach_bit(buffer, info->buffers_written) {
       assert(info->buffers[buffer].stride);
 
       prim_stride[buffer] =
@@ -1244,10 +1242,7 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
       nir_def *any_overflow = nir_imm_false(b);
       nir_def *overflow_amount[4] = {undef, undef, undef, undef};
 
-      for (unsigned buffer = 0; buffer < 4; buffer++) {
-         if (!(info->buffers_written & BITFIELD_BIT(buffer)))
-            continue;
-
+      u_foreach_bit(buffer, info->buffers_written) {
          nir_def *buffer_size = nir_channel(b, so_buffer_ret[buffer], 2);
 
          /* Only consider overflow for valid feedback buffers because
@@ -1313,10 +1308,7 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
       }
 
       /* Save to LDS for being accessed by other waves in this workgroup. */
-      for (unsigned stream = 0; stream < 4; stream++) {
-         if (!(info->streams_written & BITFIELD_BIT(stream)))
-            continue;
-
+      u_foreach_bit(stream, info->streams_written) {
          nir_store_shared(b, emit_prim[stream], scratch_base, .base = 16 + stream * 4);
       }
 
@@ -1340,19 +1332,13 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
                       .memory_modes = nir_var_mem_shared);
 
    /* Fetch the per-buffer offsets in all waves. */
-   for (unsigned buffer = 0; buffer < 4; buffer++) {
-      if (!(info->buffers_written & BITFIELD_BIT(buffer)))
-         continue;
-
+   u_foreach_bit(buffer, info->buffers_written) {
       buffer_offsets_ret[buffer] =
          nir_load_shared(b, 1, 32, scratch_base, .base = buffer * 4);
    }
 
    /* Fetch the per-stream emit prim in all waves. */
-   for (unsigned stream = 0; stream < 4; stream++) {
-      if (!(info->streams_written & BITFIELD_BIT(stream)))
-            continue;
-
+   u_foreach_bit(stream, info->streams_written) {
       emit_prim_ret[stream] =
          nir_load_shared(b, 1, 32, scratch_base, .base = 16 + stream * 4);
    }

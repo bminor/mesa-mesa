@@ -703,10 +703,8 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *gen_prim[4] = {0};
    nir_def *export_seq[4] = {0};
    nir_def *out_vtx_primflag[4] = {0};
-   for (unsigned stream = 0; stream < 4; stream++) {
-      if (!(info->streams_written & BITFIELD_BIT(stream)))
-         continue;
 
+   u_foreach_bit(stream, info->streams_written) {
       out_vtx_primflag[stream] =
          ngg_gs_load_out_vtx_primflag(b, stream, tid_in_tg, out_vtx_lds_addr, max_vtxcnt, s);
 
@@ -757,10 +755,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
                                    s->options->use_gfx12_xfb_intrinsic, s->lds_addr_gs_out_vtx, tid_in_tg,
                                    gen_prim, so_buffer, buffer_offsets, emit_prim);
 
-   for (unsigned stream = 0; stream < 4; stream++) {
-      if (!(info->streams_written & BITFIELD_BIT(stream)))
-         continue;
-
+   u_foreach_bit(stream, info->streams_written) {
       nir_def *can_emit = nir_ilt(b, export_seq[stream], emit_prim[stream]);
       nir_if *if_emit = nir_push_if(b, nir_iand(b, can_emit, prim_live[stream]));
       {
