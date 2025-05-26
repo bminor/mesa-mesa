@@ -75,8 +75,8 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
 {
    struct etna_context *ctx = etna_context(pctx);
    struct etna_screen *screen = ctx->screen;
-   unsigned layer = templat->u.tex.first_layer;
-   unsigned level = templat->u.tex.level;
+   unsigned layer = templat->first_layer;
+   unsigned level = templat->level;
    struct etna_resource *rsc = etna_render_handle_incompatible(pctx, prsc);
    struct etna_resource_level *lev = &rsc->levels[level];
    struct etna_surface *surf = CALLOC_STRUCT(etna_surface);
@@ -84,7 +84,7 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    if (!surf)
       return NULL;
 
-   assert(templat->u.tex.first_layer == templat->u.tex.last_layer);
+   assert(templat->first_layer == templat->last_layer);
    assert(layer <= util_max_layer(prsc, level));
 
    surf->base.context = pctx;
@@ -94,7 +94,8 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    pipe_resource_reference(&surf->prsc, prsc);
 
    surf->base.format = templat->format;
-   surf->base.u = templat->u;
+   surf->base.first_layer = templat->first_layer;
+   surf->base.last_layer = templat->last_layer;
    surf->level = lev;
 
    /* XXX we don't really need a copy but it's convenient */

@@ -803,7 +803,7 @@ static void r600_init_color_surface(struct r600_context *rctx,
 {
 	struct r600_screen *rscreen = rctx->screen;
 	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
-	unsigned level = surf->base.u.tex.level;
+	unsigned level = surf->base.level;
 	unsigned pitch, slice;
 	unsigned color_info;
 	unsigned color_view;
@@ -820,8 +820,8 @@ static void r600_init_color_surface(struct r600_context *rctx,
 	}
 
 	offset = (uint64_t)rtex->surface.u.legacy.level[level].offset_256B * 256;
-	color_view = S_028080_SLICE_START(surf->base.u.tex.first_layer) |
-		     S_028080_SLICE_MAX(surf->base.u.tex.last_layer);
+	color_view = S_028080_SLICE_START(surf->base.first_layer) |
+		     S_028080_SLICE_MAX(surf->base.last_layer);
 
 	pitch = rtex->surface.u.legacy.level[level].nblk_x / 8 - 1;
 	slice = (rtex->surface.u.legacy.level[level].nblk_x * rtex->surface.u.legacy.level[level].nblk_y) / 64;
@@ -1031,7 +1031,7 @@ static void r600_init_depth_surface(struct r600_context *rctx,
 	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
 	unsigned level, pitch, slice, format, offset, array_mode;
 
-	level = surf->base.u.tex.level;
+	level = surf->base.level;
 	offset = (uint64_t)rtex->surface.u.legacy.level[level].offset_256B * 256;
 	pitch = rtex->surface.u.legacy.level[level].nblk_x / 8 - 1;
 	slice = (rtex->surface.u.legacy.level[level].nblk_x * rtex->surface.u.legacy.level[level].nblk_y) / 64;
@@ -1054,8 +1054,8 @@ static void r600_init_depth_surface(struct r600_context *rctx,
 
 	surf->db_depth_info = S_028010_ARRAY_MODE(array_mode) | S_028010_FORMAT(format);
 	surf->db_depth_base = offset >> 8;
-	surf->db_depth_view = S_028004_SLICE_START(surf->base.u.tex.first_layer) |
-			      S_028004_SLICE_MAX(surf->base.u.tex.last_layer);
+	surf->db_depth_view = S_028004_SLICE_START(surf->base.first_layer) |
+			      S_028004_SLICE_MAX(surf->base.last_layer);
 	surf->db_depth_size = S_028000_PITCH_TILE_MAX(pitch) | S_028000_SLICE_TILE_MAX(slice);
 	surf->db_prefetch_limit = (rtex->surface.u.legacy.level[level].nblk_y / 8) - 1;
 

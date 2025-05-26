@@ -1587,9 +1587,9 @@ void util_blitter_default_dst_texture(struct pipe_surface *dst_templ,
    memset(dst_templ, 0, sizeof(*dst_templ));
    dst_templ->texture = dst;
    dst_templ->format = util_format_linear(dst->format);
-   dst_templ->u.tex.level = dstlevel;
-   dst_templ->u.tex.first_layer = dstz;
-   dst_templ->u.tex.last_layer = dstz;
+   dst_templ->level = dstlevel;
+   dst_templ->first_layer = dstz;
+   dst_templ->last_layer = dstz;
 }
 
 static struct pipe_surface *
@@ -1600,9 +1600,9 @@ util_blitter_get_next_surface_layer(struct pipe_context *pipe,
 
    memset(&dst_templ, 0, sizeof(dst_templ));
    dst_templ.format = surf->format;
-   dst_templ.u.tex.level = surf->u.tex.level;
-   dst_templ.u.tex.first_layer = surf->u.tex.first_layer + 1;
-   dst_templ.u.tex.last_layer = surf->u.tex.last_layer + 1;
+   dst_templ.level = surf->level;
+   dst_templ.first_layer = surf->first_layer + 1;
+   dst_templ.last_layer = surf->last_layer + 1;
 
    return pipe->create_surface(pipe, surf->texture, &dst_templ);
 }
@@ -2384,7 +2384,7 @@ void util_blitter_clear_render_target(struct blitter_context *blitter,
    pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, blitter->cb_slot,
                              false, &cb);
 
-   num_layers = dstsurf->u.tex.last_layer - dstsurf->u.tex.first_layer + 1;
+   num_layers = dstsurf->last_layer - dstsurf->first_layer + 1;
 
    if (num_layers > 1 && ctx->has_layered) {
       get_vs = get_vs_layered;
@@ -2462,7 +2462,7 @@ void util_blitter_clear_depth_stencil(struct blitter_context *blitter,
 
    blitter_set_dst_dimensions(ctx, fb_state.width, fb_state.height);
 
-   num_layers = dstsurf->u.tex.last_layer - dstsurf->u.tex.first_layer + 1;
+   num_layers = dstsurf->last_layer - dstsurf->first_layer + 1;
    if (num_layers > 1 && ctx->has_layered) {
       blitter_set_common_draw_rect_state(ctx, false, false);
       blitter->draw_rectangle(blitter, ctx->velem_state, get_vs_layered,
@@ -2571,15 +2571,15 @@ void util_blitter_custom_resolve_color(struct blitter_context *blitter,
 
    dstsurf.format = format;
    dstsurf.texture = dst;
-   dstsurf.u.tex.level = dst_level;
-   dstsurf.u.tex.first_layer = dst_layer;
-   dstsurf.u.tex.last_layer = dst_layer;
+   dstsurf.level = dst_level;
+   dstsurf.first_layer = dst_layer;
+   dstsurf.last_layer = dst_layer;
 
    srcsurf.format = format;
    srcsurf.texture = src;
-   srcsurf.u.tex.level = 0;
-   srcsurf.u.tex.first_layer = src_layer;
-   srcsurf.u.tex.last_layer = src_layer;
+   srcsurf.level = 0;
+   srcsurf.first_layer = src_layer;
+   srcsurf.last_layer = src_layer;
 
    /* set a framebuffer state */
    fb_state.width = src->width0;

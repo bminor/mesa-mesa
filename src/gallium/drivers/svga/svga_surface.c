@@ -286,28 +286,28 @@ svga_create_surface_view(struct pipe_context *pipe,
    SVGA_STATS_TIME_PUSH(ss->sws, SVGA_STATS_TIME_CREATESURFACEVIEW);
 
    if (pt->target == PIPE_TEXTURE_CUBE) {
-      layer = surf_tmpl->u.tex.first_layer;
+      layer = surf_tmpl->first_layer;
       zslice = 0;
    }
    else if (pt->target == PIPE_TEXTURE_1D_ARRAY ||
             pt->target == PIPE_TEXTURE_2D_ARRAY ||
             pt->target == PIPE_TEXTURE_CUBE_ARRAY) {
-      layer = surf_tmpl->u.tex.first_layer;
+      layer = surf_tmpl->first_layer;
       zslice = 0;
-      nlayers = surf_tmpl->u.tex.last_layer - surf_tmpl->u.tex.first_layer + 1;
+      nlayers = surf_tmpl->last_layer - surf_tmpl->first_layer + 1;
    }
    else {
       layer = 0;
-      zslice = surf_tmpl->u.tex.first_layer;
+      zslice = surf_tmpl->first_layer;
    }
 
    pipe_reference_init(&s->base.reference, 1);
    pipe_resource_reference(&s->base.texture, pt);
    s->base.context = pipe;
    s->base.format = surf_tmpl->format;
-   s->base.u.tex.level = surf_tmpl->u.tex.level;
-   s->base.u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-   s->base.u.tex.last_layer = surf_tmpl->u.tex.last_layer;
+   s->base.level = surf_tmpl->level;
+   s->base.first_layer = surf_tmpl->first_layer;
+   s->base.last_layer = surf_tmpl->last_layer;
    s->view_id = SVGA3D_INVALID_ID;
 
    s->backed = NULL;
@@ -340,7 +340,7 @@ svga_create_surface_view(struct pipe_context *pipe,
    if (clone_resource) {
       SVGA_DBG(DEBUG_VIEWS,
                "New backed surface view: resource %p, level %u layer %u z %u, %p\n",
-               pt, surf_tmpl->u.tex.level, layer, zslice, s);
+               pt, surf_tmpl->level, layer, zslice, s);
 
       if (svga_have_vgpu10(svga)) {
          switch (pt->target) {
@@ -374,7 +374,7 @@ svga_create_surface_view(struct pipe_context *pipe,
        */
       s->handle = svga_texture_view_surface(svga, tex, bind, flags,
                                             tex->key.format,
-                                            surf_tmpl->u.tex.level, 1,
+                                            surf_tmpl->level, 1,
                                             layer, nlayers, zslice,
                                             true, &s->key);
       if (!s->handle) {
@@ -389,14 +389,14 @@ svga_create_surface_view(struct pipe_context *pipe,
    } else {
       SVGA_DBG(DEBUG_VIEWS,
                "New surface view: resource %p, level %u, layer %u, z %u, %p\n",
-               pt, surf_tmpl->u.tex.level, layer, zslice, s);
+               pt, surf_tmpl->level, layer, zslice, s);
 
       memset(&s->key, 0, sizeof s->key);
       s->key.format = format;
       s->handle = tex->handle;
       s->real_layer = layer;
       s->real_zslice = zslice;
-      s->real_level = surf_tmpl->u.tex.level;
+      s->real_level = surf_tmpl->level;
    }
 
    svga->hud.num_surface_views++;
@@ -423,7 +423,7 @@ svga_create_surface(struct pipe_context *pipe,
    if (svga_screen(screen)->debug.force_surface_view)
       view = true;
 
-   if (surf_tmpl->u.tex.level != 0 &&
+   if (surf_tmpl->level != 0 &&
        svga_screen(screen)->debug.force_level_surface_view)
       view = true;
 
@@ -484,18 +484,18 @@ create_backed_surface_view(struct svga_context *svga, struct svga_surface *s,
       case PIPE_TEXTURE_CUBE_ARRAY:
       case PIPE_TEXTURE_1D_ARRAY:
       case PIPE_TEXTURE_2D_ARRAY:
-         layer = s->base.u.tex.first_layer;
+         layer = s->base.first_layer;
          zslice = 0;
          break;
       default:
          layer = 0;
-         zslice = s->base.u.tex.first_layer;
+         zslice = s->base.first_layer;
       }
 
       svga_texture_copy_handle_resource(svga, tex, bs->handle,
                                         bs->key.numMipLevels,
                                         bs->key.numFaces * bs->key.arraySize,
-                                        zslice, s->base.u.tex.level, layer);
+                                        zslice, s->base.level, layer);
    }
 
    svga_mark_surface_dirty(&s->backed->base);
@@ -577,7 +577,7 @@ svga_validate_surface_view(struct svga_context *svga, struct svga_surface *s)
       desc.tex.mipSlice = s->real_level;
       desc.tex.firstArraySlice = s->real_layer + s->real_zslice;
       desc.tex.arraySize =
-         s->base.u.tex.last_layer - s->base.u.tex.first_layer + 1;
+         s->base.last_layer - s->base.first_layer + 1;
 
       resType = svga_resource_type(s->base.texture->target);
 
@@ -706,8 +706,8 @@ svga_mark_surface_dirty(struct pipe_surface *surf)
 
       if (s->handle == tex->handle) {
          /* hmm so 3d textures always have all their slices marked ? */
-         svga_define_texture_level(tex, surf->u.tex.first_layer,
-                                   surf->u.tex.level);
+         svga_define_texture_level(tex, surf->first_layer,
+                                   surf->level);
       }
       else {
          /* this will happen later in svga_propagate_surface */
@@ -720,7 +720,7 @@ svga_mark_surface_dirty(struct pipe_surface *surf)
     *       backed surface is propagated to the original surface.
     */
    if (s->handle == tex->handle)
-      svga_age_texture_view(tex, surf->u.tex.level);
+      svga_age_texture_view(tex, surf->level);
 }
 
 
@@ -778,7 +778,7 @@ svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
    s->dirty = !reset;
 
    ss->texture_timestamp++;
-   svga_age_texture_view(tex, surf->u.tex.level);
+   svga_age_texture_view(tex, surf->level);
 
    if (s->handle != tex->handle) {
       unsigned zslice, layer;
@@ -786,29 +786,29 @@ svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
       unsigned i;
       unsigned numMipLevels = tex->b.last_level + 1;
       unsigned srcLevel = s->real_level;
-      unsigned dstLevel = surf->u.tex.level;
+      unsigned dstLevel = surf->level;
       unsigned width = u_minify(tex->b.width0, dstLevel);
       unsigned height = u_minify(tex->b.height0, dstLevel);
 
       if (surf->texture->target == PIPE_TEXTURE_CUBE) {
          zslice = 0;
-         layer = surf->u.tex.first_layer;
+         layer = surf->first_layer;
       }
       else if (surf->texture->target == PIPE_TEXTURE_1D_ARRAY ||
                surf->texture->target == PIPE_TEXTURE_2D_ARRAY ||
                surf->texture->target == PIPE_TEXTURE_CUBE_ARRAY) {
          zslice = 0;
-         layer = surf->u.tex.first_layer;
-         nlayers = surf->u.tex.last_layer - surf->u.tex.first_layer + 1;
+         layer = surf->first_layer;
+         nlayers = surf->last_layer - surf->first_layer + 1;
       }
       else {
-         zslice = surf->u.tex.first_layer;
+         zslice = surf->first_layer;
          layer = 0;
       }
 
       SVGA_DBG(DEBUG_VIEWS,
                "Propagate surface %p to resource %p, level %u\n",
-               surf, tex, surf->u.tex.level);
+               surf, tex, surf->level);
 
       if (svga_have_vgpu10(svga)) {
          unsigned srcSubResource, dstSubResource;

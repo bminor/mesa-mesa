@@ -182,10 +182,10 @@ nvc0_validate_fb(struct nvc0_context *nvc0)
          PUSH_DATA(push, sf->height);
          PUSH_DATA(push, nvc0_format_table[sf->base.format].rt);
          PUSH_DATA(push, (mt->layout_3d << 16) |
-                          mt->level[sf->base.u.tex.level].tile_mode);
-         PUSH_DATA(push, sf->base.u.tex.first_layer + sf->depth);
+                          mt->level[sf->base.level].tile_mode);
+         PUSH_DATA(push, sf->base.first_layer + sf->depth);
          PUSH_DATA(push, mt->layer_stride >> 2);
-         PUSH_DATA(push, sf->base.u.tex.first_layer);
+         PUSH_DATA(push, sf->base.first_layer);
 
          ms_mode = mt->ms_mode;
       } else {
@@ -225,7 +225,7 @@ nvc0_validate_fb(struct nvc0_context *nvc0)
       PUSH_DATAh(push, mt->base.address + sf->offset);
       PUSH_DATA (push, mt->base.address + sf->offset);
       PUSH_DATA (push, nvc0_format_table[fb->zsbuf.format].rt);
-      PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+      PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
       PUSH_DATA (push, mt->layer_stride >> 2);
       BEGIN_NVC0(push, NVC0_3D(ZETA_ENABLE), 1);
       PUSH_DATA (push, 1);
@@ -233,9 +233,9 @@ nvc0_validate_fb(struct nvc0_context *nvc0)
       PUSH_DATA (push, sf->width);
       PUSH_DATA (push, sf->height);
       PUSH_DATA (push, (unk << 16) |
-                (sf->base.u.tex.first_layer + sf->depth));
+                (sf->base.first_layer + sf->depth));
       BEGIN_NVC0(push, NVC0_3D(ZETA_BASE_LAYER), 1);
-      PUSH_DATA (push, sf->base.u.tex.first_layer);
+      PUSH_DATA (push, sf->base.first_layer);
 
       ms_mode = mt->ms_mode;
 
@@ -745,9 +745,9 @@ nvc0_validate_fbread(struct nvc0_context *nvc0)
 
       tmpl.target = PIPE_TEXTURE_2D_ARRAY;
       tmpl.format = sf->format;
-      tmpl.u.tex.first_level = tmpl.u.tex.last_level = sf->u.tex.level;
-      tmpl.u.tex.first_layer = sf->u.tex.first_layer;
-      tmpl.u.tex.last_layer = sf->u.tex.last_layer;
+      tmpl.u.tex.first_level = tmpl.u.tex.last_level = sf->level;
+      tmpl.u.tex.first_layer = sf->first_layer;
+      tmpl.u.tex.last_layer = sf->last_layer;
       tmpl.swizzle_r = PIPE_SWIZZLE_X;
       tmpl.swizzle_g = PIPE_SWIZZLE_Y;
       tmpl.swizzle_b = PIPE_SWIZZLE_Z;
@@ -756,9 +756,9 @@ nvc0_validate_fbread(struct nvc0_context *nvc0)
       /* Bail if it's the same parameters */
       if (old_view && old_view->texture == sf->texture &&
           old_view->format == sf->format &&
-          old_view->u.tex.first_level == sf->u.tex.level &&
-          old_view->u.tex.first_layer == sf->u.tex.first_layer &&
-          old_view->u.tex.last_layer == sf->u.tex.last_layer)
+          old_view->u.tex.first_level == sf->level &&
+          old_view->u.tex.first_layer == sf->first_layer &&
+          old_view->u.tex.last_layer == sf->last_layer)
          return;
 
       new_view = pipe->create_sampler_view(pipe, sf->texture, &tmpl);

@@ -426,40 +426,14 @@ util_clear_render_target(struct pipe_context *pipe,
                          unsigned dstx, unsigned dsty,
                          unsigned width, unsigned height)
 {
-   struct pipe_transfer *dst_trans;
-   uint8_t *dst_map;
-
    assert(dst->texture);
    if (!dst->texture)
       return;
 
-   if (dst->texture->target == PIPE_BUFFER) {
-      /*
-       * The fill naturally works on the surface format, however
-       * the transfer uses resource format which is just bytes for buffers.
-       */
-      unsigned dx, w;
-      unsigned pixstride = util_format_get_blocksize(dst->format);
-      dx = (dst->u.buf.first_element + dstx) * pixstride;
-      w = width * pixstride;
-      dst_map = pipe_texture_map(pipe,
-                                  dst->texture,
-                                  0, 0,
-                                  PIPE_MAP_WRITE,
-                                  dx, 0, w, 1,
-                                  &dst_trans);
-      if (dst_map) {
-         util_clear_color_texture_helper(dst_trans, dst_map, dst->format,
-                                         color, width, height, 1);
-         pipe->texture_unmap(pipe, dst_trans);
-      }
-   }
-   else {
-      unsigned depth = dst->u.tex.last_layer - dst->u.tex.first_layer + 1;
-      util_clear_color_texture(pipe, dst->texture, dst->format, color,
-                               dst->u.tex.level, dstx, dsty,
-                               dst->u.tex.first_layer, width, height, depth);
-   }
+   unsigned depth = dst->last_layer - dst->first_layer + 1;
+   util_clear_color_texture(pipe, dst->texture, dst->format, color,
+                              dst->level, dstx, dsty,
+                              dst->first_layer, width, height, depth);
 }
 
 static void
@@ -625,9 +599,9 @@ util_clear_texture_as_surface(struct pipe_context *pipe,
    struct pipe_surface tmpl = {{0}}, *sf;
 
    tmpl.format = res->format;
-   tmpl.u.tex.first_layer = box->z;
-   tmpl.u.tex.last_layer = box->z + box->depth - 1;
-   tmpl.u.tex.level = level;
+   tmpl.first_layer = box->z;
+   tmpl.last_layer = box->z + box->depth - 1;
+   tmpl.level = level;
 
    if (util_format_is_depth_or_stencil(res->format)) {
       if (!pipe->clear_depth_stencil)
@@ -806,10 +780,10 @@ util_clear_depth_stencil(struct pipe_context *pipe,
       return;
 
    zstencil = util_pack64_z_stencil(dst->format, depth, stencil);
-   max_layer = dst->u.tex.last_layer - dst->u.tex.first_layer;
+   max_layer = dst->last_layer - dst->first_layer;
    util_clear_depth_stencil_texture(pipe, dst->texture, dst->format,
-                                    clear_flags, zstencil, dst->u.tex.level,
-                                    dstx, dsty, dst->u.tex.first_layer,
+                                    clear_flags, zstencil, dst->level,
+                                    dstx, dsty, dst->first_layer,
                                     width, height, max_layer + 1);
 }
 

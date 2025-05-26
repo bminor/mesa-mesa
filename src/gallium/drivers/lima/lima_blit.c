@@ -45,8 +45,8 @@ lima_pack_blit_cmd(struct lima_job *job,
 
    struct lima_context *ctx = job->ctx;
    struct lima_surface *surf = lima_surface(psurf);
-   int level = psurf->u.tex.level;
-   unsigned first_layer = psurf->u.tex.first_layer;
+   int level = psurf->level;
+   unsigned first_layer = psurf->first_layer;
    float fb_width = dst->width, fb_height = dst->height;
 
    uint32_t va;
@@ -183,9 +183,9 @@ lima_get_blit_surface(struct pipe_context *pctx,
 
    memset(&tmpl, 0, sizeof(tmpl));
    tmpl.format = prsc->format;
-   tmpl.u.tex.level = level;
-   tmpl.u.tex.first_layer = 0;
-   tmpl.u.tex.last_layer = 0;
+   tmpl.level = level;
+   tmpl.first_layer = 0;
+   tmpl.last_layer = 0;
 
    return pctx->create_surface(pctx, prsc, &tmpl);
 }

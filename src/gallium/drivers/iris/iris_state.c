@@ -2118,7 +2118,7 @@ want_pma_fix(struct iris_context *ice)
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable &&
     */
    if (!zres ||
-       !iris_resource_level_has_hiz(devinfo, zres, cso_fb->zsbuf.u.tex.level))
+       !iris_resource_level_has_hiz(devinfo, zres, cso_fb->zsbuf.level))
       return false;
 
    /* 3DSTATE_WM::EDSC_Mode != EDSC_PREPS */
@@ -3165,14 +3165,14 @@ iris_create_surface(struct pipe_context *ctx,
    if (!surf)
       return NULL;
 
-   uint32_t array_len = tmpl->u.tex.last_layer - tmpl->u.tex.first_layer + 1;
+   uint32_t array_len = tmpl->last_layer - tmpl->first_layer + 1;
 
    struct isl_view *view = &surf->view;
    *view = (struct isl_view) {
       .format = fmt.fmt,
-      .base_level = tmpl->u.tex.level,
+      .base_level = tmpl->level,
       .levels = 1,
-      .base_array_layer = tmpl->u.tex.first_layer,
+      .base_array_layer = tmpl->first_layer,
       .array_len = array_len,
       .swizzle = ISL_SWIZZLE_IDENTITY,
       .usage = usage,
@@ -3182,9 +3182,9 @@ iris_create_surface(struct pipe_context *ctx,
    struct isl_view *read_view = &surf->read_view;
    *read_view = (struct isl_view) {
       .format = fmt.fmt,
-      .base_level = tmpl->u.tex.level,
+      .base_level = tmpl->level,
       .levels = 1,
-      .base_array_layer = tmpl->u.tex.first_layer,
+      .base_array_layer = tmpl->first_layer,
       .array_len = array_len,
       .swizzle = ISL_SWIZZLE_IDENTITY,
       .usage = ISL_SURF_USAGE_TEXTURE_BIT,
@@ -3273,9 +3273,9 @@ iris_create_surface(struct pipe_context *ctx,
    psurf->context = ctx;
    psurf->format = tmpl->format;
    psurf->texture = tex;
-   psurf->u.tex.first_layer = tmpl->u.tex.first_layer;
-   psurf->u.tex.last_layer = tmpl->u.tex.last_layer;
-   psurf->u.tex.level = tmpl->u.tex.level;
+   psurf->first_layer = tmpl->first_layer;
+   psurf->last_layer = tmpl->last_layer;
+   psurf->level = tmpl->level;
 
    /* Bail early for depth/stencil - we don't want SURFACE_STATE for them. */
    if (res->surf.usage & (ISL_SURF_USAGE_DEPTH_BIT |
@@ -3868,10 +3868,10 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       iris_get_depth_stencil_resources(cso->zsbuf.texture, &zres,
                                        &stencil_res);
 
-      view.base_level = cso->zsbuf.u.tex.level;
-      view.base_array_layer = cso->zsbuf.u.tex.first_layer;
+      view.base_level = cso->zsbuf.level;
+      view.base_array_layer = cso->zsbuf.first_layer;
       view.array_len =
-         cso->zsbuf.u.tex.last_layer - cso->zsbuf.u.tex.first_layer + 1;
+         cso->zsbuf.last_layer - cso->zsbuf.first_layer + 1;
 
       if (zres) {
          view.usage |= ISL_SURF_USAGE_DEPTH_BIT;
@@ -6714,7 +6714,7 @@ calculate_tile_dimensions(struct iris_context *ice,
          /* XXX - Pessimistic, in some cases it might be helpful to neglect
           *       aux surface traffic.
           */
-         if (iris_resource_level_has_hiz(devinfo, zres, cso->zsbuf.u.tex.level)) {
+         if (iris_resource_level_has_hiz(devinfo, zres, cso->zsbuf.level)) {
             pixel_size += intel_calculate_surface_pixel_size(&zres->aux.surf);
 
             if (isl_aux_usage_has_ccs(zres->aux.usage)) {

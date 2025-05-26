@@ -175,14 +175,14 @@ try_pbo_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
       }
 
       templ.target = view_target;
-      templ.u.tex.first_level = surface->u.tex.level;
+      templ.u.tex.first_level = surface->level;
       templ.u.tex.last_level = templ.u.tex.first_level;
 
       if (view_target != PIPE_TEXTURE_3D) {
-         templ.u.tex.first_layer = surface->u.tex.first_layer;
+         templ.u.tex.first_layer = surface->first_layer;
          templ.u.tex.last_layer = templ.u.tex.first_layer;
       } else {
-         addr.constants.layer_offset = surface->u.tex.first_layer;
+         addr.constants.layer_offset = surface->first_layer;
       }
 
       sampler_view = pipe->create_sampler_view(pipe, texture, &templ);
@@ -310,7 +310,7 @@ blit_to_staging(struct st_context *st, struct gl_renderbuffer *rb,
 
    memset(&blit, 0, sizeof(blit));
    blit.src.resource = rb->texture;
-   blit.src.level = rb->surface.u.tex.level;
+   blit.src.level = rb->surface.level;
    blit.src.format = src_format;
    blit.dst.resource = dst;
    blit.dst.level = 0;
@@ -319,7 +319,7 @@ blit_to_staging(struct st_context *st, struct gl_renderbuffer *rb,
    blit.dst.box.x = 0;
    blit.src.box.y = y;
    blit.dst.box.y = 0;
-   blit.src.box.z = rb->surface.u.tex.first_layer;
+   blit.src.box.z = rb->surface.first_layer;
    blit.dst.box.z = 0;
    blit.src.box.width = blit.dst.box.width = width;
    blit.src.box.height = blit.dst.box.height = height;
@@ -356,13 +356,13 @@ try_cached_readpixels(struct st_context *st, struct gl_renderbuffer *rb,
    /* Reset cache after invalidation or switch of parameters. */
    if (st->readpix_cache.src != src ||
        st->readpix_cache.dst_format != dst_format ||
-       st->readpix_cache.level != surface->u.tex.level ||
-       st->readpix_cache.layer != surface->u.tex.first_layer) {
+       st->readpix_cache.level != surface->level ||
+       st->readpix_cache.layer != surface->first_layer) {
       pipe_resource_reference(&st->readpix_cache.src, src);
       pipe_resource_reference(&st->readpix_cache.cache, NULL);
       st->readpix_cache.dst_format = dst_format;
-      st->readpix_cache.level = surface->u.tex.level;
-      st->readpix_cache.layer = surface->u.tex.first_layer;
+      st->readpix_cache.level = surface->level;
+      st->readpix_cache.layer = surface->first_layer;
       st->readpix_cache.hits = 0;
    }
 

@@ -61,7 +61,7 @@ nv50_validate_fb(struct nv50_context *nv50)
       if (likely(nouveau_bo_memtype(bo))) {
          assert(sf->base.texture->target != PIPE_BUFFER);
 
-         PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+         PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
          PUSH_DATA (push, mt->layer_stride >> 2);
          BEGIN_NV04(push, NV50_3D(RT_HORIZ(i)), 2);
          PUSH_DATA (push, sf->width);
@@ -102,7 +102,7 @@ nv50_validate_fb(struct nv50_context *nv50)
       PUSH_DATAh(push, mt->base.address + sf->offset);
       PUSH_DATA (push, mt->base.address + sf->offset);
       PUSH_DATA (push, nv50_format_table[fb->zsbuf.format].rt);
-      PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+      PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
       PUSH_DATA (push, mt->layer_stride >> 2);
       BEGIN_NV04(push, NV50_3D(ZETA_ENABLE), 1);
       PUSH_DATA (push, 1);

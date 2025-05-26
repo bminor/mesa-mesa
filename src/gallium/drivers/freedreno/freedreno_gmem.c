@@ -740,10 +740,10 @@ fd_gmem_render_tiles(struct fd_batch *batch)
       struct pipe_surface *psurf = &pfb->cbufs[i];
       if (!psurf->texture)
          continue;
-      if (psurf->u.tex.first_layer < psurf->u.tex.last_layer)
+      if (psurf->first_layer < psurf->last_layer)
          sysmem = true;
    }
-   if (pfb->zsbuf.texture && pfb->zsbuf.u.tex.first_layer < pfb->zsbuf.u.tex.last_layer)
+   if (pfb->zsbuf.texture && pfb->zsbuf.first_layer < pfb->zsbuf.last_layer)
       sysmem = true;
 
    /* Tessellation doesn't seem to support tiled rendering so fall back to

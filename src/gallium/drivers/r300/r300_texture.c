@@ -960,7 +960,7 @@ void r300_texture_setup_format_state(struct r300_screen *screen,
 static void r300_texture_setup_fb_state(struct r300_surface *surf)
 {
     struct r300_resource *tex = r300_resource(surf->base.texture);
-    unsigned level = surf->base.u.tex.level;
+    unsigned level = surf->base.level;
     unsigned stride =
       r300_stride_to_width(surf->base.format, tex->tex.stride_in_bytes[level]);
 
@@ -1169,9 +1169,9 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
 {
     struct r300_resource* tex = r300_resource(texture);
     struct r300_surface* surface = CALLOC_STRUCT(r300_surface);
-    unsigned level = surf_tmpl->u.tex.level;
+    unsigned level = surf_tmpl->level;
 
-    assert(surf_tmpl->u.tex.first_layer == surf_tmpl->u.tex.last_layer);
+    assert(surf_tmpl->first_layer == surf_tmpl->last_layer);
 
     if (surface) {
         uint32_t offset, tile_height;
@@ -1180,9 +1180,9 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
         pipe_resource_reference(&surface->base.texture, texture);
         surface->base.context = ctx;
         surface->base.format = surf_tmpl->format;
-        surface->base.u.tex.level = level;
-        surface->base.u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-        surface->base.u.tex.last_layer = surf_tmpl->u.tex.last_layer;
+        surface->base.level = level;
+        surface->base.first_layer = surf_tmpl->first_layer;
+        surface->base.last_layer = surf_tmpl->last_layer;
 
         surface->buf = tex->buf;
 
@@ -1192,7 +1192,7 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
             surface->domain &= ~RADEON_DOMAIN_GTT;
 
         surface->offset = r300_texture_get_offset(tex, level,
-                                                  surf_tmpl->u.tex.first_layer);
+                                                  surf_tmpl->first_layer);
         r300_texture_setup_fb_state(surface);
 
         /* Parameters for the CBZB clear. */

@@ -179,14 +179,14 @@ static void virgl_attach_res_framebuffer(struct virgl_context *vctx)
    res = virgl_resource(surf->texture);
    if (res) {
       vws->emit_res(vws, vctx->cbuf, res->hw_res, false);
-      virgl_resource_dirty(res, surf->u.tex.level);
+      virgl_resource_dirty(res, surf->level);
    }
    for (i = 0; i < vctx->framebuffer.nr_cbufs; i++) {
       surf = &vctx->framebuffer.cbufs[i];
       res = virgl_resource(surf->texture);
       if (res) {
          vws->emit_res(vws, vctx->cbuf, res->hw_res, false);
-         virgl_resource_dirty(res, surf->u.tex.level);
+         virgl_resource_dirty(res, surf->level);
       }
    }
 }
@@ -369,9 +369,9 @@ static struct pipe_surface *virgl_create_surface(struct pipe_context *ctx,
    surf->base.context = ctx;
    surf->base.format = templ->format;
 
-   surf->base.u.tex.level = templ->u.tex.level;
-   surf->base.u.tex.first_layer = templ->u.tex.first_layer;
-   surf->base.u.tex.last_layer = templ->u.tex.last_layer;
+   surf->base.level = templ->level;
+   surf->base.first_layer = templ->first_layer;
+   surf->base.last_layer = templ->last_layer;
    surf->base.nr_samples = templ->nr_samples;
 
    virgl_encoder_create_surface(vctx, handle, res, &surf->base);
@@ -921,7 +921,7 @@ static void virgl_clear_render_target(struct pipe_context *ctx,
     * without going through the corresponding guest side resource, and
     * hence the two will diverge.
     */
-   virgl_resource_dirty(virgl_resource(dst->texture), dst->u.tex.level);
+   virgl_resource_dirty(virgl_resource(dst->texture), dst->level);
 }
 
 static void virgl_clear_depth_stencil(struct pipe_context *ctx,
@@ -946,7 +946,7 @@ static void virgl_clear_depth_stencil(struct pipe_context *ctx,
     * without going through the corresponding guest side resource, and
     * hence the two will diverge.
     */
-   virgl_resource_dirty(virgl_resource(dst->texture), dst->u.tex.level);
+   virgl_resource_dirty(virgl_resource(dst->texture), dst->level);
 }
 
 static void virgl_clear_render_target_stub(struct pipe_context *ctx,

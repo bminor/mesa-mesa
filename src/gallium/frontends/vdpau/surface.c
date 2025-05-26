@@ -525,7 +525,7 @@ VdpStatus vlVdpVideoSurfaceDMABuf(VdpVideoSurface surface,
 
    memset(&whandle, 0, sizeof(struct winsys_handle));
    whandle.type = WINSYS_HANDLE_TYPE_FD;
-   whandle.layer = surf->u.tex.first_layer;
+   whandle.layer = surf->first_layer;
 
    pscreen = surf->texture->screen;
    if (!pscreen->resource_get_handle(pscreen, p_surf->device->context,

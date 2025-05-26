@@ -477,7 +477,7 @@ nv84_create_decoder(struct pipe_context *context,
       surf.height = (templ->max_references + 1) * dec->frame_mbs / 4;
       surf.depth = 1;
       surf.base.format = PIPE_FORMAT_B8G8R8A8_UNORM;
-      surf.base.u.tex.level = 0;
+      surf.base.level = 0;
       surf.base.texture = &mip.base.base;
       mip.level[0].tile_mode = 0;
       mip.level[0].pitch = surf.width * 4;
@@ -733,10 +733,10 @@ nv84_video_buffer_create(struct pipe_context *pipe,
    memset(&surf_templ, 0, sizeof(surf_templ));
    for (j = 0; j < 2; ++j) {
       u_surface_default_template(&surf_templ, buffer->resources[j]);
-      surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 0;
+      surf_templ.first_layer = surf_templ.last_layer = 0;
       buffer->surfaces[j * 2] = surf_templ;
 
-      surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 1;
+      surf_templ.first_layer = surf_templ.last_layer = 1;
       buffer->surfaces[j * 2 + 1] = surf_templ;
    }
 

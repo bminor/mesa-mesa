@@ -1869,7 +1869,7 @@ want_pma_fix(struct crocus_context *ice)
    /* 3DSTATE_DEPTH_BUFFER::SURFACE_TYPE != NULL &&
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable &&
     */
-   if (!zres || !crocus_resource_level_has_hiz(zres, cso_fb->zsbuf.u.tex.level))
+   if (!zres || !crocus_resource_level_has_hiz(zres, cso_fb->zsbuf.level))
       return false;
 
    /* 3DSTATE_WM::EDSC_Mode != EDSC_PREPS */
@@ -2857,18 +2857,18 @@ crocus_create_surface(struct pipe_context *ctx,
    pipe_resource_reference(&psurf->texture, tex);
    psurf->context = ctx;
    psurf->format = tmpl->format;
-   psurf->u.tex.first_layer = tmpl->u.tex.first_layer;
-   psurf->u.tex.last_layer = tmpl->u.tex.last_layer;
-   psurf->u.tex.level = tmpl->u.tex.level;
+   psurf->first_layer = tmpl->first_layer;
+   psurf->last_layer = tmpl->last_layer;
+   psurf->level = tmpl->level;
 
-   uint32_t array_len = tmpl->u.tex.last_layer - tmpl->u.tex.first_layer + 1;
+   uint32_t array_len = tmpl->last_layer - tmpl->first_layer + 1;
 
    struct isl_view *view = &surf->view;
    *view = (struct isl_view) {
       .format = fmt.fmt,
-      .base_level = tmpl->u.tex.level,
+      .base_level = tmpl->level,
       .levels = 1,
-      .base_array_layer = tmpl->u.tex.first_layer,
+      .base_array_layer = tmpl->first_layer,
       .array_len = array_len,
       .swizzle = ISL_SWIZZLE_IDENTITY,
       .usage = usage,
@@ -2878,9 +2878,9 @@ crocus_create_surface(struct pipe_context *ctx,
    struct isl_view *read_view = &surf->read_view;
    *read_view = (struct isl_view) {
       .format = fmt.fmt,
-      .base_level = tmpl->u.tex.level,
+      .base_level = tmpl->level,
       .levels = 1,
-      .base_array_layer = tmpl->u.tex.first_layer,
+      .base_array_layer = tmpl->first_layer,
       .array_len = array_len,
       .swizzle = ISL_SWIZZLE_IDENTITY,
       .usage = ISL_SURF_USAGE_TEXTURE_BIT,
@@ -2899,9 +2899,9 @@ crocus_create_surface(struct pipe_context *ctx,
       uint64_t temp_offset;
       uint32_t temp_x, temp_y;
 
-      isl_surf_get_image_offset_B_tile_sa(&res->surf, tmpl->u.tex.level,
-                                          res->base.b.target == PIPE_TEXTURE_3D ? 0 : tmpl->u.tex.first_layer,
-                                          res->base.b.target == PIPE_TEXTURE_3D ? tmpl->u.tex.first_layer : 0,
+      isl_surf_get_image_offset_B_tile_sa(&res->surf, tmpl->level,
+                                          res->base.b.target == PIPE_TEXTURE_3D ? 0 : tmpl->first_layer,
+                                          res->base.b.target == PIPE_TEXTURE_3D ? tmpl->first_layer : 0,
                                           &temp_offset, &temp_x, &temp_y);
       if (devinfo->verx10 == 40 && (temp_x || temp_y)) {
          /* Original gfx4 hardware couldn't draw to a non-tile-aligned
@@ -2909,8 +2909,8 @@ crocus_create_surface(struct pipe_context *ctx,
           */
          /* move to temp */
          struct pipe_resource wa_templ = (struct pipe_resource) {
-            .width0 = u_minify(res->base.b.width0, tmpl->u.tex.level),
-            .height0 = u_minify(res->base.b.height0, tmpl->u.tex.level),
+            .width0 = u_minify(res->base.b.width0, tmpl->level),
+            .height0 = u_minify(res->base.b.height0, tmpl->level),
             .depth0 = 1,
             .array_size = 1,
             .format = res->base.b.format,
@@ -3443,7 +3443,7 @@ crocus_set_framebuffer_state(struct pipe_context *ctx,
       enum isl_aux_usage aux_usage = ISL_AUX_USAGE_NONE;
       crocus_get_depth_stencil_resources(devinfo, cso->zsbuf.texture, &zres,
                                          &stencil_res);
-      if (zres && crocus_resource_level_has_hiz(zres, cso->zsbuf.u.tex.level)) {
+      if (zres && crocus_resource_level_has_hiz(zres, cso->zsbuf.level)) {
          aux_usage = zres->aux.usage;
       }
       ice->state.hiz_usage = aux_usage;
@@ -4944,8 +4944,8 @@ emit_null_fb_surface(struct crocus_batch *batch,
    if (cso->nr_cbufs == 0 && ice->state.fb_zsbuf) {
       width = ((struct crocus_surface*)ice->state.fb_zsbuf)->surf.logical_level0_px.width;
       height = ((struct crocus_surface*)ice->state.fb_zsbuf)->surf.logical_level0_px.height;
-      level = cso->zsbuf.u.tex.level;
-      layer = cso->zsbuf.u.tex.first_layer;
+      level = cso->zsbuf.level;
+      layer = cso->zsbuf.first_layer;
    }
    emit_sized_null_surface(batch, width, height,
                            layers, level, layer,
@@ -7448,9 +7448,9 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
          if (zsbuf->align_res) {
             zres = (struct crocus_resource *)zsbuf->align_res;
          }
-         view.base_level = cso->zsbuf.u.tex.level;
-         view.base_array_layer = cso->zsbuf.u.tex.first_layer;
-         view.array_len = cso->zsbuf.u.tex.last_layer - cso->zsbuf.u.tex.first_layer + 1;
+         view.base_level = cso->zsbuf.level;
+         view.base_array_layer = cso->zsbuf.first_layer;
+         view.array_len = cso->zsbuf.last_layer - cso->zsbuf.first_layer + 1;
 
          if (zres) {
             view.usage |= ISL_SURF_USAGE_DEPTH_BIT;

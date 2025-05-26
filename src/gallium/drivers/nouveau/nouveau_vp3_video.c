@@ -167,10 +167,10 @@ nouveau_vp3_video_buffer_create(struct pipe_context *pipe,
    memset(&surf_templ, 0, sizeof(surf_templ));
    for (j = 0; j < buffer->num_planes; ++j) {
       u_surface_default_template(&surf_templ, buffer->resources[j]);
-      surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 0;
+      surf_templ.first_layer = surf_templ.last_layer = 0;
       buffer->surfaces[j * 2] = surf_templ;
 
-      surf_templ.u.tex.first_layer = surf_templ.u.tex.last_layer = 1;
+      surf_templ.first_layer = surf_templ.last_layer = 1;
       buffer->surfaces[j * 2 + 1] = surf_templ;
    }
 

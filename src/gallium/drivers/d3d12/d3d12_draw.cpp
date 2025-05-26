@@ -707,11 +707,11 @@ transition_surface_subresources_state(struct d3d12_context *ctx,
       start_layer = 0;
       num_layers = 1;
    } else {
-      start_layer = psurf->u.tex.first_layer;
-      num_layers = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1;
+      start_layer = psurf->first_layer;
+      num_layers = psurf->last_layer - psurf->first_layer + 1;
    }
    d3d12_transition_subresources_state(ctx, res,
-                                       psurf->u.tex.level, 1,
+                                       psurf->level, 1,
                                        start_layer, num_layers,
                                        d3d12_get_format_start_plane(psurf->format),
                                        d3d12_get_format_num_planes(psurf->format),

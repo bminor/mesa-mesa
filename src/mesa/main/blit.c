@@ -369,14 +369,14 @@ blit_info_from_renderbuffer(struct gl_context *ctx, struct gl_renderbuffer *srcR
 {
    if (srcRb) {
       blit->src.resource = srcRb->texture;
-      blit->src.level = srcRb->surface.u.tex.level;
-      blit->src.box.z = srcRb->surface.u.tex.first_layer;
+      blit->src.level = srcRb->surface.level;
+      blit->src.box.z = srcRb->surface.first_layer;
       blit->src.format = _mesa_renderbuffer_get_format(ctx, srcRb);
    }
    if (dstRb) {
       blit->dst.resource = dstRb->texture;
-      blit->dst.level = dstRb->surface.u.tex.level;
-      blit->dst.box.z = dstRb->surface.u.tex.first_layer;
+      blit->dst.level = dstRb->surface.level;
+      blit->dst.box.z = dstRb->surface.first_layer;
       blit->dst.format = _mesa_renderbuffer_get_format(ctx, dstRb);
    }
 }

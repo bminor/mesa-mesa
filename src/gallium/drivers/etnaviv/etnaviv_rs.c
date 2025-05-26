@@ -441,7 +441,7 @@ etna_blit_clear_zs_rs(struct pipe_context *pctx, struct pipe_surface *dst,
       /* If the level has valid TS state we need to flush it, as the regular
        * clear will not update the state and we must therefore invalidate it. */
       etna_copy_resource(pctx, surf->base.texture, surf->base.texture,
-                         surf->base.u.tex.level, surf->base.u.tex.level);
+                         surf->base.level, surf->base.level);
 
       /* If no valid command yet generate stored command, otherwise simply
        * update clear value. */

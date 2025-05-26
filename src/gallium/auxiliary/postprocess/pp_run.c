@@ -62,7 +62,7 @@ pp_blit(struct pipe_context *pipe,
    blit.src.box.depth = 1;
 
    blit.dst.resource = dst->texture;
-   blit.dst.level = dst->u.tex.level;
+   blit.dst.level = dst->level;
    blit.dst.format = dst->format;
    blit.dst.box.x = dstX0;
    blit.dst.box.y = dstY0;

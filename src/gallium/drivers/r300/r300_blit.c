@@ -135,7 +135,7 @@ static bool r300_fast_zclear_allowed(struct r300_context *r300,
     struct pipe_framebuffer_state *fb =
         (struct pipe_framebuffer_state*)r300->fb_state.state;
 
-    return r300_resource(fb->zsbuf.texture)->tex.zmask_dwords[fb->zsbuf.u.tex.level] != 0;
+    return r300_resource(fb->zsbuf.texture)->tex.zmask_dwords[fb->zsbuf.level] != 0;
 }
 
 static bool r300_hiz_clear_allowed(struct r300_context *r300)
@@ -143,7 +143,7 @@ static bool r300_hiz_clear_allowed(struct r300_context *r300)
     struct pipe_framebuffer_state *fb =
         (struct pipe_framebuffer_state*)r300->fb_state.state;
 
-    return r300_resource(fb->zsbuf.texture)->tex.hiz_dwords[fb->zsbuf.u.tex.level] != 0;
+    return r300_resource(fb->zsbuf.texture)->tex.hiz_dwords[fb->zsbuf.level] != 0;
 }
 
 static uint32_t r300_depth_clear_value(enum pipe_format format,
@@ -719,9 +719,9 @@ static void r300_simple_msaa_resolve(struct pipe_context *pipe,
     srcsurf = r300_surface(pipe->create_surface(pipe, src, &surf_tmpl));
 
     surf_tmpl.format = format;
-    surf_tmpl.u.tex.level = dst_level;
-    surf_tmpl.u.tex.first_layer =
-    surf_tmpl.u.tex.last_layer = dst_layer;
+    surf_tmpl.level = dst_level;
+    surf_tmpl.first_layer =
+    surf_tmpl.last_layer = dst_layer;
     dstsurf = r300_surface(pipe->create_surface(pipe, dst, &surf_tmpl));
 
     /* COLORPITCH should contain the tiling info of the resolve buffer.

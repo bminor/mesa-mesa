@@ -1326,12 +1326,12 @@ void evergreen_init_color_surface(struct r600_context *rctx,
 				  struct r600_surface *surf)
 {
 	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
-	unsigned level = surf->base.u.tex.level;
+	unsigned level = surf->base.level;
 	struct r600_tex_color_info color;
 
 	evergreen_set_color_surface_common(rctx, rtex, level,
-					   surf->base.u.tex.first_layer,
-					   surf->base.u.tex.last_layer,
+					   surf->base.first_layer,
+					   surf->base.last_layer,
 					   surf->base.format,
 					   &color);
 
@@ -1358,7 +1358,7 @@ static void evergreen_init_depth_surface(struct r600_context *rctx,
 {
 	struct r600_screen *rscreen = rctx->screen;
 	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
-	unsigned level = surf->base.u.tex.level;
+	unsigned level = surf->base.level;
 	struct legacy_surf_level *levelinfo = &rtex->surface.u.legacy.level[level];
 	uint64_t offset;
 	unsigned format, array_mode;
@@ -1406,8 +1406,8 @@ static void evergreen_init_depth_surface(struct r600_context *rctx,
 	assert(levelinfo->nblk_x % 8 == 0 && levelinfo->nblk_y % 8 == 0);
 
 	surf->db_depth_base = offset;
-	surf->db_depth_view = S_028008_SLICE_START(surf->base.u.tex.first_layer) |
-			      S_028008_SLICE_MAX(surf->base.u.tex.last_layer);
+	surf->db_depth_view = S_028008_SLICE_START(surf->base.first_layer) |
+			      S_028008_SLICE_MAX(surf->base.last_layer);
 	surf->db_depth_size = S_028058_PITCH_TILE_MAX(levelinfo->nblk_x / 8 - 1) |
 			      S_028058_HEIGHT_TILE_MAX(levelinfo->nblk_y / 8 - 1);
 	surf->db_depth_slice = S_02805C_SLICE_TILE_MAX(levelinfo->nblk_x *

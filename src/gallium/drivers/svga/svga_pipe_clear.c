@@ -274,9 +274,9 @@ svga_clear_texture(struct pipe_context *pipe,
 
    memset(&tmpl, 0, sizeof(tmpl));
    tmpl.format = res->format;
-   tmpl.u.tex.first_layer = box->z;
-   tmpl.u.tex.last_layer = box->z + box->depth - 1;
-   tmpl.u.tex.level = level;
+   tmpl.first_layer = box->z;
+   tmpl.last_layer = box->z + box->depth - 1;
+   tmpl.level = level;
 
    surface = pipe->create_surface(pipe, res, &tmpl);
    if (surface == NULL) {
@@ -422,19 +422,19 @@ svga_clear_texture(struct pipe_context *pipe,
             /* clear with map/write/unmap */
 
             /* store layer values */
-            unsigned first_layer = rtv->u.tex.first_layer;
-            unsigned last_layer = rtv->u.tex.last_layer;
+            unsigned first_layer = rtv->first_layer;
+            unsigned last_layer = rtv->last_layer;
             unsigned box_depth = last_layer - first_layer + 1;
 
             for (unsigned i = 0; i < box_depth; i++) {
-               rtv->u.tex.first_layer = rtv->u.tex.last_layer =
+               rtv->first_layer = rtv->last_layer =
                   first_layer + i;
                util_clear_render_target(pipe, rtv, &color, box->x, box->y,
                                         box->width, box->height);
             }
             /* restore layer values */
-            rtv->u.tex.first_layer = first_layer;
-            rtv->u.tex.last_layer = last_layer;
+            rtv->first_layer = first_layer;
+            rtv->last_layer = last_layer;
          }
       }
    }

@@ -407,9 +407,9 @@ create_clear_surface(struct pipe_context *pctx, struct pipe_resource *pres, unsi
    struct pipe_surface tmpl = {{0}};
 
    tmpl.format = pres->format;
-   tmpl.u.tex.first_layer = box->z;
-   tmpl.u.tex.last_layer = box->z + box->depth - 1;
-   tmpl.u.tex.level = level;
+   tmpl.first_layer = box->z;
+   tmpl.last_layer = box->z + box->depth - 1;
+   tmpl.level = level;
    return tmpl;
 }
 
@@ -699,8 +699,8 @@ zink_fb_clear_reset(struct zink_context *ctx, unsigned i)
 static bool
 fb_depth_intersects(const struct pipe_surface *psurf, int z, int depth)
 {
-   return (z >= psurf->u.tex.first_layer && z + depth - 1 <= psurf->u.tex.last_layer) ||
-          (psurf->u.tex.first_layer >= z && psurf->u.tex.last_layer <= z + depth - 1);
+   return (z >= psurf->first_layer && z + depth - 1 <= psurf->last_layer) ||
+          (psurf->first_layer >= z && psurf->last_layer <= z + depth - 1);
 }
 
 void
@@ -796,7 +796,7 @@ fb_clears_apply_or_discard_internal(struct zink_context *ctx, struct pipe_resour
 static bool
 fb_depth_fills(const struct pipe_surface *psurf, int z, int depth)
 {
-   return z == psurf->u.tex.first_layer && z + depth - 1 >= psurf->u.tex.last_layer;
+   return z == psurf->first_layer && z + depth - 1 >= psurf->last_layer;
 }
 
 void

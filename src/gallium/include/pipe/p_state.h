@@ -390,18 +390,6 @@ struct pipe_stencil_ref
    uint8_t ref_value[2];
 };
 
-union pipe_surface_desc {
-   struct {
-      unsigned level;
-      unsigned first_layer:16;
-      unsigned last_layer:16;
-   } tex;
-   struct {
-      unsigned first_element;
-      unsigned last_element;
-   } buf;
-};
-
 /**
  * A view into a texture that can be bound to a color render target /
  * depth stencil attachment point.
@@ -410,17 +398,19 @@ struct pipe_surface
 {
    struct pipe_reference reference;
    enum pipe_format format:16;
-   struct pipe_resource *texture; /**< resource into which this is a view  */
-   struct pipe_context *context; /**< context this surface belongs to */
-
    /**
     * Number of samples for the surface.  This will be 0 if rendering
     * should use the resource's nr_samples, or another value if the resource
     * is bound using FramebufferTexture2DMultisampleEXT.
     */
-   unsigned nr_samples:8;
+   unsigned nr_samples:16;
 
-   union pipe_surface_desc u;
+   unsigned first_layer:16;
+   unsigned last_layer:16;
+   unsigned level;
+
+   struct pipe_resource *texture; /**< resource into which this is a view  */
+   struct pipe_context *context; /**< context this surface belongs to */
 };
 
 /**

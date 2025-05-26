@@ -2550,10 +2550,10 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 			struct pipe_surface *surf = &rctx->framebuffer.state.zsbuf;
 			struct r600_texture *rtex = (struct r600_texture *)surf->texture;
 
-			rtex->dirty_level_mask |= 1 << surf->u.tex.level;
+			rtex->dirty_level_mask |= 1 << surf->level;
 
 			if (rtex->surface.has_stencil)
-				rtex->stencil_dirty_level_mask |= 1 << surf->u.tex.level;
+				rtex->stencil_dirty_level_mask |= 1 << surf->level;
 		}
 		if (rctx->framebuffer.compressed_cb_mask) {
 			struct pipe_surface *surf;
@@ -2565,7 +2565,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 				surf = rctx->framebuffer.fb_cbufs[i];
 				rtex = (struct r600_texture*)surf->texture;
 
-				rtex->dirty_level_mask |= 1 << surf->u.tex.level;
+				rtex->dirty_level_mask |= 1 << surf->level;
 
 			} while (mask);
 		}

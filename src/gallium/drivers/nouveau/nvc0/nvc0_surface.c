@@ -328,10 +328,10 @@ nvc0_clear_render_target(struct pipe_context *pipe,
       PUSH_DATA(push, sf->height);
       PUSH_DATA(push, nvc0_format_table[dst->format].rt);
       PUSH_DATA(push, (mt->layout_3d << 16) |
-               mt->level[sf->base.u.tex.level].tile_mode);
-      PUSH_DATA(push, dst->u.tex.first_layer + sf->depth);
+               mt->level[sf->base.level].tile_mode);
+      PUSH_DATA(push, dst->first_layer + sf->depth);
       PUSH_DATA(push, mt->layer_stride >> 2);
-      PUSH_DATA(push, dst->u.tex.first_layer);
+      PUSH_DATA(push, dst->first_layer);
       IMMED_NVC0(push, NVC0_3D(MULTISAMPLE_MODE), mt->ms_mode);
    } else {
       if (res->base.target == PIPE_BUFFER) {
@@ -664,16 +664,16 @@ nvc0_clear_depth_stencil(struct pipe_context *pipe,
    PUSH_DATAh(push, mt->base.address + sf->offset);
    PUSH_DATA (push, mt->base.address + sf->offset);
    PUSH_DATA (push, nvc0_format_table[dst->format].rt);
-   PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+   PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
    PUSH_DATA (push, mt->layer_stride >> 2);
    BEGIN_NVC0(push, NVC0_3D(ZETA_ENABLE), 1);
    PUSH_DATA (push, 1);
    BEGIN_NVC0(push, NVC0_3D(ZETA_HORIZ), 3);
    PUSH_DATA (push, sf->width);
    PUSH_DATA (push, sf->height);
-   PUSH_DATA (push, (unk << 16) | (dst->u.tex.first_layer + sf->depth));
+   PUSH_DATA (push, (unk << 16) | (dst->first_layer + sf->depth));
    BEGIN_NVC0(push, NVC0_3D(ZETA_BASE_LAYER), 1);
-   PUSH_DATA (push, dst->u.tex.first_layer);
+   PUSH_DATA (push, dst->first_layer);
    IMMED_NVC0(push, NVC0_3D(MULTISAMPLE_MODE), mt->ms_mode);
 
    if (!render_condition_enabled)
@@ -749,11 +749,11 @@ nvc0_clear(struct pipe_context *pipe, unsigned buffers,
    if (mode) {
       int zs_layers = 0, color0_layers = 0;
       if (fb->cbufs[0].texture && (mode & 0x3c))
-         color0_layers = fb->cbufs[0].u.tex.last_layer -
-            fb->cbufs[0].u.tex.first_layer + 1;
+         color0_layers = fb->cbufs[0].last_layer -
+            fb->cbufs[0].first_layer + 1;
       if (fb->zsbuf.texture && (mode & ~0x3c))
-         zs_layers = fb->zsbuf.u.tex.last_layer -
-            fb->zsbuf.u.tex.first_layer + 1;
+         zs_layers = fb->zsbuf.last_layer -
+            fb->zsbuf.first_layer + 1;
 
       for (j = 0; j < MIN2(zs_layers, color0_layers); j++) {
          BEGIN_NVC0(push, NVC0_3D(CLEAR_BUFFERS), 1);
@@ -773,7 +773,7 @@ nvc0_clear(struct pipe_context *pipe, unsigned buffers,
       const struct pipe_surface *sf = &fb->cbufs[i];
       if (!sf->texture || !(buffers & (PIPE_CLEAR_COLOR0 << i)))
          continue;
-      for (j = 0; j <= sf->u.tex.last_layer - sf->u.tex.first_layer; j++) {
+      for (j = 0; j <= sf->last_layer - sf->first_layer; j++) {
          BEGIN_NVC0(push, NVC0_3D(CLEAR_BUFFERS), 1);
          PUSH_DATA (push, (i << 6) | 0x3c |
                     (j << NVC0_3D_CLEAR_BUFFERS_LAYER__SHIFT));
@@ -969,12 +969,12 @@ nvc0_blit_set_dst(struct nvc0_blitctx *ctx,
    else
       templ.format = format;
 
-   templ.u.tex.level = level;
-   templ.u.tex.first_layer = templ.u.tex.last_layer = layer;
+   templ.level = level;
+   templ.first_layer = templ.last_layer = layer;
 
    if (layer == -1) {
-      templ.u.tex.first_layer = 0;
-      templ.u.tex.last_layer =
+      templ.first_layer = 0;
+      templ.last_layer =
          (res->target == PIPE_TEXTURE_3D ? res->depth0 : res->array_size) - 1;
    }
 

@@ -50,8 +50,8 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
         struct v3d_resource *rsc = v3d_resource(psurf->texture);
 
         uint32_t layer_offset =
-                v3d_layer_offset(&rsc->base, psurf->u.tex.level,
-                                 psurf->u.tex.first_layer + layer);
+                v3d_layer_offset(&rsc->base, psurf->level,
+                                 psurf->first_layer + layer);
         cl_emit(cl, LOAD_TILE_BUFFER_GENERAL, load) {
                 load.buffer_to_load = buffer;
                 load.address = cl_address(rsc->bo, layer_offset);
@@ -69,7 +69,7 @@ load_general(struct v3d_cl *cl, struct pipe_surface *psurf, int buffer,
                                 surf->padded_height_of_output_image_in_uif_blocks;
                 } else if (surf->tiling == V3D_TILING_RASTER) {
                         struct v3d_resource_slice *slice =
-                                &rsc->slices[psurf->u.tex.level];
+                                &rsc->slices[psurf->level];
                         load.height_in_ub_or_stride = slice->stride;
                 }
 
@@ -106,8 +106,8 @@ store_general(struct v3d_job *job,
         rsc->graphics_written = true;
 
         uint32_t layer_offset =
-                v3d_layer_offset(&rsc->base, psurf->u.tex.level,
-                                 psurf->u.tex.first_layer + layer);
+                v3d_layer_offset(&rsc->base, psurf->level,
+                                 psurf->first_layer + layer);
         cl_emit(cl, STORE_TILE_BUFFER_GENERAL, store) {
                 store.buffer_to_store = buffer;
                 store.address = cl_address(rsc->bo, layer_offset);
@@ -128,7 +128,7 @@ store_general(struct v3d_job *job,
                                 surf->padded_height_of_output_image_in_uif_blocks;
                 } else if (surf->tiling == V3D_TILING_RASTER) {
                         struct v3d_resource_slice *slice =
-                                &rsc->slices[psurf->u.tex.level];
+                                &rsc->slices[psurf->level];
                         store.height_in_ub_or_stride = slice->stride;
                 }
 

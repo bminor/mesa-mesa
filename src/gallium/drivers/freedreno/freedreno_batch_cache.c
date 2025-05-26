@@ -67,7 +67,9 @@ struct fd_batch_key {
    uint16_t ctx_seqno;
    struct {
       struct pipe_resource *texture;
-      union pipe_surface_desc u;
+      unsigned first_layer:16;
+      unsigned last_layer:16;
+      unsigned level;
       uint8_t pos, samples;
       uint16_t format;
    } surf[0];
@@ -511,12 +513,11 @@ batch_from_key(struct fd_context *ctx, struct fd_batch_key *key) assert_dt
    DBG("%p: hash=0x%08x, %ux%u, %u layers, %u samples", batch, hash, key->width,
        key->height, key->layers, key->samples);
    for (unsigned idx = 0; idx < key->num_surfs; idx++) {
-      DBG("%p:  surf[%u]: %p (%s) (%u,%u / %u,%u,%u)", batch,
+      DBG("%p:  surf[%u]: %p (%s) (%u,%u,%u)", batch,
           key->surf[idx].pos, key->surf[idx].texture,
           util_format_name(key->surf[idx].format),
-          key->surf[idx].u.buf.first_element, key->surf[idx].u.buf.last_element,
-          key->surf[idx].u.tex.first_layer, key->surf[idx].u.tex.last_layer,
-          key->surf[idx].u.tex.level);
+          key->surf[idx].first_layer, key->surf[idx].last_layer,
+          key->surf[idx].level);
    }
 #endif
    if (!batch)
@@ -547,7 +548,9 @@ key_surf(struct fd_batch_key *key, unsigned idx, unsigned pos,
          const struct pipe_surface *psurf)
 {
    key->surf[idx].texture = psurf->texture;
-   key->surf[idx].u = psurf->u;
+   key->surf[idx].level = psurf->level;
+   key->surf[idx].first_layer = psurf->first_layer;
+   key->surf[idx].last_layer = psurf->last_layer;
    key->surf[idx].pos = pos;
    key->surf[idx].samples = MAX2(1, psurf->nr_samples);
    key->surf[idx].format = psurf->format;

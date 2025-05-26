@@ -69,8 +69,8 @@ disable_rb_aux_buffer(struct crocus_context *ice,
       struct crocus_resource *rb_res = (void *) surf->base.texture;
 
       if (rb_res->bo == tex_res->bo &&
-          surf->base.u.tex.level >= min_level &&
-          surf->base.u.tex.level < min_level + num_levels) {
+          surf->base.level >= min_level &&
+          surf->base.level < min_level + num_levels) {
          found = draw_aux_buffer_disabled[i] = true;
       }
    }
@@ -170,15 +170,15 @@ crocus_update_align_res(struct crocus_batch *batch,
    struct pipe_blit_info info = { 0 };
 
    info.src.resource = copy_to_wa ? surf->base.texture : surf->align_res;
-   info.src.level = copy_to_wa ? surf->base.u.tex.level : 0;
-   u_box_2d_zslice(0, 0, copy_to_wa ? surf->base.u.tex.first_layer : 0,
-                   u_minify(surf->base.texture->width0, surf->base.u.tex.level),
-                   u_minify(surf->base.texture->height0, surf->base.u.tex.level), &info.src.box);
+   info.src.level = copy_to_wa ? surf->base.level : 0;
+   u_box_2d_zslice(0, 0, copy_to_wa ? surf->base.first_layer : 0,
+                   u_minify(surf->base.texture->width0, surf->base.level),
+                   u_minify(surf->base.texture->height0, surf->base.level), &info.src.box);
    info.src.format = surf->base.texture->format;
    info.dst.resource = copy_to_wa ? surf->align_res : surf->base.texture;
-   info.dst.level = copy_to_wa ? 0 : surf->base.u.tex.level;
+   info.dst.level = copy_to_wa ? 0 : surf->base.level;
    info.dst.box = info.src.box;
-   info.dst.box.z = copy_to_wa ? 0 : surf->base.u.tex.first_layer;
+   info.dst.box.z = copy_to_wa ? 0 : surf->base.first_layer;
    info.dst.format = surf->base.texture->format;
    info.mask = util_format_is_depth_or_stencil(surf->base.texture->format) ? PIPE_MASK_ZS : PIPE_MASK_RGBA;
    info.filter = 0;
@@ -233,12 +233,12 @@ crocus_predraw_resolve_framebuffer(struct crocus_context *ice,
          struct crocus_resource *z_res, *s_res;
          crocus_get_depth_stencil_resources(devinfo, zs_surf->texture, &z_res, &s_res);
          unsigned num_layers =
-            zs_surf->u.tex.last_layer - zs_surf->u.tex.first_layer + 1;
+            zs_surf->last_layer - zs_surf->first_layer + 1;
 
          if (z_res) {
             crocus_resource_prepare_render(ice, z_res,
-                                           zs_surf->u.tex.level,
-                                           zs_surf->u.tex.first_layer,
+                                           zs_surf->level,
+                                           zs_surf->first_layer,
                                            num_layers, ice->state.hiz_usage);
             crocus_cache_flush_for_depth(batch, z_res->bo);
 
@@ -330,12 +330,12 @@ crocus_postdraw_update_resolve_tracking(struct crocus_context *ice,
       struct crocus_resource *z_res, *s_res;
       crocus_get_depth_stencil_resources(devinfo, zs_surf->texture, &z_res, &s_res);
       unsigned num_layers =
-         zs_surf->u.tex.last_layer - zs_surf->u.tex.first_layer + 1;
+         zs_surf->last_layer - zs_surf->first_layer + 1;
 
       if (z_res) {
          if (may_have_resolved_depth && ice->state.depth_writes_enabled) {
-            crocus_resource_finish_render(ice, z_res, zs_surf->u.tex.level,
-                                          zs_surf->u.tex.first_layer, num_layers,
+            crocus_resource_finish_render(ice, z_res, zs_surf->level,
+                                          zs_surf->first_layer, num_layers,
                                           ice->state.hiz_usage);
          }
 
@@ -349,8 +349,8 @@ crocus_postdraw_update_resolve_tracking(struct crocus_context *ice,
 
       if (s_res) {
          if (may_have_resolved_depth && ice->state.stencil_writes_enabled) {
-            crocus_resource_finish_write(ice, s_res, zs_surf->u.tex.level,
-                                         zs_surf->u.tex.first_layer, num_layers,
+            crocus_resource_finish_write(ice, s_res, zs_surf->level,
+                                         zs_surf->first_layer, num_layers,
                                          s_res->aux.usage);
          }
 
@@ -376,11 +376,10 @@ crocus_postdraw_update_resolve_tracking(struct crocus_context *ice,
                                  aux_usage);
 
       if (may_have_resolved_color) {
-         union pipe_surface_desc *desc = &surf->base.u;
          unsigned num_layers =
-            desc->tex.last_layer - desc->tex.first_layer + 1;
-         crocus_resource_finish_render(ice, res, desc->tex.level,
-                                       desc->tex.first_layer, num_layers,
+            surf->base.last_layer - surf->base.first_layer + 1;
+         crocus_resource_finish_render(ice, res, surf->base.level,
+                                       surf->base.first_layer, num_layers,
                                        aux_usage);
       }
    }

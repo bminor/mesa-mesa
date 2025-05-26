@@ -171,12 +171,10 @@ v3d_stencil_blit(struct pipe_context *ctx, struct pipe_blit_info *info)
 
         /* Initialize the surface. */
         struct pipe_surface dst_tmpl = {
-                .u.tex = {
-                        .level = info->dst.level,
-                        .first_layer = info->dst.box.z,
-                        .last_layer = info->dst.box.z,
-                },
                 .format = dst_format,
+                .first_layer = info->dst.box.z,
+                .last_layer = info->dst.box.z,
+                .level = info->dst.level,
         };
         struct pipe_surface *dst_surf =
                 ctx->create_surface(ctx, &dst->base, &dst_tmpl);
@@ -300,9 +298,9 @@ v3d_get_blit_surface(struct pipe_context *pctx,
         struct pipe_surface tmpl;
 
         tmpl.format = format;
-        tmpl.u.tex.level = level;
-        tmpl.u.tex.first_layer = layer;
-        tmpl.u.tex.last_layer = layer;
+        tmpl.level = level;
+        tmpl.first_layer = layer;
+        tmpl.last_layer = layer;
 
         return pctx->create_surface(pctx, prsc, &tmpl);
 }

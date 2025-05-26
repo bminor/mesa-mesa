@@ -293,7 +293,7 @@ i915_clear_render_target_blitter(struct pipe_context *pipe,
    struct pipe_resource *pt = &tex->b;
    union util_color uc;
    unsigned offset =
-      i915_texture_offset(tex, dst->u.tex.level, dst->u.tex.first_layer);
+      i915_texture_offset(tex, dst->level, dst->first_layer);
 
    assert(util_format_get_blockwidth(pt->format) == 1);
    assert(util_format_get_blockheight(pt->format) == 1);
@@ -317,7 +317,7 @@ i915_clear_depth_stencil_blitter(struct pipe_context *pipe,
    unsigned packedds;
    unsigned mask = 0;
    unsigned offset =
-      i915_texture_offset(tex, dst->u.tex.level, dst->u.tex.first_layer);
+      i915_texture_offset(tex, dst->level, dst->first_layer);
 
    assert(util_format_get_blockwidth(pt->format) == 1);
    assert(util_format_get_blockheight(pt->format) == 1);
@@ -390,9 +390,9 @@ i915_create_surface_custom(struct pipe_context *ctx, struct pipe_resource *pt,
    struct i915_texture *tex = i915_texture(pt);
    struct i915_surface *surf;
 
-   assert(surf_tmpl->u.tex.first_layer == surf_tmpl->u.tex.last_layer);
+   assert(surf_tmpl->first_layer == surf_tmpl->last_layer);
    if (pt->target != PIPE_TEXTURE_CUBE && pt->target != PIPE_TEXTURE_3D)
-      assert(surf_tmpl->u.tex.first_layer == 0);
+      assert(surf_tmpl->first_layer == 0);
 
    surf = CALLOC_STRUCT(i915_surface);
    if (!surf)
@@ -403,9 +403,9 @@ i915_create_surface_custom(struct pipe_context *ctx, struct pipe_resource *pt,
    pipe_reference_init(&ps->reference, 1);
    pipe_resource_reference(&ps->texture, pt);
    ps->format = surf_tmpl->format;
-   ps->u.tex.level = surf_tmpl->u.tex.level;
-   ps->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-   ps->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
+   ps->level = surf_tmpl->level;
+   ps->first_layer = surf_tmpl->first_layer;
+   ps->last_layer = surf_tmpl->last_layer;
    ps->context = ctx;
 
    if (util_format_is_depth_or_stencil(ps->format)) {

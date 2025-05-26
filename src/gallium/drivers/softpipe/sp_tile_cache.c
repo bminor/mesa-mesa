@@ -190,7 +190,7 @@ sp_tile_cache_set_surface(struct softpipe_tile_cache *tc,
    tc->surface = *ps;
 
    if (ps->texture) {
-      tc->num_maps = ps->u.tex.last_layer - ps->u.tex.first_layer + 1;
+      tc->num_maps = ps->last_layer - ps->first_layer + 1;
       tc->transfer = CALLOC(tc->num_maps, sizeof(struct pipe_transfer *));
       tc->transfer_map = CALLOC(tc->num_maps, sizeof(void *));
 
@@ -200,7 +200,7 @@ sp_tile_cache_set_surface(struct softpipe_tile_cache *tc,
       if (ps->texture->target != PIPE_BUFFER) {
          for (i = 0; i < tc->num_maps; i++) {
             tc->transfer_map[i] = pipe_texture_map(pipe, ps->texture,
-                                                    ps->u.tex.level, ps->u.tex.first_layer + i,
+                                                    ps->level, ps->first_layer + i,
                                                     PIPE_MAP_READ_WRITE |
                                                     PIPE_MAP_UNSYNCHRONIZED,
                                                     0, 0,

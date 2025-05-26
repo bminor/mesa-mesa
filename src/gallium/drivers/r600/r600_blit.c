@@ -167,9 +167,9 @@ static void r600_blit_decompress_depth(struct pipe_context *ctx,
 				}
 
 				surf_tmpl.format = texture->resource.b.b.format;
-				surf_tmpl.u.tex.level = level;
-				surf_tmpl.u.tex.first_layer = layer;
-				surf_tmpl.u.tex.last_layer = layer;
+				surf_tmpl.level = level;
+				surf_tmpl.first_layer = layer;
+				surf_tmpl.last_layer = layer;
 
 				zsurf = ctx->create_surface(ctx, &texture->resource.b.b, &surf_tmpl);
 
@@ -227,7 +227,7 @@ static void r600_blit_decompress_depth_in_place(struct r600_context *rctx,
 		if (!(*dirty_level_mask & (1 << level)))
 			continue;
 
-		surf_tmpl.u.tex.level = level;
+		surf_tmpl.level = level;
 
 		/* The smaller the mipmap level, the less layers there are
 		 * as far as 3D textures are concerned. */
@@ -235,8 +235,8 @@ static void r600_blit_decompress_depth_in_place(struct r600_context *rctx,
 		checked_last_layer = last_layer < max_layer ? last_layer : max_layer;
 
 		for (layer = first_layer; layer <= checked_last_layer; layer++) {
-			surf_tmpl.u.tex.first_layer = layer;
-			surf_tmpl.u.tex.last_layer = layer;
+			surf_tmpl.first_layer = layer;
+			surf_tmpl.last_layer = layer;
 
 			zsurf = rctx->b.b.create_surface(&rctx->b.b, &texture->resource.b.b, &surf_tmpl);
 
@@ -353,9 +353,9 @@ static void r600_blit_decompress_color(struct pipe_context *ctx,
 			struct pipe_surface *cbsurf, surf_tmpl;
 
 			surf_tmpl.format = rtex->resource.b.b.format;
-			surf_tmpl.u.tex.level = level;
-			surf_tmpl.u.tex.first_layer = layer;
-			surf_tmpl.u.tex.last_layer = layer;
+			surf_tmpl.level = level;
+			surf_tmpl.first_layer = layer;
+			surf_tmpl.last_layer = layer;
 			cbsurf = ctx->create_surface(ctx, &rtex->resource.b.b, &surf_tmpl);
 
 			r600_blitter_begin(ctx, R600_DECOMPRESS);
@@ -518,8 +518,8 @@ evergreen_do_fast_color_clear(struct r600_context *rctx,
 		tex = (struct r600_texture *)rctx->framebuffer.fb_cbufs[i]->texture;
 
 		/* the clear is allowed if all layers are bound */
-		if (fb->cbufs[i].u.tex.first_layer != 0 ||
-		    fb->cbufs[i].u.tex.last_layer != util_max_layer(&tex->resource.b.b, 0)) {
+		if (fb->cbufs[i].first_layer != 0 ||
+		    fb->cbufs[i].last_layer != util_max_layer(&tex->resource.b.b, 0)) {
 			continue;
 		}
 
@@ -570,7 +570,7 @@ evergreen_do_fast_color_clear(struct r600_context *rctx,
 
 			bool need_compressed_update = !tex->dirty_level_mask;
 
-			tex->dirty_level_mask |= 1 << fb->cbufs[i].u.tex.level;
+			tex->dirty_level_mask |= 1 << fb->cbufs[i].level;
 
 			if (need_compressed_update)
 				p_atomic_inc(&rctx->b.screen->compressed_colortex_counter);
@@ -616,14 +616,14 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 
 			tex = (struct r600_texture *)fb->cbufs[i].texture;
 			if (tex->fmask.size == 0)
-				tex->dirty_level_mask &= ~(1 << fb->cbufs[i].u.tex.level);
+				tex->dirty_level_mask &= ~(1 << fb->cbufs[i].level);
 		}
 	}
 
 	/* if hyperz enabled just clear hyperz */
 	if (fb->zsbuf.texture && (buffers & PIPE_CLEAR_DEPTH)) {
 		struct r600_texture *rtex;
-		unsigned level = fb->zsbuf.u.tex.level;
+		unsigned level = fb->zsbuf.level;
 
 		rtex = (struct r600_texture*)fb->zsbuf.texture;
 
@@ -632,8 +632,8 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 		 * disable fast clear for texture array.
 		 */
 		if (r600_htile_enabled(rtex, level) &&
-                   fb->zsbuf.u.tex.first_layer == 0 &&
-                   fb->zsbuf.u.tex.last_layer == util_max_layer(&rtex->resource.b.b, level)) {
+                   fb->zsbuf.first_layer == 0 &&
+                   fb->zsbuf.last_layer == util_max_layer(&rtex->resource.b.b, level)) {
 			if (rtex->depth_clear_value != depth) {
 				rtex->depth_clear_value = depth;
 				r600_mark_atom_dirty(rctx, &rctx->db_state.atom);

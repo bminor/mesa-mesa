@@ -517,8 +517,8 @@ lp_rast_blit_tile_to_dest(struct lp_rasterizer_task *task,
    struct lp_fragment_shader_variant *variant = state->variant;
    const struct lp_jit_texture *texture = &state->jit_resources.textures[0];
    const struct pipe_surface *cbuf = &scene->fb.cbufs[0];
-   const unsigned face_slice = cbuf->u.tex.first_layer;
-   const unsigned level = cbuf->u.tex.level;
+   const unsigned face_slice = cbuf->first_layer;
+   const unsigned level = cbuf->level;
    struct llvmpipe_resource *lpt = llvmpipe_resource(cbuf->texture);
 
    LP_DBG(DEBUG_RAST, "%s\n", __func__);

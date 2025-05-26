@@ -425,17 +425,17 @@ vc4_set_framebuffer_state(struct pipe_context *pctx,
          * framebuffer.  Note that if the z/color buffers were mismatched
          * sizes, we wouldn't be able to do this.
          */
-        if (cso->cbufs[0].texture && cso->cbufs[0].u.tex.level) {
+        if (cso->cbufs[0].texture && cso->cbufs[0].level) {
                 struct vc4_resource *rsc =
                         vc4_resource(cso->cbufs[0].texture);
                 cso->width =
-                        (rsc->slices[cso->cbufs[0].u.tex.level].stride /
+                        (rsc->slices[cso->cbufs[0].level].stride /
                          rsc->cpp);
-        } else if (cso->zsbuf.texture && cso->zsbuf.u.tex.level){
+        } else if (cso->zsbuf.texture && cso->zsbuf.level){
                 struct vc4_resource *rsc =
                         vc4_resource(cso->zsbuf.texture);
                 cso->width =
-                        (rsc->slices[cso->zsbuf.u.tex.level].stride /
+                        (rsc->slices[cso->zsbuf.level].stride /
                          rsc->cpp);
         }
 

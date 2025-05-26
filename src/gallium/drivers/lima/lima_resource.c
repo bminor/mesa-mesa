@@ -570,10 +570,10 @@ lima_surface_create(struct pipe_context *pctx,
    if (!surf)
       return NULL;
 
-   assert(surf_tmpl->u.tex.first_layer == surf_tmpl->u.tex.last_layer);
+   assert(surf_tmpl->first_layer == surf_tmpl->last_layer);
 
    struct pipe_surface *psurf = &surf->base;
-   unsigned level = surf_tmpl->u.tex.level;
+   unsigned level = surf_tmpl->level;
 
    pipe_reference_init(&psurf->reference, 1);
    pipe_resource_reference(&psurf->texture, pres);
@@ -581,9 +581,9 @@ lima_surface_create(struct pipe_context *pctx,
    psurf->context = pctx;
    psurf->format = surf_tmpl->format;
    psurf->nr_samples = surf_tmpl->nr_samples;
-   psurf->u.tex.level = level;
-   psurf->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-   psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
+   psurf->level = level;
+   psurf->first_layer = surf_tmpl->first_layer;
+   psurf->last_layer = surf_tmpl->last_layer;
 
    surf->tiled_w = align(u_minify(pres->width0, level), 16) >> 4;
    surf->tiled_h = align(u_minify(pres->height0, level), 16) >> 4;

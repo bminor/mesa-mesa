@@ -352,9 +352,9 @@ st_egl_image_target_renderbuffer_storage(struct gl_context *ctx,
       struct pipe_surface surf_tmpl;
 
       u_surface_default_template(&surf_tmpl, stimg.texture);
-      surf_tmpl.u.tex.level = stimg.level;
-      surf_tmpl.u.tex.first_layer = stimg.layer;
-      surf_tmpl.u.tex.last_layer = stimg.layer;
+      surf_tmpl.level = stimg.level;
+      surf_tmpl.first_layer = stimg.layer;
+      surf_tmpl.last_layer = stimg.layer;
 
       rb->Format = st_pipe_format_to_mesa_format(surf_tmpl.format);
       rb->_BaseFormat = st_pipe_format_to_base_format(surf_tmpl.format);

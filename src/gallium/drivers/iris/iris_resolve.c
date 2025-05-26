@@ -65,8 +65,8 @@ disable_rb_aux_buffer(struct iris_context *ice,
       struct iris_resource *rb_res = (void *) surf->base.texture;
 
       if (rb_res->bo == tex_res->bo &&
-          surf->base.u.tex.level >= min_level &&
-          surf->base.u.tex.level < min_level + num_levels) {
+          surf->base.level >= min_level &&
+          surf->base.level < min_level + num_levels) {
          found = draw_aux_buffer_disabled[i] = true;
       }
    }
@@ -210,12 +210,12 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
          struct iris_resource *z_res, *s_res;
          iris_get_depth_stencil_resources(zs_surf->texture, &z_res, &s_res);
          unsigned num_layers =
-            zs_surf->u.tex.last_layer - zs_surf->u.tex.first_layer + 1;
+            zs_surf->last_layer - zs_surf->first_layer + 1;
 
          if (z_res) {
             iris_resource_prepare_render(ice, z_res, z_res->surf.format,
-                                         zs_surf->u.tex.level,
-                                         zs_surf->u.tex.first_layer,
+                                         zs_surf->level,
+                                         zs_surf->first_layer,
                                          num_layers, ice->state.hiz_usage);
             iris_emit_buffer_barrier_for(batch, z_res->bo,
                                          IRIS_DOMAIN_DEPTH_WRITE);
@@ -349,20 +349,20 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
       struct iris_resource *z_res, *s_res;
       iris_get_depth_stencil_resources(zs_surf->texture, &z_res, &s_res);
       unsigned num_layers =
-         zs_surf->u.tex.last_layer - zs_surf->u.tex.first_layer + 1;
+         zs_surf->last_layer - zs_surf->first_layer + 1;
 
       if (z_res) {
          if (may_have_resolved_depth && ice->state.depth_writes_enabled) {
-            iris_resource_finish_render(ice, z_res, zs_surf->u.tex.level,
-                                        zs_surf->u.tex.first_layer,
+            iris_resource_finish_render(ice, z_res, zs_surf->level,
+                                        zs_surf->first_layer,
                                         num_layers, ice->state.hiz_usage);
          }
       }
 
       if (s_res) {
          if (may_have_resolved_depth && ice->state.stencil_writes_enabled) {
-            iris_resource_finish_write(ice, s_res, zs_surf->u.tex.level,
-                                       zs_surf->u.tex.first_layer, num_layers,
+            iris_resource_finish_write(ice, s_res, zs_surf->level,
+                                       zs_surf->first_layer, num_layers,
                                        s_res->aux.usage);
          }
       }
@@ -380,11 +380,10 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
       enum isl_aux_usage aux_usage = ice->state.draw_aux_usage[i];
 
       if (may_have_resolved_color) {
-         union pipe_surface_desc *desc = &surf->base.u;
          unsigned num_layers =
-            desc->tex.last_layer - desc->tex.first_layer + 1;
-         iris_resource_finish_render(ice, res, desc->tex.level,
-                                     desc->tex.first_layer, num_layers,
+            surf->base.last_layer - surf->base.first_layer + 1;
+         iris_resource_finish_render(ice, res, surf->base.level,
+                                     surf->base.first_layer, num_layers,
                                      aux_usage);
       }
    }

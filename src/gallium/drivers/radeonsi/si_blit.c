@@ -141,14 +141,14 @@ static unsigned si_blit_dbcb_copy(struct si_context *sctx, struct si_texture *sr
       max_layer = util_max_layer(&src->buffer.b.b, level);
       checked_last_layer = MIN2(last_layer, max_layer);
 
-      surf_tmpl.u.tex.level = level;
+      surf_tmpl.level = level;
 
       for (layer = first_layer; layer <= checked_last_layer; layer++) {
          struct pipe_surface *zsurf, *cbsurf;
 
          surf_tmpl.format = src->buffer.b.b.format;
-         surf_tmpl.u.tex.first_layer = layer;
-         surf_tmpl.u.tex.last_layer = layer;
+         surf_tmpl.first_layer = layer;
+         surf_tmpl.last_layer = layer;
 
          zsurf = sctx->b.create_surface(&sctx->b, &src->buffer.b.b, &surf_tmpl);
 
@@ -213,7 +213,7 @@ static void si_blit_decompress_zs_planes_in_place(struct si_context *sctx,
    while (level_mask) {
       unsigned level = u_bit_scan(&level_mask);
 
-      surf_tmpl.u.tex.level = level;
+      surf_tmpl.level = level;
 
       /* The smaller the mipmap level, the less layers there are
        * as far as 3D textures are concerned. */
@@ -221,8 +221,8 @@ static void si_blit_decompress_zs_planes_in_place(struct si_context *sctx,
       checked_last_layer = MIN2(last_layer, max_layer);
 
       for (layer = first_layer; layer <= checked_last_layer; layer++) {
-         surf_tmpl.u.tex.first_layer = layer;
-         surf_tmpl.u.tex.last_layer = layer;
+         surf_tmpl.first_layer = layer;
+         surf_tmpl.last_layer = layer;
 
          zsurf = sctx->b.create_surface(&sctx->b, &texture->buffer.b.b, &surf_tmpl);
 
@@ -500,9 +500,9 @@ static void si_blit_decompress_color(struct si_context *sctx, struct si_texture 
          struct pipe_surface *cbsurf, surf_tmpl;
 
          surf_tmpl.format = tex->buffer.b.b.format;
-         surf_tmpl.u.tex.level = level;
-         surf_tmpl.u.tex.first_layer = layer;
-         surf_tmpl.u.tex.last_layer = layer;
+         surf_tmpl.level = level;
+         surf_tmpl.first_layer = layer;
+         surf_tmpl.last_layer = layer;
          cbsurf = sctx->b.create_surface(&sctx->b, &tex->buffer.b.b, &surf_tmpl);
 
          /* Required before and after FMASK and DCC_DECOMPRESS. */
@@ -646,9 +646,9 @@ static void si_check_render_feedback_texture(struct si_context *sctx, struct si_
       if (!sctx->framebuffer.state.cbufs[j].texture)
          continue;
 
-      if (tex == (struct si_texture *)surf->texture && surf->u.tex.level >= first_level &&
-          surf->u.tex.level <= last_level && surf->u.tex.first_layer <= last_layer &&
-          surf->u.tex.last_layer >= first_layer) {
+      if (tex == (struct si_texture *)surf->texture && surf->level >= first_level &&
+          surf->level <= last_level && surf->first_layer <= last_layer &&
+          surf->last_layer >= first_layer) {
          render_feedback = true;
          break;
       }
@@ -868,7 +868,7 @@ void gfx6_decompress_textures(struct si_context *sctx, unsigned shader_mask)
       if (sctx->ps_uses_fbfetch) {
          struct pipe_surface *cb0 = &sctx->framebuffer.state.cbufs[0];
          si_decompress_color_texture(sctx, (struct si_texture *)cb0->texture,
-                                     cb0->u.tex.first_layer, cb0->u.tex.last_layer, false);
+                                     cb0->first_layer, cb0->last_layer, false);
       }
 
       si_check_render_feedback(sctx);
@@ -930,7 +930,7 @@ void si_decompress_subresource(struct pipe_context *ctx, struct pipe_resource *t
        * source, make sure the decompression pass is invoked
        * by dirtying the framebuffer.
        */
-      if (sctx->framebuffer.state.zsbuf.u.tex.level == level &&
+      if (sctx->framebuffer.state.zsbuf.level == level &&
           sctx->framebuffer.state.zsbuf.texture == tex)
          si_fb_barrier_after_rendering(sctx, SI_FB_BARRIER_SYNC_DB);
 
@@ -942,7 +942,7 @@ void si_decompress_subresource(struct pipe_context *ctx, struct pipe_resource *t
        * by dirtying the framebuffer.
        */
       for (unsigned i = 0; i < sctx->framebuffer.state.nr_cbufs; i++) {
-         if (sctx->framebuffer.state.cbufs[i].u.tex.level == level &&
+         if (sctx->framebuffer.state.cbufs[i].level == level &&
              sctx->framebuffer.state.cbufs[i].texture == tex) {
             si_fb_barrier_after_rendering(sctx, SI_FB_BARRIER_SYNC_CB);
             break;

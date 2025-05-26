@@ -532,9 +532,9 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
 
       rts[i].format = surf->format;
       rts[i].dim = MALI_TEXTURE_DIMENSION_2D;
-      rts[i].last_level = rts[i].first_level = surf->u.tex.level;
-      rts[i].first_layer = surf->u.tex.first_layer;
-      rts[i].last_layer = surf->u.tex.last_layer;
+      rts[i].last_level = rts[i].first_level = surf->level;
+      rts[i].first_layer = surf->first_layer;
+      rts[i].last_layer = surf->last_layer;
       panfrost_set_image_view_planes(&rts[i], surf->texture);
       rts[i].nr_samples =
          surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
@@ -561,9 +561,9 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
                       ? PIPE_FORMAT_Z32_FLOAT
                       : surf->format;
       zs->dim = MALI_TEXTURE_DIMENSION_2D;
-      zs->last_level = zs->first_level = surf->u.tex.level;
-      zs->first_layer = surf->u.tex.first_layer;
-      zs->last_layer = surf->u.tex.last_layer;
+      zs->last_level = zs->first_level = surf->level;
+      zs->first_layer = surf->first_layer;
+      zs->last_layer = surf->last_layer;
       zs->planes[0] = &z_rsrc->image;
       zs->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
       memcpy(zs->swizzle, id_swz, sizeof(zs->swizzle));
@@ -578,9 +578,9 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
          s_rsrc = z_rsrc->separate_stencil;
          s->format = PIPE_FORMAT_S8_UINT;
          s->dim = MALI_TEXTURE_DIMENSION_2D;
-         s->last_level = s->first_level = surf->u.tex.level;
-         s->first_layer = surf->u.tex.first_layer;
-         s->last_layer = surf->u.tex.last_layer;
+         s->last_level = s->first_level = surf->level;
+         s->first_layer = surf->first_layer;
+         s->last_layer = surf->last_layer;
          s->planes[0] = &s_rsrc->image;
          s->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
          memcpy(s->swizzle, id_swz, sizeof(s->swizzle));
@@ -673,7 +673,7 @@ panfrost_batch_submit(struct panfrost_context *ctx,
       struct panfrost_resource *z_rsrc = pan_resource(surf->texture);
 
       /* if there are multiple levels or layers, we optimize only the first */
-      if (surf->u.tex.level == 0 && surf->u.tex.first_layer == 0) {
+      if (surf->level == 0 && surf->first_layer == 0) {
          /* Shared depth/stencil resources are not supported, and would
           * break this optimisation. */
          assert(!(z_rsrc->base.bind & PAN_BIND_SHARED_MASK));

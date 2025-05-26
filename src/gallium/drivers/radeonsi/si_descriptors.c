@@ -929,9 +929,9 @@ void si_update_ps_colorbuf0_slot(struct si_context *sctx)
       view.resource = surf->texture;
       view.format = surf->format;
       view.access = PIPE_IMAGE_ACCESS_READ;
-      view.u.tex.first_layer = surf->u.tex.first_layer;
-      view.u.tex.last_layer = surf->u.tex.last_layer;
-      view.u.tex.level = surf->u.tex.level;
+      view.u.tex.first_layer = surf->first_layer;
+      view.u.tex.last_layer = surf->last_layer;
+      view.u.tex.level = surf->level;
 
       /* Set the descriptor. */
       uint32_t *desc = descs->list + slot * 4;

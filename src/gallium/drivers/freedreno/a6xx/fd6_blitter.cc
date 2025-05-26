@@ -1009,9 +1009,9 @@ fd6_clear_surface(struct fd_context *ctx, struct fd_ringbuffer *ring,
    emit_clear_color(ring, psurf->format, &clear_color);
    emit_blit_setup<CHIP>(ring, psurf->format, false, &clear_color, unknown_8c01, ROTATE_0);
 
-   for (unsigned i = psurf->u.tex.first_layer; i <= psurf->u.tex.last_layer;
+   for (unsigned i = psurf->first_layer; i <= psurf->last_layer;
         i++) {
-      emit_blit_dst(ring, psurf->texture, psurf->format, psurf->u.tex.level, i);
+      emit_blit_dst(ring, psurf->texture, psurf->format, psurf->level, i);
 
       emit_blit_fini<CHIP>(ctx, ring);
    }
@@ -1081,14 +1081,10 @@ fd6_clear_texture(struct pipe_context *pctx, struct pipe_resource *prsc,
 
    struct pipe_surface surf = {
          .format = prsc->format,
+         .first_layer = box->z,
+         .last_layer = box->depth + box->z - 1,
+         .level = level,
          .texture = prsc,
-         .u = {
-               .tex = {
-                     .level = level,
-                     .first_layer = box->z,
-                     .last_layer = box->depth + box->z - 1,
-               },
-         },
    };
 
    fd6_clear_surface<CHIP>(ctx, batch->draw, &surf, box, &color, 0);
@@ -1138,10 +1134,10 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
    emit_blit_setup<CHIP>(ring, psurf->format, true, NULL, unknown_8c01, ROTATE_0);
 
    /* We shouldn't be using GMEM in the layered rendering case: */
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
-   emit_blit_dst(ring, psurf->texture, psurf->format, psurf->u.tex.level,
-                 psurf->u.tex.first_layer);
+   emit_blit_dst(ring, psurf->texture, psurf->format, psurf->level,
+                 psurf->first_layer);
 
    enum a6xx_format sfmt = fd6_color_format(psurf->format, TILE6_LINEAR);
    enum a3xx_msaa_samples samples = fd_msaa_samples(batch->framebuffer.samples);

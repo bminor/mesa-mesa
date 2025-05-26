@@ -23,9 +23,9 @@ default_dst_texture(struct pipe_surface *dst_templ, struct pipe_resource *dst,
                     unsigned dstlevel, unsigned dstz)
 {
    memset(dst_templ, 0, sizeof(*dst_templ));
-   dst_templ->u.tex.level = dstlevel;
-   dst_templ->u.tex.first_layer = dstz;
-   dst_templ->u.tex.last_layer = dstz;
+   dst_templ->level = dstlevel;
+   dst_templ->first_layer = dstz;
+   dst_templ->last_layer = dstz;
 }
 
 static void

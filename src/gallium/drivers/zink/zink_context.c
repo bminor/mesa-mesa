@@ -1163,14 +1163,14 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
       }
       struct pipe_surface templ = {0};
       if (!state->is_tex2d_from_buf)
-         templ.u.tex.level = state->u.tex.first_level;
+         templ.level = state->u.tex.first_level;
       templ.format = state->format;
       /* avoid needing mutable for depth/stencil sampling */
       if (util_format_is_depth_and_stencil(pres->format))
          templ.format = pres->format;
       if (target != PIPE_TEXTURE_3D && !state->is_tex2d_from_buf) {
-         templ.u.tex.first_layer = state->u.tex.first_layer;
-         templ.u.tex.last_layer = state->u.tex.last_layer;
+         templ.first_layer = state->u.tex.first_layer;
+         templ.last_layer = state->u.tex.last_layer;
       }
 
       if (zink_is_swapchain(res)) {
@@ -1941,11 +1941,11 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
       res = zink_resource(import);
       pres = import;
    } else {
-      tmpl.u.tex.level = view->u.tex.level;
-      tmpl.u.tex.first_layer = view->u.tex.first_layer;
-      tmpl.u.tex.last_layer = view->u.tex.last_layer;
-      depth += tmpl.u.tex.last_layer - tmpl.u.tex.first_layer;
-      z = tmpl.u.tex.first_layer;
+      tmpl.level = view->u.tex.level;
+      tmpl.first_layer = view->u.tex.first_layer;
+      tmpl.last_layer = view->u.tex.last_layer;
+      depth += tmpl.last_layer - tmpl.first_layer;
+      z = tmpl.first_layer;
    }
    switch (target) {
    case PIPE_TEXTURE_3D:
@@ -1958,8 +1958,8 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
             warn_missing_feature(warned, "image2DViewOf3D");
          }
       } else {
-         assert(tmpl.u.tex.first_layer == 0);
-         tmpl.u.tex.last_layer = 0;
+         assert(tmpl.first_layer == 0);
+         tmpl.last_layer = 0;
       }
       break;
    case PIPE_TEXTURE_2D_ARRAY:
@@ -2543,7 +2543,7 @@ zink_make_texture_handle_resident(struct pipe_context *pctx, uint64_t handle, bo
          ii->sampler = bd->sampler->sampler;
          ii->imageView = ds->surface->image_view;
          ii->imageLayout = zink_descriptor_util_image_layout_eval(ctx, res, false);
-         flush_pending_clears(ctx, res, ds->surface->base.u.tex.first_layer, ds->surface->base.u.tex.last_layer - ds->surface->base.u.tex.first_layer + 1);
+         flush_pending_clears(ctx, res, ds->surface->base.first_layer, ds->surface->base.last_layer - ds->surface->base.first_layer + 1);
          if (!check_for_layout_update(ctx, res, false)) {
             res->obj->unordered_read = false;
             // TODO: figure out a way to link up layouts between unordered and main cmdbuf
@@ -3208,14 +3208,14 @@ framebuffer_get_num_layers(const struct pipe_framebuffer_state *fb)
 
    for (i = 0; i < fb->nr_cbufs; i++) {
       if (fb->cbufs[i].texture) {
-         unsigned num = fb->cbufs[i].u.tex.last_layer -
-         fb->cbufs[i].u.tex.first_layer + 1;
+         unsigned num = fb->cbufs[i].last_layer -
+         fb->cbufs[i].first_layer + 1;
          num_layers = MIN2(num_layers, num);
       }
    }
    if (fb->zsbuf.texture) {
-      unsigned num = fb->zsbuf.u.tex.last_layer -
-      fb->zsbuf.u.tex.first_layer + 1;
+      unsigned num = fb->zsbuf.last_layer -
+      fb->zsbuf.first_layer + 1;
       num_layers = MIN2(num_layers, num);
    }
    return MAX2(num_layers, 1);
@@ -3859,7 +3859,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
          else if (zink_fb_clear_enabled(ctx, i) && !pipe_surface_equal(&ctx->fb_state.cbufs[i], &state->cbufs[i])) {
             struct zink_surface *a = zink_csurface(ctx->fb_cbufs[i]);
             const struct pipe_surface *b = &state->cbufs[i];
-            if (!a || !b->texture || framebuffer_surface_needs_mutable(b->texture, b) || memcmp(&a->base.u.tex, &b->u.tex, sizeof(b->u.tex)) ||
+            if (!a || !b->texture || framebuffer_surface_needs_mutable(b->texture, b) || a->base.level != b->level || a->base.first_layer != b->first_layer || a->base.last_layer != b->last_layer ||
                 a->base.texture != b->texture)
                flush_clears = true;
             else if (ctx->fb_state.cbufs[i].format != state->cbufs[i].format)
@@ -5779,9 +5779,9 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
          struct pipe_sampler_view *sv = ctx->sampler_views[stage][slot];
 
          for (unsigned i = 0; i < surf_idx; i++) {
-            if (sv->u.tex.first_level > psurfs[i]->u.tex.level || sv->u.tex.last_level < psurfs[i]->u.tex.level)
+            if (sv->u.tex.first_level > psurfs[i]->level || sv->u.tex.last_level < psurfs[i]->level)
                continue;
-            if (sv->u.tex.first_layer > psurfs[i]->u.tex.last_layer || sv->u.tex.last_layer < psurfs[i]->u.tex.first_layer)
+            if (sv->u.tex.first_layer > psurfs[i]->last_layer || sv->u.tex.last_layer < psurfs[i]->first_layer)
                continue;
             is_feedback = true;
             break;

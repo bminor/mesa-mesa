@@ -1384,7 +1384,7 @@ sp_setup_prepare(struct setup_context *setup)
       const struct pipe_surface *cbuf = &setup->softpipe->framebuffer.cbufs[i];
       if (cbuf->texture) {
          max_layer = MIN2(max_layer,
-                          cbuf->u.tex.last_layer - cbuf->u.tex.first_layer);
+                          cbuf->last_layer - cbuf->first_layer);
 
       }
    }

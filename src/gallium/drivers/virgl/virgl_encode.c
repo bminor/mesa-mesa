@@ -1008,8 +1008,8 @@ static int virgl_encoder_create_surface_common(struct virgl_context *ctx,
    virgl_encoder_write_dword(ctx->cbuf, pipe_to_virgl_format(templat->format));
 
    assert(templat->texture->target != PIPE_BUFFER);
-   virgl_encoder_write_dword(ctx->cbuf, templat->u.tex.level);
-   virgl_encoder_write_dword(ctx->cbuf, templat->u.tex.first_layer | (templat->u.tex.last_layer << 16));
+   virgl_encoder_write_dword(ctx->cbuf, templat->level);
+   virgl_encoder_write_dword(ctx->cbuf, templat->first_layer | (templat->last_layer << 16));
 
    return 0;
 }

@@ -483,8 +483,8 @@ _mesa_map_renderbuffer(struct gl_context *ctx,
    _mesa_update_renderbuffer_surface(ctx, rb);
    map = pipe_texture_map(pipe,
                            rb->texture,
-                           rb->surface.u.tex.level,
-                           rb->surface.u.tex.first_layer,
+                           rb->surface.level,
+                           rb->surface.first_layer,
                            transfer_flags, x, y2, w, h, &rb->transfer);
    if (map) {
       if (invert) {
@@ -638,7 +638,7 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
    rb->surface.format = format;
    rb->surface.texture = rb->texture;
    rb->surface.nr_samples = nr_samples;
-   rb->surface.u.tex.level = level;
-   rb->surface.u.tex.first_layer = first_layer;
-   rb->surface.u.tex.last_layer = last_layer;
+   rb->surface.level = level;
+   rb->surface.first_layer = first_layer;
+   rb->surface.last_layer = last_layer;
 }

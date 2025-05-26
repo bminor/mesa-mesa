@@ -400,9 +400,9 @@ fd4_emit_gmem_restore_tex(struct fd_ringbuffer *ring, unsigned nr_bufs,
          }
 
          /* note: PIPE_BUFFER disallowed for surfaces */
-         unsigned lvl = bufs[i].u.tex.level;
+         unsigned lvl = bufs[i].level;
          unsigned offset =
-            fd_resource_offset(rsc, lvl, bufs[i].u.tex.first_layer);
+            fd_resource_offset(rsc, lvl, bufs[i].first_layer);
 
          /* z32 restore is accomplished using depth write.  If there is
           * no stencil component (ie. PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
@@ -415,7 +415,7 @@ fd4_emit_gmem_restore_tex(struct fd_ringbuffer *ring, unsigned nr_bufs,
              (format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT))
             mrt_comp[i] = 0;
 
-         assert(bufs[i].u.tex.first_layer == bufs[i].u.tex.last_layer);
+         assert(bufs[i].first_layer == bufs[i].last_layer);
 
          OUT_RING(ring, A4XX_TEX_CONST_0_FMT(fd4_pipe2tex(format)) |
                            A4XX_TEX_CONST_0_TYPE(A4XX_TEX_2D) |

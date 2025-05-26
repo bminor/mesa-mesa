@@ -362,7 +362,7 @@ vl_video_buffer_surfaces(struct vl_video_buffer *buf)
 
          buf->surfaces[surf].texture = buf->resources[i];
          buf->surfaces[surf].format = vl_video_buffer_surface_format(buf->resources[i]->format);
-         buf->surfaces[surf].u.tex.first_layer = buf->surfaces[surf].u.tex.last_layer = j;
+         buf->surfaces[surf].first_layer = buf->surfaces[surf].last_layer = j;
       }
    }
 }

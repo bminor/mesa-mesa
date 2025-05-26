@@ -113,7 +113,7 @@ etna_update_render_surface(struct pipe_context *pctx, struct etna_surface *surf)
 {
    struct etna_resource *base = etna_resource(surf->prsc);
    struct etna_resource *to = base, *from = base;
-   unsigned level = surf->base.u.tex.level;
+   unsigned level = surf->base.level;
 
    if (base->texture &&
        etna_resource_level_newer(&etna_resource(base->texture)->levels[level],
@@ -163,8 +163,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
       /* Resolve TS if needed */
       if (!use_ts) {
-         etna_copy_resource(pctx, &res->base, &res->base, cbuf->base.u.tex.level, cbuf->base.u.tex.level);
-         etna_resource_level_ts_mark_invalid(&res->levels[cbuf->base.u.tex.level]);
+         etna_copy_resource(pctx, &res->base, &res->base, cbuf->base.level, cbuf->base.level);
+         etna_resource_level_ts_mark_invalid(&res->levels[cbuf->base.level]);
       }
 
       assert((res->layout & ETNA_LAYOUT_BIT_TILE) ||

@@ -661,12 +661,12 @@ static void si_fast_clear(struct si_context *sctx, unsigned *buffers,
       unsigned i = u_bit_scan(&color_buffer_mask);
 
       struct si_texture *tex = (struct si_texture *)fb->cbufs[i].texture;
-      unsigned level = fb->cbufs[i].u.tex.level;
+      unsigned level = fb->cbufs[i].level;
       unsigned num_layers = util_num_layers(&tex->buffer.b.b, level);
 
       /* the clear is allowed if all layers are bound */
-      if (fb->cbufs[i].u.tex.first_layer != 0 ||
-          fb->cbufs[i].u.tex.last_layer != num_layers - 1) {
+      if (fb->cbufs[i].first_layer != 0 ||
+          fb->cbufs[i].last_layer != num_layers - 1) {
          continue;
       }
 
@@ -893,12 +893,12 @@ static void si_fast_clear(struct si_context *sctx, unsigned *buffers,
 
    /* Depth/stencil clears. */
    struct si_texture *zstex = (struct si_texture *)fb->zsbuf.texture;
-   unsigned zs_num_layers = zstex ? util_num_layers(&zstex->buffer.b.b, fb->zsbuf.u.tex.level) : 0;
+   unsigned zs_num_layers = zstex ? util_num_layers(&zstex->buffer.b.b, fb->zsbuf.level) : 0;
 
-   if (zstex && fb->zsbuf.u.tex.first_layer == 0 &&
-       fb->zsbuf.u.tex.last_layer == zs_num_layers - 1 &&
-       si_htile_enabled(zstex, fb->zsbuf.u.tex.level, PIPE_MASK_ZS)) {
-      unsigned level = fb->zsbuf.u.tex.level;
+   if (zstex && fb->zsbuf.first_layer == 0 &&
+       fb->zsbuf.last_layer == zs_num_layers - 1 &&
+       si_htile_enabled(zstex, fb->zsbuf.level, PIPE_MASK_ZS)) {
+      unsigned level = fb->zsbuf.level;
       bool update_db_depth_clear = false;
       bool update_db_stencil_clear = false;
       bool fb_too_small = num_pixels * zs_num_layers <= 512 * 512;
@@ -1067,13 +1067,13 @@ static void si_fb_clear_via_compute(struct si_context *sctx, unsigned *buffers,
       unsigned i = u_bit_scan(&color_buffer_mask);
 
       struct pipe_surface *surf = &fb->cbufs[i];
-      unsigned depth = surf->u.tex.last_layer - surf->u.tex.first_layer + 1;
+      unsigned depth = surf->last_layer - surf->first_layer + 1;
       struct si_texture *tex = (struct si_texture *)surf->texture;
 
       /* If DCC is enable (which can happen with thick tiling on gfx8, don't use compute to get
        * compressed clears.
        */
-      if (vi_dcc_enabled(tex, surf->u.tex.level))
+      if (vi_dcc_enabled(tex, surf->level))
          continue;
 
       uint16_t width, height;
@@ -1083,9 +1083,9 @@ static void si_fb_clear_via_compute(struct si_context *sctx, unsigned *buffers,
           (tex->surface.is_linear && (height > 1 || depth > 1 || width >= 8192))) {
          struct pipe_box box;
 
-         u_box_3d(0, 0, surf->u.tex.first_layer, width, height, depth, &box);
+         u_box_3d(0, 0, surf->first_layer, width, height, depth, &box);
 
-         if (si_compute_clear_image(sctx, &tex->buffer.b.b, surf->format, surf->u.tex.level, &box,
+         if (si_compute_clear_image(sctx, &tex->buffer.b.b, surf->format, surf->level, &box,
                                     color, sctx->render_cond_enabled, true))
             *buffers &= ~(PIPE_CLEAR_COLOR0 << i); /* success */
       }
@@ -1125,13 +1125,13 @@ static void gfx6_clear(struct pipe_context *ctx, unsigned buffers,
          unsigned i = u_bit_scan(&color_buffer_mask);
          struct si_texture *tex = (struct si_texture *)fb->cbufs[i].texture;
          if (tex->surface.fmask_size == 0)
-            tex->dirty_level_mask &= ~(1 << fb->cbufs[i].u.tex.level);
+            tex->dirty_level_mask &= ~(1 << fb->cbufs[i].level);
       }
    }
 
-   if (zstex && fb->zsbuf.u.tex.first_layer == 0 &&
-       fb->zsbuf.u.tex.last_layer == util_max_layer(&zstex->buffer.b.b, 0)) {
-      unsigned level = fb->zsbuf.u.tex.level;
+   if (zstex && fb->zsbuf.first_layer == 0 &&
+       fb->zsbuf.last_layer == util_max_layer(&zstex->buffer.b.b, 0)) {
+      unsigned level = fb->zsbuf.level;
 
       if (si_can_fast_clear_depth(zstex, level, depth, buffers)) {
          /* Need to disable EXPCLEAR temporarily if clearing
@@ -1201,15 +1201,15 @@ static void gfx6_clear(struct pipe_context *ctx, unsigned buffers,
    if (sctx->db_depth_clear) {
       sctx->db_depth_clear = false;
       sctx->db_depth_disable_expclear = false;
-      zstex->depth_cleared_level_mask_once |= BITFIELD_BIT(fb->zsbuf.u.tex.level);
-      zstex->depth_cleared_level_mask |= BITFIELD_BIT(fb->zsbuf.u.tex.level);
+      zstex->depth_cleared_level_mask_once |= BITFIELD_BIT(fb->zsbuf.level);
+      zstex->depth_cleared_level_mask |= BITFIELD_BIT(fb->zsbuf.level);
       si_mark_atom_dirty(sctx, &sctx->atoms.s.db_render_state);
    }
 
    if (sctx->db_stencil_clear) {
       sctx->db_stencil_clear = false;
       sctx->db_stencil_disable_expclear = false;
-      zstex->stencil_cleared_level_mask_once |= BITFIELD_BIT(fb->zsbuf.u.tex.level);
+      zstex->stencil_cleared_level_mask_once |= BITFIELD_BIT(fb->zsbuf.level);
       si_mark_atom_dirty(sctx, &sctx->atoms.s.db_render_state);
    }
 }
@@ -1246,8 +1246,8 @@ static void gfx12_clear(struct pipe_context *ctx, unsigned buffers,
 
    /* This is only used by the driver, not the hw. */
    if (buffers & PIPE_CLEAR_DEPTH) {
-      zstex->depth_cleared_level_mask |= BITFIELD_BIT(fb->zsbuf.u.tex.level);
-      zstex->depth_clear_value[fb->zsbuf.u.tex.level] = depth;
+      zstex->depth_cleared_level_mask |= BITFIELD_BIT(fb->zsbuf.level);
+      zstex->depth_clear_value[fb->zsbuf.level] = depth;
    }
 }
 
@@ -1263,8 +1263,8 @@ static bool si_try_normal_clear(struct si_context *sctx, struct pipe_surface *ds
    if (dstx == 0 && dsty == 0 &&
        width == surf_width &&
        height == surf_height &&
-       dst->u.tex.first_layer == 0 &&
-       dst->u.tex.last_layer == util_max_layer(dst->texture, dst->u.tex.level) &&
+       dst->first_layer == 0 &&
+       dst->last_layer == util_max_layer(dst->texture, dst->level) &&
        /* pipe->clear honors render_condition, so only use it if it's unset or if it's set and enabled. */
        (!sctx->render_cond || render_condition_enabled) &&
        sctx->has_graphics) {
@@ -1378,7 +1378,7 @@ static void si_clear_render_target(struct pipe_context *ctx, struct pipe_surface
     * or CMASK).
     */
    if (sctx->gfx_level <= GFX10_3 &&
-       (vi_dcc_enabled(sdst, dst->u.tex.level) ||
+       (vi_dcc_enabled(sdst, dst->level) ||
         /* GFX6-9 allow CMASK without MSAA and allocate it on demand, but only 8-64bpp. */
         (sctx->gfx_level <= GFX9 && sdst->surface.bpe <= 8)) &&
        si_try_normal_clear(sctx, dst, dstx, dsty, width, height, render_condition_enabled,
@@ -1386,14 +1386,14 @@ static void si_clear_render_target(struct pipe_context *ctx, struct pipe_surface
       return;
 
    struct pipe_box box;
-   u_box_3d(dstx, dsty, dst->u.tex.first_layer, width, height,
-            dst->u.tex.last_layer - dst->u.tex.first_layer + 1, &box);
+   u_box_3d(dstx, dsty, dst->first_layer, width, height,
+            dst->last_layer - dst->first_layer + 1, &box);
 
-   if (si_compute_fast_clear_image(sctx, dst->texture, dst->format, dst->u.tex.level, &box, color,
+   if (si_compute_fast_clear_image(sctx, dst->texture, dst->format, dst->level, &box, color,
                                    render_condition_enabled, true))
       return;
 
-   if (si_compute_clear_image(sctx, dst->texture, dst->format, dst->u.tex.level, &box, color,
+   if (si_compute_clear_image(sctx, dst->texture, dst->format, dst->level, &box, color,
                               render_condition_enabled, true))
       return;
 

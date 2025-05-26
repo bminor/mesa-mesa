@@ -1226,7 +1226,7 @@ void r300_emit_hiz_clear(struct r300_context *r300, unsigned size, void *state)
     BEGIN_CS(size);
     OUT_CS_PKT3(R300_PACKET3_3D_CLEAR_HIZ, 2);
     OUT_CS(0);
-    OUT_CS(tex->tex.hiz_dwords[fb->zsbuf.u.tex.level]);
+    OUT_CS(tex->tex.hiz_dwords[fb->zsbuf.level]);
     OUT_CS(r300->hiz_clear_value);
     END_CS;
 
@@ -1248,7 +1248,7 @@ void r300_emit_zmask_clear(struct r300_context *r300, unsigned size, void *state
     BEGIN_CS(size);
     OUT_CS_PKT3(R300_PACKET3_3D_CLEAR_ZMASK, 2);
     OUT_CS(0);
-    OUT_CS(tex->tex.zmask_dwords[fb->zsbuf.u.tex.level]);
+    OUT_CS(tex->tex.zmask_dwords[fb->zsbuf.level]);
     OUT_CS(0);
     END_CS;
 

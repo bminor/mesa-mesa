@@ -831,7 +831,7 @@ static void r300_print_fb_surf_info(const struct pipe_surface *surf, unsigned in
 
             binding, index, pipe_surface_width(surf),
             pipe_surface_height(surf),
-            surf->u.tex.first_layer, surf->u.tex.last_layer, surf->u.tex.level,
+            surf->first_layer, surf->last_layer, surf->level,
             util_format_short_name(surf->format),
 
             rtex->tex.macrotile[0] ? "YES" : " NO",

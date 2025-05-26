@@ -97,43 +97,43 @@ initialize_dsv(struct pipe_context *pctx,
    desc.ViewDimension = view_dsv_dimension(pres->target, pres->nr_samples);
    switch (desc.ViewDimension) {
    case D3D12_DSV_DIMENSION_TEXTURE1D:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 1D DSV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
 
-      desc.Texture1D.MipSlice = tpl->u.tex.level;
+      desc.Texture1D.MipSlice = tpl->level;
       break;
 
    case D3D12_DSV_DIMENSION_TEXTURE1DARRAY:
-      desc.Texture1DArray.MipSlice = tpl->u.tex.level;
-      desc.Texture1DArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture1DArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture1DArray.MipSlice = tpl->level;
+      desc.Texture1DArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture1DArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    case D3D12_DSV_DIMENSION_TEXTURE2DMS:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 2DMS DSV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
 
       break;
 
    case D3D12_DSV_DIMENSION_TEXTURE2D:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 2D DSV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
 
-      desc.Texture2D.MipSlice = tpl->u.tex.level;
+      desc.Texture2D.MipSlice = tpl->level;
       break;
 
    case D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY:
-      desc.Texture2DMSArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture2DMSArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture2DMSArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture2DMSArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    case D3D12_DSV_DIMENSION_TEXTURE2DARRAY:
-      desc.Texture2DArray.MipSlice = tpl->u.tex.level;
-      desc.Texture2DArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture2DArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture2DArray.MipSlice = tpl->level;
+      desc.Texture2DArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture2DArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    default:
@@ -169,50 +169,50 @@ initialize_rtv(struct pipe_context *pctx,
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE1D:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 1D RTV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
 
-      desc.Texture1D.MipSlice = tpl->u.tex.level;
+      desc.Texture1D.MipSlice = tpl->level;
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE1DARRAY:
-      desc.Texture1DArray.MipSlice = tpl->u.tex.level;
-      desc.Texture1DArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture1DArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture1DArray.MipSlice = tpl->level;
+      desc.Texture1DArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture1DArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE2DMS:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 2DMS RTV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE2D:
-      if (tpl->u.tex.first_layer > 0)
+      if (tpl->first_layer > 0)
          debug_printf("D3D12: can't create 2D RTV from layer %d\n",
-                      tpl->u.tex.first_layer);
+                      tpl->first_layer);
 
-      desc.Texture2D.MipSlice = tpl->u.tex.level;
+      desc.Texture2D.MipSlice = tpl->level;
       desc.Texture2D.PlaneSlice = res->plane_slice;
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY:
-      desc.Texture2DMSArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture2DMSArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture2DMSArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture2DMSArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE2DARRAY:
-      desc.Texture2DArray.MipSlice = tpl->u.tex.level;
-      desc.Texture2DArray.FirstArraySlice = tpl->u.tex.first_layer;
-      desc.Texture2DArray.ArraySize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture2DArray.MipSlice = tpl->level;
+      desc.Texture2DArray.FirstArraySlice = tpl->first_layer;
+      desc.Texture2DArray.ArraySize = tpl->last_layer - tpl->first_layer + 1;
       desc.Texture2DArray.PlaneSlice = 0;
       break;
 
    case D3D12_RTV_DIMENSION_TEXTURE3D:
-      desc.Texture3D.MipSlice = tpl->u.tex.level;
-      desc.Texture3D.FirstWSlice = tpl->u.tex.first_layer;
-      desc.Texture3D.WSize = tpl->u.tex.last_layer - tpl->u.tex.first_layer + 1;
+      desc.Texture3D.MipSlice = tpl->level;
+      desc.Texture3D.FirstWSlice = tpl->first_layer;
+      desc.Texture3D.WSize = tpl->last_layer - tpl->first_layer + 1;
       break;
 
    default:
@@ -248,9 +248,9 @@ d3d12_create_surface(struct pipe_context *pctx,
    pipe_reference_init(&surface->base.reference, 1);
    surface->base.context = pctx;
    surface->base.format = tpl->format;
-   surface->base.u.tex.level = tpl->u.tex.level;
-   surface->base.u.tex.first_layer = tpl->u.tex.first_layer;
-   surface->base.u.tex.last_layer = tpl->u.tex.last_layer;
+   surface->base.level = tpl->level;
+   surface->base.first_layer = tpl->first_layer;
+   surface->base.last_layer = tpl->last_layer;
 
    DXGI_FORMAT dxgi_format = d3d12_get_resource_rt_format(tpl->format);
    if (is_depth_or_stencil)

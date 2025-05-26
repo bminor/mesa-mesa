@@ -1497,14 +1497,16 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 	if (!surface)
 		return NULL;
 
-	assert(templ->u.tex.first_layer <= util_max_layer(texture, templ->u.tex.level));
-	assert(templ->u.tex.last_layer <= util_max_layer(texture, templ->u.tex.level));
+	assert(templ->first_layer <= util_max_layer(texture, templ->level));
+	assert(templ->last_layer <= util_max_layer(texture, templ->level));
 
 	pipe_reference_init(&surface->base.reference, 1);
 	pipe_resource_reference(&surface->base.texture, texture);
 	surface->base.context = pipe;
 	surface->base.format = templ->format;
-	surface->base.u = templ->u;
+	surface->base.level = templ->level;
+	surface->base.first_layer = templ->first_layer;
+	surface->base.last_layer = templ->last_layer;
 
 	surface->width0 = width0;
 	surface->height0 = height0;

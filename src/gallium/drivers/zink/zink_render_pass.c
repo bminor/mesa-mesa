@@ -208,9 +208,9 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       struct pipe_box dstbox;
 
       u_box_3d(0, 0, 0, ctx->fb_state.width, ctx->fb_state.height,
-               1 + dst_view->u.tex.last_layer - dst_view->u.tex.first_layer, &dstbox);
+               1 + dst_view->last_layer - dst_view->first_layer, &dstbox);
 
-      util_blitter_default_src_texture(ctx->blitter, &src_templ, src, ctx->fb_state.cbufs[i].u.tex.level);
+      util_blitter_default_src_texture(ctx->blitter, &src_templ, src, ctx->fb_state.cbufs[i].level);
       src_view = ctx->base.create_sampler_view(&ctx->base, src, &src_templ);
 
       zink_blit_begin(ctx, ZINK_BLIT_SAVE_FB | ZINK_BLIT_SAVE_FS | ZINK_BLIT_SAVE_TEXTURES);

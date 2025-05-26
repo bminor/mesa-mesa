@@ -81,10 +81,10 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
          else
             pformat = util_format_linear(pformat);
 
-         assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+         assert(psurf->first_layer == psurf->last_layer);
 
-         offset = fd_resource_offset(rsc, psurf->u.tex.level,
-                                     psurf->u.tex.first_layer);
+         offset = fd_resource_offset(rsc, psurf->level,
+                                     psurf->first_layer);
          swap = rsc->layout.tile_mode ? WZYX : fd3_pipe2swap(pformat);
 
          if (bin_w) {
@@ -94,7 +94,7 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
                base = bases[i];
             }
          } else {
-            stride = fd_resource_pitch(rsc, psurf->u.tex.level);
+            stride = fd_resource_pitch(rsc, psurf->level);
             tile_mode = rsc->layout.tile_mode;
          }
       } else if (i < nr_bufs && bases) {
@@ -329,10 +329,10 @@ emit_gmem2mem_surf(struct fd_batch *batch,
    }
 
    uint32_t offset =
-      fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
-   uint32_t pitch = fd_resource_pitch(rsc, psurf->u.tex.level);
+      fd_resource_offset(rsc, psurf->level, psurf->first_layer);
+   uint32_t pitch = fd_resource_pitch(rsc, psurf->level);
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    OUT_PKT0(ring, REG_A3XX_RB_COPY_CONTROL, 4);
    OUT_RING(ring, A3XX_RB_COPY_CONTROL_MSAA_RESOLVE(MSAA_ONE) |
@@ -740,7 +740,7 @@ fd3_emit_sysmem_prep(struct fd_batch *batch) assert_dt
       if (!psurf->texture)
          continue;
       struct fd_resource *rsc = fd_resource(psurf->texture);
-      pitch = fd_resource_pitch(rsc, psurf->u.tex.level) / rsc->layout.cpp;
+      pitch = fd_resource_pitch(rsc, psurf->level) / rsc->layout.cpp;
    }
 
    fd3_emit_restore(batch, ring);

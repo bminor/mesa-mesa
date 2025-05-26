@@ -279,17 +279,11 @@ panfrost_create_surface(struct pipe_context *pipe, struct pipe_resource *pt,
       ps->context = pipe;
       ps->format = surf_tmpl->format;
 
-      if (pt->target != PIPE_BUFFER) {
-         assert(surf_tmpl->u.tex.level <= pt->last_level);
-         ps->nr_samples = surf_tmpl->nr_samples;
-         ps->u.tex.level = surf_tmpl->u.tex.level;
-         ps->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-         ps->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
-      } else {
-         ps->u.buf.first_element = surf_tmpl->u.buf.first_element;
-         ps->u.buf.last_element = surf_tmpl->u.buf.last_element;
-         assert(ps->u.buf.first_element <= ps->u.buf.last_element);
-      }
+      assert(surf_tmpl->level <= pt->last_level);
+      ps->nr_samples = surf_tmpl->nr_samples;
+      ps->level = surf_tmpl->level;
+      ps->first_layer = surf_tmpl->first_layer;
+      ps->last_layer = surf_tmpl->last_layer;
    }
 
    return ps;

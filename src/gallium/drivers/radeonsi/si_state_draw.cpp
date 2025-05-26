@@ -2461,7 +2461,7 @@ static void si_draw(struct pipe_context *ctx,
    /* On Gfx12, this is only used to detect whether a depth texture is in the cleared state. */
    if (sctx->framebuffer.state.zsbuf.texture) {
       struct si_texture *zstex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
-      zstex->depth_cleared_level_mask &= ~BITFIELD_BIT(sctx->framebuffer.state.zsbuf.u.tex.level);
+      zstex->depth_cleared_level_mask &= ~BITFIELD_BIT(sctx->framebuffer.state.zsbuf.level);
    }
 
 #ifdef HAVE_PERFETTO

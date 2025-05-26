@@ -644,10 +644,10 @@ crocus_clear(struct pipe_context *ctx,
                             buffers & PIPE_CLEAR_DEPTHSTENCIL, p_color, depth, stencil, false);
       } else {
          const struct pipe_surface *psurf = &cso_fb->zsbuf;
-         box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1;
-         box.z = psurf->u.tex.first_layer;
+         box.depth = psurf->last_layer - psurf->first_layer + 1;
+         box.z = psurf->first_layer;
 
-         clear_depth_stencil(ice, psurf->texture, psurf->u.tex.level, &box, true,
+         clear_depth_stencil(ice, psurf->texture, psurf->level, &box, true,
                              buffers & PIPE_CLEAR_DEPTH,
                              buffers & PIPE_CLEAR_STENCIL,
                              depth, stencil);
@@ -663,10 +663,10 @@ crocus_clear(struct pipe_context *ctx,
          if (buffers & (PIPE_CLEAR_COLOR0 << i)) {
             struct pipe_surface *psurf = ice->state.fb_cbufs[i];
             struct crocus_surface *isurf = (void *) psurf;
-            box.depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1,
-            box.z = psurf->u.tex.first_layer,
+            box.depth = psurf->last_layer - psurf->first_layer + 1,
+            box.z = psurf->first_layer,
 
-            clear_color(ice, psurf->texture, psurf->u.tex.level, &box,
+            clear_color(ice, psurf->texture, psurf->level, &box,
                         true, isurf->view.format, isurf->view.swizzle,
                         *color);
          }
@@ -761,16 +761,16 @@ crocus_clear_render_target(struct pipe_context *ctx,
    struct pipe_box box = {
       .x = dst_x,
       .y = dst_y,
-      .z = psurf->u.tex.first_layer,
+      .z = psurf->first_layer,
       .width = width,
       .height = height,
-      .depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1
+      .depth = psurf->last_layer - psurf->first_layer + 1
    };
 
    /* pipe_color_union and isl_color_value are interchangeable */
    union isl_color_value *color = (void *) p_color;
 
-   clear_color(ice, psurf->texture, psurf->u.tex.level, &box,
+   clear_color(ice, psurf->texture, psurf->level, &box,
                render_condition_enabled,
                isurf->view.format, isurf->view.swizzle, *color);
 }
@@ -796,10 +796,10 @@ crocus_clear_depth_stencil(struct pipe_context *ctx,
    struct pipe_box box = {
       .x = dst_x,
       .y = dst_y,
-      .z = psurf->u.tex.first_layer,
+      .z = psurf->first_layer,
       .width = width,
       .height = height,
-      .depth = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1
+      .depth = psurf->last_layer - psurf->first_layer + 1
    };
    uint32_t blit_flags = 0;
 
@@ -809,7 +809,7 @@ crocus_clear_depth_stencil(struct pipe_context *ctx,
    util_blitter_clear(ice->blitter, width, height,
                       1, flags, NULL, depth, stencil, render_condition_enabled);
 #if 0
-   clear_depth_stencil(ice, psurf->texture, psurf->u.tex.level, &box,
+   clear_depth_stencil(ice, psurf->texture, psurf->level, &box,
                        render_condition_enabled,
                        flags & PIPE_CLEAR_DEPTH, flags & PIPE_CLEAR_STENCIL,
                        depth, stencil);

@@ -747,10 +747,10 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
          struct pipe_surface *surf = &sctx->framebuffer.state.zsbuf;
          struct si_texture *tex = (struct si_texture *)surf->texture;
 
-         tex->dirty_level_mask |= 1 << surf->u.tex.level;
+         tex->dirty_level_mask |= 1 << surf->level;
 
          if (tex->surface.has_stencil)
-            tex->stencil_dirty_level_mask |= 1 << surf->u.tex.level;
+            tex->stencil_dirty_level_mask |= 1 << surf->level;
 
          si_set_sampler_depth_decompress_mask(sctx, tex);
       }
@@ -762,7 +762,7 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
          struct si_texture *tex = (struct si_texture *)surf->texture;
 
          if (tex->surface.fmask_offset) {
-            tex->dirty_level_mask |= 1 << surf->u.tex.level;
+            tex->dirty_level_mask |= 1 << surf->level;
             tex->fmask_is_identity = false;
          }
       }

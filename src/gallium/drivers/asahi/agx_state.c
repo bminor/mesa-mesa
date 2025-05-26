@@ -866,7 +866,7 @@ agx_create_surface(struct pipe_context *ctx, struct pipe_resource *texture,
    if (!surface)
       return NULL;
 
-   unsigned level = surf_tmpl->u.tex.level;
+   unsigned level = surf_tmpl->level;
 
    pipe_reference_init(&surface->reference, 1);
    pipe_resource_reference(&surface->texture, texture);
@@ -877,9 +877,9 @@ agx_create_surface(struct pipe_context *ctx, struct pipe_resource *texture,
    surface->format = surf_tmpl->format;
    surface->nr_samples = surf_tmpl->nr_samples;
    surface->texture = texture;
-   surface->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-   surface->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
-   surface->u.tex.level = level;
+   surface->first_layer = surf_tmpl->first_layer;
+   surface->last_layer = surf_tmpl->last_layer;
+   surface->level = level;
 
    return surface;
 }
@@ -1126,10 +1126,10 @@ image_view_for_surface(const struct pipe_surface *surf)
       .access = PIPE_IMAGE_ACCESS_READ_WRITE,
       .shader_access = PIPE_IMAGE_ACCESS_READ_WRITE,
       .u.tex.single_layer_view =
-         surf->u.tex.first_layer == surf->u.tex.last_layer,
-      .u.tex.first_layer = surf->u.tex.first_layer,
-      .u.tex.last_layer = surf->u.tex.last_layer,
-      .u.tex.level = surf->u.tex.level,
+         surf->first_layer == surf->last_layer,
+      .u.tex.first_layer = surf->first_layer,
+      .u.tex.last_layer = surf->last_layer,
+      .u.tex.level = surf->level,
    };
 }
 
@@ -1137,7 +1137,7 @@ image_view_for_surface(const struct pipe_surface *surf)
 static struct pipe_sampler_view
 sampler_view_for_surface(const struct pipe_surface *surf)
 {
-   bool layered = surf->u.tex.last_layer > surf->u.tex.first_layer;
+   bool layered = surf->last_layer > surf->first_layer;
 
    return (struct pipe_sampler_view){
       /* To reduce shader variants, we always use a 2D texture. For reloads of
@@ -1150,10 +1150,10 @@ sampler_view_for_surface(const struct pipe_surface *surf)
       .swizzle_a = PIPE_SWIZZLE_W,
       .u.tex =
          {
-            .first_layer = surf->u.tex.first_layer,
-            .last_layer = surf->u.tex.last_layer,
-            .first_level = surf->u.tex.level,
-            .last_level = surf->u.tex.level,
+            .first_layer = surf->first_layer,
+            .last_layer = surf->last_layer,
+            .first_level = surf->level,
+            .last_level = surf->level,
          },
    };
 }
@@ -3431,7 +3431,7 @@ agx_batch_init_state(struct agx_batch *batch)
 
          struct agx_resource *rsrc = agx_resource(surf->texture);
          struct ail_layout *layout = &rsrc->layout;
-         unsigned level = surf->u.tex.level;
+         unsigned level = surf->level;
 
          if (!ail_is_level_compressed(layout, level))
             continue;
@@ -3445,7 +3445,7 @@ agx_batch_init_state(struct agx_batch *batch)
    }
 
    if (batch->key.zsbuf.texture) {
-      unsigned level = batch->key.zsbuf.u.tex.level;
+      unsigned level = batch->key.zsbuf.level;
       struct agx_resource *rsrc = agx_resource(batch->key.zsbuf.texture);
 
       agx_batch_writes(batch, rsrc, level);
@@ -3457,7 +3457,7 @@ agx_batch_init_state(struct agx_batch *batch)
    for (unsigned i = 0; i < batch->key.nr_cbufs; ++i) {
       if (batch->key.cbufs[i].texture) {
          struct agx_resource *rsrc = agx_resource(batch->key.cbufs[i].texture);
-         unsigned level = batch->key.cbufs[i].u.tex.level;
+         unsigned level = batch->key.cbufs[i].level;
 
          if (agx_resource_valid(rsrc, level))
             batch->load |= PIPE_CLEAR_COLOR0 << i;
@@ -5516,7 +5516,7 @@ agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
    struct agx_device *dev = agx_device(ctx->base.screen);
    struct agx_resource *rsrc = agx_resource(surf->texture);
    struct ail_layout *layout = &rsrc->layout;
-   unsigned level = surf->u.tex.level;
+   unsigned level = surf->level;
 
    perf_debug(dev, "Decompressing in-place due to: %s", reason);
 
@@ -5537,10 +5537,10 @@ agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
    struct agx_grid grid =
       agx_3d(ail_metadata_width_tl(layout, level) * 32,
              ail_metadata_height_tl(layout, level),
-             surf->u.tex.last_layer - surf->u.tex.first_layer + 1);
+             surf->last_layer - surf->first_layer + 1);
 
    libagx_decompress(batch, grid, AGX_BARRIER_ALL, layout,
-                     surf->u.tex.first_layer, level,
+                     surf->first_layer, level,
                      agx_map_texture_gpu(rsrc, 0), images.gpu);
 }
 

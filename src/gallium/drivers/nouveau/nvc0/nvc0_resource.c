@@ -131,8 +131,6 @@ nvc0_surface_create(struct pipe_context *pipe,
                     struct pipe_resource *pres,
                     const struct pipe_surface *templ)
 {
-   if (unlikely(pres->target == PIPE_BUFFER))
-      return nv50_surface_from_buffer(pipe, pres, templ);
    return nvc0_miptree_surface_new(pipe, pres, templ);
 }
 

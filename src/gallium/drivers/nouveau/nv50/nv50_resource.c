@@ -40,42 +40,11 @@ nv50_resource_from_handle(struct pipe_screen * screen,
       return nv50_miptree_from_handle(screen, templ, whandle);
 }
 
-struct pipe_surface *
-nv50_surface_from_buffer(struct pipe_context *pipe,
-                         struct pipe_resource *pbuf,
-                         const struct pipe_surface *templ)
-{
-   struct nv50_surface *sf = CALLOC_STRUCT(nv50_surface);
-   if (!sf)
-      return NULL;
-
-   pipe_reference_init(&sf->base.reference, 1);
-   pipe_resource_reference(&sf->base.texture, pbuf);
-
-   sf->base.format = templ->format;
-   sf->base.u.buf.first_element = templ->u.buf.first_element;
-   sf->base.u.buf.last_element = templ->u.buf.last_element;
-
-   sf->offset =
-      templ->u.buf.first_element * util_format_get_blocksize(sf->base.format);
-
-   sf->offset &= ~0x7f; /* FIXME: RT_ADDRESS requires 128 byte alignment */
-
-   sf->width = templ->u.buf.last_element - templ->u.buf.first_element + 1;
-   sf->height = 1;
-   sf->depth = 1;
-
-   sf->base.context = pipe;
-   return &sf->base;
-}
-
 static struct pipe_surface *
 nv50_surface_create(struct pipe_context *pipe,
                     struct pipe_resource *pres,
                     const struct pipe_surface *templ)
 {
-   if (unlikely(pres->target == PIPE_BUFFER))
-      return nv50_surface_from_buffer(pipe, pres, templ);
    return nv50_miptree_surface_new(pipe, pres, templ);
 }
 

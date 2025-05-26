@@ -318,7 +318,7 @@ nv50_clear_render_target(struct pipe_context *pipe,
    PUSH_DATAh(push, mt->base.address + sf->offset);
    PUSH_DATA (push, mt->base.address + sf->offset);
    PUSH_DATA (push, nv50_format_table[dst->format].rt);
-   PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+   PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
    PUSH_DATA (push, mt->layer_stride >> 2);
    BEGIN_NV04(push, NV50_3D(RT_HORIZ(0)), 2);
    if (nouveau_bo_memtype(bo))
@@ -415,7 +415,7 @@ nv50_clear_depth_stencil(struct pipe_context *pipe,
    PUSH_DATAh(push, mt->base.address + sf->offset);
    PUSH_DATA (push, mt->base.address + sf->offset);
    PUSH_DATA (push, nv50_format_table[dst->format].rt);
-   PUSH_DATA (push, mt->level[sf->base.u.tex.level].tile_mode);
+   PUSH_DATA (push, mt->level[sf->base.level].tile_mode);
    PUSH_DATA (push, mt->layer_stride >> 2);
    BEGIN_NV04(push, NV50_3D(ZETA_ENABLE), 1);
    PUSH_DATA (push, 1);
@@ -1101,12 +1101,12 @@ nv50_blit_set_dst(struct nv50_blitctx *ctx,
    else
       templ.format = format;
 
-   templ.u.tex.level = level;
-   templ.u.tex.first_layer = templ.u.tex.last_layer = layer;
+   templ.level = level;
+   templ.first_layer = templ.last_layer = layer;
 
    if (layer == -1) {
-      templ.u.tex.first_layer = 0;
-      templ.u.tex.last_layer =
+      templ.first_layer = 0;
+      templ.last_layer =
          (res->target == PIPE_TEXTURE_3D ? res->depth0 : res->array_size) - 1;
    }
 

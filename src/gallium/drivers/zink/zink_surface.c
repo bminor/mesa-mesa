@@ -95,14 +95,14 @@ create_ivci(struct zink_screen *screen,
    ivci.components.a = VK_COMPONENT_SWIZZLE_A;
 
    ivci.subresourceRange.aspectMask = res->aspect;
-   ivci.subresourceRange.baseMipLevel = templ->u.tex.level;
+   ivci.subresourceRange.baseMipLevel = templ->level;
    ivci.subresourceRange.levelCount = 1;
-   ivci.subresourceRange.baseArrayLayer = templ->u.tex.first_layer;
-   ivci.subresourceRange.layerCount = 1 + templ->u.tex.last_layer - templ->u.tex.first_layer;
+   ivci.subresourceRange.baseArrayLayer = templ->first_layer;
+   ivci.subresourceRange.layerCount = 1 + templ->last_layer - templ->first_layer;
    assert(ivci.viewType != VK_IMAGE_VIEW_TYPE_3D || ivci.subresourceRange.baseArrayLayer == 0);
    assert(ivci.viewType != VK_IMAGE_VIEW_TYPE_3D || ivci.subresourceRange.layerCount == 1);
    /* ensure cube image types get clamped to 2D/2D_ARRAY as expected for partial views */
-   ivci.viewType = zink_surface_clamp_viewtype(ivci.viewType, templ->u.tex.first_layer, templ->u.tex.last_layer, res->base.b.array_size);
+   ivci.viewType = zink_surface_clamp_viewtype(ivci.viewType, templ->first_layer, templ->last_layer, res->base.b.array_size);
 
    return ivci;
 }
@@ -110,13 +110,13 @@ create_ivci(struct zink_screen *screen,
 static void
 init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, const struct pipe_surface *templ, const struct pipe_resource *pres)
 {
-   unsigned int level = templ->u.tex.level;
+   unsigned int level = templ->level;
    psurf->context = pctx;
    psurf->format = templ->format;
    psurf->nr_samples = templ->nr_samples;
-   psurf->u.tex.level = level;
-   psurf->u.tex.first_layer = templ->u.tex.first_layer;
-   psurf->u.tex.last_layer = templ->u.tex.last_layer;
+   psurf->level = level;
+   psurf->first_layer = templ->first_layer;
+   psurf->last_layer = templ->last_layer;
 }
 
 static void
@@ -276,7 +276,7 @@ zink_create_surface(struct pipe_context *pctx,
 {
    struct zink_resource *res = zink_resource(pres);
    struct zink_screen *screen = zink_screen(pctx->screen);
-   bool is_array = templ->u.tex.last_layer != templ->u.tex.first_layer;
+   bool is_array = templ->last_layer != templ->first_layer;
    bool needs_mutable = false;
    enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
    if (!res->obj->dt && zink_format_needs_mutable(pres->format, templ->format)) {
@@ -290,7 +290,7 @@ zink_create_surface(struct pipe_context *pctx,
 
          ...but this is allowed with a maintenance6 property
        */
-      if (util_format_is_compressed(pres->format) && templ->u.tex.first_layer != templ->u.tex.last_layer &&
+      if (util_format_is_compressed(pres->format) && templ->first_layer != templ->last_layer &&
           (!screen->info.have_KHR_maintenance6 || !screen->info.maint6_props.blockTexelViewCompatibleMultipleLayers))
          return NULL;
    }

@@ -94,9 +94,9 @@ static void evergreen_set_rat(struct r600_pipe_compute *pipe,
 	memset(&rat_templ, 0, sizeof(rat_templ));
 	rat_templ.format = PIPE_FORMAT_R32_UINT;
 	rat_templ.texture = &bo->b.b;
-	rat_templ.u.tex.level = 0;
-	rat_templ.u.tex.first_layer = 0;
-	rat_templ.u.tex.last_layer = 0;
+	rat_templ.level = 0;
+	rat_templ.first_layer = 0;
+	rat_templ.last_layer = 0;
 
 	/* Add the RAT the list of color buffers. Drop the old buffer first. */
 	pipe->ctx->framebuffer.state.cbufs[id] = rat_templ;

@@ -508,7 +508,7 @@ void si_test_blit_perf(struct si_screen *sscreen)
                               if (test_flavor == TEST_FB_CLEAR || test_flavor == TEST_CLEAR) {
 
                                  u_surface_default_template(&surf_templ, dst[size_factor]);
-                                 surf_templ.u.tex.last_layer = dst[size_factor]->depth0 - 1;
+                                 surf_templ.last_layer = dst[size_factor]->depth0 - 1;
 
                                  /* Bind the colorbuffer for FB clears. */
                                  if (box_flavor == BOX_FULL) {

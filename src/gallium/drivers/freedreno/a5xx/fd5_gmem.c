@@ -59,21 +59,21 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
          sint = util_format_is_pure_sint(pformat);
          uint = util_format_is_pure_uint(pformat);
 
-         assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+         assert(psurf->first_layer == psurf->last_layer);
 
-         offset = fd_resource_offset(rsc, psurf->u.tex.level,
-                                     psurf->u.tex.first_layer);
+         offset = fd_resource_offset(rsc, psurf->level,
+                                     psurf->first_layer);
 
          if (gmem) {
             stride = gmem->bin_w * gmem->cbuf_cpp[i];
             size = stride * gmem->bin_h;
             base = gmem->cbuf_base[i];
          } else {
-            stride = fd_resource_pitch(rsc, psurf->u.tex.level);
-            size = fd_resource_layer_stride(rsc, psurf->u.tex.level);
+            stride = fd_resource_pitch(rsc, psurf->level);
+            size = fd_resource_layer_stride(rsc, psurf->level);
 
             tile_mode =
-               fd_resource_tile_mode(psurf->texture, psurf->u.tex.level);
+               fd_resource_tile_mode(psurf->texture, psurf->level);
          }
       }
 
@@ -127,8 +127,8 @@ emit_zs(struct fd_ringbuffer *ring, struct pipe_surface *zsbuf,
          stride = cpp * gmem->bin_w;
          size = stride * gmem->bin_h;
       } else {
-         stride = fd_resource_pitch(rsc, zsbuf->u.tex.level);
-         size = fd_resource_layer_stride(rsc, zsbuf->u.tex.level);
+         stride = fd_resource_pitch(rsc, zsbuf->level);
+         size = fd_resource_layer_stride(rsc, zsbuf->level);
       }
 
       OUT_PKT4(ring, REG_A5XX_RB_DEPTH_BUFFER_INFO, 5);
@@ -138,7 +138,7 @@ emit_zs(struct fd_ringbuffer *ring, struct pipe_surface *zsbuf,
          OUT_RING(ring, 0x00000000);          /* RB_DEPTH_BUFFER_BASE_HI */
       } else {
          OUT_RELOC(ring, rsc->bo,
-            fd_resource_offset(rsc, zsbuf->u.tex.level, zsbuf->u.tex.first_layer),
+            fd_resource_offset(rsc, zsbuf->level, zsbuf->first_layer),
             0, 0); /* RB_DEPTH_BUFFER_BASE_LO/HI */
       }
       OUT_RING(ring, A5XX_RB_DEPTH_BUFFER_PITCH(stride));
@@ -175,8 +175,8 @@ emit_zs(struct fd_ringbuffer *ring, struct pipe_surface *zsbuf,
             stride = 1 * gmem->bin_w;
             size = stride * gmem->bin_h;
          } else {
-            stride = fd_resource_pitch(rsc->stencil, zsbuf->u.tex.level);
-            size = fd_resource_layer_stride(rsc, zsbuf->u.tex.level);
+            stride = fd_resource_pitch(rsc->stencil, zsbuf->level);
+            size = fd_resource_layer_stride(rsc, zsbuf->level);
          }
 
          OUT_PKT4(ring, REG_A5XX_RB_STENCIL_INFO, 5);
@@ -186,7 +186,7 @@ emit_zs(struct fd_ringbuffer *ring, struct pipe_surface *zsbuf,
             OUT_RING(ring, 0x00000000);          /* RB_STENCIL_BASE_HI */
          } else {
             OUT_RELOC(ring, rsc->stencil->bo,
-               fd_resource_offset(rsc->stencil, zsbuf->u.tex.level, zsbuf->u.tex.first_layer),
+               fd_resource_offset(rsc->stencil, zsbuf->level, zsbuf->first_layer),
                       0, 0); /* RB_STENCIL_BASE_LO/HI */
          }
          OUT_RING(ring, A5XX_RB_STENCIL_PITCH(stride));
@@ -494,7 +494,7 @@ emit_mem2gmem_surf(struct fd_batch *batch, uint32_t base,
    struct fd_resource *rsc = fd_resource(psurf->texture);
    uint32_t stride, size;
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    if (buf == BLIT_S)
       rsc = rsc->stencil;
@@ -513,10 +513,10 @@ emit_mem2gmem_surf(struct fd_batch *batch, uint32_t base,
                A5XX_RB_MRT_BUF_INFO_COLOR_FORMAT(format) |
                   A5XX_RB_MRT_BUF_INFO_COLOR_TILE_MODE(rsc->layout.tile_mode) |
                   A5XX_RB_MRT_BUF_INFO_COLOR_SWAP(WZYX));
-      OUT_RING(ring, A5XX_RB_MRT_PITCH(fd_resource_pitch(rsc, psurf->u.tex.level)));
-      OUT_RING(ring, A5XX_RB_MRT_ARRAY_PITCH(fd_resource_layer_stride(rsc, psurf->u.tex.level)));
+      OUT_RING(ring, A5XX_RB_MRT_PITCH(fd_resource_pitch(rsc, psurf->level)));
+      OUT_RING(ring, A5XX_RB_MRT_ARRAY_PITCH(fd_resource_layer_stride(rsc, psurf->level)));
       OUT_RELOC(ring, rsc->bo,
-         fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer),
+         fd_resource_offset(rsc, psurf->level, psurf->first_layer),
          0, 0); /* BASE_LO/HI */
 
       buf = BLIT_MRT0;
@@ -622,10 +622,10 @@ emit_gmem2mem_surf(struct fd_batch *batch, uint32_t base,
       rsc = rsc->stencil;
 
    offset =
-      fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
-   pitch = fd_resource_pitch(rsc, psurf->u.tex.level);
+      fd_resource_offset(rsc, psurf->level, psurf->first_layer);
+   pitch = fd_resource_pitch(rsc, psurf->level);
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    OUT_PKT4(ring, REG_A5XX_RB_BLIT_FLAG_DST_LO, 4);
    OUT_RING(ring, 0x00000000); /* RB_BLIT_FLAG_DST_LO */
@@ -633,14 +633,14 @@ emit_gmem2mem_surf(struct fd_batch *batch, uint32_t base,
    OUT_RING(ring, 0x00000000); /* RB_BLIT_FLAG_DST_PITCH */
    OUT_RING(ring, 0x00000000); /* RB_BLIT_FLAG_DST_ARRAY_PITCH */
 
-   tiled = fd_resource_tile_mode(psurf->texture, psurf->u.tex.level);
+   tiled = fd_resource_tile_mode(psurf->texture, psurf->level);
 
    OUT_PKT4(ring, REG_A5XX_RB_RESOLVE_CNTL_3, 5);
    OUT_RING(ring, 0x00000004 | /* XXX RB_RESOLVE_CNTL_3 */
                      COND(tiled, A5XX_RB_RESOLVE_CNTL_3_TILED));
    OUT_RELOC(ring, rsc->bo, offset, 0, 0); /* RB_BLIT_DST_LO/HI */
    OUT_RING(ring, A5XX_RB_BLIT_DST_PITCH(pitch));
-   OUT_RING(ring, A5XX_RB_BLIT_DST_ARRAY_PITCH(fd_resource_layer_stride(rsc, psurf->u.tex.level)));
+   OUT_RING(ring, A5XX_RB_BLIT_DST_ARRAY_PITCH(fd_resource_layer_stride(rsc, psurf->level)));
 
    OUT_PKT4(ring, REG_A5XX_RB_BLIT_CNTL, 1);
    OUT_RING(ring, A5XX_RB_BLIT_CNTL_BUF(buf));

@@ -85,10 +85,10 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
          else
             pformat = util_format_linear(pformat);
 
-         assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+         assert(psurf->first_layer == psurf->last_layer);
 
-         offset = fd_resource_offset(rsc, psurf->u.tex.level,
-                                     psurf->u.tex.first_layer);
+         offset = fd_resource_offset(rsc, psurf->level,
+                                     psurf->first_layer);
 
          if (bin_w) {
             stride = bin_w << fdl_cpp_shift(&rsc->layout);
@@ -97,7 +97,7 @@ emit_mrt(struct fd_ringbuffer *ring, unsigned nr_bufs,
                base = bases[i];
             }
          } else {
-            stride = fd_resource_pitch(rsc, psurf->u.tex.level);
+            stride = fd_resource_pitch(rsc, psurf->level);
          }
       } else if ((i < nr_bufs) && bases) {
          base = bases[i];
@@ -166,10 +166,10 @@ emit_gmem2mem_surf(struct fd_batch *batch, bool stencil, uint32_t base,
    }
 
    offset =
-      fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
-   pitch = fd_resource_pitch(rsc, psurf->u.tex.level);
+      fd_resource_offset(rsc, psurf->level, psurf->first_layer);
+   pitch = fd_resource_pitch(rsc, psurf->level);
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    OUT_PKT0(ring, REG_A4XX_RB_COPY_CONTROL, 4);
    OUT_RING(ring, A4XX_RB_COPY_CONTROL_MSAA_RESOLVE(MSAA_ONE) |

@@ -1937,9 +1937,9 @@ try_pbo_upload(struct gl_context *ctx, GLuint dims,
    struct pipe_surface templ;
    memset(&templ, 0, sizeof(templ));
    templ.format = dst_format;
-   templ.u.tex.level = level;
-   templ.u.tex.first_layer = MIN2(zoffset, max_layer);
-   templ.u.tex.last_layer = MIN2(zoffset + depth - 1, max_layer);
+   templ.level = level;
+   templ.first_layer = MIN2(zoffset, max_layer);
+   templ.last_layer = MIN2(zoffset + depth - 1, max_layer);
    templ.context = st->pipe;
    templ.texture = texture;
 
@@ -2555,9 +2555,9 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
    templ.format = copy_format;
    templ.texture = texture;
    templ.context = st->pipe;
-   templ.u.tex.level = level;
-   templ.u.tex.first_layer = MIN2(layer, max_layer);
-   templ.u.tex.last_layer = MIN2(layer + d - 1, max_layer);
+   templ.level = level;
+   templ.first_layer = MIN2(layer, max_layer);
+   templ.last_layer = MIN2(layer + d - 1, max_layer);
 
    if (st_try_pbo_compressed_texsubimage(ctx, buf, buf_offset, &addr,
                                          &templ))
@@ -2567,8 +2567,8 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
     * Fall back to doing a single try_pbo_upload_common per layer.
     */
    while (layer <= max_layer) {
-      templ.u.tex.first_layer = MIN2(layer, max_layer);
-      templ.u.tex.last_layer = templ.u.tex.first_layer;
+      templ.first_layer = MIN2(layer, max_layer);
+      templ.last_layer = templ.first_layer;
       if (!st_try_pbo_compressed_texsubimage(ctx, buf, buf_offset, &addr,
                                              &templ))
          goto fallback;
@@ -2824,8 +2824,8 @@ fallback_copy_texsubimage(struct gl_context *ctx,
 
    map = pipe_texture_map(pipe,
                            rb->texture,
-                           rb->surface.u.tex.level,
-                           rb->surface.u.tex.first_layer,
+                           rb->surface.level,
+                           rb->surface.first_layer,
                            PIPE_MAP_READ,
                            srcX, srcY,
                            width, height, &src_trans);
@@ -3059,10 +3059,10 @@ st_CopyTexSubImage(struct gl_context *ctx, GLuint dims,
    memset(&blit, 0, sizeof(blit));
    blit.src.resource = rb->texture;
    blit.src.format = rb->format_linear;
-   blit.src.level = rb->surface.u.tex.level;
+   blit.src.level = rb->surface.level;
    blit.src.box.x = srcX;
    blit.src.box.y = srcY0;
-   blit.src.box.z = rb->surface.u.tex.first_layer;
+   blit.src.box.z = rb->surface.first_layer;
    blit.src.box.width = width;
    blit.src.box.height = srcY1 - srcY0;
    blit.src.box.depth = 1;

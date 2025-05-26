@@ -87,9 +87,9 @@ emit_mrt(struct fd_ringbuffer *ring, struct pipe_framebuffer_state *pfb,
       rsc = fd_resource(psurf->texture);
 
       uint32_t base = gmem ? gmem->cbuf_base[i] : 0;
-      slice = fd_resource_slice(rsc, psurf->u.tex.level);
+      slice = fd_resource_slice(rsc, psurf->level);
       enum a6xx_tile_mode tile_mode = (enum a6xx_tile_mode)
-            fd_resource_tile_mode(psurf->texture, psurf->u.tex.level);
+            fd_resource_tile_mode(psurf->texture, psurf->level);
       enum a6xx_format format = fd6_color_format(pformat, tile_mode);
       sint = util_format_is_pure_sint(pformat);
       uint = util_format_is_pure_uint(pformat);
@@ -98,13 +98,13 @@ emit_mrt(struct fd_ringbuffer *ring, struct pipe_framebuffer_state *pfb,
          srgb_cntl |= (1 << i);
 
       offset =
-         fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
+         fd_resource_offset(rsc, psurf->level, psurf->first_layer);
 
-      stride = fd_resource_pitch(rsc, psurf->u.tex.level);
-      array_stride = fd_resource_layer_stride(rsc, psurf->u.tex.level);
+      stride = fd_resource_pitch(rsc, psurf->level);
+      array_stride = fd_resource_layer_stride(rsc, psurf->level);
       swap = fd6_color_swap(pformat, (enum a6xx_tile_mode)rsc->layout.tile_mode, false);
 
-      max_layer_index = psurf->u.tex.last_layer - psurf->u.tex.first_layer;
+      max_layer_index = psurf->last_layer - psurf->first_layer;
 
       assert((offset + slice->size0) <= fd_bo_size(rsc->bo));
 
@@ -116,7 +116,7 @@ emit_mrt(struct fd_ringbuffer *ring, struct pipe_framebuffer_state *pfb,
             .color_format = format,
             .color_tile_mode = tile_mode,
             .color_swap = swap,
-            .losslesscompen = fd_resource_ubwc_enabled(rsc, psurf->u.tex.level),
+            .losslesscompen = fd_resource_ubwc_enabled(rsc, psurf->level),
          ),
          A6XX_RB_MRT_PITCH(i, stride),
          A6XX_RB_MRT_ARRAY_PITCH(i, array_stride),
@@ -127,14 +127,14 @@ emit_mrt(struct fd_ringbuffer *ring, struct pipe_framebuffer_state *pfb,
                                        .color_sint = sint, .color_uint = uint));
 
       OUT_PKT4(ring, REG_A6XX_RB_MRT_FLAG_BUFFER(i), 3);
-      fd6_emit_flag_reference(ring, rsc, psurf->u.tex.level,
-                              psurf->u.tex.first_layer);
+      fd6_emit_flag_reference(ring, rsc, psurf->level,
+                              psurf->first_layer);
 
       if (i == 0)
          mrt0_format = format;
    }
    if (pfb->zsbuf.texture)
-      max_layer_index = pfb->zsbuf.u.tex.last_layer - pfb->zsbuf.u.tex.first_layer;
+      max_layer_index = pfb->zsbuf.last_layer - pfb->zsbuf.first_layer;
 
    OUT_REG(ring, A6XX_GRAS_LRZ_MRT_BUF_INFO_0(.color_format = mrt0_format));
 
@@ -152,11 +152,11 @@ emit_zs(struct fd_context *ctx, struct fd_ringbuffer *ring,
    if (zsbuf->texture) {
       struct fd_resource *rsc = fd_resource(zsbuf->texture);
       struct fd_resource *stencil = rsc->stencil;
-      uint32_t stride = fd_resource_pitch(rsc, zsbuf->u.tex.level);
-      uint32_t array_stride = fd_resource_layer_stride(rsc, zsbuf->u.tex.level);
+      uint32_t stride = fd_resource_pitch(rsc, zsbuf->level);
+      uint32_t array_stride = fd_resource_layer_stride(rsc, zsbuf->level);
       uint32_t base = gmem ? gmem->zsbuf_base[0] : 0;
       uint32_t offset =
-         fd_resource_offset(rsc, zsbuf->u.tex.level, zsbuf->u.tex.first_layer);
+         fd_resource_offset(rsc, zsbuf->level, zsbuf->first_layer);
 
       /* We could have a depth buffer, but no draws with depth write/test
        * enabled, in which case it wouldn't have been part of the batch
@@ -172,7 +172,7 @@ emit_zs(struct fd_context *ctx, struct fd_ringbuffer *ring,
             RB_DEPTH_BUFFER_INFO(CHIP,
                .depth_format = fmt,
                .tilemode = TILE6_3,
-               .losslesscompen = fd_resource_ubwc_enabled(rsc, zsbuf->u.tex.level),
+               .losslesscompen = fd_resource_ubwc_enabled(rsc, zsbuf->level),
             ),
             A6XX_RB_DEPTH_BUFFER_PITCH(0),
             A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH(0),
@@ -189,7 +189,7 @@ emit_zs(struct fd_context *ctx, struct fd_ringbuffer *ring,
             RB_DEPTH_BUFFER_INFO(CHIP,
                .depth_format = fmt,
                .tilemode = TILE6_3,
-               .losslesscompen = fd_resource_ubwc_enabled(rsc, zsbuf->u.tex.level),
+               .losslesscompen = fd_resource_ubwc_enabled(rsc, zsbuf->level),
             ),
             A6XX_RB_DEPTH_BUFFER_PITCH(stride),
             A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH(array_stride),
@@ -199,16 +199,16 @@ emit_zs(struct fd_context *ctx, struct fd_ringbuffer *ring,
          OUT_REG(ring, A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = fmt));
 
          OUT_PKT4(ring, REG_A6XX_RB_DEPTH_FLAG_BUFFER_BASE, 3);
-         fd6_emit_flag_reference(ring, rsc, zsbuf->u.tex.level,
-                                 zsbuf->u.tex.first_layer);
+         fd6_emit_flag_reference(ring, rsc, zsbuf->level,
+                                 zsbuf->first_layer);
       }
 
       if (stencil) {
-         stride = fd_resource_pitch(stencil, zsbuf->u.tex.level);
-         array_stride = fd_resource_layer_stride(stencil, zsbuf->u.tex.level);
+         stride = fd_resource_pitch(stencil, zsbuf->level);
+         array_stride = fd_resource_layer_stride(stencil, zsbuf->level);
          uint32_t base = gmem ? gmem->zsbuf_base[1] : 0;
          uint32_t offset =
-            fd_resource_offset(stencil, zsbuf->u.tex.level, zsbuf->u.tex.first_layer);
+            fd_resource_offset(stencil, zsbuf->level, zsbuf->first_layer);
 
          fd_ringbuffer_attach_bo(ring, stencil->bo);
 
@@ -461,11 +461,11 @@ patch_fb_read_sysmem(struct fd_batch *batch)
 
          .iova = fd_bo_get_iova(rsc->bo),
 
-         .base_miplevel = psurf->u.tex.level,
+         .base_miplevel = psurf->level,
          .level_count = 1,
 
-         .base_array_layer = psurf->u.tex.first_layer,
-         .layer_count = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1,
+         .base_array_layer = psurf->first_layer,
+         .layer_count = psurf->last_layer - psurf->first_layer + 1,
 
          .swiz = {PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y, PIPE_SWIZZLE_Z,
                   PIPE_SWIZZLE_W},
@@ -517,7 +517,7 @@ update_render_cntl(struct fd_batch *batch, struct pipe_framebuffer_state *pfb,
    if (pfb->zsbuf.texture) {
       struct fd_resource *rsc = fd_resource(pfb->zsbuf.texture);
       depth_ubwc_enable =
-         fd_resource_ubwc_enabled(rsc, pfb->zsbuf.u.tex.level);
+         fd_resource_ubwc_enabled(rsc, pfb->zsbuf.level);
    }
 
    for (i = 0; i < pfb->nr_cbufs; i++) {
@@ -527,7 +527,7 @@ update_render_cntl(struct fd_batch *batch, struct pipe_framebuffer_state *pfb,
       struct pipe_surface *psurf = &pfb->cbufs[i];
       struct fd_resource *rsc = fd_resource(psurf->texture);
 
-      if (fd_resource_ubwc_enabled(rsc, psurf->u.tex.level))
+      if (fd_resource_ubwc_enabled(rsc, psurf->level))
          mrts_ubwc_enable |= 1 << i;
    }
 
@@ -1381,7 +1381,7 @@ emit_blit(struct fd_batch *batch, struct fd_ringbuffer *ring, uint32_t base,
    uint32_t offset;
    bool ubwc_enabled;
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    /* separate stencil case: */
    if (stencil) {
@@ -1390,16 +1390,16 @@ emit_blit(struct fd_batch *batch, struct fd_ringbuffer *ring, uint32_t base,
    }
 
    offset =
-      fd_resource_offset(rsc, psurf->u.tex.level, psurf->u.tex.first_layer);
-   ubwc_enabled = fd_resource_ubwc_enabled(rsc, psurf->u.tex.level);
+      fd_resource_offset(rsc, psurf->level, psurf->first_layer);
+   ubwc_enabled = fd_resource_ubwc_enabled(rsc, psurf->level);
 
-   assert(psurf->u.tex.first_layer == psurf->u.tex.last_layer);
+   assert(psurf->first_layer == psurf->last_layer);
 
    enum a6xx_tile_mode tile_mode = (enum a6xx_tile_mode)
-         fd_resource_tile_mode(&rsc->b.b, psurf->u.tex.level);
+         fd_resource_tile_mode(&rsc->b.b, psurf->level);
    enum a6xx_format format = fd6_color_format(pfmt, tile_mode);
-   uint32_t stride = fd_resource_pitch(rsc, psurf->u.tex.level);
-   uint32_t array_stride = fd_resource_layer_stride(rsc, psurf->u.tex.level);
+   uint32_t stride = fd_resource_pitch(rsc, psurf->level);
+   uint32_t array_stride = fd_resource_layer_stride(rsc, psurf->level);
    enum a3xx_color_swap swap =
          fd6_color_swap(pfmt, (enum a6xx_tile_mode)rsc->layout.tile_mode,
                         false);
@@ -1421,8 +1421,8 @@ emit_blit(struct fd_batch *batch, struct fd_ringbuffer *ring, uint32_t base,
 
    if (ubwc_enabled) {
       OUT_PKT4(ring, REG_A6XX_RB_BLIT_FLAG_DST, 3);
-      fd6_emit_flag_reference(ring, rsc, psurf->u.tex.level,
-                              psurf->u.tex.first_layer);
+      fd6_emit_flag_reference(ring, rsc, psurf->level,
+                              psurf->first_layer);
    }
 
    if (CHIP >= A7XX)

@@ -476,14 +476,14 @@ nv50_surface_from_miptree(struct nv50_miptree *mt,
    pipe_resource_reference(&ps->texture, &mt->base.base);
 
    ps->format = templ->format;
-   ps->u.tex.level = templ->u.tex.level;
-   ps->u.tex.first_layer = templ->u.tex.first_layer;
-   ps->u.tex.last_layer = templ->u.tex.last_layer;
+   ps->level = templ->level;
+   ps->first_layer = templ->first_layer;
+   ps->last_layer = templ->last_layer;
 
-   ns->width = u_minify(mt->base.base.width0, ps->u.tex.level);
-   ns->height = u_minify(mt->base.base.height0, ps->u.tex.level);
-   ns->depth = ps->u.tex.last_layer - ps->u.tex.first_layer + 1;
-   ns->offset = mt->level[templ->u.tex.level].offset;
+   ns->width = u_minify(mt->base.base.width0, ps->level);
+   ns->height = u_minify(mt->base.base.height0, ps->level);
+   ns->depth = ps->last_layer - ps->first_layer + 1;
+   ns->offset = mt->level[templ->level].offset;
 
    ns->width <<= mt->ms_x;
    ns->height <<= mt->ms_y;
@@ -502,9 +502,9 @@ nv50_miptree_surface_new(struct pipe_context *pipe,
       return NULL;
    ns->base.context = pipe;
 
-   if (ns->base.u.tex.first_layer) {
-      const unsigned l = ns->base.u.tex.level;
-      const unsigned z = ns->base.u.tex.first_layer;
+   if (ns->base.first_layer) {
+      const unsigned l = ns->base.level;
+      const unsigned z = ns->base.first_layer;
 
       if (mt->layout_3d) {
          ns->offset += nv50_mt_zslice_offset(mt, l, z);

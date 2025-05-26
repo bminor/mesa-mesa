@@ -768,21 +768,21 @@ vc4_create_surface(struct pipe_context *pctx,
         if (!surface)
                 return NULL;
 
-        assert(surf_tmpl->u.tex.first_layer == surf_tmpl->u.tex.last_layer);
+        assert(surf_tmpl->first_layer == surf_tmpl->last_layer);
 
         struct pipe_surface *psurf = &surface->base;
-        unsigned level = surf_tmpl->u.tex.level;
+        unsigned level = surf_tmpl->level;
 
         pipe_reference_init(&psurf->reference, 1);
         pipe_resource_reference(&psurf->texture, ptex);
 
         psurf->context = pctx;
         psurf->format = surf_tmpl->format;
-        psurf->u.tex.level = level;
-        psurf->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-        psurf->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
+        psurf->level = level;
+        psurf->first_layer = surf_tmpl->first_layer;
+        psurf->last_layer = surf_tmpl->last_layer;
         surface->offset = (rsc->slices[level].offset +
-                           psurf->u.tex.first_layer * rsc->cube_map_stride);
+                           psurf->first_layer * rsc->cube_map_stride);
         surface->tiling = rsc->slices[level].tiling;
 
         return &surface->base;

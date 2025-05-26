@@ -2430,12 +2430,12 @@ static void si_initialize_color_surface(struct si_context *sctx, struct si_surfa
       .format = surf->base.format,
       .width = surf->width0,
       .height = surf->height0,
-      .first_layer = surf->base.u.tex.first_layer,
-      .last_layer = surf->base.u.tex.last_layer,
+      .first_layer = surf->base.first_layer,
+      .last_layer = surf->base.last_layer,
       .num_layers = util_max_layer(&tex->buffer.b.b, 0),
       .num_samples = tex->buffer.b.b.nr_samples,
       .num_storage_samples = tex->buffer.b.b.nr_storage_samples,
-      .base_level = surf->base.u.tex.level,
+      .base_level = surf->base.level,
       .num_levels = tex->buffer.b.b.last_level + 1,
    };
 
@@ -2450,7 +2450,7 @@ static void si_initialize_color_surface(struct si_context *sctx, struct si_surfa
 static void si_init_depth_surface(struct si_context *sctx, struct si_surface *surf)
 {
    struct si_texture *tex = (struct si_texture *)surf->base.texture;
-   unsigned level = surf->base.u.tex.level;
+   unsigned level = surf->base.level;
    unsigned format;
 
    format = ac_translate_dbformat(tex->db_render_format);
@@ -2486,8 +2486,8 @@ static void si_init_depth_surface(struct si_context *sctx, struct si_surface *su
       .level = level,
       .num_levels = tex->buffer.b.b.last_level + 1,
       .num_samples = tex->buffer.b.b.nr_samples,
-      .first_layer = surf->base.u.tex.first_layer,
-      .last_layer = surf->base.u.tex.last_layer,
+      .first_layer = surf->base.first_layer,
+      .last_layer = surf->base.last_layer,
       .allow_expclear = true,
       .htile_enabled = sctx->gfx_level < GFX12 && si_htile_enabled(tex, level, PIPE_MASK_ZS),
       .htile_stencil_disabled = tex->htile_stencil_disabled,
@@ -2592,7 +2592,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
          if (!surf->dcc_incompatible)
             continue;
 
-         if (vi_dcc_enabled(tex, surf->base.u.tex.level))
+         if (vi_dcc_enabled(tex, surf->base.level))
             if (!si_texture_disable_dcc(sctx, tex))
                si_decompress_dcc(sctx, tex);
 
@@ -2670,7 +2670,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
       if (tex->surface.is_linear)
          sctx->framebuffer.any_dst_linear = true;
 
-      if (vi_dcc_enabled(tex, surf->base.u.tex.level)) {
+      if (vi_dcc_enabled(tex, surf->base.level)) {
          sctx->framebuffer.CB_has_shader_readable_metadata = true;
 
          if (sctx->gfx_level >= GFX9 && sctx->gfx_level < GFX12 &&
@@ -2708,7 +2708,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
       }
 
       if (sctx->gfx_level < GFX12 &&
-          vi_tc_compat_htile_enabled(zstex, surf->base.u.tex.level, PIPE_MASK_ZS))
+          vi_tc_compat_htile_enabled(zstex, surf->base.level, PIPE_MASK_ZS))
          sctx->framebuffer.DB_has_shader_readable_metadata = true;
 
       /* Update the minimum but don't keep 0. */
@@ -2843,13 +2843,13 @@ static void gfx6_emit_framebuffer_state(struct si_context *sctx, unsigned index)
          .surf = &tex->surface,
          .cb = &cb->cb,
          .va = tex->buffer.gpu_address,
-         .base_level = cb->base.u.tex.level,
+         .base_level = cb->base.level,
          .num_samples = cb->base.texture->nr_samples,
          .fmask_enabled = !!tex->surface.fmask_offset,
          /* CMASK and fast clears are configured elsewhere. */
          .cmask_enabled = false,
          .fast_clear_enabled = false,
-         .dcc_enabled = vi_dcc_enabled(tex, cb->base.u.tex.level) &&
+         .dcc_enabled = vi_dcc_enabled(tex, cb->base.level) &&
                         (i != 1 || !is_msaa_resolve),
       };
       struct ac_cb_surface cb_surf;
@@ -2873,7 +2873,7 @@ static void gfx6_emit_framebuffer_state(struct si_context *sctx, unsigned index)
             cb_surf.cb_color_info |= S_028C70_COMP_SWAP(swap);
          }
 
-         if (cb->base.u.tex.level > 0)
+         if (cb->base.level > 0)
             cb_surf.cb_color_info &= C_028C70_FAST_CLEAR;
          else
             cb_surf.cb_color_cmask = tex->cmask_base_address_reg;
@@ -2972,7 +2972,7 @@ static void gfx6_emit_framebuffer_state(struct si_context *sctx, unsigned index)
                                 (zb->base.texture->nr_samples > 1 ? RADEON_PRIO_DEPTH_BUFFER_MSAA
                                                                   : RADEON_PRIO_DEPTH_BUFFER));
 
-      const unsigned level = zb->base.u.tex.level;
+      const unsigned level = zb->base.level;
 
       /* Set mutable fields. */
       const struct ac_mutable_ds_state mutable_ds_state = {
@@ -3141,7 +3141,7 @@ static void gfx11_dgpu_emit_framebuffer_state(struct si_context *sctx, unsigned 
          .cb = &cb->cb,
          .va = tex->buffer.gpu_address,
          .num_samples = cb->base.texture->nr_samples,
-         .dcc_enabled = vi_dcc_enabled(tex, cb->base.u.tex.level),
+         .dcc_enabled = vi_dcc_enabled(tex, cb->base.level),
       };
       struct ac_cb_surface cb_surf;
 
@@ -3173,7 +3173,7 @@ static void gfx11_dgpu_emit_framebuffer_state(struct si_context *sctx, unsigned 
                                 (zb->base.texture->nr_samples > 1 ? RADEON_PRIO_DEPTH_BUFFER_MSAA
                                                                   : RADEON_PRIO_DEPTH_BUFFER));
 
-      const unsigned level = zb->base.u.tex.level;
+      const unsigned level = zb->base.level;
 
       /* Set mutable fields. */
       const struct ac_mutable_ds_state mutable_ds_state = {

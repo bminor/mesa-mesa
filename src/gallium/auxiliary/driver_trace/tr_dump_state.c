@@ -705,26 +705,9 @@ void trace_dump_surface_template(const struct pipe_surface *state,
    trace_dump_enum(tr_util_pipe_texture_target_name(target));
    trace_dump_member_end();
 
-   trace_dump_member_begin("u");
-   trace_dump_struct_begin(""); /* anonymous */
-   if (target == PIPE_BUFFER) {
-      trace_dump_member_begin("buf");
-      trace_dump_struct_begin(""); /* anonymous */
-      trace_dump_member(uint, &state->u.buf, first_element);
-      trace_dump_member(uint, &state->u.buf, last_element);
-      trace_dump_struct_end(); /* anonymous */
-      trace_dump_member_end(); /* buf */
-   } else {
-      trace_dump_member_begin("tex");
-      trace_dump_struct_begin(""); /* anonymous */
-      trace_dump_member(uint, &state->u.tex, level);
-      trace_dump_member(uint, &state->u.tex, first_layer);
-      trace_dump_member(uint, &state->u.tex, last_layer);
-      trace_dump_struct_end(); /* anonymous */
-      trace_dump_member_end(); /* tex */
-   }
-   trace_dump_struct_end(); /* anonymous */
-   trace_dump_member_end(); /* u */
+   trace_dump_member(uint, state, level);
+   trace_dump_member(uint, state, first_layer);
+   trace_dump_member(uint, state, last_layer);
 
    trace_dump_struct_end();
 }

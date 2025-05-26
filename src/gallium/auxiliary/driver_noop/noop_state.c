@@ -112,9 +112,9 @@ static struct pipe_surface *noop_create_surface(struct pipe_context *ctx,
    surface->context = ctx;
    surface->format = surf_tmpl->format;
    surface->texture = texture;
-   surface->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-   surface->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
-   surface->u.tex.level = surf_tmpl->u.tex.level;
+   surface->first_layer = surf_tmpl->first_layer;
+   surface->last_layer = surf_tmpl->last_layer;
+   surface->level = surf_tmpl->level;
 
    return surface;
 }

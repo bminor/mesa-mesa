@@ -602,8 +602,8 @@ init_source(struct vl_idct *idct, struct vl_idct_buffer *buffer)
    memset(&surf_templ, 0, sizeof(surf_templ));
    surf_templ.texture = tex;
    surf_templ.format = tex->format;
-   surf_templ.u.tex.first_layer = 0;
-   surf_templ.u.tex.last_layer = 0;
+   surf_templ.first_layer = 0;
+   surf_templ.last_layer = 0;
    buffer->fb_state_mismatch.cbufs[0] = surf_templ;
 
    buffer->viewport_mismatch.scale[0] = tex->width0;
@@ -645,8 +645,8 @@ init_intermediate(struct vl_idct *idct, struct vl_idct_buffer *buffer)
       memset(&surf_templ, 0, sizeof(surf_templ));
       surf_templ.format = tex->format;
       surf_templ.texture = tex;
-      surf_templ.u.tex.first_layer = i;
-      surf_templ.u.tex.last_layer = i;
+      surf_templ.first_layer = i;
+      surf_templ.last_layer = i;
       buffer->fb_state.cbufs[i] = surf_templ;
    }
 

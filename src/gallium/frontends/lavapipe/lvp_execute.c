@@ -1228,9 +1228,9 @@ static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
 
    const struct pipe_surface template = {
       .format = pformat,
-      .u.tex.first_layer = range->baseArrayLayer + base_layer,
-      .u.tex.last_layer = range->baseArrayLayer + base_layer + layer_count - 1,
-      .u.tex.level = range->baseMipLevel + level,
+      .first_layer = range->baseArrayLayer + base_layer,
+      .last_layer = range->baseArrayLayer + base_layer + layer_count - 1,
+      .level = range->baseMipLevel + level,
    };
 
    return state->pctx->create_surface(state->pctx,
@@ -1255,7 +1255,7 @@ static void add_img_view_surface(struct rendering_state *state,
                                  int layer_count)
 {
    if (imgv->surface) {
-      if ((imgv->surface->u.tex.last_layer - imgv->surface->u.tex.first_layer) != (layer_count - 1))
+      if ((imgv->surface->last_layer - imgv->surface->first_layer) != (layer_count - 1))
          pipe_surface_reference(&imgv->surface, NULL);
    }
 
@@ -1580,7 +1580,7 @@ replicate_attachment(struct rendering_state *state,
                      struct lvp_image_view *src,
                      struct lvp_image_view *dst)
 {
-   unsigned level = dst->surface->u.tex.level;
+   unsigned level = dst->surface->level;
    const struct pipe_box box = {
       .x = 0,
       .y = 0,

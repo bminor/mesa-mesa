@@ -2259,7 +2259,7 @@ void vi_disable_dcc_if_incompatible_format(struct si_context *sctx, struct pipe_
 static struct pipe_surface *si_create_surface(struct pipe_context *pipe, struct pipe_resource *tex,
                                               const struct pipe_surface *templ)
 {
-   unsigned level = templ->u.tex.level;
+   unsigned level = templ->level;
    unsigned width = u_minify(tex->width0, level);
    unsigned height = u_minify(tex->height0, level);
    unsigned width0 = tex->width0;
@@ -2291,21 +2291,23 @@ static struct pipe_surface *si_create_surface(struct pipe_context *pipe, struct 
    if (!surface)
       return NULL;
 
-   assert(templ->u.tex.first_layer <= util_max_layer(tex, templ->u.tex.level));
-   assert(templ->u.tex.last_layer <= util_max_layer(tex, templ->u.tex.level));
+   assert(templ->first_layer <= util_max_layer(tex, templ->level));
+   assert(templ->last_layer <= util_max_layer(tex, templ->level));
 
    pipe_reference_init(&surface->base.reference, 1);
    pipe_resource_reference(&surface->base.texture, tex);
    surface->base.context = pipe;
    surface->base.format = templ->format;
-   surface->base.u = templ->u;
+   surface->base.level = templ->level;
+   surface->base.first_layer = templ->first_layer;
+   surface->base.last_layer = templ->last_layer;
 
    surface->width0 = width0;
    surface->height0 = height0;
 
    surface->dcc_incompatible =
       tex->target != PIPE_BUFFER &&
-      vi_dcc_formats_are_incompatible(tex, templ->u.tex.level, templ->format);
+      vi_dcc_formats_are_incompatible(tex, templ->level, templ->format);
    return &surface->base;
 }
 

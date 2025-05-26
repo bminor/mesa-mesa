@@ -167,33 +167,21 @@ init_scene_texture(struct lp_scene_surface *ssurf, struct pipe_surface *psurf)
       return;
    }
 
-   if (llvmpipe_resource_is_texture(psurf->texture)) {
-      ssurf->stride = llvmpipe_resource_stride(psurf->texture,
-                                               psurf->u.tex.level);
-      ssurf->layer_stride = llvmpipe_layer_stride(psurf->texture,
-                                                           psurf->u.tex.level);
-      ssurf->sample_stride = llvmpipe_sample_stride(psurf->texture);
+   ssurf->stride = llvmpipe_resource_stride(psurf->texture,
+                                             psurf->level);
+   ssurf->layer_stride = llvmpipe_layer_stride(psurf->texture,
+                                                         psurf->level);
+   ssurf->sample_stride = llvmpipe_sample_stride(psurf->texture);
 
-      ssurf->map = llvmpipe_resource_map(psurf->texture,
-                                         psurf->u.tex.level,
-                                         psurf->u.tex.first_layer,
-                                         LP_TEX_USAGE_READ_WRITE);
-      assert(ssurf->map);
-      ssurf->format_bytes = util_format_get_blocksize(psurf->format);
-      ssurf->nr_samples = util_res_sample_count(psurf->texture);
-      ssurf->base_layer = psurf->u.tex.first_layer;
-      ssurf->layer_count = psurf->u.tex.last_layer - psurf->u.tex.first_layer + 1;
-   } else {
-      struct llvmpipe_resource *lpr = llvmpipe_resource(psurf->texture);
-      unsigned pixstride = util_format_get_blocksize(psurf->format);
-      ssurf->stride = psurf->texture->width0;
-      ssurf->layer_stride = 0;
-      ssurf->sample_stride = 0;
-      ssurf->nr_samples = 1;
-      ssurf->map = lpr->data;
-      ssurf->map += psurf->u.buf.first_element * pixstride;
-      ssurf->format_bytes = util_format_get_blocksize(psurf->format);
-   }
+   ssurf->map = llvmpipe_resource_map(psurf->texture,
+                                       psurf->level,
+                                       psurf->first_layer,
+                                       LP_TEX_USAGE_READ_WRITE);
+   assert(ssurf->map);
+   ssurf->format_bytes = util_format_get_blocksize(psurf->format);
+   ssurf->nr_samples = util_res_sample_count(psurf->texture);
+   ssurf->base_layer = psurf->first_layer;
+   ssurf->layer_count = psurf->last_layer - psurf->first_layer + 1;
 }
 
 
@@ -226,8 +214,8 @@ lp_scene_end_rasterization(struct lp_scene *scene)
          struct pipe_surface *cbuf = &scene->fb.cbufs[i];
          if (llvmpipe_resource_is_texture(cbuf->texture)) {
             llvmpipe_resource_unmap(cbuf->texture,
-                                    cbuf->u.tex.level,
-                                    cbuf->u.tex.first_layer);
+                                    cbuf->level,
+                                    cbuf->first_layer);
          }
          scene->cbufs[i].map = NULL;
       }
@@ -237,8 +225,8 @@ lp_scene_end_rasterization(struct lp_scene *scene)
    if (scene->zsbuf.map) {
       struct pipe_surface *zsbuf = &scene->fb.zsbuf;
       llvmpipe_resource_unmap(zsbuf->texture,
-                              zsbuf->u.tex.level,
-                              zsbuf->u.tex.first_layer);
+                              zsbuf->level,
+                              zsbuf->first_layer);
       scene->zsbuf.map = NULL;
    }
 
@@ -638,7 +626,7 @@ lp_scene_begin_binning(struct lp_scene *scene,
       if (cbuf->texture) {
          if (llvmpipe_resource_is_texture(cbuf->texture)) {
             max_layer = MIN2(max_layer,
-                             cbuf->u.tex.last_layer - cbuf->u.tex.first_layer);
+                             cbuf->last_layer - cbuf->first_layer);
          } else {
             max_layer = 0;
          }
@@ -647,7 +635,7 @@ lp_scene_begin_binning(struct lp_scene *scene,
 
    if (fb->zsbuf.texture) {
       struct pipe_surface *zsbuf = &scene->fb.zsbuf;
-      max_layer = MIN2(max_layer, zsbuf->u.tex.last_layer - zsbuf->u.tex.first_layer);
+      max_layer = MIN2(max_layer, zsbuf->last_layer - zsbuf->first_layer);
    }
 
    scene->fb_max_layer = max_layer;

@@ -740,7 +740,7 @@ lima_pack_wb_zsbuf_reg(struct lima_job *job, uint32_t *wb_reg, int wb_idx)
    struct lima_job_fb_info *fb = &job->fb;
    struct pipe_surface *zsbuf = job->key.zsbuf;
    struct lima_resource *res = lima_resource(zsbuf->texture);
-   int level = zsbuf->u.tex.level;
+   int level = zsbuf->level;
    uint32_t format = lima_format_get_pixel(zsbuf->format);
 
    struct lima_pp_wb_reg *wb = (void *)wb_reg;
@@ -769,8 +769,8 @@ lima_pack_wb_cbuf_reg(struct lima_job *job, uint32_t *wb_reg, int wb_idx)
    struct lima_job_fb_info *fb = &job->fb;
    struct pipe_surface *cbuf = job->key.cbuf;
    struct lima_resource *res = lima_resource(cbuf->texture);
-   int level = cbuf->u.tex.level;
-   unsigned layer = cbuf->u.tex.first_layer;
+   int level = cbuf->level;
+   unsigned layer = cbuf->first_layer;
    uint32_t format = lima_format_get_pixel(cbuf->format);
    bool swap_channels = lima_format_get_pixel_swap_rb(cbuf->format);
 

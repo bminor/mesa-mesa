@@ -549,7 +549,7 @@ nv30_miptree_surface_new(struct pipe_context *pipe,
    struct nv30_miptree *mt = nv30_miptree(pt); /* guaranteed */
    struct nv30_surface *ns;
    struct pipe_surface *ps;
-   struct nv30_miptree_level *lvl = &mt->level[tmpl->u.tex.level];
+   struct nv30_miptree_level *lvl = &mt->level[tmpl->level];
 
    ns = CALLOC_STRUCT(nv30_surface);
    if (!ns)
@@ -560,14 +560,14 @@ nv30_miptree_surface_new(struct pipe_context *pipe,
    pipe_resource_reference(&ps->texture, pt);
    ps->context = pipe;
    ps->format = tmpl->format;
-   ps->u.tex.level = tmpl->u.tex.level;
-   ps->u.tex.first_layer = tmpl->u.tex.first_layer;
-   ps->u.tex.last_layer = tmpl->u.tex.last_layer;
+   ps->level = tmpl->level;
+   ps->first_layer = tmpl->first_layer;
+   ps->last_layer = tmpl->last_layer;
 
-   ns->width = u_minify(pt->width0, ps->u.tex.level);
-   ns->height = u_minify(pt->height0, ps->u.tex.level);
-   ns->depth = ps->u.tex.last_layer - ps->u.tex.first_layer + 1;
-   ns->offset = layer_offset(pt, ps->u.tex.level, ps->u.tex.first_layer);
+   ns->width = u_minify(pt->width0, ps->level);
+   ns->height = u_minify(pt->height0, ps->level);
+   ns->depth = ps->last_layer - ps->first_layer + 1;
+   ns->offset = layer_offset(pt, ps->level, ps->first_layer);
    if (mt->swizzled)
       ns->pitch = 4096; /* random, just something the hw won't reject.. */
    else

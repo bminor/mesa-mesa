@@ -232,19 +232,11 @@ llvmpipe_create_surface(struct pipe_context *pipe,
       pipe_resource_reference(&ps->texture, pt);
       ps->context = pipe;
       ps->format = surf_tmpl->format;
-      if (llvmpipe_resource_is_texture(pt)) {
-         assert(surf_tmpl->u.tex.level <= pt->last_level);
-         assert(surf_tmpl->u.tex.first_layer <= surf_tmpl->u.tex.last_layer);
-         ps->u.tex.level = surf_tmpl->u.tex.level;
-         ps->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
-         ps->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
-      } else {
-         ps->u.buf.first_element = surf_tmpl->u.buf.first_element;
-         ps->u.buf.last_element = surf_tmpl->u.buf.last_element;
-         assert(ps->u.buf.first_element <= ps->u.buf.last_element);
-         assert(util_format_get_blocksize(surf_tmpl->format) *
-                (ps->u.buf.last_element + 1) <= pt->width0);
-      }
+      assert(surf_tmpl->level <= pt->last_level);
+      assert(surf_tmpl->first_layer <= surf_tmpl->last_layer);
+      ps->level = surf_tmpl->level;
+      ps->first_layer = surf_tmpl->first_layer;
+      ps->last_layer = surf_tmpl->last_layer;
    }
    return ps;
 }
@@ -345,8 +337,8 @@ llvmpipe_clear_render_target(struct pipe_context *pipe,
       struct pipe_box box;
       u_box_2d(dstx, dsty, width, height, &box);
       if (dst->texture->target != PIPE_BUFFER) {
-         box.z = dst->u.tex.first_layer;
-         box.depth = dst->u.tex.last_layer - dst->u.tex.first_layer + 1;
+         box.z = dst->first_layer;
+         box.depth = dst->last_layer - dst->first_layer + 1;
       }
       for (unsigned s = 0; s < util_res_sample_count(dst->texture); s++) {
          lp_clear_color_texture_msaa(pipe, dst->texture, dst->format,
@@ -419,8 +411,8 @@ llvmpipe_clear_depth_stencil(struct pipe_context *pipe,
       struct pipe_box box;
       u_box_2d(dstx, dsty, width, height, &box);
       if (dst->texture->target != PIPE_BUFFER) {
-         box.z = dst->u.tex.first_layer;
-         box.depth = dst->u.tex.last_layer - dst->u.tex.first_layer + 1;
+         box.z = dst->first_layer;
+         box.depth = dst->last_layer - dst->first_layer + 1;
       }
       for (unsigned s = 0; s < util_res_sample_count(dst->texture); s++)
          lp_clear_depth_stencil_texture_msaa(pipe, dst->texture,
