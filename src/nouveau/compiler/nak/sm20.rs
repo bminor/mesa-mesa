@@ -812,12 +812,14 @@ impl SM20Op for OpFSet {
             None,
         );
 
-        e.set_bit(5, self.ftz);
+        e.set_bit(5, true); // .bf
         e.set_bit(6, self.srcs[1].src_mod.has_fabs());
         e.set_bit(7, self.srcs[0].src_mod.has_fabs());
         e.set_bit(8, self.srcs[1].src_mod.has_fneg());
         e.set_bit(9, self.srcs[0].src_mod.has_fneg());
+        e.set_pred_src(49..53, &SrcRef::True.into());
         e.set_float_cmp_op(55..59, self.cmp_op);
+        e.set_bit(59, self.ftz);
     }
 }
 
