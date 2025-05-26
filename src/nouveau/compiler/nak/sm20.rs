@@ -2494,16 +2494,16 @@ impl SM20Op for OpTexDepBar {
     }
 }
 
-impl SM20Op for OpIsberd {
-    fn legalize(&mut self, b: &mut LegalizeBuilder) {
-        legalize_ext_instr(self, b);
+impl SM20Op for OpViLd {
+    fn legalize(&mut self, _b: &mut LegalizeBuilder) {
+        // Nothing to do
     }
 
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         e.set_opcode(SM20Unit::Tex, 0x0);
         e.set_dst(14..20, &self.dst);
         e.set_reg_src(20..26, &self.idx);
-        e.set_field(26..42, 0_u16); // offset
+        e.set_field(26..42, self.off);
     }
 }
 
@@ -2677,7 +2677,7 @@ macro_rules! as_sm20_op_match {
             Op::Exit(op) => op,
             Op::Bar(op) => op,
             Op::TexDepBar(op) => op,
-            Op::Isberd(op) => op,
+            Op::ViLd(op) => op,
             Op::Kill(op) => op,
             Op::Nop(op) => op,
             Op::PixLd(op) => op,
