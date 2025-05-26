@@ -1274,6 +1274,20 @@ void si_emit_buffered_compute_sh_regs(struct si_context *sctx)
    }
 }
 
+/* Used by mesh pipeline only. */
+void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx)
+{
+   if (sctx->gfx_level >= GFX12) {
+      radeon_begin(&sctx->gfx_cs);
+      gfx12_emit_buffered_sh_regs_inline(&sctx->num_buffered_gfx_sh_regs,
+                                         sctx->gfx12.buffered_gfx_sh_regs);
+      radeon_end();
+   } else {
+      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->num_buffered_gfx_sh_regs,
+                                         sctx->gfx11.buffered_gfx_sh_regs);
+   }
+}
+
 #endif
 
 template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG,
