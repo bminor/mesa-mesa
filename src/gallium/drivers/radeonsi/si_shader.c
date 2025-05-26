@@ -994,6 +994,7 @@ static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
         stage == MESA_SHADER_VERTEX) &&
        !key->ge.as_es && !key->ge.as_ls) {
       fprintf(f, "  mono.remove_streamout = 0x%x\n", key->ge.mono.remove_streamout);
+      fprintf(f, "  mono.write_pos_to_clipvertex = %u\n", key->ge.mono.write_pos_to_clipvertex);
       fprintf(f, "  opt.kill_outputs = 0x%" PRIx64 "\n", key->ge.opt.kill_outputs);
       fprintf(f, "  opt.kill_clip_distances = 0x%x\n", key->ge.opt.kill_clip_distances);
       fprintf(f, "  opt.kill_pointsize = %u\n", key->ge.opt.kill_pointsize);
@@ -1121,6 +1122,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .vs_output_param_offset = temp_info->vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,
       .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
+      .write_pos_to_clipvertex = shader->key.ge.mono.write_pos_to_clipvertex,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
       .skip_viewport_state_culling = sel->info.writes_viewport_index,
@@ -1534,7 +1536,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          NIR_PASS_V(nir, ac_nir_lower_legacy_vs,
                     sel->screen->info.gfx_level,
                     shader->info.clipdist_mask | shader->info.culldist_mask,
-                    false, false,
+                    shader->key.ge.mono.write_pos_to_clipvertex, false,
                     ctx->temp_info.vs_output_param_offset,
                     shader->info.nr_param_exports,
                     shader->key.ge.mono.u.vs_export_prim_id,
@@ -1566,6 +1568,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          .has_pipeline_stats_query = sel->screen->use_ngg,
          .gfx_level = sel->screen->info.gfx_level,
          .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
+         .write_pos_to_clipvertex = shader->key.ge.mono.write_pos_to_clipvertex,
          .param_offsets = ctx->temp_info.vs_output_param_offset,
          .has_param_exports = shader->info.nr_param_exports,
          .disable_streamout = !shader->info.num_streamout_vec4s,

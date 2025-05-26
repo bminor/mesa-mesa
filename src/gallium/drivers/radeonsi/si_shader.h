@@ -635,6 +635,11 @@ struct si_shader_key_ge {
 
       /* Gfx12: When no streamout buffers are bound, streamout must be disabled. */
       unsigned remove_streamout : 1;
+
+      /* Emulate 8 clip planes using the CLIP_VERTEX output. Only 6 clip planes are supported
+       * without this.
+       */
+      unsigned write_pos_to_clipvertex : 1;
    } mono;
 
    /* Optimization flags for asynchronous compilation only. */

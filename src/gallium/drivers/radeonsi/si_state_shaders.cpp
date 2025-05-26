@@ -2474,6 +2474,16 @@ static void si_get_vs_key_outputs(struct si_context *sctx, struct si_shader_sele
 
    if (sctx->gfx_level >= GFX12)
       key->ge.mono.remove_streamout = key->ge.opt.remove_streamout;
+
+   /* The fixed-func hw only supports 6 clip planes, while gl_ClipVertex supports 8. */
+   if (!vs->info.clipdist_mask &&
+       sctx->queued.named.rasterizer->clip_plane_enable & BITFIELD_RANGE(6, 2)) {
+      key->ge.mono.write_pos_to_clipvertex = 1;
+      key->ge.opt.kill_clip_distances = SI_USER_CLIP_PLANE_MASK &
+                                        ~sctx->queued.named.rasterizer->clip_plane_enable;
+   } else {
+      key->ge.mono.write_pos_to_clipvertex = 0;
+   }
 }
 
 static void si_clear_vs_key_outputs(struct si_context *sctx, struct si_shader_selector *vs,
@@ -2486,6 +2496,7 @@ static void si_clear_vs_key_outputs(struct si_context *sctx, struct si_shader_se
    key->ge.opt.ngg_vs_streamout_num_verts_per_prim = 0;
    key->ge.mono.u.vs_export_prim_id = 0;
    key->ge.mono.remove_streamout = 0;
+   key->ge.mono.write_pos_to_clipvertex = 0;
 }
 
 void si_ps_key_update_framebuffer(struct si_context *sctx)

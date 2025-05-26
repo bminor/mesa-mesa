@@ -259,8 +259,10 @@ void si_get_shader_variant_info(struct si_shader *shader,
             shader->info.num_streamout_vec4s = DIV_ROUND_UP(num_streamout_dwords, 4);
          }
 
-         shader->info.clipdist_mask = shader->selector->info.clipdist_mask &
-                                      ~shader->key.ge.opt.kill_clip_distances;
+         shader->info.clipdist_mask =
+            (shader->key.ge.mono.write_pos_to_clipvertex ?
+               SI_USER_CLIP_PLANE_MASK : shader->selector->info.clipdist_mask) &
+            ~shader->key.ge.opt.kill_clip_distances;
          shader->info.culldist_mask = BITFIELD_RANGE(nir->info.clip_distance_array_size,
                                                      nir->info.cull_distance_array_size);
       }
