@@ -80,26 +80,26 @@ def has_access(format):
     # pack/unpack functions for softpipe/llvmpipe.
     noaccess_formats = [
         'r1_unorm',
-        'yv12',
-        'yv16',
-        'iyuv',
-        'nv12',
-        'nv16',
-        'nv21',
-        'nv15',
-        'nv20',
-        'p010',
-        'p012',
-        'p016',
-        'p030',
-        'y210',
-        'y212',
-        'y216',
-        'y410',
-        'y412',
-        'y416',
-        'xyuv',
-        'ayuv',
+        'y8_v8_u8_420_unorm',
+        'y8_v8_u8_422_unorm',
+        'y8_u8_v8_420_unorm',
+        'y8_u8v8_420_unorm',
+        'y8_u8v8_422_unorm',
+        'y8_v8u8_420_unorm',
+        'y10_u10v10_420_unorm',
+        'y10_u10v10_422_unorm',
+        'x6y10_x6u10x6v10_420_unorm',
+        'x4y12_x4u12x4v12_420_unorm',
+        'y16_u16v16_420_unorm',
+        'y10y10y10x2_u10v10u10x2v10u10v10x2_420_unorm',
+        'x6y10x6u10x6y10x6v10_422_unorm',
+        'x4y12x4u12x4y12x4v12_422_unorm',
+        'y16u16y16v16_422_unorm',
+        'u10y10v10a2_444_unorm',
+        'x4u12x4y12x4v12x4a12_444_unorm',
+        'u16y16v16a16_444_unorm',
+        'x8y8u8v8_444_unorm',
+        'a8y8u8v8_444_unorm',
         'r8g8_r8b8_unorm',
         'r8b8_r8g8_unorm',
         'g8r8_b8r8_unorm',
@@ -279,6 +279,11 @@ def write_format_enum(formats):
     print('};', file=sys.stdout3)
 
 def write_format_aliases(formats):
+    for f in formats:
+        if f.colorspace and f.alias != None:
+            print("#define %s %s" % (f.alias, f.name), file=sys.stdout3)
+
+    print(file=sys.stdout3)
     print("#if UTIL_ARCH_LITTLE_ENDIAN", file=sys.stdout3)
     for f in formats:
         if f.le_alias:
