@@ -1212,8 +1212,7 @@ v3d_flush_resource(struct pipe_context *pctx, struct pipe_resource *prsc)
                 rsc->size = new_rsc->size;
                 rsc->tiled = new_rsc->tiled;
 
-                struct pipe_resource *new_prsc = (struct pipe_resource *)&new_rsc;
-                pipe_resource_reference(&new_prsc, NULL);
+                pipe_resource_reference((struct pipe_resource **)&new_rsc, NULL);
         }
 }
 
