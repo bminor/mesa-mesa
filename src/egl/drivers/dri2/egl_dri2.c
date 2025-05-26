@@ -588,7 +588,7 @@ dri2_query_driver_config(_EGLDisplay *disp)
    struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
    char *ret;
 
-   ret = pipe_loader_get_driinfo_xml(dri2_dpy->driver_name);
+   ret = driGetDriInfoXML(dri2_dpy->driver_name);
 
    mtx_unlock(&dri2_dpy->lock);
 
