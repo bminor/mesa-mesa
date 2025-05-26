@@ -298,11 +298,16 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
    }
 
    /* Build tex instruction */
-   unsigned dmask = nir_def_components_read(&instr->def) & 0xf;
+   unsigned dmask = nir_def_components_read(&instr->def);
+   /* Mask out the bit set for the sparse info. */
+   if (instr->is_sparse)
+      dmask &= ~(1u << (instr->def.num_components - 1));
    if (instr->sampler_dim == GLSL_SAMPLER_DIM_BUF)
       dmask = u_bit_consecutive(0, util_last_bit(dmask));
+   /* Set the 5th bit for the sparse code. */
    if (instr->is_sparse)
       dmask = MAX2(dmask, 1) | 0x10;
+
    bool d16 = instr->def.bit_size == 16;
    Temp dst = get_ssa_temp(ctx, &instr->def);
    Temp tmp_dst = dst;
@@ -706,6 +711,13 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
                               val[3]);
    }
    unsigned mask = instr->op == nir_texop_tg4 ? (instr->is_sparse ? 0x1F : 0xF) : dmask;
+
+   /* Move the bit for the sparse residency code from the 5th bit to the last component. */
+   if (mask & 0x10) {
+      mask &= ~0x10;
+      mask |= 1u << (instr->def.num_components - 1);
+   }
+
    expand_vector(ctx, tmp_dst, dst, instr->def.num_components, mask);
 }
 
