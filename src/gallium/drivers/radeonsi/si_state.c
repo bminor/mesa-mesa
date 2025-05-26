@@ -897,18 +897,18 @@ static void si_emit_clip_regs(struct si_context *sctx, unsigned index)
    struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
    bool window_space = vs_sel->stage == MESA_SHADER_VERTEX ?
                           info->base.vs.window_space_position : 0;
-   unsigned clipdist_mask = vs_sel->info.clipdist_mask;
-   unsigned ucp_mask = clipdist_mask ? 0 : rs->clip_plane_enable & SI_USER_CLIP_PLANE_MASK;
-   unsigned culldist_mask = vs_sel->info.culldist_mask;
+   unsigned ucp_mask = 0, clipdist_mask = 0, culldist_mask = 0;
 
-   /* Clip distances on points have no effect, so need to be implemented
-    * as cull distances. This applies for the clipvertex case as well.
-    *
-    * Setting this for primitives other than points should have no adverse
-    * effects.
-    */
-   clipdist_mask &= rs->clip_plane_enable;
-   culldist_mask |= clipdist_mask;
+   if (!vs_sel->info.clipdist_mask && !vs_sel->info.culldist_mask) {
+      assert(!vs_sel->info.culldist_mask);
+      ucp_mask = SI_USER_CLIP_PLANE_MASK & rs->clip_plane_enable;
+   } else {
+      clipdist_mask = vs_sel->info.clipdist_mask & rs->clip_plane_enable;
+      /* For points, we need to set the cull distance bits too because the clip distance bits have
+       * no effect on them.
+       */
+      culldist_mask = vs_sel->info.culldist_mask | clipdist_mask;
+   }
 
    unsigned pa_cl_cntl = S_02881C_BYPASS_VTX_RATE_COMBINER(sctx->gfx_level >= GFX10_3 &&
                                                            !sctx->screen->options.vrs2x2) |
