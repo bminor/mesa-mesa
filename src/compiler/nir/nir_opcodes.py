@@ -1108,15 +1108,15 @@ if (bits == 0) {
 """)
 opcode("ibfe", 0, tint32,
        [0, 0, 0], [tint32, tuint32, tuint32], False, "", """
-int base = src0;
+uint32_t base = src0;
 unsigned offset = src1 & 0x1F;
 unsigned bits = src2 & 0x1F;
 if (bits == 0) {
    dst = 0;
 } else if (offset + bits < 32) {
-   dst = (base << (32 - bits - offset)) >> (32 - bits);
+   dst = util_mask_sign_extend(base >> offset, bits);
 } else {
-   dst = base >> offset;
+   dst = util_mask_sign_extend(base >> offset, 32 - offset);
 }
 """)
 
