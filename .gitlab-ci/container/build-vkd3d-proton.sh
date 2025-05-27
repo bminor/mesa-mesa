@@ -7,7 +7,7 @@ set -ex
 
 uncollapsed_section_start vkd3d-proton "Building vkd3d-proton"
 
-VKD3D_PROTON_COMMIT="7e829e88364f9429596b14d0c0ea0205e1337edc"
+VKD3D_PROTON_COMMIT="041cfa75580090c6b30af2f2721015d15493f14b"
 
 VKD3D_PROTON_DST_DIR="/vkd3d-proton-tests"
 VKD3D_PROTON_SRC_DIR="/vkd3d-proton-src"
