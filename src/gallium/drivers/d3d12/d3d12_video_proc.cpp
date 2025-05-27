@@ -179,8 +179,9 @@ d3d12_video_processor_end_frame(struct pipe_video_codec * codec,
 
     pD3D12Proc->m_spCommandList->ResourceBarrier(static_cast<uint32_t>(barrier_transitions.size()), barrier_transitions.data());
 
-    pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)].value = pD3D12Proc->m_fenceValue;
-    pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)].cmdqueue_fence = pD3D12Proc->m_spFence.Get();
+    ASSERTED bool success = d3d12_reset_fence(&pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)], pD3D12Proc->m_spFence.Get(), pD3D12Proc->m_fenceValue);
+    assert(success);
+
     *picture->fence = (pipe_fence_handle*) &pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)];
     return 0;
 }

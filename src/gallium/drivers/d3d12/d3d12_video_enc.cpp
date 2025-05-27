@@ -3059,11 +3059,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       }
    }
 
-   memset(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData,
-            0,
-            sizeof(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData));
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData.value = pD3D12Enc->m_fenceValue;
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData.cmdqueue_fence = pD3D12Enc->m_spFence.Get();
+   ASSERTED bool success = d3d12_reset_fence(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData, pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
+   assert(success);
+
    *feedback = (void*) &pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData;
 
    std::vector<D3D12_RESOURCE_BARRIER> rgCurrentFrameStateTransitions = {

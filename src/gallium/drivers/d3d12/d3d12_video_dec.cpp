@@ -806,10 +806,8 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
       }
 
       // Set async fence info
-      memset(&inFlightResources.m_FenceData, 0, sizeof(inFlightResources.m_FenceData));
-
-      inFlightResources.m_FenceData.value = pD3D12Dec->m_fenceValue;
-      inFlightResources.m_FenceData.cmdqueue_fence = pD3D12Dec->m_spFence.Get();
+      ASSERTED bool success = d3d12_reset_fence(&inFlightResources.m_FenceData, pD3D12Dec->m_spFence.Get(), pD3D12Dec->m_fenceValue);
+      assert(success);
 
       pD3D12Dec->m_fenceValue++;
       pD3D12Dec->m_needsGPUFlush = false;
