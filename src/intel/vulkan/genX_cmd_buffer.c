@@ -945,16 +945,6 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
          isl_color_value_unpack(&clear_color, image->view_formats[i], pixel);
       }
 
-      UNUSED union isl_color_value sample_color = clear_color;
-      if (isl_format_is_srgb(image->view_formats[i])) {
-         sample_color.f32[0] =
-            util_format_linear_to_srgb_float(clear_color.f32[0]);
-         sample_color.f32[1] =
-            util_format_linear_to_srgb_float(clear_color.f32[1]);
-         sample_color.f32[2] =
-            util_format_linear_to_srgb_float(clear_color.f32[2]);
-      }
-
       const struct anv_address addr =
          anv_image_get_clear_color_addr(cmd_buffer->device, image,
                                         image->view_formats[i], aspect,
@@ -987,10 +977,10 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
       dw[4] = clear_color.u32[1];
       dw[5] = clear_color.u32[2];
       dw[6] = clear_color.u32[3];
-      dw[7]  = sample_color.u32[0];
-      dw[8]  = sample_color.u32[1];
-      dw[9]  = sample_color.u32[2];
-      dw[10] = sample_color.u32[3];
+      dw[7] = fui(util_format_linear_to_srgb_float(clear_color.f32[0]));
+      dw[8] = fui(util_format_linear_to_srgb_float(clear_color.f32[1]));
+      dw[9] = fui(util_format_linear_to_srgb_float(clear_color.f32[2]));
+      dw[10] = clear_color.u32[3];
 #endif
    }
 }

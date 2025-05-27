@@ -5802,7 +5802,8 @@ anv_image_get_clear_color_addr(UNUSED const struct anv_device *device,
    if (view_format == ISL_FORMAT_UNSUPPORTED)
       view_format = image->planes[plane].primary_surface.isl.format;
 
-   uint64_t access_offset = device->info->ver == 9 && for_sampler ? 16 : 0;
+   uint64_t access_offset = device->info->ver == 9 && for_sampler &&
+                            isl_format_is_srgb(view_format) ? 16 : 0;
    const unsigned clear_state_size = device->info->ver >= 11 ? 64 : 32;
    for (int i = 0; i < image->num_view_formats; i++) {
       if (view_format == image->view_formats[i]) {
