@@ -36,60 +36,6 @@
 extern "C" {
 #endif
 
-enum pipe_video_chroma_format
-{
-   PIPE_VIDEO_CHROMA_FORMAT_400,
-   PIPE_VIDEO_CHROMA_FORMAT_420,
-   PIPE_VIDEO_CHROMA_FORMAT_422,
-   PIPE_VIDEO_CHROMA_FORMAT_444,
-   PIPE_VIDEO_CHROMA_FORMAT_440,
-   PIPE_VIDEO_CHROMA_FORMAT_NONE
-};
-
-static inline enum pipe_video_chroma_format
-pipe_format_to_chroma_format(enum pipe_format format)
-{
-   switch (format) {
-      case PIPE_FORMAT_NV12:
-      case PIPE_FORMAT_NV21:
-      case PIPE_FORMAT_YV12:
-      case PIPE_FORMAT_IYUV:
-      case PIPE_FORMAT_P010:
-      case PIPE_FORMAT_P012:
-      case PIPE_FORMAT_P016:
-      case PIPE_FORMAT_P030:
-      case PIPE_FORMAT_Y10X6_U10X6_V10X6_420_UNORM:
-      case PIPE_FORMAT_Y12X4_U12X4_V12X4_420_UNORM:
-      case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
-      case PIPE_FORMAT_Y8U8V8_420_UNORM_PACKED:
-      case PIPE_FORMAT_Y10U10V10_420_UNORM_PACKED:
-         return PIPE_VIDEO_CHROMA_FORMAT_420;
-      case PIPE_FORMAT_UYVY:
-      case PIPE_FORMAT_VYUY:
-      case PIPE_FORMAT_YUYV:
-      case PIPE_FORMAT_YVYU:
-      case PIPE_FORMAT_YV16:
-      case PIPE_FORMAT_NV16:
-      case PIPE_FORMAT_Y8_U8_V8_422_UNORM:
-      case PIPE_FORMAT_Y10X6_U10X6_V10X6_422_UNORM:
-      case PIPE_FORMAT_Y12X4_U12X4_V12X4_422_UNORM:
-      case PIPE_FORMAT_Y16_U16_V16_422_UNORM:
-      case PIPE_FORMAT_Y16_U16V16_422_UNORM:
-         return PIPE_VIDEO_CHROMA_FORMAT_422;
-      case PIPE_FORMAT_Y8_U8_V8_444_UNORM:
-      case PIPE_FORMAT_Y10X6_U10X6_V10X6_444_UNORM:
-      case PIPE_FORMAT_Y12X4_U12X4_V12X4_444_UNORM:
-      case PIPE_FORMAT_Y16_U16_V16_444_UNORM:
-         return PIPE_VIDEO_CHROMA_FORMAT_444;
-      case PIPE_FORMAT_Y8_U8_V8_440_UNORM:
-         return PIPE_VIDEO_CHROMA_FORMAT_440;
-      case PIPE_FORMAT_Y8_400_UNORM:
-         return PIPE_VIDEO_CHROMA_FORMAT_400;
-      default:
-         return PIPE_VIDEO_CHROMA_FORMAT_NONE;
-   }
-}
-
 /**
  * Texture & format swizzles
  */
