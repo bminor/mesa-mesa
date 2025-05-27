@@ -7,6 +7,10 @@ set -ex
 
 section_start vkd3d-proton "Building vkd3d-proton"
 
+# Do a very early check to make sure the tag is correct without the need of
+# setting up the environment variables locally
+ci_tag_build_time_check "VKD3D_PROTON_TAG"
+
 VKD3D_PROTON_COMMIT="041cfa75580090c6b30af2f2721015d15493f14b"
 
 VKD3D_PROTON_DST_DIR="/vkd3d-proton-tests"

@@ -15,6 +15,14 @@ if [[ -z "$VK_DRIVER" ]]; then
     exit 1
 fi
 
+if [ -z "$VKD3D_PROTON_TAG" ]; then
+    echo "VKD3D_PROTON_TAG must be set to the conditional build tag"
+    exit 1
+fi
+
+# Are we using the right vkd3d-proton version?
+ci_tag_test_time_check "VKD3D_PROTON_TAG"
+
 INSTALL=$(realpath -s "$PWD"/install)
 
 # Set up the driver environment.

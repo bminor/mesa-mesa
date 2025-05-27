@@ -203,6 +203,7 @@ yaml-toml-shell-py-test:
 
 .test-vkd3d-proton:
   variables:
+    VKD3D_PROTON_TAG: ${CONDITIONAL_BUILD_VKD3D_PROTON_TAG}
     HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
 
 .piglit-traces-test:
