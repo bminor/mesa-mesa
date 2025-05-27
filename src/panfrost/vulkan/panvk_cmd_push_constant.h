@@ -13,7 +13,7 @@
 struct panvk_cmd_buffer;
 struct panvk_shader;
 
-#define MAX_PUSH_CONSTANTS_SIZE 128
+#define MAX_PUSH_CONSTANTS_SIZE 256
 
 struct panvk_push_constant_state {
    uint64_t data[MAX_PUSH_CONSTANTS_SIZE / sizeof(uint64_t)];

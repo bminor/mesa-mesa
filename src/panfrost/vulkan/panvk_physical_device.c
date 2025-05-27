@@ -711,10 +711,13 @@ get_device_properties(const struct panvk_instance *instance,
        * descriptors, where the size is a 32-bit field.
        */
       .maxStorageBufferRange = UINT32_MAX,
-      /* 128 bytes of push constants, so we're aligned with the minimum Vulkan
-       * requirements.
+      /* Vulkan 1.4 minimum. We currently implement push constants in terms of
+       * FAUs so we're limited by how many user-defined FAUs the hardware
+       * offers, minus driver-internal needs. If we ever need go to higher,
+       * we'll have to implement push constants in terms of both FAUs and global
+       * loads.
        */
-      .maxPushConstantsSize = 128,
+      .maxPushConstantsSize = 256,
       /* On our kernel drivers we're limited by the available memory rather
        * than available allocations. This is better expressed through memory
        * properties and budget queries, and by returning
