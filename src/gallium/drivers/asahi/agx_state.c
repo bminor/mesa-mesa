@@ -1990,6 +1990,11 @@ agx_create_shader_state(struct pipe_context *pctx,
 
       case PIPE_SHADER_FRAGMENT:
          key.fs.nr_samples = 1;
+
+         /* For fbfetch */
+         for (unsigned i = 0; i < ARRAY_SIZE(key.fs.rt_formats); ++i) {
+            key.fs.rt_formats[i] = PIPE_FORMAT_R8G8B8A8_UNORM;
+         }
          break;
       default:
          unreachable("Unknown shader stage in shader-db precompile");
