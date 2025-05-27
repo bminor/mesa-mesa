@@ -148,4 +148,7 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
 
    m_TwoPassSupport.value =
       pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_TWO_PASS );
+
+   m_PSNRStatsSupport.value =
+      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR );
 }

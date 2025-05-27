@@ -45,6 +45,7 @@ typedef class DX12EncodeContext
    pipe_resource *pPipeResourceQPMapStats = nullptr;
    pipe_resource *pPipeResourceSATDMapStats = nullptr;
    pipe_resource *pPipeResourceRCBitAllocMapStats = nullptr;
+   pipe_resource *pPipeResourcePSNRStats = nullptr;
 
    // Keep all the media and sync objects until encode is done
    // and then signal EnqueueResourceRelease so the media
@@ -191,5 +192,7 @@ typedef class DX12EncodeContext
          pPipeVideoBuffer->destroy( pPipeVideoBuffer );
       if( pDownscaledTwoPassPipeVideoBuffer )
          pDownscaledTwoPassPipeVideoBuffer->destroy( pDownscaledTwoPassPipeVideoBuffer );
+      if( pPipeResourcePSNRStats )
+         pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourcePSNRStats );
    }
 } *LPDX12EncodeContext;

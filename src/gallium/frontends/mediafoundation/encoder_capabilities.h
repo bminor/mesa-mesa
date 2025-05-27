@@ -130,4 +130,7 @@ class encoder_capabilities
 
    // Two pass encode
    union pipe_enc_cap_two_pass m_TwoPassSupport = {};
+
+   // PSNR frame stats
+   union pipe_enc_cap_gpu_stats_psnr m_PSNRStatsSupport = {};
 };

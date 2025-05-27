@@ -335,8 +335,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       {
          uint32_t block_size = (1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size);
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>(std::ceil(alignedWidth / static_cast<float>(block_size)));
-         templ.height0 = static_cast<uint32_t>(std::ceil(alignedHeight / static_cast<float>(block_size)));
+         templ.width0 = static_cast<uint32_t>(std::ceil(m_uiOutputWidth / static_cast<float>(block_size)));
+         templ.height0 = static_cast<uint16_t>(std::ceil(m_uiOutputHeight / static_cast<float>(block_size)));
          CHECKNULL_GOTO(
             pDX12EncodeContext->pPipeResourceQPMapStats = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &templ),
             E_OUTOFMEMORY,
@@ -347,8 +347,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       {
          uint32_t block_size = (1 << m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.log2_values_block_size);
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>(std::ceil(alignedWidth / static_cast<float>(block_size)));
-         templ.height0 = static_cast<uint32_t>(std::ceil(alignedHeight / static_cast<float>(block_size)));
+         templ.width0 = static_cast<uint32_t>(std::ceil(m_uiOutputWidth / static_cast<float>(block_size)));
+         templ.height0 = static_cast<uint16_t>(std::ceil(m_uiOutputHeight / static_cast<float>(block_size)));
          CHECKNULL_GOTO(
             pDX12EncodeContext->pPipeResourceSATDMapStats = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &templ),
             E_OUTOFMEMORY,
@@ -359,10 +359,31 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       {
          uint32_t block_size = (1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size);
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>(std::ceil(alignedWidth / static_cast<float>(block_size)));
-         templ.height0 = static_cast<uint32_t>(std::ceil(alignedHeight / static_cast<float>(block_size)));
+         templ.width0 = static_cast<uint32_t>(std::ceil(m_uiOutputWidth / static_cast<float>(block_size)));
+         templ.height0 = static_cast<uint16_t>(std::ceil(m_uiOutputHeight / static_cast<float>(block_size)));
          CHECKNULL_GOTO(
             pDX12EncodeContext->pPipeResourceRCBitAllocMapStats = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &templ),
+            E_OUTOFMEMORY,
+            done);
+      }
+
+      if (m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel)
+      {
+         struct pipe_resource buffer_templ = {};
+         buffer_templ.width0 = 3 * sizeof(float); // Up to 3 float components Y, U, V
+         buffer_templ.target = PIPE_BUFFER;
+         // PIPE_USAGE_STAGING allocates resource in L0 (System Memory) heap
+         // and avoid a bunch of roundtrips for uploading/reading back the bitstream headers
+         // The GPU writes once the slice data (if dGPU over the PCIe bus) and all the other
+         // uploads (e.g bitstream headers from CPU) and readbacks to output MFSamples
+         // happen without moving data between L0/L1 pools
+         buffer_templ.usage = PIPE_USAGE_STAGING;
+         buffer_templ.format = PIPE_FORMAT_R8_UINT;
+         buffer_templ.height0 = 1;
+         buffer_templ.depth0 = 1;
+         buffer_templ.array_size = 1;
+         CHECKNULL_GOTO(
+            pDX12EncodeContext->pPipeResourcePSNRStats = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &buffer_templ),
             E_OUTOFMEMORY,
             done);
       }
