@@ -39,7 +39,7 @@ public:
         return m_bufsize < len ? len : m_bufsize;
     }
 
-    virtual int connect(const char* serviceName = nullptr) { return 0; }
+    virtual int connect(const char* /*serviceName*/ = nullptr) { return 0; }
     virtual uint64_t processPipeInit() { return 0; }
 
     virtual void *allocBuffer(size_t minSize) = 0;

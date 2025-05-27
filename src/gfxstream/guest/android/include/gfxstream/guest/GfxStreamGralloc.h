@@ -177,7 +177,7 @@ class Gralloc {
 
     virtual bool treatBlobAsImage() { return false; }
 
-    virtual int32_t getDataspace(const AHardwareBuffer* ahb) {
+    virtual int32_t getDataspace(const AHardwareBuffer* /*ahb*/) {
         return GFXSTREAM_AHB_DATASPACE_UNKNOWN;
     }
 };
