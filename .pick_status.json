@@ -5874,7 +5874,7 @@
         "description": "freedreno/ci: Update piglit expectations on a618",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "65e18a84944b559419aceaf2083936cf68ac3e79",
         "notes": null
