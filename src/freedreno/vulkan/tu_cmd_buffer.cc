@@ -2538,7 +2538,7 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
       addr.bo = image->mem->bo;
       addr.offset = (image->iova - image->mem->iova) +
                     image->lrz_layout.lrz_fc_offset +
-                    offsetof(fd_lrzfc_layout<CHIP>, dir_track);
+                    offsetof(fd_lrzfc_layout<CHIP>, buffer[0].dir_track);
    }
 
    int32_t lrz_disabled_at_draw = cmd->state.rp.lrz_disabled_at_draw
