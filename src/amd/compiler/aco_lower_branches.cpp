@@ -52,6 +52,7 @@ try_remove_simple_block(branch_ctx& ctx, Block& block)
 
    unsigned succ_idx = block.linear_succs[0];
    Block& succ = ctx.program->blocks[succ_idx];
+   Block::edge_vec new_preds;
    for (unsigned pred_idx : block.linear_preds) {
       Block& pred = ctx.program->blocks[pred_idx];
       assert(pred.index < block.index);
@@ -82,12 +83,16 @@ try_remove_simple_block(branch_ctx& ctx, Block& block)
          }
 
          /* Otherwise, check if there is a fall-through path for the jump target. */
-         if (block.index >= pred.linear_succs[1])
-            return;
-         for (unsigned j = block.index + 1; j < pred.linear_succs[1]; j++) {
+         bool can_fallthrough = block.index < pred.linear_succs[1];
+         for (unsigned j = block.index + 1; can_fallthrough && j < pred.linear_succs[1]; j++) {
             if (!ctx.program->blocks[j].instructions.empty())
-               return;
+               can_fallthrough = false;
          }
+         if (!can_fallthrough) {
+            new_preds.push_back(pred_idx);
+            continue;
+         }
+
          pred.linear_succs[0] = pred.linear_succs[1];
          pred.linear_succs[1] = succ_idx;
          succ.linear_preds.push_back(pred_idx);
@@ -130,9 +135,11 @@ try_remove_simple_block(branch_ctx& ctx, Block& block)
       block.logical_preds.clear();
    }
 
-   remove_linear_successor(ctx, block, succ_idx);
-   block.linear_preds.clear();
-   block.instructions.clear();
+   block.linear_preds = new_preds;
+   if (block.linear_preds.empty()) {
+      remove_linear_successor(ctx, block, succ_idx);
+      block.instructions.clear();
+   }
 }
 
 bool
