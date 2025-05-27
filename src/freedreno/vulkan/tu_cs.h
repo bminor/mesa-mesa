@@ -447,7 +447,6 @@ tu_cs_trace_end(struct u_trace_context *utctx, void *cs, const char *fmt, ...);
 static inline void
 tu_cond_exec_start(struct tu_cs *cs, uint32_t cond_flags)
 {
-   assert(cs->mode == TU_CS_MODE_GROW);
    assert(cs->cond_stack_depth < TU_COND_EXEC_STACK_SIZE);
 
    ASSERTED enum compare_mode mode =
