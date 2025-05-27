@@ -150,7 +150,13 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
                     )
                 })
             }
-
+            CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR if dev.kernel_clock_supported() => {
+                v.write::<cl_device_kernel_clock_capabilities_khr>(
+                    (CL_DEVICE_KERNEL_CLOCK_SCOPE_DEVICE_KHR
+                        | CL_DEVICE_KERNEL_CLOCK_SCOPE_SUB_GROUP_KHR)
+                        .into(),
+                )
+            }
             CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED => {
                 v.write::<&CStr>(dev.screen().cl_cts_version())
             }

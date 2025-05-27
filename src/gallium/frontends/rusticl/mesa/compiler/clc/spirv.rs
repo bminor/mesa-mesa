@@ -297,6 +297,7 @@ impl SPIRVBin {
             LiteralSampler: true,
             SampledBuffer: true,
             Sampled1D: true,
+            ShaderClockKHR: true,
             UniformDecoration: true,
             Vector16: true,
             ..Default::default()

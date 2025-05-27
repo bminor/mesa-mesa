@@ -51,9 +51,9 @@ The minimum versions to build Rusticl are:
 -  Rust: 1.78
 -  Meson: 1.4.0
 -  Bindgen: 0.65.0
--  LLVM: 15.0.0
+-  LLVM: 15.0.0 (recommended 19.0.0)
 -  Clang: 15.0.0
-   Updating clang requires a rebuilt of mesa and rusticl if and only if the value of
+   Updating clang requires a rebuilt mesa and rusticl if and only if the value of
    ``CLANG_RESOURCE_DIR`` changes. It is defined through ``clang/Config/config.h``.
 -  SPIRV-Tools: any version (recommended: v2025.1)
 

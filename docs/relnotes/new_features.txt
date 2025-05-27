@@ -25,3 +25,4 @@ VK_EXT_zero_initialize_device_memory on RADV and NVK
 VK_EXT_primitive_topology_list_restart on panvk
 VK_EXT_image_2d_view_of_3d on panvk
 VK_EXT_texel_buffer_alignment on panvk
+cl_khr_kernel_clock on freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi and zink with llvm-19 or newer

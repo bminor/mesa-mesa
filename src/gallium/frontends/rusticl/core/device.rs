@@ -17,6 +17,7 @@ use mesa_rust::pipe::transfer::PipeTransfer;
 use mesa_rust_gen::*;
 use mesa_rust_util::math::SetBitIndices;
 use mesa_rust_util::static_assert;
+use rusticl_llvm_gen::*;
 use rusticl_opencl_gen::*;
 
 use std::cmp::max;
@@ -684,6 +685,13 @@ impl Device {
             add_feat(1, 0, 0, "__opencl_c_int64");
         }
 
+        if self.kernel_clock_supported() {
+            add_ext(1, 0, 0, "cl_khr_kernel_clock");
+            add_feat(1, 0, 0, "__opencl_c_kernel_clock_scope_device");
+            add_feat(1, 0, 0, "__opencl_c_kernel_clock_scope_sub_group");
+            add_spirv(c"SPV_KHR_shader_clock");
+        }
+
         if self.caps.has_images {
             add_feat(1, 0, 0, "__opencl_c_images");
 
@@ -1128,6 +1136,10 @@ impl Device {
         self.screen.compute_caps().max_subgroups
     }
 
+    pub fn kernel_clock_supported(&self) -> bool {
+        self.screen.caps().shader_clock && LLVM_VERSION_MAJOR >= 19
+    }
+
     pub fn subgroups_supported(&self) -> bool {
         let subgroup_sizes = self.subgroup_sizes().len();
 
@@ -1187,6 +1199,7 @@ impl Device {
             images_write_3d: self.caps.has_3d_image_writes,
             integer_dot_product: true,
             intel_subgroups: self.intel_subgroups_supported(),
+            kernel_clock: self.kernel_clock_supported(),
             subgroups: subgroups_supported,
             subgroups_shuffle: subgroups_supported,
             subgroups_shuffle_relative: subgroups_supported,
