@@ -348,7 +348,11 @@ nir_gather_xfb_info_from_intrinsics(nir_shader *nir)
                out.component_mask =
                   BITFIELD_RANGE(index, xfb.out[index % 2].num_components);
                out.location = sem.location;
+               out.data_is_16bit = intr->src[0].ssa->bit_size == 16;
                out.high_16bits = sem.high_16bits;
+               out.mediump = sem.medium_precision;
+               out.mediump_upconvert_type = nir_intrinsic_src_type(intr) &
+                                            (nir_type_float | nir_type_int | nir_type_uint);
                out.buffer = xfb.out[index % 2].buffer;
                out.offset = (uint32_t)xfb.out[index % 2].offset * 4;
                util_dynarray_append(&array, nir_xfb_output_info, out);
