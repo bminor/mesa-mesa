@@ -381,11 +381,12 @@ radv_use_htile_for_image(const struct radv_device *device, const struct radv_ima
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
 
+   if (!pdev->use_hiz)
+      return false;
+
    const VkImageCompressionControlEXT *compression =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_COMPRESSION_CONTROL_EXT);
-
-   if (instance->debug_flags & RADV_DEBUG_NO_HIZ ||
-       (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT))
+   if (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT)
       return false;
 
    /* HTILE compression is only useful for depth/stencil attachments. */

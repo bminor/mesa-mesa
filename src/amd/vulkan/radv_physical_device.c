@@ -109,8 +109,7 @@ radv_compute_queue_enabled(const struct radv_physical_device *pdev)
 static bool
 radv_vrs_attachment_enabled(const struct radv_physical_device *pdev)
 {
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   return pdev->info.gfx_level >= GFX11 || !(instance->debug_flags & RADV_DEBUG_NO_HIZ);
+   return pdev->info.gfx_level >= GFX11 || pdev->use_hiz;
 }
 
 static bool
@@ -2176,6 +2175,10 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->dcc_msaa_allowed = (instance->perftest_flags & RADV_PERFTEST_DCC_MSAA);
 
    pdev->use_fmask = pdev->info.gfx_level < GFX11 && !(instance->debug_flags & RADV_DEBUG_NO_FMASK);
+
+   pdev->use_hiz = !(instance->debug_flags & RADV_DEBUG_NO_HIZ);
+   if (pdev->info.gfx_level == GFX12 && instance->drirc.disable_hiz_his_gfx12)
+      pdev->use_hiz = false;
 
    pdev->use_ngg = (pdev->info.gfx_level >= GFX10 && pdev->info.family != CHIP_NAVI14 &&
                     !(instance->debug_flags & RADV_DEBUG_NO_NGG)) ||
