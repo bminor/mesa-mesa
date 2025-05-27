@@ -18,6 +18,7 @@
 #include "vk_pipeline_layout.h"
 #include "vk_synchronization.h"
 
+#include "clb097.h"
 #include "nv_push_cl906f.h"
 #include "nv_push_cl90b5.h"
 #include "nv_push_cla097.h"
@@ -602,9 +603,20 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
    struct nv_push *p = nvk_cmd_buffer_push(cmd, 10);
 
    if (barriers & NVK_BARRIER_INVALIDATE_TEX_DATA) {
-      P_IMMD(p, NVA097, INVALIDATE_TEXTURE_DATA_CACHE_NO_WFI, {
-         .lines = LINES_ALL,
-      });
+      if (pdev->info.cls_eng3d >= MAXWELL_A) {
+         P_IMMD(p, NVA097, INVALIDATE_TEXTURE_DATA_CACHE_NO_WFI, {
+            .lines = LINES_ALL,
+         });
+      } else {
+         /* On Kepler, the _NO_WFI form doesn't appear to actually work
+          * properly.  It exists in the headers but it doesn't fully
+          * invalidate everything.  Even doing a full WFI before hand isn't
+          * sufficient.
+          */
+         P_IMMD(p, NVA097, INVALIDATE_TEXTURE_DATA_CACHE, {
+            .lines = LINES_ALL,
+         });
+      }
    }
 
    if (barriers & (NVK_BARRIER_INVALIDATE_SHADER_DATA &
