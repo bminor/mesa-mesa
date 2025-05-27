@@ -5,7 +5,7 @@
 # DEBIAN_TEST_VK_TAG
 set -ex
 
-uncollapsed_section_start vkd3d-proton "Building vkd3d-proton"
+section_start vkd3d-proton "Building vkd3d-proton"
 
 VKD3D_PROTON_COMMIT="041cfa75580090c6b30af2f2721015d15493f14b"
 
