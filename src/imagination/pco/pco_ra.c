@@ -107,6 +107,7 @@ static void preproc_vecs(pco_func *func)
                                                      BITSET_WORDS(num_ssas));
    struct hash_table_u64 *elem_uses = _mesa_hash_table_u64_create(mem_ctx);
 
+   bool needs_reindex = false;
    pco_foreach_instr_in_func (instr, func) {
       if (instr->op != PCO_OP_VEC)
          continue;
@@ -156,20 +157,50 @@ static void preproc_vecs(pco_func *func)
 
       util_dynarray_foreach (uses, pco_use, use) {
          b.cursor = pco_cursor_before_instr(use->instr);
-         pco_ref dest = pco_ref_new_ssa_clone(func, var);
-         assert(pco_ref_get_chans(var) <= 4);
-         pco_mbyp(&b,
-                  dest,
-                  var,
-                  .exec_cnd = pco_instr_has_exec_cnd(producer)
-                                 ? pco_instr_get_exec_cnd(producer)
-                                 : PCO_EXEC_CND_E1_ZX,
-                  .rpt = pco_ref_get_chans(var));
-         *use->ref = dest;
+         if (pco_ref_get_chans(var) <= 4) {
+            pco_ref dest = pco_ref_new_ssa_clone(func, var);
+            pco_mbyp(&b,
+                     dest,
+                     var,
+                     .exec_cnd = pco_instr_has_exec_cnd(producer)
+                                    ? pco_instr_get_exec_cnd(producer)
+                                    : PCO_EXEC_CND_E1_ZX,
+                     .rpt = pco_ref_get_chans(var));
+            *use->ref = dest;
+         } else {
+            assert(use->instr->op == PCO_OP_VEC && producer->op == PCO_OP_VEC);
+
+            pco_instr *instr =
+               pco_instr_create(func,
+                                1,
+                                use->instr->num_srcs + producer->num_srcs - 1);
+            instr->op = PCO_OP_VEC;
+
+            instr->dest[0] = use->instr->dest[0];
+
+            unsigned num_srcs = 0;
+            for (unsigned s = 0; s < use->instr->num_srcs; ++s) {
+               if (&use->instr->src[s] != use->ref) {
+                  instr->src[num_srcs++] = use->instr->src[s];
+               } else {
+                  for (unsigned t = 0; t < producer->num_srcs; ++t)
+                     instr->src[num_srcs++] = producer->src[t];
+               }
+            }
+
+            pco_instr_set_exec_cnd(instr, pco_instr_get_exec_cnd(use->instr));
+            pco_builder_insert_instr(&b, instr);
+
+            pco_instr_delete(use->instr);
+            needs_reindex = true;
+         }
       }
    }
 
    ralloc_free(mem_ctx);
+
+   if (needs_reindex)
+      pco_index(func->parent_shader, false);
 }
 
 typedef struct _pco_copy {
