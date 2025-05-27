@@ -446,7 +446,7 @@ struct vpe_debug_options {
         uint32_t skip_optimal_tap_check   : 1; /**< Skip optimal tap check */
         uint32_t disable_lut_caching      : 1; /**< disable config caching for all luts */
         uint32_t disable_performance_mode : 1; /**< disable performance mode */
-    } flags;
+    } flags;                                  /**< debug flags */
 
     // valid only if the corresponding flag is set
     uint32_t cm_in_bypass             : 1; /**< Color management bypass */

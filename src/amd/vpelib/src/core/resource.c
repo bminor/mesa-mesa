@@ -134,7 +134,6 @@ void vpe_destroy_resource(struct vpe_priv *vpe_priv, struct resource *res)
     default:
         break;
     }
-    vpe_free(res);
 }
 
 enum vpe_status vpe_alloc_segment_ctx(
