@@ -2338,5 +2338,99 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 	</reg32>
 </domain>
 
+<domain name="CP_RESOURCE_LIST" width="32">
+	<doc>
+		A7xx introduces the "resource table" which is managed by
+		CP_RESOURCE_LIST. It is used to synchronize BR and BV access
+		to resources such as LRZ buffers.
+
+		The resource table consists of resources that are in-use by BR.
+		Each "resource" has a base address, which is
+		usually a pointer but is treated by the HW as an opaque handle,
+		a read/write bit, and a timestamp when it was last used.
+		Resources are removed from the table upon event completion when
+		a special CP_EVENT_WRITE::CLEAR_RENDER_RESOURCE bit is set, which
+		will remove all resources with a timestamp up to the current
+		timestamp.
+
+		CP_RESOURCE_LIST first specifies a list of BV resources. For
+		each BV resource, the HW will check if there is a corresponding
+		BR resource in the table, and if at least one of the BV and BR
+		resources is marked WRITE then it will stall until the BR
+		resource is removed.
+
+		It then specifies a list of BR resources. These will be added to
+		the resource table, unless there is an overflow in which case
+		the designated overflow register will have bit 0 set. Overflow
+		should cause the next binning pass to stall until BR is done,
+		effectively disabling concurrent binning.
+
+		CP_RESOURCE_LIST must be executed by BV. BR resources are added
+		by BV and removed by BR.
+
+		There is a separate table for "LRZ resources." These behave a
+		bit differently: specifying an LRZ resource via BV_RES_LRZ
+		stalls on any matching resource existing and then adds it to the
+		table, making it both a BV and BR resource in one. There is a
+		separate CLEAR_LRZ_RESOURCE bit for removing resources from the
+		LRZ table, and it only removes one resource given by a base
+		address passed to CP_EVENT_WRITE. Therefore timestamps are
+		unnecessary.
+	</doc>
+	<reg32 offset="0" name="BV_COUNT" type="uint"/>
+	<doc>
+		What follows is a list of CP_BV_RESOURCE and then CP_RESOURCE_LIST_BR.
+	</doc>
+</domain>
+
+<domain name="CP_BV_RESOURCE" width="32">
+	<doc>
+		BV resources don't go in the table. Instead CP waits until any
+		corresponding BR resources with the same base pointer are
+		finished before the packet completes.
+	</doc>
+	<enum name="cp_bv_resource_encoding">
+		<value value="0" name="BV_RES_DIRECT"/>
+		<doc>
+			INDIRECT resources are encoded as a 32b offset + 3b
+			bindless base selector. The offset is added to the given
+			BINDLESS_BASE pseudoregister and then the 64b value
+			fetched there is used as the pointer.
+		</doc>
+		<value value="1" name="BV_RES_INDIRECT_READ"/>
+		<value value="2" name="BV_RES_LRZ"/>
+		<value value="3" name="BV_RES_INDIRECT_WRITE"/>
+	</enum>
+	<reg64 offset="0" name="0">
+		<bitfield name="BASE_ADDR" low="1" high="61" shr="1" type="address"/>
+		<bitfield name="WRITE" pos="0" type="boolean"/>
+		<bitfield name="ENCODING" low="62" high="63" type="cp_bv_resource_encoding"/>
+	</reg64>
+</domain>
+
+<domain name="CP_RESOURCE_LIST_BR" width="32">
+	<reg32 offset="0" name="0">
+		<bitfield name="BR_COUNT" low="0" high="23" type="uint"/>
+		<bitfield name="OVERFLOW_ONCHIP_ADDR" low="24" high="26"/>
+		<bitfield name="OVERFLOW" pos="31" type="boolean"/>
+	</reg32>
+	<doc>
+		What follows is a list of CP_BR_RESOURCE.
+	</doc>
+</domain>
+
+<domain name="CP_BR_RESOURCE" width="32">
+	<enum name="cp_br_resource_encoding">
+		<value value="0" name="BR_RES_DIRECT"/>
+		<value value="2" name="BR_RES_INDIRECT_READ"/>
+		<value value="3" name="BR_RES_INDIRECT_WRITE"/> <!-- set WRITE bit -->
+	</enum>
+	<reg64 offset="0" name="0">
+		<bitfield name="BASE_ADDR" low="1" high="61" shr="1" type="address"/>
+		<bitfield name="WRITE" pos="0" type="boolean"/>
+		<bitfield name="ENCODING" low="62" high="63" type="cp_br_resource_encoding"/>
+	</reg64>
+</domain>
+
 </database>
 

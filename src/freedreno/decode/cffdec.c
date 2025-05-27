@@ -1106,6 +1106,21 @@ dump_domain(uint32_t *dwords, uint32_t sizedwords, int level, const char *name)
    }
 }
 
+static void
+cp_resource_list(uint32_t *dwords, uint32_t sizedwords, int level)
+{
+   uint32_t bv_resource_count = *dwords++;
+
+   for (unsigned i = 0; i < bv_resource_count; i++, dwords += 2)
+      dump_domain(dwords, 2, level + 1, "CP_BV_RESOURCE");
+
+   dump_domain(dwords, 1, level + 1, "CP_RESOURCE_LIST_BR");
+   uint32_t br_resource_count = *dwords++ & ((1u << 24) - 1);
+
+   for (unsigned i = 0; i < br_resource_count; i++, dwords += 2)
+      dump_domain(dwords, 2, level + 1, "CP_BR_RESOURCE");
+}
+
 static uint32_t bin_x1, bin_x2, bin_y1, bin_y2;
 static unsigned mode;
 static const char *render_mode;
@@ -3106,6 +3121,7 @@ static const struct type3_op {
    CP(THREAD_CONTROL, cp_set_thread_control),
    CP(NON_CONTEXT_REG_BUNCH, cp_non_context_reg_bunch),
    CP(EVENT_WRITE7, cp_event_write),
+   CP(RESOURCE_LIST, cp_resource_list),
 };
 
 static void
