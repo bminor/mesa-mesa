@@ -3,7 +3,7 @@ include:
 
 .ondracka-generic:
   extends:
-    - .ci-tron-x86_64-test-gl-manual  # use debian-build-testing rather than debian-testing
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .r300-manual-rules
   variables:
     FDO_CI_CONCURRENT: 2

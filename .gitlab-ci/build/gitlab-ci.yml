@@ -82,7 +82,7 @@
     - *meson-build
 
 
-debian-testing:
+debian-x86_64:
   extends:
     - .meson-build-for-tests
     - .use-debian/x86_64_build
@@ -108,14 +108,14 @@ debian-testing:
       -D tools=drm-shim
       -D valgrind=disabled
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
-    RUN_MESON_TESTS: "false" # debian-build-testing already runs these
+    RUN_MESON_TESTS: "false" # debian-build-x86_64 already runs these
   artifacts:
     reports:
       junit: artifacts/ci_scripts_report.xml
 
-debian-testing-asan:
+debian-x86_64-asan:
   extends:
-    - debian-testing
+    - debian-x86_64
     - .meson-build-for-tests
     - .build-run-long
   variables:
@@ -148,7 +148,7 @@ debian-testing-asan:
       -D video-codecs=
       -D vulkan-drivers=
 
-debian-testing-msan:
+debian-x86_64-msan:
   # https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo
   # msan cannot fully work until it's used together with msan libc
   extends:
@@ -206,9 +206,9 @@ debian-testing-msan:
       -D install-precomp-compiler=true
       -D tools=panfrost
 
-debian-testing-ubsan:
+debian-x86_64-ubsan:
   extends:
-    - debian-testing
+    - debian-x86_64
     - .meson-build-for-tests
     - .build-run-long
   variables:
@@ -240,7 +240,7 @@ debian-testing-ubsan:
       -D mesa-clc=enabled
       -D install-mesa-clc=true
 
-debian-build-testing:
+debian-build-x86_64:
   extends:
     - .meson-build-for-tests
     - .use-debian/x86_64_build
@@ -269,7 +269,7 @@ debian-build-testing:
       -D spirv-to-dxil=true
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi
       -D perfetto=true
-    S3_ARTIFACT_NAME: debian-build-testing
+    S3_ARTIFACT_NAME: debian-build-x86_64
 
 # Test a release build with -Werror so new warnings don't sneak in.
 debian-release:

@@ -86,7 +86,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-gl
       artifacts: false
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: false
 
 .lava-x86_64-test-video:
@@ -97,7 +97,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-video
       artifacts: false
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: false
 
 .lava-x86_64-test-vk:
@@ -108,7 +108,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-vk
       artifacts: false
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: false
 
 .lava-arm32-test:

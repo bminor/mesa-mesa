@@ -63,9 +63,9 @@ shader-db:
         - .gitlab-ci/build/gitlab-ci.yml
         - .gitlab-ci/run-shader-db.sh
   needs:
-    - debian-build-testing
+    - debian-build-x86_64
   variables:
-    S3_ARTIFACT_NAME: debian-build-testing
+    S3_ARTIFACT_NAME: debian-build-x86_64
   before_script:
     - !reference [.download_s3, before_script]
   script: |
@@ -127,7 +127,7 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-gl
   needs:
     - debian/x86_64_test-gl
-    - debian-testing
+    - debian-x86_64
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     DEBIAN_ARCH: amd64
@@ -138,7 +138,7 @@ yaml-toml-shell-py-test:
     - .test
     - .use-debian/x86_64_test-vk
   needs:
-    - debian-testing
+    - debian-x86_64
     - debian/x86_64_test-vk
     - !reference [.required-for-hardware-jobs, needs]
   variables:
@@ -169,7 +169,7 @@ yaml-toml-shell-py-test:
     # overwritten depending on the physical machine running the job.
     VK_DRIVER: "lvp"
   needs:
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: true  # On the host we want the Linux build
     - job: debian-android
       artifacts: false  # The Android build will be downloaded later
@@ -470,7 +470,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
 
@@ -479,11 +479,11 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-vk
     - .ci-tron-x86_64-test
   variables:
-    S3_ARTIFACT_NAME: "debian-build-testing"
+    S3_ARTIFACT_NAME: "debian-build-x86_64"
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
-    - job: debian-build-testing
+    - job: debian-build-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
 
@@ -494,7 +494,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
-    - job: debian-testing
+    - job: debian-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
 
@@ -503,11 +503,11 @@ yaml-toml-shell-py-test:
     - .use-debian/x86_64_test-gl
     - .ci-tron-x86_64-test
   variables:
-    S3_ARTIFACT_NAME: "debian-build-testing"
+    S3_ARTIFACT_NAME: "debian-build-x86_64"
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
-    - job: debian-build-testing
+    - job: debian-build-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
 

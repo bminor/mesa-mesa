@@ -7,7 +7,7 @@ llvmpipe-piglit-rusticl:
     - .llvmpipe-rusticl-rules
     - .test-piglit
   needs:
-    - debian-testing
+    - debian-x86_64
     - debian/x86_64_test-gl
   variables:
     DEQP_SUITE: llvmpipe-rusticl
@@ -64,7 +64,7 @@ llvmpipe-deqp-asan:
   extends: .llvmpipe-deqp-test
   needs:
     - debian/x86_64_test-gl
-    - debian-testing-asan
+    - debian-x86_64-asan
 
 .android-llvmpipe:
   extends:
