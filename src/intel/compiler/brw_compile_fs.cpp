@@ -1058,7 +1058,8 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
        prog_data->sample_shading ||
        prog_data->uses_sample_mask ||
        (prog_data->computed_depth_mode != BRW_PSCDEPTH_OFF) ||
-       prog_data->computed_stencil) {
+       prog_data->computed_stencil ||
+       devinfo->ver < 11) {
       prog_data->coarse_pixel_dispatch = INTEL_NEVER;
    }
 
