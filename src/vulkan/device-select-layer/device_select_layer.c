@@ -127,8 +127,12 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    info->xwayland = !strcmp(applicationName, "Xwayland");
    info->xserver = !strcmp(applicationName, "Xorg") || !strcmp(applicationName, "Xephyr");
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
    bool has_wayland = getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET");
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
    bool has_xcb = !!getenv("DISPLAY");
+#endif
 
    for (unsigned i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
