@@ -39,9 +39,11 @@
 
 
 void
-util_format_r8g8_b8g8_unorm_unpack_rgba_float(void *restrict dst_row, unsigned dst_stride,
-                                         const uint8_t *restrict src_row, unsigned src_stride,
-                                         unsigned width, unsigned height)
+util_format_r8g8_b8g8_422_unorm_unpack_rgba_float(void *restrict dst_row,
+                                                  unsigned dst_stride,
+                                                  const uint8_t *restrict src_row,
+                                                  unsigned src_stride,
+                                                  unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -93,9 +95,11 @@ util_format_r8g8_b8g8_unorm_unpack_rgba_float(void *restrict dst_row, unsigned d
 
 
 void
-util_format_r8g8_b8g8_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row, unsigned dst_stride,
-                                          const uint8_t *restrict src_row, unsigned src_stride,
-                                          unsigned width, unsigned height)
+util_format_r8g8_b8g8_422_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row,
+                                                   unsigned dst_stride,
+                                                   const uint8_t *restrict src_row,
+                                                   unsigned src_stride,
+                                                   unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -147,9 +151,11 @@ util_format_r8g8_b8g8_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row, unsign
 
 
 void
-util_format_r8g8_b8g8_unorm_pack_rgba_float(uint8_t *restrict dst_row, unsigned dst_stride,
-                                       const float *restrict src_row, unsigned src_stride,
-                                       unsigned width, unsigned height)
+util_format_r8g8_b8g8_422_unorm_pack_rgba_float(uint8_t *restrict dst_row,
+                                                unsigned dst_stride,
+                                                const float *restrict src_row,
+                                                unsigned src_stride,
+                                                unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -196,9 +202,11 @@ util_format_r8g8_b8g8_unorm_pack_rgba_float(uint8_t *restrict dst_row, unsigned 
 
 
 void
-util_format_r8g8_b8g8_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row, unsigned dst_stride,
-                                        const uint8_t *restrict src_row, unsigned src_stride,
-                                        unsigned width, unsigned height)
+util_format_r8g8_b8g8_422_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row,
+                                                 unsigned dst_stride,
+                                                 const uint8_t *restrict src_row,
+                                                 unsigned src_stride,
+                                                 unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -245,8 +253,9 @@ util_format_r8g8_b8g8_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row, unsigned
 
 
 void
-util_format_r8g8_b8g8_unorm_fetch_rgba(void *restrict in_dst, const uint8_t *restrict src,
-                                        unsigned i, ASSERTED unsigned j)
+util_format_r8g8_b8g8_422_unorm_fetch_rgba(void *restrict in_dst,
+                                           const uint8_t *restrict src,
+                                           unsigned i, ASSERTED unsigned j)
 {
    float *dst = in_dst;
 
@@ -261,9 +270,11 @@ util_format_r8g8_b8g8_unorm_fetch_rgba(void *restrict in_dst, const uint8_t *res
 
 
 void
-util_format_g8r8_g8b8_unorm_unpack_rgba_float(void *restrict dst_row, unsigned dst_stride,
-                                         const uint8_t *restrict src_row, unsigned src_stride,
-                                         unsigned width, unsigned height)
+util_format_g8r8_g8b8_422_unorm_unpack_rgba_float(void *restrict dst_row,
+                                                  unsigned dst_stride,
+                                                  const uint8_t *restrict src_row,
+                                                  unsigned src_stride,
+                                                  unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -315,9 +326,11 @@ util_format_g8r8_g8b8_unorm_unpack_rgba_float(void *restrict dst_row, unsigned d
 
 
 void
-util_format_g8r8_g8b8_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row, unsigned dst_stride,
-                                          const uint8_t *restrict src_row, unsigned src_stride,
-                                          unsigned width, unsigned height)
+util_format_g8r8_g8b8_422_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row,
+                                                   unsigned dst_stride,
+                                                   const uint8_t *restrict src_row,
+                                                   unsigned src_stride,
+                                                   unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -369,9 +382,11 @@ util_format_g8r8_g8b8_unorm_unpack_rgba_8unorm(uint8_t *restrict dst_row, unsign
 
 
 void
-util_format_g8r8_g8b8_unorm_pack_rgba_float(uint8_t *restrict dst_row, unsigned dst_stride,
-                                       const float *restrict src_row, unsigned src_stride,
-                                       unsigned width, unsigned height)
+util_format_g8r8_g8b8_422_unorm_pack_rgba_float(uint8_t *restrict dst_row,
+                                                unsigned dst_stride,
+                                                const float *restrict src_row,
+                                                unsigned src_stride,
+                                                unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -418,9 +433,11 @@ util_format_g8r8_g8b8_unorm_pack_rgba_float(uint8_t *restrict dst_row, unsigned 
 
 
 void
-util_format_g8r8_g8b8_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row, unsigned dst_stride,
-                                        const uint8_t *restrict src_row, unsigned src_stride,
-                                        unsigned width, unsigned height)
+util_format_g8r8_g8b8_422_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row,
+                                                 unsigned dst_stride,
+                                                 const uint8_t *restrict src_row,
+                                                 unsigned src_stride,
+                                                 unsigned width, unsigned height)
 {
    unsigned x, y;
 
@@ -467,8 +484,9 @@ util_format_g8r8_g8b8_unorm_pack_rgba_8unorm(uint8_t *restrict dst_row, unsigned
 
 
 void
-util_format_g8r8_g8b8_unorm_fetch_rgba(void *restrict in_dst, const uint8_t *restrict src,
-                                        unsigned i, ASSERTED unsigned j)
+util_format_g8r8_g8b8_422_unorm_fetch_rgba(void *restrict in_dst,
+                                           const uint8_t *restrict src,
+                                           unsigned i, ASSERTED unsigned j)
 {
    float *dst = in_dst;
 

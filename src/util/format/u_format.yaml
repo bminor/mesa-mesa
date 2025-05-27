@@ -731,49 +731,57 @@
   swizzles: [X, Y, Z, 1]
 
 # same subsampling but with rgb channels
-- name: R8G8_B8G8_UNORM
+- name: R8G8_B8G8_422_UNORM
+  alias: R8G8_B8G8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [X, Y, Z, 1]
-- name: G8R8_G8B8_UNORM
+- name: G8R8_G8B8_422_UNORM
+  alias: G8R8_G8B8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [X, Y, Z, 1]
-- name: G8R8_B8R8_UNORM
+- name: G8R8_B8R8_422_UNORM
+  alias: G8R8_B8R8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [Z, Y, X, 1]
-- name: R8G8_R8B8_UNORM
+- name: R8G8_R8B8_422_UNORM
+  alias: R8G8_R8B8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [Z, Y, X, 1]
-- name: B8R8_G8R8_UNORM
+- name: B8R8_G8R8_422_UNORM
+  alias: B8R8_G8R8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [Y, X, Z, 1]
-- name: R8B8_R8G8_UNORM
+- name: R8B8_R8G8_422_UNORM
+  alias: R8B8_R8G8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [Y, X, Z, 1]
-- name: G8B8_G8R8_UNORM
+- name: G8B8_G8R8_422_UNORM
+  alias: G8B8_G8R8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
   channels: [UN8, UN8, UN8, UN8]
   swizzles: [X, Y, Z, 1]
-- name: B8G8_R8G8_UNORM
+- name: B8G8_R8G8_422_UNORM
+  alias: B8G8_R8G8_UNORM
   layout: subsampled
   colorspace: RGB
   block: {width: 2, height: 1, depth: 1}
@@ -2094,7 +2102,8 @@
   block: {width: 1, height: 1, depth: 1}
   channels: [UN8]
   swizzles: [X, Y, Z, W]
-- name: R8_G8_B8_UNORM
+- name: R8_G8_B8_444_UNORM
+  alias: R8_G8_B8_UNORM
   layout: planar3
   colorspace: RGB
   block: {width: 1, height: 1, depth: 1}
