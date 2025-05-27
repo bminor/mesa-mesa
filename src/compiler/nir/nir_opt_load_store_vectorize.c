@@ -241,8 +241,13 @@ sort_entries(const void *a_, const void *b_)
       return 1;
    else if (a->offset_signed < b->offset_signed)
       return -1;
-   else
-      return 0;
+
+   if (a->index > b->index)
+      return 1;
+   else if (a->index < b->index)
+      return -1;
+
+   return 0;
 }
 
 static unsigned
