@@ -293,6 +293,19 @@ lower_ngg_gs_set_vertex_and_primitive_count(nir_builder *b, nir_intrinsic_instr 
 }
 
 static bool
+gather_output_store_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
+{
+   lower_ngg_gs_state *s = (lower_ngg_gs_state *) state;
+
+   if (intrin->intrinsic == nir_intrinsic_store_output) {
+      ac_nir_gather_prerast_store_output_info(b, intrin, &s->out, false);
+      return true;
+   }
+
+   return false;
+}
+
+static bool
 lower_ngg_gs_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_ngg_gs_state *s = (lower_ngg_gs_state *) state;
@@ -307,6 +320,12 @@ lower_ngg_gs_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       return lower_ngg_gs_set_vertex_and_primitive_count(b, intrin, s);
 
    return false;
+}
+
+static void
+gather_output_stores(nir_shader *shader, lower_ngg_gs_state *s)
+{
+   nir_shader_intrinsics_pass(shader, gather_output_store_intrinsic, nir_metadata_all, s);
 }
 
 static void
@@ -933,7 +952,11 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
    nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
                          .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
 
-   /* Lower the GS intrinsics (it also gathers ac_nir_prerast_out) */
+   /* Gather output info (but not output values) to determine the LDS vertex size, and then lower
+    * GS intrinsics. Note that lower_ngg_gs_intrinsics re-gathers outputs again, but it also
+    * gathers output values, which must be done while lowering GS intrinsics and not before.
+    */
+   gather_output_stores(shader, &state);
    lower_ngg_gs_intrinsics(shader, &state);
 
    if (state.streamout_enabled)
