@@ -21,7 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 
 #include "reference_frames_tracker_h264.h"
 #include <algorithm>

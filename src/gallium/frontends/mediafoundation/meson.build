@@ -81,6 +81,27 @@ mediafoundation_wpp_rsp = configure_file(
   configuration : {'WPP_ARGS' : mediafoundation_wpp_args}
 )
 
+mft_codecs = get_option('mediafoundation-codecs')
+all_mft_codecs = ['h264enc', 'h265enc', 'av1enc']
+if mft_codecs.contains('all')
+  mft_codecs = all_mft_codecs
+endif
+
+foreach c : mft_codecs
+  if not _codecs.contains(c)
+    error('@0@ present in mediafoundation-codecs must also be present in video-codecs.'.format(c))
+  endif
+endforeach
+
+mf_codecs_cpp_args = {}
+foreach mf_codec_target : all_mft_codecs
+  cpp_args = mf_cpp_args
+  foreach c : all_mft_codecs
+    cpp_args += '-DMFT_CODEC_@0@=@1@'.format(c.to_upper(), (c == mf_codec_target).to_int())
+  endforeach
+  mf_codecs_cpp_args += {mf_codec_target : cpp_args}
+endforeach
+
 mediafoundation_wpp_preprocess = custom_target(
   'mediafoundation_wpp_preprocess',
   capture : true,
@@ -90,18 +111,20 @@ mediafoundation_wpp_preprocess = custom_target(
   command : ['tracewpp', '-cfgdir:@CURRENT_SOURCE_DIR@/wppconfig/rev1', '-scan:@CURRENT_SOURCE_DIR@/wpptrace.h', '-odir:@OUTDIR@', '@' + fs.relative_to(mediafoundation_wpp_rsp, 'a:\\')]
 )
 
-gallium_mf_name = get_option('mediafoundation-windows-dll-name')
-
-mediafoundation_st = static_library(
-  'mediafoundation_st',
-  mediafoundation_files,
-  mediafoundation_wpp_preprocess,
-  gnu_symbol_visibility : 'hidden',
-  cpp_args : mf_cpp_args,
-  override_options: ['cpp_std=c++20'],
-  include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
-  dependencies : [idep_mesautil, dep_dxheaders],
-)
+mediafoundation_st = {}
+foreach codec : mft_codecs
+  lib = static_library(
+    'mediafoundation_st_' + codec,
+    mediafoundation_files,
+    mediafoundation_wpp_preprocess,
+    gnu_symbol_visibility : 'hidden',
+    cpp_args : mf_codecs_cpp_args[codec],
+    override_options: ['cpp_std=c++20'],
+    include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
+    dependencies : [idep_mesautil, dep_dxheaders],
+  )
+  mediafoundation_st += {codec : lib}
+endforeach
 
 if with_gallium_mediafoundation_test
   subdir('test')

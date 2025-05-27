@@ -54,11 +54,11 @@ done:
    return hr;
 }
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 MFT_REGISTER_TYPE_INFO rgOutputInfo = { MFMediaType_Video, MFVideoFormat_H264 };
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
 MFT_REGISTER_TYPE_INFO rgOutputInfo = { MFMediaType_Video, MFVideoFormat_HEVC };
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
 MFT_REGISTER_TYPE_INFO rgOutputInfo = { MFMediaType_Video, MFVideoFormat_AV1 };
 #endif
 MFT_REGISTER_TYPE_INFO rgInputInfo[NUM_INPUT_TYPES] = { { MFMediaType_Video, MFVideoFormat_NV12 },
@@ -72,8 +72,8 @@ CDX12EncHMFT::RuntimeClassInitialize()
    HRESULT hr = S_OK;
    ComPtr<IMFMediaType> spVideoType = NULL;
 
-   static_assert( VIDEO_CODEC_H264ENC ^ VIDEO_CODEC_H265ENC ^ VIDEO_CODEC_AV1ENC,
-                  "VIDEO_CODEC_H264ENC or VIDEO_CODEC_H265ENC or VIDEO_CODEC_AV1ENC must be defined but only one at a time" );
+   static_assert( MFT_CODEC_H264ENC ^ MFT_CODEC_H265ENC ^ MFT_CODEC_AV1ENC,
+                  "MFT_CODEC_H264ENC or MFT_CODEC_H265ENC or MFT_CODEC_AV1ENC must be defined but only one at a time" );
 
    // Start by configuring for 4:2:0 NV12 as the only possible input type.
    // Once the SetOutputType() happens with a profile, we'll reconfigure the available input type

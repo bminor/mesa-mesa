@@ -20,7 +20,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 #include "hmft_entrypoints.h"
 #include "mfbufferhelp.h"
 #include "mfpipeinterop.h"

@@ -58,16 +58,16 @@ TEST( MediaFoundationEntrypoint, VerifySimpleEncodeSoftwareSample )
    ComPtr<IMFMediaBuffer> spOutBuffer;
    ComPtr<IMFMediaType> spInType = CreateVideoMT( width, height, FOURCC_NV12, FALSE, frameRateNum, frameRateDiv );
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
    ComPtr<IMFMediaType> spOutType = CreateVideoMT( width, height, FOURCC_H264, FALSE, frameRateNum, frameRateDiv, bitRate * 1024 );
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
    ComPtr<IMFMediaType> spOutType = CreateVideoMT( width, height, FOURCC_HEVC, FALSE, frameRateNum, frameRateDiv, bitRate * 1024 );
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
    // NO AV1 doesn't work yet...
    assert( false );
    ComPtr<IMFMediaType> spOutType = CreateVideoMT( width, height, FOURCC_AV01, FALSE, frameRateNum, frameRateDiv, bitRate * 1024 );
 #else
-#error VIDEO_CODEC_xxx must be defined
+#error MFT_CODEC_xxx must be defined
 #endif
 
    GUID m_guidOutputVideoSubtype( MFVideoFormat_IYUV );
@@ -176,11 +176,11 @@ TEST( MediaFoundationEntrypoint, VerifySimpleEncodeSoftwareSample )
 // #define DUMP
 #if defined( DUMP )
                {
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
                   FILE *fp = fopen( "d:\\test\\output.h264", "ab" );
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
                   FILE *fp = fopen( "d:\\test\\output.h265", "ab" );
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
                   FILE *fp = fopen( "d:\\test\\output.av1", "ab" );
 #endif
                   fwrite( pBuf, 1, dwLen, fp );

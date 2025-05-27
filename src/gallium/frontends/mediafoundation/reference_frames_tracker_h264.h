@@ -23,7 +23,7 @@
 
 #pragma once
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 
 #include <deque>
 #include <queue>

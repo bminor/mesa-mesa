@@ -31,20 +31,20 @@ using namespace Microsoft::WRL;
 extern "C" BOOL WINAPI
 DllEntryPoint(HINSTANCE, ULONG, __inout_opt LPVOID);
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 const wchar_t *g_pMFTFriendlyName =
    L"Microsoft AVC DX12 Encoder HMFT";
 DEFINE_GUID(CLSID_CDX12EncoderHMFT, 0x8994db7c, 0x288a, 0x4c62, 0xa1, 0x36, 0xa3, 0xc3, 0xc2, 0xa2, 0x08, 0xa8);
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
 const wchar_t *g_pMFTFriendlyName =
    L"Microsoft HEVC DX12 Encoder HMFT";
 DEFINE_GUID(CLSID_CDX12EncoderHMFT, 0xe7ffb8eb, 0xfa0b, 0x4fb0, 0xac, 0xdf, 0x12, 0x2, 0xf6, 0x63, 0xcd, 0xe5);
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
 const wchar_t *g_pMFTFriendlyName =
    L"Microsoft AV1 DX12 Encoder HMFT";
 DEFINE_GUID(CLSID_CDX12EncoderHMFT, 0x1a6f3150, 0xb121, 0x4ce9, 0x94, 0x97, 0x50, 0xfe, 0xdb, 0x3d, 0xcb, 0x70);
 #else
-#error VIDEO_CODEC_xxx must be defined
+#error MFT_CODEC_xxx must be defined
 #endif
 
 HINSTANCE g_hModule = nullptr;

@@ -434,11 +434,11 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // Otherwise fallback to full frame encoding fence notification using a single output buffer
       uint32_t num_output_buffers = 1u;
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
       num_output_buffers = std::max( 1u, pDX12EncodeContext->encoderPicInfo.h264enc.num_slice_descriptors );
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
       num_output_buffers = std::max( 1u, pDX12EncodeContext->encoderPicInfo.h265enc.num_slice_descriptors );
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
       num_output_buffers =
          std::max( 1u, pDX12EncodeContext->encoderPicInfo.av1enc.tile_rows * pDX12EncodeContext->encoderPicInfo.av1enc.tile_cols );
 #endif

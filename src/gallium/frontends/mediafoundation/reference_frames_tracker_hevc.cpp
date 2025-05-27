@@ -20,7 +20,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#if VIDEO_CODEC_H265ENC
+#if MFT_CODEC_H265ENC
 #include "reference_frames_tracker_hevc.h"
 #include <algorithm>
 #include <cmath>

@@ -1165,7 +1165,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                           &encoded_bitstream_bytes,
                                                           &metadata );
 
-#if (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)
+#if (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
                   if (pThis->m_pPipeVideoCodec->two_pass.enable &&
                      (pThis->m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0) &&
                      (pThis->m_pPipeVideoCodec->two_pass.skip_1st_dpb_texture))
@@ -1183,9 +1183,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      vpblit_params.src_surface_fence = NULL; // No need, we _just_ waited for completion above before get_feedback
                      vpblit_params.base.fence = &dst_surface_fence; // Output surface fence (driver output)
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
                      auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h264enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
                      auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h265enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
 #endif
 
@@ -1239,7 +1239,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                                                                        OS_TIMEOUT_INFINITE );
                      assert(finished);
                   }
-#endif // (VIDEO_CODEC_H264ENC || VIDEO_CODEC_H265ENC)
+#endif // (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
 
                   // Only release the reconpic AFTER working on it for two pass if needed
                   pThis->m_pGOPTracker->release_reconpic( pDX12EncodeContext->pAsyncDPBToken );

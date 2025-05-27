@@ -27,14 +27,14 @@
 
 #include <TraceLoggingProvider.h>
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 #define DEFINE_MFE_WPP_GUID ( 264, 0dc9, 401d, b9b8, 05e4eca4977e )
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
 #define DEFINE_MFE_WPP_GUID ( 265, 0dc9, 401d, b9b8, 05e4eca4977e )
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
 #define DEFINE_MFE_WPP_GUID ( aa1, 0dc9, 401d, b9b8, 05e4eca4977e )
 #else
-#error VIDEO_CODEC_xxx must be defined
+#error MFT_CODEC_xxx must be defined
 #endif
 
 #define WPP_CONTROL_GUIDS WPP_DEFINE_CONTROL_GUID( CTRLGUID_MFE, DEFINE_MFE_WPP_GUID, WPP_DEFINE_BIT( MFE_ALL ) )
@@ -64,20 +64,20 @@
 TRACELOGGING_DECLARE_PROVIDER( g_hEtwProvider );
 
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 
 #define ETW_MODULE_STR "H264Enc"
 
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
 
 #define ETW_MODULE_STR "H265Enc"
 
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
 
 #define ETW_MODULE_STR "AV1Enc"
 
 #else
-#error VIDEO_CODEC_xxx must be defined
+#error MFT_CODEC_xxx must be defined
 #endif
 
 #define HMFT_ETW_EVENT_START( EventId, this )                                                                                      \

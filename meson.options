@@ -177,17 +177,22 @@ option(
 )
 
 option(
-  'mediafoundation-windows-dll-name',
-  type : 'string',
-  value : 'mediafoundation_hmft',
-  description : 'name of gallium mediafoundation DLL built for Windows. ',
-)
-
-option(
   'mediafoundation-store-dll',
   type : 'boolean',
   value : 'false',
   description : 'Selects whether the gallium mediafoundation DLL is built for the store. ',
+)
+
+option(
+  'mediafoundation-codecs',
+  type : 'array',
+  value : ['all'],
+  choices: [
+    'all', 'h264enc', 'h265enc', 'av1enc'
+  ],
+  description : 'List of codecs to build mediafoundation frontend DLLs for. ' +
+                'These will generate different MFT DLLs per codec and link' +
+                'against the gallium drivers which uses the video-codecs option'
 )
 
 option(

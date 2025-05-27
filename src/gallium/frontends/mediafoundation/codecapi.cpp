@@ -446,7 +446,7 @@ CDX12EncHMFT::GetParameterRange( const GUID *Api, VARIANT *ValueMin, VARIANT *Va
             ValueMin->ulVal = HMFT_MIN_BITS_PER_SLICE;
             ValueMax->ulVal = 0xffffffff;
             break;
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
          case SLICE_CONTROL_MODE_MB_ROW:
             if( m_spOutputType )
             {

@@ -21,6 +21,6 @@
  * IN THE SOFTWARE.
  */
 
-#if VIDEO_CODEC_AV1ENC
+#if MFT_CODEC_AV1ENC
 
 #endif

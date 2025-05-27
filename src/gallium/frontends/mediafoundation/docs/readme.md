@@ -37,12 +37,26 @@ Other files related to the MFT:
 | src/gallium/targets/mediafoundation | dllmain and resourc files for MFT, builds the dll |
 
 ## Build
-Current implementation is designed to build three differt codec (AV1, H264, HEVC) with the same code (note AV1 is stub right now).  To build each codec, we run setup with different codec name.
+Current implementation is designed to build three differt codec (AV1, H264, HEVC) with the same code (note AV1 is stub right now).
+You can set up the build to build a single codec without comingling of other codec's code or you can build several (include all) codecs together that has comingle code.
+The comingle code currently comes from .\gallium\drivers\d3d12 folder.
 
-To build the COM based H264 codec, you can use the following command to setup the build (please run the setup under the mesa folder, and by default the output will go to c:\bin)
+To select one codec, you can do:
 
 ```
-meson setup build/ --pkg-config-path="C:\lib\pkgconfig" -Dgallium-d3d12-graphics=disabled -Dintel-elk=false -Dmicrosoft-clc=disabled -Dllvm=disabled -Dvalgrind=disabled -Dlmsensors=disabled -Dzlib=disabled -Dzstd=disabled -Dxmlconfig=disabled -Dgles1=disabled -Dgles2=disabled -Degl=disabled -Dgbm=disabled -Dglx-direct=false -Denable-glcpp-tests=false -Dopengl=false -Dgallium-drivers=d3d12 -Dgallium-vdpau=disabled -Dgallium-va=disabled -Dgallium-mediafoundation=enabled -Dc_args="/guard:cf /we4146 /we4308 /we4509 /we4510 /we4532 /we4533 /we4610 /we4700 /we4789 /wd4703" -Dc_link_args="/guard:cf /profile /DYNAMICBASE" -Dcpp_args="/guard:cf /we4146 /we4308 /we4509 /we4510 /we4532 /we4533 /we4610 /we4700 /we4789 /wd4703" -Dcpp_link_args="/guard:cf /profile /DYNAMICBASE" --default-library=static -Db_vscrt=mt -Dc_std=c17 -Dcpp_std=c++17 -Dmicrosoft-clc=disabled -Ddebug=false --buildtype=release -Dwarning_level=2 -Dvideo-codecs=h264enc -Dmediafoundation-windows-dll-name="msh264enchmft" -Dmediafoundation-store-dll=false -Dgallium-mediafoundation-test=true
+-Dvideo-codecs=h264enc -Dmediafoundation-codecs=h264enc
+```
+
+To select all codecs, you can do
+
+```
+-Dvideo-codecs=all -Dmediafoundation-codecs=all
+```
+
+Below is an example setup command that builds one codec
+
+```
+meson setup build/ --pkg-config-path="C:\lib\pkgconfig" -Dgallium-d3d12-graphics=disabled -Dintel-elk=false -Dmicrosoft-clc=disabled -Dllvm=disabled -Dvalgrind=disabled -Dlmsensors=disabled -Dzlib=disabled -Dzstd=disabled -Dxmlconfig=disabled -Dgles1=disabled -Dgles2=disabled -Degl=disabled -Dgbm=disabled -Dglx-direct=false -Denable-glcpp-tests=false -Dopengl=false -Dgallium-drivers=d3d12 -Dgallium-vdpau=disabled -Dgallium-va=disabled -Dgallium-mediafoundation=enabled -Dc_args="/guard:cf /we4146 /we4308 /we4509 /we4510 /we4532 /we4533 /we4610 /we4700 /we4789 /wd4703" -Dc_link_args="/guard:cf /profile /DYNAMICBASE" -Dcpp_args="/guard:cf /we4146 /we4308 /we4509 /we4510 /we4532 /we4533 /we4610 /we4700 /we4789 /wd4703" -Dcpp_link_args="/guard:cf /profile /DYNAMICBASE" --default-library=static -Db_vscrt=mt -Dc_std=c17 -Dcpp_std=c++17 -Dmicrosoft-clc=disabled -Ddebug=false --buildtype=release -Dwarning_level=2 -Dvideo-codecs=h264enc -Dmediafoundation-codecs=h264enc -Dmediafoundation-store-dll=false -Dgallium-mediafoundation-test=true
 ```
 
 To build the COM based HEVC codec, use the above command but replace all instances of h264enc with h265enc to setup the build.  Similarly for the pending AV1 codec, replace h264enc with av1enc.

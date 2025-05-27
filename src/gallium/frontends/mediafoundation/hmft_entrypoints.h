@@ -293,11 +293,11 @@ DEFINE_CODECAPI_GUID( AVEncVideoOutputBitsUsedMapBlockSize,"6C2CD11A-CA3B-44BD-9
 #define CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputBitsUsedMapBlockSize )
 #endif
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
 #define HMFT_GUID "8994db7c-288a-4c62-a136-a3c3c2a208a8"
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
 #define HMFT_GUID "e7ffb8eb-fa0b-4fb0-acdf-1202f663cde5"
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
 #define HMFT_GUID "1a6f3150-b121-4ce9-9497-50fedb3dcb70"
 #endif
 
@@ -348,13 +348,13 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    HRESULT InternalCheckOutputType( IMFMediaType *pType );
    HRESULT CheckMediaType( IMFMediaType *pmt, bool bInputType );
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
    HRESULT CheckMediaTypeLevel(
       IMFMediaType *pmt, int width, int height, const encoder_capabilities &encoderCapabilities, eAVEncH264VLevel *pLevel ) const;
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
    HRESULT CheckMediaTypeLevel(
       IMFMediaType *pmt, int width, int height, const encoder_capabilities &encoderCapabilities, eAVEncH265VLevel *pLevel ) const;
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
    HRESULT CheckMediaTypeLevel(
       IMFMediaType *pmt, int width, int height, const encoder_capabilities &encoderCapabilities, eAVEncAV1VLevel *pLevel ) const;
 #endif
@@ -431,25 +431,25 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    UINT32 m_uiSliceControlSize = 0;
    BOOL m_bSliceControlSizeSet = FALSE;
    BOOL m_bMaxNumRefFrameSet = FALSE;
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
    UINT32 m_uiMaxNumRefFrame = PIPE_H264_MAX_REFERENCES;
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
    UINT32 m_uiMaxNumRefFrame = PIPE_H265_MAX_REFERENCES;
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
    UINT32 m_uiMaxNumRefFrame = PIPE_AV1_MAX_REFERENCES;
 #endif
 
-#if VIDEO_CODEC_H264ENC
+#if MFT_CODEC_H264ENC
    eAVEncH264VProfile m_uiProfile = eAVEncH264VProfile_Main;
    eAVEncH264VLevel m_uiLevel = eAVEncH264VLevel5;
    const D3D12_VIDEO_ENCODER_CODEC m_Codec = D3D12_VIDEO_ENCODER_CODEC_H264;
    enum pipe_video_profile m_outputPipeProfile = PIPE_VIDEO_PROFILE_MPEG4_AVC_MAIN;
-#elif VIDEO_CODEC_H265ENC
+#elif MFT_CODEC_H265ENC
    eAVEncH265VProfile m_uiProfile = eAVEncH265VProfile_Main_420_8;
    eAVEncH265VLevel m_uiLevel = eAVEncH265VLevel5;
    const D3D12_VIDEO_ENCODER_CODEC m_Codec = D3D12_VIDEO_ENCODER_CODEC_HEVC;
    enum pipe_video_profile m_outputPipeProfile = PIPE_VIDEO_PROFILE_HEVC_MAIN;
-#elif VIDEO_CODEC_AV1ENC
+#elif MFT_CODEC_AV1ENC
    eAVEncAV1VProfile m_uiProfile = eAVEncAV1VProfile_Main_420_8;
    eAVEncAV1VLevel m_uiLevel = eAVEncAV1VLevel5;
    const D3D12_VIDEO_ENCODER_CODEC m_Codec = D3D12_VIDEO_ENCODER_CODEC_AV1;
