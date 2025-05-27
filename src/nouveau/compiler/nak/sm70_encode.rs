@@ -40,12 +40,6 @@ impl BitMutViewable for SM70Encoder<'_> {
     }
 }
 
-impl SetFieldU64 for SM70Encoder<'_> {
-    fn set_field_u64(&mut self, range: Range<usize>, val: u64) {
-        BitMutView::new(&mut self.inst).set_field_u64(range, val);
-    }
-}
-
 impl SM70Encoder<'_> {
     /// Maximum encodable UGPR
     ///

@@ -7,7 +7,6 @@ use crate::legalize::{
 };
 use bitview::{
     BitMutView, BitMutViewable, BitView, BitViewable, SetBit, SetField,
-    SetFieldU64,
 };
 
 use rustc_hash::FxHashMap;
@@ -209,12 +208,6 @@ impl BitViewable for SM20Encoder<'_> {
 impl BitMutViewable for SM20Encoder<'_> {
     fn set_bit_range_u64(&mut self, range: Range<usize>, val: u64) {
         BitMutView::new(&mut self.inst).set_bit_range_u64(range, val);
-    }
-}
-
-impl SetFieldU64 for SM20Encoder<'_> {
-    fn set_field_u64(&mut self, range: Range<usize>, val: u64) {
-        BitMutView::new(&mut self.inst).set_field_u64(range, val);
     }
 }
 

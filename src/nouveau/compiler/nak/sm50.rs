@@ -200,12 +200,6 @@ impl BitMutViewable for SM50Encoder<'_> {
     }
 }
 
-impl SetFieldU64 for SM50Encoder<'_> {
-    fn set_field_u64(&mut self, range: Range<usize>, val: u64) {
-        BitMutView::new(&mut self.inst).set_field_u64(range, val);
-    }
-}
-
 fn zero_reg() -> RegRef {
     RegRef::new(RegFile::GPR, 255, 1)
 }

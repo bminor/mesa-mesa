@@ -7,7 +7,6 @@ extern crate nvidia_headers;
 use crate::ir::{ShaderInfo, ShaderIoInfo, ShaderModel, ShaderStageInfo};
 use bitview::{
     BitMutView, BitMutViewable, BitView, BitViewable, SetBit, SetField,
-    SetFieldU64,
 };
 use nak_bindings::*;
 use nvidia_headers::classes::cla097::sph::*;
@@ -88,12 +87,6 @@ impl BitViewable for ShaderProgramHeader {
 impl BitMutViewable for ShaderProgramHeader {
     fn set_bit_range_u64(&mut self, range: Range<usize>, val: u64) {
         BitMutView::new(&mut self.data).set_bit_range_u64(range, val);
-    }
-}
-
-impl SetFieldU64 for ShaderProgramHeader {
-    fn set_field_u64(&mut self, range: Range<usize>, val: u64) {
-        BitMutView::new(&mut self.data).set_field_u64(range, val);
     }
 }
 
