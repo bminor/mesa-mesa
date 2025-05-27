@@ -954,7 +954,7 @@
         "description": "nvk: Allocate the correct VAB size on Kepler",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "970bd70584610b26198af9736e3b1a30b1373366",
         "notes": null
