@@ -163,7 +163,6 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
     * In case of packed 16-bit, we assume that has been already packed into 32 bit slots by now.
     */
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
-      const unsigned packed_location = util_bitcount64((b->shader->info.outputs_written & BITFIELD64_MASK(slot)));
       unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
 
       nir_def **output = s->out.outputs[slot];
@@ -185,7 +184,7 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
 
          nir_def *store_val = nir_vec(b, values, (unsigned)count);
          nir_store_shared(b, store_val, gs_emit_vtx_addr,
-                          .base = packed_location * 16 + start * 4,
+                          .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, slot, start),
                           .align_mul = 4);
       }
 
@@ -193,13 +192,8 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
       memset(s->out.outputs[slot], 0, sizeof(s->out.outputs[slot]));
    }
 
-   const unsigned num_32bit_outputs = util_bitcount64(b->shader->info.outputs_written);
-
    /* Store dedicated 16-bit outputs to LDS. */
    u_foreach_bit(slot, b->shader->info.outputs_written_16bit) {
-      const unsigned packed_location = num_32bit_outputs +
-         util_bitcount(b->shader->info.outputs_written_16bit & BITFIELD_MASK(slot));
-
       const unsigned mask_lo = gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
       const unsigned mask_hi = gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
       unsigned mask = mask_lo | mask_hi;
@@ -221,7 +215,7 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
 
          nir_def *store_val = nir_vec(b, values, (unsigned)count);
          nir_store_shared(b, store_val, gs_emit_vtx_addr,
-                          .base = packed_location * 16 + start * 4,
+                          .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_VAR0_16BIT + slot, start),
                           .align_mul = 4);
       }
 
@@ -387,9 +381,6 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
    }
 
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
-      const unsigned packed_location =
-         util_bitcount64((b->shader->info.outputs_written & BITFIELD64_MASK(slot)));
-
       unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
 
       while (mask) {
@@ -397,7 +388,7 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
          u_bit_scan_consecutive_range(&mask, &start, &count);
          nir_def *load =
             nir_load_shared(b, count, 32, exported_out_vtx_lds_addr,
-                            .base = packed_location * 16 + start * 4,
+                            .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, slot, start),
                             .align_mul = 4);
 
          for (int i = 0; i < count; i++)
@@ -405,13 +396,8 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
       }
    }
 
-   const unsigned num_32bit_outputs = util_bitcount64(b->shader->info.outputs_written);
-
    /* Dedicated 16-bit outputs. */
    u_foreach_bit(i, b->shader->info.outputs_written_16bit) {
-      const unsigned packed_location = num_32bit_outputs +
-         util_bitcount(b->shader->info.outputs_written_16bit & BITFIELD_MASK(i));
-
       const unsigned mask_lo = gs_output_component_mask_with_stream(&s->out.infos_16bit_lo[i], 0);
       const unsigned mask_hi = gs_output_component_mask_with_stream(&s->out.infos_16bit_hi[i], 0);
       unsigned mask = mask_lo | mask_hi;
@@ -421,7 +407,7 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
          u_bit_scan_consecutive_range(&mask, &start, &count);
          nir_def *load =
             nir_load_shared(b, count, 32, exported_out_vtx_lds_addr,
-                            .base = packed_location * 16 + start * 4,
+                            .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_VAR0_16BIT + i, start),
                             .align_mul = 4);
 
          for (int j = 0; j < count; j++) {
@@ -639,11 +625,12 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
       /* Load the positions from LDS. */
       nir_def *pos[3][4];
       for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
-         /* VARYING_SLOT_POS == 0, so base won't count packed location */
-         pos[i][3] = nir_load_shared(b, 1, 32, vtxptr[i], .base = 12); /* W */
-         nir_def *xy = nir_load_shared(b, 2, 32, vtxptr[i], .base = 0, .align_mul = 4);
-         pos[i][0] = nir_channel(b, xy, 0);
-         pos[i][1] = nir_channel(b, xy, 1);
+         /* Load X, Y, W position components. */
+         for (unsigned c = 0; c < 4; c == 1 ? c += 2 : c++) {
+            pos[i][c] = nir_load_shared(b, 1, 32, vtxptr[i],
+                                        .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_POS, c),
+                                        .align_mul = 4);
+         }
 
          pos[i][0] = nir_fdiv(b, pos[i][0], pos[i][3]);
          pos[i][1] = nir_fdiv(b, pos[i][1], pos[i][3]);
@@ -806,7 +793,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
             ac_nir_ngg_build_streamout_vertex(b, info, stream, so_buffer,
                                        stream_buffer_offsets, i,
                                        exported_vtx_lds_addr[i],
-                                       &s->out, false);
+                                       &s->out);
          }
       }
       nir_pop_if(b, if_emit);
@@ -903,16 +890,10 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    assert(impl);
 
-   /* Add 4 for primflags. */
-   *out_lds_vertex_size = (util_bitcount64(shader->info.outputs_written) +
-                           util_bitcount(shader->info.outputs_written_16bit)) * 16 + 4;
-
    lower_ngg_gs_state state = {
       .options = options,
       .impl = impl,
       .max_num_waves = DIV_ROUND_UP(options->max_workgroup_size, options->wave_size),
-      .lds_offs_primflags = *out_lds_vertex_size - 4,
-      .lds_bytes_per_gs_out_vertex = *out_lds_vertex_size,
       .streamout_enabled = shader->xfb_info && !options->disable_streamout,
    };
 
@@ -962,6 +943,11 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
     * gathers output values, which must be done while lowering GS intrinsics and not before.
     */
    gather_output_stores(shader, &state);
+   ac_nir_compute_prerast_packed_output_info(&state.out);
+   state.lds_offs_primflags = state.out.total_packed_gs_out_size;
+   /* Make the vertex size in LDS be an odd number of dwords (| 0x4) to reduce LDS bank conflicts. */
+   state.lds_bytes_per_gs_out_vertex = (state.out.total_packed_gs_out_size + 4 /*primflags*/) | 0x4;
+
    lower_ngg_gs_intrinsics(shader, &state);
 
    if (state.streamout_enabled)
@@ -995,5 +981,7 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
    /* Cleanup */
    nir_lower_vars_to_ssa(shader);
    nir_remove_dead_variables(shader, nir_var_function_temp, NULL);
+
+   *out_lds_vertex_size = state.lds_bytes_per_gs_out_vertex;
    return nir_progress(true, impl, nir_metadata_none);
 }

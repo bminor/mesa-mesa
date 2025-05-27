@@ -228,13 +228,19 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
                                        nir_def *buffer_offsets_ret[4],
                                        nir_def *emit_prim_ret[4]);
 
+unsigned
+ac_nir_get_lds_gs_out_slot_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component);
+
+unsigned
+ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component,
+                              bool data_is_16bit);
+
 void
 ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
                                   unsigned stream, nir_def *so_buffer[4],
                                   nir_def *buffer_offsets[4],
                                   unsigned vertex_index, nir_def *vtx_lds_addr,
-                                  ac_nir_prerast_out *pr_out,
-                                  bool skip_primitive_id);
+                                  ac_nir_prerast_out *pr_out);
 
 void
 ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
