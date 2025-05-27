@@ -876,6 +876,18 @@ lower_bitfield_reverse64(nir_builder *b, nir_def *x)
    return nir_pack_64_2x32_split(b, hi_rev, lo_rev);
 }
 
+static nir_def *
+lower_bitfield_extract64(nir_builder *b, nir_def *base, nir_def *offset, nir_def *bits, bool is_signed)
+{
+   nir_def *tmp0 = nir_isub_imm(b, 64, bits);
+   nir_def *tmp1 = nir_isub(b, tmp0, offset);
+   nir_def *tmp2 = nir_ishl(b, base, tmp1);
+
+   nir_def *res = is_signed ? nir_ishr(b, tmp2, tmp0) : nir_ushr(b, tmp2, tmp0);
+
+   return nir_bcsel(b, nir_ieq_imm(b, bits, 0), nir_imm_int64(b, 0), res);
+}
+
 nir_lower_int64_options
 nir_lower_int64_op_to_options_mask(nir_op opcode)
 {
@@ -958,6 +970,9 @@ nir_lower_int64_op_to_options_mask(nir_op opcode)
       return nir_lower_bit_count64;
    case nir_op_bitfield_reverse:
       return nir_lower_bitfield_reverse64;
+   case nir_op_ibitfield_extract:
+   case nir_op_ubitfield_extract:
+      return nir_lower_bitfield_extract64;
    default:
       return 0;
    }
@@ -1064,6 +1079,9 @@ lower_int64_alu_instr(nir_builder *b, nir_alu_instr *alu)
       return lower_bit_count64(b, src[0]);
    case nir_op_bitfield_reverse:
       return lower_bitfield_reverse64(b, src[0]);
+   case nir_op_ibitfield_extract:
+   case nir_op_ubitfield_extract:
+      return lower_bitfield_extract64(b, src[0], src[1], src[2], alu->op == nir_op_ibitfield_extract);
    case nir_op_i2f64:
    case nir_op_i2f32:
    case nir_op_i2f16:
