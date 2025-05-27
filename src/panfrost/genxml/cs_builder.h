@@ -2184,7 +2184,7 @@ cs_trace_run_idvs2(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
 
    for (unsigned i = 0; i < 64; i += 16)
       cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
-               cs_trace_field_offset(run_idvs2, sr[0]) + i + sizeof(uint32_t));
+               cs_trace_field_offset(run_idvs2, sr[0]) + i * sizeof(uint32_t));
    cs_store(b, cs_reg_tuple(b, 64, 2), tracebuf_addr, BITFIELD_MASK(2),
             cs_trace_field_offset(run_idvs2, sr[64]));
    cs_flush_stores(b);
