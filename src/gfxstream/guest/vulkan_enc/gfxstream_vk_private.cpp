@@ -6,6 +6,7 @@
 #include "gfxstream_vk_private.h"
 
 #include "vk_sync_dummy.h"
+#include "vulkan/vulkan_core.h"
 
 /* Under the assumption that Mesa VK runtime queue submission is used, WSI flow
  * sets this temporary state to a dummy sync type (when no explicit dma-buf
@@ -57,4 +58,20 @@ std::vector<VkSemaphoreSubmitInfo> transformVkSemaphoreSubmitInfoList(
         }
     }
     return outSemaphoreSubmitInfo;
+}
+
+float linearChannelToSRGB(float cl)
+{
+    if (cl <= 0.0f)
+        return 0.0f;
+    else if (cl < 0.0031308f)
+        return 12.92f * cl;
+    else if (cl < 1.0f)
+        return 1.055f * pow(cl, 0.41666f) - 0.055f;
+    else
+        return 1.0f;
+}
+
+float srgbFormatNeedsConversionForClearColor(const VkFormat& format) {
+    return format == VK_FORMAT_R8G8B8A8_SRGB;
 }

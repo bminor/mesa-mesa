@@ -142,4 +142,7 @@ std::vector<VkFence> transformVkFenceList(const VkFence* pFences, uint32_t fence
 std::vector<VkSemaphoreSubmitInfo> transformVkSemaphoreSubmitInfoList(
     const VkSemaphoreSubmitInfo* pSemaphoreSubmitInfos, uint32_t semaphoreSubmitInfoCount);
 
+float linearChannelToSRGB(float cl);
+float srgbFormatNeedsConversionForClearColor(const VkFormat& format);
+
 #endif /* GFXSTREAM_VK_PRIVATE_H */

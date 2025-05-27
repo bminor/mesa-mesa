@@ -24,6 +24,7 @@
 #include "goldfish_vk_transform_guest.h"
 #include "util/perf/cpu_trace.h"
 #include "util/detect_os.h"
+#include "vulkan/vulkan_core.h"
 
 /// Use installed headers or locally defined Fuchsia-specific bits
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -561,6 +562,10 @@ class ResourceTracker {
         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+
+    void on_vkCmdClearColorImage(void* context, VkCommandBuffer commandBuffer, VkImage image,
+                                 VkImageLayout imageLayout, const VkClearColorValue* pColor,
+                                 uint32_t rangeCount, const VkImageSubresourceRange* pRanges);
 
     void on_vkDestroyDescriptorSetLayout(void* context, VkDevice device,
                                          VkDescriptorSetLayout descriptorSetLayout,

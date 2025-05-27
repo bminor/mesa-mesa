@@ -85,6 +85,7 @@ RESOURCE_TRACKER_ENTRIES = [
     "vkQueueSignalReleaseImageANDROID",
     "vkCmdPipelineBarrier",
     "vkCreateGraphicsPipelines",
+    "vkCmdClearColorImage",
     # Fuchsia
     "vkGetMemoryZirconHandleFUCHSIA",
     "vkGetMemoryZirconHandlePropertiesFUCHSIA",

@@ -14,6 +14,7 @@
 #include "goldfish_address_space.h"
 #include "goldfish_vk_private_defs.h"
 #include "util/anon_file.h"
+#include "util/log.h"
 #include "util/macros.h"
 #include "vulkan/vulkan_core.h"
 #include "util/detect_os.h"
@@ -7367,6 +7368,39 @@ void ResourceTracker::on_vkCmdPipelineBarrier(
                               memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                               pBufferMemoryBarriers, updatedImageMemoryBarriers.size(),
                               updatedImageMemoryBarriers.data(), true /* do lock */);
+}
+
+void ResourceTracker::on_vkCmdClearColorImage(void* context, VkCommandBuffer commandBuffer, VkImage image,
+                             VkImageLayout imageLayout, const VkClearColorValue* pColor,
+                             uint32_t rangeCount, const VkImageSubresourceRange* pRanges) {
+    VkEncoder* enc = (VkEncoder*)context;
+    auto imageInfoIt = info_VkImage.find(image);
+    if (!pColor) {
+        mesa_loge("%s: Null VkClearColorValue requested", __func__);
+        return;
+    }
+    if (imageInfoIt == info_VkImage.end()) {
+        mesa_loge("%s: Failed to find image required for vkCmdClearColorImage", __func__);
+        return;
+    }
+
+    auto& imageInfo = imageInfoIt->second;
+    VkFormat actualFormat = imageInfo.createInfo.format;
+    VkClearColorValue convertedColor = *pColor;
+
+    // Color buffer image on the host will be created with UNORM format to ensure
+    // it'll have the identical parameters, so we need to convert the linearized
+    // clear color back to sRGB at this point.
+    // TODO(b/420857458): revise the allocation logic to support mutable formats better
+    if (srgbFormatNeedsConversionForClearColor(actualFormat)) {
+       // Perform linear to srgb conversion
+       // Backing image is UNORM for vkCmdClearColorImage so we convert pColor
+       convertedColor.float32[0] = linearChannelToSRGB(convertedColor.float32[0]);
+       convertedColor.float32[1] = linearChannelToSRGB(convertedColor.float32[1]);
+       convertedColor.float32[2] = linearChannelToSRGB(convertedColor.float32[2]);
+    }
+    enc->vkCmdClearColorImage(commandBuffer, image, imageLayout, &convertedColor, rangeCount, pRanges, true);
+    return;
 }
 
 void ResourceTracker::on_vkDestroyDescriptorSetLayout(void* context, VkDevice device,
