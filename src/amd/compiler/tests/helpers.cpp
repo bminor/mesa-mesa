@@ -302,6 +302,26 @@ finish_to_hw_instr_test()
 }
 
 void
+finish_lower_branches_test()
+{
+   finish_program(program.get(), true, true);
+
+   if (!aco::validate_ir(program.get())) {
+      fail_test("Validation before lower_branches failed");
+      return;
+   }
+
+   aco::lower_branches(program.get());
+
+   if (!aco::validate_ir(program.get())) {
+      fail_test("Validation after lower_branches failed");
+      return;
+   }
+
+   aco_print_program(program.get(), output);
+}
+
+void
 finish_schedule_vopd_test()
 {
    finish_program(program.get());

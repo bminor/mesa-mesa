@@ -74,6 +74,7 @@ void finish_lower_subdword_test();
 void finish_ra_test(aco::ra_test_policy);
 void finish_optimizer_postRA_test();
 void finish_to_hw_instr_test();
+void finish_lower_branches_test();
 void finish_schedule_vopd_test();
 void finish_waitcnt_test();
 void finish_insert_nops_test(bool endpgm = true);
