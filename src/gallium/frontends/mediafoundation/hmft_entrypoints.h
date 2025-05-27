@@ -254,6 +254,41 @@ typedef enum IntraRefreshMode
 // Used by to return the QP map of the current frame
 DEFINE_GUID( MFSampleExtension_VideoEncodeQPMap, 0x2c68a331, 0xb712, 0x49ca, 0x86, 0xa, 0x3a, 0x1d, 0x58, 0x23, 0x7d, 0x88 );
 
+
+#ifndef CODECAPI_AVEncVideoEnableFramePsnrYuv
+// AVEncVideoEnableFramePsnrYuv (BOOL)
+// Indicates whether to enable or disable reporting frame PSNR of YUV planes for video encoding.
+// VARIANT_FALSE: disable; VARIANT_TRUE: enable
+DEFINE_CODECAPI_GUID( AVEncVideoEnableFramePsnrYuv,"2BBCDD1D-BC47-430E-B2E8-64801B47F5F0", 0x2bbcdd1d, 0xbc47, 0x430e, 0xb2, 0xe8, 0x64, 0x80, 0x1b, 0x47, 0xf5, 0xf0 )
+#define CODECAPI_AVEncVideoEnableFramePsnrYuv DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableFramePsnrYuv )
+#endif
+
+#ifndef CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization
+// AVEncVideoEnableSpatialAdaptiveQuantization (BOOL)
+// Indicates whether to enable or disable spatial adaptive quantization for video encoding.
+// VARIANT_FALSE: disable; VARIANT_TRUE: enable
+DEFINE_CODECAPI_GUID( AVEncVideoEnableSpatialAdaptiveQuantization,"659CB943-15CA-448D-B99A-875619DB4DE4", 0x659cb943, 0x15ca, 0x448d, 0xb9, 0x9a, 0x87, 0x56, 0x19, 0xdb, 0x4d, 0xe4 )
+#define CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization       DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableSpatialAdaptiveQuantization )
+#endif
+
+#ifndef CODECAPI_AVEncVideoOutputQPMapBlockSize
+// AVEncVideoOutputQPMapBlockSize (VT_UI4)
+// The block size used in reporting the output QP map for each block in an encoded video frame.
+// ulVal should be zero or power of 2, such as 16 or 32, etc.
+// Zero value is used to disable the QP map reporting.
+DEFINE_CODECAPI_GUID( AVEncVideoOutputQPMapBlockSize,"97038743-4AE3-44C3-A0F2-5BD58A4634EF", 0x97038743, 0x4ae3, 0x44c3, 0xa0, 0xf2, 0x5b, 0xd5, 0x8a, 0x46, 0x34, 0xef )
+#define CODECAPI_AVEncVideoOutputQPMapBlockSize       DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputQPMapBlockSize )
+#endif
+
+#ifndef CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize
+// AVEncVideoOutputBitsUsedMapBlockSize (VT_UI4)
+// The block size used in reporting the output bits used map for each block in an encoded video frame.
+// ulVal should be zero or power of 2, such as 16 or 32, etc.
+// Zero value is used to disable the bits used map reporting.
+DEFINE_CODECAPI_GUID( AVEncVideoOutputBitsUsedMapBlockSize,"6C2CD11A-CA3B-44BD-9A9E-93B03634C36E", 0x6c2cd11a, 0xca3b, 0x44bd, 0x9a, 0x9e, 0x93, 0xb0, 0x36, 0x34, 0xc3, 0x6e )
+#define CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputBitsUsedMapBlockSize )
+#endif
+
 #if VIDEO_CODEC_H264ENC
 #define HMFT_GUID "8994db7c-288a-4c62-a136-a3c3c2a208a8"
 #elif VIDEO_CODEC_H265ENC
@@ -431,6 +466,11 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
 
    BOOL m_bLowLatency = FALSE;
    BOOL m_bCabacEnable = TRUE;
+
+   BOOL m_bVideoEnableFramePsnrYuv = FALSE;
+   BOOL m_bVideoEnableSpatialAdaptiveQuantization = FALSE;
+   UINT32 m_uiVideoOutputQPMapBlockSize = 0;
+   UINT32 m_uiVideoOutputBitsUsedMapBlockSize = 0;
 
    struct pipe_video_codec *m_pPipeVideoCodec = nullptr;
    reference_frames_tracker *m_pGOPTracker = nullptr;

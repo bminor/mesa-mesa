@@ -757,6 +757,26 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
       Value->vt = VT_UI4;
       Value->ulVal = m_bVideoROIEnabled;
    }
+   else if( *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = m_bVideoEnableFramePsnrYuv;
+   }
+   else if( *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = m_bVideoEnableSpatialAdaptiveQuantization;
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = m_uiVideoOutputQPMapBlockSize;
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = m_uiVideoOutputBitsUsedMapBlockSize;
+   }
    else
    {
       hr = E_NOTIMPL;
@@ -1374,6 +1394,42 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_uiDirtyRectEnabled = Value->ulVal;
+   }
+   else if( *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoEnableFramePsnrYuv - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      m_bVideoEnableFramePsnrYuv = Value->ulVal ? TRUE : FALSE;
+   }
+   else if( *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      m_bVideoEnableSpatialAdaptiveQuantization = Value->ulVal ? TRUE : FALSE;
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoOutputQPMapBlockSize - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 || ( Value->ulVal & ( Value->ulVal - 1 ) ) )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      m_uiVideoOutputQPMapBlockSize = Value->ulVal;
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 || ( Value->ulVal & ( Value->ulVal - 1 ) ) )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      m_uiVideoOutputBitsUsedMapBlockSize = Value->ulVal;
    }
    else
    {
