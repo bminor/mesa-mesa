@@ -182,7 +182,7 @@ rusticl_llvm_bindings_rs = rust.bindgen(
   args : [
     bindgen_output_args,
     # we want to limit what to generate bindings for
-    '--generate', 'constructors,functions,types',
+    '--generate', 'constructors,functions,types,vars',
     # and all types will be opaque
     '--opaque-type', '.*',
     # LLVM/Clang/Translator stuff, only used for build-id
@@ -190,6 +190,7 @@ rusticl_llvm_bindings_rs = rust.bindgen(
     '--allowlist-function', 'clang::getClangFullVersion',
     '--allowlist-function', 'llvm::LLVMContext::LLVMContext',
     '--allowlist-function', 'llvm::writeSpirv',
+    '--allowlist-var', 'LLVM_VERSION_.*'
   ],
 )
 
