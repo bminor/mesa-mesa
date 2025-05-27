@@ -44,6 +44,11 @@ buildah_export() {
         exit 1
     fi
 
+    # These components will be provided via LAVA overlays,
+    # so remove them from the core rootfs
+    rm -rf "${mountpoint}/vkd3d-proton-tests"
+    rm -rf "${mountpoint}/vkd3d-proton-wine64"
+
     # Compress to zstd
     ZSTD_CLEVEL=10 tar -C "$mountpoint" -I zstd -cf "$2" .
 }

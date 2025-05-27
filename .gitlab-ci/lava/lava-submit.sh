@@ -69,6 +69,16 @@ if [ -n "${HWCI_KERNEL_MODULES:-}" ]; then
 		  --format=tar
 	)
 fi
+if [ -n "${VKD3D_PROTON_TAG:-}" ]; then
+	LAVA_EXTRA_OVERLAYS+=(
+		- append-overlay
+		  --name=vkd3d-proton
+		  --url="$(find_s3_project_artifact "${DATA_STORAGE_PATH}/vkd3d-proton/${VKD3D_PROTON_TAG}/${MESA_IMAGE_PATH}/vkd3d-proton.tar.zst")"
+		  --path="/"
+		  --format=tar
+		  --compression=zstd
+	)
+fi
 
 PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--farm "${FARM}" \
