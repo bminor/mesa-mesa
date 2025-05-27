@@ -6,7 +6,6 @@
 #include "util/macros.h"
 #include "agx_builder.h"
 #include "agx_compiler.h"
-#include "agx_minifloat.h"
 #include "agx_opcodes.h"
 
 /* AGX peephole optimizer responsible for instruction combining. It operates in

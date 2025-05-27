@@ -6,6 +6,8 @@
 #pragma once
 
 #include <math.h>
+#include <stdbool.h>
+#include <string.h>
 #include "util/macros.h"
 
 /* AGX includes an 8-bit floating-point format for small dyadic immediates,

@@ -9,6 +9,8 @@ inc_asahi = include_directories([
    '.', 'layout', 'lib', 'genxml', 'compiler'
 ])
 
+subdir('isa')
+
 if with_gallium_asahi or with_asahi_vk or with_tools.contains('asahi')
    subdir('genxml')
    subdir('libagx')

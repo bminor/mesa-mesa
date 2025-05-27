@@ -7,6 +7,7 @@
 
 #include "agx_compile.h"
 #include "asahi/clc/asahi_clc.h"
+#include "asahi/isa/disasm.h"
 #include "asahi/layout/layout.h"
 #include "asahi/lib/agx_abi.h"
 #include "compiler/nir/nir_builder.h"
@@ -3647,8 +3648,41 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
       }
    }
 
-   ralloc_free(ctx);
+   /*
+    * Disassemble if the environment variable is set. Also disassemble to
+    * /dev/null in debug builds as a smoke test - a legally encoded shader
+    * should not hit any disassembler errors.
+    */
+   bool dump_shaders = agx_should_dump(nir, AGX_DBG_SHADERS);
+#ifndef NDEBUG
+   bool selftest = !dump_shaders;
+#else
+   bool selftest = false;
+#endif
 
+   if (dump_shaders || selftest) {
+      FILE *fp = selftest ? fopen("/dev/null", "w") : stdout;
+      bool errors =
+         agx2_disassemble(binary->data + offset, binary->size - offset, fp);
+
+      if (errors) {
+         /* In a self-test, disassemble again to get something the user can look
+          * at to figure out what went wrong.
+          */
+         if (selftest) {
+            agx2_disassemble(binary->data + offset, binary->size - offset,
+                             stderr);
+         }
+
+         unreachable("Disassembly error hit.");
+      }
+
+      if (selftest) {
+         fclose(fp);
+      }
+   }
+
+   ralloc_free(ctx);
    return offset;
 }
 

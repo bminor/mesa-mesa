@@ -16,6 +16,7 @@
 #include <sys/mman.h>
 #include <agx_pack.h>
 
+#include "asahi/isa/disasm.h"
 #include "util/u_hexdump.h"
 #include "decode.h"
 
@@ -24,7 +25,8 @@ struct libagxdecode_config lib_config;
 static void
 agx_disassemble(void *_code, size_t maxlen, FILE *fp)
 {
-   /* stub */
+   bool errors = agx2_disassemble(_code, maxlen, fp);
+   assert(!errors);
 }
 
 FILE *agxdecode_dump_stream;

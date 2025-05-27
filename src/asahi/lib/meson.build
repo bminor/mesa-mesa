@@ -36,6 +36,7 @@ libasahi_decode = static_library(
   dependencies : [dep_valgrind, idep_mesautil],
   c_args : [no_override_init_args, '-Wno-c2x-extensions'],
   gnu_symbol_visibility : 'hidden',
+  link_with : [libagx2_disasm],
   build_by_default : false,
 )
 
@@ -45,6 +46,7 @@ libasahi_decode_shared = shared_library(
   dependencies : [dep_valgrind, idep_mesautil],
   c_args : [no_override_init_args, '-Wno-c2x-extensions'],
   build_by_default : with_tools.contains('asahi'),
+  link_with : [libagx2_disasm],
 )
 
 libagx_shaders = custom_target(

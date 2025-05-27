@@ -6,13 +6,13 @@
 
 #pragma once
 
+#include "asahi/isa/agx_minifloat.h"
 #include "compiler/nir/nir.h"
 #include "util/half_float.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
 #include "util/u_worklist.h"
 #include "agx_compile.h"
-#include "agx_minifloat.h"
 #include "agx_opcodes.h"
 
 #ifdef __cplusplus
