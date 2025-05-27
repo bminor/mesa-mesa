@@ -931,11 +931,11 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
    nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
                          .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
 
+   /* Lower the GS intrinsics (it also gathers ac_nir_prerast_out) */
+   lower_ngg_gs_intrinsics(shader, &state);
+
    if (state.streamout_enabled)
       ngg_gs_build_streamout(b, &state);
-
-   /* Lower the GS intrinsics */
-   lower_ngg_gs_intrinsics(shader, &state);
 
    if (!state.vertex_count[0]) {
       fprintf(stderr, "Could not find set_vertex_and_primitive_count for stream 0. This would hang your GPU.");
