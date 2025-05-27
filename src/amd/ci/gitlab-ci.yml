@@ -361,6 +361,17 @@ radv-fossils:
 
 ############### vkd3d-proton
 
+radv-raven-vkd3d:
+  extends:
+    - .lava-x86_64-test-vk
+    - .test-vkd3d-proton
+    - .radv-raven-test:x86_64
+    - .lava-hp-x360-14a-cb0001xx-zork:x86_64
+  variables:
+    GPU_VERSION: radv-raven
+    # Random tests fail/crash when trying to run them in parallel
+    FDO_CI_CONCURRENT: 1
+
 radv-tahiti-vkd3d:
   extends:
     - .ci-tron-test-radv-vk
