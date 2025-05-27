@@ -378,6 +378,7 @@ struct D3D12EncodeConfiguration
    struct d3d12_resource *m_GPUQPStatsResource = NULL;
    struct d3d12_resource *m_GPUSATDStatsResource = NULL;
    struct d3d12_resource *m_GPURCBitAllocationStatsResource = NULL;
+   struct d3d12_resource *m_GPUPSNRAllocationStatsResource = NULL;
    struct
    {
       //
@@ -737,7 +738,8 @@ void
 d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD3D12Enc,
                                                   struct pipe_resource* qpmap,
                                                   struct pipe_resource* satdmap,
-                                                  struct pipe_resource* rcbitsmap);
+                                                  struct pipe_resource* rcbitsmap,
+                                                  struct pipe_resource* psnrmap);
 
 bool
 d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc);
