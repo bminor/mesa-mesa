@@ -206,6 +206,13 @@ lower_vtg_io_intrin(nir_builder *b,
          comps = 1;
       assert(!(c_addr & 0x3));
 
+      /* Vector load/store with non-constant offsets don't work pre-Maxwell.
+       * They encode fine and they don't throw any shader exceptions but the
+       * seem to get stuck in the hardware and we get context timeouts.
+       */
+      if (nak->sm < 50 && !offset_is_const)
+         comps = 1;
+
       nir_def *c_offset = offset;
       if (flags.phys) {
          /* Physical addressing has to be scalar */
