@@ -19,29 +19,13 @@ const struct drm_driver_descriptor descriptor_name = {         \
    ##__VA_ARGS__                                               \
 };
 
-/* The static pipe loader refers to the *_driver_descriptor structs for all
+/* The pipe loader refers to the *_driver_descriptor structs for all
  * drivers, regardless of whether they are configured in this Mesa build, or
  * whether they're included in the specific gallium target.  The target (dri,
  * vdpau, etc.) will include this header with the #defines for the specific
  * drivers it's including, and the disabled drivers will have a descriptor
  * with a stub create function logging the failure.
- *
- * The dynamic pipe loader instead has target/pipeloader/pipe_*.c including
- * this header in a pipe_*.so for each driver which will have one driver's
- * GALLIUM_* defined.  We make a single driver_descriptor entrypoint that is
- * dlsym()ed by the dynamic pipe loader.
  */
-
-#ifdef PIPE_LOADER_DYNAMIC
-
-#define DRM_DRIVER_DESCRIPTOR(driver, driconf, driconf_count, ...)      \
-   PUBLIC DEFINE_DRM_DRIVER_DESCRIPTOR(driver_descriptor, driver, driconf, driconf_count, pipe_##driver##_create_screen, __VA_ARGS__)
-
-#define DRM_DRIVER_DESCRIPTOR_STUB(driver)
-
-#define DRM_DRIVER_DESCRIPTOR_ALIAS(driver, alias, driconf, driconf_count)
-
-#else
 
 #define DRM_DRIVER_DESCRIPTOR(driver, driconf, driconf_count, ...)      \
    DEFINE_DRM_DRIVER_DESCRIPTOR(driver##_driver_descriptor, driver, driconf, driconf_count, pipe_##driver##_create_screen, __VA_ARGS__)
@@ -58,8 +42,6 @@ const struct drm_driver_descriptor descriptor_name = {         \
 #define DRM_DRIVER_DESCRIPTOR_ALIAS(driver, alias, driconf, driconf_count) \
    DEFINE_DRM_DRIVER_DESCRIPTOR(alias##_driver_descriptor, alias, driconf, \
                                 driconf_count, pipe_##driver##_create_screen, NULL)
-
-#endif
 
 #ifdef GALLIUM_KMSRO_ONLY
 #undef GALLIUM_V3D
