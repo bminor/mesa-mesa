@@ -56,6 +56,19 @@ typedef struct
    uint8_t as_varying_mask : 4;
    /* Bitmask of components that are used as sysval, 1 bit per component. */
    uint8_t as_sysval_mask : 4;
+   /* Prefix sum over all component masks. Used by the GS outputs in LDS for NGG GS.
+    * This is set even if components_mask is 0, in which case it's the offset after the last output.
+    */
+   uint16_t packed_slot_gs_out_offset : 12;
+   /* Prefix sum over all component masks. Used by XFB outputs in LDS for NGG VS and TES.
+    * This is set even if xfb_components_mask is 0, in which case it's the offset after the last output.
+    * For NGG GS, it's equal to packed_slot_gs_out_offset because NGG GS has all outputs in LDS.
+    */
+   uint16_t packed_slot_xfb_lds_offset : 12;
+   /* Bitmask of components written by XFB: 4 bits per slot, 1 bit per component.
+    * For NGG GS, it's equal to components_mask because NGG GS has all outputs in LDS.
+    */
+   uint8_t xfb_lds_components_mask : 4;
 } ac_nir_prerast_per_output_info;
 
 typedef struct
@@ -71,6 +84,10 @@ typedef struct
    ac_nir_prerast_per_output_info infos[VARYING_SLOT_MAX];
    ac_nir_prerast_per_output_info infos_16bit_lo[16];
    ac_nir_prerast_per_output_info infos_16bit_hi[16];
+
+   /* The size of all components, packed. */
+   uint16_t total_packed_gs_out_size;
+   uint16_t total_packed_xfb_lds_size;
 } ac_nir_prerast_out;
 
 typedef struct {
@@ -225,6 +242,9 @@ ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
                                        ac_nir_wg_repack_result *results, const unsigned num_repacks,
                                        nir_def *lds_addr_base, unsigned max_num_waves,
                                        unsigned wave_size);
+
+void
+ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out);
 
 #ifdef __cplusplus
 }

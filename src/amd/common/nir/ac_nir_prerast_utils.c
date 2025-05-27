@@ -168,6 +168,22 @@ void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr
          type[c] = src_type;
       }
    }
+
+   /* GS stores all outputs in LDS, while VS/TES only store XFB outputs in LDS. */
+   if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
+      info->xfb_lds_components_mask |= write_mask << component_offset;
+   } else {
+      info->xfb_lds_components_mask |= nir_instr_xfb_write_mask(intrin) & (write_mask << component_offset);
+
+      /* For VS, we store edge flags in LDS where the LDS space is shared with XFB, so we need
+       * to include edge flags in the XFB LDS size even though XFB doesn't use it.
+       * Only the prim export uses it.
+       */
+      if (b->shader->info.stage == MESA_SHADER_VERTEX && slot == VARYING_SLOT_EDGE) {
+         assert(write_mask == 0x1);
+         info->xfb_lds_components_mask |= write_mask;
+      }
+   }
 }
 
 static nir_intrinsic_instr *
@@ -1398,4 +1414,47 @@ ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
                            .base = vertex_offset[store_buffer_index] + store_offset,
                            .access = ACCESS_NON_TEMPORAL);
    }
+}
+
+/* Determine optimal output packing based on component masks, and set packed offsets. */
+void
+ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out)
+{
+   unsigned gs_out_offset = 0;
+   unsigned xfb_lds_offset = 0;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(pr_out->infos); i++) {
+      assert(gs_out_offset < BITFIELD_BIT(12));
+      assert(xfb_lds_offset < BITFIELD_BIT(12));
+      pr_out->infos[i].packed_slot_gs_out_offset = gs_out_offset;
+      pr_out->infos[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
+
+      if (pr_out->infos[i].components_mask)
+         gs_out_offset += util_bitcount(pr_out->infos[i].components_mask) * 4;
+      if (pr_out->infos[i].xfb_lds_components_mask)
+         xfb_lds_offset += util_bitcount(pr_out->infos[i].xfb_lds_components_mask) * 4;
+   }
+
+   for (unsigned i = 0; i < ARRAY_SIZE(pr_out->infos_16bit_lo); i++) {
+      unsigned component_mask = pr_out->infos_16bit_lo[i].components_mask |
+                                pr_out->infos_16bit_hi[i].components_mask;
+      unsigned xfb_component_mask = pr_out->infos_16bit_lo[i].xfb_lds_components_mask |
+                                    pr_out->infos_16bit_hi[i].xfb_lds_components_mask;
+      assert(gs_out_offset < BITFIELD_BIT(12));
+      assert(xfb_lds_offset < BITFIELD_BIT(12));
+      pr_out->infos_16bit_lo[i].packed_slot_gs_out_offset = gs_out_offset;
+      pr_out->infos_16bit_hi[i].packed_slot_gs_out_offset = gs_out_offset;
+      pr_out->infos_16bit_lo[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
+      pr_out->infos_16bit_hi[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
+
+      if (component_mask)
+         gs_out_offset += util_bitcount(component_mask) * 4;
+      if (xfb_component_mask)
+         xfb_lds_offset += util_bitcount(xfb_component_mask) * 4;
+   }
+
+   assert(gs_out_offset < BITFIELD_BIT(16));
+   assert(xfb_lds_offset < BITFIELD_BIT(16));
+   pr_out->total_packed_gs_out_size = gs_out_offset;
+   pr_out->total_packed_xfb_lds_size = xfb_lds_offset;
 }
