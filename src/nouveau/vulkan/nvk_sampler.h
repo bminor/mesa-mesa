@@ -32,10 +32,8 @@ struct nvk_sampler_capture {
    } planes[NVK_MAX_SAMPLER_PLANES];
 };
 
-static void
-nvk_sampler_fill_header(const struct nvk_physical_device *pdev,
-                        const struct VkSamplerCreateInfo *info,
-                        const struct vk_sampler *vk_sampler,
-                        uint32_t *samp);
+void
+nvk_fill_txf_sampler_header(const struct nvk_physical_device *pdev,
+                            uint32_t *samp);
 
 #endif

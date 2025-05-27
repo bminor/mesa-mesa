@@ -282,6 +282,30 @@ nvk_sampler_fill_header(const struct nvk_physical_device *pdev,
    SAMP_SET_U(samp, NV9097, 7, BORDER_COLOR_A, bc.uint32[3]);
 }
 
+void
+nvk_fill_txf_sampler_header(const struct nvk_physical_device *pdev,
+                            uint32_t *samp)
+{
+   const VkSamplerCreateInfo sampler_info = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .magFilter = VK_FILTER_NEAREST,
+      .minFilter = VK_FILTER_NEAREST,
+      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+      .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+      .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+      .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+      .borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,
+      .minLod = 0.0,
+      .maxLod = 16.0,
+      .unnormalizedCoordinates = true,
+   };
+
+   struct vk_sampler sampler;
+   vk_sampler_init(&sampler_info, &sampler);
+
+   nvk_sampler_fill_header(pdev, &sampler_info, &sampler, samp);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateSampler(VkDevice device,
                   const VkSamplerCreateInfo *pCreateInfo,

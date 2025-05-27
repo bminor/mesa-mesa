@@ -12,6 +12,7 @@
 #include "nir_builder.h"
 #include "nir_deref.h"
 
+#include "clb097.h"
 #include "clc397.h"
 #include "clc597.h"
 
@@ -1301,7 +1302,21 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
          load_resource_deref_desc(b, 1, 32, texture, plane_offset_B, ctx);
 
    nir_def *combined_handle;
-   if (texture == sampler || !nir_tex_instr_need_sampler(tex)) {
+
+   if (!nir_tex_instr_need_sampler(tex)) {
+      combined_handle = texture_desc;
+
+      /* On Kepler and earlier, TXF takes a sampler but SPIR-V defines it as
+       * not taking one so we can't trust the sampler from the client's image
+       * descriptor.  Instead, mask off the top bits so we get a zero sampler
+       * index which we've conveniently reserved at device cration time for a
+       * special TXF sampler.
+       */
+      if (ctx->dev_info->cls_eng3d < MAXWELL_A) {
+         combined_handle = nir_iand_imm(b, combined_handle,
+                                        NVK_IMAGE_DESCRIPTOR_IMAGE_INDEX_MASK);
+      }
+   } else if (texture == sampler) {
       combined_handle = texture_desc;
    } else {
       combined_handle = nir_iand_imm(b, texture_desc,

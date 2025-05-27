@@ -8,6 +8,7 @@
 #include "nvk_entrypoints.h"
 #include "nvk_instance.h"
 #include "nvk_physical_device.h"
+#include "nvk_sampler.h"
 #include "nvk_shader.h"
 #include "nvkmd/nvkmd.h"
 
@@ -199,6 +200,23 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
                                       4096, 4096);
    if (result != VK_SUCCESS)
       goto fail_images;
+
+   /* On Kepler and earlier, TXF takes a sampler but SPIR-V defines it as not
+    * taking one so we need to reserve one at device create time.  If we do so
+    * now then it will always have sampler index 0 so we can rely on that in
+    * the compiler lowering code (similar to null descriptors).
+    */
+   if (pdev->info.cls_eng3d < MAXWELL_A) {
+      uint32_t txf_sampler[8] = {};
+      nvk_fill_txf_sampler_header(pdev, txf_sampler);
+
+      ASSERTED uint32_t txf_sampler_index;
+      result = nvk_descriptor_table_add(dev, &dev->samplers,
+                                        txf_sampler, sizeof(txf_sampler),
+                                        &txf_sampler_index);
+      assert(result == VK_SUCCESS);
+      assert(txf_sampler_index == 0);
+   }
 
    if (dev->vk.enabled_features.descriptorBuffer ||
        nvk_use_edb_buffer_views(pdev)) {
