@@ -70,7 +70,7 @@ nvk_nak_stages(const struct nv_device_info *info)
 
    const char *env_str = getenv("NVK_USE_NAK");
    if (env_str == NULL)
-      return info->cls_eng3d >= MAXWELL_A ? all : 0;
+      return all;
    else
       return parse_debug_string(env_str, flags);
 }
