@@ -6928,7 +6928,6 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
       if (resume_info) {
          radv_CmdBeginRendering(commandBuffer, resume_info);
       } else {
-         const struct radv_instance *instance = radv_physical_device_instance(pdev);
          const VkCommandBufferInheritanceRenderingInfo *inheritance_info =
             vk_get_command_buffer_inheritance_rendering_info(cmd_buffer->vk.level, pBeginInfo);
 
@@ -6957,7 +6956,7 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
          if (vk_format_has_stencil(render->ds_att.format))
             render->ds_att_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
-         if (pdev->info.gfx_level >= GFX12 && render->ds_att.format && !(instance->debug_flags & RADV_DEBUG_NO_HIZ)) {
+         if (pdev->info.gfx_level >= GFX12 && pdev->use_hiz && render->ds_att.format) {
             /* For inherited rendering with secondary commands buffers, assume HiZ/HiS is enabled if
              * there is a depth/stencil attachment. This is required to apply hardware workarounds
              * on GFX12.
