@@ -1924,7 +1924,7 @@
         "description": "nvk: Call ensure_slm for nvk_cmd_dispatch_shader",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "105bdf2e362bf343b619de835758310f031dfd2e",
         "notes": null
