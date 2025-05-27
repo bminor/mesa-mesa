@@ -480,32 +480,14 @@ transition_depth_buffer(struct anv_cmd_buffer *cmd_buffer,
       return;
 
    /* Initialize the indirect clear color prior to first use. */
-   const enum isl_format depth_format =
-      image->planes[depth_plane].primary_surface.isl.format;
-   const struct anv_address clear_color_addr =
-      anv_image_get_clear_color_addr(cmd_buffer->device, image, depth_format,
-                                     VK_IMAGE_ASPECT_DEPTH_BIT, true);
-   if (!anv_address_is_null(clear_color_addr) &&
+   if (image->planes[depth_plane].fast_clear_memory_range.size > 0 &&
        (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED ||
         initial_layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
-      const union isl_color_value clear_value =
-         anv_image_hiz_clear_value(image);
-
-      uint32_t depth_value[4] = {};
-      isl_color_value_pack(&clear_value, depth_format, depth_value);
-
-      const uint32_t clear_pixel_offset = clear_color_addr.offset +
-         isl_get_sampler_clear_field_offset(cmd_buffer->device->info,
-                                            depth_format, true);
-      const struct anv_address clear_pixel_addr = {
-         .bo = clear_color_addr.bo,
-         .offset = clear_pixel_offset,
-      };
-
-      struct mi_builder b;
-      mi_builder_init(&b, cmd_buffer->device->info, &cmd_buffer->batch);
-      mi_builder_set_write_check(&b, true);
-      mi_store(&b, mi_mem32(clear_pixel_addr), mi_imm(depth_value[0]));
+      const enum isl_format depth_format =
+         image->planes[depth_plane].primary_surface.isl.format;
+      genX(set_fast_clear_state)(cmd_buffer, image, depth_format,
+                                 ISL_SWIZZLE_IDENTITY,
+                                 anv_image_hiz_clear_value(image));
    }
 
    /* If will_full_fast_clear is set, the caller promises to fast-clear the
@@ -992,11 +974,14 @@ genX(set_fast_clear_state)(struct anv_cmd_buffer *cmd_buffer,
                            const struct isl_swizzle swizzle,
                            union isl_color_value clear_color)
 {
+   VkImageAspectFlagBits aspect = image->vk.aspects &
+      (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
+
    uint32_t pixel[4] = {};
    union isl_color_value swiz_color =
       isl_color_value_swizzle_inv(clear_color, swizzle);
    isl_color_value_pack(&swiz_color, format, pixel);
-   set_image_clear_color(cmd_buffer, image, VK_IMAGE_ASPECT_COLOR_BIT, pixel);
+   set_image_clear_color(cmd_buffer, image, aspect, pixel);
 
    if (isl_color_value_is_zero(clear_color, format)) {
       /* This image has the auxiliary buffer enabled. We can mark the
@@ -1004,12 +989,10 @@ genX(set_fast_clear_state)(struct anv_cmd_buffer *cmd_buffer,
        * will match what's in every RENDER_SURFACE_STATE object when
        * it's being used for sampling.
        */
-      set_image_fast_clear_state(cmd_buffer, image,
-                                 VK_IMAGE_ASPECT_COLOR_BIT,
+      set_image_fast_clear_state(cmd_buffer, image, aspect,
                                  ANV_FAST_CLEAR_DEFAULT_VALUE);
    } else {
-      set_image_fast_clear_state(cmd_buffer, image,
-                                 VK_IMAGE_ASPECT_COLOR_BIT,
+      set_image_fast_clear_state(cmd_buffer, image, aspect,
                                  ANV_FAST_CLEAR_ANY);
    }
 }
