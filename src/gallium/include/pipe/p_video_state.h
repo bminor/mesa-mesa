@@ -959,6 +959,8 @@ struct pipe_h264_enc_picture_desc
    struct pipe_resource *gpu_stats_satd_map;
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
    struct pipe_resource *gpu_stats_rc_bitallocation_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
+   struct pipe_resource *gpu_stats_psnr;
 
    /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
    struct pipe_resource *input_gpu_qpmap;
@@ -1357,6 +1359,8 @@ struct pipe_h265_enc_picture_desc
    struct pipe_resource *gpu_stats_satd_map;
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
    struct pipe_resource *gpu_stats_rc_bitallocation_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
+   struct pipe_resource *gpu_stats_psnr;
 
    /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
    struct pipe_resource *input_gpu_qpmap;
@@ -2788,6 +2792,24 @@ union pipe_enc_cap_gpu_stats_map {
          by 2^log2_values_block_size
        */
       uint32_t log2_values_block_size: 4;
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
+union pipe_enc_cap_gpu_stats_psnr {
+   struct {
+      /*
+       * Driver Output. Indicates support for writing the frame's PSNR into a
+       * PIPE_BUFFER during encode frame execution as 32 bit float components
+       *
+       * The components are always written in Y, U, V order as packed
+       * 32 bit floats in the gpu_stats_psnr buffer sent down to the driver
+       * in the picture parameters. The unsupported channels are written as zero.
+       */
+      uint32_t supports_y_channel: 1;
+      uint32_t supports_u_channel: 1;
+      uint32_t supports_v_channel: 1;
    } bits;
   uint32_t value;
 };

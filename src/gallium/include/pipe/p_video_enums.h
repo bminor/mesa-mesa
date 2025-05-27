@@ -243,6 +243,18 @@ enum pipe_video_cap
     * Support for two pass encode in encoder picture params pipe_enc_cap_two_pass
     */
    PIPE_VIDEO_CAP_ENC_TWO_PASS = 66,
+   /*
+    * Support for the frame's PSNR to be written into a PIPE_BUFFER
+    * during the encoding of a frame
+    *
+    * Note that this may be written during the encode operation, before the
+    * get_feedback operation, since it's written into a GPU memory allocation
+    *
+    * The returned value is pipe_enc_cap_gpu_stats_psnr, which indicates
+    * more information about the number of PSNR components returned and their
+    * data layout
+    */
+   PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR = 67,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
