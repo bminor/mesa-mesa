@@ -18,7 +18,7 @@
 .windows-build-rules:
   rules:
     - !reference [.scheduled_pipeline-rules, rules]
-    - !reference [.test, rules]
+    - !reference [.build-rules, rules]
     - !reference [.microsoft-farm-rules, rules]
     - !reference [.zink-common-rules, rules]
     - !reference [.vulkan-rules, rules]
