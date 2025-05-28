@@ -124,8 +124,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_shader, vk.base, VkShaderEXT,
 
 extern const struct vk_device_shader_ops nvk_device_shader_ops;
 
-VkShaderStageFlags nvk_nak_stages(const struct nv_device_info *info);
-
 uint64_t
 nvk_physical_device_compiler_flags(const struct nvk_physical_device *pdev);
 
@@ -152,24 +150,5 @@ nvk_compile_nir_shader(struct nvk_device *dev, nir_shader *nir,
 
 uint32_t mesa_to_nv9097_shader_type(gl_shader_stage stage);
 uint32_t nvk_pipeline_bind_group(gl_shader_stage stage);
-
-/* Codegen wrappers.
- *
- * TODO: Delete these once NAK supports everything.
- */
-uint64_t nvk_cg_get_prog_debug(void);
-uint64_t nvk_cg_get_prog_optimize(void);
-
-const nir_shader_compiler_options *
-nvk_cg_nir_options(const struct nvk_physical_device *pdev,
-                   gl_shader_stage stage);
-
-void nvk_cg_preprocess_nir(nir_shader *nir);
-void nvk_cg_optimize_nir(nir_shader *nir);
-
-VkResult nvk_cg_compile_nir(const struct nvk_physical_device *pdev,
-                            nir_shader *nir,
-                            const struct nak_fs_key *fs_key,
-                            struct nvk_shader *shader);
 
 #endif

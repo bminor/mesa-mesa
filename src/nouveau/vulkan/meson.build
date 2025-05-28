@@ -1,7 +1,6 @@
 # Copyright © 2022 Collabora Ltd. and Red Hat Inc.
 # SPDX-License-Identifier: MIT
 nvk_files = files(
-  '../../gallium/auxiliary/tgsi/tgsi_from_mesa.c',
   'nvk_acceleration_structure.c',
   'nvk_buffer.c',
   'nvk_buffer.h',
@@ -17,7 +16,6 @@ nvk_files = files(
   'nvk_cmd_meta.c',
   'nvk_cmd_pool.c',
   'nvk_cmd_pool.h',
-  'nvk_codegen.c',
   'nvk_debug.h',
   'nvk_descriptor_set.h',
   'nvk_descriptor_set.c',
@@ -150,8 +148,7 @@ libnvk = static_library(
     inc_include,
     inc_src,
   ],
-  link_with : [libnouveau_codegen],
-  dependencies : [nvk_deps, idep_nouveau_codegen],
+  dependencies : nvk_deps,
   c_args : [no_override_init_args, nvk_flags],
   gnu_symbol_visibility : 'hidden',
 )

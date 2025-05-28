@@ -23,8 +23,6 @@
 #include "nir_builder.h"
 #include "compiler/spirv/nir_spirv.h"
 
-#include "nv50_ir_driver.h"
-
 #include "util/mesa-sha1.h"
 #include "util/u_debug.h"
 
@@ -46,61 +44,17 @@ shared_var_info(const struct glsl_type *type, unsigned *size, unsigned *align)
    *size = comp_size * length, *align = comp_size;
 }
 
-VkShaderStageFlags
-nvk_nak_stages(const struct nv_device_info *info)
-{
-   const VkShaderStageFlags all =
-      VK_SHADER_STAGE_VERTEX_BIT |
-      VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-      VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-      VK_SHADER_STAGE_GEOMETRY_BIT |
-      VK_SHADER_STAGE_FRAGMENT_BIT |
-      VK_SHADER_STAGE_COMPUTE_BIT;
-
-   const struct debug_control flags[] = {
-      { "vs", BITFIELD64_BIT(MESA_SHADER_VERTEX) },
-      { "tcs", BITFIELD64_BIT(MESA_SHADER_TESS_CTRL) },
-      { "tes", BITFIELD64_BIT(MESA_SHADER_TESS_EVAL) },
-      { "gs", BITFIELD64_BIT(MESA_SHADER_GEOMETRY) },
-      { "fs", BITFIELD64_BIT(MESA_SHADER_FRAGMENT) },
-      { "cs", BITFIELD64_BIT(MESA_SHADER_COMPUTE) },
-      { "all", all },
-      { NULL, 0 },
-   };
-
-   const char *env_str = getenv("NVK_USE_NAK");
-   if (env_str == NULL)
-      return all;
-   else
-      return parse_debug_string(env_str, flags);
-}
-
-static bool
-use_nak(const struct nvk_physical_device *pdev, gl_shader_stage stage)
-{
-   return nvk_nak_stages(&pdev->info) & mesa_to_vk_shader_stage(stage);
-}
-
 uint64_t
 nvk_physical_device_compiler_flags(const struct nvk_physical_device *pdev)
 {
    bool no_cbufs = pdev->debug_flags & NVK_DEBUG_NO_CBUF;
    bool use_edb_buffer_views = nvk_use_edb_buffer_views(pdev);
-   uint64_t prog_debug = nvk_cg_get_prog_debug();
-   uint64_t prog_optimize = nvk_cg_get_prog_optimize();
-   uint64_t nak_stages = nvk_nak_stages(&pdev->info);
    uint64_t nak_flags = nak_debug_flags(pdev->nak);
 
-   assert(prog_debug <= UINT8_MAX);
-   assert(prog_optimize < 16);
-   assert(nak_stages <= UINT32_MAX);
    assert(nak_flags <= UINT16_MAX);
 
-   return prog_debug
-      | (prog_optimize << 8)
-      | ((uint64_t)no_cbufs << 12)
+   return ((uint64_t)no_cbufs << 12)
       | ((uint64_t)use_edb_buffer_views << 13)
-      | (nak_stages << 16)
       | (nak_flags << 48);
 }
 
@@ -111,11 +65,7 @@ nvk_get_nir_options(struct vk_physical_device *vk_pdev,
 {
    const struct nvk_physical_device *pdev =
       container_of(vk_pdev, struct nvk_physical_device, vk);
-
-   if (use_nak(pdev, stage))
-      return nak_nir_options(pdev->nak);
-   else
-      return nvk_cg_nir_options(pdev, stage);
+   return nak_nir_options(pdev->nak);
 }
 
 nir_address_format
@@ -189,10 +139,7 @@ nvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, nir_lower_io_to_temporaries,
               nir_shader_get_entrypoint(nir), true, false);
 
-   if (use_nak(pdev, nir->info.stage))
-      nak_preprocess_nir(nir, pdev->nak);
-   else
-      nvk_cg_preprocess_nir(nir);
+   nak_preprocess_nir(nir, pdev->nak);
 }
 
 static void
@@ -387,15 +334,6 @@ lookup_ycbcr_conversion(const void *_state, uint32_t set,
           &sampler->vk.ycbcr_conversion->state : NULL;
 }
 
-static inline bool
-nir_has_image_var(nir_shader *nir)
-{
-   nir_foreach_image_variable(_, nir)
-      return true;
-
-   return false;
-}
-
 static void
 nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
               VkShaderCreateFlagsEXT shader_flags,
@@ -410,9 +348,8 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
                &(nir_input_attachment_options) {
-                  .use_fragcoord_sysval = use_nak(pdev, nir->info.stage),
-                  .use_layer_id_sysval = use_nak(pdev, nir->info.stage) ||
-                                         is_multiview,
+                  .use_fragcoord_sysval = true,
+                  .use_layer_id_sysval = true,
                   .use_view_id_for_layer = is_multiview,
                });
    }
@@ -460,8 +397,7 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    }
 
    struct nvk_cbuf_map *cbuf_map = NULL;
-   if (use_nak(pdev, nir->info.stage) &&
-       !(pdev->debug_flags & NVK_DEBUG_NO_CBUF)) {
+   if (!(pdev->debug_flags & NVK_DEBUG_NO_CBUF)) {
       cbuf_map = cbuf_map_out;
 
       /* Large constant support assumes cbufs */
@@ -486,12 +422,8 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
 
    /* On Kepler, we have to lower images to addresses */
-   if (pdev->info.cls_eng3d < MAXWELL_A) {
-      if (use_nak(pdev, nir->info.stage))
-         NIR_PASS(_, nir, nak_nir_lower_image_addrs, pdev->nak);
-      else
-         assert(!nir_has_image_var(nir));
-   }
+   if (pdev->info.cls_eng3d < MAXWELL_A)
+      NIR_PASS(_, nir, nak_nir_lower_image_addrs, pdev->nak);
 
    NIR_PASS(_, nir, nvk_nir_lower_descriptors, pdev, shader_flags, rs,
             set_layout_count, set_layouts, cbuf_map);
@@ -585,14 +517,9 @@ nvk_compile_nir(struct nvk_device *dev, nir_shader *nir,
                 struct nvk_shader *shader)
 {
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
-   VkResult result;
 
-   if (use_nak(pdev, nir->info.stage)) {
-      result = nvk_compile_nir_with_nak(pdev, nir, shader_flags, rs,
-                                       fs_key, shader);
-   } else {
-      result = nvk_cg_compile_nir(pdev, nir, fs_key, shader);
-   }
+   VkResult result = nvk_compile_nir_with_nak(pdev, nir, shader_flags, rs,
+                                              fs_key, shader);
    if (result != VK_SUCCESS)
       return result;
 
@@ -955,7 +882,7 @@ nvk_shader_destroy(struct vk_device *vk_dev,
    if (shader->nak) {
       nak_shader_bin_destroy(shader->nak);
    } else {
-      /* This came from codegen or deserialize, just free it */
+      /* This came from deserialize, just free it */
       free((void *)shader->code_ptr);
    }
 
