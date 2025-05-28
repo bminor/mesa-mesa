@@ -76,9 +76,11 @@ $ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
 $ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
 $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
+$ADB push /android-tools/eglinfo /data
+
 get_gles_runtime_version() {
-  while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
-  $ADB shell dumpsys SurfaceFlinger | grep GLES
+  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version':)" = "" ] ; do sleep 1; done
+  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version'
 }
 
 # Check what GLES implementation is used before loading the new libraries
@@ -101,7 +103,7 @@ if [ -n "$ANGLE_TAG" ]; then
   fi
 else
   MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
-  if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep --quiet "${MESA_BUILD_VERSION}$"; then
+  if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
      echo "Fatal: Android is loading a wrong version of the Mesa3D GLES libs: ${GLES_RUNTIME_VERSION}" 1>&2
      exit 1
   fi
