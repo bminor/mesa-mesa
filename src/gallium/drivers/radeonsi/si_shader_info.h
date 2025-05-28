@@ -225,9 +225,9 @@ struct si_shader_variant_info {
    uint8_t clipdist_mask;
    uint8_t culldist_mask;
    uint8_t num_streamout_vec4s;
+   uint8_t max_simd_waves;
    uint8_t ngg_lds_scratch_size;
-   unsigned private_mem_vgprs;
-   unsigned max_simd_waves;
+   uint16_t private_mem_vgprs;
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
    ac_nir_legacy_gs_info legacy_gs;
 };
