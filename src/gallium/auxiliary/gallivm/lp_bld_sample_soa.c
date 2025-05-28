@@ -4268,7 +4268,6 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
                         const struct lp_sampler_size_query_params *params)
 {
    LLVMValueRef first_level = NULL;
-   const unsigned num_lods = 1;
    LLVMTypeRef resources_type = params->resources_type;
    LLVMValueRef resources_ptr = params->resources_ptr;
    const unsigned texture_unit = params->texture_unit;
@@ -4324,8 +4323,8 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
 
    assert(!params->int_type.floating);
 
-   struct lp_build_context bld_int_vec4;
-   lp_build_context_init(&bld_int_vec4, gallivm, lp_type_int_vec(32, 128));
+   struct lp_build_context bld_int;
+   lp_build_context_init(&bld_int, gallivm, params->int_type);
 
    if (params->samples_only) {
       LLVMValueRef num_samples;
@@ -4337,7 +4336,7 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
                                                  texture_unit,
                                                  texture_unit_offset);
          num_samples = LLVMBuildZExt(gallivm->builder, num_samples,
-                                     bld_int_vec4.elem_type, "");
+                                     bld_int.elem_type, "");
       } else {
          num_samples = lp_build_const_int32(gallivm, 0);
       }
@@ -4349,24 +4348,20 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
    }
 
    LLVMValueRef lod;
-   LLVMValueRef level = 0;
    if (params->explicit_lod) {
-      /* FIXME: this needs to honor per-element lod */
-      lod = LLVMBuildExtractElement(gallivm->builder, params->explicit_lod,
-                                    lp_build_const_int32(gallivm, 0), "");
+      lod = params->explicit_lod;
       first_level = get_first_level(gallivm, resources_type, resources_ptr,
                                     texture_unit, texture_unit_offset,
                                     static_state, dynamic_state);
-      level = LLVMBuildAdd(gallivm->builder, lod, first_level, "level");
-      lod = lp_build_broadcast_scalar(&bld_int_vec4, level);
+      lod = LLVMBuildAdd(gallivm->builder, lod, lp_build_broadcast_scalar(&bld_int, first_level), "level");
    } else {
-      lod = bld_int_vec4.zero;
+      lod = bld_int.zero;
    }
 
-   LLVMValueRef size = bld_int_vec4.undef;
-   LLVMValueRef tex_blocksize = bld_int_vec4.undef;
-   LLVMValueRef tex_blocksize_log2 = bld_int_vec4.undef;
-   LLVMValueRef view_blocksize = bld_int_vec4.undef;
+   LLVMValueRef size[3];
+   LLVMValueRef tex_blocksize;
+   LLVMValueRef tex_blocksize_log2;
+   LLVMValueRef view_blocksize;
 
    uint32_t res_bw = res_format_desc->block.width;
    uint32_t res_bh = res_format_desc->block.height;
@@ -4384,35 +4379,27 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
                                                  resources_ptr,
                                                  texture_unit,
                                                  texture_unit_offset);
-   size = LLVMBuildInsertElement(gallivm->builder, size,
-                                 tex_width,
-                                 lp_build_const_int32(gallivm, 0), "");
-   tex_blocksize = LLVMBuildInsertElement(gallivm->builder, tex_blocksize,
-                                          lp_build_const_int32(gallivm, res_bw),
-                                          lp_build_const_int32(gallivm, 0), "");
-   tex_blocksize_log2 = LLVMBuildInsertElement(gallivm->builder, tex_blocksize_log2,
-                                               lp_build_const_int32(gallivm, util_logbase2(res_bw)),
-                                               lp_build_const_int32(gallivm, 0), "");
-   view_blocksize = LLVMBuildInsertElement(gallivm->builder, view_blocksize,
-                                           lp_build_const_int32(gallivm, bw),
-                                           lp_build_const_int32(gallivm, 0), "");
+   tex_width = lp_build_broadcast_scalar(&bld_int, tex_width);
+   tex_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, res_bw);
+   tex_blocksize_log2 = lp_build_const_int_vec(gallivm, bld_int.type, util_logbase2(res_bw));
+   view_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, bw);
+   size[0] = lp_build_minify(&bld_int, tex_width, lod, false);
+   size[0] = lp_build_scale_view_dims(&bld_int, size[0], tex_blocksize,
+                                      tex_blocksize_log2, view_blocksize);
+
    if (dims >= 2) {
       LLVMValueRef tex_height =
          dynamic_state->height(gallivm, resources_type,
                                resources_ptr, texture_unit, texture_unit_offset);
       tex_height = LLVMBuildZExt(gallivm->builder, tex_height,
-                                 bld_int_vec4.elem_type, "");
-      size = LLVMBuildInsertElement(gallivm->builder, size, tex_height,
-                                    lp_build_const_int32(gallivm, 1), "");
-      tex_blocksize = LLVMBuildInsertElement(gallivm->builder, tex_blocksize,
-                                             lp_build_const_int32(gallivm, res_bh),
-                                             lp_build_const_int32(gallivm, 1), "");
-      tex_blocksize_log2 = LLVMBuildInsertElement(gallivm->builder, tex_blocksize_log2,
-                                                  lp_build_const_int32(gallivm, util_logbase2(res_bh)),
-                                                  lp_build_const_int32(gallivm, 1), "");
-      view_blocksize = LLVMBuildInsertElement(gallivm->builder, view_blocksize,
-                                              lp_build_const_int32(gallivm, bh),
-                                              lp_build_const_int32(gallivm, 1), "");
+                                 bld_int.elem_type, "");
+      tex_height = lp_build_broadcast_scalar(&bld_int, tex_height);
+      tex_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, res_bh);
+      tex_blocksize_log2 = lp_build_const_int_vec(gallivm, bld_int.type, util_logbase2(res_bh));
+      view_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, bh);
+      size[1] = lp_build_minify(&bld_int, tex_height, lod, false);
+      size[1] = lp_build_scale_view_dims(&bld_int, size[1], tex_blocksize,
+                                         tex_blocksize_log2, view_blocksize);
    }
 
    if (dims >= 3) {
@@ -4420,30 +4407,22 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
          dynamic_state->depth(gallivm, resources_type,
                               resources_ptr, texture_unit, texture_unit_offset);
       tex_depth = LLVMBuildZExt(gallivm->builder, tex_depth,
-                                bld_int_vec4.elem_type, "");
-      size = LLVMBuildInsertElement(gallivm->builder, size, tex_depth,
-                                    lp_build_const_int32(gallivm, 2), "");
-      tex_blocksize = LLVMBuildInsertElement(gallivm->builder, tex_blocksize,
-                                             lp_build_const_int32(gallivm, 1),
-                                             lp_build_const_int32(gallivm, 2), "");
-      tex_blocksize_log2 = LLVMBuildInsertElement(gallivm->builder, tex_blocksize_log2,
-                                                  lp_build_const_int32(gallivm, 0),
-                                                  lp_build_const_int32(gallivm, 2), "");
-      view_blocksize = LLVMBuildInsertElement(gallivm->builder, view_blocksize,
-                                              lp_build_const_int32(gallivm, 1),
-                                              lp_build_const_int32(gallivm, 2), "");
+                                bld_int.elem_type, "");
+      tex_depth = lp_build_broadcast_scalar(&bld_int, tex_depth);
+      tex_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, 1);
+      tex_blocksize_log2 = lp_build_const_int_vec(gallivm, bld_int.type, util_logbase2(0));
+      view_blocksize = lp_build_const_int_vec(gallivm, bld_int.type, 1);
+      size[2] = lp_build_minify(&bld_int, tex_depth, lod, false);
+      size[2] = lp_build_scale_view_dims(&bld_int, size[2], tex_blocksize,
+                                         tex_blocksize_log2, view_blocksize);
    }
-
-   size = lp_build_minify(&bld_int_vec4, size, lod, true);
-   size = lp_build_scale_view_dims(&bld_int_vec4, size, tex_blocksize,
-                                   tex_blocksize_log2, view_blocksize);
 
    if (has_array) {
       LLVMValueRef layers = dynamic_state->depth(gallivm, resources_type,
                                                  resources_ptr, texture_unit,
                                                  texture_unit_offset);
       layers = LLVMBuildZExt(gallivm->builder, layers,
-                             bld_int_vec4.elem_type, "");
+                             bld_int.elem_type, "");
       if (target == PIPE_TEXTURE_CUBE_ARRAY) {
          /*
           * It looks like GL wants number of cubes, d3d10.1 has it undefined?
@@ -4453,8 +4432,8 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
          LLVMValueRef six = lp_build_const_int32(gallivm, 6);
          layers = LLVMBuildSDiv(gallivm->builder, layers, six, "");
       }
-      size = LLVMBuildInsertElement(gallivm->builder, size, layers,
-                                    lp_build_const_int32(gallivm, dims), "");
+      layers = lp_build_broadcast_scalar(&bld_int, layers);
+      size[dims] = layers;
    }
 
    /*
@@ -4464,33 +4443,22 @@ lp_build_size_query_soa(struct gallivm_state *gallivm,
     */
    if (params->explicit_lod && params->is_sviewinfo) {
       LLVMValueRef last_level, out, out1;
-      struct lp_build_context leveli_bld;
+      struct lp_build_context leveli_bld = bld_int;
 
-      /* everything is scalar for now */
-      lp_build_context_init(&leveli_bld, gallivm, lp_type_int_vec(32, 32));
       last_level = get_last_level(gallivm, resources_type, resources_ptr,
                                   texture_unit, texture_unit_offset,
                                   static_state, dynamic_state);
-
-      out = lp_build_cmp(&leveli_bld, PIPE_FUNC_LESS, level, first_level);
-      out1 = lp_build_cmp(&leveli_bld, PIPE_FUNC_GREATER, level, last_level);
+      last_level = lp_build_broadcast_scalar(&bld_int, last_level);
+      out = lp_build_cmp(&leveli_bld, PIPE_FUNC_LESS, lod, lp_build_broadcast_scalar(&bld_int, first_level));
+      out1 = lp_build_cmp(&leveli_bld, PIPE_FUNC_GREATER, lod, last_level);
       out = lp_build_or(&leveli_bld, out, out1);
-      if (num_lods == 1) {
-         out = lp_build_broadcast_scalar(&bld_int_vec4, out);
-      } else {
-         /* TODO */
-         assert(0);
-      }
-      size = lp_build_andnot(&bld_int_vec4, size, out);
+      for (uint32_t i = 0; i < dims + (has_array ? 1 : 0); i++)
+         size[i] = lp_build_andnot(&bld_int, size[i], out);
    }
 
    unsigned i;
    for (i = 0; i < dims + (has_array ? 1 : 0); i++) {
-      params->sizes_out[i] =
-         lp_build_extract_broadcast(gallivm, bld_int_vec4.type,
-                                    params->int_type,
-                                    size,
-                                    lp_build_const_int32(gallivm, i));
+      params->sizes_out[i] = size[i];
    }
    if (params->is_sviewinfo) {
       for (; i < 4; i++) {
