@@ -100,7 +100,7 @@ retry_select_mode:
       }
 
       esvert_lds_size = es_sel->info.esgs_vertex_stride / 4;
-      gsprim_lds_size = (gs_sel->info.gsvs_vertex_size / 4 + 1) * max_out_verts_per_gsprim;
+      gsprim_lds_size = (shader->info.ngg_lds_vertex_size / 4) * max_out_verts_per_gsprim;
 
       if (gsprim_lds_size > target_lds_size && !force_multi_cycling) {
          if (gs_sel->tess_turns_off_ngg || es_sel->stage != MESA_SHADER_TESS_EVAL) {

@@ -637,8 +637,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      info->gsvs_vertex_size = info->num_outputs * 16;
-      info->max_gsvs_emit_size = info->gsvs_vertex_size * nir->info.gs.vertices_out;
+      info->max_gsvs_emit_size = info->num_outputs * 16 * nir->info.gs.vertices_out;
       info->gs_input_verts_per_prim =
          mesa_vertices_per_prim(nir->info.gs.input_primitive);
    }

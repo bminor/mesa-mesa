@@ -897,17 +897,22 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
 }
 
 bool
-ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
+ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
+                    uint32_t *out_lds_vertex_size)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    assert(impl);
+
+   /* Add 4 for primflags. */
+   *out_lds_vertex_size = (util_bitcount64(shader->info.outputs_written) +
+                           util_bitcount(shader->info.outputs_written_16bit)) * 16 + 4;
 
    lower_ngg_gs_state state = {
       .options = options,
       .impl = impl,
       .max_num_waves = DIV_ROUND_UP(options->max_workgroup_size, options->wave_size),
-      .lds_offs_primflags = options->gs_out_vtx_bytes,
-      .lds_bytes_per_gs_out_vertex = options->gs_out_vtx_bytes + 4u,
+      .lds_offs_primflags = *out_lds_vertex_size - 4,
+      .lds_bytes_per_gs_out_vertex = *out_lds_vertex_size,
       .streamout_enabled = shader->xfb_info && !options->disable_streamout,
    };
 

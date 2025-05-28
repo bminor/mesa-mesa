@@ -1503,7 +1503,7 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
       }
 
       esvert_lds_size = es_info->esgs_itemsize / 4;
-      gsprim_lds_size = (gs_info->gs.gsvs_vertex_size / 4 + 1) * max_out_verts_per_gsprim;
+      gsprim_lds_size = (gs_info->ngg_lds_vertex_size / 4) * max_out_verts_per_gsprim;
    } else {
       /* VS and TES. */
       /* LDS size for passing data from GS to ES. */

@@ -202,9 +202,6 @@ typedef struct {
    bool export_primitive_id_per_prim;
    uint32_t instance_rate_inputs;
    uint32_t user_clip_plane_enable_mask;
-
-   /* GS */
-   unsigned gs_out_vtx_bytes;
 } ac_nir_lower_ngg_options;
 
 bool
@@ -212,7 +209,8 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                       uint32_t *out_lds_vertex_size);
 
 bool
-ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
+ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
+                    uint32_t *out_lds_vertex_size);
 
 bool
 ac_nir_lower_ngg_mesh(nir_shader *shader,

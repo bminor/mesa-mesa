@@ -818,9 +818,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       assert(info->is_ngg);
 
-      options.gs_out_vtx_bytes = info->gs.gsvs_vertex_size;
-
-      NIR_PASS(_, nir, ac_nir_lower_ngg_gs, &options);
+      NIR_PASS(_, nir, ac_nir_lower_ngg_gs, &options, &ngg_stage->info.ngg_lds_vertex_size);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
       /* ACO aligns the workgroup size to the wave size. */
       unsigned hw_workgroup_size = ALIGN(info->workgroup_size, info->wave_size);

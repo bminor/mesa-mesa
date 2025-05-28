@@ -100,7 +100,7 @@ struct radv_shader_info {
    bool has_xfb_query;
    uint32_t num_tess_patches;
    uint32_t esgs_itemsize; /* Only for VS or TES as ES */
-   uint32_t ngg_lds_vertex_size;
+   uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
    struct radv_vs_output_info outinfo;
    unsigned workgroup_size;
    bool force_vrs_per_vertex;

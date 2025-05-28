@@ -1176,7 +1176,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
    } else {
       assert(nir->info.stage == MESA_SHADER_GEOMETRY);
 
-      options.gs_out_vtx_bytes = sel->info.gsvs_vertex_size;
       options.has_gen_prim_query = options.has_xfb_prim_query =
          sel->screen->info.gfx_level >= GFX11;
       options.has_gs_invocations_query = sel->screen->info.gfx_level < GFX11;
@@ -1186,7 +1185,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       if (key->ge.part.gs.es)
          nir->info.writes_memory |= key->ge.part.gs.es->info.base.writes_memory;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options);
+      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options, &shader->info.ngg_lds_vertex_size);
    }
 
    /* may generate some vector output store */

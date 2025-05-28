@@ -114,7 +114,6 @@ struct si_shader_info {
    uint8_t culldist_mask;
 
    uint16_t esgs_vertex_stride;
-   uint16_t gsvs_vertex_size;
    uint8_t gs_input_verts_per_prim;
    unsigned max_gsvs_emit_size;
 
@@ -240,7 +239,7 @@ struct si_shader_variant_info {
    uint8_t num_streamout_vec4s;
    unsigned private_mem_vgprs;
    unsigned max_simd_waves;
-   uint32_t ngg_lds_vertex_size;
+   uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
 };
 
 #endif
