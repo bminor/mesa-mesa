@@ -4221,6 +4221,9 @@ framebuffer_texture_with_dims(int dims, GLenum target, GLuint framebuffer,
 
       if (!check_level(ctx, texObj, textarget, level, caller))
          return;
+
+      if (!check_samples(ctx, texObj, textarget, level, samples, caller))
+         return;
    }
 
    struct gl_renderbuffer_attachment *att =
