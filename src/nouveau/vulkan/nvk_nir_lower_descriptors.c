@@ -1349,18 +1349,12 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
       }
    }
 
-   /* TODO: The nv50 back-end assumes it gets handles both places, even for
-    * texelFetch.
-    */
    nir_src_rewrite(&tex->src[texture_src_idx].src, combined_handle);
    tex->src[texture_src_idx].src_type = nir_tex_src_texture_handle;
 
-   if (sampler_src_idx < 0) {
-      nir_tex_instr_add_src(tex, nir_tex_src_sampler_handle, combined_handle);
-   } else {
-      nir_src_rewrite(&tex->src[sampler_src_idx].src, combined_handle);
-      tex->src[sampler_src_idx].src_type = nir_tex_src_sampler_handle;
-   }
+   /* NAK doesn't care about the sampler handle at all */
+   if (sampler_src_idx >= 0)
+      nir_tex_instr_remove_src(tex, sampler_src_idx);
 
    /* On pre-Volta hardware, we don't have real null descriptors.  Null
     * descriptors work well enough for sampling but they may not return the
