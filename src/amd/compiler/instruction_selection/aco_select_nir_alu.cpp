@@ -1220,6 +1220,47 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       }
       break;
    }
+   case nir_op_ubitfield_extract:
+   case nir_op_ibitfield_extract: {
+      assert(instr->def.bit_size <= 16);
+      if (dst.type() == RegType::sgpr) {
+         Temp base = get_alu_src(ctx, instr->src[0]);
+         Temp offset = get_alu_src(ctx, instr->src[1]);
+         Temp bits = get_alu_src(ctx, instr->src[2]);
+         Temp extract;
+
+         if (nir_src_is_const(instr->src[1].src) && nir_src_is_const(instr->src[2].src)) {
+            uint32_t c_offset = nir_src_as_uint(instr->src[1].src);
+            uint32_t c_bits = nir_src_as_uint(instr->src[2].src);
+            extract = bld.copy(bld.def(s1), Operand::c32(c_offset | (c_bits << 16)));
+         } else if (ctx->program->gfx_level >= GFX9) {
+            extract = bld.sop2(aco_opcode::s_pack_ll_b32_b16, bld.def(s1), offset, bits);
+         } else {
+            if (nir_src_is_const(instr->src[2].src)) {
+               bits = bld.copy(bld.def(s1), Operand::c32(nir_src_as_uint(instr->src[2].src) << 16));
+            } else {
+               bits = bld.sop2(aco_opcode::s_lshl_b32, bld.def(s1), bld.def(s1, scc), bits,
+                               Operand::c32(16u));
+            }
+
+            if (nir_src_is_const(instr->src[1].src) && !nir_src_as_uint(instr->src[1].src)) {
+               extract = bits;
+            } else {
+               extract =
+                  bld.sop2(aco_opcode::s_or_b32, bld.def(s1), bld.def(s1, scc), bits, offset);
+            }
+         }
+
+         aco_opcode opcode =
+            instr->op == nir_op_ubitfield_extract ? aco_opcode::s_bfe_u32 : aco_opcode::s_bfe_i32;
+         bld.sop2(opcode, Definition(dst), bld.def(s1, scc), base, extract);
+      } else {
+         aco_opcode opcode =
+            instr->op == nir_op_ubitfield_extract ? aco_opcode::v_bfe_u32 : aco_opcode::v_bfe_i32;
+         emit_vop3a_instruction(ctx, instr, opcode, dst, false, 3);
+      }
+      break;
+   }
    case nir_op_iadd: {
       if (dst.regClass() == s1) {
          emit_sop2_instruction(ctx, instr, aco_opcode::s_add_u32, dst, true);
