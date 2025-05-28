@@ -2454,8 +2454,7 @@ impl SM50Op for OpSuLd {
         // mem_eviction_policy not a thing for sm < 70
 
         let scope = match self.mem_order {
-            MemOrder::Constant => MemScope::System,
-            MemOrder::Weak => MemScope::CTA,
+            MemOrder::Constant | MemOrder::Weak => MemScope::CTA,
             MemOrder::Strong(s) => s,
         };
 
