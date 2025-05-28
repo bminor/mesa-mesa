@@ -1,6 +1,8 @@
 # Copyright © 2017 Dylan Baker
 # SPDX-License-Identifier: MIT
 
+subdir('codegen')
+
 files_libnouveau = files(
   'nouveau_buffer.c',
   'nouveau_buffer.h',

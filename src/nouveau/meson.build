@@ -13,7 +13,6 @@ if with_tools.contains('drm-shim')
   subdir('drm-shim')
 endif
 
-subdir('codegen')
 if with_nouveau_vk
   subdir('mme')
   subdir('vulkan')
