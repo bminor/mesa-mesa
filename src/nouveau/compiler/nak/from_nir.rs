@@ -2672,6 +2672,17 @@ impl<'a> ShaderFromNir<'a> {
                     _ => panic!("Invalid suldga flags"),
                 };
 
+                let mem_order = if (intrin.access() & ACCESS_CAN_REORDER) != 0 {
+                    MemOrder::Constant
+                } else {
+                    MemOrder::Strong(MemScope::GPU)
+                };
+                let cache_op = LdCacheOp::select(
+                    MemSpace::Global(MemAddrType::A64),
+                    mem_order,
+                    self.get_eviction_priority(intrin.access()),
+                );
+
                 let dst = b.alloc_ssa_vec(RegFile::GPR, comps);
                 b.push_op(OpSuLdGa {
                     dst: dst.clone().into(),
@@ -2680,6 +2691,7 @@ impl<'a> ShaderFromNir<'a> {
                     out_of_bounds,
                     mem_type,
                     offset_mode,
+                    cache_op,
                 });
                 self.set_dst(&intrin.def, dst);
             }
@@ -2775,6 +2787,12 @@ impl<'a> ShaderFromNir<'a> {
                     _ => panic!("Invalid sustga flags"),
                 };
 
+                let cache_op = StCacheOp::select(
+                    MemSpace::Global(MemAddrType::A64),
+                    MemOrder::Strong(MemScope::GPU),
+                    self.get_eviction_priority(intrin.access()),
+                );
+
                 b.push_op(OpSuStGa {
                     addr,
                     format,
@@ -2782,6 +2800,7 @@ impl<'a> ShaderFromNir<'a> {
                     out_of_bounds,
                     image_access,
                     offset_mode,
+                    cache_op,
                 });
             }
             nir_intrinsic_bindless_image_store => {

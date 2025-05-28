@@ -2212,7 +2212,7 @@ impl SM20Op for OpSuLdGa {
 
         e.set_opcode(SM20Unit::Mem, 0x35);
         e.set_mem_type(5..8, self.mem_type);
-        e.set_field(8..10, 0_u8); // 0: .ca, 1: none, 2: .cs, 3: .cv
+        e.set_ld_cache_op(8..10, self.cache_op);
         e.set_dst(14..20, &self.dst);
         e.set_reg_src(20..26, &self.addr);
 
@@ -2258,7 +2258,7 @@ impl SM20Op for OpSuStGa {
                 e.set_field(54..58, channel_mask.to_bits());
             }
         }
-        e.set_field(8..10, 0_u8); // 0: .wb, 1: none, 2: .cs, 3: .wt
+        e.set_st_cache_op(8..10, self.cache_op);
         e.set_reg_src(14..20, &self.data);
         e.set_reg_src(20..26, &self.addr);
 

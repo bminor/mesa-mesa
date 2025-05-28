@@ -5848,6 +5848,7 @@ pub struct OpSuLdGa {
 
     pub mem_type: MemType,
     pub offset_mode: SuGaOffsetMode,
+    pub cache_op: LdCacheOp,
 
     /// Format for the loaded data, passed directly from the descriptor.
     #[src_type(GPR)]
@@ -5886,6 +5887,7 @@ impl_display_for_op!(OpSuLdGa);
 pub struct OpSuStGa {
     pub image_access: ImageAccess,
     pub offset_mode: SuGaOffsetMode,
+    pub cache_op: StCacheOp,
 
     #[src_type(GPR)]
     pub format: Src,

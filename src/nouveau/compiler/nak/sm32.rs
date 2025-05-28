@@ -2404,14 +2404,14 @@ impl SM32Op for OpSuLdGa {
                 e.set_opcode(0x300, 2);
                 e.set_mem_type(56..59, self.mem_type);
 
-                // 54..56 cache hints (.ca, .cg, .cs, .cv)
+                e.set_ld_cache_op(54..56, self.cache_op);
                 e.set_src_cbuf(23..42, &cb);
             }
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x798, 2);
                 e.set_mem_type(33..36, self.mem_type);
 
-                // 31..33 cache hints (.ca, .cg, .cs, .cv)
+                e.set_ld_cache_op(31..33, self.cache_op);
                 e.set_reg_src(23..31, &self.format);
             }
             _ => panic!("Unhandled format src type"),
@@ -2459,7 +2459,7 @@ impl SM32Op for OpSuStGa {
 
                 e.set_su_ga_offset_mode(8..10, self.offset_mode);
                 e.set_src_cbuf(23..42, &cb);
-                // 54..56 cache hints (.wb, .cg, .cs, .wt)
+                e.set_st_cache_op(54..56, self.cache_op);
             }
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x79c, 2);
@@ -2481,7 +2481,7 @@ impl SM32Op for OpSuStGa {
                 };
 
                 e.set_su_ga_offset_mode(29..31, self.offset_mode);
-                // 31..33 cache hints (.wb, ??, .cs, .wt)
+                e.set_st_cache_op(31..33, self.cache_op);
             }
             _ => panic!("Unhandled format src type"),
         }
