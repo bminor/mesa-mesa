@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, UTC
 from math import floor
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from lava.utils.console_format import CONSOLE_LOG
 
@@ -32,10 +32,10 @@ class GitlabSection:
     __end_time: Optional[datetime] = field(default=None, init=False)
 
     @classmethod
-    def section_id_filter(cls, value) -> str:
+    def section_id_filter(cls, value: str) -> str:
         return str(re.sub(r"[^\w_-]+", "-", value))
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.id = self.section_id_filter(self.id)
 
     @property
@@ -47,7 +47,7 @@ class GitlabSection:
         return self.__end_time is not None
 
     @property
-    def start_time(self) -> datetime:
+    def start_time(self) -> Optional[datetime]:
         return self.__start_time
 
     @property
@@ -66,7 +66,7 @@ class GitlabSection:
 
         timestamp = self.get_timestamp(time)
         before_header = ":".join([preamble, timestamp, section_id])
-        if self.timestamp_relative_to:
+        if self.timestamp_relative_to and self.start_time is not None:
             delta = self.start_time - self.timestamp_relative_to
             reltime = f"[{floor(delta.seconds / 60):02}:{(delta.seconds % 60):02}] "
         else:
@@ -86,12 +86,16 @@ class GitlabSection:
             f"ET={self.end_time}, ET={elapsed_time})"
         )
 
-    def __enter__(self):
+    def __enter__(self) -> "GitlabSection":
         if start_log_line := self.start():
             print(start_log_line)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        *args: list[Any],
+        **kwargs: dict[str, Any],
+    ) -> None:
         if end_log_line := self.end():
             print(end_log_line)
 
@@ -103,26 +107,31 @@ class GitlabSection:
     def print_start_section(self) -> str:
         if self.suppress_start:
             return ""
+        if self.__start_time is None:
+            raise RuntimeError("Start time is not set.")
         return self.section(marker="start", header=self.header, time=self.__start_time)
 
     def end(self) -> str:
         assert self.has_started, "Ending an uninitialized section"
         self.__end_time = datetime.now(tz=UTC)
         assert (
-            self.__end_time >= self.__start_time
+            self.__start_time is not None and self.__end_time >= self.__start_time
         ), "Section execution time will be negative"
         return self.print_end_section()
 
     def print_end_section(self) -> str:
         if self.suppress_end:
             return ""
+        if self.__end_time is None:
+            raise RuntimeError("End time is not set.")
         return self.section(marker="end", header="", time=self.__end_time)
 
     def delta_time(self) -> Optional[timedelta]:
-        if self.__start_time and self.__end_time:
+        if self.__start_time is not None and self.__end_time is not None:
             return self.__end_time - self.__start_time
 
         if self.has_started:
+            assert self.__start_time is not None
             return datetime.now(tz=UTC) - self.__start_time
 
         return None
