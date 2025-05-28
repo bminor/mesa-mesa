@@ -310,6 +310,11 @@ function filter_env_vars() {
         CI_REGISTRY_PASSWORD
         CI_REPOSITORY_URL
 
+        # Too long and unnecessary GitLab variables
+        CI_COMMIT_DESCRIPTION
+        CI_COMMIT_MESSAGE
+        CI_MERGE_REQUEST_DESCRIPTION
+
         # Shell-managed variables
         _
         HOME
