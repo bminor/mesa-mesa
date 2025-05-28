@@ -393,7 +393,7 @@ yaml-toml-shell-py-test:
 
     SCRIPTS_DIR: install
 
-    CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: pass, exit_code: 0\r$'
+    CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: exit_code: 0\r$'
     CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'
 
     CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 2

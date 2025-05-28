@@ -260,7 +260,7 @@ def follow_job_execution(job, log_follower):
         raise_lava_error(job)
 
     # LogFollower does some cleanup after the early exit (trigger by
-    # `hwci: pass|fail` regex), let's update the phases after the cleanup.
+    # `hwci: mesa: exit_code: \d+` regex), let's update the phases after the cleanup.
     structural_log_phases(job, log_follower)
 
 

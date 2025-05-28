@@ -337,27 +337,27 @@ def test_log_corruption(mock_sleep, data_sequence, expected_exception, mock_prox
 LAVA_RESULT_LOG_SCENARIOS = {
     # the submitter should accept xtrace logs
     "Bash xtrace echo with kmsg interleaving": (
-        "echo hwci: mesa: pass, exit_code: 0[  737.673352] <LAVA_SIGNAL_ENDTC mesa-ci>",
+        "echo hwci: mesa: exit_code: 0[  737.673352] <LAVA_SIGNAL_ENDTC mesa-ci>",
         "pass", 0,
     ),
     # the submitter should accept xtrace logs
     "kmsg result print": (
-        "[  737.673352] hwci: mesa: pass, exit_code: 0",
+        "[  737.673352] hwci: mesa: exit_code: 0",
         "pass", 0,
     ),
     # if the job result echo has a very bad luck, it still can be interleaved
     # with kmsg
     "echo output with kmsg interleaving": (
-        "hwci: mesa: pass, exit_code: 0[  737.673352] <LAVA_SIGNAL_ENDTC mesa-ci>",
+        "hwci: mesa: exit_code: 0[  737.673352] <LAVA_SIGNAL_ENDTC mesa-ci>",
         "pass", 0,
     ),
     "fail case": (
-        "hwci: mesa: fail, exit_code: 1",
+        "hwci: mesa: exit_code: 1",
         "fail", 1,
     ),
     # fail case with different exit code
     "fail case (exit code 101)": (
-        "hwci: mesa: fail, exit_code: 101",
+        "hwci: mesa: exit_code: 101",
         "fail", 101,
     ),
 }

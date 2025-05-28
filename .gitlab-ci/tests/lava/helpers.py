@@ -49,7 +49,7 @@ def jobs_logs_response(
     timed_msg = {"dt": str(datetime.now(tz=UTC)), "msg": "New message", "lvl": lvl}
     if result:
         timed_msg["lvl"] = "target"
-        timed_msg["msg"] = f"hwci: mesa: {result}, exit_code: {exit_code}"
+        timed_msg["msg"] = f"hwci: mesa: exit_code: {exit_code}"
 
     logs = [timed_msg] if msg is None else msg
 
@@ -72,7 +72,7 @@ def section_aware_message_generator(
         if result and section_type == result_message_section:
             # To consider the job finished, the result `echo` should be produced
             # in the correct section
-            yield create_lava_yaml_msg(msg=f"hwci: mesa: {result}, exit_code: {exit_code}"), delay
+            yield create_lava_yaml_msg(msg=f"hwci: mesa: exit_code: {exit_code}"), delay
 
 
 def message_generator():
