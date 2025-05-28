@@ -8,6 +8,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from lava.exceptions import MesaCIKnownIssueException, MesaCITimeoutError
 from lava.utils import (
     GitlabSection,
@@ -23,7 +24,6 @@ from lava.utils.constants import (
     A6XX_GPU_RECOVERY_FAILURE_MAX_COUNT,
 )
 from lava.utils.lava_log_hints import LAVALogHints
-
 from ..lava.helpers import (
     create_lava_yaml_msg,
     does_not_raise,
@@ -36,12 +36,14 @@ GITLAB_SECTION_SCENARIOS = {
     "start collapsed": (
         "start",
         True,
-        f"\x1b[0Ksection_start:mock_date:my_first_section[collapsed=true]\r\x1b[0K{GitlabSection.colour}my_header\x1b[0m",
+        f"\x1b[0Ksection_start:mock_date:my_first_section[collapsed=true]\r\x1b[0K"
+        f"{GitlabSection.colour}my_header\x1b[0m",
     ),
     "start non_collapsed": (
         "start",
         False,
-        f"\x1b[0Ksection_start:mock_date:my_first_section\r\x1b[0K{GitlabSection.colour}my_header\x1b[0m",
+        f"\x1b[0Ksection_start:mock_date:my_first_section\r\x1b[0K"
+        f"{GitlabSection.colour}my_header\x1b[0m",
     ),
     "end collapsed": (
         "end",
@@ -55,6 +57,7 @@ GITLAB_SECTION_SCENARIOS = {
     ),
 }
 
+
 @pytest.mark.parametrize(
     "method, collapsed, expectation",
     GITLAB_SECTION_SCENARIOS.values(),
@@ -67,7 +70,7 @@ def test_gitlab_section(method, collapsed, expectation):
         type=LogSectionType.TEST_CASE,
         start_collapsed=collapsed,
     )
-    gs.get_timestamp = lambda x: "mock_date"
+    gs.get_timestamp = lambda mock_date: "mock_date"
     gs.start()
     result = getattr(gs, method)()
     assert result == expectation
@@ -192,7 +195,8 @@ def test_hide_sensitive_data(input, expectation, tags):
 
 GITLAB_SECTION_SPLIT_SCENARIOS = {
     "Split section_start at target level": (
-        "\x1b[0Ksection_start:1668454947:test_post_process[collapsed=true]\r\x1b[0Kpost-processing test results",
+        "\x1b[0Ksection_start:1668454947:test_post_process[collapsed=true]\r\x1b[0K"
+        "post-processing test results",
         (
             "\x1b[0Ksection_start:1668454947:test_post_process[collapsed=true]",
             "\x1b[0Kpost-processing test results",
@@ -247,7 +251,8 @@ def test_lava_gitlab_section_log_collabora(expected_message, messages, monkeypat
 CARRIAGE_RETURN_SCENARIOS = {
     "Carriage return at the end of the previous line": (
         (
-            "\x1b[0Ksection_start:1677609903:test_setup[collapsed=true]\r\x1b[0K\x1b[0;36m[303:44] deqp: preparing test setup\x1b[0m",
+            "\x1b[0Ksection_start:1677609903:test_setup[collapsed=true]\r\x1b[0K\x1b[0;36m[303:44] "
+            "deqp: preparing test setup\x1b[0m",
         ),
         (
             "\x1b[0Ksection_start:1677609903:test_setup[collapsed=true]\r",
@@ -393,6 +398,7 @@ def test_detect_failure(messages, expectation):
     with expectation:
         lf.feed(messages)
 
+
 def test_detect_a6xx_gpu_recovery_failure(frozen_time):
     log_follower = LogFollower()
     lava_log_hints = LAVALogHints(log_follower=log_follower)
@@ -407,6 +413,7 @@ def test_detect_a6xx_gpu_recovery_failure(frozen_time):
             # Simulate the passage of time within the watch period
             frozen_time.tick(1)
             failure_message["dt"] = datetime.now(tz=UTC).isoformat()
+
 
 def test_detect_a6xx_gpu_recovery_success(frozen_time):
     log_follower = LogFollower()
@@ -431,5 +438,10 @@ def test_detect_a6xx_gpu_recovery_success(frozen_time):
     }
     with does_not_raise():
         lava_log_hints.detect_a6xx_gpu_recovery_failure(failure_message)
-    assert lava_log_hints.a6xx_gpu_first_fail_time is None, "a6xx_gpu_first_fail_time is not None"
-    assert lava_log_hints.a6xx_gpu_recovery_fail_counter == 0, "a6xx_gpu_recovery_fail_counter is not 0"
+    assert lava_log_hints.a6xx_gpu_first_fail_time is None, (
+        "a6xx_gpu_first_fail_time is not None"
+    )
+    assert lava_log_hints.a6xx_gpu_recovery_fail_counter == 0, (
+        "a6xx_gpu_recovery_fail_counter is not 0"
+    )
+
