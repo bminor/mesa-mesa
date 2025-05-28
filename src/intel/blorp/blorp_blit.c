@@ -2998,8 +2998,9 @@ blorp_copy(struct blorp_batch *batch,
        */
       ASSERTED enum isl_format src_view_fmt = params.src.view.format;
       ASSERTED enum isl_format src_surf_fmt = params.src.surf.format;
-      assert(isl_get_sampler_clear_field_offset(devinfo, src_view_fmt) ==
-             isl_get_sampler_clear_field_offset(devinfo, src_surf_fmt));
+      ASSERTED bool hiz = params.src.aux_usage == ISL_AUX_USAGE_HIZ_CCS_WT;
+      assert(isl_get_sampler_clear_field_offset(devinfo, src_view_fmt, hiz) ==
+             isl_get_sampler_clear_field_offset(devinfo, src_surf_fmt, hiz));
    }
 
    if (params.src.view.format != params.dst.view.format) {

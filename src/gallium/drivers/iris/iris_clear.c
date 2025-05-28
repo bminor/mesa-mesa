@@ -574,7 +574,8 @@ fast_clear_depth(struct iris_context *ice,
          isl_color_value_pack(&clear_value, res->surf.format, packed_depth);
 
          const uint64_t clear_pixel_offset = res->aux.clear_color_offset +
-            isl_get_sampler_clear_field_offset(devinfo, res->surf.format);
+            isl_get_sampler_clear_field_offset(devinfo, res->surf.format,
+                                               true);
 
          iris_emit_pipe_control_write(batch, "update fast clear value (Z)",
                                       PIPE_CONTROL_WRITE_IMMEDIATE,

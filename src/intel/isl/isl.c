@@ -536,27 +536,44 @@ isl_device_get_sample_counts(const struct isl_device *dev)
 
 uint64_t
 isl_get_sampler_clear_field_offset(const struct intel_device_info *devinfo,
-                                   enum isl_format format)
+                                   enum isl_format format, bool is_depth)
 {
    assert(devinfo->ver == 11 || devinfo->ver == 12);
+   const struct isl_format_layout *fmtl = isl_format_get_layout(format);
 
-   /* For 32bpc formats, the sampler fetches the raw clear color dwords
-    * used for rendering instead of the converted pixel dwords typically
-    * used for sampling. The CLEAR_COLOR struct page documents this for
-    * 128bpp formats, but not for 32bpp and 64bpp formats.
-    *
-    * Note that although the sampler doesn't use the converted clear color
-    * field with 32bpc formats, the hardware will still convert the clear
-    * color to a pixel when the surface format size is less than 128bpp.
+   /* For 128bpp formats, the only place with enough bits to store the clear
+    * color is the raw clear color field.
     */
-   if (isl_format_get_layout(format)->channels.r.bits == 32)
+   if (fmtl->bpb == 128)
       return 0;
 
-   /* According to Wa_2201730850, the gfx120 sampler reads the
-    * U24_X8-formatted pixel from the first raw clear color dword.
+   /* Docs state that the converted depth value is found in the raw clear
+    * color dword for Red. Test results indicate that this is not actually
+    * true for every depth format and on every platform. An exception exists
+    * however for D32_FLOAT.
     */
-   if (devinfo->verx10 == 120 && format == ISL_FORMAT_R24_UNORM_X8_TYPELESS)
+   if (is_depth && format == ISL_FORMAT_R32_FLOAT)
       return 0;
+
+   if (devinfo->verx10 <= 120) {
+      /* For R32 formats, the ICL and TGL sampler fetches the raw clear color
+       * dword used for rendering instead of the converted pixel dword
+       * typically used for sampling. The CLEAR_COLOR struct page documents
+       * this for 128bpp formats, but not for 32bpp.
+       *
+       * Note that although the sampler doesn't use the converted clear color
+       * field with R32 formats, the hardware will still output the converted
+       * pixel into that field during a fast clear.
+       */
+      if (fmtl->bpb == 32 && fmtl->channels.r.bits == 32)
+         return 0;
+
+      /* According to Wa_2201730850, the gfx120 sampler reads the
+       * U24_X8-formatted pixel from the first raw clear color dword.
+       */
+      if (format == ISL_FORMAT_R24_UNORM_X8_TYPELESS)
+         return 0;
+   }
 
    return 16;
 }

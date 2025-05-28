@@ -2055,7 +2055,7 @@ isl_device_get_sample_counts(const struct isl_device *dev);
  */
 uint64_t
 isl_get_sampler_clear_field_offset(const struct intel_device_info *devinfo,
-                                   enum isl_format format);
+                                   enum isl_format format, bool is_depth);
 
 /**
  * :returns: The isl_format_layout for the given isl_format

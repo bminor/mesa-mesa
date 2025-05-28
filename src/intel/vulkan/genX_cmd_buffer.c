@@ -496,7 +496,7 @@ transition_depth_buffer(struct anv_cmd_buffer *cmd_buffer,
 
       const uint32_t clear_pixel_offset = clear_color_addr.offset +
          isl_get_sampler_clear_field_offset(cmd_buffer->device->info,
-                                            depth_format);
+                                            depth_format, true);
       const struct anv_address clear_pixel_addr = {
          .bo = clear_color_addr.bo,
          .offset = clear_pixel_offset,
