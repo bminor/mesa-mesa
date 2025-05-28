@@ -185,6 +185,11 @@ lower_image_derefs(nir_builder *b, nir_intrinsic_instr *intr, pco_data *data)
       unsigned ia_idx = var->data.index;
       bool onchip = data->fs.ia_formats[ia_idx] != PIPE_FORMAT_NONE;
 
+      bool is_stencil = data->fs.ia_has_stencil & BITFIELD_BIT(ia_idx);
+      is_stencil &= glsl_get_sampler_result_type(glsl_without_array_or_matrix(
+                       var->type)) != GLSL_TYPE_FLOAT;
+      onchip &= !is_stencil;
+
       if (onchip) {
          nir_def *elem = array_elem_from_deref(b, deref);
          nir_def *index = nir_vec4(b,

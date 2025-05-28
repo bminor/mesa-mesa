@@ -87,6 +87,7 @@ typedef struct _pco_fs_data {
    enum pipe_format ia_formats[8];
 
    uint8_t ia_tile_buffers;
+   uint8_t ia_has_stencil;
 
    unsigned num_tile_buffers;
 

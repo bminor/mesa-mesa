@@ -2019,6 +2019,7 @@ static void pvr_init_fs_input_attachments(
          continue;
 
       VkFormat vk_format = pass->attachments[idx].vk_format;
+      bool has_stencil = vk_format_has_stencil(vk_format);
       if (hw_subpass->input_access[u].type ==
           PVR_RENDERPASS_HWSETUP_INPUT_ACCESS_ONCHIP_ZREPLICATE) {
          vk_format = VK_FORMAT_R32_SFLOAT;
@@ -2026,6 +2027,8 @@ static void pvr_init_fs_input_attachments(
 
       fs->ia_formats[u] = vk_format_to_pipe_format(vk_format);
       assert(fs->ia_formats[u] != PIPE_FORMAT_NONE);
+      if (has_stencil)
+         fs->ia_has_stencil |= BITFIELD_BIT(u);
 
       unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;
       const struct usc_mrt_resource *mrt_resource =
