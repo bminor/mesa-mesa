@@ -1552,21 +1552,6 @@ struct zink_surface {
    uint32_t hash; //for surface caching
 };
 
-/* wrapper object that preserves the gallium expectation of having
- * pipe_surface::context match the context used to create the surface
- */
-struct zink_ctx_surface {
-   struct pipe_surface base;
-   struct zink_surface *surf; //the actual surface
-};
-
-/* use this cast for framebuffer surfaces */
-static inline struct zink_surface *
-zink_csurface(struct pipe_surface *psurface)
-{
-   return psurface ? ((struct zink_ctx_surface *)psurface)->surf : NULL;
-}
-
 /* use this cast for internal surfaces */
 static inline struct zink_surface *
 zink_surface(struct pipe_surface *psurface)

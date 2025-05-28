@@ -233,39 +233,16 @@ zink_get_surface(struct zink_context *ctx,
    return surface;
 }
 
-/* wrap a surface for use as a framebuffer attachment
- * Takes ownership of surface */
-static struct zink_ctx_surface *
-wrap_surface(struct pipe_context *pctx,
-             struct zink_surface *surface,
-             const struct pipe_surface *templ)
-{
-   struct zink_ctx_surface *csurf = CALLOC_STRUCT(zink_ctx_surface);
-   if (!csurf) {
-      zink_surface_reference (zink_screen(pctx->screen), &surface, NULL);
-      return NULL;
-   }
-
-   csurf->base = *templ;
-   pipe_reference_init(&csurf->base.reference, 1);
-   csurf->surf = surface;
-   csurf->base.context = pctx;
-
-   return csurf;
-}
-
 /* this is the context hook, so only zink_ctx_surfaces will reach it */
 static void
 zink_surface_destroy(struct pipe_context *pctx,
                      struct pipe_surface *psurface)
 {
-   struct zink_ctx_surface *csurf = (struct zink_ctx_surface *)psurface;
-   zink_surface_reference(zink_screen(pctx->screen), &csurf->surf, NULL);
    /* ensure this gets repopulated if another transient surface is created */
    struct zink_resource *res = zink_resource(psurface->texture);
    if (res->transient)
       res->transient->valid = false;
-   FREE(csurf);
+   zink_destroy_surface(zink_screen(pctx->screen), psurface);
 }
 
 /* this the context hook that returns a zink_ctx_surface */
@@ -321,17 +298,7 @@ zink_create_surface(struct pipe_context *pctx,
       }
    }
 
-   struct zink_ctx_surface *csurf = wrap_surface(pctx, surface, &surface->base); /* move ownership of surface */
-   if (!unlikely (csurf)) {
-      mesa_loge("ZINK: failed to allocate csurf!");
-      return NULL;
-   }
-
-   init_pipe_surface_info(pctx, &csurf->base, templ, pres);
-   /* this may or may not be set previously depending whether templ->texture is set */
-   csurf->base.texture = pres;
-
-   return &csurf->base;
+   return &surface->base;
 }
 
 struct zink_surface *
@@ -411,7 +378,7 @@ zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface)
       /* reuse existing surface; old one will be cleaned up naturally */
       struct zink_surface *new_surface = new_entry->data;
       simple_mtx_unlock(&res->surface_mtx);
-      zink_surface_reference(screen, (struct zink_surface**)psurface, new_surface);
+      pipe_surface_reference(psurface, &new_surface->base);
       return true;
    }
    struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(&res->surface_cache, surface->hash, &surface->ivci);

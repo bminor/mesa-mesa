@@ -452,7 +452,7 @@ zink_clear_texture_dynamic(struct pipe_context *pctx,
 
    VkRenderingAttachmentInfo att = {0};
    att.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-   att.imageView = zink_csurface(surf)->image_view;
+   att.imageView = zink_surface(surf)->image_view;
    att.imageLayout = res->aspect & VK_IMAGE_ASPECT_COLOR_BIT ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
    att.loadOp = full_clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
    att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -600,7 +600,7 @@ zink_clear_depth_stencil(struct pipe_context *pctx, struct pipe_surface *dst,
       zink_stop_conditional_render(ctx);
       ctx->render_condition_active = false;
    }
-   bool cur_attachment = zink_csurface(ctx->fb_zsbuf) == zink_csurface(dst);
+   bool cur_attachment = ctx->fb_zsbuf == dst;
    if (dstx > ctx->fb_state.width || dsty > ctx->fb_state.height ||
        dstx + width > ctx->fb_state.width ||
        dsty + height > ctx->fb_state.height)

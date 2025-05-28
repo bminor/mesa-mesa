@@ -77,13 +77,6 @@ zink_surface_clamp_viewtype(VkImageViewType viewType, unsigned first_layer, unsi
 bool
 zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface);
 
-static inline bool
-zink_rebind_ctx_surface(struct zink_context *ctx, struct pipe_surface **psurface)
-{
-   struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)*psurface;
-   return zink_rebind_surface(ctx, (struct pipe_surface**)&csurf->surf);
-}
-
 struct pipe_surface *
 zink_surface_create_null(struct zink_context *ctx, enum pipe_texture_target target, unsigned width, unsigned height, unsigned samples);
 

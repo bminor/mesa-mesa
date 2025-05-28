@@ -149,7 +149,7 @@ zink_init_color_attachment(struct zink_context *ctx, unsigned i, struct zink_rt_
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
    struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
-      struct zink_surface *surf = zink_csurface(psurf);
+      struct zink_surface *surf = zink_surface(psurf);
       rt->format = surf->ivci.format;
       rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
@@ -169,7 +169,7 @@ zink_tc_init_color_attachment(struct zink_context *ctx, const struct tc_renderpa
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
    struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
-      struct zink_surface *surf = zink_csurface(psurf);
+      struct zink_surface *surf = zink_surface(psurf);
       rt->format = surf->ivci.format;
       rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
@@ -268,7 +268,7 @@ zink_render_update_swapchain(struct zink_context *ctx)
       if (zink_is_swapchain(res)) {
          has_swapchain = true;
          if (zink_kopper_acquire(ctx, res, UINT64_MAX))
-            zink_surface_swapchain_update(ctx, zink_csurface(ctx->fb_cbufs[i]));
+            zink_surface_swapchain_update(ctx, zink_surface(ctx->fb_cbufs[i]));
       }
    }
    return has_swapchain;
