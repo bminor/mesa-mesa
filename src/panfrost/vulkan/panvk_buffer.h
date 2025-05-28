@@ -15,11 +15,6 @@ struct panvk_priv_bo;
 struct panvk_buffer {
    struct vk_buffer vk;
 
-   /* TODO: See if we can rework the synchronization logic so we don't need to
-    * pass BOs around.
-    */
-   struct pan_kmod_bo *bo;
-
    /* FIXME: Only used for index buffers to do the min/max index retrieval on
     * the CPU. This is all broken anyway and the min/max search should be done
     * with a compute shader that also patches the job descriptor accordingly

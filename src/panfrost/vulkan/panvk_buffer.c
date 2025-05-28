@@ -59,17 +59,13 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
       to_panvk_physical_device(device->vk.physical);
    const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
 
-   for (uint32_t i = 0; i < bindInfoCount; ++i) {
+   for (uint32_t i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(panvk_buffer, buffer, pBindInfos[i].buffer);
-      struct pan_kmod_bo *old_bo = buffer->bo;
 
       assert(mem != NULL);
-
-      assert(buffer->bo == NULL);
       assert(buffer->vk.device_address == 0);
 
-      buffer->bo = pan_kmod_bo_get(mem->bo);
       buffer->vk.device_address = mem->addr.dev + pBindInfos[i].memoryOffset;
 
       /* FIXME: Only host map for index buffers so we can do the min/max
@@ -91,8 +87,6 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
          assert(map_addr != MAP_FAILED);
          buffer->host_ptr = map_addr + (offset & pgsize);
       }
-
-      pan_kmod_bo_put(old_bo);
    }
    return VK_SUCCESS;
 }
@@ -140,6 +134,5 @@ panvk_DestroyBuffer(VkDevice _device, VkBuffer _buffer,
       buffer->host_ptr = NULL;
    }
 
-   pan_kmod_bo_put(buffer->bo);
    vk_buffer_destroy(&device->vk, pAllocator, &buffer->vk);
 }
