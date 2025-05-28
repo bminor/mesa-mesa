@@ -31,10 +31,15 @@ struct pvr_eot_props {
       const unsigned *state_regs;
    };
 
+   unsigned msaa_samples;
+   unsigned num_output_regs;
+
    uint64_t tile_buffer_addrs[PVR_MAX_COLOR_ATTACHMENTS];
 };
 
-pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props);
+pco_shader *pvr_usc_eot(pco_ctx *ctx,
+                        struct pvr_eot_props *props,
+                        const struct pvr_device_info *dev_info);
 
 /* Transfer queue shader generation. */
 struct pvr_tq_props {

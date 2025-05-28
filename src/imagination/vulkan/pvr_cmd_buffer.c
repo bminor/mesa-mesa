@@ -490,6 +490,7 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
    const uint32_t emit_count,
    const uint32_t *pbe_cs_words,
    const unsigned *tile_buffer_ids,
+   unsigned pixel_output_width,
    struct pvr_pds_upload *const pds_upload_out)
 {
    struct pvr_pds_event_program pixel_event_program = {
@@ -513,6 +514,7 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
    pco_shader *eot;
    VkResult result;
 
+   bool has_tile_buffers = false;
    for (unsigned u = 0; u < emit_count; ++u) {
       unsigned tile_buffer_id = tile_buffer_ids[u];
       if (tile_buffer_id == ~0)
@@ -521,9 +523,20 @@ static VkResult pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
       assert(tile_buffer_id < tile_buffer_state->buffer_count);
       props.tile_buffer_addrs[u] =
          tile_buffer_state->buffers[tile_buffer_id]->vma->dev_addr.addr;
+      has_tile_buffers = true;
    }
 
-   eot = pvr_usc_eot(cmd_buffer->device->pdevice->pco_ctx, &props);
+   if (has_tile_buffers) {
+      props.num_output_regs = pixel_output_width;
+      props.msaa_samples =
+         cmd_buffer->vk.dynamic_graphics_state.ms.rasterization_samples;
+
+      if (!props.msaa_samples)
+         props.msaa_samples = 1;
+   }
+
+   eot =
+      pvr_usc_eot(device->pdevice->pco_ctx, &props, &device->pdevice->dev_info);
    usc_temp_count = pco_shader_data(eot)->common.temps;
 
    result = pvr_cmd_buffer_upload_usc(cmd_buffer,
@@ -1501,11 +1514,17 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
              emit_state.pbe_reg_words,
              sizeof(job->pbe_reg_words));
 
+      unsigned pixel_output_width =
+         pvr_pass_get_pixel_output_width(render_pass_info->pass,
+                                         sub_cmd->hw_render_idx,
+                                         dev_info);
+
       result = pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
          cmd_buffer,
          emit_state.emit_count,
          emit_state.pbe_cs_words[0],
          emit_state.tile_buffer_ids,
+         pixel_output_width,
          &pds_pixel_event_program);
       if (result != VK_SUCCESS)
          return result;

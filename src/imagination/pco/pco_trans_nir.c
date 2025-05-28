@@ -506,7 +506,8 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
                        pco_ref_drc(PCO_DRC_0),
                        pco_ref_imm8(chans),
                        addr_data,
-                       cov_mask);
+                       cov_mask,
+                       .olchk = true);
 }
 
 static pco_instr *trans_flush_tile_buffer(trans_ctx *tctx,
@@ -537,12 +538,21 @@ static pco_instr *trans_flush_tile_buffer(trans_ctx *tctx,
    pco_ref idx_reg =
       pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
 
-   pco_mbyp(&tctx->b, idx_reg, pco_zero);
+   unsigned base = nir_intrinsic_base(intr);
+   pco_movi32(&tctx->b, idx_reg, pco_ref_imm32(base));
+
+   pco_ref burst_len = pco_ref_new_ssa32(tctx->func);
+   unsigned range = nir_intrinsic_range(intr);
+   assert(range <= 1024);
+   if (range == 1024)
+      range = 0;
+
+   pco_movi32(&tctx->b, burst_len, pco_ref_imm32(range));
 
    pco_ref dest = pco_ref_hwreg(0, PCO_REG_CLASS_PIXOUT);
    dest = pco_ref_hwreg_idx_from(idx_reg_num, dest);
 
-   return pco_ld_regbl(&tctx->b, dest, pco_ref_drc(PCO_DRC_0), pco_zero, addr);
+   return pco_ld_regbl(&tctx->b, dest, pco_ref_drc(PCO_DRC_0), burst_len, addr);
 }
 
 static unsigned fetch_resource_base_reg(const pco_common_data *common,

@@ -1243,7 +1243,9 @@ static VkResult pvr_transfer_eot_shaders_init(struct pvr_device *device,
       pco_shader *eot;
       VkResult result;
 
-      eot = pvr_usc_eot(device->pdevice->pco_ctx, &props);
+      eot = pvr_usc_eot(device->pdevice->pco_ctx,
+                        &props,
+                        &device->pdevice->dev_info);
 
       result = pvr_gpu_upload_usc(device,
                                   pco_shader_binary_data(eot),

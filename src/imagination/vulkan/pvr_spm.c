@@ -735,7 +735,7 @@ pvr_spm_init_eot_state(struct pvr_device *device,
       .state_words = pbe_state_words[0],
    };
 
-   eot = pvr_usc_eot(device->pdevice->pco_ctx, &props);
+   eot = pvr_usc_eot(device->pdevice->pco_ctx, &props, dev_info);
    usc_temp_count = pco_shader_data(eot)->common.temps;
 
    /* TODO: Create a #define in the compiler code to replace the 16. */

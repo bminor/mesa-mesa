@@ -482,4 +482,23 @@ rogue_max_wg_temps(const struct pvr_device_info *dev_info,
 
    return temps;
 }
+
+static inline uint32_t
+rogue_num_uscs_per_tile(const struct pvr_device_info *dev_info)
+{
+   if (PVR_HAS_FEATURE(dev_info, tile_per_usc) ||
+       PVR_HAS_FEATURE(dev_info, pbe2_in_xe))
+      return 1;
+
+   return 4;
+}
+
+static inline uint32_t rogue_usc_indexed_pixel_output_index_scale(
+   const struct pvr_device_info *dev_info)
+{
+   if (PVR_HAS_FEATURE(dev_info, tile_per_usc))
+      return 4;
+
+   return 1;
+}
 #endif /* ROGUE_HW_UTILS_H */

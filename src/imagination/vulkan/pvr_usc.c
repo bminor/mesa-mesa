@@ -10,6 +10,7 @@
  * \brief USC internal shader generation.
  */
 
+#include "hwdef/rogue_hw_utils.h"
 #include "nir/nir.h"
 #include "nir/nir_builder.h"
 #include "nir/nir_format_convert.h"
@@ -75,7 +76,9 @@ pco_shader *pvr_usc_nop(pco_ctx *ctx, mesa_shader_stage stage)
  * \param props End of tile shader properties.
  * \return The end-of-tile shader.
  */
-pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props)
+pco_shader *pvr_usc_eot(pco_ctx *ctx,
+                        struct pvr_eot_props *props,
+                        const struct pvr_device_info *dev_info)
 {
    nir_builder b =
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
@@ -92,14 +95,44 @@ pco_shader *pvr_usc_eot(pco_ctx *ctx, struct pvr_eot_props *props)
          nir_wop_pco(&b);
 
       if (props->tile_buffer_addrs[u]) {
-         nir_def *tile_buffer_addr_lo =
-            nir_imm_int(&b, props->tile_buffer_addrs[u] & 0xffffffff);
-         nir_def *tile_buffer_addr_hi =
-            nir_imm_int(&b, props->tile_buffer_addrs[u] >> 32);
+         uint64_t tile_buffer_addr = props->tile_buffer_addrs[u];
 
-         nir_flush_tile_buffer_pco(&b,
-                                   tile_buffer_addr_lo,
-                                   tile_buffer_addr_hi);
+         unsigned data_size =
+            (PVR_GET_FEATURE_VALUE(dev_info, tile_size_x, 0U) *
+             PVR_GET_FEATURE_VALUE(dev_info, tile_size_y, 0U) *
+             props->num_output_regs) /
+            rogue_num_uscs_per_tile(dev_info);
+         assert(data_size);
+
+         assert(props->msaa_samples);
+         if (props->msaa_samples > 1) {
+            if (PVR_HAS_FEATURE(dev_info, pbe2_in_xe) &&
+                PVR_GET_FEATURE_VALUE(dev_info, isp_samples_per_pixel, 0U) ==
+                   4) {
+               data_size *= props->msaa_samples;
+            } else {
+               data_size *= 2;
+            }
+         }
+
+         /* We can burst up to 1024 dwords at a time. */
+         unsigned num_loads = DIV_ROUND_UP(data_size, 1024);
+         unsigned scale = rogue_usc_indexed_pixel_output_index_scale(dev_info);
+         for (unsigned l = 0; l < num_loads; ++l) {
+            unsigned offset = l * 1024;
+            unsigned idx_offset = offset / scale;
+            bool last_load = l == (num_loads - 1);
+            unsigned range = last_load ? data_size - offset : 1024;
+
+            nir_flush_tile_buffer_pco(
+               &b,
+               nir_imm_int(&b, tile_buffer_addr & 0xffffffff),
+               nir_imm_int(&b, tile_buffer_addr >> 32),
+               .base = idx_offset,
+               .range = range);
+
+            tile_buffer_addr += 1024 * sizeof(uint32_t);
+         }
       }
 
       nir_def *state0;
