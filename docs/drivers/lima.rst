@@ -57,6 +57,14 @@ These are some display drivers that have been tested with Lima:
 - Tiny DRM: ``tinydrm``
 - Xilinx ZynqMP: ``zynqmp-dpsub``
 
+DRIconf variables
+-----------------
+
+``lima_allow_fp16_rts``
+   Expose support for FP16 render-targets. This has the side-effect of
+   dropping support for 4xMSAA, which unfortunately can't be supported
+   at the same time due to API and hardware restrictions.
+
 Environment variables
 ---------------------
 
