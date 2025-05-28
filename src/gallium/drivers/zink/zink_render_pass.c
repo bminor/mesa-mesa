@@ -200,20 +200,21 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       }
       if (transient->valid)
          continue;
-      struct pipe_surface *dst_view = (struct pipe_surface*)zink_transient_surface(ctx->fb_cbufs[i]);
-      assert(dst_view);
+      struct pipe_surface dst_view = *ctx->fb_cbufs[i];
+      dst_view.texture = &transient->base.b;
+      dst_view.nr_samples = 0;
       struct pipe_sampler_view src_templ, *src_view;
       struct pipe_box dstbox;
 
       u_box_3d(0, 0, 0, ctx->fb_state.width, ctx->fb_state.height,
-               1 + dst_view->last_layer - dst_view->first_layer, &dstbox);
+               1 + dst_view.last_layer - dst_view.first_layer, &dstbox);
 
       util_blitter_default_src_texture(ctx->blitter, &src_templ, src, ctx->fb_state.cbufs[i].level);
       src_view = ctx->base.create_sampler_view(&ctx->base, src, &src_templ);
 
       zink_blit_begin(ctx, ZINK_BLIT_SAVE_FB | ZINK_BLIT_SAVE_FS | ZINK_BLIT_SAVE_TEXTURES);
       ctx->blitting = false;
-      zink_blit_barriers(ctx, zink_resource(src), zink_resource(dst_view->texture), true);
+      zink_blit_barriers(ctx, zink_resource(src), transient, true);
       ctx->blitting = true;
       unsigned clear_mask = i == PIPE_MAX_COLOR_BUFS ?
                               (BITFIELD_MASK(PIPE_MAX_COLOR_BUFS) << 2) :
@@ -222,7 +223,7 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       unsigned rp_clears_enabled = ctx->rp_clears_enabled & clear_mask;
       ctx->clears_enabled &= ~clear_mask;
       ctx->rp_clears_enabled &= ~clear_mask;
-      util_blitter_blit_generic(ctx->blitter, dst_view, &dstbox,
+      util_blitter_blit_generic(ctx->blitter, &dst_view, &dstbox,
                                  src_view, &dstbox, ctx->fb_state.width, ctx->fb_state.height,
                                  PIPE_MASK_RGBAZS, PIPE_TEX_FILTER_NEAREST, NULL,
                                  false, false, 0, NULL);
@@ -230,7 +231,7 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       ctx->rp_clears_enabled = rp_clears_enabled;
       ctx->blitting = false;
       if (blitting) {
-         zink_blit_barriers(ctx, NULL, zink_resource(dst_view->texture), true);
+         zink_blit_barriers(ctx, NULL, transient, true);
          zink_blit_barriers(ctx, NULL, zink_resource(src), true);
       }
       ctx->blitting = blitting;
