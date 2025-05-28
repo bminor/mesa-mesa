@@ -26,5 +26,6 @@ softpipe-asan-gles31:
   timeout: 10m
   extends: .softpipe-deqp-test
   needs:
-    - debian/x86_64_test-gl
-    - debian-x86_64-asan
+    - job: debian/x86_64_test-gl
+      optional: true
+    - job: debian-x86_64-asan

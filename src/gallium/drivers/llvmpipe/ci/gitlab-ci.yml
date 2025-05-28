@@ -7,8 +7,9 @@ llvmpipe-piglit-rusticl:
     - .llvmpipe-rusticl-rules
     - .test-piglit
   needs:
-    - debian-x86_64
-    - debian/x86_64_test-gl
+    - job: debian-x86_64
+    - job: debian/x86_64_test-gl
+      optional: true
   variables:
     DEQP_SUITE: llvmpipe-rusticl
     GPU_VERSION: llvmpipe-rusticl
@@ -63,8 +64,9 @@ llvmpipe-deqp-asan:
     S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
   extends: .llvmpipe-deqp-test
   needs:
-    - debian/x86_64_test-gl
-    - debian-x86_64-asan
+    - job: debian/x86_64_test-gl
+      optional: true
+    - job: debian-x86_64-asan
 
 .android-llvmpipe:
   extends:

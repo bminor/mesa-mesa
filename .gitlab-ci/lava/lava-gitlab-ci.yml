@@ -61,8 +61,10 @@ variables:
     - !reference [.required-for-hardware-jobs, needs]
     - job: alpine/x86_64_lava_ssh_client
       artifacts: false
+      optional: true
     - job: alpine/x86_64_lava-trigger
       artifacts: false
+      optional: true
 
 .lava-x86_64-test:
   extends:
@@ -82,6 +84,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-gl
       artifacts: false
+      optional: true
     - job: debian-x86_64
       artifacts: false
 
@@ -93,6 +96,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-video
       artifacts: false
+      optional: true
     - job: debian-x86_64
       artifacts: false
 
@@ -104,6 +108,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-vk
       artifacts: false
+      optional: true
     - job: debian-x86_64
       artifacts: false
 
@@ -125,6 +130,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/arm32_test-gl
       artifacts: false
+      optional: true
     - job: debian-arm32
       artifacts: false
 
@@ -146,6 +152,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/arm64_test-gl
       artifacts: false
+      optional: true
     - job: debian-arm64
       artifacts: false
 
@@ -157,6 +164,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/arm64_test-vk
       artifacts: false
+      optional: true
     - job: debian-arm64
       artifacts: false
 

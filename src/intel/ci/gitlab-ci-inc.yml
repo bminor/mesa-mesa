@@ -130,8 +130,9 @@
     JOB_PRIORITY: 40
     S3_ARTIFACT_NAME: mesa-x86_64-default-release
   needs:
-    - debian/x86_64_test-gl
-    - debian-release
+    - job: debian/x86_64_test-gl
+      optional: true
+    - job: debian-release
 
 .anv-rules:
   stage: intel

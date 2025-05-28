@@ -30,8 +30,9 @@ lavapipe-vk-asan:
     DEQP_FORCE_ASAN: 1
     S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
   needs:
-    - debian/x86_64_test-vk
-    - debian-x86_64-asan
+    - job: debian/x86_64_test-vk
+      optional: true
+    - job: debian-x86_64-asan
 
 lavapipe-vkd3d:
   stage: software-renderer-nightly

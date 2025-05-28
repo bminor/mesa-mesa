@@ -199,7 +199,8 @@
     # Ensure that we are using the release build artifact
     S3_ARTIFACT_NAME: mesa-arm64-default-release
   needs:
-    - debian/baremetal_arm64_test-gl
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
     - debian-arm64-release
   dependencies: null
 
@@ -216,7 +217,8 @@
     # Ensure that we are using the release build artifact
     S3_ARTIFACT_NAME: mesa-arm64-default-release
   needs:
-    - alpine/x86_64_lava-trigger
+    - job: alpine/x86_64_lava-trigger
+      optional: true
     - job: debian-arm64-release
       artifacts: false # we pull the artifacts from S3
   dependencies: null

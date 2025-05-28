@@ -232,7 +232,45 @@ include:
 
 # Note: make sure the branches in this list are the same as in
 # `.build-only-delayed-rules` below.
-.container+build-rules:
+.container-rules:
+  rules:
+    - !reference [.common-rules, rules]
+    # Run when re-enabling a disabled farm, but not when disabling it
+    - !reference [.disable-farm-mr-rules, rules]
+    # Never run immediately after merging, as we just ran everything
+    - !reference [.never-post-merge-rules, rules]
+    # Only rebuild containers in merge pipelines if any tags have been
+    # changed, else we'll just use the already-built containers
+    - if: *is-merge-attempt
+      changes: &image_tags_path
+        - .gitlab-ci/image-tags.yml
+      when: on_success
+    # Same as above, but for pre-merge pipelines
+    - if: *is-merge-request
+      changes: *image_tags_path
+      when: manual
+    # Skip everything for pre-merge and merge pipelines which don't change
+    # anything in the build
+    - if: *is-merge-attempt
+      when: never
+    - if: *is-merge-request
+      when: never
+    # Build everything after someone bypassed the CI
+    - if: *is-push-to-upstream-default-branch
+      when: on_success
+    # Build everything when pushing to staging branches
+    - if: *is-push-to-upstream-staging-branch
+      when: on_success
+    # Scheduled pipelines reuse already-built containers
+    - if: *is-scheduled-pipeline
+      when: never
+    # Allow building everything in fork pipelines, but build nothing unless
+    # manually triggered
+    - when: manual
+
+# Note: make sure the branches in this list are the same as in
+# `.build-only-delayed-rules` below.
+.build-rules:
   rules:
     - !reference [.common-rules, rules]
     # Run when re-enabling a disabled farm, but not when disabling it

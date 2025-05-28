@@ -126,8 +126,9 @@ yaml-toml-shell-py-test:
     - .test
     - .use-debian/x86_64_test-gl
   needs:
-    - debian/x86_64_test-gl
-    - debian-x86_64
+    - job: debian/x86_64_test-gl
+      optional: true
+    - job: debian-x86_64
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     DEBIAN_ARCH: amd64
@@ -138,8 +139,9 @@ yaml-toml-shell-py-test:
     - .test
     - .use-debian/x86_64_test-vk
   needs:
-    - debian-x86_64
-    - debian/x86_64_test-vk
+    - job: debian-x86_64
+    - job: debian/x86_64_test-vk
+      optional: true
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     DEBIAN_ARCH: amd64
@@ -150,7 +152,8 @@ yaml-toml-shell-py-test:
     - .test
     - .use-debian/x86_64_test-gl
   needs:
-    - debian/x86_64_test-gl
+    - job: debian/x86_64_test-gl
+      optional: true
     - !reference [.required-for-hardware-jobs, needs]
   variables:
     S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
@@ -175,6 +178,7 @@ yaml-toml-shell-py-test:
       artifacts: false  # The Android build will be downloaded later
     - job: debian/x86_64_test-android
       artifacts: false
+      optional: true
     - !reference [.required-for-hardware-jobs, needs]
   timeout: 20m
   script:
@@ -291,7 +295,8 @@ yaml-toml-shell-py-test:
     DEBIAN_ARCH: armhf
     S3_ARTIFACT_NAME: mesa-arm32-default-debugoptimized
   needs:
-    - debian/baremetal_arm32_test-gl
+    - job: debian/baremetal_arm32_test-gl
+      optional: true
     - job: debian-arm32
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -305,7 +310,8 @@ yaml-toml-shell-py-test:
     DEBIAN_ARCH: arm64
     S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
   needs:
-    - debian/baremetal_arm64_test-gl
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
     - job: debian-arm64
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -319,7 +325,8 @@ yaml-toml-shell-py-test:
     DEBIAN_ARCH: arm64
     S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
   needs:
-    - debian/baremetal_arm64_test-vk
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
     - job: debian-arm64
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -330,7 +337,8 @@ yaml-toml-shell-py-test:
     S3_ARTIFACT_NAME: mesa-arm32-asan-debugoptimized
     DEQP_FORCE_ASAN: 1
   needs:
-    - debian/baremetal_arm32_test-gl
+    - job: debian/baremetal_arm32_test-gl
+      optional: true
     - job: debian-arm32-asan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -340,7 +348,8 @@ yaml-toml-shell-py-test:
     S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
     DEQP_FORCE_ASAN: 1
   needs:
-    - debian/baremetal_arm64_test-gl
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
     - job: debian-arm64-asan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -350,7 +359,8 @@ yaml-toml-shell-py-test:
     S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
     DEQP_FORCE_ASAN: 1
   needs:
-    - debian/baremetal_arm64_test-vk
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
     - job: debian-arm64-asan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -362,7 +372,8 @@ yaml-toml-shell-py-test:
   variables:
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
   needs:
-    - debian/baremetal_arm64_test-gl
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
     - job: debian-arm64-ubsan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -374,7 +385,8 @@ yaml-toml-shell-py-test:
   variables:
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
   needs:
-    - debian/baremetal_arm64_test-vk
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
     - job: debian-arm64-ubsan
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
@@ -471,6 +483,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
+      optional: true
     - job: debian-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -484,6 +497,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-vk
       artifacts: false
+      optional: true
     - job: debian-build-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -495,6 +509,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
+      optional: true
     - job: debian-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -508,6 +523,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/x86_64_test-gl
       artifacts: false
+      optional: true
     - job: debian-build-x86_64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -527,6 +543,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm64_test-vk
       artifacts: false
+      optional: true
     - job: debian-arm64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -538,6 +555,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm64_test-gl
       artifacts: false
+      optional: true
     - job: debian-arm64
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -557,6 +575,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm32_test-vk
       artifacts: false
+      optional: true
     - job: debian-arm32
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -568,6 +587,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm32_test-gl
       artifacts: false
+      optional: true
     - job: debian-arm32
       artifacts: false
     - !reference [.ci-tron-test, needs]
@@ -582,6 +602,7 @@ yaml-toml-shell-py-test:
   needs:
     - job: debian/arm32_test-gl
       artifacts: false
+      optional: true
     - job: debian-arm32-asan
       artifacts: false
     - !reference [.ci-tron-test, needs]
