@@ -68,6 +68,9 @@ class GitlabSection:
         before_header = ":".join([preamble, timestamp, section_id])
         if self.timestamp_relative_to and self.start_time is not None:
             delta = self.start_time - self.timestamp_relative_to
+            # time drift can occur because we are dealing with timestamps from different sources
+            # clamp the delta to 0 if it's negative
+            delta = max(delta, timedelta(seconds=0))
             reltime = f"[{floor(delta.seconds / 60):02}:{(delta.seconds % 60):02}] "
         else:
             reltime = ""
@@ -112,11 +115,14 @@ class GitlabSection:
         return self.section(marker="start", header=self.header, time=self.__start_time)
 
     def end(self) -> str:
-        assert self.has_started, "Ending an uninitialized section"
+        assert self.__start_time is not None, "Ending an uninitialized section"
         self.__end_time = datetime.now(tz=UTC)
-        assert (
-            self.__start_time is not None and self.__end_time >= self.__start_time
-        ), "Section execution time will be negative"
+        if self.__end_time < self.__start_time:
+            print(
+                CONSOLE_LOG["FG_YELLOW"]
+                + f"Warning: Section {self.id} ended before it started, clamping the delta time to 0"
+                + CONSOLE_LOG["RESET"]
+            )
         return self.print_end_section()
 
     def print_end_section(self) -> str:
@@ -126,12 +132,26 @@ class GitlabSection:
             raise RuntimeError("End time is not set.")
         return self.section(marker="end", header="", time=self.__end_time)
 
-    def delta_time(self) -> Optional[timedelta]:
-        if self.__start_time is not None and self.__end_time is not None:
-            return self.__end_time - self.__start_time
+    def _delta_time(self) -> Optional[timedelta]:
+        """
+        Return the delta time between the start and end of the section.
+        If the section has not ended, return the delta time between the start and now.
+        If the section has not started and not ended, return None.
+        """
+        if self.__start_time is None:
+            return None
 
-        if self.has_started:
-            assert self.__start_time is not None
+        if self.__end_time is None:
             return datetime.now(tz=UTC) - self.__start_time
 
-        return None
+        return self.__end_time - self.__start_time
+
+    def delta_time(self) -> Optional[timedelta]:
+        """
+        Clamp the delta time to zero if it's negative, time drift can occur since we have timestamps
+        coming from GitLab jobs, LAVA dispatcher and DUTs.
+        """
+        delta = self._delta_time()
+        if delta is None:
+            return None
+        return max(delta, timedelta(seconds=0))

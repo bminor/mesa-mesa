@@ -445,3 +445,58 @@ def test_detect_a6xx_gpu_recovery_success(frozen_time):
         "a6xx_gpu_recovery_fail_counter is not 0"
     )
 
+
+@pytest.mark.parametrize(
+    "start_offset",
+    [
+        timedelta(hours=0),
+        timedelta(hours=1),
+    ],
+    ids=["equal timestamps", "negative delta"],
+)
+def test_gitlab_section_relative_time_clamping(start_offset):
+    """Test that delta time is clamped to zero if start_time <= timestamp_relative_to."""
+    now = datetime.now(tz=UTC)
+    timestamp_relative_to = now + start_offset
+    gs = GitlabSection(
+        id="clamp_section",
+        header=f"clamp_section header {start_offset}",
+        type=LogSectionType.TEST_CASE,
+        timestamp_relative_to=timestamp_relative_to,
+    )
+    gs.start()
+    output = gs.print_start_section()
+    assert "[00:00]" in output, f"Expected clamped relative time, got: {output}"
+
+
+@pytest.mark.parametrize(
+    "delta_seconds,expected_seconds",
+    [
+        (-5, 0),  # Negative delta should be clamped to 0
+        (0, 0),  # Zero delta should remain 0
+        (5, 5),  # Positive delta should remain unchanged
+    ],
+    ids=["negative delta", "zero delta", "positive delta"],
+)
+def test_gitlab_section_delta_time(frozen_time, delta_seconds, expected_seconds):
+    """Test that delta_time() properly clamps negative deltas to zero."""
+    gs = GitlabSection(
+        id="delta_section",
+        header=f"delta_section header {delta_seconds}",
+        type=LogSectionType.TEST_CASE,
+    )
+
+    with gs:
+        frozen_time.tick(delta_seconds)
+
+    # Test internal _delta_time() returns exact delta
+    internal_delta = gs._delta_time()
+    assert internal_delta == timedelta(seconds=delta_seconds), (
+        f"_delta_time() returned {internal_delta}, expected {timedelta(seconds=delta_seconds)}"
+    )
+
+    # Test public delta_time() returns clamped delta
+    clamped_delta = gs.delta_time()
+    assert clamped_delta == timedelta(seconds=expected_seconds), (
+        f"delta_time() returned {clamped_delta}, expected {timedelta(seconds=expected_seconds)}"
+    )
