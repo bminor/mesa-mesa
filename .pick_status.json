@@ -2564,7 +2564,7 @@
         "description": "panvk: fix memory binding for wsi image alias",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f77fe432c11d6ca0c22e98e8a9350b27eb61f98d",
         "notes": null
