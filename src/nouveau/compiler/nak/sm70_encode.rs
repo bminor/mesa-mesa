@@ -2752,6 +2752,12 @@ impl SM70Encoder<'_> {
 impl SM70Op for OpSuLd {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         legalize_ext_instr(self, b);
+
+        // suld.constant doesn't exist on Volta or Turing but it's always safe
+        // to silently degrade to suld.weak
+        if self.mem_order == MemOrder::Constant && b.sm() < 80 {
+            self.mem_order = MemOrder::Weak;
+        }
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
