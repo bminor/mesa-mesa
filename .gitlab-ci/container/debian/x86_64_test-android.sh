@@ -53,6 +53,10 @@ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o eglinfo "https://${S3_HOST}/${S3_ANDROID_BUCKET}/mesa/mesa/${DATA_STORAGE_PATH}/eglinfo-android-x86_64"
 chmod +x eglinfo
 
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o vulkaninfo "https://${S3_HOST}/${S3_ANDROID_BUCKET}/mesa/mesa/${DATA_STORAGE_PATH}/vulkaninfo-android-x86_64"
+chmod +x vulkaninfo
+
 popd
 
 ############### Downloading NDK for native builds for the guest ...

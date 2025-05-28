@@ -77,21 +77,28 @@ $ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
 $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
 $ADB push /android-tools/eglinfo /data
+$ADB push /android-tools/vulkaninfo /data
 
 get_gles_runtime_version() {
   while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version':)" = "" ] ; do sleep 1; done
   $ADB shell /data/eglinfo | grep 'OpenGL ES profile version'
 }
+get_vk_runtime_version() {
+  $ADB shell /data/vulkaninfo | grep driverInfo
+}
 
-# Check what GLES implementation is used before loading the new libraries
+# Check what GLES & VK implementation is used before loading the new libraries
 get_gles_runtime_version
+get_vk_runtime_version
 
 # restart Android shell, so that services use the new libraries
 $ADB shell stop
 $ADB shell start
 
-# Check what GLES implementation is used after loading the new libraries
+# Check what GLES & VK implementation is used after loading the new libraries
+MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
 GLES_RUNTIME_VERSION="$(get_gles_runtime_version)"
+VK_RUNTIME_VERSION="$(get_vk_runtime_version)"
 
 if [ -n "$ANGLE_TAG" ]; then
   # Note: we are injecting the ANGLE libs too, so we need to check if the
@@ -102,11 +109,14 @@ if [ -n "$ANGLE_TAG" ]; then
     exit 1
   fi
 else
-  MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
   if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
      echo "Fatal: Android is loading a wrong version of the Mesa3D GLES libs: ${GLES_RUNTIME_VERSION}" 1>&2
      exit 1
   fi
+fi
+if ! printf "%s" "$VK_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
+     echo "Fatal: Android is loading a wrong version of the Mesa3D Vulkan libs: ${VK_RUNTIME_VERSION}" 1>&2
+     exit 1
 fi
 
 if [ -n "$USE_ANDROID_CTS" ]; then
