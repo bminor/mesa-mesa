@@ -260,6 +260,8 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
 
    if (pco_ref_is_reg(*pdest_from) &&
        pco_ref_get_reg_class(*pdest_from) == PCO_REG_CLASS_PIXOUT) {
+      return false;
+
       bool has_isp_fb = false;
 
       pco_foreach_instr_in_func_from_rev (rev_instr, use->instr) {
@@ -274,6 +276,14 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
 
       if (has_isp_fb)
          return false;
+
+      /* Don't move pixout regs into instructions that already use them. */
+      pco_foreach_instr_src (psrc, instr) {
+         if (pco_ref_is_reg(*psrc) &&
+             pco_ref_get_reg_class(*psrc) == PCO_REG_CLASS_PIXOUT) {
+            return false;
+         }
+      }
    }
 
    assert(pco_ref_get_bits(*pdest_from) == pco_ref_get_bits(*pdest_to));
@@ -372,6 +382,11 @@ static inline bool can_fwd_prop_src(const pco_instr *to_instr,
     *  Or, a legalize pass to insert movs; probably better since
     * feature/arch-agnostic.
     */
+
+   if (pco_ref_is_reg(*from) &&
+       pco_ref_get_reg_class(*from) == PCO_REG_CLASS_PIXOUT) {
+      return false;
+   }
 
    return true;
 }
