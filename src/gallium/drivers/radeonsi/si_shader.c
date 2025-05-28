@@ -1172,7 +1172,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       options.instance_rate_inputs = instance_rate_inputs;
       options.user_clip_plane_enable_mask = clip_plane_enable;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options);
+      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size);
    } else {
       assert(nir->info.stage == MESA_SHADER_GEOMETRY);
 

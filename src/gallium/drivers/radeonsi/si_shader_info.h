@@ -240,6 +240,7 @@ struct si_shader_variant_info {
    uint8_t num_streamout_vec4s;
    unsigned private_mem_vgprs;
    unsigned max_simd_waves;
+   uint32_t ngg_lds_vertex_size;
 };
 
 #endif

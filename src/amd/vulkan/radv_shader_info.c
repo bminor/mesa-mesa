@@ -1424,7 +1424,6 @@ static unsigned
 gfx10_get_ngg_scratch_lds_base(const struct radv_device *device, const struct radv_shader_info *es_info,
                                const struct radv_shader_info *gs_info, const struct gfx10_ngg_info *ngg_info)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    uint32_t scratch_lds_base;
 
    if (gs_info) {
@@ -1433,17 +1432,8 @@ gfx10_get_ngg_scratch_lds_base(const struct radv_device *device, const struct ra
 
       scratch_lds_base = ALIGN(esgs_ring_lds_bytes + gs_total_out_vtx_bytes, 8u /* for the repacking code */);
    } else {
-      const bool uses_instanceid = es_info->vs.needs_instance_id;
-      const bool uses_primitive_id = es_info->uses_prim_id;
-      const bool streamout_enabled = es_info->so.enabled_stream_buffers_mask && pdev->use_ngg_streamout;
-      const uint32_t num_outputs =
-         es_info->stage == MESA_SHADER_VERTEX ? es_info->vs.num_outputs : es_info->tes.num_outputs;
-      unsigned pervertex_lds_bytes = ac_ngg_nogs_get_pervertex_lds_size(
-         es_info->stage, num_outputs, streamout_enabled, es_info->outinfo.export_prim_id, false, /* user edge flag */
-         es_info->has_ngg_culling, uses_instanceid, uses_primitive_id);
-
       assert(ngg_info->hw_max_esverts <= 256);
-      unsigned total_es_lds_bytes = pervertex_lds_bytes * ngg_info->hw_max_esverts;
+      unsigned total_es_lds_bytes = es_info->ngg_lds_vertex_size * ngg_info->hw_max_esverts;
 
       scratch_lds_base = ALIGN(total_es_lds_bytes, 8u);
    }

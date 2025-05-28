@@ -208,7 +208,8 @@ typedef struct {
 } ac_nir_lower_ngg_options;
 
 bool
-ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options);
+ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
+                      uint32_t *out_lds_vertex_size);
 
 bool
 ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options);

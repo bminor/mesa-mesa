@@ -1547,8 +1547,31 @@ ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nog
    }
 }
 
+static unsigned
+ac_ngg_nogs_get_pervertex_lds_size(gl_shader_stage stage,
+                                   unsigned shader_num_outputs,
+                                   bool streamout_enabled,
+                                   bool export_prim_id,
+                                   bool has_user_edgeflags,
+                                   bool can_cull,
+                                   bool uses_instance_id,
+                                   bool uses_tess_primitive_id)
+{
+   /* for culling time lds layout only */
+   unsigned culling_pervertex_lds_bytes = can_cull ?
+      ngg_nogs_get_culling_pervertex_lds_size(
+         stage, uses_instance_id, uses_tess_primitive_id, NULL) : 0;
+
+   unsigned pervertex_lds_bytes =
+      ngg_nogs_get_pervertex_lds_size(stage, shader_num_outputs, streamout_enabled,
+                                      export_prim_id, has_user_edgeflags);
+
+   return MAX2(culling_pervertex_lds_bytes, pervertex_lds_bytes);
+}
+
 bool
-ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options)
+ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
+                      uint32_t *out_lds_vertex_size)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    assert(impl);
@@ -1858,29 +1881,12 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       NIR_PASS(progress, shader, nir_opt_dead_cf);
    } while (progress);
 
+   *out_lds_vertex_size =
+      ac_ngg_nogs_get_pervertex_lds_size(shader->info.stage, shader->num_outputs, state.streamout_enabled,
+                                         options->export_primitive_id, state.has_user_edgeflags,
+                                         options->can_cull, state.deferred.uses_instance_id,
+                                         state.deferred.uses_tess_primitive_id);
    return true;
-}
-
-unsigned
-ac_ngg_nogs_get_pervertex_lds_size(gl_shader_stage stage,
-                                   unsigned shader_num_outputs,
-                                   bool streamout_enabled,
-                                   bool export_prim_id,
-                                   bool has_user_edgeflags,
-                                   bool can_cull,
-                                   bool uses_instance_id,
-                                   bool uses_primitive_id)
-{
-   /* for culling time lds layout only */
-   unsigned culling_pervertex_lds_bytes = can_cull ?
-      ngg_nogs_get_culling_pervertex_lds_size(
-         stage, uses_instance_id, uses_primitive_id, NULL) : 0;
-
-   unsigned pervertex_lds_bytes =
-      ngg_nogs_get_pervertex_lds_size(stage, shader_num_outputs, streamout_enabled,
-                                      export_prim_id, has_user_edgeflags);
-
-   return MAX2(culling_pervertex_lds_bytes, pervertex_lds_bytes);
 }
 
 unsigned
