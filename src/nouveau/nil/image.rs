@@ -256,7 +256,7 @@ impl Image {
             debug_assert!(info.explicit_row_stride_B % align_B == 0);
             info.explicit_row_stride_B
         } else {
-            extent_B.width.next_multiple_of(128)
+            extent_B.width.next_multiple_of(align_B)
         };
         let level0 = ImageLevel {
             offset_B: 0,
