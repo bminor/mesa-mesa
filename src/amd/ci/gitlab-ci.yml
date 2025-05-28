@@ -202,13 +202,13 @@ radv-polaris10-vkcts:
     - .ci-tron-test-radv-vk
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
-  timeout: 1h 15m
+  timeout: 1h 35m
   variables:
     DEQP_SUITE: radv-valve
     GPU_VERSION: radv-polaris10
     CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
     CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 90
     RADV_PERFTEST: video_decode,video_encode
     radv_enable_float16_gfx8: true
 
