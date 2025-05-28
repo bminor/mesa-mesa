@@ -2164,6 +2164,26 @@ fn legalize_ext_instr(op: &mut impl SrcsAsSlice, _b: &mut LegalizeBuilder) {
 }
 
 impl SM20Encoder<'_> {
+    fn set_ld_cache_op(&mut self, range: Range<usize>, op: LdCacheOp) {
+        let cache_op = match op {
+            LdCacheOp::CacheAll => 0_u8,
+            LdCacheOp::CacheGlobal => 1_u8,
+            LdCacheOp::CacheStreaming => 2_u8,
+            LdCacheOp::CacheInvalidate => 3_u8,
+        };
+        self.set_field(range, cache_op);
+    }
+
+    fn set_st_cache_op(&mut self, range: Range<usize>, op: StCacheOp) {
+        let cache_op = match op {
+            StCacheOp::WriteBack => 0_u8,
+            StCacheOp::CacheGlobal => 1_u8,
+            StCacheOp::CacheStreaming => 2_u8,
+            StCacheOp::WriteThrough => 3_u8,
+        };
+        self.set_field(range, cache_op);
+    }
+
     fn set_su_ga_offset_mode(
         &mut self,
         range: Range<usize>,
@@ -2290,7 +2310,7 @@ impl SM20Op for OpLd {
             }
         }
         e.set_mem_type(5..8, self.access.mem_type);
-        // 8..9: cache hints (.ca, .cg, .lu, .cv)
+        e.set_ld_cache_op(8..10, self.access.ld_cache_op());
         e.set_dst(14..20, &self.dst);
         e.set_reg_src(20..26, &self.addr);
     }
@@ -2369,7 +2389,7 @@ impl SM20Op for OpSt {
             }
         }
         e.set_mem_type(5..8, self.access.mem_type);
-        // 8..9: cache hints (.ca, .cg, .lu, .cv)
+        e.set_st_cache_op(8..10, self.access.st_cache_op());
         e.set_reg_src(14..20, &self.data);
         e.set_reg_src(20..26, &self.addr);
     }

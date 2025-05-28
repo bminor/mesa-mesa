@@ -2283,6 +2283,64 @@ impl fmt::Display for MemEvictionPriority {
     }
 }
 
+/// Memory load cache ops used by Kepler
+#[allow(dead_code)]
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
+pub enum LdCacheOp {
+    #[default]
+    CacheAll,
+    CacheGlobal,
+    CacheStreaming,
+    CacheInvalidate,
+}
+
+impl LdCacheOp {
+    pub fn select(
+        space: MemSpace,
+        order: MemOrder,
+        _eviction_priority: MemEvictionPriority,
+    ) -> Self {
+        match space {
+            // From the CUDA 10.2 docs:
+            //
+            //    "L1 caching in Kepler GPUs is reserved only for local memory
+            //    accesses, such as register spills and stack data. Global
+            //    loads are cached in L2 only (or in the Read-Only Data Cache)."
+            //
+            // We assume that CacheAll is also safe for shared memory.
+            MemSpace::Global(_) => match order {
+                MemOrder::Constant => LdCacheOp::CacheAll,
+                _ => LdCacheOp::CacheGlobal,
+            },
+            MemSpace::Local | MemSpace::Shared => LdCacheOp::CacheAll,
+        }
+    }
+}
+
+/// Memory store cache ops used by Kepler
+#[allow(dead_code)]
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
+pub enum StCacheOp {
+    #[default]
+    WriteBack,
+    CacheGlobal,
+    CacheStreaming,
+    WriteThrough,
+}
+
+impl StCacheOp {
+    pub fn select(
+        space: MemSpace,
+        _order: MemOrder,
+        _eviction_priority: MemEvictionPriority,
+    ) -> Self {
+        match space {
+            MemSpace::Global(_) => StCacheOp::CacheGlobal,
+            MemSpace::Local | MemSpace::Shared => StCacheOp::WriteBack,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct MemAccess {
     pub mem_type: MemType,
@@ -2298,6 +2356,16 @@ impl fmt::Display for MemAccess {
             "{}{}{}{}",
             self.space, self.order, self.eviction_priority, self.mem_type,
         )
+    }
+}
+
+impl MemAccess {
+    pub fn ld_cache_op(&self) -> LdCacheOp {
+        LdCacheOp::select(self.space, self.order, self.eviction_priority)
+    }
+
+    pub fn st_cache_op(&self) -> StCacheOp {
+        StCacheOp::select(self.space, self.order, self.eviction_priority)
     }
 }
 

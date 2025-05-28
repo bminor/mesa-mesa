@@ -2357,6 +2357,26 @@ impl SM32Op for OpIMadSp {
 }
 
 impl SM32Encoder<'_> {
+    fn set_ld_cache_op(&mut self, range: Range<usize>, op: LdCacheOp) {
+        let cache_op = match op {
+            LdCacheOp::CacheAll => 0_u8,
+            LdCacheOp::CacheGlobal => 1_u8,
+            LdCacheOp::CacheStreaming => 2_u8,
+            LdCacheOp::CacheInvalidate => 3_u8,
+        };
+        self.set_field(range, cache_op);
+    }
+
+    fn set_st_cache_op(&mut self, range: Range<usize>, op: StCacheOp) {
+        let cache_op = match op {
+            StCacheOp::WriteBack => 0_u8,
+            StCacheOp::CacheGlobal => 1_u8,
+            StCacheOp::CacheStreaming => 2_u8,
+            StCacheOp::WriteThrough => 3_u8,
+        };
+        self.set_field(range, cache_op);
+    }
+
     fn set_su_ga_offset_mode(
         &mut self,
         range: Range<usize>,
@@ -2555,7 +2575,7 @@ impl SM32Op for OpLd {
 
                 e.set_field(23..55, self.offset);
                 e.set_mem_access(55..59, &self.access);
-                // 59..61 cache hints (.ca, .cg, .cs, .cv)
+                e.set_ld_cache_op(59..61, self.access.ld_cache_op());
             }
             MemSpace::Local | MemSpace::Shared => {
                 let opc = match self.access.space {
@@ -2566,7 +2586,7 @@ impl SM32Op for OpLd {
                 e.set_opcode(opc, 2);
 
                 e.set_field(23..47, self.offset);
-                // 47..49: cache hints (.ca, .cg, .lu, .cv)
+                e.set_ld_cache_op(47..49, self.access.ld_cache_op());
                 e.set_mem_access(50..54, &self.access);
             }
         }
@@ -2637,7 +2657,7 @@ impl SM32Op for OpSt {
 
                 e.set_field(23..55, self.offset);
                 e.set_mem_access(55..59, &self.access);
-                // 59..61 cache hints (.ca, .cg, .cs, .cv)
+                e.set_st_cache_op(59..61, self.access.st_cache_op());
             }
             MemSpace::Local | MemSpace::Shared => {
                 let opc = match self.access.space {
@@ -2648,7 +2668,7 @@ impl SM32Op for OpSt {
                 e.set_opcode(opc, 2);
 
                 e.set_field(23..47, self.offset);
-                // 47..49: cache hints (.ca, .cg, .lu, .cv)
+                e.set_st_cache_op(47..49, self.access.st_cache_op());
                 e.set_mem_access(50..54, &self.access);
             }
         }
@@ -2669,7 +2689,7 @@ impl SM32Op for OpStSCheckUnlock {
         e.set_reg_src(10..18, &self.addr);
 
         e.set_field(23..47, self.offset);
-        // 47..49: cache hints (.ca, .cg, .lu, .cv)
+        e.set_st_cache_op(47..49, StCacheOp::WriteBack);
         e.set_pred_dst(48..51, &self.locked);
         e.set_mem_type(51..54, self.mem_type);
     }
