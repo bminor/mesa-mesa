@@ -1153,14 +1153,12 @@ iris_resource_prepare_texture(struct iris_context *ice,
    }
 
    /* With indirect clear colors, the sampler reads clear values stored in
-    * pixel form.  The location the sampler reads from is dependent on the
-    * bits-per-channel of the format.  Disable support for clear colors if the
-    * new format points the sampler to an incompatible location.  See
-    * isl_get_sampler_clear_field_offset() for more information.
+    * pixel form. Disable support for clear colors if the new format points
+    * the sampler to an incompatibly formatted location.
     */
-   if (res->aux.clear_color_bo &&
+   if (res->aux.clear_color_bo && res->surf.format != view_format &&
        isl_format_get_layout(res->surf.format)->channels.r.bits != 32 &&
-       isl_format_get_layout(view_format)->channels.r.bits == 32) {
+       isl_get_sampler_clear_field_offset(devinfo, view_format, false) == 0) {
       clear_supported = false;
    }
 
