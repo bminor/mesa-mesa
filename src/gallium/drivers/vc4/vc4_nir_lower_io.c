@@ -309,13 +309,10 @@ vc4_nir_lower_uniform(struct vc4_compile *c, nir_builder *b,
         replace_intrinsic_with_vec(b, intr, dests);
 }
 
-static void
-vc4_nir_lower_io_instr(struct vc4_compile *c, nir_builder *b,
-                       struct nir_instr *instr)
+static bool
+vc4_nir_lower_io_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-        if (instr->type != nir_instr_type_intrinsic)
-                return;
-        nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+        struct vc4_compile *c = data;
 
         switch (intr->intrinsic) {
         case nir_intrinsic_load_input:
@@ -335,27 +332,15 @@ vc4_nir_lower_io_instr(struct vc4_compile *c, nir_builder *b,
 
         case nir_intrinsic_load_user_clip_plane:
         default:
-                break;
-        }
-}
-
-static bool
-vc4_nir_lower_io_impl(struct vc4_compile *c, nir_function_impl *impl)
-{
-        nir_builder b = nir_builder_create(impl);
-
-        nir_foreach_block(block, impl) {
-                nir_foreach_instr_safe(instr, block)
-                        vc4_nir_lower_io_instr(c, &b, instr);
+                return false;
         }
 
-        return nir_progress(true, impl, nir_metadata_control_flow);
+        return true;
 }
 
 void
 vc4_nir_lower_io(nir_shader *s, struct vc4_compile *c)
 {
-        nir_foreach_function_impl(impl, s) {
-                vc4_nir_lower_io_impl(c, impl);
-        }
+        nir_shader_intrinsics_pass(s, vc4_nir_lower_io_impl,
+                                   nir_metadata_control_flow, c);
 }
