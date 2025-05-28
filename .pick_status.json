@@ -1934,7 +1934,7 @@
         "description": "zink: also check for host-visible on staging uploads",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e63acdd2b7b1ef80e09545cfdfa5fea5d42d6159",
         "notes": null
