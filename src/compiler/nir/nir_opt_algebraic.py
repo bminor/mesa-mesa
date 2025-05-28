@@ -2346,10 +2346,6 @@ optimizations.extend([
    (('uadd_carry', a, b), ('b2i', ('ult', ('iadd', a, b), a)), 'options->lower_uadd_carry'),
    (('usub_borrow', a, b), ('b2i', ('ult', a, b)), 'options->lower_usub_borrow'),
 
-   (('bitfield_insert', 'base', 'insert', 'offset', 'bits'),
-    ('bcsel', ('ult', 31, 'bits'), 'insert',
-              ('bfi', ('bfm', 'bits', 'offset'), 'insert', 'base')),
-    'options->lower_bitfield_insert && options->has_bfm && options->has_bfi'),
    (('ihadd', a, b), ('iadd', ('iand', a, b), ('ishr', ('ixor', a, b), 1)), 'options->lower_hadd'),
    (('uhadd', a, b), ('iadd', ('iand', a, b), ('ushr', ('ixor', a, b), 1)), 'options->lower_hadd'),
    (('irhadd', a, b), ('isub', ('ior', a, b), ('ishr', ('ixor', a, b), 1)), 'options->lower_hadd'),
@@ -2436,27 +2432,12 @@ optimizations.extend([
    # 0u < uint(a) <=> uint(a) != 0u
    (('ult', 0, 'a@64'), ('ine', ('ior', ('unpack_64_2x32_split_x', a), ('unpack_64_2x32_split_y', a)), 0), '(options->lower_int64_options & nir_lower_icmp64) != 0'),
 
-   # Alternative lowering that doesn't rely on bfi.
-   (('bitfield_insert', 'base', 'insert', 'offset', 'bits'),
-    ('bcsel', ('ult', 31, 'bits'),
-     'insert',
-    (('ior',
-     ('iand', 'base', ('inot', ('ishl', ('isub', ('ishl', 1, 'bits'), 1), 'offset'))),
-     ('iand', ('ishl', 'insert', 'offset'), ('ishl', ('isub', ('ishl', 1, 'bits'), 1), 'offset'))))),
-    'options->lower_bitfield_insert && (!options->has_bfm || (!options->has_bfi && !options->has_bitfield_select))'),
-
-   # Alternative lowering that uses bitfield_select.
-   (('bitfield_insert', 'base', 'insert', 'offset', 'bits'),
-    ('bcsel', ('ult', 31, 'bits'), 'insert',
-              ('bitfield_select', ('bfm', 'bits', 'offset'), ('ishl', 'insert', 'offset'), 'base')),
-    'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select'),
-
-   (('ibitfield_extract', 'value', 'offset', 'bits'),
+   (('ibitfield_extract', 'value@32', 'offset', 'bits'),
     ('bcsel', ('ult', 31, 'bits'), 'value',
               ('ibfe', 'value', 'offset', 'bits')),
     'options->lower_bitfield_extract && options->has_bfe'),
 
-   (('ubitfield_extract', 'value', 'offset', 'bits'),
+   (('ubitfield_extract', 'value@32', 'offset', 'bits'),
     ('bcsel', ('ult', 31, 'bits'), 'value',
               ('ubfe', 'value', 'offset', 'bits')),
     'options->lower_bitfield_extract && options->has_bfe'),
@@ -2521,7 +2502,7 @@ optimizations.extend([
    (('ine', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ine', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
    (('ieq', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ieq', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
 
-   (('ibitfield_extract', 'value', 'offset', 'bits'),
+   (('ibitfield_extract', 'value@32', 'offset', 'bits'),
     ('bcsel', ('ieq', 0, 'bits'),
      0,
      ('ishr',
@@ -2529,7 +2510,7 @@ optimizations.extend([
        ('isub', 32, 'bits'))),
     'options->lower_bitfield_extract && !options->has_bfe'),
 
-   (('ubitfield_extract', 'value', 'offset', 'bits'),
+   (('ubitfield_extract', 'value@32', 'offset', 'bits'),
     ('iand',
      ('ushr', 'value', 'offset'),
      ('bcsel', ('ieq', 'bits', 32),
@@ -2749,6 +2730,42 @@ for bit_size in [8, 16, 32, 64]:
       (('bcsel', ('ieq', ('uadd_carry', a, b), 0), (add, a, b), -1), ('uadd_sat', a, b), cond),
       (('bcsel', ('ine', ('uadd_carry', a, b), 0), -1, (add, a, b)), ('uadd_sat', a, b), cond),
    ]
+
+optimizations += [
+   # Alternative 32-bit lowerings that use bitfield_select/bfi.
+   (('bitfield_insert', 'base@32', 'insert', 'offset', 'bits'),
+    ('bcsel', ('ult', 31, 'bits'), 'insert',
+              ('bitfield_select', ('bfm', 'bits', 'offset'), ('ishl', 'insert', 'offset'), 'base')),
+    'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select'),
+   (('bitfield_insert', 'base@32', 'insert', 'offset', 'bits'),
+    ('bcsel', ('ult', 31, 'bits'), 'insert',
+              ('bfi', ('bfm', 'bits', 'offset'), 'insert', 'base')),
+    'options->lower_bitfield_insert && options->has_bfm && options->has_bfi'),
+]
+
+for sz in [8, 16, 32, 64]:
+   base = f'base@{sz}'
+
+   if sz == 8 or sz == 16:
+      optimizations += [
+         # Alternative 8-bit/16-bit lowerings that use bitfield_select/bfi.
+         (('bitfield_insert', base, 'insert', 'offset', 'bits'),
+          ('bitfield_select', (f'u2u{sz}', ('bfm', 'bits', 'offset')), ('ishl', 'insert', 'offset'), 'base'),
+          'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select'),
+         (('bitfield_insert', base, 'insert', 'offset', 'bits'),
+          (f'u2u{sz}', ('bfi', ('bfm', 'bits', 'offset'), ('u2u32', 'insert'), ('u2u32', 'base'))),
+          'options->lower_bitfield_insert && options->has_bfm && options->has_bfi'),
+      ]
+
+   optimizations += [
+       # Alternative lowering that doesn't rely on bfi or bfm.
+       (('bitfield_insert', base, 'insert', 'offset', 'bits'),
+        ('bcsel', ('ult', sz - 1, 'bits'), 'insert',
+        (('ior',
+         ('iand', 'base', ('inot', ('ishl', ('isub', ('ishl', 1, 'bits'), 1), 'offset'))),
+         ('iand', ('ishl', 'insert', 'offset'), ('ishl', ('isub', ('ishl', 1, 'bits'), 1), 'offset'))))),
+        'true' if sz == 64 else 'options->lower_bitfield_insert && (!options->has_bfm || (!options->has_bfi && !options->has_bitfield_select))'),
+    ]
 
 for bit_size in [8, 16, 32, 64]:
    cond = '!options->lower_usub_sat'

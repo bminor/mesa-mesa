@@ -1121,8 +1121,8 @@ if (bits == 0) {
 """)
 
 # GLSL bitfieldExtract()
-opcode("ubitfield_extract", 0, tuint32,
-       [0, 0, 0], [tuint32, tint32, tint32], False, "", """
+opcode("ubitfield_extract", 0, tuint,
+       [0, 0, 0], [tuint, tint32, tint32], False, "", """
 unsigned base = src0;
 int offset = src1, bits = src2;
 if (bits == 0) {
@@ -1133,8 +1133,8 @@ if (bits == 0) {
    dst = (base >> offset) & ((1ull << bits) - 1);
 }
 """)
-opcode("ibitfield_extract", 0, tint32,
-       [0, 0, 0], [tint32, tint32, tint32], False, "", """
+opcode("ibitfield_extract", 0, tint,
+       [0, 0, 0], [tint, tint32, tint32], False, "", """
 int base = src0;
 int offset = src1, bits = src2;
 if (bits == 0) {
@@ -1181,8 +1181,8 @@ def quadop_horiz(name, output_size, src1_size, src2_size, src3_size,
           [tuint, tuint, tuint, tuint],
           False, "", const_expr)
 
-opcode("bitfield_insert", 0, tuint32, [0, 0, 0, 0],
-       [tuint32, tuint32, tint32, tint32], False, "", """
+opcode("bitfield_insert", 0, tuint, [0, 0, 0, 0],
+       [tuint, tuint, tint32, tint32], False, "", """
 unsigned base = src0, insert = src1;
 int offset = src2, bits = src3;
 if (bits == 0) {
