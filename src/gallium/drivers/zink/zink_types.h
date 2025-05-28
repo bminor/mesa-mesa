@@ -1558,7 +1558,6 @@ struct zink_surface {
 struct zink_ctx_surface {
    struct pipe_surface base;
    struct zink_surface *surf; //the actual surface
-   bool needs_mutable;
 };
 
 /* use this cast for framebuffer surfaces */

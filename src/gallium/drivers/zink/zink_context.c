@@ -3817,22 +3817,6 @@ zink_set_null_fs(struct zink_context *ctx)
    ctx->base.bind_fs_state(&ctx->base, ctx->null_fs);
 }
 
-static void
-check_framebuffer_surface_mutable(struct pipe_context *pctx, struct pipe_surface *psurf)
-{
-   struct zink_context *ctx = zink_context(pctx);
-   struct zink_ctx_surface *csurf = (struct zink_ctx_surface *)psurf;
-   if (!csurf->needs_mutable)
-      return;
-   zink_resource_object_init_mutable(ctx, zink_resource(psurf->texture));
-   struct pipe_surface *psurf2 = pctx->create_surface(pctx, psurf->texture, psurf);
-   pipe_resource_reference(&psurf2->texture, NULL);
-   struct zink_ctx_surface *csurf2 = (struct zink_ctx_surface *)psurf2;
-   zink_surface_reference(zink_screen(pctx->screen), &csurf->surf, csurf2->surf);
-   pctx->surface_destroy(pctx, psurf2);
-   csurf->needs_mutable = false;
-}
-
 static bool
 framebuffer_surface_needs_mutable(const struct pipe_resource *pres, const struct pipe_surface *templ)
 {
@@ -3951,7 +3935,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
          if (!samples)
             samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, psurf->texture->nr_samples, 1);
          struct zink_resource *res = zink_resource(psurf->texture);
-         check_framebuffer_surface_mutable(pctx, psurf);
          if (zink_csurface(psurf)->ivci.subresourceRange.layerCount > layers)
             ctx->fb_layer_mismatch |= BITFIELD_BIT(i);
          if (res->obj->dt) {
@@ -3975,7 +3958,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    }
    if (ctx->fb_state.zsbuf.texture) {
       struct pipe_surface *psurf = ctx->fb_zsbuf;
-      check_framebuffer_surface_mutable(pctx, psurf);
       if (ctx->fb_state.zsbuf.nr_samples) {
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
          framebuffer_surface_init_transient(ctx, psurf, PIPE_MAX_COLOR_BUFS);
