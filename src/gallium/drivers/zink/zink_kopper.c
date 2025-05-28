@@ -1122,7 +1122,7 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
    struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_zsbuf;
    unsigned width = pipe_surface_width(&ctx->fb_state.zsbuf);
    unsigned height = pipe_surface_height(&ctx->fb_state.zsbuf);
-   if (width == ctx->fb_state.width && height == ctx->fb_state.height)
+   if (width >= ctx->fb_state.width && height >= ctx->fb_state.height)
       return;
 
    struct pipe_resource templ = *ctx->fb_state.zsbuf.texture;
