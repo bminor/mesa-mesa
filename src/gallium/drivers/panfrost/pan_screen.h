@@ -125,6 +125,7 @@ struct panfrost_screen {
    struct disk_cache *disk_cache;
    unsigned max_afbc_packing_ratio;
    bool force_afbc_packing;
+   bool allow_128bit_rts_v4;
    int force_afrc_rate;
    uint64_t compute_core_mask;
    uint64_t fragment_core_mask;
