@@ -397,10 +397,14 @@ pipe_lima_create_screen(int fd, const struct pipe_screen_config *config)
 {
    struct pipe_screen *screen;
 
-   screen = lima_drm_screen_create(fd);
+   screen = lima_drm_screen_create(fd, config);
    return screen ? debug_screen_wrap(screen) : NULL;
 }
-DRM_DRIVER_DESCRIPTOR(lima, NULL, 0)
+
+const driOptionDescription lima_driconf[] = {
+      #include "lima/driinfo_lima.h"
+};
+DRM_DRIVER_DESCRIPTOR(lima, lima_driconf, ARRAY_SIZE(lima_driconf))
 
 #else
 DRM_DRIVER_DESCRIPTOR_STUB(lima)
@@ -449,6 +453,9 @@ const driOptionDescription kmsro_driconf[] = {
 #endif
 #ifdef GALLIUM_PANFROST
       #include "panfrost/driinfo_panfrost.h"
+#endif
+#ifdef GALLIUM_LIMA
+      #include "lima/driinfo_lima.h"
 #endif
 };
 DRM_DRIVER_DESCRIPTOR(kmsro, kmsro_driconf, ARRAY_SIZE(kmsro_driconf))
