@@ -966,12 +966,17 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
       uint32_t *dw = anv_batch_emitn(&cmd_buffer->batch, 3 + 6,
                                      GENX(MI_STORE_DATA_IMM),
                                      .StoreQword = true, .Address = addr);
+
+      bool is_depth = aspect & VK_IMAGE_ASPECT_DEPTH_BIT;
+      uint64_t sampler_offset =
+         isl_get_sampler_clear_field_offset(cmd_buffer->device->info,
+                                            image->view_formats[i], is_depth);
       dw[3] = clear_color.u32[0];
       dw[4] = clear_color.u32[1];
       dw[5] = clear_color.u32[2];
       dw[6] = clear_color.u32[3];
-      dw[7] = pixel[0];
-      dw[8] = pixel[1];
+      dw[3 + sampler_offset / 4] = pixel[0];
+      dw[4 + sampler_offset / 4] = pixel[1];
 #else
       assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 0);
       assert(cmd_buffer->device->isl_dev.ss.clear_value_size == 16);
