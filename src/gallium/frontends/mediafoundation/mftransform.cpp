@@ -25,6 +25,7 @@
 #include "hmft_entrypoints.h"
 #include "mfpipeinterop.h"
 #include "wpptrace.h"
+#include "mfbufferhelp.h"
 
 #include "mftransform.tmh"
 
@@ -1338,6 +1339,48 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                {
                   spOutputSample->SetUINT32( MFSampleExtension_LongTermReferenceFrameInfo,
                                              pDX12EncodeContext->longTermReferenceFrameInfo );
+               }
+
+               // Conditionally attach frame PSNR
+               if( pThis->m_bVideoEnableFramePsnrYuv && pDX12EncodeContext->pPipeResourcePSNRStats != nullptr )
+               {
+                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
+                                                                      pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                      MFSampleExtension_FramePsnrYuv,
+                                                                      spOutputSample.Get() );
+
+                  if( FAILED( hr ) )
+                  {
+                     MFE_INFO( "[dx12 hmft 0x%p] PSNR: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                  }
+               }
+
+               // Conditionally attach output QP map
+               if( pThis->m_uiVideoOutputQPMapBlockSize && pDX12EncodeContext->pPipeResourceQPMapStats != nullptr )
+               {
+                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
+                                                                      pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                      MFSampleExtension_VideoEncodeQPMap,
+                                                                      spOutputSample.Get() );
+
+                  if( FAILED( hr ) )
+                  {
+                     MFE_INFO( "[dx12 hmft 0x%p] QPMap: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                  }
+               }
+
+               // Conditionally attach output bits used map
+               if( pThis->m_uiVideoOutputBitsUsedMapBlockSize && pDX12EncodeContext->pPipeResourceRCBitAllocMapStats != nullptr )
+               {
+                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
+                                                                      pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                      MFSampleExtension_VideoEncodeBitsUsedMap,
+                                                                      spOutputSample.Get() );
+
+                  if( FAILED( hr ) )
+                  {
+                     MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                  }
                }
 
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)

@@ -262,3 +262,59 @@ MFCopySample( IMFSample *dest, IMFSample *src, IMFMediaType *pmt )
 done:
    return hr;
 }
+
+//
+// MFAttachPipeResourceAsSampleExtension
+//
+// Description:
+//     Converts a Gallium pipe_resource into a D3D12 resource and wraps it as an IMFMediaBuffer,
+//     then attaches it as a sample extension on an IMFSample using the specified GUID.
+//
+// Parameters:
+//     pPipeContext   - Pointer to the Gallium pipe context.
+//     pPipeRes       - Pointer to the pipe_resource to be wrapped.
+//     guidExtension  - The GUID of the Media Foundation sample extension to attach the buffer as.
+//     pSample        - The output IMFSample to attach the media buffer to.
+//
+// Returns:
+//     S_OK if the operation was successful.
+//     E_INVALIDARG if any required pointer is null.
+//     E_FAIL if resource_get_handle fails.
+//     E_POINTER if the returned COM object is null.
+//     Other HRESULT failure codes from MFCreateDXGISurfaceBuffer or SetUnknown.
+//
+HRESULT
+MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
+                                       struct pipe_resource *pPipeRes,
+                                       REFGUID guidExtension,
+                                       IMFSample *pSample )
+{
+   if (!pPipeContext || !pPipeRes || !pSample)
+   {
+      return E_INVALIDARG;
+   }
+
+   struct winsys_handle whandle = {};
+   whandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
+
+   if( !pPipeContext->screen->resource_get_handle( pPipeContext->screen, pPipeContext, pPipeRes, &whandle, 0u ) )
+   {
+      return E_FAIL;
+   }
+
+   if( !whandle.com_obj )
+   {
+      return E_POINTER;
+   }
+
+   ID3D12Resource *pD3D12Res = static_cast<ID3D12Resource *>( whandle.com_obj );
+   ComPtr<IMFMediaBuffer> spMediaBuffer;
+   HRESULT hr = MFCreateDXGISurfaceBuffer( __uuidof( ID3D12Resource ), pD3D12Res, 0, FALSE, &spMediaBuffer );
+
+   if( FAILED( hr ) )
+   {
+      return hr;
+   }
+
+   return pSample->SetUnknown( guidExtension, spMediaBuffer.Get() );
+}
