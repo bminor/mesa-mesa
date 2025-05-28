@@ -406,7 +406,7 @@ sanity:
     - .fdo.ci-fairy
   stage: sanity
   tags:
-    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
+    - placeholder-job
   rules:
     - if: *is-merge-request
       when: on_success
