@@ -73,8 +73,8 @@ struct brw_insn_state {
 
    bool pred_inv:1;
 
-   /* Flag subreg.  Bottom bit is subreg, top bit is reg */
-   unsigned flag_subreg:2;
+   /* Flag subreg.  Bottom bit is subreg, top bits are reg */
+   unsigned flag_subreg:3;
 
    bool acc_wr_control:1;
 };

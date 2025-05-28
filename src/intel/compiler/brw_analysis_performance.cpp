@@ -73,7 +73,7 @@ namespace {
       /* Flag register part of the ARF. */
       EU_DEPENDENCY_ID_FLAG0 = EU_DEPENDENCY_ID_ACCUM0 + 12,
       /* SBID token write completion.  Only used on Gfx12+. */
-      EU_DEPENDENCY_ID_SBID_WR0 = EU_DEPENDENCY_ID_FLAG0 + 8,
+      EU_DEPENDENCY_ID_SBID_WR0 = EU_DEPENDENCY_ID_FLAG0 + 16,
       /* SBID token read completion.  Only used on Gfx12+. */
       EU_DEPENDENCY_ID_SBID_RD0 = EU_DEPENDENCY_ID_SBID_WR0 + 32,
       /* Number of computation dependencies currently tracked. */
