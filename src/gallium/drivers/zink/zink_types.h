@@ -1558,7 +1558,6 @@ struct zink_surface {
 struct zink_ctx_surface {
    struct pipe_surface base;
    struct zink_surface *surf; //the actual surface
-   struct zink_ctx_surface *transient; //for use with EXT_multisample_render_to_texture
    bool needs_mutable;
 };
 
@@ -1567,13 +1566,6 @@ static inline struct zink_surface *
 zink_csurface(struct pipe_surface *psurface)
 {
    return psurface ? ((struct zink_ctx_surface *)psurface)->surf : NULL;
-}
-
-/* use this cast for checking transient framebuffer surfaces */
-static inline struct zink_surface *
-zink_transient_surface(struct pipe_surface *psurface)
-{
-   return psurface ? ((struct zink_ctx_surface *)psurface)->transient ? ((struct zink_ctx_surface *)psurface)->transient->surf : NULL : NULL;
 }
 
 /* use this cast for internal surfaces */
@@ -1747,6 +1739,7 @@ struct zink_context {
    uint32_t transient_attachments;
    struct pipe_framebuffer_state fb_state;
    PIPE_FB_SURFACES; //STOP USING THIS
+   struct zink_surface *transients[PIPE_MAX_COLOR_BUFS + 1]; //AND THIS (probably)
 
    struct zink_vertex_elements_state *element_state;
    struct zink_rasterizer_state *rast_state;

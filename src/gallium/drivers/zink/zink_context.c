@@ -3100,8 +3100,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       VkImageView iv = VK_NULL_HANDLE;
       struct zink_surface *surf = zink_csurface(ctx->fb_cbufs[i]);
       if (surf) {
-         struct zink_surface *transient = zink_transient_surface(ctx->fb_cbufs[i]);
-         if (transient && !has_msrtss) {
+         if (ctx->fb_state.cbufs[i].nr_samples && !has_msrtss) {
+            struct zink_surface *transient = ctx->transients[i];
             iv = zink_prep_fb_attachment(ctx, transient, i);
             ctx->dynamic_fb.attachments[i].imageLayout = zink_resource(transient->base.texture)->layout;
             ctx->dynamic_fb.attachments[i].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
@@ -3158,9 +3158,9 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    }
    if (ctx->fb_state.zsbuf.texture && zsbuf_used) {
       struct zink_surface *surf = zink_csurface(ctx->fb_zsbuf);
-      struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
       VkImageView iv;
-      if (transient && !has_msrtss) {
+      if (ctx->fb_state.zsbuf.nr_samples && !has_msrtss) {
+         struct zink_surface *transient = ctx->transients[PIPE_MAX_COLOR_BUFS];
          iv = zink_prep_fb_attachment(ctx, transient, ctx->fb_state.nr_cbufs);
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].imageLayout = zink_resource(transient->base.texture)->layout;
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageView = zink_prep_fb_attachment(ctx, surf, ctx->fb_state.nr_cbufs);
@@ -3245,10 +3245,10 @@ batch_ref_fb_surface(struct zink_context *ctx, struct pipe_surface *psurf)
 {
    if (!psurf)
       return;
-   zink_batch_reference_resource(ctx, zink_resource(psurf->texture));
-   struct zink_surface *transient = zink_transient_surface(psurf);
-   if (transient)
-      zink_batch_reference_resource(ctx, zink_resource(transient->base.texture));
+   struct zink_resource *res = zink_resource(psurf->texture);
+   zink_batch_reference_resource(ctx, res);
+   if (res->transient)
+      zink_batch_reference_resource(ctx, res->transient);
 }
 
 void
@@ -3844,6 +3844,14 @@ framebuffer_surface_needs_mutable(const struct pipe_resource *pres, const struct
 }
 
 static void
+framebuffer_surface_init_transient(struct zink_context *ctx, struct pipe_surface *psurf, int idx)
+{
+   unsigned nr_samples = idx == PIPE_MAX_COLOR_BUFS ? ctx->fb_state.zsbuf.nr_samples : ctx->fb_state.cbufs[idx].nr_samples;
+   if (!zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled)
+      ctx->transients[idx] = zink_create_transient_surface(ctx, zink_csurface(psurf), nr_samples);
+}
+
+static void
 zink_set_framebuffer_state(struct pipe_context *pctx,
                            const struct pipe_framebuffer_state *state)
 {
@@ -3936,11 +3944,12 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
       struct pipe_surface *psurf = ctx->fb_cbufs[i];
       if (psurf) {
-         struct zink_surface *transient = zink_transient_surface(psurf);
-         if (transient || psurf->nr_samples)
+         if (ctx->fb_state.cbufs[i].nr_samples) {
             ctx->transient_attachments |= BITFIELD_BIT(i);
+            framebuffer_surface_init_transient(ctx, psurf, i);
+         }
          if (!samples)
-            samples = MAX3(transient ? transient->base.nr_samples : 1, psurf->texture->nr_samples, psurf->nr_samples ? psurf->nr_samples : 1);
+            samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, psurf->texture->nr_samples, 1);
          struct zink_resource *res = zink_resource(psurf->texture);
          check_framebuffer_surface_mutable(pctx, psurf);
          if (zink_csurface(psurf)->ivci.subresourceRange.layerCount > layers)
@@ -3966,12 +3975,13 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    }
    if (ctx->fb_state.zsbuf.texture) {
       struct pipe_surface *psurf = ctx->fb_zsbuf;
-      struct zink_surface *transient = zink_transient_surface(psurf);
       check_framebuffer_surface_mutable(pctx, psurf);
-      if (transient || psurf->nr_samples)
+      if (ctx->fb_state.zsbuf.nr_samples) {
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
+         framebuffer_surface_init_transient(ctx, psurf, PIPE_MAX_COLOR_BUFS);
+      }
       if (!samples)
-         samples = MAX3(transient ? transient->base.nr_samples : 1, psurf->texture->nr_samples, psurf->nr_samples ? psurf->nr_samples : 1);
+         samples = MAX3(ctx->fb_state.zsbuf.nr_samples, psurf->texture->nr_samples, 1);
       if (zink_csurface(psurf)->ivci.subresourceRange.layerCount > layers)
          ctx->fb_layer_mismatch |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
       zink_resource(psurf->texture)->fb_bind_count++;
