@@ -403,14 +403,9 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
       /* Large constant support assumes cbufs */
       NIR_PASS(_, nir, nir_opt_large_constants, NULL, 32);
    } else {
-      /* Codegen sometimes puts stuff in cbuf 1 and adds 1 to our cbuf indices
-       * so we can't really rely on it for lowering to cbufs and instead place
-       * the root descriptors in both cbuf 0 and cbuf 1.
-       */
       *cbuf_map_out = (struct nvk_cbuf_map) {
-         .cbuf_count = 2,
+         .cbuf_count = 1,
          .cbufs = {
-            { .type = NVK_CBUF_TYPE_ROOT_DESC },
             { .type = NVK_CBUF_TYPE_ROOT_DESC },
          }
       };
