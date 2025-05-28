@@ -86,7 +86,8 @@ ac_nir_calc_io_off(nir_builder *b, unsigned component, nir_def *io_offset, nir_d
  * - 64-bit outputs are lowered
  * - no indirect indexing is present
  */
-void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr *intrin, ac_nir_prerast_out *out)
+void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr *intrin,
+                                             ac_nir_prerast_out *out, bool gather_values)
 {
    assert(intrin->intrinsic == nir_intrinsic_store_output);
    assert(nir_src_is_const(intrin->src[1]) && !nir_src_as_uint(intrin->src[1]));
@@ -155,16 +156,19 @@ void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr
       nir_def *store_component = nir_channel(b, intrin->src[0].ssa, i);
 
       if (non_dedicated_16bit) {
-         if (io_sem.high_16bits) {
-            nir_def *lo = output[c] ? nir_unpack_32_2x16_split_x(b, output[c]) : nir_imm_intN_t(b, 0, 16);
-            output[c] = nir_pack_32_2x16_split(b, lo, store_component);
-         } else {
-            nir_def *hi = output[c] ? nir_unpack_32_2x16_split_y(b, output[c]) : nir_imm_intN_t(b, 0, 16);
-            output[c] = nir_pack_32_2x16_split(b, store_component, hi);
+         if (gather_values) {
+            if (io_sem.high_16bits) {
+               nir_def *lo = output[c] ? nir_unpack_32_2x16_split_x(b, output[c]) : nir_imm_intN_t(b, 0, 16);
+               output[c] = nir_pack_32_2x16_split(b, lo, store_component);
+            } else {
+               nir_def *hi = output[c] ? nir_unpack_32_2x16_split_y(b, output[c]) : nir_imm_intN_t(b, 0, 16);
+               output[c] = nir_pack_32_2x16_split(b, store_component, hi);
+            }
          }
          type[c] = nir_type_uint32;
       } else {
-         output[c] = store_component;
+         if (gather_values)
+            output[c] = store_component;
          type[c] = src_type;
       }
    }

@@ -1541,7 +1541,7 @@ ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nog
          if (intrin->intrinsic != nir_intrinsic_store_output)
             continue;
 
-         ac_nir_gather_prerast_store_output_info(b, intrin, &s->out);
+         ac_nir_gather_prerast_store_output_info(b, intrin, &s->out, true);
          nir_instr_remove(instr);
       }
    }

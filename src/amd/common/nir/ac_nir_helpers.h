@@ -116,9 +116,8 @@ ac_nir_store_var_components(nir_builder *b, nir_variable *var, nir_def *value,
                             unsigned component, unsigned writemask);
 
 void
-ac_nir_gather_prerast_store_output_info(nir_builder *b,
-                                        nir_intrinsic_instr *intrin,
-                                        ac_nir_prerast_out *out);
+ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr *intrin,
+                                        ac_nir_prerast_out *out, bool gather_values);
 
 void
 ac_nir_export_primitive(nir_builder *b, nir_def *prim, nir_def *row);

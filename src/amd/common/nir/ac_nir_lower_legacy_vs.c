@@ -26,7 +26,7 @@ gather_outputs(nir_builder *b, nir_function_impl *impl, ac_nir_prerast_out *out)
          if (intrin->intrinsic != nir_intrinsic_store_output)
             continue;
 
-         ac_nir_gather_prerast_store_output_info(b, intrin, out);
+         ac_nir_gather_prerast_store_output_info(b, intrin, out, true);
          nir_instr_remove(instr);
       }
    }

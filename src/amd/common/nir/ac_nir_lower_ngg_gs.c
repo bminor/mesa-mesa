@@ -123,7 +123,7 @@ ngg_gs_clear_primflags(nir_builder *b, nir_def *num_vertices, unsigned stream, l
 static bool
 lower_ngg_gs_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ngg_gs_state *s)
 {
-   ac_nir_gather_prerast_store_output_info(b, intrin, &s->out);
+   ac_nir_gather_prerast_store_output_info(b, intrin, &s->out, true);
    nir_instr_remove(&intrin->instr);
    return true;
 }
