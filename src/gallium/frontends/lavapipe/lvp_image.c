@@ -387,7 +387,7 @@ lvp_CreateImageView(VkDevice _device,
 
    view->pformat = lvp_vk_format_to_pipe_format(view->vk.format);
    view->image = image;
-   view->surface = NULL;
+   view->surface.texture = NULL;
 
    if (image->vk.aspects & (VK_IMAGE_ASPECT_DEPTH_BIT |
                             VK_IMAGE_ASPECT_STENCIL_BIT)) {
@@ -457,7 +457,6 @@ lvp_DestroyImageView(VkDevice _device, VkImageView _iview,
    }
    simple_mtx_unlock(&device->queue.lock);
 
-   pipe_surface_reference(&iview->surface, NULL);
    vk_image_view_destroy(&device->vk, pAllocator, &iview->vk);
 }
 

@@ -302,7 +302,7 @@ struct lvp_image_view {
 
    enum pipe_format pformat;
 
-   struct pipe_surface *surface; /* have we created a pipe surface for this? */
+   struct pipe_surface surface; /* have we created a pipe surface for this? */
    struct lvp_image_view *multisample; //VK_EXT_multisampled_render_to_single_sampled
 
    uint8_t plane_count;

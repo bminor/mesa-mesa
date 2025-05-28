@@ -1216,7 +1216,7 @@ handle_descriptor_sets_cmd(struct vk_cmd_queue_entry *cmd, struct rendering_stat
    handle_descriptor_sets(bds, state);
 }
 
-static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
+static struct pipe_surface create_img_surface_bo(struct rendering_state *state,
                                                   VkImageSubresourceRange *range,
                                                   struct pipe_resource *bo,
                                                   enum pipe_format pformat,
@@ -1224,20 +1224,18 @@ static struct pipe_surface *create_img_surface_bo(struct rendering_state *state,
                                                   int level)
 {
    if (pformat == PIPE_FORMAT_NONE)
-      return NULL;
+      return (struct pipe_surface){0};
 
-   const struct pipe_surface template = {
+   struct pipe_surface template = {
       .format = pformat,
+      .texture = bo,
       .first_layer = range->baseArrayLayer + base_layer,
       .last_layer = range->baseArrayLayer + base_layer + layer_count - 1,
       .level = range->baseMipLevel + level,
    };
-
-   return state->pctx->create_surface(state->pctx,
-                                      bo, &template);
-
+   return template;
 }
-static struct pipe_surface *create_img_surface(struct rendering_state *state,
+static struct pipe_surface create_img_surface(struct rendering_state *state,
                                                struct lvp_image_view *imgv,
                                                VkFormat format,
                                                int base_layer, int layer_count)
@@ -1254,15 +1252,7 @@ static void add_img_view_surface(struct rendering_state *state,
                                  struct lvp_image_view *imgv,
                                  int layer_count)
 {
-   if (imgv->surface) {
-      if ((imgv->surface->last_layer - imgv->surface->first_layer) != (layer_count - 1))
-         pipe_surface_reference(&imgv->surface, NULL);
-   }
-
-   if (!imgv->surface) {
-      imgv->surface = create_img_surface(state, imgv, imgv->vk.format,
-                                         0, layer_count);
-   }
+   imgv->surface = create_img_surface(state, imgv, imgv->vk.format, 0, layer_count);
 }
 
 static bool
@@ -1287,28 +1277,27 @@ static void clear_attachment_layers(struct rendering_state *state,
                                     uint32_t sclear_val,
                                     union pipe_color_union *col_val)
 {
-   struct pipe_surface *clear_surf = create_img_surface(state,
-                                                        imgv,
-                                                        imgv->vk.format,
-                                                        base_layer,
-                                                        layer_count);
+   struct pipe_surface clear_surf = create_img_surface(state,
+                                                       imgv,
+                                                       imgv->vk.format,
+                                                       base_layer,
+                                                       layer_count);
 
    if (ds_clear_flags) {
       state->pctx->clear_depth_stencil(state->pctx,
-                                       clear_surf,
+                                       &clear_surf,
                                        ds_clear_flags,
                                        dclear_val, sclear_val,
                                        rect->offset.x, rect->offset.y,
                                        rect->extent.width, rect->extent.height,
                                        true);
    } else {
-      state->pctx->clear_render_target(state->pctx, clear_surf,
+      state->pctx->clear_render_target(state->pctx, &clear_surf,
                                        col_val,
                                        rect->offset.x, rect->offset.y,
                                        rect->extent.width, rect->extent.height,
                                        true);
    }
-   state->pctx->surface_destroy(state->pctx, clear_surf);
 }
 
 static void render_clear(struct rendering_state *state)
@@ -1325,7 +1314,6 @@ static void render_clear(struct rendering_state *state)
       color_clear_val.ui[3] = value.color.uint32[3];
 
       struct lvp_image_view *imgv = state->color_att[i].imgv;
-      assert(imgv->surface);
 
       if (state->framebuffer.viewmask) {
          u_foreach_bit(i, state->framebuffer.viewmask)
@@ -1333,7 +1321,7 @@ static void render_clear(struct rendering_state *state)
                                     i, 1, 0, 0, 0, &color_clear_val);
       } else {
          state->pctx->clear_render_target(state->pctx,
-                                          imgv->surface,
+                                          &imgv->surface,
                                           &color_clear_val,
                                           state->render_area.offset.x,
                                           state->render_area.offset.y,
@@ -1363,7 +1351,7 @@ static void render_clear(struct rendering_state *state)
                                     i, 1, ds_clear_flags, dclear_val, sclear_val, NULL);
       } else {
          state->pctx->clear_depth_stencil(state->pctx,
-                                          state->ds_imgv->surface,
+                                          &state->ds_imgv->surface,
                                           ds_clear_flags,
                                           dclear_val, sclear_val,
                                           state->render_area.offset.x,
@@ -1445,7 +1433,6 @@ destroy_multisample_surface(struct rendering_state *state, struct lvp_image_view
    struct lvp_image_view *base = imgv->multisample;
    base->multisample = NULL;
    free((void*)imgv->image);
-   pipe_surface_reference(&imgv->surface, NULL);
    free(imgv);
    return base;
 }
@@ -1580,7 +1567,7 @@ replicate_attachment(struct rendering_state *state,
                      struct lvp_image_view *src,
                      struct lvp_image_view *dst)
 {
-   unsigned level = dst->surface->level;
+   unsigned level = dst->surface.level;
    const struct pipe_box box = {
       .x = 0,
       .y = 0,
@@ -1598,7 +1585,7 @@ create_multisample_surface(struct rendering_state *state, struct lvp_image_view 
 {
    assert(!imgv->multisample);
 
-   struct pipe_resource templ = *imgv->surface->texture;
+   struct pipe_resource templ = *imgv->surface.texture;
    templ.nr_samples = samples;
    struct lvp_image *image = mem_dup(imgv->image, sizeof(struct lvp_image));
    image->vk.samples = samples;
@@ -1607,9 +1594,8 @@ create_multisample_surface(struct rendering_state *state, struct lvp_image_view 
 
    struct lvp_image_view *multi = mem_dup(imgv, sizeof(struct lvp_image_view));
    multi->image = image;
-   multi->surface = state->pctx->create_surface(state->pctx, image->planes[0].bo, imgv->surface);
-   struct pipe_resource *ref = image->planes[0].bo;
-   pipe_resource_reference(&ref, NULL);
+   multi->surface = imgv->surface;
+   multi->surface.texture = image->planes[0].bo;
    imgv->multisample = multi;
    multi->multisample = imgv;
    if (replicate)
@@ -1727,7 +1713,7 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
          if (state->forced_sample_count && imgv->image->vk.samples == 1)
             state->color_att[i].imgv = create_multisample_surface(state, imgv, state->forced_sample_count,
                                                                   att_needs_replicate(state, imgv, state->color_att[i].load_op));
-         state->framebuffer.cbufs[i] = *state->color_att[i].imgv->surface;
+         state->framebuffer.cbufs[i] = state->color_att[i].imgv->surface;
          assert(state->render_area.offset.x + state->render_area.extent.width <= state->framebuffer.cbufs[i].texture->width0);
          assert(state->render_area.offset.y + state->render_area.extent.height <= state->framebuffer.cbufs[i].texture->height0);
       } else {
@@ -1761,7 +1747,7 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
          state->ds_imgv = create_multisample_surface(state, imgv, state->forced_sample_count,
                                                      att_needs_replicate(state, imgv, load_op));
       }
-      state->framebuffer.zsbuf = *state->ds_imgv->surface;
+      state->framebuffer.zsbuf = state->ds_imgv->surface;
       assert(state->render_area.offset.x + state->render_area.extent.width <= state->framebuffer.zsbuf.texture->width0);
       assert(state->render_area.offset.y + state->render_area.extent.height <= state->framebuffer.zsbuf.texture->height0);
    } else {
@@ -1796,7 +1782,7 @@ static void handle_end_rendering(struct vk_cmd_queue_entry *cmd,
                                        i, 1, 0, 0, 0, &color_clear_val);
          } else {
             state->pctx->clear_render_target(state->pctx,
-                                             state->color_att[i].imgv->surface,
+                                             &state->color_att[i].imgv->surface,
                                              &color_clear_val,
                                              state->render_area.offset.x,
                                              state->render_area.offset.y,
@@ -1820,7 +1806,7 @@ static void handle_end_rendering(struct vk_cmd_queue_entry *cmd,
                                     i, 1, ds_clear_flags, dclear_val, sclear_val, NULL);
       } else {
          state->pctx->clear_depth_stencil(state->pctx,
-                                          state->ds_imgv->surface,
+                                          &state->ds_imgv->surface,
                                           ds_clear_flags,
                                           dclear_val, sclear_val,
                                           state->render_area.offset.x,
@@ -3086,7 +3072,7 @@ static void handle_clear_ds_image(struct vk_cmd_queue_entry *cmd,
 
       uint32_t level_count = vk_image_subresource_level_count(&image->vk, range);
       for (unsigned j = 0; j < level_count; j++) {
-         struct pipe_surface *surf;
+         struct pipe_surface surf;
          unsigned width, height, depth;
          width = u_minify(image->planes[0].bo->width0, range->baseMipLevel + j);
          height = u_minify(image->planes[0].bo->height0, range->baseMipLevel + j);
@@ -3102,13 +3088,12 @@ static void handle_clear_ds_image(struct vk_cmd_queue_entry *cmd,
                                       0, depth, j);
 
          state->pctx->clear_depth_stencil(state->pctx,
-                                          surf,
+                                          &surf,
                                           ds_clear_flags,
                                           cmd->u.clear_depth_stencil_image.depth_stencil->depth,
                                           cmd->u.clear_depth_stencil_image.depth_stencil->stencil,
                                           0, 0,
                                           width, height, false);
-         state->pctx->surface_destroy(state->pctx, surf);
       }
    }
 }
