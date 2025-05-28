@@ -178,8 +178,7 @@ nvk_AllocateMemory(VkDevice device,
       /* We can't really assert anything for dma-bufs because they could come
        * in from some other device.
        */
-      if (fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)
-         assert(!(flags & ~mem->mem->flags));
+      assert(!(flags & ~mem->mem->flags & ~NVKMD_MEM_PLACEMENT_FLAGS));
    } else if (pte_kind != 0 || tile_mode != 0) {
       result = nvkmd_dev_alloc_tiled_mem(dev->nvkmd, &dev->vk.base,
                                          aligned_size, alignment,

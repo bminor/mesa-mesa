@@ -55,6 +55,9 @@ enum nvkmd_mem_flags {
    NVKMD_MEM_SHARED     = 1 << 4,
 };
 
+#define NVKMD_MEM_PLACEMENT_FLAGS \
+   (NVKMD_MEM_LOCAL | NVKMD_MEM_GART | NVKMD_MEM_VRAM)
+
 enum nvkmd_mem_map_flags {
    NVKMD_MEM_MAP_RD     = 1 << 0,
    NVKMD_MEM_MAP_WR     = 1 << 1,
