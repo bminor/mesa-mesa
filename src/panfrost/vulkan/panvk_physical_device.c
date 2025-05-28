@@ -221,6 +221,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
       .KHR_descriptor_update_template = true,
+      .KHR_depth_clamp_zero_one = true,
       .KHR_depth_stencil_resolve = true,
       .KHR_device_group = true,
       .KHR_draw_indirect_count = arch >= 10,
@@ -285,6 +286,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_buffer_device_address = true,
       .EXT_custom_border_color = true,
       .EXT_depth_bias_control = true,
+      .EXT_depth_clamp_zero_one = true,
       .EXT_depth_clip_enable = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
@@ -513,6 +515,9 @@ get_features(const struct panvk_instance *instance,
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
       .shaderSubgroupRotateClustered = true,
+
+      /* VK_KHR_depth_clamp_zero_one */
+      .depthClampZeroOne = true,
 
       /* VK_KHR_line_rasterization */
       .rectangularLines = true,
