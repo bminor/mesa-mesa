@@ -2952,7 +2952,8 @@ panfrost_emit_varying_descriptors(struct panfrost_batch *batch)
          cfg.table = 61;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_VERTEX;
          cfg.offset = 1024 + (index * 16);
-         cfg.buffer_index = 0;
+         /* On v12+, the hardware-controlled buffer is at index 1 for varyings */
+         cfg.buffer_index = PAN_ARCH >= 12 ? 1 : 0;
          cfg.attribute_stride = varying_size;
          cfg.packet_stride = varying_size + 16;
       }
