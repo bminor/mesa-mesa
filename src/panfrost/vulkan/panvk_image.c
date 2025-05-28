@@ -406,9 +406,6 @@ panvk_DestroyImage(VkDevice _device, VkImage _image,
    if (!image)
       return;
 
-   if (image->bo)
-      pan_kmod_bo_put(image->bo);
-
    vk_image_destroy(&device->vk, pAllocator, &image->vk);
 }
 
@@ -574,9 +571,8 @@ VKAPI_ATTR VkResult VKAPI_CALL
 panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
 {
-   for (uint32_t i = 0; i < bindInfoCount; ++i) {
+   for (uint32_t i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(panvk_image, image, pBindInfos[i].image);
-      struct pan_kmod_bo *old_bo = image->bo;
       const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
          vk_find_struct_const(pBindInfos[i].pNext,
                               BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
@@ -589,13 +585,13 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
          assert(image->plane_count == 1);
          assert(wsi_image->plane_count == 1);
 
-         image->bo = pan_kmod_bo_get(wsi_image->bo);
+         image->bo = wsi_image->bo;
          panvk_image_plane_bind(&image->planes[0], image->bo,
                                 wsi_image->planes[0].data.base, 0);
       } else {
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);
-         image->bo = pan_kmod_bo_get(mem->bo);
+         image->bo = mem->bo;
          uint64_t offset = pBindInfos[i].memoryOffset;
          if (is_disjoint(image)) {
             const VkBindImagePlaneMemoryInfo *plane_info =
@@ -613,8 +609,6 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
             }
          }
       }
-
-      pan_kmod_bo_put(old_bo);
    }
 
    return VK_SUCCESS;
