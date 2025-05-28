@@ -692,8 +692,12 @@ lower_load_push_consts(nir_shader *nir, struct panvk_shader *shader)
     * blend constants are never loaded from the fragment shader, but might be
     * needed in the blend shader. */
    shader->fau.sysval_count = BITSET_COUNT(shader->fau.used_sysvals);
+   /* 32 FAUs (256 bytes) are reserved for API push constants */
+   assert(shader->fau.sysval_count <= 64 - 32 && "too many sysval FAUs");
    shader->fau.total_count =
       shader->fau.sysval_count + BITSET_COUNT(shader->fau.used_push_consts);
+   assert(shader->fau.total_count <= 64 &&
+          "asking for more FAUs than the hardware has to offer");
 
    if (!progress)
       return;
