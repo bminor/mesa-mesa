@@ -71,6 +71,28 @@ fail_bo:
    return result;
 }
 
+static inline bool
+force_mem_to_gart(const struct nvkmd_pdev *pdev,
+                  enum nvkmd_mem_flags flags)
+{
+   if (pdev->debug_flags & NVK_DEBUG_FORCE_GART)
+      return true;
+
+   /* TODO:
+    *
+    * VRAM maps on Kepler appear to be broken and we don't really know why.
+    * My NVIDIA contact doesn't remember them not working so they probably
+    * should but they don't today.  Force everything that may be mapped to
+    * use GART for now.
+    */
+   if (pdev->dev_info.chipset < 0x110 && (flags & NVKMD_MEM_CAN_MAP)) {
+      assert(!(flags & NVKMD_MEM_VRAM));
+      return true;
+   }
+
+   return false;
+}
+
 VkResult
 nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
                               struct vk_object_base *log_obj,
@@ -97,20 +119,8 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
       domains |= NOUVEAU_WS_BO_VRAM;
    }
 
-   if (dev->base.pdev->debug_flags & NVK_DEBUG_FORCE_GART)
+   if (force_mem_to_gart(dev->base.pdev, flags))
       domains = NOUVEAU_WS_BO_GART;
-
-   /* TODO:
-    *
-    * VRAM maps on Kepler appear to be broken and we don't really know why.
-    * My NVIDIA contact doesn't remember them not working so they probably
-    * should but they don't today.  Force everything that may be mapped to
-    * use GART for now.
-    */
-   if (dev_info->chipset < 0x110 && (flags & NVKMD_MEM_CAN_MAP)) {
-      assert(domains & NOUVEAU_WS_BO_GART);
-      domains = NOUVEAU_WS_BO_GART;
-   }
 
    const uint32_t mem_align_B = _dev->pdev->bind_align_B;
    size_B = align64(size_B, mem_align_B);
