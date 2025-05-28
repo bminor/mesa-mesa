@@ -128,7 +128,3 @@ spec@ext_transform_feedback@tessellation quad_strip wireframe,Crash
 spec@!opengl 1.0@gl-1.0-dlist-beginend,Crash
 
 spec@arb_viewport_array@display-list,Fail
-
-# uprev Piglit in Mesa
-spec@arb_sparse_buffer@buffer-data,Crash
-spec@arb_sparse_buffer@commit,Crash
