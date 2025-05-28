@@ -2690,11 +2690,7 @@ impl<'a> ShaderFromNir<'a> {
                 // let sample = self.get_src(&srcs[2]);
 
                 let mem_order = if (intrin.access() & ACCESS_CAN_REORDER) != 0 {
-                    if self.sm.sm() >= 80 {
-                        MemOrder::Constant
-                    } else {
-                        MemOrder::Weak
-                    }
+                    MemOrder::Constant
                 } else {
                     MemOrder::Strong(MemScope::GPU)
                 };
@@ -2727,11 +2723,7 @@ impl<'a> ShaderFromNir<'a> {
                 // let sample = self.get_src(&srcs[2]);
 
                 let mem_order = if (intrin.access() & ACCESS_CAN_REORDER) != 0 {
-                    if self.sm.sm() >= 80 {
-                        MemOrder::Constant
-                    } else {
-                        MemOrder::Weak
-                    }
+                    MemOrder::Constant
                 } else {
                     MemOrder::Strong(MemScope::GPU)
                 };
