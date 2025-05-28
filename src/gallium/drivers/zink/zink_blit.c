@@ -447,11 +447,10 @@ zink_blit(struct pipe_context *pctx,
    ctx->blit_nearest = info->filter == PIPE_TEX_FILTER_NEAREST;
 
    if (stencil_blit) {
-      struct pipe_surface *dst_view, dst_templ;
+      struct pipe_surface dst_templ;
       util_blitter_default_dst_texture(&dst_templ, info->dst.resource, info->dst.level, info->dst.box.z);
-      dst_view = pctx->create_surface(pctx, info->dst.resource, &dst_templ);
 
-      util_blitter_clear_depth_stencil(ctx->blitter, dst_view, PIPE_CLEAR_STENCIL,
+      util_blitter_clear_depth_stencil(ctx->blitter, &dst_templ, PIPE_CLEAR_STENCIL,
                                        0, 0, info->dst.box.x, info->dst.box.y,
                                        info->dst.box.width, info->dst.box.height);
       zink_blit_begin(ctx, ZINK_BLIT_SAVE_FB | ZINK_BLIT_SAVE_FS | ZINK_BLIT_SAVE_TEXTURES | ZINK_BLIT_SAVE_FS_CONST_BUF);
@@ -463,8 +462,6 @@ zink_blit(struct pipe_context *pctx,
                                     info->src.level,
                                     &info->src.box,
                                     info->scissor_enable ? &info->scissor : NULL);
-
-      pipe_surface_unref(pctx, &dst_view);
    } else {
       struct pipe_blit_info new_info = *info;
       new_info.src.resource = &use_src->base.b;
