@@ -264,6 +264,9 @@ zink_surface_destroy(struct pipe_context *pctx,
       /* this has an extra resource ref */
       pipe_resource_reference(&csurf->base.texture, NULL);
    zink_surface_reference(zink_screen(pctx->screen), &csurf->surf, NULL);
+   /* ensure this gets repopulated if another transient surface is created */
+   if (csurf->transient)
+      zink_resource(psurface->texture)->transient->valid = false;
    pipe_surface_unref(pctx, (struct pipe_surface**)&csurf->transient);
    FREE(csurf);
 }
@@ -341,19 +344,22 @@ zink_create_surface(struct pipe_context *pctx,
    csurf->base.texture = pres;
 
    if (templ->nr_samples && !screen->info.have_EXT_multisampled_render_to_single_sampled) {
-      /* transient fb attachment: not cached */
-      struct pipe_resource rtempl = *pres;
-      rtempl.nr_samples = templ->nr_samples;
-      rtempl.bind |= ZINK_BIND_TRANSIENT;
-      struct zink_resource *transient = zink_resource(pctx->screen->resource_create(pctx->screen, &rtempl));
-      if (unlikely(!transient)) {
-         mesa_loge("ZINK: failed to create transient resource!");
-         goto fail;
+      struct zink_resource *transient = res->transient;
+      if (!res->transient) {
+         /* transient fb attachment: not cached */
+         struct pipe_resource rtempl = *pres;
+         rtempl.nr_samples = templ->nr_samples;
+         rtempl.bind |= ZINK_BIND_TRANSIENT;
+         res->transient = zink_resource(pctx->screen->resource_create(pctx->screen, &rtempl));
+         transient = res->transient;
+         if (unlikely(!transient)) {
+            mesa_loge("ZINK: failed to create transient resource!");
+            goto fail;
+         }
       }
 
       ivci.image = transient->obj->image;
       struct zink_surface *tsurf = create_surface(pctx, &transient->base.b, templ, &ivci, true);
-      zink_resource_reference(&transient, NULL);
       if (unlikely(!tsurf)) {
          mesa_loge("ZINK: failed to create transient surface!");
          goto fail;

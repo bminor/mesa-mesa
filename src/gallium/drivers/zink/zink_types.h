@@ -1247,6 +1247,7 @@ struct zink_resource {
 
    struct zink_resource_object *obj;
    struct pipe_surface *surface; //for swapchain images
+   struct zink_resource *transient; //for msrtt without EXT_multisampled_render_to_single_sampled
    uint32_t queue;
    union {
       struct {
@@ -1558,7 +1559,6 @@ struct zink_ctx_surface {
    struct pipe_surface base;
    struct zink_surface *surf; //the actual surface
    struct zink_ctx_surface *transient; //for use with EXT_multisample_render_to_texture
-   bool transient_init; //whether the transient surface has data
    bool needs_mutable;
 };
 

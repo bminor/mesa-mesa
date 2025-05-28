@@ -193,18 +193,19 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
 
    bool blitting = ctx->blitting;
    u_foreach_bit(i, msaa_expand_mask) {
-      struct zink_ctx_surface *csurf = (struct zink_ctx_surface*)ctx->fb_cbufs[i];
+      struct pipe_resource *src = ctx->fb_state.cbufs[i].texture;
+      struct zink_resource *res = zink_resource(src);
+      struct zink_resource *transient = res->transient;
       /* skip replicate blit if the image will be full-cleared */
       if ((i == PIPE_MAX_COLOR_BUFS && (ctx->rp_clears_enabled & PIPE_CLEAR_DEPTHSTENCIL)) ||
             (ctx->rp_clears_enabled >> 2) & BITFIELD_BIT(i)) {
-         csurf->transient_init |= zink_fb_clear_full_exists(ctx, i);
+         transient->valid |= zink_fb_clear_full_exists(ctx, i);
       }
-      if (csurf->transient_init)
+      if (transient->valid)
          continue;
-      struct pipe_surface *dst_view = (struct pipe_surface*)csurf->transient;
+      struct pipe_surface *dst_view = (struct pipe_surface*)zink_transient_surface(ctx->fb_cbufs[i]);
       assert(dst_view);
       struct pipe_sampler_view src_templ, *src_view;
-      struct pipe_resource *src = ctx->fb_state.cbufs[i].texture;
       struct pipe_box dstbox;
 
       u_box_3d(0, 0, 0, ctx->fb_state.width, ctx->fb_state.height,
@@ -237,7 +238,7 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       }
       ctx->blitting = blitting;
       pipe_sampler_view_reference(&src_view, NULL);
-      csurf->transient_init = true;
+      transient->valid = true;
    }
 }
 
