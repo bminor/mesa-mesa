@@ -481,13 +481,14 @@ nvk_shader_dump(struct nvk_shader *shader)
 #endif
 
 static VkResult
-nvk_compile_nir_with_nak(const struct nvk_physical_device *pdev,
-                         nir_shader *nir,
-                         VkShaderCreateFlagsEXT shader_flags,
-                         const struct vk_pipeline_robustness_state *rs,
-                         const struct nak_fs_key *fs_key,
-                         struct nvk_shader *shader)
+nvk_compile_nir(struct nvk_device *dev, nir_shader *nir,
+                VkShaderCreateFlagsEXT shader_flags,
+                const struct vk_pipeline_robustness_state *rs,
+                const struct nak_fs_key *fs_key,
+                struct nvk_shader *shader)
 {
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+
    const bool dump_asm =
       shader_flags & VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA;
 
@@ -497,31 +498,14 @@ nvk_compile_nir_with_nak(const struct nvk_physical_device *pdev,
    if (rs->storage_buffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT)
       robust2_modes |= nir_var_mem_ssbo;
 
-   shader->nak = nak_compile_shader(nir, dump_asm, pdev->nak, robust2_modes, fs_key);
-
+   shader->nak = nak_compile_shader(nir, dump_asm, pdev->nak,
+                                    robust2_modes, fs_key);
    if (!shader->nak)
       return vk_errorf(pdev, VK_ERROR_UNKNOWN, "Internal compiler error in NAK");
 
    shader->info = shader->nak->info;
    shader->code_ptr = shader->nak->code;
    shader->code_size = shader->nak->code_size;
-
-   return VK_SUCCESS;
-}
-
-static VkResult
-nvk_compile_nir(struct nvk_device *dev, nir_shader *nir,
-                VkShaderCreateFlagsEXT shader_flags,
-                const struct vk_pipeline_robustness_state *rs,
-                const struct nak_fs_key *fs_key,
-                struct nvk_shader *shader)
-{
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
-
-   VkResult result = nvk_compile_nir_with_nak(pdev, nir, shader_flags, rs,
-                                              fs_key, shader);
-   if (result != VK_SUCCESS)
-      return result;
 
    if (nir->constant_data_size > 0) {
       uint32_t data_align = nvk_min_cbuf_alignment(&pdev->info);
