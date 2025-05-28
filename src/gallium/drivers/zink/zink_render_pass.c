@@ -100,9 +100,8 @@ zink_init_zs_attachment(struct zink_context *ctx, struct zink_rt_attrib *rt)
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
    struct zink_resource *zsbuf = zink_resource(fb->zsbuf.texture);
    struct zink_framebuffer_clear *fb_clear = &ctx->fb_clears[PIPE_MAX_COLOR_BUFS];
-   struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
    rt->format = zsbuf->format;
-   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf.texture->nr_samples, 1);
+   rt->samples = MAX3(ctx->fb_state.zsbuf.nr_samples, ctx->fb_state.zsbuf.texture->nr_samples, 1);
    rt->clear_color = zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS) &&
                                          !zink_fb_clear_first_needs_explicit(fb_clear) &&
                                          (zink_fb_clear_element(fb_clear, 0)->zs.bits & PIPE_CLEAR_DEPTH);
@@ -113,7 +112,8 @@ zink_init_zs_attachment(struct zink_context *ctx, struct zink_rt_attrib *rt)
                                     ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.outputs_written : 0;
    bool needs_write_z = (ctx->dsa_state && ctx->dsa_state->hw_state.depth_write) ||
                        outputs_written & BITFIELD64_BIT(FRAG_RESULT_DEPTH);
-   needs_write_z |= transient || rt->clear_color ||
+   needs_write_z |= (ctx->fb_state.zsbuf.nr_samples && !zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled) ||
+                    rt->clear_color ||
                     (zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS) && (zink_fb_clear_element(fb_clear, 0)->zs.bits & PIPE_CLEAR_DEPTH));
 
    bool needs_write_s = (ctx->dsa_state && (util_writes_stencil(&ctx->dsa_state->base.stencil[0]) || util_writes_stencil(&ctx->dsa_state->base.stencil[1]))) || 
@@ -130,9 +130,8 @@ zink_tc_init_zs_attachment(struct zink_context *ctx, const struct tc_renderpass_
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
    struct zink_resource *zsbuf = zink_resource(fb->zsbuf.texture);
    struct zink_framebuffer_clear *fb_clear = &ctx->fb_clears[PIPE_MAX_COLOR_BUFS];
-   struct zink_surface *transient = zink_transient_surface(ctx->fb_zsbuf);
    rt->format = zsbuf->format;
-   rt->samples = MAX3(transient ? transient->base.nr_samples : 0, fb->zsbuf.texture->nr_samples, 1);
+   rt->samples = MAX3(ctx->fb_state.zsbuf.nr_samples, ctx->fb_state.zsbuf.texture->nr_samples, 1);
    rt->clear_color = zink_fb_clear_enabled(ctx, PIPE_MAX_COLOR_BUFS) &&
                                          !zink_fb_clear_first_needs_explicit(fb_clear) &&
                                          (zink_fb_clear_element(fb_clear, 0)->zs.bits & PIPE_CLEAR_DEPTH);
@@ -151,9 +150,8 @@ zink_init_color_attachment(struct zink_context *ctx, unsigned i, struct zink_rt_
    struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
-      struct zink_surface *transient = zink_transient_surface(psurf);
       rt->format = surf->ivci.format;
-      rt->samples = MAX3(transient ? transient->base.nr_samples : 0, psurf->texture->nr_samples, 1);
+      rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
       rt->invalid = !zink_resource(psurf->texture)->valid;
       rt->fbfetch = (ctx->fbfetch_outputs & BITFIELD_BIT(i)) > 0;
@@ -172,9 +170,8 @@ zink_tc_init_color_attachment(struct zink_context *ctx, const struct tc_renderpa
    struct pipe_surface *psurf = ctx->fb_cbufs[i];
    if (psurf) {
       struct zink_surface *surf = zink_csurface(psurf);
-      struct zink_surface *transient = zink_transient_surface(psurf);
       rt->format = surf->ivci.format;
-      rt->samples = MAX3(transient ? transient->base.nr_samples : 0, psurf->texture->nr_samples, 1);
+      rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
       rt->invalid = !zink_resource(psurf->texture)->valid;
       rt->fbfetch = (info->cbuf_fbfetch & BITFIELD_BIT(i)) > 0;
