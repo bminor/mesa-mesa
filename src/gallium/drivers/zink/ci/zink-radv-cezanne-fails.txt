@@ -404,3 +404,10 @@ spec@arb_shader_image_load_store@invalid@imageStore/incomplete image test,Fail
 spec@arb_shader_image_load_store@invalid@imageStore/invalid format test,Fail
 spec@arb_shader_image_load_store@invalid@imageStore/level bounds test,Fail
 spec@arb_shader_image_load_store@invalid@imageStore/unbound image test,Fail
+
+# The first vertex should get default point size = 1, but RADV doesn't set it.
+#   EmitVertex
+#   gl_PointSize = 13;
+#   EmitVertex
+spec@glsl-1.50@execution@geometry@point-size-out,Fail
+spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs,Fail

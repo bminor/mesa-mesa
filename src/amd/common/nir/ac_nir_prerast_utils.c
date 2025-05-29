@@ -155,6 +155,48 @@ void ac_nir_gather_prerast_store_output_info(nir_builder *b, nir_intrinsic_instr
 
       nir_def *store_component = nir_channel(b, intrin->src[0].ssa, i);
 
+      /* Gather constant output components. This must be done only once when we gather info but not SSA defs
+       * because we want to gather all stores and then determine if they are all constants and if they are
+       * the same constants.
+       */
+      if (!gather_values && !(info->nonconst_mask & BITFIELD_BIT(c))) {
+         nir_scalar s = nir_scalar_resolved(store_component, 0);
+
+         if (nir_scalar_is_const(s)) {
+            nir_const_value value = nir_scalar_as_const_value(s);
+            uint32_t *saved_value, new_value;
+
+            /* Get the old value pointer and the new value. */
+            if (store_component->bit_size == 16) {
+               if (slot < VARYING_SLOT_VAR0_16BIT)
+                  saved_value = &out->const_values[slot][c];
+               else
+                  saved_value = &out->const_values_16bit[slot - VARYING_SLOT_VAR0_16BIT][c];
+
+               if (io_sem.high_16bits)
+                  new_value = (*saved_value & 0xffff) | ((uint32_t)value.u16 << 16);
+               else
+                  new_value = (*saved_value & 0xffff0000) | value.u16;
+            } else {
+               saved_value = &out->const_values[slot][c];
+               new_value = value.u32;
+            }
+
+            /* Update constant info. */
+            if (!(info->const_mask & BITFIELD_BIT(c))) {
+               *saved_value = new_value;
+               info->const_mask |= BITFIELD_BIT(c);
+            } else if (*saved_value != new_value) {
+               /* Different stores write different constants. */
+               info->const_mask &= ~BITFIELD_BIT(c);
+               info->nonconst_mask |= BITFIELD_BIT(c);
+            }
+         } else {
+            info->const_mask &= ~BITFIELD_BIT(c);
+            info->nonconst_mask |= BITFIELD_BIT(c);
+         }
+      }
+
       if (non_dedicated_16bit) {
          if (gather_values) {
             if (io_sem.high_16bits) {
@@ -1322,11 +1364,13 @@ ac_nir_get_lds_gs_out_slot_offset(ac_nir_prerast_out *pr_out, gl_varying_slot sl
              pr_out->infos_16bit_hi[i].packed_slot_gs_out_offset);
 
       lds_slot_offset = pr_out->infos_16bit_lo[i].packed_slot_gs_out_offset;
-      lds_component_mask = pr_out->infos_16bit_lo[i].components_mask |
-                           pr_out->infos_16bit_hi[i].components_mask;
+      lds_component_mask = (pr_out->infos_16bit_lo[i].components_mask |
+                            pr_out->infos_16bit_hi[i].components_mask) &
+                           ~(pr_out->infos_16bit_lo[i].const_mask &
+                             pr_out->infos_16bit_hi[i].const_mask);
    } else {
       lds_slot_offset = pr_out->infos[slot].packed_slot_gs_out_offset;
-      lds_component_mask = pr_out->infos[slot].components_mask;
+      lds_component_mask = pr_out->infos[slot].components_mask & ~pr_out->infos[slot].const_mask;
    }
 
    return lds_slot_offset + util_bitcount(lds_component_mask & BITFIELD_MASK(component)) * 4;
@@ -1351,10 +1395,35 @@ ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, 
       assert(!"unimplemented");
    } else {
       lds_slot_offset = pr_out->infos[slot].packed_slot_xfb_lds_offset;
-      lds_component_mask = pr_out->infos[slot].xfb_lds_components_mask;
+      lds_component_mask = pr_out->infos[slot].xfb_lds_components_mask & ~pr_out->infos[slot].const_mask;
    }
 
    return lds_slot_offset + util_bitcount(lds_component_mask & BITFIELD_MASK(component)) * 4;
+}
+
+static bool
+is_const_output(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component)
+{
+   if (slot >= VARYING_SLOT_VAR0_16BIT) {
+      slot -= VARYING_SLOT_VAR0_16BIT;
+      return pr_out->infos_16bit_lo[slot].const_mask &
+             pr_out->infos_16bit_hi[slot].const_mask & BITFIELD_BIT(component);
+   } else {
+      return pr_out->infos[slot].const_mask & BITFIELD_BIT(component);
+   }
+}
+
+static nir_def *
+get_const_output(nir_builder *b, unsigned bit_size, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
+                 unsigned component)
+{
+   if (!is_const_output(pr_out, slot, component))
+      return NULL;
+
+   if (slot >= VARYING_SLOT_VAR0_16BIT)
+      return nir_imm_intN_t(b, pr_out->const_values_16bit[slot - VARYING_SLOT_VAR0_16BIT][component], bit_size);
+   else
+      return nir_imm_intN_t(b, pr_out->const_values[slot][component], bit_size);
 }
 
 void
@@ -1362,6 +1431,9 @@ ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_
                         gl_varying_slot slot, unsigned component)
 {
    assert(value->num_components == 1);
+   if (is_const_output(pr_out, slot, component))
+      return;
+
    unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, value->bit_size == 16);
    nir_store_shared(b, value, vtxptr, .base = offset, .align_mul = 4);
 }
@@ -1370,6 +1442,10 @@ nir_def *
 ac_nir_load_shared_xfb(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                        gl_varying_slot slot, unsigned component)
 {
+   nir_def *const_val = get_const_output(b, bit_size, pr_out, slot, component);
+   if (const_val)
+      return const_val;
+
    unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, bit_size == 16);
    return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
 }
@@ -1379,6 +1455,9 @@ ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_n
                            gl_varying_slot slot, unsigned component)
 {
    assert(value->num_components == 1);
+   if (is_const_output(pr_out, slot, component))
+      return;
+
    unsigned offset = ac_nir_get_lds_gs_out_slot_offset(pr_out, slot, component);
    nir_store_shared(b, value, vtxptr, .base = offset, .align_mul = 4);
 }
@@ -1387,6 +1466,10 @@ nir_def *
 ac_nir_load_shared_gs_out(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                           gl_varying_slot slot, unsigned component)
 {
+   nir_def *const_val = get_const_output(b, bit_size, pr_out, slot, component);
+   if (const_val)
+      return const_val;
+
    unsigned offset = ac_nir_get_lds_gs_out_slot_offset(pr_out, slot, component);
    return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
 }
@@ -1492,10 +1575,14 @@ ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out)
       pr_out->infos[i].packed_slot_gs_out_offset = gs_out_offset;
       pr_out->infos[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
 
-      if (pr_out->infos[i].components_mask)
-         gs_out_offset += util_bitcount(pr_out->infos[i].components_mask) * 4;
-      if (pr_out->infos[i].xfb_lds_components_mask)
-         xfb_lds_offset += util_bitcount(pr_out->infos[i].xfb_lds_components_mask) * 4;
+      if (pr_out->infos[i].components_mask & ~pr_out->infos[i].const_mask) {
+         gs_out_offset += util_bitcount(pr_out->infos[i].components_mask &
+                                        ~pr_out->infos[i].const_mask) * 4;
+      }
+      if (pr_out->infos[i].xfb_lds_components_mask & ~pr_out->infos[i].const_mask) {
+         xfb_lds_offset += util_bitcount(pr_out->infos[i].xfb_lds_components_mask &
+                                         ~pr_out->infos[i].const_mask) * 4;
+      }
    }
 
    for (unsigned i = 0; i < ARRAY_SIZE(pr_out->infos_16bit_lo); i++) {
@@ -1503,6 +1590,8 @@ ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out)
                                 pr_out->infos_16bit_hi[i].components_mask;
       unsigned xfb_component_mask = pr_out->infos_16bit_lo[i].xfb_lds_components_mask |
                                     pr_out->infos_16bit_hi[i].xfb_lds_components_mask;
+      unsigned const_mask = pr_out->infos_16bit_lo[i].const_mask &
+                            pr_out->infos_16bit_hi[i].const_mask;
       assert(gs_out_offset < BITFIELD_BIT(12));
       assert(xfb_lds_offset < BITFIELD_BIT(12));
       pr_out->infos_16bit_lo[i].packed_slot_gs_out_offset = gs_out_offset;
@@ -1510,10 +1599,10 @@ ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out)
       pr_out->infos_16bit_lo[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
       pr_out->infos_16bit_hi[i].packed_slot_xfb_lds_offset = xfb_lds_offset;
 
-      if (component_mask)
-         gs_out_offset += util_bitcount(component_mask) * 4;
-      if (xfb_component_mask)
-         xfb_lds_offset += util_bitcount(xfb_component_mask) * 4;
+      if (component_mask & ~const_mask)
+         gs_out_offset += util_bitcount(component_mask & ~const_mask) * 4;
+      if (xfb_component_mask & ~const_mask)
+         xfb_lds_offset += util_bitcount(xfb_component_mask & ~const_mask) * 4;
    }
 
    assert(gs_out_offset < BITFIELD_BIT(16));

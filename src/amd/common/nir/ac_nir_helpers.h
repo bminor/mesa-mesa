@@ -69,6 +69,10 @@ typedef struct
     * For NGG GS, it's equal to components_mask because NGG GS has all outputs in LDS.
     */
    uint8_t xfb_lds_components_mask : 4;
+   /* Bitmask of components that store a constant value. */
+   uint8_t const_mask : 4;
+   /* Bitmask of components that store a non-constant value at least once. Used only during gathering. */
+   uint8_t nonconst_mask : 4;
 } ac_nir_prerast_per_output_info;
 
 typedef struct
@@ -76,6 +80,10 @@ typedef struct
    nir_def *outputs[VARYING_SLOT_MAX][4];
    nir_def *outputs_16bit_lo[16][4];
    nir_def *outputs_16bit_hi[16][4];
+
+   /* Low and high 16 bits are packed. */
+   uint32_t const_values[VARYING_SLOT_MAX][4];
+   uint32_t const_values_16bit[16][4];
 
    nir_alu_type types[VARYING_SLOT_MAX][4];
    nir_alu_type types_16bit_lo[16][4];
