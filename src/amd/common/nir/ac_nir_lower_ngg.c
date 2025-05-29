@@ -208,8 +208,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
             nir_def *vtx_idx = nir_load_var(b, s->gs_vtx_indices_vars[i]);
             nir_def *addr = pervertex_lds_addr(b, vtx_idx, s->pervertex_lds_bytes);
             /* Edge flags share LDS with XFB. */
-            unsigned offset = ac_nir_ngg_get_xfb_lds_offset(&s->out, VARYING_SLOT_EDGE, 0, false);
-            nir_def *edge = nir_load_shared(b, 1, 32, addr, .base = offset);
+            nir_def *edge = ac_nir_load_shared_xfb(b, 32, addr, &s->out, VARYING_SLOT_EDGE, 0);
 
             if (s->options->hw_info->gfx_level >= GFX12)
                mask = nir_ior(b, mask, nir_ishl_imm(b, edge, 8 + i * 9));
@@ -1304,8 +1303,7 @@ ngg_nogs_store_edgeflag_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
    nir_def *addr = pervertex_lds_addr(b, tid, s->pervertex_lds_bytes);
 
    /* Edge flags share LDS with XFB. */
-   nir_store_shared(b, edgeflag, addr,
-                    .base = ac_nir_ngg_get_xfb_lds_offset(&s->out, VARYING_SLOT_EDGE, 0, false));
+   ac_nir_store_shared_xfb(b, edgeflag, addr, &s->out, VARYING_SLOT_EDGE, 0);
 }
 
 static void
@@ -1341,64 +1339,36 @@ ngg_nogs_store_xfb_outputs_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
    nir_def *addr = pervertex_lds_addr(b, tid, s->pervertex_lds_bytes);
 
    u_foreach_bit64(slot, xfb_outputs) {
-      unsigned mask = xfb_mask[slot];
+      u_foreach_bit(c, xfb_mask[slot]) {
+         if (!s->out.outputs[slot][c])
+            continue;
 
-      /* Clear unused components. */
-      for (unsigned i = 0; i < 4; i++) {
-         if (!s->out.outputs[slot][i])
-            mask &= ~BITFIELD_BIT(i);
-      }
-
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
          /* Outputs here are sure to be 32bit.
           *
           * 64bit outputs have been lowered to two 32bit. As 16bit outputs:
           *   Vulkan does not allow streamout outputs less than 32bit.
           *   OpenGL puts 16bit outputs in VARYING_SLOT_VAR0_16BIT.
           */
-         nir_def *store_val = nir_vec(b, &s->out.outputs[slot][start], (unsigned)count);
-         unsigned offset = ac_nir_ngg_get_xfb_lds_offset(&s->out, slot, start,
-                                                         store_val->bit_size == 16);
-         nir_store_shared(b, store_val, addr, .base = offset, .align_mul = 4);
+         ac_nir_store_shared_xfb(b, s->out.outputs[slot][c], addr, &s->out, slot, c);
       }
    }
 
    u_foreach_bit64(slot, xfb_outputs_16bit) {
       unsigned mask_lo = xfb_mask_16bit_lo[slot];
       unsigned mask_hi = xfb_mask_16bit_hi[slot];
-
-      /* Clear unused components. */
-      for (unsigned i = 0; i < 4; i++) {
-         if (!s->out.outputs_16bit_lo[slot][i])
-            mask_lo &= ~BITFIELD_BIT(i);
-         if (!s->out.outputs_16bit_hi[slot][i])
-            mask_hi &= ~BITFIELD_BIT(i);
-      }
-
       nir_def **outputs_lo = s->out.outputs_16bit_lo[slot];
       nir_def **outputs_hi = s->out.outputs_16bit_hi[slot];
       nir_def *undef = nir_undef(b, 1, 16);
 
-      unsigned mask = mask_lo | mask_hi;
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
+      u_foreach_bit(c, mask_lo | mask_hi) {
+         if (!outputs_lo[c] && !outputs_hi[c])
+            continue;
 
-         nir_def *values[4] = {0};
-         for (int c = start; c < start + count; ++c) {
-            nir_def *lo = mask_lo & BITFIELD_BIT(c) ? outputs_lo[c] : undef;
-            nir_def *hi = mask_hi & BITFIELD_BIT(c) ? outputs_hi[c] : undef;
+         nir_def *lo = mask_lo & BITFIELD_BIT(c) ? outputs_lo[c] : undef;
+         nir_def *hi = mask_hi & BITFIELD_BIT(c) ? outputs_hi[c] : undef;
+         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
 
-            /* extend 8/16 bit to 32 bit, 64 bit has been lowered */
-            values[c - start] = nir_pack_32_2x16_split(b, lo, hi);
-         }
-
-         nir_def *store_val = nir_vec(b, values, (unsigned)count);
-         unsigned offset = ac_nir_ngg_get_xfb_lds_offset(&s->out, VARYING_SLOT_VAR0_16BIT + slot,
-                                                         start, true);
-         nir_store_shared(b, store_val, addr, .base = offset);
+         ac_nir_store_shared_xfb(b, store_val, addr, &s->out, VARYING_SLOT_VAR0_16BIT + slot, c);
       }
    }
 }

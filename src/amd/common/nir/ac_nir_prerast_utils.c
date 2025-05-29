@@ -1332,7 +1332,7 @@ ac_nir_get_lds_gs_out_slot_offset(ac_nir_prerast_out *pr_out, gl_varying_slot sl
    return lds_slot_offset + util_bitcount(lds_component_mask & BITFIELD_MASK(component)) * 4;
 }
 
-unsigned
+static unsigned
 ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component,
                               bool data_is_16bit)
 {
@@ -1355,6 +1355,23 @@ ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, 
    }
 
    return lds_slot_offset + util_bitcount(lds_component_mask & BITFIELD_MASK(component)) * 4;
+}
+
+void
+ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                        gl_varying_slot slot, unsigned component)
+{
+   assert(value->num_components == 1);
+   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, value->bit_size == 16);
+   nir_store_shared(b, value, vtxptr, .base = offset, .align_mul = 4);
+}
+
+nir_def *
+ac_nir_load_shared_xfb(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                       gl_varying_slot slot, unsigned component)
+{
+   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, bit_size == 16);
+   return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
 }
 
 void
@@ -1403,10 +1420,8 @@ ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
       unsigned count = util_bitcount(out->component_mask);
 
       for (unsigned comp = 0; comp < count; comp++) {
-         unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, out->location,
-                                                         out->component_offset + comp,
-                                                         out->data_is_16bit);
-         nir_def *data = nir_load_shared(b, 1, 32, vtx_lds_addr, .base = offset, .align_mul = 4);
+         nir_def *data = ac_nir_load_shared_xfb(b, 32, vtx_lds_addr, pr_out, out->location,
+                                                out->component_offset + comp);
 
          /* Convert 16-bit outputs to 32-bit.
           *

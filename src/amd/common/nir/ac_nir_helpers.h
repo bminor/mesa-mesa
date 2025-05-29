@@ -228,9 +228,13 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
                                        nir_def *buffer_offsets_ret[4],
                                        nir_def *emit_prim_ret[4]);
 
-unsigned
-ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component,
-                              bool data_is_16bit);
+void
+ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                        gl_varying_slot slot, unsigned component);
+
+nir_def *
+ac_nir_load_shared_xfb(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                       gl_varying_slot slot, unsigned component);
 
 void
 ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
