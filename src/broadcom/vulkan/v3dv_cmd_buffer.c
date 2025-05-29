@@ -1788,9 +1788,14 @@ cmd_buffer_subpass_create_job(struct v3dv_cmd_buffer *cmd_buffer,
          layers = util_last_bit(subpass->view_mask);
       }
 
+      uint32_t width =
+         state->render_area.offset.x + state->render_area.extent.width;
+      uint32_t height =
+         state->render_area.offset.y + state->render_area.extent.height;
+
       v3dv_job_start_frame(job,
-                           framebuffer->width,
-                           framebuffer->height,
+                           width,
+                           height,
                            layers,
                            true, false,
                            subpass->color_count,
