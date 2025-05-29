@@ -720,9 +720,8 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
          cfg.max_x = CLAMP(maxx, 0, UINT16_MAX);
          cfg.max_y = CLAMP(maxy, 0, UINT16_MAX);
 
-         struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
-         float z_min = sysvals->viewport.offset.z;
-         float z_max = z_min + sysvals->viewport.scale.z;
+         float z_min, z_max;
+         panvk_depth_range(&cmdbuf->state.gfx, &z_min, &z_max);
          cfg.min_depth = CLAMP(z_min, 0.0f, 1.0f);
          cfg.max_depth = CLAMP(z_max, 0.0f, 1.0f);
       }
@@ -785,14 +784,10 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
-      struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
-
-      float z_min = sysvals->viewport.offset.z;
-      float z_max = z_min + sysvals->viewport.scale.z;
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, LOW_DEPTH_CLAMP),
-                   fui(MIN2(z_min, z_max)));
-      cs_move32_to(b, cs_sr_reg32(b, IDVS, HIGH_DEPTH_CLAMP),
-                   fui(MAX2(z_min, z_max)));
+      float z_min, z_max;
+      panvk_depth_range(&cmdbuf->state.gfx, &z_min, &z_max);
+      cs_move32_to(b, cs_sr_reg32(b, IDVS, LOW_DEPTH_CLAMP), fui(z_min));
+      cs_move32_to(b, cs_sr_reg32(b, IDVS, HIGH_DEPTH_CLAMP), fui(z_max));
    }
 }
 #endif

@@ -673,11 +673,10 @@ panvk_emit_viewport(struct panvk_cmd_buffer *cmdbuf,
    if (vp->viewport_count < 1)
       return;
 
-   struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
    const VkViewport *viewport = &vp->viewports[0];
    const VkRect2D *scissor = &vp->scissors[0];
-   float minz = sysvals->viewport.offset.z;
-   float maxz = minz + sysvals->viewport.scale.z;
+   float minz, maxz;
+   panvk_depth_range(&cmdbuf->state.gfx, &minz, &maxz);
 
    /* The spec says "width must be greater than 0.0" */
    assert(viewport->width >= 0);
@@ -709,8 +708,8 @@ panvk_emit_viewport(struct panvk_cmd_buffer *cmdbuf,
       cfg.scissor_minimum_y = miny;
       cfg.scissor_maximum_x = maxx;
       cfg.scissor_maximum_y = maxy;
-      cfg.minimum_z = MIN2(minz, maxz);
-      cfg.maximum_z = MAX2(minz, maxz);
+      cfg.minimum_z = minz;
+      cfg.maximum_z = maxz;
    }
 }
 

@@ -728,7 +728,35 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
+      const struct vk_rasterization_state *rs =
+         &cmdbuf->vk.dynamic_graphics_state.rs;
       VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
+
+      /* Doing the viewport transform in the vertex shader and then depth
+       * clipping with the viewport depth range gets a similar result to
+       * clipping in clip-space, but loses precision when the viewport depth
+       * range is very small. When minDepth == maxDepth, this completely
+       * flattens the clip-space depth and results in never clipping.
+       *
+       * To work around this, set a lower limit on depth range when clipping is
+       * enabled. This results in slightly incorrect fragment depth values, and
+       * doesn't help with the precision loss, but at least clipping isn't
+       * completely broken.
+       */
+      float z_min = viewport->minDepth;
+      float z_max = viewport->maxDepth;
+      if (vk_rasterization_state_depth_clip_enable(rs) &&
+          fabsf(z_max - z_min) < MIN_DEPTH_CLIP_RANGE) {
+         float z_sign = z_min <= z_max ? 1.0f : -1.0f;
+
+         float z_center = 0.5f * (z_max + z_min);
+         /* Bump offset off-center if necessary, to not go out of range */
+         z_center = CLAMP(z_center, 0.5f * MIN_DEPTH_CLIP_RANGE,
+                          1.0f - 0.5f * MIN_DEPTH_CLIP_RANGE);
+
+         z_min = z_center - 0.5f * z_sign * MIN_DEPTH_CLIP_RANGE;
+         z_max = z_center + 0.5f * z_sign * MIN_DEPTH_CLIP_RANGE;
+      }
 
       /* Upload the viewport scale. Defined as (px/2, py/2, pz) at the start of
        * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
@@ -742,8 +770,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
                      0.5f * viewport->width);
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.y,
                      0.5f * viewport->height);
-      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.z,
-                     (viewport->maxDepth - viewport->minDepth));
+      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.z, z_max - z_min);
 
       /* Upload the viewport offset. Defined as (ox, oy, oz) at the start of
        * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
@@ -757,45 +784,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
                      (0.5f * viewport->width) + viewport->x);
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.y,
                      (0.5f * viewport->height) + viewport->y);
-      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z,
-                     viewport->minDepth);
-
-      /* Doing the viewport transform in the vertex shader and then depth
-       * clipping with the viewport depth range gets a similar result to
-       * clipping in clip-space, but loses precision when the viewport depth
-       * range is very small. When minDepth == maxDepth, this completely
-       * flattens the clip-space depth and results in never clipping.
-       *
-       * To work around this, set a lower limit on depth range when clipping is
-       * enabled. This results in slightly incorrect fragment depth values, and
-       * doesn't help with the precision loss, but at least clipping isn't
-       * completely broken.
-       */
-      const struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
-      const struct vk_rasterization_state *rs =
-         &cmdbuf->vk.dynamic_graphics_state.rs;
-
-      if (vk_rasterization_state_depth_clip_enable(rs) &&
-          fabsf(sysvals->viewport.scale.z) < MIN_DEPTH_CLIP_RANGE) {
-         float z_min = viewport->minDepth;
-         float z_max = viewport->maxDepth;
-         float z_sign = z_min <= z_max ? 1.0f : -1.0f;
-
-         set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.z,
-                        z_sign * MIN_DEPTH_CLIP_RANGE);
-
-         /* Middle of the user range is
-         *    z_range_center = z_min + (z_max - z_min) * 0.5f,
-         * and we want to set the offset to
-         *    z_offset = z_range_center - viewport.scale.z * 0.5f
-         * which, when expanding, gives us
-         *    z_offset = (z_max + z_min - viewport.scale.z) * 0.5f
-         */
-         float z_offset = (z_max + z_min - sysvals->viewport.scale.z) * 0.5f;
-         /* Bump offset off-center if necessary, to not go out of range */
-         set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z,
-                        CLAMP(z_offset, 0.0f, 1.0f));
-      }
+      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z, z_min);
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP))
