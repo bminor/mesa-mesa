@@ -623,21 +623,73 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
       ngg_gs_out_prim_all_vtxptr(b, tid_in_tg, out_vtx_lds_addr, out_vtx_primflag_0, s, vtxptr);
 
       /* Load the positions from LDS. */
+      bool clip_against_pos = s->options->cull_clipdist_mask &&
+                              !(b->shader->info.outputs_written & BITFIELD64_RANGE(VARYING_SLOT_CLIP_DIST0, 2)) &&
+                              !(b->shader->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_CLIP_VERTEX));
       nir_def *pos[3][4];
+
       for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
-         /* Load X, Y, W position components. */
-         for (unsigned c = 0; c < 4; c == 1 ? c += 2 : c++) {
+         /* Load X, Y, W position components. Z is loaded only if we clip against POS. */
+         for (unsigned c = 0; c < 4; c == 1 && !clip_against_pos ? c += 2 : c++) {
             pos[i][c] = nir_load_shared(b, 1, 32, vtxptr[i],
                                         .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_POS, c),
                                         .align_mul = 4);
          }
+      }
 
+      nir_def *accepted_by_clipdist = nir_imm_true(b);
+
+      if (s->options->cull_clipdist_mask) {
+         nir_def *clipdist[3][8];
+
+         if (!(b->shader->info.outputs_written & BITFIELD64_RANGE(VARYING_SLOT_CLIP_DIST0, 2))) {
+            /* Lower Pos or ClipVertex to clip distances. */
+            nir_def *clipvertex[3][4];
+
+            /* Load ClipVertex. */
+            if (!clip_against_pos) {
+               for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
+                  for (unsigned c = 0; c < 4; c++) {
+                     unsigned offset = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_CLIP_VERTEX, c);
+                     clipvertex[i][c] = nir_load_shared(b, 1, 32, vtxptr[i], .base = offset, .align_mul = 4);
+                  }
+               }
+            }
+
+            /* Calculate clip distances. */
+            u_foreach_bit(c, s->options->cull_clipdist_mask) {
+               nir_def *plane = nir_load_user_clip_plane(b, .ucp_id = c);
+
+               for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
+                  nir_def *vec = nir_vec(b, clip_against_pos ? pos[i] : clipvertex[i], 4);
+                  clipdist[i][c] = nir_fdot(b, vec, plane);
+               }
+            }
+         } else {
+            /* Load clip distances. */
+            u_foreach_bit(c, s->options->cull_clipdist_mask) {
+               unsigned offset = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_CLIP_DIST0 + c / 4, c % 4);
+
+               for (unsigned i = 0; i < s->num_vertices_per_primitive; i++)
+                  clipdist[i][c] = nir_load_shared(b, 1, 32, vtxptr[i], .base = offset, .align_mul = 4);
+            }
+         }
+
+         /* Cull the primitive if all vertices have only negative clip distances in at least one slot. */
+         u_foreach_bit(c, s->options->cull_clipdist_mask) {
+            nir_def *clipdist_is_neg = nir_imm_true(b);
+            for (unsigned i = 0; i < s->num_vertices_per_primitive; i++)
+               clipdist_is_neg = nir_iand(b, clipdist_is_neg, nir_flt_imm(b, clipdist[i][c], 0));
+
+            accepted_by_clipdist = nir_iand(b, accepted_by_clipdist, nir_inot(b, clipdist_is_neg));
+         }
+      }
+
+      /* Divide X,Y by W. */
+      for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
          pos[i][0] = nir_fdiv(b, pos[i][0], pos[i][3]);
          pos[i][1] = nir_fdiv(b, pos[i][1], pos[i][3]);
       }
-
-      /* TODO: support clipdist culling in GS */
-      nir_def *accepted_by_clipdist = nir_imm_true(b);
 
       nir_def *accepted = ac_nir_cull_primitive(b, s->options->skip_viewport_state_culling,
                                                 s->options->use_point_tri_intersection,
