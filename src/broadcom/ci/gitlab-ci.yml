@@ -160,7 +160,7 @@ v3dv-rpi4-vk-full:arm64:
     - igalia-rpi4
     - igalia-fullrun
   parallel: 8
-  timeout: 2h
+  timeout: 1h
   variables:
     # Keep 10 minutes for boot + setup + uploading the artifacts at the end
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
@@ -261,7 +261,7 @@ v3dv-rpi5-vk-full:arm64:
     - igalia-rpi5
     - igalia-fullrun
   parallel: 4
-  timeout: 2h 30m
+  timeout: 1h
   variables:
     # Keep 10 minutes for boot + setup + uploading the artifacts at the end
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
