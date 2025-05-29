@@ -1904,7 +1904,7 @@
         "description": "zink: fix queue transition check in check_for_layout_update()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "18d206d67ca485ef2f8b17ea1c0e0c08b63d3562",
         "notes": null
