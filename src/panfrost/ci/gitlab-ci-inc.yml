@@ -87,8 +87,7 @@
     - changes: &panfrost_vulkan_file_list
         - src/panfrost/vulkan/**/*
       when: on_success
-    - changes: &panfrost_bifrost_file_list
-        - src/panfrost/compiler/**/*
+    - changes: *panfrost_bifrost_file_list
       when: on_success
 
 .panfrost-vk-manual-rules:
