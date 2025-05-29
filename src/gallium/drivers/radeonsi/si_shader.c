@@ -1124,6 +1124,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
       .write_pos_to_clipvertex = shader->key.ge.mono.write_pos_to_clipvertex,
       .pack_clip_cull_distances = true,
+      .cull_clipdist_mask = SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(key->ge.opt.ngg_culling),
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
       .skip_viewport_state_culling = sel->info.writes_viewport_index,
@@ -1148,8 +1149,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
             BITSET_SET(nir->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);
       }
 
-      unsigned clip_plane_enable =
-         SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(key->ge.opt.ngg_culling);
       unsigned num_vertices = si_get_num_vertices_per_output_prim(shader);
 
       options.num_vertices_per_primitive = num_vertices ? num_vertices : 3;
@@ -1160,7 +1159,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
          sel->screen->info.gfx_level >= GFX11 && !nir->info.vs.blit_sgprs_amd;
       options.export_primitive_id = key->ge.mono.u.vs_export_prim_id;
       options.instance_rate_inputs = instance_rate_inputs;
-      options.cull_clipdist_mask = clip_plane_enable;
 
       NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size,
                  &shader->info.ngg_lds_scratch_size);
