@@ -8324,7 +8324,7 @@
         "description": "panfrost: fix depth clip range with u_blitter",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "810135fb428a2505eba490b4d17a33629820e4e5",
         "notes": null
