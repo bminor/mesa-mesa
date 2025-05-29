@@ -32,14 +32,14 @@
 #include "git_sha1.h"
 #include "vulkan/vulkan.h"
 
-static_assert(DXIL_SPIRV_SHADER_NONE == (int)MESA_SHADER_NONE, "must match");
-static_assert(DXIL_SPIRV_SHADER_VERTEX == (int)MESA_SHADER_VERTEX, "must match");
-static_assert(DXIL_SPIRV_SHADER_TESS_CTRL == (int)MESA_SHADER_TESS_CTRL, "must match");
-static_assert(DXIL_SPIRV_SHADER_TESS_EVAL == (int)MESA_SHADER_TESS_EVAL, "must match");
-static_assert(DXIL_SPIRV_SHADER_GEOMETRY == (int)MESA_SHADER_GEOMETRY, "must match");
-static_assert(DXIL_SPIRV_SHADER_FRAGMENT == (int)MESA_SHADER_FRAGMENT, "must match");
-static_assert(DXIL_SPIRV_SHADER_COMPUTE == (int)MESA_SHADER_COMPUTE, "must match");
-static_assert(DXIL_SPIRV_SHADER_KERNEL == (int)MESA_SHADER_KERNEL, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_NONE == MESA_SHADER_NONE, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_VERTEX == MESA_SHADER_VERTEX, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_TESS_CTRL == MESA_SHADER_TESS_CTRL, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_TESS_EVAL == MESA_SHADER_TESS_EVAL, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_GEOMETRY == MESA_SHADER_GEOMETRY, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_FRAGMENT == MESA_SHADER_FRAGMENT, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_COMPUTE == MESA_SHADER_COMPUTE, "must match");
+static_assert((gl_shader_stage)DXIL_SPIRV_SHADER_KERNEL == MESA_SHADER_KERNEL, "must match");
 
 bool
 spirv_to_dxil(const uint32_t *words, size_t word_count,
