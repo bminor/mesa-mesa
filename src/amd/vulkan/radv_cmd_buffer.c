@@ -9124,7 +9124,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples, const VkSampleMask *pSampleMask)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   radv_cmd_set_sample_mask(cmd_buffer, pSampleMask[0] & 0xffff);
+   radv_cmd_set_sample_mask(cmd_buffer, pSampleMask ? pSampleMask[0] & 0xffff : 0xffff);
 }
 
 VKAPI_ATTR void VKAPI_CALL
