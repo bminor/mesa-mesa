@@ -1457,7 +1457,7 @@ get_vmem_type(enum amd_gfx_level gfx_level, Instruction* instr)
    if (instr->opcode == aco_opcode::image_bvh64_intersect_ray ||
        instr->opcode == aco_opcode::image_bvh8_intersect_ray) {
       return vmem_bvh;
-   } else if (gfx_level >= GFX12 && instr->opcode == aco_opcode::image_msaa_load) {
+   } else if (instr->opcode == aco_opcode::image_msaa_load) {
       return vmem_sampler;
    } else if (instr->isMIMG() && !instr->operands[1].isUndefined() &&
               instr->operands[1].regClass() == s4) {
