@@ -63,9 +63,14 @@ rebase_const_offset_ubo_loads_instr(nir_builder *b,
     */
    intrin->def.num_components = block_components;
    intrin->num_components = block_components;
-   nir_intrinsic_set_range_base(intrin, new_offset);
    nir_intrinsic_set_range(intrin, block_components * type_bytes);
    nir_intrinsic_set_align_offset(intrin, 0);
+
+   /* We're running this pass before the constant offset extraction, so it
+    * should be 0 at this point, otherwise some other pass modified this value
+    * and likely didn't teak into account our HW requirements.
+    */
+   assert(nir_intrinsic_base(intrin) == 0);
 
    if (pad_components) {
       /* Change the base of the load to the new lower offset, and emit
@@ -184,10 +189,35 @@ intel_nir_blockify_uniform_loads_instr(nir_builder *b,
       if (!devinfo->has_lsc && intrin->def.num_components < 4)
          return false;
 
-      intrin->intrinsic =
+      b->cursor = nir_before_instr(&intrin->instr);
+
+      nir_def *new_value =
          intrin->intrinsic == nir_intrinsic_load_ubo ?
-         nir_intrinsic_load_ubo_uniform_block_intel :
-         nir_intrinsic_load_ssbo_uniform_block_intel;
+         nir_load_ubo_uniform_block_intel(
+            b,
+            intrin->def.num_components,
+            intrin->def.bit_size,
+            intrin->src[0].ssa,
+            intrin->src[1].ssa,
+            .access = nir_intrinsic_access(intrin),
+            .align_mul = nir_intrinsic_align_mul(intrin),
+            .align_offset = nir_intrinsic_align_offset(intrin),
+            .base = 0,
+            .range = nir_intrinsic_range(intrin)) :
+         nir_load_ssbo_uniform_block_intel(
+            b,
+            intrin->def.num_components,
+            intrin->def.bit_size,
+            intrin->src[0].ssa,
+            intrin->src[1].ssa,
+            .access = nir_intrinsic_access(intrin),
+            .align_mul = nir_intrinsic_align_mul(intrin),
+            .align_offset = nir_intrinsic_align_offset(intrin),
+            .base = 0);
+      new_value->loop_invariant = intrin->def.loop_invariant;
+      new_value->divergent = false;
+
+      nir_def_replace(&intrin->def, new_value);
       return true;
 
    case nir_intrinsic_load_shared:
@@ -241,8 +271,6 @@ intel_nir_blockify_uniform_loads(nir_shader *shader,
 
    return nir_shader_instructions_pass(shader,
                                        intel_nir_blockify_uniform_loads_instr,
-                                       nir_metadata_control_flow |
-                                       nir_metadata_live_defs |
-                                       nir_metadata_divergence,
+                                       nir_metadata_control_flow,
                                        (void *) devinfo);
 }

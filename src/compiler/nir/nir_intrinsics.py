@@ -2382,12 +2382,12 @@ load("global_constant_uniform_block_intel", [1],
 # offset should be uniform
 # src[] = { buffer_index, offset }.
 load("ubo_uniform_block_intel", [-1, 1],
-     [ACCESS, ALIGN_MUL, ALIGN_OFFSET, RANGE_BASE, RANGE], [CAN_ELIMINATE, CAN_REORDER])
+     [ACCESS, ALIGN_MUL, ALIGN_OFFSET, BASE, RANGE], [CAN_ELIMINATE, CAN_REORDER])
 
 # Similar to load_global_const_block_intel but for SSBOs
 # offset should be uniform
 # src[] = { buffer_index, offset }.
-load("ssbo_uniform_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("ssbo_uniform_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET, BASE], [CAN_ELIMINATE])
 
 # Similar to load_global_const_block_intel but for shared memory
 # src[] = { offset }.

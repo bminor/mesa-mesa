@@ -6274,6 +6274,11 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
              */
             brw_reg base_offset = retype(get_nir_src(ntb, instr->src[1], 0),
                                         BRW_TYPE_UD);
+            if (nir_intrinsic_has_base(instr)) {
+               struct brw_reg imm = brw_imm_reg(base_offset.type);
+               imm.u64 = nir_intrinsic_base(instr);
+               base_offset = bld.ADD(base_offset, imm);
+            }
 
             const unsigned comps_per_load = brw_type_size_bytes(dest.type) == 8 ? 2 : 4;
 
@@ -6303,7 +6308,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
           */
          const unsigned type_size = brw_type_size_bytes(dest.type);
          const unsigned load_offset =
-            nir_src_as_uint(instr->src[1]) + first_component * type_size;
+            nir_src_as_uint(instr->src[1]) + first_component * type_size +
+            (nir_intrinsic_has_base(instr) ? nir_intrinsic_base(instr) : 0);
          const unsigned end_offset = load_offset + num_components * type_size;
          const unsigned ubo_block =
             brw_nir_ubo_surface_index_get_push_block(instr->src[0]);
