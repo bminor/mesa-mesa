@@ -376,6 +376,10 @@ nir_gather_input_to_output_dependencies(nir_shader *nir,
 
       for (unsigned i = 0; i < num_instr; i++) {
          nir_instr *instr = deps.output[out].instr_list[i];
+         if (instr->type == nir_instr_type_tex) {
+            if (!nir_tex_instr_is_query(nir_instr_as_tex(instr)))
+               out_deps->output[out].uses_image_reads = true;
+         }
          if (instr->type != nir_instr_type_intrinsic)
             continue;
 
@@ -396,10 +400,6 @@ nir_gather_input_to_output_dependencies(nir_shader *nir,
             }
             break;
          }
-         case nir_instr_type_tex:
-            if (!nir_tex_instr_is_query(nir_instr_as_tex(instr)))
-               out_deps->output[out].uses_image_reads = true;
-            break;
          default: {
             const char *name = nir_intrinsic_infos[intr->intrinsic].name;
 
