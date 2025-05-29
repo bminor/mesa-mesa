@@ -1780,6 +1780,10 @@ tu_DestroyInstance(VkInstance _instance,
    vk_free(&instance->vk.alloc, instance);
 }
 
+/* Note if we introduce more queues in a family that we may need to reduce the max
+ * scope in our nir_opt_acquire_release_barriers() call.  See
+ * https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/33504#note_2807879
+ */
 static const VkQueueFamilyProperties tu_queue_family_properties = {
    .queueFlags =
       VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,

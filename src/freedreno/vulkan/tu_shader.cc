@@ -2570,6 +2570,12 @@ tu_shader_create(struct tu_device *dev,
    };
    NIR_PASS(_, nir, tu_nir_lower_fdm, &fdm_options);
 
+   /* Note that nir_opt_barrier_modes here breaks tests such as
+    * dEQP-VK.memory_model.message_passing.ext.u32.coherent.fence_atomic.atomicwrite.device.payload_local.image.guard_local.buffer.vert
+    */
+
+   NIR_PASS(_, nir, nir_opt_acquire_release_barriers, SCOPE_QUEUE_FAMILY);
+
    /* This needs to happen before multiview lowering which rewrites store
     * instructions of the position variable, so that we can just rewrite one
     * store at the end instead of having to rewrite every store specified by
