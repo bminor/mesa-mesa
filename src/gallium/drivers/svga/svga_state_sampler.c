@@ -85,8 +85,8 @@ svga_check_sampler_framebuffer_resource_collision(struct svga_context *svga,
    struct svga_surface *surf;
    unsigned i;
 
-   for (i = 0; i < svga->curr.framebuffer.nr_cbufs; i++) {
-      surf = svga_surface(svga->curr.fb_cbufs[i]);
+   for (i = 0; i < svga->curr.framebuffer.base.nr_cbufs; i++) {
+      surf = svga->curr.framebuffer.cbufs[i];
       if (surf &&
           svga_check_sampler_view_resource_collision(svga, surf->handle,
                                                      shader)) {
@@ -94,7 +94,7 @@ svga_check_sampler_framebuffer_resource_collision(struct svga_context *svga,
       }
    }
 
-   surf = svga_surface(svga->curr.fb_zsbuf);
+   surf = svga->curr.framebuffer.zsbuf;
    if (surf &&
        svga_check_sampler_view_resource_collision(svga, surf->handle, shader)) {
       return true;

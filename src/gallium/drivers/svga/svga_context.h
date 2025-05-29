@@ -99,6 +99,7 @@ enum svga_surface_state
 struct draw_vertex_shader;
 struct draw_fragment_shader;
 struct svga_shader_variant;
+struct svga_surface;
 struct SVGACmdMemory;
 struct util_bitmask;
 
@@ -279,6 +280,18 @@ struct svga_raw_buffer {
    int32 srvid;
 };
 
+/*
+ * Subclass of pipe_framebuffer_state which has dynamically allocated
+ * svga_surface objects.
+ */
+struct svga_framebuffer_state
+{
+   struct pipe_framebuffer_state base;
+
+   struct svga_surface *cbufs[PIPE_MAX_COLOR_BUFS];
+   struct svga_surface *zsbuf;
+};
+
 /* Use to calculate differences between state emitted to hardware and
  * current driver-calculated state.
  */
@@ -309,8 +322,8 @@ struct svga_state
    struct pipe_constant_buffer constbufs[PIPE_SHADER_TYPES][SVGA_MAX_CONST_BUFS];
    struct svga_raw_buffer rawbufs[PIPE_SHADER_TYPES][SVGA_MAX_RAW_BUFS];
 
-   PIPE_FB_SURFACES; //STOP USING THIS
-   struct pipe_framebuffer_state framebuffer;
+   struct svga_framebuffer_state framebuffer;
+
    float depthscale;
 
    /* Hack to limit the number of different render targets between
@@ -378,8 +391,7 @@ struct svga_depthrange {
  */
 struct svga_hw_clear_state
 {
-   PIPE_FB_SURFACES; //STOP USING THIS
-   struct pipe_framebuffer_state framebuffer;
+   struct svga_framebuffer_state framebuffer;
 
    /* VGPU9 only */
    SVGA3dRect viewport;

@@ -15,6 +15,7 @@
 
 #include "svga_winsys.h"
 #include "svga_screen.h"
+#include "svga_surface.h"
 #include "svga_format.h"
 
 
@@ -1886,9 +1887,9 @@ svga_has_any_integer_cbufs(const struct svga_context *svga)
 {
    unsigned i;
    for (i = 0; i < PIPE_MAX_COLOR_BUFS; ++i) {
-      const struct pipe_surface *cbuf = &svga->curr.framebuffer.cbufs[i];
+      const struct svga_surface *cbuf = svga->curr.framebuffer.cbufs[i];
 
-      if (cbuf->texture && util_format_is_pure_integer(cbuf->format)) {
+      if (cbuf && cbuf->base.texture && util_format_is_pure_integer(cbuf->base.format)) {
          return true;
       }
    }

@@ -31,15 +31,13 @@
 #define MAX_RT_PER_BATCH 8
 
 
-
 static enum pipe_error
 emit_fb_vgpu9(struct svga_context *svga)
 {
    struct svga_screen *svgascreen = svga_screen(svga->pipe.screen);
-   const struct pipe_framebuffer_state *curr = &svga->curr.framebuffer;
-   struct pipe_framebuffer_state *hw = &svga->state.hw_clear.framebuffer;
+   const struct svga_framebuffer_state *currfb = &svga->curr.framebuffer;
+   struct svga_framebuffer_state *hwfb = &svga->state.hw_clear.framebuffer;
    bool reemit = svga->rebind.flags.rendertargets;
-   unsigned i;
    enum pipe_error ret;
 
    assert(!svga_have_vgpu10(svga));
@@ -49,47 +47,47 @@ emit_fb_vgpu9(struct svga_context *svga)
     * dirty, to ensure that the resources are paged in.
     */
 
-   for (i = 0; i < svgascreen->max_color_buffers; i++) {
-      if (!pipe_surface_equal(&curr->cbufs[i], &hw->cbufs[i]) ||
-          (reemit && svga->state.hw_clear.fb_cbufs[i])) {
+   for (unsigned i = 0; i < svgascreen->max_color_buffers; i++) {
+      if (!svga_surface_equal(currfb->cbufs[i], hwfb->cbufs[i]) ||
+          (reemit && hwfb->base.cbufs[i].texture)) {
          if (svga->curr.nr_fbs++ > MAX_RT_PER_BATCH)
             return PIPE_ERROR_OUT_OF_MEMORY;
 
          /* Check to see if we need to propagate the render target surface */
-         if (svga_surface_needs_propagation(svga->state.hw_clear.fb_cbufs[i]))
-            svga_propagate_surface(svga, svga->state.hw_clear.fb_cbufs[i], true);
+         if (svga_surface_needs_propagation(svga->state.hw_clear.framebuffer.cbufs[i]))
+            svga_propagate_surface(svga, svga->state.hw_clear.framebuffer.cbufs[i], true);
 
          ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_COLOR0 + i,
-                                      svga->curr.fb_cbufs[i]);
+                                      svga->curr.framebuffer.cbufs[i]);
          if (ret != PIPE_OK)
             return ret;
 
-         pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i],
-                                svga->curr.fb_cbufs[i]);
+         svga_surface_reference(&svga->state.hw_clear.framebuffer.cbufs[i],
+                                svga->curr.framebuffer.cbufs[i]);
       }
 
       /* Set the rendered-to flag */
-      struct pipe_surface *s = svga->curr.fb_cbufs[i];
-      if (s->texture) {
-         svga_set_texture_rendered_to(svga_texture(s->texture));
+      struct svga_surface *s = svga->curr.framebuffer.cbufs[i];
+      if (s && s->base.texture) {
+         svga_set_texture_rendered_to(svga_texture(s->base.texture));
       }
    }
 
-   if (!pipe_surface_equal(&curr->zsbuf, &hw->zsbuf) ||
-       (reemit && svga->state.hw_clear.fb_zsbuf)) {
+   if (!svga_surface_equal(currfb->zsbuf, hwfb->zsbuf) ||
+       (reemit && svga->state.hw_clear.framebuffer.zsbuf)) {
       ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH,
-                                   svga->curr.fb_zsbuf);
+                                   currfb->zsbuf);
       if (ret != PIPE_OK)
          return ret;
 
       /* Check to see if we need to propagate the depth stencil surface */
-      if (svga_surface_needs_propagation(svga->state.hw_clear.fb_zsbuf))
-         svga_propagate_surface(svga, svga->state.hw_clear.fb_zsbuf, true);
+      if (svga_surface_needs_propagation(hwfb->zsbuf))
+         svga_propagate_surface(svga, hwfb->zsbuf, true);
 
-      if (curr->zsbuf.texture &&
-          util_format_is_depth_and_stencil(curr->zsbuf.format)) {
+      if (currfb->zsbuf->base.texture &&
+          util_format_is_depth_and_stencil(currfb->zsbuf->base.format)) {
          ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL,
-                                      svga->curr.fb_zsbuf);
+                                      currfb->zsbuf);
          if (ret != PIPE_OK)
             return ret;
       }
@@ -99,13 +97,13 @@ emit_fb_vgpu9(struct svga_context *svga)
             return ret;
       }
 
-      pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf,
-                             svga->curr.fb_zsbuf);
+      svga_surface_reference(&svga->state.hw_clear.framebuffer.zsbuf,
+                             svga->curr.framebuffer.zsbuf);
 
       /* Set the rendered-to flag */
-      struct pipe_surface *s = svga->curr.fb_zsbuf;
-      if (s->texture) {
-         svga_set_texture_rendered_to(svga_texture(s->texture));
+      struct svga_surface *s = currfb->zsbuf;
+      if (s && s->base.texture) {
+         svga_set_texture_rendered_to(svga_texture(s->base.texture));
       }
    }
 
@@ -125,41 +123,31 @@ static enum pipe_error
 svga_reemit_framebuffer_bindings_vgpu9(struct svga_context *svga)
 {
    struct svga_screen *svgascreen = svga_screen(svga->pipe.screen);
-   unsigned i;
-   enum pipe_error ret;
+   enum pipe_error ret = PIPE_OK;
 
    assert(!svga_have_vgpu10(svga));
 
-   for (i = 0; i < svgascreen->max_color_buffers; i++) {
-      if (svga->state.hw_clear.fb_cbufs[i]) {
-         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_COLOR0 + i,
-                                      svga->state.hw_clear.fb_cbufs[i]);
+   for (unsigned i = 0; i < svgascreen->max_color_buffers; i++) {
+      struct svga_surface *cbuf = svga->state.hw_clear.framebuffer.cbufs[i];
+      if (cbuf) {
+         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_COLOR0 + i, cbuf);
          if (ret != PIPE_OK) {
             return ret;
          }
       }
    }
 
-   if (svga->state.hw_clear.fb_zsbuf) {
-      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH,
-                                   svga->state.hw_clear.fb_zsbuf);
+   struct svga_surface *zsbuf = svga->state.hw_clear.framebuffer.zsbuf;
+   if (zsbuf) {
+      ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_DEPTH, zsbuf);
       if (ret != PIPE_OK) {
          return ret;
       }
 
-      if (svga->state.hw_clear.fb_zsbuf &&
-          util_format_is_depth_and_stencil(svga->state.hw_clear.fb_zsbuf->format)) {
-         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL,
-                                      svga->state.hw_clear.fb_zsbuf);
-         if (ret != PIPE_OK) {
-            return ret;
-         }
-      }
-      else {
+      if (util_format_is_depth_and_stencil(zsbuf->base.format)) {
+         ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL, zsbuf);
+      } else {
          ret = SVGA3D_SetRenderTarget(svga->swc, SVGA3D_RT_STENCIL, NULL);
-         if (ret != PIPE_OK) {
-            return ret;
-         }
       }
    }
 
@@ -174,9 +162,9 @@ emit_fb_vgpu10(struct svga_context *svga)
    const struct svga_screen *ss = svga_screen(svga->pipe.screen);
    struct pipe_surface *rtv[SVGA3D_DX_MAX_RENDER_TARGETS];
    struct pipe_surface *dsv;
-   struct pipe_framebuffer_state *curr = &svga->curr.framebuffer;
-   struct pipe_framebuffer_state *hw = &svga->state.hw_clear.framebuffer;
-   const unsigned num_color = MAX2(curr->nr_cbufs, hw->nr_cbufs);
+   struct svga_framebuffer_state *currfb = &svga->curr.framebuffer;
+   struct svga_framebuffer_state *hwfb = &svga->state.hw_clear.framebuffer;
+   const unsigned num_color = MAX2(currfb->base.nr_cbufs, hwfb->base.nr_cbufs);
    int last_rtv = -1;
 
    assert(svga_have_vgpu10(svga));
@@ -193,11 +181,11 @@ emit_fb_vgpu10(struct svga_context *svga)
     * than the old number of buffers.
     */
    for (unsigned i = 0; i < num_color; i++) {
-      if (curr->cbufs[i].texture) {
-         struct pipe_surface *s = svga->curr.fb_cbufs[i];
+      if (currfb->base.cbufs[i].texture) {
+         struct svga_surface *s = currfb->cbufs[i];
 
-         if (!pipe_surface_equal(&curr->cbufs[i], &hw->cbufs[i])) {
-            rtv[i] = svga_validate_surface_view(svga, svga_surface(s));
+         if (!svga_surface_equal(s, hwfb->cbufs[i])) {
+            rtv[i] = svga_validate_surface_view(svga, s);
             if (rtv[i] == NULL) {
                return PIPE_ERROR_OUT_OF_MEMORY;
             }
@@ -209,7 +197,7 @@ emit_fb_vgpu10(struct svga_context *svga)
          last_rtv = i;
 
          /* Set the rendered-to flag */
-         svga_set_texture_rendered_to(svga_texture(s->texture));
+         svga_set_texture_rendered_to(svga_texture(s->base.texture));
       }
       else {
          rtv[i] = NULL;
@@ -217,11 +205,11 @@ emit_fb_vgpu10(struct svga_context *svga)
    }
 
    /* Setup depth stencil view */
-   if (curr->zsbuf.texture) {
-      struct pipe_surface *s = svga->curr.fb_zsbuf;
+   if (currfb->zsbuf) {
+      struct svga_surface *s = currfb->zsbuf;
 
-      if (svga->curr.fb_zsbuf != svga->state.hw_clear.fb_zsbuf) {
-         dsv = svga_validate_surface_view(svga, svga_surface(svga->curr.fb_zsbuf));
+      if (s != hwfb->zsbuf) {
+         dsv = svga_validate_surface_view(svga, s);
          if (!dsv) {
             return PIPE_ERROR_OUT_OF_MEMORY;
          }
@@ -230,7 +218,7 @@ emit_fb_vgpu10(struct svga_context *svga)
       }
 
       /* Set the rendered-to flag */
-      svga_set_texture_rendered_to(svga_texture(s->texture));
+      svga_set_texture_rendered_to(svga_texture(s->base.texture));
    }
    else {
       dsv = NULL;
@@ -250,43 +238,36 @@ emit_fb_vgpu10(struct svga_context *svga)
        * unbound render targets.
        */
       for (unsigned i = 0; i < ss->max_color_buffers; i++) {
-         if (!pipe_surface_equal(&hw->cbufs[i], &curr->cbufs[i])) {
+         if (!svga_surface_equal(hwfb->cbufs[i], currfb->cbufs[i])) {
             /* propagate the backed view surface before unbinding it */
-            if (hw->cbufs[i].texture &&
-                svga_surface(svga->state.hw_clear.fb_cbufs[i])->backed) {
-               svga_propagate_surface(svga,
-                                      &svga_surface(svga->state.hw_clear.fb_cbufs[i])->backed->base,
-                                      true);
+            if (hwfb->cbufs[i] && hwfb->cbufs[i]->backed) {
+               svga_propagate_surface(svga, hwfb->cbufs[i]->backed, true);
             }
-            else if (svga->state.hw_clear.rtv[i] != svga->state.hw_clear.fb_cbufs[i] &&
+            else if (svga_surface(svga->state.hw_clear.rtv[i]) != hwfb->cbufs[i] &&
                      svga->state.hw_clear.rtv[i]) {
                /* Free the alternate surface view when it is unbound.  */
                pipe_surface_unref(&svga->pipe, &svga->state.hw_clear.rtv[i]);
             }
-            pipe_surface_reference(&svga->state.hw_clear.fb_cbufs[i],
-                                   svga->curr.fb_cbufs[i]);
+            svga_surface_reference(&hwfb->cbufs[i], currfb->cbufs[i]);
          }
       }
       svga->state.hw_clear.num_rendertargets = last_rtv + 1;
       for (unsigned i = 0; i < num_color; i++) {
          pipe_surface_reference(&svga->state.hw_clear.rtv[i], rtv[i]);
       }
-      hw->nr_cbufs = curr->nr_cbufs;
+      hwfb->base.nr_cbufs = currfb->base.nr_cbufs;
 
-      if (!pipe_surface_equal(&hw->zsbuf, &curr->zsbuf)) {
+      if (!svga_surface_equal(hwfb->zsbuf, currfb->zsbuf)) {
          /* propagate the backed view surface before unbinding it */
-         if (svga->state.hw_clear.fb_zsbuf && svga_surface(svga->state.hw_clear.fb_zsbuf)->backed) {
-            svga_propagate_surface(svga,
-                                   &svga_surface(svga->state.hw_clear.fb_zsbuf)->backed->base,
-                                   true);
+         if (hwfb->zsbuf && hwfb->zsbuf->backed) {
+            svga_propagate_surface(svga, hwfb->zsbuf->backed, true);
          }
-         else if (svga->state.hw_clear.dsv != svga->state.hw_clear.fb_zsbuf &&
+         else if (svga_surface(svga->state.hw_clear.dsv) != hwfb->zsbuf &&
                   svga->state.hw_clear.dsv) {
             /* Free the alternate surface view when it is unbound.  */
-            svga->pipe.surface_destroy(&svga->pipe, svga->state.hw_clear.dsv);
+            pipe_surface_unref(&svga->pipe, &svga->state.hw_clear.dsv);
          }
-         pipe_surface_reference(&svga->state.hw_clear.fb_zsbuf,
-                                svga->curr.fb_zsbuf);
+         svga_surface_reference(&hwfb->zsbuf, currfb->zsbuf);
       }
       pipe_surface_reference(&svga->state.hw_clear.dsv, dsv);
    }
@@ -401,8 +382,8 @@ get_viewport_prescale(struct svga_context *svga,
    bool degenerate = false;
    bool invertY = false;
 
-   float fb_width = (float) svga->curr.framebuffer.width;
-   float fb_height = (float) svga->curr.framebuffer.height;
+   float fb_width = (float) svga->curr.framebuffer.base.width;
+   float fb_height = (float) svga->curr.framebuffer.base.height;
 
    float fx =        viewport->scale[0] * -1.0f + viewport->translate[0];
    float fy = flip * viewport->scale[1] * -1.0f + viewport->translate[1];

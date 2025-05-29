@@ -41,12 +41,11 @@
 
 static inline void
 surface_to_surfaceid(struct svga_winsys_context *swc, // IN
-                     struct pipe_surface *surface,    // IN
+                     struct svga_surface *s,          // IN
                      SVGA3dSurfaceImageId *id,        // OUT
                      unsigned flags)                  // IN
 {
-   if (surface) {
-      struct svga_surface *s = svga_surface(surface);
+   if (s) {
       swc->surface_relocation(swc, &id->sid, NULL, s->handle, flags);
       id->face = s->real_layer; /* faces have the same order */
       id->mipmap = s->real_level;
@@ -569,7 +568,7 @@ SVGA3D_BufferDMA(struct svga_winsys_context *swc,
 enum pipe_error
 SVGA3D_SetRenderTarget(struct svga_winsys_context *swc,
                        SVGA3dRenderTargetType type,   // IN
-                       struct pipe_surface *surface)  // IN
+                       struct svga_surface *surface)  // IN
 {
    SVGA3dCmdSetRenderTarget *cmd;
 
@@ -1036,8 +1035,8 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
 
 enum pipe_error
 SVGA3D_BeginSurfaceCopy(struct svga_winsys_context *swc,
-                        struct pipe_surface *src,    // IN
-                        struct pipe_surface *dest,   // IN
+                        struct svga_surface *src,    // IN
+                        struct svga_surface *dest,   // IN
                         SVGA3dCopyBox **boxes,       // OUT
                         uint32 numBoxes)             // IN
 {
@@ -1079,8 +1078,8 @@ SVGA3D_BeginSurfaceCopy(struct svga_winsys_context *swc,
 
 enum pipe_error
 SVGA3D_SurfaceStretchBlt(struct svga_winsys_context *swc,
-                         struct pipe_surface *src,    // IN
-                         struct pipe_surface *dest,   // IN
+                         struct svga_surface *src,    // IN
+                         struct svga_surface *dest,   // IN
                          SVGA3dBox *boxSrc,           // IN
                          SVGA3dBox *boxDest,          // IN
                          SVGA3dStretchBltMode mode)   // IN

@@ -57,7 +57,7 @@ clear_buffers_with_quad(struct svga_context *svga,
                         const union pipe_color_union *color,
                         double depth, unsigned stencil)
 {
-   const struct pipe_framebuffer_state *fb = &svga->curr.framebuffer;
+   const struct pipe_framebuffer_state *fb = &svga->curr.framebuffer.base;
 
    begin_blit(svga);
    util_blitter_clear(svga->blitter,
@@ -73,7 +73,7 @@ clear_buffers_with_quad(struct svga_context *svga,
  * Check if any of the color buffers are integer buffers.
  */
 static bool
-is_integer_target(struct pipe_framebuffer_state *fb, unsigned buffers)
+is_integer_target(const struct pipe_framebuffer_state *fb, unsigned buffers)
 {
    unsigned i;
 
@@ -105,7 +105,7 @@ ints_fit_in_floats(const union pipe_color_union *color)
 
 
 static enum pipe_error
-try_clear(struct svga_context *svga, 
+try_clear(struct svga_context *svga,
           unsigned buffers,
           const union pipe_color_union *color,
           double depth,
@@ -115,7 +115,7 @@ try_clear(struct svga_context *svga,
    SVGA3dRect rect = { 0, 0, 0, 0 };
    bool restore_viewport = false;
    SVGA3dClearFlag flags = 0;
-   struct pipe_framebuffer_state *fb = &svga->curr.framebuffer;
+   struct pipe_framebuffer_state *fb = &svga->curr.framebuffer.base;
    union util_color uc = {0};
 
    ret = svga_update_state(svga, SVGA_STATE_HW_CLEAR);
@@ -189,7 +189,7 @@ try_clear(struct svga_context *svga,
                   continue;
 
                rtv = svga_validate_surface_view(svga,
-                                                svga_surface(svga->curr.fb_cbufs[i]));
+                                                svga->curr.framebuffer.cbufs[i]);
                if (!rtv)
                   return PIPE_ERROR_OUT_OF_MEMORY;
 
@@ -201,7 +201,7 @@ try_clear(struct svga_context *svga,
       }
       if (flags & (SVGA3D_CLEAR_DEPTH | SVGA3D_CLEAR_STENCIL)) {
          struct pipe_surface *dsv =
-            svga_validate_surface_view(svga, svga_surface(svga->curr.fb_zsbuf));
+            svga_validate_surface_view(svga, svga->curr.framebuffer.zsbuf);
          if (!dsv)
             return PIPE_ERROR_OUT_OF_MEMORY;
 
@@ -239,8 +239,8 @@ svga_clear(struct pipe_context *pipe, unsigned buffers, const struct pipe_scisso
 
    if (buffers & PIPE_CLEAR_COLOR) {
       struct svga_winsys_surface *h = NULL;
-      if (svga->curr.fb_cbufs[0]) {
-         h = svga_surface(svga->curr.fb_cbufs[0])->handle;
+      if (svga->curr.framebuffer.cbufs[0]) {
+         h = svga->curr.framebuffer.cbufs[0]->handle;
       }
       SVGA_DBG(DEBUG_DMA, "clear sid %p\n", h);
    }
@@ -334,7 +334,7 @@ svga_clear_texture(struct pipe_context *pipe,
          /* To clear subtexture use software fallback */
 
          util_blitter_save_framebuffer(svga->blitter,
-                                       &svga->curr.framebuffer);
+                                       &svga->curr.framebuffer.base);
          begin_blit(svga);
          util_blitter_clear_depth_stencil(svga->blitter,
                                           dsv, clear_flags,
@@ -365,8 +365,8 @@ svga_clear_texture(struct pipe_context *pipe,
 
       if (box->x == 0 && box->y == 0 && box->width == pipe_surface_width(surface) &&
           box->height == pipe_surface_height(surface)) {
-         struct pipe_framebuffer_state *curr =  &svga->curr.framebuffer;
-         bool int_target = is_integer_target(curr, PIPE_CLEAR_COLOR);
+         bool int_target =
+            is_integer_target(&svga->curr.framebuffer.base, PIPE_CLEAR_COLOR);
 
          if (int_target && !ints_fit_in_floats(&color)) {
             /* To clear full texture with integer format */
@@ -410,7 +410,7 @@ svga_clear_texture(struct pipe_context *pipe,
                                                PIPE_BIND_RENDER_TARGET)) {
             /* clear with quad drawing */
             util_blitter_save_framebuffer(svga->blitter,
-                                          &svga->curr.framebuffer);
+                                          &svga->curr.framebuffer.base);
             begin_blit(svga);
             util_blitter_clear_render_target(svga->blitter,
                                              rtv,
@@ -484,7 +484,7 @@ svga_blitter_clear_render_target(struct svga_context *svga,
                                  unsigned width, unsigned height)
 {
    begin_blit(svga);
-   util_blitter_save_framebuffer(svga->blitter, &svga->curr.framebuffer);
+   util_blitter_save_framebuffer(svga->blitter, &svga->curr.framebuffer.base);
 
    util_blitter_clear_render_target(svga->blitter, dst, color,
                                     dstx, dsty, width, height);

@@ -287,7 +287,7 @@ make_fs_key(const struct svga_context *svga,
    if (fs->base.info.fs.color0_writes_all_cbufs ||
        svga->curr.blend->need_white_fragments) {
       /* Replicate color0 output (or white) to N colorbuffers */
-      key->fs.write_color0_to_n_cbufs = svga->curr.framebuffer.nr_cbufs;
+      key->fs.write_color0_to_n_cbufs = svga->curr.framebuffer.base.nr_cbufs;
    }
 
    return PIPE_OK;

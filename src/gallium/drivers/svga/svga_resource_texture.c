@@ -1366,12 +1366,12 @@ svga_validate_texture_resource(struct svga_context *svga,
    for (unsigned i = 0; i < svga->state.hw_clear.num_rendertargets; i++) {
       s = svga->state.hw_clear.rtv[i];
       if (s && need_update_texture_resource(s, tex))
-         svga_propagate_surface(svga, s, true);
+         svga_propagate_surface(svga, svga_surface(s), true);
    }
 
    s = svga->state.hw_clear.dsv;
    if (s && need_update_texture_resource(s, tex))
-      svga_propagate_surface(svga, s, true);
+      svga_propagate_surface(svga, svga_surface(s), true);
 }
 
 

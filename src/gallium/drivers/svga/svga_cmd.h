@@ -24,6 +24,7 @@
 
 
 struct pipe_surface;
+struct svga_surface;
 struct svga_transfer;
 struct svga_winsys_context;
 struct svga_winsys_buffer;
@@ -147,15 +148,15 @@ SVGA3D_BeginDrawPrimitives(struct svga_winsys_context *swc,
 
 enum pipe_error
 SVGA3D_BeginSurfaceCopy(struct svga_winsys_context *swc,
-                        struct pipe_surface *src,
-                        struct pipe_surface *dest,
+                        struct svga_surface *src,
+                        struct svga_surface *dest,
                         SVGA3dCopyBox **boxes, uint32 numBoxes);
 
 
 enum pipe_error
 SVGA3D_SurfaceStretchBlt(struct svga_winsys_context *swc,
-                         struct pipe_surface *src,
-                         struct pipe_surface *dest,
+                         struct svga_surface *src,
+                         struct svga_surface *dest,
                          SVGA3dBox *boxSrc, SVGA3dBox *boxDest,
                          SVGA3dStretchBltMode mode);
 
@@ -166,7 +167,7 @@ SVGA3D_SurfaceStretchBlt(struct svga_winsys_context *swc,
 enum pipe_error
 SVGA3D_SetRenderTarget(struct svga_winsys_context *swc,
                        SVGA3dRenderTargetType type,
-                       struct pipe_surface *surface);
+                       struct svga_surface *surface);
 
 enum pipe_error
 SVGA3D_SetZRange(struct svga_winsys_context *swc,

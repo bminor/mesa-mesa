@@ -36,7 +36,7 @@ static void svga_flush( struct pipe_context *pipe,
 
    /* Enable to dump BMPs of the color/depth buffers each frame */
    if (0) {
-      struct pipe_framebuffer_state *fb = &svga->curr.framebuffer;
+      struct pipe_framebuffer_state *fb = &svga->curr.framebuffer.base;
       static unsigned frame_no = 1;
       char filename[256];
       unsigned i;

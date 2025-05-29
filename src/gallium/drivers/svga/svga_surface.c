@@ -24,7 +24,7 @@
 #include "svga_surface.h"
 #include "svga_debug.h"
 
-static void svga_mark_surface_dirty(struct pipe_surface *surf);
+static void svga_mark_surface_dirty(struct svga_surface *s);
 
 void
 svga_texture_copy_region(struct svga_context *svga,
@@ -97,11 +97,7 @@ svga_texture_copy_handle(struct svga_context *svga,
             dst_handle, dst_level, dst_x, dst_y, dst_z);
 */
 
-   SVGA_RETRY(svga, SVGA3D_BeginSurfaceCopy(svga->swc,
-                                            &src.base,
-                                            &dst.base,
-                                            &boxes, 1));
-
+   SVGA_RETRY(svga, SVGA3D_BeginSurfaceCopy(svga->swc, &src, &dst, &boxes, 1));
    *boxes = box;
    SVGA_FIFOCommitAll(svga->swc);
 }
@@ -492,7 +488,7 @@ create_backed_surface_view(struct svga_context *svga, struct svga_surface *s,
                                         zslice, s->base.level, layer);
    }
 
-   svga_mark_surface_dirty(&s->backed->base);
+   svga_mark_surface_dirty(s->backed);
    s->backed->age = tex->age;
 
    assert(s->backed->base.context == &svga->pipe);
@@ -644,7 +640,7 @@ svga_surface_destroy(struct pipe_context *pipe,
 
    /* Destroy the backed view surface if it exists */
    if (s->backed) {
-      pipe_surface_unref(pipe, (struct pipe_surface **) &s->backed);
+      svga_surface_unref(pipe, &s->backed);
    }
 
    /* Destroy the surface handle if this is a backed handle and
@@ -690,18 +686,17 @@ svga_surface_destroy(struct pipe_context *pipe,
 
 
 static void
-svga_mark_surface_dirty(struct pipe_surface *surf)
+svga_mark_surface_dirty(struct svga_surface *s)
 {
-   struct svga_surface *s = svga_surface(surf);
-   struct svga_texture *tex = svga_texture(surf->texture);
+   struct svga_texture *tex = svga_texture(s->base.texture);
 
    if (!s->dirty) {
       s->dirty = true;
 
       if (s->handle == tex->handle) {
          /* hmm so 3d textures always have all their slices marked ? */
-         svga_define_texture_level(tex, surf->first_layer,
-                                   surf->level);
+         svga_define_texture_level(tex, s->base.first_layer,
+                                   s->base.level);
       }
       else {
          /* this will happen later in svga_propagate_surface */
@@ -714,7 +709,7 @@ svga_mark_surface_dirty(struct pipe_surface *surf)
     *       backed surface is propagated to the original surface.
     */
    if (s->handle == tex->handle)
-      svga_age_texture_view(tex, surf->level);
+      svga_age_texture_view(tex, s->base.level);
 }
 
 
@@ -729,17 +724,17 @@ svga_mark_surfaces_dirty(struct svga_context *svga)
        */
       for (unsigned i = 0; i < hw->num_rendertargets; i++) {
          if (hw->rtv[i])
-            svga_mark_surface_dirty(hw->rtv[i]);
+            svga_mark_surface_dirty(svga_surface(hw->rtv[i]));
       }
       if (hw->dsv)
-         svga_mark_surface_dirty(hw->dsv);
+         svga_mark_surface_dirty(svga_surface(hw->dsv));
    } else {
-      for (unsigned i = 0; i < svga->curr.framebuffer.nr_cbufs; i++) {
-         if (svga->curr.framebuffer.cbufs[i].texture)
-            svga_mark_surface_dirty(svga->curr.fb_cbufs[i]);
+      for (unsigned i = 0; i < svga->curr.framebuffer.base.nr_cbufs; i++) {
+         if (svga->curr.framebuffer.base.cbufs[i].texture)
+            svga_mark_surface_dirty(svga->curr.framebuffer.cbufs[i]);
       }
-      if (svga->curr.framebuffer.zsbuf.texture)
-         svga_mark_surface_dirty(svga->curr.fb_zsbuf);
+      if (svga->curr.framebuffer.base.zsbuf.texture)
+         svga_mark_surface_dirty(svga->curr.framebuffer.zsbuf);
    }
 }
 
@@ -749,12 +744,11 @@ svga_mark_surfaces_dirty(struct svga_context *svga)
  * pipe is optional context to inline the blit command in.
  */
 void
-svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
+svga_propagate_surface(struct svga_context *svga, struct svga_surface *s,
                        bool reset)
 {
-   struct svga_surface *s = svga_surface(surf);
-   struct svga_texture *tex = svga_texture(surf->texture);
-   struct svga_screen *ss = svga_screen(surf->texture->screen);
+   struct svga_texture *tex = svga_texture(s->base.texture);
+   struct svga_screen *ss = svga_screen(s->base.texture->screen);
 
    if (!s->dirty)
       return;
@@ -770,36 +764,36 @@ svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
    s->dirty = !reset;
 
    ss->texture_timestamp++;
-   svga_age_texture_view(tex, surf->level);
+   svga_age_texture_view(tex, s->base.level);
 
    if (s->handle != tex->handle) {
       unsigned zslice, layer;
       unsigned nlayers = 1;
       const unsigned numMipLevels = tex->b.last_level + 1;
       const unsigned srcLevel = s->real_level;
-      const unsigned dstLevel = surf->level;
+      const unsigned dstLevel = s->base.level;
       const unsigned width = u_minify(tex->b.width0, dstLevel);
       const unsigned height = u_minify(tex->b.height0, dstLevel);
 
-      if (surf->texture->target == PIPE_TEXTURE_CUBE) {
+      if (s->base.texture->target == PIPE_TEXTURE_CUBE) {
          zslice = 0;
-         layer = surf->first_layer;
+         layer = s->base.first_layer;
       }
-      else if (surf->texture->target == PIPE_TEXTURE_1D_ARRAY ||
-               surf->texture->target == PIPE_TEXTURE_2D_ARRAY ||
-               surf->texture->target == PIPE_TEXTURE_CUBE_ARRAY) {
+      else if (s->base.texture->target == PIPE_TEXTURE_1D_ARRAY ||
+               s->base.texture->target == PIPE_TEXTURE_2D_ARRAY ||
+               s->base.texture->target == PIPE_TEXTURE_CUBE_ARRAY) {
          zslice = 0;
-         layer = surf->first_layer;
-         nlayers = surf->last_layer - surf->first_layer + 1;
+         layer = s->base.first_layer;
+         nlayers = s->base.last_layer - s->base.first_layer + 1;
       }
       else {
-         zslice = surf->first_layer;
+         zslice = s->base.first_layer;
          layer = 0;
       }
 
       SVGA_DBG(DEBUG_VIEWS,
                "Propagate surface %p to resource %p, level %u\n",
-               surf, tex, surf->level);
+               s, tex, s->base.level);
 
       if (svga_have_vgpu10(svga)) {
          unsigned srcSubResource, dstSubResource;
@@ -859,14 +853,14 @@ svga_propagate_rendertargets(struct svga_context *svga)
     * surfaces which may be backing surface views (the actual render targets).
     */
    for (unsigned i = 0; i < svga->state.hw_clear.num_rendertargets; i++) {
-      struct pipe_surface *s = svga->state.hw_clear.rtv[i];
+      struct svga_surface *s = svga_surface(svga->state.hw_clear.rtv[i]);
       if (s) {
          svga_propagate_surface(svga, s, false);
       }
    }
 
    if (svga->state.hw_clear.dsv) {
-      svga_propagate_surface(svga, svga->state.hw_clear.dsv, false);
+      svga_propagate_surface(svga, svga_surface(svga->state.hw_clear.dsv), false);
    }
 }
 
@@ -875,13 +869,12 @@ svga_propagate_rendertargets(struct svga_context *svga)
  * Check if we should call svga_propagate_surface on the surface.
  */
 bool
-svga_surface_needs_propagation(const struct pipe_surface *surf)
+svga_surface_needs_propagation(const struct svga_surface *s)
 {
-   if (surf == NULL) {
+   if (s == NULL) {
       return false;
    } else {
-      const struct svga_surface *s = svga_surface_const(surf);
-      struct svga_texture *tex = svga_texture(surf->texture);
+      struct svga_texture *tex = svga_texture(s->base.texture);
       return s->dirty && s->handle != tex->handle;
    }
 }

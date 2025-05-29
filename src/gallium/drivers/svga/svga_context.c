@@ -260,9 +260,6 @@ svga_context_create(struct pipe_screen *screen, void *priv, unsigned flags)
    // but some fields have to be zero/null:
    memset(&svga->state.hw_clear.framebuffer, 0x0,
           sizeof(svga->state.hw_clear.framebuffer));
-   memset(&svga->state.hw_clear.fb_cbufs, 0x0,
-          sizeof(svga->state.hw_clear.fb_cbufs));
-   svga->state.hw_clear.fb_zsbuf = NULL;
    memset(&svga->state.hw_clear.rtv, 0, sizeof(svga->state.hw_clear.rtv));
    svga->state.hw_clear.num_rendertargets = 0;
    svga->state.hw_clear.dsv = NULL;

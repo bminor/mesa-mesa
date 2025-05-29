@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "util/u_framebuffer.h"
 #include "util/u_inlines.h"
 #include "util/u_pstipple.h"
 
@@ -70,15 +69,17 @@ svga_set_polygon_stipple(struct pipe_context *pipe,
 }
 
 
+/**
+ * Release all the context's framebuffer surfaces.
+ */
 void
 svga_cleanup_framebuffer(struct svga_context *svga)
 {
-   struct pipe_framebuffer_state *curr = &svga->curr.framebuffer;
-   struct pipe_framebuffer_state *hw = &svga->state.hw_clear.framebuffer;
-
-   util_framebuffer_init(&svga->pipe, NULL, svga->curr.fb_cbufs, &svga->curr.fb_zsbuf);
-   util_unreference_framebuffer_state(curr);
-   util_unreference_framebuffer_state(hw);
+   struct svga_framebuffer_state *fb = &svga->curr.framebuffer;
+   for (unsigned i = 0; i < fb->base.nr_cbufs; i++) {
+      svga_surface_unref(&svga->pipe, &fb->cbufs[i]);
+   }
+   svga_surface_unref(&svga->pipe, &fb->zsbuf);
 }
 
 
@@ -87,12 +88,66 @@ svga_cleanup_framebuffer(struct svga_context *svga)
 #define DEPTH_BIAS_SCALE_FACTOR_D32    ((float)(1<<31))
 
 
+/*
+ * Copy pipe_framebuffer_state to svga_framebuffer_state while
+ * creating svga_surface objects as needed.
+ */
+static void
+svga_copy_framebuffer_state(struct svga_context *svga,
+                            struct svga_framebuffer_state *dst,
+                            const struct pipe_framebuffer_state *src)
+{
+   struct pipe_context *pctx = &svga->pipe;
+   const unsigned prev_nr_cbufs = dst->base.nr_cbufs;
+
+   dst->base = *src; // struct copy
+
+   // Create svga_surfaces for each color buffer
+   for (unsigned i = 0; i < src->nr_cbufs; i++) {
+      if (dst->cbufs[i] &&
+          pipe_surface_equal(&src->cbufs[i], &dst->cbufs[i]->base)) {
+         continue;
+      }
+
+      struct pipe_surface *psurf = src->cbufs[i].texture
+         ? pctx->create_surface(pctx, src->cbufs[i].texture, &src->cbufs[i])
+         : NULL;
+      if (dst->cbufs[i]) {
+         svga_surface_unref(pctx, &dst->cbufs[i]);
+      }
+      dst->cbufs[i] = svga_surface(psurf);
+   }
+
+   // unref any remaining surfaces
+   for (unsigned i = src->nr_cbufs; i < prev_nr_cbufs; i++) {
+      if (dst->cbufs[i]) {
+         svga_surface_unref(pctx, &dst->cbufs[i]);
+      }
+   }
+
+   dst->base.nr_cbufs = src->nr_cbufs;
+
+   // depth/stencil surface
+   if (dst->zsbuf &&
+       pipe_surface_equal(&src->zsbuf, &dst->zsbuf->base)) {
+      return;
+   }
+
+   struct pipe_surface *psurf = src->zsbuf.texture
+      ? pctx->create_surface(pctx, src->zsbuf.texture, &src->zsbuf)
+      : NULL;
+   if (dst->zsbuf) {
+      svga_surface_unref(pctx, &dst->zsbuf);
+   }
+   dst->zsbuf = svga_surface(psurf);
+}
+
+
 static void
 svga_set_framebuffer_state(struct pipe_context *pipe,
                            const struct pipe_framebuffer_state *fb)
 {
    struct svga_context *svga = svga_context(pipe);
-   struct pipe_framebuffer_state *dst = &svga->curr.framebuffer;
 
    /* make sure any pending drawing calls are flushed before changing
     * the framebuffer state
@@ -126,11 +181,10 @@ svga_set_framebuffer_state(struct pipe_context *pipe,
       }
    }
 
-   util_framebuffer_init(pipe, fb, svga->curr.fb_cbufs, &svga->curr.fb_zsbuf);
-   util_copy_framebuffer_state(dst, fb);
+   svga_copy_framebuffer_state(svga, &svga->curr.framebuffer, fb);
 
-   if (svga->curr.framebuffer.zsbuf.texture) {
-      switch (svga->curr.framebuffer.zsbuf.texture->format) {
+   if (svga->curr.framebuffer.zsbuf) {
+      switch (svga->curr.framebuffer.zsbuf->base.texture->format) {
       case PIPE_FORMAT_Z16_UNORM:
          svga->curr.depthscale = 1.0f / DEPTH_BIAS_SCALE_FACTOR_D16;
          break;

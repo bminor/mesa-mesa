@@ -60,18 +60,45 @@ struct svga_surface
 };
 
 
+static inline void
+svga_surface_reference(struct svga_surface **dst,
+                       struct svga_surface *src)
+{
+   pipe_surface_reference((struct pipe_surface **) dst,
+                          (struct pipe_surface *) src);
+}
+
+
+static inline void
+svga_surface_unref(struct pipe_context *pipe,
+                   struct svga_surface **s)
+{
+   pipe_surface_unref(pipe, (struct pipe_surface **) s);
+}
+
+
+static inline bool
+svga_surface_equal(const struct svga_surface *s1, const struct svga_surface *s2)
+{
+   if (s1 == NULL && s2 == NULL)
+      return true;
+   return pipe_surface_equal((struct pipe_surface *) s1,
+                             (struct pipe_surface *) s2);
+}
+
+
 void
 svga_mark_surfaces_dirty(struct svga_context *svga);
 
 extern void
-svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
+svga_propagate_surface(struct svga_context *svga, struct svga_surface *surf,
                        bool reset);
 
 void
 svga_propagate_rendertargets(struct svga_context *svga);
 
 extern bool
-svga_surface_needs_propagation(const struct pipe_surface *surf);
+svga_surface_needs_propagation(const struct svga_surface *s);
 
 struct svga_winsys_surface *
 svga_texture_view_surface(struct svga_context *svga,
@@ -124,9 +151,6 @@ svga_surface_const(const struct pipe_surface *surface)
 struct pipe_surface *
 svga_validate_surface_view(struct svga_context *svga, struct svga_surface *s);
 
-void
-svga_propagate_surface(struct svga_context *svga, struct pipe_surface *surf,
-                       bool reset);
 
 static inline SVGA3dResourceType
 svga_resource_type(enum pipe_texture_target target)
