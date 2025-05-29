@@ -293,7 +293,7 @@ anv_slab_alloc(void *priv,
       struct anv_bo *bo = &slab->entries[i];
       uint64_t offset = intel_48b_address(slab->bo->offset);
 
-      offset += (i * entry_size);
+      offset += ((uint64_t)i * entry_size);
 
       bo->name = "slab_child";
       bo->gem_handle = slab->bo->gem_handle;
