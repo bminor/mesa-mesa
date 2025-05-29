@@ -1016,29 +1016,8 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
             flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
 
          if (devinfo->has_ray_tracing) {
-#if ANV_SUPPORT_RT_GRL
-            switch (vk_format) {
-            case VK_FORMAT_R32G32_SFLOAT:
-            case VK_FORMAT_R32G32B32_SFLOAT:
-            case VK_FORMAT_R16G16_SFLOAT:
-            case VK_FORMAT_R16G16B16A16_SFLOAT:
-            case VK_FORMAT_R16G16_SNORM:
-            case VK_FORMAT_R16G16B16A16_SNORM:
-            case VK_FORMAT_R16G16B16A16_UNORM:
-            case VK_FORMAT_R16G16_UNORM:
-            case VK_FORMAT_R8G8B8A8_UNORM:
-            case VK_FORMAT_R8G8_UNORM:
-            case VK_FORMAT_R8G8B8A8_SNORM:
-            case VK_FORMAT_R8G8_SNORM:
-               flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
-               break;
-            default:
-               break;
-            }
-#else
             if (vk_acceleration_struct_vtx_format_supported(vk_format))
                flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
-#endif
          }
       }
    }

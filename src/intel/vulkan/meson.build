@@ -39,22 +39,10 @@ idep_anv_headers = declare_dependency(
 
 bvh_spv = []
 if with_intel_vk_rt
-  if with_intel_bvh_grl
-    subdir('grl')
-    optional_libgrl = [libgrl]
-    anv_flags += '-DANV_SUPPORT_RT_GRL=1'
-  else
-    subdir('bvh')
-    idep_grl = null_dep
-    optional_libgrl = []
-    anv_flags += '-DANV_SUPPORT_RT_GRL=0'
-  endif
+  subdir('bvh')
   anv_flags += '-DANV_SUPPORT_RT=1'
 else
-  idep_grl = null_dep
-  optional_libgrl = []
   anv_flags += '-DANV_SUPPORT_RT=0'
-  anv_flags += '-DANV_SUPPORT_RT_GRL=0'
 endif
 
 intel_icd = custom_target(
@@ -111,15 +99,9 @@ anv_per_hw_ver_files = files(
   'genX_simple_shader.c',
 )
 if with_intel_vk_rt
-  if with_intel_bvh_grl
-    anv_per_hw_ver_files += files(
-      'genX_acceleration_structure_grl.c',
-    )
-  else
-    anv_per_hw_ver_files += files(
-      'genX_acceleration_structure.c',
-    )
-  endif
+  anv_per_hw_ver_files += files(
+    'genX_acceleration_structure.c',
+  )
 endif
 
 foreach _gfx_ver : ['90', '110', '120', '125', '200', '300']
@@ -135,7 +117,7 @@ foreach _gfx_ver : ['90', '110', '120', '125', '200', '300']
       dep_libdrm, dep_valgrind, idep_nir_headers, idep_genxml,
       idep_vulkan_util_headers, idep_vulkan_wsi_headers,
       idep_vulkan_runtime_headers, idep_mesautil,
-      idep_intel_driver_ds_headers, idep_grl,
+      idep_intel_driver_ds_headers,
       idep_intel_shaders, idep_intel_blorp,
     ],
   )
@@ -271,7 +253,7 @@ libvulkan_intel = shared_library(
   include_directories : [
     inc_include, inc_src, inc_intel,
   ],
-  link_whole : [libanv_common, libanv_per_hw_ver_libs] + optional_libgrl,
+  link_whole : [libanv_common, libanv_per_hw_ver_libs],
   link_with : [
     libisl, libintel_perf,
   ],
@@ -313,7 +295,7 @@ if with_tests
     link_with : [
       libanv_per_hw_ver_libs, libintel_common,
       libisl, libintel_perf,
-    ] + optional_libgrl,
+    ],
     dependencies : [
       dep_thread, dep_dl, dep_m, anv_deps,
       idep_nir, idep_vulkan_util, idep_vulkan_wsi, idep_vulkan_runtime,

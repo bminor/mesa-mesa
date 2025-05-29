@@ -31,10 +31,6 @@
 
 #include "vk_standard_sample_locations.h"
 
-#if GFX_VERx10 >= 125 && ANV_SUPPORT_RT_GRL
-#include "grl/genX_grl.h"
-#endif
-
 #include "genX_mi_builder.h"
 
 #include "vk_util.h"
@@ -895,13 +891,8 @@ genX(init_physical_device_state)(ASSERTED struct anv_physical_device *pdevice)
    assert(pdevice->info.verx10 == GFX_VERx10);
 
 #if GFX_VERx10 >= 125 && ANV_SUPPORT_RT
-#if ANV_SUPPORT_RT_GRL
-   genX(grl_load_rt_uuid)(pdevice->rt_uuid);
-   pdevice->max_grl_scratch_size = genX(grl_max_scratch_size)();
-#else
    STATIC_ASSERT(sizeof(ANV_RT_UUID_MACRO) == VK_UUID_SIZE);
    memcpy(pdevice->rt_uuid, ANV_RT_UUID_MACRO, VK_UUID_SIZE);
-#endif
 #endif
 
    pdevice->cmd_emit_timestamp = genX(cmd_emit_timestamp);

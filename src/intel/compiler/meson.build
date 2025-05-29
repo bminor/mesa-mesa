@@ -169,42 +169,6 @@ idep_intel_compiler_brw = declare_dependency(
   ],
 )
 
-# For now this tool is only going to be used by Anv
-if with_intel_bvh_grl
-  if get_option('intel-clc') == 'system' or get_option('precomp-compiler') == 'system'
-    prog_intel_clc = find_program('intel_clc', native : true)
-    dep_prog_intel_clc = []
-  elif with_intel_clc
-    prog_intel_clc = executable(
-      'intel_clc',
-      [
-        'intel_clc.c',
-        'brw_kernel.c',
-
-        # Use just the nir_options part of ELK instead of fully linking.
-        'elk/elk_nir_options.h',
-        'elk/elk_nir_options.c',
-        'elk/elk_spirv.c',
-      ],
-      link_with : [libisl],
-      include_directories : [inc_include, inc_src, inc_intel],
-      c_args : [pre_args, no_override_init_args],
-      cpp_args : ['-Werror=vla'],
-      link_args : [ld_args_build_id],
-      dependencies : [idep_nir, idep_mesaclc, idep_mesautil, idep_intel_dev,
-                      idep_intel_compiler_brw],
-      # If we can run host binaries directly, just build intel_clc for the host.
-      # Most commonly this happens when doing a cross compile from an x86_64 build
-      # machine to an x86 host
-      native : not meson.can_run_host_binaries(),
-      install : get_option('install-intel-clc') or get_option('install-precomp-compiler'),
-    )
-    dep_prog_intel_clc = [prog_intel_clc]
-  endif
-else
-  dep_prog_intel_clc = []
-endif
-
 if with_tests
   test(
     'intel_compiler_brw_tests',

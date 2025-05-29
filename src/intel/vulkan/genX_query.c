@@ -2040,12 +2040,7 @@ void genX(CmdCopyQueryPoolResults)(
 
 #if GFX_VERx10 >= 125 && ANV_SUPPORT_RT
 
-#if ANV_SUPPORT_RT_GRL
-#include "grl/include/GRLRTASCommon.h"
-#include "grl/grl_metakernel_postbuild_info.h"
-#else
 #include "bvh/anv_bvh.h"
-#endif
 
 void
 genX(CmdWriteAccelerationStructuresPropertiesKHR)(
@@ -2064,66 +2059,19 @@ genX(CmdWriteAccelerationStructuresPropertiesKHR)(
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    ANV_FROM_HANDLE(anv_query_pool, pool, queryPool);
 
-#if !ANV_SUPPORT_RT_GRL
    anv_add_pending_pipe_bits(cmd_buffer,
                              ANV_PIPE_END_OF_PIPE_SYNC_BIT |
                              ANV_PIPE_DATA_CACHE_FLUSH_BIT,
                              "read BVH data using CS");
-#endif
 
    if (append_query_clear_flush(
           cmd_buffer, pool,
-          "CmdWriteAccelerationStructuresPropertiesKHR flush query clears") ||
-       !ANV_SUPPORT_RT_GRL)
+          "CmdWriteAccelerationStructuresPropertiesKHR flush query clears"))
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
    struct mi_builder b;
    mi_builder_init(&b, cmd_buffer->device->info, &cmd_buffer->batch);
 
-#if ANV_SUPPORT_RT_GRL
-   for (uint32_t i = 0; i < accelerationStructureCount; i++) {
-      ANV_FROM_HANDLE(vk_acceleration_structure, accel, pAccelerationStructures[i]);
-      struct anv_address query_addr =
-         anv_address_add(anv_query_address(pool, firstQuery + i), 8);
-
-      switch (queryType) {
-      case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
-         genX(grl_postbuild_info_compacted_size)(cmd_buffer,
-                                                 vk_acceleration_structure_get_va(accel),
-                                                 anv_address_physical(query_addr));
-         break;
-
-      case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
-         genX(grl_postbuild_info_current_size)(cmd_buffer,
-                                               vk_acceleration_structure_get_va(accel),
-                                               anv_address_physical(query_addr));
-         break;
-
-      case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
-      case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
-         genX(grl_postbuild_info_serialized_size)(cmd_buffer,
-                                                  vk_acceleration_structure_get_va(accel),
-                                                  anv_address_physical(query_addr));
-         break;
-
-      default:
-         unreachable("unhandled query type");
-      }
-   }
-
-   /* TODO: Figure out why MTL needs ANV_PIPE_DATA_CACHE_FLUSH_BIT in order
-    * to not lose the availability bit.
-    */
-   anv_add_pending_pipe_bits(cmd_buffer,
-                             ANV_PIPE_END_OF_PIPE_SYNC_BIT |
-                             ANV_PIPE_DATA_CACHE_FLUSH_BIT,
-                             "after write acceleration struct props");
-   genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
-
-   for (uint32_t i = 0; i < accelerationStructureCount; i++)
-      emit_query_mi_availability(&b, anv_query_address(pool, firstQuery + i), true);
-
-#else
    for (uint32_t i = 0; i < accelerationStructureCount; i++) {
       ANV_FROM_HANDLE(vk_acceleration_structure, accel, pAccelerationStructures[i]);
       struct anv_address query_addr =
@@ -2163,6 +2111,5 @@ genX(CmdWriteAccelerationStructuresPropertiesKHR)(
       mi_builder_set_write_check(&b1, (i == (accelerationStructureCount - 1)));
       emit_query_mi_availability(&b1, anv_query_address(pool, firstQuery + i), true);
    }
-#endif /* ANV_SUPPORT_RT_GRL */
 }
 #endif /* GFX_VERx10 >= 125 && ANV_SUPPORT_RT */

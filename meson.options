@@ -294,7 +294,7 @@ option(
   type : 'array',
   value : [],
   choices : [
-    'device-select', 'intel-nullhw', 'overlay', 'screenshot', 
+    'device-select', 'intel-nullhw', 'overlay', 'screenshot',
     'vram-report-limit',
   ],
   description : 'List of vulkan layers to build'
@@ -691,13 +691,6 @@ option(
     'enabled', 'system', 'auto'
   ],
   description : 'Build the intel-clc compiler or use a system version.'
-)
-
-option(
-  'intel-bvh-grl',
-  type : 'boolean',
-  value : false,
-  description : 'Build the BVH structure using GRL.'
 )
 
 option(

@@ -307,29 +307,12 @@ with_any_broadcom = [
 
 with_intel_vk_rt = get_option('intel-rt') \
    .disable_auto_if(not with_intel_vk) \
-   .disable_if(get_option('intel-bvh-grl') and \
-               host_machine.cpu_family() != 'x86_64', \
-               error_message : 'Intel Ray Tracing is only supported on x86_64') \
   .allowed()
-
-with_intel_bvh_grl = get_option('intel-bvh-grl')
-
-if get_option('intel-clc') != 'system' and \
-   get_option('precomp-compiler') != 'system' and \
-   with_intel_bvh_grl
-  # Require intel-clc with Anv & Iris (for internal shaders)
-  with_intel_clc = get_option('intel-clc') == 'enabled' or \
-                   get_option('precomp-compiler') == 'enabled' or \
-                   with_intel_bvh_grl
-else
-  with_intel_clc = false
-endif
 
 with_any_intel = [
   with_gallium_crocus,
   with_gallium_i915,
   with_gallium_iris,
-  with_intel_clc,
   with_intel_hasvk,
   with_intel_tools,
   with_intel_vk,

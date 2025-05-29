@@ -87,7 +87,6 @@ with_nir_headers_only = (
     with_gallium_rusticl,
     with_microsoft_clc,
     with_spirv_to_dxil,
-    with_intel_clc,
     with_clc,
     with_drivers_clc,
     get_option('intel-elk'),

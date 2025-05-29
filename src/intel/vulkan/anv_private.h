@@ -2415,7 +2415,7 @@ anv_queue_post_submit(struct anv_queue *queue, VkResult submit_result)
          result = vk_queue_set_lost(&queue->vk, "sync wait failed");
    }
 
-#if ANV_SUPPORT_RT && !ANV_SUPPORT_RT_GRL
+#if ANV_SUPPORT_RT
    /* The recorded bvh is dumped to files upon command buffer completion */
    if (INTEL_DEBUG_BVH_ANY)
       anv_dump_bvh_to_files(queue->device);
