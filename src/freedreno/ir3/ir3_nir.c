@@ -635,6 +635,7 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    }
 
    OPT(s, nir_lower_is_helper_invocation);
+   OPT(s, nir_opt_combine_barriers, NULL, NULL);
 
    ir3_optimize_loop(compiler, options, s);
 
