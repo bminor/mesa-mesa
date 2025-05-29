@@ -67,7 +67,7 @@ class decl_dumper_t(decl_visitor.decl_visitor_t):
 
     def visit_enumeration(self):
         if enums:
-            print '   switch(%s) {' % ("(*cmd)" + self._instance,)
+            print '   switch (%s) {' % ("(*cmd)" + self._instance,)
             for name, value in self.decl.values:
                 print '   case %s:' % (name,)
                 print '      _debug_printf("\\t\\t%s = %s\\n");' % (self._instance, name)
@@ -97,49 +97,49 @@ class type_dumper_t(type_visitor.type_visitor_t):
 
     def visit_char(self):
         self.print_instance('%i')
-        
+
     def visit_unsigned_char(self):
         self.print_instance('%u')
 
     def visit_signed_char(self):
         self.print_instance('%i')
-    
+
     def visit_wchar(self):
         self.print_instance('%i')
-        
+
     def visit_short_int(self):
         self.print_instance('%i')
-        
+
     def visit_short_unsigned_int(self):
         self.print_instance('%u')
-        
+
     def visit_bool(self):
         self.print_instance('%i')
-        
+
     def visit_int(self):
         self.print_instance('%i')
-        
+
     def visit_unsigned_int(self):
         self.print_instance('%u')
-        
+
     def visit_long_int(self):
         self.print_instance('%li')
-        
+
     def visit_long_unsigned_int(self):
         self.print_instance('%lu')
-        
+
     def visit_long_long_int(self):
         self.print_instance('%lli')
-        
+
     def visit_long_long_unsigned_int(self):
         self.print_instance('%llu')
-        
+
     def visit_float(self):
         self.print_instance('%f')
-        
+
     def visit_double(self):
         self.print_instance('%f')
-        
+
     def visit_array(self):
         for i in range(type_traits.array_size(self.type)):
             dump_type(self.instance + '[%i]' % i, type_traits.base_type(self.type))
@@ -206,13 +206,13 @@ cmds = [
 
 def dump_cmds():
     print r'''
-void            
+void
 svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size)
 {
    const uint8_t *body = (const uint8_t *)data;
    const uint8_t *next = body + size;
 '''
-    print '   switch(cmd_id) {'
+    print '   switch (cmd_id) {'
     indexes = 'ijklmn'
     for id, header, body, footer in cmds:
         print '   case %s:' % id
@@ -226,12 +226,12 @@ svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size)
         for i in range(len(body)):
             struct, count = body[i]
             idx = indexes[i]
-            print '         for(%s = 0; %s < cmd->%s; ++%s) {' % (idx, idx, count, idx)
+            print '         for (%s = 0; %s < cmd->%s; ++%s) {' % (idx, idx, count, idx)
             print '            dump_%s((const %s *)body);' % (struct, struct)
             print '            body += sizeof(%s);' % struct
             print '         }'
         if footer is not None:
-            print '         while(body + sizeof(%s) <= next) {' % footer
+            print '         while (body + sizeof(%s) <= next) {' % footer
             print '            dump_%s((const %s *)body);' % (footer, footer)
             print '            body += sizeof(%s);' % footer
             print '         }'
@@ -247,37 +247,37 @@ svga_dump_command(uint32_t cmd_id, const void *data, uint32_t size)
     print '      break;'
     print '   }'
     print r'''
-   while(body + sizeof(uint32_t) <= next) {
+   while (body + sizeof(uint32_t) <= next) {
       _debug_printf("\t\t0x%08x\n", *(const uint32_t *)body);
       body += sizeof(uint32_t);
    }
-   while(body + sizeof(uint32_t) <= next)
+   while (body + sizeof(uint32_t) <= next)
       _debug_printf("\t\t0x%02x\n", *body++);
 }
 '''
     print r'''
-void            
+void
 svga_dump_commands(const void *commands, uint32_t size)
 {
    const uint8_t *next = commands;
    const uint8_t *last = next + size;
-   
+
    assert(size % sizeof(uint32_t) == 0);
-   
-   while(next < last) {
+
+   while (next < last) {
       const uint32_t cmd_id = *(const uint32_t *)next;
 
-      if(SVGA_3D_CMD_BASE <= cmd_id && cmd_id < SVGA_3D_CMD_MAX) {
+      if (SVGA_3D_CMD_BASE <= cmd_id && cmd_id < SVGA_3D_CMD_MAX) {
          const SVGA3dCmdHeader *header = (const SVGA3dCmdHeader *)next;
          const uint8_t *body = (const uint8_t *)&header[1];
 
          next = body + header->size;
-         if(next > last)
+         if (next > last)
             break;
 
          svga_dump_command(cmd_id, body, header->size);
       }
-      else if(cmd_id == SVGA_CMD_FENCE) {
+      else if (cmd_id == SVGA_CMD_FENCE) {
          _debug_printf("\tSVGA_CMD_FENCE\n");
          _debug_printf("\t\t0x%08x\n", ((const uint32_t *)next)[1]);
          next += 2*sizeof(uint32_t);

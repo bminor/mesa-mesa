@@ -37,9 +37,9 @@ svga_get_image_size_constant(const struct svga_context *svga, float **dest,
          if (images[shader][i].desc.resource->target == PIPE_BUFFER) {
             unsigned bytes_per_element = util_format_get_blocksize(images[shader][i].desc.format);
             *dest_u++ = images[shader][i].desc.resource->width0 / bytes_per_element;
-         }
-         else
+         } else {
             *dest_u++ = images[shader][i].desc.resource->width0;
+         }
 
          if (images[shader][i].desc.resource->target == PIPE_TEXTURE_1D_ARRAY)
             *dest_u++ = images[shader][i].desc.resource->array_size;
@@ -53,8 +53,7 @@ svga_get_image_size_constant(const struct svga_context *svga, float **dest,
          else
             *dest_u++ = images[shader][i].desc.resource->depth0;
          *dest_u++ = 1; // Later this can be used for sample counts
-      }
-      else {
+      } else {
          *dest_u += 4;
       }
    }
@@ -88,10 +87,9 @@ svga_get_extra_constants_common(const struct svga_context *svga,
                                 enum pipe_shader_type shader, float *dest)
 {
    uint32_t *dest_u = (uint32_t *) dest;  // uint version of dest
-   unsigned i;
    unsigned count = 0;
 
-   for (i = 0; i < variant->key.num_textures; i++) {
+   for (unsigned i = 0; i < variant->key.num_textures; i++) {
       const struct pipe_sampler_view *sv = svga->curr.sampler_views[shader][i];
       if (sv) {
          const struct pipe_resource *tex = sv->texture;
@@ -155,6 +153,7 @@ svga_get_extra_fs_constants(const struct svga_context *svga, float *dest)
    return count;
 }
 
+
 /**
  * Emit extra constants needed for prescale computation into the
  * the buffer pointed to by '*dest'. The updated buffer pointer
@@ -162,7 +161,7 @@ svga_get_extra_fs_constants(const struct svga_context *svga, float *dest)
  */
 static unsigned
 svga_get_prescale_constants(const struct svga_context *svga, float **dest,
-		            const struct svga_prescale *prescale)
+                            const struct svga_prescale *prescale)
 {
    memcpy(*dest, prescale->scale, 4 * sizeof(float));
    *dest += 4;
@@ -172,6 +171,7 @@ svga_get_prescale_constants(const struct svga_context *svga, float **dest,
 
    return 2;
 }
+
 
 /**
  * Emit extra constants needed for point sprite emulation.
@@ -189,6 +189,7 @@ svga_get_pt_sprite_constants(const struct svga_context *svga, float **dest)
    *dest = *dest + 4;
    return 1;
 }
+
 
 /**
  * Emit user-defined clip plane coefficients into the buffer pointed to
@@ -234,7 +235,7 @@ svga_get_extra_vs_constants(const struct svga_context *svga, float *dest)
     */
    if (variant->key.vs.need_prescale) {
       count += svga_get_prescale_constants(svga, &dest,
-		                           &svga->state.hw_clear.prescale[0]);
+                                           &svga->state.hw_clear.prescale[0]);
    }
 
    if (variant->key.vs.undo_viewport) {
@@ -270,6 +271,7 @@ svga_get_extra_vs_constants(const struct svga_context *svga, float *dest)
    return count;
 }
 
+
 /**
  * Emit any extra geometry shader constants into the buffer pointed
  * to by 'dest'.
@@ -292,7 +294,7 @@ svga_get_extra_gs_constants(const struct svga_context *svga, float *dest)
    }
 
    if (variant->key.gs.need_prescale) {
-      unsigned i, num_prescale = 1;
+      unsigned num_prescale = 1;
 
       /* If prescale is needed and the geometry shader writes to viewport
        * index, then prescale for all viewports will be added to the
@@ -301,10 +303,10 @@ svga_get_extra_gs_constants(const struct svga_context *svga, float *dest)
       if (variant->key.gs.writes_viewport_index)
          num_prescale = svga->state.hw_clear.num_prescale;
 
-      for (i = 0; i < num_prescale; i++) {
+      for (unsigned i = 0; i < num_prescale; i++) {
          count +=
             svga_get_prescale_constants(svga, &dest,
-			                &svga->state.hw_clear.prescale[i]);
+                                        &svga->state.hw_clear.prescale[i]);
       }
    }
 
@@ -355,7 +357,7 @@ svga_get_extra_tes_constants(struct svga_context *svga, float *dest)
 
    if (variant->key.tes.need_prescale) {
       count += svga_get_prescale_constants(svga, &dest,
-		                           &svga->state.hw_clear.prescale[0]);
+                                           &svga->state.hw_clear.prescale[0]);
    }
 
    /* SVGA_NEW_CLIP */
@@ -484,8 +486,7 @@ emit_const_range(struct svga_context *svga,
                                                  svga_shader_type(shader),
                                                  SVGA3D_CONST_TYPE_FLOAT,
                                                  values + i);
-         }
-         else {
+         } else {
             ret = SVGA3D_SetShaderConsts(svga->swc,
                                          offset + i, j - i,
                                          svga_shader_type(shader),
@@ -555,7 +556,7 @@ emit_consts_vgpu9(struct svga_context *svga, enum pipe_shader_type shader)
       count = cbuf->buffer_size / (4 * sizeof(float));
       data += cbuf->buffer_offset / (4 * sizeof(float));
 
-      ret = emit_const_range( svga, shader, offset, count, data );
+      ret = emit_const_range(svga, shader, offset, count, data);
 
       pipe_buffer_unmap(&svga->pipe, transfer);
 
@@ -567,7 +568,6 @@ emit_consts_vgpu9(struct svga_context *svga, enum pipe_shader_type shader)
    /* emit extra shader constants */
    {
       const struct svga_shader_variant *variant = NULL;
-      unsigned offset;
       float extras[MAX_EXTRA_CONSTS][4];
       unsigned count;
 
@@ -586,7 +586,7 @@ emit_consts_vgpu9(struct svga_context *svga, enum pipe_shader_type shader)
       }
 
       assert(variant);
-      offset = variant->shader->info.constbuf0_num_uniforms;
+      unsigned offset = variant->shader->info.constbuf0_num_uniforms;
       assert(count <= ARRAY_SIZE(extras));
 
       if (count > 0) {
@@ -618,6 +618,7 @@ svga_destroy_rawbuf_srv(struct svga_context *svga)
    }
 }
 
+
 /**
  * A helper function to emit constant buffer as srv raw buffer.
  */
@@ -645,8 +646,7 @@ svga_emit_rawbuf(struct svga_context *svga,
          goto done;
       }
       enabled_rawbufs &= ~(1 << slot);
-   }
-   else {
+   } else {
       if ((rawbuf->buffer_offset != buffer_offset) ||
           (rawbuf->buffer_size != buffer_size) ||
           (rawbuf->buffer != buffer)) {
@@ -688,8 +688,7 @@ svga_emit_rawbuf(struct svga_context *svga,
          rawbuf->handle = buf_handle;
 
          SVGA_STATS_COUNT_INC(svga_sws(svga), SVGA_STATS_COUNT_RAWBUFFERSRVIEW);
-      }
-      else {
+      } else {
          /* Same buffer attributes in the slot. Can use the same SRV. */
          assert(rawbuf->srvid != SVGA3D_INVALID_ID);
          srvid = rawbuf->srvid;
@@ -803,8 +802,7 @@ emit_constbuf(struct svga_context *svga,
           svga->state.hw_draw.const0_handle) {
          /* re-reference already mapped buffer */
          dst_handle = svga->state.hw_draw.const0_handle;
-      }
-      else {
+      } else {
          /* we must unmap the buffer before getting the winsys handle */
          u_upload_unmap(svga->const0_upload);
 
@@ -815,8 +813,7 @@ emit_constbuf(struct svga_context *svga,
             return PIPE_ERROR_OUT_OF_MEMORY;
          }
       }
-   }
-   else if (sbuf) {
+   } else if (sbuf) {
       dst_handle = svga_buffer_handle(svga, &sbuf->b, PIPE_BIND_CONSTANT_BUFFER);
       new_buf_size = align(buffer_size, 16);
       offset = buffer_offset;
@@ -840,8 +837,7 @@ emit_constbuf(struct svga_context *svga,
                                                   dst_handle,
                                                   offset,
                                                   new_buf_size);
-   }
-   else if (dst_handle){
+   } else if (dst_handle){
       unsigned command = SVGA_3D_CMD_DX_SET_VS_CONSTANT_BUFFER_OFFSET +
                             svga_shader_type(shader) - SVGA3D_SHADERTYPE_VS;
       ret = SVGA3D_vgpu10_SetConstantBufferOffset(svga->swc,
@@ -866,7 +862,8 @@ emit_constbuf(struct svga_context *svga,
     * command buffer is submitted, it'll get recycled and we will have
     * incorrect constant buffer bindings.
     */
-   pipe_resource_reference(&svga->state.hw_draw.constbuf[shader][slot], dst_buffer);
+   pipe_resource_reference(&svga->state.hw_draw.constbuf[shader][slot],
+                           dst_buffer);
    svga->state.hw_draw.constbufoffsets[shader][slot].handle = dst_handle;
    svga->state.hw_draw.constbufoffsets[shader][slot].size = new_buf_size;
 
@@ -973,8 +970,7 @@ emit_constbuf_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
 
       if (buffer) {
          enabled_constbufs |= 1 << index;
-      }
-      else {
+      } else {
          enabled_constbufs &= ~(1 << index);
          assert(offset == 0);
          assert(size == 0);
@@ -989,8 +985,7 @@ emit_constbuf_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
          if (offset + align(size, 16) <= total_size) {
             /* round up size to multiple of 16 */
             size = align(size, 16);
-         }
-         else {
+         } else {
             /* round down to multiple of 16 (this may cause rendering problems
              * but should avoid a device error).
              */
@@ -1021,8 +1016,7 @@ emit_constbuf_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
           * at resource validation time.
           */
          enabled_constbufs &= ~(1 << index);
-      }
-      else {
+      } else {
          if (svga->state.hw_draw.enabled_rawbufs[shader] & (1 << index)) {
             ret = svga_emit_rawbuf(svga, index, shader, offset, size, NULL);
             if (ret != PIPE_OK) {
@@ -1060,8 +1054,7 @@ emit_fs_consts(struct svga_context *svga, uint64_t dirty)
     */
    if (svga_have_vgpu10(svga)) {
       ret = emit_consts_vgpu10(svga, PIPE_SHADER_FRAGMENT);
-   }
-   else {
+   } else {
       ret = emit_consts_vgpu9(svga, PIPE_SHADER_FRAGMENT);
    }
 
@@ -1121,8 +1114,7 @@ emit_vs_consts(struct svga_context *svga, uint64_t dirty)
     */
    if (svga_have_vgpu10(svga)) {
       ret = emit_consts_vgpu10(svga, PIPE_SHADER_VERTEX);
-   }
-   else {
+   } else {
       ret = emit_consts_vgpu9(svga, PIPE_SHADER_VERTEX);
    }
 

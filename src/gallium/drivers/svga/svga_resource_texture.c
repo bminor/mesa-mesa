@@ -1318,7 +1318,7 @@ svga_texture_transfer_map_can_upload(const struct svga_screen *svgascreen,
    if (util_format_is_compressed(texture->format)) {
       /* XXX Need to take a closer look to see why texture upload
        * with 3D texture with compressed format fails
-       */ 
+       */
       if (texture->target == PIPE_TEXTURE_3D)
           return false;
    }
@@ -1336,7 +1336,7 @@ svga_texture_transfer_map_can_upload(const struct svga_screen *svgascreen,
  */
 static bool
 need_update_texture_resource(struct pipe_surface *surf,
-		             struct svga_texture *tex)
+                             struct svga_texture *tex)
 {
    struct svga_texture *stex = svga_texture(surf->texture);
    struct svga_surface *s = svga_surface(surf);
@@ -1353,7 +1353,7 @@ need_update_texture_resource(struct pipe_surface *surf,
  */
 static void
 svga_validate_texture_resource(struct svga_context *svga,
-		               struct svga_texture *tex)
+                               struct svga_texture *tex)
 {
    if (svga_was_texture_rendered_to(tex) == false)
       return;

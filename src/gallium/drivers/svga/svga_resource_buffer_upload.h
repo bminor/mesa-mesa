@@ -25,7 +25,7 @@ svga_buffer_create_hw_storage(struct svga_screen *ss,
 
 void
 svga_buffer_destroy_hw_storage(struct svga_screen *ss,
-			       struct svga_buffer *sbuf);
+                               struct svga_buffer *sbuf);
 
 enum pipe_error
 svga_buffer_create_host_surface(struct svga_screen *ss,

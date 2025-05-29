@@ -37,7 +37,7 @@ svga_debug_describe_sampler_view(char *buf, const struct svga_sampler_view *sv)
 
 struct svga_sampler_view *
 svga_get_tex_sampler_view(struct pipe_context *pipe,
-			  struct pipe_resource *pt,
+                          struct pipe_resource *pt,
                           unsigned min_lod, unsigned max_lod)
 {
    struct svga_context *svga = svga_context(pipe);

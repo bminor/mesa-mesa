@@ -1035,7 +1035,7 @@ svga_set_curr_shader_use_samplers_flag(struct svga_context *svga,
 
 static inline bool
 svga_curr_shader_use_samplers(const struct svga_context *svga,
-	                      enum pipe_shader_type shader_type)
+                              enum pipe_shader_type shader_type)
 {
    return svga->curr.use_samplers[shader_type];
 }

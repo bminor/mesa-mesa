@@ -75,7 +75,7 @@ svga_sampler_view_reference(struct svga_sampler_view **ptr, struct svga_sampler_
 {
    struct svga_sampler_view *old = *ptr;
 
-   if (pipe_reference_described(&(*ptr)->reference, &v->reference, 
+   if (pipe_reference_described(&(*ptr)->reference, &v->reference,
                                 (debug_reference_descriptor)svga_debug_describe_sampler_view))
       svga_destroy_sampler_view_priv(old);
    *ptr = v;

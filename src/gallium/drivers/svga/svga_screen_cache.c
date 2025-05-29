@@ -415,13 +415,12 @@ svga_screen_cache_cleanup(struct svga_screen *svgascreen)
 {
    struct svga_host_surface_cache *cache = &svgascreen->cache;
    struct svga_winsys_screen *sws = svgascreen->sws;
-   unsigned i;
 
-   for (i = 0; i < SVGA_HOST_SURFACE_CACHE_SIZE; ++i) {
+   for (unsigned i = 0; i < SVGA_HOST_SURFACE_CACHE_SIZE; ++i) {
       if (cache->entries[i].handle) {
-	 SVGA_DBG(DEBUG_CACHE|DEBUG_DMA,
+         SVGA_DBG(DEBUG_CACHE|DEBUG_DMA,
                   "unref sid %p (shutdown)\n", cache->entries[i].handle);
-	 sws->surface_reference(sws, &cache->entries[i].handle, NULL);
+         sws->surface_reference(sws, &cache->entries[i].handle, NULL);
 
          cache->total_size -= svga_surface_size(&cache->entries[i].key);
       }

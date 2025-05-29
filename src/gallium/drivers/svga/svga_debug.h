@@ -41,16 +41,15 @@ extern int SVGA_DEBUG;
 #endif
 
 static inline void
-SVGA_DBG( unsigned flag, const char *fmt, ... )
+SVGA_DBG(unsigned flag, const char *fmt, ...)
 {
-#if MESA_DEBUG 
-    if (SVGA_DEBUG & flag)
-    {
+#if MESA_DEBUG
+    if (SVGA_DEBUG & flag) {
         va_list args;
 
-        va_start( args, fmt );
-        debug_vprintf( fmt, args );
-        va_end( args );
+        va_start(args, fmt);
+        debug_vprintf(fmt, args);
+        va_end(args);
     }
 #else
     (void)flag;

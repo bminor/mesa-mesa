@@ -107,7 +107,7 @@ svga_set_shader_buffers(struct pipe_context *pipe,
             pipe_resource_reference(&cbuf->resource, NULL);
          }
          cbuf->uav_index = -1;
-	 cbuf->writeAccess = (writeable_bitmask & (1 << j)) != 0;
+         cbuf->writeAccess = (writeable_bitmask & (1 << j)) != 0;
       }
       svga->curr.num_shader_buffers[shader] =
          MAX2(svga->curr.num_shader_buffers[shader], last_buffer + 1);
@@ -334,7 +334,7 @@ svga_validate_shader_buffer_resources(struct svga_context *svga,
  */
 bool
 svga_shader_buffer_can_use_srv(struct svga_context *svga,
-			       enum pipe_shader_type shader,
+                               enum pipe_shader_type shader,
                                unsigned index,
                                struct svga_shader_buffer *buf)
 {

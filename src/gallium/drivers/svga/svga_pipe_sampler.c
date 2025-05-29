@@ -168,8 +168,7 @@ define_sampler_state_object(struct svga_context *svga,
    if (ps->min_mip_filter == PIPE_TEX_MIPFILTER_NONE) {
       /* just use the base level image */
       min_lod = max_lod = 0.0f;
-   }
-   else {
+   } else {
       min_lod = ps->min_lod;
       max_lod = ps->max_lod;
    }
@@ -183,8 +182,7 @@ define_sampler_state_object(struct svga_context *svga,
    STATIC_ASSERT(PIPE_TEX_COMPARE_R_TO_TEXTURE == 1);
    ss->id[1] = SVGA3D_INVALID_ID;
 
-   unsigned i;
-   for (i = 0; i <= ss->compare_mode; i++) {
+   for (unsigned i = 0; i <= ss->compare_mode; i++) {
       ss->id[i] = util_bitmask_add(svga->sampler_object_id_bm);
 
       SVGA_RETRY(svga, SVGA3D_vgpu10_DefineSamplerState
@@ -212,15 +210,15 @@ svga_create_sampler_state(struct pipe_context *pipe,
                           const struct pipe_sampler_state *sampler)
 {
    struct svga_context *svga = svga_context(pipe);
-   struct svga_sampler_state *cso = CALLOC_STRUCT( svga_sampler_state );
+   struct svga_sampler_state *cso = CALLOC_STRUCT(svga_sampler_state);
 
    if (!cso)
       return NULL;
 
    cso->mipfilter = translate_mip_filter(sampler->min_mip_filter);
-   cso->magfilter = translate_img_filter( sampler->mag_img_filter );
-   cso->minfilter = translate_img_filter( sampler->min_img_filter );
-   cso->aniso_level = MAX2( sampler->max_anisotropy, 1 );
+   cso->magfilter = translate_img_filter(sampler->mag_img_filter);
+   cso->minfilter = translate_img_filter(sampler->min_img_filter);
+   cso->aniso_level = MAX2(sampler->max_anisotropy, 1);
    if (sampler->max_anisotropy)
       cso->magfilter = cso->minfilter = SVGA3D_TEX_FILTER_ANISOTROPIC;
    cso->lod_bias = sampler->lod_bias;
@@ -282,7 +280,6 @@ svga_bind_sampler_states(struct pipe_context *pipe,
                          void **samplers)
 {
    struct svga_context *svga = svga_context(pipe);
-   unsigned i;
    bool any_change = false;
 
    assert(shader < PIPE_SHADER_TYPES);
@@ -292,7 +289,7 @@ svga_bind_sampler_states(struct pipe_context *pipe,
    if (!svga_have_vgpu10(svga) && shader != PIPE_SHADER_FRAGMENT)
       return;
 
-   for (i = 0; i < num; i++) {
+   for (unsigned i = 0; i < num; i++) {
       if (svga->curr.sampler[shader][start + i] != samplers[i])
          any_change = true;
       svga->curr.sampler[shader][start + i] = samplers[i];
@@ -401,7 +398,6 @@ svga_set_sampler_views(struct pipe_context *pipe,
    struct svga_context *svga = svga_context(pipe);
    unsigned flag_1d = 0;
    unsigned flag_srgb = 0;
-   uint i;
    bool any_change = false;
 
    assert(shader < PIPE_SHADER_TYPES);
@@ -424,13 +420,14 @@ svga_set_sampler_views(struct pipe_context *pipe,
     * differently than other shader types.
     */
    if (start == 0 && num == 0 && svga->curr.num_sampler_views[shader] > 0) {
-      for (i = 0; i < svga->curr.num_sampler_views[shader]; i++) {
+      for (unsigned i = 0; i < svga->curr.num_sampler_views[shader]; i++) {
          pipe_sampler_view_reference(&svga->curr.sampler_views[shader][i],
                                      NULL);
       }
       any_change = true;
    }
 
+   unsigned i;
    for (i = 0; i < num; i++) {
       enum pipe_texture_target target;
 
@@ -505,6 +502,7 @@ done:
    SVGA_STATS_TIME_POP(svga_sws(svga));
 }
 
+
 /**
  * Clean up sampler, sampler view state at context destruction time
  */
@@ -521,7 +519,7 @@ svga_cleanup_sampler_state(struct svga_context *svga)
                                      NULL);
       }
    }
-   
+
    /* free polygon stipple state */
    if (svga->polygon_stipple.sampler) {
       svga->pipe.delete_sampler_state(&svga->pipe, svga->polygon_stipple.sampler);
@@ -534,8 +532,9 @@ svga_cleanup_sampler_state(struct svga_context *svga)
    pipe_resource_reference(&svga->polygon_stipple.texture, NULL);
 }
 
+
 void
-svga_init_sampler_functions( struct svga_context *svga )
+svga_init_sampler_functions(struct svga_context *svga)
 {
    svga->pipe.create_sampler_state = svga_create_sampler_state;
    svga->pipe.bind_sampler_states = svga_bind_sampler_states;

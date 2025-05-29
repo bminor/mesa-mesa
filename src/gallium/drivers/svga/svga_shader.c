@@ -297,9 +297,9 @@ svga_init_shader_key_common(const struct svga_context *svga,
          enum pipe_texture_target target = view->target;
          assert(target < (1 << 4)); /* texture_target:4 */
 
-	 key->tex[i].target = target;
-	 key->tex[i].sampler_return_type = vgpu10_return_type(view->format);
-	 key->tex[i].sampler_view = 1;
+         key->tex[i].target = target;
+         key->tex[i].sampler_return_type = vgpu10_return_type(view->format);
+         key->tex[i].sampler_view = 1;
 
          /* 1D/2D array textures with one slice and cube map array textures
           * with one cube are treated as non-arrays by the SVGA3D device.
@@ -383,9 +383,8 @@ svga_init_shader_key_common(const struct svga_context *svga,
          key->tex[i].swizzle_g = swizzle_tab[view->swizzle_g];
          key->tex[i].swizzle_b = swizzle_tab[view->swizzle_b];
          key->tex[i].swizzle_a = swizzle_tab[view->swizzle_a];
-      }
-      else {
-	 key->tex[i].sampler_view = 0;
+      } else {
+         key->tex[i].sampler_view = 0;
       }
 
       if (sampler) {
@@ -393,7 +392,7 @@ svga_init_shader_key_common(const struct svga_context *svga,
             if (view) {
                assert(idx < (1 << 5));  /* width_height_idx:5 bitfield */
                key->tex[i].width_height_idx = idx++;
-	    }
+            }
             key->tex[i].unnormalized = true;
             ++key->num_unnormalized_coords;
 
@@ -489,7 +488,7 @@ svga_init_shader_key_common(const struct svga_context *svga,
             struct pipe_resource *resource = cur_image_view->desc.resource;
 
             if (resource) {
-	       key->images[i].return_type =
+               key->images[i].return_type =
                   vgpu10_return_type(cur_image_view->desc.format);
 
                key->images[i].is_array = resource->array_size > 1;
@@ -526,7 +525,7 @@ svga_init_shader_key_common(const struct svga_context *svga,
             key->raw_shaderbufs = svga->state.raw_shaderbufs[shader_type] &
                                   shader->info.shader_buffers_declared;
             key->srv_raw_shaderbuf_index = key->srv_raw_constbuf_index +
-		                           SVGA_MAX_CONST_BUFS;
+               SVGA_MAX_CONST_BUFS;
          }
 
          for (unsigned i = 0; i < ARRAY_SIZE(svga->curr.shader_buffers[shader_type]);

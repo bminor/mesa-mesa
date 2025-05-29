@@ -339,7 +339,7 @@ done:
    return ret;
 }
 
-struct svga_tracked_state svga_hw_vs = 
+struct svga_tracked_state svga_hw_vs =
 {
    "vertex shader (hwtnl)",
    (SVGA_NEW_VS |

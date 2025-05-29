@@ -203,10 +203,7 @@ update_state(struct svga_context *svga,
 #else
    bool debug = false;
 #endif
-   enum pipe_error ret = PIPE_OK;
-   unsigned i;
-
-   ret = svga_hwtnl_flush( svga->hwtnl );
+   enum pipe_error ret = svga_hwtnl_flush(svga->hwtnl);
    if (ret != PIPE_OK)
       return ret;
 
@@ -215,12 +212,9 @@ update_state(struct svga_context *svga,
        * state flags which are generated and checked to help ensure
        * state atoms are ordered correctly in the list.
        */
-      uint64_t examined, prev;
+      uint64_t examined = 0, prev = *state;
 
-      examined = 0;
-      prev = *state;
-
-      for (i = 0; atoms[i] != NULL; i++) {
+      for (unsigned i = 0; atoms[i] != NULL; i++) {
          uint64_t generated;
 
          assert(atoms[i]->dirty);
@@ -229,7 +223,7 @@ update_state(struct svga_context *svga,
          if (check_state(*state, atoms[i]->dirty)) {
             if (0)
                debug_printf("update: %s\n", atoms[i]->name);
-            ret = atoms[i]->update( svga, *state );
+            ret = atoms[i]->update(svga, *state);
             if (ret != PIPE_OK)
                return ret;
          }
@@ -248,11 +242,10 @@ update_state(struct svga_context *svga,
          prev = *state;
          accumulate_state(&examined, atoms[i]->dirty);
       }
-   }
-   else {
-      for (i = 0; atoms[i] != NULL; i++) {
+   } else {
+      for (unsigned i = 0; atoms[i] != NULL; i++) {
          if (check_state(*state, atoms[i]->dirty)) {
-            ret = atoms[i]->update( svga, *state );
+            ret = atoms[i]->update(svga, *state);
             if (ret != PIPE_OK)
                return ret;
          }
@@ -268,7 +261,6 @@ svga_update_state(struct svga_context *svga, unsigned max_level)
 {
    struct svga_screen *screen = svga_screen(svga->pipe.screen);
    enum pipe_error ret = PIPE_OK;
-   unsigned i;
 
    SVGA_STATS_TIME_PUSH(screen->sws, SVGA_STATS_TIME_UPDATESTATE);
 
@@ -281,13 +273,14 @@ svga_update_state(struct svga_context *svga, unsigned max_level)
       svga->dirty |= SVGA_NEW_TEXTURE;
    }
 
+   unsigned i;
    for (i = 0; i <= max_level; i++) {
       svga->dirty |= svga->state.dirty[i];
 
       if (svga->dirty) {
-         ret = update_state( svga,
+         ret = update_state(svga,
                              state_levels[i],
-                             &svga->dirty );
+                             &svga->dirty);
          if (ret != PIPE_OK)
             goto done;
 
@@ -318,7 +311,7 @@ svga_update_state_retry(struct svga_context *svga, unsigned max_level)
 {
    enum pipe_error ret;
 
-   SVGA_RETRY_OOM(svga, ret, svga_update_state( svga, max_level ));
+   SVGA_RETRY_OOM(svga, ret, svga_update_state(svga, max_level));
 
    return ret == PIPE_OK;
 }
@@ -366,14 +359,13 @@ svga_emit_initial_state(struct svga_context *svga)
 
       ret = SVGA3D_vgpu10_SetRasterizerState(svga->swc, id);
       return ret;
-   }
-   else {
+   } else {
       SVGA3dRenderState *rs;
       unsigned count = 0;
       const unsigned COUNT = 2;
       enum pipe_error ret;
 
-      ret = SVGA3D_BeginSetRenderState( svga->swc, &rs, COUNT );
+      ret = SVGA3D_BeginSetRenderState(svga->swc, &rs, COUNT);
       if (ret != PIPE_OK)
          return ret;
 
@@ -381,11 +373,11 @@ svga_emit_initial_state(struct svga_context *svga)
        * which is implemented on all backends.
        */
       EMIT_RS(rs, count, SVGA3D_RS_COORDINATETYPE,
-              SVGA3D_COORDINATE_LEFTHANDED );
-      EMIT_RS(rs, count, SVGA3D_RS_FRONTWINDING, SVGA3D_FRONTWINDING_CW );
+              SVGA3D_COORDINATE_LEFTHANDED);
+      EMIT_RS(rs, count, SVGA3D_RS_FRONTWINDING, SVGA3D_FRONTWINDING_CW);
 
-      assert( COUNT == count );
-      SVGA_FIFOCommitAll( svga->swc );
+      assert(COUNT == count);
+      SVGA_FIFOCommitAll(svga->swc);
 
       return PIPE_OK;
    }
@@ -415,6 +407,7 @@ static const struct svga_tracked_state *compute_state[] =
    &svga_hw_cs_constbufs,
    NULL
 };
+
 
 /**
  * Update compute state.

@@ -2108,7 +2108,7 @@ emit_rasterizer_register(struct svga_shader_emitter_v10 *emit)
 
 
 /**
- * Emit tokens for the "stream" register used by the 
+ * Emit tokens for the "stream" register used by the
  * DCL_STREAM, CUT_STREAM, EMIT_STREAM instructions.
  */
 static void
@@ -4316,7 +4316,6 @@ emit_gs_output_declarations(struct svga_shader_emitter_v10 *emit)
    unsigned i;
    VGPU10OpcodeToken0 opcode0;
    unsigned numStreamsSupported = 1;
-   int s;
 
    if (emit->version >= 50) {
       numStreamsSupported = ARRAY_SIZE(emit->info.num_stream_output_components);
@@ -4327,7 +4326,7 @@ emit_gs_output_declarations(struct svga_shader_emitter_v10 *emit)
     * stream 0, so any of the auxiliary output declarations will
     * go to stream 0.
     */
-   for (s = numStreamsSupported-1; s >= 0; s--) { 
+   for (int s = numStreamsSupported-1; s >= 0; s--) {
 
       if (emit->info.num_stream_output_components[s] == 0)
          continue;
@@ -4346,12 +4345,11 @@ emit_gs_output_declarations(struct svga_shader_emitter_v10 *emit)
       opcode0.primitiveTopology = emit->gs.prim_topology;
       emit_property_instruction(emit, opcode0, 0, 0);
 
-      for (i = 0; i < emit->info.num_outputs; i++) {
-         unsigned writemask;
-
+      for (unsigned i = 0; i < emit->info.num_outputs; i++) {
          /* find out the writemask for this stream */
-         writemask = output_writemask_for_stream(s, emit->info.output_streams[i],
-                                                 emit->output_usage_mask[i]);
+         unsigned writemask =
+            output_writemask_for_stream(s, emit->info.output_streams[i],
+                                        emit->output_usage_mask[i]);
 
          if (writemask) {
             enum tgsi_semantic semantic_name =
@@ -4360,7 +4358,7 @@ emit_gs_output_declarations(struct svga_shader_emitter_v10 *emit)
             /* TODO: Still need to take care of a special case where a
              *       single varying spans across multiple output registers.
              */
-            switch(semantic_name) {
+            switch (semantic_name) {
             case TGSI_SEMANTIC_PRIMID:
                emit_output_declaration(emit,
                                        VGPU10_OPCODE_DCL_OUTPUT_SGV, i,
@@ -8054,12 +8052,10 @@ emit_sincos(struct svga_shader_emitter_v10 *emit,
    begin_emit_instruction(emit);
    emit_opcode(emit, VGPU10_OPCODE_SINCOS, false);
 
-   if(inst->Instruction.Opcode == TGSI_OPCODE_SIN)
-   {
+   if (inst->Instruction.Opcode == TGSI_OPCODE_SIN) {
       emit_dst_register(emit, &tmp_dst_x);  /* first destination register */
       emit_null_dst_register(emit);  /* second destination register */
-   }
-   else {
+   } else {
       emit_null_dst_register(emit);
       emit_dst_register(emit, &tmp_dst_x);
    }
@@ -8336,8 +8332,7 @@ emit_comparison(struct svga_shader_emitter_v10 *emit,
    if (swapSrc) {
       emit_src_register(emit, src1);
       emit_src_register(emit, src0);
-   }
-   else {
+   } else {
       emit_src_register(emit, src0);
       emit_src_register(emit, src1);
    }
@@ -8553,8 +8548,7 @@ end_tex_swizzle(struct svga_shader_emitter_v10 *emit,
       emit_opcode(emit, VGPU10_OPCODE_AND, false);
       if (swz->swizzled) {
          emit_dst_register(emit, &swz->tmp_dst);
-      }
-      else {
+      } else {
          emit_dst_register(emit, swz->inst_dst);
       }
       emit_src_register(emit, &swz->tmp_src);
@@ -8792,8 +8786,7 @@ emit_tg4(struct svga_shader_emitter_v10 *emit,
          default:
             assert(!"Unexpected component in texture gather swizzle");
          }
-      }
-      else {
+      } else {
          select_swizzle = emit->key.tex[unit].swizzle_r;
       }
 
@@ -8801,8 +8794,7 @@ emit_tg4(struct svga_shader_emitter_v10 *emit,
          src = make_immediate_reg_float(emit, 1.0);
          emit_instruction_op1(emit, VGPU10_OPCODE_MOV, &inst->Dst[0], &src);
          return true;
-      }
-      else if (select_swizzle == PIPE_SWIZZLE_0) {
+      } else if (select_swizzle == PIPE_SWIZZLE_0) {
          src = make_immediate_reg_float(emit, 0.0);
          emit_instruction_op1(emit, VGPU10_OPCODE_MOV, &inst->Dst[0], &src);
          return true;
@@ -8819,18 +8811,15 @@ emit_tg4(struct svga_shader_emitter_v10 *emit,
          if (tgsi_is_shadow_target(target)) {
             emit_opcode(emit, VGPU10_OPCODE_GATHER4_PO_C,
                         inst->Instruction.Saturate);
-         }
-         else {
+         } else {
             emit_opcode(emit, VGPU10_OPCODE_GATHER4_PO,
                         inst->Instruction.Saturate);
          }
-      }
-      else {
+      } else {
          if (tgsi_is_shadow_target(target)) {
             emit_opcode(emit, VGPU10_OPCODE_GATHER4_C,
                         inst->Instruction.Saturate);
-         }
-         else {
+         } else {
             emit_opcode(emit, VGPU10_OPCODE_GATHER4,
                         inst->Instruction.Saturate);
          }
@@ -8866,16 +8855,14 @@ emit_tg4(struct svga_shader_emitter_v10 *emit,
          if (target == TGSI_TEXTURE_SHADOWCUBE_ARRAY) {
             ref = scalar_src(&inst->Src[1], TGSI_SWIZZLE_X);
             emit_tex_compare_refcoord(emit, target, &ref);
-         }
-         else {
+         } else {
             emit_tex_compare_refcoord(emit, target, &src);
          }
       }
 
       end_emit_instruction(emit);
       free_temp_indexes(emit);
-   }
-   else {
+   } else {
       /* Only a single channel is supported in SM4_1 and we report
        * pipe_caps.max_texture_gather_components = 1.
        * Only the 0th component will be gathered.
@@ -9115,8 +9102,7 @@ emit_txf(struct svga_shader_emitter_v10 *emit,
       emit_resource_register(emit, unit);
       emit_src_register(emit, &sampleIndex);
       end_emit_instruction(emit);
-   }
-   else {
+   } else {
       /* Fetch one texel specified by integer coordinate */
       /* LD dst, coord(s0), resource */
       begin_emit_instruction(emit);
@@ -9158,8 +9144,7 @@ emit_txl_txb(struct svga_shader_emitter_v10 *emit,
    if (inst->Instruction.Opcode == TGSI_OPCODE_TXB2) {
       lod_bias = scalar_src(&inst->Src[1], TGSI_SWIZZLE_X);
       unit = inst->Src[2].Register.Index;
-   }
-   else {
+   } else {
       lod_bias = scalar_src(&inst->Src[0], TGSI_SWIZZLE_W);
       unit = inst->Src[1].Register.Index;
    }
@@ -9175,8 +9160,7 @@ emit_txl_txb(struct svga_shader_emitter_v10 *emit,
    begin_emit_instruction(emit);
    if (inst->Instruction.Opcode == TGSI_OPCODE_TXL) {
       opcode = VGPU10_OPCODE_SAMPLE_L;
-   }
-   else {
+   } else {
       opcode = VGPU10_OPCODE_SAMPLE_B;
    }
    emit_sample_opcode(emit, opcode, inst->Instruction.Saturate, offsets);
@@ -9652,7 +9636,7 @@ emit_dtrunc(struct svga_shader_emitter_v10 *emit,
    struct tgsi_full_src_register tmp2_src = make_src_temp_reg(tmp2_index);
    struct tgsi_full_src_register cond_src_xy =
       swizzle_src(&cond_src, PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y,
-		             PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y);
+                  PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y);
    struct tgsi_full_src_register one =
                make_immediate_reg_double(emit, 1.0);
 
@@ -9733,8 +9717,7 @@ emit_simple(struct svga_shader_emitter_v10 *emit,
 
    if (inst->Instruction.Opcode == TGSI_OPCODE_BGNLOOP) {
       emit->current_loop_depth++;
-   }
-   else if (inst->Instruction.Opcode == TGSI_OPCODE_ENDLOOP) {
+   } else if (inst->Instruction.Opcode == TGSI_OPCODE_ENDLOOP) {
       emit->current_loop_depth--;
    }
 
@@ -10051,10 +10034,9 @@ emit_vmware(struct svga_shader_emitter_v10 *emit,
    const struct tgsi_opcode_info *op = tgsi_get_opcode_info(opcode);
    const bool dbl_dst = opcode_has_dbl_dst(inst->Instruction.Opcode);
    const bool dbl_src = opcode_has_dbl_src(inst->Instruction.Opcode);
-   unsigned i;
    struct tgsi_full_src_register src[3];
 
-   for (i = 0; i < op->num_src; i++) {
+   for (unsigned i = 0; i < op->num_src; i++) {
       if (dbl_src)
          src[i] = check_double_src(emit, &inst->Src[i]);
       else
@@ -10075,7 +10057,7 @@ emit_vmware(struct svga_shader_emitter_v10 *emit,
       emit_dst_register(emit, &inst->Dst[0]);
       emit_null_dst_register(emit);
    } else {
-      for (i = 0; i < op->num_dst; i++) {
+      for (unsigned i = 0; i < op->num_dst; i++) {
          if (dbl_dst) {
             check_double_dst_writemask(inst);
          }
@@ -10083,7 +10065,7 @@ emit_vmware(struct svga_shader_emitter_v10 *emit,
       }
    }
 
-   for (i = 0; i < op->num_src; i++) {
+   for (unsigned i = 0; i < op->num_src; i++) {
       emit_src_register(emit, &src[i]);
    }
    end_emit_instruction(emit);
@@ -11875,7 +11857,7 @@ find_prescale_from_cbuf(struct svga_shader_emitter_v10 *emit,
    }
 
    struct tgsi_full_src_register index_src =
-	                            make_immediate_reg_int(emit, index);
+      make_immediate_reg_int(emit, index);
 
    if (index == 0) {
       /* GE tmp, vp_index, index */
@@ -11941,7 +11923,7 @@ emit_temp_prescale_instructions(struct svga_shader_emitter_v10 *emit)
 
       find_prescale_from_cbuf(emit, 0, emit->vposition.num_prescale,
                               &vp_index_src_x,
-		              &prescale_scale, &prescale_translate,
+                              &prescale_scale, &prescale_translate,
                               &tmp_src_x, &tmp_dst);
    }
 
@@ -12295,13 +12277,12 @@ emit_alpha_to_one_instructions(struct svga_shader_emitter_v10 *emit,
                                unsigned fs_color_tmp_index)
 {
    struct tgsi_full_src_register one = make_immediate_reg_float(emit, 1.0f);
-   unsigned i;
 
    /* Note: it's not 100% clear from the spec if we're supposed to clobber
     * the alpha for all render targets.  But that's what NVIDIA does and
     * that's what Piglit tests.
     */
-   for (i = 0; i < emit->fs.num_color_outputs; i++) {
+   for (unsigned i = 0; i < emit->fs.num_color_outputs; i++) {
       struct tgsi_full_dst_register color_dst;
 
       if (fs_color_tmp_index != INVALID_INDEX && i == 0) {
@@ -12383,7 +12364,6 @@ emit_broadcast_color_instructions(struct svga_shader_emitter_v10 *emit,
                                  unsigned fs_color_tmp_index)
 {
    const unsigned n = emit->key.fs.write_color0_to_n_cbufs;
-   unsigned i;
    struct tgsi_full_src_register color_src;
 
    if (emit->key.fs.white_fragments) {
@@ -12398,7 +12378,7 @@ emit_broadcast_color_instructions(struct svga_shader_emitter_v10 *emit,
 
    assert(emit->unit == PIPE_SHADER_FRAGMENT);
 
-   for (i = 0; i < n; i++) {
+   for (unsigned i = 0; i < n; i++) {
       unsigned output_reg = emit->fs.color_out_index[i];
       struct tgsi_full_dst_register color_dst =
          make_dst_output_reg(output_reg);
@@ -12518,7 +12498,7 @@ emit_rawbuf_instruction(struct svga_shader_emitter_v10 *emit,
          int immpos = find_immediate(emit, imm, 0);
          if (immpos < 0) {
             UNUSED unsigned element_index_imm =
-		                add_immediate_int(emit, element_index);
+               add_immediate_int(emit, element_index);
          }
          element_src = make_immediate_reg_int(emit, element_index);
       }
@@ -12815,7 +12795,7 @@ transform_fs_pstipple(struct svga_shader_emitter_v10 *emit,
  */
 static const struct tgsi_token *
 transform_fs_aapoint(struct svga_context *svga,
-		     const struct tgsi_token *tokens,
+                     const struct tgsi_token *tokens,
                      int aa_coord_index)
 {
    bool need_texcoord_semantic =
@@ -12863,8 +12843,7 @@ compute_input_mapping(struct svga_context *svga,
    if (prevShader != NULL) {
       svga_link_shaders(&prevShader->tgsi_info, &emit->info, &emit->linkage);
       emit->prevShaderInfo = &prevShader->tgsi_info;
-   } 
-   else {
+   } else {
       /**
        * Since vertex shader does not need to go through the linker to
        * establish the input map, we need to make sure the highest index
@@ -13086,7 +13065,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
       }
       if (key->fs.aa_point) {
          tokens = transform_fs_aapoint(svga, tokens,
-			               key->fs.aa_point_coord_index);
+                                       key->fs.aa_point_coord_index);
       }
    }
 

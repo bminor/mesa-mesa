@@ -269,7 +269,7 @@ emulate_point_sprite(struct svga_context *svga,
                                          key.gs.sprite_coord_enable,
                                          key.gs.sprite_origin_upper_left,
                                          key.gs.point_pos_stream_out,
-					 has_texcoord_semantic,
+                                         has_texcoord_semantic,
                                          key.gs.aa_point ?
                                             &aa_point_coord_index : NULL);
 

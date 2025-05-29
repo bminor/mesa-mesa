@@ -15,14 +15,17 @@
 struct svga_context;
 
 
-void svga_init_state( struct svga_context *svga );
-void svga_destroy_state( struct svga_context *svga );
+void
+svga_init_state(struct svga_context *svga);
+
+void
+svga_destroy_state(struct svga_context *svga);
 
 
 struct svga_tracked_state {
    const char *name;
    uint64_t dirty;
-   enum pipe_error (*update)( struct svga_context *svga, uint64_t dirty );
+   enum pipe_error (*update)(struct svga_context *svga, uint64_t dirty);
 };
 
 /* NEED_SWTNL
@@ -90,24 +93,32 @@ extern struct svga_tracked_state svga_update_swtnl_vdecl;
 #define SVGA_STATE_MAX               4
 
 
-enum pipe_error svga_update_state( struct svga_context *svga,
-                                   unsigned level );
+enum pipe_error
+svga_update_state(struct svga_context *svga, unsigned level);
 
-bool svga_update_state_retry(struct svga_context *svga, unsigned level);
+bool
+svga_update_state_retry(struct svga_context *svga, unsigned level);
 
-enum pipe_error svga_emit_initial_state( struct svga_context *svga );
+enum pipe_error
+svga_emit_initial_state(struct svga_context *svga);
 
-enum pipe_error svga_reemit_framebuffer_bindings( struct svga_context *svga );
+enum pipe_error
+svga_reemit_framebuffer_bindings(struct svga_context *svga);
 
-enum pipe_error svga_rebind_framebuffer_bindings( struct svga_context *svga );
+enum pipe_error
+svga_rebind_framebuffer_bindings(struct svga_context *svga);
 
-enum pipe_error svga_reemit_tss_bindings( struct svga_context *svga );
+enum pipe_error
+svga_reemit_tss_bindings(struct svga_context *svga);
 
-enum pipe_error svga_reemit_vs_bindings(struct svga_context *svga);
+enum pipe_error
+svga_reemit_vs_bindings(struct svga_context *svga);
 
-enum pipe_error svga_reemit_fs_bindings(struct svga_context *svga);
+enum pipe_error
+svga_reemit_fs_bindings(struct svga_context *svga);
 
-void svga_init_tracked_state(struct svga_context *svga);
+void
+svga_init_tracked_state(struct svga_context *svga);
 
 void *
 svga_create_fs_state(struct pipe_context *pipe,

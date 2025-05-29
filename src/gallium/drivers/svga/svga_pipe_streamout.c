@@ -583,7 +583,7 @@ svga_begin_stream_output_queries(struct svga_context *svga,
          ret = svga->pipe.begin_query(&svga->pipe, svga->so_queries[i]);
       }
       (void) ret;
-   }   
+   }
    svga->in_streamout = true;
 
    return;
@@ -608,7 +608,7 @@ svga_end_stream_output_queries(struct svga_context *svga,
          ret = svga->pipe.end_query(&svga->pipe, svga->so_queries[i]);
       }
       (void) ret;
-   }   
+   }
    svga->in_streamout = false;
 
    return;

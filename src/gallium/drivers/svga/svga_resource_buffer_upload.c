@@ -42,10 +42,10 @@ svga_buffer_upload_ranges(struct svga_context *, struct svga_buffer *);
  * to avoid recursion.
  */
 struct svga_winsys_buffer *
-svga_winsys_buffer_create( struct svga_context *svga,
-                           unsigned alignment,
-                           unsigned usage,
-                           unsigned size )
+svga_winsys_buffer_create(struct svga_context *svga,
+                          unsigned alignment,
+                          unsigned usage,
+                          unsigned size)
 {
    struct svga_screen *svgascreen = svga_screen(svga->pipe.screen);
    struct svga_winsys_screen *sws = svgascreen->sws;
@@ -198,7 +198,7 @@ svga_buffer_create_host_surface(struct svga_screen *ss,
              * surface cannot have other bind flags.
              */
             if ((bind_flags & PIPE_BIND_CONSTANT_BUFFER) == 0) {
-	       sbuf->key.flags |= SVGA3D_SURFACE_BIND_UAVIEW |
+               sbuf->key.flags |= SVGA3D_SURFACE_BIND_UAVIEW |
                                   SVGA3D_SURFACE_BIND_RAW_VIEWS;
                bind_flags = bind_flags | PIPE_BIND_SHADER_BUFFER;
                //sbuf->key.flags |= SVGA3D_SURFACE_BIND_RAW_VIEWS;
@@ -238,14 +238,14 @@ svga_buffer_create_host_surface(struct svga_screen *ss,
 
       /* Add the new surface to the buffer surface list */
       sbuf->bufsurf = svga_buffer_add_host_surface(sbuf, sbuf->handle,
-		                                   &sbuf->key,
+                                                   &sbuf->key,
                                                    bind_flags);
       if (sbuf->bufsurf == NULL)
          return PIPE_ERROR_OUT_OF_MEMORY;
 
       sbuf->bufsurf->surface_state =
-	 invalidated ? SVGA_SURFACE_STATE_INVALIDATED :
-	               SVGA_SURFACE_STATE_CREATED;
+         invalidated ? SVGA_SURFACE_STATE_INVALIDATED :
+         SVGA_SURFACE_STATE_CREATED;
 
       if (ss->sws->have_gb_objects) {
          /* Initialize the surface with zero */
@@ -584,12 +584,10 @@ svga_buffer_upload_hb_command(struct svga_context *svga,
    if (transfer == SVGA3D_WRITE_HOST_VRAM) {
       region_flags = SVGA_RELOC_READ;
       surface_flags = SVGA_RELOC_WRITE;
-   }
-   else if (transfer == SVGA3D_READ_HOST_VRAM) {
+   } else if (transfer == SVGA3D_READ_HOST_VRAM) {
       region_flags = SVGA_RELOC_WRITE;
       surface_flags = SVGA_RELOC_READ;
-   }
-   else {
+   } else {
       assert(0);
       return PIPE_ERROR_BAD_INPUT;
    }
@@ -696,8 +694,7 @@ svga_buffer_upload_flush(struct svga_context *svga, struct svga_buffer *sbuf)
          svga->hud.num_bytes_uploaded += box->w;
          svga->hud.num_buffer_uploads++;
       }
-   }
-   else {
+   } else {
       assert(sbuf->hwbuf);
       assert(sbuf->dma.boxes);
       SVGA_DBG(DEBUG_DMA, "dma to sid %p\n", sbuf->handle);
@@ -793,8 +790,7 @@ svga_buffer_add_range(struct svga_buffer *sbuf, unsigned start, unsigned end)
          sbuf->map.ranges[i].start = MIN2(sbuf->map.ranges[i].start, start);
          sbuf->map.ranges[i].end   = MAX2(sbuf->map.ranges[i].end,   end);
          return;
-      }
-      else {
+      } else {
          /*
           * Discontiguous ranges -- keep track of the nearest range.
           */
@@ -1005,8 +1001,7 @@ svga_buffer_upload_ranges(struct svga_context *svga,
                assert(!sbuf->head.prev && !sbuf->head.next);
                list_addtail(&sbuf->head, &svga->dirty_buffers);
             }
-         }
-         else if (ret == PIPE_ERROR_OUT_OF_MEMORY) {
+         } else if (ret == PIPE_ERROR_OUT_OF_MEMORY) {
             /*
              * The buffer is too big to fit in the GMR aperture, so break it in
              * smaller pieces.
@@ -1022,15 +1017,13 @@ svga_buffer_upload_ranges(struct svga_context *svga,
             assert(0);
             sbuf->map.num_ranges = 0;
          }
-      }
-      else {
+      } else {
          /*
           * There a pending dma already. Make sure it is from this context.
           */
          assert(sbuf->dma.svga == svga);
       }
    }
-   return;
 }
 
 

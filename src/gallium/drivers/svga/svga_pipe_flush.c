@@ -14,15 +14,16 @@
 #include "svga_debug.h"
 
 
-static void svga_flush( struct pipe_context *pipe,
-                        struct pipe_fence_handle **fence,
-                        unsigned flags)
+static void
+svga_flush(struct pipe_context *pipe,
+           struct pipe_fence_handle **fence,
+           unsigned flags)
 {
    struct svga_context *svga = svga_context(pipe);
 
    /* Emit buffered drawing commands, and any back copies.
     */
-   svga_surfaces_flush( svga );
+   svga_surfaces_flush(svga);
 
    if (flags & PIPE_FLUSH_FENCE_FD)
       svga->swc->hints |= SVGA_HINT_FLAG_EXPORT_FENCE_FD;
@@ -94,7 +95,8 @@ svga_fence_server_sync(struct pipe_context *pipe,
 }
 
 
-void svga_init_flush_functions( struct svga_context *svga )
+void
+svga_init_flush_functions(struct svga_context *svga)
 {
    svga->pipe.flush = svga_flush;
    svga->pipe.create_fence_fd = svga_create_fence_fd;

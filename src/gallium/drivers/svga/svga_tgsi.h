@@ -28,15 +28,15 @@ struct svga_shader_variant;
  * The real use of this information is matching vertex elements to
  * fragment shader inputs in the case where vertex shader is disabled.
  */
-static inline void svga_generate_vdecl_semantics( unsigned idx,
-                                                  unsigned *usage,
-                                                  unsigned *usage_index )
+static inline void
+svga_generate_vdecl_semantics(unsigned idx,
+                              unsigned *usage,
+                              unsigned *usage_index)
 {
    if (idx == 0) {
       *usage = SVGA3D_DECLUSAGE_POSITION;
       *usage_index = 0;
-   }
-   else {
+   } else {
       *usage = SVGA3D_DECLUSAGE_TEXCOORD;
       *usage_index = idx - 1;
    }
@@ -65,4 +65,5 @@ struct svga_shader_variant *
 svga_tgsi_compile_shader(struct svga_context *svga,
                          struct svga_shader *shader,
                          const struct svga_compile_key *key);
+
 #endif

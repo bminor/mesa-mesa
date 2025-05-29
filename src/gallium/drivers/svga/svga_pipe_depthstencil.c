@@ -102,7 +102,7 @@ define_depth_stencil_state_object(struct svga_context *svga,
 
 static void *
 svga_create_depth_stencil_state(struct pipe_context *pipe,
-				const struct pipe_depth_stencil_alpha_state *templ)
+                                const struct pipe_depth_stencil_alpha_state *templ)
 {
    struct svga_context *svga = svga_context(pipe);
    struct svga_depth_stencil_state *ds = CALLOC_STRUCT(svga_depth_stencil_state);

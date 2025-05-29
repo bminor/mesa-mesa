@@ -15,9 +15,11 @@ struct pipe_context;
 struct vbuf_render;
 
 
-bool svga_init_swtnl( struct svga_context *svga );
-void svga_destroy_swtnl( struct svga_context *svga );
+bool
+svga_init_swtnl(struct svga_context *svga);
 
+void
+svga_destroy_swtnl(struct svga_context *svga);
 
 enum pipe_error
 svga_swtnl_draw_vbo(struct svga_context *svga,

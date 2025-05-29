@@ -98,7 +98,7 @@ svga_swtnl_draw_vbo(struct svga_context *svga,
    }
 
    draw_vbo(draw, info, drawid_offset, indirect, draw_one, 1,
-	    svga->patch_vertices);
+            svga->patch_vertices);
 
    draw_flush(svga->swtnl.draw);
 
