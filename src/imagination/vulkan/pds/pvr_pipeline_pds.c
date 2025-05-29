@@ -1582,7 +1582,8 @@ void pvr_pds_generate_descriptor_upload_program(
       case PVR_BUFFER_TYPE_FRONT_FACE_OP:
       case PVR_BUFFER_TYPE_FS_META:
       case PVR_BUFFER_TYPE_TILE_BUFFERS:
-      case PVR_BUFFER_TYPE_SPILL_INFO: {
+      case PVR_BUFFER_TYPE_SPILL_INFO:
+      case PVR_BUFFER_TYPE_SCRATCH_INFO: {
          struct pvr_const_map_entry_special_buffer *special_buffer_entry;
 
          special_buffer_entry =

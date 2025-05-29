@@ -199,6 +199,9 @@ typedef struct _pco_common_data {
    unsigned spilled_temps;
    pco_range spill_info; /* addr_lo, addr_hi, block_size */
 
+   unsigned scratch;
+   pco_range scratch_info; /* addr_lo, addr_hi, block_size */
+
    unsigned coeffs; /** Number of allocated coefficient registers. */
    unsigned shareds; /** Number of allocated shared registers. */
 

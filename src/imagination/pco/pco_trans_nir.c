@@ -1195,6 +1195,85 @@ static pco_instr *trans_global_atomic_buffer(trans_ctx *tctx,
    UNREACHABLE("");
 }
 
+static pco_instr *trans_scratch(trans_ctx *tctx,
+                                pco_ref dest,
+                                pco_ref offset_src,
+                                pco_ref data_src)
+{
+   const pco_common_data *common = &tctx->shader->data.common;
+
+   assert(common->scratch_info.count > 0);
+   unsigned base_addr_idx = common->scratch_info.start;
+   unsigned block_size_idx = common->scratch_info.start + 2;
+
+   pco_ref base_addr[2];
+   pco_ref_hwreg_addr_comps(base_addr_idx, PCO_REG_CLASS_SHARED, base_addr);
+
+   pco_ref block_size = pco_ref_hwreg(block_size_idx, PCO_REG_CLASS_SHARED);
+   pco_ref local_addr_inst_num =
+      pco_ref_hwreg(PCO_SR_LOCAL_ADDR_INST_NUM, PCO_REG_CLASS_SPEC);
+
+   pco_ref inst_base_addr[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, inst_base_addr);
+
+   pco_imadd64(&tctx->b,
+               inst_base_addr[0],
+               inst_base_addr[1],
+               block_size,
+               local_addr_inst_num,
+               base_addr[0],
+               base_addr[1],
+               pco_ref_null());
+
+   pco_ref addr_data_comps[3];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps);
+
+   pco_add64_32(&tctx->b,
+                addr_data_comps[0],
+                addr_data_comps[1],
+                inst_base_addr[0],
+                inst_base_addr[1],
+                offset_src,
+                pco_ref_null(),
+                .s = true);
+
+   bool is_load = pco_ref_is_null(data_src);
+   if (is_load) {
+      ASSERTED unsigned bits = pco_ref_get_bits(dest);
+
+      /* TODO: 8/16-bit support via masking. */
+      assert(bits == 32);
+
+      pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
+      pco_vec(&tctx->b, addr, 2, addr_data_comps);
+
+      unsigned chans = pco_ref_get_chans(dest);
+      return pco_ld(&tctx->b,
+                    dest,
+                    pco_ref_drc(PCO_DRC_0),
+                    pco_ref_imm8(chans),
+                    addr);
+   }
+
+   unsigned chans = pco_ref_get_chans(data_src);
+   pco_ref addr_data = pco_ref_new_ssa_addr_data(tctx->func, chans);
+
+   addr_data_comps[2] = data_src;
+   pco_vec(&tctx->b, addr_data, ARRAY_SIZE(addr_data_comps), addr_data_comps);
+
+   pco_ref data_comp = pco_ref_new_ssa(tctx->func,
+                                       pco_ref_get_bits(data_src),
+                                       pco_ref_get_chans(data_src));
+   pco_comp(&tctx->b, data_comp, addr_data, pco_ref_val16(2));
+
+   return pco_st32(&tctx->b,
+                   data_comp,
+                   pco_ref_drc(PCO_DRC_0),
+                   pco_ref_imm8(chans),
+                   addr_data,
+                   pco_ref_null());
+}
+
 static inline enum pco_reg_class sys_val_to_reg_class(gl_system_value sys_val,
                                                       mesa_shader_stage stage)
 {
@@ -1625,6 +1704,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_global_atomic_pco:
       instr = trans_global_atomic_buffer(tctx, intr, dest, src[0]);
+      break;
+
+   case nir_intrinsic_load_scratch:
+      instr = trans_scratch(tctx, dest, src[0], src[1]);
+      break;
+
+   case nir_intrinsic_store_scratch:
+      instr = trans_scratch(tctx, dest, src[1], src[0]);
       break;
 
    /* Vertex sysvals. */

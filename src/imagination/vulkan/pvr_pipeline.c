@@ -623,6 +623,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (data->common.scratch_info.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_SCRATCH_INFO,
+         .size_in_dwords = data->common.scratch_info.count,
+         .destination = data->common.scratch_info.start,
+      };
+   }
+
    if (stage == MESA_SHADER_FRAGMENT &&
        data->common.sys_vals[SYSTEM_VALUE_FRONT_FACE].count > 0) {
       program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
@@ -2418,6 +2426,15 @@ static void pvr_setup_descriptors(pco_data *data,
 
    if (true || data->common.spilled_temps) {
       data->common.spill_info = (pco_range){
+         .start = data->common.shareds,
+         .count = 3,
+      };
+
+      data->common.shareds += 3;
+   }
+
+   if (data->common.scratch) {
+      data->common.scratch_info = (pco_range){
          .start = data->common.shareds,
          .count = 3,
       };

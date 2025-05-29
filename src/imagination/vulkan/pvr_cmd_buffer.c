@@ -4020,6 +4020,43 @@ static VkResult pvr_setup_descriptor_mappings(
             break;
          }
 
+         case PVR_BUFFER_TYPE_SCRATCH_INFO: {
+            assert(data->common.scratch);
+            unsigned scratch_block_size = data->common.scratch;
+
+            /* TODO: 2048 is to account for each instance... do this
+             * programmatically!
+             */
+            struct pvr_suballoc_bo *scratch_buffer_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   NULL,
+                                                   scratch_block_size * 2048,
+                                                   &scratch_buffer_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            uint32_t scratch_info[3] = {
+               [0] = scratch_buffer_bo->dev_addr.addr & 0xffffffff,
+               [1] = scratch_buffer_bo->dev_addr.addr >> 32,
+               [2] = scratch_block_size,
+            };
+
+            struct pvr_suballoc_bo *scratch_info_bo;
+            result = pvr_cmd_buffer_upload_general(cmd_buffer,
+                                                   scratch_info,
+                                                   sizeof(scratch_info),
+                                                   &scratch_info_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      scratch_info_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }

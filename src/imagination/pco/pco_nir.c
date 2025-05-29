@@ -350,6 +350,8 @@ static void gather_common_data(nir_shader *nir, pco_data *data)
                               gather_common_data_pass,
                               nir_metadata_all,
                               data);
+
+   data->common.scratch = nir->scratch_size;
 }
 
 /**
@@ -535,6 +537,17 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             UINT32_MAX);
 
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+
+   if (!nir->info.internal) {
+      /* TODO: test with different size_threshold values. */
+      NIR_PASS(_,
+               nir,
+               nir_lower_vars_to_scratch,
+               nir_var_function_temp,
+               8,
+               glsl_get_natural_size_align_bytes,
+               glsl_get_word_size_align_bytes);
+   }
 
    NIR_PASS(_,
             nir,
