@@ -85,8 +85,6 @@ endif
 
 opencl_headers = files(
   'CL/cl.h',
-  'CL/cl.hpp',
-  'CL/cl2.hpp',
   'CL/cl_d3d10.h',
   'CL/cl_d3d11.h',
   'CL/cl_dx9_media_sharing.h',
@@ -104,5 +102,4 @@ opencl_headers = files(
   'CL/cl_va_api_media_sharing_intel.h',
   'CL/cl_version.h',
   'CL/opencl.h',
-  'CL/opencl.hpp',
 )

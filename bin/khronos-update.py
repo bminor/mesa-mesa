@@ -179,10 +179,6 @@ SOURCES = [
             Source('include/CL/cl_dx9_media_sharing_intel.h',    'https://github.com/KhronosGroup/OpenCL-Headers/raw/main/CL/cl_dx9_media_sharing_intel.h'),
             Source('include/CL/cl_ext_intel.h',                  'https://github.com/KhronosGroup/OpenCL-Headers/raw/main/CL/cl_ext_intel.h'),
             Source('include/CL/cl_va_api_media_sharing_intel.h', 'https://github.com/KhronosGroup/OpenCL-Headers/raw/main/CL/cl_va_api_media_sharing_intel.h'),
-
-            Source('include/CL/cl.hpp',                          'https://github.com/KhronosGroup/OpenCL-CLHPP/raw/5f3cc41df821a3e5988490232082a3e3b82c0283/include/CL/cl.hpp'),
-            Source('include/CL/cl2.hpp',                         'https://github.com/KhronosGroup/OpenCL-CLHPP/raw/main/include/CL/cl2.hpp'),
-            Source('include/CL/opencl.hpp',                      'https://github.com/KhronosGroup/OpenCL-CLHPP/raw/main/include/CL/opencl.hpp'),
         ],
     },
 
