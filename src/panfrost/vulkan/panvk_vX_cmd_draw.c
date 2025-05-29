@@ -726,11 +726,14 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
        dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
       const struct vk_rasterization_state *rs =
          &cmdbuf->vk.dynamic_graphics_state.rs;
-      VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
+      const struct vk_viewport_state *vp =
+         &cmdbuf->vk.dynamic_graphics_state.vp;
+      const VkViewport *viewport = &vp->viewports[0];
 
       /* Doing the viewport transform in the vertex shader and then depth
        * clipping with the viewport depth range gets a similar result to
@@ -764,13 +767,16 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
        *
        * px = width
        * py = height
-       * pz = maxDepth - minDepth
+       * pz = maxDepth - minDepth         if negativeOneToOne is false
+       * pz = (maxDepth - minDepth) / 2   if negativeOneToOne is true
        */
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.x,
                      0.5f * viewport->width);
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.y,
                      0.5f * viewport->height);
-      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.z, z_max - z_min);
+      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.scale.z,
+                     vp->depth_clip_negative_one_to_one ?
+                        0.5f * (z_max - z_min) : z_max - z_min);
 
       /* Upload the viewport offset. Defined as (ox, oy, oz) at the start of
        * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
@@ -778,13 +784,17 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
        *
        * ox = x + width/2
        * oy = y + height/2
-       * oz = minDepth
+       * oz = minDepth                    if negativeOneToOne is false
+       * oz = (maxDepth + minDepth) / 2   if negativeOneToOne is true
        */
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.x,
                      (0.5f * viewport->width) + viewport->x);
       set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.y,
                      (0.5f * viewport->height) + viewport->y);
-      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z, z_min);
+      set_gfx_sysval(cmdbuf, dirty_sysvals, viewport.offset.z,
+                     vp->depth_clip_negative_one_to_one ?
+                        0.5f * (z_min + z_max) : z_min);
+
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP))

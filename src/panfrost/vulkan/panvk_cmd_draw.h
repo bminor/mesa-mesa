@@ -228,10 +228,13 @@ struct panvk_device_draw_context {
 
 static inline void
 panvk_depth_range(const struct panvk_cmd_graphics_state *state,
+                  const struct vk_viewport_state *vp,
                   float *z_min, float *z_max)
 {
-   float a = state->sysvals.viewport.offset.z;
-   float b = a + state->sysvals.viewport.scale.z;
+   float a = vp->depth_clip_negative_one_to_one ?
+      state->sysvals.viewport.offset.z - state->sysvals.viewport.scale.z :
+      state->sysvals.viewport.offset.z;
+   float b = state->sysvals.viewport.offset.z + state->sysvals.viewport.scale.z;
    *z_min = MIN2(a, b);
    *z_max = MAX2(a, b);
 }

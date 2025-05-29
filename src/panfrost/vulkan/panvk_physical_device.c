@@ -288,6 +288,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_depth_bias_control = true,
       .EXT_depth_clamp_zero_one = true,
       .EXT_depth_clip_enable = true,
+      .EXT_depth_clip_control = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
 #endif
@@ -544,6 +545,9 @@ get_features(const struct panvk_instance *instance,
       .leastRepresentableValueForceUnormRepresentation = false,
       .floatRepresentation = false,
       .depthBiasExact = true,
+
+      /* VK_EXT_depth_clip_control */
+      .depthClipControl = true,
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
