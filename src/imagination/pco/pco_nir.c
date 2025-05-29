@@ -462,6 +462,14 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
    } while (progress);
 }
 
+static bool check_mem_writes(nir_builder *b,
+                             nir_intrinsic_instr *intr,
+                             UNUSED void *cb_data)
+{
+   b->shader->info.writes_memory |= nir_intrinsic_writes_external_memory(intr);
+   return false;
+}
+
 /**
  * \brief Runs pre-processing passes on a NIR shader.
  *
@@ -470,6 +478,9 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      nir_shader_intrinsics_pass(nir, check_mem_writes, nir_metadata_all, NULL);
+
    if (nir->info.stage == MESA_SHADER_COMPUTE)
       NIR_PASS(_, nir, pco_nir_compute_instance_check);
 
