@@ -164,28 +164,14 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
     */
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
       unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
-
       nir_def **output = s->out.outputs[slot];
-      nir_def *undef = nir_undef(b, 1, 32);
 
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
-         nir_def *values[4] = {0};
-         for (int c = start; c < start + count; ++c) {
-            if (!output[c]) {
-               /* The shader hasn't written this output. */
-               values[c - start] = undef;
-            } else {
-               assert(output[c]->bit_size == 32);
-               values[c - start] = output[c];
-            }
-         }
+      u_foreach_bit(c, mask) {
+         /* The shader hasn't written this output yet. */
+         if (!output[c])
+            continue;
 
-         nir_def *store_val = nir_vec(b, values, (unsigned)count);
-         nir_store_shared(b, store_val, gs_emit_vtx_addr,
-                          .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, slot, start),
-                          .align_mul = 4);
+         ac_nir_store_shared_gs_out(b, output[c], gs_emit_vtx_addr, &s->out, slot, c);
       }
 
       /* Clear all outputs (they are undefined after emit_vertex) */
@@ -202,21 +188,16 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
       nir_def **output_hi = s->out.outputs_16bit_hi[slot];
       nir_def *undef = nir_undef(b, 1, 16);
 
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
-         nir_def *values[4] = {0};
-         for (int c = start; c < start + count; ++c) {
-            nir_def *lo = output_lo[c] ? output_lo[c] : undef;
-            nir_def *hi = output_hi[c] ? output_hi[c] : undef;
+      u_foreach_bit(c, mask) {
+         /* The shader hasn't written this output yet. */
+         if (!output_lo[c] && !output_hi[c])
+            continue;
 
-            values[c - start] = nir_pack_32_2x16_split(b, lo, hi);
-         }
+         nir_def *lo = output_lo[c] ? output_lo[c] : undef;
+         nir_def *hi = output_hi[c] ? output_hi[c] : undef;
+         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
 
-         nir_def *store_val = nir_vec(b, values, (unsigned)count);
-         nir_store_shared(b, store_val, gs_emit_vtx_addr,
-                          .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_VAR0_16BIT + slot, start),
-                          .align_mul = 4);
+         ac_nir_store_shared_gs_out(b, store_val, gs_emit_vtx_addr, &s->out, VARYING_SLOT_VAR0_16BIT + slot, c);
       }
 
       /* Clear all outputs (they are undefined after emit_vertex) */
@@ -383,16 +364,9 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
       unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
 
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
-         nir_def *load =
-            nir_load_shared(b, count, 32, exported_out_vtx_lds_addr,
-                            .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, slot, start),
-                            .align_mul = 4);
-
-         for (int i = 0; i < count; i++)
-            s->out.outputs[slot][start + i] = nir_channel(b, load, i);
+      u_foreach_bit(c, mask) {
+         s->out.outputs[slot][c] = ac_nir_load_shared_gs_out(b, 32, exported_out_vtx_lds_addr,
+                                                             &s->out, slot, c);
       }
    }
 
@@ -402,24 +376,15 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
       const unsigned mask_hi = gs_output_component_mask_with_stream(&s->out.infos_16bit_hi[i], 0);
       unsigned mask = mask_lo | mask_hi;
 
-      while (mask) {
-         int start, count;
-         u_bit_scan_consecutive_range(&mask, &start, &count);
-         nir_def *load =
-            nir_load_shared(b, count, 32, exported_out_vtx_lds_addr,
-                            .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_VAR0_16BIT + i, start),
-                            .align_mul = 4);
+      u_foreach_bit(c, mask) {
+         nir_def *load_val = ac_nir_load_shared_gs_out(b, 32, exported_out_vtx_lds_addr,
+                                                       &s->out, VARYING_SLOT_VAR0_16BIT + i, c);
 
-         for (int j = 0; j < count; j++) {
-            nir_def *val = nir_channel(b, load, j);
-            unsigned comp = start + j;
+         if (mask_lo & BITFIELD_BIT(c))
+            s->out.outputs_16bit_lo[i][c] = nir_unpack_32_2x16_split_x(b, load_val);
 
-            if (mask_lo & BITFIELD_BIT(comp))
-               s->out.outputs_16bit_lo[i][comp] = nir_unpack_32_2x16_split_x(b, val);
-
-            if (mask_hi & BITFIELD_BIT(comp))
-               s->out.outputs_16bit_hi[i][comp] = nir_unpack_32_2x16_split_y(b, val);
-         }
+         if (mask_hi & BITFIELD_BIT(c))
+            s->out.outputs_16bit_hi[i][c] = nir_unpack_32_2x16_split_y(b, load_val);
       }
    }
 
@@ -630,11 +595,8 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
 
       for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
          /* Load X, Y, W position components. Z is loaded only if we clip against POS. */
-         for (unsigned c = 0; c < 4; c == 1 && !clip_against_pos ? c += 2 : c++) {
-            pos[i][c] = nir_load_shared(b, 1, 32, vtxptr[i],
-                                        .base = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_POS, c),
-                                        .align_mul = 4);
-         }
+         for (unsigned c = 0; c < 4; c == 1 && !clip_against_pos ? c += 2 : c++)
+            pos[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out, VARYING_SLOT_POS, c);
       }
 
       nir_def *accepted_by_clipdist = nir_imm_true(b);
@@ -650,8 +612,8 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
             if (!clip_against_pos) {
                for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
                   for (unsigned c = 0; c < 4; c++) {
-                     unsigned offset = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_CLIP_VERTEX, c);
-                     clipvertex[i][c] = nir_load_shared(b, 1, 32, vtxptr[i], .base = offset, .align_mul = 4);
+                     clipvertex[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out,
+                                                                  VARYING_SLOT_CLIP_VERTEX, c);
                   }
                }
             }
@@ -668,10 +630,10 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
          } else {
             /* Load clip distances. */
             u_foreach_bit(c, s->options->cull_clipdist_mask) {
-               unsigned offset = ac_nir_get_lds_gs_out_slot_offset(&s->out, VARYING_SLOT_CLIP_DIST0 + c / 4, c % 4);
-
-               for (unsigned i = 0; i < s->num_vertices_per_primitive; i++)
-                  clipdist[i][c] = nir_load_shared(b, 1, 32, vtxptr[i], .base = offset, .align_mul = 4);
+               for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
+                  clipdist[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out,
+                                                             VARYING_SLOT_CLIP_DIST0 + c / 4, c % 4);
+               }
             }
          }
 

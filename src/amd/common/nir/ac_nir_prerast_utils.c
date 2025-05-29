@@ -1310,7 +1310,7 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
    }
 }
 
-unsigned
+static unsigned
 ac_nir_get_lds_gs_out_slot_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component)
 {
    assert(component < 4);
@@ -1355,6 +1355,23 @@ ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, 
    }
 
    return lds_slot_offset + util_bitcount(lds_component_mask & BITFIELD_MASK(component)) * 4;
+}
+
+void
+ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                           gl_varying_slot slot, unsigned component)
+{
+   assert(value->num_components == 1);
+   unsigned offset = ac_nir_get_lds_gs_out_slot_offset(pr_out, slot, component);
+   nir_store_shared(b, value, vtxptr, .base = offset, .align_mul = 4);
+}
+
+nir_def *
+ac_nir_load_shared_gs_out(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+                          gl_varying_slot slot, unsigned component)
+{
+   unsigned offset = ac_nir_get_lds_gs_out_slot_offset(pr_out, slot, component);
+   return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
 }
 
 void
