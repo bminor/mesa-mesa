@@ -18,8 +18,16 @@ use rusticl_opencl_gen::*;
 use std::ffi::c_char;
 use std::ffi::c_void;
 use std::ffi::CStr;
+use std::mem;
 use std::ptr;
 use std::sync::Arc;
+
+const fn cl_icd_dispatch_default() -> cl_icd_dispatch {
+    const ELEMS: usize = mem::size_of::<cl_icd_dispatch>() / mem::size_of::<Option<fn()>>();
+
+    // SAFETY: cl_icd_dispatch is a list of function pointers and we set them all to None
+    unsafe { mem::transmute([None::<fn()>; ELEMS]) }
+}
 
 pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     anon_1: _cl_icd_dispatch__bindgen_ty_1 {
@@ -87,9 +95,9 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clEnqueueUnmapMemObject: Some(clEnqueueUnmapMemObject),
     clEnqueueNDRangeKernel: Some(clEnqueueNDRangeKernel),
     clEnqueueTask: Some(clEnqueueTask),
-    clEnqueueNativeKernel: None,
+    // clEnqueueNativeKernel: None,
     clEnqueueMarker: Some(clEnqueueMarker),
-    clEnqueueWaitForEvents: None,
+    // clEnqueueWaitForEvents: None,
     clEnqueueBarrier: Some(clEnqueueBarrier),
     clGetExtensionFunctionAddress: Some(clGetExtensionFunctionAddress),
     clCreateFromGLBuffer: Some(clCreateFromGLBuffer),
@@ -101,12 +109,6 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clEnqueueAcquireGLObjects: Some(clEnqueueAcquireGLObjects),
     clEnqueueReleaseGLObjects: Some(clEnqueueReleaseGLObjects),
     clGetGLContextInfoKHR: Some(clGetGLContextInfoKHR),
-    clGetDeviceIDsFromD3D10KHR: ptr::null_mut(),
-    clCreateFromD3D10BufferKHR: ptr::null_mut(),
-    clCreateFromD3D10Texture2DKHR: ptr::null_mut(),
-    clCreateFromD3D10Texture3DKHR: ptr::null_mut(),
-    clEnqueueAcquireD3D10ObjectsKHR: ptr::null_mut(),
-    clEnqueueReleaseD3D10ObjectsKHR: ptr::null_mut(),
     clSetEventCallback: Some(clSetEventCallback),
     clCreateSubBuffer: Some(clCreateSubBuffer),
     clSetMemObjectDestructorCallback: Some(clSetMemObjectDestructorCallback),
@@ -115,15 +117,15 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clEnqueueReadBufferRect: Some(clEnqueueReadBufferRect),
     clEnqueueWriteBufferRect: Some(clEnqueueWriteBufferRect),
     clEnqueueCopyBufferRect: Some(clEnqueueCopyBufferRect),
-    clCreateSubDevicesEXT: None,
-    clRetainDeviceEXT: None,
-    clReleaseDeviceEXT: None,
-    clCreateEventFromGLsyncKHR: None,
+    // clCreateSubDevicesEXT: None,
+    // clRetainDeviceEXT: None,
+    // clReleaseDeviceEXT: None,
+    // clCreateEventFromGLsyncKHR: None,
     clCreateSubDevices: Some(clCreateSubDevices),
     clRetainDevice: Some(clRetainDevice),
     clReleaseDevice: Some(clReleaseDevice),
     clCreateImage: Some(clCreateImage),
-    clCreateProgramWithBuiltInKernels: None,
+    // clCreateProgramWithBuiltInKernels: None,
     clCompileProgram: Some(clCompileProgram),
     clLinkProgram: Some(clLinkProgram),
     clUnloadPlatformCompiler: Some(clUnloadPlatformCompiler),
@@ -135,20 +137,10 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clEnqueueBarrierWithWaitList: Some(clEnqueueBarrierWithWaitList),
     clGetExtensionFunctionAddressForPlatform: Some(clGetExtensionFunctionAddressForPlatform),
     clCreateFromGLTexture: Some(clCreateFromGLTexture),
-    clGetDeviceIDsFromD3D11KHR: ptr::null_mut(),
-    clCreateFromD3D11BufferKHR: ptr::null_mut(),
-    clCreateFromD3D11Texture2DKHR: ptr::null_mut(),
-    clCreateFromD3D11Texture3DKHR: ptr::null_mut(),
-    clCreateFromDX9MediaSurfaceKHR: ptr::null_mut(),
-    clEnqueueAcquireD3D11ObjectsKHR: ptr::null_mut(),
-    clEnqueueReleaseD3D11ObjectsKHR: ptr::null_mut(),
-    clGetDeviceIDsFromDX9MediaAdapterKHR: ptr::null_mut(),
-    clEnqueueAcquireDX9MediaSurfacesKHR: ptr::null_mut(),
-    clEnqueueReleaseDX9MediaSurfacesKHR: ptr::null_mut(),
-    clCreateFromEGLImageKHR: None,
-    clEnqueueAcquireEGLObjectsKHR: None,
-    clEnqueueReleaseEGLObjectsKHR: None,
-    clCreateEventFromEGLSyncKHR: None,
+    // clCreateFromEGLImageKHR: None,
+    // clEnqueueAcquireEGLObjectsKHR: None,
+    // clEnqueueReleaseEGLObjectsKHR: None,
+    // clCreateEventFromEGLSyncKHR: None,
     clCreateCommandQueueWithProperties: Some(clCreateCommandQueueWithProperties),
     clCreatePipe: Some(clCreatePipe),
     clGetPipeInfo: Some(clGetPipeInfo),
@@ -175,6 +167,7 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clCreateBufferWithProperties: Some(clCreateBufferWithProperties),
     clCreateImageWithProperties: Some(clCreateImageWithProperties),
     clSetContextDestructorCallback: Some(clSetContextDestructorCallback),
+    ..cl_icd_dispatch_default()
 };
 
 pub type CLError = cl_int;
