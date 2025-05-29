@@ -51,153 +51,33 @@ get_type(Program* program, aco_ptr<Instruction>& instr)
 
    if (program->gfx_level >= GFX11) {
       if (instr->isMIMG()) {
-         switch (instr->opcode) {
-         case aco_opcode::image_bvh_intersect_ray:
-         case aco_opcode::image_bvh64_intersect_ray:
-         case aco_opcode::image_bvh_dual_intersect_ray:
-         case aco_opcode::image_bvh8_intersect_ray: return clause_bvh;
-         case aco_opcode::image_atomic_swap:
-         case aco_opcode::image_atomic_cmpswap:
-         case aco_opcode::image_atomic_add:
-         case aco_opcode::image_atomic_sub:
-         case aco_opcode::image_atomic_rsub:
-         case aco_opcode::image_atomic_smin:
-         case aco_opcode::image_atomic_umin:
-         case aco_opcode::image_atomic_smax:
-         case aco_opcode::image_atomic_umax:
-         case aco_opcode::image_atomic_and:
-         case aco_opcode::image_atomic_or:
-         case aco_opcode::image_atomic_xor:
-         case aco_opcode::image_atomic_inc:
-         case aco_opcode::image_atomic_dec:
-         case aco_opcode::image_atomic_fcmpswap:
-         case aco_opcode::image_atomic_fmin:
-         case aco_opcode::image_atomic_fmax: return clause_mimg_atomic;
-         default:
-            if (instr->definitions.empty())
+         uint8_t vmem_type = get_vmem_type(program->gfx_level, instr.get());
+         switch (vmem_type) {
+         case vmem_bvh: return clause_bvh;
+         case vmem_sampler: return clause_mimg_sample;
+         case vmem_nosampler:
+            if (instr_info.is_atomic[(unsigned)instr->opcode])
+               return clause_mimg_atomic;
+            else if (instr->definitions.empty())
                return clause_mimg_store;
             else
-               return !instr->operands[1].isUndefined() && instr->operands[1].regClass() == s4
-                         ? clause_mimg_sample
-                         : clause_mimg_load;
+               return clause_mimg_load;
+         default: return clause_other;
          }
-      } else if (instr->isMTBUF() || instr->isScratch()) {
-         return instr->definitions.empty() ? clause_vmem_store : clause_vmem_load;
-      } else if (instr->isMUBUF()) {
-         switch (instr->opcode) {
-         case aco_opcode::buffer_atomic_add:
-         case aco_opcode::buffer_atomic_and_x2:
-         case aco_opcode::buffer_atomic_rsub:
-         case aco_opcode::buffer_atomic_umax:
-         case aco_opcode::buffer_atomic_dec:
-         case aco_opcode::buffer_atomic_smax:
-         case aco_opcode::buffer_atomic_fmax:
-         case aco_opcode::buffer_atomic_rsub_x2:
-         case aco_opcode::buffer_atomic_smin:
-         case aco_opcode::buffer_atomic_sub:
-         case aco_opcode::buffer_atomic_sub_x2:
-         case aco_opcode::buffer_atomic_xor_x2:
-         case aco_opcode::buffer_atomic_add_f32:
-         case aco_opcode::buffer_atomic_inc:
-         case aco_opcode::buffer_atomic_swap_x2:
-         case aco_opcode::buffer_atomic_cmpswap:
-         case aco_opcode::buffer_atomic_fmin_x2:
-         case aco_opcode::buffer_atomic_umin:
-         case aco_opcode::buffer_atomic_or:
-         case aco_opcode::buffer_atomic_umax_x2:
-         case aco_opcode::buffer_atomic_smin_x2:
-         case aco_opcode::buffer_atomic_umin_x2:
-         case aco_opcode::buffer_atomic_cmpswap_x2:
-         case aco_opcode::buffer_atomic_add_x2:
-         case aco_opcode::buffer_atomic_swap:
-         case aco_opcode::buffer_atomic_and:
-         case aco_opcode::buffer_atomic_fmin:
-         case aco_opcode::buffer_atomic_fcmpswap_x2:
-         case aco_opcode::buffer_atomic_or_x2:
-         case aco_opcode::buffer_atomic_fcmpswap:
-         case aco_opcode::buffer_atomic_xor:
-         case aco_opcode::buffer_atomic_dec_x2:
-         case aco_opcode::buffer_atomic_fmax_x2:
-         case aco_opcode::buffer_atomic_csub:
-         case aco_opcode::buffer_atomic_inc_x2:
-         case aco_opcode::buffer_atomic_smax_x2: return clause_vmem_atomic;
-         default: return instr->definitions.empty() ? clause_vmem_store : clause_vmem_load;
-         }
-      } else if (instr->isGlobal()) {
-         switch (instr->opcode) {
-         case aco_opcode::global_atomic_swap:
-         case aco_opcode::global_atomic_umax:
-         case aco_opcode::global_atomic_cmpswap:
-         case aco_opcode::global_atomic_and_x2:
-         case aco_opcode::global_atomic_fmax:
-         case aco_opcode::global_atomic_smax_x2:
-         case aco_opcode::global_atomic_fmax_x2:
-         case aco_opcode::global_atomic_dec:
-         case aco_opcode::global_atomic_dec_x2:
-         case aco_opcode::global_atomic_umin:
-         case aco_opcode::global_atomic_fcmpswap_x2:
-         case aco_opcode::global_atomic_inc:
-         case aco_opcode::global_atomic_and:
-         case aco_opcode::global_atomic_fmin:
-         case aco_opcode::global_atomic_fcmpswap:
-         case aco_opcode::global_atomic_or_x2:
-         case aco_opcode::global_atomic_smax:
-         case aco_opcode::global_atomic_sub:
-         case aco_opcode::global_atomic_xor:
-         case aco_opcode::global_atomic_swap_x2:
-         case aco_opcode::global_atomic_umax_x2:
-         case aco_opcode::global_atomic_umin_x2:
-         case aco_opcode::global_atomic_xor_x2:
-         case aco_opcode::global_atomic_inc_x2:
-         case aco_opcode::global_atomic_fmin_x2:
-         case aco_opcode::global_atomic_add_f32:
-         case aco_opcode::global_atomic_add:
-         case aco_opcode::global_atomic_or:
-         case aco_opcode::global_atomic_add_x2:
-         case aco_opcode::global_atomic_smin_x2:
-         case aco_opcode::global_atomic_smin:
-         case aco_opcode::global_atomic_csub:
-         case aco_opcode::global_atomic_sub_x2:
-         case aco_opcode::global_atomic_cmpswap_x2: return clause_vmem_atomic;
-         default: return instr->definitions.empty() ? clause_vmem_store : clause_vmem_load;
-         }
+      } else if (instr->isMTBUF() || instr->isScratch() || instr->isMUBUF() || instr->isGlobal()) {
+         if (instr_info.is_atomic[(unsigned)instr->opcode])
+            return clause_vmem_atomic;
+         else if (instr->definitions.empty())
+            return clause_vmem_store;
+         else
+            return clause_vmem_load;
       } else if (instr->isFlat()) {
-         switch (instr->opcode) {
-         case aco_opcode::flat_atomic_smax:
-         case aco_opcode::flat_atomic_fcmpswap_x2:
-         case aco_opcode::flat_atomic_inc_x2:
-         case aco_opcode::flat_atomic_dec:
-         case aco_opcode::flat_atomic_fmin:
-         case aco_opcode::flat_atomic_umax_x2:
-         case aco_opcode::flat_atomic_add_f32:
-         case aco_opcode::flat_atomic_or:
-         case aco_opcode::flat_atomic_smax_x2:
-         case aco_opcode::flat_atomic_umin:
-         case aco_opcode::flat_atomic_sub:
-         case aco_opcode::flat_atomic_swap:
-         case aco_opcode::flat_atomic_swap_x2:
-         case aco_opcode::flat_atomic_cmpswap_x2:
-         case aco_opcode::flat_atomic_fcmpswap:
-         case aco_opcode::flat_atomic_add:
-         case aco_opcode::flat_atomic_umin_x2:
-         case aco_opcode::flat_atomic_xor_x2:
-         case aco_opcode::flat_atomic_smin:
-         case aco_opcode::flat_atomic_fmax_x2:
-         case aco_opcode::flat_atomic_cmpswap:
-         case aco_opcode::flat_atomic_dec_x2:
-         case aco_opcode::flat_atomic_sub_x2:
-         case aco_opcode::flat_atomic_add_x2:
-         case aco_opcode::flat_atomic_umax:
-         case aco_opcode::flat_atomic_xor:
-         case aco_opcode::flat_atomic_and_x2:
-         case aco_opcode::flat_atomic_inc:
-         case aco_opcode::flat_atomic_and:
-         case aco_opcode::flat_atomic_fmin_x2:
-         case aco_opcode::flat_atomic_smin_x2:
-         case aco_opcode::flat_atomic_or_x2:
-         case aco_opcode::flat_atomic_fmax: return clause_flat_atomic;
-         default: return instr->definitions.empty() ? clause_flat_store : clause_flat_load;
-         }
+         if (instr_info.is_atomic[(unsigned)instr->opcode])
+            return clause_flat_atomic;
+         else if (instr->definitions.empty())
+            return clause_flat_store;
+         else
+            return clause_flat_load;
       }
    } else {
       /* Exclude stores from clauses before GFX11. */
