@@ -364,7 +364,11 @@ radv_meta_resolve_hardware_image(struct radv_cmd_buffer *cmd_buffer, struct radv
 
    emit_resolve(cmd_buffer, src_image, dst_image, dst_format);
 
-   radv_CmdEndRendering(radv_cmd_buffer_to_handle(cmd_buffer));
+   const VkRenderingEndInfoKHR end_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
+   };
+
+   radv_CmdEndRendering2KHR(radv_cmd_buffer_to_handle(cmd_buffer), &end_info);
 
    radv_image_view_finish(&src_iview);
    radv_image_view_finish(&dst_iview);

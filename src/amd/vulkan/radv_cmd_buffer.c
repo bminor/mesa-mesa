@@ -10038,7 +10038,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdEndRendering(VkCommandBuffer commandBuffer)
+radv_CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR *pRenderingEndInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
 

@@ -209,7 +209,11 @@ radv_process_depth_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_i
 
    radv_CmdDraw(radv_cmd_buffer_to_handle(cmd_buffer), 3, 1, 0, 0);
 
-   radv_CmdEndRendering(radv_cmd_buffer_to_handle(cmd_buffer));
+   const VkRenderingEndInfoKHR end_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
+   };
+
+   radv_CmdEndRendering2KHR(radv_cmd_buffer_to_handle(cmd_buffer), &end_info);
 
    radv_image_view_finish(&iview);
 }
