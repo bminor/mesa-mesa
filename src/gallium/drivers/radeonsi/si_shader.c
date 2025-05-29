@@ -1170,7 +1170,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
          sel->screen->info.gfx_level >= GFX11 && !nir->info.vs.blit_sgprs_amd;
       options.export_primitive_id = key->ge.mono.u.vs_export_prim_id;
       options.instance_rate_inputs = instance_rate_inputs;
-      options.user_clip_plane_enable_mask = clip_plane_enable;
+      options.cull_clipdist_mask = clip_plane_enable;
 
       NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size);
    } else {

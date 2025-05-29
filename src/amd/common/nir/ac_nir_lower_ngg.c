@@ -881,7 +881,7 @@ clipdist_culling_es_part(nir_builder *b, lower_ngg_nogs_state *s,
                          nir_def *es_vertex_lds_addr)
 {
    /* no gl_ClipDistance used but we have user defined clip plane */
-   if (s->options->user_clip_plane_enable_mask && !s->has_clipdist) {
+   if (s->options->cull_clipdist_mask && !s->has_clipdist) {
       /* use gl_ClipVertex if defined */
       nir_variable *clip_vertex_var =
          b->shader->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_CLIP_VERTEX) ?
@@ -889,10 +889,7 @@ clipdist_culling_es_part(nir_builder *b, lower_ngg_nogs_state *s,
       nir_def *clip_vertex = nir_load_var(b, clip_vertex_var);
 
       /* clip against user defined clip planes */
-      for (unsigned i = 0; i < 8; i++) {
-         if (!(s->options->user_clip_plane_enable_mask & BITFIELD_BIT(i)))
-            continue;
-
+      u_foreach_bit(i, s->options->cull_clipdist_mask) {
          nir_def *plane = nir_load_user_clip_plane(b, .ucp_id = i);
          nir_def *dist = nir_fdot(b, clip_vertex, plane);
          add_clipdist_bit(b, dist, i, s->clipdist_neg_mask_var);
@@ -1045,7 +1042,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
    s->repacked_rel_patch_id = nir_local_variable_create(impl, glsl_uint_type(), "repacked_rel_patch_id");
 
    if (s->options->clip_cull_dist_mask ||
-       s->options->user_clip_plane_enable_mask) {
+       s->options->cull_clipdist_mask) {
       s->clip_vertex_var =
          nir_local_variable_create(impl, glsl_vec4_type(), "clip_vertex");
       s->clipdist_neg_mask_var =
