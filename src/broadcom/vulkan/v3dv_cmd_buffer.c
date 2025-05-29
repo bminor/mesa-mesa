@@ -409,7 +409,6 @@ job_compute_frame_tiling(struct v3dv_job *job,
    tiling->draw_tiles_y = DIV_ROUND_UP(height, tiling->tile_height);
 
    /* Size up our supertiles until we get under the limit */
-   const uint32_t max_supertiles = 256;
    tiling->supertile_width = 1;
    tiling->supertile_height = 1;
    for (;;) {
@@ -419,8 +418,16 @@ job_compute_frame_tiling(struct v3dv_job *job,
          DIV_ROUND_UP(tiling->draw_tiles_y, tiling->supertile_height);
       const uint32_t num_supertiles = tiling->frame_width_in_supertiles *
                                       tiling->frame_height_in_supertiles;
-      if (num_supertiles < max_supertiles)
+
+      /* While the hardware allows up to V3D_MAX_SUPERTILES, it doesn't allow
+       * 1xV3D_MAX_SUPERTILES or V3D_MAX_SUPERTILESx1 frame configurations; in
+       * these cases we need to increase the supertile size.
+       */
+      if (tiling->frame_width_in_supertiles < V3D_MAX_SUPERTILES &&
+          tiling->frame_height_in_supertiles < V3D_MAX_SUPERTILES &&
+          num_supertiles <= V3D_MAX_SUPERTILES) {
          break;
+      }
 
       if (tiling->supertile_width < tiling->supertile_height)
          tiling->supertile_width++;
