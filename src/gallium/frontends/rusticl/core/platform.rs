@@ -11,6 +11,7 @@ use rusticl_opencl_gen::*;
 
 use std::cmp;
 use std::env;
+use std::ffi::c_void;
 use std::num::NonZeroU64;
 use std::ops::Deref;
 use std::ptr;
@@ -39,6 +40,7 @@ impl Deref for PlatformVM<'_> {
 #[repr(C)]
 pub struct Platform {
     dispatch: &'static cl_icd_dispatch,
+    pub dispatch_data: usize,
     pub devs: Vec<Device>,
     pub extension_string: String,
     pub extensions: Vec<cl_name_version>,
@@ -76,6 +78,7 @@ static PLATFORM_ONCE: Once = Once::new();
 
 static mut PLATFORM: Platform = Platform {
     dispatch: &DISPATCH,
+    dispatch_data: 0,
     devs: Vec::new(),
     extension_string: String::new(),
     extensions: Vec::new(),
@@ -152,6 +155,15 @@ impl Platform {
         unsafe { &*addr_of!(PLATFORM) }
     }
 
+    /// # Safety
+    ///
+    /// The caller needs to guarantee that there is no concurrent access on the platform
+    unsafe fn get_mut() -> &'static mut Self {
+        debug_assert!(PLATFORM_ONCE.is_completed());
+        // SAFETY: the caller has to guarantee it's safe to call
+        unsafe { &mut *addr_of_mut!(PLATFORM) }
+    }
+
     pub fn dbg() -> &'static PlatformDebug {
         debug_assert!(PLATFORM_ENV_ONCE.is_completed());
         unsafe { &*addr_of!(PLATFORM_DBG) }
@@ -220,7 +232,7 @@ impl Platform {
         };
 
         // Add all platform extensions we don't expect devices to advertise.
-        add_ext(1, 0, 0, "cl_khr_icd");
+        add_ext(2, 0, 0, "cl_khr_icd");
 
         let mut exts;
         if let Some((first, rest)) = self.devs.split_first() {
@@ -245,6 +257,17 @@ impl Platform {
         self.extension_string = exts_str.join(" ");
     }
 
+    /// Updates the dispatch_data of the platform and all devices.
+    ///
+    /// This function is only supposed to be called once, but we don't really care about that.
+    pub fn init_icd_dispatch_data(&mut self, dispatch_data: *mut c_void) {
+        let dispatch_data = dispatch_data as usize;
+        self.dispatch_data = dispatch_data;
+        for dev in &mut self.devs {
+            dev.base.dispatch_data = dispatch_data;
+        }
+    }
+
     pub fn init_once() {
         PLATFORM_ENV_ONCE.call_once(load_env);
         // SAFETY: no concurrent static mut access due to std::Once
@@ -262,10 +285,23 @@ impl Drop for Platform {
 }
 
 pub trait GetPlatformRef {
+    /// # Safety
+    ///
+    /// The caller needs to guarantee that there is no concurrent access on the platform
+    unsafe fn get_mut(&self) -> CLResult<&'static mut Platform>;
     fn get_ref(&self) -> CLResult<&'static Platform>;
 }
 
 impl GetPlatformRef for cl_platform_id {
+    unsafe fn get_mut(&self) -> CLResult<&'static mut Platform> {
+        if !self.is_null() && *self == Platform::get().as_ptr() {
+            // SAFETY: the caller has to guarantee it's safe to call
+            Ok(unsafe { Platform::get_mut() })
+        } else {
+            Err(CL_INVALID_PLATFORM)
+        }
+    }
+
     fn get_ref(&self) -> CLResult<&'static Platform> {
         if !self.is_null() && *self == Platform::get().as_ptr() {
             Ok(Platform::get())

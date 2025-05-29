@@ -79,6 +79,18 @@ fn unload_platform_compiler(platform: cl_platform_id) -> CLResult<()> {
     Ok(())
 }
 
+#[cl_entrypoint(clIcdSetPlatformDispatchDataKHR)]
+fn icd_set_platform_dispatch_data(
+    platform: cl_platform_id,
+    dispatch_data: *mut ::std::os::raw::c_void,
+) -> CLResult<()> {
+    // SAFETY: this API is expected to be called from the ICD loader at initialization time and
+    //         therefore no concurrent access should exist.
+    let p = unsafe { platform.get_mut()? };
+    p.init_icd_dispatch_data(dispatch_data);
+    Ok(())
+}
+
 #[test]
 fn test_get_platform_info() {
     let mut s: usize = 0;

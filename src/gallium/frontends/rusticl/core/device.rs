@@ -1289,7 +1289,7 @@ impl Device {
         }
 
         Some(Device {
-            base: CLObjectBase::new(RusticlTypes::Device),
+            base: CLObjectBase::new_no_dispatch(RusticlTypes::Device),
             dev_base: dev_base,
             lib_clc: lib_clc?,
         })

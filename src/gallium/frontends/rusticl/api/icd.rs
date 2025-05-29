@@ -11,6 +11,7 @@ use crate::api::program::*;
 use crate::api::queue::*;
 use crate::api::types::*;
 use crate::api::util::*;
+use crate::core::platform::*;
 
 use mesa_rust_util::ptr::*;
 use rusticl_opencl_gen::*;
@@ -22,6 +23,13 @@ use std::mem;
 use std::ptr;
 use std::sync::Arc;
 
+// somehow bindgen ignores those
+#[cfg(target_pointer_width = "32")]
+const CL_ICD2_TAG_KHR: isize = 0x434C3331;
+
+#[cfg(target_pointer_width = "64")]
+const CL_ICD2_TAG_KHR: isize = 0x4F50454E434C3331;
+
 const fn cl_icd_dispatch_default() -> cl_icd_dispatch {
     const ELEMS: usize = mem::size_of::<cl_icd_dispatch>() / mem::size_of::<Option<fn()>>();
 
@@ -29,10 +37,45 @@ const fn cl_icd_dispatch_default() -> cl_icd_dispatch {
     unsafe { mem::transmute([None::<fn()>; ELEMS]) }
 }
 
-pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
-    anon_1: _cl_icd_dispatch__bindgen_ty_1 {
-        clGetPlatformIDs: Some(clGetPlatformIDs),
-    },
+macro_rules! cl_dispatch {
+    ([$($func:ident: Some($val:tt)),*$(,)?]) => {
+        pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
+            anon_1: _cl_icd_dispatch__bindgen_ty_1 {
+                clGetPlatformIDs_icd2_tag: CL_ICD2_TAG_KHR,
+            },
+            anon_2: _cl_icd_dispatch__bindgen_ty_2 {
+                clUnloadCompiler_icd2_tag: CL_ICD2_TAG_KHR,
+            },
+            $($func: Some($val)),*,
+            ..cl_icd_dispatch_default()
+        };
+
+        unsafe extern "C" fn clIcdGetFunctionAddressForPlatformKHR(
+            platform: cl_platform_id,
+            func_name: *const c_char,
+        ) -> *mut c_void {
+            // A return value of NULL indicates that [..] platform is not a valid platform for the
+            // implementation.
+            if platform.get_ref().is_err() {
+                return ptr::null_mut();
+            };
+
+            // SAFETY: func_name is a proper UTF-8 encoded nul terminated string.
+            let Ok(func_name) = unsafe { CStr::from_ptr(func_name) }.to_str() else {
+                return ptr::null_mut();
+            };
+
+            match func_name {
+                $(stringify!($func) => $val as _,)*
+                // A return value of NULL indicates that the specified function does not exist for
+                // platform.
+                _ => ptr::null_mut()
+            }
+        }
+    };
+}
+
+cl_dispatch!([
     clGetPlatformInfo: Some(clGetPlatformInfo),
     clGetDeviceIDs: Some(clGetDeviceIDs),
     clGetDeviceInfo: Some(clGetDeviceInfo),
@@ -63,9 +106,6 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clRetainProgram: Some(clRetainProgram),
     clReleaseProgram: Some(clReleaseProgram),
     clBuildProgram: Some(clBuildProgram),
-    anon_2: _cl_icd_dispatch__bindgen_ty_2 {
-        clUnloadCompiler: None,
-    },
     clGetProgramInfo: Some(clGetProgramInfo),
     clGetProgramBuildInfo: Some(clGetProgramBuildInfo),
     clCreateKernel: Some(clCreateKernel),
@@ -167,8 +207,7 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clCreateBufferWithProperties: Some(clCreateBufferWithProperties),
     clCreateImageWithProperties: Some(clCreateImageWithProperties),
     clSetContextDestructorCallback: Some(clSetContextDestructorCallback),
-    ..cl_icd_dispatch_default()
-};
+]);
 
 pub type CLError = cl_int;
 pub type CLResult<T> = Result<T, CLError>;
@@ -214,6 +253,7 @@ impl RusticlTypes {
 #[repr(C)]
 pub struct CLObjectBase<const ERR: i32> {
     dispatch: &'static cl_icd_dispatch,
+    pub dispatch_data: usize,
     rusticl_type: u32,
 }
 
@@ -221,6 +261,15 @@ impl<const ERR: i32> CLObjectBase<ERR> {
     pub fn new(t: RusticlTypes) -> Self {
         Self {
             dispatch: &DISPATCH,
+            dispatch_data: Platform::get().dispatch_data,
+            rusticl_type: t.u32(),
+        }
+    }
+
+    pub fn new_no_dispatch(t: RusticlTypes) -> Self {
+        Self {
+            dispatch: &DISPATCH,
+            dispatch_data: 0,
             rusticl_type: t.u32(),
         }
     }
@@ -484,6 +533,8 @@ extern "C" fn clGetExtensionFunctionAddress(
         // cl_khr_icd
         "clGetPlatformInfo" => cl_ext_func!(clGetPlatformInfo: clGetPlatformInfo_fn),
         "clIcdGetPlatformIDsKHR" => cl_ext_func!(clIcdGetPlatformIDsKHR: clIcdGetPlatformIDsKHR_fn),
+        "clIcdGetFunctionAddressForPlatformKHR" => cl_ext_func!(clIcdGetFunctionAddressForPlatformKHR: clIcdGetFunctionAddressForPlatformKHR_fn),
+        "clIcdSetPlatformDispatchDataKHR" => cl_ext_func!(clIcdSetPlatformDispatchDataKHR: clIcdSetPlatformDispatchDataKHR_fn),
 
         // cl_khr_il_program
         "clCreateProgramWithILKHR" => cl_ext_func!(clCreateProgramWithIL: clCreateProgramWithILKHR_fn),
