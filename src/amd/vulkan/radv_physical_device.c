@@ -603,6 +603,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_maintenance7 = true,
       .KHR_maintenance8 = true,
       .KHR_maintenance9 = true,
+      .KHR_maintenance10 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_performance_query = radv_perf_query_supported(pdev),
@@ -1420,6 +1421,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_EXT_shader_uniform_buffer_unsized_array */
       .shaderUniformBufferUnsizedArray = true,
+
+      /* VK_KHR_maintenance10 */
+      .maintenance10 = true,
    };
 }
 
@@ -2091,6 +2095,11 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
 
       /* VK_NV_cooperative_matrix2 */
       .cooperativeMatrixFlexibleDimensionsMaxDimension = 1024,
+
+      /* VK_KHR_maintenance10 */
+      .rgba4OpaqueBlackSwizzled = true,
+      .resolveSrgbFormatAppliesTransferFunction = true,
+      .resolveSrgbFormatSupportsTransferFunctionControl = true,
    };
 
    struct vk_properties *p = &pdev->vk.properties;
