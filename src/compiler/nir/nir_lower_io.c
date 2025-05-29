@@ -2932,6 +2932,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_buffer_amd:
    case nir_intrinsic_store_shared2_amd:
    case nir_intrinsic_store_shared_ir3:
+   case nir_intrinsic_load_ssbo_intel:
       return 1;
    case nir_intrinsic_store_ssbo:
    case nir_intrinsic_store_per_vertex_output:
@@ -2940,6 +2941,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_attribute_pan:
    case nir_intrinsic_store_ssbo_block_intel:
    case nir_intrinsic_store_buffer_amd:
+   case nir_intrinsic_store_ssbo_intel:
       return 2;
    case nir_intrinsic_load_ssbo_ir3:
       /* This intrinsic has 2 offsets (src1 bytes, src2 dwords), we return the
@@ -2985,6 +2987,7 @@ nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_smem_amd:
    case nir_intrinsic_ldc_nv:
    case nir_intrinsic_ldcx_nv:
+   case nir_intrinsic_load_ssbo_intel:
    case nir_intrinsic_load_ssbo_block_intel:
    case nir_intrinsic_store_global_block_intel:
    case nir_intrinsic_store_shared_block_intel:
@@ -2996,6 +2999,7 @@ nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
    case nir_intrinsic_store_ssbo_block_intel:
+   case nir_intrinsic_store_ssbo_intel:
       return 1;
    default:
       return -1;

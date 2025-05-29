@@ -223,6 +223,10 @@ process_instr(nir_builder *b, nir_instr *instr, void *s)
    case nir_intrinsic_store_buffer_amd:
       return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max),
                                  nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
+   case nir_intrinsic_load_ssbo_intel:
+      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max), true);
+   case nir_intrinsic_store_ssbo_intel:
+      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), true);
    case nir_intrinsic_load_ssbo_ir3:
       return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), true);
    case nir_intrinsic_store_ssbo_ir3:

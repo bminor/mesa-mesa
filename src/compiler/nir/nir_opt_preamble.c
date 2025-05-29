@@ -247,6 +247,7 @@ can_move_intrinsic(nir_intrinsic_instr *instr, opt_preamble_ctx *ctx)
    case nir_intrinsic_image_samples_identical:
    case nir_intrinsic_bindless_image_load:
    case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_ssbo_intel:
    case nir_intrinsic_load_ssbo_ir3:
    case nir_intrinsic_load_global_ir3:
    case nir_intrinsic_load_agx:

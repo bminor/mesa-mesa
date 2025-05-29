@@ -104,6 +104,7 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
          *can_mov_out_of_loop = false;
          return options & nir_move_load_ubo;
       case nir_intrinsic_load_ssbo:
+      case nir_intrinsic_load_ssbo_intel:
          *can_mov_out_of_loop = false;
          return (options & nir_move_load_ssbo) && nir_intrinsic_can_reorder(intrin);
       case nir_intrinsic_load_input:
