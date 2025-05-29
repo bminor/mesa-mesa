@@ -500,8 +500,10 @@ d3d12_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
          d3d12_replace_buffer_storage,
          NULL,
          &ctx->threaded_context);
-      ctx->threaded_context->bytes_replaced_limit = 1024 * 1024 * 1024; /* 1GiB */
-      threaded_context_init_bytes_mapped_limit(ctx->threaded_context, 4);
+      if (ctx->threaded_context) {
+         ctx->threaded_context->bytes_replaced_limit = 1024 * 1024 * 1024; /* 1GiB */
+         threaded_context_init_bytes_mapped_limit(ctx->threaded_context, 4);
+      }
       return ret;
    }
 
