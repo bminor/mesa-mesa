@@ -513,8 +513,15 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
 
    case MESA_SHADER_COMPUTE:
    case MESA_SHADER_KERNEL:
+   case MESA_SHADER_TASK:
       declare_global_desc_pointers(args);
       declare_per_stage_desc_pointers(args, shader, info, true);
+      if (stage == MESA_SHADER_TASK) {
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->task_ring_addr);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.task_ring_entry);
+      }
+      if (shader->info.uses_draw_id)
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
       if (shader->selector->info.uses_grid_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
       if (shader->selector->info.uses_variable_block_size)

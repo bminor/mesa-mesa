@@ -114,6 +114,12 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
          return;
       }
 
+      /* task ring entry and draw id
+       * note uses_draw_id is only available after shader variant creation
+       */
+      if (sel->stage == MESA_SHADER_TASK)
+         user_sgprs += shader->info.uses_draw_id ? 3 : 2;
+
       shader->config.rsrc1 = S_00B848_VGPRS((shader->config.num_vgprs - 1) /
                                             ((shader->wave_size == 32 ||
                                               sscreen->info.wave64_vgpr_alloc_granularity == 8) ? 8 : 4)) |
