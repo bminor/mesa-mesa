@@ -22,7 +22,9 @@ use std::ptr;
 use std::sync::Arc;
 
 pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
-    clGetPlatformIDs: Some(clGetPlatformIDs),
+    anon_1: _cl_icd_dispatch__bindgen_ty_1 {
+        clGetPlatformIDs: Some(clGetPlatformIDs),
+    },
     clGetPlatformInfo: Some(clGetPlatformInfo),
     clGetDeviceIDs: Some(clGetDeviceIDs),
     clGetDeviceInfo: Some(clGetDeviceInfo),
@@ -53,7 +55,9 @@ pub static DISPATCH: cl_icd_dispatch = cl_icd_dispatch {
     clRetainProgram: Some(clRetainProgram),
     clReleaseProgram: Some(clReleaseProgram),
     clBuildProgram: Some(clBuildProgram),
-    clUnloadCompiler: None,
+    anon_2: _cl_icd_dispatch__bindgen_ty_2 {
+        clUnloadCompiler: None,
+    },
     clGetProgramInfo: Some(clGetProgramInfo),
     clGetProgramBuildInfo: Some(clGetProgramBuildInfo),
     clCreateKernel: Some(clCreateKernel),
