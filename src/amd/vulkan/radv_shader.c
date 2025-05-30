@@ -794,6 +794,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    options.max_workgroup_size = info->workgroup_size;
    options.wave_size = info->wave_size;
    options.export_clipdist_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
+   options.cull_clipdist_mask = options.export_clipdist_mask;
    options.vs_output_param_offset = info->outinfo.vs_output_param_offset;
    options.has_param_exports = info->outinfo.param_exports || info->outinfo.prim_param_exports;
    options.can_cull = nir->info.stage != MESA_SHADER_GEOMETRY && info->has_ngg_culling;

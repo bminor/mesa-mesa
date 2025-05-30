@@ -148,13 +148,19 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_cull_any_enabled_amd: {
       nir_def *gs_tg_info = ac_nir_load_arg(b, &s->args->ac, s->args->ac.gs_tg_info);
 
-      /* Consider a workgroup small if it contains less than 16 triangles.
+      /* Cull only if the workgroup contains at least 16 triangles.
        *
        * The gs_tg_info[30:22] is the number of primitives, which we know is non-zero,
        * so the below is equivalent to: "ult(ubfe(gs_tg_info, 22, 9), 16)", but
        * ACO can optimize out the comparison to zero (see try_optimize_scc_nocompare).
        */
       nir_def *small_workgroup = nir_ieq_imm(b, nir_iand_imm(b, gs_tg_info, BITFIELD_RANGE(22 + 4, 9 - 4)), 0);
+
+      /* If clip or cull distances are present, always cull against them if the workgroup is large enough. */
+      if (b->shader->info.clip_distance_array_size || b->shader->info.cull_distance_array_size) {
+         replacement = nir_inot(b, small_workgroup);
+         break;
+      }
 
       nir_def *mask =
          nir_bcsel(b, small_workgroup, nir_imm_int(b, radv_nggc_none),
