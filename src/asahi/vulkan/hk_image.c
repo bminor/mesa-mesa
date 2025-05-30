@@ -59,26 +59,11 @@ hk_get_image_plane_format_features(struct hk_physical_device *pdev,
    if (!util_is_power_of_two_nonzero(util_format_get_blocksize(p_format)))
       return 0;
 
-   if (util_format_is_compressed(p_format)) {
-      /* Linear block-compressed images are all sorts of problematic, not sure
-       * if AGX even supports them. Don't try.
-       */
-      if (tiling != VK_IMAGE_TILING_OPTIMAL)
-         return 0;
-
-      /* XXX: Conformance fails, e.g.:
-       * dEQP-VK.pipeline.monolithic.sampler.view_type.2d.format.etc2_r8g8b8a1_unorm_block.mipmap.linear.lod.select_bias_3_7
-       *
-       * I suspect ail bug with mipmapping of compressed :-/
-       */
-      switch (util_format_description(p_format)->layout) {
-      case UTIL_FORMAT_LAYOUT_ETC:
-      case UTIL_FORMAT_LAYOUT_ASTC:
-         return 0;
-      default:
-         break;
-      }
-   }
+   /* Linear block-compressed images are all sorts of problematic, not sure
+    * if AGX even supports them. Don't try.
+    */
+   if (util_format_is_compressed(p_format) && tiling != VK_IMAGE_TILING_OPTIMAL)
+      return 0;
 
    if (ail_pixel_format[p_format].texturable) {
       features |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT;
