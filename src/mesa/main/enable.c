@@ -501,6 +501,7 @@ _mesa_set_enable(struct gl_context *ctx, GLenum cap, GLboolean state)
                         GL_POLYGON_BIT | GL_ENABLE_BIT);
          ctx->NewDriverState |= ST_NEW_RASTERIZER;
          ctx->Polygon.CullFlag = state;
+         _mesa_update_edgeflag_state_vao(ctx);
          break;
       case GL_DEPTH_TEST:
          if (ctx->Depth.Test == state)

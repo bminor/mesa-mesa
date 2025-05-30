@@ -70,6 +70,7 @@ cull_face(struct gl_context *ctx, GLenum mode, bool no_error)
                   GL_POLYGON_BIT);
    ctx->NewDriverState |= ST_NEW_RASTERIZER;
    ctx->Polygon.CullFaceMode = mode;
+   _mesa_update_edgeflag_state_vao(ctx);
 }
 
 
