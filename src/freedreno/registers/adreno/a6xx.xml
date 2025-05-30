@@ -462,6 +462,11 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0x0a61" name="CP_BV_PROTECT_STATUS" variants="A7XX"/>
 	<reg32 offset="0x0a64" name="CP_BV_HW_FAULT" variants="A7XX"/>
+	<reg32 offset="0x0a66" name="CP_BV_RB_RPTR" variants="A7XX"/>
+	<reg64 offset="0x0a6d" name="CP_BV_IB1_BASE" variants="A7XX"/>
+	<reg32 offset="0x0a70" name="CP_BV_IB1_REM_SIZE" variants="A7XX"/>
+	<reg64 offset="0x0a71" name="CP_BV_IB2_BASE" variants="A7XX"/>
+	<reg32 offset="0x0a74" name="CP_BV_IB2_REM_SIZE" variants="A7XX"/>
 	<reg32 offset="0x0a81" name="CP_BV_DRAW_STATE_ADDR" variants="A7XX"/>
 	<reg32 offset="0x0a82" name="CP_BV_DRAW_STATE_DATA" variants="A7XX"/>
 	<reg32 offset="0x0a83" name="CP_BV_ROQ_DBG_ADDR" variants="A7XX"/>
@@ -470,6 +475,20 @@ by a particular renderpass/blit.
 	<reg32 offset="0x0a86" name="CP_BV_SQE_UCODE_DBG_DATA" variants="A7XX"/>
 	<reg32 offset="0x0a87" name="CP_BV_SQE_STAT_ADDR" variants="A7XX"/>
 	<reg32 offset="0x0a88" name="CP_BV_SQE_STAT_DATA" variants="A7XX"/>
+
+	<reg32 offset="0x0a8f" name="CP_BV_ROQ_AVAIL_RB" variants="A7XX-">
+		<doc>number of remaining dwords incl current dword being consumed?</doc>
+		<bitfield name="REM" low="16" high="31"/>
+	</reg32>
+	<reg32 offset="0x0a90" name="CP_BV_ROQ_AVAIL_IB1" variants="A7XX-">
+		<doc>number of remaining dwords incl current dword being consumed?</doc>
+		<bitfield name="REM" low="16" high="31"/>
+	</reg32>
+	<reg32 offset="0x0a91" name="CP_BV_ROQ_AVAIL_IB2" variants="A7XX-">
+		<doc>number of remaining dwords incl current dword being consumed?</doc>
+		<bitfield name="REM" low="16" high="31"/>
+	</reg32>
+
 	<reg32 offset="0x0a96" name="CP_BV_MEM_POOL_DBG_ADDR" variants="A7XX"/>
 	<reg32 offset="0x0a97" name="CP_BV_MEM_POOL_DBG_DATA" variants="A7XX"/>
 	<reg64 offset="0x0a98" name="CP_BV_RB_RPTR_ADDR" variants="A7XX"/>
