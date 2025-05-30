@@ -295,34 +295,35 @@ static void si_set_global_binding(struct pipe_context *ctx, unsigned first, unsi
    }
 }
 
-static bool si_setup_compute_scratch_buffer(struct si_context *sctx, struct si_shader *shader)
+bool si_setup_compute_scratch_buffer(struct si_screen *screen,
+                                     struct si_shader *shader,
+                                     struct si_resource **scratch_buffer,
+                                     unsigned max_scratch_bytes_per_wave)
 {
-   uint64_t scratch_bo_size =
-      sctx->compute_scratch_buffer ? sctx->compute_scratch_buffer->b.b.width0 : 0;
-   uint64_t scratch_needed = (uint64_t)sctx->max_seen_compute_scratch_bytes_per_wave *
-                             sctx->screen->info.max_scratch_waves;
+   uint64_t scratch_bo_size = *scratch_buffer ? (*scratch_buffer)->b.b.width0 : 0;
+   uint64_t scratch_needed = (uint64_t)max_scratch_bytes_per_wave * screen->info.max_scratch_waves;
    assert(scratch_needed);
 
    if (scratch_bo_size < scratch_needed) {
-      si_resource_reference(&sctx->compute_scratch_buffer, NULL);
+      si_resource_reference(scratch_buffer, NULL);
 
-      sctx->compute_scratch_buffer =
-         si_aligned_buffer_create(&sctx->screen->b,
+      *scratch_buffer =
+         si_aligned_buffer_create(&screen->b,
                                   PIPE_RESOURCE_FLAG_UNMAPPABLE | SI_RESOURCE_FLAG_DRIVER_INTERNAL |
                                   SI_RESOURCE_FLAG_DISCARDABLE,
                                   PIPE_USAGE_DEFAULT,
-                                  scratch_needed, sctx->screen->info.pte_fragment_size);
+                                  scratch_needed, screen->info.pte_fragment_size);
 
-      if (!sctx->compute_scratch_buffer)
+      if (!*scratch_buffer)
          return false;
    }
 
    /* Set the scratch address in the shader binary. */
-   if (!sctx->screen->info.has_scratch_base_registers) {
-      uint64_t scratch_va = sctx->compute_scratch_buffer->gpu_address;
+   if (!screen->info.has_scratch_base_registers) {
+      uint64_t scratch_va = (*scratch_buffer)->gpu_address;
 
       if (shader->scratch_va != scratch_va) {
-         if (!si_shader_binary_upload(sctx->screen, shader, scratch_va))
+         if (!si_shader_binary_upload(screen, shader, scratch_va))
             return false;
 
          shader->scratch_va = scratch_va;
@@ -382,7 +383,9 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
       si_get_scratch_tmpring_size(sctx, config->scratch_bytes_per_wave, true,
                                   &sctx->compute_tmpring_size);
 
-      if (!si_setup_compute_scratch_buffer(sctx, shader))
+      if (!si_setup_compute_scratch_buffer(sctx->screen, shader,
+                                           &sctx->compute_scratch_buffer,
+                                           sctx->max_seen_compute_scratch_bytes_per_wave))
          return false;
 
       radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, sctx->compute_scratch_buffer,

@@ -1484,6 +1484,10 @@ void si_gfx_clear_render_target(struct pipe_context *ctx, struct pipe_surface *d
 void si_init_clear_functions(struct si_context *sctx);
 
 /* si_compute.c */
+bool si_setup_compute_scratch_buffer(struct si_screen *screen,
+                                     struct si_shader *shader,
+                                     struct si_resource **scratch_buffer,
+                                     unsigned max_scratch_bytes_per_wave);
 void si_destroy_compute(struct si_compute *program);
 
 /* si_compute_blit.c */
