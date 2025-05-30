@@ -1704,7 +1704,7 @@
         "description": "radeonsi: Fix violation of aliasing rules in radeon_ws_bo_reference",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6d913a2bcc69309d07ca9f75c91fed8f92004aad",
         "notes": null
