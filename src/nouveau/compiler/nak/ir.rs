@@ -2294,6 +2294,17 @@ pub enum LdCacheOp {
     CacheInvalidate,
 }
 
+impl fmt::Display for LdCacheOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LdCacheOp::CacheAll => write!(f, ".ca"),
+            LdCacheOp::CacheGlobal => write!(f, ".cg"),
+            LdCacheOp::CacheStreaming => write!(f, ".cs"),
+            LdCacheOp::CacheInvalidate => write!(f, ".cv"),
+        }
+    }
+}
+
 impl LdCacheOp {
     pub fn select(
         _sm: &dyn ShaderModel,
@@ -2327,6 +2338,17 @@ pub enum StCacheOp {
     CacheGlobal,
     CacheStreaming,
     WriteThrough,
+}
+
+impl fmt::Display for StCacheOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StCacheOp::WriteBack => write!(f, ".wb"),
+            StCacheOp::CacheGlobal => write!(f, ".cg"),
+            StCacheOp::CacheStreaming => write!(f, ".cs"),
+            StCacheOp::WriteThrough => write!(f, ".wt"),
+        }
+    }
 }
 
 impl StCacheOp {
@@ -5915,8 +5937,12 @@ impl DisplayOp for OpSuLdGa {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "suldga{} [{}] {} {}",
-            self.mem_type, self.addr, self.format, self.out_of_bounds
+            "suldga{}{} [{}] {} {}",
+            self.mem_type,
+            self.cache_op,
+            self.addr,
+            self.format,
+            self.out_of_bounds
         )
     }
 }
@@ -5950,8 +5976,9 @@ impl DisplayOp for OpSuStGa {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "sustga{} [{}] {} {} {}",
+            "sustga{}{} [{}] {} {} {}",
             self.image_access,
+            self.cache_op,
             self.addr,
             self.format,
             self.data,
