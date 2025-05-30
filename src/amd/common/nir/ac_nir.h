@@ -165,16 +165,17 @@ typedef struct {
 
    unsigned max_workgroup_size;
    unsigned wave_size;
-   uint8_t clip_cull_dist_mask;
+   /* The mask of clip and cull distances that the shader should export. */
+   uint8_t export_clipdist_mask;
    /* The mask of clip and cull distances that the shader should cull against.
     * If no clip and cull distance outputs are present, it will load clip planes and cull
     * either against CLIP_VERTEX or POS.
     */
    uint8_t cull_clipdist_mask;
    bool write_pos_to_clipvertex;
-   /* Remove clip/cull distance components that are missing in clip_cull_dist_mask, improving
+   /* Remove clip/cull distance components that are missing in export_clipdist_mask, improving
     * throughput by up to 50% (3 pos exports -> 2 pos exports). The caller shouldn't set no-op
-    * components (>= 0) in clip_cull_dist_mask to remove those completely. No-op components
+    * components (>= 0) in export_clipdist_mask to remove those completely. No-op components
     * should be determined by nir_opt_clip_cull_const before this.
     */
    bool pack_clip_cull_distances;

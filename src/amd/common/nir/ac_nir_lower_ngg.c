@@ -359,8 +359,7 @@ remove_culling_shader_output(nir_builder *b, nir_intrinsic_instr *intrin, void *
       unsigned base = io_sem.location == VARYING_SLOT_CLIP_DIST1 ? 4 : 0;
       base += component;
 
-      /* valid clipdist component mask */
-      unsigned mask = (s->options->clip_cull_dist_mask >> base) & writemask;
+      unsigned mask = (s->options->cull_clipdist_mask >> base) & writemask;
       u_foreach_bit(i, mask) {
          add_clipdist_bit(b, nir_channel(b, store_val, i), base + i,
                           s->clipdist_neg_mask_var);
@@ -369,7 +368,8 @@ remove_culling_shader_output(nir_builder *b, nir_intrinsic_instr *intrin, void *
       break;
    }
    case VARYING_SLOT_CLIP_VERTEX:
-      ac_nir_store_var_components(b, s->clip_vertex_var, store_val, component, writemask);
+      if (s->options->cull_clipdist_mask)
+         ac_nir_store_var_components(b, s->clip_vertex_var, store_val, component, writemask);
       break;
    default:
       break;
@@ -1040,8 +1040,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
    /* Relative patch ID is a special case because it doesn't need an extra dword, repack separately. */
    s->repacked_rel_patch_id = nir_local_variable_create(impl, glsl_uint_type(), "repacked_rel_patch_id");
 
-   if (s->options->clip_cull_dist_mask ||
-       s->options->cull_clipdist_mask) {
+   if (s->options->cull_clipdist_mask) {
       s->clip_vertex_var =
          nir_local_variable_create(impl, glsl_vec4_type(), "clip_vertex");
       s->clipdist_neg_mask_var =
@@ -1746,7 +1745,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    }
 
    ac_nir_export_position(b, options->hw_info->gfx_level,
-                          options->clip_cull_dist_mask,
+                          options->export_clipdist_mask,
                           options->write_pos_to_clipvertex,
                           options->pack_clip_cull_distances,
                           !options->has_param_exports,
