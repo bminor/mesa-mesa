@@ -679,7 +679,7 @@ pipeline_access_stage(VkAccessFlags flags)
 }
 
 ALWAYS_INLINE static bool
-buffer_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline, bool unordered)
+resource_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline, bool unordered)
 {
    return zink_resource_access_is_write(unordered ? res->obj->unordered_access : res->obj->access) ||
           zink_resource_access_is_write(flags) ||
@@ -691,7 +691,7 @@ buffer_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelineS
 
 template <barrier_type BARRIER_API, bool UNSYNCHRONIZED>
 void
-zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
+zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
    if (!pipeline)
       pipeline = pipeline_access_stage(flags);
@@ -709,7 +709,7 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
    bool unordered_usage_matches = res->obj->unordered_access && usage_matches;
    bool unordered = unordered_res_exec(ctx, res, is_write);
    assert(!UNSYNCHRONIZED || !usage_matches);
-   if (!buffer_needs_barrier(res, flags, pipeline, unordered))
+   if (!resource_needs_barrier(res, flags, pipeline, unordered))
       return;
    if (completed) {
       /* reset access on complete */
@@ -752,7 +752,7 @@ zink_resource_buffer_barrier(struct zink_context *ctx, struct zink_resource *res
       if (unlikely(zink_tracing)) {
          char buf[4096];
          zink_string_vkflags_unroll(buf, sizeof(buf), flags, (zink_vkflags_func)vk_AccessFlagBits_to_str);
-         marker = zink_cmd_debug_marker_begin(ctx, cmdbuf, "buffer_barrier(%s)", buf);
+         marker = zink_cmd_debug_marker_begin(ctx, cmdbuf, "memory_barrier(%s)", buf);
       }
 
       VkPipelineStageFlags stages = res->obj->access_stage ? res->obj->access_stage : pipeline_access_stage(res->obj->access);;
@@ -788,13 +788,13 @@ void
 zink_synchronization_init(struct zink_screen *screen)
 {
    if (screen->info.have_vulkan13 || screen->info.have_KHR_synchronization2) {
-      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_KHR_synchronzation2, false>;
-      screen->buffer_barrier_unsync = zink_resource_buffer_barrier<barrier_KHR_synchronzation2, true>;
+      screen->buffer_barrier = zink_resource_memory_barrier<barrier_KHR_synchronzation2, false>;
+      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_KHR_synchronzation2, true>;
       screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
       screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
    } else {
-      screen->buffer_barrier = zink_resource_buffer_barrier<barrier_default, false>;
-      screen->buffer_barrier_unsync = zink_resource_buffer_barrier<barrier_default, true>;
+      screen->buffer_barrier = zink_resource_memory_barrier<barrier_default, false>;
+      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_default, true>;
       screen->image_barrier = zink_resource_image_barrier<barrier_default, false>;
       screen->image_barrier_unsync = zink_resource_image_barrier<barrier_default, true>;
    }
