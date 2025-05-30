@@ -369,7 +369,7 @@ def print_formatted_list(elements: list[str], indentation: int = 0) -> None:
         return
     column_separator_size = 2
     column_width: int = len(max(elements, key=len)) + column_separator_size
-    n_columns: int = (h_size - indentation) // column_width
+    n_columns: int = max((h_size - indentation) // column_width, 1)
     step = (len(elements) // n_columns) + 1
     rows = [elements[i::step] for i in range(step)]
     for line in rows:
