@@ -193,10 +193,10 @@ hk_CreateSampler(VkDevice device,
    /* Sanity check the noborder setting. There's no way to recover from it being
     * wrong but at least we can make noise to lint for errors in the driconf.
     */
-   if (HK_PERF(dev, NOBORDER) && custom_border) {
+   static bool warned_custom_border = false;
+   if (HK_PERF(dev, NOBORDER) && custom_border && !warned_custom_border) {
       fprintf(stderr, "custom border colour used, but emulation is disabled\n");
       fprintf(stderr, "border %u\n", info->borderColor);
-      fprintf(stderr, "rgba4 workaround: %u\n", workaround_rgba4);
       fprintf(stderr, "unnorm %X\n", info->unnormalizedCoordinates);
       fprintf(stderr, "compare %X\n", info->compareEnable);
       fprintf(stderr, "value: %X, %X, %X, %X\n",
@@ -206,11 +206,7 @@ hk_CreateSampler(VkDevice device,
               sampler->vk.border_color_value.uint32[3]);
       fprintf(stderr, "wraps: %X, %X, %X\n", info->addressModeU,
               info->addressModeV, info->addressModeW);
-
-      /* Blow up debug builds so we can fix the driconf. Allow the rare
-       * misrendering on release builds.
-       */
-      assert(0);
+      warned_custom_border = true;
    }
 
    struct agx_sampler_packed samp;
