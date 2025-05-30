@@ -1122,14 +1122,20 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .vs_output_param_offset = temp_info->vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,
       .export_clipdist_mask = shader->info.clipdist_mask | shader->info.culldist_mask,
+      .cull_clipdist_mask = si_shader_culling_enabled(shader) ?
+                                 SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(key->ge.opt.ngg_culling) |
+                                 shader->info.culldist_mask : 0,
+      .dont_export_cull_distances = si_shader_culling_enabled(shader),
       .write_pos_to_clipvertex = shader->key.ge.mono.write_pos_to_clipvertex,
       .pack_clip_cull_distances = true,
-      .cull_clipdist_mask = SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(key->ge.opt.ngg_culling),
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
       .skip_viewport_state_culling = sel->info.writes_viewport_index,
       .use_point_tri_intersection = sel->screen->info.num_cu / sel->screen->info.num_se >= 12,
    };
+
+   if (options.dont_export_cull_distances)
+      shader->info.culldist_mask = 0;
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL) {
