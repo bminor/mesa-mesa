@@ -3226,6 +3226,8 @@ impl SM32Op for OpPixLd {
                 other => panic!("Unsupported PixVal: {other}"),
             },
         );
+
+        e.set_pred_dst(48..51, &Dst::None); // dst1
     }
 }
 
