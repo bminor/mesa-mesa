@@ -225,6 +225,7 @@ hk_populate_fs_key(struct hk_fs_key *key,
 enum hk_feature_key {
    HK_FEAT_MIN_LOD = BITFIELD_BIT(0),
    HK_FEAT_CUSTOM_BORDER = BITFIELD_BIT(1),
+   HK_FEAT_LARGE_POINTS = BITFIELD_BIT(2),
 };
 
 static enum hk_feature_key
@@ -234,7 +235,8 @@ hk_make_feature_key(const struct vk_features *features)
       return ~0U;
 
    return (features->minLod ? HK_FEAT_MIN_LOD : 0) |
-          (features->customBorderColors ? HK_FEAT_CUSTOM_BORDER : 0);
+          (features->customBorderColors ? HK_FEAT_CUSTOM_BORDER : 0) |
+          (features->largePoints ? HK_FEAT_LARGE_POINTS : 0);
 }
 
 static void
@@ -885,12 +887,35 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    return true;
 }
 
+static void
+hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader,
+               enum hk_feature_key features)
+{
+   if (features & HK_FEAT_LARGE_POINTS) {
+      /* Point size must be clamped, excessively large points don't render
+       * properly on G13.
+       *
+       * Must be synced with pointSizeRange.
+       */
+      NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
+
+      /* TODO: Optimize out for monolithic? */
+      NIR_PASS(_, nir, nir_lower_default_point_size);
+   }
+
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+   NIR_PASS(_, nir, agx_nir_lower_cull_distance_vs);
+
+   NIR_PASS(_, nir, agx_nir_lower_uvs, &shader->info.uvs);
+}
+
 static VkResult
 hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
                nir_shader *nir, VkShaderCreateFlagsEXT shader_flags,
                const struct vk_pipeline_robustness_state *rs,
-               const struct hk_fs_key *fs_key, struct hk_shader *shader,
-               gl_shader_stage sw_stage, bool hw, nir_xfb_info *xfb_info)
+               const struct hk_fs_key *fs_key, enum hk_feature_key features,
+               struct hk_shader *shader, gl_shader_stage sw_stage, bool hw,
+               nir_xfb_info *xfb_info)
 {
    unsigned nr_vbos = 0;
 
@@ -946,11 +971,15 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
    }
 
    uint64_t outputs = nir->info.outputs_written;
-   if (!hw &&
-       (sw_stage == MESA_SHADER_VERTEX || sw_stage == MESA_SHADER_TESS_EVAL)) {
-      nir->info.stage = MESA_SHADER_COMPUTE;
-      memset(&nir->info.cs, 0, sizeof(nir->info.cs));
-      nir->xfb_info = NULL;
+   if (sw_stage == MESA_SHADER_VERTEX || sw_stage == MESA_SHADER_TESS_EVAL) {
+      if (hw) {
+         hk_lower_hw_vs(nir, shader, features);
+      } else {
+         NIR_PASS(_, nir, agx_nir_lower_vs_before_gs);
+         nir->info.stage = MESA_SHADER_COMPUTE;
+         memset(&nir->info.cs, 0, sizeof(nir->info.cs));
+         nir->xfb_info = NULL;
+      }
    }
 
    struct fixed_uniforms f = {.root = 0, .image_heap = 4};
@@ -1097,25 +1126,6 @@ hk_api_shader_destroy(struct vk_device *vk_dev, struct vk_shader *vk_shader,
    vk_shader_free(&dev->vk, pAllocator, &obj->vk);
 }
 
-static void
-hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader)
-{
-   /* Point size must be clamped, excessively large points don't render
-    * properly on G13.
-    *
-    * Must be synced with pointSizeRange.
-    */
-   NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
-
-   /* TODO: Optimize out for monolithic? */
-   NIR_PASS(_, nir, nir_lower_default_point_size);
-
-   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
-   NIR_PASS(_, nir, agx_nir_lower_cull_distance_vs);
-
-   NIR_PASS(_, nir, agx_nir_lower_uvs, &shader->info.uvs);
-}
-
 VkResult
 hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
                   const struct vk_graphics_pipeline_state *state,
@@ -1188,7 +1198,7 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
          if (!rast_disc) {
             struct hk_shader *shader = &obj->variants[HK_GS_VARIANT_RAST];
 
-            hk_lower_hw_vs(rast, shader);
+            hk_lower_hw_vs(rast, shader, features);
             shader->info.gs = count_variant->info.gs;
          }
 
@@ -1206,9 +1216,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
 
          for (unsigned v = 0; v < ARRAY_SIZE(variants); ++v) {
             if (variants[v].in) {
-               result = hk_compile_nir(dev, pAllocator, variants[v].in,
-                                       info->flags, info->robustness, NULL,
-                                       variants[v].out, sw_stage, true, NULL);
+               result =
+                  hk_compile_nir(dev, pAllocator, variants[v].in, info->flags,
+                                 info->robustness, NULL, features,
+                                 variants[v].out, sw_stage, true, NULL);
                if (result != VK_SUCCESS) {
                   hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
                   if (clone != nir) {
@@ -1285,16 +1296,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
                nir->info.inputs_read >> VERT_ATTRIB_GENERIC0;
          }
 
-         if (hw) {
-            hk_lower_hw_vs(clone, shader);
-         } else {
-            NIR_PASS(_, clone, agx_nir_lower_vs_before_gs);
-         }
-
          /* hk_compile_nir takes ownership of the clone */
          result = hk_compile_nir(dev, pAllocator, clone, info->flags,
-                                 info->robustness, fs_key, shader, sw_stage, hw,
-                                 nir->xfb_info);
+                                 info->robustness, fs_key, features, shader,
+                                 sw_stage, hw, nir->xfb_info);
          if (result != VK_SUCCESS) {
             hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
             ralloc_free(nir);
@@ -1307,7 +1312,7 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
       /* hk_compile_nir takes ownership of nir */
       result =
          hk_compile_nir(dev, pAllocator, nir, info->flags, info->robustness,
-                        fs_key, shader, sw_stage, true, NULL);
+                        fs_key, features, shader, sw_stage, true, NULL);
       if (result != VK_SUCCESS) {
          hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
          return result;

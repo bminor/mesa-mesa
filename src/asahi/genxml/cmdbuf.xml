@@ -1126,4 +1126,10 @@
     <field name="Y" start="15" size="15" type="uint" modifier="minus(1)"/>
   </struct>
 
+  <struct name="CR PPP Control" size="4">
+    <field name="OpenGL" start="0" size="1" type="bool"/>
+    <field name="Enable W Clamp" start="1" size="1" type="bool"/>
+    <field name="Default point size" start="8" size="1" type="bool"/>
+    <field name="Fixed point format" start="9" size="1" type="uint"/>
+  </struct>
 </genxml>
