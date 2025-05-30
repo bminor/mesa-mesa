@@ -859,6 +859,32 @@ hk_init_link_ht(struct hk_shader *shader, gl_shader_stage sw_stage)
                                       : VK_SUCCESS;
 }
 
+struct fixed_uniforms {
+   unsigned image_heap;
+   unsigned root;
+};
+
+static bool
+lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_texture_handle_agx &&
+       intr->intrinsic != nir_intrinsic_load_root_agx)
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   struct fixed_uniforms *ctx = data;
+   nir_def *rep;
+
+   if (intr->intrinsic == nir_intrinsic_load_texture_handle_agx) {
+      rep = nir_vec2(b, nir_imm_int(b, ctx->image_heap), intr->src[0].ssa);
+   } else {
+      rep = nir_load_preamble(b, 1, 64, .base = ctx->root);
+   }
+
+   nir_def_replace(&intr->def, rep);
+   return true;
+}
+
 static VkResult
 hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
                nir_shader *nir, VkShaderCreateFlagsEXT shader_flags,
@@ -927,8 +953,21 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       nir->xfb_info = NULL;
    }
 
+   struct fixed_uniforms f = {.root = 0, .image_heap = 4};
+   if (sw_stage == MESA_SHADER_FRAGMENT) {
+      f.image_heap = AGX_ABI_FUNI_COUNT;
+      f.root = AGX_ABI_FUNI_ROOT;
+   } else if (sw_stage == MESA_SHADER_VERTEX) {
+      f.root = AGX_ABI_VUNI_COUNT_VK(nr_vbos);
+      f.image_heap = f.root + 4;
+   }
+
+   shader->info.image_heap_uniform = f.image_heap;
+
    /* XXX: rename */
    NIR_PASS(_, nir, hk_lower_uvs_index, nr_vbos);
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_uniforms,
+            nir_metadata_control_flow, &f);
 
 #if 0
    /* TODO */
@@ -1554,7 +1593,13 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
       agx_usc_immediates(&b, &main->b.info.rodata, main->bo->va->addr);
    }
 
-   agx_usc_push_packed(&b, UNIFORM, dev->rodata.image_heap);
+   if (main) {
+      agx_usc_pack(&b, UNIFORM, cfg) {
+         cfg.start_halfs = main->info.image_heap_uniform;
+         cfg.size_halfs = 4;
+         cfg.buffer = dev->rodata.image_heap_ptr;
+      }
+   }
 
    if (s->b.uses_txf)
       agx_usc_push_packed(&b, SAMPLER, dev->dev.txf_sampler);

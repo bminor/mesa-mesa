@@ -658,8 +658,7 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
    static_assert(offsetof(struct hk_root_descriptor_table, root_desc_addr) == 0,
                  "self-reflective");
 
-   agx_usc_uniform(&b, HK_ROOT_UNIFORM, 4, root_ptr);
-
+   unsigned root_unif = 0;
    if (sw_stage == MESA_SHADER_VERTEX) {
       unsigned count =
          DIV_ROUND_UP(BITSET_LAST_BIT(s->info.vs.attrib_components_read), 4);
@@ -689,6 +688,8 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
             &b, AGX_ABI_VUNI_INPUT_ASSEMBLY(count), 4,
             root_ptr + hk_root_descriptor_offset(draw.input_assembly));
       }
+
+      root_unif = AGX_ABI_VUNI_COUNT_VK(count);
    } else if (sw_stage == MESA_SHADER_FRAGMENT) {
       if (agx_tilebuffer_spills(&cmd->state.gfx.render.tilebuffer)) {
          hk_usc_upload_spilled_rt_descs(&b, cmd);
@@ -703,7 +704,10 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
        * TODO: We probably could with some refactor.
        */
       agx_usc_push_packed(&b, SHARED, &cmd->state.gfx.render.tilebuffer.usc);
+      root_unif = AGX_ABI_FUNI_ROOT;
    }
+
+   agx_usc_uniform(&b, root_unif, 4, root_ptr);
 
    agx_usc_push_blob(&b, linked->usc.data, linked->usc.size);
    return agx_usc_addr(&dev->dev, t.gpu);

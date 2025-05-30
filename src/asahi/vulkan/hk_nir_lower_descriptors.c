@@ -55,10 +55,7 @@ static nir_def *
 load_root(nir_builder *b, unsigned num_components, unsigned bit_size,
           nir_def *offset, unsigned align)
 {
-   nir_def *root = nir_load_preamble(b, 1, 64, .base = HK_ROOT_UNIFORM);
-
-   /* We've bound the address of the root descriptor, index in. */
-   nir_def *addr = nir_iadd(b, root, nir_u2u64(b, offset));
+   nir_def *addr = nir_iadd(b, nir_load_root_agx(b), nir_u2u64(b, offset));
 
    return load_speculatable(b, num_components, bit_size, addr, align);
 }
@@ -318,16 +315,6 @@ load_resource_deref_desc(nir_builder *b, unsigned num_components,
                           offset_B, ctx);
 }
 
-/*
- * Returns an AGX bindless handle to access an indexed image within the global
- * image heap.
- */
-static nir_def *
-image_heap_handle(nir_builder *b, nir_def *offset)
-{
-   return nir_vec2(b, nir_imm_int(b, HK_IMAGE_HEAP_UNIFORM), offset);
-}
-
 static bool
 lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intr,
                    const struct lower_descriptors_ctx *ctx)
@@ -348,7 +335,8 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intr,
    }
 
    nir_def *offset = load_resource_deref_desc(b, 1, 32, deref, offs, ctx);
-   nir_rewrite_image_intrinsic(intr, image_heap_handle(b, offset), true);
+   nir_rewrite_image_intrinsic(intr, nir_load_texture_handle_agx(b, offset),
+                               true);
 
    return true;
 }
@@ -662,7 +650,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
          b, 1, 32, nir_src_as_deref(nir_src_for_ssa(texture)),
          plane_offset_B + offs, ctx);
 
-      nir_def *handle = image_heap_handle(b, offset);
+      nir_def *handle = nir_load_texture_handle_agx(b, offset);
       nir_tex_instr_add_src(tex, nir_tex_src_texture_handle, handle);
    }
 

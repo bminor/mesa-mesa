@@ -37,10 +37,6 @@ struct vk_pipeline_layout;
 struct vk_pipeline_robustness_state;
 struct vk_shader_module;
 
-/* TODO: Make dynamic */
-#define HK_ROOT_UNIFORM       104
-#define HK_IMAGE_HEAP_UNIFORM 108
-
 struct hk_tess_info {
    enum tess_primitive_mode mode : 8;
    enum gl_tess_spacing spacing  : 8;
@@ -111,7 +107,7 @@ struct hk_shader_info {
    gl_shader_stage stage : 8;
    uint8_t clip_distance_array_size;
    uint8_t cull_distance_array_size;
-   uint8_t _pad0[1];
+   uint8_t image_heap_uniform;
 
    /* XXX: is there a less goofy way to do this? I really don't want dynamic
     * allocation here.

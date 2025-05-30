@@ -92,11 +92,7 @@ hk_upload_rodata(struct hk_device *dev)
     * cut an alloc/upload at draw time.
     */
    offs = align(offs, sizeof(uint64_t));
-   agx_pack(&dev->rodata.image_heap, USC_UNIFORM, cfg) {
-      cfg.start_halfs = HK_IMAGE_HEAP_UNIFORM;
-      cfg.size_halfs = 4;
-      cfg.buffer = dev->rodata.bo->va->addr + offs;
-   }
+   dev->rodata.image_heap_ptr = dev->rodata.bo->va->addr + offs;
 
    uint64_t *image_heap_ptr = (void *)map + offs;
    *image_heap_ptr = dev->images.bo->va->addr;

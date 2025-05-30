@@ -47,6 +47,7 @@
 #include "libagx_shaders.h"
 #include "nir.h"
 #include "nir_builder.h"
+#include "nir_intrinsics.h"
 #include "nir_lower_blend.h"
 #include "nir_xfb_info.h"
 #include "pool.h"
@@ -1806,6 +1807,18 @@ hk_get_fast_linked_locked_vs(struct hk_device *dev, struct hk_shader *shader,
    return linked;
 }
 
+static bool
+lower_fs_root(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_root_agx)
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def_replace(&intr->def,
+                   nir_load_preamble(b, 1, 64, .base = AGX_ABI_FUNI_ROOT));
+   return true;
+}
+
 static void
 build_fs_prolog(nir_builder *b, const void *key)
 {
@@ -1813,6 +1826,8 @@ build_fs_prolog(nir_builder *b, const void *key)
 
    /* Lower load_stat_query_address_agx, needed for FS statistics */
    NIR_PASS(_, b->shader, hk_lower_uvs_index, 0);
+   NIR_PASS(_, b->shader, nir_shader_intrinsics_pass, lower_fs_root,
+            nir_metadata_control_flow, NULL);
 }
 
 static struct hk_linked_shader *
