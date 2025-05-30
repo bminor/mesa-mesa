@@ -368,7 +368,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          std::max( 1u, pDX12EncodeContext->encoderPicInfo.av1enc.tile_rows * pDX12EncodeContext->encoderPicInfo.av1enc.tile_cols );
 #endif
 
-#if (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 716))
+#if (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
       pDX12EncodeContext->sliceNotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
       if( m_EncoderCapabilities.m_HWSupportSlicedFences.bits.supported && ( num_output_buffers > 1 ) )
       {
@@ -385,7 +385,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          }
       }
       else
-#endif // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 716))
+#endif // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
       {
          // Buffer byte size for full frame bitstream (when num_output_buffers == 1)
          templ.width0 = ( 1024 /*1K*/ * 1024 /*1MB*/ ) * 8 /*8 MB*/;
