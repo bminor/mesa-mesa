@@ -2575,7 +2575,7 @@ impl SM32Op for OpLd {
 
                 e.set_field(23..55, self.offset);
                 e.set_mem_access(55..59, &self.access);
-                e.set_ld_cache_op(59..61, self.access.ld_cache_op());
+                e.set_ld_cache_op(59..61, self.access.ld_cache_op(e.sm));
             }
             MemSpace::Local | MemSpace::Shared => {
                 let opc = match self.access.space {
@@ -2586,7 +2586,7 @@ impl SM32Op for OpLd {
                 e.set_opcode(opc, 2);
 
                 e.set_field(23..47, self.offset);
-                e.set_ld_cache_op(47..49, self.access.ld_cache_op());
+                e.set_ld_cache_op(47..49, self.access.ld_cache_op(e.sm));
                 e.set_mem_access(50..54, &self.access);
             }
         }
@@ -2657,7 +2657,7 @@ impl SM32Op for OpSt {
 
                 e.set_field(23..55, self.offset);
                 e.set_mem_access(55..59, &self.access);
-                e.set_st_cache_op(59..61, self.access.st_cache_op());
+                e.set_st_cache_op(59..61, self.access.st_cache_op(e.sm));
             }
             MemSpace::Local | MemSpace::Shared => {
                 let opc = match self.access.space {
@@ -2668,7 +2668,7 @@ impl SM32Op for OpSt {
                 e.set_opcode(opc, 2);
 
                 e.set_field(23..47, self.offset);
-                e.set_st_cache_op(47..49, self.access.st_cache_op());
+                e.set_st_cache_op(47..49, self.access.st_cache_op(e.sm));
                 e.set_mem_access(50..54, &self.access);
             }
         }

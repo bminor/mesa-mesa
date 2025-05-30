@@ -2296,6 +2296,7 @@ pub enum LdCacheOp {
 
 impl LdCacheOp {
     pub fn select(
+        _sm: &dyn ShaderModel,
         space: MemSpace,
         order: MemOrder,
         _eviction_priority: MemEvictionPriority,
@@ -2330,6 +2331,7 @@ pub enum StCacheOp {
 
 impl StCacheOp {
     pub fn select(
+        _sm: &dyn ShaderModel,
         space: MemSpace,
         _order: MemOrder,
         _eviction_priority: MemEvictionPriority,
@@ -2360,12 +2362,12 @@ impl fmt::Display for MemAccess {
 }
 
 impl MemAccess {
-    pub fn ld_cache_op(&self) -> LdCacheOp {
-        LdCacheOp::select(self.space, self.order, self.eviction_priority)
+    pub fn ld_cache_op(&self, sm: &dyn ShaderModel) -> LdCacheOp {
+        LdCacheOp::select(sm, self.space, self.order, self.eviction_priority)
     }
 
-    pub fn st_cache_op(&self) -> StCacheOp {
-        StCacheOp::select(self.space, self.order, self.eviction_priority)
+    pub fn st_cache_op(&self, sm: &dyn ShaderModel) -> StCacheOp {
+        StCacheOp::select(sm, self.space, self.order, self.eviction_priority)
     }
 }
 

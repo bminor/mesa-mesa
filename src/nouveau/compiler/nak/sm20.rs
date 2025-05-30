@@ -2310,7 +2310,7 @@ impl SM20Op for OpLd {
             }
         }
         e.set_mem_type(5..8, self.access.mem_type);
-        e.set_ld_cache_op(8..10, self.access.ld_cache_op());
+        e.set_ld_cache_op(8..10, self.access.ld_cache_op(e.sm));
         e.set_dst(14..20, &self.dst);
         e.set_reg_src(20..26, &self.addr);
     }
@@ -2389,7 +2389,7 @@ impl SM20Op for OpSt {
             }
         }
         e.set_mem_type(5..8, self.access.mem_type);
-        e.set_st_cache_op(8..10, self.access.st_cache_op());
+        e.set_st_cache_op(8..10, self.access.st_cache_op(e.sm));
         e.set_reg_src(14..20, &self.data);
         e.set_reg_src(20..26, &self.addr);
     }

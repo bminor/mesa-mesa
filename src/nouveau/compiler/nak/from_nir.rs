@@ -2678,6 +2678,7 @@ impl<'a> ShaderFromNir<'a> {
                     MemOrder::Strong(MemScope::GPU)
                 };
                 let cache_op = LdCacheOp::select(
+                    self.sm,
                     MemSpace::Global(MemAddrType::A64),
                     mem_order,
                     self.get_eviction_priority(intrin.access()),
@@ -2788,6 +2789,7 @@ impl<'a> ShaderFromNir<'a> {
                 };
 
                 let cache_op = StCacheOp::select(
+                    self.sm,
                     MemSpace::Global(MemAddrType::A64),
                     MemOrder::Strong(MemScope::GPU),
                     self.get_eviction_priority(intrin.access()),
