@@ -210,7 +210,7 @@ vlVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
 
    struct pipe_context *pipe;
    struct pipe_resource *tex;
-   struct pipe_surface surf_templ, *surf_draw = NULL;
+   struct pipe_surface surf_templ;
    struct u_rect src_rect, dst_clip, *dirty_area;
 
    struct vl_compositor *compositor;
@@ -232,7 +232,7 @@ vlVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
 
    mtx_lock(&pq->device->mutex);
    if (vscreen->set_back_texture_from_output && surf->send_to_X)
-      vscreen->set_back_texture_from_output(vscreen, surf->surface->texture, clip_width, clip_height);
+      vscreen->set_back_texture_from_output(vscreen, surf->surface.texture, clip_width, clip_height);
    tex = vscreen->texture_from_drawable(vscreen, (void *)pq->drawable);
    if (!tex) {
       mtx_unlock(&pq->device->mutex);
@@ -243,23 +243,22 @@ vlVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
       dirty_area = vscreen->get_dirty_area(vscreen);
 
       memset(&surf_templ, 0, sizeof(surf_templ));
-      surf_templ.format = tex->format;
-      surf_draw = pipe->create_surface(pipe, tex, &surf_templ);
+      u_surface_default_template(&surf_templ, tex);
 
       dst_clip.x0 = 0;
       dst_clip.y0 = 0;
-      dst_clip.x1 = clip_width ? clip_width : pipe_surface_width(surf_draw);
-      dst_clip.y1 = clip_height ? clip_height : pipe_surface_height(surf_draw);
+      dst_clip.x1 = clip_width ? clip_width : pipe_surface_width(&surf_templ);
+      dst_clip.y1 = clip_height ? clip_height : pipe_surface_height(&surf_templ);
 
       src_rect.x0 = 0;
       src_rect.y0 = 0;
-      src_rect.x1 = pipe_surface_width(surf_draw);
-      src_rect.y1 = pipe_surface_height(surf_draw);
+      src_rect.x1 = pipe_surface_width(&surf_templ);
+      src_rect.y1 = pipe_surface_height(&surf_templ);
 
       vl_compositor_clear_layers(cstate);
       vl_compositor_set_rgba_layer(cstate, compositor, 0, surf->sampler_view, &src_rect, NULL, NULL);
       vl_compositor_set_dst_clip(cstate, &dst_clip);
-      vl_compositor_render(cstate, compositor, surf_draw, dirty_area, true);
+      vl_compositor_render(cstate, compositor, &surf_templ, dirty_area, true);
    }
 
    vscreen->set_next_timestamp(vscreen, earliest_presentation_time);
@@ -291,7 +290,6 @@ vlVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
 
    if (!vscreen->set_back_texture_from_output || !surf->send_to_X) {
       pipe_resource_reference(&tex, NULL);
-      pipe_surface_reference(&surf_draw, NULL);
    }
    mtx_unlock(&pq->device->mutex);
 

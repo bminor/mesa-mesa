@@ -42,6 +42,7 @@
 
 #include "util/u_debug.h"
 #include "util/u_rect.h"
+#include "util/u_surface.h"
 #include "util/u_thread.h"
 
 #include "vl/vl_video_buffer.h"
@@ -465,7 +466,7 @@ typedef uint64_t vlVdpTime;
 typedef struct
 {
    vlVdpDevice *device;
-   struct pipe_surface *surface;
+   struct pipe_surface surface;
    struct pipe_sampler_view *sampler_view;
    struct pipe_fence_handle *fence;
    struct vl_compositor_state cstate;
