@@ -866,13 +866,12 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
                const struct hk_fs_key *fs_key, struct hk_shader *shader,
                gl_shader_stage sw_stage, bool hw, nir_xfb_info *xfb_info)
 {
-   unsigned vs_uniform_base = 0;
+   unsigned nr_vbos = 0;
 
    /* For now, only shader objects are supported */
    if (sw_stage == MESA_SHADER_VERTEX) {
-      vs_uniform_base =
-         6 * DIV_ROUND_UP(
-                BITSET_LAST_BIT(shader->info.vs.attrib_components_read), 4);
+      nr_vbos = DIV_ROUND_UP(
+         BITSET_LAST_BIT(shader->info.vs.attrib_components_read), 4);
    } else if (sw_stage == MESA_SHADER_FRAGMENT) {
       shader->info.fs.interp = agx_gather_interp_info(nir);
       shader->info.fs.writes_memory = nir->info.writes_memory;
@@ -929,7 +928,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
    }
 
    /* XXX: rename */
-   NIR_PASS(_, nir, hk_lower_uvs_index, vs_uniform_base);
+   NIR_PASS(_, nir, hk_lower_uvs_index, nr_vbos);
 
 #if 0
    /* TODO */

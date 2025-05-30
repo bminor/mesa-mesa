@@ -6,6 +6,7 @@
  */
 #include "hk_cmd_buffer.h"
 
+#include "agx_abi.h"
 #include "agx_bo.h"
 #include "agx_device.h"
 #include "agx_linker.h"
@@ -665,23 +666,27 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 
       if (count) {
          agx_usc_uniform(
-            &b, 0, 4 * count,
+            &b, AGX_ABI_VUNI_VBO_BASE(0), 4 * count,
             root_ptr + hk_root_descriptor_offset(draw.attrib_base));
 
          agx_usc_uniform(
-            &b, 4 * count, 2 * count,
+            &b, AGX_ABI_VUNI_VBO_CLAMP(count, 0), 2 * count,
             root_ptr + hk_root_descriptor_offset(draw.attrib_clamps));
       }
 
-      if (cmd->state.gfx.draw_params)
-         agx_usc_uniform(&b, 6 * count, 4, cmd->state.gfx.draw_params);
+      if (cmd->state.gfx.draw_params) {
+         agx_usc_uniform(&b, AGX_ABI_VUNI_FIRST_VERTEX(count), 4,
+                         cmd->state.gfx.draw_params);
+      }
 
-      if (cmd->state.gfx.draw_id_ptr)
-         agx_usc_uniform(&b, (6 * count) + 4, 1, cmd->state.gfx.draw_id_ptr);
+      if (cmd->state.gfx.draw_id_ptr) {
+         agx_usc_uniform(&b, AGX_ABI_VUNI_DRAW_ID(count), 1,
+                         cmd->state.gfx.draw_id_ptr);
+      }
 
       if (linked->sw_indexing) {
          agx_usc_uniform(
-            &b, (6 * count) + 8, 4,
+            &b, AGX_ABI_VUNI_INPUT_ASSEMBLY(count), 4,
             root_ptr + hk_root_descriptor_offset(draw.input_assembly));
       }
    } else if (sw_stage == MESA_SHADER_FRAGMENT) {

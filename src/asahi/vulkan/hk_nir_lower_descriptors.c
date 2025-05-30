@@ -6,6 +6,7 @@
  */
 #include "pipe/p_defines.h"
 #include "vulkan/vulkan_core.h"
+#include "agx_abi.h"
 #include "agx_nir_texture.h"
 #include "hk_cmd_buffer.h"
 #include "hk_descriptor_set.h"
@@ -390,7 +391,7 @@ translate_pipeline_stat_bit(enum pipe_statistics_query_index pipe)
 static bool
 lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 {
-   unsigned *vs_uniform_base = data;
+   unsigned *nr_vbos = data;
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_uvs_index_agx: {
@@ -450,17 +451,17 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_input_assembly_buffer_agx: {
       b->cursor = nir_instr_remove(&intrin->instr);
 
-      unsigned base = *vs_uniform_base;
+      unsigned base = AGX_ABI_VUNI_FIRST_VERTEX(*nr_vbos);
       unsigned size = 32;
 
       if (intrin->intrinsic == nir_intrinsic_load_base_instance) {
-         base += 2;
+         base = AGX_ABI_VUNI_BASE_INSTANCE(*nr_vbos);
       } else if (intrin->intrinsic == nir_intrinsic_load_draw_id) {
-         base += 4;
+         base = AGX_ABI_VUNI_DRAW_ID(*nr_vbos);
          size = 16;
       } else if (intrin->intrinsic ==
                  nir_intrinsic_load_input_assembly_buffer_agx) {
-         base += 8;
+         base = AGX_ABI_VUNI_INPUT_ASSEMBLY(*nr_vbos);
          size = 64;
       }
 
@@ -520,10 +521,10 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 }
 
 bool
-hk_lower_uvs_index(nir_shader *s, unsigned vs_uniform_base)
+hk_lower_uvs_index(nir_shader *s, unsigned nr_vbos)
 {
-   return nir_shader_intrinsics_pass(
-      s, lower_uvs_index, nir_metadata_control_flow, &vs_uniform_base);
+   return nir_shader_intrinsics_pass(s, lower_uvs_index,
+                                     nir_metadata_control_flow, &nr_vbos);
 }
 
 static bool
