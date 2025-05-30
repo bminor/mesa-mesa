@@ -763,7 +763,6 @@ vc4_create_surface(struct pipe_context *pctx,
                    const struct pipe_surface *surf_tmpl)
 {
         struct vc4_surface *surface = CALLOC_STRUCT(vc4_surface);
-        struct vc4_resource *rsc = vc4_resource(ptex);
 
         if (!surface)
                 return NULL;
@@ -781,7 +780,6 @@ vc4_create_surface(struct pipe_context *pctx,
         psurf->level = level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-        surface->tiling = rsc->slices[level].tiling;
 
         return &surface->base;
 }

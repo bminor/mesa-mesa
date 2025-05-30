@@ -289,9 +289,7 @@ vc4_submit_setup_rcl_surface(struct vc4_job *job,
                              struct pipe_surface *psurf,
                              bool is_depth, bool is_write)
 {
-        struct vc4_surface *surf = vc4_surface(psurf);
-
-        if (!surf)
+        if (!psurf)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
@@ -314,7 +312,7 @@ vc4_submit_setup_rcl_surface(struct vc4_job *job,
                                               VC4_LOADSTORE_TILE_BUFFER_FORMAT);
                 }
                 submit_surf->bits |=
-                        VC4_SET_FIELD(surf->tiling,
+                        VC4_SET_FIELD(vc4_surface_get_tiling(psurf),
                                       VC4_LOADSTORE_TILE_BUFFER_TILING);
         } else {
                 assert(!is_write);
@@ -330,9 +328,7 @@ vc4_submit_setup_rcl_render_config_surface(struct vc4_job *job,
                                            struct drm_vc4_submit_rcl_surface *submit_surf,
                                            struct pipe_surface *psurf)
 {
-        struct vc4_surface *surf = vc4_surface(psurf);
-
-        if (!surf)
+        if (!psurf)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
@@ -341,11 +337,11 @@ vc4_submit_setup_rcl_render_config_surface(struct vc4_job *job,
 
         if (psurf->texture->nr_samples <= 1) {
                 submit_surf->bits =
-                        VC4_SET_FIELD(vc4_rt_format_is_565(surf->base.format) ?
+                        VC4_SET_FIELD(vc4_rt_format_is_565(psurf->format) ?
                                       VC4_RENDER_CONFIG_FORMAT_BGR565 :
                                       VC4_RENDER_CONFIG_FORMAT_RGBA8888,
                                       VC4_RENDER_CONFIG_FORMAT) |
-                        VC4_SET_FIELD(surf->tiling,
+                        VC4_SET_FIELD(vc4_surface_get_tiling(psurf),
                                       VC4_RENDER_CONFIG_MEMORY_FORMAT);
         }
 
