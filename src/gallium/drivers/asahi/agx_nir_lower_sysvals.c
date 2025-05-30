@@ -7,6 +7,7 @@
 #include "pipe/p_defines.h"
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
+#include "agx_abi.h"
 #include "agx_nir_lower_gs.h"
 #include "agx_state.h"
 #include "nir.h"
@@ -388,14 +389,14 @@ lay_out_uniforms(struct agx_compiled_shader *shader, struct state *state)
 
       if (count) {
          shader->push[shader->push_range_count++] = (struct agx_push_range){
-            .uniform = 0,
+            .uniform = AGX_ABI_VUNI_VBO_BASE(0),
             .table = AGX_SYSVAL_TABLE_ROOT,
             .offset = (uintptr_t)&u->attrib_base,
             .length = 4 * count,
          };
 
          shader->push[shader->push_range_count++] = (struct agx_push_range){
-            .uniform = 4 * count,
+            .uniform = AGX_ABI_VUNI_VBO_CLAMP(count, 0),
             .table = AGX_SYSVAL_TABLE_ROOT,
             .offset = (uintptr_t)&u->attrib_clamp,
             .length = 2 * count,
@@ -403,49 +404,48 @@ lay_out_uniforms(struct agx_compiled_shader *shader, struct state *state)
       }
 
       shader->push[shader->push_range_count++] = (struct agx_push_range){
-         .uniform = 6 * count,
+         .uniform = AGX_ABI_VUNI_FIRST_VERTEX(count),
          .table = AGX_SYSVAL_TABLE_PARAMS,
          .offset = 0,
          .length = 4,
       };
 
-      uniform = (6 * count) + 4;
-
-      if (state->hw_stage == PIPE_SHADER_COMPUTE) {
+      bool sw = state->hw_stage == PIPE_SHADER_COMPUTE;
+      if (sw) {
          shader->push[shader->push_range_count++] = (struct agx_push_range){
-            .uniform = (6 * count) + 8,
+            .uniform = AGX_ABI_VUNI_INPUT_ASSEMBLY(count),
             .table = AGX_SYSVAL_TABLE_ROOT,
             .offset = (uintptr_t)&u->input_assembly,
             .length = 4,
          };
-
-         uniform = (6 * count) + 12;
       }
+
+      uniform = AGX_ABI_VUNI_COUNT_GL(count, sw);
    } else if (state->stage == PIPE_SHADER_FRAGMENT) {
       struct agx_draw_uniforms *u = NULL;
       struct agx_stage_uniforms *s = NULL;
       shader->push[shader->push_range_count++] = (struct agx_push_range){
-         .uniform = 0,
+         .uniform = AGX_ABI_FUNI_EMRT_HEAP,
          .table = AGX_SYSVAL_TABLE_FS,
          .offset = (uintptr_t)&s->texture_base,
          .length = 4,
       };
 
       shader->push[shader->push_range_count++] = (struct agx_push_range){
-         .uniform = 4,
+         .uniform = AGX_ABI_FUNI_BLEND_R,
          .table = AGX_SYSVAL_TABLE_ROOT,
          .offset = (uintptr_t)&u->blend_constant,
          .length = 8,
       };
 
       shader->push[shader->push_range_count++] = (struct agx_push_range){
-         .uniform = 12,
+         .uniform = AGX_ABI_FUNI_ROOT,
          .table = AGX_SYSVAL_TABLE_ROOT,
          .offset = (uintptr_t)&u->tables[AGX_SYSVAL_TABLE_ROOT],
          .length = 4,
       };
 
-      uniform = 16;
+      uniform = AGX_ABI_FUNI_COUNT;
    }
 
    /* Lay out each system value table. We do this backwards to ensure the first
