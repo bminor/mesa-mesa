@@ -266,7 +266,7 @@ typedef struct ac_nir_gs_output_info {
 nir_shader *
 ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
                              enum amd_gfx_level gfx_level,
-                             uint32_t clip_cull_mask,
+                             uint32_t export_clipdist_mask,
                              bool write_pos_to_clipvertex,
                              bool pack_clip_cull_distances,
                              const uint8_t *param_offsets,
@@ -280,7 +280,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
 bool
 ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
-                       uint32_t clip_cull_mask,
+                       uint32_t export_clipdist_mask,
                        bool write_pos_to_clipvertex,
                        bool pack_clip_cull_distances,
                        const uint8_t *param_offsets,

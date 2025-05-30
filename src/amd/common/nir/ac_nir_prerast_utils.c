@@ -289,7 +289,7 @@ get_pos0_output(nir_builder *b, nir_def **output)
 void
 ac_nir_export_position(nir_builder *b,
                        enum amd_gfx_level gfx_level,
-                       uint32_t clip_cull_mask,
+                       uint32_t export_clipdist_mask,
                        bool write_pos_to_clipvertex,
                        bool pack_clip_cull_distances,
                        bool no_param_export,
@@ -331,13 +331,13 @@ ac_nir_export_position(nir_builder *b,
       gl_varying_slot slot = write_pos_to_clipvertex ? VARYING_SLOT_POS : VARYING_SLOT_CLIP_VERTEX;
       nir_def *vtx = get_export_output(b, out->outputs[slot]);
 
-      u_foreach_bit(i, clip_cull_mask) {
+      u_foreach_bit(i, export_clipdist_mask) {
          nir_def *ucp = nir_load_user_clip_plane(b, .ucp_id = i);
          clip_dist[i] = nir_fdot4(b, vtx, ucp);
       }
    } else {
       /* Gather clip/cull distances. */
-      u_foreach_bit(i, clip_cull_mask) {
+      u_foreach_bit(i, export_clipdist_mask) {
          assert(outputs_written & (VARYING_BIT_CLIP_DIST0 << (i / 4)));
          clip_dist[i] = out->outputs[VARYING_SLOT_CLIP_DIST0 + i / 4][i % 4];
       }
@@ -347,10 +347,10 @@ ac_nir_export_position(nir_builder *b,
    if (pack_clip_cull_distances) {
       unsigned num = 0;
 
-      u_foreach_bit(i, clip_cull_mask) {
+      u_foreach_bit(i, export_clipdist_mask) {
          clip_dist[num++] = clip_dist[i];
       }
-      clip_cull_mask = BITFIELD_MASK(num);
+      export_clipdist_mask = BITFIELD_MASK(num);
    }
 
    if (outputs_written & VARYING_BIT_POS) {
@@ -421,10 +421,10 @@ ac_nir_export_position(nir_builder *b,
    }
 
    for (int i = 0; i < 2; i++) {
-      if (clip_cull_mask & BITFIELD_RANGE(i * 4, 4)) {
+      if (export_clipdist_mask & BITFIELD_RANGE(i * 4, 4)) {
          exp[exp_num] = export(b, get_export_output(b, clip_dist + i * 4), row,
                                V_008DFC_SQ_EXP_POS + exp_num + exp_pos_offset, 0,
-                               (clip_cull_mask >> (i * 4)) & 0xf);
+                               (export_clipdist_mask >> (i * 4)) & 0xf);
          exp_num++;
       }
    }
