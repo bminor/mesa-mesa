@@ -137,18 +137,14 @@ debug_dump_texture(struct pipe_context *pipe,
                    const char *prefix,
                    struct pipe_resource *texture)
 {
-   struct pipe_surface *surface, surf_tmpl;
+   struct pipe_surface surf_tmpl;
 
    if (!texture)
       return;
 
    /* XXX for now, just dump image for layer=0, level=0 */
    u_surface_default_template(&surf_tmpl, texture);
-   surface = pipe->create_surface(pipe, texture, &surf_tmpl);
-   if (surface) {
-      debug_dump_surface(pipe, prefix, surface);
-      pipe->surface_destroy(pipe, surface);
-   }
+   debug_dump_surface(pipe, prefix, &surf_tmpl);
 }
 
 
