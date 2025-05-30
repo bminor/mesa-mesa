@@ -261,6 +261,7 @@ struct LoadEmitInfo {
    unsigned align_offset = 0;
    pipe_format format;
    nir_src* offset_src = NULL; /* should be equal to offset or NULL */
+   isel_context* ctx;
 
    ac_hw_cache_flags cache = {{0, 0, 0, 0, 0}};
    bool split_by_component_stride = true;
@@ -315,6 +316,7 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
 
       /* reduce constant offset */
       LoadEmitInfo new_info = info;
+      new_info.ctx = ctx;
       Operand offset = info.offset;
       unsigned reduced_const_offset = const_offset;
       if (const_offset > params.max_const_offset) {
@@ -817,8 +819,8 @@ get_gfx6_global_rsrc(Builder& bld, Temp addr)
 }
 
 void
-lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
-                     uint32_t* const_offset_inout, Temp* offset_inout)
+lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* address_inout,
+                     uint32_t* const_offset_inout, Temp* offset_inout, nir_src* offset_src)
 {
    Temp address = *address_inout;
    uint64_t const_offset = *const_offset_inout + offset_in;
@@ -857,9 +859,10 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
    if (bld.program->gfx_level == GFX6) {
       /* GFX6 (MUBUF): (SGPR address, SGPR offset) or (SGPR address, VGPR offset) */
       /* GFX6 (MUBUF-addr64): (VGPR address, SGPR offset) */
-      /* Disallow SGPR address with both a const_offset and offset because of possible overflow. */
+      /* Disallow SGPR address with both a const_offset and offset in case of possible overflow. */
       if (offset.id() &&
-          (address.type() == RegType::vgpr ? offset.type() != RegType::sgpr : const_offset > 0)) {
+          (address.type() == RegType::vgpr ? offset.type() != RegType::sgpr
+                                           : add_might_overflow(ctx, offset_src, const_offset))) {
          address = add64_32(bld, address, Operand(offset));
          offset = Temp();
       }
@@ -898,7 +901,7 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       offset = Temp();
    }
    uint32_t const_offset = info.const_offset;
-   lower_global_address(bld, 0, &addr, &const_offset, &offset);
+   lower_global_address(info.ctx, bld, 0, &addr, &const_offset, &offset, info.offset_src);
 
    unsigned bytes_size = 0;
    bool use_mubuf = bld.program->gfx_level == GFX6;
@@ -2518,7 +2521,8 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp write_address = addr;
       uint32_t write_const_offset = const_offset;
       Temp write_offset = offset;
-      lower_global_address(bld, offsets[i], &write_address, &write_const_offset, &write_offset);
+      lower_global_address(ctx, bld, offsets[i], &write_address, &write_const_offset, &write_offset,
+                           &instr->src[2]);
 
       unsigned access = nir_intrinsic_access(instr) | ACCESS_TYPE_STORE;
       if (write_datas[i].bytes() < 4)
@@ -2613,7 +2617,7 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp addr, offset;
    uint32_t const_offset;
    parse_global(ctx, instr, &addr, &const_offset, &offset);
-   lower_global_address(bld, 0, &addr, &const_offset, &offset);
+   lower_global_address(ctx, bld, 0, &addr, &const_offset, &offset, &instr->src[2]);
 
    if (ctx->options->gfx_level >= GFX7) {
       bool global = ctx->options->gfx_level >= GFX9;
