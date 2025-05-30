@@ -268,6 +268,9 @@ struct hk_graphics_state {
    struct hk_linked_shader *linked[PIPE_SHADER_TYPES];
    bool generate_primitive_id;
 
+   /* Whether blend constants are required by the active blend state */
+   bool uses_blend_constant;
+
    /* Tessellation state */
    struct {
       uint64_t out_draws;

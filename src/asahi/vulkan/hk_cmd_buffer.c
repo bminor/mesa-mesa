@@ -695,8 +695,11 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
          hk_usc_upload_spilled_rt_descs(&b, cmd);
       }
 
-      agx_usc_uniform(
-         &b, 4, 8, root_ptr + hk_root_descriptor_offset(draw.blend_constant));
+      if (cmd->state.gfx.uses_blend_constant) {
+         agx_usc_uniform(
+            &b, 4, 8,
+            root_ptr + hk_root_descriptor_offset(draw.blend_constant));
+      }
 
       /* The SHARED state is baked into linked->usc for non-fragment shaders. We
        * don't pass around the information to bake the tilebuffer layout.

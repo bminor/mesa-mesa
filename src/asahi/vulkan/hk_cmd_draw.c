@@ -2534,6 +2534,36 @@ hk_depth_bias_factor(VkFormat format, bool exact, bool force_unorm)
    }
 }
 
+static bool
+uses_blend_constant(const struct vk_color_blend_state *cb)
+{
+   static_assert(VK_BLEND_FACTOR_CONSTANT_COLOR + 1 ==
+                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR);
+
+   static_assert(VK_BLEND_FACTOR_CONSTANT_COLOR + 2 ==
+                 VK_BLEND_FACTOR_CONSTANT_ALPHA);
+
+   static_assert(VK_BLEND_FACTOR_CONSTANT_COLOR + 3 ==
+                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA);
+
+   for (unsigned i = 0; i < cb->attachment_count; ++i) {
+      unsigned factors[] = {
+         cb->attachments[i].src_color_blend_factor,
+         cb->attachments[i].src_alpha_blend_factor,
+         cb->attachments[i].dst_color_blend_factor,
+         cb->attachments[i].dst_alpha_blend_factor,
+      };
+
+      for (unsigned j = 0; j < ARRAY_SIZE(factors); ++j) {
+         if (factors[j] >= VK_BLEND_FACTOR_CONSTANT_COLOR &&
+             factors[j] <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)
+            return true;
+      }
+   }
+
+   return false;
+}
+
 static void
 hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                        uint32_t draw_id, struct agx_draw draw)
@@ -2574,6 +2604,10 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       memcpy(desc->root.draw.blend_constant, dyn->cb.blend_constants,
              sizeof(dyn->cb.blend_constants));
       desc->root_dirty = true;
+   }
+
+   if (IS_DIRTY(CB_BLEND_EQUATIONS) || IS_DIRTY(CB_BLEND_ENABLES)) {
+      gfx->uses_blend_constant = uses_blend_constant(&dyn->cb);
    }
 
    if (IS_DIRTY(MS_SAMPLE_MASK)) {
