@@ -119,14 +119,14 @@ mkdir /cuttlefish
 pushd /cuttlefish
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst"
+  -O "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst"
 
 tar --zstd -xvf aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst
 rm aosp_cf_x86_64_only_phone-img-$CUTTLEFISH_BUILD_NUMBER.tar.zst
 ls -lhS ./*
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o cvd-host_package-x86_64.tar.zst "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package-x86_64.tar.zst"
+  -O "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package-x86_64.tar.zst"
 tar --zst -xvf cvd-host_package-x86_64.tar.zst
 rm cvd-host_package-x86_64.tar.zst
 
@@ -135,9 +135,9 @@ AOSP_KERNEL_BUILD_VERSION_TAGS=common-android14-6.1-venus
 AOSP_KERNEL_BUILD_NUMBER=20241107.001
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o bzImage "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/bzImage"
+  -O "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/bzImage"
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o initramfs.img "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/initramfs.img"
+  -O "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/initramfs.img"
 
 popd
 
