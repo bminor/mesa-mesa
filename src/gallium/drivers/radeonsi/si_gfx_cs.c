@@ -550,11 +550,11 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
    bool has_clear_state = ctx->screen->info.has_clear_state;
    if (has_clear_state) {
       ctx->framebuffer.dirty_cbufs =
-            u_bit_consecutive(0, ctx->framebuffer.state.nr_cbufs);
+            BITFIELD_MASK(ctx->framebuffer.state.nr_cbufs);
       /* CLEAR_STATE disables the zbuffer, so only enable it if it's bound. */
       ctx->framebuffer.dirty_zsbuf = ctx->framebuffer.state.zsbuf.texture != NULL;
    } else {
-      ctx->framebuffer.dirty_cbufs = u_bit_consecutive(0, 8);
+      ctx->framebuffer.dirty_cbufs = BITFIELD_MASK(8);
       ctx->framebuffer.dirty_zsbuf = true;
    }
 

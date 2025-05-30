@@ -244,7 +244,7 @@ ntr_tgsi_var_usage_mask(const struct nir_variable *var)
    if (num_components == 0) /* structs */
       num_components = 4;
 
-   return u_bit_consecutive(var->data.location_frac, num_components);
+   return BITFIELD_RANGE(var->data.location_frac, num_components);
 }
 
 static struct ureg_dst
@@ -277,7 +277,7 @@ ntr_output_decl(struct ntr_compile *c, nir_intrinsic_instr *instr, uint32_t *fra
 
       tgsi_get_gl_varying_semantic(semantics.location, true, &semantic_name, &semantic_index);
 
-      uint32_t usage_mask = u_bit_consecutive(*frac, instr->num_components);
+      uint32_t usage_mask = BITFIELD_RANGE(*frac, instr->num_components);
       uint32_t gs_streams = semantics.gs_streams;
       for (int i = 0; i < 4; i++) {
          if (!(usage_mask & (1 << i)))

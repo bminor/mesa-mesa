@@ -1129,7 +1129,7 @@ static int gfx6_surface_settings(ADDR_HANDLE addrlib, const struct radeon_info *
          return r;
 
       assert(AddrBaseSwizzleOut.tileSwizzle <=
-             u_bit_consecutive(0, sizeof(surf->tile_swizzle) * 8));
+             BITFIELD_MASK(sizeof(surf->tile_swizzle) * 8));
       surf->tile_swizzle = AddrBaseSwizzleOut.tileSwizzle;
    }
    return 0;
@@ -1691,7 +1691,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
          if (r != ADDR_OK)
             return r;
 
-         assert(xout.tileSwizzle <= u_bit_consecutive(0, sizeof(surf->tile_swizzle) * 8));
+         assert(xout.tileSwizzle <= BITFIELD_MASK(sizeof(surf->tile_swizzle) * 8));
          surf->fmask_tile_swizzle = xout.tileSwizzle;
       }
    }
@@ -2260,7 +2260,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
          if (ret != ADDR_OK)
             return ret;
 
-         assert(xout.pipeBankXor <= u_bit_consecutive(0, sizeof(surf->tile_swizzle) * 8));
+         assert(xout.pipeBankXor <= BITFIELD_MASK(sizeof(surf->tile_swizzle) * 8));
          surf->tile_swizzle = xout.pipeBankXor;
 
          /* Gfx11 should shift it by 10 bits instead of 8, and drivers already shift it by 8 bits,
@@ -2462,7 +2462,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
             if (ret != ADDR_OK)
                return ret;
 
-            assert(xout.pipeBankXor <= u_bit_consecutive(0, sizeof(surf->fmask_tile_swizzle) * 8));
+            assert(xout.pipeBankXor <= BITFIELD_MASK(sizeof(surf->fmask_tile_swizzle) * 8));
             surf->fmask_tile_swizzle = xout.pipeBankXor;
          }
       }
@@ -3305,7 +3305,7 @@ static bool gfx12_compute_miptree(struct ac_addrlib *addrlib, const struct radeo
       if (ret != ADDR_OK)
          return false;
 
-      assert(xout.pipeBankXor <= u_bit_consecutive(0, sizeof(surf->tile_swizzle) * 8 + 2));
+      assert(xout.pipeBankXor <= BITFIELD_MASK(sizeof(surf->tile_swizzle) * 8 + 2));
       surf->tile_swizzle = xout.pipeBankXor;
    }
 

@@ -501,7 +501,7 @@ enum
 #define SI_NUM_DESCS           (SI_DESCS_FIRST_SHADER + SI_NUM_SHADERS * SI_NUM_SHADER_DESCS)
 
 #define SI_DESCS_SHADER_MASK(name)                                                                 \
-   u_bit_consecutive(SI_DESCS_FIRST_SHADER + PIPE_SHADER_##name * SI_NUM_SHADER_DESCS,             \
+   BITFIELD_RANGE(SI_DESCS_FIRST_SHADER + PIPE_SHADER_##name * SI_NUM_SHADER_DESCS,             \
                      SI_NUM_SHADER_DESCS)
 
 static inline unsigned si_const_and_shader_buffer_descriptors_idx(unsigned shader)

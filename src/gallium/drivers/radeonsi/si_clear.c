@@ -187,7 +187,7 @@ static bool gfx8_get_dcc_clear_parameters(struct si_screen *sscreen, enum pipe_f
 
       if (desc->channel[i].pure_integer && desc->channel[i].type == UTIL_FORMAT_TYPE_SIGNED) {
          /* Use the maximum value for clamping the clear color. */
-         int max = u_bit_consecutive(0, desc->channel[i].size - 1);
+         int max = BITFIELD_MASK(desc->channel[i].size - 1);
 
          values[i] = color->i[i] != 0;
          if (color->i[i] != 0 && MIN2(color->i[i], max) != max)
@@ -195,7 +195,7 @@ static bool gfx8_get_dcc_clear_parameters(struct si_screen *sscreen, enum pipe_f
       } else if (desc->channel[i].pure_integer &&
                  desc->channel[i].type == UTIL_FORMAT_TYPE_UNSIGNED) {
          /* Use the maximum value for clamping the clear color. */
-         unsigned max = u_bit_consecutive(0, desc->channel[i].size);
+         unsigned max = BITFIELD_MASK(desc->channel[i].size);
 
          values[i] = color->ui[i] != 0U;
          if (color->ui[i] != 0U && MIN2(color->ui[i], max) != max)

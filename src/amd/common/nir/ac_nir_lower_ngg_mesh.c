@@ -295,7 +295,7 @@ ms_store_arrayed_output(nir_builder *b,
    bool hi_16b = io_sem.high_16bits;
    bool lo_16b = !hi_16b && store_val->bit_size == 16;
 
-   unsigned mapped_location = util_bitcount64(out->mask & u_bit_consecutive64(0, io_sem.location));
+   unsigned mapped_location = util_bitcount64(out->mask & BITFIELD64_MASK(io_sem.location));
    unsigned num_outputs = util_bitcount64(out->mask);
    unsigned const_off = out->addr + component_offset * 4 + (hi_16b ? 2 : 0);
 
@@ -414,7 +414,7 @@ ms_load_arrayed_output(nir_builder *b,
    unsigned const_off = out->addr + component_offset * 4;
 
    /* Use compacted location instead of the original semantic location. */
-   unsigned mapped_location = util_bitcount64(out->mask & u_bit_consecutive64(0, location));
+   unsigned mapped_location = util_bitcount64(out->mask & BITFIELD64_MASK(location));
 
    nir_def *base_addr = ms_arrayed_output_base_addr(b, arr_index, mapped_location, num_outputs);
    nir_def *base_addr_off = nir_imul_imm(b, base_offset, 16);

@@ -225,7 +225,7 @@ lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin, lower_vs_inputs
    const struct ac_vtx_format_info *vtx_info =
       ac_get_vtx_format_info(s->gpu_info->gfx_level, s->gpu_info->family, attrib_format);
    const unsigned binding_index = s->info->vs.use_per_attribute_vb_descs ? location : attrib_binding;
-   const unsigned desc_index = util_bitcount(s->info->vs.vb_desc_usage_mask & u_bit_consecutive(0, binding_index));
+   const unsigned desc_index = util_bitcount(s->info->vs.vb_desc_usage_mask & BITFIELD_MASK(binding_index));
 
    nir_def *vertex_buffers_arg = ac_nir_load_arg(b, &s->args->ac, s->args->ac.vertex_buffers);
    nir_def *vertex_buffers = nir_pack_64_2x32_split(b, vertex_buffers_arg, nir_imm_int(b, s->gpu_info->address32_hi));

@@ -64,7 +64,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    }
 
    /* Images in user SGPRs. */
-   unsigned non_fmask_images = u_bit_consecutive(0, sel->nir->info.num_images);
+   unsigned non_fmask_images = BITFIELD_MASK(sel->nir->info.num_images);
 
    /* Remove images with FMASK from the bitmask.  We only care about the first
     * 3 anyway, so we can take msaa_images[0] and ignore the rest.
@@ -859,7 +859,7 @@ static bool si_check_needs_implicit_sync(struct si_context *sctx, uint32_t usage
    }
 
    struct si_images *images = &sctx->images[PIPE_SHADER_COMPUTE];
-   mask = u_bit_consecutive(0, info->base.num_images) & images->enabled_mask;
+   mask = BITFIELD_MASK(info->base.num_images) & images->enabled_mask;
 
    while (mask) {
       int i = u_bit_scan(&mask);

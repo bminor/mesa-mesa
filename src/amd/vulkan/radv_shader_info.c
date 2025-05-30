@@ -206,7 +206,7 @@ gather_push_constant_info(const nir_shader *nir, const nir_intrinsic_instr *inst
       uint32_t size = instr->num_components * (instr->def.bit_size / 32u);
 
       if (start + size <= (MAX_PUSH_CONSTANTS_SIZE / 4u)) {
-         info->inline_push_constant_mask |= u_bit_consecutive64(start, size);
+         info->inline_push_constant_mask |= BITFIELD64_RANGE(start, size);
          return;
       }
    }

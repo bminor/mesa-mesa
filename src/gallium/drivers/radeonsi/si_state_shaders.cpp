@@ -3569,7 +3569,7 @@ void si_get_active_slot_masks(struct si_screen *sscreen, const struct si_shader_
 
    /* The layout is: sb[last] ... sb[0], cb[0] ... cb[last] */
    start = si_get_shaderbuf_slot(num_shaderbufs - 1);
-   *const_and_shader_buffers = u_bit_consecutive64(start, num_shaderbufs + num_constbufs);
+   *const_and_shader_buffers = BITFIELD64_RANGE(start, num_shaderbufs + num_constbufs);
 
    /* The layout is:
     *   - fmask[last] ... fmask[0]     go to [15-last .. 15]
@@ -3584,7 +3584,7 @@ void si_get_active_slot_masks(struct si_screen *sscreen, const struct si_shader_
       num_images = SI_NUM_IMAGES + num_msaa_images; /* add FMASK descriptors */
 
    start = si_get_image_slot(num_images - 1) / 2;
-   *samplers_and_images = u_bit_consecutive64(start, num_images / 2 + num_samplers);
+   *samplers_and_images = BITFIELD64_RANGE(start, num_images / 2 + num_samplers);
 }
 
 static void *si_create_shader_selector(struct pipe_context *ctx,
@@ -4844,7 +4844,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
       sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
           si_resource(sctx->screen->tess_rings_tmz)->gpu_address :
           si_resource(sctx->screen->tess_rings)->gpu_address;
-   assert((ring_va & u_bit_consecutive(0, 19)) == 0);
+   assert((ring_va & BITFIELD_MASK(19)) == 0);
 
    sctx->tes_offchip_ring_va_sgpr = ring_va;
    sctx->tcs_offchip_layout &= 0xe0000000;

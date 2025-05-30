@@ -1709,7 +1709,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
       u_foreach_bit(shader, mask) {
          si_reset_buffer_resources(sctx, &sctx->const_and_shader_buffers[shader],
                                    si_const_and_shader_buffer_descriptors_idx(shader),
-                                   u_bit_consecutive64(SI_NUM_SHADER_BUFFERS, SI_NUM_CONST_BUFFERS),
+                                   BITFIELD64_RANGE(SI_NUM_SHADER_BUFFERS, SI_NUM_CONST_BUFFERS),
                                    buf, sctx->const_and_shader_buffers[shader].priority_constbuf);
       }
    }
@@ -1720,7 +1720,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
       u_foreach_bit(shader, mask) {
          if (si_reset_buffer_resources(sctx, &sctx->const_and_shader_buffers[shader],
                                        si_const_and_shader_buffer_descriptors_idx(shader),
-                                       u_bit_consecutive64(0, SI_NUM_SHADER_BUFFERS), buf,
+                                       BITFIELD64_MASK(SI_NUM_SHADER_BUFFERS), buf,
                                        sctx->const_and_shader_buffers[shader].priority) &&
              shader == PIPE_SHADER_COMPUTE) {
             sctx->compute_shaderbuf_sgprs_dirty = true;
@@ -2011,7 +2011,7 @@ void si_update_all_texture_descriptors(struct si_context *sctx)
 static void si_mark_shader_pointers_dirty(struct si_context *sctx, unsigned shader)
 {
    sctx->shader_pointers_dirty |=
-      u_bit_consecutive(SI_DESCS_FIRST_SHADER + shader * SI_NUM_SHADER_DESCS, SI_NUM_SHADER_DESCS);
+      BITFIELD_RANGE(SI_DESCS_FIRST_SHADER + shader * SI_NUM_SHADER_DESCS, SI_NUM_SHADER_DESCS);
 
    if (shader == PIPE_SHADER_VERTEX)
       sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
@@ -2022,7 +2022,7 @@ static void si_mark_shader_pointers_dirty(struct si_context *sctx, unsigned shad
 void si_shader_pointers_mark_dirty(struct si_context *sctx)
 {
    sctx->shader_pointers_dirty =
-      u_bit_consecutive(SI_DESCS_FIRST_SHADER, SI_NUM_DESCS - SI_DESCS_FIRST_SHADER);
+      BITFIELD_RANGE(SI_DESCS_FIRST_SHADER, SI_NUM_DESCS - SI_DESCS_FIRST_SHADER);
    sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
    sctx->graphics_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;
@@ -2933,7 +2933,7 @@ void si_init_all_descriptors(struct si_context *sctx)
    si_init_bindless_descriptors(sctx, &sctx->bindless_descriptors,
                                 SI_SGPR_BINDLESS_SAMPLERS_AND_IMAGES, 1024);
 
-   sctx->descriptors_dirty = u_bit_consecutive(0, SI_NUM_DESCS);
+   sctx->descriptors_dirty = BITFIELD_MASK(SI_NUM_DESCS);
 
    /* Set pipe_context functions. */
    sctx->b.bind_sampler_states = si_bind_sampler_states;
@@ -3005,7 +3005,7 @@ bool si_gfx_resources_check_encrypted(struct si_context *sctx)
          si_sampler_views_check_encrypted(sctx, &sctx->samplers[i],
                                           current_shader->cso->info.base.textures_used);
       use_encrypted_bo |= si_image_views_check_encrypted(sctx, &sctx->images[i],
-                                          u_bit_consecutive(0, current_shader->cso->info.base.num_images));
+                                          BITFIELD_MASK(current_shader->cso->info.base.num_images));
    }
    use_encrypted_bo |= si_buffer_resources_check_encrypted(sctx, &sctx->internal_bindings);
 
@@ -3084,7 +3084,7 @@ bool si_compute_resources_check_encrypted(struct si_context *sctx)
     */
    return si_buffer_resources_check_encrypted(sctx, &sctx->const_and_shader_buffers[sh]) ||
           si_sampler_views_check_encrypted(sctx, &sctx->samplers[sh], info->base.textures_used) ||
-          si_image_views_check_encrypted(sctx, &sctx->images[sh], u_bit_consecutive(0, info->base.num_images)) ||
+          si_image_views_check_encrypted(sctx, &sctx->images[sh], BITFIELD_MASK(info->base.num_images)) ||
           si_buffer_resources_check_encrypted(sctx, &sctx->internal_bindings);
 }
 
@@ -3121,7 +3121,7 @@ void si_set_active_descriptors(struct si_context *sctx, unsigned desc_idx, uint6
 
    /* Ignore no-op updates and updates that disable all slots. */
    if (!new_active_mask ||
-       new_active_mask == u_bit_consecutive64(desc->first_active_slot, desc->num_active_slots))
+       new_active_mask == BITFIELD64_RANGE(desc->first_active_slot, desc->num_active_slots))
       return;
 
    int first, count;

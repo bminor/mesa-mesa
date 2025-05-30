@@ -219,7 +219,7 @@ radv_device_init_vs_prologs(struct radv_device *device)
    for (unsigned num_attributes = 1; num_attributes <= 16; num_attributes++) {
       for (unsigned count = 1; count <= num_attributes; count++) {
          for (unsigned start = 0; start <= (num_attributes - count); start++) {
-            key.instance_rate_inputs = u_bit_consecutive(start, count);
+            key.instance_rate_inputs = BITFIELD_RANGE(start, count);
             key.num_attributes = num_attributes;
 
             struct radv_shader_part *prolog = radv_create_vs_prolog(device, &key);

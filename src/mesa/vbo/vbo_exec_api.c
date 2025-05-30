@@ -1127,7 +1127,7 @@ vbo_exec_vtx_init(struct vbo_exec_context *exec)
 
    exec->vtx.bufferobj = _mesa_bufferobj_alloc(ctx, IMM_BUFFER_NAME);
 
-   exec->vtx.enabled = u_bit_consecutive64(0, VBO_ATTRIB_MAX); /* reset all */
+   exec->vtx.enabled = BITFIELD64_MASK(VBO_ATTRIB_MAX); /* reset all */
    vbo_reset_all_attr(ctx);
 
    exec->vtx.info.instance_count = 1;

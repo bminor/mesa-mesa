@@ -2097,9 +2097,9 @@ static void si_draw(struct pipe_context *ctx,
    si_check_dirty_buffers_textures(sctx);
 
    if (GFX_VERSION < GFX11)
-      gfx6_decompress_textures(sctx, u_bit_consecutive(0, SI_NUM_GRAPHICS_SHADERS));
+      gfx6_decompress_textures(sctx, BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS));
    else if (GFX_VERSION < GFX12)
-      gfx11_decompress_textures(sctx, u_bit_consecutive(0, SI_NUM_GRAPHICS_SHADERS));
+      gfx11_decompress_textures(sctx, BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS));
 
    si_need_gfx_cs_space(sctx, num_draws, ALT_HIZ_LOGIC ? 8 : 0);
 

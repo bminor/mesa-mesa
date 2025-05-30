@@ -287,7 +287,7 @@ static void si_decompress_depth(struct si_context *sctx, struct si_texture *tex,
 {
    unsigned inplace_planes = 0;
    unsigned copy_planes = 0;
-   unsigned level_mask = u_bit_consecutive(first_level, last_level - first_level + 1);
+   unsigned level_mask = BITFIELD_RANGE(first_level, last_level - first_level + 1);
    unsigned levels_z = 0;
    unsigned levels_s = 0;
 
@@ -443,7 +443,7 @@ static void si_blit_decompress_color(struct si_context *sctx, struct si_texture 
 {
    void *custom_blend;
    unsigned layer, checked_last_layer, max_layer;
-   unsigned level_mask = u_bit_consecutive(first_level, last_level - first_level + 1);
+   unsigned level_mask = BITFIELD_RANGE(first_level, last_level - first_level + 1);
 
    /* No decompression is ever needed on Gfx12. */
    assert(sctx->gfx_level < GFX12);
@@ -763,7 +763,7 @@ static void si_check_render_feedback(struct si_context *sctx)
 
       struct si_shader_info *info = &sctx->shaders[i].cso->info;
       si_check_render_feedback_images(sctx, &sctx->images[i],
-                                      u_bit_consecutive(0, info->base.num_images));
+                                      BITFIELD_MASK(info->base.num_images));
       si_check_render_feedback_textures(sctx, &sctx->samplers[i],
                                         info->base.textures_used);
    }
@@ -857,7 +857,7 @@ void gfx6_decompress_textures(struct si_context *sctx, unsigned shader_mask)
       sctx->b.flush(&sctx->b, NULL, RADEON_FLUSH_ASYNC_START_NEXT_GFX_IB_NOW);
    }
 
-   if (shader_mask & u_bit_consecutive(0, SI_NUM_GRAPHICS_SHADERS)) {
+   if (shader_mask & BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS)) {
       if (sctx->uses_bindless_samplers) {
          si_decompress_resident_color_textures(sctx);
          si_decompress_resident_depth_textures(sctx);
@@ -895,7 +895,7 @@ void gfx11_decompress_textures(struct si_context *sctx, unsigned shader_mask)
    }
 
    /* Decompress bindless depth textures and disable DCC for render feedback. */
-   if (shader_mask & u_bit_consecutive(0, SI_NUM_GRAPHICS_SHADERS)) {
+   if (shader_mask & BITFIELD_MASK(SI_NUM_GRAPHICS_SHADERS)) {
       if (sctx->uses_bindless_samplers)
          si_decompress_resident_depth_textures(sctx);
 
@@ -1385,7 +1385,7 @@ static bool si_generate_mipmap(struct pipe_context *ctx, struct pipe_resource *t
 
    /* Clear dirty_level_mask for the levels that will be overwritten. */
    assert(base_level < last_level);
-   stex->dirty_level_mask &= ~u_bit_consecutive(base_level + 1, last_level - base_level);
+   stex->dirty_level_mask &= ~BITFIELD_RANGE(base_level + 1, last_level - base_level);
 
    sctx->generate_mipmap_for_depth = stex->is_depth;
 

@@ -775,10 +775,10 @@ static void si_dump_descriptors(struct si_context *sctx, gl_shader_stage stage,
    unsigned enabled_images;
 
    if (info) {
-      enabled_constbuf = u_bit_consecutive(0, info->base.num_ubos);
-      enabled_shaderbuf = u_bit_consecutive(0, info->base.num_ssbos);
+      enabled_constbuf = BITFIELD_MASK(info->base.num_ubos);
+      enabled_shaderbuf = BITFIELD_MASK(info->base.num_ssbos);
       enabled_samplers = info->base.textures_used;
-      enabled_images = u_bit_consecutive(0, info->base.num_images);
+      enabled_images = BITFIELD_MASK(info->base.num_images);
    } else {
       enabled_constbuf =
          sctx->const_and_shader_buffers[stage].enabled_mask >> SI_NUM_SHADER_BUFFERS;

@@ -1183,14 +1183,14 @@ gfx8_get_fast_clear_parameters(struct radv_device *device, const struct radv_ima
 
       if (desc->channel[i].pure_integer && desc->channel[i].type == UTIL_FORMAT_TYPE_SIGNED) {
          /* Use the maximum value for clamping the clear color. */
-         int max = u_bit_consecutive(0, desc->channel[i].size - 1);
+         int max = BITFIELD_MASK(desc->channel[i].size - 1);
 
          values[i] = clear_value->int32[i] != 0;
          if (clear_value->int32[i] != 0 && MIN2(clear_value->int32[i], max) != max)
             return;
       } else if (desc->channel[i].pure_integer && desc->channel[i].type == UTIL_FORMAT_TYPE_UNSIGNED) {
          /* Use the maximum value for clamping the clear color. */
-         unsigned max = u_bit_consecutive(0, desc->channel[i].size);
+         unsigned max = BITFIELD_MASK(desc->channel[i].size);
 
          values[i] = clear_value->uint32[i] != 0U;
          if (clear_value->uint32[i] != 0U && MIN2(clear_value->uint32[i], max) != max)

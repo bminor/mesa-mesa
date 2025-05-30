@@ -2602,5 +2602,5 @@ uint32_t ac_gfx103_get_cu_mask_ps(const struct radeon_info *info)
     * increase clocks for busy CUs. In the future, we might disable or enable this
     * tweak only for certain apps.
     */
-   return u_bit_consecutive(0, info->min_good_cu_per_sa);
+   return BITFIELD_MASK(info->min_good_cu_per_sa);
 }
