@@ -99,26 +99,6 @@ static struct pipe_sampler_view *noop_create_sampler_view(struct pipe_context *c
    return sampler_view;
 }
 
-static struct pipe_surface *noop_create_surface(struct pipe_context *ctx,
-                                                struct pipe_resource *texture,
-                                                const struct pipe_surface *surf_tmpl)
-{
-   struct pipe_surface *surface = CALLOC_STRUCT(pipe_surface);
-
-   if (!surface)
-      return NULL;
-   pipe_reference_init(&surface->reference, 1);
-   pipe_resource_reference(&surface->texture, texture);
-   surface->context = ctx;
-   surface->format = surf_tmpl->format;
-   surface->texture = texture;
-   surface->first_layer = surf_tmpl->first_layer;
-   surface->last_layer = surf_tmpl->last_layer;
-   surface->level = surf_tmpl->level;
-
-   return surface;
-}
-
 static void noop_set_sampler_views(struct pipe_context *ctx,
                                    enum pipe_shader_type shader,
                                    unsigned start, unsigned count,
@@ -204,13 +184,6 @@ static void noop_sampler_view_release(struct pipe_context *ctx,
    noop_sampler_view_destroy(ctx, state);
 }
 
-
-static void noop_surface_destroy(struct pipe_context *ctx,
-                                 struct pipe_surface *surface)
-{
-   pipe_resource_reference(&surface->texture, NULL);
-   FREE(surface);
-}
 
 static void noop_bind_state(struct pipe_context *ctx, void *state)
 {
@@ -434,7 +407,6 @@ void noop_init_state_functions(struct pipe_context *ctx)
    ctx->create_rasterizer_state = noop_create_rs_state;
    ctx->create_sampler_state = noop_create_sampler_state;
    ctx->create_sampler_view = noop_create_sampler_view;
-   ctx->create_surface = noop_create_surface;
    ctx->create_vertex_elements_state = noop_create_vertex_elements;
    ctx->create_compute_state = noop_create_compute_state;
    ctx->create_tcs_state = noop_create_shader_state;
@@ -480,7 +452,6 @@ void noop_init_state_functions(struct pipe_context *ctx)
    ctx->set_window_rectangles = noop_set_window_rectangles;
    ctx->sampler_view_destroy = noop_sampler_view_destroy;
    ctx->sampler_view_release = noop_sampler_view_release;
-   ctx->surface_destroy = noop_surface_destroy;
    ctx->draw_vbo = noop_draw_vbo;
    ctx->draw_vertex_state = noop_draw_vertex_state;
    ctx->launch_grid = noop_launch_grid;
