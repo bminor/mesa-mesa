@@ -2307,25 +2307,45 @@ impl fmt::Display for LdCacheOp {
 
 impl LdCacheOp {
     pub fn select(
-        _sm: &dyn ShaderModel,
+        sm: &dyn ShaderModel,
         space: MemSpace,
         order: MemOrder,
         _eviction_priority: MemEvictionPriority,
     ) -> Self {
         match space {
-            // From the CUDA 10.2 docs:
-            //
-            //    "L1 caching in Kepler GPUs is reserved only for local memory
-            //    accesses, such as register spills and stack data. Global
-            //    loads are cached in L2 only (or in the Read-Only Data Cache)."
-            //
-            // We assume that CacheAll is also safe for shared memory.
             MemSpace::Global(_) => match order {
                 MemOrder::Constant => LdCacheOp::CacheAll,
                 MemOrder::Strong(MemScope::System) => {
                     LdCacheOp::CacheInvalidate
                 }
-                _ => LdCacheOp::CacheGlobal,
+                _ => {
+                    // From the CUDA 10.2 docs:
+                    //
+                    //    "The default load instruction cache operation is
+                    //    ld.ca, which allocates cache lines in all levels (L1
+                    //    and L2) with normal eviction policy. Global data is
+                    //    coherent at the L2 level, but multiple L1 caches are
+                    //    not coherent for global data. If one thread stores to
+                    //    global memory via one L1 cache, and a second thread
+                    //    loads that address via a second L1 cache with ld.ca,
+                    //    the second thread may get stale L1 cache data"
+                    //
+                    // and
+                    //
+                    //    "L1 caching in Kepler GPUs is reserved only for local
+                    //    memory accesses, such as register spills and stack
+                    //    data. Global loads are cached in L2 only (or in the
+                    //    Read-Only Data Cache)."
+                    //
+                    // We follow suit and use CacheGlobal for all global memory
+                    // access on Kepler.  On Maxwell, it appears safe to use
+                    // CacheAll for everything.
+                    if sm.sm() >= 50 {
+                        LdCacheOp::CacheAll
+                    } else {
+                        LdCacheOp::CacheGlobal
+                    }
+                }
             },
             MemSpace::Local | MemSpace::Shared => LdCacheOp::CacheAll,
         }
@@ -2356,7 +2376,7 @@ impl fmt::Display for StCacheOp {
 
 impl StCacheOp {
     pub fn select(
-        _sm: &dyn ShaderModel,
+        sm: &dyn ShaderModel,
         space: MemSpace,
         order: MemOrder,
         _eviction_priority: MemEvictionPriority,
@@ -2364,10 +2384,15 @@ impl StCacheOp {
         match space {
             MemSpace::Global(_) => match order {
                 MemOrder::Constant => panic!("Cannot store to constant"),
-                MemOrder::Strong(MemScope::System) => {
-                    StCacheOp::WriteThrough
+                MemOrder::Strong(MemScope::System) => StCacheOp::WriteThrough,
+                _ => {
+                    // See the corresponding comment in LdCacheOp::select()
+                    if sm.sm() >= 50 {
+                        StCacheOp::WriteBack
+                    } else {
+                        StCacheOp::CacheGlobal
+                    }
                 }
-                _ => StCacheOp::CacheGlobal,
             },
             MemSpace::Local | MemSpace::Shared => StCacheOp::WriteBack,
         }
