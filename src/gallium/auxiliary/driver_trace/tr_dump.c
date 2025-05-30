@@ -629,19 +629,6 @@ void trace_dump_ptr(const void *value)
       trace_dump_null();
 }
 
-void trace_dump_surface_ptr(struct pipe_surface *_surface)
-{
-   if (!dumping)
-      return;
-
-   if (_surface) {
-      struct trace_surface *tr_surf = trace_surface(_surface);
-      trace_dump_ptr(tr_surf->surface);
-   } else {
-      trace_dump_null();
-   }
-}
-
 void trace_dump_transfer_ptr(struct pipe_transfer *_transfer)
 {
    if (!dumping)

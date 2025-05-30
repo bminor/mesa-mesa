@@ -71,26 +71,6 @@ trace_query_unwrap(struct pipe_query *query)
    }
 }
 
-
-static inline struct pipe_surface *
-trace_surface_unwrap(struct trace_context *tr_ctx,
-                     struct pipe_surface *surface)
-{
-   struct trace_surface *tr_surf;
-
-   if (!surface)
-      return NULL;
-
-   assert(surface->texture);
-   if (!surface->texture)
-      return surface;
-
-   tr_surf = trace_surface(surface);
-
-   assert(tr_surf->surface);
-   return tr_surf->surface;
-}
-
 static void
 dump_fb_state(struct trace_context *tr_ctx,
               const char *method,
@@ -1174,56 +1154,6 @@ trace_context_sampler_view_release(struct pipe_context *_pipe,
  */
 
 
-static struct pipe_surface *
-trace_context_create_surface(struct pipe_context *_pipe,
-                             struct pipe_resource *resource,
-                             const struct pipe_surface *surf_tmpl)
-{
-   struct trace_context *tr_ctx = trace_context(_pipe);
-   struct pipe_context *pipe = tr_ctx->pipe;
-   struct pipe_surface *result = NULL;
-
-   trace_dump_call_begin("pipe_context", "create_surface");
-
-   trace_dump_arg(ptr, pipe);
-   trace_dump_arg(ptr, resource);
-
-   trace_dump_arg_begin("surf_tmpl");
-   trace_dump_surface_template(surf_tmpl, resource->target);
-   trace_dump_arg_end();
-
-
-   result = pipe->create_surface(pipe, resource, surf_tmpl);
-
-   trace_dump_ret(ptr, result);
-
-   trace_dump_call_end();
-
-   result = trace_surf_create(tr_ctx, resource, result);
-
-   return result;
-}
-
-
-static void
-trace_context_surface_destroy(struct pipe_context *_pipe,
-                              struct pipe_surface *_surface)
-{
-   struct trace_context *tr_ctx = trace_context(_pipe);
-   struct pipe_context *pipe = tr_ctx->pipe;
-   struct trace_surface *tr_surf = trace_surface(_surface);
-   struct pipe_surface *surface = tr_surf->surface;
-
-   trace_dump_call_begin("pipe_context", "surface_destroy");
-
-   trace_dump_arg(ptr, pipe);
-   trace_dump_arg(ptr, surface);
-
-   trace_dump_call_end();
-
-   trace_surf_destroy(tr_surf);
-}
-
 
 static void
 trace_context_set_sampler_views(struct pipe_context *_pipe,
@@ -1490,8 +1420,6 @@ trace_context_clear_render_target(struct pipe_context *_pipe,
    struct trace_context *tr_ctx = trace_context(_pipe);
    struct pipe_context *pipe = tr_ctx->pipe;
 
-   dst = trace_surface_unwrap(tr_ctx, dst);
-
    trace_dump_call_begin("pipe_context", "clear_render_target");
 
    trace_dump_arg(ptr, pipe);
@@ -1521,8 +1449,6 @@ trace_context_clear_depth_stencil(struct pipe_context *_pipe,
 {
    struct trace_context *tr_ctx = trace_context(_pipe);
    struct pipe_context *pipe = tr_ctx->pipe;
-
-   dst = trace_surface_unwrap(tr_ctx, dst);
 
    trace_dump_call_begin("pipe_context", "clear_depth_stencil");
 
@@ -2599,8 +2525,6 @@ trace_context_create(struct trace_screen *tr_scr,
    TR_CTX_INIT(create_sampler_view);
    TR_CTX_INIT(sampler_view_destroy);
    TR_CTX_INIT(sampler_view_release);
-   TR_CTX_INIT(create_surface);
-   TR_CTX_INIT(surface_destroy);
    TR_CTX_INIT(set_vertex_buffers);
    TR_CTX_INIT(create_stream_output_target);
    TR_CTX_INIT(stream_output_target_destroy);

@@ -729,14 +729,6 @@ class Context(Dispatcher):
     def clear_texture(self, res, level, box, **color):
         pass
 
-    def create_surface(self, resource, surf_tmpl):
-        assert resource is not None
-        surf_tmpl.resource = resource
-        return surf_tmpl
-
-    def surface_destroy(self, surface):
-        self.interpreter.unregister_object(surface)
-
     def create_query(self, query_type, index):
         return query_type
 
