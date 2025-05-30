@@ -2068,6 +2068,9 @@ system_value("is_first_fan_agx", 1, bit_sizes=[1])
 # mesa_prim for the input topology (in a geometry shader)
 system_value("input_topology_agx", 1)
 
+# Root descriptor address
+system_value("root_agx", 1, bit_sizes=[64])
+
 # Load a bindless sampler handle mapping a binding table sampler.
 intrinsic("load_sampler_handle_agx", [1], 1, [],
           flags=[CAN_ELIMINATE, CAN_REORDER],
