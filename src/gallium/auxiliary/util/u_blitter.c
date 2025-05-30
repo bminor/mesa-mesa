@@ -1592,21 +1592,6 @@ void util_blitter_default_dst_texture(struct pipe_surface *dst_templ,
    dst_templ->last_layer = dstz;
 }
 
-static struct pipe_surface *
-util_blitter_get_next_surface_layer(struct pipe_context *pipe,
-                                    struct pipe_surface *surf)
-{
-   struct pipe_surface dst_templ;
-
-   memset(&dst_templ, 0, sizeof(dst_templ));
-   dst_templ.format = surf->format;
-   dst_templ.level = surf->level;
-   dst_templ.first_layer = surf->first_layer + 1;
-   dst_templ.last_layer = surf->last_layer + 1;
-
-   return pipe->create_surface(pipe, surf->texture, &dst_templ);
-}
-
 void util_blitter_default_src_texture(struct blitter_context *blitter,
                                       struct pipe_sampler_view *src_templ,
                                       struct pipe_resource *src,
@@ -1841,10 +1826,13 @@ static void do_blits(struct blitter_context_priv *ctx,
                        srcbox->x + srcbox->width, srcbox->y + srcbox->height,
                        0, 0, uses_txf, UTIL_BLITTER_ATTRIB_TEXCOORD_XY);
    } else {
+      /* Set framebuffer state. */
+      struct pipe_surface *psurf = is_zsbuf ? &fb_state.zsbuf : &fb_state.cbufs[0];
+      memcpy(psurf, dst, sizeof(*dst));
+
       /* Draw the quad with the generic codepath. */
       int dst_z;
       for (dst_z = 0; dst_z < dstbox->depth; dst_z++) {
-         struct pipe_surface *old;
          bool flipped = (srcbox->depth < 0);
          float depth_center_offset = 0.0;
          int src_depth = abs(srcbox->depth);
@@ -1875,13 +1863,6 @@ static void do_blits(struct blitter_context_priv *ctx,
          }
 
          float src_z = dst_z * src_z_step + depth_center_offset;
-
-         /* Set framebuffer state. */
-         if (is_zsbuf) {
-            memcpy(&fb_state.zsbuf, dst, sizeof(*dst));
-         } else {
-            memcpy(&fb_state.cbufs[0], dst, sizeof(*dst));
-         }
          pipe->set_framebuffer_state(pipe, &fb_state);
 
          /* See if we need to blit a multisample or singlesample buffer. */
@@ -1936,14 +1917,10 @@ static void do_blits(struct blitter_context_priv *ctx,
                              UTIL_BLITTER_ATTRIB_TEXCOORD_XYZW);
          }
 
-         /* Get the next surface or (if this is the last iteration)
-          * just unreference the last one. */
-         old = dst;
+         /* Increment the layer */
          if (dst_z < dstbox->depth-1) {
-            dst = util_blitter_get_next_surface_layer(ctx->base.pipe, dst);
-         }
-         if (dst_z) {
-            pipe_surface_reference(&old, NULL);
+            psurf->first_layer++;
+            psurf->last_layer++;
          }
       }
    }
