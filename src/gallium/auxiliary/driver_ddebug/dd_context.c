@@ -436,30 +436,6 @@ static void dd_context_set_window_rectangles(struct pipe_context *_pipe,
  * views
  */
 
-static struct pipe_surface *
-dd_context_create_surface(struct pipe_context *_pipe,
-                          struct pipe_resource *resource,
-                          const struct pipe_surface *surf_tmpl)
-{
-   struct pipe_context *pipe = dd_context(_pipe)->pipe;
-   struct pipe_surface *view =
-      pipe->create_surface(pipe, resource, surf_tmpl);
-
-   if (!view)
-      return NULL;
-   view->context = _pipe;
-   return view;
-}
-
-static void
-dd_context_surface_destroy(struct pipe_context *_pipe,
-                           struct pipe_surface *surf)
-{
-   struct pipe_context *pipe = dd_context(_pipe)->pipe;
-
-   pipe->surface_destroy(pipe, surf);
-}
-
 static struct pipe_sampler_view *
 dd_context_create_sampler_view(struct pipe_context *_pipe,
                                struct pipe_resource *resource,
@@ -935,8 +911,6 @@ dd_context_create(struct dd_screen *dscreen, struct pipe_context *pipe)
    CTX_INIT(create_sampler_view);
    CTX_INIT(sampler_view_destroy);
    CTX_INIT(sampler_view_release);
-   CTX_INIT(create_surface);
-   CTX_INIT(surface_destroy);
    CTX_INIT(texture_barrier);
    CTX_INIT(memory_barrier);
    CTX_INIT(resource_commit);
