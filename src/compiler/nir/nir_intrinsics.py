@@ -2439,10 +2439,10 @@ system_value("ray_query_global_intel", 1, bit_sizes=[64])
 # infrastructure in NIR uses to determine the number of components in the
 # result.
 #
-# The number of components for the second source is -1 to avoid validation of
-# its value. Some supported configurations will have the component count of
-# that matrix different than the others.
-intrinsic("dpas_intel", dest_comp=0, src_comp=[0, -1, 0],
+# The number of components for the second and third sources is -1 to avoid
+# validation of its value. Some supported configurations will have the
+# component count of that matrix different than the others.
+intrinsic("dpas_intel", dest_comp=0, src_comp=[0, -1, -1],
           indices=[DEST_BASE_TYPE, SRC_BASE_TYPE, SATURATE, SYSTOLIC_DEPTH, REPEAT_COUNT],
           flags=[CAN_ELIMINATE])
 
