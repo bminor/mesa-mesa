@@ -596,19 +596,15 @@ util_clear_texture_as_surface(struct pipe_context *pipe,
                               const struct pipe_box *box,
                               const void *data)
 {
-   struct pipe_surface tmpl = {{0}}, *sf;
+   struct pipe_surface tmpl;
 
-   tmpl.format = res->format;
+   u_surface_default_template(&tmpl, res);
    tmpl.first_layer = box->z;
    tmpl.last_layer = box->z + box->depth - 1;
    tmpl.level = level;
 
    if (util_format_is_depth_or_stencil(res->format)) {
       if (!pipe->clear_depth_stencil)
-         return false;
-
-      sf = pipe->create_surface(pipe, res, &tmpl);
-      if (!sf)
          return false;
 
       float depth = 0;
@@ -625,11 +621,9 @@ util_clear_texture_as_surface(struct pipe_context *pipe,
          clear |= PIPE_CLEAR_STENCIL;
          util_format_unpack_s_8uint(tmpl.format, &stencil, data, 1);
       }
-      pipe->clear_depth_stencil(pipe, sf, clear, depth, stencil,
+      pipe->clear_depth_stencil(pipe, &tmpl, clear, depth, stencil,
                                 box->x, box->y, box->width, box->height,
                                 false);
-
-      pipe_surface_reference(&sf, NULL);
    } else {
       if (!pipe->clear_render_target)
          return false;
@@ -648,16 +642,10 @@ util_clear_texture_as_surface(struct pipe_context *pipe,
             return false;
       }
 
-      sf = pipe->create_surface(pipe, res, &tmpl);
-      if (!sf)
-         return false;
-
       union pipe_color_union color;
-      util_format_unpack_rgba(sf->format, color.ui, data, 1);
-      pipe->clear_render_target(pipe, sf, &color, box->x, box->y,
+      util_format_unpack_rgba(tmpl.format, color.ui, data, 1);
+      pipe->clear_render_target(pipe, &tmpl, &color, box->x, box->y,
                               box->width, box->height, false);
-
-      pipe_surface_reference(&sf, NULL);
    }
 
    return true;
