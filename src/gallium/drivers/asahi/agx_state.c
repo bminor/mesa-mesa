@@ -2082,10 +2082,15 @@ rast_prim(enum mesa_prim mode, unsigned fill_mode)
 static bool
 lower_fs_prolog_abi(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
 {
-   if (intr->intrinsic == nir_intrinsic_load_polygon_stipple_agx) {
-      b->cursor = nir_instr_remove(&intr->instr);
+   if (intr->intrinsic != nir_intrinsic_load_polygon_stipple_agx &&
+       intr->intrinsic != nir_intrinsic_load_stat_query_address_agx)
+      return false;
 
-      nir_def *root = nir_load_preamble(b, 1, 64, .base = 12);
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def *root = nir_load_preamble(b, 1, 64, .base = AGX_ABI_FUNI_ROOT);
+   nir_def *repl;
+
+   if (intr->intrinsic == nir_intrinsic_load_polygon_stipple_agx) {
       off_t stipple_offs = offsetof(struct agx_draw_uniforms, polygon_stipple);
       nir_def *stipple_ptr_ptr = nir_iadd_imm(b, root, stipple_offs);
       nir_def *base = nir_load_global_constant(b, stipple_ptr_ptr, 4, 1, 64);
@@ -2093,25 +2098,15 @@ lower_fs_prolog_abi(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
       nir_def *row = intr->src[0].ssa;
       nir_def *addr = nir_iadd(b, base, nir_u2u64(b, nir_imul_imm(b, row, 4)));
 
-      nir_def *pattern = nir_load_global_constant(b, addr, 4, 1, 32);
-      nir_def_rewrite_uses(&intr->def, pattern);
-      return true;
-   } else if (intr->intrinsic == nir_intrinsic_load_stat_query_address_agx) {
-      b->cursor = nir_instr_remove(&intr->instr);
-
-      /* ABI: root descriptor address in u6_u7 */
-      nir_def *root = nir_load_preamble(b, 1, intr->def.bit_size, .base = 12);
-
+      repl = nir_load_global_constant(b, addr, 4, 1, 32);
+   } else {
       off_t offs = offsetof(struct agx_draw_uniforms,
                             pipeline_statistics[nir_intrinsic_base(intr)]);
-
-      nir_def *ptr = nir_iadd_imm(b, root, offs);
-      nir_def *load = nir_load_global_constant(b, ptr, 4, 1, 64);
-      nir_def_rewrite_uses(&intr->def, load);
-      return true;
-   } else {
-      return false;
+      repl = nir_load_global_constant(b, nir_iadd_imm(b, root, offs), 4, 1, 64);
    }
+
+   nir_def_replace(&intr->def, repl);
+   return true;
 }
 
 static void
