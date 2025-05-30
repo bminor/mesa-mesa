@@ -979,8 +979,12 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
 #endif
 
    struct agx_shader_key backend_key = {
+      /* the image heap is always the last fixed uniform, so we can start
+       * preamble after that.
+       */
+      .reserved_preamble = f.image_heap + 4,
+
       .dev = agx_gather_device_key(&dev->dev),
-      .reserved_preamble = 128 /* TODO */,
       .no_stop = nir->info.stage == MESA_SHADER_FRAGMENT,
       .has_scratch = !nir->info.internal,
       .promote_constants = true,
