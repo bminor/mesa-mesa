@@ -5001,9 +5001,7 @@ increment_a64_address(const brw_builder &_bld, brw_reg address, uint32_t v, bool
    const brw_builder bld = use_no_mask ? _bld.exec_all().group(8, 0) : _bld;
 
    if (bld.shader->devinfo->has_64bit_int) {
-      struct brw_reg imm = brw_imm_reg(address.type);
-      imm.u64 = v;
-      return bld.ADD(address, imm);
+      return bld.ADD(address, brw_imm_int(address.type, v));
    } else {
       brw_reg dst = bld.vgrf(BRW_TYPE_UQ);
       brw_reg dst_low = subscript(dst, BRW_TYPE_UD, 0);
@@ -6278,8 +6276,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
             brw_reg base_offset = retype(get_nir_src(ntb, instr->src[1], 0),
                                         BRW_TYPE_UD);
             if (nir_intrinsic_has_base(instr)) {
-               struct brw_reg imm = brw_imm_reg(base_offset.type);
-               imm.u64 = nir_intrinsic_base(instr);
+               struct brw_reg imm = brw_imm_int(base_offset.type,
+                                                nir_intrinsic_base(instr));
                base_offset = bld.ADD(base_offset, imm);
             }
 
