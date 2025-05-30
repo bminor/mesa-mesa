@@ -694,6 +694,8 @@ struct ir3_shader_variant {
 
    struct ir3_info info;
 
+   char sha1_str[SHA1_DIGEST_STRING_LENGTH];
+
    struct ir3_shader_options shader_options;
 
    uint32_t constant_data_size;

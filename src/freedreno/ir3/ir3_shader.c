@@ -393,16 +393,14 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
 {
    v->bin = ir3_shader_assemble(v);
 
+   unsigned char sha1[21];
+   _mesa_sha1_compute(v->bin, v->info.size, sha1);
+   _mesa_sha1_format(v->sha1_str, sha1);
+
    bool dbg_enabled = shader_debug_enabled(v->type, internal);
    if (dbg_enabled || ir3_shader_override_path || v->disasm_info.write_disasm) {
-      unsigned char sha1[21];
-      char sha1buf[41];
-
-      _mesa_sha1_compute(v->bin, v->info.size, sha1);
-      _mesa_sha1_format(sha1buf, sha1);
-
       bool shader_overridden =
-         ir3_shader_override_path && try_override_shader_variant(v, sha1buf);
+         ir3_shader_override_path && try_override_shader_variant(v, v->sha1_str);
 
       if (v->disasm_info.write_disasm) {
          char *stream_data = NULL;
@@ -412,7 +410,7 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
          fprintf(stream,
                  "Native code%s for unnamed %s shader %s with sha1 %s:\n",
                  shader_overridden ? " (overridden)" : "", ir3_shader_stage(v),
-                 v->name, sha1buf);
+                 v->name, v->sha1_str);
          ir3_shader_disasm(v, v->bin, stream);
 
          fclose(stream);
@@ -431,7 +429,7 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
          fprintf(stream,
                  "Native code%s for unnamed %s shader %s with sha1 %s:\n",
                  shader_overridden ? " (overridden)" : "", ir3_shader_stage(v),
-                 v->name, sha1buf);
+                 v->name, v->sha1_str);
          if (v->type == MESA_SHADER_FRAGMENT)
             fprintf(stream, "SIMD0\n");
          ir3_shader_disasm(v, v->bin, stream);
