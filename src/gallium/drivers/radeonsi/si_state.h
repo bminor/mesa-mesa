@@ -33,6 +33,7 @@ struct si_texture;
 struct si_qbo_state;
 struct legacy_surf_level;
 struct pb_slab_entry;
+struct radeon_cmdbuf;
 
 struct si_state_blend {
    struct si_pm4_state pm4;
@@ -689,7 +690,9 @@ void si_update_common_shader_state(struct si_context *sctx, struct si_shader_sel
                                    mesa_shader_stage type);
 
 /* si_state_draw.cpp */
-void si_cp_dma_prefetch(struct si_context *sctx, struct pipe_resource *buf,
+void si_cp_dma_prefetch(struct radeon_cmdbuf *cs,
+                        enum amd_gfx_level gfx_level,
+                        struct pipe_resource *buf,
                         unsigned offset, unsigned size);
 void si_set_vertex_buffer_descriptor(struct si_screen *sscreen, struct si_vertex_elements *velems,
                                      const struct pipe_vertex_buffer *vb, unsigned element_index,

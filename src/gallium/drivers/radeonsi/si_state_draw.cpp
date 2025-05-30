@@ -547,10 +547,9 @@ static unsigned si_conv_pipe_prim(unsigned mode)
 }
 
 template<amd_gfx_level GFX_VERSION>
-static void si_cp_dma_prefetch_inline(struct si_context *sctx, uint64_t address, unsigned size)
+static void si_cp_dma_prefetch_inline(struct radeon_cmdbuf *cs, uint64_t address, unsigned size)
 {
    assert(GFX_VERSION >= GFX7);
-   assert(sctx->screen->info.has_cp_dma);
 
    if (GFX_VERSION >= GFX11)
       size = MIN2(size, 32768 - SI_CPDMA_ALIGNMENT);
@@ -577,7 +576,6 @@ static void si_cp_dma_prefetch_inline(struct si_context *sctx, uint64_t address,
       header |= S_411_DST_SEL(V_411_DST_ADDR_TC_L2);
    }
 
-   struct radeon_cmdbuf *cs = &sctx->gfx_cs;
    radeon_begin(cs);
    radeon_emit(PKT3(PKT3_DMA_DATA, 5, 0));
    radeon_emit(header);
@@ -591,34 +589,36 @@ static void si_cp_dma_prefetch_inline(struct si_context *sctx, uint64_t address,
 
 #if GFX_VER == 6 /* declare this function only once because it handles all chips. */
 
-void si_cp_dma_prefetch(struct si_context *sctx, struct pipe_resource *buf,
+void si_cp_dma_prefetch(struct radeon_cmdbuf *cs,
+                        enum amd_gfx_level gfx_level,
+                        struct pipe_resource *buf,
                         unsigned offset, unsigned size)
 {
    uint64_t address = si_resource(buf)->gpu_address + offset;
-   switch (sctx->gfx_level) {
+   switch (gfx_level) {
    case GFX7:
-      si_cp_dma_prefetch_inline<GFX7>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX7>(cs, address, size);
       break;
    case GFX8:
-      si_cp_dma_prefetch_inline<GFX8>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX8>(cs, address, size);
       break;
    case GFX9:
-      si_cp_dma_prefetch_inline<GFX9>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX9>(cs, address, size);
       break;
    case GFX10:
-      si_cp_dma_prefetch_inline<GFX10>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX10>(cs, address, size);
       break;
    case GFX10_3:
-      si_cp_dma_prefetch_inline<GFX10_3>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX10_3>(cs, address, size);
       break;
    case GFX11:
-      si_cp_dma_prefetch_inline<GFX11>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX11>(cs, address, size);
       break;
    case GFX11_5:
-      si_cp_dma_prefetch_inline<GFX11_5>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX11_5>(cs, address, size);
       break;
    case GFX12:
-      si_cp_dma_prefetch_inline<GFX12>(sctx, address, size);
+      si_cp_dma_prefetch_inline<GFX12>(cs, address, size);
       break;
    default:
       break;
@@ -631,7 +631,7 @@ template<amd_gfx_level GFX_VERSION>
 static void si_prefetch_shader_async(struct si_context *sctx, struct si_shader *shader)
 {
    struct pipe_resource *bo = &shader->bo->b.b;
-   si_cp_dma_prefetch_inline<GFX_VERSION>(sctx, shader->gpu_address, bo->width0);
+   si_cp_dma_prefetch_inline<GFX_VERSION>(&sctx->gfx_cs, shader->gpu_address, bo->width0);
 }
 
 /**
@@ -1905,7 +1905,7 @@ static bool si_upload_and_prefetch_VB_descriptors(struct si_context *sctx,
          /* GFX6 doesn't support the L2 prefetch. */
          if (GFX_VERSION >= GFX7) {
             uint64_t address = si_resource(upload_buf)->gpu_address + offset;
-            si_cp_dma_prefetch_inline<GFX_VERSION>(sctx, address, alloc_size);
+            si_cp_dma_prefetch_inline<GFX_VERSION>(&sctx->gfx_cs, address, alloc_size);
          }
       }
 
