@@ -172,6 +172,12 @@ typedef struct {
     * either against CLIP_VERTEX or POS.
     */
    uint8_t cull_clipdist_mask;
+   /* This skips exporting cull distances to increase throughput by reducing the number of pos exports.
+    * If this is set, cull_clipdist_mask must be set to cull against cull distances in the shader because
+    * the hw won't do it without the exports. The best case scenario is 100% increase in throughput
+    * (2 pos exports -> 1 pos export).
+    */
+   bool dont_export_cull_distances;
    bool write_pos_to_clipvertex;
    /* Remove clip/cull distance components that are missing in export_clipdist_mask, improving
     * throughput by up to 50% (3 pos exports -> 2 pos exports). The caller shouldn't set no-op

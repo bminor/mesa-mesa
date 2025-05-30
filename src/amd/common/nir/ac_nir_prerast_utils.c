@@ -290,6 +290,7 @@ void
 ac_nir_export_position(nir_builder *b,
                        enum amd_gfx_level gfx_level,
                        uint32_t export_clipdist_mask,
+                       bool dont_export_cull_distances,
                        bool write_pos_to_clipvertex,
                        bool pack_clip_cull_distances,
                        bool no_param_export,
@@ -301,6 +302,11 @@ ac_nir_export_position(nir_builder *b,
    nir_intrinsic_instr *exp[4];
    unsigned exp_num = 0;
    unsigned exp_pos_offset = 0;
+
+   if (dont_export_cull_distances) {
+      export_clipdist_mask &= ~BITFIELD_RANGE(b->shader->info.clip_distance_array_size,
+                                              b->shader->info.cull_distance_array_size);
+   }
 
    uint64_t mask =
       VARYING_BIT_PSIZ |

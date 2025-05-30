@@ -1746,6 +1746,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
 
    ac_nir_export_position(b, options->hw_info->gfx_level,
                           options->export_clipdist_mask,
+                          options->dont_export_cull_distances,
                           options->write_pos_to_clipvertex,
                           options->pack_clip_cull_distances,
                           !options->has_param_exports,
