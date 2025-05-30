@@ -361,7 +361,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
    vlVaSurface *surf;
    struct pipe_screen *screen;
    struct pipe_resource *tex;
-   struct pipe_surface surf_templ, *surf_draw;
+   struct pipe_surface surf_templ;
    struct vl_screen *vscreen;
    struct u_rect src_rect, *dirty_area;
    struct u_rect dst_rect = {destx, destx + destw, desty, desty + desth};
@@ -392,14 +392,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
 
    dirty_area = vscreen->get_dirty_area(vscreen);
 
-   memset(&surf_templ, 0, sizeof(surf_templ));
-   surf_templ.format = tex->format;
-   surf_draw = drv->pipe->create_surface(drv->pipe, tex, &surf_templ);
-   if (!surf_draw) {
-      pipe_resource_reference(&tex, NULL);
-      mtx_unlock(&drv->mutex);
-      return VA_STATUS_ERROR_INVALID_DISPLAY;
-   }
+   u_surface_default_template(&surf_templ, tex);
 
    src_rect.x0 = srcx;
    src_rect.y0 = srcy;
@@ -429,9 +422,9 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
       vl_compositor_set_buffer_layer(&drv->cstate, &drv->compositor, 0, surf->buffer, &src_rect, NULL, VL_COMPOSITOR_WEAVE);
 
    vl_compositor_set_layer_dst_area(&drv->cstate, 0, &dst_rect);
-   vl_compositor_render(&drv->cstate, &drv->compositor, surf_draw, dirty_area, true);
+   vl_compositor_render(&drv->cstate, &drv->compositor, &surf_templ, dirty_area, true);
 
-   status = vlVaPutSubpictures(surf, drv, surf_draw, dirty_area, &src_rect, &dst_rect);
+   status = vlVaPutSubpictures(surf, drv, &surf_templ, dirty_area, &src_rect, &dst_rect);
    if (status) {
       mtx_unlock(&drv->mutex);
       return status;
@@ -450,7 +443,6 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
 
 
    pipe_resource_reference(&tex, NULL);
-   pipe_surface_reference(&surf_draw, NULL);
    mtx_unlock(&drv->mutex);
 
    return VA_STATUS_SUCCESS;
