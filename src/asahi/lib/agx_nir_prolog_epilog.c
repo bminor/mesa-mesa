@@ -79,15 +79,20 @@ map_vs_part_uniform(nir_intrinsic_instr *intr, unsigned nr_attribs)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_load_vbo_base_agx:
-      return 4 * nir_src_as_uint(intr->src[0]);
+      return AGX_ABI_VUNI_VBO_BASE(nir_src_as_uint(intr->src[0]));
+
    case nir_intrinsic_load_attrib_clamp_agx:
-      return (4 * nr_attribs) + (2 * nir_src_as_uint(intr->src[0]));
+      return AGX_ABI_VUNI_VBO_CLAMP(nr_attribs, nir_src_as_uint(intr->src[0]));
+
    case nir_intrinsic_load_first_vertex:
-      return (6 * nr_attribs);
+      return AGX_ABI_VUNI_FIRST_VERTEX(nr_attribs);
+
    case nir_intrinsic_load_base_instance:
-      return (6 * nr_attribs) + 2;
+      return AGX_ABI_VUNI_BASE_INSTANCE(nr_attribs);
+
    case nir_intrinsic_load_input_assembly_buffer_agx:
-      return (6 * nr_attribs) + 8;
+      return AGX_ABI_VUNI_INPUT_ASSEMBLY(nr_attribs);
+
    default:
       return -1;
    }
@@ -98,13 +103,17 @@ map_fs_part_uniform(nir_intrinsic_instr *intr)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_load_blend_const_color_r_float:
-      return 4;
+      return AGX_ABI_FUNI_BLEND_R;
+
    case nir_intrinsic_load_blend_const_color_g_float:
-      return 6;
+      return AGX_ABI_FUNI_BLEND_G;
+
    case nir_intrinsic_load_blend_const_color_b_float:
-      return 8;
+      return AGX_ABI_FUNI_BLEND_B;
+
    case nir_intrinsic_load_blend_const_color_a_float:
-      return 10;
+      return AGX_ABI_FUNI_BLEND_A;
+
    default:
       return -1;
    }
