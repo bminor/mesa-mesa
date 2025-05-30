@@ -29,19 +29,18 @@
 #include "compiler/nir/nir_builder.h"
 #include "vc4_context.h"
 
-static struct pipe_surface *
-vc4_get_blit_surface(struct pipe_context *pctx,
+static void
+vc4_set_blit_surface(struct pipe_surface *psurf, struct pipe_context *pctx,
                      struct pipe_resource *prsc, unsigned level,
                      unsigned layer)
 {
-        struct pipe_surface tmpl;
-
-        memset(&tmpl, 0, sizeof(tmpl));
-        tmpl.format = prsc->format;
-        tmpl.level = level;
-        tmpl.first_layer = tmpl.last_layer = layer;
-
-        return pctx->create_surface(pctx, prsc, &tmpl);
+        memset(psurf, 0, sizeof(*psurf));
+        psurf->context = pctx;
+        psurf->format = prsc->format;
+        psurf->level = level;
+        psurf->first_layer = layer;
+        psurf->last_layer = layer;
+        pipe_resource_reference(&psurf->texture, prsc);
 }
 
 static bool
@@ -140,30 +139,30 @@ vc4_tile_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                         info->dst.box.height);
         }
 
-        struct pipe_surface *dst_surf =
-                vc4_get_blit_surface(pctx, info->dst.resource, info->dst.level,
-                                           info->dst.box.z);
-        struct pipe_surface *src_surf =
-                vc4_get_blit_surface(pctx, info->src.resource, info->src.level,
-                                           info->src.box.z);
+        struct pipe_surface dst_surf;
+        vc4_set_blit_surface(&dst_surf, pctx, info->dst.resource,
+                             info->dst.level, info->dst.box.z);
+        struct pipe_surface src_surf;
+        vc4_set_blit_surface(&src_surf, pctx, info->src.resource,
+                             info->src.level, info->src.box.z);
 
         vc4_flush_jobs_reading_resource(vc4, info->src.resource);
 
         struct vc4_job *job;
         if (is_color_blit) {
-                job = vc4_get_job(vc4, dst_surf, NULL);
-                pipe_surface_reference(&job->color_read, src_surf);
+                job = vc4_get_job(vc4, &dst_surf, NULL);
+                vc4_job_attach_surface(&job->color_read, &src_surf);
         } else {
-                job = vc4_get_job(vc4, NULL, dst_surf);
-                pipe_surface_reference(&job->zs_read, src_surf);
+                job = vc4_get_job(vc4, NULL, &dst_surf);
+                vc4_job_attach_surface(&job->zs_read, &src_surf);
         }
 
         job->draw_min_x = info->dst.box.x;
         job->draw_min_y = info->dst.box.y;
         job->draw_max_x = info->dst.box.x + info->dst.box.width;
         job->draw_max_y = info->dst.box.y + info->dst.box.height;
-        job->draw_width = pipe_surface_width(dst_surf);
-        job->draw_height = pipe_surface_height(dst_surf);
+        job->draw_width = pipe_surface_width(&dst_surf);
+        job->draw_height = pipe_surface_height(&dst_surf);
 
         job->tile_width = tile_width;
         job->tile_height = tile_height;
@@ -187,8 +186,8 @@ vc4_tile_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
 
         vc4_job_submit(vc4, job);
 
-        pipe_surface_reference(&dst_surf, NULL);
-        pipe_surface_reference(&src_surf, NULL);
+        pipe_resource_reference(&dst_surf.texture, NULL);
+        pipe_resource_reference(&src_surf.texture, NULL);
 }
 
 void
@@ -374,19 +373,12 @@ vc4_yuv_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
 
         /* Create a renderable surface mapping the T-tiled shadow buffer.
          */
-        struct pipe_surface dst_tmpl;
-        util_blitter_default_dst_texture(&dst_tmpl, info->dst.resource,
-                                         info->dst.level, info->dst.box.z);
-        dst_tmpl.format = PIPE_FORMAT_RGBA8888_UNORM;
-        struct pipe_surface *dst_surf =
-                pctx->create_surface(pctx, info->dst.resource, &dst_tmpl);
-        if (!dst_surf) {
-                fprintf(stderr, "Failed to create YUV dst surface\n");
-                util_blitter_unset_running_flag(vc4->blitter);
-                return;
-        }
+        struct pipe_surface dst_surf;
+        vc4_set_blit_surface(&dst_surf, pctx, info->dst.resource,
+                             info->dst.level, info->dst.box.z);
+        dst_surf.format = PIPE_FORMAT_RGBA8888_UNORM;
         uint16_t width, height;
-        pipe_surface_size(dst_surf, &width, &height);
+        pipe_surface_size(&dst_surf, &width, &height);
         width = align(width, 8) / 2;
         if (dst->cpp == 1)
                 height /= 2;
@@ -412,7 +404,7 @@ vc4_yuv_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         pctx->set_sampler_views(pctx, PIPE_SHADER_FRAGMENT, 0, 0, 0, NULL);
         pctx->bind_sampler_states(pctx, PIPE_SHADER_FRAGMENT, 0, 0, NULL);
 
-        util_blitter_custom_shader(vc4->blitter, dst_surf, width, height,
+        util_blitter_custom_shader(vc4->blitter, &dst_surf, width, height,
                                    vc4_get_yuv_vs(pctx),
                                    vc4_get_yuv_fs(pctx, src->cpp));
 
@@ -422,7 +414,7 @@ vc4_yuv_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         struct pipe_constant_buffer cb_disabled = { 0 };
         pctx->set_constant_buffer(pctx, PIPE_SHADER_FRAGMENT, 1, false, &cb_disabled);
 
-        pipe_surface_reference(&dst_surf, NULL);
+        pipe_resource_reference(&dst_surf.texture, NULL);
 
         info->mask &= ~PIPE_MASK_RGBA;
 
@@ -476,7 +468,6 @@ vc4_stencil_blit(struct pipe_context *ctx, struct pipe_blit_info *info)
 {
         struct vc4_context *vc4 = vc4_context(ctx);
         struct vc4_resource *src = vc4_resource(info->src.resource);
-        struct vc4_resource *dst = vc4_resource(info->dst.resource);
         enum pipe_format src_format, dst_format;
 
         if ((info->mask & PIPE_MASK_S) == 0)
@@ -491,14 +482,10 @@ vc4_stencil_blit(struct pipe_context *ctx, struct pipe_blit_info *info)
                      PIPE_FORMAT_R8_UINT;
 
         /* Initialize the surface */
-        struct pipe_surface dst_tmpl = {
-                .format = dst_format,
-                .first_layer = info->dst.box.z,
-                .last_layer = info->dst.box.z,
-                .level = info->dst.level,
-        };
-        struct pipe_surface *dst_surf =
-                ctx->create_surface(ctx, &dst->base, &dst_tmpl);
+        struct pipe_surface dst_surf;
+        vc4_set_blit_surface(&dst_surf, ctx, info->dst.resource,
+                             info->dst.level, info->dst.box.z);
+        dst_surf.format = dst_format;
 
         /* Initialize the sampler view */
         struct pipe_sampler_view src_tmpl = {
@@ -524,7 +511,7 @@ vc4_stencil_blit(struct pipe_context *ctx, struct pipe_blit_info *info)
                 ctx->create_sampler_view(ctx, &src->base, &src_tmpl);
 
         vc4_blitter_save(vc4);
-        util_blitter_blit_generic(vc4->blitter, dst_surf, &info->dst.box,
+        util_blitter_blit_generic(vc4->blitter, &dst_surf, &info->dst.box,
                                   src_view, &info->src.box,
                                   src->base.width0, src->base.height0,
                                   (info->mask & PIPE_MASK_ZS) ?
@@ -533,7 +520,7 @@ vc4_stencil_blit(struct pipe_context *ctx, struct pipe_blit_info *info)
                                   info->scissor_enable ? &info->scissor :  NULL,
                                   info->alpha_blend, false, 0, NULL);
 
-        pipe_surface_reference(&dst_surf, NULL);
+        pipe_resource_reference(&dst_surf.texture, NULL);
         pipe_sampler_view_reference(&src_view, NULL);
 
         info->mask &= ~PIPE_MASK_ZS;

@@ -416,7 +416,6 @@ vc4_set_framebuffer_state(struct pipe_context *pctx,
 
         vc4->job = NULL;
 
-        util_framebuffer_init(pctx, framebuffer, vc4->fb_cbufs, &vc4->fb_zsbuf);
         util_copy_framebuffer_state(cso, framebuffer);
 
         /* Nonzero texture mipmap levels are laid out as if they were in

@@ -190,8 +190,8 @@ struct vc4_vertex_stateobj {
 
 /* Hash table key for vc4->jobs */
 struct vc4_job_key {
-        struct pipe_surface *cbuf;
-        struct pipe_surface *zsbuf;
+        struct pipe_surface cbuf;
+        struct pipe_surface zsbuf;
 };
 
 struct vc4_hwperfmon {
@@ -229,12 +229,12 @@ struct vc4_job {
         uint32_t last_gem_handle_hindex;
 
         /** @{ Surfaces to submit rendering for. */
-        struct pipe_surface *color_read;
-        struct pipe_surface *color_write;
-        struct pipe_surface *zs_read;
-        struct pipe_surface *zs_write;
-        struct pipe_surface *msaa_color_write;
-        struct pipe_surface *msaa_zs_write;
+        struct pipe_surface color_read;
+        struct pipe_surface color_write;
+        struct pipe_surface zs_read;
+        struct pipe_surface zs_write;
+        struct pipe_surface msaa_color_write;
+        struct pipe_surface msaa_zs_write;
         /** @} */
         /** @{
          * Bounding box of the scissor across all queued drawing.
@@ -371,7 +371,6 @@ struct vc4_context {
         } blend_color;
         struct pipe_stencil_ref stencil_ref;
         unsigned sample_mask;
-        PIPE_FB_SURFACES; //STOP USING THIS
         struct pipe_framebuffer_state framebuffer;
         struct pipe_poly_stipple stipple;
         struct pipe_clip_state clip;
@@ -488,6 +487,8 @@ struct vc4_job *vc4_get_job(struct vc4_context *vc4,
                             struct pipe_surface *zsbuf);
 struct vc4_job *vc4_get_job_for_fbo(struct vc4_context *vc4);
 
+void vc4_job_attach_surface(struct pipe_surface *job_psurf,
+                            struct pipe_surface *src_psurf);
 void vc4_job_submit(struct vc4_context *vc4, struct vc4_job *job);
 void vc4_flush_jobs_writing_resource(struct vc4_context *vc4,
                                      struct pipe_resource *prsc);

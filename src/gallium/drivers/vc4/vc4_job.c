@@ -42,29 +42,31 @@ vc4_job_free(struct vc4_context *vc4, struct vc4_job *job)
 
         _mesa_hash_table_remove_key(vc4->jobs, &job->key);
 
-        if (job->color_write) {
+        if (job->color_write.texture) {
                 _mesa_hash_table_remove_key(vc4->write_jobs,
-                                            job->color_write->texture);
-                pipe_surface_reference(&job->color_write, NULL);
+                                            job->color_write.texture);
+                pipe_resource_reference(&job->color_write.texture, NULL);
         }
-        if (job->msaa_color_write) {
+        if (job->msaa_color_write.texture) {
                 _mesa_hash_table_remove_key(vc4->write_jobs,
-                                            job->msaa_color_write->texture);
-                pipe_surface_reference(&job->msaa_color_write, NULL);
+                                            job->msaa_color_write.texture);
+                pipe_resource_reference(&job->msaa_color_write.texture, NULL);
         }
-        if (job->zs_write) {
+        if (job->zs_write.texture) {
                 _mesa_hash_table_remove_key(vc4->write_jobs,
-                                            job->zs_write->texture);
-                pipe_surface_reference(&job->zs_write, NULL);
+                                            job->zs_write.texture);
+                pipe_resource_reference(&job->zs_write.texture, NULL);
         }
-        if (job->msaa_zs_write) {
+        if (job->msaa_zs_write.texture) {
                 _mesa_hash_table_remove_key(vc4->write_jobs,
-                                            job->msaa_zs_write->texture);
-                pipe_surface_reference(&job->msaa_zs_write, NULL);
+                                            job->msaa_zs_write.texture);
+                pipe_resource_reference(&job->msaa_zs_write.texture, NULL);
         }
 
-        pipe_surface_reference(&job->color_read, NULL);
-        pipe_surface_reference(&job->zs_read, NULL);
+        if (job->color_read.texture)
+                pipe_resource_reference(&job->color_read.texture, NULL);
+        if (job->zs_read.texture)
+                pipe_resource_reference(&job->zs_read.texture, NULL);
 
         if (vc4->job == job)
                 vc4->job = NULL;
@@ -140,24 +142,46 @@ vc4_flush_jobs_reading_resource(struct vc4_context *vc4,
                 /* Also check for the Z/color buffers, since the references to
                  * those are only added immediately before submit.
                  */
-                if (job->color_read && !(job->cleared & PIPE_CLEAR_COLOR)) {
+                if (job->color_read.texture && !(job->cleared & PIPE_CLEAR_COLOR)) {
                         struct vc4_resource *ctex =
-                                vc4_resource(job->color_read->texture);
+                                vc4_resource(job->color_read.texture);
                         if (ctex->bo == rsc->bo) {
                                 vc4_job_submit(vc4, job);
                                 continue;
                         }
                 }
 
-                if (job->zs_read && !(job->cleared &
+                if (job->zs_read.texture && !(job->cleared &
                                       (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL))) {
                         struct vc4_resource *ztex =
-                                vc4_resource(job->zs_read->texture);
+                                vc4_resource(job->zs_read.texture);
                         if (ztex->bo == rsc->bo) {
                                 vc4_job_submit(vc4, job);
                                 continue;
                         }
                 }
+        }
+}
+
+void
+vc4_job_attach_surface(struct pipe_surface *job_psurf,
+                       struct pipe_surface *src_psurf)
+{
+        assert(job_psurf);
+        if (src_psurf) {
+                /* Texture reference counter needs to be updated before
+                 * assigning the struct pipe_surface to avoid leaks of
+                 * textures from previously attached surfaces. The follow up
+                 * assignment would just overwrite the same pointer for the
+                 * texture field.
+                 */
+                pipe_resource_reference(&job_psurf->texture,
+                                        src_psurf->texture);
+                *job_psurf = *src_psurf;
+        } else {
+                pipe_resource_reference(&job_psurf->texture,
+                                        NULL);
+                memset(job_psurf, 0, sizeof(*job_psurf));
         }
 }
 
@@ -174,7 +198,12 @@ vc4_get_job(struct vc4_context *vc4,
             struct pipe_surface *cbuf, struct pipe_surface *zsbuf)
 {
         /* Return the existing job for this FBO if we have one */
-        struct vc4_job_key local_key = {.cbuf = cbuf, .zsbuf = zsbuf};
+        struct vc4_job_key local_key;
+        memset(&local_key, 0, sizeof(local_key));
+        if (cbuf && cbuf->texture)
+                local_key.cbuf = *cbuf;
+        if (zsbuf && zsbuf->texture)
+                local_key.zsbuf = *zsbuf;
         struct hash_entry *entry = _mesa_hash_table_search(vc4->jobs,
                                                            &local_key);
         if (entry)
@@ -183,28 +212,28 @@ vc4_get_job(struct vc4_context *vc4,
         /* Creating a new job.  Make sure that any previous jobs reading or
          * writing these buffers are flushed.
          */
-        if (cbuf)
+        if (cbuf && cbuf->texture)
                 vc4_flush_jobs_reading_resource(vc4, cbuf->texture);
-        if (zsbuf)
+        if (zsbuf && zsbuf->texture)
                 vc4_flush_jobs_reading_resource(vc4, zsbuf->texture);
 
         struct vc4_job *job = vc4_job_create(vc4);
 
-        if (cbuf) {
+        if (cbuf && cbuf->texture) {
                 if (cbuf->texture->nr_samples > 1) {
                         job->msaa = true;
-                        pipe_surface_reference(&job->msaa_color_write, cbuf);
+                        vc4_job_attach_surface(&job->msaa_color_write, cbuf);
                 } else {
-                        pipe_surface_reference(&job->color_write, cbuf);
+                        vc4_job_attach_surface(&job->color_write, cbuf);
                 }
         }
 
-        if (zsbuf) {
+        if (zsbuf && zsbuf->texture) {
                 if (zsbuf->texture->nr_samples > 1) {
                         job->msaa = true;
-                        pipe_surface_reference(&job->msaa_zs_write, zsbuf);
+                        vc4_job_attach_surface(&job->msaa_zs_write, zsbuf);
                 } else {
-                        pipe_surface_reference(&job->zs_write, zsbuf);
+                        vc4_job_attach_surface(&job->zs_write, zsbuf);
                 }
         }
 
@@ -216,13 +245,12 @@ vc4_get_job(struct vc4_context *vc4,
                 job->tile_height = 64;
         }
 
-        if (cbuf)
+        if (cbuf && cbuf->texture)
                 _mesa_hash_table_insert(vc4->write_jobs, cbuf->texture, job);
-        if (zsbuf)
+        if (zsbuf && zsbuf->texture)
                 _mesa_hash_table_insert(vc4->write_jobs, zsbuf->texture, job);
 
-        job->key.cbuf = cbuf;
-        job->key.zsbuf = zsbuf;
+        job->key = local_key;
         _mesa_hash_table_insert(vc4->jobs, &job->key, job);
 
         return job;
@@ -234,8 +262,8 @@ vc4_get_job_for_fbo(struct vc4_context *vc4)
         if (vc4->job)
                 return vc4->job;
 
-        struct pipe_surface *cbuf = vc4->fb_cbufs[0];
-        struct pipe_surface *zsbuf = vc4->fb_zsbuf;
+        struct pipe_surface *cbuf = &vc4->framebuffer.cbufs[0];
+        struct pipe_surface *zsbuf = &vc4->framebuffer.zsbuf;
         struct vc4_job *job = vc4_get_job(vc4, cbuf, zsbuf);
 
         /* The dirty flags are tracking what's been updated while vc4->job has
@@ -248,19 +276,19 @@ vc4_get_job_for_fbo(struct vc4_context *vc4)
          * getting read (due to a clear starting the frame), job->cleared will
          * mask out the read.
          */
-        pipe_surface_reference(&job->color_read, cbuf);
-        pipe_surface_reference(&job->zs_read, zsbuf);
+        vc4_job_attach_surface(&job->color_read, cbuf);
+        vc4_job_attach_surface(&job->zs_read, zsbuf);
 
         /* If we're binding to uninitialized buffers, no need to load their
          * contents before drawing.
          */
-        if (cbuf) {
+        if (cbuf && cbuf->texture) {
                 struct vc4_resource *rsc = vc4_resource(cbuf->texture);
                 if (!rsc->writes)
                         job->cleared |= PIPE_CLEAR_COLOR0;
         }
 
-        if (zsbuf) {
+        if (zsbuf && zsbuf->texture) {
                 struct vc4_resource *rsc = vc4_resource(zsbuf->texture);
                 if (!rsc->writes)
                         job->cleared |= PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL;
@@ -289,7 +317,7 @@ vc4_submit_setup_rcl_surface(struct vc4_job *job,
                              struct pipe_surface *psurf,
                              bool is_depth, bool is_write)
 {
-        if (!psurf)
+        if (!psurf || !psurf->texture)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
@@ -328,7 +356,7 @@ vc4_submit_setup_rcl_render_config_surface(struct vc4_job *job,
                                            struct drm_vc4_submit_rcl_surface *submit_surf,
                                            struct pipe_surface *psurf)
 {
-        if (!psurf)
+        if (!psurf || !psurf->texture)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
@@ -353,7 +381,7 @@ vc4_submit_setup_rcl_msaa_surface(struct vc4_job *job,
                                   struct drm_vc4_submit_rcl_surface *submit_surf,
                                   struct pipe_surface *psurf)
 {
-        if (!psurf)
+        if (!psurf || !psurf->texture)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
@@ -414,25 +442,25 @@ vc4_job_submit(struct vc4_context *vc4, struct vc4_job *job)
         if (job->resolve & PIPE_CLEAR_COLOR) {
                 if (!(job->cleared & PIPE_CLEAR_COLOR)) {
                         vc4_submit_setup_rcl_surface(job, &submit.color_read,
-                                                     job->color_read,
+                                                     &job->color_read,
                                                      false, false);
                 }
                 vc4_submit_setup_rcl_render_config_surface(job,
                                                            &submit.color_write,
-                                                           job->color_write);
+                                                           &job->color_write);
                 vc4_submit_setup_rcl_msaa_surface(job,
                                                   &submit.msaa_color_write,
-                                                  job->msaa_color_write);
+                                                  &job->msaa_color_write);
         }
         if (job->resolve & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL)) {
                 if (!(job->cleared & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL))) {
                         vc4_submit_setup_rcl_surface(job, &submit.zs_read,
-                                                     job->zs_read, true, false);
+                                                     &job->zs_read, true, false);
                 }
                 vc4_submit_setup_rcl_surface(job, &submit.zs_write,
-                                             job->zs_write, true, true);
+                                             &job->zs_write, true, true);
                 vc4_submit_setup_rcl_msaa_surface(job, &submit.msaa_zs_write,
-                                                  job->msaa_zs_write);
+                                                  &job->msaa_zs_write);
         }
 
         if (job->msaa) {
