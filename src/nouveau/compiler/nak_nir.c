@@ -1101,12 +1101,10 @@ nak_postprocess_nir(nir_shader *nir,
    if (OPT(nir, nak_nir_rematerialize_load_const))
       OPT(nir, nir_opt_dce);
 
-   bool lcssa_progress = nir_convert_to_lcssa(nir, false, false);
+   OPT(nir, nir_convert_to_lcssa, false, false);
 
    if (nak->sm >= 73) {
-      if (lcssa_progress) {
-         OPT(nir, nak_nir_mark_lcssa_invariants);
-      }
+      OPT(nir, nak_nir_mark_lcssa_invariants);
       if (OPT(nir, nak_nir_lower_non_uniform_ldcx)) {
          OPT(nir, nir_copy_prop);
          OPT(nir, nir_opt_dce);
