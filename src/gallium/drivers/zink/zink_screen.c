@@ -3023,6 +3023,19 @@ init_driver_workarounds(struct zink_screen *screen)
       break;
    }
 
+   switch (zink_driverid(screen)) {
+   case VK_DRIVER_ID_MESA_LLVMPIPE:
+   case VK_DRIVER_ID_MESA_NVK:
+   case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
+   case VK_DRIVER_ID_MESA_TURNIP:
+   case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
+      screen->driver_workarounds.general_layout = true;
+      break;
+   default:
+      screen->driver_workarounds.general_layout = screen->info.have_KHR_unified_image_layouts;
+      break;
+   }
+
    if (!screen->resizable_bar)
       screen->info.have_EXT_host_image_copy = false;
 }

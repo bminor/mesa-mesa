@@ -1520,6 +1520,7 @@ struct zink_screen {
       bool inconsistent_interpolation;
       bool can_2d_view_sparse;
       bool general_depth_layout;
+      bool general_layout;
    } driver_workarounds;
 };
 

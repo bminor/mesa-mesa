@@ -163,6 +163,21 @@ zink_debug_mem_print_stats(struct zink_screen *screen)
    simple_mtx_unlock(&screen->debug_mem_lock);
 }
 
+static void
+image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkImageLayout layout)
+{
+   VkHostImageLayoutTransitionInfoEXT t = {
+      VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT,
+      NULL,
+      res->obj->image,
+      res->layout,
+      layout,
+      {res->aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS}
+   };
+   VKSCR(TransitionImageLayoutEXT)(screen->dev, 1, &t);
+   res->layout = layout;
+}
+
 static bool
 equals_ivci(const void *a, const void *b)
 {
@@ -1694,6 +1709,11 @@ resource_create(struct pipe_screen *pscreen,
    } else {
       _mesa_hash_table_init(&res->surface_cache, NULL, NULL, equals_ivci);
       simple_mtx_init(&res->surface_mtx, mtx_plain);
+
+      /* immediately switch to GENERAL layout if possible to avoid extra sync */
+      if (res->obj->image && res->queue != VK_QUEUE_FAMILY_FOREIGN_EXT && (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) &&
+          screen->driver_workarounds.general_layout)
+         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
    }
    if (res->obj->exportable)
       res->base.b.bind |= ZINK_BIND_DMABUF;
@@ -2678,20 +2698,9 @@ zink_image_subdata(struct pipe_context *pctx,
       unsigned vk_layer_stride = util_format_get_2d_size(pres->format, stride, 1) * vk_stride;
       layer_stride /= vk_layer_stride;
 
-      VkHostImageLayoutTransitionInfoEXT t = {
-         VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT,
-         NULL,
-         res->obj->image,
-         res->layout,
-         /* GENERAL support is guaranteed */
-         VK_IMAGE_LAYOUT_GENERAL,
-         {res->aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS}
-      };
       /* only pre-transition uninit images to avoid thrashing */
-      if (change_layout) {
-         VKSCR(TransitionImageLayoutEXT)(screen->dev, 1, &t);
-         res->layout = VK_IMAGE_LAYOUT_GENERAL;
-      }
+      if (change_layout)
+         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
       VkMemoryToImageCopyEXT region = {
          VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT,
          NULL,
@@ -2712,14 +2721,12 @@ zink_image_subdata(struct pipe_context *pctx,
          &region
       };
       VKSCR(CopyMemoryToImageEXT)(screen->dev, &copy);
-      if (change_layout && screen->can_hic_shader_read && !pres->last_level && !box->x && !box->y && !box->z &&
+      if (change_layout && !screen->driver_workarounds.general_layout && screen->can_hic_shader_read &&
+          !pres->last_level && !box->x && !box->y && !box->z &&
           box->width == pres->width0 && box->height == pres->height0 &&
           ((is_arrayed && box->depth == pres->array_size) || (!is_arrayed && box->depth == pres->depth0))) {
          /* assume full copy single-mip images use shader read access */
-         t.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-         t.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-         VKSCR(TransitionImageLayoutEXT)(screen->dev, 1, &t);
-         res->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
          /* assume multi-mip where further subdata calls may happen */
       }
       /* make sure image is marked as having data */
@@ -3157,6 +3164,7 @@ zink_resource_get_address(struct zink_screen *screen, struct zink_resource *res)
 void
 zink_resource_setup_transfer_layouts(struct zink_context *ctx, struct zink_resource *src, struct zink_resource *dst)
 {
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
    if (src == dst) {
       /* The Vulkan 1.1 specification says the following about valid usage
        * of vkCmdBlitImage:
@@ -3174,20 +3182,20 @@ zink_resource_setup_transfer_layouts(struct zink_context *ctx, struct zink_resou
        * VK_IMAGE_LAYOUT_GENERAL. And since this isn't a present-related
        * operation, VK_IMAGE_LAYOUT_GENERAL seems most appropriate.
        */
-      zink_screen(ctx->base.screen)->image_barrier(ctx, src,
-                                  VK_IMAGE_LAYOUT_GENERAL,
-                                  VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT);
+      screen->image_barrier(ctx, src,
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT);
    } else {
-      zink_screen(ctx->base.screen)->image_barrier(ctx, src,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                  VK_ACCESS_TRANSFER_READ_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT);
+      screen->image_barrier(ctx, src,
+                            screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            VK_ACCESS_TRANSFER_READ_BIT,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-      zink_screen(ctx->base.screen)->image_barrier(ctx, dst,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  VK_ACCESS_TRANSFER_WRITE_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT);
+      screen->image_barrier(ctx, dst,
+                            screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            VK_ACCESS_TRANSFER_WRITE_BIT,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT);
    }
 }
 

@@ -689,7 +689,7 @@ resource_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelin
 
 
 
-template <barrier_type BARRIER_API, bool UNSYNCHRONIZED>
+template <barrier_type BARRIER_API, bool UNSYNCHRONIZED, bool GENERAL_IMAGE>
 void
 zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
@@ -761,8 +761,16 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
       zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
    }
 
-   if (!UNSYNCHRONIZED)
-      resource_check_defer_buffer_barrier(ctx, res, pipeline);
+   if (!UNSYNCHRONIZED) {
+      if (GENERAL_IMAGE) {
+         bool is_compute = (pipeline & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) == pipeline;
+         if (res->bind_count[!is_compute] || (is_compute && res->fb_bind_count))
+            /* compute rebind */
+            _mesa_set_add(ctx->need_barriers[is_compute], res);
+      } else {
+         resource_check_defer_buffer_barrier(ctx, res, pipeline);
+      }
+   }
 
    if (is_write)
       res->obj->last_write = flags;
@@ -780,21 +788,47 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
       res->obj->access_stage = pipeline;
       res->obj->ordered_access_is_copied = unordered;
    }
-   if (pipeline != VK_PIPELINE_STAGE_TRANSFER_BIT && is_write)
+   if (pipeline != VK_PIPELINE_STAGE_TRANSFER_BIT && is_write && !GENERAL_IMAGE)
       zink_resource_copies_reset(res);
+}
+
+template <bool UNSYNCHRONIZED>
+void
+zink_resource_image_barrier_general(struct zink_context *ctx, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline)
+{
+   if (!pipeline)
+      pipeline = pipeline_dst_stage(new_layout);
+   if (!flags)
+      flags = access_dst_flags(new_layout);
+
+   assert(new_layout == VK_IMAGE_LAYOUT_GENERAL || new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+   /* if this requires an actual image barrier, send it through to the image barrier handlers */
+   if (res->obj->needs_zs_evaluate || res->obj->exportable || zink_is_swapchain(res) || res->layout != new_layout ||
+       res->queue != zink_screen(ctx->base.screen)->gfx_queue || res->queue != VK_QUEUE_FAMILY_IGNORED) {
+      zink_resource_image_barrier<barrier_KHR_synchronzation2, UNSYNCHRONIZED>(ctx, res, new_layout, flags, pipeline);
+      return;
+   }
+
+   /* this is just a synchronization barrier with GENERAL layout: use memory barrier for better granularity */
+   zink_resource_memory_barrier<barrier_KHR_synchronzation2, false, true>(ctx, res, flags, pipeline);
 }
 
 void
 zink_synchronization_init(struct zink_screen *screen)
 {
    if (screen->info.have_vulkan13 || screen->info.have_KHR_synchronization2) {
-      screen->buffer_barrier = zink_resource_memory_barrier<barrier_KHR_synchronzation2, false>;
-      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_KHR_synchronzation2, true>;
-      screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
-      screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
+      screen->buffer_barrier = zink_resource_memory_barrier<barrier_KHR_synchronzation2, false, false>;
+      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_KHR_synchronzation2, true, false>;
+      if (screen->driver_workarounds.general_layout) {
+         screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
+         screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
+      } else {
+         screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
+         screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
+      }
    } else {
-      screen->buffer_barrier = zink_resource_memory_barrier<barrier_default, false>;
-      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_default, true>;
+      screen->buffer_barrier = zink_resource_memory_barrier<barrier_default, false, false>;
+      screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_default, true, false>;
       screen->image_barrier = zink_resource_image_barrier<barrier_default, false>;
       screen->image_barrier_unsync = zink_resource_image_barrier<barrier_default, true>;
    }

@@ -264,6 +264,8 @@ zink_descriptor_util_push_layouts_get(struct zink_context *ctx, struct zink_desc
 VkImageLayout
 zink_descriptor_util_image_layout_eval(const struct zink_context *ctx, const struct zink_resource *res, bool is_compute)
 {
+   if (zink_screen(ctx->base.screen)->driver_workarounds.general_layout)
+      return VK_IMAGE_LAYOUT_GENERAL;
    if (res->bindless[0] || res->bindless[1]) {
       /* bindless needs most permissive layout */
       if (res->image_bind_count[0] || res->image_bind_count[1])
