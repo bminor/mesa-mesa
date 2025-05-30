@@ -40,15 +40,11 @@ hk_get_image_plane_format_features(struct hk_physical_device *pdev,
 {
    VkFormatFeatureFlags2 features = 0;
 
-   /* Conformance fails with these optional formats. Just drop them for now.
-    * TODO: Investigate later if we have a use case.
+   /* A8 with opaque black needs custom borders, so hide for performance. We
+    * might specially enable this for Proton / behind a driconf.
     */
-   switch (vk_format) {
-   case VK_FORMAT_A8_UNORM_KHR:
+   if (vk_format == VK_FORMAT_A8_UNORM_KHR)
       return 0;
-   default:
-      break;
-   }
 
    enum pipe_format p_format = hk_format_to_pipe_format(vk_format);
    if (p_format == PIPE_FORMAT_NONE)
