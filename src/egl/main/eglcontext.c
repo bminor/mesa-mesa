@@ -270,8 +270,7 @@ _eglParseContextAttribList(_EGLContext *ctx, _EGLDisplay *disp,
           *     contexts."
           */
          if (!(disp->Extensions.KHR_create_context && api == EGL_OPENGL_API) &&
-             !(disp->Version >= 15 &&
-               (api == EGL_OPENGL_API || api == EGL_OPENGL_ES_API))) {
+             disp->Version < 15) {
             err = EGL_BAD_ATTRIBUTE;
             break;
          }
