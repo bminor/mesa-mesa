@@ -588,6 +588,8 @@ void __trace_${trace_name}(
  % for arg in trace.tp_struct:
   % if arg.copy_func is None:
    __entry->${arg.name} = ${arg.var};
+  % elif arg.length_arg is None:
+     ${arg.copy_func}(__entry->${arg.name}, ${arg.var});
   % else:
    ${arg.copy_func}(__entry->${arg.name}, ${arg.var}, ${arg.length_arg});
   % endif

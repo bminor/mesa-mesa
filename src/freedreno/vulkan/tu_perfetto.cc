@@ -15,6 +15,7 @@
 #include "util/perf/u_perfetto.h"
 #include "util/perf/u_perfetto_renderpass.h"
 
+#include "tu_cmd_buffer.h"
 #include "tu_tracepoints.h"
 #include "tu_tracepoints_perfetto.h"
 #include "vk_object.h"
@@ -54,6 +55,7 @@ enum tu_stage_id {
    GMEM_STAGE_ID,
    BYPASS_STAGE_ID,
    BLIT_STAGE_ID,
+   DRAW_STAGE_ID,
    COMPUTE_STAGE_ID,
    CLEAR_SYSMEM_STAGE_ID,
    CLEAR_GMEM_STAGE_ID,
@@ -84,6 +86,7 @@ static const struct {
    [GMEM_STAGE_ID]           = { "GMEM", "Rendering to GMEM" },
    [BYPASS_STAGE_ID]         = { "Bypass", "Rendering to system memory" },
    [BLIT_STAGE_ID]           = { "Blit", "Performing a Blit operation" },
+   [DRAW_STAGE_ID]           = { "Draw", "Performing a graphics-pipeline draw" },
    [COMPUTE_STAGE_ID]        = { "Compute", "Compute job" },
    [CLEAR_SYSMEM_STAGE_ID]   = { "Clear Sysmem", "" },
    [CLEAR_GMEM_STAGE_ID]     = { "Clear GMEM", "Per-tile (GMEM) clear" },
@@ -525,6 +528,7 @@ CREATE_EVENT_CALLBACK(binning_ib, BINNING_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_gmem, GMEM_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_sysmem, BYPASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(blit, BLIT_STAGE_ID)
+CREATE_EVENT_CALLBACK(draw, DRAW_STAGE_ID)
 CREATE_EVENT_CALLBACK(compute, COMPUTE_STAGE_ID)
 CREATE_EVENT_CALLBACK(compute_indirect, COMPUTE_STAGE_ID)
 CREATE_EVENT_CALLBACK(generic_clear, GENERIC_CLEAR_STAGE_ID)

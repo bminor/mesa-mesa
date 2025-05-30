@@ -120,6 +120,19 @@ begin_end_tp('render_pass',
               Arg(type='int32_t',                               var='lrzWriteDisabledAtDraw',                               c_format='%d'),
               Arg(type='uint32_t',                              var='lrzStatus', c_format='%s', to_prim_type='(fd_lrz_gpu_dir_to_str((enum fd_lrz_gpu_dir)({} & 0xff)))', is_indirect=True),])
 
+begin_end_tp('draw',
+             [Arg(type='uint32_t', var='count', c_format='%u'),
+              Arg(type='tu_sha1_str', var='vs_sha1',  c_format='%s',
+                  copy_func='strcpy'),
+              Arg(type='tu_sha1_str', var='tcs_sha1',  c_format='%s',
+                  copy_func='strcpy'),
+              Arg(type='tu_sha1_str', var='tes_sha1',  c_format='%s',
+                  copy_func='strcpy'),
+              Arg(type='tu_sha1_str', var='gs_sha1',  c_format='%s',
+                  copy_func='strcpy'),
+              Arg(type='tu_sha1_str', var='fs_sha1',  c_format='%s',
+                  copy_func='strcpy'),
+              ], tp_default_enabled=False)
 
 begin_end_tp('binning_ib')
 begin_end_tp('draw_ib_sysmem')

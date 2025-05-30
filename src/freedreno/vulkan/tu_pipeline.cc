@@ -2230,6 +2230,11 @@ tu_emit_program_state(struct tu_cs *sub_cs,
                   shaders[stage]->dynamic_descriptor_sizes[i];
             }
          }
+
+         if (variants[stage]) {
+            memcpy(prog->stage_sha1[stage], variants[stage]->sha1_str,
+                   sizeof(variants[stage]->sha1_str));
+         }
       }
    }
 

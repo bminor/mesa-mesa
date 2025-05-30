@@ -417,6 +417,8 @@ enum tu_suspend_resume_state
    SR_IN_CHAIN_AFTER_PRE_CHAIN,
 };
 
+typedef char tu_sha1_str[SHA1_DIGEST_STRING_LENGTH];
+
 struct tu_cmd_state
 {
    uint32_t dirty;
@@ -546,6 +548,9 @@ struct tu_cmd_state
    bool prim_generated_query_running_before_rp;
 
    bool occlusion_query_may_be_running;
+
+   bool trace_draws_enabled;
+   enum tu_pipeline_type trace_draws_pipeline_type;
 
    enum tu_suspend_resume_state suspend_resume;
 
