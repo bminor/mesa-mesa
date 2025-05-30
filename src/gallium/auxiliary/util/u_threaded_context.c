@@ -2223,29 +2223,6 @@ tc_set_global_binding(struct pipe_context *_pipe, unsigned first,
  * views
  */
 
-static struct pipe_surface *
-tc_create_surface(struct pipe_context *_pipe,
-                  struct pipe_resource *resource,
-                  const struct pipe_surface *surf_tmpl)
-{
-   struct pipe_context *pipe = threaded_context(_pipe)->pipe;
-   struct pipe_surface *view =
-         pipe->create_surface(pipe, resource, surf_tmpl);
-
-   if (view)
-      view->context = _pipe;
-   return view;
-}
-
-static void
-tc_surface_destroy(struct pipe_context *_pipe,
-                   struct pipe_surface *surf)
-{
-   struct pipe_context *pipe = threaded_context(_pipe)->pipe;
-
-   pipe->surface_destroy(pipe, surf);
-}
-
 static struct pipe_sampler_view *
 tc_create_sampler_view(struct pipe_context *_pipe,
                        struct pipe_resource *resource,
@@ -5443,8 +5420,6 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(create_sampler_view);
    CTX_INIT(sampler_view_destroy);
    CTX_INIT(sampler_view_release);
-   CTX_INIT(create_surface);
-   CTX_INIT(surface_destroy);
    CTX_INIT(buffer_map);
    CTX_INIT(texture_map);
    CTX_INIT(transfer_flush_region);

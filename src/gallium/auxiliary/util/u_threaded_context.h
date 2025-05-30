@@ -70,8 +70,6 @@
  *       (e.g. LLVM target machine)
  *     - Only pipe_context's debug callback for shader dumps is guaranteed to
  *       be up to date, because set_debug_callback synchronizes execution.
- * - create_surface
- * - surface_destroy
  * - create_sampler_view
  * - sampler_view_destroy
  * - stream_output_target_destroy
