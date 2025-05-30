@@ -296,7 +296,7 @@ vc4_submit_setup_rcl_surface(struct vc4_job *job,
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
         submit_surf->hindex = vc4_gem_hindex(job, rsc->bo);
-        submit_surf->offset = surf->offset;
+        submit_surf->offset = vc4_surface_get_offset(psurf);
 
         if (psurf->texture->nr_samples <= 1) {
                 if (is_depth) {
@@ -337,7 +337,7 @@ vc4_submit_setup_rcl_render_config_surface(struct vc4_job *job,
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
         submit_surf->hindex = vc4_gem_hindex(job, rsc->bo);
-        submit_surf->offset = surf->offset;
+        submit_surf->offset = vc4_surface_get_offset(psurf);
 
         if (psurf->texture->nr_samples <= 1) {
                 submit_surf->bits =
@@ -357,14 +357,12 @@ vc4_submit_setup_rcl_msaa_surface(struct vc4_job *job,
                                   struct drm_vc4_submit_rcl_surface *submit_surf,
                                   struct pipe_surface *psurf)
 {
-        struct vc4_surface *surf = vc4_surface(psurf);
-
-        if (!surf)
+        if (!psurf)
                 return;
 
         struct vc4_resource *rsc = vc4_resource(psurf->texture);
         submit_surf->hindex = vc4_gem_hindex(job, rsc->bo);
-        submit_surf->offset = surf->offset;
+        submit_surf->offset = vc4_surface_get_offset(psurf);
         submit_surf->bits = 0;
         rsc->writes++;
 }

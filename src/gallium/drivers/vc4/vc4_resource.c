@@ -781,8 +781,6 @@ vc4_create_surface(struct pipe_context *pctx,
         psurf->level = level;
         psurf->first_layer = surf_tmpl->first_layer;
         psurf->last_layer = surf_tmpl->last_layer;
-        surface->offset = (rsc->slices[level].offset +
-                           psurf->first_layer * rsc->cube_map_stride);
         surface->tiling = rsc->slices[level].tiling;
 
         return &surface->base;

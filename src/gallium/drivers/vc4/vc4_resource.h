@@ -44,7 +44,6 @@ struct vc4_resource_slice {
 
 struct vc4_surface {
         struct pipe_surface base;
-        uint32_t offset;
         uint8_t tiling;
 };
 
@@ -110,5 +109,13 @@ struct pipe_resource *vc4_get_shadow_index_buffer(struct pipe_context *pctx,
                                                   uint32_t count,
                                                   uint32_t *shadow_offset);
 void vc4_dump_surface(struct pipe_surface *psurf);
+
+static inline uint32_t vc4_surface_get_offset(struct pipe_surface *psurf)
+{
+        assert(psurf && psurf->texture);
+        struct vc4_resource *rsc = vc4_resource(psurf->texture);
+        return rsc->slices[psurf->level].offset +
+                psurf->first_layer * rsc->cube_map_stride;
+}
 
 #endif /* VC4_RESOURCE_H */
