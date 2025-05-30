@@ -218,6 +218,36 @@ emit_readfirstlane(isel_context* ctx, Temp src, Temp dst)
    return dst;
 }
 
+Temp
+add64_32(Builder& bld, Temp src0, Operand src1)
+{
+   Temp src00 = bld.tmp(src0.type(), 1);
+   Temp src01 = bld.tmp(src0.type(), 1);
+   bld.pseudo(aco_opcode::p_split_vector, Definition(src00), Definition(src01), src0);
+
+   if (src0.type() == RegType::vgpr || src1.isOfType(RegType::vgpr)) {
+      src1 = src1.isOfType(RegType::vgpr) ? src1 : bld.copy(bld.def(v1), src1);
+      Temp dst0 = bld.tmp(v1);
+      Temp carry = bld.vadd32(Definition(dst0), src00, src1, true).def(1).getTemp();
+      Temp dst1 = bld.vadd32(bld.def(v1), src01, Operand::zero(), false, carry);
+      return bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), dst0, dst1);
+   } else {
+      Temp carry = bld.tmp(s1);
+      Temp dst0 =
+         bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.scc(Definition(carry)), src00, src1);
+      Temp dst1 = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc), src01, carry);
+      return bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), dst0, dst1);
+   }
+}
+
+/* undef becomes Temp(id=0) */
+Temp
+as_temp(Builder& bld, Operand op)
+{
+   RegClass rc(RegType::sgpr, op.size());
+   return op.isTemp() ? op.getTemp() : op.isConstant() ? bld.copy(bld.def(rc), op) : Temp(0, rc);
+}
+
 struct LoadEmitInfo {
    Operand offset;
    Temp dst;
@@ -277,45 +307,28 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
       /* reduce constant offset */
       Operand offset = info.offset;
       unsigned reduced_const_offset = const_offset;
-      if (const_offset && const_offset > params.max_const_offset) {
+      if (const_offset > params.max_const_offset) {
          uint32_t max_const_offset_plus_one = params.max_const_offset + 1;
          unsigned to_add = const_offset / max_const_offset_plus_one * max_const_offset_plus_one;
          reduced_const_offset %= max_const_offset_plus_one;
-         Temp offset_tmp = offset.isTemp() ? offset.getTemp() : Temp();
+
+         /* For global loads with a 32-bit offset, the resource is the 64-bit address. */
          if (offset.isConstant()) {
             offset = Operand::c32(offset.constantValue() + to_add);
          } else if (offset.isUndefined()) {
             offset = Operand::c32(to_add);
-         } else if (offset_tmp.regClass() == s1) {
-            offset = bld.sop2(aco_opcode::s_add_i32, bld.def(s1), bld.def(s1, scc), offset_tmp,
+         } else if (offset.regClass() == s1) {
+            offset = bld.sop2(aco_opcode::s_add_i32, bld.def(s1), bld.def(s1, scc), offset,
                               Operand::c32(to_add));
-         } else if (offset_tmp.regClass() == v1) {
-            offset = bld.vadd32(bld.def(v1), offset_tmp, Operand::c32(to_add));
+         } else if (offset.regClass() == v1) {
+            offset = bld.vadd32(bld.def(v1), offset, Operand::c32(to_add));
          } else {
-            Temp lo = bld.tmp(offset_tmp.type(), 1);
-            Temp hi = bld.tmp(offset_tmp.type(), 1);
-            bld.pseudo(aco_opcode::p_split_vector, Definition(lo), Definition(hi), offset_tmp);
-
-            if (offset_tmp.regClass() == s2) {
-               Temp carry = bld.tmp(s1);
-               lo = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.scc(Definition(carry)), lo,
-                             Operand::c32(to_add));
-               hi = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc), hi, carry);
-               offset = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), lo, hi);
-            } else {
-               Temp new_lo = bld.tmp(v1);
-               Temp carry =
-                  bld.vadd32(Definition(new_lo), lo, Operand::c32(to_add), true).def(1).getTemp();
-               hi = bld.vadd32(bld.def(v1), hi, Operand::zero(), false, carry);
-               offset = bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), new_lo, hi);
-            }
+            offset = Operand(add64_32(bld, offset.getTemp(), Operand::c32(to_add)));
          }
       }
 
       unsigned align = align_offset ? 1 << (ffs(align_offset) - 1) : align_mul;
-      Temp offset_tmp = offset.isTemp()       ? offset.getTemp()
-                        : offset.isConstant() ? bld.copy(bld.def(s1), offset)
-                                              : Temp(0, s1);
+      Temp offset_tmp = as_temp(bld, offset);
 
       Temp val = params.callback(bld, info, offset_tmp, bytes_needed, align, reduced_const_offset,
                                  info.dst);
@@ -785,27 +798,6 @@ get_gfx6_global_rsrc(Builder& bld, Temp addr)
                      Operand::c32(desc[3]));
 }
 
-Temp
-add64_32(Builder& bld, Temp src0, Temp src1)
-{
-   Temp src00 = bld.tmp(src0.type(), 1);
-   Temp src01 = bld.tmp(src0.type(), 1);
-   bld.pseudo(aco_opcode::p_split_vector, Definition(src00), Definition(src01), src0);
-
-   if (src0.type() == RegType::vgpr || src1.type() == RegType::vgpr) {
-      Temp dst0 = bld.tmp(v1);
-      Temp carry = bld.vadd32(Definition(dst0), src00, src1, true).def(1).getTemp();
-      Temp dst1 = bld.vadd32(bld.def(v1), src01, Operand::zero(), false, carry);
-      return bld.pseudo(aco_opcode::p_create_vector, bld.def(v2), dst0, dst1);
-   } else {
-      Temp carry = bld.tmp(s1);
-      Temp dst0 =
-         bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.scc(Definition(carry)), src00, src1);
-      Temp dst1 = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc), src01, carry);
-      return bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), dst0, dst1);
-   }
-}
-
 void
 lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
                      uint32_t* const_offset_inout, Temp* offset_inout)
@@ -825,7 +817,7 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
 
    if (!offset.id()) {
       while (unlikely(excess_offset > UINT32_MAX)) {
-         address = add64_32(bld, address, bld.copy(bld.def(s1), Operand::c32(UINT32_MAX)));
+         address = add64_32(bld, address, Operand::c32(UINT32_MAX));
          excess_offset -= UINT32_MAX;
       }
       if (excess_offset)
@@ -839,7 +831,7 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
        */
       while (excess_offset) {
          uint32_t src2 = MIN2(excess_offset, UINT32_MAX);
-         address = add64_32(bld, address, bld.copy(bld.def(s1), Operand::c32(src2)));
+         address = add64_32(bld, address, Operand::c32(src2));
          excess_offset -= src2;
       }
    }
@@ -849,21 +841,21 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
       /* Disallow SGPR address with both a const_offset and offset because of possible overflow. */
       if (offset.id() && (offset.type() != RegType::sgpr ||
                           (address.type() == RegType::sgpr && const_offset > 0))) {
-         address = add64_32(bld, address, offset);
+         address = add64_32(bld, address, Operand(offset));
          offset = Temp();
       }
       offset = offset.id() ? offset : bld.copy(bld.def(s1), Operand::zero());
    } else if (bld.program->gfx_level <= GFX8) {
       /* GFX7,8 (FLAT): VGPR address */
       if (offset.id()) {
-         address = add64_32(bld, address, offset);
+         address = add64_32(bld, address, Operand(offset));
          offset = Temp();
       }
       address = as_vgpr(bld, address);
    } else {
       /* GFX9+ (GLOBAL): (VGPR address), or (SGPR address and VGPR offset) */
       if (address.type() == RegType::vgpr && offset.id()) {
-         address = add64_32(bld, address, offset);
+         address = add64_32(bld, address, Operand(offset));
          offset = Temp();
       } else if (address.type() == RegType::sgpr && offset.id()) {
          offset = as_vgpr(bld, offset);
