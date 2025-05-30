@@ -4707,7 +4707,7 @@ struct tc_clear_render_target {
    unsigned width;
    unsigned height;
    union pipe_color_union color;
-   struct pipe_surface *dst;
+   struct pipe_surface dst;
 };
 
 static uint16_t ALWAYS_INLINE
@@ -4715,9 +4715,9 @@ tc_call_clear_render_target(struct pipe_context *pipe, void *call)
 {
    struct tc_clear_render_target *p = to_call(call, tc_clear_render_target);
 
-   pipe->clear_render_target(pipe, p->dst, &p->color, p->dstx, p->dsty, p->width, p->height,
+   pipe->clear_render_target(pipe, &p->dst, &p->color, p->dstx, p->dsty, p->width, p->height,
                              p->render_condition_enabled);
-   tc_drop_surface_reference(p->dst);
+   tc_drop_resource_reference(p->dst.texture);
    return call_size(tc_clear_render_target);
 }
 
@@ -4731,8 +4731,9 @@ tc_clear_render_target(struct pipe_context *_pipe,
 {
    struct threaded_context *tc = threaded_context(_pipe);
    struct tc_clear_render_target *p = tc_add_call(tc, TC_CALL_clear_render_target, tc_clear_render_target);
-   p->dst = NULL;
-   pipe_surface_reference(&p->dst, dst);
+   p->dst.texture = NULL;
+   pipe_resource_reference(&p->dst.texture, dst->texture);
+   p->dst = *dst;
    p->color = *color;
    p->dstx = dstx;
    p->dsty = dsty;
@@ -4752,7 +4753,7 @@ struct tc_clear_depth_stencil {
    unsigned dsty;
    unsigned width;
    unsigned height;
-   struct pipe_surface *dst;
+   struct pipe_surface dst;
 };
 
 
@@ -4761,10 +4762,10 @@ tc_call_clear_depth_stencil(struct pipe_context *pipe, void *call)
 {
    struct tc_clear_depth_stencil *p = to_call(call, tc_clear_depth_stencil);
 
-   pipe->clear_depth_stencil(pipe, p->dst, p->clear_flags, p->depth, p->stencil,
+   pipe->clear_depth_stencil(pipe, &p->dst, p->clear_flags, p->depth, p->stencil,
                              p->dstx, p->dsty, p->width, p->height,
                              p->render_condition_enabled);
-   tc_drop_surface_reference(p->dst);
+   tc_drop_resource_reference(p->dst.texture);
    return call_size(tc_clear_depth_stencil);
 }
 
@@ -4777,8 +4778,9 @@ tc_clear_depth_stencil(struct pipe_context *_pipe,
 {
    struct threaded_context *tc = threaded_context(_pipe);
    struct tc_clear_depth_stencil *p = tc_add_call(tc, TC_CALL_clear_depth_stencil, tc_clear_depth_stencil);
-   p->dst = NULL;
-   pipe_surface_reference(&p->dst, dst);
+   p->dst.texture = NULL;
+   pipe_resource_reference(&p->dst.texture, dst->texture);
+   p->dst = *dst;
    p->clear_flags = clear_flags;
    p->depth = depth;
    p->stencil = stencil;
