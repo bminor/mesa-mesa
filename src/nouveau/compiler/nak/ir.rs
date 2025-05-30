@@ -2290,6 +2290,28 @@ pub enum LdCacheOp {
     #[default]
     CacheAll,
     CacheGlobal,
+    /// This cache mode not officially documented by NVIDIA.  What we do know is
+    /// that the Cuda C programming gude says:
+    ///
+    /// > The read-only data cache load function is only supported by devices
+    /// > of compute capability 5.0 and higher.
+    /// > ```c
+    /// > T __ldg(const T* address);
+    /// > ```
+    ///
+    /// and we know that `__ldg()` compiles to `ld.global.nc` in PTX which
+    /// compiles to `ld.ci`.  The PTX 5.0 docs say:
+    ///
+    /// > Load register variable `d` from the location specified by the source
+    /// > address operand `a` in the global state space, and optionally cache in
+    /// > non-coherent texture cache. Since the cache is non-coherent, the data
+    /// > should be read-only within the kernel's process.
+    ///
+    /// Since `.nc` means "non-coherent", the name "incoherent" seems about
+    /// right.  The quote above also seems to imply that these loads got loaded
+    /// through the texture cache but we don't fully understand the implications
+    /// of that.
+    CacheIncoherent,
     CacheStreaming,
     CacheInvalidate,
 }
@@ -2299,6 +2321,7 @@ impl fmt::Display for LdCacheOp {
         match self {
             LdCacheOp::CacheAll => write!(f, ".ca"),
             LdCacheOp::CacheGlobal => write!(f, ".cg"),
+            LdCacheOp::CacheIncoherent => write!(f, ".ci"),
             LdCacheOp::CacheStreaming => write!(f, ".cs"),
             LdCacheOp::CacheInvalidate => write!(f, ".cv"),
         }
@@ -2314,7 +2337,15 @@ impl LdCacheOp {
     ) -> Self {
         match space {
             MemSpace::Global(_) => match order {
-                MemOrder::Constant => LdCacheOp::CacheAll,
+                MemOrder::Constant => {
+                    if sm.sm() >= 50 {
+                        // This is undocumented in the CUDA docs but NVIDIA uses
+                        // it for constant loads.
+                        LdCacheOp::CacheIncoherent
+                    } else {
+                        LdCacheOp::CacheAll
+                    }
+                }
                 MemOrder::Strong(MemScope::System) => {
                     LdCacheOp::CacheInvalidate
                 }

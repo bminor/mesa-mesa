@@ -2401,6 +2401,7 @@ impl SM50Encoder<'_> {
         let cache_op = match op {
             LdCacheOp::CacheAll => 0_u8,
             LdCacheOp::CacheGlobal => 1_u8,
+            LdCacheOp::CacheIncoherent => 2_u8,
             LdCacheOp::CacheInvalidate => 3_u8,
             _ => panic!("Unsupported cache op: ld{op}"),
         };

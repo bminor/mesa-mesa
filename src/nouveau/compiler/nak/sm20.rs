@@ -2170,6 +2170,7 @@ impl SM20Encoder<'_> {
             LdCacheOp::CacheGlobal => 1_u8,
             LdCacheOp::CacheStreaming => 2_u8,
             LdCacheOp::CacheInvalidate => 3_u8,
+            _ => panic!("Unsupported cache op: ld{op}"),
         };
         self.set_field(range, cache_op);
     }
