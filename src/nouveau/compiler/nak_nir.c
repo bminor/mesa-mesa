@@ -965,7 +965,6 @@ nak_postprocess_nir(nir_shader *nir,
       // On Kepler we need to lower shared atomics into locked ld-st
       OPT(nir, nak_nir_lower_kepler_shared_atomics);
    }
-   OPT(nir, nak_nir_lower_scan_reduce);
 
    if (nir_shader_has_local_variables(nir)) {
       OPT(nir, nir_lower_vars_to_explicit_types, nir_var_function_temp,
@@ -999,6 +998,7 @@ nak_postprocess_nir(nir_shader *nir,
    nir_divergence_analysis(nir);
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       OPT(nir, nir_opt_tex_skip_helpers, true);
+   OPT(nir, nak_nir_lower_scan_reduce);
 
    nak_optimize_nir(nir, nak);
 
