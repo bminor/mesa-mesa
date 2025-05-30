@@ -2322,6 +2322,9 @@ impl LdCacheOp {
             // We assume that CacheAll is also safe for shared memory.
             MemSpace::Global(_) => match order {
                 MemOrder::Constant => LdCacheOp::CacheAll,
+                MemOrder::Strong(MemScope::System) => {
+                    LdCacheOp::CacheInvalidate
+                }
                 _ => LdCacheOp::CacheGlobal,
             },
             MemSpace::Local | MemSpace::Shared => LdCacheOp::CacheAll,
@@ -2355,11 +2358,17 @@ impl StCacheOp {
     pub fn select(
         _sm: &dyn ShaderModel,
         space: MemSpace,
-        _order: MemOrder,
+        order: MemOrder,
         _eviction_priority: MemEvictionPriority,
     ) -> Self {
         match space {
-            MemSpace::Global(_) => StCacheOp::CacheGlobal,
+            MemSpace::Global(_) => match order {
+                MemOrder::Constant => panic!("Cannot store to constant"),
+                MemOrder::Strong(MemScope::System) => {
+                    StCacheOp::WriteThrough
+                }
+                _ => StCacheOp::CacheGlobal,
+            },
             MemSpace::Local | MemSpace::Shared => StCacheOp::WriteBack,
         }
     }
