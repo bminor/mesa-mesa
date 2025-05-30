@@ -452,6 +452,9 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
       flags |= RADV_BUILD_FLAG_COMPACT;
    if (radv_use_bvh8(pdev))
       flags |= RADV_BUILD_FLAG_BVH8;
+   /* gfx11 box intersection tests can return garbage with infs and non-standard box sorting */
+   if (pdev->info.gfx_level == GFX11)
+      flags |= RADV_BUILD_FLAG_NO_INFS;
 
    return flags;
 }
@@ -461,7 +464,7 @@ radv_encode_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
 {
    radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_ENCODE, encode_spv, sizeof(encode_spv),
                                 sizeof(struct encode_args),
-                                radv_build_flags(commandBuffer, key) & RADV_BUILD_FLAG_COMPACT);
+                                radv_build_flags(commandBuffer, key));
 
    return VK_SUCCESS;
 }
