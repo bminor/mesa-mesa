@@ -107,9 +107,6 @@ destroy_video_buffer_private(void *private)
    for (i = 0; i < VL_NUM_COMPONENTS; ++i)
       pipe_sampler_view_reference(&priv->sampler_view_planes[i], NULL);
 
-   for (i = 0; i < VL_MAX_SURFACES; ++i)
-      pipe_surface_reference(&priv->surfaces[i], NULL);
-
    if (priv->buffer)
       vl_mpeg12_destroy_buffer(priv->buffer);
 
