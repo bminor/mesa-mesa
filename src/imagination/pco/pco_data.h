@@ -115,6 +115,7 @@ typedef struct _pco_fs_data {
       bool early_frag;
       bool sample_shading;
       bool alpha_to_coverage;
+      bool olchk_skip;
    } uses;
 
    struct {

@@ -31,6 +31,7 @@ typedef struct _trans_ctx {
    pco_builder b; /** Builder. */
    mesa_shader_stage stage; /** Shader stage. */
    enum pco_cf_node_flag flag; /** Implementation-defined control-flow flag. */
+   bool olchk;
 
    BITSET_WORD *float_types; /** NIR SSA float vars. */
    BITSET_WORD *int_types; /** NIR SSA int vars. */
@@ -449,7 +450,7 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    if (!tile_buffer) {
       pco_ref dest =
          pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
-      return pco_mov(&tctx->b, dest, src, .olchk = true);
+      return pco_mov(&tctx->b, dest, src, .olchk = tctx->olchk);
    }
 
    unsigned tile_buffer_id = range->start;
@@ -480,7 +481,7 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
                 base_addr[1],
                 tiled_offset,
                 pco_ref_null(),
-                .olchk = true,
+                .olchk = tctx->olchk,
                 .s = true);
 
    unsigned chans = pco_ref_get_chans(src);
@@ -507,7 +508,7 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
                        pco_ref_imm8(chans),
                        addr_data,
                        cov_mask,
-                       .olchk = true);
+                       .olchk = tctx->olchk);
 }
 
 static pco_instr *trans_flush_tile_buffer(trans_ctx *tctx,
@@ -528,7 +529,7 @@ static pco_instr *trans_flush_tile_buffer(trans_ctx *tctx,
                 src_addr_hi,
                 tiled_offset,
                 pco_ref_null(),
-                .olchk = true,
+                .olchk = tctx->olchk,
                 .s = true);
 
    pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
@@ -651,7 +652,7 @@ trans_load_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    if (!tile_buffer) {
       pco_ref src =
          pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
-      return pco_mov(&tctx->b, dest, src, .olchk = true);
+      return pco_mov(&tctx->b, dest, src, .olchk = tctx->olchk);
    }
 
    unsigned tile_buffer_id = range->start;
@@ -680,7 +681,7 @@ trans_load_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
                 base_addr[1],
                 tiled_offset,
                 pco_ref_null(),
-                .olchk = true,
+                .olchk = tctx->olchk,
                 .s = true);
 
    pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
@@ -1541,7 +1542,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
       pco_ref pixout =
          pco_ref_hwreg(nir_intrinsic_base(intr), PCO_REG_CLASS_PIXOUT);
-      return pco_mov(&tctx->b, pixout, pixout, .olchk = true);
+      return pco_mov(&tctx->b, pixout, pixout, .olchk = tctx->olchk);
       break;
    }
 
@@ -1713,14 +1714,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = does_depthf ? pco_depthf(&tctx->b,
                                        pco_ref_drc(PCO_DRC_0),
                                        src[1],
-                                       .olchk = true)
+                                       .olchk = tctx->olchk)
                           : pco_alphaf(&tctx->b,
                                        pco_ref_null(),
                                        pco_ref_drc(PCO_DRC_0),
                                        pco_zero,
                                        pco_zero,
                                        pco_7,
-                                       .olchk = true);
+                                       .olchk = tctx->olchk);
 
       if (does_discard)
          pco_instr_set_exec_cnd(instr, PCO_EXEC_CND_E1_Z1);
@@ -3409,6 +3410,9 @@ pco_trans_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data, void *mem_ctx)
       .shader = shader,
       .stage = shader->stage,
    };
+
+   if (shader->stage == MESA_SHADER_FRAGMENT)
+      tctx.olchk = !data->fs.uses.olchk_skip;
 
    nir_foreach_function_with_impl (func, impl, nir) {
       trans_func(&tctx, impl);

@@ -156,7 +156,10 @@ pco_shader *pvr_usc_eot(pco_ctx *ctx,
    /* Just return. */
    nir_jump(&b, nir_jump_return);
 
-   return build_shader(ctx, b.shader, &(pco_data){ 0 });
+   pco_data data = {
+      .fs.uses.olchk_skip = true,
+   };
+   return build_shader(ctx, b.shader, &data);
 }
 
 /**
