@@ -464,7 +464,7 @@
         "description": "llvmpipe: Define LP_NIR_SHADER_DUMP_DIR differently on Android",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
