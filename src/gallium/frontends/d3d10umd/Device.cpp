@@ -45,6 +45,7 @@
 #include "Debug.h"
 
 #include "util/u_sampler.h"
+#include "util/u_framebuffer.h"
 
 
 static void APIENTRY DestroyDevice(D3D10DDI_HDEVICE hDevice);
@@ -340,10 +341,7 @@ DestroyDevice(D3D10DDI_HDEVICE hDevice)   // IN
    DeleteEmptyShader(pDevice, PIPE_SHADER_FRAGMENT, pDevice->empty_fs);
    DeleteEmptyShader(pDevice, PIPE_SHADER_VERTEX, pDevice->empty_vs);
 
-   pipe_surface_reference(&pDevice->fb.zsbuf, NULL);
-   for (i = 0; i < PIPE_MAX_COLOR_BUFS; ++i) {
-      pipe_surface_reference(&pDevice->fb.cbufs[i], NULL);
-   }
+   util_unreference_framebuffer_state(&pDevice->fb);
 
    for (i = 0; i < PIPE_MAX_ATTRIBS; ++i) {
       if (!pDevice->vertex_buffers[i].is_user_buffer) {

@@ -207,7 +207,7 @@ CastPipeBuffer(D3D10DDI_HRESOURCE hResource)
 
 struct RenderTargetView
 {
-   struct pipe_surface *surface;
+   struct pipe_surface surface;
    D3D10DDI_HRTRENDERTARGETVIEW hRTRenderTargetView;
 };
 
@@ -223,13 +223,13 @@ static inline struct pipe_surface *
 CastPipeRenderTargetView(D3D10DDI_HRENDERTARGETVIEW hRenderTargetView)
 {
    RenderTargetView *pRenderTargetView = CastRenderTargetView(hRenderTargetView);
-   return pRenderTargetView ? pRenderTargetView->surface : NULL;
+   return pRenderTargetView ? &pRenderTargetView->surface : NULL;
 }
 
 
 struct DepthStencilView
 {
-   struct pipe_surface *surface;
+   struct pipe_surface surface;
    D3D10DDI_HRTDEPTHSTENCILVIEW hRTDepthStencilView;
 };
 
@@ -245,7 +245,7 @@ static inline struct pipe_surface *
 CastPipeDepthStencilView(D3D10DDI_HDEPTHSTENCILVIEW hDepthStencilView)
 {
    DepthStencilView *pDepthStencilView = CastDepthStencilView(hDepthStencilView);
-   return pDepthStencilView ? pDepthStencilView->surface : NULL;
+   return pDepthStencilView ? &pDepthStencilView->surface : NULL;
 }
 
 
@@ -408,4 +408,3 @@ CastPipeQuery(D3D10DDI_HQUERY hQuery)
    Query *pQuery = CastQuery(hQuery);
    return pQuery ? pQuery->handle : NULL;
 }
-

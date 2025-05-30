@@ -90,6 +90,7 @@ CreateRenderTargetView(
    struct pipe_surface desc;
 
    memset(&desc, 0, sizeof desc);
+   pipe_resource_reference(&desc.texture, resource);
    desc.format = FormatTranslate(pCreateRenderTargetView->Format, false);
 
    switch (pCreateRenderTargetView->ResourceDimension) {
@@ -130,8 +131,7 @@ CreateRenderTargetView(
       return;
    }
 
-   pRTView->surface = pipe->create_surface(pipe, resource, &desc);
-   assert(pRTView->surface);
+   pRTView->surface = desc;
 }
 
 
@@ -155,7 +155,7 @@ DestroyRenderTargetView(D3D10DDI_HDEVICE hDevice,                       // IN
 
    RenderTargetView *pRTView = CastRenderTargetView(hRenderTargetView);
 
-   pipe_surface_reference(&pRTView->surface, NULL);
+   pipe_resource_reference(&pRTView->surface.texture, NULL);
 }
 
 
@@ -290,6 +290,7 @@ CreateDepthStencilView(
    struct pipe_surface desc;
 
    memset(&desc, 0, sizeof desc);
+   pipe_resource_reference(&desc.texture, resource);
    desc.format = FormatTranslate(pCreateDepthStencilView->Format, true);
 
    switch (pCreateDepthStencilView->ResourceDimension) {
@@ -319,8 +320,7 @@ CreateDepthStencilView(
       return;
    }
 
-   pDSView->surface = pipe->create_surface(pipe, resource, &desc);
-   assert(pDSView->surface);
+   pDSView->surface = desc;
 }
 
 
@@ -344,7 +344,7 @@ DestroyDepthStencilView(D3D10DDI_HDEVICE hDevice,                       // IN
 
    DepthStencilView *pDSView = CastDepthStencilView(hDepthStencilView);
 
-   pipe_surface_reference(&pDSView->surface, NULL);
+   pipe_resource_reference(&pDSView->surface.texture, NULL);
 }
 
 
@@ -753,19 +753,24 @@ SetRenderTargets(D3D10DDI_HDEVICE hDevice,                              // IN
 
    pDevice->fb.nr_cbufs = 0;
    for (unsigned i = 0; i < RTargets; ++i) {
-      pipe_surface_reference(&pDevice->fb.cbufs[i],
-                             CastPipeRenderTargetView(phRenderTargetView[i]));
-      if (pDevice->fb.cbufs[i]) {
+      struct pipe_surface *psurf = CastPipeRenderTargetView(phRenderTargetView[i]);
+      pipe_resource_reference(&pDevice->fb.cbufs[i].texture,
+                              psurf && psurf->texture ? psurf->texture : NULL);
+      if (psurf && psurf->texture) {
          pDevice->fb.nr_cbufs = i + 1;
+         pDevice->fb.cbufs[i] = *psurf;
       }
    }
 
    for (unsigned i = RTargets; i < PIPE_MAX_COLOR_BUFS; ++i) {
-      pipe_surface_reference(&pDevice->fb.cbufs[i], NULL);
+      pipe_resource_reference(&pDevice->fb.cbufs[i].texture, NULL);
    }
 
-   pipe_surface_reference(&pDevice->fb.zsbuf,
-                          CastPipeDepthStencilView(hDepthStencilView));
+   struct pipe_surface *zsbuf = CastPipeDepthStencilView(hDepthStencilView);
+   pipe_resource_reference(&pDevice->fb.zsbuf.texture, zsbuf && zsbuf->texture ? zsbuf->texture : NULL);
+   if(zsbuf && zsbuf->texture) {
+      pDevice->fb.zsbuf = *zsbuf;
+   }
 
    /*
     * Calculate the width/height fields for this framebuffer.  D3D10
