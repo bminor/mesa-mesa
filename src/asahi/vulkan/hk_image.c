@@ -44,7 +44,6 @@ hk_get_image_plane_format_features(struct hk_physical_device *pdev,
     * TODO: Investigate later if we have a use case.
     */
    switch (vk_format) {
-   case VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR:
    case VK_FORMAT_A8_UNORM_KHR:
       return 0;
    default:
