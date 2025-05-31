@@ -1424,7 +1424,7 @@
         "description": "nak: Don't swap f2fp sources in legalize",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e19871bd6ad0651a5b8ea8215eab686ace5d08e1",
         "notes": null
