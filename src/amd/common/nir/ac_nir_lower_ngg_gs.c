@@ -128,22 +128,6 @@ lower_ngg_gs_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ngg
    return true;
 }
 
-static unsigned
-gs_output_component_mask_with_stream(ac_nir_prerast_per_output_info *info, unsigned stream)
-{
-   unsigned mask = info->components_mask;
-   if (!mask)
-      return 0;
-
-   /* clear component when not requested stream */
-   for (int i = 0; i < 4; i++) {
-      if (((info->stream >> (i * 2)) & 3) != stream)
-         mask &= ~(1 << i);
-   }
-
-   return mask;
-}
-
 static bool
 lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intrin, lower_ngg_gs_state *s)
 {
@@ -163,7 +147,7 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
     * In case of packed 16-bit, we assume that has been already packed into 32 bit slots by now.
     */
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
-      unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
+      unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
       nir_def **output = s->out.outputs[slot];
 
       u_foreach_bit(c, mask) {
@@ -180,8 +164,8 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
 
    /* Store dedicated 16-bit outputs to LDS. */
    u_foreach_bit(slot, b->shader->info.outputs_written_16bit) {
-      const unsigned mask_lo = gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
-      const unsigned mask_hi = gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
+      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
+      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
       unsigned mask = mask_lo | mask_hi;
 
       nir_def **output_lo = s->out.outputs_16bit_lo[slot];
@@ -362,7 +346,7 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
    }
 
    u_foreach_bit64(slot, b->shader->info.outputs_written) {
-      unsigned mask = gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
+      unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
 
       u_foreach_bit(c, mask) {
          s->out.outputs[slot][c] = ac_nir_load_shared_gs_out(b, 32, exported_out_vtx_lds_addr,
@@ -372,8 +356,8 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
 
    /* Dedicated 16-bit outputs. */
    u_foreach_bit(i, b->shader->info.outputs_written_16bit) {
-      const unsigned mask_lo = gs_output_component_mask_with_stream(&s->out.infos_16bit_lo[i], 0);
-      const unsigned mask_hi = gs_output_component_mask_with_stream(&s->out.infos_16bit_hi[i], 0);
+      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(&s->out.infos_16bit_lo[i], 0);
+      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(&s->out.infos_16bit_hi[i], 0);
       unsigned mask = mask_lo | mask_hi;
 
       u_foreach_bit(c, mask) {

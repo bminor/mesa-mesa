@@ -269,6 +269,9 @@ ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
 void
 ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out);
 
+unsigned
+ac_nir_gs_output_component_mask_with_stream(ac_nir_prerast_per_output_info *info, unsigned stream);
+
 #ifdef __cplusplus
 }
 #endif

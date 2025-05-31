@@ -1616,3 +1616,19 @@ ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out)
    pr_out->total_packed_gs_out_size = gs_out_offset;
    pr_out->total_packed_xfb_lds_size = xfb_lds_offset;
 }
+
+unsigned
+ac_nir_gs_output_component_mask_with_stream(ac_nir_prerast_per_output_info *info, unsigned stream)
+{
+   unsigned mask = info->components_mask;
+   if (!mask)
+      return 0;
+
+   /* clear component when not requested stream */
+   for (int i = 0; i < 4; i++) {
+      if (((info->stream >> (i * 2)) & 3) != stream)
+         mask &= ~(1 << i);
+   }
+
+   return mask;
+}
