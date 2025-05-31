@@ -168,10 +168,6 @@ spec@arb_viewport_array@display-list,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 
-# https://gitlab.freedesktop.org/mesa/mesa/-/issues/12496
-# ../src/amd/vulkan/radv_shader_info.c:1559: gfx10_get_ngg_info: Assertion `max_esverts >= max_verts_per_prim && max_gsprims >= 1' failed.
-spec@glsl-1.50@gs-max-output,Crash
-
 spec@arb_sample_locations@test,Fail
 spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 0- Grid: false,Fail
 spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 0- Grid: true,Fail
