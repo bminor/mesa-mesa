@@ -721,7 +721,7 @@ fd_gmem_render_tiles(struct fd_batch *batch)
       trace_framebuffer_state(&batch->trace, batch->gmem, pfb);
    }
 
-   if (ctx->emit_sysmem_prep && !batch->nondraw) {
+   if (ctx->emit_sysmem_prep && !sysmem) {
       if (fd_autotune_use_bypass(&ctx->autotune, batch) && !FD_DBG(GMEM)) {
          sysmem = true;
       }
