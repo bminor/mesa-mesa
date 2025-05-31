@@ -1269,6 +1269,99 @@ clamp_gsprims_to_esverts(unsigned *max_gsprims, unsigned max_esverts, unsigned m
    *max_gsprims = MIN2(*max_gsprims, 1 + max_reuse);
 }
 
+void
+ac_legacy_gs_compute_subgroup_info(enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
+                                   unsigned esgs_vertex_stride, ac_legacy_gs_subgroup_info *out)
+{
+   unsigned gs_num_invocations = MAX2(gs_invocations, 1);
+   bool uses_adjacency = mesa_prim_has_adjacency((enum mesa_prim)input_prim);
+   const unsigned max_verts_per_prim = mesa_vertices_per_prim(input_prim);
+
+   /* All these are in dwords: */
+   /* We can't allow using the whole LDS, because GS waves compete with
+    * other shader stages for LDS space. */
+   const unsigned max_lds_size = 8 * 1024;
+   const unsigned esgs_itemsize = esgs_vertex_stride / 4;
+   unsigned esgs_lds_size;
+
+   /* All these are per subgroup: */
+   const unsigned max_out_prims = 32 * 1024;
+   const unsigned max_es_verts = 255;
+   const unsigned ideal_gs_prims = 64;
+   unsigned max_gs_prims, gs_prims;
+   unsigned min_es_verts, es_verts, worst_case_es_verts;
+
+   if (uses_adjacency || gs_num_invocations > 1)
+      max_gs_prims = 127 / gs_num_invocations;
+   else
+      max_gs_prims = 255;
+
+   /* MAX_PRIMS_PER_SUBGROUP = gs_prims * max_vert_out * gs_invocations.
+    * Make sure we don't go over the maximum value.
+    */
+   if (gs_vertices_out > 0) {
+      max_gs_prims =
+         MIN2(max_gs_prims, max_out_prims / (gs_vertices_out * gs_num_invocations));
+   }
+   assert(max_gs_prims > 0);
+
+   /* If the primitive has adjacency, halve the number of vertices
+    * that will be reused in multiple primitives.
+    */
+   min_es_verts = max_verts_per_prim / (uses_adjacency ? 2 : 1);
+
+   gs_prims = MIN2(ideal_gs_prims, max_gs_prims);
+   worst_case_es_verts = MIN2(min_es_verts * gs_prims, max_es_verts);
+
+   /* Compute ESGS LDS size based on the worst case number of ES vertices
+    * needed to create the target number of GS prims per subgroup.
+    */
+   esgs_lds_size = esgs_itemsize * worst_case_es_verts;
+
+   /* If total LDS usage is too big, refactor partitions based on ratio
+    * of ESGS item sizes.
+    */
+   if (esgs_lds_size > max_lds_size) {
+      /* Our target GS Prims Per Subgroup was too large. Calculate
+       * the maximum number of GS Prims Per Subgroup that will fit
+       * into LDS, capped by the maximum that the hardware can support.
+       */
+      gs_prims = MIN2((max_lds_size / (esgs_itemsize * min_es_verts)), max_gs_prims);
+      assert(gs_prims > 0);
+      worst_case_es_verts = MIN2(min_es_verts * gs_prims, max_es_verts);
+
+      esgs_lds_size = esgs_itemsize * worst_case_es_verts;
+      assert(esgs_lds_size <= max_lds_size);
+   }
+
+   /* Now calculate remaining ESGS information. */
+   if (esgs_lds_size)
+      es_verts = MIN2(esgs_lds_size / esgs_itemsize, max_es_verts);
+   else
+      es_verts = max_es_verts;
+
+   /* Vertices for adjacency primitives are not always reused, so restore
+    * it for ES_VERTS_PER_SUBGRP.
+    */
+   min_es_verts = max_verts_per_prim;
+
+   /* For normal primitives, the VGT only checks if they are past the ES
+    * verts per subgroup after allocating a full GS primitive and if they
+    * are, kick off a new subgroup.  But if those additional ES verts are
+    * unique (e.g. not reused) we need to make sure there is enough LDS
+    * space to account for those ES verts beyond ES_VERTS_PER_SUBGRP.
+    */
+   es_verts -= min_es_verts - 1;
+
+   out->es_verts_per_subgroup = es_verts;
+   out->gs_prims_per_subgroup = gs_prims;
+   out->gs_inst_prims_in_subgroup = gs_prims * gs_num_invocations;
+   out->max_prims_per_subgroup = out->gs_inst_prims_in_subgroup * gs_vertices_out;
+   out->esgs_lds_size = esgs_lds_size;
+
+   assert(out->max_prims_per_subgroup <= max_out_prims);
+}
+
 /**
  * Determine subgroup information like maximum number of vertices and prims.
  *

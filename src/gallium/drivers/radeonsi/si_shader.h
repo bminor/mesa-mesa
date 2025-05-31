@@ -752,14 +752,6 @@ struct si_shader_binary {
    unsigned num_symbols;
 };
 
-struct gfx9_gs_info {
-   unsigned es_verts_per_subgroup;
-   unsigned gs_prims_per_subgroup;
-   unsigned gs_inst_prims_in_subgroup;
-   unsigned max_prims_per_subgroup;
-   unsigned esgs_ring_size; /* in dwords */
-};
-
 struct si_shader {
    struct si_pm4_state pm4; /* base class */
    struct si_compiler_ctx_state compiler_ctx_state;
@@ -803,7 +795,7 @@ struct si_shader {
    char *shader_log;
    size_t shader_log_size;
 
-   struct gfx9_gs_info gs_info;
+   ac_legacy_gs_subgroup_info gs_info;
 
    /* Precomputed register values. */
    union {
@@ -927,8 +919,6 @@ char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir);
 /* si_state_shaders.cpp */
 unsigned si_shader_num_alloc_param_exports(struct si_shader *shader);
 unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *shader);
-void gfx9_get_gs_info(struct si_shader_selector *es, struct si_shader_selector *gs,
-                      struct gfx9_gs_info *out);
 bool gfx10_is_ngg_passthrough(struct si_shader *shader);
 unsigned si_shader_lshs_vertex_stride(struct si_shader *ls);
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader);

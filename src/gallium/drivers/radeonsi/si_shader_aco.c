@@ -210,7 +210,7 @@ si_aco_resolve_symbols(struct si_shader *shader, uint32_t *code_for_write,
       case aco_symbol_lds_ngg_gs_out_vertex_base:
          assert(sel->stage == MESA_SHADER_GEOMETRY && key->ge.as_ngg);
          value = (key->ge.as_ngg ? shader->ngg.info.esgs_lds_size
-                                 : shader->gs_info.esgs_ring_size) * 4;
+                                 : shader->gs_info.esgs_lds_size) * 4;
          break;
       case aco_symbol_const_data_addr:
          if (!const_offset)

@@ -322,6 +322,18 @@ unsigned ac_get_all_edge_flag_bits(enum amd_gfx_level gfx_level);
 unsigned ac_shader_io_get_unique_index_patch(unsigned semantic);
 
 typedef struct {
+   uint16_t es_verts_per_subgroup;
+   uint16_t gs_prims_per_subgroup;
+   uint16_t gs_inst_prims_in_subgroup;
+   uint16_t max_prims_per_subgroup;
+   uint16_t esgs_lds_size;    /* in dwords */
+} ac_legacy_gs_subgroup_info;
+
+void
+ac_legacy_gs_compute_subgroup_info(enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
+                                   unsigned esgs_vertex_stride, ac_legacy_gs_subgroup_info *out);
+
+typedef struct {
    uint16_t esgs_lds_size;    /* in dwords */
    uint16_t ngg_out_lds_size; /* in dwords */
    uint16_t hw_max_esverts;
