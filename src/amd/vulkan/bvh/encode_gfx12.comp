@@ -196,11 +196,13 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
             REF(vk_ir_box_node) child_node = REF(vk_ir_box_node)OFFSET(args.intermediate_bvh, offset);
             cull_flags = DEREF(child_node).flags & 0x3;
          } else {
-            /* Write leaf node offset. */
-            uint32_t leaf_index = offset / ir_leaf_node_size;
-            REF(uint32_t) child_dst_offset = REF(uint32_t)(args.output_base + args.leaf_node_offsets_offset);
-            child_dst_offset = INDEX(uint32_t, child_dst_offset, leaf_index);
-            DEREF(child_dst_offset) = dst_offset;
+            if (VK_BUILD_FLAG(RADV_BUILD_FLAG_WRITE_LEAF_NODE_OFFSETS)) {
+               /* Write leaf node offset. */
+               uint32_t leaf_index = offset / ir_leaf_node_size;
+               REF(uint32_t) child_dst_offset = REF(uint32_t)(args.output_base + args.leaf_node_offsets_offset);
+               child_dst_offset = INDEX(uint32_t, child_dst_offset, leaf_index);
+               DEREF(child_dst_offset) = dst_offset;
+            }
 
             VOID_REF dst_leaf_addr = args.output_base + args.output_bvh_offset + dst_offset;
 
