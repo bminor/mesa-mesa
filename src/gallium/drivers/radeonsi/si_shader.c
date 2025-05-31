@@ -1606,9 +1606,44 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
+      STATIC_ASSERT(sizeof(ctx->temp_info.vs_output_param_offset[0]) == 1);
+      memset(ctx->temp_info.vs_output_param_offset, AC_EXP_PARAM_DEFAULT_VAL_0000,
+             sizeof(ctx->temp_info.vs_output_param_offset));
+
+      for (unsigned i = 0; i < sel->info.num_outputs; i++) {
+         unsigned semantic = sel->info.output_semantic[i];
+
+         /* Skip if no channel writes to stream 0. */
+         if (!nir_slot_is_varying(semantic, MESA_SHADER_FRAGMENT) ||
+             (sel->info.output_streams[i] & 0x03 && /* whether component 0 writes to non-zero stream */
+              sel->info.output_streams[i] & 0x0c && /* whether component 1 writes to non-zero stream */
+              sel->info.output_streams[i] & 0x30 && /* whether component 2 writes to non-zero stream */
+              sel->info.output_streams[i] & 0xc0))  /* whether component 3 writes to non-zero stream */
+            continue;
+
+         ctx->temp_info.vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
+      }
+
       si_init_gs_output_info(&sel->info, &ctx->temp_info);
-      NIR_PASS_V(nir, ac_nir_lower_legacy_gs, false, sel->screen->use_ngg,
-                 &ctx->temp_info.gs_out_info);
+
+      unsigned clip_cull_mask =
+         (sel->info.clipdist_mask & ~shader->key.ge.opt.kill_clip_distances) | sel->info.culldist_mask;
+
+      ac_nir_lower_legacy_gs_options options = {
+         .has_gen_prim_query = false,
+         .has_pipeline_stats_query = sel->screen->use_ngg,
+         .output_info = &ctx->temp_info.gs_out_info,
+         .gfx_level = sel->screen->info.gfx_level,
+         .export_clipdist_mask = clip_cull_mask,
+         .param_offsets = ctx->temp_info.vs_output_param_offset,
+         .has_param_exports = shader->info.nr_param_exports,
+         .disable_streamout = !shader->info.num_streamout_vec4s,
+         .kill_pointsize = key->ge.opt.kill_pointsize,
+         .kill_layer = key->ge.opt.kill_layer,
+         .force_vrs = sel->screen->options.vrs2x2,
+      };
+
+      NIR_PASS(_, nir, ac_nir_lower_legacy_gs, &options, &ctx->gs_copy_shader);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
       ac_nir_lower_ps_late_options late_options = {
@@ -1865,14 +1900,11 @@ static struct si_shader *
 si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
                                struct ac_llvm_compiler *compiler,
                                struct si_shader *gs_shader,
-                               struct si_temp_shader_variant_info *temp_info,
-                               nir_shader *gs_nir,
+                               nir_shader *gs_nir, nir_shader *gs_copy_shader,
                                struct util_debug_callback *debug)
 {
    struct si_shader *shader;
    struct si_shader_selector *gs_selector = gs_shader->selector;
-   struct si_shader_info *gsinfo = &gs_selector->info;
-   union si_shader_key *gskey = &gs_shader->key;
 
    shader = CALLOC_STRUCT(si_shader);
    if (!shader)
@@ -1886,43 +1918,10 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    shader->is_gs_copy_shader = true;
    shader->wave_size = si_determine_wave_size(sscreen, shader);
    shader->info.num_streamout_vec4s = gs_shader->info.num_streamout_vec4s;
+   shader->info.nr_pos_exports = si_get_nr_pos_exports(gs_selector, &gs_shader->key);
+   shader->info.nr_param_exports = gs_shader->info.nr_param_exports;
 
-   STATIC_ASSERT(sizeof(temp_info->vs_output_param_offset[0]) == 1);
-   memset(temp_info->vs_output_param_offset, AC_EXP_PARAM_DEFAULT_VAL_0000,
-          sizeof(temp_info->vs_output_param_offset));
-
-   for (unsigned i = 0; i < gsinfo->num_outputs; i++) {
-      unsigned semantic = gsinfo->output_semantic[i];
-
-      /* Skip if no channel writes to stream 0. */
-      if (!nir_slot_is_varying(semantic, MESA_SHADER_FRAGMENT) ||
-          (gsinfo->output_streams[i] & 0x03 && /* whether component 0 writes to non-zero stream */
-           gsinfo->output_streams[i] & 0x0c && /* whether component 1 writes to non-zero stream */
-           gsinfo->output_streams[i] & 0x30 && /* whether component 2 writes to non-zero stream */
-           gsinfo->output_streams[i] & 0xc0))  /* whether component 3 writes to non-zero stream */
-         continue;
-
-      temp_info->vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
-   }
-
-   shader->info.nr_pos_exports = si_get_nr_pos_exports(gs_selector, gskey);
-
-   unsigned clip_cull_mask =
-      (gsinfo->clipdist_mask & ~gskey->ge.opt.kill_clip_distances) | gsinfo->culldist_mask;
-
-   nir_shader *nir =
-      ac_nir_create_gs_copy_shader(gs_nir,
-                                   sscreen->info.gfx_level,
-                                   clip_cull_mask,
-                                   false, false,
-                                   temp_info->vs_output_param_offset,
-                                   shader->info.nr_param_exports,
-                                   !gs_shader->info.num_streamout_vec4s,
-                                   gskey->ge.opt.kill_pointsize,
-                                   gskey->ge.opt.kill_layer,
-                                   sscreen->options.vrs2x2,
-                                   &temp_info->gs_out_info);
-
+   nir_shader *nir = gs_copy_shader;
    struct si_linked_shaders linked;
    memset(&linked, 0, sizeof(linked));
    linked.consumer.nir = nir;
@@ -2049,8 +2048,8 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    /* The GS copy shader is compiled next. */
    if (nir->info.stage == MESA_SHADER_GEOMETRY && !shader->key.ge.as_ngg) {
       shader->gs_copy_shader =
-         si_nir_generate_gs_copy_shader(sscreen, compiler, shader, &linked.consumer.temp_info,
-                                        nir, debug);
+         si_nir_generate_gs_copy_shader(sscreen, compiler, shader, nir,
+                                        linked.consumer.gs_copy_shader, debug);
       if (!shader->gs_copy_shader) {
          fprintf(stderr, "radeonsi: can't create GS copy shader\n");
          ret = false;

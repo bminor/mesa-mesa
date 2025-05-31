@@ -64,6 +64,7 @@ struct si_nir_shader_ctx {
    struct si_shader_args args;
    struct si_temp_shader_variant_info temp_info;
    nir_shader *nir;
+   nir_shader *gs_copy_shader;
    bool free_nir;
 };
 

@@ -269,20 +269,6 @@ typedef struct ac_nir_gs_output_info {
    nir_alu_type (*types_16bit_hi)[4];
 } ac_nir_gs_output_info;
 
-nir_shader *
-ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
-                             enum amd_gfx_level gfx_level,
-                             uint32_t export_clipdist_mask,
-                             bool write_pos_to_clipvertex,
-                             bool pack_clip_cull_distances,
-                             const uint8_t *param_offsets,
-                             bool has_param_exports,
-                             bool disable_streamout,
-                             bool kill_pointsize,
-                             bool kill_layer,
-                             bool force_vrs,
-                             ac_nir_gs_output_info *output_info);
-
 bool
 ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
@@ -297,11 +283,29 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        bool kill_layer,
                        bool force_vrs);
 
+typedef struct {
+   bool has_gen_prim_query;
+   bool has_pipeline_stats_query;
+   ac_nir_gs_output_info *output_info;
+
+   enum amd_gfx_level gfx_level;
+   uint32_t export_clipdist_mask;
+   bool write_pos_to_clipvertex;
+   bool pack_clip_cull_distances;
+   const uint8_t *param_offsets;
+   bool has_param_exports;
+   bool disable_streamout;
+   bool kill_pointsize;
+   bool kill_layer;
+   bool force_vrs;
+} ac_nir_lower_legacy_gs_options;
+
+nir_shader *
+ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options);
+
 bool
-ac_nir_lower_legacy_gs(nir_shader *nir,
-                       bool has_gen_prim_query,
-                       bool has_pipeline_stats_query,
-                       ac_nir_gs_output_info *output_info);
+ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
+                       nir_shader **gs_copy_shader);
 
 /* This is a pre-link pass. It should only eliminate code and do lowering that mostly doesn't
  * generate AMD-specific intrinsics.

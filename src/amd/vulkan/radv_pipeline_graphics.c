@@ -2265,16 +2265,7 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
    struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    const struct radv_shader_info *gs_info = &gs_stage->info;
-   ac_nir_gs_output_info output_info = {
-      .streams = gs_info->gs.output_streams,
-      .sysval_mask = gs_info->gs.output_usage_mask,
-      .varying_mask = gs_info->gs.output_usage_mask,
-   };
-   nir_shader *nir = ac_nir_create_gs_copy_shader(
-      gs_stage->nir, pdev->info.gfx_level, gs_info->outinfo.clip_dist_mask | gs_info->outinfo.cull_dist_mask, false,
-      false, gs_info->outinfo.vs_output_param_offset, gs_info->outinfo.param_exports, false, false, false,
-      gs_info->force_vrs_per_vertex, &output_info);
-
+   nir_shader *nir = gs_stage->gs_copy_shader;
    nir->info.internal = true;
 
    nir_validate_shader(nir, "after ac_nir_create_gs_copy_shader");

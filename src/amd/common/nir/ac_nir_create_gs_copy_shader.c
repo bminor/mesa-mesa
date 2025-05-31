@@ -11,21 +11,11 @@
 #include "nir_xfb_info.h"
 
 nir_shader *
-ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
-                             enum amd_gfx_level gfx_level,
-                             uint32_t export_clipdist_mask,
-                             bool write_pos_to_clipvertex,
-                             bool pack_clip_cull_distances,
-                             const uint8_t *param_offsets,
-                             bool has_param_exports,
-                             bool disable_streamout,
-                             bool kill_pointsize,
-                             bool kill_layer,
-                             bool force_vrs,
-                             ac_nir_gs_output_info *output_info)
+ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options)
 {
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_VERTEX, gs_nir->options, "gs_copy");
+   ac_nir_gs_output_info *output_info = options->output_info;
 
    b.shader->info.outputs_written = gs_nir->info.outputs_written;
    b.shader->info.outputs_written_16bit = gs_nir->info.outputs_written_16bit;
@@ -34,7 +24,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
 
    nir_xfb_info *info = ac_nir_get_sorted_xfb_info(gs_nir);
    nir_def *stream_id = NULL;
-   if (!disable_streamout && info)
+   if (!options->disable_streamout && info)
       stream_id = nir_ubfe_imm(&b, nir_load_streamout_config_amd(&b), 24, 2);
 
    nir_def *vtx_offset = nir_imul_imm(&b, nir_load_vertex_id_zero_base(&b), 4);
@@ -112,17 +102,18 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
 
       if (stream == 0) {
          uint64_t export_outputs = b.shader->info.outputs_written | VARYING_BIT_POS;
-         if (kill_pointsize)
+         if (options->kill_pointsize)
             export_outputs &= ~VARYING_BIT_PSIZ;
-         if (kill_layer)
+         if (options->kill_layer)
             export_outputs &= ~VARYING_BIT_LAYER;
 
-         ac_nir_export_position(&b, gfx_level, export_clipdist_mask, false, write_pos_to_clipvertex,
-                                pack_clip_cull_distances, !has_param_exports, force_vrs, export_outputs,
+         ac_nir_export_position(&b, options->gfx_level, options->export_clipdist_mask, false,
+                                options->write_pos_to_clipvertex, options->pack_clip_cull_distances,
+                                !options->has_param_exports, options->force_vrs, export_outputs,
                                 &out, NULL);
 
-         if (has_param_exports) {
-            ac_nir_export_parameters(&b, param_offsets,
+         if (options->has_param_exports) {
+            ac_nir_export_parameters(&b, options->param_offsets,
                                      b.shader->info.outputs_written,
                                      b.shader->info.outputs_written_16bit,
                                      &out);

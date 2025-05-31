@@ -454,7 +454,17 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
             .sysval_mask = stage->info.gs.output_usage_mask,
             .varying_mask = stage->info.gs.output_usage_mask,
          };
-         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_gs, false, false, &gs_out_info);
+         ac_nir_lower_legacy_gs_options options = {
+            .has_gen_prim_query = false,
+            .has_pipeline_stats_query = false,
+            .output_info = &gs_out_info,
+            .gfx_level = pdev->info.gfx_level,
+            .export_clipdist_mask = stage->info.outinfo.clip_dist_mask | stage->info.outinfo.cull_dist_mask,
+            .param_offsets = stage->info.outinfo.vs_output_param_offset,
+            .has_param_exports = stage->info.outinfo.param_exports,
+            .force_vrs = stage->info.force_vrs_per_vertex,
+         };
+         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_gs, &options, &stage->gs_copy_shader);
       }
    } else if (stage->stage == MESA_SHADER_FRAGMENT) {
       ac_nir_lower_ps_late_options late_options = {

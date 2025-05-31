@@ -230,13 +230,11 @@ lower_legacy_gs_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *sta
 }
 
 bool
-ac_nir_lower_legacy_gs(nir_shader *nir,
-                       bool has_gen_prim_query,
-                       bool has_pipeline_stats_query,
-                       ac_nir_gs_output_info *output_info)
+ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
+                       nir_shader **gs_copy_shader)
 {
    lower_legacy_gs_state s = {
-      .info = output_info,
+      .info = options->output_info,
    };
 
    unsigned num_vertices_per_primitive = 0;
@@ -265,9 +263,9 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
 
    /* Emit shader query for mix use legacy/NGG GS */
    bool progress = ac_nir_gs_shader_query(b,
-                                          has_gen_prim_query,
-                                          has_pipeline_stats_query,
-                                          has_pipeline_stats_query,
+                                          options->has_gen_prim_query,
+                                          options->has_pipeline_stats_query,
+                                          options->has_pipeline_stats_query,
                                           num_vertices_per_primitive,
                                           64,
                                           s.vertex_count,
@@ -286,5 +284,6 @@ ac_nir_lower_legacy_gs(nir_shader *nir,
 
    nir_progress(progress, impl, nir_metadata_none);
 
+   *gs_copy_shader = ac_nir_create_gs_copy_shader(nir, options);
    return true;
 }

@@ -272,6 +272,7 @@ struct radv_shader_stage {
    unsigned char shader_sha1[20];
 
    nir_shader *nir;
+   nir_shader *gs_copy_shader;
    nir_shader *internal_nir; /* meta shaders */
 
    struct radv_shader_info info;
