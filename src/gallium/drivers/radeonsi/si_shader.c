@@ -1106,6 +1106,23 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir)
    return false;
 }
 
+static bool gfx10_ngg_writes_user_edgeflags(struct si_shader *shader)
+{
+   return gfx10_has_variable_edgeflags(shader) &&
+          shader->selector->info.writes_edgeflag;
+}
+
+bool gfx10_ngg_export_prim_early(struct si_shader *shader)
+{
+   struct si_shader_selector *sel = shader->selector;
+
+   assert(shader->key.ge.as_ngg && !shader->key.ge.as_es);
+
+   return sel->stage != MESA_SHADER_GEOMETRY &&
+          !gfx10_ngg_writes_user_edgeflags(shader) &&
+          sel->screen->info.gfx_level < GFX11;
+}
+
 static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
                          struct si_temp_shader_variant_info *temp_info)
 {
@@ -2569,7 +2586,20 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
 
    if (sel->stage <= MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg) {
       assert(!shader->key.ge.as_es && !shader->key.ge.as_ls);
-      if (!gfx10_ngg_calculate_subgroup_info(shader)) {
+      const struct si_shader_selector *gs_sel = shader->selector;
+      const struct si_shader_selector *es_sel =
+         shader->previous_stage_sel ? shader->previous_stage_sel : gs_sel;
+      const unsigned input_prim = si_get_input_prim(gs_sel, &shader->key, false);
+      unsigned gs_vertices_out = gs_sel->stage == MESA_SHADER_GEOMETRY ? gs_sel->info.base.gs.vertices_out : 0;
+      unsigned gs_invocations = gs_sel->stage == MESA_SHADER_GEOMETRY ? gs_sel->info.base.gs.invocations : 0;
+
+      if (!ac_ngg_compute_subgroup_info(gs_sel->screen->info.gfx_level, es_sel->stage,
+                                        gs_sel->stage == MESA_SHADER_GEOMETRY,
+                                        input_prim, gs_vertices_out, gs_invocations,
+                                        si_get_max_workgroup_size(shader), shader->wave_size,
+                                        es_sel->info.esgs_vertex_stride, shader->info.ngg_lds_vertex_size,
+                                        shader->info.ngg_lds_scratch_size, gs_sel->tess_turns_off_ngg,
+                                        &shader->ngg.info)) {
          mesa_loge("Failed to compute subgroup info");
          return false;
       }

@@ -95,6 +95,7 @@ bool si_is_merged_shader(struct si_shader *shader);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 enum ac_hw_stage si_select_hw_stage(const gl_shader_stage stage, const union si_shader_key *const key,
                                     const enum amd_gfx_level gfx_level);
+bool gfx10_ngg_export_prim_early(struct si_shader *shader);
 
 /* si_shader_args.c */
 void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
@@ -106,10 +107,6 @@ void si_get_ps_epilog_args(struct si_shader_args *args,
                            struct ac_arg colors[MAX_DRAW_BUFFERS],
                            struct ac_arg *depth, struct ac_arg *stencil,
                            struct ac_arg *sample_mask);
-
-/* gfx10_shader_ngg.c */
-bool gfx10_ngg_export_prim_early(struct si_shader *shader);
-bool gfx10_ngg_calculate_subgroup_info(struct si_shader *shader);
 
 struct nir_def;
 typedef struct nir_def nir_def;
