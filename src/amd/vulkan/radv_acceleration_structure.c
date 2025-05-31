@@ -48,6 +48,8 @@ static const uint32_t leaf_spv[] = {
 #include "bvh/radv_leaf.spv.h"
 };
 
+#define RADV_OFFSET_UNUSED 0xffffffff
+
 struct acceleration_structure_layout {
    uint32_t geometry_info_offset;
    uint32_t leaf_node_offsets_offset;
@@ -123,6 +125,8 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
    if (device->rra_trace.accel_structs) {
       accel_struct->geometry_info_offset = offset;
       offset += sizeof(struct radv_accel_struct_geometry_info) * state->build_info->geometryCount;
+   } else {
+      accel_struct->geometry_info_offset = RADV_OFFSET_UNUSED;
    }
 
    /* On GFX12, we need additional space for leaf node offsets since they do not have the same
@@ -512,7 +516,7 @@ radv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_str
    radv_update_memory_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
                          sizeof(header) - base);
 
-   if (device->rra_trace.accel_structs) {
+   if (layout.geometry_info_offset != RADV_OFFSET_UNUSED) {
       uint64_t geometry_infos_size = state->build_info->geometryCount * sizeof(struct radv_accel_struct_geometry_info);
 
       struct radv_accel_struct_geometry_info *geometry_infos = malloc(geometry_infos_size);
