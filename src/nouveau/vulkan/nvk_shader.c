@@ -372,27 +372,6 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_push_const,
             nir_address_format_32bit_offset);
 
-   /* Lower non-uniform access before lower_descriptors */
-   enum nir_lower_non_uniform_access_type lower_non_uniform_access_types =
-      nir_lower_non_uniform_ubo_access;
-
-   if (pdev->info.cls_eng3d < TURING_A) {
-      lower_non_uniform_access_types |= nir_lower_non_uniform_texture_access |
-                                        nir_lower_non_uniform_image_access;
-   }
-
-   /* In practice, most shaders do not have non-uniform-qualified accesses
-    * thus a cheaper and likely to fail check is run first.
-    */
-   if (nir_has_non_uniform_access(nir, lower_non_uniform_access_types)) {
-      struct nir_lower_non_uniform_access_options opts = {
-         .types = lower_non_uniform_access_types,
-         .callback = NULL,
-      };
-      NIR_PASS(_, nir, nir_opt_non_uniform_access);
-      NIR_PASS(_, nir, nir_lower_non_uniform_access, &opts);
-   }
-
    struct nvk_cbuf_map *cbuf_map = NULL;
    if (!(pdev->debug_flags & NVK_DEBUG_NO_CBUF)) {
       cbuf_map = cbuf_map_out;
@@ -419,6 +398,27 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
 
    NIR_PASS(_, nir, nvk_nir_lower_descriptors, pdev, shader_flags, rs,
             set_layout_count, set_layouts, cbuf_map);
+
+   if (pdev->info.cls_eng3d < TURING_A) {
+      /* NOTE: This does nothing for images on Kepler since those are lowered
+       * to suldga/sustga before we get here.  That's fine, though, because
+       * our nil_su_info fetches and calculations work fine with non-uniform
+       * descriptors.
+       */
+      struct nir_lower_non_uniform_access_options opts = {
+         .types = nir_lower_non_uniform_texture_access |
+                  nir_lower_non_uniform_image_access,
+         .callback = NULL,
+      };
+      /* In practice, most shaders do not have non-uniform-qualified accesses
+       * thus a cheaper and likely to fail check is run first.
+       */
+      if (nir_has_non_uniform_access(nir, opts.types)) {
+         NIR_PASS(_, nir, nir_opt_non_uniform_access);
+         NIR_PASS(_, nir, nir_lower_non_uniform_access, &opts);
+      }
+   }
+
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
             nir_address_format_64bit_global);
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ssbo,
