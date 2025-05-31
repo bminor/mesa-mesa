@@ -196,14 +196,15 @@ static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *sh
         (sel->stage <= MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg))) {
       struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
       sym->name = "esgs_ring";
-      sym->size = shader->gs_info.esgs_ring_size * 4;
+      sym->size = (shader->key.ge.as_ngg ? shader->ngg.info.esgs_lds_size
+                                         : shader->gs_info.esgs_ring_size) * 4;
       sym->align = 64 * 1024;
    }
 
    if (sel->stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg) {
       struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
       sym->name = "ngg_emit";
-      sym->size = shader->ngg.ngg_emit_size * 4;
+      sym->size = shader->ngg.info.ngg_out_lds_size * 4;
       sym->align = 4;
    }
 
@@ -454,10 +455,11 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
 
    if (sscreen->info.gfx_level >= GFX9 && stage <= MESA_SHADER_GEOMETRY &&
        (stage == MESA_SHADER_GEOMETRY || shader->key.ge.as_ngg)) {
-      unsigned size_in_dw = shader->gs_info.esgs_ring_size;
+      unsigned size_in_dw = shader->key.ge.as_ngg ? shader->ngg.info.esgs_lds_size
+                                                  : shader->gs_info.esgs_ring_size;
 
       if (stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)
-         size_in_dw += shader->ngg.ngg_emit_size;
+         size_in_dw += shader->ngg.info.ngg_out_lds_size;
 
       shader->config.lds_size =
          DIV_ROUND_UP(size_in_dw * 4, get_lds_granularity(sscreen, stage));

@@ -826,12 +826,8 @@ struct si_shader {
       } gs;
 
       struct {
-         /* Computed by gfx10_ngg_calculate_subgroup_info. */
-         uint16_t ngg_emit_size; /* in dwords */
-         uint16_t hw_max_esverts;
-         uint16_t max_gsprims;
-         uint16_t max_out_verts;
-         bool max_vert_out_per_gs_instance;
+         /* Computed by ac_ngg_calculate_subgroup_info. */
+         ac_ngg_subgroup_info info;
          /* Register values. */
          unsigned ge_max_output_per_subgroup;
          unsigned ge_ngg_subgrp_cntl;

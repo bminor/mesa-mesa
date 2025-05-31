@@ -1603,11 +1603,11 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
                                                                   : V_02870C_SPI_SHADER_NONE) |
       S_02870C_POS3_EXPORT_FORMAT(shader->info.nr_pos_exports > 3 ? V_02870C_SPI_SHADER_4COMP
                                                                   : V_02870C_SPI_SHADER_NONE);
-   shader->ngg.ge_max_output_per_subgroup = S_0287FC_MAX_VERTS_PER_SUBGROUP(shader->ngg.max_out_verts);
+   shader->ngg.ge_max_output_per_subgroup = S_0287FC_MAX_VERTS_PER_SUBGROUP(shader->ngg.info.max_out_verts);
    shader->ngg.vgt_gs_instance_cnt =
       S_028B90_ENABLE(gs_num_invocations > 1) |
       S_028B90_CNT(gs_num_invocations) |
-      S_028B90_EN_MAX_VERT_OUT_PER_GS_INSTANCE(shader->ngg.max_vert_out_per_gs_instance);
+      S_028B90_EN_MAX_VERT_OUT_PER_GS_INSTANCE(shader->ngg.info.max_vert_out_per_gs_instance);
    shader->pa_cl_vs_out_cntl = si_get_vs_out_cntl(shader->selector, shader, true);
 
    if (gs_stage == MESA_SHADER_GEOMETRY) {
@@ -1710,19 +1710,19 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       unsigned prim_amp_factor = gs_stage == MESA_SHADER_GEOMETRY ?
                                     gs_sel->info.base.gs.vertices_out : 1;
 
-      shader->ge_cntl = S_03096C_PRIMS_PER_SUBGRP(shader->ngg.max_gsprims) |
-                        S_03096C_VERTS_PER_SUBGRP(shader->ngg.hw_max_esverts) |
+      shader->ge_cntl = S_03096C_PRIMS_PER_SUBGRP(shader->ngg.info.max_gsprims) |
+                        S_03096C_VERTS_PER_SUBGRP(shader->ngg.info.hw_max_esverts) |
                         S_03096C_PRIM_GRP_SIZE_GFX11(
                            CLAMP(max_prim_grp_size / MAX2(prim_amp_factor, 1), 1, 256)) |
                         S_03096C_DIS_PG_SIZE_ADJUST_FOR_STRIP(sscreen->info.gfx_level >= GFX12);
    } else {
-      shader->ge_cntl = S_03096C_PRIM_GRP_SIZE_GFX10(shader->ngg.max_gsprims) |
-                        S_03096C_VERT_GRP_SIZE(shader->ngg.hw_max_esverts);
+      shader->ge_cntl = S_03096C_PRIM_GRP_SIZE_GFX10(shader->ngg.info.max_gsprims) |
+                        S_03096C_VERT_GRP_SIZE(shader->ngg.info.hw_max_esverts);
 
       shader->ngg.vgt_gs_onchip_cntl =
-         S_028A44_ES_VERTS_PER_SUBGRP(shader->ngg.hw_max_esverts) |
-         S_028A44_GS_PRIMS_PER_SUBGRP(shader->ngg.max_gsprims) |
-         S_028A44_GS_INST_PRIMS_IN_SUBGRP(shader->ngg.max_gsprims * gs_num_invocations);
+         S_028A44_ES_VERTS_PER_SUBGRP(shader->ngg.info.hw_max_esverts) |
+         S_028A44_GS_PRIMS_PER_SUBGRP(shader->ngg.info.max_gsprims) |
+         S_028A44_GS_INST_PRIMS_IN_SUBGRP(shader->ngg.info.max_gsprims * gs_num_invocations);
 
       /* On gfx10, the GE only checks against the maximum number of ES verts after
        * allocating a full GS primitive. So we need to ensure that whenever
@@ -1734,13 +1734,13 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
        */
       if ((sscreen->info.gfx_level == GFX10) &&
           (es_stage == MESA_SHADER_VERTEX || gs_stage == MESA_SHADER_VERTEX) && /* = no tess */
-          shader->ngg.hw_max_esverts != 256 &&
-          shader->ngg.hw_max_esverts > 5) {
+          shader->ngg.info.hw_max_esverts != 256 &&
+          shader->ngg.info.hw_max_esverts > 5) {
          /* This could be based on the input primitive type. 5 is the worst case
           * for primitive types with adjacency.
           */
          shader->ge_cntl &= C_03096C_VERT_GRP_SIZE;
-         shader->ge_cntl |= S_03096C_VERT_GRP_SIZE(shader->ngg.hw_max_esverts - 5);
+         shader->ge_cntl |= S_03096C_VERT_GRP_SIZE(shader->ngg.info.hw_max_esverts - 5);
       }
    }
 
