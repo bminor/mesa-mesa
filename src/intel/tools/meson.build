@@ -112,7 +112,7 @@ intel_monitor = executable(
   files('intel_monitor.c',
         'intel_monitor_eustall.c',
         'intel_monitor_eustall.h'),
-  dependencies : [dep_libdrm, idep_intel_driver_ds, dep_valgrind],
+  dependencies : [idep_intel_dev, idep_intel_perf, idep_mesautil, dep_libdrm, dep_valgrind],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',

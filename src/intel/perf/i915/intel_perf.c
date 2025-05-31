@@ -11,7 +11,7 @@
 #include "common/i915/intel_gem.h"
 #include "dev/intel_debug.h"
 #include "dev/intel_device_info.h"
-#include "intel_perf_common.h"
+#include "perf/intel_perf_common.h"
 #include "perf/intel_perf.h"
 #include "perf/intel_perf_private.h"
 #include "util/compiler.h"

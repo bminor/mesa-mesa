@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 
 #include "perf/intel_perf.h"
-#include "intel_perf_common.h"
+#include "perf/intel_perf_common.h"
 #include "intel/common/intel_gem.h"
 #include "intel/common/xe/intel_device_query.h"
 #include "intel/common/xe/intel_queue.h"

@@ -55,6 +55,12 @@ libintel_perf = static_library(
   dependencies : [idep_intel_dev],
 )
 
+idep_intel_perf = declare_dependency(
+  link_with : libintel_perf,
+  dependencies : [idep_intel_dev, idep_libintel_common],
+  sources : intel_perf_sources
+)
+
 if with_intel_tools
   intel_perf_query_layout = executable(
     'intel_perf_query_layout',
