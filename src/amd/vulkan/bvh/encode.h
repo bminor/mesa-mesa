@@ -41,7 +41,11 @@ radv_encode_instance_gfx10_3(VOID_REF dst_addr, vk_ir_instance_node src)
 
    radv_accel_struct_header blas_header = DEREF(REF(radv_accel_struct_header)(src.base_ptr));
 
-   DEREF(dst).bvh_ptr = addr_to_node(src.base_ptr + blas_header.bvh_offset);
+   uint64_t ptr = addr_to_node(src.base_ptr + blas_header.bvh_offset);
+   if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+      ptr |= radv_encode_blas_pointer_flags(src.sbt_offset_and_flags >> 24, blas_header.geometry_type);
+
+   DEREF(dst).bvh_ptr = ptr;
    DEREF(dst).bvh_offset = blas_header.bvh_offset;
 
    mat4 transform = mat4(src.otw_matrix);
@@ -252,24 +256,11 @@ radv_encode_instance_gfx12(VOID_REF dst, vk_ir_instance_node src)
 
    uint32_t flags = src.sbt_offset_and_flags >> 24;
    uint32_t instance_pointer_flags = 0;
-   if ((flags & VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR) != 0)
-      instance_pointer_flags |= 1;
-   if ((flags & VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR) != 0)
-      instance_pointer_flags |= 2;
-   if ((flags & VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR) != 0 ||
-       blas_header.geometry_type == VK_GEOMETRY_TYPE_AABBS_KHR)
-      instance_pointer_flags |= 4;
-   if ((flags & VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR) != 0)
-      instance_pointer_flags |= 8;
-
-   if (blas_header.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
-      instance_pointer_flags |= 512;
-   else
-      instance_pointer_flags |= 256;
 
    uint64_t bvh_addr = addr_to_node(src.base_ptr + blas_header.bvh_offset);
+   bvh_addr |= radv_encode_blas_pointer_flags(flags, blas_header.geometry_type);
    bit_writer_write(child_writer, uint32_t(bvh_addr & 0xffffffff), 32);
-   bit_writer_write(child_writer, uint32_t(bvh_addr >> 32) | (instance_pointer_flags << (54 - 32)), 32);
+   bit_writer_write(child_writer, uint32_t(bvh_addr >> 32), 32);
    bit_writer_write(child_writer, src.custom_instance_and_mask & 0xffffff, 32);
    bit_writer_write(child_writer, src.sbt_offset_and_flags & 0xffffff, 24);
    bit_writer_write(child_writer, src.custom_instance_and_mask >> 24, 8);

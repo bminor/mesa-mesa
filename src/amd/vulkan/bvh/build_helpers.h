@@ -87,6 +87,28 @@ radv_encode_sbt_offset_and_flags(uint32_t src)
    return ret;
 }
 
+uint64_t
+radv_encode_blas_pointer_flags(uint32_t flags, uint32_t geometry_type)
+{
+   uint64_t ptr_flags = 0;
+   if ((flags & VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR) != 0)
+      ptr_flags |= RADV_BLAS_POINTER_FORCE_OPAQUE;
+   if ((flags & VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR) != 0)
+      ptr_flags |= RADV_BLAS_POINTER_FORCE_NON_OPAQUE;
+   if ((flags & VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR) != 0 ||
+       geometry_type == VK_GEOMETRY_TYPE_AABBS_KHR)
+      ptr_flags |= RADV_BLAS_POINTER_DISABLE_TRI_CULL;
+   if ((flags & VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR) != 0)
+      ptr_flags |= RADV_BLAS_POINTER_FLIP_FACING;
+
+   if (geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
+      ptr_flags |= RADV_BLAS_POINTER_SKIP_AABBS;
+   else
+      ptr_flags |= RADV_BLAS_POINTER_SKIP_TRIANGLES;
+
+   return ptr_flags;
+}
+
 /** Compute ceiling of integer quotient of A divided by B.
     From macros.h */
 #define DIV_ROUND_UP(A, B) (((A) + (B)-1) / (B))

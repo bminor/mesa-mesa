@@ -476,6 +476,8 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
    /* gfx11 box intersection tests can return garbage with infs and non-standard box sorting */
    if (pdev->info.gfx_level == GFX11)
       flags |= RADV_BUILD_FLAG_NO_INFS;
+   if (pdev->info.gfx_level >= GFX11)
+      flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
 
    return flags;
 }
