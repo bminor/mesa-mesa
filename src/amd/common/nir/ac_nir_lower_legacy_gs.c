@@ -10,11 +10,7 @@
 #include "nir_builder.h"
 
 typedef struct {
-   nir_def *outputs[64][4];
-   nir_def *outputs_16bit_lo[16][4];
-   nir_def *outputs_16bit_hi[16][4];
-
-   ac_nir_gs_output_info *info;
+   ac_nir_prerast_out out;
 
    nir_def *vertex_count[4];
    nir_def *primitive_count[4];
@@ -24,54 +20,7 @@ static bool
 lower_legacy_gs_store_output(nir_builder *b, nir_intrinsic_instr *intrin,
                              lower_legacy_gs_state *s)
 {
-   /* Assume:
-    * - the shader used nir_lower_io_vars_to_temporaries
-    * - 64-bit outputs are lowered
-    * - no indirect indexing is present
-    */
-   assert(nir_src_is_const(intrin->src[1]) && !nir_src_as_uint(intrin->src[1]));
-
-   b->cursor = nir_before_instr(&intrin->instr);
-
-   unsigned component = nir_intrinsic_component(intrin);
-   unsigned write_mask = nir_intrinsic_write_mask(intrin);
-   nir_io_semantics sem = nir_intrinsic_io_semantics(intrin);
-
-   nir_def **outputs;
-   if (sem.location < VARYING_SLOT_VAR0_16BIT) {
-      outputs = s->outputs[sem.location];
-   } else {
-      unsigned index = sem.location - VARYING_SLOT_VAR0_16BIT;
-      if (sem.high_16bits)
-         outputs = s->outputs_16bit_hi[index];
-      else
-         outputs = s->outputs_16bit_lo[index];
-   }
-
-   nir_def *store_val = intrin->src[0].ssa;
-   /* 64bit output has been lowered to 32bit */
-   assert(store_val->bit_size <= 32);
-
-   /* 16-bit output stored in a normal varying slot that isn't a dedicated 16-bit slot. */
-   const bool non_dedicated_16bit = sem.location < VARYING_SLOT_VAR0_16BIT && store_val->bit_size == 16;
-
-   u_foreach_bit (i, write_mask) {
-      unsigned comp = component + i;
-      nir_def *store_component = nir_channel(b, store_val, i);
-
-      if (non_dedicated_16bit) {
-         if (sem.high_16bits) {
-            nir_def *lo = outputs[comp] ? nir_unpack_32_2x16_split_x(b, outputs[comp]) : nir_imm_intN_t(b, 0, 16);
-            outputs[comp] = nir_pack_32_2x16_split(b, lo, store_component);
-         } else {
-            nir_def *hi = outputs[comp] ? nir_unpack_32_2x16_split_y(b, outputs[comp]) : nir_imm_intN_t(b, 0, 16);
-            outputs[comp] = nir_pack_32_2x16_split(b, store_component, hi);
-         }
-      } else {
-         outputs[comp] = store_component;
-      }
-   }
-
+   ac_nir_gather_prerast_store_output_info(b, intrin, &s->out, true);
    nir_instr_remove(&intrin->instr);
    return true;
 }
@@ -89,29 +38,21 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
    nir_def *soffset = nir_load_ring_gs2vs_offset_amd(b);
 
    unsigned offset = 0;
-   u_foreach_bit64 (i, b->shader->info.outputs_written) {
-      for (unsigned j = 0; j < 4; j++) {
-         nir_def *output = s->outputs[i][j];
-         /* Next vertex emit need a new value, reset all outputs. */
-         s->outputs[i][j] = NULL;
 
-         const uint8_t usage_mask = s->info->varying_mask[i] | s->info->sysval_mask[i];
+   u_foreach_bit64 (slot, b->shader->info.outputs_written) {
+      unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
+      nir_def **output = s->out.outputs[slot];
 
-         if (!(usage_mask & (1 << j)) ||
-             ((s->info->streams[i] >> (j * 2)) & 0x3) != stream)
+      u_foreach_bit(c, mask) {
+         /* The shader hasn't written this output yet. */
+         if (!output[c] || ac_nir_is_const_output(&s->out, slot, c))
             continue;
 
-         unsigned base = offset * b->shader->info.gs.vertices_out * 4;
-         offset++;
-
-         /* no one set this output, skip the buffer store */
-         if (!output)
-            continue;
-
+         unsigned base = offset * b->shader->info.gs.vertices_out;
          nir_def *voffset = nir_ishl_imm(b, vtxidx, 2);
 
          /* extend 8/16 bit to 32 bit, 64 bit has been lowered */
-         nir_def *data = nir_u2uN(b, output, 32);
+         nir_def *store_val = nir_u2u32(b, output[c]);
 
          unsigned align_mul = 4;
          unsigned align_offset = 0;
@@ -121,57 +62,56 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
             align_offset = v_const_offset % align_mul;
          }
 
-         nir_store_buffer_amd(b, data, gsvs_ring, voffset, soffset, nir_imm_int(b, 0),
+         nir_store_buffer_amd(b, store_val, gsvs_ring, voffset, soffset, nir_imm_int(b, 0),
                               .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL |
                                         ACCESS_IS_SWIZZLED_AMD,
                               .base = base,
                               /* For ACO to not reorder this store around EmitVertex/EndPrimitve */
                               .memory_modes = nir_var_shader_out,
                               .align_mul = align_mul, .align_offset = align_offset);
+         offset += 4;
       }
+
+      /* Clear all outputs (they are undefined after emit_vertex) */
+      memset(s->out.outputs[slot], 0, sizeof(s->out.outputs[slot]));
    }
 
-   u_foreach_bit (i, b->shader->info.outputs_written_16bit) {
-      for (unsigned j = 0; j < 4; j++) {
-         nir_def *output_lo = s->outputs_16bit_lo[i][j];
-         nir_def *output_hi = s->outputs_16bit_hi[i][j];
-         /* Next vertex emit need a new value, reset all outputs. */
-         s->outputs_16bit_lo[i][j] = NULL;
-         s->outputs_16bit_hi[i][j] = NULL;
+   u_foreach_bit (slot, b->shader->info.outputs_written_16bit) {
+      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
+      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
+      unsigned mask = mask_lo | mask_hi;
 
-         bool has_lo_16bit = (s->info->varying_mask_16bit_lo[i] & (1 << j)) &&
-            ((s->info->streams_16bit_lo[i] >> (j * 2)) & 0x3) == stream;
-         bool has_hi_16bit = (s->info->varying_mask_16bit_hi[i] & (1 << j)) &&
-            ((s->info->streams_16bit_hi[i] >> (j * 2)) & 0x3) == stream;
-         if (!has_lo_16bit && !has_hi_16bit)
+      nir_def **output_lo = s->out.outputs_16bit_lo[slot];
+      nir_def **output_hi = s->out.outputs_16bit_hi[slot];
+      nir_def *undef = nir_undef(b, 1, 16);
+
+      u_foreach_bit(c, mask) {
+         /* The shader hasn't written this output yet. */
+         if ((!output_lo[c] && !output_hi[c]) ||
+              ac_nir_is_const_output(&s->out, VARYING_SLOT_VAR0_16BIT + slot, c))
             continue;
+
+         nir_def *lo = output_lo[c] ? output_lo[c] : undef;
+         nir_def *hi = output_hi[c] ? output_hi[c] : undef;
+         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
 
          unsigned base = offset * b->shader->info.gs.vertices_out;
-         offset++;
-
-         bool has_lo_16bit_out = has_lo_16bit && output_lo;
-         bool has_hi_16bit_out = has_hi_16bit && output_hi;
-
-         /* no one set needed output, skip the buffer store */
-         if (!has_lo_16bit_out && !has_hi_16bit_out)
-            continue;
-
-         if (!has_lo_16bit_out)
-            output_lo = nir_undef(b, 1, 16);
-
-         if (!has_hi_16bit_out)
-            output_hi = nir_undef(b, 1, 16);
 
          nir_def *voffset = nir_iadd_imm(b, vtxidx, base);
          voffset = nir_ishl_imm(b, voffset, 2);
 
-         nir_store_buffer_amd(b, nir_pack_32_2x16_split(b, output_lo, output_hi),
+         nir_store_buffer_amd(b, store_val,
                               gsvs_ring, voffset, soffset, nir_imm_int(b, 0),
                               .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL |
                                         ACCESS_IS_SWIZZLED_AMD,
                               /* For ACO to not reorder this store around EmitVertex/EndPrimitve */
                               .memory_modes = nir_var_shader_out);
+         offset += 4;
       }
+
+      /* Clear all outputs (they are undefined after emit_vertex) */
+      memset(s->out.outputs_16bit_lo[slot], 0, sizeof(s->out.outputs_16bit_lo[slot]));
+      memset(s->out.outputs_16bit_hi[slot], 0, sizeof(s->out.outputs_16bit_hi[slot]));
    }
 
    /* Signal vertex emission. */
@@ -229,13 +169,33 @@ lower_legacy_gs_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *sta
    return false;
 }
 
+static bool
+gather_output_store_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
+{
+   lower_legacy_gs_state *s = (lower_legacy_gs_state *) state;
+
+   if (intrin->intrinsic == nir_intrinsic_store_output) {
+      ac_nir_gather_prerast_store_output_info(b, intrin, &s->out, false);
+      return true;
+   }
+
+   return false;
+}
+
+static void
+gather_output_stores(nir_shader *shader, lower_legacy_gs_state *s)
+{
+   nir_shader_intrinsics_pass(shader, gather_output_store_intrinsic, nir_metadata_none, s);
+}
+
 bool
 ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
                        nir_shader **gs_copy_shader)
 {
-   lower_legacy_gs_state s = {
-      .info = options->output_info,
-   };
+   lower_legacy_gs_state s = {0};
+
+   gather_output_stores(nir, &s);
+   ac_nir_compute_prerast_packed_output_info(&s.out);
 
    unsigned num_vertices_per_primitive = 0;
    switch (nir->info.gs.output_primitive) {
@@ -284,6 +244,6 @@ ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
 
    nir_progress(progress, impl, nir_metadata_none);
 
-   *gs_copy_shader = ac_nir_create_gs_copy_shader(nir, options);
+   *gs_copy_shader = ac_nir_create_gs_copy_shader(nir, options, &s.out);
    return true;
 }

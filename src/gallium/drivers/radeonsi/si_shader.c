@@ -1324,39 +1324,6 @@ bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *sha
       shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
-static void
-si_init_gs_output_info(struct si_shader_info *info, struct si_temp_shader_variant_info *out_info)
-{
-   for (int i = 0; i < info->num_outputs; i++) {
-      unsigned slot = info->output_semantic[i];
-      if (slot < VARYING_SLOT_VAR0_16BIT) {
-         out_info->gs_streams[slot] = info->output_streams[i];
-         out_info->gs_out_usage_mask[slot] = info->output_usagemask[i];
-      } else {
-         unsigned index = slot - VARYING_SLOT_VAR0_16BIT;
-         /* TODO: 16bit need separated fields for lo/hi part. */
-         out_info->gs_streams_16bit_lo[index] = info->output_streams[i];
-         out_info->gs_streams_16bit_hi[index] = info->output_streams[i];
-         out_info->gs_out_usage_mask_16bit_lo[index] = info->output_usagemask[i];
-         out_info->gs_out_usage_mask_16bit_hi[index] = info->output_usagemask[i];
-      }
-   }
-
-   ac_nir_gs_output_info *ac_info = &out_info->gs_out_info;
-
-   ac_info->streams = out_info->gs_streams;
-   ac_info->streams_16bit_lo = out_info->gs_streams_16bit_lo;
-   ac_info->streams_16bit_hi = out_info->gs_streams_16bit_hi;
-
-   ac_info->sysval_mask = out_info->gs_out_usage_mask;
-   ac_info->varying_mask = out_info->gs_out_usage_mask;
-   ac_info->varying_mask_16bit_lo = out_info->gs_out_usage_mask_16bit_lo;
-   ac_info->varying_mask_16bit_hi = out_info->gs_out_usage_mask_16bit_hi;
-
-   /* TODO: construct 16bit slot per component store type. */
-   ac_info->types_16bit_lo = ac_info->types_16bit_hi = NULL;
-}
-
 /* Run passes that eliminate code and affect shader_info. These should be run before linking
  * and shader_info gathering. Lowering passes can be run here too, but only if they lead to
  * better code or lower undesirable representations (like derefs). Lowering passes that prevent
@@ -1624,15 +1591,12 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          ctx->temp_info.vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
       }
 
-      si_init_gs_output_info(&sel->info, &ctx->temp_info);
-
       unsigned clip_cull_mask =
          (sel->info.clipdist_mask & ~shader->key.ge.opt.kill_clip_distances) | sel->info.culldist_mask;
 
       ac_nir_lower_legacy_gs_options options = {
          .has_gen_prim_query = false,
          .has_pipeline_stats_query = sel->screen->use_ngg,
-         .output_info = &ctx->temp_info.gs_out_info,
          .gfx_level = sel->screen->info.gfx_level,
          .export_clipdist_mask = clip_cull_mask,
          .param_offsets = ctx->temp_info.vs_output_param_offset,

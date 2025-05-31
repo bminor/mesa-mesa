@@ -449,15 +449,9 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
                   stage->info.outinfo.export_prim_id, false, false, false, stage->info.force_vrs_per_vertex);
 
       } else {
-         ac_nir_gs_output_info gs_out_info = {
-            .streams = stage->info.gs.output_streams,
-            .sysval_mask = stage->info.gs.output_usage_mask,
-            .varying_mask = stage->info.gs.output_usage_mask,
-         };
          ac_nir_lower_legacy_gs_options options = {
             .has_gen_prim_query = false,
             .has_pipeline_stats_query = false,
-            .output_info = &gs_out_info,
             .gfx_level = pdev->info.gfx_level,
             .export_clipdist_mask = stage->info.outinfo.clip_dist_mask | stage->info.outinfo.cull_dist_mask,
             .param_offsets = stage->info.outinfo.vs_output_param_offset,

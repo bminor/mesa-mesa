@@ -189,17 +189,6 @@ struct si_shader_info {
  * finished.
  */
 struct si_temp_shader_variant_info {
-   /* Legacy GS output info. */
-   uint8_t gs_streams[64];
-   uint8_t gs_streams_16bit_lo[16];
-   uint8_t gs_streams_16bit_hi[16];
-
-   uint8_t gs_out_usage_mask[64];
-   uint8_t gs_out_usage_mask_16bit_lo[16];
-   uint8_t gs_out_usage_mask_16bit_hi[16];
-
-   ac_nir_gs_output_info gs_out_info;
-
    uint8_t vs_output_param_offset[NUM_TOTAL_VARYING_SLOTS];
    bool has_non_uniform_tex_access : 1;
    bool has_shadow_comparison : 1;

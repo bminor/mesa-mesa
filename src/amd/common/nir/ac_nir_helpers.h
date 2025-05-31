@@ -11,6 +11,7 @@
 #include "ac_hw_stage.h"
 #include "ac_shader_args.h"
 #include "ac_shader_util.h"
+#include "ac_nir.h"
 #include "nir_defines.h"
 
 #ifdef __cplusplus
@@ -237,6 +238,13 @@ ac_nir_ngg_build_streamout_buffer_info(nir_builder *b,
                                        nir_def *buffer_offsets_ret[4],
                                        nir_def *emit_prim_ret[4]);
 
+bool
+ac_nir_is_const_output(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component);
+
+nir_def *
+ac_nir_get_const_output(nir_builder *b, unsigned bit_size, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
+                        unsigned component);
+
 void
 ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                         gl_varying_slot slot, unsigned component);
@@ -271,6 +279,10 @@ ac_nir_compute_prerast_packed_output_info(ac_nir_prerast_out *pr_out);
 
 unsigned
 ac_nir_gs_output_component_mask_with_stream(ac_nir_prerast_per_output_info *info, unsigned stream);
+
+nir_shader *
+ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options,
+                             ac_nir_prerast_out *out);
 
 #ifdef __cplusplus
 }

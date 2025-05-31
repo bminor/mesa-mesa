@@ -253,22 +253,6 @@ ac_nir_lower_global_access(nir_shader *shader);
 bool ac_nir_lower_resinfo(nir_shader *nir, enum amd_gfx_level gfx_level);
 bool ac_nir_lower_image_opcodes(nir_shader *nir);
 
-typedef struct ac_nir_gs_output_info {
-   const uint8_t *streams;
-   const uint8_t *streams_16bit_lo;
-   const uint8_t *streams_16bit_hi;
-
-   const uint8_t *varying_mask;
-   const uint8_t *varying_mask_16bit_lo;
-   const uint8_t *varying_mask_16bit_hi;
-
-   const uint8_t *sysval_mask;
-
-   /* type for each 16bit slot component */
-   nir_alu_type (*types_16bit_lo)[4];
-   nir_alu_type (*types_16bit_hi)[4];
-} ac_nir_gs_output_info;
-
 bool
 ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
@@ -286,7 +270,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
 typedef struct {
    bool has_gen_prim_query;
    bool has_pipeline_stats_query;
-   ac_nir_gs_output_info *output_info;
 
    enum amd_gfx_level gfx_level;
    uint32_t export_clipdist_mask;
@@ -299,9 +282,6 @@ typedef struct {
    bool kill_layer;
    bool force_vrs;
 } ac_nir_lower_legacy_gs_options;
-
-nir_shader *
-ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options);
 
 bool
 ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,

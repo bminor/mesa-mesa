@@ -11,11 +11,11 @@
 #include "nir_xfb_info.h"
 
 nir_shader *
-ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options)
+ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_options *options,
+                             ac_nir_prerast_out *out)
 {
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_VERTEX, gs_nir->options, "gs_copy");
-   ac_nir_gs_output_info *output_info = options->output_info;
 
    b.shader->info.outputs_written = gs_nir->info.outputs_written;
    b.shader->info.outputs_written_16bit = gs_nir->info.outputs_written_16bit;
@@ -37,68 +37,63 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
       if (stream_id)
          nir_push_if(&b, nir_ieq_imm(&b, stream_id, stream));
 
-      uint32_t offset = 0;
-      ac_nir_prerast_out out = {0};
-      if (output_info->types_16bit_lo)
-         memcpy(&out.types_16bit_lo, output_info->types_16bit_lo, sizeof(out.types_16bit_lo));
-      if (output_info->types_16bit_hi)
-         memcpy(&out.types_16bit_hi, output_info->types_16bit_hi, sizeof(out.types_16bit_hi));
+      unsigned offset = 0;
 
       u_foreach_bit64 (i, gs_nir->info.outputs_written) {
-         const uint8_t usage_mask = output_info->varying_mask[i] | output_info->sysval_mask[i];
-         out.infos[i].components_mask = usage_mask;
-         out.infos[i].as_varying_mask = output_info->varying_mask[i];
-         out.infos[i].as_sysval_mask = output_info->sysval_mask[i];
-
-         u_foreach_bit (j, usage_mask) {
-            if (((output_info->streams[i] >> (j * 2)) & 0x3) != stream)
+         u_foreach_bit (j, out->infos[i].components_mask) {
+            if (((out->infos[i].stream >> (j * 2)) & 0x3) != stream)
                continue;
 
-            out.outputs[i][j] =
+            if (ac_nir_is_const_output(out, i, j)) {
+               out->outputs[i][j] = ac_nir_get_const_output(&b, 32, out, i, j);
+               continue;
+            }
+
+            unsigned base = offset * gs_nir->info.gs.vertices_out * 16;
+            out->outputs[i][j] =
                nir_load_buffer_amd(&b, 1, 32, gsvs_ring, vtx_offset, zero, zero,
-                                   .base = offset,
+                                   .base = base,
                                    .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL);
-            offset += gs_nir->info.gs.vertices_out * 16 * 4;
+            offset += 4;
          }
       }
 
       u_foreach_bit (i, gs_nir->info.outputs_written_16bit) {
-         out.infos_16bit_lo[i].components_mask = output_info->varying_mask_16bit_lo[i];
-         out.infos_16bit_lo[i].as_varying_mask = output_info->varying_mask_16bit_lo[i];
-         out.infos_16bit_hi[i].components_mask = output_info->varying_mask_16bit_hi[i];
-         out.infos_16bit_hi[i].as_varying_mask = output_info->varying_mask_16bit_hi[i];
+         unsigned mask = out->infos_16bit_lo[i].components_mask |
+                         out->infos_16bit_hi[i].components_mask;
 
-         for (unsigned j = 0; j < 4; j++) {
-            out.infos[i].as_varying_mask = output_info->varying_mask[i];
-            out.infos[i].as_sysval_mask = output_info->sysval_mask[i];
+         u_foreach_bit (j, mask) {
+            bool has_lo_16bit = ((out->infos_16bit_lo[i].stream >> (j * 2)) & 0x3) == stream;
+            bool has_hi_16bit = ((out->infos_16bit_hi[i].stream >> (j * 2)) & 0x3) == stream;
 
-            bool has_lo_16bit = (output_info->varying_mask_16bit_lo[i] & (1 << j)) &&
-               ((output_info->streams_16bit_lo[i] >> (j * 2)) & 0x3) == stream;
-            bool has_hi_16bit = (output_info->varying_mask_16bit_hi[i] & (1 << j)) &&
-               ((output_info->streams_16bit_hi[i] >> (j * 2)) & 0x3) == stream;
             if (!has_lo_16bit && !has_hi_16bit)
                continue;
 
-            nir_def *data =
-               nir_load_buffer_amd(&b, 1, 32, gsvs_ring, vtx_offset, zero, zero,
-                                   .base = offset,
-                                   .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL);
+            nir_def *load_val;
+
+            if (ac_nir_is_const_output(out, VARYING_SLOT_VAR0_16BIT + i, j)) {
+               load_val = ac_nir_get_const_output(&b, 32, out, i, j);
+            } else {
+               unsigned base = offset * gs_nir->info.gs.vertices_out * 16;
+               load_val = nir_load_buffer_amd(&b, 1, 32, gsvs_ring, vtx_offset, zero, zero,
+                                              .base = base,
+                                              .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL);
+               offset += 4;
+            }
 
             if (has_lo_16bit)
-               out.outputs_16bit_lo[i][j] = nir_unpack_32_2x16_split_x(&b, data);
+               out->outputs_16bit_lo[i][j] = nir_unpack_32_2x16_split_x(&b, load_val);
 
             if (has_hi_16bit)
-               out.outputs_16bit_hi[i][j] = nir_unpack_32_2x16_split_y(&b, data);
-
-            offset += gs_nir->info.gs.vertices_out * 16 * 4;
+               out->outputs_16bit_hi[i][j] = nir_unpack_32_2x16_split_y(&b, load_val);
          }
       }
 
       if (stream_id)
-         ac_nir_emit_legacy_streamout(&b, stream, info, &out);
+         ac_nir_emit_legacy_streamout(&b, stream, info, out);
 
       /* This should be after streamout and before exports. */
-      ac_nir_clamp_vertex_color_outputs(&b, &out);
+      ac_nir_clamp_vertex_color_outputs(&b, out);
 
       if (stream == 0) {
          uint64_t export_outputs = b.shader->info.outputs_written | VARYING_BIT_POS;
@@ -110,13 +105,13 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
          ac_nir_export_position(&b, options->gfx_level, options->export_clipdist_mask, false,
                                 options->write_pos_to_clipvertex, options->pack_clip_cull_distances,
                                 !options->has_param_exports, options->force_vrs, export_outputs,
-                                &out, NULL);
+                                out, NULL);
 
          if (options->has_param_exports) {
             ac_nir_export_parameters(&b, options->param_offsets,
                                      b.shader->info.outputs_written,
                                      b.shader->info.outputs_written_16bit,
-                                     &out);
+                                     out);
          }
       }
 
