@@ -27,9 +27,6 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir,
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_VERTEX, gs_nir->options, "gs_copy");
 
-   nir_foreach_shader_out_variable(var, gs_nir)
-      nir_shader_add_variable(b.shader, nir_variable_clone(var, b.shader));
-
    b.shader->info.outputs_written = gs_nir->info.outputs_written;
    b.shader->info.outputs_written_16bit = gs_nir->info.outputs_written_16bit;
 
