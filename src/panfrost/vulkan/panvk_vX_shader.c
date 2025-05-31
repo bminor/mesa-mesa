@@ -148,7 +148,7 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       const struct vk_input_attachment_location_state *ial =
          ctx->state ? ctx->state->ial : NULL;
 
-      if (ial) {
+      if (ial && nir_src_is_const(intr->src[0])) {
          uint32_t index = nir_src_as_uint(intr->src[0]);
          uint32_t depth_idx = ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX
                                  ? 0

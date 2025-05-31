@@ -855,16 +855,23 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
    nir_variable *var = nir_deref_instr_get_variable(deref);
    assert(var);
 
-   const unsigned iam_idx =
-      var->data.index != NIR_VARIABLE_NO_INDEX ? var->data.index + 1 : 0;
-   nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
-
-   shader->fs.input_attachment_read |= BITFIELD_BIT(iam_idx);
-
    b->cursor = nir_before_instr(&intr->instr);
 
-   nir_def *target =
-      nir_load_input_attachment_target_pan(b, nir_imm_int(b, iam_idx));
+   uint32_t set, binding, index_imm, max_idx;
+   nir_def *index_ssa;
+   get_resource_deref_binding(deref, &set, &binding, &index_imm, &index_ssa, &max_idx);
+   const unsigned base_idx =
+      var->data.index != NIR_VARIABLE_NO_INDEX ? var->data.index + 1 : 0;
+   index_imm += base_idx;
+   index_ssa = index_ssa ?
+      nir_iadd_imm(b, index_ssa, base_idx) : nir_imm_int(b, index_imm);
+
+   nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
+
+   unsigned range = max_idx == UINT32_MAX ? 9 - index_imm : max_idx + 1;
+   shader->fs.input_attachment_read |= BITFIELD_RANGE(index_imm, range);
+
+   nir_def *target = nir_load_input_attachment_target_pan(b, index_ssa);
    nir_def *load_img, *load_output;
 
    nir_push_if(b, nir_ine_imm(b, target, ~0));
@@ -876,7 +883,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
       nir_push_if(b, is_color_att);
       {
          nir_def *conversion =
-            nir_load_input_attachment_conv_pan(b, nir_imm_int(b, iam_idx));
+            nir_load_input_attachment_conv_pan(b, index_ssa);
          nir_def *is_read_only =
             nir_i2b(b, nir_iand_imm(b, nir_ishl(b, nir_imm_int(b, 1), target),
                                     ctx->ro_color_mask));
@@ -917,7 +924,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
          nir_def *conversion =
             dest_type == nir_type_uint32
                ? nir_imm_int(b, stencil_conv.opaque[0])
-               : nir_load_input_attachment_conv_pan(b, nir_imm_int(b, iam_idx));
+               : nir_load_input_attachment_conv_pan(b, index_ssa);
 #else
          nir_def *conversion = nir_imm_int(b, 0);
 #endif

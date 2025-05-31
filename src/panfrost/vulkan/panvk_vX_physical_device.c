@@ -282,7 +282,7 @@ panvk_per_arch(get_physical_device_features)(
       .shaderInt8 = true,
 
       .descriptorIndexing = false,
-      .shaderInputAttachmentArrayDynamicIndexing = false,
+      .shaderInputAttachmentArrayDynamicIndexing = true,
       .shaderUniformTexelBufferArrayDynamicIndexing = true,
       .shaderStorageTexelBufferArrayDynamicIndexing = true,
       .shaderUniformBufferArrayNonUniformIndexing = false,
