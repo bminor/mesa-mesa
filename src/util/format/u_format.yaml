@@ -2180,7 +2180,31 @@
   swizzles: [X, Y, Z, W]
 
 
+- name: Y10X6_U10X6_V10X6_420_UNORM
+  layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y12X4_U12X4_V12X4_420_UNORM
+  layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
 - name: Y16_U16_V16_420_UNORM
+  layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y10X6_U10X6_V10X6_422_UNORM
+  layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y12X4_U12X4_V12X4_422_UNORM
   layout: planar3
   colorspace: YUV
   block: {width: 1, height: 1, depth: 1}
@@ -2192,14 +2216,26 @@
   block: {width: 1, height: 1, depth: 1}
   channels: []
   swizzles: [X, Y, Z, W]
-- name: Y16_U16V16_422_UNORM
-  layout: planar2
+- name: Y10X6_U10X6_V10X6_444_UNORM
+  layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y12X4_U12X4_V12X4_444_UNORM
+  layout: planar3
   colorspace: YUV
   block: {width: 1, height: 1, depth: 1}
   channels: []
   swizzles: [X, Y, Z, W]
 - name: Y16_U16_V16_444_UNORM
   layout: planar3
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y16_U16V16_422_UNORM
+  layout: planar2
   colorspace: YUV
   block: {width: 1, height: 1, depth: 1}
   channels: []
