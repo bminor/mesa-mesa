@@ -340,9 +340,9 @@ fd_init_compute_caps(struct fd_screen *screen)
 
    caps->max_clock_frequency = screen->max_freq / 1000000;
 
-   caps->max_compute_units = 9999; // TODO
+   caps->max_compute_units = screen->info->num_sp_cores;
 
-   caps->subgroup_sizes = 32; // TODO
+   caps->subgroup_sizes = screen->info->max_waves;
 
    caps->max_variable_threads_per_block = compiler->max_variable_workgroup_size;
 }
