@@ -399,6 +399,15 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nvk_nir_lower_descriptors, pdev, shader_flags, rs,
             set_layout_count, set_layouts, cbuf_map);
 
+   if (nvk_use_bindless_cbuf(&pdev->info)) {
+      /* On Turing+ where we have bindless cbufs, we use ACCESS_NON_UNIFORM to
+       * determine whether or not it's safe to assume a uniform handle so we
+       * want to optimize it away whenever possible.
+       */
+      if (nir_has_non_uniform_access(nir, nir_lower_non_uniform_ubo_access))
+         NIR_PASS(_, nir, nir_opt_non_uniform_access);
+   }
+
    if (pdev->info.cls_eng3d < TURING_A) {
       /* NOTE: This does nothing for images on Kepler since those are lowered
        * to suldga/sustga before we get here.  That's fine, though, because
