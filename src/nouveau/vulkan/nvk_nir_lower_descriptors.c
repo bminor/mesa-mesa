@@ -712,29 +712,6 @@ is_idx_intrin(nir_intrinsic_instr *intrin)
 }
 
 static nir_def *
-buffer_address_to_ldcx_handle(nir_builder *b, nir_def *addr)
-{
-   nir_def *base_addr = nir_pack_64_2x32(b, nir_channels(b, addr, 0x3));
-   nir_def *size = nir_channel(b, addr, 2);
-   nir_def *offset = nir_channel(b, addr, 3);
-
-   nir_def *addr16 = nir_ushr_imm(b, base_addr, 4);
-   nir_def *addr16_lo = nir_unpack_64_2x32_split_x(b, addr16);
-   nir_def *addr16_hi = nir_unpack_64_2x32_split_y(b, addr16);
-
-   /* If we assume the top bis of the address are 0 as well as the bottom two
-    * bits of the size. (We can trust it since it's a descriptor) then
-    *
-    *    ((size >> 4) << 13) | addr
-    *
-    * is just an imad.
-    */
-   nir_def *handle_hi = nir_imad(b, size, nir_imm_int(b, 1 << 9), addr16_hi);
-
-   return nir_vec3(b, addr16_lo, handle_hi, offset);
-}
-
-static nir_def *
 load_descriptor_for_idx_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
                                const struct lower_descriptors_ctx *ctx)
 {
