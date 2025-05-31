@@ -28,7 +28,9 @@
  * That is, the variable has the same value for all invocations
  * of the group.
  *
- * This divergence analysis pass expects the shader to be in LCSSA-form.
+ * If the shader is not in LCSSA-form, passes need to use nir_src_is_divergent()
+ * instead of reading the value from src->ssa->divergent as without LCSSA a src
+ * can have a different divergence than the corresponding SSA-def.
  *
  * This algorithm implements "The Simple Divergence Analysis" from
  * Diogo Sampaio, Rafael De Souza, Sylvain Collange, Fernando Magno Quintão Pereira.
