@@ -52,6 +52,7 @@ fd_pipe_new2(struct fd_device *dev, enum fd_pipe_id id, uint32_t prio)
       return NULL;
    }
 
+   pipe->gen = fd_dev_gen(&pipe->dev_id);
    pipe->is_64bit = fd_dev_64b(&pipe->dev_id);
 
    /* Use the _NOSYNC flags because we don't want the control_mem bo to hold
@@ -189,7 +190,7 @@ uint32_t
 fd_pipe_emit_fence(struct fd_pipe *pipe, struct fd_ringbuffer *ring)
 {
    uint32_t fence = ++pipe->last_fence;
-   unsigned gen = fd_dev_gen(&pipe->dev_id);
+   unsigned gen = pipe->gen;
 
    if (gen >= A7XX) {
       OUT_PKT7(ring, CP_EVENT_WRITE7, 4);

@@ -321,6 +321,7 @@ struct fd_pipe {
    struct fd_device *dev;
    enum fd_pipe_id id;
    struct fd_dev_id dev_id;
+   uint8_t gen;
 
    /**
     * Note refcnt is *not* atomic, but protected by fence_lock, since the
