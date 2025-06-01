@@ -1240,7 +1240,7 @@ static void si_nir_assign_param_offsets(nir_shader *nir, struct si_shader *shade
          /* Assign the param index if it's unassigned. */
          if (nir_slot_is_varying(sem.location, MESA_SHADER_FRAGMENT) && !sem.no_varying &&
              (sem.gs_streams & 0x3) == 0 &&
-             temp_info->vs_output_param_offset[sem.location] == AC_EXP_PARAM_DEFAULT_VAL_0000) {
+             temp_info->vs_output_param_offset[sem.location] == AC_EXP_PARAM_UNDEFINED) {
             /* The semantic and the base should be the same as in si_shader_info. */
             assert(sem.location == sel->info.output_semantic[nir_intrinsic_base(intr)]);
             /* It must not be remapped (duplicated). */
@@ -1273,7 +1273,7 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
    shader->info.nr_param_exports = 0;
 
    STATIC_ASSERT(sizeof(temp_info->vs_output_param_offset[0]) == 1);
-   memset(temp_info->vs_output_param_offset, AC_EXP_PARAM_DEFAULT_VAL_0000,
+   memset(temp_info->vs_output_param_offset, AC_EXP_PARAM_UNDEFINED,
           sizeof(temp_info->vs_output_param_offset));
 
    /* A slot remapping table for duplicated outputs, so that 1 vertex shader output can be
@@ -1290,6 +1290,12 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
    /* Assign the non-constant outputs. */
    /* TODO: Use this for the GS copy shader too. */
    si_nir_assign_param_offsets(nir, shader, slot_remap, temp_info);
+
+   /* Any unwritten output will default to (0,0,0,0). */
+   for (unsigned i = 0; i < NUM_TOTAL_VARYING_SLOTS; i++) {
+      if (temp_info->vs_output_param_offset[i] == AC_EXP_PARAM_UNDEFINED)
+         temp_info->vs_output_param_offset[i] = AC_EXP_PARAM_DEFAULT_VAL_0000;
+   }
 }
 
 static unsigned si_get_nr_pos_exports(const struct si_shader_selector *sel,
