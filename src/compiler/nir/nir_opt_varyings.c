@@ -5374,5 +5374,16 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    if ((progress & nir_progress_consumer) || NIR_DEBUG(EXTENDED_VALIDATION))
       nir_validate_shader(consumer, "nir_opt_varyings");
 
+   /* Set prev_stage/next_stage if they are NONE. */
+   if (producer->info.next_stage == MESA_SHADER_NONE)
+      producer->info.next_stage = consumer->info.stage;
+   else
+      assert(producer->info.next_stage == consumer->info.stage);
+
+   if (consumer->info.prev_stage == MESA_SHADER_NONE)
+      consumer->info.prev_stage = producer->info.stage;
+   else
+      assert(consumer->info.prev_stage == producer->info.stage);
+
    return progress;
 }
