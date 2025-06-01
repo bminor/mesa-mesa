@@ -96,15 +96,10 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
       ac_nir_clamp_vertex_color_outputs(&b, out);
 
       if (stream == 0) {
-         uint64_t export_outputs = b.shader->info.outputs_written | VARYING_BIT_POS;
-         if (options->kill_pointsize)
-            export_outputs &= ~VARYING_BIT_PSIZ;
-         if (options->kill_layer)
-            export_outputs &= ~VARYING_BIT_LAYER;
-
          ac_nir_export_position(&b, options->gfx_level, options->export_clipdist_mask, false,
                                 options->write_pos_to_clipvertex, options->pack_clip_cull_distances,
-                                !options->has_param_exports, options->force_vrs, export_outputs,
+                                !options->has_param_exports, options->force_vrs,
+                                b.shader->info.outputs_written | VARYING_BIT_POS,
                                 out, NULL);
 
          if (options->has_param_exports) {

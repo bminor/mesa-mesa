@@ -194,8 +194,6 @@ typedef struct {
    bool use_gfx12_xfb_intrinsic;
    bool has_gs_invocations_query;
    bool has_gs_primitives_query;
-   bool kill_pointsize;
-   bool kill_layer;
    bool force_vrs;
    bool compact_primitives;
    /* Skip culling dependent on the viewport state, which is frustum culling and small prim
@@ -263,8 +261,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        bool has_param_exports,
                        bool export_primitive_id,
                        bool disable_streamout,
-                       bool kill_pointsize,
-                       bool kill_layer,
                        bool force_vrs);
 
 typedef struct {
@@ -278,8 +274,6 @@ typedef struct {
    const uint8_t *param_offsets;
    bool has_param_exports;
    bool disable_streamout;
-   bool kill_pointsize;
-   bool kill_layer;
    bool force_vrs;
 } ac_nir_lower_legacy_gs_options;
 

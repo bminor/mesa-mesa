@@ -1721,10 +1721,6 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
 
    uint64_t export_outputs = shader->info.outputs_written | VARYING_BIT_POS;
    export_outputs &= ~VARYING_BIT_EDGE; /* edge flags are never exported via pos with NGG */
-   if (options->kill_pointsize)
-      export_outputs &= ~VARYING_BIT_PSIZ;
-   if (options->kill_layer)
-      export_outputs &= ~VARYING_BIT_LAYER;
 
    /* If streamout is enabled, export positions after streamout. This increases streamout performance
     * for up to 4 vec4 xfb outputs on GFX12 because the streamout code doesn't have go through

@@ -42,8 +42,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        bool has_param_exports,
                        bool export_primitive_id,
                        bool disable_streamout,
-                       bool kill_pointsize,
-                       bool kill_layer,
                        bool force_vrs)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
@@ -72,14 +70,9 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
    /* This should be after streamout and before exports. */
    ac_nir_clamp_vertex_color_outputs(&b, &out);
 
-   uint64_t export_outputs = nir->info.outputs_written | VARYING_BIT_POS;
-   if (kill_pointsize)
-      export_outputs &= ~VARYING_BIT_PSIZ;
-   if (kill_layer)
-      export_outputs &= ~VARYING_BIT_LAYER;
-
    ac_nir_export_position(&b, gfx_level, export_clipdist_mask, false, write_pos_to_clipvertex,
-                          pack_clip_cull_distances, !has_param_exports, force_vrs, export_outputs,
+                          pack_clip_cull_distances, !has_param_exports, force_vrs,
+                          nir->info.outputs_written | VARYING_BIT_POS,
                           &out, NULL);
 
    if (has_param_exports) {

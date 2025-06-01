@@ -445,12 +445,6 @@ ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_ou
 
    nir_if *if_export_vertex = nir_push_if(b, if_process_vertex->condition.ssa);
    {
-      uint64_t export_outputs = b->shader->info.outputs_written | VARYING_BIT_POS;
-      if (s->options->kill_pointsize)
-         export_outputs &= ~VARYING_BIT_PSIZ;
-      if (s->options->kill_layer)
-         export_outputs &= ~VARYING_BIT_LAYER;
-
       ac_nir_export_position(b, s->options->hw_info->gfx_level,
                              s->options->export_clipdist_mask,
                              s->options->dont_export_cull_distances,
@@ -458,7 +452,7 @@ ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_ou
                              s->options->pack_clip_cull_distances,
                              !s->options->has_param_exports,
                              s->options->force_vrs,
-                             export_outputs, &s->out, NULL);
+                             b->shader->info.outputs_written | VARYING_BIT_POS, &s->out, NULL);
 
       if (s->options->has_param_exports && !s->options->hw_info->has_attr_ring)
          ac_nir_export_parameters(b, s->options->vs_output_param_offset,

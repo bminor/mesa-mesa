@@ -446,7 +446,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          NIR_PASS(_, stage->nir, ac_nir_lower_legacy_vs, gfx_level,
                   stage->info.outinfo.clip_dist_mask | stage->info.outinfo.cull_dist_mask, false, false,
                   stage->info.outinfo.vs_output_param_offset, stage->info.outinfo.param_exports,
-                  stage->info.outinfo.export_prim_id, false, false, false, stage->info.force_vrs_per_vertex);
+                  stage->info.outinfo.export_prim_id, false, stage->info.force_vrs_per_vertex);
 
       } else {
          ac_nir_lower_legacy_gs_options options = {

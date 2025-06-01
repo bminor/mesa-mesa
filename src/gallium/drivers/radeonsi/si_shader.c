@@ -1125,8 +1125,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .vs_output_param_offset = temp_info->vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,
       .export_clipdist_mask = clip_cull_dist_mask,
-      .kill_pointsize = key->ge.opt.kill_pointsize,
-      .kill_layer = key->ge.opt.kill_layer,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
       .skip_viewport_state_culling = sel->info.writes_viewport_index,
@@ -1567,8 +1565,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
                     shader->info.nr_param_exports,
                     shader->key.ge.mono.u.vs_export_prim_id,
                     !shader->info.num_streamout_vec4s,
-                    key->ge.opt.kill_pointsize,
-                    key->ge.opt.kill_layer,
                     sel->screen->options.vrs2x2);
       }
       progress = true;
@@ -1602,8 +1598,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          .param_offsets = ctx->temp_info.vs_output_param_offset,
          .has_param_exports = shader->info.nr_param_exports,
          .disable_streamout = !shader->info.num_streamout_vec4s,
-         .kill_pointsize = key->ge.opt.kill_pointsize,
-         .kill_layer = key->ge.opt.kill_layer,
          .force_vrs = sel->screen->options.vrs2x2,
       };
 
