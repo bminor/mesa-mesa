@@ -1612,7 +1612,8 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
          .force_vrs = sel->screen->options.vrs2x2,
       };
 
-      NIR_PASS(_, nir, ac_nir_lower_legacy_gs, &options, &ctx->gs_copy_shader);
+      NIR_PASS(_, nir, ac_nir_lower_legacy_gs, &options, &ctx->gs_copy_shader,
+               &shader->info.legacy_gs);
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT && shader->is_monolithic) {
       ac_nir_lower_ps_late_options late_options = {

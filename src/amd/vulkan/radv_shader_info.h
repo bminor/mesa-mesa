@@ -135,12 +135,7 @@ struct radv_shader_info {
       uint32_t num_outputs; /* For NGG streamout only */
    } vs;
    struct {
-      uint8_t output_usage_mask[VARYING_SLOT_VAR31 + 1];
-      uint8_t num_stream_output_components[4];
-      uint8_t output_streams[VARYING_SLOT_VAR31 + 1];
-      uint8_t max_stream;
-      unsigned gsvs_vertex_size;
-      unsigned max_gsvs_emit_size;
+      uint8_t num_components_per_stream[4];
       unsigned vertices_in;
       unsigned vertices_out;
       unsigned input_prim;

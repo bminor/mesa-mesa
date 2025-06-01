@@ -938,11 +938,13 @@ static void si_emit_shader_gs(struct si_context *sctx, unsigned index)
 static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
 {
    struct si_shader_selector *sel = shader->selector;
-   const uint8_t *num_components = sel->info.num_gs_stream_components;
+   const uint8_t *num_components = shader->info.legacy_gs.num_components_per_stream;
    unsigned gs_num_invocations = sel->info.base.gs.invocations;
    struct si_pm4_state *pm4;
    uint64_t va;
-   unsigned max_stream = util_last_bit(sel->info.base.gs.active_stream_mask);
+   unsigned max_stream = num_components[3] ? 4 :
+                         num_components[2] ? 3 :
+                         num_components[1] ? 2 : 1;
    unsigned offset;
 
    assert(sscreen->info.gfx_level < GFX11); /* gfx11 doesn't have the legacy pipeline */
@@ -951,19 +953,19 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
    if (!pm4)
       return;
 
-   offset = num_components[0] * sel->info.base.gs.vertices_out;
+   offset = (uint32_t)num_components[0] * sel->info.base.gs.vertices_out;
    shader->gs.vgt_gsvs_ring_offset_1 = offset;
 
    if (max_stream >= 2)
-      offset += num_components[1] * sel->info.base.gs.vertices_out;
+      offset += (uint32_t)num_components[1] * sel->info.base.gs.vertices_out;
    shader->gs.vgt_gsvs_ring_offset_2 = offset;
 
    if (max_stream >= 3)
-      offset += num_components[2] * sel->info.base.gs.vertices_out;
+      offset += (uint32_t)num_components[2] * sel->info.base.gs.vertices_out;
    shader->gs.vgt_gsvs_ring_offset_3 = offset;
 
    if (max_stream >= 4)
-      offset += num_components[3] * sel->info.base.gs.vertices_out;
+      offset += (uint32_t)num_components[3] * sel->info.base.gs.vertices_out;
    shader->gs.vgt_gsvs_ring_itemsize = offset;
 
    /* The GSVS_RING_ITEMSIZE register takes 15 bits */
@@ -3541,7 +3543,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       !sel->nir->info.writes_memory &&
       /* NGG GS supports culling with streamout because it culls after streamout. */
       (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
-      (sel->stage != MESA_SHADER_GEOMETRY || sel->info.num_gs_stream_components[0]) &&
+      (sel->stage != MESA_SHADER_GEOMETRY || sel->info.gs_writes_stream0) &&
       (sel->stage != MESA_SHADER_VERTEX ||
        (!sel->nir->info.vs.blit_sgprs_amd &&
         !sel->nir->info.vs.window_space_position));
@@ -4120,10 +4122,16 @@ bool si_update_gs_ring_buffers(struct si_context *sctx)
    /* Calculate the minimum size. */
    unsigned min_esgs_ring_size = align(es->info.esgs_vertex_stride * gs_vertex_reuse * wave_size, alignment);
 
+   unsigned gsvs_emit_size = 0;
+   for (unsigned stream = 0; stream < 4; stream++) {
+      gsvs_emit_size += (uint32_t)sctx->shader.gs.current->info.legacy_gs.num_components_per_stream[stream] *
+                        4 * gs->info.base.gs.vertices_out;
+   }
+
    /* These are recommended sizes, not minimum sizes. */
    unsigned esgs_ring_size =
       max_gs_waves * 2 * wave_size * es->info.esgs_vertex_stride * gs->info.gs_input_verts_per_prim;
-   unsigned gsvs_ring_size = max_gs_waves * 2 * wave_size * gs->info.max_gsvs_emit_size;
+   unsigned gsvs_ring_size = max_gs_waves * 2 * wave_size * gsvs_emit_size;
 
    min_esgs_ring_size = align(min_esgs_ring_size, alignment);
    esgs_ring_size = align(esgs_ring_size, alignment);

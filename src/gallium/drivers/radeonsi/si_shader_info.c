@@ -171,10 +171,11 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
             for (unsigned i = 0; i < 4; i++) {
                unsigned stream = (gs_streams >> (i * 2)) & 0x3;
 
-               if (new_mask & (1 << i)) {
+               if (new_mask && stream == 0)
+                  info->gs_writes_stream0 = true;
+
+               if (new_mask & (1 << i))
                   info->output_streams[loc] |= stream << (i * 2);
-                  info->num_gs_stream_components[stream]++;
-               }
             }
 
             if (nir_intrinsic_has_src_type(intr))
@@ -437,7 +438,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->base.gs.input_primitive = nir->info.gs.input_primitive;
       info->base.gs.vertices_out = nir->info.gs.vertices_out;
       info->base.gs.invocations = nir->info.gs.invocations;
-      info->base.gs.active_stream_mask = nir->info.gs.active_stream_mask;
       break;
 
    case MESA_SHADER_FRAGMENT:
@@ -637,7 +637,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      info->max_gsvs_emit_size = info->num_outputs * 16 * nir->info.gs.vertices_out;
       info->gs_input_verts_per_prim =
          mesa_vertices_per_prim(nir->info.gs.input_primitive);
    }

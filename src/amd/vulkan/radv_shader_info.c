@@ -149,9 +149,6 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
    case MESA_SHADER_TESS_EVAL:
       output_usage_mask = info->tes.output_usage_mask;
       break;
-   case MESA_SHADER_GEOMETRY:
-      output_usage_mask = info->gs.output_usage_mask;
-      break;
    case MESA_SHADER_FRAGMENT:
       if (location >= FRAG_RESULT_DATA0) {
          const unsigned fs_semantic = location + io_sem.dual_source_blend_index;
@@ -182,11 +179,6 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
          if (!nir_scalar_is_const(pos_w) || nir_scalar_as_uint(pos_w) != 0x3f800000u)
             info->force_vrs_per_vertex = true;
       }
-   }
-
-   if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      const uint8_t gs_streams = nir_intrinsic_io_semantics(instr).gs_streams;
-      info->gs.output_streams[location] |= gs_streams << (component * 2);
    }
 
    if ((location == VARYING_SLOT_CLIP_DIST0 || location == VARYING_SLOT_CLIP_DIST1) && !io_sem.no_sysval_output) {
@@ -721,7 +713,13 @@ radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_inf
    unsigned min_esgs_ring_size = align(esgs_vertex_stride * gs_vertex_reuse * wave_size, alignment);
    /* These are recommended sizes, not minimum sizes. */
    unsigned esgs_ring_size = max_gs_waves * 2 * wave_size * esgs_vertex_stride * gs_info->gs.vertices_in;
-   unsigned gsvs_ring_size = max_gs_waves * 2 * wave_size * gs_info->gs.max_gsvs_emit_size;
+
+   unsigned gsvs_emit_size = 0;
+   for (unsigned stream = 0; stream < 4; stream++) {
+      gsvs_emit_size += (uint32_t)gs_info->gs.num_components_per_stream[stream] * 4 * gs_info->gs.vertices_out;
+   }
+
+   unsigned gsvs_ring_size = max_gs_waves * 2 * wave_size * gsvs_emit_size;
 
    min_esgs_ring_size = align(min_esgs_ring_size, alignment);
    esgs_ring_size = align(esgs_ring_size, alignment);
@@ -736,29 +734,11 @@ radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_inf
 static void
 gather_shader_info_gs(struct radv_device *device, const nir_shader *nir, struct radv_shader_info *info)
 {
-   unsigned add_clip = nir->info.clip_distance_array_size + nir->info.cull_distance_array_size > 4;
-   info->gs.gsvs_vertex_size = (util_bitcount64(nir->info.outputs_written) + add_clip) * 16;
-   info->gs.max_gsvs_emit_size = info->gs.gsvs_vertex_size * nir->info.gs.vertices_out;
-
    info->gs.vertices_in = nir->info.gs.vertices_in;
    info->gs.vertices_out = nir->info.gs.vertices_out;
    info->gs.input_prim = nir->info.gs.input_primitive;
    info->gs.output_prim = nir->info.gs.output_primitive;
    info->gs.invocations = nir->info.gs.invocations;
-   info->gs.max_stream = nir->info.gs.active_stream_mask ? util_last_bit(nir->info.gs.active_stream_mask) - 1 : 0;
-
-   for (unsigned slot = 0; slot < VARYING_SLOT_MAX; ++slot) {
-      const uint8_t usage_mask = info->gs.output_usage_mask[slot];
-      const uint8_t gs_streams = info->gs.output_streams[slot];
-
-      for (unsigned component = 0; component < 4; ++component) {
-         if (!(usage_mask & BITFIELD_BIT(component)))
-            continue;
-
-         const uint8_t stream = (gs_streams >> (component * 2)) & 0x3;
-         info->gs.num_stream_output_components[stream]++;
-      }
-   }
 
    if (!info->inputs_linked)
       info->gs.num_linked_inputs = util_last_bit64(radv_gather_unlinked_io_mask(nir->info.inputs_read));

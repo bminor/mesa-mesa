@@ -503,7 +503,12 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
             .has_param_exports = stage->info.outinfo.param_exports,
             .force_vrs = stage->info.force_vrs_per_vertex,
          };
-         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_gs, &options, &stage->gs_copy_shader);
+         ac_nir_legacy_gs_info info = {0};
+
+         NIR_PASS(_, stage->nir, ac_nir_lower_legacy_gs, &options, &stage->gs_copy_shader, &info);
+
+         for (unsigned i = 0; i < 4; i++)
+            stage->info.gs.num_components_per_stream[i] = info.num_components_per_stream[i];
       }
    } else if (stage->stage == MESA_SHADER_FRAGMENT) {
       ac_nir_lower_ps_late_options late_options = {
@@ -998,7 +1003,12 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
                           shader->info.outinfo.prim_param_exports;
       } else {
          /* GS -> FS outputs (GFX6-10.3 legacy) */
-         stats.outputs += shader->info.gs.gsvs_vertex_size / 16;
+         stats.outputs += DIV_ROUND_UP(((uint32_t)shader->info.gs.num_components_per_stream[0] +
+                                        (uint32_t)shader->info.gs.num_components_per_stream[1] +
+                                        (uint32_t)shader->info.gs.num_components_per_stream[2] +
+                                        (uint32_t)shader->info.gs.num_components_per_stream[3]) *
+                                          4,
+                                       16);
       }
       break;
 

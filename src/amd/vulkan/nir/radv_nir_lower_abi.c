@@ -449,7 +449,7 @@ load_gsvs_ring(nir_builder *b, lower_abi_state *s, unsigned stream_id)
    unsigned stream_offset = 0;
    unsigned stride = 0;
    for (unsigned i = 0; i <= stream_id; i++) {
-      stride = 4 * s->info->gs.num_stream_output_components[i] * s->info->gs.vertices_out;
+      stride = 4 * (uint32_t)s->info->gs.num_components_per_stream[i] * s->info->gs.vertices_out;
       if (i < stream_id)
          stream_offset += stride * s->info->wave_size;
    }

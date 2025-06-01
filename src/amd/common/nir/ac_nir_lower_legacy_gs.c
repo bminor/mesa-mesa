@@ -10,6 +10,7 @@
 #include "nir_builder.h"
 
 typedef struct {
+   ac_nir_legacy_gs_info *out_info;
    ac_nir_prerast_out out;
 
    nir_def *vertex_count[4];
@@ -114,6 +115,9 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
       memset(s->out.outputs_16bit_hi[slot], 0, sizeof(s->out.outputs_16bit_hi[slot]));
    }
 
+   assert(offset / 4 < 256);
+   s->out_info->num_components_per_stream[stream] = offset / 4;
+
    /* Signal vertex emission. */
    nir_sendmsg_amd(b, nir_load_gs_wave_id_amd(b),
                    .base = AC_SENDMSG_GS_OP_EMIT | AC_SENDMSG_GS | (stream << 8));
@@ -190,9 +194,9 @@ gather_output_stores(nir_shader *shader, lower_legacy_gs_state *s)
 
 bool
 ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
-                       nir_shader **gs_copy_shader)
+                       nir_shader **gs_copy_shader, ac_nir_legacy_gs_info *out_info)
 {
-   lower_legacy_gs_state s = {0};
+   lower_legacy_gs_state s = {out_info};
 
    gather_output_stores(nir, &s);
    ac_nir_compute_prerast_packed_output_info(&s.out);

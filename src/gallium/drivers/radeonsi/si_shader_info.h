@@ -64,7 +64,6 @@ struct si_shader_info {
             enum mesa_prim input_primitive;
             uint16_t vertices_out;
             uint8_t invocations;
-            uint8_t active_stream_mask:4;
          } gs;
 
          struct {
@@ -98,7 +97,6 @@ struct si_shader_info {
 
    uint8_t num_vs_inputs;
    uint8_t num_vbos_in_user_sgprs;
-   uint8_t num_gs_stream_components[4];
    uint16_t enabled_streamout_buffer_mask;
 
    uint64_t inputs_read; /* "get_unique_index" bits */
@@ -112,10 +110,10 @@ struct si_shader_info {
 
    uint8_t clipdist_mask;
    uint8_t culldist_mask;
+   bool gs_writes_stream0;
 
    uint16_t esgs_vertex_stride;
    uint8_t gs_input_verts_per_prim;
-   unsigned max_gsvs_emit_size;
 
    /* Set 0xf or 0x0 (4 bits) per each written output.
     * ANDed with spi_shader_col_format.
@@ -230,6 +228,7 @@ struct si_shader_variant_info {
    unsigned private_mem_vgprs;
    unsigned max_simd_waves;
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
+   ac_nir_legacy_gs_info legacy_gs;
 };
 
 #endif

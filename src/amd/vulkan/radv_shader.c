@@ -1509,8 +1509,11 @@ radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_b
                                    S_028A44_GS_INST_PRIMS_IN_SUBGRP(info->gs_ring_info.gs_inst_prims_in_subgroup);
 
    const uint32_t gs_max_out_vertices = info->gs.vertices_out;
-   const uint8_t max_stream = info->gs.max_stream;
-   const uint8_t *num_components = info->gs.num_stream_output_components;
+   const uint8_t max_stream = info->gs.num_components_per_stream[3]   ? 3
+                              : info->gs.num_components_per_stream[2] ? 2
+                              : info->gs.num_components_per_stream[1] ? 1
+                                                                      : 0;
+   const uint8_t *num_components = info->gs.num_components_per_stream;
 
    uint32_t offset = num_components[0] * gs_max_out_vertices;
    info->regs.gs.vgt_gsvs_ring_offset[0] = offset;

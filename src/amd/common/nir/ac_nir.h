@@ -276,9 +276,13 @@ typedef struct {
    bool force_vrs;
 } ac_nir_lower_legacy_gs_options;
 
+typedef struct {
+   uint8_t num_components_per_stream[4];
+} ac_nir_legacy_gs_info;
+
 bool
 ac_nir_lower_legacy_gs(nir_shader *nir, ac_nir_lower_legacy_gs_options *options,
-                       nir_shader **gs_copy_shader);
+                       nir_shader **gs_copy_shader, ac_nir_legacy_gs_info *out_info);
 
 /* This is a pre-link pass. It should only eliminate code and do lowering that mostly doesn't
  * generate AMD-specific intrinsics.
