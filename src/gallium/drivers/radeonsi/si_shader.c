@@ -1300,7 +1300,6 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
               temp_info->vs_output_param_offset);
 
    /* Assign the non-constant outputs. */
-   /* TODO: Use this for the GS copy shader too. */
    si_nir_assign_param_offsets(nir, shader, slot_remap, temp_info);
 
    /* Any unwritten output will default to (0,0,0,0). */
@@ -1567,23 +1566,8 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
-      STATIC_ASSERT(sizeof(ctx->temp_info.vs_output_param_offset[0]) == 1);
-      memset(ctx->temp_info.vs_output_param_offset, AC_EXP_PARAM_DEFAULT_VAL_0000,
-             sizeof(ctx->temp_info.vs_output_param_offset));
-
-      for (unsigned i = 0; i < sel->info.num_outputs; i++) {
-         unsigned semantic = sel->info.output_semantic[i];
-
-         /* Skip if no channel writes to stream 0. */
-         if (!nir_slot_is_varying(semantic, MESA_SHADER_FRAGMENT) ||
-             (sel->info.output_streams[i] & 0x03 && /* whether component 0 writes to non-zero stream */
-              sel->info.output_streams[i] & 0x0c && /* whether component 1 writes to non-zero stream */
-              sel->info.output_streams[i] & 0x30 && /* whether component 2 writes to non-zero stream */
-              sel->info.output_streams[i] & 0xc0))  /* whether component 3 writes to non-zero stream */
-            continue;
-
-         ctx->temp_info.vs_output_param_offset[semantic] = shader->info.nr_param_exports++;
-      }
+      /* Assign param export indices. */
+      si_assign_param_offsets(nir, shader, &ctx->temp_info);
 
       ac_nir_lower_legacy_gs_options options = {
          .has_gen_prim_query = false,

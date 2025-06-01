@@ -165,17 +165,13 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
             /* Output stores. */
             unsigned gs_streams = (uint32_t)nir_intrinsic_io_semantics(intr).gs_streams <<
                                   (nir_intrinsic_component(intr) * 2);
-            unsigned new_mask = mask & ~info->output_usagemask[loc];
 
             /* Iterate over all components. */
-            for (unsigned i = 0; i < 4; i++) {
+            u_foreach_bit(i, mask) {
                unsigned stream = (gs_streams >> (i * 2)) & 0x3;
 
-               if (new_mask && stream == 0)
+               if (stream == 0)
                   info->gs_writes_stream0 = true;
-
-               if (new_mask & (1 << i))
-                  info->output_streams[loc] |= stream << (i * 2);
             }
 
             if (nir_intrinsic_has_src_type(intr))
