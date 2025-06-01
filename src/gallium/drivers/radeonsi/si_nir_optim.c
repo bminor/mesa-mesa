@@ -83,11 +83,22 @@ get_output_as_const_value(nir_shader *shader, float values[4])
                   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
                   if (intrin->intrinsic == nir_intrinsic_store_output) {
                      nir_const_value *c = nir_src_as_const_value(intrin->src[0]);
-                     if (c) {
+                     if (!c)
+                        return false;
+
+                     if (intrin->src[0].ssa->bit_size == 16 &&
+                         !(nir_intrinsic_src_type(intrin) & nir_type_float))
+                        return false;
+
+                     if (intrin->src[0].ssa->bit_size == 16) {
+                        uint16_t half_values[4];
+                        nir_const_value_to_array(half_values, c, 4, u16);
+                        for (unsigned i = 0; i < 4; i++)
+                           values[i] = _mesa_half_to_float(half_values[i]);
+                     } else {
                         nir_const_value_to_array(values, c, 4, f32);
-                        return true;
                      }
-                     return false;
+                     return true;
                   }
                   FALLTHROUGH;
                }
@@ -128,7 +139,11 @@ replace_tex_by_imm(nir_builder *b, nir_tex_instr *tex, void *state)
       return false;
 
    b->cursor = nir_instr_remove(&tex->instr);
-   nir_def *imm = nir_imm_vec4(b, p->value[0], p->value[1], p->value[2], p->value[3]);
+   nir_def *imm;
+   if (tex->def.bit_size == 16)
+      imm = nir_imm_vec4_16(b, p->value[0], p->value[1], p->value[2], p->value[3]);
+   else
+      imm = nir_imm_vec4(b, p->value[0], p->value[1], p->value[2], p->value[3]);
    nir_def_rewrite_uses(&tex->def, imm);
    return true;
 }

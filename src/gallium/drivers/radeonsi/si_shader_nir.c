@@ -237,15 +237,46 @@ static bool si_lower_intrinsics(nir_shader *nir)
                                         NULL);
 }
 
-void si_lower_mediump_io(nir_shader *nir)
+static bool can_lower_mediump_io(gl_shader_stage prev_stage, bool prev_stage_has_xfb,
+                                 gl_shader_stage next_stage, bool config_option)
 {
-   NIR_PASS_V(nir, nir_lower_mediump_io,
-              /* TODO: LLVM fails to compile this test if VS inputs are 16-bit:
-               * dEQP-GLES31.functional.shaders.builtin_functions.integer.bitfieldinsert.uvec3_lowp_geometry
-               */
-              (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0) | nir_var_shader_out,
-              VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32),
-              true);
+   /* This is the filter that determines when mediump IO is lowered.
+    *
+    * NOTE: LLVM fails to compile this test if VS inputs are 16-bit:
+    * dEQP-GLES31.functional.shaders.builtin_functions.integer.bitfieldinsert.uvec3_lowp_geometry
+    */
+   return (prev_stage == MESA_SHADER_VERTEX && next_stage == MESA_SHADER_FRAGMENT &&
+           !prev_stage_has_xfb && config_option) ||
+          prev_stage == MESA_SHADER_FRAGMENT;
+}
+
+static void lower_mediump_io(nir_shader *nir, bool config_option)
+{
+   nir_variable_mode modes = 0;
+
+   if (can_lower_mediump_io(nir->info.stage, nir->xfb_info != NULL, nir->info.next_stage,
+                            config_option))
+      modes |= nir_var_shader_out;
+
+   if (can_lower_mediump_io(nir->info.prev_stage, nir->info.prev_stage_has_xfb, nir->info.stage,
+                            config_option))
+      modes |= nir_var_shader_in;
+
+   if (modes) {
+      NIR_PASS(_, nir, nir_lower_mediump_io, modes,
+               VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32), true);
+   }
+   NIR_PASS(_, nir, nir_clear_mediump_io_flag);
+}
+
+void si_lower_mediump_io_default(nir_shader *nir)
+{
+   lower_mediump_io(nir, false);
+}
+
+void si_lower_mediump_io_option(nir_shader *nir)
+{
+   lower_mediump_io(nir, true);
 }
 
 /**

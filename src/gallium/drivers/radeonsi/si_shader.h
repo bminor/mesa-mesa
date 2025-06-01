@@ -914,7 +914,8 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered);
 
 /* si_shader_nir.c */
-void si_lower_mediump_io(struct nir_shader *nir);
+void si_lower_mediump_io_default(nir_shader *nir);
+void si_lower_mediump_io_option(struct nir_shader *nir);
 
 bool si_alu_to_scalar_packed_math_filter(const struct nir_instr *instr, const void *data);
 void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_array_temps);

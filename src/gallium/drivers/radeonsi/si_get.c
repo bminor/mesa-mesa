@@ -877,7 +877,8 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
       (sscreen->info.family >= CHIP_GFX940 && !sscreen->info.has_graphics) ||
       /* fma32 is too slow for gpu < gfx9, so apply the option only for gpu >= gfx9 */
       (sscreen->info.gfx_level >= GFX9 && sscreen->options.force_use_fma32);
-   bool has_mediump = sscreen->info.gfx_level >= GFX9 && sscreen->options.mediump;
+   /* GFX8 has precision issues with 16-bit PS outputs. */
+   bool has_16bit_io = sscreen->info.gfx_level >= GFX9;
 
    nir_shader_compiler_options *options = sscreen->nir_options;
    ac_nir_set_options(&sscreen->info, !sscreen->use_aco, options);
@@ -904,10 +905,14 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
     * GFX8 has precision issues with this option.
     */
    options->force_f2f16_rtz = sscreen->info.gfx_level >= GFX9;
-   options->io_options |= (!has_mediump ? nir_io_mediump_is_32bit : 0) | nir_io_has_intrinsics |
+   options->io_options |= (!has_16bit_io ? nir_io_mediump_is_32bit : 0) | nir_io_has_intrinsics |
                           (sscreen->use_ngg_culling ?
                               nir_io_compaction_groups_tes_inputs_into_pos_and_var_groups : 0);
-   options->lower_mediump_io = has_mediump ? si_lower_mediump_io : NULL;
+   if (has_16bit_io) {
+      options->lower_mediump_io = sscreen->options.mediump ? si_lower_mediump_io_option
+                                                           : si_lower_mediump_io_default;
+   }
+
    /* HW supports indirect indexing for: | Enabled in driver
     * -------------------------------------------------------
     * TCS inputs                         | Yes
