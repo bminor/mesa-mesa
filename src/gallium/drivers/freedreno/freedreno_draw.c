@@ -342,7 +342,7 @@ fd_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       return;
    }
 
-   struct fd_batch *batch = fd_context_batch(ctx);
+   struct fd_batch *batch = fd_context_batch_draw(ctx);
 
    batch_draw_tracking(batch, info, indirect);
 
@@ -352,7 +352,7 @@ fd_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
        * since we are dealing with a fresh batch:
        */
       fd_batch_reference(&batch, NULL);
-      batch = fd_context_batch(ctx);
+      batch = fd_context_batch_draw(ctx);
       batch_draw_tracking(batch, info, indirect);
       assert(ctx->batch == batch);
    }
@@ -471,7 +471,7 @@ fd_clear(struct pipe_context *pctx, unsigned buffers,
    if (!fd_render_condition_check(pctx))
       return;
 
-   struct fd_batch *batch = fd_context_batch(ctx);
+   struct fd_batch *batch = fd_context_batch_draw(ctx);
 
    batch_clear_tracking(batch, buffers);
 
@@ -481,7 +481,7 @@ fd_clear(struct pipe_context *pctx, unsigned buffers,
        * since we are dealing with a fresh batch:
        */
       fd_batch_reference(&batch, NULL);
-      batch = fd_context_batch(ctx);
+      batch = fd_context_batch_draw(ctx);
       batch_clear_tracking(batch, buffers);
       assert(ctx->batch == batch);
    }
