@@ -165,14 +165,15 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
             /* Output stores. */
             unsigned gs_streams = (uint32_t)nir_intrinsic_io_semantics(intr).gs_streams <<
                                   (nir_intrinsic_component(intr) * 2);
+            bool writes_stream0 = false;
 
             /* Iterate over all components. */
             u_foreach_bit(i, mask) {
                unsigned stream = (gs_streams >> (i * 2)) & 0x3;
-
-               if (stream == 0)
-                  info->gs_writes_stream0 = true;
+               writes_stream0 |= stream == 0;
             }
+
+            info->gs_writes_stream0 |= writes_stream0;
 
             if (nir_intrinsic_has_src_type(intr))
                info->output_type[loc] = nir_intrinsic_src_type(intr);
@@ -204,7 +205,8 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                   if (slot_semantic != VARYING_SLOT_POS &&
                       slot_semantic != VARYING_SLOT_PSIZ &&
                       slot_semantic != VARYING_SLOT_CLIP_VERTEX &&
-                      slot_semantic != VARYING_SLOT_LAYER)
+                      slot_semantic != VARYING_SLOT_LAYER &&
+                      writes_stream0)
                      info->outputs_written_before_ps |= bit;
 
                   /* LAYER and VIEWPORT have no effect if they don't feed the rasterizer. */
