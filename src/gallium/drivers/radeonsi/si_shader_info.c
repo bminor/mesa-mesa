@@ -139,8 +139,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       }
    } else {
       /* Outputs. */
-      assert(driver_location + num_slots <= ARRAY_SIZE(info->output_usagemask));
-
       for (unsigned i = 0; i < num_slots; i++) {
          unsigned loc = driver_location + i;
          unsigned slot_semantic = semantic + i;
@@ -174,15 +172,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
             }
 
             info->gs_writes_stream0 |= writes_stream0;
-
-            if (nir_intrinsic_has_src_type(intr))
-               info->output_type[loc] = nir_intrinsic_src_type(intr);
-            else if (nir_intrinsic_has_dest_type(intr))
-               info->output_type[loc] = nir_intrinsic_dest_type(intr);
-            else
-               info->output_type[loc] = nir_type_float32;
-
-            info->output_usagemask[loc] |= mask;
             info->num_outputs = MAX2(info->num_outputs, loc + 1);
 
             if (nir->info.stage == MESA_SHADER_VERTEX ||
@@ -578,8 +567,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
        * and si_emit_spi_map uses this unconditionally when such a pixel shader is used.
        */
       info->output_semantic[info->num_outputs] = VARYING_SLOT_PRIMITIVE_ID;
-      info->output_type[info->num_outputs] = nir_type_uint32;
-      info->output_usagemask[info->num_outputs] = 0x1;
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {

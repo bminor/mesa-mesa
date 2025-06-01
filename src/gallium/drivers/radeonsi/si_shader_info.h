@@ -91,8 +91,6 @@ struct si_shader_info {
    uint8_t num_outputs;
    struct si_vs_tcs_input_info input[PIPE_MAX_SHADER_INPUTS];
    uint8_t output_semantic[PIPE_MAX_SHADER_OUTPUTS];
-   uint8_t output_usagemask[PIPE_MAX_SHADER_OUTPUTS];
-   uint8_t output_type[PIPE_MAX_SHADER_OUTPUTS]; /* enum nir_alu_type */
 
    uint8_t num_vs_inputs;
    uint8_t num_vbos_in_user_sgprs;
