@@ -1296,18 +1296,16 @@ preprocess_shader(const struct gl_constants *consts,
    }
 
    /* Set the next shader stage hint for VS and TES. */
-   if (!nir->info.separate_shader &&
-       (nir->info.stage == MESA_SHADER_VERTEX ||
-        nir->info.stage == MESA_SHADER_TESS_EVAL)) {
+   if (!nir->info.separate_shader) {
+      unsigned prev_stages = shader_program->data->linked_stages &
+                             BITFIELD_MASK(prog->info.stage);
+      unsigned next_stages = shader_program->data->linked_stages &
+                             ~BITFIELD_MASK(prog->info.stage + 1);
 
-      unsigned prev_stages = (1 << (prog->info.stage + 1)) - 1;
-      unsigned stages_mask =
-         ~prev_stages & shader_program->data->linked_stages;
-
-      nir->info.next_stage = stages_mask ?
-         (gl_shader_stage) u_bit_scan(&stages_mask) : MESA_SHADER_FRAGMENT;
-   } else {
-      nir->info.next_stage = MESA_SHADER_FRAGMENT;
+      if (prev_stages)
+         nir->info.prev_stage = util_last_bit(prev_stages) - 1;
+      if (next_stages)
+         nir->info.next_stage = u_bit_scan(&next_stages);
    }
 
    prog->skip_pointsize_xfb = !(nir->info.outputs_written & VARYING_BIT_PSIZ);

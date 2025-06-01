@@ -1973,7 +1973,7 @@ agx_create_shader_state(struct pipe_context *pctx,
       };
       agx_get_shader_variant(agx_screen(pctx->screen), pctx, so, &key);
 
-      if (!next_stage) {
+      if (next_stage == MESA_SHADER_NONE) {
          key.vs.hw = true;
          agx_get_shader_variant(agx_screen(pctx->screen), pctx, so, &key);
       }
