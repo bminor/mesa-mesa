@@ -2623,6 +2623,8 @@ print_shader_info(const struct shader_info *info, FILE *fp)
               info->workgroup_size_variable ? " (variable)" : "");
    }
 
+   if (info->prev_stage != MESA_SHADER_NONE)
+      fprintf(fp, "prev_stage: %s\n", gl_shader_stage_name(info->prev_stage));
    if (info->next_stage != MESA_SHADER_NONE)
       fprintf(fp, "next_stage: %s\n", gl_shader_stage_name(info->next_stage));
 

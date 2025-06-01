@@ -52,9 +52,10 @@ typedef struct shader_info {
    /** The shader stage, such as MESA_SHADER_VERTEX. */
    gl_shader_stage stage:8;
 
-   /** The shader stage in a non SSO linked program that follows this stage,
-     * such as MESA_SHADER_FRAGMENT.
-     */
+   /* If the shader is linked, this is the previous shader, else MESA_SHADER_NONE. */
+   gl_shader_stage prev_stage:8;
+
+   /* If the shader is linked, this is the next shader, else MESA_SHADER_NONE. */
    gl_shader_stage next_stage:8;
 
    /* Number of textures used by this shader */
