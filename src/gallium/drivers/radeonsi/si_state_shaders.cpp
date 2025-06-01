@@ -1411,6 +1411,8 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
    unsigned gs_num_invocations = gs_sel->stage == MESA_SHADER_GEOMETRY ?
                                     CLAMP(gs_info->base.gs.invocations, 1, 32) : 0;
    unsigned input_prim = si_get_input_prim(gs_sel, &shader->key, false);
+   unsigned gs_input_verts_per_prim = gs_sel->stage == MESA_SHADER_GEOMETRY ?
+                                         mesa_vertices_per_prim(gs_sel->info.base.gs.input_primitive) : 0;
 
    struct si_pm4_state *pm4 = si_get_shader_pm4_state(shader, NULL);
    if (!pm4)
@@ -1451,10 +1453,10 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
    }
 
    /* Primitives with adjancency can only occur without tessellation. */
-   assert(gs_info->gs_input_verts_per_prim <= 3 || es_stage == MESA_SHADER_VERTEX);
+   assert(gs_input_verts_per_prim <= 3 || es_stage == MESA_SHADER_VERTEX);
 
    if (sscreen->info.gfx_level >= GFX12) {
-      if (gs_info->gs_input_verts_per_prim >= 4)
+      if (gs_input_verts_per_prim >= 4)
          gs_vgpr_comp_cnt = 2; /* VGPR2 contains offsets 3-5 */
       else if ((gs_stage == MESA_SHADER_GEOMETRY && gs_info->uses_primid) ||
                (gs_stage == MESA_SHADER_VERTEX && shader->key.ge.mono.u.vs_export_prim_id))
@@ -4139,8 +4141,9 @@ bool si_update_gs_ring_buffers(struct si_context *sctx)
    }
 
    /* These are recommended sizes, not minimum sizes. */
+   unsigned gs_input_verts_per_prim = mesa_vertices_per_prim(gs->info.base.gs.input_primitive);
    unsigned esgs_ring_size =
-      max_gs_waves * 2 * wave_size * es->info.esgs_vertex_stride * gs->info.gs_input_verts_per_prim;
+      max_gs_waves * 2 * wave_size * es->info.esgs_vertex_stride * gs_input_verts_per_prim;
    unsigned gsvs_ring_size = max_gs_waves * 2 * wave_size * gsvs_emit_size;
 
    min_esgs_ring_size = align(min_esgs_ring_size, alignment);

@@ -110,7 +110,6 @@ struct si_shader_info {
    bool gs_writes_stream0;
 
    uint16_t esgs_vertex_stride;
-   uint8_t gs_input_verts_per_prim;
 
    /* Set 0xf or 0x0 (4 bits) per each written output.
     * ANDed with spi_shader_col_format.

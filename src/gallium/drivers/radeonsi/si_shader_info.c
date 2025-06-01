@@ -636,11 +636,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                                   nir->info.inputs_read_indirectly);
    }
 
-   if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      info->gs_input_verts_per_prim =
-         mesa_vertices_per_prim(nir->info.gs.input_primitive);
-   }
-
    /* clipdist_mask cannot be determined here from nir->info.clip_distance_array_size because
     * nir_opt_clip_cull_const can reduce their number. It has to be determined by scanning
     * the shader instructions.
