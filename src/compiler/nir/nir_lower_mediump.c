@@ -284,6 +284,36 @@ nir_lower_mediump_io(nir_shader *nir, nir_variable_mode modes,
    return nir_progress(changed, impl, nir_metadata_control_flow);
 }
 
+static bool
+clear_mediump_io_flag(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   /* The mediump flag must be preserved for XFB, but other IO
+    * doesn't need it.
+    */
+   if (nir_intrinsic_has_io_semantics(intr) &&
+       !nir_instr_xfb_write_mask(intr)) {
+      nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+
+      if (sem.medium_precision) {
+         sem.medium_precision = 0;
+         nir_intrinsic_set_io_semantics(intr, sem);
+         return true;
+      }
+   }
+   return false;
+}
+
+/* Set nir_io_semantics.medium_precision to 0 if it has no effect.
+ *
+ * This is recommended after nir_lower_mediump_io and before
+ * nir_opt_varyings / nir_opt_vectorize_io.
+ */
+bool
+nir_clear_mediump_io_flag(nir_shader *nir)
+{
+   return nir_shader_intrinsics_pass(nir, clear_mediump_io_flag, nir_metadata_all, NULL);
+}
+
 /**
  * Set the mediump precision bit for those shader inputs and outputs that are
  * set in the "modes" mask. Non-generic varyings (that GLES3 doesn't have)
