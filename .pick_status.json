@@ -1604,7 +1604,7 @@
         "description": "nir_gather_output_deps: Fix incorrect enum in switch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
