@@ -353,35 +353,38 @@ void si_llvm_ps_build_end(struct si_shader_context *ctx)
    struct si_shader_info *info = &shader->selector->info;
    LLVMBuilderRef builder = ctx->ac.builder;
    unsigned i, j, vgpr;
-   LLVMValueRef *addrs = ctx->abi.outputs;
 
    LLVMValueRef color[8][4] = {};
+   uint8_t color_output_mask = 0, is_16bit_mask = 0;
    LLVMValueRef depth = NULL, stencil = NULL, samplemask = NULL;
    LLVMValueRef ret;
 
    /* Read the output values. */
    for (i = 0; i < info->num_outputs; i++) {
       unsigned semantic = info->output_semantic[i];
-      LLVMTypeRef type = ctx->abi.is_16bit[4 * i] ? ctx->ac.f16 : ctx->ac.f32;
 
       switch (semantic) {
       case FRAG_RESULT_DEPTH:
-         depth = LLVMBuildLoad2(builder, type, addrs[4 * i + 0], "");
+         depth = LLVMBuildLoad2(builder, ctx->ac.f32, ctx->abi.outputs[4 * i + 0], "");
          break;
       case FRAG_RESULT_STENCIL:
-         stencil = LLVMBuildLoad2(builder, type, addrs[4 * i + 0], "");
+         stencil = LLVMBuildLoad2(builder, ctx->ac.f32, ctx->abi.outputs[4 * i + 0], "");
          break;
       case FRAG_RESULT_SAMPLE_MASK:
-         samplemask = LLVMBuildLoad2(builder, type, addrs[4 * i + 0], "");
+         samplemask = LLVMBuildLoad2(builder, ctx->ac.f32, ctx->abi.outputs[4 * i + 0], "");
          break;
       default:
          if (semantic >= FRAG_RESULT_DATA0 && semantic <= FRAG_RESULT_DATA7) {
             unsigned index = semantic - FRAG_RESULT_DATA0;
 
             for (j = 0; j < 4; j++) {
-               LLVMValueRef ptr = addrs[4 * i + j];
-               type = ctx->abi.is_16bit[4 * i + j] ? ctx->ac.f16 : ctx->ac.f32;
-               LLVMValueRef result = LLVMBuildLoad2(builder, type, ptr, "");
+               if (!ctx->abi.outputs[4 * i + j])
+                  continue;
+
+               color_output_mask |= BITFIELD_BIT(index);
+               is_16bit_mask |= ctx->abi.is_16bit[4 * i + j] ? BITFIELD_BIT(index) : 0;
+               LLVMTypeRef type = ctx->abi.is_16bit[4 * i + j] ? ctx->ac.f16 : ctx->ac.f32;
+               LLVMValueRef result = LLVMBuildLoad2(builder, type, ctx->abi.outputs[4 * i + j], "");
                color[index][j] = result;
             }
          } else {
@@ -401,20 +404,28 @@ void si_llvm_ps_build_end(struct si_shader_context *ctx)
 
    /* Set VGPRs */
    vgpr = SI_SGPR_ALPHA_REF + 1;
-   for (i = 0; i < ARRAY_SIZE(color); i++) {
-      if (!color[i][0])
-         continue;
 
-      if (LLVMTypeOf(color[i][0]) == ctx->ac.f16) {
+   u_foreach_bit(i, color_output_mask) {
+      if (is_16bit_mask & BITFIELD_BIT(i)) {
          for (j = 0; j < 2; j++) {
-            LLVMValueRef tmp = ac_build_gather_values(&ctx->ac, &color[i][j * 2], 2);
-            tmp = LLVMBuildBitCast(builder, tmp, ctx->ac.f32, "");
-            ret = LLVMBuildInsertValue(builder, ret, tmp, vgpr++, "");
+            if (color[i][j * 2] || color[i][j * 2 + 1]) {
+               for (unsigned k = 0; k < 2; k++) {
+                  if (!color[i][j * 2 + k])
+                     color[i][j * 2 + k] = LLVMGetUndef(ctx->ac.f16);
+               }
+               LLVMValueRef tmp = ac_build_gather_values(&ctx->ac, &color[i][j * 2], 2);
+               tmp = LLVMBuildBitCast(builder, tmp, ctx->ac.f32, "");
+               ret = LLVMBuildInsertValue(builder, ret, tmp, vgpr, "");
+            }
+            vgpr++;
          }
          vgpr += 2;
       } else {
-         for (j = 0; j < 4; j++)
-            ret = LLVMBuildInsertValue(builder, ret, color[i][j], vgpr++, "");
+         for (j = 0; j < 4; j++) {
+            if (color[i][j])
+               ret = LLVMBuildInsertValue(builder, ret, color[i][j], vgpr, "");
+            vgpr++;
+         }
       }
    }
    if (depth)

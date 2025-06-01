@@ -183,15 +183,6 @@ radv_get_sampler_desc(struct ac_shader_abi *abi, LLVMValueRef index, enum ac_des
    return radv_load_rsrc(ctx, index, v4 ? ctx->ac.v4i32 : ctx->ac.v8i32);
 }
 
-static LLVMValueRef
-radv_load_output(struct radv_shader_context *ctx, unsigned index, unsigned chan)
-{
-   int idx = ac_llvm_reg_index_soa(index, chan);
-   LLVMValueRef output = ctx->abi.outputs[idx];
-   LLVMTypeRef type = ctx->abi.is_16bit[idx] ? ctx->ac.f16 : ctx->ac.f32;
-   return LLVMBuildLoad2(ctx->ac.builder, type, output, "");
-}
-
 static void
 ac_llvm_finalize_module(struct radv_shader_context *ctx, struct ac_midend_optimizer *meo)
 {

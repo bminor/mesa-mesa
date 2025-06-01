@@ -684,28 +684,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
                                 info->options & SI_PROFILE_CLAMP_DIV_BY_ZERO;
    ctx->abi.disable_aniso_single_level = true;
 
-   bool ls_need_output =
-      ctx->stage == MESA_SHADER_VERTEX && shader->key.ge.as_ls &&
-      shader->key.ge.opt.same_patch_vertices;
-
-   bool ps_need_output = ctx->stage == MESA_SHADER_FRAGMENT;
-
-   if (ls_need_output || ps_need_output) {
-      for (unsigned i = 0; i < info->num_outputs; i++) {
-         LLVMTypeRef type = ctx->ac.f32;
-
-         /* Only FS uses unpacked f16. Other stages pack 16-bit outputs into low and high bits of f32. */
-         if (nir->info.stage == MESA_SHADER_FRAGMENT &&
-             nir_alu_type_get_type_size(ctx->shader->selector->info.output_type[i]) == 16)
-            type = ctx->ac.f16;
-
-         for (unsigned j = 0; j < 4; j++) {
-            ctx->abi.outputs[i * 4 + j] = ac_build_alloca_undef(&ctx->ac, type, "");
-            ctx->abi.is_16bit[i * 4 + j] = type == ctx->ac.f16;
-         }
-      }
-   }
-
    if (!ac_nir_translate(&ctx->ac, &ctx->abi, &ctx->args->ac, nir))
       return false;
 

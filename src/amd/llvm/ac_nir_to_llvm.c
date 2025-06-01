@@ -2047,10 +2047,18 @@ static void visit_store_output(struct ac_nir_context *ctx, nir_intrinsic_instr *
          continue;
 
       LLVMValueRef value = ac_llvm_extract_elem(&ctx->ac, src, chan - component);
-      LLVMValueRef output_addr = ctx->abi->outputs[base * 4 + chan];
+      LLVMTypeRef val_type = LLVMTypeOf(value);
+      assert(val_type == ctx->ac.f32 || val_type == ctx->ac.f16);
+      LLVMTypeRef output_type = ctx->stage == MESA_SHADER_FRAGMENT ? val_type : ctx->ac.f32;
+      LLVMValueRef *output_addr = &ctx->abi->outputs[base * 4 + chan];
 
-      if (!ctx->abi->is_16bit[base * 4 + chan] &&
-          LLVMTypeOf(value) == ctx->ac.f16) {
+      /* Allocate the output variable on demand. */
+      if (!*output_addr) {
+         *output_addr = ac_build_alloca_undef(&ctx->ac, output_type, "");
+         ctx->abi->is_16bit[base * 4 + chan] = output_type == ctx->ac.f16;
+      }
+
+      if (val_type == ctx->ac.f16 && output_type == ctx->ac.f32) {
          LLVMValueRef output, index;
 
          /* Insert the 16-bit value into the low or high bits of the 32-bit output
@@ -2058,11 +2066,11 @@ static void visit_store_output(struct ac_nir_context *ctx, nir_intrinsic_instr *
           */
          index = LLVMConstInt(ctx->ac.i32, nir_intrinsic_io_semantics(instr).high_16bits, 0);
 
-         output = LLVMBuildLoad2(ctx->ac.builder, ctx->ac.v2f16, output_addr, "");
+         output = LLVMBuildLoad2(ctx->ac.builder, ctx->ac.v2f16, *output_addr, "");
          output = LLVMBuildInsertElement(ctx->ac.builder, output, value, index, "");
          value = LLVMBuildBitCast(ctx->ac.builder, output, ctx->ac.f32, "");
       }
-      LLVMBuildStore(ctx->ac.builder, value, output_addr);
+      LLVMBuildStore(ctx->ac.builder, value, *output_addr);
    }
 }
 

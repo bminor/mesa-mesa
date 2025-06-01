@@ -74,7 +74,6 @@ void si_llvm_ls_build_end(struct si_shader_context *ctx)
       assert(shader->is_monolithic);
 
       struct si_shader_info *info = &shader->selector->info;
-      LLVMValueRef *addrs = ctx->abi.outputs;
 
       for (unsigned i = 0; i < info->num_outputs; i++) {
          unsigned semantic = info->output_semantic[i];
@@ -84,11 +83,11 @@ void si_llvm_ls_build_end(struct si_shader_context *ctx)
             continue;
 
          for (unsigned chan = 0; chan < 4; chan++) {
-            if (!(info->output_usagemask[i] & (1 << chan)))
+            if (!ctx->abi.outputs[4 * i + chan])
                continue;
 
-            LLVMValueRef value = LLVMBuildLoad2(ctx->ac.builder, ctx->ac.f32, addrs[4 * i + chan], "");
-
+            LLVMValueRef value = LLVMBuildLoad2(ctx->ac.builder, ctx->ac.f32,
+                                                ctx->abi.outputs[4 * i + chan], "");
             ret = LLVMBuildInsertValue(ctx->ac.builder, ret, value, vgpr + param * 4 + chan, "");
          }
       }
