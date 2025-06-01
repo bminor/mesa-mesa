@@ -3483,42 +3483,6 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
       }
 
       *si_get_main_shader_part(sel, &shader->key, shader->wave_size) = shader;
-
-      /* Unset "outputs_written" flags for outputs converted to
-       * DEFAULT_VAL, so that later inter-shader optimizations don't
-       * try to eliminate outputs that don't exist in the final
-       * shader.
-       *
-       * This is only done if non-monolithic shaders are enabled.
-       */
-      if ((sel->stage == MESA_SHADER_VERTEX ||
-           sel->stage == MESA_SHADER_TESS_EVAL ||
-           sel->stage == MESA_SHADER_GEOMETRY) &&
-          !shader->key.ge.as_ls && !shader->key.ge.as_es) {
-         unsigned i;
-
-         for (i = 0; i < sel->info.num_outputs; i++) {
-            unsigned semantic = sel->info.output_semantic[i];
-            unsigned ps_input_cntl = shader->info.vs_output_ps_input_cntl[semantic];
-
-            /* OFFSET=0x20 means DEFAULT_VAL, which means VS doesn't export it. */
-            if (G_028644_OFFSET(ps_input_cntl) != 0x20)
-               continue;
-
-            unsigned id;
-
-            /* Remove the output from the mask. */
-            if ((semantic <= VARYING_SLOT_VAR31 || semantic >= VARYING_SLOT_VAR0_16BIT) &&
-                semantic != VARYING_SLOT_POS &&
-                semantic != VARYING_SLOT_PSIZ &&
-                semantic != VARYING_SLOT_CLIP_VERTEX &&
-                semantic != VARYING_SLOT_EDGE &&
-                semantic != VARYING_SLOT_LAYER) {
-               id = si_shader_io_get_unique_index(semantic);
-               sel->info.outputs_written_before_ps &= ~(1ull << id);
-            }
-         }
-      }
    }
 
    /* Free NIR. We only keep serialized NIR after this point. */
