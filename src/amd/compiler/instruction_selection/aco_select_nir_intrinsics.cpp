@@ -855,10 +855,11 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
    }
 
    if (bld.program->gfx_level == GFX6) {
-      /* GFX6 (MUBUF): (SGPR address, SGPR offset) or (VGPR address, SGPR offset) */
+      /* GFX6 (MUBUF): (SGPR address, SGPR offset) or (SGPR address, VGPR offset) */
+      /* GFX6 (MUBUF-addr64): (VGPR address, SGPR offset) */
       /* Disallow SGPR address with both a const_offset and offset because of possible overflow. */
-      if (offset.id() && (offset.type() != RegType::sgpr ||
-                          (address.type() == RegType::sgpr && const_offset > 0))) {
+      if (offset.id() &&
+          (address.type() == RegType::vgpr ? offset.type() != RegType::sgpr : const_offset > 0)) {
          address = add64_32(bld, address, Operand(offset));
          offset = Temp();
       }
@@ -937,8 +938,14 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
    if (use_mubuf) {
       aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3, 1)};
       mubuf->operands[0] = Operand(get_gfx6_global_rsrc(bld, addr));
-      mubuf->operands[1] = addr.type() == RegType::vgpr ? Operand(addr) : Operand(v1);
-      mubuf->operands[2] = Operand(offset);
+      if (addr.type() == RegType::vgpr)
+         mubuf->operands[1] = Operand(addr);
+      else if (offset.type() == RegType::vgpr)
+         mubuf->operands[1] = Operand(offset);
+      else
+         mubuf->operands[1] = Operand(v1);
+      mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
+      mubuf->mubuf().offen = offset.type() == RegType::vgpr;
       mubuf->mubuf().cache = info.cache;
       mubuf->mubuf().offset = const_offset;
       mubuf->mubuf().addr64 = addr.type() == RegType::vgpr;
@@ -2564,10 +2571,16 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
 
          aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, 0)};
          mubuf->operands[0] = Operand(rsrc);
-         mubuf->operands[1] =
-            write_address.type() == RegType::vgpr ? Operand(write_address) : Operand(v1);
-         mubuf->operands[2] = Operand(write_offset);
+         if (write_address.type() == RegType::vgpr)
+            mubuf->operands[1] = Operand(write_address);
+         else if (write_offset.type() == RegType::vgpr)
+            mubuf->operands[1] = Operand(write_offset);
+         else
+            mubuf->operands[1] = Operand(v1);
+         mubuf->operands[2] =
+            write_offset.type() == RegType::sgpr ? Operand(write_offset) : Operand::c32(0);
          mubuf->operands[3] = Operand(write_datas[i]);
+         mubuf->mubuf().offen = write_offset.type() == RegType::vgpr;
          mubuf->mubuf().cache = get_cache_flags(ctx, access);
          mubuf->mubuf().offset = write_const_offset;
          mubuf->mubuf().addr64 = write_address.type() == RegType::vgpr;
@@ -2699,13 +2712,19 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, return_previous ? 1 : 0)};
       mubuf->operands[0] = Operand(rsrc);
-      mubuf->operands[1] = addr.type() == RegType::vgpr ? Operand(addr) : Operand(v1);
-      mubuf->operands[2] = Operand(offset);
+      if (addr.type() == RegType::vgpr)
+         mubuf->operands[1] = Operand(addr);
+      else if (offset.type() == RegType::vgpr)
+         mubuf->operands[1] = Operand(offset);
+      else
+         mubuf->operands[1] = Operand(v1);
+      mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       mubuf->operands[3] = Operand(data);
       Definition def =
          return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
       if (return_previous)
          mubuf->definitions[0] = def;
+      mubuf->mubuf().offen = offset.type() == RegType::vgpr;
       mubuf->mubuf().cache = get_atomic_cache_flags(ctx, return_previous);
       mubuf->mubuf().offset = const_offset;
       mubuf->mubuf().addr64 = addr.type() == RegType::vgpr;
