@@ -309,10 +309,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       }
    }
 
-   //
-   // TODO: Just to test the backend, needs proper plumbing to CodecAPI
-   //
-#if 0   // TODO: Enable me
    {
       //
       // Create resources for output GPU frame stats
@@ -329,9 +325,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       templ.depth0 = 1;
       templ.array_size = 1;
 
-      // TODO: Only allocate these if CodecAPi requested these stats, since there's a perf impact to request them in DX12 driver
-
-      if (m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported)
+      if( m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported && m_uiVideoOutputQPMapBlockSize > 0 )
       {
          uint32_t block_size = (1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size);
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.pipe_pixel_format;
@@ -355,7 +349,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             done);
       }
 
-      if (m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported)
+      if( m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported && m_uiVideoOutputBitsUsedMapBlockSize > 0 )
       {
          uint32_t block_size = (1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size);
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.pipe_pixel_format;
@@ -367,7 +361,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             done);
       }
 
-      if (m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel)
+      if( m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel && m_bVideoEnableFramePsnrYuv )
       {
          struct pipe_resource buffer_templ = {};
          buffer_templ.width0 = 3 * sizeof(float); // Up to 3 float components Y, U, V
@@ -388,8 +382,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             done);
       }
    }
-
-#endif
 
    memset( &pDX12EncodeContext->encoderPicInfo, 0, sizeof( pDX12EncodeContext->encoderPicInfo ) );
    pDX12EncodeContext->encoderPicInfo.base.profile = m_outputPipeProfile;

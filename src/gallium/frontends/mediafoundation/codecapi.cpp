@@ -246,6 +246,22 @@ StringFromCodecAPI( const GUID *Api )
    {
       return "CODECAPI_AVEncSliceGenerationMode";
    }
+   else if( *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv )
+   {
+      return "CODECAPI_AVEncVideoEnableFramePsnrYuv";
+   }
+   else if( *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization )
+   {
+      return "CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization";
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
+   {
+      return "CODECAPI_AVEncVideoOutputQPMapBlockSize";
+   }
+   else if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
+   {
+      return "CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize";
+   }
    return "Unknown CodecAPI";
 }
 
@@ -296,7 +312,9 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
        *Api == CODECAPI_AVEncVideoMaxNumRefFrame || *Api == CODECAPI_AVEncVideoMeanAbsoluteDifference ||
        *Api == CODECAPI_AVEncVideoMaxQP || *Api == CODECAPI_AVEncVideoGradualIntraRefresh || *Api == CODECAPI_AVScenarioInfo ||
        *Api == CODECAPI_AVEncVideoROIEnabled || *Api == CODECAPI_AVEncVideoLTRBufferControl ||
-       *Api == CODECAPI_AVEncVideoMarkLTRFrame || *Api == CODECAPI_AVEncVideoUseLTRFrame )
+       *Api == CODECAPI_AVEncVideoMarkLTRFrame || *Api == CODECAPI_AVEncVideoUseLTRFrame ||
+       *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv || *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization ||
+       *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize || *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
    {
       hr = S_OK;
       return hr;
