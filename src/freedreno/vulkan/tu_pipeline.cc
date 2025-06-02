@@ -2289,6 +2289,8 @@ tu_emit_program_state(struct tu_cs *sub_cs,
    prog->ds_state = draw_states[MESA_SHADER_TESS_EVAL];
    prog->gs_state = draw_states[MESA_SHADER_GEOMETRY];
    prog->gs_binning_state =
+      (safe_variants & (1u << MESA_SHADER_GEOMETRY)) ?
+      shaders[MESA_SHADER_GEOMETRY]->safe_const_binning_state :
       shaders[MESA_SHADER_GEOMETRY]->binning_state;
    prog->fs_state = draw_states[MESA_SHADER_FRAGMENT];
 
