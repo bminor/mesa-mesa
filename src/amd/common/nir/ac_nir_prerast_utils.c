@@ -715,12 +715,15 @@ ac_nir_emit_legacy_streamout(nir_builder *b, unsigned stream, nir_xfb_info *info
 
          nir_def *data = output_data[out_comp];
 
-         if (data->bit_size < 32) {
-            /* Convert the 16-bit output to 32 bits. */
-            assert(output_type);
+         if (output->data_is_16bit) {
+            data = output->high_16bits ? nir_unpack_32_2x16_split_y(b, data)
+                                       : nir_unpack_32_2x16_split_x(b, data);
 
-            nir_alu_type base_type = nir_alu_type_get_base_type(output_type[out_comp]);
-            data = nir_convert_to_bit_size(b, data, base_type, 32);
+            /* Convert mediump 16-bit outputs to 32 bits for mediump.
+             * Vulkan does not allow 8/16bit varyings for streamout.
+             */
+            if (output->mediump)
+               data = nir_convert_to_bit_size(b, data, output->mediump_upconvert_type, 32);
          }
 
          assert(out_comp >= output->component_offset);
@@ -1499,29 +1502,15 @@ ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
          nir_def *data = ac_nir_load_shared_xfb(b, vtx_lds_addr, pr_out, out->location,
                                                 out->component_offset + comp);
 
-         /* Convert 16-bit outputs to 32-bit.
-          *
-          * OpenGL ES will put 16-bit medium precision varyings to VARYING_SLOT_VAR0_16BIT.
-          * We need to convert them to 32-bit for streamout.
-          *
-          * Vulkan does not allow 8/16bit varyings for streamout.
-          */
-         if (out->location >= VARYING_SLOT_VAR0_16BIT) {
-            unsigned index = out->location - VARYING_SLOT_VAR0_16BIT;
-            unsigned c = out->component_offset + comp;
-            nir_def *v;
-            nir_alu_type t;
+         if (out->data_is_16bit) {
+            data = out->high_16bits ? nir_unpack_32_2x16_split_y(b, data)
+                                    : nir_unpack_32_2x16_split_x(b, data);
 
-            if (out->high_16bits) {
-               v = nir_unpack_32_2x16_split_y(b, data);
-               t = pr_out->types_16bit_hi[index][c];
-            } else {
-               v = nir_unpack_32_2x16_split_x(b, data);
-               t = pr_out->types_16bit_lo[index][c];
-            }
-
-            t = nir_alu_type_get_base_type(t);
-            data = nir_convert_to_bit_size(b, v, t, 32);
+            /* Convert mediump 16-bit outputs to 32 bits for mediump.
+             * Vulkan does not allow 8/16bit varyings for streamout.
+             */
+            if (out->mediump)
+               data = nir_convert_to_bit_size(b, data, out->mediump_upconvert_type, 32);
          }
 
          const unsigned store_comp_offset = out->offset + comp * 4;
