@@ -316,6 +316,36 @@ radv_enc_code_se(struct radv_cmd_buffer *cmd_buffer, int value)
    radv_enc_code_ue(cmd_buffer, v);
 }
 
+static uint32_t
+radv_enc_h264_pic_type(enum StdVideoH264PictureType type)
+{
+   switch (type) {
+   case STD_VIDEO_H264_PICTURE_TYPE_P:
+      return RENCODE_PICTURE_TYPE_P;
+   case STD_VIDEO_H264_PICTURE_TYPE_B:
+      return RENCODE_PICTURE_TYPE_B;
+   case STD_VIDEO_H264_PICTURE_TYPE_I:
+   case STD_VIDEO_H264_PICTURE_TYPE_IDR:
+   default:
+      return RENCODE_PICTURE_TYPE_I;
+   }
+}
+
+static uint32_t
+radv_enc_h265_pic_type(enum StdVideoH265PictureType type)
+{
+   switch (type) {
+   case STD_VIDEO_H265_PICTURE_TYPE_P:
+      return RENCODE_PICTURE_TYPE_P;
+   case STD_VIDEO_H265_PICTURE_TYPE_B:
+      return RENCODE_PICTURE_TYPE_B;
+   case STD_VIDEO_H265_PICTURE_TYPE_I:
+   case STD_VIDEO_H265_PICTURE_TYPE_IDR:
+   default:
+      return RENCODE_PICTURE_TYPE_I;
+   }
+}
+
 #define RADEON_ENC_CS(value) (cmd_buffer->cs->buf[cmd_buffer->cs->cdw++] = (value))
 
 #define RADEON_ENC_BEGIN(cmd)                                                                                          \
@@ -1402,36 +1432,24 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
    if (h264_pic) {
       switch (h264_pic->primary_pic_type) {
       case STD_VIDEO_H264_PICTURE_TYPE_P:
-         slot_idx = enc_info->pReferenceSlots[0].slotIndex;
-         pic_type = RENCODE_PICTURE_TYPE_P;
-         break;
       case STD_VIDEO_H264_PICTURE_TYPE_B:
          slot_idx = enc_info->pReferenceSlots[0].slotIndex;
-         pic_type = RENCODE_PICTURE_TYPE_B;
          break;
-      case STD_VIDEO_H264_PICTURE_TYPE_I:
-      case STD_VIDEO_H264_PICTURE_TYPE_IDR:
       default:
-         pic_type = RENCODE_PICTURE_TYPE_I;
          break;
       }
+      pic_type = radv_enc_h264_pic_type(h264_pic->primary_pic_type);
       radv_enc_layer_select(cmd_buffer, MIN2(h264_pic->temporal_id, max_layers));
    } else if (h265_pic) {
       switch (h265_pic->pic_type) {
       case STD_VIDEO_H265_PICTURE_TYPE_P:
-         slot_idx = enc_info->pReferenceSlots[0].slotIndex;
-         pic_type = RENCODE_PICTURE_TYPE_P;
-         break;
       case STD_VIDEO_H265_PICTURE_TYPE_B:
          slot_idx = enc_info->pReferenceSlots[0].slotIndex;
-         pic_type = RENCODE_PICTURE_TYPE_B;
          break;
-      case STD_VIDEO_H265_PICTURE_TYPE_I:
-      case STD_VIDEO_H265_PICTURE_TYPE_IDR:
       default:
-         pic_type = RENCODE_PICTURE_TYPE_I;
          break;
       }
+      pic_type = radv_enc_h265_pic_type(h265_pic->pic_type);
       radv_enc_layer_select(cmd_buffer, MIN2(h265_pic->TemporalId, max_layers));
    } else {
       assert(0);
