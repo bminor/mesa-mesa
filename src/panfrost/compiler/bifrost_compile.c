@@ -2231,6 +2231,10 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       bi_load_sample_id_to(b, dst);
       break;
 
+   case nir_intrinsic_load_primitive_id:
+      bi_mov_i32_to(b, dst, bi_preload(b, 57));
+      break;
+
    case nir_intrinsic_load_front_face: {
       /* (r58 & 1) == 0 means primitive is front facing */
       bi_index primitive_facing = bi_preload(b, 58);

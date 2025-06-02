@@ -143,6 +143,9 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
       info->fs.reads_frag_coord =
          (s->info.inputs_read & (1 << VARYING_SLOT_POS)) ||
          BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_FRAG_COORD);
+      info->fs.reads_primitive_id =
+         (s->info.inputs_read & (1 << VARYING_SLOT_PRIMITIVE_ID)) ||
+         BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);
       info->fs.reads_point_coord =
          s->info.inputs_read & (1 << VARYING_SLOT_PNTC);
       info->fs.reads_face =

@@ -206,6 +206,7 @@ struct pan_shader_info {
       struct {
          bool reads_frag_coord;
          bool reads_point_coord;
+         bool reads_primitive_id;
          bool reads_face;
          bool can_discard;
          bool writes_depth;

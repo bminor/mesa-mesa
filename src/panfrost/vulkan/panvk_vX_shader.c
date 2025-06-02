@@ -224,6 +224,26 @@ panvk_lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static bool
+panvk_lower_load_fs_input(nir_builder *b, nir_intrinsic_instr *intrin,
+                          UNUSED void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_load_input)
+      return false;
+
+   /* Lower PrimitiveID varying loads to the equivalent intrinsic. This only
+    * works since v6 and will require additional changes if PrimitiveID is
+    * explicitly written to (for example by a geometry shader). */
+   if (nir_intrinsic_io_semantics(intrin).location ==
+       VARYING_SLOT_PRIMITIVE_ID) {
+      b->cursor = nir_before_instr(&intrin->instr);
+      nir_def_replace(&intrin->def, nir_load_primitive_id(b));
+      return true;
+   }
+
+   return false;
+}
+
 #if PAN_ARCH <= 7
 static bool
 lower_gl_pos_layer_writes(nir_builder *b, nir_instr *instr, void *data)
@@ -866,6 +886,9 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 
    if (stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_vs_input,
+               nir_metadata_control_flow, NULL);
+   else if (stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_fs_input,
                nir_metadata_control_flow, NULL);
 
    /* since valhall, panvk_per_arch(nir_lower_descriptors) separates the

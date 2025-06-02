@@ -835,11 +835,14 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
    bool secondary_shader = vs->info.vs.secondary_enable && fs != NULL;
+   bool fs_reads_primitive_id = fs ? fs->info.fs.reads_primitive_id : false;
 
    pan_pack(prim, PRIMITIVE, cfg) {
       cfg.draw_mode = translate_prim_topology(ia->primitive_topology);
       if (writes_point_size)
          cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_FP16;
+      cfg.primitive_index_enable = fs_reads_primitive_id;
+      cfg.primitive_index_writeback = fs_reads_primitive_id;
 
       cfg.first_provoking_vertex =
          cmdbuf->state.gfx.render.first_provoking_vertex != U_TRISTATE_NO;
@@ -900,6 +903,24 @@ panvk_emit_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+static uint32_t
+primitive_vertex_count(enum mali_draw_mode in)
+{
+   switch (in) {
+   case MALI_DRAW_MODE_POINTS:
+      return 1;
+   case MALI_DRAW_MODE_LINES:
+   case MALI_DRAW_MODE_LINE_STRIP:
+      return 2;
+   case MALI_DRAW_MODE_TRIANGLES:
+   case MALI_DRAW_MODE_TRIANGLE_STRIP:
+   case MALI_DRAW_MODE_TRIANGLE_FAN:
+      return 3;
+   default:
+      unreachable("Invalid draw mode");
+   }
+}
+
 static void
 panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
                      const struct panvk_draw_data *draw,
@@ -936,6 +957,14 @@ panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.offset_start = draw->info.vertex.raw_offset;
       cfg.instance_size =
          draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
+      uint32_t primitives_per_instance =
+         DIV_ROUND_UP(draw->padded_vertex_count,
+                      primitive_vertex_count(
+                         translate_prim_topology(ia->primitive_topology)));
+      /* instance_primitive_size has the same restrictions as
+       * padded_vertex_count, so we can use pan_padded_vertex_count here. */
+      cfg.instance_primitive_size =
+         pan_padded_vertex_count(primitives_per_instance);
       cfg.uniform_buffers = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
       cfg.push_uniforms = cmdbuf->state.gfx.fs.push_uniforms;
       cfg.textures = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];

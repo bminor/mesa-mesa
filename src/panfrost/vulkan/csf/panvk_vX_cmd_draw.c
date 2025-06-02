@@ -2085,6 +2085,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
    if (dirty) {
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
          cfg.draw_mode = translate_prim_topology(ia->primitive_topology);
+         cfg.primitive_index_enable =
+            fs ? fs->info.fs.reads_primitive_id : false;
 
 #if PAN_ARCH < 13
          cfg.point_size_array_format = writes_point_size
