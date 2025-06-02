@@ -209,30 +209,6 @@ panvk_per_arch(EndCommandBuffer)(VkCommandBuffer commandBuffer)
    return vk_command_buffer_end(&cmdbuf->vk);
 }
 
-static VkPipelineStageFlags2
-get_subqueue_stages(enum panvk_subqueue_id subqueue)
-{
-   switch (subqueue) {
-   case PANVK_SUBQUEUE_VERTEX_TILER:
-      return VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
-             VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT |
-             VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT |
-             VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-   case PANVK_SUBQUEUE_FRAGMENT:
-      return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
-             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-             VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT |
-             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
-             VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT |
-             VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
-   case PANVK_SUBQUEUE_COMPUTE:
-      return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-             VK_PIPELINE_STAGE_2_COPY_BIT;
-   default:
-      unreachable("Invalid subqueue id");
-   }
-}
-
 static void
 add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
                          VkPipelineStageFlags2 src_stages,
@@ -242,7 +218,7 @@ add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
    uint32_t src_subqueues = 0;
    uint32_t dst_subqueues = 0;
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      const VkPipelineStageFlags2 subqueue_stages = get_subqueue_stages(i);
+      const VkPipelineStageFlags2 subqueue_stages = panvk_get_subqueue_stages(i);
       if (src_stages & subqueue_stages)
          src_subqueues |= BITFIELD_BIT(i);
       if (dst_stages & subqueue_stages)
@@ -265,7 +241,7 @@ add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
           * load/store operations are synchronized with the LS scoreboard
           * immediately after the read, so no need to wait in that case.
           */
-         if ((src_stages & get_subqueue_stages(i)) ==
+         if ((src_stages & panvk_get_subqueue_stages(i)) ==
              VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT)
             wait_mask &= ~BITFIELD_BIT(i);
          break;
@@ -386,7 +362,7 @@ collect_cache_flush_info(enum panvk_subqueue_id subqueue,
 {
    /* limit access to the subqueue and host */
    const VkPipelineStageFlags2 subqueue_stages =
-      get_subqueue_stages(subqueue) | VK_PIPELINE_STAGE_2_HOST_BIT;
+      panvk_get_subqueue_stages(subqueue) | VK_PIPELINE_STAGE_2_HOST_BIT;
    src_access = vk_filter_src_access_flags2(subqueue_stages, src_access);
    dst_access = vk_filter_dst_access_flags2(subqueue_stages, dst_access);
 

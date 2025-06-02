@@ -484,6 +484,30 @@ panvk_per_arch(calculate_task_axis_and_increment)(
    assert(*task_increment > 0);
 }
 
+static VkPipelineStageFlags2
+panvk_get_subqueue_stages(enum panvk_subqueue_id subqueue)
+{
+   switch (subqueue) {
+   case PANVK_SUBQUEUE_VERTEX_TILER:
+      return VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
+             VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT |
+             VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT |
+             VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+   case PANVK_SUBQUEUE_FRAGMENT:
+      return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+             VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT |
+             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
+             VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT |
+             VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
+   case PANVK_SUBQUEUE_COMPUTE:
+      return VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+             VK_PIPELINE_STAGE_2_COPY_BIT;
+   default:
+      unreachable("Invalid subqueue id");
+   }
+}
+
 void panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
                                   struct panvk_cs_deps deps);
 #endif /* PANVK_CMD_BUFFER_H */
