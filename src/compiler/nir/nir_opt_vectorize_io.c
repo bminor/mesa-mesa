@@ -127,6 +127,7 @@ compare_intr(const void *xa, const void *xb)
 
 typedef enum {
    merge_low_high_16_to_32,
+   vectorize_high_16_separately,
    vectorize_the_rest,
 } nir_vectorize_op_step;
 
@@ -157,15 +158,25 @@ vectorize_load(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
    memcpy(new_intr->src, first->src,
           nir_intrinsic_infos[first->intrinsic].num_srcs * sizeof(nir_src));
    nir_intrinsic_copy_const_indices(new_intr, first);
-   nir_intrinsic_set_component(new_intr, start);
+   nir_intrinsic_set_component(new_intr, start & 0x3); /* Bits 4..7 should map to 0..3 */
+   assert(start % 4 + count <= 4);
+
+   nir_io_semantics sem = nir_intrinsic_io_semantics(new_intr);
+
+   if (step == vectorize_high_16_separately) {
+      assert(start >= 4);
+      sem.high_16bits = 1;
+   } else {
+      assert(start <= 3);
+   }
 
    if (step == merge_low_high_16_to_32) {
-      nir_io_semantics sem = nir_intrinsic_io_semantics(new_intr);
       sem.high_16bits = 0;
-      nir_intrinsic_set_io_semantics(new_intr, sem);
       nir_intrinsic_set_dest_type(new_intr,
                                   (nir_intrinsic_dest_type(new_intr) & ~16) | 32);
    }
+
+   nir_intrinsic_set_io_semantics(new_intr, sem);
 
    nir_builder_instr_insert(&b, &new_intr->instr);
    nir_def *def = &new_intr->def;
@@ -260,6 +271,13 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
    nir_io_semantics sem = nir_intrinsic_io_semantics(last);
    sem.gs_streams = gs_streams;
 
+   if (step == vectorize_high_16_separately) {
+      assert(start >= 4);
+      sem.high_16bits = 1;
+   } else {
+      assert(start <= 3);
+   }
+
    /* Update other flags. */
    for (unsigned i = start; i < start + count; i++) {
       if (!nir_intrinsic_io_semantics(chan[i]).no_sysval_output)
@@ -287,7 +305,8 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
 
    /* Update the rest. */
    nir_intrinsic_set_io_semantics(last, sem);
-   nir_intrinsic_set_component(last, start);
+   nir_intrinsic_set_component(last, start & 0x3); /* Bits 4..7 should map to 0..3 */
+   assert(start % 4 + count <= 4);
    nir_intrinsic_set_write_mask(last, BITFIELD_MASK(count));
    last->num_components = count;
 
@@ -368,6 +387,9 @@ vectorize_slot(nir_intrinsic_instr *chan[8], unsigned mask)
                mask &= ~low_high_bits;
             }
          }
+      } else if (step == vectorize_high_16_separately) {
+         scan_mask = mask & BITFIELD_RANGE(4, 4);
+         mask &= ~scan_mask;
       } else {
          scan_mask = mask;
       }
