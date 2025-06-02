@@ -37,16 +37,11 @@ try_extract_additions(nir_builder *b, nir_scalar scalar, uint64_t *out_const,
       nir_scalar src = i ? src1 : src0;
       if (nir_scalar_is_const(src)) {
          *out_const += nir_scalar_as_uint(src);
-      } else if (is_u2u64(src)) {
+      } else if (is_u2u64(src) && *out_offset == NULL) {
          nir_scalar offset_scalar = nir_scalar_chase_alu_src(src, 0);
          if (offset_scalar.def->bit_size != 32)
             continue;
-
-         nir_def *offset = nir_channel(b, offset_scalar.def, offset_scalar.comp);
-         if (*out_offset)
-            *out_offset = nir_iadd(b, *out_offset, offset);
-         else
-            *out_offset = offset;
+         *out_offset = nir_channel(b, offset_scalar.def, offset_scalar.comp);
       } else {
          continue;
       }
