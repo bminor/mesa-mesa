@@ -818,7 +818,7 @@ get_gfx6_global_rsrc(Builder& bld, Temp addr)
                      Operand::c32(desc[3]));
 }
 
-void
+Format
 lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* address_inout,
                      uint32_t* const_offset_inout, Temp* offset_inout, nir_src* offset_src)
 {
@@ -826,11 +826,17 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
    uint64_t const_offset = *const_offset_inout + offset_in;
    Temp offset = *offset_inout;
 
+   Format format = Format::MUBUF;
+   if (bld.program->gfx_level >= GFX9)
+      format = Format::GLOBAL;
+   else if (bld.program->gfx_level >= GFX7)
+      format = Format::FLAT;
+
    uint64_t max_const_offset_plus_one =
       1; /* GFX7/8/9: FLAT loads do not support constant offsets */
-   if (bld.program->gfx_level >= GFX9)
+   if (format == Format::GLOBAL)
       max_const_offset_plus_one = bld.program->dev.scratch_global_offset_max + UINT64_C(1);
-   else if (bld.program->gfx_level == GFX6)
+   else if (format == Format::MUBUF)
       max_const_offset_plus_one = bld.program->dev.buf_offset_max + 1;
    uint64_t excess_offset = const_offset - (const_offset % max_const_offset_plus_one);
    const_offset %= max_const_offset_plus_one;
@@ -856,7 +862,7 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
       }
    }
 
-   if (bld.program->gfx_level == GFX6) {
+   if (format == Format::MUBUF) {
       /* GFX6 (MUBUF): (SGPR address, SGPR offset) or (SGPR address, VGPR offset) */
       /* GFX6 (MUBUF-addr64): (VGPR address, SGPR offset) */
       /* Disallow SGPR address with both a const_offset and offset in case of possible overflow. */
@@ -867,7 +873,7 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
          offset = Temp();
       }
       offset = offset.id() ? offset : bld.copy(bld.def(s1), Operand::zero());
-   } else if (bld.program->gfx_level <= GFX8) {
+   } else if (format == Format::FLAT) {
       /* GFX7,8 (FLAT): VGPR address */
       if (offset.id()) {
          address = add64_32(bld, address, Operand(offset));
@@ -889,6 +895,8 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
    *address_inout = address;
    *const_offset_inout = const_offset;
    *offset_inout = offset;
+
+   return format;
 }
 
 Temp
@@ -901,11 +909,12 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       offset = Temp();
    }
    uint32_t const_offset = info.const_offset;
-   lower_global_address(info.ctx, bld, 0, &addr, &const_offset, &offset, info.offset_src);
+   Format format =
+      lower_global_address(info.ctx, bld, 0, &addr, &const_offset, &offset, info.offset_src);
 
    unsigned bytes_size = 0;
-   bool use_mubuf = bld.program->gfx_level == GFX6;
-   bool global = bld.program->gfx_level >= GFX9;
+   bool use_mubuf = format == Format::MUBUF;
+   bool global = format == Format::GLOBAL;
    aco_opcode op;
    if (bytes_needed == 1 || align_ % 2u) {
       bytes_size = 1;
@@ -922,14 +931,16 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       op = use_mubuf ? aco_opcode::buffer_load_dword
            : global  ? aco_opcode::global_load_dword
                      : aco_opcode::flat_load_dword;
-   } else if (bytes_needed <= 8 || (bytes_needed <= 12 && use_mubuf)) {
+   } else if (bytes_needed <= 8 || (bytes_needed <= 12 && bld.program->gfx_level == GFX6)) {
       bytes_size = 8;
       op = use_mubuf ? aco_opcode::buffer_load_dwordx2
            : global  ? aco_opcode::global_load_dwordx2
                      : aco_opcode::flat_load_dwordx2;
-   } else if (bytes_needed <= 12 && !use_mubuf) {
+   } else if (bytes_needed <= 12) {
       bytes_size = 12;
-      op = global ? aco_opcode::global_load_dwordx3 : aco_opcode::flat_load_dwordx3;
+      op = use_mubuf ? aco_opcode::buffer_load_dwordx3
+           : global  ? aco_opcode::global_load_dwordx3
+                     : aco_opcode::flat_load_dwordx3;
    } else {
       bytes_size = 16;
       op = use_mubuf ? aco_opcode::buffer_load_dwordx4
@@ -957,8 +968,7 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       mubuf->definitions[0] = Definition(val);
       bld.insert(std::move(mubuf));
    } else {
-      aco_ptr<Instruction> flat{
-         create_instruction(op, global ? Format::GLOBAL : Format::FLAT, 2, 1)};
+      aco_ptr<Instruction> flat{create_instruction(op, format, 2, 1)};
       if (addr.regClass() == s2) {
          assert(global && offset.id() && offset.type() == RegType::vgpr);
          flat->operands[0] = Operand(offset);
@@ -2521,15 +2531,15 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp write_address = addr;
       uint32_t write_const_offset = const_offset;
       Temp write_offset = offset;
-      lower_global_address(ctx, bld, offsets[i], &write_address, &write_const_offset, &write_offset,
-                           &instr->src[2]);
+      Format format = lower_global_address(ctx, bld, offsets[i], &write_address,
+                                           &write_const_offset, &write_offset, &instr->src[2]);
 
       unsigned access = nir_intrinsic_access(instr) | ACCESS_TYPE_STORE;
       if (write_datas[i].bytes() < 4)
          access |= ACCESS_MAY_STORE_SUBDWORD;
 
-      if (ctx->options->gfx_level >= GFX7) {
-         bool global = ctx->options->gfx_level >= GFX9;
+      if (format != Format::MUBUF) {
+         bool global = format == Format::GLOBAL;
          aco_opcode op;
          switch (write_datas[i].bytes()) {
          case 1: op = global ? aco_opcode::global_store_byte : aco_opcode::flat_store_byte; break;
@@ -2547,8 +2557,7 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          default: unreachable("store_global not implemented for this size.");
          }
 
-         aco_ptr<Instruction> flat{
-            create_instruction(op, global ? Format::GLOBAL : Format::FLAT, 3, 0)};
+         aco_ptr<Instruction> flat{create_instruction(op, format, 3, 0)};
          if (write_address.regClass() == s2) {
             assert(global && write_offset.id() && write_offset.type() == RegType::vgpr);
             flat->operands[0] = Operand(write_offset);
@@ -2617,10 +2626,10 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp addr, offset;
    uint32_t const_offset;
    parse_global(ctx, instr, &addr, &const_offset, &offset);
-   lower_global_address(ctx, bld, 0, &addr, &const_offset, &offset, &instr->src[2]);
+   Format format = lower_global_address(ctx, bld, 0, &addr, &const_offset, &offset, &instr->src[2]);
 
-   if (ctx->options->gfx_level >= GFX7) {
-      bool global = ctx->options->gfx_level >= GFX9;
+   if (format != Format::MUBUF) {
+      bool global = format == Format::GLOBAL;
       switch (nir_op) {
       case nir_atomic_op_iadd:
          op32 = global ? aco_opcode::global_atomic_add : aco_opcode::flat_atomic_add;
@@ -2683,8 +2692,7 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       }
 
       aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
-      aco_ptr<Instruction> flat{create_instruction(op, global ? Format::GLOBAL : Format::FLAT, 3,
-                                                   return_previous ? 1 : 0)};
+      aco_ptr<Instruction> flat{create_instruction(op, format, 3, return_previous ? 1 : 0)};
       if (addr.regClass() == s2) {
          assert(global && offset.id() && offset.type() == RegType::vgpr);
          flat->operands[0] = Operand(offset);
