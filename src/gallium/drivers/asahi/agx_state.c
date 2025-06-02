@@ -1098,8 +1098,7 @@ image_view_for_surface(const struct pipe_surface *surf)
       .format = surf->format,
       .access = PIPE_IMAGE_ACCESS_READ_WRITE,
       .shader_access = PIPE_IMAGE_ACCESS_READ_WRITE,
-      .u.tex.single_layer_view =
-         surf->first_layer == surf->last_layer,
+      .u.tex.single_layer_view = surf->first_layer == surf->last_layer,
       .u.tex.first_layer = surf->first_layer,
       .u.tex.last_layer = surf->last_layer,
       .u.tex.level = surf->level,
@@ -5500,14 +5499,12 @@ agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
    agx_batch_upload_pbe(batch, &img->uncompressed, &view, false, true, true,
                         true);
 
-   struct agx_grid grid =
-      agx_3d(ail_metadata_width_tl(layout, level) * 32,
-             ail_metadata_height_tl(layout, level),
-             surf->last_layer - surf->first_layer + 1);
+   struct agx_grid grid = agx_3d(ail_metadata_width_tl(layout, level) * 32,
+                                 ail_metadata_height_tl(layout, level),
+                                 surf->last_layer - surf->first_layer + 1);
 
-   libagx_decompress(batch, grid, AGX_BARRIER_ALL, layout,
-                     surf->first_layer, level,
-                     agx_map_texture_gpu(rsrc, 0), images.gpu);
+   libagx_decompress(batch, grid, AGX_BARRIER_ALL, layout, surf->first_layer,
+                     level, agx_map_texture_gpu(rsrc, 0), images.gpu);
 }
 
 void
