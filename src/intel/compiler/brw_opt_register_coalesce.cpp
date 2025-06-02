@@ -332,7 +332,7 @@ brw_opt_register_coalesce(brw_shader &s)
 
       progress = true;
 
-      for (int i = 0; i < src_size; i++) {
+      for (int i = 0; i < src_size; i += regs_written(mov[i])) {
          if (!mov[i])
             continue;
 

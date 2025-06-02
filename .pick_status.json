@@ -424,7 +424,7 @@
         "description": "brw: don't generate invalid instructions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e3e5146cf140095cae9da0c20a7feed17eb9ef7",
         "notes": null
