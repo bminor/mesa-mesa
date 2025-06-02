@@ -52,7 +52,7 @@ workflow:
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: priority:high-kvm
         FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:high-aarch64
     # Pre-merge pipeline
-    - if: &is-pre-merge $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: &is-merge-request $CI_PIPELINE_SOURCE == "merge_request_event"
     # Push to a branch on a fork
     - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
     # nightly pipeline
@@ -263,7 +263,7 @@ include:
         - src/**/*
       when: on_success
     # Same as above, but for pre-merge pipelines
-    - if: *is-pre-merge
+    - if: *is-merge-request
       changes:
         *all_paths
       when: manual
@@ -271,7 +271,7 @@ include:
     # anything in the build
     - if: *is-merge-attempt
       when: never
-    - if: *is-pre-merge
+    - if: *is-merge-request
       when: never
     # Build everything after someone bypassed the CI
     - if: *is-push-to-upstream-default-branch
@@ -304,14 +304,14 @@ include:
       when: delayed
       start_in: &build-delay 5 minutes
     # Same as above, but for pre-merge pipelines
-    - if: *is-pre-merge
+    - if: *is-merge-request
       changes: *all_paths
       when: manual
     # Skip everything for pre-merge and merge pipelines which don't change
     # anything in the build
     - if: *is-merge-attempt
       when: never
-    - if: *is-pre-merge
+    - if: *is-merge-request
       when: never
     # Build everything after someone bypassed the CI
     - if: *is-push-to-upstream-default-branch
@@ -369,7 +369,7 @@ sanity:
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   rules:
-    - if: *is-pre-merge
+    - if: *is-merge-request
       when: on_success
     - when: never
   variables:
