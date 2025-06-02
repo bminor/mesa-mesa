@@ -271,9 +271,8 @@ struct LoadEmitInfo {
 };
 
 struct EmitLoadParameters {
-   using Callback = Temp (*)(Builder& bld, const LoadEmitInfo& info, Temp offset,
-                             unsigned bytes_needed, unsigned align, unsigned const_offset,
-                             Temp dst_hint);
+   using Callback = Temp (*)(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed,
+                             unsigned align);
 
    Callback callback;
    uint32_t max_const_offset;
@@ -344,12 +343,12 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
          if (offset_changed)
             new_info.offset_src = NULL;
       }
+      new_info.offset = Operand(as_temp(bld, offset));
+      new_info.const_offset = reduced_const_offset;
 
       unsigned align = align_offset ? 1 << (ffs(align_offset) - 1) : align_mul;
-      Temp offset_tmp = as_temp(bld, offset);
 
-      Temp val = params.callback(bld, new_info, offset_tmp, bytes_needed, align,
-                                 reduced_const_offset, info.dst);
+      Temp val = params.callback(bld, new_info, bytes_needed, align);
 
       /* the callback wrote directly to dst */
       if (val == info.dst) {
@@ -469,10 +468,11 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
 }
 
 Temp
-lds_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                  unsigned align, unsigned const_offset, Temp dst_hint)
+lds_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed, unsigned align)
 {
-   offset = offset.regClass() == s1 ? bld.copy(bld.def(v1), offset) : offset;
+   Temp offset =
+      info.offset.regClass() == s1 ? bld.copy(bld.def(v1), info.offset) : info.offset.getTemp();
+   uint32_t const_offset = info.const_offset;
 
    Operand m = load_lds_size_m0(bld);
 
@@ -522,7 +522,7 @@ lds_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned 
    const_offset /= const_offset_unit;
 
    RegClass rc = RegClass::get(RegType::vgpr, size);
-   Temp val = rc == info.dst.regClass() && dst_hint.id() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    Instruction* instr;
    if (read2)
       instr = bld.ds(op, Definition(val), offset, m, const_offset, const_offset + 1);
@@ -560,8 +560,7 @@ get_smem_opcode(amd_gfx_level level, unsigned bytes, bool buffer, bool round_dow
 }
 
 Temp
-smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                   unsigned align, unsigned const_offset, Temp dst_hint)
+smem_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed, unsigned align)
 {
    /* Only scalar sub-dword loads are supported. */
    assert(bytes_needed % 4 == 0 || bytes_needed <= 2);
@@ -569,6 +568,8 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
 
    bld.program->has_smem_buffer_or_global_loads = true;
 
+   uint32_t const_offset = info.const_offset;
+   Temp offset = info.offset.getTemp();
    bool buffer = info.resource.id() && info.resource.bytes() == 16;
    Temp addr = info.resource;
    if (!buffer && !addr.id()) {
@@ -613,9 +614,7 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
       else
          load->operands[1] = Operand::c32(const_offset);
    }
-   Temp val = dst_hint.id() && dst_hint.regClass() == rc && rc.bytes() == bytes_needed
-                 ? dst_hint
-                 : bld.tmp(rc);
+   Temp val = info.dst.regClass() == rc && rc.bytes() == bytes_needed ? info.dst : bld.tmp(rc);
    load->definitions[0] = Definition(val);
    load->smem().cache = info.cache;
    load->smem().sync = info.sync;
@@ -623,7 +622,7 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
 
    if (rc.bytes() > bytes_needed) {
       rc = RegClass(RegType::sgpr, DIV_ROUND_UP(bytes_needed, 4u));
-      Temp val2 = dst_hint.id() && dst_hint.regClass() == rc ? dst_hint : bld.tmp(rc);
+      Temp val2 = info.dst.regClass() == rc ? info.dst : bld.tmp(rc);
       val = bld.pseudo(aco_opcode::p_extract_vector, Definition(val2), val, Operand::c32(0u));
    }
 
@@ -633,9 +632,9 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned
 const EmitLoadParameters smem_load_params{smem_load_callback, 1023};
 
 Temp
-mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                    unsigned align_, unsigned const_offset, Temp dst_hint)
+mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed, unsigned align_)
 {
+   Temp offset = info.offset.getTemp();
    Operand vaddr = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
    Operand soffset = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
 
@@ -687,9 +686,9 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    mubuf->mubuf().idxen = idxen;
    mubuf->mubuf().cache = info.cache;
    mubuf->mubuf().sync = info.sync;
-   mubuf->mubuf().offset = const_offset;
+   mubuf->mubuf().offset = info.const_offset;
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
-   Temp val = dst_hint.id() && rc == dst_hint.regClass() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    mubuf->definitions[0] = Definition(val);
    bld.insert(std::move(mubuf));
 
@@ -699,10 +698,10 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
 const EmitLoadParameters mubuf_load_params{mubuf_load_callback, 4095};
 
 Temp
-mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, Temp offset,
-                           unsigned bytes_needed, unsigned align_, unsigned const_offset,
-                           Temp dst_hint)
+mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed,
+                           unsigned align_)
 {
+   Temp offset = info.offset.getTemp();
    Operand vaddr = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
    Operand soffset = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
 
@@ -751,9 +750,9 @@ mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, Temp offset,
    mubuf->mubuf().idxen = idxen;
    mubuf->mubuf().cache = info.cache;
    mubuf->mubuf().sync = info.sync;
-   mubuf->mubuf().offset = const_offset;
+   mubuf->mubuf().offset = info.const_offset;
    RegClass rc = RegClass::get(RegType::vgpr, bytes_needed);
-   Temp val = dst_hint.id() && rc == dst_hint.regClass() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    mubuf->definitions[0] = Definition(val);
    bld.insert(std::move(mubuf));
 
@@ -763,8 +762,8 @@ mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, Temp offset,
 const EmitLoadParameters mubuf_load_format_params{mubuf_load_format_callback, 4095};
 
 Temp
-scratch_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                      unsigned align_, unsigned const_offset, Temp dst_hint)
+scratch_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed,
+                      unsigned align_)
 {
    unsigned bytes_size = 0;
    aco_opcode op;
@@ -788,12 +787,13 @@ scratch_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsig
       op = aco_opcode::scratch_load_dwordx4;
    }
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
-   Temp val = dst_hint.id() && rc == dst_hint.regClass() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    aco_ptr<Instruction> flat{create_instruction(op, Format::SCRATCH, 2, 1)};
+   Temp offset = info.offset.getTemp();
    flat->operands[0] = offset.regClass() == s1 ? Operand(v1) : Operand(offset);
    flat->operands[1] = offset.regClass() == s1 ? Operand(offset) : Operand(s1);
    flat->scratch().sync = info.sync;
-   flat->scratch().offset = const_offset;
+   flat->scratch().offset = info.const_offset;
    flat->definitions[0] = Definition(val);
    bld.insert(std::move(flat));
 
@@ -888,14 +888,15 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
 }
 
 Temp
-global_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                     unsigned align_, unsigned const_offset, Temp dst_hint)
+global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed, unsigned align_)
 {
+   Temp offset = info.offset.getTemp();
    Temp addr = info.resource;
    if (!addr.id()) {
       addr = offset;
       offset = Temp();
    }
+   uint32_t const_offset = info.const_offset;
    lower_global_address(bld, 0, &addr, &const_offset, &offset);
 
    unsigned bytes_size = 0;
@@ -932,7 +933,7 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsign
                      : aco_opcode::flat_load_dwordx4;
    }
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
-   Temp val = dst_hint.id() && rc == dst_hint.regClass() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    if (use_mubuf) {
       aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3, 1)};
       mubuf->operands[0] = Operand(get_gfx6_global_rsrc(bld, addr));
@@ -1462,9 +1463,10 @@ visit_load_interpolated_input(isel_context* ctx, nir_intrinsic_instr* instr)
 }
 
 Temp
-mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigned bytes_needed,
-                    unsigned alignment, unsigned const_offset, Temp dst_hint)
+mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed,
+                    unsigned alignment)
 {
+   Temp offset = info.offset.getTemp();
    Operand vaddr = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
    Operand soffset = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
 
@@ -1495,7 +1497,7 @@ mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    /* Calculate maximum number of components loaded according to alignment. */
    unsigned max_fetched_components = bytes_needed / info.component_size;
    max_fetched_components =
-      ac_get_safe_fetch_size(bld.program->gfx_level, vtx_info, const_offset, max_components,
+      ac_get_safe_fetch_size(bld.program->gfx_level, vtx_info, info.const_offset, max_components,
                              alignment, max_fetched_components);
    const unsigned fetch_fmt = vtx_info->hw_format[max_fetched_components - 1];
    /* Adjust bytes needed in case we need to do a smaller load due to alignment.
@@ -1549,11 +1551,11 @@ mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, Temp offset, unsigne
    mtbuf->mtbuf().idxen = idxen;
    mtbuf->mtbuf().cache = info.cache;
    mtbuf->mtbuf().sync = info.sync;
-   mtbuf->mtbuf().offset = const_offset;
+   mtbuf->mtbuf().offset = info.const_offset;
    mtbuf->mtbuf().dfmt = fetch_fmt & 0xf;
    mtbuf->mtbuf().nfmt = fetch_fmt >> 4;
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
-   Temp val = dst_hint.id() && rc == dst_hint.regClass() ? dst_hint : bld.tmp(rc);
+   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    mtbuf->definitions[0] = Definition(val);
    bld.insert(std::move(mtbuf));
 
