@@ -122,6 +122,16 @@ u_bit_scan64(uint64_t *mask)
         ((b) = ffsll(__dword) - 1, __dword);      \
         __dword &= ~(1ull << (b)))
 
+/* Given two bitmasks, loop over all bits of both of them.
+ * Bits of mask1 are: b = scan_bit(mask1);
+ * Bits of mask2 are: b = offset + scan_bit(mask2);
+ */
+#define u_foreach_bit64_two_masks(b, mask1, offset, mask2)                          \
+   for (uint64_t __mask1 = (mask1), __mask2 = (mask2), b;                           \
+        (__mask1 ? ((b) = ffsll(__mask1) - 1)                                       \
+                 : ((b) = ffsll(__mask2) - 1 + offset), __mask1 || __mask2);        \
+        __mask1 ? (__mask1 &= ~(1ull << (b))) : (__mask2 &= ~(1ull << (b - offset))))
+
 /* Determine if an uint32_t value is a power of two.
  *
  * \note

@@ -146,7 +146,8 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
    /* Store generic 32-bit outputs to LDS.
     * In case of packed 16-bit, we assume that has been already packed into 32 bit slots by now.
     */
-   u_foreach_bit64(slot, b->shader->info.outputs_written) {
+   u_foreach_bit64_two_masks(slot, b->shader->info.outputs_written,
+                             VARYING_SLOT_VAR0_16BIT, b->shader->info.outputs_written_16bit) {
       unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
       nir_def **output = s->out.outputs[slot];
 
@@ -160,33 +161,6 @@ lower_ngg_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *intri
 
       /* Clear all outputs (they are undefined after emit_vertex) */
       memset(s->out.outputs[slot], 0, sizeof(s->out.outputs[slot]));
-   }
-
-   /* Store dedicated 16-bit outputs to LDS. */
-   u_foreach_bit(slot, b->shader->info.outputs_written_16bit) {
-      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
-      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
-      unsigned mask = mask_lo | mask_hi;
-
-      nir_def **output_lo = s->out.outputs_16bit_lo[slot];
-      nir_def **output_hi = s->out.outputs_16bit_hi[slot];
-      nir_def *undef = nir_undef(b, 1, 16);
-
-      u_foreach_bit(c, mask) {
-         /* The shader hasn't written this output yet. */
-         if (!output_lo[c] && !output_hi[c])
-            continue;
-
-         nir_def *lo = output_lo[c] ? output_lo[c] : undef;
-         nir_def *hi = output_hi[c] ? output_hi[c] : undef;
-         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
-
-         ac_nir_store_shared_gs_out(b, store_val, gs_emit_vtx_addr, &s->out, VARYING_SLOT_VAR0_16BIT + slot, c);
-      }
-
-      /* Clear all outputs (they are undefined after emit_vertex) */
-      memset(s->out.outputs_16bit_lo[slot], 0, sizeof(s->out.outputs_16bit_lo[slot]));
-      memset(s->out.outputs_16bit_hi[slot], 0, sizeof(s->out.outputs_16bit_hi[slot]));
    }
 
    /* Calculate and store per-vertex primitive flags based on vertex counts:
@@ -345,30 +319,13 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
       exported_out_vtx_lds_addr = ngg_gs_out_vertex_addr(b, nir_u2u32(b, exported_vtx_idx), s);
    }
 
-   u_foreach_bit64(slot, b->shader->info.outputs_written) {
+   u_foreach_bit64_two_masks(slot, b->shader->info.outputs_written,
+                             VARYING_SLOT_VAR0_16BIT, b->shader->info.outputs_written_16bit) {
       unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
 
       u_foreach_bit(c, mask) {
          s->out.outputs[slot][c] = ac_nir_load_shared_gs_out(b, exported_out_vtx_lds_addr,
                                                              &s->out, slot, c);
-      }
-   }
-
-   /* Dedicated 16-bit outputs. */
-   u_foreach_bit(i, b->shader->info.outputs_written_16bit) {
-      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(&s->out.infos_16bit_lo[i], 0);
-      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(&s->out.infos_16bit_hi[i], 0);
-      unsigned mask = mask_lo | mask_hi;
-
-      u_foreach_bit(c, mask) {
-         nir_def *load_val = ac_nir_load_shared_gs_out(b, exported_out_vtx_lds_addr,
-                                                       &s->out, VARYING_SLOT_VAR0_16BIT + i, c);
-
-         if (mask_lo & BITFIELD_BIT(c))
-            s->out.outputs_16bit_lo[i][c] = nir_unpack_32_2x16_split_x(b, load_val);
-
-         if (mask_hi & BITFIELD_BIT(c))
-            s->out.outputs_16bit_hi[i][c] = nir_unpack_32_2x16_split_y(b, load_val);
       }
    }
 

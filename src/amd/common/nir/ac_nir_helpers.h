@@ -78,21 +78,12 @@ typedef struct
 
 typedef struct
 {
-   nir_def *outputs[VARYING_SLOT_MAX][4];
-   nir_def *outputs_16bit_lo[16][4];
-   nir_def *outputs_16bit_hi[16][4];
+   /* Low and high 16 bits are packed into 32 bits. */
+   nir_def *outputs[NUM_TOTAL_VARYING_SLOTS][4];
+   uint32_t const_values[NUM_TOTAL_VARYING_SLOTS][4];
 
-   /* Low and high 16 bits are packed. */
-   uint32_t const_values[VARYING_SLOT_MAX][4];
-   uint32_t const_values_16bit[16][4];
-
-   nir_alu_type types[VARYING_SLOT_MAX][4];
-   nir_alu_type types_16bit_lo[16][4];
-   nir_alu_type types_16bit_hi[16][4];
-
-   ac_nir_prerast_per_output_info infos[VARYING_SLOT_MAX];
-   ac_nir_prerast_per_output_info infos_16bit_lo[16];
-   ac_nir_prerast_per_output_info infos_16bit_hi[16];
+   nir_alu_type types[NUM_TOTAL_VARYING_SLOTS][4];
+   ac_nir_prerast_per_output_info infos[NUM_TOTAL_VARYING_SLOTS];
 
    /* The size of all components, packed. */
    uint16_t total_packed_gs_out_size;

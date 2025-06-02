@@ -40,7 +40,8 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
 
    unsigned offset = 0;
 
-   u_foreach_bit64 (slot, b->shader->info.outputs_written) {
+   u_foreach_bit64_two_masks(slot, b->shader->info.outputs_written,
+                             VARYING_SLOT_VAR0_16BIT, b->shader->info.outputs_written_16bit) {
       unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], stream);
       nir_def **output = s->out.outputs[slot];
 
@@ -75,44 +76,6 @@ lower_legacy_gs_emit_vertex_with_counter(nir_builder *b, nir_intrinsic_instr *in
 
       /* Clear all outputs (they are undefined after emit_vertex) */
       memset(s->out.outputs[slot], 0, sizeof(s->out.outputs[slot]));
-   }
-
-   u_foreach_bit (slot, b->shader->info.outputs_written_16bit) {
-      const unsigned mask_lo = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_lo + slot, stream);
-      const unsigned mask_hi = ac_nir_gs_output_component_mask_with_stream(s->out.infos_16bit_hi + slot, stream);
-      unsigned mask = mask_lo | mask_hi;
-
-      nir_def **output_lo = s->out.outputs_16bit_lo[slot];
-      nir_def **output_hi = s->out.outputs_16bit_hi[slot];
-      nir_def *undef = nir_undef(b, 1, 16);
-
-      u_foreach_bit(c, mask) {
-         /* The shader hasn't written this output yet. */
-         if ((!output_lo[c] && !output_hi[c]) ||
-              ac_nir_is_const_output(&s->out, VARYING_SLOT_VAR0_16BIT + slot, c))
-            continue;
-
-         nir_def *lo = output_lo[c] ? output_lo[c] : undef;
-         nir_def *hi = output_hi[c] ? output_hi[c] : undef;
-         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
-
-         unsigned base = offset * b->shader->info.gs.vertices_out;
-
-         nir_def *voffset = nir_iadd_imm(b, vtxidx, base);
-         voffset = nir_ishl_imm(b, voffset, 2);
-
-         nir_store_buffer_amd(b, store_val,
-                              gsvs_ring, voffset, soffset, nir_imm_int(b, 0),
-                              .access = ACCESS_COHERENT | ACCESS_NON_TEMPORAL |
-                                        ACCESS_IS_SWIZZLED_AMD,
-                              /* For ACO to not reorder this store around EmitVertex/EndPrimitve */
-                              .memory_modes = nir_var_shader_out);
-         offset += 4;
-      }
-
-      /* Clear all outputs (they are undefined after emit_vertex) */
-      memset(s->out.outputs_16bit_lo[slot], 0, sizeof(s->out.outputs_16bit_lo[slot]));
-      memset(s->out.outputs_16bit_hi[slot], 0, sizeof(s->out.outputs_16bit_hi[slot]));
    }
 
    assert(offset / 4 < 256);

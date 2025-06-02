@@ -1311,32 +1311,23 @@ ngg_nogs_store_xfb_outputs_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
 
    uint64_t xfb_outputs = 0;
    unsigned xfb_outputs_16bit = 0;
-   uint8_t xfb_mask[VARYING_SLOT_MAX] = {0};
-   uint8_t xfb_mask_16bit_lo[16] = {0};
-   uint8_t xfb_mask_16bit_hi[16] = {0};
+   uint8_t xfb_mask[NUM_TOTAL_VARYING_SLOTS] = {0};
 
    /* Get XFB output mask for each slot. */
    for (int i = 0; i < info->output_count; i++) {
       nir_xfb_output_info *out = info->outputs + i;
+      xfb_mask[out->location] |= out->component_mask;
 
-      if (out->location < VARYING_SLOT_VAR0_16BIT) {
+      if (out->location < VARYING_SLOT_VAR0_16BIT)
          xfb_outputs |= BITFIELD64_BIT(out->location);
-         xfb_mask[out->location] |= out->component_mask;
-      } else {
-         unsigned index = out->location - VARYING_SLOT_VAR0_16BIT;
-         xfb_outputs_16bit |= BITFIELD_BIT(index);
-
-         if (out->high_16bits)
-            xfb_mask_16bit_hi[index] |= out->component_mask;
-         else
-            xfb_mask_16bit_lo[index] |= out->component_mask;
-      }
+      else
+         xfb_outputs_16bit |= BITFIELD_BIT(out->location - VARYING_SLOT_VAR0_16BIT);
    }
 
    nir_def *tid = nir_load_local_invocation_index(b);
    nir_def *addr = pervertex_lds_addr(b, s, tid, s->pervertex_lds_bytes);
 
-   u_foreach_bit64(slot, xfb_outputs) {
+   u_foreach_bit64_two_masks(slot, xfb_outputs, VARYING_SLOT_VAR0_16BIT, xfb_outputs_16bit) {
       u_foreach_bit(c, xfb_mask[slot]) {
          if (!s->out.outputs[slot][c])
             continue;
@@ -1348,25 +1339,6 @@ ngg_nogs_store_xfb_outputs_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
           *   OpenGL puts 16bit outputs in VARYING_SLOT_VAR0_16BIT.
           */
          ac_nir_store_shared_xfb(b, s->out.outputs[slot][c], addr, &s->out, slot, c);
-      }
-   }
-
-   u_foreach_bit64(slot, xfb_outputs_16bit) {
-      unsigned mask_lo = xfb_mask_16bit_lo[slot];
-      unsigned mask_hi = xfb_mask_16bit_hi[slot];
-      nir_def **outputs_lo = s->out.outputs_16bit_lo[slot];
-      nir_def **outputs_hi = s->out.outputs_16bit_hi[slot];
-      nir_def *undef = nir_undef(b, 1, 16);
-
-      u_foreach_bit(c, mask_lo | mask_hi) {
-         if (!outputs_lo[c] && !outputs_hi[c])
-            continue;
-
-         nir_def *lo = mask_lo & BITFIELD_BIT(c) ? outputs_lo[c] : undef;
-         nir_def *hi = mask_hi & BITFIELD_BIT(c) ? outputs_hi[c] : undef;
-         nir_def *store_val = nir_pack_32_2x16_split(b, lo, hi);
-
-         ac_nir_store_shared_xfb(b, store_val, addr, &s->out, VARYING_SLOT_VAR0_16BIT + slot, c);
       }
    }
 }
