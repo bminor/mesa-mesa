@@ -48,7 +48,8 @@ radv_choose_tiling(struct radv_device *device, const VkImageCreateInfo *pCreateI
        pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR))
       return RADEON_SURF_MODE_LINEAR_ALIGNED;
 
-   if (pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))
+   if (pdev->info.vcn_ip_version < VCN_5_0_0 &&
+       pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))
       return RADEON_SURF_MODE_LINEAR_ALIGNED;
 
    /* MSAA resources must be 2D tiled. */
@@ -1059,6 +1060,8 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    if (!vk_format_is_depth_or_stencil(image->vk.format) && !image->vk.external_handle_types &&
        !(image->vk.create_flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
                                    VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) &&
+       !(image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                            VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) &&
        image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       info.surf_index = &device->image_mrt_offset_counter;
       info.fmask_surf_index = &device->fmask_mrt_offset_counter;
@@ -1178,10 +1181,17 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
                           VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
       if (!device->vk.enabled_features.videoMaintenance1)
          assert(profile_list);
-      uint32_t width_align, height_align;
-      radv_video_get_profile_alignments(pdev, profile_list, &width_align, &height_align);
-      image_info.width = align(image_info.width, width_align);
-      image_info.height = align(image_info.height, height_align);
+
+      const bool is_linear = image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
+         image->planes[0].surface.modifier == DRM_FORMAT_MOD_LINEAR;
+
+      /* Only linear decode target requires the custom alignment. */
+      if (is_linear || !(image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)) {
+         uint32_t width_align, height_align;
+         radv_video_get_profile_alignments(pdev, profile_list, &width_align, &height_align);
+         image_info.width = align(image_info.width, width_align);
+         image_info.height = align(image_info.height, height_align);
+      }
 
       if (radv_has_uvd(pdev) && image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) {
          /* UVD and kernel demand a full DPB allocation. */
@@ -1206,6 +1216,12 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
 
       if (create_info.no_metadata_planes || plane_count > 1) {
          image->planes[plane].surface.flags |= RADEON_SURF_DISABLE_DCC | RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE;
+      }
+
+      if (plane > 0 && image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                                          VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
+         image->planes[plane].surface.flags |= RADEON_SURF_FORCE_SWIZZLE_MODE;
+         image->planes[plane].surface.u.gfx9.swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
       }
 
       radv_surface_init(pdev, &info, &image->planes[plane].surface);

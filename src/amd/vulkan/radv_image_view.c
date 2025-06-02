@@ -391,8 +391,8 @@ radv_image_view_make_descriptor(struct radv_image_view *iview, struct radv_devic
          first_layer = 0;
       } else {
          /* Video decode target uses custom height alignment. */
-         if (image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) {
-            assert(image->planes[plane_id].surface.u.gfx9.swizzle_mode == 0);
+         if (image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR &&
+             image->planes[plane_id].surface.u.gfx9.swizzle_mode == 0) {
             offset += first_layer * image->planes[plane_id].surface.u.gfx9.surf_slice_size;
             first_layer = 0;
          }
