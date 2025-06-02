@@ -375,12 +375,16 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       }
    }
 
-   nir->info.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
-                           sscreen->info.has_image_opcodes &&
-                           (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco ||
-                            /* Use ACO for streamout on gfx12 because it's faster. */
-                            (sscreen->info.gfx_level >= GFX12 && nir->xfb_info &&
-                             nir->xfb_info->output_count));
+   if (sscreen->debug_flags & DBG(USE_LLVM)) {
+      nir->info.use_aco_amd = false;
+   } else {
+      nir->info.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
+                              sscreen->info.has_image_opcodes &&
+                              (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco ||
+                               /* Use ACO for streamout on gfx12 because it's faster. */
+                               (sscreen->info.gfx_level >= GFX12 && nir->xfb_info &&
+                                nir->xfb_info->output_count));
+   }
 #else
    assert(aco_is_gpu_supported(&sscreen->info));
    nir->info.use_aco_amd = true;
