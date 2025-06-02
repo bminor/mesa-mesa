@@ -223,7 +223,7 @@ fn every_nth_bit(n: usize) -> u32 {
 
 impl<K> BitSet<K> {
     /// Evaluate an expression and store its value in self
-    pub fn assign<B>(&mut self, value: BitSetStream<B>)
+    pub fn assign<B>(&mut self, value: BitSetStream<B, K>)
     where
         B: BitSetStreamTrait,
     {
@@ -242,7 +242,7 @@ impl<K> BitSet<K> {
     /// Returns true if the value of self changes, or false otherwise. If you
     /// don't need the return value of this function, consider using the `|=`
     /// operator instead.
-    pub fn union_with<B>(&mut self, other: BitSetStream<B>) -> bool
+    pub fn union_with<B>(&mut self, other: BitSetStream<B, K>) -> bool
     where
         B: BitSetStreamTrait,
     {
@@ -263,10 +263,13 @@ impl<K> BitSet<K> {
     pub fn s<'a>(
         &'a self,
         _: RangeFull,
-    ) -> BitSetStream<impl 'a + BitSetStreamTrait> {
-        BitSetStream(BitSetStreamFromBitSet {
-            iter: self.words.iter().copied(),
-        })
+    ) -> BitSetStream<impl 'a + BitSetStreamTrait, K> {
+        BitSetStream(
+            BitSetStreamFromBitSet {
+                iter: self.words.iter().copied(),
+            },
+            PhantomData,
+        )
     }
 }
 
@@ -318,15 +321,15 @@ where
     }
 }
 
-pub struct BitSetStream<T>(T)
+pub struct BitSetStream<T, K>(T, PhantomData<K>)
 where
     T: BitSetStreamTrait;
 
-impl<T> From<BitSetStream<T>> for BitSet
+impl<T, K> From<BitSetStream<T, K>> for BitSet<K>
 where
     T: BitSetStreamTrait,
 {
-    fn from(value: BitSetStream<T>) -> Self {
+    fn from(value: BitSetStream<T, K>) -> Self {
         let mut out = BitSet::new();
         out.assign(value);
         out
@@ -371,26 +374,29 @@ macro_rules! binop {
             }
         }
 
-        impl<A, B> $BinOp<BitSetStream<B>> for BitSetStream<A>
+        impl<A, B, K> $BinOp<BitSetStream<B, K>> for BitSetStream<A, K>
         where
             A: BitSetStreamTrait,
             B: BitSetStreamTrait,
         {
-            type Output = BitSetStream<$Struct<A, B>>;
+            type Output = BitSetStream<$Struct<A, B>, K>;
 
-            fn $bin_op(self, rhs: BitSetStream<B>) -> Self::Output {
-                BitSetStream($Struct {
-                    a: self.0,
-                    b: rhs.0,
-                })
+            fn $bin_op(self, rhs: BitSetStream<B, K>) -> Self::Output {
+                BitSetStream(
+                    $Struct {
+                        a: self.0,
+                        b: rhs.0,
+                    },
+                    PhantomData,
+                )
             }
         }
 
-        impl<B> $AssignBinOp<BitSetStream<B>> for BitSet
+        impl<B, K> $AssignBinOp<BitSetStream<B, K>> for BitSet<K>
         where
             B: BitSetStreamTrait,
         {
-            fn $assign_bin_op(&mut self, rhs: BitSetStream<B>) {
+            fn $assign_bin_op(&mut self, rhs: BitSetStream<B, K>) {
                 let mut rhs = rhs.0;
 
                 let $a_len = self.words.len();
