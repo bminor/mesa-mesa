@@ -30,11 +30,11 @@ workflow:
     # do not duplicate pipelines on merge pipelines
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
       when: never
-    # tag pipelines are disabled as it's too late to run all the tests by
+    # Tag pipelines are disabled as it's too late to run all the tests by
     # then, the release has been made based on the staging pipelines results
     - if: $CI_COMMIT_TAG
       when: never
-    # merge pipeline
+    # Merge pipeline
     - if: &is-merge-attempt $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
         MESA_CI_PERFORMANCE_ENABLED: 1
@@ -45,17 +45,17 @@ workflow:
         JOB_PRIORITY: 75
         # fast-fail in merge pipelines: stop early if we get this many unexpected fails/crashes
         DEQP_RUNNER_MAX_FAILS: 40
-    # post-merge pipeline
+    # Post-merge pipeline
     - if: &is-post-merge $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "push"
       variables:
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: priority:high
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: priority:high-kvm
         FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:high-aarch64
-    # Pre-merge pipeline
+    # Pre-merge pipeline (because merge pipelines are already caught above)
     - if: &is-merge-request $CI_PIPELINE_SOURCE == "merge_request_event"
     # Push to a branch on a fork
     - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
-    # nightly pipeline
+    # Nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
         FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: priority:low
@@ -66,11 +66,11 @@ workflow:
         # short timeout allowed in other pipelines.
         # Note: 0 = infinity = gitlab's job `timeout:` applies, which is 1h
         BUILD_JOB_TIMEOUT_OVERRIDE: 0
-    # pipeline for direct pushes that bypassed the CI
+    # Pipeline for direct pushes to the default branch that bypassed the CI
     - if: &is-push-to-upstream-default-branch $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       variables:
         JOB_PRIORITY: 70
-    # pipeline for direct pushes from release maintainer
+    # Pipeline for direct pushes from release maintainer
     - if: &is-push-to-upstream-staging-branch $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^staging\//
       variables:
         JOB_PRIORITY: 70
