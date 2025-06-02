@@ -67,11 +67,11 @@ workflow:
         # Note: 0 = infinity = gitlab's job `timeout:` applies, which is 1h
         BUILD_JOB_TIMEOUT_OVERRIDE: 0
     # pipeline for direct pushes that bypassed the CI
-    - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: &is-push-to-upstream-default-branch $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       variables:
         JOB_PRIORITY: 70
     # pipeline for direct pushes from release maintainer
-    - if: &is-staging-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^staging\//
+    - if: &is-push-to-upstream-staging-branch $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^staging\//
       variables:
         JOB_PRIORITY: 70
 
@@ -274,10 +274,10 @@ include:
     - if: *is-pre-merge
       when: never
     # Build everything after someone bypassed the CI
-    - if: *is-direct-push
+    - if: *is-push-to-upstream-default-branch
       when: on_success
     # Build everything when pushing to staging branches
-    - if: *is-staging-push
+    - if: *is-push-to-upstream-staging-branch
       when: on_success
     # Build everything in scheduled pipelines
     - if: *is-scheduled-pipeline
@@ -314,11 +314,11 @@ include:
     - if: *is-pre-merge
       when: never
     # Build everything after someone bypassed the CI
-    - if: *is-direct-push
+    - if: *is-push-to-upstream-default-branch
       when: delayed
       start_in: *build-delay
     # Build everything when pushing to staging branches
-    - if: *is-staging-push
+    - if: *is-push-to-upstream-staging-branch
       when: delayed
       start_in: *build-delay
     # Build everything in scheduled pipelines
