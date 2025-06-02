@@ -738,10 +738,10 @@ brw_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset,
    _mesa_set_add(spill_insts, inst);
 
    if (spill_offset > 0 && spill_offset <= 0xffffu) {
-      inst = ubld.MAD(offset,
-                      brw_imm_uw(spill_offset),
-                      retype(offset, BRW_TYPE_UW),
-                      brw_imm_uw(4));
+      inst = ubld.group(8, 0).MAD(offset,
+                                  brw_imm_uw(spill_offset),
+                                  retype(offset, BRW_TYPE_UW),
+                                  brw_imm_uw(4));
       _mesa_set_add(spill_insts, inst);
    } else {
       /* Make the offset a dword */
