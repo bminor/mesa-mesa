@@ -1369,8 +1369,7 @@ ac_nir_get_lds_gs_out_slot_offset(ac_nir_prerast_out *pr_out, gl_varying_slot sl
 }
 
 static unsigned
-ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component,
-                              bool data_is_16bit)
+ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component)
 {
    assert(component < 4);
    unsigned lds_slot_offset = 0, lds_component_mask = 0;
@@ -1383,8 +1382,6 @@ ac_nir_ngg_get_xfb_lds_offset(ac_nir_prerast_out *pr_out, gl_varying_slot slot, 
       lds_slot_offset = pr_out->infos_16bit_lo[i].packed_slot_xfb_lds_offset;
       lds_component_mask = pr_out->infos_16bit_lo[i].xfb_lds_components_mask |
                            pr_out->infos_16bit_hi[i].xfb_lds_components_mask;
-   } else if (data_is_16bit) {
-      assert(!"unimplemented");
    } else {
       lds_slot_offset = pr_out->infos[slot].packed_slot_xfb_lds_offset;
       lds_component_mask = pr_out->infos[slot].xfb_lds_components_mask & ~pr_out->infos[slot].const_mask;
@@ -1406,16 +1403,16 @@ ac_nir_is_const_output(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigne
 }
 
 nir_def *
-ac_nir_get_const_output(nir_builder *b, unsigned bit_size, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
+ac_nir_get_const_output(nir_builder *b, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
                         unsigned component)
 {
    if (!ac_nir_is_const_output(pr_out, slot, component))
       return NULL;
 
    if (slot >= VARYING_SLOT_VAR0_16BIT)
-      return nir_imm_intN_t(b, pr_out->const_values_16bit[slot - VARYING_SLOT_VAR0_16BIT][component], bit_size);
+      return nir_imm_intN_t(b, pr_out->const_values_16bit[slot - VARYING_SLOT_VAR0_16BIT][component], 32);
    else
-      return nir_imm_intN_t(b, pr_out->const_values[slot][component], bit_size);
+      return nir_imm_intN_t(b, pr_out->const_values[slot][component], 32);
 }
 
 void
@@ -1423,23 +1420,25 @@ ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_
                         gl_varying_slot slot, unsigned component)
 {
    assert(value->num_components == 1);
+   assert(value->bit_size == 32);
+
    if (ac_nir_is_const_output(pr_out, slot, component))
       return;
 
-   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, value->bit_size == 16);
+   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component);
    nir_store_shared(b, value, vtxptr, .base = offset, .align_mul = 4);
 }
 
 nir_def *
-ac_nir_load_shared_xfb(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+ac_nir_load_shared_xfb(nir_builder *b, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                        gl_varying_slot slot, unsigned component)
 {
-   nir_def *const_val = ac_nir_get_const_output(b, bit_size, pr_out, slot, component);
+   nir_def *const_val = ac_nir_get_const_output(b, pr_out, slot, component);
    if (const_val)
       return const_val;
 
-   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component, bit_size == 16);
-   return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
+   unsigned offset = ac_nir_ngg_get_xfb_lds_offset(pr_out, slot, component);
+   return nir_load_shared(b, 1, 32, vtxptr, .base = offset, .align_mul = 4);
 }
 
 void
@@ -1447,6 +1446,8 @@ ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_n
                            gl_varying_slot slot, unsigned component)
 {
    assert(value->num_components == 1);
+   assert(value->bit_size == 32);
+
    if (ac_nir_is_const_output(pr_out, slot, component))
       return;
 
@@ -1455,15 +1456,15 @@ ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_n
 }
 
 nir_def *
-ac_nir_load_shared_gs_out(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+ac_nir_load_shared_gs_out(nir_builder *b, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                           gl_varying_slot slot, unsigned component)
 {
-   nir_def *const_val = ac_nir_get_const_output(b, bit_size, pr_out, slot, component);
+   nir_def *const_val = ac_nir_get_const_output(b, pr_out, slot, component);
    if (const_val)
       return const_val;
 
    unsigned offset = ac_nir_get_lds_gs_out_slot_offset(pr_out, slot, component);
-   return nir_load_shared(b, 1, bit_size, vtxptr, .base = offset, .align_mul = 4);
+   return nir_load_shared(b, 1, 32, vtxptr, .base = offset, .align_mul = 4);
 }
 
 void
@@ -1495,7 +1496,7 @@ ac_nir_ngg_build_streamout_vertex(nir_builder *b, nir_xfb_info *info,
       unsigned count = util_bitcount(out->component_mask);
 
       for (unsigned comp = 0; comp < count; comp++) {
-         nir_def *data = ac_nir_load_shared_xfb(b, 32, vtx_lds_addr, pr_out, out->location,
+         nir_def *data = ac_nir_load_shared_xfb(b, vtx_lds_addr, pr_out, out->location,
                                                 out->component_offset + comp);
 
          /* Convert 16-bit outputs to 32-bit.

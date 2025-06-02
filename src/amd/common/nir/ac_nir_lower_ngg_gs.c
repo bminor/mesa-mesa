@@ -349,7 +349,7 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
       unsigned mask = ac_nir_gs_output_component_mask_with_stream(&s->out.infos[slot], 0);
 
       u_foreach_bit(c, mask) {
-         s->out.outputs[slot][c] = ac_nir_load_shared_gs_out(b, 32, exported_out_vtx_lds_addr,
+         s->out.outputs[slot][c] = ac_nir_load_shared_gs_out(b, exported_out_vtx_lds_addr,
                                                              &s->out, slot, c);
       }
    }
@@ -361,7 +361,7 @@ ngg_gs_process_out_vertex(nir_builder *b, nir_def *out_vtx_lds_addr, lower_ngg_g
       unsigned mask = mask_lo | mask_hi;
 
       u_foreach_bit(c, mask) {
-         nir_def *load_val = ac_nir_load_shared_gs_out(b, 32, exported_out_vtx_lds_addr,
+         nir_def *load_val = ac_nir_load_shared_gs_out(b, exported_out_vtx_lds_addr,
                                                        &s->out, VARYING_SLOT_VAR0_16BIT + i, c);
 
          if (mask_lo & BITFIELD_BIT(c))
@@ -575,7 +575,7 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
       for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
          /* Load X, Y, W position components. Z is loaded only if we clip against POS. */
          for (unsigned c = 0; c < 4; c == 1 && !clip_against_pos ? c += 2 : c++)
-            pos[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out, VARYING_SLOT_POS, c);
+            pos[i][c] = ac_nir_load_shared_gs_out(b, vtxptr[i], &s->out, VARYING_SLOT_POS, c);
       }
 
       nir_def *accepted_by_clipdist = nir_imm_true(b);
@@ -591,7 +591,7 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
             if (!clip_against_pos) {
                for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
                   for (unsigned c = 0; c < 4; c++) {
-                     clipvertex[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out,
+                     clipvertex[i][c] = ac_nir_load_shared_gs_out(b, vtxptr[i], &s->out,
                                                                   VARYING_SLOT_CLIP_VERTEX, c);
                   }
                }
@@ -610,7 +610,7 @@ ngg_gs_cull_primitive(nir_builder *b, nir_def *tid_in_tg, nir_def *max_vtxcnt,
             /* Load clip distances. */
             u_foreach_bit(c, s->options->cull_clipdist_mask) {
                for (unsigned i = 0; i < s->num_vertices_per_primitive; i++) {
-                  clipdist[i][c] = ac_nir_load_shared_gs_out(b, 32, vtxptr[i], &s->out,
+                  clipdist[i][c] = ac_nir_load_shared_gs_out(b, vtxptr[i], &s->out,
                                                              VARYING_SLOT_CLIP_DIST0 + c / 4, c % 4);
                }
             }

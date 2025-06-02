@@ -242,7 +242,7 @@ bool
 ac_nir_is_const_output(ac_nir_prerast_out *pr_out, gl_varying_slot slot, unsigned component);
 
 nir_def *
-ac_nir_get_const_output(nir_builder *b, unsigned bit_size, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
+ac_nir_get_const_output(nir_builder *b, ac_nir_prerast_out *pr_out, gl_varying_slot slot,
                         unsigned component);
 
 void
@@ -250,7 +250,7 @@ ac_nir_store_shared_xfb(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_nir_
                         gl_varying_slot slot, unsigned component);
 
 nir_def *
-ac_nir_load_shared_xfb(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+ac_nir_load_shared_xfb(nir_builder *b, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                        gl_varying_slot slot, unsigned component);
 
 void
@@ -258,7 +258,7 @@ ac_nir_store_shared_gs_out(nir_builder *b, nir_def *value, nir_def *vtxptr, ac_n
                            gl_varying_slot slot, unsigned component);
 
 nir_def *
-ac_nir_load_shared_gs_out(nir_builder *b, unsigned bit_size, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
+ac_nir_load_shared_gs_out(nir_builder *b, nir_def *vtxptr, ac_nir_prerast_out *pr_out,
                           gl_varying_slot slot, unsigned component);
 
 void

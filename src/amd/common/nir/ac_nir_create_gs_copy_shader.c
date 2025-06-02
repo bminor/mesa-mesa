@@ -45,7 +45,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
                continue;
 
             if (ac_nir_is_const_output(out, i, j)) {
-               out->outputs[i][j] = ac_nir_get_const_output(&b, 32, out, i, j);
+               out->outputs[i][j] = ac_nir_get_const_output(&b, out, i, j);
                continue;
             }
 
@@ -72,7 +72,7 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
             nir_def *load_val;
 
             if (ac_nir_is_const_output(out, VARYING_SLOT_VAR0_16BIT + i, j)) {
-               load_val = ac_nir_get_const_output(&b, 32, out, i, j);
+               load_val = ac_nir_get_const_output(&b, out, i, j);
             } else {
                unsigned base = offset * gs_nir->info.gs.vertices_out * 16;
                load_val = nir_load_buffer_amd(&b, 1, 32, gsvs_ring, vtx_offset, zero, zero,

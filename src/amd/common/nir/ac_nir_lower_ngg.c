@@ -209,7 +209,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
             nir_def *vtx_idx = nir_load_var(b, s->gs_vtx_indices_vars[i]);
             nir_def *addr = pervertex_lds_addr(b, s, vtx_idx, s->pervertex_lds_bytes);
             /* Edge flags share LDS with XFB. */
-            nir_def *edge = ac_nir_load_shared_xfb(b, 32, addr, &s->out, VARYING_SLOT_EDGE, 0);
+            nir_def *edge = ac_nir_load_shared_xfb(b, addr, &s->out, VARYING_SLOT_EDGE, 0);
 
             if (s->options->hw_info->gfx_level >= GFX12)
                mask = nir_ior(b, mask, nir_ishl_imm(b, edge, 8 + i * 9));
