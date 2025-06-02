@@ -64,7 +64,8 @@ impl Drop for SVMAlloc {
         if let Some(vma) = self.vma {
             let address = vma.get() as usize as *mut c_void;
             unsafe {
-                debug_assert_eq!(0, munmap(address, self.size()));
+                let ret = munmap(address, self.size());
+                debug_assert_eq!(0, ret);
             }
 
             Platform::get()
