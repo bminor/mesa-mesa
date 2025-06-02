@@ -213,9 +213,6 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
          uint32_t descriptor_count = binding->descriptorCount;
          bool has_ycbcr_sampler = false;
 
-         /* main image + fmask */
-         uint32_t max_sampled_image_descriptors = 2;
-
          if (binding->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && binding->pImmutableSamplers) {
             for (unsigned i = 0; i < binding->descriptorCount; ++i) {
                struct vk_ycbcr_conversion *conversion =
@@ -223,8 +220,6 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
 
                if (conversion) {
                   has_ycbcr_sampler = true;
-                  max_sampled_image_descriptors =
-                     MAX2(max_sampled_image_descriptors, vk_format_get_plane_count(conversion->state.format));
                }
             }
          }
