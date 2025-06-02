@@ -319,7 +319,7 @@ impl Context {
                 unreachable!("SVM supported only on Linux")
             }
 
-            let res = unsafe {
+            let mut res = unsafe {
                 mmap(
                     vma.get() as usize as *mut c_void,
                     size.get() as usize,
@@ -333,6 +333,14 @@ impl Context {
             // mmap returns MAP_FAILED on error which is -1
             if res as usize == usize::MAX {
                 return Err(CL_OUT_OF_HOST_MEMORY);
+            }
+
+            if res as usize != vma.get() as usize {
+                unsafe {
+                    let ret = munmap(res, size.get() as usize);
+                    debug_assert_eq!(0, ret);
+                }
+                res = ptr::null_mut();
             }
 
             res.cast()
