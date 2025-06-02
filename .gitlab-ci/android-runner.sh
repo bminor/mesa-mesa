@@ -2,6 +2,8 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
+set -uex
+
 # Set default ADB command if not set already
 
 : "${ADB:=adb}"
@@ -119,7 +121,7 @@ if ! printf "%s" "$VK_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; th
      exit 1
 fi
 
-if [ -n "$USE_ANDROID_CTS" ]; then
+if [ -n "${USE_ANDROID_CTS:-}" ]; then
   # The script sets EXIT_CODE
   . "$(dirname "$0")/android-cts-runner.sh"
 else

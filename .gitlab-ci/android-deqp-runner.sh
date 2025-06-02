@@ -35,6 +35,7 @@ fi
 # Default to an empty known flakes file if it doesn't exist.
 $ADB shell "touch /data/deqp/$GPU_VERSION-flakes.txt"
 
+DEQP_SKIPS=""
 if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
     DEQP_SKIPS="$DEQP_SKIPS /data/deqp/$GPU_VERSION-skips.txt"
 fi

@@ -2,10 +2,11 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
+set -uex
+
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
 section_start cuttlefish_setup "cuttlefish: setup"
-set -xe
 
 # Structured tagging check for angle
 if [ -n "$ANGLE_TAG" ]; then
@@ -14,11 +15,11 @@ if [ -n "$ANGLE_TAG" ]; then
 fi
 
 export PATH=/cuttlefish/bin:$PATH
-export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:${LD_LIBRARY_PATH:-}
 
 # Pick up a vulkan driver
 ARCH=$(uname -m)
-export VK_DRIVER_FILES=${CI_PROJECT_DIR}/install/share/vulkan/icd.d/${VK_DRIVER:-}_icd.$ARCH.json
+export VK_DRIVER_FILES=${CI_PROJECT_DIR}/install/share/vulkan/icd.d/${VK_DRIVER}_icd.$ARCH.json
 
 syslogd
 
@@ -50,6 +51,7 @@ VSOCK_BASE=10000 # greater than all the default vsock ports
 VSOCK_CID=$((VSOCK_BASE + (CI_JOB_ID & 0xfff)))
 
 # Venus requires a custom kernel for now
+CUSTOM_KERNEL_ARGS=""
 if [ "$ANDROID_GPU_MODE" = "venus" ] || [ "$ANDROID_GPU_MODE" = "venus_guest_angle" ]; then
   CUSTOM_KERNEL_ARGS="
   -kernel_path=/cuttlefish/bzImage
