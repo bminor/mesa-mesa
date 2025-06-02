@@ -264,8 +264,7 @@ include:
       when: on_success
     # Same as above, but for pre-merge pipelines
     - if: *is-merge-request
-      changes:
-        *all_paths
+      changes: *all_paths
       when: manual
     # Skip everything for pre-merge and merge pipelines which don't change
     # anything in the build
