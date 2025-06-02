@@ -2,7 +2,7 @@ include:
   - local: 'src/gallium/drivers/svga/ci/gitlab-ci-inc.yml'
 
 .vmware-qemu-traces:x86_64:
-  stage: software-renderer
+  stage: software-renderer-nightly
   extends:
     - .lava-x86_64-piglit-traces
     - .vmware-manual-rules
@@ -21,7 +21,6 @@ include:
     FDO_HTTP_CACHE_URI: ""
 
 vmware-vmx-piglit:x86_64:
-  stage: layered-backends
   extends:
     - .lava-x86_64-test-gl
     - .test-piglit

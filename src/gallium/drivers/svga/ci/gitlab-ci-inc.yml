@@ -1,4 +1,5 @@
 .vmware-rules:
+  stage: layered-backends
   rules:
     - !reference [.test, rules]
     - !reference [.vmware-farm-rules, rules]
@@ -13,6 +14,7 @@
       when: on_success
 
 .vmware-manual-rules:
+  stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
