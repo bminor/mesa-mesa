@@ -515,11 +515,12 @@ get_l1_addr_mask(struct intel_aux_map_context *ctx)
    return l1_addr & VALID_ADDRESS_MASK;
 }
 
-static void
+static bool
 get_aux_entry(struct intel_aux_map_context *ctx, uint64_t main_address,
               uint32_t *l1_index_out, uint64_t *l1_entry_addr_out,
               uint64_t **l1_entry_map_out,
-              struct intel_aux_level **l1_aux_level_out)
+              struct intel_aux_level **l1_aux_level_out,
+              bool create)
 {
    struct intel_aux_level *l3_level = ctx->l3_level;
    struct intel_aux_level *l2_level;
@@ -528,6 +529,8 @@ get_aux_entry(struct intel_aux_map_context *ctx, uint64_t main_address,
    uint32_t l3_index = (main_address >> 36) & 0xfff;
 
    if (l3_level->children[l3_index] == NULL) {
+      if (!create)
+         return false;
       l2_level =
          add_sub_table(ctx, ctx->l3_level, l3_index,
                        L3_L2_SUB_TABLE_LEN, L3_L2_SUB_TABLE_LEN);
@@ -546,6 +549,8 @@ get_aux_entry(struct intel_aux_map_context *ctx, uint64_t main_address,
    uint32_t l2_index = (main_address >> 24) & 0xfff;
    uint64_t l1_page_size = ctx->format->l1_page_size;
    if (l2_level->children[l2_index] == NULL) {
+      if (!create)
+         return false;
       l1_level = add_sub_table(ctx, l2_level, l2_index, l1_page_size, l1_page_size);
       if (l1_level != NULL) {
          if (aux_map_debug)
@@ -569,6 +574,7 @@ get_aux_entry(struct intel_aux_map_context *ctx, uint64_t main_address,
       *l1_entry_map_out = &l1_level->entries[l1_index];
    if (l1_aux_level_out)
       *l1_aux_level_out = l1_level;
+   return true;
 }
 
 static bool
@@ -583,7 +589,8 @@ add_mapping(struct intel_aux_map_context *ctx, uint64_t main_address,
    uint32_t l1_index;
    uint64_t *l1_entry;
    struct intel_aux_level *l1_aux_level;
-   get_aux_entry(ctx, main_address, &l1_index, NULL, &l1_entry, &l1_aux_level);
+   get_aux_entry(ctx, main_address, &l1_index, NULL, &l1_entry,
+                 &l1_aux_level, true);
 
    const uint64_t l1_data =
       (aux_address & intel_aux_get_meta_address_mask(ctx)) |
@@ -634,7 +641,8 @@ intel_aux_map_get_entry(struct intel_aux_map_context *ctx,
 {
    pthread_mutex_lock(&ctx->mutex);
    uint64_t *l1_entry_map;
-   get_aux_entry(ctx, main_address, NULL, aux_entry_address, &l1_entry_map, NULL);
+   get_aux_entry(ctx, main_address, NULL, aux_entry_address, &l1_entry_map,
+                 NULL, true);
    pthread_mutex_unlock(&ctx->mutex);
 
    return l1_entry_map;
@@ -653,7 +661,9 @@ remove_l1_mapping_locked(struct intel_aux_map_context *ctx, uint64_t main_addres
    uint32_t l1_index;
    uint64_t *l1_entry;
    struct intel_aux_level *l1_aux_level;
-   get_aux_entry(ctx, main_address, &l1_index, NULL, &l1_entry, &l1_aux_level);
+   if (!get_aux_entry(ctx, main_address, &l1_index, NULL, &l1_entry,
+                 &l1_aux_level, false))
+      return;
 
    const uint64_t current_l1_data = *l1_entry;
    const uint64_t l1_data = current_l1_data & ~INTEL_AUX_MAP_ENTRY_VALID_BIT;
