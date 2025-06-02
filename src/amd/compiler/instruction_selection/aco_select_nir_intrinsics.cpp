@@ -846,7 +846,9 @@ lower_global_address(Builder& bld, uint32_t offset_in, Temp* address_inout,
 
    if (bld.program->gfx_level == GFX6) {
       /* GFX6 (MUBUF): (SGPR address, SGPR offset) or (VGPR address, SGPR offset) */
-      if (offset.type() != RegType::sgpr) {
+      /* Disallow SGPR address with both a const_offset and offset because of possible overflow. */
+      if (offset.id() && (offset.type() != RegType::sgpr ||
+                          (address.type() == RegType::sgpr && const_offset > 0))) {
          address = add64_32(bld, address, offset);
          offset = Temp();
       }
