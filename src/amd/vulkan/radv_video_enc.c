@@ -1490,14 +1490,22 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer,
    const StdVideoEncodeH264PictureInfo *h264_pic = h264_picture_info->pStdPictureInfo;
    unsigned slot_idx_0 = 0xffffffff;
    unsigned slot_idx_1 = 0xffffffff;
+   const VkVideoEncodeH264DpbSlotInfoKHR *slot_info_0 = NULL;
+   const VkVideoEncodeH264DpbSlotInfoKHR *slot_info_1 = NULL;
 
    switch (h264_pic->primary_pic_type) {
    case STD_VIDEO_H264_PICTURE_TYPE_P:
       slot_idx_0 = enc_info->pReferenceSlots[0].slotIndex;
+      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[0].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       break;
    case STD_VIDEO_H264_PICTURE_TYPE_B:
       slot_idx_0 = enc_info->pReferenceSlots[0].slotIndex;
       slot_idx_1 = enc_info->pReferenceSlots[1].slotIndex;
+      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[0].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      slot_info_1 = vk_find_struct_const(enc_info->pReferenceSlots[1].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       break;
    default:
       break;
@@ -1512,29 +1520,43 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer,
       RADEON_ENC_CS(0xffffffff); // reference_picture1_index
    } else if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5) {
       RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
-      RADEON_ENC_CS(0); // input pic order cnt
+      RADEON_ENC_CS(h264_pic->PicOrderCnt);
       RADEON_ENC_CS(RENCODE_H264_INTERLACING_MODE_PROGRESSIVE);
-      RADEON_ENC_CS(0);                            // l0 ref pic0 pic_type
-      RADEON_ENC_CS(0);                            // l0 ref pic0 is long term
-      RADEON_ENC_CS(0);                            // l0 ref pic0 picture structure
-      RADEON_ENC_CS(0);                            // l0 ref pic0 pic order cnt
+      if (slot_info_0) {
+         RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_0->pStdReferenceInfo->primary_pic_type));
+         RADEON_ENC_CS(slot_info_0->pStdReferenceInfo->flags.used_for_long_term_reference);
+         RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
+         RADEON_ENC_CS(slot_info_0->pStdReferenceInfo->PicOrderCnt);
+      } else {
+         RADEON_ENC_CS(0);                         // l0 ref pic0 pic_type
+         RADEON_ENC_CS(0);                         // l0 ref pic0 is long term
+         RADEON_ENC_CS(0);                         // l0 ref pic0 picture structure
+         RADEON_ENC_CS(0);                         // l0 ref pic0 pic order cnt
+      }
       RADEON_ENC_CS(0xffffffff);                   // l0 ref pic1 index
       RADEON_ENC_CS(0);                            // l0 ref pic1 pic_type
       RADEON_ENC_CS(0);                            // l0 ref pic1 is long term
       RADEON_ENC_CS(0);                            // l0 ref pic1 picture structure
       RADEON_ENC_CS(0);                            // l0 ref pic1 pic order cnt
       RADEON_ENC_CS(slot_idx_1);                   // l1 ref pic0 index
-      RADEON_ENC_CS(0);                            // l1 ref pic0 pic_type
-      RADEON_ENC_CS(0);                            // l1 ref pic0 is long term
-      RADEON_ENC_CS(0);                            // l1 ref pic0 picture structure
-      RADEON_ENC_CS(0);                            // l1 ref pic0 pic order cnt
+      if (slot_info_1) {
+         RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_1->pStdReferenceInfo->primary_pic_type));
+         RADEON_ENC_CS(slot_info_1->pStdReferenceInfo->flags.used_for_long_term_reference);
+         RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
+         RADEON_ENC_CS(slot_info_1->pStdReferenceInfo->PicOrderCnt);
+      } else {
+         RADEON_ENC_CS(0);                         // l1 ref pic0 pic_type
+         RADEON_ENC_CS(0);                         // l1 ref pic0 is long term
+         RADEON_ENC_CS(0);                         // l1 ref pic0 picture structure
+         RADEON_ENC_CS(0);                         // l1 ref pic0 pic order cnt
+      }
       RADEON_ENC_CS(h264_pic->flags.is_reference); // is reference
    } else {
       // V5
       RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
-      RADEON_ENC_CS(0);                            // input pic order cnt
+      RADEON_ENC_CS(h264_pic->PicOrderCnt);
       RADEON_ENC_CS(h264_pic->flags.is_reference);
-      RADEON_ENC_CS(0);                            // is long term
+      RADEON_ENC_CS(h264_pic->flags.long_term_reference_flag);
       RADEON_ENC_CS(RENCODE_H264_INTERLACING_MODE_PROGRESSIVE);
       RADEON_ENC_CS(slot_idx_0);                   // ref_list0[0]
       for (int i = 1; i < RENCODE_H264_MAX_REFERENCE_LIST_SIZE; i++)
