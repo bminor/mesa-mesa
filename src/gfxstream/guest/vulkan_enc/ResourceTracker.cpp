@@ -751,10 +751,8 @@ CoherentMemoryPtr ResourceTracker::freeCoherentMemoryLocked(VkDeviceMemory memor
             delete_goldfish_VkDeviceMemory(memory);
         }
 
-        if (info.ptr) {
-            info.coherentMemory->release(info.ptr);
-            info.ptr = nullptr;
-        }
+        info.coherentMemory->release(info.coherentMemoryOffset);
+        info.ptr = nullptr;
 
         return std::move(info.coherentMemory);
     }
