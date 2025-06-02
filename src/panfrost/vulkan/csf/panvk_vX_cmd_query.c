@@ -1,22 +1,29 @@
 /*
  * Copyright © 2024 Collabora Ltd.
+ * Copyright © 2025 Arm Ltd.
  * SPDX-License-Identifier: MIT
  */
 #include <stdint.h>
 #include "util/os_time.h"
 
+#include "cs_builder.h"
+
+#include "vk_enum_defines.h"
 #include "vk_log.h"
 #include "vk_synchronization.h"
 
 #include "genxml/gen_macros.h"
 
 #include "panvk_buffer.h"
+#include "panvk_cmd_alloc.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_cmd_meta.h"
+#include "panvk_cmd_ts.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
 #include "panvk_macros.h"
 #include "panvk_query_pool.h"
+#include "panvk_queue.h"
 
 /* At the API level, a query consists of a status and a result.  Both are
  * uninitialized initially.  There are these query operations:
@@ -308,6 +315,221 @@ panvk_copy_occlusion_query_results(struct panvk_cmd_buffer *cmd,
    }
 }
 
+static void
+panvk_cmd_reset_timestamp_queries(struct panvk_cmd_buffer *cmd,
+                                  struct panvk_query_pool *pool,
+                                  uint32_t first_query, uint32_t query_count)
+{
+   for (int sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq) {
+      struct cs_builder *b = panvk_get_cs_builder(cmd, sq);
+
+      struct cs_index zeros = cs_scratch_reg_tuple(b, 0, 4);
+      struct cs_index zero64 = cs_scratch_reg64(b, 0);
+      struct cs_index addr = cs_scratch_reg64(b, 4);
+      struct cs_index counter = cs_scratch_reg32(b, 6);
+
+      int offset = sq * sizeof(struct panvk_query_report);
+
+      for (uint32_t i = 0; i < zeros.size; i += 2)
+         cs_move64_to(b, cs_scratch_reg64(b, i), 0);
+
+      cs_move32_to(b, counter, query_count);
+      cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, first_query));
+
+      /* Wait for timestamp writes. */
+      cs_wait_slot(b, SB_ID(LS));
+
+      cs_while(b, MALI_CS_CONDITION_GREATER, counter) {
+         /* If the info subqueue is the last one, it can reset the info field in
+          * one store because of the memory layout of the query report values. */
+         STATIC_ASSERT(PANVK_QUERY_TS_INFO_SUBQUEUE ==
+                       PANVK_SUBQUEUE_COUNT - 1);
+         if (sq == PANVK_QUERY_TS_INFO_SUBQUEUE)
+            cs_store(b, zeros, addr, BITFIELD_MASK(zeros.size), offset);
+         else
+            cs_store64(b, zero64, addr, offset);
+
+         cs_add64(b, addr, addr, pool->query_stride);
+         cs_add32(b, counter, counter, -1);
+      }
+
+      cs_flush_stores(b);
+   }
+
+   /* Reset availability from the info subqueue because we also use that queue
+    * to signal the availability later. */
+   struct cs_builder *b =
+      panvk_get_cs_builder(cmd, PANVK_QUERY_TS_INFO_SUBQUEUE);
+   struct cs_index addr = cs_scratch_reg64(b, 16);
+   struct cs_index zero_regs = cs_scratch_reg_tuple(b, 0, 16);
+   cs_move64_to(b, addr, panvk_query_available_dev_addr(pool, first_query));
+   reset_queries_batch(b, addr, zero_regs, query_count);
+   cs_flush_stores(b);
+}
+
+static void
+panvk_cs_write_ts_info(struct panvk_cmd_buffer *cmd,
+                       VkPipelineStageFlags2 stage,
+                       struct panvk_query_pool *pool, uint32_t first_query)
+{
+   const uint32_t n_views =
+      MAX2(1, util_bitcount(cmd->state.gfx.render.view_mask));
+
+   /* Store the timestamp info needed during copy. */
+   struct cs_builder *b =
+      panvk_get_cs_builder(cmd, PANVK_QUERY_TS_INFO_SUBQUEUE);
+   struct cs_index addr = cs_scratch_reg64(b, 0);
+   struct cs_index info = cs_scratch_reg64(b, 2);
+   int offset = PANVK_SUBQUEUE_COUNT * sizeof(struct panvk_query_report);
+
+   uint64_t ts_info = panvk_timestamp_info_encode(
+      stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT ? PANVK_QUERY_TS_OP_MIN
+                                                   : PANVK_QUERY_TS_OP_MAX,
+      vk_stage_to_subqueue_mask(stage));
+
+   cs_move64_to(b, info, ts_info);
+   for (uint32_t query = first_query; query < first_query + n_views; ++query) {
+      cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, query));
+      cs_store64(b, info, addr, offset);
+   }
+}
+
+static void
+panvk_add_finished_query(struct panvk_cmd_buffer *cmd,
+                         VkPipelineStageFlags2 stage,
+                         struct panvk_query_pool *pool, uint32_t query)
+{
+   struct cs_builder *b =
+      panvk_get_cs_builder(cmd, PANVK_QUERY_TS_INFO_SUBQUEUE);
+
+   struct pan_ptr new_ts_node = panvk_cmd_alloc_dev_mem(
+      cmd, desc, sizeof(struct panvk_cs_timestamp_query), 8);
+
+   *((struct panvk_cs_timestamp_query *)new_ts_node.cpu) =
+      (struct panvk_cs_timestamp_query){
+         .node = {.next = 0},
+         .reports = panvk_query_report_dev_addr(pool, query),
+         .avail = panvk_query_available_dev_addr(pool, query),
+      };
+
+   struct cs_index new_node_ptr = cs_scratch_reg64(b, 0);
+   cs_move64_to(b, new_node_ptr, new_ts_node.gpu);
+
+   cs_single_link_list_add_tail(
+      b, cs_subqueue_ctx_reg(b),
+      offsetof(struct panvk_cs_subqueue_context, render.ts_done_chain),
+      new_node_ptr, offsetof(struct panvk_cs_timestamp_query, node),
+      cs_scratch_reg_tuple(b, 10, 4));
+}
+
+static void
+panvk_cs_defer_timestamp(struct panvk_cmd_buffer *cmd,
+                         VkPipelineStageFlags2 stage,
+                         struct panvk_query_pool *pool, uint32_t query)
+{
+   /* Deferring top of pipe doesn't make sense. */
+   assert(VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT != stage);
+
+   const uint32_t write_sq_mask = vk_stage_to_subqueue_mask(stage);
+   const uint32_t n_views =
+      MAX2(1, util_bitcount(cmd->state.gfx.render.view_mask));
+
+   /* Each subqueue in write_sq_mask must write a timestamp value.
+    * Additionally, the info subqueue needs to move the deferred timestamp
+    * into the list of timestamps to be signalled later - Regardless of
+    * whether a timestamp is needed from that subqueue.
+    */
+   for (uint32_t sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq) {
+      if (((write_sq_mask | BITFIELD_BIT(PANVK_QUERY_TS_INFO_SUBQUEUE)) &
+           BITFIELD_BIT(sq)) == 0)
+         continue;
+
+      bool write_report =
+         (sq != PANVK_QUERY_TS_INFO_SUBQUEUE) ||
+         (write_sq_mask & BITFIELD_BIT(PANVK_QUERY_TS_INFO_SUBQUEUE)) != 0;
+
+      struct cs_builder *b = panvk_get_cs_builder(cmd, sq);
+
+      for (uint32_t q = query; q < query + n_views; ++q) {
+         struct pan_ptr new_ts_node = panvk_cmd_alloc_dev_mem(
+            cmd, desc, sizeof(struct panvk_cs_timestamp_query), 8);
+         *((struct panvk_cs_timestamp_query *)new_ts_node.cpu) =
+            (struct panvk_cs_timestamp_query){
+               .node = {.next = 0},
+               .reports =
+                  write_report ? panvk_query_report_dev_addr(pool, q) : 0,
+               .avail = panvk_query_available_dev_addr(pool, q),
+            };
+
+         struct cs_index new_node_ptr = cs_scratch_reg64(b, 0);
+         cs_move64_to(b, new_node_ptr, new_ts_node.gpu);
+         cs_single_link_list_add_tail(
+            b, cs_subqueue_ctx_reg(b),
+            offsetof(struct panvk_cs_subqueue_context, render.ts_chain),
+            new_node_ptr, offsetof(struct panvk_cs_timestamp_query, node),
+            cs_scratch_reg_tuple(b, 10, 4));
+      }
+   }
+}
+
+static void
+panvk_cs_write_timestamp(struct panvk_cmd_buffer *cmd,
+                         VkPipelineStageFlags2 stage,
+                         struct panvk_query_pool *pool, uint32_t query)
+{
+   struct panvk_device *dev = to_panvk_device(cmd->vk.base.device);
+
+   const uint32_t write_sq_mask = vk_stage_to_subqueue_mask(stage);
+   const uint32_t n_views =
+      MAX2(1, util_bitcount(cmd->state.gfx.render.view_mask));
+
+   for (uint32_t sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq) {
+      if ((write_sq_mask & BITFIELD_BIT(sq)) == 0)
+         continue;
+
+      struct cs_builder *b = panvk_get_cs_builder(cmd, sq);
+      struct cs_index addr = cs_scratch_reg64(b, 0);
+      int offset = sq * sizeof(struct panvk_query_report);
+
+      for (uint32_t q = query; q < query + n_views; ++q) {
+         /* Wait for prev. timestamp so they increase monotonically. */
+         cs_wait_slot(b, SB_ID(LS));
+         cs_move64_to(b, addr, panvk_query_report_dev_addr(pool, q));
+         cs_store_state(b, addr, offset, MALI_CS_STATE_TIMESTAMP,
+                        cs_defer(dev->csf.sb.all_iters_mask, SB_ID(LS)));
+      }
+   }
+
+   /* Store the queries syncobj for signalling at the end of this cmdbuf. */
+   for (uint32_t q = query; q < query + n_views; ++q)
+      panvk_add_finished_query(cmd, stage, pool, q);
+}
+
+static void
+panvk_cmd_write_timestamp_query(struct panvk_cmd_buffer *cmd,
+                                VkPipelineStageFlags2 stage,
+                                struct panvk_query_pool *pool, uint32_t query)
+{
+   /* Store the actual timestamp values per subqueue. */
+   const uint32_t write_sq_mask = vk_stage_to_subqueue_mask(stage);
+
+   /* The timestamp has to be written after RUN_FRAGMENT if we are inside
+    * a renderpass at the moment and cover the F subqueue.
+    */
+   const bool in_rp = cmd->state.gfx.render.tiler || inherits_render_ctx(cmd);
+   const bool defer =
+      in_rp && (write_sq_mask & BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT));
+
+   if (defer)
+      panvk_cs_defer_timestamp(cmd, stage, pool, query);
+   else
+      panvk_cs_write_timestamp(cmd, stage, pool, query);
+
+   panvk_cs_write_ts_info(cmd, stage, pool, query);
+
+   cmd->state.contains_timestamp_queries = true;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdResetQueryPool)(VkCommandBuffer commandBuffer,
                                   VkQueryPool queryPool, uint32_t firstQuery,
@@ -322,6 +544,10 @@ panvk_per_arch(CmdResetQueryPool)(VkCommandBuffer commandBuffer,
    switch (pool->vk.query_type) {
    case VK_QUERY_TYPE_OCCLUSION: {
       panvk_cmd_reset_occlusion_queries(cmd, pool, firstQuery, queryCount);
+      break;
+   }
+   case VK_QUERY_TYPE_TIMESTAMP: {
+      panvk_cmd_reset_timestamp_queries(cmd, pool, firstQuery, queryCount);
       break;
    }
    default:
@@ -377,10 +603,10 @@ panvk_per_arch(CmdWriteTimestamp2)(VkCommandBuffer commandBuffer,
                                    VkPipelineStageFlags2 stage,
                                    VkQueryPool queryPool, uint32_t query)
 {
-   UNUSED VK_FROM_HANDLE(panvk_cmd_buffer, cmd, commandBuffer);
-   UNUSED VK_FROM_HANDLE(panvk_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(panvk_cmd_buffer, cmd, commandBuffer);
+   VK_FROM_HANDLE(panvk_query_pool, pool, queryPool);
 
-   panvk_stub();
+   panvk_cmd_write_timestamp_query(cmd, stage, pool, query);
 }
 
 VKAPI_ATTR void VKAPI_CALL

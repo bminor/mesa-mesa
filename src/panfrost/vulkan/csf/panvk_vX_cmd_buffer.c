@@ -36,6 +36,7 @@
 #include "panvk_cmd_desc_state.h"
 #include "panvk_cmd_pool.h"
 #include "panvk_cmd_push_constant.h"
+#include "panvk_cmd_ts.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
 #include "panvk_instance.h"
@@ -187,10 +188,68 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    cs_finish(&cmdbuf->state.cs[subqueue].builder);
 }
 
+static void
+finish_queries(struct panvk_cmd_buffer *cmdbuf)
+{
+   enum panvk_subqueue_id signal_queue = PANVK_QUERY_TS_INFO_SUBQUEUE;
+
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, signal_queue);
+   struct cs_index next = cs_scratch_reg64(b, 6);
+   struct cs_index syncobj = cs_scratch_reg64(b, 2);
+   struct cs_index signal_val = cs_scratch_reg32(b, 4);
+
+   cs_load64_to(
+      b, next, cs_subqueue_ctx_reg(b),
+      offsetof(struct panvk_cs_subqueue_context, render.ts_done_chain.head));
+
+   /* If there are queries to signal, wait for other subqueues before
+    * signalling the syncobjs. */
+   struct panvk_cs_deps deps = {0};
+   deps.dst[signal_queue].wait_subqueue_mask =
+      BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) & ~BITFIELD_BIT(signal_queue);
+   deps.dst[signal_queue].conditional = true;
+   deps.dst[signal_queue].cond_value = next;
+   deps.dst[signal_queue].cond = MALI_CS_CONDITION_NEQUAL;
+   /* Wait for DEFERRED_SYNC in addition to LS so that we don't overtake the
+    * deferred SYNC_ADDs added after frag jobs. */
+   u_foreach_bit(i, deps.dst[signal_queue].wait_subqueue_mask)
+      deps.src[i].wait_sb_mask = SB_MASK(LS) | SB_MASK(DEFERRED_SYNC);
+   panvk_per_arch(emit_barrier)(cmdbuf, deps);
+
+   cs_single_link_list_for_each_from(b, next, struct panvk_cs_timestamp_query,
+                                     node) {
+      cs_load64_to(b, syncobj, next,
+                   offsetof(struct panvk_cs_timestamp_query, avail));
+
+      cs_move32_to(b, signal_val, 1);
+      cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, signal_val, syncobj,
+                    cs_defer(SB_IMM_MASK, SB_ID(DEFERRED_SYNC)));
+   }
+
+   cs_move64_to(b, next, 0);
+   cs_store64(
+      b, next, cs_subqueue_ctx_reg(b),
+      offsetof(struct panvk_cs_subqueue_context, render.ts_done_chain.head));
+   cs_flush_stores(b);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_per_arch(EndCommandBuffer)(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+
+   /* Finishing queries requires a barrier. We don't want to do that more
+    * often than necessary. At the end of a primary is usually enough.
+    * Additionally, simultaneous use secondaries also need to flush if they
+    * contain timestamp query writes to avoid adding the same node more than
+    * once into panvk_cs_subqueue_context::render.ts_chain. */
+   const bool sim_use_sec_with_ts =
+      cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
+      (cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) &&
+      cmdbuf->state.contains_timestamp_queries;
+   if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ||
+       unlikely(sim_use_sec_with_ts))
+      finish_queries(cmdbuf);
 
    emit_tls(cmdbuf);
    flush_sync_points(cmdbuf);

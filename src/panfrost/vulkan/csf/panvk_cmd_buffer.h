@@ -1,5 +1,6 @@
 /*
  * Copyright © 2024 Collabora Ltd.
+ * Copyright © 2025 Arm Ltd.
  * SPDX-License-Identifier: MIT
  */
 
@@ -21,6 +22,7 @@
 #include "panvk_queue.h"
 
 #include "vk_command_buffer.h"
+#include "vk_synchronization.h"
 
 #include "util/list.h"
 #include "util/perf/u_trace.h"
@@ -85,6 +87,12 @@ get_fbd_size(bool has_zs_ext, uint32_t rt_count)
    (TILER_OOM_CTX_FIELD_OFFSET(fbds) +                                         \
     (PANVK_IR_##_pass##_PASS * sizeof(uint64_t)))
 
+struct panvk_cs_timestamp_query {
+   struct cs_single_link_list_node node;
+   uint64_t reports;
+   uint64_t avail;
+};
+
 struct panvk_cs_occlusion_query {
    struct cs_single_link_list_node node;
    uint64_t syncobj;
@@ -102,6 +110,9 @@ struct panvk_cs_subqueue_context {
       uint64_t tiler_heap;
       uint64_t geom_buf;
       struct cs_single_link_list oq_chain;
+      /* Timestamp queries that need to happen after the current rp. */
+      struct cs_single_link_list ts_chain;
+      struct cs_single_link_list ts_done_chain;
    } render;
    struct {
       uint32_t counter;
@@ -385,6 +396,7 @@ struct panvk_cmd_buffer {
       struct panvk_push_constant_state push_constants;
       struct panvk_cs_state cs[PANVK_SUBQUEUE_COUNT];
       struct panvk_tls_state tls;
+      bool contains_timestamp_queries;
    } state;
 };
 
@@ -506,6 +518,45 @@ panvk_get_subqueue_stages(enum panvk_subqueue_id subqueue)
    default:
       unreachable("Invalid subqueue id");
    }
+}
+
+static uint32_t
+vk_stage_to_subqueue_mask(VkPipelineStageFlagBits2 vk_stage)
+{
+   assert(util_bitcount64(vk_stage) == 1);
+   /* Handle special stages. */
+   if (vk_stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
+      return BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER) |
+             BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+   if (vk_stage == VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)
+      return BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT) |
+             BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+   if (vk_stage == VK_PIPELINE_STAGE_2_HOST_BIT)
+      /* We need to map host to something, so map it to compute to not interfer
+       * with drawing. */
+      return BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+
+   /* Handle other compound stages by expanding. */
+   vk_stage = vk_expand_pipeline_stage_flags2(vk_stage);
+
+   VkPipelineStageFlags2 flags[PANVK_SUBQUEUE_COUNT];
+   for (uint32_t sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq)
+      flags[sq] = panvk_get_subqueue_stages(sq);
+
+   uint32_t result = 0;
+
+   if (flags[PANVK_SUBQUEUE_VERTEX_TILER] & vk_stage)
+      result |= BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER);
+
+   if (flags[PANVK_SUBQUEUE_FRAGMENT] & vk_stage)
+      result |= BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT);
+
+   if (flags[PANVK_SUBQUEUE_COMPUTE] & vk_stage)
+      result |= BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+
+   /* All stages should map to at least one subqueue. */
+   assert(util_bitcount(result) > 0);
+   return result;
 }
 
 void panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,

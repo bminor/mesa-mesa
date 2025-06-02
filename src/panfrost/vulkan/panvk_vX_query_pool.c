@@ -1,14 +1,22 @@
 /*
  * Copyright © 2024 Collabora Ltd.
+ * Copyright © 2025 Arm Ltd.
  * SPDX-License-Identifier: MIT
  */
 
+#include "util/macros.h"
 #include "vk_log.h"
 
 #include "pan_props.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
 #include "panvk_query_pool.h"
+
+#include "panvk_cmd_ts.h"
+
+#if PAN_ARCH >= 10
+#include "panvk_queue.h"
+#endif
 
 #define PANVK_QUERY_TIMEOUT 2000000000ull
 
@@ -41,6 +49,13 @@ panvk_per_arch(CreateQueryPool)(VkDevice _device,
 #endif
       break;
    }
+#if PAN_ARCH >= 10
+   case VK_QUERY_TYPE_TIMESTAMP: {
+      /* One value per subqueue + 1 value for metadata. */
+      reports_per_query = PANVK_SUBQUEUE_COUNT + 1;
+      break;
+   }
+#endif
    default:
       unreachable("Unsupported query type");
    }
