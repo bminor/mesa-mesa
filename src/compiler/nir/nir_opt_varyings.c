@@ -4186,7 +4186,6 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
          }
 
          nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-         unsigned bit_size = nir_intrinsic_infos[intr->intrinsic].has_dest ? intr->def.bit_size : intr->src[0].ssa->bit_size;
 
          /* Set all types to float to facilitate full IO vectorization.
           * This is skipped only if mediump is not lowered to 16 bits.
@@ -4198,7 +4197,7 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
           * Set nir_shader_compiler_options::lower_mediump_io if you want to
           * lower mediump to 16 bits in the GLSL linker before this pass.
           */
-         if (bit_size != 32 || !sem.medium_precision) {
+         if (!sem.medium_precision) {
             nir_alu_type type = nir_intrinsic_has_src_type(intr) ? nir_intrinsic_src_type(intr) : nir_intrinsic_dest_type(intr);
             type = nir_alu_type_get_type_size(type) | nir_type_float;
 
