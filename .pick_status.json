@@ -1484,7 +1484,7 @@
         "description": "d3d10umd: De-bufferize OutputMerger",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05f8b59c90e9407cec499fbd4bc10b7801a44f5c",
         "notes": null
