@@ -483,6 +483,8 @@ get_register_queries_function(const struct intel_device_info *devinfo)
       return intel_oa_register_queries_lnl;
    case INTEL_PLATFORM_BMG:
       return intel_oa_register_queries_bmg;
+   case INTEL_PLATFORM_PTL:
+      return intel_oa_register_queries_ptl;
    default:
       return NULL;
    }
@@ -1232,6 +1234,7 @@ intel_perf_query_result_read_gt_frequency(struct intel_perf_query_result *result
    case 11:
    case 12:
    case 20:
+   case 30:
       result->gt_frequency[0] = GET_FIELD(start, GFX9_RPSTAT0_CURR_GT_FREQ) * 50ULL / 3ULL;
       result->gt_frequency[1] = GET_FIELD(end, GFX9_RPSTAT0_CURR_GT_FREQ) * 50ULL / 3ULL;
       break;

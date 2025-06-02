@@ -12,6 +12,7 @@ intel_hw_metrics = [
   'arlgt1', 'arlgt2',
   'lnl',
   'bmg',
+  'ptl',
 ]
 
 intel_hw_metrics_xml_files = []

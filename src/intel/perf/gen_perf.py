@@ -263,6 +263,14 @@ def resolve_variable(name, set, allow_counters):
     m = re.search(r'\$GtSlice([0-9]+)XeCore([0-9]+)$', name)
     if m:
         return 'intel_device_info_subslice_available(perf->devinfo, {0}, {1})'.format(m.group(1), m.group(2))
+    m = re.search(r'\$GtXeCore([0-9]+)$', name)
+    if m:
+        n = m.group(1)
+        return (
+            'intel_device_info_subslice_available(perf->devinfo, '
+            '{n} / perf->devinfo->subslice_slice_stride, '
+            '{n} % perf->devinfo->subslice_slice_stride)'
+        ).format(n=n)
     if allow_counters and name in set.counter_vars:
         return set.read_funcs[name[1:]] + "(perf, query, results)"
     return None
