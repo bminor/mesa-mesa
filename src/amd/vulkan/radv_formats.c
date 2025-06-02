@@ -320,25 +320,32 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
             tiling |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
       }
 
+      if (multiplanar)
+         tiling |= VK_FORMAT_FEATURE_2_DISJOINT_BIT;
+
+      /* Fails for unknown reasons with linear tiling & subsampled formats. */
+      if (desc->layout != UTIL_FORMAT_LAYOUT_SUBSAMPLED)
+         linear = tiling;
+
       if (pdev->video_decode_enabled) {
          if (format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM ||
              format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 ||
-             format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16)
+             format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16) {
+            linear |= VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR;
             tiling |= VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR | VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR;
+         }
       }
 
       if (pdev->video_encode_enabled) {
          if (format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM ||
              format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 ||
-             format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16)
+             format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16) {
+            linear |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR;
             tiling |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR | VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR;
+         }
       }
 
-      if (multiplanar)
-         tiling |= VK_FORMAT_FEATURE_2_DISJOINT_BIT;
-
-      /* Fails for unknown reasons with linear tiling & subsampled formats. */
-      out_properties->linearTilingFeatures = desc->layout == UTIL_FORMAT_LAYOUT_SUBSAMPLED ? 0 : tiling;
+      out_properties->linearTilingFeatures = linear;
       out_properties->optimalTilingFeatures = tiling;
       out_properties->bufferFeatures = 0;
       return;
