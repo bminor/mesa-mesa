@@ -121,6 +121,12 @@ zink_context_destroy(struct pipe_context *pctx)
    struct pipe_framebuffer_state fb = {0};
    pctx->set_framebuffer_state(pctx, &fb);
 
+   if (screen->base.num_contexts == 1 && screen->renderdoc_capturing) {
+      screen->renderdoc_capture_all = false;
+      ctx->bs->has_work = true;
+      pctx->flush(pctx, NULL, 0);
+   }
+
    if (util_queue_is_initialized(&screen->flush_queue))
       util_queue_finish(&screen->flush_queue);
    if (ctx->bs && !screen->device_lost) {
