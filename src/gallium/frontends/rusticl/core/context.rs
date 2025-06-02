@@ -302,13 +302,28 @@ impl Context {
         };
 
         let ptr: *mut c_void = if let Some(vma) = &vma {
+            #[cfg(target_os = "linux")]
+            fn os_flags() -> u32 {
+                // MAP_FIXED_NOREPLACE needs 4.17
+                MAP_FIXED_NOREPLACE | MAP_NORESERVE
+            }
+
+            #[cfg(target_os = "freebsd")]
+            fn os_flags() -> u32 {
+                MAP_FIXED | MAP_EXCL
+            }
+
+            #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+            fn os_flags() -> u32 {
+                unreachable!("SVM supported only on Linux")
+            }
+
             let res = unsafe {
                 mmap(
                     vma.get() as usize as *mut c_void,
                     size.get() as usize,
                     (PROT_READ | PROT_WRITE) as c_int,
-                    // MAP_FIXED_NOREPLACE needs 4.17
-                    (MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE | MAP_NORESERVE) as c_int,
+                    (MAP_PRIVATE | MAP_ANONYMOUS | os_flags()) as c_int,
                     -1,
                     0,
                 )

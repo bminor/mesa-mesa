@@ -1181,7 +1181,10 @@ impl Device {
     }
 
     pub fn svm_supported(&self) -> bool {
-        if cfg!(not(target_pointer_width = "64")) {
+        if cfg!(any(
+            not(target_pointer_width = "64"),
+            not(any(target_os = "linux", target_os = "freebsd"))
+        )) {
             return false;
         }
 
