@@ -552,11 +552,12 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
 
    /* Arrays and cubemaps have the entire miptree duplicated */
    layout->array_stride_B = ALIGN_POT(offset_B, 64);
-   if (wsi_layout)
-      layout->data_size_B = offset_B;
-   else
+   if (wsi_layout) {
+      layout->data_size_B = offset_B - wsi_layout->offset_B;
+   } else {
       layout->data_size_B = ALIGN_POT(
          (uint64_t)layout->array_stride_B * (uint64_t)props->array_size, 4096);
+   }
 
    return true;
 }

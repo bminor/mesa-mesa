@@ -89,6 +89,7 @@ struct pan_image_props {
 struct pan_image_layout {
    struct pan_image_slice_layout slices[MAX_MIP_LEVELS];
 
+   /* Image plane data size in bytes */
    uint64_t data_size_B;
    uint64_t array_stride_B;
 };
