@@ -526,6 +526,8 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_split_array_vars,
             nir_var_function_temp | nir_var_shader_temp);
 
+   pco_nir_opt(ctx, nir);
+
    NIR_PASS(_,
             nir,
             nir_lower_indirect_derefs,
