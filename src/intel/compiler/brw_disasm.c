@@ -114,6 +114,15 @@ is_split_send(UNUSED const struct intel_device_info *devinfo, unsigned opcode)
              opcode == BRW_OPCODE_SENDSC;
 }
 
+static bool
+is_send_gather(const struct brw_isa_info *isa,
+               const struct brw_eu_inst *inst)
+{
+   return isa->devinfo->ver >= 30 &&
+          is_split_send(isa->devinfo, brw_eu_inst_opcode(isa, inst)) &&
+          brw_eu_inst_send_src0_reg_file(isa->devinfo, inst) == ARF;
+}
+
 const char *const conditional_modifier[16] = {
    [BRW_CONDITIONAL_NONE] = "",
    [BRW_CONDITIONAL_Z]    = ".z",
@@ -2132,7 +2141,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
          err |= src0(file, isa, inst);
       }
 
-      if (desc->nsrc > 1) {
+      if (desc->nsrc > 1 && !is_send_gather(isa, inst)) {
          pad(file, 48);
          err |= src1(file, isa, inst);
       }
@@ -2144,8 +2153,6 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       bool has_imm_desc = false, has_imm_ex_desc = false;
       uint32_t imm_desc = 0, imm_ex_desc = 0;
       if (is_split_send(devinfo, opcode)) {
-         const bool is_send_gather =
-            devinfo->ver >= 30 && brw_eu_inst_send_src0_reg_file(devinfo, inst) == ARF;
          pad(file, 64);
          if (brw_eu_inst_send_sel_reg32_desc(devinfo, inst)) {
             /* show the indirect descriptor source */
@@ -2163,7 +2170,8 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                                     brw_eu_inst_send_ex_desc_ia_subreg_nr(devinfo, inst));
          } else {
             has_imm_ex_desc = true;
-            imm_ex_desc = brw_eu_inst_sends_ex_desc(devinfo, inst, is_send_gather);
+            imm_ex_desc = brw_eu_inst_sends_ex_desc(devinfo, inst,
+                                                    is_send_gather(isa, inst));
             fprintf(file, "0x%08"PRIx32, imm_ex_desc);
          }
       } else {
@@ -2319,8 +2327,9 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                       brw_message_desc_rlen(devinfo, imm_desc) / reg_unit(devinfo));
                format(file, " src0_len = %u,",
                       brw_message_desc_mlen(devinfo, imm_desc) / reg_unit(devinfo));
-               format(file, " src1_len = %d",
-                      brw_message_ex_desc_ex_mlen(devinfo, imm_ex_desc) / reg_unit(devinfo));
+               if (!is_send_gather(isa, inst))
+                  format(file, " src1_len = %d",
+                         brw_message_ex_desc_ex_mlen(devinfo, imm_ex_desc) / reg_unit(devinfo));
                err |= control(file, "address_type", lsc_addr_surface_type,
                               lsc_msg_desc_addr_type(devinfo, imm_desc), &space);
                format(file, " )");
@@ -2431,7 +2440,8 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
             format(file, " src0_len = %u,",
                    brw_message_desc_mlen(devinfo, imm_desc) / reg_unit(devinfo));
 
-            if (!brw_eu_inst_send_sel_reg32_ex_desc(devinfo, inst))
+            if (!brw_eu_inst_send_sel_reg32_ex_desc(devinfo, inst) &&
+                !is_send_gather(isa, inst))
                format(file, " src1_len = %d",
                       brw_message_ex_desc_ex_mlen(devinfo, imm_ex_desc) / reg_unit(devinfo));
 
