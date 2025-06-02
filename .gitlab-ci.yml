@@ -54,7 +54,7 @@ workflow:
     # Pre-merge pipeline
     - if: &is-pre-merge $CI_PIPELINE_SOURCE == "merge_request_event"
     # Push to a branch on a fork
-    - if: &is-fork-push $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
+    - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
     # nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
@@ -219,7 +219,7 @@ include:
 # Rules applied to every job in the pipeline
 .common-rules:
   rules:
-    - if: *is-fork-push
+    - if: *is-push-to-fork
       when: manual
 
 .never-post-merge-rules:
