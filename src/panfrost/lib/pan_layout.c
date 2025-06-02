@@ -386,9 +386,9 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
    if (plane_idx >= util_format_get_num_planes(props->format))
       return false;
 
-   bool afbc = drm_is_afbc(props->modifier);
-   bool afrc = drm_is_afrc(props->modifier);
-   int align_req_B =
+   const bool afbc = drm_is_afbc(props->modifier);
+   const bool afrc = drm_is_afrc(props->modifier);
+   const int align_req_B =
       afbc ? pan_afbc_header_row_stride_align(arch, props->format,
                                               props->modifier)
       : afrc
@@ -406,7 +406,7 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
       offset_B = wsi_layout->offset_B;
    }
 
-   unsigned fmt_blocksize_B =
+   const unsigned fmt_blocksize_B =
       get_plane_blocksize(props->format, plane_idx);
 
    /* MSAA is implemented as a 3D texture with z corresponding to the
@@ -414,12 +414,12 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
 
    assert(props->extent_px.depth == 1 || props->nr_samples == 1);
 
-   bool linear = props->modifier == DRM_FORMAT_MOD_LINEAR;
-   bool is_3d = props->dim == MALI_TEXTURE_DIMENSION_3D;
+   const bool linear = props->modifier == DRM_FORMAT_MOD_LINEAR;
+   const bool is_3d = props->dim == MALI_TEXTURE_DIMENSION_3D;
 
-   struct pan_image_block_size renderblk_size_el =
+   const struct pan_image_block_size renderblk_size_el =
       pan_image_renderblock_size_el(props->modifier, props->format, plane_idx);
-   struct pan_image_block_size block_size_el =
+   const struct pan_image_block_size block_size_el =
       pan_image_block_size_el(props->modifier, props->format, plane_idx);
 
    unsigned width_px = util_format_get_plane_width(props->format, plane_idx,
@@ -442,12 +442,12 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
    for (unsigned l = 0; l < props->nr_slices; ++l) {
       struct pan_image_slice_layout *slice = &layout->slices[l];
 
-      unsigned effective_width_el =
+      const unsigned effective_width_el =
          ALIGN_POT(DIV_ROUND_UP(width_px, blk_width_px), align_w_el);
-      unsigned effective_height_el =
+      const unsigned effective_height_el =
          ALIGN_POT(DIV_ROUND_UP(height_px, blk_height_px), align_h_el);
-      unsigned effective_width_px = effective_width_el * blk_width_px;
-      unsigned effective_height_px = effective_height_el * blk_height_px;
+      const unsigned effective_width_px = effective_width_el * blk_width_px;
+      const unsigned effective_height_px = effective_height_el * blk_height_px;
       unsigned row_stride_B;
 
       /* Align levels to cache-line as a performance improvement for
@@ -528,7 +528,7 @@ pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
          slice->row_stride_B = row_stride_B;
       }
 
-      uint64_t slice_full_size_B =
+      const uint64_t slice_full_size_B =
          slice_one_size_B * depth_px * props->nr_samples;
 
       slice->surface_stride_B = slice_one_size_B;
