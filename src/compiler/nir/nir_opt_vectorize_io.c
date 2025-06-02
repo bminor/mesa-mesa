@@ -8,8 +8,8 @@
  * This pass:
  * - vectorizes lowered input/output loads and stores
  * - vectorizes low and high 16-bit loads and stores by merging them into
- *   a single 32-bit load or store (except load_interpolated_input, which has
- *   to keep bit_size=16)
+ *   a single 32-bit load or store (except load_interpolated_input and XFB,
+ *   which have to keep bit_size=16)
  * - performs DCE of output stores that overwrite the previous value by writing
  *   into the same slot and component.
  *
@@ -229,11 +229,10 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
 
       for (unsigned i = start; i < start + count; i++) {
          xfb[i / 2].out[i % 2] =
-            (i < 2 ? nir_intrinsic_io_xfb(chan[i]) : nir_intrinsic_io_xfb2(chan[i])).out[i % 2];
+            ((i % 4) < 2 ? nir_intrinsic_io_xfb(chan[i]) : nir_intrinsic_io_xfb2(chan[i])).out[i % 2];
 
          /* Merging low and high 16 bits to 32 bits is not possible
-          * with xfb in some cases. (and it's not implemented for
-          * cases where it's possible)
+          * with xfb in some cases.
           */
          assert(!xfb[i / 2].out[i % 2].num_components ||
                 step != merge_low_high_16_to_32);
@@ -258,8 +257,14 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
          }
       }
 
-      nir_intrinsic_set_io_xfb(last, xfb[0]);
-      nir_intrinsic_set_io_xfb2(last, xfb[1]);
+      if (start >= 4) {
+         nir_intrinsic_set_io_xfb(last, xfb[2]);
+         nir_intrinsic_set_io_xfb2(last, xfb[3]);
+      } else {
+         assert(start + count <= 4);
+         nir_intrinsic_set_io_xfb(last, xfb[0]);
+         nir_intrinsic_set_io_xfb2(last, xfb[1]);
+      }
    }
 
    /* Update gs_streams. */
@@ -361,8 +366,7 @@ vectorize_slot(nir_intrinsic_instr *chan[8], unsigned mask)
 
             if ((mask & low_high_bits) == low_high_bits) {
                /* Merging low and high 16 bits to 32 bits is not possible
-                * with xfb in some cases. (and it's not implemented for
-                * cases where it's possible)
+                * with xfb in some cases.
                 */
                if (nir_intrinsic_has_io_xfb(chan[i])) {
                   unsigned hi = i + 4;
