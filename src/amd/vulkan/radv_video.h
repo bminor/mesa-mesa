@@ -43,7 +43,7 @@ struct radv_video_session {
    uint32_t stream_handle;
    unsigned stream_type;
    bool encode;
-   enum { DPB_MAX_RES = 0, DPB_DYNAMIC_TIER_1, DPB_DYNAMIC_TIER_2 } dpb_type;
+   enum { DPB_MAX_RES = 0, DPB_DYNAMIC_TIER_1, DPB_DYNAMIC_TIER_2, DPB_DYNAMIC_TIER_3 } dpb_type;
    unsigned db_alignment;
 
    struct radv_vid_mem sessionctx;
