@@ -857,33 +857,6 @@ agx_sampler_view_destroy(struct pipe_context *ctx,
    FREE(view);
 }
 
-static struct pipe_surface *
-agx_create_surface(struct pipe_context *ctx, struct pipe_resource *texture,
-                   const struct pipe_surface *surf_tmpl)
-{
-   struct pipe_surface *surface = CALLOC_STRUCT(pipe_surface);
-
-   if (!surface)
-      return NULL;
-
-   unsigned level = surf_tmpl->level;
-
-   pipe_reference_init(&surface->reference, 1);
-   pipe_resource_reference(&surface->texture, texture);
-
-   assert(texture->target != PIPE_BUFFER && "buffers are not renderable");
-
-   surface->context = ctx;
-   surface->format = surf_tmpl->format;
-   surface->nr_samples = surf_tmpl->nr_samples;
-   surface->texture = texture;
-   surface->first_layer = surf_tmpl->first_layer;
-   surface->last_layer = surf_tmpl->last_layer;
-   surface->level = level;
-
-   return surface;
-}
-
 static void
 agx_set_clip_state(struct pipe_context *ctx,
                    const struct pipe_clip_state *state)
@@ -1359,13 +1332,6 @@ agx_set_constant_buffer(struct pipe_context *pctx, enum pipe_shader_type shader,
       s->cb_mask &= ~mask;
 
    ctx->stage[shader].dirty |= AGX_STAGE_DIRTY_CONST;
-}
-
-static void
-agx_surface_destroy(struct pipe_context *ctx, struct pipe_surface *surface)
-{
-   pipe_resource_reference(&surface->texture, NULL);
-   FREE(surface);
 }
 
 static void
@@ -5553,7 +5519,6 @@ agx_init_state_functions(struct pipe_context *ctx)
    ctx->create_rasterizer_state = agx_create_rs_state;
    ctx->create_sampler_state = agx_create_sampler_state;
    ctx->create_sampler_view = agx_create_sampler_view;
-   ctx->create_surface = agx_create_surface;
    ctx->create_vertex_elements_state = agx_create_vertex_elements;
    ctx->create_vs_state = agx_create_shader_state;
    ctx->create_gs_state = agx_create_shader_state;
@@ -5598,7 +5563,6 @@ agx_init_state_functions(struct pipe_context *ctx)
    ctx->set_viewport_states = agx_set_viewport_states;
    ctx->sampler_view_destroy = agx_sampler_view_destroy;
    ctx->sampler_view_release = u_default_sampler_view_release;
-   ctx->surface_destroy = agx_surface_destroy;
    ctx->draw_vbo = agx_draw_vbo;
    ctx->launch_grid = agx_launch_grid;
    ctx->set_global_binding = agx_set_global_binding;
