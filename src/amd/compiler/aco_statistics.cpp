@@ -498,8 +498,7 @@ collect_preasm_stats(Program* program)
          if (instr->isVOPD())
             program->statistics.vopd++;
 
-         if ((instr->isVMEM() || instr->isScratch() || instr->isGlobal()) &&
-             !instr->operands.empty()) {
+         if ((instr->isVMEM() || instr->isFlatLike()) && !instr->operands.empty()) {
             if (std::none_of(vmem_clause.begin(), vmem_clause.end(),
                              [&](Instruction* other)
                              { return should_form_clause(instr.get(), other); }))
