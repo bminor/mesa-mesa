@@ -3275,8 +3275,10 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    if (++instance_refcount == 1) {
       instance_info.loader_version = zink_get_loader_version(screen);
       instance = zink_create_instance(screen, &instance_info);
-      if (!instance)
+      if (!instance) {
+         simple_mtx_unlock(&instance_lock);
          goto fail;
+      }
    } else {
       assert(instance);
    }
