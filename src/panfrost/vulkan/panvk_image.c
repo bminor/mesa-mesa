@@ -208,6 +208,16 @@ panvk_image_type_to_mali_tex_dim(VkImageType type)
    }
 }
 
+static bool
+is_disjoint(const struct panvk_image *image)
+{
+   assert((image->plane_count > 1 &&
+           image->vk.format != VK_FORMAT_D32_SFLOAT_S8_UINT) ||
+          (image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT) ||
+          !(image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT));
+   return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
+}
+
 static void
 panvk_image_init_layouts(struct panvk_image *image,
                          const VkImageCreateInfo *pCreateInfo)
@@ -229,6 +239,9 @@ panvk_image_init_layouts(struct panvk_image *image,
    if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
       image->plane_count = 2;
 
+   struct pan_image_layout_constraints plane_layout = {
+      .offset_B = 0,
+   };
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
       VkFormat format;
 
@@ -237,7 +250,6 @@ panvk_image_init_layouts(struct panvk_image *image,
       else
          format = vk_format_get_plane_format(image->vk.format, plane);
 
-      struct pan_image_layout_constraints plane_layout;
       if (explicit_info) {
          plane_layout = (struct pan_image_layout_constraints){
             .offset_B = explicit_info->pPlaneLayouts[plane].offset,
@@ -265,8 +277,10 @@ panvk_image_init_layouts(struct panvk_image *image,
       };
 
       pan_image_layout_init(arch, &image->planes[plane].image.props, 0,
-                            explicit_info ? &plane_layout : NULL,
-                            &image->planes[plane].plane.layout);
+                            &plane_layout, &image->planes[plane].plane.layout);
+
+      if (!is_disjoint(image) && !explicit_info)
+         plane_layout.offset_B += image->planes[plane].plane.layout.data_size_B;
    }
 }
 
@@ -330,19 +344,12 @@ static uint64_t
 panvk_image_get_total_size(const struct panvk_image *image)
 {
    uint64_t size = 0;
-   for (uint8_t plane = 0; plane < image->plane_count; plane++)
-      size += image->planes[plane].plane.layout.data_size_B;
+   for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+      const struct pan_image_layout *layout =
+         &image->planes[plane].plane.layout;
+      size = MAX2(size, layout->slices[0].offset_B + layout->data_size_B);
+   }
    return size;
-}
-
-static bool
-is_disjoint(const struct panvk_image *image)
-{
-   assert((image->plane_count > 1 &&
-           image->vk.format != VK_FORMAT_D32_SFLOAT_S8_UINT) ||
-          (image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT) ||
-          !(image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT));
-   return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
 
 static void
@@ -425,14 +432,8 @@ get_image_subresource_layout(const struct panvk_image *image,
    const struct pan_image_slice_layout *slice_layout =
       &image->planes[plane].plane.layout.slices[subres->mipLevel];
 
-   uint64_t base_offset = 0;
-   if (!is_disjoint(image)) {
-      for (uint8_t plane_idx = 0; plane_idx < plane; plane_idx++)
-         base_offset += image->planes[plane_idx].plane.layout.data_size_B;
-   }
-
    layout->offset =
-      base_offset + slice_layout->offset_B +
+      slice_layout->offset_B +
       (subres->arrayLayer * image->planes[plane].plane.layout.array_stride_B);
    layout->size = slice_layout->size_B;
    layout->rowPitch = slice_layout->row_stride_B;
@@ -595,20 +596,19 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);
          image->bo = mem->bo;
-         uint64_t offset = pBindInfos[i].memoryOffset;
          if (is_disjoint(image)) {
             const VkBindImagePlaneMemoryInfo *plane_info =
                vk_find_struct_const(pBindInfos[i].pNext,
                                     BIND_IMAGE_PLANE_MEMORY_INFO);
-            uint8_t plane =
+            const uint8_t plane =
                panvk_plane_index(image->vk.format, plane_info->planeAspect);
             panvk_image_plane_bind(&image->planes[plane], image->bo,
-                                   mem->addr.dev, offset);
+                                   mem->addr.dev, pBindInfos[i].memoryOffset);
          } else {
             for (unsigned plane = 0; plane < image->plane_count; plane++) {
                panvk_image_plane_bind(&image->planes[plane], image->bo,
-                                      mem->addr.dev, offset);
-               offset += image->planes[plane].plane.layout.data_size_B;
+                                      mem->addr.dev,
+                                      pBindInfos[i].memoryOffset);
             }
          }
       }

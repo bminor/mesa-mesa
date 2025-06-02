@@ -31,10 +31,6 @@ struct pan_image_slice_layout {
     * Doing so allows us to use a single code path to correctly:
     * - report image subres layout and memory requirement
     * - bind image memory
-    *
-    * XXX However, for native non-disjoint multi-planar images in panvk, this
-    * offset_B is currently relative to the planar plane offset instead of base
-    * bo offset. To be fixed in the follow up.
     */
    unsigned offset_B;
 
