@@ -34,3 +34,4 @@ VK_EXT_shader_subgroup_vote on panvk
 Vulkan video support on GFX12 (RDNA4) for RADV
 VK_KHR_load_store_op_none on panvk
 VK_EXT_load_store_op_none on panvk
+VK_EXT_scalar_block_layout on radv/gfx6

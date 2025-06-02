@@ -695,7 +695,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_robustness2 = true,
       .EXT_sample_locations = true,
       .EXT_sampler_filter_minmax = radv_filter_minmax_enabled(pdev),
-      .EXT_scalar_block_layout = pdev->info.gfx_level >= GFX7,
+      .EXT_scalar_block_layout = true,
       .EXT_separate_stencil_usage = true,
       .EXT_shader_atomic_float = true,
       .EXT_shader_atomic_float2 = true,
@@ -865,7 +865,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .runtimeDescriptorArray = true,
 
       .samplerFilterMinmax = true,
-      .scalarBlockLayout = pdev->info.gfx_level >= GFX7,
+      .scalarBlockLayout = true,
       .imagelessFramebuffer = true,
       .uniformBufferStandardLayout = true,
       .shaderSubgroupExtendedTypes = true,
