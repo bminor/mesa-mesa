@@ -240,11 +240,9 @@ blend_needs_shader(const struct pan_blend_state *state, unsigned rt_idx,
 {
    const struct pan_blend_rt_state *rt = &state->rts[rt_idx];
 
-   /* LogicOp requires a blend shader, unless it's a NOOP, in which case we just
-    * disable blending.
-    */
+   /* LogicOp requires a blend shader */
    if (state->logicop_enable)
-      return state->logicop_func != PIPE_LOGICOP_NOOP;
+      return true;
 
    /* alpha-to-one always requires a blend shader */
    if (state->alpha_to_one)
@@ -357,11 +355,6 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
          continue;
       }
 
-      if (bs.logicop_enable && bs.logicop_func == PIPE_LOGICOP_NOOP) {
-         rt->equation.color_mask = 0;
-         continue;
-      }
-
       if (color_attachment_formats[i] == VK_FORMAT_UNDEFINED) {
          rt->equation.color_mask = 0;
          continue;
@@ -373,6 +366,14 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
       }
 
       rt->format = vk_format_to_pipe_format(color_attachment_formats[i]);
+
+      /* Disable blending for LOGICOP_NOOP unless the format is float/srgb */
+      if (bs.logicop_enable && bs.logicop_func == PIPE_LOGICOP_NOOP &&
+          !(util_format_is_float(rt->format) ||
+            util_format_is_srgb(rt->format))) {
+         rt->equation.color_mask = 0;
+         continue;
+      }
 
       rt->nr_samples = color_attachment_samples[i];
       rt->equation.blend_enable = cb->attachments[i].blend_enable;
