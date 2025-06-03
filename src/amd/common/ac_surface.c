@@ -3390,7 +3390,7 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       assert(!compressed);
       assert(!ac_modifier_has_dcc(surf->modifier) || !(surf->flags & RADEON_SURF_DISABLE_DCC));
       AddrSurfInfoIn.swizzleMode = ac_get_modifier_swizzle_mode(info->gfx_level, surf->modifier);
-   } else if (surf->flags & RADEON_SURF_IMPORTED) {
+   } else if (surf->flags & (RADEON_SURF_IMPORTED | RADEON_SURF_FORCE_SWIZZLE_MODE)) {
       AddrSurfInfoIn.swizzleMode = surf->u.gfx9.swizzle_mode;
    } else if (mode == RADEON_SURF_MODE_LINEAR_ALIGNED) {
       assert(config->info.samples <= 1 && !(surf->flags & RADEON_SURF_Z_OR_SBUFFER));
