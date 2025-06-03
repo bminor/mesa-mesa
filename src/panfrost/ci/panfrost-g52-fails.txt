@@ -33,9 +33,6 @@ spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB,Fail
 spec@arb_texture_float@fbo-generatemipmap-formats@GL_INTENSITY16F_ARB NPOT,Fail
 spec@arb_texture_float@multisample-formats 2 gl_arb_texture_float,Fail
 spec@arb_texture_float@multisample-formats 4 gl_arb_texture_float,Fail
-spec@arb_texture_float@multisample-formats 6 gl_arb_texture_float,Fail
-spec@arb_texture_float@multisample-formats 8 gl_arb_texture_float,Fail
-spec@arb_texture_float@multisample-formats 16 gl_arb_texture_float,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16I,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R16_SNORM,Fail
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_R32I,Fail
@@ -373,26 +370,29 @@ afbcp-spec@arb_texture_rg@fbo-blending-formats@GL_RG8,Fail
 afbcp-spec@arb_texture_rg@fbo-blending-formats@GL_RG,Fail
 afbcp-spec@glsl-1.30@execution@tex-miplevel-selection texture() 2drect,Fail
 afbcp-spec@glsl-1.30@execution@tex-miplevel-selection texture() 2drectshadow,Fail
-afbcp-spec@khr_texture_compression_astc@miptree-gles hdr,Fail
-afbcp-spec@khr_texture_compression_astc@miptree-gles hdr@HDR Profile,Fail
 afbcp-spec@khr_texture_compression_astc@miptree-gles srgb-fp,Fail
 afbcp-spec@khr_texture_compression_astc@miptree-gles srgb-fp@sRGB decode full precision,Fail
-afbcp-spec@khr_texture_compression_astc@miptree-gl hdr,Fail
-afbcp-spec@khr_texture_compression_astc@miptree-gl hdr@HDR Profile,Fail
 afbcp-spec@khr_texture_compression_astc@miptree-gl srgb-fp,Fail
 afbcp-spec@khr_texture_compression_astc@miptree-gl srgb-fp@sRGB decode full precision,Fail
-afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gles hdr,Fail
-afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gles hdr@HDR Profile,Fail
 afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
-afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gl hdr,Fail
-afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gl hdr@HDR Profile,Fail
 afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gl srgb-fp,Fail
 afbcp-spec@khr_texture_compression_astc@sliced-3d-miptree-gl srgb-fp@sRGB decode full precision,Fail
 
 # uprev Piglit in Mesa
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 afbcp-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
+spec@!opengl 1.1@dlist-fdo31590,Crash
+spec@arb_texture_float@multisample-formats 6 gl_arb_texture_float,Crash
+spec@arb_texture_float@multisample-formats 8 gl_arb_texture_float,Crash
+spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 6,Fail
+spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 8,Fail
+spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 6,Fail
+spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 8,Fail
+spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 6,Fail
+spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 8,Fail
+spec@ext_framebuffer_multisample@sample-alpha-to-coverage 6 color,Fail
+spec@ext_framebuffer_multisample@sample-alpha-to-coverage 8 color,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread,Crash
 
 # CTS bug: https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5695
 KHR-GLES31.core.texture_storage_multisample.APIDependencies.renderbuffer_storage_multisample_invalid_samples_argument_for_integer_internalformats,Fail

@@ -657,8 +657,15 @@ spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec4-index-rd,Fail
 
 # uprev Piglit in Mesa
 spec@!opengl 1.1@push-pop-color-material,Fail
+spec@arb_depth_texture@fbo-clear-formats,Fail
+spec@arb_depth_texture@fbo-clear-formats@GL_DEPTH_COMPONENT,Fail
+spec@arb_depth_texture@fbo-clear-formats@GL_DEPTH_COMPONENT16,Fail
+spec@arb_depth_texture@fbo-clear-formats@GL_DEPTH_COMPONENT24,Fail
+spec@arb_depth_texture@fbo-clear-formats@GL_DEPTH_COMPONENT32,Fail
+spec@arb_framebuffer_object@fbo-mipmap-copypix,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 normal,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 normal,Fail
+spec@sgis_generate_mipmap@gen-teximage,Fail
 
 # New failures with ES CTS 3.2.12.0
 dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.2d_rgb,Fail

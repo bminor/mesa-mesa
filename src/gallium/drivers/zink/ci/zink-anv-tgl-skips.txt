@@ -47,3 +47,8 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y412
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y416
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
+
+# uprev Piglit in Mesa
+spec@ext_external_objects@vk-ping-pong-multi-sem
+spec@ext_external_objects@vk-ping-pong-single-sem
+

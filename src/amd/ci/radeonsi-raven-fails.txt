@@ -67,3 +67,9 @@ program@execute@builtin@builtin-float-sign-1.0.generated@sign float8,Fail
 program@execute@global-offset,Fail
 program@execute@global-offset@3d- input dependent,Fail
 program@execute@vector-conversion,Fail
+
+# uprev Piglit in Mesa
+spec@ext_external_objects@vk-semaphores,Crash
+spec@ext_external_objects@vk-semaphores-2,Crash
+spec@glsl-es-1.00@linker@glsl-mismatched-uniform-precision-unused,Fail
+
