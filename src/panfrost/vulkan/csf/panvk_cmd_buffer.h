@@ -387,11 +387,12 @@ VK_DEFINE_HANDLE_CASTS(panvk_cmd_buffer, vk.base, VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 
 static inline uint32_t
-next_iter_sb(struct panvk_cmd_buffer *cmdbuf, uint32_t sb)
+next_iter_sb(struct panvk_cmd_buffer *cmdbuf, uint32_t iter_sb_idx)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
-   return sb + 1 < dev->csf.sb.iter_count ? sb + 1 : 0;
+   return iter_sb_idx + 1 < dev->csf.sb.iter_count ? SB_ITER(iter_sb_idx + 1)
+                                                   : SB_ITER(0);
 }
 
 static bool

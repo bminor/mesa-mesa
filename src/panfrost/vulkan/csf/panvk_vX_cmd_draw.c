@@ -2870,7 +2870,7 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
-   cs_case(b, x) {                                                             \
+   cs_case(b, SB_ITER(x)) {                                                    \
       cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,      \
                         cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));      \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
@@ -3123,7 +3123,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
-   cs_case(b, x) {                                                             \
+   cs_case(b, SB_ITER(x)) {                                                    \
       const struct cs_async_op async =                                         \
          cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC));                      \
       if (td_count == 1) {                                                     \

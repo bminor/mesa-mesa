@@ -630,7 +630,7 @@ panvk_per_arch(cs_pick_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
-   cs_case(b, x) {                                                             \
+   cs_case(b, SB_ITER(x)) {                                                    \
       cs_wait_slot(b, SB_ITER(x));                                             \
       cs_select_sb_entries_for_async_ops(b, SB_ITER(x));                       \
    }

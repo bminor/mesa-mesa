@@ -311,7 +311,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
-   cs_case(b, x) {                                                             \
+   cs_case(b, SB_ITER(x)) {                                                    \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
       cs_move32_to(b, iter_sb, next_iter_sb(cmdbuf, x));                       \

@@ -395,7 +395,7 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
       .debug.syncobjs = panvk_priv_mem_dev_addr(queue->debug_syncobjs),
       .debug.tracebuf.cs = subq->tracebuf.addr.dev,
-      .iter_sb = 0,
+      .iter_sb = SB_ITER(0),
       .reg_dump_addr = panvk_priv_mem_dev_addr(subq->regs_save),
    };
 
