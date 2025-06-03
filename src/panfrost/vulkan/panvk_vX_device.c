@@ -327,8 +327,13 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    device->csf.sb.all_mask = BITFIELD_MASK(device->csf.sb.count);
 
    assert(device->csf.sb.count > PANVK_SB_ITER_START);
+   device->csf.sb.iter_count = device->csf.sb.count - PANVK_SB_ITER_START;
+
+#if PAN_ARCH == 10
    device->csf.sb.iter_count =
-      MIN2(device->csf.sb.count - PANVK_SB_ITER_START, PANVK_SB_ITER_COUNT);
+      MIN2(device->csf.sb.iter_count, PANVK_SB_ITER_COUNT);
+#endif
+
    device->csf.sb.all_iters_mask =
       BITFIELD_RANGE(PANVK_SB_ITER_START, device->csf.sb.iter_count);
 #endif
