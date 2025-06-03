@@ -178,6 +178,7 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
          NIR_LOOP_PASS(progress, skip, shader, nir_opt_find_array_copies);
       }
 
+      NIR_LOOP_PASS(progress, skip, shader, nir_opt_memcpy);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_copy_prop_vars);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_dead_write_vars);
       NIR_LOOP_PASS(_, skip, shader, nir_lower_vars_to_ssa);
