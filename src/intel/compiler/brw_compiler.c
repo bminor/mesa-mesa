@@ -46,6 +46,8 @@ const struct nir_shader_compiler_options brw_scalar_nir_options = {
    .has_uclz = true,
    .lower_base_vertex = true,
    .lower_bitfield_extract = true,
+   .lower_bitfield_extract8 = true,
+   .lower_bitfield_extract16 = true,
    .lower_bitfield_insert = true,
    .lower_device_index_to_zero = true,
    .lower_fdiv = true,
@@ -115,7 +117,9 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
       nir_lower_find_lsb64 |
       nir_lower_ufind_msb64 |
       nir_lower_bit_count64 |
-      nir_lower_iadd3_64;
+      nir_lower_iadd3_64 |
+      nir_lower_bitfield_extract64 |
+      nir_lower_bitfield_reverse64;
    nir_lower_doubles_options fp64_options =
       nir_lower_drcp |
       nir_lower_dsqrt |
