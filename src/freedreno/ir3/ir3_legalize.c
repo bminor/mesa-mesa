@@ -1171,6 +1171,15 @@ mark_jp(struct ir3_block *block)
 
    struct ir3_instruction *target =
       list_first_entry(&block->instr_list, struct ir3_instruction, node);
+
+   /* Add nop instruction for (jp) flag since it has no effect on a5xx when set
+    * on the end instruction.
+    */
+   if (target->opc == OPC_END && block->shader->compiler->gen == 5) {
+      struct ir3_builder build = ir3_builder_at(ir3_before_instr(target));
+      target = ir3_NOP(&build);
+   }
+
    target->flags |= IR3_INSTR_JP;
 }
 
