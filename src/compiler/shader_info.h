@@ -58,6 +58,9 @@ typedef struct shader_info {
    /* If the shader is linked, this is the next shader, else MESA_SHADER_NONE. */
    gl_shader_stage next_stage:8;
 
+   /* Whether the previous stage has XFB if the shader is linked (prev_stage != NONE). */
+   bool prev_stage_has_xfb;
+
    /* Number of textures used by this shader */
    uint8_t num_textures;
    /* Number of uniform buffers used by this shader */

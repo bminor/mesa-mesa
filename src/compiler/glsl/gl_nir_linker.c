@@ -1302,8 +1302,15 @@ preprocess_shader(const struct gl_constants *consts,
       unsigned next_stages = shader_program->data->linked_stages &
                              ~BITFIELD_MASK(prog->info.stage + 1);
 
-      if (prev_stages)
+      if (prev_stages) {
          nir->info.prev_stage = util_last_bit(prev_stages) - 1;
+
+         if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+            nir->info.prev_stage_has_xfb =
+               shader_program->TransformFeedback.NumVarying > 0;
+         }
+      }
+
       if (next_stages)
          nir->info.next_stage = u_bit_scan(&next_stages);
    }
