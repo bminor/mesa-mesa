@@ -58,4 +58,5 @@ x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareB
 x86_64 CtsSkQPTestCases org.skia.skqp.SkQPRunner#UnitTest_BulkTextureRectTest
 x86_64 CtsSkQPTestCases org.skia.skqp.SkQPRunner#UnitTest_ES2BlendWithNoTexture
 x86_64 CtsSkQPTestCases org.skia.skqp.SkQPRunner#UnitTest_GrAHardwareBuffer_BasicDrawTest
+x86_64 CtsSkQPTestCases org.skia.skqp.SkQPRunner#UnitTest_SurfaceResolveTest
 x86_64 CtsSkQPTestCases org.skia.skqp.SkQPRunner#UnitTest_VkYCbcrSampler_DrawImageWithYcbcrSampler
