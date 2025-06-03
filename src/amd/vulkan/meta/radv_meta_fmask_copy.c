@@ -103,10 +103,10 @@ radv_fixup_copy_dst_metadata(struct radv_cmd_buffer *cmd_buffer, const struct ra
           dst_image->planes[0].surface.fmask_offset + dst_image->planes[0].surface.fmask_size ==
              dst_image->planes[0].surface.cmask_offset);
 
-   if (src_image->bindings[0].bo && (src_image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
-      src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
-   if (dst_image->bindings[0].bo && (dst_image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
-      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   if (src_image->bindings[0].bo)
+      src_copy_flags |= radv_get_copy_flags_from_bo(src_image->bindings[0].bo);
+   if (dst_image->bindings[0].bo)
+      dst_copy_flags |= radv_get_copy_flags_from_bo(dst_image->bindings[0].bo);
 
    /* Copy CMASK+FMASK. */
    size = src_image->planes[0].surface.cmask_size + src_image->planes[0].surface.fmask_size;

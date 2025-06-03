@@ -426,3 +426,16 @@ radv_meta_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoi
 
    radv_CmdSetDescriptorBufferOffsets2EXT(radv_cmd_buffer_to_handle(cmd_buffer), &descriptor_buffer_offsets);
 }
+
+enum radv_copy_flags
+radv_get_copy_flags_from_bo(const struct radeon_winsys_bo *bo)
+{
+   enum radv_copy_flags copy_flags = 0;
+
+   if (bo->initial_domain & RADEON_DOMAIN_VRAM)
+      copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   if (bo->is_virtual)
+      copy_flags |= RADV_COPY_FLAGS_SPARSE;
+
+   return copy_flags;
+}

@@ -289,6 +289,8 @@ void radv_meta_bind_descriptors(struct radv_cmd_buffer *cmd_buffer, VkPipelineBi
                                 VkPipelineLayout _layout, uint32_t num_descriptors,
                                 const VkDescriptorGetInfoEXT *descriptors);
 
+enum radv_copy_flags radv_get_copy_flags_from_bo(const struct radeon_winsys_bo *bo);
+
 #ifdef __cplusplus
 }
 #endif

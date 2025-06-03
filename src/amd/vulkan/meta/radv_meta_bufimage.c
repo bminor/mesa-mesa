@@ -637,8 +637,8 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_INV_VCACHE;
    }
 
-   if (image->bindings[0].bo && (image->bindings[0].bo->initial_domain & RADEON_DOMAIN_VRAM))
-      img_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   if (image->bindings[0].bo)
+      img_copy_flags |= radv_get_copy_flags_from_bo(image->bindings[0].bo);
    mem_copy_flags |= buf_bsurf->copy_flags;
 
    for (uint32_t y = 0; y < mip_extent.height; y++) {

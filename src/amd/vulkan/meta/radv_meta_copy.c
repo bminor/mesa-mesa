@@ -217,10 +217,8 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
    VK_FROM_HANDLE(radv_image, dst_image, pCopyBufferToImageInfo->dstImage);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   enum radv_copy_flags src_copy_flags = 0;
 
-   if (src_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
-      src_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags src_copy_flags = radv_get_copy_flags_from_bo(src_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
@@ -370,10 +368,8 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
    VK_FROM_HANDLE(radv_image, src_image, pCopyImageToBufferInfo->srcImage);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyImageToBufferInfo->dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   enum radv_copy_flags dst_copy_flags = 0;
 
-   if (dst_buffer->bo->initial_domain & RADEON_DOMAIN_VRAM)
-      dst_copy_flags |= RADV_COPY_FLAGS_DEVICE_LOCAL;
+   const enum radv_copy_flags dst_copy_flags = radv_get_copy_flags_from_bo(dst_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
