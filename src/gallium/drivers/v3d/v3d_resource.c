@@ -1072,37 +1072,6 @@ v3d_update_shadow_texture(struct pipe_context *pctx,
         shadow->writes = orig->writes;
 }
 
-static struct pipe_surface *
-v3d_create_surface(struct pipe_context *pctx,
-                   struct pipe_resource *ptex,
-                   const struct pipe_surface *surf_tmpl)
-{
-        struct v3d_surface *surface = CALLOC_STRUCT(v3d_surface);
-
-        if (!surface)
-                return NULL;
-
-        struct pipe_surface *psurf = &surface->base;
-
-        pipe_reference_init(&psurf->reference, 1);
-        pipe_resource_reference(&psurf->texture, ptex);
-
-        psurf->context = pctx;
-        psurf->format = surf_tmpl->format;
-        psurf->level = surf_tmpl->level;
-        psurf->first_layer = surf_tmpl->first_layer;
-        psurf->last_layer = surf_tmpl->last_layer;
-
-        return &surface->base;
-}
-
-static void
-v3d_surface_destroy(struct pipe_context *pctx, struct pipe_surface *psurf)
-{
-        pipe_resource_reference(&psurf->texture, NULL);
-        FREE(psurf);
-}
-
 static void
 v3d_flush_resource(struct pipe_context *pctx, struct pipe_resource *prsc)
 {
@@ -1217,8 +1186,6 @@ v3d_resource_context_init(struct pipe_context *pctx)
         pctx->texture_unmap = u_transfer_helper_transfer_unmap;
         pctx->buffer_subdata = u_default_buffer_subdata;
         pctx->texture_subdata = v3d_texture_subdata;
-        pctx->create_surface = v3d_create_surface;
-        pctx->surface_destroy = v3d_surface_destroy;
         pctx->resource_copy_region = util_resource_copy_region;
         pctx->blit = v3d_blit;
         pctx->generate_mipmap = v3d_generate_mipmap;

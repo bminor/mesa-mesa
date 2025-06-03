@@ -48,10 +48,6 @@ struct v3d_resource_slice {
         enum v3d_tiling_mode tiling;
 };
 
-struct v3d_surface {
-        struct pipe_surface base;
-};
-
 struct v3d_resource {
         struct pipe_resource base;
         struct v3d_bo *bo;
@@ -116,12 +112,6 @@ static inline struct v3d_resource *
 v3d_resource(struct pipe_resource *prsc)
 {
         return (struct v3d_resource *)prsc;
-}
-
-static inline struct v3d_surface *
-v3d_surface(struct pipe_surface *psurf)
-{
-        return (struct v3d_surface *)psurf;
 }
 
 static inline struct v3d_transfer *
