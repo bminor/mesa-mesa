@@ -1249,14 +1249,6 @@ fail:
    return result;
 }
 
-static const VkQueueFamilyProperties panvk_queue_family_properties = {
-   .queueFlags =
-      VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
-   .queueCount = 1,
-   .timestampValidBits = 0,
-   .minImageTransferGranularity = {1, 1, 1},
-};
-
 static void
 panvk_fill_global_priority(const struct panvk_physical_device *physical_device,
                            VkQueueFamilyGlobalPriorityPropertiesKHR *prio)
@@ -1288,10 +1280,19 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkQueueFamilyProperties2, out, pQueueFamilyProperties,
                           pQueueFamilyPropertyCount);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
 
    vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p)
    {
-      p->queueFamilyProperties = panvk_queue_family_properties;
+      p->queueFamilyProperties = (VkQueueFamilyProperties){
+         .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
+                       VK_QUEUE_TRANSFER_BIT,
+         /* On v10+ we can support up to 127 queues but this causes timeout on
+            some CTS tests */
+         .queueCount = arch >= 10 ? 2 : 1,
+         .timestampValidBits = 0,
+         .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
+      };
 
       VkQueueFamilyGlobalPriorityPropertiesKHR *prio =
          vk_find_struct(p->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR);
