@@ -904,6 +904,12 @@ Anvil(ANV) driver environment variables
    modifying command buffers to implement ``vkCmdExecuteCommands``. As
    a result of this, it will also disable :ext:`VK_KHR_performance_query`.
 
+.. envvar:: ANV_DEBUG_WAIT_FOR_ATTACH
+
+   If defined, the value is parsed as a regular expression. If the current
+   process name matches the regex, ANV will wait 30 seconds for a debugger
+   to attach before starting device creation.
+
 .. envvar:: ANV_PRIMITIVE_REPLICATION_MAX_VIEWS
 
    Specifies up to how many view shaders can be lowered to handle

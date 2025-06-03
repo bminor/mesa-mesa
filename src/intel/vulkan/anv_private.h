@@ -2390,6 +2390,8 @@ void anv_device_print_fini(struct anv_device *device);
 
 void anv_dump_bvh_to_files(struct anv_device *device);
 
+void anv_wait_for_attach(void);
+
 VkResult anv_queue_init(struct anv_device *device, struct anv_queue *queue,
                         const VkDeviceQueueCreateInfo *pCreateInfo,
                         uint32_t index_in_family);
