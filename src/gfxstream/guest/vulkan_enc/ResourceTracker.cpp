@@ -4669,8 +4669,8 @@ VkResult ResourceTracker::on_vkCreateSampler(void* context, VkResult, VkDevice d
                                              VkSampler* pSampler) {
     VkSamplerCreateInfo localCreateInfo = vk_make_orphan_copy(*pCreateInfo);
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_FUCHSIA)
     vk_struct_chain_iterator structChainIter = vk_make_chain_iterator(&localCreateInfo);
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_FUCHSIA)
     VkSamplerYcbcrConversionInfo localVkSamplerYcbcrConversionInfo;
     const VkSamplerYcbcrConversionInfo* samplerYcbcrConversionInfo =
         vk_find_struct_const(pCreateInfo, SAMPLER_YCBCR_CONVERSION_INFO);
@@ -4690,6 +4690,15 @@ VkResult ResourceTracker::on_vkCreateSampler(void* context, VkResult, VkDevice d
         vk_append_struct(&structChainIter, &localVkSamplerCustomBorderColorCreateInfo);
     }
 #endif
+
+    VkSamplerReductionModeCreateInfo localVkSamplerReductionModeCreateInfo;
+    const VkSamplerReductionModeCreateInfo* samplerReductionModeCreateInfo =
+        vk_find_struct_const(pCreateInfo, SAMPLER_REDUCTION_MODE_CREATE_INFO);
+    if (samplerReductionModeCreateInfo) {
+        localVkSamplerReductionModeCreateInfo =
+            vk_make_orphan_copy(*samplerReductionModeCreateInfo);
+        vk_append_struct(&structChainIter, &localVkSamplerReductionModeCreateInfo);
+    }
 
     VkEncoder* enc = (VkEncoder*)context;
     return enc->vkCreateSampler(device, &localCreateInfo, pAllocator, pSampler, true /* do lock */);
