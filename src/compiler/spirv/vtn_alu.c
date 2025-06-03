@@ -585,6 +585,10 @@ vtn_alu_op_mediump_16bit(struct vtn_builder *b, SpvOp opcode, struct vtn_value *
    case SpvOpFwidthFine:
    case SpvOpFwidthCoarse:
       return b->options->mediump_16bit_derivatives;
+   case SpvOpBitFieldInsert:
+   case SpvOpBitFieldSExtract:
+   case SpvOpBitFieldUExtract:
+      return false;
    default:
       return true;
    }
