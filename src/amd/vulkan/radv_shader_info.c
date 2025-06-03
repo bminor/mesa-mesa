@@ -1320,7 +1320,7 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
                                      (info->workgroup_size % info->wave_size) == 0;
       break;
    case MESA_SHADER_VERTEX:
-      if (info->vs.as_ls || info->vs.as_es) {
+      if (info->vs.as_ls || info->vs.as_es || info->is_ngg) {
          /* Set the maximum possible value by default, this will be optimized during linking if
           * possible.
           */
@@ -1340,7 +1340,7 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       }
       break;
    case MESA_SHADER_TESS_EVAL:
-      if (info->tes.as_es) {
+      if (info->tes.as_es || info->is_ngg) {
          /* Set the maximum possible value by default, this will be optimized during linking if
           * possible.
           */
@@ -1656,12 +1656,6 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
    /* Don't count unusable vertices. */
    out->esgs_ring_size = MIN2(max_esverts, max_gsprims * max_verts_per_prim) * esvert_lds_size * 4;
 
-   if (gs_info) {
-      out->vgt_esgs_ring_itemsize = es_info->esgs_itemsize / 4;
-   } else {
-      out->vgt_esgs_ring_itemsize = 1;
-   }
-
    assert(out->hw_max_esverts >= min_esverts); /* HW limitation */
 
    out->scratch_lds_base = gfx10_get_ngg_scratch_lds_base(device, es_info, gs_info, out);
@@ -1678,6 +1672,17 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
       gs_info->workgroup_size = workgroup_size;
    }
    es_info->workgroup_size = workgroup_size;
+}
+
+void
+gfx10_ngg_set_esgs_ring_itemsize(const struct radv_device *device, struct radv_shader_info *es_info,
+                                 struct radv_shader_info *gs_info, struct gfx10_ngg_info *out)
+{
+   if (gs_info) {
+      out->vgt_esgs_ring_itemsize = es_info->esgs_itemsize / 4;
+   } else {
+      out->vgt_esgs_ring_itemsize = 1;
+   }
 }
 
 static void
@@ -1752,7 +1757,10 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *pro
             radv_determine_ngg_settings(device, producer, consumer, gfx_state);
          }
 
-         gfx10_get_ngg_info(device, &producer->info, gs_stage ? &gs_stage->info : NULL, out);
+         gfx10_ngg_set_esgs_ring_itemsize(device, &producer->info, gs_stage ? &gs_stage->info : NULL, out);
+
+         assert(producer->info.workgroup_size == 256);
+         assert(!gs_stage || gs_stage->info.workgroup_size == 256);
       } else if (consumer && consumer->stage == MESA_SHADER_GEOMETRY) {
          struct radv_shader_info *gs_info = &consumer->info;
          struct radv_shader_info *es_info = &producer->info;

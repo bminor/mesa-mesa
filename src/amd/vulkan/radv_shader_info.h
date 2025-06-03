@@ -334,6 +334,9 @@ void radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shad
 void gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es_info,
                         struct radv_shader_info *gs_info, struct gfx10_ngg_info *out);
 
+void gfx10_ngg_set_esgs_ring_itemsize(const struct radv_device *device, struct radv_shader_info *es_info,
+                                      struct radv_shader_info *gs_info, struct gfx10_ngg_info *out);
+
 void radv_nir_shader_info_link(struct radv_device *device, const struct radv_graphics_state_key *gfx_state,
                                struct radv_shader_stage *stages);
 

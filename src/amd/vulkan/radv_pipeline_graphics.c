@@ -2799,6 +2799,18 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
       stages[i].feedback.duration += os_time_get_nano() - stage_start;
    }
 
+   if (stages[MESA_SHADER_VERTEX].nir || stages[MESA_SHADER_TESS_EVAL].nir) {
+      struct radv_shader_stage *es_stage =
+         stages[MESA_SHADER_TESS_EVAL].nir ? &stages[MESA_SHADER_TESS_EVAL] : &stages[MESA_SHADER_VERTEX];
+      struct radv_shader_stage *gs_stage = stages[MESA_SHADER_GEOMETRY].nir ? &stages[MESA_SHADER_GEOMETRY] : NULL;
+      struct radv_shader_stage *stage = gs_stage ? gs_stage : es_stage;
+
+      if ((gs_stage ? gs_stage : es_stage)->info.is_ngg) {
+         gfx10_get_ngg_info(device, &es_stage->info, gs_stage ? &gs_stage->info : NULL, &stage->info.ngg_info);
+         stage->nir->info.shared_size = stage->info.ngg_info.lds_size;
+      }
+   }
+
    /* Compile NIR shaders to AMD assembly. */
    radv_graphics_shaders_nir_to_asm(device, cache, stages, gfx_state, keep_executable_info, keep_statistic_info,
                                     skip_shaders_cache, active_nir_stages, shaders, binaries, gs_copy_shader,

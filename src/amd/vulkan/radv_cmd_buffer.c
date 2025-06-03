@@ -11517,6 +11517,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
                                   : cmd_buffer->state.shaders[MESA_SHADER_VERTEX];
       struct radv_shader *gs = cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY];
 
+      gfx10_ngg_set_esgs_ring_itemsize(device, &es->info, &gs->info, &gs->info.ngg_info);
       gfx10_get_ngg_info(device, &es->info, &gs->info, &gs->info.ngg_info);
       radv_precompute_registers_hw_ngg(device, &gs->config, &gs->info);
    }

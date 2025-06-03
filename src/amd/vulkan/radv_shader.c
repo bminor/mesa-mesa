@@ -786,9 +786,6 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       unreachable("NGG needs to be VS, TES or GS.");
    }
 
-   if (nir->info.stage != MESA_SHADER_MESH)
-      nir->info.shared_size = info->ngg_info.lds_size;
-
    ac_nir_lower_ngg_options options = {0};
    options.hw_info = &pdev->info;
    options.max_workgroup_size = info->workgroup_size;
@@ -818,9 +815,6 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       options.instance_rate_inputs = gfx_state->vi.instance_rate_inputs << VERT_ATTRIB_GENERIC0;
 
       NIR_PASS(_, nir, ac_nir_lower_ngg_nogs, &options);
-
-      /* Increase ESGS ring size so the LLVM binary contains the correct LDS size. */
-      ngg_stage->info.ngg_info.esgs_ring_size = nir->info.shared_size;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       assert(info->is_ngg);
 
