@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "util/macros.h"
 #include "util/mesa-blake3.h"
 
 #include "vk_descriptor_update_template.h"
@@ -156,7 +157,14 @@ panvk_per_arch(CreateDescriptorSetLayout)(
          binding_layout->flags = binding_flags_info->pBindingFlags[i];
       }
 
-      binding_layout->desc_count = binding->descriptorCount;
+      if (binding_layout->type & VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+         /* One extra descriptor at the start to use as a buffer descriptor. */
+         binding_layout->desc_count =
+            DIV_ROUND_UP(binding->descriptorCount, PANVK_DESCRIPTOR_SIZE) + 1;
+      } else {
+         binding_layout->desc_count = binding->descriptorCount;
+      }
+
       if (is_texture(binding_layout->type))
          binding_layout->textures_per_desc = 1;
 

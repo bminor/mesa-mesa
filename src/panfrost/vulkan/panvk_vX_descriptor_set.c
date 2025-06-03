@@ -193,6 +193,22 @@ write_buffer_view_desc(struct panvk_descriptor_set *set,
 }
 
 static void
+write_iub(struct panvk_descriptor_set *set, uint32_t binding,
+          uint32_t dst_offset, uint32_t count, const void *data)
+{
+   const struct panvk_descriptor_set_binding_layout *binding_layout =
+      &set->layout->bindings[binding];
+
+   /* First slot is the actual buffer descriptor. */
+   uint32_t iub_data_offset =
+      panvk_get_desc_index(binding_layout, 1, NO_SUBDESC) *
+      PANVK_DESCRIPTOR_SIZE;
+
+   void *iub_data_host = set->descs.host + iub_data_offset;
+   memcpy(iub_data_host + dst_offset, data, count);
+}
+
+static void
 panvk_desc_pool_free_set(struct panvk_descriptor_pool *pool,
                          struct panvk_descriptor_set *set)
 {
@@ -334,6 +350,42 @@ desc_set_write_immutable_samplers(struct panvk_descriptor_set *set,
    }
 }
 
+static void
+panvk_init_iub(struct panvk_descriptor_set *set, uint32_t binding)
+{
+   const struct panvk_descriptor_set_binding_layout *binding_layout =
+      &set->layout->bindings[binding];
+
+   /* The first element is the buffer descriptor. */
+   uint32_t iub_data_offset =
+      panvk_get_desc_index(binding_layout, 1, NO_SUBDESC) *
+      PANVK_DESCRIPTOR_SIZE;
+   uint64_t iub_data_dev = set->descs.dev + iub_data_offset;
+   uint32_t iub_size_dev =
+      (binding_layout->desc_count - 1) * PANVK_DESCRIPTOR_SIZE;
+
+#if PAN_ARCH <= 7
+   struct {
+      struct mali_uniform_buffer_packed ubo;
+      uint32_t pad[6];
+   } padded_desc = {0};
+
+   pan_pack(&padded_desc.ubo, UNIFORM_BUFFER, cfg) {
+      cfg.pointer = iub_data_dev;
+      cfg.entries = iub_size_dev;
+   }
+   write_desc(set, binding, 0, &padded_desc, NO_SUBDESC);
+#else
+   struct mali_buffer_packed desc;
+
+   pan_pack(&desc, BUFFER, cfg) {
+      cfg.address = iub_data_dev;
+      cfg.size = iub_size_dev;
+   }
+   write_desc(set, binding, 0, &desc, NO_SUBDESC);
+#endif
+}
+
 static VkResult
 panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
                              struct panvk_descriptor_set_layout *layout,
@@ -383,6 +435,11 @@ panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
    }
    desc_set_write_immutable_samplers(set, variable_count);
    BITSET_CLEAR(pool->free_sets, first_free_set - 1);
+
+   for (uint32_t b = 0; b < layout->binding_count; ++b) {
+      if (layout->bindings[b].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
+         panvk_init_iub(set, b);
+   }
 
    *out = set;
    return VK_SUCCESS;
@@ -516,6 +573,15 @@ panvk_per_arch(descriptor_set_write)(struct panvk_descriptor_set *set,
       }
       break;
 
+   case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK: {
+      const VkWriteDescriptorSetInlineUniformBlock *inline_info =
+         vk_find_struct_const(write->pNext,
+                              WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK);
+      write_iub(set, write->dstBinding, write->dstArrayElement,
+                write->descriptorCount, inline_info->pData);
+      break;
+   }
+
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
       for (uint32_t j = 0; j < write->descriptorCount; j++) {
@@ -579,6 +645,15 @@ panvk_descriptor_set_copy(const VkCopyDescriptorSet *copy)
          &dst_set->dyn_bufs[dst_dyn_buf_idx],
          &src_set->dyn_bufs[src_dyn_buf_idx],
          copy->descriptorCount * sizeof(dst_set->dyn_bufs[dst_dyn_buf_idx]));
+      break;
+   }
+
+   case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK: {
+      const void *src =
+         get_desc_slot_ptr(src_set, copy->srcBinding, 0, NO_SUBDESC);
+      src += PANVK_DESCRIPTOR_SIZE + copy->srcArrayElement;
+      write_iub(dst_set, copy->dstBinding, copy->dstArrayElement,
+                copy->descriptorCount, src);
       break;
    }
 
@@ -682,6 +757,12 @@ panvk_per_arch(descriptor_set_write_template)(
                                       entry->array_element + j);
          }
          break;
+
+      case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+         write_iub(set, entry->binding, entry->array_element,
+                   entry->array_count, data + entry->offset);
+         break;
+
       default:
          unreachable("Unsupported descriptor type");
       }

@@ -140,6 +140,7 @@ desc_type_to_table_type(
    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
       return PANVK_BIFROST_DESC_TABLE_IMG;
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+   case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
       return PANVK_BIFROST_DESC_TABLE_UBO;
    default:
       return PANVK_BIFROST_DESC_TABLE_INVALID;
@@ -219,6 +220,7 @@ addr_format_for_type(VkDescriptorType type, const struct lower_desc_ctx *ctx)
    switch (type) {
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+   case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
       return ctx->ubo_addr_format;
 
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
