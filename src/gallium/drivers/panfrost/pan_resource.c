@@ -132,6 +132,54 @@ panfrost_resource_init_image(struct panfrost_resource *rsc,
       plane->image = rsc->image;
 }
 
+static bool
+adjust_mtk_tiled_props(struct panfrost_resource *rsc,
+                       struct pan_image_props *iprops, unsigned plane_idx,
+                       struct pan_image_layout_constraints *explicit_layout)
+{
+   bool is_uv_plane =
+      iprops->format == PIPE_FORMAT_R8G8_UNORM ||
+      (iprops->format == PIPE_FORMAT_R8_G8B8_420_UNORM && plane_idx > 0);
+   unsigned tile_w_px, tile_h_px, blksz_B;
+
+   if (is_uv_plane) {
+      tile_w_px = 8;
+      tile_h_px = 16;
+      blksz_B = 2;
+      iprops->format = PIPE_FORMAT_R8G8_UNORM;
+   } else {
+      tile_w_px = 16;
+      tile_h_px = 32;
+      blksz_B = 1;
+      iprops->format = PIPE_FORMAT_R8_UNORM;
+   }
+
+   /* SW detiling on MTK_TILED resources. This forces us to treat such
+    * resources as linear images with:
+    *    width = tile_width * tile_height
+    *    height = (wsi_row_stride / (tile_width * blksize)) * (height /
+    * tile_height)
+    */
+   iprops->extent_px.width = tile_w_px * tile_h_px;
+   iprops->extent_px.height =
+      (explicit_layout->wsi_row_pitch_B / (blksz_B * tile_w_px)) *
+      DIV_ROUND_UP(rsc->base.height0, tile_h_px);
+
+   /* Reject the import if the pitch is not aligned on a tile or if it's not
+    * covering the resource width. */
+   unsigned min_row_pitch_B = rsc->base.width0 * blksz_B;
+   unsigned row_pitch_align_req_B = blksz_B * tile_w_px;
+
+   if (explicit_layout->strict &&
+       (explicit_layout->wsi_row_pitch_B % row_pitch_align_req_B != 0 ||
+        explicit_layout->wsi_row_pitch_B < min_row_pitch_B))
+      return false;
+
+   /* Now adjust the row pitch. */
+   explicit_layout->wsi_row_pitch_B = iprops->extent_px.width * blksz_B;
+   return true;
+}
+
 static struct pipe_resource *
 panfrost_resource_from_handle(struct pipe_screen *pscreen,
                               const struct pipe_resource *templat,
@@ -190,6 +238,14 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
       .nr_samples = MAX2(prsc->nr_samples, 1),
       .nr_slices = 1,
    };
+
+   if (drm_is_mtk_tiled(mod) &&
+       !adjust_mtk_tiled_props(rsc, &iprops, whandle->plane,
+                               &explicit_layout)) {
+      FREE(rsc);
+      return NULL;
+   }
+
    unsigned format_plane =
       util_format_get_num_planes(iprops.format) > 1 ? whandle->plane : 0;
 
@@ -266,6 +322,26 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
       &rsrc->image.planes[handle->plane]->layout, 0);
    handle->offset =
       pan_image_get_wsi_offset(&rsrc->image.planes[handle->plane]->layout, 0);
+
+   /* SW detiling on MTK_TILED resources. This forces us to treat such
+    * resources as linear images with:
+    *    width = tile_width * tile_height
+    *    height = (wsi_row_stride / (tile_width * blksize)) * (height / tile_height)
+    *
+    * We need to extract the original WSI row pitch from this.
+    */
+   if (drm_is_mtk_tiled(rsrc->modifier)) {
+      bool subsamp = handle->plane > 0 ||
+                     rsrc->image.props.format == PIPE_FORMAT_R8G8_UNORM;
+      unsigned blksz_B = subsamp ? 2 : 1;
+      unsigned tile_w_px = 16 / (subsamp ? 2 : 1);
+      unsigned tile_h_px = 32 / (subsamp ? 2 : 1);
+      unsigned row_stride_tl = rsrc->image.props.extent_px.height /
+                               DIV_ROUND_UP(rsrc->base.height0, tile_h_px);
+
+      handle->stride = row_stride_tl * tile_w_px * blksz_B;
+   }
+
    return true;
 }
 
@@ -976,6 +1052,72 @@ panfrost_resource_create_with_modifiers(struct pipe_screen *screen,
    /* If we didn't find one, app specified invalid */
    assert(count == 1 && modifiers[0] == DRM_FORMAT_MOD_INVALID);
    return panfrost_resource_create(screen, template);
+}
+
+void
+panfrost_resource_change_format(struct panfrost_resource *rsrc,
+                                enum pipe_format new_format,
+                                struct panfrost_resource *save)
+{
+   if (!rsrc)
+      return;
+
+   assert(rsrc->image.props.modifier == DRM_FORMAT_MOD_LINEAR);
+   assert(util_format_get_num_planes(new_format) == 1);
+   assert(util_format_get_blockwidth(new_format) == 1 &&
+          util_format_get_blockheight(new_format) == 1);
+   assert(util_format_get_blockwidth(rsrc->image.props.format) == 1 &&
+          util_format_get_blockheight(rsrc->image.props.format) == 1);
+
+   if (new_format == rsrc->image.props.format)
+      return;
+
+   *save = *rsrc;
+
+   unsigned old_res_plane_idx = pan_resource_plane_index(rsrc);
+   enum pipe_format old_format =
+      util_format_get_plane_format(rsrc->image.props.format, old_res_plane_idx);
+   unsigned old_width =
+      util_format_get_plane_width(rsrc->image.props.format, old_res_plane_idx,
+                                  rsrc->image.props.extent_px.width);
+
+   unsigned old_fmt_blksize = util_format_get_blocksize(old_format);
+   unsigned new_fmt_blksize = util_format_get_blocksize(new_format);
+
+   if (old_fmt_blksize != new_fmt_blksize) {
+      assert((old_fmt_blksize * rsrc->base.width0) % new_fmt_blksize == 0);
+      rsrc->base.width0 =
+         (old_fmt_blksize * rsrc->base.width0) / new_fmt_blksize;
+      rsrc->image.props.extent_px.width =
+         (old_fmt_blksize * old_width) /
+         new_fmt_blksize;
+      rsrc->image.props.extent_px.height =
+         util_format_get_plane_height(rsrc->image.props.format, old_res_plane_idx,
+                                      rsrc->image.props.extent_px.height);
+   }
+
+   rsrc->base.next = NULL;
+   rsrc->base.format = new_format;
+   rsrc->image.props.format = new_format;
+   rsrc->image.planes[0] = &rsrc->plane;
+   rsrc->image.planes[1] = NULL;
+   rsrc->image.planes[2] = NULL;
+}
+
+void
+panfrost_resource_restore_format(struct panfrost_resource *rsrc,
+                                 const struct panfrost_resource *saved)
+{
+   if (!rsrc)
+      return;
+
+   rsrc->base.next = saved->base.next;
+   memcpy(rsrc->image.planes, saved->image.planes, sizeof(rsrc->image.planes));
+   rsrc->base.format = saved->base.format;
+   rsrc->image.props.format = saved->image.props.format;
+   rsrc->base.width0 = saved->base.width0;
+   rsrc->image.props.extent_px.width = saved->image.props.extent_px.width;
+   rsrc->image.props.extent_px.height = saved->image.props.extent_px.height;
 }
 
 static void

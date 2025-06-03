@@ -3652,10 +3652,6 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
 
    unsigned width = info->src.box.width;
    unsigned height = info->src.box.height;
-   unsigned src_stride =
-      pan_resource(y_src)->plane.layout.slices[0].row_stride_B;
-   unsigned dst_stride =
-      pan_resource(y_dst)->plane.layout.slices[0].row_stride_B;
 
    /* 4 images: y_src, uv_src, y_dst, uv_dst */
    struct pipe_image_view image[4] = { 0 };
@@ -3673,6 +3669,43 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
          y_src = y_dst = NULL;
       }
    }
+
+   /* We're not supposed to create views with a format whose size doesn't match
+    * the image format. */
+   struct panfrost_resource y_src_save;
+   struct panfrost_resource uv_src_save;
+   struct panfrost_resource y_dst_save;
+   struct panfrost_resource uv_dst_save;
+
+   panfrost_resource_change_format(pan_resource(y_src),
+                                   PIPE_FORMAT_R8G8B8A8_UINT, &y_src_save);
+   panfrost_resource_change_format(pan_resource(uv_src),
+                                   PIPE_FORMAT_R8G8B8A8_UINT, &uv_src_save);
+   panfrost_resource_change_format(pan_resource(y_dst),
+                                   PIPE_FORMAT_R8G8B8A8_UINT, &y_dst_save);
+   panfrost_resource_change_format(pan_resource(uv_dst),
+                                   PIPE_FORMAT_R8G8B8A8_UINT, &uv_dst_save);
+
+   struct panfrost_mtk_detile_info consts = {
+      .height = height,
+      /* The copy width is expressed for an R8_UNORM resource, but we
+       * changed the format into RGBA8_UINT, so we need to adjust the width if
+       * we want the shader-side bound check to do its job. */
+      .width = width / 4,
+   };
+
+   if (y_src) {
+      consts.src_y_row_stride_tl =
+         pan_resource(y_src)->image.props.extent_px.height /
+         DIV_ROUND_UP(y_src->height0, 32);
+   }
+
+   if (uv_src) {
+      consts.src_uv_row_stride_tl =
+         pan_resource(uv_src)->image.props.extent_px.height /
+         DIV_ROUND_UP(uv_src->height0, 16);
+   }
+
    image[0].resource = y_src;
    image[0].format = PIPE_FORMAT_R8G8B8A8_UINT;
    image[0].shader_access = image[0].access = PIPE_IMAGE_ACCESS_READ;
@@ -3701,12 +3734,6 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
    image[3].u.tex.first_layer = 0;
    image[3].u.tex.last_layer = uv_dst ? (unsigned)(uv_dst->array_size - 1) : 0;
 
-   struct panfrost_mtk_detile_info consts = {
-      .tiles_per_stride = src_stride >> 4,
-      .src_width = width,
-      .src_height = height,
-      .dst_stride = dst_stride,
-   };
    panfrost_flush_all_batches(ctx, "mtk_detile pre-barrier");
 
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
@@ -3714,20 +3741,20 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
 
    /* launch the compute shader */
    struct pan_mod_convert_shader_data *shader =
-      panfrost_get_mtk_detile_shader(ctx);
+      panfrost_get_mtk_detile_shader(ctx, y_src != NULL, uv_src != NULL);
    struct pipe_constant_buffer cbuf = {
       .buffer_size = sizeof(consts),
       .user_buffer = &consts};
 
    struct pipe_grid_info grid_info = {
       .block[0] = 4,
-      .last_block[0] = (width/4) % 4,
+      .last_block[0] = (width / 4) % 4,
       .block[1] = 16,
-      .last_block[1] = height % 16,
+      .last_block[1] = (height / 2) % 16,
       .block[2] = 1,
       .last_block[2] = 0,
-      .grid[0] = DIV_ROUND_UP(width/4, 4),
-      .grid[1] = DIV_ROUND_UP(height, 16),
+      .grid[0] = DIV_ROUND_UP(width / 4, 4),
+      .grid[1] = DIV_ROUND_UP(height / 2, 16),
       .grid[2] = 1,
    };
 
@@ -3745,6 +3772,11 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
 
    pipe->bind_compute_state(pipe, saved_cso);
    pipe->set_constant_buffer(pipe, PIPE_SHADER_COMPUTE, 0, true, &saved_const);
+
+   panfrost_resource_restore_format(pan_resource(y_src), &y_src_save);
+   panfrost_resource_restore_format(pan_resource(uv_src), &uv_src_save);
+   panfrost_resource_restore_format(pan_resource(y_dst), &y_dst_save);
+   panfrost_resource_restore_format(pan_resource(uv_dst), &uv_dst_save);
 }
 
 static void *

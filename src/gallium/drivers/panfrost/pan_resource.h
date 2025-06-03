@@ -197,6 +197,15 @@ panfrost_translate_texture_dimension(enum pipe_texture_target t)
    }
 }
 
+void
+panfrost_resource_change_format(struct panfrost_resource *rsrc,
+                                enum pipe_format new_format,
+                                struct panfrost_resource *save);
+
+void
+panfrost_resource_restore_format(struct panfrost_resource *rsrc,
+                                 const struct panfrost_resource *saved);
+
 bool panfrost_should_pack_afbc(struct panfrost_device *dev,
                                const struct panfrost_resource *rsrc);
 
