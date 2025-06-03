@@ -3099,8 +3099,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    }
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
-   struct cs_index iter_sb = cs_scratch_reg32(b, 2);
-   struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
    struct cs_index add_val = cs_scratch_reg64(b, 4);
    struct cs_index add_val_lo = cs_scratch_reg32(b, 4);
    struct cs_index ringbuf_sync_addr = cs_scratch_reg64(b, 6);
@@ -3117,9 +3115,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index oq_syncobj = cs_scratch_reg64(b, 12);
 
    cs_move64_to(b, add_val, 1);
-   cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
-              BITFIELD_MASK(3),
-              offsetof(struct panvk_cs_subqueue_context, syncobjs));
 
    if (free_render_descs) {
       cs_move32_to(b, release_sz, calc_render_descs_size(cmdbuf));
@@ -3128,9 +3123,87 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
                             render.desc_ringbuf.syncobj));
    }
 
+   cs_move32_to(b, tiler_count, td_count);
+
+#if PAN_ARCH >= 11
+   cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
+                offsetof(struct panvk_cs_subqueue_context, syncobjs));
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
-   cs_move32_to(b, tiler_count, td_count);
+
+   if (td_count == 1) {
+      cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);
+      cs_finish_fragment(b, true, completed_top, completed_bottom,
+                         cs_defer_indirect());
+   } else if (td_count > 1) {
+      cs_while(b, MALI_CS_CONDITION_GREATER, tiler_count) {
+         cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);
+         cs_finish_fragment(b, false, completed_top, completed_bottom,
+                            cs_defer_indirect());
+         cs_update_frag_ctx(b)
+            cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));
+         cs_add32(b, tiler_count, tiler_count, -1);
+      }
+      cs_frag_end(b, cs_defer_indirect());
+   }
+
+   if (free_render_descs) {
+      cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, release_sz,
+                    ringbuf_sync_addr, cs_defer_indirect());
+   }
+
+   if (has_oq_chain) {
+      struct cs_index flush_id = oq_chain_lo;
+      cs_move32_to(b, flush_id, 0);
+
+      /* FLUSH_CACHE2 is part of the deferred group so we need to
+       * temporarily set DEFERRED_FLUSH here to use the right scoreboard in
+       * indirect mode */
+      cs_set_state_imm32(b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
+                         SB_ID(DEFERRED_FLUSH));
+      cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
+                      MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
+                      cs_defer_indirect());
+      cs_set_state_imm32(b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
+                         SB_ID(DEFERRED_SYNC));
+
+      cs_load64_to(b, oq_chain, cs_subqueue_ctx_reg(b),
+                   offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
+
+      /* For WAR dependency on subqueue_context.render.oq_chain. */
+      cs_flush_loads(b);
+
+      /* We use oq_syncobj as a placeholder to reset the oq_chain. */
+      cs_move64_to(b, oq_syncobj, 0);
+      cs_store64(b, oq_syncobj, cs_subqueue_ctx_reg(b),
+                 offsetof(struct panvk_cs_subqueue_context, render.oq_chain));
+
+      cs_while(b, MALI_CS_CONDITION_ALWAYS, cs_undef()) {
+         cs_load64_to(b, oq_syncobj, oq_chain,
+                      offsetof(struct panvk_cs_occlusion_query, syncobj));
+         cs_load64_to(b, oq_chain, oq_chain,
+                      offsetof(struct panvk_cs_occlusion_query, next));
+         cs_sync32_set(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val_lo, oq_syncobj,
+                       cs_defer(SB_MASK(DEFERRED_FLUSH), SB_ID(DEFERRED_SYNC)));
+         cs_if(b, MALI_CS_CONDITION_NEQUAL, oq_chain_lo)
+            cs_continue(b);
+         cs_if(b, MALI_CS_CONDITION_NEQUAL, oq_chain_hi)
+            cs_continue(b);
+         cs_break(b);
+      }
+   }
+
+   cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
+                 cs_defer_indirect());
+#else
+   struct cs_index iter_sb = cs_scratch_reg32(b, 2);
+   struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
+
+   cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
+              BITFIELD_MASK(3),
+              offsetof(struct panvk_cs_subqueue_context, syncobjs));
+   cs_add64(b, sync_addr, sync_addr,
+            PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
@@ -3198,6 +3271,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       CASE(4)
 #undef CASE
    }
+#endif
 
    /* Update the ring buffer position. */
    if (free_render_descs) {
