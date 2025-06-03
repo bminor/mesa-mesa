@@ -20,12 +20,10 @@ struct nvkmd_ctx;
 
 struct nvk_queue_state {
    struct {
-      struct nvkmd_mem *mem;
       uint32_t alloc_count;
    } images;
 
    struct {
-      struct nvkmd_mem *mem;
       uint32_t alloc_count;
    } samplers;
 

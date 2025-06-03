@@ -14,27 +14,16 @@ nvk_descriptor_table_grow_locked(struct nvk_device *dev,
                                  struct nvk_descriptor_table *table,
                                  uint32_t new_alloc)
 {
-   struct nvkmd_mem *new_mem;
    BITSET_WORD *new_in_use;
    uint32_t *new_free_table;
-   VkResult result;
 
-   assert(new_alloc > table->alloc && new_alloc <= table->max_alloc);
-
-   const uint32_t new_mem_size = new_alloc * table->desc_size;
-   result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
-                                       new_mem_size, 256,
-                                       NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
-                                       &new_mem);
-   if (result != VK_SUCCESS)
-      return result;
-
-   if (table->mem) {
-      assert(new_mem_size >= table->mem->size_B);
-      memcpy(new_mem->map, table->mem->map, table->mem->size_B);
-      nvkmd_mem_unref(table->mem);
+   uint32_t new_arena_size_B = new_alloc * table->desc_size;
+   while (nvk_mem_arena_size_B(&table->arena) < new_arena_size_B) {
+      VkResult result = nvk_mem_arena_grow_locked(dev, &table->arena,
+                                                  NULL, NULL);
+      if (result != VK_SUCCESS)
+         return result;
    }
-   table->mem = new_mem;
 
    assert((table->alloc % BITSET_WORDBITS) == 0);
    assert((new_alloc % BITSET_WORDBITS) == 0);
@@ -78,10 +67,14 @@ nvk_descriptor_table_init(struct nvk_device *dev,
    memset(table, 0, sizeof(*table));
    VkResult result;
 
-   simple_mtx_init(&table->mutex, mtx_plain);
-
    assert(util_is_power_of_two_nonzero(min_descriptor_count));
    assert(util_is_power_of_two_nonzero(max_descriptor_count));
+
+   result = nvk_mem_arena_init(dev, &table->arena, NVKMD_MEM_LOCAL,
+                               NVKMD_MEM_MAP_WR, true /* contiguous */,
+                               max_descriptor_count * descriptor_size);
+   if (result != VK_SUCCESS)
+      return result;
 
    table->desc_size = descriptor_size;
    table->alloc = 0;
@@ -102,11 +95,9 @@ void
 nvk_descriptor_table_finish(struct nvk_device *dev,
                             struct nvk_descriptor_table *table)
 {
-   if (table->mem != NULL)
-      nvkmd_mem_unref(table->mem);
+   nvk_mem_arena_finish(dev, &table->arena);
    vk_free(&dev->vk.alloc, table->in_use);
    vk_free(&dev->vk.alloc, table->free_table);
-   simple_mtx_destroy(&table->mutex);
 }
 
 static void *
@@ -116,7 +107,9 @@ nvk_descriptor_table_map_locked(struct nvk_descriptor_table *table,
    assert(index < table->alloc);
    assert(BITSET_TEST(table->in_use, index));
 
-   return (char *)table->mem->map + (index * table->desc_size);
+   uint32_t offset_B = index * table->desc_size;
+   return nvk_contiguous_mem_arena_map_offset(&table->arena, offset_B,
+                                              table->desc_size);
 }
 
 static void
@@ -219,10 +212,10 @@ nvk_descriptor_table_add(struct nvk_device *dev,
                          const void *desc_data, size_t desc_size,
                          uint32_t *index_out)
 {
-   simple_mtx_lock(&table->mutex);
+   simple_mtx_lock(&table->arena.mutex);
    VkResult result = nvk_descriptor_table_add_locked(dev, table, desc_data,
                                                      desc_size, index_out);
-   simple_mtx_unlock(&table->mutex);
+   simple_mtx_unlock(&table->arena.mutex);
 
    return result;
 }
@@ -248,10 +241,10 @@ nvk_descriptor_table_insert(struct nvk_device *dev,
                             uint32_t index,
                             const void *desc_data, size_t desc_size)
 {
-   simple_mtx_lock(&table->mutex);
+   simple_mtx_lock(&table->arena.mutex);
    VkResult result = nvk_descriptor_table_insert_locked(dev, table, index,
                                                         desc_data, desc_size);
-   simple_mtx_unlock(&table->mutex);
+   simple_mtx_unlock(&table->arena.mutex);
 
    return result;
 }
@@ -314,7 +307,7 @@ nvk_descriptor_table_remove(struct nvk_device *dev,
                             struct nvk_descriptor_table *table,
                             uint32_t index)
 {
-   simple_mtx_lock(&table->mutex);
+   simple_mtx_lock(&table->arena.mutex);
    nvk_descriptor_table_remove_locked(dev, table, index);
-   simple_mtx_unlock(&table->mutex);
+   simple_mtx_unlock(&table->arena.mutex);
 }
