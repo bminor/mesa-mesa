@@ -2260,6 +2260,14 @@ radv_emit_hw_ngg(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *e
       radeon_set_uconfig_reg(R_030980_GE_PC_ALLOC, shader->info.regs.ge_pc_alloc);
    }
 
+   const uint32_t ngg_lds_layout_offset = radv_get_user_sgpr_loc(shader, AC_UD_NGG_LDS_LAYOUT);
+   assert(ngg_lds_layout_offset);
+   assert(!(shader->info.ngg_info.esgs_ring_size & 0xffff0000) &&
+          !(shader->info.ngg_info.scratch_lds_base & 0xffff0000));
+
+   radeon_set_sh_reg(ngg_lds_layout_offset,
+                     SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size) |
+                        SET_SGPR_FIELD(NGG_LDS_LAYOUT_SCRATCH_BASE, shader->info.ngg_info.scratch_lds_base));
    radeon_end();
 }
 
@@ -2498,22 +2506,9 @@ radv_emit_geometry_shader(struct radv_cmd_buffer *cmd_buffer)
 
    if (gs->info.merged_shader_compiled_separately) {
       const uint32_t vgt_esgs_ring_itemsize_offset = radv_get_user_sgpr_loc(gs, AC_UD_VGT_ESGS_RING_ITEMSIZE);
-      const uint32_t ngg_lds_layout_offset = radv_get_user_sgpr_loc(gs, AC_UD_NGG_LDS_LAYOUT);
-      uint32_t ngg_lds_layout = 0;
-
-      if (gs->info.is_ngg) {
-         assert(ngg_lds_layout_offset);
-         assert(!(gs->info.ngg_info.esgs_ring_size & 0xffff0000) && !(gs->info.ngg_info.scratch_lds_base & 0xffff0000));
-
-         ngg_lds_layout = SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, gs->info.ngg_info.esgs_ring_size) |
-                          SET_SGPR_FIELD(NGG_LDS_LAYOUT_SCRATCH_BASE, gs->info.ngg_info.scratch_lds_base);
-      }
-
       assert(vgt_esgs_ring_itemsize_offset);
 
       radeon_set_sh_reg(vgt_esgs_ring_itemsize_offset, es->info.esgs_itemsize / 4);
-      if (ngg_lds_layout)
-         radeon_set_sh_reg(ngg_lds_layout_offset, ngg_lds_layout);
    }
 
    radeon_end();

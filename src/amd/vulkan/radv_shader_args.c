@@ -285,6 +285,8 @@ declare_ps_input_vgprs(const struct radv_shader_info *info, struct radv_shader_a
 static void
 declare_ngg_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args, bool ngg_needs_state_sgpr)
 {
+   add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_lds_layout, AC_UD_NGG_LDS_LAYOUT);
+
    if (ngg_needs_state_sgpr)
       add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_state, AC_UD_NGG_STATE);
 
