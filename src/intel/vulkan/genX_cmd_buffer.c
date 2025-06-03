@@ -1150,6 +1150,10 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
       anv_layout_to_fast_clear_type(devinfo, image, aspect, final_layout,
                                     dst_queue_flags);
 
+   /* We make this guarantee with optimalImageTransferToQueueFamilies */
+   if (devinfo->ver >= 20 && (src_queue_external || dst_queue_external))
+      assert(initial_aux_usage == final_aux_usage);
+
    /* We must override the anv_layout_to_* functions because they are unaware
     * of acquire/release direction.
     */

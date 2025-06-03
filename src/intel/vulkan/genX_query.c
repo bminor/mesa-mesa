@@ -51,6 +51,12 @@
 
 #include "vk_util.h"
 
+static void *
+query_slot(struct anv_query_pool *pool, uint32_t query)
+{
+   return pool->bo->map + query * pool->stride;
+}
+
 static struct anv_address
 anv_query_address(struct anv_query_pool *pool, uint32_t query)
 {
@@ -321,6 +327,13 @@ VkResult genX(CreateQueryPool)(
       }
    }
 
+   if (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR) {
+      for (uint32_t q = 0; q < pool->vk.query_count; q++) {
+         uint64_t *slot = query_slot(pool, q);
+         *slot = 0;
+      }
+   }
+
    ANV_RMV(query_pool_create, device, pool, false);
 
    *pQueryPool = anv_query_pool_to_handle(pool);
@@ -475,12 +488,6 @@ cpu_write_query_result(void *dst_slot, VkQueryResultFlags flags,
       uint32_t *dst32 = dst_slot;
       dst32[value_index] = result;
    }
-}
-
-static void *
-query_slot(struct anv_query_pool *pool, uint32_t query)
-{
-   return pool->bo->map + query * pool->stride;
 }
 
 static bool

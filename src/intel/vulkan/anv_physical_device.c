@@ -198,6 +198,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_maintenance6                      = true,
       .KHR_maintenance7                      = true,
       .KHR_maintenance8                      = true,
+      .KHR_maintenance9                      = true,
       .KHR_map_memory2                       = true,
       .KHR_multiview                         = true,
       .KHR_performance_query =
@@ -964,6 +965,9 @@ get_features(const struct anv_physical_device *pdevice,
       /* VK_KHR_fragment_shader_barycentric */
       .fragmentShaderBarycentric =
          pdevice->vk.supported_extensions.KHR_fragment_shader_barycentric,
+
+      /* VK_KHR_maintenance9 */
+      .maintenance9 = true,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
@@ -1515,6 +1519,14 @@ get_properties(const struct anv_physical_device *pdevice,
       props->maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic = MAX_DYNAMIC_BUFFERS;
       props->maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic = MAX_DYNAMIC_BUFFERS;
       props->maxDescriptorSetUpdateAfterBindTotalBuffersDynamic = MAX_DYNAMIC_BUFFERS;
+   }
+
+   /* VK_KHR_maintenance9 */
+   {
+      /* Swizzling of Tile64 images is different in 2D/3D */
+      props->image2DViewOf3DSparse = false;
+      props->defaultVertexAttributeValue =
+         VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR;
    }
 
    /* VK_KHR_performance_query */
@@ -2925,6 +2937,17 @@ void anv_GetPhysicalDeviceQueueFamilyProperties2(
                }
                break;
             }
+
+            case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR: {
+               VkQueueFamilyOwnershipTransferPropertiesKHR *prop =
+                  (VkQueueFamilyOwnershipTransferPropertiesKHR *)ext;
+               if (pdevice->info.ver >= 20)
+                  prop->optimalImageTransferToQueueFamilies = BITSET_MASK(pdevice->queue.family_count);
+               else
+                  prop->optimalImageTransferToQueueFamilies = 0;
+               break;
+            }
+
             default:
                vk_debug_ignored_stype(ext->sType);
             }
