@@ -104,8 +104,6 @@ GLboolean _mesa_bufferobj_unmap(struct gl_context *ctx, struct gl_buffer_object 
 
 struct gl_buffer_object *
 _mesa_bufferobj_alloc(struct gl_context *ctx, GLuint id);
-void
-_mesa_bufferobj_release_buffer(struct gl_buffer_object *obj);
 
 enum pipe_map_flags
 _mesa_access_flags_to_transfer_flags(GLbitfield access, bool wholeBuffer);

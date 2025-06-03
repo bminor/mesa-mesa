@@ -255,6 +255,25 @@ buffer_usage(GLenum target, GLboolean immutable,
    }
 }
 
+static void
+_mesa_bufferobj_release_buffer(struct gl_buffer_object *obj)
+{
+   if (!obj->buffer)
+      return;
+
+   /* Subtract the remaining private references before unreferencing
+    * the buffer. See the header file for explanation.
+    */
+   if (obj->private_refcount) {
+      assert(obj->private_refcount > 0);
+      p_atomic_add(&obj->buffer->reference.count,
+                   -obj->private_refcount);
+      obj->private_refcount = 0;
+   }
+   obj->private_refcount_ctx = NULL;
+
+   pipe_resource_reference(&obj->buffer, NULL);
+}
 
 static ALWAYS_INLINE GLboolean
 bufferobj_data(struct gl_context *ctx,
@@ -1006,26 +1025,6 @@ convert_clear_buffer_data(struct gl_context *ctx,
       _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", caller);
       return false;
    }
-}
-
-void
-_mesa_bufferobj_release_buffer(struct gl_buffer_object *obj)
-{
-   if (!obj->buffer)
-      return;
-
-   /* Subtract the remaining private references before unreferencing
-    * the buffer. See the header file for explanation.
-    */
-   if (obj->private_refcount) {
-      assert(obj->private_refcount > 0);
-      p_atomic_add(&obj->buffer->reference.count,
-                   -obj->private_refcount);
-      obj->private_refcount = 0;
-   }
-   obj->private_refcount_ctx = NULL;
-
-   pipe_resource_reference(&obj->buffer, NULL);
 }
 
 /**
