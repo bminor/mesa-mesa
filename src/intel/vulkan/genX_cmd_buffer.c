@@ -5681,11 +5681,11 @@ void genX(CmdBeginRendering)(
 
       if (clear_aspects != 0) {
          const bool hiz_clear =
-            anv_can_hiz_clear_ds_view(cmd_buffer->device, d_iview,
-                                      depth_layout, clear_aspects,
-                                      clear_value.depth,
-                                      render_area,
-                                      cmd_buffer->queue_family->queueFlags);
+            anv_can_hiz_clear_image(cmd_buffer, ds_iview->image,
+                                    depth_layout, clear_aspects,
+                                    clear_value.depth,
+                                    render_area,
+                                    ds_iview->vk.base_mip_level);
 
          if (depth_layout != initial_depth_layout) {
             assert(render_area.offset.x == 0 && render_area.offset.y == 0 &&

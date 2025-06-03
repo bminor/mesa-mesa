@@ -2058,12 +2058,12 @@ can_hiz_clear_att(struct anv_cmd_buffer *cmd_buffer,
    if (pRects[0].layerCount > 1 || pRects[0].baseArrayLayer > 0)
       return false;
 
-   return anv_can_hiz_clear_ds_view(cmd_buffer->device, ds_att->iview,
-                                    ds_att->layout,
-                                    attachment->aspectMask,
-                                    attachment->clearValue.depthStencil.depth,
-                                    pRects->rect,
-                                    cmd_buffer->queue_family->queueFlags);
+   return anv_can_hiz_clear_image(cmd_buffer, ds_att->iview->image,
+                                  ds_att->layout,
+                                  attachment->aspectMask,
+                                  attachment->clearValue.depthStencil.depth,
+                                  pRects->rect,
+                                  ds_att->iview->vk.base_mip_level);
 }
 
 static void

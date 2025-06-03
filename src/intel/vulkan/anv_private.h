@@ -6098,15 +6098,6 @@ VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
 
 bool
-anv_can_hiz_clear_ds_view(struct anv_device *device,
-                          const struct anv_image_view *iview,
-                          VkImageLayout layout,
-                          VkImageAspectFlags clear_aspects,
-                          float depth_clear_value,
-                          VkRect2D render_area,
-                          const VkQueueFlagBits queue_flags);
-
-bool
 anv_can_hiz_clear_image(struct anv_cmd_buffer *cmd_buffer,
                         const struct anv_image *image,
                         VkImageLayout layout,
