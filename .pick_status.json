@@ -6864,7 +6864,7 @@
         "description": "nir/lower_to_scalar: fix opt_varying with output reads",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "00589893579a66e2cc00a86edae47dff9bf9a7f1",
         "notes": null
