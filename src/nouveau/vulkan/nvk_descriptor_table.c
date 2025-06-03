@@ -109,7 +109,35 @@ nvk_descriptor_table_finish(struct nvk_device *dev,
    simple_mtx_destroy(&table->mutex);
 }
 
-#define NVK_IMAGE_DESC_INVALID
+static void *
+nvk_descriptor_table_map_locked(struct nvk_descriptor_table *table,
+                                uint32_t index)
+{
+   assert(index < table->alloc);
+   assert(BITSET_TEST(table->in_use, index));
+
+   return (char *)table->mem->map + (index * table->desc_size);
+}
+
+static void
+nvk_descriptor_table_write_locked(struct nvk_descriptor_table *table,
+                                  uint32_t index,
+                                  const void *desc_data, size_t desc_size)
+{
+   void *map = nvk_descriptor_table_map_locked(table, index);
+
+   assert(desc_size == table->desc_size);
+   memcpy(map, desc_data, table->desc_size);
+}
+
+static void
+nvk_descriptor_table_clear_locked(struct nvk_descriptor_table *table,
+                                  uint32_t index)
+{
+   void *map = nvk_descriptor_table_map_locked(table, index);
+
+   memset(map, 0, table->desc_size);
+}
 
 static VkResult
 nvk_descriptor_table_alloc_locked(struct nvk_device *dev,
@@ -179,10 +207,7 @@ nvk_descriptor_table_add_locked(struct nvk_device *dev,
    if (result != VK_SUCCESS)
       return result;
 
-   void *map = (char *)table->mem->map + (*index_out * table->desc_size);
-
-   assert(desc_size == table->desc_size);
-   memcpy(map, desc_data, table->desc_size);
+   nvk_descriptor_table_write_locked(table, *index_out, desc_data, desc_size);
 
    return VK_SUCCESS;
 }
@@ -212,10 +237,7 @@ nvk_descriptor_table_insert_locked(struct nvk_device *dev,
    if (result != VK_SUCCESS)
       return result;
 
-   void *map = (char *)table->mem->map + (index * table->desc_size);
-
-   assert(desc_size == table->desc_size);
-   memcpy(map, desc_data, table->desc_size);
+   nvk_descriptor_table_write_locked(table, index, desc_data, desc_size);
 
    return result;
 }
@@ -262,17 +284,14 @@ nvk_descriptor_table_compact_free_table(struct nvk_descriptor_table *table)
    table->free_count = j;
 }
 
-void
-nvk_descriptor_table_remove(struct nvk_device *dev,
-                            struct nvk_descriptor_table *table,
-                            uint32_t index)
+static void
+nvk_descriptor_table_remove_locked(struct nvk_device *dev,
+                                   struct nvk_descriptor_table *table,
+                                   uint32_t index)
 {
-   simple_mtx_lock(&table->mutex);
-
-   void *map = (char *)table->mem->map + (index * table->desc_size);
-   memset(map, 0, table->desc_size);
-
    assert(BITSET_TEST(table->in_use, index));
+
+   nvk_descriptor_table_clear_locked(table, index);
 
    /* There may be duplicate entries in the free table.  For most operations,
     * this is fine as we always consult nvk_descriptor_table::in_use when
@@ -288,6 +307,14 @@ nvk_descriptor_table_remove(struct nvk_device *dev,
 
    BITSET_CLEAR(table->in_use, index);
    table->free_table[table->free_count++] = index;
+}
 
+void
+nvk_descriptor_table_remove(struct nvk_device *dev,
+                            struct nvk_descriptor_table *table,
+                            uint32_t index)
+{
+   simple_mtx_lock(&table->mutex);
+   nvk_descriptor_table_remove_locked(dev, table, index);
    simple_mtx_unlock(&table->mutex);
 }
