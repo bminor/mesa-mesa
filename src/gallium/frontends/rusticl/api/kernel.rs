@@ -437,6 +437,20 @@ fn set_kernel_arg(
                     KernelArgType::Image | KernelArgType::RWImage | KernelArgType::Texture => {
                         let img: *const cl_mem = arg_value.cast();
                         let img = Image::arc_from_raw(*img)?;
+
+                        // CL_INVALID_ARG_VALUE if the argument is an image declared with the read_only
+                        // qualifier and arg_value refers to an image object created with cl_mem_flags
+                        // of CL_MEM_WRITE_ONLY or if the image argument is declared with the write_only
+                        // qualifier and arg_value refers to an image object created with cl_mem_flags
+                        // of CL_MEM_READ_ONLY.
+                        if arg.kind == KernelArgType::Texture
+                            && bit_check(img.flags, CL_MEM_WRITE_ONLY)
+                            || arg.kind == KernelArgType::Image
+                                && bit_check(img.flags, CL_MEM_READ_ONLY)
+                        {
+                            return Err(CL_INVALID_ARG_VALUE);
+                        }
+
                         KernelArgValue::Image(Arc::downgrade(&img))
                     }
                     KernelArgType::Sampler => {
@@ -452,7 +466,6 @@ fn set_kernel_arg(
     }
 
     //• CL_INVALID_DEVICE_QUEUE for an argument declared to be of type queue_t when the specified arg_value is not a valid device queue object. This error code is missing before version 2.0.
-    //• CL_INVALID_ARG_VALUE if the argument is an image declared with the read_only qualifier and arg_value refers to an image object created with cl_mem_flags of CL_MEM_WRITE_ONLY or if the image argument is declared with the write_only qualifier and arg_value refers to an image object created with cl_mem_flags of CL_MEM_READ_ONLY.
     //• CL_MAX_SIZE_RESTRICTION_EXCEEDED if the size in bytes of the memory object (if the argument is a memory object) or arg_size (if the argument is declared with local qualifier) exceeds a language- specified maximum size restriction for this argument, such as the MaxByteOffset SPIR-V decoration. This error code is missing before version 2.2.
 }
 

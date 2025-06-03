@@ -674,7 +674,7 @@
         "description": "rusticl/kernel: implement CL_INVALID_ARG_VALUE for image args in clSetKernelArg",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
