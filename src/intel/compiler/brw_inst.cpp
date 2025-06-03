@@ -564,22 +564,21 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
        * coincidence, so this isn't so bad.
        */
       const unsigned reg_unit = this->exec_size / 8;
+      const unsigned type_size = brw_type_size_bytes(src[arg].type);
 
       switch (arg) {
       case 0:
-         if (src[0].type == BRW_TYPE_HF) {
-            return rcount * reg_unit * REG_SIZE / 2;
-         } else {
-            return rcount * reg_unit * REG_SIZE;
-         }
+         assert(type_size == 4 || type_size == 2);
+         return rcount * reg_unit * 8 * type_size;
       case 1:
          return sdepth * reg_unit * REG_SIZE;
       case 2:
          /* This is simpler than the formula described in the Bspec, but it
           * covers all of the cases that we support. Each inner sdepth
-          * iteration of the DPAS consumes a single dword for int8, uint8, or
-          * float16 types. These are the one source types currently
-          * supportable through Vulkan. This is independent of reg_unit.
+          * iteration of the DPAS consumes a single dword for int8, uint8,
+          * float16, or bfloat16 types. These are the one source types
+          * currently supportable through Vulkan. This is independent of
+          * reg_unit.
           */
          return rcount * sdepth * 4;
       default:

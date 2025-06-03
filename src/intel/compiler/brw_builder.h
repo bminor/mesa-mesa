@@ -765,11 +765,9 @@ public:
       inst->sdepth = sdepth;
       inst->rcount = rcount;
 
-      if (dst.type == BRW_TYPE_HF) {
-         inst->size_written = reg_unit(shader->devinfo) * rcount * REG_SIZE / 2;
-      } else {
-         inst->size_written = reg_unit(shader->devinfo) * rcount * REG_SIZE;
-      }
+      unsigned type_size = brw_type_size_bytes(dst.type);
+      assert(type_size == 4 || type_size == 2);
+      inst->size_written = rcount * reg_unit(shader->devinfo) * 8 * type_size;
 
       return inst;
    }
