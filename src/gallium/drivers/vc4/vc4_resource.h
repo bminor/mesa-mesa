@@ -42,10 +42,6 @@ struct vc4_resource_slice {
         uint8_t tiling;
 };
 
-struct vc4_surface {
-        struct pipe_surface base;
-};
-
 struct vc4_resource {
         struct pipe_resource base;
         struct vc4_bo *bo;
@@ -82,12 +78,6 @@ static inline struct vc4_resource *
 vc4_resource(struct pipe_resource *prsc)
 {
         return (struct vc4_resource *)prsc;
-}
-
-static inline struct vc4_surface *
-vc4_surface(struct pipe_surface *psurf)
-{
-        return (struct vc4_surface *)psurf;
 }
 
 static inline struct vc4_transfer *
