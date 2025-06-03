@@ -3553,9 +3553,9 @@ panfrost_launch_grid(struct pipe_context *pipe,
 #define AFBC_BLOCK_ALIGN 16
 
 static void
-panfrost_launch_convert_shader(struct panfrost_batch *batch, void *cso,
-                            struct pipe_constant_buffer *cbuf,
-                            unsigned nr_blocks)
+panfrost_launch_afbc_conv_shader(struct panfrost_batch *batch, void *cso,
+                                 struct pipe_constant_buffer *cbuf,
+                                 unsigned nr_blocks)
 {
    struct pipe_context *pctx = &batch->ctx->base;
    void *saved_cso = NULL;
@@ -3583,14 +3583,15 @@ panfrost_launch_convert_shader(struct panfrost_batch *batch, void *cso,
    pctx->set_constant_buffer(pctx, PIPE_SHADER_COMPUTE, 0, true, &saved_const);
 }
 
-#define LAUNCH_CONVERT_SHADER(name, batch, rsrc, consts, nr_blocks)               \
-   struct pan_mod_convert_shader_data *shaders =                                      \
-      panfrost_get_mod_convert_shaders(batch->ctx, rsrc, AFBC_BLOCK_ALIGN);           \
+#define LAUNCH_AFBC_CONV_SHADER(name, batch, rsrc, consts, nr_blocks)          \
+   struct pan_mod_convert_shader_data *shaders =                               \
+      panfrost_get_afbc_pack_shaders(batch->ctx, rsrc, AFBC_BLOCK_ALIGN);      \
    struct pipe_constant_buffer constant_buffer = {                             \
       .buffer_size = sizeof(consts),                                           \
-      .user_buffer = &consts};                                                 \
-   panfrost_launch_convert_shader(batch, shaders->name##_cso, &constant_buffer,   \
-                               nr_blocks);
+      .user_buffer = &consts,                                                  \
+   };                                                                          \
+   panfrost_launch_afbc_conv_shader(batch, shaders->afbc.name##_cso,           \
+                                    &constant_buffer, nr_blocks);
 
 static void
 panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
@@ -3608,7 +3609,7 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_CONVERT_SHADER(afbc_size, batch, src, consts, slice->afbc.nr_sblocks);
+   LAUNCH_AFBC_CONV_SHADER(size, batch, src, consts, slice->afbc.nr_sblocks);
 }
 
 static void
@@ -3634,8 +3635,8 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
    panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
    panfrost_batch_add_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_CONVERT_SHADER(afbc_pack, batch, src, consts,
-                         dst_slice->afbc.nr_sblocks);
+   LAUNCH_AFBC_CONV_SHADER(pack, batch, src, consts,
+                           dst_slice->afbc.nr_sblocks);
 }
 
 static void
@@ -3712,8 +3713,8 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
    pipe->set_shader_images(pipe, PIPE_SHADER_COMPUTE, 0, 4, 0, image);
 
    /* launch the compute shader */
-   struct pan_mod_convert_shader_data *shaders =
-      panfrost_get_mod_convert_shaders(ctx, pan_resource(y_dst ? y_dst : uv_dst), AFBC_BLOCK_ALIGN);
+   struct pan_mod_convert_shader_data *shader =
+      panfrost_get_mtk_detile_shader(ctx);
    struct pipe_constant_buffer cbuf = {
       .buffer_size = sizeof(consts),
       .user_buffer = &consts};
@@ -3734,7 +3735,7 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
    struct panfrost_constant_buffer *pbuf =
       &batch->ctx->constant_buffer[PIPE_SHADER_COMPUTE];
    void *saved_cso = batch->ctx->uncompiled[PIPE_SHADER_COMPUTE];
-   void *cso = shaders->mtk_detile_cso;
+   void *cso = shader->mtk_tiled.detile_cso;
    util_copy_constant_buffer(&pbuf->cb[0], &saved_const, true);
 
    pipe->bind_compute_state(pipe, cso);

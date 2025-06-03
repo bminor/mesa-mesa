@@ -35,16 +35,26 @@ struct panfrost_resource;
 struct panfrost_screen;
 
 struct pan_mod_convert_shader_key {
-   unsigned bpp;
-   unsigned align;
-   bool tiled;
+   uint64_t mod;
+   union {
+      struct {
+         unsigned bpp;
+         unsigned align;
+      } afbc;
+   };
 };
 
 struct pan_mod_convert_shader_data {
    struct pan_mod_convert_shader_key key;
-   void *afbc_size_cso;
-   void *afbc_pack_cso;
-   void *mtk_detile_cso;
+   union {
+      struct {
+         void *size_cso;
+         void *pack_cso;
+      } afbc;
+      struct {
+         void *detile_cso;
+      } mtk_tiled;
+   };
 };
 
 struct pan_mod_convert_shaders {
@@ -83,8 +93,11 @@ void panfrost_afbc_context_init(struct panfrost_context *ctx);
 void panfrost_afbc_context_destroy(struct panfrost_context *ctx);
 
 struct pan_mod_convert_shader_data *
-panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
-                                 struct panfrost_resource *rsrc, unsigned align);
+panfrost_get_afbc_pack_shaders(struct panfrost_context *ctx,
+                               struct panfrost_resource *rsrc, unsigned align);
+
+struct pan_mod_convert_shader_data *
+panfrost_get_mtk_detile_shader(struct panfrost_context *ctx);
 
 #define drm_is_mtk_tiled(mod)                                                  \
    ((mod >> 52) == (0 | (DRM_FORMAT_MOD_VENDOR_MTK << 4)))

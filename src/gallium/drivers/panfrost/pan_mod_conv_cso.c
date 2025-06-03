@@ -214,9 +214,11 @@ copy_superblock(nir_builder *b, nir_def *dst, nir_def *dst_idx, nir_def *hdr_sz,
    panfrost_afbc_get_info_field(size, b, field)
 
 static nir_shader *
-panfrost_create_afbc_size_shader(struct panfrost_screen *screen, unsigned bpp,
-                                 unsigned align)
+panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
+                                 const struct pan_mod_convert_shader_key *key)
 {
+   unsigned bpp = key->afbc.bpp;
+   unsigned align = key->afbc.align;
    struct panfrost_device *dev = pan_device(&screen->base);
 
    nir_builder b = nir_builder_init_simple_shader(
@@ -250,9 +252,11 @@ panfrost_create_afbc_size_shader(struct panfrost_screen *screen, unsigned bpp,
    panfrost_afbc_get_info_field(pack, b, field)
 
 static nir_shader *
-panfrost_create_afbc_pack_shader(struct panfrost_screen *screen, unsigned align,
-                                 bool tiled)
+panfrost_create_afbc_pack_shader(struct panfrost_screen *screen,
+                                 const struct pan_mod_convert_shader_key *key)
 {
+   unsigned align = key->afbc.align;
+   bool tiled = key->mod & AFBC_FORMAT_MOD_TILED;
    struct panfrost_device *dev = pan_device(&screen->base);
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, pan_shader_get_compiler_options(dev->arch),
@@ -333,8 +337,8 @@ pan_mtk_tiled_from_linear(nir_builder *b, nir_def *linear, nir_def *tiles_per_st
 }
 
 static nir_shader *
-panfrost_create_mtk_detile_shader(struct panfrost_screen *screen, unsigned align,
-                                  bool is_tiled)
+panfrost_create_mtk_tiled_detile_shader(
+   struct panfrost_screen *screen, const struct pan_mod_convert_shader_key *key)
 {
    const struct panfrost_device *device = &screen->dev;
    bool tint_yuv = (device->debug & PAN_DBG_YUV) != 0;
@@ -443,18 +447,12 @@ panfrost_create_mtk_detile_shader(struct panfrost_screen *screen, unsigned align
    return b.shader;
 }
 
-struct pan_mod_convert_shader_data *
-panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
-                                 struct panfrost_resource *rsrc, unsigned align)
+static struct pan_mod_convert_shader_data *
+get_mod_convert_shaders(struct panfrost_context *ctx,
+                        const struct pan_mod_convert_shader_key *key)
 {
    struct pipe_context *pctx = &ctx->base;
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
-   bool tiled = rsrc->modifier & AFBC_FORMAT_MOD_TILED;
-   struct pan_mod_convert_shader_key key = {
-      .bpp = util_format_get_blocksizebits(rsrc->base.format),
-      .align = align,
-      .tiled = tiled,
-   };
 
    pthread_mutex_lock(&ctx->mod_convert_shaders.lock);
    struct hash_entry *he =
@@ -466,22 +464,26 @@ panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
       return shader;
 
    shader = rzalloc(ctx->mod_convert_shaders.shaders, struct pan_mod_convert_shader_data);
-   shader->key = key;
+   shader->key = *key;
 
-#define COMPILE_SHADER(name, ...)                                              \
+#define COMPILE_SHADER(type, name, key)                                        \
    {                                                                           \
-      nir_shader *nir =                                                        \
-         panfrost_create_##name##_shader(screen, __VA_ARGS__);            \
+      nir_shader *nir = panfrost_create_##type##_##name##_shader(screen, key); \
       nir->info.num_ubos = 1;                                                  \
       /* "default" UBO is maybe not correct here, but in panfrost we're */     \
       /* using this as an indicator for whether UBO0 is a user UBO */          \
       nir->info.first_ubo_is_default_ubo = true;                               \
-      shader->name##_cso = pipe_shader_from_nir(pctx, nir);                    \
+      shader->type.name##_cso = pipe_shader_from_nir(pctx, nir);               \
    }
 
-   COMPILE_SHADER(afbc_size, key.bpp, key.align);
-   COMPILE_SHADER(afbc_pack, key.align, key.tiled);
-   COMPILE_SHADER(mtk_detile, key.bpp, key.align);
+   if (drm_is_afbc(key->mod)) {
+      COMPILE_SHADER(afbc, size, key);
+      COMPILE_SHADER(afbc, pack, key);
+   } else if (drm_is_mtk_tiled(key->mod)) {
+      COMPILE_SHADER(mtk_tiled, detile, key);
+   } else {
+      unreachable("Unsupported conversion");
+   }
 
 #undef COMPILE_SHADER
 
@@ -490,6 +492,31 @@ panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
    pthread_mutex_unlock(&ctx->mod_convert_shaders.lock);
 
    return shader;
+}
+
+struct pan_mod_convert_shader_data *
+panfrost_get_afbc_pack_shaders(struct panfrost_context *ctx,
+                               struct panfrost_resource *rsrc, unsigned align)
+{
+   struct pan_mod_convert_shader_key key = {
+      .mod = DRM_FORMAT_MOD_ARM_AFBC(rsrc->modifier & AFBC_FORMAT_MOD_TILED),
+      .afbc = {
+         .bpp = util_format_get_blocksizebits(rsrc->base.format),
+         .align = align,
+      },
+   };
+
+   return get_mod_convert_shaders(ctx, &key);
+}
+
+struct pan_mod_convert_shader_data *
+panfrost_get_mtk_detile_shader(struct panfrost_context *ctx)
+{
+   struct pan_mod_convert_shader_key key = {
+      .mod = DRM_FORMAT_MOD_MTK_16L_32S_TILE,
+   };
+
+   return get_mod_convert_shaders(ctx, &key);
 }
 
 DERIVE_HASH_TABLE(pan_mod_convert_shader_key);
@@ -507,9 +534,13 @@ panfrost_afbc_context_destroy(struct panfrost_context *ctx)
    hash_table_foreach(ctx->mod_convert_shaders.shaders, he) {
       assert(he->data);
       struct pan_mod_convert_shader_data *shader = he->data;
-      ctx->base.delete_compute_state(&ctx->base, shader->afbc_size_cso);
-      ctx->base.delete_compute_state(&ctx->base, shader->afbc_pack_cso);
-      ctx->base.delete_compute_state(&ctx->base, shader->mtk_detile_cso);
+
+      if (drm_is_afbc(shader->key.mod)) {
+         ctx->base.delete_compute_state(&ctx->base, shader->afbc.size_cso);
+         ctx->base.delete_compute_state(&ctx->base, shader->afbc.pack_cso);
+      } else if (drm_is_mtk_tiled(shader->key.mod)) {
+         ctx->base.delete_compute_state(&ctx->base, shader->mtk_tiled.detile_cso);
+      }
    }
 
    _mesa_hash_table_destroy(ctx->mod_convert_shaders.shaders, NULL);
