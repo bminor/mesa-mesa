@@ -503,6 +503,9 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                nir_deref_instr *deref = nir_src_as_deref(intr->src[is_load]);
                nir_def *stride = intr->src[2].ssa;
 
+               const uint32_t ptr_stride = glsl_get_bit_size(deref->type) / 8 * glsl_get_vector_elements(deref->type);
+               deref = nir_build_deref_cast(&b, &deref->def, deref->modes, deref->type, ptr_stride);
+
                nir_def *local_idx = nir_load_subgroup_invocation(&b);
                nir_def *inner_idx = nir_iand_imm(&b, local_idx, 15);
 
