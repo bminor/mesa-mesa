@@ -314,7 +314,7 @@
         "description": "brw: fix brw_nir_fs_needs_null_rt helper",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9b42215e0d6762151e3063fd83e779dee17ad058",
         "notes": null
