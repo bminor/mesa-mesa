@@ -34,18 +34,6 @@ static void clamp_gsprims_to_esverts(unsigned *max_gsprims, unsigned max_esverts
    *max_gsprims = MIN2(*max_gsprims, 1 + max_reuse);
 }
 
-unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader)
-{
-   const struct si_shader_selector *sel = shader->selector;
-
-   return ac_ngg_get_scratch_lds_size(sel->stage,
-                                      si_get_max_workgroup_size(shader),
-                                      shader->wave_size,
-                                      shader->info.num_streamout_vec4s != 0,
-                                      si_shader_culling_enabled(shader),
-                                      false) / 4;
-}
-
 /**
  * Determine subgroup information like maximum number of vertices and prims.
  *
@@ -65,9 +53,8 @@ bool gfx10_ngg_calculate_subgroup_info(struct si_shader *shader)
    const unsigned min_verts_per_prim = gs_stage == MESA_SHADER_GEOMETRY ? max_verts_per_prim : 1;
 
    /* All these are in dwords. The maximum is 16K dwords (64KB) of LDS per workgroup. */
-   const unsigned scratch_lds_size = gfx10_ngg_get_scratch_dw_size(shader);
-   /* Scratch is at last of LDS space and 2 dwords aligned, so it may cost more for alignment. */
-   const unsigned max_lds_size = 16 * 1024 - ALIGN(scratch_lds_size, 2);
+   /* The LDS scratch is at the beginning of LDS space. */
+   const unsigned max_lds_size = 16 * 1024 - shader->info.ngg_lds_scratch_size / 4;
    const unsigned target_lds_size = max_lds_size;
    unsigned esvert_lds_size = 0;
    unsigned gsprim_lds_size = 0;
@@ -200,6 +187,11 @@ retry_select_mode:
    shader->gs_info.esgs_ring_size = MIN2(max_esverts, max_gsprims * max_verts_per_prim) *
                                     esvert_lds_size;
    shader->ngg.ngg_emit_size = max_gsprims * gsprim_lds_size;
+
+   if (gs_stage == MESA_SHADER_GEOMETRY)
+      shader->ngg.ngg_emit_size += shader->info.ngg_lds_scratch_size / 4;
+   else
+      shader->gs_info.esgs_ring_size += shader->info.ngg_lds_scratch_size / 4;
 
    assert(shader->ngg.hw_max_esverts >= min_esverts); /* HW limitation */
 

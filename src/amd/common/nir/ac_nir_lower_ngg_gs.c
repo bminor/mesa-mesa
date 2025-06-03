@@ -23,9 +23,9 @@ typedef struct
    unsigned max_num_waves;
    unsigned num_vertices_per_primitive;
    nir_def *lds_addr_gs_out_vtx;
-   nir_def *lds_addr_gs_scratch;
    unsigned lds_bytes_per_gs_out_vertex;
    unsigned lds_offs_primflags;
+   unsigned lds_scratch_size;
    bool output_compile_time_known;
    bool streamout_enabled;
    /* Outputs */
@@ -79,7 +79,7 @@ ngg_gs_out_vertex_addr(nir_builder *b, nir_def *out_vtx_idx, lower_ngg_gs_state 
    }
 
    nir_def *out_vtx_offs = nir_imul_imm(b, out_vtx_idx, s->lds_bytes_per_gs_out_vertex);
-   return nir_iadd_nuw(b, out_vtx_offs, s->lds_addr_gs_out_vtx);
+   return nir_iadd_nuw(b, out_vtx_offs, nir_iadd_imm_nuw(b, s->lds_addr_gs_out_vtx, s->lds_scratch_size));
 }
 
 static nir_def *
@@ -739,7 +739,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
 
       unsigned scratch_stride = ALIGN(s->max_num_waves, 4);
       nir_def *scratch_base =
-         nir_iadd_imm(b, s->lds_addr_gs_scratch, stream * scratch_stride);
+         nir_iadd_imm(b, s->lds_addr_gs_out_vtx, stream * scratch_stride);
 
       /* We want to export primitives to streamout buffer in sequence,
        * but not all vertices are alive or mark end of a primitive, so
@@ -776,7 +776,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *buffer_offsets[4] = {0};
    nir_def *so_buffer[4] = {0};
    ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->hw_info->gfx_level, s->options->has_xfb_prim_query,
-                                   s->options->use_gfx12_xfb_intrinsic, s->lds_addr_gs_scratch, tid_in_tg,
+                                   s->options->use_gfx12_xfb_intrinsic, s->lds_addr_gs_out_vtx, tid_in_tg,
                                    gen_prim, so_buffer, buffer_offsets, emit_prim);
 
    for (unsigned stream = 0; stream < 4; stream++) {
@@ -871,7 +871,7 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *vertex_live = nir_ine_imm(b, out_vtx_primflag_0, 0);
    ac_nir_wg_repack_result rep = {0};
 
-   ac_nir_repack_invocations_in_workgroup(b, &vertex_live, &rep, 1, s->lds_addr_gs_scratch,
+   ac_nir_repack_invocations_in_workgroup(b, &vertex_live, &rep, 1, s->lds_addr_gs_out_vtx,
                                    s->max_num_waves, s->options->wave_size);
 
    nir_def *workgroup_num_vertices = rep.num_repacked_invocations;
@@ -900,16 +900,20 @@ ngg_gs_finale(nir_builder *b, lower_ngg_gs_state *s)
 
 bool
 ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
-                    uint32_t *out_lds_vertex_size)
+                    uint32_t *out_lds_vertex_size, uint8_t *out_lds_scratch_size)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    assert(impl);
+   bool streamout_enabled = shader->xfb_info && !options->disable_streamout;
 
    lower_ngg_gs_state state = {
       .options = options,
       .impl = impl,
       .max_num_waves = DIV_ROUND_UP(options->max_workgroup_size, options->wave_size),
-      .streamout_enabled = shader->xfb_info && !options->disable_streamout,
+      .streamout_enabled = streamout_enabled,
+      .lds_scratch_size = ac_ngg_get_scratch_lds_size(shader->info.stage, options->max_workgroup_size,
+                                                      options->wave_size, streamout_enabled,
+                                                      options->can_cull, options->compact_primitives),
    };
 
    if (!options->can_cull) {
@@ -940,7 +944,6 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
                          .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
 
    state.lds_addr_gs_out_vtx = nir_load_lds_ngg_gs_out_vertex_base_amd(b);
-   state.lds_addr_gs_scratch = nir_load_lds_ngg_scratch_base_amd(b);
 
    /* Wrap the GS control flow. */
    nir_if *if_gs_thread = nir_push_if(b, nir_is_subgroup_invocation_lt_amd(b, nir_load_merged_wave_info_amd(b), .base = 8));
@@ -998,5 +1001,6 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
    nir_remove_dead_variables(shader, nir_var_function_temp, NULL);
 
    *out_lds_vertex_size = state.lds_bytes_per_gs_out_vertex;
+   *out_lds_scratch_size = state.lds_scratch_size;
    return nir_progress(true, impl, nir_metadata_none);
 }

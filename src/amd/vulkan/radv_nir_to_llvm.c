@@ -275,15 +275,8 @@ ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir
          declare_esgs_ring(&ctx);
 
       if (ctx.stage == MESA_SHADER_GEOMETRY) {
-         /* Scratch space used by NGG GS for repacking vertices at the end. */
-         LLVMTypeRef ai32 = LLVMArrayType(ctx.ac.i32, 8);
-         LLVMValueRef gs_ngg_scratch =
-            LLVMAddGlobalInAddressSpace(ctx.ac.module, ai32, "ngg_scratch", AC_ADDR_SPACE_LDS);
-         LLVMSetInitializer(gs_ngg_scratch, LLVMGetUndef(ai32));
-         LLVMSetLinkage(gs_ngg_scratch, LLVMExternalLinkage);
-         LLVMSetAlignment(gs_ngg_scratch, 4);
-
          /* Vertex emit space used by NGG GS for storing all vertex attributes. */
+         LLVMTypeRef ai32 = LLVMArrayType(ctx.ac.i32, 8);
          LLVMValueRef gs_ngg_emit =
             LLVMAddGlobalInAddressSpace(ctx.ac.module, LLVMArrayType(ctx.ac.i32, 0), "ngg_emit", AC_ADDR_SPACE_LDS);
          LLVMSetInitializer(gs_ngg_emit, LLVMGetUndef(ai32));

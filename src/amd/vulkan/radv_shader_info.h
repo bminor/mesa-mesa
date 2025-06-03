@@ -75,7 +75,6 @@ struct gfx10_ngg_info {
    uint32_t prim_amp_factor;
    uint32_t vgt_esgs_ring_itemsize;
    uint32_t esgs_ring_size;
-   uint32_t scratch_lds_base;
    uint32_t lds_size;
    bool max_vert_out_per_gs_instance;
 };
@@ -98,6 +97,7 @@ struct radv_shader_info {
    bool has_ngg_early_prim_export;
    bool has_prim_query;
    bool has_xfb_query;
+   uint8_t ngg_lds_scratch_size;
    uint32_t num_tess_patches;
    uint32_t esgs_itemsize; /* Only for VS or TES as ES */
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */

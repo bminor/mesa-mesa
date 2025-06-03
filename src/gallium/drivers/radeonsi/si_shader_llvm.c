@@ -447,9 +447,6 @@ static LLVMValueRef si_llvm_load_intrinsic(struct ac_shader_abi *abi, nir_intrin
    struct si_shader_context *ctx = si_shader_context_from_abi(abi);
 
    switch (intrin->intrinsic) {
-   case nir_intrinsic_load_lds_ngg_scratch_base_amd:
-      return LLVMBuildPtrToInt(ctx->ac.builder, ctx->gs_ngg_scratch.value, ctx->ac.i32, "");
-
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
       return LLVMBuildPtrToInt(ctx->ac.builder, ctx->gs_ngg_emit, ctx->ac.i32, "");
 
@@ -528,14 +525,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
 
    case MESA_SHADER_GEOMETRY:
       if (ctx->shader->key.ge.as_ngg) {
-         LLVMTypeRef ai32 = LLVMArrayType(ctx->ac.i32, gfx10_ngg_get_scratch_dw_size(shader));
-         ctx->gs_ngg_scratch = (struct ac_llvm_pointer) {
-            .value = LLVMAddGlobalInAddressSpace(ctx->ac.module, ai32, "ngg_scratch", AC_ADDR_SPACE_LDS),
-            .pointee_type = ai32
-         };
-         LLVMSetInitializer(ctx->gs_ngg_scratch.value, LLVMGetUndef(ai32));
-         LLVMSetAlignment(ctx->gs_ngg_scratch.value, 8);
-
          ctx->gs_ngg_emit = LLVMAddGlobalInAddressSpace(
             ctx->ac.module, LLVMArrayType(ctx->ac.i32, 0), "ngg_emit", AC_ADDR_SPACE_LDS);
          LLVMSetLinkage(ctx->gs_ngg_emit, LLVMExternalLinkage);
@@ -576,21 +565,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
     */
    if (is_merged_esgs_stage || is_nogs_ngg_stage)
       si_llvm_declare_lds_esgs_ring(ctx);
-
-   /* This is really only needed when streamout and / or vertex
-    * compaction is enabled.
-    */
-   if (is_nogs_ngg_stage &&
-       (shader->info.num_streamout_vec4s || si_shader_culling_enabled(shader))) {
-      LLVMTypeRef asi32 = LLVMArrayType(ctx->ac.i32, gfx10_ngg_get_scratch_dw_size(shader));
-      ctx->gs_ngg_scratch = (struct ac_llvm_pointer) {
-         .value = LLVMAddGlobalInAddressSpace(ctx->ac.module, asi32, "ngg_scratch",
-                                              AC_ADDR_SPACE_LDS),
-         .pointee_type = asi32
-      };
-      LLVMSetInitializer(ctx->gs_ngg_scratch.value, LLVMGetUndef(asi32));
-      LLVMSetAlignment(ctx->gs_ngg_scratch.value, 8);
-   }
 
    /* For merged shaders (VS-TCS, VS-GS, TES-GS): */
    if (ctx->screen->info.gfx_level >= GFX9 && si_is_merged_shader(shader)) {

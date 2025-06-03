@@ -237,6 +237,7 @@ struct si_shader_variant_info {
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    uint8_t num_streamout_vec4s;
+   uint8_t ngg_lds_scratch_size;
    unsigned private_mem_vgprs;
    unsigned max_simd_waves;
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */

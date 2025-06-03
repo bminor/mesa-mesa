@@ -1421,24 +1421,20 @@ radv_get_pre_rast_input_topology(const struct radv_shader_info *es_info, const s
 }
 
 static unsigned
-gfx10_get_ngg_scratch_lds_base(const struct radv_device *device, const struct radv_shader_info *es_info,
-                               const struct radv_shader_info *gs_info, const struct gfx10_ngg_info *ngg_info)
+gfx10_get_ngg_vert_prim_lds_size(const struct radv_device *device, const struct radv_shader_info *es_info,
+                                 const struct radv_shader_info *gs_info, const struct gfx10_ngg_info *ngg_info)
 {
-   uint32_t scratch_lds_base;
-
    if (gs_info) {
       const unsigned esgs_ring_lds_bytes = ngg_info->esgs_ring_size;
       const unsigned gs_total_out_vtx_bytes = ngg_info->ngg_emit_size * 4u;
 
-      scratch_lds_base = ALIGN(esgs_ring_lds_bytes + gs_total_out_vtx_bytes, 8u /* for the repacking code */);
+      return esgs_ring_lds_bytes + gs_total_out_vtx_bytes;
    } else {
       assert(ngg_info->hw_max_esverts <= 256);
       unsigned total_es_lds_bytes = es_info->ngg_lds_vertex_size * ngg_info->hw_max_esverts;
 
-      scratch_lds_base = ALIGN(total_es_lds_bytes, 8u);
+      return total_es_lds_bytes;
    }
-
-   return scratch_lds_base;
 }
 
 void
@@ -1648,13 +1644,8 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
 
    assert(out->hw_max_esverts >= min_esverts); /* HW limitation */
 
-   out->scratch_lds_base = gfx10_get_ngg_scratch_lds_base(device, es_info, gs_info, out);
-
-   /* Get scratch LDS usage. */
    const struct radv_shader_info *info = gs_info ? gs_info : es_info;
-   const unsigned scratch_lds_size = ac_ngg_get_scratch_lds_size(info->stage, info->workgroup_size, info->wave_size,
-                                                                 pdev->use_ngg_streamout, info->has_ngg_culling, false);
-   out->lds_size = out->scratch_lds_base + scratch_lds_size;
+   out->lds_size = info->ngg_lds_scratch_size + gfx10_get_ngg_vert_prim_lds_size(device, es_info, gs_info, out);
 
    unsigned workgroup_size =
       ac_compute_ngg_workgroup_size(max_esverts, max_gsprims * gs_num_invocations, max_out_vertices, prim_amp_factor);

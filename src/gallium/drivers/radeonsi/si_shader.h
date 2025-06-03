@@ -757,7 +757,7 @@ struct gfx9_gs_info {
    unsigned gs_prims_per_subgroup;
    unsigned gs_inst_prims_in_subgroup;
    unsigned max_prims_per_subgroup;
-   unsigned esgs_ring_size; /* in bytes */
+   unsigned esgs_ring_size; /* in dwords */
 };
 
 struct si_shader {

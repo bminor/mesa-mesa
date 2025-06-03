@@ -2269,12 +2269,10 @@ radv_emit_hw_ngg(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *e
 
    const uint32_t ngg_lds_layout_offset = radv_get_user_sgpr_loc(shader, AC_UD_NGG_LDS_LAYOUT);
    assert(ngg_lds_layout_offset);
-   assert(!(shader->info.ngg_info.esgs_ring_size & 0xffff0000) &&
-          !(shader->info.ngg_info.scratch_lds_base & 0xffff0000));
+   assert(!(shader->info.ngg_info.esgs_ring_size & 0xffff0000));
 
    radeon_set_sh_reg(ngg_lds_layout_offset,
-                     SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size) |
-                        SET_SGPR_FIELD(NGG_LDS_LAYOUT_SCRATCH_BASE, shader->info.ngg_info.scratch_lds_base));
+                     SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size));
    radeon_end();
 }
 

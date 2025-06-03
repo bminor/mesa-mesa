@@ -74,6 +74,7 @@ typedef struct
 
    /* LDS params */
    unsigned pervertex_lds_bytes;
+   unsigned lds_scratch_size;
 
    nir_variable *repacked_rel_patch_id;
 
@@ -108,9 +109,9 @@ enum {
 };
 
 static nir_def *
-pervertex_lds_addr(nir_builder *b, nir_def *vertex_idx, unsigned per_vtx_bytes)
+pervertex_lds_addr(nir_builder *b, lower_ngg_nogs_state *s, nir_def *vertex_idx, unsigned per_vtx_bytes)
 {
-   return nir_imul_imm(b, vertex_idx, per_vtx_bytes);
+   return nir_iadd_imm_nuw(b, nir_imul_imm(b, vertex_idx, per_vtx_bytes), s->lds_scratch_size);
 }
 
 static void
@@ -206,7 +207,7 @@ emit_ngg_nogs_prim_export(nir_builder *b, lower_ngg_nogs_state *s, nir_def *arg)
 
          for (int i = 0; i < s->options->num_vertices_per_primitive; i++) {
             nir_def *vtx_idx = nir_load_var(b, s->gs_vtx_indices_vars[i]);
-            nir_def *addr = pervertex_lds_addr(b, vtx_idx, s->pervertex_lds_bytes);
+            nir_def *addr = pervertex_lds_addr(b, s, vtx_idx, s->pervertex_lds_bytes);
             /* Edge flags share LDS with XFB. */
             nir_def *edge = ac_nir_load_shared_xfb(b, 32, addr, &s->out, VARYING_SLOT_EDGE, 0);
 
@@ -261,7 +262,7 @@ emit_ngg_nogs_prim_id_store_shared(nir_builder *b, lower_ngg_nogs_state *s)
          b, gs_vtx_indices, s->options->num_vertices_per_primitive, provoking_vertex);
 
       nir_def *prim_id = nir_load_primitive_id(b);
-      nir_def *addr = pervertex_lds_addr(b, provoking_vtx_idx, s->pervertex_lds_bytes);
+      nir_def *addr = pervertex_lds_addr(b, s, provoking_vtx_idx, s->pervertex_lds_bytes);
 
       /* primitive id is always at last of a vertex */
       nir_store_shared(b, prim_id, addr, .base = s->pervertex_lds_bytes - 4);
@@ -301,7 +302,7 @@ emit_store_ngg_nogs_es_primitive_id(nir_builder *b, lower_ngg_nogs_state *s)
       /* LDS address where the primitive ID is stored */
       nir_def *thread_id_in_threadgroup = nir_load_local_invocation_index(b);
       nir_def *addr =
-         pervertex_lds_addr(b, thread_id_in_threadgroup, s->pervertex_lds_bytes);
+         pervertex_lds_addr(b, s, thread_id_in_threadgroup, s->pervertex_lds_bytes);
 
       /* Load primitive ID from LDS */
       prim_id = nir_load_shared(b, 1, 32, addr, .base = s->pervertex_lds_bytes - 4);
@@ -478,7 +479,7 @@ compact_vertices_after_culling(nir_builder *b,
 {
    nir_if *if_es_accepted = nir_push_if(b, nir_load_var(b, s->es_accepted_var));
    {
-      nir_def *exporter_addr = pervertex_lds_addr(b, es_exporter_tid, pervertex_lds_bytes);
+      nir_def *exporter_addr = pervertex_lds_addr(b, s, es_exporter_tid, pervertex_lds_bytes);
 
       /* Store the exporter thread's index to the LDS space of the current thread so GS threads can load it */
       nir_store_shared(b, nir_u2u8(b, es_exporter_tid), es_vertex_lds_addr, .base = lds_es_exporter_tid);
@@ -568,7 +569,7 @@ compact_vertices_after_culling(nir_builder *b,
 
       if_gs_accepted = nir_push_if(b, gs_accepted);
       {
-         nir_def *exporter_addr = pervertex_lds_addr(b, gs_exporter_tid, pervertex_lds_bytes);
+         nir_def *exporter_addr = pervertex_lds_addr(b, s, gs_exporter_tid, pervertex_lds_bytes);
          nir_def *prim_exp_arg = nir_load_var(b, s->prim_exp_arg_var);
 
          /* Store the primitive export argument into the address of the exporter thread. */
@@ -1100,8 +1101,6 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
    remove_culling_shader_outputs(b->shader, s);
    b->cursor = nir_after_impl(impl);
 
-   nir_def *lds_scratch_base = nir_load_lds_ngg_scratch_base_amd(b);
-
    /* Run culling algorithms if culling is enabled.
     *
     * NGG culling can be enabled or disabled in runtime.
@@ -1112,7 +1111,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
    nir_if *if_cull_en = nir_push_if(b, nir_load_cull_any_enabled_amd(b));
    {
       nir_def *invocation_index = nir_load_local_invocation_index(b);
-      nir_def *es_vertex_lds_addr = pervertex_lds_addr(b, invocation_index, pervertex_lds_bytes);
+      nir_def *es_vertex_lds_addr = pervertex_lds_addr(b, s, invocation_index, pervertex_lds_bytes);
 
       /* ES invocations store their vertex data to LDS for GS threads to read. */
       if_es_thread = nir_push_if(b, es_thread);
@@ -1153,7 +1152,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
 
          /* Load W positions of vertices first because the culling code will use these first */
          for (unsigned vtx = 0; vtx < s->options->num_vertices_per_primitive; ++vtx) {
-            s->vtx_addr[vtx] = pervertex_lds_addr(b, vtx_idx[vtx], pervertex_lds_bytes);
+            s->vtx_addr[vtx] = pervertex_lds_addr(b, s, vtx_idx[vtx], pervertex_lds_bytes);
             pos[vtx][3] = nir_load_shared(b, 1, 32, s->vtx_addr[vtx], .base = lds_es_pos_w);
             nir_store_var(b, gs_vtxaddr_vars[vtx], s->vtx_addr[vtx], 0x1u);
          }
@@ -1209,7 +1208,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
       nir_def *accepted[] = { es_accepted, gs_accepted };
       ac_nir_wg_repack_result rep[2] = {0};
       const unsigned num_rep = s->options->compact_primitives ? 2 : 1;
-      ac_nir_repack_invocations_in_workgroup(b, accepted, rep, num_rep, lds_scratch_base,
+      ac_nir_repack_invocations_in_workgroup(b, accepted, rep, num_rep, nir_imm_int(b, 0),
                                       s->max_num_waves, s->options->wave_size);
       nir_def *num_live_vertices_in_workgroup = rep[0].num_repacked_invocations;
       nir_def *es_exporter_tid = rep[0].repacked_invocation_index;
@@ -1299,7 +1298,7 @@ ngg_nogs_store_edgeflag_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
    edgeflag = nir_umin(b, edgeflag, nir_imm_int(b, 1));
 
    nir_def *tid = nir_load_local_invocation_index(b);
-   nir_def *addr = pervertex_lds_addr(b, tid, s->pervertex_lds_bytes);
+   nir_def *addr = pervertex_lds_addr(b, s, tid, s->pervertex_lds_bytes);
 
    /* Edge flags share LDS with XFB. */
    ac_nir_store_shared_xfb(b, edgeflag, addr, &s->out, VARYING_SLOT_EDGE, 0);
@@ -1335,7 +1334,7 @@ ngg_nogs_store_xfb_outputs_to_lds(nir_builder *b, lower_ngg_nogs_state *s)
    }
 
    nir_def *tid = nir_load_local_invocation_index(b);
-   nir_def *addr = pervertex_lds_addr(b, tid, s->pervertex_lds_bytes);
+   nir_def *addr = pervertex_lds_addr(b, s, tid, s->pervertex_lds_bytes);
 
    u_foreach_bit64(slot, xfb_outputs) {
       u_foreach_bit(c, xfb_mask[slot]) {
@@ -1377,8 +1376,6 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
 {
    nir_xfb_info *info = ac_nir_get_sorted_xfb_info(b->shader);
 
-   nir_def *lds_scratch_base = nir_load_lds_ngg_scratch_base_amd(b);
-
    /* Get global buffer offset where this workgroup will stream out data to. */
    nir_def *generated_prim = nir_load_workgroup_num_input_primitives_amd(b);
    nir_def *gen_prim_per_stream[4] = {generated_prim, 0, 0, 0};
@@ -1387,7 +1384,7 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
    nir_def *so_buffer[4] = {0};
    nir_def *tid_in_tg = nir_load_local_invocation_index(b);
    ac_nir_ngg_build_streamout_buffer_info(b, info, s->options->hw_info->gfx_level, s->options->has_xfb_prim_query,
-                                   s->options->use_gfx12_xfb_intrinsic, lds_scratch_base, tid_in_tg,
+                                   s->options->use_gfx12_xfb_intrinsic, nir_imm_int(b, 0), tid_in_tg,
                                    gen_prim_per_stream,
                                    so_buffer, buffer_offsets,
                                    emit_prim_per_stream);
@@ -1409,7 +1406,7 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
             nir_push_if(b, nir_igt_imm(b, num_vert_per_prim, i));
          {
             nir_def *vtx_lds_idx = nir_load_var(b, s->gs_vtx_indices_vars[i]);
-            nir_def *vtx_lds_addr = pervertex_lds_addr(b, vtx_lds_idx, s->pervertex_lds_bytes);
+            nir_def *vtx_lds_addr = pervertex_lds_addr(b, s, vtx_lds_idx, s->pervertex_lds_bytes);
             ac_nir_ngg_build_streamout_vertex(b, info, 0, so_buffer, buffer_offsets, i,
                                               vtx_lds_addr, &s->out);
          }
@@ -1507,7 +1504,7 @@ ac_ngg_nogs_get_pervertex_lds_size(lower_ngg_nogs_state *s,
 
 bool
 ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
-                      uint32_t *out_lds_vertex_size)
+                      uint32_t *out_lds_vertex_size, uint8_t *out_lds_scratch_size)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    assert(impl);
@@ -1553,6 +1550,9 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
       .gs_exported_var = gs_exported_var,
       .max_num_waves = DIV_ROUND_UP(options->max_workgroup_size, options->wave_size),
       .has_user_edgeflags = has_user_edgeflags,
+      .lds_scratch_size = ac_ngg_get_scratch_lds_size(shader->info.stage, options->max_workgroup_size,
+                                                      options->wave_size, streamout_enabled,
+                                                      options->can_cull, options->compact_primitives),
    };
 
    /* Can't export the primitive ID both as per-vertex and per-primitive. */
@@ -1823,6 +1823,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
                                          options->export_primitive_id, state.has_user_edgeflags,
                                          options->can_cull, state.deferred.uses_instance_id,
                                          state.deferred.uses_tess_primitive_id);
+   *out_lds_scratch_size = state.lds_scratch_size;
    return true;
 }
 

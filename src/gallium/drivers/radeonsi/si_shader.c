@@ -459,15 +459,6 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
       if (stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)
          size_in_dw += shader->ngg.ngg_emit_size;
 
-      if (shader->key.ge.as_ngg) {
-         unsigned scratch_dw_size = gfx10_ngg_get_scratch_dw_size(shader);
-         if (scratch_dw_size) {
-            /* scratch base address needs to be 8 byte aligned */
-            size_in_dw = ALIGN(size_in_dw, 2);
-            size_in_dw += scratch_dw_size;
-         }
-      }
-
       shader->config.lds_size =
          DIV_ROUND_UP(size_in_dw * 4, get_lds_granularity(sscreen, stage));
    }
@@ -1172,7 +1163,8 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       options.instance_rate_inputs = instance_rate_inputs;
       options.cull_clipdist_mask = clip_plane_enable;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size);
+      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size,
+                 &shader->info.ngg_lds_scratch_size);
    } else {
       assert(nir->info.stage == MESA_SHADER_GEOMETRY);
 
@@ -1185,7 +1177,8 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       if (key->ge.part.gs.es)
          nir->info.writes_memory |= key->ge.part.gs.es->info.base.writes_memory;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options, &shader->info.ngg_lds_vertex_size);
+      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options, &shader->info.ngg_lds_vertex_size,
+                 &shader->info.ngg_lds_scratch_size);
    }
 
    /* may generate some vector output store */

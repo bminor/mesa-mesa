@@ -108,7 +108,6 @@ void si_get_ps_epilog_args(struct si_shader_args *args,
 
 /* gfx10_shader_ngg.c */
 bool gfx10_ngg_export_prim_early(struct si_shader *shader);
-unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader);
 bool gfx10_ngg_calculate_subgroup_info(struct si_shader *shader);
 
 struct nir_def;
