@@ -2854,6 +2854,23 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
    /* Flush the tiling operations and signal the internal sync object. */
    cs_finish_tiling(b);
 
+   /* We're relying on PANVK_SUBQUEUE_VERTEX_TILER being the first queue to
+    * skip an ADD operation on the syncobjs pointer. */
+   STATIC_ASSERT(PANVK_SUBQUEUE_VERTEX_TILER == 0);
+
+#if PAN_ARCH >= 11
+   struct cs_index sync_addr = cs_scratch_reg64(b, 0);
+   struct cs_index add_val = cs_scratch_reg64(b, 2);
+
+   cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
+                offsetof(struct panvk_cs_subqueue_context, syncobjs));
+
+   cs_move64_to(b, add_val, 1);
+   cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,
+                     cs_defer_indirect());
+   cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
+                 cs_defer_indirect());
+#else
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
    struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
@@ -2862,10 +2879,6 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
    cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
               BITFIELD_MASK(3),
               offsetof(struct panvk_cs_subqueue_context, syncobjs));
-
-   /* We're relying on PANVK_SUBQUEUE_VERTEX_TILER being the first queue to
-    * skip an ADD operation on the syncobjs pointer. */
-   STATIC_ASSERT(PANVK_SUBQUEUE_VERTEX_TILER == 0);
 
    cs_move64_to(b, add_val, 1);
 
@@ -2885,6 +2898,7 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
       CASE(4)
 #undef CASE
    }
+#endif
 
    /* Update the vertex seqno. */
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].relative_sync_point;
