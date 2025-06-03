@@ -25,14 +25,14 @@
         *zink_files_list
       when: manual
 
-.zink-lvp-rules:
+.zink-lavapipe-rules:
   stage: layered-backends
   rules:
     - !reference [.test, rules]
     - !reference [.lavapipe-rules, rules]
     - !reference [.zink-common-rules, rules]
 
-.zink-venus-lvp-rules:
+.zink-venus-lavapipe-rules:
   stage: layered-backends
   rules:
     - !reference [.test, rules]
@@ -40,7 +40,7 @@
     - !reference [.venus-rules, rules]
     - !reference [.zink-common-rules, rules]
 
-.zink-venus-lvp-manual-rules:
+.zink-venus-lavapipe-manual-rules:
   stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
@@ -151,27 +151,27 @@
     WAFFLE_PLATFORM: gbm
     PIGLIT_PLATFORM: gbm
 
-.zink-lvp-test:
+.zink-lavapipe-test:
   extends:
-    - .zink-lvp-rules
+    - .zink-lavapipe-rules
     - .zink-test
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     LIBGL_ALWAYS_SOFTWARE: "true"
     LVP_POISON_MEMORY: "1"
-    GPU_VERSION: zink-lvp
+    GPU_VERSION: zink-lavapipe
     # Fix non-conformant llvmpipe filter defaults
     GALLIVM_PERF: "no_quad_lod"
 
-.zink-venus-lvp-test:
+.zink-venus-lavapipe-test:
   extends:
-    - .zink-venus-lvp-rules
+    - .zink-venus-lavapipe-rules
     - .zink-test
   variables:
     LIBGL_ALWAYS_SOFTWARE: "true"
     LVP_POISON_MEMORY: "1"
-    GPU_VERSION: zink-venus-lvp
+    GPU_VERSION: zink-venus-lavapipe
     # Fix non-conformant llvmpipe filter defaults
     GALLIVM_PERF: "no_quad_lod"
     VK_DRIVER: virtio

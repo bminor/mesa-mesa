@@ -1,20 +1,20 @@
 include:
   - local: 'src/gallium/drivers/zink/ci/gitlab-ci-inc.yml'
 
-zink-lvp:
+zink-lavapipe:
   extends:
     - .test-gl
     - .test-piglit
     - .deqp-test
-    - .zink-lvp-test
+    - .zink-lavapipe-test
   tags:
     # FIXME: kvm is a hack, should not be needed
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   variables:
-    DEQP_SUITE: zink-lvp
+    DEQP_SUITE: zink-lavapipe
     DEQP_FRACTION: 8
     PIGLIT_NO_WINDOW: 1
-    # Enable validation (except for on piglit, see deqp-zink-lvp.toml), logging
+    # Enable validation (except for on piglit, see deqp-zink-lavapipe.toml), logging
     # to stdout and aborting on unknown failures.
     ZINK_DEBUG: validation
     XVFB_SCRIPT: "VK_DRIVER=lvp install/deqp-runner.sh"
@@ -23,19 +23,19 @@ zink-lvp:
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
     xvfb-run --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
 
-zink-venus-lvp:
+zink-venus-lavapipe:
   extends:
     - .test-gl
     - .deqp-test
-    - .zink-venus-lvp-test
+    - .zink-venus-lavapipe-test
     - .test-crosvm
     - .test-piglit
   timeout: 15min  # base run time = 8min, but it's on the shared runners so it can go up
   variables:
-    DEQP_SUITE: zink-venus-lvp
+    DEQP_SUITE: zink-venus-lavapipe
     DEQP_FRACTION: 2
     PIGLIT_NO_WINDOW: 1
-    # Enable validation (except for on piglit, see deqp-zink-venus-lvp.toml), logging
+    # Enable validation (except for on piglit, see deqp-zink-venus-lavapipe.toml), logging
     # to stdout and aborting on unknown failures.
     ZINK_DEBUG: validation
     LP_NUM_THREADS: 2
@@ -47,10 +47,10 @@ zink-venus-lvp:
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
     xvfb-run --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
 
-zink-venus-lvp-full:
+zink-venus-lavapipe-full:
   extends:
-    - zink-venus-lvp
-    - .zink-venus-lvp-manual-rules
+    - zink-venus-lavapipe
+    - .zink-venus-lavapipe-manual-rules
   timeout: 30m
   variables:
     DEQP_FRACTION: 1
