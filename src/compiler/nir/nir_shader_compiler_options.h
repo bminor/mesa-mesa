@@ -235,7 +235,9 @@ typedef struct nir_shader_compiler_options {
    bool lower_fsqrt;
    bool lower_sincos;
    bool lower_fmod;
-   /** Lowers ibitfield_extract/ubitfield_extract. */
+   /** Lowers ibitfield_extract/ubitfield_extract for 8, 16 & 32 bits. */
+   bool lower_bitfield_extract8;
+   bool lower_bitfield_extract16;
    bool lower_bitfield_extract;
    /** Lowers bitfield_insert. */
    bool lower_bitfield_insert;

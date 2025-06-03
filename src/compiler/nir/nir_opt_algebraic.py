@@ -2502,22 +2502,6 @@ optimizations.extend([
    (('ine', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ine', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
    (('ieq', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ieq', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
 
-   (('ibitfield_extract', 'value@32', 'offset', 'bits'),
-    ('bcsel', ('ieq', 0, 'bits'),
-     0,
-     ('ishr',
-       ('ishl', 'value', ('isub', ('isub', 32, 'bits'), 'offset')),
-       ('isub', 32, 'bits'))),
-    'options->lower_bitfield_extract && !options->has_bfe'),
-
-   (('ubitfield_extract', 'value@32', 'offset', 'bits'),
-    ('iand',
-     ('ushr', 'value', 'offset'),
-     ('bcsel', ('ieq', 'bits', 32),
-      0xffffffff,
-      ('isub', ('ishl', 1, 'bits'), 1))),
-    'options->lower_bitfield_extract && !options->has_bfe'),
-
    (('ifind_msb', 'value'),
     ('ufind_msb', ('bcsel', ('ilt', 'value', 0), ('inot', 'value'), 'value')),
     'options->lower_ifind_msb && !options->has_find_msb_rev && !options->has_uclz'),
@@ -2742,6 +2726,31 @@ optimizations += [
               ('bfi', ('bfm', 'bits', 'offset'), 'insert', 'base')),
     'options->lower_bitfield_insert && options->has_bfm && options->has_bfi'),
 ]
+
+# 64bit lowering is handled by nir_lower_int64
+for bit_size in [8, 16, 32]:
+   bit_size_str = f'{bit_size}' if bit_size < 32 else ''
+   extract_opt = f'options->lower_bitfield_extract{bit_size_str}'
+   if bit_size == 32:
+       extract_opt += ' && !options->has_bfe'
+
+   optimizations += [
+       (('ibitfield_extract', f'value@{bit_size}', 'offset', 'bits'),
+        ('bcsel', ('ieq', 0, 'bits'),
+         0,
+         ('ishr',
+          ('ishl', 'value', ('isub', ('isub', bit_size, 'bits'), 'offset')),
+          ('isub', bit_size, 'bits'))),
+        extract_opt),
+
+       (('ubitfield_extract', f'value@{bit_size}', 'offset', 'bits'),
+        ('iand',
+         ('ushr', 'value', 'offset'),
+         ('bcsel', ('ieq', 'bits', bit_size),
+          -1,
+          ('isub', ('ishl', 1, 'bits'), 1))),
+        extract_opt),
+   ]
 
 for sz in [8, 16, 32, 64]:
    base = f'base@{sz}'
