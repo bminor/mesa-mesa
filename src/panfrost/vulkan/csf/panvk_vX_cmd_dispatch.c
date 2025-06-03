@@ -272,7 +272,9 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       }
    }
 
-   panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
+   struct cs_index next_iter_sb_scratch = cs_scratch_reg_tuple(b, 0, 2);
+   panvk_per_arch(cs_next_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE,
+                                   next_iter_sb_scratch);
 
    if (indirect) {
       /* Use run_compute with a set task axis instead of run_compute_indirect as
@@ -314,7 +316,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    cs_case(b, SB_ITER(x)) {                                                    \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
-      cs_move32_to(b, iter_sb, next_iter_sb(cmdbuf, x));                       \
    }
 
       CASE(0)
@@ -324,10 +325,6 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       CASE(4)
 #undef CASE
    }
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
 
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].relative_sync_point;
    clear_dirty_after_dispatch(cmdbuf);

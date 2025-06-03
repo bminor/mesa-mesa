@@ -104,7 +104,9 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Z), grid.count[2]);
    }
 
-   panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
+   struct cs_index next_iter_sb_scratch = cs_scratch_reg_tuple(b, 0, 2);
+   panvk_per_arch(cs_next_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE,
+                                   next_iter_sb_scratch);
 
    unsigned task_axis = MALI_TASK_AXIS_X;
    unsigned task_increment = 0;
@@ -132,7 +134,6 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
    cs_case(b, SB_ITER(x)) {                                                    \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
-      cs_move32_to(b, iter_sb, next_iter_sb(cmdbuf, x));                       \
    }
 
       CASE(0)
@@ -142,10 +143,6 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
       CASE(4)
 #undef CASE
    }
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
 
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].relative_sync_point;
 

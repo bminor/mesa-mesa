@@ -386,15 +386,6 @@ struct panvk_cmd_buffer {
 VK_DEFINE_HANDLE_CASTS(panvk_cmd_buffer, vk.base, VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 
-static inline uint32_t
-next_iter_sb(struct panvk_cmd_buffer *cmdbuf, uint32_t iter_sb_idx)
-{
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-
-   return iter_sb_idx + 1 < dev->csf.sb.iter_count ? SB_ITER(iter_sb_idx + 1)
-                                                   : SB_ITER(0);
-}
-
 static bool
 inherits_render_ctx(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -431,8 +422,9 @@ extern const struct vk_command_buffer_ops panvk_per_arch(cmd_buffer_ops);
 
 void panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf);
 
-void panvk_per_arch(cs_pick_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
-                                     enum panvk_subqueue_id subqueue);
+void panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
+                                     enum panvk_subqueue_id subqueue,
+                                     struct cs_index scratch_regs);
 
 void panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
                                  const VkDependencyInfo *in,

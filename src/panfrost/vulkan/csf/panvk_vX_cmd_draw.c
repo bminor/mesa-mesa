@@ -1169,8 +1169,9 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    /* Flush all stores to tiler_ctx_addr. */
    cs_flush_stores(b);
 
-   /* Then we change the scoreboard slot used for iterators. */
-   panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
+   struct cs_index next_iter_sb_scratch = cs_scratch_reg_tuple(b, 0, 2);
+   panvk_per_arch(cs_next_iter_sb)(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER,
+                                   next_iter_sb_scratch);
 
    cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_STARTED, cs_now());
    return VK_SUCCESS;
@@ -2875,7 +2876,6 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
                         cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));      \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
-      cs_move32_to(b, iter_sb, next_iter_sb(cmdbuf, x));                       \
    }
 
       CASE(0)
@@ -2885,10 +2885,6 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
       CASE(4)
 #undef CASE
    }
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
 
    /* Update the vertex seqno. */
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].relative_sync_point;
@@ -2978,8 +2974,9 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
    bool has_oq_chain = cmdbuf->state.gfx.render.oq.chain != 0;
 
-   /* Reserve a scoreboard for the fragment job. */
-   panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+   struct cs_index next_iter_sb_scratch = cs_scratch_reg_tuple(b, 0, 2);
+   panvk_per_arch(cs_next_iter_sb)(cmdbuf, PANVK_SUBQUEUE_FRAGMENT,
+                                   next_iter_sb_scratch);
 
    /* Now initialize the fragment bits. */
    cs_update_frag_ctx(b) {
@@ -3178,7 +3175,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       }                                                                        \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
                     async);                                                    \
-      cs_move32_to(b, iter_sb, next_iter_sb(cmdbuf, x));                       \
    }
 
       CASE(0)
@@ -3188,10 +3184,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
       CASE(4)
 #undef CASE
    }
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
 
    /* Update the ring buffer position. */
    if (free_render_descs) {

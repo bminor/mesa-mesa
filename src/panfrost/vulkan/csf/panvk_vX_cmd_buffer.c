@@ -618,15 +618,24 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 }
 
 void
-panvk_per_arch(cs_pick_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
-                                enum panvk_subqueue_id subqueue)
+panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
+                                enum panvk_subqueue_id subqueue,
+                                struct cs_index scratch_regs)
 {
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
-   struct cs_index iter_sb = cs_scratch_reg32(b, 0);
-   struct cs_index cmp_scratch = cs_scratch_reg32(b, 1);
+   struct cs_index iter_sb = cs_extract32(b, scratch_regs, 0);
+   struct cs_index cmp_scratch = cs_extract32(b, scratch_regs, 1);
 
    cs_load32_to(b, iter_sb, cs_subqueue_ctx_reg(b),
                 offsetof(struct panvk_cs_subqueue_context, iter_sb));
+
+   /* Select next scoreboard entry and wrap around if we get past the limit */
+   cs_add32(b, iter_sb, iter_sb, 1);
+   cs_add32(b, cmp_scratch, iter_sb, -SB_ITER(dev->csf.sb.iter_count));
+   cs_if(b, MALI_CS_CONDITION_GEQUAL, cmp_scratch) {
+      cs_move32_to(b, iter_sb, SB_ITER(0));
+   }
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
@@ -642,6 +651,10 @@ panvk_per_arch(cs_pick_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
       CASE(4)
 #undef CASE
    }
+
+   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
+              offsetof(struct panvk_cs_subqueue_context, iter_sb));
+   cs_flush_stores(b);
 }
 
 static struct cs_buffer
