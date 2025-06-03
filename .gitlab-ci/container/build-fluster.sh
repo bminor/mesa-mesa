@@ -10,13 +10,13 @@
 
 # Install fluster in /fluster.
 
+set -uex
+
+section_start fluster "Installing Fluster"
+
 # Do a very early check to make sure the tag is correct without the need of
 # setting up the environment variables locally
 ci_tag_build_time_check "FLUSTER_TAG"
-
-set -uex
-
-section_start fluster "Installing fluster"
 
 FLUSTER_REVISION="e997402978f62428fffc8e5a4a709690d9ca9bc5"
 
