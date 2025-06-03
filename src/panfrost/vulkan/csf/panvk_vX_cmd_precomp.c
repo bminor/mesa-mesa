@@ -116,6 +116,18 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
                         task_increment, task_axis,
                         cs_shader_res_sel(0, 0, 0, 0));
 
+#if PAN_ARCH >= 11
+   struct cs_index sync_addr = cs_scratch_reg64(b, 0);
+   struct cs_index add_val = cs_scratch_reg64(b, 2);
+
+   cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
+                offsetof(struct panvk_cs_subqueue_context, syncobjs));
+   cs_add64(b, sync_addr, sync_addr,
+            PANVK_SUBQUEUE_COMPUTE * sizeof(struct panvk_cs_sync64));
+   cs_move64_to(b, add_val, 1);
+   cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
+                 cs_defer_indirect());
+#else
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
    struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
@@ -143,6 +155,7 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
       CASE(4)
 #undef CASE
    }
+#endif
 
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].relative_sync_point;
 
