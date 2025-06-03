@@ -780,10 +780,10 @@ option(
 option(
   'legacy-x11',
   type : 'array',
-  value : ['none'],
+  value : [],
   description : 'Build legacy X11 support features.',
   choices : [
-    'none', 'dri2'
+    'dri2'
   ],
 )
 
