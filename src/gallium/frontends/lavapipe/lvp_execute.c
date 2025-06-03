@@ -1785,6 +1785,12 @@ static void handle_end_rendering(struct vk_cmd_queue_entry *cmd,
    if (!state->poison_mem)
       return;
 
+   /* ensure that textures are correctly framebuffer-referenced in llvmpipe */
+   if (state->fb_remapped) {
+      state->fb_remapped = false;
+      emit_fb_state(state);
+   }
+
    union pipe_color_union color_clear_val;
    memset(color_clear_val.ui, rand() % UINT8_MAX, sizeof(color_clear_val.ui));
 
