@@ -1913,19 +1913,6 @@ impl Image {
         )
     }
 
-    fn pipe_image_host_access(&self) -> u16 {
-        // those flags are all mutually exclusive
-        (if bit_check(self.flags, CL_MEM_HOST_READ_ONLY) {
-            PIPE_IMAGE_ACCESS_READ
-        } else if bit_check(self.flags, CL_MEM_HOST_WRITE_ONLY) {
-            PIPE_IMAGE_ACCESS_WRITE
-        } else if bit_check(self.flags, CL_MEM_HOST_NO_ACCESS) {
-            0
-        } else {
-            PIPE_IMAGE_ACCESS_READ_WRITE
-        }) as u16
-    }
-
     pub fn read(
         &self,
         dst: MutMemoryPtr,
@@ -2147,22 +2134,18 @@ impl Image {
 
         let res = self.get_res_for_access(ctx, rw)?;
         if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
-            Ok(res.pipe_image_view_2d_buffer(
-                self.pipe_format,
-                read_write,
-                self.pipe_image_host_access(),
-                &self.buffer_2d_info()?,
-            ))
+            Ok(
+                res.pipe_image_view_2d_buffer(
+                    self.pipe_format,
+                    read_write,
+                    &self.buffer_2d_info()?,
+                ),
+            )
         } else if res.is_buffer() {
             let size = self.size.try_into_with_err(CL_OUT_OF_RESOURCES)?;
-            Ok(res.pipe_image_view_1d_buffer(
-                self.pipe_format,
-                read_write,
-                self.pipe_image_host_access(),
-                size,
-            ))
+            Ok(res.pipe_image_view_1d_buffer(self.pipe_format, read_write, size))
         } else {
-            Ok(res.pipe_image_view(read_write, self.pipe_image_host_access()))
+            Ok(res.pipe_image_view(read_write))
         }
     }
 }

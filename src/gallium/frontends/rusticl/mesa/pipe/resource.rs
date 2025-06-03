@@ -133,7 +133,7 @@ impl PipeResource {
         NonZeroU64::new(unsafe { screen.resource_get_address?(screen_ptr, self.pipe()) })
     }
 
-    pub fn pipe_image_view(&self, read_write: bool, host_access: u16) -> PipeImageView {
+    pub fn pipe_image_view(&self, read_write: bool) -> PipeImageView {
         debug_assert!(!self.is_buffer());
 
         let pipe = self.as_ref();
@@ -155,7 +155,7 @@ impl PipeResource {
         PipeImageView::new(pipe_image_view {
             resource: self.pipe(),
             format: pipe.format(),
-            access: host_access,
+            access: shader_access,
             shader_access: shader_access,
             u: pipe_image_view__bindgen_ty_1 { tex: tex },
         })
@@ -165,7 +165,6 @@ impl PipeResource {
         &self,
         format: pipe_format,
         read_write: bool,
-        host_access: u16,
         size: u32,
     ) -> PipeImageView {
         debug_assert!(self.is_buffer());
@@ -179,7 +178,7 @@ impl PipeResource {
         PipeImageView::new(pipe_image_view {
             resource: self.pipe(),
             format: format,
-            access: host_access,
+            access: shader_access,
             shader_access: shader_access,
             u: pipe_image_view__bindgen_ty_1 {
                 buf: pipe_image_view__bindgen_ty_1__bindgen_ty_2 {
@@ -194,7 +193,6 @@ impl PipeResource {
         &self,
         format: pipe_format,
         read_write: bool,
-        host_access: u16,
         app_img_info: &AppImgInfo,
     ) -> PipeImageView {
         debug_assert!(self.is_buffer());
@@ -208,7 +206,7 @@ impl PipeResource {
         PipeImageView::new(pipe_image_view {
             resource: self.pipe(),
             format: format,
-            access: PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER as u16 | host_access,
+            access: PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER as u16 | shader_access,
             shader_access: shader_access,
             u: pipe_image_view__bindgen_ty_1 {
                 tex2d_from_buf: pipe_tex2d_from_buf {
