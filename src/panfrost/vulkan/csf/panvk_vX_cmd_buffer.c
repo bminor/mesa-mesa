@@ -617,6 +617,30 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
    }
 }
 
+#if PAN_ARCH >= 11
+void
+panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
+                                enum panvk_subqueue_id subqueue,
+                                struct cs_index scratch_regs)
+{
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
+   struct cs_index iter_sb = cs_extract32(b, scratch_regs, 0);
+   struct cs_index sb_wait_mask = cs_extract32(b, scratch_regs, 1);
+
+   /* Wait for scoreboard to be available and select the next scoreboard entry */
+   cs_next_sb_entry(b, iter_sb, MALI_CS_SCOREBOARD_TYPE_ENDPOINT,
+                    MALI_CS_NEXT_SB_ENTRY_FORMAT_INDEX);
+
+   /* Setup indirect scoreboard wait mask now for indirect defer */
+   cs_move32_to(b, sb_wait_mask, 0);
+   cs_bit_set32(b, sb_wait_mask, sb_wait_mask, iter_sb);
+   cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_WAIT, sb_wait_mask);
+
+   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
+              offsetof(struct panvk_cs_subqueue_context, iter_sb));
+   cs_flush_stores(b);
+}
+#else
 void
 panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
                                 enum panvk_subqueue_id subqueue,
@@ -656,6 +680,7 @@ panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
               offsetof(struct panvk_cs_subqueue_context, iter_sb));
    cs_flush_stores(b);
 }
+#endif
 
 static struct cs_buffer
 alloc_cs_buffer(void *cookie)
