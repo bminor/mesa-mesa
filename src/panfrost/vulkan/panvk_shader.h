@@ -104,7 +104,8 @@ struct panvk_graphics_sysvals {
       uint32_t noperspective_varyings;
    } vs;
 
-   aligned_u64 push_consts;
+   /* Address of sysval/push constant buffer used for indirect loads */
+   aligned_u64 push_uniforms;
    aligned_u64 printf_buffer_address;
 
    struct panvk_input_attachment_info iam[INPUT_ATTACHMENT_MAP_SIZE];
@@ -123,9 +124,9 @@ struct panvk_graphics_sysvals {
 
 static_assert((sizeof(struct panvk_graphics_sysvals) % FAU_WORD_SIZE) == 0,
               "struct panvk_graphics_sysvals must be 8-byte aligned");
-static_assert((offsetof(struct panvk_graphics_sysvals, push_consts) %
+static_assert((offsetof(struct panvk_graphics_sysvals, push_uniforms) %
                FAU_WORD_SIZE) == 0,
-              "panvk_graphics_sysvals::push_consts must be 8-byte aligned");
+              "panvk_graphics_sysvals::push_uniforms must be 8-byte aligned");
 #if PAN_ARCH <= 7
 static_assert((offsetof(struct panvk_graphics_sysvals, desc) % FAU_WORD_SIZE) ==
                  0,
@@ -143,7 +144,8 @@ struct panvk_compute_sysvals {
       uint32_t x, y, z;
    } local_group_size;
 
-   aligned_u64 push_consts;
+   /* Address of sysval/push constant buffer used for indirect loads */
+   aligned_u64 push_uniforms;
    aligned_u64 printf_buffer_address;
 
 #if PAN_ARCH <= 7
@@ -155,9 +157,9 @@ struct panvk_compute_sysvals {
 
 static_assert((sizeof(struct panvk_compute_sysvals) % FAU_WORD_SIZE) == 0,
               "struct panvk_compute_sysvals must be 8-byte aligned");
-static_assert((offsetof(struct panvk_compute_sysvals, push_consts) %
+static_assert((offsetof(struct panvk_compute_sysvals, push_uniforms) %
                FAU_WORD_SIZE) == 0,
-              "panvk_compute_sysvals::push_consts must be 8-byte aligned");
+              "panvk_compute_sysvals::push_uniforms must be 8-byte aligned");
 #if PAN_ARCH <= 7
 static_assert((offsetof(struct panvk_compute_sysvals, desc) % FAU_WORD_SIZE) ==
                  0,
@@ -241,11 +243,9 @@ static_assert((offsetof(struct panvk_compute_sysvals, desc) % FAU_WORD_SIZE) ==
 #define load_sysval_entry(__b, __ptype, __bitsz, __name, __dyn_idx)            \
    nir_load_push_constant(                                                     \
       __b, sysval_entry_size(__ptype, __name) / ((__bitsz) / 8), __bitsz,      \
-      nir_iadd_imm(                                                            \
-         __b,                                                                  \
-         nir_imul_imm(__b, __dyn_idx, sysval_entry_size(__ptype, __name)),     \
-         sysval_offset(__ptype, __name)),                                      \
-      .base = SYSVALS_PUSH_CONST_BASE)
+      nir_imul_imm(__b, __dyn_idx, sysval_entry_size(__ptype, __name)),        \
+      .base = SYSVALS_PUSH_CONST_BASE + sysval_offset(__ptype, __name),        \
+      .range = sysval_size(__ptype, __name))
 
 #if PAN_ARCH <= 7
 enum panvk_bifrost_desc_table_type {
