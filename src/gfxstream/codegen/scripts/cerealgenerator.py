@@ -435,6 +435,11 @@ using gfxstream::base::BumpPool;
         deepcopyInclude = """
 #include "vk_util.h"
 """
+
+        deepcopyHostInclude = """
+#include "VkUtils.h"
+"""
+
         poolIncludeGuest = f"""
 #include "goldfish_vk_private_defs.h"
 #include "BumpPool.h"
@@ -506,7 +511,7 @@ using DlSymFunc = void* (void*, const char*);
         decoderSnapshotHeaderIncludes = f"""
 #include <memory>
 
-#include "VkSnapshotApiCall.h"
+#include "VkSnapshotHandles.h"
 #include "gfxstream/HealthMonitor.h"
 #include "gfxstream/host/GfxApiLogger.h"
 #include "goldfish_vk_private_defs.h"
@@ -523,7 +528,7 @@ using DlSymFunc = void* (void*, const char*);
 
         decoderHeaderIncludes = f"""
 #include "VkDecoderContext.h"
-#include "ProcessResources.h"
+#include "gfxstream/host/ProcessResources.h"
 
 #include <memory>
 
@@ -642,7 +647,7 @@ class BumpPool;
                            extraImpl=commonCerealImplIncludes + reservedMarshalingHostIncludes)
             self.addCppModule("common", "goldfish_vk_deepcopy",
                            extraHeader=poolInclude,
-                           extraImpl=commonCerealImplIncludes + deepcopyInclude)
+                           extraImpl=commonCerealImplIncludes + deepcopyHostInclude)
             self.addCppModule("common", "goldfish_vk_dispatch",
                            extraHeader=dispatchHeaderDefs,
                            extraImpl=dispatchImplIncludes)

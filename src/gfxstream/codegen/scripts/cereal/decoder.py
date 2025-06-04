@@ -36,7 +36,7 @@ GLOBAL_COMMANDS_WITHOUT_DISPATCH = [
     "vkEnumerateInstanceLayerProperties",
 ]
 
-SNAPSHOT_API_CALL_INFO_VARNAME = "snapshotApiCallInfo"
+SNAPSHOT_API_CALL_HANDLE_VARNAME = "snapshotApiCallHandle"
 
 global_state_prefix = "m_state->on_"
 
@@ -376,9 +376,9 @@ def emit_global_state_wrapped_call(api, cgen, context):
     if delay:
         cgen.line("std::function<void()> delayed_remove_callback = [vk, %s]() {" % ", ".join(coreCustomParams))
         cgen.stmt("auto m_state = VkDecoderGlobalState::get()")
-        customParams = ["nullptr", "nullptr"] + coreCustomParams
+        customParams = ["nullptr", "kInvalidSnapshotApiCallHandle"] + coreCustomParams
     else:
-        customParams = ["&m_pool", SNAPSHOT_API_CALL_INFO_VARNAME] + coreCustomParams
+        customParams = ["&m_pool", SNAPSHOT_API_CALL_HANDLE_VARNAME] + coreCustomParams
 
     if context:
         customParams += ["context"]
@@ -490,7 +490,7 @@ def emit_seqno_incr(api, cgen):
 def emit_snapshot(typeInfo, api, cgen):
     additionalParams = [ \
         makeVulkanTypeSimple(False, "gfxstream::base::BumpPool", 1, "&m_pool"),
-        makeVulkanTypeSimple(True, "VkSnapshotApiCallInfo", 1, SNAPSHOT_API_CALL_INFO_VARNAME),
+        makeVulkanTypeSimple(True, "VkSnapshotApiCallHandle", 1, SNAPSHOT_API_CALL_HANDLE_VARNAME),
         makeVulkanTypeSimple(True, "uint8_t", 1, "packet"),
         makeVulkanTypeSimple(False, "size_t", 0, "packetLen"),
     ]
@@ -969,11 +969,11 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         """)
 
         self.cgen.line("""
-        VkSnapshotApiCallInfo* %s = nullptr;
+        VkSnapshotApiCallHandle %s = kInvalidSnapshotApiCallHandle;
         if (m_snapshotsEnabled) {
             %s = m_state->snapshot()->createApiCallInfo();
         }
-        """ % (SNAPSHOT_API_CALL_INFO_VARNAME, SNAPSHOT_API_CALL_INFO_VARNAME))
+        """ % (SNAPSHOT_API_CALL_HANDLE_VARNAME, SNAPSHOT_API_CALL_HANDLE_VARNAME))
 
         self.cgen.line("""
         gfx_logger.recordCommandExecution();
@@ -1017,7 +1017,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         if (m_snapshotsEnabled) {
             m_state->snapshot()->destroyApiCallInfoIfUnused(%s);
         }
-        """ % (SNAPSHOT_API_CALL_INFO_VARNAME))
+        """ % (SNAPSHOT_API_CALL_HANDLE_VARNAME))
 
         self.cgen.stmt("m_pool.freeAll()")
         self.cgen.stmt("return ptr - (unsigned char *)buf")
@@ -1029,7 +1029,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         if (m_snapshotsEnabled) {
             m_state->snapshot()->destroyApiCallInfoIfUnused(%s);
         }
-        """ % (SNAPSHOT_API_CALL_INFO_VARNAME))
+        """ % (SNAPSHOT_API_CALL_HANDLE_VARNAME))
 
         self.cgen.stmt("ptr += packetLen")
         self.cgen.stmt("vkStream->clearPool()")

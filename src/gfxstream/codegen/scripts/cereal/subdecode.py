@@ -23,6 +23,8 @@ global_state_prefix = "this->on_"
 READ_STREAM = "readStream"
 WRITE_STREAM = "vkStream"
 
+SNAPSHOT_API_CALL_HANDLE_VARNAME = "snapshotApiCallHandle"
+
 # Driver workarounds for APIs that don't work well multithreaded
 driver_workarounds_global_lock_apis = [
     "vkCreatePipelineLayout",
@@ -247,7 +249,7 @@ def emit_decode_parameters(typeInfo, api, cgen, globalWrapped=False):
 def emit_snapshot_call(api, cgen):
     apiForSnapshot = \
         api.withCustomReturnType(makeVulkanTypeSimple(False, "void", 0, "void"))
-    customParamsSnapshot = ["pool", "snapshotApiCallInfo", "nullptr", "0"]
+    customParamsSnapshot = ["pool", SNAPSHOT_API_CALL_HANDLE_VARNAME, "nullptr", "0"]
     retTypeName = api.getRetTypeExpr()
     if retTypeName != "void":
         retVar = api.getRetVarExpr()
@@ -284,7 +286,7 @@ def emit_dispatch_call(api, cgen):
 
 
 def emit_global_state_wrapped_call(api, cgen, context=False):
-    customParams = ["pool", "nullptr", "(VkCommandBuffer)(boxed_dispatchHandle)"] + \
+    customParams = ["pool", SNAPSHOT_API_CALL_HANDLE_VARNAME, "(VkCommandBuffer)(boxed_dispatchHandle)"] + \
         list(map(lambda p: p.paramName, api.parameters[1:]))
     if context:
         customParams += ["context"];
@@ -354,7 +356,7 @@ class VulkanSubDecoder(VulkanWrapperGenerator):
             "#define CC_UNLIKELY(exp)  (__builtin_expect( !!(exp), false ))\n")
 
         self.module.appendImpl(
-            "size_t subDecode(VulkanMemReadingStream* readStream, VulkanDispatch* vk, VkSnapshotApiCallInfo* snapshotApiCallInfo, void* boxed_dispatchHandle, void* dispatchHandle, VkDeviceSize subDecodeDataSize, const void* pSubDecodeData, const VkDecoderContext& context)\n")
+            "size_t subDecode(VulkanMemReadingStream* readStream, VulkanDispatch* vk, VkSnapshotApiCallHandle %s, void* boxed_dispatchHandle, void* dispatchHandle, VkDeviceSize subDecodeDataSize, const void* pSubDecodeData, const VkDecoderContext& context)\n" % SNAPSHOT_API_CALL_HANDLE_VARNAME)
 
         self.cgen.beginBlock()  # function body
 

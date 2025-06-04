@@ -39,8 +39,13 @@ class VkDecoderSnapshot {
     void saveReplayBuffers(gfxstream::Stream* stream);
     static void loadReplayBuffers(gfxstream::Stream* stream, std::vector<uint64_t>* outHandleBuffer, std::vector<uint8_t>* outDecoderBuffer);
 
-    VkSnapshotApiCallInfo* createApiCallInfo();
-    void destroyApiCallInfoIfUnused(VkSnapshotApiCallInfo* info);
+    VkSnapshotApiCallHandle createApiCallInfo();
+    void destroyApiCallInfoIfUnused(VkSnapshotApiCallHandle handle);
+
+    // Performs bookkeeping to track that a given api call created the given VkObject handles.
+    // This is a public function so that `VkDecoderGlobalState` can inform snapshot of any
+    // additional handles created while emulating features.
+    void addOrderedBoxedHandlesCreatedByCall(VkSnapshotApiCallHandle apiCallHandle, VkObjectHandle* boxedHandles, uint32_t boxedHandlesCount);
 """
 
 decoder_snapshot_decl_postamble = """
@@ -77,15 +82,21 @@ class VkDecoderSnapshot::Impl {
         VkReconstruction::loadReplayBuffers(stream, outHandleBuffer, outDecoderBuffer);
     }
 
-    VkSnapshotApiCallInfo* createApiCallInfo() {
+    VkSnapshotApiCallHandle createApiCallInfo() {
         std::lock_guard<std::mutex> lock(mReconstructionMutex);
         return mReconstruction.createApiCallInfo();
     }
 
-    void destroyApiCallInfoIfUnused(VkSnapshotApiCallInfo* info) {
+    void destroyApiCallInfoIfUnused(VkSnapshotApiCallHandle apiCallHandle) {
         std::lock_guard<std::mutex> lock(mReconstructionMutex);
-        return mReconstruction.destroyApiCallInfoIfUnused(info);
+        return mReconstruction.destroyApiCallInfoIfUnused(apiCallHandle);
     }
+
+    void addOrderedBoxedHandlesCreatedByCall(VkSnapshotApiCallHandle apiCallHandle, VkObjectHandle* boxedHandles, uint32_t boxedHandlesCount) {
+        std::lock_guard<std::mutex> lock(mReconstructionMutex);
+        return mReconstruction.addOrderedBoxedHandlesCreatedByCall(apiCallHandle, boxedHandles, boxedHandlesCount);
+    }
+
 """
 
 decoder_snapshot_impl_postamble = """
@@ -110,12 +121,16 @@ void VkDecoderSnapshot::loadReplayBuffers(gfxstream::Stream* stream, std::vector
     VkDecoderSnapshot::Impl::loadReplayBuffers(stream, outHandleBuffer, outDecoderBuffer);
 }
 
-VkSnapshotApiCallInfo* VkDecoderSnapshot::createApiCallInfo() {
+VkSnapshotApiCallHandle VkDecoderSnapshot::createApiCallInfo() {
     return mImpl->createApiCallInfo();
 }
 
-void VkDecoderSnapshot::destroyApiCallInfoIfUnused(VkSnapshotApiCallInfo* info) {
-    mImpl->destroyApiCallInfoIfUnused(info);
+void VkDecoderSnapshot::destroyApiCallInfoIfUnused(VkSnapshotApiCallHandle handle) {
+    mImpl->destroyApiCallInfoIfUnused(handle);
+}
+
+void VkDecoderSnapshot::addOrderedBoxedHandlesCreatedByCall(VkSnapshotApiCallHandle apiCallHandle, VkObjectHandle* boxedHandles, uint32_t boxedHandlesCount) {
+    mImpl->addOrderedBoxedHandlesCreatedByCall(apiCallHandle, boxedHandles, boxedHandlesCount);
 }
 
 VkDecoderSnapshot::~VkDecoderSnapshot() = default;
@@ -257,18 +272,17 @@ def api_special_implementation_common(api, cgen, tag_vk):
     cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
     cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(%s)" % tag_vk)
     cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
-    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallInfo->handle, VkReconstruction::CREATED)")
-    cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
+    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, VkReconstruction::CREATED)")
     cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
-    cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+    cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
 
 def api_special_implementation_vkCmdPipelineBarrier(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.beginFor("uint32_t i = 0", "i < bufferMemoryBarrierCount", "++i")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer( pBufferMemoryBarriers[i].buffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer( pBufferMemoryBarriers[i].buffer))")
     cgen.endFor()
     cgen.beginFor("uint32_t i = 0", "i < imageMemoryBarrierCount", "++i")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage( pImageMemoryBarriers[i].image))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage( pImageMemoryBarriers[i].image))")
     cgen.endFor()
 
 def api_special_implementation_vkUpdateDescriptorSetWithTemplateSizedGOOGLE(api, cgen):
@@ -279,15 +293,14 @@ def api_special_implementation_vkUpdateDescriptorSetWithTemplateSizedGOOGLE(api,
     cgen.endIf();
     cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(Tag_VkUpdateDescriptorSets)")
     cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
-    cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
-    cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+    cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
     cgen.stmt("mReconstruction.addHandleDependency( (const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)device)")
     cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, VkReconstruction::CREATED)")
     cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
 
 def api_special_implementation_vkCmdBeginRenderPass(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
 
 def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
@@ -295,34 +308,33 @@ def api_special_implementation_vkMapMemoryIntoAddressSpaceGOOGLE(api, cgen):
     cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(Tag_VkMapMemory)")
     cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDeviceMemory(memory))")
-    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallInfo->handle, VkReconstruction::CREATED)")
-    cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
+    cgen.stmt("mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, VkReconstruction::CREATED)")
     cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiCallHandle, (const uint64_t*)(&handle), 1)")
-    cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+    cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
 
 def api_special_implementation_vkCmdBeginRenderPass(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkFramebuffer( pRenderPassBegin->framebuffer))")
 
 def api_special_implementation_vkCmdCopyBufferToImage(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(dstImage))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(dstImage))")
 
 def api_special_implementation_vkCmdCopyBuffer(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(dstBuffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(dstBuffer))")
 
 def api_special_implementation_vkCmdBindVertexBuffers(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.beginFor("uint32_t i = 0", "i < bindingCount", "++i")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(pBuffers[i]))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(pBuffers[i]))")
     cgen.endFor()
 
 def api_special_implementation_vkCmdBindPipeline(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
-    cgen.stmt("apiCallInfo->depends.push_back( (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkPipeline(pipeline))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkPipeline(pipeline))")
 
 def api_special_implementation_vkResetCommandPool(api, cgen):
     cgen.line("// Note: special implementation");
@@ -337,10 +349,10 @@ def api_special_implementation_vkResetCommandBuffer(api, cgen):
 def api_special_implementation_vkQueueFlushCommandsGOOGLE(api, cgen):
     api_special_implementation_common(api, cgen, "Tag_VkCmdOp")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)commandBuffer)")
-    cgen.beginFor("uint32_t i = 0", "i < apiCallInfo->depends.size()", "++i")
-    cgen.stmt("auto parent = apiCallInfo->depends[i]")
-    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)parent)")
-    cgen.endFor()
+
+    cgen.line("// Track that `handle` depends on previously tracked dependencies (e.g. the handle for this `vkQueueFlushCommandsGOOGLE()` call depends on the `VkPipeline` handle from `vkCmdBindPipeline()`).")
+    cgen.stmt("mReconstruction.addHandleDependenciesForApiCallDependencies(apiCallHandle, handle)")
+
 
 def api_special_implementation_vkBindBufferMemory(api, cgen):
     api_special_implementation_common(api, cgen, "Tag_VkBindMemory")
@@ -479,8 +491,7 @@ def emit_impl(typeInfo, api, cgen):
             if api.name in specialCaseDependencyExtractors:
                 specialCaseDependencyExtractors[api.name](p, boxed_access, lenExpr, api, cgen)
 
-            cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
-            cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+            cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
             if lenAccessGuard is not None:
                 cgen.beginIf(lenAccessGuard)
             cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*){boxed_access}, {lenExpr}, apiCallHandle, {get_target_state(api, p)})")
@@ -508,8 +519,7 @@ def emit_impl(typeInfo, api, cgen):
             cgen.endIf();
             cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle(%s)" % apiActionsTag[api.name])
             cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)");
-            cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
-            cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+            cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
             if api.name in specialCaseDependencyExtractors:
                 specialCaseDependencyExtractors[api.name](p, None, None, api, cgen)
             cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiCallHandle, {get_target_state(api, p)})")
@@ -518,8 +528,7 @@ def emit_impl(typeInfo, api, cgen):
         elif is_modify_operation(api, p):
             cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
             cgen.line("// %s modify" % p.paramName)
-            cgen.stmt("auto apiCallHandle = apiCallInfo->handle")
-            cgen.stmt("mReconstruction.setApiTrace(apiCallInfo, apiCallPacket, apiCallPacketSize)")
+            cgen.stmt("mReconstruction.setApiTrace(apiCallHandle, apiCallPacket, apiCallPacketSize)")
             if lenAccessGuard is not None:
                 cgen.beginIf(lenAccessGuard)
             cgen.beginFor("uint32_t i = 0", "i < %s" % lenExpr, "++i")
@@ -569,7 +578,7 @@ class VulkanDecoderSnapshot(VulkanWrapperGenerator):
 
         additionalParams = [ \
             makeVulkanTypeSimple(False, "gfxstream::base::BumpPool", 1, "pool"),
-            makeVulkanTypeSimple(False, "VkSnapshotApiCallInfo", 1, "apiCallInfo"),
+            makeVulkanTypeSimple(False, "VkSnapshotApiCallHandle", 0, "apiCallHandle"),
             makeVulkanTypeSimple(True, "uint8_t", 1, "apiCallPacket"),
             makeVulkanTypeSimple(False, "size_t", 0, "apiCallPacketSize"),
         ]
