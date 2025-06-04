@@ -510,12 +510,19 @@ radv_rra_trace_init(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   VkMemoryRequirements requirements;
-   vk_common_GetBufferMemoryRequirements(_device, device->rra_trace.ray_history_buffer, &requirements);
+   VkDeviceBufferMemoryRequirements buffer_mem_req_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+      .pCreateInfo = &buffer_create_info,
+   };
+   VkMemoryRequirements2 requirements = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+   };
+
+   radv_GetDeviceBufferMemoryRequirements(_device, &buffer_mem_req_info, &requirements);
 
    VkMemoryAllocateInfo alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .allocationSize = requirements.size,
+      .allocationSize = requirements.memoryRequirements.size,
       .memoryTypeIndex =
          radv_find_memory_index(pdev, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
@@ -525,13 +532,23 @@ radv_rra_trace_init(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   result = vk_common_MapMemory(_device, device->rra_trace.ray_history_memory, 0, VK_WHOLE_SIZE, 0,
-                                (void **)&device->rra_trace.ray_history_data);
+   VkMemoryMapInfo memory_map_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_MAP_INFO,
+      .memory = device->rra_trace.ray_history_memory,
+      .size = VK_WHOLE_SIZE,
+   };
+
+   result = radv_MapMemory2(_device, &memory_map_info, (void **)&device->rra_trace.ray_history_data);
    if (result != VK_SUCCESS)
       return result;
 
-   result = vk_common_BindBufferMemory(_device, device->rra_trace.ray_history_buffer,
-                                       device->rra_trace.ray_history_memory, 0);
+   VkBindBufferMemoryInfo bind_info = {
+      .sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
+      .buffer = device->rra_trace.ray_history_buffer,
+      .memory = device->rra_trace.ray_history_memory,
+   };
+
+   result = radv_BindBufferMemory2(_device, 1, &bind_info);
 
    VkBufferDeviceAddressInfo addr_info = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
@@ -585,8 +602,14 @@ radv_rra_trace_finish(VkDevice vk_device, struct radv_rra_trace_data *data)
 {
    radv_DestroyBuffer(vk_device, data->ray_history_buffer, NULL);
 
-   if (data->ray_history_memory)
-      vk_common_UnmapMemory(vk_device, data->ray_history_memory);
+   if (data->ray_history_memory) {
+      VkMemoryUnmapInfo unmap_info = {
+         .sType = VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO,
+         .memory = data->ray_history_memory,
+      };
+
+      radv_UnmapMemory2(vk_device, &unmap_info);
+   }
 
    radv_FreeMemory(vk_device, data->ray_history_memory, NULL);
 
@@ -689,12 +712,19 @@ rra_copy_context_init(struct rra_copy_context *ctx)
    if (result != VK_SUCCESS)
       goto fail_pool;
 
-   VkMemoryRequirements requirements;
-   vk_common_GetBufferMemoryRequirements(ctx->device, ctx->buffer, &requirements);
+   VkDeviceBufferMemoryRequirements buffer_mem_req_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+      .pCreateInfo = &buffer_create_info,
+   };
+   VkMemoryRequirements2 requirements = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+   };
+
+   radv_GetDeviceBufferMemoryRequirements(ctx->device, &buffer_mem_req_info, &requirements);
 
    VkMemoryAllocateInfo alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .allocationSize = requirements.size,
+      .allocationSize = requirements.memoryRequirements.size,
       .memoryTypeIndex = device->rra_trace.copy_memory_index,
    };
 
@@ -702,11 +732,23 @@ rra_copy_context_init(struct rra_copy_context *ctx)
    if (result != VK_SUCCESS)
       goto fail_buffer;
 
-   result = vk_common_MapMemory(ctx->device, ctx->memory, 0, VK_WHOLE_SIZE, 0, (void **)&ctx->mapped_data);
+   VkMemoryMapInfo memory_map_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_MAP_INFO,
+      .memory = ctx->memory,
+      .size = VK_WHOLE_SIZE,
+   };
+
+   result = radv_MapMemory2(ctx->device, &memory_map_info, (void **)&ctx->mapped_data);
    if (result != VK_SUCCESS)
       goto fail_memory;
 
-   result = vk_common_BindBufferMemory(ctx->device, ctx->buffer, ctx->memory, 0);
+   VkBindBufferMemoryInfo bind_info = {
+      .sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
+      .buffer = ctx->buffer,
+      .memory = ctx->memory,
+   };
+
+   result = radv_BindBufferMemory2(ctx->device, 1, &bind_info);
    if (result != VK_SUCCESS)
       goto fail_memory;
 
@@ -729,7 +771,13 @@ rra_copy_context_finish(struct rra_copy_context *ctx)
 
    vk_common_DestroyCommandPool(ctx->device, ctx->pool, NULL);
    radv_DestroyBuffer(ctx->device, ctx->buffer, NULL);
-   vk_common_UnmapMemory(ctx->device, ctx->memory);
+
+   VkMemoryUnmapInfo unmap_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO,
+      .memory = ctx->memory,
+   };
+
+   radv_UnmapMemory2(ctx->device, &unmap_info);
    radv_FreeMemory(ctx->device, ctx->memory, NULL);
 }
 
@@ -741,8 +789,14 @@ rra_map_accel_struct_data(struct rra_copy_context *ctx, uint32_t i)
       return NULL;
 
    if (data->buffer->memory) {
+      VkMemoryMapInfo memory_map_info = {
+         .sType = VK_STRUCTURE_TYPE_MEMORY_MAP_INFO,
+         .memory = data->buffer->memory,
+         .size = VK_WHOLE_SIZE,
+      };
       void *mapped_data;
-      vk_common_MapMemory(ctx->device, data->buffer->memory, 0, VK_WHOLE_SIZE, 0, &mapped_data);
+
+      radv_MapMemory2(ctx->device, &memory_map_info, &mapped_data);
       return mapped_data;
    }
 
@@ -798,8 +852,14 @@ rra_unmap_accel_struct_data(struct rra_copy_context *ctx, uint32_t i)
 {
    struct radv_rra_accel_struct_data *data = ctx->entries[i]->data;
 
-   if (data->buffer && data->buffer->memory)
-      vk_common_UnmapMemory(ctx->device, data->buffer->memory);
+   if (data->buffer && data->buffer->memory) {
+      VkMemoryUnmapInfo unmap_info = {
+         .sType = VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO,
+         .memory = data->buffer->memory,
+      };
+
+      radv_UnmapMemory2(ctx->device, &unmap_info);
+   }
 }
 
 enum rra_ray_history_token_type {

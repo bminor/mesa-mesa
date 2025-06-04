@@ -264,14 +264,16 @@ radv_device_init_null_accel_struct(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   VkBufferMemoryRequirementsInfo2 info = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
-      .buffer = buffer,
-   };
    VkMemoryRequirements2 mem_req = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
    };
-   vk_common_GetBufferMemoryRequirements2(_device, &info, &mem_req);
+
+   VkDeviceBufferMemoryRequirements buffer_mem_req_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+      .pCreateInfo = &buffer_create_info,
+   };
+
+   radv_GetDeviceBufferMemoryRequirements(radv_device_to_handle(device), &buffer_mem_req_info, &mem_req);
 
    VkMemoryAllocateInfo alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -295,8 +297,14 @@ radv_device_init_null_accel_struct(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
+   VkMemoryMapInfo memory_map_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_MAP_INFO,
+      .memory = memory,
+      .size = size,
+   };
    void *data;
-   result = vk_common_MapMemory(_device, memory, 0, size, 0, &data);
+
+   result = radv_MapMemory2(_device, &memory_map_info, &data);
    if (result != VK_SUCCESS)
       return result;
 
@@ -344,7 +352,12 @@ radv_device_init_null_accel_struct(struct radv_device *device)
       memcpy((uint8_t *)data + bvh_offset, &root, sizeof(struct radv_bvh_box32_node));
    }
 
-   vk_common_UnmapMemory(_device, memory);
+   VkMemoryUnmapInfo unmap_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO,
+      .memory = memory,
+   };
+
+   radv_UnmapMemory2(_device, &unmap_info);
 
    VkAccelerationStructureCreateInfoKHR create_info = {
       .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR,
@@ -436,7 +449,16 @@ radv_bvh_build_set_args(VkCommandBuffer commandBuffer, const void *args, uint32_
    VkPipelineLayout layout;
    vk_get_bvh_build_pipeline_layout(&device->vk, &device->meta_state.device, size, &layout);
 
-   vk_common_CmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, size, args);
+   const VkPushConstantsInfoKHR pc_info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .offset = 0,
+      .size = size,
+      .pValues = args,
+   };
+
+   radv_CmdPushConstants2(commandBuffer, &pc_info);
 }
 
 static uint32_t
@@ -1057,7 +1079,7 @@ radv_CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
    };
    radv_bvh_build_set_args(commandBuffer, &consts, sizeof(consts));
 
-   vk_common_CmdDispatch(commandBuffer, 512, 1, 1);
+   radv_CmdDispatchBase(commandBuffer, 0, 0, 0, 512, 1, 1);
 
    if (radv_use_bvh8(pdev)) {
       /* Wait for the main copy dispatch to finish. */
@@ -1071,7 +1093,7 @@ radv_CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                    copy_blas_addrs_gfx12_spv, sizeof(copy_blas_addrs_gfx12_spv),
                                    sizeof(struct copy_args), 0);
 
-      vk_common_CmdDispatch(commandBuffer, 256, 1, 1);
+      radv_CmdDispatchBase(commandBuffer, 0, 0, 0, 256, 1, 1);
    }
 
    radv_meta_restore(&saved_state, cmd_buffer);
@@ -1118,7 +1140,7 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                    copy_blas_addrs_gfx12_spv, sizeof(copy_blas_addrs_gfx12_spv),
                                    sizeof(struct copy_args), 0);
 
-      vk_common_CmdDispatch(commandBuffer, 256, 1, 1);
+      radv_CmdDispatchBase(commandBuffer, 0, 0, 0, 256, 1, 1);
    }
 
    radv_meta_restore(&saved_state, cmd_buffer);

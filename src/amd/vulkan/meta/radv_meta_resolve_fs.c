@@ -10,7 +10,6 @@
 #include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
 #include "radv_meta.h"
-#include "vk_common_entrypoints.h"
 #include "vk_format.h"
 
 static VkResult
@@ -360,8 +359,17 @@ emit_resolve(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_ivi
       src_offset->x - dst_offset->x,
       src_offset->y - dst_offset->y,
    };
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 8,
-                              push_constants);
+
+   const VkPushConstantsInfoKHR pc_info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .offset = 0,
+      .size = 8,
+      .pValues = push_constants,
+   };
+
+   radv_CmdPushConstants2(cmd_buffer_h, &pc_info);
 
    radv_CmdBindPipeline(cmd_buffer_h, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 

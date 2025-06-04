@@ -14,7 +14,6 @@
 #include "radv_sdma.h"
 
 #include "radv_cs.h"
-#include "vk_common_entrypoints.h"
 
 static enum radv_copy_flags
 radv_get_copy_flags_from_bo(const struct radeon_winsys_bo *bo)
@@ -196,8 +195,16 @@ radv_compute_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64
       dim_x = DIV_ROUND_UP(size, 4);
    }
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                              sizeof(fill_consts), &fill_consts);
+   const VkPushConstantsInfoKHR pc_info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .offset = 0,
+      .size = sizeof(fill_consts),
+      .pValues = &fill_consts,
+   };
+
+   radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
 
    radv_unaligned_dispatch(cmd_buffer, dim_x, 1, 1);
 
@@ -240,8 +247,16 @@ radv_compute_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, ui
       dim_x = size;
    }
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                              sizeof(copy_consts), &copy_consts);
+   const VkPushConstantsInfoKHR pc_info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .offset = 0,
+      .size = sizeof(copy_consts),
+      .pValues = &copy_consts,
+   };
+
+   radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
 
    radv_unaligned_dispatch(cmd_buffer, dim_x, 1, 1);
 

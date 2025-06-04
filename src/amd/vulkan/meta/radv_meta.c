@@ -208,8 +208,16 @@ radv_meta_restore(const struct radv_meta_saved_state *state, struct radv_cmd_buf
       if (state->flags & RADV_META_SAVE_GRAPHICS_PIPELINE)
          stage_flags |= VK_SHADER_STAGE_ALL_GRAPHICS;
 
-      vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), VK_NULL_HANDLE, stage_flags, 0,
-                                 MAX_PUSH_CONSTANTS_SIZE, state->push_constants);
+      const VkPushConstantsInfoKHR pc_info = {
+         .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+         .layout = VK_NULL_HANDLE,
+         .stageFlags = stage_flags,
+         .offset = 0,
+         .size = MAX_PUSH_CONSTANTS_SIZE,
+         .pValues = state->push_constants,
+      };
+
+      radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
    }
 
    if (state->flags & RADV_META_SAVE_RENDER) {

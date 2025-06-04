@@ -25,7 +25,6 @@
 #include "radv_sdma.h"
 #include "sid.h"
 #include "vk_acceleration_structure.h"
-#include "vk_common_entrypoints.h"
 #include "vk_shader_module.h"
 
 #define TIMESTAMP_NOT_READY UINT64_MAX
@@ -1835,8 +1834,16 @@ radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType query_type, st
       dst_stride, pipeline_stats_mask, avail_offset, uses_emulated_queries,
    };
 
-   vk_common_CmdPushConstants(radv_cmd_buffer_to_handle(cmd_buffer), layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                              sizeof(push_constants), &push_constants);
+   const VkPushConstantsInfoKHR pc_info = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+      .offset = 0,
+      .size = sizeof(push_constants),
+      .pValues = &push_constants,
+   };
+
+   radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
 
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_INV_VCACHE;
 

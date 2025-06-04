@@ -9,7 +9,6 @@
 #include "radv_event.h"
 #include "radv_rra.h"
 #include "vk_acceleration_structure.h"
-#include "vk_common_entrypoints.h"
 
 VKAPI_ATTR VkResult VKAPI_CALL
 rra_QueuePresentKHR(VkQueue _queue, const VkPresentInfoKHR *pPresentInfo)
@@ -86,8 +85,15 @@ rra_init_accel_struct_data_buffer(VkDevice vk_device, struct radv_rra_accel_stru
    if (result != VK_SUCCESS)
       return result;
 
-   VkMemoryRequirements requirements;
-   vk_common_GetBufferMemoryRequirements(vk_device, buffer->buffer, &requirements);
+   VkDeviceBufferMemoryRequirements buffer_mem_req_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+      .pCreateInfo = &buffer_create_info,
+   };
+   VkMemoryRequirements2 requirements = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+   };
+
+   radv_GetDeviceBufferMemoryRequirements(vk_device, &buffer_mem_req_info, &requirements);
 
    VkMemoryAllocateFlagsInfo flags_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
@@ -97,14 +103,20 @@ rra_init_accel_struct_data_buffer(VkDevice vk_device, struct radv_rra_accel_stru
    VkMemoryAllocateInfo alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &flags_info,
-      .allocationSize = requirements.size,
+      .allocationSize = requirements.memoryRequirements.size,
       .memoryTypeIndex = device->rra_trace.copy_memory_index,
    };
    result = radv_alloc_memory(device, &alloc_info, NULL, &buffer->memory, true);
    if (result != VK_SUCCESS)
       goto fail_buffer;
 
-   result = vk_common_BindBufferMemory(vk_device, buffer->buffer, buffer->memory, 0);
+   VkBindBufferMemoryInfo bind_info = {
+      .sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO,
+      .buffer = buffer->buffer,
+      .memory = buffer->memory,
+   };
+
+   result = radv_BindBufferMemory2(vk_device, 1, &bind_info);
    if (result != VK_SUCCESS)
       goto fail_memory;
 
@@ -200,7 +212,19 @@ handle_accel_struct_write(VkCommandBuffer commandBuffer, VkAccelerationStructure
 
    radv_CmdPipelineBarrier2(commandBuffer, &dependencyInfo);
 
-   vk_common_CmdSetEvent(commandBuffer, data->build_event, 0);
+   VkMemoryBarrier2 mem_barrier = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+      .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+      .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+   };
+
+   VkDependencyInfo dep_info = {
+      .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+      .memoryBarrierCount = 1,
+      .pMemoryBarriers = &mem_barrier,
+   };
+
+   radv_CmdSetEvent2(commandBuffer, data->build_event, &dep_info);
 
    if (!data->va) {
       data->va = vk_acceleration_structure_get_va(accel_struct);
