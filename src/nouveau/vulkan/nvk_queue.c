@@ -274,7 +274,7 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
 
       if (upload_time_point > 0) {
          struct vk_sync_wait wait = {
-            .sync = dev->upload.sync,
+            .sync = dev->upload.stream.sync,
             .stage_mask = ~0,
             .wait_value = upload_time_point,
          };
