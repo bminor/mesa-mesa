@@ -1085,8 +1085,8 @@ cs_loop_diverge_ls_update(struct cs_builder *b, struct cs_loop *loop)
 }
 
 static inline struct cs_loop *
-cs_do_while_start(struct cs_builder *b, struct cs_loop *loop,
-                  enum mali_cs_condition cond, struct cs_index val)
+cs_loop_init(struct cs_builder *b, struct cs_loop *loop,
+             enum mali_cs_condition cond, struct cs_index val)
 {
    *loop = (struct cs_loop){
       .cond = cond,
@@ -1096,7 +1096,6 @@ cs_do_while_start(struct cs_builder *b, struct cs_loop *loop,
    cs_block_start(b, &loop->block);
    cs_label_init(&loop->start);
    cs_label_init(&loop->end);
-   cs_set_label(b, &loop->start);
    return loop;
 }
 
@@ -1104,7 +1103,7 @@ static inline struct cs_loop *
 cs_while_start(struct cs_builder *b, struct cs_loop *loop,
                enum mali_cs_condition cond, struct cs_index val)
 {
-   cs_do_while_start(b, loop, cond, val);
+   cs_loop_init(b, loop, cond, val);
 
    /* Do an initial check on the condition, and if it's false, jump to
     * the end of the loop block. For 'while(true)' loops, skip the
@@ -1114,6 +1113,8 @@ cs_while_start(struct cs_builder *b, struct cs_loop *loop,
       cs_branch_label(b, &loop->end, cs_invert_cond(cond), val);
       cs_loop_diverge_ls_update(b, loop);
    }
+
+   cs_set_label(b, &loop->start);
 
    return loop;
 }
