@@ -829,12 +829,51 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
       flags &= ~VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
    }
 
-   const VkFormatFeatureFlags2 disallowed_ycbcr_image_features =
+   /* Not supported on YCbCr images */
+   VkFormatFeatureFlags2 disallowed_ycbcr_image_features =
       VK_FORMAT_FEATURE_2_BLIT_SRC_BIT |
       VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
       VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
       VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT |
-      VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
+      VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+      VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
+      VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+
+   /* Vulkan Spec:
+    *
+    *    "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT specifies that the image can be
+    *     created with usage flags that are not supported for the format the
+    *     image is created with but are supported for at least one format a
+    *     VkImageView created from the image can have."
+    *
+    * Remove disallowed flags if any of the plane can support that feature.
+    */
+   if (usage & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) {
+      for (uint32_t p = 0; p < anv_format->n_planes; p++) {
+         const struct anv_format_plane ycbcr_plane_format =
+            anv_get_format_plane(physical_device, vk_format, p, vk_tiling);
+
+         if (isl_format_supports_rendering(devinfo,
+                                           ycbcr_plane_format.isl_format) &&
+             ycbcr_plane_format.swizzle.a == ISL_CHANNEL_SELECT_ALPHA)
+            disallowed_ycbcr_image_features &= ~VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT;
+
+         if (isl_format_supports_alpha_blending(devinfo,
+                                                ycbcr_plane_format.isl_format) &&
+             isl_swizzle_is_identity(ycbcr_plane_format.swizzle))
+            disallowed_ycbcr_image_features &= ~VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
+
+         if (isl_format_supports_typed_reads(devinfo, ycbcr_plane_format.isl_format))
+            disallowed_ycbcr_image_features &= ~VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
+         if (isl_format_supports_typed_writes(devinfo, ycbcr_plane_format.isl_format))
+            disallowed_ycbcr_image_features &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+      }
+
+      if ((disallowed_ycbcr_image_features &
+           (VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
+            VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) == 0)
+         disallowed_ycbcr_image_features &= ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
+   }
 
    if (anv_format->flags & ANV_FORMAT_FLAG_CAN_YCBCR) {
       /* The sampler doesn't have support for mid point when it handles YUV on
