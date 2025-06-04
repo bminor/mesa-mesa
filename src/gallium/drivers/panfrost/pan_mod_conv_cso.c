@@ -502,6 +502,14 @@ panfrost_afbc_context_init(struct panfrost_context *ctx)
 void
 panfrost_afbc_context_destroy(struct panfrost_context *ctx)
 {
+   hash_table_foreach(ctx->mod_convert_shaders.shaders, he) {
+      assert(he->data);
+      struct pan_mod_convert_shader_data *shader = he->data;
+      ctx->base.delete_compute_state(&ctx->base, shader->afbc_size_cso);
+      ctx->base.delete_compute_state(&ctx->base, shader->afbc_pack_cso);
+      ctx->base.delete_compute_state(&ctx->base, shader->mtk_detile_cso);
+   }
+
    _mesa_hash_table_destroy(ctx->mod_convert_shaders.shaders, NULL);
    pthread_mutex_destroy(&ctx->mod_convert_shaders.lock);
 }
