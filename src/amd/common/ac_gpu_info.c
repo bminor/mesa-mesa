@@ -682,6 +682,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          info->vcn_dec_version = (vidip_fw_version & 0x0F000000) >> 24;
          info->vcn_enc_major_version = (vidip_fw_version & 0x00F00000) >> 20;
          info->vcn_enc_minor_version = (vidip_fw_version & 0x000FF000) >> 12;
+         info->vcn_fw_revision = (vidip_fw_version & 0x00000FFF);
       }
    } else {
       if (info->ip[AMD_IP_VCE].num_queues) {
