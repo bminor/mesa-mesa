@@ -323,7 +323,6 @@ VkResult anv_CreateDevice(
    /* Check requested queues and fail if we are requested to create any
     * queues with flags we don't support.
     */
-   assert(pCreateInfo->queueCreateInfoCount > 0);
    for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       if (pCreateInfo->pQueueCreateInfos[i].flags & ~VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)
          return vk_error(physical_device, VK_ERROR_INITIALIZATION_FAILED);
