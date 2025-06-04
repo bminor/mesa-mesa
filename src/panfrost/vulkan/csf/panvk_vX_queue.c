@@ -395,10 +395,12 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
       .debug.syncobjs = panvk_priv_mem_dev_addr(queue->debug_syncobjs),
       .debug.tracebuf.cs = subq->tracebuf.addr.dev,
+#if PAN_ARCH == 10
       /* Iterator scoreboard will be picked in CS and wrap back to SB_ITER(0) on
          first RUN_* so we ensure an invalid value here that is handled by our
          partial modulo implementation */
       .iter_sb = SB_ITER(dev->csf.sb.iter_count),
+#endif
       .reg_dump_addr = panvk_priv_mem_dev_addr(subq->regs_save),
    };
 

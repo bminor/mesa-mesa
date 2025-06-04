@@ -635,10 +635,6 @@ panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
    cs_move32_to(b, sb_wait_mask, 0);
    cs_bit_set32(b, sb_wait_mask, sb_wait_mask, iter_sb);
    cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_WAIT, sb_wait_mask);
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
 }
 #else
 void
