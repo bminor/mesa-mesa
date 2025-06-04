@@ -2222,7 +2222,12 @@ setup_renderdoc(struct zink_screen *screen)
    const char *capture_id = debug_get_option("ZINK_RENDERDOC", NULL);
    if (!capture_id)
       return;
-   void *renderdoc = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
+#if DETECT_OS_ANDROID
+   const char *libstr = "libVkLayer_GLES_RenderDoc.so";
+#else
+   const char *libstr = "librenderdoc.so";
+#endif
+   void *renderdoc = dlopen(libstr, RTLD_NOW | RTLD_NOLOAD);
    /* not loaded */
    if (!renderdoc)
       return;
