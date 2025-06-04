@@ -1022,6 +1022,8 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
       num_patches = MIN2(num_patches, one_wave);
    }
 
+   /* This is the maximum number that fits into tcs_offchip_layout. */
+   assert(num_patches <= 127);
    return num_patches;
 }
 

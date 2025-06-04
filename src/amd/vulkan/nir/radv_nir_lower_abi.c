@@ -80,8 +80,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       if (s->info->num_tess_patches) {
          replacement = nir_imm_int(b, s->info->num_tess_patches);
       } else {
-         nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_NUM_PATCHES);
-         replacement = nir_iadd_imm_nuw(b, n, 1);
+         replacement = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_NUM_PATCHES);
       }
       break;
    case nir_intrinsic_load_tcs_tess_levels_to_tes_amd:
@@ -249,8 +248,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       if (s->info->num_tess_patches) {
          num_patches = nir_imm_int(b, s->info->num_tess_patches);
       } else {
-         nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_NUM_PATCHES);
-         num_patches = nir_iadd_imm_nuw(b, n, 1);
+         num_patches = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_NUM_PATCHES);
       }
 
       if (stage == MESA_SHADER_TESS_CTRL) {

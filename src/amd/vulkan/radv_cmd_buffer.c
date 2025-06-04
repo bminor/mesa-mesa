@@ -10654,7 +10654,7 @@ radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
    const uint32_t tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tcs, AC_UD_TCS_OFFCHIP_LAYOUT);
    const uint32_t tes_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
    if (tcs_offchip_layout_offset) {
-      uint32_t tmp = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
+      uint32_t tmp = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches) |
                      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
                      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
                      SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |

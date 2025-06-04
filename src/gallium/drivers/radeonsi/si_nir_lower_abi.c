@@ -299,13 +299,11 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       }
       break;
    case nir_intrinsic_load_tcs_num_patches_amd: {
-      nir_def *tmp = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
-      replacement = nir_iadd_imm(b, tmp, 1);
+      replacement = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
       break;
    }
    case nir_intrinsic_load_hs_out_patch_data_offset_amd: {
-      nir_def *tcs_num_patches =
-         nir_iadd_imm_nuw(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7), 1);
+      nir_def *tcs_num_patches = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
       nir_def *tcs_out_vertices, *num_tcs_mem_outputs;
 
       if (stage == MESA_SHADER_TESS_CTRL) {

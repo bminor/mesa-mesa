@@ -4836,7 +4836,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    assert(ls_current->config.lds_size == 0);
    assert(num_tcs_input_cp <= 32);
    assert(num_tcs_output_cp <= 32);
-   assert(num_patches <= 128);
+   assert(num_patches <= 127);
    assert(num_lds_vs_outputs <= 63);
    assert(num_mem_tcs_outputs <= 63);
 
@@ -4846,7 +4846,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
           si_resource(sctx->screen->tess_rings)->gpu_address;
    assert((ring_va & BITFIELD_MASK(19)) == 0);
 
-   unsigned shared_fields = (num_patches - 1) | (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
+   unsigned shared_fields = num_patches | (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
 
    sctx->tes_offchip_ring_va_sgpr = ring_va;
    sctx->tcs_offchip_layout = (sctx->tcs_offchip_layout & 0xe0000000) |

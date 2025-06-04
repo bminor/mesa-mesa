@@ -48,7 +48,7 @@ struct si_shader_args {
 
    /* API TCS & TES */
    /* Layout of TCS outputs in the offchip buffer
-    *   [0:6] (7 bits) = the number of patches per threadgroup - 1, max = 127
+    *   [0:6] (7 bits) = the number of patches per threadgroup, max = 127
     *   [7:11] (5 bits) = patch_vertices_in - 1, different for TCS and TES, max = 31
     *   [12:16] (5 bits) = (unused)
     *   [17:22] (6 bits) = the number of LS outputs in LDS, max = 63
