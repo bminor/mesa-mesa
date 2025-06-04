@@ -22,6 +22,20 @@ extern "C" {
 #define MAX_IMAGE_PLANES 3
 
 struct pan_image_slice_layout {
+   /* Offset in bytes relative to the base bo bound.
+    *
+    * Unlike gallium, vulkan has to report explicit image subres layout which
+    * disallows to hide the planar plane offset into the bo mapping. So we let
+    * the slice offsets to include the plane offset of the native multi-planar
+    * images to be consistent with the imported ones via explicit layout info.
+    * Doing so allows us to use a single code path to correctly:
+    * - report image subres layout and memory requirement
+    * - bind image memory
+    *
+    * XXX However, for native non-disjoint multi-planar images in panvk, this
+    * offset_B is currently relative to the planar plane offset instead of base
+    * bo offset. To be fixed in the follow up.
+    */
    unsigned offset_B;
 
    /* For AFBC images, the number of bytes between two rows of AFBC
@@ -94,9 +108,19 @@ struct pan_image_layout {
    uint64_t array_stride_B;
 };
 
-struct pan_image_wsi_layout {
+struct pan_image_layout_constraints {
+   /*
+    * Plane offset in bytes
+    * - For native images, it's the planar plane offset.
+    * - For imported images, it's the user specified explicit offset.
+    *
+    * To be noted, this offset might be adjusted to choose an optimal alignment,
+    * unless the layout constraints are explicit (wsi_row_patch_B != 0).
+    */
    unsigned offset_B;
-   unsigned row_pitch_B;
+
+   /* Row pitch in bytes. Non-zero if layout is explicit. */
+   unsigned wsi_row_pitch_B;
    bool strict;
 };
 
@@ -151,10 +175,10 @@ pan_image_mip_level_size(const struct pan_image_props *props,
    return size;
 }
 
-bool pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
-                           unsigned plane_idx,
-                           const struct pan_image_wsi_layout *wsi_layout,
-                           struct pan_image_layout *layout);
+bool pan_image_layout_init(
+   unsigned arch, const struct pan_image_props *props, unsigned plane_idx,
+   const struct pan_image_layout_constraints *layout_constraints,
+   struct pan_image_layout *layout);
 
 static inline unsigned
 pan_image_get_wsi_offset(const struct pan_image_layout *layout, unsigned level)

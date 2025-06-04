@@ -159,9 +159,9 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
                      : whandle->modifier;
    enum mali_texture_dimension dim =
       panfrost_translate_texture_dimension(templat->target);
-   struct pan_image_wsi_layout explicit_layout = {
+   struct pan_image_layout_constraints explicit_layout = {
       .offset_B = whandle->offset,
-      .row_pitch_B = whandle->stride,
+      .wsi_row_pitch_B = whandle->stride,
       .strict = dev->debug & PAN_DBG_STRICT_IMPORT,
    };
 

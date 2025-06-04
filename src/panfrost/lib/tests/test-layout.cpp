@@ -519,7 +519,7 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
       unsigned __export_row_pitch_B =                                          \
          pan_image_get_wsi_row_pitch(&iprops, __plane, &layout, 0);            \
       unsigned __export_offset_B = pan_image_get_wsi_offset(&layout, 0);       \
-      EXPECT_TRUE(__export_row_pitch_B == (__wsi_layout)->row_pitch_B &&       \
+      EXPECT_TRUE(__export_row_pitch_B == (__wsi_layout)->wsi_row_pitch_B &&   \
                   __export_offset_B == (__wsi_layout)->offset_B)               \
          << " mismatch between import and export for <format="                 \
          << util_format_name(iprops.format) << ",plane=" << __plane            \
@@ -786,8 +786,8 @@ TEST(WSI, Import)
                assert(default_row_pitch_B > row_align_req_B);
 
                if (row_align_req_B > 1) {
-                  struct pan_image_wsi_layout wsi_layout = {
-                     .row_pitch_B = default_row_pitch_B + 1,
+                  struct pan_image_layout_constraints wsi_layout = {
+                     .wsi_row_pitch_B = default_row_pitch_B + 1,
                      .strict = true,
                   };
 
@@ -796,9 +796,9 @@ TEST(WSI, Import)
                }
 
                if (offset_align_req_B > 1) {
-                  struct pan_image_wsi_layout wsi_layout = {
+                  struct pan_image_layout_constraints wsi_layout = {
                      .offset_B = 1,
-                     .row_pitch_B = default_row_pitch_B,
+                     .wsi_row_pitch_B = default_row_pitch_B,
                      .strict = true,
                   };
 
@@ -807,23 +807,25 @@ TEST(WSI, Import)
                }
 
                /* Exact match. */
-               struct pan_image_wsi_layout wsi_layout = {
-                  .row_pitch_B = default_row_pitch_B,
+               struct pan_image_layout_constraints wsi_layout = {
+                  .wsi_row_pitch_B = default_row_pitch_B,
                   .strict = true,
                };
 
                EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
                                      "tightly packed lines");
 
-               wsi_layout.row_pitch_B = default_row_pitch_B + row_align_req_B;
+               wsi_layout.wsi_row_pitch_B =
+                  default_row_pitch_B + row_align_req_B;
                EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
                                      "lines with padding");
 
-               wsi_layout.row_pitch_B = default_row_pitch_B - row_align_req_B;
+               wsi_layout.wsi_row_pitch_B =
+                  default_row_pitch_B - row_align_req_B;
                EXPECT_IMPORT_FAIL(arch, &iprops, p, &wsi_layout, &layout,
                                   "partially aliased lines");
 
-               wsi_layout.row_pitch_B = default_row_pitch_B;
+               wsi_layout.wsi_row_pitch_B = default_row_pitch_B;
                wsi_layout.offset_B = offset_align_req_B;
                EXPECT_IMPORT_SUCCESS(arch, &iprops, p, &wsi_layout, &layout,
                                      "properly aligned offset");
