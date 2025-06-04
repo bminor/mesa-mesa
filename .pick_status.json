@@ -1024,7 +1024,7 @@
         "description": "anv: fix R64 format support reporting",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ed77f67e445d5104c81b999bbc7cbafc75090838",
         "notes": null
