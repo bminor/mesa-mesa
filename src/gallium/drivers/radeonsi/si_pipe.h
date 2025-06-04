@@ -1200,6 +1200,7 @@ struct si_context {
    bool last_tess_uses_primid;
    unsigned num_patches_per_workgroup;
    unsigned tcs_offchip_layout;
+   unsigned tes_offchip_layout;
    unsigned tes_offchip_ring_va_sgpr;
    unsigned ls_hs_rsrc2;
    unsigned ls_hs_config;

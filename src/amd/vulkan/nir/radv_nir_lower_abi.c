@@ -124,14 +124,14 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          if (s->gfx_state->ts.patch_control_points) {
             replacement = nir_imm_int(b, s->gfx_state->ts.patch_control_points);
          } else {
-            nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS);
+            nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN);
             replacement = nir_iadd_imm_nuw(b, n, 1);
          }
       } else if (stage == MESA_SHADER_TESS_EVAL) {
          if (s->info->tes.tcs_vertices_out) {
             replacement = nir_imm_int(b, s->info->tes.tcs_vertices_out);
          } else {
-            nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP);
+            nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN);
             replacement = nir_iadd_imm_nuw(b, n, 1);
          }
       } else
@@ -260,7 +260,8 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          out_vertices_per_patch = nir_imm_int(b, s->info->tes.tcs_vertices_out);
          num_tcs_mem_outputs = nir_imm_int(b, s->info->tes.num_linked_inputs);
       } else {
-         nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP);
+         assert(stage == MESA_SHADER_TESS_EVAL);
+         nir_def *n = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN);
          out_vertices_per_patch = nir_iadd_imm_nuw(b, n, 1);
          num_tcs_mem_outputs = GET_SGPR_FIELD_NIR(s->args->tcs_offchip_layout, TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS);
       }

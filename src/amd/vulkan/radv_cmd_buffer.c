@@ -10634,7 +10634,7 @@ radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *tes = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_TESS_EVAL);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   uint32_t tcs_offchip_layout = 0;
+   uint32_t tcs_offchip_layout = 0, tes_offchip_layout = 0;
    uint32_t pgm_hs_rsrc2 = 0;
 
    if (pdev->info.gfx_level >= GFX9) {
@@ -10654,21 +10654,23 @@ radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
    const uint32_t tcs_offchip_layout_offset = radv_get_user_sgpr_loc(tcs, AC_UD_TCS_OFFCHIP_LAYOUT);
    const uint32_t tes_offchip_layout_offset = radv_get_user_sgpr_loc(tes, AC_UD_TCS_OFFCHIP_LAYOUT);
    if (tcs_offchip_layout_offset) {
-      tcs_offchip_layout = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_CONTROL_POINTS, d->vk.ts.patch_control_points - 1) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_OUT_PATCH_CP, tcs->info.tcs.tcs_vertices_out - 1) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
-                           SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
+      uint32_t tmp = SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_PATCHES, cmd_buffer->state.tess_num_patches - 1) |
+                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS, vs->info.vs.num_linked_outputs) |
+                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS, tcs->info.tcs.num_linked_outputs) |
+                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_TES_READS_TF, tes->info.tes.reads_tess_factors) |
+                     SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE, tes->info.tes._primitive_mode);
+      tcs_offchip_layout =
+         tmp | SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN, d->vk.ts.patch_control_points - 1);
+      tes_offchip_layout =
+         tmp | SET_SGPR_FIELD(TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN, tcs->info.tcs.tcs_vertices_out - 1);
       assert(tes_offchip_layout_offset);
    }
 
    if (pdev->info.gfx_level >= GFX12) {
       gfx12_push_sh_reg(cmd_buffer, tcs->info.regs.pgm_rsrc2, pgm_hs_rsrc2);
-      if (tcs_offchip_layout) {
+      if (tcs_offchip_layout || tes_offchip_layout) {
          gfx12_push_sh_reg(cmd_buffer, tcs_offchip_layout_offset, tcs_offchip_layout);
-         gfx12_push_sh_reg(cmd_buffer, tes_offchip_layout_offset, tcs_offchip_layout);
+         gfx12_push_sh_reg(cmd_buffer, tes_offchip_layout_offset, tes_offchip_layout);
       }
    } else {
       radeon_begin(cs);
@@ -10681,9 +10683,9 @@ radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
          radeon_set_sh_reg(vs->info.regs.pgm_rsrc2, ls_rsrc2);
       }
 
-      if (tcs_offchip_layout) {
+      if (tcs_offchip_layout || tes_offchip_layout) {
          radeon_set_sh_reg(tcs_offchip_layout_offset, tcs_offchip_layout);
-         radeon_set_sh_reg(tes_offchip_layout_offset, tcs_offchip_layout);
+         radeon_set_sh_reg(tes_offchip_layout_offset, tes_offchip_layout);
       }
 
       radeon_end();

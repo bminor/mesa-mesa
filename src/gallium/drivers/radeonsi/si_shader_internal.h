@@ -48,20 +48,13 @@ struct si_shader_args {
 
    /* API TCS & TES */
    /* Layout of TCS outputs in the offchip buffer
-    * # 7 bits
-    *   [0:6] = the number of patches per threadgroup - 1, max = 127
-    * # 5 bits
-    *   [7:11] = the number of output vertices per patch - 1, max = 31
-    * # 5 bits
-    *   [12:16] = the number of input vertices per patch - 1, max = 31 (TCS only)
-    * # 6 bits
-    *   [17:22] = the number of LS outputs in LDS, max = 63
-    * # 6 bits
-    *   [23:28] = the number of HS per-vertex outputs in memory, max = 63
-    * # 2 bits
-    *   [29:30] = TES output primitive type
-    * # 1 bit
-    *   [31] = whether TES reads tess factor outputs from TCS
+    *   [0:6] (7 bits) = the number of patches per threadgroup - 1, max = 127
+    *   [7:11] (5 bits) = patch_vertices_in - 1, different for TCS and TES, max = 31
+    *   [12:16] (5 bits) = (unused)
+    *   [17:22] (6 bits) = the number of LS outputs in LDS, max = 63
+    *   [23:28] (6 bits) = the number of HS per-vertex outputs in memory, max = 63
+    *   [29:30] (2 bits) = TES output primitive type (TCS only)
+    *   [31] (1 bit) = whether TES reads tess factor outputs from TCS (TCS only)
     */
    struct ac_arg tcs_offchip_layout;
 

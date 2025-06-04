@@ -4846,11 +4846,12 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
           si_resource(sctx->screen->tess_rings)->gpu_address;
    assert((ring_va & BITFIELD_MASK(19)) == 0);
 
+   unsigned shared_fields = (num_patches - 1) | (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
+
    sctx->tes_offchip_ring_va_sgpr = ring_va;
-   sctx->tcs_offchip_layout &= 0xe0000000;
-   sctx->tcs_offchip_layout |=
-      (num_patches - 1) | ((num_tcs_output_cp - 1) << 7) | ((num_tcs_input_cp - 1) << 12) |
-      (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
+   sctx->tcs_offchip_layout = (sctx->tcs_offchip_layout & 0xe0000000) |
+                              shared_fields | ((num_tcs_input_cp - 1) << 7);
+   sctx->tes_offchip_layout = shared_fields | ((num_tcs_output_cp - 1) << 7);
 
    unsigned ls_hs_rsrc2;
 
@@ -4939,18 +4940,18 @@ static void gfx6_emit_tess_io_layout_state(struct si_context *sctx, unsigned ind
    if (sctx->screen->info.has_set_sh_pairs_packed) {
       gfx11_opt_push_gfx_sh_reg(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
                                 SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX,
-                                sctx->tcs_offchip_layout);
+                                sctx->tes_offchip_layout);
       gfx11_opt_push_gfx_sh_reg(tes_sh_base + SI_SGPR_TES_OFFCHIP_ADDR * 4,
                                 SI_TRACKED_SPI_SHADER_USER_DATA_ES__DRAWID,
                                 sctx->tes_offchip_ring_va_sgpr);
    } else if (sctx->ngg || sctx->shader.gs.cso) {
       radeon_opt_set_sh_reg2(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
                              SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX,
-                             sctx->tcs_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
+                             sctx->tes_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
    } else {
       radeon_opt_set_sh_reg2(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
                              SI_TRACKED_SPI_SHADER_USER_DATA_VS__BASE_VERTEX,
-                             sctx->tcs_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
+                             sctx->tes_offchip_layout, sctx->tes_offchip_ring_va_sgpr);
    }
    radeon_end();
 
@@ -4994,7 +4995,7 @@ static void gfx12_emit_tess_io_layout_state(struct si_context *sctx, unsigned in
     */
    gfx12_opt_push_gfx_sh_reg(tes_sh_base + SI_SGPR_TES_OFFCHIP_LAYOUT * 4,
                              SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX,
-                             sctx->tcs_offchip_layout);
+                             sctx->tes_offchip_layout);
    gfx12_opt_push_gfx_sh_reg(tes_sh_base + SI_SGPR_TES_OFFCHIP_ADDR * 4,
                              SI_TRACKED_SPI_SHADER_USER_DATA_ES__DRAWID,
                              sctx->tes_offchip_ring_va_sgpr);
