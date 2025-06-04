@@ -467,7 +467,6 @@ panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
 
    shader = rzalloc(ctx->mod_convert_shaders.shaders, struct pan_mod_convert_shader_data);
    shader->key = key;
-   _mesa_hash_table_insert(ctx->mod_convert_shaders.shaders, &shader->key, shader);
 
 #define COMPILE_SHADER(name, ...)                                              \
    {                                                                           \
