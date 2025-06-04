@@ -189,7 +189,8 @@ get_ahw_buffer_format_properties2(
 
    p->formatFeatures =
       anv_get_image_format_features2(device->physical, p->format, anv_format,
-                                     tiling, false /* is_sparse */, NULL);
+                                     tiling, 0 /* usage */, 0 /* flags */,
+                                     NULL);
 
    /* "Images can be created with an external format even if the Android hardware
     *  buffer has a format which has an equivalent Vulkan format to enable
