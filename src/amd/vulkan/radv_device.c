@@ -63,7 +63,6 @@ typedef void *drmDevicePtr;
 #include "winsys/null/radv_null_winsys_public.h"
 #include "git_sha1.h"
 #include "sid.h"
-#include "vk_common_entrypoints.h"
 #include "vk_format.h"
 #include "vk_sync.h"
 #include "vk_sync_dummy.h"

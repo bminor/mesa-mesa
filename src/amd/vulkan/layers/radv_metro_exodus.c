@@ -6,7 +6,6 @@
 
 #include "radv_device.h"
 #include "radv_entrypoints.h"
-#include "vk_common_entrypoints.h"
 
 VKAPI_ATTR VkResult VKAPI_CALL
 metro_exodus_GetSemaphoreCounterValue(VkDevice _device, VkSemaphore _semaphore, uint64_t *pValue)

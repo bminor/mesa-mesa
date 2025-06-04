@@ -25,7 +25,6 @@
 #include "radv_sqtt.h"
 #include "sid.h"
 #include "vk_command_pool.h"
-#include "vk_common_entrypoints.h"
 #include "vk_enum_defines.h"
 #include "vk_format.h"
 #include "vk_framebuffer.h"

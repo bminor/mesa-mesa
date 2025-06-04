@@ -12,7 +12,6 @@
 #include "radv_shader.h"
 #include "radv_spm.h"
 #include "radv_sqtt.h"
-#include "vk_common_entrypoints.h"
 #include "vk_semaphore.h"
 
 #include "ac_rgp.h"

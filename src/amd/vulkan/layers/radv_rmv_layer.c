@@ -9,7 +9,6 @@
 #include "radv_device.h"
 #include "radv_entrypoints.h"
 #include "radv_queue.h"
-#include "vk_common_entrypoints.h"
 
 VKAPI_ATTR VkResult VKAPI_CALL
 rmv_QueuePresentKHR(VkQueue _queue, const VkPresentInfoKHR *pPresentInfo)
