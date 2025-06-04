@@ -1532,6 +1532,10 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
    if (anv_is_compressed_format_emulated(pdevice, vk_format))
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
+   /* Avoid emulated formats */
+   if (anv_is_storage_format_atomics_emulated(&pdevice->info, vk_format))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
    /* While the spec itself says linear is not supported (see above), deqp-vk
     * tries anyway to create linear sparse images, so we have to check for it.
     * This is also said in VUID-VkImageCreateInfo-tiling-04121:
