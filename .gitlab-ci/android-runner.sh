@@ -32,6 +32,22 @@ done
 
 $ADB shell setenforce 0
 
+$ADB push /android-tools/eglinfo /data
+$ADB push /android-tools/vulkaninfo /data
+
+get_gles_runtime_version() {
+  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version:')" = "" ] ; do sleep 1; done
+  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version:'
+}
+
+get_vk_runtime_version() {
+  $ADB shell /data/vulkaninfo | grep driverInfo
+}
+
+# Check what GLES & VK implementation is used before uploading the new libraries
+get_gles_runtime_version
+get_vk_runtime_version
+
 # download Android Mesa from S3
 MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -o ${S3_ANDROID_ARTIFACT_NAME}.tar.zst ${MESA_ANDROID_ARTIFACT_URL}
@@ -78,33 +94,14 @@ $ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
 $ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
 $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
-$ADB push /android-tools/eglinfo /data
-$ADB push /android-tools/vulkaninfo /data
-
-get_gles_runtime_version() {
-  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version':)" = "" ] ; do sleep 1; done
-  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version'
-}
-get_vk_runtime_version() {
-  $ADB shell /data/vulkaninfo | grep driverInfo
-}
-
-# Check what GLES & VK implementation is used before loading the new libraries
-get_gles_runtime_version
-get_vk_runtime_version
-
-# restart Android shell, so that services use the new libraries
-$ADB shell stop
-$ADB shell start
-
-# Check what GLES & VK implementation is used after loading the new libraries
+# Check what GLES & VK implementation is used after uploading the new libraries
 MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
 GLES_RUNTIME_VERSION="$(get_gles_runtime_version)"
 VK_RUNTIME_VERSION="$(get_vk_runtime_version)"
 
 if [ -n "$ANGLE_TAG" ]; then
   # Note: we are injecting the ANGLE libs too, so we need to check if the
-  #       ANGLE libs are being used after the shell restart.
+  #       new ANGLE libs are being used.
   ANGLE_HASH=$(head -c 12 /angle/version)
   if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep --quiet "${ANGLE_HASH}"; then
     echo "Fatal: Android is loading a wrong version of the ANGLE libs: ${ANGLE_HASH}" 1>&2
@@ -118,6 +115,25 @@ else
 fi
 if ! printf "%s" "$VK_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
      echo "Fatal: Android is loading a wrong version of the Mesa3D Vulkan libs: ${VK_RUNTIME_VERSION}" 1>&2
+     exit 1
+fi
+
+get_surfaceflinger_pid() {
+  while [ "$($ADB shell dumpsys -l | grep 'SurfaceFlinger$')" = "" ] ; do sleep 1; done
+  $ADB shell ps -A | grep -i surfaceflinger | tr -s ' ' | cut -d ' ' -f 2
+}
+
+OLD_SF_PID=$(get_surfaceflinger_pid)
+
+# restart Android shell, so that services use the new libraries
+$ADB shell stop
+$ADB shell start
+
+# Check that SurfaceFlinger restarted, to ensure that new libraries have been picked up
+NEW_SF_PID=$(get_surfaceflinger_pid)
+
+if [ "$OLD_SF_PID" == "$NEW_SF_PID" ]; then
+     echo "Fatal: check that SurfaceFlinger restarted" 1>&2
      exit 1
 fi
 
