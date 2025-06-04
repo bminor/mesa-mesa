@@ -380,38 +380,6 @@ panfrost_flush_resource(struct pipe_context *pctx, struct pipe_resource *prsc)
    /* TODO */
 }
 
-static struct pipe_surface *
-panfrost_create_surface(struct pipe_context *pipe, struct pipe_resource *pt,
-                        const struct pipe_surface *surf_tmpl)
-{
-   struct pipe_surface *ps = NULL;
-
-   ps = CALLOC_STRUCT(pipe_surface);
-
-   if (ps) {
-      pipe_reference_init(&ps->reference, 1);
-      pipe_resource_reference(&ps->texture, pt);
-      ps->context = pipe;
-      ps->format = surf_tmpl->format;
-
-      assert(surf_tmpl->level <= pt->last_level);
-      ps->nr_samples = surf_tmpl->nr_samples;
-      ps->level = surf_tmpl->level;
-      ps->first_layer = surf_tmpl->first_layer;
-      ps->last_layer = surf_tmpl->last_layer;
-   }
-
-   return ps;
-}
-
-static void
-panfrost_surface_destroy(struct pipe_context *pipe, struct pipe_surface *surf)
-{
-   assert(surf->texture);
-   pipe_resource_reference(&surf->texture, NULL);
-   free(surf);
-}
-
 static inline bool
 panfrost_is_2d(const struct panfrost_resource *pres)
 {
@@ -2307,8 +2275,6 @@ panfrost_resource_context_init(struct pipe_context *pctx)
    pctx->buffer_unmap = u_transfer_helper_transfer_unmap;
    pctx->texture_map = u_transfer_helper_transfer_map;
    pctx->texture_unmap = u_transfer_helper_transfer_unmap;
-   pctx->create_surface = panfrost_create_surface;
-   pctx->surface_destroy = panfrost_surface_destroy;
    pctx->resource_copy_region = util_resource_copy_region;
    pctx->blit = panfrost_blit;
    pctx->generate_mipmap = panfrost_generate_mipmap;
