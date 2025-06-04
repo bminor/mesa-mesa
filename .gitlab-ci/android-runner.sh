@@ -35,9 +35,18 @@ $ADB shell setenforce 0
 $ADB push /android-tools/eglinfo /data
 $ADB push /android-tools/vulkaninfo /data
 
+get_gles_runtime_renderer() {
+  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile renderer':)" = "" ] ; do sleep 1; done
+  $ADB shell /data/eglinfo | grep 'OpenGL ES profile renderer' | head -1
+}
+
 get_gles_runtime_version() {
   while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version:')" = "" ] ; do sleep 1; done
   $ADB shell /data/eglinfo | grep 'OpenGL ES profile version:' | head -1
+}
+
+get_vk_runtime_device_name() {
+  $ADB shell /data/vulkaninfo | grep deviceName | head -1
 }
 
 get_vk_runtime_version() {
@@ -45,7 +54,9 @@ get_vk_runtime_version() {
 }
 
 # Check what GLES & VK implementation is used before uploading the new libraries
+get_gles_runtime_renderer
 get_gles_runtime_version
+get_vk_runtime_device_name
 get_vk_runtime_version
 
 # download Android Mesa from S3
@@ -96,7 +107,9 @@ $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
 # Check what GLES & VK implementation is used after uploading the new libraries
 MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
+get_gles_runtime_renderer
 GLES_RUNTIME_VERSION="$(get_gles_runtime_version)"
+get_vk_runtime_device_name
 VK_RUNTIME_VERSION="$(get_vk_runtime_version)"
 
 if [ -n "$ANGLE_TAG" ]; then
