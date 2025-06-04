@@ -139,7 +139,7 @@ radv_meta_nir_build_fill_memory_shader(struct radv_device *dev, uint32_t bytes_p
       nir_iadd(&b, nir_imul_imm(&b, nir_channel(&b, nir_load_workgroup_id(&b), 0), b.shader->info.workgroup_size[0]),
                nir_load_local_invocation_index(&b));
 
-   nir_def *offset = nir_imin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset);
+   nir_def *offset = nir_umin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset);
    nir_def *dst_addr = nir_iadd(&b, buffer_addr, nir_u2u64(&b, offset));
    nir_build_store_global(&b, data, dst_addr, .align_mul = 4);
 
@@ -166,7 +166,7 @@ radv_meta_nir_build_copy_memory_shader(struct radv_device *dev, uint32_t bytes_p
       nir_iadd(&b, nir_imul_imm(&b, nir_channel(&b, nir_load_workgroup_id(&b), 0), b.shader->info.workgroup_size[0]),
                nir_load_local_invocation_index(&b));
 
-   nir_def *offset = nir_u2u64(&b, nir_imin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset));
+   nir_def *offset = nir_u2u64(&b, nir_umin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset));
 
    nir_def *data =
       nir_build_load_global(&b, num_components, bit_size, nir_iadd(&b, src_addr, offset), .align_mul = bit_size / 8);
