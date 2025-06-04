@@ -49,7 +49,6 @@
  * The following ARF registers don't need to be tracked here because data
  * coherency is still provided transparently by the hardware:
  *
- *  - f0-1 flag registers
  *  - n0 notification register
  *  - tdr0 thread dependency register
  */
@@ -699,6 +698,10 @@ namespace {
 
          sb.addr_dep = merge(eq, sb0.addr_dep, sb1.addr_dep);
          sb.accum_dep = merge(eq, sb0.accum_dep, sb1.accum_dep);
+
+         for (unsigned i = 0; i < ARRAY_SIZE(sb.flag_deps); i++)
+            sb.flag_deps[i] = merge(eq, sb0.flag_deps[i], sb1.flag_deps[i]);
+
          sb.scalar_dep = merge(eq, sb0.scalar_dep, sb1.scalar_dep);
 
          return sb;
@@ -718,6 +721,10 @@ namespace {
 
          sb.addr_dep = shadow(sb0.addr_dep, sb1.addr_dep);
          sb.accum_dep = shadow(sb0.accum_dep, sb1.accum_dep);
+
+         for (unsigned i = 0; i < ARRAY_SIZE(sb.flag_deps); i++)
+            sb.flag_deps[i] = shadow(sb0.flag_deps[i], sb1.flag_deps[i]);
+
          sb.scalar_dep = shadow(sb0.scalar_dep, sb1.scalar_dep);
 
          return sb;
@@ -737,6 +744,10 @@ namespace {
 
          sb.addr_dep = transport(sb0.addr_dep, delta);
          sb.accum_dep = transport(sb0.accum_dep, delta);
+
+         for (unsigned i = 0; i < ARRAY_SIZE(sb.flag_deps); i++)
+            sb.flag_deps[i] = transport(sb0.flag_deps[i], delta);
+
          sb.scalar_dep = transport(sb0.scalar_dep, delta);
 
          return sb;
@@ -756,6 +767,11 @@ namespace {
          if (sb0.accum_dep != sb1.accum_dep)
             return false;
 
+         for (unsigned i = 0; i < ARRAY_SIZE(sb0.flag_deps); i++) {
+            if (sb0.flag_deps[i] != sb1.flag_deps[i])
+               return false;
+         }
+
          if (sb0.scalar_dep != sb1.scalar_dep)
             return false;
 
@@ -772,6 +788,7 @@ namespace {
       dependency grf_deps[XE3_MAX_GRF];
       dependency addr_dep;
       dependency accum_dep;
+      dependency flag_deps[4];
       dependency scalar_dep;
 
       dependency *
@@ -783,6 +800,7 @@ namespace {
          return (r.file == VGRF || r.file == FIXED_GRF ? &grf_deps[reg] :
                  brw_reg_is_arf(r, BRW_ARF_ADDRESS) ? &addr_dep :
                  brw_reg_is_arf(r, BRW_ARF_ACCUMULATOR) ? &accum_dep :
+                 brw_reg_is_arf(r, BRW_ARF_FLAG) ? &flag_deps[r.nr & 0x0f] :
                  brw_reg_is_arf(r, BRW_ARF_SCALAR) ? &scalar_dep :
                  NULL);
       }
@@ -1073,6 +1091,25 @@ namespace {
       if (inst->reads_accumulator_implicitly())
          sb.set(brw_acc_reg(8), dependency(TGL_REGDIST_SRC, jp, exec_all));
 
+      /* flags_read (and flags_written) returns a bit set per byte of the
+       * flags register file that is writtten.
+       *
+       * Gfx12 does not need this particular workaround because earlier
+       * hardware doesn't have multiple asynchronous FPU pipelines, and
+       * therefore can't be affected by this bug.
+       */
+      if (devinfo->verx10 >= 125 && inst->predicate != BRW_PREDICATE_NONE) {
+         const dependency rd_dep = dependency(TGL_REGDIST_SRC, jp, exec_all);
+         unsigned flags = inst->flags_read(devinfo);
+
+         for (unsigned i = 0; flags != 0; i++) {
+            if ((flags & 0x0f) != 0)
+               sb.set(brw_flag_reg(i, 0), rd_dep);
+
+            flags >>= 4;
+         }
+      }
+
       /* Track any destination registers of this instruction. */
       const dependency wr_dep =
          is_unordered(devinfo, inst) ? dependency(TGL_SBID_DST, ip, exec_all) :
@@ -1081,6 +1118,19 @@ namespace {
 
       if (inst->writes_accumulator_implicitly(devinfo))
          sb.set(brw_acc_reg(8), wr_dep);
+
+      /* See comment above for explanation of flag_written parsing and the
+       * Gfx12.5 restriction.
+       */
+      if (devinfo->verx10 >= 125) {
+         unsigned flags = inst->flags_written(devinfo);
+         for (unsigned i = 0; flags != 0; i++) {
+            if ((flags & 0x0f) != 0)
+               sb.set(brw_flag_reg(i, 0), wr_dep);
+
+            flags >>= 4;
+         }
+      }
 
       if (is_valid(wr_dep) && inst->dst.file != BAD_FILE &&
           !inst->dst.is_null()) {
@@ -1196,6 +1246,28 @@ namespace {
                add_dependency(ids, deps[ip], dep);
          }
 
+         /* flags_read (and flags_written) returns a bit set per byte of the
+          * flags register file that is writtten.
+          *
+          * Gfx12 does not need this particular workaround because earlier
+          * hardware doesn't have multiple asynchronous FPU pipelines, and
+          * therefore can't be affected by this bug.
+          */
+         if (devinfo->verx10 >= 125 && inst->predicate != BRW_PREDICATE_NONE) {
+            unsigned flags = inst->flags_read(devinfo);
+
+            for (unsigned i = 0; flags != 0; i++) {
+               if ((flags & 0x0f) != 0) {
+                  const dependency dep = sb.get(brw_flag_reg(i, 0));
+
+                  if (dep.ordered && !is_single_pipe(dep.jp, p))
+                     add_dependency(ids, deps[ip], dep);
+               }
+
+               flags >>= 4;
+            }
+         }
+
          if (is_unordered(devinfo, inst) && !inst->eot)
             add_dependency(ids, deps[ip],
                            dependency(TGL_SBID_SET, ip, exec_all));
@@ -1220,6 +1292,20 @@ namespace {
                const dependency dep = sb.get(brw_acc_reg(8));
                if (dep.ordered && !is_single_pipe(dep.jp, p))
                   add_dependency(ids, deps[ip], dep);
+            }
+
+            /* flags_written returns a bit set per byte of the flags register
+             * file that is writtten.
+             */
+            unsigned flags = inst->flags_written(devinfo);
+            for (unsigned i = 0; flags != 0; i++) {
+               if ((flags & 0x0f) != 0) {
+                  const dependency dep = sb.get(brw_flag_reg(i, 0));
+                  if (dep.ordered && !is_single_pipe(dep.jp, p))
+                     add_dependency(ids, deps[ip], dep);
+               }
+
+               flags >>= 4;
             }
          }
 
