@@ -26,10 +26,6 @@ spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
 spec@khr_texture_compression_astc@miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@miptree-gles srgb-fp@sRGB decode full precision,Fail
 
-# These are GLCTS bugs. See: https://gitlab.freedesktop.org/mesa/mesa/-/issues/10361
-GTF-GL46.gtf31.GL3Tests.uniform_buffer_object.uniform_buffer_object_accessing_info_for_block_with_an_instance_array,Fail
-GTF-GL46.gtf31.GL3Tests.uniform_buffer_object.uniform_buffer_object_getactiveuniformblockiv,Fail
-
 # escts failures
 KHR-GLES31.core.shader_image_load_store.basic-allTargets-loadStoreCS,Fail
 KHR-GLES31.core.shader_image_load_store.basic-allTargets-loadStoreVS,Fail

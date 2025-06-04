@@ -15,9 +15,6 @@ spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag
 
 # Random
 # Mostly reported by "Some new flakes found:" and most of them never appear in the failures
-GTF-GL46.gtf30.GL3Tests.blend_minmax.blend_minmax_clamping
-GTF-GL46.gtf30.GL3Tests.blend_minmax.blend_minmax_draw
-
 KHR-GL46.ext_texture_shadow_lod.texture.samplercubearrayshadow_fragment
 KHR-GL46.ext_texture_shadow_lod.texturelod.samplercubearrayshadow_fragment
 KHR-GL46.ext_texture_shadow_lod.texturelod.samplercubeshadow_vertex

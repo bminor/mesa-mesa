@@ -19,8 +19,6 @@ spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag
 
 # Random
 # Mostly reported by "Some new flakes found:" and most of them never appear in the failures
-GTF-GL46.gtf30.GL3Tests.blend_minmax.blend_minmax_clamping
-GTF-GL46.gtf30.GL3Tests.blend_minmax.blend_minmax_draw
 KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp
 
 KHR-GLES31.core.geometry_shader.primitive_counter.lines_to_line_strip

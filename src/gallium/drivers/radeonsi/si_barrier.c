@@ -799,7 +799,6 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
             /* TODO: some failures related to hyperz appeared after 969ed851 on nv33:
              * - piglit tex-miplevel-selection
              * - KHR-GL46.direct_state_access.framebuffers_texture_attachment
-             * - GTF-GL46.gtf30.GL3Tests.blend_minmax.blend_minmax_draw
              * - KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment
              *
              * This seems to fix them:

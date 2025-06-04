@@ -59,10 +59,6 @@ KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
 # AMD_DEBUG=nodcc fixes this
 KHR-GL46.texture_view.view_classes,Fail
 
-# These are GLCTS bugs. See: https://gitlab.freedesktop.org/mesa/mesa/-/issues/10361
-GTF-GL46.gtf31.GL3Tests.uniform_buffer_object.uniform_buffer_object_accessing_info_for_block_with_an_instance_array,Fail
-GTF-GL46.gtf31.GL3Tests.uniform_buffer_object.uniform_buffer_object_getactiveuniformblockiv,Fail
-
 # escts failures
 KHR-GLES31.core.geometry_shader.rendering.rendering.triangles_with_adjacency_input_line_strip_output_triangle_strip_adjacency_drawcall,Fail
 KHR-GLES31.core.geometry_shader.rendering.rendering.triangles_with_adjacency_input_triangle_strip_output_triangle_strip_adjacency_drawcall,Fail
