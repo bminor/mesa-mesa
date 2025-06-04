@@ -36,21 +36,21 @@ $ADB push /android-tools/eglinfo /data
 $ADB push /android-tools/vulkaninfo /data
 
 get_gles_runtime_renderer() {
-  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile renderer':)" = "" ] ; do sleep 1; done
-  $ADB shell /data/eglinfo | grep 'OpenGL ES profile renderer' | head -1
+  while [ "$($ADB shell XDG_CACHE_HOME=/data/local/tmp /data/eglinfo | grep 'OpenGL ES profile renderer':)" = "" ] ; do sleep 1; done
+  $ADB shell XDG_CACHE_HOME=/data/local/tmp /data/eglinfo | grep 'OpenGL ES profile renderer' | head -1
 }
 
 get_gles_runtime_version() {
-  while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version:')" = "" ] ; do sleep 1; done
-  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version:' | head -1
+  while [ "$($ADB shell XDG_CACHE_HOME=/data/local/tmp /data/eglinfo | grep 'OpenGL ES profile version:')" = "" ] ; do sleep 1; done
+  $ADB shell XDG_CACHE_HOME=/data/local/tmp /data/eglinfo | grep 'OpenGL ES profile version:' | head -1
 }
 
 get_vk_runtime_device_name() {
-  $ADB shell /data/vulkaninfo | grep deviceName | head -1
+  $ADB shell XDG_CACHE_HOME=/data/local/tmp /data/vulkaninfo | grep deviceName | head -1
 }
 
 get_vk_runtime_version() {
-  $ADB shell /data/vulkaninfo | grep driverInfo | head -1
+  $ADB shell XDG_CACHE_HOME=/data/local/tmp /data/vulkaninfo | grep driverInfo | head -1
 }
 
 # Check what GLES & VK implementation is used before uploading the new libraries
