@@ -134,7 +134,7 @@
         "description": "broadcom/compiler: handle moving last ubo load in the block correctly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8998666de7e827f5fe62b51186c7f81d362a2be1",
         "notes": null
