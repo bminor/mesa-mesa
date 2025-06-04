@@ -9,6 +9,8 @@
 $ADB shell mkdir -p /data/deqp
 $ADB push /deqp-gles/modules/egl/deqp-egl-android /data/deqp
 $ADB push /deqp-gles/mustpass/egl-main.txt.zst /data/deqp
+$ADB push /deqp-gles/modules/gles2/deqp-gles2 /data/deqp
+$ADB push /deqp-gles/mustpass/gles2-main.txt.zst /data/deqp
 $ADB push /deqp-vk/external/vulkancts/modules/vulkan/* /data/deqp
 $ADB push /deqp-vk/mustpass/vk-main.txt.zst /data/deqp
 $ADB push /deqp-tools/* /data/deqp
