@@ -156,11 +156,16 @@ bool pan_image_layout_init(unsigned arch, const struct pan_image_props *props,
                            const struct pan_image_wsi_layout *wsi_layout,
                            struct pan_image_layout *layout);
 
-struct pan_image_wsi_layout
-pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
-                                unsigned plane_idx,
-                                const struct pan_image_layout *layout,
-                                unsigned level);
+static inline unsigned
+pan_image_get_wsi_offset(const struct pan_image_layout *layout, unsigned level)
+{
+   return layout->slices[level].offset_B;
+}
+
+unsigned pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
+                                     unsigned plane_idx,
+                                     const struct pan_image_layout *layout,
+                                     unsigned level);
 
 #ifdef __cplusplus
 } /* extern C */

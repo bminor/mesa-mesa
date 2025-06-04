@@ -261,12 +261,11 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
       return false;
    }
 
-   struct pan_image_wsi_layout wsi_layout = pan_image_layout_get_wsi_layout(
+   handle->stride = pan_image_get_wsi_row_pitch(
       &rsrc->image.props, handle->plane,
       &rsrc->image.planes[handle->plane]->layout, 0);
-
-   handle->stride = wsi_layout.row_pitch_B;
-   handle->offset = wsi_layout.offset_B;
+   handle->offset =
+      pan_image_get_wsi_offset(&rsrc->image.planes[handle->plane]->layout, 0);
    return true;
 }
 
@@ -282,14 +281,11 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
-      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props, plane,
-                                               &rsrc->plane.layout, level)
-                  .row_pitch_B;
+      *value = pan_image_get_wsi_row_pitch(&rsrc->image.props, plane,
+                                           &rsrc->plane.layout, level);
       return true;
    case PIPE_RESOURCE_PARAM_OFFSET:
-      *value = pan_image_layout_get_wsi_layout(&rsrc->image.props, plane,
-                                               &rsrc->plane.layout, level)
-                  .offset_B;
+      *value = pan_image_get_wsi_offset(&rsrc->plane.layout, level);
       return true;
    case PIPE_RESOURCE_PARAM_MODIFIER:
       *value = rsrc->modifier;

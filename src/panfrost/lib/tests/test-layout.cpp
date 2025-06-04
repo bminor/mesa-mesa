@@ -516,11 +516,11 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
       if (!__result)                                                           \
          break;                                                                \
                                                                                \
-      struct pan_image_wsi_layout __export_wsi_layout =                        \
-         pan_image_layout_get_wsi_layout(&iprops, __plane, &layout, 0);        \
-      EXPECT_TRUE(__export_wsi_layout.row_pitch_B ==                           \
-                     (__wsi_layout)->row_pitch_B &&                            \
-                  __export_wsi_layout.offset_B == (__wsi_layout)->offset_B)    \
+      unsigned __export_row_pitch_B =                                          \
+         pan_image_get_wsi_row_pitch(&iprops, __plane, &layout, 0);            \
+      unsigned __export_offset_B = pan_image_get_wsi_offset(&layout, 0);       \
+      EXPECT_TRUE(__export_row_pitch_B == (__wsi_layout)->row_pitch_B &&       \
+                  __export_offset_B == (__wsi_layout)->offset_B)               \
          << " mismatch between import and export for <format="                 \
          << util_format_name(iprops.format) << ",plane=" << __plane            \
          << ",mod=" << std::hex << (__iprops)->modifier << std::dec            \

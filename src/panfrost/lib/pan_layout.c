@@ -206,44 +206,38 @@ get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
    }
 }
 
-struct pan_image_wsi_layout
-pan_image_layout_get_wsi_layout(const struct pan_image_props *props,
-                                unsigned plane_idx,
-                                const struct pan_image_layout *layout,
-                                unsigned level)
+unsigned
+pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
+                            unsigned plane_idx,
+                            const struct pan_image_layout *layout,
+                            unsigned level)
 {
-   unsigned row_stride_B = layout->slices[level].row_stride_B;
-   struct pan_image_block_size block_size_el =
+   const unsigned row_stride_B = layout->slices[level].row_stride_B;
+   const struct pan_image_block_size block_size_el =
       pan_image_renderblock_size_el(props->modifier, props->format, plane_idx);
 
    if (drm_is_afbc(props->modifier)) {
-      struct pan_image_block_size afbc_tile_extent_el =
+      const struct pan_image_block_size afbc_tile_extent_el =
          pan_image_block_size_el(props->modifier, props->format, plane_idx);
-      unsigned afbc_tile_payload_size_B =
+      const unsigned afbc_tile_payload_size_B =
          afbc_tile_extent_el.width * afbc_tile_extent_el.height *
          get_plane_blocksize(props->format, plane_idx);
-      unsigned afbc_tile_row_payload_size_B =
+      const unsigned afbc_tile_row_payload_size_B =
          pan_afbc_stride_blocks(props->modifier, row_stride_B) *
          afbc_tile_payload_size_B;
-      return (struct pan_image_wsi_layout){
-         .offset_B = layout->slices[level].offset_B,
-         .row_pitch_B = afbc_tile_row_payload_size_B /
-                        pan_afbc_superblock_height(props->modifier),
-      };
-   } else if (drm_is_afrc(props->modifier)) {
-      struct pan_image_block_size tile_size_px =
+
+      return afbc_tile_row_payload_size_B /
+             pan_afbc_superblock_height(props->modifier);
+   }
+
+   if (drm_is_afrc(props->modifier)) {
+      const struct pan_image_block_size tile_size_px =
          pan_afrc_tile_size(props->format, props->modifier);
 
-      return (struct pan_image_wsi_layout){
-         .offset_B = layout->slices[level].offset_B,
-         .row_pitch_B = row_stride_B / tile_size_px.height,
-      };
-   } else {
-      return (struct pan_image_wsi_layout){
-         .offset_B = layout->slices[level].offset_B,
-         .row_pitch_B = row_stride_B / block_size_el.height,
-      };
+      return row_stride_B / tile_size_px.height;
    }
+
+   return row_stride_B / block_size_el.height;
 }
 
 static bool
