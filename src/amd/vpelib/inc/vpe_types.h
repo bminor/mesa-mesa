@@ -221,9 +221,13 @@ struct vpe_color_caps {
  *  shall be queried by @ref vpe_check_support_funcs
  */
 struct vpe_caps {
-    uint32_t max_downscale_ratio; /**< max downscaling ratio (src/dest) x 100.
-                                     E.g. 4k -> 1080p is 400 */
-    uint64_t lut_size;            /**< 3dlut size */
+    struct vpe_size max_input_size;      /**< Maximum input size */
+    struct vpe_size min_input_size;      /**< Minimum input size */
+    struct vpe_size max_output_size;     /**< Maximum output size */
+    struct vpe_size min_output_size;     /**< Minimum output size */
+    uint32_t        max_downscale_ratio; /**< max downscaling ratio (src/dest) x 100.
+                                              E.g. 4k -> 1080p is 400 */
+    uint64_t lut_size;                   /**< 3dlut size */
 
     uint32_t rotation_support       : 1; /**< rotation support */
     uint32_t h_mirror_support       : 1; /**< horizontal mirror support */

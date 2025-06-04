@@ -121,6 +121,26 @@ static const struct vpe10_opp_shift opp_shift = {OPP_FIELD_LIST_VPE10(__SHIFT)};
 static const struct vpe10_opp_mask opp_mask = {OPP_FIELD_LIST_VPE10(_MASK)};
 
 static struct vpe_caps caps = {
+    .max_input_size =
+        {
+            .width  = 16384,
+            .height = 16384,
+        },
+    .max_output_size =
+        {
+            .width  = 16384,
+            .height = 16384,
+        },
+    .min_input_size =
+        {
+            .width  = 1,
+            .height = 1,
+        },
+    .min_output_size =
+        {
+            .width  = 1,
+            .height = 1,
+        },
     .lut_size               = LUT_BUFFER_SIZE,
     .rotation_support       = 0,
     .h_mirror_support       = 1,
