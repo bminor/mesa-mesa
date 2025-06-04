@@ -47,6 +47,8 @@ nvk_files = files(
   'nvk_instance.h',
   'nvk_mem_arena.c',
   'nvk_mem_arena.h',
+  'nvk_mem_stream.c',
+  'nvk_mem_stream.h',
   'nvk_mme.c',
   'nvk_mme.h',
   'nvk_nir_lower_descriptors.c',
