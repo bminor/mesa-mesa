@@ -519,6 +519,18 @@ nvk_push_draw_state_init(struct nvk_queue *queue, struct nv_push *p)
       P_NV9097_SET_PROGRAM_REGION_B(p, shader_base_addr);
    }
 
+   /* From nvc0_screen.c:
+    *
+    *    "Reduce likelihood of collision with real buffers by placing the
+    *    hole at the top of the 4G area. This will have to be dealt with
+    *    for real eventually by blocking off that area from the VM."
+    *
+    * Really?!?  TODO: Fix this for realz.  Annoyingly, we only have a
+    * 32-bit pointer for this in 3D rather than a full 48 like we have for
+    * compute.
+    */
+   P_IMMD(p, NV9097, SET_SHADER_LOCAL_MEMORY_WINDOW, 0xff << 24);
+
    for (uint32_t group = 0; group < 5; group++) {
       for (uint32_t slot = 0; slot < 16; slot++) {
          P_IMMD(p, NV9097, BIND_GROUP_CONSTANT_BUFFER(group), {

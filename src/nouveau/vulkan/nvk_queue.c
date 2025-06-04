@@ -164,53 +164,6 @@ nvk_queue_state_update(struct nvk_queue *queue,
       }
    }
 
-   /* We set memory windows unconditionally.  Otherwise, the memory window
-    * might be in a random place and cause us to fault off into nowhere.
-    */
-   if (queue->engines & NVKMD_ENGINE_COMPUTE) {
-      if (pdev->info.cls_compute >= VOLTA_COMPUTE_A) {
-         uint64_t temp = 0xfeULL << 24;
-         P_MTHD(p, NVC3C0, SET_SHADER_SHARED_MEMORY_WINDOW_A);
-         P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_A(p, temp >> 32);
-         P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_B(p, temp & 0xffffffff);
-
-         temp = 0xffULL << 24;
-         P_MTHD(p, NVC3C0, SET_SHADER_LOCAL_MEMORY_WINDOW_A);
-         P_NVC3C0_SET_SHADER_LOCAL_MEMORY_WINDOW_A(p, temp >> 32);
-         P_NVC3C0_SET_SHADER_LOCAL_MEMORY_WINDOW_B(p, temp & 0xffffffff);
-      } else {
-         P_MTHD(p, NVA0C0, SET_SHADER_LOCAL_MEMORY_WINDOW);
-         P_NVA0C0_SET_SHADER_LOCAL_MEMORY_WINDOW(p, 0xff << 24);
-
-         P_MTHD(p, NVA0C0, SET_SHADER_SHARED_MEMORY_WINDOW);
-         P_NVA0C0_SET_SHADER_SHARED_MEMORY_WINDOW(p, 0xfe << 24);
-      }
-
-      /* From nvc0_screen.c:
-       *
-       *    "Reduce likelihood of collision with real buffers by placing the
-       *    hole at the top of the 4G area. This will have to be dealt with
-       *    for real eventually by blocking off that area from the VM."
-       *
-       * Really?!?  TODO: Fix this for realz.  Annoyingly, we only have a
-       * 32-bit pointer for this in 3D rather than a full 48 like we have for
-       * compute.
-       */
-      P_IMMD(p, NV9097, SET_SHADER_LOCAL_MEMORY_WINDOW, 0xff << 24);
-   }
-
-   /* From nvc0_screen.c:
-    *
-    *    "Reduce likelihood of collision with real buffers by placing the
-    *    hole at the top of the 4G area. This will have to be dealt with
-    *    for real eventually by blocking off that area from the VM."
-    *
-    * Really?!?  TODO: Fix this for realz.  Annoyingly, we only have a
-    * 32-bit pointer for this in 3D rather than a full 48 like we have for
-    * compute.
-    */
-   P_IMMD(p, NV9097, SET_SHADER_LOCAL_MEMORY_WINDOW, 0xff << 24);
-
    return nvk_queue_push(queue, p);
 }
 

@@ -49,6 +49,32 @@ nvk_push_dispatch_state_init(struct nvk_queue *queue, struct nv_push *p)
       P_NVA0C0_SET_PROGRAM_REGION_B(p, shader_base_addr);
    }
 
+   if (pdev->info.cls_compute >= VOLTA_COMPUTE_A) {
+      /* From nvc0_screen.c:
+       *
+       *    "Reduce likelihood of collision with real buffers by placing the
+       *    hole at the top of the 4G area. This will have to be dealt with
+       *    for real eventually by blocking off that area from the VM."
+       *
+       * Really?!?  TODO: Fix this for realz.
+       */
+      uint64_t temp = 0xfeULL << 24;
+      P_MTHD(p, NVC3C0, SET_SHADER_SHARED_MEMORY_WINDOW_A);
+      P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_A(p, temp >> 32);
+      P_NVC3C0_SET_SHADER_SHARED_MEMORY_WINDOW_B(p, temp & 0xffffffff);
+
+      temp = 0xffULL << 24;
+      P_MTHD(p, NVC3C0, SET_SHADER_LOCAL_MEMORY_WINDOW_A);
+      P_NVC3C0_SET_SHADER_LOCAL_MEMORY_WINDOW_A(p, temp >> 32);
+      P_NVC3C0_SET_SHADER_LOCAL_MEMORY_WINDOW_B(p, temp & 0xffffffff);
+   } else {
+      P_MTHD(p, NVA0C0, SET_SHADER_LOCAL_MEMORY_WINDOW);
+      P_NVA0C0_SET_SHADER_LOCAL_MEMORY_WINDOW(p, 0xff << 24);
+
+      P_MTHD(p, NVA0C0, SET_SHADER_SHARED_MEMORY_WINDOW);
+      P_NVA0C0_SET_SHADER_SHARED_MEMORY_WINDOW(p, 0xfe << 24);
+   }
+
    return VK_SUCCESS;
 }
 
