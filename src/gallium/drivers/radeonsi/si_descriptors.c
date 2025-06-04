@@ -2208,6 +2208,26 @@ static void gfx12_push_global_shader_pointers(struct si_context *sctx, struct si
                          descs->gpu_address);
 }
 
+static void si_upload_shader_descriptors(struct si_context *sctx,
+                                         unsigned descriptors_dirty)
+{
+   if (descriptors_dirty & BITFIELD_BIT(SI_DESCS_INTERNAL)) {
+      sctx->graphics_internal_bindings_pointer_dirty = true;
+      sctx->compute_internal_bindings_pointer_dirty = true;
+   }
+
+   /* Upload descriptors. */
+   if (descriptors_dirty) {
+      sctx->descriptors_dirty &= ~descriptors_dirty;
+
+      do {
+         si_upload_descriptors(sctx, &sctx->descriptors[u_bit_scan(&descriptors_dirty)]);
+      } while (descriptors_dirty);
+   }
+
+   si_upload_bindless_descriptors(sctx);
+}
+
 static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned index)
 {
    bool is_mesh_pipeline = !!sctx->ms_shader_state.cso;
@@ -2226,25 +2246,11 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
    unsigned attribute_ring_addr_sgpr = is_mesh_pipeline ?
       GFX11_SGPR_MS_ATTRIBUTE_RING_ADDR : GFX9_SGPR_ATTRIBUTE_RING_ADDR;
 
-   if (descriptors_dirty & BITFIELD_BIT(SI_DESCS_INTERNAL)) {
-      sctx->graphics_internal_bindings_pointer_dirty = true;
-      sctx->compute_internal_bindings_pointer_dirty = true;
-   }
-
    /* Blits shouldn't set VS shader pointers. */
    if (sctx->num_vs_blit_sgprs)
       shader_pointers_dirty &= ~SI_DESCS_SHADER_MASK(VERTEX);
 
-   /* Upload descriptors. */
-   if (descriptors_dirty) {
-      sctx->descriptors_dirty &= ~descriptors_dirty;
-
-      do {
-         si_upload_descriptors(sctx, &sctx->descriptors[u_bit_scan(&descriptors_dirty)]);
-      } while (descriptors_dirty);
-   }
-
-   si_upload_bindless_descriptors(sctx);
+   si_upload_shader_descriptors(sctx, descriptors_dirty);
 
    /* Set shader pointers. */
    if (sctx->gfx_level >= GFX12) {
@@ -2358,21 +2364,7 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
                                 (BITFIELD_BIT(SI_DESCS_INTERNAL) | SI_DESCS_SHADER_MASK(COMPUTE));
    unsigned shader_pointers_dirty = sctx->shader_pointers_dirty | descriptors_dirty;
 
-   if (descriptors_dirty & BITFIELD_BIT(SI_DESCS_INTERNAL)) {
-      sctx->graphics_internal_bindings_pointer_dirty = true;
-      sctx->compute_internal_bindings_pointer_dirty = true;
-   }
-
-   /* Upload descriptors. */
-   if (descriptors_dirty) {
-      sctx->descriptors_dirty &= ~descriptors_dirty;
-
-      do {
-         si_upload_descriptors(sctx, &sctx->descriptors[u_bit_scan(&descriptors_dirty)]);
-      } while (descriptors_dirty);
-   }
-
-   si_upload_bindless_descriptors(sctx);
+   si_upload_shader_descriptors(sctx, descriptors_dirty);
 
    radeon_begin(&sctx->gfx_cs);
 
