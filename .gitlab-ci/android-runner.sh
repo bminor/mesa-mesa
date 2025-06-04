@@ -37,11 +37,11 @@ $ADB push /android-tools/vulkaninfo /data
 
 get_gles_runtime_version() {
   while [ "$($ADB shell /data/eglinfo | grep 'OpenGL ES profile version:')" = "" ] ; do sleep 1; done
-  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version:'
+  $ADB shell /data/eglinfo | grep 'OpenGL ES profile version:' | head -1
 }
 
 get_vk_runtime_version() {
-  $ADB shell /data/vulkaninfo | grep driverInfo
+  $ADB shell /data/vulkaninfo | grep driverInfo | head -1
 }
 
 # Check what GLES & VK implementation is used before uploading the new libraries
