@@ -12182,15 +12182,7 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
       radeon_end();
    }
 
-   const uint32_t view_mask = cmd_buffer->state.render.view_mask;
-   if (rt || compute || !view_mask) {
-      radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
-   } else {
-      u_foreach_bit (view, view_mask) {
-         radv_emit_view_index(&cmd_buffer->state, cmd_buffer->cs, view);
-         radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
-      }
-   }
+   radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
 
    if (rt) {
       cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
