@@ -1250,8 +1250,10 @@ struct si_context {
    bool bindless_descriptors_dirty;
    bool graphics_internal_bindings_pointer_dirty;
    bool compute_internal_bindings_pointer_dirty;
+   bool task_internal_bindings_pointer_dirty;
    bool graphics_bindless_pointer_dirty;
    bool compute_bindless_pointer_dirty;
+   bool task_bindless_pointer_dirty;
    bool gs_attribute_ring_pointer_dirty;
 
    /* Allocated bindless handles */

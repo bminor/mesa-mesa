@@ -616,6 +616,7 @@ void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint32_t ne
 void si_shader_change_notify(struct si_context *sctx);
 void si_update_needs_color_decompress_masks(struct si_context *sctx);
 void si_emit_compute_shader_pointers(struct si_context *sctx);
+void si_emit_task_shader_pointers(struct si_context *sctx);
 void si_set_internal_const_buffer(struct si_context *sctx, uint slot,
                                   const struct pipe_constant_buffer *input);
 void si_set_internal_shader_buffer(struct si_context *sctx, uint slot,

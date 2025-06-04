@@ -2015,10 +2015,12 @@ void si_shader_pointers_mark_dirty(struct si_context *sctx)
       BITFIELD_RANGE(SI_DESCS_FIRST_SHADER, SI_NUM_DESCS - SI_DESCS_FIRST_SHADER);
    sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
-   sctx->graphics_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;
-   sctx->compute_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;
-   sctx->graphics_bindless_pointer_dirty = sctx->bindless_descriptors.buffer != NULL;
-   sctx->compute_bindless_pointer_dirty = sctx->bindless_descriptors.buffer != NULL;
+   sctx->graphics_internal_bindings_pointer_dirty =
+   sctx->compute_internal_bindings_pointer_dirty =
+   sctx->task_internal_bindings_pointer_dirty = sctx->descriptors[SI_DESCS_INTERNAL].buffer != NULL;
+   sctx->graphics_bindless_pointer_dirty =
+   sctx->compute_bindless_pointer_dirty =
+   sctx->task_bindless_pointer_dirty = sctx->bindless_descriptors.buffer != NULL;
    sctx->compute_shaderbuf_sgprs_dirty = true;
    sctx->compute_image_sgprs_dirty = true;
    if (sctx->gfx_level >= GFX11)
@@ -2214,6 +2216,7 @@ static void si_upload_shader_descriptors(struct si_context *sctx,
    if (descriptors_dirty & BITFIELD_BIT(SI_DESCS_INTERNAL)) {
       sctx->graphics_internal_bindings_pointer_dirty = true;
       sctx->compute_internal_bindings_pointer_dirty = true;
+      sctx->task_internal_bindings_pointer_dirty = true;
    }
 
    /* Upload descriptors. */
@@ -2357,70 +2360,86 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
    sctx->shader_pointers_dirty &= ~emit_desc_mask;
 }
 
+static void si_emit_compute_shader_pointer_packets(struct si_context *sctx,
+                                                   struct radeon_cmdbuf *cs,
+                                                   unsigned shader_pointers_dirty,
+                                                   unsigned shader_pointers_mask,
+                                                   bool *internal_bindings_pointer_dirty,
+                                                   bool *bindless_pointer_dirty)
+{
+   radeon_begin(cs);
+
+   /* Set shader pointers. */
+   if (sctx->gfx_level >= GFX12) {
+      gfx12_push_consecutive_shader_pointers(sctx, shader_pointers_mask,
+                                             R_00B900_COMPUTE_USER_DATA_0, compute);
+
+      if (*internal_bindings_pointer_dirty) {
+         gfx12_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
+                                   sctx->descriptors[SI_DESCS_INTERNAL].shader_userdata_offset,
+                                   sctx->descriptors[SI_DESCS_INTERNAL].gpu_address);
+         *internal_bindings_pointer_dirty = false;
+      }
+
+      if (*bindless_pointer_dirty) {
+         gfx12_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
+                                   sctx->bindless_descriptors.shader_userdata_offset,
+                                   sctx->bindless_descriptors.gpu_address);
+         *bindless_pointer_dirty = false;
+      }
+   } else if (sctx->screen->info.has_set_sh_pairs_packed) {
+      gfx11_push_consecutive_shader_pointers(sctx, shader_pointers_mask,
+                                             R_00B900_COMPUTE_USER_DATA_0, compute);
+
+      if (*internal_bindings_pointer_dirty) {
+         gfx11_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
+                                   sctx->descriptors[SI_DESCS_INTERNAL].shader_userdata_offset,
+                                   sctx->descriptors[SI_DESCS_INTERNAL].gpu_address);
+         *internal_bindings_pointer_dirty = false;
+      }
+
+      if (*bindless_pointer_dirty) {
+         gfx11_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
+                                   sctx->bindless_descriptors.shader_userdata_offset,
+                                   sctx->bindless_descriptors.gpu_address);
+         *bindless_pointer_dirty = false;
+      }
+   } else {
+      si_emit_consecutive_shader_pointers(sctx, shader_pointers_mask,
+                                          R_00B900_COMPUTE_USER_DATA_0, compute);
+
+      if (*internal_bindings_pointer_dirty) {
+         radeon_emit_one_32bit_pointer(&sctx->descriptors[SI_DESCS_INTERNAL],
+                                       R_00B900_COMPUTE_USER_DATA_0);
+         *internal_bindings_pointer_dirty = false;
+      }
+
+      if (*bindless_pointer_dirty) {
+         radeon_emit_one_32bit_pointer(&sctx->bindless_descriptors,
+                                       R_00B900_COMPUTE_USER_DATA_0);
+         *bindless_pointer_dirty = false;
+      }
+   }
+
+   radeon_end();
+}
+
 void si_emit_compute_shader_pointers(struct si_context *sctx)
 {
-   /* This does not update internal bindings as that is not needed for compute shaders. */
    unsigned descriptors_dirty = sctx->descriptors_dirty &
                                 (BITFIELD_BIT(SI_DESCS_INTERNAL) | SI_DESCS_SHADER_MASK(COMPUTE));
    unsigned shader_pointers_dirty = sctx->shader_pointers_dirty | descriptors_dirty;
 
    si_upload_shader_descriptors(sctx, descriptors_dirty);
 
-   radeon_begin(&sctx->gfx_cs);
-
-   /* Set shader pointers. */
-   if (sctx->gfx_level >= GFX12) {
-      gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(COMPUTE),
-                                             R_00B900_COMPUTE_USER_DATA_0, compute);
-
-      if (sctx->compute_internal_bindings_pointer_dirty) {
-         gfx12_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
-                                   sctx->descriptors[SI_DESCS_INTERNAL].shader_userdata_offset,
-                                   sctx->descriptors[SI_DESCS_INTERNAL].gpu_address);
-         sctx->compute_internal_bindings_pointer_dirty = false;
-      }
-
-      if (sctx->compute_bindless_pointer_dirty) {
-         gfx12_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
-                                   sctx->bindless_descriptors.shader_userdata_offset,
-                                   sctx->bindless_descriptors.gpu_address);
-         sctx->compute_bindless_pointer_dirty = false;
-      }
-   } else if (sctx->screen->info.has_set_sh_pairs_packed) {
-      gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(COMPUTE),
-                                             R_00B900_COMPUTE_USER_DATA_0, compute);
-
-      if (sctx->compute_internal_bindings_pointer_dirty) {
-         gfx11_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
-                                   sctx->descriptors[SI_DESCS_INTERNAL].shader_userdata_offset,
-                                   sctx->descriptors[SI_DESCS_INTERNAL].gpu_address);
-         sctx->compute_internal_bindings_pointer_dirty = false;
-      }
-
-      if (sctx->compute_bindless_pointer_dirty) {
-         gfx11_push_compute_sh_reg(R_00B900_COMPUTE_USER_DATA_0 +
-                                   sctx->bindless_descriptors.shader_userdata_offset,
-                                   sctx->bindless_descriptors.gpu_address);
-         sctx->compute_bindless_pointer_dirty = false;
-      }
-   } else {
-      si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(COMPUTE),
-                                          R_00B900_COMPUTE_USER_DATA_0, compute);
-
-      if (sctx->compute_internal_bindings_pointer_dirty) {
-         radeon_emit_one_32bit_pointer(&sctx->descriptors[SI_DESCS_INTERNAL],
-                                       R_00B900_COMPUTE_USER_DATA_0);
-         sctx->compute_internal_bindings_pointer_dirty = false;
-      }
-
-      if (sctx->compute_bindless_pointer_dirty) {
-         radeon_emit_one_32bit_pointer(&sctx->bindless_descriptors,
-                                       R_00B900_COMPUTE_USER_DATA_0);
-         sctx->compute_bindless_pointer_dirty = false;
-      }
-   }
+   si_emit_compute_shader_pointer_packets(sctx, &sctx->gfx_cs, shader_pointers_dirty,
+                                          SI_DESCS_SHADER_MASK(COMPUTE),
+                                          &sctx->compute_internal_bindings_pointer_dirty,
+                                          &sctx->compute_bindless_pointer_dirty);
 
    sctx->shader_pointers_dirty &= ~SI_DESCS_SHADER_MASK(COMPUTE);
+
+   radeon_begin(&sctx->gfx_cs);
 
    /* Set shader buffer descriptors in user SGPRs. */
    struct si_shader_selector *shader = &sctx->cs_shader_state.program->sel;
@@ -2462,6 +2481,22 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
       sctx->compute_image_sgprs_dirty = false;
    }
    radeon_end();
+}
+
+void si_emit_task_shader_pointers(struct si_context *sctx)
+{
+   unsigned descriptors_dirty = sctx->descriptors_dirty &
+                                (BITFIELD_BIT(SI_DESCS_INTERNAL) | SI_DESCS_SHADER_MASK(TASK));
+   unsigned shader_pointers_dirty = sctx->shader_pointers_dirty | descriptors_dirty;
+
+   si_upload_shader_descriptors(sctx, descriptors_dirty);
+
+   si_emit_compute_shader_pointer_packets(sctx, sctx->gfx_cs.gang_cs, shader_pointers_dirty,
+                                          SI_DESCS_SHADER_MASK(TASK),
+                                          &sctx->task_internal_bindings_pointer_dirty,
+                                          &sctx->task_bindless_pointer_dirty);
+
+   sctx->shader_pointers_dirty &= ~SI_DESCS_SHADER_MASK(TASK);
 }
 
 /* BINDLESS */
@@ -2539,6 +2574,7 @@ static unsigned si_create_bindless_descriptor(struct si_context *sctx, uint32_t 
    /* Make sure to re-emit the shader pointers for all stages. */
    sctx->graphics_bindless_pointer_dirty = true;
    sctx->compute_bindless_pointer_dirty = true;
+   sctx->task_bindless_pointer_dirty = true;
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
 
    return desc_slot;
