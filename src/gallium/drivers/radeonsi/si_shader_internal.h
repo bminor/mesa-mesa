@@ -50,7 +50,7 @@ struct si_shader_args {
    /* Layout of TCS outputs in the offchip buffer
     *   [0:6] (7 bits) = the number of patches per threadgroup, max = 127
     *   [7:11] (5 bits) = patch_vertices_in - 1, different for TCS and TES, max = 31
-    *   [12:16] (5 bits) = (unused)
+    *   [12:16] (5 bits) = the stride of 1 TCS per-vertex output in memory / 256, max = 16
     *   [17:22] (6 bits) = the number of LS outputs in LDS, max = 63
     *   [23:28] (6 bits) = the number of HS per-vertex outputs in memory, max = 63
     *   [29:30] (2 bits) = TES output primitive type (TCS only)

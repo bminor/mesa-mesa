@@ -348,6 +348,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_fbfetch_image_fmask_desc_amd:
    case nir_intrinsic_load_fbfetch_image_desc_amd:
    case nir_intrinsic_load_polygon_stipple_buffer_amd:
+   case nir_intrinsic_load_tcs_mem_attrib_stride:
    case nir_intrinsic_load_printf_buffer_address:
    case nir_intrinsic_load_printf_buffer_size:
    case nir_intrinsic_load_core_id_agx:

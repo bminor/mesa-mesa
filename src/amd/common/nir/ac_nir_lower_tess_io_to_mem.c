@@ -477,11 +477,7 @@ hs_per_vertex_output_vmem_offset(nir_builder *b, lower_tess_io_state *st, unsign
    nir_def *out_vertices_per_patch = b->shader->info.stage == MESA_SHADER_TESS_CTRL
                                          ? nir_imm_int(b, b->shader->info.tess.tcs_vertices_out)
                                          : nir_load_patch_vertices_in(b);
-
-   nir_def *tcs_num_patches = nir_load_tcs_num_patches_amd(b);
-   nir_def *attr_stride = nir_imul(b, tcs_num_patches, nir_imul_imm(b, out_vertices_per_patch, 16u));
-   /* Align the stride to 256B. */
-   attr_stride = nir_align_imm(b, attr_stride, 256);
+   nir_def *attr_stride = nir_load_tcs_mem_attrib_stride(b);
    nir_def *off =
       ac_nir_calc_io_off(b, component, io_offset, attr_stride, 4u,
                          hs_output_vram_map_io_location(b->shader, true, location, st));

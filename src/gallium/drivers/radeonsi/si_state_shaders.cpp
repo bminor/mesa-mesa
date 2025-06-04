@@ -4833,10 +4833,13 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
 
    /* Compute userdata SGPRs. */
    unsigned num_lds_vs_outputs = lds_input_vertex_size / 16;
+   unsigned tcs_mem_attrib_stride = align(num_patches * num_tcs_output_cp * 16, 256) / 256;
+
    assert(ls_current->config.lds_size == 0);
    assert(num_tcs_input_cp <= 32);
    assert(num_tcs_output_cp <= 32);
    assert(num_patches <= 127);
+   assert(tcs_mem_attrib_stride <= 31);
    assert(num_lds_vs_outputs <= 63);
    assert(num_mem_tcs_outputs <= 63);
 
@@ -4846,7 +4849,8 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
           si_resource(sctx->screen->tess_rings)->gpu_address;
    assert((ring_va & BITFIELD_MASK(19)) == 0);
 
-   unsigned shared_fields = num_patches | (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
+   unsigned shared_fields = num_patches | (tcs_mem_attrib_stride << 12) |
+                            (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
 
    sctx->tes_offchip_ring_va_sgpr = ring_va;
    sctx->tcs_offchip_layout = (sctx->tcs_offchip_layout & 0xe0000000) |

@@ -302,22 +302,20 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
       break;
    }
+   case nir_intrinsic_load_tcs_mem_attrib_stride:
+      replacement = nir_imul_imm(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 12, 5), 256);
+      break;
    case nir_intrinsic_load_hs_out_patch_data_offset_amd: {
-      nir_def *tcs_num_patches = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 0, 7);
-      nir_def *tcs_out_vertices, *num_tcs_mem_outputs;
+      nir_def *num_tcs_mem_outputs;
 
-      if (stage == MESA_SHADER_TESS_CTRL) {
-         tcs_out_vertices = nir_imm_int(b, b->shader->info.tess.tcs_vertices_out);
+      if (stage == MESA_SHADER_TESS_CTRL)
          num_tcs_mem_outputs = nir_imm_int(b, util_last_bit64(sel->info.tcs_outputs_written_for_tes));
-      } else {
-         tcs_out_vertices =
-            nir_iadd_imm_nuw(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 7, 5), 1);
+      else
          num_tcs_mem_outputs = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 23, 6);
-      }
 
-      /* Compute the stride of a single output. */
-      nir_def *attr_stride = nir_imul(b, tcs_num_patches, nir_imul_imm(b, tcs_out_vertices, 16));
-      attr_stride = nir_align_imm(b, attr_stride, 256);
+      /* Get the stride of a single output. */
+      nir_def *attr_stride =
+         nir_imul_imm(b, ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 12, 5), 256);
       replacement = nir_imul(b, attr_stride, num_tcs_mem_outputs);
       break;
    }

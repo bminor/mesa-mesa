@@ -1709,6 +1709,8 @@ system_value("rasterization_primitive_amd", 1);
 
 # Number of patches processed by each TCS workgroup
 system_value("tcs_num_patches_amd", 1)
+# The stride of 1 TCS per-vertex output in memory / 256
+system_value("tcs_mem_attrib_stride", 1)
 # Whether TCS should store tessellation level outputs for TES to read
 system_value("tcs_tess_levels_to_tes_amd", dest_comp=1, bit_sizes=[1])
 # Tessellation primitive mode for TCS
