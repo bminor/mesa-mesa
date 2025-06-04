@@ -864,7 +864,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .descriptorBindingVariableDescriptorCount = true,
       .runtimeDescriptorArray = true,
 
-      .samplerFilterMinmax = true,
+      .samplerFilterMinmax = radv_filter_minmax_enabled(pdev),
       .scalarBlockLayout = true,
       .imagelessFramebuffer = true,
       .uniformBufferStandardLayout = true,
