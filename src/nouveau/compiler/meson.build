@@ -16,6 +16,7 @@ libnak_c_files = files(
   'nak.h',
   'nak_nir.c',
   'nak_nir_lower_cf.c',
+  'nak_nir_lower_cmat.c',
   'nak_nir_lower_fs_inputs.c',
   'nak_nir_lower_gs_intrinsics.c',
   'nak_nir_lower_image_addrs.c',

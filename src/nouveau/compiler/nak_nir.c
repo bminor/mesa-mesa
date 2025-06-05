@@ -354,6 +354,8 @@ nak_preprocess_nir(nir_shader *nir, const struct nak_compiler *nak)
 
    OPT(nir, nir_lower_global_vars_to_local);
 
+   OPT(nir, nak_nir_lower_cmat, nak);
+
    OPT(nir, nir_split_var_copies);
    OPT(nir, nir_split_struct_vars, nir_var_function_temp);
 

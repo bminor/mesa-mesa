@@ -158,6 +158,16 @@ static inline bool glsl_base_type_is_integer(enum glsl_base_type type)
           type == GLSL_TYPE_IMAGE;
 }
 
+static inline bool glsl_base_type_is_float(enum glsl_base_type type)
+{
+   return type == GLSL_TYPE_FLOAT ||
+          type == GLSL_TYPE_FLOAT16 ||
+          type == GLSL_TYPE_BFLOAT16 ||
+          type == GLSL_TYPE_FLOAT_E4M3FN ||
+          type == GLSL_TYPE_FLOAT_E5M2 ||
+          type == GLSL_TYPE_DOUBLE;
+}
+
 static inline unsigned int
 glsl_base_type_get_bit_size(const enum glsl_base_type base_type)
 {
