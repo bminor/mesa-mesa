@@ -887,6 +887,16 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    return true;
 }
 
+static bool
+kill_psiz(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_store_output ||
+       nir_intrinsic_io_semantics(intr).location != VARYING_SLOT_PSIZ)
+      return false;
+
+   return nir_remove_sysval_output(intr, MESA_SHADER_FRAGMENT);
+}
+
 static void
 hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader,
                enum hk_feature_key features)
@@ -901,6 +911,9 @@ hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader,
 
       /* TODO: Optimize out for monolithic? */
       NIR_PASS(_, nir, nir_lower_default_point_size);
+   } else {
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass, kill_psiz,
+               nir_metadata_control_flow, NULL);
    }
 
    NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
