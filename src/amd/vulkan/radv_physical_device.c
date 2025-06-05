@@ -1868,10 +1868,10 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxSamplerDescriptorBufferBindings = MAX_SETS,
       .maxEmbeddedImmutableSamplerBindings = MAX_SETS,
       .maxEmbeddedImmutableSamplers = radv_max_descriptor_set_size(),
-      /* No data required for capture/replay (except for sparse images) but these values need to be
-       * non-zero.
+      /* No data required for capture/replay (except for sparse buffers/images) but these values
+       * need to be non-zero.
        */
-      .bufferCaptureReplayDescriptorDataSize = 1,
+      .bufferCaptureReplayDescriptorDataSize = 8,
       .imageCaptureReplayDescriptorDataSize = 8,
       .imageViewCaptureReplayDescriptorDataSize = 1,
       .samplerCaptureReplayDescriptorDataSize = 1,

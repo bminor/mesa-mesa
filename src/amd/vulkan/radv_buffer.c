@@ -76,6 +76,15 @@ radv_create_buffer(struct radv_device *device, const VkBufferCreateInfo *pCreate
             replay_address = opaque_addr_info->opaqueCaptureAddress;
       }
 
+      if (buffer->vk.create_flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
+         flags |= RADEON_FLAG_REPLAYABLE;
+
+         const VkOpaqueCaptureDescriptorDataCreateInfoEXT *opaque_info =
+            vk_find_struct_const(pCreateInfo->pNext, OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT);
+         if (opaque_info)
+            replay_address = *((const uint64_t *)opaque_info->opaqueCaptureDescriptorData);
+      }
+
       if (buffer->vk.usage &
           (VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))
          flags |= RADEON_FLAG_32BIT;
@@ -238,6 +247,16 @@ radv_GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressI
 {
    VK_FROM_HANDLE(radv_buffer, buffer, pInfo->buffer);
    return buffer->vk.device_address;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT *pInfo,
+                                             void *pData)
+{
+   VK_FROM_HANDLE(radv_buffer, buffer, pInfo->buffer);
+
+   *((uint64_t *)pData) = buffer->vk.device_address;
+   return VK_SUCCESS;
 }
 
 VkResult
