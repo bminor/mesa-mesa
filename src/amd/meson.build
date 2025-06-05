@@ -28,4 +28,5 @@ endif
 if with_gallium_radeonsi
   subdir('vpelib')
   subdir('gmlib')
+  subdir('lanczoslib')
 endif

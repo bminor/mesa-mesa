@@ -33,6 +33,7 @@
 #include <si_pipe.h>
 #include "si_vpe.h"
 #include "gmlib/tonemap_adaptor.h"
+#include "lanczoslib/lanczos_adaptor.h"
 
 #define SI_VPE_LOG_LEVEL_DEFAULT     0
 #define SI_VPE_LOG_LEVEL_INFO        1
@@ -605,6 +606,93 @@ si_vpe_set_surface_info(struct vpe_video_processor *vpeproc,
    return VPE_STATUS_OK;
 }
 
+static bool
+si_vpe_reuse_scaling_info(struct vpe_video_processor *vpeproc,
+                          struct vpe_stream *stream,
+                          float *scaling_ratios)
+{
+   if (vpeproc->lanczos_info) {
+      uint8_t scaling_pass_num = (vpeproc->geometric_passes)? vpeproc->geometric_passes : 1;
+      struct vpe_scaling_lanczos_info *lanczof = vpeproc->lanczos_info;
+      uint8_t idx;
+
+      for (idx = 0; idx < scaling_pass_num; idx++) {
+         if (lanczof[idx].scaling_ratios[0] == 0 && lanczof[idx].scaling_ratios[1] == 0)
+            break;
+         else if (lanczof[idx].scaling_ratios[0] == scaling_ratios[0] &&
+                  lanczof[idx].scaling_ratios[1] == scaling_ratios[1]) {
+            SIVPE_INFO(vpeproc->log_level, "Reuse Scaling Coeff from array[%d]\n", idx);
+            memcpy(&stream->polyphase_scaling_coeffs,
+                   &lanczof[idx].filterCoeffs,
+                   sizeof(struct vpe_scaling_filter_coeffs));
+            stream->use_external_scaling_coeffs = true;
+            stream->scaling_info.taps.h_taps = stream->polyphase_scaling_coeffs.taps.h_taps;
+            stream->scaling_info.taps.v_taps = stream->polyphase_scaling_coeffs.taps.v_taps;
+            stream->scaling_info.taps.h_taps_c = stream->polyphase_scaling_coeffs.taps.h_taps_c;
+            stream->scaling_info.taps.v_taps_c = stream->polyphase_scaling_coeffs.taps.v_taps_c;
+            return true;
+         } else {
+            SIVPE_DBG(vpeproc->log_level, "Scaling Coeff in array[%d] is not match\n", idx);
+         }
+      }
+   }
+
+   return false;
+}
+
+static void
+si_vpe_init_polyphase_filter(struct vpe_video_processor *vpeproc,
+                             struct vpe_stream *stream,
+                             float *scaling_ratios)
+{
+   uint32_t hw_num_taps[2] = {4, 4};
+   uint32_t hTaps = stream->scaling_info.taps.h_taps;
+   uint32_t vTaps = stream->scaling_info.taps.v_taps;
+   uint32_t hw_num_phases = 64;
+   uint8_t scaling_pass_num = (vpeproc->geometric_passes)? vpeproc->geometric_passes : 1;
+
+   if (hTaps > 0)
+      hw_num_taps[0] = hTaps;
+   if (vTaps > 0)
+      hw_num_taps[1] = vTaps;
+
+   stream->use_external_scaling_coeffs = true;
+   stream->polyphase_scaling_coeffs.taps.h_taps = hw_num_taps[0];
+   stream->polyphase_scaling_coeffs.taps.v_taps = hw_num_taps[1];
+   stream->polyphase_scaling_coeffs.taps.h_taps_c = 2;
+   stream->polyphase_scaling_coeffs.taps.v_taps_c = 2;
+   stream->polyphase_scaling_coeffs.nb_phases = hw_num_phases;
+
+   if (scaling_ratios[0] > 0)
+      generate_lanczos_coeff(scaling_ratios[0], hw_num_taps[0], hw_num_phases, stream->polyphase_scaling_coeffs.horiz_polyphase_coeffs);
+
+   if (scaling_ratios[1] > 0)
+      generate_lanczos_coeff(scaling_ratios[1], hw_num_taps[1], hw_num_phases, stream->polyphase_scaling_coeffs.vert_polyphase_coeffs);
+
+   /* backup the scaling ratio and coeff info for re-using in next round */
+   if (!vpeproc->lanczos_info)
+      vpeproc->lanczos_info = (struct vpe_scaling_lanczos_info *)CALLOC(scaling_pass_num, sizeof(struct vpe_scaling_lanczos_info));
+
+   if (vpeproc->lanczos_info) {
+      struct vpe_scaling_lanczos_info *lanczof = vpeproc->lanczos_info;
+      uint8_t idx;
+
+      for (idx = 0; idx < scaling_pass_num; idx++) {
+         if (lanczof[idx].scaling_ratios[0] == 0 && lanczof[idx].scaling_ratios[1] == 0) {
+            lanczof[idx].scaling_ratios[0] = scaling_ratios[0];
+            lanczof[idx].scaling_ratios[1] = scaling_ratios[1];
+            memcpy(&lanczof[idx].filterCoeffs,
+                   &stream->polyphase_scaling_coeffs,
+                   sizeof(struct vpe_scaling_filter_coeffs));
+            SIVPE_INFO(vpeproc->log_level, "Backup Scaling Coeff into to array[%d]\n", idx);
+            break;
+         }
+      }
+      if (idx == scaling_pass_num)
+         SIVPE_INFO(vpeproc->log_level, "Backup Scaling Coeff failed\n");
+   }
+}
+
 static void
 si_vpe_set_stream_in_param(struct vpe_video_processor *vpeproc,
                            const struct pipe_vpp_desc *process_properties,
@@ -614,6 +702,7 @@ si_vpe_set_stream_in_param(struct vpe_video_processor *vpeproc,
    struct vpe_scaling_info *scaling_info = &stream->scaling_info;
    struct vpe_blend_info *blend_info     = &stream->blend_info;
    struct vpe_color_adjust *color_adj    = &stream->color_adj;
+   float scaling_ratios[2] = { 1.0, 1.0 };
 
    /* Init: scaling_info */
    scaling_info->src_rect.x            = process_properties->src_region.x0;
@@ -629,7 +718,19 @@ si_vpe_set_stream_in_param(struct vpe_video_processor *vpeproc,
    scaling_info->taps.v_taps_c         = 2;
    scaling_info->taps.h_taps_c         = 2;
 
-   vpe_get_optimal_num_of_taps(vpe_handle, scaling_info);
+   /* Get current scaling ratio */
+   if (stream->scaling_info.dst_rect.width > 1)
+      scaling_ratios[0] = (float)stream->scaling_info.src_rect.width / (float)stream->scaling_info.dst_rect.width;
+   if (stream->scaling_info.dst_rect.height > 1)
+      scaling_ratios[1] = (float)stream->scaling_info.src_rect.height / (float)stream->scaling_info.dst_rect.height;
+
+   if (!si_vpe_reuse_scaling_info(vpeproc, stream, scaling_ratios)) {
+      /* Failed to reuse scaling info,
+       * it means the new scaling coeff have to be generated
+       */
+      vpe_get_optimal_num_of_taps(vpe_handle, scaling_info);
+      si_vpe_init_polyphase_filter(vpeproc, stream, scaling_ratios);
+   }
 
    blend_info->blending                = false;
    blend_info->pre_multiplied_alpha    = false;
@@ -855,6 +956,9 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
 
    if (vpeproc->geometric_scaling_ratios)
       FREE(vpeproc->geometric_scaling_ratios);
+
+   if (vpeproc->lanczos_info)
+      FREE(vpeproc->lanczos_info);
 
    if (vpeproc->geometric_buf[0])
       vpeproc->geometric_buf[0]->destroy(vpeproc->geometric_buf[0]);
