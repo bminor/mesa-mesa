@@ -6344,7 +6344,7 @@
         "description": "panfrost: Fix shader_clock support for v6+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1ce2dcc66df091026a87c9e2ed58a75b8fcf67a",
         "notes": null
