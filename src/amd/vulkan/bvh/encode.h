@@ -109,6 +109,7 @@ bit_writer_skip_to(inout bit_writer writer, uint32_t target)
    if (writer.count > 0) {
       REF(uint32_t) dst = REF(uint32_t)(writer.addr + writer.offset);
       DEREF(dst) = writer.temp;
+      writer.temp = 0;
    }
 
    writer.count = target % 32;
