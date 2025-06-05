@@ -51,10 +51,9 @@ brw_insert_load_reg(brw_shader &s)
 
       bool bad_source = false;
       for (int i = 0; i < inst->sources; i++) {
-         if (inst->src[i].file == ARF &&
-             (inst->src[i].nr == BRW_ARF_ADDRESS ||
-              inst->src[i].nr == BRW_ARF_ACCUMULATOR ||
-              inst->src[i].nr == BRW_ARF_FLAG)) {
+         if (brw_reg_is_arf(inst->src[i], BRW_ARF_ADDRESS) ||
+             brw_reg_is_arf(inst->src[i], BRW_ARF_ACCUMULATOR) ||
+             brw_reg_is_arf(inst->src[i], BRW_ARF_FLAG)) {
             bad_source = true;
             break;
          }

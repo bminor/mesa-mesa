@@ -146,6 +146,9 @@ brw_swizzle_for_mask(unsigned mask)
 
 uint32_t brw_swizzle_immediate(enum brw_reg_type type, uint32_t x, unsigned swz);
 
+struct brw_reg;
+static inline bool brw_reg_is_arf(struct brw_reg reg, unsigned arf);
+
 #define REG_SIZE (8*4)
 
 /* These aren't hardware structs, just something useful for us to pass around:
@@ -225,9 +228,9 @@ typedef struct brw_reg {
    bool is_zero() const;
    bool is_one() const;
    bool is_negative_one() const;
-   bool is_null() const;
-   bool is_accumulator() const;
-   bool is_ip() const;
+   bool is_null() const { return brw_reg_is_arf(*this, BRW_ARF_NULL); }
+   bool is_accumulator() const { return brw_reg_is_arf(*this, BRW_ARF_ACCUMULATOR); }
+   bool is_ip() const { return brw_reg_is_arf(*this, BRW_ARF_IP); }
    bool is_address() const;
 
    unsigned address_slot(unsigned byte_offset) const;
@@ -265,9 +268,7 @@ phys_nr(const struct intel_device_info *devinfo, const struct brw_reg reg)
          return reg.nr / 2;
       else if (reg.file == ADDRESS)
          return BRW_ARF_ADDRESS;
-      else if (reg.file == ARF &&
-               reg.nr >= BRW_ARF_ACCUMULATOR &&
-               reg.nr < BRW_ARF_FLAG)
+      else if (brw_reg_is_arf(reg, BRW_ARF_ACCUMULATOR))
          return BRW_ARF_ACCUMULATOR + (reg.nr - BRW_ARF_ACCUMULATOR) / 2;
       else
          return reg.nr;
@@ -282,10 +283,7 @@ static inline unsigned
 phys_subnr(const struct intel_device_info *devinfo, const struct brw_reg reg)
 {
    if (devinfo->ver >= 20) {
-      if (reg.file == FIXED_GRF ||
-          (reg.file == ARF &&
-           reg.nr >= BRW_ARF_ACCUMULATOR &&
-           reg.nr < BRW_ARF_FLAG))
+      if (reg.file == FIXED_GRF || brw_reg_is_arf(reg, BRW_ARF_ACCUMULATOR))
          return (reg.nr & 1) * REG_SIZE + reg.subnr;
       else
          return reg.subnr;
@@ -1067,6 +1065,14 @@ brw_uniform_reg(unsigned nr, enum brw_reg_type type)
    reg.type = type;
    reg.stride = 0;
    return reg;
+}
+
+static inline bool
+brw_reg_is_arf(struct brw_reg reg, unsigned arf)
+{
+   assert((arf & 0x0f) == 0 && arf <= BRW_ARF_TIMESTAMP);
+
+   return reg.file == ARF && (reg.nr & 0xF0) == arf;
 }
 
 /* This is almost always called with a numeric constant argument, so

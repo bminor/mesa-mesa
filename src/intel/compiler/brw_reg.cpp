@@ -252,24 +252,6 @@ brw_reg::is_negative_one() const
 }
 
 bool
-brw_reg::is_null() const
-{
-   return file == ARF && nr == BRW_ARF_NULL;
-}
-
-bool
-brw_reg::is_accumulator() const
-{
-   return file == ARF && (nr & 0xF0) == BRW_ARF_ACCUMULATOR;
-}
-
-bool
-brw_reg::is_ip() const
-{
-   return file == ARF && (nr & 0xF0) == BRW_ARF_IP;
-}
-
-bool
 brw_reg::is_address() const
 {
    return file == ADDRESS;

@@ -130,8 +130,7 @@ namespace {
          return TGL_PIPE_FLOAT;
       else if (devinfo->ver >= 30 &&
                inst->exec_size == 1 &&
-               inst->dst.file == ARF &&
-               inst->dst.nr == BRW_ARF_SCALAR &&
+               brw_reg_is_arf(inst->dst, BRW_ARF_SCALAR) &&
                inst->src[0].file == IMM) {
          /* Scalar pipe has a very narrow usage.  See Bspec 56701 (r60146),
           * in the SWSB description entry.
@@ -782,12 +781,9 @@ namespace {
                                reg_offset(r) / REG_SIZE);
 
          return (r.file == VGRF || r.file == FIXED_GRF ? &grf_deps[reg] :
-                 r.file == ARF && reg >= BRW_ARF_ADDRESS &&
-                                  reg < BRW_ARF_ACCUMULATOR ? &addr_dep :
-                 r.file == ARF && reg >= BRW_ARF_ACCUMULATOR &&
-                                  reg < BRW_ARF_FLAG ? &accum_dep :
-                 r.file == ARF && reg >= BRW_ARF_SCALAR &&
-                                  reg < BRW_ARF_STATE ? &scalar_dep :
+                 brw_reg_is_arf(r, BRW_ARF_ADDRESS) ? &addr_dep :
+                 brw_reg_is_arf(r, BRW_ARF_ACCUMULATOR) ? &accum_dep :
+                 brw_reg_is_arf(r, BRW_ARF_SCALAR) ? &scalar_dep :
                  NULL);
       }
    };
